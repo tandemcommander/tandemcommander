@@ -154,12 +154,18 @@ public:
     // when Exception==NULL, it's not an exception (user manually opened the Bug Report dialog)
     static void PrintBugReport(EXCEPTION_POINTERS* Exception, DWORD ThreadID, DWORD ShellExtCrashID,
                                FPrintLine PrintLine, void* param);
+
 #endif // CALLSTK_DISABLE
 };
 
 // stores the message on the call stack and removes it upon leaving the block; parameters are the same as print functions
 
 #ifndef CALLSTK_DISABLE
+
+// Feature 077: puts our top-level exception filter back if an in-process component
+// replaced it (supported SetUnhandledExceptionFilter call only, no code patching);
+// called from the main window's "newly loaded modules" timer.
+void CallStk_ReassertTopLevelExceptionFilter();
 
 class CCallStackMessage
 {
@@ -288,6 +294,8 @@ extern BOOL __CallStk_T; // always TRUE - just to check format string and type o
 #endif // (defined(_DEBUG) || defined(CALLSTK_MEASURETIMES)) && !defined(CALLSTK_DISABLEMEASURETIMES)
 
 #else // CALLSTK_DISABLE
+
+inline void CallStk_ReassertTopLevelExceptionFilter() {}
 
 #define CALL_STACK_MESSAGE1(p1)
 #define CALL_STACK_MESSAGE2(p1, p2)

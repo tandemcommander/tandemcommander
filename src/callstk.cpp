@@ -59,90 +59,6 @@ CCallStack MainThreadStack; // ensure the call-stack object is created before co
 
 //
 // ****************************************************************************
-// PreventSetUnhandledExceptionFilter
-//
-
-#if defined _M_X64 || defined _M_IX86
-LPTOP_LEVEL_EXCEPTION_FILTER WINAPI
-MyDummySetUnhandledExceptionFilter(
-    LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter)
-{
-    return NULL;
-}
-#else
-#error "This code works only for x86 and x64!"
-#endif
-
-BOOL PreventSetUnhandledExceptionFilterAux()
-{
-    HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
-    if (hKernel32 == NULL)
-        return FALSE;
-    void* pOrgEntry = GetProcAddress(hKernel32, "SetUnhandledExceptionFilter");
-    if (pOrgEntry == NULL)
-        return FALSE;
-
-    DWORD dwOldProtect = 0;
-    SIZE_T jmpSize = 5;
-#ifdef _M_X64
-    jmpSize = 13;
-#endif
-    BOOL bProt = VirtualProtect(pOrgEntry, jmpSize,
-                                PAGE_EXECUTE_READWRITE, &dwOldProtect);
-    BYTE newJump[20];
-    void* pNewFunc = &MyDummySetUnhandledExceptionFilter;
-#ifdef _M_IX86
-    DWORD dwOrgEntryAddr = (DWORD)pOrgEntry;
-    dwOrgEntryAddr += jmpSize; // add 5 for 5 op-codes for jmp rel32
-    DWORD dwNewEntryAddr = (DWORD)pNewFunc;
-    DWORD dwRelativeAddr = dwNewEntryAddr - dwOrgEntryAddr;
-    // JMP rel32: Jump near, relative, displacement relative to next instruction.
-    newJump[0] = 0xE9; // JMP rel32
-    memcpy(&newJump[1], &dwRelativeAddr, sizeof(pNewFunc));
-#elif _M_X64
-    // We must use R10 or R11, because these are "scratch" registers
-    // which need not to be preserved accross function calls
-    // For more info see: Register Usage for x64 64-Bit
-    // http://msdn.microsoft.com/en-us/library/ms794547.aspx
-    // Thanks to Matthew Smith!!!
-    newJump[0] = 0x49; // MOV R11, ...
-    newJump[1] = 0xBB; // ...
-    memcpy(&newJump[2], &pNewFunc, sizeof(pNewFunc));
-    //pCur += sizeof (ULONG_PTR);
-    newJump[10] = 0x41; // JMP R11, ...
-    newJump[11] = 0xFF; // ...
-    newJump[12] = 0xE3; // ...
-#endif
-    SIZE_T bytesWritten;
-    BOOL bRet = WriteProcessMemory(GetCurrentProcess(),
-                                   pOrgEntry, newJump, jmpSize, &bytesWritten);
-
-    if (bProt != FALSE)
-    {
-        DWORD dwBuf;
-        VirtualProtect(pOrgEntry, jmpSize, dwOldProtect, &dwBuf);
-        // Does it make sense? http://chadaustin.me/2009/03/disabling-functions/
-        //FlushInstructionCache(GetCurrentProcess(), pOrgEntry, 20);
-    }
-    return bRet;
-}
-
-BOOL PreventSetUnhandledExceptionFilter()
-{
-    __try
-    {
-        PreventSetUnhandledExceptionFilterAux();
-        return TRUE;
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        TRACE_E("PreventSetUnhandledExceptionFilterAux failed!");
-        return FALSE;
-    }
-}
-
-//
-// ****************************************************************************
 // CCallStack
 //
 
@@ -182,6 +98,17 @@ LONG WINAPI TopLevelExceptionFilter(LPEXCEPTION_POINTERS exception)
 }
 
 LPTOP_LEVEL_EXCEPTION_FILTER OldUnhandledExceptionFilter = NULL;
+
+// Feature 077: re-register our top-level exception filter by supported means only.
+// An in-process component (shell extension, icon overlay handler, ...) may have
+// installed its own filter after start-up, which would steal the crash report;
+// calling SetUnhandledExceptionFilter again simply puts ours back.
+void CallStk_ReassertTopLevelExceptionFilter()
+{
+    LPTOP_LEVEL_EXCEPTION_FILTER prev = SetUnhandledExceptionFilter(TopLevelExceptionFilter);
+    if (prev != TopLevelExceptionFilter && prev != OldUnhandledExceptionFilter && prev != NULL)
+        TRACE_I("CallStk_ReassertTopLevelExceptionFilter: a foreign top-level exception filter (0x" << (void*)prev << ") was displaced");
+}
 
 CCallStack::CCallStack(BOOL dontSuspend)
 {
@@ -262,25 +189,11 @@ CCallStack::CCallStack(BOOL dontSuspend)
     */
 
         OldUnhandledExceptionFilter = SetUnhandledExceptionFilter(TopLevelExceptionFilter);
-
-        // Try to disable the unhandled exception filter for subsequent calls.
-        // When a DLL library (plugin, shell extension) that uses a different RTL is
-        // loaded into Salamander process, that RTL installs this filter during its
-        // initialization. Additionally, starting with MSVC 2005, various sanity checks no
-        // longer throw exceptions but instead print a message and directly call
-        // UnhandledExceptionFilter(), which opens the Watson dialog.
-        // For example, Salamander used to crash without a bug report
-        // from TortoiseSVN shell extension. The call below should
-        // ensure we catch all unhandled crashes including MSVC 2005 sanity
-        // checks.
-        //
-        // More on this topic in "A proposal to make Dr.Watson invocation configurable":
-        // http://connect.microsoft.com/VisualStudio/feedback/ViewFeedback.aspx?FeedbackID=101337
-        // and two hardcore solutions:
-        // http://www.debuginfo.com/articles/debugfilters.html
-        // http://blog.kalmbachnet.de/?postid=75
-        // 3/2012 - update pro x64: http://blog.kalmbach-software.de/2008/04/02/unhandled-exceptions-in-vc8-and-above-for-x86-and-x64/
-        PreventSetUnhandledExceptionFilter();
+        // Feature 077: the former in-process patch of kernel32!SetUnhandledExceptionFilter
+        // (a code rewrite that behaviour-based antivirus engines flag) is gone; a foreign
+        // filter installed later by an in-process component is displaced by
+        // CallStk_ReassertTopLevelExceptionFilter(), called from the main window's
+        // "newly loaded modules" timer (see AddNewlyLoadedModulesToGlobalModulesStore).
     }
 
 #if (defined(_DEBUG) || defined(CALLSTK_MEASURETIMES)) && !defined(CALLSTK_DISABLEMEASURETIMES)

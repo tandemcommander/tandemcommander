@@ -145,6 +145,95 @@ order (research R7, evidence 2).
 exactly `concrt140.dll msvcp140.dll vcruntime140.dll vcruntime140_1.dll` in
 the tree root.
 
+### T017 — commits
+
+`6ce6403 [076] Record the antivirus false-positive review`,
+`5ffa4c8 [077] Specify, plan and task the antivirus-findings fixes`,
+`eb5a050 [077] Ship the Visual C++ runtime application-locally`.
+
+### T018–T021 — the patch removal
+
+- `src/callstk.cpp`: the whole "PreventSetUnhandledExceptionFilter" section
+  (banner, `MyDummySetUnhandledExceptionFilter`,
+  `PreventSetUnhandledExceptionFilterAux` with its `VirtualProtect` /
+  `WriteProcessMemory` trampoline, the `__try` wrapper — 2,745 characters)
+  and its call in the first `CCallStack` constructor are gone; the call is
+  replaced by a comment pointing at the new helper.
+  `CallStk_ReassertTopLevelExceptionFilter()` (7 lines) sits next to
+  `TopLevelExceptionFilter` / `OldUnhandledExceptionFilter`, inside the
+  file's `#ifndef CALLSTK_DISABLE`.
+- `src/callstk.h`: declaration in the free-function/macro block
+  (`#ifndef CALLSTK_DISABLE`, second occurrence) and an `inline … {}` stub in
+  its `#else`. **First attempt was wrong**: the first
+  `#ifndef CALLSTK_DISABLE` in the header is *inside* `class CCallStack`, so
+  the declaration became a member and `bugreprt.cpp` failed with
+  `C3861 'CallStk_ReassertTopLevelExceptionFilter': identifier not found` in
+  both configurations; moved and rebuilt.
+- `src/bugreprt.cpp`: `AddNewlyLoadedModulesToGlobalModulesStore()` calls the
+  helper first (comment references feature 077).
+- `clang-format -i --style=file` (VS-bundled LLVM 17) on the three files;
+  BOM and CRLF preserved (`efbbbf`, all lines CRLF). Diff vs HEAD:
+  `callstk.cpp` −103/+29 net, `callstk.h` +8, `bugreprt.cpp` +5.
+- Builds: `build.cmd release` (incremental) BUILD SUCCEEDED, runtime step
+  ran again (`Runtime : 4 file(s) shipped, closure OK`); `build.cmd`
+  (Debug) BUILD SUCCEEDED. No new warnings in the touched files (the
+  pre-existing `pack1.cpp`/`salamdr2.cpp`/`zip.cpp` warnings are unchanged).
+
+### T022 — S4 run 1 (incremental binary, 19:36:57, 3,333,120 B)
+
+`dumpbin /imports` → `WriteProcessMemory` / `VirtualProtect`: **(none)**
+(baseline had `669 WriteProcessMemory`, `61A VirtualProtect`).
+Still imported, as expected and out of scope: `5B8 SetUnhandledExceptionFilter`,
+`43F OpenProcess`, `118 CreateToolhelp32Snapshot`, `3B0 IsDebuggerPresent`.
+
+### T024–T025 — S5 after the change (binary of 19:36:57)
+
+| Run | Target | Result | Report | Faulting address |
+|---|---|---|---|---|
+| after-app-1 | app | RESULT: OK | `…-193743.TXT` (35,901 B) | `0x0`, thread 0x1EF8 |
+| after-app-2 | app | RESULT: OK | `…-193754.TXT` (27,107 B) | `0x0`, thread 0x1F90 |
+| after-plugin-1 | zip.spl | RESULT: OK | `…-193805.TXT` (26,878 B) | `0x00007FFEC95E0000` = zip.spl base, inside [0x7FFEC95E0000..0x7FFEC9631000) |
+| after-plugin-2 | zip.spl | RESULT: OK | `…-193816.TXT` (26,882 B) | `0x00007FFEC95E0000`, inside the same range |
+
+Every run: "Exception: access violation: write on …", application exited
+after writing the report, salmon crash dialog shown — identical behaviour to
+the baseline on the pre-change binary. (The first run after a rebuild lists
+all 20 plugins as loaded: the start-up auto-registration of the bumped
+`plugins.ver`; steady state loads none.)
+
+### T023 — S4 run 2 (clean `build.cmd rebuild release`, binary 19:39:15, SHA-256 `BAD1459D…`)
+
+Rebuild: BUILD SUCCEEDED (0 min 45 s), runtime step ran again
+(`4 file(s) copied`, `runtime closure OK: 220 module(s) …`), tree 361 files.
+`dumpbin /imports` → `WriteProcessMemory` / `VirtualProtect`: **(none)**;
+`5B8 SetUnhandledExceptionFilter` still imported. Two independently linked
+binaries (19:36:57 incremental, 19:39:15 clean) give the same answer.
+
+### T026 — re-assert proof (FR-012), `probe/reassert_filter.ps1`
+
+cdb attached to the running program with
+`bp kernel32!SetUnhandledExceptionFilter ".echo HIT; r rcx; g"` and
+`.sympath build\obj\Release_x64\Intermediate` (never `.symfix`).
+`x tandemcommander!TopLevelExceptionFilter` = `0x00007ff6d6c153c0`.
+
+| Run | Hits in 40 s | rcx of every hit |
+|---|---|---|
+| 1 | 2 | `0x00007ff6d6c153c0` = ours, `0x00007ff6d6c153c0` = ours → RESULT: OK |
+| 2 | 2 | same two values → RESULT: OK |
+
+Two hits ≈ the 15-second `IDT_ADDNEWMODULES` timer firing at ~15 s and
+~30 s after attach; each re-registers exactly our filter. (A first attempt
+of the probe failed on tooling, not on the product: the breakpoint command's
+inner quotes cannot survive cdb's `-c` argument — the probe now feeds the
+commands through `-cf <file>`; a second attempt then mis-parsed the echoed
+`x` command line instead of its address line. Both fixes are in the probe.)
+
+### S9 run 1 (after the US2 change)
+
+`saltests.exe`: **1353 checks, 0 failed** (the test executable links only
+`src\common` and is unaffected by `callstk.cpp` by construction — same as
+feature 075 noted; the run proves the Debug tree is intact).
+
 ## Verification matrix
 
 | Scenario | Run 1 | Run 2 | Notes |

@@ -2652,6 +2652,11 @@ void AddNewlyLoadedModulesToGlobalModulesStore()
     char buf[500];
     __try
     {
+        // Feature 077: this timer is the one periodic point that already deals with
+        // modules loaded into the process after start-up; put our crash filter back
+        // in case one of them replaced it (supported call, no code patching).
+        CallStk_ReassertTopLevelExceptionFilter();
+
         HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
         if (snap != (HANDLE)-1)
         {
