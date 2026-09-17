@@ -101,7 +101,7 @@ No blocking prerequisites: the three stories touch disjoint files (`build.cmd` +
 - [x] T032 [US3] Amend `specs/050-code-signing/contracts/signing-cli.md` §1 per-file behaviour with a pointer to `specs/077-fix-antivirus-findings/contracts/signing-exemption.md` and the new summary format
 - [x] T033 [US3] Quickstart S8 run 1: `setup\build_setup.cmd sign` (archived installer already moved aside in T002) → signed installer; silent per-user install to `<scratch>\tc-inst` (`/VERYSILENT /CURRENTUSER /DIR=… /NOICONS /SUPPRESSMSGBOXES /NORESTART /LOG=…`) → four runtime DLLs present with Microsoft signatures, `tandemcommander.exe` with the project signature, HKCU uninstall key created, machine-wide install (`C:\Program Files\Tandem Commander\`, HKLM key) untouched; `unins000.exe /VERYSILENT` → folder and key gone; record
 - [x] T034 [US3] Quickstart S8 run 2: repeat install → verify → uninstall; then `MpCmdRun` scan of the installer (S10) → no threats; move the test installer to the scratchpad and restore the archived published installer into `setup\output`, verify its SHA-256 `6731E146…F64DD`; record
-- [ ] T035 [US3] Commit `[077] Signing sweep: keep Microsoft's signature on the runtime files` (`tools/codesign/sign_release.ps1`, `specs/050-code-signing/contracts/signing-cli.md`, `probe/sign_exempt_negative.ps1`, `probe/check_loaded_crt.ps1`, `fix-log.md` progress)
+- [x] T035 [US3] Commit `[077] Signing sweep: keep Microsoft's signature on the runtime files` (`tools/codesign/sign_release.ps1`, `specs/050-code-signing/contracts/signing-cli.md`, `probe/sign_exempt_negative.ps1`, `probe/check_loaded_crt.ps1`, `fix-log.md` progress)
 
 **Checkpoint**: signed release with Microsoft-signed runtime, packaging proven 2×.
 
