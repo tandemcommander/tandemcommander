@@ -18,6 +18,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\codesign\sign_release.
 - Per-file behavior: skip iff Authenticode `Valid` + thumbprint matches
   profile; otherwise sign with
   `signtool sign /sha1 <thumbprint> /tr <timestamp_url> /td sha256 /fd sha256 /v <files…>`.
+  **Amended by feature 077**
+  (`specs/077-fix-antivirus-findings/contracts/signing-exemption.md`): a file
+  with a `Valid` signature whose signer subject contains
+  `O=Microsoft Corporation` (the application-local Visual C++ runtime) is
+  *exempt* — never stripped, never re-signed, counted as verified and
+  reported as `Exempt (Microsoft): N`; a file whose name matches the runtime
+  pattern (`vcruntime140*`, `msvcp140*`, `concrt140`, …) that is *not*
+  validly Microsoft-signed fails the run before any file is touched
+  (`ERROR: runtime file is not validly signed by Microsoft: <path>`, exit 1).
 - Batching: ≤ 15 files per signtool invocation; per batch ≤ 3 attempts,
   5 s pause between attempts; after a failed batch, per-file fallback within
   that batch.
@@ -25,11 +34,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\codesign\sign_release.
   certificate not found in `Cert:\CurrentUser\My` or `Cert:\LocalMachine\My`,
   signtool not found, root/file not found, no candidates found under -Root.
 - Ends with a verification pass over all candidates; prints summary
-  `Signed: N  Skipped: M  Failed: K  (of T)` plus each failed path on its own
-  `FAILED: <path>` line.
+  `Signed: N  Skipped: M  Exempt (Microsoft): E  Failed: K  (of T)` plus each
+  failed path on its own `FAILED: <path>` line (feature 077 added the
+  `Exempt` column).
 - Exit code: `0` iff every candidate verifies as signed by the configured
-  certificate; `1` otherwise. `-VerifyOnly`: `0` iff tree already fully
-  signed.
+  certificate or is Microsoft-exempt; `1` otherwise. `-VerifyOnly`: `0` iff
+  tree already fully signed (exempt files count as signed; a runtime file
+  without a valid Microsoft signature is reported as
+  `RUNTIME FILE NOT MICROSOFT-SIGNED: <path>`, exit 1).
 
 ## 2. `tools/codesign/codesign.cfg` (signing profile)
 

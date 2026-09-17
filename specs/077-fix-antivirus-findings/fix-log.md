@@ -228,6 +228,62 @@ inner quotes cannot survive cdb's `-c` argument — the probe now feeds the
 commands through `-cf <file>`; a second attempt then mis-parsed the echoed
 `x` command line instead of its address line. Both fixes are in the probe.)
 
+### T028 — `tools/codesign/sign_release.ps1` amended
+
+Per `contracts/signing-exemption.md`: `$RuntimeNamePattern` (identical to the
+Python checker's), `$MicrosoftSubjectPattern = 'O=Microsoft Corporation'`,
+`Test-MicrosoftExempt` (Valid + Microsoft signer; catalog-type results judged
+by the embedded signer like `Test-SignedByCurrent`), `Test-RuntimeName`;
+classification order Runtime-invalid → Ours-valid → Microsoft-exempt → sign;
+runtime-invalid files fail the run before anything is touched
+(`ERROR: runtime file is not validly signed by Microsoft: <path>`, or
+`RUNTIME FILE NOT MICROSOFT-SIGNED: <path>` under `-VerifyOnly`); summary
+`Signed: N  Skipped: M  Exempt (Microsoft): E  Failed: K  (of T)`; the final
+verification and `-VerifyOnly` count exempt files as verified. ASCII, CRLF,
+Windows PowerShell 5.1. `specs/050-code-signing/contracts/signing-cli.md`
+§1 amended with a pointer (T032).
+
+### T029–T030 — S6 run 1 and run 2 (tree of the clean rebuild, 220 candidates)
+
+| Run | Sweep | VerifyOnly |
+|---|---|---|
+| 1 | `To sign : 48 (skipping 168 already signed)` → `Signed: 48  Skipped: 168  Exempt (Microsoft): 4  Failed: 0  (of 220)`, `Verified : 220 of 220`, exit 0 (4 signtool batches, SimplySign unattended) | `VerifyOnly : 216 of 220 artifacts signed by the configured certificate, 4 Microsoft-exempt.`, exit 0 |
+| 2 | `Signed: 0  Skipped: 216  Exempt (Microsoft): 4  Failed: 0  (of 220)`, `All artifacts already signed by the configured certificate (or Microsoft-exempt).`, exit 0 | same line, exit 0 |
+
+After both sweeps the four runtime files still report `Valid` with signer
+`CN=Microsoft Windows Software Compatibility Publisher` — never re-signed.
+(Only 48 files needed signing: the clean rebuild relinks the 25 PE modules
+and `english.slg`s; the other language modules kept their signatures.)
+
+### T031 — S7 run 1 and run 2, `probe/sign_exempt_negative.ps1`
+
+| Run | Tampered file | Sweep | VerifyOnly | Files changed in the copy |
+|---|---|---|---|---|
+| 1 | `concrt140.dll` (Valid → NotSigned after appending one byte) | exit 1, `ERROR: runtime file is not validly signed by Microsoft: …\concrt140.dll` | exit 1, `RUNTIME FILE NOT MICROSOFT-SIGNED: …\concrt140.dll` | 0 |
+| 2 | `vcruntime140.dll` | exit 1, same line for `vcruntime140.dll` | exit 1, same | 0 |
+
+Both `RESULT: OK`; the sweep stopped after the classification, before any
+signtool call.
+
+### T033–T034 — S8 run 1 and run 2 (packaging), S10 on the installer
+
+`setup\build_setup.cmd sign` (from Git Bash, default `PSModulePath`): sweep
+`Signed: 0  Skipped: 216  Exempt (Microsoft): 4`, Inno `Successful compile`,
+`Installer signed and verified`; installer 8,281,072 B (was 8,002,480 B for
+the published 0.1.7 — the four runtime DLLs), SHA-256 `ED0BC2F2…C7A4`,
+signer *Open Source Developer Pavel Stupka*; Defender: `found no threats`.
+
+| Run | Install (`/VERYSILENT /CURRENTUSER /DIR=<scratch>\tc-inst /NOICONS /SUPPRESSMSGBOXES /NORESTART`) | In the folder | Uninstall (`unins000.exe /VERYSILENT`) |
+|---|---|---|---|
+| 1 | exit 0 | 364 files; `vcruntime140.dll vcruntime140_1.dll msvcp140.dll concrt140.dll` Valid / Microsoft; `tandemcommander.exe`, `utils\salmon.exe` Valid / project cert | exit 0; folder emptied (the self-deleting `unins000.exe` last), HKCU key gone |
+| 2 | exit 0, log `Installation process succeeded.` | same; HKCU `…\Uninstall\{35C0B0DC-…}_is1` present with `InstallLocation=<scratch>\tc-inst\`, `DisplayVersion=0.1.7` | exit 0; same |
+
+The machine-wide installation (`C:\Program Files\Tandem Commander\`,
+exe of 2026-08-29 11:46:42, HKLM key `Tandem Commander 0.1.7`) is untouched
+before and after both runs. The test installer is kept in the scratchpad as
+`test-installer-077-run1.exe`; the archived published 0.1.7 installer was
+restored into `setup\output` (SHA-256 `6731E146…F64DD`, match=True).
+
 ### S9 run 1 (after the US2 change)
 
 `saltests.exe`: **1353 checks, 0 failed** (the test executable links only
@@ -256,9 +312,43 @@ feature 075 noted; the run proves the Debug tree is intact).
 
 _(filled at close)_
 
+### T039 — S9 run 1 and run 2 (after all code changes)
+
+`build.cmd` (Debug, incremental) BUILD SUCCEEDED earlier in T021;
+`saltests.exe`: run 1 **1353 checks, 0 failed**; run 2 **1353 checks,
+0 failed** — identical to the T007 baseline.
+
 ## Changelog draft
 
-_(T038)_
+For `CHANGELOG.md` under the next version (the bump and the entry are made
+together at the ship gate; wording in the user's terms per the constitution):
+
+```markdown
+### Fixed
+
+- **The program starts on a computer that has no Microsoft Visual C++
+  runtime installed.** Every version from 0.1.0 to 0.1.7 depended on the
+  "Microsoft Visual C++ 2015-2022 Redistributable (x64)" being present, but
+  neither installed it nor said so: on a computer without it the installer
+  finished normally and Tandem Commander then refused to start with
+  *"The code execution cannot proceed because VCRUNTIME140.dll was not
+  found"*. The runtime files now ship inside the program folder, so no
+  separate installation is needed. Nothing changes on computers that already
+  had the runtime.
+
+### Changed
+
+- **Starting the program no longer rewrites Windows system code in memory.**
+  Since its Open Salamander days the program patched a Windows function
+  (`SetUnhandledExceptionFilter`) inside its own process at every start so
+  that no add-on could take over crash reporting. Behaviour-based antivirus
+  engines treat exactly this pattern as suspicious, and it is one likely
+  reason for false alarms such as the reported Avast detection. The patch is
+  gone; crash reports are produced exactly as before, and the reporter simply
+  re-registers itself periodically instead. Crash *minidumps* were never
+  produced by any release (a missing helper library) and still are not — the
+  text report is unchanged; this is recorded as a separate follow-up.
+```
 
 ## Side effects
 

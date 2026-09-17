@@ -9,8 +9,13 @@ thumbprint), timestamped by the configured RFC 3161 authority, SHA-256
 digests. Idempotent: files already carrying a Valid signature from the
 configured certificate are skipped; unsigned files and files signed by any
 other certificate are (re-)signed (signtool replaces the primary signature).
+Feature 077: files carrying a Valid signature by Microsoft (the
+application-local Visual C++ runtime) are exempt - never stripped, never
+re-signed, counted as verified - and a runtime-named file WITHOUT a valid
+Microsoft signature fails the run before anything is touched.
 
-Contract: specs/050-code-signing/contracts/signing-cli.md
+Contract: specs/050-code-signing/contracts/signing-cli.md, amended by
+specs/077-fix-antivirus-findings/contracts/signing-exemption.md
 Windows PowerShell 5.1 compatible. ASCII only.
 
 .PARAMETER Root
@@ -46,6 +51,11 @@ $BatchSize = 15
 $MaxAttempts = 3
 $RetryDelaySeconds = 5
 $PeExtensions = @('.exe', '.dll', '.spl', '.slg')
+# Feature 077: the Visual C++ runtime file classes shipped application-locally
+# (keep in sync with tools/check_runtime_deps.py DEFAULT_PATTERN and
+# specs/077-fix-antivirus-findings/data-model.md section 1).
+$RuntimeNamePattern = '^(vcruntime140|vcruntime140_1|vcruntime140_threads|msvcp140(_[a-z0-9_]+)?|concrt140|vccorlib140|vcamp140|vcomp140|mfc140[a-z]*|mfcm140[a-z]*)\.dll$'
+$MicrosoftSubjectPattern = 'O=Microsoft Corporation'
 
 function Fail([string]$Message) {
     Write-Host "ERROR: $Message"
@@ -133,25 +143,74 @@ function Test-SignedByCurrent([string]$Path) {
     }
 }
 
+# Feature 077: a file with a Valid signature whose signer is Microsoft
+# (the application-local Visual C++ runtime) is exempt from signing.
+function Get-EmbeddedSignerSubject([string]$Path) {
+    try {
+        $embedded = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
+            [System.Security.Cryptography.X509Certificates.X509Certificate]::CreateFromSignedFile($Path))
+        return $embedded.Subject
+    } catch {
+        return ''
+    }
+}
+
+function Test-MicrosoftExempt([string]$Path) {
+    $sig = Get-AuthenticodeSignature -LiteralPath $Path
+    if ($sig.Status -ne 'Valid') { return $false }
+    if ($sig.SignatureType -eq 'Authenticode') {
+        return ($null -ne $sig.SignerCertificate -and
+                $sig.SignerCertificate.Subject -match $MicrosoftSubjectPattern)
+    }
+    # catalog-signed: judge the embedded signer, as Test-SignedByCurrent does
+    return ((Get-EmbeddedSignerSubject $Path) -match $MicrosoftSubjectPattern)
+}
+
+function Test-RuntimeName([string]$Name) {
+    return ($Name -match $RuntimeNamePattern)
+}
+
 $toSign = New-Object System.Collections.ArrayList
 $skippedCount = 0
+$exemptCount = 0
+$runtimeInvalid = New-Object System.Collections.ArrayList
 foreach ($cand in $candidates) {
+    $msExempt = Test-MicrosoftExempt $cand.FullName
+    if ((Test-RuntimeName $cand.Name) -and -not $msExempt) {
+        [void]$runtimeInvalid.Add($cand.FullName)
+        continue
+    }
     if (Test-SignedByCurrent $cand.FullName) {
         $skippedCount++
+    } elseif ($msExempt) {
+        $exemptCount++
     } else {
         [void]$toSign.Add($cand.FullName)
     }
 }
 
+# Rule 1 of the 077 contract: a runtime file that is not validly signed by
+# Microsoft must neither ship nor be signed with the project certificate.
+if ($runtimeInvalid.Count -gt 0) {
+    foreach ($p in $runtimeInvalid) {
+        if ($VerifyOnly) { Write-Host "RUNTIME FILE NOT MICROSOFT-SIGNED: $p" }
+        else { Write-Host "ERROR: runtime file is not validly signed by Microsoft: $p" }
+    }
+    if ($VerifyOnly) {
+        foreach ($p in $toSign) { Write-Host "NOT SIGNED BY CURRENT CERT: $p" }
+    }
+    exit 1
+}
+
 if ($VerifyOnly) {
-    Write-Host ("VerifyOnly   : {0} of {1} artifacts signed by the configured certificate." -f $skippedCount, $candidates.Count)
+    Write-Host ("VerifyOnly   : {0} of {1} artifacts signed by the configured certificate, {2} Microsoft-exempt." -f $skippedCount, $candidates.Count, $exemptCount)
     foreach ($p in $toSign) { Write-Host "NOT SIGNED BY CURRENT CERT: $p" }
     if ($toSign.Count -eq 0) { exit 0 } else { exit 1 }
 }
 
 if ($toSign.Count -eq 0) {
-    Write-Host ("Signed: 0  Skipped: {0}  Failed: 0  (of {1})" -f $skippedCount, $candidates.Count)
-    Write-Host "All artifacts already signed by the configured certificate."
+    Write-Host ("Signed: 0  Skipped: {0}  Exempt (Microsoft): {1}  Failed: 0  (of {2})" -f $skippedCount, $exemptCount, $candidates.Count)
+    Write-Host "All artifacts already signed by the configured certificate (or Microsoft-exempt)."
     exit 0
 }
 
@@ -316,7 +375,10 @@ for ($i = 0; $i -lt $toSignArr.Count; $i += $BatchSize) {
 $verifiedCount = 0
 $notVerified = New-Object System.Collections.ArrayList
 foreach ($cand in $candidates) {
-    if (Test-SignedByCurrent $cand.FullName) {
+    $msExempt = Test-MicrosoftExempt $cand.FullName
+    if ((Test-RuntimeName $cand.Name) -and -not $msExempt) {
+        [void]$notVerified.Add($cand.FullName)
+    } elseif ((Test-SignedByCurrent $cand.FullName) -or $msExempt) {
         $verifiedCount++
     } else {
         [void]$notVerified.Add($cand.FullName)
@@ -324,7 +386,7 @@ foreach ($cand in $candidates) {
 }
 
 Write-Host ""
-Write-Host ("Signed: {0}  Skipped: {1}  Failed: {2}  (of {3})" -f $signedCount, $skippedCount, $notVerified.Count, $candidates.Count)
+Write-Host ("Signed: {0}  Skipped: {1}  Exempt (Microsoft): {2}  Failed: {3}  (of {4})" -f $signedCount, $skippedCount, $exemptCount, $notVerified.Count, $candidates.Count)
 Write-Host ("Verified     : {0} of {1}" -f $verifiedCount, $candidates.Count)
 foreach ($p in $notVerified) { Write-Host "FAILED: $p" }
 
