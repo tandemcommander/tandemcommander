@@ -279,6 +279,35 @@ if %BUILD_EXIT% equ 0 if not "%BUILD_FULL%"=="1" if exist "%OUT_DIR%\plugins\plu
     if errorlevel 1 set "BUILD_EXIT=1"
 )
 
+:: Release only (feature 077): ship the Visual C++ runtime application-locally.
+:: Every shipped module links the CRT dynamically; a machine without the
+:: redistributable could install the product but not start it. The helper
+:: copies vcruntime140/vcruntime140_1/msvcp140/concrt140 from the located
+:: Visual Studio installation into the tree root, then the closure check
+:: proves that every runtime import of every shipped PE resolves inside the
+:: tree. Both full and incremental Release builds run it, so a Release tree is
+:: never left without the runtime; Debug trees (debug CRT, never shipped)
+:: are untouched. See specs\077-fix-antivirus-findings\contracts\runtime-deployment.md
+set "RUNTIME_RESULT="
+if %BUILD_EXIT% equ 0 if /i "%BUILD_CONFIG%"=="Release" (
+    set "VCRT_VS=!VS_INSTALL!"
+    if not defined VCRT_VS if defined VCToolsRedistDir set "VCRT_VS=%VCToolsRedistDir%\..\..\.."
+    echo.
+    call "%~dp0src\vcxproj\copy_vc_runtime.cmd" "!VCRT_VS!" "%OUT_DIR%"
+    if errorlevel 1 (
+        echo ERROR: Visual C++ runtime check failed - the release tree is incomplete.
+        set "BUILD_EXIT=1"
+    ) else (
+        python "%~dp0tools\check_runtime_deps.py" "%OUT_DIR%"
+        if errorlevel 1 (
+            echo ERROR: Visual C++ runtime check failed - a shipped module imports a runtime library that is not in the tree.
+            set "BUILD_EXIT=1"
+        ) else (
+            set "RUNTIME_RESULT=4 file(s) shipped, closure OK"
+        )
+    )
+)
+
 :: Release only: keep the shipped output tree free of build scaffolding
 :: (feature 023). Intermediates are relocated outside the tree by
 :: src\Directory.Build.targets and saltests is not built in Release; this
@@ -367,6 +396,7 @@ if %BUILD_EXIT% equ 0 if "%BUILD_FULL%"=="1" (
     echo  Plugins       : %PLUG_COUNT% registered in plugins.ver ^(version %NEW_VER%^)
     echo  Languages     : %LANG_COUNT% language modules
 )
+if defined RUNTIME_RESULT echo  Runtime       : %RUNTIME_RESULT%
 if defined SIGN_RESULT echo  Code signing  : %SIGN_RESULT%
 if defined SETUP_RESULT echo  Installer     : %SETUP_RESULT% ^(setup\output\^)
 echo ============================================================
