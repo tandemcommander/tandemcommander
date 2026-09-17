@@ -294,29 +294,67 @@ feature 075 noted; the run proves the Debug tree is intact).
 
 | Scenario | Run 1 | Run 2 | Notes |
 |---|---|---|---|
-| S1 build ships runtime | | | |
-| S2 build fails without runtime | | | |
-| S3 loaded from app dir | | | |
-| S4 import table clean | | | |
-| S5 crash parity — app | | | baseline: |
-| S5 crash parity — plugin | | | baseline: |
-| S5b re-assert proof | | | |
-| S6 signing sweep + VerifyOnly | | | |
-| S7 tampered runtime refused | | | |
-| S8 install / uninstall | | | |
-| S9 Debug build + saltests | | | |
-| S10 Defender scan | | | |
-| Integrated `build.cmd full release sign setup` | | | |
+| S1 build ships runtime | ✅ full build: 4 copied, closure OK, 361 files | ✅ DLLs deleted, incremental build restored them | T012–T013 |
+| S2 build fails without runtime | ✅ checker: 55 unsatisfied on the old tree; helper: 4 failure branches exit 1 | ✅ identical (+ "one file missing" case) | T009, T014 |
+| S3 loaded from app dir | ✅ 4/4 from `Release_x64\` | ✅ 4/4 | T015; system-wide 14.51 present and ignored |
+| S4 import table clean | ✅ incremental binary 19:36:57 | ✅ clean-rebuilt binary 19:39:15 | T022–T023 |
+| S5 crash parity — app | ✅ report, address 0x0 | ✅ | baseline on pre-change binary: ✅ (T006) |
+| S5 crash parity — plugin (zip.spl) | ✅ report, address = zip.spl base | ✅ | baseline: ✅ (T006) |
+| S5b re-assert proof | ✅ 2 hits / 40 s, rcx = ours | ✅ 2 hits, rcx = ours | T026 |
+| S6 signing sweep + VerifyOnly | ✅ 48 signed, 4 exempt, 220/220; VerifyOnly 0 | ✅ 0 signed, 4 exempt; VerifyOnly 0 | T029–T030 |
+| S7 tampered runtime refused | ✅ concrt140.dll, nothing modified | ✅ vcruntime140.dll | T031 |
+| S8 install / uninstall | ✅ 364 files, signatures, key, clean removal | ✅ + HKCU key contents verified | T033–T034; machine-wide install untouched |
+| S9 Debug build + saltests | ✅ 1353/0 | ✅ 1353/0 | T007 baseline 1353/0 ×2, T039 ×2 |
+| S10 Defender scan | ✅ tree: no threats | ✅ installer: no threats | T016, T034 |
+| Integrated `build.cmd full release sign setup` | ✅ 2 min 54 s; 168 signed + 4 exempt; installer signed | ✅ 0 min 28 s; 0 signed + 4 exempt (idempotent); installer signed | T040; both installers Defender-clean |
 
 ## Owed human step
 
-_(filled at close)_
+**Clean-machine start** (spec User Story 1, acceptance scenario 1; research
+R7). Not reachable from this session: not elevated, Windows Sandbox not
+installed (needs the optional feature + reboot), Hyper-V present but
+`Get-VM` denied, Docker offers Linux containers only. What substitutes for
+it here — and why it is strong evidence, not proof: (1) the import closure
+of all 220 shipped PE files resolves inside the tree root, including the
+runtime's own dependencies (`check_runtime_deps.py`, T009/T012); (2) on
+this machine, which *has* the system-wide runtime 14.51.36247, the running
+program loads all four runtime modules from its own directory (T015) — the
+loader's application-directory-first order is what a clean machine relies
+on; (3) the signed installer places and removes the four files (T033–T034).
+
+To close it: on a Windows 10/11 VM or Windows Sandbox with **no**
+"Microsoft Visual C++ 2015-2022 Redistributable (x64)" entry in *Installed
+apps*, run the signed installer, launch Tandem Commander from the final
+page, confirm the main window opens and *Plugins → Plugins Manager* lists
+all 20 plugins; record Windows build, the absence of the redistributable
+entry and the result here.
 
 ### T039 — S9 run 1 and run 2 (after all code changes)
 
 `build.cmd` (Debug, incremental) BUILD SUCCEEDED earlier in T021;
 `saltests.exe`: run 1 **1353 checks, 0 failed**; run 2 **1353 checks,
 0 failed** — identical to the T007 baseline.
+
+### T040 — integrated `build.cmd full release sign setup`, run 1 and run 2
+
+| Run | Build | Runtime step | Sweep (`build.cmd … sign`) | `build_setup.cmd sign` | Result |
+|---|---|---|---|---|---|
+| 1 | BUILD SUCCEEDED, 2 min 54 s (full: 189 language modules rebuilt) | `4 file(s) copied`, `runtime closure OK: 220 …` | `Signed: 168  Skipped: 48  Exempt (Microsoft): 4  Failed: 0  (of 220)` | sweep `Signed: 0 … Exempt (Microsoft): 4`, `Installer signed and verified` | summary `Runtime : 4 file(s) shipped, closure OK`, `Code signing : OK`, `Installer : OK`; installer 8,280,312 B |
+| 2 | BUILD SUCCEEDED, 0 min 28 s (nothing to rebuild) | same | `Signed: 0  Skipped: 216  Exempt (Microsoft): 4  Failed: 0  (of 220)` (idempotent) | same, installer re-compiled and signed | same summary; installer 8,280,656 B |
+
+Both installers `MpCmdRun` → `found no threats`; kept in the scratchpad as
+`test-installer-077-pipeline1.exe` / `…pipeline2.exe`; the archived published
+0.1.7 installer restored into `setup\output` after each run (SHA-256
+`6731E146…F64DD` re-verified).
+
+### T042 — close
+
+All 43 tasks done except the owed human step recorded above. Final tree:
+361 files, 220 PE candidates (216 project-signed, 4 Microsoft-exempt),
+`tandemcommander.exe` without `WriteProcessMemory`/`VirtualProtect`.
+Pre-existing defects found on the way and handed to `specs/NEXT-WORK.md`
+§0: minidumps never produced (`dbghelp.dll` not shipped next to
+`salmon.exe`), and an old bug report blocking start-up in `SalmonCheckBugs`.
 
 ## Changelog draft
 
@@ -352,4 +390,32 @@ together at the ship gate; wording in the user's terms per the constitution):
 
 ## Side effects
 
-_(filled at close)_
+- `setup\output\tandemcommander-0.1.7-x64-setup.exe` (archived published
+  installer, SHA-256 `6731E146…F64DD`) was moved aside before every
+  packaging build and restored afterwards, hash-verified each time; the
+  test installers built here stay in the session scratchpad
+  (`test-installer-077-run1.exe`, plus the pipeline runs').
+- Two silent per-user installs into the scratchpad were made and removed
+  (HKCU uninstall key created and deleted both times); the machine-wide
+  0.1.7 installation in `C:\Program Files\Tandem Commander\` was not
+  touched (exe timestamp and HKLM key unchanged).
+- Seven injected crashes of throw-away instances of the built program; their
+  reports (`*-NC017X64-*.TXT`) were moved out of
+  `%LOCALAPPDATA%\Tandem Commander\` into `%TEMP%\tc077-bugreports\` so the
+  next start does not offer them (see T003–T006 learning 1). The directory
+  is left as it was found (only `WebView2\`).
+- The Release tree in `build\` is fully signed (216 project + 4 Microsoft)
+  and contains the four runtime DLLs; the Debug tree was rebuilt with the
+  change; `build\obj\Release_x64\Intermediate\` holds the PDB the
+  breakpoint probe used.
+- `%TEMP%\tc077-reassert.log/.cdb` and the copied trees `tc-signneg-*` in
+  the scratchpad are inspection leftovers, safe to delete.
+- Git: five commits on `077-fix-antivirus-findings` (076 record, 077 design,
+  US1, US2, US3) plus the closing commit; nothing pushed.
+
+## Final state of the import table
+
+`dumpbin /imports tandemcommander.exe` (clean-rebuilt 19:39:15 and every
+later build): no `WriteProcessMemory`, no `VirtualProtect`;
+`SetUnhandledExceptionFilter`, `OpenProcess`, `CreateToolhelp32Snapshot`,
+`IsDebuggerPresent` remain (legitimate uses, out of scope — 076 §3.4).

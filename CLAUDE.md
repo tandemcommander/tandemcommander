@@ -126,6 +126,12 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
   winscp); `plugins.cfg` disables 10 more by default (demos and
   marginal plugins), so a default build ships 20 plugins
 - **All dependencies are embedded** — zero NuGet packages
+- **Visual C++ runtime ships with the product** (feature 077):
+  `build.cmd release` copies `vcruntime140/vcruntime140_1/msvcp140/concrt140`
+  from the located VS installation into the tree root and
+  `tools/check_runtime_deps.py` proves every shipped module's runtime
+  imports resolve there; the signing sweep leaves Microsoft's signature on
+  them. Plugin authors: toolset no newer than the shipped runtime.
 - **Missing deps**: unrar.dll (unrar), OpenSSL (ftp); pictview runs on
   the built-in Windows WIC engine since feature 006 (no pvw32cnv.dll
   needed)
@@ -482,3 +488,43 @@ plugin architecture preservation, UI consistency.
   and gate G6 need a person; this session could not drive the application or a
   debugger, which is recorded rather than worked around. No version bump, no
   changelog entry yet — the text is drafted in `fix-log.md` for the ship gate.
+- 077-fix-antivirus-findings: implements findings 3.2 and 3.3 of the 076
+  antivirus false-positive review (`specs/076-avast-false-positive-review/`).
+  **(a) The Visual C++ runtime ships application-locally**: every shipped
+  module links the CRT dynamically but no release ever carried
+  `vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`, `concrt140.dll`;
+  on a machine without the redistributable the installer finished and the
+  program failed with "VCRUNTIME140.dll was not found" (the likely "problem
+  with the installation" of the user report). `build.cmd release` (full and
+  incremental) now calls `src/vcxproj/copy_vc_runtime.cmd` (redist version
+  from `VC\Auxiliary\Build\Microsoft.VCRedistVersion.default.txt` of the
+  `vswhere`-located VS, no absolute path) and then
+  `tools/check_runtime_deps.py`, a stdlib PE import-table closure check that
+  fails the build if any shipped PE imports a runtime DLL missing from the
+  tree root; the installer packages the tree recursively and needed no
+  change. `tools/codesign/sign_release.ps1` exempts validly Microsoft-signed
+  files (never re-signed, `Exempt (Microsoft): 4`) and refuses a
+  runtime-named file without a valid Microsoft signature (contract:
+  `specs/077-fix-antivirus-findings/contracts/signing-exemption.md`, amends
+  050 section 1). **(b) The in-process kernel32 patch is gone**:
+  `callstk.cpp` no longer rewrites `kernel32!SetUnhandledExceptionFilter` in
+  memory (`VirtualProtect` + `WriteProcessMemory` trampoline, an inline-hook
+  pattern behaviour shields flag); the filter is registered normally and
+  `CallStk_ReassertTopLevelExceptionFilter()` re-registers it from the
+  15-second `IDT_ADDNEWMODULES` timer (`AddNewlyLoadedModulesToGlobalModulesStore`).
+  `WriteProcessMemory`/`VirtualProtect` left the import table. Verified
+  twice each: builds, checker negatives, loaded-module origin
+  (`probe/check_loaded_crt.ps1`), crash parity with a cdb-injected fault
+  (`probe/crash_inject.ps1`, app + zip.spl; the injected thread must be the
+  window-owning one, woken by `WM_NULL` after `.detach`; with a debugger
+  attached the registered filter is never called), re-registration under a
+  breakpoint (`probe/reassert_filter.ps1`), signing sweep + negative
+  (`probe/sign_exempt_negative.ps1`), silent per-user install/uninstall,
+  saltests 1353/0. **Found on the way, out of scope**: `salmon.exe` loads
+  `dbghelp.dll` only from its own `utils\` directory, which is not shipped,
+  so no minidump has ever been produced in any release (text report only);
+  and an old bug report left in `%LOCALAPPDATA%\Tandem Commander\` makes
+  salmon offer it at start-up while the main thread blocks in
+  `SalmonCheckBugs`. **Owed human step**: the literal start on a clean
+  Windows without the redistributable (Windows Sandbox / VM, admin needed).
+  Record: `specs/077-fix-antivirus-findings/fix-log.md`.

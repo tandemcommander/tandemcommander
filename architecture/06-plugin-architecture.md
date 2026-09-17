@@ -116,6 +116,29 @@ Defined in `src/plugins/shared/vcxproj/plugin_base.props`:
 - **COMDAT folding and reference elimination**: Enabled
 - **Code signing**: Post-build step runs `sign_with_retry.cmd` on the output
 
+### Visual C++ Runtime (application-local, feature 077)
+
+The Release tree ships `vcruntime140.dll`, `vcruntime140_1.dll`,
+`msvcp140.dll` and `concrt140.dll` next to `tandemcommander.exe`
+(`build.cmd release` copies them from the Visual Studio installation that
+built the product; see `03-build-pipeline.md`). Because the loader searches
+the application directory first and a DLL name already loaded is reused
+process-wide, **every plugin runs on the shipped runtime, never on a
+system-wide copy, even a newer one**. Consequences for plugin authors:
+
+- build plugins with a toolset **no newer than the shipped runtime**
+  (14.40 for 0.1.x; the exact version is the file version of the tree's
+  `vcruntime140.dll`). A plugin that needs a newer `msvcp140.dll` export
+  fails to load even on a machine that has the newer redistributable
+  installed;
+- a plugin must not ship its own copy of these DLLs in `plugins\<name>\`
+  (ignored for the already-loaded names, and it could shadow the
+  application's copy for others);
+- `tools\check_runtime_deps.py` fails the build if a shipped plugin imports
+  a runtime DLL that is not in the tree root (for example
+  `msvcp140_atomic_wait.dll`); add the file to the list in
+  `src\vcxproj\copy_vc_runtime.cmd` in that case.
+
 ### Module Definition (.def) Files
 
 Each plugin has a `.def` file (e.g., `src/plugins/zip/zip.def`) that controls DLL exports:

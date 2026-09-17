@@ -183,28 +183,55 @@ salamand.sln
 ### Code Signing (Release only)
 
 Release builds run `tools\codesign\sign_with_retry.cmd` as a
-post-build event to sign executables, plugins, and DLLs.
+post-build event to sign executables, plugins, and DLLs (a no-op unless
+`TC_CODESIGN=1`; release signing normally happens as the whole-tree sweep
+`build.cmd full release sign`). Since feature 077 the sweep
+(`tools\codesign\sign_release.ps1`) leaves files that carry a valid
+Microsoft signature, the application-local Visual C++ runtime, untouched
+(`Exempt (Microsoft): 4` in its summary) and refuses to run when a
+runtime-named file is not validly Microsoft-signed.
 
-### Populate Build Directory
+### Visual C++ Runtime (Release only, feature 077)
 
-After building, run:
+Every shipped module links the CRT dynamically (`/MD`), so a Release tree
+must carry the runtime itself: a machine without the "Microsoft Visual C++
+2015-2022 Redistributable (x64)" could install 0.1.0-0.1.7 but not start
+them. `build.cmd release` (full and incremental) therefore runs, after the
+runtime layout and before the tree clean-up:
 
-```batch
-src\vcxproj\!populate_build_dir.cmd
-```
+1. `src\vcxproj\copy_vc_runtime.cmd <VS_INSTALL> <OUT_DIR>` copies
+   `vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`, `concrt140.dll`
+   from `<VS_INSTALL>\VC\Redist\MSVC\<v>\x64\Microsoft.VC143.CRT\` into the
+   tree root, where `<v>` is read from
+   `<VS_INSTALL>\VC\Auxiliary\Build\Microsoft.VCRedistVersion.default.txt`
+   (the same file `VsDevCmd.bat` uses) and `<VS_INSTALL>` is the
+   installation `build.cmd` located through `vswhere` (no absolute path,
+   no manual step). A missing toolchain component fails the build with
+   `ERROR: Visual C++ runtime not found: <path>`.
+2. `python tools\check_runtime_deps.py <OUT_DIR>` parses the import and
+   delay-load tables of every shipped PE (`*.exe *.dll *.spl *.slg`) and
+   fails the build if any runtime-named import does not resolve to a file
+   in the tree root (`<module> needs <dll> (not shipped)`). That is the
+   signal to extend the fixed list in step 1.
 
-This copies runtime dependencies to the build directory:
-- **MSVC Redistributables**: concrt140.dll, msvcp140.dll, vcruntime140.dll
-- **Universal CRT**: ucrtbase.dll and api-ms-*.dll files
-- **Conversion tables**: from `convert\` directory
-- **Support files**: automation scripts, CSS files, ZIP2SFX readme
+The summary block reports `Runtime       : 4 file(s) shipped, closure OK`.
+The Universal CRT (`api-ms-win-crt-*`, `ucrtbase.dll`) is part of Windows
+10 and later and is not shipped. The signing sweep leaves Microsoft's
+signature on these files (see Code Signing). Debug trees are untouched
+(debug CRT from Visual Studio, never shipped).
 
-The script references specific redistributable paths under:
-- `C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Redist\`
-- `C:\Program Files (x86)\Windows Kits\10\Redist\`
+Application-local deployment means the shipped runtime takes precedence
+over any system-wide copy for the whole process, plugins included; see
+`06-plugin-architecture.md`, section "Visual C++ Runtime", for what that
+means for plugin authors.
 
-These paths may need updating for different VS2022 editions or SDK
-versions.
+### Legacy: Populate Build Directory
+
+Upstream Open Salamander's `src\vcxproj\!populate_build_dir.cmd` copied the
+MSVC redistributables, the Universal CRT, conversion tables and support
+files into the output tree from hard-coded absolute paths. It is kept for
+reference only; `build.cmd full` (runtime data) and `build.cmd release`
+(runtime DLLs) cover everything it did that is still shipped.
 
 ## Build Logs
 

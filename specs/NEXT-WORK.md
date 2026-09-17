@@ -14,6 +14,44 @@ blocker for anything already shipped.
 
 ---
 
+## 0. Antivirus findings — ✅ DONE (feature 077, 2026-09-17)
+
+> A user reported that Avast "blocked and removed" the program and that the
+> installation "had a problem". Feature 076 analysed it
+> ([`076-avast-false-positive-review/review-report.md`](076-avast-false-positive-review/review-report.md)):
+> most likely reputation-based blocking of a brand-new product (six-week-old
+> certificate, Inno Setup 7 loader), plus two real product findings. Feature
+> 077 fixed both: the Visual C++ runtime now ships with the product (no
+> release before it could start on a machine without the redistributable),
+> and start-up no longer patches kernel32 in memory. Record:
+> [`077-fix-antivirus-findings/fix-log.md`](077-fix-antivirus-findings/fix-log.md).
+>
+> **Left open by 077, in priority order:**
+>
+> 1. **Clean-machine start** (owed human step): install the signed build on
+>    a Windows VM/Sandbox that has no "Visual C++ 2015-2022 Redistributable
+>    (x64)" entry and confirm the main window and all 20 plugins; steps in
+>    `077-fix-antivirus-findings/quickstart.md`, "Owed human step".
+> 2. **Minidumps have never worked**: `salmon.exe` loads `dbghelp.dll` only
+>    from its own `utils\` directory (`src/salmon/minidump.cpp:16-20`), which
+>    is not shipped, so every crash produces the text report only. Either
+>    ship `dbghelp.dll` from the Windows SDK next to `salmon.exe` or fall
+>    back to the system copy. Small, one file.
+> 3. **Old bug report blocks start-up**: with a leftover report in
+>    `%LOCALAPPDATA%\Tandem Commander\`, salmon opens its dialog at start
+>    and the main thread waits in `SalmonCheckBugs` until it is answered;
+>    the window is "not responding" meanwhile. Worth a look with item 2.
+> 4. **Reputation work** (076 section 6): Avast Whitelisting Program
+>    registration and false-positive submission of each release, SHA-256 +
+>    VirusTotal link in the release notes, an "antivirus warning?" FAQ page,
+>    keep the same certificate at renewal (2027-08-03).
+> 5. **Cosmetics** (076 section 3.4): version resources for `7zwrapper.dll`
+>    and `sqlite.dll`, drop `HIGH_PRIORITY_CLASS` for `salmon.exe`,
+>    `/guard:cf`, remove the dead pre-Vista `ZwQueryInformationProcess` path.
+>
+> Ship gate for 077 (not done here): version bump + `CHANGELOG.md` entry,
+> drafted in `077-fix-antivirus-findings/fix-log.md`, "Changelog draft".
+
 ## 1. Small hardening batch — ✅ DONE (feature 075, 2026-09-02)
 
 > Delivered as `075-fix-small-hardening`: six commits, one per defect, each

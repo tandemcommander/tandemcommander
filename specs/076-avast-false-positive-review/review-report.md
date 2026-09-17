@@ -105,6 +105,11 @@ during installation… Avast CyberCapture in the window title") for an
 
 ### 3.2 A real behavioural trigger in the product: the in-process kernel32 patch
 
+> **Implemented by feature 077** (`specs/077-fix-antivirus-findings/`): the
+> patch is removed, the filter is re-asserted by a supported call from the
+> 15-second module timer; `WriteProcessMemory`/`VirtualProtect` are gone from
+> the import table; crash-report parity proven with injected faults.
+
 `src/callstk.cpp:76-127` (`PreventSetUnhandledExceptionFilterAux`) does, at
 **every** start of `tandemcommander.exe`, in the main thread, unconditionally
 (called from the first `CCallStack` constructor, `callstk.cpp:283`):
@@ -146,6 +151,12 @@ suspicious runtime behaviour disappears, and `WriteProcessMemory` /
 `VirtualProtect` leave the import table.
 
 ### 3.3 The installer ships no Visual C++ runtime (a real install failure, unrelated to Avast)
+
+> **Implemented by feature 077** with option 1 (application-local DLLs):
+> `build.cmd release` copies the four files from the located VS installation,
+> `tools/check_runtime_deps.py` proves the import closure, the signing sweep
+> keeps Microsoft's signature on them. The literal clean-machine start
+> remains an owed human step.
 
 Every one of the 25 shipped PE modules links the CRT dynamically
 (`RuntimeLibrary = MultiThreadedDLL` in `sal_release.props` and
