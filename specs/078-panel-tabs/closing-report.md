@@ -75,14 +75,17 @@ Both hold at HEAD (`src/salamdr3.cpp`), see `fix-log.md`, Decisions.
 
 ## Open items
 
-1. **Leak report at exit (Debug CRT), twice.** One `88 bytes` block,
-   `#File Error#(84)`, zeroed head — allocated by a module unloaded before the
-   dump (a plugin; only ftp, pictview and unchm register their module names
-   for the leak reporter). Six other runs, including the long US1–US5 session
-   and the same archive flow with tabs off, exited clean. Recipe: run the
-   Debug build under the DBWIN listener (`dbglisten.ps1` in the session
-   scratchpad — a 40-line PowerShell/C# program) and read the dump; identify
-   the block with `_CrtSetBreakAlloc` under a debugger or by making the plugins
+1. **Leak report at exit (Debug CRT) on the first start after a rebuild.**
+   Three occurrences, each the first run of a freshly built executable, always
+   one `88 bytes` block, `#File Error#(84)`, zeroed head — allocated by a
+   module unloaded before the dump (a plugin; only ftp, pictview and unchm
+   register their module names for the leak reporter). Eleven later starts of
+   the same binaries were clean, and touching one or all plugin files did not
+   reproduce it, so it is tied to what Salamander re-reads on a new
+   executable's first run, not to tabs. Recipe: run the Debug build under the
+   DBWIN listener (`dbglisten.ps1` in the session scratchpad — a 40-line
+   PowerShell/C# program) right after a build and read the dump; identify the
+   block with `_CrtSetBreakAlloc` under a debugger or by making the plugins
    call `AddModuleWithPossibleMemoryLeaks`.
 2. **One wrong landing, not reproduced.** In the first archive-leave run the
    panel ended in `D:\Downloads` with the second tab active while a USB drive
@@ -105,5 +108,11 @@ Both hold at HEAD (`src/salamdr3.cpp`), see `fix-log.md`, Decisions.
    a tab, and a display-index separate from the active index so the strip does
    not repaint the target early. The main-window caption is still ANSI (shows
    `?` for non-code-page names) — pre-existing, cluster B-1 of feature 069.
-5. **Translations**: machine output reviewed by reading only; a native check
-   of the eight languages' *Tabs* strings is worth a minute each.
+5. **Translations**: machine output reviewed by reading and by the eight
+   language screenshots of the *Tabs* submenu; a native check of the
+   confirmation sentences is worth a minute each. The Spanish `ñ` drawn as `n`
+   under a Czech system code page is the ANSI menu/header drawing (feature 069
+   cluster B-1), pre-existing.
+6. **Release gate**: `build.cmd full release` passed and the Release binary
+   was smoke-started with tabs; the full quickstart pass on that build, the
+   signed build and the installer remain the human release-gate steps.
