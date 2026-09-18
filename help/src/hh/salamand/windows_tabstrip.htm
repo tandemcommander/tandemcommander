@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Tab Strip</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="../salamander_help.css" />
+<link rel="stylesheet" type="text/css" href="../salamander_help_shared.css" />
+</head>
+
+<body>
+<div id="help_page">
+<div class="header">Tandem Commander: Window Components</div>
+<div class="page">
+<h1>Tab Strip</h1>
+
+<p>The Tab strip is a row of tabs above the <a href="windows_dirline.htm">Directory
+Line</a> of each panel. Every tab remembers a location (a directory, an archive or a
+plugin file system path) together with its view mode, sort order, filter, cursor,
+selection and its own Back/Forward history. A panel shows one tab at a time; the
+other tabs of that panel are inactive and hold nothing open. The strip works the
+same way in the left and in the right panel.</p>
+
+<p>Tabs are switched on by default. They can be turned off with <i>Show tabs in
+panels</i> in <a href="configuration_appea.htm">Configuration/Appearance</a>; with
+tabs off the strip is not shown and the program looks and behaves exactly as it did
+without tabs.</p>
+
+<h5>Tabs</h5>
+<p>A tab is titled by the name of the directory it shows: the last part of the path,
+the archive name for the root of an archive, or the drive letter for a drive root
+(<code>D:\</code>). The active tab of the active panel uses the colours of the panel
+caption; the active tab of the inactive panel uses the inactive caption colours.
+Click a tab to show it. Clicking a tab of the inactive panel activates that panel
+and shows the tab in one step; the keyboard focus stays in the panel list, never
+on the strip.</p>
+
+<p>Returning to a tab lists its directory again, so the listing is always current.
+The cursor, the selection and the scroll position are restored. If the directory
+no longer exists, the panel goes to the nearest existing parent directory (or to a
+drive root), and the tab follows.</p>
+
+<h5>New Tab Button</h5>
+<p>The <b>+</b> button after the last tab opens a new tab with the same location
+as the current one and makes it active (Ctrl+Shift+T does the same).</p>
+
+<h5>Close Button</h5>
+<p>The active tab shows a close button (<b>&#215;</b>) when the panel has more than
+one tab. Closing the active tab shows the tab to its right, or the tab to its left
+when it was the last one. The last remaining tab cannot be closed.</p>
+
+<h5>Tab List Button</h5>
+<p>When there are more tabs than fit into the strip, the tabs shrink and a list
+button (<b>&#9662;</b>) appears at the right end. It opens a menu listing all tabs
+of the panel with the current one checked; choosing an entry activates that tab.
+The active tab is always kept visible.</p>
+
+<h5>Mouse</h5>
+<p>Middle-click a directory in the panel to open it in a new tab in the background
+(the current tab stays active); this works in archives and on plugin file systems
+too, and does nothing on a file. Middle-click a tab to close it. Drag a tab left or
+right to change the order; press Escape while dragging to cancel. Hovering a tab
+shows its full location in a tooltip.</p>
+
+<h5>Context Menu</h5>
+<p>Right-click a tab for <i>New Tab</i>, <i>Duplicate Tab</i>, <i>Close Tab</i>,
+<i>Close Other Tabs</i> and <i>Close Tabs to the Right</i>; the commands act on the
+clicked tab. Right-click the empty part of the strip for <i>New Tab</i>. The same
+commands, working on the active tab, are in the <i>Tabs</i> submenu of the
+<a href="windows_menubar.htm">Left and Right menus</a>, together with <i>Next Tab</i>
+(Ctrl+Shift+Page Down) and <i>Previous Tab</i> (Ctrl+Shift+Page Up). See
+<a href="shortcuts_keyboard.htm">Keyboard Shortcuts</a>.</p>
+
+<h5>Archives and Plugin File Systems</h5>
+<p>Leaving a tab is the same as leaving its directory in any other way. Leaving an
+archive tab offers to update the archive if you edited a file inside it; leaving a
+plugin file system tab (for example an FTP or SFTP connection) applies the plugin's
+own rules, so a connection may be kept for reuse or closed, exactly as when you
+navigate elsewhere. If you cancel such a question, the tab stays active and its
+listing is left untouched. Closing a plugin file system tab has the same effect as
+navigating away from it: a kept connection still appears in the
+<a href="windows_drivebar.htm">Change Drive menu</a> until it is disconnected.
+Two tabs on the same connection share it; switching between them does not log in
+again.</p>
+
+<p>When you exit, the tabs of both panels are saved with the configuration and
+restored at the next start. An archive or plugin file system tab is opened only
+when you click it (a plugin file system asks for its login as usual); the panel
+starts in its last disk directory when such a tab was active at exit. Passwords
+are never stored with a tab.</p>
+
+<h4>See Also</h4>
+<p>
+<a href="windows_panel.htm">Panel Components</a><br />
+<a href="windows_dirline.htm">Directory Line</a><br />
+<a href="configuration_appea.htm">Configuration/Appearance</a><br />
+<a href="shortcuts_keyboard.htm">Keyboard Shortcuts</a><br />
+</p>
+
+</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
+</div>
+</body>
+</html>

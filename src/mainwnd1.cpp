@@ -2143,7 +2143,9 @@ CMainWindow::HitTest(int xPos, int yPos) // screen coordinates
     {
         if (PtInChild(LeftPanel->HWindow, p))
         {
-            if (PtInChild(LeftPanel->DirectoryLine->HWindow, p))
+            if (PtInChild(LeftPanel->GetTabStripHWND(), p)) // feature 078
+                hit = mwhteLeftTabStrip;
+            else if (PtInChild(LeftPanel->DirectoryLine->HWindow, p))
                 hit = mwhteLeftDirLine;
             else if (PtInChild(LeftPanel->GetHeaderLineHWND(), p))
                 hit = mwhteLeftHeaderLine;
@@ -2159,7 +2161,9 @@ CMainWindow::HitTest(int xPos, int yPos) // screen coordinates
     {
         if (PtInChild(RightPanel->HWindow, p))
         {
-            if (PtInChild(RightPanel->DirectoryLine->HWindow, p))
+            if (PtInChild(RightPanel->GetTabStripHWND(), p)) // feature 078
+                hit = mwhteRightTabStrip;
+            else if (PtInChild(RightPanel->DirectoryLine->HWindow, p))
                 hit = mwhteRightDirLine;
             else if (PtInChild(RightPanel->GetHeaderLineHWND(), p))
                 hit = mwhteRightHeaderLine;
@@ -2181,6 +2185,8 @@ void CMainWindow::OnWmContextMenu(HWND hWnd, int xPos, int yPos)
 
     if (hit == mwhteNone)
         return;
+    if (hit == mwhteLeftTabStrip || hit == mwhteRightTabStrip)
+        return; // feature 078: the strip shows its own menu
 
     BOOL mainClass = (hit == mwhteTopRebar || hit == mwhteMenu || hit == mwhteTopToolbar ||
                       hit == mwhteUMToolbar || hit == mwhteDriveBar || hit == mwhteCmdLine ||

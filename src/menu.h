@@ -556,6 +556,8 @@ void ReleaseMenu();
 
 extern CMenuPopup MainMenu;
 extern CMenuPopup ArchiveMenu;
+extern MENU_TEMPLATE_ITEM LeftTabsMenuTemplate[];  // feature 078: the Left > Tabs submenu (re-created when tabs are turned on)
+extern MENU_TEMPLATE_ITEM RightTabsMenuTemplate[]; // feature 078
 extern CMenuPopup ArchivePanelMenu;
 
 BOOL BuildSalamanderMenus();           // sestavi globalni menu pro Salamandera

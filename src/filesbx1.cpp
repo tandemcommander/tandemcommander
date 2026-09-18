@@ -1513,6 +1513,16 @@ CFilesBox::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
     }
 
+    case WM_MBUTTONUP: // feature 078: a folder into a new background tab
+    {
+        if (MainWindow->HasLockedUI())
+            break;
+        LRESULT lResult;
+        if (Parent->OnMButtonUp(wParam, lParam, &lResult))
+            return lResult;
+        break;
+    }
+
     case WM_RBUTTONUP:
     {
         if (MainWindow->HasLockedUI())

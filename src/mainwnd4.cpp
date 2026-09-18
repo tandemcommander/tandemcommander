@@ -1575,6 +1575,11 @@ CMainWindow::MapClientArea(POINT point)
         dwContext = IDH_SPLITBAR;
         break;
 
+    case mwhteLeftTabStrip: // feature 078
+    case mwhteRightTabStrip:
+        dwContext = IDH_TABSTRIP;
+        break;
+
     case mwhteLeftDirLine:
     {
         dwContext = IDH_DIRECTORYLINE;

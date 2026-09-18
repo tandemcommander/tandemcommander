@@ -85,9 +85,10 @@ BOOL IsSalHotKey(WORD hotKey)
     {
         switch (mods)
         {
-        case NONE:    // page up
-        case CONTROL: // root directory
-        case SHIFT:   // select + page up
+        case NONE:          // page up
+        case CONTROL:       // root directory
+        case SHIFT:         // select + page up
+        case CONTROL_SHIFT: // previous tab (feature 078)
             found = TRUE;
         }
         break;
@@ -97,9 +98,10 @@ BOOL IsSalHotKey(WORD hotKey)
     {
         switch (mods)
         {
-        case NONE:    // page down
-        case CONTROL: // enter
-        case SHIFT:   // select + page down
+        case NONE:          // page down
+        case CONTROL:       // enter
+        case SHIFT:         // select + page down
+        case CONTROL_SHIFT: // next tab (feature 078)
             found = TRUE;
         }
         break;
@@ -602,10 +604,11 @@ BOOL IsSalHotKey(WORD hotKey)
     {
         switch (mods)
         {
-        case NONE:    // quick search/type in command line
-        case CONTROL: // focus shortcut or link target
-        case ALT:     // enter menu
-        case SHIFT:   // change drive
+        case NONE:          // quick search/type in command line
+        case CONTROL:       // focus shortcut or link target
+        case ALT:           // enter menu
+        case SHIFT:         // change drive
+        case CONTROL_SHIFT: // new tab (feature 078)
             found = TRUE;
         }
         break;
@@ -641,10 +644,11 @@ BOOL IsSalHotKey(WORD hotKey)
     {
         switch (mods)
         {
-        case NONE:    // quick search/type in command line
-        case CONTROL: // reselect
-        case ALT:     // enter menu
-        case SHIFT:   // change drive
+        case NONE:          // quick search/type in command line
+        case CONTROL:       // reselect
+        case ALT:           // enter menu
+        case SHIFT:         // change drive
+        case CONTROL_SHIFT: // close tab (feature 078)
             found = TRUE;
         }
         break;

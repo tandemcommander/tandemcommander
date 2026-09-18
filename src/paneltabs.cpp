@@ -238,7 +238,7 @@ BOOL CFilesWindow::SwitchToTab(int target)
         return FALSE;
 
     Tabs.SwitchInProgress = TRUE;
-    CancelUI();              // quick search / quick rename, as any path change does
+    CancelUI();               // quick search / quick rename, as any path change does
     RefreshPathHistoryData(); // the leaving cursor into the leaving tab's history
     CaptureActiveTab();
 
@@ -268,15 +268,24 @@ BOOL CFilesWindow::SwitchToTab(int target)
         SelectViewTemplate(tab->ViewTemplateIndex, FALSE, FALSE, VALID_DATA_ALL, FALSE, TRUE);
         viewChanged = TRUE;
     }
-    // the new location is appended to the target tab's history by DirectoryLineSetText
+    // the new location is appended to the target tab's history by DirectoryLineSetText,
+    // which also refreshes the *active* record's location - so the target is active from here
     PathHistory = tab->PathHistory;
+    int oldActive = Tabs.ActiveIndex;
+    Tabs.ActiveIndex = target;
 
+    // as the Change Directory dialog does: the leave prompts (archive update, plugin
+    // questions) pump messages, and no snooper or plugin refresh may re-enter the
+    // panel while its tab bookkeeping is half switched
+    BeginStopRefresh();
     int failReason = CHPPFR_SUCCESS;
     BOOL ok = ChangeDir(tab->Location, tab->TopIndex, tab->FocusName[0] != 0 ? tab->FocusName : NULL,
                         3 /*change-dir*/, &failReason, TRUE /*external -> internal FS path*/);
+    EndStopRefresh();
     if (!ok && failReason == CHPPFR_CANNOTCLOSEPATH)
     {
         // the plugin refused or the user cancelled: the panel is intact, put the rest back
+        Tabs.ActiveIndex = oldActive;
         SortType = oldSort;
         ReverseSort = oldReverse;
         Filter = oldFilter;
@@ -313,7 +322,6 @@ BOOL CFilesWindow::SwitchToTab(int target)
     if (tab->XOffset != 0 && GetViewMode() == vmDetailed && ListBox != NULL)
         RefreshListBox(tab->XOffset, ListBox->GetTopIndex(), FocusedIndex, FALSE, FALSE);
     UserWorkedOnThisPath = tab->UserWorkedOnThisPath;
-    Tabs.ActiveIndex = target;
     tab->Visited = TRUE;
     if (!ok) // fell back to a shorter path / the rescue path: remember where we really are
         GetGeneralPath(tab->Location, SAL_TAB_LOCATION_MAX, TRUE);
@@ -445,5 +453,127 @@ void CFilesWindow::SetTabsEnabled(BOOL on)
         Tabs.ActiveIndex = 0;
         if (TabStrip != NULL && TabStrip->HWindow != NULL)
             ToggleTabStrip();
+    }
+}
+
+HWND CFilesWindow::GetTabStripHWND()
+{
+    return (TabStrip != NULL) ? TabStrip->HWindow : NULL;
+}
+
+void CFilesWindow::OpenIndexInNewTab(int index)
+{
+    CALL_STACK_MESSAGE2("CFilesWindow::OpenIndexInNewTab(%d)", index);
+    if (!Configuration.PanelTabs || Files == NULL || Dirs == NULL)
+        return;
+    if (index < 0 || index >= Dirs->Count) // folders only; a file does nothing (US5-1)
+        return;
+    CFileData* file = &Dirs->At(index);
+    BOOL isUpDir = (index == 0 && strcmp(file->Name, "..") == 0);
+
+    char loc[SAL_TAB_LOCATION_MAX];
+    loc[0] = 0;
+    if (Is(ptDisk) || Is(ptZIPArchive))
+    {
+        GetGeneralPath(loc, SAL_TAB_LOCATION_MAX, TRUE);
+        if (isUpDir)
+        {
+            if (!CutDirectory(loc)) // a root: nothing above it (the UNC-root nethood jump stays a Backspace thing)
+                return;
+        }
+        else if (!SalPathAppend(loc, file->Name, SAL_TAB_LOCATION_MAX))
+            return;
+    }
+    else if (Is(ptPluginFS) && GetPluginFS()->NotEmpty())
+    {
+        // the OpenFocusedInOtherPanel shape: "fsname:" + the plugin's full name of the item
+        int l = (int)strlen(GetPluginFS()->GetPluginFSName());
+        if (l + 1 >= SAL_TAB_LOCATION_MAX)
+            return;
+        memcpy(loc, GetPluginFS()->GetPluginFSName(), l);
+        loc[l++] = ':';
+        loc[l] = 0;
+        int isDir = isUpDir ? 2 : 1;
+        if (!GetPluginFS()->GetFullName(*file, isDir, loc + l, min(2 * MAX_PATH, SAL_TAB_LOCATION_MAX - l)))
+            return;
+        PluginFSConvertPathToExternal(loc); // tabs store the external form (research R2)
+    }
+    if (loc[0] == 0)
+        return;
+
+    CaptureActiveTab();
+    CPanelTab* cur = Tabs.Active();
+    CSalTabRecord rec;
+    SalTabRecordInit(&rec);
+    if (cur != NULL)
+        rec = *(const CSalTabRecord*)cur; // the same view, sort and filter as here
+    lstrcpyn(rec.Location, loc, SAL_TAB_LOCATION_MAX);
+    CPanelTab* tab = Tabs.Add(rec, -1);
+    if (tab != NULL)
+        tab->Visited = FALSE; // opened when first activated; the current tab stays active
+    UpdateTabStrip();
+}
+
+BOOL CFilesWindow::OnMButtonUp(WPARAM wParam, LPARAM lParam, LRESULT* lResult)
+{
+    CALL_STACK_MESSAGE_NONE
+    *lResult = 0;
+    if (!Configuration.PanelTabs || ListBox == NULL)
+        return FALSE;
+    int x = (short)LOWORD(lParam);
+    int y = (short)HIWORD(lParam);
+    int index = GetIndex(x, y);
+    if (index == INT_MAX || index < 0 || Files == NULL || Dirs == NULL ||
+        index >= Dirs->Count + Files->Count)
+        return FALSE;
+    OpenIndexInNewTab(index);
+    return TRUE;
+}
+
+//
+// ****************************************************************************
+// CMainWindow - the tab commands
+//
+
+void CMainWindow::HandleTabCommand(int cmd)
+{
+    CALL_STACK_MESSAGE2("CMainWindow::HandleTabCommand(%d)", cmd);
+    if (!Configuration.PanelTabs || cmd < CM_ACTIVE_NEWTAB || cmd > CM_RIGHT_CLOSETABSRIGHT)
+        return;
+    int which = (cmd - CM_ACTIVE_NEWTAB) % 3; // 0 = active, 1 = left, 2 = right (the CM_*_CHANGEDIR order)
+    int op = (cmd - CM_ACTIVE_NEWTAB) / 3;    // 0 new, 1 close, 2 next, 3 previous, 4 duplicate, 5 close others, 6 close right
+    CFilesWindow* panel = (which == 0) ? GetActivePanel() : (which == 1 ? LeftPanel : RightPanel);
+    if (panel == NULL)
+        return;
+    // a strip context menu names the clicked tab; menu and keyboard commands mean the active one
+    int ctx = panel->Tabs.ContextTabIndex;
+    panel->Tabs.ContextTabIndex = -1;
+    int target = (ctx >= 0 && ctx < panel->Tabs.Count()) ? ctx : panel->Tabs.ActiveIndex;
+    int count = panel->Tabs.Count();
+    switch (op)
+    {
+    case 0:
+        panel->NewTab();
+        break;
+    case 1:
+        panel->CloseTab(target);
+        break;
+    case 2:
+        if (count > 1)
+            panel->SwitchToTab(SalTabsCycle(count, panel->Tabs.ActiveIndex, TRUE));
+        break;
+    case 3:
+        if (count > 1)
+            panel->SwitchToTab(SalTabsCycle(count, panel->Tabs.ActiveIndex, FALSE));
+        break;
+    case 4:
+        panel->DuplicateTab(target);
+        break;
+    case 5:
+        panel->CloseOtherTabs(target);
+        break;
+    case 6:
+        panel->CloseTabsToRight(target);
+        break;
     }
 }

@@ -34,7 +34,7 @@
 // where MINORB were hundredths appended without a dot (2.53) and a zero was dropped (5.0)
 #define VERSINFO_SALAMANDER_MAJOR 0
 #define VERSINFO_SALAMANDER_MINORA 1
-#define VERSINFO_SALAMANDER_MINORB 7
+#define VERSINFO_SALAMANDER_MINORB 8
 
 #define VERSINFO_SALAMANDER_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSION_TXT
 #define VERSINFO_SAL_SHORT_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSIONSHORT_TXT
@@ -131,10 +131,14 @@
 //       /SILENT setup since feature 050, and that is what blocked the
 //       winget submission; the application itself is unchanged from 0.1.6
 //       - feature 072; see CHANGELOG.md)
+// 192 - Tandem Commander 0.1.8 (panel tabs: a browser-style tab strip above
+//       each panel's Directory Line, on by default, tabs restored at
+//       start-up, one Appearance checkbox turns it off - feature 078; see
+//       CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
-#define VERSINFO_BUILDNUMBER 191
+#define VERSINFO_BUILDNUMBER 192
 
 // VERSINFO_BETAVERSION_TXT:
 //

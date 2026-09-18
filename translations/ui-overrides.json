@@ -208,14 +208,17 @@
       "IDS_FINDLOG_TEXT": "Text",
       "IDT_CMDSHELL_INTRO": "Příkaz Příkazový řádek (Num /, Ctrl+/, tlačítko na panelu nástrojů) otevře tento program v adresáři aktivního panelu:",
       "IDS_CMDSHELL_ERRNOTFOUND": "Vybraný program příkazového řádku (%s) nebyl na tomto počítači nalezen.\\n\\nVyberte jiný program v části Konfigurace / Příkazový řádek.",
-      "IDS_CMDSHELL_ERREXEC": "Nelze spustit program příkazového řádku:\\n%s\\n\\n%s\\n\\nProgram můžete změnit v části Konfigurace / Příkazový řádek."
+      "IDS_CMDSHELL_ERREXEC": "Nelze spustit program příkazového řádku:\\n%s\\n\\n%s\\n\\nProgram můžete změnit v části Konfigurace / Příkazový řádek.",
+      "IDS_TABS_CLOSECONFIRM": "Počet karet, které se vypnutím karet zavřou: %d. Pokračovat?",
+      "IDC_PANELTABS": "Zobrazit karty &v panelech"
     },
     "slovak": {
       "IDS_FINDLOG_TEXT": "Text",
       "#Command Shell": "Príkazový riadok",
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
       "IDS_CMDSHELL_ERRNOTFOUND": "Vybraný program príkazového riadku (%s) nebol na tomto počítači nájdený.\\n\\nVyberte iný program v časti Konfigurácia / Príkazový riadok.",
-      "IDS_CMDSHELL_ERREXEC": "Program príkazového riadku sa nedá spustiť:\\n%s\\n\\n%s\\n\\nProgram môžete zmeniť v časti Konfigurácia / Príkazový riadok."
+      "IDS_CMDSHELL_ERREXEC": "Program príkazového riadku sa nedá spustiť:\\n%s\\n\\n%s\\n\\nProgram môžete zmeniť v časti Konfigurácia / Príkazový riadok.",
+      "IDS_TABS_CLOSECONFIRM": "Počet kariet, ktoré sa vypnutím kariet zatvoria: %d. Pokračovať?"
     },
     "german": {
       "#Command Shell": "Eingabeaufforderung",
@@ -225,7 +228,20 @@
       "IDS_CMDSHELL_BROWSETITLE": "Programm für die Eingabeaufforderung auswählen",
       "IDS_CMDSHELL_ERRTITLE": "Fehler beim Starten der Eingabeaufforderung",
       "IDS_CMDSHELL_ERRNOTFOUND": "Das ausgewählte Programm für die Eingabeaufforderung (%s) wurde auf diesem Computer nicht gefunden.\\n\\nWählen Sie ein anderes Programm unter „Konfiguration / Eingabeaufforderung“ aus.",
-      "IDS_CMDSHELL_ERREXEC": "Das Programm für die Eingabeaufforderung kann nicht gestartet werden:\\n%s\\n\\n%s\\n\\nSie können das Programm unter „Konfiguration / Eingabeaufforderung“ ändern."
+      "IDS_CMDSHELL_ERREXEC": "Das Programm für die Eingabeaufforderung kann nicht gestartet werden:\\n%s\\n\\n%s\\n\\nSie können das Programm unter „Konfiguration / Eingabeaufforderung“ ändern.",
+      "IDS_MENU_LEFT_TABS": "Registerkar&ten",
+      "IDS_MENU_RIGHT_TABS": "Regis&terkarten",
+      "IDS_MENU_TAB_NEW": "&Neue Registerkarte\\tCtrl+Shift+T",
+      "IDS_MENU_TAB_DUPLICATE": "Registerkarte &duplizieren",
+      "IDS_MENU_TAB_CLOSE": "Registerkarte &schließen\\tCtrl+Shift+W",
+      "IDS_MENU_TAB_NEXT": "Nä&chste Registerkarte\\tCtrl+Shift+Page Down",
+      "IDS_MENU_TAB_PREVIOUS": "&Vorherige Registerkarte\\tCtrl+Shift+Page Up",
+      "IDS_MENU_TAB_CLOSEOTHERS": "&Andere Registerkarten schließen",
+      "IDS_MENU_TAB_CLOSERIGHT": "Registerkarten &rechts schließen",
+      "IDS_TABS_TT_NEW": "Neue Registerkarte (Ctrl+Shift+T)",
+      "IDS_TABS_TT_LIST": "Alle Registerkarten",
+      "IDS_TABS_CLOSECONFIRM": "Beim Ausschalten der Registerkarten werden %d Registerkarten geschlossen. Fortfahren?",
+      "IDC_PANELTABS": "&Registerkarten in Panels anzeigen"
     },
     "french": {
       "#Command Shell": "Interpréteur de commandes",
@@ -235,7 +251,9 @@
       "IDS_CMDSHELL_BROWSETITLE": "Sélectionner le programme de l'interpréteur de commandes",
       "IDS_CMDSHELL_ERRTITLE": "Erreur au démarrage de l'interpréteur de commandes",
       "IDS_CMDSHELL_ERRNOTFOUND": "Le programme d'interpréteur de commandes sélectionné (%s) est introuvable sur cet ordinateur.\\n\\nChoisissez un autre programme dans Configuration / Interpréteur de commandes.",
-      "IDS_CMDSHELL_ERREXEC": "Impossible de lancer le programme d'interpréteur de commandes :\\n%s\\n\\n%s\\n\\nVous pouvez changer de programme dans Configuration / Interpréteur de commandes."
+      "IDS_CMDSHELL_ERREXEC": "Impossible de lancer le programme d'interpréteur de commandes :\\n%s\\n\\n%s\\n\\nVous pouvez changer de programme dans Configuration / Interpréteur de commandes.",
+      "IDS_TABS_TT_NEW": "Nouvel onglet (Ctrl+Shift+T)",
+      "IDS_TABS_CLOSECONFIRM": "%d onglet(s) seront fermés lorsque les onglets seront désactivés. Continuer ?"
     },
     "dutch": {
       "#Command Shell": "Opdracht Shell",
@@ -249,14 +267,17 @@
     },
     "hungarian": {
       "IDS_CMDSHELL_ERRNOTFOUND": "A kiválasztott parancssori program (%s) nem található ezen a számítógépen.\\n\\nVálasszon másik programot a Konfiguráció / Parancssor menüpontban.",
-      "IDS_CMDSHELL_ERREXEC": "Nem lehet elindítani a parancssor programot:\\n%s\\n\\n%s\\n\\nA programot a Konfiguráció / Parancssor menüpontban módosíthatja."
+      "IDS_CMDSHELL_ERREXEC": "Nem lehet elindítani a parancssor programot:\\n%s\\n\\n%s\\n\\nA programot a Konfiguráció / Parancssor menüpontban módosíthatja.",
+      "IDS_TABS_CLOSECONFIRM": "%d lap bezárul a lapok kikapcsolásakor. Folytatja?",
+      "IDC_PANELTABS": "&Lapok megjelenítése a paneleken"
     },
     "romanian": {
       "#Command Shell": "Comanda Shell",
       "IDT_CMDSHELL_INTRO": "Comanda „Comanda Shell” (Num /, Ctrl+/, butonul din bara de instrumente) deschide acest program în directorul panoului activ:",
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
       "IDS_CMDSHELL_ERRNOTFOUND": "Programul de tip shell de comandă selectat (%s) nu a fost găsit pe acest computer.\\n\\nAlegeți un alt program în Configurare / Comanda Shell.",
-      "IDS_CMDSHELL_ERREXEC": "Nu se poate porni programul shell de comandă:\\n%s\\n\\n%s\\n\\nPuteți schimba programul în Configurare / Comanda Shell."
+      "IDS_CMDSHELL_ERREXEC": "Nu se poate porni programul shell de comandă:\\n%s\\n\\n%s\\n\\nPuteți schimba programul în Configurare / Comanda Shell.",
+      "IDS_TABS_CLOSECONFIRM": "%d file vor fi închise când filele vor fi dezactivate. Continuați?"
     },
     "spanish": {
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
@@ -264,8 +285,17 @@
       "IDS_CMDSHELL_PROGRAMREQUIRED": "Introduzca el programa que se ejecutará como shell de comandos.",
       "IDS_CMDSHELL_BROWSETITLE": "Seleccionar el programa del shell de comandos",
       "IDS_CMDSHELL_ERRNOTFOUND": "El programa de shell de comandos seleccionado (%s) no se ha encontrado en este equipo.\\n\\nElija otro programa en Configuración / Shell de comandos.",
-      "IDS_CMDSHELL_ERREXEC": "No se puede iniciar el programa del shell de comandos:\\n%s\\n\\n%s\\n\\nPuede cambiar el programa en Configuración / Shell de comandos."
-    }
+      "IDS_CMDSHELL_ERREXEC": "No se puede iniciar el programa del shell de comandos:\\n%s\\n\\n%s\\n\\nPuede cambiar el programa en Configuración / Shell de comandos.",
+      "IDS_MENU_TAB_NEXT": "Pestaña &siguiente\\tCtrl+Shift+Page Down",
+      "IDS_TABS_TT_NEW": "Nueva pestaña (Ctrl+Shift+T)",
+      "IDS_TABS_CLOSECONFIRM": "Al desactivar las pestañas se cerrarán %d pestañas. ¿Continuar?"
+    },
+    "_feature_078": [
+      "Panel tabs (feature 078): the term for a tab follows each language's platform",
+      "convention (cs/sk karta, de Registerkarte, fr onglet, es pestana, nl tabblad,",
+      "ro fila, hu lap); shortcut labels inside the strings keep the English",
+      "Ctrl+Shift form the menu rows use; the close confirmation keeps a single %d."
+    ]
   },
   "zip": {
     "czech": {

@@ -22,9 +22,9 @@
 //
 
 // pixel metrics at 100 % scale
-#define TABSTRIP_PAD 4    // text inset inside a tab
-#define TABSTRIP_GLYPH 8  // size of the close / plus glyph box
-#define TABSTRIP_BAND 2   // extra band above the tab row
+#define TABSTRIP_PAD 4   // text inset inside a tab
+#define TABSTRIP_GLYPH 8 // size of the close / plus glyph box
+#define TABSTRIP_BAND 2  // extra band above the tab row
 #define TABSTRIP_MIN_CHARS 6
 #define TABSTRIP_MAX_CHARS 20
 

@@ -42,10 +42,10 @@ protected:
     BOOL MouseIsTracked;
 
     // layout computed by Layout() from the panel's tab set and Width
-    int FirstVisible;  // index of the first painted tab
-    int VisibleCount;  // number of painted tabs
-    int TabWidth;      // width of every painted tab
-    int TabsLeft;      // x of the first painted tab
+    int FirstVisible; // index of the first painted tab
+    int VisibleCount; // number of painted tabs
+    int TabWidth;     // width of every painted tab
+    int TabsLeft;     // x of the first painted tab
     BOOL ListButtonVisible;
     RECT PlusRect;
     RECT ListRect;

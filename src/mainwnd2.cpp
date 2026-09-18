@@ -195,6 +195,8 @@ const char* PANEL_FILTER_ENABLE = "Enable Filter";
 const char* PANEL_FILTER_INVERSE = "Inverse Filter";
 const char* PANEL_FILTERHISTORY_REG = "Filter History";
 const char* PANEL_FILTER = "Filter";
+const char* PANEL_TABS_REG = "Tabs";            // feature 078: subkey with one numbered subkey per tab
+const char* PANEL_ACTIVETAB_REG = "Active Tab"; // feature 078
 
 const char* SALAMANDER_DEFDIRS_REG = "Default Directories";
 
@@ -1197,6 +1199,7 @@ void CMainWindow::SavePanelConfig(CFilesWindow* panel, HKEY hSalamander, const c
     if (CreateKey(hSalamander, reg, actKey))
     {
         DWORD value;
+        panel->CaptureActiveTab(); // feature 078: the active record follows the panel
         value = panel->HeaderLineVisible;
         SetValue(actKey, PANEL_HEADER_REG, REG_DWORD, &value, sizeof(DWORD));
         SetValue(actKey, PANEL_PATH_REG, REG_SZ, panel->GetPath(), -1);
@@ -1213,6 +1216,41 @@ void CMainWindow::SavePanelConfig(CFilesWindow* panel, HKEY hSalamander, const c
         SetValue(actKey, PANEL_FILTER_ENABLE, REG_DWORD, &panel->FilterEnabled,
                  sizeof(DWORD));
         SetValue(actKey, PANEL_FILTER, REG_SZ, panel->Filter.GetMasksString(), -1);
+
+        // feature 078: the tab list (the values above keep describing the active tab
+        // for older builds and for the option-off state); rewritten whole
+        HKEY tabsKey;
+        if (CreateKey(actKey, PANEL_TABS_REG, tabsKey))
+        {
+            ClearKey(tabsKey);
+            int i;
+            for (i = 0; i < panel->Tabs.Count(); i++)
+            {
+                CPanelTab* tab = panel->Tabs.At(i);
+                if (tab == NULL || tab->Location[0] == 0)
+                    continue;
+                char name[16];
+                sprintf_s(name, "%d", i);
+                HKEY tabKey;
+                if (CreateKey(tabsKey, name, tabKey))
+                {
+                    SetValue(tabKey, PANEL_PATH_REG, REG_SZ, tab->Location, -1);
+                    value = tab->ViewTemplateIndex;
+                    SetValue(tabKey, PANEL_VIEW_REG, REG_DWORD, &value, sizeof(DWORD));
+                    value = tab->SortType;
+                    SetValue(tabKey, PANEL_SORT_REG, REG_DWORD, &value, sizeof(DWORD));
+                    value = tab->ReverseSort;
+                    SetValue(tabKey, PANEL_REVERSE_REG, REG_DWORD, &value, sizeof(DWORD));
+                    value = tab->FilterEnabled;
+                    SetValue(tabKey, PANEL_FILTER_ENABLE, REG_DWORD, &value, sizeof(DWORD));
+                    SetValue(tabKey, PANEL_FILTER, REG_SZ, tab->FilterMasks, -1);
+                    CloseKey(tabKey);
+                }
+            }
+            CloseKey(tabsKey);
+        }
+        value = panel->Tabs.ActiveIndex;
+        SetValue(actKey, PANEL_ACTIVETAB_REG, REG_DWORD, &value, sizeof(DWORD));
 
         CloseKey(actKey);
     }
@@ -2309,6 +2347,60 @@ void CMainWindow::LoadPanelConfig(char* panelPath, CFilesWindow* panel, HKEY hSa
             {
                 panel->Filter.SetMasksString("*.*");
                 panel->Filter.PrepareMasks(errPos);
+            }
+
+            // feature 078: the tab list; absent or empty -> the one tab the panel already has
+            HKEY tabsKey;
+            if (OpenKeyAux(NULL, actKey, PANEL_TABS_REG, tabsKey, TRUE))
+            {
+                BOOL first = TRUE;
+                int i;
+                for (i = 0;; i++)
+                {
+                    char name[16];
+                    sprintf_s(name, "%d", i);
+                    HKEY tabKey;
+                    if (!OpenKeyAux(NULL, tabsKey, name, tabKey, TRUE))
+                        break;
+                    CSalTabRecord rec;
+                    SalTabRecordInit(&rec);
+                    GetValue(tabKey, PANEL_PATH_REG, REG_SZ, rec.Location, SAL_TAB_LOCATION_MAX);
+                    if (GetValue(tabKey, PANEL_VIEW_REG, REG_DWORD, &value, sizeof(DWORD)))
+                        rec.ViewTemplateIndex = value;
+                    if (GetValue(tabKey, PANEL_SORT_REG, REG_DWORD, &value, sizeof(DWORD)))
+                        rec.SortType = value;
+                    if (GetValue(tabKey, PANEL_REVERSE_REG, REG_DWORD, &value, sizeof(DWORD)))
+                        rec.ReverseSort = value;
+                    if (GetValue(tabKey, PANEL_FILTER_ENABLE, REG_DWORD, &value, sizeof(DWORD)))
+                        rec.FilterEnabled = value;
+                    GetValue(tabKey, PANEL_FILTER, REG_SZ, rec.FilterMasks, SAL_TAB_FILTER_MAX);
+                    CloseKey(tabKey);
+                    if (!SalTabRecordClamp(&rec, stAttr))
+                        continue; // an unusable record is dropped
+                    CPanelTab* tab;
+                    if (first) // the panel's first tab keeps its (still empty) history
+                    {
+                        tab = panel->Tabs.At(0);
+                        if (tab != NULL)
+                            *(CSalTabRecord*)tab = rec;
+                        first = FALSE;
+                    }
+                    else
+                        tab = panel->Tabs.Add(rec, -1);
+                    if (tab != NULL)
+                    {
+                        tab->ResetSession();
+                        tab->Visited = FALSE; // opened when first activated
+                    }
+                }
+                CloseKey(tabsKey);
+                DWORD active = 0;
+                GetValue(actKey, PANEL_ACTIVETAB_REG, REG_DWORD, &active, sizeof(DWORD));
+                if ((int)active >= panel->Tabs.Count())
+                    active = 0;
+                panel->Tabs.ActiveIndex = active;
+                if (panel->Tabs.Active() != NULL)
+                    panel->PathHistory = panel->Tabs.Active()->PathHistory; // the panel history is the active tab's
             }
         }
 

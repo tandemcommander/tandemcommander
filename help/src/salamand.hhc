@@ -87,6 +87,10 @@
 				<param name="Local" value="hh\salamand\windows_panel.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Tab Strip">
+				<param name="Local" value="hh\salamand\windows_tabstrip.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Directory Line">
 				<param name="Local" value="hh\salamand\windows_dirline.htm">
 				</OBJECT>

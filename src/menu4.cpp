@@ -44,6 +44,19 @@ MENU_TEMPLATE_ITEM MainMenuTemplate[] =
         {MNTT_SP, -1, MNTS_I | MNTS_A, 0, -1, 0, NULL},
         {MNTT_IT, IDS_MENU_LEFT_FILTER, MNTS_I | MNTS_A, CM_LCHANGEFILTER, IDX_TB_FILTER, 0, NULL},
         {MNTT_IT, IDS_MENU_LEFT_REFRESH, MNTS_B | MNTS_I | MNTS_A, CM_LEFTREFRESH, IDX_TB_REFRESH, 0, NULL},
+        // feature 078: panel tabs - keep in sync with LeftTabsMenuTemplate[] below
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_PB, IDS_MENU_LEFT_TABS, MNTS_B | MNTS_I | MNTS_A, CML_LEFT_TABS, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_NEW, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_NEWTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_DUPLICATE, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_DUPTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSE, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_CLOSETAB, -1, 0, NULL},
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_NEXT, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_NEXTTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_PREVIOUS, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_PREVTAB, -1, 0, NULL},
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSEOTHERS, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_CLOSEOTHERTABS, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSERIGHT, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_CLOSETABSRIGHT, -1, 0, NULL},
+        {MNTT_PE},
         {MNTT_PE},
 
         // Files
@@ -248,6 +261,19 @@ MENU_TEMPLATE_ITEM MainMenuTemplate[] =
         {MNTT_SP, -1, MNTS_I | MNTS_A, 0, -1, 0, NULL},
         {MNTT_IT, IDS_MENU_LEFT_FILTER, MNTS_I | MNTS_A, CM_RCHANGEFILTER, IDX_TB_FILTER, 0, NULL},
         {MNTT_IT, IDS_MENU_LEFT_REFRESH, MNTS_B | MNTS_I | MNTS_A, CM_RIGHTREFRESH, IDX_TB_REFRESH, 0, NULL},
+        // feature 078: panel tabs - keep in sync with RightTabsMenuTemplate[] below
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_PB, IDS_MENU_RIGHT_TABS, MNTS_B | MNTS_I | MNTS_A, CML_RIGHT_TABS, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_NEW, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_NEWTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_DUPLICATE, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_DUPTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSE, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_CLOSETAB, -1, 0, NULL},
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_NEXT, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_NEXTTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_PREVIOUS, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_PREVTAB, -1, 0, NULL},
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSEOTHERS, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_CLOSEOTHERTABS, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSERIGHT, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_CLOSETABSRIGHT, -1, 0, NULL},
+        {MNTT_PE},
         {MNTT_PE},
 
         // Help
@@ -332,6 +358,39 @@ MENU_TEMPLATE_ITEM FindMenuTemplate[] =
         // [019] Help menu removed from the Find window (program help not built).
 
         {MNTT_PE}, // terminator
+};
+
+// feature 078: the Left > Tabs / Right > Tabs submenus as standalone templates - used to
+// re-create the submenu when the tab option is turned on again (the rows mirror
+// the two blocks inside MainMenuTemplate above; keep all three in sync)
+MENU_TEMPLATE_ITEM LeftTabsMenuTemplate[] =
+    {
+        {MNTT_PB, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_NEW, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_NEWTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_DUPLICATE, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_DUPTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSE, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_CLOSETAB, -1, 0, NULL},
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_NEXT, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_NEXTTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_PREVIOUS, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_PREVTAB, -1, 0, NULL},
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSEOTHERS, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_CLOSEOTHERTABS, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSERIGHT, MNTS_B | MNTS_I | MNTS_A, CM_LEFT_CLOSETABSRIGHT, -1, 0, NULL},
+        {MNTT_PE},
+};
+
+MENU_TEMPLATE_ITEM RightTabsMenuTemplate[] =
+    {
+        {MNTT_PB, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_NEW, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_NEWTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_DUPLICATE, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_DUPTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSE, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_CLOSETAB, -1, 0, NULL},
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_NEXT, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_NEXTTAB, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_PREVIOUS, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_PREVTAB, -1, 0, NULL},
+        {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSEOTHERS, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_CLOSEOTHERTABS, -1, 0, NULL},
+        {MNTT_IT, IDS_MENU_TAB_CLOSERIGHT, MNTS_B | MNTS_I | MNTS_A, CM_RIGHT_CLOSETABSRIGHT, -1, 0, NULL},
+        {MNTT_PE},
 };
 
 MENU_TEMPLATE_ITEM ArchiveMenuTemplate[] =

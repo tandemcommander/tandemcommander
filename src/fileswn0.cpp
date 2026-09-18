@@ -1128,6 +1128,29 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
     BOOL controlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
     BOOL altPressed = (GetKeyState(VK_MENU) & 0x8000) != 0;
 
+    // feature 078: tab shortcuts ("Chrome's tab keys with Shift added"), only while
+    // tabs are on - otherwise every key keeps doing what it did (Ctrl+Shift+PgUp/PgDn
+    // then still act as Shift+PgUp/PgDn)
+    if (Configuration.PanelTabs && controlPressed && shiftPressed && !altPressed)
+    {
+        int tabCmd = 0;
+        if (wParam == 'T')
+            tabCmd = CM_ACTIVE_NEWTAB;
+        else if (wParam == 'W')
+            tabCmd = CM_ACTIVE_CLOSETAB;
+        else if (wParam == VK_NEXT)
+            tabCmd = CM_ACTIVE_NEXTTAB;
+        else if (wParam == VK_PRIOR)
+            tabCmd = CM_ACTIVE_PREVTAB;
+        if (tabCmd != 0)
+        {
+            if (wParam == 'T' || wParam == 'W')
+                SkipCharacter = TRUE;
+            PostMessage(MainWindow->HWindow, WM_COMMAND, MAKEWPARAM(tabCmd, 0), 0);
+            return TRUE;
+        }
+    }
+
     if (((Configuration.QuickSearchEnterAlt &&
           altPressed && !controlPressed)) &&
         wParam > 31 &&

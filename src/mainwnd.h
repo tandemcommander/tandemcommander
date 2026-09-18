@@ -357,6 +357,8 @@ enum CMainWindowsHitTestEnum
     mwhteRightHeaderLine,
     mwhteRightStatusLine,
     mwhteRightWorkingArea,
+    mwhteLeftTabStrip,  // feature 078
+    mwhteRightTabStrip, // feature 078
 };
 
 struct CChangeNotifData
@@ -541,6 +543,7 @@ public:
 
     // these functions have no effect if CFilesWindow::CanBeFocused is not satisfied
     void ChangePanel(BOOL force = FALSE);                                   // respects EditMode; activates the inactive panel; (ignores ZOOM if force is TRUE)
+    void HandleTabCommand(int cmd);                                         // feature 078: CM_ACTIVE/LEFT/RIGHT_*TAB* (paneltabs.cpp)
     void FocusPanel(CFilesWindow* focus, BOOL testIfMainWndActive = FALSE); // clears EditMode because focus is put into the panel
     void FocusLeftPanel();                                                  // calls FocusPanel for the left panel
 

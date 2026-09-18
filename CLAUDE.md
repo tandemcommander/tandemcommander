@@ -8,7 +8,7 @@ WinAPI C++ application — no MFC, no Qt, no cross-platform frameworks.
 
 ## Product Identity (established in feature 032, renamed in feature 046)
 
-- **Product name**: Tandem Commander, version **0.1.7** (internal build 191);
+- **Product name**: Tandem Commander, version **0.1.8** (internal build 192);
   released versions and what changed in each are recorded in `CHANGELOG.md`
   (mandatory per the constitution: a release bumps
   `VERSINFO_SALAMANDER_MINORB` + `VERSINFO_BUILDNUMBER` in
@@ -528,3 +528,35 @@ plugin architecture preservation, UI consistency.
   `SalmonCheckBugs`. **Owed human step**: the literal start on a clean
   Windows without the redistributable (Windows Sandbox / VM, admin needed).
   Record: `specs/077-fix-antivirus-findings/fix-log.md`.
+- 078-panel-tabs: **panel tabs** (version 0.1.8, build 192). Design Model A:
+  each panel keeps its single `CFilesWindow`; a tab is a remembered view state
+  (`CPanelTab` in `src/paneltabs.*`: location in external form, view template,
+  sort, filter, cursor, selection, scroll, its own `CPathHistory`); switching =
+  capture -> pre-set sort/filter/view -> the **unchanged** `ChangeDir` ->
+  restore, so archives and plugin file systems keep their own leave rules
+  (`CHPPFR_CANNOTCLOSEPATH` reverts everything; the SFTP plugin v1 closes on
+  leave and reconnects from the saved password without a prompt). Strip
+  `CTabWindow` (`src/tabwnd.*`) is owner-drawn on the shared `ItemBitmap` with
+  the caption palette, never takes focus, and owns its context menu; pure rules
+  (title derivation incl. WTF-8, index arithmetic, record clamping) live in
+  `src/common/saltabs.*` under `saltests` (1353 -> 1405). Persistence: `{Left,
+  Right} Panel\Tabs\<n>` subkeys + `Active Tab`, legacy values unchanged for
+  the active tab, written only with the configuration; `Configuration\Panel
+  Tabs` (default 1, documented exception to the opt-in principle). Left/Right
+  menus gain a *Tabs* submenu (removed while off), 21 `CM_*` ids 2860-2880,
+  Ctrl+Shift+T/W/PgUp/PgDn reserved in `IsSalHotKey` (Plugins Manager refuses
+  them); the Appearance page got the checkbox and its three groups moved down
+  12 dialog units. Plugin ABI untouched (interface 106), no
+  `THIS_CONFIG_VERSION` bump. Verified by a PowerShell GUI driver against the
+  Debug build (SFTP container, archive-update prompts, accented/Chinese/lone-
+  surrogate titles, 20-tab overflow, skill levels, hotkey refusal, fresh and
+  0.1.7-shaped registries). **Open**: two Debug-CRT leak reports of one
+  88-byte block from a plugin module unloaded before the dump (six other runs
+  clean; DBWIN listener recipe in the fix-log), and one unreproduced wrong
+  landing after a USB drive arrived during the archive leave prompts -
+  `SwitchToTab` now brackets `ChangeDir` with `BeginStopRefresh`/
+  `EndStopRefresh` like the Change Directory dialog. Translations: 12 strings x
+  8 languages via `translate.merge`, pins under `_feature_078` in
+  `ui-overrides.json` (de *Registerkarte*, three close-confirmation strings
+  repaired by hand). Record: `specs/078-panel-tabs/fix-log.md`,
+  `closing-report.md`.

@@ -252,6 +252,7 @@ IDH_SPLITBAR=hh\salamand\windows_splitbar.htm
 IDH_COMMANDLINE=hh\salamand\windows_cmdline.htm
 IDH_BOTTOMTOOLBAR=hh\salamand\windows_btmtlb.htm
 IDH_DIRECTORYLINE=hh\salamand\windows_dirline.htm
+IDH_TABSTRIP=hh\salamand\windows_tabstrip.htm
 IDH_HEADERLINE=hh\salamand\windows_hdrline.htm
 IDH_WORKINGAREA=hh\salamand\windows_wrkarea.htm
 IDH_INFOLINE=hh\salamand\windows_infoline.htm

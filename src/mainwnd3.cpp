@@ -3780,6 +3780,32 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             return 0;
         }
 
+        case CM_ACTIVE_NEWTAB: // feature 078: the 21 tab commands (active / left / right x 7)
+        case CM_LEFT_NEWTAB:
+        case CM_RIGHT_NEWTAB:
+        case CM_ACTIVE_CLOSETAB:
+        case CM_LEFT_CLOSETAB:
+        case CM_RIGHT_CLOSETAB:
+        case CM_ACTIVE_NEXTTAB:
+        case CM_LEFT_NEXTTAB:
+        case CM_RIGHT_NEXTTAB:
+        case CM_ACTIVE_PREVTAB:
+        case CM_LEFT_PREVTAB:
+        case CM_RIGHT_PREVTAB:
+        case CM_ACTIVE_DUPTAB:
+        case CM_LEFT_DUPTAB:
+        case CM_RIGHT_DUPTAB:
+        case CM_ACTIVE_CLOSEOTHERTABS:
+        case CM_LEFT_CLOSEOTHERTABS:
+        case CM_RIGHT_CLOSEOTHERTABS:
+        case CM_ACTIVE_CLOSETABSRIGHT:
+        case CM_LEFT_CLOSETABSRIGHT:
+        case CM_RIGHT_CLOSETABSRIGHT:
+        {
+            HandleTabCommand(LOWORD(wParam));
+            return 0;
+        }
+
         case CM_ACTIVE_CHANGEDIR:
         {
             activePanel->ChangeDir();
@@ -4824,6 +4850,50 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 // populate the list of views
                 FillViewModeMenu(popup, firstIndex + 1, left ? 1 : 2);
             }
+
+            // feature 078: the Tabs submenu (the last two items: separator + submenu) is
+            // offered only while tabs are on; re-created from its template when turned on
+            DWORD tabsID = left ? CML_LEFT_TABS : CML_RIGHT_TABS;
+            int tabsIndex = popup->FindItemPosition(tabsID);
+            if (!Configuration.PanelTabs)
+            {
+                if (tabsIndex != -1)
+                    popup->RemoveItemsRange(tabsIndex > 0 ? tabsIndex - 1 : tabsIndex, tabsIndex);
+            }
+            else if (tabsIndex == -1)
+            {
+                CMenuPopup* sub = new CMenuPopup(tabsID);
+                if (sub != NULL)
+                {
+                    sub->LoadFromTemplate(HLanguage, left ? LeftTabsMenuTemplate : RightTabsMenuTemplate, NULL,
+                                          HGrayToolBarImageList, HHotToolBarImageList);
+                    MENU_ITEM_INFO mii;
+                    mii.Mask = MENU_MASK_TYPE;
+                    mii.Type = MENU_TYPE_SEPARATOR;
+                    popup->InsertItem(0xffffffff, TRUE, &mii);
+                    mii.Mask = MENU_MASK_TYPE | MENU_MASK_ID | MENU_MASK_STRING | MENU_MASK_SUBMENU;
+                    mii.Type = MENU_TYPE_STRING;
+                    mii.ID = tabsID;
+                    mii.String = LoadStr(left ? IDS_MENU_LEFT_TABS : IDS_MENU_RIGHT_TABS);
+                    mii.SubMenu = sub;
+                    popup->InsertItem(0xffffffff, TRUE, &mii);
+                }
+            }
+            break;
+        }
+
+        case CML_LEFT_TABS: // feature 078
+        case CML_RIGHT_TABS:
+        {
+            BOOL left = popupID == CML_LEFT_TABS;
+            CFilesWindow* panel = left ? LeftPanel : RightPanel;
+            int count = panel->Tabs.Count();
+            popup->EnableItem(left ? CM_LEFT_CLOSETAB : CM_RIGHT_CLOSETAB, FALSE, count > 1);
+            popup->EnableItem(left ? CM_LEFT_NEXTTAB : CM_RIGHT_NEXTTAB, FALSE, count > 1);
+            popup->EnableItem(left ? CM_LEFT_PREVTAB : CM_RIGHT_PREVTAB, FALSE, count > 1);
+            popup->EnableItem(left ? CM_LEFT_CLOSEOTHERTABS : CM_RIGHT_CLOSEOTHERTABS, FALSE, count > 1);
+            popup->EnableItem(left ? CM_LEFT_CLOSETABSRIGHT : CM_RIGHT_CLOSETABSRIGHT, FALSE,
+                              panel->Tabs.ActiveIndex < count - 1);
             break;
         }
 

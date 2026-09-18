@@ -9,6 +9,67 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
+## [0.1.8] — 2026-09-18
+
+**Build 192.** Feature release. Each panel can now keep several directories
+open in **tabs**, the way a web browser does: a strip of tabs sits above the
+panel's Directory Line, every tab remembers its own directory, view, sort
+order, filter, cursor, selection and Back/Forward history, and the whole set
+of tabs comes back at the next start. Tabs are on by default; one checkbox in
+Configuration turns them off and restores the previous look and behaviour
+exactly. Nothing else in the program changed.
+
+### Added
+
+- **Panel tabs.** Above the Directory Line of each panel there is now a tab
+  strip. The `+` button (or Ctrl+Shift+T) opens a new tab with the current
+  directory; clicking a tab shows it; the active tab carries a close button
+  (Ctrl+Shift+W closes it too, the last tab of a panel never closes). Tabs are
+  titled by the directory they show — the folder name, the archive name for an
+  archive, or the drive letter for a drive root. Middle-clicking a folder in the
+  panel opens it in a new tab in the background (in archives and on plugin
+  file systems as well), middle-clicking a tab closes it, and tabs can be
+  dragged into a new order. The right-click menu of a tab offers *New Tab*,
+  *Duplicate Tab*, *Close Tab*, *Close Other Tabs* and *Close Tabs to the
+  Right*; the same commands, plus *Next Tab* (Ctrl+Shift+Page Down) and
+  *Previous Tab* (Ctrl+Shift+Page Up), live in a new *Tabs* submenu of the
+  *Left* and *Right* menus. When more tabs are open than fit into the strip,
+  they shrink and a list button at the right end names them all. Clicking a
+  tab of the inactive panel activates that panel and shows the tab in one
+  step; the keyboard focus never leaves the file list.
+
+  Returning to a tab reads its directory again, so what you see is always
+  current; the cursor, the selection and the scroll position are put back. A
+  tab whose directory has disappeared falls back to the nearest existing parent
+  and keeps following the panel. Leaving a tab is the same as leaving its
+  directory any other way: an archive offers to update files you edited inside
+  it, a plugin file system (FTP, SFTP) applies its own rules for keeping or
+  closing the connection, and cancelling such a question leaves the tab where
+  it was. Two tabs on the same connection share it.
+
+  The tabs of both panels are saved with the configuration (on exit, or with
+  *Save Configuration*) and restored at the next start; an archive or plugin
+  file system tab is opened only when you click it, a plugin asks for its login
+  as usual, and no password is ever stored with a tab. A panel whose active
+  tab was a plugin file system at exit starts in its last disk directory, as
+  before.
+
+  *Show tabs in panels* in Configuration ▸ Appearance turns the feature off:
+  the strips disappear at once, each panel keeps the tab it was showing (the
+  dialog says how many tabs will be closed and asks first), the *Tabs*
+  submenus vanish and the four shortcuts do exactly what they did in 0.1.7.
+  With the option off the program is, pixel for pixel, the previous version.
+
+- **Manual.** A new *Tab Strip* page under Panel Components, the four
+  shortcuts in the keyboard shortcuts table, and the new option on the
+  Appearance page.
+
+### Changed
+
+- **Ctrl+Shift+Page Up / Page Down switch tabs while tabs are on.** Until now
+  these two combinations were undocumented duplicates of Shift+Page Up /
+  Page Down (page-and-select). With tabs turned off they keep that behaviour.
+
 ## [0.1.7] — 2026-08-29
 
 **Build 191.** Installer fix. Unattended installation — `/VERYSILENT` and

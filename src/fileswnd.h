@@ -1642,6 +1642,8 @@ public:
 
     // feature 078: panel tabs (paneltabs.cpp); the panel is always its active tab
     int GetTabStripHeight();       // 0 while the strip window does not exist
+    HWND GetTabStripHWND();        // NULL while the strip window does not exist
+    BOOL OnMButtonUp(WPARAM wParam, LPARAM lParam, LRESULT* lResult); // middle click on a folder -> new background tab
     void UpdateTabStrip();         // repaint the strip (titles, active tab)
     void ToggleTabStrip();         // create / destroy the strip window and re-layout the panel
     void CaptureActiveTab();       // snapshot the panel into the active tab record
