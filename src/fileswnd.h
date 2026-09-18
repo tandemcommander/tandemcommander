@@ -156,6 +156,7 @@ class COperations;
 class CFilesBox;
 class CHeaderLine;
 class CStatusWindow;
+class CTabWindow; // feature 078
 class CFilesArray;
 struct CFileData;
 class CIconCache;
@@ -374,6 +375,8 @@ public:
     void Push(const char* path, int topIndex);        // stores the top index for the given path
     BOOL FindAndPop(const char* path, int& topIndex); // looks for the top index of the path, FALSE -> not found
 };
+
+#include "paneltabs.h" // feature 078: CPanelTab / CPanelTabs (needs CTopIndexMem above)
 
 //******************************************************************************
 //
@@ -768,6 +771,7 @@ public:
     CFilesBox* ListBox;
     CStatusWindow *StatusLine,
         *DirectoryLine;
+    CTabWindow* TabStrip; // feature 078: the tab strip above the directory line (its window exists only while tabs are on)
 
     BOOL StatusLineVisible;
     BOOL DirectoryLineVisible;
@@ -830,7 +834,8 @@ public:
     BOOL NeedRefreshAfterIconsReading; // is a refresh needed after icon reading finishes?
     int RefreshAfterIconsReadingTime;  // "time" of the latest refresh that arrived while icons were being read
 
-    CPathHistory* PathHistory; // browsing history for this panel (for the panel)
+    CPathHistory* PathHistory; // browsing history for this panel (for the panel); feature 078: always the active tab's
+    CPanelTabs Tabs;           // feature 078: the panel's tabs; the panel is the active one, the others are remembered view state
 
     DWORD HiddenDirsFilesReason; // bit field indicating the reason why files/directories are hidden (HIDDEN_REASON_xxx)
     int HiddenDirsCount,         // number of hidden directories in the panel (number of skipped ones)
@@ -1634,6 +1639,21 @@ public:
     void SetFont();
 
     void LockUI(BOOL lock);
+
+    // feature 078: panel tabs (paneltabs.cpp); the panel is always its active tab
+    int GetTabStripHeight();       // 0 while the strip window does not exist
+    void UpdateTabStrip();         // repaint the strip (titles, active tab)
+    void ToggleTabStrip();         // create / destroy the strip window and re-layout the panel
+    void CaptureActiveTab();       // snapshot the panel into the active tab record
+    BOOL SwitchToTab(int index);   // FALSE = refused or nothing to do (the panel is intact)
+    void NewTab();                 // new tab at the current location, appended, activated
+    void DuplicateTab(int index);  // copy after 'index', activated
+    BOOL CloseTab(int index);      // never the only tab; the active one switches to a neighbour first
+    void CloseOtherTabs(int keepIndex);
+    void CloseTabsToRight(int index);
+    void MoveTab(int from, int to);
+    void OpenIndexInNewTab(int itemIndex); // a folder of the listing into a new background tab
+    void SetTabsEnabled(BOOL on);  // the option changed (or start-up): strip on/off, extra tabs dropped when off
 };
 
 //****************************************************************************

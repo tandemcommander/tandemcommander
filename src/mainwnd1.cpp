@@ -1270,14 +1270,17 @@ HWND CMainWindow::GetActivePanelHWND()
 
 int CMainWindow::GetDirectoryLineHeight()
 {
+    // feature 078: the distance from the panel's top edge to the bottom of the
+    // directory line - the tab strip sits above it (both callers anchor popups)
+    int height = GetActivePanel()->GetTabStripHeight();
     if (GetActivePanel()->DirectoryLine != NULL &&
         GetActivePanel()->DirectoryLine->HWindow != NULL)
     {
         RECT r;
         GetClientRect(GetActivePanel()->DirectoryLine->HWindow, &r);
-        return r.bottom - r.top;
+        height += r.bottom - r.top;
     }
-    return 0;
+    return height;
 }
 
 void CMainWindow::RefreshDiskFreeSpace()

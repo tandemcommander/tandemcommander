@@ -226,6 +226,7 @@ public:
         return count > 1;
     }
     BOOL HasPaths() { return Paths.Count > 0; }
+    BOOL IsLocked() { return Lock; } // feature 078: a Back/Forward navigation is executing (no tab switch meanwhile)
 
     void SaveToRegistry(HKEY hKey, const char* name, BOOL onlyClear);
     void LoadFromRegistry(HKEY hKey, const char* name);

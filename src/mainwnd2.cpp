@@ -284,6 +284,7 @@ const char* CONFIG_FULLROWHIGHLIGHT_REG = "Full Row Highlight";
 const char* CONFIG_USEICONTINCTURE_REG = "Use Icon Tincture";
 const char* CONFIG_SHOWPANELCAPTION_REG = "Show Panel Caption";
 const char* CONFIG_SHOWPANELZOOM_REG = "Show Panel Zoom";
+const char* CONFIG_PANELTABS_REG = "Panel Tabs"; // feature 078
 const char* CONFIG_INFOLINECONTENT_REG = "Information Line Content";
 const char* CONFIG_IFPATHISINACCESSIBLEGOTOISMYDOCS_REG = "If Path Is Inaccessible Go To My Docs";
 const char* CONFIG_IFPATHISINACCESSIBLEGOTO_REG = "If Path Is Inaccessible Go To";
@@ -1631,6 +1632,8 @@ void CMainWindow::SaveConfig(HWND parent)
                          &Configuration.ShowPanelCaption, sizeof(DWORD));
                 SetValue(actKey, CONFIG_SHOWPANELZOOM_REG, REG_DWORD,
                          &Configuration.ShowPanelZoom, sizeof(DWORD));
+                SetValue(actKey, CONFIG_PANELTABS_REG, REG_DWORD,
+                         &Configuration.PanelTabs, sizeof(DWORD));
                 SetValue(actKey, CONFIG_SINGLECLICK_REG, REG_DWORD,
                          &Configuration.SingleClick, sizeof(DWORD));
                 //      SetValue(actKey, CONFIG_SHOWTIPOFTHEDAY_REG, REG_DWORD,
@@ -3171,6 +3174,8 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                      &Configuration.ShowPanelCaption, sizeof(DWORD));
             GetValue(actKey, CONFIG_SHOWPANELZOOM_REG, REG_DWORD,
                      &Configuration.ShowPanelZoom, sizeof(DWORD));
+            GetValue(actKey, CONFIG_PANELTABS_REG, REG_DWORD, // absent -> stays on (feature 078)
+                     &Configuration.PanelTabs, sizeof(DWORD));
             GetValue(actKey, CONFIG_SINGLECLICK_REG, REG_DWORD,
                      &Configuration.SingleClick, sizeof(DWORD));
             //      GetValue(actKey, CONFIG_SHOWTIPOFTHEDAY_REG, REG_DWORD,
@@ -3930,6 +3935,10 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
         lstrcpyn(DefaultDir[LowerCase[sysDefDir[0]] - 'a'], sysDefDir, MAX_PATH);
         // restore DefaultDir
         MainWindow->UpdateDefaultDir(TRUE);
+
+        // feature 078: the strips (and the capture of the active tab) once the panels show their start-up paths
+        LeftPanel->SetTabsEnabled(Configuration.PanelTabs);
+        RightPanel->SetTabsEnabled(Configuration.PanelTabs);
 
         return ret;
     }

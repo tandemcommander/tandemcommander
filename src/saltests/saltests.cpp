@@ -15,6 +15,7 @@
 #include "salclip.h"
 #include "themes_palette.h"
 #include "salshell.h" // feature 071
+#include "saltabs.h"  // feature 078
 
 #include <map>
 #include <set>
@@ -1900,6 +1901,116 @@ static void TestCommandShell071()
     }
 }
 
+// ---------------------------------------------------------------------------
+// feature 078: panel tabs - the pure rules of src/common/saltabs.cpp
+// ---------------------------------------------------------------------------
+
+static bool TitleIs(const char* location, const char* expected)
+{
+    char title[64];
+    SalTabTitleFromLocation(location, title, sizeof(title));
+    return strcmp(title, expected) == 0;
+}
+
+static void TestPanelTabs078()
+{
+    // titles (spec FR-007)
+    CHECK(TitleIs("D:\\Work\\Reports", "Reports"));
+    CHECK(TitleIs("D:\\Work\\", "Work"));
+    CHECK(TitleIs("D:\\Work", "Work"));
+    CHECK(TitleIs("D:\\", "D:\\"));
+    CHECK(TitleIs("D:", "D:\\"));
+    CHECK(TitleIs("d:\\", "d:\\"));
+    CHECK(TitleIs("\\\\server\\share", "\\\\server\\share"));
+    CHECK(TitleIs("\\\\server\\share\\", "\\\\server\\share"));
+    CHECK(TitleIs("\\\\server\\share\\sub", "sub"));
+    CHECK(TitleIs("\\\\server\\share\\sub\\deeper", "deeper"));
+    CHECK(TitleIs("C:\\x\\a.zip", "a.zip"));
+    CHECK(TitleIs("C:\\x\\a.zip\\sub", "sub"));
+    CHECK(TitleIs("C:\\x\\a.zip\\sub\\", "sub"));
+    CHECK(TitleIs("ftp:ftp://user@server/dir/sub", "sub"));
+    CHECK(TitleIs("ftp:ftp://user@server/dir/sub/", "sub"));
+    CHECK(TitleIs("ftp:ftp://user@server", "ftp://user@server"));
+    CHECK(TitleIs("ftp:ftp://user@server/", "ftp://user@server"));
+    CHECK(TitleIs("sftp:host/path/", "path"));
+    CHECK(TitleIs("sftp:host", "host"));
+    CHECK(TitleIs("nethood:\\\\server", "\\\\server"));
+    CHECK(TitleIs("G:\\M\xC5\xAFj disk\\Nov\xC3\xBD projekt", "Nov\xC3\xBD projekt")); // "G:\Muj disk\Novy projekt"
+    CHECK(TitleIs("", ""));
+    CHECK(TitleIs("\\", "\\"));
+    // a WTF-8 unpaired surrogate (ED A0 80) survives as bytes
+    CHECK(TitleIs("D:\\Lone\xED\xA0\x80" "surrogate", "Lone\xED\xA0\x80" "surrogate"));
+    {
+        // truncation never leaves a torn sequence: "Novy" with y-acute (C3 BD) cut inside the sequence
+        char title[5];
+        SalTabTitleFromLocation("D:\\Nov\xC3\xBD", title, sizeof(title));
+        CHECK(strcmp(title, "Nov") == 0);
+        char title2[6];
+        SalTabTitleFromLocation("D:\\Nov\xC3\xBD", title2, sizeof(title2));
+        CHECK(strcmp(title2, "Nov\xC3\xBD") == 0);
+    }
+
+    // index after close (spec FR-017)
+    CHECK(SalTabsIndexAfterClose(3, 0, 2) == 1); // a tab left of the active one shifts it down
+    CHECK(SalTabsIndexAfterClose(3, 2, 0) == 0); // a tab right of it changes nothing
+    CHECK(SalTabsIndexAfterClose(3, 1, 1) == 1); // closing the active middle tab: the right neighbour takes its index
+    CHECK(SalTabsIndexAfterClose(3, 2, 2) == 1); // closing the active last tab: the left neighbour
+    CHECK(SalTabsIndexAfterClose(3, 0, 0) == 0); // closing the active first tab: the (former) second
+    CHECK(SalTabsIndexAfterClose(1, 0, 0) == 0); // the only tab cannot be closed - index unchanged
+    CHECK(SalTabsIndexAfterClose(3, 5, 1) == 1); // out of range: unchanged
+
+    // cycling with wrap-around (US4-2)
+    CHECK(SalTabsCycle(3, 0, TRUE) == 1);
+    CHECK(SalTabsCycle(3, 1, TRUE) == 2);
+    CHECK(SalTabsCycle(3, 2, TRUE) == 0);
+    CHECK(SalTabsCycle(3, 0, FALSE) == 2);
+    CHECK(SalTabsCycle(3, 2, FALSE) == 1);
+    CHECK(SalTabsCycle(1, 0, TRUE) == 0);
+    CHECK(SalTabsCycle(0, 0, TRUE) == 0);
+
+    // move: the active index follows the moved tab or shifts with the others (US5-3)
+    {
+        int a = 2;
+        SalTabsMove(3, 2, 0, &a); // "Music" before "Work": the active (moved) tab lands at 0
+        CHECK(a == 0);
+        a = 0;
+        SalTabsMove(3, 2, 0, &a); // the active first tab is pushed right
+        CHECK(a == 1);
+        a = 1;
+        SalTabsMove(3, 0, 2, &a); // moving the first tab to the end pulls the active middle one left
+        CHECK(a == 0);
+        a = 2;
+        SalTabsMove(3, 0, 1, &a); // untouched tabs keep their index
+        CHECK(a == 2);
+        a = 1;
+        SalTabsMove(3, 1, 1, &a); // no-op
+        CHECK(a == 1);
+        a = 1;
+        SalTabsMove(3, 7, 0, &a); // out of range: no-op
+        CHECK(a == 1);
+    }
+
+    // record clamping (data-model.md section 1)
+    {
+        CSalTabRecord rec;
+        SalTabRecordInit(&rec);
+        CHECK(rec.Location[0] == 0 && rec.ViewTemplateIndex == 2 && rec.SortType == 0 &&
+              !rec.ReverseSort && !rec.FilterEnabled && strcmp(rec.FilterMasks, "*.*") == 0);
+        CHECK(!SalTabRecordClamp(&rec, 5)); // empty location -> dropped
+        lstrcpynA(rec.Location, "D:\\Work", sizeof(rec.Location));
+        rec.SortType = 9;
+        rec.ViewTemplateIndex = 0;
+        rec.FilterMasks[0] = 0;
+        CHECK(SalTabRecordClamp(&rec, 5));
+        CHECK(rec.SortType == 0 && rec.ViewTemplateIndex == 2 && strcmp(rec.FilterMasks, "*.*") == 0);
+        rec.SortType = 5;
+        rec.ViewTemplateIndex = 7;
+        CHECK(SalTabRecordClamp(&rec, 5) && rec.SortType == 5 && rec.ViewTemplateIndex == 7);
+        rec.SortType = -1;
+        CHECK(SalTabRecordClamp(&rec, 5) && rec.SortType == 0);
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -1922,6 +2033,7 @@ int main()
     TestEncodingReview068();
     TestEncodingFixes069();
     TestCommandShell071();
+    TestPanelTabs078();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -295,6 +295,7 @@ struct CConfiguration
     int UseIconTincture;  // for hidden/system/selected/focused items
     int ShowPanelCaption; // should the panel caption be shown in color in the directory line?
     int ShowPanelZoom;    // should the Zoom button be shown in the directory line?
+    int PanelTabs;        // feature 078: tab strips in the panels (on by default)
 
     char InfoLineContent[200];
 

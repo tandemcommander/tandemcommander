@@ -1232,6 +1232,8 @@ void CMainWindow::ChangePanel(BOOL force)
             p1->DirectoryLine->InvalidateAndUpdate(FALSE);
         if (p2->DirectoryLine != NULL)
             p2->DirectoryLine->InvalidateAndUpdate(FALSE);
+        p1->UpdateTabStrip(); // feature 078
+        p2->UpdateTabStrip();
 
         UpdateDriveBars(); // press the correct drive in the drive bar
 
@@ -1297,6 +1299,8 @@ void CMainWindow::FocusPanel(CFilesWindow* focus, BOOL testIfMainWndActive)
             old->DirectoryLine->InvalidateAndUpdate(FALSE);
         if (focus->DirectoryLine != NULL)
             focus->DirectoryLine->InvalidateAndUpdate(FALSE);
+        old->UpdateTabStrip(); // feature 078
+        focus->UpdateTabStrip();
         //    ReleaseMenuNew();
         EditWindowSetDirectory();
         IdleRefreshStates = TRUE; // on the next Idle, force checking of state variables

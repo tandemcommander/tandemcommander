@@ -1155,6 +1155,7 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,1,51,133,12
     CONTROL         "Show &maximize/restore button in Directory line",IDC_PANELZOOM,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,1,63,169,12
+    CONTROL         "Show ta&bs in panels",IDC_PANELTABS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,1,75,169,12
     GROUPBOX        " Panel Font ",IDC_STATIC_2,1,81,295,32
     PUSHBUTTON      "&Font",IDB_PANELFONT,7,93,52,14,WS_GROUP
     EDITTEXT        IDE_PANELFONT,64,93,224,14,ES_AUTOHSCROLL | ES_READONLY | NOT WS_TABSTOP

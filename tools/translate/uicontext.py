@@ -148,6 +148,7 @@ _WORDS = sorted(
     treemap undo unpack upper used verify version vertical viewer volume
     volumes whitespace wipe
     shell preset cmd found args arguments custom intro hint program
+    tab tabs strip close closeothers closeright next previous other others
     """.split(),
     key=len,
     reverse=True,

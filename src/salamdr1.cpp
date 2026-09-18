@@ -4456,6 +4456,8 @@ FIND_NEW_SLG_FILE:
                     MainWindow->RightPanel->UpdateDriveIcon(TRUE);
                     MainWindow->LeftPanel->UpdateFilterSymbol();
                     MainWindow->RightPanel->UpdateFilterSymbol();
+                    MainWindow->LeftPanel->SetTabsEnabled(Configuration.PanelTabs);  // feature 078
+                    MainWindow->RightPanel->SetTabsEnabled(Configuration.PanelTabs); // feature 078
                     if (!SystemPolicies.GetNoRun())
                         SendMessage(MainWindow->HWindow, WM_COMMAND, CM_TOGGLEEDITLINE, TRUE);
                     MainWindow->SetWindowIcon();

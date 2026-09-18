@@ -2856,6 +2856,7 @@ void CCfgPageAppearance::Transfer(CTransferInfo& ti)
     ti.CheckBox(IDC_ICONTINCTURE, Configuration.UseIconTincture);
     ti.CheckBox(IDC_PANELCAPTION, Configuration.ShowPanelCaption);
     ti.CheckBox(IDC_PANELZOOM, Configuration.ShowPanelZoom);
+    ti.CheckBox(IDC_PANELTABS, Configuration.PanelTabs); // feature 078
     ti.CheckBox(IDC_SINGLECLICK, Configuration.SingleClick);
 
     ti.EditLine(IDC_INFOLINECONTENT, Configuration.InfoLineContent, 200);
@@ -2882,6 +2883,23 @@ void CCfgPageAppearance::Validate(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CCfgPageAppearance::Validate()");
     HWND hWnd;
+
+    // feature 078 (FR-005): turning tabs off closes every background tab - say so first
+    if (Configuration.PanelTabs && IsDlgButtonChecked(HWindow, IDC_PANELTABS) != BST_CHECKED &&
+        MainWindow != NULL && MainWindow->LeftPanel != NULL && MainWindow->RightPanel != NULL)
+    {
+        int closing = (MainWindow->LeftPanel->Tabs.Count() - 1) + (MainWindow->RightPanel->Tabs.Count() - 1);
+        if (closing > 0)
+        {
+            char msg[500];
+            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_TABS_CLOSECONFIRM), closing);
+            if (SalMessageBox(HWindow, msg, LoadStrU8(IDS_QUESTION), MB_YESNO | MB_ICONQUESTION) != IDYES)
+            {
+                ti.ErrorOn(IDC_PANELTABS);
+                return;
+            }
+        }
+    }
     if (ti.GetControl(hWnd, IDC_INFOLINECONTENT))
     {
         char buff[MAX_PATH];

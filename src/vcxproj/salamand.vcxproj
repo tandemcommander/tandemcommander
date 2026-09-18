@@ -271,6 +271,8 @@
     </ClCompile>
     <ClCompile Include="..\common\salshell.cpp">
     </ClCompile>
+    <ClCompile Include="..\common\saltabs.cpp">
+    </ClCompile>
     <ClCompile Include="..\common\salunicode.cpp">
     </ClCompile>
     <ClCompile Include="..\common\sheets.cpp">
@@ -565,6 +567,8 @@
     </ClCompile>
     <ClCompile Include="..\stswnd.cpp">
     </ClCompile>
+    <ClCompile Include="..\paneltabs.cpp">
+    </ClCompile>
     <ClCompile Include="..\svg.cpp">
     </ClCompile>
     <ClCompile Include="..\tabwnd.cpp">
@@ -737,6 +741,8 @@
     </ClInclude>
     <ClInclude Include="..\common\salpath.h">
     </ClInclude>
+    <ClInclude Include="..\common\saltabs.h">
+    </ClInclude>
     <ClInclude Include="..\common\salunicode.h">
     </ClInclude>
     <ClInclude Include="..\common\sheets.h">
@@ -862,6 +868,8 @@
     <ClInclude Include="..\sort.h">
     </ClInclude>
     <ClInclude Include="..\stswnd.h">
+    </ClInclude>
+    <ClInclude Include="..\paneltabs.h">
     </ClInclude>
     <ClInclude Include="..\pngimage.h">
     </ClInclude>

@@ -8,6 +8,7 @@
 #include "mainwnd.h"
 #include "plugins.h"
 #include "fileswnd.h"
+#include "tabwnd.h" // feature 078
 #include "editwnd.h"
 #include "stswnd.h"
 #include "filesbox.h"
@@ -3462,6 +3463,9 @@ void CFilesWindow::OnColorsChanged()
     {
         StatusLine->OnColorsChanged();
     }
+
+    if (TabStrip != NULL) // feature 078 (independent of the directory line's toolbar)
+        TabStrip->OnColorsChanged();
 
     if (IconCache != NULL)
     {

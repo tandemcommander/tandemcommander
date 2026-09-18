@@ -1949,6 +1949,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         BOOL oldStatusArea = Configuration.StatusArea;
         BOOL oldPanelCaption = Configuration.ShowPanelCaption;
         BOOL oldPanelZoom = Configuration.ShowPanelZoom;
+        BOOL oldPanelTabs = Configuration.PanelTabs; // feature 078
 
         UserMenuIconBkgndReader.ResetSysColorsChanged(); // now, we start watching system color changes (icon reload required)
         BOOL readingUMIcons = UserMenuIconBkgndReader.IsReadingIcons();
@@ -2024,6 +2025,15 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                     LeftPanel->DirectoryLine->Repaint();
                 if (RightPanel->DirectoryLine != NULL && RightPanel->DirectoryLine->HWindow != NULL)
                     RightPanel->DirectoryLine->Repaint();
+            }
+
+            if (oldPanelTabs != Configuration.PanelTabs) // feature 078: strips on/off, no restart
+            {
+                LockWindowUpdate(HWindow);
+                LeftPanel->SetTabsEnabled(Configuration.PanelTabs);
+                RightPanel->SetTabsEnabled(Configuration.PanelTabs);
+                LayoutWindows();
+                LockWindowUpdate(NULL);
             }
 
             // main window icon
@@ -5525,13 +5535,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
             if (MiddleToolBar->HWindow != NULL)
             {
-                // move the toolbar down if any panel has a directory line
-                int offset1 = 0;
-                int offset2 = 0;
+                // move the toolbar down if any panel has a directory line (feature 078: or a tab strip)
+                int offset1 = LeftPanel->GetTabStripHeight();
+                int offset2 = RightPanel->GetTabStripHeight();
                 if (LeftPanel->DirectoryLine != NULL && LeftPanel->DirectoryLine->HWindow != NULL)
-                    offset1 = LeftPanel->DirectoryLine->GetNeededHeight();
+                    offset1 += LeftPanel->DirectoryLine->GetNeededHeight();
                 if (RightPanel->DirectoryLine != NULL && RightPanel->DirectoryLine->HWindow != NULL)
-                    offset2 = RightPanel->DirectoryLine->GetNeededHeight();
+                    offset2 += RightPanel->DirectoryLine->GetNeededHeight();
                 int offset = max(offset1, offset2);
                 hdwp = HANDLES(DeferWindowPos(hdwp, MiddleToolBar->HWindow, NULL,
                                               SplitPositionPix + SPLIT_LINE_WIDTH, TopRebarHeight + offset,
@@ -5585,6 +5595,8 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         CFilesWindow* panel = GetActivePanel();
         if (panel != NULL && panel->DirectoryLine != NULL)
             panel->DirectoryLine->InvalidateAndUpdate(!CaptionIsActive);
+        if (panel != NULL) // feature 078: the active tab uses the caption colours too
+            panel->UpdateTabStrip();
 
         if (!CaptionIsActive)
         {

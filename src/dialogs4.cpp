@@ -380,6 +380,7 @@ CConfiguration::CConfiguration()
     UseIconTincture = TRUE;
     ShowPanelCaption = TRUE;
     ShowPanelZoom = TRUE;
+    PanelTabs = TRUE; // feature 078
     strcpy(InfoLineContent, "$(FileName): $(FileSize), $(FileDate), $(FileTime), $(FileAttributes), $(FileDOSName)");
 
     HotPathAutoConfig = TRUE;

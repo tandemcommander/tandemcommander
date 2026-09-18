@@ -309,6 +309,7 @@
 #define IDC_PANELCAPTION                614
 #define IDC_SHIFTFORHOTPATHS            615
 #define IDC_PANELZOOM                   616
+#define IDC_PANELTABS                   6235
 #define IDC_CHD_SHOWNET                 619
 #define IDC_THUMBNAILSIZE               620
 #define IDC_THUMBNAILSIZE_UPDOWN        621
@@ -708,7 +709,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        8200
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         6235
+#define _APS_NEXT_CONTROL_VALUE         6236
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

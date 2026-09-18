@@ -41,6 +41,7 @@
 #define IDH_VIEWERINTRO     140
 #define IDH_GROUPPOLICY     141
 #define IDH_PWDMANAGER      142
+#define IDH_TABSTRIP        143      // feature 078: the tab strip above the directory line
 // virtualni IDcka - END
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FREESPACE
@@ -323,6 +324,7 @@
 #define IDC_EDITWINDOW      955
 #define IDC_EDITLINE        956
 #define IDC_DIRTEXT         957
+#define IDC_TABSTRIP        958      // feature 078: child id of the panel's tab strip
 
 // icons
 #define IDI_SALAMANDER       960
@@ -449,6 +451,29 @@
 #define CM_RIGHTHISTORYPATH_MIN    2850    // historie adresaru pro menu Go To
 #define CM_RIGHTHISTORYPATH_MAX    2859
 
+// feature 078: panel tab commands (order active, left, right - as CM_*_CHANGEDIR)
+#define CM_ACTIVE_NEWTAB           2860
+#define CM_LEFT_NEWTAB             2861
+#define CM_RIGHT_NEWTAB            2862
+#define CM_ACTIVE_CLOSETAB         2863
+#define CM_LEFT_CLOSETAB           2864
+#define CM_RIGHT_CLOSETAB          2865
+#define CM_ACTIVE_NEXTTAB          2866
+#define CM_LEFT_NEXTTAB            2867
+#define CM_RIGHT_NEXTTAB           2868
+#define CM_ACTIVE_PREVTAB          2869
+#define CM_LEFT_PREVTAB            2870
+#define CM_RIGHT_PREVTAB           2871
+#define CM_ACTIVE_DUPTAB           2872
+#define CM_LEFT_DUPTAB             2873
+#define CM_RIGHT_DUPTAB            2874
+#define CM_ACTIVE_CLOSEOTHERTABS   2875
+#define CM_LEFT_CLOSEOTHERTABS     2876
+#define CM_RIGHT_CLOSEOTHERTABS    2877
+#define CM_ACTIVE_CLOSETABSRIGHT   2878
+#define CM_LEFT_CLOSETABSRIGHT     2879
+#define CM_RIGHT_CLOSETABSRIGHT    2880
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FREESPACE
 
 // vyhrazene intervaly pro SortBy a FixedWidth po 20 polozkach; vic proste nezobrazime
@@ -571,6 +596,8 @@
 #define CML_FIND_OPTIONS        5953
 #define CML_FIND_HELP           5954
 #define CML_FIND_FIND           5955
+#define CML_LEFT_TABS           5956     // feature 078
+#define CML_RIGHT_TABS          5957
 
 #define CML_LAST                5999
 

@@ -2727,6 +2727,19 @@
 #define IDS_CMDSHELL_ERRTITLE           14209
 #define IDS_CMDSHELL_ERRNOTFOUND        14210
 #define IDS_CMDSHELL_ERREXEC            14211
+// feature 078: panel tabs
+#define IDS_MENU_LEFT_TABS              14212
+#define IDS_MENU_RIGHT_TABS             14213
+#define IDS_MENU_TAB_NEW                14214
+#define IDS_MENU_TAB_DUPLICATE          14215
+#define IDS_MENU_TAB_CLOSE              14216
+#define IDS_MENU_TAB_NEXT               14217
+#define IDS_MENU_TAB_PREVIOUS           14218
+#define IDS_MENU_TAB_CLOSEOTHERS        14219
+#define IDS_MENU_TAB_CLOSERIGHT         14220
+#define IDS_TABS_TT_NEW                 14221
+#define IDS_TABS_TT_LIST                14222
+#define IDS_TABS_CLOSECONFIRM           14223
 
 //#define CM_TEXTS_MAX                  18000    // maximal texts id
 

@@ -78,7 +78,15 @@ int CFilesWindow::GetPanelCode()
 void CFilesWindow::ClearPluginFSFromHistory(CPluginFSInterfaceAbstract* fs)
 {
     CALL_STACK_MESSAGE_NONE
-    PathHistory->ClearPluginFSFromHistory(fs);
+    int i; // feature 078: every tab's history may remember the interface
+    for (i = 0; i < Tabs.Count(); i++)
+    {
+        CPanelTab* tab = Tabs.At(i);
+        if (tab != NULL && tab->PathHistory != NULL)
+            tab->PathHistory->ClearPluginFSFromHistory(fs);
+    }
+    if (PathHistory != NULL && (Tabs.Active() == NULL || Tabs.Active()->PathHistory != PathHistory))
+        PathHistory->ClearPluginFSFromHistory(fs);
 }
 
 BOOL SafeInvokeCommand(IContextMenu2* menu, CMINVOKECOMMANDINFO& ici)

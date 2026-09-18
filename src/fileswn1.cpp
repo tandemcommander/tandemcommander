@@ -1466,7 +1466,15 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
     NeedRefreshAfterIconsReading = FALSE;
     RefreshAfterIconsReadingTime = 0;
 
-    PathHistory = new CPathHistory();
+    // feature 078: the browsing history belongs to the first tab; the panel
+    // pointer always refers to the active tab's history
+    TabStrip = NULL;
+    {
+        CSalTabRecord rec;
+        SalTabRecordInit(&rec);
+        CPanelTab* tab = Tabs.Add(rec, -1);
+        PathHistory = (tab != NULL) ? tab->PathHistory : NULL;
+    }
 
     DontDrawIndex = -1;
     DrawOnlyIndex = -1;
@@ -1536,8 +1544,7 @@ CFilesWindow::~CFilesWindow()
 
     ClearHistory();
 
-    if (PathHistory != NULL)
-        delete PathHistory;
+    PathHistory = NULL; // feature 078: owned by the tabs, deleted with them
 
     if (IconCacheThread != NULL)
     {
@@ -1570,7 +1577,14 @@ CFilesWindow::~CFilesWindow()
 
 void CFilesWindow::ClearHistory()
 {
-    if (PathHistory != NULL)
+    int i; // feature 078: every tab has its own history
+    for (i = 0; i < Tabs.Count(); i++)
+    {
+        CPanelTab* tab = Tabs.At(i);
+        if (tab != NULL && tab->PathHistory != NULL)
+            tab->PathHistory->ClearHistory();
+    }
+    if (PathHistory != NULL && (Tabs.Active() == NULL || Tabs.Active()->PathHistory != PathHistory))
         PathHistory->ClearHistory();
 
     OldSelection.Clear();
@@ -1804,6 +1818,14 @@ void CFilesWindow::DirectoryLineSetText()
     else
     {
         DirectoryLine->SetText(path);
+    }
+
+    // feature 078: the active tab shows what the panel shows (its title follows)
+    CPanelTab* tab = Tabs.Active();
+    if (tab != NULL)
+    {
+        GetGeneralPath(tab->Location, SAL_TAB_LOCATION_MAX, TRUE);
+        UpdateTabStrip();
     }
 }
 

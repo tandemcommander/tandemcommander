@@ -333,6 +333,9 @@
     <ClCompile Include="..\tabwnd.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\paneltabs.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
     <ClCompile Include="..\tasklist.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
@@ -415,6 +418,9 @@
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\common\salshell.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\saltabs.cpp">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="..\common\salunicode.cpp">
@@ -689,6 +695,9 @@
     <ClInclude Include="..\tabwnd.h">
       <Filter>h</Filter>
     </ClInclude>
+    <ClInclude Include="..\paneltabs.h">
+      <Filter>h</Filter>
+    </ClInclude>
     <ClInclude Include="..\tasklist.h">
       <Filter>h</Filter>
     </ClInclude>
@@ -741,6 +750,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\salpath.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\saltabs.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\salunicode.h">

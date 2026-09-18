@@ -8,6 +8,7 @@
 #include "mainwnd.h"
 #include "plugins.h"
 #include "fileswnd.h"
+#include "tabwnd.h" // feature 078
 #include "filesbox.h"
 #include "stswnd.h"
 #include "snooper.h"
@@ -78,7 +79,14 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             int dlHeight = 3;
             int stHeight = 0;
+            int tsHeight = 0; // feature 078: the tab strip above the directory line
             int windowsCount = 1;
+            if (TabStrip != NULL && TabStrip->HWindow != NULL)
+            {
+                tsHeight = TabStrip->GetNeededHeight();
+                InvalidateRect(TabStrip->HWindow, NULL, FALSE);
+                windowsCount++;
+            }
             if (DirectoryLine->HWindow != NULL)
             {
                 dlHeight = DirectoryLine->GetNeededHeight();
@@ -98,13 +106,18 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             HDWP hdwp = HANDLES(BeginDeferWindowPos(windowsCount));
             if (hdwp != NULL)
             {
+                if (tsHeight > 0)
+                    hdwp = HANDLES(DeferWindowPos(hdwp, TabStrip->HWindow, NULL,
+                                                  0, 0, width, tsHeight,
+                                                  SWP_NOACTIVATE | SWP_NOZORDER));
+
                 if (DirectoryLine->HWindow != NULL)
                     hdwp = HANDLES(DeferWindowPos(hdwp, DirectoryLine->HWindow, NULL,
-                                                  0, 0, width, dlHeight,
+                                                  0, tsHeight, width, dlHeight,
                                                   SWP_NOACTIVATE | SWP_NOZORDER));
 
                 hdwp = HANDLES(DeferWindowPos(hdwp, ListBox->HWindow, NULL,
-                                              0, dlHeight, width, height - stHeight - dlHeight,
+                                              0, tsHeight + dlHeight, width, height - stHeight - dlHeight - tsHeight,
                                               SWP_NOACTIVATE | SWP_NOZORDER));
 
                 if (StatusLine->HWindow != NULL)
@@ -127,7 +140,8 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 RECT r;
                 GetClientRect(HWindow, &r);
-                r.bottom = 3;
+                r.top = GetTabStripHeight(); // feature 078: the 3-pixel filler sits under the strip
+                r.bottom = r.top + 3;
                 FillRect((HDC)wParam, &r, HDialogBrush);
             }
         }
@@ -1050,6 +1064,13 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         DirectoryLine->SetLeftPanel(MainWindow->LeftPanel == this);
         ToggleDirectoryLine();
+        //---  feature 078: the tab strip object; its window is created by SetTabsEnabled() once the option is known
+        TabStrip = new CTabWindow(this);
+        if (TabStrip == NULL)
+        {
+            TRACE_E(LOW_MEMORY);
+            return -1;
+        }
         //---  nahozeni typu viewu + nacteni obsahu adresare
         SetThumbnailSize(Configuration.ThumbnailSize); // musi existovat ListBox
         if (!ListBox->CreateExW(WS_EX_WINDOWEDGE,
@@ -1104,6 +1125,13 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         ListBox->DetachWindow();
         delete ListBox;
         ListBox = NULL; // pro jistotu, at se chyby ukazou...
+
+        if (TabStrip != NULL) // feature 078
+        {
+            TabStrip->DestroyWindow();
+            delete TabStrip;
+            TabStrip = NULL;
+        }
 
         StatusLine->DestroyWindow();
         delete StatusLine;
@@ -1567,6 +1595,8 @@ int CFilesWindow::GetThumbnailSize()
 
 void CFilesWindow::SetFont()
 {
+    if (TabStrip != NULL) // feature 078
+        TabStrip->SetFont();
     if (DirectoryLine != NULL)
         DirectoryLine->SetFont();
     //if (ListBox != NULL)  // toto se nastavi z volani SetFont()
@@ -1579,6 +1609,8 @@ void CFilesWindow::SetFont()
 
 void CFilesWindow::LockUI(BOOL lock)
 {
+    if (TabStrip != NULL && TabStrip->HWindow != NULL) // feature 078
+        EnableWindow(TabStrip->HWindow, !lock);
     if (DirectoryLine != NULL && DirectoryLine->HWindow != NULL)
         EnableWindow(DirectoryLine->HWindow, !lock);
     if (StatusLine != NULL && StatusLine->HWindow != NULL)
