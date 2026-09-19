@@ -16,9 +16,11 @@
 <p>Open Salamander Task List is intended to
 control execution of all running Open Salamander tasks (version 2.52 or later).
 The most important feature is possibility to break a not-responding task (do it
-from some responding Open Salamander task). The break should invoke the Bug
-Report dialog in a target task, so you can send us the Bug Report about "hung"
-Open Salamander. This should help us to remove such bugs.</p>
+from some responding Open Salamander task). The break makes the target task
+write a bug report to <code>%LOCALAPPDATA%\Tandem Commander</code> and show a
+message with the report's location; you can attach the report to an issue at
+github.com/tandemcommander/tandemcommander. This should help us to remove such
+bugs.</p>
 
 <h3>To break a not-responding (frozen) Open Salamander task:</h3>
 <ol>
@@ -29,9 +31,10 @@ Open Salamander. This should help us to remove such bugs.</p>
     not-responding task.
     <p><b>Note</b> Current task has "current process" appendix.</p></li>
 <li>Choose the <i>Break</i> button.</li>
-<li>The break should invoke the Bug Report dialog in the selected task.</li>
-<li>Activate the Bug Report dialog box and send us the Bug Report about "hung"
-    Open Salamander.</li>
+<li>The selected task writes a bug report to <code>%LOCALAPPDATA%\Tandem
+    Commander</code>, shows a message with the report's location and closes.</li>
+<li>Attach the report to an issue at github.com/tandemcommander/tandemcommander
+    if you want to help us fix the "hung" task.</li>
 </ol>
  
 <h4>See Also</h4>

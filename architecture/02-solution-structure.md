@@ -2,7 +2,7 @@
 
 **Solution file**: `src\vcxproj\salamand.sln`
 **Visual Studio**: 2022 (Format Version 12.00, VS Version 17)
-**Total projects**: 76 C++ projects
+**Total projects**: 75 C++ projects
 
 > **Update (2026-07-16, feature 007 — plugin build policy):** 8 obsolete
 > plugins (pak, unarj, unlha, unfat, wmobile, ieviewer, splitcbn, winscp)
@@ -151,13 +151,12 @@ only UI strings, dialogs, and menus.
 | salpvenv | plugins/pictview/vcxproj/salpvenv.vcxproj | .exe | PictView environment helper |
 | sqlite | vcxproj/sqlite/sqlite.vcxproj | .dll | SQLite database engine |
 
-### Utility Executables (5 projects)
+### Utility Executables (4 projects)
 
 | Project | Path | Output | Description |
 |---------|------|--------|-------------|
 | salopen | vcxproj/salopen/salopen.vcxproj | .exe | Open files helper |
 | salspawn | vcxproj/salspawn/salspawn.vcxproj | .exe | Process spawning helper |
-| salmon | vcxproj/salmon/salmon.vcxproj | .exe | Crash detection and reporting |
 | tserver | vcxproj/tserver/tserver.vcxproj | .exe | Trace Server (debug messages) |
 | translator | vcxproj/translator/translator.vcxproj | .exe | UI translation utility |
 
@@ -229,7 +228,7 @@ salamand → lang (build order)
 | Language Modules | 29 |
 | Shell Extensions | 2 |
 | Helper Libraries | 7 |
-| Utility Executables | 5 |
+| Utility Executables | 4 |
 | Setup/Install | 3 |
 | Other | 1 (zip2sfx) + 1 (Solution Items) |
-| **Total** | **78** (76 C++ projects + 1 virtual + 1 converter) |
+| **Total** | **77** (75 C++ projects + 1 virtual + 1 converter) |

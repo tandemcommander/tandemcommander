@@ -9,6 +9,34 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
+## [Unreleased]
+
+### Removed
+
+- **The crash-reporting helper `salmon.exe`.** Since the first release the
+  program started a second process alongside itself whose job was to capture
+  a memory dump when the program crashed and upload it. Neither has been true
+  for a long time: uploading was switched off in 0.1.0, and no memory dump was
+  ever produced because the helper needed a debugging library the product
+  does not ship. What remained was a background process that waits to read
+  the program's memory — the exact pattern behaviour-based antivirus engines
+  flag, and users reported their antivirus blocking Tandem Commander because
+  of it. The helper, its start-up question about "older bug reports" (which
+  used to hold the main window unresponsive until answered) and its registry
+  key are gone; the `utils` folder keeps its other files.
+
+### Changed
+
+- **After a crash the program itself tells you where the report is.** The
+  text report is written as before (exception details, registers, call
+  stacks, loaded modules — no memory dump, nothing is sent anywhere), now
+  under the name `TC<version>-<date>-<time>.TXT` in
+  `%LOCALAPPDATA%\Tandem Commander`, and a message names the full path so
+  you can attach the file to an issue on GitHub. The folder is created when
+  it is needed; previously the report was silently lost on a machine where
+  that folder did not exist yet. Old reports left in the folder are never
+  touched. The Task List *Break* command ends in the same report and message.
+
 ## [0.1.8] — 2026-09-18
 
 **Build 192.** Feature release. Each panel can now keep several directories

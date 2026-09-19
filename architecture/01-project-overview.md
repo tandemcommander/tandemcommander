@@ -57,7 +57,6 @@ in some areas. Many comments are in Czech.
 │   │   └── shared\      Shared plugin infrastructure and build props
 │   ├── reglib\          Windows Registry file access
 │   ├── res\             Image resources and toolbars
-│   ├── salmon\          Crash detection and reporting
 │   ├── salopen\         Open files helper utility
 │   ├── salspawn\        Process spawning helper
 │   ├── setup\           Installer and uninstaller

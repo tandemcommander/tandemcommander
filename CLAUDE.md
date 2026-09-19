@@ -30,7 +30,7 @@ WinAPI C++ application — no MFC, no Qt, no cross-platform frameworks.
   `src/plugins/shared/spl_vers.h`; every notice concatenates it
   (`"… , © 2026 " VERSINFO_HOLDER_TANDEM`) and never spells it out — that
   covers all 30 `versinfo.rh2` files, the standalone `.rc` files
-  (salmon, shellext, zip sfx trio, fcremote, salpvenv) and the two
+  (shellext, zip sfx trio, fcremote, salpvenv) and the two
   hardcoded strings in `plugins2.cpp` / `zip/add_del.cpp`. The two
   notices shown in the About dialog and on the splash screen live in
   `src/versinfo.rh2` (`VERSINFO_COPYRIGHT_TANDEM` above
@@ -64,7 +64,6 @@ src/                   All source code (~2,224 files)
     shared/            Shared plugin build infrastructure
   vcxproj/             VS solution (salamand.sln) and project files
   lang/                English resources for main app
-  salmon/              Crash reporter
   shellext/            Shell extension (x86 + x64)
   setup/               Installer/uninstaller
 architecture/          Architecture documentation (see below)
@@ -119,8 +118,8 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
 
 ## Key Facts
 
-- **82 projects** in salamand.sln (1 main app, 31 plugins, 32 lang
-  modules, 7 helper libs, 5 utilities, 2 shell exts, 3 setup, 1 other)
+- **81 projects** in salamand.sln (1 main app, 31 plugins, 32 lang
+  modules, 7 helper libs, 4 utilities, 2 shell exts, 3 setup, 1 other)
 - **Plugin set is policy-driven**: 8 obsolete plugins were removed in
   feature 007 (pak, unarj, unlha, unfat, wmobile, ieviewer, splitcbn,
   winscp); `plugins.cfg` disables 10 more by default (demos and
@@ -520,12 +519,12 @@ plugin architecture preservation, UI consistency.
   attached the registered filter is never called), re-registration under a
   breakpoint (`probe/reassert_filter.ps1`), signing sweep + negative
   (`probe/sign_exempt_negative.ps1`), silent per-user install/uninstall,
-  saltests 1353/0. **Found on the way, out of scope**: `salmon.exe` loads
-  `dbghelp.dll` only from its own `utils\` directory, which is not shipped,
-  so no minidump has ever been produced in any release (text report only);
-  and an old bug report left in `%LOCALAPPDATA%\Tandem Commander\` makes
-  salmon offer it at start-up while the main thread blocks in
-  `SalmonCheckBugs`. **Owed human step**: the literal start on a clean
+  saltests 1353/0. **Found on the way, out of scope**: the crash-reporting
+  helper loaded `dbghelp.dll` only from its own `utils\` directory, which is
+  not shipped, so no minidump has ever been produced in any release (text
+  report only); and an old bug report left in `%LOCALAPPDATA%\Tandem
+  Commander\` made the helper offer it at start-up while the main thread
+  blocked (both gone with the helper in feature 079). **Owed human step**: the literal start on a clean
   Windows without the redistributable (Windows Sandbox / VM, admin needed).
   Record: `specs/077-fix-antivirus-findings/fix-log.md`.
 - 078-panel-tabs: **panel tabs** (version 0.1.8, build 192). Design Model A:
@@ -560,3 +559,40 @@ plugin architecture preservation, UI consistency.
   `ui-overrides.json` (de *Registerkarte*, three close-confirmation strings
   repaired by hand). Record: `specs/078-panel-tabs/fix-log.md`,
   `closing-report.md`.
+- 079-remove-salmon-crash-reporter: the out-of-process crash reporter
+  (`utils\salmon.exe`, `src/salmon/`, `src/salmoncl.*`, its solution project,
+  dialog `IDD_SALMON_MAIN` and 41 strings) is **gone** — antivirus engines
+  flagged the helper (a background process holding the main process open to
+  read its memory), its upload had been off since 0.1.0 and it never produced
+  a minidump (no `dbghelp.dll` shipped, 077). The application now does the two
+  things the helper did for it: it names the report
+  (`TC<shortver>-YYYYMMDD-HHMMSS[-n].TXT`, pure formatter
+  `src/common/salbugreport.*` under `saltests`, 1405 → 1427) and creates
+  `%LOCALAPPDATA%\Tandem Commander` on demand (previously a report was
+  silently lost when the folder did not exist), writes the same text report
+  as before (`CreateFileW`, wide path end to end), and shows the closing
+  message (`IDS_BUGREPORT_SAVED` / `_NOTSAVED`, `LoadStringW` — not
+  `LoadStrW`, whose critical section the crashing thread may hold) from the
+  bug-report thread with a new `MessageDone` handshake in
+  `CCallStack::HandleException`, inline fallback, a re-entry guard for a
+  nested fault on the handling thread and a guard for a crash inside the
+  bug-report thread itself; exit code stays 1. No start-up prompt about old
+  reports, no `Bug Reporter` registry key access, `CProcessListItem::SalmonPID`
+  is `Reserved1` (same offset, always 0) so 0.1.8 and this build share the
+  process list; `EnableExceptionsOn64` moved into `salamdr1.cpp`. `build.cmd`
+  deletes a stale `utils\salmon.exe` from older output trees (MSBuild rebuild
+  cleans only projects still in the solution and the installer packages the
+  tree). Translations: two-stage refresh twice; **DeepL returned the informal
+  register** for de/fr/nl/es (pinned formal under `_feature_079`), and the
+  merge tool's string-table identity is the *bundle ordinal*, so removing
+  whole 16-id bundles displaced 46 rows per language into DeepL — repaired
+  from HEAD by script, dry run 0 gaps (tooling defect recorded, not fixed).
+  Verified: full Debug + Release builds, crash probe (app + zip.spl targets,
+  report path in the message text, BM_CLICK dismissal, exit code 1), Task
+  List Break via `tools/salbreak`, start-up probes with stale reports and a
+  fresh registry (backup/restore verified key by key), signing inventory,
+  runtime-dependency check. The intermittent Debug-CRT 88-byte leak at exit is
+  the 078 one (dump captured, `#File Error#(84)`), not new. No version bump
+  (`[Unreleased]` in `CHANGELOG.md`), plugin ABI untouched (interface 106).
+  Records: `specs/079-remove-salmon-crash-reporter/fix-log.md`,
+  `closing-report.md`; probes under `probe/`.
