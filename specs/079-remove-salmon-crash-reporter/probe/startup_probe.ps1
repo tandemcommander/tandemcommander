@@ -34,8 +34,16 @@ Add-Type -Namespace TC079S -Name User32 -MemberDefinition @'
 [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string cls, IntPtr title);
 [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, System.Text.StringBuilder s, int n);
 [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+[DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr h, int id);
+[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, System.Text.StringBuilder s);
 '@
-$WM_CLOSE = 0x0010; $WM_COMMAND = 0x0111; $IDOK = 1
+$WM_CLOSE = 0x0010; $WM_GETTEXT = 0x000D; $BM_CLICK = 0x00F5
+
+# a MessageBox ignores a posted WM_COMMAND/IDOK; clicking its first button is what a user does
+function Dismiss-Dialog([IntPtr]$h) {
+    $btn = [TC079S.User32]::FindWindowEx($h, [IntPtr]::Zero, 'Button', [IntPtr]::Zero)
+    if ($btn -ne [IntPtr]::Zero) { [void][TC079S.User32]::PostMessage($btn, $BM_CLICK, [IntPtr]::Zero, [IntPtr]::Zero) }
+}
 
 $regRoot = 'HKCU\Software\Tandem Commander'
 $regCfg = "$regRoot\0.1"
@@ -60,17 +68,31 @@ function Dialogs([int]$ownerPid) {
         if ($wp -ne $ownerPid -or -not [TC079S.User32]::IsWindowVisible($h)) { continue }
         $sb = New-Object System.Text.StringBuilder 512
         [void][TC079S.User32]::GetWindowText($h, $sb, 512)
-        $list += [pscustomobject]@{ Handle = $h; Caption = $sb.ToString() }
+        $txt = New-Object System.Text.StringBuilder 2048
+        $static = [TC079S.User32]::GetDlgItem($h, 0xFFFF)
+        if ($static -ne [IntPtr]::Zero) { [void][TC079S.User32]::SendMessage($static, $WM_GETTEXT, [IntPtr]2048, $txt) }
+        $list += [pscustomobject]@{ Handle = $h; Caption = $sb.ToString(); Text = ($txt.ToString() -replace "`r?`n", ' | ') }
     }
     return $list
+}
+
+# reg.exe prints its success message on stderr; under $ErrorActionPreference = 'Stop' a
+# native command's stderr becomes a terminating error, so every reg call goes through cmd
+function Reg([string[]]$regArgs) {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $out = & reg.exe @regArgs 2>&1 | ForEach-Object { $_.ToString() }
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = $prev
+    return @{ Code = $code; Out = ($out -join ' ') }
 }
 
 function Restore-Registry {
     if (-not $script:backup) { return }
     Note ("restoring registry from {0}" -f $script:backup)
-    & reg.exe delete $regCfg /f 2>&1 | Out-Null
-    $out = & reg.exe import $script:backup 2>&1
-    if ($LASTEXITCODE -ne 0) { Bad ("reg import failed: {0}" -f ($out -join ' ')); return }
+    [void](Reg @('delete', $regCfg, '/f'))
+    $r = Reg @('import', $script:backup)
+    if ($r.Code -ne 0) { Bad ("reg import failed: {0}" -f $r.Out); return }
     $after = (Get-ItemProperty -Path "HKCU:\Software\Tandem Commander\0.1\Configuration" -Name Language -ErrorAction SilentlyContinue).Language
     if ($after -eq $script:languageBefore) { Note ("registry restored: OK (Configuration\Language = '{0}')" -f $after) }
     else { Bad ("registry restore mismatch: Language before '{0}', after '{1}'" -f $script:languageBefore, $after) }
@@ -112,13 +134,13 @@ Note ("Bug Reporter key exists before start: {0}" -f $bugReporterKeyBefore)
 if ($FreshRegistry) {
     $script:languageBefore = (Get-ItemProperty -Path "HKCU:\Software\Tandem Commander\0.1\Configuration" -Name Language -ErrorAction SilentlyContinue).Language
     $script:backup = Join-Path $Archive ("tc-backup-{0}.reg" -f $stamp)
-    $out = & reg.exe export $regRoot $script:backup /y 2>&1
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $script:backup) -or (Get-Item -LiteralPath $script:backup).Length -lt 1024) {
+    $r = Reg @('export', $regRoot, $script:backup, '/y')
+    if ($r.Code -ne 0 -or -not (Test-Path -LiteralPath $script:backup) -or (Get-Item -LiteralPath $script:backup).Length -lt 1024) {
         $script:backup = $null
-        Bad ("registry backup failed or too small: {0}" -f ($out -join ' ')); Finish
+        Bad ("registry backup failed or too small: {0}" -f $r.Out); Finish
     }
     Note ("registry backed up to {0} ({1} bytes; Configuration\Language = '{2}')" -f $script:backup, (Get-Item -LiteralPath $script:backup).Length, $script:languageBefore)
-    & reg.exe delete $regCfg /f 2>&1 | Out-Null
+    [void](Reg @('delete', $regCfg, '/f'))
     if (Test-Path "Registry::$regCfg") { Bad 'could not delete the 0.1 configuration key'; Finish }
     Note 'configuration key 0.1 deleted (fresh registry)'
 }
@@ -139,7 +161,7 @@ while ((Get-Date) -lt $deadline) {
             $seen[$d.Caption] = 1
             Note ("dialog before main window: '{0}' - answering with its default button" -f $d.Caption)
             if ($d.Caption -match 'Bug Report|Reporter') { Bad ("crash-reporter dialog at start-up: '{0}'" -f $d.Caption) }
-            [void][TC079S.User32]::PostMessage($d.Handle, $WM_COMMAND, [IntPtr]$IDOK, [IntPtr]::Zero)
+            Dismiss-Dialog $d.Handle
         }
     }
     $p.Refresh()
@@ -156,7 +178,7 @@ while ((Get-Date) -lt $settleEnd) {
     foreach ($d in (Dialogs $p.Id)) {
         if (-not $seen.ContainsKey($d.Caption)) {
             $seen[$d.Caption] = 1
-            Note ("dialog during settle: '{0}'" -f $d.Caption)
+            Note ("dialog during settle: '{0}' text: '{1}'" -f $d.Caption, $d.Text)
             if ($d.Caption -match 'Bug Report|Reporter' -or $d.Caption -match '^Tandem Commander \d') { Bad ("unexpected dialog: '{0}'" -f $d.Caption) }
             else { [void][TC079S.User32]::PostMessage($d.Handle, $WM_COMMAND, [IntPtr]$IDOK, [IntPtr]::Zero) }
         }
@@ -183,8 +205,8 @@ while ((Get-Date) -lt $exitDeadline -and -not $p.HasExited) {
     foreach ($d in (Dialogs $p.Id)) {
         if (-not $seen.ContainsKey($d.Caption)) {
             $seen[$d.Caption] = 1
-            Note ("dialog at exit: '{0}' - answering with its default button" -f $d.Caption)
-            [void][TC079S.User32]::PostMessage($d.Handle, $WM_COMMAND, [IntPtr]$IDOK, [IntPtr]::Zero)
+            Note ("dialog at exit: '{0}' text: '{1}' - clicking its button" -f $d.Caption, $d.Text)
+            Dismiss-Dialog $d.Handle
         }
     }
     Start-Sleep -Milliseconds 250

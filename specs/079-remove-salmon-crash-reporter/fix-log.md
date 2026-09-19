@@ -131,11 +131,213 @@ notice keeps its `LoadStr`; unchanged, pre-existing).
 
 ## Phase 4 — US1 removal
 
-(pending)
+- 2026-09-19 T017: `salamdr1.cpp` — `EnableExceptionsOn64` moved in verbatim
+  as a static function (no-op on x64), the WinMain wrapper calls it and then
+  `WinMainCRTStartup()`; the `SalmonInit` branch with its English
+  "initialization has failed" box, the `SalmonSetSLG` call and the
+  `SalmonCheckBugs` call are gone, as is the include.
+- T018: `CProcessListItem::SalmonPID` → `Reserved1` (same `DWORD`, same
+  offset, `= 0`), `HSalmonProcess` extern and constructor lines removed,
+  the second `AllowSetForegroundWindow` on a Break removed
+  (`tasklist.cpp`), dead `BugReportPath` global + `consts.h` extern +
+  its orphaned comment removed; `tools/salbreak/tasklist.*` mirrored.
+- T019: `git rm` of `src/salmoncl.cpp/.h`, `src/salmon/` (16 files incl.
+  `res/`), `src/vcxproj/salmon/` (5 files) — 24 files; `salamand.sln`
+  project block (2 lines) + 10 configuration lines for
+  `{41909C30-…}` removed by script, GUID no longer present; `salamand.vcxproj`
+  + `.filters` lost their `salmoncl.*` items.
+- T020: `lang.rc` template (18 lines) + DESIGNINFO block (7 lines),
+  `lang.rh` 11 ids, `texts.rc2` 40 lines (39 strings + the commented
+  `IDS_SALMON_FAILED`), `texts.rh2` 39 defines + 2 comments — all by script
+  with count assertions; `IDS_BUGREPORT_*` kept at 14101/14102.
+- T021: `baseaddr_x64.txt` / `baseaddr_x86.txt` line 82 dropped (CRLF kept).
+- T022: `build.cmd` — "Removed helper cleanup (feature 079)" stage after the
+  language policy stage deletes a stale `utils\salmon.exe` / `.pdb` with a
+  `Reconcile:` message; this is the one place outside the records that must
+  name the file (it is the file it deletes).
+- T030/T031 (pulled forward, same files untouched by the build):
+  `check_encoding.py` exclusion tuple no longer lists the helper;
+  `gen_icons.py` `ICO_TARGETS` and `tools/brand/README.md` (3 mentions)
+  cleaned; the regeneration check runs after the build.
+- Translation refresh #2 attempt before rebuilding: the exported template
+  still carried the 41 rows — `build_langs.cmd --export-templates` exports
+  from the *built* English module, so the Debug build must precede the
+  export (noted for the quickstart).
+
+- Post-removal Debug build (`build.cmd`): **BUILD SUCCEEDED** (29 s),
+  `Reconcile: removed stale utils\salmon.exe (crash reporter removed in
+  feature 079)` printed by the new stage, `utils\` now `sqlite.dll/.exp/.lib/.pdb`
+  only, `salamand.gen.slnf` no longer lists the project, `saltests: 1427
+  checks, 0 failed`, `english.slg` without the old strings and with the new
+  one.
+- **Translation refresh #2 — incident and repair.** Export from the rebuilt
+  module: template 3433 rows (was 3495), no helper rows. The merge then
+  reported **46 unique gaps per language and sent 27,512 DeepL characters**
+  (quota 467,510 → 443,094): the matcher's identity for string-table rows is
+  `(STRINGTABLE, bundle-number, id)` (`tools/translate/match.py`
+  `entry_key`), and removing four whole 16-id bundles renumbered every later
+  bundle (`[STRINGTABLE 158]` → `154`), so all rows after the removed block
+  missed their legacy match and were machine-retranslated — **human
+  translations displaced** (e.g. cs 14151, hu 078's close-confirmation
+  which even failed placeholder validation). Repair (script
+  `restore_shifted.py`, kept in the session scratchpad; method recorded
+  here): for every string-table row whose id exists in HEAD, the HEAD line
+  replaces the merged line and the HEAD provenance is written under the
+  tool's new bundle-numbered key — czech 23 rows, german 14, french 14,
+  dutch 17, hungarian 18, romanian 20, slovak 18, spanish 14 (**138 rows**;
+  provenance entries 13–15 per language). After the repair the diff against
+  HEAD contains only removals (52 removed ids per language: 39 strings +
+  `IDS_SALMON_NOT_RUNNING` + 12 dialog rows) and the bundle renumbering;
+  `translate.merge --dry-run` reports 0 gaps / 0 validation failures for all
+  8; 3433 rows each; the four formal pins intact. Lesson for the tooling
+  (not fixed here, out of scope): the identity should not depend on the
+  bundle ordinal.
+- T031 check: `python tools\brand\gen_icons.py` regenerated every `.ico` and
+  `logo.png` byte-identical (`git status` shows no image diff).
+- `tools/salbreak` builds (Release|Win32 only — the project has no x64
+  configuration; the process list is x86/x64-shared by design), output
+  ignored via `.gitignore`.
 
 ## Phase 5 — US3 start-up probes
 
-(pending)
+- 2026-09-19 `startup_probe.ps1 -StaleReports` (Debug, helper gone), first
+  run: no helper, main window in 0.9 s, responding, one product process,
+  three planted files untouched — but at exit the Debug CRT heap checker
+  raised **"Heap Message: Detected memory leaks!"** and the probe's
+  `WM_COMMAND/IDOK` did not dismiss it (a MessageBox needs `BM_CLICK`, see
+  Phase 3), so the run ended FAIL on the exit timeout. Second run (probe now
+  reads dialog texts and clicks the button): **RESULT: OK**, `exited on
+  WM_CLOSE with code 0`, no heap message at all — the leak report is
+  intermittent, matching 078's record ("two of eight runs, one 88-byte block
+  from a plugin module unloaded before the dump"). A DBWIN listener is used
+  below to capture the dump when it recurs, so it can be attributed rather
+  than assumed.
+- `-StaleReports` runs 2 and 3 (under the listener): **RESULT: OK** both,
+  main window in 0.4 s, no dialog, one process, no helper, exit code 0, files
+  untouched; no leak report in either.
+- `-FreshRegistry` run 1: behaviour OK (backup 365,476 bytes, `0.1` key
+  deleted, start in 0.4 s, no dialog, responding, one process, no helper,
+  exit code 0) but the script itself aborted at the restore step — `reg.exe`
+  prints its success message on stderr and `$ErrorActionPreference = 'Stop'`
+  turned that into a terminating error *after* the `reg import` had run.
+  Verified by hand before anything else: `Configuration\Language =
+  czech.slg` as in the backup, all 389 subkeys of the backup present (the
+  only diff line is the root key itself, which `reg query /s` does not
+  list). Probe fixed: `reg.exe` is called through a helper that relaxes the
+  error preference for the call and reads `$LASTEXITCODE` (a first attempt
+  through `cmd /c` broke on quoting and failed before touching the registry).
+- `-FreshRegistry` run 2 (fixed script, under the listener): **RESULT: OK**,
+  `registry restored: OK (Configuration\Language = 'czech.slg')`, 389 keys.
+  At exit the Debug heap checker reported a leak; **dump captured** (pid
+  23460): `#File Error#(84) : {16097} normal block at 0x0000000101F7BA40, 88
+  bytes long. Data: 00 00 … (16 zero bytes)`, `88 bytes in 1 Normal Blocks`,
+  `202804 bytes in 237 CRT Blocks`. This is byte-for-byte the block feature
+  078 recorded on 0.1.8 before this feature ("one block, 88 bytes, first 16
+  bytes zero, `#File Error#(84)`" — a plugin module unloaded before the
+  dump), so it is **pre-existing and unrelated to 079**; it shows on the
+  fresh-registry (first-run) path in 2 of 2 runs and in 0 of 3 stale-report
+  runs here. Left as recorded in 078.
+- T029 Task List Break: `tools/salbreak` (Release|Win32) started next to a
+  Debug instance and its global hotkey Ctrl+Alt+Shift+F12 sent by
+  `SendKeys`: closing message `Tandem Commander 0.1.8 (x64)` naming
+  `…\TC018X64-20260919-100716.TXT` (23,133 bytes, `Exception: open
+  salamander break exception`), dismissed, **exit code 1, RESULT: OK** —
+  the message came from the bug-report thread while the main thread was
+  idle, as designed.
+- SC-007 grep (`git grep -i -l salmon` outside `specs/`, `CHANGELOG.md`,
+  third-party sources and `.specify/`): `build.cmd` (the cleanup stage must
+  name the file it deletes) and the three **disabled** languages'
+  `salamand.slt` (chinesesimplified, russian, ukrainian — not refreshed by
+  policy since 046; already flagged as a re-enabling precondition). No hit
+  in `src/`, `tools/`, `help/`, `architecture/`, `CLAUDE.md`; `Bug Reporter`
+  absent from `src`, `tools`, `help`.
+- T023 builds after the translation repair: `build.cmd full` (Debug)
+  **BUILD SUCCEEDED**, language modules built 189; Debug tree: no `salmon*`
+  outside stale *Intermediate* scaffolding (`Intermediate\salmoncl.obj`,
+  `plugins\Intermediate\salmon\…` — Debug keeps its Intermediate directories
+  by design; the 079 cleanup stage now removes those two as well), `utils\`
+  = sqlite only, `saltests: 1427 checks, 0 failed`, all 9 `.slg` free of the
+  old helper string.
+- T025 crash probe series on Debug, helper gone (no `-AllowHelper`):
+  **app 3/3 OK** (reports `TC018X64-20260919-101059/101108/101116.TXT`,
+  33,088 / 24,902 / 24,895 bytes, `execution address = 0x0`, message
+  caption `Tandem Commander 0.1.8 (x64)`, dismissed by BM_CLICK in ~210 ms,
+  **exit code 1**, `salmon.exe processes: 0`), **plugin 3/3 OK** (zip.spl,
+  `execution address = 0x0000010021100000` inside
+  `[0x10021100000..0x10021224000)`, 24,643 / 24,658 / 24,659 bytes, exit
+  code 1).
+- **T026 (report not writable) found a real defect in the fallback.** With
+  `%LOCALAPPDATA%\Tandem Commander` replaced by a zero-byte *file*, the
+  thread's `CreateFileW` failed as intended, the crashing (UI) thread took
+  the inline path and called `MessageBoxW` — and the probe's diagnostics
+  showed the box **created but invisible** (`#32770 … visible=False`) with
+  the process *not responding*. Cause: a modal loop on the crashing thread
+  dispatches messages to its windows; their handlers enter call-stack macros,
+  and `CCallStack::Push` suspends any thread that does so while an exception
+  is active unless its stack is marked `DontSuspend` — the UI thread
+  suspended itself (the bug-report thread is created with `DontSuspend`
+  for exactly this reason; the old comment "Opening dialog windows freezes,
+  so this cannot be used" in `HandleException` is the same lesson). Fix:
+  (1) the bug-report thread shows the closing message in **both** outcomes
+  (`ShowBugReportMessage(path, ret)`), and the crashing thread no longer
+  retries inline after a reported failure (the same path fails the same way);
+  (2) the remaining inline fallback (thread unusable / timed out) marks the
+  current thread's `CCallStack` `DontSuspend = TRUE` before the box.
+  Contract C4 updated. Re-verified below after the rebuild.
+- After the rebuild (`build.cmd`, BUILD SUCCEEDED): app and plugin probes
+  **OK** again (exit code 1, dismissed in ~212 ms); **T026 OK** — the Czech
+  "could not be saved" message names the intended path
+  `C:\Users\pavel\AppData\Local\Tandem Commander\TC018X64-20260919-101732.TXT`,
+  dismissed in 217 ms, **exit code 1** (the probe's first assertion looked for
+  the English wording; it now checks the path, language-neutral).
+- T024 shipped-tree checks on the Release build of this state: **BUILD
+  SUCCEEDED** (1 min 20 s), 189 language modules, `Visual C++ runtime
+  14.40.33807: 4 file(s) copied`, `runtime closure OK: 219 module(s) scanned,
+  59 runtime import(s)`; `Release_x64` recursive search for `salmon*`: **0**;
+  `utils\` = `sqlite.dll` only; `sign_release.ps1 -VerifyOnly` inventory
+  (unsigned build, every candidate listed as not signed by the current
+  certificate, as expected) contains no `utils\salmon.exe`.
+
+## Phase 7 — Final gate
+
+- T037 formatting: VS 2022's `clang-format` 17.0.3 with the repository
+  `.clang-format` over the touched C++ files. Whitespace-only results kept:
+  `callstk.cpp` (8 lines), `precomp.h` (4: include-comment alignment),
+  `tools/salbreak/tasklist.cpp` (2). `saltests.cpp` was **reverted to HEAD**:
+  the tool also reflowed pre-existing 069/071/078 lines (string-literal
+  splits) that this feature does not touch — constitution III; the only 079
+  line it wanted to change was a comment column. The two new
+  `salbugreport.*` files received the UTF-8 BOM the house rule requires
+  (`saltests.cpp` never had one; left as found).
+- T038 final gate on the final sources (after formatting), 2026-09-19:
+  - `build.cmd full` (Debug): **BUILD SUCCEEDED**, 189 language modules,
+    encoding guard `--strict` **TOTAL: 0 finding(s)** (run directly as well;
+    the `salmon/` exclusion is gone from the checker); `build.cmd full
+    release`: **BUILD SUCCEEDED**, 189 language modules, runtime 4 files
+    shipped, closure OK.
+  - Debug tree: `salmon*` files **0** (the cleanup stage now also removes the
+    stale Intermediate scaffolding), `utils\` = sqlite only;
+    **`saltests: 1427 checks, 0 failed`**.
+  - Debug crash matrix: **app 3/3 OK, plugin (zip.spl) 3/3 OK**, exit code 1
+    each; **not-writable OK** (exit code 1, message names the intended
+    path); **stale reports OK** (one process, no helper, files untouched,
+    exit 0); **fresh registry OK** (backup → run → restore verified,
+    `Configuration\Language = 'czech.slg'`; the pre-existing Debug-CRT leak
+    box appeared on this first-run path again and was dismissed); **Task
+    List Break OK** (exit code 1).
+  - Release tree: `salmon*` files **0**, `utils\` = `sqlite.dll`;
+    `check_runtime_deps.py`: `runtime closure OK: 219 module(s) scanned, 59
+    runtime import(s)`; `sign_release.ps1 -VerifyOnly` inventory: **215
+    candidate lines, 0 naming the helper** (unsigned build, so every
+    candidate is "not signed by the current certificate" — expected).
+  - Release crash probe (app): report `TC018X64-20260919-102048.TXT`
+    (28,163 bytes), exit code 1, **OK**; Release stale-reports start-up:
+    **OK**.
+  - `salamand.sln` / `tandemcommander.iss`: 0 matches. Repository grep
+    (SC-007): `CLAUDE.md` (the feature paragraph names what was removed —
+    a record, like the change log), `build.cmd` (cleanup stage) and the
+    three disabled languages' retained `salamand.slt`; nothing in `src/`,
+    `tools/`, `help/`, `architecture/`.
 
 ## Phase 6 — US4 tooling, docs, changelog
 

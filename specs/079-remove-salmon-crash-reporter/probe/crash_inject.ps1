@@ -226,7 +226,10 @@ Write-Host ("probe: message caption = '{0}'" -f $box.Caption)
 Write-Host ("probe: message text    = '{0}'" -f ($box.Text -replace "`r?`n", ' | '))
 $textOk = $false
 if ($ExpectNotSaved) {
-    $textOk = ($box.Text -match 'could not be saved')
+    # language-neutral: the "could not be saved" message names the intended path under the
+    # (blocked) report folder, and no report file can exist there
+    $textOk = ($box.Text.ToLowerInvariant().Contains(($bugDir + '\TC').ToLowerInvariant())) -and
+              -not (Test-Path -LiteralPath (Join-Path $bugDir 'x') -ErrorAction SilentlyContinue)
 } else {
     $textOk = ($box.Text.ToLowerInvariant().Contains($txt.FullName.ToLowerInvariant()))
 }

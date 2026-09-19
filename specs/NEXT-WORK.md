@@ -32,22 +32,22 @@ blocker for anything already shipped.
 >    a Windows VM/Sandbox that has no "Visual C++ 2015-2022 Redistributable
 >    (x64)" entry and confirm the main window and all 20 plugins; steps in
 >    `077-fix-antivirus-findings/quickstart.md`, "Owed human step".
-> 2. **Minidumps have never worked**: `salmon.exe` loads `dbghelp.dll` only
->    from its own `utils\` directory (`src/salmon/minidump.cpp:16-20`), which
->    is not shipped, so every crash produces the text report only. Either
->    ship `dbghelp.dll` from the Windows SDK next to `salmon.exe` or fall
->    back to the system copy. Small, one file.
-> 3. **Old bug report blocks start-up**: with a leftover report in
->    `%LOCALAPPDATA%\Tandem Commander\`, salmon opens its dialog at start
->    and the main thread waits in `SalmonCheckBugs` until it is answered;
->    the window is "not responding" meanwhile. Worth a look with item 2.
+> 2. ~~**Minidumps have never worked**~~ — **closed by feature 079**: the
+>    crash-reporting helper was removed altogether (antivirus false
+>    positives); the text report is the deliverable, now named and announced
+>    by the application itself. If minidumps are ever wanted, they would be
+>    a new in-process feature (`MiniDumpWriteDump` from the system
+>    `dbghelp.dll`), not a revival of the helper.
+> 3. ~~**Old bug report blocks start-up**~~ — **closed by feature 079** with
+>    the helper: nothing scans the report folder at start-up any more.
 > 4. **Reputation work** (076 section 6): Avast Whitelisting Program
 >    registration and false-positive submission of each release, SHA-256 +
 >    VirusTotal link in the release notes, an "antivirus warning?" FAQ page,
 >    keep the same certificate at renewal (2027-08-03).
 > 5. **Cosmetics** (076 section 3.4): version resources for `7zwrapper.dll`
->    and `sqlite.dll`, drop `HIGH_PRIORITY_CLASS` for `salmon.exe`,
->    `/guard:cf`, remove the dead pre-Vista `ZwQueryInformationProcess` path.
+>    and `sqlite.dll` (the `HIGH_PRIORITY_CLASS` item went away with the
+>    helper in feature 079), `/guard:cf`, remove the dead pre-Vista
+>    `ZwQueryInformationProcess` path.
 >
 > Ship gate for 077 (not done here): version bump + `CHANGELOG.md` entry,
 > drafted in `077-fix-antivirus-findings/fix-log.md`, "Changelog draft".
@@ -112,10 +112,10 @@ upgrading meant running the installer by hand. Full evidence in
 Scope note taken at HEAD: the plumbing already exists — `src/mainwnd3.cpp:6220`
 onwards has an elaborate `WM_QUERYENDSESSION` / `WM_ENDSESSION` handler
 including critical-shutdown handling and configuration backup. The work is
-therefore *behave correctly on `ENDSESSION_CLOSEAPP` and actually close*, the
-same for `salmon` (also listed as holding files), and a decision on
-`RegisterApplicationRestart` — **not** writing Restart Manager support from
-scratch.
+therefore *behave correctly on `ENDSESSION_CLOSEAPP` and actually close* (the
+crash-reporting helper that was also listed as holding files is gone since
+feature 079), and a decision on `RegisterApplicationRestart` — **not** writing
+Restart Manager support from scratch.
 
 First step is reproduction with 072 `quickstart.md` §2b and confirming exit 5.
 The design question is whether the panels' state survives the restart; the API

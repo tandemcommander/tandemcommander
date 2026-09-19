@@ -44,11 +44,21 @@ header, the exception information (`Information About Exception` with
    in termination).
 2. If the bug-report thread exists and the crashing thread is not that
    thread: signal `Event`, wait `EventProcessed` up to **6 000 ms**. On
-   success, wait `MessageDone` **without a time limit** (user-driven).
-3. Otherwise (no thread, timeout, failure reported, or the crashing thread
-   *is* the bug-report thread): write the report on the crashing thread
-   (suspending the bug-report thread first, as today, unless it is the
-   current thread), then show the message on the crashing thread.
+   success — whether the thread wrote the report or reported that it could
+   not — wait `MessageDone` **without a time limit** (user-driven): the
+   thread shows the notices and the closing message (saved / not saved)
+   itself. There is no inline retry after a reported failure: the same path
+   would fail the same way, and a modal loop on the crashing thread is
+   unsafe (below).
+3. Otherwise (no thread, timeout, or the crashing thread *is* the
+   bug-report thread): write the report on the crashing thread (suspending
+   the bug-report thread first, as today, unless it is the current thread),
+   mark the current thread's `CCallStack` as `DontSuspend` — a modal loop
+   dispatches messages to this thread's windows, their handlers enter
+   call-stack macros, and `CCallStack::Push` suspends a thread that does so
+   while an exception is active; without the mark the thread suspends itself
+   and the box never shows (found by the not-writable probe) — then show
+   the message on the crashing thread.
 4. `TerminateProcess(GetCurrentProcess(), 1)` — the exit code stays 1.
 
 ## C5. Closing message

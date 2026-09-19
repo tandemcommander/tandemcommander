@@ -29,16 +29,22 @@ the new `TestBugReport079` checks.
 ## 2. Translation refresh (FR-010, SC-006) — done once during implementation
 
 ```bat
+build.cmd                                   :: the export reads the BUILT English module
 src\vcxproj\build_langs.cmd --export-templates --module salamand
 cd tools
-python -m translate.merge --module salamand
+python -m translate.merge --module salamand --templates D:\Build\OpenSal\tandemcommander\translator\templates
 cd ..
 build.cmd full
 ```
 
-Expected: `translate.merge` reports the two new strings translated for 8
-languages and 0 validation failures; the full build imports every
-`salamand.slt`; the grep below returns nothing:
+`translate.merge` ignores `OPENSAL_BUILD_DIR` (it defaults to the repo's
+`build\` folder), hence `--templates`. Expected: the merge reports the two
+new strings translated for 8 languages and 0 validation failures; the full
+build imports every `salamand.slt`; the grep below returns nothing. Caveat
+found in implementation: the matcher keys string-table rows by bundle
+number, so a refresh that removes whole 16-id bundles re-translates every
+later row — check the "unique gaps" count against the number of strings
+actually added before accepting a merge:
 
 ```powershell
 Select-String -Path translations\*\salamand.slt -Pattern 'salmon|Bug Reporter' -CaseSensitive:$false |
@@ -104,7 +110,14 @@ running.
 ## 7. Repository grep (SC-007)
 
 ```powershell
-git grep -i -l salmon -- . ':!specs' ':!CHANGELOG.md' ':!src/common/dep' ':!src/plugins/codeview/web' ':!temp'
+git grep -i -l salmon -- . ':!specs' ':!CHANGELOG.md' ':!src/common/dep' ':!src/plugins/codeview/web' ':!temp' ':!.specify'
 ```
 
-Expected: no output.
+Expected: exactly three kinds of hit and nothing else — `CLAUDE.md` (the
+feature-079 paragraph in *Recent Changes* records what was removed, like the
+change log), `build.cmd` (its feature-079 cleanup stage must name the stale
+file it deletes) and the three **disabled** languages'
+`translations/<lang>/salamand.slt` (chinesesimplified, russian, ukrainian:
+retained, not refreshed by policy since 046; they carry the removed strings
+until they are re-enabled and refreshed). `git grep -n "Bug Reporter" -- src
+tools help` prints nothing.
