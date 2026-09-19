@@ -186,15 +186,13 @@ BOOL CTaskList::FireEvent(DWORD todo, DWORD pid, BOOL* timeouted)
         ProcessList->TodoTimestamp = GetTickCount();
         ProcessList->PID = pid;
 
-        // pri breaknuti jine instance Salamandera pustime jeho Salmon nad nas
         if (todo == TASKLIST_TODO_BREAK)
         {
             for (DWORD i = 0; i < ProcessList->ItemsCount; i++)
             {
                 if (ProcessList->Items[i].PID == pid)
                 {
-                    AllowSetForegroundWindow(ProcessList->Items[i].PID);       // radeji povolime i vlastniho Salamandera, i kdyz to je asi zbytecne...
-                    AllowSetForegroundWindow(ProcessList->Items[i].SalmonPID); // rozhodne musime pustit nad nas jeho Salmon
+                    AllowSetForegroundWindow(ProcessList->Items[i].PID); // radeji povolime i vlastniho Salamandera, i kdyz to je asi zbytecne...
                     break;
                 }
             }

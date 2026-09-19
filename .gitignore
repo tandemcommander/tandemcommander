@@ -29,3 +29,7 @@ __pycache__/
 *.atp
 *.sdc
 /translations/**/*.bak
+
+# feature 079: local builds of the developer tool salbreak (tools/salbreak/salbreak.vcxproj)
+/tools/salbreak/Release/
+/tools/salbreak/Debug/

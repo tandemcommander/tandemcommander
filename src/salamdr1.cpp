@@ -40,7 +40,6 @@ extern "C"
 }
 #include "salshlib.h"
 #include "shiconov.h"
-#include "salmoncl.h"
 #include "jumplist.h"
 #include "themes_palette.h"
 #include "usermenu.h"
@@ -88,6 +87,39 @@ void X64StressTestAlloc()
 }
 
 #endif //X64_STRESS_TEST
+
+// We want to be notified about SEH exceptions even on x64 Windows 7 SP1 and newer
+// http://blog.paulbetts.org/index.php/2010/07/20/the-case-of-the-disappearing-onload-exception-user-mode-callback-exceptions-in-x64/
+// http://connect.microsoft.com/VisualStudio/feedback/details/550944/hardware-exceptions-on-x64-machines-are-silently-caught-in-wndproc-messages
+// http://support.microsoft.com/kb/976038
+// (feature 079: moved here from the removed crash-reporter client; a no-op for the x64 build)
+static void EnableExceptionsOn64()
+{
+    typedef BOOL(WINAPI * FSetProcessUserModeExceptionPolicy)(DWORD dwFlags);
+    typedef BOOL(WINAPI * FGetProcessUserModeExceptionPolicy)(LPDWORD dwFlags);
+    typedef BOOL(WINAPI * FIsWow64Process)(HANDLE, PBOOL);
+#define PROCESS_CALLBACK_FILTER_ENABLED 0x1
+
+    HINSTANCE hDLL = LoadLibrary("KERNEL32.DLL");
+    if (hDLL != NULL)
+    {
+        FIsWow64Process isWow64 = (FIsWow64Process)GetProcAddress(hDLL, "IsWow64Process");                                                      // Min: XP SP2
+        FSetProcessUserModeExceptionPolicy set = (FSetProcessUserModeExceptionPolicy)GetProcAddress(hDLL, "SetProcessUserModeExceptionPolicy"); // Min: Vista with hotfix
+        FGetProcessUserModeExceptionPolicy get = (FGetProcessUserModeExceptionPolicy)GetProcAddress(hDLL, "GetProcessUserModeExceptionPolicy"); // Min: Vista with hotfix
+        if (isWow64 != NULL && set != NULL && get != NULL)
+        {
+            BOOL bIsWow64;
+            if (isWow64(GetCurrentProcess(), &bIsWow64) && bIsWow64)
+            {
+                DWORD dwFlags;
+                if (get(&dwFlags))
+                    set(dwFlags & ~PROCESS_CALLBACK_FILTER_ENABLED);
+            }
+        }
+        FreeLibrary(hDLL);
+    }
+}
+
 // nas vlastni vstupni bod, o ktery jsme si pozadali linker pomoci pragmy
 int MyEntryPoint()
 {
@@ -98,15 +130,12 @@ int MyEntryPoint()
 
     int ret = 1; // error
 
-    // spustime Salmon, chceme aby pochytal maximum nasich padu
-    if (SalmonInit())
-    {
-        // zavolame puvodni entry point aplikace a spustime tim program
-        ret = WinMainCRTStartup();
-    }
-    else
-        MessageBox(NULL, "Tandem Commander Bug Reporter (salmon.exe) initialization has failed. Please reinstall Tandem Commander.",
-                   SALAMANDER_TEXT_VERSION, MB_OK | MB_ICONSTOP);
+    // feature 079: no crash-reporting helper process any more; the exception filter
+    // registered by CCallStack writes the report and shows the closing message itself
+    EnableExceptionsOn64();
+
+    // zavolame puvodni entry point aplikace a spustime tim program
+    ret = WinMainCRTStartup();
 
     // sem uz mi debugger nechodi, sestreli nas v RTL (testovano pod VC 2008 s nasim RTL)
 
@@ -4084,9 +4113,6 @@ FIND_NEW_SLG_FILE:
 
     strcpy(Configuration.LoadedSLGName, Configuration.SLGName);
 
-    // nechame jiz bezici salmon nacist zvolene SLG (zatim pouzival nejake provizorni)
-    SalmonSetSLG(Configuration.SLGName);
-
     // nastavime lokalizovane hlasky do modulu ALLOCHAN (zajistuje pri nedostatku pameti hlaseni uzivateli + Retry button + kdyz vse selze tak i Cancel pro terminate softu)
     SetAllocHandlerMessage(LoadStr(IDS_ALLOCHANDLER_MSG), SALAMANDER_TEXT_VERSION,
                            LoadStr(IDS_ALLOCHANDLER_WRNIGNORE), LoadStr(IDS_ALLOCHANDLER_WRNABORT));
@@ -4600,9 +4626,6 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 
                     // dame seznamu procesu vedet, ze bezime a mame hlavni okno (je mozne nas aktivovat pri OnlyOneInstance)
                     TaskList.SetProcessState(PROCESS_STATE_RUNNING, MainWindow->HWindow);
-
-                    // pozadame Salmon o kontrolu, zda na disku nejsou stare bug reporty, ktere by bylo potreba odeslat
-                    SalmonCheckBugs();
 
                     if (IsSLGIncomplete[0] != 0 && Configuration.ShowSLGIncomplete)
                         PostMessage(MainWindow->HWindow, WM_USER_SLGINCOMPLETE, 0, 0);

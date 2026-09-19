@@ -623,11 +623,11 @@ CCallStack::ThreadBugReportF(void* param)
                 }
             }
 
-            // feature 079: tell the user where the report is (the former out-of-process
-            // helper showed this dialog); when the report could not be written the crashing
-            // thread retries inline and shows the message itself
-            if (ret)
-                ShowBugReportMessage(data->BugReportPath, TRUE);
+            // feature 079: tell the user where the report is, or that it could not be
+            // saved (the former out-of-process helper showed this dialog). This thread
+            // was created with DontSuspend, so it may run a modal loop while an
+            // exception is active; the crashing thread must not (see HandleException)
+            ShowBugReportMessage(data->BugReportPath, ret);
 
             data->ExitProcess = TRUE; // terminate the thread
             SetEvent(data->MessageDone);
@@ -865,8 +865,11 @@ int CCallStack::HandleException(EXCEPTION_POINTERS* e, DWORD shellExtCrashID, co
             reportInThisThread = TRUE; // on error or timeout, we will try to generate the report here as well
         else
         {
-            reportInThisThread = TBRData.EventProcessedRet == FALSE; // if generation failed in the thread, try here too
-            // the thread now shows the notices and the closing message; wait until the user dismissed them
+            // the thread wrote the report (or reported that it could not) and now shows the
+            // notices and the closing message - saved or not; wait until the user dismissed
+            // them. No inline retry on failure: the same path would fail the same way, and
+            // a modal loop on this thread is unsafe (see below)
+            reportInThisThread = FALSE;
             WaitForSingleObject(TBRData.MessageDone, INFINITE);
         }
     }
@@ -886,6 +889,16 @@ int CCallStack::HandleException(EXCEPTION_POINTERS* e, DWORD shellExtCrashID, co
         if (threadUsable)
             ResumeThread(BugReportThread);
 
+            // A modal loop on this thread dispatches messages to its windows; their handlers
+            // enter call-stack macros, and CCallStack::Push suspends a thread that does so
+            // while an exception is active - this thread would suspend itself and the box
+            // would never show. Mark it like the bug-report thread before showing anything.
+#ifndef CALLSTK_DISABLE
+        static CCallStack* thisStack;
+        thisStack = CCallStack::GetThis();
+        if (thisStack != NULL)
+            thisStack->DontSuspend = TRUE;
+#endif // CALLSTK_DISABLE
         ShowBugReportMessage(bugReportPath, written);
     }
 

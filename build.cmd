@@ -191,6 +191,22 @@ if not "%LANGS_STAGE_EXIT%"=="0" (
 set /a REGISTERED_LANGS=ENABLED_LANGS+DISABLED_LANGS
 
 :: ============================================================
+:: Removed helper cleanup (feature 079)
+:: ============================================================
+:: The crash reporter utils\salmon.exe was removed from the solution.
+:: MSBuild "rebuild" only cleans projects that are still in the
+:: solution, so an older output tree would keep the stale binary --
+:: and the installer packages the tree recursively, i.e. it would
+:: ship it. Delete it here on every build, like stale plugin outputs.
+if exist "%OUT_DIR%\utils\salmon.exe" (
+    del /f /q "%OUT_DIR%\utils\salmon.exe" >nul 2>&1
+    echo Reconcile: removed stale utils\salmon.exe ^(crash reporter removed in feature 079^)
+)
+if exist "%OUT_DIR%\utils\salmon.pdb" del /f /q "%OUT_DIR%\utils\salmon.pdb" >nul 2>&1
+if exist "%OUT_DIR%\plugins\Intermediate\salmon" rmdir /s /q "%OUT_DIR%\plugins\Intermediate\salmon" >nul 2>&1
+if exist "%OUT_DIR%\Intermediate\salmoncl.obj" del /f /q "%OUT_DIR%\Intermediate\salmoncl.obj" >nul 2>&1
+
+:: ============================================================
 :: File-name display-encoding guard (feature 042)
 :: ============================================================
 :: Fails the build when a file name would be destroyed on its way

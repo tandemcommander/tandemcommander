@@ -1547,21 +1547,6 @@ SLGINCOMPLETE,""
 2,80,122,50,14,1,"Annuler"
 9,139,122,50,14,1,"Aide"
 
-[DIALOG 6130]
-351,199,1,"Rapport d'anomalie Tandem Commander"
-6131,8,9,339,16,1,"Un problème a contrainty Tandem Commander à fermer. Envoyez-nous le rapport d'anomalie ci-dessous pour nous permettre de résoudre de tels problèmes à l'avenir."
-6132,8,33,339,8,1,"Politique de confidentialité: nous ne fournissons aucune de vos informations à des tiers."
-6140,8,42,84,8,0,"..."
-6134,8,51,169,8,1,"Description de l'erreur (optionnel)"
-6133,254,48,90,14,1,"&Voir le rapport"
-6135,8,69,66,8,1,"&Dernière action:"
-6136,8,79,336,54,1,""
-6137,8,144,70,8,1,"Email de &contact:"
-6138,8,154,336,14,1,""
-6139,8,178,115,10,1,"&Relancer Tandem Commander"
-1,158,176,90,14,1,"&Envoyer le rapport"
-2,254,176,93,14,1,"&Ne pas envoyer le rapport"
-
 [DIALOG 6208]
 352,96,1,"Confirmer le lien de la copie cible"
 6,31,73,50,14,1,"&Oui"
@@ -3386,64 +3371,17 @@ SLGINCOMPLETE,""
 [STRINGTABLE 152]
 14000,1,"[invalide]"
 14005,1,"Administrateur"
-14010,1,"Veuillez entrer une adresse email valide pour nous permettre de vous aider face au problème indiqué."
-14011,1,"Veuillez attendre la fin de la compression et du téléchargement."
-14012,1,"Etes-vous sûr de ne pas vouloir nous indiquer ce problème? Sans votre rapport, nous ne pourrons pas le résou_dre.\n\nCliquez sur OK pour supprimer le rapport sans nous l'envoyer."
 
 [STRINGTABLE 153]
-14020,1,"Le fichier à envoyer dépasse la taille limite autorisée. Code: %d."
-14021,1,"Le fichier n'a été que partiellement envoyé. Code: %d."
-14022,1,"Aucun fichier n'a été envoyé. Code: %d."
-14023,1,"Absence d'un répertoire temporaire. Code: %d."
-14024,1,"Impossible d'écrire le fichier sur le disque. Code: %d."
-14025,1,"Une extension a empêché le téléchargement du fichier. Code: %d."
-14026,1,"Erreur de téléchargement inconnue. Code: %d."
-14030,1,"Erreur de syntaxe dans la réponse du serveur. Marqueur d'ouverture non trouvé."
-14031,1,"Erreur de syntaxe dans la réponse du serveur. Marqueur de fermeture non trouvé."
-
-[STRINGTABLE 154]
-14032,1,"Erreur de syntaxe dans la réponse du serveur. Valeur non trouvée."
-14040,1,"Réception de donnée impossible. Code: %d."
-14041,1,"Fermeture de connexion impossible. Code: %d."
-14042,1,"Envoi de donnée impossible. Code: %d."
-14043,1,"Connexion au serveur impossible. Code: %d."
-14044,1,"Ouverture de connexion impossible. Code: %d."
-14045,1,"Résolution de nom d'hôte impossible. Code: %d."
-14046,1,"Initialisation de connexion impossible. Code: %d."
-
-[STRINGTABLE 155]
-14050,1,"Erreur de lecture du fichier %s"
-14051,1,"Mémoire insuffisante"
-14052,1,"Erreur de lecture de tazille du fichier %s"
-14053,1,"Echec d'ouverture de %s"
-14061,1,"Des rapports d'anomalie plus anciens ont été trouvés. Voulez-vous nous signaler également ces anomalies pour nous aider à améliorer Tandem Commander?\n\nCliquez Oui pour traiter ces anciens rapports d'anomalie. Cliquez Non pour les supprimer."
-14062,1,"Rapport d'anomalie Tandem Commander"
-14063,1,"Compression en cours, veuillez patienter..."
-
-[STRINGTABLE 156]
-14064,1,"Téléchargement en cours, veuillez patienter..."
-14065,1,"Téléchargement du rapport réussi.\n\nMerci de nous aider à améliorer Tandem Commander!"
-14066,1,"Le téléchargement du rapport a échoué: %s\n\nVeuillez nous envoyer ce rapport par email à www.tandemcommander.org et effecez-le de votre disque. Cliquez sur OK pour voir le rapport."
-14067,1,"Le compression du rapport a échoué: %s\n\nVeuillez compresser le rapport d'anomalie avec 7-Zip, l'envoyer par email à www.tandemcommander.org, et le supprimer de votre disque. Cliquez sur OK pour voir le rapport."
-14068,1,"Echec du chargement de %s."
-14070,1,"Il s'agit d'un outil interne à Tandem Commander; ne le lancez pas directement."
-14071,1,"Version incorrecte du Rapport d'anomalie Tandem Commander. Veuillez nous contacter à www.tandemcommander.org."
-14072,1,"Un problème a contraint Tandem Commander à fermer.\nCréation du rapport d'anomalie, veuillez patienter..."
-14073,1,"Un problème est survenu pendant la création du rapport d'anomalie:\n%s"
-14074,1,"Création du fichier de vidage %s impossible. Code: %d."
-14075,1,"Erreur pendant la création du fichier de vidage. Code: %d."
-
-[STRINGTABLE 157]
-14100,1,"Le Rapporteur d'anomalie Tandem Commander (salmon.exe) n'est pas lancé. Tandem Commander ne saura pas traiter d'éventuels plantages. Veuillez relancer Tandem Commander."
 14101,1,"Un problème est survenu, forçant Tandem Commander à se fermer.\n\nUn rapport de bug a été enregistré à l'emplacement suivant :\n%s\n\nRien n'est envoyé nulle part. Si vous souhaitez aider à améliorer Tandem Commander, veuillez joindre ce fichier à un ticket sur github.com/tandemcommander/tandemcommander/issues."
 14102,1,"Un problème est survenu, forçant Tandem Commander à se fermer.\n\nLe rapport de bug n’a pas pu être enregistré à l’emplacement :\n%s"
 
-[STRINGTABLE 158]
+[STRINGTABLE 154]
 14150,1,"Traduction inachevée d'Tandem Commander"
 14151,1,"La traduction d'Tandem Commander dans votre langue n'est pas terminée. Vous pouvez venir sur notre forum de discussion et collaborer à cette traduction:"
 14155,1,"Impossible de placer le fichier ou le répertoire dans la Corbeille car leur nom est invalide.\n\nPartie invalide du nom: "%s"\n\nConseil: Essayez de les renommer avant de les envoyer dans la Corbeille ou effacez-les de manière permanente (touches Maj+Suppr)."
 
-[STRINGTABLE 159]
+[STRINGTABLE 155]
 14165,1,"Google Drive"
 14166,1,"Dropbox"
 14167,1,"OneDrive"
@@ -3451,7 +3389,7 @@ SLGINCOMPLETE,""
 14170,1,"impossible de résoudre le lien"
 14171,1,"Point de montage du volume"
 
-[STRINGTABLE 160]
+[STRINGTABLE 156]
 14180,1,"Erreur d'obtention de la taille du fichier cible de lien"
 14181,1,"Vous tentez de déplacer les fichiers et les répertoires sélectionnés en archive. Cela n'est pas possible car la sélection contient un lien vers un répertoire (point de jonction, point de montage de volume, ou lien symboliquje). Veuillez poursuivre sans supprimer de fichiers du disque après mise en archive.\n\nLien: %s"
 14185,1,"L'opération disque est en cours."
@@ -3460,7 +3398,7 @@ SLGINCOMPLETE,""
 14188,1,"Windows refuse d'annuler l'arrêt. Ce message va le bloquer temporairement. Veuillez patienter pour annuler manuellement l'arrêt avant de fermer ce message, sinon Tandem Commander se fermera sans sauvegarder la configuration."
 14189,1,"Windows refuse d'annuler l'arrêt. Ce message va le bloquer temporairement.\n\nQuelques opérations sur disque sont en cours. Voulez-vous les annuler maintenant? Cliquez sur Non seulement si vous avez annulé manuellement l'arrêt, sinon vous risquez d'avoir des fichiers non terminés sur votre disque.\n\nVeuillez attendre pour annuler manuellement l'arrêt avant de répondre à cette question, sinon Tandem Commander se fermera sans sauvegarder la configuration."
 
-[STRINGTABLE 161]
+[STRINGTABLE 157]
 14195,1,"Fermeture de la fenêtre Rechercher, veuillez patienter..."
 14196,1,"Ce dossier contient des entrées dont les noms semblent identiques mais qui utilisent des orthographes Unicode différentes (par exemple, accents précomposés vs accents décomposés) : \n \n %s \n \n Windows les considère comme des fichiers différents. Tandem Commander conserve les deux noms exactement tels qu’ils sont stockés."
 14197,1,"Le plugin ne peut pas traiter ce nom (il a été conçu pour une ancienne interface ne prenant pas en charge l'Unicode ni les chemins d'accès longs) : \n \n %s \n \n L'élément a été ignoré, les éléments restants seront traités."
@@ -3475,7 +3413,7 @@ SLGINCOMPLETE,""
 14206,1,"Le programme sélectionné est introuvable sur cet ordinateur. Choisissez-en un autre, ou sélectionnez « Programme personnalisé » et saisissez son chemin."
 14207,1,"Saisissez le programme à lancer comme interpréteur de commandes."
 
-[STRINGTABLE 162]
+[STRINGTABLE 158]
 14208,1,"Sélectionner le programme de l'interpréteur de commandes"
 14209,1,"Erreur au démarrage de l'interpréteur de commandes"
 14210,1,"Le programme d'interpréteur de commandes sélectionné (%s) est introuvable sur cet ordinateur.\n\nChoisissez un autre programme dans Configuration / Interpréteur de commandes."

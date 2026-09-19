@@ -79,7 +79,6 @@ lang_winscp     0x38900000
 nethood         0x28e00000
 lang_nethood    0x38e00000
 7zwrapper       0x28f00000
-salmon          0x29000000
 fcremote        0x29200000
 sqlite          0x29300000
 salpvenv        0x29400000      ; dummy - x86 version doesn't exist

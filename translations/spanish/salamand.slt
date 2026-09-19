@@ -1547,21 +1547,6 @@ SLGINCOMPLETE,""
 2,80,122,50,14,1,"Cancelar"
 9,139,122,50,14,1,"Ayuda"
 
-[DIALOG 6130]
-351,199,1,"Informador de fallos de Tandem Commander"
-6131,8,9,339,16,1,"Ha surgido un problema que ha forzado el cierre de Tandem Commander. Para ayudarnos a evitar problemas similares en el futuro, por favor envíenos un informe de errores a continuación."
-6132,8,33,300,8,1,"Privacidad: No se proporcionará ninguna información suya a terceros."
-6140,8,42,84,8,0,"..."
-6134,8,51,169,8,1,"Descripción del error (opcional)"
-6133,254,48,90,14,1,"&Ver informe"
-6135,8,69,58,8,1,"Última &acción:"
-6136,8,79,336,54,1,""
-6137,8,144,74,8,1,"&Email de contacto:"
-6138,8,154,336,14,1,""
-6139,8,178,119,10,1,"&Reiniciar Tandem Commander"
-1,158,176,90,14,1,"Enviar &informe"
-2,254,176,90,14,1,"&No enviar informe"
-
 [DIALOG 6208]
 352,96,1,"Confirmar copia de enlace destino"
 6,31,73,50,14,1,"&Sí"
@@ -3386,64 +3371,17 @@ SLGINCOMPLETE,""
 [STRINGTABLE 152]
 14000,1,"[no válida]"
 14005,1,"Administrador"
-14010,1,"Por favor, introduzca una dirección de email válida para que podamos ayudarle con el problema."
-14011,1,"Por favor, espere mientras termina la compresión y la carga."
-14012,1,"¿Está segudo de no querer que conozcamos este problema? Sin su informe no seremos capaces de arreglarlo.\n\nPulse OK para borrar el informe sin que nosotros lo sepamos."
 
 [STRINGTABLE 153]
-14020,1,"El fichero cargado supera el tamaño permitido. Código: %d."
-14021,1,"El fichero cargado fue cargado sólo en parte. Código: %d."
-14022,1,"El fichero no fue cargado. Código: %d."
-14023,1,"Falta un fichero temporal. Código: %d."
-14024,1,"Fallo al guardar el fichero al disco. Código: %d."
-14025,1,"Alguna extensión ha interrumpido la carga. Código: %d."
-14026,1,"Error de carga desconocido. Código: %d."
-14030,1,"Error de sintaxis en la respuesta del servidor. No se encontró señal de apertura."
-14031,1,"Error de sintaxis en la respuesta del servidor. No se encontró señal de cierre."
-
-[STRINGTABLE 154]
-14032,1,"Error de sintaxis en la respuesta del servidor. Valor no encontrado."
-14040,1,"No es posible recibir datos. Código: %d."
-14041,1,"No es posible detener la conexión. Código: %d."
-14042,1,"No es posible enviar datos. Código: %d."
-14043,1,"No es posible conectarse al servidor. Código: %d."
-14044,1,"No es posible abrir conexión. Código: %d."
-14045,1,"No es posible resolver el nombre del hospedador. Código: %d."
-14046,1,"No es posible inicializar la conexión. Código: %d."
-
-[STRINGTABLE 155]
-14050,1,"Error leyendo el fichero %s"
-14051,1,"Memoria insuficiente"
-14052,1,"Fallo al obtener el tamaño del fichero %s"
-14053,1,"Fallo al abrir %s"
-14061,1,"Se encontraron informes de fallos antiguos. ¿Querría informar también de estos fallos y ayudarnos a mejorar Tandem Commander?\n\nPulse Sí para procesar informes de fallos antiguos. Pulse No para borrar informes de fallos antiguos."
-14062,1,"Informador de Fallos de Tandem Commander"
-14063,1,"Comprimiendo, espere por favor..."
-
-[STRINGTABLE 156]
-14064,1,"Cargando, espere por favor..."
-14065,1,"El informe ha sido cargado con éxito.\n\nGracias por ayudarnos a mejorar Tandem Commander!"
-14066,1,"La carga del informe ha fallado; razón: %s\n\nPor favor, envíenos el informe por email a www.tandemcommander.org y bórrelo de su disco. Pulse OK para ver el informe."
-14067,1,"La compresión del informe ha fallado; razón: %s\n\nPor favor, comprima su informe de fallos usando 7-Zip, envíelo por email a www.tandemcommander.org, y borre el fichero de su disco. Pulse OK para ver el informe."
-14068,1,"La carga de %s ha fallado."
-14070,1,"Esta es una utilidad interna de Tandem Commander, no la inicie directamente."
-14071,1,"Versión incorrecta del Informador de Fallos de Tandem Commander . Por favor, contactge con nosotros en www.tandemcommander.org."
-14072,1,"Ha surgido un problema, forzando el cierre de Tandem Commander.\nCreando informe de fallos, espere por favor..."
-14073,1,"Ha ocurrido algún problema durante la creación del informe de fallos:\n%s"
-14074,1,"No es posible crear el fichero de minidump %s. Código: %d."
-14075,1,"Error durante la creación del minidump. Código: %d."
-
-[STRINGTABLE 157]
-14100,1,"El Informador de Fallor de Tandem Commander (salmon.exe) no está ejecutándose. Tandem Commander no podrá manejar posibles cuelgues. Por favor, reinicie Tandem Commander."
 14101,1,"Se ha producido un problema que ha obligado a Tandem Commander a cerrarse.\n\nSe ha guardado un informe de error en:\n%s\n\nNo se envía nada a ningún sitio. Si desea ayudar a mejorar Tandem Commander, adjunte este archivo a una incidencia en github.com/tandemcommander/tandemcommander/issues."
 14102,1,"Ha surgido un problema que ha obligado a Tandem Commander a cerrarse.\n\nNo se ha podido guardar el informe de error en:\n%s"
 
-[STRINGTABLE 158]
+[STRINGTABLE 154]
 14150,1,"Traducción inacabada de Tandem Commander"
 14151,1,"La traducción de Tandem Commander a su idioma no ha terminado. Por favor, piense en visitar nuestro foro de discusión y unirse al equipo de traducción:"
 14155,1,"Imposible enviar fichero o directorio a la Papelera porque su nombre es incorrecto.\n\nParte incorrecta: "%s"\n\nConsejo: Pruebe a cambiar el nombre antes de enviarlo a la Papelera o borrarlo definitivamente (pruebe con las teclas Mays+Supr)."
 
-[STRINGTABLE 159]
+[STRINGTABLE 155]
 14165,1,"Google Drive"
 14166,1,"Dropbox"
 14167,1,"OneDrive"
@@ -3451,7 +3389,7 @@ SLGINCOMPLETE,""
 14170,1,"no se puede resolver el enlace"
 14171,1,"punto de montaje del volumen"
 
-[STRINGTABLE 160]
+[STRINGTABLE 156]
 14180,1,"Error al obtener el tamaño del ficihero de destino del enlace"
 14181,1,"Está intentando pasar los ficheros y directorios seleccionados a un archivo. Esto no es posible porque la selección contiene un enlace a directorio (punto de unión, punto de montaje de volumen o enlace simbólico). Por favor, continúe sin borrar ficheros del disco después de comprimir al archivo.\n\nEnlace: %s"
 14185,1,"Ejecutando operación sobre disco."
@@ -3460,7 +3398,7 @@ SLGINCOMPLETE,""
 14188,1,"Windows está rechazando cancelar el apagado. Este mensaje lo bloqueará temporalmente. Por favor, espere para cancelar el apagado manualmente antes de que cierre este mensaje, de lo contrario Tandem Commander terminará sin guardar la configuración."
 14189,1,"Windows está rechazando cancelar el apagado. Este mensaje lo bloqueará temporalmente.\n\nVd. tiene algunas operaciones sobre disco ejecutándose. ¿Desea cancelarlas ahora? Pulse NO sólo si ha cancelado el apagado manualmente, de lo contrario se arriesga a tener ficheros no terminados en su disco.\n\nPor favor, espere para cancelar manualmente el apagado antes de responder a esta cuestión; de lo contrario, Tandem Commander terminará sin guardar la configuración."
 
-[STRINGTABLE 161]
+[STRINGTABLE 157]
 14195,1,"Cerrando ventanas de Búsqueda; por favor, espere..."
 14196,1,"Esta carpeta contiene entradas cuyos nombres parecen idénticos pero utilizan grafías Unicode diferentes (por ejemplo, acentos precompuestos frente a acentos descompuestos): \n \n %s \n \n Windows los trata como archivos diferentes. Tandem Commander conserva ambos nombres tal y como están almacenados."
 14197,1,"El complemento no puede procesar este nombre (se creó para una interfaz más antigua sin soporte para Unicode ni rutas largas): \n \n %s \n \n Se ha omitido este elemento; se procesarán los restantes."
@@ -3475,7 +3413,7 @@ SLGINCOMPLETE,""
 14206,1,"El programa seleccionado no se ha encontrado en este equipo. Elija otro, o seleccione «Programa personalizado» e introduzca su ruta."
 14207,1,"Introduzca el programa que se ejecutará como shell de comandos."
 
-[STRINGTABLE 162]
+[STRINGTABLE 158]
 14208,1,"Seleccionar el programa del shell de comandos"
 14209,1,"Error al iniciar el shell de comandos"
 14210,1,"El programa de shell de comandos seleccionado (%s) no se ha encontrado en este equipo.\n\nElija otro programa en Configuración / Shell de comandos."

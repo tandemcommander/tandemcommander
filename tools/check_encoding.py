@@ -152,7 +152,7 @@ SRC = REPO / "src"
 # policy (feature 042 must not change plugin behaviour); the rest are separate
 # executables with their own text handling.
 EXCLUDED = ("plugins/", "saltests/", "tserver/", "shellext/", "setup/",
-            "salmon/", "salopen/", "translator/", "reglib/", "common/dep/")
+            "salopen/", "translator/", "reglib/", "common/dep/")
 
 SUPPRESS = re.compile(r'//\s*encoding-check:\s*allow\s+([a-z0-9-]+)\s*-\s*(\S.*)')
 

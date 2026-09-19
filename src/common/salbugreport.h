@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Pavel Stupka
+﻿// SPDX-FileCopyrightText: 2026 Pavel Stupka
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
@@ -7,10 +7,10 @@
 //
 // salbugreport.h
 //
-// Crash report file name - the pure part (feature 079-remove-salmon-crash-reporter).
+// Crash report file name - the pure part (feature 079, crash reporter removal).
 //
 // Since feature 079 the application names and writes its crash report
-// itself (the former out-of-process helper salmon.exe is gone). The name
+// itself (the former out-of-process helper is gone). The name
 // carries the product version and the local time of the crash:
 //
 //   TC<shortVersion>-YYYYMMDD-HHMMSS[-suffix].TXT      e.g. TC018X64-20260919-143007.TXT

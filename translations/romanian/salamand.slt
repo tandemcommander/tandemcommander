@@ -1547,21 +1547,6 @@ SLGINCOMPLETE,""
 2,80,122,50,14,1,"Anuleaza"
 9,139,122,50,14,1,"Ajutor"
 
-[DIALOG 6130]
-351,199,1,"Raportare Eroare Programare Tandem Commander"
-6131,8,9,339,16,1,"A avut loc o eroare grava, fortand inchiderea Tandem Commander. Pentru a ne ajuta sa evitam probleme similare pe viitor, va rugam sa completati mai jos un raport de erori."
-6132,8,33,339,8,1,"Politica de intimitate: noi nu transmitem nici o informatie a dumneavoastra catre alte site-uri."
-6140,8,42,84,8,0,"..."
-6134,8,51,169,8,1,"Descrierea erorii (optionala)"
-6133,254,48,90,14,1,"&Vizualizeaza Raport"
-6135,8,69,62,8,1,"U&ltima actiune:"
-6136,8,79,336,54,1,""
-6137,8,144,87,8,1,"&Contacteaza pe email:"
-6138,8,154,336,14,1,""
-6139,8,178,127,10,1,"&Restarteaza Tandem Commander"
-1,158,176,90,14,1,"&Trimite Raport"
-2,254,176,90,14,1,"&Nu Trimite Raport"
-
 [DIALOG 6208]
 352,96,1,"Confirma Link Target Copy"
 6,31,73,50,14,1,"&Da"
@@ -3386,64 +3371,17 @@ SLGINCOMPLETE,""
 [STRINGTABLE 152]
 14000,1,"[nevalid]"
 14005,1,"Administrator"
-14010,1,"Va rugam introduceti o adresa de email valabila ca sa va putem ajuta cu problema raportata."
-14011,1,"Va rugam asteptati pana ce compresia si transmiterea de date este terminata."
-14012,1,"Sunteti sigur ca nu doriti sa ne raportati aceasta problema? Fara raportul dumneavoastra nu vom reusi sa rezolvam problema.\n\nDati click pe OK pentru a sterge raportul fara a ne comunica."
 
 [STRINGTABLE 153]
-14020,1,"Fisierul transmis depaseste marimea alocata. Cod: %d."
-14021,1,"Fisierul transmis a fost doar partial transmis. Cod: %d."
-14022,1,"Nici un fisier nu a fost transmis. Cod: %d."
-14023,1,"Lipseste un director temporar. Cod: %d."
-14024,1,"Incercare esuata la scriere fisierului pe disk. Cod: %d."
-14025,1,"Niste extensii au oprit transmisia fisierului. Cod: %d."
-14026,1,"Eroare necunoscuta de transmisie. Cod: %d."
-14030,1,"Eroare de sintaxa in raspunsul serverului. Nu s-a gasit open tag."
-14031,1,"Eroare de sintaxa in raspunsul serverului. Nu s-a gasit close tag."
-
-[STRINGTABLE 154]
-14032,1,"Eroare de sintaxa in raspunsul serverului. Nu s-a gasit value."
-14040,1,"Nu primesc date. Cod: %d."
-14041,1,"Nu pot inchide conexiunea. Cod: %d."
-14042,1,"Nu pot trimite date. Cod: %d."
-14043,1,"Nu ma pot conecta la server. Cod: %d."
-14044,1,"Nu pot deschide conexiunea. Cod: %d."
-14045,1,"Nu gasesc host name. Cod: %d."
-14046,1,"Nu pot initializa conexiunea. Cod: %d."
-
-[STRINGTABLE 155]
-14050,1,"Eroare la citirea fisierului %s"
-14051,1,"Memorie insuficienta"
-14052,1,"Obtinerea marimii fisierului care a esuat pentru %s"
-14053,1,"Eroare la deschidere %s"
-14061,1,"Cateva raporturi de bug mai vechi au fost gasite. Ati dori sa raportati si aceste bug si sa ne ajutati sa imbunatatim Tandem Commander?\n\nApasati Yes pentru a procesa raporturile vechi de bug. Apasati No pentru a sterge raporturile de bug vechi."
-14062,1,"Raport Bug Tandem Commander"
-14063,1,"Comprim, va rugam asteptati..."
-
-[STRINGTABLE 156]
-14064,1,"Trasmit date, va rugam asteptati..."
-14065,1,"Raportul a fost transmis cu succes.\n\nVa multumim ca ne ajutati sa imbunatatim Tandem Commander!"
-14066,1,"Transmiterea raportului a esuat, motiv: %s\n\nVa rugam sa ne trimiteti raportul la adresa de email www.tandemcommander.org si sa il stergeti de pe disk-ul dumneavoastra. Dati OK pentru a vedea raportul."
-14067,1,"A esuat comprimarea raportului, motiv: %s\n\nVa rugam sa arhivati raportul de bug al dumneavoastra folosind 7-Zip, sa il trimiteti pe email la www.tandemcommander.org, si sa stergeti fisierele de raport de pe disk-ul dumneavoastra. Dati OK pentru a vedea raportul."
-14068,1,"Incarcarea %s a esuat."
-14070,1,"Aceasta este un utilitar intern al Tandem Commander, va rugam sa nu il porniti in mod direct."
-14071,1,"Versiune incorecta a Raportorului Bug al Tandem Commander. Va rugam sa ne contactati la www.tandemcommander.org."
-14072,1,"A avut loc o problema, care a inchis fortat Tandem Commander.\nCreez un raport bug, va rugam asteptati..."
-14073,1,"Cateva probleme au avut loc in timpul crearii raportului bug:\n%s"
-14074,1,"Nu pot crea fisierul minidump %s. Cod: %d."
-14075,1,"Eroare in timpul crearii minidump. Cod: %d."
-
-[STRINGTABLE 157]
-14100,1,"Raportorul Bug Tandem Commander (salmon.exe) nu ruleaza. Tandem Commander nu va fi capabila sa rezolve posibile erori. Va rugam restartati Tandem Commander."
 14101,1,"A apărut o problemă, care a forțat închiderea Tandem Commander.\n\nUn raport de eroare a fost salvat la:\n%s\n\nNu se trimite nimic nicăieri. Dacă doriți să contribuiți la îmbunătățirea Tandem Commander, vă rugăm să atașați acest fișier la o sesizare pe github.com/tandemcommander/tandemcommander/issues."
 14102,1,"A apărut o problemă, care a forțat închiderea Tandem Commander.\n\nRaportul de eroare nu a putut fi salvat în:\n%s"
 
-[STRINGTABLE 158]
+[STRINGTABLE 154]
 14150,1,"Traducere Neterminata a Tandem Commander"
 14151,1,"Traducerea Tandem Commander in limba dumneavoastra nu este finalizata. Va rugam sa luati in considerare vizitarea forumului nostru de discutii si sa va alaturati echipei de traducere:"
 14155,1,"Nu pot trimite fisier sau director la Recycle Bin pentru ca are nume invalid.\n\nNume partial invalid:"%s"\n\nSfat: Incearca sa-l redenumesti inainte de a=l trimite la Recycle bin sau sa-l stergi de tot (incearca combinatia Shift+Delete)."
 
-[STRINGTABLE 159]
+[STRINGTABLE 155]
 14165,1,"Google Drive"
 14166,1,"Dropbox"
 14167,1,"OneDrive"
@@ -3451,7 +3389,7 @@ SLGINCOMPLETE,""
 14170,1,"nu pot rezolva link"
 14171,1,"punctul de montare volum"
 
-[STRINGTABLE 160]
+[STRINGTABLE 156]
 14180,1,"Eroare In Obtinerea Link Marimii Fisierului Cautat"
 14181,1,"Incerci sa muti fisierele si directoarele selectate in arhiva. Acest lucru nu e posibil pentru ca selectia contine link catre director (punct de jonctiune, punct de montare volum,sau link symbolic). Te rog sa continui fara stergerea fisierelor de pe disk dupa pregatirea lor pentr arhivare.\n\nLink: %s"
 14185,1,"Operatiunea disk-ului este in progress."
@@ -3460,7 +3398,7 @@ SLGINCOMPLETE,""
 14188,1,"Windows-ul refuza anularea shutdown. Acest mesaj il va bloca temporar. Te rog asteapta sa anulezi manual shutdown inainte de a inchide acest mesaj, altfel Tandem Commander va fi inchis brusc fara salvarea configuratiei."
 14189,1,"Windows-ul refuza anularea shutdown. Acest mesaj il va bloca temporar.\n\nAi niste operatii pe disk in progres. Vrei sa le anulezi acum? Click pe Nu ai anulat manual shutdown, altfel risti sa ai fisiere neterminate pe disk.\n\nTe rog asteapta sa anulezi manual shutdown inainte de a raspunde la aceasta intrebare, altfel Tandem Commander va fi inchis brusc fara salvarea configuratiei."
 
-[STRINGTABLE 161]
+[STRINGTABLE 157]
 14195,1,"Inchid ferestrele Find windows, te rog asteapta..."
 14196,1,"Acest folder conține intrări ale căror nume par identice, dar utilizează ortografii Unicode diferite (de exemplu, accente precompuse vs. descompuse): \n \n %s \n \n Windows le tratează ca fișiere diferite. Tandem Commander păstrează ambele nume exact așa cum sunt stocate."
 14197,1,"Pluginul nu poate procesa acest nume (a fost creat pentru o interfață mai veche, fără suport pentru Unicode și căi lungi): \n \n %s \n \n Elementul a fost omis, elementele rămase vor fi procesate."
@@ -3475,7 +3413,7 @@ SLGINCOMPLETE,""
 14206,1,"Programul selectat nu a fost găsit pe acest computer. Alegeți altul sau selectați Program personalizat și introduceți calea către acesta."
 14207,1,"Introduceți programul care va rula ca shell de comandă."
 
-[STRINGTABLE 162]
+[STRINGTABLE 158]
 14208,1,"Selectați programul de shell de comandă"
 14209,1,"Eroare la pornirea shell-ului de comandă"
 14210,1,"Programul de tip shell de comandă selectat (%s) nu a fost găsit pe acest computer.\n\nAlegeți un alt program în Configurare / Comanda Shell."

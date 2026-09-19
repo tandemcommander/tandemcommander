@@ -539,8 +539,6 @@
     </ClCompile>
     <ClCompile Include="..\salinflt.cpp">
     </ClCompile>
-    <ClCompile Include="..\salmoncl.cpp">
-    </ClCompile>
     <ClCompile Include="..\salshlib.cpp">
     </ClCompile>
     <ClCompile Include="..\salzlib.cpp">
@@ -856,8 +854,6 @@
     <ClInclude Include="..\salamand.h">
     </ClInclude>
     <ClInclude Include="..\salinflt.h">
-    </ClInclude>
-    <ClInclude Include="..\salmoncl.h">
     </ClInclude>
     <ClInclude Include="..\salshlib.h">
     </ClInclude>

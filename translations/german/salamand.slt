@@ -1547,21 +1547,6 @@ SLGINCOMPLETE,""
 2,80,122,50,14,1,"Abbrechen"
 9,139,122,50,14,1,"Hilfe"
 
-[DIALOG 6130]
-351,199,1,"Tandem Commander Bug-Reporter"
-6131,8,9,339,16,1,"Ein Problem ist aufgetreten, die Schließung von Tandem Commander wird erzwungen. Senden Sie uns bitte den unten aufgeführten Fehlerbericht zu, das kann uns helfen ähnliche Fehler in Zukunft zu vermeiden."
-6132,8,33,309,8,1,"Datenschutzrichtlinie: wir geben keinerlei Daten von Ihnen an Dritte weiter."
-6140,8,42,84,8,0,"..."
-6134,8,51,169,8,1,"Fehlerbeschreibung (optional)"
-6133,254,48,90,14,1,"&Bericht ansehen"
-6135,8,69,66,8,1,"&Letzter Vorgang:"
-6136,8,79,336,54,1,""
-6137,8,144,62,8,1,"&E-Mail-Adresse:"
-6138,8,154,336,14,1,""
-6139,8,178,127,10,1,"&Tandem Commander neu starten"
-1,158,176,90,14,1,"Bericht &senden"
-2,254,176,90,14,1,"&Keinen Bericht senden"
-
 [DIALOG 6208]
 352,96,1,"Kopieren des Linkziels bestätigen"
 6,31,73,50,14,1,"&Ja"
@@ -3386,64 +3371,17 @@ SLGINCOMPLETE,""
 [STRINGTABLE 152]
 14000,1,"[falsch]"
 14005,1,"Administrator"
-14010,1,"Geben Sie bitte eine gültige E-Mail-Adresse an, damit wir Ihnen bei dem gemeldeten Problem helfen können."
-14011,1,"Warten Sie bitte bis die Komprimierung und der Upload beendet wurde."
-14012,1,"Sind Sie sicher, dass Sie uns nicht über dieses Problem informieren wollen? Ohne Ihren Bericht wird es nicht behoben werden.\n\nDrücken Sie 'OK', um den Bericht, ohne uns zu informieren, zu löschen."
 
 [STRINGTABLE 153]
-14020,1,"Die hochgeladene Datei übersteigt die zulässige Größe. Code: %d."
-14021,1,"Die Datei wurde nur unvollständig hochgeladen. Code: %d."
-14022,1,"Datei wurde nicht hochgeladen. Code: %d."
-14023,1,"Temporärer Ordner fehlt. Code: %d."
-14024,1,"Schreiben auf Datenträger fehlgeschlagen. Code: %d."
-14025,1,"Erweiterung beendete den Dateiupload. Code: %d."
-14026,1,"Unbekannter Uploadfehler. Code: %d."
-14030,1,"Syntaxfehler in der Serverantwort. Open-Tag nicht gefunden."
-14031,1,"Syntaxfehler in der Serverantwort. Close-Tag nicht gefunden."
-
-[STRINGTABLE 154]
-14032,1,"Syntaxfehler in der Serverantwort. Wert nicht gefunden."
-14040,1,"Daten können nicht empfangen werden. Code: %d."
-14041,1,"Verbindung kann nicht getrennt werden. Code: %d."
-14042,1,"Daten können nicht gesendet werden. Code: %d."
-14043,1,"Verbindung mit dem Server kann nicht hergestellt werden. Code: %d."
-14044,1,"Verbindung kann nicht geöffnet werden. Code: %d."
-14045,1,"Hostname kann nicht aufgelöst werden. Code: %d."
-14046,1,"Verbindung kann nicht initialisiert werden. Code: %d."
-
-[STRINGTABLE 155]
-14050,1,"Fehler beim Lesen der Datei %s"
-14051,1,"Nicht genug Speicher"
-14052,1,"Fehler beim Einlesen der Dateigröße bei %s"
-14053,1,"Fehler beim Öffnen von %s"
-14061,1,"Einige ältere Fehlerberichte wurden gefunden. Möchten Sie auch diese Fehlerberichte senden und uns helfen Tandem Commander zu verbessern?\n\nDrücken Sie 'JA' , um die älteren Fehlerberichte zu bearbeiten. Drücken Sie 'NEIN' um die älteren Fehlerberichte zu löschen."
-14062,1,"Tandem Commander Bug-Reporter"
-14063,1,"Komprimiere, bitte warten..."
-
-[STRINGTABLE 156]
-14064,1,"Upload, bitte warten..."
-14065,1,"Bericht wurde erfolgreich hochgeladen.\n\nDanke für Ihre Hilfe Tandem Commander zu verbessern!"
-14066,1,"Aus folgendem Grund ist der Upload fehlgeschlagen: %s\n\nBitte senden Sie uns den Bericht per E-Mail an www.tandemcommander.org und löschen Sie diesen von ihrer Festplatte. Drücken Sie 'OK', um den Bericht anzusehen."
-14067,1,"Aus folgendem Grund ist die Komprimierung des Berichts fehlgeschlagen: %s\n\nPacken Sie bitte den Fehlerbericht mit 7-Zip und mailen Sie ihn an www.tandemcommander.org, anschließend können Sie die Dateien von ihrer Festplatte löschen. Drücken Sie 'OK', um den Bericht anzusehen."
-14068,1,"Laden von %s fehlgeschlagen."
-14070,1,"Dies ist ein internes Hilfsprogramm von Tandem Commander, öffnen Sie es bitte nicht direkt."
-14071,1,"Unzulässige Bug-Reporter Version von Tandem Commander. Kontaktieren Sie bitte www.tandemcommander.org."
-14072,1,"Ein Problem ist aufgetreten, die Schließung von Tandem Commander wird erzwungen.\nErstelle ein Fehlerbericht, bitte warten..."
-14073,1,"Es ist ein Problem beim Erstellen des Fehlerberichts aufgetreten:\n%s"
-14074,1,"Minidump-Datei %s kann nicht erstellt werden. Code: %d."
-14075,1,"Fehler beim Erstellen der Minidump. Code: %d."
-
-[STRINGTABLE 157]
-14100,1,"Der Bug-Reporter (salmon.exe) von Tandem Commander wird nicht ausgeführt. Tandem Commander kann mögliche Abstürze nicht verarbeiten. Starten Sie bitte Tandem Commander neu."
 14101,1,"Es ist ein Problem aufgetreten, wodurch Tandem Commander geschlossen werden musste.\n\nEin Fehlerbericht wurde gespeichert unter:\n%s\n\nEs wird nichts an irgendjemanden gesendet. Wenn Sie dabei helfen möchten, Tandem Commander zu verbessern, fügen Sie diese Datei bitte einem Ticket unter github.com/tandemcommander/tandemcommander/issues bei."
 14102,1,"Es ist ein Problem aufgetreten, wodurch Tandem Commander geschlossen werden musste.\n\nDer Fehlerbericht konnte nicht gespeichert werden unter:\n%s"
 
-[STRINGTABLE 158]
+[STRINGTABLE 154]
 14150,1,"Nicht abgeschlossene Übersetzung von Tandem Commander"
 14151,1,"Die Übersetzung von Tandem Commander, in Ihre Sprache, ist noch nicht beendet. Erwägen Sie bitte einen Besuch unseres Diskussionsforums und schließen Sie sich der Übersetzungsarbeit an:"
 14155,1,"Die Datei oder das Verzeichnis konnte nicht in den Papierkorb verschoben werden, da der Name ungültig ist.\n\nUngültiger Teil des Namens:  "%s"\n\nTip: Versuchen Sie die Datei, bevor Sie diese in den Papierkorb verschieben, umzubenennen, oder löschen Sie diese dauerhaft (Umschalt+Entf Taste benutzen)."
 
-[STRINGTABLE 159]
+[STRINGTABLE 155]
 14165,1,"Google Drive"
 14166,1,"Dropbox"
 14167,1,"OneDrive"
@@ -3451,7 +3389,7 @@ SLGINCOMPLETE,""
 14170,1,"Link kann nicht aufgelöst werden"
 14171,1,"Volume Mount Point"
 
-[STRINGTABLE 160]
+[STRINGTABLE 156]
 14180,1,"Fehler beim Abrufen der Dateigröße des Linkziels"
 14181,1,"Sie versuchen die ausgewählten Dateien und Verzeichnisse ins Archiv zu verschieben. Das ist nicht möglich, da die Auswahl Verknüpfungen zu Verzeichnissen enthält (Verknüpfungspunkt, Volumebereitstellungspunkt oder symbolische Verknüpfung). Fahren Sie fort ohne die Dateien nach dem Archivieren zu löschen.\n\nLink: %s"
 14185,1,"Datenträgervorgang wird ausgeführt."
@@ -3460,7 +3398,7 @@ SLGINCOMPLETE,""
 14188,1,"Windows weigert sich das Herunterfahren vorzeitig abzubrechen. Dieser Hinweis wird Windows kurzzeitig blockieren. Bitte warten Sie mit dem Schließen dieses Hinweises bevor Sie das Herunterfahren manuell abbrechen, andernfalls wird Tandem Commander beendet ohne die Konfiguration zu speichern."
 14189,1,"Windows weigert sich das Herunterfahren vorzeitig abzubrechen. Dieser Hinweis wird Windows kurzzeitig blockieren.\n\nEs werden einige Datenträgervorgänge ausgeführt. Möchten Sie diese jetzt abbrechen? Klicken Sie nur dann auf NEIN, wenn Sie das Herunterfahren manuell abgebrochen haben, ansonsten riskieren Sie unvollständige Dateien auf Ihrem Datenträger.\n\nBitte warten Sie mit der Antwort bevor Sie das Herunterfahren manuell abbrechen, andernfalls wird Tandem Commander beendet ohne die Konfiguration zu speichern."
 
-[STRINGTABLE 161]
+[STRINGTABLE 157]
 14195,1,"Schließe Suchfenster, bitte warten..."
 14196,1,"Dieser Ordner enthält Einträge, deren Namen identisch aussehen, aber unterschiedliche Unicode-Schreibweisen verwenden (z. B. zusammengesetzte vs. zerlegte Akzente): \n \n %s \n \n Windows behandelt sie als unterschiedliche Dateien. Tandem Commander behält beide Namen genau so bei, wie sie gespeichert sind."
 14197,1,"Das Plugin kann diesen Namen nicht verarbeiten (es wurde für eine ältere Benutzeroberfläche ohne Unicode- und Unterstützung für lange Pfade entwickelt): \n \n %s \n \n Das Element wurde übersprungen, die restlichen Elemente werden verarbeitet."
@@ -3475,7 +3413,7 @@ SLGINCOMPLETE,""
 14206,1,"Das ausgewählte Programm wurde auf diesem Computer nicht gefunden. Wählen Sie ein anderes aus, oder wählen Sie „Benutzerdefiniertes Programm“ und geben Sie seinen Pfad ein."
 14207,1,"Geben Sie das Programm ein, das als Eingabeaufforderung gestartet werden soll."
 
-[STRINGTABLE 162]
+[STRINGTABLE 158]
 14208,1,"Programm für die Eingabeaufforderung auswählen"
 14209,1,"Fehler beim Starten der Eingabeaufforderung"
 14210,1,"Das ausgewählte Programm für die Eingabeaufforderung (%s) wurde auf diesem Computer nicht gefunden.\n\nWählen Sie ein anderes Programm unter „Konfiguration / Eingabeaufforderung“ aus."

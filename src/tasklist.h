@@ -32,8 +32,6 @@ extern BOOL FirstInstance_3_or_later;
 #pragma pack(push, enter_include_tasklist) // aby byly struktury nezavisle na nastavenem zarovnavani
 #pragma pack(4)
 
-extern HANDLE HSalmonProcess;
-
 // POZOR, pomoci struktury komunikuji x64 a x86 procesy, pozor na typy (napr. HANDLE), ktere maji ruzne sirky
 struct CProcessListItem
 {
@@ -43,7 +41,7 @@ struct CProcessListItem
     BYTE SID_MD5[16];     // MD5 napocitana ze SID procesu, slouzi nam k rozliseni procesu bezicich pod ruznymi uzivateli; SID ma neznamou delku, proto tato obezlicka
     DWORD ProcessState;   // Stav v jakem se Salamander nachazi, viz PROCESS_STATE_xxx
     UINT64 HMainWindow;   // (x64 friendly) Handle hlavniho okna, pokud jiz/jeste existuje (nastavuje se pri jeho vytvareni/destrukci)
-    DWORD SalmonPID;      // ProcessID salmonu, aby mu brakujici proces mohl garantovat pravo pro SetForegroundWindow
+    DWORD Reserved1;      // feature 079: was the crash reporter's PID; kept for layout compatibility with older instances, always 0
 
     CProcessListItem()
     {
@@ -53,9 +51,7 @@ struct CProcessListItem
         GetSidMD5(SID_MD5);
         ProcessState = PROCESS_STATE_STARTING;
         HMainWindow = NULL;
-        SalmonPID = 0;
-        if (HSalmonProcess != NULL)
-            SalmonPID = SalGetProcessId(HSalmonProcess); // v tuto dobu jiz Salmon bezi
+        Reserved1 = 0;
     }
 };
 

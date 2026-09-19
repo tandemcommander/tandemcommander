@@ -9,7 +9,7 @@ knowledge of the app's internals is required.
 
 | File | Where it appears | Format & size |
 |------|------------------|---------------|
-| `icon-master.png` | Application icon everywhere: main-window top-left corner, taskbar, `tandemcommander.exe` in Explorer, crash reporter (salmon), installer, uninstaller | PNG, **square**, edge ≥ 256 px (1024×1024 recommended). All icon sizes are derived from it automatically (high-quality Lanczos downscale). |
+| `icon-master.png` | Application icon everywhere: main-window top-left corner, taskbar, `tandemcommander.exe` in Explorer, installer, uninstaller | PNG, **square**, edge ≥ 256 px (1024×1024 recommended). All icon sizes are derived from it automatically (high-quality Lanczos downscale). |
 | `icon-16.png`, `icon-24.png`, `icon-32.png`, `icon-48.png`, `icon-64.png`, `icon-128.png`, `icon-256.png` | Optional per-size overrides of the master | PNG, exactly N×N for `icon-<N>.png`. If present, the file wins over the master-derived rendering at that size — useful for hand-tuning tiny sizes. **Delete them when swapping the icon wholesale**, otherwise the old artwork stays at those sizes. Currently all seven are present: the designer's per-size renders of the full-bleed icon (feature 046). |
 | `about.png` | Artwork in the About dialog (Help → About) and on the startup splash screen | PNG, alpha supported, any size (≈ 512 px on the long edge recommended). The app scales it to fit at draw time, aspect ratio preserved — no distortion, no cropping. Currently the margin+drop-shadow icon variant. |
 | `hotpath-master.png` | Hot path icon gallery (feature 047): the color variants offered in Options → Configuration → Hot Paths and shown on the Hot Path Bar and in the Change Drive menu | PNG, **square**, edge ≥ 256 px, transparent background. Keep the fill white/light with a dark outline — the RGB channels are multiplied by each gallery color (tint table in `gen_icons.py`), producing `src/res/hotpath1.ico` … `hotpath9.ico` (16/20/24/32 px). The tint order is append-only: the gallery index is persisted in user configurations. The gallery's default entry (index 0) is the system bookmark icon and is not generated here. |
@@ -23,7 +23,7 @@ knowledge of the app's internals is required.
    python tools\brand\gen_icons.py
    ```
 
-   This rewrites `src/res/salamand.ico`, `src/salmon/res/salmon.ico`,
+   This rewrites `src/res/salamand.ico`,
    `src/setup/res/setup.ico`, `src/setup/remove/icon1.ico`, the hot path
    gallery `src/res/hotpath1.ico` … `hotpath9.ico`, and copies
    `about.png` to `src/res/logo.png`. Inputs are validated first — a bad or
@@ -41,7 +41,7 @@ knowledge of the app's internals is required.
    Configuration → Main Window if turned off).
 
 Commit the changed files under `tools/brand/`, `src/res/`,
-`src/salmon/res/`, `src/setup/` and `setup/`.
+`src/setup/` and `setup/`.
 
 Optional structural self-check of the committed outputs (no writes):
 

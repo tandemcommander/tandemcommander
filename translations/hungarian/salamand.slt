@@ -1547,21 +1547,6 @@ SLGINCOMPLETE,""
 2,80,122,50,14,1,"Mégse"
 9,139,122,50,14,1,"Súgó"
 
-[DIALOG 6130]
-351,199,1,"Tandem Commander Hibajelentő"
-6131,8,9,339,16,1,"Probléma lépett fel, mely bezárásra kényszerítette az Tandem Commandert. Hogy a jövőben eltudjuk kerülni a hasonló problémákat, kérem küldje el nekünk a lenti hibajelentést."
-6132,8,33,300,8,1,"Adatvédelem: nem adunk ki Önről semmilyen információt harmadik félnek."
-6140,8,42,84,8,0,"..."
-6134,8,51,169,8,1,"A hiba leírása (választható)"
-6133,254,48,90,14,1,"Jelentés &megtekintése"
-6135,8,69,62,8,1,"Uto&lsó művelet:"
-6136,8,79,336,54,1,""
-6137,8,144,91,8,1,"Bejelentő e-mail &címe:"
-6138,8,154,336,14,1,""
-6139,8,178,131,10,1,"Tandem Commander új&raindítása"
-1,158,176,90,14,1,"Jelenté&s küldése"
-2,254,176,90,14,1,"&Ne küldjön jelentést"
-
 [DIALOG 6208]
 352,96,1,"Link céljának másolási megerősítése"
 6,31,73,50,14,1,"&Igen"
@@ -3386,64 +3371,17 @@ SLGINCOMPLETE,""
 [STRINGTABLE 152]
 14000,1,"[érvénytelen]"
 14005,1,"Rendszergazda"
-14010,1,"Érvényes e-mail címet adjon meg, hogy segíthessen a jelentett problémában."
-14011,1,"Kérem várjon a tömörítés és a feltöltés befejezésére."
-14012,1,"Biztos nem akar minket tájékoztatni a problémáról? A jelentése nélkül, nem leszünk képesek javítani azt.\n\nA jelentés törléséhez OK gomb."
 
 [STRINGTABLE 153]
-14020,1,"A feltöltött fájl meghaladja az engedélyezett méretet. Kód: %d."
-14021,1,"A feltöltött fájl csak részben lett feltöltve. Kód: %d."
-14022,1,"nem lett fájl feltöltve. Kód: %d."
-14023,1,"Hiányzik egy ideiglenes mappa. Kód: %d."
-14024,1,"A lemezre írás sikertelen. Kód: %d."
-14025,1,"Néhány kiterjesztés leállította a fájl feltöltését. Kód: %d."
-14026,1,"Ismeretlen feltöltési hiba. Kód: %d."
-14030,1,"Szintaktikai hiba a szerver válaszában. Nincs nyitó címke."
-14031,1,"Szintaktikai hiba a szerver válaszában. Nincs záró címke."
-
-[STRINGTABLE 154]
-14032,1,"Szintaktikai hiba a szerver válaszában. Nincs érték."
-14040,1,"Nem fogadható adat. Kód: %d."
-14041,1,"Nem zárható le a kapcsolat. Kód: %d."
-14042,1,"Nem küldhető adat. Kód: %d."
-14043,1,"A szerver nem érhető el. Kód: %d."
-14044,1,"A kapcsolat nem nyitható meg. Kód: %d."
-14045,1,"Nem oldható fel a gazda neve. Kód: %d."
-14046,1,"A kapcsolat nem inicializálható. Kód: %d."
-
-[STRINGTABLE 155]
-14050,1,"Sikertelen olvasás: %s"
-14051,1,"Kevés a memória"
-14052,1,"A fájl méretének lekérése sikertelen: %s"
-14053,1,"Sikertelen megnyitás: %s"
-14061,1,"Néhány régi hibajelentés észlelhető. Szeretné jelenteni ezeket a hibákat és segíteni nekünk az Tandem Commander tökéletesítésében?\n\nRégi hibajelentés el elküldéséhez Igen gomb. A régi hibajelentések törléséhez Nem gomb."
-14062,1,"Tandem Commander Hibajelentő"
-14063,1,"Tömörítés, kérem várjon..."
-
-[STRINGTABLE 156]
-14064,1,"Feltöltés, kérem várjon..."
-14065,1,"Jelentés sikeresen feltöltve.\n\nKöszönjük, hogy segít nekünk az Tandem Commander tökéletesítésében!"
-14066,1,"Jelentés feltöltése sikertelen, oka: %s\n\nKérem küldje el a jelentést a www.tandemcommander.org e-mail címre és törölje azt a gépről. Jelentés megjelenítéséhez OK gomb."
-14067,1,"Jelentés tömörítése sikertelen, oka: %s\n\nKérem tömörítse be a hibajelentést 7-Zip segítségével, küldje el a www.tandemcommander.org e-mail címre, és törölje azt a gépről. Jelentés megjelenítéséhez OK gomb."
-14068,1,"Betöltés sikertelen: %s."
-14070,1,"Ez egy belső Tandem Commander segédprogram, ne közvetlen futtassa."
-14071,1,"Helytelen Tandem Commander Bug Reporter verzió. Értesítsen minket a www.tandemcommander.org e-mail címen."
-14072,1,"Probléma lépett fel, bezárásra kényszerítve az Tandem Commander-t.\nHibajelentés készítése, kérem várjon..."
-14073,1,"Problémák léptek fel a hibajelentés készítése közben:\n%s"
-14074,1,"Minidump fájl létrehozása sikertelen: %s. Kód: %d."
-14075,1,"Hiba a minidump létrehozása közben. Kód: %d."
-
-[STRINGTABLE 157]
-14100,1,"Az Tandem Commander Bug Reporter (salmon.exe) nem fut. Az Tandem Commander nem lesz képes kezelni a potenciális összeomlásokat. Kérem indítsa újra az Tandem Commander-t."
 14101,1,"Probléma merült fel, ami miatt a Tandem Commander kénytelen bezárni.\n\nA hibajelentés mentve lett a következő helyre:\n%s\n\nSemmilyen adat nem kerül elküldésre. Ha szeretne segíteni a Tandem Commander fejlesztésében, kérjük, csatolja ezt a fájlt egy hibajelentéshez a github.com/tandemcommander/tandemcommander/issues oldalon."
 14102,1,"Probléma merült fel, ami miatt a Tandem Commander kénytelen bezárni.\n\nA hibajelentés nem menthető el a következő helyre:\n%s"
 
-[STRINGTABLE 158]
+[STRINGTABLE 154]
 14150,1,"Befejezetlen Tandem Commander fordítás"
 14151,1,"Az Tandem Commander fordítása az Ön nyelvére, még nem fejeződött be. Kérem látogassa meg fórumunkat és csatlakozzon a fordítási törekvésünkhöz:"
 14155,1,"A fájl vagy mappa lomtárba küldése sikertelen, mert érvénytelen névvel rendelkezik.\n\nA név érvénytelen része: "%s"\n\nTipp: Próbálja átnevezni, mielőtt a lomtárba küldi vagy véglegesen törli (Shift+Delete kombináció)."
 
-[STRINGTABLE 159]
+[STRINGTABLE 155]
 14165,1,"Google Drive"
 14166,1,"Dropbox"
 14167,1,"OneDrive"
@@ -3451,7 +3389,7 @@ SLGINCOMPLETE,""
 14170,1,"a link nem oldható fel"
 14171,1,"kötet csatlakozási pont"
 
-[STRINGTABLE 160]
+[STRINGTABLE 156]
 14180,1,"Fájlméreti beolvasási hiba a link célján"
 14181,1,"A kijelölt fájlokat és mappákat archívumba próbálta mozgatni. Ez nem lehetséges, mivel a kijelölés mappára mutató linket is tartalmaz (csatlakozási pont, kötetcsatlakozási pont vagy szimbolikus hivatkozás). Kérem, úgy folytassa, hogy az archívumba csomagolás után nem törli a fájlokat.\n\nLink: %s"
 14185,1,"Lemezművelet folyamatban."
@@ -3460,7 +3398,7 @@ SLGINCOMPLETE,""
 14188,1,"A Windows elutasítja a leállítás megszakítását. Ez az üzenet ideiglenesen blokkolja. Kérem, manuálisan szakítsa meg a leállítást, mielőtt bezárja ezt az üzenetet, különben az Tandem Commander a beállítások mentése nélkül áll le."
 14189,1,"A Windows elutasítja a leállítás megszakítását. Ez az üzenet ideiglenesen blokkolja.\n\nNéhány lemezművelet még folyamtban van. Meg akarja őket szakítani? Csak akkor válassza, hogy Nem, ha manuálísan megszakította a leállítást, különben kockáztatja, hogy befejezetlen fájlok maradhatnak a lemezen.\n\nKérem, manuálisan szakítsa meg a leállítást, mielőtt bezárja ezt az üzenetet, különben az Tandem Commander a beállítások mentése nélkül áll le."
 
-[STRINGTABLE 161]
+[STRINGTABLE 157]
 14195,1,"Keres ablak bezárása, kérem várjon..."
 14196,1,"Ez a mappa olyan bejegyzéseket tartalmaz, amelyek nevei azonosnak tűnnek, de eltérő Unicode-írásmódot használnak (pl. összetett és szétbontott ékezetek): \n \n %s \n \n A Windows ezeket különböző fájlként kezeli. A Tandem Commander mindkét nevet pontosan úgy őrzi meg, ahogyan tárolva vannak."
 14197,1,"A bővítmény nem tudja feldolgozni ezt a nevet (egy régebbi felületre készült, amely nem támogatja az Unicode-ot és a hosszú elérési utakat): \n \n %s \n \n Az elemet kihagytuk, a többi elemet feldolgozzuk."
@@ -3475,7 +3413,7 @@ SLGINCOMPLETE,""
 14206,1,"A kiválasztott program nem található ezen a számítógépen. Válasszon egy másikat, vagy válassza az Egyéni program lehetőséget, és adja meg annak elérési útját."
 14207,1,"Adja meg a parancssorként futtatandó programot."
 
-[STRINGTABLE 162]
+[STRINGTABLE 158]
 14208,1,"Parancssori program kiválasztása"
 14209,1,"Hiba a parancssor elindításakor"
 14210,1,"A kiválasztott parancssori program (%s) nem található ezen a számítógépen.\n\nVálasszon másik programot a Konfiguráció / Parancssor menüpontban."

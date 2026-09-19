@@ -297,9 +297,6 @@
     <ClCompile Include="..\salinflt.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
-    <ClCompile Include="..\salmoncl.cpp">
-      <Filter>cpp</Filter>
-    </ClCompile>
     <ClCompile Include="..\salshlib.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
@@ -636,9 +633,6 @@
       <Filter>h</Filter>
     </ClInclude>
     <ClInclude Include="..\salinflt.h">
-      <Filter>h</Filter>
-    </ClInclude>
-    <ClInclude Include="..\salmoncl.h">
       <Filter>h</Filter>
     </ClInclude>
     <ClInclude Include="..\salshlib.h">

@@ -1547,21 +1547,6 @@ SLGINCOMPLETE,""
 2,80,122,50,14,1,"Storno"
 9,139,122,50,14,1,"Nápověda"
 
-[DIALOG 6130]
-351,199,1,"Hlášení chyby programu Tandem Commander"
-6131,8,9,339,16,1,"Došlo k problému, který si vynutil zavření programu Tandem Commander. Odešlete nám prosím hlášení o této chybě, abychom problému mohli předejít."
-6132,8,33,300,8,1,"Ochrana osobních údajů: žádnou z vašich informací nedáme třetí osobě."
-6140,8,42,84,8,0,"..."
-6134,8,51,169,8,1,"Popis chyby (nepovinné)"
-6133,254,48,90,14,1,"&Zobrazit hlášení"
-6135,8,69,58,8,1,"&Poslední akce:"
-6136,8,79,336,54,1,""
-6137,8,144,66,8,1,"&Kontaktní email:"
-6138,8,154,336,14,1,""
-6139,8,178,135,10,1,"Zno&vu spustit Tandem Commander"
-1,158,176,90,14,1,"&Odeslat hlášení"
-2,254,176,90,14,1,"&Neodesílat hlášení"
-
 [DIALOG 6208]
 352,96,1,"Potvrzení kopírování cíle odkazu"
 6,31,73,50,14,1,"&Ano"
@@ -3386,64 +3371,17 @@ SLGINCOMPLETE,""
 [STRINGTABLE 152]
 14000,1,"[neplatný]"
 14005,1,"Správce"
-14010,1,"Zadejte prosím validní emailovou adresu, abychom Vám mohli s hlášeným problémem pomoci."
-14011,1,"Počkejte prosím na dokončení komprimace a nahrání dat."
-14012,1,"Opravdu nás nechcete informovat o tomto problému? Bez hlášení o chybě nebudeme schopni problém opravit.\n\nKlikněte na tlačítko OK pro odstranění hlášení bez jeho odeslání."
 
 [STRINGTABLE 153]
-14020,1,"Nahrávaný soubor překračuje povolenou velikost. Kód: %d."
-14021,1,"Soubor byl nahrán pouze částečně. Kód: %d."
-14022,1,"Soubor nebyl nahrán. Kód: %d."
-14023,1,"Chybějící dočasný adresář. Kód: %d."
-14024,1,"Chyba při zápisu souboru na disk. Kód: %d."
-14025,1,"Rozšíření přerušilo nahrávání souboru. Kód: %d."
-14026,1,"Neznámá chyba při nahrávání souboru. Kód: %d."
-14030,1,"Syntaktická chyba v odpovědi serveru. Otevírací značka nebyla nalezena."
-14031,1,"Syntaktická chyba v odpovědi serveru. Zavírací značka nebyla nalezena."
-
-[STRINGTABLE 154]
-14032,1,"Syntaktická chyba v odpovědi serveru. Hodnota nebyla nalezena."
-14040,1,"Nelze přijmout data. Kód: %d."
-14041,1,"Nelze zavřít připojení. Kód: %d."
-14042,1,"Nelze odeslat data. Kód: %d."
-14043,1,"Nelze se připojit na server. Kód: %d."
-14044,1,"Nelze navázat spojení. Kód: %d."
-14045,1,"Nelze získat adresu serveru. Kód: %d."
-14046,1,"Nelze inicializovat spojení. Kód: %d."
-
-[STRINGTABLE 155]
-14050,1,"Chyba čtení souboru %s"
-14051,1,"Nedostatek paměti"
-14052,1,"Chyba při získávání velikosti souboru %s"
-14053,1,"Chyba při otevírání %s"
-14061,1,"Nalezeno starší chybové hlášení. Přejete si odeslat také tato hlášení a pomoci nám vylepšit Tandem Commander?\n\nStiskněte tlačítko Ano pro odeslání starých chybových hlášení. Stiskněte tlačítko Ne pro jejich odstranění."
-14062,1,"Chybové hlášení programu Tandem Commander"
-14063,1,"Probíhá komprimace, čekejte prosím..."
-
-[STRINGTABLE 156]
-14064,1,"Probíhá nahrávání, čekejte prosím..."
-14065,1,"Hlášení bylo úspěšně nahráno.\n\nDěkujeme, že nám pomáháte vylepšovat Tandem Commander!"
-14066,1,"Selhalo nahrání chybového hlášení, důvod: %s\n\nOdešlete nám prosím chybové hlášení pomocí emailu na adresu www.tandemcommander.org a odstraňte hlášení z pevného disku. Stiskněte tlačítko OK pro zobrazení chybového hlášení."
-14067,1,"Selhala komprimace chybového hlášení, důvod: %s\n\nZabalte prosím chybové hlášení pomocí 7-Zip, odešlete ho na email www.tandemcommander.org, a následně odstraňte soubory z pevného disku. Stiskněte tlačítko OK pro zobrazení chybového hlášení."
-14068,1,"Načtení %s selhalo."
-14070,1,"Toto je interní nástroj programu Tandem Commander, nespouštějte ho prosím přímo."
-14071,1,"Nesprávná verze programu Chybová hlášení programu Tandem Commander. Kontaktujte nás prosím na www.tandemcommander.org."
-14072,1,"Nastal problém, který si vynutil ukončení programu Tandem Commander.\nVytváří se chybové hlášení, čekejte prosím..."
-14073,1,"Během vytváření chybového hlášení došlo k chybě:\n%s"
-14074,1,"Nelze vytvořit minidump soubor %s. Kód: %d."
-14075,1,"Chyba během vytváření minidump souboru. Kód: %d."
-
-[STRINGTABLE 157]
-14100,1,"Program Chybové hlášení Tandem Commander (salmon.exe) není spuštěný. Tandem Commander nebude schopná oznámit případné pády. Ukončete a znovu spusťte Tandem Commander."
 14101,1,"Došlo k problému, který donutil Tandem Commander se zavřít.\n\nHlášení o chybě bylo uloženo do:\n%s\n\nNic se nikam neodesílá. Pokud chcete pomoci vylepšit Tandem Commander, přiložte prosím tento soubor k hlášení na github.com/tandemcommander/tandemcommander/issues."
 14102,1,"Došlo k problému, který vynutil uzavření aplikace Tandem Commander.\n\nHlášení chyby nebylo možné uložit do:\n%s"
 
-[STRINGTABLE 158]
+[STRINGTABLE 154]
 14150,1,"Nedokončený překlad programu Tandem Commander"
 14151,1,"Překlad programu Tandem Commander do Vašeho jazyka není dokončený. Zvažte prosím navštívení našeho diskuzního fóra a připojení se k překladatelskému týmu:"
 14155,1,"Nelze odeslat soubor nebo adresář do Koše, protože má chybný název.\n\nChybná část názvu: "%s"\n\nNápověda: Zkuste ho přejmenovat před odesláním do Koše nebo ho úplně odstranit (pomocí Shift+Delete)."
 
-[STRINGTABLE 159]
+[STRINGTABLE 155]
 14165,1,"Disk Google"
 14166,1,"Dropbox"
 14167,1,"OneDrive"
@@ -3451,7 +3389,7 @@ SLGINCOMPLETE,""
 14170,1,"nelze zjistit cíl odkazu"
 14171,1,"připojovací bod svazku"
 
-[STRINGTABLE 160]
+[STRINGTABLE 156]
 14180,1,"Chyba při získávání velikosti cílového souboru odkazu"
 14181,1,"Pokoušíte se přesunout označené soubory a adresáře do archivu. Není to možné, protože označení obsahuje odkaz na adresář (spojení, připojovací bod svazku nebo symbolický odkaz). Pokračujte prosím bez odstranění souborů z disku po přidání do archivu.\n\nOdkaz: %s"
 14185,1,"Právě probíhá operace na disku."
@@ -3460,7 +3398,7 @@ SLGINCOMPLETE,""
 14188,1,"Windows odmítá přerušit vypínání. Tato zpráva ho dočasně zablokuje. Prosím počkejte a před zavřením této zprávy přerušte vypínání ručně. Jinak dojde k ukončení Tandem Commandera bez uložení konfigurace."
 14189,1,"Windows odmítá přerušit vypínání. Tato zpráva ho dočasně zablokuje.\n\nPrávě probíhají nějaké diskové operace. Přejete si je nyní přerušit? Klikněte na Ne jen pokud jste přerušili vypínání ručně, jinak riskujete , že na disku zůstanou nedokončené soubory.\n\nProsím počkejte a před zodpovězením tohoto dotazu přerušte vypínání ručně. Jinak dojde k ukončení Tandem Commandera bez uložení konfigurace."
 
-[STRINGTABLE 161]
+[STRINGTABLE 157]
 14195,1,"Zavírání oken Vyhledat, čekejte prosím..."
 14196,1,"Tato složka obsahuje položky, jejichž názvy vypadají identicky, ale používají odlišné Unicode zápisy (např. složené vs. rozložené diakritické znaky): \n \n %s \n \n Systém Windows je považuje za různé soubory. Tandem Commander zachovává oba názvy přesně tak, jak jsou uloženy."
 14197,1,"Plugin nemůže zpracovat tento název (byl vytvořen pro starší rozhraní bez podpory Unicode a dlouhých cest): \n \n %s \n \n Položka byla přeskočena, zbývající položky budou zpracovány."
@@ -3475,7 +3413,7 @@ SLGINCOMPLETE,""
 14206,1,"Vybraný program nebyl na tomto počítači nalezen. Vyberte jiný nebo zvolte Vlastní program a zadejte jeho cestu."
 14207,1,"Zadejte program, který se má spustit jako příkazový shell."
 
-[STRINGTABLE 162]
+[STRINGTABLE 158]
 14208,1,"Výběr programu příkazového řádku"
 14209,1,"Chyba při spouštění příkazového řádku"
 14210,1,"Vybraný program příkazového řádku (%s) nebyl na tomto počítači nalezen.\n\nVyberte jiný program v části Konfigurace / Příkazový řádek."

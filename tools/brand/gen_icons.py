@@ -49,7 +49,6 @@ MASTER_MIN_EDGE = 256
 # Shipped ICO outputs (repo-relative); all pack the full size set.
 ICO_TARGETS = (
     "src/res/salamand.ico",
-    "src/salmon/res/salmon.ico",
     "src/setup/res/setup.ico",
     "src/setup/remove/icon1.ico",
 )

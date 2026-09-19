@@ -1769,9 +1769,6 @@ extern char WindowsDirectory[MAX_PATH]; // cachovany vysledek GetWindowsDirector
 extern char RTCErrorDescription[RTC_ERROR_DESCRIPTION_SIZE];
 //#endif // MSVC_RUNTIME_CHECKS
 
-// cesta, kde vytvorime bug report a minidump, umisteni: do Visty u salamand.exe, ve Viste (a dale) v CSIDL_APPDATA + "\\Open Salamander"
-extern char BugReportPath[MAX_PATH];
-
 // nazev souboru, ktery bude importovan (pokud existuje) do registry
 extern char ConfigurationName[MAX_PATH];
 extern BOOL ConfigurationNameIgnoreIfNotExists;

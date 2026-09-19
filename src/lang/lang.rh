@@ -669,17 +669,6 @@
 #define IDT_FINDTEXT                    6126
 #define IDC_FINDHEX                     6127
 #define IDC_REGEXP_BROWSE               6128
-#define IDD_SALMON_MAIN                 6130
-#define IDC_SALMON_INTRO                6131
-#define IDC_SALMON_PRIVACY              6132
-#define IDC_SALMON_VIEW                 6133
-#define IDC_SALMON_DESCRIPTION          6134
-#define IDC_SALMON_ACTION_LABEL         6135
-#define IDC_SALMON_ACTION               6136
-#define IDC_SALMON_EMAIL_LABEL          6137
-#define IDC_SALMON_EMAIL                6138
-#define IDC_SALMON_RESTART              6139
-#define IDC_SALMON_UPLOADING            6140
 #define IDC_CFGREG_INCOMPLETE_TITLE     6205
 #define IDC_CFGREG_INCOMPLETE_TEXT      6206
 #define IDC_CFGREG_INCOMPLETE_URL       6207

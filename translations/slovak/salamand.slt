@@ -1547,21 +1547,6 @@ SLGINCOMPLETE,""
 2,80,122,50,14,1,"Zrušiť"
 9,139,122,50,14,1,"Nápoveda"
 
-[DIALOG 6130]
-351,199,1,"Ohlasovač chýb Tandem Commander"
-6131,8,9,339,16,1,"Nastala chyba, kvôli ktorej je potrebné zatvoriť Tandem Commander. Na prevenciu voči podobným chybám v budúcnosti, prosím pošlite nám správu o chybe."
-6132,8,33,300,8,1,"Ochrana súkromia: žiadne vaše informácie neposkytujeme tretím stranám."
-6140,8,42,84,8,0,"..."
-6134,8,51,169,8,1,"Popis chyby (voliteľné)"
-6133,254,48,90,14,1,"&Zobraziť správu"
-6135,8,69,62,8,1,"&Posledná akcia:"
-6136,8,79,336,54,1,""
-6137,8,144,70,8,1,"&Kontaktný e-mail:"
-6138,8,154,336,14,1,""
-6139,8,178,127,10,1,"&Reštartovať Tandem Commander"
-1,158,176,90,14,1,"&Odoslať správu"
-2,254,176,90,14,1,"&Neodosielať správu"
-
 [DIALOG 6208]
 352,96,1,"Potvrdiť kopírovanie cieľa odkazu"
 6,31,73,50,14,1,"&Áno"
@@ -3386,64 +3371,17 @@ SLGINCOMPLETE,""
 [STRINGTABLE 152]
 14000,1,"[neplatný]"
 14005,1,"Administrátor"
-14010,1,"Prosím zadajte platnú e-mailovú adresu, aby sme vám mohli pomôcť so zadaným problémom."
-14011,1,"Prosím počkajte, kým sa ukončí kompresia a nahrávanie."
-14012,1,"Určite nám nechcete dať vedieť o tomto probléme? Bez vášho oznámenia nebudeme schopní ho opraviť. \n\nKliknite na OK na vymazanie správy bez jej odoslania."
 
 [STRINGTABLE 153]
-14020,1,"Nahraný súbor presahuje povolenú veľkosť. Kód: %d."
-14021,1,"Nahrávaný súbor bol nahraný iba čiastočne. Kód: %d."
-14022,1,"Žiadny súbor nebol nahraný. Kód: %d."
-14023,1,"Chýbajúci dočasný priečinok. Kód: %d."
-14024,1,"Zlyhal zápis súboru na disk. Kód: %d."
-14025,1,"Niektoré rozšírenie zastavilo nahrávanie súboru. Kód: %d."
-14026,1,"Neznáma chyba nahrávania. Kód: %d."
-14030,1,"Syntaktická chyba v odpovedi servera. Značka otvorenia nenájdená."
-14031,1,"Syntaktická chyba v odpovedi servera. Značka zatvorenia nenájdená."
-
-[STRINGTABLE 154]
-14032,1,"Syntaktická chyba v odpovedi servera. Hodnota nenájdená."
-14040,1,"Nemôžem prijímať dáta. Kód: %d."
-14041,1,"Nemôžem zatvoriť pripojenie. Kód: %d."
-14042,1,"Nemôžem poslať dáta. Kód: %d."
-14043,1,"Nemôžem sa pripojiť na server. Kód: %d."
-14044,1,"Nemôžem otvoriť pripojenie. Kód: %d."
-14045,1,"Nemôžem zistiť názov hostiteľa. Kód: %d."
-14046,1,"Nemôžem inicializovať pripojenie. Kód: %d."
-
-[STRINGTABLE 155]
-14050,1,"Chyba čítania súboru %s"
-14051,1,"Nedostatok pamäti"
-14052,1,"Získanie veľkosti súboru zlyhalo pre %s"
-14053,1,"Zlyhalo otvorenie %s"
-14061,1,"Boli nájdené nejaké staršie oznámenia chýb. Chcete oznámiť aj tieto chyby a pomôcť nám zlepšiť Tandem Commander?\n\nStlačte Áno na spracovanie starších oznámení. Stlačte Nie na vymazanie starších oznámení."
-14062,1,"Oznamovač chýb Tandem Commander"
-14063,1,"Komprimovanie, prosím čakajte..."
-
-[STRINGTABLE 156]
-14064,1,"Nahrávanie, prosím čakajte..."
-14065,1,"Správa bola úspešne nahraná.\n\nĎakujeme, že nám pomáhate zlepšovať Tandem Commander!"
-14066,1,"Nahranie správy zlyhalo, dôvod: %s\n\nProsím pošlite nám správu pomocou e-mailu na www.tandemcommander.org a vymažte ich z disku. Kliknite na OK na zobrazanie správy."
-14067,1,"Komprimácia správy zlyhala, dôvod: %s\n\nProsím skomprimujte vašu správu pomocou 7-Zip, pošlite ju na www.tandemcommander.org, a vymažte súbory správy z disku. Kliknite na OK na zobrazenie správy."
-14068,1,"Načítanie %s zlyhalo."
-14070,1,"Toto je interný nástroj Tandem Commandera, prosím nespúšťajte ho priamo."
-14071,1,"Nesprávna verzia oznamovača chýb Tandem Commandera. Prosím kontaktujte nás na www.tandemcommander.org."
-14072,1,"Vyskytla sa chyba, ktorá vyžaduje zatvorenie Tandem Commandera.\nVytvára sa správa o chybe, prosím čakajte..."
-14073,1,"Počas vytvárania správy o chybe sa vyskytol nejaký problém:\n%s"
-14074,1,"Nemôžem vytvoriť súbor minidumpu %s. Kód: %d."
-14075,1,"Chyba počas vytvárania minidumpu. Kód: %d."
-
-[STRINGTABLE 157]
-14100,1,"Oznamovač chýb Tandem Commander (salmon.exe) nebeží. Tandem Commander nebude schopný spracovať prípadné pády. Prosím reštartujte Tandem Commander."
 14101,1,"Vyskytol sa problém, ktorý prinútil program Tandem Commander ukončiť činnosť.\n\nSpráva o chybe bola uložená na:\n%s\n\nNič sa nikam neodosiela. Ak chcete pomôcť vylepšiť program Tandem Commander, priložte prosím tento súbor k hláseniu na stránke github.com/tandemcommander/tandemcommander/issues."
 14102,1,"Vyskytol sa problém, ktorý vynútil zatvorenie programu Tandem Commander.\n\nSpráva o chybe sa nepodarilo uložiť do:\n%s"
 
-[STRINGTABLE 158]
+[STRINGTABLE 154]
 14150,1,"Nedokončený preklad Tandem Commandera"
 14151,1,"Preklad Tandem Commandera do vášho jazyka nie je dokončený. Prosím zvážte navštívenie nášho diskusného fóra a pridanie sa k prekladateľom:"
 14155,1,"Nie je možné odoslať súbor alebo adresár do Koša kvôli nesprávnemu názvu.\n\nNesprávna časť názvu: "%s"\n\nNápoveda: Skúste ho premenovať pred jeho odoslaním do Koša alebo ho úplne odstrániť (pomocou Shift+Delete)."
 
-[STRINGTABLE 159]
+[STRINGTABLE 155]
 14165,1,"Disk Google"
 14166,1,"Dropbox"
 14167,1,"OneDrive"
@@ -3451,7 +3389,7 @@ SLGINCOMPLETE,""
 14170,1,"nemôžem zistiť cieľ odkazu"
 14171,1,"pripájací bod zväzku"
 
-[STRINGTABLE 160]
+[STRINGTABLE 156]
 14180,1,"Chyba pri získaní veľkosti cieľového súboru odkazu"
 14181,1,"Snažíte sa presunúť vybrané súbory a adresáre do archívu. Toto nie je možné, pretože výber obsahuje odkaz na adresár (bod uzla, prípojný bod zväzku alebo symbolický odkaz). Prosím, pokračujte bez odstránenie súborov z disku po pridaní do archívu.\n\nOdkaz: %s"
 14185,1,"Prebieha disková operácia."
@@ -3460,7 +3398,7 @@ SLGINCOMPLETE,""
 14188,1,"Windows odmieta zrušiť vypnutie. Táto správa ho dočasne zablokuje. Prosím, počkajte na zrušenie vypnutia ručne pred zatvorením tejto správy, inak sa Tandem Commander ukončí bez uloženia nastavenia."
 14189,1,"Windows odmieta zrušiť vypnutie. Táto správa ho dočasne zablokuje.\n\nMáte nejaké prebiehajúce diskové operácie. Chcete ich teraz prerušiť? Kliknite na Nie, iba ak ste ručne zrušili vypnutie, inak riskujete prítomnosť nedokončených súborov na vašom disku.\n\nProsím, počkajte na zrušenie vypnutia ručne pred odpoveďou na túto otázku, inak sa Tandem Commander ukončí bez uloženia nastavenia."
 
-[STRINGTABLE 161]
+[STRINGTABLE 157]
 14195,1,"Zatváram okná vyhľadávania, prosím čakajte..."
 14196,1,"Táto zložka obsahuje položky, ktorých názvy vyzerajú identicky, ale používajú odlišné Unicode zápisy (napr. zložené vs. rozložené diakritické znaky): \n \n %s \n \n Systém Windows ich považuje za odlišné súbory. Tandem Commander zachováva oba názvy presne tak, ako sú uložené."
 14197,1,"Plugin nemôže spracovať tento názov (bol vytvorený pre staršie rozhranie bez podpory Unicode a dlhých ciest): \n \n %s \n \n Položka bola preskočená, zostávajúce položky budú spracované."
@@ -3475,7 +3413,7 @@ SLGINCOMPLETE,""
 14206,1,"Vybraný program nebol nájdený na tomto počítači. Vyberte iný alebo vyberte možnosť Vlastný program a zadajte jeho cestu."
 14207,1,"Zadajte program, ktorý sa má spustiť ako príkazový shell."
 
-[STRINGTABLE 162]
+[STRINGTABLE 158]
 14208,1,"Vyberte program príkazového riadku"
 14209,1,"Chyba pri spúšťaní príkazového riadku"
 14210,1,"Vybraný program príkazového riadku (%s) nebol na tomto počítači nájdený.\n\nVyberte iný program v časti Konfigurácia / Príkazový riadok."

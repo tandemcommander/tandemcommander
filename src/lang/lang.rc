@@ -2091,25 +2091,6 @@ BEGIN
     PUSHBUTTON      "Help",IDHELP,139,122,50,14
 END
 
-IDD_SALMON_MAIN DIALOGEX 81, 47, 351, 199
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-CAPTION "Tandem Commander Bug Reporter"
-FONT 8, "MS Shell Dlg", 400, 0, 0x1
-BEGIN
-    LTEXT           "A problem has occured, forcing Tandem Commander to close. A bug report will be created and saved on your disk only.",IDC_SALMON_INTRO,8,9,336,16
-    LTEXT           "Privacy: nothing is sent anywhere; you can attach the saved report to a GitHub issue.",IDC_SALMON_PRIVACY,8,33,300,8
-    LTEXT           "...",IDC_SALMON_UPLOADING,8,42,84,8
-    LTEXT           "Error description (optional)",IDC_SALMON_DESCRIPTION,8,51,169,8
-    PUSHBUTTON      "&View Report",IDC_SALMON_VIEW,254,48,90,14
-    LTEXT           "&Last action:",IDC_SALMON_ACTION_LABEL,8,69,40,8
-    EDITTEXT        IDC_SALMON_ACTION,8,79,336,54,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL
-    LTEXT           "&Contact email:",IDC_SALMON_EMAIL_LABEL,8,144,50,8
-    EDITTEXT        IDC_SALMON_EMAIL,8,154,336,14,ES_AUTOHSCROLL
-    CONTROL         "&Restart Tandem Commander",IDC_SALMON_RESTART,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,178,98,10
-    DEFPUSHBUTTON   "&Save Report",IDOK,158,176,90,14
-    PUSHBUTTON      "&Discard Report",IDCANCEL,254,176,90,14
-END
-
 IDD_CONFIRMLINKTGTCOPY DIALOGEX 15, 34, 352, 96
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Confirm Link Target Copy"
@@ -2311,14 +2292,6 @@ BEGIN
 
     IDD_FINDSET, DIALOG
     BEGIN
-    END
-
-    IDD_SALMON_MAIN, DIALOG
-    BEGIN
-        LEFTMARGIN, 8
-        RIGHTMARGIN, 344
-        TOPMARGIN, 9
-        BOTTOMMARGIN, 190
     END
 
     IDD_CONFIRMLINKTGTCOPY, DIALOG
