@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\salamand\salamand.atp"
-TEXTVERSION,"0.1.7 (x64)"
-VERSION,"0,1,7,191"
+TEXTVERSION,"0.1.8 (x64)"
+VERSION,"0,1,8,192"
 
 [TRANSLATION]
 LANGID,1048
@@ -3435,6 +3435,8 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 157]
 14100,1,"Raportorul Bug Tandem Commander (salmon.exe) nu ruleaza. Tandem Commander nu va fi capabila sa rezolve posibile erori. Va rugam restartati Tandem Commander."
+14101,1,"A apărut o problemă, care a forțat închiderea Tandem Commander.\n\nUn raport de eroare a fost salvat la:\n%s\n\nNu se trimite nimic nicăieri. Dacă doriți să contribuiți la îmbunătățirea Tandem Commander, vă rugăm să atașați acest fișier la o sesizare pe github.com/tandemcommander/tandemcommander/issues."
+14102,1,"A apărut o problemă, care a forțat închiderea Tandem Commander.\n\nRaportul de eroare nu a putut fi salvat în:\n%s"
 
 [STRINGTABLE 158]
 14150,1,"Traducere Neterminata a Tandem Commander"

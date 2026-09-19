@@ -1932,6 +1932,9 @@ STRINGTABLE
 // IDS_SALMON_FAILED, "Starting of Bug Reporter failed. Please pack following bug report using 7-Zip packer and attach it to an issue at github.com/tandemcommander/tandemcommander/issues.\n\nThank you for helping us improve Tandem Commander."
  IDS_SALMON_NOT_RUNNING, "Tandem Commander Bug Reporter (salmon.exe) is not running. Tandem Commander will not be able to handle potential crashes. Please restart Tandem Commander."
 
+ IDS_BUGREPORT_SAVED, "A problem has occurred, forcing Tandem Commander to close.\n\nA bug report has been saved to:\n%s\n\nNothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues."
+ IDS_BUGREPORT_NOTSAVED, "A problem has occurred, forcing Tandem Commander to close.\n\nThe bug report could not be saved to:\n%s"
+
  IDS_SLGINCOMPLETE_TITLE, "Unfinished Translation of Tandem Commander"
  IDS_SLGINCOMPLETE_TEXT, "Translation of Tandem Commander into your language is not finished. Please consider visiting our discussion forum and joining the translation effort:"
  

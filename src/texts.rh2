@@ -2665,6 +2665,10 @@
 // salmon.exe is not running
 #define IDS_SALMON_NOT_RUNNING          14100
 
+// bug report written by the application itself (feature 079): the closing message
+#define IDS_BUGREPORT_SAVED             14101
+#define IDS_BUGREPORT_NOTSAVED          14102
+
 // Translation of Open Salamander into your language is not finished. Please join the translation effort.
 #define IDS_SLGINCOMPLETE_TITLE         14150
 #define IDS_SLGINCOMPLETE_TEXT          14151

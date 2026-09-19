@@ -64,6 +64,7 @@
 #include "salfileio.h"
 #include "salshell.h" // feature 071: Command Shell presets
 #include "saltabs.h"   // feature 078: panel tabs (pure part)
+#include "salbugreport.h" // feature 079: crash report file name (pure part)
 #include "spl_com.h"
 #include "spl_base.h"
 #include "spl_crypt.h"

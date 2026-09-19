@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\salamand\salamand.atp"
-TEXTVERSION,"0.1.7 (x64)"
-VERSION,"0,1,7,191"
+TEXTVERSION,"0.1.8 (x64)"
+VERSION,"0,1,8,192"
 
 [TRANSLATION]
 LANGID,3082
@@ -3435,6 +3435,8 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 157]
 14100,1,"El Informador de Fallor de Tandem Commander (salmon.exe) no está ejecutándose. Tandem Commander no podrá manejar posibles cuelgues. Por favor, reinicie Tandem Commander."
+14101,1,"Se ha producido un problema que ha obligado a Tandem Commander a cerrarse.\n\nSe ha guardado un informe de error en:\n%s\n\nNo se envía nada a ningún sitio. Si desea ayudar a mejorar Tandem Commander, adjunte este archivo a una incidencia en github.com/tandemcommander/tandemcommander/issues."
+14102,1,"Ha surgido un problema que ha obligado a Tandem Commander a cerrarse.\n\nNo se ha podido guardar el informe de error en:\n%s"
 
 [STRINGTABLE 158]
 14150,1,"Traducción inacabada de Tandem Commander"

@@ -16,6 +16,7 @@
 #include "themes_palette.h"
 #include "salshell.h" // feature 071
 #include "saltabs.h"  // feature 078
+#include "salbugreport.h" // feature 079
 
 #include <map>
 #include <set>
@@ -2011,6 +2012,83 @@ static void TestPanelTabs078()
     }
 }
 
+// feature 079: crash report file name (src/common/salbugreport.cpp), contracts/crash-report.md C2
+static void TestBugReport079()
+{
+    SYSTEMTIME t = {0};
+    t.wYear = 2026;
+    t.wMonth = 9;
+    t.wDay = 19;
+    t.wHour = 14;
+    t.wMinute = 30;
+    t.wSecond = 7;
+    WCHAR name[64];
+
+    // exact layout, upper-casing of the version tag, .TXT extension
+    CHECK(SalFormatBugReportName(name, 64, "018X64", t, 0) && wcscmp(name, L"TC018X64-20260919-143007.TXT") == 0);
+    CHECK(SalFormatBugReportName(name, 64, "018x64", t, 0) && wcscmp(name, L"TC018X64-20260919-143007.TXT") == 0);
+
+    // zero padding of every date/time field
+    SYSTEMTIME t2 = {0};
+    t2.wYear = 2030;
+    t2.wMonth = 1;
+    t2.wDay = 2;
+    t2.wHour = 3;
+    t2.wMinute = 4;
+    t2.wSecond = 5;
+    CHECK(SalFormatBugReportName(name, 64, "100X64", t2, 0) && wcscmp(name, L"TC100X64-20300102-030405.TXT") == 0);
+
+    // collision suffix: omitted for 0, one digit, two digits, refused above 99 or below 0
+    CHECK(SalFormatBugReportName(name, 64, "018X64", t, 7) && wcscmp(name, L"TC018X64-20260919-143007-7.TXT") == 0);
+    CHECK(SalFormatBugReportName(name, 64, "018X64", t, 99) && wcscmp(name, L"TC018X64-20260919-143007-99.TXT") == 0);
+    CHECK(!SalFormatBugReportName(name, 64, "018X64", t, 100) && name[0] == 0);
+    CHECK(!SalFormatBugReportName(name, 64, "018X64", t, -1) && name[0] == 0);
+
+    // only A-Z 0-9 '-' '.' ever appear in the output
+    CHECK(SalFormatBugReportName(name, 64, "018X64", t, 42));
+    {
+        BOOL clean = TRUE;
+        for (const WCHAR* p = name; *p != 0; p++)
+        {
+            BOOL ok = (*p >= L'A' && *p <= L'Z') || (*p >= L'0' && *p <= L'9') || *p == L'-' || *p == L'.';
+            if (!ok)
+                clean = FALSE;
+        }
+        CHECK(clean);
+        CHECK(wcslen(name) < 64);
+    }
+
+    // buffer bound: exact size succeeds, one character less fails and clears the buffer
+    {
+        const int exact = 2 + 6 + 9 + 7 + 4 + 1; // TC + version + -YYYYMMDD + -HHMMSS + .TXT + NUL
+        WCHAR tight[64]; // ("small" is a Windows macro)
+        CHECK(SalFormatBugReportName(tight, exact, "018X64", t, 0) && wcslen(tight) == (size_t)(exact - 1));
+        tight[0] = L'x';
+        CHECK(!SalFormatBugReportName(tight, exact - 1, "018X64", t, 0) && tight[0] == 0);
+        const int exactSuffix = exact + 3; // "-42"
+        CHECK(SalFormatBugReportName(tight, exactSuffix, "018X64", t, 42) && wcslen(tight) == (size_t)(exactSuffix - 1));
+        CHECK(!SalFormatBugReportName(tight, exactSuffix - 1, "018X64", t, 42) && tight[0] == 0);
+    }
+
+    // version tag validation: empty, backslash, space, NULL
+    CHECK(!SalFormatBugReportName(name, 64, "", t, 0) && name[0] == 0);
+    CHECK(!SalFormatBugReportName(name, 64, "01\\8", t, 0) && name[0] == 0);
+    CHECK(!SalFormatBugReportName(name, 64, "018 X64", t, 0) && name[0] == 0);
+    CHECK(!SalFormatBugReportName(name, 64, NULL, t, 0) && name[0] == 0);
+
+    // out-of-range time field is refused rather than written as garbage
+    SYSTEMTIME bad = t;
+    bad.wMonth = 100;
+    CHECK(!SalFormatBugReportName(name, 64, "018X64", bad, 0) && name[0] == 0);
+    bad = t;
+    bad.wYear = 10000;
+    CHECK(!SalFormatBugReportName(name, 64, "018X64", bad, 0) && name[0] == 0);
+
+    // degenerate buffers
+    CHECK(!SalFormatBugReportName(NULL, 64, "018X64", t, 0));
+    CHECK(!SalFormatBugReportName(name, 0, "018X64", t, 0));
+}
+
 int main()
 {
     TestConversions();
@@ -2034,6 +2112,7 @@ int main()
     TestEncodingFixes069();
     TestCommandShell071();
     TestPanelTabs078();
+    TestBugReport079();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

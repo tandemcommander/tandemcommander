@@ -241,7 +241,8 @@
       "IDS_TABS_TT_NEW": "Neue Registerkarte (Ctrl+Shift+T)",
       "IDS_TABS_TT_LIST": "Alle Registerkarten",
       "IDS_TABS_CLOSECONFIRM": "Beim Ausschalten der Registerkarten werden %d Registerkarten geschlossen. Fortfahren?",
-      "IDC_PANELTABS": "&Registerkarten in Panels anzeigen"
+      "IDC_PANELTABS": "&Registerkarten in Panels anzeigen",
+      "IDS_BUGREPORT_SAVED": "Es ist ein Problem aufgetreten, wodurch Tandem Commander geschlossen werden musste.\\n\\nEin Fehlerbericht wurde gespeichert unter:\\n%s\\n\\nEs wird nichts an irgendjemanden gesendet. Wenn Sie dabei helfen möchten, Tandem Commander zu verbessern, fügen Sie diese Datei bitte einem Ticket unter github.com/tandemcommander/tandemcommander/issues bei."
     },
     "french": {
       "#Command Shell": "Interpréteur de commandes",
@@ -253,7 +254,8 @@
       "IDS_CMDSHELL_ERRNOTFOUND": "Le programme d'interpréteur de commandes sélectionné (%s) est introuvable sur cet ordinateur.\\n\\nChoisissez un autre programme dans Configuration / Interpréteur de commandes.",
       "IDS_CMDSHELL_ERREXEC": "Impossible de lancer le programme d'interpréteur de commandes :\\n%s\\n\\n%s\\n\\nVous pouvez changer de programme dans Configuration / Interpréteur de commandes.",
       "IDS_TABS_TT_NEW": "Nouvel onglet (Ctrl+Shift+T)",
-      "IDS_TABS_CLOSECONFIRM": "%d onglet(s) seront fermés lorsque les onglets seront désactivés. Continuer ?"
+      "IDS_TABS_CLOSECONFIRM": "%d onglet(s) seront fermés lorsque les onglets seront désactivés. Continuer ?",
+      "IDS_BUGREPORT_SAVED": "Un problème est survenu, forçant Tandem Commander à se fermer.\\n\\nUn rapport de bug a été enregistré à l'emplacement suivant :\\n%s\\n\\nRien n'est envoyé nulle part. Si vous souhaitez aider à améliorer Tandem Commander, veuillez joindre ce fichier à un ticket sur github.com/tandemcommander/tandemcommander/issues."
     },
     "dutch": {
       "#Command Shell": "Opdracht Shell",
@@ -263,7 +265,8 @@
       "IDS_CMDSHELL_BROWSETITLE": "Programma voor de Opdracht Shell selecteren",
       "IDS_CMDSHELL_ERRTITLE": "Fout bij het starten van de Opdracht Shell",
       "IDS_CMDSHELL_ERRNOTFOUND": "Het geselecteerde programma voor de Opdracht Shell (%s) is niet gevonden op deze computer.\\n\\nKies een ander programma in Configuratie / Opdracht Shell.",
-      "IDS_CMDSHELL_ERREXEC": "Het programma voor de Opdracht Shell kan niet worden gestart:\\n%s\\n\\n%s\\n\\nU kunt het programma wijzigen in Configuratie / Opdracht Shell."
+      "IDS_CMDSHELL_ERREXEC": "Het programma voor de Opdracht Shell kan niet worden gestart:\\n%s\\n\\n%s\\n\\nU kunt het programma wijzigen in Configuratie / Opdracht Shell.",
+      "IDS_BUGREPORT_SAVED": "Er is een probleem opgetreden, waardoor Tandem Commander moet worden afgesloten.\\n\\nEr is een bugrapport opgeslagen op:\\n%s\\n\\nEr wordt nergens iets naartoe gestuurd. Als u wilt helpen Tandem Commander te verbeteren, voeg dit bestand dan toe aan een issue op github.com/tandemcommander/tandemcommander/issues."
     },
     "hungarian": {
       "IDS_CMDSHELL_ERRNOTFOUND": "A kiválasztott parancssori program (%s) nem található ezen a számítógépen.\\n\\nVálasszon másik programot a Konfiguráció / Parancssor menüpontban.",
@@ -288,13 +291,19 @@
       "IDS_CMDSHELL_ERREXEC": "No se puede iniciar el programa del shell de comandos:\\n%s\\n\\n%s\\n\\nPuede cambiar el programa en Configuración / Shell de comandos.",
       "IDS_MENU_TAB_NEXT": "Pestaña &siguiente\\tCtrl+Shift+Page Down",
       "IDS_TABS_TT_NEW": "Nueva pestaña (Ctrl+Shift+T)",
-      "IDS_TABS_CLOSECONFIRM": "Al desactivar las pestañas se cerrarán %d pestañas. ¿Continuar?"
+      "IDS_TABS_CLOSECONFIRM": "Al desactivar las pestañas se cerrarán %d pestañas. ¿Continuar?",
+      "IDS_BUGREPORT_SAVED": "Se ha producido un problema que ha obligado a Tandem Commander a cerrarse.\\n\\nSe ha guardado un informe de error en:\\n%s\\n\\nNo se envía nada a ningún sitio. Si desea ayudar a mejorar Tandem Commander, adjunte este archivo a una incidencia en github.com/tandemcommander/tandemcommander/issues."
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
       "convention (cs/sk karta, de Registerkarte, fr onglet, es pestana, nl tabblad,",
       "ro fila, hu lap); shortcut labels inside the strings keep the English",
       "Ctrl+Shift form the menu rows use; the close confirmation keeps a single %d."
+    ],
+    "_feature_079": [
+      "Crash closing message (feature 079): DeepL returned the informal register",
+      "(du/tu/je/tu) for the long message in de/fr/nl/es while the corpus is formal;",
+      "the four pins keep Sie/vous/u/usted, the %s placeholder and the GitHub URL."
     ]
   },
   "zip": {

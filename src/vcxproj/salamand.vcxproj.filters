@@ -423,6 +423,9 @@
     <ClCompile Include="..\common\saltabs.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\salbugreport.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\common\salunicode.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -753,6 +756,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\saltabs.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\salbugreport.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\salunicode.h">

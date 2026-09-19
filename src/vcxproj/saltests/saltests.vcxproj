@@ -87,6 +87,8 @@
     </ClCompile>
     <ClCompile Include="..\..\common\saltabs.cpp">
     </ClCompile>
+    <ClCompile Include="..\..\common\salbugreport.cpp">
+    </ClCompile>
     <ClCompile Include="..\..\common\salunicode.cpp">
     </ClCompile>
     <ClCompile Include="..\..\saltests\saltests.cpp">

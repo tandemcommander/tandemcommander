@@ -27,8 +27,6 @@
 
 typedef void (*FPrintLine)(void* param, const char* txt, BOOL tab);
 
-BOOL StartSalmonProcess(BOOL enableRestartAS);
-
 #if (defined(_DEBUG) || defined(CALLSTK_MEASURETIMES)) && !defined(CALLSTK_DISABLEMEASURETIMES)
 #define CALLSTACK_MONITORINGPERIOD 100    // in miliseconds: how long to monitor how many times a single call-stack macro was called
 #define CALLSTACK_MONITOREDITEMS_BASE 30  // initial number of items to allocate for the queue of monitored call-stack macro calls
@@ -148,7 +146,7 @@ public:
                                const char* iconOvrlsHanName = NULL); // called from the exception handler
     static DWORD WINAPI ThreadBugReportF(void* exitProcess);         // thread that opens the bug report dialog
     // calls PrintBugReport into the bug report
-    static BOOL CreateBugReportFile(EXCEPTION_POINTERS* Exception, DWORD ThreadID, DWORD ShellExtCrashID, const char* bugReportFileName);
+    static BOOL CreateBugReportFile(EXCEPTION_POINTERS* Exception, DWORD ThreadID, DWORD ShellExtCrashID, const WCHAR* bugReportFileName); // feature 079: wide name
 
     // function for printing exception information (used both to a file and to a window)
     // when Exception==NULL, it's not an exception (user manually opened the Bug Report dialog)

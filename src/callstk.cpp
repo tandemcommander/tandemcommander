@@ -10,7 +10,6 @@
 #include "cfgdlg.h"
 #include "dialogs.h"
 #include "tasklist.h"
-#include "salmoncl.h"
 
 #ifndef CALLSTK_DISABLE
 
@@ -73,12 +72,17 @@ struct CTBRData
     DWORD CurrentThreadID;
     DWORD ShellExtCrashID; // if not equal to -1, it indicates an exception during shell execute
     const char* IconOvrlsHanName;
-    const char* BugReportPath;
+    const WCHAR* BugReportPath; // feature 079: full path of the report file (wide - the folder lives under the user profile)
+    HANDLE MessageDone;         // feature 079: signalled by the bug-report thread once the closing message was dismissed
 };
 
 CTBRData TBRData = {0};
 HANDLE BugReportThread = NULL;
 DWORD BugReportThreadID;
+
+// feature 079: in-process crash reporting helpers (defined above HandleException)
+static BOOL BuildBugReportPath(WCHAR* path);
+static void ShowBugReportMessage(const WCHAR* path, BOOL saved);
 
 void BenchmarkCallStkTestFunction(int counter, const char* string)
 {
@@ -164,7 +168,8 @@ CCallStack::CCallStack(BOOL dontSuspend)
         TBRData.TerminateEvent = NOHANDLES(CreateEvent(NULL, TRUE, FALSE, NULL));
         TBRData.Event = NOHANDLES(CreateEvent(NULL, TRUE, FALSE, NULL));
         TBRData.EventProcessed = NOHANDLES(CreateEvent(NULL, TRUE, FALSE, NULL));
-        if (TBRData.TerminateEvent == NULL || TBRData.Event == NULL || TBRData.EventProcessed == NULL)
+        TBRData.MessageDone = NOHANDLES(CreateEvent(NULL, TRUE, FALSE, NULL)); // feature 079
+        if (TBRData.TerminateEvent == NULL || TBRData.Event == NULL || TBRData.EventProcessed == NULL || TBRData.MessageDone == NULL)
             TRACE_E("Error during creating events.");
         else // start the thread only if the events were created successfully
         {
@@ -325,6 +330,7 @@ CCallStack::~CCallStack()
             NOHANDLES(CloseHandle(TBRData.TerminateEvent));
             NOHANDLES(CloseHandle(TBRData.Event));
             NOHANDLES(CloseHandle(TBRData.EventProcessed));
+            NOHANDLES(CloseHandle(TBRData.MessageDone)); // feature 079
         }
 
         HANDLES(DeleteCriticalSection(&Section));
@@ -593,6 +599,12 @@ CCallStack::ThreadBugReportF(void* param)
             // save the error records to disk
             BOOL ret = CreateBugReportFile(data->Exception, data->CurrentThreadID, data->ShellExtCrashID, data->BugReportPath);
 
+            // feature 079: the crashing thread gives us 6 s for the report and then waits
+            // for MessageDone without a limit, so everything the user has to dismiss
+            // comes after this signal (before it, the notices raced the 6 s budget)
+            data->EventProcessedRet = ret;
+            SetEvent(data->EventProcessed);
+
             if (HLanguage != NULL) // we need the SLG module already loaded to display the message box
             {
                 if (data->IconOvrlsHanName != NULL)
@@ -610,10 +622,15 @@ CCallStack::ThreadBugReportF(void* param)
                     SalMessageBoxEx(&params);
                 }
             }
-            data->ExitProcess = TRUE; // terminate the thread
 
-            data->EventProcessedRet = ret;
-            SetEvent(data->EventProcessed);
+            // feature 079: tell the user where the report is (the former out-of-process
+            // helper showed this dialog); when the report could not be written the crashing
+            // thread retries inline and shows the message itself
+            if (ret)
+                ShowBugReportMessage(data->BugReportPath, TRUE);
+
+            data->ExitProcess = TRUE; // terminate the thread
+            SetEvent(data->MessageDone);
             break;
         }
 
@@ -640,7 +657,7 @@ void PrintBugReportLine(void* param, const char* txt, BOOL tab)
         FlushFileBuffers((HANDLE)param);
 }
 
-BOOL CCallStack::CreateBugReportFile(EXCEPTION_POINTERS* Exception, DWORD threadID, DWORD ShellExtCrashID, const char* bugReportFileName)
+BOOL CCallStack::CreateBugReportFile(EXCEPTION_POINTERS* Exception, DWORD threadID, DWORD ShellExtCrashID, const WCHAR* bugReportFileName)
 {
     // try to create the bug report file; the fewer library functions we call,
     // the lower the chance this routine crashes (the libraries might be corrupted
@@ -650,11 +667,14 @@ BOOL CCallStack::CreateBugReportFile(EXCEPTION_POINTERS* Exception, DWORD thread
     __try
     {
         {
-            // create the file
+            // create the file (feature 079: wide name - the folder lives under the user
+            // profile; FALSE when it cannot be created, so the closing message is honest)
             static HANDLE file;
-            file = NOHANDLES(CreateFile(bugReportFileName, GENERIC_WRITE, 0, NULL, CREATE_NEW,
-                                        FILE_ATTRIBUTE_NORMAL, NULL));
-            if (file != INVALID_HANDLE_VALUE)
+            file = NOHANDLES(CreateFileW(bugReportFileName, GENERIC_WRITE, 0, NULL, CREATE_NEW,
+                                         FILE_ATTRIBUTE_NORMAL, NULL));
+            if (file == INVALID_HANDLE_VALUE)
+                ret = FALSE;
+            else
             {
                 __try
                 {
@@ -695,11 +715,87 @@ BOOL CCallStack::CreateBugReportFile(EXCEPTION_POINTERS* Exception, DWORD thread
     return ret;
 }
 
+// feature 079: the application names, writes and announces its crash report
+// itself (the former out-of-process helper is gone). Both helpers run inside
+// the top-level exception filter of a crashing process: raw WinAPI only, static
+// buffers, no CRT, no LoadStr (it takes a critical section the crashing thread
+// may hold). Contract: feature 079, contracts/crash-report.md
+
+// Resolves %LOCALAPPDATA%\Tandem Commander\<name>.TXT into 'path' (MAX_PATH),
+// creating the folder when it is missing and choosing a name that does not exist
+// yet. Returns FALSE when the folder cannot even be resolved; 'path' then names
+// the intended folder so the failure message still tells the user where to look.
+static BOOL BuildBugReportPath(WCHAR* path)
+{
+    static WCHAR dir[MAX_PATH];
+    static WCHAR name[64];
+    static const WCHAR subDir[] = L"\\Tandem Commander";
+
+    lstrcpyW(path, L"%LOCALAPPDATA%");
+    lstrcatW(path, subDir);
+    if (SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, dir) != S_OK)
+        return FALSE;
+    int len = lstrlenW(dir);
+    if (len > 0 && dir[len - 1] == L'\\')
+        dir[--len] = 0;
+    if (len + (int)(sizeof(subDir) / sizeof(WCHAR)) >= MAX_PATH)
+        return FALSE;
+    lstrcatW(dir, subDir);
+    lstrcpyW(path, dir);
+    CreateDirectoryW(dir, NULL); // ERROR_ALREADY_EXISTS is fine; any other failure surfaces at CreateFile
+
+    SYSTEMTIME lt;
+    GetLocalTime(&lt);
+    int dirLen = lstrlenW(dir);
+    for (int suffix = 0; suffix <= 99; suffix++)
+    {
+        if (!SalFormatBugReportName(name, sizeof(name) / sizeof(WCHAR), VERSINFO_SAL_SHORT_VERSION, lt, suffix))
+            return FALSE;
+        if (dirLen + 1 + lstrlenW(name) >= MAX_PATH)
+            return FALSE;
+        lstrcpyW(path, dir);
+        lstrcatW(path, L"\\");
+        lstrcatW(path, name);
+        if (GetFileAttributesW(path) == INVALID_FILE_ATTRIBUTES)
+            break; // free name (or an unusable folder - CreateFile decides)
+    }
+    return TRUE;
+}
+
+// Tells the user that the program has to close and where the report is (or that it
+// could not be saved). Text from the language module when one is loaded, English
+// otherwise; the caption is the product name and version.
+static void ShowBugReportMessage(const WCHAR* path, BOOL saved)
+{
+    static WCHAR format[1024];
+    static WCHAR text[2048];
+    static WCHAR caption[128];
+
+    const WCHAR* fmt = NULL;
+    if (HLanguage != NULL &&
+        LoadStringW(HLanguage, saved ? IDS_BUGREPORT_SAVED : IDS_BUGREPORT_NOTSAVED, format, sizeof(format) / sizeof(WCHAR)) > 0)
+    {
+        fmt = format;
+    }
+    else
+    {
+        // keep byte-identical to the English texts in src\lang\texts.rc2
+        fmt = saved ? L"A problem has occurred, forcing Tandem Commander to close.\n\nA bug report has been saved to:\n%s\n\nNothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues."
+                    : L"A problem has occurred, forcing Tandem Commander to close.\n\nThe bug report could not be saved to:\n%s";
+    }
+    wsprintfW(text, fmt, path); // wsprintf: at most 1024 characters, which the format plus a MAX_PATH path never reach
+    if (MultiByteToWideChar(CP_ACP, 0, SALAMANDER_TEXT_VERSION, -1, caption, sizeof(caption) / sizeof(WCHAR)) == 0)
+        lstrcpyW(caption, L"Tandem Commander");
+    MessageBoxW(NULL, text, caption, MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST);
+}
+
 int CCallStack::HandleException(EXCEPTION_POINTERS* e, DWORD shellExtCrashID, const char* iconOvrlsHanName)
 {
-    // WARNING - an exception occurred and before signaling salmon.exe (to generate
-    // the minidump), we should call only the absolute minimum API (the system may be
-    // in critical sections, with even more restrictions than inside DllMain)
+    // WARNING - an exception occurred; until the report is written we should call
+    // only the absolute minimum API (the system may be in critical sections, with
+    // even more restrictions than inside DllMain). Feature 079: the report is
+    // named, written and announced in-process (see BuildBugReportPath and
+    // ShowBugReportMessage above); the former out-of-process helper is gone.
 
     // in the DEBUG version we check for a debugger; in SDK/RELEASE version we rather skip this test
 #if defined(_DEBUG) && !defined(ENABLE_BUGREPORT_DEBUGGING)
@@ -707,22 +803,28 @@ int CCallStack::HandleException(EXCEPTION_POINTERS* e, DWORD shellExtCrashID, co
         return EXCEPTION_CONTINUE_SEARCH; // pass the exception on ... the debugger will catch it
 #endif
 
-    static char bugReportPath[MAX_PATH];
-
-    // request salmon to generate the minidump
-    SalmonFireAndWait(e, bugReportPath);
-
-    // Although delayed after the minidump, it is more reliable, it increases the chance of having a valid dump
-    SalamanderExceptionTime = GetTickCount();
-
     static DWORD curThreadID;
     curThreadID = GetCurrentThreadId();
+
+    // a nested fault on the thread that is already handling one (for example inside
+    // the closing message) would otherwise spin in the wait below forever
+    static DWORD handlingThreadID;
+    if (CCallStack::ExceptionExists && handlingThreadID == curThreadID)
+        TerminateProcess(GetCurrentProcess(), 1);
+
+    static WCHAR bugReportPath[MAX_PATH];
+    static BOOL havePath;
+    havePath = BuildBugReportPath(bugReportPath);
+
+    SalamanderExceptionTime = GetTickCount();
+
     TRACE_I("Exception 0x" << std::hex << e->ExceptionRecord->ExceptionCode << " in address " << e->ExceptionRecord->ExceptionAddress << ", thread ID = " << std::dec << curThreadID);
 
     // Wait until our exception can be processed
     while (CCallStack::ExceptionExists)
         Sleep(1000);
     CCallStack::ExceptionExists = TRUE; // our exception is being handled now
+    handlingThreadID = curThreadID;
 
     /*  // Opening dialog windows freezes, so this cannot be used.
   // First we suspend the other threads so their call-stacks remain usable
@@ -744,12 +846,14 @@ int CCallStack::HandleException(EXCEPTION_POINTERS* e, DWORD shellExtCrashID, co
     TBRData.IconOvrlsHanName = iconOvrlsHanName;
     TBRData.BugReportPath = bugReportPath;
 
-    // if the bug-report thread is running, attempt generation there
+    // if the bug-report thread is running (and is not the thread that crashed), attempt generation there
     BOOL reportInThisThread = TRUE;
+    BOOL threadUsable = BugReportThread != NULL && curThreadID != BugReportThreadID;
 
-    if (BugReportThread != NULL)
+    if (threadUsable)
     {
         ResetEvent(TBRData.EventProcessed);
+        ResetEvent(TBRData.MessageDone);
         SetEvent(TBRData.Event);
         DWORD waitRet = WaitForSingleObject(TBRData.EventProcessed,
 #if defined(_DEBUG) && defined(ENABLE_BUGREPORT_DEBUGGING)
@@ -760,7 +864,11 @@ int CCallStack::HandleException(EXCEPTION_POINTERS* e, DWORD shellExtCrashID, co
         if (waitRet != WAIT_OBJECT_0)
             reportInThisThread = TRUE; // on error or timeout, we will try to generate the report here as well
         else
+        {
             reportInThisThread = TBRData.EventProcessedRet == FALSE; // if generation failed in the thread, try here too
+            // the thread now shows the notices and the closing message; wait until the user dismissed them
+            WaitForSingleObject(TBRData.MessageDone, INFINITE);
+        }
     }
 
     // if the bug-report thread didn't run or failed to generate the report, we will try again in this thread
@@ -768,14 +876,17 @@ int CCallStack::HandleException(EXCEPTION_POINTERS* e, DWORD shellExtCrashID, co
     {
         // Concurrent generation of two reports caused issues (with a 200 ms
         // timeout both .BUG and .DMP were incomplete) - suspend the background thread
-        if (BugReportThread)
+        if (threadUsable)
             SuspendThread(BugReportThread);
 
         // Try to generate the report in this thread
-        CreateBugReportFile(e, curThreadID, shellExtCrashID, bugReportPath); // create an on-disk record of the error
+        static BOOL written;
+        written = havePath && CreateBugReportFile(e, curThreadID, shellExtCrashID, bugReportPath); // create an on-disk record of the error
 
-        if (BugReportThread)
+        if (threadUsable)
             ResumeThread(BugReportThread);
+
+        ShowBugReportMessage(bugReportPath, written);
     }
 
     TerminateProcess(GetCurrentProcess(), 1); // stronger exit (this still performs some calls)
