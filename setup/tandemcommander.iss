@@ -179,3 +179,50 @@ begin
     WizardForm.NextButton.Enabled := DisclaimerAcceptedCheck.Checked;
 end;
 
+{ Feature 080: remove the crash-reporting helper that releases up to 0.1.7
+  shipped in the utils folder and feature 079 dropped from the product. (No
+  curly braces inside this comment - one would end it.) Setup never
+  deletes a file merely because it stopped shipping it, so every installation
+  upgraded from 0.1.7 kept salmon.exe - the file antivirus engines flag.
+
+  DO NOT move this into [InstallDelete]. Entries of that section are registered
+  with the Restart Manager exactly like [Files], and a 0.1.7 that is still
+  running has its helper running too: a process WITHOUT A WINDOW, which the
+  Restart Manager cannot close - and when its list contains such a process it
+  fails the whole list at once, without asking the main program at all. Setup
+  then hits "file in use", /SUPPRESSMSGBOXES answers Abort, exit code 5, rollback.
+  That is precisely why every update over a running 0.1.7 failed (the package
+  contained salmon.exe), and an [InstallDelete] entry brings it back - measured:
+  specs/080-restart-manager-upgrade/research.md R8.
+
+  Here, after the files are installed, the old program has been closed and its
+  helper - which watches its parent - has ended with it. A short retry covers a
+  helper that is slow to die. Whatever happens, the installation never fails
+  over this and nothing is shown; the uninstaller removes the file in any case,
+  because the uninstall log is cumulative. }
+procedure RemoveStaleCrashReporter;
+var
+  FileName: String;
+  Attempt: Integer;
+begin
+  FileName := ExpandConstant('{app}\utils\salmon.exe');
+  if not FileExists(FileName) then
+    exit;
+  for Attempt := 1 to 10 do
+  begin
+    if DeleteFile(FileName) then
+    begin
+      Log('Feature 080: removed the obsolete crash-reporting helper: ' + FileName);
+      exit;
+    end;
+    Sleep(500);
+  end;
+  Log('Feature 080: the obsolete crash-reporting helper could not be deleted and was left behind: ' + FileName);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    RemoveStaleCrashReporter;
+end;
+
