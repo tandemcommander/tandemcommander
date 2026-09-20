@@ -366,3 +366,19 @@ script is gone and the claim is made three other ways:
 3. **Reading the settings back is still compiled in** and will fire for
    whoever runs the product with the Trace Server attached; the on-screen
    checklist's D4 row says so instead of pretending a probe covered it.
+
+---
+
+## Phase 8 — closing
+
+### T048 — final verification, after every commit on the branch
+
+| Gate | Result |
+|---|---|
+| G1 Debug | `build.cmd` — BUILD SUCCEEDED, 0 errors |
+| G1 Release | `build.cmd full release` — BUILD SUCCEEDED, 0 errors, 20 plugins, 189 language modules, runtime closure OK (219 modules, 59 runtime imports, 4 CRT files) |
+| G2 guards | `disable-features=msWebOOUI` → **1 file** (`src/common/webhost/webhost.cpp`); `#include` of `wrl.h`/`WebView2.h`/`WebView2EnvironmentOptions.h` under `src/plugins/` → **none**; `src/plugins/mdview/webview.cpp` → **absent** |
+| G3 | `build_and_run.cmd` — **29 passed, 0 failed** |
+| G4 | `check_csp_compat.py` — **PASS**, control document and `sample.md` clean |
+| G5 | `mdview_probe.ps1` — 24 checks Debug, 5 Release smoke, **0 failed** |
+| G6 | `render_diff.ps1` — **0 / 729,144 differing pixels** |
