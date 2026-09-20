@@ -38,6 +38,13 @@ struct TcWebKeeperConfig
 class CTcWebKeeper
 {
 public:
+    CTcWebKeeper() = default;
+    // Frees the lazily created state. Without this the block was allocated on
+    // the first Arm() or Disarm() and never released -- 88 bytes per plugin
+    // per session, reported by the debug CRT as a leak from a module that is
+    // already unloaded when the dump is taken (feature 081 review, S1).
+    ~CTcWebKeeper();
+
     // Arms the keeper if it is not already arming/armed. Silent on failure.
     void Arm(const TcWebKeeperConfig& config);
     // Releases the controller and unregisters the window class. Safe to call
@@ -53,4 +60,9 @@ private:
 
     friend struct CTcWebKeeperAccess;
     void* State = nullptr; // CTcWebKeeperState*, created lazily
+
+    // A keeper owns a window class and COM objects; copying one would release
+    // them twice.
+    CTcWebKeeper(const CTcWebKeeper&) = delete;
+    CTcWebKeeper& operator=(const CTcWebKeeper&) = delete;
 };

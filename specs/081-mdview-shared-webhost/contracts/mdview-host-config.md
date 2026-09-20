@@ -48,9 +48,12 @@ module resource and a window member, both of which outlive everything.)
 | `img/<n>` bytes | a scratch `std::vector<BYTE>` held by the `Serve` lambda (a captured `shared_ptr`) | the host (the lambda is stored in its config copy) |
 
 One scratch buffer is enough because `WebResourceRequested` is raised on the
-single thread that created the controller, so two requests never overlap; it
-is cleared and shrunk on the refusal path so a large failed fetch is not held
-for the session.
+single thread that created the controller, so two requests never overlap.
+
+Its capacity is released **at the start of the next image request**, not at
+the end of the current one — the bytes still have to be there when the host
+copies them. So at most one image is held between requests (up to 64 MB local,
+32 MB consented remote), never for the life of the window.
 
 ## 3. `Accelerator` — the 0.1.7 key map, verbatim
 
@@ -100,8 +103,14 @@ keeper arm/disarm/re-arm, cache folder and janitor.
 | close during cold start | latent use-after-free window | late completions discarded |
 | Debug read-back | none | `AssertLockdown` traces any regressed setting |
 
-**Accepted tiny delta** (spec Edge Cases): an embedded `<form>` submission is
-refused silently instead of showing *link blocked*.
+**Accepted tiny deltas**:
+
+- an embedded `<form>` submission is refused silently instead of showing
+  *link blocked* (spec Edge Cases);
+- the 404 for a broken `img/<n>` slot now carries
+  `Content-Type: application/octet-stream`; before it carried no headers at
+  all. Status, reason and the empty body are unchanged, and the engine shows
+  the same empty slot.
 
 ## 6. Forbidden
 

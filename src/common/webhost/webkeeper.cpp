@@ -279,10 +279,21 @@ void CTcWebKeeper::Disarm()
         TRACE_I(s->cfg.TraceName << ": disarmed");
         ReleaseAll();
     }
-    // The class is released here and not in ReleaseAll: that also runs when the
-    // shared browser process dies mid-session, and there the class must stay so
-    // the next view can re-arm without re-registering. This is the unload path
-    // and must run even when the keeper is already unarmed.
+    // The class is released here and not in ReleaseAll, so that a caller who
+    // only wants the controller gone does not lose the registration. Note that
+    // the browser-death path DOES reach this function (TcKeeperWndProc posts
+    // TC_KEEPER_DIED and the handler calls Disarm), so the class is released
+    // there too and the next Arm() re-registers it: ReleaseAll() sets
+    // GWLP_USERDATA to 0 and destroys the hidden window first, so
+    // UnregisterClassW has no window left to refuse over. The pre-081 mdview
+    // keeper kept the class across a browser death instead; both end with the
+    // next view arming successfully. (mdview's own comment claimed this
+    // function was reached only on the unload path -- it never was, once the
+    // keeper became the shared one.)
+    //
+    // Must run even when the keeper is already unarmed: feature 069 (F-P6-01)
+    // -- a class left registered after an unload makes RegisterClassW fail
+    // after a reload and "instant view" silently stops working for the session.
     UnregisterClassIfRegistered();
 }
 
@@ -290,4 +301,20 @@ bool CTcWebKeeper::Armed() const
 {
     CTcWebKeeperState* s = (CTcWebKeeperState*)State;
     return s != nullptr && s->state != CTcWebKeeperState::kUnarmed;
+}
+
+// The keepers are file-static objects in each plugin, so this runs at DLL
+// unload. Disarm() has normally released the COM objects long before (the
+// plugin calls it from CPluginInterface::Release); the guard below covers the
+// path where it did not, and frees the state block itself -- which nothing
+// used to free. It is the one allocation the keeper makes, 88 bytes on x64.
+CTcWebKeeper::~CTcWebKeeper()
+{
+    CTcWebKeeperState* s = (CTcWebKeeperState*)State;
+    if (s == nullptr)
+        return;
+    if (s->state != CTcWebKeeperState::kUnarmed)
+        Disarm(); // releases controller, window and COM, unregisters the class
+    State = nullptr;
+    delete s;
 }

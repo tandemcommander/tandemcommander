@@ -117,7 +117,54 @@ Listed in `specs/NEXT-WORK.md` item 3 with the other owed sweeps.
 
 ## Review
 
-<!-- filled from the independent review -->
+An agent that did not write the code reviewed `git diff main...HEAD -- src/`
+with the deleted file from `main` beside it: **no blocker, 3 SHOULD-FIX, 6
+NOTE**. It confirmed parity item by item (accelerator map, content types,
+where and how often the document version is bumped, the navigation gate, the
+default-deny, the keeper's identity and the 069 class-unregistration fix), and
+verified two claims I had only argued — that the served document pointer cannot
+dangle, and that the single scratch buffer cannot be clobbered re-entrantly.
+
+**All three SHOULD-FIX findings were fixed**, and one of them reaches past this
+feature:
+
+- **The keeper leaked its state block — 88 bytes, per plugin, per session.**
+  `CTcWebKeeper` allocated its state lazily and had no destructor; nothing ever
+  freed it. Because the disarm call on the unload path allocates the state
+  too, the block leaked even in a session where no Markdown file was ever
+  viewed. The pre-081 mdview keeper was a file-static struct that allocated
+  nothing, so my change introduced this for mdview — and codeview has carried
+  it since feature 070.
+
+  **Features 078 and 079 both record an unexplained "one 88-byte block from a
+  plugin module unloaded before the dump".** I measured the struct
+  independently (a same-layout stand-in compiled x64 gives `sizeof = 88`)
+  rather than taking the review's word for it. This is the **most likely
+  explanation, not a proven one** — confirming it needs an allocation stack
+  from a dump. Whoever next sees that leak report should check whether it is
+  now gone. Fixed with a destructor (and deleted copy operations).
+
+  Worth noting *why this feature's own leak check could not have caught it*:
+  T033 compared the migrated tree against a reference tree that already
+  contained codeview's identical leak.
+
+- **The image scratch buffer held the last served image for the window's
+  life** (up to 64 MB) because `clear()` does not release capacity. Now
+  released at the start of the next image request — it cannot be released at
+  the end of the current one, since the host copies the bytes after the
+  callback returns.
+
+- **A comment in the shared keeper was false**: it justified unregistering the
+  window class in `Disarm()` by claiming the browser-death path goes through
+  `ReleaseAll()`. It goes through `Disarm()`. Behaviour is fine (the reviewer
+  traced it: the window is destroyed before `UnregisterClassW`, and the next
+  arm re-registers), but the comment was inherited from mdview's keeper where
+  it had been true, and would have misled the next maintainer.
+
+Two NOTEs were also acted on (the dead NULL guard now says why it is kept; the
+404's new content type is listed among the contract's accepted deltas). The
+stale prose in mdview's `IMPLEMENTATION_NOTES.md` sits in historical sections
+that the new v2.3 section supersedes and was left as an append-only record.
 
 ## Records
 

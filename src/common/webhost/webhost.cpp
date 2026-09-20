@@ -13,7 +13,8 @@
 
 // WRL's implements.h (pulled in by <wrl.h> and WebView2EnvironmentOptions.h) is
 // incompatible with the debug leak-tracking "new" macro. Suspend it across
-// these headers, then restore it (precedent: mdview's webview.cpp).
+// these headers, then restore it. This file and webkeeper.cpp are the only two
+// in the product that include them at all (feature 081).
 #pragma push_macro("new")
 #undef new
 #include <wrl.h>

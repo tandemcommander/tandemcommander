@@ -169,12 +169,22 @@ void MdConfigureHost(TcWebHostConfig& cfg, const MdHtmlResult* doc)
     // is enough -- WebResourceRequested is raised on the single thread that
     // created the controller, so two requests never overlap, and the buffer is
     // only required to survive until the host has copied it.
+    //
+    // It is released at the START of the next image request rather than at the
+    // end of this one, because the host has not copied the bytes yet when we
+    // return. That bounds what is held to one request-to-request interval; the
+    // pre-081 code used a function-local vector and held nothing, and an image
+    // may be up to 64 MB (local) or 32 MB (consented remote).
     auto scratch = std::make_shared<std::vector<BYTE>>();
 
     cfg.Serve = [doc, scratch](const std::wstring& path, TcWebResponse& out) -> bool
     {
+        // Defensive only: MdConfigureHost is called once with the address of a
+        // live window's member, so this cannot be NULL today. (The pre-081 host
+        // needed a real guard here: its document pointer started NULL and was
+        // filled by the first SetDocument.)
         if (doc == NULL)
-            return false; // nothing generated yet -> the host's 403
+            return false; // -> the host's 403
 
         if (path == L"doc.html")
         {
@@ -191,7 +201,8 @@ void MdConfigureHost(TcWebHostConfig& cfg, const MdHtmlResult* doc)
         if (path.compare(0, pl, kImgPrefix) == 0)
         {
             int idx = _wtoi(path.c_str() + pl);
-            scratch->clear();
+            // free what the previous image request left behind (see above)
+            std::vector<BYTE>().swap(*scratch);
             if (idx >= 0 && idx < (int)doc->images.size())
             {
                 const MdImageRef& ref = doc->images[idx];
@@ -205,8 +216,7 @@ void MdConfigureHost(TcWebHostConfig& cfg, const MdHtmlResult* doc)
                     return true;
                 }
             }
-            scratch->clear();
-            scratch->shrink_to_fit(); // a refused 32 MB fetch must not be held
+            std::vector<BYTE>().swap(*scratch); // a refused fetch holds nothing
             // Answered, but Not Found: the status mdview has always used for a
             // broken image slot. Returning false here would turn it into the
             // host's 403 and change what the engine reports.

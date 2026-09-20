@@ -688,7 +688,18 @@ plugin architecture preservation, UI consistency.
   cross-plugin warmth from the Code Viewer); `render_diff.ps1` **0 of 729,144
   pixels differ** from the preserved pre-migration build
   `build\tandemcommander\Debug_x64_prefix081\` (**do not delete it** before
-  the on-screen pass). Owed to a person: `quickstart.md` § A–D — the network
-  monitor over the hostile corpus, the *Keep the rendering engine ready*
-  toggle, plugin unload/reload, dark menus. Records:
+  the on-screen pass). **The independent review (no blocker, 3 SHOULD-FIX, all
+  fixed) found that `CTcWebKeeper` allocated its state lazily and had no
+  destructor — 88 bytes leaked per plugin per session since feature 070, even
+  in a session where nothing was ever viewed** (the disarm on the unload path
+  allocates it too). `sizeof` measured independently as exactly **88**, which
+  matches the *"one 88-byte block from a plugin module unloaded before the
+  dump"* that 078 and 079 both record as unexplained — **the most likely
+  explanation of that leak, not proven**; check whether it is gone the next
+  time that report appears. Also fixed: the image scratch buffer held the last
+  served image (up to 64 MB) for the viewer window's life, and a comment in the
+  shared keeper justified itself by a code path that does not exist. Owed to a
+  person: `quickstart.md` § A–D — the network monitor over the hostile corpus,
+  the *Keep the rendering engine ready* toggle, plugin unload/reload, dark
+  menus. Records:
   `specs/081-mdview-shared-webhost/closing-report.md`, `fix-log.md`.

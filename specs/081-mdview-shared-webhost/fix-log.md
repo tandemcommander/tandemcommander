@@ -382,3 +382,84 @@ script is gone and the claim is made three other ways:
 | G4 | `check_csp_compat.py` — **PASS**, control document and `sample.md` clean |
 | G5 | `mdview_probe.ps1` — 24 checks Debug, 5 Release smoke, **0 failed** |
 | G6 | `render_diff.ps1` — **0 / 729,144 differing pixels** |
+
+### T047 — independent review: no blocker, 3 SHOULD-FIX, all fixed
+
+An agent that did not write the code reviewed `git diff main...HEAD -- src/`
+against the contract and research R1–R4, with the deleted `webview.cpp` from
+`main` beside it. It confirmed parity item by item — the accelerator map is the
+same key set (and the `(vk, ctrl, shift)` argument order matches the host's
+call site, which is the kind of silent swap this review exists to catch), the
+content-type strings are the old ones minus the prefix the host now adds, the
+document-version bumps happen at the same three sites the same number of times,
+and the navigation gate and default-deny are textually unchanged. It also
+verified what I had only argued: that the `doc` pointer cannot dangle
+(`~CViewerWindow` destroys the host in its body, before `Html` goes away) and
+that the single scratch buffer cannot be clobbered re-entrantly.
+
+Three findings, **all fixed in this feature**:
+
+**S1 — the keeper leaked its state block, and it is very probably the 078/079
+mystery leak.** `CTcWebKeeperAccess::S()` allocates `CTcWebKeeperState` with
+`new` on the first `Arm()` *or* `Disarm()`; `CTcWebKeeper` had no destructor
+and nothing ever deleted it. Because `MdKeeperDisarm()` is called
+unconditionally on the unload path, the block leaked **even in a session where
+no Markdown file was viewed**. The pre-081 mdview keeper used a file-static
+struct and allocated nothing, so this is a regression my change introduced for
+mdview — and a defect codeview has carried since feature 070.
+
+The size is the interesting part. I measured it independently rather than
+trusting the review: a stand-in struct with the same members compiled x64
+gives **`sizeof = 88`**. Features 078 and 079 both record an unexplained
+*"one 88-byte block from a plugin module unloaded before the dump"*
+(`#File Error#(84)`) — which is exactly how this allocation presents when the
+debug CRT dumps after the `.spl` is gone. I state it as the **most likely
+explanation, not as proven**: confirming it needs the allocation stack from a
+dump, which needs the Trace Server or a debugger. Whoever next sees that leak
+report should check whether it is gone.
+
+Fixed with a destructor on `CTcWebKeeper` (plus deleted copy operations — a
+copied keeper would release its window class twice). It disarms first if the
+plugin never did, then frees the block. Note this also means the feature's own
+leak check could not have caught it: T033 compared the migrated tree against a
+reference tree that already contained codeview's identical leak.
+
+**S2 — the image scratch buffer kept the last image resident for the window's
+life.** `clear()` does not release capacity and `shrink_to_fit()` was only on
+the refusal path, so a served 64 MB local image (or 32 MB remote) stayed
+allocated until the viewer window closed; the pre-081 function-local vector
+freed it at once. Fixed by releasing the capacity at the **start** of the next
+image request (`std::vector<BYTE>().swap(*scratch)`) — it cannot be released at
+the end of the current one, because the host has not copied the bytes yet.
+Retention is now bounded to one request-to-request interval. The contract's
+buffer-lifetime section says so.
+
+**S3 — a comment in the shared keeper was factually false.** It claimed the
+class is unregistered only on the unload path "because `ReleaseAll` also runs
+when the browser dies mid-session". The browser-death path calls `Disarm()`
+(`webkeeper.cpp:73`), not `ReleaseAll()`, so the class *is* released there. The
+reviewer traced the consequence and it is not a functional regression — the
+window is destroyed and `GWLP_USERDATA` cleared before `UnregisterClassW`, so
+it succeeds, and the next `Arm()` re-registers — but the comment was inherited
+from mdview's own keeper, where it had been true. Corrected to describe what
+the code does, with the 069 requirement kept explicit.
+
+Two of the six NOTEs were also acted on: the dead `doc == NULL` branch now says
+why it is kept, and the 404's new `Content-Type` is listed among the contract's
+accepted deltas. The stale prose the reviewer found in
+`IMPLEMENTATION_NOTES.md` sits in the historical v2.0–v2.2 sections, which the
+new v2.3 section supersedes — left as an append-only record — but the dangling
+*"precedent: mdview's webview.cpp"* in `webhost.cpp` was corrected.
+
+### T048b — re-verification after the review fixes
+
+| Gate | Result |
+|---|---|
+| Debug build | 0 errors |
+| Release build | 0 errors, runtime closure OK (219 modules) |
+| `mdview_probe.ps1` smoke / hostile / cold-close / cross-warm | **18 checks, 0 failed** (the keeper scenarios were not re-run: the two long ones take ~4 min and nothing in the fixes touches arming — the destructor runs at DLL unload, after every scenario ends) |
+| generator harness | 29 passed, 0 failed |
+| arguments literal | one file (`webhost.cpp`) |
+
+The `cold-close` scenario matters most here: it is the one that exercises the
+keeper allocation and release path ten times in a row, and it stayed green.
