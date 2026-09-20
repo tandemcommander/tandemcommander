@@ -13,7 +13,7 @@ working, not reconstructed afterwards. The whole Spec Kit flow
 |---|---|---|
 | specify | done 2026-09-20 | `spec.md`, checklist 16/16, no clarification markers (three decisions recorded as assumptions) |
 | plan | done 2026-09-20 | baseline B0–B6, protocol P1–P6, busy states S1–S3 measured; `research.md` R1–R9, `plan.md`, `data-model.md`, 3 contracts, `quickstart.md` V1–V16; spec revised (Background, US1.5, US5, FR-021/022, SC-009/010) |
-| tasks | pending | |
+| tasks | done 2026-09-20 | `tasks.md`: 39 tasks (4 done during planning), 8 phases, 5 planned commits |
 | implement | pending | |
 
 ## Log
