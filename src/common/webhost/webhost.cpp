@@ -37,12 +37,20 @@ using namespace Microsoft::WRL;
 // ignored. Extending this set is a coordinated change here, never a per-plugin
 // override -- an override would take effect or not depending on which plugin
 // happened to start the tree first.
+//
+// This is the ONE definition in the product (feature 081): the keeper builds
+// its own options object, but takes the string from here, and no plugin may
+// carry a literal of its own.
+const wchar_t* TcWebBrowserArguments()
+{
+    return L"--disable-background-networking --disable-sync --disable-component-update "
+           L"--disable-features=msWebOOUI,msPdfOOUI";
+}
+
 static ComPtr<CoreWebView2EnvironmentOptions> TcWebBuildEnvOptions()
 {
     auto options = Make<CoreWebView2EnvironmentOptions>();
-    options->put_AdditionalBrowserArguments(
-        L"--disable-background-networking --disable-sync --disable-component-update "
-        L"--disable-features=msWebOOUI,msPdfOOUI");
+    options->put_AdditionalBrowserArguments(TcWebBrowserArguments());
     return options;
 }
 

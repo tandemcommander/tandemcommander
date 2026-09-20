@@ -119,3 +119,14 @@ private:
 // the product uses this one folder. A different folder spawns a second, cold
 // browser tree and gains nothing from any keeper.
 std::wstring TcWebUserDataFolder();
+
+// architecture/11-webview2-integration.md S2.2: THE browser-arguments set.
+// AdditionalBrowserArguments take effect only for the environment that STARTS
+// the shared browser process; every later environment's arguments are silently
+// ignored, so two definitions that drift apart would make the product behave
+// differently depending on which plugin the user opened first. Every
+// environment -- each plugin's viewer surfaces and each plugin's keeper --
+// passes exactly this string; extending the set is a coordinated change here
+// and nowhere else. Contract:
+// specs/081-mdview-shared-webhost/contracts/browser-arguments-single-source.md.
+const wchar_t* TcWebBrowserArguments();

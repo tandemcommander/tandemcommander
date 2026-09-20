@@ -3,7 +3,8 @@
 **Written**: 2026-09-02 · **Baseline**: `main` at `f4cefa1` (0.1.7, build 191)
 **Revised**: 2026-09-20 — release status corrected: **0.1.7 is the last
 published version**; 0.1.8 (build 192) exists only in the tree. Feature 080 is
-in `main` (`71e340b`).
+in `main` (`71e340b`); feature 081 closed item 4's first bullet (mdview onto
+the shared WebView2 host) and added its on-screen pass to item 3.
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
@@ -204,6 +205,16 @@ Three features are complete on paper and unverified on screen:
   corpus checks (hostile content, request log, key sweep, copy fidelity,
   encoding matrix, performance budgets). The corpora are already written.
 - **074** — the human steps listed at the end of its `fix-log.md`.
+- **081 §A–D** — the Markdown Viewer's regression pass after it moved onto the
+  shared WebView2 host: `specs/081-mdview-shared-webhost/quickstart.md`. The
+  machine-checkable half is done (builds, guards, 29 generator assertions, the
+  content-policy compatibility check, and probes for the hostile corpus, the
+  keeper, cross-plugin warmth and close-during-cold-start); what needs a person
+  is the network monitor over the hostile corpus, the *Keep the rendering
+  engine ready* toggle and plugin unload/reload through the Plugins Manager,
+  the dark menus, and an eye over rows A1–A10 against the preserved
+  pre-migration build `build\tandemcommander\Debug_x64_prefix081\` — **do not
+  delete that tree before the pass**.
 
 Best done **after** items 1 and 2, so the sweep runs once against a final state.
 A sweep failure is a finding: back through fix → independent review → gates.
@@ -220,13 +231,15 @@ A sweep failure is a finding: back through fix → independent review → gates.
   (version 107): a signal that the close is unattended, honoured by the four
   viewer plug-ins. Documented first, per the constitution.
 
-- **mdview onto the shared `src/common/webhost/`** (`070/REMAINING-WORK.md` §2).
-  `src/common/webhost/` exists and codeview uses it; `src/plugins/mdview/webview.cpp`
-  is still its own copy — verified at HEAD. The product ships two copies of the
-  WebView2 host, the exact duplication
-  `architecture/11-webview2-integration.md` exists to prevent. Its acceptance
-  (the 021 lockdown re-verification and the 065 keeper scenarios) is a manual
-  GUI pass, so it pairs naturally with item 3.
+- ~~**mdview onto the shared `src/common/webhost/`**~~ — ✅ **DONE** (feature
+  081, 2026-09-20). Both viewer plugins now run on `src/common/webhost/`;
+  mdview's own copy is deleted and the browser-arguments set has one
+  definition instead of three. mdview gained the shared host's stricter
+  posture (content policy on the document, downloads and permission requests
+  refused, the close-during-cold-start guard) with no visible change for
+  ordinary documents. Records:
+  [`081-mdview-shared-webhost/closing-report.md`](081-mdview-shared-webhost/closing-report.md).
+  **Its on-screen regression pass is owed and has joined item 3.**
 - **`GetNextFileNameForViewer`'s buffer contract.** The header documents *"at
   least MAX_PATH"* (`src/plugins/shared/spl_gen.h:2703`); the core fills it with
   `SAL_MAX_PATH_UTF8` (`src/salamdr6.cpp:205,223`). A plugin that believes the

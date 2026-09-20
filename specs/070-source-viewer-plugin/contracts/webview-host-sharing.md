@@ -72,3 +72,25 @@ them too (defence-in-depth, no behaviour change).
 - `architecture/11-webview2-integration.md` §2.2/§2.5/§3 updated to point at
   `src/common/webhost/`; mdview's vcxproj gains the shared sources, codeview's
   references them from the start.
+
+### Verification record — feature 081 (2026-09-20)
+
+The mdview half was carried out by `specs/081-mdview-shared-webhost/`. What
+that feature actually proved, and with which artefact:
+
+| Claim | Evidence |
+|---|---|
+| mdview compiles and runs on `CTcWebHost`/`CTcWebKeeper`; no WebView2 or WRL header is included anywhere in either plugin | Debug + Release builds; guard `rg '^\s*#\s*include\s*[<"](wrl\.h\|WebView2\.h)' src/plugins/` → nothing |
+| one browser-arguments set | `TcWebBrowserArguments()`; guard `rg -c "disable-features=msWebOOUI" src/` → 1 file |
+| the generator is untouched | `tests/mdview_htmlgen_test/build_and_run.cmd` — 29 assertions, 0 failed |
+| the added CSP costs no legitimate element | `probe/check_csp_compat.py` — the control document and the harness sample render with **0 blocked references** |
+| hostile documents stay harmless | `probe/mdview_probe.ps1 -Scenario hostile` — 9 fixtures, one viewer each, no dialog, no engine growth |
+| viewing, zoom, View Source, schemes unchanged | `-Scenario smoke` + `probe/render_diff.ps1` against a preserved pre-migration build |
+| keeper behaviour unchanged | `-Scenario keeper-warm/keeper-crash/cross-warm` |
+| a window closed during a cold start is safe | `-Scenario cold-close` (this is a case mdview's own copy did not guard) |
+
+**Still owed to a person** (it always was — the reason the mdview half was
+deferred in the first place): the on-screen pass in
+`specs/081-mdview-shared-webhost/quickstart.md` § A–D, in particular the
+network monitor over the hostile corpus, the `KeepReady` toggle and the
+plugin unload/reload through the Plugins Manager.

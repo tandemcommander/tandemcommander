@@ -3,9 +3,12 @@
 **Status**: binding for every module that embeds WebView2. Established in
 feature 065 (`specs/065-mdview-instant-render/`); first consumer is the
 mdview plugin (rendering surface since feature 021, keeper + this contract
-since 065), second is the codeview plugin (feature 070). If you are adding a
-WebView2-based plugin (WebGPU surface, …), this document tells you what you
-inherit for free and what you must not break.
+since 065), second is the codeview plugin (feature 070). Since feature 081
+(`specs/081-mdview-shared-webhost/`) **both** run on the shared code in
+`src/common/webhost/` — the product carries one implementation of the host,
+not one per plugin. If you are adding a WebView2-based plugin (WebGPU surface,
+…), this document tells you what you inherit for free and what you must not
+break.
 
 **Where the shared code lives (feature 070)**: `src/common/webhost/` —
 `webhost.{h,cpp}` (`CTcWebHost`: environment options, the canonical user data
@@ -18,11 +21,14 @@ interceptor serves, and its key map. Everything else is an invariant of the
 shared code and cannot be relaxed per plugin. Contract:
 `specs/070-source-viewer-plugin/contracts/webview-host-sharing.md`.
 
-**Status of the migration**: codeview uses `src/common/webhost/` from the
-start. mdview still carries its own copy in `src/plugins/mdview/webview.cpp`;
-converting it to the shared host is the outstanding half of the lift and is
-tracked in `specs/070-source-viewer-plugin/REMAINING-WORK.md` (it needs the
-manual mdview regression pass that only a GUI session can run).
+**Status of the migration**: **complete** (feature 081, 2026-09-20). codeview
+used `src/common/webhost/` from the start; mdview was converted in 081 and its
+own copy (`src/plugins/mdview/webview.{h,cpp}`, `CMdWebHost`) is deleted. Each
+plugin keeps only a COM-free `webglue.{h,cpp}` holding what is genuinely its
+own — what its interceptor serves, its key map, its keeper identity — and no
+plugin includes a WebView2 or WRL header any more. The on-screen regression
+pass that only a GUI session can run is recorded as owed in
+`specs/081-mdview-shared-webhost/quickstart.md`.
 
 ## 1. Why a contract exists
 
@@ -57,9 +63,14 @@ already been used in the session.
 
 2. **One browser-arguments set** — `AdditionalBrowserArguments` apply only
    when the browser process *starts*; arguments passed by environments
-   created after that are **silently ignored**. The options helper in
-   `src/plugins/mdview/webview.cpp` is therefore the single source of truth.
-   Current set:
+   created after that are **silently ignored**. Since feature 081 the set has
+   exactly one definition in the tree: **`TcWebBrowserArguments()` in
+   `src/common/webhost/webhost.cpp`**, declared in the COM-free `webhost.h` and
+   used by the viewer surfaces and by both keepers. (Before 081 the literal was
+   written out three times — in mdview's own host, in `webhost.cpp` and in
+   `webkeeper.cpp`, whose comment claimed to include the one definition but did
+   not.) Guard: `rg -c "disable-features=msWebOOUI" src/` must report exactly
+   one file. Current set:
 
    ```
    --disable-background-networking --disable-sync --disable-component-update
@@ -80,8 +91,9 @@ already been used in the session.
    controller settings deliberately — the lockdown is per-WebView, the
    process tree is shared.
 
-4. **Keeper symmetry** — until a shared component exists, each WebView2
-   plugin arms its **own** keeper at its **own first use** (never earlier:
+4. **Keeper symmetry** — the shared component exists (`CTcWebKeeper`), and
+   each WebView2 plugin still arms its **own** instance of it at its **own
+   first use** (never earlier:
    zero background work and zero footprint before the plugin's first real
    use is a product rule, spec 065 FR-001). Any one live controller keeps
    the tree warm for all consumers — whichever plugin is used first warms
@@ -101,25 +113,40 @@ already been used in the session.
    - user-facing opt-out: mdview persists `CONFIG_KEEPREADY`
      (`REG_DWORD`, default 1) — mirror the pattern in your plugin.
 
-5. **Second consumer = lift the helper** — the options helper (and
-   optionally the keeper) is written to move to `src/common/` unchanged.
-   When you add the second WebView2 plugin, do that lift instead of copying
-   the code. A core-hosted keeper service exposed through the plugin API is
+5. **The lift is done; a third consumer only adds itself** — the host, the
+   options helper and the keeper live in `src/common/webhost/` and both
+   existing plugins use them (070 lifted the code and built codeview on it,
+   081 moved mdview across). A third WebView2 consumer therefore **never
+   copies anything**: it adds `webhost.cpp` and `webkeeper.cpp` to its
+   `.vcxproj`, `..\..\..\common\webhost` to its `.props` include path, fills a
+   `TcWebHostConfig` (virtual host, scripts/web messages, what its interceptor
+   serves, its key map, its trace name) and gives its keeper a window class
+   name no other plugin uses. Everything else is an invariant it inherits. If
+   it needs something the config does not expose, that is a coordinated change
+   to the shared host — reviewed with every consumer in mind — never a local
+   fork. A core-hosted keeper service exposed through the plugin API remains
    deliberately deferred (it would bump `LAST_VERSION_OF_SALAMANDER`).
 
 ## 3. Build/source checklist for a new WebView2 plugin
 
+- **Sources**: add `..\..\..\common\webhost\webhost.cpp` and `webkeeper.cpp`
+  as `ClCompile` items (they compile against the consuming plugin's own
+  precompiled header, as they do in `mdview.vcxproj` and
+  `codeview.vcxproj`), and `..\..\..\common\webhost` to
+  `AdditionalIncludeDirectories`.
 - **SDK**: vendored at `src/common/dep/webview2/` (headers +
   `WebView2LoaderStatic.lib` x86/x64, v1.0.4078.44, BSD-3). Runtime is the
-  Evergreen OS component — never distributed. Follow `mdview.props`:
-  include dir + `lib\$(ShortPlatform)` + link
+  Evergreen OS component — never distributed. Follow `mdview.props` or
+  `codeview.props`: include dir + `lib\$(ShortPlatform)` + link
   `WebView2LoaderStatic.lib;shlwapi.lib;ole32.lib;version.lib`; `WINVER`
   ≥ `0x0A00`.
-- **COM/WRL confinement**: include `<wrl.h>`/WebView2 headers in a single
-  .cpp with the debug `new` macro suspended
-  (`#pragma push_macro("new")` / `#undef new` / `#pragma pop_macro("new")`)
-  — WRL's implements.h is incompatible with the leak-tracking macro
-  (precedent: `src/plugins/mdview/webview.cpp`).
+- **COM/WRL confinement**: `<wrl.h>`/WebView2 headers are included **only** in
+  `src/common/webhost/webhost.cpp` and `webkeeper.cpp`, with the debug `new`
+  macro suspended (`#pragma push_macro("new")` / `#undef new` /
+  `#pragma pop_macro("new")`) — WRL's implements.h is incompatible with the
+  leak-tracking macro. A plugin's own glue stays COM-free; the guard is
+  `rg '^\s*#\s*include\s*[<"](wrl\.h|WebView2\.h)' src/plugins/` finding
+  nothing.
 - **Availability gate**: check
   `GetAvailableCoreWebView2BrowserVersionString` before relying on the
   engine and provide a graceful fallback (mdview falls back to the internal
@@ -141,5 +168,11 @@ already been used in the session.
   R2 (what pins the browser process), R4 (footprint), R5 (argument
   identity), R9 (UDF neutralization rationale)
 - `specs/021-mdview-html-renderer/` — rendering-surface security lockdown
-- `src/plugins/mdview/webview.{h,cpp}` — reference implementation
-  (options helper, keeper, host)
+- `specs/081-mdview-shared-webhost/` — the second half of the lift: what moved,
+  what each plugin keeps, and the on-screen checklist for the regression pass.
+  `contracts/mdview-host-config.md` is worth reading before writing a `Serve`
+  callback — it documents the one trap (the host reads `TcWebResponse::Data`
+  *after* the callback returns, so the buffer must outlive the call).
+- `src/common/webhost/webhost.{h,cpp}`, `webkeeper.{h,cpp}` — the
+  implementation; `src/plugins/{mdview,codeview}/webglue.{h,cpp}` — the two
+  worked examples of a per-plugin configuration

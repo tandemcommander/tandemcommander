@@ -20,14 +20,15 @@
 using namespace Microsoft::WRL;
 
 // The keeper must build its environment with the SAME options as every other
-// consumer (contract S2.2). webhost.cpp owns that set; it is rebuilt here
-// through the same code path by including the one definition below.
+// consumer (contract S2.2). Only the options OBJECT is built here -- it is a
+// WRL type and cannot cross the COM-free webhost.h; the argument STRING comes
+// from TcWebBrowserArguments(), which is its single definition in the product.
+// (Until feature 081 this function repeated the literal, and its comment
+// claimed to include the one definition, which it did not.)
 static ComPtr<CoreWebView2EnvironmentOptions> TcWebKeeperEnvOptions()
 {
     auto options = Make<CoreWebView2EnvironmentOptions>();
-    options->put_AdditionalBrowserArguments(
-        L"--disable-background-networking --disable-sync --disable-component-update "
-        L"--disable-features=msWebOOUI,msPdfOOUI");
+    options->put_AdditionalBrowserArguments(TcWebBrowserArguments());
     return options;
 }
 

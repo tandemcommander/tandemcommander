@@ -221,4 +221,83 @@ tables in `specs/065-mdview-instant-render/baseline.md` (the pre-065
 baseline is measured with the option OFF, which reproduces the old
 lifecycle exactly). The `tests/mdview_htmlgen_test/` inputs (htmlgen,
 render, highlight, md4c) are untouched by this feature; its `.vcxproj` has
-never been committed (only the sources), a pre-existing gap.
+never been committed (only the sources), a pre-existing gap — **closed in
+feature 081** by `tests/mdview_htmlgen_test/build_and_run.cmd`, a direct
+`cl.exe` recipe that needs no project file.
+
+---
+
+# v2.3 — Feature 081: onto the shared WebView2 host
+
+Spec/plan/tasks: `specs/081-mdview-shared-webhost/`. Feature 070 lifted the
+WebView2 hosting code into `src/common/webhost/` and built the Code Viewer on
+it, but left mdview on its own copy because converting a shipping feature needs
+a regression pass that only a GUI session can run. This feature is that
+conversion: **the product no longer ships two copies of the host.**
+
+## What moved, what stayed
+
+`webview.{h,cpp}` (984 lines, `CMdWebHost`, `MdBuildEnvOptions`,
+`MdUserDataFolder`, the keeper) is **deleted**. In its place:
+
+- **`webglue.{h,cpp}`** — mdview's side of the shared host, and **COM-free**:
+  no `<wrl.h>`, no WebView2 header is included anywhere in this plugin any
+  more. It holds `MdConfigureHost` (the private origin `mdview.invalid`,
+  scripts and web messages OFF, the `Serve` callback for `doc.html` and
+  `img/<n>`, and the feature-021 key map), the local-file and WinHTTP readers,
+  `SniffContentType`, `MdCleanupOldUserDataFolder` (the pre-065 folder
+  janitor, mdview history) and the two keeper wrappers.
+- **`viewer.{h,cpp}`** — `CTcWebHost* Web`, and a new `int DocVersion` member.
+  The version that cache-busts `doc.html?v=N` used to live inside the host
+  (`SetDocument` bumped it); the shared host takes it from its caller, as
+  codeview's does, so the window owns it now.
+- `MdKeeperArmed()` is gone (declared and defined since 065, called nowhere).
+- `mdview.props` gains the `common\webhost` include directory;
+  `mdview.vcxproj` compiles `webhost.cpp` and `webkeeper.cpp` (against this
+  plugin's own precompiled header).
+
+## What mdview gained, for free
+
+The shared host is a strict superset of the copy it replaces, so the viewer is
+now stricter than in 0.1.7 in five ways, none of which a legitimate document
+notices:
+
+| | Before | Now |
+|---|---|---|
+| `Content-Security-Policy` on the document | none | `default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src/base-uri/form-action/frame-ancestors none` |
+| downloads | the engine's default | cancelled (`DownloadStarting`) |
+| permission requests | the engine's default | denied |
+| script dialogs | the engine's default | disabled |
+| a window closed during a cold engine start | a queued completion could touch a freed host | discarded (the host's `alive` token) |
+| Debug lockdown check | none | every setting read back, `TRACE_E` on a mismatch |
+
+## The one trap worth remembering
+
+`TcWebResponse::Data` is **borrowed and read after the `Serve` callback
+returns** (the host copies it into a stream in `MakeAndSetResponse`). The first
+version of the image branch handed out a pointer into a vector local to the
+lambda, which dangles. codeview never met this because its answers are a module
+resource and a window member. Image bytes therefore live in a scratch buffer
+owned by the `Serve` lambda; the contract
+(`specs/081-.../contracts/mdview-host-config.md`) documents it.
+
+Also preserved deliberately: a broken `img/<n>` slot still answers **404**, not
+the host's default-deny 403 — returning `false` from `Serve` would have changed
+what the engine reports for a missing image.
+
+## Verification
+
+Debug and full Release builds clean. `tests/mdview_htmlgen_test/build_and_run.cmd`
+— 29 assertions, 0 failed (the generator is untouched).
+`specs/081-.../probe/check_csp_compat.py` — the control document and the
+harness's own sample render with **0 blocked references** under the new policy.
+`probe/mdview_probe.ps1` — 24 checks over smoke, the nine hostile fixtures, the
+keeper (survives 65 s, warm reopen, crash re-arm), ten close-during-cold-start
+cycles and cross-plugin warmth from the Code Viewer. `probe/render_diff.ps1` —
+the control document rendered by the pre-migration and migrated builds differs
+in **0 of 729 144 pixels**.
+
+**Still owed, as it was for every mdview feature**: the on-screen pass —
+`specs/081-mdview-shared-webhost/quickstart.md` § A–D, with the network monitor
+over the hostile corpus, the `KeepReady` toggle and plugin unload/reload
+through the Plugins Manager.

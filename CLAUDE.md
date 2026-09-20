@@ -11,7 +11,7 @@ WinAPI C++ application — no MFC, no Qt, no cross-platform frameworks.
 - **Product name**: Tandem Commander, version **0.1.8** (internal build 192)
   in the tree — **not released yet**: the last published version is
   **0.1.7** (build 191, tag `v0.1.7`, 2026-08-29), and everything made since
-  (features 075, 077, 078, 079, 080) ships together as 0.1.8, collected in the
+  (features 075, 077, 078, 079, 080, 081) ships together as 0.1.8, collected in the
   `## [0.1.8] — unreleased` section of `CHANGELOG.md`;
   released versions and what changed in each are recorded in `CHANGELOG.md`
   (mandatory per the constitution: a release bumps
@@ -216,14 +216,18 @@ plugin architecture preservation, UI consistency.
   WebView2 (planned: formatted source viewer, WebGPU), see
   `architecture/11-webview2-integration.md`: one canonical user data folder
   `%LOCALAPPDATA%\Tandem Commander\WebView2` (a different UDF spawns a
-  separate cold browser tree), one browser-arguments set built by the shared
-  options helper in `src/plugins/mdview/webview.cpp` (later environments'
-  args are silently ignored — extensions are coordinated helper changes,
-  never per-plugin overrides), per-controller security stays per-plugin,
-  and each plugin arms its own session-long keeper at its own first use
-  (any one live controller keeps the warm tree for all). SDK vendored at
-  `src/common/dep/webview2/` (v1.0.4078.44); second consumer lifts the
-  helper to `src/common/` instead of copying it (065-mdview-instant-render)
+  separate cold browser tree), one browser-arguments set — **exactly one
+  definition in the tree**, `TcWebBrowserArguments()` in
+  `src/common/webhost/webhost.cpp` (later environments' args are silently
+  ignored — extensions are coordinated changes there, never per-plugin
+  overrides), per-controller security stays per-plugin, and each plugin arms
+  its own session-long keeper at its own first use (any one live controller
+  keeps the warm tree for all). SDK vendored at `src/common/dep/webview2/`
+  (v1.0.4078.44). **The lift is complete since feature 081**: both mdview and
+  codeview run on `src/common/webhost/` (`CTcWebHost`, `CTcWebKeeper`) and
+  keep only a COM-free `webglue.{h,cpp}`; a third consumer adds those two
+  `.cpp` files to its project and fills a `TcWebHostConfig` — it never copies
+  code
 
 ## Recent Changes
 - 002-msvc-x64-build-script: Added Windows Batch script (.cmd) + MSBuild (from VS2022), vswhere.exe
@@ -651,3 +655,40 @@ plugin architecture preservation, UI consistency.
   exists. Owed to a person: the elevated machine-wide update, a real
   `winget upgrade`, real sign-out/shutdown. Records:
   `specs/080-restart-manager-upgrade/closing-report.md`, `fix-log.md`.
+- 081-mdview-shared-webhost: **one WebView2 host in the product**, inside the
+  unreleased 0.1.8, no version bump, plugin ABI untouched (interface 106).
+  Feature 070 lifted the hosting code to `src/common/webhost/` and built the
+  Code Viewer on it but left the Markdown Viewer on its own 984-line copy
+  (`webview.{h,cpp}`, `CMdWebHost`) — the duplication
+  `architecture/11-webview2-integration.md` exists to prevent. That copy is
+  **deleted**; mdview now configures `CTcWebHost`/`CTcWebKeeper` from a
+  COM-free `webglue.{h,cpp}` holding only what is its own (the `doc.html` +
+  `img/<n>` server with the WinHTTP consented fetch, the key map, the
+  pre-065 folder janitor, the keeper's window-class identity), and the
+  viewer window owns the `DocVersion` that cache-busts the document URL, as
+  codeview's does. `MdKeeperArmed()` dropped (dead). The
+  browser-arguments literal existed **three** times — including in
+  `webkeeper.cpp`, whose comment claimed to include the one definition and
+  did not — and is now `TcWebBrowserArguments()` in `webhost.cpp`, guarded by
+  `rg -c "disable-features=msWebOOUI" src/` == 1. **mdview gained the shared
+  host's stricter posture** with no visible change for ordinary documents:
+  a content policy on the served document, downloads and permission requests
+  refused, script dialogs off, the close-during-cold-start guard, the Debug
+  lockdown read-back. Deliberately preserved: a broken `img/<n>` still
+  answers **404**, not the host's 403. **The trap the contract now
+  documents**: `TcWebResponse::Data` is read *after* `Serve` returns, so image
+  bytes live in a scratch buffer owned by the callback — a vector local to the
+  lambda dangles (codeview never met this; its answers outlive everything).
+  Evidence: Debug + full Release builds; 29 generator assertions via the new
+  `tests/mdview_htmlgen_test/build_and_run.cmd` (the `.vcxproj` was never
+  committed — a gap open since 021); `check_csp_compat.py` shows the control
+  document and the harness sample with **0 blocked references** under the new
+  policy; `mdview_probe.ps1` 24 checks (smoke, 9 hostile fixtures, keeper
+  warmth over 65 s, crash re-arm, 10 close-during-cold-start cycles,
+  cross-plugin warmth from the Code Viewer); `render_diff.ps1` **0 of 729,144
+  pixels differ** from the preserved pre-migration build
+  `build\tandemcommander\Debug_x64_prefix081\` (**do not delete it** before
+  the on-screen pass). Owed to a person: `quickstart.md` § A–D — the network
+  monitor over the hostile corpus, the *Keep the rendering engine ready*
+  toggle, plugin unload/reload, dark menus. Records:
+  `specs/081-mdview-shared-webhost/closing-report.md`, `fix-log.md`.

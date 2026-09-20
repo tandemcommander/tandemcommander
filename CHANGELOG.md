@@ -73,6 +73,19 @@ replaced by the release date when the version is published.*
 
 ### Changed
 
+- **The Markdown viewer renders on the same hardened surface as the Code
+  viewer.** Both viewers now share one rendering host inside the program, so
+  they apply one and the same security lockdown. For an ordinary Markdown
+  document nothing changes — text, tables, code, images, colour schemes, zoom,
+  search, View Source, links and the instant second open all behave exactly as
+  in 0.1.7. For a document that tries something it should not, the viewer is
+  stricter: a file download started by the document is refused (previously the
+  browser engine's own handling applied), and the document is delivered with a
+  content policy, so an element the viewer already refused to fetch — a remote
+  image without your consent, an embedded frame, a web font — is now refused
+  one step earlier. Scripts remain switched off and the viewer still makes no
+  network connection of its own.
+
 - **Ctrl+Shift+Page Up / Page Down switch tabs while tabs are on.** Until now
   these two combinations were undocumented duplicates of Shift+Page Up /
   Page Down (page-and-select). With tabs turned off they keep that behaviour.

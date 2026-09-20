@@ -66,7 +66,25 @@ Specific things most likely to need a fix on first run, with where to look:
 | Line-height measurement before the font loads | the virtual list geometry is computed from one probe row | `web/viewer.js` `measure()` |
 | Status bar as a plain `STATIC` | may need owner-draw to follow the dark theme properly | `viewer.cpp` `WM_CREATE` |
 
-## 2. mdview is not yet on the shared host (T006/T007)
+## 2. mdview is not yet on the shared host (T006/T007) — ✅ DONE (feature 081, 2026-09-20)
+
+> Delivered as `081-mdview-shared-webhost`. `src/plugins/mdview/webview.{h,cpp}`
+> is deleted; the plugin configures `CTcWebHost`/`CTcWebKeeper` from a COM-free
+> `webglue.{h,cpp}`, and the browser-arguments set — which this contract said
+> must have one source and which in fact had three — is now
+> `TcWebBrowserArguments()` in `webhost.cpp`. mdview gained the shared host's
+> stricter posture (content policy on the document, downloads and permission
+> requests refused, script dialogs off, the close-during-cold-start guard);
+> nothing was relaxed. Records:
+> [`081-mdview-shared-webhost/closing-report.md`](../081-mdview-shared-webhost/closing-report.md),
+> `fix-log.md`, and the verification record appended to
+> [`contracts/webview-host-sharing.md`](contracts/webview-host-sharing.md) §4.
+>
+> **The manual GUI regression pass this entry was waiting for is still owed**,
+> and has moved to `specs/081-mdview-shared-webhost/quickstart.md` § A–D
+> (listed in `specs/NEXT-WORK.md` item 3 with the other on-screen sweeps).
+>
+> The original entry follows, unchanged.
 
 `src/common/webhost/` exists, is complete, and codeview uses it. **mdview still
 carries its own copy** in `src/plugins/mdview/webview.cpp`.
