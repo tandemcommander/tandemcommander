@@ -587,6 +587,37 @@ static BOOL CALLBACK CloseAppEnumWindowsProc(HWND hwnd, LPARAM lParam)
     return TRUE;
 }
 
+// Makes the program eligible to be started again by an installer that closed it (Restart
+// Manager). Update case only: not after a crash, a hang or a reboot. The command line carries
+// identity (the title prefix and the icon given on the command line), never location - the
+// panels' directories and the tabs come back from the stored configuration.
+// Called when start-up is complete and whenever the forced title prefix / icon change.
+// Contract: specs/080-restart-manager-upgrade/contracts/restart-registration.md
+void RegisterRestartForUpdates()
+{
+    // the forced prefix is UTF-8 and was cut to TITLE_PREFIX_MAX bytes with lstrcpyn - possibly in the
+    // middle of a character, which the strict converter refuses: drop a torn tail first. An EMPTY
+    // forced prefix is an identity too (-t "" forces "no prefix" over the configured one).
+    char prefixU8[TITLE_PREFIX_MAX];
+    lstrcpyn(prefixU8, Configuration.TitleBarPrefixForced, _countof(prefixU8));
+    SalU8TrimIncompleteTail(prefixU8);
+    WCHAR prefixW[TITLE_PREFIX_MAX + 1];
+    prefixW[0] = 0;
+    BOOL hasPrefix = Configuration.UseTitleBarPrefixForced != 0;
+    if (hasPrefix && prefixU8[0] != 0 && SalU8ToW(prefixU8, -1, prefixW, _countof(prefixW)) <= 0)
+        hasPrefix = FALSE; // not convertible: better no prefix than a wrong one
+    BOOL hasIcon = Configuration.MainWindowIconIndexForced != -1;
+
+    WCHAR cmdLine[RESTART_MAX_CMD_LINE];
+    if (!SalRestartCommandLine(cmdLine, _countof(cmdLine), hasPrefix, prefixW,
+                               hasIcon, Configuration.MainWindowIconIndexForced))
+        cmdLine[0] = 0;
+
+    HRESULT hr = RegisterApplicationRestart(cmdLine, RESTART_NO_CRASH | RESTART_NO_HANG | RESTART_NO_REBOOT);
+    if (FAILED(hr))
+        TRACE_E("RegisterApplicationRestart() failed, hr=0x" << std::hex << hr << std::dec);
+}
+
 CSalCloseAppDecision
 CMainWindow::DecideCloseApp()
 {
@@ -998,6 +1029,8 @@ void CMainWindow::ApplyCommandLineParams(const CCommandLineParams* cmdLineParams
         lstrcpyn(Configuration.TitleBarPrefixForced, cmdLineParams->TitlePrefix, TITLE_PREFIX_MAX);
         SetWindowTitle();
     }
+    if (CanClose && (cmdLineParams->SetMainWindowIconIndex || cmdLineParams->SetTitlePrefix))
+        RegisterRestartForUpdates(); // feature 080: the identity a restart after an update must keep has changed
 }
 
 BOOL CMainWindow::SHChangeNotifyInitialize()

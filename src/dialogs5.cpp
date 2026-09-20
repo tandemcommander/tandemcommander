@@ -2761,6 +2761,7 @@ void CCfgPageMainWindow::Transfer(CTransferInfo& ti)
         {
             Configuration.UseTitleBarPrefixForced = FALSE;
             Configuration.TitleBarPrefixForced[0] = 0;
+            RegisterRestartForUpdates(); // feature 080: a restart after an update must not bring the dropped prefix back
         }
     }
 

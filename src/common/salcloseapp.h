@@ -58,8 +58,10 @@ struct CSalCloseAppWindow
 
 // TRUE when 'w' is a window the core cannot account for: visible, of kind
 // scawOther, and a real window - i.e. not a captionless tool / no-activate
-// window (tooltips, save-bits and IME windows never count; a captionless
-// full-screen viewer does)
+// window (tooltips and IME windows never count; a captionless full-screen
+// viewer does). Erring on the side of "foreign" is harmless - it can only
+// decline: e.g. the core's own wait window (WS_OVERLAPPED, so Windows gives it
+// a caption) counts, but it exists only while the program is busy anyway.
 BOOL SalCloseAppWindowIsForeign(const CSalCloseAppWindow& w);
 
 // read-only picture of the program at the moment of the request
@@ -98,7 +100,9 @@ CSalCloseAppDecision SalCloseAppDecide(const CSalCloseAppSnapshot& s);
 const char* SalCloseAppDecisionName(CSalCloseAppDecision d);
 
 // Composes the command line for RegisterApplicationRestart: identity, not
-// location. "-t <prefix>" when the instance was started with a title prefix,
+// location. "-t <prefix>" when the instance was started with a title prefix
+// (an empty or NULL prefix gives -t "", which forces "no prefix" over the
+// configured one - that is what the instance was started with),
 // "-i <n>" when it was started with an icon index (0..3), nothing else - the
 // panels' directories and the tabs come back from the stored configuration.
 // The prefix is quoted the way the program's own tokenizer (GetCmdLine) reads

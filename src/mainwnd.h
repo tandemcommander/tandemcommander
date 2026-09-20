@@ -28,6 +28,10 @@ void BroadcastConfigChanged();
 // universal callback for message boxes
 void CALLBACK MessageBoxHelpCallback(LPHELPINFO helpInfo);
 
+// feature 080: declares the program restartable by an installer that closed it (Restart Manager,
+// update case only); call when start-up is complete and when the forced title prefix / icon change
+void RegisterRestartForUpdates();
+
 //
 // ****************************************************************************
 

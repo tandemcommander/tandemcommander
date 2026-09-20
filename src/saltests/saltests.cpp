@@ -2257,7 +2257,7 @@ static void TestCloseApp080()
     CHECK(SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP, 0, scawOther)));
     // a tool window WITH a caption (a floating palette) counts too
     CHECK(SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP | WS_CAPTION, WS_EX_TOOLWINDOW, scawOther)));
-    // tooltips, save-bits, no-activate helpers: captionless + tool/no-activate -> never
+    // tooltips, IME and no-activate helpers: captionless + tool/no-activate -> never
     CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP, WS_EX_TOOLWINDOW | WS_EX_TOPMOST, scawOther)));
     CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP, WS_EX_NOACTIVATE, scawOther)));
     // WS_BORDER or WS_DLGFRAME alone is not a caption
@@ -2296,9 +2296,17 @@ static void TestCloseApp080()
     CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"Work", TRUE, 2) && wcscmp(cmd, L"-t \"Work\" -i 2") == 0);
     CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"My \"big\" disk", FALSE, 0) &&
           wcscmp(cmd, L"-t \"My \"\"big\"\" disk\"") == 0);
-    // an empty or missing prefix is no prefix; an icon index outside 0..3 is no icon index
-    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"", TRUE, 0) && wcscmp(cmd, L"-i 0") == 0);
-    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, NULL, TRUE, 3) && wcscmp(cmd, L"-i 3") == 0);
+    // -t with an EMPTY prefix is an identity too (it forces "no prefix" over the configured one);
+    // an icon index outside 0..3 is no icon index
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"", TRUE, 0) && wcscmp(cmd, L"-t \"\" -i 0") == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, NULL, TRUE, 3) && wcscmp(cmd, L"-t \"\" -i 3") == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"", FALSE, 0) && wcscmp(cmd, L"-t \"\"") == 0);
+    {
+        std::vector<std::wstring> a = TokenizeLikeGetCmdLine080(L"-t \"\" -i 3");
+        CHECK(a.size() == 4 && a[0] == L"-t" && a[1].empty() && a[2] == L"-i" && a[3] == L"3");
+        a = TokenizeLikeGetCmdLine080(L"-t \"\"");
+        CHECK(a.size() == 2 && a[0] == L"-t" && a[1].empty());
+    }
     CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"A", TRUE, 4) && wcscmp(cmd, L"-t \"A\"") == 0);
     CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"A", TRUE, -1) && wcscmp(cmd, L"-t \"A\"") == 0);
 

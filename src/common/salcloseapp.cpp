@@ -111,9 +111,11 @@ BOOL SalRestartCommandLine(WCHAR* out, int outLen, BOOL hasTitlePrefix, const WC
     out[0] = 0;
     int pos = 0;
 
-    if (hasTitlePrefix && titlePrefix != NULL && titlePrefix[0] != 0)
+    if (hasTitlePrefix)
     {
-        // -t "<prefix>": compose aside first, so that a prefix that does not fit leaves no trace
+        if (titlePrefix == NULL)
+            titlePrefix = L""; // -t "" is an identity too: it forces "no prefix" over the configured one
+        // -t "<prefix>": measure first, so that a prefix that does not fit leaves no trace
         int need = 4; // -t "
         for (const WCHAR* p = titlePrefix; *p != 0; p++)
             need += (*p == L'"') ? 2 : 1;

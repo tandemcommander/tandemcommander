@@ -4628,6 +4628,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                     // dame seznamu procesu vedet, ze bezime a mame hlavni okno (je mozne nas aktivovat pri OnlyOneInstance)
                     TaskList.SetProcessState(PROCESS_STATE_RUNNING, MainWindow->HWindow);
 
+                    // feature 080: start-up is complete - an installer that closes us for an update
+                    // (Restart Manager) may start us again afterwards
+                    RegisterRestartForUpdates();
+
                     if (IsSLGIncomplete[0] != 0 && Configuration.ShowSLGIncomplete)
                         PostMessage(MainWindow->HWindow, WM_USER_SLGINCOMPLETE, 0, 0);
 
