@@ -75,7 +75,12 @@ Write-Host ("Before     : {0}" -f (($before | ForEach-Object { "{0}:{1}" -f $_.P
 
 $argList = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/CURRENTUSER', '/NOICONS', "/DIR=$InstallDir", "/LOG=$Log") + $ExtraArgs
 $sw = [Diagnostics.Stopwatch]::StartNew()
-$inst = Start-Process -FilePath $Installer -ArgumentList $argList -Wait -PassThru
+# NOT Start-Process -Wait: that waits for the whole process TREE, and the program the installer
+# starts again is a descendant of the installer - the probe would wait until that program exits
+# (found the hard way: 614 s). Wait for the installer process only, like a package manager does.
+$inst = Start-Process -FilePath $Installer -ArgumentList $argList -PassThru
+$null = $inst.Handle   # keep the handle so that ExitCode is available after the exit
+$inst.WaitForExit()
 $sw.Stop()
 Write-Host ("EXIT CODE  : {0}   ({1:N1} s)   log: {2}" -f $inst.ExitCode, $sw.Elapsed.TotalSeconds, $Log)
 

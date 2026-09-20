@@ -24,6 +24,18 @@ certutil -hashfile setup\output\tandemcommander-0.1.7-x64-setup.exe SHA256    ::
 - install only per-user into the scratch directory
   (`/CURRENTUSER /DIR=<S>\tc-inst /NOICONS`);
 - make sure no instance of your own is running from the build tree;
+- Setup reuses the folder of an existing installation with the same AppId, so
+  `/DIR=` is ignored while a scratch installation exists — uninstall it before
+  installing somewhere else;
+- wait for Setup with `WaitForExit()`, never with `Start-Process -Wait`: the
+  latter waits for the whole process tree, and the program Setup starts again
+  is a descendant of Setup (the probe does this right);
+- run installer switches from PowerShell: under Git Bash a switch such as
+  `/NORESTARTAPPLICATIONS` is rewritten into a path;
+- the driver matches dialogs by their English titles: set
+  `Configuration\Language` to `english.slg` for the session (the restore in §9
+  puts the original back), and again after `config_equivalence.ps1`, which
+  resets the configuration;
 - at the end: §9.
 
 ## 1. Build and unit tests
@@ -50,18 +62,28 @@ git diff --stat main -- src/plugins/shared   :: empty
 | V7 | confirm on exit | enable *Confirm on program exit*; idle; `rm_probe` | `RmShutdown : 0`, no confirmation |
 | V8 | configuration equivalence | from the same state (known directories, three tabs in one panel): once exit by hand, export the key; once close through `rm_probe`, export the key; compare | identical apart from values that differ between any two runs (list them) |
 | V9 | two instances | one idle, one in the V3 state; `rm_probe` | 351; **both** still running (the idle one did not close at the question) |
-| V10 | identity | start with `-t Work -i 2`; `rm_probe -Restart` | the restarted window's title starts with `Work`, icon variant 2; panels as stored |
+| V10 | identity | start with `-t Work -i 2`; `rm_probe -Restart` | the restarted window's title starts with `Work`, icon variant 2; panels as stored; also `-t "" -i 3` (a forced *empty* prefix) → restarted with `-t "" -i 3` |
+| V18 | forced close | the V3 state; `rm_probe -Force` | nothing new on screen during the 30 s; then the Restart Manager ends the process (its caller asked for that). **No** *forced shutdown* box, **no** *Exiting* dialog |
+| V19 | hidden main window | hide the main window (as when minimised to the tray); `rm_probe -Restart` | listed as `RmOtherWindow`; closed and restarted all the same |
+| V20 | folder with spaces | install into `<S>\tc inst with spaces`, start with `-t "Sp ace" -i 1`, `rm_probe -Restart` | restarted command line `"…\tc inst with spaces\tandemcommander.exe" -t "Sp ace" -i 1`; no *invalid command line* box |
+
+`config_equivalence.ps1` performs V8 by itself (both runs, the export, the
+value-by-value comparison). One differing value is expected and is **not**
+caused by the feature: byte 77 of the File Comparator plug-in's
+`Configuration` blob differs between *any* two runs (an uninitialised byte the
+plug-in has always written).
 
 ## 3. The real installer
 
 | # | Scenario | Steps | Must |
 |---|---|---|---|
 | V11 | update over this version | install the branch's installer into `<S>\tc-inst`; `upgrade_probe.ps1 -Installer … -InstallDir <S>\tc-inst`, **5 runs** | exit code 0 five times; log: *Shutting down applications* … *Attempting to restart applications*; *After: NEW (restarted)* |
-| V12 | update over the published 0.1.7 | uninstall; install `setup\output\tandemcommander-0.1.7-x64-setup.exe` the same way; `upgrade_probe` with the branch's installer | exit code 0 although `salmon.exe` was running; afterwards `utils\salmon.exe` **does not exist**; installer log has the removal line; program restarted |
+| V12 | update over the published 0.1.7 | uninstall; install `setup\output\tandemcommander-0.1.7-x64-setup.exe` the same way; `upgrade_probe` with the branch's installer | exit code 0 although `salmon.exe` was running; afterwards `utils\salmon.exe` **does not exist**; installer log has the removal line. The 0.1.7 is closed and **not** started again — it never registered for a restart; the restart works for updates *from* 0.1.8 on |
 | V13 | no restart on request | `upgrade_probe … -ExtraArgs /NORESTARTAPPLICATIONS` | exit code 0; nothing runs from the folder afterwards |
 | V14 | declined update | the V3 state in the installed instance; `upgrade_probe -Start 0` | exit code 5 within seconds (not after a timeout); installation unchanged; program still running, nothing on screen; record whether Inno Setup restarts anything after a failure |
 | V15 | stale file, program not running | 0.1.7 installed, not started; run the branch's installer | exit code 0; `utils\salmon.exe` gone |
-| V16 | clean install | branch installer into an empty folder, then over itself | exit code 0 twice; removal step reports nothing to do |
+| V16 | clean install | branch installer into an empty folder, then over itself | exit code 0 twice; removal step reports nothing to do; the file list of an installation upgraded from 0.1.7 is identical to a fresh one |
+| V17 | helper cannot be deleted | 0.1.7 installed; hold `utils\salmon.exe` open without delete sharing; run the branch's installer | exit code 0 after about 6 s (the retries); log: *could not be deleted and was left behind*; the next update removes it |
 
 ## 4. What must not have changed (spec FR-013)
 

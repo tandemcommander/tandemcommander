@@ -20,10 +20,13 @@ shutdown, a servicing restart, `WM_USER_CLOSE_MAINWND`,
 1. The program collects a snapshot (`data-model.md` §2) and evaluates
    `SalCloseAppDecide`.
 2. It returns **TRUE** for `scadAgree`, **FALSE** otherwise.
-3. It has **no side effects**: nothing is closed, stopped, saved, shown,
-   disabled or marked busy. The only state it changes is `CloseAppAgreed`.
-   In particular it MUST NOT set `SalamanderBusy`, `DisableIdleProcessing`,
-   `SaveCfgInEndSession` or `WaitInEndSession`.
+3. It has **no side effects the user or the requester could observe**:
+   nothing is closed, stopped, saved, shown, disabled or marked busy. The only
+   request state it changes is `CloseAppAgreed`. In particular it MUST NOT set
+   `SalamanderBusy`, `DisableIdleProcessing`, `SaveCfgInEndSession` or
+   `WaitInEndSession`. (Counting the running file operations releases the
+   thread handles of operations that have already finished — bookkeeping the
+   old code performed at the same point; review finding 10.)
 4. It answers within milliseconds (budget: 5 s, P4). It MUST NOT wait for
    anything — no `WaitForIdle`, no message pumping, no cross-thread
    `SendMessage`.
@@ -31,14 +34,16 @@ shutdown, a servicing restart, `WM_USER_CLOSE_MAINWND`,
 
 ## C3 — The instruction stage (`WM_ENDSESSION`)
 
+The branch is selected by **the message** (C1), never by whether the program
+agreed: an installer's instruction MUST NOT fall into the pre-080 code, whose
+*forced shutdown* message box (`IDS_FORCEDSHUTDOWN`,
+`IDS_FORCEDSHUTDOWNDISKOPER`) would appear on an unattended machine.
+
 | wParam | `CloseAppAgreed` | Behaviour |
 |---|---|---|
 | 0 | any | clear `CloseAppAgreed`; `return 0`. Nothing to undo (C2.3). |
-| 1 | FALSE | not ours (we never agreed) → the pre-080 `WM_ENDSESSION` path |
-| 1 | TRUE | clear `CloseAppAgreed`; arm the `WM_CLOSE` swallow (C5); evaluate the decision **again**; if it no longer agrees → trace, `return 0` (the program keeps running); else run the execute stage (C4); `return 0` |
-
-The pre-080 *forced shutdown* message box (`IDS_FORCEDSHUTDOWN`) MUST NOT be
-reachable for an installer's close request.
+| 1 | FALSE | an instruction we never agreed to — **measured** under a forced close (`RmForceShutdown`, Setup's `/FORCECLOSEAPPLICATIONS`: wParam 1, lParam `0x1`, the process is killed 30 s later), possible with overlapping requests or a sign-out query in between. Arm the `WM_CLOSE` swallow, trace, `return 0`: nothing is shown, nothing is closed. |
+| 1 | TRUE | clear `CloseAppAgreed`; arm the `WM_CLOSE` swallow (C5); evaluate the decision **again**; if it no longer agrees → trace, `return 0` (the program keeps running); else run the execute stage (C4), stamp the swallow time again, `return 0` |
 
 ## C4 — The execute stage
 
@@ -77,15 +82,28 @@ showing anything. The sites (research R6):
 | `PrepareCloseCurrentPath`: `IDS_ARCHIVEFORCECLOSE`, `IDS_FSFORCECLOSE` | as if *No* → FALSE |
 | `CloseDetachedFS`: `IDS_FSFORCECLOSE` | as if *No* → FALSE |
 | `LockedUIReason` message box | not shown |
+| `CFindDialog::CanCloseWindow`: `IDS_SHELLEXTBREAK3` (raised in the Find window's thread) | as if *Continue* → the Find window refuses |
+| leaving an archive when its plug-in unloads (`ChangePathToDisk`, `ChangeToRescuePathOrFixedDrive`): `IDS_INVALIDESCAPEPATH`, the *path shortened* box, `CDriveSelectErrDlg`, the `CheckPath` display | not shown; the code continues as it does after the box (the drive dialog: neither *retry* nor *root*) |
+| registry helpers (`regwork.cpp`): *Error Saving / Loading Configuration*, *Unexpected value type* | not shown; the call fails as it does after the box |
 | exit confirmation `CnfrmOnSalClose` | never reached (it belongs to `WM_USER_CLOSE_MAINWND` only) |
 
 A site added to the exit path later MUST follow the same rule. The guard is
 spelled out at each site (`if (UnattendedClose) …`), not hidden inside the
 message-box function.
 
-**The `WM_CLOSE` that follows** (P2): the first `WM_CLOSE` delivered to the
-main window within 35 s of the start of the execute stage is ignored, once.
-Any later `WM_CLOSE` is an ordinary interactive exit.
+**The `WM_CLOSE` that follows** (P2, P7, P8): after every installer's
+instruction with wParam 1 — agreed or not — the first `WM_CLOSE` delivered to
+the main window within 35 s is ignored, once. The 35 s run from the
+instruction and, after an abandoned execute stage, again from its end (the
+Restart Manager posts the `WM_CLOSE` when the handler returns, or 5 s after
+sending the instruction). Any later `WM_CLOSE` is an ordinary interactive
+exit.
+
+**What the core cannot guard**: a plug-in's own dialogs inside `Release()` or
+`SaveConfiguration()`. Decisions D7 and D8 keep them out of reach for every
+case that could be verified; the FTP plug-in asks when its operations list is
+not empty, and whether an operation can exist without a window and without a
+file system in a panel is not verified (`REMAINING-WORK.md`).
 
 ## C6 — The decision table
 

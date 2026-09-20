@@ -96,7 +96,48 @@ replaced by the release date when the version is published.*
   gone; crash reports are produced exactly as before, and the reporter simply
   re-registers itself periodically instead.
 
+- **Updating while the program is open.** When an installer has to replace the
+  program's files — `winget upgrade`, or Setup run by hand — Windows asks the
+  running program to close. Tandem Commander now treats that request for what
+  it is: nobody may be sitting at the computer. If it is idle it closes without
+  asking anything — not even *Confirm on program exit* — saves the configuration
+  exactly as a normal exit does (and leaves it alone when *Save configuration on
+  exit* is off), and **is started again when the update is finished**, with the
+  same directories, tabs and active tab; an instance started with its own title
+  prefix or icon (`-t`, `-i`) comes back with them. Setup's
+  `/NORESTARTAPPLICATIONS` switch keeps it closed. Nothing else restarts the
+  program: not a crash, not a sign-out, not a reboot.
+
+  If closing would need a decision or would interrupt something, the program
+  **declines at once** and the update fails the way it always did (exit
+  code 5, the installation is rolled back, nothing is changed): while a file
+  operation or a search is running, while a dialog is open, while files edited
+  from an archive wait to be packed back, while a panel shows an FTP or SFTP
+  connection — and also **while a window of a plug-in is open, including a
+  viewer window such as the Code Viewer's**. Close those windows before
+  updating. (The program's own viewer and idle Find windows close by
+  themselves.) Closing plug-in viewers automatically needs a change to the
+  plug-in interface and is planned separately.
+
+  Until now the program answered such a request with its ordinary exit and
+  all of its questions. With a copy running or a plug-in viewer open, the
+  installer gave up after five seconds, a question stayed on the screen, and
+  when somebody answered it later the program exited on its own with no
+  installer left to start it again. Signing out, shutting down and the normal
+  exit are unchanged. The restart works for updates *from* this version on: a
+  0.1.7 that is closed for the update to 0.1.8 stays closed.
+
 ### Fixed
+
+- **An update no longer leaves `salmon.exe` behind.** The crash-reporting
+  helper was removed from the product in this version, but Setup never deletes
+  a file merely because a new version stopped shipping it, so every
+  installation upgraded from 0.1.7 or older would have kept the file in its
+  `utils` folder — the very file antivirus products flag. The installer now
+  removes it after the new files are in place. (It was also this helper, not
+  the program, that made every update over a running 0.1.7 fail: Windows
+  cannot close a program that has no window, and gives up on the whole request
+  when it finds one. Updating a running 0.1.7 to this version works.)
 
 - **The program starts on a computer that has no Microsoft Visual C++
   runtime installed.** Every version from 0.1.0 to 0.1.7 depended on the

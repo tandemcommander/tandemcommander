@@ -60,12 +60,21 @@ manifest can pass, whatever it says. From an **elevated** shell, against the
 installer you are about to publish:
 
 ```powershell
-$log="$env:TEMP\tc_silent.log"; $p=Start-Process 'setup\output\tandemcommander-<version>-x64-setup.exe' -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/LOG=$log" -Wait -PassThru; "EXIT CODE: $($p.ExitCode)"; Get-Content $log -Tail 20
+$log="$env:TEMP\tc_silent.log"; $p=Start-Process 'setup\output\tandemcommander-<version>-x64-setup.exe' -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/LOG=$log" -PassThru; $null=$p.Handle; $p.WaitForExit(); "EXIT CODE: $($p.ExitCode)"; Get-Content $log -Tail 20
 ```
 
 Must print `EXIT CODE: 0` and the log must end with
 `Installation process succeeded.` It reinstalls the same version over itself,
 so nothing is lost.
+
+Do **not** use `Start-Process -Wait` here (this recipe did until feature 080):
+`-Wait` waits for the whole process *tree*, and since feature 080 Setup starts
+the program again after closing it for the update — the restarted program is a
+descendant of Setup, so the command would sit there until somebody closes
+Tandem Commander (observed: 614 s). `WaitForExit()` waits for Setup alone, like
+a package manager does. With the program open during this step the expected
+outcome is now exit code 0 **and** a restarted program; see
+`specs/080-restart-manager-upgrade/quickstart.md`.
 
 Run it **elevated**. From a normal shell the UAC prompt cannot be answered and
 you get exit code 2 with no log — that is the prompt being dismissed, not a

@@ -84,7 +84,7 @@ ASCII name for the trace. The function is total and has no side effects.
 | Item | Type | Life cycle |
 |---|---|---|
 | `CloseAppAgreed` | BOOL | set TRUE by an agreeing query stage; cleared by the following `WM_ENDSESSION` (either wParam) and by a new query |
-| `CloseAppExecuteTime` | DWORD (tick) | set when the execute stage starts; arms the `WM_CLOSE` swallow |
+| `CloseAppExecuteTime` | DWORD (tick) | set at every installer's instruction with wParam 1 (agreed or not) and again when an abandoned execute stage returns |
 | `CloseAppSwallowClose` | BOOL | one-shot: the first `WM_CLOSE` within 35 s of `CloseAppExecuteTime` is ignored and clears it |
 | `CloseAppExecuting` | BOOL | TRUE around the re-dispatch from `WM_ENDSESSION`; selects the execute stage |
 | `UnattendedClose` | BOOL, global (`consts.h`) | TRUE only while the execute stage runs; read by the prompt sites; never visible to plug-ins |
@@ -108,6 +108,7 @@ the command line? (+ 0–3). Output: a wide string, at most
 | Input | Output |
 |---|---|
 | nothing | *(empty)* |
+| forced **empty** prefix (`-t ""` forces *no prefix*) | `-t ""` |
 | prefix `Work` | `-t "Work"` |
 | prefix `My "big" disk` | `-t "My ""big"" disk"` |
 | icon 2 | `-i 2` |

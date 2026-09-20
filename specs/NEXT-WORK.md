@@ -6,8 +6,9 @@ published version**; 0.1.8 (build 192) exists only in the tree.
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
-`specs/069-finish-encoding-fixes/REMAINING-WORK.md` and
-`specs/070-source-viewer-plugin/REMAINING-WORK.md` — into one order. Those files
+`specs/069-finish-encoding-fixes/REMAINING-WORK.md`,
+`specs/070-source-viewer-plugin/REMAINING-WORK.md` and (since 2026-09-20)
+`specs/080-restart-manager-upgrade/REMAINING-WORK.md` — into one order. Those files
 stay authoritative for the *detail and the reasoning*; this one decides the
 **sequence** and records what was verified against HEAD when it was written.
 
@@ -18,7 +19,9 @@ blocker for anything already shipped.
 
 ## R. Release 0.1.8 — not done yet
 
-Features 075, 077, 078 and 079 are merged but **unpublished**. The version was
+Features 075, 077, 078 and 079 are merged but **unpublished**; feature 080
+(branch `080-restart-manager-upgrade`, not merged yet) belongs to the same
+release. The version was
 bumped to 0.1.8 / build 192 by feature 078 (`spl_vers.h`,
 `setup/tandemcommander.iss`, `CLAUDE.md`), and `CHANGELOG.md` collects all four
 features in one section headed `## [0.1.8] — unreleased` (the changelog drafts
@@ -41,8 +44,11 @@ Ship gate, when the release is decided:
 4. `build.cmd full release sign setup`, tag `v0.1.8`, GitHub release, then the
    winget manifest — see item 6 for the state of the catalogue submission.
 
-Whether item 2 (Restart Manager) goes into 0.1.8 or into the release after it
-is an open decision; nothing in the unreleased delta depends on it.
+Item 2 (Restart Manager) was implemented as feature 080 inside the unreleased
+0.1.8, without a version bump; its changelog text is in the same section. Its
+owed human step 1 — the elevated, machine-wide update with the program open —
+belongs to this ship gate too: it is the first thing a `winget upgrade` of the
+released 0.1.8 will do on a user's machine.
 
 ---
 
@@ -133,7 +139,32 @@ output trustworthy for everything below.
 
 </details>
 
-## 2. Restart Manager — upgrading over a running instance (winget P1) ← **start here**
+## 2. Restart Manager — upgrading over a running instance (winget P1) — ✅ DONE (feature 080, 2026-09-20)
+
+> Delivered as `080-restart-manager-upgrade`; record:
+> [`080-restart-manager-upgrade/closing-report.md`](080-restart-manager-upgrade/closing-report.md).
+> **The diagnosis below was wrong in its cause.** The reproduction showed that
+> the update over a running 0.1.7 failed because of `salmon.exe`: a process
+> without a window cannot be closed by the Restart Manager, which then fails
+> the whole request at once without asking the main program. Feature 079 had
+> already removed the helper, and with it the failure in the idle case. What
+> this feature really fixed: the request ran the *interactive* exit, so a
+> running file operation or an open plug-in viewer left a prompt on an
+> unattended machine and the program exited by itself later; the program was
+> not started again after the update; and upgraded installations kept
+> `salmon.exe` (where the obvious `[InstallDelete]` remedy re-creates exit 5 —
+> measured). Left open, in
+> [`080-restart-manager-upgrade/REMAINING-WORK.md`](080-restart-manager-upgrade/REMAINING-WORK.md):
+> five human steps (elevated machine-wide update, a real `winget upgrade`, the
+> interactive installer, real sign-out/shutdown, a servicing restart) and one
+> feature-sized follow-up — **a plug-in-visible "unattended close"** so that
+> plug-in *viewer* windows can close silently instead of making the program
+> decline the update (plug-in interface 107).
+>
+> The original entry follows, unchanged. **Start at item 3 now.**
+
+<details>
+<summary>Original entry</summary>
 
 The one item that **will fail for real users** as soon as the package is in the
 catalogue (checked 2026-09-20: PR #426090, version 0.1.7, is still open —
@@ -156,6 +187,8 @@ First step is reproduction with 072 `quickstart.md` §2b and confirming exit 5.
 The design question is whether the panels' state survives the restart; the API
 is the easy half. Scope is `src/`, not `setup/`. Worth a feature of its own.
 
+</details>
+
 ## 3. The owed on-screen sweeps (a GUI session, maintainer only)
 
 Three features are complete on paper and unverified on screen:
@@ -176,6 +209,16 @@ Best done **after** items 1 and 2, so the sweep runs once against a final state.
 A sweep failure is a finding: back through fix → independent review → gates.
 
 ## 4. Architectural debt to repay before it is copied
+
+- **A plug-in-visible "unattended close"** (`080/REMAINING-WORK.md` P2). Since
+  feature 080 the program declines an installer's close request while *any*
+  plug-in window is open — including the Code Viewer's, which is the default
+  for F3 — because the viewer plug-ins ask *"close the windows?"* when they are
+  unloaded and the core can neither answer for them nor tell a viewer from an
+  FTP transfer. An update therefore fails (cleanly) whenever a viewer window
+  was left open. The remedy is a small addition to the plug-in interface
+  (version 107): a signal that the close is unattended, honoured by the four
+  viewer plug-ins. Documented first, per the constitution.
 
 - **mdview onto the shared `src/common/webhost/`** (`070/REMAINING-WORK.md` §2).
   `src/common/webhost/` exists and codeview uses it; `src/plugins/mdview/webview.cpp`

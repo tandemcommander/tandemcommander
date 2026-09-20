@@ -34,7 +34,20 @@ itself is accepted.
 
 ---
 
-## P1 — Upgrading over a running instance aborts the install
+## P1 — Upgrading over a running instance aborts the install — CLOSED (feature 080, 2026-09-20)
+
+> **Closed, and the diagnosis below corrected.** The abort was caused by
+> `salmon.exe`, not by the program: a process without a window cannot be closed
+> by the Restart Manager, which then fails the whole request immediately —
+> the main program was never asked. The helper was removed in feature 079;
+> feature 080 made the close unattended-safe (no prompt, prompt refusal when
+> busy), registered the program for a restart after the update, and removes
+> the stale `salmon.exe` of upgraded installations (not via `[InstallDelete]`,
+> which would bring exit 5 back). Updating a running 0.1.7 to 0.1.8 works.
+> Record: `specs/080-restart-manager-upgrade/closing-report.md`. Note that
+> quickstart §2b no longer uses `Start-Process -Wait`.
+>
+> The original text follows, unchanged.
 
 **Affects real users the moment the package is in the catalogue.**
 

@@ -21,7 +21,25 @@
 <dt><i>Save configuration on exit</i></dt>
 <dd>When checked, configuration will be saved on Open Salamander exit. 
 Configuration contains settings from Configuration dialog, main window position,
-panel widths and current directories, and other options.</dd>
+panel widths and current directories, and other options.
+<p><b>Updating while the program is running.</b> When an installer has to replace
+the program's files (<code>winget upgrade</code>, or Setup started by hand), Windows
+asks the running Tandem Commander to close. An idle program closes without asking
+anything &ndash; not even <i>Confirm on program exit</i> &ndash; and this option
+applies exactly as it does to a normal exit: when checked, the configuration is
+saved; when unchecked, the stored configuration is left alone. After the update
+the program is started again and shows what the stored configuration says (the
+directories of both panels, the tabs, the active tab); an instance started with
+the <code>-t</code> or <code>-i</code> command line parameters keeps its title
+prefix and icon. Setup's <code>/NORESTARTAPPLICATIONS</code> switch keeps the
+program closed.</p>
+<p>The program declines the request &ndash; and the update fails without changing
+anything &ndash; while a file operation or a search is running, while a dialog is
+open, while files edited from an archive are waiting to be packed back, while a
+panel shows a plugin file system such as FTP or SFTP, and while a window of a
+plugin is open, including a plugin viewer such as the Code Viewer. Close such
+windows before updating. The internal viewer and idle Find windows are closed
+automatically.</p></dd>
 
 <dt><i>Clear read-only attribute when copying from CD-ROM</i></dt>
 <dd>Files on CD-ROM have read-only attribute set. This check box allows clear

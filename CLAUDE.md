@@ -185,7 +185,8 @@ Property sheets: `plugins/shared/vcxproj/plugin_base.props` + debug/release vari
 consolidated, prioritized ordering of the per-feature handoffs
 (`specs/069-finish-encoding-fixes/REMAINING-WORK.md`,
 `specs/070-source-viewer-plugin/REMAINING-WORK.md`,
-`specs/072-winget-distribution/REMAINING-WORK.md`), which stay authoritative
+`specs/072-winget-distribution/REMAINING-WORK.md`,
+`specs/080-restart-manager-upgrade/REMAINING-WORK.md`), which stay authoritative
 for the detail and the reasoning behind each item. Start there rather than
 re-deriving the order from the individual files.
 
@@ -603,3 +604,50 @@ plugin architecture preservation, UI consistency.
   in `CHANGELOG.md`), plugin ABI untouched (interface 106).
   Records: `specs/079-remove-salmon-crash-reporter/fix-log.md`,
   `closing-report.md`; probes under `probe/`.
+- 080-restart-manager-upgrade: **closing for an update** (Restart Manager),
+  inside the unreleased 0.1.8, no version bump. The backlog's diagnosis
+  (*"the program does not end when the installer asks"*) was **refuted by the
+  reproduction it demanded**: updates over a running 0.1.7 failed because of
+  `salmon.exe` — a process without a window cannot be closed by the Restart
+  Manager, which then fails the *whole* request in milliseconds without asking
+  the main program; feature 079 had already removed that. The real defects,
+  measured first: an installer's request (`WM_QUERYENDSESSION` /
+  `WM_ENDSESSION` with `ENDSESSION_CLOSEAPP`) ran the complete *interactive*
+  exit inside the question, so a running file operation or an open plug-in
+  viewer (the default F3 viewer) made the installer time out after 5 s, left a
+  prompt on an unattended machine, and the program exited by itself when the
+  prompt was answered later; the program was not started again; upgraded
+  installations kept `salmon.exe`. Fix: **decide at the question**
+  (side-effect-free `CMainWindow::DecideCloseApp` → pure
+  `SalCloseAppDecide`, reasons D1–D8 in `src/common/salcloseapp.*` under
+  `saltests`, 1427 → 1527), **act at the instruction** by re-entering the
+  existing exit handler synchronously with the global **`UnattendedClose`**
+  set — every prompt site on the exit path takes its negative branch without
+  showing anything (`mainwnd3/4`, `fileswn2`, `plugins1`, `finddlg1`,
+  `regwork`); it is the *opposite* policy of `CriticalShutdown` and is not
+  exposed to plug-ins. The branch in `WM_ENDSESSION` is selected by the
+  message, not by our agreement (a forced close delivers the instruction to a
+  program that declined — measured), and the one `WM_CLOSE` the Restart Manager
+  sends afterwards is swallowed. Scope guard: close-app flag set, critical
+  flag clear, `SM_SHUTTINGDOWN` 0 — sign-out, shutdown, critical shutdown and
+  the normal exit are untouched. `RegisterRestartForUpdates()`:
+  `RESTART_NO_CRASH|NO_HANG|NO_REBOOT`, command line = identity only
+  (`-t`, `-i`), state through the stored configuration. **An open plug-in
+  window declines the update** — closing viewer windows silently needs a
+  plug-in-visible signal (interface 107), handed over in `REMAINING-WORK.md`.
+  Installer: the stale helper is deleted from `[Code]` at `ssPostInstall`,
+  **never via `[InstallDelete]`** — entries of that section are registered
+  with the Restart Manager, which brings exit 5 back for a running 0.1.7
+  (measured; comment in the `.iss`). Verified with six committed probes
+  (`probe/rm_probe.ps1` performs Inno Setup's Restart Manager sequence without
+  an installer; `rm_protocol_dummy.ps1` logs what the Restart Manager really
+  sends): 5/5 silent updates exit 0 and restart, busy states decline in 0.0 s
+  with nothing on screen, configuration saved by the unattended close equals a
+  manual exit's, upgraded file list identical to a fresh install; independent
+  review: no blocker, three SHOULD-FIX fixed. Traps: `Start-Process -Wait`
+  waits for the process *tree* (the restarted program is Setup's descendant —
+  also corrected in 072 quickstart §2b), Git Bash rewrites `/SWITCH` arguments
+  into paths, Setup ignores `/DIR` while an installation with the same AppId
+  exists. Owed to a person: the elevated machine-wide update, a real
+  `winget upgrade`, real sign-out/shutdown. Records:
+  `specs/080-restart-manager-upgrade/closing-report.md`, `fix-log.md`.

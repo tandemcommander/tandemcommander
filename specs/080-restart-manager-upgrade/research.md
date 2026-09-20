@@ -57,6 +57,9 @@ documentation. The design relies on P1, P2, P3 and P6.
 | P4 | A window that has not answered the query after **5 s** fails the session (351 after 5.0 s). |
 | P5 | A process that exits *inside* the query is accepted (success). |
 | P6 | `RegisterApplicationRestart` makes `RmGetList` report `restartable=True`, and `RmRestart` starts the program again with the registered command line **even if it had been running for only three seconds**. The documented 60-second minimum applies to restarts after crashes and hangs, not to the Restart Manager. |
+| P7 | *(measured during the review, dummy mode `slow-end`)* A program that stays inside its `WM_ENDSESSION` handler receives the `WM_CLOSE` **5.1 s after the instruction was sent**, while still inside the handler (if it pumps messages); otherwise right after the handler returns. |
+| P8 | *(measured during the review, `rm_probe -Force`)* Under `RmForceShutdown` — Setup's `/FORCECLOSEAPPLICATIONS` — a program that **declines** the question still gets `WM_ENDSESSION` with **wParam 1**, lParam `0x1` (no critical flag), then `WM_CLOSE`, and is killed after 30 s. |
+| P9 | *(measured during the review)* `RmRestart` starts the program with a **quoted image path** (`"…\tc inst with spaces\tandemcommander.exe" -t "Sp ace" -i 1`), so an installation folder with spaces is safe. With the main window hidden the process is listed as `RmOtherWindow` and is closed and restarted all the same. |
 
 **Consequences**:
 

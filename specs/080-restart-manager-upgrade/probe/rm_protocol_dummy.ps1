@@ -15,6 +15,8 @@
         agree-exit     answer TRUE, exit on WM_ENDSESSION            (well-behaved)
         agree-late N   answer TRUE, exit N seconds after WM_ENDSESSION
         agree-stay     answer TRUE, never exit
+        slow-end N     answer TRUE, stay inside WM_ENDSESSION for N seconds (pumping
+                       messages), then exit - shows when the WM_CLOSE really arrives
         refuse         answer FALSE
         query-exit     exit inside WM_QUERYENDSESSION (what Tandem Commander
                        did before feature 080)
@@ -99,6 +101,17 @@ public class RmDummy : Form
             m.Result = IntPtr.Zero;
             if (m.WParam != IntPtr.Zero)
             {
+                if (mode.Contains("slow-end"))
+                {
+                    // stay INSIDE the WM_ENDSESSION handler for 'late' seconds while pumping messages, the
+                    // way a real program closes (wait windows, plug-in unload): does the WM_CLOSE arrive
+                    // while we are still in here, or only after we return?
+                    W("slow-end: staying inside WM_ENDSESSION for " + late + " s, pumping messages");
+                    DateTime until = DateTime.Now.AddSeconds(late);
+                    while (DateTime.Now < until) { Application.DoEvents(); System.Threading.Thread.Sleep(50); }
+                    W("slow-end: leaving WM_ENDSESSION and exiting");
+                    Environment.Exit(0);
+                }
                 if (mode.Contains("agree-exit")) { W("exiting on WM_ENDSESSION"); Environment.Exit(0); }
                 if (mode.Contains("agree-late"))
                 {

@@ -17,16 +17,20 @@
       click        post BM_CLICK to the button with control id <Id> in the
                    top-level dialog whose title contains <Title>
       close        post WM_CLOSE to the main window (a normal, interactive exit)
+      settext      WM_SETTEXT <Text> to control <Id> of the dialog titled <Title>
+      closewnd     post WM_CLOSE to the visible top-level window of the pid whose
+                   title contains <Title> (closing a viewer or a Find window)
 
     Command ids used by the scenarios (src/resource.rh2):
       686 CM_CONFIGURATION   727 CM_COPYFILES   741 CM_FINDFILE   742 CM_VIEW
+      753 CM_ALTVIEW (the internal viewer)          2210 CM_HELP_CONTENTS
 
 .NOTES
     Windows PowerShell 5.1 compatible.
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)][ValidateSet('start', 'children', 'command', 'key', 'dialogs', 'click', 'close')][string]$Action,
+    [Parameter(Mandatory = $true)][ValidateSet('start', 'children', 'command', 'key', 'dialogs', 'click', 'close', 'closewnd', 'settext')][string]$Action,
     [string]$Exe,
     [int]$ProcessId,
     [string]$Left, [string]$Right,
@@ -34,7 +38,8 @@ param(
     [int]$Id,
     [int]$Vk,
     [int]$Panel = 0,
-    [string]$Title
+    [string]$Title,
+    [string]$Text
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,6 +63,7 @@ public static class Drv080
     [DllImport("user32.dll")] public static extern int GetDlgCtrlID(IntPtr h);
     [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr h, int id);
     [DllImport("user32.dll")] public static extern bool PostMessageW(IntPtr h, uint msg, IntPtr w, IntPtr l);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")] public static extern IntPtr SendText(IntPtr h, uint msg, IntPtr w, string l);
 
     public static string Cls(IntPtr h) { var s = new StringBuilder(256); GetClassNameW(h, s, 256); return s.ToString(); }
     public static string Txt(IntPtr h) { var s = new StringBuilder(512); GetWindowTextW(h, s, 512); return s.ToString(); }
@@ -134,6 +140,26 @@ switch ($Action) {
             }
         }
         if (-not $done) { throw "no visible dialog titled '*$Title*' with control $Id" }
+        Start-Sleep -Milliseconds 1000
+    }
+    'settext' {
+        $done = $false
+        foreach ($h in [Drv080]::Top([uint32]$ProcessId)) {
+            if ([Drv080]::IsWindowVisible($h) -and [Drv080]::Txt($h) -like "*$Title*") {
+                $c = [Drv080]::GetDlgItem($h, $Id)
+                if ($c -ne [IntPtr]::Zero) { [void][Drv080]::SendText($c, 0x000C, [IntPtr]::Zero, $Text); $done = $true; break }   # WM_SETTEXT
+            }
+        }
+        if (-not $done) { throw "no visible dialog titled '*$Title*' with control $Id" }
+    }
+    'closewnd' {
+        $done = $false
+        foreach ($h in [Drv080]::Top([uint32]$ProcessId)) {
+            if ([Drv080]::IsWindowVisible($h) -and [Drv080]::Txt($h) -like "*$Title*" -and [Drv080]::Cls($h) -ne $MainClass) {
+                [void][Drv080]::PostMessageW($h, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero); $done = $true; break
+            }
+        }
+        if (-not $done) { throw "no visible window titled '*$Title*'" }
         Start-Sleep -Milliseconds 1000
     }
     'close' {
