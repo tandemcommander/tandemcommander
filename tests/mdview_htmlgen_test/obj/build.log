@@ -1,0 +1,15 @@
+md4c.c
+E:\Projects\tandemcommander\tests\mdview_htmlgen_test\..\..\src\common\dep\md4c\md4c.c(1846): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+E:\Projects\tandemcommander\tests\mdview_htmlgen_test\..\..\src\common\dep\md4c\md4c.c(1965): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+E:\Projects\tandemcommander\tests\mdview_htmlgen_test\..\..\src\common\dep\md4c\md4c.c(5585): warning C4267: '=': conversion from 'size_t' to 'MD_OFFSET', possible loss of data
+dump_main.cpp
+htmlgen.cpp
+E:\Projects\tandemcommander\src\plugins\mdview\precomp.h(12): warning C4005: 'WIN32_LEAN_AND_MEAN': macro redefinition
+E:\Projects\tandemcommander\src\plugins\mdview\precomp.h(12): note: 'WIN32_LEAN_AND_MEAN' previously declared on the command line
+render.cpp
+E:\Projects\tandemcommander\src\plugins\mdview\precomp.h(12): warning C4005: 'WIN32_LEAN_AND_MEAN': macro redefinition
+E:\Projects\tandemcommander\src\plugins\mdview\precomp.h(12): note: 'WIN32_LEAN_AND_MEAN' previously declared on the command line
+highlight.cpp
+E:\Projects\tandemcommander\src\plugins\mdview\precomp.h(12): warning C4005: 'WIN32_LEAN_AND_MEAN': macro redefinition
+E:\Projects\tandemcommander\src\plugins\mdview\precomp.h(12): note: 'WIN32_LEAN_AND_MEAN' previously declared on the command line
+Generating Code...

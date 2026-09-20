@@ -188,3 +188,70 @@ the **active** one, so both `-l` and `-r` must point at the fixtures (the first
 attempt posted keys to the left list while the right panel was active and
 nothing opened); and `WM_COMMAND CM_VIEW` is far more reliable than posting a
 `VK_F3` key.
+
+---
+
+## Phase 3 — evidence for User Story 1
+
+### T019/T020 — the generator harness can be run again
+
+`tests/mdview_htmlgen_test/build_and_run.cmd` written: locate VS with
+`vswhere`, `vcvarsall x64`, compile `md4c.c` as C and the three generator
+sources plus `test_main.cpp` as C++, run, report. **29 assertions passed, 0
+failed** — the FR-014 baseline, and the same count feature 022 recorded, so the
+generator is untouched by this feature (as it must be: nothing in
+`htmlgen/render/highlight` was edited).
+
+No stub objects were needed: those three translation units reference no plugin
+global (no `LoadStr`, no `SalamanderGeneral`, no `TRACE_*`, no `HANDLES`), so
+the planned `test_stubs.cpp` does not exist. The script also has a `dump` mode
+that builds `dump_main.cpp` for the CSP check.
+
+Two cmd traps cost a run each and are worth remembering:
+
+- `for /f "usebackq" %%i in (`"%VSWHERE%" … ^` …`)` mangles a quoted path with
+  spaces; `build.cmd`'s pattern (redirect to a temp file, `set /p`) is used
+  instead — and it is the reason build.cmd does it that way.
+- `/Fo"<dir>\prefix"` with several source files is `D8036`; `/Fo` must name a
+  directory (trailing backslash).
+- A harmless `'vswhere.exe' is not recognized` line came from inside
+  `vcvarsall.bat`; its output is now silenced with `2>&1`.
+
+### T026/T027 — the content policy costs no legitimate element
+
+`probe/check_csp_compat.py` renders every fixture with the committed dumper and
+classifies each resource reference against the scripts-off CSP the shared host
+serves.
+
+**The corpus is not uniform, and the first version of the check pretended it
+was.** Three hostile fixtures legitimately produce *zero* blocked references,
+because the layer that refuses them leaves nothing in the HTML: `javascript:`
+links and `<a download>` are anchors the **navigation gate / download handler**
+refuse at runtime, and the traversal images are refused by the **generator**,
+which emits a placeholder instead of a URL. The check now carries a per-fixture
+`LAYER` table and asserts the *right* layer, which makes it a record of who
+refuses what rather than a crude count.
+
+Result (`RESULT: PASS`, exit 0):
+
+| fixture | layer | inline styles | allowed | blocked | verdict |
+|---|---|---|---|---|---|
+| `01-script-tag.md` | csp | 0 | 0 | 2 | refused by CSP |
+| `02-event-handlers.md` | csp | 1 | 0 | 1 | refused by CSP |
+| `03-javascript-link.md` | navigation | 0 | 0 | 0 | runtime gate |
+| `04-remote-image.md` | csp | 2 | 0 | 9 | refused by CSP |
+| `05-iframe.md` | csp | 2 | 0 | 8 | refused by CSP |
+| `06-meta-refresh.md` | csp | 0 | 1 | 1 | refused by CSP (`base-uri 'none'`) |
+| `07-form.md` | csp | 0 | 0 | 3 | refused by CSP (`form-action 'none'`) |
+| `08-path-traversal-image.md` | generator | 0 | 1 | 0 | refused by generator |
+| `09-download-link.md` | navigation | 0 | 0 | 0 | runtime gate |
+| **`10-legit-control.md`** | control | **13** | **3** | **0** | **CLEAN** |
+| `10b-linked.md` | target | 0 | 0 | 0 | n/a |
+| **`sample.md`** (the harness's own document) | control | **15** | **1** | **0** | **CLEAN** |
+
+The two control rows are the evidence for FR-006/SC-003: 28 inline styles, two
+own-origin images and one `data:` image survive the policy, and nothing a
+Markdown document may legitimately contain is refused. `06`'s row is the
+prettiest one — the hostile `<base>` is blocked while the local image below it
+still resolves to `https://mdview.invalid/img/0`, because the generator had
+already resolved it.
