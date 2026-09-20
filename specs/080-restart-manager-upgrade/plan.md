@@ -73,14 +73,15 @@ specs/080-restart-manager-upgrade/
 ├── plan.md              # this file
 ├── research.md          # R1–R9, measured
 ├── data-model.md        # snapshot, decision, request state, restart command line
-├── quickstart.md        # validation scenarios V1–V12 + owed human steps
+├── quickstart.md        # validation scenarios V1–V20 + owed human steps
 ├── contracts/
 │   ├── close-request.md       # what the program does with an installer's request
 │   ├── restart-registration.md
 │   └── installer-cleanup.md
 ├── checklists/requirements.md
 ├── fix-log.md           # running record
-├── probe/               # rm_probe, wnd_probe, upgrade_probe, tc_drive, rm_protocol_dummy
+├── probe/               # rm_probe, wnd_probe, upgrade_probe, tc_drive, rm_protocol_dummy, config_equivalence
+├── REMAINING-WORK.md, closing-report.md
 └── tasks.md             # /speckit-tasks
 ```
 
@@ -93,7 +94,7 @@ src/
 │   └── salcloseapp.cpp      # NEW
 ├── saltests/saltests.cpp    # + TestCloseApp (decision table, window filter, command line quoting)
 ├── precomp.h                # + #include "salcloseapp.h"
-├── mainwnd.h                # + CollectCloseAppSnapshot(), request-state members/globals
+├── mainwnd.h                # + DecideCloseApp(), RegisterRestartForUpdates() (request state is file-scope in mainwnd3.cpp)
 ├── mainwnd3.cpp             # WM_QUERYENDSESSION / WM_ENDSESSION / WM_CLOSE: the two stages, the
 │                            #   WM_CLOSE swallow, unattended guards at the handler's prompt sites
 ├── mainwnd4.cpp             # CloseDetachedFS: unattended guard

@@ -244,6 +244,12 @@ without showing anything:
 | `IDS_ARCHIVEFORCECLOSE`, `IDS_FSFORCECLOSE` (panel, detached FS) | asks *force?* | No → abandon |
 | `LockedUIReason` message box when busy | shows | not shown |
 
+The table above is the set known at planning time; the sweep of the exit
+path and the independent review added the Find window's own shell-extension
+box, the path-change error UI reached when an archive is left, and the
+registry helpers' error boxes. **The authoritative list is contract
+`close-request.md` C5.**
+
 *Abandon* means the existing refusal exits of the handler (`return 0`,
 `EXIT_WM_USER_CLOSE_MAINWND`) — the program keeps running. After an abandoned
 execute stage the Restart Manager times out after 30 s (P3) and the installer
