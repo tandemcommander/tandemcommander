@@ -2866,7 +2866,8 @@ BOOL CFindDialog::CanCloseWindow()
     if (EnumCShellExecuteWnd(HWindow, reason + (int)strlen(reason), BUG_REPORT_REASON_MAX - ((int)strlen(reason) + 1)) > 0)
     {
         // ask whether Salamander should continue or generate a bug report
-        if (SalMessageBox(HWindow, LoadStr(IDS_SHELLEXTBREAK3), SALAMANDER_TEXT_VERSION,
+        if (UnattendedClose || // feature 080: nobody to ask - keep running (the same branch as "Continue")
+            SalMessageBox(HWindow, LoadStr(IDS_SHELLEXTBREAK3), SALAMANDER_TEXT_VERSION,
                           MSGBOXEX_CONTINUEABORT | MB_ICONINFORMATION | MSGBOXEX_SETFOREGROUND) != IDABORT)
         {
             return FALSE; // continue

@@ -1778,6 +1778,15 @@ extern HWND PluginMsgBoxParent;   // parent pro messageboxy plug-inu (hlavni okn
 
 extern BOOL CriticalShutdown; // TRUE = probiha "critical shutdown", neni cas se ptat, rychle koncime, 5s do zabiti
 
+// feature 080: TRUE = the exit sequence is running because an installer asked the program to
+// close (Restart Manager, ENDSESSION_CLOSEAPP) - nobody sits at the machine, so NOTHING may be
+// asked or shown: every prompt site on the exit path takes its negative branch (the one that
+// leaves the program running) without showing anything. This is the opposite policy of
+// CriticalShutdown ("no time, force everything, lose what must be lost"): here nothing is lost,
+// the close is abandoned instead. Deliberately NOT exposed to plug-ins.
+// Contract: specs/080-restart-manager-upgrade/contracts/close-request.md C5
+extern BOOL UnattendedClose;
+
 // "preklad" POSIX jmena na MS
 #define itoa _itoa
 #define stricmp _stricmp

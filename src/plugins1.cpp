@@ -3114,6 +3114,10 @@ BOOL CPluginData::Unload(HWND parent, BOOL ask)
 
                 if (PluginIface.Release(parent, CriticalShutdown) || CriticalShutdown)
                     ret = TRUE;
+                else if (UnattendedClose)
+                { // feature 080: nobody to ask "force unload?" - the plug-in stays, the close is abandoned
+                    TRACE_I("CPluginData::Unload(): unattended close: the plug-in refuses to unload: " << Name);
+                }
                 else
                 {
                     // plugin metadata is UTF-8 (feature 052) - compose with the UTF-8 template

@@ -566,6 +566,12 @@ public:
     // returns TRUE if the plugin is no longer used by Salamander -> it can be unloaded
     BOOL CanUnloadPlugin(HWND parent, CPluginInterfaceAbstract* plugin);
 
+    // feature 080: decides whether this instance can close right now for an installer
+    // (Restart Manager) WITHOUT asking anybody anything; read-only, no side effects, main
+    // thread only; the rules live in src/common/salcloseapp.cpp (SalCloseAppDecide);
+    // contract: specs/080-restart-manager-upgrade/contracts/close-request.md C2 + C6
+    CSalCloseAppDecision DecideCloseApp();
+
     // called when closing a file system; the directory history stores FS
     // interfaces that must be set to NULL after closing (to prevent accidental match just because FS interfaces were allocated at the same address)
     void ClearPluginFSFromHistory(CPluginFSInterfaceAbstract* fs);

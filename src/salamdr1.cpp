@@ -369,6 +369,7 @@ HWND PluginProgressDialog = NULL;
 HWND PluginMsgBoxParent = NULL;
 
 BOOL CriticalShutdown = FALSE;
+BOOL UnattendedClose = FALSE; // feature 080, see consts.h
 
 HANDLE SalOpenFileMapping = NULL;
 void* SalOpenSharedMem = NULL;

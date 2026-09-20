@@ -53,7 +53,7 @@ BOOL CreateKeyAux(HWND parent, HKEY hKey, const char* name, HKEY& createdKey, BO
         return TRUE;
     else
     {
-        if (!quiet)
+        if (!quiet && !UnattendedClose) // feature 080: an unattended close shows nothing - the save just fails
         {
             if (HLanguage == NULL)
             {
@@ -79,7 +79,7 @@ BOOL OpenKeyAux(HWND parent, HKEY hKey, const char* name, HKEY& openedKey, BOOL 
         return TRUE;
     else
     {
-        if (!quiet && res != ERROR_FILE_NOT_FOUND)
+        if (!quiet && !UnattendedClose && res != ERROR_FILE_NOT_FOUND) // feature 080: see CreateKeyAux
         {
             if (HLanguage == NULL)
             {
@@ -121,7 +121,7 @@ BOOL GetValueAux(HWND parent, HKEY hKey, const char* name, DWORD type, void* buf
             return TRUE;
         else
         {
-            if (!quiet)
+            if (!quiet && !UnattendedClose) // feature 080: see CreateKeyAux
             {
                 if (HLanguage == NULL)
                 {
@@ -140,7 +140,7 @@ BOOL GetValueAux(HWND parent, HKEY hKey, const char* name, DWORD type, void* buf
     {
         if (res != ERROR_FILE_NOT_FOUND)
         {
-            if (!quiet)
+            if (!quiet && !UnattendedClose) // feature 080: see CreateKeyAux
             {
                 if (HLanguage == NULL)
                 {
@@ -170,6 +170,8 @@ BOOL GetValue2Aux(HWND parent, HKEY hKey, const char* name, DWORD type1, DWORD t
         }
         else
         {
+            if (UnattendedClose)
+                return FALSE; // feature 080: see CreateKeyAux
             if (HLanguage == NULL)
             {
                 MessageBox(parent, "Unexpected value type.",
@@ -184,7 +186,7 @@ BOOL GetValue2Aux(HWND parent, HKEY hKey, const char* name, DWORD type1, DWORD t
         }
     else
     {
-        if (res != ERROR_FILE_NOT_FOUND)
+        if (res != ERROR_FILE_NOT_FOUND && !UnattendedClose) // feature 080: see CreateKeyAux
         {
             if (HLanguage == NULL)
             {
@@ -218,7 +220,7 @@ BOOL SetValueAux(HWND parent, HKEY hKey, const char* name, DWORD type,
         return TRUE;
     else
     {
-        if (!quiet)
+        if (!quiet && !UnattendedClose) // feature 080: see CreateKeyAux
         {
             if (HLanguage == NULL)
             {
@@ -253,6 +255,8 @@ BOOL GetSizeAux(HWND parent, HKEY hKey, const char* name, DWORD type, DWORD& buf
             return TRUE;
         else
         {
+            if (UnattendedClose)
+                return FALSE; // feature 080: see CreateKeyAux
             if (HLanguage == NULL)
             {
                 MessageBox(parent, "Unexpected value type.",
@@ -267,7 +271,7 @@ BOOL GetSizeAux(HWND parent, HKEY hKey, const char* name, DWORD type, DWORD& buf
         }
     else
     {
-        if (res != ERROR_FILE_NOT_FOUND)
+        if (res != ERROR_FILE_NOT_FOUND && !UnattendedClose) // feature 080: see CreateKeyAux
         {
             if (HLanguage == NULL)
             {

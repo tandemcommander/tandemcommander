@@ -515,6 +515,157 @@ BOOL MyShutdownBlockReasonDestroy(HWND hWnd)
 
 //
 // ****************************************************************************
+// Closing for an update (feature 080)
+//
+// An installer that has to replace our files asks the Restart Manager to close us:
+// WM_QUERYENDSESSION and then WM_ENDSESSION, both with ENDSESSION_CLOSEAPP. Nobody kills the
+// process and nobody sits at the machine, so we decide at the question (no side effects) and
+// act at the instruction (the ordinary exit sequence, but without ever asking anything).
+// Measured protocol facts: specs/080-restart-manager-upgrade/research.md R2;
+// contract: specs/080-restart-manager-upgrade/contracts/close-request.md
+//
+// The request state is file-scope on purpose: the WM_ENDSESSION branch uses it after the
+// execute stage returns, when the main window object may already be gone. Main thread only.
+
+static BOOL CloseAppAgreed = FALSE;       // the question stage agreed; WM_ENDSESSION is expected
+static BOOL CloseAppExecuting = FALSE;    // TRUE around the re-dispatch from WM_ENDSESSION = the execute stage
+static BOOL CloseAppSwallowClose = FALSE; // one-shot: ignore the WM_CLOSE the Restart Manager sends right after WM_ENDSESSION
+static DWORD CloseAppExecuteTime = 0;     // GetTickCount() at the start of the execute stage
+
+// the Restart Manager waits 30 s for the process to end (measured), plus a margin
+#define CLOSEAPP_SWALLOW_CLOSE_MS 35000
+
+#define CLOSEAPP_MAX_WINDOWS 512
+
+struct CCloseAppEnumData
+{
+    DWORD ProcessId;
+    HWND MainWnd;
+    TDirectArray<HWND>* FindWnds;
+    CSalCloseAppWindow* Windows;
+    HWND* Handles; // parallel to Windows, for the trace only
+    int Count;
+    BOOL Overflow;
+};
+
+static BOOL CALLBACK CloseAppEnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+    CCloseAppEnumData* data = (CCloseAppEnumData*)lParam;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid != data->ProcessId)
+        return TRUE;
+    if (data->Count >= CLOSEAPP_MAX_WINDOWS)
+    {
+        data->Overflow = TRUE;
+        return FALSE;
+    }
+    data->Handles[data->Count] = hwnd;
+    CSalCloseAppWindow& w = data->Windows[data->Count++];
+    w.Visible = IsWindowVisible(hwnd);
+    w.Style = (DWORD)GetWindowLongPtr(hwnd, GWL_STYLE);
+    w.ExStyle = (DWORD)GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+    w.Kind = scawOther;
+    if (hwnd == data->MainWnd)
+        w.Kind = scawMain;
+    else
+    {
+        char cls[100];
+        if (GetClassNameA(hwnd, cls, _countof(cls)) > 0)
+        {
+            if (strcmp(cls, CVIEWERWINDOW_CLASSNAME) == 0)
+                w.Kind = scawInternalViewer; // closed by the exit sequence without questions
+            else if (strcmp(cls, "HH Parent") == 0)
+                w.Kind = scawHelp; // the HTML Help window lives in our process and goes away with it
+        }
+        for (int i = 0; w.Kind == scawOther && i < data->FindWnds->Count; i++)
+        {
+            if ((*data->FindWnds)[i] == hwnd)
+                w.Kind = scawFind;
+        }
+    }
+    return TRUE;
+}
+
+CSalCloseAppDecision
+CMainWindow::DecideCloseApp()
+{
+    CALL_STACK_MESSAGE1("CMainWindow::DecideCloseApp()");
+
+    CSalCloseAppSnapshot s;
+    memset(&s, 0, sizeof(s));
+    s.StartupFinished = CanClose || CanCloseButInEndSuspendMode;
+    s.CloseInProgress = CannotCloseSalMainWnd;
+    s.Busy = SalamanderBusy || !IsWindowEnabled(HWindow);
+    s.InsidePlugin = AlreadyInPlugin > 0;
+    s.FileOperations = ProgressDlgArray.RemoveFinishedDlgs();
+
+    // Find windows: a running search makes a manual exit ask "stop searching?"
+    TDirectArray<HWND> findWnds(10, 5);
+    FindDialogQueue.AddToArray(findWnds);
+    for (int i = 0; i < findWnds.Count; i++)
+    {
+        WindowsManager.CS.Enter(); // we do not want any changes to WindowsManager
+        CFindDialog* findDlg = (CFindDialog*)WindowsManager.GetWindowPtr(findWnds[i]);
+        if (findDlg != NULL && findDlg->IsSearchInProgress())
+            s.FindSearching++;
+        WindowsManager.CS.Leave();
+    }
+
+    if (LeftPanel != NULL && RightPanel != NULL)
+    {
+        s.ArchiveEditsPending = LeftPanel->AssocUsed || RightPanel->AssocUsed;
+        s.PluginFSOpen = LeftPanel->Is(ptPluginFS) || RightPanel->Is(ptPluginFS);
+    }
+    if (DetachedFSList != NULL && DetachedFSList->Count > 0)
+        s.PluginFSOpen = TRUE;
+
+    // every top-level window of this process: a visible one the core cannot account for belongs
+    // to a plug-in, and unloading that plug-in would make it ask
+    static CSalCloseAppWindow windows[CLOSEAPP_MAX_WINDOWS + 1]; // main thread only
+    static HWND handles[CLOSEAPP_MAX_WINDOWS + 1];
+    CCloseAppEnumData data;
+    data.ProcessId = GetCurrentProcessId();
+    data.MainWnd = HWindow;
+    data.FindWnds = &findWnds;
+    data.Windows = windows;
+    data.Handles = handles;
+    data.Count = 0;
+    data.Overflow = FALSE;
+    BOOL enumOK = EnumWindows(CloseAppEnumWindowsProc, (LPARAM)&data);
+    if (data.Overflow || !enumOK)
+    { // more windows than we can look at, or the enumeration failed: never "agree" on a picture we do
+        // not have - count the unknown rest as one unknown window (= decline)
+        handles[data.Count] = NULL;
+        CSalCloseAppWindow& w = windows[data.Count++];
+        w.Visible = TRUE;
+        w.Style = WS_CAPTION;
+        w.ExStyle = 0;
+        w.Kind = scawOther;
+    }
+    s.Windows = windows;
+    s.WindowCount = data.Count;
+
+    CSalCloseAppDecision decision = SalCloseAppDecide(s);
+    if (decision == scadForeignWindow)
+    { // name the window: a third-party DLL in our process could make every update decline, with no clue why
+        for (int i = 0; i < data.Count; i++)
+        {
+            if (SalCloseAppWindowIsForeign(windows[i]))
+            {
+                char cls[100];
+                if (handles[i] == NULL || GetClassNameA(handles[i], cls, _countof(cls)) == 0)
+                    lstrcpynA(cls, "(unknown)", _countof(cls));
+                TRACE_I("CMainWindow::DecideCloseApp(): declining because of the window 0x" << std::hex << (UINT_PTR)handles[i] << std::dec << ", class: " << cls);
+                break;
+            }
+        }
+    }
+    return decision;
+}
+
+//
+// ****************************************************************************
 // CMainWindow
 //
 
@@ -6174,12 +6325,79 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
     case WM_CLOSE:
     {
+        // feature 080: right after WM_ENDSESSION the Restart Manager also sends WM_CLOSE to the
+        // main window (measured, research R2/P2). Normally the window is gone by then; if the
+        // unattended close had to be abandoned, this WM_CLOSE must not start the ordinary
+        // INTERACTIVE exit (confirmation, questions) on a machine nobody sits at. One message,
+        // one time window - any later WM_CLOSE is served as usual.
+        if (CloseAppSwallowClose)
+        {
+            CloseAppSwallowClose = FALSE;
+            if (GetTickCount() - CloseAppExecuteTime <= CLOSEAPP_SWALLOW_CLOSE_MS)
+            {
+                TRACE_I("WM_CLOSE: ignored, it belongs to the installer's close request");
+                return 0;
+            }
+        }
         PostMessage(HWindow, WM_USER_CLOSE_MAINWND, 0, 0);
         return 0;
     }
 
     case WM_ENDSESSION:
     {
+        // feature 080: the instruction stage of an installer's close request (Restart Manager);
+        // contract: specs/080-restart-manager-upgrade/contracts/close-request.md C3.
+        // Classified by the message itself, NOT by whether we agreed: an installer's WM_ENDSESSION
+        // that arrives without our agreement must not fall into the old code below, whose "forced
+        // shutdown" message box would then appear on a machine nobody sits at. That happens - measured -
+        // when the requester forces the close (RmForceShutdown, Setup's /FORCECLOSEAPPLICATIONS): we
+        // decline the question and still get WM_ENDSESSION with wParam TRUE, and are killed 30 s later;
+        // it can also happen when two requests overlap or a sign-out query slips in between.
+        if (SalIsCloseAppRequest(lParam, GetSystemMetrics(SM_SHUTTINGDOWN) != 0))
+        {
+            BOOL agreed = CloseAppAgreed;
+            CloseAppAgreed = FALSE;
+            if (!wParam)
+            {
+                TRACE_I("WM_ENDSESSION: the installer's close request was cancelled (somebody declined)");
+                return 0; // the question stage had no side effects, nothing to undo
+            }
+            // from here on the Restart Manager's WM_CLOSE follows (measured - also after a forced
+            // instruction we never agreed to); it belongs to this request, not to a person
+            CloseAppSwallowClose = TRUE;
+            CloseAppExecuteTime = GetTickCount();
+            if (!agreed)
+            {
+                TRACE_I("WM_ENDSESSION: an installer's close instruction without our agreement - ignored (we keep running)");
+                return 0; // nothing is shown and nothing is closed; a forcing requester ends the process itself
+            }
+
+            // the state may have changed since the question
+            CSalCloseAppDecision decision = DecideCloseApp();
+            if (decision != scadAgree)
+            {
+                TRACE_I("WM_ENDSESSION: the installer's close request is abandoned: " << SalCloseAppDecisionName(decision));
+                return 0; // we keep running; the requester gives up after its timeout
+            }
+
+            // the execute stage: the ordinary exit sequence of a (non-critical) session request,
+            // synchronously - if this request came from Windows closing programs for servicing,
+            // we could be ended as soon as we return, so the configuration is saved before that.
+            // WARNING: after the call the main window object may be destroyed - touch only
+            // file-scope and global state below!
+            TRACE_I("WM_ENDSESSION: closing for the installer (unattended)");
+            UnattendedClose = TRUE;
+            CloseAppExecuting = TRUE;
+            WindowProc(WM_QUERYENDSESSION, 0, lParam);
+            CloseAppExecuting = FALSE;
+            UnattendedClose = FALSE;
+            // if we are still here the close was abandoned: measure the WM_CLOSE swallow from NOW - the
+            // Restart Manager posts its WM_CLOSE when WM_ENDSESSION returns, or 5 s after sending it
+            // (measured), and the attempt itself may have taken long
+            CloseAppExecuteTime = GetTickCount();
+            return 0;
+        }
+
         if (!wParam)
             return 0; // no shutdown or log off requested, nothing to handle
 
@@ -6307,6 +6525,24 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
         DWORD msgArrivalTime = GetTickCount(); // critical shutdown lasts 5s + 5s; if exceeded, we are killed, so we measure the time
 
+        // feature 080: the question stage of an installer's close request (Restart Manager);
+        // contract: specs/080-restart-manager-upgrade/contracts/close-request.md C2.
+        // Decide only - nothing is closed, stopped, saved, shown or marked busy here; the work
+        // is done when WM_ENDSESSION confirms that everybody agreed (the execute stage re-enters
+        // this block with CloseAppExecuting set and runs the code below as an ordinary,
+        // non-critical session request, with UnattendedClose forbidding every prompt).
+        if (uMsg == WM_QUERYENDSESSION && !CloseAppExecuting)
+        {
+            CloseAppAgreed = FALSE; // a new request supersedes whatever was pending
+            if (SalIsCloseAppRequest(lParam, GetSystemMetrics(SM_SHUTTINGDOWN) != 0))
+            {
+                CSalCloseAppDecision decision = DecideCloseApp();
+                CloseAppAgreed = decision == scadAgree;
+                TRACE_I("WM_QUERYENDSESSION: an installer asks us to close: " << SalCloseAppDecisionName(decision));
+                return CloseAppAgreed;
+            }
+        }
+
         if (uMsg == WM_QUERYENDSESSION)
         {
             TRACE_I("WM_QUERYENDSESSION: message received");
@@ -6371,7 +6607,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                     endAfterCleanup = TRUE; // cannot be refused -> perform minimal cleanup
                 else
                 {
-                    if (LockedUIReason != NULL && HasLockedUI())
+                    if (LockedUIReason != NULL && HasLockedUI() && !UnattendedClose) // feature 080: nothing is shown during an unattended close
                         SalMessageBox(HWindow, LockedUIReason, SALAMANDER_TEXT_VERSION, MB_OK | MB_ICONINFORMATION);
                     else
                         TRACE_E("WM_USER_CLOSE_MAINWND: SalamanderBusy == TRUE!");
@@ -6424,6 +6660,12 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             }
             else // report it in a window and wait for everything to finish; WM_ENDSESSION cannot arrive here
             {
+                if (UnattendedClose)
+                { // feature 080: nobody can answer the "Exiting" dialog and the installer does not wait for disk
+                    // operations - refuse; DecideCloseApp() has just ruled this out, so only a race gets here
+                    TRACE_I("WM_QUERYENDSESSION: unattended close abandoned: disk operations are running");
+                    return 0;
+                }
                 if (uMsg == WM_QUERYENDSESSION && HLanguage != NULL &&
                     LoadStringW(HLanguage, IDS_BLOCKSHUTDOWNDISKOPER, blockReason, _countof(blockReason)))
                 {
@@ -6505,7 +6747,8 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                         {
                             findDlg->StateOfFindCloseQuery = sofcqSentToFind;
                             PostMessage(destroyArray[i], WM_USER_QUERYCLOSEFIND, 0,
-                                        uMsg == WM_QUERYENDSESSION && (lParam & ENDSESSION_CRITICAL) != 0); // during critical shutdown we don't ask, we just cancel
+                                        UnattendedClose || // feature 080: never "stop searching?" - DecideCloseApp() has just made sure nothing is searching
+                                            uMsg == WM_QUERYENDSESSION && (lParam & ENDSESSION_CRITICAL) != 0); // during critical shutdown we don't ask, we just cancel
                         }
                         BOOL cont = TRUE;
                         while (cont)
@@ -6775,6 +7018,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         {
             // ask whether Salamander should continue or generate a bug report
             if (CriticalShutdown || // during critical shutdown there's no point in asking anything, let the system terminate us quietly
+                UnattendedClose ||  // feature 080: nobody to ask - keep running (the same branch as "Continue")
                 SalMessageBox(shutdown ? analysing.HWindow : HWindow,
                               LoadStr(IDS_SHELLEXTBREAK3), SALAMANDER_TEXT_VERSION,
                               MSGBOXEX_CONTINUEABORT | MB_ICONINFORMATION) != IDABORT)
@@ -6891,7 +7135,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         DestroyWindow(HWindow);
 
         // WM_QUERYENDSESSION and WM_ENDSESSION: all Windows versions kill the process as soon as
-        // the main window is destroyed during shutdown, so the following code is dead code in that case
+        // the main window is destroyed during shutdown, so the following code is dead code in that case.
+        // feature 080: NOT so when an installer asked us to close (the execute stage, see
+        // WM_ENDSESSION): nobody kills us, the process ends by itself - WM_DESTROY posted the quit
+        // message. From here on only globals and locals may be touched.
 
         CriticalShutdown = FALSE; // just to be safe
 

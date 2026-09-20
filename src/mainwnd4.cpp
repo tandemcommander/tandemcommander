@@ -131,6 +131,11 @@ BOOL CMainWindow::CloseDetachedFS(HWND parent, CPluginFSInterfaceEncapsulation* 
     if (!detachedFS->TryCloseOrDetach(CriticalShutdown, FALSE, dummy, FSTRYCLOSE_UNLOADCLOSEDETACHEDFS) &&
         !CriticalShutdown) // test close; forceClose==TRUE only during a "critical shutdown"
     {                      // ask the user whether to close it even against the FS wishes
+        if (UnattendedClose)
+        { // feature 080: nobody to ask - the detached FS stays, the close is abandoned
+            TRACE_I("CMainWindow::CloseDetachedFS(): unattended close: the detached FS refuses to close");
+            return FALSE;
+        }
         char path[2 * MAX_PATH];
         strcpy(path, detachedFS->GetPluginFSName());
         strcat(path, ":");

@@ -711,7 +711,7 @@ BOOL CFilesWindow::ChangeToRescuePathOrFixedDrive(HWND parent, BOOL* noChange, B
     }
     else
     {
-        if (!CriticalShutdown)
+        if (!CriticalShutdown && !UnattendedClose) // feature 080: nothing is shown during an unattended close
         {
             SalMessageBox(parent, LoadStr(IDS_INVALIDESCAPEPATH), LoadStr(IDS_ERRORCHANGINGDIR),
                           MB_OK | MB_ICONEXCLAMATION);
@@ -1250,6 +1250,13 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
         if (Is(ptZIPArchive))
         {
             BOOL someFilesChanged = FALSE;
+            if (AssocUsed && UnattendedClose)
+            { // feature 080: the information box and the "which files to update?" dialog need a person, and
+                // deciding for them could lose edits - the archive stays open, the close is abandoned
+                // (CMainWindow::DecideCloseApp() declines such a request up front, so only a race gets here)
+                TRACE_I("CFilesWindow::PrepareCloseCurrentPath(): unattended close: files opened from the archive may need packing back");
+                return FALSE;
+            }
             if (AssocUsed)
             {
                 // if the user didn't suppress it, we show info about closing an archive that contains edited files
@@ -1317,7 +1324,7 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
                         if (!plugin->CanCloseArchive(this, GetZIPArchive(), CriticalShutdown)) // it refuses to close
                         {
                             canclose = FALSE;
-                            if (canForce) // we can ask the user whether to force it
+                            if (canForce && !UnattendedClose) // we can ask the user whether to force it (feature 080: not during an unattended close - the archive stays open)
                             {
                                 sprintf(buf, LoadStrU8(IDS_ARCHIVEFORCECLOSE), GetZIPArchive());
                                 userAsked = TRUE;
@@ -1345,7 +1352,7 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
                                 if (!plugin->CanCloseArchive(this, GetZIPArchive(), userForce || CriticalShutdown)) // it refuses to close
                                 {
                                     canclose = FALSE;
-                                    if (canForce && !userAsked) // we can ask the user whether to force it
+                                    if (canForce && !userAsked && !UnattendedClose) // we can ask the user whether to force it (feature 080: not during an unattended close)
                                     {
                                         sprintf(buf, LoadStrU8(IDS_ARCHIVEFORCECLOSE), GetZIPArchive());
                                         if (SalMessageBox(parent, buf, LoadStr(IDS_QUESTION),
@@ -1368,7 +1375,7 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
         {
             if (Is(ptPluginFS))
             {
-                if (!canForce && !CriticalShutdown) // we can't ask the user about forcing
+                if ((!canForce || UnattendedClose) && !CriticalShutdown) // we can't ask the user about forcing (feature 080: nor during an unattended close - the FS decides, nobody is asked)
                 {
                     detachFS = FALSE; // to ensure a known value in case the plugin doesn't modify it
                     BOOL r = GetPluginFS()->TryCloseOrDetach(FALSE, canDetach, detachFS, tryCloseReason);
@@ -1945,7 +1952,8 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
                 // we just received a new listing; if there are any reported panel changes, we cancel them
                 InvalidateChangesInPanelWeHaveNewListing();
 
-                if (lastErr != ERROR_SUCCESS && (!isRefresh || openIfPathIsInaccessibleGoToCfg) && shorterPathWarning)
+                if (lastErr != ERROR_SUCCESS && (!isRefresh || openIfPathIsInaccessibleGoToCfg) && shorterPathWarning &&
+                    !UnattendedClose)    // feature 080: nothing is shown during an unattended close (the path change itself succeeded)
                 {                        // if it's not a refresh and messages about path-shortening are supposed to be shown ...
                     if (!refreshListBox) // we'll display a message; we must perform refresh-list-box
                     {
@@ -1998,7 +2006,8 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
                 else
                     GetRootPath(CheckPathRootWithRetryMsgBox, changedPath);
                 sprintf(text, LoadStr(IDS_NODISKINDRIVE), drive);
-                int msgboxRes = (int)CDriveSelectErrDlg(parent, text, changedPath).Execute();
+                // feature 080: nobody to ask during an unattended close - neither "retry" nor "use the root" (IDABORT is neither)
+                int msgboxRes = UnattendedClose ? IDABORT : (int)CDriveSelectErrDlg(parent, text, changedPath).Execute();
                 if (msgboxRes == IDCANCEL && CutDirectory(CheckPathRootWithRetryMsgBox))
                 { // to allow entering the root when a volume is mounted (F:\DRIVE_CD -> F:\)
                     lstrcpyn(changedPath, CheckPathRootWithRetryMsgBox, SAL_MAX_PATH_UTF8);
@@ -2011,8 +2020,9 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
             }
             else
             {
-                if (!pathInvalid &&               // the user already knows the UNC path couldn't be revived
-                    err != ERROR_USER_TERMINATED) // the user also knows about the abort (ESC)
+                if (!pathInvalid &&                // the user already knows the UNC path couldn't be revived
+                    err != ERROR_USER_TERMINATED && // the user also knows about the abort (ESC)
+                    !UnattendedClose)               // feature 080: nothing is shown during an unattended close
                 {
                     CheckPath(TRUE, changedPath, err, TRUE, parent); // other errors - just display the message
                 }
