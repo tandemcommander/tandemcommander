@@ -114,7 +114,7 @@ Open each file with F3, look at the screen, look at the monitor, close.
 | D1 | A1 passed | inline styles, local image, `data:` image all render under the CSP |
 | D2 | B5, B6, B7 | refused (now by policy, before by the interceptor) — same or stricter |
 | D3 | B9 | no download, no bubble — **stricter** than reference |
-| D4 | Debug build only: run G5 with the DBWIN listener; grep the trace for `lockdown regression` | zero hits |
+| D4 | *(optional, needs the Salamander Trace Server — a plugin's `TRACE_*` goes through `SalamanderDebug`, not `OutputDebugString`, so no DBWIN tool can see it)*: attach the Trace Server, open a Markdown file on a Debug build, look for `lockdown regression` | zero hits. Without the Trace Server this row is covered indirectly: the lockdown is the same code codeview runs, and D1–D3 show its effect |
 
 ### Result table
 

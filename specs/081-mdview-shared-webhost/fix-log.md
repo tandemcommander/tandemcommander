@@ -333,3 +333,36 @@ Guards:
 `rg -l "wrl\.h" src/plugins/mdview/` matches two files — `webglue.h` and
 `IMPLEMENTATION_NOTES.md` — because both *mention* the header in prose while
 stating that it is not included.
+
+### T030 — the planned lockdown read-back check does not work here (and what replaces it)
+
+The plan wanted to capture the shared host's Debug-only `AssertLockdown`
+output (`"<plugin>: lockdown regression, <setting> is not ..."`) with a DBWIN
+listener. **A listener was written, run, and then deleted**, because in this
+codebase it can never see those lines: a plugin's `TRACE_*` does not call
+`OutputDebugString`. `src/plugins/shared/dbg.cpp:266`
+(`C__Trace::SendMessageToServer`) forwards to `SalamanderDebug->TraceI/TraceE`,
+i.e. into the core, which talks to the **Salamander Trace Server** — a separate
+application that is not part of this tree. The listener did capture one line
+from our process during a smoke run (`RecursiveDirectoryCreate( …\Tandem
+Commander\WebView2\EBWebView directory exists )`), but that comes from
+Microsoft's WebView2 loader, not from us.
+
+Rather than leave a tool that looks like it proves something it cannot, the
+script is gone and the claim is made three other ways:
+
+1. **The lockdown is applied by the same code that codeview has run since
+   070** — there is no mdview-specific branch in it; the only per-plugin inputs
+   are `ScriptsEnabled` and `WebMessagesEnabled`, which mdview sets to `false`
+   (`webglue.cpp:161-162`), exactly as its own host did.
+2. **The CSP demonstrably reaches mdview's document**, by code path:
+   `webhost.cpp:155` strips the query (`PathOnly`), so the `?v=<n>`
+   cache-buster does not defeat the comparison at `webhost.cpp:164`
+   (`rel == impl->cfg.DocumentPath`); mdview sets `DocumentPath = L"doc.html"`
+   (`webglue.cpp:157`) and answers exactly that path (`webglue.cpp:179`); with
+   `ScriptsEnabled == false` the header appended is `kCspStatic`
+   (`webhost.cpp:167`). And it is *effective*: the content the policy permits
+   renders (G4, G6) while the hostile corpus shows nothing loading (G5).
+3. **Reading the settings back is still compiled in** and will fire for
+   whoever runs the product with the Trace Server attached; the on-screen
+   checklist's D4 row says so instead of pretending a probe covered it.
