@@ -255,3 +255,81 @@ Markdown document may legitimately contain is refused. `06`'s row is the
 prettiest one — the hostile `<base>` is blocked while the local image below it
 still resolves to `https://mdview.invalid/img/0`, because the generator had
 already resolved it.
+
+### T021/T023 — the runtime probe, and 0 differing pixels
+
+`probe/mdview_probe.ps1` (posted messages only, one instance, derived from
+080's `tc_drive.ps1`) — **24 checks, 0 failed** on the Debug tree, plus a
+Release smoke of 5/5:
+
+| Scenario | Checks | Result |
+|---|---|---|
+| `smoke` | 5 | viewer opens in 106 ms; 7 engine processes are ours; zoom 110 % → 120 % → reset; `[Source]` on and off; scheme cycling leaves the window alive with no dialog |
+| `hostile` | 9 | each of the nine hostile fixtures: exactly one viewer, **0 dialogs**, engine count flat at 7, the title still names the file (nothing navigated away) |
+| `keeper-warm` | 3 | cold 106 ms; after **65 s with no viewer** 6 engine processes are still ours (keeper armed); warm open **95 ms** vs back-to-back **95 ms** (065 SC-002 wants ≤ 2×) |
+| `keeper-crash` | 3 | 6 processes killed; the next view works (95 ms); the one after it is warm again (92 ms) |
+| `cold-close` | 2 | 10 open-and-close-within-100 ms cycles, the process survives all of them, and a normal open still works (96 ms) — the case mdview's own host did **not** guard |
+| `cross-warm` | 2 | the Code Viewer opens `hello.cpp` first (`… [C++] - Prohlížeč kódu` — this machine runs the Czech UI), and the first Markdown view is then **94 ms** vs 95 ms back-to-back: either plugin's keeper warms the other |
+
+**A bug in the probe, not in the product**, worth remembering: the first run
+reported `smoke/source` as FAIL although the toggle demonstrably worked. In a
+PowerShell `-like` pattern `[Source]` is a *character class*, so
+`'…Markdown Viewer (100%)' -like '*[Source]*'` is true for almost any string
+and the negative half of the check could never hold. The script uses
+`.Contains('[Source]')`.
+
+`probe/render_diff.ps1` captures the client area of the viewer showing
+`10-legit-control.md` from the **reference** tree and from the **migrated**
+tree at the same fixed rectangle, and compares them:
+
+```
+client area   : 984x741 = 729144 pixels
+differing     : 0 (0 %) with a per-channel tolerance of 8
+RESULT: PASS
+```
+
+**Zero differing pixels.** The captured image (`probe/out/render-migrated.png`)
+shows the inline-`<style>` box with its green border and rounded corners, the
+`style=` paragraph, the magenta stylesheet class and the local image — i.e. the
+document renders completely under the new content policy, and identically to
+the build that had no policy at all.
+
+Two notes on the probe scripts themselves: the pixel comparison runs in a small
+C# `LockBits` helper because 729 k `GetPixel` calls through the PowerShell
+interop take minutes; and `$PSScriptRoot` is **not** populated while a
+parameter default is evaluated under `-File`, which silently dropped the first
+captures into the current drive's root (`E:\out`). Both are fixed in the
+committed scripts.
+
+### T024 — Release
+
+`build.cmd full release`: **0 errors**, 20 plugins registered, 189 language
+modules, `tools/check_runtime_deps.py` reports *runtime closure OK, 219
+modules scanned, 59 runtime imports*, 4 CRT files shipped. Release smoke 5/5.
+
+### T035/T036 — one browser-arguments set, and the guards
+
+`TcWebBrowserArguments()` added to the COM-free `webhost.h`, defined once in
+`webhost.cpp`; `TcWebBuildEnvOptions()` and the keeper's options builder both
+call it. Only the WRL options *object* is still built in two places — it
+cannot cross a COM-free header — which is precisely the distinction
+`webkeeper.cpp`'s old comment got wrong when it claimed to "include the one
+definition below".
+
+Both plugins relinked with the change (`codeview.spl` and `mdview.spl` both
+list `webhost.obj`/`webkeeper.obj`), so a shared-host edit is compiled twice on
+every build and cannot rot in one consumer.
+
+Guards:
+
+| Guard | Result |
+|---|---|
+| `rg -c "disable-features=msWebOOUI" src/` | `src/common/webhost/webhost.cpp:1` — one file |
+| `rg '^\s*#\s*include\s*[<"](wrl\.h\|WebView2\.h\|WebView2EnvironmentOptions\.h)' src/plugins/` | nothing — neither plugin includes a COM or WebView2 header |
+| `rg -l '^\s*#\s*include\s*[<"]wrl\.h' src/` | only `webhost.cpp` and `webkeeper.cpp` |
+| `ls src/plugins/mdview/webview.*` | absent |
+
+**Write the include guard as an `#include` pattern.** A bare
+`rg -l "wrl\.h" src/plugins/mdview/` matches two files — `webglue.h` and
+`IMPLEMENTATION_NOTES.md` — because both *mention* the header in prose while
+stating that it is not included.

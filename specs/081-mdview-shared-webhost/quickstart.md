@@ -33,15 +33,23 @@ the implementation (results in `fix-log.md`).
 
 ## 1. Automated gates (run by the implementation; re-runnable)
 
-| Gate | Command | Pass |
-|---|---|---|
-| G1 | `build.cmd` then `build.cmd full release` (repo root, `OPENSAL_BUILD_DIR=D:\Build\OpenSal\`) | both exit 0; `plugins\mdview\mdview.spl` present in both trees |
-| G2 | `rg -l "wrl\.h|WebView2\.h|WebView2EnvironmentOptions\.h" src/plugins/mdview/` → no output; `rg -c "disable-features=msWebOOUI" src/` → exactly `src/common/webhost/webhost.cpp:1`; `src/plugins/mdview/webview.cpp` and `.h` do not exist | as stated |
-| G3 | `tests\mdview_htmlgen_test\build_and_run.cmd` | `RESULT: PASS`, `[FAIL]` count 0, `[PASS]` count recorded in `fix-log.md` |
-| G4 | `python specs\081-mdview-shared-webhost\probe\check_csp_compat.py` (renders every fixture with the dumper and classifies resource references) | `10-legit-control.md`: 0 blocked; hostile files: blocked set equals the constructs the file exists to test |
-| G5 | `powershell -File specs\081-mdview-shared-webhost\probe\mdview_probe.ps1 -Exe <Debug tree>\tandemcommander.exe -Fixtures %TEMP%\md081` | every scenario prints `PASS` (open/zoom/source/scheme; keeper alive after 60 s; warm reopen ≤ 2× back-to-back; kill → view → warm; 10× close-during-cold-start, no leak from `mdview.spl`; hostile corpus: one window each, no dialog, no process growth) |
-| G6 | `powershell -File specs\081-mdview-shared-webhost\probe\render_diff.ps1 -Ref <ref tree>\tandemcommander.exe -New <Debug tree>\tandemcommander.exe -File %TEMP%\md081\10-legit-control.md` | differing pixels ≤ 0.1 % of the viewer client area; both PNGs saved beside the log |
-| G7 | independent review of `git diff main...081-mdview-shared-webhost` (069 protocol) | no blocker |
+All of these were run during implementation; the measured results are in
+[`fix-log.md`](fix-log.md). Re-run any of them from the repository root.
+
+| Gate | Command | Pass | Measured |
+|---|---|---|---|
+| G1 | `build.cmd` then `build.cmd full release` (**do not set `OPENSAL_BUILD_DIR`**) | both exit 0 | 0 errors; both trees carry `plugins\mdview\mdview.spl` linked with `webhost.obj`+`webkeeper.obj`; Release runtime closure OK |
+| G2 | `rg '^\s*#\s*include\s*[<"](wrl\.h\|WebView2\.h\|WebView2EnvironmentOptions\.h)' src/plugins/` → nothing; `rg -c "disable-features=msWebOOUI" src/` → one file; `ls src/plugins/mdview/webview.*` → absent | as stated | all three hold. **Use the `#include` form**: a bare `rg -l "wrl\.h"` also matches prose in comments and documentation, which cost one confused minute |
+| G3 | `tests\mdview_htmlgen_test\build_and_run.cmd` | `RESULT: PASS` | **29 passed, 0 failed** |
+| G4 | `python specs\081-mdview-shared-webhost\probe\check_csp_compat.py --extra tests\mdview_htmlgen_test\sample.md` | exit 0 | control document **0 blocked**, `sample.md` **0 blocked**, every hostile fixture matched its declared layer |
+| G5 | `powershell -NoProfile -File specs\081-mdview-shared-webhost\probe\mdview_probe.ps1 -Exe <tree>\tandemcommander.exe -Scenario all` | every scenario `PASS` | **24 checks, 0 failed** (smoke 5, hostile 9, keeper-warm 3, keeper-crash 3, cold-close 2, cross-warm 2); Release smoke 5/5 |
+| G6 | `powershell -NoProfile -File specs\081-mdview-shared-webhost\probe\render_diff.ps1 -Ref <ref tree>\tandemcommander.exe -New <tree>\tandemcommander.exe` | ≤ 0.1 % differing pixels | **0 of 729,144 pixels** differ; PNGs in `probe/out/` |
+| G7 | independent review of `git diff main...081-mdview-shared-webhost -- src/` (069 protocol) | no blocker | see `fix-log.md` |
+
+> **Expect a "Heap Message — Detected memory leaks!" dialog when a *Debug*
+> build exits.** It is the pre-existing leak recorded in feature 078 and it
+> appears on the reference build too; it is not a regression of this feature.
+> The probes dismiss it. Do not report it as a finding of the on-screen pass.
 
 ## 2. On-screen checklist (a person; ~45 minutes)
 
@@ -60,7 +68,7 @@ independent review → gates again.
 | A4 | Ctrl+F `dot`, OK; F3; Shift+F3; Ctrl+F `zzz-nomatch` | matches highlighted, view jumps next/previous; the no-match term shows the *not found* box | ⇄ |
 | A5 | Ctrl+U; scroll; Ctrl+F in source; Ctrl+U again | raw source shown, title gains `[Source]`; find works in source; toggles back to rendered | ⇄ |
 | A6 | click, in order: the `#anchor` link, the `10b-linked.md` link, the `notes.txt` link, the `https://` link, the `mailto:` link, the `ftp://` link | anchor scrolls; a **second viewer window** opens on `10b-linked.md`; the `.txt` shows its resolved path only (nothing launched); `https` and `mailto` open the system handler; `ftp` → *link blocked* | ⇄ |
-| A7 | F3 on `04-remote-image.md`; View ▸ *Load Remote Images* | placeholder with the URL as tooltip before consent; after consent the image loads (or an empty slot if `example.invalid` cannot resolve — same as reference) | ⇄ |
+| A7 | F3 on `04-remote-image.md`; View ▸ *Load Remote Images* | placeholder with the URL as tooltip before consent. After consent the slot stays **empty**: `example.invalid` cannot resolve by design (RFC 2606), so the fetch fails — that is the expected outcome on both builds, and what matters is that no request was attempted *before* consent (row B4) | ⇄ |
 | A8 | Options ▸ Theme ▸ Dark in the main window, open a viewer | menu bar and popups drawn dark; Alt+V opens View; mnemonics work | ⇄ |
 | A9 | (if a VM without the WebView2 runtime is at hand) F3 on a `.md` | the built-in text viewer opens; no new message text | ⇄ |
 | A10 | resize the viewer with the mouse; Alt+Tab away and back; press PgDn | content fills the window at every size; PgDn scrolls without a click | ⇄ |
@@ -79,7 +87,7 @@ Open each file with F3, look at the screen, look at the monitor, close.
 | B6 | `06-meta-refresh.md` | view stays on the document | no request |
 | B7 | `07-form.md` | clicking *Submit* does nothing (silently — accepted delta) | no request |
 | B8 | `08-path-traversal-image.md` | three placeholders | no request; nothing read outside the folder (Process Monitor optional) |
-| B9 | `09-download-link.md` | clicking either link: **no download bubble, nothing saved** (stricter than reference — on the reference a bubble may appear) | no request |
+| B9 | `09-download-link.md` | clicking **each of the five** links: **no download bubble, nothing saved in `%USERPROFILE%\Downloads`**. This is the one hardening you can see: on the reference build the `data:` link may produce a bubble or a saved file | no request |
 
 ### C — Keeper (spec User Story 3; feature 065 quickstart 1, 3, 4, 5, 7)
 
@@ -92,7 +100,12 @@ Open each file with F3, look at the screen, look at the monitor, close.
 | C5 | Plugins Manager ▸ Markdown Viewer ▸ Configure ▸ uncheck *Keep the rendering engine ready…* ▸ OK (no viewer open); wait ~1 min | engine tree exits; F3 → cold; close; F3 → cold again; re-check the option → next view arms; view/close/view → instant |
 | C6 | F3 on `a.md` and **immediately** F3 on `b.md` during the cold start | both render; no crash, no error |
 | C7 | keeper armed, no viewer: Plugins Manager ▸ Unload Markdown Viewer | unloads cleanly; engine tree exits; Load again; F3 → works; close; F3 → **instant** (the class was released — 069 F-P6-01) |
-| C8 | open a `.cpp` with the Code Viewer first (fresh session), close it, then F3 on a `.md` | the Markdown view attaches **warm** (either plugin's keeper warms the other) |
+| C8 | open `hello.cpp` with the Code Viewer first (fresh session), close it, then F3 on a `.md` | the Markdown view attaches **warm** (either plugin's keeper warms the other) |
+
+> Rows C1–C4, C6 and C8 are covered by `mdview_probe.ps1` (G5) and passed
+> there; run them by hand only if you want to see them. **C5 and C7 are the
+> ones that genuinely need you**: they go through the Plugins Manager, which
+> the probe does not drive.
 
 ### D — Hardening (spec User Story 2 scenario 4–5; contract §5)
 
