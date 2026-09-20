@@ -7,14 +7,18 @@ the implementation (results in `fix-log.md`).
 
 ## 0. Prerequisites
 
-- **Reference tree** (pre-migration): `D:\Build\OpenSal\tandemcommander\Debug_x64_prefix081\`
+- **Build tree**: `OPENSAL_BUILD_DIR` is unset on this machine, so `build.cmd`
+  uses its default and everything lives under
+  `E:\Projects\tandemcommander\build\tandemcommander\` (research R7). Do not
+  set the variable for this pass, or you will compare against a stale tree on
+  `D:`.
+- **Reference tree** (pre-migration): `build\tandemcommander\Debug_x64_prefix081\`
   — a copy of the Debug x64 tree of `main` `6b4d7af` made before the first
-  build of this branch (research R7). Start it with
+  build of this branch. Start it with
   `Debug_x64_prefix081\tandemcommander.exe -t REF081`. **Do not delete it
   before section A–D is done.**
-- **Migrated tree**: `D:\Build\OpenSal\tandemcommander\Debug_x64\` after
-  `build.cmd` on this branch (Release: `Release_x64\` after
-  `build.cmd full release`).
+- **Migrated tree**: `build\tandemcommander\Debug_x64\` after `build.cmd` on
+  this branch (Release: `Release_x64\` after `build.cmd full release`).
 - **Fixtures**: `specs\081-mdview-shared-webhost\fixtures\security\` (copy the
   folder to a scratch location such as `%TEMP%\md081\` so relative links and
   the `assets\dot.png` image resolve exactly as a user's folder would).

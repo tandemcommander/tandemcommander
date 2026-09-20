@@ -158,11 +158,24 @@ C4 proves it on the migrated plugin.
 
 ## R7 — Decision: the reference build for side-by-side comparison
 
-`D:\Build\OpenSal\tandemcommander\Debug_x64\` at the start of this feature is
-a pre-migration Debug build of `main` (mdview.spl dated 2026-09-19 09:53, the
-feature-080 build). **Decision**: copy the tree (excluding `Intermediate\`
-folders, ≈230 MB) to `D:\Build\OpenSal\tandemcommander\Debug_x64_prefix081\`
-*before* the first build of this branch. It is an independently runnable
+**Which tree is live**: `OPENSAL_BUILD_DIR` is **unset** on this machine in
+every scope, so `build.cmd` uses its documented default `.\build\`
+(build.cmd:67–69) — even though CLAUDE.md's quick start shows
+`set OPENSAL_BUILD_DIR=D:\Build\OpenSal\`. Measured 2026-09-20:
+
+| Tree | `tandemcommander.exe` | `plugins\mdview\mdview.spl` |
+|---|---|---|
+| `E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\` | 09-20 09:46 | 09-20 09:00 |
+| `D:\Build\OpenSal\tandemcommander\Debug_x64\` | 09-19 10:18 | 09-19 09:53 |
+
+The repo-local tree is the current one (233 MB / 432 files without
+`Intermediate\`; `codeview.spl` present, same timestamp) and is where this
+feature builds; the `D:` tree is stale and is left alone.
+
+**Decision**: before the first build of this branch, copy the live Debug tree
+(excluding `Intermediate\`) to
+`E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_prefix081\`
+(`build\` is gitignored; E: has 162 GB free). It is an independently runnable
 reference (`tandemcommander.exe -t REF081 …`) — the 069 precedent
 (`Release_x64_prefix069`). It shares the registry with the migrated build,
 which is what a side-by-side comparison wants (same schemes, zoom, placement).
