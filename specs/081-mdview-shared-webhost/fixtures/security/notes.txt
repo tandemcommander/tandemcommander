@@ -1,0 +1,8 @@
+The target of the "local text file" link in 10-legit-control.md.
+
+Clicking that link must NOT open or launch this file. The viewer shows the
+resolved path in a message box and does nothing else - feature 021's rule for
+a local target that is not Markdown.
+
+If you are reading this inside Tandem Commander's own text viewer because the
+link launched it, that is a regression.

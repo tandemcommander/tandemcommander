@@ -1,0 +1,3 @@
+# Probe output: screenshots, traces and dumps produced by the scripts in
+# probe/. They are evidence for one run on one machine, not source.
+probe/out/
