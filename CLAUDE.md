@@ -8,7 +8,11 @@ WinAPI C++ application — no MFC, no Qt, no cross-platform frameworks.
 
 ## Product Identity (established in feature 032, renamed in feature 046)
 
-- **Product name**: Tandem Commander, version **0.1.8** (internal build 192);
+- **Product name**: Tandem Commander, version **0.1.8** (internal build 192)
+  in the tree — **not released yet**: the last published version is
+  **0.1.7** (build 191, tag `v0.1.7`, 2026-08-29), and everything made since
+  (features 075, 077, 078, 079) ships together as 0.1.8, collected in the
+  `## [0.1.8] — unreleased` section of `CHANGELOG.md`;
   released versions and what changed in each are recorded in `CHANGELOG.md`
   (mandatory per the constitution: a release bumps
   `VERSINFO_SALAMANDER_MINORB` + `VERSINFO_BUILDNUMBER` in
@@ -485,8 +489,8 @@ plugin architecture preservation, UI consistency.
   fixture bugs, and after each review it gained the fixture class that would
   have caught what the reviewer found. **Still owed**: the GUI scenarios S1–S5
   and gate G6 need a person; this session could not drive the application or a
-  debugger, which is recorded rather than worked around. No version bump, no
-  changelog entry yet — the text is drafted in `fix-log.md` for the ship gate.
+  debugger, which is recorded rather than worked around. Ships with 0.1.8
+  (unreleased); its changelog text is in that section of `CHANGELOG.md`.
 - 077-fix-antivirus-findings: implements findings 3.2 and 3.3 of the 076
   antivirus false-positive review (`specs/076-avast-false-positive-review/`).
   **(a) The Visual C++ runtime ships application-locally**: every shipped
@@ -527,7 +531,8 @@ plugin architecture preservation, UI consistency.
   blocked (both gone with the helper in feature 079). **Owed human step**: the literal start on a clean
   Windows without the redistributable (Windows Sandbox / VM, admin needed).
   Record: `specs/077-fix-antivirus-findings/fix-log.md`.
-- 078-panel-tabs: **panel tabs** (version 0.1.8, build 192). Design Model A:
+- 078-panel-tabs: **panel tabs** (version 0.1.8, build 192 — bumped in the
+  tree, not released yet). Design Model A:
   each panel keeps its single `CFilesWindow`; a tab is a remembered view state
   (`CPanelTab` in `src/paneltabs.*`: location in external form, view template,
   sort, filter, cursor, selection, scroll, its own `CPathHistory`); switching =
@@ -578,7 +583,8 @@ plugin architecture preservation, UI consistency.
   nested fault on the handling thread and a guard for a crash inside the
   bug-report thread itself; exit code stays 1. No start-up prompt about old
   reports, no `Bug Reporter` registry key access, `CProcessListItem::SalmonPID`
-  is `Reserved1` (same offset, always 0) so 0.1.8 and this build share the
+  is `Reserved1` (same offset, always 0) so older instances (0.1.7, earlier
+  0.1.8 development builds) and this build share the
   process list; `EnableExceptionsOn64` moved into `salamdr1.cpp`. `build.cmd`
   deletes a stale `utils\salmon.exe` from older output trees (MSBuild rebuild
   cleans only projects still in the solution and the installer packages the
@@ -593,6 +599,7 @@ plugin architecture preservation, UI consistency.
   fresh registry (backup/restore verified key by key), signing inventory,
   runtime-dependency check. The intermittent Debug-CRT 88-byte leak at exit is
   the 078 one (dump captured, `#File Error#(84)`), not new. No version bump
-  (`[Unreleased]` in `CHANGELOG.md`), plugin ABI untouched (interface 106).
+  of its own — it ships with the unreleased 0.1.8 (`## [0.1.8] — unreleased`
+  in `CHANGELOG.md`), plugin ABI untouched (interface 106).
   Records: `specs/079-remove-salmon-crash-reporter/fix-log.md`,
   `closing-report.md`; probes under `probe/`.

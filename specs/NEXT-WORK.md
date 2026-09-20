@@ -1,6 +1,8 @@
 # Next Work — consolidated continuation
 
 **Written**: 2026-09-02 · **Baseline**: `main` at `f4cefa1` (0.1.7, build 191)
+**Revised**: 2026-09-20 — release status corrected: **0.1.7 is the last
+published version**; 0.1.8 (build 192) exists only in the tree.
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
@@ -11,6 +13,36 @@ stay authoritative for the *detail and the reasoning*; this one decides the
 
 Ordering criterion: what it costs users × what it costs us. Nothing here is a
 blocker for anything already shipped.
+
+---
+
+## R. Release 0.1.8 — not done yet
+
+Features 075, 077, 078 and 079 are merged but **unpublished**. The version was
+bumped to 0.1.8 / build 192 by feature 078 (`spl_vers.h`,
+`setup/tandemcommander.iss`, `CLAUDE.md`), and `CHANGELOG.md` collects all four
+features in one section headed `## [0.1.8] — unreleased` (the changelog drafts
+that 075 and 077 left in their fix-logs are applied there). No `v0.1.8` tag,
+no installer in `setup/output/`, no winget manifest.
+
+Ship gate, when the release is decided:
+
+1. Replace `unreleased` in the changelog heading with the release date and
+   delete the *Not released yet* paragraph under the lead
+   (`tools/winget/publish.ps1` reads the date from that heading and the
+   release summary from the lead paragraph); drop *not released yet* from the
+   build-192 row in `spl_vers.h` and from the version line in `CLAUDE.md`.
+2. Pre-release review of the `v0.1.7..HEAD` delta (the 056 pattern) — the
+   delta contains a feature the size of panel tabs.
+3. The owed human steps that gate a release rather than follow it: the
+   **clean-machine start** (item 0.1 below — it verifies the very fix the
+   release advertises) and a manual pass over the panel tabs on the Release
+   build (078 was verified by a GUI driver against the Debug build).
+4. `build.cmd full release sign setup`, tag `v0.1.8`, GitHub release, then the
+   winget manifest — see item 6 for the state of the catalogue submission.
+
+Whether item 2 (Restart Manager) goes into 0.1.8 or into the release after it
+is an open decision; nothing in the unreleased delta depends on it.
 
 ---
 
@@ -49,8 +81,9 @@ blocker for anything already shipped.
 >    helper in feature 079), `/guard:cf`, remove the dead pre-Vista
 >    `ZwQueryInformationProcess` path.
 >
-> Ship gate for 077 (not done here): version bump + `CHANGELOG.md` entry,
-> drafted in `077-fix-antivirus-findings/fix-log.md`, "Changelog draft".
+> Ship gate for 077: the version bump came with feature 078 and the drafted
+> changelog text is now in the `## [0.1.8] — unreleased` section of
+> `CHANGELOG.md`; publishing is section R above.
 
 ## 1. Small hardening batch — ✅ DONE (feature 075, 2026-09-02)
 
@@ -102,8 +135,10 @@ output trustworthy for everything below.
 
 ## 2. Restart Manager — upgrading over a running instance (winget P1) ← **start here**
 
-The one item that **fails for real users** now that the package is in the
-catalogue. With the program open, `winget upgrade` (which passes
+The one item that **will fail for real users** as soon as the package is in the
+catalogue (checked 2026-09-20: PR #426090, version 0.1.7, is still open —
+pipeline passed, waiting for moderator validation — so nobody can hit this
+through winget yet). With the program open, `winget upgrade` (which passes
 `/SUPPRESSMSGBOXES`) hits the Abort/Retry/Ignore prompt, answers **Abort**, and
 the install rolls back with exit 5. Not a regression — it never mattered while
 upgrading meant running the installer by hand. Full evidence in

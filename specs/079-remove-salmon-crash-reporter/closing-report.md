@@ -96,3 +96,9 @@
 
 Ship gate: bump the version and move the `[Unreleased]` entry under it in the
 same change (constitution, Release Documentation), rebuild signed, publish.
+
+*Correction, 2026-09-20*: this report treated 0.1.8 as a published version.
+It is not — 0.1.7 is the last release, and 0.1.8 / build 192 was only bumped
+in the tree by feature 078. No further bump is needed for this feature: its
+changelog entry was merged into the `## [0.1.8] — unreleased` section, and it
+ships with 075, 077 and 078 as 0.1.8. See `specs/NEXT-WORK.md`, section R.

@@ -9,35 +9,7 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
-## [Unreleased]
-
-### Removed
-
-- **The crash-reporting helper `salmon.exe`.** Since the first release the
-  program started a second process alongside itself whose job was to capture
-  a memory dump when the program crashed and upload it. Neither has been true
-  for a long time: uploading was switched off in 0.1.0, and no memory dump was
-  ever produced because the helper needed a debugging library the product
-  does not ship. What remained was a background process that waits to read
-  the program's memory — the exact pattern behaviour-based antivirus engines
-  flag, and users reported their antivirus blocking Tandem Commander because
-  of it. The helper, its start-up question about "older bug reports" (which
-  used to hold the main window unresponsive until answered) and its registry
-  key are gone; the `utils` folder keeps its other files.
-
-### Changed
-
-- **After a crash the program itself tells you where the report is.** The
-  text report is written as before (exception details, registers, call
-  stacks, loaded modules — no memory dump, nothing is sent anywhere), now
-  under the name `TC<version>-<date>-<time>.TXT` in
-  `%LOCALAPPDATA%\Tandem Commander`, and a message names the full path so
-  you can attach the file to an issue on GitHub. The folder is created when
-  it is needed; previously the report was silently lost on a machine where
-  that folder did not exist yet. Old reports left in the folder are never
-  touched. The Task List *Break* command ends in the same report and message.
-
-## [0.1.8] — 2026-09-18
+## [0.1.8] — unreleased
 
 **Build 192.** Feature release. Each panel can now keep several directories
 open in **tabs**, the way a web browser does: a strip of tabs sits above the
@@ -45,7 +17,14 @@ panel's Directory Line, every tab remembers its own directory, view, sort
 order, filter, cursor, selection and Back/Forward history, and the whole set
 of tabs comes back at the next start. Tabs are on by default; one checkbox in
 Configuration turns them off and restores the previous look and behaviour
-exactly. Nothing else in the program changed.
+exactly. The program also starts on a computer without the Microsoft Visual
+C++ runtime, and two things antivirus engines objected to are gone: the
+in-memory patch of a Windows function at start-up and the crash-reporting
+helper process.
+
+*Not released yet — the last published version is 0.1.7. This section
+collects everything made since then; the word "unreleased" in the heading is
+replaced by the release date when the version is published.*
 
 ### Added
 
@@ -97,6 +76,66 @@ exactly. Nothing else in the program changed.
 - **Ctrl+Shift+Page Up / Page Down switch tabs while tabs are on.** Until now
   these two combinations were undocumented duplicates of Shift+Page Up /
   Page Down (page-and-select). With tabs turned off they keep that behaviour.
+
+- **After a crash the program itself tells you where the report is.** The
+  text report is written as before (exception details, registers, call
+  stacks, loaded modules — no memory dump, nothing is sent anywhere), now
+  under the name `TC<version>-<date>-<time>.TXT` in
+  `%LOCALAPPDATA%\Tandem Commander`, and a message names the full path so
+  you can attach the file to an issue on GitHub. The folder is created when
+  it is needed; previously the report was silently lost on a machine where
+  that folder did not exist yet. Old reports left in the folder are never
+  touched. The Task List *Break* command ends in the same report and message.
+
+- **Starting the program no longer rewrites Windows system code in memory.**
+  Since its Open Salamander days the program patched a Windows function
+  (`SetUnhandledExceptionFilter`) inside its own process at every start so
+  that no add-on could take over crash reporting. Behaviour-based antivirus
+  engines treat exactly this pattern as suspicious, and it is one likely
+  reason for false alarms such as the reported Avast detection. The patch is
+  gone; crash reports are produced exactly as before, and the reporter simply
+  re-registers itself periodically instead.
+
+### Fixed
+
+- **The program starts on a computer that has no Microsoft Visual C++
+  runtime installed.** Every version from 0.1.0 to 0.1.7 depended on the
+  "Microsoft Visual C++ 2015-2022 Redistributable (x64)" being present, but
+  neither installed it nor said so: on a computer without it the installer
+  finished normally and Tandem Commander then refused to start with
+  *"The code execution cannot proceed because VCRUNTIME140.dll was not
+  found"*. The runtime files now ship inside the program folder, so no
+  separate installation is needed. Nothing changes on computers that already
+  had the runtime.
+
+- **The viewer's title bar is readable for files under very long paths.**
+  Opening a file whose full path is longer than about 260 bytes showed the
+  title — the file name, the word *Viewer* and the coding — with garbled
+  accented characters. The name was being cut in the middle of a character,
+  which made the whole title fall back to the legacy code page. Paths at or
+  below that length were never affected.
+
+- **Hardening, with no known way to trigger it.** Three internal copies that
+  could write past their storage were bounded: the viewer's lookup of a
+  conversion name, the File Comparator's file header, and the argument check of
+  the conversion service offered to plugins. No shipped configuration reaches
+  any of them — the longest conversion name in `convert.cfg` is 33 bytes and
+  every path shown in the comparator is already length-limited — so nothing
+  users have seen is being repaired here.
+
+### Removed
+
+- **The crash-reporting helper `salmon.exe`.** Since the first release the
+  program started a second process alongside itself whose job was to capture
+  a memory dump when the program crashed and upload it. Neither has been true
+  for a long time: uploading was switched off in 0.1.0, and no memory dump was
+  ever produced because the helper needed a debugging library the product
+  does not ship. What remained was a background process that waits to read
+  the program's memory — the exact pattern behaviour-based antivirus engines
+  flag, and users reported their antivirus blocking Tandem Commander because
+  of it. The helper, its start-up question about "older bug reports" (which
+  used to hold the main window unresponsive until answered) and its registry
+  key are gone; the `utils` folder keeps its other files.
 
 ## [0.1.7] — 2026-08-29
 

@@ -133,8 +133,11 @@
 //       - feature 072; see CHANGELOG.md)
 // 192 - Tandem Commander 0.1.8 (panel tabs: a browser-style tab strip above
 //       each panel's Directory Line, on by default, tabs restored at
-//       start-up, one Appearance checkbox turns it off - feature 078; see
-//       CHANGELOG.md)
+//       start-up, one Appearance checkbox turns it off - feature 078; the
+//       Visual C++ runtime ships with the product and start-up no longer
+//       patches kernel32 - feature 077; the salmon.exe crash reporter is
+//       removed - feature 079; small hardening - feature 075; not released
+//       yet, see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
