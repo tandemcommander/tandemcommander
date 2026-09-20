@@ -112,11 +112,12 @@ location, clipboard read, …) or pop a script dialog.
 property that made rendering raw HTML acceptable at all. Sharing the lockdown
 routine is only acceptable if the shared routine is at least as strict.
 
-**Independent Test**: open every file of the feature-021 security fixture corpus
-(`specs/021-mdview-html-renderer/fixtures/security/`) in the migrated viewer
-with a network monitor attached; observe zero script effects and zero
-content-triggered network requests — identical to 0.1.7 — plus no download
-prompt and no permission prompt.
+**Independent Test**: open every file of the security fixture corpus
+(`specs/081-mdview-shared-webhost/fixtures/security/` — the corpus feature
+021's quickstart describes was never committed, so this feature authors it) in
+the migrated viewer with a network monitor attached; observe zero script
+effects and zero content-triggered network requests — identical to 0.1.7 —
+plus no download prompt.
 
 **Acceptance Scenarios**:
 
@@ -130,10 +131,13 @@ prompt and no permission prompt.
 3. **Given** a document that references `../../secret.png` or an absolute /
    UNC image path, **When** it is viewed, **Then** the image is refused (as
    before).
-4. **Given** a document that tries to trigger a file download or requests a
-   permission, **When** it is viewed, **Then** no download starts and no
-   permission prompt appears (new hardening; before, the engine's defaults
-   applied).
+4. **Given** a document with a download link (`<a download>` to a `data:` or
+   a document-relative target), **When** the link is clicked, **Then** no
+   download starts and no download bubble appears (new hardening; before, the
+   engine's default download handling applied). Permission prompts and script
+   dialogs cannot arise at all while scripts are off — their refusal is
+   defence in depth and is verified by reading the applied settings, not on
+   screen.
 5. **Given** a legitimate document with inline styles, a local image and a
    `data:` image, **When** it is viewed under the new content policy, **Then**
    all three render — the hardening blocks nothing a Markdown document may
@@ -384,9 +388,9 @@ checklist end to end without asking a question.
   scenario of stories 1–3) read "same as reference" on the migrated build;
   the four hardening rows (downloads, permissions, script dialogs, content
   policy) read "stricter, nothing legitimate lost".
-- **SC-004**: 100 % of the feature-021 security fixtures show zero script
-  effect and zero content-triggered network requests; 100 % of feature-065
-  quickstart scenarios 1, 3, 4, 5 and 7 pass unchanged.
+- **SC-004**: 100 % of the security fixtures show zero script effect and zero
+  content-triggered network requests; 100 % of feature-065 quickstart
+  scenarios 1, 3, 4, 5 and 7 pass unchanged.
 - **SC-005**: The second Markdown view of a session opens within 2× the
   back-to-back time (feature 065 SC-002), measured on the migrated build.
 - **SC-006**: Full Debug and Release builds succeed; the generator test
