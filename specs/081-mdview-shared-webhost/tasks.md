@@ -161,10 +161,10 @@ the living documentation says the migration is complete.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T047 Independent review (G7, 069 protocol): spawn a reviewer agent that did not write the code over `git diff main...081-mdview-shared-webhost -- src/` with the contract `contracts/mdview-host-config.md`, research R1/R3/R4 and the question set "is any lockdown relaxed? does anything outlive the window? is the 404 preserved? is the accelerator map byte-identical to 0.1.7? does codeview's behaviour change?"; record the verdict and every finding in `fix-log.md`; fix accepted findings in the mdview glue/viewer, rebuild, rerun T023/T029/T033 for the touched area
-- [ ] T048 Final full builds after review fixes: `build.cmd` and `build.cmd full release`; rerun G2 guards (T036), `build_and_run.cmd` (T020) and `check_csp_compat.py` (T027); record
-- [ ] T049 Write `specs/081-mdview-shared-webhost/closing-report.md` (house style of 078/079/080): what was done, evidence table with numbers (lines removed/added, PASS counts, pixel-diff %, timings), the hardening deltas, what is owed to a person and where the checklist is, what changed in the shared host (one accessor) and that codeview recompiled with it, no ABI change (interface 106), no version bump
-- [ ] T050 Final commit `[081] Closing report`; leave the branch un-merged and report the merge as the user's decision (constitution: PR against `main`)
+- [X] T047 Independent review (G7, 069 protocol): spawn a reviewer agent that did not write the code over `git diff main...081-mdview-shared-webhost -- src/` with the contract `contracts/mdview-host-config.md`, research R1/R3/R4 and the question set "is any lockdown relaxed? does anything outlive the window? is the 404 preserved? is the accelerator map byte-identical to 0.1.7? does codeview's behaviour change?"; record the verdict and every finding in `fix-log.md`; fix accepted findings in the mdview glue/viewer, rebuild, rerun T023/T029/T033 for the touched area
+- [X] T048 Final full builds after review fixes: `build.cmd` and `build.cmd full release`; rerun G2 guards (T036), `build_and_run.cmd` (T020) and `check_csp_compat.py` (T027); record
+- [X] T049 Write `specs/081-mdview-shared-webhost/closing-report.md` (house style of 078/079/080): what was done, evidence table with numbers (lines removed/added, PASS counts, pixel-diff %, timings), the hardening deltas, what is owed to a person and where the checklist is, what changed in the shared host (one accessor) and that codeview recompiled with it, no ABI change (interface 106), no version bump
+- [X] T050 Final commit `[081] Closing report`; leave the branch un-merged and report the merge as the user's decision (constitution: PR against `main`)
 
 ---
 
