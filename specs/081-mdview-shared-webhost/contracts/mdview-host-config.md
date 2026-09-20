@@ -34,10 +34,23 @@ listed.
 | `img/<n>` otherwise (index out of range, unreadable, fetch failed, empty) | **404 `Not Found`** | `application/octet-stream` | empty | returned as `true` with `Status = 404` so the status mdview always used is preserved (returning `false` would make it the host's 403) |
 | anything else | — | — | — | `false` → 403 by the host (default-deny is the host's invariant, not the plugin's choice) |
 
-The `Data` pointer is borrowed and MUST outlive the call: the document bytes
-belong to the window's `Html` member; image bytes live in a `std::vector`
-owned by the callback for the duration of the call — the host copies them into
-an `IStream` before returning.
+### Buffer lifetime — the trap in this callback
+
+`TcWebResponse::Data` is **borrowed, and the host reads it after `Serve`
+returns**: the shared host calls `MakeAndSetResponse` → `SHCreateMemStream`
+*after* the callback, so a buffer local to the callback body is already
+destroyed when the copy happens. (codeview never met this: its answers are a
+module resource and a window member, both of which outlive everything.)
+
+| Answer | Owner | Lives as long as |
+|---|---|---|
+| `doc.html` bytes | `CViewerWindow::Html.html` | the viewer window |
+| `img/<n>` bytes | a scratch `std::vector<BYTE>` held by the `Serve` lambda (a captured `shared_ptr`) | the host (the lambda is stored in its config copy) |
+
+One scratch buffer is enough because `WebResourceRequested` is raised on the
+single thread that created the controller, so two requests never overlap; it
+is cleared and shrunk on the refusal path so a large failed fetch is not held
+for the session.
 
 ## 3. `Accelerator` — the 0.1.7 key map, verbatim
 

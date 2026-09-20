@@ -3,7 +3,7 @@
 //
 // render.h - color schemes, encoding detection, GitHub slug, and syntax-
 // highlight interface for mdview. Markdown -> HTML generation lives in
-// htmlgen.h; the rendering surface is WebView2 (see webview.h). The v1
+// htmlgen.h; the rendering surface is WebView2 (see webglue.h). The v1
 // RTF/RichEdit path was retired in feature 021.
 
 #pragma once

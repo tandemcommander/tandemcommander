@@ -9,14 +9,14 @@
 #include "htmlgen.h"
 #include <string>
 
-class CMdWebHost;
+class CTcWebHost;
 
 class CViewerWindow : public CWindow
 {
 public:
-    HANDLE Lock;      // signaled once the (possibly temp) source file may be released
-    char* Name;       // full UTF-8 path (heap; may exceed MAX_PATH) or NULL
-    CMdWebHost* Web;  // the WebView2 rendering surface
+    HANDLE Lock;     // signaled once the (possibly temp) source file may be released
+    char* Name;      // full UTF-8 path (heap; may exceed MAX_PATH) or NULL
+    CTcWebHost* Web; // the shared WebView2 rendering surface (src/common/webhost/)
 
     HMENU HSchemeMenu; // the "Color Scheme" submenu (for radio/checkmark updates)
 
@@ -30,12 +30,17 @@ public:
     std::wstring DocDir;      // directory of the file (image resolution)
     MdEncoding Encoding;
     wchar_t FindText[256];
-    int FindIndex;            // current match for find next/prev
-    bool RemoteAllowed;       // per-document remote-image consent (D2)
-    bool RenderPending;       // set before the controller is ready
-    bool SourceMode;          // "View Source" (Ctrl+U): raw text instead of rendered
-    bool DarkMenus;           // IsDarkThemeActive() snapshot at creation; owner-drawn
-                              // dark menu when set (036 convention: reopen adopts)
+    int FindIndex;      // current match for find next/prev
+    int DocVersion;     // bumped whenever Html is regenerated; Navigate(DocVersion, ...)
+                        // makes that a fresh URL (full reload with the new marks),
+                        // while a fragment at the SAME version is a same-document
+                        // scroll. Owned here since feature 081 -- the shared host
+                        // takes the version from its caller.
+    bool RemoteAllowed; // per-document remote-image consent (D2)
+    bool RenderPending; // set before the controller is ready
+    bool SourceMode;    // "View Source" (Ctrl+U): raw text instead of rendered
+    bool DarkMenus;     // IsDarkThemeActive() snapshot at creation; owner-drawn
+                        // dark menu when set (036 convention: reopen adopts)
 
     int EnumFilesSourceUID;
     int EnumFilesCurrentIndex;
@@ -53,7 +58,7 @@ protected:
     void BuildMenu();
     void RefreshSchemeChecks();
     const MdTheme* EffectiveTheme();
-    void RebuildHtml();                                        // (re)generate Html only
+    void RebuildHtml();                                               // (re)generate Html only
     void ShowDocument(const std::wstring& fragment = std::wstring()); // serve + navigate
     void Regenerate(const std::wstring& fragment = std::wstring());   // RebuildHtml + ShowDocument
     void RenderDocument();

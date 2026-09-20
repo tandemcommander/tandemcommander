@@ -8,7 +8,7 @@
 #include "precomp.h"
 #include "render.h"
 #include "htmlgen.h"
-#include "webview.h"
+#include "webglue.h" // feature 081: mdview's side of the shared host (COM-free)
 #include "viewer.h"
 #include "darkmenu.h"
 
@@ -282,7 +282,7 @@ BOOL WINAPI CPluginInterfaceForViewer::ViewFile(const char* name, int left, int 
     // Engine-unavailable fallback: ViewFile runs on the main thread, where the
     // internal text viewer may legally be opened (ViewFileInPluginViewer is
     // main-thread-only). Do this before spawning our own viewer thread.
-    if (!CMdWebHost::RuntimeAvailable())
+    if (!CTcWebHost::RuntimeAvailable())
     {
         CSalamanderPluginInternalViewerData data;
         ZeroMemory(&data, sizeof(data));
@@ -390,6 +390,7 @@ CViewerWindow::CViewerWindow(int enumFilesSourceUID, int enumFilesCurrentIndex) 
     Encoding = MDENC_UTF8;
     FindText[0] = 0;
     FindIndex = -1;
+    DocVersion = 0;
     RemoteAllowed = false;
     RenderPending = false;
     SourceMode = false;
@@ -549,15 +550,16 @@ void CViewerWindow::RebuildHtml()
 }
 
 // Serve the current Html and (if the surface is ready) navigate; otherwise
-// defer until OnReady. SetDocument bumps the doc version -> full reload.
+// defer until OnReady. The interceptor always reads the Html member itself, so
+// "serving" is just bumping the version -> the next Navigate is a full reload.
 void CViewerWindow::ShowDocument(const std::wstring& fragment)
 {
     if (Web != NULL)
     {
-        Web->SetDocument(&Html, DocDir);
+        DocVersion++;
         Web->SetZoomPercent(g_zoom);
         if (Web->IsReady())
-            Web->Navigate(fragment);
+            Web->Navigate(DocVersion, fragment);
         else
             RenderPending = true;
     }
@@ -678,15 +680,15 @@ void CViewerWindow::DoFind(BOOL forward, BOOL prompt)
             return;
         if (FindText[0] == 0)
             return;
-        // Regenerate with <mark>s for the (new) term and re-serve it. SetDocument
-        // bumps the doc version, so the single Navigate below is a full reload
-        // that carries the new marks (fixes the v021 double-navigation race).
+        // Regenerate with <mark>s for the (new) term and re-serve it. The
+        // version bump makes the single Navigate below a full reload carrying
+        // the new marks (fixes the v021 double-navigation race).
         FindIndex = -1;
         RebuildHtml();
         if (Web != NULL)
-            Web->SetDocument(&Html, DocDir);
+            DocVersion++;
         if (Html.matchCount <= 0 && Web != NULL && Web->IsReady())
-            Web->Navigate(); // reload to clear any previous term's highlights
+            Web->Navigate(DocVersion); // reload to clear any previous term's highlights
     }
     if (Html.matchCount <= 0)
     {
@@ -701,7 +703,8 @@ void CViewerWindow::DoFind(BOOL forward, BOOL prompt)
         FindIndex = 0;
     if (Web != NULL && Web->IsReady())
     {
-        Web->Navigate(L"mdfind-" + std::to_wstring(FindIndex));
+        // the SAME version: a fragment-only change is a same-document scroll
+        Web->Navigate(DocVersion, L"mdfind-" + std::to_wstring(FindIndex));
         Web->Focus();
     }
 }
@@ -827,22 +830,28 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         BuildMenu();
         ViewerWindowQueue.Add(new CWindowQueueItem(HWindow));
 
-        if (!CMdWebHost::RuntimeAvailable())
+        if (!CTcWebHost::RuntimeAvailable())
         {
             // defer the fatal path until after OpenFile set Name (so OpenAsText works)
             PostMessage(HWindow, WM_APP + 1, 0, 0);
             break;
         }
-        Web = new CMdWebHost();
-        CMdWebHost::Callbacks cb;
+        Web = new CTcWebHost();
+        // The interceptor reads this window's Html member directly; its address
+        // is what MdConfigureHost keeps, so regenerating the document needs no
+        // further call into the host (feature 081).
+        TcWebHostConfig cfg;
+        MdConfigureHost(cfg, &Html);
+
+        CTcWebHost::Callbacks cb;
         cb.OnReady = [this]()
         {
             if (RenderPending)
             {
                 RenderPending = false;
-                Web->SetDocument(&Html, DocDir);
+                DocVersion++;
                 Web->SetZoomPercent(g_zoom);
-                Web->Navigate();
+                Web->Navigate(DocVersion);
             }
         };
         cb.OnActivateLink = [this](const std::wstring& uri)
@@ -853,7 +862,7 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         { PostMessage(HWindow, WM_APP + 1, 0, 0); };
         cb.OnZoomChanged = [this](int pct)
         { g_zoom = pct; UpdateTitle(); };
-        Web->Create(HWindow, MdUserDataFolder(), cb);
+        Web->Create(HWindow, TcWebUserDataFolder(), cfg, cb);
         Web->SetBackgroundColor(Theme->docBg); // applied when the controller is ready
         break;
     }

@@ -4,7 +4,7 @@
 // htmlgen.h - Markdown (UTF-8) -> self-contained HTML document + theme CSS.
 // Engine-independent and pure (no I/O, no network). Parses with md4c and
 // emits an inert, static document to be rendered by the locked-down WebView2
-// surface (webview.cpp). Raw embedded HTML is passed through verbatim
+// surface (src/common/webhost/). Raw embedded HTML is passed through verbatim
 // (feature 021 FR-020/FR-022); safety comes from the engine lockdown, not a
 // sanitizer.
 

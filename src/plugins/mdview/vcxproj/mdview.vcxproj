@@ -133,6 +133,10 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ObjectFileName>$(IntDir)lib_md4c.obj</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\..\common\webhost\webhost.cpp">
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\webhost\webkeeper.cpp">
+    </ClCompile>
     <ClCompile Include="..\mdview.cpp">
     </ClCompile>
     <ClCompile Include="..\render.cpp">
@@ -141,7 +145,7 @@
     </ClCompile>
     <ClCompile Include="..\htmlgen.cpp">
     </ClCompile>
-    <ClCompile Include="..\webview.cpp">
+    <ClCompile Include="..\webglue.cpp">
     </ClCompile>
     <ClCompile Include="..\viewer.cpp">
     </ClCompile>
@@ -183,7 +187,11 @@
     </ClInclude>
     <ClInclude Include="..\htmlgen.h">
     </ClInclude>
-    <ClInclude Include="..\webview.h">
+    <ClInclude Include="..\..\..\common\webhost\webhost.h">
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\webhost\webkeeper.h">
+    </ClInclude>
+    <ClInclude Include="..\webglue.h">
     </ClInclude>
     <ClInclude Include="..\viewer.h">
     </ClInclude>

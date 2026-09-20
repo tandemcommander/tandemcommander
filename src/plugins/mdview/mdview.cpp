@@ -6,7 +6,7 @@
 #include "precomp.h"
 #include "render.h"
 #include "htmlgen.h"
-#include "webview.h" // feature 065: MdKeeperDisarm (COM-free header)
+#include "webglue.h" // feature 081: MdKeeperDisarm, a wrapper over the shared CTcWebKeeper
 
 // plugin interface objects
 CPluginInterface PluginInterface;

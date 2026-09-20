@@ -3,7 +3,7 @@
 //
 // render.cpp - color schemes, encoding detection and GitHub slug for mdview.
 // Markdown parsing (md4c) and HTML generation live in htmlgen.cpp; the
-// rendering surface is WebView2 (webview.cpp). No I/O, no network here.
+// rendering surface is WebView2 (src/common/webhost/). No I/O, no network here.
 
 #include "precomp.h"
 #include "render.h"
