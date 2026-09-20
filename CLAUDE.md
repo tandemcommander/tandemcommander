@@ -11,7 +11,7 @@ WinAPI C++ application — no MFC, no Qt, no cross-platform frameworks.
 - **Product name**: Tandem Commander, version **0.1.8** (internal build 192)
   in the tree — **not released yet**: the last published version is
   **0.1.7** (build 191, tag `v0.1.7`, 2026-08-29), and everything made since
-  (features 075, 077, 078, 079) ships together as 0.1.8, collected in the
+  (features 075, 077, 078, 079, 080) ships together as 0.1.8, collected in the
   `## [0.1.8] — unreleased` section of `CHANGELOG.md`;
   released versions and what changed in each are recorded in `CHANGELOG.md`
   (mandatory per the constitution: a release bumps

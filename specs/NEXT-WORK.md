@@ -2,7 +2,8 @@
 
 **Written**: 2026-09-02 · **Baseline**: `main` at `f4cefa1` (0.1.7, build 191)
 **Revised**: 2026-09-20 — release status corrected: **0.1.7 is the last
-published version**; 0.1.8 (build 192) exists only in the tree.
+published version**; 0.1.8 (build 192) exists only in the tree. Feature 080 is
+in `main` (`71e340b`).
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
@@ -19,11 +20,10 @@ blocker for anything already shipped.
 
 ## R. Release 0.1.8 — not done yet
 
-Features 075, 077, 078 and 079 are merged but **unpublished**; feature 080
-(branch `080-restart-manager-upgrade`, not merged yet) belongs to the same
-release. The version was
+Features 075, 077, 078, 079 and 080 are all in `main` (080 fast-forwarded at
+`71e340b`, 2026-09-20) but **unpublished**. The version was
 bumped to 0.1.8 / build 192 by feature 078 (`spl_vers.h`,
-`setup/tandemcommander.iss`, `CLAUDE.md`), and `CHANGELOG.md` collects all four
+`setup/tandemcommander.iss`, `CLAUDE.md`), and `CHANGELOG.md` collects all five
 features in one section headed `## [0.1.8] — unreleased` (the changelog drafts
 that 075 and 077 left in their fix-logs are applied there). No `v0.1.8` tag,
 no installer in `setup/output/`, no winget manifest.
