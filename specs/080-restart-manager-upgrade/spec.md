@@ -40,6 +40,41 @@ The helper process `salmon.exe`, which the 072 evidence also named as holding
 files, no longer exists (removed in feature 079). Whether it was a
 contributing cause is part of the baseline this feature has to establish.
 
+### What the baseline showed (added 2026-09-20, after the reproduction)
+
+The reproduction required by FR-001 was done before planning, and it changed
+the picture. It is recorded here because the rest of this document has to be
+read in its light; the evidence is in `fix-log.md` and `research.md`.
+
+- **The failure in 0.1.7 was caused by the helper, not by the program.**
+  Windows cannot close a process that has no window, and when the list of
+  programs to close contains one, it gives up on the whole list at once. The
+  main program was never even asked. Asked on its own, it closes in about a
+  second — in 0.1.7 as well as now.
+- **With the helper gone the basic case already works**: a silent update over
+  an idle, running program succeeds, from 0.1.7 to the current build and from
+  the current build to itself.
+- **What does not work is everything around the basic case.** The program
+  treats the installer's request like the user signing out and runs its
+  complete *interactive* exit while the installer waits. When a file operation
+  is running, or when a viewer window of a plug-in is open — which is the
+  everyday state, because the plug-in viewer is the default for F3 — the
+  update fails after a timeout, **a question is left on the screen of a
+  machine nobody is sitting at, and when that question is answered minutes or
+  hours later the program exits by itself**, with no installer left to bring
+  it back.
+- **After a successful update the program is simply gone.** Nothing starts it
+  again.
+- **An installation upgraded from 0.1.7 keeps `salmon.exe` on disk.** The
+  installer does not delete files it no longer ships, so the file antivirus
+  engines flag (the reason for feature 079) stays in every upgraded
+  installation. The obvious remedy would bring the original failure back —
+  see User Story 5.
+
+User Story 1 therefore describes a guarantee that must be *kept and proven*
+rather than a defect to be removed; the defects are in User Stories 2, 3
+and 5.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - An unattended update succeeds while the program is open (Priority: P1)
@@ -74,6 +109,12 @@ on its own: the update no longer fails.
    the same test is performed, **Then** the failure is reproduced and recorded
    (exit code, installer log, what the program did with the request) so the
    fix is measured against evidence and not against the description alone.
+   *(Done: reproduced with the published 0.1.7, exit code 5; not reproducible
+   with the current build in the idle case — see Background.)*
+5. **Given** an installed and running **0.1.7** — the version real users have —
+   **When** the installer of this version is run over it silently, **Then** it
+   finishes with exit code 0, although the old program still has its helper
+   process running.
 
 ---
 
@@ -195,6 +236,43 @@ after the change, and compare the observable behaviour.
    request, **When** it arrives, **Then** the program follows the existing
    sequence unchanged, including the configuration backup taken for a critical
    shutdown.
+
+---
+
+### User Story 5 - An upgraded installation no longer contains the removed helper (Priority: P2)
+
+A user who installed 0.1.7 or older and upgrades to this version ends up with
+the same set of files as a user who installed this version fresh. In
+particular the crash-reporting helper removed in feature 079 — the file
+antivirus engines flag — is no longer in the installation folder.
+
+**Why this priority**: Feature 079 removed the helper because antivirus
+products blocked the program over it. For everyone who upgrades instead of
+installing fresh, the file is still there, so for them 079 has not happened.
+It belongs to this feature because it is a defect *of the upgrade path*, it
+was found by this feature's baseline, and the straightforward fix collides
+head-on with User Story 1: telling the installer to delete the file makes the
+installer ask Windows to close the old, still-running helper — which Windows
+cannot do — and the update fails exactly as it did in 0.1.7.
+
+**Independent Test**: Install the published 0.1.7 into a scratch location,
+start it, run this version's installer over it silently, and list the
+installation folder.
+
+**Acceptance Scenarios**:
+
+1. **Given** a running 0.1.7 installation, **When** this version's installer
+   is run over it silently, **Then** the installer succeeds (User Story 1,
+   scenario 5) **and** the helper file is gone from the installation folder
+   afterwards.
+2. **Given** a 0.1.7 installation whose program is *not* running, **When** the
+   installer is run over it, **Then** the helper file is gone afterwards.
+3. **Given** a fresh installation of this version, **When** it is installed or
+   upgraded to itself, **Then** the removal step finds nothing and changes
+   nothing.
+4. **Given** the helper file cannot be deleted (still in use, no permission),
+   **When** the installer reaches that step, **Then** the installation still
+   succeeds and the installer's log says the file was left behind.
 
 ---
 
@@ -327,10 +405,24 @@ after the change, and compare the observable behaviour.
 - **FR-016**: The product version and build number MUST remain 0.1.8 / 192.
   The user-visible change is described in the `## [0.1.8] — unreleased`
   section of `CHANGELOG.md`.
-- **FR-017**: The fix belongs to the application. The installer script MUST
-  NOT be changed unless the recorded evidence shows that the application
-  alone cannot make the update succeed; any such change MUST keep everything
-  the package-manager distribution depends on (feature 072) intact.
+- **FR-017**: The fix of the close-and-restart behaviour belongs to the
+  application. The installer script MUST NOT be changed for it. The only
+  change to the installer script is the removal step of FR-021, and it MUST
+  keep everything the package-manager distribution depends on (feature 072)
+  intact — the privilege directive, the application identifier, silent
+  operation.
+
+**Leftovers of the removed helper**
+
+- **FR-021**: Upgrading an installation of 0.1.7 or older MUST remove the
+  crash-reporting helper's file from the installation folder. The removal
+  MUST NOT make the installer treat that file as one it has to free — i.e. it
+  MUST NOT cause the old, running helper to be put on the list of programs
+  Windows is asked to close — because that is what made every update over a
+  running 0.1.7 fail.
+- **FR-022**: The removal step MUST be harmless: nothing happens when the file
+  does not exist, a file that cannot be deleted never fails the installation,
+  and the outcome is written to the installer's log.
 
 **Verification and records**
 
@@ -372,8 +464,10 @@ after the change, and compare the observable behaviour.
 ### Measurable Outcomes
 
 - **SC-001**: A silent update over one running, idle instance succeeds in 5
-  out of 5 consecutive attempts (installer exit code 0), where before the
-  feature it fails in 5 out of 5.
+  out of 5 consecutive attempts (installer exit code 0) — both over the
+  published 0.1.7 and over this version itself. (With the published 0.1.7
+  installer over a running 0.1.7 it fails in every attempt; that is the
+  recorded starting point.)
 - **SC-002**: An idle instance with the default plug-ins ends its process
   within 10 seconds of the close request, measured on the development
   machine, in every one of those attempts.
@@ -397,6 +491,14 @@ after the change, and compare the observable behaviour.
 - **SC-008**: After the verification the machine is as it was found: the
   published installation, the archived installers (hash-checked) and the
   user's stored configuration are unchanged.
+- **SC-009**: After upgrading a running 0.1.7 the installation folder contains
+  no crash-reporting helper, and the file list of the upgraded installation is
+  identical to that of a fresh installation of this version (apart from the
+  installer's own uninstall records).
+- **SC-010**: In the two everyday "not idle" states found by the baseline — a
+  file operation running, a plug-in viewer window open — the request is
+  answered within 5 seconds, nothing is left on the screen, and the program
+  does **not** exit later on its own.
 
 ## Assumptions
 
@@ -425,6 +527,18 @@ after the change, and compare the observable behaviour.
 - **Declining is the safe default for every state that would need a
   question.** An unattended update that fails can be retried; work destroyed
   by an unattended close cannot be recovered.
+- **An open plug-in window makes the program decline**, including plug-in
+  *viewer* windows, which hold nothing that could be lost. Closing them
+  silently would be the better behaviour, but the only ways to do it without
+  the plug-ins' cooperation are to force-unload plug-ins (which also cancels
+  transfers of the FTP and SFTP plug-ins) or to imitate a click on every
+  window's close button (which can raise a plug-in's own question on an
+  unattended machine — the very defect being removed). Doing it properly
+  needs a way to tell plug-ins that a close is unattended, i.e. an addition to
+  the plug-in interface, which this feature must not touch (FR-014). Recorded
+  as follow-up work; the user-visible consequence — *close viewer windows
+  before updating, or the update is declined* — is stated in the changelog
+  and the manual.
 - **The installer's behaviour is already correct.** It asks the program to
   close, would restart it afterwards, and rolls back cleanly when the program
   does not close. The 072 evidence supports this; the baseline (FR-001)

@@ -59,3 +59,14 @@ Validation pass 1 (2026-09-20), all items pass. Remarks on the judgement calls:
 - **Owed human steps are in scope of the spec** (Assumptions, FR-019): the
   elevated machine-wide variant and a real `winget upgrade` cannot be run
   autonomously.
+
+Revision after the baseline (2026-09-20, during `/speckit-plan`): the
+reproduction showed that the failure described in the input was caused by the
+removed helper process and no longer occurs in the idle case. The spec gained
+a *What the baseline showed* subsection, acceptance scenario 1.5 (upgrade over
+the published 0.1.7), **User Story 5** with **FR-021 / FR-022** (the stale
+helper file left behind by upgrades, and why the obvious remedy is a trap),
+**SC-009 / SC-010**, a rewritten FR-017 and SC-001, and the assumption that an
+open plug-in window declines the request. All checklist items were
+re-evaluated against the revised text and still pass; the new requirements are
+testable (quickstart V12, V15, V16, V3, V4).
