@@ -5,6 +5,9 @@
 published version**; 0.1.8 (build 192) exists only in the tree. Feature 080 is
 in `main` (`71e340b`); feature 081 closed item 4's first bullet (mdview onto
 the shared WebView2 host) and added its on-screen pass to item 3.
+**Revised again**: 2026-09-20 — the tree is **prepared for the 0.1.8
+release** (section R, step 1 done); building, tagging and publishing are the
+maintainer's.
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
@@ -19,35 +22,47 @@ blocker for anything already shipped.
 
 ---
 
-## R. Release 0.1.8 — not done yet
+## R. Release 0.1.8 — tree prepared 2026-09-20, publishing owed
 
-Features 075, 077, 078, 079 and 080 are all in `main` (080 fast-forwarded at
-`71e340b`, 2026-09-20) but **unpublished**. The version was
+Features 075, 077, 078, 079, 080 and 081 are all in `main`. The version was
 bumped to 0.1.8 / build 192 by feature 078 (`spl_vers.h`,
-`setup/tandemcommander.iss`, `CLAUDE.md`), and `CHANGELOG.md` collects all five
-features in one section headed `## [0.1.8] — unreleased` (the changelog drafts
-that 075 and 077 left in their fix-logs are applied there). No `v0.1.8` tag,
-no installer in `setup/output/`, no winget manifest.
+`setup/tandemcommander.iss`, `CLAUDE.md`), and `CHANGELOG.md` collects all six
+features in one section. **Until the maintainer publishes it there is still no
+`v0.1.8` tag, no installer in `setup/output/` and no winget manifest** — the
+date in the tree states the intended release day, not a fact about GitHub.
 
-Ship gate, when the release is decided:
+Ship gate:
 
-1. Replace `unreleased` in the changelog heading with the release date and
-   delete the *Not released yet* paragraph under the lead
+1. ✅ **Done 2026-09-20** — the changelog heading reads
+   `## [0.1.8] — 2026-09-20` and the *Not released yet* paragraph is gone
    (`tools/winget/publish.ps1` reads the date from that heading and the
-   release summary from the lead paragraph); drop *not released yet* from the
-   build-192 row in `spl_vers.h` and from the version line in `CLAUDE.md`.
+   release summary from the lead paragraph — 820 of its 900 characters; the
+   lead gained one sentence for feature 080, which it had never mentioned);
+   *not released yet* dropped from the build-192 row in `spl_vers.h` (the row
+   now also names 080 and 081) and from `CLAUDE.md`. GitHub release notes
+   drafted as `temp/release_notes_v0.1.8.md` (not tracked). **If the release
+   is published on another day, the date moves in two places**: the changelog
+   heading and the product line in `CLAUDE.md`.
 2. Pre-release review of the `v0.1.7..HEAD` delta (the 056 pattern) — the
-   delta contains a feature the size of panel tabs.
+   delta contains a feature the size of panel tabs. *Not done; the
+   maintainer's call.*
 3. The owed human steps that gate a release rather than follow it: the
    **clean-machine start** (item 0.1 below — it verifies the very fix the
    release advertises) and a manual pass over the panel tabs on the Release
    build (078 was verified by a GUI driver against the Debug build).
 4. `build.cmd full release sign setup`, tag `v0.1.8`, GitHub release, then the
    winget manifest — see item 6 for the state of the catalogue submission.
+   **Before publishing, switch the `Publish to winget` workflow off by hand
+   on GitHub** (Actions ▸ the workflow ▸ `···` ▸ *Disable workflow*; decided
+   2026-09-20) so that publishing 0.1.8 does not open a second pull request
+   while #426090 (0.1.7) is still open. A `release: published` event is not replayed, so once #426090 has
+   settled: *Enable workflow*, then *Run workflow* with `version: 0.1.8`,
+   `submit: true` — or `tools\winget\publish.ps1 -Version 0.1.8 -Submit`
+   locally.
 
-Item 2 (Restart Manager) was implemented as feature 080 inside the unreleased
-0.1.8, without a version bump; its changelog text is in the same section. Its
-owed human step 1 — the elevated, machine-wide update with the program open —
+Item 2 (Restart Manager) was implemented as feature 080 inside 0.1.8,
+without a version bump of its own; its changelog text is in the same section.
+Its owed human step 1 — the elevated, machine-wide update with the program open —
 belongs to this ship gate too: it is the first thing a `winget upgrade` of the
 released 0.1.8 will do on a user's machine.
 
@@ -89,7 +104,7 @@ released 0.1.8 will do on a user's machine.
 >    `ZwQueryInformationProcess` path.
 >
 > Ship gate for 077: the version bump came with feature 078 and the drafted
-> changelog text is now in the `## [0.1.8] — unreleased` section of
+> changelog text is now in the `## [0.1.8]` section of
 > `CHANGELOG.md`; publishing is section R above.
 
 ## 1. Small hardening batch — ✅ DONE (feature 075, 2026-09-02)

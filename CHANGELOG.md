@@ -9,7 +9,7 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
-## [0.1.8] — unreleased
+## [0.1.8] — 2026-09-20
 
 **Build 192.** Feature release. Each panel can now keep several directories
 open in **tabs**, the way a web browser does: a strip of tabs sits above the
@@ -20,11 +20,8 @@ Configuration turns them off and restores the previous look and behaviour
 exactly. The program also starts on a computer without the Microsoft Visual
 C++ runtime, and two things antivirus engines objected to are gone: the
 in-memory patch of a Windows function at start-up and the crash-reporting
-helper process.
-
-*Not released yet — the last published version is 0.1.7. This section
-collects everything made since then; the word "unreleased" in the heading is
-replaced by the release date when the version is published.*
+helper process. When an update is installed while the program is open and
+idle, it now closes without asking anything and is started again afterwards.
 
 ### Added
 

@@ -136,8 +136,10 @@
 //       start-up, one Appearance checkbox turns it off - feature 078; the
 //       Visual C++ runtime ships with the product and start-up no longer
 //       patches kernel32 - feature 077; the salmon.exe crash reporter is
-//       removed - feature 079; small hardening - feature 075; not released
-//       yet, see CHANGELOG.md)
+//       removed - feature 079; an installer's request to close is answered
+//       without prompts and the program restarts after the update - feature
+//       080; the Markdown viewer runs on the shared WebView2 host - feature
+//       081; small hardening - feature 075; see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
