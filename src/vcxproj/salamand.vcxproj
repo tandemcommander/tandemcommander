@@ -275,6 +275,8 @@
     </ClCompile>
     <ClCompile Include="..\common\salbugreport.cpp">
     </ClCompile>
+    <ClCompile Include="..\common\salcloseapp.cpp">
+    </ClCompile>
     <ClCompile Include="..\common\salunicode.cpp">
     </ClCompile>
     <ClCompile Include="..\common\sheets.cpp">
@@ -744,6 +746,8 @@
     <ClInclude Include="..\common\saltabs.h">
     </ClInclude>
     <ClInclude Include="..\common\salbugreport.h">
+    </ClInclude>
+    <ClInclude Include="..\common\salcloseapp.h">
     </ClInclude>
     <ClInclude Include="..\common\salunicode.h">
     </ClInclude>

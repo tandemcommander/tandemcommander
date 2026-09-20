@@ -17,6 +17,7 @@
 #include "salshell.h" // feature 071
 #include "saltabs.h"  // feature 078
 #include "salbugreport.h" // feature 079
+#include "salcloseapp.h"  // feature 080
 
 #include <map>
 #include <set>
@@ -2089,6 +2090,251 @@ static void TestBugReport079()
     CHECK(!SalFormatBugReportName(name, 0, "018X64", t, 0));
 }
 
+// feature 080: closing for an update (src/common/salcloseapp.cpp),
+// contracts/close-request.md C1 + C6, contracts/restart-registration.md R3
+
+// the tokenizer rule of GetCmdLine (src/salamdr1.cpp), mirrored here so that the
+// composed restart command line can be read back the way the program reads it:
+// an argument in double quotes ends at the next quote, "" inside it is one quote
+static std::vector<std::wstring> TokenizeLikeGetCmdLine080(const WCHAR* s)
+{
+    std::vector<std::wstring> args;
+    while (*s != 0)
+    {
+        WCHAR term = L' ';
+        if (*s == L'"')
+        {
+            if (*++s == 0)
+                break;
+            term = L'"';
+        }
+        std::wstring arg;
+        while (1)
+        {
+            if (*s == term || *s == 0)
+            {
+                if (*s == 0 || term != L'"' || *++s != L'"')
+                {
+                    if (*s != 0)
+                        s++;
+                    while (*s == L' ')
+                        s++;
+                    break;
+                }
+            }
+            arg += *s++;
+        }
+        args.push_back(arg);
+    }
+    return args;
+}
+
+static CSalCloseAppSnapshot IdleSnapshot080()
+{
+    CSalCloseAppSnapshot s;
+    memset(&s, 0, sizeof(s));
+    s.StartupFinished = TRUE;
+    return s;
+}
+
+static CSalCloseAppWindow Window080(BOOL visible, DWORD style, DWORD exStyle, CSalCloseAppWindowKind kind)
+{
+    CSalCloseAppWindow w;
+    w.Visible = visible;
+    w.Style = style;
+    w.ExStyle = exStyle;
+    w.Kind = kind;
+    return w;
+}
+
+static void TestCloseApp080()
+{
+    const LPARAM closeApp = 0x00000001;   // ENDSESSION_CLOSEAPP
+    const LPARAM critical = 0x40000000;   // ENDSESSION_CRITICAL
+    const LPARAM logoff = (LPARAM)0x80000000; // ENDSESSION_LOGOFF
+
+    // --- C1: what counts as an installer's close request
+    CHECK(SalIsCloseAppRequest(closeApp, FALSE));
+    CHECK(SalIsCloseAppRequest(closeApp | logoff, FALSE)); // the log-off bit does not matter
+    CHECK(!SalIsCloseAppRequest(0, FALSE));                // ordinary shutdown
+    CHECK(!SalIsCloseAppRequest(logoff, FALSE));           // ordinary sign-out
+    CHECK(!SalIsCloseAppRequest(critical, FALSE));         // critical shutdown
+    CHECK(!SalIsCloseAppRequest(closeApp | critical, FALSE)); // forced close: the critical path handles it
+    CHECK(!SalIsCloseAppRequest(closeApp, TRUE));          // Windows is closing programs for servicing
+    CHECK(!SalIsCloseAppRequest(closeApp | critical, TRUE));
+    CHECK(!SalIsCloseAppRequest(0, TRUE));
+
+    // --- C6: an idle instance agrees
+    CSalCloseAppSnapshot idle = IdleSnapshot080();
+    CHECK(SalCloseAppDecide(idle) == scadAgree);
+
+    // every reason alone
+    {
+        CSalCloseAppSnapshot s = IdleSnapshot080();
+        s.StartupFinished = FALSE;
+        CHECK(SalCloseAppDecide(s) == scadStartupOrClosing);
+        s = IdleSnapshot080();
+        s.CloseInProgress = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadStartupOrClosing);
+        s = IdleSnapshot080();
+        s.Busy = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadBusy);
+        s = IdleSnapshot080();
+        s.InsidePlugin = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadInsidePlugin);
+        s = IdleSnapshot080();
+        s.FileOperations = 1;
+        CHECK(SalCloseAppDecide(s) == scadFileOperations);
+        s = IdleSnapshot080();
+        s.FindSearching = 2;
+        CHECK(SalCloseAppDecide(s) == scadFindSearching);
+        s = IdleSnapshot080();
+        s.ArchiveEditsPending = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadArchiveEdits);
+        s = IdleSnapshot080();
+        s.PluginFSOpen = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadPluginFS);
+    }
+
+    // the order: the most fundamental obstacle is the one that is named
+    {
+        CSalCloseAppWindow plugin = Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawOther);
+        CSalCloseAppSnapshot s = IdleSnapshot080();
+        s.Windows = &plugin;
+        s.WindowCount = 1;
+        CHECK(SalCloseAppDecide(s) == scadForeignWindow);
+        s.PluginFSOpen = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadPluginFS);
+        s.ArchiveEditsPending = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadArchiveEdits);
+        s.FindSearching = 1;
+        CHECK(SalCloseAppDecide(s) == scadFindSearching);
+        s.FileOperations = 3;
+        CHECK(SalCloseAppDecide(s) == scadFileOperations);
+        s.InsidePlugin = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadInsidePlugin);
+        s.Busy = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadBusy);
+        s.StartupFinished = FALSE;
+        CHECK(SalCloseAppDecide(s) == scadStartupOrClosing);
+    }
+
+    // zero and negative counts are "none"; a NULL window list with a count is ignored, not read
+    {
+        CSalCloseAppSnapshot s = IdleSnapshot080();
+        s.FileOperations = 0;
+        s.FindSearching = -1;
+        s.Windows = NULL;
+        s.WindowCount = 5;
+        CHECK(SalCloseAppDecide(s) == scadAgree);
+    }
+
+    // --- D8: which windows count
+    // what an idle instance really has (taken from a running build): the main window visible,
+    // hidden helper windows, IME windows
+    {
+        CSalCloseAppWindow w[5];
+        w[0] = Window080(TRUE, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 0, scawMain);
+        w[1] = Window080(FALSE, WS_OVERLAPPEDWINDOW, 0, scawOther); // HiddenSocketsWindow
+        w[2] = Window080(FALSE, WS_POPUP, WS_EX_TOOLWINDOW, scawOther); // WorkerW / ComboLBox
+        w[3] = Window080(FALSE, WS_POPUP | WS_DISABLED, 0, scawOther);  // IME
+        w[4] = Window080(FALSE, WS_POPUP | WS_DISABLED, 0, scawOther);  // MSCTFIME UI
+        CSalCloseAppSnapshot s = IdleSnapshot080();
+        s.Windows = w;
+        s.WindowCount = 5;
+        CHECK(SalCloseAppDecide(s) == scadAgree);
+    }
+    // windows the exit sequence closes by itself never count, visible or not
+    CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawMain)));
+    CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawInternalViewer)));
+    CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawFind)));
+    CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawHelp)));
+    // a plug-in viewer, a plug-in dialog, a minimized plug-in window
+    CHECK(SalCloseAppWindowIsForeign(Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawOther)));
+    CHECK(SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP | WS_CAPTION | WS_SYSMENU, WS_EX_DLGMODALFRAME, scawOther)));
+    CHECK(SalCloseAppWindowIsForeign(Window080(TRUE, WS_OVERLAPPEDWINDOW | WS_MINIMIZE, 0, scawOther)));
+    // a captionless full-screen viewer counts - it is a window a user works in
+    CHECK(SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP, 0, scawOther)));
+    // a tool window WITH a caption (a floating palette) counts too
+    CHECK(SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP | WS_CAPTION, WS_EX_TOOLWINDOW, scawOther)));
+    // tooltips, save-bits, no-activate helpers: captionless + tool/no-activate -> never
+    CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP, WS_EX_TOOLWINDOW | WS_EX_TOPMOST, scawOther)));
+    CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP, WS_EX_NOACTIVATE, scawOther)));
+    // WS_BORDER or WS_DLGFRAME alone is not a caption
+    CHECK(!SalCloseAppWindowIsForeign(Window080(TRUE, WS_POPUP | WS_BORDER, WS_EX_TOOLWINDOW, scawOther)));
+    // hidden windows never count
+    CHECK(!SalCloseAppWindowIsForeign(Window080(FALSE, WS_OVERLAPPEDWINDOW, 0, scawOther)));
+    // one foreign window among many decides
+    {
+        CSalCloseAppWindow w[3];
+        w[0] = Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawMain);
+        w[1] = Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawInternalViewer);
+        w[2] = Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawOther);
+        CSalCloseAppSnapshot s = IdleSnapshot080();
+        s.Windows = w;
+        s.WindowCount = 2;
+        CHECK(SalCloseAppDecide(s) == scadAgree);
+        s.WindowCount = 3;
+        CHECK(SalCloseAppDecide(s) == scadForeignWindow);
+    }
+
+    // every decision has a name, and only "agree" does not start with "decline"
+    for (int d = scadAgree; d <= scadForeignWindow; d++)
+    {
+        const char* n = SalCloseAppDecisionName((CSalCloseAppDecision)d);
+        CHECK(n != NULL && n[0] != 0);
+        CHECK((d == scadAgree) == (strncmp(n, "decline", 7) != 0));
+    }
+    CHECK(strncmp(SalCloseAppDecisionName((CSalCloseAppDecision)999), "decline", 7) == 0);
+
+    // --- R3: the restart command line carries identity, never location
+    WCHAR cmd[1024];
+    CHECK(SalRestartCommandLine(cmd, 1024, FALSE, NULL, FALSE, 0) && cmd[0] == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, FALSE, L"ignored", FALSE, 2) && cmd[0] == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"Work", FALSE, 0) && wcscmp(cmd, L"-t \"Work\"") == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, FALSE, NULL, TRUE, 2) && wcscmp(cmd, L"-i 2") == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"Work", TRUE, 2) && wcscmp(cmd, L"-t \"Work\" -i 2") == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"My \"big\" disk", FALSE, 0) &&
+          wcscmp(cmd, L"-t \"My \"\"big\"\" disk\"") == 0);
+    // an empty or missing prefix is no prefix; an icon index outside 0..3 is no icon index
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"", TRUE, 0) && wcscmp(cmd, L"-i 0") == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, NULL, TRUE, 3) && wcscmp(cmd, L"-i 3") == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"A", TRUE, 4) && wcscmp(cmd, L"-t \"A\"") == 0);
+    CHECK(SalRestartCommandLine(cmd, 1024, TRUE, L"A", TRUE, -1) && wcscmp(cmd, L"-t \"A\"") == 0);
+
+    // read back the way the program reads its command line
+    {
+        const WCHAR* prefixes[] = {L"Work", L"two words", L"My \"big\" disk", L"\"", L"\"\"quoted\"\"",
+                                   L"trailing quote\"", L"  spaces  ", L"\x010C\x00E1st \xD83D\xDCC1"};
+        for (int i = 0; i < _countof(prefixes); i++)
+        {
+            CHECK(SalRestartCommandLine(cmd, 1024, TRUE, prefixes[i], TRUE, 1));
+            std::vector<std::wstring> a = TokenizeLikeGetCmdLine080(cmd);
+            CHECK(a.size() == 4 && a[0] == L"-t" && a[1] == prefixes[i] && a[2] == L"-i" && a[3] == L"1");
+        }
+    }
+
+    // a part that does not fit is left out whole - never cut in the middle of a quoted argument
+    {
+        WCHAR tight[32];
+        // -t "Work" = 9 characters + NUL
+        CHECK(SalRestartCommandLine(tight, 10, TRUE, L"Work", FALSE, 0) && wcscmp(tight, L"-t \"Work\"") == 0);
+        CHECK(SalRestartCommandLine(tight, 9, TRUE, L"Work", FALSE, 0) && tight[0] == 0);
+        // the prefix does not fit, the icon index still does
+        CHECK(SalRestartCommandLine(tight, 9, TRUE, L"Work", TRUE, 2) && wcscmp(tight, L"-i 2") == 0);
+        // the prefix fits, the icon index (" -i 2" = 5 more) does not
+        CHECK(SalRestartCommandLine(tight, 14, TRUE, L"Work", TRUE, 2) && wcscmp(tight, L"-t \"Work\"") == 0);
+        CHECK(SalRestartCommandLine(tight, 15, TRUE, L"Work", TRUE, 2) && wcscmp(tight, L"-t \"Work\" -i 2") == 0);
+        // a prefix longer than the whole limit: dropped, the result still parses
+        std::wstring longPrefix(2000, L'x');
+        CHECK(SalRestartCommandLine(cmd, 1024, TRUE, longPrefix.c_str(), TRUE, 1) && wcscmp(cmd, L"-i 1") == 0);
+        // degenerate buffers
+        CHECK(SalRestartCommandLine(tight, 1, TRUE, L"Work", TRUE, 2) && tight[0] == 0);
+        CHECK(!SalRestartCommandLine(tight, 0, TRUE, L"Work", TRUE, 2));
+        CHECK(!SalRestartCommandLine(NULL, 1024, TRUE, L"Work", TRUE, 2));
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -2113,6 +2359,7 @@ int main()
     TestCommandShell071();
     TestPanelTabs078();
     TestBugReport079();
+    TestCloseApp080();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
