@@ -8,6 +8,11 @@ the shared WebView2 host) and added its on-screen pass to item 3.
 **Revised again**: 2026-09-20 — the tree is **prepared for the 0.1.8
 release** (section R, step 1 done); building, tagging and publishing are the
 maintainer's.
+**Revised 2026-09-24** — **0.1.8 is published** (tag `v0.1.8`, GitHub release
+2026-09-20) and the maintainer has reviewed the `v0.1.7..v0.1.8` delta with no
+findings; section R is closed. Its owed human steps moved to item 3, the winget
+submission of 0.1.8 to item 6. The two preserved reference trees item 3 relied
+on are **no longer on disk** (see there).
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
@@ -22,7 +27,27 @@ blocker for anything already shipped.
 
 ---
 
-## R. Release 0.1.8 — tree prepared 2026-09-20, publishing owed
+## R. Release 0.1.8 — ✅ PUBLISHED 2026-09-20
+
+> Tag `v0.1.8` (commit `4899f0d`) and the GitHub release (published
+> 2026-09-20 14:34 UTC, not a pre-release) exist, so the date in
+> `CHANGELOG.md` and `CLAUDE.md` is now a fact and stays as it is. Step 2,
+> the review of the `v0.1.7..v0.1.8` delta (64 commits), was done by the
+> maintainer after publishing — **no findings** (recorded 2026-09-24). Still
+> open from the gate, and carried forward rather than dropped:
+>
+> - step 3, the human steps (clean-machine start, the panel tabs on the
+>   Release build, the elevated machine-wide update) → **item 3**;
+> - step 4, the winget manifest for 0.1.8 → **item 6**: checked 2026-09-24,
+>   `microsoft/winget-pkgs#426090` (0.1.7) is still open and no pull request
+>   for 0.1.8 exists, as intended. Whether the `Publish to winget` workflow
+>   was switched off before publishing could not be checked from this
+>   session (no `gh`); look at the Actions tab before relying on it.
+>
+> The original gate follows, unchanged.
+
+<details>
+<summary>Original entry</summary>
 
 Features 075, 077, 078, 079, 080 and 081 are all in `main`. The version was
 bumped to 0.1.8 / build 192 by feature 078 (`spl_vers.h`,
@@ -65,6 +90,8 @@ without a version bump of its own; its changelog text is in the same section.
 Its owed human step 1 — the elevated, machine-wide update with the program open —
 belongs to this ship gate too: it is the first thing a `winget upgrade` of the
 released 0.1.8 will do on a user's machine.
+
+</details>
 
 ---
 
@@ -207,15 +234,36 @@ is the easy half. Scope is `src/`, not `setup/`. Worth a feature of its own.
 
 ## 3. The owed on-screen sweeps (a GUI session, maintainer only)
 
-Three features are complete on paper and unverified on screen:
+**Now the first item.** 0.1.8 is in users' hands, so these verify a shipped
+build rather than gate one.
+
+> **The reference trees are gone** (checked 2026-09-24): `build\tandemcommander\`
+> holds only `Release_x64` and `translator` — neither `Release_x64_prefix069\`
+> nor `Debug_x64_prefix081\` exists any more. The sweeps below can still be
+> run against the current build; only the side-by-side comparisons need a
+> reference, and it can be rebuilt from git in a separate worktree:
+> **069** → `64dcbb5` (the commit before 069's first), Release x64;
+> **081** → `6b4d7af` (the commit before 081's first), Debug x64. Do this
+> only for a row that actually needs the comparison.
+
+From the 0.1.8 ship gate (section R, step 3), most valuable first:
+
+- **Clean-machine start** — item 0, point 1, above; it verifies the very fix 0.1.8
+  advertises (the Visual C++ runtime shipped with the product).
+- **The elevated machine-wide update** with the program open —
+  `080/REMAINING-WORK.md` P1 step 1 (and its steps 3–5 whenever convenient).
+- **A manual pass over the panel tabs on the Release build** — 078 was
+  verified by a GUI driver against the Debug build only.
+
+The features complete on paper and unverified on screen:
 
 - **069 §4** — the 068 sweep W1–W20 in the Czech UI and then the Hungarian UI
   (proving 069 did not disturb what earlier features repaired), then V-01…V-24
-  from its `quickstart.md`. The side-by-side reference build
-  `build\tandemcommander\Release_x64_prefix069\` (347 files) is preserved for
-  exactly this and is ageing; **do not delete it before the sweep**. Start with
+  from its `quickstart.md`. Its side-by-side reference `Release_x64_prefix069\`
+  no longer exists (see the note above). Start with
   V-01 (command line), V-09 (help and `config.reg` under an accented install
   path), V-11 (cloud entries).
+- **075** — scenarios S1–S5 and gate G6 from its `quickstart.md`.
 - **070 §3** — the codeview quickstart scenarios plus the runtime halves of the
   corpus checks (hostile content, request log, key sweep, copy fidelity,
   encoding matrix, performance budgets). The corpora are already written.
@@ -227,11 +275,16 @@ Three features are complete on paper and unverified on screen:
   keeper, cross-plugin warmth and close-during-cold-start); what needs a person
   is the network monitor over the hostile corpus, the *Keep the rendering
   engine ready* toggle and plugin unload/reload through the Plugins Manager,
-  the dark menus, and an eye over rows A1–A10 against the preserved
-  pre-migration build `build\tandemcommander\Debug_x64_prefix081\` — **do not
-  delete that tree before the pass**.
+  the dark menus, and an eye over rows A1–A10 against the pre-migration
+  build — `Debug_x64_prefix081\` is gone, rebuild it from `6b4d7af` if the
+  comparison is wanted (the pixel diff `render_diff.ps1` already found 0 of
+  729,144 pixels different, so this is a confirmation, not the evidence).
+- **078/079's 88-byte Debug-CRT leak at exit** — not a sweep, but seen only in
+  such sessions: 081 found a leak of exactly that size in `CTcWebKeeper` and
+  fixed it. If the report never appears again under a DBWIN listener, record
+  it as explained; if it does, it was something else.
 
-Best done **after** items 1 and 2, so the sweep runs once against a final state.
+Items 1 and 2 are done, so the sweep now runs against a final state.
 A sweep failure is a finding: back through fix → independent review → gates.
 
 ## 4. Architectural debt to repay before it is copied
@@ -261,7 +314,12 @@ A sweep failure is a finding: back through fix → independent review → gates.
   header takes a buffer overflow on a long path, and the constant lives in a
   core-only header, so a plugin cannot even name the right size. Correct the
   comment and export the constant — before another plugin copies the documented,
-  wrong size.
+  wrong size. **Still present at `4899f0d`** (checked 2026-09-24:
+  `spl_gen.h:2703` says MAX_PATH, `salamdr6.cpp:205,223` copy up to
+  `SAL_MAX_PATH_UTF8` = `3 * SAL_MAX_PATH_W + 1`, defined in
+  `src/common/salpath.h`). Both entries in this item change the
+  plugin-facing headers, so doing them as **one** interface-107 feature
+  means one version bump instead of two.
 
 ## 5. Encoding: cluster B-2 next
 
@@ -282,7 +340,13 @@ abort and a split directory tree; the listing must move as a whole. See 069 §0b
 
 `072/REMAINING-WORK.md` gates everything on whether the submission is merged;
 check that first, and change nothing under `tools/winget/templates/` while it is
-open.
+open. **State on 2026-09-24**: #426090 (0.1.7) is still open.
+
+- **Submit 0.1.8** (was section R, step 4) once #426090 has settled: in
+  GitHub Actions *Enable workflow*, then *Run workflow* with
+  `version: 0.1.8`, `submit: true`, or run
+  `tools\winget\publish.ps1 -Version 0.1.8 -Submit` locally. The
+  `release: published` event of 2026-09-20 will not be replayed.
 
 - **P4** — `actions/checkout@v4` / `actions/upload-artifact@v4` run on the
   deprecated Node 20. Bump all four workflows together so the repository does
