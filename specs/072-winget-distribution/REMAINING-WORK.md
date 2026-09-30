@@ -78,6 +78,13 @@ that each push costs another validation round and a place in the queue.
    mdview fetches remote images after consent. tandemcommander.org has no
    privacy page (`/privacy/` → 404). Needs a page on the website (outside this
    repository), then `PrivacyUrl:` in `templates/locale.en-US.yaml.in`.
+   **Update 2026-09-30 — prepared by feature 083:** `PRIVACY.md` (repository
+   root, evidence-backed, independently reviewed) and the template line
+   `PrivacyUrl: https://github.com/tandemcommander/tandemcommander/blob/main/PRIVACY.md`
+   exist. What remains: the URL answers only after the feature is merged to
+   `main` and pushed (check for 200 first), and the field reaches the PR only
+   with the next push to #426090 (step 1 below). See
+   `specs/083-privacy-policy-winget/closing-report.md`.
 
 ### Corrections to earlier explanations
 
@@ -139,8 +146,9 @@ that each push costs another validation round and a place in the queue.
    a version users should not get.
 2. Template fixes (6, 7) in `tools/winget/templates/installer.yaml.in`
    together with step 1, so the repository and the PR stay identical.
-3. Privacy page + `PrivacyUrl` (3) — maintainer's decision; can be pre-empted
-   in the same push if the page exists by then.
+3. `PrivacyUrl` (3) — ready since feature 083: include it in the same push as
+   step 1 once `PRIVACY.md` is on `main` (URL returns 200). Rendering from
+   `main` picks it up automatically.
 4. **Run the 0.1.8 workflow from `main`, never from tag `v0.1.8`** — the tag's
    template still contains `DisplayVersion: {{VERSION}}` (line 43).
 

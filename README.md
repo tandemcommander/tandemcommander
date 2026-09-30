@@ -188,6 +188,10 @@ Features are developed one at a time through the SpecKit workflow: **specify →
 
 See the [`architecture/`](architecture/) documents for a much deeper analysis.
 
+## Privacy
+
+Tandem Commander has no accounts, telemetry, analytics or advertising and sends nothing to the project; it uses the network only when you ask it to. What it stores, what it sends and how to remove it is described in [PRIVACY.md](PRIVACY.md).
+
 ## License
 
 Tandem Commander, like the Open Salamander project it derives from, is open-source software licensed under [GPLv2](doc/license/license_gpl.txt) and later. Individual files and libraries carry [different but compatible licenses](doc/third_party.txt). Contributors are listed in [AUTHORS](AUTHORS).

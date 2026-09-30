@@ -348,7 +348,8 @@ re-review.
 **Read `072/REMAINING-WORK.md` § P0 before anything else here.** An audit on
 2026-09-30 found what the moderators are likely to ask next — 0.1.7 does not
 start without the VC++ runtime, they ask for the current release (0.1.8),
-possibly a `PrivacyUrl` — plus two manifest inaccuracies (`DisplayName`,
+possibly a `PrivacyUrl` (prepared by feature 083: `PRIVACY.md` + template
+field, ready once merged and pushed) — plus two manifest inaccuracies (`DisplayName`,
 installer-level `ProductCode`) and stale records. Recommended: re-point
 #426090 to 0.1.8. Recorded only, not acted on — the maintainer decides.
 Run any 0.1.8 submission from `main`, not tag `v0.1.8` (its template still
@@ -370,6 +371,51 @@ has `DisplayVersion`).
 - **P3** — `checkver` still points at Open Salamander's site. Point it at the
   GitHub Releases API or drop it and declare winget the update channel: a
   product decision, not code.
+
+---
+
+## 7. Privacy-relevant defects found by feature 083 (recorded 2026-09-30, not fixed)
+
+Found while inventorying every place the product stores or sends data for
+`PRIVACY.md`; evidence and detail in
+`specs/083-privacy-policy-winget/research.md` § Side findings. `PRIVACY.md`
+describes the product *as it is*, including these — so **fixing any of them
+means updating `PRIVACY.md` in the same change** (CLAUDE.md, *Privacy
+statement*).
+
+- **F1 — highest priority. A password typed as part of an address
+  (`ftp://user:password@host`) is saved in plain text** — in FTP Quick
+  Connect's Address history, and equally in the Change Directory history
+  (`src/dialogs3.cpp:1200-1202`) and the command-line history. Quick Connect
+  (`src/plugins/ftp/dialogs1.cpp:925-931` stores the raw typed text;
+  `ftputils.cpp:530` accepts `user:password@host`). The only path by which a
+  password reaches the registry unprotected without "Save password". Fix:
+  strip the password part before adding to history.
+- **F2** — mdview remote-image requests identify as `OpenSalamander-mdview`
+  (`src/plugins/mdview/webglue.cpp:96`, pre-rebrand); the comment at `:79`
+  says "no cookies" but WinHTTP session cookies are not disabled; the HTTP
+  status is not checked.
+- **F3** — probably a Markdown document can make the viewer open the default
+  browser without a click (`<meta http-equiv="refresh">`; raw HTML passes
+  through `htmlgen.cpp:514`; `webhost.cpp:266-281` forwards every cancelled
+  navigation to `OnActivateLink` without checking `IsUserInitiated`). Fix:
+  check `get_IsUserInitiated` there; confirm with a GUI test. `PRIVACY.md`
+  already discloses it ("a document can also trigger this by itself").
+- **F4** — WebView2 engine crash dumps are sent to Microsoft by default
+  (`IsCustomCrashReportingEnabled` not set) — decide consciously.
+- **F5** — `architecture/11-webview2-integration.md:59-60` says the user data
+  folder "holds cache only"; it also holds cookie/history/storage databases.
+- **F6** — password-manager salts come from `rand()` seeded with time^pid
+  (`src/pwdmngr.cpp:37-47`).
+- **F7** — SFTP: cancelling the master-password prompt silently saves the
+  secret scrambled only (`src/plugins/sftp/dialogs.cpp:851-856`).
+- **F8** — withdrawn: the shell-extension registration only runs if
+  `utils\salext*.dll` exists (`src/salamdr1.cpp:4384-4398`); 0.1.8 ships
+  neither DLL, so nothing is registered or left behind. Open question
+  instead: is the missing copy hook (drag out of archives into Explorer)
+  intended?
+- **F9** — the FTP anonymous-login e-mail default `name@someserver.com` is
+  sent to anonymous servers (`src/plugins/ftp/ftp3.cpp:508`).
 
 ---
 

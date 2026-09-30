@@ -31,7 +31,7 @@ not something to revise casually.
 | `publish.ps1` | The only entry point: generates, validates and optionally submits |
 | `templates/version.yaml.in` | Version manifest template |
 | `templates/installer.yaml.in` | Installer manifest template — architecture, scopes, ProductCode |
-| `templates/locale.en-US.yaml.in` | **All catalogue metadata**: description, tags, URLs, licence |
+| `templates/locale.en-US.yaml.in` | **All catalogue metadata**: description, tags, URLs (incl. `PrivacyUrl`), licence |
 | `manifests/<version>/` | Generated output, committed as a record of what was submitted |
 
 **The templates are the source of truth.** To change the description, add a
@@ -39,6 +39,11 @@ tag, or fix a URL, edit `templates/locale.en-US.yaml.in` and regenerate — neve
 edit a file under `manifests/`. Authoring comments in the templates are
 stripped from the generated manifests, so explanations can be as long as they
 need to be.
+
+`PrivacyUrl` points at [`PRIVACY.md`](../../PRIVACY.md) on `main` (feature 083).
+It is a literal URL, so it answers only once `PRIVACY.md` is merged to `main`
+and pushed - check it returns 200 before a submission. When the product
+changes what it stores or sends, `PRIVACY.md` changes with it (see `CLAUDE.md`).
 
 ## One-time setup
 

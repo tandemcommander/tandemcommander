@@ -12,6 +12,14 @@
 # flattened to one paragraph and indented by two spaces by the generator.
 # Publisher must stay "Pavel Stupka": winget-pkgs validation compares it with
 # the installer's AppPublisher and with the code-signing certificate subject.
+#
+# PrivacyUrl points at PRIVACY.md on main (feature 083). The catalogue's
+# moderators ask packages that store credentials - FTP/SFTP passwords here -
+# for a privacy disclosure (specs/072-winget-distribution/REMAINING-WORK.md
+# section P0 item 3). The URL is literal, not versioned: the statement always
+# describes the current release. PRIVACY.md is a public claim and must be
+# updated in the same change as anything its update rule lists (CLAUDE.md,
+# "Privacy statement"). The URL answers 200 only once PRIVACY.md is on main.
 
 PackageIdentifier: PavelStupka.TandemCommander
 PackageVersion: {{VERSION}}
@@ -19,6 +27,7 @@ PackageLocale: en-US
 Publisher: Pavel Stupka
 PublisherUrl: https://tandemcommander.org/
 PublisherSupportUrl: https://github.com/tandemcommander/tandemcommander/issues
+PrivacyUrl: https://github.com/tandemcommander/tandemcommander/blob/main/PRIVACY.md
 Author: Pavel Stupka
 PackageName: Tandem Commander
 PackageUrl: https://tandemcommander.org/

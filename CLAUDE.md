@@ -140,6 +140,18 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
 - **Comments**: Legacy Czech OK, new comments in English
 - **Debug builds** use fixed base addresses (no ASLR) for leak detection
 - **Release builds** use LTO/WPO and code signing
+- **Privacy statement** (feature 083): `PRIVACY.md` is a **public claim**
+  about the shipped product, referenced by the winget `PrivacyUrl`
+  (`tools/winget/templates/locale.en-US.yaml.in`). It MUST be updated **in
+  the same change** as any of: new or changed network communication
+  (including a new URL the program opens); a plugin enabled in the default
+  build (`plugins.cfg`) or a disabled one shipped; a change to what is
+  stored, where, or how credentials are protected (fixing any of the
+  NEXT-WORK item 7 defects F1–F9 counts); a change to crash reporting; a
+  change to what the installer or uninstaller writes or removes. Update its
+  validity line ("describes Tandem Commander <version>. Last updated …")
+  with it, and on every release. Evidence for each claim:
+  `specs/083-privacy-policy-winget/research.md` + `fix-log.md` claim map
 
 ## Architecture Documentation
 
@@ -701,3 +713,32 @@ plugin architecture preservation, UI consistency.
   the *Keep the rendering engine ready* toggle, plugin unload/reload, dark
   menus. Records:
   `specs/081-mdview-shared-webhost/closing-report.md`, `fix-log.md`.
+- 083-privacy-policy-winget: **`PRIVACY.md`** — the product's first privacy
+  statement, written because winget moderators ask credential-storing
+  packages for a `PrivacyUrl` (072 REMAINING-WORK § P0). Evidence first:
+  four independent read-only inventories (main app + installer, FTP/SFTP +
+  password manager, the WebView2 viewers, the other 16 plugins) plus a
+  `dumpbin /imports` scan of all 26 shipped modules — only `ftp.spl`,
+  `sftp.spl`, `mdview.spl` (WinHTTP, remote images after consent) and the
+  exe (`mpr`/`netapi32` for network drives and shares, `wsock32` ordinal 10 =
+  `inet_addr` only) import anything network-capable. The statement says the
+  unflattering parts plainly: saved passwords without a Master Password are
+  only obfuscated, FTP is unencrypted and FTPS unavailable, crash reports hold
+  paths, the full command line and drive serial numbers (never sent), remote
+  images send `OpenSalamander-mdview`, uninstall leaves all per-user data.
+  Every sentence is mapped to evidence (`specs/083-…/fix-log.md` claim map)
+  and was checked by an independent reviewer and a reader test. The winget
+  locale template gained a literal `PrivacyUrl` to `blob/main/PRIVACY.md`
+  (answers 200 only once merged and pushed); `publish.ps1` unchanged. Contact
+  is the public issue tracker only, because GitHub private vulnerability
+  reporting is still disabled — enabling it and adding the second contact
+  line is the maintainer's step. The update rule is in *Key Facts*
+  ("Privacy statement"). Defects found on the way (F1 — a password typed as
+  part of an address, `ftp://user:password@host`, is saved in plain text in
+  the Quick Connect, Change Directory and command-line histories — first;
+  F3 — a Markdown document can open the browser without a click; F8
+  withdrawn) are recorded as NEXT-WORK item 7, not fixed. The independent
+  review caught two false claims in the first draft (a shell-extension
+  registration that 0.1.8 never performs — the code is gated on a DLL that
+  is not shipped), so cite *reachable* code, not just existing code; fixing any of them updates
+  `PRIVACY.md` in the same change. No product code changed.
