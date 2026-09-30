@@ -340,7 +340,10 @@ abort and a split directory tree; the listing must move as a whole. See 069 §0b
 
 `072/REMAINING-WORK.md` gates everything on whether the submission is merged;
 check that first, and change nothing under `tools/winget/templates/` while it is
-open. **State on 2026-09-24**: #426090 (0.1.7) is still open.
+open. **State on 2026-09-30**: #426090 (0.1.7) is still open; the moderator
+asked to drop `DisplayVersion` (same value as `PackageVersion`), done the same
+day in the PR and in `templates/installer.yaml.in` (072 fix-log), now awaiting
+re-review.
 
 - **Submit 0.1.8** (was section R, step 4) once #426090 has settled: in
   GitHub Actions *Enable workflow*, then *Run workflow* with

@@ -334,3 +334,31 @@ actually changed instead of pointing at a URL.
   Worth a feature of its own.
 - Not in scope, but now cheap: `checkver` could be redirected at the GitHub
   Releases API, or dropped in favour of `winget upgrade`.
+
+## Moderation feedback on #426090: DisplayVersion removed (2026-09-30)
+
+After a month in moderation, the reviewer's automation (*"Deterministic
+automation - build 1820"*) set `Needs-Author-Feedback` on
+microsoft/winget-pkgs#426090 with one request: *"This manifest uses the same
+values for DisplayVersion and PackageVersion. This is not recommended, and the
+DisplayVersion should be removed."*
+
+It is redundant for this package: Inno Setup writes `AppVersion` as the
+Add/Remove Programs `DisplayVersion`, and `AppVersion` is `MyAppVersion`, which
+is also what `publish.ps1` renders as `PackageVersion`. When
+`AppsAndFeaturesEntries` omits `DisplayVersion`, winget matches the installed
+entry against `PackageVersion`, so `winget list` / `upgrade` see the same
+thing. `DisplayName`, `Publisher` and `ProductCode` stay.
+
+- `templates/installer.yaml.in`: the `DisplayVersion: {{VERSION}}` line is
+  gone and an authoring comment records why - add it back only if the two
+  versions ever differ. This is the one exception to "change nothing under
+  `templates/` while #426090 is open": the moderator asked for it, and the
+  next submission (0.1.8) must not bring the line back.
+- `manifests/0.1.7/`: regenerated with `publish.ps1 -Version 0.1.7` (asset
+  re-downloaded, SHA256 unchanged `6731E146...F64DD`, Authenticode verified,
+  `winget validate` succeeded); the only difference is the removed line.
+- The pull request's files were written by `wingetcreate` and differ from ours
+  in formatting (list indentation, key order, header comment) but not in
+  content - compared field by field - so the PR is updated by deleting the
+  same single line from its `installer.yaml`, not by resubmitting.
