@@ -345,6 +345,15 @@ asked to drop `DisplayVersion` (same value as `PackageVersion`), done the same
 day in the PR and in `templates/installer.yaml.in` (072 fix-log), now awaiting
 re-review.
 
+**Read `072/REMAINING-WORK.md` § P0 before anything else here.** An audit on
+2026-09-30 found what the moderators are likely to ask next — 0.1.7 does not
+start without the VC++ runtime, they ask for the current release (0.1.8),
+possibly a `PrivacyUrl` — plus two manifest inaccuracies (`DisplayName`,
+installer-level `ProductCode`) and stale records. Recommended: re-point
+#426090 to 0.1.8. Recorded only, not acted on — the maintainer decides.
+Run any 0.1.8 submission from `main`, not tag `v0.1.8` (its template still
+has `DisplayVersion`).
+
 - **Submit 0.1.8** (was section R, step 4) once #426090 has settled: in
   GitHub Actions *Enable workflow*, then *Run workflow* with
   `version: 0.1.8`, `submit: true`, or run
