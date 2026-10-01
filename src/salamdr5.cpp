@@ -1140,7 +1140,9 @@ BOOL SalSplitGeneralPath(HWND parent, const char* title, const char* errorTitle,
                 if (name >= afterRoot && *name != 0)
                 {
                     *(name - 1) = 0;
-                    if (StrICmp(dirName, name) == 0 &&
+                    // feature 092: "the same name except for letter case" by the file system's rule -
+                    // with the code-page byte fold, renaming a directory "Č" to "č" was not seen as a rename
+                    if (SalNameEqualOrdinalCI(dirName, -1, name, -1) &&
                         (isTheSamePathF != NULL && isTheSamePathF(path, curPath) ||
                          isTheSamePathF == NULL && IsTheSamePath(path, curPath)))
                     { // renaming a directory to the same name (except for letter case, identity is possible)

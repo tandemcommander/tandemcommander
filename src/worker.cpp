@@ -2999,8 +2999,9 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                 if (err != ERROR_ACCESS_DENIED || (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
                 {
                     const char* tgtName = SalPathFindFileName(fileName);
-                    if (StrICmp(tgtName, fndDosNameU8) == 0 && // match only for DOS name
-                        StrICmp(tgtName, fndNameU8) != 0)      // (full name differs)
+                    // feature 092: both halves by the file system's rule, not the code-page byte fold
+                    if (SalNameEqualOrdinalCI(tgtName, -1, fndDosNameU8, -1) && // match only for DOS name
+                        !SalNameEqualOrdinalCI(tgtName, -1, fndNameU8, -1))     // (full name differs)
                     {
                         // rename ("tidy up") the file/directory with the conflicting DOS name to a temporary 8.3 name (no extra DOS name needed)
                         // heap copies - the path may be far longer than MAX_PATH
@@ -3212,7 +3213,10 @@ void CorrectCaseOfTgtName(char* tgtName, BOOL dataRead, const char* foundNameU8)
     }
     int len = (int)strlen(foundNameU8);
     int tgtNameLen = (int)strlen(tgtName);
-    if (tgtNameLen >= len && StrICmp(tgtName + tgtNameLen - len, foundNameU8) == 0)
+    // feature 092: the file system's identity rule. The length test is the capacity of the
+    // in-place copy, not a guard in front of the comparison - an equal name of another UTF-8
+    // length is left as typed
+    if (tgtNameLen >= len && SalNameEqualOrdinalCI(tgtName + tgtNameLen - len, len, foundNameU8, len))
         memcpy(tgtName + tgtNameLen - len, foundNameU8, len);
 }
 
@@ -4523,7 +4527,8 @@ BOOL DoCopyFile(COperation* op, HWND hProgressDlg, void* buffer,
             tgtNameCaseCorrected = TRUE;
 
             const char* tgtName = SalPathFindFileName(op->TargetName);
-            if (StrICmp(tgtName, tgtFndNameU8) == 0 &&                       // ensure it is not just a DOS-name match (that would change the DOS-name instead of overwriting)
+            // feature 092: found by its long name - the file system's identity rule
+            if (SalNameEqualOrdinalCI(tgtName, -1, tgtFndNameU8, -1) &&      // ensure it is not just a DOS-name match (that would change the DOS-name instead of overwriting)
                 (dataOutW.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) // ensure it is not a directory (overwrite-older cannot help there)
             {
                 find = SalFindFirstFile(op->SourceName, &dataInW);
@@ -5814,8 +5819,12 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                         SalSetFileAttributes(sourceNameMvDir, attr);
                 }
 
-                if (StrICmp(op->SourceName, op->TargetName) != 0 && // provided this is not just a change of case
-                    (err == ERROR_FILE_EXISTS ||                    // verify whether this is only overwriting the DOS name of the file/directory
+                // feature 092: "just a change of case" by the file system's rule, not the code-page
+                // byte fold (with the byte fold "Č.txt" -> "č.txt" was taken for two files; on a file
+                // system that answers "already exists" to such a rename, the overwrite branch below
+                // deletes the target, which is the source - NTFS renames it without complaint)
+                if (!SalNameEqualOrdinalCI(op->SourceName, -1, op->TargetName, -1) && // provided this is not just a change of case
+                    (err == ERROR_FILE_EXISTS ||                                      // verify whether this is only overwriting the DOS name of the file/directory
                      err == ERROR_ALREADY_EXISTS) &&
                     targetNameMvDir == op->TargetName) // no invalid names are allowed here
                 {
@@ -5829,8 +5838,9 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                         SalConvertFindDataW(&findDataW, NULL, fndNameU8, sizeof(fndNameU8),
                                             fndDosNameU8, sizeof(fndDosNameU8));
                         const char* tgtName = SalPathFindFileName(op->TargetName);
-                        if (StrICmp(tgtName, fndDosNameU8) == 0 && // match only on the DOS name
-                            StrICmp(tgtName, fndNameU8) != 0)      // (the full name is different)
+                        // feature 092: both halves by the file system's rule
+                        if (SalNameEqualOrdinalCI(tgtName, -1, fndDosNameU8, -1) && // match only on the DOS name
+                            !SalNameEqualOrdinalCI(tgtName, -1, fndNameU8, -1))     // (the full name is different)
                         {
                             // rename ("tidy up") the file/directory with the conflicting DOS name to a temporary 8.3 name (does not need an extra DOS name)
                             // heap copies - the path may be far longer than MAX_PATH
@@ -5903,7 +5913,7 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
 
                 if ((err == ERROR_ALREADY_EXISTS || // theoretically can happen for directories; prevent that (overwrite prompt is only for files)
                      err == ERROR_FILE_EXISTS) &&
-                    !dir && StrICmp(op->SourceName, op->TargetName) != 0 &&
+                    !dir && !SalNameEqualOrdinalCI(op->SourceName, -1, op->TargetName, -1) && // feature 092: never for a change of case
                     sourceNameMvDir == op->SourceName && targetNameMvDir == op->TargetName) // no invalid names allowed here (files only, and their names are validated)
                 {
                     HANDLE in, out;
@@ -6421,8 +6431,9 @@ BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
                 SalConvertFindDataW(&dataW, NULL, fndNameU8, sizeof(fndNameU8),
                                     fndDosNameU8, sizeof(fndDosNameU8));
                 const char* tgtName = SalPathFindFileName(name);
-                if (StrICmp(tgtName, fndDosNameU8) == 0 && // match only for the DOS name
-                    StrICmp(tgtName, fndNameU8) != 0)      // (the full name differs)
+                // feature 092: both halves by the file system's rule, not the code-page byte fold
+                if (SalNameEqualOrdinalCI(tgtName, -1, fndDosNameU8, -1) && // match only for the DOS name
+                    !SalNameEqualOrdinalCI(tgtName, -1, fndNameU8, -1))     // (the full name differs)
                 {
                     // rename ("tidy up") the file/directory whose DOS name conflicts to a temporary 8.3 name (no extra DOS name needed)
                     // heap copies - the path may be far longer than MAX_PATH

@@ -498,7 +498,8 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
                     SalConvertFindDataW(&findDataW, &findData, findNameU8, sizeof(findNameU8), NULL, 0);
                     strcpy(srcName, findNameU8);
                     const char* dst;
-                    if (StrICmp(tmpOrigName, findNameU8) == 0)
+                    // feature 092: name identity ('tmpOrigName' is a generated ASCII name - same answer as before)
+                    if (SalNameEqualOrdinalCI(tmpOrigName, -1, findNameU8, -1))
                         dst = archiveFileName;
                     else
                     {

@@ -86,7 +86,9 @@ public:
     BOOL IsLocked() { return LockObject.Count == 0 && NewCount == 0; }
 
     BOOL NameEqual(const char* name) { return StrICmp(Name, name) == 0; }
-    BOOL TmpNameEqual(const char* tmpName) { return StrICmp(TmpName, tmpName) == 0; }
+    // feature 092: two tmp-names are one file on disk by the file system's rule (partner of
+    // the tests in CCacheDirData::ContainTmpName); NameEqual above is the cache key - not this stage
+    BOOL TmpNameEqual(const char* tmpName) { return SalNameEqualOrdinalCI(TmpName, -1, tmpName, -1); }
 
     // waits until the tmp-file is prepared or until the method ReleaseName() is called
     // then 'exists' is set to return value matching CDiskCache::GetName()

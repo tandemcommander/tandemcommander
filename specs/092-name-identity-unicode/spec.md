@@ -84,8 +84,8 @@ Lists the program keeps sorted to search them (selected names remembered across 
 - **FR-005**: The decisions "this rename or copy only changes the case of the name" and "the target is the source" MUST use the rule.
 - **FR-006**: The program's own comparisons of paths (same path, path under path, same archive, history entries) MUST use the rule, and "is a prefix" MUST respect character boundaries.
 - **FR-007**: Each internal sorted list MUST be sorted and searched with the same comparison.
-- **FR-008**: The services exported to plug-ins, the sort order of panels, *Change Case*, mask matching, and archive listings kept for plug-ins MUST NOT change in this feature; each MUST be recorded as deferred with its reason.
-- **FR-009**: The encoding guard MUST stop reporting harmless drive-letter look-ups and MUST fail the build when a converted file starts using the old comparison on a name again.
+- **FR-008**: The comparison services exported to plug-ins (the string and path comparison primitives a plug-in calls with text of its own choosing), the sort order of panels, *Change Case*, mask matching, and archive listings kept for plug-ins MUST NOT change in this feature; each MUST be recorded as deferred with its reason. Services that operate on *file names* (creating a file or directory safely, splitting a target path) are not comparison primitives: their internal "is this the same name" decisions follow FR-001 whether the core or a plug-in calls them.
+- **FR-009**: The encoding guard MUST stop reporting harmless drive-letter look-ups and MUST fail the build when a byte table is applied to a name again. (A rule that fails on the old *comparison function* in converted files was planned and is deferred: converted files still hold legitimate uses of it on text that is not a name; recorded in the fix log and the backlog.)
 - **FR-010**: No stored data changes shape; the plug-in interface stays 107; the product version does not change.
 
 ### Key Entities

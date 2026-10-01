@@ -2188,8 +2188,12 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
             }
             else
             {
-                if (StrICmp(path, tgtPath) != 0 && // if it isn't just change-case
-                    (err == ERROR_FILE_EXISTS ||   // check whether it's only rewriting the DOS name of the file
+                // feature 092: "just change-case" by the file system's rule, not the code-page byte fold
+                // (with the byte fold "Č.txt" -> "č.txt" was taken for two files; on a file system that
+                // answers "already exists" to such a rename, the overwrite branch below deletes the target,
+                // which is the source - NTFS renames it without complaint)
+                if (!SalNameEqualOrdinalCI(path, -1, tgtPath, -1) && // if it isn't just change-case
+                    (err == ERROR_FILE_EXISTS ||                     // check whether it's only rewriting the DOS name of the file
                      err == ERROR_ALREADY_EXISTS))
                 {
                     WIN32_FIND_DATAW dataW;
@@ -2201,8 +2205,9 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                         char dosNameU8[SAL_FIND_DOSNAME_U8];
                         SalConvertFindDataW(&dataW, NULL, nameU8, sizeof(nameU8), dosNameU8, sizeof(dosNameU8));
                         const char* tgtName = SalPathFindFileName(tgtPath);
-                        if (StrICmp(tgtName, dosNameU8) == 0 && // match only for DOS name
-                            StrICmp(tgtName, nameU8) != 0)      // (full name differs)
+                        // feature 092: both halves by the file system's rule
+                        if (SalNameEqualOrdinalCI(tgtName, -1, dosNameU8, -1) && // match only for DOS name
+                            !SalNameEqualOrdinalCI(tgtName, -1, nameU8, -1))     // (full name differs)
                         {
                             // rename ("clean up") the file/directory with the conflicting DOS name to a temporary 8.3 name (no extra DOS name needed)
                             char tmpName[SAL_MAX_PATH_UTF8 + 20]; // long-path capable (feature 011)
@@ -2253,7 +2258,7 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                 }
                 if ((err == ERROR_ALREADY_EXISTS ||
                      err == ERROR_FILE_EXISTS) &&
-                    StrICmp(path, tgtPath) != 0) // overwrite the file?
+                    !SalNameEqualOrdinalCI(path, -1, tgtPath, -1)) // overwrite the file? (feature 092: never for a change of case)
                 {
                     DWORD inAttr = SalGetFileAttributes(path);
                     DWORD outAttr = SalGetFileAttributes(tgtPath);

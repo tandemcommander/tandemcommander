@@ -396,14 +396,17 @@ BOOL CCacheDirData::ContainTmpName(const char* tmpName, const char* rootTmpPath,
                     HANDLES(FindClose(find));
                     SalConvertFindDataW(&dataW, NULL, foundNameU8, sizeof(foundNameU8),
                                         foundDosNameU8, sizeof(foundDosNameU8));
-                    if (StrICmp(tmpName, foundNameU8) == 0)
+                    // feature 092: "the same file on disk" by the file system's rule (here, at the
+                    // DOS-name test below and in CCacheData::TmpNameEqual above); with the byte fold
+                    // "Č.txt" and "č.txt" got one tmp-file for two cache items
+                    if (SalNameEqualOrdinalCI(tmpName, -1, foundNameU8, -1))
                     {
                         TRACE_E("CCacheDirData::ContainTmpName(): unexpected situation: tmp-directory contains unknown file!");
                         *canContainThisName = FALSE; // the file cannot be placed here; another file would be opened
                     }
                     else
                     {
-                        if (foundDosNameU8[0] != 0 && StrICmp(tmpName, foundDosNameU8) == 0)
+                        if (foundDosNameU8[0] != 0 && SalNameEqualOrdinalCI(tmpName, -1, foundDosNameU8, -1))
                         {
                             TRACE_I("CCacheDirData::ContainTmpName(): tmp-directory contains file whose dos-name conflicts with new tmp-file - different tmp-directory has to be choosen!");
                             *canContainThisName = FALSE; // the file cannot be placed here; an existing file with the same DOS name would be opened

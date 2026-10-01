@@ -1770,10 +1770,12 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                        HasTheSameRootPath(sourcePath, targetPath); // same disk (UNC and standard)
         }
         else
-            sameDisk = (StrICmp(sourcePath, targetPath) == 0); // jen rename
+            sameDisk = SalNameEqualOrdinalCI(sourcePath, -1, targetPath, -1); // jen rename (feature 092: the file system's rule)
         if (sameDisk)
         {
-            if (StrICmp(sourcePath, targetPath) == 0 ||
+            // feature 092: a change of case only is one rename, also for letters outside ASCII (with
+            // the byte fold it went to the "merge into an existing directory" branch below)
+            if (SalNameEqualOrdinalCI(sourcePath, -1, targetPath, -1) ||
                 targetPathState == tpsEncryptedNotExisting || targetPathState == tpsNotEncryptedNotExisting) // target directory doesn't exist
             {
                 if (!script->FastMoveUsed)
@@ -2645,8 +2647,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                 return skip;
             }
         }
+        // feature 092: a copy onto the same file is recognised by the file system's rule; the
+        // move keeps strcmp (the same name in another case is a rename)
         if (type == atMove && strcmp(op.SourceName, op.TargetName) == 0 ||
-            type == atCopy && StrICmp(op.SourceName, op.TargetName) == 0)
+            type == atCopy && SalNameEqualOrdinalCI(op.SourceName, -1, op.TargetName, -1))
         {
             free(op.SourceName);
             free(op.TargetName);
@@ -2694,7 +2698,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         char tgtNameU8[SAL_FIND_NAME_U8];
                         SalConvertFindDataW(&dataOut, NULL, tgtNameU8, sizeof(tgtNameU8), NULL, 0);
                         const char* tgtName = SalPathFindFileName(op.TargetName);
-                        if (StrICmp(tgtName, tgtNameU8) == 0 &&                         // if it's not just a DOS-name match (that would change the DOS-name instead of overwriting)
+                        // feature 092: found by its long name - the file system's identity rule (twin of DoCopyFile)
+                        if (SalNameEqualOrdinalCI(tgtName, -1, tgtNameU8, -1) &&        // if it's not just a DOS-name match (that would change the DOS-name instead of overwriting)
                             (dataOut.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) // if it's not a directory (overwrite older cannot handle directories)
                         {
                             // truncate timestamps to seconds (different FSs store timestamps with different precision, so there were "differences" even between "identical" times)

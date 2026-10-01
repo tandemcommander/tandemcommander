@@ -67,6 +67,8 @@ exported plug-in services and `src/common/str.cpp` keep the byte fold.
 ## I6 — guard
 
 `tools/check_encoding.py`: `acp-byte-table-on-name` strict (drive-letter
-look-ups excluded, the intentional sites annotated); `byte-fold-on-name`
-(strict, per converted file): `StrICmp`, `StrNICmp`, `StrICmpEx`, `StrICpy`,
-`IsTheSamePath` applied to an identifier that names a file name or path.
+look-ups excluded, the intentional sites annotated). A second rule,
+`byte-fold-on-name` (the old comparison functions applied to a name in a
+converted file), was planned and is **not implemented**: the converted files
+keep legitimate uses on text that is not a name and deferred sites, so it
+would need an annotation per line. Deferred with the remaining clusters.

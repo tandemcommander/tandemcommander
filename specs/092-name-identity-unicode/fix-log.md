@@ -130,3 +130,69 @@ key was backed up and restored (identical hash).
 
 Recorded for the backlog: `UnselectItemWithName` (`fileswn0.cpp`) uses the
 linguistic comparison plus a length guard for an identity look-up.
+
+## S3 — overwrite, delete, rename (FR-005)
+
+Converted to `SalNameEqualOrdinalCI` (20 comparisons): the sites that decide
+between "the same file under another spelling" and "another file" before an
+overwrite, a delete or a rename.
+
+| Site | Function | Decision |
+|---|---|---|
+| `fileswn5.cpp` x3 | `RenameFileInternal` | Quick Rename: only a change of case / only the 8.3 name collides / overwrite |
+| `worker.cpp` x2 | `SalCreateFileEx` | the target exists only as an 8.3 name |
+| `worker.cpp` | `CorrectCaseOfTgtName` | take the spelling the disk has (the capacity test stays, bytes are copied within the old string) |
+| `worker.cpp` | `DoCopyFile` | "overwrite older": same file found under the target name |
+| `worker.cpp` x4 | `DoMoveFile` | change of case vs. overwrite; 8.3 collision |
+| `worker.cpp` x2 | `SalCreateDirectoryEx` | 8.3 collision |
+| `fileswn6.cpp` x4 | `BuildScriptDir`, `BuildScriptFile` | a change of case is one rename; copy onto itself is refused |
+| `safefile.cpp` x2 | `SafeFileCreate` | 8.3 collision |
+| `pack2.cpp` | temporary name | generated ASCII name, no behaviour change |
+| `cache.cpp` x2, `cache.h` | `ContainTmpName`, `TmpNameEqual` | a temporary name is taken |
+| `salamdr5.cpp` | `SalSplitGeneralPath` | F6 on a directory typed in another case is a rename |
+
+`SalSplitGeneralPath` is also reachable from plug-ins. FR-008 protects the
+comparison *primitives* a plug-in calls with its own text; a file service's
+internal decision follows FR-001 (spec clarified). Only the name half is
+converted; the path half (`IsTheSamePath` or the plug-in's callback) stays.
+
+**Probe** `probe/case_only_probe.cpp` (`build_and_run.cmd`, exit 0): for 15
+name pairs the new rule agrees with NTFS (create one name, open the other);
+the old rule (the x64 `StrICmp` of `str.cpp` over the `CharLowerA` table)
+gives 4 false "different" and 1 false "same". 8 rows for the in-place
+spelling correction, including pairs of different UTF-8 length.
+
+**Independent review - ACCEPT**, no blocker. Its measurements:
+
+- The whole BMP on real NTFS with the product's `salunicode.cpp`: 62,472
+  names created, 973 collisions, **0 false "same", 0 false "different"**.
+- A case-sensitive directory (`fsutil file setCaseSensitiveInfo`) holding
+  both `Článek.txt` and `článek.txt`: the move fails with "already exists"
+  and the new code shows the error without an overwrite prompt - exactly what
+  `a.txt`/`A.txt` always did there. At every site the new behaviour for
+  accented pairs equals the old behaviour for ASCII pairs.
+- `ĥ.txt` moved onto an existing `Ĺ.txt`: the old code took them for one file
+  and showed a bare error; the new code asks to overwrite.
+- 8.3 tests: both operands come from `WIN32_FIND_DATAW`, always valid WTF-8;
+  the logic `equal to the short name AND not to the long name` is unchanged.
+
+Done after the review: four comments stated as fact what was not measured
+(NTFS renames a case-only pair without complaint; the "would delete the
+source" path needs a file system that answers "already exists") - reworded.
+FR-009 and contract I6 now say that the second guard rule is deferred.
+
+Recorded, not changed (all exist before this feature, none made worse):
+
+1. **Delete-then-retry trusts a name rule alone** (`worker.cpp DoMoveFile`,
+   `fileswn5.cpp RenameFileInternal`): on a share whose server folds *more*
+   than Windows (NFC/NFD on a macOS server), a rename onto another spelling of
+   the same file answers "already exists", the names compare different, and
+   the overwrite branch deletes the target - which is the source. The fix is
+   a file-identity test (volume serial + file index) before the delete.
+   Backlog.
+2. `CCacheDirData::DetachTmpFile` (`cache.cpp`) keeps the byte fold; it has
+   no caller in the tree.
+3. The helper reads an allocation failure (tails over 519 bytes) as "not
+   WTF-8", i.e. "different".
+4. The probe does not cover the 8.3 predicate, legacy text, or paths over
+   520 units; the reviewer's whole-BMP run and saltests cover the helper.

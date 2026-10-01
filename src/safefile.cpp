@@ -151,8 +151,11 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                 if (SalWToU8(dataW.cAlternateFileName, -1, foundDosName, sizeof(foundDosName)) == 0)
                     foundDosName[0] = 0;
                 const char* tgtName = SalPathFindFileName(fileName);
-                if (StrICmp(tgtName, foundDosName) == 0 && // match only for the DOS name
-                    StrICmp(tgtName, foundName) != 0)      // (the full name is different)
+                // feature 092: both halves by the file system's rule, not the code-page byte fold
+                // (the same answer as before for ASCII names; a name that is not UTF-8 never equals a
+                // found name, which always is)
+                if (SalNameEqualOrdinalCI(tgtName, -1, foundDosName, -1) && // match only for the DOS name
+                    !SalNameEqualOrdinalCI(tgtName, -1, foundName, -1))     // (the full name is different)
                 {
                     // rename ("clean up") the file/directory with the conflicting DOS name to a temporary 8.3 name (which doesn’t require an extra DOS name)
                     char tmpName[MAX_PATH + 20];
