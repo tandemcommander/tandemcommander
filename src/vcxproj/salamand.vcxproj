@@ -277,6 +277,10 @@
     </ClCompile>
     <ClCompile Include="..\common\salcloseapp.cpp">
     </ClCompile>
+    <ClCompile Include="..\common\sal7zlist.cpp">
+    </ClCompile>
+    <ClCompile Include="..\common\salarcmig.cpp">
+    </ClCompile>
     <ClCompile Include="..\common\salunicode.cpp">
     </ClCompile>
     <ClCompile Include="..\common\sheets.cpp">
@@ -748,6 +752,10 @@
     <ClInclude Include="..\common\salbugreport.h">
     </ClInclude>
     <ClInclude Include="..\common\salcloseapp.h">
+    </ClInclude>
+    <ClInclude Include="..\common\sal7zlist.h">
+    </ClInclude>
+    <ClInclude Include="..\common\salarcmig.h">
     </ClInclude>
     <ClInclude Include="..\common\salunicode.h">
     </ClInclude>

@@ -2828,7 +2828,7 @@ void CMainWindow_RefreshCommandStates(CMainWindow* obj)
             int format = PackerFormatConfig.PackIsArchive(activePanel->GetZIPArchive());
             if (format != 0) // we found a supported archive
             {
-                archiveEdit = PackerFormatConfig.GetUsePacker(format - 1); // does it have an edit?
+                archiveEdit = PackerFormatConfig.CanPack(format - 1); // does it have an edit? (feature 084: with its packer program installed)
             }
         }
 

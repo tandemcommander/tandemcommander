@@ -8,6 +8,7 @@
 #include "plugins.h"
 #include "zip.h"
 #include "pack.h"
+#include "salarcmig.h" // feature 084
 
 // custom packers / unpackers
 const char* SALAMANDER_CPU_TITLE = "Title";
@@ -33,149 +34,42 @@ struct SPackConvTable
 };
 
 SPackConvTable PackConversionTable[] = {
-    {"jar32", "$(Jar32bitExecutable)"},
-    {"jar16", "$(Jar16bitExecutable)"},
+    {"7z", "$(SevenZipExecutable)"},
     {"rar", "$(Rar32bitExecutable)"},
-    {"arj32", "$(Arj32bitExecutable)"},
-    {"arj", "$(Arj16bitExecutable)"},
-    {"ace32", "$(Ace32bitExecutable)"},
-    {"ace", "$(Ace16bitExecutable)"},
-    {"lha", "$(Lha16bitExecutable)"},
-    {"uc", "$(UC216bitExecutable)"},
-    {"pkzip25", "$(Zip32bitExecutable)"},
-    {"pkzip", "$(Zip16bitExecutable)"},
-    {"pkunzip", "$(Unzip16bitExecutable)"},
     {NULL, NULL}};
 
-// order in which custom packers/unpackers were historically added
-int CustomOrder[] = {0, 1, 9, 10, 2, 3, 4, 11, 5, 6, 7, 8};
-
-// custom packer table
+// custom packer table, indexed by the archiver index (PACK7ZIPINDEX, PACKRARINDEX;
+// AutoConfig adds entries by that index). Feature 084: of the twelve archivers of
+// 0.1.8 only these two remain; the RAR "1.44MB volumes" variant is gone.
 SPackCustomPacker CustomPackers[] = {
-    // JAR32
-    {{"a \"$(ArchiveFullName)\" !\"$(ListFullName)\"", "a -v1440 \"$(ArchiveFullName)\" !\"$(ListFullName)\""},
-     {"m \"$(ArchiveFullName)\" !\"$(ListFullName)\"", "m -v1440 \"$(ArchiveFullName)\" !\"$(ListFullName)\""},
-     {IDS_DP_JAR_E, IDS_DP_JARV_E},
-     "j",
+    // [PACK7ZIPINDEX] 7-Zip console: no default packer (it is offered for unpacking only)
+    {{NULL, NULL},
+     {NULL, NULL},
+     {-1, -1},
+     "7z",
      TRUE,
      FALSE,
-     "jar32"},
-    // RAR32
-    {{"a -scol \"$(ArchiveFullName)\" @\"$(ListFullName)\"", "a -scol -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\""}, // since version 5.0 we must enforce the -scol switch, version 4.20 is fine; appears elsewhere and in the registry
-     {"m -scol \"$(ArchiveFullName)\" @\"$(ListFullName)\"", "m -scol -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\""},
-     {IDS_DP_RAR_E, IDS_DP_RARV_E},
+     "7z"},
+    // [PACKRARINDEX] WinRAR console; the list of files is UTF-16 (research R7a)
+    {{"a -scul -idq -y \"$(ArchiveFullName)\" @\"$(ListUnicodeFullName)\"", NULL},
+     {"m -scul -idq -y \"$(ArchiveFullName)\" @\"$(ListUnicodeFullName)\"", NULL},
+     {IDS_DP_RAR_WINRAR, -1},
      "rar",
      TRUE,
      FALSE,
      "rar"},
-    // ARJ16
-    {{"a -pa $(ArchiveDOSFullName) !$(ListDOSFullName)", "a -pav1440 $(ArchiveDOSFullName) !$(ListDOSFullName)"},
-     {"m -pa $(ArchiveDOSFullName) !$(ListDOSFullName)", "m -pav1440 $(ArchiveDOSFullName) !$(ListDOSFullName)"},
-     {IDS_DP_ARJ16_E, IDS_DP_ARJ16V_E},
-     "arj",
-     FALSE,
-     FALSE,
-     "arj"},
-    // LZH
-    {{"a -m -p -a -l1 -x1 -c $(ArchiveDOSFullName) @$(ListDOSFullName)", NULL},
-     {"m -m -p -a -l1 -x1 -c $(ArchiveDOSFullName) @$(ListDOSFullName)", NULL},
-     {IDS_DP_LHA_E, -1},
-     "lzh",
-     FALSE,
-     FALSE,
-     "lha"},
-    // UC2
-    {{"A !SYSHID=ON ##\\ $(ArchiveDOSFullName) @$(ListDOSFullName)", NULL},
-     {"AM !SYSHID=ON ##\\ $(ArchiveDOSFullName) @$(ListDOSFullName)", NULL},
-     {IDS_DP_UC2_E, -1},
-     "uc2",
-     FALSE,
-     FALSE,
-     "uc"},
-    // JAR16
-    {{"a $(ArchiveDOSFullName) !$(ListDOSFullName)", "a -v1440 $(ArchiveDOSFullName) !$(ListDOSFullName)"},
-     {"m $(ArchiveDOSFullName) !$(ListDOSFullName)", "m -v1440 $(ArchiveDOSFullName) !$(ListDOSFullName)"},
-     {IDS_DP_JAR16_E, IDS_DP_JAR16V_E},
-     "j",
-     FALSE,
-     FALSE,
-     "jar16"},
-    // RAR16
-    {{"a $(ArchiveDOSFullName) @$(ListDOSFullName)", "a -v1440 $(ArchiveDOSFullName) @$(ListDOSFullName)"},
-     {"m $(ArchiveDOSFullName) @$(ListDOSFullName)", "m -v1440 $(ArchiveDOSFullName) @$(ListDOSFullName)"},
-     {IDS_DP_RAR16_E, IDS_DP_RAR16V_E},
-     "rar",
-     FALSE,
-     FALSE,
-     "rar"},
-    // ZIP32
-    {{"-add -nozipextension -path -attr \"$(ArchiveFullName)\" @\"$(ListFullName)\"", NULL},
-     {"-add -nozipextension -move -path -attr \"$(ArchiveFullName)\" @\"$(ListFullName)\"", NULL},
-     {IDS_DP_ZIP32_E, -1},
-     "zip",
-     TRUE,
-     TRUE,
-     "pkzip25"},
-    // ZIP16
-    {{"-P -whs $(ArchiveDOSFullName) @$(ListDOSFullName)", NULL},
-     {"-m -P -whs $(ArchiveDOSFullName) @$(ListDOSFullName)", NULL},
-     {IDS_DP_ZIP16_E, -1},
-     "zip",
-     FALSE,
-     FALSE,
-     "pkzip"},
-    // ARJ32
-    {{"a -pa \"$(ArchiveFullName)\" !\"$(ListFullName)\"", "a -pav1440 \"$(ArchiveFullName)\" !\"$(ListFullName)\""},
-     {"m -pa \"$(ArchiveFullName)\" !\"$(ListFullName)\"", "m -pav1440 \"$(ArchiveFullName)\" !\"$(ListFullName)\""},
-     {IDS_DP_ARJ32_E, IDS_DP_ARJ32V_E},
-     "arj",
-     TRUE,
-     FALSE,
-     "arj32"},
-    // ACE32
-    {{"a \"$(ArchiveFullName)\" @\"$(ListFullName)\"", "a -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\""},
-     {"m \"$(ArchiveFullName)\" @\"$(ListFullName)\"", "m -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\""},
-     {IDS_DP_ACE_E, IDS_DP_ACEV_E},
-     "ace",
-     TRUE,
-     TRUE,
-     "ace32"},
-    // ACE16
-    {{"a $(ArchiveDOSFullName) @$(ListDOSFullName)", "a -v1440 $(ArchiveDOSFullName) @$(ListDOSFullName)"},
-     {"m $(ArchiveDOSFullName) @$(ListDOSFullName)", "m -v1440 $(ArchiveDOSFullName) @$(ListDOSFullName)"},
-     {IDS_DP_ACE16_E, IDS_DP_ACE16V_E},
-     "ace",
-     FALSE,
-     FALSE,
-     "ace"},
 };
 
-// custom unpacker table
+// custom unpacker table, indexed by the archiver index like CustomPackers
 SPackCustomUnpacker CustomUnpackers[] = {
-    // JAR32
-    {"x -jyc \"$(ArchiveFullName)\" !\"$(ListFullName)\"", IDS_DU_JAR_E, "*.j", TRUE, FALSE, "jar32"},
-    // RAR32
-    {"x -scol \"$(ArchiveFullName)\" @\"$(ListFullName)\"", IDS_DU_RAR_E, "*.rar", TRUE, FALSE, "rar"}, // since version 5.0 we must enforce the -scol switch, version 4.20 is fine; appears elsewhere and in the registry
-    // ARJ16
-    {"x -va -jyc $(ArchiveDOSFullName) !$(ListDOSFullName)", IDS_DU_ARJ16_E, "*.arj", FALSE, FALSE, "arj"},
-    // LZH
-    {"x -a -l1 -c $(ArchiveDOSFullName) @$(ListDOSFullName)", IDS_DU_LHA_E, "*.lzh", FALSE, FALSE, "lha"},
-    // UC2
-    {"ESF $(ArchiveDOSFullName) @$(ListDOSFullName)", IDS_DU_UC2_E, "*.uc2", FALSE, FALSE, "uc"},
-    // JAR16
-    {"x -jyc $(ArchiveDOSFullName) !$(ListDOSFullName)", IDS_DU_JAR16_E, "*.j", FALSE, FALSE, "jar16"},
-    // RAR16
-    {"x $(ArchiveDOSFullName) @$(ListDOSFullName)", IDS_DU_RAR16_E, "*.rar", FALSE, FALSE, "rar"},
-    // ZIP32
-    {"-ext -nozipextension -directories -path \"$(ArchiveFullName)\" @\"$(ListFullName)\"", IDS_DU_ZIP32_E, "*.zip;*.pk3;*.jar", TRUE, TRUE, "pkzip25"},
-    // ZIP16
-    {"-d -Jhrs $(ArchiveDOSFullName) @$(ListDOSFullName)", IDS_DU_ZIP16_E, "*.zip", FALSE, FALSE, "pkunzip"},
-    // ARJ32
-    {"x -va -jyc \"$(ArchiveFullName)\" !\"$(ListFullName)\"", IDS_DU_ARJ32_E, "*.arj", TRUE, FALSE, "arj32"},
-    // ACE32
-    {"x \"$(ArchiveFullName)\" @\"$(ListFullName)\"", IDS_DU_ACE_E, "*.ace", TRUE, TRUE, "ace32"},
-    // ACE16
-    {"x $(ArchiveDOSFullName) @$(ListDOSFullName)", IDS_DU_ACE16_E, "*.ace", FALSE, FALSE, "ace"},
+    // [PACK7ZIPINDEX] 7-Zip console: the formats no plug-in reads (inventory.md). It extracts
+    // into $(TargetPath) - the empty temporary folder PackUniversalUncompress creates - so -y
+    // is safe there and the files reach the real target through the ordinary move, which asks
+    // before overwriting (without -o, 7-Zip would write into the target itself and -y would
+    // overwrite the user's files silently - independent review of feature 084, finding 1)
+    {"x -y -sccUTF-8 -scsUTF-16LE \"$(ArchiveFullName)\" -o\"$(TargetPath)\" @\"$(ListUnicodeFullName)\"", IDS_DU_7ZIP, "*.arj;*.lzh;*.lha", TRUE, FALSE, "7z"},
+    // [PACKRARINDEX] WinRAR console: no default unpacker (RAR is unpacked by the 7zip plug-in)
+    {NULL, -1, "*.rar", TRUE, FALSE, "rar"},
 };
 
 //
@@ -232,49 +126,21 @@ void CPackerConfig::AddDefault(int SalamVersion)
 
     case 0: // default config
     case 1: // v1.52 had no packers
-        for (i = 0; i < 7; i++)
+        // feature 084: the default packers of the supported external archivers
+        // (CustomPackers is indexed by the archiver index; 7-Zip has no packer)
+        for (i = 0; i < PACK_ARCHIVERS_COUNT; i++)
         {
-            int idx = CustomOrder[i];
+            if (CustomPackers[i].CopyArgs[0] == NULL)
+                continue;
             if ((index = AddPacker()) == -1)
                 return;
-            SetPacker(index, 1, LoadStrU8(CustomPackers[idx].Title[0]), CustomPackers[idx].Ext, TRUE,
-                      CustomPackers[idx].SupLN, TRUE,
-                      CustomPackers[idx].Exe, CustomPackers[idx].CopyArgs[0],
-                      CustomPackers[idx].Exe, CustomPackers[idx].MoveArgs[0],
-                      CustomPackers[idx].Ansi);
-            if (CustomPackers[idx].CopyArgs[1] != NULL)
-            {
-                if ((index = AddPacker()) == -1)
-                    return;
-                SetPacker(index, 1, LoadStrU8(CustomPackers[idx].Title[1]), CustomPackers[idx].Ext, TRUE,
-                          CustomPackers[idx].SupLN, TRUE,
-                          CustomPackers[idx].Exe, CustomPackers[idx].CopyArgs[1],
-                          CustomPackers[idx].Exe, CustomPackers[idx].MoveArgs[1],
-                          CustomPackers[idx].Ansi);
-            }
+            SetPacker(index, 1, LoadStrU8(CustomPackers[i].Title[0]), CustomPackers[i].Ext, TRUE,
+                      CustomPackers[i].SupLN, TRUE,
+                      CustomPackers[i].Exe, CustomPackers[i].CopyArgs[0],
+                      CustomPackers[i].Exe, CustomPackers[i].MoveArgs[0],
+                      CustomPackers[i].Ansi);
         }
-    case 2: // added after beta1
-        for (i = 7; i < 12; i++)
-        {
-            int idx = CustomOrder[i];
-            if ((index = AddPacker()) == -1)
-                return;
-            SetPacker(index, 1, LoadStrU8(CustomPackers[idx].Title[0]), CustomPackers[idx].Ext, TRUE,
-                      CustomPackers[idx].SupLN, TRUE,
-                      CustomPackers[idx].Exe, CustomPackers[idx].CopyArgs[0],
-                      CustomPackers[idx].Exe, CustomPackers[idx].MoveArgs[0],
-                      CustomPackers[idx].Ansi);
-            if (CustomPackers[idx].CopyArgs[1] != NULL)
-            {
-                if ((index = AddPacker()) == -1)
-                    return;
-                SetPacker(index, 1, LoadStrU8(CustomPackers[idx].Title[1]), CustomPackers[idx].Ext, TRUE,
-                          CustomPackers[idx].SupLN, TRUE,
-                          CustomPackers[idx].Exe, CustomPackers[idx].CopyArgs[1],
-                          CustomPackers[idx].Exe, CustomPackers[idx].MoveArgs[1],
-                          CustomPackers[idx].Ansi);
-            }
-        }
+    case 2: // added after beta1 (the remaining 1990s archivers, removed in feature 084)
     case 3: // added after beta2
     case 4: // beta 3 but with old configuration (contains $(SpawnName))
         // in older versions the $(SpawnName) variable might exist, it no longer does - we must remove it
@@ -354,30 +220,14 @@ void CPackerConfig::AddDefault(int SalamVersion)
                         if (!strcmp(cmdC, PackConversionTable[i].exe))
                         {
                             free(cmdC);
-                            // an ugly hack because of RAR
-                            if (i == 2)
-                                // if it's RAR we cannot tell whether it is 16-bit or 32-bit directly, only from long-name support
-                                if (GetPackerSupLongNames(index))
-                                    cmdC = DupStr(PackConversionTable[i].variable);
-                                else
-                                    cmdC = DupStr("$(Rar16bitExecutable)");
-                            else
-                                // for others it's simple
-                                cmdC = DupStr(PackConversionTable[i].variable);
+                            // (the RAR 16-bit special case went with the DOS archivers, feature 084)
+                            cmdC = DupStr(PackConversionTable[i].variable);
                         }
                         if (!strcmp(cmdM, PackConversionTable[i].exe))
                         {
                             free(cmdM);
-                            // an ugly hack because of RAR
-                            if (i == 2)
-                                // if it's RAR we cannot tell whether it is 16-bit or 32-bit directly, only from long-name support
-                                if (GetPackerSupLongNames(index))
-                                    cmdM = DupStr(PackConversionTable[i].variable);
-                                else
-                                    cmdM = DupStr("$(Rar16bitExecutable)");
-                            else
-                                // for others it's simple
-                                cmdM = DupStr(PackConversionTable[i].variable);
+                            // (the RAR 16-bit special case went with the DOS archivers, feature 084)
+                            cmdM = DupStr(PackConversionTable[i].variable);
                         }
                         found = TRUE;
                     }
@@ -778,6 +628,204 @@ BOOL CPackerConfig::SetPackerTitle(int index, const char* title)
     return data->Title != NULL;
 }
 
+//
+// ****************************************************************************
+// Configuration version 106 (feature 084, contract
+// specs/084-archiver-cleanup/contracts/config-migration-106.md)
+//
+// Runs once, on a configuration stored by a version older than 106, after the
+// four "Packers & Unpackers" sections were loaded and before CPlugins::CheckData.
+// The decisions are pure (src/common/salarcmig.*, covered by saltests).
+
+// the extensions the 7-Zip console takes over when no record claims them (M3),
+// one association record per group - the same groups the defaults have
+static const char* const SevenZipDefaultExtGroups[] = {"arj", "lzh;lha"};
+
+void PackMigrateArchiversTo106()
+{
+    CALL_STACK_MESSAGE1("PackMigrateArchiversTo106()");
+    int i;
+
+    // M1: custom packers - entries calling a removed archiver or creating floppy
+    // volumes go; the untouched 0.1.8 RAR default becomes the new RAR default
+    for (i = PackerConfig.GetPackersCount() - 1; i >= 0; i--)
+    {
+        switch (SalArcMigPacker(PackerConfig.GetPackerType(i) == CUSTOMPACKER_EXTERNAL,
+                                PackerConfig.GetPackerCmdExecCopy(i), PackerConfig.GetPackerCmdArgsCopy(i),
+                                PackerConfig.GetPackerCmdExecMove(i), PackerConfig.GetPackerCmdArgsMove(i)))
+        {
+        case sameDelete:
+            TRACE_I("Archivers 106: removing custom packer " << PackerConfig.GetPackerTitle(i));
+            PackerConfig.DeletePacker(i);
+            break;
+
+        case sameRarDefault:
+        {
+            TRACE_I("Archivers 106: updating the default RAR packer " << PackerConfig.GetPackerTitle(i));
+            const SPackCustomPacker* rar = &CustomPackers[PACKRARINDEX];
+            char variable[100];
+            _snprintf_s(variable, _TRUNCATE, "$(%s)", ArchiverConfig.GetPackerVariable(PACKRARINDEX));
+            PackerConfig.SetPacker(i, CUSTOMPACKER_EXTERNAL, LoadStrU8(rar->Title[0]), rar->Ext, FALSE,
+                                   rar->SupLN, TRUE, variable, rar->CopyArgs[0], variable, rar->MoveArgs[0],
+                                   rar->Ansi);
+            break;
+        }
+
+        default:
+            break;
+        }
+    }
+
+    // M1: custom unpackers
+    BOOL has7Zip = FALSE;
+    char sevenZipVariable[100];
+    _snprintf_s(sevenZipVariable, _TRUNCATE, "$(%s)", ArchiverConfig.GetPackerVariable(PACK7ZIPINDEX));
+    for (i = UnpackerConfig.GetUnpackersCount() - 1; i >= 0; i--)
+    {
+        if (SalArcMigUnpacker(UnpackerConfig.GetUnpackerType(i) == CUSTOMUNPACKER_EXTERNAL,
+                              UnpackerConfig.GetUnpackerCmdExecExtract(i),
+                              UnpackerConfig.GetUnpackerCmdArgsExtract(i)) == sameDelete)
+        {
+            TRACE_I("Archivers 106: removing custom unpacker " << UnpackerConfig.GetUnpackerTitle(i));
+            UnpackerConfig.DeleteUnpacker(i);
+        }
+        else
+        {
+            const char* cmd = UnpackerConfig.GetUnpackerCmdExecExtract(i);
+            if (UnpackerConfig.GetUnpackerType(i) == CUSTOMUNPACKER_EXTERNAL && cmd != NULL &&
+                StrICmp(cmd, sevenZipVariable) == 0)
+            {
+                has7Zip = TRUE;
+            }
+        }
+    }
+    // the new 7-Zip default unpacker (an upgraded configuration has none)
+    if (!has7Zip)
+    {
+        const SPackCustomUnpacker* sz = &CustomUnpackers[PACK7ZIPINDEX];
+        int index = UnpackerConfig.AddUnpacker();
+        if (index != -1)
+        {
+            UnpackerConfig.SetUnpacker(index, CUSTOMUNPACKER_EXTERNAL, LoadStrU8(sz->Title), sz->Ext, FALSE,
+                                       sz->SupLN, sevenZipVariable, sz->Args, sz->Ansi);
+        }
+    }
+
+    // M2: associations - a removed archiver as the viewer deletes the record, as the
+    // packer it switches packing off; plug-ins and RAR (index 1) stay
+    for (i = PackerFormatConfig.GetFormatsCount() - 1; i >= 0; i--)
+    {
+        int unpacker, packer;
+        BOOL usePacker;
+        if (!SalArcMigAssociation(PackerFormatConfig.GetUnpackerIndex(i), PackerFormatConfig.GetPackerIndex(i),
+                                  PackerFormatConfig.GetUsePacker(i), &unpacker, &packer, &usePacker))
+        {
+            TRACE_I("Archivers 106: removing association " << PackerFormatConfig.GetExt(i));
+            PackerFormatConfig.DeleteFormat(i);
+            continue;
+        }
+        PackerFormatConfig.SetUnpackerIndex(i, unpacker);
+        PackerFormatConfig.SetUsePacker(i, usePacker);
+        if (usePacker)
+            PackerFormatConfig.SetPackerIndex(i, packer);
+    }
+
+    // M3: the 7-Zip console takes the extensions nobody claims
+    int g;
+    for (g = 0; g < _countof(SevenZipDefaultExtGroups); g++)
+    {
+        char missing[100];
+        missing[0] = 0;
+        char group[100];
+        lstrcpyn(group, SevenZipDefaultExtGroups[g], _countof(group));
+        char* next = NULL;
+        char* ext = strtok_s(group, ";", &next);
+        while (ext != NULL)
+        {
+            BOOL claimed = FALSE;
+            for (i = 0; !claimed && i < PackerFormatConfig.GetFormatsCount(); i++)
+                claimed = SalArcMigListHasExt(PackerFormatConfig.GetExt(i), ext);
+            if (!claimed)
+            {
+                if (missing[0] != 0)
+                    strcat_s(missing, ";");
+                strcat_s(missing, ext);
+            }
+            ext = strtok_s(NULL, ";", &next);
+        }
+        if (missing[0] != 0)
+        {
+            TRACE_I("Archivers 106: adding association " << missing << " for 7-Zip");
+            int index = PackerFormatConfig.AddFormat();
+            if (index != -1)
+                PackerFormatConfig.SetFormat(index, missing, FALSE, -1, PACK7ZIPINDEX, FALSE);
+        }
+    }
+}
+
+// feature 084 (FR-017): the index of the supported external archiver a command
+// calls - exactly "$(SevenZipExecutable)" or "$(Rar32bitExecutable)", as the
+// default entries and Archivers Autoconfiguration write it - or -1 (a plug-in,
+// a program given by its own path, anything else)
+static int PackCommandArchiverIndex(const char* cmd)
+{
+    if (cmd == NULL)
+        return -1;
+    int i;
+    for (i = 0; i < ArchiverConfig.GetArchiversCount(); i++)
+    {
+        char variable[100];
+        _snprintf_s(variable, _TRUNCATE, "$(%s)", ArchiverConfig.GetPackerVariable(i));
+        if (StrICmp(cmd, variable) == 0)
+            return i;
+    }
+    return -1;
+}
+
+BOOL CPackerConfig::IsPackerOffered(int index)
+{
+    if (index < 0 || index >= GetPackersCount() || GetPackerType(index) != CUSTOMPACKER_EXTERNAL)
+        return index >= 0 && index < GetPackersCount();
+    int archiver = PackCommandArchiverIndex(GetPackerCmdExecCopy(index));
+    return archiver < 0 || ArchiverConfig.IsArchiverAvailable(archiver);
+}
+
+int CPackerConfig::GetOfferedPreferedPacker()
+{
+    int pref = GetPreferedPacker();
+    if (pref >= 0 && IsPackerOffered(pref))
+        return pref;
+    int i;
+    for (i = 0; i < GetPackersCount(); i++)
+    {
+        if (IsPackerOffered(i))
+            return i;
+    }
+    return -1;
+}
+
+BOOL CUnpackerConfig::IsUnpackerOffered(int index)
+{
+    if (index < 0 || index >= GetUnpackersCount() || GetUnpackerType(index) != CUSTOMUNPACKER_EXTERNAL)
+        return index >= 0 && index < GetUnpackersCount();
+    int archiver = PackCommandArchiverIndex(GetUnpackerCmdExecExtract(index));
+    return archiver < 0 || ArchiverConfig.IsArchiverAvailable(archiver);
+}
+
+int CUnpackerConfig::GetOfferedPreferedUnpacker()
+{
+    int pref = GetPreferedUnpacker();
+    if (pref >= 0 && IsUnpackerOffered(pref))
+        return pref;
+    int i;
+    for (i = 0; i < GetUnpackersCount(); i++)
+    {
+        if (IsUnpackerOffered(i))
+            return i;
+    }
+    return -1;
+}
+
 BOOL CPackerConfig::ExecutePacker(CFilesWindow* panel, const char* zipFile, BOOL move,
                                   const char* sourcePath, SalEnumSelection2 next, void* param)
 {
@@ -1057,25 +1105,19 @@ void CUnpackerConfig::AddDefault(int SalamVersion)
 
     case 0: // default config
     case 1: // v1.52 had no packers
-        for (i = 0; i < 7; i++)
+        // feature 084: the default unpackers of the supported external archivers
+        // (CustomUnpackers is indexed by the archiver index; RAR has no unpacker)
+        for (i = 0; i < PACK_ARCHIVERS_COUNT; i++)
         {
-            int idx = CustomOrder[i];
+            if (CustomUnpackers[i].Args == NULL)
+                continue;
             if ((index = AddUnpacker()) == -1)
                 return;
-            SetUnpacker(index, 1, LoadStrU8(CustomUnpackers[idx].Title), CustomUnpackers[idx].Ext, TRUE,
-                        CustomUnpackers[idx].SupLN, CustomUnpackers[idx].Exe,
-                        CustomUnpackers[idx].Args, CustomUnpackers[idx].Ansi);
+            SetUnpacker(index, 1, LoadStrU8(CustomUnpackers[i].Title), CustomUnpackers[i].Ext, TRUE,
+                        CustomUnpackers[i].SupLN, CustomUnpackers[i].Exe,
+                        CustomUnpackers[i].Args, CustomUnpackers[i].Ansi);
         }
-    case 2: // what was added after beta1
-        for (i = 7; i < 12; i++)
-        {
-            int idx = CustomOrder[i];
-            if ((index = AddUnpacker()) == -1)
-                return;
-            SetUnpacker(index, 1, LoadStrU8(CustomUnpackers[idx].Title), CustomUnpackers[idx].Ext, TRUE,
-                        CustomUnpackers[idx].SupLN, CustomUnpackers[idx].Exe,
-                        CustomUnpackers[idx].Args, CustomUnpackers[idx].Ansi);
-        }
+    case 2: // what was added after beta1 (the remaining 1990s archivers, removed in feature 084)
     case 3: // what was added after beta2
     case 4: // beta 3 but without the $(SpawnName) variable
         // in older versions the $(SpawnName) variable might exist, it no longer does - we must remove it
@@ -1125,16 +1167,8 @@ void CUnpackerConfig::AddDefault(int SalamVersion)
                     if (!strcmp(cmd, PackConversionTable[i].exe))
                     {
                         free(cmd);
-                        // an ugly hack because of RAR
-                        if (i == 2)
-                            // if it's RAR we cannot tell whether it is 16-bit or 32-bit directly, only from long-name support
-                            if (GetUnpackerSupLongNames(index))
-                                cmd = DupStr(PackConversionTable[i].variable);
-                            else
-                                cmd = DupStr("$(Rar16bitExecutable)");
-                        else
-                            // for others it's simple
-                            cmd = DupStr(PackConversionTable[i].variable);
+                        // (the RAR 16-bit special case went with the DOS archivers, feature 084)
+                        cmd = DupStr(PackConversionTable[i].variable);
                         found = TRUE;
                     }
                     i++;

@@ -1,0 +1,78 @@
+
+7-Zip 22.01 (x64) : Copyright (c) 1999-2022 Igor Pavlov : 2022-07-15
+
+Scanning the drive for archives:
+1 file, 309 bytes (1 KiB)
+
+Listing archive: D:\Projects\tandemcommander\specs\084-archiver-cleanup\probe\fixtures\7z\unicode.7z
+
+--
+Path = D:\Projects\tandemcommander\specs\084-archiver-cleanup\probe\fixtures\7z\unicode.7z
+Type = 7z
+Physical Size = 309
+Headers Size = 266
+Method = LZMA2:12
+Solid = +
+Blocks = 1
+
+----------
+Path = sub dir
+Size = 0
+Packed Size = 0
+Modified = 2026-10-01 09:27:39.3945619
+Attributes = D
+CRC = 
+Encrypted = -
+Method = 
+Block = 
+
+Path = empty.txt
+Size = 0
+Packed Size = 0
+Modified = 2026-10-01 09:27:39.3970710
+Attributes = A
+CRC = 
+Encrypted = -
+Method = 
+Block = 
+
+Path = Příliš žluťoučký kůň.txt
+Size = 7
+Packed Size = 43
+Modified = 2026-10-01 09:27:39.3960661
+Attributes = A
+CRC = 29C83326
+Encrypted = -
+Method = LZMA2:12
+Block = 0
+
+Path = sub dir\inner file.txt
+Size = 350
+Packed Size = 
+Modified = 2026-10-01 09:27:39.3970710
+Attributes = A
+CRC = 6AFF6CD9
+Encrypted = -
+Method = LZMA2:12
+Block = 0
+
+Path = 中文.txt
+Size = 9
+Packed Size = 
+Modified = 2026-10-01 09:27:39.3960661
+Attributes = A
+CRC = 1DF79EA9
+Encrypted = -
+Method = LZMA2:12
+Block = 0
+
+Path = 😀.txt
+Size = 7
+Packed Size = 
+Modified = 2026-10-01 09:27:39.3970710
+Attributes = A
+CRC = 62B10923
+Encrypted = -
+Method = LZMA2:12
+Block = 0
+

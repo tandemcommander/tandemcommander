@@ -1,0 +1,68 @@
+
+7-Zip 22.01 (x64) : Copyright (c) 1999-2022 Igor Pavlov : 2022-07-15
+
+Scanning the drive for archives:
+1 file, 422 bytes (1 KiB)
+
+Listing archive: D:\Projects\tandemcommander\specs\084-archiver-cleanup\probe\fixtures\lzh\test_read_format_lha_lh6.lzh
+
+--
+Path = D:\Projects\tandemcommander\specs\084-archiver-cleanup\probe\fixtures\lzh\test_read_format_lha_lh6.lzh
+Type = Lzh
+Physical Size = 422
+
+----------
+Path = dir
+Folder = +
+Size = 0
+Packed Size = 0
+Modified = 1970-01-02 02:00:01
+CRC = 00000000
+Method = -lhd-
+Host OS = UNIX
+
+Path = dir2
+Folder = +
+Size = 0
+Packed Size = 0
+Modified = 1970-01-02 02:00:01
+CRC = 00000000
+Method = -lhd-
+Host OS = UNIX
+
+Path = dir2\symlink1|..\file1
+Folder = +
+Size = 0
+Packed Size = 0
+Modified = 1970-01-03 02:00:02
+CRC = 00000000
+Method = -lhd-
+Host OS = UNIX
+
+Path = dir2\symlink2|..\file2
+Folder = +
+Size = 0
+Packed Size = 0
+Modified = 1970-01-03 02:00:02
+CRC = 00000000
+Method = -lhd-
+Host OS = UNIX
+
+Path = file1
+Folder = -
+Size = 60
+Packed Size = 35
+Modified = 1970-01-02 02:00:01
+CRC = 0000E7A4
+Method = -lh6-
+Host OS = UNIX
+
+Path = file2
+Folder = -
+Size = 78
+Packed Size = 35
+Modified = 1970-01-02 02:00:01
+CRC = 000015D5
+Method = -lh6-
+Host OS = UNIX
+

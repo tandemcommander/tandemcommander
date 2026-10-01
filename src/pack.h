@@ -13,26 +13,15 @@
 #define DOS_MAX_PATH 80
 // maximum possible command line length
 #define PACK_CMDLINE_MAXLEN (MAX_PATH * 4)
-// at what value do custom errors of salspawn.exe start
-#define SPAWN_ERR_BASE 10000
-// program for running 16-bit archivers (the -c parameter must match SPAWN_ERR_BASE)
-extern const char* SPAWN_EXE_PARAMS;
-// name of the salspawn program
-extern const char* SPAWN_EXE_NAME;
 
-// indexes of individual packers in the ArchiverConfig array
-#define PACKJAR32INDEX 0
-#define PACKJAR16INDEX 5
-#define PACKRAR32INDEX 1
-#define PACKRAR16INDEX 6
-#define PACKARJ32INDEX 9
-#define PACKARJ16INDEX 2
-#define PACKLHA16INDEX 3
-#define PACKUC216INDEX 4
-#define PACKACE32INDEX 10
-#define PACKACE16INDEX 11
-#define PACKZIP32INDEX 7
-#define PACKZIP16INDEX 8
+// indexes of individual packers in the ArchiverConfig array; the same index
+// selects the row of PackBrowseTable, PackModifyTable and PackACExtensions and
+// is stored in the "Archive Association" records (feature 084: the twelve
+// archivers of 0.1.8 were reduced to these two - RAR keeps its old index 1 so
+// stored "rar;r##" associations stay valid, index 0 was JAR 1.02 Win32)
+#define PACK7ZIPINDEX 0
+#define PACKRARINDEX 1
+#define PACK_ARCHIVERS_COUNT 2
 
 // ****************************************************************************
 // Types
@@ -45,16 +34,6 @@ enum EPackExeType
     EXE_32BIT,
     EXE_16BIT,
     EXE_END
-};
-
-// structure for holding the path to the packer
-struct SPackLocation
-{
-    const char* Variable;
-    const char* Executable;
-    EPackExeType Type;
-    const char* Value;
-    BOOL Valid;
 };
 
 // Class storing information about found programs
@@ -225,6 +204,9 @@ public:
     void AddToCustom(int foundIndex, int packerIndex, CPackACPacker* foundPacker);
     void RemoveFromCustom(int foundIndex, int packerIndex);
     BOOL MyGetBinaryType(LPCSTR filename, LPDWORD lpBinaryType);
+    // feature 084: the registry entries and Program Files folders of 7-Zip and WinRAR
+    BOOL ProbeKnownLocations();
+    BOOL ConsiderKnownFile(const char* fullName);
 
 protected:
     CArchiverConfig* ArchiverConfig;
@@ -301,30 +283,26 @@ struct SPackFormat
                                 // an index into the external packers table (modifying part)
 };
 
-// modified indirect array that calls delete[]
-template <class DATA_TYPE>
-class TPackIndirectArray : public TIndirectArray<DATA_TYPE>
+// function parsing an archive listing; it gets the complete captured output of
+// the listing command (feature 084: the column parser for the 1990s archivers
+// is gone, every listing has its own parser)
+typedef BOOL (*FPackList)(const char* archiveFileName, const char* output, size_t outputLen,
+                          CSalamanderDirectory& dir);
+
+// encoding of the list-of-files file handed to an archiver (feature 084, R7a)
+enum EPackListEncoding
 {
-public:
-    TPackIndirectArray(int base, int delta, CDeleteType dt = dtDelete)
-        : TIndirectArray<DATA_TYPE>(base, delta, dt) {}
-
-    virtual ~TPackIndirectArray() { this->DestroyMembers(); }
-
-protected:
-    virtual void CallDestructor(void*& member)
-    {
-        if (this->DeleteType == dtDelete && (DATA_TYPE*)member != NULL)
-            delete[] ((DATA_TYPE*)member);
-    }
+    PACKLIST_OEM,    // console code page (the historical default)
+    PACKLIST_ANSI,   // ANSI code page ("Need list of files in ANSI charset")
+    PACKLIST_UNICODE // UTF-16LE with a BOM: the command uses $(ListUnicodeFullName)
 };
 
-// type for an array of lines read from the pipe
-typedef TPackIndirectArray<char> CPackLineArray;
+// the encoding a command line template needs
+EPackListEncoding PackGetListEncoding(const char* command, BOOL needANSIListFile);
 
-// general function for parsing an archive listing
-typedef BOOL (*FPackList)(const char* archiveFileName, CPackLineArray& lineArray,
-                          CSalamanderDirectory& dir);
+// writes "a" + "b" + "c" (UTF-8/WTF-8, any of them may be NULL) as one UTF-16LE
+// line with CRLF to a list file opened in binary mode; FALSE on error
+BOOL PackWriteListLineW(FILE* file, const char* a, const char* b, const char* c);
 
 // constants used for SPackModifyTable::DelEmptyDir
 #define PMT_EMPDIRS_DONOTDELETE 0        // no need to delete the empty directory separately
@@ -375,27 +353,12 @@ struct SPackBrowseTable
     BOOL SupportLongNames;       // TRUE if long file names are supported
 
     //
-    // items for listing archive contents
+    // items for listing archive contents (all NULL when the archiver cannot
+    // browse; feature 084: RAR is browsed by the 7zip plug-in, not by Rar.exe)
     //
     const char* ListInitDir; // directory where the listing command is executed
     const char* ListCommand; // command for listing archive contents
-    FPackList SpecialList;   // if it is not NULL, it is a function for parsing the listing
-                             // in that case, the following items may be meaningless
-    const char* StartString; // how the last header line begins
-    int LinesToSkip;         // number of lines to ignore after StartString
-    int AlwaysSkip;          // number of lines to always ignore after StartString (stop string not checked)
-    int LinesPerFile;        // number of data lines in the listing for one file
-    const char* StopString;  // how the first footer line begins
-    unsigned char Separator; // if the archiver uses a special separator, it is stored here (otherwise e.g. a space)
-    // indices of items in the listing; the number is the item's order on the line
-    // (the first is 1); zero means the item does not exist
-    short NameIdx;  // index of the name on the listing line
-    short SizeIdx;  // index of the file size on the listing line
-    short TimeIdx;  // index of the time on the listing line
-    short DateIdx;  // index of the date on the listing line
-    short AttrIdx;  // index of the attribute on the listing line
-    short DateYIdx; // index of the year in the date (first, second or third)
-    short DateMIdx; // index of the month in the date (first, second or third)
+    FPackList ListParser;    // parses the complete output of ListCommand
 
     //
     // items for decompression
@@ -416,18 +379,12 @@ struct SPackBrowseTable
 extern const SPackBrowseTable PackBrowseTable[];
 extern const SPackModifyTable PackModifyTable[];
 
-#define ARC_UID_JAR32 1
+// stored as "Packer UID" in "Predefined Packers"; a stored row with an unknown
+// UID is ignored on load. Retired in feature 084, never reuse: 1 JAR32,
+// 3 ARJ16, 4 LHA16, 5 UC216, 6 JAR16, 7 RAR16, 8 ZIP32, 9 ZIP16, 10 ARJ32,
+// 11 ACE32, 12 ACE16.
 #define ARC_UID_RAR32 2
-#define ARC_UID_ARJ16 3
-#define ARC_UID_LHA16 4
-#define ARC_UID_UC216 5
-#define ARC_UID_JAR16 6
-#define ARC_UID_RAR16 7
-#define ARC_UID_ZIP32 8
-#define ARC_UID_ZIP16 9
-#define ARC_UID_ARJ32 10
-#define ARC_UID_ACE32 11
-#define ARC_UID_ACE16 12
+#define ARC_UID_7ZIP 13
 
 // class for storing data
 class CArchiverConfigData
@@ -443,6 +400,7 @@ public:
     BOOL ExesAreSame;               // true if PackExeFile is used for both pack and unpack
     char* PackExeFile;              // path to the pack program
     char* UnpackExeFile;            // path to the unpack program or NULL
+    BOOL Available;                 // runtime only (feature 084): the program was found, see RefreshAvailability()
 
 public:
     CArchiverConfigData()
@@ -478,6 +436,7 @@ public:
         ExesAreSame = FALSE;
         PackExeFile = NULL;
         UnpackExeFile = NULL;
+        Available = FALSE;
     }
 
     BOOL IsValid()
@@ -529,6 +488,14 @@ public:
     const SPackModifyTable* GetPackerConfigTable(int index) { return &PackModifyTable[index]; }
     const SPackBrowseTable* GetUnpackerConfigTable(int index) { return &PackBrowseTable[index]; }
     BOOL ArchiverExesAreSame(int index) { return Archivers[index]->ExesAreSame; }
+
+    // feature 084 (FR-017): looks up the configured programs once (call after the
+    // configuration is loaded or changed); an archiver whose program is not found
+    // is hidden from the dialogs and its formats are ordinary files
+    void RefreshAvailability();
+    BOOL IsArchiverAvailable(int index);
+    // available and able to list an archive (RAR is browsed by the 7zip plug-in)
+    BOOL CanBrowse(int index);
     BOOL Save(int index, HKEY hKey);
     BOOL Load(HKEY hKey);
 };
@@ -666,7 +633,10 @@ public:
     void DeleteFormat(int index);
 
     int GetUnpackerIndex(int index) { return Formats[index]->UnpackerIndex; }
-    BOOL GetUsePacker(int index) { return Formats[index]->UsePacker; }
+    BOOL GetUsePacker(int index) { return Formats[index]->UsePacker; } // the stored setting
+    // feature 084: packing is possible right now - the stored setting and, for an
+    // external packer, its program was found (use this one outside the configuration)
+    BOOL CanPack(int index);
     int GetPackerIndex(int index) { return Formats[index]->PackerIndex; }
     const char* GetExt(int index) { return Formats[index]->Ext; }
     BOOL GetOldType(int index) { return Formats[index]->OldType; }
@@ -676,11 +646,71 @@ public:
 };
 
 // ****************************************************************************
+// Running an external archiver (feature 084, contract
+// specs/084-archiver-cleanup/contracts/archiver-launch.md)
+//
+// The archiver is the process that is created - no helper program. It runs in
+// a job object that kills it (and anything it started) when the job handle is
+// closed, so Cancel and the end of Tandem Commander both stop it.
+
+// result of one run
+enum EPackRunResult
+{
+    PACKRUN_EXITED,    // the archiver ran and ended; the exit code is valid
+    PACKRUN_CANCELLED, // the user pressed Cancel; the archiver was stopped
+    PACKRUN_FAILED     // it could not be started or waited for; already reported
+};
+
+// growable buffer for the captured stdout/stderr of a listing run
+class CPackOutput
+{
+public:
+    char* Data;
+    size_t Len;
+    size_t Cap;
+
+    CPackOutput()
+    {
+        Data = NULL;
+        Len = 0;
+        Cap = 0;
+    }
+    ~CPackOutput()
+    {
+        if (Data != NULL)
+            free(Data);
+    }
+    // FALSE when out of memory or the output exceeds PACK_OUTPUT_MAXLEN
+    BOOL Append(const char* data, size_t len);
+};
+
+// a listing larger than this is refused (no archive listing is anywhere near)
+#define PACK_OUTPUT_MAXLEN ((size_t)512 * 1024 * 1024)
+
+// Runs 'cmdLine' (UTF-8) in 'currentDir'. With 'output' != NULL it is a
+// listing run: hidden console, stdin = NUL, stdout+stderr captured into
+// 'output'; otherwise the archiver's console starts minimized and is restored
+// after PackWinTimeout so the user can answer a question. While it runs, the
+// main window is disabled and a wait window with a Cancel button is shown (for
+// a listing only when it takes longer than half a second).
+EPackRunResult PackRunArchiver(HWND parent, const char* cmdLine, const char* currentDir,
+                               CPackOutput* output, DWORD* exitCode);
+
+// reports a non-zero exit code through the error table (or as a plain number)
+// and returns the error handler's result
+BOOL PackReportExitCode(HWND parent, const char* cmdLine, DWORD exitCode,
+                        TPackErrorTable* const errorTable);
+
+// the program part of a command line (first token, quotes removed)
+void PackGetProgramName(const char* cmdLine, char* program, int programSize);
+
+// TRUE when the last PackExecute() returned FALSE because the user cancelled it
+// (the callers then show no error; packing reports the archive may be incomplete)
+extern BOOL PackLastRunCancelled;
+
+// ****************************************************************************
 // Variables
 //
-
-extern char SpawnExe[MAX_PATH * 2];
-extern BOOL SpawnExeInitialised;
 
 struct CExecuteItem;
 extern CExecuteItem ArgsCustomPackers[];
@@ -689,23 +719,14 @@ extern CExecuteItem CmdCustomPackers[];
 extern CPackerFormatConfig PackerFormatConfig;
 extern CArchiverConfig ArchiverConfig;
 
-extern const TPackErrorTable JARErrors;
 extern const TPackErrorTable RARErrors;
-extern const TPackErrorTable ARJErrors;
-extern const TPackErrorTable LHAErrors;
-extern const TPackErrorTable UC2Errors;
-extern const TPackErrorTable ZIP204Errors;
-extern const TPackErrorTable UNZIP204Errors;
-extern const TPackErrorTable ACEErrors;
+extern const TPackErrorTable SevenZipErrors;
 extern BOOL (*PackErrorHandlerPtr)(HWND parent, const WORD errNum, ...);
 extern const SPackFormat PackFormat[];
 
 // ****************************************************************************
 // Functions
 //
-
-// Initialization of the path to spawn.exe
-BOOL InitSpawnName(HWND parent);
 
 // setting error handling
 void PackSetErrorHandler(BOOL (*handler)(HWND parent, const WORD errNum, ...));
@@ -754,6 +775,10 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
 // automatic configuration of packers
 void PackAutoconfig(HWND parent);
 
+// feature 084: one-time migration of the archiver configuration to version 106
+// (removes what refers to the removed archivers; see packers.cpp)
+void PackMigrateArchiversTo106();
+
 // runs the external program cmdLine and interprets the return code according to errorTable
 BOOL PackExecute(HWND parent, char* cmdLine, const char* currentDir, TPackErrorTable* const errorTable);
 
@@ -773,6 +798,6 @@ BOOL PackExpandInitDir(const char* archiveName, const char* srcDir, const char* 
 // default error handling function - only does TRACE_E
 BOOL EmptyErrorHandler(HWND parent, const WORD err, ...);
 
-// function for parsing the output from the UC2 packer
-BOOL PackUC2List(const char* archiveFileName, CPackLineArray& lineArray,
-                 CSalamanderDirectory& dir);
+// parser of the 7-Zip technical listing (7z l -slt), see src/common/sal7zlist.h
+BOOL Pack7zList(const char* archiveFileName, const char* output, size_t outputLen,
+                CSalamanderDirectory& dir);

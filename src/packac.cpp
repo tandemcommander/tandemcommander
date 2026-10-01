@@ -14,6 +14,7 @@
 #include "pack.h"
 #include "fileswnd.h"
 #include "edtlbwnd.h"
+#include "salarcmig.h" // feature 084: SalArcMigListHasExt
 
 // item type in the packer extensions table
 struct SPackAssocItem
@@ -22,21 +23,13 @@ struct SPackAssocItem
     int nextIndex;   // index of another packer for the same archive, -1 if none exists
 };
 
-// table of packer extension associations
+// table of packer extension associations, indexed by the archiver index
 // first item is the string of masks, second is the index of the next packer of the same type
+// (feature 084: only the two supported archivers; the alternatives of the 1990s
+// archivers - a DOS and a Win32 build of the same program - are gone)
 SPackAssocItem PackACExtensions[] = {
-    {"j", 5},           // 0
-    {"rar;r##", 6},     // 1
-    {"arj;a##", 10},    // 2
-    {"lzh", -1},        // 3
-    {"uc2", -1},        // 4
-    {"j", 0},           // 5
-    {"rar;r##", 1},     // 6
-    {"zip;pk3;jar", 8}, // 7
-    {"zip;pk3;jar", 7}, // 8, 9
-    {"arj;a##", 2},     // 10
-    {"ace;c##", 12},    // 11
-    {"ace;c##", 11},    // 12
+    {"arj;lzh;lha", -1}, // PACK7ZIPINDEX - unpacking only
+    {"rar;r##", -1},     // PACKRARINDEX
 };
 
 //
@@ -99,7 +92,16 @@ CPackACDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         // theming pass; re-apply so it gets the dark status-bar subclass
         // (feature 049, defect A5; idempotent - the Find precedent)
         ThemeApplyToDialog(HWindow);
-        break;
+        // feature 084 (FR-009): the base class fills the list view (Transfer);
+        // then the usual installations are offered without any disk scan
+        INT_PTR ret = CCommonDialog::DialogProc(uMsg, wParam, lParam);
+        if (ProbeKnownLocations())
+        {
+            EnableWindow(GetDlgItem(HWindow, IDOK), TRUE);
+            PostMessage(GetDlgItem(HWindow, IDB_ACSTOP), BM_SETSTYLE, BS_PUSHBUTTON, TRUE);
+            PostMessage(HWindow, DM_SETDEFID, IDOK, NULL);
+        }
+        return ret;
     }
     case WM_COMMAND:
     {
@@ -619,6 +621,122 @@ BOOL CPackACDialog::MyGetBinaryType(LPCSTR filename, LPDWORD lpBinaryType)
     return ret;
 }
 
+// feature 084 (FR-009): offers one candidate path (UTF-8, full name of the exe)
+// to the list view if it exists and is a Windows program; TRUE when it was taken
+BOOL CPackACDialog::ConsiderKnownFile(const char* fullName)
+{
+    CALL_STACK_MESSAGE2("CPackACDialog::ConsiderKnownFile(%s)", fullName);
+    WIN32_FIND_DATAW findDataW;
+    HANDLE find = SalFindFirstFile(fullName, &findDataW); // registers with HANDLES itself
+    if (find == INVALID_HANDLE_VALUE)
+        return FALSE;
+    HANDLES(FindClose(find));
+    if (findDataW.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        return FALSE;
+    DWORD type;
+    if (!MyGetBinaryType(fullName, &type) || type != SCS_32BIT_BINARY) // PE32 and PE32+
+        return FALSE;
+    const char* name = strrchr(fullName, '\\');
+    if (name == NULL)
+        return FALSE;
+    char path[MAX_PATH];
+    lstrcpyn(path, fullName, (int)(name - fullName) + 2 > MAX_PATH ? MAX_PATH : (int)(name - fullName) + 2);
+    int before = ListView->GetCount();
+    ListView->ConsiderItem(path, name + 1, findDataW.ftLastWriteTime,
+                           CQuadWord(findDataW.nFileSizeLow, findDataW.nFileSizeHigh), EXE_32BIT);
+    return ListView->GetCount() > before;
+}
+
+// feature 084 (FR-009): the usual installations of 7-Zip and WinRAR are found
+// without a disk scan - from their registry entries and in the Program Files
+// folders; returns TRUE when anything was found
+BOOL CPackACDialog::ProbeKnownLocations()
+{
+    CALL_STACK_MESSAGE1("CPackACDialog::ProbeKnownLocations()");
+    BOOL found = FALSE;
+    char u8[MAX_PATH];
+
+    // registry: 7-Zip stores its folder (Path64/Path), WinRAR the full name of
+    // WinRAR.exe (exe64/exe32) - the console program Rar.exe lives next to it
+    struct CRegProbe
+    {
+        const WCHAR* Key;
+        const WCHAR* Value;
+        const WCHAR* Exe; // appended to the folder
+        BOOL ValueIsFile; // the value names a file: use its folder
+    };
+    static const CRegProbe probes[] = {
+        {L"SOFTWARE\\7-Zip", L"Path64", L"7z.exe", FALSE},
+        {L"SOFTWARE\\7-Zip", L"Path", L"7z.exe", FALSE},
+        {L"SOFTWARE\\WinRAR", L"exe64", L"Rar.exe", TRUE},
+        {L"SOFTWARE\\WinRAR", L"exe32", L"Rar.exe", TRUE},
+    };
+    static const HKEY roots[] = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER};
+    static const REGSAM views[] = {KEY_WOW64_64KEY, KEY_WOW64_32KEY};
+    for (int p = 0; p < _countof(probes); p++)
+    {
+        for (int r = 0; r < _countof(roots); r++)
+        {
+            for (int v = 0; v < _countof(views); v++)
+            {
+                HKEY key;
+                if (RegOpenKeyExW(roots[r], probes[p].Key, 0, KEY_QUERY_VALUE | views[v], &key) != ERROR_SUCCESS)
+                    continue;
+                WCHAR value[MAX_PATH + 1];
+                DWORD size = sizeof(value) - sizeof(WCHAR);
+                DWORD regType;
+                LONG res = RegQueryValueExW(key, probes[p].Value, NULL, &regType, (BYTE*)value, &size);
+                RegCloseKey(key);
+                if (res != ERROR_SUCCESS || (regType != REG_SZ && regType != REG_EXPAND_SZ))
+                    continue;
+                value[size / sizeof(WCHAR)] = 0;
+                WCHAR full[MAX_PATH];
+                lstrcpynW(full, value, MAX_PATH);
+                if (probes[p].ValueIsFile)
+                {
+                    WCHAR* slash = wcsrchr(full, L'\\');
+                    if (slash == NULL)
+                        continue;
+                    slash[1] = 0;
+                }
+                size_t len = wcslen(full);
+                if (len > 0 && full[len - 1] != L'\\' && len + 1 < MAX_PATH)
+                    wcscat(full, L"\\");
+                if (wcslen(full) + wcslen(probes[p].Exe) >= MAX_PATH)
+                    continue;
+                wcscat(full, probes[p].Exe);
+                if (SalWToU8(full, -1, u8, MAX_PATH) != 0 && ConsiderKnownFile(u8))
+                    found = TRUE;
+            }
+        }
+    }
+
+    // the default installation folders
+    static const KNOWNFOLDERID* folders[] = {&FOLDERID_ProgramFiles, &FOLDERID_ProgramFilesX86};
+    static const WCHAR* subPaths[] = {L"\\7-Zip\\7z.exe", L"\\WinRAR\\Rar.exe"};
+    for (int f = 0; f < _countof(folders); f++)
+    {
+        PWSTR folder = NULL;
+        if (SHGetKnownFolderPath(*folders[f], 0, NULL, &folder) == S_OK && folder != NULL)
+        {
+            for (int s = 0; s < _countof(subPaths); s++)
+            {
+                WCHAR full[MAX_PATH];
+                if (wcslen(folder) + wcslen(subPaths[s]) < MAX_PATH)
+                {
+                    wcscpy(full, folder);
+                    wcscat(full, subPaths[s]);
+                    if (SalWToU8(full, -1, u8, MAX_PATH) != 0 && ConsiderKnownFile(u8))
+                        found = TRUE;
+                }
+            }
+        }
+        if (folder != NULL)
+            CoTaskMemFree(folder);
+    }
+    return found;
+}
+
 // the actual (and recursive :-) ) function for disk searching
 BOOL CPackACDialog::DirectorySearch(char* path)
 {
@@ -815,21 +933,27 @@ void CPackACDialog::AddToExtensions(int foundIndex, int packerIndex, CPackACPack
     do
     {
         // look for who is using us
-        buffer[0] = '.';
-        int j = 1;
+        int j = 0;
         while (*ptr != ';' && *ptr != '\0')
         {
-            if (*ptr == '#')
-                buffer[j++] = '1';
-            else
+            if (j < (int)sizeof(buffer) - 1)
                 buffer[j++] = *ptr;
             ptr++;
         }
         if (*ptr == ';')
             ptr++;
         buffer[j] = '\0';
-        // we built the "archive name", now check whether we have it in extensions...
-        found = PackerFormatConfig.PackIsArchive(buffer);
+        // feature 084: find the record in the STORED extension lists - PackIsArchive()
+        // leaves out records whose external archiver is not found or cannot browse
+        // (RAR), and this function would then add such a record once more on every
+        // run (independent review of feature 084, finding 3)
+        found = 0;
+        int f;
+        for (f = 0; found == 0 && f < PackerFormatConfig.GetFormatsCount(); f++)
+        {
+            if (SalArcMigListHasExt(PackerFormatConfig.GetExt(f), buffer))
+                found = f + 1;
+        }
         if (found != 0)
         {
             int pos;
@@ -993,13 +1117,15 @@ void CPackACDialog::AddToCustom(int foundIndex, int packerIndex, CPackACPacker* 
         {
             const char* cmd = PackerConfig.GetPackerCmdExecCopy(i);
             const char* args = PackerConfig.GetPackerCmdArgsCopy(i);
-            if (!strcmp(cmd, variable) && !strcmp(args, CustomPackers[packerIndex].CopyArgs[0]))
+            if (CustomPackers[packerIndex].CopyArgs[0] == NULL) // feature 084: no default packer (7-Zip)
+                found1 = TRUE;
+            else if (!strcmp(cmd, variable) && !strcmp(args, CustomPackers[packerIndex].CopyArgs[0]))
                 found1 = TRUE;
             else if (CustomPackers[packerIndex].CopyArgs[1] != NULL && !strcmp(cmd, variable) && !strcmp(args, CustomPackers[packerIndex].CopyArgs[1]))
                 found2 = TRUE;
         }
     }
-    if (!found1 && foundPacker->GetPackerType() != Packer_Unpacker)
+    if (!found1 && foundPacker->GetPackerType() != Packer_Unpacker && CustomPackers[packerIndex].CopyArgs[0] != NULL)
     {
         TRACE_I("Adding custom packer " << LoadStr(CustomPackers[packerIndex].Title[0]));
         int idx = PackerConfig.AddPacker();
@@ -1020,9 +1146,9 @@ void CPackACDialog::AddToCustom(int foundIndex, int packerIndex, CPackACPacker* 
     // add custom unpackers for the newly found packer
     if (!ArchiverConfig->ArchiverExesAreSame(packerIndex))
         sprintf(variable, "$(%s)", ArchiverConfig->GetUnpackerVariable(packerIndex));
-    found1 = FALSE;
+    found1 = CustomUnpackers[packerIndex].Args == NULL; // feature 084: no default unpacker (RAR)
     // search custom packers to see if it is already present
-    for (i = 0; i < UnpackerConfig.GetUnpackersCount(); i++)
+    for (i = 0; !found1 && i < UnpackerConfig.GetUnpackersCount(); i++)
     {
         // consider only external ones
         if (UnpackerConfig.GetUnpackerType(i) >= 0)
@@ -1108,7 +1234,15 @@ void CPackACDialog::Transfer(CTransferInfo& ti)
         int i;
         for (i = 0; i < ArchiverConfig->GetArchiversCount(); i++)
         {
-            if (ArchiverConfig->ArchiverExesAreSame(i))
+            if (ArchiverConfig->ArchiverExesAreSame(i) && ArchiverConfig->GetPackerConfigTable(i)->CompressCommand == NULL)
+            {
+                // feature 084: 7-Zip is offered for unpacking only - it must never become
+                // the packer of an association
+                table->Add(new CPackACPacker(i, Packer_Unpacker, ArchiverConfig->GetPackerVariable(i),
+                                             ArchiverConfig->GetPackerExecutable(i),
+                                             ArchiverConfig->GetArchiverType(i)));
+            }
+            else if (ArchiverConfig->ArchiverExesAreSame(i))
             {
                 table->Add(new CPackACPacker(i, Packer_Standalone, ArchiverConfig->GetPackerVariable(i),
                                              ArchiverConfig->GetPackerExecutable(i),
@@ -1148,8 +1282,15 @@ void CPackACDialog::Transfer(CTransferInfo& ti)
             // if we didn't find it leave the original value
             if (fullName != NULL)
             {
-                // store the path in the configuration
-                if (packer->GetPackerType() == Packer_Unpacker)
+                // store the path in the configuration (feature 084: one program for both
+                // jobs - the 7-Zip entry is an "unpacker" here but PackExpExeName() and
+                // RefreshAvailability() read the packer path)
+                if (ArchiverConfig->ArchiverExesAreSame(index))
+                {
+                    ArchiverConfig->SetPackerExeFile(index, fullName);
+                    ArchiverConfig->SetUnpackerExeFile(index, fullName);
+                }
+                else if (packer->GetPackerType() == Packer_Unpacker)
                     ArchiverConfig->SetUnpackerExeFile(index, fullName);
                 else
                     ArchiverConfig->SetPackerExeFile(index, fullName);
@@ -1161,6 +1302,12 @@ void CPackACDialog::Transfer(CTransferInfo& ti)
                     RemoveFromCustom(i, index);
             }
         }
+        // feature 084: the associations of archivers whose program is not installed
+        // are hidden from PackIsArchive(), which AddToExtensions() uses to find the
+        // existing records - so make the programs just found visible first, or
+        // their records would be added a second time
+        ArchiverConfig->RefreshAvailability();
+        PackerFormatConfig.BuildArray();
         // go through all packers again, this time only adding new associations
         for (i = 0; i < ListView->GetPackersCount(); i++)
         {
@@ -1297,8 +1444,9 @@ int CPackACPacker::CheckAndInsert(const char* path, const char* fileName, FILETI
         for (i = 0; i < Found.Count; i++)
         {
             char* n2 = Found.At(i)->FullName;
-            // if we already have it, return
-            if (!strcmp(fullName, n2))
+            // if we already have it, return (feature 084: the registry and the disk
+            // scan may spell the same folder in a different case)
+            if (StrICmp(fullName, n2) == 0)
             {
                 free(fullName);
                 return 0;
@@ -2059,6 +2207,9 @@ void PackAutoconfig(HWND parent)
             HANDLES(GlobalFree((HGLOBAL)sysDrives));
             // open the search dialog
             CPackACDialog(HLanguage, IDD_AUTOCONF, IDD_AUTOCONF, parent, &ArchiverConfig, &drives).Execute();
+            // feature 084 (FR-017): offer what was found right away
+            ArchiverConfig.RefreshAvailability();
+            PackerFormatConfig.BuildArray();
         }
         HANDLES(GlobalFree((HGLOBAL)drives));
     }

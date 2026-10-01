@@ -18,6 +18,8 @@
 #include "saltabs.h"  // feature 078
 #include "salbugreport.h" // feature 079
 #include "salcloseapp.h"  // feature 080
+#include "sal7zlist.h"    // feature 084
+#include "salarcmig.h"    // feature 084
 
 #include <map>
 #include <set>
@@ -2343,6 +2345,278 @@ static void TestCloseApp080()
     }
 }
 
+//*****************************************************************************
+//
+// Feature 084: parser of the 7-Zip technical listing (src/common/sal7zlist.*),
+// contract specs/084-archiver-cleanup/contracts/7z-slt-listing.md P4.
+//
+
+struct C7zItemCopy
+{
+    std::string Path;
+    BOOL IsDir;
+    unsigned __int64 Size;
+    BOOL HasPackedSize;
+    unsigned __int64 PackedSize;
+    BOOL HasDate;
+    SYSTEMTIME Modified;
+    DWORD Attributes;
+    BOOL Encrypted;
+};
+
+static BOOL Collect7zItem(const CSal7zListItem* item, void* ctx)
+{
+    C7zItemCopy c;
+    c.Path.assign(item->Path, item->PathLen);
+    c.IsDir = item->IsDir;
+    c.Size = item->Size;
+    c.HasPackedSize = item->HasPackedSize;
+    c.PackedSize = item->PackedSize;
+    c.HasDate = item->HasDate;
+    c.Modified = item->Modified;
+    c.Attributes = item->Attributes;
+    c.Encrypted = item->Encrypted;
+    ((std::vector<C7zItemCopy>*)ctx)->push_back(c);
+    return TRUE;
+}
+
+static BOOL StopAfterFirst7zItem(const CSal7zListItem*, void* ctx)
+{
+    (*(int*)ctx)++;
+    return FALSE;
+}
+
+static int Parse7z(const std::string& text, std::vector<C7zItemCopy>& items, int* errorLine = NULL)
+{
+    items.clear();
+    return SalParse7zTechList(text.data(), text.size(), Collect7zItem, &items, errorLine);
+}
+
+// probe/fixtures/slt/unicode_7z.txt as captured from 7-Zip 22.01 x64 (CRLF) with
+// -ba (the bare listing: item blocks only); names: Czech, Chinese, emoji (UTF-8 bytes)
+#define U8_7Z_CZECH "P\xC5\x99\xC3\xADli\xC5\xA1 \xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD k\xC5\xAF\xC5\x88.txt"
+#define U8_7Z_CHINESE "\xE4\xB8\xAD\xE6\x96\x87.txt"
+#define U8_7Z_EMOJI "\xF0\x9F\x98\x80.txt"
+static const char* const Capture7z084 =
+    "Path = sub dir\r\nSize = 0\r\nPacked Size = 0\r\nModified = 2026-10-01 09:27:39.3945619\r\n"
+    "Attributes = D\r\nCRC = \r\nEncrypted = -\r\nMethod = \r\nBlock = \r\n\r\n"
+    "Path = empty.txt\r\nSize = 0\r\nPacked Size = 0\r\nModified = 2026-10-01 09:27:39.3970710\r\n"
+    "Attributes = A\r\nCRC = \r\nEncrypted = -\r\nMethod = \r\nBlock = \r\n\r\n"
+    "Path = " U8_7Z_CZECH "\r\nSize = 7\r\nPacked Size = 43\r\nModified = 2026-10-01 09:27:39.3960661\r\n"
+    "Attributes = A\r\nCRC = 29C83326\r\nEncrypted = -\r\nMethod = LZMA2:12\r\nBlock = 0\r\n\r\n"
+    "Path = sub dir\\inner file.txt\r\nSize = 350\r\nPacked Size = \r\nModified = 2026-10-01 09:27:39.3970710\r\n"
+    "Attributes = A\r\nCRC = 6AFF6CD9\r\nEncrypted = -\r\nMethod = LZMA2:12\r\nBlock = 0\r\n\r\n"
+    "Path = " U8_7Z_CHINESE "\r\nSize = 9\r\nPacked Size = \r\nModified = 2026-10-01 09:27:39.3960661\r\n"
+    "Attributes = A\r\nCRC = 1DF79EA9\r\nEncrypted = -\r\nMethod = LZMA2:12\r\nBlock = 0\r\n\r\n"
+    "Path = " U8_7Z_EMOJI "\r\nSize = 7\r\nPacked Size = \r\nModified = 2026-10-01 09:27:39.3970710\r\n"
+    "Attributes = A\r\nCRC = 62B10923\r\nEncrypted = -\r\nMethod = LZMA2:12\r\nBlock = 0\r\n\r\n";
+
+static void Check7zCapture084(const std::vector<C7zItemCopy>& it)
+{
+    CHECK(it.size() == 6);
+    if (it.size() != 6)
+        return;
+    CHECK(it[0].Path == "sub dir" && it[0].IsDir && it[0].Size == 0);
+    CHECK(it[0].HasDate && it[0].Modified.wYear == 2026 && it[0].Modified.wMonth == 10 &&
+          it[0].Modified.wDay == 1 && it[0].Modified.wHour == 9 && it[0].Modified.wMinute == 27 &&
+          it[0].Modified.wSecond == 39 && it[0].Modified.wMilliseconds == 0);
+    CHECK(it[1].Path == "empty.txt" && !it[1].IsDir && it[1].Size == 0 && it[1].HasPackedSize &&
+          it[1].PackedSize == 0 && it[1].Attributes == FILE_ATTRIBUTE_ARCHIVE && !it[1].Encrypted);
+    CHECK(it[2].Path == U8_7Z_CZECH && it[2].Size == 7 && it[2].HasPackedSize && it[2].PackedSize == 43);
+    // a member of a solid block: "Packed Size =" is empty, which is not an error
+    CHECK(it[3].Path == "sub dir\\inner file.txt" && it[3].Size == 350 && !it[3].HasPackedSize);
+    CHECK(it[4].Path == U8_7Z_CHINESE && it[4].Size == 9 && !it[4].IsDir);
+    CHECK(it[5].Path == U8_7Z_EMOJI && it[5].Size == 7);
+}
+
+static void TestSevenZipList084()
+{
+    std::vector<C7zItemCopy> it;
+    int errorLine = -1;
+
+    // --- P4: the real bare capture (CRLF)
+    CHECK(Parse7z(Capture7z084, it, &errorLine) == SAL7Z_OK && errorLine == 0);
+    Check7zCapture084(it);
+
+    // --- the same output with LF line ends
+    std::string lf = Capture7z084;
+    for (size_t p; (p = lf.find('\r')) != std::string::npos;)
+        lf.erase(p, 1);
+    CHECK(Parse7z(lf, it) == SAL7Z_OK);
+    Check7zCapture084(it);
+
+    // --- no trailing blank line after the last item, and two blocks with no
+    // blank line between them ("Path =" starts the next one)
+    CHECK(Parse7z("Path = a.txt\nSize = 1\nPath = b.txt\nSize = 2", it) == SAL7Z_OK &&
+          it.size() == 2 && it[0].Path == "a.txt" && it[0].Size == 1 && it[1].Path == "b.txt" &&
+          it[1].Size == 2);
+
+    // --- an empty archive: the bare listing is empty
+    CHECK(Parse7z("", it) == SAL7Z_OK && it.empty());
+    CHECK(Parse7z("\r\n", it) == SAL7Z_OK && it.empty());
+
+    // --- review finding 2: output that is not the bare listing is refused - its
+    // archive-properties part can carry a multi-line archive comment that imitates
+    // the separator and the item blocks (the injection the review demonstrated
+    // with a crafted ARJ; probe/fixtures review capture)
+    std::string injected = "--\r\nPath = cmt.arj\r\nType = Arj\r\nComment = \r\n{\r\nWelcome BBS\r\n"
+                           "----------\r\n\r\nPath = fake_entry.txt\r\nSize = 999\r\n\r\n}\r\n\r\n"
+                           "----------\r\nPath = real.txt\r\nSize = 5\r\n\r\n";
+    CHECK(Parse7z(injected, it, &errorLine) == SAL7Z_NOT_BARE && it.empty() && errorLine == 7);
+    CHECK(Parse7z("-----------\nPath = a\n", it) == SAL7Z_OK && it.size() == 1); // 11 dashes: an ignored line
+    // an item comment is flattened by 7-Zip onto one line: no phantom item
+    CHECK(Parse7z("Path = real.txt\r\nSize = 5\r\nComment = c1\r_\r_Path = phantom.txt\r_Size = 123\r\n\r\n", it) ==
+              SAL7Z_OK &&
+          it.size() == 1 && it[0].Path == "real.txt" && it[0].Size == 5);
+
+    // --- P3 rejections: nothing is delivered as a partial listing
+    CHECK(Parse7z("Size = 5\nAttributes = A\n\n", it, &errorLine) == SAL7Z_NO_PATH && errorLine == 1);
+    CHECK(Parse7z("Path = ok.txt\n\nPath = a\\..\\b.txt\n", it, &errorLine) == SAL7Z_UNSAFE_PATH &&
+          errorLine == 3);
+    CHECK(Parse7z("Path = \\abs.txt\n", it) == SAL7Z_UNSAFE_PATH);
+    CHECK(Parse7z("Path = /abs.txt\n", it) == SAL7Z_UNSAFE_PATH);
+    CHECK(Parse7z("Path = C:\\abs.txt\n", it) == SAL7Z_UNSAFE_PATH);
+    CHECK(Parse7z("Path = ../up.txt\n", it) == SAL7Z_UNSAFE_PATH);
+    CHECK(Parse7z("Path = \nSize = 1\n", it) == SAL7Z_UNSAFE_PATH);
+    CHECK(Parse7z("Path = a.txt\nSize = 12a\n", it) == SAL7Z_BAD_SIZE);
+    CHECK(Parse7z("Path = a.txt\nSize = 99999999999999999999999\n", it) == SAL7Z_BAD_SIZE);
+
+    // --- a malformed date is not an error: the item has no date
+    CHECK(Parse7z("Path = a.txt\nModified = 2026-13-01 00:00:00\n", it) == SAL7Z_OK &&
+          it.size() == 1 && !it[0].HasDate);
+    CHECK(Parse7z("Path = a.txt\nModified = garbage\n", it) == SAL7Z_OK &&
+          it.size() == 1 && !it[0].HasDate);
+    CHECK(Parse7z("Path = a.txt\nModified = 2026-02-03 04:05:06\n", it) == SAL7Z_OK &&
+          it.size() == 1 && it[0].HasDate && it[0].Modified.wSecond == 6);
+
+    // --- attributes: letters before the first space; unix part ignored
+    CHECK(Parse7z("Path = a\nAttributes = A -rw-r--r--\n", it) == SAL7Z_OK &&
+          it.size() == 1 && it[0].Attributes == FILE_ATTRIBUTE_ARCHIVE && !it[0].IsDir);
+    CHECK(Parse7z("Path = a\nAttributes = RHSA\n", it) == SAL7Z_OK && it.size() == 1 &&
+          it[0].Attributes == (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM |
+                               FILE_ATTRIBUTE_ARCHIVE));
+    CHECK(Parse7z("Path = d\nFolder = +\n", it) == SAL7Z_OK && it.size() == 1 && it[0].IsDir);
+    CHECK(Parse7z("Path = e.txt\nEncrypted = +\n", it) == SAL7Z_OK && it.size() == 1 &&
+          it[0].Encrypted);
+
+    // --- a key whose value contains " = " keeps it in the value
+    CHECK(Parse7z("Path = a = b.txt\n", it) == SAL7Z_OK && it.size() == 1 &&
+          it[0].Path == "a = b.txt");
+
+    // --- the callback can stop the walk
+    int seen = 0;
+    std::string two = "Path = a\n\nPath = b\n";
+    CHECK(SalParse7zTechList(two.data(), two.size(), StopAfterFirst7zItem, &seen, NULL) == SAL7Z_STOPPED &&
+          seen == 1);
+
+    // --- SalIs7zPathSafe
+    CHECK(SalIs7zPathSafe("a..b", 4));
+    CHECK(SalIs7zPathSafe("..a\\b..", 7));
+    CHECK(SalIs7zPathSafe("dir\\file.txt", 12));
+    CHECK(!SalIs7zPathSafe("dir/../x", 8));
+    CHECK(!SalIs7zPathSafe("..", 2));
+    CHECK(!SalIs7zPathSafe("x:", 2));
+    CHECK(!SalIs7zPathSafe("", 0));
+    CHECK(!SalIs7zPathSafe(NULL, 3));
+}
+
+//*****************************************************************************
+//
+// Feature 084: archiver configuration migration to version 106 - the pure
+// decisions (src/common/salarcmig.*), contract
+// specs/084-archiver-cleanup/contracts/config-migration-106.md M1-M3.
+//
+
+static void TestArchiverMigration084()
+{
+    // --- M1: every removed variable, any letter case, in any field
+    const char* removed[] = {"$(Jar32bitExecutable)", "$(Jar16bitExecutable)", "$(Rar16bitExecutable)",
+                             "$(Arj32bitExecutable)", "$(Arj16bitExecutable)", "$(Ace32bitExecutable)",
+                             "$(Ace16bitExecutable)", "$(Lha16bitExecutable)", "$(UC216bitExecutable)",
+                             "$(Zip32bitExecutable)", "$(Zip16bitExecutable)", "$(Unzip16bitExecutable)"};
+    for (int i = 0; i < _countof(removed); i++)
+        CHECK(SalArcMigUsesRemovedVariable(removed[i]));
+    CHECK(SalArcMigUsesRemovedVariable("$(ARJ32BITEXECUTABLE)"));
+    CHECK(SalArcMigUsesRemovedVariable("x \"$(ArchiveFullName)\" & $(arj16bitexecutable) e"));
+    CHECK(!SalArcMigUsesRemovedVariable("$(Rar32bitExecutable)"));
+    CHECK(!SalArcMigUsesRemovedVariable("$(SevenZipExecutable)"));
+    CHECK(!SalArcMigUsesRemovedVariable("C:\\Tools\\arj32.exe"));                        // own path: kept
+    CHECK(!SalArcMigUsesRemovedVariable("a $(ArchiveDOSFullName) !$(ListDOSFullName)")); // DOS variables still expand
+    CHECK(!SalArcMigUsesRemovedVariable("$(Arj32bitExecutableX)"));
+    CHECK(!SalArcMigUsesRemovedVariable("$(Arj32bitExecutable"));
+    CHECK(!SalArcMigUsesRemovedVariable(""));
+    CHECK(!SalArcMigUsesRemovedVariable(NULL));
+
+    // --- M1: the floppy-volume presets, exact strings only
+    CHECK(SalArcMigIsFloppyArgs("a -scol -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\""));
+    CHECK(SalArcMigIsFloppyArgs("m -scol -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\""));
+    CHECK(SalArcMigIsFloppyArgs("a -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\""));
+    CHECK(!SalArcMigIsFloppyArgs("a -scol -v1440  \"$(ArchiveFullName)\" @\"$(ListFullName)\"")); // one more space
+    CHECK(!SalArcMigIsFloppyArgs("a -v700m \"$(ArchiveFullName)\" @\"$(ListFullName)\""));        // user's own volumes
+    CHECK(!SalArcMigIsFloppyArgs(NULL));
+
+    // --- M1: packers
+    const char* rar = "$(Rar32bitExecutable)";
+    CHECK(SalArcMigPacker(FALSE, NULL, NULL, NULL, NULL) == sameKeep); // plug-in
+    CHECK(SalArcMigPacker(TRUE, "$(Arj32bitExecutable)", "a -pa \"$(ArchiveFullName)\" !\"$(ListFullName)\"",
+                          "$(Arj32bitExecutable)", "m -pa \"$(ArchiveFullName)\" !\"$(ListFullName)\"") == sameDelete);
+    // an EDITED default of a removed archiver goes too (clarification Q4)
+    CHECK(SalArcMigPacker(TRUE, "$(Arj32bitExecutable)", "a -m4 \"$(ArchiveFullName)\" !\"$(ListFullName)\"",
+                          "$(Arj32bitExecutable)", "m -m4 \"$(ArchiveFullName)\" !\"$(ListFullName)\"") == sameDelete);
+    // the move command alone referring to a removed archiver is enough
+    CHECK(SalArcMigPacker(TRUE, "C:\\Tools\\my.exe", "a", "$(Ace32bitExecutable)", "m") == sameDelete);
+    CHECK(SalArcMigPacker(TRUE, rar, "a -scol -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\"",
+                          rar, "m -scol -v1440 \"$(ArchiveFullName)\" @\"$(ListFullName)\"") == sameDelete);
+    CHECK(SalArcMigPacker(TRUE, rar, "a -scol \"$(ArchiveFullName)\" @\"$(ListFullName)\"",
+                          rar, "m -scol \"$(ArchiveFullName)\" @\"$(ListFullName)\"") == sameRarDefault);
+    CHECK(SalArcMigPacker(TRUE, "$(rar32bitexecutable)", "a \"$(ArchiveFullName)\" @\"$(ListFullName)\"",
+                          "$(RAR32BITEXECUTABLE)", "m \"$(ArchiveFullName)\" @\"$(ListFullName)\"") == sameRarDefault);
+    // the user's own RAR arguments: kept byte for byte
+    CHECK(SalArcMigPacker(TRUE, rar, "a -m5 \"$(ArchiveFullName)\" @\"$(ListFullName)\"",
+                          rar, "m -m5 \"$(ArchiveFullName)\" @\"$(ListFullName)\"") == sameKeep);
+    // own path with the DOS variables: kept
+    CHECK(SalArcMigPacker(TRUE, "C:\\Tools\\myarc.exe", "a $(ArchiveDOSFullName) @$(ListDOSFullName)",
+                          "C:\\Tools\\myarc.exe", "m $(ArchiveDOSFullName) @$(ListDOSFullName)") == sameKeep);
+
+    // --- M1: unpackers
+    CHECK(SalArcMigUnpacker(FALSE, NULL, NULL) == sameKeep);
+    CHECK(SalArcMigUnpacker(TRUE, "$(Lha16bitExecutable)", "x -a -l1 -c $(ArchiveDOSFullName) @$(ListDOSFullName)") == sameDelete);
+    CHECK(SalArcMigUnpacker(TRUE, rar, "x -scol \"$(ArchiveFullName)\" @\"$(ListFullName)\"") == sameDelete);
+    CHECK(SalArcMigUnpacker(TRUE, rar, "x -o+ \"$(ArchiveFullName)\" @\"$(ListFullName)\"") == sameKeep);
+    CHECK(SalArcMigUnpacker(TRUE, "$(SevenZipExecutable)", "x \"$(ArchiveFullName)\"") == sameKeep);
+    CHECK(SalArcMigUnpacker(TRUE, "C:\\x\\unace.exe", "x \"$(ArchiveFullName)\"") == sameKeep);
+
+    // --- M2: associations
+    int u, p;
+    BOOL use;
+    CHECK(SalArcMigAssociation(-1, -1, TRUE, &u, &p, &use) && u == -1 && p == -1 && use); // plug-in both
+    CHECK(SalArcMigAssociation(1, 1, TRUE, &u, &p, &use) && u == 1 && p == 1 && use);     // rar;r##
+    CHECK(!SalArcMigAssociation(0, 0, TRUE, &u, &p, &use));                               // j (JAR32)
+    for (int old = 2; old <= 11; old++)
+        CHECK(!SalArcMigAssociation(old, old, TRUE, &u, &p, &use));                       // arj, lzh, uc2, ace, ...
+    CHECK(SalArcMigAssociation(-3, 7, TRUE, &u, &p, &use) && u == -3 && !use);            // plug-in + PKZIP25
+    CHECK(SalArcMigAssociation(-3, 1, TRUE, &u, &p, &use) && u == -3 && p == 1 && use);   // plug-in + RAR
+    CHECK(SalArcMigAssociation(1, 0, FALSE, &u, &p, &use) && u == 1 && !use);             // packing already off
+    CHECK(SalArcMigAssociation(-2, -2, FALSE, &u, &p, &use) && u == -2 && !use);
+
+    // --- M3: extension lists
+    CHECK(SalArcMigListHasExt("arj;a##", "arj"));
+    CHECK(SalArcMigListHasExt("ZIP;PK3;JAR", "jar"));
+    CHECK(SalArcMigListHasExt("lzh;lha", "lha"));
+    CHECK(!SalArcMigListHasExt("tlzh;lzhx", "lzh"));
+    CHECK(!SalArcMigListHasExt("a##", "a01"));
+    CHECK(!SalArcMigListHasExt("", "arj"));
+    CHECK(!SalArcMigListHasExt("arj", ""));
+
+    // --- idempotence: a migrated entry/record is left as it is on a second run
+    CHECK(SalArcMigPacker(TRUE, rar, "a -scul -idq -y \"$(ArchiveFullName)\" @\"$(ListUnicodeFullName)\"",
+                          rar, "m -scul -idq -y \"$(ArchiveFullName)\" @\"$(ListUnicodeFullName)\"") == sameKeep);
+    CHECK(SalArcMigUnpacker(TRUE, "$(SevenZipExecutable)",
+                            "x -y -sccUTF-8 -scsUTF-16LE \"$(ArchiveFullName)\" -o\"$(TargetPath)\" @\"$(ListUnicodeFullName)\"") == sameKeep);
+    CHECK(SalArcMigAssociation(0, -1, FALSE, &u, &p, &use) == FALSE); // NB: index 0 after 084 is 7-Zip -
+    // the migration runs only for configurations older than 106, whose index 0 is JAR (contract M0)
+}
+
 int main()
 {
     TestConversions();
@@ -2368,6 +2642,8 @@ int main()
     TestPanelTabs078();
     TestBugReport079();
     TestCloseApp080();
+    TestSevenZipList084();
+    TestArchiverMigration084();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

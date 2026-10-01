@@ -9,7 +9,7 @@
 
 <body>
 <div id="help_page">
-<div class="header">Open Salamander: Dialog Boxes: Configuration</div>
+<div class="header">Tandem Commander: Dialog Boxes: Configuration</div>
 <div class="page">
 <h1>Packers in Pack Dialog Box</h1>
 
@@ -30,8 +30,9 @@ plugin.</dd>
 
 <dt><i>Pack to archive</i></dt>
 <dd>When external program is used for packing, Command specifies file name
-of used external archiver. Using of variable from External Archivers Locations
-is recommended when packer is known in Open Salamander. Arguments are
+of used external archiver. For a supported external archiver (WinRAR), use its
+variable from <a href="configuration_locat.htm">External Archivers Locations</a>; for
+any other archiver, enter the full path of its program. Arguments are
 parameters passed to the external program.</dd>
 
 <dt><i>Pack to archive and then delete from disk</i></dt>
@@ -42,17 +43,62 @@ the external program.</dd>
 
 <dt><i>Support long names</i></dt>
 <dd>Check this check box when external archiver supports long file names. Otherwise
-clear this check box and Open Salamander prepares MS-DOS 8.3 file names.</dd>
+clear this check box and Tandem Commander passes short (8.3) file names to the
+archiver. It has no effect on a list of files passed as
+<code>$(ListUnicodeFullName)</code>.</dd>
 
 <dt><i>Need List of Files in ANSI Charset</i></dt>
 <dd>Check this check box if external program used for packing and deleting files
-requires list of files in ANSI charset (some Win32 archivers). Clear this box if
-it requires list of files in OEM charset.</dd>
+requires list of files in ANSI charset. Clear this box if
+it requires list of files in OEM (console) charset. It has no effect on a list of
+files passed as <code>$(ListUnicodeFullName)</code>, which is always written in
+Unicode.</dd>
 
 </dl>
 
+<h4>Variables</h4>
+<p>The menu next to the <i>Command</i> box offers <code>$(SevenZipExecutable)</code> and
+<code>$(Rar32bitExecutable)</code>, the program locations set in
+<a href="configuration_locat.htm">External Archivers Locations</a>, and a command to
+browse for a program. The menu next to the <i>Arguments</i> box offers:</p>
+
+<table>
+
+<tr>
+<th>Variable</th><th>Description</th>
+</tr>
+<tr>
+ <td>$(ArchiveFullName)</td>
+ <td>Full name of the archive.</td>
+</tr>
+<tr>
+ <td>$(ArchiveFileName)</td>
+ <td>Name of the archive.</td>
+</tr>
+<tr>
+ <td>$(ArchivePath)</td>
+ <td>Path to the archive.</td>
+</tr>
+<tr>
+ <td>$(ListFullName)</td>
+ <td>Full name of the list of files, written in the OEM or ANSI code page (see
+ <i>Need List of Files in ANSI Charset</i>).</td>
+</tr>
+<tr>
+ <td>$(ListUnicodeFullName)</td>
+ <td>Full name of the list of files, written in Unicode (UTF-16). Use it for archivers
+ that read such a list; names that the code page cannot represent are then passed
+ unchanged.</td>
+</tr>
+</table>
+
+<p>The short-name (8.3) variables <code>$(ArchiveDOSFullName)</code>,
+<code>$(ArchiveDOSFileName)</code> and <code>$(ListDOSFullName)</code> are no
+longer offered in the menu, but commands that already use them, or
+<code>$(TargetDOSPath)</code>, keep working.</p>
+
 </div>
-<div class="footer">&#169; 2023 Open Salamander Authors</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
 </div>
 </body>
 </html>

@@ -9,7 +9,7 @@
 
 <body>
 <div id="help_page">
-<div class="header">Open Salamander: Dialog Boxes</div>
+<div class="header">Tandem Commander: Dialog Boxes</div>
 <div class="page">
 <h1>Unpack</h1>
 
@@ -22,8 +22,13 @@
 not exist, it will be created).</dd>
 
 <dt><i>Unpacker</i></dt>
-<dd>Specify unpacker which will be used. For external unpackers, you can choose
-the version you prefer to use. You can configure unpackers in
+<dd>Specify unpacker which will be used. The list contains the unpackers provided by
+plugins and the external unpackers. An external unpacker is listed only while its
+program is found: for example <i>7-Zip</i>, which unpacks ARJ and LZH (LHA) archives
+with the 7-Zip console program (7z.exe), appears once 7z.exe has been found by
+<a href="customize_arccfg.htm">Archivers Autoconfiguration</a> or its location has been
+set in <a href="configuration_locat.htm">External Archivers Locations</a>. Unpackers you
+have added yourself are always listed. You can configure unpackers in
 <a href="configuration_unpck.htm">Configuration/Archives/Unpackers in Unpack Dialog</a>.
 </dd>
 
@@ -36,13 +41,18 @@ If it is multi-volume archive, all its volumes will be deleted.</dd>
 *.*, it means that all files will be extracted. </dd>
 </dl>
 
+<h4>Remarks</h4>
+<p>While an external unpacker runs, a small window with a <i>Cancel</i> button is shown.
+<i>Cancel</i> stops the unpacker.</p>
+
 <h4>See Also</h4>
 <p>
-<a href="basicwork_unpack.htm">Unpacking Archive File</a>
+<a href="basicwork_unpack.htm">Unpacking Archive File</a><br />
+<a href="configuration_locat.htm">External Archivers Locations</a>
 </p>
 
 </div>
-<div class="footer">&#169; 2023 Open Salamander Authors</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
 </div>
 </body>
 </html>

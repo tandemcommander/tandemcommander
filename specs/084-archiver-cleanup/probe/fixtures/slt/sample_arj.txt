@@ -1,0 +1,73 @@
+
+7-Zip 22.01 (x64) : Copyright (c) 1999-2022 Igor Pavlov : 2022-07-15
+
+Scanning the drive for archives:
+1 file, 386 bytes (1 KiB)
+
+Listing archive: D:\Projects\tandemcommander\specs\084-archiver-cleanup\probe\fixtures\arj\sample.arj
+
+--
+Path = D:\Projects\tandemcommander\specs\084-archiver-cleanup\probe\fixtures\arj\sample.arj
+Type = Arj
+Physical Size = 386
+Name = sample.arj
+Created = 2026-10-01 12:00:00
+Host OS = MSDOS
+
+----------
+Path = readme.txt
+Folder = -
+Size = 41
+Position = 
+Packed Size = 41
+Modified = 2026-10-01 12:00:00
+Attributes = A
+Encrypted = -
+CRC = 90504FB6
+Method = 0
+Host OS = MSDOS
+Comment = 
+Characteristics = 
+
+Path = Příliš žluťoučký kůň.txt
+Folder = -
+Size = 22
+Position = 
+Packed Size = 22
+Modified = 2026-10-01 12:00:00
+Attributes = A
+Encrypted = -
+CRC = CB20C54E
+Method = 0
+Host OS = MSDOS
+Comment = 
+Characteristics = 
+
+Path = sub dir\inner.txt
+Folder = -
+Size = 39
+Position = 
+Packed Size = 39
+Modified = 2026-10-01 12:00:00
+Attributes = A
+Encrypted = -
+CRC = 09364595
+Method = 0
+Host OS = MSDOS
+Comment = 
+Characteristics = 
+
+Path = empty.txt
+Folder = -
+Size = 0
+Position = 
+Packed Size = 0
+Modified = 2026-10-01 12:00:00
+Attributes = A
+Encrypted = -
+CRC = 00000000
+Method = 0
+Host OS = MSDOS
+Comment = 
+Characteristics = 
+

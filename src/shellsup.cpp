@@ -269,7 +269,7 @@ const char* GetCurrentDir(POINTL& pt, void* param, DWORD* effect, BOOL rButton, 
             if (format != 0) // we have found a supported archive
             {
                 format--;
-                if (PackerFormatConfig.GetUsePacker(format) &&
+                if (PackerFormatConfig.CanPack(format) && // feature 084: and its packer program is found
                         (*effect & (DROPEFFECT_MOVE | DROPEFFECT_COPY)) != 0 || // Edit available? + is the effect copy or move?
                     index == 0 && panel->Dirs->Count > 0 && strcmp(panel->Dirs->At(0).Name, "..") == 0 &&
                         (panel->GetZIPPath()[0] == 0 || panel->GetZIPPath()[0] == '\\' && panel->GetZIPPath()[1] == 0)) // drop onto a disk path
@@ -574,7 +574,7 @@ const char* GetCurrentDir(POINTL& pt, void* param, DWORD* effect, BOOL rButton, 
             if (format != 0) // found a supported archive
             {
                 format--;
-                if (PackerFormatConfig.GetUsePacker(format) && // is edit available?
+                if (PackerFormatConfig.CanPack(format) && // is edit available? (feature 084: with its packer program found)
                     (*effect & (DROPEFFECT_MOVE | DROPEFFECT_COPY)) != 0)
                 {
                     tgtType = idtttArchiveOnWinPath;

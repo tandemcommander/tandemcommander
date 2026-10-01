@@ -9,7 +9,7 @@
 
 <body>
 <div id="help_page">
-<div class="header">Open Salamander: Dialog Boxes</div>
+<div class="header">Tandem Commander: Dialog Boxes</div>
 <div class="page">
 <h1>Pack</h1>
 
@@ -21,7 +21,13 @@
 <dd>Enter the location of archive file you want to pack selected files and directories to.</dd>
 
 <dt><i>Packer</i></dt>
-<dd>Specify packer which will be used. You can configure packers in
+<dd>Specify packer which will be used. The list contains the packers provided by
+plugins and the external packers. An external packer is listed only while its program
+is found: for example <i>RAR (WinRAR)</i>, which creates RAR archives with WinRAR's
+console program (Rar.exe), appears once Rar.exe has been found by
+<a href="customize_arccfg.htm">Archivers Autoconfiguration</a> or its location has been
+set in <a href="configuration_locat.htm">External Archivers Locations</a>. Packers you
+have added yourself are always listed. You can configure packers in
 <a href="configuration_packr.htm">Configuration/Archives/Packers in Pack Dialog</a>.</dd>
 
 <dt><i>Delete files from disk after packing to archive</i></dt>
@@ -29,13 +35,18 @@
 
 </dl>
 
+<h4>Remarks</h4>
+<p>While an external packer runs, a small window with a <i>Cancel</i> button is shown.
+<i>Cancel</i> stops the packer; you are then told that the archive may be incomplete.</p>
+
 <h4>See Also</h4>
 <p>
-<a href="basicwork_pack.htm">Packing Files and Directories</a>
+<a href="basicwork_pack.htm">Packing Files and Directories</a><br />
+<a href="configuration_locat.htm">External Archivers Locations</a>
 </p>
 
 </div>
-<div class="footer">&#169; 2023 Open Salamander Authors</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
 </div>
 </body>
 </html>

@@ -1455,10 +1455,9 @@ void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* plugi
         }
     }
 
-    if (PackerConfig.GetPreferedPacker() == -1)
-    { // if no preferred packer is set, choose the first one so users do not stare at an empty combo box
-        PackerConfig.SetPreferedPacker(0);
-    }
+    // if no preferred packer is set, choose the first one so users do not stare at an empty combo box
+    // (feature 084: also when the preferred one is hidden because its archiver is not installed)
+    PackerConfig.SetPreferedPacker(PackerConfig.GetOfferedPreferedPacker());
     if (PackerConfig.GetPreferedPacker() != -1) // necessary even after Set (it might have failed -> still returns -1)
         strcat(fileBuf, PackerConfig.GetPackerExt(PackerConfig.GetPreferedPacker()));
 
@@ -1744,10 +1743,9 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
         else // choose the unpacker based on the extension
         {
             CMaskGroup tmpmask;
-            if (UnpackerConfig.GetPreferedUnpacker() == -1)
-            { // if none is preferred, pick the first one (so users do not stare at an empty combo box)
-                UnpackerConfig.SetPreferedUnpacker(0);
-            }
+            // if none is preferred, pick the first one (so users do not stare at an empty combo box)
+            // (feature 084: also when the preferred one is hidden because its archiver is not installed)
+            UnpackerConfig.SetPreferedUnpacker(UnpackerConfig.GetOfferedPreferedUnpacker());
             if (UnpackerConfig.GetPreferedUnpacker() != -1)
             {
                 tmpmask.SetMasksString(UnpackerConfig.GetUnpackerExt(UnpackerConfig.GetPreferedUnpacker()), TRUE);
@@ -1763,6 +1761,8 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
                 int i2;
                 for (i2 = 0; i2 < UnpackerConfig.GetUnpackersCount(); i2++)
                 {
+                    if (!UnpackerConfig.IsUnpackerOffered(i2))
+                        continue; // feature 084: its archiver is not installed
                     tmpmask.SetMasksString(UnpackerConfig.GetUnpackerExt(i2), TRUE);
                     tmpmask.PrepareMasks(errpos);
                     if (tmpmask.AgreeMasks(file->Name, file->Ext))

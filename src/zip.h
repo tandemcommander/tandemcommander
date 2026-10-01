@@ -443,6 +443,13 @@ public:
     }
     void SetPreferedPacker(int i) { PreferedPacker = i; }
 
+    // feature 084 (FR-017): an entry that calls a supported external archiver
+    // ($(SevenZipExecutable), $(Rar32bitExecutable)) is offered only while its
+    // program is found; plug-in entries and entries with their own path always
+    BOOL IsPackerOffered(int index);
+    // the preferred entry if it is offered, else the first offered one, else -1
+    int GetOfferedPreferedPacker();
+
     BOOL ExecutePacker(CFilesWindow* panel, const char* zipFile, BOOL move,
                        const char* sourcePath, SalEnumSelection2 next, void* param);
 };
@@ -570,6 +577,10 @@ public:
         return (PreferedUnpacker < Unpackers.Count) ? PreferedUnpacker : -1;
     }
     void SetPreferedUnpacker(int i) { PreferedUnpacker = i; }
+
+    // feature 084 (FR-017): see CPackerConfig::IsPackerOffered
+    BOOL IsUnpackerOffered(int index);
+    int GetOfferedPreferedUnpacker();
 
     BOOL ExecuteUnpacker(HWND parent, CFilesWindow* panel, const char* zipFile, const char* mask,
                          const char* targetDir, BOOL delArchiveWhenDone, CDynamicString* archiveVolumes);

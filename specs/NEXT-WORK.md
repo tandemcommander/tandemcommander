@@ -257,6 +257,19 @@ From the 0.1.8 ship gate (section R, step 3), most valuable first:
 
 The features complete on paper and unverified on screen:
 
+- **084 (working archivers)**. The probes are ready but were **not run**
+  (maintainer's request, 2026-10-01): close your own Tandem Commander, then
+  run:
+  - `specs/084-archiver-cleanup/probe/make_cfg_fixtures.ps1 -Exe "C:\Program Files\Tandem Commander\tandemcommander.exe" -OutDir specs\084-archiver-cleanup\probe\fixtures\cfg`;
+  - `gui_probe.ps1 -Exe <Debug build>`, which covers Autoconfiguration,
+    ARJ/Unicode browse and extract through 7-Zip, hiding, Cancel and the
+    0.1.8 → 106 migration. Both back up and restore
+    `HKCU\Software\Tandem Commander` and verify the restore.
+
+  Then do the visual pass of the Pack/Unpack dialogs and the archiver
+  configuration pages in English and Czech, and RAR packing with WinRAR 7.x
+  (084 `quickstart.md` §4, §6).
+
 - **069 §4** — the 068 sweep W1–W20 in the Czech UI and then the Hungarian UI
   (proving 069 did not disturb what earlier features repaired), then V-01…V-24
   from its `quickstart.md`. Its side-by-side reference `Release_x64_prefix069\`
@@ -416,6 +429,28 @@ statement*).
   intended?
 - **F9** — the FTP anonymous-login e-mail default `name@someserver.com` is
   sent to anonymous servers (`src/plugins/ftp/ftp3.cpp:508`).
+
+## 8. Upgrade the vendored 7-Zip 16.04 → 25.x (recorded 2026-10-01, needs its own spec)
+
+**Prerequisite of feature 084 stage S7** (RAR out of the box,
+`specs/084-archiver-cleanup/`). The 7zip plug-in's engine
+(`src/plugins/7zip/7za`, `7za/c/7zVersion.h:4` = **16.04**) is built from
+source and already contains 7-Zip's RAR/RAR5 handlers, decoders and RAR crypto
+(`7za.dll.vcxproj:263-265/451-461/489-493`). The plug-in does not use them
+today. Exposing them on 16.04 would make two known remote-code-execution
+defects reachable from any downloaded `.rar`:
+- CVE-2018-10115 (RAR handler, fixed in 18.05);
+- CVE-2025-53816 (RAR5 heap overflow, fixed in 25.00).
+
+The upgrade is also worth doing for the 7z handling the product already ships.
+It touches all `.7z` handling (`7zclient.cpp`, `update.cpp`, `extract.cpp`,
+the wrapper DLL), so it is a feature of its own and needs `/speckit-specify`.
+The maintainer accepted, on 2026-10-01, shipping and exposing the RAR decoder
+under its "unRAR restriction" licence term (084 `research.md` R4). Feature 084
+documents that in `doc/third_party.txt`. **Feature 084 is otherwise complete**
+(stages S1–S6; `closing-report.md`). After this upgrade, its stage S7
+(T046–T053) exposes RAR through the 7zip plug-in. At the same time, decide
+whether that plug-in should also read ARJ/LZH (084 research R5).
 
 ---
 

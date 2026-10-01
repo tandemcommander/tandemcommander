@@ -9,6 +9,75 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
+## [Unreleased]
+
+Working external archivers (feature 084). **External archivers never worked
+in any Tandem Commander release:** every archive operation that used an
+external program ended with "Unable to execute new process
+...\utils\salspawn.exe", because a helper program that no build ever shipped
+started the archiver. The list of external archivers dated from the 1990s, and
+most of its entries were MS-DOS programs that 64-bit Windows cannot run at all.
+Archivers are now started directly. Of the old list only RAR (WinRAR) is kept,
+for creating RAR archives; 7-Zip is added for opening and unpacking ARJ and
+LZH/LHA archives. **RAR archives still cannot be opened or unpacked**; that
+comes with a later version, after the built-in 7-Zip engine is updated.
+
+### Fixed
+
+- **External archivers start.** The program runs the archiver itself instead
+  of the missing `salspawn.exe` helper. If the archiver's program cannot be
+  found, the message names it and points to *External Archivers Locations* or
+  *Archivers Autoconfiguration*; any other launch error names the program and
+  the reason instead of suggesting a step that cannot help.
+
+### Added
+
+- **Cancel.** While an external archiver runs, the small "Executing external
+  program" window has a *Cancel* button, and Esc does the same. It stops the
+  archiver and anything it started. Esc also stops reading an archive's list
+  of files. Unpacking from the panel, and with the built-in 7-Zip unpacker,
+  writes nothing to the target folder when cancelled. A custom unpacker that
+  does not use `$(TargetPath)` starts in the target folder and may leave some
+  files there. After a cancelled pack or delete you are told the archive may be
+  incomplete.
+- **7-Zip.** With 7-Zip installed, ARJ and LZH/LHA archives open in the panel
+  and can be unpacked through the 7-Zip console program (`7z.exe`). File
+  names outside the system code page survive listing and unpacking.
+- **Archivers Autoconfiguration finds installed programs without a disk
+  scan.** It reads where 7-Zip and WinRAR are installed (their registry
+  entries and the Program Files folders). The drive scan is still available
+  and now looks only for `7z.exe` and `Rar.exe`.
+- **`$(ListUnicodeFullName)`** for custom packers and unpackers: the list of
+  files written in Unicode (UTF-16), for archivers that read such lists.
+
+### Changed
+
+- **Only programs that work are offered.** An external archiver's entries in
+  *Pack* (Alt+F5) and *Unpack* (Alt+F9), and the archive types it serves, are
+  offered only while its program is found. Install it and run *Archivers
+  Autoconfiguration*, and they appear. *RAR (WinRAR)* is offered for creating
+  RAR archives when WinRAR's console program `Rar.exe` is installed.
+- The DOS (8.3) variables are no longer offered in the variable menus of the
+  packer and unpacker configuration. Commands that already use them keep
+  working.
+
+### Removed
+
+- The MS-DOS archivers (ARJ 2.60, LHA 2.55, UC2, JAR, RAR 2.50, PKZIP/PKUNZIP
+  2.04g, ACE). 64-bit Windows cannot run 16-bit programs.
+- JAR, ARJ, ACE and PKZIP for Windows, and the *1.44MB volumes* presets.
+  These programs are discontinued, and ACE's extractor had a widely exploited
+  security defect. ZIP is handled by the ZIP plugin as before. ARJ and LZH
+  archives can still be opened with 7-Zip installed.
+- **Your configuration is cleaned up once** (configuration version 106).
+  Removed are the packer and unpacker entries that call one of the removed
+  archivers, including ones you edited, the floppy-volume presets, and the
+  archive associations of the removed archivers. None of them could run.
+  The old default RAR packer becomes *RAR (WinRAR)*. Entries that call a
+  program by its own path are kept unchanged, unless their arguments are
+  exactly one of the old *1.44MB volumes* presets. The archiver settings saved by
+  this version are not meant to be read by 0.1.8.
+
 ## [0.1.8] — 2026-09-20
 
 **Build 192.** Feature release. Each panel can now keep several directories

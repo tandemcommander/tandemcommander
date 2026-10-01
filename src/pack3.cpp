@@ -41,8 +41,12 @@ class CExecuteWindow : public CWindow
 protected:
     char* Text;
     HWND HParent;
+    HWND HCancel;       // the Cancel button (feature 084)
+    int TextAreaHeight; // height of the part with the text; the button is below it
 
 public:
+    BOOL Cancelled; // set by the Cancel button (feature 084)
+
     CExecuteWindow(HWND hParent, int textResID, CObjectOrigin origin = ooAllocated);
     ~CExecuteWindow();
 
@@ -85,21 +89,8 @@ CArchiverConfig ArchiverConfig /*(FALSE)*/;
 // error code 0 always means success
 //
 
-// JAR
-const TPackErrorTable JARErrors =
-    {
-        {1, IDS_PACKRET_WARNING},
-        {2, IDS_PACKRET_FATAL},
-        {3, IDS_PACKRET_CRC},
-        {5, IDS_PACKRET_DISK},
-        {6, IDS_PACKRET_FOPEN},
-        {7, IDS_PACKRET_PARAMS},
-        {8, IDS_PACKRET_MEMORY},
-        {9, IDS_PACKRET_NOTARC},
-        {10, IDS_PACKRET_INTERN},
-        {11, IDS_PACKRET_BREAK},
-        {-1, -1}};
-// RAR
+// RAR (WinRAR console; codes 9-12 exist since RAR 3.x, 255 = user break -
+// feature 084)
 const TPackErrorTable RARErrors =
     {
         {1, IDS_PACKRET_WARNING},
@@ -110,137 +101,20 @@ const TPackErrorTable RARErrors =
         {6, IDS_PACKRET_FOPEN},
         {7, IDS_PACKRET_PARAMS},
         {8, IDS_PACKRET_MEMORY},
-        {255, IDS_PACKRET_BREAK},
+        {9, IDS_PACKRET_CREATE},
+        {10, IDS_PACKRET_NOFILES},
+        {11, IDS_PACKRET_BADPWD},
+        {12, IDS_PACKRET_READ},
+        {255, IDS_PACKRET_STOPPED},
         {-1, -1}};
-// ARJ
-const TPackErrorTable ARJErrors =
+// 7-Zip console (feature 084)
+const TPackErrorTable SevenZipErrors =
     {
         {1, IDS_PACKRET_WARNING},
         {2, IDS_PACKRET_FATAL},
-        {3, IDS_PACKRET_CRC},
-        {4, IDS_PACKRET_SECURITY},
-        {5, IDS_PACKRET_DISK},
-        {6, IDS_PACKRET_FOPEN},
         {7, IDS_PACKRET_PARAMS},
         {8, IDS_PACKRET_MEMORY},
-        {9, IDS_PACKRET_NOTARC},
-        {10, IDS_PACKRET_XMSMEM},
-        {11, IDS_PACKRET_BREAK},
-        {12, IDS_PACKRET_CHAPTERS},
-        {-1, -1}};
-// LHA
-const TPackErrorTable LHAErrors =
-    {
-        {1, IDS_PACKRET_EXTRACT_LHA},
-        {2, IDS_PACKRET_FATAL},
-        {3, IDS_PACKRET_TEMP},
-        {-1, -1}};
-// UC2
-const TPackErrorTable UC2Errors =
-    {
-        {5, IDS_PACKRET_INTERN},
-        {7, IDS_PACKRET_SECURITY},
-        {10, IDS_PACKRET_FOPEN},
-        {15, IDS_PACKRET_WARNING},
-        {20, IDS_PACKRET_FOPEN},
-        {25, IDS_PACKRET_SKIPPED},
-        {30, IDS_PACKRET_SKIPPED},
-        {35, IDS_PACKRET_SKIPPED},
-        {50, IDS_PACKRET_INTERN},
-        {55, IDS_PACKRET_DISK},
-        {60, IDS_PACKRET_DISK},
-        {65, IDS_PACKRET_FATAL},
-        {70, IDS_PACKRET_DISK},
-        {75, IDS_PACKRET_WARNING},
-        {80, IDS_PACKRET_SKIPPED},
-        {85, IDS_PACKRET_DISK},
-        {90, IDS_PACKRET_DAMAGED},
-        {95, IDS_PACKRET_VIRUS},
-        {100, IDS_PACKRET_BREAK},
-        {105, IDS_PACKRET_INTERN},
-        {110, IDS_PACKRET_PARAMS},
-        {115, IDS_PACKRET_PARAMS},
-        {120, IDS_PACKRET_NOTARC},
-        {123, IDS_PACKRET_PARAMS},
-        {125, IDS_PACKRET_SECURITY},
-        {130, IDS_PACKRET_NOTARC},
-        {135, IDS_PACKRET_FOPEN},
-        {140, IDS_PACKRET_PARAMS},
-        {145, IDS_PACKRET_EXTRACT},
-        {150, IDS_PACKRET_FOPEN},
-        {155, IDS_PACKRET_WARNING},
-        {157, IDS_PACKRET_WARNING},
-        {160, IDS_PACKRET_MEMORY},
-        {163, IDS_PACKRET_MEMORY},
-        {165, IDS_PACKRET_MEMORY},
-        {170, IDS_PACKRET_FATAL},
-        {175, IDS_PACKRET_TEMP},
-        {180, IDS_PACKRET_DISK},
-        {185, IDS_PACKRET_FOPEN},
-        {190, IDS_PACKRET_VIRUS},
-        {195, IDS_PACKRET_DAMAGED},
-        {200, IDS_PACKRET_DAMAGED},
-        {205, IDS_PACKRET_FATAL},
-        {210, IDS_PACKRET_FATAL},
-        {250, IDS_PACKRET_FOPEN},
-        {255, IDS_PACKRET_INTERN},
-        {-1, -1}};
-// PKZIP 2.04g
-const TPackErrorTable ZIP204Errors =
-    {
-        {1, IDS_PACKRET_FOPEN},
-        {2, IDS_PACKRET_CRC},
-        {3, IDS_PACKRET_CRC},
-        {4, IDS_PACKRET_MEMORY},
-        {5, IDS_PACKRET_MEMORY},
-        {6, IDS_PACKRET_MEMORY},
-        {7, IDS_PACKRET_MEMORY},
-        {8, IDS_PACKRET_MEMORY},
-        {9, IDS_PACKRET_MEMORY},
-        {10, IDS_PACKRET_MEMORY},
-        {11, IDS_PACKRET_MEMORY},
-        {12, IDS_PACKRET_PARAMS},
-        {13, IDS_PACKRET_FOPEN},
-        {14, IDS_PACKRET_DISK},
-        {15, IDS_PACKRET_DISK},
-        {16, IDS_PACKRET_PARAMS},
-        {17, IDS_PACKRET_PARAMS},
-        {18, IDS_PACKRET_FOPEN},
-        {255, IDS_PACKRET_BREAK},
-        {-1, -1}};
-// PKUNZIP 2.04g
-const TPackErrorTable UNZIP204Errors =
-    {
-        {1, IDS_PACKRET_WARNING},
-        {2, IDS_PACKRET_CRC},
-        {3, IDS_PACKRET_CRC},
-        {4, IDS_PACKRET_MEMORY},
-        {5, IDS_PACKRET_MEMORY},
-        {6, IDS_PACKRET_MEMORY},
-        {7, IDS_PACKRET_MEMORY},
-        {8, IDS_PACKRET_MEMORY},
-        {9, IDS_PACKRET_FOPEN},
-        {10, IDS_PACKRET_PARAMS},
-        {11, IDS_PACKRET_FOPEN},
-        {50, IDS_PACKRET_DISK},
-        {51, IDS_PACKRET_CRC},
-        {255, IDS_PACKRET_BREAK},
-        {-1, -1}};
-// ACE
-const TPackErrorTable ACEErrors =
-    {
-        {1, IDS_PACKRET_MEMORY},
-        {2, IDS_PACKRET_FOPEN},
-        {3, IDS_PACKRET_FOPEN},
-        {4, IDS_PACKRET_DISK},
-        {5, IDS_PACKRET_FOPEN},
-        {6, IDS_PACKRET_FOPEN},
-        {7, IDS_PACKRET_DISK},
-        {8, IDS_PACKRET_PARAMS},
-        {9, IDS_PACKRET_CRC},
-        {10, IDS_PACKRET_FATAL},
-        {11, IDS_PACKRET_FOPEN},
-        {255, IDS_PACKRET_BREAK2},
+        {255, IDS_PACKRET_STOPPED},
         {-1, -1}};
 
 // Variables distinguished in the command line and the current directory when
@@ -256,20 +130,15 @@ const char* PACK_ARC_DOSFILE = "ArchiveDOSFileName";
 const char* PACK_ARC_DOSNAME = "ArchiveDOSFullName";
 const char* PACK_TGT_DOSPATH = "TargetDOSPath";
 const char* PACK_LST_DOSNAME = "ListDOSFullName";
+// feature 084: the list of files written in UTF-16LE with a BOM (research R7a);
+// a command that uses it decides the list-file encoding by itself
+const char* PACK_LST_UNINAME = "ListUnicodeFullName";
 
-const char* PACK_EXE_JAR32 = "Jar32bitExecutable";
-const char* PACK_EXE_JAR16 = "Jar16bitExecutable";
+// paths of the supported external archivers (feature 084: 7-Zip and WinRAR; the
+// variables of the ten removed archivers no longer expand - stored commands
+// that used them are removed by the version 106 migration)
+const char* PACK_EXE_7ZIP = "SevenZipExecutable";
 const char* PACK_EXE_RAR32 = "Rar32bitExecutable";
-const char* PACK_EXE_RAR16 = "Rar16bitExecutable";
-const char* PACK_EXE_ARJ32 = "Arj32bitExecutable";
-const char* PACK_EXE_ARJ16 = "Arj16bitExecutable";
-const char* PACK_EXE_ACE32 = "Ace32bitExecutable";
-const char* PACK_EXE_ACE16 = "Ace16bitExecutable";
-const char* PACK_EXE_LHA16 = "Lha16bitExecutable";
-const char* PACK_EXE_UC216 = "UC216bitExecutable";
-const char* PACK_EXE_ZIP32 = "Zip32bitExecutable";
-const char* PACK_EXE_ZIP16 = "Zip16bitExecutable";
-const char* PACK_EXE_UZP16 = "Unzip16bitExecutable";
 
 // Menu in configuration
 
@@ -278,19 +147,8 @@ const char* PACK_EXE_UZP16 = "Unzip16bitExecutable";
 MENU_TEMPLATE_ITEM CmdCustomPackers[] = 
 {
   {MNTT_PB, 0
-  {MNTT_IT, IDS_PACK_EXE_JAR32
-  {MNTT_IT, IDS_PACK_EXE_JAR16
-  {MNTT_IT, IDS_PACK_EXE_RAR32
-  {MNTT_IT, IDS_PACK_EXE_RAR16
-  {MNTT_IT, IDS_PACK_EXE_ARJ32
-  {MNTT_IT, IDS_PACK_EXE_ARJ16
-  {MNTT_IT, IDS_PACK_EXE_ACE32
-  {MNTT_IT, IDS_PACK_EXE_ACE16
-  {MNTT_IT, IDS_PACK_EXE_LHA16
-  {MNTT_IT, IDS_PACK_EXE_UC216
-  {MNTT_IT, IDS_PACK_EXE_ZIP32
-  {MNTT_IT, IDS_PACK_EXE_ZIP16
-  {MNTT_IT, IDS_PACK_EXE_UZP16
+  {MNTT_IT, IDS_PACK_EXE_7ZIP
+  {MNTT_IT, IDS_PACK_EXE_RAR
   {MNTT_IT, IDS_PACK_EXE_BROWSE
   {MNTT_PE, 0
 };
@@ -299,19 +157,8 @@ MENU_TEMPLATE_ITEM CmdCustomPackers[] =
 // Command
 CExecuteItem CmdCustomPackers[] =
     {
-        {PACK_EXE_JAR32, IDS_PACK_EXE_JAR32, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_JAR16, IDS_PACK_EXE_JAR16, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_RAR32, IDS_PACK_EXE_RAR32, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_RAR16, IDS_PACK_EXE_RAR16, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_ARJ32, IDS_PACK_EXE_ARJ32, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_ARJ16, IDS_PACK_EXE_ARJ16, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_ACE32, IDS_PACK_EXE_ACE32, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_ACE16, IDS_PACK_EXE_ACE16, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_LHA16, IDS_PACK_EXE_LHA16, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_UC216, IDS_PACK_EXE_UC216, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_ZIP32, IDS_PACK_EXE_ZIP32, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_ZIP16, IDS_PACK_EXE_ZIP16, EIF_VARIABLE | EIF_REPLACE_ALL},
-        {PACK_EXE_UZP16, IDS_PACK_EXE_UZP16, EIF_VARIABLE | EIF_REPLACE_ALL},
+        {PACK_EXE_7ZIP, IDS_PACK_EXE_7ZIP, EIF_VARIABLE | EIF_REPLACE_ALL},
+        {PACK_EXE_RAR32, IDS_PACK_EXE_RAR, EIF_VARIABLE | EIF_REPLACE_ALL},
         {EXECUTE_SEPARATOR, 0, 0},
         {EXECUTE_BROWSE, IDS_PACK_EXE_BROWSE, EIF_REPLACE_ALL},
         {EXECUTE_TERMINATOR, 0, 0},
@@ -326,25 +173,21 @@ MENU_TEMPLATE_ITEM ArgsCustomPackers[] =
   {MNTT_IT, IDS_PACK_ARC_FILE
   {MNTT_IT, IDS_PACK_ARC_PATH
   {MNTT_IT, IDS_PACK_LST_NAME
-  {MNTT_IT, IDS_PACK_ARC_DOSNAME
-  {MNTT_IT, IDS_PACK_ARC_DOSFILE
-  {MNTT_IT, IDS_PACK_LST_DOSNAME
+  {MNTT_IT, IDS_PACK_LST_UNINAME
   {MNTT_PE, 0
 };
 */
 
 // Arguments
-// Custom packers/unpackers
+// Custom packers/unpackers (feature 084: the DOS (8.3) variables are no longer
+// offered here, but they still expand in commands that use them - FR-008)
 CExecuteItem ArgsCustomPackers[] =
     {
         {PACK_ARC_NAME, IDS_PACK_ARC_NAME, EIF_VARIABLE},
         {PACK_ARC_FILE, IDS_PACK_ARC_FILE, EIF_VARIABLE},
         {PACK_ARC_PATH, IDS_PACK_ARC_PATH, EIF_VARIABLE},
         {PACK_LST_NAME, IDS_PACK_LST_NAME, EIF_VARIABLE},
-        {EXECUTE_SEPARATOR, 0, 0},
-        {PACK_ARC_DOSNAME, IDS_PACK_ARC_DOSNAME, EIF_VARIABLE},
-        {PACK_ARC_DOSFILE, IDS_PACK_ARC_DOSFILE, EIF_VARIABLE},
-        {PACK_LST_DOSNAME, IDS_PACK_LST_DOSNAME, EIF_VARIABLE},
+        {PACK_LST_UNINAME, IDS_PACK_LST_UNINAME, EIF_VARIABLE},
         {EXECUTE_TERMINATOR, 0, 0},
 };
 
@@ -353,42 +196,6 @@ CExecuteItem ArgsCustomPackers[] =
 // Functions
 // ****************************************************************************
 //
-
-// Function for initializing the spawn executable name with full path
-BOOL InitSpawnName(HWND parent)
-{
-    CALL_STACK_MESSAGE1("InitSpawnName()");
-    if (!SpawnExeInitialised)
-    {
-        // feature 069 (F-P1-07): the ANSI GetModuleFileName returned the install
-        // path in the code page, and this value is then concatenated into the
-        // command line of SalCreateProcess, which is a UTF-8 consumer - so on an
-        // install path with a non-ASCII character the WHOLE command line was
-        // discarded (ERROR_INVALID_NAME) and the user was told the ARCHIVER
-        // could not be started, correctly encoded archive name and all
-        WCHAR spawnExeW[MAX_PATH];
-        DWORD spawnLen = GetModuleFileNameW(NULL, spawnExeW, MAX_PATH);
-        if (spawnLen == 0 || spawnLen >= MAX_PATH ||
-            SalWToU8(spawnExeW, -1, SpawnExe, MAX_PATH) == 0)
-            spawnLen = GetModuleFileName(NULL, SpawnExe, MAX_PATH); // legacy fallback
-        if (spawnLen == 0)
-        {
-            char buffer[1000];
-            strcpy(buffer, "GetModuleFileName: ");
-            strcat(buffer, GetErrorText(GetLastError()));
-            return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
-        }
-        char* ptr = strrchr(SpawnExe, '\\');
-        if (ptr == NULL)
-            ptr = SpawnExe;
-        else
-            ptr++;
-        strcpy(ptr, "utils\\");
-        strcat(ptr, SPAWN_EXE_NAME);
-        SpawnExeInitialised = TRUE;
-    }
-    return TRUE;
-}
 
 //
 // ****************************************************************************
@@ -430,24 +237,19 @@ void CPackerFormatConfig::AddDefault(int SalamVersion)
         if ((index = AddFormat()) == -1)
             return;
         SetFormat(index, "zip", TRUE, -1, -1, TRUE);
+        // feature 084: RAR keeps archiver index 1 (packing by WinRAR; browsing is
+        // taken over by the 7zip plug-in), the formats no plug-in reads go to the
+        // 7-Zip console (index 0, unpacking only); "j", "uc2", "ace" and the ARJ
+        // volumes "a##" are no longer claimed (see specs/084-archiver-cleanup/inventory.md)
         if ((index = AddFormat()) == -1)
             return;
-        SetFormat(index, "j", TRUE, 0, 0, TRUE);
+        SetFormat(index, "rar;r##", TRUE, PACKRARINDEX, PACKRARINDEX, TRUE);
         if ((index = AddFormat()) == -1)
             return;
-        SetFormat(index, "rar;r##", TRUE, 1, 1, TRUE);
+        SetFormat(index, "arj", FALSE, -1, PACK7ZIPINDEX, TRUE);
         if ((index = AddFormat()) == -1)
             return;
-        SetFormat(index, "arj;a##", TRUE, 9, 9, TRUE);
-        if ((index = AddFormat()) == -1)
-            return;
-        SetFormat(index, "lzh", TRUE, 3, 3, TRUE);
-        if ((index = AddFormat()) == -1)
-            return;
-        SetFormat(index, "uc2", TRUE, 4, 4, TRUE);
-        if ((index = AddFormat()) == -1)
-            return;
-        SetFormat(index, "ace", TRUE, 10, 10, TRUE);
+        SetFormat(index, "lzh;lha", FALSE, -1, PACK7ZIPINDEX, TRUE);
 
     case 2: // what was added after beta1
         // workaround to add the PK3 extension to ZIP
@@ -468,20 +270,7 @@ void CPackerFormatConfig::AddDefault(int SalamVersion)
 
     case 3: // what was added after beta2
     case 4: // beta3 but with old configuration (contains $(SpawnName))
-        // workaround to add the C## extension to ACE
-        for (index = 0; index < Formats.Count; index++)
-            if (!stricmp(Formats[index]->Ext, "ace"))
-            {
-                char* ptr = (char*)malloc(strlen(Formats[index]->Ext) + 5);
-                if (ptr != NULL)
-                {
-                    strcpy(ptr, Formats[index]->Ext);
-                    strcat(ptr, ";c##");
-                    free(Formats[index]->Ext);
-                    Formats[index]->Ext = ptr;
-                }
-                break;
-            }
+        // (the "c##" extension of ACE was added here; ACE was removed in feature 084)
 
     case 5: // what's new in beta4?
         if ((index = AddFormat()) == -1)
@@ -518,6 +307,13 @@ BOOL CPackerFormatConfig::BuildArray(int* line, int* column)
     CExtItem item;
     for (i = 0; i < Formats.Count; i++)
     {
+        // feature 084 (FR-017): a record whose external unpacker is not installed,
+        // or cannot browse at all (RAR - the 7zip plug-in browses it), is left out:
+        // its extensions are then ordinary files. The record itself stays stored,
+        // so installing the program and running Autoconfiguration brings it back.
+        int unpacker = GetUnpackerIndex(i);
+        if (unpacker >= 0 && !ArchiverConfig.CanBrowse(unpacker))
+            continue;
         strncpy(buffer, GetExt(i), 500);
         char* ptr = strtok(buffer, ";");
         while (ptr != NULL)
@@ -644,6 +440,14 @@ int CPackerFormatConfig::PackIsArchive(const char* archiveName, int archiveNameL
     }
     // not found
     return 0;
+}
+
+BOOL CPackerFormatConfig::CanPack(int index)
+{
+    if (!Formats[index]->UsePacker)
+        return FALSE;
+    int packer = Formats[index]->PackerIndex;
+    return packer < 0 || ArchiverConfig.IsArchiverAvailable(packer);
 }
 
 BOOL CPackerFormatConfig::Load(CPackerFormatConfig& src)
@@ -785,64 +589,83 @@ void CArchiverConfig::AddDefault(int SalamVersion)
     //                  const char *packerExecutable, const char *unpackerExecutable,
     //                  const char *packExeFile, const char *unpackExeFile)
 
+    // feature 084: only the archivers that still exist and run on 64-bit Windows;
+    // the row order is the archiver index (PACK7ZIPINDEX, PACKRARINDEX)
     switch (SalamVersion)
     {
     case 0: // default
     case 1: // version 1.52 had no packers
         if ((index = AddArchiver()) == -1)
             return;
-        SetArchiver(index, ARC_UID_JAR32, LoadStr(IDS_EXT_JAR32), EXE_32BIT, TRUE, PACK_EXE_JAR32, NULL,
-                    "jar32", NULL, "jar32", NULL);
+        SetArchiver(index, ARC_UID_7ZIP, LoadStr(IDS_EXT_7ZIP), EXE_32BIT, TRUE, PACK_EXE_7ZIP, NULL,
+                    "7z", NULL, "7z", NULL);
         if ((index = AddArchiver()) == -1)
             return;
-        SetArchiver(index, ARC_UID_RAR32, LoadStr(IDS_EXT_RAR32), EXE_32BIT, TRUE, PACK_EXE_RAR32, NULL,
+        SetArchiver(index, ARC_UID_RAR32, LoadStr(IDS_EXT_RAR), EXE_32BIT, TRUE, PACK_EXE_RAR32, NULL,
                     "rar", NULL, "rar", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_ARJ16, LoadStr(IDS_EXT_ARJ16), EXE_16BIT, TRUE, PACK_EXE_ARJ16, NULL,
-                    "arj", NULL, "arj", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_LHA16, LoadStr(IDS_EXT_LHA16), EXE_16BIT, TRUE, PACK_EXE_LHA16, NULL,
-                    "lha", NULL, "lha", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_UC216, LoadStr(IDS_EXT_UC216), EXE_16BIT, TRUE, PACK_EXE_UC216, NULL,
-                    "uc", NULL, "uc", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_JAR16, LoadStr(IDS_EXT_JAR16), EXE_16BIT, TRUE, PACK_EXE_JAR16, NULL,
-                    "jar16", NULL, "jar16", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_RAR16, LoadStr(IDS_EXT_RAR16), EXE_16BIT, TRUE, PACK_EXE_RAR16, NULL,
-                    "rar", NULL, "rar", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_ZIP32, LoadStr(IDS_EXT_ZIP32), EXE_32BIT, TRUE, PACK_EXE_ZIP32, NULL,
-                    "pkzip25", NULL, "pkzip25", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_ZIP16, LoadStr(IDS_EXT_ZIP16), EXE_16BIT, FALSE, PACK_EXE_ZIP16, PACK_EXE_UZP16,
-                    "pkzip", "pkunzip", "pkzip", "pkunzip");
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_ARJ32, LoadStr(IDS_EXT_ARJ32), EXE_32BIT, TRUE, PACK_EXE_ARJ32, NULL,
-                    "arj32", NULL, "arj32", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_ACE32, LoadStr(IDS_EXT_ACE32), EXE_32BIT, TRUE, PACK_EXE_ACE32, NULL,
-                    "ace32", NULL, "ace32", NULL);
-        if ((index = AddArchiver()) == -1)
-            return;
-        SetArchiver(index, ARC_UID_ACE16, LoadStr(IDS_EXT_ACE16), EXE_16BIT, TRUE, PACK_EXE_ACE16, NULL,
-                    "ace", NULL, "ace", NULL);
-        //    case 2:  // what was added after beta1
-        //    case 3:  // what was added after beta2
-        //    case 4:  // beta3 but with old configuration (contains $(SpawnName))
-        //    case 5:   // beta3 but without tar
-        //    case 6:   // what's new in beta4?
     }
+}
+
+// feature 084 (FR-017): the configured program of every archiver is looked up
+// once here, never per file (PackIsArchive is on the panel refresh path)
+void CArchiverConfig::RefreshAvailability()
+{
+    CALL_STACK_MESSAGE1("CArchiverConfig::RefreshAvailability()");
+    int i;
+    for (i = 0; i < Archivers.Count; i++)
+    {
+        CArchiverConfigData* data = Archivers[i];
+        data->Available = FALSE;
+        const char* exe = data->PackExeFile;
+        if (exe == NULL || exe[0] == 0)
+            continue;
+        // the same expansion PackExpExeName() applies before the program is started
+        char expanded[MAX_PATH];
+        if (!ExpandCommand(NULL, exe, expanded, MAX_PATH, FALSE))
+            lstrcpyn(expanded, exe, MAX_PATH);
+        char* s = expanded;
+        int len = (int)strlen(s);
+        if (len >= 2 && s[0] == '"' && s[len - 1] == '"')
+        {
+            s[len - 1] = 0;
+            s++;
+        }
+        if ((s[0] == '\\' && s[1] == '\\') || (s[0] == '/' && s[1] == '/'))
+        {
+            // a program on a network share: not probed here (this runs at every
+            // start, and an unreachable server would stall it); it is offered and
+            // a failed start names it (independent review of feature 084)
+            data->Available = TRUE;
+        }
+        else if (strchr(s, '\\') != NULL || strchr(s, '/') != NULL || strchr(s, ':') != NULL)
+        {
+            DWORD attrs = SalGetFileAttributes(s);
+            data->Available = attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
+        }
+        else
+        {
+            // a bare program name ("7z", the default before Autoconfiguration ran)
+            // works when Windows finds it on the PATH - CreateProcess searches the same way
+            WCHAR* nameW = SalU8ToWAlloc(s);
+            if (nameW != NULL)
+            {
+                WCHAR found[MAX_PATH];
+                data->Available = SearchPathW(NULL, nameW, L".exe", MAX_PATH, found, NULL) != 0;
+                free(nameW);
+            }
+        }
+    }
+}
+
+BOOL CArchiverConfig::IsArchiverAvailable(int index)
+{
+    return index >= 0 && index < Archivers.Count && Archivers[index]->Available;
+}
+
+BOOL CArchiverConfig::CanBrowse(int index)
+{
+    return IsArchiverAvailable(index) && index < PACK_ARCHIVERS_COUNT &&
+           PackBrowseTable[index].ListCommand != NULL;
 }
 
 // initializes the configuration based on another configuration
@@ -1033,132 +856,6 @@ BOOL CArchiverConfig::Load(HKEY hKey)
     }
     return ret;
 }
-/*
-BOOL
-CArchiverConfig::Load(HKEY hKey)
-{
-  int max = MAX_PATH + 2;
-  char title[MAX_PATH + 2]; title[0] = 0;
-  char packExe[MAX_PATH + 2]; packExe[0] = 0;
-  char unpackExe[MAX_PATH + 2]; unpackExe[0] = 0;
-  DWORD exesAreSame;
-
-  BOOL ret = TRUE;
-  // loads the title
-  if (ret) ret &= GetValue(hKey, SALAMANDER_PPC_TITLE, REG_SZ, title, max);
-  // loads the packing executable
-  if (ret) ret &= GetValue(hKey, SALAMANDER_PPC_PACKEXE, REG_SZ, packExe, max);
-  // determine whether the unpacker is the same
-  if (ret) ret &= GetValue(hKey, SALAMANDER_PPC_EXESAME, REG_DWORD, &exesAreSame, sizeof(DWORD));
-  // loads the unpacker executable, if it is different from the packer
-  if (!exesAreSame)
-    if (ret) ret &= GetValue(hKey, SALAMANDER_PPC_UNPACKEXE, REG_SZ, unpackExe, max);
-
-  EPackExeType type;
-  const char *name, *variablePack, *variableUnpack = NULL, *exePack, *exeUnpack = NULL;
-
-  // and now convert to a newer configuration - missing information is taken from defaults
-  // (none of it is configurable anyway :-))
-  if (ret)
-  {
-    int index;
-    if ((index = AddArchiver()) == -1) return FALSE;
-    // I now assume the indices in the configuration keep their order. If not, nothing is loaded
-    switch (index)
-    {
-      case 0:
-        name = LoadStr(IDS_EXT_JAR32);
-        type = EXE_32BIT;
-        variablePack = PACK_EXE_JAR32;
-        exePack = "jar32";
-        break;
-      case 1:
-        name = LoadStr(IDS_EXT_RAR32);
-        type = EXE_32BIT;
-        variablePack = PACK_EXE_RAR32;
-        exePack = "rar";
-        break;
-      case 2:
-        name = LoadStr(IDS_EXT_ARJ16);
-        type = EXE_16BIT;
-        variablePack = PACK_EXE_ARJ16;
-        exePack = "arj";
-        break;
-      case 3:
-        name = LoadStr(IDS_EXT_LHA16);
-        type = EXE_16BIT;
-        variablePack = PACK_EXE_LHA16;
-        exePack = "lha";
-        break;
-      case 4:
-        name = LoadStr(IDS_EXT_UC216);
-        type = EXE_16BIT;
-        variablePack = PACK_EXE_UC216;
-        exePack = "uc";
-        break;
-      case 5:
-        name = LoadStr(IDS_EXT_JAR16);
-        type = EXE_16BIT;
-        variablePack = PACK_EXE_JAR16;
-        exePack = "jar16";
-        break;
-      case 6:
-        name = LoadStr(IDS_EXT_RAR16);
-        type = EXE_16BIT;
-        variablePack = PACK_EXE_RAR16;
-        exePack = "rar";
-        break;
-      case 7:
-        name = LoadStr(IDS_EXT_ZIP32);
-        type = EXE_32BIT;
-        variablePack = PACK_EXE_ZIP32;
-        exePack = "pkzip25";
-        break;
-      case 8:
-        name = LoadStr(IDS_EXT_ZIP16);
-        type = EXE_16BIT;
-        variablePack = PACK_EXE_ZIP16;
-        variableUnpack = PACK_EXE_UZP16;
-        exePack = "pkzip";
-        exeUnpack = "pkunzip";
-        break;
-      case 9:
-        name = LoadStr(IDS_EXT_ARJ32);
-        type = EXE_32BIT;
-        variablePack = PACK_EXE_ARJ32;
-        exePack = "arj32";
-        break;
-      case 10:
-        name = LoadStr(IDS_EXT_ACE32);
-        type = EXE_32BIT;
-        variablePack = PACK_EXE_ACE32;
-        exePack = "ace32";
-        break;
-      case 11:
-        name = LoadStr(IDS_EXT_ACE16);
-        type = EXE_16BIT;
-        variablePack = PACK_EXE_ACE16;
-        exePack = "ace";
-        break;
-      default:
-        TRACE_E("Too big index of packer, probably mistake in registry");
-        Archivers.Delete(index);  // To avoid leaving an uninitialized structure; Salamander 2.0 crashed in SaveConfig
-        return FALSE;
-    }
-    // verify we are really adding the packer we think we are adding
-    if (strncmp(title, name, 10) || (exesAreSame && exeUnpack != NULL) || (!exesAreSame && exeUnpack == NULL))
-    {
-      TRACE_E("Inconsistency in configuration of packers.");
-      Archivers.Delete(index);  // To avoid leaving an uninitialized structure; Salamander 2.0 crashed in SaveConfig
-      return FALSE;
-    }
-    // and set all information
-    ret &= SetArchiver(index, name, type, exesAreSame, variablePack, variableUnpack,
-                       exePack, exeUnpack, packExe, unpackExe);
-  }
-  return ret;
-}
-*/
 
 //
 // ****************************************************************************
@@ -1436,27 +1133,15 @@ PackExpExeName(unsigned int index, BOOL unpacker = FALSE)
             exe = ArchiverConfig.GetPackerExecutable(index);
         else
             exe = ArchiverConfig.GetUnpackerExecutable(index);
-    else
-    {
-        // on older Windows it was impossible to redirect output from a DOS program in a directory
-        // with a long name; I no longer feel like patching and risking this that it won't work
-        buff[0] = '\0';
-        // SalGetShortPathName returns BOOL, not a length (unlike the ANSI
-        // GetShortPathName it replaced) - comparing it with strlen made this
-        // branch dead for every install, ASCII included
-        DWORD len = SalGetShortPathName(exe, buff, MAX_PATH) ? (DWORD)strlen(buff) : 0;
-        // if the path was shortened successfully, return the short name
-        if (len == strlen(buff) && len > 0)
-        {
-            strcpy(PackExpExeName, buff);
-            return PackExpExeName;
-        }
-    }
-    // for long names, check the quotes...
+    // feature 084: the program is always given by its long name in quotes. The 8.3
+    // short name was used for MS-DOS archivers, which could not take a long one;
+    // on a volume without 8.3 names the "short" name IS the long one and went
+    // into the command line unquoted - "D:\Program Files\7-Zip\7z.exe" then
+    // started "D:\Program.exe" (independent review of feature 084, finding 4)
     unsigned long src = 0, dst = 0;
     if (exe[src] != '"')
         buff[dst++] = '"';
-    while (exe[src] != '\0' && dst < MAX_PATH)
+    while (exe[src] != '\0' && dst < MAX_PATH - 2)
         buff[dst++] = exe[src++];
     if (src == 0 || exe[src - 1] != '"')
         buff[dst++] = '"';
@@ -1466,69 +1151,14 @@ PackExpExeName(unsigned int index, BOOL unpacker = FALSE)
     return PackExpExeName;
 }
 
-const char* WINAPI PackExpJar32ExeName(HWND msgParent, void* param)
+const char* WINAPI PackExp7ZipExeName(HWND msgParent, void* param)
 {
-    return PackExpExeName(PACKJAR32INDEX);
-}
-
-const char* WINAPI PackExpJar16ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKJAR16INDEX);
+    return PackExpExeName(PACK7ZIPINDEX);
 }
 
 const char* WINAPI PackExpRar32ExeName(HWND msgParent, void* param)
 {
-    return PackExpExeName(PACKRAR32INDEX);
-}
-
-const char* WINAPI PackExpRar16ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKRAR16INDEX);
-}
-
-const char* WINAPI PackExpArj32ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKARJ32INDEX);
-}
-
-const char* WINAPI PackExpArj16ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKARJ16INDEX);
-}
-
-const char* WINAPI PackExpLha16ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKLHA16INDEX);
-}
-
-const char* WINAPI PackExpUc216ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKUC216INDEX);
-}
-
-const char* WINAPI PackExpAce32ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKACE32INDEX);
-}
-
-const char* WINAPI PackExpAce16ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKACE16INDEX);
-}
-
-const char* WINAPI PackExpZip32ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKZIP32INDEX);
-}
-
-const char* WINAPI PackExpZip16ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKZIP16INDEX);
-}
-
-const char* WINAPI PackExpUzp16ExeName(HWND msgParent, void* param)
-{
-    return PackExpExeName(PACKZIP16INDEX, TRUE);
+    return PackExpExeName(PACKRARINDEX);
 }
 
 //
@@ -1553,20 +1183,10 @@ CSalamanderVarStrEntry PackCmdLineExpArray[] =
         {PACK_TGT_DOSPATH, PackExpTgtDosPath},
         {PACK_LST_NAME, PackExpLstName},
         {PACK_LST_DOSNAME, PackExpLstDosName},
+        {PACK_LST_UNINAME, PackExpLstName}, // same file, only its encoding differs (feature 084)
         {PACK_EXT_NAME, PackExpExtName},
-        {PACK_EXE_JAR32, PackExpJar32ExeName},
-        {PACK_EXE_JAR16, PackExpJar16ExeName},
+        {PACK_EXE_7ZIP, PackExp7ZipExeName},
         {PACK_EXE_RAR32, PackExpRar32ExeName},
-        {PACK_EXE_RAR16, PackExpRar16ExeName},
-        {PACK_EXE_ARJ32, PackExpArj32ExeName},
-        {PACK_EXE_ARJ16, PackExpArj16ExeName},
-        {PACK_EXE_LHA16, PackExpLha16ExeName},
-        {PACK_EXE_UC216, PackExpUc216ExeName},
-        {PACK_EXE_ACE32, PackExpAce32ExeName},
-        {PACK_EXE_ACE16, PackExpAce16ExeName},
-        {PACK_EXE_ZIP32, PackExpZip32ExeName},
-        {PACK_EXE_ZIP16, PackExpZip16ExeName},
-        {PACK_EXE_UZP16, PackExpUzp16ExeName},
         // sentinel
         {NULL, NULL}};
 
@@ -1706,31 +1326,255 @@ void PackSetErrorHandler(BOOL (*handler)(HWND parent, const WORD errNum, ...))
 
 //
 // ****************************************************************************
-// BOOL PackExecute(HWND parent, char *cmdLine, const char *currentDir, TPackErrorTable *const errorTable)
+// Running external archivers (feature 084, contract
+// specs/084-archiver-cleanup/contracts/archiver-launch.md)
 //
-//   Runs the external program given (including parameters) in cmdLine string
-//
-//   RET: returns TRUE on success, FALSE on error
-//        on error the callback *PackErrorHandlerPtr is called
-//   IN:  parent is the parent window for message boxes
-//        cmdLine is the command line to execute
-//        currentDir is the full current directory for the launched program or NULL if it doesn't matter
-//        errorTable is a pointer to the return code table (if NULL, no table)
+// Until feature 084 every archiver was started through utils\salspawn.exe, a
+// helper that no build ever produced - so every external archiver failed with
+// "Unable to execute new process ...\utils\salspawn.exe". The archiver is now
+// the process we create; a job object stops it (and whatever it started) on
+// Cancel and when Tandem Commander ends.
 
-BOOL PackExecute(HWND parent, char* cmdLine, const char* currentDir, TPackErrorTable* const errorTable)
+BOOL PackLastRunCancelled = FALSE;
+
+BOOL CPackOutput::Append(const char* data, size_t len)
 {
-    CALL_STACK_MESSAGE3("PackExecute(, %s, %s, ,)", cmdLine, currentDir);
-
-    // if we haven't determined the path to the spawn yet, do it now
-    if (!InitSpawnName(parent))
+    if (len == 0)
+        return TRUE;
+    if (len > PACK_OUTPUT_MAXLEN || Len > PACK_OUTPUT_MAXLEN - len)
         return FALSE;
+    if (Len + len + 1 > Cap)
+    {
+        size_t newCap = Cap == 0 ? 64 * 1024 : Cap;
+        while (newCap < Len + len + 1)
+            newCap *= 2;
+        char* p = (char*)realloc(Data, newCap);
+        if (p == NULL)
+            return FALSE;
+        Data = p;
+        Cap = newCap;
+    }
+    memcpy(Data + Len, data, len);
+    Len += len;
+    Data[Len] = 0;
+    return TRUE;
+}
+
+static void PackNormalizeProgramQuotes(const char* cmdLine, char* out, size_t outSize);
+
+void PackGetProgramName(const char* cmdLineIn, char* program, int programSize)
+{
+    char cmdLine[PACK_CMDLINE_MAXLEN];
+    PackNormalizeProgramQuotes(cmdLineIn, cmdLine, sizeof(cmdLine)); // ""path"" -> "path"
+    int i = 0, j = 0;
+    // skip leading whitespace
+    while (cmdLine[i] == ' ' || cmdLine[i] == '\t')
+        i++;
+    // read the program name
+    if (cmdLine[i] == '"')
+    {
+        i++;
+        while (j < programSize - 1 && cmdLine[i] != 0 && cmdLine[i] != '"')
+            program[j++] = cmdLine[i++];
+    }
+    else
+    {
+        while (j < programSize - 1 && cmdLine[i] != 0 && cmdLine[i] != ' ' && cmdLine[i] != '\t' &&
+               cmdLine[i] != '"')
+            program[j++] = cmdLine[i++];
+    }
+    program[j] = 0;
+    SalU8TrimIncompleteTail(program); // a cut name must not end in half a character
+}
+
+BOOL PackReportExitCode(HWND parent, const char* cmdLine, DWORD exitCode, TPackErrorTable* const errorTable)
+{
+    char program[MAX_PATH];
+    PackGetProgramName(cmdLine, program, MAX_PATH);
+    // if errorTable == NULL, no translation is done (table doesn't exist)
+    if (errorTable == NULL)
+    {
+        char buffer[1000];
+        sprintf(buffer, LoadStr(IDS_PACKRET_GENERAL), exitCode);
+        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_RETURN, program, buffer);
+    }
+    // find the corresponding text in the table
+    int i;
+    for (i = 0; (*errorTable)[i][0] != -1 && (*errorTable)[i][0] != (int)exitCode; i++)
+        ;
+    if ((*errorTable)[i][0] == -1)
+        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_RETURN, program, LoadStr(IDS_PACKRET_UNKNOWN));
+    return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_RETURN, program, LoadStr((*errorTable)[i][1]));
+}
+
+EPackListEncoding PackGetListEncoding(const char* command, BOOL needANSIListFile)
+{
+    // variables are matched without regard to case, like ExpandVarString() does
+    static const char token[] = "$(ListUnicodeFullName)";
+    const int tokenLen = (int)sizeof(token) - 1;
+    if (command != NULL)
+    {
+        const char* s;
+        for (s = command; *s != 0; s++)
+        {
+            if (*s == '$' && _strnicmp(s, token, tokenLen) == 0)
+                return PACKLIST_UNICODE;
+        }
+    }
+    return needANSIListFile ? PACKLIST_ANSI : PACKLIST_OEM;
+}
+
+BOOL PackWriteListLineW(FILE* file, const char* a, const char* b, const char* c)
+{
+    const char* parts[3] = {a, b, c};
+    int i;
+    for (i = 0; i < 3; i++)
+    {
+        if (parts[i] == NULL || parts[i][0] == 0)
+            continue;
+        // WTF-8 -> UTF-16: a name with an unpaired surrogate (feature 066) keeps it
+        WCHAR* w = SalU8ToWAlloc(parts[i]);
+        if (w == NULL)
+            return FALSE;
+        size_t len = wcslen(w);
+        BOOL ok = fwrite(w, sizeof(WCHAR), len, file) == len;
+        free(w);
+        if (!ok)
+            return FALSE;
+    }
+    return fwrite(L"\r\n", sizeof(WCHAR), 2, file) == 2;
+}
+
+// reads whatever the archiver has written so far without ever blocking; FALSE
+// when the output is too large or memory ran out
+static BOOL PackDrainPipe(HANDLE pipe, CPackOutput* output, BOOL* broken)
+{
+    char buffer[16384];
+    while (1)
+    {
+        DWORD avail = 0;
+        if (!PeekNamedPipe(pipe, NULL, 0, NULL, &avail, NULL))
+        {
+            *broken = TRUE; // the archiver closed its end (and nobody else holds it)
+            return TRUE;
+        }
+        if (avail == 0)
+            return TRUE;
+        DWORD read = 0;
+        if (!ReadFile(pipe, buffer, avail < sizeof(buffer) ? avail : sizeof(buffer), &read, NULL))
+        {
+            *broken = TRUE;
+            return TRUE;
+        }
+        if (read == 0)
+            return TRUE;
+        if (!output->Append(buffer, read))
+            return FALSE;
+    }
+}
+
+// shows the archiver's console window (it starts minimized) so the user can see
+// a question it asks
+static void PackRestoreConsoleWindow(DWORD processID)
+{
+    HWND win = NULL;
+    while ((win = FindWindowEx(NULL, win, "ConsoleWindowClass", NULL)) != NULL)
+    {
+        DWORD pid;
+        GetWindowThreadProcessId(win, &pid);
+        if (pid == processID)
+        {
+            ShowWindow(win, SW_RESTORE);
+            break;
+        }
+    }
+}
+
+// A command that quotes the archiver variable itself - "$(Rar32bitExecutable)" -
+// expands to ""C:\...\Rar.exe"" since feature 084 quotes the path in the variable
+// (until then an unquoted 8.3 name made such commands work). The doubled quotes
+// around the program are reduced to single ones so these entries keep working
+// (FR-008; independent re-review of feature 084, finding 1).
+static void PackNormalizeProgramQuotes(const char* cmdLine, char* out, size_t outSize)
+{
+    lstrcpyn(out, cmdLine, (int)outSize);
+    char* s = out;
+    while (*s == ' ' || *s == '\t')
+        s++;
+    if (s[0] != '"' || s[1] != '"' || s[2] == '"' || s[2] == 0)
+        return;
+    char* end = strstr(s + 2, "\"\"");
+    if (end == NULL || memchr(s + 2, '"', end - (s + 2)) != NULL)
+        return;
+    memmove(end, end + 1, strlen(end + 1) + 1); // the closing ""  -> "
+    memmove(s, s + 1, strlen(s + 1) + 1);       // the opening ""  -> "
+}
+
+EPackRunResult PackRunArchiver(HWND parent, const char* cmdLineIn, const char* currentDir,
+                               CPackOutput* output, DWORD* exitCode)
+{
+    CALL_STACK_MESSAGE3("PackRunArchiver(, %s, %s, ,)", cmdLineIn, currentDir);
+    BOOL listing = output != NULL;
+    *exitCode = 0;
+    char cmdLine[PACK_CMDLINE_MAXLEN];
+    PackNormalizeProgramQuotes(cmdLineIn, cmdLine, sizeof(cmdLine));
+
+    char program[MAX_PATH];
+    PackGetProgramName(cmdLine, program, MAX_PATH);
+    if (program[0] == 0)
+    {
+        (*PackErrorHandlerPtr)(parent, IDS_PACKERR_CMDLNERR);
+        return PACKRUN_FAILED;
+    }
 
     // set everything needed to create the process
-    PROCESS_INFORMATION pi;
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE;
+    HANDLE outRd = NULL, outWr = NULL, errWr = NULL;
+    HANDLE inNul = INVALID_HANDLE_VALUE;
     STARTUPINFO si;
     memset(&si, 0, sizeof(STARTUPINFO));
     si.cb = sizeof(STARTUPINFO);
-    if (PackWinTimeout != 0)
+    // a new process group: Ctrl+C in a console never reaches the archiver (what the
+    // old helper ensured); Cancel stops it through the job instead
+    DWORD flags = CREATE_NEW_PROCESS_GROUP | CREATE_DEFAULT_ERROR_MODE | NORMAL_PRIORITY_CLASS | CREATE_SUSPENDED;
+    if (listing)
+    {
+        if (!HANDLES(CreatePipe(&outRd, &outWr, &sa, 0)))
+        {
+            char buffer[1000];
+            strcpy(buffer, "CreatePipe: ");
+            strcat(buffer, GetErrorText(GetLastError()));
+            (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
+            return PACKRUN_FAILED;
+        }
+        SetHandleInformation(outRd, HANDLE_FLAG_INHERIT, 0); // our end must not leak into the archiver
+        // so that we can use it as stderr as well
+        if (!HANDLES(DuplicateHandle(GetCurrentProcess(), outWr, GetCurrentProcess(), &errWr,
+                                     0, TRUE, DUPLICATE_SAME_ACCESS)))
+        {
+            char buffer[1000];
+            strcpy(buffer, "DuplicateHandle: ");
+            strcat(buffer, GetErrorText(GetLastError()));
+            HANDLES(CloseHandle(outRd));
+            HANDLES(CloseHandle(outWr));
+            (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
+            return PACKRUN_FAILED;
+        }
+        // an archiver that asks a question while listing reads end-of-file and
+        // fails instead of waiting forever for an answer nobody can give
+        inNul = NOHANDLES(CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa,
+                                      OPEN_EXISTING, 0, NULL));
+        flags |= CREATE_NEW_CONSOLE;
+        si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+        si.wShowWindow = SW_HIDE;
+        si.hStdInput = inNul != INVALID_HANDLE_VALUE ? inNul : NULL;
+        si.hStdOutput = outWr;
+        si.hStdError = errWr;
+    }
+    else if (PackWinTimeout != 0)
     {
         si.dwFlags = STARTF_USESHOWWINDOW;
         POINT p;
@@ -1745,131 +1589,161 @@ BOOL PackExecute(HWND parent, char* cmdLine, const char* currentDir, TPackErrorT
         si.wShowWindow = SW_MINIMIZE;
     }
 
-    // Determine what we are actually running (for error reporting)
-    int i = 0, j = 0;
-    char cmd[MAX_PATH];
-    // skip leading whitespace
-    while (cmdLine[i] != '\0' && (cmdLine[i] == ' ' || cmdLine[i] == '\t'))
-        i++;
-    // read the program name
-    if (cmdLine[i] == '"')
+    // the job that stops the archiver and everything it starts
+    HANDLE job = NOHANDLES(CreateJobObjectW(NULL, NULL));
+    if (job != NULL)
     {
-        i++;
-        while (j < MAX_PATH && cmdLine[i] != '\0' && cmdLine[i] != '"')
-            cmd[j++] = cmdLine[i++];
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION li;
+        memset(&li, 0, sizeof(li));
+        li.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, &li, sizeof(li)))
+        {
+            TRACE_E("PackRunArchiver(): SetInformationJobObject failed, error " << GetLastError());
+            NOHANDLES(CloseHandle(job));
+            job = NULL;
+        }
     }
     else
-        while (j < MAX_PATH && cmdLine[i] != '\0' && cmdLine[i] != ' ' && cmdLine[i] != '\t' && cmdLine[i] != '"')
-            cmd[j++] = cmdLine[i++];
-    cmd[j] = '\0';
+        TRACE_E("PackRunArchiver(): CreateJobObject failed, error " << GetLastError());
 
-    char* tmpCmdLine = (char*)malloc(2 + strlen(SpawnExe) + 2 + strlen(SPAWN_EXE_PARAMS) + 1 + strlen(cmdLine) + 1);
-    if (tmpCmdLine == NULL)
-        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_NOMEM);
-    sprintf(tmpCmdLine, "\"%s\" %s %s", SpawnExe, SPAWN_EXE_PARAMS, cmdLine);
-    // launch the external program
-    if (!SalCreateProcess(NULL, tmpCmdLine, NULL, NULL, TRUE, CREATE_DEFAULT_ERROR_MODE | NORMAL_PRIORITY_CLASS, NULL, currentDir, &si, &pi))
+    // launch the archiver itself
+    PROCESS_INFORMATION pi;
+    BOOL started = SalCreateProcess(NULL, cmdLine, NULL, NULL, TRUE, flags, NULL, currentDir, &si, &pi);
+    DWORD err = started ? 0 : GetLastError();
+    // the child's ends are not needed any more (the archiver has its own copies)
+    if (outWr != NULL)
+        HANDLES(CloseHandle(outWr));
+    if (errWr != NULL)
+        HANDLES(CloseHandle(errWr));
+    if (inNul != INVALID_HANDLE_VALUE)
+        NOHANDLES(CloseHandle(inNul));
+    if (!started)
     {
-        DWORD err = GetLastError();
-        free(tmpCmdLine);
-        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PROCESS, SpawnExe, GetErrorText(err));
+        if (outRd != NULL)
+            HANDLES(CloseHandle(outRd));
+        if (job != NULL)
+            NOHANDLES(CloseHandle(job));
+        // name the program actually involved; point to the configuration only
+        // where it can help - when the program is not there at all (FR-005)
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND)
+            (*PackErrorHandlerPtr)(parent, IDS_PACKERR_EXEMISSING, program);
+        else
+            (*PackErrorHandlerPtr)(parent, IDS_PACKERR_STARTFAIL, program, GetErrorText(err));
+        return PACKRUN_FAILED;
     }
-    free(tmpCmdLine);
+    if (job != NULL && !AssignProcessToJobObject(job, pi.hProcess))
+    {
+        TRACE_E("PackRunArchiver(): AssignProcessToJobObject failed, error " << GetLastError());
+        NOHANDLES(CloseHandle(job));
+        job = NULL; // Cancel then stops at least the archiver itself
+    }
+    ResumeThread(pi.hThread);
 
-    // create a modal window
+    // the wait window with Cancel - for a run that executes the archiver; a listing
+    // shows none of its own: its callers already show "Reading list of files ...
+    // please wait" (CreateSafeWaitWindow) and a second window would cover it.
+    // Esc cancels both kinds (UserWantsToCancelSafeWaitWindow: Esc while this
+    // program is active, or that window's Close button).
     HWND hFocusedWnd = GetFocus();
     HWND main = parent == NULL ? MainWindow->HWindow : parent;
-    CExecuteWindow tmpWindow(main, IDS_PACK_EXECUTING, ooStatic);
-    tmpWindow.Create();
+    CExecuteWindow waitWindow(main, IDS_PACK_EXECUTING, ooStatic);
+    BOOL waitShown = FALSE;
     HWND oldPluginMsgBoxParent = PluginMsgBoxParent;
-    // plugin timers may be invoked (happens with an FS plugin, e.g. FTP, open in the other panel) -> set parent for message boxes
-    PluginMsgBoxParent = tmpWindow.HWindow;
     EnableWindow(main, FALSE);
     // activate the hourglass cursor
     HCURSOR prevCrsr = SetCursor(LoadCursor(NULL, IDC_WAIT));
-    // Wait for the external program to finish
-    HANDLE objects[] = {pi.hProcess};
-    DWORD start = GetTickCount();
-    DWORD elapsed = 0;
-
-    DWORD ret;
-    do
+    if (!listing)
     {
-        /*  // Petr: pumping only WM_PAINT leads to blocking all other instances of Salamander
-    //       (even newly started ones) and other softwares (at least during Paste), if we
-    //       put a file or directory on the clipboard before packing. Accessing clipboard
-    //       data causes OLE to communicate with this process which doesn't respond
-    //       because it pumps only WM_PAINT.
-    // Original Tom's variant:
-    ret = MsgWaitForMultipleObjects(1, objects, FALSE,
-                                    PackWinTimeout <= 0 ? INFINITE : PackWinTimeout - elapsed,
-                                    QS_PAINT);
-*/
-        ret = MsgWaitForMultipleObjects(1, objects, FALSE,
-                                        PackWinTimeout <= 0 ? INFINITE : PackWinTimeout - elapsed,
-                                        QS_ALLINPUT);
+        waitWindow.Create();
+        waitShown = TRUE;
+        // plugin timers may be invoked (happens with an FS plugin, e.g. FTP, open in the other panel) -> set parent for message boxes
+        PluginMsgBoxParent = waitWindow.HWindow;
+    }
+
+    GetAsyncKeyState(VK_ESCAPE); // forget an Esc pressed before the run started
+    EPackRunResult result = PACKRUN_EXITED;
+    BOOL consoleRestored = listing || PackWinTimeout <= 0;
+    BOOL pipeBroken = FALSE;
+    BOOL overflow = FALSE;
+    DWORD waitError = 0;
+    DWORD start = GetTickCount();
+    while (1)
+    {
+        if (listing && !pipeBroken && !PackDrainPipe(outRd, output, &pipeBroken))
+        {
+            overflow = TRUE;
+            break;
+        }
+        DWORD elapsed = GetTickCount() - start;
+        // a listing keeps the pipe drained so the archiver never blocks on a full pipe;
+        // both kinds wake up regularly to notice Esc
+        DWORD timeout = listing ? 50 : 100;
+        if (!consoleRestored && elapsed < (DWORD)PackWinTimeout && (DWORD)PackWinTimeout - elapsed < timeout)
+            timeout = (DWORD)PackWinTimeout - elapsed;
+        // Petr: pumping only WM_PAINT leads to blocking all other instances of Salamander
+        // (even newly started ones) and other software (at least during Paste), if a file
+        // or directory is on the clipboard: OLE talks to this process, which then does
+        // not answer - so all messages are pumped
+        DWORD ret = MsgWaitForMultipleObjects(1, &pi.hProcess, FALSE, timeout, QS_ALLINPUT);
+        if (ret == WAIT_OBJECT_0)
+            break; // the archiver has ended
+        if (ret == WAIT_FAILED)
+        {
+            waitError = GetLastError();
+            break;
+        }
         if (ret == WAIT_OBJECT_0 + 1)
         {
-            // if a message arrived, handle it
             MSG msg;
-            /*    // Original Tom's variant: (see description above)
-      while (PeekMessage(&msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE))
-        DispatchMessage(&msg);
-*/
             while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
             {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
-            // if the timeout has expired, stop
-            elapsed = GetTickCount() - start;
-            if (PackWinTimeout > 0 && (int)elapsed >= PackWinTimeout)
-            {
-                ret = WAIT_TIMEOUT;
-                break;
-            }
         }
-    } while (ret == WAIT_OBJECT_0 + 1); // wait while WM_PAINT messages arrive
-
-    if (ret == WAIT_TIMEOUT)
-    {
-        HWND win = NULL;
-        DWORD pid;
-        do
+        if ((waitShown && waitWindow.Cancelled) || UserWantsToCancelSafeWaitWindow())
         {
-            win = FindWindowEx(NULL, win, "ConsoleWindowClass", NULL);
-            GetWindowThreadProcessId(win, &pid);
-            if (pid == pi.dwProcessId)
+            result = PACKRUN_CANCELLED;
+            break;
+        }
+        elapsed = GetTickCount() - start;
+        if (!consoleRestored && elapsed >= (DWORD)PackWinTimeout)
+        {
+            PackRestoreConsoleWindow(pi.dwProcessId);
+            consoleRestored = TRUE;
+        }
+    }
+
+    if (result == PACKRUN_CANCELLED || overflow || waitError != 0)
+    {
+        // stop the archiver and everything it has started
+        if (job != NULL)
+            TerminateJobObject(job, 255);
+        else
+            TerminateProcess(pi.hProcess, 255);
+        WaitForSingleObject(pi.hProcess, 10000);
+    }
+    else if (listing)
+    {
+        // the archiver has ended: take the rest of its output (stop when nothing more
+        // comes - a process it started could still hold the pipe open)
+        while (!pipeBroken)
+        {
+            size_t before = output->Len;
+            if (!PackDrainPipe(outRd, output, &pipeBroken))
             {
-                ShowWindow(win, SW_RESTORE);
+                overflow = TRUE;
                 break;
             }
-        } while (win != NULL);
-        do
-        {
-            /*    // Original Tom's variant: (see description above)
-      ret = MsgWaitForMultipleObjects(1, objects, FALSE, INFINITE, QS_PAINT);
-*/
-            ret = MsgWaitForMultipleObjects(1, objects, FALSE, INFINITE, QS_ALLINPUT);
-            MSG msg;
-            if (ret == WAIT_OBJECT_0 + 1)
-            {
-                /*      // Original Tom's variant: (see description above)
-        while (PeekMessage(&msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE))
-          DispatchMessage(&msg);
-*/
-                while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-                {
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
-                }
-            }
-        } while (ret == WAIT_OBJECT_0 + 1); // wait while WM_PAINT messages arrive
+            if (output->Len == before)
+                break;
+        }
     }
 
     EnableWindow(main, TRUE);
     PluginMsgBoxParent = oldPluginMsgBoxParent;
-    DestroyWindow(tmpWindow.HWindow);
+    if (waitShown)
+        DestroyWindow(waitWindow.HWindow);
     // if Salamander is active, call SetFocus on the stored window (SetFocus does
     // not work when the main window is disabled - after deactivation/activation
     // of the disabled main window, the active panel has no focus)
@@ -1882,83 +1756,64 @@ BOOL PackExecute(HWND parent, char* cmdLine, const char* currentDir, TPackErrorT
     SetCursor(prevCrsr);
     UpdateWindow(main);
 
-    if (ret == WAIT_FAILED)
-    {
-        char buffer[1000];
-        strcpy(buffer, "WaitForSingleObject: ");
-        strcat(buffer, GetErrorText(GetLastError()));
-        HANDLES(CloseHandle(pi.hProcess));
-        HANDLES(CloseHandle(pi.hThread));
-        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
-    }
+    DWORD exitCodeError = 0;
+    if (result == PACKRUN_EXITED && !overflow && waitError == 0 && !GetExitCodeProcess(pi.hProcess, exitCode))
+        exitCodeError = GetLastError();
 
-    // and find out how it ended - hopefully they all return 0 as success
-    DWORD exitCode;
-    if (!GetExitCodeProcess(pi.hProcess, &exitCode))
-    {
-        char buffer[1000];
-        strcpy(buffer, "GetExitCodeProcess: ");
-        strcat(buffer, GetErrorText(GetLastError()));
-        HANDLES(CloseHandle(pi.hProcess));
-        HANDLES(CloseHandle(pi.hThread));
-        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
-    }
-
-    // release handles of the process
+    // release the handles; closing the job ends anything the archiver left running
     HANDLES(CloseHandle(pi.hProcess));
     HANDLES(CloseHandle(pi.hThread));
+    if (outRd != NULL)
+        HANDLES(CloseHandle(outRd));
+    if (job != NULL)
+        NOHANDLES(CloseHandle(job));
 
-    if (exitCode != 0)
+    if (waitError != 0 || exitCodeError != 0)
     {
-        //
-        // First handle salspawn.exe errors if we used it
-        //
-        if (exitCode >= SPAWN_ERR_BASE)
-        {
-            // salspawn.exe error - bad parameters or similar
-            if (exitCode >= SPAWN_ERR_BASE && exitCode < SPAWN_ERR_BASE * 2)
-                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_RETURN, SPAWN_EXE_NAME, LoadStr(IDS_PACKRET_SPAWN));
-            // CreateProcess error
-            if (exitCode >= SPAWN_ERR_BASE * 2 && exitCode < SPAWN_ERR_BASE * 3)
-                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PROCESS, cmd, GetErrorText(exitCode - SPAWN_ERR_BASE * 2));
-            // WaitForSingleObject error
-            if (exitCode >= SPAWN_ERR_BASE * 3 && exitCode < SPAWN_ERR_BASE * 4)
-            {
-                char buffer[1000];
-                strcpy(buffer, "WaitForSingleObject: ");
-                strcat(buffer, GetErrorText(exitCode - SPAWN_ERR_BASE * 3));
-                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
-            }
-            // GetExitCodeProcess error
-            if (exitCode >= SPAWN_ERR_BASE * 4)
-            {
-                char buffer[1000];
-                strcpy(buffer, "GetExitCodeProcess: ");
-                strcat(buffer, GetErrorText(exitCode - SPAWN_ERR_BASE * 4));
-                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
-            }
-        }
-        //
-        // now come the external program errors
-        //
-        // if errorTable == NULL, no translation is done (table doesn't exist)
-        if (!errorTable)
-        {
-            char buffer[1000];
-            sprintf(buffer, LoadStr(IDS_PACKRET_GENERAL), exitCode);
-            return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_RETURN, cmd, buffer);
-        }
-        // find the corresponding text in the table
-        for (i = 0; (*errorTable)[i][0] != -1 &&
-                    (*errorTable)[i][0] != (int)exitCode;
-             i++)
-            ;
-        // was it found?
-        if ((*errorTable)[i][0] == -1)
-            return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_RETURN, cmd, LoadStr(IDS_PACKRET_UNKNOWN));
-        else
-            return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_RETURN, cmd, LoadStr((*errorTable)[i][1]));
+        char buffer[1000];
+        strcpy(buffer, waitError != 0 ? "WaitForSingleObject: " : "GetExitCodeProcess: ");
+        strcat(buffer, GetErrorText(waitError != 0 ? waitError : exitCodeError));
+        (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
+        return PACKRUN_FAILED;
     }
+    if (overflow)
+    {
+        (*PackErrorHandlerPtr)(parent, IDS_PACKERR_NOMEM);
+        return PACKRUN_FAILED;
+    }
+    return result;
+}
+
+//
+// ****************************************************************************
+// BOOL PackExecute(HWND parent, char *cmdLine, const char *currentDir, TPackErrorTable *const errorTable)
+//
+//   Runs the external program given (including parameters) in cmdLine string
+//
+//   RET: returns TRUE on success, FALSE on error or when the user cancelled it
+//        (PackLastRunCancelled then says which); an error is reported through
+//        the callback *PackErrorHandlerPtr, a cancel is not
+//   IN:  parent is the parent window for message boxes
+//        cmdLine is the command line to execute
+//        currentDir is the full current directory for the launched program or NULL if it doesn't matter
+//        errorTable is a pointer to the return code table (if NULL, no table)
+
+BOOL PackExecute(HWND parent, char* cmdLine, const char* currentDir, TPackErrorTable* const errorTable)
+{
+    CALL_STACK_MESSAGE3("PackExecute(, %s, %s, ,)", cmdLine, currentDir);
+    PackLastRunCancelled = FALSE;
+    DWORD exitCode;
+    switch (PackRunArchiver(parent, cmdLine, currentDir, NULL, &exitCode))
+    {
+    case PACKRUN_FAILED:
+        return FALSE; // already reported
+    case PACKRUN_CANCELLED:
+        PackLastRunCancelled = TRUE;
+        return FALSE;
+    }
+    // and find out how it ended - hopefully they all return 0 as success
+    if (exitCode != 0)
+        return PackReportExitCode(parent, cmdLine, exitCode, errorTable);
     return TRUE;
 }
 
@@ -1972,6 +1827,9 @@ CExecuteWindow::CExecuteWindow(HWND hParent, int textResID, CObjectOrigin origin
 {
     CALL_STACK_MESSAGE2("CExecuteWindow::CExecuteWindow(, %d, )", textResID);
     HParent = hParent;
+    HCancel = NULL;
+    TextAreaHeight = 0;
+    Cancelled = FALSE;
     char* t = LoadStr(textResID);
     int len = (int)strlen(t);
     Text = new char[len + 1];
@@ -1998,17 +1856,27 @@ HWND CExecuteWindow::Create()
     SIZE s;
     s.cx = 300;
     s.cy = 30;
+    SIZE b; // the Cancel button caption (feature 084)
+    b.cx = 50;
+    b.cy = 13;
+    const WCHAR* cancelText = LoadStrW(IDS_BUTTON_CANCEL);
     HDC dc = HANDLES(GetDC(NULL));
     if (dc != NULL)
     {
         HFONT old = (HFONT)SelectObject(dc, EnvFont);
         GetTextExtentPoint32(dc, Text, (int)strlen(Text), &s);
+        GetTextExtentPoint32W(dc, cancelText, (int)wcslen(cancelText), &b);
         SelectObject(dc, old);
         HANDLES(ReleaseDC(NULL, dc));
     }
 
-    int width = s.cx + 2 * EXECUTEWINDOW_HMARGIN;
-    int height = s.cy + 2 * EXECUTEWINDOW_VMARGIN;
+    int buttonW = b.cx + 2 * b.cy;
+    if (buttonW < 5 * b.cy)
+        buttonW = 5 * b.cy;
+    int buttonH = b.cy + b.cy / 2 + 6;
+    TextAreaHeight = s.cy + 2 * EXECUTEWINDOW_VMARGIN;
+    int width = (s.cx > buttonW ? s.cx : buttonW) + 2 * EXECUTEWINDOW_HMARGIN;
+    int height = TextAreaHeight + buttonH + EXECUTEWINDOW_VMARGIN;
     int x;
     int y;
 
@@ -2028,6 +1896,21 @@ HWND CExecuteWindow::Create()
              HInstance,
              this);
 
+    if (HWindow != NULL)
+    {
+        // feature 084: the archiver can be stopped (the main window is disabled
+        // meanwhile, this window is not)
+        RECT cr;
+        GetClientRect(HWindow, &cr);
+        HCancel = CreateWindowExW(0, L"BUTTON", cancelText,
+                                  WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
+                                  (cr.right - buttonW) / 2, TextAreaHeight, buttonW, buttonH,
+                                  HWindow, (HMENU)IDCANCEL, HInstance, NULL);
+        if (HCancel != NULL)
+            SendMessage(HCancel, WM_SETFONT, (WPARAM)EnvFont, TRUE);
+        ThemeApplyToWindowTree(HWindow);
+    }
+
     ShowWindow(HWindow, SW_SHOWNA);
     return HWindow;
 }
@@ -2037,6 +1920,18 @@ CExecuteWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
+    case WM_COMMAND:
+    {
+        if (LOWORD(wParam) == IDCANCEL && HIWORD(wParam) == BN_CLICKED)
+        {
+            Cancelled = TRUE; // PackRunArchiver() stops the archiver
+            if (HCancel != NULL)
+                EnableWindow(HCancel, FALSE);
+            return 0;
+        }
+        break;
+    }
+
     case WM_ERASEBKGND:
     {
         LRESULT ret = CWindow::WindowProc(uMsg, wParam, lParam);
@@ -2054,6 +1949,8 @@ CExecuteWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         if (Text != NULL)
         {
+            if (TextAreaHeight > 0 && TextAreaHeight < r.bottom)
+                r.bottom = TextAreaHeight; // the Cancel button is below the text
             HFONT hOldFont = (HFONT)SelectObject(dc, EnvFont);
             int prevBkMode = SetBkMode(dc, TRANSPARENT);
             SetTextColor(dc, ThemeSysColor(COLOR_BTNTEXT));
@@ -2063,8 +1960,15 @@ CExecuteWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         return ret;
     }
+
     case WM_SETCURSOR:
     {
+        // the hourglass everywhere except over the Cancel button
+        if ((HWND)wParam == HCancel && HCancel != NULL)
+        {
+            SetCursor(LoadCursor(NULL, IDC_ARROW));
+            return TRUE;
+        }
         LRESULT ret = CWindow::WindowProc(uMsg, wParam, lParam);
         SetCursor(LoadCursor(NULL, IDC_WAIT));
         return TRUE;

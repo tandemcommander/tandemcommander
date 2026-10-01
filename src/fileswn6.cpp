@@ -3148,7 +3148,7 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         int format = PackerFormatConfig.PackIsArchive(GetZIPArchive());
         if (format != 0) // "always-true" - we found a supported archive
         {
-            if (!PackerFormatConfig.GetUsePacker(format - 1)) // no Edit?
+            if (!PackerFormatConfig.CanPack(format - 1)) // no Edit? (feature 084: or its packer program is missing)
             {
                 if (SalMessageBox(HWindow, LoadStr(IDS_EDITPACKNOTSUPPORTED),
                                   LoadStr(IDS_QUESTION), MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION) != IDYES)

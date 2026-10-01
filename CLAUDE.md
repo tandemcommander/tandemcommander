@@ -120,8 +120,9 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
 
 ## Key Facts
 
-- **81 projects** in salamand.sln (1 main app, 31 plugins, 32 lang
-  modules, 7 helper libs, 4 utilities, 2 shell exts, 3 setup, 1 other)
+- **80 projects** in salamand.sln (1 main app, 31 plugins, 32 lang
+  modules, 7 helper libs, 3 utilities, 2 shell exts, 3 setup, 1 other;
+  the `salspawn` helper left in feature 084)
 - **Plugin set is policy-driven**: 8 obsolete plugins were removed in
   feature 007 (pak, unarj, unlha, unfat, wmobile, ieviewer, splitcbn,
   winscp); `plugins.cfg` disables 10 more by default (demos and
@@ -133,7 +134,11 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
   `tools/check_runtime_deps.py` proves every shipped module's runtime
   imports resolve there; the signing sweep leaves Microsoft's signature on
   them. Plugin authors: toolset no newer than the shipped runtime.
-- **Missing deps**: unrar.dll (unrar), OpenSSL (ftp); pictview runs on
+- **Missing deps**: unrar.dll (unrar - not needed: RAR is to be read by
+  the 7zip plug-in's own engine, whose RAR decoder carries the "unRAR
+  restriction" the maintainer accepted in feature 084 - exposed once the
+  vendored 7-Zip is upgraded, NEXT-WORK item 8; unrar.dll *is*
+  redistributable, the issue is GPL compatibility), OpenSSL (ftp); pictview runs on
   the built-in Windows WIC engine since feature 006 (no pvw32cnv.dll
   needed)
 - **Encoding**: UTF-8-BOM, formatted with clang-format
@@ -742,3 +747,63 @@ plugin architecture preservation, UI consistency.
   registration that 0.1.8 never performs — the code is gated on a DLL that
   is not shipped), so cite *reachable* code, not just existing code; fixing any of them updates
   `PRIVACY.md` in the same change. No product code changed.
+- 084-archiver-cleanup: **external archivers work for the first time.**
+  - **What was broken.** Every external archiver operation since 0.1.0 failed
+    with "Unable to execute new process ...\utils\salspawn.exe". The helper
+    started every archiver, but it was built only in the `Utils (Release)`
+    configuration, into `plugins\Intermediate\`, and no release ever
+    contained it. Of the 12 known archivers, 7 were MS-DOS programs that
+    64-bit Windows cannot run.
+  - **What it is now.** The archiver is started **directly**
+    (`PackRunArchiver`, `src/pack3.cpp`) in a **kill-on-close job object**,
+    behind a wait window with **Cancel**. Esc cancels too; a listing honours
+    the caller's "Reading list…" window instead of opening its own. The
+    `salspawn` project is deleted (solution: 80 projects).
+  - **Two archivers left.** Index 0 = **7-Zip console** (new, UID 13): browses
+    (`7z l -slt -ba`, pure parser `src/common/sal7zlist.*`) and unpacks ARJ
+    and LZH/LHA. Index 1 = **RAR (WinRAR console)**: packing only, UID 2 and
+    index kept so stored `rar;r##` associations stay valid. JAR, ACE, ARJ,
+    PKZIP, LHA, UC2, every DOS row, the floppy presets, the OEM column parser,
+    `PackUC2List` and the ARJ/RAR5 hacks are deleted.
+  - **List files.** New variable `$(ListUnicodeFullName)` gives a UTF-16LE
+    list file with a BOM. 7-Zip 22.01 rejects 4-byte UTF-8 (emoji) in a UTF-8
+    list. Custom entries keep their OEM/ANSI behaviour.
+  - **Hiding (FR-017).** `RefreshAvailability` (at `CheckData`, the Locations
+    page OK, and after Autoconfiguration; UNC paths not probed) drives three
+    things: `CanBrowse` (`BuildArray` skips records of missing or
+    non-browsing archivers), `CanPack` (the runtime "can pack" sites), and
+    `IsPackerOffered`/`IsUnpackerOffered` (Pack/Unpack combos now map
+    positions through item data).
+  - **Autoconfiguration** finds 7-Zip and WinRAR through the registry and
+    Program Files before any disk scan.
+  - **Configuration version 106.** `PackMigrateArchiversTo106`, with pure
+    decisions in `src/common/salarcmig.*`, removes entries that use a removed
+    archiver's variable (edited or not, clarification Q4) and the floppy
+    presets. It rewrites the untouched 0.1.8 RAR packer default, deletes the
+    RAR unpacker default, adds the 7-Zip unpacker and the `arj` / `lzh;lha`
+    associations, and runs once before `CheckData`.
+  - **Traps the reviews caught.**
+    - `PackErrorHandler` shows every ID >= `IDS_PACKQRY_PREFIX` (11101) as an
+      OK/Cancel question, so error strings live in 11072-11074.
+    - The default 7-Zip unpacker without `-o"$(TargetPath)"` silently
+      overwrote files in the target (blocker).
+    - Without `-ba` an archive comment injected fake entries.
+    - On a volume without 8.3 names the archiver path went unquoted
+      (`D:\Program.exe`).
+    - A user command quoting the variable now expands to `""path""` and is
+      normalised.
+  - **Translations.** The merge tool keys string rows by bundle *ordinal*,
+    so removing two bundles would have displaced 456 rows per language.
+    `probe/rekey_stringtables.py` re-keys the committed `.slt` and `.origin`
+    to the new bundle numbering before the merge: 15 gaps per language,
+    5,696 DeepL characters, `IDS_PACKERR_EXEMISSING` pinned formal with the
+    real UI names. Python TLS to DeepL needs `SSL_CERT_FILE` = certifi.
+  - **RAR out of the box (stage S7) is blocked** on NEXT-WORK item 8, the
+    upgrade of the vendored 7-Zip 16.04 (RAR RCE CVEs) to 25.x. The
+    maintainer accepted the "unRAR restriction" licence of the RAR decoder
+    already inside `7za.dll` (documented in `doc/third_party.txt`).
+  - **Status.** saltests 1527 → 1647. Plugin ABI untouched (interface 106).
+    The GUI probes (`probe/gui_probe.ps1`, `make_cfg_fixtures.ps1`) were
+    written but **not run**, at the maintainer's request; they are owed.
+    Records: `specs/084-archiver-cleanup/fix-log.md`, `inventory.md`,
+    `closing-report.md`.

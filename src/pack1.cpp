@@ -11,6 +11,7 @@
 #include "fileswnd.h"
 #include "zip.h"
 #include "pack.h"
+#include "sal7zlist.h" // feature 084
 
 //
 // ****************************************************************************
@@ -22,105 +23,34 @@
 BOOL(*PackErrorHandlerPtr)
 (HWND parent, const WORD errNum, ...) = EmptyErrorHandler;
 
-const char* SPAWN_EXE_NAME = "salspawn.exe";
-const char* SPAWN_EXE_PARAMS = "-c10000";
-
-// Path to the salspawn program
-char SpawnExe[MAX_PATH * 2] = {0};
-BOOL SpawnExeInitialised = FALSE;
-
-// so that the date error is reported only once
-BOOL FirstError;
-
 // Table of archive definitions and handling - non-modifying operations
-// !!! WARNING: when changing the order of external archivers you must also change
-// the order in the externalArchivers array inside CPlugins::FindViewEdit method
+// !!! WARNING: the row order is the archiver index (PACK7ZIPINDEX, PACKRARINDEX)
+// stored in the "Archive Association" records; when changing it you must also
+// change PackModifyTable, CArchiverConfig::AddDefault, PackACExtensions, the
+// default custom packers/unpackers and the externalArchivers array inside
+// CPlugins::FindViewEdit
 const SPackBrowseTable PackBrowseTable[] =
     {
-        // JAR 1.02 Win32
+        // [PACK7ZIPINDEX] 7-Zip console (7z.exe) - browses and unpacks the formats no
+        // plug-in handles (feature 084): the bare listing (-ba: no archive comment can
+        // reach the parser, see sal7zlist.h) is read as UTF-8 (-sccUTF-8) and
+        // the list of files is written as UTF-16 (-scsUTF-16LE; research R7a - 7-Zip
+        // rejects 4-byte UTF-8 in a list file)
         {
-            (TPackErrorTable*)&JARErrors, TRUE,
-            "$(ArchivePath)", "$(Jar32bitExecutable) v -ju- \"$(ArchiveFileName)\"",
-            NULL, "Analyzing", 4, 0, 3, "Total files listed:", ' ', 2, 3, 9, 8, 4, 1, 2,
-            "$(TargetPath)", "$(Jar32bitExecutable) x -r- -jyc \"$(ArchiveFullName)\" !\"$(ListFullName)\"",
-            "$(TargetPath)", "$(Jar32bitExecutable) e -r- \"$(ArchiveFullName)\" \"$(ExtractFullName)\"", FALSE},
-        // RAR 4.20 & 5.0 Win x86/x64
+            (TPackErrorTable*)&SevenZipErrors, TRUE,
+            "$(ArchivePath)", "$(SevenZipExecutable) l -slt -ba -sccUTF-8 -scsUTF-8 -- \"$(ArchiveFullName)\"",
+            Pack7zList,
+            "$(TargetPath)", "$(SevenZipExecutable) x -y -sccUTF-8 -scsUTF-16LE \"$(ArchiveFullName)\" -o\"$(TargetPath)\" @\"$(ListUnicodeFullName)\"",
+            "$(TargetPath)", "$(SevenZipExecutable) e -y -sccUTF-8 -scsUTF-8 \"$(ArchiveFullName)\" -o\"$(TargetPath)\" -- \"$(ExtractFullName)\"",
+            FALSE},
+        // [PACKRARINDEX] RAR (WinRAR console, Rar.exe) - packing only; RAR archives are
+        // browsed and unpacked by the 7zip plug-in (feature 084)
         {
             (TPackErrorTable*)&RARErrors, TRUE,
-            "$(ArchivePath)", "$(Rar32bitExecutable) v -c- \"$(ArchiveFileName)\"",
-            NULL, "--------", 0, 0, 2, "--------", ' ', 1, 2, 6, 5, 7, 3, 2,                              // after RAR 5.0 we patch the indices at runtime; see variable 'RAR5AndLater'
-            "$(TargetPath)", "$(Rar32bitExecutable) x -scol \"$(ArchiveFullName)\" @\"$(ListFullName)\"", // since version 5.0 we must enforce the -scol switch; version 4.20 is fine; appears elsewhere and in the registry
-            "$(TargetPath)", "$(Rar32bitExecutable) e \"$(ArchiveFullName)\" \"$(ExtractFullName)\"", FALSE},
-        // ARJ 2.60 MS-DOS
-        {
-            (TPackErrorTable*)&ARJErrors, FALSE,
-            ".", "$(Arj16bitExecutable) v -ja1 $(ArchiveDOSFullName)",
-            NULL, "--------", 0, 0, 2, "--------", ' ', 2, 5, 9, -8, 11, 1, 2,
-            ".", "$(Arj16bitExecutable) x -p -va -hl -jyc $(ArchiveDOSFullName) $(TargetDOSPath)\\ !$(ListDOSFullName)",
-            "$(TargetPath)", "$(Arj16bitExecutable) e -p -va -hl $(ArchiveDOSFullName) $(ExtractFullName)", FALSE},
-        // LHA 2.55 MS-DOS
-        {
-            (TPackErrorTable*)&LHAErrors, FALSE,
-            ".", "$(Lha16bitExecutable) v $(ArchiveDOSFullName)",
-            NULL, "--------------", 0, 0, 2, "--------------", ' ', 1, 2, 6, 5, 7, 1, 2,
-            ".", "$(Lha16bitExecutable) x -p -a -l1 -x1 -c $(ArchiveDOSFullName) $(TargetDOSPath)\\ @$(ListDOSFullName)",
-            "$(TargetPath)", "$(Lha16bitExecutable) e -p -a -l1 -c $(ArchiveDOSFullName) $(ExtractFullName)", FALSE},
-        // UC2 2r3 PRO MS-DOS
-        {
-            (TPackErrorTable*)&UC2Errors, FALSE,
-            ".", "$(UC216bitExecutable) ~D $(ArchiveDOSFullName)",
-            PackUC2List, "", 0, 0, 0, "", ' ', 0, 0, 0, 0, 0, 0, 0,
-            ".", "$(UC216bitExecutable) EF $(ArchiveDOSFullName) ##$(TargetDOSPath) @$(ListDOSFullName)",
-            "$(TargetPath)", "$(UC216bitExecutable) E $(ArchiveDOSFullName) $(ExtractFullName)", FALSE},
-        // JAR 1.02 MS-DOS
-        {
-            (TPackErrorTable*)&JARErrors, FALSE,
-            ".", "$(Jar16bitExecutable) v -ju- $(ArchiveDOSFullName)",
-            NULL, "Analyzing", 4, 0, 3, "Total files listed:", ' ', 2, 3, 9, 8, 4, 1, 2,
-            ".", "$(Jar16bitExecutable) x -r- -jyc $(ArchiveDOSFullName) -o$(TargetDOSPath) !$(ListDOSFullName)",
-            "$(TargetPath)", "$(Jar16bitExecutable) e -r- $(ArchiveDOSFullName) \"$(ExtractFullName)\"", FALSE},
-        // RAR 2.05 MS-DOS
-        {
-            (TPackErrorTable*)&RARErrors, FALSE,
-            ".", "$(Rar16bitExecutable) v -c- $(ArchiveDOSFullName)",
-            NULL, "--------", 0, 0, 2, "--------", ' ', 1, 2, 6, 5, 7, 3, 1,
-            ".", "$(Rar16bitExecutable) x $(ArchiveDOSFullName) $(TargetDOSPath)\\ @$(ListDOSFullName)",
-            "$(TargetPath)", "$(Rar16bitExecutable) e $(ArchiveDOSFullName) $(ExtractFullName)", FALSE},
-        // PKZIP 2.50 Win32
-        {
-            NULL, TRUE,
-            "$(ArchivePath)", "$(Zip32bitExecutable) -com=none -nozipextension \"$(ArchiveFileName)\"",
-            NULL, "  ------  ------    -----", 0, 0, 1, "  ------           ------", ' ', 9, 1, 6, 5, 8, 3, 1,
-            "$(TargetPath)", "$(Zip32bitExecutable) -ext -nozipextension -directories -path \"$(ArchiveFullName)\" @\"$(ListFullName)\"",
-            "$(TargetPath)", "$(Zip32bitExecutable) -ext -nozipextension \"$(ArchiveFullName)\" \"$(ExtractFullName)\"", TRUE},
-        // PKUNZIP 2.04g MS-DOS
-        {
-            (TPackErrorTable*)&UNZIP204Errors, FALSE,
-            ".", "$(Unzip16bitExecutable) -v $(ArchiveDOSFullName)",
-            NULL, " ------  ------   -----", 0, 0, 1, " ------          ------", ' ', 9, 1, 6, 5, 8, 3, 1,
-            ".", "$(Unzip16bitExecutable) -d $(ArchiveDOSFullName) $(TargetDOSPath)\\ @$(ListDOSFullName)",
-            "$(TargetPath)", "$(Unzip16bitExecutable) $(ArchiveDOSFullName) $(ExtractFullName)", FALSE},
-        // ARJ 3.00c Win32
-        {
-            (TPackErrorTable*)&ARJErrors, TRUE,
-            "$(ArchivePath)", "$(Arj32bitExecutable) v -ja1 \"$(ArchiveFileName)\"",
-            NULL, "--------", 0, 0, 0, "--------", ' ', 2, 5, 9, 8, 11, 1, 2,
-            "$(TargetPath)", "$(Arj32bitExecutable) x -p -va -hl -jyc \"$(ArchiveFullName)\" !\"$(ListFullName)\"",
-            "$(TargetPath)", "$(Arj32bitExecutable) e -p -va -hl \"$(ArchiveFullName)\" \"$(ExtractFullName)\"", FALSE},
-        // ACE 1.2b Win32
-        {
-            (TPackErrorTable*)&ACEErrors, TRUE,
-            "$(ArchivePath)", "$(Ace32bitExecutable) v \"$(ArchiveFileName)\"",
-            NULL, "Date    ", 0, 1, 1, "        ", 0xB3, 6, 4, 2, 1, 0, 3, 2,
-            "$(TargetPath)", "$(Ace32bitExecutable) x -f \"$(ArchiveFullName)\" @\"$(ListFullName)\"",
-            "$(TargetPath)", "$(Ace32bitExecutable) e -f \"$(ArchiveFullName)\" \"$(ExtractFullName)\"", TRUE},
-        // ACE 1.2b MS-DOS
-        {
-            (TPackErrorTable*)&ACEErrors, FALSE,
-            ".", "$(Ace16bitExecutable) v $(ArchiveDOSFullName)",
-            NULL, "Date    ", 0, 1, 1, "        ", 0xB3, 6, 4, 2, 1, 0, 3, 2,
-            ".", "$(Ace16bitExecutable) x -f $(ArchiveDOSFullName) $(TargetDOSPath)\\ @$(ListDOSFullName)",
-            "$(TargetPath)", "$(Ace16bitExecutable) e -f $(ArchiveDOSFullName) $(ExtractFullName)", FALSE}};
+            NULL, NULL, NULL,
+            NULL, NULL,
+            NULL, NULL,
+            FALSE}};
 
 //
 // ****************************************************************************
@@ -133,449 +63,153 @@ const SPackBrowseTable PackBrowseTable[] =
 // Functions for listing archives
 //
 
-//
-// ****************************************************************************
-// char *PackGetField(char *buffer, const int index, const int nameidx)
-//
-//   In the string, buffer finds the item at the given index. Items can be
-//   separated by any number of spaces, tabs or newlines.
-//   (the vertical bar character (ASCII 0xB3) was added because of ACE)
-//   When passing over the item at index nameidx (usually the file name),
-//   the only item separator is a newline (as the name can contain spaces or tabs).
-//   This function is called from PackScanLine().
-//
-//   RET: returns a pointer to the given item in buffer string or NULL if it cannot be found
-//   IN:  buffer is a line of text for analysis
-//        index is the ordinal number of the item to be found
-//        nameidx is the index of the "file name" item
-
-char* PackGetField(char* buffer, const int index, const int nameidx, const char separator)
+// context of Pack7zList
+struct SPack7zListCtx
 {
-    CALL_STACK_MESSAGE5("PackGetField(%s, %d, %d, %u)", buffer, index, nameidx, separator);
-    // the requested item does not exist for the given archiver program
-    if (index == 0)
-        return NULL;
+    CSalamanderDirectory* Dir;
+    BOOL Reported; // an error was already shown to the user
+};
 
-    // indicates the current item we are at
-    int i = 1;
+// one item of the 7-Zip listing -> one panel entry (names stay UTF-8 end to end,
+// so the whole listing is in one encoding - the defect feature 069 recorded for
+// the OEM column parser cannot occur)
+static BOOL Pack7zListItem(const CSal7zListItem* item, void* param)
+{
+    SPack7zListCtx* ctx = (SPack7zListCtx*)param;
 
-    // skip leading spaces and tabs (if there are any)
-    while (*buffer != '\0' && (*buffer == ' ' || *buffer == '\t' ||
-                               *buffer == 0x10 || *buffer == 0x11 || // arrow characters for ACE
-                               *buffer == separator))
-        buffer++;
-
-    // find the specified item
-    while (index != i)
+    // separators to '\', a trailing separator means a directory
+    char* path = (char*)malloc(item->PathLen + 1);
+    if (path == NULL)
     {
-        // skip the item
-        if (i == nameidx)
-            // if we are on the name, only a newline is a separator
-            while (*buffer != '\0' && *buffer != '\n')
-                buffer++;
-        else
-            // otherwise it is a space, tab, dash or newline
-            while (*buffer != '\0' && *buffer != ' ' && *buffer != '\n' &&
-                   *buffer != '\t' && *buffer != 0x10 && *buffer != 0x11 &&
-                   *buffer != separator)
-                buffer++;
-
-        // skip the spaces behind it
-        while (*buffer != '\0' && (*buffer == ' ' || *buffer == '\t' ||
-                                   *buffer == '\n' || *buffer == 0x10 ||
-                                   *buffer == 0x11 || *buffer == separator))
-            buffer++;
-
-        // we are on the next item
-        i++;
+        ctx->Reported = TRUE;
+        (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_NOMEM);
+        return FALSE;
     }
-    return buffer;
-}
+    int len = 0;
+    for (int i = 0; i < item->PathLen; i++)
+    {
+        char c = item->Path[i] == '/' ? '\\' : item->Path[i];
+        if (c == '\\' && (len == 0 || path[len - 1] == '\\'))
+            continue; // collapse repeated separators
+        path[len++] = c;
+    }
+    BOOL isDir = item->IsDir;
+    if (len > 0 && path[len - 1] == '\\')
+    {
+        len--;
+        isDir = TRUE;
+    }
+    path[len] = 0;
+    if (len == 0) // only separators - nothing to show
+    {
+        free(path);
+        return TRUE;
+    }
 
-//
-// ****************************************************************************
-// BOOL PackScanLine(char *buffer, CSalamanderDirectory &dir, const int index)
-//
-//   Analyzes one item from the file list output of the archiver program.
-//   Usually, it is a single line but it can span multiple connected lines -
-//   it must contain all information about a single file stored
-//   in the archive. Called from the PackList() function.
-//
-//   RET: returns TRUE on success, FALSE on error
-//        on error the callback function *PackErrorHandlerPtr is called
-//   IN:  buffer is the line of text to be analyzed - it is modified during analysis !
-//        index is the index in PackTable table corresponding to the given line
-//   OUT: CSalamanderDirectory is created and filled with archive data
+    // split into the directory part and the name
+    char* name = strrchr(path, '\\');
+    const char* dirPart = NULL;
+    if (name != NULL)
+    {
+        *name++ = 0;
+        dirPart = path;
+    }
+    else
+        name = path;
 
-BOOL PackScanLine(char* buffer, CSalamanderDirectory& dir, const int index,
-                  const SPackBrowseTable* configTable, BOOL ARJHack)
-{
-    CALL_STACK_MESSAGE3("PackScanLine(%s, , %d,)", buffer, index);
-    // the file or directory being added
     CFileData newfile;
-    int idx;
-
-    // buffer for the file name
-    char filename[MAX_PATH];
-    char* tmpfname = filename;
-
-    // locate the name in the line
-    char* tmpbuf = PackGetField(buffer, configTable->NameIdx,
-                                configTable->NameIdx,
-                                configTable->Separator);
-    // it makes no sense for the name to be missing, but if we let the user
-    // tamper with the configuration, it should shout at him
-    if (tmpbuf == NULL)
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_ARCCFG);
-
-    // remove a leading backslash or slash if present
-    if (*tmpbuf == '\\' || *tmpbuf == '/')
-        tmpbuf++;
-    // copy only the name, replacing slashes with backslashes
-    while (*tmpbuf != '\0' && *tmpbuf != '\n')
-    {
-        if (*tmpbuf == '/')
-        {
-            tmpbuf++;
-            *tmpfname++ = '\\';
-        }
-        else
-            *tmpfname++ = *tmpbuf++;
-    }
-
-    // remove any trailing separators from the name
-    while (*(tmpfname - 1) == ' ' || *(tmpfname - 1) == '\t' ||
-           *(tmpfname - 1) == configTable->Separator)
-        tmpfname--;
-
-    // if the processed object is not a directory according to the trailing slash,
-    // find the attributes in the line and if any of them is D or d,
-    // it is also a directory so append a backslash at the end
-    if (*(tmpfname - 1) != '\\')
-    {
-        idx = configTable->AttrIdx;
-        if (ARJHack)
-            idx--;
-        tmpbuf = PackGetField(buffer, idx,
-                              configTable->NameIdx,
-                              configTable->Separator);
-        if (tmpbuf != NULL && *tmpbuf != '\0')
-        {
-            while (*tmpbuf != '\0' && *tmpbuf != '\n' && *tmpbuf != '\t' &&
-                   *tmpbuf != ' ' && *tmpbuf != 'D' && *tmpbuf != 'd')
-                tmpbuf++;
-            if (*tmpbuf == 'D' || *tmpbuf == 'd')
-                *tmpfname++ = '\\';
-        }
-    }
-    // terminate and prepare a pointer to the last non-backslash character
-    *tmpfname-- = '\0';
-    if (*tmpfname == '\\')
-        tmpfname--;
-
-    char* pomptr = tmpfname; // points to the end of the name
-    // separate it from the path
-    while (pomptr > filename && *pomptr != '\\')
-        pomptr--;
-
-    char* pomptr2;
-    if (*pomptr == '\\')
-    {
-        // there is both a name and a path
-        *pomptr++ = '\0';
-        pomptr2 = filename;
-    }
-    else
-    {
-        // only the name is present
-        pomptr2 = NULL;
-    }
-
-    // pomptr now holds the name of the added directory or file
-    // and pomptr2 possibly holds the path to it
-    newfile.NameLen = tmpfname - pomptr + 1;
-
-    // set the name of the new file or directory
-    //
-    // feature 069 (F-P1-05): this listing stays in the ACTIVE CODE PAGE, and
-    // deliberately so.  Converting it to UTF-8 was tried and reverted twice.
-    // The decision can only ever be made per item, but the directory components
-    // it yields are shared BETWEEN items, and CSalamanderDirectory::FindDir
-    // (zip.cpp) matches them with SalDirStrCmpEx - a byte comparison.  So any
-    // item that has to fall back (AddFile/AddDir refuse a name or path over
-    // MAX_PATH - 5, and the UTF-8 form is up to three times longer than the OEM
-    // one) spells its directory differently from its siblings and the panel
-    // grows a SECOND folder of the same name with the files divided between
-    // them.  Both spellings even render correctly, so it reads as data loss.
-    // Moving the whole listing at once is the real fix and it belongs with the
-    // rest of the archive-name work - see REMAINING-WORK.md.  The user-visible
-    // half of F-P1-05 (the list file handed to the archiver, and the unpack
-    // side) is fixed and does not depend on this.
+    newfile.NameLen = (unsigned)strlen(name);
     newfile.Name = (char*)malloc(newfile.NameLen + 1);
-    if (!newfile.Name)
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_NOMEM);
-    OemToCharBuff(pomptr, newfile.Name, newfile.NameLen); // copy with conversion from OEM to ANSI
-    newfile.Name[newfile.NameLen] = '\0';
+    if (newfile.Name == NULL)
+    {
+        free(path);
+        ctx->Reported = TRUE;
+        (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_NOMEM);
+        return FALSE;
+    }
+    memcpy(newfile.Name, name, newfile.NameLen + 1);
+    char* s = newfile.Name + newfile.NameLen;
+    while (--s >= newfile.Name && *s != '.')
+        ;
+    newfile.Ext = s >= newfile.Name ? s + 1 : newfile.Name + newfile.NameLen; // ".cvspass" is an extension in Windows
 
-    // convert the path from OEM to ANSI as well
-    if (pomptr2 != NULL)
-        OemToChar(pomptr2, pomptr2);
-
-    // set the extension
-    char* s = tmpfname - 1;
-    while (s >= pomptr && *s != '.')
-        s--;
-    if (s >= pomptr)
-        //  if (s > pomptr)  // ".cvspass" is an extension in Windows...
-        newfile.Ext = newfile.Name + (s - pomptr) + 1;
-    else
-        newfile.Ext = newfile.Name + newfile.NameLen;
-
-    // now load the date and time
+    // the time 7-Zip prints is local time; without one the old default 1.1.1980 applies
     SYSTEMTIME t;
-    idx = abs(configTable->DateIdx);
-    if (ARJHack)
-        idx--;
-    tmpbuf = PackGetField(buffer, idx,
-                          configTable->NameIdx,
-                          configTable->Separator);
-    // the item was not found in the listing, use defaults
-    if (tmpbuf == NULL)
-    {
-        t.wYear = 1980;
-        t.wMonth = 1;
-        t.wDay = 1;
-    }
+    if (item->HasDate)
+        t = item->Modified;
     else
     {
-        // otherwise read all three parts of the date
-        int i;
-        for (i = 1; i < 4; i++)
-        {
-            WORD tmpnum = 0;
-            // read a number
-            while (*tmpbuf >= '0' && *tmpbuf <= '9')
-            {
-                tmpnum = tmpnum * 10 + (*tmpbuf - '0');
-                tmpbuf++;
-            }
-            // and assign it to the correct variable
-            if (configTable->DateYIdx == i)
-                t.wYear = tmpnum;
-            else if (configTable->DateMIdx == i)
-                t.wMonth = tmpnum;
-            else
-                t.wDay = tmpnum;
-            tmpbuf++;
-        }
-    }
-
-    t.wDayOfWeek = 0; // ignored
-    if (t.wYear < 100)
-    {
-        if (t.wYear >= 80)
-            t.wYear += 1900;
-        else
-            t.wYear += 2000;
-    }
-
-    // ted cas
-    idx = configTable->TimeIdx;
-    if (ARJHack)
-        idx--;
-    tmpbuf = PackGetField(buffer, idx,
-                          configTable->NameIdx,
-                          configTable->Separator);
-    // set to zero, in case we did not read the item (default time)
-    t.wHour = 0;
-    t.wMinute = 0;
-    t.wSecond = 0;
-    t.wMilliseconds = 0;
-    if (tmpbuf != NULL)
-    {
-        // item exists, read hours
-        while (*tmpbuf >= '0' && *tmpbuf <= '9')
-        {
-            t.wHour = t.wHour * 10 + (*tmpbuf - '0');
-            tmpbuf++;
-        }
-        // skip one separator character
-        tmpbuf++;
-        // next digits must be minutes
-        while (*tmpbuf >= '0' && *tmpbuf <= '9')
-        {
-            t.wMinute = t.wMinute * 10 + (*tmpbuf - '0');
-            tmpbuf++;
-        }
-        // is am/pm following?
-        if (*tmpbuf == 'a' || *tmpbuf == 'p' || *tmpbuf == 'A' || *tmpbuf == 'P')
-        {
-            if (*tmpbuf == 'p' || *tmpbuf == 'P')
-            {
-                t.wHour += 12;
-            }
-            tmpbuf++;
-            if (*tmpbuf == 'm' || *tmpbuf == 'M')
-                tmpbuf++;
-        }
-        // if no item separator follows, we can read only seconds
-        if (*tmpbuf != '\0' && *tmpbuf != '\n' && *tmpbuf != '\t' &&
-            *tmpbuf != ' ')
-        {
-            // skip the separator
-            tmpbuf++;
-            // and read seconds
-            while (*tmpbuf >= '0' && *tmpbuf <= '9')
-            {
-                t.wSecond = t.wSecond * 10 + (*tmpbuf - '0');
-                tmpbuf++;
-            }
-        }
-        // is am/pm following?
-        if (*tmpbuf == 'a' || *tmpbuf == 'p' || *tmpbuf == 'A' || *tmpbuf == 'P')
-        {
-            if (*tmpbuf == 'p' || *tmpbuf == 'P')
-            {
-                t.wHour += 12;
-            }
-            tmpbuf++;
-            if (*tmpbuf == 'm' || *tmpbuf == 'M')
-                tmpbuf++;
-        }
-    }
-
-    // and store it in the structure
-    FILETIME lt;
-    if (!SystemTimeToFileTime(&t, &lt))
-    {
-        DWORD ret = GetLastError();
-        if (ret != ERROR_INVALID_PARAMETER && ret != ERROR_SUCCESS)
-        {
-            char buff[1000];
-            strcpy(buff, "SystemTimeToFileTime: ");
-            strcat(buff, GetErrorText(ret));
-            free(newfile.Name);
-            return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buff);
-        }
-        if (FirstError)
-        {
-            FirstError = FALSE;
-            (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_DATETIME);
-        }
+        memset(&t, 0, sizeof(t));
         t.wYear = 1980;
         t.wMonth = 1;
         t.wDay = 1;
-        t.wHour = 0;
-        t.wMinute = 0;
-        t.wSecond = 0;
-        t.wMilliseconds = 0;
-        if (!SystemTimeToFileTime(&t, &lt))
-        {
-            free(newfile.Name);
-            return FALSE;
-        }
     }
-    if (!LocalFileTimeToFileTime(&lt, &newfile.LastWrite))
+    FILETIME lt;
+    if (!SystemTimeToFileTime(&t, &lt) || !LocalFileTimeToFileTime(&lt, &newfile.LastWrite))
     {
-        char buff[1000];
-        strcpy(buff, "LocalFileTimeToFileTime: ");
-        strcat(buff, GetErrorText(GetLastError()));
-        free(newfile.Name);
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buff);
+        newfile.LastWrite.dwLowDateTime = 0;
+        newfile.LastWrite.dwHighDateTime = 0;
     }
 
-    // now read the file size
-    idx = configTable->SizeIdx;
-    if (ARJHack)
-        idx--;
-    tmpbuf = PackGetField(buffer, idx,
-                          configTable->NameIdx,
-                          configTable->Separator);
-    // default is zero
-    unsigned __int64 tmpvalue = 0;
-    // if the item exists
-    if (tmpbuf != NULL)
-        // read it
-        while (*tmpbuf >= '0' && *tmpbuf <= '9')
-        {
-            tmpvalue = tmpvalue * 10 + (*tmpbuf - '0');
-            tmpbuf++;
-        }
-    // and set it in the structure
-    newfile.Size.Set((DWORD)(tmpvalue & 0xFFFFFFFF), (DWORD)(tmpvalue >> 32));
-
-    // attributes follow
-    idx = configTable->AttrIdx;
-    if (ARJHack)
-        idx--;
-    tmpbuf = PackGetField(buffer, idx,
-                          configTable->NameIdx,
-                          configTable->Separator);
-    // default is none set
-    newfile.Attr = 0;
-    newfile.Hidden = 0;
+    newfile.Size.Set((DWORD)(item->Size & 0xFFFFFFFF), (DWORD)(item->Size >> 32));
+    newfile.Attr = item->Attributes;
+    newfile.Hidden = (item->Attributes & FILE_ATTRIBUTE_HIDDEN) != 0 ? 1 : 0;
     newfile.IsOffline = 0;
-    if (tmpbuf != NULL)
-        while (*tmpbuf != '\0' && *tmpbuf != '\n' && *tmpbuf != '\t' &&
-               *tmpbuf != ' ')
-        {
-            switch (*tmpbuf)
-            {
-            // read-only attribute
-            case 'R':
-            case 'r':
-                newfile.Attr |= FILE_ATTRIBUTE_READONLY;
-                break;
-            // archive attribute
-            case 'A':
-            case 'a':
-                newfile.Attr |= FILE_ATTRIBUTE_ARCHIVE;
-                break;
-            // system attribute
-            case 'S':
-            case 's':
-                newfile.Attr |= FILE_ATTRIBUTE_SYSTEM;
-                break;
-            // hidden attribute
-            case 'H':
-            case 'h':
-                newfile.Attr |= FILE_ATTRIBUTE_HIDDEN;
-                newfile.Hidden = 1;
-                break;
-            }
-            tmpbuf++;
-        }
-
-    // set the remaining structure items (those not zeroed in AddFile/Dir)
     newfile.DosName = NULL;
     newfile.PluginData = -1; // -1 just for now, ignored
 
-    // and add either a new file or a directory
-    if (*(tmpfname + 1) != '\\')
+    BOOL ok;
+    if (!isDir)
     {
         newfile.IsLink = IsFileLink(newfile.Ext);
-
-        // it is a file, add a file
-        if (!dir.AddFile(pomptr2, newfile, NULL))
-        {
-            free(newfile.Name);
-            return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_FDATA);
-        }
+        ok = ctx->Dir->AddFile(dirPart, newfile, NULL);
     }
     else
     {
-        // it is a directory, add a directory
         newfile.Attr |= FILE_ATTRIBUTE_DIRECTORY;
         newfile.IsLink = 0;
         if (!Configuration.SortDirsByExt)
             newfile.Ext = newfile.Name + newfile.NameLen; // directories have no extension
-        if (!dir.AddDir(pomptr2, newfile, NULL))
-        {
-            free(newfile.Name);
-            return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_FDATA);
-        }
+        ok = ctx->Dir->AddDir(dirPart, newfile, NULL);
+    }
+    free(path);
+    if (!ok)
+    {
+        // e.g. a name or path longer than the panel accepts: the whole listing
+        // fails instead of showing a partial tree
+        free(newfile.Name);
+        ctx->Reported = TRUE;
+        (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_FDATA);
+        return FALSE;
     }
     return TRUE;
+}
+
+//
+// ****************************************************************************
+// BOOL Pack7zList(const char *archiveFileName, const char *output, size_t outputLen,
+//                 CSalamanderDirectory &dir)
+//
+//   Parser of the 7-Zip technical listing (7z l -slt), contract
+//   specs/084-archiver-cleanup/contracts/7z-slt-listing.md
+//
+//   RET: TRUE on success, FALSE on error (already reported)
+
+BOOL Pack7zList(const char* archiveFileName, const char* output, size_t outputLen,
+                CSalamanderDirectory& dir)
+{
+    CALL_STACK_MESSAGE2("Pack7zList(%s, , ,)", archiveFileName);
+    SPack7zListCtx ctx;
+    ctx.Dir = &dir;
+    ctx.Reported = FALSE;
+    int errorLine = 0;
+    int ret = SalParse7zTechList(output, outputLen, Pack7zListItem, &ctx, &errorLine);
+    if (ret == SAL7Z_OK)
+        return TRUE;
+    if (ctx.Reported)
+        return FALSE;
+    TRACE_E("Pack7zList(): the 7-Zip listing was rejected, code " << ret << ", line " << errorLine);
+    return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
 }
 
 //
@@ -602,8 +236,6 @@ BOOL PackList(CFilesWindow* panel, const char* archiveFileName, CSalamanderDirec
     pluginData = NULL;
     plugin = NULL;
 
-    FirstError = TRUE;
-
     // find the correct one according to the table
     int format = PackerFormatConfig.PackIsArchive(archiveFileName);
     // Supported archive not found - error
@@ -624,14 +256,12 @@ BOOL PackList(CFilesWindow* panel, const char* archiveFileName, CSalamanderDirec
         return plugin->ListArchive(panel, archiveFileName, dir, pluginData);
     }
 
-    // if we have not determined the spawn path yet, do it now
-    if (!InitSpawnName(NULL))
-        return FALSE;
-
     //
     // We will run an external program with redirected output
     //
     const SPackBrowseTable* browseTable = ArchiverConfig.GetUnpackerConfigTable(index);
+    if (browseTable->ListCommand == NULL || browseTable->ListParser == NULL)
+        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_ARCNAME_UNSUP); // this archiver cannot browse
 
     // build the current directory
     char currentDir[MAX_PATH];
@@ -639,712 +269,34 @@ BOOL PackList(CFilesWindow* panel, const char* archiveFileName, CSalamanderDirec
                            currentDir, MAX_PATH))
         return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_IDIRERR);
 
-    // build the command line
+    // build the command line (feature 084: the archiver itself, no helper program)
     char cmdLine[PACK_CMDLINE_MAXLEN];
-    sprintf(cmdLine, "\"%s\" %s ", SpawnExe, SPAWN_EXE_PARAMS);
-    int cmdIndex = (int)strlen(cmdLine);
     if (!PackExpandCmdLine(archiveFileName, NULL, NULL, NULL, browseTable->ListCommand,
-                           cmdLine + cmdIndex, PACK_CMDLINE_MAXLEN - cmdIndex, NULL))
+                           cmdLine, PACK_CMDLINE_MAXLEN, NULL))
         return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_CMDLNERR);
-
-    char cmdForErrors[MAX_PATH]; // path and name of executed exe if an error occurs
-    if (PackExpandCmdLine(archiveFileName, NULL, NULL, NULL, browseTable->ListCommand,
-                          cmdForErrors, MAX_PATH, NULL))
-    {
-        char* begin;
-        char* p = cmdForErrors;
-        while (*p == ' ')
-            p++;
-        begin = p;
-        if (*p == '\"')
-        {
-            p++;
-            begin = p;
-            while (*p != '\"' && *p != 0)
-                p++;
-        }
-        else
-        {
-            while (*p != ' ' && *p != 0)
-                p++;
-        }
-        *p = 0;
-        if (begin > cmdForErrors)
-            memmove(cmdForErrors, begin, strlen(begin) + 1);
-    }
-    else
-        cmdForErrors[0] = 0;
 
     // check whether the command line is too long
     if (!browseTable->SupportLongNames && strlen(cmdLine) >= 128)
     {
         char buffer[1000];
-        strcpy(buffer, cmdLine);
+        lstrcpyn(buffer, cmdLine, 1000);
         return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_CMDLNLEN, buffer);
     }
 
-    // we must inherit handles
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.lpSecurityDescriptor = NULL;
-    sa.bInheritHandle = TRUE;
-
-    // create a pipe for communication with the process
-    HANDLE StdOutRd, StdOutWr, StdErrWr;
-    if (!HANDLES(CreatePipe(&StdOutRd, &StdOutWr, &sa, 0)))
-    {
-        char buffer[1000];
-        strcpy(buffer, "CreatePipe: ");
-        strcat(buffer, GetErrorText(GetLastError()));
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buffer);
-    }
-    // so that we can use it as stderr as well
-    if (!HANDLES(DuplicateHandle(GetCurrentProcess(), StdOutWr, GetCurrentProcess(), &StdErrWr,
-                                 0, TRUE, DUPLICATE_SAME_ACCESS)))
-    {
-        char buffer[1000];
-        strcpy(buffer, "DuplicateHandle: ");
-        strcat(buffer, GetErrorText(GetLastError()));
-        HANDLES(CloseHandle(StdOutRd));
-        HANDLES(CloseHandle(StdOutWr));
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buffer);
-    }
-
-    // create structures for the new process
-    PROCESS_INFORMATION pi;
-    STARTUPINFO si;
-    memset(&si, 0, sizeof(STARTUPINFO));
-    si.cb = sizeof(STARTUPINFO);
-    si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-    si.wShowWindow = SW_HIDE;
-    si.hStdInput = NULL;
-    si.hStdOutput = StdOutWr;
-    si.hStdError = StdErrWr;
-    // and start it ...
-    if (!SalCreateProcess(NULL, cmdLine, NULL, NULL, TRUE, CREATE_NEW_CONSOLE | CREATE_DEFAULT_ERROR_MODE | NORMAL_PRIORITY_CLASS,
-                          NULL, currentDir, &si, &pi))
-    {
-        // if this failed, we have a bad path to salspawn
-        DWORD err = GetLastError();
-        HANDLES(CloseHandle(StdOutRd));
-        HANDLES(CloseHandle(StdOutWr));
-        HANDLES(CloseHandle(StdErrWr));
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PROCESS, SpawnExe, GetErrorText(err));
-    }
-
-    // We no longer need these handles; the child will close the duplicates, we keep only StdOutRd
-    HANDLES(CloseHandle(StdOutWr));
-    HANDLES(CloseHandle(StdErrWr));
-
-    // Pull all data from the pipe into an array of lines
-    char tmpbuff[1000];
-    DWORD read;
-    CPackLineArray lineArray(1000, 500);
-    int buffOffset = 0;
-    while (1)
-    {
-        // read a full buffer from the end of the unprocessed data
-        if (!ReadFile(StdOutRd, tmpbuff + buffOffset, 1000 - buffOffset, &read, NULL))
-            break;
-        // start at the beginning
-        char* start = tmpbuff;
-        // search the entire buffer for line ends
-        unsigned int i;
-        for (i = 0; i < read + buffOffset; i++)
-        {
-            if (tmpbuff[i] == '\n')
-            {
-                // length of the line
-                int lineLen = (int)(tmpbuff + i - start);
-                // remove \r, if it is present
-                if (lineLen > 0 && tmpbuff[i - 1] == '\r')
-                    lineLen--;
-                // allocate a new line
-                char* newLine = new char[lineLen + 2];
-                // fill it with data and terminate it
-                strncpy(newLine, start, lineLen);
-                newLine[lineLen] = '\n';
-                newLine[lineLen + 1] = '\0';
-                // add it to the array
-                lineArray.Add(newLine);
-                // and move past it
-                start = tmpbuff + i + 1;
-            }
-        }
-        // buffer processed; now find out how much is left and move it to the start of the buffer
-        buffOffset = (int)(tmpbuff + read + buffOffset - start);
-        if (buffOffset > 0)
-            memmove(tmpbuff, start, buffOffset);
-        // maximum line length is 990, hopefully that is enough :-)
-        if (buffOffset >= 990)
-        {
-            HANDLES(CloseHandle(StdOutRd));
-            HANDLES(CloseHandle(pi.hProcess));
-            HANDLES(CloseHandle(pi.hThread));
-            return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-        }
-    }
-
-    // done reading, we no longer need it
-    HANDLES(CloseHandle(StdOutRd));
-
-    // Wait for the external program to finish (it should be done already but better be sure)
-    if (WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_FAILED)
-    {
-        char buffer[1000];
-        strcpy(buffer, "WaitForSingleObject: ");
-        strcat(buffer, GetErrorText(GetLastError()));
-        HANDLES(CloseHandle(pi.hProcess));
-        HANDLES(CloseHandle(pi.hThread));
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buffer);
-    }
+    CPackOutput output;
+    DWORD exitCode;
+    EPackRunResult run = PackRunArchiver(NULL, cmdLine, currentDir, &output, &exitCode);
+    if (run != PACKRUN_EXITED)
+        return FALSE; // a failure was already reported, a cancel needs no message
 
     // Restore focus back to us
     SetForegroundWindow(MainWindow->HWindow);
 
-    // find out how it ended - hopefully all return 0 as success
-    DWORD exitCode;
-    if (!GetExitCodeProcess(pi.hProcess, &exitCode))
-    {
-        char buffer[1000];
-        strcpy(buffer, "GetExitCodeProcess: ");
-        strcat(buffer, GetErrorText(GetLastError()));
-        HANDLES(CloseHandle(pi.hProcess));
-        HANDLES(CloseHandle(pi.hThread));
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buffer);
-    }
-
-    // release the process handles
-    HANDLES(CloseHandle(pi.hProcess));
-    HANDLES(CloseHandle(pi.hThread));
-
     if (exitCode != 0)
-    {
-        //
-        // First handle salspawn.exe errors
-        //
-        if (exitCode >= SPAWN_ERR_BASE)
-        {
-            // salspawn.exe error - wrong parameters or such
-            if (exitCode >= SPAWN_ERR_BASE && exitCode < SPAWN_ERR_BASE * 2)
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_RETURN, SPAWN_EXE_NAME, LoadStr(IDS_PACKRET_SPAWN));
-            // CreateProcess error
-            if (exitCode >= SPAWN_ERR_BASE * 2 && exitCode < SPAWN_ERR_BASE * 3)
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PROCESS, cmdForErrors, GetErrorText(exitCode - SPAWN_ERR_BASE * 2));
-            // WaitForSingleObject error
-            if (exitCode >= SPAWN_ERR_BASE * 3 && exitCode < SPAWN_ERR_BASE * 4)
-            {
-                char buffer[1000];
-                strcpy(buffer, "WaitForSingleObject: ");
-                strcat(buffer, GetErrorText(exitCode - SPAWN_ERR_BASE * 3));
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buffer);
-            }
-            // GetExitCodeProcess error
-            if (exitCode >= SPAWN_ERR_BASE * 4)
-            {
-                char buffer[1000];
-                strcpy(buffer, "GetExitCodeProcess: ");
-                strcat(buffer, GetErrorText(exitCode - SPAWN_ERR_BASE * 4));
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buffer);
-            }
-        }
-        //
-        // now handle errors of the external program
-        //
-        // if errorTable == NULL, do not translate (no table exists)
-        if (!browseTable->ErrorTable)
-        {
-            char buffer[1000];
-            sprintf(buffer, LoadStr(IDS_PACKRET_GENERAL), exitCode);
-            return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_RETURN, cmdForErrors, buffer);
-        }
-        // find the appropriate text in the table
-        int i;
-        for (i = 0; (*browseTable->ErrorTable)[i][0] != -1 &&
-                    (*browseTable->ErrorTable)[i][0] != (int)exitCode;
-             i++)
-            ;
-        // did we find it?
-        if ((*browseTable->ErrorTable)[i][0] == -1)
-            return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_RETURN, cmdForErrors, LoadStr(IDS_PACKRET_UNKNOWN));
-        else
-            return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_RETURN, cmdForErrors,
-                                          LoadStr((*browseTable->ErrorTable)[i][1]));
-    }
+        return PackReportExitCode(NULL, cmdLine, exitCode, browseTable->ErrorTable);
 
-    //
-    // now the main part - parsing the packer`s output into our structures
-    //
-    if (lineArray.Count == 0)
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_NOOUTPUT);
-
-    // if we must use a special parsing function, do it right now
-    if (browseTable->SpecialList)
-        return (*(browseTable->SpecialList))(archiveFileName, lineArray, dir);
-
-    // now we parse with the universal parser
-
-    // a few local variables
-    char* line = NULL; // buffer for building a "multi-line line"
-    int lines = 0;     // how many lines of the multi-line item we have read
-    int validData = 0; // whether we read header/footer or valid data
-    int toSkip = browseTable->LinesToSkip;
-    int alwaysSkip = browseTable->AlwaysSkip;
-    int linesPerFile = browseTable->LinesPerFile;
-    BOOL ARJHack;
-    BOOL RAR5AndLater = FALSE; // starting with RAR 5.0 the listing format is new (commands 'v' and 'l'), the name is in the last column
-
-    int i;
-    for (i = 0; i < lineArray.Count; i++)
-    {
-        // determine what to do with this data
-        switch (validData)
-        {
-        case 0: // we are in the header
-            // determine whether we stay in it
-            if (!strncmp(lineArray[i], browseTable->StartString,
-                         strlen(browseTable->StartString)))
-                validData++;
-            if (i == 1 && strncmp(lineArray[i], "RAR ", 4) == 0 && lineArray[i][4] >= '5' && lineArray[i][4] <= '9')
-            {
-                RAR5AndLater = TRUE; // the test fails starting with RAR 10, which will be useful ;-)
-                linesPerFile = 1;
-            }
-            // in any case this line does not interest us
-            continue;
-        case 2: // we are in the footer and we do not care about it
-            continue;
-        case 1: // we are in the data - just check if it ends and then work
-            // if we still need to skip something, do it now
-            if (alwaysSkip > 0)
-            {
-                alwaysSkip--;
-                continue;
-            }
-            if (!strncmp(lineArray[i], browseTable->StopString,
-                         strlen(browseTable->StopString)))
-            {
-                validData++;
-                // maybe some leftovers from the previous line remain
-                if (line)
-                    free(line);
-                continue;
-            }
-        }
-
-        // if we still have something to skip, do it now
-        if (toSkip > 0)
-        {
-            toSkip--;
-            continue;
-        }
-
-        // we have another line
-        lines++;
-        // if this is the first line, we must allocate a buffer
-        if (lines == 1)
-        {
-            // determine whether we are dealing with two or four lines (ARJ32 hack)
-            if (browseTable->LinesPerFile == 0)
-                if (i + 3 < lineArray.Count && lineArray[i + 2][3] == ' ')
-                    linesPerFile = 4;
-                else
-                    linesPerFile = 2;
-            // determine whether the OS type is missing (ARJ16 hack)
-            ARJHack = FALSE;
-            if (browseTable->DateIdx < 0)
-                if (lineArray[i + 1][5] == ' ')
-                    ARJHack = TRUE;
-            // do we even have that many lines?
-            if (i + linesPerFile - 1 >= lineArray.Count)
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-            // determine the resulting length
-            int len = 0;
-            int j;
-            for (j = 0; j < linesPerFile; j++)
-                len = len + (int)strlen(lineArray[i + j]);
-            // allocate a buffer for it
-            line = (char*)malloc(len + 1);
-            if (!line)
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_NOMEM);
-            // and initialize it
-            line[0] = '\0';
-        }
-        // if this is not the last line just append it to the buffer
-        if (lines < linesPerFile)
-        {
-            strcat(line, lineArray[i]);
-            continue;
-        }
-        // if it is the last line, append it to the buffer
-        strcat(line, lineArray[i]);
-
-        // and we have everything for one item - process it
-        SPackBrowseTable browseTableRAR5;
-        if (RAR5AndLater)
-        {
-            memmove(&browseTableRAR5, browseTable, sizeof(SPackBrowseTable));
-            browseTableRAR5.NameIdx = 8;
-            browseTableRAR5.AttrIdx = 1;
-        }
-        BOOL ret = PackScanLine(line, dir, index, RAR5AndLater ? &browseTableRAR5 : browseTable, ARJHack);
-        // we no longer need the buffer
-        free(line);
-        line = NULL;
-        if (!ret)
-            return FALSE; // no need to call the error function, PackScanLine already did the call
-
-        // initialize variables
-        lines = 0;
-    }
-
-    // if we ended somewhere else than in the footer, we have a problem
-    if (validData < 2)
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-
-    return TRUE;
-}
-
-//
-// ****************************************************************************
-// BOOL PackUC2List(const char *archiveFileName, CPackLineArray &lineArray,
-//                  CSalamanderDirectory &dir)
-//
-//   Function for retrieving archive contents for the UC2 format (parser only)
-//
-//   RET: returns TRUE on success, FALSE on error
-//        on error the callback function *PackErrorHandlerPtr is called
-//   IN:  archiveFileName is the archive name we work with
-//        lineArray is the array of lines from the archiver output
-//   OUT: dir is created and filled with archive data
-
-BOOL PackUC2List(const char* archiveFileName, CPackLineArray& lineArray,
-                 CSalamanderDirectory& dir)
-{
-    CALL_STACK_MESSAGE2("PackUC2List(%s, ,)", archiveFileName);
-    // First delete the helper file that UC2 creates when using the ~D flag
-    char arcPath[MAX_PATH];
-    const char* arcName = strrchr(archiveFileName, '\\') + 1;
-    strncpy(arcPath, archiveFileName, arcName - archiveFileName);
-    arcPath[arcName - archiveFileName] = '\0';
-    strcat(arcPath, "U$~RESLT.OK");
-    SalDeleteFile(arcPath);
-
-    char* txtPtr;         // pointer to the current position in the read line
-    char currentDir[256]; // current directory we are exploring
-    int line = 0;         // index into the line array
-    // a bit redundant check but better be safe
-    if (lineArray.Count < 1)
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-
-    // main parsing loop
-    while (1)
-    {
-        // added file or directory
-        CFileData newfile;
-
-        // skip leading spaces
-        for (txtPtr = lineArray[line]; *txtPtr == ' '; txtPtr++)
-            ;
-
-        // if the item is END, we are done
-        if (!strncmp(txtPtr, "END", 3))
-            break;
-
-        // if the item is LIST, we determine which directory we are in
-        if (!strncmp(txtPtr, "LIST", 4))
-        {
-            // run to the start of the name
-            while (*txtPtr != '\0' && *txtPtr != '[')
-                txtPtr++;
-            // error check - should not happen
-            if (*txtPtr == '\0')
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-            // and to the first letter of the name
-            txtPtr++;
-            int i = 0;
-            // skip leading backslashes
-            while (*txtPtr == '\\')
-                txtPtr++;
-            // copy the name into the variable
-            while (*txtPtr != '\0' && *txtPtr != ']')
-                currentDir[i++] = *txtPtr++;
-            // terminate the string
-            currentDir[i] = '\0';
-            // feature 069 (F-P1-05): code page, like the two listing sites above -
-            // this is a DIRECTORY, and a per-item conversion of a directory is
-            // exactly what splits the tree (see the note at the main site)
-            OemToChar(currentDir, currentDir);
-            // one more check
-            if (*txtPtr == '\0')
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-            // prepare the next line
-            if (++line > lineArray.Count - 1)
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-            // and go for another round
-            continue;
-        }
-
-        // if the item is FILE/DIR, we create a file/directory
-        if (!strncmp(txtPtr, "DIR", 3) || !strncmp(txtPtr, "FILE", 4))
-        {
-            // what is it, a file or a directory?
-            BOOL isDir = TRUE;
-            if (!strncmp(txtPtr, "FILE", 4))
-                isDir = FALSE;
-
-            // prepare some default values
-            SYSTEMTIME t;
-            t.wYear = 1980;
-            t.wMonth = 1;
-            t.wDay = 1;
-            t.wDayOfWeek = 0; // ignored
-            t.wHour = 0;
-            t.wMinute = 0;
-            t.wSecond = 0;
-            t.wMilliseconds = 0;
-
-            newfile.Size = CQuadWord(0, 0);
-            newfile.DosName = NULL;
-            newfile.PluginData = -1; // just -1, ignored
-
-            // main parsing loop of a file/directory
-            // ends once we hit an unknown keyword
-            while (1)
-            {
-                // prepare the next line
-                if (++line > lineArray.Count - 1)
-                    return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-
-                // skip leading spaces
-                for (txtPtr = lineArray[line]; *txtPtr == ' '; txtPtr++)
-                    ;
-
-                // is it a name?
-                if (!strncmp(txtPtr, "NAME=", 5))
-                {
-                    // move to the start of the name
-                    while (*txtPtr != '\0' && *txtPtr != '[')
-                        txtPtr++;
-                    if (*txtPtr == '\0')
-                        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-                    txtPtr++;
-                    int i = 0;
-                    // copy the name to the newName variable
-                    char newName[15];
-                    while (*txtPtr != '\0' && *txtPtr != ']')
-                        newName[i++] = *txtPtr++;
-                    newName[i] = '\0';
-                    if (*txtPtr == '\0')
-                        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-                    // and store it in the structure
-                    // feature 069 (F-P1-05): code page, like the main listing
-                    // above - one panel must not mix the two spellings
-                    newfile.NameLen = (unsigned)strlen(newName);
-                    newfile.Name = (char*)malloc(newfile.NameLen + 1);
-                    if (!newfile.Name)
-                        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-                    OemToChar(newName, newfile.Name);
-                    newfile.Ext = strrchr(newfile.Name, '.');
-                    if (newfile.Ext != NULL) // ".cvspass" is an extension in Windows ...
-                                             //          if (newfile.Ext != NULL && newfile.Name != newfile.Ext)
-                        newfile.Ext++;
-                    else
-                        newfile.Ext = newfile.Name + newfile.NameLen;
-                    // and go another round
-                    continue;
-                }
-                // or is it a date?
-                if (!strncmp(txtPtr, "DATE(MDY)=", 10))
-                {
-                    // reset it
-                    t.wYear = 0;
-                    t.wMonth = 0;
-                    t.wDay = 0;
-                    // go to the start of the data
-                    while (*txtPtr != '\0' && *txtPtr != '=')
-                        txtPtr++;
-                    if (*txtPtr == '\0')
-                        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-                    txtPtr++;
-                    // read the month
-                    while (*txtPtr >= '0' && *txtPtr <= '9')
-                        t.wMonth = t.wMonth * 10 + *txtPtr++ - '0';
-                    while (*txtPtr == ' ')
-                        txtPtr++;
-                    // read the day
-                    while (*txtPtr >= '0' && *txtPtr <= '9')
-                        t.wDay = t.wDay * 10 + *txtPtr++ - '0';
-                    while (*txtPtr == ' ')
-                        txtPtr++;
-                    // read the year
-                    while (*txtPtr >= '0' && *txtPtr <= '9')
-                        t.wYear = t.wYear * 10 + *txtPtr++ - '0';
-
-                    // conversion just in case (should not be needed)
-                    if (t.wYear < 100)
-                    {
-                        if (t.wYear >= 80)
-                            t.wYear += 1900;
-                        else
-                            t.wYear += 2000;
-                    }
-                    if (t.wMonth == 0)
-                        t.wMonth = 1;
-                    if (t.wDay == 0)
-                        t.wDay = 1;
-
-                    // and again ...
-                    continue;
-                }
-                // it could also be the last modification time
-                if (!strncmp(txtPtr, "TIME(HMS)=", 10))
-                {
-                    // reset again
-                    t.wHour = 0;
-                    t.wMinute = 0;
-                    t.wSecond = 0;
-                    // start of the data
-                    while (*txtPtr != '\0' && *txtPtr != '=')
-                        txtPtr++;
-                    if (*txtPtr == '\0')
-                        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-                    txtPtr++;
-                    // read the hour
-                    while (*txtPtr >= '0' && *txtPtr <= '9')
-                        t.wHour = t.wHour * 10 + *txtPtr++ - '0';
-                    while (*txtPtr == ' ')
-                        txtPtr++;
-                    // read the minute
-                    while (*txtPtr >= '0' && *txtPtr <= '9')
-                        t.wMinute = t.wMinute * 10 + *txtPtr++ - '0';
-                    while (*txtPtr == ' ')
-                        txtPtr++;
-                    // read the second
-                    while (*txtPtr >= '0' && *txtPtr <= '9')
-                        t.wSecond = t.wSecond * 10 + *txtPtr++ - '0';
-
-                    // and again ...
-                    continue;
-                }
-                // attributes remain...
-                if (!strncmp(txtPtr, "ATTRIB=", 7))
-                {
-                    // start of the data
-                    while (*txtPtr != '\0' && *txtPtr != '=')
-                        txtPtr++;
-                    if (*txtPtr == '\0')
-                        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-                    txtPtr++;
-                    // clear first
-                    newfile.Attr = 0;
-                    newfile.Hidden = 0;
-                    // and set what is needed
-                    while (*txtPtr != '\0')
-                    {
-                        switch (*txtPtr++)
-                        {
-                        // readonly attribute
-                        case 'R':
-                            newfile.Attr |= FILE_ATTRIBUTE_READONLY;
-                            break;
-                        // archive attribute
-                        case 'A':
-                            newfile.Attr |= FILE_ATTRIBUTE_ARCHIVE;
-                            break;
-                        // system attribute
-                        case 'S':
-                            newfile.Attr |= FILE_ATTRIBUTE_SYSTEM;
-                            break;
-                        // hidden attribute
-                        case 'H':
-                            newfile.Attr |= FILE_ATTRIBUTE_HIDDEN;
-                            newfile.Hidden = 1;
-                        }
-                    }
-                    // and again at it ...
-                    continue;
-                }
-                // and finally the size
-                if (!strncmp(txtPtr, "SIZE=", 5))
-                {
-                    // again skip the unimportant stuff
-                    while (*txtPtr != '\0' && *txtPtr != '=')
-                        txtPtr++;
-                    if (*txtPtr == '\0')
-                        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_PARSE);
-                    txtPtr++;
-                    // we need a helper variable
-                    unsigned __int64 tmpvalue = 0;
-                    while (*txtPtr >= '0' && *txtPtr <= '9')
-                        tmpvalue = tmpvalue * 10 + *txtPtr++ - '0';
-                    // and store it in the structure
-                    newfile.Size.Set((DWORD)(tmpvalue & 0xFFFFFFFF), (DWORD)(tmpvalue >> 32));
-                    // and off to the next line
-                    continue;
-                }
-                // dummy values - we must know them but can ignore them
-                if (!strncmp(txtPtr, "VERSION=", 8))
-                    continue;
-                if (!strncmp(txtPtr, "CHECK=", 6))
-                    continue;
-
-                // unknown item - end of the section
-                break;
-            }
-            //
-            // we have everything, create the object
-            //
-
-            // store in the structure what is not there yet
-            FILETIME lt;
-            if (!SystemTimeToFileTime(&t, &lt))
-            {
-                char buffer[1000];
-                strcpy(buffer, "SystemTimeToFileTime: ");
-                strcat(buffer, GetErrorText(GetLastError()));
-                free(newfile.Name);
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buffer);
-            }
-            if (!LocalFileTimeToFileTime(&lt, &newfile.LastWrite))
-            {
-                char buffer[1000];
-                strcpy(buffer, "LocalFileTimeToFileTime: ");
-                strcat(buffer, GetErrorText(GetLastError()));
-                free(newfile.Name);
-                return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_GENERAL, buffer);
-            }
-            // and finally just create a new object
-            newfile.IsOffline = 0;
-            if (isDir)
-            {
-                // if it is a directory, handle it here
-                newfile.Attr |= FILE_ATTRIBUTE_DIRECTORY;
-                if (!Configuration.SortDirsByExt)
-                    newfile.Ext = newfile.Name + newfile.NameLen; // directories have no extensions
-                newfile.IsLink = 0;
-                if (!dir.AddDir(currentDir, newfile, NULL))
-                {
-                    free(newfile.Name);
-                    return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_FDATA);
-                }
-            }
-            else
-            {
-                newfile.IsLink = IsFileLink(newfile.Ext);
-
-                // if it is a file, go this way
-                if (!dir.AddFile(currentDir, newfile, NULL))
-                {
-                    free(newfile.Name);
-                    return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_FDATA);
-                }
-            }
-            // and off to the next round
-            continue;
-        }
-    }
-    return TRUE;
+    // no output is not an error here: the bare 7-Zip listing of an empty archive is empty
+    return browseTable->ListParser(archiveFileName, output.Data != NULL ? output.Data : "", output.Len, dir);
 }
 
 //
@@ -1493,15 +445,22 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
     }
 
     // we have the file, now open it
+    // feature 084: a command using $(ListUnicodeFullName) gets the list in UTF-16
+    EPackListEncoding listEnc = PackGetListEncoding(command, needANSIListFile);
     FILE* listFile;
     // feature 069 (F-P1-06): the narrow CRT resolves the name through the ANSI
     // code page, so under a non-ASCII %TEMP% the list file could not be created
     // at all and the packer aborted with "cannot create the file list"
     WCHAR* tmpListNameW = SalU8ToWAlloc(tmpListNameBuf);
-    listFile = tmpListNameW != NULL ? _wfopen(tmpListNameW, L"w")
-                                    : fopen(tmpListNameBuf, "w"); // legacy fallback
+    listFile = tmpListNameW != NULL ? _wfopen(tmpListNameW, listEnc == PACKLIST_UNICODE ? L"wb" : L"w")
+                                    : fopen(tmpListNameBuf, listEnc == PACKLIST_UNICODE ? "wb" : "w"); // legacy fallback
     if (tmpListNameW != NULL)
         free(tmpListNameW);
+    if (listFile != NULL && listEnc == PACKLIST_UNICODE && fwrite("\xFF\xFE", 1, 2, listFile) != 2)
+    {
+        fclose(listFile);
+        listFile = NULL;
+    }
     if (listFile == NULL)
     {
         SalRemoveDirectory(tmpDirNameBuf);
@@ -1524,7 +483,7 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
     // properly; where the name cannot be expressed in the console code page at
     // all it fails, and the legacy call keeps the previous (failing) behaviour
     // rather than skipping the file silently.
-    if (!needANSIListFile)
+    if (listEnc == PACKLIST_OEM)
     {
         char rootPathOem[2 * MAX_PATH];
         if (SalU8ToOEM(rootPath, rootPathOem, sizeof(rootPathOem)) != 0)
@@ -1535,15 +494,30 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
     // pick the name
     while ((name = nextName(parent, 1, &isDir, &size, NULL, param, &errorOccured)) != NULL)
     {
-        if (!needANSIListFile)
+        // sum the total size
+        totalSize += size;
+        if (listEnc == PACKLIST_UNICODE) // UTF-8 names straight to UTF-16, nothing lost
+        {
+            // the Unpack dialog's default mask "*.*" means every file, but 7-Zip reads
+            // it as "names with an extension" - "*" means every file to 7-Zip and RAR alike
+            if (rootPath[0] == 0 && strcmp(name, "*.*") == 0)
+                name = "*";
+            if (!isDir && !PackWriteListLineW(listFile, rootPath, name, NULL))
+            {
+                fclose(listFile);
+                SalDeleteFile(tmpListNameBuf);
+                SalRemoveDirectory(tmpDirNameBuf);
+                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_FILE);
+            }
+            continue;
+        }
+        if (listEnc == PACKLIST_OEM)
         {
             if (SalU8ToOEM(name, namecnv, _countof(namecnv)) == 0)
                 CharToOem(name, namecnv); // legacy fallback
         }
         else
-            strcpy(namecnv, name);
-        // sum the total size
-        totalSize += size;
+            lstrcpyn(namecnv, name, _countof(namecnv));
         // put the name into the list
         if (!isDir)
         {

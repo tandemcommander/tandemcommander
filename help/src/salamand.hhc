@@ -740,7 +740,7 @@
 			<param name="Local" value="hh\salamand\dlgboxes_arcac.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Archivers Autoconfiguration Drives">
+			<param name="Name" value="Archivers Autoconfiguration Search Paths">
 			<param name="Local" value="hh\salamand\dlgboxes_arcacdrv.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">

@@ -894,6 +894,10 @@ void CCfgPageExternalArchivers::Transfer(CTransferInfo& ti)
     else
     {
         ArchiverConfig.Load(*Config);
+        // feature 084 (FR-017): a changed location can make an archiver (and the
+        // formats it serves) appear or disappear
+        ArchiverConfig.RefreshAvailability();
+        PackerFormatConfig.BuildArray();
     }
 }
 

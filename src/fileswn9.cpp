@@ -503,7 +503,7 @@ BOOL CFilesWindow::ClipboardPasteToArcOrFS(BOOL onlyTest, DWORD* pasteDefEffect)
                 {
                     int format = PackerFormatConfig.PackIsArchive(GetZIPArchive());
                     if (format != 0 &&                               // found a supported archive
-                        PackerFormatConfig.GetUsePacker(format - 1)) // edit available?
+                        PackerFormatConfig.CanPack(format - 1)) // edit available? (feature 084: and its packer program installed)
                     {
                         if (dropEffect == (DROPEFFECT_COPY | DROPEFFECT_MOVE))
                             dropEffect = DROPEFFECT_COPY; // Copy has priority (it is safer to use)

@@ -137,6 +137,9 @@
 //                      association sections stored by older versions may carry
 //                      legacy-encoded display strings and are rebuilt from the
 //                      current defaults at load (spec clarification 2026-07-17)
+// 106 = Tandem Commander (feature 084) archivers: only 7-Zip and WinRAR remain; the
+//                      stored entries and associations of the ten removed external
+//                      archivers are migrated away once (PackMigrateArchiversTo106)
 //
 // When increasing configuration version, add one to THIS_CONFIG_VERSION
 //
@@ -144,7 +147,7 @@
 // so that new plug-ins are auto-installed and the plugins.ver counter resets.
 //
 
-const DWORD THIS_CONFIG_VERSION = 105;
+const DWORD THIS_CONFIG_VERSION = 106;
 
 // Configuration roots for individual Open Salamander versions.
 // The root of the current (youngest) configuration is at index 0.
@@ -2956,6 +2959,12 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                 PackerFormatConfig.AddDefault(packersResetToDefaults ? 0 : Configuration.ConfigVersion);
                 PackerFormatConfig.BuildArray();
             }
+            // feature 084 (configuration version 106): the archivers that no longer
+            // exist leave the stored configuration once - before CheckData below, so
+            // its index checks see the migrated records (the defaults of a reset
+            // section are already the new ones)
+            if (!packersResetToDefaults && Configuration.ConfigVersion < 106)
+                PackMigrateArchiversTo106();
             CloseKey(actKey);
         }
 

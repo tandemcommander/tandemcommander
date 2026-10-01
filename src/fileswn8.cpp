@@ -315,7 +315,7 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                 int format = PackerFormatConfig.PackIsArchive(target->GetZIPArchive());
                 if (format != 0) // we found a supported archive
                 {
-                    if (!PackerFormatConfig.GetUsePacker(format - 1)) // no edit -> empty operation target
+                    if (!PackerFormatConfig.CanPack(format - 1)) // no edit -> empty operation target (feature 084: or its packer program is missing)
                     {
                         path[0] = 0;
                     }

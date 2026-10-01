@@ -63,7 +63,7 @@ in the repository.
 | Dependency | Required By | Issue | Impact | Proposed Solution |
 |------------|-------------|-------|--------|-------------------|
 | pvw32cnv.dll | pictview | Proprietary image engine, not open-sourced | PictView cannot convert all image formats | Replace with [WIC](https://learn.microsoft.com/en-us/windows/win32/wic/-wic-about-windows-imaging-codec) (Windows Imaging Component) |
-| unrar.dll | unrar | Not redistributable (RARLAB license) | Cannot extract RAR archives | Download from [rarlab.com](https://www.rarlab.com/rar_add.htm) — both projects are open source |
+| unrar.dll | unrar (off in `plugins.cfg`) | Not shipped. The UnRAR licence **permits** redistribution (clause 3, <https://spdx.org/licenses/UnRAR.html>); the real issue is that the "unRAR restriction" is not GPL-compatible (feature 084 research R4) | RAR archives cannot be browsed out of the box yet. The plan (feature 084 stage S7): read them through the 7zip plug-in, whose source-built engine already contains 7-Zip's RAR decoder (same unRAR restriction, documented in `doc/third_party.txt`), once the vendored 7-Zip is upgraded to 25.x (NEXT-WORK item 8) | Keep the plug-in off |
 | OpenSSL | ftp | Libraries not included | FTP plugin lacks FTPS (SSL/TLS) support | Build from [openssl.org](https://www.openssl.org/) source or use vcpkg |
 
 ### Build Impact of Missing Dependencies
@@ -71,7 +71,7 @@ in the repository.
 | Plugin | Can Build? | Functionality Loss |
 |--------|-----------|-------------------|
 | pictview | Yes (partial) | Some image formats not supported without pvw32cnv.dll |
-| unrar | Yes (compiles) | Cannot function at runtime without unrar.dll |
+| unrar | Yes (compiles) | Cannot function at runtime without unrar.dll (not needed: see above) |
 | ftp | Yes (partial) | No SSL/TLS support without OpenSSL |
 
 ## Windows SDK Dependencies

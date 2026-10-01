@@ -58,7 +58,6 @@ in some areas. Many comments are in Czech.
 │   ├── reglib\          Windows Registry file access
 │   ├── res\             Image resources and toolbars
 │   ├── salopen\         Open files helper utility
-│   ├── salspawn\        Process spawning helper
 │   ├── setup\           Installer and uninstaller
 │   ├── sfx7zip\         Self-extractor based on 7-Zip
 │   ├── shellext\        Shell extension DLL (x86 + x64)

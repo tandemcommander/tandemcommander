@@ -1,0 +1,68 @@
+
+7-Zip 22.01 (x64) : Copyright (c) 1999-2022 Igor Pavlov : 2022-07-15
+
+Scanning the drive for archives:
+1 file, 707 bytes (1 KiB)
+
+Listing archive: D:\Projects\tandemcommander\specs\084-archiver-cleanup\probe\fixtures\lzh\test_read_format_lha_filename_utf16.lzh
+
+--
+Path = D:\Projects\tandemcommander\specs\084-archiver-cleanup\probe\fixtures\lzh\test_read_format_lha_filename_utf16.lzh
+Type = Lzh
+Physical Size = 707
+
+----------
+Path = ______\______.txt
+Folder = -
+Size = 12
+Packed Size = 12
+Modified = 2019-08-18 08:52:32
+CRC = 000071A7
+Method = -lh0-
+Host OS = MS-DOS
+
+Path = ______
+Folder = +
+Size = 0
+Packed Size = 0
+Modified = 2019-10-14 16:05:55
+CRC = 00000000
+Method = -lhd-
+Host OS = MS-DOS
+
+Path = ______\âeâXâg.txt
+Folder = -
+Size = 25
+Packed Size = 25
+Modified = 2019-11-07 16:13:10
+CRC = 0000BBA3
+Method = -lh0-
+Host OS = MS-DOS
+
+Path = âeâXâg\______.txt
+Folder = -
+Size = 12
+Packed Size = 12
+Modified = 2019-08-18 08:52:32
+CRC = 000071A7
+Method = -lh0-
+Host OS = MS-DOS
+
+Path = âeâXâg
+Folder = +
+Size = 0
+Packed Size = 0
+Modified = 2019-11-06 14:47:16
+CRC = 00000000
+Method = -lhd-
+Host OS = MS-DOS
+
+Path = ______.txt
+Folder = -
+Size = 12
+Packed Size = 12
+Modified = 2019-08-18 08:52:32
+CRC = 000071A7
+Method = -lh0-
+Host OS = MS-DOS
+

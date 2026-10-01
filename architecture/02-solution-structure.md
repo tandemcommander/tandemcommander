@@ -2,13 +2,18 @@
 
 **Solution file**: `src\vcxproj\salamand.sln`
 **Visual Studio**: 2022 (Format Version 12.00, VS Version 17)
-**Total projects**: 75 C++ projects
+**Total projects**: 74 C++ projects
 
 > **Update (2026-07-16, feature 007 — plugin build policy):** 8 obsolete
 > plugins (pak, unarj, unlha, unfat, wmobile, ieviewer, splitcbn, winscp)
 > were removed from the repository, dropping 14 projects (7 plugin +
 > 7 language) from the solution. Which of the remaining plugins are built
 > is controlled by `plugins.cfg` in the repository root.
+>
+> **Update (2026-10-01, feature 084 — working archivers only):** the
+> `salspawn` helper project was removed. External archivers are started
+> directly; the helper was built only in the `Utils (Release)` configuration
+> and never reached an output tree or an installer.
 
 ## Build Configurations
 
@@ -151,12 +156,11 @@ only UI strings, dialogs, and menus.
 | salpvenv | plugins/pictview/vcxproj/salpvenv.vcxproj | .exe | PictView environment helper |
 | sqlite | vcxproj/sqlite/sqlite.vcxproj | .dll | SQLite database engine |
 
-### Utility Executables (4 projects)
+### Utility Executables (3 projects)
 
 | Project | Path | Output | Description |
 |---------|------|--------|-------------|
 | salopen | vcxproj/salopen/salopen.vcxproj | .exe | Open files helper |
-| salspawn | vcxproj/salspawn/salspawn.vcxproj | .exe | Process spawning helper |
 | tserver | vcxproj/tserver/tserver.vcxproj | .exe | Trace Server (debug messages) |
 | translator | vcxproj/translator/translator.vcxproj | .exe | UI translation utility |
 

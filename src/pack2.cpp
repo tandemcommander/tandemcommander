@@ -16,84 +16,24 @@
 //
 
 // Table of archive definitions and how to handle them - modifying operations
-// !!! WARNING: when changing the order of external archivers, the order in the
-// externalArchivers array in the CPlugins::FindViewEdit method must be changed
-// as well
+// !!! WARNING: the row order is the archiver index (PACK7ZIPINDEX, PACKRARINDEX),
+// see the note at PackBrowseTable in pack1.cpp
 const SPackModifyTable PackModifyTable[] =
     {
-        // JAR 1.02 Win32
+        // [PACK7ZIPINDEX] 7-Zip console - no modifying operations, it is offered for
+        // browsing and unpacking only (feature 084, research R5)
         {
-            (TPackErrorTable*)&JARErrors, TRUE,
-            "$(SourcePath)", "$(Jar32bitExecutable) a -hl \"$(ArchiveFullName)\" -o\"$(TargetPath)\" !\"$(ListFullName)\"", TRUE,
-            "$(ArchivePath)", "$(Jar32bitExecutable) d -r- \"$(ArchiveFileName)\" !\"$(ListFullName)\"", PMT_EMPDIRS_DELETE,
-            "$(SourcePath)", "$(Jar32bitExecutable) m -hl \"$(ArchiveFullName)\" -o\"$(TargetPath)\" !\"$(ListFullName)\"", FALSE},
-        // RAR 4.20 & 5.0 Win x86/x64
+            (TPackErrorTable*)&SevenZipErrors, TRUE,
+            NULL, NULL, FALSE,
+            NULL, NULL, PMT_EMPDIRS_DONOTDELETE,
+            NULL, NULL, FALSE},
+        // [PACKRARINDEX] RAR (WinRAR console, Rar.exe) - the list of files is UTF-16
+        // (-scul, research R7a), -idq quiet, -y answers yes to every question
         {
             (TPackErrorTable*)&RARErrors, TRUE,
-            "$(SourcePath)", "$(Rar32bitExecutable) a -scol \"$(ArchiveFullName)\" -ap\"$(TargetPath)\" @\"$(ListFullName)\"", TRUE, // since version 5.0 we must enforce the -scol switch, version 4.20 is fine; it appears elsewhere and in the registry
-            "$(ArchivePath)", "$(Rar32bitExecutable) d -scol \"$(ArchiveFileName)\" @\"$(ListFullName)\"", PMT_EMPDIRS_DELETE,
-            "$(SourcePath)", "$(Rar32bitExecutable) m -scol \"$(ArchiveFullName)\" -ap\"$(TargetPath)\" @\"$(ListFullName)\"", FALSE},
-        // ARJ 2.60 MS-DOS
-        {
-            (TPackErrorTable*)&ARJErrors, FALSE,
-            "$(SourcePath)", "$(Arj16bitExecutable) a -p -va -hl -a $(ArchiveDOSFullName) !$(ListDOSFullName)", FALSE,
-            ".", "$(Arj16bitExecutable) d -p -va -hl $(ArchiveDOSFullName) !$(ListDOSFullName)", PMT_EMPDIRS_DONOTDELETE,
-            "$(SourcePath)", "$(Arj16bitExecutable) m -p -va -hl -a $(ArchiveDOSFullName) !$(ListDOSFullName)", FALSE},
-        // LHA 2.55 MS-DOS
-        {
-            (TPackErrorTable*)&LHAErrors, FALSE,
-            "$(SourcePath)", "$(Lha16bitExecutable) a -m -p -a -l1 -x1 -c $(ArchiveDOSFullName) @$(ListDOSFullName)", FALSE,
-            ".", "$(Lha16bitExecutable) d -p -a -l1 -x1 -c $(ArchiveDOSFullName) @$(ListDOSFullName)", PMT_EMPDIRS_DELETEWITHASTERISK,
-            "$(SourcePath)", "$(Lha16bitExecutable) m -m -p -a -l1 -x1 -c $(ArchiveDOSFullName) @$(ListDOSFullName)", FALSE},
-        // UC2 2r3 PRO MS-DOS
-        {
-            (TPackErrorTable*)&UC2Errors, FALSE,
-            "$(SourcePath)", "$(UC216bitExecutable) A !SYSHID=ON $(ArchiveDOSFullName) ##$(TargetPath) @$(ListDOSFullName)", TRUE,
-            ".", "$(UC216bitExecutable) D $(ArchiveDOSFullName) @$(ListDOSFullName) & $$RED $(ArchiveDOSFullName)", PMT_EMPDIRS_DONOTDELETE,
-            "$(SourcePath)", "$(UC216bitExecutable) AM !SYSHID=ON $(ArchiveDOSFullName) ##$(TargetPath) @$(ListDOSFullName)", FALSE},
-        // JAR 1.02 MS-DOS
-        {
-            (TPackErrorTable*)&JARErrors, FALSE,
-            "$(SourcePath)", "$(Jar16bitExecutable) a -hl $(ArchiveDOSFullName) -o\"$(TargetPath)\" !$(ListDOSFullName)", TRUE,
-            "$(ArchivePath)", "$(Jar16bitExecutable) d -r- $(ArchiveDOSFileName) !$(ListDOSFullName)", PMT_EMPDIRS_DELETE,
-            "$(SourcePath)", "$(Jar16bitExecutable) m -hl $(ArchiveDOSFullName) -o\"$(TargetPath)\" !$(ListDOSFullName)", FALSE},
-        // RAR 2.50 MS-DOS
-        {
-            (TPackErrorTable*)&RARErrors, FALSE,
-            "$(SourcePath)", "$(Rar16bitExecutable) a $(ArchiveDOSFullName) @$(ListDOSFullName)", FALSE, // P.S. ability to pack into subdirectories removed
-            "$(ArchivePath)", "$(Rar16bitExecutable) d $(ArchiveDOSFileName) @$(ListDOSFullName)", PMT_EMPDIRS_DELETE,
-            "$(SourcePath)", "$(Rar16bitExecutable) m $(ArchiveDOSFullName) @$(ListDOSFullName)", FALSE // P.S. ability to pack into subdirectories removed
-        },
-        // PKZIP 2.50 Win32
-        {
-            NULL, TRUE,
-            "$(SourcePath)", "$(Zip32bitExecutable) -add -nozipextension -attr -path \"$(ArchiveFullName)\" @\"$(ListFullName)\"", FALSE,
-            "$(ArchivePath)", "$(Zip32bitExecutable) -del -nozipextension \"$(ArchiveFileName)\" @\"$(ListFullName)\"", PMT_EMPDIRS_DONOTDELETE,
-            "$(SourcePath)", "$(Zip32bitExecutable) -add -nozipextension -attr -path -move \"$(ArchiveFullName)\" @\"$(ListFullName)\"", TRUE},
-        // PKZIP 2.04g MS-DOS
-        {
-            (TPackErrorTable*)&ZIP204Errors, FALSE,
-            "$(SourcePath)", "$(Zip16bitExecutable) -a -P -whs $(ArchiveDOSFullName) @$(ListDOSFullName)", FALSE,
-            ".", "$(Zip16bitExecutable) -d $(ArchiveDOSFullName) @$(ListDOSFullName)", PMT_EMPDIRS_DONOTDELETE,
-            "$(SourcePath)", "$(Zip16bitExecutable) -m -P -whs $(ArchiveDOSFullName) @$(ListDOSFullName)", FALSE},
-        // ARJ 3.00c Win32
-        {
-            (TPackErrorTable*)&ARJErrors, TRUE,
-            "$(SourcePath)", "$(Arj32bitExecutable) a -p -va -hl -a \"$(ArchiveFullName)\" !\"$(ListFullName)\"", FALSE,
-            "$(ArchivePath)", "$(Arj32bitExecutable) d -p -va -hl \"$(ArchiveFileName)\" !\"$(ListFullName)\"", PMT_EMPDIRS_DONOTDELETE,
-            "$(SourcePath)", "$(Arj32bitExecutable) m -p -va -hl -a \"$(ArchiveFullName)\" !\"$(ListFullName)\"", FALSE},
-        // ACE 1.2b Win32
-        {
-            (TPackErrorTable*)&ACEErrors, TRUE,
-            "$(SourcePath)", "$(Ace32bitExecutable) a -o -f \"$(ArchiveFullName)\" @\"$(ListFullName)\"", FALSE,
-            "$(ArchivePath)", "$(Ace32bitExecutable) d -f \"$(ArchiveFileName)\" @\"$(ListFullName)\"", PMT_EMPDIRS_DONOTDELETE,
-            "$(SourcePath)", "$(Ace32bitExecutable) m -o -f \"$(ArchiveFullName)\" @\"$(ListFullName)\"", TRUE},
-        // ACE 1.2b MS-DOS
-        {
-            (TPackErrorTable*)&ACEErrors, FALSE,
-            "$(SourcePath)", "$(Ace16bitExecutable) a -o -f $(ArchiveDOSFullName) @$(ListDOSFullName)", FALSE,
-            ".", "$(Ace16bitExecutable) d -f $(ArchiveDOSFullName) @$(ListDOSFullName)", PMT_EMPDIRS_DONOTDELETE,
-            "$(SourcePath)", "$(Ace16bitExecutable) m -o -f $(ArchiveDOSFullName) @$(ListDOSFullName)", FALSE}};
+            "$(SourcePath)", "$(Rar32bitExecutable) a -scul -idq -y \"$(ArchiveFullName)\" -ap\"$(TargetPath)\" @\"$(ListUnicodeFullName)\"", TRUE,
+            "$(ArchivePath)", "$(Rar32bitExecutable) d -scul -idq -y \"$(ArchiveFileName)\" @\"$(ListUnicodeFullName)\"", PMT_EMPDIRS_DELETE,
+            "$(SourcePath)", "$(Rar32bitExecutable) m -scul -idq -y \"$(ArchiveFullName)\" -ap\"$(TargetPath)\" @\"$(ListUnicodeFullName)\"", FALSE}};
 
 //
 // ****************************************************************************
@@ -139,7 +79,7 @@ BOOL PackCompress(HWND parent, CFilesWindow* panel, const char* archiveFileName,
         return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_ARCNAME_UNSUP);
 
     format--;
-    if (!PackerFormatConfig.GetUsePacker(format))
+    if (!PackerFormatConfig.CanPack(format)) // feature 084: also when the packer program is missing
         return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PACKER_UNSUP);
     int index = PackerFormatConfig.GetPackerIndex(format);
 
@@ -156,6 +96,8 @@ BOOL PackCompress(HWND parent, CFilesWindow* panel, const char* archiveFileName,
     }
 
     const SPackModifyTable* modifyTable = ArchiverConfig.GetPackerConfigTable(index);
+    if (modifyTable->CompressCommand == NULL) // feature 084: 7-Zip console only unpacks
+        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PACKER_UNSUP);
 
     // determine whether we perform copy or move
     const char* compressCommand;
@@ -297,15 +239,22 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
     }
 
     // we have the file, now open it
+    // feature 084: a command using $(ListUnicodeFullName) gets the list in UTF-16
+    EPackListEncoding listEnc = PackGetListEncoding(command, needANSIListFile);
     FILE* listFile;
     // feature 069 (F-P1-06): the narrow CRT resolves the name through the ANSI
     // code page, so under a non-ASCII %TEMP% the list file could not be created
     // at all and the packer aborted with "cannot create the file list"
     WCHAR* tmpListNameW = SalU8ToWAlloc(tmpListNameBuf);
-    listFile = tmpListNameW != NULL ? _wfopen(tmpListNameW, L"w")
-                                    : fopen(tmpListNameBuf, "w"); // legacy fallback
+    listFile = tmpListNameW != NULL ? _wfopen(tmpListNameW, listEnc == PACKLIST_UNICODE ? L"wb" : L"w")
+                                    : fopen(tmpListNameBuf, listEnc == PACKLIST_UNICODE ? "wb" : "w"); // legacy fallback
     if (tmpListNameW != NULL)
         free(tmpListNameW);
+    if (listFile != NULL && listEnc == PACKLIST_UNICODE && fwrite("\xFF\xFE", 1, 2, listFile) != 2)
+    {
+        fclose(listFile);
+        listFile = NULL;
+    }
     if (listFile == NULL)
     {
         SalDeleteFile(tmpListNameBuf);
@@ -326,7 +275,7 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
     // were in the ANSI code page, so the archiver was given a name that does
     // not exist; the legacy call stays as the fallback for a name the console
     // code page cannot express at all
-    if (!needANSIListFile)
+    if (listEnc == PACKLIST_OEM)
     {
         char sourceOem[2 * MAX_PATH];
         if (SalU8ToOEM(sourceShortName, sourceOem, sizeof(sourceOem)) != 0)
@@ -339,15 +288,25 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
     // pick the name
     while ((name = nextName(parent, 1, NULL, &isDir, NULL, NULL, NULL, param, &errorOccured)) != NULL)
     {
+        if (listEnc == PACKLIST_UNICODE) // UTF-8 names straight to UTF-16, nothing lost
+        {
+            if (!isDir && !PackWriteListLineW(listFile, name, NULL, NULL))
+            {
+                fclose(listFile);
+                SalDeleteFile(tmpListNameBuf);
+                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_FILE);
+            }
+            continue;
+        }
         if (supportLongNames)
         {
-            if (!needANSIListFile)
+            if (listEnc == PACKLIST_OEM)
             {
                 if (SalU8ToOEM(name, namecnv, _countof(namecnv)) == 0)
                     CharToOem(name, namecnv); // legacy fallback
             }
             else
-                strcpy(namecnv, name);
+                lstrcpyn(namecnv, name, _countof(namecnv));
         }
         else
         {
@@ -362,7 +321,7 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
                 SalDeleteFile(tmpListNameBuf);
                 return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
             }
-            if (!needANSIListFile)
+            if (listEnc == PACKLIST_OEM)
             { // 'namecnv' is the 8.3 form here, ASCII in practice
                 char shortOem[MAX_PATH];
                 if (SalU8ToOEM(namecnv, shortOem, sizeof(shortOem)) != 0)
@@ -485,6 +444,9 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
     if (!exec)
     {
         SalDeleteFile(tmpListNameBuf);
+        // feature 084: the user stopped the archiver - the archive may be half written
+        if (PackLastRunCancelled)
+            (*PackErrorHandlerPtr)(parent, IDS_PACKERR_CANCELLED_ARC, archiveFileName);
         return FALSE; // error message has already been displayed
     }
 
@@ -614,7 +576,7 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
         return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_ARCNAME_UNSUP);
 
     format--;
-    if (!PackerFormatConfig.GetUsePacker(format))
+    if (!PackerFormatConfig.CanPack(format)) // feature 084: also when the packer program is missing
         return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PACKER_UNSUP);
     int index = PackerFormatConfig.GetPackerIndex(format);
 
@@ -631,7 +593,10 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
     }
 
     const SPackModifyTable* modifyTable = ArchiverConfig.GetPackerConfigTable(index);
-    BOOL needANSIListFile = modifyTable->NeedANSIListFile;
+    if (modifyTable->DeleteCommand == NULL) // feature 084: 7-Zip console only unpacks
+        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PACKER_UNSUP);
+    // feature 084: a command using $(ListUnicodeFullName) gets the list in UTF-16
+    EPackListEncoding listEnc = PackGetListEncoding(modifyTable->DeleteCommand, modifyTable->NeedANSIListFile);
 
     //
     // We must adjust the directory in the archive to the required format
@@ -674,10 +639,15 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
     // code page, so under a non-ASCII %TEMP% the list file could not be created
     // at all and the packer aborted with "cannot create the file list"
     WCHAR* tmpListNameW = SalU8ToWAlloc(tmpListNameBuf);
-    listFile = tmpListNameW != NULL ? _wfopen(tmpListNameW, L"w")
-                                    : fopen(tmpListNameBuf, "w"); // legacy fallback
+    listFile = tmpListNameW != NULL ? _wfopen(tmpListNameW, listEnc == PACKLIST_UNICODE ? L"wb" : L"w")
+                                    : fopen(tmpListNameBuf, listEnc == PACKLIST_UNICODE ? "wb" : "w"); // legacy fallback
     if (tmpListNameW != NULL)
         free(tmpListNameW);
+    if (listFile != NULL && listEnc == PACKLIST_UNICODE && fwrite("\xFF\xFE", 1, 2, listFile) != 2)
+    {
+        fclose(listFile);
+        listFile = NULL;
+    }
     if (listFile == NULL)
     {
         SalDeleteFile(tmpListNameBuf);
@@ -690,7 +660,7 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
     char namecnv[MAX_PATH];
     int errorOccured;
     // feature 069 (F-P1-05): see the note in pack1.cpp
-    if (!needANSIListFile)
+    if (listEnc == PACKLIST_OEM)
     {
         char rootOem[2 * MAX_PATH];
         if (SalU8ToOEM(rootPath, rootOem, sizeof(rootOem)) != 0)
@@ -701,13 +671,32 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
     // pick the name
     while ((name = nextName(parent, 1, &isDir, NULL, NULL, param, &errorOccured)) != NULL)
     {
-        if (!needANSIListFile)
+        if (listEnc == PACKLIST_UNICODE) // UTF-8 names straight to UTF-16, nothing lost
+        {
+            const char* suffix = NULL;
+            BOOL write = !isDir;
+            if (isDir && modifyTable->DelEmptyDir == PMT_EMPDIRS_DELETE)
+                write = TRUE;
+            if (isDir && modifyTable->DelEmptyDir == PMT_EMPDIRS_DELETEWITHASTERISK)
+            {
+                write = TRUE;
+                suffix = "\\*";
+            }
+            if (write && !PackWriteListLineW(listFile, rootPath, name, suffix))
+            {
+                fclose(listFile);
+                SalDeleteFile(tmpListNameBuf);
+                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_FILE);
+            }
+            continue;
+        }
+        if (listEnc == PACKLIST_OEM)
         {
             if (SalU8ToOEM(name, namecnv, _countof(namecnv)) == 0)
                 CharToOem(name, namecnv); // legacy fallback
         }
         else
-            strcpy(namecnv, name);
+            lstrcpyn(namecnv, name, _countof(namecnv));
         // and put it into the list
         if (!isDir)
         {
@@ -807,6 +796,9 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
     if (!exec)
     {
         SalDeleteFile(tmpListNameBuf);
+        // feature 084: the user stopped the archiver - the archive may be half written
+        if (PackLastRunCancelled)
+            (*PackErrorHandlerPtr)(parent, IDS_PACKERR_CANCELLED_ARC, archiveFileName);
         return FALSE; // error message has already been displayed
     }
 

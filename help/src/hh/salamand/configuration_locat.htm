@@ -9,18 +9,28 @@
 
 <body>
 <div id="help_page">
-<div class="header">Open Salamander: Dialog Boxes: Configuration</div>
+<div class="header">Tandem Commander: Dialog Boxes: Configuration</div>
 <div class="page">
 
 <h1>External Archivers Locations</h1>
 
-<p>Allows you to assign external archiver file name to the variables used in
-Open Salamander archivers configuration.</p>
+<p>Allows you to set where the external archivers are installed. The location is
+assigned to a variable that the packer, unpacker and panel commands of the archiver
+use. Tandem Commander supports two external archivers:</p>
+
+<ul>
+<li><i>7-Zip console program (7z.exe)</i>, variable <code>$(SevenZipExecutable)</code>:
+lists (browses in a panel) and unpacks ARJ and LZH (LHA) archives, formats that no
+plugin reads. It is not used for packing.</li>
+<li><i>WinRAR console program (Rar.exe)</i>, variable <code>$(Rar32bitExecutable)</code>:
+creates RAR archives (the <i>RAR (WinRAR)</i> packer in the Pack dialog box) and packs
+files into them. It is used only for packing, not for reading RAR archives.</li>
+</ul>
 
 <h4>Dialog Box Options</h4>
 <dl>
 <dt><i>External Archivers</i></dt>
-<dd>Displays a list of external archivers supported by Open Salamander.</dd>
+<dd>Displays a list of external archivers supported by Tandem Commander.</dd>
 
 <dt><i>List and Unpack</i></dt>
 <dd>Displays the external archiver file name assigned to the selected variable
@@ -30,18 +40,36 @@ content of archive.</dd>
 <dt><i>Delete and Pack</i></dt>
 <dd>Displays the external archiver file name assigned to the selected variable
 in External Archivers. This archiver will be used for deleting files from archive
-and packing files into archive. If selected archiver supports all operations
-(listing, unpacking, deleting, and packing), Delete and Pack box will be disabled.
-Otherwise different file name of external archiver must be assigned.</dd>
+and packing files into archive. If selected archiver uses one program for all
+operations, Delete and Pack box will be disabled; this is the case for both supported
+archivers.</dd>
 
 </dl>
 
-<h4>Note</h4>
-<p>Use Options/Archivers Autoconfiguration to search for installed external
-archivers on your machine.</p>
+<h4>Remarks</h4>
+<p>An external archiver is used, and its entries in the Pack and Unpack dialog boxes
+and the archive formats it serves are offered, only while its program is found: the
+location set here must exist. A program name without a path is looked up the way
+Windows does (on the system path). While the program is not found, its entries are
+hidden and files with its extensions are treated as ordinary files, or opened by a
+plugin that supports them. After you install 7-Zip or WinRAR, use
+<a href="customize_arccfg.htm">Options/Archivers Autoconfiguration</a> to find it, or
+enter its location here; the entries appear at once.</p>
+
+<p>Tandem Commander starts the archiver program directly. While it packs or unpacks,
+a small window with a <i>Cancel</i> button is shown; <i>Cancel</i> or Esc stops the
+archiver. While it reads an archive's list of files, Esc stops it. If the
+program cannot be started, the error message names the program and the reason.</p>
+
+<p>Any other archiver can still be used: add it as your own packer or unpacker in
+<a href="configuration_packr.htm">Packers in Pack Dialog Box</a> or
+<a href="configuration_unpck.htm">Unpackers in Unpack Dialog Box</a> with the full
+path of its program in the <i>Command</i> box. Such an archiver can pack and unpack,
+but its archives cannot be browsed in a panel unless a plugin or one of the supported
+archivers reads their format.</p>
 
 </div>
-<div class="footer">&#169; 2023 Open Salamander Authors</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
 </div>
 </body>
 </html>

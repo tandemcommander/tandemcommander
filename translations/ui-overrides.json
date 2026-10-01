@@ -210,7 +210,8 @@
       "IDS_CMDSHELL_ERRNOTFOUND": "Vybraný program příkazového řádku (%s) nebyl na tomto počítači nalezen.\\n\\nVyberte jiný program v části Konfigurace / Příkazový řádek.",
       "IDS_CMDSHELL_ERREXEC": "Nelze spustit program příkazového řádku:\\n%s\\n\\n%s\\n\\nProgram můžete změnit v části Konfigurace / Příkazový řádek.",
       "IDS_TABS_CLOSECONFIRM": "Počet karet, které se vypnutím karet zavřou: %d. Pokračovat?",
-      "IDC_PANELTABS": "Zobrazit karty &v panelech"
+      "IDC_PANELTABS": "Zobrazit karty &v panelech",
+      "IDS_PACKERR_EXEMISSING": "Archivační program „%1“ nebyl nalezen. Nastavte jeho umístění na stránce „Umístění externích archivátorů“ v konfiguraci nebo použijte příkaz „Autokonfigurace archivačních programů“ z nabídky Možnosti."
     },
     "slovak": {
       "IDS_FINDLOG_TEXT": "Text",
@@ -218,7 +219,11 @@
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
       "IDS_CMDSHELL_ERRNOTFOUND": "Vybraný program príkazového riadku (%s) nebol na tomto počítači nájdený.\\n\\nVyberte iný program v časti Konfigurácia / Príkazový riadok.",
       "IDS_CMDSHELL_ERREXEC": "Program príkazového riadku sa nedá spustiť:\\n%s\\n\\n%s\\n\\nProgram môžete zmeniť v časti Konfigurácia / Príkazový riadok.",
-      "IDS_TABS_CLOSECONFIRM": "Počet kariet, ktoré sa vypnutím kariet zatvoria: %d. Pokračovať?"
+      "IDS_TABS_CLOSECONFIRM": "Počet kariet, ktoré sa vypnutím kariet zatvoria: %d. Pokračovať?",
+      "IDS_PACKERR_EXEMISSING": "Archivačný program „%1“ sa nenašiel. Nastavte jeho umiestnenie na stránke „Umiestnenie externých archivátorov“ v konfigurácii alebo použite príkaz „Autokonfigurácia archivačných programov“ z ponuky Možnosti.",
+      "IDS_PACKERR_STARTFAIL": "Archivačný program „%1“ sa nepodarilo spustiť. Chyba: %2",
+      "IDS_PACKERR_CANCELLED_ARC": "Operácia bola zrušená a archivačný program bol zastavený. Archív „%1“ môže byť neúplný.",
+      "IDS_PACKRET_STOPPED": "Archivačný program bol zastavený alebo čakal na odpoveď, ktorú nebolo možné poskytnúť."
     },
     "german": {
       "#Command Shell": "Eingabeaufforderung",
@@ -242,7 +247,11 @@
       "IDS_TABS_TT_LIST": "Alle Registerkarten",
       "IDS_TABS_CLOSECONFIRM": "Beim Ausschalten der Registerkarten werden %d Registerkarten geschlossen. Fortfahren?",
       "IDC_PANELTABS": "&Registerkarten in Panels anzeigen",
-      "IDS_BUGREPORT_SAVED": "Es ist ein Problem aufgetreten, wodurch Tandem Commander geschlossen werden musste.\\n\\nEin Fehlerbericht wurde gespeichert unter:\\n%s\\n\\nEs wird nichts an irgendjemanden gesendet. Wenn Sie dabei helfen möchten, Tandem Commander zu verbessern, fügen Sie diese Datei bitte einem Ticket unter github.com/tandemcommander/tandemcommander/issues bei."
+      "IDS_BUGREPORT_SAVED": "Es ist ein Problem aufgetreten, wodurch Tandem Commander geschlossen werden musste.\\n\\nEin Fehlerbericht wurde gespeichert unter:\\n%s\\n\\nEs wird nichts an irgendjemanden gesendet. Wenn Sie dabei helfen möchten, Tandem Commander zu verbessern, fügen Sie diese Datei bitte einem Ticket unter github.com/tandemcommander/tandemcommander/issues bei.",
+      "IDS_PACKERR_EXEMISSING": "Das Packprogramm „%1“ wurde nicht gefunden. Legen Sie seinen Speicherort auf der Seite „Position ext. Packprogramme“ der Konfiguration fest, oder verwenden Sie „Autokonfig. Packprogramme“ im Menü „Optionen“.",
+      "IDS_PACKERR_STARTFAIL": "Das Packprogramm „%1“ konnte nicht gestartet werden. Der Fehler lautete: %2",
+      "IDS_PACKERR_CANCELLED_ARC": "Der Vorgang wurde abgebrochen und das Packprogramm wurde beendet. Das Archiv „%1“ ist möglicherweise unvollständig.",
+      "IDS_PACKRET_STOPPED": "Das Packprogramm wurde beendet oder wartete auf eine Antwort, die nicht gegeben werden konnte."
     },
     "french": {
       "#Command Shell": "Interpréteur de commandes",
@@ -255,7 +264,11 @@
       "IDS_CMDSHELL_ERREXEC": "Impossible de lancer le programme d'interpréteur de commandes :\\n%s\\n\\n%s\\n\\nVous pouvez changer de programme dans Configuration / Interpréteur de commandes.",
       "IDS_TABS_TT_NEW": "Nouvel onglet (Ctrl+Shift+T)",
       "IDS_TABS_CLOSECONFIRM": "%d onglet(s) seront fermés lorsque les onglets seront désactivés. Continuer ?",
-      "IDS_BUGREPORT_SAVED": "Un problème est survenu, forçant Tandem Commander à se fermer.\\n\\nUn rapport de bug a été enregistré à l'emplacement suivant :\\n%s\\n\\nRien n'est envoyé nulle part. Si vous souhaitez aider à améliorer Tandem Commander, veuillez joindre ce fichier à un ticket sur github.com/tandemcommander/tandemcommander/issues."
+      "IDS_BUGREPORT_SAVED": "Un problème est survenu, forçant Tandem Commander à se fermer.\\n\\nUn rapport de bug a été enregistré à l'emplacement suivant :\\n%s\\n\\nRien n'est envoyé nulle part. Si vous souhaitez aider à améliorer Tandem Commander, veuillez joindre ce fichier à un ticket sur github.com/tandemcommander/tandemcommander/issues.",
+      "IDS_PACKERR_EXEMISSING": "L'archiveur « %1 » est introuvable. Indiquez son emplacement dans la page « Emplacements des compresseurs externes » de la configuration, ou utilisez « Autoconfiguration des archiveurs » dans le menu Options.",
+      "IDS_PACKERR_STARTFAIL": "Impossible de démarrer l'archiveur « %1 ». L'erreur était : %2",
+      "IDS_PACKERR_CANCELLED_ARC": "L'opération a été annulée et l'archiveur a été arrêté. L'archive « %1 » est peut-être incomplète.",
+      "IDS_EXT_7ZIP": "Programme console 7-Zip (7z.exe)"
     },
     "dutch": {
       "#Command Shell": "Opdracht Shell",
@@ -266,13 +279,20 @@
       "IDS_CMDSHELL_ERRTITLE": "Fout bij het starten van de Opdracht Shell",
       "IDS_CMDSHELL_ERRNOTFOUND": "Het geselecteerde programma voor de Opdracht Shell (%s) is niet gevonden op deze computer.\\n\\nKies een ander programma in Configuratie / Opdracht Shell.",
       "IDS_CMDSHELL_ERREXEC": "Het programma voor de Opdracht Shell kan niet worden gestart:\\n%s\\n\\n%s\\n\\nU kunt het programma wijzigen in Configuratie / Opdracht Shell.",
-      "IDS_BUGREPORT_SAVED": "Er is een probleem opgetreden, waardoor Tandem Commander moet worden afgesloten.\\n\\nEr is een bugrapport opgeslagen op:\\n%s\\n\\nEr wordt nergens iets naartoe gestuurd. Als u wilt helpen Tandem Commander te verbeteren, voeg dit bestand dan toe aan een issue op github.com/tandemcommander/tandemcommander/issues."
+      "IDS_BUGREPORT_SAVED": "Er is een probleem opgetreden, waardoor Tandem Commander moet worden afgesloten.\\n\\nEr is een bugrapport opgeslagen op:\\n%s\\n\\nEr wordt nergens iets naartoe gestuurd. Als u wilt helpen Tandem Commander te verbeteren, voeg dit bestand dan toe aan een issue op github.com/tandemcommander/tandemcommander/issues.",
+      "IDS_PACKERR_EXEMISSING": "Het archiveringsprogramma „%1“ is niet gevonden. Stel de locatie in op de pagina „Locatie van Externe archief programma's“ van de configuratie, of gebruik „Archiverings Programma Autoconfiguratie“ in het menu Opties.",
+      "IDS_PACKERR_STARTFAIL": "Kan het archiveringsprogramma „%1“ niet starten. De fout was: %2",
+      "IDS_PACKERR_CANCELLED_ARC": "De bewerking is geannuleerd en het archiveringsprogramma is gestopt. Het archief „%1“ is mogelijk onvolledig."
     },
     "hungarian": {
       "IDS_CMDSHELL_ERRNOTFOUND": "A kiválasztott parancssori program (%s) nem található ezen a számítógépen.\\n\\nVálasszon másik programot a Konfiguráció / Parancssor menüpontban.",
       "IDS_CMDSHELL_ERREXEC": "Nem lehet elindítani a parancssor programot:\\n%s\\n\\n%s\\n\\nA programot a Konfiguráció / Parancssor menüpontban módosíthatja.",
       "IDS_TABS_CLOSECONFIRM": "%d lap bezárul a lapok kikapcsolásakor. Folytatja?",
-      "IDC_PANELTABS": "&Lapok megjelenítése a paneleken"
+      "IDC_PANELTABS": "&Lapok megjelenítése a paneleken",
+      "IDS_PACKERR_EXEMISSING": "A(z) „%1” archiváló nem található. Adja meg a helyét a konfiguráció „Külső archiválók elérése” lapján, vagy használja a Beállítások menü „Archiválók automatikus beállítása” parancsát.",
+      "IDS_PACKERR_STARTFAIL": "A(z) „%1” archiváló nem indítható el. A hiba: %2",
+      "IDS_PACKERR_CANCELLED_ARC": "A művelet megszakadt, és az archiváló leállt. Lehet, hogy a(z) „%1” archívum hiányos.",
+      "IDS_PACKRET_STOPPED": "Az archiváló leállt, vagy olyan válaszra várt, amelyet nem lehetett megadni."
     },
     "romanian": {
       "#Command Shell": "Comanda Shell",
@@ -280,7 +300,8 @@
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
       "IDS_CMDSHELL_ERRNOTFOUND": "Programul de tip shell de comandă selectat (%s) nu a fost găsit pe acest computer.\\n\\nAlegeți un alt program în Configurare / Comanda Shell.",
       "IDS_CMDSHELL_ERREXEC": "Nu se poate porni programul shell de comandă:\\n%s\\n\\n%s\\n\\nPuteți schimba programul în Configurare / Comanda Shell.",
-      "IDS_TABS_CLOSECONFIRM": "%d file vor fi închise când filele vor fi dezactivate. Continuați?"
+      "IDS_TABS_CLOSECONFIRM": "%d file vor fi închise când filele vor fi dezactivate. Continuați?",
+      "IDS_PACKERR_EXEMISSING": "Arhivatorul „%1” nu a fost găsit. Setați locația sa în pagina „Localizarile Arhivatorilor Externi” din configurație sau folosiți comanda „Autoconfigurare Archivatori” din meniul Optiuni."
     },
     "spanish": {
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
@@ -292,7 +313,11 @@
       "IDS_MENU_TAB_NEXT": "Pestaña &siguiente\\tCtrl+Shift+Page Down",
       "IDS_TABS_TT_NEW": "Nueva pestaña (Ctrl+Shift+T)",
       "IDS_TABS_CLOSECONFIRM": "Al desactivar las pestañas se cerrarán %d pestañas. ¿Continuar?",
-      "IDS_BUGREPORT_SAVED": "Se ha producido un problema que ha obligado a Tandem Commander a cerrarse.\\n\\nSe ha guardado un informe de error en:\\n%s\\n\\nNo se envía nada a ningún sitio. Si desea ayudar a mejorar Tandem Commander, adjunte este archivo a una incidencia en github.com/tandemcommander/tandemcommander/issues."
+      "IDS_BUGREPORT_SAVED": "Se ha producido un problema que ha obligado a Tandem Commander a cerrarse.\\n\\nSe ha guardado un informe de error en:\\n%s\\n\\nNo se envía nada a ningún sitio. Si desea ayudar a mejorar Tandem Commander, adjunte este archivo a una incidencia en github.com/tandemcommander/tandemcommander/issues.",
+      "IDS_PACKERR_EXEMISSING": "No se ha encontrado el compresor «%1». Indique su ubicación en la página «Localización de compresores externos» de la configuración, o utilice «Autoconfiguración de compresores» del menú Opciones.",
+      "IDS_PACKERR_STARTFAIL": "No se ha podido iniciar el compresor «%1». El error fue: %2",
+      "IDS_PACKERR_CANCELLED_ARC": "La operación se ha cancelado y el compresor se ha detenido. Es posible que el archivo «%1» esté incompleto.",
+      "IDS_PACKRET_STOPPED": "El compresor se detuvo o estaba esperando una respuesta que no se pudo dar."
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -304,6 +329,16 @@
       "Crash closing message (feature 079): DeepL returned the informal register",
       "(du/tu/je/tu) for the long message in de/fr/nl/es while the corpus is formal;",
       "the four pins keep Sie/vous/u/usted, the %s placeholder and the GitHub URL."
+    ],
+    "_feature_084": [
+      "Archiver not found (feature 084): DeepL returned the informal register (du/tu/tu) for the",
+      "long message in de/fr/es and invented its own names for the configuration page and the",
+      "menu command it refers to; the pins keep the formal register, the %1 placeholder and the",
+      "exact UI names each language already shows (dialog 2340 caption, IDS_MENU_OPT_ARCHAUTOCFG,",
+      "IDS_MENU_OPT). German also keeps the corpus term 'Packprogramm' in the other three new messages.",
+      "Final review (084): the other new messages follow each corpus' own word for an archiver",
+      "(es compresor, nl archiveringsprogramma, hu archiváló, sk archivačný program), French uses",
+      "the corpus' straight apostrophe and one wording for both console-program names."
     ]
   },
   "zip": {

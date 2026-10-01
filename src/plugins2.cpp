@@ -2145,6 +2145,11 @@ void CPlugins::CheckData()
         MainWindow->LeaveViewerMasksCS();
     }
 
+    // feature 084 (FR-017): which external archivers are installed decides which
+    // formats are archives at all - looked up once here, before BuildArray below
+    // (this runs after the configuration is loaded and with the defaults alike)
+    ArchiverConfig.RefreshAvailability();
+
     // check the indices/types of archivers/plugins and delete invalid entries when needed
     int i;
     for (i = 0; i < PackerFormatConfig.GetFormatsCount(); i++)
@@ -2592,29 +2597,21 @@ void CPlugins::FindViewEdit(const char* extensions, int exclude, BOOL& viewFound
 
     if (!viewFound || !editFound)
     {
-        // NOTE: if you change the order of external archivers, you must also update the order
-        // in the externalArchivers array in CPlugins::FindViewEdit method
+        // NOTE: the archiver indices are PACK7ZIPINDEX and PACKRARINDEX (pack.h); feature 084:
+        // the 7-Zip console only views, RAR (WinRAR) only edits - its record keeps index 1
+        // as the viewer so the RAR packer survives (the record is hidden while it cannot browse)
         struct
         {
             const char* ext;
-            int index;
+            int view; // -1 = this archiver cannot view
+            int edit; // -1 = this archiver cannot edit
         } externalArchivers[] =
             {
-                {"J", 0},
-                {"RAR", 1},
-                // {"ARJ", 2},
-                {"LZH", 3},
-                {"UC2", 4},
-                // {"J", 5},
-                // {"RAR", 6},
-                {"ZIP", 7},
-                {"PK3", 7},
-                {"JAR", 7},
-                // {"ZIP;PK3;JAR", 8},
-                {"ARJ", 9},
-                {"ACE", 10},
-                // {"ACE", 11},
-                {NULL, 0}};
+                {"RAR", PACKRARINDEX, PACKRARINDEX},
+                {"ARJ", PACK7ZIPINDEX, -1},
+                {"LZH", PACK7ZIPINDEX, -1},
+                {"LHA", PACK7ZIPINDEX, -1},
+                {NULL, 0, 0}};
 
         i = 0;
         while (externalArchivers[i].ext != NULL)
@@ -2624,14 +2621,14 @@ void CPlugins::FindViewEdit(const char* extensions, int exclude, BOOL& viewFound
             {
                 if (StrICmp(externalArchivers[i].ext, extArray[j]) == 0) // ext. archiver found
                 {
-                    if (!viewFound)
+                    if (!viewFound && externalArchivers[i].view >= 0)
                     {
-                        view = externalArchivers[i].index;
+                        view = externalArchivers[i].view;
                         viewFound = TRUE;
                     }
-                    if (!editFound)
+                    if (!editFound && externalArchivers[i].edit >= 0)
                     {
-                        edit = externalArchivers[i].index;
+                        edit = externalArchivers[i].edit;
                         editFound = TRUE;
                     }
                     break;

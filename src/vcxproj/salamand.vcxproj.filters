@@ -426,6 +426,12 @@
     <ClCompile Include="..\common\salcloseapp.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\sal7zlist.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\salarcmig.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\common\salunicode.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -759,6 +765,12 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\salcloseapp.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\sal7zlist.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\salarcmig.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\salunicode.h">

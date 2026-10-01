@@ -9,27 +9,36 @@
 
 <body>
 <div id="help_page">
-<div class="header">Open Salamander: Dialog Boxes</div>
+<div class="header">Tandem Commander: Dialog Boxes</div>
 <div class="page">
 <h1>Archivers Autoconfiguration</h1>
 
-<p>Use this dialog box to find external archivers on you drives.</p>
+<p>Use this dialog box to find the external archivers Tandem Commander supports, the
+7-Zip console program (7z.exe) and WinRAR's console program (Rar.exe), and add them to
+the configuration.</p>
 
 <h4>Dialog Box Options</h4>
 <dl>
 <dt><i>Available archivers</i></dt>
-<dd>Displays a list of the packers that are to be searched on your machine.</dd>
+<dd>Displays the supported external archivers and the programs found for them. When
+the dialog box opens, the usual installations of 7-Zip and WinRAR (found through their
+registry entries and in the Program Files folders) are already listed, without any
+search of your drives.</dd>
 
 <dt><i>Add/Remove custom (un)packers</i></dt>
-<dd>When selected, not only archives association in panels will be modified, but also packers will be removed from
-and added to the list of packers in the pack and unpack dialog boxes. When not selected, this list of custom
-archivers remains unmodified.</dd>
+<dd>When selected, not only archives association in panels will be modified, but the
+entries of the archivers (the <i>RAR (WinRAR)</i> packer and the <i>7-Zip</i> unpacker)
+will also be added to or removed from the lists in the Pack and Unpack dialog boxes.
+When not selected, these lists remain unmodified.</dd>
 
 <dt><i>Drives</i></dt>
-<dd>Opens a <a href="dlgboxes_arcacdrv.htm">dialog</a> allowing to specify which drives will be searched for archivers.</dd>
+<dd>Opens a <a href="dlgboxes_arcacdrv.htm">dialog</a> allowing to specify which drives
+and directories the <i>Start</i> button searches.</dd>
 
 <dt><i>Start</i></dt>
-<dd>Begin searching of external archivers.</dd>
+<dd>Searches the specified drives for 7z.exe and Rar.exe. Use it when an archiver is
+installed outside its usual location. While searching, the button changes to
+<i>Stop</i>.</dd>
 
 </dl>
 
@@ -40,7 +49,7 @@ archivers remains unmodified.</dd>
 </p>
 
 </div>
-<div class="footer">&#169; 2023 Open Salamander Authors</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
 </div>
 </body>
 </html>

@@ -1880,6 +1880,19 @@ void CPackDialog::SetSelectionEnd(int selectionEnd)
     SelectionEnd = selectionEnd;
 }
 
+// feature 084 (FR-017): the Pack and Unpack combo boxes list only the entries
+// that are offered (an external archiver whose program is not found is hidden),
+// so a combo position is no longer the configuration index - the index is kept
+// as the item data; returns -1 when nothing is selected
+static int GetSelectedConfigIndex(HWND combo)
+{
+    int pos = (int)SendMessage(combo, CB_GETCURSEL, 0, 0);
+    if (pos == CB_ERR)
+        return -1;
+    LRESULT index = SendMessage(combo, CB_GETITEMDATA, pos, 0);
+    return index == CB_ERR ? -1 : (int)index;
+}
+
 void CPackDialog::Transfer(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CPackDialog::Transfer()");
@@ -1890,15 +1903,25 @@ void CPackDialog::Transfer(CTransferInfo& ti)
         {
             SendMessage(combo, CB_RESETCONTENT, 0, 0);
             int i;
+            int prefered = PackerConfig->GetOfferedPreferedPacker();
+            int selPos = -1;
             for (i = 0; i < PackerConfig->GetPackersCount(); i++)
             {
-                SalComboAddStringU8(combo, PackerConfig->GetPackerTitle(i)); // titles are UTF-8 (feature 010)
+                if (!PackerConfig->IsPackerOffered(i))
+                    continue; // feature 084: its archiver is not installed
+                int pos = (int)SalComboAddStringU8(combo, PackerConfig->GetPackerTitle(i)); // titles are UTF-8 (feature 010)
+                if (pos >= 0)
+                {
+                    SendMessage(combo, CB_SETITEMDATA, pos, i);
+                    if (i == prefered)
+                        selPos = pos;
+                }
             }
-            // sets the position in the combo, preferedPacker == -1 -> no selection
-            SendMessage(combo, CB_SETCURSEL, (WPARAM)PackerConfig->GetPreferedPacker(), 0);
+            // sets the position in the combo, no preferred packer -> no selection
+            SendMessage(combo, CB_SETCURSEL, (WPARAM)selPos, 0);
 
-            i = (int)SendMessage(combo, CB_GETCURSEL, 0, 0);
-            if (i != CB_ERR)
+            i = GetSelectedConfigIndex(combo);
+            if (i != -1)
             {
                 BOOL supMove = TRUE;
                 if (PackerConfig->GetPackerType(i) == CUSTOMPACKER_EXTERNAL)
@@ -1910,11 +1933,7 @@ void CPackDialog::Transfer(CTransferInfo& ti)
         }
         else // ttDataFromWindow
         {
-            int i = (int)SendMessage(combo, CB_GETCURSEL, (WPARAM)PackerConfig->GetPreferedPacker(), 0);
-            if (i != CB_ERR)
-                PackerConfig->SetPreferedPacker(i);
-            else
-                PackerConfig->SetPreferedPacker(-1);
+            PackerConfig->SetPreferedPacker(GetSelectedConfigIndex(combo)); // -1 = no selection
         }
     }
 
@@ -2032,8 +2051,8 @@ CPackDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         if (HIWORD(wParam) == CBN_SELCHANGE && LOWORD(wParam) == IDC_PACKER)
         {
-            int i = (int)SendMessage((HWND)lParam, CB_GETCURSEL, 0, 0);
-            if (i != CB_ERR)
+            int i = GetSelectedConfigIndex((HWND)lParam); // feature 084: the configuration index
+            if (i != -1)
             {
                 // swap extensions
                 char name[MAX_PATH];
@@ -2125,9 +2144,9 @@ CUnpackDialog::CUnpackDialog(HWND parent, char* path, const char* pathAlt, char*
 
 void CUnpackDialog::EnableDelArcCheckbox()
 {
-    int i = (int)SendDlgItemMessage(HWindow, IDC_PACKER, CB_GETCURSEL, 0, 0);
+    int i = GetSelectedConfigIndex(GetDlgItem(HWindow, IDC_PACKER)); // feature 084: the configuration index
     EnableWindow(GetDlgItem(HWindow, IDC_DELETEARCHIVEFILES),
-                 i != CB_ERR && UnpackerConfig->GetUnpackerType(i) != CUSTOMUNPACKER_EXTERNAL);
+                 i != -1 && UnpackerConfig->GetUnpackerType(i) != CUSTOMUNPACKER_EXTERNAL);
 }
 
 void CUnpackDialog::Transfer(CTransferInfo& ti)
@@ -2140,21 +2159,27 @@ void CUnpackDialog::Transfer(CTransferInfo& ti)
         {
             SendMessage(combo, CB_RESETCONTENT, 0, 0);
             int i;
+            int prefered = UnpackerConfig->GetOfferedPreferedUnpacker();
+            int selPos = -1;
             for (i = 0; i < UnpackerConfig->GetUnpackersCount(); i++)
             {
-                SalComboAddStringU8(combo, UnpackerConfig->GetUnpackerTitle(i)); // titles are UTF-8 (feature 010)
+                if (!UnpackerConfig->IsUnpackerOffered(i))
+                    continue; // feature 084: its archiver is not installed
+                int pos = (int)SalComboAddStringU8(combo, UnpackerConfig->GetUnpackerTitle(i)); // titles are UTF-8 (feature 010)
+                if (pos >= 0)
+                {
+                    SendMessage(combo, CB_SETITEMDATA, pos, i);
+                    if (i == prefered)
+                        selPos = pos;
+                }
             }
-            // set the position in the combo, preferredUnpacker == -1 -> no selection
-            SendMessage(combo, CB_SETCURSEL, (WPARAM)UnpackerConfig->GetPreferedUnpacker(), 0);
+            // set the position in the combo, no preferred unpacker -> no selection
+            SendMessage(combo, CB_SETCURSEL, (WPARAM)selPos, 0);
             EnableDelArcCheckbox();
         }
         else // ttDataFromWindow
         {
-            int i = (int)SendMessage(combo, CB_GETCURSEL, 0, 0);
-            if (i != CB_ERR)
-                UnpackerConfig->SetPreferedUnpacker(i);
-            else
-                UnpackerConfig->SetPreferedUnpacker(-1);
+            UnpackerConfig->SetPreferedUnpacker(GetSelectedConfigIndex(combo)); // -1 = no selection
         }
     }
     if (ti.Type == ttDataToWindow)

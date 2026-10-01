@@ -1892,60 +1892,12 @@ SLGINCOMPLETE,""
 10280,1,"%d pt. %s (%s)"
 10281,1,"fuente predeterminada"
 10282,1,"fuente personalizada"
-10285,1,"JAR (Externo Win32, probado con v1.02)"
-10286,1,"JAR a volúmenes 1.44MB (Externo Win32, probado con v1.02)"
-10287,1,"RAR (Externo Win32, probado con v2.50)"
 
 [STRINGTABLE 20]
-10288,1,"RAR a volúmenes 1.44MB (Externo Win32, probado con v2.50)"
-10289,1,"ARJ (Externo DOS, probado con v2.60)"
-10290,1,"ARJ a volúmenes 1.44MB (Externo DOS, probado con v2.60)"
-10291,1,"LHA (Externo DOS, probado con v2.55)"
-10292,1,"UC2 (Externo DOS, probado con v2r3PRO)"
-10293,1,"ARJ (Externo Win32, probado con v3.00c)"
-10294,1,"ARJ a volúmenes 1.44MB (Externo Win32, probado con v3.00c)"
-10295,1,"ACE (Externo Win32, probado con v1.2b)"
-10296,1,"ACE a volúmenes 1.44MB (Externo Win32, probado con v1.2b)"
-10297,1,"ACE (Externo DOS, probado con v1.2b)"
-10298,1,"ACE a volúmenes 1.44MB (Externo DOS, probado con v1.2b)"
-10299,1,"JAR (Externo DOS, probado con v1.02)"
-10300,1,"JAR a volúmenes 1.44MB (Externo DOS, probado con v1.02)"
-10301,1,"RAR (Externo DOS, probado con v2.50)"
-10302,1,"RAR a volúmenes 1.44MB (Externo DOS, probado con v2.50)"
-10303,1,"PKZIP (Externo Win32, probado con v2.50)"
-
-[STRINGTABLE 21]
-10304,1,"PKZIP (Externo DOS, probado con v2.04g)"
-10307,1,"JAR (Externo Win32, probado con v1.02)"
-10308,1,"RAR (Externo Win32, probado con v2.50)"
-10309,1,"ARJ (Externo DOS, probado con v2.60)"
-10310,1,"LHA (Externo DOS, probado con v2.55)"
-10311,1,"UC2 (Externo DOS, probado con v2r3PRO)"
-10312,1,"ARJ (Externo Win32, probado con v3.00c)"
-10313,1,"ACE (Externo Win32, probado con v1.2b)"
-10314,1,"ACE (Externo DOS, probado con v1.2b)"
-10315,1,"JAR (Externo DOS, probado con v1.02)"
-10316,1,"RAR (Externo DOS, probado con v2.50)"
-10317,1,"PKZIP (Externo Win32, probado con v2.50)"
-10318,1,"PKUNZIP (Externo DOS, probado con v2.04g)"
-10319,1,"Win32 JAR ejecutable de consola (probado con v1.02)"
-
-[STRINGTABLE 22]
-10320,1,"Win32 RAR ejecutable de consola (probado con v2.50)"
-10321,1,"MS-DOS ARJ ejecutable (probado con v2.60)"
-10322,1,"MS-DOS LHA ejecutable (probado con v2.55)"
-10323,1,"MS-DOS UC2 ejecutable (probado con v2r3PRO)"
-10324,1,"MS-DOS JAR ejecutable (probado con v1.02)"
-10325,1,"MS-DOS RAR ejecutable (probado con v2.50)"
-10326,1,"Win32 PKZIP ejecutable de consola (probado con v2.50)"
-10327,1,"MS-DOS PKZIP/PKUNZIP ejecutable (probado con v2.04g)"
-10328,1,"Win32 ARJ ejecutable de consola (probado con v3.00c)"
-10329,1,"Win32 ACE ejecutable de consola (probado con v1.2b)"
-10330,1,"MS-DOS ACE ejecutable (probado con v1.2b)"
 10334,1,"Modificar (F2)"
 10335,1,"Nuevo (Insertar)"
 
-[STRINGTABLE 23]
+[STRINGTABLE 21]
 10336,1,"Borrar (Supr)"
 10337,1,"Mover elemento arriba (Alt + Flecha arriba)"
 10338,1,"Mover elemento abajo (Alt + Flecha abajo)"
@@ -1961,7 +1913,7 @@ SLGINCOMPLETE,""
 10350,1,"Variable de entorno"
 10351,1,"Nombre completo"
 
-[STRINGTABLE 24]
+[STRINGTABLE 22]
 10352,1,"Nombre completo DOS"
 10353,1,"Ruta completa"
 10354,1,"Directorio Windows"
@@ -1978,7 +1930,7 @@ SLGINCOMPLETE,""
 10366,1,"La resolución del tiempo debe estar entre 0 y 3600 s"
 10367,1,"B&arra de plugins"
 
-[STRINGTABLE 25]
+[STRINGTABLE 23]
 10368,1,"Barra d&e menú de usuario"
 10369,1,"Barra de herramientas &superior"
 10370,1,"Barra de &ruta rápida"
@@ -1996,7 +1948,7 @@ SLGINCOMPLETE,""
 10382,1,"Última &fecha de grabación"
 10383,1,"Última &hora de grabación"
 
-[STRINGTABLE 26]
+[STRINGTABLE 24]
 10384,1,"&Atribiutos de fichero"
 10385,1,"&Personalizar barra de herramientas de panel..."
 10386,1,"&Asignar ruta rápida"
@@ -2005,7 +1957,7 @@ SLGINCOMPLETE,""
 10389,1,"&Bloquear las barras de herramientas"
 10390,1,"Modo de columnas sencillo\tCtrl+N"
 
-[STRINGTABLE 27]
+[STRINGTABLE 25]
 10400,1,"Ayuda,Cambiar nombre,Ver,Editar,Copiar,Trasladar,HacerDir,Borrar,MenúUsr,Menú,Conectar,Desconectar"
 10401,1,"LChDrv, RChDrv, AltView, Exit, Pack, Unpack, Find,, Unpack, CalcSpc, OpnFiles, WorkDirs"
 10402,1,"DrvInfo,ChAttrs,ByName,ByExt,ByTime,BySize,ChCase,,Refresh,Compare,MaxPanel,Filter"
@@ -2014,7 +1966,7 @@ SLGINCOMPLETE,""
 10406,1,",,,,,,,,,DirMenu,,"
 10408,1,"Ayuda,,,,,,,,,Menú,,"
 
-[STRINGTABLE 28]
+[STRINGTABLE 26]
 10420,1,"Conectar unidad de red\tF11"
 10421,1,"Desconectar\tF12"
 10424,1,"Crear directorio\tF7"
@@ -2025,7 +1977,7 @@ SLGINCOMPLETE,""
 10430,1,"Ordenar por extensión\tCtrl+F4"
 10431,1,"Ordenar por tamaño\tCtrl+F6"
 
-[STRINGTABLE 29]
+[STRINGTABLE 27]
 10432,1,"Ordenar por fecha\tCtrl+F5"
 10433,1,"Directorio padre\tBackspace"
 10434,1,"Directorio raíz\tMays+Retroceso"
@@ -2042,7 +1994,7 @@ SLGINCOMPLETE,""
 10445,1,"Borrar\tF8"
 10447,1,"Comprimir NTFS"
 
-[STRINGTABLE 30]
+[STRINGTABLE 28]
 10448,1,"Descomprimir NTFS"
 10449,1,"Cambio rápido de nombre\tF2"
 10450,1,"Cambiar mays/minúsculas\tCtrl+F7"
@@ -2059,7 +2011,7 @@ SLGINCOMPLETE,""
 10462,1,"Cambiar unidad"
 10463,1,"Editar\tF4"
 
-[STRINGTABLE 31]
+[STRINGTABLE 29]
 10465,1,"Seleccionar\tNum +"
 10466,1,"Deseleccionar\tNum -"
 10467,1,"Invertir selección\tNum *"
@@ -2076,7 +2028,7 @@ SLGINCOMPLETE,""
 10478,1,"Abrir Fuentes"
 10479,1,"Convertir\tCtrl+K"
 
-[STRINGTABLE 32]
+[STRINGTABLE 30]
 10480,1,"Deseleccionar todo\tCtrl+D"
 10481,1,"Entras o salir del menú"
 10482,1,"Vista alternativa"
@@ -2094,7 +2046,7 @@ SLGINCOMPLETE,""
 10494,1,"Ir a ruta rápida\tMays+F9"
 10495,1,"Correo electrónico"
 
-[STRINGTABLE 33]
+[STRINGTABLE 31]
 10496,1,"Maximizar/Restaurar Panel"
 10497,1,"Directorios compartidos\tCtrl+Mays+F9"
 10498,1,"Pasar a pantalla completa"
@@ -2112,7 +2064,7 @@ SLGINCOMPLETE,""
 10510,1,"Abrir carpeta"
 10511,1,"Configuración"
 
-[STRINGTABLE 34]
+[STRINGTABLE 32]
 10512,1,"Menú contextual del directorio actual"
 10513,1,"Enfocar nombre en el otro panel"
 10514,1,"Abrir nombre en el otro panel"
@@ -2123,7 +2075,7 @@ SLGINCOMPLETE,""
 10519,1,"Abrir documentos"
 10520,1,"Modo de columna simple\tCtrl+N"
 
-[STRINGTABLE 35]
+[STRINGTABLE 33]
 10530,1,"La variable debe terminar con ')'."
 10531,1,"Error interno."
 10532,1,"La variable "%s" no fue encontrada."
@@ -2136,7 +2088,7 @@ SLGINCOMPLETE,""
 10539,1,"No se permite aquí una cadena vacía."
 10540,1,"Ancho de variable incorrecto (debe estar entre 1 y 9999 o texto 'max' si debe encajar el valor máximo de la variable)."
 
-[STRINGTABLE 36]
+[STRINGTABLE 34]
 10550,1,"Programa externo"
 10551,1,"-- no admitido --"
 10552,1,"&Color personalizado..."
@@ -2148,7 +2100,7 @@ SLGINCOMPLETE,""
 10558,1,"&No cambiar el color del texto"
 10559,1,"N&o cambiar el color del fondo"
 
-[STRINGTABLE 37]
+[STRINGTABLE 35]
 10564,1,"Elementos en el panel"
 10565,1,"Marco del elemento enfocado en el panel"
 10566,1,"Transparencia de icono en el panel"
@@ -2162,7 +2114,7 @@ SLGINCOMPLETE,""
 10574,1,"Normal"
 10575,1,"Seleccionado"
 
-[STRINGTABLE 38]
+[STRINGTABLE 36]
 10576,1,"Enfocado"
 10577,1,"Enfocado y seleccionado"
 10578,1,"Parte izquierda (hecho)"
@@ -2174,7 +2126,7 @@ SLGINCOMPLETE,""
 10584,1,"Título inactivo"
 10585,1,"Parte resaltada de la fila"
 
-[STRINGTABLE 39]
+[STRINGTABLE 37]
 10595,1,"Marco de miniatura en el panel"
 10600,1,"Personalizado"
 10601,1,"Tandem Commander"
@@ -2182,14 +2134,14 @@ SLGINCOMPLETE,""
 10603,1,"Norton Commander"
 10604,1,"DOS Navigator"
 
-[STRINGTABLE 40]
+[STRINGTABLE 38]
 10665,1,"Nombre"
 10666,1,"Tecla rápida"
 10667,1,"Nombre"
 10668,1,"La ruta rápida tiene un nombre pero no una ruta. Introduce la ruta o borra el nombre."
 10671,1,"Filtro activado"
 
-[STRINGTABLE 41]
+[STRINGTABLE 39]
 10672,1,"Espacio libre\nPulse para ver información de la unidad (Ctrl+F1)"
 10673,1,"Lista de directorios de trabajo (Alt+F12)"
 10674,1,"Maximizar/Restaurar Panel (Ctrl+F11)"
@@ -2197,7 +2149,7 @@ SLGINCOMPLETE,""
 10680,1,"Visor interno"
 10681,1,"Visor externo"
 
-[STRINGTABLE 42]
+[STRINGTABLE 40]
 10694,1,"Imposible cambiar etiqueta de unidad.\nError: %s"
 10696,1,"Ctrl"
 10697,1,"Mays"
@@ -2207,7 +2159,7 @@ SLGINCOMPLETE,""
 10702,1,"Un nombre de fichero "%s" es incorrecto."
 10703,1,"El fichero "%s" no contiene iconos."
 
-[STRINGTABLE 43]
+[STRINGTABLE 41]
 10704,1,"Imposible encontrar el fichero "%s"."
 10706,1,"Visor externo [%s]"
 10707,1,"Visor interno"
@@ -2220,7 +2172,7 @@ SLGINCOMPLETE,""
 10716,1,"Editar"
 10717,1,"Abrir"
 
-[STRINGTABLE 44]
+[STRINGTABLE 42]
 10720,1,"Atributos"
 10721,1,"Tamaño"
 10722,1,"Fecha"
@@ -2233,7 +2185,7 @@ SLGINCOMPLETE,""
 10734,1,"Buscando:"
 10735,1,"Buscar"
 
-[STRINGTABLE 45]
+[STRINGTABLE 43]
 10736,1,"buscando"
 10737,1,"No se permiten cadenas vacías aquí."
 10738,1,"Se cargaron las opciones "%s""
@@ -2247,7 +2199,7 @@ SLGINCOMPLETE,""
 10750,1,"Iniciando datos..."
 10751,1,"Leyendo lista de directorios compartidos..."
 
-[STRINGTABLE 46]
+[STRINGTABLE 44]
 10752,1,"Leyendo configuración del registro..."
 10753,1,"Importando configuración del registro..."
 10754,1,"Leyendo configuración del registro..."
@@ -2261,7 +2213,7 @@ SLGINCOMPLETE,""
 10766,1,"Información"
 10767,1,"Saltando directorio"
 
-[STRINGTABLE 47]
+[STRINGTABLE 45]
 10768,1,"¿Desea añadir el directorio "%s" a la lista de directorios ignorados?"
 10769,1,"Saltando %d errors..."
 10770,1,"&Diferir siguientes mensajes de error"
@@ -2271,7 +2223,7 @@ SLGINCOMPLETE,""
 10782,1,"Cualquiera del juego de caracteres"
 10783,1,"Cualquiera excepto del juego de caracteres"
 
-[STRINGTABLE 48]
+[STRINGTABLE 46]
 10784,1,"Cualquiera del rango de caracteres"
 10785,1,"Comienzo de línea"
 10786,1,"Fin de línea"
@@ -2289,7 +2241,7 @@ SLGINCOMPLETE,""
 10798,1,"Dígito decimal"
 10799,1,"Número decimal"
 
-[STRINGTABLE 49]
+[STRINGTABLE 47]
 10800,1,"Número hexadecimal"
 10801,1,"Número real"
 10802,1,"Cadena entre comillas"
@@ -2306,7 +2258,7 @@ SLGINCOMPLETE,""
 10814,1,"Unidad local"
 10815,1,"Unidad extraíble"
 
-[STRINGTABLE 50]
+[STRINGTABLE 48]
 10818,1,"Enviando correo:"
 10819,1,"Sus ficheros han sido incorporados y preparados para ser enviados con este mensaje."
 10820,1,"Imposible enviar correo. No hay programas preparados para enviar correo, MAPI32.DLL no fue encontrado."
@@ -2319,7 +2271,7 @@ SLGINCOMPLETE,""
 10830,1,"(No hay plugins instalados)"
 10831,1,"(No hay plugins configurables)"
 
-[STRINGTABLE 51]
+[STRINGTABLE 49]
 10832,1,"El nombre "%s" no puede ser convertido a UNC.\nNo es ni de un directorio compartido ni de una unidad mapeada."
 10833,1,"¿Está´seguro de querer dejar de compartir "%s"?"
 10834,1,"Nombre compartido"
@@ -2334,7 +2286,7 @@ SLGINCOMPLETE,""
 10846,1,"&Probar de nuevo"
 10847,1,"&Continuar"
 
-[STRINGTABLE 52]
+[STRINGTABLE 50]
 10848,1,"&Sí"
 10849,1,"&No"
 10860,1,"ESC"
@@ -2342,7 +2294,7 @@ SLGINCOMPLETE,""
 10862,1,"Marra de herramientas &media"
 10863,1,"Ruta completa"
 
-[STRINGTABLE 53]
+[STRINGTABLE 51]
 10864,1,"Sólo nombre de directorio"
 10865,1,"Ruta corta"
 10867,1,"Crear directorio"
@@ -2355,7 +2307,7 @@ SLGINCOMPLETE,""
 10874,1,"Imposible conseguir destino del enlace."
 10875,1,"Este enlace es un punto de montaje de volumen. No se puede mostrar en panel.\nRuta: %s"
 
-[STRINGTABLE 54]
+[STRINGTABLE 52]
 10880,1,"{!}segundo{s|0||1|s}"
 10881,1,"{!}minuto{s|0||1|s}"
 10882,1,"{!}hora{s|0||1|s}"
@@ -2370,13 +2322,13 @@ SLGINCOMPLETE,""
 10893,1,"Comparar con sistema de ficheros de plugin no está aún soportado."
 10894,1,"Hay la misma ruta en los paneles izquierdo y derecho."
 
-[STRINGTABLE 55]
+[STRINGTABLE 53]
 10900,1,"La encriptación no está permitida en este volumen o este sistema operativo."
 10905,1,"Error al cambiar encriptación"
 10910,1,"Confirmar encriptación de fichero"
 10911,1,"¿Desea encriptar el fichero con atributo SISTEMA?"
 
-[STRINGTABLE 56]
+[STRINGTABLE 54]
 10920,1,"&Pausar"
 10921,1,"&Reanudar"
 10922,1,"pausado"
@@ -2385,13 +2337,13 @@ SLGINCOMPLETE,""
 10926,1,"(nombre: %s, usuario: %s)"
 10927,1,"Documentos"
 
-[STRINGTABLE 57]
+[STRINGTABLE 55]
 10930,1,"Nombre"
 10931,1,"Ruta"
 10932,1,"No hay conexiones de red para desconectar."
 10940,1,"(ninguno)"
 
-[STRINGTABLE 58]
+[STRINGTABLE 56]
 10945,1,"Imposible descomprimir fichero desde archivo a directorio temporal\nporque el nombre de fichero resultante es demasiado largo."
 10946,1,"Imposible descomprimir fichero desde archivo porque su nombre es incorrecto en sistemas Windows y el plugin de compresión no soporta compresión hacia otro nombre de fichero."
 10950,1,"Seleccione ruta"
@@ -2400,7 +2352,7 @@ SLGINCOMPLETE,""
 10953,1,"(symlink a: %s)"
 10955,1,"Ignorar &todo"
 
-[STRINGTABLE 59]
+[STRINGTABLE 57]
 10960,1,"Tal como están almacenados en el disco"
 10961,1,"Parcialmente en minúsculas si están en formato DOS"
 10962,1,"En minúsculas; directorios en mayúsculas"
@@ -2409,7 +2361,7 @@ SLGINCOMPLETE,""
 10965,1,"En mayúsculas"
 10970,1,"No importar, empezar con la configuración por omisión"
 
-[STRINGTABLE 60]
+[STRINGTABLE 58]
 10980,1,"&Hojear...\tCtrl+B"
 10981,1,"Ruta del panel &izquierdo\tCtrl+["
 10982,1,"Ruta del panel &derecho\tCtrl+]"
@@ -2417,7 +2369,7 @@ SLGINCOMPLETE,""
 10986,1,"En Kilobytes (por defecto en Windows Explorer)"
 10987,1,"En formato corto (por ejemplo 15 B, 3.41 KB, o 12.5 MB)"
 
-[STRINGTABLE 61]
+[STRINGTABLE 59]
 10994,1,"Imposible ejecutar nueva tarea porque la tarea anterior no ha terminado todavía. Pulse Continuar y espere hasta que se ejecute la tarea previa.\n\nSi no hay tal tarea, pulse Interrumpir y envíenos un informe de fallos para ayudarnos a resolver el problema. Tandem Commander finalizará."
 10995,1,"Esta ventana no puede cerrarse en este momento porque hay alguna tarea pendiente que la está´usando. Pulse Continuar y espere hasta que esta tarea finalice.\n\nSi no hay tal tarea, pulse Interrumpir y envíenos un informe de fallos para ayudarnos a resolver el problema. Tandem Commander finalizará."
 10996,1,"Tandem Commander se ha vuelto inestable por fallo de alguna extensión shell. Por favor, envíenos el siguiente informe de fallos para ayudarnos a resolver este problema.\n\nPulse OK para abrir el cuadro de diálogo Informe de fallos."
@@ -2428,11 +2380,10 @@ SLGINCOMPLETE,""
 11002,1,"La extensión no pertenece a ningún tipo de archivo soportado."
 11003,1,"Las operaciones "Borrar y comprimir" no están permitidas en este tipo de archivo."
 11004,1,"Error del sistema: %1"
-11005,1,"Imposible ejecutar nuevo proceso "%1". Si no lo ha hecho todavía, ejecute Autoconfiguración de compresores desde el menú Opciones. El error fue: %2"
 11006,1,"El programa externo "%1" ha devuelto un error: %2"
 11007,1,"El compresor externo "%1" no puede ser ejecutado."
 
-[STRINGTABLE 62]
+[STRINGTABLE 60]
 11008,1,"Fichero temporal incorrecto."
 11009,1,"Ruta demasiado larga hacia el fichero: %1"
 11010,1,"Error manejando línea de comando al compresor."
@@ -2448,10 +2399,9 @@ SLGINCOMPLETE,""
 11020,1,"Imposible cambiar nombre de fichero temporal de archivo (%1) hacia nombre de archivo (%2)."
 11021,1,"Este nombre de fichero es incorrecto en sistemas Windows. Los compresores externos no soportan descomprimir hacia otro nombre de fichero, por lo que no es posible descomprimir este fichero."
 
-[STRINGTABLE 63]
+[STRINGTABLE 61]
 11025,1,"Código de salida %d."
 11026,1,"Se ha encontrado un aviso."
-11027,1,"Error de extracción de fichero."
 11028,1,"Se ha encontrado un error fatal."
 11029,1,"Se ha encontrado un error de CRC."
 11030,1,"Violación de seguridad en el archivo."
@@ -2459,52 +2409,43 @@ SLGINCOMPLETE,""
 11032,1,"Error al abrir archivo o fichero."
 11033,1,"Error de usuario - parámetros incorrectos."
 11034,1,"No hay suficiente memoria."
-11035,1,"El fichero no es un archivo."
-11036,1,"Error d ememoria XMS."
-11037,1,"Interrumpido por el usuario."
-11038,1,"Demasiados capítulos en el archivo."
-11039,1,"Imposible convertir el fichero temporal al archivo."
 
-[STRINGTABLE 64]
-11040,1,"Error interno."
+[STRINGTABLE 62]
 11041,1,"Error desconocido."
-11042,1,"Se saltó un fichero."
-11043,1,"El archivo está dañado."
-11044,1,"Se ha detectado un virus."
-11045,1,"Error en configuración interna: parámetros incorrectos de salspawn.exe."
-11046,1,"Error de extracción de fichero; si está borrando desde un archivo, ignore este mensaje de error."
 11047,1,"Nombre completo del archivo"
 11048,1,"Nombre del archivo"
 11049,1,"Ruta al archivo"
 11050,1,"Nombre completo de la lista de ficheros"
-11051,1,"Nombre completo DOS del archivo"
-11052,1,"Nombre DOS del archivo"
-11053,1,"Nombre completo DOS de la lista de ficheros"
 11054,1,"Ejecutando programa externo; espere por favor..."
-11055,1,"Nombre de ruta al ejecutable Jar32"
+
+[STRINGTABLE 63]
+11068,1,"Hojear ejecutables"
+
+[STRINGTABLE 64]
+11072,1,"No se ha podido iniciar el compresor «%1». El error fue: %2"
+11073,1,"No se ha encontrado el compresor «%1». Indique su ubicación en la página «Localización de compresores externos» de la configuración, o utilice «Autoconfiguración de compresores» del menú Opciones."
+11074,1,"La operación se ha cancelado y el compresor se ha detenido. Es posible que el archivo «%1» esté incompleto."
 
 [STRINGTABLE 65]
-11056,1,"Nombre de ruta al ejecutable Jar16"
-11057,1,"Nombre de ruta al ejecutable Rar32"
-11058,1,"Nombre de ruta al ejecutable Rar16"
-11059,1,"Nombre de ruta al ejecutable Arj32"
-11060,1,"Nombre de ruta al ejecutable Arj16"
-11061,1,"Nombre de ruta al ejecutable Ace32"
-11062,1,"Nombre de ruta al ejecutable Ace16"
-11063,1,"Nombre de ruta al ejecutable Lha"
-11064,1,"Nombre de ruta al ejecutable UC2"
-11065,1,"Nombre de ruta al ejecutable PkZip32"
-11066,1,"Nombre de ruta al ejecutable PkZip16"
-11067,1,"Nombre de ruta al ejecutable PkUnzip16"
-11068,1,"Hojear ejecutables"
-11070,1,"Interrumpción del usuario o cuestión sin resolver (repita operación y pulse el proceso "salspawn.exe" en la barra de tareas; verá el indicador del compresor)."
-
-[STRINGTABLE 66]
 11102,1,"El compresor no permite compresión a subdirectorios.\n¿Desea colocar ficheros en el directorio raíz del archivo?"
 11103,1,"El compresor no permite el comando "trasladar al archivo".\n¿Desea usar "copiar al archivo" en su lugar?"
 
-[STRINGTABLE 67]
+[STRINGTABLE 66]
 11104,1,"La ruta no es un directorio válido."
+
+[STRINGTABLE 67]
+11122,1,"El compresor se detuvo o estaba esperando una respuesta que no se pudo dar."
+11124,1,"RAR (WinRAR)"
+11125,1,"7-Zip"
+11126,1,"Programa de consola de 7-Zip (7z.exe)"
+11127,1,"Programa de consola de WinRAR (Rar.exe)"
+11128,1,"Ruta del ejecutable de 7-Zip"
+11129,1,"Ruta del ejecutable de WinRAR"
+11130,1,"No se puede crear un archivo."
+11131,1,"No se han encontrado archivos que coincidan con la máscara y las opciones especificadas."
+11132,1,"Contraseña incorrecta."
+11133,1,"Error de lectura."
+11134,1,"Nombre completo de la lista de archivos (Unicode)"
 
 [STRINGTABLE 68]
 11209,1,"Error en la ayuda"

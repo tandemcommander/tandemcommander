@@ -543,56 +543,6 @@
 #define IDS_FONTDESCRIPTION_DEF    10281
 #define IDS_FONTDESCRIPTION_CST    10282
 
-// default user defined packers
-#define IDS_DP_JAR_E               10285
-#define IDS_DP_JARV_E              10286
-#define IDS_DP_RAR_E               10287
-#define IDS_DP_RARV_E              10288
-#define IDS_DP_ARJ16_E             10289
-#define IDS_DP_ARJ16V_E            10290
-#define IDS_DP_LHA_E               10291
-#define IDS_DP_UC2_E               10292
-#define IDS_DP_ARJ32_E             10293
-#define IDS_DP_ARJ32V_E            10294
-#define IDS_DP_ACE_E               10295
-#define IDS_DP_ACEV_E              10296
-#define IDS_DP_ACE16_E             10297
-#define IDS_DP_ACE16V_E            10298
-#define IDS_DP_JAR16_E             10299
-#define IDS_DP_JAR16V_E            10300
-#define IDS_DP_RAR16_E             10301
-#define IDS_DP_RAR16V_E            10302
-#define IDS_DP_ZIP32_E             10303
-#define IDS_DP_ZIP16_E             10304
-
-// default user defined unpackers
-#define IDS_DU_JAR_E               10307
-#define IDS_DU_RAR_E               10308
-#define IDS_DU_ARJ16_E             10309
-#define IDS_DU_LHA_E               10310
-#define IDS_DU_UC2_E               10311
-#define IDS_DU_ARJ32_E             10312
-#define IDS_DU_ACE_E               10313
-
-#define IDS_DU_ACE16_E             10314
-#define IDS_DU_JAR16_E             10315
-#define IDS_DU_RAR16_E             10316
-#define IDS_DU_ZIP32_E             10317
-#define IDS_DU_ZIP16_E             10318
-
-// supported external archivers
-#define IDS_EXT_JAR32              10319
-#define IDS_EXT_RAR32              10320
-#define IDS_EXT_ARJ16              10321
-#define IDS_EXT_LHA16              10322
-#define IDS_EXT_UC216              10323
-#define IDS_EXT_JAR16              10324
-#define IDS_EXT_RAR16              10325
-#define IDS_EXT_ZIP32              10326
-#define IDS_EXT_ZIP16              10327
-#define IDS_EXT_ARJ32              10328
-#define IDS_EXT_ACE32              10329
-#define IDS_EXT_ACE16              10330
 
 // buttons for Edit ListBox ToolBar
 #define IDS_EDTLB_MODIFY           10334
@@ -1222,8 +1172,6 @@
 #define IDS_PACKERR_PACKER_UNSUP     11003
 // some general error, e.g. system error
 #define IDS_PACKERR_GENERAL          11004
-// unable to execute new process
-#define IDS_PACKERR_PROCESS          11005
 // external archiver returns error
 #define IDS_PACKERR_RETURN           11006
 // external archiver not found
@@ -1262,8 +1210,6 @@
 #define IDS_PACKRET_GENERAL          11025
 // Warning (Non fatal error)
 #define IDS_PACKRET_WARNING          11026
-// Extraction error
-#define IDS_PACKRET_EXTRACT          11027
 // Fatal error
 #define IDS_PACKRET_FATAL            11028
 // CRC error
@@ -1278,32 +1224,8 @@
 #define IDS_PACKRET_PARAMS           11033
 // Not enough memmory
 #define IDS_PACKRET_MEMORY           11034
-// File is not an archive file
-#define IDS_PACKRET_NOTARC           11035
-// XMS memmory error
-#define IDS_PACKRET_XMSMEM           11036
-// User break
-#define IDS_PACKRET_BREAK            11037
-// User break - ACE - maybe archiver have waited for your answer in its window (click on "salspawn.exe" window on taskbar to see archiver question)
-#define IDS_PACKRET_BREAK2           11070
-// Too many chapters
-#define IDS_PACKRET_CHAPTERS         11038
-// Failed to rename temporary file to archive file
-#define IDS_PACKRET_TEMP             11039
-// Internal error
-#define IDS_PACKRET_INTERN           11040
 // Undefined error
 #define IDS_PACKRET_UNKNOWN          11041
-// Skipped a file
-#define IDS_PACKRET_SKIPPED          11042
-// Archive damaged
-#define IDS_PACKRET_DAMAGED          11043
-// Virus detected
-#define IDS_PACKRET_VIRUS            11044
-// Error of salspawn.exe
-#define IDS_PACKRET_SPAWN            11045
-// Extraction error or if you are deleting from archive, please ignore this error message
-#define IDS_PACKRET_EXTRACT_LHA      11046
 
 // Full name of archive
 #define IDS_PACK_ARC_NAME            11047
@@ -1313,31 +1235,18 @@
 #define IDS_PACK_ARC_PATH            11049
 // Full name of list of files
 #define IDS_PACK_LST_NAME            11050
-// DOS full name of archive
-#define IDS_PACK_ARC_DOSNAME         11051
-// DOS name of archive
-#define IDS_PACK_ARC_DOSFILE         11052
-// DOS full name of list of files
-#define IDS_PACK_LST_DOSNAME         11053
 // Text in window while executing external unpacker
 #define IDS_PACK_EXECUTING           11054
 // paths to packer executables
-#define IDS_PACK_EXE_JAR32           11055
-#define IDS_PACK_EXE_JAR16           11056
-#define IDS_PACK_EXE_RAR32           11057
-#define IDS_PACK_EXE_RAR16           11058
-#define IDS_PACK_EXE_ARJ32           11059
-#define IDS_PACK_EXE_ARJ16           11060
-#define IDS_PACK_EXE_ACE32           11061
-#define IDS_PACK_EXE_ACE16           11062
-#define IDS_PACK_EXE_LHA16           11063
-#define IDS_PACK_EXE_UC216           11064
-#define IDS_PACK_EXE_ZIP32           11065
-#define IDS_PACK_EXE_ZIP16           11066
-#define IDS_PACK_EXE_UZP16           11067
 #define IDS_PACK_EXE_BROWSE          11068
 
-// 11070 je zabrany pro IDS_PACKRET_BREAK2
+// 11070 was IDS_PACKRET_BREAK2, removed in feature 084 - never reuse a removed id
+
+// feature 084: errors of the direct archiver launch (must stay below
+// IDS_PACKQRY_PREFIX, see the 084 block near IDS_ACBADDRIVE)
+#define IDS_PACKERR_STARTFAIL        11072
+#define IDS_PACKERR_EXEMISSING       11073
+#define IDS_PACKERR_CANCELLED_ARC    11074
 
 #define IDS_PACKQRY_PREFIX           11101
 // User query, whether discard root dir in archive while compressing
@@ -1347,6 +1256,23 @@
 
 // Requested drive in Autoconfig dialog is invalid
 #define IDS_ACBADDRIVE               11104
+
+// feature 084: external archivers started directly (no helper), only 7-Zip and
+// WinRAR supported; 11120-11151 were never used before (fix-log T006). The
+// messages shown through PackErrorHandler are in 11072-11087 (also never used):
+// that handler shows every id >= IDS_PACKQRY_PREFIX as an OK/Cancel question.
+#define IDS_PACKRET_STOPPED          11122
+#define IDS_DP_RAR_WINRAR            11124
+#define IDS_DU_7ZIP                  11125
+#define IDS_EXT_7ZIP                 11126
+#define IDS_EXT_RAR                  11127
+#define IDS_PACK_EXE_7ZIP            11128
+#define IDS_PACK_EXE_RAR             11129
+#define IDS_PACKRET_CREATE           11130
+#define IDS_PACKRET_NOFILES          11131
+#define IDS_PACKRET_BADPWD           11132
+#define IDS_PACKRET_READ             11133
+#define IDS_PACK_LST_UNINAME         11134
 
 // Change end of line characters
 // not to change

@@ -1892,60 +1892,12 @@ SLGINCOMPLETE,""
 10280,1,"%d pt. %s (%s)"
 10281,1,"standaardlettertype"
 10282,1,"aangepast font"
-10285,1,"JAR (Extern Win32, getest met v1.02)"
-10286,1,"JAR naar 1.44MB volumes (Extern Win32, getest met v1.02)"
-10287,1,"RAR (Extern Win32, getest met v2.50)"
 
 [STRINGTABLE 20]
-10288,1,"RAR naar 1.44MB volumes (Extern Win32, getest met v2.50)"
-10289,1,"ARJ (Extern DOS, getest met v2.60)"
-10290,1,"ARJ naar 1.44MB volumes (Extern DOS, getest met v2.60)"
-10291,1,"LHA (Extern DOS, getest met v2.55)"
-10292,1,"UC2 (Extern DOS, getest met v2r3PRO)"
-10293,1,"ARJ (Extern Win32, getest met v3.00c)"
-10294,1,"ARJ naar 1.44MB volumes (Extern Win32, getest met v3.00c)"
-10295,1,"ACE (Extern Win32, getest met v1.2b)"
-10296,1,"ACE naar 1.44MB volumes (Extern Win32, getest met v1.2b)"
-10297,1,"ACE (Extern DOS, getest met v1.2b)"
-10298,1,"ACE naar 1.44MB volumes (Extern DOS, getest met v1.2b)"
-10299,1,"JAR (Extern DOS, getest met v1.02)"
-10300,1,"JAR naar 1.44MB volumes (Extern DOS, getest met v1.02)"
-10301,1,"RAR (Extern DOS, getest met v2.50)"
-10302,1,"RAR naar 1.44MB volumes (Extern DOS, getest met v2.50)"
-10303,1,"PKZIP (Extern Win32, getest met v2.50)"
-
-[STRINGTABLE 21]
-10304,1,"PKZIP (Extern DOS, getest met v2.04g)"
-10307,1,"JAR (Extern Win32, getest met v1.02)"
-10308,1,"RAR (Extern Win32, getest met v2.50)"
-10309,1,"ARJ (Extern DOS, getest met v2.60)"
-10310,1,"LHA (Extern DOS, getest met v2.55)"
-10311,1,"UC2 (Extern DOS, getest met v2r3PRO)"
-10312,1,"ARJ (Extern Win32, getest met v3.00c)"
-10313,1,"ACE (Extern Win32, getest met v1.2b)"
-10314,1,"ACE (Extern DOS, getest met v1.2b)"
-10315,1,"JAR (Extern DOS, getest met v1.02)"
-10316,1,"RAR (Extern DOS, getest met v2.50)"
-10317,1,"PKZIP (Extern Win32, getest met v2.50)"
-10318,1,"PKUNZIP (Extern DOS, getest met v2.04g)"
-10319,1,"Win32 JAR console uitvoerbaar bestand (getest met v1.02)"
-
-[STRINGTABLE 22]
-10320,1,"Win32 RAR console uitvoerbaar bestand (getest met v2.50)"
-10321,1,"MS-DOS ARJ uitvoerbaar bestand (getest met v2.60)"
-10322,1,"MS-DOS LHA uitvoerbaar bestand (getest met v2.55)"
-10323,1,"MS-DOS UC2 uitvoerbaar bestand (getest met v2r3PRO)"
-10324,1,"MS-DOS JAR uitvoerbaar bestand (getest met v1.02)"
-10325,1,"MS-DOS RAR uitvoerbaar bestand (getest met v2.50)"
-10326,1,"Win32 PKZIP console uitvoerbaar bestand (getest met v2.50)"
-10327,1,"MS-DOS PKZIP/PKUNZIP uitvoerbaar bestand (getest met v2.04g)"
-10328,1,"Win32 ARJ console uitvoerbaar bestand (getest met v3.00c)"
-10329,1,"Win32 ACE console uitvoerbaar bestand (getest met v1.2b)"
-10330,1,"MS-DOS ACE uitvoerbaar bestand (getest met v1.2b)"
 10334,1,"Bewerken (F2)"
 10335,1,"Nieuw (Invoegen)"
 
-[STRINGTABLE 23]
+[STRINGTABLE 21]
 10336,1,"Wissen (Wissen)"
 10337,1,"Item omhoog verplaatsen (Alt + pijl omhoog)"
 10338,1,"Item omlaag verplaatsen (Alt + pijl omlaag)"
@@ -1961,7 +1913,7 @@ SLGINCOMPLETE,""
 10350,1,"Omgevings Variabele"
 10351,1,"Volledige Naam"
 
-[STRINGTABLE 24]
+[STRINGTABLE 22]
 10352,1,"DOS Volledige Naam"
 10353,1,"Volledig Pad"
 10354,1,"Windows Map"
@@ -1978,7 +1930,7 @@ SLGINCOMPLETE,""
 10366,1,"Tiijd resolutie moet tussen 0 en 3600 s liggen"
 10367,1,"&Plugin Balk"
 
-[STRINGTABLE 25]
+[STRINGTABLE 23]
 10368,1,"&Gebruikers Menu Balk"
 10369,1,"&Bovenste Werkbalk"
 10370,1,"&Favorieten Balk"
@@ -1996,7 +1948,7 @@ SLGINCOMPLETE,""
 10382,1,"Laatste Schrijf &Datum"
 10383,1,"Lastste Schrijf &Tijd"
 
-[STRINGTABLE 26]
+[STRINGTABLE 24]
 10384,1,"Bestands &Attributen"
 10385,1,"&Paneel Werkbalk Aanpassen..."
 10386,1,"&Favorieten toewijzen"
@@ -2005,7 +1957,7 @@ SLGINCOMPLETE,""
 10389,1,"&Werkbalken Fixeren"
 10390,1,"Intelligente Kolom Mode\tCtrl+N"
 
-[STRINGTABLE 27]
+[STRINGTABLE 25]
 10400,1,"Help,Naam wijzigen,Bekijken,Bewerken,Kopiëren,Verschuiven,Nieuwe Map,Wissen,Gebr. Menu,Menu,Verbinden,Verb. verbreken"
 10401,1,"Station wissel. L,Station wissel R.,Alt. Weergave,Exit,Comprim.,Decompr.,Zoeken,,Decompr.,Verbruik,Open best,Werkmappen"
 10402,1,"StationInfo,Attr verand.,op Naam,op Ext,op Tijd,op Grootte,op Hoofd/Klein,,Vernieuwen,Vergelijken,MaxPaneel,Filter"
@@ -2014,7 +1966,7 @@ SLGINCOMPLETE,""
 10406,1,",,,,,,,,,MapMenu,,"
 10408,1,"Help,,,,,,,,,Menu,,"
 
-[STRINGTABLE 28]
+[STRINGTABLE 26]
 10420,1,"Netwerk Station Verbinden\tF11"
 10421,1,"Verbreken\tF12"
 10424,1,"Map maken\tF7"
@@ -2025,7 +1977,7 @@ SLGINCOMPLETE,""
 10430,1,"Sorteren op Extensie\tCtrl+F4"
 10431,1,"Sorteren op Grootte\tCtrl+F6"
 
-[STRINGTABLE 29]
+[STRINGTABLE 27]
 10432,1,"Sorteren op Datum\tCtrl+F5"
 10433,1,"Bovenliggende Map\tBackspace"
 10434,1,"Hoofd Map\tShift+Backspace"
@@ -2042,7 +1994,7 @@ SLGINCOMPLETE,""
 10445,1,"Wissen\tF8"
 10447,1,"NTFS Comprimeren"
 
-[STRINGTABLE 30]
+[STRINGTABLE 28]
 10448,1,"NTFS Decomprimeren"
 10449,1,"Snel naam veranderen\tF2"
 10450,1,"Hoofd/Klein veranderen\tCtrl+F7"
@@ -2059,7 +2011,7 @@ SLGINCOMPLETE,""
 10462,1,"Station Veranderen"
 10463,1,"Bewerken\tF4"
 
-[STRINGTABLE 31]
+[STRINGTABLE 29]
 10465,1,"Selecteren\tNum +"
 10466,1,"Deselecteren\tNum -"
 10467,1,"Selectie inverteren\tNum *"
@@ -2076,7 +2028,7 @@ SLGINCOMPLETE,""
 10478,1,"Fonts Openen"
 10479,1,"Converteren\tCtrl+K"
 
-[STRINGTABLE 32]
+[STRINGTABLE 30]
 10480,1,"Alles Deselecteren\tCtrl+D"
 10481,1,"Menu Openen of Sluiten"
 10482,1,"Alternatieve Weergave"
@@ -2094,7 +2046,7 @@ SLGINCOMPLETE,""
 10494,1,"Ga Naar Favorieten\tShift+F9"
 10495,1,"E-mail"
 
-[STRINGTABLE 33]
+[STRINGTABLE 31]
 10496,1,"Paneel Maximaliseren/Restaureren"
 10497,1,"Gedeelde Mappen\tCtrl+Shift+F9"
 10498,1,"Volledig beeldscherm inschakelen"
@@ -2112,7 +2064,7 @@ SLGINCOMPLETE,""
 10510,1,"Open Map"
 10511,1,"Configuratie"
 
-[STRINGTABLE 34]
+[STRINGTABLE 32]
 10512,1,"Huidige map context menu"
 10513,1,"Focus Naam in ander paneel"
 10514,1,"Open Naam in ander paneel"
@@ -2123,7 +2075,7 @@ SLGINCOMPLETE,""
 10519,1,"Open Documenten"
 10520,1,"Intelligente kolom modus\tCtrl+N"
 
-[STRINGTABLE 35]
+[STRINGTABLE 33]
 10530,1,"Variabele naam moet met een ')' afgesloten worden."
 10531,1,"Interne fout."
 10532,1,"Variabele "%s" werd niet gevonden."
@@ -2136,7 +2088,7 @@ SLGINCOMPLETE,""
 10539,1,"Lege tekenreeks hier niet geoorloofd."
 10540,1,"Ongeldige variabele breedte (moet in het bereik tussen 1 en 9999 zijn of 'max' als het de grootst mogelijke waarde moet hebben)."
 
-[STRINGTABLE 36]
+[STRINGTABLE 34]
 10550,1,"Extern Program"
 10551,1,"-- niet ondersteund --"
 10552,1,"&Gebruikers kleur..."
@@ -2148,7 +2100,7 @@ SLGINCOMPLETE,""
 10558,1,"&De kleur van de tekst niet veranderen"
 10559,1,"D&e kleur van de achtergrond niet veranderen"
 
-[STRINGTABLE 37]
+[STRINGTABLE 35]
 10564,1,"Items in paneel"
 10565,1,"Frame van gefocusseerd item in paneel"
 10566,1,"Icon kleur in panel"
@@ -2162,7 +2114,7 @@ SLGINCOMPLETE,""
 10574,1,"Normaal"
 10575,1,"Geselecteerd"
 
-[STRINGTABLE 38]
+[STRINGTABLE 36]
 10576,1,"Gefocuseerd"
 10577,1,"Gefocuseerd en geselecteerd"
 10578,1,"Linker gedeelte (klaar)"
@@ -2174,7 +2126,7 @@ SLGINCOMPLETE,""
 10584,1,"Inactief onderschrift"
 10585,1,"Gemarkeerd gedeelte van de rij"
 
-[STRINGTABLE 39]
+[STRINGTABLE 37]
 10595,1,"Frame om miniatuur in paneel"
 10600,1,"Gebruikers"
 10601,1,"Tandem Commander"
@@ -2182,14 +2134,14 @@ SLGINCOMPLETE,""
 10603,1,"Norton Commander"
 10604,1,"DOS Navigator"
 
-[STRINGTABLE 40]
+[STRINGTABLE 38]
 10665,1,"Naam"
 10666,1,"Sneltoets"
 10667,1,"Naam"
 10668,1,"Het snelpad heeft een naam maar geen pad. Voer het pad in of wis de naam."
 10671,1,"Filter is actief"
 
-[STRINGTABLE 41]
+[STRINGTABLE 39]
 10672,1,"Vrije disk ruimte\nKlik om Station informatie te bekijken (Ctrl+F1)"
 10673,1,"Lijst van werkmappen (Alt+F12)"
 10674,1,"Maximeren/Restaureren Paneel (Ctrl+F11)"
@@ -2197,7 +2149,7 @@ SLGINCOMPLETE,""
 10680,1,"Interne Viewer"
 10681,1,"Externe Viewer"
 
-[STRINGTABLE 42]
+[STRINGTABLE 40]
 10694,1,"Kan station label niet veranderen.\nFout: %s"
 10696,1,"Ctrl"
 10697,1,"Shift"
@@ -2207,7 +2159,7 @@ SLGINCOMPLETE,""
 10702,1,"Een bestandsnaam "%s" is ongeldig."
 10703,1,"Het bestand "%s" bevat geen pictogrammen."
 
-[STRINGTABLE 43]
+[STRINGTABLE 41]
 10704,1,"Kan het bestand "%s" niet vinden."
 10706,1,"Externe Viewer [%s]"
 10707,1,"Interne Viewer"
@@ -2220,7 +2172,7 @@ SLGINCOMPLETE,""
 10716,1,"Bewerken"
 10717,1,"Openen"
 
-[STRINGTABLE 44]
+[STRINGTABLE 42]
 10720,1,"Attributen"
 10721,1,"Grootte"
 10722,1,"Datum"
@@ -2233,7 +2185,7 @@ SLGINCOMPLETE,""
 10734,1,"Zoeken:"
 10735,1,"Zoek"
 
-[STRINGTABLE 45]
+[STRINGTABLE 43]
 10736,1,"zoeken"
 10737,1,"Lege tekenreeks is niet toegestaan."
 10738,1,"Optie "%s" werd geladen"
@@ -2247,7 +2199,7 @@ SLGINCOMPLETE,""
 10750,1,"Data wordt geinitialiseerd..."
 10751,1,"Lijst met gedeelde mappen wordt gelezen..."
 
-[STRINGTABLE 46]
+[STRINGTABLE 44]
 10752,1,"configuratie wordt van register gelezen..."
 10753,1,"Configuratie wordt vanuit register geïmporteerd..."
 10754,1,"Associaties worden van het register gelezen..."
@@ -2261,7 +2213,7 @@ SLGINCOMPLETE,""
 10766,1,"Informatie"
 10767,1,"Map overslaan"
 
-[STRINGTABLE 47]
+[STRINGTABLE 45]
 10768,1,"Wilt u de map "%s" aan de Negeer Map Lijst toevoegen?"
 10769,1,"%d fouten worden overgeslagen..."
 10770,1,"&Stel de volgende foutmeldingen uit"
@@ -2271,7 +2223,7 @@ SLGINCOMPLETE,""
 10782,1,"Willekeurig uit een Set van Tekens"
 10783,1,"Willekeurig behalve uit een Set van Tekens"
 
-[STRINGTABLE 48]
+[STRINGTABLE 46]
 10784,1,"Willekeurig uit een Teken Reeks"
 10785,1,"Begin van een Regel"
 10786,1,"Eind van een Regel"
@@ -2289,7 +2241,7 @@ SLGINCOMPLETE,""
 10798,1,"Decimaal Teken"
 10799,1,"Decimaal Getal"
 
-[STRINGTABLE 49]
+[STRINGTABLE 47]
 10800,1,"Hexadecimaal Getal"
 10801,1,"Reeel Getal"
 10802,1,"Tekenreeks tussen aanhalingstekens"
@@ -2306,7 +2258,7 @@ SLGINCOMPLETE,""
 10814,1,"Lokaal Station"
 10815,1,"Verwisselbaar Station"
 
-[STRINGTABLE 50]
+[STRINGTABLE 48]
 10818,1,"Email wordt verstuurd:"
 10819,1,"Uw bestanden zijn aangehangen en klaar om met dit bericht verstuurd te worden."
 10820,1,"Kan geen mail sturen. Er is geen mail programma gevonden waarmee mails verstuurd kunnen worden, MAPI32.DLL werd niet gevonden."
@@ -2319,7 +2271,7 @@ SLGINCOMPLETE,""
 10830,1,"(Er zijn geen plugins geïnstalleerd)"
 10831,1,"(er zijn geen plugins die geconfigureerd kunnen worden)"
 
-[STRINGTABLE 51]
+[STRINGTABLE 49]
 10832,1,"De naam "%s" kan niet naar UNC geconverteerd worden.\nDe naam zowel niet van een gedeelde map als van een toegewezen station."
 10833,1,"Weet u zeker dat u wilt stoppen met delen van "%s"?"
 10834,1,"Gedeelde Naam"
@@ -2334,7 +2286,7 @@ SLGINCOMPLETE,""
 10846,1,"&Opnieuw Proberen"
 10847,1,"&Doorgaan"
 
-[STRINGTABLE 52]
+[STRINGTABLE 50]
 10848,1,"&Ja"
 10849,1,"&Nee"
 10860,1,"ESC"
@@ -2342,7 +2294,7 @@ SLGINCOMPLETE,""
 10862,1,"&Middelste Werkbalk"
 10863,1,"Volledig Pad"
 
-[STRINGTABLE 53]
+[STRINGTABLE 51]
 10864,1,"Alleen Map Naam"
 10865,1,"Afgekort Pad"
 10867,1,"Map Maken"
@@ -2355,7 +2307,7 @@ SLGINCOMPLETE,""
 10874,1,"Kan gekoppeld doel niet vinden."
 10875,1,"Deze koppeling is een mount point. Kan dit niet in paneel weergeven.\nPad:%s"
 
-[STRINGTABLE 54]
+[STRINGTABLE 52]
 10880,1,"{!}seconde{n|0||1|n}"
 10881,1,"{!}minute{n|0||1|n}"
 10882,1,"{!}u{ren|0|ur|1|ren}"
@@ -2370,13 +2322,13 @@ SLGINCOMPLETE,""
 10893,1,"Vergelijk met plugin file-system wordt nog niet ondersteund."
 10894,1,"Er is hetzelfde pad in het linker- en rechterpaneel."
 
-[STRINGTABLE 55]
+[STRINGTABLE 53]
 10900,1,"Versleuteling wordt nog niet ondersteund op dit volume of door dit besturings systeem."
 10905,1,"Fout bij veranderen van Versleuteling"
 10910,1,"Bevestig Versleuteling van Bestand"
 10911,1,"Wilt u dit bestand met SYSTEEM attribuut versleutelen?"
 
-[STRINGTABLE 56]
+[STRINGTABLE 54]
 10920,1,"&Pauze"
 10921,1,"&Hervatten"
 10922,1,"onderbroken"
@@ -2385,13 +2337,13 @@ SLGINCOMPLETE,""
 10926,1,"(naam: %s, gebruiker: %s)"
 10927,1,"Documenten"
 
-[STRINGTABLE 57]
+[STRINGTABLE 55]
 10930,1,"Naam"
 10931,1,"Pad"
 10932,1,"Er zijn geen netwerkverbindingen te verbreken."
 10940,1,"(geen)"
 
-[STRINGTABLE 58]
+[STRINGTABLE 56]
 10945,1,"Kan het archief niet uitpakken naar de tijdelijke map omdat de\nresulterende bestandsnaam te lang is."
 10946,1,"Kan het archief niet uitpakken omdat de naam in het Windows bestandssysteem ongeldig is en omdat de archiverings plugin het uitpakken naar een andere naam niet ondersteund."
 10950,1,"Selecteer Pad"
@@ -2400,7 +2352,7 @@ SLGINCOMPLETE,""
 10953,1,"(symlink naar: %s)"
 10955,1,"&Alle negeren"
 
-[STRINGTABLE 59]
+[STRINGTABLE 57]
 10960,1,"Zoals ze op de schijf opgeslagen zijn"
 10961,1,"In gedeeltelijk hoofd/klein letters als ze in DOS formaat zijn"
 10962,1,"In kleine letters; mappen in hoofdletters"
@@ -2409,7 +2361,7 @@ SLGINCOMPLETE,""
 10965,1,"In hoofdletters"
 10970,1,"Niet importeren, start met de standaard configuratie"
 
-[STRINGTABLE 60]
+[STRINGTABLE 58]
 10980,1,"&Bladeren...\tCtrl+B"
 10981,1,"&Linker Paneel Pad\tCtrl+["
 10982,1,"&Rechter Paneel Pad\tCtrl+]"
@@ -2417,7 +2369,7 @@ SLGINCOMPLETE,""
 10986,1,"In Kilo Bytes (Windows verkenner standaard)"
 10987,1,"In verkort formaat (voorbeeld: 15 B, 3.41 KB, or 12.5 MB)"
 
-[STRINGTABLE 61]
+[STRINGTABLE 59]
 10994,1,"Kan de nieuwe taak niet uitvoeren om dat de uitvoering van de vorige taak nog niet beëindigd is. Druk Verdergaan en wacht totdat de uitvoering van de vorige taak beëindigd is.\n\nAls er geen andere taak is, druk Annuleren en stuur ons een foutrapport toe om ons te helpen dit probleem op te lossen. Tandem Commander wordt beëindigd."
 10995,1,"Dit venster kan niet gesloten worden omdat er een taak is die dit venster gebruikt. Druk Verdergaan en wacht totdat de taak beëindigd is.\n\nAls er geen andere taak is, druk Annuleren en stuur ons een foutrapport toe om ons te helpen dit probleem op te lossen. Tandem Commander wordt beëindigd."
 10996,1,"Tandem Commander is instabiel geworden door een foutieve shell extensie. Stuur ons a.u.b. het volgende foutrapport om ons te helpen het probleem op te lossen.\n\n Druk OK om de fout rapport dialoog te openen."
@@ -2428,11 +2380,10 @@ SLGINCOMPLETE,""
 11002,1,"Extensie behoort niet aan enig ondersteund archief type toe."
 11003,1,""Wis en Comprimeer" operaties worden bij dit archief type niet ondersteund."
 11004,1,"Systeem fout: %1"
-11005,1,"Kan nieuw proces "%1" niet uitvoeren. Als u dit nog niet gedaan heeft, start dan de Archiveringsprogramma Autoconfiguratie vanuit het Opties Menu. De fout was: %2"
 11006,1,"Extern programma "%1" heeft foutcode: %2 teruggegeven"
 11007,1,"Extern archiefprogramma "%1" kan niet uitgevoerd worden."
 
-[STRINGTABLE 62]
+[STRINGTABLE 60]
 11008,1,"Ongeldig tijdelijk bestand."
 11009,1,"Pad naar bestand te lang: %1"
 11010,1,"Fout bij het inlezen van de archiveringsprogramma opdrachtregel."
@@ -2448,10 +2399,9 @@ SLGINCOMPLETE,""
 11020,1,"Kan de naam van het tijdelijke archief bestand (%1) niet naar (%2) veranderen."
 11021,1,"Deze bestandsnaam is ongeldig op het Windows Bestands Systeem. Externe archiveringsprogramma's ondersteunen decomprimeren naar een andere bestandsnaam niet, dus is het niet mogelijk dit bestand te decomprimeren."
 
-[STRINGTABLE 63]
+[STRINGTABLE 61]
 11025,1,"Afsluit code %d."
 11026,1,"Waarschuwingen gevonden."
-11027,1,"Fout bij bestandsextractie."
 11028,1,"Fatale fout gevonden."
 11029,1,"CRC fout gevonden."
 11030,1,"Schending van archief beveiliging."
@@ -2459,52 +2409,43 @@ SLGINCOMPLETE,""
 11032,1,"Fout bij openen van archief of bestand."
 11033,1,"Gebruikers fout - ongeldige parameters."
 11034,1,"Onvoldoende geheugen."
-11035,1,"Bestand is geen archief."
-11036,1,"XMS geheugen fout."
-11037,1,"Gebruikers onderbreking."
-11038,1,"Te veel hoofdstukken in archief."
-11039,1,"Kan tijdelijk bestand niet naar archief converteren."
 
-[STRINGTABLE 64]
-11040,1,"Interne fout."
+[STRINGTABLE 62]
 11041,1,"Onbekende fout."
-11042,1,"Een bestand werd overgeslagen."
-11043,1,"Het archief is beschadigd."
-11044,1,"Virus gedetecteerd."
-11045,1,"Fout in interne configuratie. Ongeldige parameters voor salspawn.exe."
-11046,1,"Fout bij bestands extractie. Tijdens wissen van archief, kunt u deze foutmelding negeren."
 11047,1,"Volledige naam van het archief"
 11048,1,"Naam van het archief"
 11049,1,"Pad naar het archief"
 11050,1,"Volledige naam van Lijst met Bestanden"
-11051,1,"DOS volledige naam van archief"
-11052,1,"DOS naam van het archief"
-11053,1,"DOS volledige naam van Lijst met Bestanden"
 11054,1,"Exterrn programma wordt uitgevoerd, a.u.b. wachten..."
-11055,1,"Jar32 Padnaam naar Programma"
+
+[STRINGTABLE 63]
+11068,1,"Bladeren op zoek naar uitvoerbaar bestand"
+
+[STRINGTABLE 64]
+11072,1,"Kan het archiveringsprogramma „%1“ niet starten. De fout was: %2"
+11073,1,"Het archiveringsprogramma „%1“ is niet gevonden. Stel de locatie in op de pagina „Locatie van Externe archief programma's“ van de configuratie, of gebruik „Archiverings Programma Autoconfiguratie“ in het menu Opties."
+11074,1,"De bewerking is geannuleerd en het archiveringsprogramma is gestopt. Het archief „%1“ is mogelijk onvolledig."
 
 [STRINGTABLE 65]
-11056,1,"Jar16 Padnaam naar Programma"
-11057,1,"Rar32 Padnaam naar Programma"
-11058,1,"Rar16 Padnaam naar Programma"
-11059,1,"Arj32 Padnaam naar Programma"
-11060,1,"Arj16 Padnaam naar Programma"
-11061,1,"Ace32 Padnaam naar Programma"
-11062,1,"Ace16 Padnaam naar Programma"
-11063,1,"Lha Padnaam naar Programma"
-11064,1,"UC2 Padnaam naar Programma"
-11065,1,"PkZip32 Padnaam naar Programma"
-11066,1,"PkZip16 Padnaam naar Programma"
-11067,1,"PkUnzip16 Padnaam naar Programma"
-11068,1,"Bladeren op zoek naar uitvoerbaar bestand"
-11070,1,"Gebruikers onderbreking of niet beantwoorde query (herhaal opdracht en klik op "salspawn.exe" proces in taakbalk om de archiveringsprogramma prompt te zien)."
-
-[STRINGTABLE 66]
 11102,1,"Archiveringsprogramma ondersteunt geen comprimeren naar sub mappen.\nWilt u het bestand in de hoofd map in het archief plaatsen?"
 11103,1,"Archiveringsprogramm ondersteunt geen 'verschuiven naar archief' commando.\nWilt u 'kopiëren naar archief' gebruiken?"
 
-[STRINGTABLE 67]
+[STRINGTABLE 66]
 11104,1,"Het pad is geen geldige map."
+
+[STRINGTABLE 67]
+11122,1,"Het archiveringsprogramma is gestopt, of het wachtte op een antwoord dat niet kon worden gegeven."
+11124,1,"RAR (WinRAR)"
+11125,1,"7-Zip"
+11126,1,"7-Zip-consoleprogramma (7z.exe)"
+11127,1,"WinRAR-consoleprogramma (Rar.exe)"
+11128,1,"Pad naar het uitvoerbare bestand van 7-Zip"
+11129,1,"Pad naar het uitvoerbare bestand van WinRAR"
+11130,1,"Kan geen bestand aanmaken."
+11131,1,"Er zijn geen bestanden gevonden die voldoen aan het opgegeven patroon en de opgegeven opties."
+11132,1,"Verkeerd wachtwoord."
+11133,1,"Leesfout."
+11134,1,"Volledige naam van de lijst met bestanden (Unicode)"
 
 [STRINGTABLE 68]
 11209,1,"Hulp Fout"

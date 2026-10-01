@@ -190,9 +190,11 @@ Commander" with the plugin's version number.
   The program turns off some of its background features (background
   networking, sync, component updates and SmartScreen checks) but does not
   change Microsoft's diagnostic-data collection.
-- **External archivers** (for example RAR or ARJ) run only when you work with
-  an archive format handled by an external program installed on your
-  computer; they are separate programs with their own behaviour.
+- **External archivers** (7-Zip and WinRAR's console programs) run only when
+  you work with an archive format handled by an external program installed on
+  your computer; they are separate programs with their own behaviour. To find
+  them, *Archivers Autoconfiguration* reads where they are installed (their
+  registry entries and the Program Files folders); nothing is sent anywhere.
 - **Plugins from other sources** are not covered by this statement.
 
 ## Optional components
@@ -253,4 +255,5 @@ project's repository.
 
 ---
 
-This statement describes Tandem Commander 0.1.8. Last updated 2026-09-30.
+This statement describes Tandem Commander 0.1.8 and the unreleased changes
+prepared after it (`CHANGELOG.md`, *Unreleased*). Last updated 2026-10-01.
