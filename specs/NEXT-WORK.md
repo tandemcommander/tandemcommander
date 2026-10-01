@@ -18,6 +18,7 @@ on are **no longer on disk** (see there).
 as feature 085, except F9; the GUI steps of 085 join item 3. The ZIP salt
 item 085's review added is done as feature 086. Item 8 (7-Zip engine, with
 RAR reading — 084 stage S7) is done as feature 087; its GUI pass joins item 3.
+Item 4 (plug-in interface 107) is done as feature 088.
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
@@ -305,7 +306,20 @@ The features complete on paper and unverified on screen:
 Items 1 and 2 are done, so the sweep now runs against a final state.
 A sweep failure is a finding: back through fix → independent review → gates.
 
-## 4. Architectural debt to repay before it is copied
+## 4. Architectural debt to repay before it is copied — ✅ DONE (feature 088, 2026-10-01)
+
+> Both entries were delivered as one interface bump, `088-plugin-interface-107`
+> (record: [`088-plugin-interface-107/fix-log.md`](088-plugin-interface-107/fix-log.md)):
+> plug-in interface **107** adds `IsUnattendedClose` and
+> `SetWindowClosesUnattended`; the four viewer plug-ins declare their windows
+> and close them silently, so an update no longer fails because a viewer is
+> open; `SAL_MAX_PATH_UTF8` is in the plug-in headers, the buffer comments are
+> corrected, PictView and the Database Viewer no longer overflow on a deep
+> path. **Left**: windows of the non-viewer plug-ins (File Comparator, Batch
+> Renamer, Disk Map, Checksum) still decline an update. **Owed** (joins
+> item 3): `088-plugin-interface-107/quickstart.md`.
+
+*Original entries:*
 
 - **A plug-in-visible "unattended close"** (`080/REMAINING-WORK.md` P2). Since
   feature 080 the program declines an installer's close request while *any*

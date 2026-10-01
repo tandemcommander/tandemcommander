@@ -43,7 +43,14 @@ installer's request because of this window.
 - A dialog or any other top-level window owned by the declared window is
   **not** covered; while one is open, the program declines.
 - The declaration lives with the window: it ends when the window is
-  destroyed. Withdraw it explicitly when the window stops being safe.
+  destroyed. Withdraw it explicitly when the window stops being safe
+  (PictView does so while it shows an image that exists only in the window:
+  pasted, scanned, captured).
+- If a declared window does not close in time, the plug-in returns FALSE
+  from `Release()`; the core then abandons the unattended close at that
+  plug-in: plug-ins asked before it have already closed their windows (and
+  unloaded), the rest are not asked. The program stays running; unloaded
+  plug-ins load again on demand.
 - `hWindow` NULL or not a window: ignored. Callable from any thread.
 
 Implementation note (not part of the contract): the core stores the
@@ -77,15 +84,21 @@ the same.
 | `SalSplitGeneralPath` | `path` | at least `2 * MAX_PATH` | `SAL_MAX_PATH_UTF8` |
 | `SalSplitGeneralPath` | `newDirs` | at least `MAX_PATH` | `SAL_MAX_PATH_UTF8` |
 | `SalSplitWindowsPath` | `path` | at least `2 * MAX_PATH` | `SAL_MAX_PATH_UTF8` |
+| `CheckAndCreateDirectory` | `firstCreatedDir` | `MAX_PATH` | `SAL_MAX_PATH_UTF8` (the core copies the full name of the first created directory, `salamdr3.cpp`; no in-tree plug-in passes this buffer) |
+
+`CSalMaxPathBuffer` (also in `spl_base.h`) is a heap buffer of that size that
+converts to `char*`; in-tree plug-ins use it where they used a `MAX_PATH`
+stack array.
 
 ## B3 — older plug-ins and the viewer file-name services
 
 For a plug-in whose `SalamanderPluginGetReqVer()` (or SDK version) is below
 107, `GetNextFileNameForViewer` / `GetPreviousFileNameForViewer` never write
-more than `MAX_PATH` bytes: when the found name does not fit, the call
-returns FALSE with `*noMoreFiles` TRUE and `*srcBusy` FALSE, `fileName` and
-`*lastFileIndex` untouched. A plug-in built for 107 or later receives every
-name.
+more than `MAX_PATH` bytes: a found name that does not fit is **stepped
+over** and the search goes on from it, so the plug-in receives the next file
+it can hold, or "no further file" when none is left. A plug-in built for 107
+or later receives every name. (The first draft said "no further file" at the
+first long name; stepping over keeps the remaining files reachable.)
 
 ## Version record
 

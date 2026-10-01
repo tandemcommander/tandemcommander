@@ -274,6 +274,35 @@ would corrupt memory; the migration path is a rebuild against the 104
 SDK - see `doc/plugin-vnext-migration.md` and
 `specs/004-long-paths-unicode/contracts/plugin-interface-vnext.md`.
 
+## Plugin Interfaces 105-107 (additions only)
+
+Every version after 104 is a pure append at the end of
+`CSalamanderGeneralAbstract` plus constants and comments, so a plugin built
+for 104 or later loads into any later core unchanged. In-tree plugins are
+built against the current version and require a core that has it. The
+version history is the comment block above `LAST_VERSION_OF_SALAMANDER` in
+`src/plugins/shared/spl_vers.h`; each version has a contract file.
+
+| Version | Feature | Adds | Contract |
+|---|---|---|---|
+| 105 | 036 | theme services for plugin UI (6 methods) | `specs/036-plugin-dark-theme/contracts/plugin-theme-api.md` |
+| 106 | 049 | `ThemeSubclassPropSheetFrame` | `specs/049-dark-mode-stabilization/contracts/plugin-theme-api-v106.md` |
+| 107 | 088 | unattended close: `IsUnattendedClose`, `SetWindowClosesUnattended`; `SAL_MAX_PATH_UTF8` and `CSalMaxPathBuffer` in `spl_base.h`; corrected buffer sizes in the comments | `specs/088-plugin-interface-107/contracts/plugin-api-v107.md` |
+
+**Unattended close (107).** When an installer closes the program through
+the Restart Manager (feature 080) nobody sits at the machine. A plugin's
+`Release(parent, force = FALSE)` must then show nothing
+(`IsUnattendedClose()`): release silently or return FALSE. A plugin whose
+top-level window holds nothing to lose (a viewer) declares it with
+`SetWindowClosesUnattended`; the core then does not decline the installer's
+request because of that window. Undeclared plugin windows keep declining.
+
+**Path buffers.** A full path or full file name handed to a plugin can be
+`SAL_MAX_PATH_UTF8` bytes long. Never receive one into a `MAX_PATH` stack
+array; use `CSalMaxPathBuffer`. For a plugin built for an interface older
+than 107 the two viewer file-name services deliver only names that fit
+`MAX_PATH` (longer ones are stepped over).
+
 ## Plugin Loading Mechanism
 
 Plugin loading is implemented in `src/plugins1.cpp` (`CPluginData::InitDLL`) and `src/plugins2.cpp` (`CPlugins::Load`, `SearchForAddedSPLs`).

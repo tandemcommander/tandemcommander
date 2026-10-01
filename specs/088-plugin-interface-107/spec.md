@@ -46,7 +46,7 @@ A user views a picture or a database file in a folder whose full path is longer 
 
 1. **Given** PictView shows a file in a folder with a path of 300+ characters, **When** the user steps to the next or previous file, **Then** that file is shown.
 2. **Given** the same in the Database Viewer, **Then** the next file is shown.
-3. **Given** a plug-in built for interface 104–106 with a 260-byte buffer, **When** the next file's full name is 260 bytes or longer, **Then** the service reports that there is no further file and writes nothing beyond what the old header promised.
+3. **Given** a plug-in built for interface 104–106 with a 260-byte buffer, **When** the next file's full name is 260 bytes or longer, **Then** the service steps over that file and writes nothing beyond what the old header promised.
 
 ### User Story 3 — A plug-in author can read the truth in the headers (Priority: P2)
 
@@ -62,7 +62,8 @@ A developer writing a viewer plug-in reads `spl_gen.h` and sizes a buffer from i
 ### Edge Cases
 
 - A viewer window that is minimised, or full screen without a caption: it is declared like any other and closes.
-- A viewer window whose thread is busy and does not close in time: the plug-in reports that it cannot unload; the program stays running (the close is abandoned cleanly, as for any plug-in that refuses), nothing is shown.
+- A viewer window whose thread is busy and does not close in time: the plug-in reports that it cannot unload; the program stays running and nothing is shown. The close is abandoned at that plug-in: viewer windows of plug-ins asked earlier are already closed, later plug-ins are not asked.
+- PictView showing an image that exists only in its window (pasted from the clipboard, scanned, a screen capture): that window is not declared, so the program declines.
 - A plug-in declares a window and the window is destroyed: the declaration goes away with the window (no stale entry can make a later window with the same handle pass).
 - A plug-in built for 106 that never declares anything: its windows decline the update, as today.
 - The Markdown Viewer or Code Viewer window while its engine is still starting: closes like any other (feature 081's close-during-cold-start guard).
@@ -81,7 +82,7 @@ A developer writing a viewer plug-in reads `spl_gen.h` and sizes a buffer from i
 - **FR-006**: The FTP plug-in MUST NOT show its *"cancel existing operations?"* question during an unattended close; it MUST refuse to unload instead.
 - **FR-007**: The services that hand a full file name to a viewer plug-in (next / previous file) MUST document the real buffer size, and the size MUST be available to plug-ins as a named constant in the plug-in headers.
 - **FR-008**: Every in-tree plug-in that calls those services MUST pass a buffer of that size (PictView, Database Viewer; also the plug-ins not built by default: Multimedia Viewer, the two demo plug-ins).
-- **FR-009**: For a plug-in built for an interface older than 107, those services MUST NOT write a name longer than the size the older header promised; such a name MUST be reported as "no further file".
+- **FR-009**: For a plug-in built for an interface older than 107, those services MUST NOT write a name longer than the size the older header promised; such a file MUST be stepped over (the plug-in gets the next file whose name fits, or "no further file"). *Revised after the review: the first wording stopped at the first long name.*
 - **FR-010**: Other services of the plug-in interface whose header promises a smaller buffer than the core can fill MUST have their header corrected in the same change (path-splitting services), and in-tree callers MUST comply.
 - **FR-011**: The interface version MUST become 107; plug-ins built for 104–106 MUST keep loading and working unchanged; the additions MUST be documented (header comments, version history, an interface contract) before the code that uses them.
 - **FR-012**: The user-facing documentation that tells users to close viewer windows before updating MUST be corrected.

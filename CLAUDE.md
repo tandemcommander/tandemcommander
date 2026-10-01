@@ -906,3 +906,35 @@ plugin architecture preservation, UI consistency.
     7z round trips checked by 7z.exe 22.01, hostile names, memory bound,
     timing). saltests 1829 -> 1900. GUI pass owed (`quickstart.md`). Records:
     `specs/087-7zip-2603-rar/fix-log.md`.
+- 088-plugin-interface-107: **plug-in interface 107 - an update goes through
+  with viewer windows open, and the path-buffer contract is true.**
+  - **Interface** (pure append, plug-ins built for 104-106 keep loading):
+    `IsUnattendedClose()` (TRUE while an installer closes the program through
+    the Restart Manager - `Release(parent, FALSE)` must then show nothing) and
+    `SetWindowClosesUnattended(hwnd, closes)` (a plug-in declares a top-level
+    window that holds nothing to lose). The declaration is a **window
+    property** (`SALCLOSEAPP_WINDOW_PROP`), so `DecideCloseApp` reads it with
+    `GetProp` - no message, no side effect, gone with the window. Contract:
+    `specs/088-plugin-interface-107/contracts/plugin-api-v107.md`; history in
+    `spl_vers.h`; overview of 105-107 in `architecture/06`.
+  - **Who declares**: codeview, mdview, pictview, dbviewer at `WM_CREATE`;
+    `Release` closes with `CloseAllWindows(FALSE, 5000)` (never forced).
+    PictView withdraws the declaration while it shows an image that exists
+    only in the window (pasted, scanned, captured - review finding). FTP no
+    longer asks "cancel existing operations?" on that path. A viewer's own
+    dialog, and every other plug-in's window, still declines. `UnloadAll`
+    stops at the first refusal during an unattended close.
+  - **Buffers**: `SAL_MAX_PATH_UTF8` and `CSalMaxPathBuffer` are in
+    `spl_base.h`; the headers said `MAX_PATH` for buffers the core fills with
+    up to 98,302 bytes (`GetNext/PreviousFileNameForViewer`,
+    `SalSplitGeneralPath`, `SalSplitWindowsPath`, `CheckAndCreateDirectory`'s
+    `firstCreatedDir`). PictView and the Database Viewer overflowed a
+    260-byte stack buffer in a deep folder - fixed. A plug-in built for < 107
+    gets only names that fit `MAX_PATH`; longer ones are stepped over
+    (`GetFileNameForOldViewer`, rule in `src/common/salplugver.h`).
+  - Evidence: `probe/viewers_probe.ps1` (10/10: four viewers alone and
+    together agree in 1.4-1.6 s, dialogs decline in 0.0 s, normal exit
+    unchanged), `longpath_probe.ps1` (10/10 on a 349-character path),
+    `oldplugin_probe.ps1` (the 0.1.8 PictView, interface 106, in the new
+    core: loads, no overflow, still declines). saltests 1900 -> 1918.
+    Records: `specs/088-plugin-interface-107/fix-log.md`.

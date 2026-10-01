@@ -41,6 +41,13 @@ published newer version. Steps: `quickstart.md` §5.
 
 ## P2 — Plug-in windows decline the update; plug-in viewers should not have to
 
+> ✅ **DONE (feature 088, 2026-10-01)** — interface 107:
+> `IsUnattendedClose()` and `SetWindowClosesUnattended()`; the four viewer
+> plug-ins declare their windows and close them without the question; FTP no
+> longer asks during an unattended close. Decision D8 lets declared windows
+> pass. See `specs/088-plugin-interface-107/`. The text below is the original
+> handoff.
+
 An open plug-in window makes the program decline, **including viewer windows**
 (Code Viewer, Markdown Viewer, PictView, Database Viewer), which hold nothing
 that could be lost — and the Code Viewer is the default for F3, so this is an

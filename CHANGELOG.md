@@ -32,8 +32,16 @@ Privacy fixes (feature 085): privacy defects found while writing the privacy
 statement of 0.1.8 are fixed, and `PRIVACY.md` now describes the program
 without them.
 
+Updates with viewer windows open, and plugin interface 107 (feature 088).
+
 ### Fixed
 
+- **PictView and the Database Viewer no longer write past a buffer in a deep
+  folder.** When the full path of the next or previous file was 260 bytes or
+  longer, stepping to it (Space, Backspace) - or just the viewer refreshing
+  its toolbar - wrote the name into a buffer of 260 bytes. Depending on what
+  lay behind it the viewer misbehaved or the program crashed. Both viewers
+  now take names of any length.
 - **A password typed as part of an address is no longer kept in history.**
   Typing `ftp://user:password@server` into FTP Quick Connect, Change Directory
   (Shift+F7), a Copy or Move target (also the FTP plugin's download target),
@@ -174,6 +182,23 @@ without them.
 
 ### Changed
 
+- **An update no longer fails because a viewer window is open.** When an
+  installer or `winget upgrade` asks the running program to close, windows of
+  the Code Viewer, the Markdown Viewer, PictView and the Database Viewer are
+  now closed without a question, like the internal viewer's. Since 0.1.8 the
+  program declined in that state and the update failed. It still declines -
+  at once, showing nothing - while a viewer has a dialog of its own open,
+  while PictView shows an image that exists only in its window (pasted,
+  scanned, captured), and while a window of another plugin is open (File
+  Comparator, Batch Renamer and others).
+- **Plugin interface 107** (for plugin authors): `IsUnattendedClose` and
+  `SetWindowClosesUnattended`; `SAL_MAX_PATH_UTF8` and `CSalMaxPathBuffer`
+  in the plugin headers; the headers now state the real size of the buffers
+  that receive full paths (`GetNextFileNameForViewer`,
+  `GetPreviousFileNameForViewer`, `SalSplitGeneralPath`,
+  `SalSplitWindowsPath`, `CheckAndCreateDirectory`). Plugins built for
+  interface 104-106 keep working; the two viewer file-name services skip
+  files whose name does not fit the 260 bytes the old headers promised.
 - **The viewer engine's crash reports stay on your computer.** If the engine
   that the Markdown Viewer and the Code Viewer display documents with
   (Microsoft Edge WebView2) crashes, its crash report is no longer sent to

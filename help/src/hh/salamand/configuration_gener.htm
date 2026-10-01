@@ -37,9 +37,11 @@ program closed.</p>
 anything &ndash; while a file operation or a search is running, while a dialog is
 open, while files edited from an archive are waiting to be packed back, while a
 panel shows a plugin file system such as FTP or SFTP, and while a window of a
-plugin is open, including a plugin viewer such as the Code Viewer. Close such
-windows before updating. The internal viewer and idle Find windows are closed
-automatically.</p></dd>
+plugin other than a viewer is open (File Comparator, Batch Renamer and the like).
+Viewer windows &ndash; the internal viewer, the Code Viewer, the Markdown Viewer,
+PictView and the Database Viewer &ndash; and idle Find windows are closed
+automatically; a viewer with a dialog of its own open (Find, Save As) still
+makes the program decline.</p></dd>
 
 <dt><i>Clear read-only attribute when copying from CD-ROM</i></dt>
 <dd>Files on CD-ROM have read-only attribute set. This check box allows clear
