@@ -32,6 +32,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 static int g_checks = 0;
 static int g_failures = 0;
@@ -3193,6 +3194,366 @@ static void TestFtpAnon090()
     CHECK(strcmp(SalFtpAnonymousOnLoad(SalFtpAnonymousOnLoad("name@someserver.com")), SAL_FTP_ANONYMOUS_DEFAULT) == 0);
 }
 
+//*****************************************************************************
+//
+// feature 092 (encoding cluster B-2): name identity - the file system's rule
+// (src/common/salunicode.cpp, contracts/name-identity.md)
+//
+
+// UTF-8 of one or two UTF-16 strings, for building test names from code points
+static std::string U8of092(const WCHAR* w)
+{
+    char buf[400];
+    int n = SalWToU8(w, -1, buf, _countof(buf));
+    return n > 0 ? std::string(buf) : std::string();
+}
+
+static int Sign092(int v) { return v < 0 ? -1 : (v > 0 ? 1 : 0); }
+
+// today's StrICmpEx on ASCII input: fold to LOWER case, shorter is smaller
+static int RefAsciiLowerCmp092(const char* a, const char* b)
+{
+    int la = (int)strlen(a), lb = (int)strlen(b);
+    int l = la < lb ? la : lb;
+    for (int i = 0; i < l; i++)
+    {
+        int ca = tolower((unsigned char)a[i]), cb = tolower((unsigned char)b[i]);
+        if (ca != cb)
+            return ca < cb ? -1 : 1;
+    }
+    return la == lb ? 0 : (la < lb ? -1 : 1);
+}
+
+static BOOL Eq092(const WCHAR* a, const WCHAR* b)
+{
+    std::string ua = U8of092(a), ub = U8of092(b);
+    BOOL eq = SalNameEqualOrdinalCI(ua.c_str(), -1, ub.c_str(), -1);
+    // the yes/no answer and the three-way answer agree, in both directions
+    CHECK(eq == (SalNameCompareOrdinalCI(ua.c_str(), -1, ub.c_str(), -1) == 0));
+    CHECK(eq == SalNameEqualOrdinalCI(ub.c_str(), -1, ua.c_str(), -1));
+    CHECK(Sign092(SalNameCompareOrdinalCI(ua.c_str(), -1, ub.c_str(), -1)) ==
+          -Sign092(SalNameCompareOrdinalCI(ub.c_str(), -1, ua.c_str(), -1)));
+    return eq;
+}
+
+static void TestNameIdentity092()
+{
+    // --- (1) ASCII: equality identical to the old byte fold; the three-way sign identical
+    //         too, except where a character between 'Z' and 'a' meets a letter (documented:
+    //         the new order folds to UPPER case, as CompareStringOrdinal does)
+    static const char* const ascii[] = {"", "a", "A", "ab", "AB", "aB", "abc", "abd", "b", "Z", "z", "0", "9",
+                                        "a.txt", "A.TXT", "a_b", "a-b", "a b", "readme", "README.md", "file[1]",
+                                        "file_1", "~tmp", "x^y", "x`y", "{", "@"};
+    for (int i = 0; i < _countof(ascii); i++)
+    {
+        for (int j = 0; j < _countof(ascii); j++)
+        {
+            int ref = RefAsciiLowerCmp092(ascii[i], ascii[j]);
+            int got = SalNameCompareOrdinalCI(ascii[i], -1, ascii[j], -1);
+            CHECK((got == 0) == (ref == 0));
+            CHECK(SalNameEqualOrdinalCI(ascii[i], -1, ascii[j], -1) == (ref == 0));
+            // equals what the OS says for the same strings
+            WCHAR wi[64], wj[64];
+            int ui = MultiByteToWideChar(CP_ACP, 0, ascii[i], -1, wi, 64) - 1;
+            int uj = MultiByteToWideChar(CP_ACP, 0, ascii[j], -1, wj, 64) - 1;
+            int os = (ui == 0 || uj == 0) ? (ui == uj ? 0 : (ui < uj ? -1 : 1))
+                                          : CompareStringOrdinal(wi, ui, wj, uj, TRUE) - CSTR_EQUAL;
+            CHECK(Sign092(got) == Sign092(os));
+        }
+    }
+    // the documented fold direction: '_' (0x5F) sorts AFTER letters (upper-case fold), where the
+    // old lower-case fold put it before them
+    CHECK(SalNameCompareOrdinalCI("_", -1, "a", -1) > 0);
+    CHECK(RefAsciiLowerCmp092("_", "a") < 0);
+    // explicit lengths, NULL
+    CHECK(SalNameEqualOrdinalCI("abcX", 3, "ABCY", 3));
+    CHECK(!SalNameEqualOrdinalCI("abcX", 4, "ABCY", 4));
+    CHECK(SalNameCompareOrdinalCI("abc", 2, "abd", 2) == 0);
+    CHECK(SalNameCompareOrdinalCI(NULL, -1, "", -1) == 0);
+    CHECK(SalNameCompareOrdinalCI(NULL, -1, "a", -1) < 0);
+    CHECK(SalNameEqualOrdinalCI(NULL, -1, NULL, -1));
+
+    // --- (2) the motivating pairs
+    CHECK(Eq092(L"\x010C.txt", L"\x010D.txt"));  // C-caron: upper / lower
+    CHECK(!Eq092(L"\x0125", L"\x0139"));         // h-circumflex vs L-acute: the old fold confused them on CP1250
+    CHECK(!Eq092(L"\x010C", L"\x011C"));         // C-caron vs G-circumflex
+    CHECK(Eq092(L"\x010Cl\x00E1nek.TXT", L"\x010Dl\x00C1NEK.txt"));
+    // every letter with a simple one-to-one case pair in these blocks: upper == lower
+    {
+        int pairs = 0;
+        static const int ranges[][2] = {{0x00C0, 0x00FF}, {0x0100, 0x017F}, {0x0370, 0x03FF}, {0x0400, 0x04FF}};
+        for (int r = 0; r < _countof(ranges); r++)
+        {
+            for (int cp = ranges[r][0]; cp <= ranges[r][1]; cp++)
+            {
+                WCHAR lo[4] = {(WCHAR)cp, L'x', 0};
+                WCHAR up[4] = {(WCHAR)cp, L'x', 0};
+                CharUpperBuffW(up, 1);
+                if (up[0] == lo[0])
+                    continue; // not a lower-case letter with an upper-case partner
+                WCHAR back[2] = {up[0], 0};
+                CharLowerBuffW(back, 1);
+                if (back[0] != lo[0])
+                    continue; // not a one-to-one pair (e.g. U+00B5, U+017F): the OS decides those
+                pairs++;
+                std::string a = U8of092(lo), b = U8of092(up);
+                CHECK(SalNameEqualOrdinalCI(a.c_str(), -1, b.c_str(), -1));
+            }
+        }
+        CHECK(pairs > 250); // the loop really tested the blocks
+    }
+    // different letters stay different, whatever their UTF-8 bytes fold to in a code page
+    {
+        int checked = 0;
+        for (int a = 0x0100; a < 0x0180; a++)
+        {
+            for (int b = a + 1; b < 0x0180; b++)
+            {
+                WCHAR wa[2] = {(WCHAR)a, 0}, wb[2] = {(WCHAR)b, 0};
+                BOOL osEqual = CompareStringOrdinal(wa, 1, wb, 1, TRUE) == CSTR_EQUAL;
+                std::string ua = U8of092(wa), ub = U8of092(wb);
+                CHECK(SalNameEqualOrdinalCI(ua.c_str(), -1, ub.c_str(), -1) == osEqual);
+                checked++;
+            }
+        }
+        CHECK(checked == 128 * 127 / 2);
+    }
+
+    // --- (3) equal for a linguistic comparison, DIFFERENT for the file system
+    CHECK(!Eq092(L"strasse", L"stra\x00DF" L"e"));    // sharp s
+    CHECK(!Eq092(L"ab", L"a\x00AD" L"b"));            // soft hyphen
+    CHECK(!Eq092(L"ab", L"a\x200D" L"b"));            // zero width joiner
+    CHECK(!Eq092(L"\xFF21", L"A"));                   // full-width A
+    CHECK(!Eq092(L"\x010D", L"c\x030C"));             // NFC vs NFD
+    CHECK(!Eq092(L"\x03C3", L"\x03C2"));              // sigma vs final sigma
+    CHECK(!Eq092(L"\x212A", L"k"));                   // Kelvin sign
+    CHECK(!Eq092(L"a\x0378", L"a\x0379"));            // two unassigned code points
+    // ... each of which the linguistic helper does call equal (that is why it is the wrong one)
+    {
+        std::string a = U8of092(L"strasse"), b = U8of092(L"stra\x00DF" L"e");
+        CHECK(SalNameEqualCI(a.c_str(), -1, b.c_str(), -1));
+    }
+
+    // --- (4) WTF-8: lone surrogates are characters like any other
+    CHECK(Eq092(L"Lone\xD800.TXT", L"lone\xD800.txt"));
+    CHECK(!Eq092(L"lone\xD800.txt", L"lone\xD801.txt"));
+    CHECK(!Eq092(L"a\xD800", L"a"));
+    CHECK(Eq092(L"\xD83D\xDE00.png", L"\xD83D\xDE00.PNG")); // a real pair (emoji)
+
+    // --- (5) text that is not WTF-8: exactly the legacy code-page fold
+    {
+        static const char* const legacy[] = {"\xC8.txt", "\xE8.txt", "\xE1" "bc", "\xC1" "BC", "abc\xFF", "\x80", "a\xBF" "b"};
+        BYTE lower[256];
+        for (int i = 0; i < 256; i++)
+            lower[i] = (BYTE)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)i);
+        for (int i = 0; i < _countof(legacy); i++)
+        {
+            for (int j = 0; j < _countof(legacy); j++)
+            {
+                const char* a = legacy[i];
+                const char* b = legacy[j];
+                int la = (int)strlen(a), lb = (int)strlen(b), l = la < lb ? la : lb, ref = 0;
+                for (int k = 0; k < l && ref == 0; k++)
+                    ref = (int)lower[(BYTE)a[k]] - (int)lower[(BYTE)b[k]];
+                if (ref == 0)
+                    ref = la - lb;
+                CHECK(Sign092(SalNameCompareOrdinalCI(a, -1, b, -1)) == Sign092(ref));
+            }
+        }
+        // one valid and one invalid string: also the legacy fold (never a crash, never "equal" by accident)
+        CHECK(SalNameCompareOrdinalCI("\xC4\x8D", -1, "\xE8", -1) != 0);
+    }
+
+    // --- (6) long names take the heap path and give the same answers
+    {
+        std::string a(3000, 'a'), b(3000, 'A');
+        a += U8of092(L"\x010D");
+        b += U8of092(L"\x010C");
+        CHECK(SalNameEqualOrdinalCI(a.c_str(), -1, b.c_str(), -1));
+        b += "x";
+        CHECK(SalNameCompareOrdinalCI(a.c_str(), -1, b.c_str(), -1) < 0);
+    }
+
+    // --- (7) paths: IsTheSamePath's backslash rules with the new identity
+    {
+        std::string p1 = U8of092(L"C:\\Dokumenty\\\x010Cl\x00E1nek");
+        std::string p2 = U8of092(L"c:\\dokumenty\\\x010Dl\x00C1NEK");
+        CHECK(SalPathEqualOrdinalCI(p1.c_str(), p2.c_str()));
+        CHECK(SalPathEqualOrdinalCI((p1 + "\\").c_str(), p2.c_str()));
+        CHECK(SalPathEqualOrdinalCI(p1.c_str(), (p2 + "\\").c_str()));
+        CHECK(SalPathEqualOrdinalCI((p1 + "\\").c_str(), (p2 + "\\").c_str()));
+        CHECK(!SalPathEqualOrdinalCI((p1 + "\\\\").c_str(), p2.c_str()));
+        CHECK(SalPathEqualOrdinalCI((p1 + "\\\\").c_str(), (p2 + "\\").c_str())); // as the legacy function
+        CHECK(SalPathEqualOrdinalCI("\\a\\b", "a\\b"));                           // one leading backslash is skipped
+        CHECK(SalPathEqualOrdinalCI("", "\\"));
+        CHECK(SalPathEqualOrdinalCI("", ""));
+        CHECK(SalPathEqualOrdinalCI(NULL, ""));
+        CHECK(!SalPathEqualOrdinalCI("a", "ab"));
+        std::string h = U8of092(L"C:\\\x0125"), l = U8of092(L"C:\\\x0139");
+        CHECK(!SalPathEqualOrdinalCI(h.c_str(), l.c_str())); // "C:\ĥ" is not "C:\Ĺ"
+        CHECK(SalPathEqualOrdinalCI("\\\\server\\share\\DIR", "\\\\SERVER\\Share\\dir\\"));
+    }
+
+    // --- (8) prefixes: the count is measured on the path, the cut never splits a character
+    {
+        int n = -1;
+        CHECK(SalPathHasPrefixOrdinalCI("C:\\Dir\\file", "c:\\dir", -1, &n) && n == 6);
+        CHECK(SalPathHasPrefixOrdinalCI("C:\\Dir", "c:\\dir", -1, &n) && n == 6);
+        CHECK(!SalPathHasPrefixOrdinalCI("C:\\Di", "c:\\dir", -1, &n) && n == 0);
+        CHECK(SalPathHasPrefixOrdinalCI("anything", "", -1, &n) && n == 0);
+        CHECK(SalPathHasPrefixOrdinalCI("anything", "ANYx", 3, &n) && n == 3);
+        CHECK(SalPathHasPrefixOrdinalCI("x", NULL, -1, NULL));
+        std::string path = U8of092(L"C:\\\x010Cl\x00E1nek\\sub");
+        std::string pre = U8of092(L"c:\\\x010Dl\x00C1NEK");
+        CHECK(SalPathHasPrefixOrdinalCI(path.c_str(), pre.c_str(), -1, &n) && n == (int)pre.size() && path[n] == '\\');
+        // a prefix that ends in the middle of a character of the path is not a prefix
+        std::string cut = path.substr(0, 4); // "C:\" + the first byte of U+010C
+        CHECK(!SalPathHasPrefixOrdinalCI(path.c_str(), cut.c_str(), -1, &n));
+        // nor one that ends between the halves of a surrogate pair
+        std::string emoji = U8of092(L"C:\\\xD83D\xDE00\\x");
+        std::string half = U8of092(L"C:\\\xD83D");
+        CHECK(!SalPathHasPrefixOrdinalCI(emoji.c_str(), half.c_str(), -1, &n));
+        std::string whole = U8of092(L"c:\\\xD83D\xDE00");
+        CHECK(SalPathHasPrefixOrdinalCI(emoji.c_str(), whole.c_str(), -1, &n) && emoji[n] == '\\');
+        // different letters are not a prefix, whatever the code page fold says
+        std::string ph = U8of092(L"C:\\\x0125\\x"), pl = U8of092(L"C:\\\x0139");
+        CHECK(!SalPathHasPrefixOrdinalCI(ph.c_str(), pl.c_str(), -1, &n));
+        // every pair the OS calls equal although the UTF-8 lengths differ: the count follows the path
+        {
+            int found = 0;
+            for (int a = 0x80; a < 0x2000; a++)
+            {
+                for (int b = 'A'; b <= 'z'; b++)
+                {
+                    WCHAR wa[2] = {(WCHAR)a, 0}, wb[2] = {(WCHAR)b, 0};
+                    if (CompareStringOrdinal(wa, 1, wb, 1, TRUE) != CSTR_EQUAL)
+                        continue;
+                    found++;
+                    std::string pathU = "C:\\" + U8of092(wa) + "\\f";
+                    std::string preU = std::string("C:\\") + (char)b;
+                    int cnt = -1;
+                    CHECK(SalPathHasPrefixOrdinalCI(pathU.c_str(), preU.c_str(), -1, &cnt));
+                    CHECK(cnt > 0 && pathU[cnt] == '\\');
+                }
+            }
+            printf("  name identity: %d non-ASCII characters equal an ASCII letter for the OS\n", found);
+        }
+        // legacy text: the old byte answer
+        CHECK(SalPathHasPrefixOrdinalCI("\xC8" "dir\\x", "\xE8" "DIR", -1, &n) ==
+              (CharLowerA((LPSTR)(UINT_PTR)0xC8) == CharLowerA((LPSTR)(UINT_PTR)0xE8)));
+    }
+
+    // --- (9) a consistent order: antisymmetric and transitive over a mixed set
+    {
+        std::vector<std::string> names;
+        static const WCHAR* const seeds[] = {L"", L"a", L"B", L"ab", L"a-c", L"a_c", L"ab\x00E9", L"AB\x00C9", L"\x010D",
+                                             L"\x010C", L"\x010Dz", L"z", L"Z", L"_", L"\x00E9", L"\x4E2D", L"\xD800",
+                                             L"\xD83D\xDE00", L"a\x0301", L"\x00E1", L"A\x0301", L"1", L"10", L"2", L"~",
+                                             L"\xFF21", L"stra\x00DF" L"e", L"strasse", L"\x03C3", L"\x03A3", L"\x0436", L"\x0416"};
+        for (int i = 0; i < _countof(seeds); i++)
+            names.push_back(U8of092(seeds[i]));
+        names.push_back("\xE8"); // one string that is not UTF-8
+        int n = (int)names.size();
+        int violations = 0;
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                int ij = Sign092(SalNameCompareOrdinalCI(names[i].c_str(), -1, names[j].c_str(), -1));
+                int ji = Sign092(SalNameCompareOrdinalCI(names[j].c_str(), -1, names[i].c_str(), -1));
+                if (ij != -ji)
+                    violations++;
+                if (names[i].find('\xE8') != std::string::npos || names[j].find('\xE8') != std::string::npos)
+                    continue; // transitivity is promised for valid WTF-8 only
+                for (int k = 0; k < n; k++)
+                {
+                    if (names[k] == "\xE8")
+                        continue;
+                    int jk = Sign092(SalNameCompareOrdinalCI(names[j].c_str(), -1, names[k].c_str(), -1));
+                    int ik = Sign092(SalNameCompareOrdinalCI(names[i].c_str(), -1, names[k].c_str(), -1));
+                    if (ij <= 0 && jk <= 0 && ik > 0)
+                        violations++;
+                    if (ij == 0 && jk == 0 && ik != 0)
+                        violations++;
+                }
+            }
+        }
+        CHECK(violations == 0);
+        // sort with it, then find every element again by binary search with the same comparison
+        std::vector<std::string> sorted = names;
+        sorted.pop_back(); // valid WTF-8 only
+        std::sort(sorted.begin(), sorted.end(), [](const std::string& x, const std::string& y)
+                  { return SalNameCompareOrdinalCI(x.c_str(), -1, y.c_str(), -1) < 0; });
+        int notFound = 0;
+        for (size_t i = 0; i < sorted.size(); i++)
+        {
+            int lo = 0, hi = (int)sorted.size() - 1;
+            BOOL found = FALSE;
+            while (lo <= hi && !found)
+            {
+                int mid = (lo + hi) / 2;
+                int c = SalNameCompareOrdinalCI(sorted[i].c_str(), -1, sorted[mid].c_str(), -1);
+                if (c == 0)
+                    found = TRUE;
+                else if (c < 0)
+                    hi = mid - 1;
+                else
+                    lo = mid + 1;
+            }
+            if (!found)
+                notFound++;
+        }
+        CHECK(notFound == 0);
+    }
+
+    // --- (10) the file system agrees (real NTFS in the temp directory)
+    {
+        WCHAR tmp[MAX_PATH];
+        WCHAR dir[MAX_PATH];
+        if (GetTempPathW(MAX_PATH, tmp) == 0 || swprintf_s(dir, L"%ssal092_%u", tmp, GetCurrentProcessId()) < 0 ||
+            !CreateDirectoryW(dir, NULL))
+        {
+            printf("skipping the NTFS part of TestNameIdentity092 (no temp directory)\n");
+            return;
+        }
+        static const WCHAR* const pairs[][2] = {
+            {L"\x010C.txt", L"\x010D.txt"}, {L"\x0125.txt", L"\x0139.txt"}, {L"strasse.txt", L"stra\x00DF" L"e.txt"},
+            {L"\x010D" L"1.txt", L"c\x030C" L"1.txt"}, {L"\x0416.txt", L"\x0436.txt"}, {L"\x03A3.txt", L"\x03C3.txt"},
+            {L"\x03C3" L"2.txt", L"\x03C2" L"2.txt"}, {L"A3.txt", L"a3.txt"}, {L"\x212A.txt", L"k.txt"},
+            {L"\xFF21" L"4.txt", L"A4.txt"}, {L"\x00DC.txt", L"\x00FC.txt"}, {L"\x0130" L"5.txt", L"i5.txt"},
+            {L"\x0131" L"6.txt", L"I6.txt"}, {L"\x017F" L"7.txt", L"S7.txt"}, {L"\x01C5" L"8.txt", L"\x01C6" L"8.txt"},
+            {L"\x01C4" L"9.txt", L"\x01C6" L"9.txt"}};
+        int disagreements = 0;
+        for (int i = 0; i < _countof(pairs); i++)
+        {
+            WCHAR f1[MAX_PATH], f2[MAX_PATH];
+            swprintf_s(f1, L"%s\\%s", dir, pairs[i][0]);
+            swprintf_s(f2, L"%s\\%s", dir, pairs[i][1]);
+            HANDLE h = CreateFileW(f1, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (h == INVALID_HANDLE_VALUE)
+                continue;
+            CloseHandle(h);
+            // is the second name the same file for the file system?
+            HANDLE h2 = CreateFileW(f2, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                                    OPEN_EXISTING, 0, NULL);
+            BOOL fsSame = h2 != INVALID_HANDLE_VALUE;
+            if (fsSame)
+                CloseHandle(h2);
+            std::string a = U8of092(pairs[i][0]), b = U8of092(pairs[i][1]);
+            BOOL ours = SalNameEqualOrdinalCI(a.c_str(), -1, b.c_str(), -1);
+            if (ours != fsSame)
+            {
+                disagreements++;
+                printf("  name identity: pair %d - file system says %s, helper says %s\n", i,
+                       fsSame ? "same" : "different", ours ? "same" : "different");
+            }
+            DeleteFileW(f1);
+        }
+        RemoveDirectoryW(dir);
+        CHECK(disagreements == 0);
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -3226,6 +3587,7 @@ int main()
     TestSplUnicode089();
     TestArcAssoc089();
     TestFtpAnon090();
+    TestNameIdentity092();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

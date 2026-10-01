@@ -872,3 +872,276 @@ int SalGetTimeFormatU8(LCID locale, DWORD flags, const SYSTEMTIME* time,
     int wideLen = GetTimeFormatW(locale, flags, time, format, wide, _countof(wide));
     return LocaleWideToU8(wide, wideLen, u8Buf, u8BufSize);
 }
+//*****************************************************************************
+//
+// Name identity (feature 092) - see salunicode.h
+//
+
+// the legacy fold of str.cpp (LowerCase[] = CharLowerA per byte), rebuilt here
+// so that this module does not depend on str.cpp (saltests does not link it);
+// filling it twice from two threads writes the same values
+static const BYTE* SalLegacyLowerTable()
+{
+    static BYTE table[256];
+    static volatile LONG ready = 0;
+    if (!ready)
+    {
+        for (int i = 0; i < 256; i++)
+            table[i] = (BYTE)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)i);
+        InterlockedExchange(&ready, 1);
+    }
+    return table;
+}
+
+// exactly StrICmpEx (str.cpp)
+static int SalLegacyCompareCI(const char* a, int la, const char* b, int lb)
+{
+    const BYTE* lower = SalLegacyLowerTable();
+    int l = la < lb ? la : lb;
+    for (int i = 0; i < l; i++)
+    {
+        int res = (int)lower[(BYTE)a[i]] - (int)lower[(BYTE)b[i]];
+        if (res != 0)
+            return res < 0 ? -1 : 1;
+    }
+    if (la != lb)
+        return la < lb ? -1 : 1;
+    return 0;
+}
+
+static inline BYTE SalAsciiUpper(BYTE c)
+{
+    return (c >= 'a' && c <= 'z') ? (BYTE)(c - ('a' - 'A')) : c;
+}
+
+static BOOL SalBytesAreASCII(const char* s, int len)
+{
+    for (int i = 0; i < len; i++)
+        if ((BYTE)s[i] >= 0x80)
+            return FALSE;
+    return TRUE;
+}
+
+// converts 'len' bytes of WTF-8 to UTF-16 into 'stackBuf' or, when it does not
+// fit, into a heap block returned in '*heap' (free it); returns the buffer and
+// the unit count in '*units', NULL when the text is not valid WTF-8 or memory
+// is low ('*heap' NULL then)
+#define SAL_IDENT_STACK_UNITS 520
+static const WCHAR* SalIdentToW(const char* s, int len, WCHAR* stackBuf, WCHAR** heap, int* units)
+{
+    *heap = NULL;
+    *units = 0;
+    if (len == 0)
+    {
+        stackBuf[0] = 0;
+        return stackBuf;
+    }
+    WCHAR* buf = stackBuf;
+    int bufSize = SAL_IDENT_STACK_UNITS;
+    if (len + 1 > SAL_IDENT_STACK_UNITS) // units never outnumber bytes
+    {
+        buf = (WCHAR*)malloc((len + 1) * sizeof(WCHAR));
+        if (buf == NULL)
+            return NULL;
+        bufSize = len + 1;
+        *heap = buf;
+    }
+    int res = SalU8ToW(s, len, buf, bufSize); // counts the terminator it adds
+    if (res <= 0)
+    {
+        if (*heap != NULL)
+        {
+            free(*heap);
+            *heap = NULL;
+        }
+        return NULL;
+    }
+    *units = res - 1;
+    return buf;
+}
+
+int SalNameCompareOrdinalCI(const char* a, int aLen, const char* b, int bLen)
+{
+    if (a == NULL)
+    {
+        a = "";
+        aLen = 0;
+    }
+    if (b == NULL)
+    {
+        b = "";
+        bLen = 0;
+    }
+    int la = aLen < 0 ? (int)strlen(a) : aLen;
+    int lb = bLen < 0 ? (int)strlen(b) : bLen;
+
+    // tier 1: ASCII
+    if (SalBytesAreASCII(a, la) && SalBytesAreASCII(b, lb))
+    {
+        int l = la < lb ? la : lb;
+        for (int i = 0; i < l; i++)
+        {
+            BYTE ca = SalAsciiUpper((BYTE)a[i]);
+            BYTE cb = SalAsciiUpper((BYTE)b[i]);
+            if (ca != cb)
+                return ca < cb ? -1 : 1;
+        }
+        if (la != lb)
+            return la < lb ? -1 : 1;
+        return 0;
+    }
+
+    // tier 2: both valid WTF-8 -> the file system's rule on UTF-16
+    WCHAR stackA[SAL_IDENT_STACK_UNITS];
+    WCHAR stackB[SAL_IDENT_STACK_UNITS];
+    WCHAR* heapA = NULL;
+    WCHAR* heapB = NULL;
+    int ua = 0;
+    int ub = 0;
+    const WCHAR* wa = SalIdentToW(a, la, stackA, &heapA, &ua);
+    const WCHAR* wb = wa != NULL ? SalIdentToW(b, lb, stackB, &heapB, &ub) : NULL;
+    int ret;
+    if (wa != NULL && wb != NULL)
+    {
+        if (ua == 0 || ub == 0)
+            ret = ua == ub ? 0 : (ua < ub ? -1 : 1);
+        else
+        {
+            int cmp = CompareStringOrdinal(wa, ua, wb, ub, TRUE);
+            if (cmp == 0) // cannot happen with valid arguments; stay deterministic
+                ret = SalLegacyCompareCI(a, la, b, lb);
+            else
+                ret = cmp - CSTR_EQUAL;
+        }
+    }
+    else
+        ret = SalLegacyCompareCI(a, la, b, lb); // tier 3
+    if (heapA != NULL)
+        free(heapA);
+    if (heapB != NULL)
+        free(heapB);
+    return ret;
+}
+
+BOOL SalNameEqualOrdinalCI(const char* a, int aLen, const char* b, int bLen)
+{
+    if (a == NULL)
+    {
+        a = "";
+        aLen = 0;
+    }
+    if (b == NULL)
+    {
+        b = "";
+        bLen = 0;
+    }
+    int la = aLen < 0 ? (int)strlen(a) : aLen;
+    int lb = bLen < 0 ? (int)strlen(b) : bLen;
+    if (la == lb && memcmp(a, b, la) == 0)
+        return TRUE; // byte-identical
+    return SalNameCompareOrdinalCI(a, la, b, lb) == 0;
+}
+
+BOOL SalPathEqualOrdinalCI(const char* path1, const char* path2)
+{
+    if (path1 == NULL)
+        path1 = "";
+    if (path2 == NULL)
+        path2 = "";
+    // IsTheSamePath (salamdr1.cpp): one leading backslash is skipped on each side,
+    // and one trailing backslash on either side does not matter
+    if (*path1 == '\\')
+        path1++;
+    if (*path2 == '\\')
+        path2++;
+    int l1 = (int)strlen(path1);
+    int l2 = (int)strlen(path2);
+    if (SalNameEqualOrdinalCI(path1, l1, path2, l2))
+        return TRUE;
+    if (l1 > 0 && path1[l1 - 1] == '\\' && SalNameEqualOrdinalCI(path1, l1 - 1, path2, l2))
+        return TRUE;
+    if (l2 > 0 && path2[l2 - 1] == '\\' && SalNameEqualOrdinalCI(path1, l1, path2, l2 - 1))
+        return TRUE;
+    return FALSE;
+}
+
+BOOL SalPathHasPrefixOrdinalCI(const char* path, const char* prefix, int prefixLen, int* pathBytes)
+{
+    if (pathBytes != NULL)
+        *pathBytes = 0;
+    if (path == NULL)
+        path = "";
+    if (prefix == NULL)
+    {
+        prefix = "";
+        prefixLen = 0;
+    }
+    int pl = prefixLen < 0 ? (int)strlen(prefix) : prefixLen;
+    if (pl == 0)
+        return TRUE;
+    int pathLen = (int)strlen(path);
+
+    // tier 1: the prefix and the same number of bytes of the path are ASCII
+    if (SalBytesAreASCII(prefix, pl))
+    {
+        if (pathLen >= pl && SalBytesAreASCII(path, pl))
+        {
+            for (int i = 0; i < pl; i++)
+                if (SalAsciiUpper((BYTE)path[i]) != SalAsciiUpper((BYTE)prefix[i]))
+                    return FALSE;
+            if (pathBytes != NULL)
+                *pathBytes = pl;
+            return TRUE;
+        }
+        // An ASCII prefix can only equal ASCII units... except through a case
+        // mapping that crosses into ASCII (e.g. U+017F, should the OS table map
+        // it to 'S'): let tier 2 decide rather than assume.
+    }
+
+    WCHAR stackP[SAL_IDENT_STACK_UNITS];
+    WCHAR stackT[SAL_IDENT_STACK_UNITS];
+    WCHAR* heapP = NULL;
+    WCHAR* heapT = NULL;
+    int up = 0;
+    int ut = 0;
+    const WCHAR* wt = SalIdentToW(path, pathLen, stackT, &heapT, &ut);
+    const WCHAR* wp = wt != NULL ? SalIdentToW(prefix, pl, stackP, &heapP, &up) : NULL;
+    BOOL ret = FALSE;
+    if (wt != NULL && wp == NULL)
+    {
+        // the path is valid WTF-8 and the prefix is not (e.g. it was cut in the middle of a
+        // character): it cannot be a prefix of this path
+    }
+    else if (wp != NULL && wt != NULL)
+    {
+        // tier 2: the first 'up' units of the path must equal the prefix, and the
+        // cut must not fall inside a surrogate pair of the path
+        if (ut >= up &&
+            !(ut > up && wt[up - 1] >= 0xD800 && wt[up - 1] <= 0xDBFF && wt[up] >= 0xDC00 && wt[up] <= 0xDFFF) &&
+            CompareStringOrdinal(wt, up, wp, up, TRUE) == CSTR_EQUAL)
+        {
+            ret = TRUE;
+            if (pathBytes != NULL)
+            {
+                int n = SalWToU8(wt, up, NULL, 0); // bytes of those units + 1
+                *pathBytes = n > 0 ? n - 1 : pl;
+            }
+        }
+    }
+    else
+    {
+        // tier 3 (the path is not WTF-8 - legacy text): the old answer, StrNICmp(path, prefix, pl) == 0
+        // for a path of at least pl bytes
+        if (pathLen >= pl && SalLegacyCompareCI(path, pl, prefix, pl) == 0)
+        {
+            ret = TRUE;
+            if (pathBytes != NULL)
+                *pathBytes = pl;
+        }
+    }
+    if (heapP != NULL)
+        free(heapP);
+    if (heapT != NULL)
+        free(heapT);
+    return ret;
+}

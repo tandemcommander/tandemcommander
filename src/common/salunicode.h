@@ -263,3 +263,50 @@ int SalCompareNamesUTF8(const char* u8a, int aLen, const char* u8b, int bLen, BO
 // UTF-8 names (quick search, Find, mask matching - FR-008).
 //
 BOOL SalNameEqualCI(const char* u8a, int aLen, const char* u8b, int bLen);
+//*****************************************************************************
+//
+// Name identity (feature 092, encoding cluster B-2)
+//
+// "Are these two names the same name?" - answered the way the file system
+// answers it: case-insensitive, character by character, with NO other
+// equivalences (no normalization, no linguistic rules, no ignorable
+// characters). In Windows terms: ordinal, ignore case - what NTFS does with
+// its upper-case table.
+//
+// This is NOT SalNameEqualCI. That one is linguistic (and NFC-insensitive):
+// it calls "strasse" and "straße" equal, and a name with a soft hyphen equal
+// to the name without it - right for SEARCHING, wrong for deciding whether two
+// names are the same file. And it is not StrICmp, which folds the BYTES of
+// UTF-8 with the system code page table: "Č.txt" != "č.txt", yet on a Central
+// European system "ĥ" == "Ĺ".
+//
+// Three tiers, every function:
+//   1. both strings ASCII      -> byte loop, 'a'..'z' folded to UPPER case
+//   2. both valid WTF-8        -> UTF-16, CompareStringOrdinal(..., TRUE)
+//   3. either is not WTF-8     -> the legacy byte fold (CharLowerA per byte,
+//                                 shorter-is-smaller) - exactly StrICmpEx
+// Tiers 1 and 2 are the same total order (same fold direction), so sorted
+// lists may mix ASCII and non-ASCII names.
+//
+// Contract: specs/092-name-identity-unicode/contracts/name-identity.md
+//
+
+// three-way comparison; 'aLen'/'bLen' are byte counts or -1 (null-terminated);
+// NULL counts as an empty string. Use it on BOTH sides of a sorted list (the
+// sort and the search), never together with StrICmp.
+int SalNameCompareOrdinalCI(const char* a, int aLen, const char* b, int bLen);
+
+// the same relation as a yes/no answer (byte-equal fast path)
+BOOL SalNameEqualOrdinalCI(const char* a, int aLen, const char* b, int bLen);
+
+// two paths are the same place: IsTheSamePath's rules (one leading and one
+// trailing backslash on either side do not matter) with the identity above
+BOOL SalPathEqualOrdinalCI(const char* path1, const char* path2);
+
+// TRUE when 'path' starts with a string equal to the first 'prefixLen' bytes
+// of 'prefix' (-1 = the whole of it). On TRUE '*pathBytes' (may be NULL) is
+// the number of bytes of 'path' the prefix covers - look at path[*pathBytes]
+// (a backslash or the end), never at path[prefixLen]: equal characters need
+// not have equal UTF-8 lengths. A prefix that would end inside a character of
+// 'path' is not a prefix. Replaces StrNICmp(path, prefix, prefixLen) == 0.
+BOOL SalPathHasPrefixOrdinalCI(const char* path, const char* prefix, int prefixLen, int* pathBytes);
