@@ -985,8 +985,7 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 BOOL ok = FALSE;
                 BOOL srcBusy = FALSE;
                 BOOL noMoreFiles = FALSE;
-                char fileName[MAX_PATH];
-                fileName[0] = 0;
+                CSalMaxPathBuffer fileName; // feature 088: a full name can be as long as SAL_MAX_PATH_UTF8 - never a MAX_PATH stack array
                 if (shiftPressed) // obsolete hotkey: use Backspace instead (see PictView, File/Other Files for the key bindings)
                 {
                     ok = SalamanderGeneral->GetPreviousFileNameForViewer(EnumFilesSourceUID,

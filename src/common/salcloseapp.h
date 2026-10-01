@@ -48,16 +48,22 @@ enum CSalCloseAppWindowKind
     scawOther           // anything else: a plug-in's window, a dialog, a tooltip...
 };
 
+// The window property by which a plug-in declares that a top-level window of
+// its own closes without a question during an unattended close (feature 088,
+// CSalamanderGeneralAbstract::SetWindowClosesUnattended, interface 107).
+#define SALCLOSEAPP_WINDOW_PROP "TandemCommander.ClosesUnattended"
+
 struct CSalCloseAppWindow
 {
     BOOL Visible;  // IsWindowVisible
     DWORD Style;   // GWL_STYLE
     DWORD ExStyle; // GWL_EXSTYLE
     CSalCloseAppWindowKind Kind;
+    BOOL ClosesUnattended; // feature 088: its plug-in declared it (SALCLOSEAPP_WINDOW_PROP is set)
 };
 
 // TRUE when 'w' is a window the core cannot account for: visible, of kind
-// scawOther, and a real window - i.e. not a captionless tool / no-activate
+// scawOther, not declared by its plug-in (ClosesUnattended), and a real window - i.e. not a captionless tool / no-activate
 // window (tooltips and IME windows never count; a captionless full-screen
 // viewer does). Erring on the side of "foreign" is harmless - it can only
 // decline: e.g. the core's own wait window (WS_OVERLAPPED, so Windows gives it

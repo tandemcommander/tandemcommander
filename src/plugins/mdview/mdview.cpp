@@ -119,7 +119,13 @@ BOOL WINAPI CPluginInterface::Release(HWND parent, BOOL force)
 {
     CALL_STACK_MESSAGE2("CPluginInterface::Release(, %d)", force);
     BOOL ret = ViewerWindowQueue.Empty();
-    if (!ret && (force || SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_VIEWER_OPENWNDS),
+    // feature 088 (interface 107): an installer is closing the program and nobody sits at the
+    // machine - no question; the viewer windows are closed (not forced: threads are not
+    // terminated), and if one does not close in time the plug-in refuses to unload
+    BOOL unattended = !force && SalamanderGeneral->IsUnattendedClose();
+    if (!ret && unattended)
+        ret = ViewerWindowQueue.CloseAllWindows(FALSE, 5000);
+    else if (!ret && (force || SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_VIEWER_OPENWNDS),
                                                            LoadStr(IDS_PLUGINNAME),
                                                            MB_YESNO | MB_ICONQUESTION) == IDYES))
     {
@@ -127,7 +133,8 @@ BOOL WINAPI CPluginInterface::Release(HWND parent, BOOL force)
     }
     if (ret)
     {
-        if (!ThreadQueue.KillAll(force) && !force)
+        // feature 088: unattended, the window threads get the same 5 s the windows got
+        if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
             ret = FALSE;
         else
         {

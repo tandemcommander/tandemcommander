@@ -251,8 +251,19 @@
 //         configuration dialogs); pure vtable append - plugins built for
 //         104/105 keep loading and running unchanged, see
 //         specs/049-dark-mode-stabilization/contracts/plugin-theme-api-v106.md
+//   107 - after 0.1.8 (feature 088): unattended close (an installer closes the
+//         program through the Restart Manager, feature 080) made visible to
+//         plugins - IsUnattendedClose and SetWindowClosesUnattended appended at
+//         the end of CSalamanderGeneralAbstract; SAL_MAX_PATH_UTF8 defined in
+//         spl_base.h and the buffer sizes of GetNextFileNameForViewer,
+//         GetPreviousFileNameForViewer, SalSplitGeneralPath and
+//         SalSplitWindowsPath documented as they have been since 104 (the
+//         comments still said MAX_PATH). Pure vtable append - plugins built for
+//         104-106 keep loading and running unchanged; for them the two viewer
+//         file-name services deliver only names that fit MAX_PATH. See
+//         specs/088-plugin-interface-107/contracts/plugin-api-v107.md
 
-#define LAST_VERSION_OF_SALAMANDER 106
-#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires Tandem Commander 0.1.0 build 184 (" SAL_VER_PLATFORM ") or later."
+#define LAST_VERSION_OF_SALAMANDER 107
+#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 107, first shipped after version 0.1.8."
 
 #endif // __SPL_VERS_H

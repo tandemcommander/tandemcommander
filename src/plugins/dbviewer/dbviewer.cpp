@@ -398,14 +398,21 @@ void CPluginInterface::About(HWND parent)
 BOOL CPluginInterface::Release(HWND parent, BOOL force)
 {
     BOOL ret = ViewerWindowQueue.Empty();
-    if (!ret && (force || MessageBox(parent, LoadStr(IDS_OPENED_WINDOWS), LoadStr(IDS_PLUGINNAME),
+    // feature 088 (interface 107): an installer is closing the program and nobody sits at the
+    // machine - no question; the viewer windows are closed (not forced: threads are not
+    // terminated), and if one does not close in time the plug-in refuses to unload
+    BOOL unattended = !force && SalGeneral->IsUnattendedClose();
+    if (!ret && unattended)
+        ret = ViewerWindowQueue.CloseAllWindows(FALSE, 5000);
+    else if (!ret && (force || MessageBox(parent, LoadStr(IDS_OPENED_WINDOWS), LoadStr(IDS_PLUGINNAME),
                                      MB_YESNO | MB_ICONQUESTION) == IDYES))
     {
         ret = ViewerWindowQueue.CloseAllWindows(force) || force;
     }
     if (ret)
     {
-        if (!ThreadQueue.KillAll(force) && !force)
+        // feature 088: unattended, the window threads get the same 5 s the windows got
+        if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
             ret = FALSE;
         else
             ReleaseViewer();
@@ -1027,7 +1034,7 @@ void CViewerWindow::UpdateEnablers()
     if (IsWindowVisible(HWindow))
     {
         BOOL srcBusy, noMoreFiles;
-        TCHAR fileName[MAX_PATH] = _T("");
+        CSalMaxPathBuffer fileName; // feature 088: a full name can be as long as SAL_MAX_PATH_UTF8 - never a MAX_PATH stack array
         LPCTSTR openedFileName = FileName;
         int enumFilesCurrentIndex = Renderer.EnumFilesCurrentIndex;
 
@@ -1073,7 +1080,8 @@ void CViewerWindow::UpdateEnablers()
                 IsSrcFileSelected = FALSE;
             }
 
-            fileName[0] = 0;
+            if (fileName != NULL)
+                fileName[0] = 0;
             enumFilesCurrentIndex = Renderer.EnumFilesCurrentIndex;
             ok = SalGeneral->GetNextFileNameForViewer(Renderer.EnumFilesSourceUID,
                                                       &enumFilesCurrentIndex,
@@ -1192,6 +1200,9 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         InsertToolBarBand();
 
         ViewerWindowQueue.Add(new CWindowQueueItem(HWindow));
+        // feature 088 (interface 107): a viewer window holds nothing to lose - it may be closed
+        // without a question when an installer closes the program (see Release)
+        SalGeneral->SetWindowClosesUnattended(HWindow, TRUE);
         InitCodingSubmenu();
         break;
     }
@@ -1457,7 +1468,7 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 BOOL ok = FALSE;
                 BOOL srcBusy = FALSE;
                 BOOL noMoreFiles = FALSE;
-                TCHAR fileName[MAX_PATH] = _T("");
+                CSalMaxPathBuffer fileName; // feature 088: a full name can be as long as SAL_MAX_PATH_UTF8 - never a MAX_PATH stack array
                 LPCTSTR openedFileName = FileName;
                 int enumFilesCurrentIndex = Renderer.EnumFilesCurrentIndex;
 

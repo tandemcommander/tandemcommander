@@ -3191,7 +3191,7 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
             BOOL ok = FALSE;
             BOOL srcBusy = FALSE;
             BOOL noMoreFiles = FALSE;
-            TCHAR fileName[MAX_PATH] = _T("");
+            CSalMaxPathBuffer fileName; // feature 088: a full name can be as long as SAL_MAX_PATH_UTF8 - never a MAX_PATH stack array
             LPCTSTR reallyOpenedFileName, openedFileName = FileName;
             BOOL deletedFile = FileName != NULL && _tcscmp(FileName, LoadStr(IDS_DELETED_TITLE)) == 0;
             if (deletedFile)

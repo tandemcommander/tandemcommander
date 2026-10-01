@@ -1939,8 +1939,9 @@ CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsName, HW
                     }
 
                     char* mask;
-                    char newDirs[MAX_PATH];
-                    if (SalamanderGeneral->SalSplitGeneralPath(parent, title, errTitle, selectedFiles + selectedDirs,
+                    CSalMaxPathBuffer newDirs; // feature 088: SalSplitGeneralPath writes up to SAL_MAX_PATH_UTF8 bytes
+                    if (newDirs != NULL &&
+                        SalamanderGeneral->SalSplitGeneralPath(parent, title, errTitle, selectedFiles + selectedDirs,
                                                                targetPath, afterRoot, end, pathIsDir,
                                                                backslashAtEnd, dirName, curPath, mask, newDirs,
                                                                DFS_IsTheSamePath))
@@ -2640,8 +2641,9 @@ CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, const char* fsNa
             if (*end == '\\')
                 end++;
 
-            char newDirs[MAX_PATH];
-            if (SalamanderGeneral->SalSplitGeneralPath(parent, title, errTitle, sourceFiles + sourceDirs,
+            CSalMaxPathBuffer newDirs; // feature 088: SalSplitGeneralPath writes up to SAL_MAX_PATH_UTF8 bytes
+            if (newDirs != NULL &&
+                SalamanderGeneral->SalSplitGeneralPath(parent, title, errTitle, sourceFiles + sourceDirs,
                                                        targetPath, afterRoot, end, pathIsDir,
                                                        backslashAtEnd, NULL, NULL, opMask, newDirs,
                                                        NULL /* 'isTheSamePathF' not needed */))

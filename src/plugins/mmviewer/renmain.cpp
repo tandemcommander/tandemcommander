@@ -227,8 +227,7 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam)
         BOOL ok = FALSE;
         BOOL srcBusy = FALSE;
         BOOL noMoreFiles = FALSE;
-        char fileName[MAX_PATH];
-        fileName[0] = 0;
+        CSalMaxPathBuffer fileName; // feature 088: a full name can be as long as SAL_MAX_PATH_UTF8 - never a MAX_PATH stack array
         int enumFilesCurrentIndex = EnumFilesCurrentIndex;
         if (LOWORD(wParam) == CM_FILE_PREV || LOWORD(wParam) == CM_FILE_LAST)
         {
@@ -250,6 +249,11 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam)
                                                       fileName, &noMoreFiles,
                                                       &srcBusy);
         }
+
+        // feature 088: the rest of this plug-in keeps full names in MAX_PATH buffers - a longer
+        // name cannot be opened here
+        if (ok && strlen(fileName) >= MAX_PATH)
+            ok = FALSE;
 
         if (ok) // we have a new name
         {

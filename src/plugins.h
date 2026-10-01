@@ -1876,6 +1876,8 @@ protected:
 
     char HelpFileName[MAX_PATH]; // if not empty, this is the name (without path) of the .chm help file used by this plugin (optimization only, not stored anywhere)
 
+    int PluginBuiltForVersion; // feature 088: the interface version the plugin was built for (0 = not known yet)
+
 public:
     HINSTANCE LanguageModule; // if not NULL, it is the handle to the plugin's .SLG language module
 
@@ -1885,6 +1887,14 @@ public:
 
     // must be called immediately after the plugin's entry point
     void Init(CPluginInterfaceAbstract* plugin) { Plugin = plugin; }
+
+    // feature 088 (contract B3): the viewer file-name services for a plug-in with a MAX_PATH buffer
+    BOOL GetFileNameForOldViewer(BOOL next, int srcUID, int* lastFileIndex, const char* lastFileName,
+                                 BOOL preferSelected, BOOL onlyAssociatedExtensions,
+                                 char* fileName, BOOL* noMoreFiles, BOOL* srcBusy);
+
+    // feature 088: called as soon as the plugin's DLL told which interface version it was built for
+    void SetBuiltForVersion(int builtForVersion) { PluginBuiltForVersion = builtForVersion; }
 
     // called after the plugin unloads - prepares data for the next plugin load
     void Clear();
@@ -2361,6 +2371,9 @@ public:
                                             INT_PTR* result);
     // feature 049, interface version 106
     virtual void WINAPI ThemeSubclassPropSheetFrame(HWND hFrame);
+    // feature 088, interface version 107
+    virtual BOOL WINAPI IsUnattendedClose();
+    virtual void WINAPI SetWindowClosesUnattended(HWND hWindow, BOOL closes);
 };
 
 //

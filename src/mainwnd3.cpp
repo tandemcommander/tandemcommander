@@ -566,6 +566,8 @@ static BOOL CALLBACK CloseAppEnumWindowsProc(HWND hwnd, LPARAM lParam)
     w.Style = (DWORD)GetWindowLongPtr(hwnd, GWL_STYLE);
     w.ExStyle = (DWORD)GetWindowLongPtr(hwnd, GWL_EXSTYLE);
     w.Kind = scawOther;
+    // feature 088: read, not asked - GetProp sends the window nothing
+    w.ClosesUnattended = GetPropA(hwnd, SALCLOSEAPP_WINDOW_PROP) != NULL;
     if (hwnd == data->MainWnd)
         w.Kind = scawMain;
     else
@@ -673,6 +675,7 @@ CMainWindow::DecideCloseApp()
         w.Style = WS_CAPTION;
         w.ExStyle = 0;
         w.Kind = scawOther;
+        w.ClosesUnattended = FALSE; // feature 088: the array is static - never inherit an old declaration
     }
     s.Windows = windows;
     s.WindowCount = data.Count;

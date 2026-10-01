@@ -427,7 +427,7 @@ BOOL SalParsePath(HWND parent, char* path, int& type, BOOL& isDir, char*& second
 // nulou; pokud v ceste neni maska, automaticky vytvori masku "*.*"); 'parent' - parent pripadnych
 // messageboxu; 'title' + 'errorTitle' jsou titulky messageboxu s informaci + chybou; 'selCount' je
 // pocet oznacenych souboru a adresaru; 'path' je na vstupu cilova cesta ke zpracovani, na vystupu
-// (alespon 2 * MAX_PATH znaku) existujici cilova cesta; 'secondPart' ukazuje do 'path' na pozici
+// (buffer o velikosti SAL_MAX_PATH_UTF8 bajtu, feature 088) existujici cilova cesta; 'secondPart' ukazuje do 'path' na pozici
 // za existujici cestu (za '\\' nebo na konec retezce; existuje-li v ceste soubor, ukazuje za cestu
 // k tomuto souboru); 'pathIsDir' je TRUE/FALSE pokud existujici cast cesty je adresar/soubor;
 // 'backslashAtEnd' je TRUE pokud byl pred provedenim "parse" na konci 'path' backslash (napr.
@@ -446,8 +446,8 @@ BOOL SalSplitWindowsPath(HWND parent, const char* title, const char* errorTitle,
 // (v 'mask' - ukazuje do bufferu 'path', ale cesta a maska jsou oddelene nulou; pokud v ceste neni
 // maska, automaticky vytvori masku "*.*"); 'parent' - parent pripadnych messageboxu;
 // 'title' + 'errorTitle' jsou titulky messageboxu s informaci + chybou; 'selCount' je pocet oznacenych
-// souboru a adresaru; 'path' je na vstupu cilova cesta ke zpracovani, na vystupu (alespon 2 * MAX_PATH
-// znaku) existujici cilova cesta (vzdy konci backslashem); 'afterRoot' ukazuje do 'path' za root cesty
+// souboru a adresaru; 'path' je na vstupu cilova cesta ke zpracovani, na vystupu (buffer o velikosti
+// SAL_MAX_PATH_UTF8 bajtu, feature 088) existujici cilova cesta (vzdy konci backslashem); 'afterRoot' ukazuje do 'path' za root cesty
 // (za '\\' nebo na konec retezce); 'secondPart' ukazuje do 'path' na pozici za existujici cestu (za
 // '\\' nebo na konec retezce; existuje-li v ceste soubor, ukazuje za cestu k tomuto souboru);
 // 'pathIsDir' je TRUE/FALSE pokud existujici cast cesty je adresar/soubor; 'backslashAtEnd' je
@@ -455,7 +455,7 @@ BOOL SalSplitWindowsPath(HWND parent, const char* title, const char* errorTitle,
 // backslash rusi); 'dirName' + 'curPath' nejsou NULL pokud je oznaceny max. jeden soubor/adresar
 // (jeho jmeno bez cesty je v 'dirName'; jeho cesta je v 'curPath'; pokud neni nic oznacene, bere
 // se focus); 'mask' je na vystupu ukazatel na operacni masku do bufferu 'path'; neni-li 'newDirs' NULL,
-// pak jde o buffer (o velikosti alespon MAX_PATH) pro relativni cestu (vzhledem k existujici ceste
+// pak jde o buffer (o velikosti SAL_MAX_PATH_UTF8 bajtu, feature 088) pro relativni cestu (vzhledem k existujici ceste
 // v 'path'), kterou je nutne vytvorit (uzivatel s vytvorenim souhlasi, byl pouzit stejny dotaz jako
 // u kopirovani z disku na disk; prazdny retezec = nic nevytvaret); je-li 'newDirs' NULL a je-li
 // potreba vytvorit nejakou relativni cestu, je jen vypsana chyba; 'isTheSamePathF' je funkce pro
@@ -2239,8 +2239,8 @@ BOOL IsFileEnumSourcePanel(int srcUID, int* panel);
 // jmeno oznacene, budou se vracet oznacena jmena; je-li 'onlyAssociatedExtensions'
 // TRUE, vraci jen soubory s priponou asociovanou s viewerem tohoto pluginu (F3 na tomto
 // souboru by se pokusilo otevrit viewer tohoto pluginu + ignoruje pripadne zastineni
-// viewerem jineho pluginu); 'fileName' je buffer pro ziskane jmeno (velikost alespon
-// MAX_PATH); vraci TRUE pokud se podari jmeno ziskat; vraci FALSE pri chybe: zadne
+// viewerem jineho pluginu); 'fileName' je buffer pro ziskane jmeno (velikost
+// SAL_MAX_PATH_UTF8 bajtu, feature 088); vraci TRUE pokud se podari jmeno ziskat; vraci FALSE pri chybe: zadne
 // dalsi jmeno souboru ve zdroji neni (neni-li 'noMoreFiles' NULL, vraci se v nem TRUE),
 // zdroj je zaneprazdnen (nezpracovava zpravy; neni-li 'srcBusy' NULL, vraci se v nem
 // TRUE), jinak zdroj prestal existovat (zmena cesty v panelu, zmena razeni, atp.)
@@ -2259,8 +2259,8 @@ BOOL GetNextFileNameForViewer(int srcUID, int* lastFileIndex, const char* lastFi
 // jmeno oznacene, budou se vracet oznacena jmena; je-li 'onlyAssociatedExtensions' TRUE,
 // vraci jen soubory s priponou asociovanou s viewerem tohoto pluginu (F3 na tomto
 // souboru by se pokusilo otevrit viewer tohoto pluginu + ignoruje pripadne zastineni
-// viewerem jineho pluginu); 'fileName' je buffer pro ziskane jmeno (velikost alespon
-// MAX_PATH); vraci TRUE pokud se podari jmeno ziskat; vraci FALSE pri chybe: zadne
+// viewerem jineho pluginu); 'fileName' je buffer pro ziskane jmeno (velikost
+// SAL_MAX_PATH_UTF8 bajtu, feature 088); vraci TRUE pokud se podari jmeno ziskat; vraci FALSE pri chybe: zadne
 // predchozi jmeno souboru ve zdroji neni (neni-li 'noMoreFiles' NULL, vraci se v nem
 // TRUE), zdroj je zaneprazdnen (nezpracovava zpravy; neni-li 'srcBusy' NULL, vraci
 // se v nem TRUE), jinak zdroj prestal existovat (zmena cesty v panelu, zmena

@@ -23,6 +23,7 @@
 #include "salurlpwd.h"    // feature 085
 #include "salrandom.h"    // feature 086
 #include "salarcname.h"   // feature 087
+#include "salplugver.h"   // feature 088
 
 #include <map>
 #include <set>
@@ -2149,6 +2150,7 @@ static CSalCloseAppWindow Window080(BOOL visible, DWORD style, DWORD exStyle, CS
     w.Style = style;
     w.ExStyle = exStyle;
     w.Kind = kind;
+    w.ClosesUnattended = FALSE;
     return w;
 }
 
@@ -2282,6 +2284,53 @@ static void TestCloseApp080()
         s.WindowCount = 3;
         CHECK(SalCloseAppDecide(s) == scadForeignWindow);
     }
+
+    // --- feature 088: a window its plug-in declared (SetWindowClosesUnattended) is not foreign
+    {
+        CSalCloseAppWindow viewer = Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawOther);
+        CHECK(SalCloseAppWindowIsForeign(viewer));
+        viewer.ClosesUnattended = TRUE;
+        CHECK(!SalCloseAppWindowIsForeign(viewer));
+        // a captionless full-screen viewer counted as foreign; declared, it passes too
+        CSalCloseAppWindow full = Window080(TRUE, WS_POPUP, 0, scawOther);
+        CHECK(SalCloseAppWindowIsForeign(full));
+        full.ClosesUnattended = TRUE;
+        CHECK(!SalCloseAppWindowIsForeign(full));
+        // the declaration changes nothing for windows that never counted
+        CSalCloseAppWindow hidden = Window080(FALSE, WS_OVERLAPPEDWINDOW, 0, scawOther);
+        hidden.ClosesUnattended = TRUE;
+        CHECK(!SalCloseAppWindowIsForeign(hidden));
+
+        CSalCloseAppWindow w[4];
+        w[0] = Window080(TRUE, WS_OVERLAPPEDWINDOW, 0, scawMain);
+        w[1] = viewer;                                                  // declared viewer
+        w[2] = viewer;                                                  // a second one
+        w[3] = Window080(TRUE, WS_POPUP | WS_CAPTION, 0, scawOther);    // its Find dialog: not declared
+        CSalCloseAppSnapshot s = IdleSnapshot080();
+        s.Windows = w;
+        s.WindowCount = 3;
+        CHECK(SalCloseAppDecide(s) == scadAgree);
+        s.WindowCount = 4;
+        CHECK(SalCloseAppDecide(s) == scadForeignWindow); // a dialog owned by a declared window is not covered
+        // declared windows do not outweigh the other reasons
+        s.WindowCount = 3;
+        s.PluginFSOpen = TRUE;
+        CHECK(SalCloseAppDecide(s) == scadPluginFS);
+        s.PluginFSOpen = FALSE;
+        s.FileOperations = 1;
+        CHECK(SalCloseAppDecide(s) == scadFileOperations);
+    }
+
+    // --- feature 088 (contract B3): which names a plug-in's viewer buffer can hold
+    CHECK(SalViewerNameFitsPlugin(107, 100000));
+    CHECK(SalViewerNameFitsPlugin(108, SAL_MAX_PATH_UTF8 - 1));
+    CHECK(SalViewerNameFitsPlugin(106, MAX_PATH - 1));  // 259 bytes + terminator = the promised 260
+    CHECK(!SalViewerNameFitsPlugin(106, MAX_PATH));     // 260 bytes do not fit
+    CHECK(!SalViewerNameFitsPlugin(104, 5000));
+    CHECK(SalViewerNameFitsPlugin(104, 0));
+    CHECK(!SalViewerNameFitsPlugin(0, MAX_PATH));       // unknown version: treated as old
+    CHECK(!SalViewerNameFitsPlugin(-1, MAX_PATH));
+    CHECK(SAL_MAX_PATH_UTF8 == 3 * 32767 + 1);
 
     // every decision has a name, and only "agree" does not start with "decline"
     for (int d = scadAgree; d <= scadForeignWindow; d++)

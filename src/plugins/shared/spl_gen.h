@@ -935,7 +935,8 @@ public:
     // dava popis chyb do bufferu 'errBuf' o velikosti 'errBufSize' (zadna chybova okna se
     // neoteviraji); vsechny otevirana okna maji za parenta 'parent', je-li 'parent' NULL,
     // pouziva se hlavni okno Salamandera; neni-li 'firstCreatedDir' NULL, jde o buffer
-    // o velikosti MAX_PATH pro ulozeni plneho jmena prvniho vytvareneho adresare na ceste
+    // o velikosti SAL_MAX_PATH_UTF8 bajtu (komentar do verze 106 mylne uvadel MAX_PATH)
+    // pro ulozeni plneho jmena prvniho vytvareneho adresare na ceste
     // 'dir' (vraci prazdny retezec pokud jiz cesta 'dir' existuje); je-li 'manualCrDir' TRUE,
     // nedovoli vytvorit adresar s mezerou na zacatku jmena (Windowsum to nevadi, ale je to
     // potencialne nebezpecne, napr. Explorer to taky nedovoluje)
@@ -2001,7 +2002,8 @@ public:
     // nulou; pokud v ceste neni maska, automaticky vytvori masku "*.*"); 'parent' - parent pripadnych
     // messageboxu; 'title' + 'errorTitle' jsou titulky messageboxu s informaci + chybou; 'selCount' je
     // pocet oznacenych souboru a adresaru; 'path' je na vstupu cilova cesta ke zpracovani, na vystupu
-    // (alespon 2 * MAX_PATH znaku) existujici cilova cesta; 'secondPart' ukazuje do 'path' na pozici
+    // (buffer o velikosti SAL_MAX_PATH_UTF8 bajtu; komentar do verze 106 mylne uvadel 2 * MAX_PATH)
+    // existujici cilova cesta; 'secondPart' ukazuje do 'path' na pozici
     // za existujici cestu (za '\\' nebo na konec retezce; existuje-li v ceste soubor, ukazuje za cestu
     // k tomuto souboru); 'pathIsDir' je TRUE/FALSE pokud existujici cast cesty je adresar/soubor;
     // 'backslashAtEnd' je TRUE pokud byl pred provedenim "parse" na konci 'path' backslash (napr.
@@ -2022,8 +2024,9 @@ public:
     // (v 'mask' - ukazuje do bufferu 'path', ale cesta a maska jsou oddelene nulou; pokud v ceste neni
     // maska, automaticky vytvori masku "*.*"); 'parent' - parent pripadnych messageboxu;
     // 'title' + 'errorTitle' jsou titulky messageboxu s informaci + chybou; 'selCount' je pocet oznacenych
-    // souboru a adresaru; 'path' je na vstupu cilova cesta ke zpracovani, na vystupu (alespon 2 * MAX_PATH
-    // znaku) existujici cilova cesta (vzdy konci backslashem); 'afterRoot' ukazuje do 'path' za root cesty
+    // souboru a adresaru; 'path' je na vstupu cilova cesta ke zpracovani, na vystupu (buffer o velikosti
+    // SAL_MAX_PATH_UTF8 bajtu; komentar do verze 106 mylne uvadel 2 * MAX_PATH) existujici cilova cesta
+    // (vzdy konci backslashem); 'afterRoot' ukazuje do 'path' za root cesty
     // (za '\\' nebo na konec retezce); 'secondPart' ukazuje do 'path' na pozici za existujici cestu (za
     // '\\' nebo na konec retezce; existuje-li v ceste soubor, ukazuje za cestu k tomuto souboru);
     // 'pathIsDir' je TRUE/FALSE pokud existujici cast cesty je adresar/soubor; 'backslashAtEnd' je
@@ -2031,7 +2034,8 @@ public:
     // backslash rusi); 'dirName' + 'curPath' nejsou NULL pokud je oznaceny max. jeden soubor/adresar
     // (jeho jmeno bez cesty je v 'dirName'; jeho cesta je v 'curPath'; pokud neni nic oznacene, bere
     // se focus); 'mask' je na vystupu ukazatel na operacni masku do bufferu 'path'; neni-li 'newDirs' NULL,
-    // pak jde o buffer (o velikosti alespon MAX_PATH) pro relativni cestu (vzhledem k existujici ceste
+    // pak jde o buffer (o velikosti SAL_MAX_PATH_UTF8 bajtu; komentar do verze 106 mylne uvadel
+    // MAX_PATH) pro relativni cestu (vzhledem k existujici ceste
     // v 'path'), kterou je nutne vytvorit (uzivatel s vytvorenim souhlasi, byl pouzit stejny dotaz jako
     // u kopirovani z disku na disk; prazdny retezec = nic nevytvaret); je-li 'newDirs' NULL a je-li
     // potreba vytvorit nejakou relativni cestu, je jen vypsana chyba; 'isTheSamePathF' je funkce pro
@@ -2700,7 +2704,10 @@ public:
     // je-li 'onlyAssociatedExtensions' TRUE, vraci jen soubory s priponou asociovanou s
     // viewerem tohoto pluginu (F3 na tomto souboru by se pokusilo otevrit viewer tohoto
     // pluginu + ignoruje pripadne zastineni viewerem jineho pluginu); 'fileName' je buffer
-    // pro ziskane jmeno (velikost alespon MAX_PATH); vraci TRUE pokud se podari jmeno
+    // pro ziskane jmeno (velikost SAL_MAX_PATH_UTF8 bajtu - plna jmena jsou UTF-8 a mohou byt
+    // dlouha uz od verze 104; komentar do verze 106 mylne uvadel MAX_PATH; pluginu postavenemu
+    // pro verzi starsi nez 107 se proto jmeno, ktere se nevejde do MAX_PATH, nevraci a hleda se
+    // dalsi - viz specs/088-plugin-interface-107/contracts/plugin-api-v107.md); vraci TRUE pokud se podari jmeno
     // ziskat; vraci FALSE pri chybe: zadne dalsi jmeno souboru ve zdroji neni (neni-li
     // 'noMoreFiles' NULL, vraci se v nem TRUE), zdroj je zaneprazdnen (nezpracovava zpravy;
     // neni-li 'srcBusy' NULL, vraci se v nem TRUE), jinak zdroj prestal existovat (zmena
@@ -2724,7 +2731,10 @@ public:
     // 'onlyAssociatedExtensions' TRUE, vraci jen soubory s priponou asociovanou s viewerem
     // tohoto pluginu (F3 na tomto souboru by se pokusilo otevrit viewer tohoto
     // pluginu + ignoruje pripadne zastineni viewerem jineho pluginu); 'fileName' je buffer
-    // pro ziskane jmeno (velikost alespon MAX_PATH); vraci TRUE pokud se podari jmeno
+    // pro ziskane jmeno (velikost SAL_MAX_PATH_UTF8 bajtu - plna jmena jsou UTF-8 a mohou byt
+    // dlouha uz od verze 104; komentar do verze 106 mylne uvadel MAX_PATH; pluginu postavenemu
+    // pro verzi starsi nez 107 se proto jmeno, ktere se nevejde do MAX_PATH, nevraci a hleda se
+    // dalsi - viz specs/088-plugin-interface-107/contracts/plugin-api-v107.md); vraci TRUE pokud se podari jmeno
     // ziskat; vraci FALSE pri chybe: zadne predchozi jmeno souboru ve zdroji neni (neni-li
     // 'noMoreFiles' NULL, vraci se v nem TRUE), zdroj je zaneprazdnen (nezpracovava zpravy;
     // neni-li 'srcBusy' NULL, vraci se v nem TRUE), jinak zdroj prestal existovat (zmena
@@ -3521,6 +3531,39 @@ public:
     // ThemeApplyToDialog. (feature 049, interface version 106)
     // omezeni: thread vlastnici okno 'hFrame'
     virtual void WINAPI ThemeSubclassPropSheetFrame(HWND hFrame) = 0;
+
+    // ------------------------------------------------------------------------
+    // unattended close (feature 088, interface version 107)
+    //
+    // An installer that has to replace files of the running program asks it to
+    // close (Windows Restart Manager, WM_ENDSESSION with ENDSESSION_CLOSEAPP).
+    // Nobody sits at the machine, so nothing may be asked: the program either
+    // closes without a single prompt or stays running. It is the opposite of a
+    // critical shutdown ("hurry, lose what must be lost"): "ask nobody, lose
+    // nothing". Contract: specs/088-plugin-interface-107/contracts/plugin-api-v107.md
+
+    // returns TRUE while the program is closing on such a request; FALSE at any
+    // other time (normal exit, critical shutdown, sign-out). In
+    // CPluginInterfaceAbstract::Release(parent, force) with 'force' FALSE a plugin
+    // then MUST NOT show anything: it either releases everything without a
+    // question and returns TRUE, or returns FALSE (the program stays running and
+    // the installer's request fails cleanly). Work in progress is never
+    // cancelled for it - a plugin with running operations returns FALSE.
+    // can be called from any thread
+    virtual BOOL WINAPI IsUnattendedClose() = 0;
+
+    // declares ('closes' TRUE) or withdraws ('closes' FALSE) that the top-level
+    // window 'hWindow' of this process can be closed during an unattended close
+    // without a question and without losing anything (a viewer window); the
+    // program then does not decline an installer's request because of this
+    // window. The plugin MUST close such a window in Release() without a prompt
+    // when IsUnattendedClose() returns TRUE. A window with unsaved input, a
+    // running operation or a transfer MUST NOT be declared. Dialogs and other
+    // top-level windows owned by 'hWindow' are not covered: while one is open,
+    // the program declines. The declaration ends when the window is destroyed.
+    // 'hWindow' NULL or invalid: ignored.
+    // can be called from any thread
+    virtual void WINAPI SetWindowClosesUnattended(HWND hWindow, BOOL closes) = 0;
 };
 
 #ifdef _MSC_VER

@@ -625,7 +625,13 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
 {
     CALL_STACK_MESSAGE2("CPluginInterface::Release(, %d)", force);
     BOOL ret = ViewerWindowQueue.Empty();
-    if (!ret && (force || SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_SOME_WINS_OPENED),
+    // feature 088 (interface 107): an installer is closing the program and nobody sits at the
+    // machine - no question; the viewer windows are closed (not forced: threads are not
+    // terminated), and if one does not close in time the plug-in refuses to unload
+    BOOL unattended = !force && SalamanderGeneral->IsUnattendedClose();
+    if (!ret && unattended)
+        ret = ViewerWindowQueue.CloseAllWindows(FALSE, 5000);
+    else if (!ret && (force || SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_SOME_WINS_OPENED),
                                                            LoadStr(IDS_PLUGINNAME),
                                                            MB_YESNO | MB_ICONQUESTION) == IDYES))
     {
@@ -633,7 +639,8 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
     }
     if (ret)
     {
-        if (!ThreadQueue.KillAll(force) && !force)
+        // feature 088: unattended, the window threads get the same 5 s the windows got
+        if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
             ret = FALSE;
         else
             ReleaseViewer();
@@ -2299,6 +2306,17 @@ void CViewerWindow::LayoutWindows()
 void CViewerWindow::UpdateEnablers()
 {
     LPCTSTR pDeletedTitle = LoadStr(IDS_DELETED_TITLE);
+
+    // feature 088 (interface 107, contract A2): a pasted, scanned or captured image exists
+    // only in this window (its "name" is "<Clipboard>" and the like) - closing the window
+    // loses it, so such a window is not declared and an installer's request is declined.
+    // A window showing a file (or the title of a deleted one) holds nothing to lose.
+    if (HWindow != NULL)
+    {
+        BOOL onlyInWindow = Renderer.FileName != NULL && *Renderer.FileName == '<' &&
+                            _tcscmp(Renderer.FileName, pDeletedTitle) != 0;
+        SalamanderGeneral->SetWindowClosesUnattended(HWindow, !onlyInWindow);
+    }
     Enablers[vweFileOpened] = Renderer.ImageLoaded;
     Enablers[vweFileOpened2] = Renderer.ImageLoaded && Renderer.FileName != NULL && *Renderer.FileName != '<';
     Enablers[vwePaste] = Renderer.ImageLoaded && IsClipboardFormatAvailable(CF_BITMAP);
@@ -2314,7 +2332,7 @@ void CViewerWindow::UpdateEnablers()
         IsWindowVisible(HWindow) && (Renderer.FileName == NULL || *Renderer.FileName != '<' || _tcscmp(Renderer.FileName, pDeletedTitle) == 0))
     {
         BOOL srcBusy, noMoreFiles;
-        TCHAR fileName[MAX_PATH] = _T("");
+        CSalMaxPathBuffer fileName; // feature 088: a full name can be as long as SAL_MAX_PATH_UTF8 - never a MAX_PATH stack array
         LPCTSTR openedFileName = Renderer.FileName;
 
         if (Renderer.FileName != NULL && _tcscmp(Renderer.FileName, pDeletedTitle) == 0)
@@ -2363,7 +2381,8 @@ void CViewerWindow::UpdateEnablers()
             }
 
             BOOL deletedFile = Renderer.FileName != NULL && _tcscmp(Renderer.FileName, pDeletedTitle) == 0;
-            fileName[0] = 0;
+            if (fileName != NULL)
+                fileName[0] = 0;
             enumFilesCurrentIndex = Renderer.EnumFilesCurrentIndex;
             if (deletedFile && enumFilesCurrentIndex >= 0)
                 enumFilesCurrentIndex--; // prevent skipping the next file after deleting with Space due to files shifting in the panel
@@ -2375,7 +2394,8 @@ void CViewerWindow::UpdateEnablers()
             Enablers[vweNextFile] = ok || srcBusy; // only if there is another file (or Salamander is busy, the user has to try later)
 
             // find out whether the next file is selected or whether no selected file remains
-            fileName[0] = 0;
+            if (fileName != NULL)
+                fileName[0] = 0;
             enumFilesCurrentIndex = Renderer.EnumFilesCurrentIndex;
             if (deletedFile && enumFilesCurrentIndex >= 0)
                 enumFilesCurrentIndex--; // prevent skipping the next file after deleting with Space due to files shifting in the panel
@@ -2919,6 +2939,9 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         SetFocus(Renderer.HWindow);
 
         ViewerWindowQueue.Add(new CWindowQueueItem(HWindow));
+        // feature 088 (interface 107): a viewer window holds nothing to lose - it may be closed
+        // without a question when an installer closes the program (see Release)
+        SalamanderGeneral->SetWindowClosesUnattended(HWindow, TRUE);
 
         UpdateEnablers();
 

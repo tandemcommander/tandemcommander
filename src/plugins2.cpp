@@ -1802,7 +1802,14 @@ BOOL CPlugins::UnloadAll(HWND parent)
         if (Data[i]->GetLoaded())
         {
             if (!Data[i]->Unload(parent, FALSE))
+            {
                 ret = FALSE;
+                // feature 088: an unattended close (an installer's request) is abandoned as a
+                // whole when one plug-in refuses - do not go on closing the windows of the
+                // others and unloading them while the program stays running
+                if (UnattendedClose)
+                    break;
+            }
         }
     }
     return ret;

@@ -2234,6 +2234,7 @@ BOOL CPluginData::InitDLL(HWND parent, BOOL quiet, BOOL waitCursor, BOOL release
                             TRACE_E("CPluginData::InitDLL(): nonsense: SalamanderPluginGetSDKVer() returns older version than SalamanderPluginGetReqVer()");
                     }
                 }
+                SalamanderGeneral.SetBuiltForVersion(BuiltForVersion); // feature 088: services that depend on the plugin's interface version
                 BOOL oldVer = BuiltForVersion < PLUGIN_REQVER;
                 if (!oldVer)
                 {

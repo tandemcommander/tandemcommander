@@ -67,6 +67,43 @@ extern "C"
 #pragma message(__FILE__ " ERROR: FILE_ATTRIBUTE_ENCRYPTED != 0x00004000. You have to install latest version of Microsoft SDK. This value has changed!")
 #endif
 
+// The size in bytes, terminator included, of a buffer that holds any full path
+// or full file name the program can hand to a plugin: paths are UTF-8 and may be
+// as long as Windows allows (32767 UTF-16 units, at most 3 bytes each) since
+// interface version 104. Defined for plugins by name since version 107
+// (feature 088); the core defines the same value in src/common/salpath.h.
+#ifndef SAL_MAX_PATH_UTF8
+#define SAL_MAX_PATH_UTF8 (3 * 32767 + 1)
+#endif
+
+#ifdef __cplusplus
+#include <stdlib.h> // malloc, free
+// A heap buffer of SAL_MAX_PATH_UTF8 bytes (about 96 KB - too much for the stack)
+// for one full path or full file name, e.g. the 'fileName' output of
+// CSalamanderGeneralAbstract::GetNextFileNameForViewer. It starts as an empty
+// string and converts to char*; the pointer is NULL when memory is low (the
+// services that take such a buffer return FALSE for NULL). (feature 088)
+class CSalMaxPathBuffer
+{
+public:
+    CSalMaxPathBuffer()
+    {
+        Buffer = (char*)malloc(SAL_MAX_PATH_UTF8);
+        if (Buffer != NULL)
+            Buffer[0] = 0;
+    }
+    ~CSalMaxPathBuffer() { free(Buffer); }
+    operator char*() { return Buffer; }
+    char* Get() { return Buffer; }
+    int Size() const { return SAL_MAX_PATH_UTF8; }
+
+private:
+    char* Buffer;
+    CSalMaxPathBuffer(const CSalMaxPathBuffer&);            // not copyable
+    CSalMaxPathBuffer& operator=(const CSalMaxPathBuffer&); // not copyable
+};
+#endif // __cplusplus
+
 class CSalamanderGeneralAbstract;
 class CPluginDataInterfaceAbstract;
 class CPluginInterfaceForArchiverAbstract;

@@ -31,6 +31,8 @@ BOOL SalCloseAppWindowIsForeign(const CSalCloseAppWindow& w)
 {
     if (!w.Visible || w.Kind != scawOther)
         return FALSE;
+    if (w.ClosesUnattended)
+        return FALSE; // feature 088: a plug-in's viewer window, closed by the plug-in without a question
     BOOL hasCaption = (w.Style & WS_CAPTION) == WS_CAPTION;
     BOOL toolLike = (w.ExStyle & (WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE)) != 0;
     if (!hasCaption && toolLike)

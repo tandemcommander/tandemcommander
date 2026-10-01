@@ -791,14 +791,11 @@ void CViewerWindow::NextFile(int dir)
     // the buffer is sized for the UTF-8 worst case rather than MAX_PATH.
     if (EnumFilesSourceUID == -1)
         return;
-    // BUFFER SIZE: spl_gen.h:2703 documents "at least MAX_PATH", but the core
-    // fills this buffer with lstrcpyn(fileName, ..., SAL_MAX_PATH_UTF8)
-    // (src/salamdr6.cpp:205,223) and its own callers declare
-    // char[SAL_MAX_PATH_UTF8] (src/viewer3.cpp:967). A plugin that believed the
-    // header would take a buffer overflow on a long path. SAL_MAX_PATH_UTF8
-    // lives in the core-only header src/common/salpath.h, so the value is
-    // restated here; at ~96 KB it is heap, not stack.
-    const size_t kMaxPathUtf8 = 3 * 32767 + 1;
+    // BUFFER SIZE: the core fills this buffer with up to SAL_MAX_PATH_UTF8 bytes
+    // (src/salamdr6.cpp). Until interface 107 (feature 088) spl_gen.h said "at
+    // least MAX_PATH" and the constant was core-only; both are corrected now.
+    // At ~96 KB the buffer is heap, not stack.
+    const size_t kMaxPathUtf8 = SAL_MAX_PATH_UTF8;
     std::vector<char> nameBuf(kMaxPathUtf8, 0);
     char* fileName = &nameBuf[0];
     BOOL noMoreFiles = FALSE;
@@ -975,6 +972,9 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_CREATE:
     {
         ViewerWindowQueue.Add(new CWindowQueueItem(HWindow));
+        // feature 088 (interface 107): a viewer window holds nothing to lose - it may be closed
+        // without a question when an installer closes the program (see Release)
+        SalamanderGeneral->SetWindowClosesUnattended(HWindow, TRUE);
         BuildMenu();
         ApplyScheme(TRUE);
 

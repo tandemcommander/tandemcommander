@@ -829,6 +829,9 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         DarkMenus = SalamanderGeneral->IsDarkThemeActive() != FALSE;
         BuildMenu();
         ViewerWindowQueue.Add(new CWindowQueueItem(HWindow));
+        // feature 088 (interface 107): a viewer window holds nothing to lose - it may be closed
+        // without a question when an installer closes the program (see Release)
+        SalamanderGeneral->SetWindowClosesUnattended(HWindow, TRUE);
 
         if (!CTcWebHost::RuntimeAvailable())
         {

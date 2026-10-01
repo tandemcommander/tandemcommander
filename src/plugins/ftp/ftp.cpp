@@ -383,11 +383,16 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
     CALL_STACK_MESSAGE2("CPluginInterface::Release(, %d)", force);
 
     BOOL ret = FALSE;
+    // feature 088 (interface 107): when an installer closes the program nobody sits at the
+    // machine - nothing is asked and running operations are never cancelled for an update;
+    // the plug-in refuses to unload and the program stays
+    BOOL unattended = !force && SalamanderGeneral->IsUnattendedClose();
     if (force ||
         FTPOperationsList.IsEmpty() ||
-        SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_CANCELEXISTINGOPER),
-                                         LoadStr(IDS_FTPPLUGINTITLE),
-                                         MB_YESNO | MB_ICONQUESTION | MSGBOXEX_ESCAPEENABLED) == IDYES)
+        !unattended &&
+            SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_CANCELEXISTINGOPER),
+                                             LoadStr(IDS_FTPPLUGINTITLE),
+                                             MB_YESNO | MB_ICONQUESTION | MSGBOXEX_ESCAPEENABLED) == IDYES)
     { // any cancellation of all operations is performed in ReleaseFS()
         ret = TRUE;
     }

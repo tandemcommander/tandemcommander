@@ -18,7 +18,10 @@
 // maximum path length accepted by W APIs with the \\?\ prefix (WCHARs)
 #define SAL_MAX_PATH_W 32767
 // worst-case UTF-8 byte length of such a path (3 bytes per UTF-16 unit) + null
+// (also defined for plugins in src/plugins/shared/spl_base.h - same value)
+#ifndef SAL_MAX_PATH_UTF8
 #define SAL_MAX_PATH_UTF8 (3 * SAL_MAX_PATH_W + 1)
+#endif
 
 //*****************************************************************************
 //

@@ -449,6 +449,7 @@ CSalamanderGeneral::CSalamanderGeneral()
     Plugin = NULL;
     LanguageModule = NULL;
     HelpFileName[0] = 0;
+    PluginBuiltForVersion = 0;
 }
 
 CSalamanderGeneral::~CSalamanderGeneral()
@@ -4017,6 +4018,61 @@ BOOL CSalamanderGeneral::IsFileEnumSourcePanel(int srcUID, int* panel)
     return ::IsFileEnumSourcePanel(srcUID, panel);
 }
 
+// feature 088 (contract B3): GetNext/GetPreviousFileNameForViewer for a plug-in
+// whose buffer is only MAX_PATH bytes. The name is fetched into a buffer of the
+// real size; a name that does not fit is stepped over (the enumeration goes on
+// from it), so the plug-in sees the files it can hold and never an overflow.
+BOOL CSalamanderGeneral::GetFileNameForOldViewer(BOOL next, int srcUID, int* lastFileIndex, const char* lastFileName,
+                                                 BOOL preferSelected, BOOL onlyAssociatedExtensions,
+                                                 char* fileName, BOOL* noMoreFiles, BOOL* srcBusy)
+{
+    char* name = (char*)malloc(SAL_MAX_PATH_UTF8);
+    char* last = (char*)malloc(SAL_MAX_PATH_UTF8);
+    if (noMoreFiles != NULL)
+        *noMoreFiles = FALSE;
+    if (srcBusy != NULL)
+        *srcBusy = FALSE;
+    if (name == NULL || last == NULL)
+    {
+        free(name);
+        free(last);
+        TRACE_E(LOW_MEMORY);
+        return FALSE;
+    }
+    lstrcpyn(last, lastFileName != NULL ? lastFileName : "", SAL_MAX_PATH_UTF8);
+    int index = *lastFileIndex;
+    BOOL ret = FALSE;
+    while (1)
+    {
+        BOOL noMore = FALSE;
+        BOOL busy = FALSE;
+        name[0] = 0;
+        BOOL found = next ? ::GetNextFileNameForViewer(srcUID, &index, last, preferSelected, onlyAssociatedExtensions,
+                                                       name, &noMore, &busy, Plugin)
+                          : ::GetPreviousFileNameForViewer(srcUID, &index, last, preferSelected,
+                                                           onlyAssociatedExtensions, name, &noMore, &busy, Plugin);
+        if (!found)
+        {
+            if (noMoreFiles != NULL)
+                *noMoreFiles = noMore;
+            if (srcBusy != NULL)
+                *srcBusy = busy;
+            break;
+        }
+        if (SalViewerNameFitsPlugin(PluginBuiltForVersion, strlen(name)))
+        {
+            lstrcpyn(fileName, name, MAX_PATH);
+            *lastFileIndex = index;
+            ret = TRUE;
+            break;
+        }
+        lstrcpyn(last, name, SAL_MAX_PATH_UTF8); // too long for this plug-in: go on from it
+    }
+    free(name);
+    free(last);
+    return ret;
+}
+
 BOOL CSalamanderGeneral::GetNextFileNameForViewer(int srcUID, int* lastFileIndex, const char* lastFileName,
                                                   BOOL preferSelected, BOOL onlyAssociatedExtensions,
                                                   char* fileName, BOOL* noMoreFiles, BOOL* srcBusy)
@@ -4041,6 +4097,12 @@ BOOL CSalamanderGeneral::GetNextFileNameForViewer(int srcUID, int* lastFileIndex
         TRACE_E("CSalamanderGeneral::GetNextFileNameForViewer(): unexpected call, plugin is not initialized yet!");
         return FALSE;
     }
+    // feature 088 (contract B3): a plug-in built for an interface older than 107
+    // was promised a MAX_PATH buffer; it never gets a longer name - such files
+    // are stepped over
+    if (PluginBuiltForVersion < SAL_PLUGINVER_LONG_VIEWER_NAMES)
+        return GetFileNameForOldViewer(TRUE, srcUID, lastFileIndex, lastFileName, preferSelected,
+                                       onlyAssociatedExtensions, fileName, noMoreFiles, srcBusy);
     return ::GetNextFileNameForViewer(srcUID, lastFileIndex, lastFileName, preferSelected,
                                       onlyAssociatedExtensions, fileName,
                                       noMoreFiles, srcBusy, Plugin);
@@ -4070,6 +4132,12 @@ BOOL CSalamanderGeneral::GetPreviousFileNameForViewer(int srcUID, int* lastFileI
         TRACE_E("CSalamanderGeneral::GetPreviousFileNameForViewer(): unexpected call, plugin is not initialized yet!");
         return FALSE;
     }
+    // feature 088 (contract B3): a plug-in built for an interface older than 107
+    // was promised a MAX_PATH buffer; it never gets a longer name - such files
+    // are stepped over
+    if (PluginBuiltForVersion < SAL_PLUGINVER_LONG_VIEWER_NAMES)
+        return GetFileNameForOldViewer(FALSE, srcUID, lastFileIndex, lastFileName, preferSelected,
+                                       onlyAssociatedExtensions, fileName, noMoreFiles, srcBusy);
     return ::GetPreviousFileNameForViewer(srcUID, lastFileIndex, lastFileName, preferSelected,
                                           onlyAssociatedExtensions, fileName,
                                           noMoreFiles, srcBusy, Plugin);
@@ -5332,6 +5400,30 @@ BOOL CSalamanderGeneral::ThemeHandleCtlColor(UINT uMsg, WPARAM wParam, LPARAM lP
 void CSalamanderGeneral::ThemeSubclassPropSheetFrame(HWND hFrame)
 {
     ::ThemeSubclassPropSheetFrame(hFrame);
+}
+
+// unattended close for plugins (feature 088, interface version 107)
+
+BOOL CSalamanderGeneral::IsUnattendedClose()
+{
+    return UnattendedClose;
+}
+
+void CSalamanderGeneral::SetWindowClosesUnattended(HWND hWindow, BOOL closes)
+{
+    // The declaration is a window property: the close decision
+    // (CMainWindow::DecideCloseApp) reads it without sending the window anything,
+    // and it disappears with the window, so no stale entry can outlive it.
+    if (hWindow == NULL || !IsWindow(hWindow))
+        return;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hWindow, &pid);
+    if (pid != GetCurrentProcessId())
+        return;
+    if (closes)
+        SetPropA(hWindow, SALCLOSEAPP_WINDOW_PROP, (HANDLE)(INT_PTR)1);
+    else
+        RemovePropA(hWindow, SALCLOSEAPP_WINDOW_PROP);
 }
 
 //
