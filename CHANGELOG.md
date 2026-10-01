@@ -22,7 +22,51 @@ for creating RAR archives; 7-Zip is added for opening and unpacking ARJ and
 LZH/LHA archives. **RAR archives still cannot be opened or unpacked**; that
 comes with a later version, after the built-in 7-Zip engine is updated.
 
+Privacy fixes (feature 085): privacy defects found while writing the privacy
+statement of 0.1.8 are fixed, and `PRIVACY.md` now describes the program
+without them.
+
 ### Fixed
+
+- **A password typed as part of an address is no longer kept in history.**
+  Typing `ftp://user:password@server` into FTP Quick Connect, Change Directory
+  (Shift+F7), a Copy or Move target (also the FTP plugin's download target),
+  Find's *Look in* field or the command line still uses the password for that
+  operation, but the drop-down list and the saved history now hold
+  `ftp://user@server`. Until now the password was saved in the registry as
+  plain text, even without *Save password*, and was included in an exported
+  configuration. Histories saved by 0.1.8 and older are cleaned when this
+  version next saves its configuration (the FTP Quick Connect history once the
+  FTP plugin has been used in that session). On the command line every address in
+  the command is cleaned, so a recalled command such as
+  `curl ftp://user@server/file` needs the password again. Not recognised: a
+  password containing `/`, and on the command line a password containing a
+  space, a quote, `<` or `>` outside a quoted address — use the password field.
+- **A Markdown document can no longer open a web page or another window by
+  itself.** A document could make the Markdown Viewer open the default browser
+  at an address of its choosing without any click (for example with an
+  automatic page refresh), or open further viewer windows and messages. Links
+  now open only when you click them or activate them with the keyboard. Both
+  viewers share this rule; the Code Viewer opens no links at all.
+- **Remote images in the Markdown Viewer** (after *View ▸ Load Remote Images*)
+  no longer identify themselves as `OpenSalamander-mdview` but as
+  `TandemCommander-mdview`; they neither store nor send cookies; and the
+  viewer no longer signs in automatically when a server asks for Windows
+  authentication — a server on your local network could make it answer with
+  your Windows account. An error page from the server is shown as a broken
+  image instead of being handed to the viewer as image data. On a network
+  whose proxy server requires signing in with your Windows account, remote
+  images therefore no longer load.
+- **Cancelling the Master Password prompt no longer saves an SFTP password or
+  passphrase in the weaker scrambled form.** When a Master Password is in use
+  but not yet entered, saving the bookmark asks for it; cancelling used to save the
+  secret anyway, only scrambled. It is now not saved and *Save password* is
+  turned off, as the FTP plugin always did; the connection still uses it.
+- **Stronger protection of saved passwords.** The random values behind the
+  encryption of saved passwords (with a Master Password) now come from
+  Windows' cryptographic random generator instead of a generator seeded with
+  the time and the process number. Passwords saved by older versions are read
+  as before.
 
 - **External archivers start.** The program runs the archiver itself instead
   of the missing `salspawn.exe` helper. If the archiver's program cannot be
@@ -52,6 +96,13 @@ comes with a later version, after the built-in 7-Zip engine is updated.
 
 ### Changed
 
+- **The viewer engine's crash reports stay on your computer.** If the engine
+  that the Markdown Viewer and the Code Viewer display documents with
+  (Microsoft Edge WebView2) crashes, its crash report is no longer sent to
+  Microsoft. While Tandem Commander 0.1.5 to 0.1.8 is running at the same time
+  and has used one of these viewers, the two cannot share that engine: in the instance that starts it
+  second, the viewer reports that its display engine is unavailable and
+  closes, until the other instance is closed.
 - **Only programs that work are offered.** An external archiver's entries in
   *Pack* (Alt+F5) and *Unpack* (Alt+F9), and the archive types it serves, are
   offered only while its program is found. Install it and run *Archivers

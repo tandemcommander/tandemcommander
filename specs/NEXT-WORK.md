@@ -14,6 +14,9 @@ findings; section R is closed. Its owed human steps moved to item 3, the winget
 submission of 0.1.8 to item 6. The two preserved reference trees item 3 relied
 on are **no longer on disk** (see there).
 
+**Revised 2026-10-01** — item 7 (the privacy defects of feature 083) is done
+as feature 085, except F9; the GUI steps of 085 join item 3.
+
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
 `specs/069-finish-encoding-fixes/REMAINING-WORK.md`,
@@ -387,7 +390,46 @@ has `DisplayVersion`).
 
 ---
 
-## 7. Privacy-relevant defects found by feature 083 (recorded 2026-09-30, not fixed)
+## 7. Privacy-relevant defects found by feature 083 — ✅ F1–F7 FIXED (feature 085, 2026-10-01)
+
+> Delivered as `085-privacy-defect-fixes`; record:
+> [`085-privacy-defect-fixes/fix-log.md`](085-privacy-defect-fixes/fix-log.md).
+> `PRIVACY.md` was updated in the same change. F1 (passwords in typed
+> addresses kept in history — five sinks, two of which 083 had not named:
+> the Copy/Move target and Find's *Look in*), F2 (remote-image requests —
+> and the probe showed the old code also **answered a Negotiate/NTLM
+> challenge with the user's Windows logon**), F3 (navigation without a
+> click, with a second layer in mdview's generator because the engine's
+> user-gesture flag is *transient*), F6 (salts), F7 (SFTP cancelled prompt),
+> F4 (decided 2026-10-01: crash upload off — one options builder for host
+> and keeper) and F5 (contract text) are done. The first independent review
+> of F1 was **REJECTED** (a password with a space or quote kept in full);
+> fixed and re-reviewed.
+>
+> **Left open:**
+>
+> - **The GUI steps** `085/quickstart.md` G1–G6 — join item 3's sweep.
+> - **F9** — the FTP anonymous-login e-mail default `name@someserver.com` is
+>   sent to anonymous servers (`src/plugins/ftp/ftp3.cpp:508`). Not asked for.
+> - **F8** — withdrawn: the shell-extension registration only runs if
+>   `utils\salext*.dll` exists (`src/salamdr1.cpp:4384-4398`); 0.1.8 ships
+>   neither DLL, so nothing is registered or left behind. Open question
+>   instead: is the missing copy hook (drag out of archives into Explorer)
+>   intended?
+> - **New (found by 085's review): the ZIP plugin's AES salt comes from
+>   `rand()` seeded with time ^ pid** (`src/plugins/zip/crypt.cpp:118-127`,
+>   used by `zip/add.cpp:1632` for AES-encrypted archives). A repeated salt
+>   with the same password repeats the AES-CTR keystream. Same fix as F6
+>   (`BCryptGenRandom`); small, but it changes archive-creation code, so it is
+>   a feature of its own. The vendored 7-Zip has its own generator and belongs
+>   to item 8.
+> - SFTP: `sftp:user:password@host` is not split (the plugin takes
+>   `user:password` as the user name and would echo it into the panel path);
+>   unreachable in practice because the server rejects such a user. Recorded
+>   in `085/research.md` R1, not changed.
+
+<details>
+<summary>Original entry</summary>
 
 Found while inventorying every place the product stores or sends data for
 `PRIVACY.md`; evidence and detail in
@@ -429,6 +471,8 @@ statement*).
   intended?
 - **F9** — the FTP anonymous-login e-mail default `name@someserver.com` is
   sent to anonymous servers (`src/plugins/ftp/ftp3.cpp:508`).
+
+</details>
 
 ## 8. Upgrade the vendored 7-Zip 16.04 → 25.x (recorded 2026-10-01, needs its own spec)
 

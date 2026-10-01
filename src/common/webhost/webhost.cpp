@@ -58,9 +58,9 @@ const wchar_t* TcWebBrowserArguments()
 //
 // IsCustomCrashReportingEnabled (feature 085, privacy defect F4): by default the
 // engine sends its crash dumps to Microsoft (respecting the OS consent); with
-// TRUE, "Windows won't send crash data to Microsoft endpoint" and the dumps stay
-// in the engine's folder under the user data folder. The program promises to
-// send nothing by itself; the viewer engine now keeps that promise too.
+// TRUE, "Windows won't send crash data to Microsoft endpoint" (where the engine
+// then keeps them locally is its own business, not measured). The program
+// promises to send nothing by itself; the viewer engine now keeps that promise too.
 ComPtr<CoreWebView2EnvironmentOptions> TcWebBuildEnvOptions()
 {
     auto options = Make<CoreWebView2EnvironmentOptions>();

@@ -119,6 +119,18 @@ locale, where a trail byte can be 0x40 (`@`); the worst case is that part of a
 user name containing `:` is also removed from the history entry — privacy-safe,
 and not reachable in a Latin-script locale.
 
+**Revised after the first independent review (REJECT, 2026-10-01).** The rule
+above ended the address part at white space and quotes everywhere and at `\`
+in form 2; FTP accepts all of these inside a password (`FTPSplitPath`'s
+`passEnd` loop stops only at `@ : / \`, "leave the password as is (do not
+skip spaces)"), so `alice:correct horse@host` kept the whole password. Now a
+single value ends only at `/`; the command line keeps the word ending, except
+inside a quoted URL; `%3A`/`%40` count as `:`/`@` (the FTP plugin decodes them
+first when *ConvertHexEscSeq* is on); the FTP address form is the pure, tested
+`SalStripAddressPassword`; and the copy/move strip is limited to `CopyHistory`
+(the dialog also serves Create Directory, Quick Rename and Edit New). The
+contract (`contracts/history-password-strip.md`) holds the current rule.
+
 ## R4 — F3: the engine's user-gesture flag
 
 `ICoreWebView2NavigationStartingEventArgs::get_IsUserInitiated` and
@@ -200,8 +212,9 @@ next configuration save re-encrypts.
 Microsoft's reference: *"When `IsCustomCrashReportingEnabled` is set to
 `TRUE`, Windows won't send crash data to Microsoft endpoint. […] default
 `FALSE`, in this case, WebView will respect OS consent."* (Introduced in SDK
-1.0.1518.46; the vendored SDK is 1.0.4078.44.) The dumps then stay local, in
-the engine's own folder under the user data folder.
+1.0.1518.46; the vendored SDK is 1.0.4078.44.) Where the engine then keeps the
+dumps is not documented there and was not measured — the records claim only
+that they are not sent (corrected after the claims review).
 
 The options object is built twice — `TcWebBuildEnvOptions` (`webhost.cpp:51`)
 and `TcWebKeeperEnvOptions` (`webkeeper.cpp:28`) — and Microsoft documents
@@ -219,8 +232,12 @@ the whole options object, so the two can never drift apart again.
 Guard: `rg -c "put_IsCustomCrashReportingEnabled" src/` == 1 (outside
 `src/common/dep/`).
 Accepted risk (clarification Q1): an older instance running at the same time
-holds an engine with the old setting; the later viewer falls back to the text
-view until that instance closes.
+holds an engine with the old setting; the viewer started later gets
+`ERROR_INVALID_STATE`, and `EngineFailed` (both viewers) shows "engine
+unavailable" and closes the window, until that instance closes. (The
+clarification question had said "falls back to the text view"; checking the
+code during implementation showed that neither viewer does that after the
+runtime check — corrected here and in the changelog.)
 
 F5: `architecture/11-webview2-integration.md:59-60` says the folder "holds
 cache only"; it also holds cookie, history and storage databases (083 R-side

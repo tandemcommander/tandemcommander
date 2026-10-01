@@ -9,7 +9,7 @@
 
 ### Session 2026-10-01
 
-- Q: F4 — the viewer engine's crash dumps go to Microsoft by default. What does this feature do? → A: **Turn sending off.** Dumps stay in the viewer engine's local data folder; nothing is uploaded. Set once, for both viewers. Accepted risk: two instances of *different* program versions running at the same time cannot share the viewer engine, and the later one falls back to the plain text view.
+- Q: F4 — the viewer engine's crash dumps go to Microsoft by default. What does this feature do? → A: **Turn sending off.** Dumps stay in the viewer engine's local data folder; nothing is uploaded. Set once, for both viewers. Accepted risk: two instances of *different* program versions running at the same time cannot share the viewer engine, and the later one falls back to the plain text view. *(Correction found during implementation: neither viewer falls back to text when the engine fails after the runtime check - both show "engine unavailable" and close (`mdview/viewer.cpp` and `codeview/viewer.cpp` `EngineFailed`). The decision stands; the records state the real consequence.)*
 - Q: F1, command line — where is a password searched for in a command before it goes to history? → A: **Anywhere in the command.** `curl ftp://u:secret@h/f` is kept as `curl ftp://u@h/f`; recalling it from history then needs the password typed again.
 - (Scope, decided by the author from the 083 record) F5 — `architecture/11-webview2-integration.md` says the viewer data folder "holds cache only". The F4 change edits that contract anyway, so the inaccurate sentence is corrected in the same change. F9 (FTP anonymous e-mail placeholder) stays out.
 
@@ -245,8 +245,10 @@ share the same setting.
   typed secret triggers the prompt).
 - **Two program versions running at once** (an older instance still
   open): the viewer engine cannot be shared between environments with
-  different crash-reporting settings; the viewer started second falls
-  back to the text view. Accepted (clarification Q1).
+  different crash-reporting settings; the viewer started second shows
+  "engine unavailable" and closes (`EngineFailed` in both viewers).
+  Accepted (clarification Q1, whose wording "falls back to the text view"
+  was corrected during implementation).
 
 ## Requirements *(mandatory)*
 
@@ -267,11 +269,14 @@ share the same setting.
 - **FR-003**: FTP Quick Connect MUST store its Address history entry
   with the password removed, for every address form it accepts
   (`ftp://`, `ftps://`, `ftp:`, `//`, bare `user:password@host`).
-- **FR-004**: The rule MUST remove everything from the first `:` of the
-  user part up to the last `@` of the address part (the part ending at
-  the first `/`, white space, quote or end; for the prefix-without-`//`
-  form also at `\`), and MUST NOT change a value that has no `@` in that
-  part or no `:` before it.
+- **FR-004**: The rule MUST remove everything from the first `:` (or
+  `%3A`) of the user part up to the last `@` (or `%40`) of the address
+  part. For a single typed value the part ends only at the first `/` or
+  the end (a password may contain spaces and quotes); on the command line
+  it also ends where a word ends, except inside a quoted URL. The rule
+  MUST NOT change a value that has no `@` in that part or no `:` before
+  it. *(Revised after the first independent review, which rejected the
+  white-space/quote ending for single values.)*
 - **FR-005**: When histories are loaded at start-up (core: the four
   histories in FR-001; FTP: Quick Connect Address), entries MUST be
   cleaned by the same rule; an entry that becomes identical to a more

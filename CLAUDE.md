@@ -807,3 +807,38 @@ plugin architecture preservation, UI consistency.
     written but **not run**, at the maintainer's request; they are owed.
     Records: `specs/084-archiver-cleanup/fix-log.md`, `inventory.md`,
     `closing-report.md`.
+- 085-privacy-defect-fixes: **the privacy defects 083 recorded are fixed**
+  (NEXT-WORK item 7, F1–F7; F9 left), `PRIVACY.md` updated in the same change.
+  - **F1, passwords in typed addresses** never reach a history: one pure rule,
+    `src/common/salurlpwd.*` (compiled into core, saltests and the FTP plugin),
+    applied to the *history copy* only — never to the value the operation uses.
+    Three forms: single value (part ends only at `/`; FTP accepts spaces and
+    quotes in a password), command line (word ends, except a quoted URL), FTP
+    address field (`SalStripAddressPassword`, the plugin passes its FS names).
+    `%3A`/`%40` count. Sinks: Change Directory, Copy/Move target (core dialogs,
+    and via `CSalamanderGeneral::AddValueToStdHistoryValues` for
+    `CopyHistory`/`ChangeDirHistory` — no ABI change), Find *Look in*
+    (`HistoryComboBox(..., stripPasswords)`), command line, FTP Quick Connect;
+    histories are also cleaned after load. Location stores (Alt+F12, tabs, hot
+    paths) record the FS-reported path, which never holds the FTP password.
+    First review **REJECTED** (spaces/quotes kept the password) — fixed.
+  - **F3**: the shared WebView2 host forwards a cancelled navigation to the
+    link handler only if `get_IsUserInitiated`; because that flag is
+    *transient* activation, mdview also renames raw-HTML `http-equiv` to
+    `data-tc-equiv` (`htmlgen.cpp AppendRawHtml`; its first version was
+    REJECTED: md4c sends a raw-HTML line break as its own call, so `=` on
+    the next line bypassed it — the name is now renamed at a call's end too).
+  - **F2**: mdview's fetch moved to `remotefetch.*` (no PCH, probe-buildable):
+    UA `TandemCommander-mdview`, cookies + automatic authentication off, 2xx
+    only. The probe's negative control showed the old code **sent an
+    `Authorization` header** (Windows logon) on a 401 Negotiate/NTLM.
+  - **F4/F5**: one environment-options builder for host and keeper
+    (`webenvopts.h`), `IsCustomCrashReportingEnabled = TRUE`; mismatched
+    options make the later environment fail (per Microsoft, not measured), so a
+    0.1.5–0.1.8 instance running at the
+    same time cannot share the engine (viewer says "engine unavailable").
+  - **F6** `BCryptGenRandom` salts; **F7** SFTP cancelled Master Password prompt
+    no longer saves a scrambled secret (FTP parity).
+  - Found, not fixed: the ZIP plugin's AES salt still uses `rand()` (NEXT-WORK
+    item 7). saltests 1647 → 1816, htmlgen 29 → 38. GUI steps owed
+    (`quickstart.md` G1–G6). Records: `specs/085-privacy-defect-fixes/fix-log.md`.

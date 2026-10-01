@@ -119,15 +119,21 @@ proxy server. How it is protected depends on the Master Password
   configuration can unscramble them. If you save passwords, please set a
   Master Password.
 
-Limitations you should know about:
+Passwords typed as part of an address (`ftp://user:password@server`) — in
+FTP Quick Connect, in Change Directory, as a copy or move target, in Find's
+*Look in* field or on the command line — are used for that operation but are
+not kept in history: the history entry reads `ftp://user@server`. Version
+0.1.8 and older saved them there as plain text; such entries are cleaned the
+next time the configuration is saved — for the FTP Quick Connect history, the
+next time it is saved after the FTP plugin has been used — or remove them
+with *Clear History*. A password that contains `/` — or, on the command line,
+a space, a quote, `<` or `>`, unless the address is enclosed in quotes — is
+not recognised as part of the address and stays in the entry; use the
+password field instead.
 
-- If you type a password as part of an address (`ftp://user:password@server`)
-  — in FTP Quick Connect, in Change Directory or on the command line — it is
-  saved in that history as plain text. Use the password field instead.
-  *Clear History* removes such entries. We intend to fix this in a future
-  version.
-- If you cancel the Master Password prompt while saving an SFTP password, that
-  password is saved scrambled only.
+If you cancel the Master Password prompt while saving a new FTP, FTP proxy or
+SFTP password or an SFTP key passphrase, it is not saved at all (*Save
+password* is turned off); the connection still uses it.
 
 Passwords for network drives are entered in a Windows dialog and are saved
 only if you choose so there, by Windows.
@@ -153,12 +159,14 @@ network only in these situations, each started by something you do:
   the open window only and is not remembered. The server hosting an image
   (and a proxy or redirect target on the way) then receives an ordinary web
   request: your IP address, the time, the image's address, and the
-  identification `OpenSalamander-mdview` (a name inherited from the program
-  Tandem Commander is based on). Nothing else from the document is sent. The
-  viewer is designed to block anything else a document tries to load from the
-  internet. Web and e-mail links in a document open in your browser or e-mail
-  program — normally when you click them, though a document can also trigger
-  this by itself — and lead wherever the document's author pointed them.
+  identification `TandemCommander-mdview`. No cookies are stored or sent, and
+  the viewer never signs in to a server with your Windows credentials. Nothing
+  else from the document is sent. The viewer is designed to block anything
+  else a document tries to load from the internet. Web and e-mail links in a
+  document open in your browser or e-mail program only when you click them
+  (or activate them with the keyboard), and lead wherever the document's
+  author pointed them; the viewer is designed so that a document cannot open
+  them without a click or key press of yours.
 - **Network drives and shared folders** — when you open a network location,
   Windows connects to it.
 - **Links in the program** — links in, for example, the About box, the Help
@@ -183,13 +191,14 @@ Commander" with the plugin's version number.
   Tandem Commander when it shows your files, and behave as their vendors
   designed them.
 - **Microsoft Edge WebView2**, used by the Markdown Viewer and the Code
-  Viewer, is provided by Microsoft. Its diagnostic data, its crash reports and
-  its updates are governed by Microsoft's privacy statement and your Windows
-  diagnostic-data settings (see Microsoft's
+  Viewer, is provided by Microsoft. Its diagnostic data and its updates are
+  governed by Microsoft's privacy statement and your Windows diagnostic-data
+  settings (see Microsoft's
   [Data and privacy in WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/data-privacy)).
   The program turns off some of its background features (background
-  networking, sync, component updates and SmartScreen checks) but does not
-  change Microsoft's diagnostic-data collection.
+  networking, sync, component updates and SmartScreen checks) and tells it not
+  to send its crash reports to Microsoft, so they stay on your computer, but
+  does not change Microsoft's other diagnostic-data collection.
 - **External archivers** (7-Zip and WinRAR's console programs) run only when
   you work with an archive format handled by an external program installed on
   your computer; they are separate programs with their own behaviour. To find
@@ -255,5 +264,11 @@ project's repository.
 
 ---
 
-This statement describes Tandem Commander 0.1.8 and the unreleased changes
-prepared after it (`CHANGELOG.md`, *Unreleased*). Last updated 2026-10-01.
+This statement describes the version in development after Tandem Commander
+0.1.8 (`CHANGELOG.md`, *Unreleased*). In 0.1.8 itself: a password typed as part
+of an address is saved in history as plain text; a Markdown document can open
+a link without a click; remote images identify as `OpenSalamander-mdview`, and
+the viewer may answer a server's request for Windows sign-in with your Windows
+account; cancelling the Master Password prompt saves an SFTP password or
+passphrase scrambled; and the viewer engine's crash reports follow your
+Windows diagnostic-data settings. Last updated 2026-10-01.

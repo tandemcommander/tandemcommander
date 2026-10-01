@@ -59,8 +59,7 @@ already been used in the session.
    cold browser tree and gains nothing from the keeper. The folder holds the
    engine's working data — HTTP and code caches (which can include documents
    and images that were viewed), the cookie, history and web-storage databases
-   every profile has, and since feature 085 the engine's own crash dumps (see
-   item 2). None of it is configuration; deleting the folder while no viewer
+   every profile has. None of it is configuration; deleting the folder while no viewer
    runs is safe. (Corrected in 085: earlier text said "cache only".) (Before 065 mdview used
    `...\Tandem Commander\mdview.WebView2`; 065 renames it and removes the
    old folder best-effort at first view.)
@@ -101,13 +100,16 @@ already been used in the session.
 
    - `AdditionalBrowserArguments` = `TcWebBrowserArguments()`;
    - `IsCustomCrashReportingEnabled = TRUE` — *"Windows won't send crash data
-     to Microsoft endpoint"*; the engine keeps its dumps locally under the
-     user data folder (privacy defect F4 of feature 083, decided 2026-10-01).
-     Consequence: a running instance of **0.1.8 or older** (default
-     `FALSE`) and a newer one cannot share a tree; whichever starts its engine
-     second gets `ERROR_INVALID_STATE`; its viewer reports the engine as
-     unavailable (`IDS_ENGINE_UNAVAILABLE`) and closes, until the other
-     instance closes. Accepted.
+     to Microsoft endpoint"* (privacy defect F4 of feature 083, decided
+     2026-10-01). Where the engine then keeps its dumps is not documented and
+     was not measured (`ICoreWebView2Environment11::get_FailureReportFolderPath`
+     would tell). Consequence, per Microsoft's documentation (not measured): a
+     running instance of **0.1.5 to 0.1.8** (the versions that share this
+     folder; default `FALSE`) that has started its engine and a newer one cannot
+     share a tree; whichever starts its engine second gets
+     `ERROR_INVALID_STATE`; its viewer reports the engine as unavailable
+     (`IDS_ENGINE_UNAVAILABLE`) and closes, until the other instance closes.
+     Accepted.
 
    Guard: `rg -c "put_IsCustomCrashReportingEnabled" src/ --glob '!src/common/dep/**'`
    must report exactly one file.
