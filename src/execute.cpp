@@ -59,7 +59,15 @@ void CComboboxEdit::ReplaceText(const char* text)
 {
     // we must refresh the selection because the dumb combobox forgot it
     SendMessage(HWindow, EM_SETSEL, SelStart, SelEnd);
-    SendMessage(HWindow, EM_REPLACESEL, TRUE, (LPARAM)text);
+    // feature 093: 'text' is UTF-8 (a path or an ASCII keyword) - insert it wide
+    WCHAR* w = SalU8ToWAlloc(text);
+    if (w != NULL)
+    {
+        SendMessageW(HWindow, EM_REPLACESEL, TRUE, (LPARAM)w);
+        free(w);
+        return;
+    }
+    SendMessage(HWindow, EM_REPLACESEL, TRUE, (LPARAM)text); // not valid UTF-8: legacy path
 }
 
 //******************************************************************************

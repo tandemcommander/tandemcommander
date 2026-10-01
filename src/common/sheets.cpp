@@ -1164,7 +1164,9 @@ int CTreePropHolderDlg::ExecuteIndirect(LPCDLGTEMPLATE hDialogTemplate)
     CreateDialogIndirectParam(Modul, hDialogTemplate, Parent,
                               (DLGPROC)CDialog::CDialogProc, (LPARAM)this);
     MSG msg;
-    while (ExitButton == -1 && GetMessage(&msg, NULL, 0, 0))
+    // feature 093: wide loop - typed characters reach the Unicode text fields of
+    // the pages intact; neutral for code-page windows
+    while (ExitButton == -1 && GetMessageW(&msg, NULL, 0, 0))
     {
         CWindowsObject* wnd = WindowsManager.GetWindowPtr(GetActiveWindow());
         if ((msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) &&
@@ -1173,10 +1175,10 @@ int CTreePropHolderDlg::ExecuteIndirect(LPCDLGTEMPLATE hDialogTemplate)
             if (msg.message == WM_KEYDOWN)
                 OnCtrlTab((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0);
         }
-        else if (wnd == NULL || !wnd->Is(otDialog) || !IsDialogMessage(wnd->HWindow, &msg))
+        else if (wnd == NULL || !wnd->Is(otDialog) || !IsDialogMessageW(wnd->HWindow, &msg))
         {
             TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            DispatchMessageW(&msg);
         }
     }
     EnableWindow(Parent, TRUE);

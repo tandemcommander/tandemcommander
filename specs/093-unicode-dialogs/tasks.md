@@ -12,13 +12,13 @@ strict guard, probe, independent review, fixes, fix-log, commit.
 
 ## Phase 2 - User Stories 1-3: loops and attached helpers (S1)
 
-- [ ] T004 [US2] src/find.cpp Find thread loop and the secondary loops in src/finddlg1.cpp: wide
-- [ ] T005 [US3] src/common/sheets.cpp Configuration holder loop: wide
-- [ ] T006 src/salamdr1.cpp main loop: `IsDialogMessageW`
-- [ ] T007 [US2] src/common/winlib.cpp `CWindow::AttachToWindow` follows the control's kind; audit `WindowProc` overrides of helpers attached to text fields (`CComboboxEdit` src/execute.cpp, `CEditLBEdit` src/edtlbwnd.cpp, key forwarders)
-- [ ] T008 src/common/winlib.cpp overflow in `CTransferInfo::EditLine` / `SalGetWindowTextU8` cuts at a whole character; saltests for the pure part
-- [ ] T009 Probe: extend dialogs_probe.ps1 with the five modal dialogs not driven yet (Convert, Make File List, compare arguments, Change Icon, volume label) and the in-place list editor; run on the pre-change build (negative control) and the new build
-- [ ] T010 Independent review; fixes; commit `[093] S1 ...`
+- [X] T004 [US2] src/find.cpp Find thread loop and the secondary loops in src/finddlg1.cpp: wide
+- [X] T005 [US3] src/common/sheets.cpp Configuration holder loop: wide
+- [X] T006 src/salamdr1.cpp main loop: `IsDialogMessageW`
+- [X] T007 [US2] src/common/winlib.cpp `CWindow::AttachToWindow` follows the control's kind; audit `WindowProc` overrides of helpers attached to text fields (`CComboboxEdit` src/execute.cpp, `CEditLBEdit` src/edtlbwnd.cpp, key forwarders)
+- [X] T008 src/common/winlib.cpp overflow in `CTransferInfo::EditLine` / `SalGetWindowTextU8` cuts at a whole character; saltests for the pure part
+- [X] T009 Probe: extend dialogs_probe.ps1 with the five modal dialogs not driven yet (Convert, Make File List, compare arguments, Change Icon, volume label) and the in-place list editor; run on the pre-change build (negative control) and the new build
+- [X] T010 Independent review; fixes; commit `[093] S1 ...`
 
 ## Phase 3 - User Story 4: 7-Zip password (S2)
 

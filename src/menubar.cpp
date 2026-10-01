@@ -388,7 +388,9 @@ void CMenuBar::EnterMenuInternal(int index, BOOL openWidthSelect, BOOL byMouse)
             {
                 if (!HotIndexIsTracked)
                 {
-                    BOOL found = HotKeyIndexLookup((char)msg.wParam, index);
+                    // this loop takes messages with the code-page PeekMessage; the byte is in the
+                    // code page of the keyboard layout, which SalACPCharToW takes to be the system's
+                    BOOL found = HotKeyIndexLookup(SalACPCharToW((char)msg.wParam), index);
                     if (found)
                     {
                         if (index != HotIndex)
@@ -675,30 +677,16 @@ void CMenuBar::TrackHotIndex()
     //  TRACE_I("CMenuBar::TrackHotIndex end");
 }
 
-BOOL CMenuBar::HotKeyIndexLookup(char hotKey, int& itemIndex)
+BOOL CMenuBar::HotKeyIndexLookup(WCHAR hotKey, int& itemIndex)
 {
     CALL_STACK_MESSAGE3("CMenuBar::HotKeyIndexLookup(%u, %d)", hotKey, itemIndex);
+    // feature 093: the item strings are UTF-8 and the key is a UTF-16 unit; the
+    // old comparison of one byte through the code-page table took U+0159 from a
+    // wide loop for 'Y' and never matched an accented mnemonic
     int i;
     for (i = 0; i < Menu->Items.Count; i++)
     {
-        const char* found = NULL;
-        const char* s = Menu->Items[i]->String;
-        while (*s != 0)
-        {
-            if (*s == '&')
-            {
-                if (*(s + 1) == '&')
-                {
-                    s += 2;
-                    continue;
-                }
-                if (*(s + 1) != 0)
-                    found = s + 1;
-                break;
-            }
-            s++;
-        }
-        if (found != NULL && UpperCase[*found] == UpperCase[hotKey])
+        if (SalMnemonicMatchW(Menu->Items[i]->String, hotKey))
         {
             itemIndex = i;
             return TRUE;
@@ -708,6 +696,11 @@ BOOL CMenuBar::HotKeyIndexLookup(char hotKey, int& itemIndex)
 }
 
 BOOL CMenuBar::IsMenuBarMessage(CONST MSG* lpMsg)
+{
+    return IsMenuBarMessageEx(lpMsg, FALSE);
+}
+
+BOOL CMenuBar::IsMenuBarMessageEx(CONST MSG* lpMsg, BOOL unicodeMsg)
 {
     SLOW_CALL_STACK_MESSAGE4("CMenuBar::IsMenuBarMessage(0x%X, 0x%IX, 0x%IX)", lpMsg->message, lpMsg->wParam, lpMsg->lParam);
     switch (lpMsg->message)
@@ -787,7 +780,7 @@ BOOL CMenuBar::IsMenuBarMessage(CONST MSG* lpMsg)
     case WM_SYSCHAR:
     {
         int index;
-        BOOL found = HotKeyIndexLookup((char)lpMsg->wParam, index);
+        BOOL found = HotKeyIndexLookup(unicodeMsg ? (WCHAR)lpMsg->wParam : SalACPCharToW((char)lpMsg->wParam), index);
         if (found)
         {
             if ((UIState & UISF_HIDEACCEL) && !ForceAccelVisible)

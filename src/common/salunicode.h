@@ -199,6 +199,36 @@ void SalU8TrimIncompleteTail(char* buf);
 
 //
 // ****************************************************************************
+// SalWToU8Truncate (feature 093, contract D4)
+//
+// SalWToU8 for a null-terminated text and a buffer that may be too short: when
+// the UTF-8 form does not fit, stores as many WHOLE characters as fit (never a
+// torn sequence) instead of failing.  Always terminates 'buf'.  Returns the
+// bytes written including the terminator (>= 1); 0 only for a NULL argument,
+// bufSize <= 0 or lack of memory ('buf' is then empty when it exists).
+
+int SalWToU8Truncate(const WCHAR* src, char* buf, int bufSize);
+
+//
+// ****************************************************************************
+// SalMnemonicMatchW (feature 093)
+//
+// TRUE when the UTF-16 unit 'typed' (WM_CHAR / WM_SYSCHAR of a wide message
+// loop) is the mnemonic of 'text' - the character after the first single '&'
+// ("&&" is a literal ampersand).  'text' is UTF-8 (legacy code-page text is
+// accepted); letter case is ignored.  A mnemonic outside the BMP never matches.
+// SalACPCharToW converts a code-page WM_CHAR byte for the same comparison
+// (0 when the byte is not a character of the code page by itself).  The byte
+// of a code-page message loop is in the code page of the active KEYBOARD
+// LAYOUT; this takes it to be the system code page, so with a layout of
+// another code page an accented mnemonic does not match (it never matched
+// before feature 093 either).  A wide loop has no such limit.
+
+BOOL SalMnemonicMatchW(const char* text, WCHAR typed);
+WCHAR SalACPCharToW(char c);
+
+//
+// ****************************************************************************
 // SalU8ToOEM / SalOEMToU8
 //
 // The console (OEM) code page boundary of the external-archiver subsystem: a

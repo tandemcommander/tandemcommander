@@ -13,7 +13,7 @@
 //
 
 CEditLBEdit::CEditLBEdit(CEditListBox* editLB)
-    : CWindow(ooAllocated)
+    : CWindow(ooAllocated, TRUE /* feature 093: a Unicode edit, see CEditListBox::OnBeginEdit */)
 {
     EditLB = editLB;
 }
@@ -101,8 +101,10 @@ CEditLBEdit::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 // CEditListBox
 //
 
+// feature 093: the list box keeps its kind (contract D3), so the character that
+// starts the in-place editing arrives as typed (see WM_CHAR)
 CEditListBox::CEditListBox(HWND hDlg, int ctrlID, DWORD flags, CObjectOrigin origin)
-    : CWindow(hDlg, ctrlID, origin)
+    : CWindow(hDlg, ctrlID, origin, IsWindowUnicode(GetDlgItem(hDlg, ctrlID)))
 {
     HDlg = hDlg;
     Header = NULL;
@@ -471,17 +473,19 @@ void CEditListBox::OnBeginEdit(int start, int end)
     if (Flags & ELB_SHOWICON)
         iconWidth = IconSizes[ICONSIZE_16] + 2;
 
-    EditLine->Create("edit",
-                     "",
-                     WS_BORDER | WS_CHILDWINDOW | ES_AUTOHSCROLL | ES_LEFT,
-                     r.left + iconWidth,
-                     r.top,
-                     r.right - r.left - buttonWidth - iconWidth,
-                     r.bottom - r.top,
-                     HWindow,
-                     (HMENU)0,
-                     HInstance,
-                     EditLine);
+    // feature 093: created and subclassed wide - a code-page subclass would turn
+    // the edit into a code-page control (text outside the code page lost)
+    EditLine->CreateW(L"edit",
+                      L"",
+                      WS_BORDER | WS_CHILDWINDOW | ES_AUTOHSCROLL | ES_LEFT,
+                      r.left + iconWidth,
+                      r.top,
+                      r.right - r.left - buttonWidth - iconWidth,
+                      r.bottom - r.top,
+                      HWindow,
+                      (HMENU)0,
+                      HInstance,
+                      EditLine);
 
     SendMessage(EditLine->HWindow, WM_SETFONT, SendMessage(HWindow, WM_GETFONT, 0, 0), TRUE);
     // the inline editor is created long after the dialog's theming pass
@@ -871,7 +875,12 @@ CEditListBox::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 OnBeginEdit();
                 if (EditLine != NULL)
-                    PostMessage(EditLine->HWindow, WM_CHAR, wParam, lParam);
+                {
+                    if (UnicodeWnd) // wParam is a UTF-16 unit
+                        PostMessageW(EditLine->HWindow, WM_CHAR, wParam, lParam);
+                    else
+                        PostMessage(EditLine->HWindow, WM_CHAR, wParam, lParam);
+                }
             }
         }
         return 0;

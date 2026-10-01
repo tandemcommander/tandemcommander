@@ -70,13 +70,9 @@ specs/093-unicode-dialogs/
   contracts/dialog-unicode.md
   checklists/requirements.md
   probe/   B1Probe.cs (Win32 semantics), dialogs_probe.ps1, pwd probes
-src/common/winlib.*            S0
-src/salamdr1.cpp               S0 (main loop)
-src/dialogs*.cpp, execute.cpp  S1, S3
-src/find*.cpp, finddlg*.cpp    S2
-src/common/sheets.cpp          S3
-src/edtlbwnd.cpp               S3
-src/editwnd.cpp                S4
-src/plugins/shared/winliblt.*  S5
-src/plugins/7zip/*             S5
+src/common/winlib.*, sheets.cpp, salunicode.*      S1
+src/salamdr1.cpp, menubar.cpp, menu.h              S1 (main loop, menu mnemonics)
+src/find.cpp, finddlg1.cpp, execute.cpp, edtlbwnd.cpp, viewer.cpp, dialogs.cpp   S1
+src/plugins/7zip/*                                 S2
+src/editwnd.cpp                                    S3
 ```

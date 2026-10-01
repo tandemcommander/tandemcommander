@@ -394,7 +394,7 @@ CFindSetDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (edit != NULL)
         {
             HWND hCombo = GetDlgItem(HWindow, IDC_FINDTEXT);
-            edit->AttachToWindow(GetWindow(hCombo, GW_CHILD));
+            edit->AttachToWindowKeepKind(GetWindow(hCombo, GW_CHILD));
         }
 
         break;

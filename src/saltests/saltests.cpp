@@ -3236,6 +3236,93 @@ static BOOL Eq092(const WCHAR* a, const WCHAR* b)
     return eq;
 }
 
+// feature 093: overflow of a dialog field's text (contract D4) and the menu
+// mnemonic of a wide message loop
+static void TestDialogText093()
+{
+    char buf[64];
+    // a: 1 byte, U+0159: 2, U+0416: 2, U+65E5: 3, U+1F4C1 (a surrogate pair): 4 = 12 bytes
+    static const WCHAR text[] = L"a\x0159\x0416\x65E5\xD83D\xDCC1";
+    static const char u8[] = "a\xC5\x99\xD0\x96\xE6\x97\xA5\xF0\x9F\x93\x81";
+
+    // --- fits: identical to SalWToU8, return value includes the terminator
+    memset(buf, 'x', sizeof(buf));
+    CHECK(SalWToU8Truncate(text, buf, sizeof(buf)) == 13 && strcmp(buf, u8) == 0);
+    memset(buf, 'x', sizeof(buf));
+    CHECK(SalWToU8Truncate(text, buf, 13) == 13 && strcmp(buf, u8) == 0); // exactly
+    CHECK(SalWToU8Truncate(L"", buf, sizeof(buf)) == 1 && buf[0] == 0);
+
+    // --- does not fit: whole characters only, for every buffer size; the byte
+    //     behind the terminator is never written
+    static const int wholeLen[] = {0, 0, 1, 1, 3, 3, 5, 5, 5, 8, 8, 8, 8, 12}; // by bufSize
+    for (int size = 1; size <= 13; size++)
+    {
+        memset(buf, 'x', sizeof(buf));
+        int res = SalWToU8Truncate(text, buf, size);
+        CHECK(res == wholeLen[size] + 1);
+        CHECK((int)strlen(buf) == wholeLen[size] && memcmp(buf, u8, wholeLen[size]) == 0);
+        CHECK(buf[size] == 'x');
+        // the result is valid UTF-8 and a prefix of the text
+        WCHAR back[16];
+        CHECK(SalU8ToW(buf, -1, back, 16) != 0 && wcsncmp(back, text, wcslen(back)) == 0);
+    }
+    // the old fallback would have produced code-page bytes here ('?' for U+0416)
+    SalWToU8Truncate(text, buf, 6);
+    CHECK(strchr(buf, '?') == NULL);
+
+    // --- a lone surrogate (WTF-8, 3 bytes) is one character for the cut
+    static const WCHAR lone[] = L"ab\xD800";
+    CHECK(SalWToU8Truncate(lone, buf, 6) == 6 && strcmp(buf, "ab\xED\xA0\x80") == 0);
+    CHECK(SalWToU8Truncate(lone, buf, 5) == 3 && strcmp(buf, "ab") == 0);
+    CHECK(SalWToU8Truncate(lone, buf, 4) == 3 && strcmp(buf, "ab") == 0);
+
+    // --- arguments
+    buf[0] = 'x';
+    CHECK(SalWToU8Truncate(NULL, buf, sizeof(buf)) == 0 && buf[0] == 0);
+    CHECK(SalWToU8Truncate(text, NULL, 10) == 0);
+    buf[0] = 'x';
+    CHECK(SalWToU8Truncate(text, buf, 0) == 0 && buf[0] == 'x');
+
+    // --- mnemonics: ASCII, either case
+    CHECK(SalMnemonicMatchW("&Files", L'f') && SalMnemonicMatchW("&Files", L'F'));
+    CHECK(SalMnemonicMatchW("O&ptions", L'P') && !SalMnemonicMatchW("O&ptions", L'o'));
+    CHECK(!SalMnemonicMatchW("Files", L'f') && !SalMnemonicMatchW("Files&", L'f'));
+    CHECK(!SalMnemonicMatchW("", L'f') && !SalMnemonicMatchW(NULL, L'f') && !SalMnemonicMatchW("&Files", 0));
+    // "&&" is a literal ampersand, the mnemonic is behind the next single one
+    CHECK(SalMnemonicMatchW("R&&D &Tools", L't') && !SalMnemonicMatchW("R&&D &Tools", L'&') &&
+          !SalMnemonicMatchW("R&&D &Tools", L'd'));
+    CHECK(!SalMnemonicMatchW("R&&D", L'd') && !SalMnemonicMatchW("R&&D", L'&'));
+    // an accented mnemonic in a UTF-8 string: U+0159 / U+0158, U+0416 / U+0436, U+65E5
+    CHECK(SalMnemonicMatchW("&\xC5\x99"
+                            "adit",
+                            0x0159) &&
+          SalMnemonicMatchW("&\xC5\x99"
+                            "adit",
+                            0x0158));
+    CHECK(SalMnemonicMatchW("&\xD0\x96", 0x0436) && SalMnemonicMatchW("\xE6\x97\xA5 (&\xE6\x97\xA5)", 0x65E5));
+    // what the truncating comparison did: U+0159 is not 'Y' (low byte 0x59)
+    CHECK(!SalMnemonicMatchW("&Yes", 0x0159) && SalMnemonicMatchW("&Yes", L'y'));
+    // a mnemonic outside the BMP never matches one unit; a torn sequence does not match either
+    CHECK(!SalMnemonicMatchW("&\xF0\x9F\x93\x81", 0xD83D) && !SalMnemonicMatchW("&\xF0\x9F\x93\x81", 0xDCC1));
+    CHECK(!SalMnemonicMatchW("&\xC5", 0x0159));
+
+    // --- code-page side (the machine's code page decides what a byte is)
+    CHECK(SalACPCharToW('a') == L'a' && SalACPCharToW('&') == L'&');
+    if (GetACP() == 1250)
+    {
+        CHECK(SalACPCharToW((char)0xF8) == 0x0159);
+        // a legacy code-page menu string: the byte 0xF8 is not UTF-8 by itself
+        CHECK(SalMnemonicMatchW("&\xF8"
+                                "adit",
+                                0x0159) &&
+              SalMnemonicMatchW("&\xF8"
+                                "adit",
+                                0x0158));
+    }
+    else
+        printf("skipping the code page 1250 part of TestDialogText093 (code page %u)\n", GetACP());
+}
+
 static void TestNameIdentity092()
 {
     // --- (1) ASCII: equality identical to the old byte fold; the three-way sign identical
@@ -3636,6 +3723,7 @@ int main()
     TestArcAssoc089();
     TestFtpAnon090();
     TestNameIdentity092();
+    TestDialogText093();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

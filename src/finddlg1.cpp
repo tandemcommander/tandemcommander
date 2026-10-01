@@ -2178,10 +2178,10 @@ void CFindDialog::StopSearch()
         BOOL oldCanClose = CanClose;
         CanClose = FALSE; // don't allow closing while we are inside this method
 
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        if (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) // feature 093: wide, as the thread's main loop
         { // message loop for messages from the grep thread
             TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            DispatchMessageW(&msg);
         }
 
         CanClose = oldCanClose;
@@ -2816,7 +2816,7 @@ BOOL CFindDialog::IsMenuBarMessage(CONST MSG* lpMsg)
     CALL_STACK_MESSAGE_NONE
     if (MenuBar == NULL)
         return FALSE;
-    return MenuBar->IsMenuBarMessage(lpMsg);
+    return MenuBar->IsMenuBarMessageEx(lpMsg, TRUE /* feature 093: the Find loop is wide */);
 }
 
 void CFindDialog::InsertDrives(HWND hEdit, BOOL network)
@@ -2985,7 +2985,7 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (edit != NULL)
         {
             HWND hCombo = GetDlgItem(HWindow, IDC_FIND_CONTAINING);
-            edit->AttachToWindow(GetWindow(hCombo, GW_CHILD));
+            edit->AttachToWindowKeepKind(GetWindow(hCombo, GW_CHILD));
         }
         ChangeToArrowButton(HWindow, IDC_FIND_REGEXP_BROWSE);
 
@@ -3100,7 +3100,7 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
 
         HWND hCombo = GetDlgItem(HWindow, IDC_FIND_LOOKIN);
-        EditLine->AttachToWindow(GetWindow(hCombo, GW_CHILD));
+        EditLine->AttachToWindowKeepKind(GetWindow(hCombo, GW_CHILD));
 
         // not supported yet, hide the option
         ShowWindow(GetDlgItem(HWindow, IDC_FIND_INCLUDE_ARCHIVES), FALSE);
@@ -3660,13 +3660,17 @@ MENU_TEMPLATE_ITEM FindLookInBrowseMenu[] =
                 {
                     // Browse...
                     char path[MAX_PATH + 200];
-                    char buff[1024];
+                    // feature 093: the field is a Unicode control - read it wide; the
+                    // selection offsets count UTF-16 units
+                    WCHAR buff[1024];
                     DWORD start, end;
                     EditLine->GetSel(&start, &end);
-                    SendMessage(EditLine->HWindow, WM_GETTEXT, (WPARAM)1024, (LPARAM)buff);
+                    buff[0] = 0;
+                    GetWindowTextW(EditLine->HWindow, buff, 1024);
+                    DWORD buffLen = (DWORD)wcslen(buff);
                     path[0] = 0;
-                    if (start < end)
-                        lstrcpyn(path, buff + start, end - start + 1);
+                    if (start < end && end <= buffLen)
+                        SalWToU8(buff + start, end - start, path, MAX_PATH); // leaves "" when it does not fit
                     if (GetTargetDirectory(HWindow, HWindow, LoadStr(IDS_CHANGE_DIRECTORY),
                                            LoadStr(IDS_BROWSECHANGEDIRTEXT), path, FALSE, path))
                     {
@@ -3685,21 +3689,21 @@ MENU_TEMPLATE_ITEM FindLookInBrowseMenu[] =
                         int rightIndex = -1; // first character after the inserted text
                         if (start > 0)
                             leftIndex = start - 1;
-                        if (end < (DWORD)lstrlen(buff))
+                        if (end < buffLen)
                             rightIndex = end;
-                        if (leftIndex != -1)
+                        if (leftIndex != -1 && (DWORD)leftIndex < buffLen)
                         {
-                            s = buff + leftIndex;
-                            while (s >= buff && *s == ';')
-                                s--;
-                            if ((((buff + leftIndex) - s) & 1) == 0)
+                            const WCHAR* ws = buff + leftIndex;
+                            while (ws >= buff && *ws == L';')
+                                ws--;
+                            if ((((buff + leftIndex) - ws) & 1) == 0)
                             {
                                 memmove(path + 2, path, lstrlen(path) + 1);
                                 path[0] = ';';
                                 path[1] = ' ';
                             }
                         }
-                        if (rightIndex != -1 && (buff[rightIndex] != ';' || buff[rightIndex + 1] == ';'))
+                        if (rightIndex != -1 && (buff[rightIndex] != L';' || buff[rightIndex + 1] == L';'))
                             lstrcat(path, "; ");
 
                         EditLine->ReplaceText(path);
@@ -4601,10 +4605,10 @@ MENU_TEMPLATE_ITEM FindLookInBrowseMenu[] =
         while (PasteLinkIsRunning > 0)
         {
             MSG msg;
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) // feature 093: wide, as the thread's main loop
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
             if (PasteLinkIsRunning > 0)
                 Sleep(50); // active waiting; slow the thread down a bit

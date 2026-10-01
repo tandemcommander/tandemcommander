@@ -629,6 +629,82 @@ void SalU8TrimIncompleteTail(char* buf)
     }
 }
 
+int SalWToU8Truncate(const WCHAR* src, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return 0;
+    buf[0] = 0;
+    if (src == NULL)
+        return 0;
+    int res = SalWToU8(src, -1, buf, bufSize);
+    if (res != 0)
+        return res; // fits
+    char* full = SalWToU8Alloc(src);
+    if (full == NULL)
+    {
+        buf[0] = 0;
+        return 0;
+    }
+    int len = (int)strlen(full);
+    if (len > bufSize - 1)
+        len = bufSize - 1;
+    memcpy(buf, full, len);
+    buf[len] = 0;
+    free(full);
+    SalU8TrimIncompleteTail(buf); // the cut may have torn the last character
+    return (int)strlen(buf) + 1;
+}
+
+WCHAR SalACPCharToW(char c)
+{
+    WCHAR w[2];
+    if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, &c, 1, w, 2) != 1)
+        return 0;
+    return w[0];
+}
+
+BOOL SalMnemonicMatchW(const char* text, WCHAR typed)
+{
+    if (text == NULL || typed == 0)
+        return FALSE;
+    const char* s = text;
+    while (*s != 0)
+    {
+        if (*s == '&')
+        {
+            if (*(s + 1) == '&')
+            {
+                s += 2;
+                continue;
+            }
+            break;
+        }
+        s++;
+    }
+    if (*s == 0 || *(s + 1) == 0)
+        return FALSE;
+    s++; // the mnemonic character
+    WCHAR w[4];
+    int units = 0;
+    unsigned char lead = (unsigned char)*s;
+    int seqLen = lead < 0x80 ? 1 : (lead >= 0xF0 ? 4 : (lead >= 0xE0 ? 3 : (lead >= 0xC0 ? 2 : 0)));
+    if (seqLen > 0 && (int)strnlen(s, seqLen) == seqLen)
+    {
+        units = SalU8ToW(s, seqLen, w, 4);
+        if (units > 0)
+            units--; // the terminator
+    }
+    if (units == 0) // not UTF-8: a legacy code-page string
+    {
+        w[0] = SalACPCharToW(*s);
+        units = w[0] != 0 ? 1 : 0;
+    }
+    if (units != 1)
+        return FALSE;
+    return (WCHAR)(ULONG_PTR)CharUpperW((LPWSTR)(ULONG_PTR)w[0]) ==
+           (WCHAR)(ULONG_PTR)CharUpperW((LPWSTR)(ULONG_PTR)typed);
+}
+
 int SalU8CharCount(const char* s, int len)
 {
     if (len < 0)

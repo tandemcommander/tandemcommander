@@ -529,6 +529,11 @@ public:
     // If the message is translated, the return value is TRUE.
     virtual BOOL WINAPI IsMenuBarMessage(CONST MSG* lpMsg);
 
+    // feature 093: IsMenuBarMessage for a message of a wide loop (GetMessageW /
+    // PeekMessageW): 'unicodeMsg' TRUE = WM_SYSCHAR carries a UTF-16 unit, FALSE =
+    // a code-page byte (what IsMenuBarMessage, also called by plug-ins, expects)
+    BOOL IsMenuBarMessageEx(CONST MSG* lpMsg, BOOL unicodeMsg);
+
 protected:
     virtual LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -546,7 +551,8 @@ protected:
 
     // prohleda vlozene submenu a vrati TRUE, pokud mezi nima najde nejaky s horkou
     // klavesou 'hotKey'; zaroven vrati jeho index
-    BOOL HotKeyIndexLookup(char hotKey, int& itemIndex);
+    // 'hotKey' is a UTF-16 unit (feature 093)
+    BOOL HotKeyIndexLookup(WCHAR hotKey, int& itemIndex);
 
     friend class CMenuPopup;
 };

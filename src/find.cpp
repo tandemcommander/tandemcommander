@@ -2071,7 +2071,10 @@ unsigned ThreadFindDialogMessageLoopBody(void* parameter)
             MSG msg;
             HWND findDialogHWindow = findDialog->HWindow; // because of WM_QUIT, when the window will no longer be allocated
             BOOL haveMSG = FALSE;                         // FALSE means GetMessage() should be called in the loop condition
-            while (haveMSG || GetMessage(&msg, NULL, 0, 0))
+            // feature 093: wide loop - typed characters reach the Unicode text
+            // fields intact (a code-page loop turns them into '?'); neutral for
+            // the code-page windows of this thread
+            while (haveMSG || GetMessageW(&msg, NULL, 0, 0))
             {
                 haveMSG = FALSE;
                 if ((msg.message == WM_SYSKEYDOWN || msg.message == WM_KEYDOWN) &&
@@ -2083,18 +2086,18 @@ unsigned ThreadFindDialogMessageLoopBody(void* parameter)
                     if (msg.message == WM_KEYDOWN && msg.wParam == VK_ESCAPE && findDialog != NULL)
                         findDialog->SetProcessingEscape(TRUE);
                     if (findDialog == NULL ||
-                        (!TranslateAccelerator(findDialogHWindow, FindDialogAccelTable, &msg)) &&
+                        (!TranslateAcceleratorW(findDialogHWindow, FindDialogAccelTable, &msg)) &&
                             (!findDialog->ManageHiddenShortcuts(&msg)) &&
-                            (!IsDialogMessage(findDialogHWindow, &msg)))
+                            (!IsDialogMessageW(findDialogHWindow, &msg)))
                     {
                         TranslateMessage(&msg); // prevent generating WM_CHAR -> would cause a beep on Cancel
-                        DispatchMessage(&msg);
+                        DispatchMessageW(&msg);
                     }
                     if (msg.message == WM_KEYDOWN && msg.wParam == VK_ESCAPE && findDialog != NULL)
                         findDialog->SetProcessingEscape(FALSE);
                 }
 
-                if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+                if (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
                 {
                     if (msg.message == WM_QUIT)
                         break;      // equivalent to the situation when GetMessage() is returning FALSE

@@ -291,6 +291,14 @@ void CWindow::AttachToWindow(HWND hWnd)
     }
 }
 
+void CWindow::AttachToWindowKeepKind(HWND hWnd)
+{
+#ifndef _UNICODE
+    UnicodeWnd = IsWindowUnicode(hWnd);
+#endif // _UNICODE
+    AttachToWindow(hWnd);
+}
+
 void CWindow::AttachToControl(HWND dlg, int ctrlID)
 {
     if (dlg == NULL)
@@ -1072,20 +1080,21 @@ void CTransferInfo::EditLine(int ctrlID, TCHAR* buffer, DWORD bufferSizeInChars,
         case ttDataFromWindow:
         {
 #if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
-            // read as wide and store UTF-8; when the UTF-8 result would not fit
-            // the caller's buffer, fall back to the legacy A read (truncation
-            // semantics identical to the pre-004 behavior)
+            // read as wide and store UTF-8; feature 093 (contract D4): when the
+            // UTF-8 form does not fit the caller's buffer, it is cut at a whole
+            // character - the former code-page re-read handed code-page bytes
+            // (and '?') to a UTF-8 buffer. The A read below remains only for the
+            // case that there is no memory for the wide copy.
             int wchars = GetWindowTextLengthW(HWindow) + 1;
             WCHAR* w = (WCHAR*)malloc(wchars * sizeof(WCHAR));
             if (w != NULL)
             {
+                w[0] = 0;
                 GetWindowTextW(HWindow, w, wchars);
-                if (SalWToU8(w, -1, buffer, bufferSizeInChars) != 0)
-                {
-                    free(w);
-                    break;
-                }
+                int res = SalWToU8Truncate(w, buffer, bufferSizeInChars);
                 free(w);
+                if (res != 0)
+                    break;
             }
 #endif // INSIDE_SALAMANDER && !_UNICODE
             SendMessage(HWindow, WM_GETTEXT, bufferSizeInChars, (LPARAM)buffer);
@@ -1122,14 +1131,17 @@ int SalGetWindowTextU8(HWND hWnd, char* u8Buf, int u8BufSize)
     WCHAR* w = (WCHAR*)malloc(wchars * sizeof(WCHAR));
     if (w != NULL)
     {
+        w[0] = 0;
         GetWindowTextW(hWnd, w, wchars);
-        int len = SalWToU8(w, -1, u8Buf, u8BufSize);
+        // feature 093 (contract D4): text that does not fit is cut at a whole
+        // character (it used to be re-read through the code page)
+        int len = SalWToU8Truncate(w, u8Buf, u8BufSize);
         free(w);
         if (len != 0)
             return len - 1; // bytes written excluding the terminator
         u8Buf[0] = 0;
     }
-    return GetWindowText(hWnd, u8Buf, u8BufSize); // UTF-8 would not fit: legacy A read (pre-004 truncation semantics)
+    return GetWindowText(hWnd, u8Buf, u8BufSize); // no memory for the wide copy: legacy A read
 }
 
 BOOL SalSetDlgItemTextU8(HWND hDlg, int ctrlID, const char* u8Text)

@@ -4668,7 +4668,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         if (MainWindow == NULL || MainWindow->MenuBar == NULL || !MainWindow->CaptionIsActive ||
                             MainWindow->QuickRenameWindowActive() ||
                             skipMenuBar || GetCapture() != NULL || // je-li captured mouse - mohli bychom zpusobit vizualni problemy
-                            !MainWindow->MenuBar->IsMenuBarMessage(&msg))
+                            !MainWindow->MenuBar->IsMenuBarMessageEx(&msg, TRUE /* wide loop */))
                         {
                             CWindowsObject* wnd = WindowsManager.GetWindowPtr(GetActiveWindow());
 
@@ -4679,7 +4679,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                 MainWindow->UpdateBottomToolBar();
 
                             if ((wnd == NULL || !wnd->Is(otDialog) ||
-                                 !IsDialogMessage(wnd->HWindow, &msg)) &&
+                                 !IsDialogMessageW(wnd->HWindow, &msg)) && // feature 093: the A form re-reads the UTF-16 unit of WM_CHAR as code-page bytes
                                 (MainWindow == NULL || !MainWindow->CaptionIsActive || // pridano "!MainWindow->CaptionIsActive", aby se v nemodalnich oknech pluginu neprekladaly akceleratory (F7 v "FTP Logs" neni nic moc)
                                  MainWindow->QuickRenameWindowActive() ||
                                  !TranslateAccelerator(MainWindow->HWindow, AccelTable1, &msg) &&

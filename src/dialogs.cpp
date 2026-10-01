@@ -1983,7 +1983,7 @@ CFileListDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         InstallWordBreakProc(GetDlgItem(HWindow, IDC_FL_FILENAME)); // install WordBreakProc into the editline
 
         HWND hCombo = GetDlgItem(HWindow, IDC_FL_LINE);
-        EditLine->AttachToWindow(GetWindow(hCombo, GW_CHILD));
+        EditLine->AttachToWindowKeepKind(GetWindow(hCombo, GW_CHILD));
 
         ChangeToArrowButton(HWindow, IDC_FL_LINEBROWSE);
         break;

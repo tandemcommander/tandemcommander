@@ -22,11 +22,17 @@ system converts code-page bytes for a Unicode window.
 
 ## D3 — attached helpers keep the control's kind
 
-A `CWindow` attached to an existing control (`AttachToWindow`) subclasses
-with the wide procedure when the control is a Unicode window and with the
-code-page one otherwise; `UnicodeWnd` of the object is set accordingly. A
-`WindowProc` override that looks at `WM_CHAR` or text messages must handle
-UTF-16 units when `UnicodeWnd` is TRUE.
+A helper attached to a **text-entry** control is attached with
+`CWindow::AttachToWindowKeepKind`: it subclasses with the wide procedure when
+the control is a Unicode window and with the code-page one otherwise, and
+sets `UnicodeWnd` of the object accordingly. A `WindowProc` override that
+looks at `WM_CHAR` or text messages must then handle UTF-16 units.
+
+It is opt-in, not the behaviour of every `AttachToWindow`: `CStaticText`,
+`CButton` and their relatives (also handed to plug-ins) pass `char*` text
+through `WM_SETTEXT` / `WM_GETTEXT` and must stay code-page subclasses. A
+plain `AttachToWindow` on an edit or on a combo box's inner edit is a
+defect: it turns the control into a code-page one.
 
 ## D4 — overflow
 

@@ -23,11 +23,16 @@
     Surfaces (names for -Only):
       createdir changedir pack unpack select filter find hotpaths usermenu
       config cmdline about msgbox
+      convert filelist driveinfo changeicon compareargs editlb drive
+    (the second line was added for stage S1: five more modal dialogs, the
+    in-place editor of an edit list box, and 'drive' = a regression drive of
+    the Find window - search, menu bar by Alt+letter - and of the main menu)
 
     One line per control and channel:
       surface | control | channel | classes dlg/ctl/inner | unicode dlg/ctl/inner | exp=<hex> | act=<hex> | verdict
     Verdicts: PASS (text equal), LOSSY (text differs), INFO (channel A, no
-    text compared), NOT DRIVEN (with the reason).
+    text compared), NOT DRIVEN (with the reason), FAIL (a regression-drive
+    step of the 'drive' surface did not give the expected result).
 
     SAFETY: only the processes started here are addressed, by pid; messages go
     only to windows of those pids; no SendInput. HKCU\Software\Tandem Commander
@@ -40,6 +45,8 @@
     tandemcommander.exe to measure.
 .PARAMETER Only
     Run only the named surfaces.
+.PARAMETER Label
+    Free text printed in the first line (which build this is).
 .PARAMETER OutFile
     Also write every printed line to this file (UTF-8, the content is ASCII).
 
@@ -51,6 +58,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Exe,
     [string[]]$Only,
+    [string]$Label,
     [string]$OutFile
 )
 
@@ -143,8 +151,10 @@ public static class Drv093
 $MainClass = 'TandemCommanderMainWindowVer01'
 $RegKey = 'HKCU\Software\Tandem Commander'
 $Started = New-Object System.Collections.ArrayList
+$script:Procs = @{}
+$script:ExitCodes = New-Object System.Collections.ArrayList
 $script:Lines = New-Object System.Collections.ArrayList
-$script:Lossy = 0; $script:Pass = 0; $script:NotDriven = 0
+$script:Lossy = 0; $script:Pass = 0; $script:NotDriven = 0; $script:Fail = 0
 $script:Unexpected = @()
 
 function S([int[]]$codes) { return -join ($codes | ForEach-Object { [char]$_ }) }
@@ -259,6 +269,8 @@ function Start-Tc([string]$Dir) {
     $a = @('-t', 'T093', '-l', ('"{0}"' -f $Dir), '-r', ('"{0}"' -f $Dir), '-p', '1')
     $p = Start-Process -FilePath $Exe -ArgumentList $a -PassThru
     [void]$Started.Add($p.Id)
+    [void]$p.Handle                      # keeps the exit code readable after the process has ended
+    $script:Procs[$p.Id] = $p
     $sw = [Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 60 -and (Get-Main $p.Id) -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 100 }
     if ((Get-Main $p.Id) -eq [IntPtr]::Zero) { throw 'the program did not show its main window' }
@@ -287,7 +299,13 @@ function Stop-Tc([int]$Id) {
         }
         Start-Sleep -Milliseconds 200
     }
-    if (Test-Alive $Id) { Out "   (pid $Id did not exit in 30 s - ended by pid)"; Stop-Process -Id $Id -Force; Start-Sleep -Milliseconds 500 }
+    if (Test-Alive $Id) { Out "   (pid $Id did not exit in 30 s - ended by pid)"; [void]$script:ExitCodes.Add('killed'); Stop-Process -Id $Id -Force; Start-Sleep -Milliseconds 500 }
+    elseif ($script:Procs.ContainsKey($Id)) {
+        $pr = $script:Procs[$Id]; $script:Procs.Remove($Id)
+        try { [void]$pr.WaitForExit(5000); $ec = $pr.ExitCode } catch { $ec = 'unknown' }
+        [void]$script:ExitCodes.Add("$ec")
+        Out ("   process exit code: {0}" -f $ec)
+    }
 }
 
 function Get-LeftList([int]$Id) {
@@ -331,7 +349,7 @@ function Row([string]$Surface, [string]$Ctl, [string]$Ch, [string]$Cls, [string]
     $line = "{0,-10}| {1,-26}| {2} | {3} | {4} | exp={5} | act={6} | {7}" -f $Surface, $Ctl, $Ch, $Cls, $Uni, $Exp, $Act, $Verdict
     if ($Note) { $line += " | $Note" }
     Out $line
-    if ($Verdict -eq 'PASS') { $script:Pass++ } elseif ($Verdict -eq 'LOSSY') { $script:Lossy++ } elseif ($Verdict -like 'NOT DRIVEN*') { $script:NotDriven++ }
+    if ($Verdict -eq 'PASS') { $script:Pass++ } elseif ($Verdict -eq 'LOSSY') { $script:Lossy++ } elseif ($Verdict -like 'NOT DRIVEN*') { $script:NotDriven++ } elseif ($Verdict -eq 'FAIL') { $script:Fail++ }
 }
 function Ctl([int]$CtlId, [string]$Name, [string]$Prefill, [string]$Mode = 'exact') { return [pscustomobject]@{ Id = $CtlId; Name = $Name; Prefill = $Prefill; Mode = $Mode } }
 function NotDriven([string]$Surface, [string]$Why) { Row $Surface '-' '-' '-' '-' '-' '-' 'NOT DRIVEN' $Why }
@@ -354,8 +372,9 @@ function Read-Settled([IntPtr]$Dlg, [IntPtr]$H, [int]$WantLen) {
 
 # channels A, B (when $Prefill is given), C, D for one control
 # $PrefillMode: 'exact' = the field must equal $Prefill; 'contains' = it must contain it
-function Measure-Ctl([string]$Surface, [IntPtr]$Dlg, [int]$CtlId, [string]$CtlName, [string]$Prefill, [string]$PrefillMode = 'exact', [bool]$DoSetType = $true) {
-    $ctl = Find-Ctl $Dlg $CtlId
+# $Hwnd: the control itself when it cannot be found by its id (the in-place editor of a list)
+function Measure-Ctl([string]$Surface, [IntPtr]$Dlg, [int]$CtlId, [string]$CtlName, [string]$Prefill, [string]$PrefillMode = 'exact', [bool]$DoSetType = $true, [IntPtr]$Hwnd = [IntPtr]::Zero) {
+    if ($Hwnd -ne [IntPtr]::Zero) { $ctl = $Hwnd } else { $ctl = Find-Ctl $Dlg $CtlId }
     $label = "$CtlName id=$CtlId"
     if ($ctl -eq [IntPtr]::Zero) { Row $Surface $label '-' '-' '-' '-' '-' 'NOT DRIVEN' 'no ComboBox/Edit with this id in the window'; return }
     $d = Describe $Dlg $ctl
@@ -452,7 +471,7 @@ $root = Join-Path $env:TEMP 'tc093_dlg'
 $existed = Backup-TcRegistry $backup
 $regOk = $false
 try {
-    Out ("=== dialogs_probe: {0}  (built {1:yyyy-MM-dd HH:mm:ss}) ===" -f $Exe, (Get-Item -LiteralPath $Exe).LastWriteTime)
+    Out ("=== dialogs_probe: {0}  (built {1:yyyy-MM-dd HH:mm:ss}){2} ===" -f $Exe, (Get-Item -LiteralPath $Exe).LastWriteTime, $(if ($Label) { "  [$Label]" } else { '' }))
     Out ("System code page {0}. Test text: {1}" -f [Drv093]::GetACP(), (Hex $TestText))
 
     # ---- manifest (static) ----
@@ -498,6 +517,13 @@ try {
             $k.SetValue('Item Name', 'tc093', 'String'); $k.SetValue('Command', ($dirs['cjk'] + '\x.exe'), 'String')
             $k.SetValue('Arguments', $TestText, 'String'); $k.SetValue('Initial Directory', $dirs['cjk'], 'String')
             $k.SetValue('Execute Through Shell', 1, 'DWord'); $k.SetValue('Close Shell Window', 1, 'DWord'); $k.Close()
+            # item 2: its arguments make the program ask for the two names to compare
+            # (the "Show Names To Compare" confirmation is switched on for the run)
+            $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Tandem Commander\0.1\User Menu\2')
+            $k.SetValue('Item Name', 'tc093cmp', 'String'); $k.SetValue('Command', ($dirs['cjk'] + '\x.exe'), 'String')
+            $k.SetValue('Arguments', '$(FileToCompareLeft) $(FileToCompareRight)', 'String'); $k.SetValue('Initial Directory', '', 'String')
+            $k.SetValue('Execute Through Shell', 1, 'DWord'); $k.SetValue('Close Shell Window', 1, 'DWord'); $k.Close()
+            & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Show Names To Compare' /t REG_DWORD /d 1 /f | Out-Null
             $script:SeededUM = $true
         }
         Out ("Seeded in the registry: Hot Paths\30 Name=<test text> Path=<cjk folder>; User Menu\1 (seeded={0}) Command=<cjk folder>\x.exe Arguments=<test text> Initial Directory=<cjk folder>" -f $script:SeededUM)
@@ -617,6 +643,179 @@ try {
                     }
                 }
 
+                # ---- stage S1: five more modal dialogs (focus on the one file first) ----
+                if (Want 'convert') { Surface-Dialog $id 'convert' 814 @((Ctl 101 'IDE_FILEMASK' $null 'exact')) { Key $id 0x23 } }
+                if (Want 'filelist') { Surface-Dialog $id 'filelist' 811 @((Ctl 2382 'IDC_FL_LINE' $null 'exact'), (Ctl 2384 'IDC_FL_FILENAME' $null 'exact')) { Key $id 0x23 } }
+                # the volume label: the field is only read and set here, the dialog is cancelled (the label is written on OK only)
+                if (Want 'driveinfo') { Surface-Dialog $id 'driveinfo' 752 @((Ctl 552 'IDE_VOLNAME' $null 'exact')) $null }
+                if (Want 'compareargs') {
+                    # user-menu item 2 (seeded) asks for the two names; cancelled, so nothing is started
+                    if (-not $script:SeededUM) { NotDriven 'compareargs' 'the user menu of this configuration is not empty - no item was seeded' }
+                    else { Surface-Dialog $id 'compareargs' 3001 @((Ctl 2803 'IDE_UMC_NAME1' $null 'exact'), (Ctl 2804 'IDE_UMC_NAME2' $null 'exact')) { Key $id 0x23 } }
+                }
+                if (Want 'changeicon') {
+                    $sf = 'changeicon'
+                    try {
+                        $cfg = Open-ByCmd $id 926
+                        if ($cfg -eq [IntPtr]::Zero) { NotDriven $sf 'command 926 opened no window' }
+                        else {
+                            $lb = @([Drv093]::Kids($cfg) | Where-Object { [Drv093]::GetDlgCtrlID($_) -eq 351 }) | Select-Object -First 1
+                            if (-not $lb) { NotDriven $sf 'list id 351 not found' }
+                            else {
+                                [void][Drv093]::Send($lb, 0x0100, 0x24, 1, 5000); [void][Drv093]::Send($lb, 0x0101, 0x24, 0xC0000001, 5000)
+                                Start-Sleep -Milliseconds 300
+                                $known = Get-Tops $id
+                                Post-Cmd ([Drv093]::GetParent($lb)) 365             # IDB_UM_CHANGEICON
+                                $dlg = Wait-NewWin $id $known 8
+                                if ($dlg -ne [IntPtr]::Zero -and (Find-Ctl $dlg 661) -eq [IntPtr]::Zero) {
+                                    # a message first (the seeded command names a file that does not exist): close it, the dialog follows
+                                    Out ("   {0}: first window class={1} title='{2}': {3}" -f $sf, [Drv093]::Cls($dlg), (Esc ([Drv093]::Txt($dlg))), (Get-DialogText $dlg))
+                                    $known = Get-Tops $id
+                                    Close-Win $id $dlg
+                                    $dlg = Wait-NewWin $id $known 8
+                                }
+                                if ($dlg -eq [IntPtr]::Zero) { NotDriven $sf 'IDB_UM_CHANGEICON opened no window' }
+                                else {
+                                    Out ("   {0}: window class={1} title='{2}'" -f $sf, [Drv093]::Cls($dlg), (Esc ([Drv093]::Txt($dlg))))
+                                    Measure-Ctl $sf $dlg 661 'IDE_CHI_FILENAME' $null
+                                    Close-Win $id $dlg
+                                    Start-Sleep -Milliseconds 300
+                                }
+                            }
+                            foreach ($h in @(Get-Tops $id | Where-Object { [Drv093]::Cls($_) -ne $MainClass -and $_ -ne $cfg })) { Close-Win $id $h }
+                            Close-Win $id $cfg; Start-Sleep -Milliseconds 300; Clear-Wins $id $sf
+                        }
+                    }
+                    catch { NotDriven $sf $_.Exception.Message; try { Clear-Wins $id $sf } catch { } }
+                }
+
+                # ---- stage S1: the in-place editor of an edit list box (the User Menu page's list) ----
+                if (Want 'editlb') {
+                    $sf = 'editlb'
+                    try {
+                        $cfg = Open-ByCmd $id 926
+                        if ($cfg -eq [IntPtr]::Zero) { NotDriven $sf 'command 926 opened no window' }
+                        else {
+                            $lb = @([Drv093]::Kids($cfg) | Where-Object { [Drv093]::GetDlgCtrlID($_) -eq 351 }) | Select-Object -First 1
+                            if (-not $lb) { NotDriven $sf 'list id 351 not found' }
+                            else {
+                                # (1) F2 on the first item
+                                [void][Drv093]::Send($lb, 0x0100, 0x24, 1, 5000); [void][Drv093]::Send($lb, 0x0101, 0x24, 0xC0000001, 5000)
+                                [void][Drv093]::Send($lb, 0x0100, 0x71, 1, 5000)
+                                Start-Sleep -Milliseconds 400
+                                $ed = @([Drv093]::Kids($lb) | Where-Object { [Drv093]::Cls($_) -eq 'Edit' }) | Select-Object -First 1
+                                if (-not $ed) { NotDriven $sf 'F2 on the list created no Edit child' }
+                                else {
+                                    $pf = $null; if ($script:SeededUM) { $pf = 'tc093' }
+                                    Measure-Ctl $sf $cfg 0 'in-place editor (F2)' $pf 'exact' $true $ed
+                                    [void][Drv093]::Send($ed, 0x0100, 0x1B, 1, 5000)          # Esc: the change is discarded
+                                    Start-Sleep -Milliseconds 300
+                                }
+                                # (2) a character typed into the list starts the editing with that character;
+                                # the first unit goes to the list, the others to the editor it creates
+                                $seq = (S 0x416, 0x61, 0x159, 0x65E5, 0xD83D, 0xDCC1)
+                                [void][Drv093]::PostMessageW($lb, 0x0102, [IntPtr][int]$seq[0], [IntPtr]1)
+                                $ed = $null
+                                $sw = [Diagnostics.Stopwatch]::StartNew()
+                                while ($sw.Elapsed.TotalSeconds -lt 3 -and -not $ed) {
+                                    Start-Sleep -Milliseconds 100
+                                    $ed = @([Drv093]::Kids($lb) | Where-Object { [Drv093]::Cls($_) -eq 'Edit' }) | Select-Object -First 1
+                                }
+                                if (-not $ed) { Row $sf 'in-place editor (typed)' 'D' '-' '-' (Hex $seq) '-' 'NOT DRIVEN' 'a character posted to the list created no Edit child' }
+                                else {
+                                    $d = Describe $cfg $ed
+                                    foreach ($u in $seq.Substring(1).ToCharArray()) { [void][Drv093]::PostMessageW($ed, 0x0102, [IntPtr][int]$u, [IntPtr]1) }
+                                    $act = Read-Settled $cfg $ed $seq.Length
+                                    Row $sf 'in-place editor (typed)' 'D' $d[0] $d[1] (Hex $seq) (Hex $act) $(if ($act -ceq $seq) { 'PASS' } else { 'LOSSY' }) 'first unit posted to the list (starts the editing), the others to the editor'
+                                    [void][Drv093]::Send($ed, 0x0100, 0x1B, 1, 5000)
+                                    Start-Sleep -Milliseconds 300
+                                }
+                            }
+                            Close-Win $id $cfg; Start-Sleep -Milliseconds 300; Clear-Wins $id $sf
+                        }
+                    }
+                    catch { NotDriven $sf $_.Exception.Message; try { Clear-Wins $id $sf } catch { } }
+                }
+
+                # ---- stage S1: regression drive (verdicts PASS / FAIL) ----
+                if (Want 'drive') {
+                    $sf = 'drive'
+                    try {
+                        $dlg = Open-ByCmd $id 741
+                        if ($dlg -eq [IntPtr]::Zero) { NotDriven $sf 'command 741 opened no window' }
+                        else {
+                            # (1) an ASCII mask typed into Named, Find Now, the number of found items
+                            $named = Find-Ctl $dlg 2505; $in = Inner-Edit $named
+                            [void][Drv093]::SetText($named, '', 5000)
+                            foreach ($u in '*.zip'.ToCharArray()) { [void][Drv093]::PostMessageW($in, 0x0102, [IntPtr][int]$u, [IntPtr]1) }
+                            $mask = Read-Settled $dlg $named 5
+                            $look = [Drv093]::GetText((Find-Ctl $dlg 2501), 5000)
+                            $lv = @([Drv093]::Kids($dlg) | Where-Object { [Drv093]::GetDlgCtrlID($_) -eq 2510 }) | Select-Object -First 1
+                            $known = Get-Tops $id
+                            Post-Cmd $dlg 1                                   # Find Now (BM_CLICK does nothing in a window that is not the active one)
+                            $count = -1; $msg = ''
+                            $sw = [Diagnostics.Stopwatch]::StartNew()
+                            while ($sw.Elapsed.TotalSeconds -lt 8) {
+                                Start-Sleep -Milliseconds 300
+                                $extra = @(Get-Tops $id | Where-Object { $known -notcontains $_ })
+                                if ($extra.Count) { foreach ($h in $extra) { $msg += (' window shown: ' + (Get-DialogText $h) + ';'); Close-Win $id $h }; break }
+                                $res = [IntPtr]::Zero
+                                if ($lv -and [Drv093]::SendMessageTimeoutW($lv, 0x1004, [IntPtr]::Zero, [IntPtr]::Zero, 0, 5000, [ref]$res) -ne [IntPtr]::Zero) { $count = [int]$res.ToInt64() }
+                                if ($count -ge 1 -and $sw.Elapsed.TotalSeconds -gt 1.5) { break }
+                            }
+                            Row $sf 'Find Now, mask *.zip' 'E' '-' '-' 'items=1' ("items={0}" -f $count) $(if ($count -eq 1) { 'PASS' } else { 'FAIL' }) ("Named held '{0}', Look in held {1};{2}" -f (Esc $mask), (Hex $look), $msg)
+                            Start-Sleep -Milliseconds 500
+
+                            # (2) the Find window's menu bar: Alt+F (WM_SYSCHAR) opens a menu, Esc closes it
+                            $pop = { @(Get-Tops $id | Where-Object { [Drv093]::Cls($_) -eq 'PopupMenuClass' }) }
+                            [void][Drv093]::PostMessageW($in, 0x0106, [IntPtr]0x66, [IntPtr]0x20000001)
+                            Start-Sleep -Milliseconds 800
+                            $m = & $pop
+                            Row $sf 'Find menu by Alt+F' 'E' '-' '-' 'menu windows=1' ("menu windows={0}" -f $m.Count) $(if ($m.Count -eq 1) { 'PASS' } else { 'FAIL' }) 'WM_SYSCHAR 0066 posted to the Named field'
+                            if ($m.Count) {
+                                [void][Drv093]::PostMessageW($m[0], 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($m[0], 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001)
+                                Start-Sleep -Milliseconds 600
+                                $m2 = & $pop
+                                Row $sf 'Find menu closed by Esc' 'E' '-' '-' 'menu windows=0' ("menu windows={0}" -f $m2.Count) $(if ($m2.Count -eq 0 -and [Drv093]::IsWindow($dlg)) { 'PASS' } else { 'FAIL' }) ("Find window still open: {0}" -f [Drv093]::IsWindow($dlg))
+                                # the menu bar keeps its loop after the popup has closed: one more Esc leaves it
+                                [void][Drv093]::PostMessageW($dlg, 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($dlg, 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001)
+                                Start-Sleep -Milliseconds 500
+                            }
+                            # (3) Alt + a letter that is no mnemonic of the menu (U+0159) opens nothing
+                            if ([Drv093]::IsWindow($dlg)) {
+                                $in = Inner-Edit (Find-Ctl $dlg 2505)
+                                [void][Drv093]::PostMessageW($in, 0x0106, [IntPtr]0x159, [IntPtr]0x20000001)
+                                Start-Sleep -Milliseconds 700
+                                $m = & $pop
+                                Row $sf 'Find menu by Alt+U+0159' 'E' '-' '-' 'menu windows=0' ("menu windows={0}" -f $m.Count) $(if ($m.Count -eq 0) { 'PASS' } else { 'FAIL' }) 'WM_SYSCHAR 0159: not a mnemonic of the English menu (its low byte is that of Y)'
+                                foreach ($h in $m) { [void][Drv093]::PostMessageW($h, 0x0100, [IntPtr]0x1B, [IntPtr]1); Start-Sleep -Milliseconds 300 }
+                            }
+                            else { Row $sf 'Find menu by Alt+U+0159' 'E' '-' '-' '-' '-' 'NOT DRIVEN' 'the Find window closed on the second Esc' }
+                            Close-Win $id $dlg; Start-Sleep -Milliseconds 500; Clear-Wins $id $sf $false
+                        }
+                        # (4) the main window's menu by Alt+F - handled only while the main window is the active one
+                        # (the caption state is set by a sent WM_NCACTIVATE and taken back afterwards; no foreground change)
+                        $mw = Get-Main $id
+                        [void][Drv093]::Send($mw, 0x0086, 1, 0, 5000)
+                        [void][Drv093]::PostMessageW($mw, 0x0106, [IntPtr]0x66, [IntPtr]0x20000001)
+                        Start-Sleep -Milliseconds 800
+                        $m = @(Get-Tops $id | Where-Object { [Drv093]::Cls($_) -eq 'PopupMenuClass' })
+                        if ($m.Count -eq 1) {
+                            Row $sf 'main menu by Alt+F' 'E' '-' '-' 'menu windows=1' 'menu windows=1' 'PASS' 'WM_SYSCHAR 0066 posted to the main window'
+                            [void][Drv093]::PostMessageW($m[0], 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($m[0], 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001)
+                            Start-Sleep -Milliseconds 500
+                            [void][Drv093]::PostMessageW($mw, 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($mw, 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001)
+                            Start-Sleep -Milliseconds 500
+                            $m = @(Get-Tops $id | Where-Object { [Drv093]::Cls($_) -eq 'PopupMenuClass' })
+                            Row $sf 'main menu closed by Esc' 'E' '-' '-' 'menu windows=0' ("menu windows={0}" -f $m.Count) $(if ($m.Count -eq 0) { 'PASS' } else { 'FAIL' }) ''
+                        }
+                        else { Row $sf 'main menu by Alt+F' 'E' '-' '-' 'menu windows=1' ("menu windows={0}" -f $m.Count) 'NOT DRIVEN' 'no menu: the main window handles Alt+letter only while it is the active window' }
+                        [void][Drv093]::Send($mw, 0x0086, 0, 0, 5000)
+                        Sync $id
+                    }
+                    catch { NotDriven $sf $_.Exception.Message; try { Clear-Wins $id $sf $false } catch { } }
+                }
+
                 # (8) the command line: a ComboBox child of the main window, id 955
                 if (Want 'cmdline') {
                     $sf = 'cmdline'
@@ -716,8 +915,8 @@ finally {
     }
     $regOk = Restore-TcRegistry $backup $existed
     Out ''
-    Out ("Rows: PASS {0}, LOSSY {1}, NOT DRIVEN {2}; unexpected windows: {3}" -f $script:Pass, $script:Lossy, $script:NotDriven, $script:Unexpected.Count)
-    Out ("Test processes left: {0}; fixture folder left: {1}; registry restored identical: {2}" -f $left, [IO.Directory]::Exists($root), $regOk)
+    Out ("Rows: PASS {0}, LOSSY {1}, NOT DRIVEN {2}, FAIL {3}; unexpected windows: {4}" -f $script:Pass, $script:Lossy, $script:NotDriven, $script:Fail, $script:Unexpected.Count)
+    Out ("Test processes left: {0}; fixture folder left: {1}; registry restored identical: {2}; process exit codes: {3}" -f $left, [IO.Directory]::Exists($root), $regOk, ($script:ExitCodes -join ','))
     if ($OutFile) { [IO.File]::WriteAllLines($OutFile, [string[]]$script:Lines.ToArray([string]), (New-Object Text.UTF8Encoding($false))) }
 }
 if ($regOk) { exit 0 } else { exit 1 }

@@ -249,6 +249,11 @@ public:
 #endif                                     // _UNICODE
 
     void AttachToWindow(HWND hWnd);
+    // feature 093 (contract D3): attaches with the procedure of the window's own
+    // kind (IsWindowUnicode), so a Unicode text control stays one; a code-page
+    // subclass would turn it into a code-page control. The object's WindowProc
+    // must take UTF-16 in character and text messages when the window is Unicode.
+    void AttachToWindowKeepKind(HWND hWnd);
     void AttachToControl(HWND dlg, int ctrlID);
     void DetachWindow();
 
