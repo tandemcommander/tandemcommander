@@ -15,7 +15,7 @@ submission of 0.1.8 to item 6. The two preserved reference trees item 3 relied
 on are **no longer on disk** (see there).
 
 **Revised 2026-10-01** — item 7 (the privacy defects of feature 083) is done
-as feature 085, except F9; the GUI steps of 085 join item 3. The ZIP salt
+as feature 085; F9, left open there, is done as feature 090; the GUI steps of 085 join item 3. The ZIP salt
 item 085's review added is done as feature 086. Item 8 (7-Zip engine, with
 RAR reading — 084 stage S7) is done as feature 087; its GUI pass joins item 3.
 Item 4 (plug-in interface 107) is done as feature 088.
@@ -425,8 +425,12 @@ has `DisplayVersion`).
 > **Left open:**
 >
 > - **The GUI steps** `085/quickstart.md` G1–G6 — join item 3's sweep.
-> - **F9** — the FTP anonymous-login e-mail default `name@someserver.com` is
->   sent to anonymous servers (`src/plugins/ftp/ftp3.cpp:508`). Not asked for.
+> - ~~**F9** — the FTP anonymous-login e-mail default `name@someserver.com` is
+>   sent to anonymous servers (`src/plugins/ftp/ftp3.cpp:508`). Not asked
+>   for.~~ ✅ **DONE (feature 090, 2026-10-01)**: the placeholder is
+>   `anonymous@example.com` (a domain reserved for examples); a stored old
+>   placeholder is replaced on load, a user's own address is kept. Record:
+>   `090-ftp-anonymous-default/fix-log.md`.
 > - **F8** — withdrawn: the shell-extension registration only runs if
 >   `utils\salext*.dll` exists (`src/salamdr1.cpp:4384-4398`); 0.1.8 ships
 >   neither DLL, so nothing is registered or left behind. Open question
@@ -489,7 +493,8 @@ statement*).
   instead: is the missing copy hook (drag out of archives into Explorer)
   intended?
 - **F9** — the FTP anonymous-login e-mail default `name@someserver.com` is
-  sent to anonymous servers (`src/plugins/ftp/ftp3.cpp:508`).
+  sent to anonymous servers (`src/plugins/ftp/ftp3.cpp:508`). *(Done as
+  feature 090.)*
 
 </details>
 

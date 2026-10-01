@@ -5,6 +5,7 @@
 #include "precomp.h"
 
 #include "../../common/salurlpwd.h" // feature 085
+#include "../../common/salftpanon.h" // feature 090
 
 // plugin interface object, its methods are called from Salamander
 CPluginInterface PluginInterface;
@@ -509,8 +510,10 @@ void CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalamanderRe
             Config.TotalSpeedLimit = atof(num);
         }
         char anonymousPasswd[PASSWORD_MAX_SIZE];
+        // feature 090: a stored old placeholder ("name@someserver.com") becomes the new one;
+        // an address the user typed is never changed
         if (registry->GetValue(regKey, CONFIG_ANONYMOUSPASSWD, REG_SZ, anonymousPasswd, PASSWORD_MAX_SIZE))
-            Config.SetAnonymousPasswd(anonymousPasswd);
+            Config.SetAnonymousPasswd(SalFtpAnonymousOnLoad(anonymousPasswd));
 
         registry->GetValue(regKey, CONFIG_PASSIVEMODE, REG_DWORD, &Config.PassiveMode, sizeof(DWORD));
         registry->GetValue(regKey, CONFIG_KEEPALIVE, REG_DWORD, &Config.KeepAlive, sizeof(DWORD));

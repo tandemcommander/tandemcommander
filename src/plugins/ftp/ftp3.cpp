@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salftpanon.h" // feature 090
+
 //
 // ****************************************************************************
 // CServerTypeList
@@ -505,7 +507,9 @@ CConfiguration::CConfiguration()
     PriorityToPanelConnections = TRUE;
     EnableTotalSpeedLimit = FALSE;
     TotalSpeedLimit = 2;
-    strcpy(AnonymousPasswd, "name@someserver.com");
+    // feature 090: a placeholder at a domain reserved for documentation (RFC 2606), not at a
+    // real one - it is sent to every anonymous server when the user never set an address
+    strcpy(AnonymousPasswd, SAL_FTP_ANONYMOUS_DEFAULT);
 
     PassiveMode = FALSE;
     KeepAlive = TRUE;

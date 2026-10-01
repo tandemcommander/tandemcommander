@@ -44,6 +44,13 @@ Follow-ups in the 7zip plugin and in the plugin text converters (feature 089).
   its toolbar - wrote the name into a buffer of 260 bytes. Depending on what
   lay behind it the viewer misbehaved or the program crashed. Both viewers
   now take names of any length.
+- **An anonymous FTP login no longer sends an address at somebody's
+  domain.** When you connect anonymously and never set an e-mail address in
+  the FTP plugin's configuration, the plugin sends a placeholder as the
+  password, as anonymous servers expect. It was `name@someserver.com` - an
+  ordinary domain that belongs to somebody else. It is now `anonymous@example.com`; `example.com`
+  is reserved for examples and belongs to nobody. A stored old placeholder is
+  replaced; an address you entered yourself is kept (feature 090).
 - **File names with an unpaired surrogate work in plugins.** A file name may
   contain half of a UTF-16 surrogate pair (NTFS allows it, some tools produce
   it). The program itself has handled such names since 0.1.5; the helpers

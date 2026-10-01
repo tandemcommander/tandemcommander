@@ -66,7 +66,8 @@ folder and similar connection details. SFTP bookmarks also store the location
 of your private key file — never the key itself — and SFTP remembers the key
 fingerprints of servers you chose to trust. The FTP plugin keeps the e-mail
 address it sends when you log in anonymously (by default the placeholder
-`name@someserver.com`) as plain text. Connection logs are kept in memory only
+`anonymous@example.com`, an address at a domain reserved for examples) as
+plain text. Connection logs are kept in memory only
 and disappear when the program closes, unless you save or copy a log
 yourself.
 
@@ -148,7 +149,7 @@ network only in these situations, each started by something you do:
   configured. FTP is not encrypted: your user name, password and files travel
   as readable text. Secure FTP (FTPS) is not available in this version; for
   anything sensitive use SFTP. An anonymous login sends `anonymous` and the
-  configured e-mail address.
+  configured e-mail address (the placeholder above unless you set your own).
 - **SFTP** — the program connects to the server you entered over an encrypted
   SSH connection. It tells the server the name and version of its connection
   software (`SSH-2.0-libssh2_1.11.1_DEV` — no personal information). The first
@@ -272,5 +273,6 @@ of an address is saved in history as plain text; a Markdown document can open
 a link without a click; remote images identify as `OpenSalamander-mdview`, and
 the viewer may answer a server's request for Windows sign-in with your Windows
 account; cancelling the Master Password prompt saves an SFTP password or
-passphrase scrambled; and the viewer engine's crash reports follow your
-Windows diagnostic-data settings. Last updated 2026-10-01.
+passphrase scrambled; the viewer engine's crash reports follow your
+Windows diagnostic-data settings; and the placeholder sent on an anonymous
+FTP login is `name@someserver.com`. Last updated 2026-10-01.

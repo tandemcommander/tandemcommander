@@ -25,6 +25,7 @@
 #include "salarcname.h"   // feature 087
 #include "salplugver.h"   // feature 088
 #include "salarcassoc.h"  // feature 089
+#include "salftpanon.h"   // feature 090
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 
 #include <map>
@@ -3168,6 +3169,30 @@ static void TestArcAssoc089()
     }
 }
 
+//*****************************************************************************
+//
+// feature 090: the FTP plug-in's placeholder for anonymous logins
+// (src/common/salftpanon.h)
+//
+
+static void TestFtpAnon090()
+{
+    CHECK(strcmp(SAL_FTP_ANONYMOUS_DEFAULT, "anonymous@example.com") == 0);
+    // the old placeholder, in any letter case, becomes the new one
+    CHECK(strcmp(SalFtpAnonymousOnLoad("name@someserver.com"), SAL_FTP_ANONYMOUS_DEFAULT) == 0);
+    CHECK(strcmp(SalFtpAnonymousOnLoad("Name@SomeServer.COM"), SAL_FTP_ANONYMOUS_DEFAULT) == 0);
+    CHECK(strcmp(SalFtpAnonymousOnLoad(NULL), SAL_FTP_ANONYMOUS_DEFAULT) == 0);
+    // everything else is the user's own value and comes back as the same pointer
+    static const char* const own[] = {
+        "", "me@mydomain.org", "name@someserver.co", "name@someserver.com ", " name@someserver.com",
+        "name@someserver.comx", "xname@someserver.com", "name@someserver.org", "anonymous@example.com",
+        "name@someserver.com\t", "n\xC3\xA1me@someserver.com"};
+    for (int i = 0; i < _countof(own); i++)
+        CHECK(SalFtpAnonymousOnLoad(own[i]) == own[i]);
+    // idempotent
+    CHECK(strcmp(SalFtpAnonymousOnLoad(SalFtpAnonymousOnLoad("name@someserver.com")), SAL_FTP_ANONYMOUS_DEFAULT) == 0);
+}
+
 int main()
 {
     TestConversions();
@@ -3200,6 +3225,7 @@ int main()
     TestArcNames087();
     TestSplUnicode089();
     TestArcAssoc089();
+    TestFtpAnon090();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

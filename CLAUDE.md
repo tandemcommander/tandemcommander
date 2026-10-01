@@ -970,3 +970,12 @@ plugin architecture preservation, UI consistency.
     was not packed but its source was deleted - both fixed.
   - saltests 1918 -> 2039. Interface stays 107. Records:
     `specs/089-7zip-followups/fix-log.md`.
+- 090-ftp-anonymous-default: **privacy defect F9 closed.** The FTP plug-in's
+  placeholder for anonymous logins was `name@someserver.com` - an ordinary
+  domain - and went to every anonymous server. It is now
+  `anonymous@example.com` (RFC 2606). The rule for a stored value is pure and
+  header-only (`src/common/salftpanon.h`, `SalFtpAnonymousOnLoad`): the old
+  placeholder in any letter case is replaced on load, anything else is the
+  user's and is kept; no configuration version bump (idempotent).
+  `PRIVACY.md` updated in the same change. saltests 2039 -> 2055. Records:
+  `specs/090-ftp-anonymous-default/fix-log.md`.
