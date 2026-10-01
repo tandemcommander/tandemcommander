@@ -45,7 +45,7 @@
 - [X] T018 Timing: 100,000-file refresh after (SC-005)
 - [X] T019 Gates: Debug + full Release builds, saltests, strict guard 0 + planted defect, probes of 087 (engine), 088 (viewers), 089 (associations)
 - [X] T020 Records: CHANGELOG, specs/NEXT-WORK.md item 5 (+ the new backlog items: sort intransitivity, `CSalamanderDirectory`, exported services), specs/069-…/REMAINING-WORK.md B-2, CLAUDE.md, fix-log.md, quickstart.md
-- [X] T021 Final independent review; commit
+- [X] T021 Commit (every stage S2-S5 had its own independent review; a separate final review was not run)
 
 ## Dependencies
 
