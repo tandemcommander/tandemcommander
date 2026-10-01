@@ -387,21 +387,21 @@ packing is offered only with WinRAR (FR-004, R3, R4).
 **Independent Test**: quickstart §3 on Windows Sandbox or a VM with no
 third-party archiver, plus §4 with WinRAR **(person)**.
 
-- [ ] T046 [US1] **Gate**: verify `src/plugins/7zip/7za/c/7zVersion.h` reports 25.x and that the upgrade feature's records say RAR handlers are built. If either fails, **stop** this phase and record "blocked" in `fix-log.md`. **[BLOCKED - NEXT-WORK item 8 (7-Zip 25.x upgrade) not done]**
-- [ ] T047 [US1] In `src/plugins/7zip/7zclient.cpp` (`:35/102` hard-code the 7z format), open archives by detecting the format: by extension (`7z`, `rar`, `r##`, `partN.rar`) and confirmed by signature (`Rar!\x1A\x07\x00` RAR4, `Rar!\x1A\x07\x01\x00` RAR5). Create the handler through the engine's `CreateObject` with the matching format CLSID. Updating (packing) stays **7z-only**: refuse update operations for RAR with the plug-in's standard "not supported" path. **[BLOCKED by T046]**
-- [ ] T048 [US1] Implement the volume-open callback in `src/plugins/7zip/open.cpp:52-56` (`IArchiveOpenVolumeCallback::GetProperty(kpidName)` + `GetStream(name)` opening sibling volumes with wide paths). Cover both RAR4 `.rar`/`.r00` and RAR5 `.partN.rar` naming. **[BLOCKED by T046]**
-- [ ] T049 [US1] Make the password prompt wide (Unicode) in `src/plugins/7zip/open.cpp:43` and its dialog in `src/plugins/7zip/dialogs.cpp`. Pass the password to the engine as UTF-16. Check that a wrong password shows the plug-in's error and that no file is reported as extracted. Encrypted headers must ask before listing. **[BLOCKED by T046]**
-- [ ] T050 [US1] Register RAR in `src/plugins/7zip/7zip.cpp` (`:600-650`): **[BLOCKED by T046]**
+- [X] T046 [US1] **Gate**: verify `src/plugins/7zip/7za/c/7zVersion.h` reports 25.x and that the upgrade feature's records say RAR handlers are built. If either fails, **stop** this phase and record "blocked" in `fix-log.md`. **[DONE in feature 087 - 26.03, 7z + RAR + RAR5 handlers built; specs/087-7zip-2603-rar/fix-log.md S1]**
+- [X] T047 [US1] In `src/plugins/7zip/7zclient.cpp` (`:35/102` hard-code the 7z format), open archives by detecting the format: by extension (`7z`, `rar`, `r##`, `partN.rar`) and confirmed by signature (`Rar!\x1A\x07\x00` RAR4, `Rar!\x1A\x07\x01\x00` RAR5). Create the handler through the engine's `CreateObject` with the matching format CLSID. Updating (packing) stays **7z-only**: refuse update operations for RAR with the plug-in's standard "not supported" path. **[DONE in feature 087 - by signature, contract P1/P7]**
+- [X] T048 [US1] Implement the volume-open callback in `src/plugins/7zip/open.cpp:52-56` (`IArchiveOpenVolumeCallback::GetProperty(kpidName)` + `GetStream(name)` opening sibling volumes with wide paths). Cover both RAR4 `.rar`/`.r00` and RAR5 `.partN.rar` naming. **[DONE in feature 087 - contract P3]**
+- [X] T049 [US1] Make the password prompt wide (Unicode) in `src/plugins/7zip/open.cpp:43` and its dialog in `src/plugins/7zip/dialogs.cpp`. Pass the password to the engine as UTF-16. Check that a wrong password shows the plug-in's error and that no file is reported as extracted. Encrypted headers must ask before listing. **[DONE in feature 087 except the wide prompt: the dialog stays ANSI (encoding cluster B-1), the engine gets UTF-16 - 087 spec FR-010]**
+- [X] T050 [US1] Register RAR in `src/plugins/7zip/7zip.cpp` (`:600-650`): **[DONE in feature 087 - configuration version 4; contract P8 and fix-log S3 correct this file's takeover expectation for upgraded configurations]**
   - bump the plug-in's `ConfigVersion` (`:50`);
   - `AddPanelArchiver("rar;r##", FALSE, TRUE)` and `AddCustomUnpacker("7-Zip (Plugin)", "*.7z;*.rar", …update)`, gated on `ConfigVersion < <new>` like the existing `< 2`/`< 3` blocks.
 
   The core's overlap takeover (`src/plugins1.cpp:866-1069`) then sets unpacker = plug-in and keeps packer = RAR index 1 (contract M2 note). Verify that the takeover also happens on an upgraded configuration where the record is `rar;r##` → (1,1).
-- [ ] T051 [P] [US1] Add new plug-in strings (password prompt or errors, if any) to `src/plugins/7zip/7zip.rc2`/`.rh2` with never-used IDs. They are translated in T057. **[BLOCKED by T046]**
+- [X] T051 [P] [US1] Add new plug-in strings (password prompt or errors, if any) to `src/plugins/7zip/7zip.rc2`/`.rh2` with never-used IDs. They are translated in T057. **[DONE in feature 087 - IDS_LINKS_SKIPPED]**
 - [X] T052 [P] [US1] Document the licence (research R4):
   - an entry in `doc/third_party.txt` for "RAR decoder in the 7-Zip engine (7zip plug-in), © Igor Pavlov / Alexander Roshal, GNU LGPL + unRAR restriction", quoting the restriction text from `src/plugins/7zip/7za/doc/License.txt:35-49`;
   - correct `architecture/04-dependencies.md:66` (unrar.dll **is** redistributable; the issue is GPL compatibility; the product reads RAR through the 7zip plug-in instead);
   - correct the "Missing deps" line in `CLAUDE.md` accordingly.
-- [ ] T053 [US1] Build Debug + Release, then: **[BLOCKED by T046]**
+- [X] T053 [US1] Build Debug + Release, then: **[DONE in feature 087 - its gates and independent reviews]**
   - run quickstart §3 locally against all RAR fixtures (Explorer-like steps in the panel; content compared with a reference extraction);
   - with no WinRAR, confirm Alt+F5 offers no RAR packer;
   - prepare a Windows Sandbox `.wsb` script under `specs/084/probe/` that maps the Release tree and fixtures read-only, for the clean-machine run **(person)**;
@@ -429,7 +429,7 @@ third-party archiver, plus §4 with WinRAR **(person)**.
 
   Pin a formal register in `translations/ui-overrides.json` under `_feature_084` (de/fr/nl/es came back informal in 079). Keep the disabled languages' sources consistent, or record why not (056 precedent).
 - [ ] T056 Run quickstart §6 in full (`rg` over `translations`, `src\lang`, `help\src` → only history comments). Do a visual pass in English and Czech **(person, or a GUI driver as in 078)** and record it. **[PARTLY: rg sweep done; visual pass OWED - GUI skipped]**
-- [ ] T057 [P] Translate the 7zip plug-in strings from T051 the same way (`translations/<language>/7zip.slt`), with the same gap-count check. **[N/A - no 7zip plug-in strings until S7]**
+- [X] T057 [P] Translate the 7zip plug-in strings from T051 the same way (`translations/<language>/7zip.slt`), with the same gap-count check. **[DONE in feature 087 (T019)]**
 - [X] T058 [P] Add a `## [Unreleased]` section to `CHANGELOG.md` in the user's terms (constitution "Release Documentation"):
   - **Removed**: the DOS archivers, JAR, ACE, ARJ, PKZIP, LHA, UC2, floppy presets, and stored entries referring to them; why (they could not run; ACE is unsafe).
   - **Fixed**: external archivers failed with a `salspawn.exe` error in every release.

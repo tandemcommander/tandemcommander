@@ -55,7 +55,7 @@ Create, modify, and extract archives; contents browsable directly in a panel.
 | Plugin | Description | Extensions | Notes |
 |--------|-------------|------------|-------|
 | **zip** | Create, browse, and extract ZIP archives. | `zip;pk3;pk4;jar` | Also builds `zip2sfx` (self-extractor converter); one of the default plugins registered on first run. |
-| **7zip** | Create, browse, and extract 7-Zip archives. | `7z` | Uses bundled 7-Zip engine (`7za.dll` + `7zwrapper` helper projects). |
+| **7zip** | Create, browse, and extract 7-Zip archives; browse and extract RAR (RAR 1.5–4, RAR5; read-only, feature 087). | `7z`, `rar` | Uses the bundled 7-Zip 26.03 engine (`7za.dll`, built from `src/plugins/7zip/7za`, 7z + RAR handlers only; local patches in `TC-PATCHES.md`). |
 | **pak** | Browse and extract Quake PAK archives. | `pak` | Despite the description, declares full edit/pack flags (read/write). |
 
 ## Archivers — extract-only (8)

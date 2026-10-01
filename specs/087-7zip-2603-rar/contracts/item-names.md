@@ -9,7 +9,8 @@ engine's UTF-16 `kpidPath` with `UStringToU8` first).
 Produces a **relative** path made of clean components, separated by `\`.
 
 1. `/` is treated as `\`.
-2. A leading drive (`X:`), a UNC/device prefix (`\\server\share\`,
+2. A leading drive (`X:` followed by a separator or the end — `C:x` or
+   `x::$DATA` is not a drive, its `:` is replaced in step 4), a UNC/device prefix (`\\server\share\`,
    `\\?\`, `\\.\`) and any leading `\` are removed.
 3. The path is split at `\`; empty components and `.` are dropped;
    **`..` components are dropped** (never climb).
@@ -34,12 +35,19 @@ Idempotent: cleaning a clean path returns it unchanged.
 `1` = 7z (`37 7A BC AF 27 1C`), `2` = RAR 1.5–4 (`52 61 72 21 1A 07 00`),
 `3` = RAR5 (`52 61 72 21 1A 07 01 00`), `0` = unknown. Reads at most 8 bytes.
 
-## N3 — `SalArcIsRarExtension(const char* name)` → BOOL
+## N3 — withdrawn
 
-TRUE for `.rar` (case-insensitive). Volume detection for display:
-`SalArcRarVolumeIndex(name)` returns the 1-based part number of
-`*.partN.rar` (N ≥ 1), 1 for a plain `.rar`, N + 2 for `.rNN`, 0 otherwise —
-used only to warn when a non-first part is opened.
+The volume-name helpers (`SalArcIsRarExtension`, `SalArcRarVolumeIndex`) were
+written for a "you opened a part that is not the first" warning that was not
+built: the format comes from the signature (N2) and the handler itself
+reports what a non-first part cannot give. The independent review of S2/S3
+found them unused; they were removed with their tests.
+
+**Reserved device names** (part of N1, extended after that review): `CON`,
+`PRN`, `AUX`, `NUL`, `CONIN$`, `CONOUT$`, `COM0`–`COM9`, `LPT0`–`LPT9` and
+`COM`/`LPT` followed by a superscript digit (U+00B9, U+00B2, U+00B3), compared
+case-insensitively with the part of the component before its first dot,
+trailing spaces of that part ignored (`CON .txt` is the device too).
 
 ## N4 — where it is applied
 

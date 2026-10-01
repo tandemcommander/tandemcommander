@@ -23,8 +23,8 @@ A user receives a RAR archive (RAR 4 or RAR 5) and presses Enter on it in a
 panel of a fresh Tandem Commander installation with no WinRAR or 7-Zip
 installed. The archive opens like a folder; the user browses it, views a
 file with F3, and copies files out with F5 or unpacks it with Alt+F9.
-Encrypted archives ask for the password (also passwords with non-Latin
-characters); archives whose file list is encrypted ask before showing it;
+Encrypted archives ask for the password (any character of the system code
+page; see FR-010 for the limit); archives whose file list is encrypted ask before showing it;
 split archives (`.part1.rar`, `.part2.rar` … or `.rar`, `.r00` …) open from
 their first part and extract across all parts; file names in any script
 appear correctly.
@@ -183,8 +183,11 @@ wrapper (trace or breakpoint), including the threads the old patch missed.
   unbounded memory.
 - A multi-volume set where a middle part is missing or renamed: an error,
   not a hang; parts are located by their standard names in the same folder.
-- A file inside RAR that is a symbolic or hard link: extracted as an ordinary
-  file (link targets are never followed or created).
+- A file inside RAR that is a symbolic or hard link: **not extracted**; the
+  user is told how many link entries were skipped (links are never created
+  or followed; a hard link carries no data of its own, a symbolic link's data
+  is only its target text). Found by the engine probe on the 084 RAR5 Unicode
+  fixture; copying a hard link's target data is a possible later improvement.
 - An archive that is RAR by content but named `.zip` (or the reverse): the
   plugin only handles extensions registered for it; detection by signature
   only confirms the registered format.
@@ -193,8 +196,12 @@ wrapper (trace or breakpoint), including the threads the old patch missed.
 - Two entries that become the same name after cleaning: both extract, the
   usual overwrite prompt applies.
 - Self-extracting RAR (`.exe`): not registered; out of scope.
-- An encrypted archive and a password with characters outside the system
-  code page (e.g. Czech diacritics on an English Windows, Cyrillic): works.
+- An encrypted archive and a password with characters of the system code
+  page (e.g. Czech diacritics on a Czech Windows): works - the engine gets the
+  password as UTF-16. Characters **outside** the code page (Cyrillic on a
+  Czech or English Windows) cannot be typed into the plugin's password
+  prompt, which is an ANSI window: they become `?` and the password is
+  reported as wrong. Revised during implementation, see FR-010.
 
 ## Requirements *(mandatory)*
 
@@ -231,9 +238,14 @@ wrapper (trace or breakpoint), including the threads the old patch missed.
   confirming the format by its signature (RAR 4 and RAR 5).
 - **FR-009**: Multi-volume RAR sets in both naming schemes MUST open from the
   first part and extract across parts; a missing part MUST produce an error.
-- **FR-010**: Passwords MUST be entered and passed to the engine as Unicode;
-  encrypted file lists MUST prompt before listing; a wrong password MUST
-  produce an error and no reported success.
+- **FR-010**: Passwords MUST be passed to the engine as UTF-16, converted
+  from what the password prompt delivers; encrypted file lists MUST prompt
+  before listing; a wrong password MUST produce an error and no reported
+  success. *Revised during implementation (2026-10-01)*: the original text
+  asked for Unicode entry, but the plugin's password prompt is one of the
+  ANSI dialogs of cluster B-1 (feature 068), so only characters of the
+  system code page can be entered. A Unicode prompt is that cluster's work,
+  not this feature's; the limit is stated in the changelog.
 - **FR-011**: Changing a RAR archive (add, delete, update) through the plugin
   MUST be refused with the plugin's standard message.
 - **FR-012**: The plugin's configuration MUST be migrated once so that RAR

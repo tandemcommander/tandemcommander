@@ -120,9 +120,9 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
 
 ## Key Facts
 
-- **80 projects** in salamand.sln (1 main app, 31 plugins, 32 lang
-  modules, 7 helper libs, 3 utilities, 2 shell exts, 3 setup, 1 other;
-  the `salspawn` helper left in feature 084)
+- **79 projects** in salamand.sln (1 main app, 31 plugins, 32 lang
+  modules, 6 helper libs, 3 utilities, 2 shell exts, 3 setup, 1 other;
+  the `salspawn` helper left in feature 084, `7zwrapper` in feature 087)
 - **Plugin set is policy-driven**: 8 obsolete plugins were removed in
   feature 007 (pak, unarj, unlha, unfat, wmobile, ieviewer, splitcbn,
   winscp); `plugins.cfg` disables 10 more by default (demos and
@@ -134,11 +134,11 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
   `tools/check_runtime_deps.py` proves every shipped module's runtime
   imports resolve there; the signing sweep leaves Microsoft's signature on
   them. Plugin authors: toolset no newer than the shipped runtime.
-- **Missing deps**: unrar.dll (unrar - not needed: RAR is to be read by
-  the 7zip plug-in's own engine, whose RAR decoder carries the "unRAR
-  restriction" the maintainer accepted in feature 084 - exposed once the
-  vendored 7-Zip is upgraded, NEXT-WORK item 8; unrar.dll *is*
-  redistributable, the issue is GPL compatibility), OpenSSL (ftp); pictview runs on
+- **Missing deps**: unrar.dll (unrar - not needed: RAR is read by the
+  7zip plug-in's own engine, 7-Zip 26.03 since feature 087, whose RAR
+  decoder carries the "unRAR restriction" the maintainer accepted in
+  feature 084; unrar.dll *is* redistributable, the issue is GPL
+  compatibility), OpenSSL (ftp); pictview runs on
   the built-in Windows WIC engine since feature 006 (no pvw32cnv.dll
   needed)
 - **Encoding**: UTF-8-BOM, formatted with clang-format
@@ -855,3 +855,54 @@ plugin architecture preservation, UI consistency.
   archives cannot use AES (`add_del.cpp:112`). saltests 1816 → 1829; probe
   `specs/086-zip-aes-salt/probe/zip_salts.py` (self-test against 7-Zip); GUI
   round trip owed (`quickstart.md`). Records: `specs/086-zip-aes-salt/fix-log.md`.
+- 087-7zip-2603-rar: **the 7zip plugin runs on 7-Zip 26.03 and reads RAR.**
+  - **Engine** (`src/plugins/7zip/7za/`, pristine 26.03 subset + one patch):
+    only 7z, RAR (1.5-4) and RAR5 (3 formats; 16.04 had 53), built from the
+    upstream `Format7z` bundle plus the RAR set. The one local patch is the
+    thread trampoline in `C/Threads.c` (`TC_7ZIP_CALLSTACK`, every engine
+    thread runs through the plug-in's call-stack object - proven by
+    `probe/fakespl.c`, negative control included); everything else and the
+    retired 16.04 patches are in `7za/TC-PATCHES.md`. 26.03 seeds 7z AES IVs
+    from `RtlGenRandom` (16.04: time + pid). `7zwrapper.dll` (no caller) is
+    gone - solution 79 projects; installer `[Code]` and `build.cmd` delete a
+    stale copy.
+  - **Item names are cleaned** (`src/common/salarcname.h`, header-only,
+    `SalArcCleanItemPath`): `..`, absolute/drive/UNC paths, ADS (`name:x`)
+    and reserved names could be written outside the target by **every
+    earlier version**; cleaned at listing and again in the extract callback
+    (the security boundary). Links (`kpidSymLink`/`kpidHardLink`) are never
+    extracted - also those marked only by the Unix mode in the attributes
+    (RAR4, Unix-made 7z); the count is reported (`IDS_LINKS_SKIPPED`).
+  - **RAR**: handler chosen by signature (`SalArcDetectFormat`), volumes via
+    `IArchiveOpenVolumeCallback` (siblings of the first part only), memory
+    requests bounded by min(4 GiB, RAM/2) (`AnswerArchiveMemoryRequest`),
+    read-only (no `IOutArchive` -> "not supported"). Registration:
+    configuration version **4**, `AddPanelArchiver("rar;r##", view only)`;
+    a fresh plug-in installation takes over the core's `rar;r##` record
+    (WinRAR stays its packer), an **upgraded** one can only extend its own
+    7z record (`plugins1.cpp` `updateExts`) - 084 contract M2's expectation
+    corrected.
+  - **26.03 API traps**: `Z7_*` COM macros, every callback `throw()`
+    (`catch (...)` in them; `std::map::operator[]` replaced by `find`);
+    `Extract()` returns S_OK with per-item errors (the 16.04 "JRY FIX" is
+    retired) - `Decompress` maps any per-item error or skipped link to
+    `OPER_CONTINUE` and **callers require `== OPER_OK`**, else *Unpack and
+    delete* deletes a partly failed archive (review blocker); `g_IsNT` must
+    be true for `LoadLibraryW`; 0.1.8 sent the word size as `VT_I4`, which
+    both engines reject (probe `props`), so it now takes effect.
+  - **Results the old code did not know** (second review, REJECT): RAR5
+    reports `kWrongPassword` after the output file exists - file deleted,
+    password forgotten, operation stopped; every other failed result asks
+    *delete or keep*. `Cleanup` on Cancel deletes only a file opened for the
+    current item (`HaveOutFile`) - 0.1.8 could delete the user's own file
+    after *Skip* + Cancel. *Unpack and delete* hands every opened RAR part to
+    the core (`OpenedVolumes`) and keeps the archive when the listing was
+    incomplete (`ListingIncomplete`).
+  - **Password prompt stays ANSI** (cluster B-1): only code-page characters;
+    FR-010 revised. The password is wiped (`WipeUString`) on close, after a
+    failed open and after an operation with errors.
+  - Evidence: `specs/087-7zip-2603-rar/probe/` (`7zdrive.exe` drives any
+    `7za.dll`; `run_engine_probe.py`: 23 RAR files of the 084 fixtures,
+    7z round trips checked by 7z.exe 22.01, hostile names, memory bound,
+    timing). saltests 1829 -> 1900. GUI pass owed (`quickstart.md`). Records:
+    `specs/087-7zip-2603-rar/fix-log.md`.

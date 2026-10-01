@@ -2,7 +2,7 @@
 
 **Solution file**: `src\vcxproj\salamand.sln`
 **Visual Studio**: 2022 (Format Version 12.00, VS Version 17)
-**Total projects**: 74 C++ projects
+**Total projects**: 73 C++ projects
 
 > **Update (2026-07-16, feature 007 — plugin build policy):** 8 obsolete
 > plugins (pak, unarj, unlha, unfat, wmobile, ieviewer, splitcbn, winscp)
@@ -144,12 +144,11 @@ only UI strings, dialogs, and menus.
 | salextx86 | vcxproj/shellext/salextx86.vcxproj | .dll | Shell extension (32-bit) |
 | salextx64 | vcxproj/shellext/salextx64.vcxproj | .dll | Shell extension (64-bit) |
 
-### Helper Libraries (7 projects)
+### Helper Libraries (6 projects)
 
 | Project | Path | Output | Description |
 |---------|------|--------|-------------|
-| 7za | plugins/7zip/vcxproj/7ZA/7za.dll.vcxproj | .dll | 7-Zip archive engine |
-| 7zwrapper | plugins/7zip/vcxproj/7zwrapper/7zwrapper.vcxproj | .dll | 7-Zip wrapper |
+| 7za | plugins/7zip/vcxproj/7ZA/7za.dll.vcxproj | .dll | 7-Zip archive engine (26.03; 7z, RAR, RAR5 only — feature 087) |
 | chmlib | plugins/unchm/vcxproj/chmlib/chmlib.vcxproj | .lib | CHM parsing library |
 | exif | plugins/pictview/vcxproj/exif/exif.vcxproj | .lib | EXIF metadata library |
 | fcremote | plugins/filecomp/vcxproj/fcremote/fcremote.vcxproj | .exe | File comparison remote helper |
@@ -231,8 +230,8 @@ salamand → lang (build order)
 | Plugins | 28 |
 | Language Modules | 29 |
 | Shell Extensions | 2 |
-| Helper Libraries | 7 |
+| Helper Libraries | 6 |
 | Utility Executables | 4 |
 | Setup/Install | 3 |
 | Other | 1 (zip2sfx) + 1 (Solution Items) |
-| **Total** | **77** (75 C++ projects + 1 virtual + 1 converter) |
+| **Total** | **76** (74 C++ projects + 1 virtual + 1 converter) |

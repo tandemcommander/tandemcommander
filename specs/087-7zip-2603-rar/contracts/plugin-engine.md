@@ -30,17 +30,27 @@ updating use 7z only.
 
 ## P3 — Volumes
 
-`GetProperty(kpidName)` → the file name of the volume the engine is
-currently on (initially the opened file); `GetStream(name)` → an
-`IInStream` on `<archive folder>\name` opened read-only with a wide path,
-`S_FALSE` if it does not exist (the handler then reports a missing volume).
+`GetProperty(kpidName)` → always the file name of the opened file (the
+first part); the handler derives the names of the other parts from it.
+`GetStream(name)` → an `IInStream` on `<archive folder>\name` opened
+read-only with a wide path, `S_FALSE` if it does not exist (the handler then
+reports a missing volume) or if `name` contains `\`, `/` or `:`.
 Both RAR naming schemes are produced by the handler itself (`RarVol.h`).
+Every part opened is recorded (`C7zClient::OpenedVolumes`): *Unpack and
+delete* hands all of them to the core, so the whole set is deleted, not only
+the first part.
 
 ## P4 — Passwords
 
-The prompt accepts any Unicode text; `CryptoGetTextPassword(BSTR*)` returns it
-as UTF-16 (`SysAllocString`). A cancelled prompt returns `E_ABORT`. The
-remembered password for the session is kept as UTF-16 and wiped on close.
+The prompt is the plugin's ANSI dialog (cluster B-1): its text is in the
+system code page and is converted to UTF-16 with the code page
+(`GetUnicodeString`); `CryptoGetTextPassword(BSTR*)` returns it as UTF-16
+(`SysAllocString`). Characters outside the code page cannot be entered
+(revised during implementation; spec FR-010). A cancelled prompt returns `E_ABORT`. The
+password remembered for the open archive is kept as UTF-16 and its buffer is
+overwritten when the archive is closed (`Wipe_and_Empty`; 0.1.8 assigned a
+shorter text, which left the tail of a longer password); transient copies
+made for one operation are not wiped.
 
 ## P5 — Memory requests
 
@@ -54,6 +64,35 @@ operation ends with the plugin's out-of-memory error. No dialog.
 Every `kpidPath` passes through `SalArcCleanItemPath` (contract
 `item-names.md`); alternate-stream items are not listed.
 
+## P6b — Links and aborted items
+
+Items with a non-empty `kpidSymLink` or `kpidHardLink`, and items whose
+attributes carry the Unix symbolic-link mode (RAR4 and Unix-made 7z archives
+have no link property), are listed but never extracted (no stream is
+returned; their operation result is ignored); after the operation the plugin
+reports how many link entries were skipped, and the operation does not count
+as complete.
+
+**Results** (`SetOperationResult`), extraction:
+
+| Result | What the plugin does |
+|---|---|
+| `kOK` | file time and attributes set |
+| `kWrongPassword` (RAR5) | the file just created is deleted, one message, the remembered password is forgotten, the operation stops (`E_ABORT`) |
+| `kUnsupportedMethod` | message, the file is deleted |
+| any other (data or CRC error, unexpected end, damaged headers, …) | the *delete or keep* question, as 0.1.8 asked for a data error only |
+| any non-OK result for an item that has no output file of its own (skipped at the overwrite prompt, not selected) | counted, nothing deleted |
+
+Any non-OK result makes the operation incomplete (the caller reports
+failure, so the core deletes nothing). After an operation with errors that
+used a password, the remembered password is forgotten: 7z reports a wrong
+password as a plain data error, and the next operation must ask again.
+
+**Cancel**: only the file this callback opened for the *current* item is
+deleted (`HaveOutFile`). 0.1.8 deleted "the last named file" whenever any
+stream had ever been created — after *Skip* at the overwrite prompt that was
+the user's own existing file.
+
 ## P7 — RAR is read-only
 
 Pack/update/delete on an archive whose handler is RAR or RAR5 → the plugin's
@@ -62,9 +101,17 @@ written.
 
 ## P8 — Registration (configuration version 4)
 
-`CURRENT_CONFIG_VERSION` 3 → 4. Panel archiver extensions become
-`7z;rar`; the custom unpacker mask `*.7z;*.rar`; both gated on
-`ConfigVersion < 4` so a configuration the user edited is touched once. The
-custom packer stays `7z`. With WinRAR's console installed, feature 084's RAR
-packer stays the packer for `rar` (the core keeps packer and viewer roles
-separate — 084 contract M2).
+`CURRENT_CONFIG_VERSION` 3 → 4. The custom unpacker mask becomes
+`*.7z;*.rar` once (`ConfigVersion < 4`); the custom packer stays `7z`. RAR is
+registered for **view only**: `AddPanelArchiver("rar;r##", FALSE, updateExts)`
+with `updateExts` true only for configurations 1–3.
+
+*As built* (the first text of this section and 084 contract M2 expected one
+outcome for both cases; reading `plugins1.cpp` `AddPanelArchiver` showed two):
+
+| Case | Result |
+|---|---|
+| the plug-in is installed for the first time | the core's `rar;r##` record is taken over: unpacker = the plug-in, packer stays WinRAR (index 1) |
+| an installed plug-in is upgraded (configuration 1–3) | the core only lets a plug-in extend **its own** record: `rar;r##` joins the plug-in's `7z` record, whose packer is the plug-in — packing into a RAR archive from the panel ends with "Update operations are not supported". The core's `rar;r##` record stays stored and is skipped at runtime (084 FR-017), so nothing claims `rar` twice |
+
+*Pack* (Alt+F5) with *RAR (WinRAR)* is unaffected in both cases.

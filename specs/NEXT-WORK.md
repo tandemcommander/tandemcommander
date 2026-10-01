@@ -16,7 +16,8 @@ on are **no longer on disk** (see there).
 
 **Revised 2026-10-01** — item 7 (the privacy defects of feature 083) is done
 as feature 085, except F9; the GUI steps of 085 join item 3. The ZIP salt
-item 085's review added is done as feature 086.
+item 085's review added is done as feature 086. Item 8 (7-Zip engine, with
+RAR reading — 084 stage S7) is done as feature 087; its GUI pass joins item 3.
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
@@ -478,7 +479,33 @@ statement*).
 
 </details>
 
-## 8. Upgrade the vendored 7-Zip 16.04 → 25.x (recorded 2026-10-01, needs its own spec)
+## 8. Upgrade the vendored 7-Zip 16.04 → 25.x — ✅ DONE as 26.03, with RAR (feature 087, 2026-10-01)
+
+> Delivered as `087-7zip-2603-rar`; record:
+> [`087-7zip-2603-rar/fix-log.md`](087-7zip-2603-rar/fix-log.md). The
+> maintainer chose **26.03** (25.x would have kept the 2026 handler CVEs),
+> the engine reduced to **7z, RAR and RAR5** (so the 7zip plug-in does
+> **not** read ARJ/LZH — 084 R5 is answered: they stay with the 7-Zip
+> console), and `7zwrapper.dll` removed. Feature 084's stage S7 is part of
+> it: RAR opens through the plug-in with no other program installed. Found on
+> the way and fixed: item names were used unchecked (a crafted 7z could write
+> outside the target folder — all earlier versions), *Unpack and delete*
+> deleted a 7z archive after a failed item, the *Word size* setting never
+> reached the engine. **Owed** (join item 3): the GUI pass of
+> `087-7zip-2603-rar/quickstart.md` — RAR on a fresh and on an upgraded
+> configuration (associations), the password prompt, the links message.
+> **Left**: a Unicode password prompt belongs to encoding cluster B-1.
+> Found by the reviews and **not fixed** (older, small; one batch):
+> (a) the 7zip plug-in converts names with strict UTF-8, not the house WTF-8
+> (a lone surrogate in an archived name becomes U+FFFD; feature 066's rule);
+> (b) adding to a 7z archive matches the *stored* names, so a file added into
+> a folder whose name had to be cleaned becomes a second item instead of
+> replacing; (c) on an upgraded configuration `rar` shares the plug-in's `7z`
+> association record, so packing into a RAR archive from the panel is refused
+> instead of going to WinRAR as on a fresh configuration — fixing it needs a
+> core-side association migration.
+
+*Original entry:*
 
 **Prerequisite of feature 084 stage S7** (RAR out of the box,
 `specs/084-archiver-cleanup/`). The 7zip plug-in's engine

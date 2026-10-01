@@ -19,8 +19,14 @@ started the archiver. The list of external archivers dated from the 1990s, and
 most of its entries were MS-DOS programs that 64-bit Windows cannot run at all.
 Archivers are now started directly. Of the old list only RAR (WinRAR) is kept,
 for creating RAR archives; 7-Zip is added for opening and unpacking ARJ and
-LZH/LHA archives. **RAR archives still cannot be opened or unpacked**; that
-comes with a later version, after the built-in 7-Zip engine is updated.
+LZH/LHA archives. RAR archives are opened and unpacked by the 7zip plugin
+(feature 087, below).
+
+RAR without installing anything, and a current 7-Zip engine (feature 087).
+The 7zip plugin's engine is updated from 7-Zip 16.04 (2016) to 26.03, which
+fixes the security defects found in it since, and with it the plugin opens
+and unpacks RAR archives itself. The engine now contains only the 7z and RAR
+formats, the only ones the plugin uses.
 
 Privacy fixes (feature 085): privacy defects found while writing the privacy
 statement of 0.1.8 are fixed, and `PRIVACY.md` now describes the program
@@ -85,8 +91,68 @@ without them.
   they were made with — re-create sensitive ones to get new salts. ZIP 2.0
   encryption itself remains weak by design; use AES for anything that matters
   (feature 086).
+- **Unpacking a 7z archive can no longer write outside the target folder.**
+  The 7zip plugin used each name stored in the archive as it was, so a
+  crafted archive could place files outside the target folder (`..\`), at an
+  absolute path or on another drive, or into a hidden NTFS stream of a file
+  (`name:stream`). Names are now made safe before anything is written: such
+  parts are removed or replaced, the same way for 7z and RAR, and the panel
+  shows each item under the name it will be unpacked with. This affected all
+  earlier versions.
+- **7-Zip security fixes.** The new engine fixes, among others, a 7z PPMd
+  decoding defect (CVE-2023-31102) and an endless loop on crafted data
+  (CVE-2024-11612), and the RAR decoder defects that matter now that RAR is
+  read (CVE-2018-5996, CVE-2018-10115, CVE-2025-53816).
+- **Encrypted 7z archives get unpredictable random values.** The value that
+  starts the encryption of each encrypted 7z archive (its initialisation
+  vector, now 16 bytes instead of 8) comes from a generator seeded by Windows'
+  cryptographic random source; the old engine seeded it only with the time and
+  the process number, like the ZIP plugin's salts before feature 086. Archives
+  made earlier open as before — re-create sensitive ones to get new values.
+- **Unpack and delete keeps a 7z archive that did not unpack completely.**
+  When a file could not be unpacked (a damaged file, a CRC error, or a name
+  too long to unpack), the archive was deleted anyway. It is now kept; so is
+  an archive with links that were left out (see *RAR archives*, below).
+- **Cancelling while unpacking a 7z archive no longer deletes the wrong
+  file.** After choosing *Skip* for a file that already existed and then
+  pressing Cancel, the plugin could delete that existing file; in an archive
+  compressed as one block it could delete the last file it had unpacked
+  completely. Only the file being written at that moment is removed now.
+- **A damaged file in a 7z archive is always offered for keeping or
+  deleting.** This was asked only for one kind of error; after a CRC error
+  the damaged file was kept without a word beyond the error message.
+- **A wrong 7z password is asked for again.** After an unpacking error in an
+  encrypted archive the plugin kept using the same password for the rest of
+  the session; it now asks again at the next operation.
+- A very long archive path could crash the 7zip plugin while it showed an
+  error message.
+- **The 7zip plugin removes the remembered password from memory completely**
+  when the archive is closed; until now part of a long password stayed
+  there.
+- **The *Word size* chosen for 7z packing is used.** The setting in the 7zip
+  plugin's compression options was never passed on correctly, so every 7z
+  archive was made with the compression level's default instead. Archives
+  made now follow the setting; they may come out somewhat smaller or larger
+  than before, and every 7-Zip version reads them.
 
 ### Added
+
+- **RAR archives** (RAR 1.5–4 and RAR5) open in the panel like a folder, can
+  be viewed with F3, copied from with F5 and unpacked with Alt+F9 — no other
+  program needs to be installed. Encrypted archives ask for the password,
+  also before showing the file list when the list itself is encrypted. A
+  split archive (`name.part1.rar`, `name.part2.rar` … or `name.rar`,
+  `name.r00` …) opens from its first part; a missing part is reported.
+  RAR archives cannot be changed: adding, deleting or updating files is
+  refused with a message; creating RAR archives remains WinRAR's job (see
+  *Only programs that work are offered*). An archive that would need more
+  memory to unpack than half of the computer's memory, or more than 4 GB, is
+  refused instead of exhausting the memory. *Unpack and delete* removes all
+  parts of a split archive. **Links are not created**:
+  symbolic and hard links stored in an archive are left out, and you are told
+  how many. **Passwords** can contain only characters of the system code page
+  (for example Czech letters on a Czech Windows); the password prompt cannot
+  take others yet.
 
 - **Cancel.** While an external archiver runs, the small "Executing external
   program" window has a *Cancel* button, and Esc does the same. It stops the
@@ -120,6 +186,18 @@ without them.
   offered only while its program is found. Install it and run *Archivers
   Autoconfiguration*, and they appear. *RAR (WinRAR)* is offered for creating
   RAR archives when WinRAR's console program `Rar.exe` is installed.
+- **The 7zip plugin is registered for RAR** (its configuration is updated
+  once). On an installation updated from an earlier version, RAR shares the
+  7z entry in *Archives Associations in Panels*; creating a RAR archive from
+  the panel then shows that RAR archives cannot be changed, while *Pack*
+  (Alt+F5) with *RAR (WinRAR)* works as before.
+- Symbolic links in a 7z archive made on Linux or macOS are no longer
+  unpacked as small text files holding the link's target. They are left out
+  like the links in RAR archives, you are told how many, and *Unpack and
+  delete* keeps such an archive.
+- In a 7z archive made on Linux or macOS, a backslash that is part of a
+  file name is now shown as a character of that name (as in 7-Zip itself)
+  instead of starting a new folder.
 - The DOS (8.3) variables are no longer offered in the variable menus of the
   packer and unpacker configuration. Commands that already use them keep
   working.
@@ -140,6 +218,8 @@ without them.
   program by its own path are kept unchanged, unless their arguments are
   exactly one of the old *1.44MB volumes* presets. The archiver settings saved by
   this version are not meant to be read by 0.1.8.
+- **`7zwrapper.dll`**, a helper of the 7zip plugin that nothing used. An
+  update removes it from the installation.
 
 ## [0.1.8] — 2026-09-20
 
