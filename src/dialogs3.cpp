@@ -16,6 +16,7 @@
 #include "codetbl.h"
 #include "worker.h"
 #include "menu.h"
+#include "salurlpwd.h" // feature 085: no password from a typed address in history
 
 //
 // ****************************************************************************
@@ -437,6 +438,12 @@ void CCopyMoveDialog::Transfer(CTransferInfo& ti)
             {
                 SalGetWindowTextU8(hWnd, Path, PathBufSize);
                 AddValueToStdHistoryValues(History, HistoryCount, Path, FALSE);
+                // feature 085 (F1): the target may be "ftp://user:password@host/dir";
+                // the copy goes there with the password, its history entry without it.
+                // Only the copy/move target history: CCopyMoveDialog also serves
+                // Create Directory, Quick Rename and Edit New, whose entries are names
+                if (History == Configuration.CopyHistory)
+                    SalStripHistoryPasswords(History, HistoryCount, SalStripUrlPasswords);
             }
         }
     }
@@ -632,6 +639,12 @@ void CCopyMoveMoreDialog::Transfer(CTransferInfo& ti)
             {
                 SalGetWindowTextU8(hWnd, Path, PathBufSize);
                 AddValueToStdHistoryValues(History, HistoryCount, Path, FALSE);
+                // feature 085 (F1): the target may be "ftp://user:password@host/dir";
+                // the copy goes there with the password, its history entry without it.
+                // Only the copy/move target history: CCopyMoveDialog also serves
+                // Create Directory, Quick Rename and Edit New, whose entries are names
+                if (History == Configuration.CopyHistory)
+                    SalStripHistoryPasswords(History, HistoryCount, SalStripUrlPasswords);
             }
         }
     }
@@ -1200,6 +1213,9 @@ void CChangeDirDlg::Transfer(CTransferInfo& ti)
         {
             SalGetWindowTextU8(hWnd, Path, 2 * MAX_PATH);
             AddValueToStdHistoryValues(history, CHANGEDIR_HISTORY_SIZE, Path, FALSE);
+            // feature 085 (F1): 'Path' keeps a typed "ftp://user:password@host" for
+            // the connection; the history entry loses the password part
+            SalStripHistoryPasswords(history, CHANGEDIR_HISTORY_SIZE, SalStripUrlPasswords);
         }
     }
     if (SendDirectlyToPlugin != NULL)

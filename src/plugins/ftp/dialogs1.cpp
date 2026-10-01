@@ -923,8 +923,16 @@ void CConnectDlg::Transfer(CTransferInfo& ti)
     }
 
     // restore the non-expanded variant of the Address string (history stores what the user typed, not the split result)
+    // feature 085 (F1): ...but never the password typed as part of it ("ftp://user:password@host"):
+    // the history (registry) and the drop-down get the address without it; the connection data
+    // were already split from the full text when the field lost focus (IDE_HOSTADDRESS, CBN_KILLFOCUS)
     if (ti.IsGood() && ti.Type == ttDataFromWindow && Config.LastBookmark == 0)
-        SetWindowText(GetDlgItem(HWindow, IDE_HOSTADDRESS), LastRawHostAddress);
+    {
+        char historyAddress[HOST_MAX_SIZE];
+        lstrcpyn(historyAddress, LastRawHostAddress, HOST_MAX_SIZE);
+        FTPStripAddressPassword(historyAddress);
+        SetWindowText(GetDlgItem(HWindow, IDE_HOSTADDRESS), historyAddress);
+    }
     char buf[HOST_MAX_SIZE < FTP_MAX_PATH ? FTP_MAX_PATH : HOST_MAX_SIZE];
     buf[0] = 0;
     HistoryComboBox(HWindow, ti, IDE_HOSTADDRESS, buf, HOST_MAX_SIZE,

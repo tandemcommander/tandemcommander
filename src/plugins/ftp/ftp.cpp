@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salurlpwd.h" // feature 085
+
 // plugin interface object, its methods are called from Salamander
 CPluginInterface PluginInterface;
 // other parts of the CPluginInterface interface
@@ -443,7 +445,11 @@ BOOL LoadHistory(CSalamanderRegistryAbstract* registry, HKEY hKey, const char* n
                     break;
                 }
                 if (!registry->GetValue(historyKey, buf, REG_SZ, history[i], bufferSize))
+                { // feature 085: never leave an uninitialised entry behind (every reader strlen()s it)
+                    free(history[i]);
+                    history[i] = NULL;
                     break;
+                }
             }
         }
         registry->CloseKey(historyKey);
@@ -686,6 +692,10 @@ void CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalamanderRe
         registry->GetValue(regKey, CONFIG_SENDSECRETCOMMAND, REG_DWORD, &Config.SendSecretCommand, sizeof(DWORD));
 
         LoadHistory(registry, regKey, CONFIG_HOSTADDRESSHISTORY, Config.HostAddressHistory, HOSTADDRESS_HISTORY_SIZE);
+        // feature 085 (F1): versions up to 0.1.8 kept a Quick Connect address with
+        // its password ("ftp://user:password@host"); clean what was loaded, so the
+        // next configuration save rewrites the history without it
+        SalStripHistoryPasswords(Config.HostAddressHistory, HOSTADDRESS_HISTORY_SIZE, FTPStripAddressPassword);
         LoadHistory(registry, regKey, CONFIG_INITPATHHISTORY, Config.InitPathHistory, INITIALPATH_HISTORY_SIZE);
 
         registry->GetValue(regKey, CONFIG_ALWAYSRECONNECT, REG_DWORD, &Config.AlwaysReconnect, sizeof(DWORD));

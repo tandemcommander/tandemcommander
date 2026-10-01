@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salurlpwd.h" // feature 085
+
 const char* FTP_ANONYMOUS = "anonymous"; // standard name for an anonymous user
 
 BOOL FTPCutDirectory(CFTPServerPathType type, char* path, int pathBufSize,
@@ -620,6 +622,19 @@ void FTPSplitPath(char* p, char** user, char** password, char** host, char** por
         if (path != NULL)
             *path = p; // path
     }
+}
+
+BOOL FTPStripAddressPassword(char* address)
+{
+    // feature 085 (F1): the Quick Connect Address field is always an address, so
+    // "alice:pw@host" is a user and a password here (the core's generic rule
+    // would read "alice:" as a file-system name). The shared, unit-tested
+    // SalStripAddressPassword skips what may precede the user part - our
+    // file-system names among them. The literal "ftp"/"ftps" are listed too:
+    // the history is cleaned in LoadConfiguration, which may run before the
+    // names are assigned.
+    const char* const names[] = {AssignedFSName, AssignedFSNameFTPS, "ftp", "ftps"};
+    return SalStripAddressPassword(address, names, 4);
 }
 
 int FTPGetUserLength(const char* user)

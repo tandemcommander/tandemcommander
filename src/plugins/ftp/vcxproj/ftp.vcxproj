@@ -129,6 +129,8 @@
     </ClCompile>
     <ClCompile Include="..\..\shared\winliblt.cpp">
     </ClCompile>
+    <ClCompile Include="..\..\..\common\salurlpwd.cpp">
+    </ClCompile>
     <ClCompile Include="..\ctrlcon1.cpp">
     </ClCompile>
     <ClCompile Include="..\ctrlcon2.cpp">
@@ -221,6 +223,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\common\salurlpwd.h">
+    </ClInclude>
     <ClInclude Include="..\..\shared\arraylt.h">
     </ClInclude>
     <ClInclude Include="..\..\shared\auxtools.h">

@@ -22,6 +22,7 @@
 #include "logo.h"
 #include "tasklist.h"
 #include "pwdmngr.h"
+#include "salurlpwd.h" // feature 085
 
 //
 // ConfigVersion - version number of the loaded configuration
@@ -3691,6 +3692,13 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
             LoadHistory(actKey, CONFIG_EDITNEWHISTORY_REG, Configuration.EditNewHistory, EDITNEW_HISTORY_SIZE);
             LoadHistory(actKey, CONFIG_CONVERTHISTORY_REG, Configuration.ConvertHistory, CONVERT_HISTORY_SIZE);
             LoadHistory(actKey, CONFIG_FILTERHISTORY_REG, Configuration.FilterHistory, FILTER_HISTORY_SIZE);
+            // feature 085 (F1): versions up to 0.1.8 kept a typed
+            // "ftp://user:password@host" with its password in these four histories;
+            // clean what was loaded, so the next configuration save rewrites them
+            SalStripHistoryPasswords(Configuration.ChangeDirHistory, CHANGEDIR_HISTORY_SIZE, SalStripUrlPasswords);
+            SalStripHistoryPasswords(Configuration.CopyHistory, COPY_HISTORY_SIZE, SalStripUrlPasswords);
+            SalStripHistoryPasswords(Configuration.EditHistory, EDIT_HISTORY_SIZE, SalStripCommandLinePasswords);
+            SalStripHistoryPasswords(FindLookInHistory, FIND_LOOKIN_HISTORY_SIZE, SalStripUrlPasswords);
             if (DirHistory != NULL)
             {
                 DirHistory->LoadFromRegistry(actKey, CONFIG_WORKDIRSHISTORY_REG);

@@ -54,7 +54,8 @@ extern char* ViewerHistory[VIEWER_HISTORY_SIZE];
 
 void HistoryComboBox(HWND hWindow, CTransferInfo& ti, int ctrlID, char* Text,
                      int textLen, BOOL hexMode, int historySize, char* history[],
-                     BOOL changeOnlyHistory = FALSE);
+                     BOOL changeOnlyHistory = FALSE,
+                     BOOL stripPasswords = FALSE); // feature 085: TRUE for a history that can hold addresses
 void DoHexValidation(HWND edit, const int textLen);
 void ConvertHexToString(char* text, char* hex, int& len);
 

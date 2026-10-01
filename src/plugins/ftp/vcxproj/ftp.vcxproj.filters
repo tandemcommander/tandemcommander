@@ -156,6 +156,9 @@
     <ClCompile Include="..\..\shared\winliblt.cpp">
       <Filter>shared</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\common\salurlpwd.cpp">
+      <Filter>shared</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ctrlcon.h">

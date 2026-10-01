@@ -78,6 +78,12 @@ BOOL FTPAddHexEscapeSequences(char* txt, int txtSize);
 void FTPSplitPath(char* p, char** user, char** password, char** host, char** port,
                   char** path, char* firstCharOfPath, int userLength);
 
+// feature 085: removes the password from an address typed into Quick Connect
+// ("[ftp:|ftps:][//]user:password@host[:port][/path]", also "name://...") in
+// place, for the copy kept in the Address history; returns TRUE when something
+// was removed. Never used on the text a connection is made from.
+BOOL FTPStripAddressPassword(char* address);
+
 // returns the length of the username for use in the "userLength" parameters (FTPSplitPath,
 // FTPFindPath, etc.); for an anonymous user and other usernames without special characters
 // ('@', '/', '\\', ':') returns zero; 'user' can also be NULL

@@ -10,6 +10,7 @@
 #include "fileswnd.h"
 #include "editwnd.h"
 #include "stswnd.h"
+#include "salurlpwd.h" // feature 085
 #include <uxtheme.h>
 
 #include <Shlwapi.h>
@@ -580,6 +581,9 @@ CEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                                 strcpy(history[0], cmdLine);
                             }
                         }
+                        // feature 085 (F1): the command ran as typed; its history entry
+                        // loses the password of every "scheme://user:password@host" in it
+                        SalStripHistoryPasswords(history, EDIT_HISTORY_SIZE, SalStripCommandLinePasswords);
                     }
                     MainWindow->EditWindow->FillHistory();
 

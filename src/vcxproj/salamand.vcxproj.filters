@@ -432,6 +432,9 @@
     <ClCompile Include="..\common\salarcmig.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\salurlpwd.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
     <ClCompile Include="..\common\salunicode.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -771,6 +774,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\salarcmig.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\salurlpwd.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="..\common\salunicode.h">

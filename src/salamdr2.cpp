@@ -2641,7 +2641,11 @@ BOOL LoadHistory(HKEY hKey, const char* name, char* history[], int maxCount)
                     break;
                 }
                 if (!GetValue(historyKey, buf, REG_SZ, history[i], bufferSize))
+                { // feature 085: never leave an uninitialised entry behind (every reader strlen()s it)
+                    free(history[i]);
+                    history[i] = NULL;
                     break;
+                }
                 // feature 005: entries must be valid UTF-8 (feature 004 contract);
                 // drop entries corrupted by older builds that read dialog text
                 // back through ANSI APIs (no reliable re-encoding exists)

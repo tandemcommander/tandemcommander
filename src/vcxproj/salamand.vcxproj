@@ -281,6 +281,8 @@
     </ClCompile>
     <ClCompile Include="..\common\salarcmig.cpp">
     </ClCompile>
+    <ClCompile Include="..\common\salurlpwd.cpp">
+    </ClCompile>
     <ClCompile Include="..\common\salunicode.cpp">
     </ClCompile>
     <ClCompile Include="..\common\sheets.cpp">
@@ -756,6 +758,8 @@
     <ClInclude Include="..\common\sal7zlist.h">
     </ClInclude>
     <ClInclude Include="..\common\salarcmig.h">
+    </ClInclude>
+    <ClInclude Include="..\common\salurlpwd.h">
     </ClInclude>
     <ClInclude Include="..\common\salunicode.h">
     </ClInclude>

@@ -12,6 +12,7 @@
 #include "usermenu.h"
 #include "execute.h"
 #include "gui.h"
+#include "salurlpwd.h" // feature 085
 
 const char* CVIEWERWINDOW_CLASSNAME = "Salamander's Viewer Window";
 
@@ -48,7 +49,7 @@ void GetDefaultViewerLogFont(LOGFONT* lf)
 
 void HistoryComboBox(HWND hWindow, CTransferInfo& ti, int ctrlID, char* Text,
                      int textLen, BOOL hexMode, int historySize, char* history[],
-                     BOOL changeOnlyHistory)
+                     BOOL changeOnlyHistory, BOOL stripPasswords)
 {
     CALL_STACK_MESSAGE6("HistoryComboBox(, , %d, , %d, %d, %d, , %d)",
                         ctrlID, textLen, hexMode, historySize, changeOnlyHistory);
@@ -147,6 +148,12 @@ void HistoryComboBox(HWND hWindow, CTransferInfo& ti, int ctrlID, char* Text,
                 }
             }
         }
+
+        // feature 085 (F1): a history that can hold an address keeps it without
+        // its password; cleaned before the list below is filled from it, so the
+        // drop-down of a dialog that stays open does not show the password either
+        if (stripPasswords)
+            SalStripHistoryPasswords(history, historySize, SalStripUrlPasswords);
 
         if (!changeOnlyHistory)
         {

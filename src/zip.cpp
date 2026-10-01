@@ -18,6 +18,7 @@
 #include "viewer.h"
 #include "codetbl.h"
 #include "shellib.h"
+#include "salurlpwd.h" // feature 085
 #include "gui.h"
 #include "tasklist.h"
 #include "olespy.h"
@@ -4186,6 +4187,13 @@ void CSalamanderGeneral::AddValueToStdHistoryValues(char** historyArr, int histo
         return;
     }
     ::AddValueToStdHistoryValues(historyArr, historyItemsCount, value, caseSensitiveValue);
+    // feature 085 (F1): the two core path histories this service hands out
+    // (SALHIST_COPYMOVETGT, SALHIST_CHANGEDIR) can receive a typed
+    // "ftp://user:password@host" from a plugin's dialog (the FTP plugin's
+    // download target); they never keep the password. A plugin's own arrays
+    // are left exactly as the plugin asked.
+    if (historyArr == Configuration.CopyHistory || historyArr == Configuration.ChangeDirHistory)
+        SalStripHistoryPasswords(historyArr, historyItemsCount, SalStripUrlPasswords);
 }
 
 void CSalamanderGeneral::LoadComboFromStdHistoryValues(HWND combo, char** historyArr, int historyItemsCount)

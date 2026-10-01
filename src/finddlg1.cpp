@@ -1811,7 +1811,8 @@ void CFindDialog::Transfer(CTransferInfo& ti)
     HistoryComboBox(HWindow, ti, IDC_FIND_NAMED, Data.NamedText, NAMED_TEXT_LEN,
                     FALSE, FIND_NAMED_HISTORY_SIZE, FindNamedHistory);
     HistoryComboBox(HWindow, ti, IDC_FIND_LOOKIN, Data.LookInText, LOOKIN_TEXT_LEN,
-                    FALSE, FIND_LOOKIN_HISTORY_SIZE, FindLookInHistory);
+                    FALSE, FIND_LOOKIN_HISTORY_SIZE, FindLookInHistory,
+                    FALSE, TRUE /* feature 085: no password from a typed address */);
 
     ti.CheckBox(IDC_FIND_INCLUDE_SUBDIR, Data.SubDirectories);
     HistoryComboBox(HWindow, ti, IDC_FIND_CONTAINING, Data.GrepText, GREP_TEXT_LEN,

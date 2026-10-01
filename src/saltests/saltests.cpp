@@ -20,6 +20,7 @@
 #include "salcloseapp.h"  // feature 080
 #include "sal7zlist.h"    // feature 084
 #include "salarcmig.h"    // feature 084
+#include "salurlpwd.h"    // feature 085
 
 #include <map>
 #include <set>
@@ -2617,6 +2618,211 @@ static void TestArchiverMigration084()
     // the migration runs only for configurations older than 106, whose index 0 is JAR (contract M0)
 }
 
+// ----------------------------------------------------------------------------
+// feature 085 (F1): passwords typed into addresses never reach a history
+// (src/common/salurlpwd.cpp, contracts/history-password-strip.md)
+
+static std::string Strip085(const char* in)
+{
+    std::string buf(in);
+    buf.push_back(0);
+    SalStripUrlPasswords(&buf[0]);
+    return std::string(buf.c_str());
+}
+
+static std::string StripCmd085(const char* in)
+{
+    std::string buf(in);
+    buf.push_back(0);
+    SalStripCommandLinePasswords(&buf[0]);
+    return std::string(buf.c_str());
+}
+
+static const char* const Fs085[] = {"", NULL, "ftp", "ftps"}; // as FTP passes them before names are assigned
+
+static std::string StripAddr085(const char* in)
+{
+    std::string buf(in);
+    buf.push_back(0);
+    SalStripAddressPassword(&buf[0], Fs085, 4);
+    return std::string(buf.c_str());
+}
+
+static bool ValidU8_085(const std::string& s)
+{
+    return s.empty() || SalU8ToW(s.c_str(), -1, NULL, 0) != 0;
+}
+
+static void TestUrlPasswordStrip085()
+{
+    // --- C2, one typed value: the entry points of the spec (US1)
+    CHECK(Strip085("ftp://alice:s3cret@ftp.example.com/pub") == "ftp://alice@ftp.example.com/pub");
+    CHECK(Strip085("ftp://alice:s3cret@host") == "ftp://alice@host");
+    CHECK(Strip085("ftps://alice:s3cret@host:990/in") == "ftps://alice@host:990/in");
+    CHECK(Strip085("sftp://bob:pw@srv:2222/home") == "sftp://bob@srv:2222/home");
+
+    // form 2: a file-system name without "//"
+    CHECK(Strip085("ftp:alice:pw@host/dir") == "ftp:alice@host/dir");
+    CHECK(Strip085("  ftp:alice:pw@host") == "  ftp:alice@host");
+    CHECK(Strip085("sftp:bob:pw@srv:22/x") == "sftp:bob@srv:22/x");
+    CHECK(Strip085("ftp:corp\\alice:pw@host") == "ftp:corp\\alice@host"); // review finding 2
+    CHECK(Strip085("ftp:host:21/a:b@c") == "ftp:host:21/a:b@c");         // '@' only in the path
+
+    // form 3: a plugin user part sent directly ("//user:pw@host")
+    CHECK(Strip085("//alice:pw@host/pub") == "//alice@host/pub");
+    CHECK(Strip085(" //alice:pw@host") == " //alice@host");
+    CHECK(Strip085("///alice:pw@host") == "///alice:pw@host"); // empty part, nothing to do
+
+    // passwords that look like other things - none of them may survive
+    CHECK(Strip085("ftp://u:p@ss@host/x") == "ftp://u@host/x");                 // unescaped '@'
+    CHECK(Strip085("ftp://u:p%40ss@host") == "ftp://u@host");                    // escaped '@' inside
+    CHECK(Strip085("ftp://u:p:q@host") == "ftp://u@host");                       // ':' inside
+    CHECK(Strip085("ftp://u:@host") == "ftp://u@host");                          // empty password
+    CHECK(Strip085("ftp://alice:correct horse@host/x") == "ftp://alice@host/x"); // review finding 1
+    CHECK(Strip085("ftp://alice:it's@host") == "ftp://alice@host");
+    CHECK(Strip085("ftp://alice:a\"b<c>@host") == "ftp://alice@host");
+    CHECK(Strip085("ftp://alice:pw\\x@host") == "ftp://alice@host");
+    CHECK(Strip085("ftp://corp\\alice:pw@host") == "ftp://corp\\alice@host");   // domain user
+    CHECK(Strip085("ftp://test.name@nas.cz:pw@host") == "ftp://test.name@nas.cz@host"); // '@' in the user name
+    CHECK(Strip085("ftp://u:pa\xC4\x8D@host") == "ftp://u@host");               // UTF-8 password
+    CHECK(Strip085("ftp://\xC4\x8D:pw@host/\xC4\x8D") == "ftp://\xC4\x8D@host/\xC4\x8D");
+    // escaped delimiters the FTP plugin decodes (review finding 4)
+    CHECK(Strip085("ftp://alice%3Apw@host") == "ftp://alice@host");
+    CHECK(Strip085("ftp://alice%3apw@host") == "ftp://alice@host");
+    CHECK(Strip085("ftp://alice:pw%40host") == "ftp://alice%40host");
+    CHECK(Strip085("ftp://a:b%4Pc") == "ftp://a:b%4Pc");                      // "%4P" is no '@'
+    CHECK(Strip085("ftp://a%3Bb@c") == "ftp://a%3Bb@c");                      // "%3B" is no ':'
+    CHECK(Strip085("ftp://u:p%") == "ftp://u:p%");                            // '%' at the end: no over-read
+    CHECK(Strip085("ftp://u:p%4") == "ftp://u:p%4");
+    CHECK(Strip085("ftp://u:p@h%3") == "ftp://u@h%3");
+    // a plugin path continuing with a drive has no user part (review 2, R1: Undelete)
+    CHECK(Strip085("del:C:\\proj\\node_modules\\@types") == "del:C:\\proj\\node_modules\\@types");
+    CHECK(Strip085("del:C:") == "del:C:");
+    CHECK(Strip085("del:C:/x:y@z") == "del:C:/x:y@z");
+
+    // nothing to remove: identical output
+    CHECK(Strip085("ftp://alice@host/pub") == "ftp://alice@host/pub");
+    CHECK(Strip085("ftp://host:2121/pub") == "ftp://host:2121/pub"); // a port is not a password
+    CHECK(Strip085("ftp://[::1]:21/x") == "ftp://[::1]:21/x");
+    CHECK(Strip085("ftp://alice@[::1]:21/x") == "ftp://alice@[::1]:21/x");
+    CHECK(Strip085("ftp://host/a:b@c") == "ftp://host/a:b@c"); // '@' in the path
+    CHECK(Strip085("ftp://a%40b@host") == "ftp://a%40b@host"); // escaped '@' in a user name
+    CHECK(Strip085("C:\\a:b@c") == "C:\\a:b@c");               // drive letter
+    CHECK(Strip085("C://a:b@c") == "C://a:b@c");               // one-letter scheme
+    CHECK(Strip085("\\\\srv\\share\\a") == "\\\\srv\\share\\a");
+    CHECK(Strip085("*.txt;*.md") == "*.txt;*.md");
+    CHECK(Strip085("mailto:john@example.com") == "mailto:john@example.com");
+    CHECK(Strip085("") == "");
+    CHECK(Strip085("10:30") == "10:30");
+
+    // --- C2', the command line
+    CHECK(StripCmd085("curl ftp://alice:s3cret@host/f") == "curl ftp://alice@host/f");
+    CHECK(StripCmd085("cp ftp://a:1@h1/x sftp://b:2@h2/y") == "cp ftp://a@h1/x sftp://b@h2/y");
+    CHECK(StripCmd085("a http://u:p@h https://v:q@k") == "a http://u@h https://v@k");
+    CHECK(StripCmd085("ftp://u:p@h a:b@c") == "ftp://u@h a:b@c"); // a space ends a word
+    CHECK(StripCmd085("x 'ftp://u:p@h' y") == "x 'ftp://u@h' y");
+    CHECK(StripCmd085("<ftp://u:p@h>") == "<ftp://u@h>");
+    CHECK(StripCmd085("curl \"ftp://u:my pass@h/f\" -o x") == "curl \"ftp://u@h/f\" -o x"); // quoted URL
+    CHECK(StripCmd085("curl 'ftp://u:it is@h' -v") == "curl 'ftp://u@h' -v");
+    CHECK(StripCmd085("ftp:alice:pw@host") == "ftp:alice@host");
+    CHECK(StripCmd085("//alice:pw@host") == "//alice@host");
+    CHECK(StripCmd085("git clone https://token@github.com/x") == "git clone https://token@github.com/x");
+    CHECK(StripCmd085("10:30 meeting a:b@c") == "10:30 meeting a:b@c"); // not a name, not a URL
+    CHECK(StripCmd085("echo:hi a:b@c") == "echo:hi a:b@c");             // form 2 ends at the space
+    CHECK(StripCmd085("net use \\\\srv\\c$ /user:x pw") == "net use \\\\srv\\c$ /user:x pw");
+    CHECK(StripCmd085("dir C:\\") == "dir C:\\");
+
+    // --- C2'', the FTP Quick Connect address field
+    CHECK(StripAddr085("alice:pw@host/pub") == "alice@host/pub");
+    CHECK(StripAddr085("  alice:pw@host") == "  alice@host");
+    CHECK(StripAddr085("//alice:pw@host") == "//alice@host");
+    CHECK(StripAddr085("ftp://alice:pw@host") == "ftp://alice@host");
+    CHECK(StripAddr085("ftps://alice:pw@host:990") == "ftps://alice@host:990");
+    CHECK(StripAddr085("FTP:alice:pw@host") == "FTP:alice@host");
+    CHECK(StripAddr085("ftps:alice:pw@host") == "ftps:alice@host");
+    CHECK(StripAddr085("ftp://alice:correct horse@host") == "ftp://alice@host");
+    CHECK(StripAddr085("corp\\alice:pw@host") == "corp\\alice@host");
+    CHECK(StripAddr085("alice@host") == "alice@host");
+    CHECK(StripAddr085("host:21") == "host:21");
+    CHECK(StripAddr085("ftp:pw@host") == "ftp:pw@host"); // "ftp:" is the file-system name here, as FTP parses it
+    {
+        const char* const own[] = {"myftp"};
+        std::string buf("myftp:alice:pw@host");
+        buf.push_back(0);
+        CHECK(SalStripAddressPassword(&buf[0], own, 1));
+        CHECK(strcmp(buf.c_str(), "myftp:alice@host") == 0);
+        CHECK(!SalStripAddressPassword(NULL, own, 1));
+        char plain[] = "alice:pw@host";
+        CHECK(SalStripAddressPassword(plain, NULL, 0) && strcmp(plain, "alice@host") == 0);
+    }
+
+    // --- C1 directly
+    {
+        char a[] = "alice:pw@host";
+        CHECK(SalStripAuthorityPassword(a, FALSE) && strcmp(a, "alice@host") == 0);
+        char b[] = "alice:my pw@host";
+        CHECK(!SalStripAuthorityPassword(b, TRUE)); // a command-line word ends at the space
+        CHECK(SalStripAuthorityPassword(b, FALSE) && strcmp(b, "alice@host") == 0);
+        CHECK(!SalStripAuthorityPassword(NULL, FALSE));
+    }
+
+    // --- C5 invariants: idempotence, no growth, UTF-8 in = UTF-8 out
+    {
+        const char* samples[] = {"ftp://u:p@ss@host/x", "cp ftp://a:1@h1/x sftp://b:2@h2/y",
+                                 "ftp:alice:pw@host", "//alice:pw@host", "C:\\a:b@c", "x",
+                                 "ftp://\xC4\x8D:\xC4\x8D@\xC4\x8D/\xC4\x8D", "curl \"ftp://u:a b@h\"",
+                                 "ftp://alice%3Apw@host"};
+        for (const char* s : samples)
+        {
+            std::string once = Strip085(s);
+            CHECK(Strip085(once.c_str()) == once);
+            CHECK(once.size() <= strlen(s));
+            CHECK(ValidU8_085(once));
+            std::string cmd = StripCmd085(s);
+            CHECK(StripCmd085(cmd.c_str()) == cmd);
+            CHECK(cmd.size() <= strlen(s));
+            CHECK(ValidU8_085(cmd));
+            std::string addr = StripAddr085(s);
+            CHECK(StripAddr085(addr.c_str()) == addr);
+            CHECK(addr.size() <= strlen(s));
+        }
+        char buf[] = "ftp://alice@host";
+        CHECK(!SalStripUrlPasswords(buf));
+        char buf2[] = "ftp://alice:x@host";
+        CHECK(SalStripUrlPasswords(buf2));
+        CHECK(!SalStripUrlPasswords(NULL));
+        CHECK(!SalStripCommandLinePasswords(NULL));
+    }
+
+    // --- C3: the history array
+    {
+        char* h[6];
+        h[0] = _strdup("ftp://alice@host");    // most recent, already clean
+        h[1] = _strdup("ftp://alice:pw@host"); // becomes a duplicate of h[0] -> goes
+        h[2] = NULL;                           // a hole (dropped invalid entry)
+        h[3] = _strdup("C:\\work");
+        h[4] = _strdup("ftp://bob:x@srv/a");
+        h[5] = NULL;
+        CHECK(SalStripHistoryPasswords(h, 6, SalStripUrlPasswords));
+        CHECK(h[0] != NULL && strcmp(h[0], "ftp://alice@host") == 0);
+        CHECK(h[1] != NULL && strcmp(h[1], "C:\\work") == 0);
+        CHECK(h[2] != NULL && strcmp(h[2], "ftp://bob@srv/a") == 0);
+        CHECK(h[3] == NULL && h[4] == NULL && h[5] == NULL);
+        CHECK(!SalStripHistoryPasswords(h, 6, SalStripUrlPasswords)); // second run: nothing to do
+        for (int i = 0; i < 6; i++)
+            free(h[i]);
+    }
+    {
+        char* h[2] = {_strdup("a"), _strdup("b")};
+        CHECK(!SalStripHistoryPasswords(h, 2, SalStripUrlPasswords));
+        CHECK(strcmp(h[0], "a") == 0 && strcmp(h[1], "b") == 0);
+        free(h[0]);
+        free(h[1]);
+        CHECK(!SalStripHistoryPasswords(NULL, 2, SalStripUrlPasswords));
+        CHECK(!SalStripHistoryPasswords(h, 0, SalStripUrlPasswords));
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -2644,6 +2850,7 @@ int main()
     TestCloseApp080();
     TestSevenZipList084();
     TestArchiverMigration084();
+    TestUrlPasswordStrip085();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
