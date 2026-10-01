@@ -496,6 +496,10 @@ public:
     BOOL IsArchiverAvailable(int index);
     // available and able to list an archive (RAR is browsed by the 7zip plug-in)
     BOOL CanBrowse(int index);
+    // feature 089: TRUE when the external archiver 'index' has no list command by design
+    // (RAR's console program since feature 084) - it can never show an archive in a panel,
+    // whether it is installed or not
+    BOOL NeverBrowses(int index);
     BOOL Save(int index, HKEY hKey);
     BOOL Load(HKEY hKey);
 };

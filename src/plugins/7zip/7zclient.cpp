@@ -631,7 +631,29 @@ int C7zClient::GetArchiveItemList(IInArchive* archive, TIndirectArray<CArchiveIt
         // path
         archive->GetProperty(i, kpidPath, &propVariant);
         UString path;
-        path = propVariant.bstrVal;
+        if (propVariant.vt == VT_BSTR && propVariant.bstrVal != NULL)
+            path = propVariant.bstrVal;
+        // feature 089: the name files are matched against when the archive is updated is the
+        // name the panel shows - the cleaned one (feature 087, salarcname.h). With the stored
+        // name, a file added into a folder whose name had to be cleaned ("a:b" shown as "a_b")
+        // found no match and became a second item. Items that stay are copied by index and
+        // deleting matches by index, so only the matching uses this name.
+        bool nameIsStoredName = true;
+        if (!path.IsEmpty()) // an empty path (a nameless stream) is left alone, as in the listing
+        {
+            AString raw = UStringToU8(path);
+            int cleanSize = (int)raw.Len() * 2 + 8;
+            char* clean = (char*)malloc(cleanSize);
+            if (clean != NULL)
+            {
+                if (SalArcCleanItemPath(raw, clean, cleanSize) && strcmp(clean, raw) != 0)
+                {
+                    path = U8ToUString(clean);
+                    nameIsStoredName = false;
+                }
+                free(clean);
+            }
+        }
 
         // Modification Time
         archive->GetProperty(i, kpidMTime, &propVariant);
@@ -649,7 +671,7 @@ int C7zClient::GetArchiveItemList(IInArchive* archive, TIndirectArray<CArchiveIt
         UINT64 size;
         ::ConvertPropVariantToUInt64(propVariant, size);
 
-        CArchiveItem* ai = new CArchiveItem(i, path, size, attr, lastWrite, isDir);
+        CArchiveItem* ai = new CArchiveItem(i, path, size, attr, lastWrite, isDir, nameIsStoredName);
         if (ai == NULL)
         {
             Error(IDS_INSUFFICIENT_MEMORY);
@@ -1032,7 +1054,44 @@ int C7zClient::UpdateMakeUpdateList(TIndirectArray<CFileItem>* fileList, TIndire
         }
         else // cmpRes == 0
         {
-            if (!ai->IsDir)
+            // feature 089: since the archive side uses cleaned names, several items can share
+            // one name ("a:b.txt" and "a_b.txt" are both "a_b.txt"; names differing only in case
+            // always could). The file replaces the item that is really stored under that name
+            // when there is one, else the first; the others stay in the archive.
+            int runEnd = archiveIterIndex + 1;
+            while (runEnd < archiveItemCount &&
+                   MyStringCompareNoCase(fi->Name, (*archiveItems)[archiveIndexes[runEnd]]->Name) == 0)
+                runEnd++;
+            int target = archiveIterIndex;
+            int k;
+            for (k = archiveIterIndex; k < runEnd; k++)
+            {
+                if ((*archiveItems)[archiveIndexes[k]]->NameIsStoredName)
+                {
+                    target = k;
+                    break;
+                }
+            }
+            for (k = archiveIterIndex; k < runEnd; k++)
+            {
+                if (k != target && AddArchiveUpdateInfo(updateList, archiveIndexes[k]) == OPER_CANCEL)
+                    return OPER_CANCEL;
+            }
+            archiveIdx = archiveIndexes[target];
+            ai = (*archiveItems)[archiveIdx];
+
+            if (ai->IsDir)
+            {
+                // feature 089: the archive's directory item stays. Until now neither side was
+                // put on the list, so adding a folder that already existed dropped its item
+                // (an empty folder vanished, its time and attributes were lost), and a FILE
+                // added under the name of a stored folder removed the folder item.
+                if (AddArchiveUpdateInfo(updateList, archiveIdx) == OPER_CANCEL)
+                    return OPER_CANCEL;
+                if (!fi->IsDir)
+                    fi->CanDelete = FALSE; // not packed: the name belongs to a folder
+            }
+            else
             {
                 // overwriting only matters for files
                 EOperationMode mode = overwriteMode;
@@ -1088,7 +1147,7 @@ int C7zClient::UpdateMakeUpdateList(TIndirectArray<CFileItem>* fileList, TIndire
             }
 
             fileIterIndex++;
-            archiveIterIndex++;
+            archiveIterIndex = runEnd;
         }
     }
     // finish building the list

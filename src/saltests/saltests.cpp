@@ -24,6 +24,8 @@
 #include "salrandom.h"    // feature 086
 #include "salarcname.h"   // feature 087
 #include "salplugver.h"   // feature 088
+#include "salarcassoc.h"  // feature 089
+#include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 
 #include <map>
 #include <set>
@@ -3041,6 +3043,131 @@ static void TestArcNames087()
     }
 }
 
+//*****************************************************************************
+//
+// feature 089: the plug-in converters (src/plugins/shared/splunicode.h) are
+// WTF-8 like the core's, and the extension-list helpers of the association
+// update (src/common/salarcassoc.h)
+//
+
+static void TestSplUnicode089()
+{
+    // (1) parity with the core and round trip, W -> bytes -> W
+    static const WCHAR* const wide[] = {
+        L"", L"plain.txt", L"C:\\dir\\\x010D\x00E1st \x4E2D\x6587.bin",
+        L"\xD83D\xDE00 astral pair", // U+1F600
+        L"lone\xD800high.txt", L"lone\xDC00low.txt", L"\xDFFF", L"\xDBFF",
+        L"\xD800\xD800\xDC00", // a lone high surrogate before a valid pair
+        L"\xDC00\xD800",       // reversed pair = two lone surrogates
+        L"tail\xD83D"};
+    for (int i = 0; i < _countof(wide); i++)
+    {
+        char core[200], spl[200];
+        int coreLen = SalWToU8(wide[i], -1, core, _countof(core));
+        int splLen = SplWToU8(wide[i], spl, _countof(spl));
+        CHECK(coreLen > 0 && splLen == coreLen);
+        CHECK(memcmp(core, spl, coreLen) == 0);
+        char* a = SplWToU8Alloc(wide[i]);
+        CHECK(a != NULL && strcmp(a, core) == 0);
+        WCHAR back[200];
+        int backLen = SplU8ToW(spl, back, _countof(back));
+        CHECK(backLen == (int)wcslen(wide[i]) + 1 && wcscmp(back, wide[i]) == 0);
+        WCHAR* wa = SplU8ToWAlloc(spl);
+        CHECK(wa != NULL && wcscmp(wa, wide[i]) == 0);
+        free(a);
+        free(wa);
+    }
+
+    // (2) a lone surrogate is exactly the 3-byte sequence, a pair stays one 4-byte sequence
+    {
+        char b[16];
+        CHECK(SplWToU8(L"\xD800", b, _countof(b)) == 4 && memcmp(b, "\xED\xA0\x80", 4) == 0);
+        CHECK(SplWToU8(L"\xDFFF", b, _countof(b)) == 4 && memcmp(b, "\xED\xBF\xBF", 4) == 0);
+        CHECK(SplWToU8(L"\xD83D\xDE00", b, _countof(b)) == 5 && memcmp(b, "\xF0\x9F\x98\x80", 5) == 0);
+    }
+
+    // (3) every other malformed input still fails, as in the core
+    static const char* const bad[] = {
+        "\xE1", "caf\xE9.txt",  // code-page bytes
+        "\xC0\xAF", "\xC1\xBF", // overlong
+        "\xE0\x80\xAF",         // overlong 3-byte
+        "\xF4\x90\x80\x80",     // above U+10FFFF
+        "\xF5\x80\x80\x80",     // invalid lead byte
+        "\x80", "a\xBF",        // stray continuation
+        "\xE2\x82",             // truncated
+        "\xED\xA0"};            // truncated surrogate sequence
+    for (int i = 0; i < _countof(bad); i++)
+    {
+        WCHAR w[32];
+        w[0] = L'x';
+        CHECK(SplU8ToW(bad[i], w, _countof(w)) == 0 && w[0] == 0);
+        CHECK(SplU8ToWAlloc(bad[i]) == NULL);
+        CHECK(SalU8ToW(bad[i], -1, w, _countof(w)) == 0); // the core agrees
+    }
+
+    // (4) buffer limits: a result that does not fit fails and leaves an empty string
+    {
+        char b3[3];
+        b3[0] = 'x';
+        CHECK(SplWToU8(L"\xD800", b3, _countof(b3)) == 0 && b3[0] == 0); // needs 4 bytes
+        char b4[4];
+        CHECK(SplWToU8(L"\xD800", b4, _countof(b4)) == 4);
+        WCHAR w1[1];
+        w1[0] = L'x';
+        CHECK(SplU8ToW("\xED\xA0\x80", w1, _countof(w1)) == 0 && w1[0] == 0); // needs 2 units
+        WCHAR w2[2];
+        CHECK(SplU8ToW("\xED\xA0\x80", w2, _countof(w2)) == 2 && w2[0] == 0xD800 && w2[1] == 0);
+        CHECK(SplU8ToW(NULL, w2, 2) == 0 && SplWToU8(NULL, b4, 4) == 0);
+        CHECK(SplU8ToWAlloc(NULL) == NULL && SplWToU8Alloc(NULL) == NULL);
+    }
+
+    // (5) the extended-length path helper accepts such a name too
+    {
+        WCHAR* ext = SplU8ToWExtAlloc("C:\\dir\\lone\xED\xA0\x80.txt");
+        CHECK(ext != NULL && wcscmp(ext, L"\\\\?\\C:\\dir\\lone\xD800.txt") == 0);
+        free(ext);
+    }
+}
+
+static BOOL ExtRemove089(const char* list, const char* ext, const char* expect, BOOL expectRemoved)
+{
+    char out[64];
+    BOOL removed = SalExtListRemove(list, ext, out, _countof(out));
+    return removed == expectRemoved && strcmp(out, expect) == 0;
+}
+
+static void TestArcAssoc089()
+{
+    CHECK(SalExtListContains("rar;r##", "rar"));
+    CHECK(SalExtListContains("rar;r##", "R##"));
+    CHECK(SalExtListContains("7z;RAR;r##", "rar"));
+    CHECK(!SalExtListContains("rar;r##", "ra"));
+    CHECK(!SalExtListContains("rar;r##", "r#"));
+    CHECK(!SalExtListContains("xrar;rarx", "rar")); // whole items only
+    CHECK(!SalExtListContains("", "rar"));
+    CHECK(!SalExtListContains("rar", ""));
+    CHECK(!SalExtListContains(NULL, "rar"));
+    CHECK(!SalExtListContains("rar", NULL));
+    CHECK(SalExtListContains("a;;rar", "rar")); // an empty item is no obstacle
+
+    CHECK(ExtRemove089("7z;rar;r##", "rar", "7z;r##", TRUE));
+    CHECK(ExtRemove089("7z;rar;r##", "r##", "7z;rar", TRUE));
+    CHECK(ExtRemove089("7z;rar;r##", "7Z", "rar;r##", TRUE));
+    CHECK(ExtRemove089("rar", "rar", "", TRUE));
+    CHECK(ExtRemove089("rar;rar;x", "rar", "x", TRUE));   // every occurrence
+    CHECK(ExtRemove089("7z;rar", "zip", "7z;rar", FALSE)); // nothing to remove
+    CHECK(ExtRemove089("7z;;rar;", "zip", "7z;rar", FALSE)); // empty items are dropped
+    CHECK(ExtRemove089("", "rar", "", FALSE));
+    CHECK(ExtRemove089(NULL, "rar", "", FALSE));
+    CHECK(ExtRemove089("xrar;rar", "rar", "xrar", TRUE));
+    {
+        char same[32] = "7z;rar;r##"; // in place
+        CHECK(SalExtListRemove(same, "7z", same, _countof(same)) && strcmp(same, "rar;r##") == 0);
+        char tiny5[5];
+        CHECK(!SalExtListRemove("abc;defg", "x", tiny5, _countof(tiny5)) && strcmp(tiny5, "abc") == 0); // cut at an item
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -3071,6 +3198,8 @@ int main()
     TestUrlPasswordStrip085();
     TestRandom086();
     TestArcNames087();
+    TestSplUnicode089();
+    TestArcAssoc089();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

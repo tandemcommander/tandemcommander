@@ -10,8 +10,28 @@
 // interface is UTF-8, while 7za works with UTF-16 (UString/BSTR). Use these
 // two helpers at that boundary - 7za's GetUnicodeString()/GetAnsiString()
 // default to CP_ACP and would mangle (or drop) any non-ASCII name.
-inline UString U8ToUString(const char* u8) { return MultiByteToUnicodeString(u8, CP_UTF8); }
-inline AString UStringToU8(const UString& s) { return UnicodeStringToMultiByte(s, CP_UTF8); }
+// feature 089: names are WTF-8 (feature 066) - a name with an unpaired UTF-16
+// surrogate must come through unchanged in both directions, so the shared
+// plug-in converters (splunicode.h) are used; 7za's own conversion is kept
+// only as the fallback for bytes that are not UTF-8 at all (as before).
+inline UString U8ToUString(const char* u8)
+{
+    WCHAR* w = SplU8ToWAlloc(u8);
+    if (w == NULL)
+        return MultiByteToUnicodeString(u8 != NULL ? u8 : "", CP_UTF8);
+    UString s(w);
+    free(w);
+    return s;
+}
+inline AString UStringToU8(const UString& s)
+{
+    char* u8 = SplWToU8Alloc(s.Ptr());
+    if (u8 == NULL)
+        return UnicodeStringToMultiByte(s, CP_UTF8);
+    AString a(u8);
+    free(u8);
+    return a;
+}
 
 // feature 087: empties a string that held a password. SecureZeroMemory over the
 // text cannot be optimised away; Wipe_and_Empty then clears the rest of the buffer.
@@ -78,10 +98,13 @@ struct CArchiveItem
     UINT64 Size;
     bool IsDir;
     UINT32 Idx;
+    bool NameIsStoredName; // feature 089: 'Name' (the cleaned name) equals the name stored in the archive
 
-    CArchiveItem(UINT32 idx, UString name, UINT64 size, DWORD attr, FILETIME lastWrite, bool isDir)
+    CArchiveItem(UINT32 idx, UString name, UINT64 size, DWORD attr, FILETIME lastWrite, bool isDir,
+                 bool nameIsStoredName = true)
     {
         Idx = idx;
+        NameIsStoredName = nameIsStoredName;
         //    NameInArchive = nameInArchive;
         Name = name;
         Size = size;

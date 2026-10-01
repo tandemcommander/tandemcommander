@@ -668,6 +668,11 @@ BOOL CArchiverConfig::CanBrowse(int index)
            PackBrowseTable[index].ListCommand != NULL;
 }
 
+BOOL CArchiverConfig::NeverBrowses(int index)
+{
+    return index >= 0 && index < PACK_ARCHIVERS_COUNT && PackBrowseTable[index].ListCommand == NULL;
+}
+
 // initializes the configuration based on another configuration
 BOOL CArchiverConfig::Load(CArchiverConfig& src)
 {

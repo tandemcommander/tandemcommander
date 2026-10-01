@@ -58,7 +58,10 @@ int ConfigVersion = 0;
 //    ignore the compression settings and use these new defaults.
 // 4: feature 087 - RAR is read by the plug-in: "rar;r##" panel archiver (view only) and "*.rar" in
 //    the custom unpacker masks.
-#define CURRENT_CONFIG_VERSION 4
+// 5: feature 089 - the "rar;r##" registration is repeated once: the core now lets an installed
+//    plug-in take over the record of an external archiver that can never browse, so an updated
+//    configuration ends like a new one (and a record joined by a development build of 087 is repaired).
+#define CURRENT_CONFIG_VERSION 5
 const char* CONFIG_VERSION = "Version";
 
 CConfig Config;
@@ -623,12 +626,12 @@ void CPluginInterface::Connect(HWND parent, CSalamanderConnectAbstract* salamand
 
     salamander->AddPanelArchiver("7z", TRUE, FALSE);
 
-    // feature 087 (P8): RAR is read-only, so it is registered for "view" only. On a new
-    // installation of the plug-in the core takes its "rar;r##" record over: the plug-in becomes
-    // the unpacker and the record keeps its packer (WinRAR console, feature 084). An installed
-    // plug-in (configuration 1-3) can only extend its own record, so there "rar;r##" joins the
-    // "7z" record and packing into a RAR archive ends with the plug-in's "not supported" message.
-    salamander->AddPanelArchiver("rar;r##", FALSE, ConfigVersion >= 1 && ConfigVersion < 4);
+    // feature 087 (P8): RAR is read-only, so it is registered for "view" only. The core takes
+    // its "rar;r##" record over: the plug-in becomes the unpacker and the record keeps its packer
+    // (WinRAR console, feature 084) - on a new installation of the plug-in by the overlap
+    // take-over, on an installed one (configuration 1-4) by the rule of feature 089
+    // (specs/089-7zip-followups/contracts/association-takeover.md), so both end the same.
+    salamander->AddPanelArchiver("rar;r##", FALSE, ConfigVersion >= 1 && ConfigVersion < 5);
 
     salamander->AddCustomPacker("7-Zip (Plugin)", "7z", ConfigVersion < 1);
     salamander->AddCustomUnpacker("7-Zip (Plugin)", "*.7z;*.rar", ConfigVersion < 4);

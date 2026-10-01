@@ -67,6 +67,7 @@
 #include "salbugreport.h" // feature 079: crash report file name (pure part)
 #include "salcloseapp.h"  // feature 080: closing for an update (pure part)
 #include "salplugver.h"   // feature 088: what a plug-in gets by the interface version it was built for
+#include "salarcassoc.h"  // feature 089: extension lists of archive association records
 #include "spl_com.h"
 #include "spl_base.h"
 #include "spl_crypt.h"

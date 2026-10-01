@@ -890,6 +890,100 @@ void CSalamanderConnect::AddPanelArchiver(const char* extensions, BOOL edit, BOO
             extArray.ResetState();
     }
 
+    // feature 089 (contracts/association-takeover.md C1): an installed plug-in adding extensions
+    // for viewing only. Until now it could only append them to its own first record, so the
+    // result differed from a new installation, where the plug-in takes over the record that
+    // already claims the extension. A record whose external unpacker can never browse (RAR's
+    // console since feature 084) is useless as it stands - the plug-in becomes its viewer and
+    // the record keeps its packer; the same extensions leave the plug-in's other records.
+    if (updateExts && !edit)
+    {
+        BOOL changed = FALSE;
+        int e = 0;
+        while (e < extArray.Count)
+        {
+            int n = -1; // a record with an external never-browsing unpacker that holds extArray[e]
+            int r;
+            for (r = 0; r < PackerFormatConfig.GetFormatsCount(); r++)
+            {
+                int unp = PackerFormatConfig.GetUnpackerIndex(r);
+                if (unp >= 0 && ArchiverConfig.NeverBrowses(unp) &&
+                    SalExtListContains(PackerFormatConfig.GetExt(r), extArray[e]))
+                {
+                    n = r;
+                    break;
+                }
+            }
+            if (n == -1)
+            { // an extension this plug-in already serves in one of its records is not added again
+                BOOL served = FALSE;
+                for (r = 0; !served && r < PackerFormatConfig.GetFormatsCount(); r++)
+                {
+                    served = PackerFormatConfig.GetUnpackerIndex(r) == -Index - 1 &&
+                             SalExtListContains(PackerFormatConfig.GetExt(r), extArray[e]);
+                }
+                if (served)
+                {
+                    extArray.Delete(e);
+                    if (!extArray.IsGood())
+                        extArray.ResetState();
+                }
+                else
+                    e++;
+                continue;
+            }
+
+            // take the record over for viewing; its packer and its extensions stay
+            char taken[300];
+            lstrcpyn(taken, PackerFormatConfig.GetExt(n), _countof(taken));
+            BOOL takenUsePacker = PackerFormatConfig.GetUsePacker(n);
+            int takenPacker = takenUsePacker ? PackerFormatConfig.GetPackerIndex(n) : -1;
+            PackerFormatConfig.SetFormat(n, taken, takenUsePacker, takenPacker, -Index - 1, FALSE);
+            changed = TRUE;
+
+            // every requested extension the record holds is done, and leaves this plug-in's other records
+            int k = 0;
+            while (k < extArray.Count)
+            {
+                if (!SalExtListContains(taken, extArray[k]))
+                {
+                    k++;
+                    continue;
+                }
+                for (r = 0; r < PackerFormatConfig.GetFormatsCount(); r++)
+                {
+                    if (r == n || PackerFormatConfig.GetUnpackerIndex(r) != -Index - 1 ||
+                        !SalExtListContains(PackerFormatConfig.GetExt(r), extArray[k]))
+                        continue;
+                    char rest[300];
+                    SalExtListRemove(PackerFormatConfig.GetExt(r), extArray[k], rest, _countof(rest));
+                    if (rest[0] == 0)
+                    {
+                        PackerFormatConfig.DeleteFormat(r);
+                        if (r < n)
+                            n--;
+                        r--;
+                    }
+                    else
+                    {
+                        BOOL usePacker = PackerFormatConfig.GetUsePacker(r);
+                        PackerFormatConfig.SetFormat(r, rest, usePacker,
+                                                     usePacker ? PackerFormatConfig.GetPackerIndex(r) : -1,
+                                                     PackerFormatConfig.GetUnpackerIndex(r), FALSE);
+                    }
+                }
+                extArray.Delete(k);
+                if (!extArray.IsGood())
+                    extArray.ResetState();
+            }
+            e = 0; // the array changed - start over
+        }
+        if (changed)
+            PackerFormatConfig.BuildArray();
+        if (extArray.Count == 0)
+            return; // nothing is left for the legacy processing below
+    }
+
     int index = -1; // index of the desired intersection of extensions or a record where the plugin provides at least
                     // "view" when updating extensions (the plugin extends/modifies an existing record)
     char ext2[300]; // copy of the extension from PackerFormatConfig (replace ';' with '\0')
