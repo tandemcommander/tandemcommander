@@ -36,18 +36,21 @@ Gate: passes.
 
 ## Stages (one commit each, each independently reviewed)
 
+**Revised after the measurement in the product** (`probe/baseline_result.txt`;
+spec *Clarifications*): the modal dialogs are not lossy, so no dialog is
+re-created as a Unicode window. The stages are:
+
 | Stage | Content | Evidence |
 |---|---|---|
-| **S0** prerequisites | (a) a `CWindow` attached to an existing control takes the control's kind (`IsWindowUnicode`) instead of forcing the code-page subclass — or an explicit parameter at the attach sites of text fields (`CComboboxEdit`, `CEditLBEdit`, key forwarders); (b) overflow in `CTransferInfo::EditLine` / `SalGetWindowTextU8` cuts UTF-8 at a whole character instead of the code-page re-read; (c) the main loop's `IsDialogMessage` becomes the wide one. No dialog converted yet. | saltests for the truncation helper; probe: existing W dialogs (Copy/Move) unchanged; B1Probe pins the Win32 semantics |
-| **S1** modal path dialogs | `unicodeWnd TRUE` for Change Directory, Pack, Unpack, Select, filter, Convert, Make File List, compare arguments, Change Icon, Drive Information (label); the code-page reads on those dialogs (`BrowseCommand`, `BrowseDirCommand`, the `WM_GETTEXT` in Convert) move to the wide helpers | GUI probe per dialog (SC-001, SC-002), negative control on the previous build |
-| **S2** Find | `CFindDialog` + its sub-dialogs W; the Find thread's loop and its secondary loops wide; combo edit helpers follow | typing test through the real loop; menu/shortcut regression |
-| **S3** Configuration | `unicodeWnd` parameter for property pages; the holder's loop wide; pages: Hot Paths, User Menu, Viewers, Editors, Command Shell, Packers, Unpackers, Archiver Locations (+ the pages with masks if the audit is clean); in-place list editor created wide; list/tree notifications handled in both forms; `dialogsp.cpp` code-page reads/writes → UTF-8 helpers | probe: stored values after OK, unchanged-on-OK, label editing |
-| **S4** command line | the control created wide; the typed-character switch, selection offsets, drop position and measuring move to UTF-16 units | probe: insert name, type, run; editing regression |
-| **S5** 7-Zip password | measurement first; winliblt optional `unicodeWnd`; the prompts created wide; password handed to the engine as Unicode; one retry with the legacy form on wrong password | engine probe with archives made by 7-Zip; GUI probe of the prompt |
-| **S6** gates & records | builds, saltests, guard, probes of 087–089/092, CHANGELOG, NEXT-WORK, CLAUDE.md, quickstart | — |
+| **S1** loops and attached helpers | (a) the Find thread's message loop and its secondary loops, and the Configuration window's loop, take and dispatch messages wide (`GetMessageW`/`PeekMessageW`, `IsDialogMessageW`, `TranslateAcceleratorW`, `DispatchMessageW`); the main loop's `IsDialogMessage` becomes the wide one; (b) a helper attached to a text field (`CComboboxEdit` on Find's *Look in* / *Containing* and on the other history combos, the in-place list editor) keeps the field a Unicode control - `AttachToWindow` follows the control's kind; (c) overflow in `EditLine` / `SalGetWindowTextU8` cuts UTF-8 at a whole character instead of re-reading through the code page | `dialogs_probe.ps1`: the 25 lossy rows of the baseline become PASS except the command line; the 56 PASS rows stay; menu, shortcuts, label editing regression |
+| **S2** 7-Zip password | password handed to the engine as Unicode at the four sites; one retry with the legacy form for existing 7z archives (contract P1); buffers wiped | engine probe with archives made by the 7-Zip program; GUI probe of the prompt |
+| **S3** command line | the control created as a Unicode control; the typed-character switch, selection offsets, drop position and measuring move to UTF-16 units | probe: set, type, insert name, run; editing regression |
+| **S4** gates & records | builds, saltests, guard, probes of 087-089/092, CHANGELOG, NEXT-WORK, CLAUDE.md, quickstart | - |
 
-Order: S0 → S1 → S2 → S3 → S5 → S4 → S6 (the command line last; if its
-review does not pass it is reverted and recorded).
+The command line is last; if its review does not pass it is reverted and
+recorded. Not part of the feature (found by the probe, recorded): the main
+window's title shows `?` for such a folder (the main window is a code-page
+window).
 
 ## Risks (from research §5)
 

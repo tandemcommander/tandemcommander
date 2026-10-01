@@ -1,0 +1,319 @@
+##### run 1 #####
+=== dialogs_probe: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-01 19:52:14) ===
+System code page 1250. Test text: 0061 0159 0416 65E5 D83D DCC1
+Manifest: embedded dependency on Microsoft.Windows.Common-Controls, version '6.0.0.0'
+Fixture: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\{0416 002D 043F 0440 043E 0435 043A 0442 | 65E5 672C | D83D DCC1}\<test text>.zip
+Seeded in the registry: Hot Paths\30 Name=<test text> Path=<cjk folder>; User Menu\1 (seeded=True) Command=<cjk folder>\x.exe Arguments=<test text> Initial Directory=<cjk folder>
+
+--- instance in the 'cyr' folder (0416 002D 043F 0440 043E 0435 043A 0442); all surfaces, all channels ---
+   main window title: 'T093 - ?-?????? - Tandem Commander 0.1.8 (x64) ST'
+Loaded comctl32.dll: C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.9278_none_3e0d1ba8e3303201\COMCTL32.dll
+Main window: IsWindowUnicode=False
+   createdir[cyr]: window class=#32770 title='Create Directory'
+createdir[cyr]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=- | act=- | INFO
+createdir[cyr]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+createdir[cyr]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+createdir[cyr]| IDE_PATH id=210           | E | - | - | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | directories now in the panel's folder; OK by BM_CLICK
+   changedir[cyr]: window class=#32770 title='Change Directory'
+changedir[cyr]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+changedir[cyr]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442 | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u0416-\u043F\u0440\u043E\u0435\u043A\u0442
+changedir[cyr]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+changedir[cyr]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   pack[cyr]: window class=#32770 title='Pack'
+pack[cyr] | IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+pack[cyr] | IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(contains) 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 002E 0037 007A | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1.7z
+pack[cyr] | IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+pack[cyr] | IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   unpack[cyr]: window class=#32770 title='Unpack'
+unpack[cyr]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+unpack[cyr]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(list) 0416 002D 043F 0440 043E 0435 043A 0442 | act=007C 007C 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442 | PASS | shown: ; list items (2):  ; C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u0416-\u043F\u0440\u043E\u0435\u043A\u0442
+unpack[cyr]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cyr]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cyr]| IDE_MASK id=521           | A | #32770/Edit/- | dlg=False ctl=True inner=- | exp=- | act=- | INFO
+unpack[cyr]| IDE_MASK id=521           | C | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cyr]| IDE_MASK id=521           | D | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   find[cyr]: window class=#32770 title='Find'
+find[cyr] | IDC_FIND_NAMED id=2505    | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+find[cyr] | IDC_FIND_NAMED id=2505    | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+find[cyr] | IDC_FIND_NAMED id=2505    | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[cyr] | IDC_FIND_LOOKIN id=2501   | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[cyr] | IDC_FIND_LOOKIN id=2501   | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 003F 002D 003F 003F 003F 003F 003F 003F | LOSSY | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\?-??????
+find[cyr] | IDC_FIND_LOOKIN id=2501   | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[cyr] | IDC_FIND_LOOKIN id=2501   | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[cyr] | IDC_FIND_CONTAINING id=2504| A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[cyr] | IDC_FIND_CONTAINING id=2504| C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[cyr] | IDC_FIND_CONTAINING id=2504| D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+   select: window class=#32770 title='Select'
+select    | IDE_FILEMASK id=101       | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+select    | IDE_FILEMASK id=101       | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+select    | IDE_FILEMASK id=101       | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   filter: window class=#32770 title='Filter'
+filter    | IDE_FILTER id=409         | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+filter    | IDE_FILTER id=409         | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+filter    | IDE_FILTER id=409         | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   config: holder class=#32770 title='Configuration' unicode=False; visible page(s): 'Archivers' unicode=False; tree view unicode=True
+config    | -                         | A | - | - | exp=- | act=- | INFO | the first page has no visible edit field
+   hotpaths: window class=#32770 title='Configuration'
+   hotpaths: list class=SysListView32 unicode=False; page unicode=False; End key sent to the list
+hotpaths  | IDC_HOTPATH_PATH id=373   | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+hotpaths  | IDC_HOTPATH_PATH id=373   | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C
+hotpaths  | IDC_HOTPATH_PATH id=373   | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+hotpaths  | IDC_HOTPATH_PATH id=373   | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+hotpaths  | IDC_HOTPATH_NAME id=376   | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+hotpaths  | IDC_HOTPATH_NAME id=376   | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1
+hotpaths  | IDC_HOTPATH_NAME id=376   | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+hotpaths  | IDC_HOTPATH_NAME id=376   | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+   usermenu: window class=#32770 title='Configuration'
+   usermenu: list class=ListBox unicode=False; page unicode=False; Home key sent to the list
+usermenu  | IDE_COMMAND id=352        | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+usermenu  | IDE_COMMAND id=352        | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C 005C 0078 002E 0065 0078 0065 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C 005C 0078 002E 0065 0078 0065 | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C\x.exe
+usermenu  | IDE_COMMAND id=352        | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+usermenu  | IDE_COMMAND id=352        | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+usermenu  | IDE_ARGUMENTS id=359      | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+usermenu  | IDE_ARGUMENTS id=359      | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1
+usermenu  | IDE_ARGUMENTS id=359      | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+usermenu  | IDE_ARGUMENTS id=359      | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+usermenu  | IDE_INITDIR id=357        | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+usermenu  | IDE_INITDIR id=357        | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C
+usermenu  | IDE_INITDIR id=357        | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+usermenu  | IDE_INITDIR id=357        | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+cmdline   | IDC_EDITWINDOW id=955     | A | TandemCommanderMainWindowVer01/ComboBox/Edit | dlg=False ctl=False inner=False | exp=- | act=- | INFO
+cmdline   | IDC_EDITWINDOW id=955     | C | TandemCommanderMainWindowVer01/ComboBox/Edit | dlg=False ctl=False inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+cmdline   | IDC_EDITWINDOW id=955     | D | TandemCommanderMainWindowVer01/ComboBox/Edit | dlg=False ctl=False inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+about     | dialog                    | A | #32770/Static/- | dlg=False ctl=False inner=- | exp=- | act=- | INFO | title ''; ctl = first Static
+msgbox    | dialog                    | A | #32770/Static/Button | dlg=False ctl=True inner=False | exp=- | act=- | INFO | ctl = first Static, inner = first Button; text: [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc093_dlg\no_such_folder_093" Error: The path specified was not found. | [Button id=1] OK
+changedir[E]| IDE_PATH id=210           | E | - | - | exp=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | act = what the field held before OK; OK by BM_CLICK; marker directory created by F7 afterwards landed in: [cjk]; main title: 'T093 - ?? - Tandem Commander 0.1.8 (x64) ST';
+
+--- instance in the 'cjk' folder (65E5 672C); Create Directory, Change Directory, Pack, Unpack, Find only ---
+   main window title: 'T093 - ?? - Tandem Commander 0.1.8 (x64) ST'
+   createdir[cjk]: window class=#32770 title='Create Directory'
+createdir[cjk]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=- | act=- | INFO
+createdir[cjk]| IDE_PATH id=210           | E | - | - | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 ; 006D 0061 0072 006B 0065 0072 005F 0030 0039 0033 | PASS | directories now in the panel's folder; OK by BM_CLICK
+   changedir[cjk]: window class=#32770 title='Change Directory'
+changedir[cjk]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+changedir[cjk]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C
+changedir[cjk]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+changedir[cjk]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   pack[cjk]: window class=#32770 title='Pack'
+pack[cjk] | IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+pack[cjk] | IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(contains) 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 002E 0037 007A | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1.7z
+pack[cjk] | IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+pack[cjk] | IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   unpack[cjk]: window class=#32770 title='Unpack'
+unpack[cjk]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+unpack[cjk]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(list) 65E5 672C | act=007C 007C 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | shown: ; list items (2):  ; C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C
+unpack[cjk]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cjk]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cjk]| IDE_MASK id=521           | A | #32770/Edit/- | dlg=False ctl=True inner=- | exp=- | act=- | INFO
+unpack[cjk]| IDE_MASK id=521           | C | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cjk]| IDE_MASK id=521           | D | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   find[cjk]: window class=#32770 title='Find'
+find[cjk] | IDC_FIND_NAMED id=2505    | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+find[cjk] | IDC_FIND_NAMED id=2505    | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+find[cjk] | IDC_FIND_NAMED id=2505    | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[cjk] | IDC_FIND_LOOKIN id=2501   | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[cjk] | IDC_FIND_LOOKIN id=2501   | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 003F 003F | LOSSY | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\??
+find[cjk] | IDC_FIND_LOOKIN id=2501   | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[cjk] | IDC_FIND_LOOKIN id=2501   | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[cjk] | IDC_FIND_CONTAINING id=2504| A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[cjk] | IDC_FIND_CONTAINING id=2504| C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[cjk] | IDC_FIND_CONTAINING id=2504| D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+
+--- instance in the 'emo' folder (D83D DCC1); Create Directory, Change Directory, Pack, Unpack, Find only ---
+   main window title: 'T093 - ?? - Tandem Commander 0.1.8 (x64) ST'
+   createdir[emo]: window class=#32770 title='Create Directory'
+createdir[emo]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=- | act=- | INFO
+createdir[emo]| IDE_PATH id=210           | E | - | - | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | directories now in the panel's folder; OK by BM_CLICK
+   changedir[emo]: window class=#32770 title='Change Directory'
+changedir[emo]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+changedir[emo]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C D83D DCC1 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C D83D DCC1 | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\uD83D\uDCC1
+changedir[emo]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+changedir[emo]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   pack[emo]: window class=#32770 title='Pack'
+pack[emo] | IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+pack[emo] | IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(contains) 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 002E 0037 007A | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1.7z
+pack[emo] | IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+pack[emo] | IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   unpack[emo]: window class=#32770 title='Unpack'
+unpack[emo]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+unpack[emo]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(list) D83D DCC1 | act=007C 007C 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C D83D DCC1 | PASS | shown: ; list items (2):  ; C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\uD83D\uDCC1
+unpack[emo]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[emo]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[emo]| IDE_MASK id=521           | A | #32770/Edit/- | dlg=False ctl=True inner=- | exp=- | act=- | INFO
+unpack[emo]| IDE_MASK id=521           | C | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[emo]| IDE_MASK id=521           | D | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   find[emo]: window class=#32770 title='Find'
+find[emo] | IDC_FIND_NAMED id=2505    | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+find[emo] | IDC_FIND_NAMED id=2505    | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+find[emo] | IDC_FIND_NAMED id=2505    | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[emo] | IDC_FIND_LOOKIN id=2501   | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[emo] | IDC_FIND_LOOKIN id=2501   | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C D83D DCC1 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 003F 003F | LOSSY | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\??
+find[emo] | IDC_FIND_LOOKIN id=2501   | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[emo] | IDC_FIND_LOOKIN id=2501   | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[emo] | IDC_FIND_CONTAINING id=2504| A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[emo] | IDC_FIND_CONTAINING id=2504| C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[emo] | IDC_FIND_CONTAINING id=2504| D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+Registry: restored; identical=True; SHA-256 before CDC4CF03AAE4F71AA07FFF27A6886BBA681603337B25ED02A40D820B20C007B3 / after CDC4CF03AAE4F71AA07FFF27A6886BBA681603337B25ED02A40D820B20C007B3
+
+Rows: PASS 56, LOSSY 25, NOT DRIVEN 0; unexpected windows: 0
+Test processes left: 0; fixture folder left: False; registry restored identical: True
+
+##### run 2 #####
+=== dialogs_probe: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-01 19:52:14) ===
+System code page 1250. Test text: 0061 0159 0416 65E5 D83D DCC1
+Manifest: embedded dependency on Microsoft.Windows.Common-Controls, version '6.0.0.0'
+Fixture: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\{0416 002D 043F 0440 043E 0435 043A 0442 | 65E5 672C | D83D DCC1}\<test text>.zip
+Seeded in the registry: Hot Paths\30 Name=<test text> Path=<cjk folder>; User Menu\1 (seeded=True) Command=<cjk folder>\x.exe Arguments=<test text> Initial Directory=<cjk folder>
+
+--- instance in the 'cyr' folder (0416 002D 043F 0440 043E 0435 043A 0442); all surfaces, all channels ---
+   main window title: 'T093 - ?-?????? - Tandem Commander 0.1.8 (x64) ST'
+Loaded comctl32.dll: C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.9278_none_3e0d1ba8e3303201\COMCTL32.dll
+Main window: IsWindowUnicode=False
+   createdir[cyr]: window class=#32770 title='Create Directory'
+createdir[cyr]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=- | act=- | INFO
+createdir[cyr]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+createdir[cyr]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+createdir[cyr]| IDE_PATH id=210           | E | - | - | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | directories now in the panel's folder; OK by BM_CLICK
+   changedir[cyr]: window class=#32770 title='Change Directory'
+changedir[cyr]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+changedir[cyr]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442 | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u0416-\u043F\u0440\u043E\u0435\u043A\u0442
+changedir[cyr]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+changedir[cyr]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   pack[cyr]: window class=#32770 title='Pack'
+pack[cyr] | IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+pack[cyr] | IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(contains) 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 002E 0037 007A | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1.7z
+pack[cyr] | IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+pack[cyr] | IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   unpack[cyr]: window class=#32770 title='Unpack'
+unpack[cyr]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+unpack[cyr]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(list) 0416 002D 043F 0440 043E 0435 043A 0442 | act=007C 007C 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442 | PASS | shown: ; list items (2):  ; C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u0416-\u043F\u0440\u043E\u0435\u043A\u0442
+unpack[cyr]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cyr]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cyr]| IDE_MASK id=521           | A | #32770/Edit/- | dlg=False ctl=True inner=- | exp=- | act=- | INFO
+unpack[cyr]| IDE_MASK id=521           | C | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cyr]| IDE_MASK id=521           | D | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   find[cyr]: window class=#32770 title='Find'
+find[cyr] | IDC_FIND_NAMED id=2505    | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+find[cyr] | IDC_FIND_NAMED id=2505    | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+find[cyr] | IDC_FIND_NAMED id=2505    | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[cyr] | IDC_FIND_LOOKIN id=2501   | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[cyr] | IDC_FIND_LOOKIN id=2501   | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 003F 002D 003F 003F 003F 003F 003F 003F | LOSSY | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\?-??????
+find[cyr] | IDC_FIND_LOOKIN id=2501   | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[cyr] | IDC_FIND_LOOKIN id=2501   | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[cyr] | IDC_FIND_CONTAINING id=2504| A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[cyr] | IDC_FIND_CONTAINING id=2504| C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[cyr] | IDC_FIND_CONTAINING id=2504| D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+   select: window class=#32770 title='Select'
+select    | IDE_FILEMASK id=101       | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+select    | IDE_FILEMASK id=101       | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+select    | IDE_FILEMASK id=101       | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   filter: window class=#32770 title='Filter'
+filter    | IDE_FILTER id=409         | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+filter    | IDE_FILTER id=409         | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+filter    | IDE_FILTER id=409         | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   config: holder class=#32770 title='Configuration' unicode=False; visible page(s): 'Archivers' unicode=False; tree view unicode=True
+config    | -                         | A | - | - | exp=- | act=- | INFO | the first page has no visible edit field
+   hotpaths: window class=#32770 title='Configuration'
+   hotpaths: list class=SysListView32 unicode=False; page unicode=False; End key sent to the list
+hotpaths  | IDC_HOTPATH_PATH id=373   | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+hotpaths  | IDC_HOTPATH_PATH id=373   | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C
+hotpaths  | IDC_HOTPATH_PATH id=373   | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+hotpaths  | IDC_HOTPATH_PATH id=373   | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+hotpaths  | IDC_HOTPATH_NAME id=376   | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+hotpaths  | IDC_HOTPATH_NAME id=376   | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1
+hotpaths  | IDC_HOTPATH_NAME id=376   | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+hotpaths  | IDC_HOTPATH_NAME id=376   | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+   usermenu: window class=#32770 title='Configuration'
+   usermenu: list class=ListBox unicode=False; page unicode=False; Home key sent to the list
+usermenu  | IDE_COMMAND id=352        | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+usermenu  | IDE_COMMAND id=352        | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C 005C 0078 002E 0065 0078 0065 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C 005C 0078 002E 0065 0078 0065 | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C\x.exe
+usermenu  | IDE_COMMAND id=352        | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+usermenu  | IDE_COMMAND id=352        | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+usermenu  | IDE_ARGUMENTS id=359      | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+usermenu  | IDE_ARGUMENTS id=359      | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1
+usermenu  | IDE_ARGUMENTS id=359      | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+usermenu  | IDE_ARGUMENTS id=359      | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+usermenu  | IDE_INITDIR id=357        | A | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=- | act=- | INFO
+usermenu  | IDE_INITDIR id=357        | B | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C
+usermenu  | IDE_INITDIR id=357        | C | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+usermenu  | IDE_INITDIR id=357        | D | #32770/Edit/- (parent #32770) | dlg=False ctl=True inner=- parent=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+cmdline   | IDC_EDITWINDOW id=955     | A | TandemCommanderMainWindowVer01/ComboBox/Edit | dlg=False ctl=False inner=False | exp=- | act=- | INFO
+cmdline   | IDC_EDITWINDOW id=955     | C | TandemCommanderMainWindowVer01/ComboBox/Edit | dlg=False ctl=False inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+cmdline   | IDC_EDITWINDOW id=955     | D | TandemCommanderMainWindowVer01/ComboBox/Edit | dlg=False ctl=False inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+about     | dialog                    | A | #32770/Static/- | dlg=False ctl=False inner=- | exp=- | act=- | INFO | title ''; ctl = first Static
+msgbox    | dialog                    | A | #32770/Static/Button | dlg=False ctl=True inner=False | exp=- | act=- | INFO | ctl = first Static, inner = first Button; text: [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc093_dlg\no_such_folder_093" Error: The path specified was not found. | [Button id=1] OK
+changedir[E]| IDE_PATH id=210           | E | - | - | exp=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | act = what the field held before OK; OK by BM_CLICK; marker directory created by F7 afterwards landed in: [cjk]; main title: 'T093 - ?? - Tandem Commander 0.1.8 (x64) ST';
+
+--- instance in the 'cjk' folder (65E5 672C); Create Directory, Change Directory, Pack, Unpack, Find only ---
+   main window title: 'T093 - ?? - Tandem Commander 0.1.8 (x64) ST'
+   createdir[cjk]: window class=#32770 title='Create Directory'
+createdir[cjk]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=- | act=- | INFO
+createdir[cjk]| IDE_PATH id=210           | E | - | - | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 ; 006D 0061 0072 006B 0065 0072 005F 0030 0039 0033 | PASS | directories now in the panel's folder; OK by BM_CLICK
+   changedir[cjk]: window class=#32770 title='Change Directory'
+changedir[cjk]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+changedir[cjk]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C
+changedir[cjk]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+changedir[cjk]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   pack[cjk]: window class=#32770 title='Pack'
+pack[cjk] | IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+pack[cjk] | IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(contains) 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 002E 0037 007A | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1.7z
+pack[cjk] | IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+pack[cjk] | IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   unpack[cjk]: window class=#32770 title='Unpack'
+unpack[cjk]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+unpack[cjk]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(list) 65E5 672C | act=007C 007C 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | PASS | shown: ; list items (2):  ; C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\u65E5\u672C
+unpack[cjk]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cjk]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cjk]| IDE_MASK id=521           | A | #32770/Edit/- | dlg=False ctl=True inner=- | exp=- | act=- | INFO
+unpack[cjk]| IDE_MASK id=521           | C | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[cjk]| IDE_MASK id=521           | D | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   find[cjk]: window class=#32770 title='Find'
+find[cjk] | IDC_FIND_NAMED id=2505    | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+find[cjk] | IDC_FIND_NAMED id=2505    | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+find[cjk] | IDC_FIND_NAMED id=2505    | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[cjk] | IDC_FIND_LOOKIN id=2501   | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[cjk] | IDC_FIND_LOOKIN id=2501   | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 65E5 672C | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 003F 003F | LOSSY | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\??
+find[cjk] | IDC_FIND_LOOKIN id=2501   | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[cjk] | IDC_FIND_LOOKIN id=2501   | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[cjk] | IDC_FIND_CONTAINING id=2504| A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[cjk] | IDC_FIND_CONTAINING id=2504| C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[cjk] | IDC_FIND_CONTAINING id=2504| D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+
+--- instance in the 'emo' folder (D83D DCC1); Create Directory, Change Directory, Pack, Unpack, Find only ---
+   main window title: 'T093 - ?? - Tandem Commander 0.1.8 (x64) ST'
+   createdir[emo]: window class=#32770 title='Create Directory'
+createdir[emo]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=True ctl=True inner=True | exp=- | act=- | INFO
+createdir[emo]| IDE_PATH id=210           | E | - | - | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | directories now in the panel's folder; OK by BM_CLICK
+   changedir[emo]: window class=#32770 title='Change Directory'
+changedir[emo]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+changedir[emo]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C D83D DCC1 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C D83D DCC1 | PASS | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\uD83D\uDCC1
+changedir[emo]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+changedir[emo]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   pack[emo]: window class=#32770 title='Pack'
+pack[emo] | IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+pack[emo] | IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(contains) 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 002E 0037 007A | PASS | shown: a\u0159\u0416\u65E5\uD83D\uDCC1.7z
+pack[emo] | IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+pack[emo] | IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   unpack[emo]: window class=#32770 title='Unpack'
+unpack[emo]| IDE_PATH id=210           | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+unpack[emo]| IDE_PATH id=210           | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=(list) D83D DCC1 | act=007C 007C 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C D83D DCC1 | PASS | shown: ; list items (2):  ; C:\Users\pavel\AppData\Local\Temp\tc093_dlg\\uD83D\uDCC1
+unpack[emo]| IDE_PATH id=210           | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[emo]| IDE_PATH id=210           | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[emo]| IDE_MASK id=521           | A | #32770/Edit/- | dlg=False ctl=True inner=- | exp=- | act=- | INFO
+unpack[emo]| IDE_MASK id=521           | C | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+unpack[emo]| IDE_MASK id=521           | D | #32770/Edit/- | dlg=False ctl=True inner=- | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+   find[emo]: window class=#32770 title='Find'
+find[emo] | IDC_FIND_NAMED id=2505    | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=- | act=- | INFO
+find[emo] | IDC_FIND_NAMED id=2505    | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+find[emo] | IDC_FIND_NAMED id=2505    | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=True | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[emo] | IDC_FIND_LOOKIN id=2501   | A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[emo] | IDC_FIND_LOOKIN id=2501   | B | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=(exact) 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C D83D DCC1 | act=0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 003F 003F | LOSSY | shown: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\??
+find[emo] | IDC_FIND_LOOKIN id=2501   | C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[emo] | IDC_FIND_LOOKIN id=2501   | D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+find[emo] | IDC_FIND_CONTAINING id=2504| A | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=- | act=- | INFO
+find[emo] | IDC_FIND_CONTAINING id=2504| C | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 003F 003F 003F 003F | LOSSY
+find[emo] | IDC_FIND_CONTAINING id=2504| D | #32770/ComboBox/Edit | dlg=False ctl=True inner=False | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0072 003F 003F 003F 003F | LOSSY
+Registry: restored; identical=True; SHA-256 before CDC4CF03AAE4F71AA07FFF27A6886BBA681603337B25ED02A40D820B20C007B3 / after CDC4CF03AAE4F71AA07FFF27A6886BBA681603337B25ED02A40D820B20C007B3
+
+Rows: PASS 56, LOSSY 25, NOT DRIVEN 0; unexpected windows: 0
+Test processes left: 0; fixture folder left: False; registry restored identical: True
