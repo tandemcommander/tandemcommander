@@ -129,7 +129,7 @@
     </ClCompile>
     <ClCompile Include="..\..\shared\winliblt.cpp">
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\7zip\Common\FileStreams.cpp">
+    <ClCompile Include="..\7za\CPP\Common\IntToString.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -139,7 +139,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Common\IntToString.cpp">
+    <ClCompile Include="..\7za\CPP\Common\MyString.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -149,7 +149,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Common\MyString.cpp">
+    <ClCompile Include="..\7za\CPP\Common\MyVector.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -159,7 +159,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Common\MyVector.cpp">
+    <ClCompile Include="..\7za\CPP\Common\StringConvert.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -169,7 +169,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Common\StringConvert.cpp">
+    <ClCompile Include="..\7za\CPP\Windows\DLL.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -179,7 +179,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\windows\dll.cpp">
+    <ClCompile Include="..\7za\CPP\Windows\PropVariant.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -189,27 +189,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\windows\fileio.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\7za\cpp\Windows\PropVariant.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\7za\cpp\Windows\PropVariantConv.cpp">
+    <ClCompile Include="..\7za\CPP\Windows\PropVariantConv.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -275,11 +255,7 @@
     </ClInclude>
     <ClInclude Include="..\..\shared\winliblt.h">
     </ClInclude>
-    <ClInclude Include="..\7za\cpp\7zip\Common\FileStreams.h">
-    </ClInclude>
-    <ClInclude Include="..\7za\cpp\windows\dll.h">
-    </ClInclude>
-    <ClInclude Include="..\7za\cpp\Windows\FileIO.h">
+    <ClInclude Include="..\7za\CPP\Windows\DLL.h">
     </ClInclude>
     <ClInclude Include="..\7zclient.h">
     </ClInclude>
@@ -327,10 +303,6 @@
   <ItemGroup>
     <ProjectReference Include="7ZA\7za.dll.vcxproj">
       <Project>{b18c1731-5bda-4ed6-80a9-9e7d6a0c59b6}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="7zwrapper\7zwrapper.vcxproj">
-      <Project>{509d1c83-66e9-49bf-8343-6d54efaa2875}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="lang_7zip.vcxproj">

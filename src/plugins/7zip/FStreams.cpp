@@ -115,7 +115,7 @@ bool CRetryableOutFileStream::SetMTime(const FILETIME* mTime)
     return ::SetFileTime(Handle, NULL, NULL, mTime) != FALSE;
 }
 
-STDMETHODIMP CRetryableOutFileStream::Write(const void* data, UInt32 size, UInt32* processedSize)
+Z7_COM7F_IMF(CRetryableOutFileStream::Write(const void* data, UInt32 size, UInt32* processedSize))
 {
     if (processedSize != NULL)
         *processedSize = 0;
@@ -144,7 +144,7 @@ STDMETHODIMP CRetryableOutFileStream::Write(const void* data, UInt32 size, UInt3
     return S_OK;
 }
 
-STDMETHODIMP CRetryableOutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64* newPosition)
+Z7_COM7F_IMF(CRetryableOutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64* newPosition))
 {
     if (seekOrigin >= 3)
         return STG_E_INVALIDFUNCTION;
@@ -161,7 +161,7 @@ STDMETHODIMP CRetryableOutFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt
     return S_OK;
 }
 
-STDMETHODIMP CRetryableOutFileStream::SetSize(UInt64 newSize)
+Z7_COM7F_IMF(CRetryableOutFileStream::SetSize(UInt64 newSize))
 {
     LARGE_INTEGER zero;
     LARGE_INTEGER currentPos;
@@ -213,7 +213,7 @@ bool CRetryableInFileStream::Close()
     return true;
 }
 
-STDMETHODIMP CRetryableInFileStream::Read(void* data, UInt32 size, UInt32* processedSize)
+Z7_COM7F_IMF(CRetryableInFileStream::Read(void* data, UInt32 size, UInt32* processedSize))
 {
     if (processedSize != NULL)
         *processedSize = 0;
@@ -237,7 +237,7 @@ STDMETHODIMP CRetryableInFileStream::Read(void* data, UInt32 size, UInt32* proce
     }
 }
 
-STDMETHODIMP CRetryableInFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64* newPosition)
+Z7_COM7F_IMF(CRetryableInFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64* newPosition))
 {
     if (seekOrigin >= 3)
         return STG_E_INVALIDFUNCTION;
@@ -254,7 +254,7 @@ STDMETHODIMP CRetryableInFileStream::Seek(Int64 offset, UInt32 seekOrigin, UInt6
     return S_OK;
 }
 
-STDMETHODIMP CRetryableInFileStream::GetSize(UInt64* size)
+Z7_COM7F_IMF(CRetryableInFileStream::GetSize(UInt64* size))
 {
     LARGE_INTEGER fileSize;
     if (!::GetFileSizeEx(Handle, &fileSize))

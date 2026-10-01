@@ -4,7 +4,7 @@
 #include "precomp.h"
 #include "dbg.h"
 
-#include "..\7zip\7za\c\7zVersion.h"
+#include "7za/C/7zVersion.h" // feature 087: the 26.03 tree (C/ upper-case)
 
 #include "7zip.h"
 #include "dialogs.h"
@@ -12,8 +12,9 @@
 #include "7zip.rh2"
 #include "lang\lang.rh"
 
-#define INITGUID
-
+// feature 087: no INITGUID here - the interface GUIDs are instantiated once,
+// in 7zclient.cpp (Common/MyInitGuid.h); with the 26.03 headers a second
+// definition here produced duplicate IID_* symbols
 #include "7zclient.h"
 
 // ****************************************************************************

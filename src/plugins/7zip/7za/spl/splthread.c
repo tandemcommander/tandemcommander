@@ -1,16 +1,15 @@
-﻿// SPDX-FileCopyrightText: 2023 Open Salamander Authors
+// SPDX-FileCopyrightText: 2023 Open Salamander Authors
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 //
-// This is a modification for the Salamander 7-Zip plugin
+// This is a modification for the Tandem Commander 7-Zip plugin: every thread
+// the engine starts (C/Threads.c, TC_7ZIP_PATCH) runs its body through the
+// plugin's call-stack tracking, so a crash in an engine thread is reported with
+// a call stack. Feature 087: no longer includes the removed spl/StdAfx.h and
+// names the module explicitly in ANSI (the 26.03 engine is built as UNICODE).
 //
 
-#include "StdAfx.h"
-
-/*#ifndef _UNICODE
-#include "../CPP/Common/StringConvert.h"
-#endif
-*/
+#include <windows.h>
 
 typedef struct
 {
@@ -20,13 +19,12 @@ typedef struct
 
 typedef unsigned(__stdcall* FThreadBody)(void*);
 
-DWORD
-RunThreadWithCallStackObject(LPTHREAD_START_ROUTINE startAddress, LPVOID parameter)
+DWORD RunThreadWithCallStackObject(LPTHREAD_START_ROUTINE startAddress, LPVOID parameter)
 {
     HMODULE module = NULL;
     FThreadBody addCallStackObject = NULL;
 
-    if ((module = GetModuleHandle("7zip.spl")) != NULL &&
+    if ((module = GetModuleHandleA("7zip.spl")) != NULL &&
         (addCallStackObject = (FThreadBody)GetProcAddress(module, "AddCallStackObject")) != NULL)
     {
         // successfully obtained AddCallStackObject from 7zip.spl
@@ -38,7 +36,8 @@ RunThreadWithCallStackObject(LPTHREAD_START_ROUTINE startAddress, LPVOID paramet
     }
     else
     {
-        // unlucky; we have to fall back to the old approach
+        // the plugin is not loaded (e.g. the engine driven by a test program):
+        // run the thread body directly
         return startAddress(parameter);
     }
 }

@@ -14,7 +14,7 @@
 
 #include "7za/CPP/Common/StringConvert.h"
 #include "7za/CPP/Common/IntToString.h"
-#include "7za/CPP/Common/Defs.h"
+#include "7za/CPP/Common/Common.h" // feature 087: Common/Defs.h merged into Common.h in 7-Zip 23.01
 #include "7za/CPP/Windows/PropVariant.h"
 
 #include "7za/CPP/7zip/Common/FileStreams.h"
@@ -35,14 +35,14 @@ CArchiveUpdateCallback::~CArchiveUpdateCallback()
     DeleteCriticalSection(&CSUpdate);
 }
 
-STDMETHODIMP CArchiveUpdateCallback::SetTotal(UInt64 size)
+Z7_COM7F_IMF(CArchiveUpdateCallback::SetTotal(UInt64 size))
 {
     Total.Value = size;
     SendMessage(hProgWnd, WM_7ZIP, WM_7ZIP_SETTOTAL, (LPARAM)&Total);
     return S_OK;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::SetCompleted(const UInt64* completeValue)
+Z7_COM7F_IMF(CArchiveUpdateCallback::SetCompleted(const UInt64* completeValue))
 {
     if (completeValue != NULL)
     {
@@ -54,13 +54,9 @@ STDMETHODIMP CArchiveUpdateCallback::SetCompleted(const UInt64* completeValue)
     return S_OK;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::EnumProperties(IEnumSTATPROPSTG** enumerator)
-{
-    return E_NOTIMPL;
-}
 
-STDMETHODIMP CArchiveUpdateCallback::GetUpdateItemInfo(UInt32 index,
-                                                       Int32* newData, Int32* newProperties, UInt32* indexInArchive)
+Z7_COM7F_IMF(CArchiveUpdateCallback::GetUpdateItemInfo(UInt32 index,
+                                                       Int32* newData, Int32* newProperties, UInt32* indexInArchive))
 {
     const CUpdateInfo* ui = (*UpdateList)[index];
     if (ui == NULL)
@@ -90,7 +86,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetUpdateItemInfo(UInt32 index,
     return S_OK;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PROPVARIANT* value)
+Z7_COM7F_IMF(CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PROPVARIANT* value))
 {
     NWindows::NCOM::CPropVariant propVariant;
     const CUpdateInfo* ui = (*UpdateList)[index];
@@ -159,8 +155,8 @@ STDMETHODIMP CArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PR
     return S_OK;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index,
-                                               ISequentialInStream** inStream)
+Z7_COM7F_IMF(CArchiveUpdateCallback::GetStream(UInt32 index,
+                                               ISequentialInStream** inStream))
 {
     /*
   char u[1024];
@@ -258,7 +254,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetStream(UInt32 index,
     return res;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::SetOperationResult(Int32 operationResult)
+Z7_COM7F_IMF(CArchiveUpdateCallback::SetOperationResult(Int32 operationResult))
 {
     /*  char u[1024];
   sprintf(u, "UpdateCallback::SetOperationResult: %d", operationResult);
@@ -267,7 +263,7 @@ STDMETHODIMP CArchiveUpdateCallback::SetOperationResult(Int32 operationResult)
     return S_OK;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64* size)
+Z7_COM7F_IMF(CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64* size))
 {
     if (VolumesSizes.Size() == 0)
         return S_FALSE;
@@ -277,7 +273,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeSize(UInt32 index, UInt64* size)
     return S_OK;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOutStream** volumeStream)
+Z7_COM7F_IMF(CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOutStream** volumeStream))
 {
     wchar_t temp[32];
     ConvertUInt64ToString(index + 1, temp);
@@ -298,7 +294,7 @@ STDMETHODIMP CArchiveUpdateCallback::GetVolumeStream(UInt32 index, ISequentialOu
     return S_FALSE;
 }
 
-STDMETHODIMP CArchiveUpdateCallback::CryptoGetTextPassword2(Int32* passwordIsDefined, BSTR* password)
+Z7_COM7F_IMF(CArchiveUpdateCallback::CryptoGetTextPassword2(Int32* passwordIsDefined, BSTR* password))
 {
     TRACE_I("CArchiveUpdateCallback::CryptoGetTextPassword2");
 

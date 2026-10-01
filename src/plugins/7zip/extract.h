@@ -13,7 +13,6 @@
 //#include "7za/Common/String.h"
 //#include "7za/Common/StdOutStream.h"
 
-#include "7za/CPP/7zip/Common/FileStreams.h"
 
 //#include "7za/7zip/IPassword.h"
 
@@ -28,31 +27,15 @@ struct CArchiveItemInfo;
 
 typedef std::map<UINT32, CArchiveItemInfo*> ItemsToExtractMap;
 
-class CExtractCallbackImp : public IArchiveExtractCallback,
-                            //  public IFolderArchiveExtractCallback,
-                            public ICryptoGetTextPassword,
-                            public CMyUnknownImp
+// feature 087: 7-Zip 26.03 interface macros (Z7_*, every method throw())
+class CExtractCallbackImp Z7_final : public IArchiveExtractCallback,
+                                     public ICryptoGetTextPassword,
+                                     public CMyUnknownImp
 {
-public:
-    MY_UNKNOWN_IMP1(ICryptoGetTextPassword)
-
-    // IProgress
-    STDMETHOD(SetTotal)
-    (UINT64 size);
-    STDMETHOD(SetCompleted)
-    (const UINT64* completeValue);
-
-    // IExtractCallback200
-    STDMETHOD(GetStream)
-    (UINT32 index, ISequentialOutStream** outStream, INT32 askExtractMode);
-    STDMETHOD(PrepareOperation)
-    (INT32 askExtractMode);
-    STDMETHOD(SetOperationResult)
-    (INT32 resultEOperationResult);
-
-    // ICryptoGetTextPassword
-    STDMETHOD(CryptoGetTextPassword)
-    (BSTR* password);
+    Z7_COM_UNKNOWN_IMP_1(ICryptoGetTextPassword)
+    Z7_IFACE_COM7_IMP(IProgress)
+    Z7_IFACE_COM7_IMP(IArchiveExtractCallback)
+    Z7_IFACE_COM7_IMP(ICryptoGetTextPassword)
 
 private:
     CQuadWord Total;

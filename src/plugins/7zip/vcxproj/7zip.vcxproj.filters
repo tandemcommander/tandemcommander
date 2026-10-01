@@ -69,31 +69,25 @@
     <ClCompile Include="..\..\shared\winliblt.cpp">
       <Filter>shared</Filter>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\windows\dll.cpp">
+    <ClCompile Include="..\7za\CPP\Windows\DLL.cpp">
       <Filter>7za\windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\windows\fileio.cpp">
+    <ClCompile Include="..\7za\CPP\Windows\PropVariant.cpp">
       <Filter>7za\windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Windows\PropVariant.cpp">
+    <ClCompile Include="..\7za\CPP\Windows\PropVariantConv.cpp">
       <Filter>7za\windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Windows\PropVariantConv.cpp">
-      <Filter>7za\windows</Filter>
-    </ClCompile>
-    <ClCompile Include="..\7za\cpp\7zip\Common\FileStreams.cpp">
-      <Filter>7za\7zip\common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\7za\cpp\Common\IntToString.cpp">
+    <ClCompile Include="..\7za\CPP\Common\IntToString.cpp">
       <Filter>7za\common No. 1</Filter>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Common\MyString.cpp">
+    <ClCompile Include="..\7za\CPP\Common\MyString.cpp">
       <Filter>7za\common No. 1</Filter>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Common\MyVector.cpp">
+    <ClCompile Include="..\7za\CPP\Common\MyVector.cpp">
       <Filter>7za\common No. 1</Filter>
     </ClCompile>
-    <ClCompile Include="..\7za\cpp\Common\StringConvert.cpp">
+    <ClCompile Include="..\7za\CPP\Common\StringConvert.cpp">
       <Filter>7za\common No. 1</Filter>
     </ClCompile>
   </ItemGroup>
@@ -176,14 +170,8 @@
     <ClInclude Include="..\..\shared\winliblt.h">
       <Filter>shared</Filter>
     </ClInclude>
-    <ClInclude Include="..\7za\cpp\windows\dll.h">
+    <ClInclude Include="..\7za\CPP\Windows\DLL.h">
       <Filter>7za\windows</Filter>
-    </ClInclude>
-    <ClInclude Include="..\7za\cpp\Windows\FileIO.h">
-      <Filter>7za\windows</Filter>
-    </ClInclude>
-    <ClInclude Include="..\7za\cpp\7zip\Common\FileStreams.h">
-      <Filter>7za\7zip\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

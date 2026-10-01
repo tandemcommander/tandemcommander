@@ -141,8 +141,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "salopen", "salopen\salopen.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zip2sfx", "..\plugins\zip\vcxproj\zip2sfx\zip2sfx.vcxproj", "{53D8DB2B-C867-4B87-AB47-68E0ACEB691B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "7zwrapper", "..\plugins\7zip\vcxproj\7zwrapper\7zwrapper.vcxproj", "{509D1C83-66E9-49BF-8343-6D54EFAA2875}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fcremote", "..\plugins\filecomp\vcxproj\fcremote\fcremote.vcxproj", "{89CD2440-2844-4C0B-9CDE-1045334E9EC0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlite", "sqlite\sqlite.vcxproj", "{49D6CEED-804F-4EA6-BD12-2D825E13DAE3}"
@@ -858,16 +856,6 @@ Global
 		{53D8DB2B-C867-4B87-AB47-68E0ACEB691B}.Utils (Release)|Win32.Build.0 = Release|Win32
 		{53D8DB2B-C867-4B87-AB47-68E0ACEB691B}.Utils (Release)|x64.ActiveCfg = Release|Win32
 		{53D8DB2B-C867-4B87-AB47-68E0ACEB691B}.Utils (Release)|x64.Build.0 = Release|Win32
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Debug|Win32.ActiveCfg = Debug|Win32
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Debug|Win32.Build.0 = Debug|Win32
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Debug|x64.ActiveCfg = Debug|x64
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Debug|x64.Build.0 = Debug|x64
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Release|Win32.ActiveCfg = Release|Win32
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Release|Win32.Build.0 = Release|Win32
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Release|x64.ActiveCfg = Release|x64
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Release|x64.Build.0 = Release|x64
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Utils (Release)|Win32.ActiveCfg = Release|Win32
-		{509D1C83-66E9-49BF-8343-6D54EFAA2875}.Utils (Release)|x64.ActiveCfg = Release|x64
 		{89CD2440-2844-4C0B-9CDE-1045334E9EC0}.Debug|Win32.ActiveCfg = Debug|Win32
 		{89CD2440-2844-4C0B-9CDE-1045334E9EC0}.Debug|Win32.Build.0 = Debug|Win32
 		{89CD2440-2844-4C0B-9CDE-1045334E9EC0}.Debug|x64.ActiveCfg = Debug|x64

@@ -13,8 +13,9 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/MP /wd4456 /wd4457 /wd4458 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>..\..\7za\cpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>BZIP2_EXTRACT_ONLY;WIN32;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\7za\CPP;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <!-- feature 087: 7-Zip 26.03 (the Z7_ prefix since 23.01); TC_7ZIP_CALLSTACK = our Threads.c patch -->
+      <PreprocessorDefinitions>Z7_DEFLATE_EXTRACT_ONLY;Z7_BZIP2_EXTRACT_ONLY;TC_7ZIP_CALLSTACK;WIN32;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <CallingConvention>StdCall</CallingConvention>
     </ClCompile>
@@ -22,7 +23,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>mpr.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\shared\libs\$(ShortPlatform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\..\7za\spl\7za.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>

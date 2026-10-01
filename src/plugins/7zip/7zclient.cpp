@@ -87,15 +87,20 @@ C7zClient::~C7zClient()
 
 BOOL C7zClient::CreateObject(const GUID* interfaceID, void** object)
 {
-    TCHAR dllPath[MAX_PATH];
-    if (!GetModuleFileName(DLLInstance, dllPath, MAX_PATH))
+    // feature 087: the 26.03 engine's file layer is wide (FString == UString),
+    // so the engine is loaded by its wide path - which also works when the
+    // installation folder is not representable in the ANSI code page
+    WCHAR dllPath[MAX_PATH];
+    DWORD len = GetModuleFileNameW(DLLInstance, dllPath, MAX_PATH);
+    WCHAR* slash = (len > 0 && len < MAX_PATH) ? wcsrchr(dllPath, L'\\') : NULL;
+    if (slash == NULL || (slash - dllPath) + 1 + 7 + 1 > MAX_PATH)
         return FALSE;
-    lstrcpy(_tcsrchr(dllPath, '\\') + 1, _T("7za.dll"));
+    wcscpy(slash + 1, L"7za.dll");
 
     if (!Load(dllPath))
         return Error(IDS_CANT_LOAD_LIBRARY);
 
-    TCreateObjectFunc createObjectFunc = (TCreateObjectFunc)GetProc("CreateObject");
+    TCreateObjectFunc createObjectFunc = (TCreateObjectFunc)(void*)GetProcAddress(Get_HMODULE(), "CreateObject");
     if (createObjectFunc == 0)
         return Error(IDS_CANT_GET_CRATEOBJECT);
 
@@ -1045,11 +1050,11 @@ C7zClient::SetCompressionParams(IOutArchive* outArchive, CCompressParams* compre
                 // set dictionary size
                 names.Add(L"0d");
                 sprintf(dictSizeStr, "%dB", compressParams->DictSize * 1024); // DictSize is in KB
-                values.push_back(NWindows::NCOM::CPropVariant(GetUnicodeString(dictSizeStr)));
+                values.push_back(NWindows::NCOM::CPropVariant(GetUnicodeString(dictSizeStr).Ptr()));
 
                 // set word size
                 names.Add(L"0fb");
-                prop = compressParams->WordSize;
+                prop = (UInt32)compressParams->WordSize; // 087: CPropVariant has no operator=(int)
                 values.push_back(prop);
                 break;
 
@@ -1061,11 +1066,11 @@ C7zClient::SetCompressionParams(IOutArchive* outArchive, CCompressParams* compre
                 // set dictionary size
                 names.Add(L"0d");
                 sprintf(dictSizeStr, "%dB", compressParams->DictSize * 1024); // DictSize is provided in KB
-                values.push_back(NWindows::NCOM::CPropVariant(GetUnicodeString(dictSizeStr)));
+                values.push_back(NWindows::NCOM::CPropVariant(GetUnicodeString(dictSizeStr).Ptr()));
 
                 // set word size
                 names.Add(L"0fb");
-                prop = compressParams->WordSize;
+                prop = (UInt32)compressParams->WordSize; // 087: CPropVariant has no operator=(int)
                 values.push_back(prop);
                 break;
 
@@ -1077,17 +1082,17 @@ C7zClient::SetCompressionParams(IOutArchive* outArchive, CCompressParams* compre
                 // set dictionary size
                 names.Add(L"0mem");
                 sprintf(dictSizeStr, "%dB", compressParams->DictSize * 1024); // DictSize is provided in KB
-                values.push_back(NWindows::NCOM::CPropVariant(GetUnicodeString(dictSizeStr)));
+                values.push_back(NWindows::NCOM::CPropVariant(GetUnicodeString(dictSizeStr).Ptr()));
 
                 // set word size
                 names.Add(L"0o");
-                prop = compressParams->WordSize;
+                prop = (UInt32)compressParams->WordSize; // 087: CPropVariant has no operator=(int)
                 values.push_back(prop);
                 break;
             } // switch
         }
 
-        RINOK(setProperties->SetProperties(&names.Front(), &values.front(), names.Size()));
+        RINOK(setProperties->SetProperties(&names[0], &values.front(), names.Size()));
     }
 
     return S_OK;

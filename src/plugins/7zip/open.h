@@ -9,29 +9,16 @@
 #include "7za/CPP/7zip/IPassword.h"
 #include "7za/CPP/7zip/Archive/IArchive.h"
 
-class CArchiveOpenCallbackImp : public IArchiveOpenCallback,
-                                public IArchiveOpenVolumeCallback,
-                                public ICryptoGetTextPassword,
-                                public CMyUnknownImp
+// feature 087: 7-Zip 26.03 interface macros (Z7_*, every method throw())
+class CArchiveOpenCallbackImp Z7_final : public IArchiveOpenCallback,
+                                         public IArchiveOpenVolumeCallback,
+                                         public ICryptoGetTextPassword,
+                                         public CMyUnknownImp
 {
-public:
-    MY_UNKNOWN_IMP1(ICryptoGetTextPassword)
-
-    // IArchiveOpenCallback
-    STDMETHOD(SetTotal)
-    (const UInt64* files, const UInt64* bytes);
-    STDMETHOD(SetCompleted)
-    (const UInt64* files, const UInt64* bytes);
-
-    // ICryptoGetTextPassword
-    STDMETHOD(CryptoGetTextPassword)
-    (BSTR* password);
-
-    // IArchiveOpenVolumeCallback
-    STDMETHOD(GetProperty)
-    (PROPID propID, PROPVARIANT* value);
-    STDMETHOD(GetStream)
-    (const wchar_t* name, IInStream** inStream);
+    Z7_COM_UNKNOWN_IMP_1(ICryptoGetTextPassword)
+    Z7_IFACE_COM7_IMP(IArchiveOpenCallback)
+    Z7_IFACE_COM7_IMP(IArchiveOpenVolumeCallback)
+    Z7_IFACE_COM7_IMP(ICryptoGetTextPassword)
 
 private:
     UString& Password;

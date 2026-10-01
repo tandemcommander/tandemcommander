@@ -18,9 +18,14 @@
 // it is opened through the W file API with the \\?\ prefix (splunicode.h).
 // On a read/write error the user is offered Retry/Abort.
 
-class CRetryableOutFileStream : public IOutStream,
-                                public CMyUnknownImp
+// feature 087: 7-Zip 26.03 interface macros (Z7_*, every method throw())
+class CRetryableOutFileStream Z7_final : public IOutStream,
+                                         public CMyUnknownImp
 {
+    Z7_COM_UNKNOWN_IMP_1(IOutStream)
+    Z7_IFACE_COM7_IMP(ISequentialOutStream)
+    Z7_IFACE_COM7_IMP(IOutStream)
+
 public:
     CRetryableOutFileStream(HWND hParentWnd);
 
@@ -32,24 +37,20 @@ public:
 
     bool SetMTime(const FILETIME* mTime);
 
-    MY_UNKNOWN_IMP1(IOutStream)
-
-    STDMETHOD(Write)
-    (const void* data, UInt32 size, UInt32* processedSize);
-    STDMETHOD(Seek)
-    (Int64 offset, UInt32 seekOrigin, UInt64* newPosition);
-    STDMETHOD(SetSize)
-    (UInt64 newSize);
-
 private:
     HANDLE Handle;
     HWND hParentWnd;
 };
 
-class CRetryableInFileStream : public IInStream,
-                               public IStreamGetSize,
-                               public CMyUnknownImp
+class CRetryableInFileStream Z7_final : public IInStream,
+                                        public IStreamGetSize,
+                                        public CMyUnknownImp
 {
+    Z7_COM_UNKNOWN_IMP_2(IInStream, IStreamGetSize)
+    Z7_IFACE_COM7_IMP(ISequentialInStream)
+    Z7_IFACE_COM7_IMP(IInStream)
+    Z7_IFACE_COM7_IMP(IStreamGetSize)
+
 public:
     CRetryableInFileStream(HWND hParentWnd);
 
@@ -58,15 +59,6 @@ public:
     // 'u8FileName' is a UTF-8 path coming from the Salamander interface
     bool Open(const char* u8FileName);
     bool Close();
-
-    MY_UNKNOWN_IMP2(IInStream, IStreamGetSize)
-
-    STDMETHOD(Read)
-    (void* data, UInt32 size, UInt32* processedSize);
-    STDMETHOD(Seek)
-    (Int64 offset, UInt32 seekOrigin, UInt64* newPosition);
-    STDMETHOD(GetSize)
-    (UInt64* size);
 
 private:
     HANDLE Handle;

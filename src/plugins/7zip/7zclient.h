@@ -16,7 +16,7 @@
 #include "7za/CPP/Windows/PropVariant.h"
 #include "7za/CPP/Windows/PropVariantConv.h"
 #include "7za/CPP/Windows/DLL.h"
-#include "7za/CPP/Windows/Defs.h"
+#include "7za/CPP/Windows/WinDefs.h" // feature 087: Windows/Defs.h was renamed in 7-Zip 23.01
 
 #include "extract.h"
 #include "update.h"
@@ -54,7 +54,9 @@ struct CArchiveItemInfo
     const CFileData* FileData;
     bool IsDir;
 
-    CArchiveItemInfo(CSysString name, const CFileData* fd, bool isDir)
+    // feature 087: 'name' as const char* - AString's constructor from char* is
+    // explicit since 7-Zip 23.01
+    CArchiveItemInfo(const char* name, const CFileData* fd, bool isDir)
     {
         NameInArchive = name;
         FileData = fd;

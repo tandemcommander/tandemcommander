@@ -21,17 +21,17 @@ CArchiveOpenCallbackImp::~CArchiveOpenCallbackImp()
 {
 }
 
-STDMETHODIMP CArchiveOpenCallbackImp::SetTotal(const UInt64* /*files*/, const UInt64* /*bytes*/)
+Z7_COM7F_IMF(CArchiveOpenCallbackImp::SetTotal(const UInt64* /*files*/, const UInt64* /*bytes*/))
 {
     return S_OK;
 }
 
-STDMETHODIMP CArchiveOpenCallbackImp::SetCompleted(const UInt64* /*files*/, const UInt64* /*bytes*/)
+Z7_COM7F_IMF(CArchiveOpenCallbackImp::SetCompleted(const UInt64* /*files*/, const UInt64* /*bytes*/))
 {
     return S_OK;
 }
 
-STDMETHODIMP CArchiveOpenCallbackImp::CryptoGetTextPassword(BSTR* password)
+Z7_COM7F_IMF(CArchiveOpenCallbackImp::CryptoGetTextPassword(BSTR* password))
 {
     if (Password.IsEmpty())
     {
@@ -49,13 +49,13 @@ STDMETHODIMP CArchiveOpenCallbackImp::CryptoGetTextPassword(BSTR* password)
     return S_OK;
 }
 
-STDMETHODIMP CArchiveOpenCallbackImp::GetStream(const wchar_t* name,
-                                                IInStream** inStream)
+Z7_COM7F_IMF(CArchiveOpenCallbackImp::GetStream(const wchar_t* name,
+                                                IInStream** inStream))
 {
     return S_OK;
 }
 
-STDMETHODIMP CArchiveOpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT* value)
+Z7_COM7F_IMF(CArchiveOpenCallbackImp::GetProperty(PROPID propID, PROPVARIANT* value))
 {
     return S_OK;
 }

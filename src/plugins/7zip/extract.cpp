@@ -14,7 +14,7 @@
 #include "7zclient.h"
 
 #include "Common/StringConvert.h"
-#include "Windows/Defs.h"
+#include "Windows/WinDefs.h" // feature 087: renamed in 7-Zip 23.01
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConv.h"
 #include "7zip/IPassword.h"
@@ -113,7 +113,7 @@ void CExtractCallbackImp::Cleanup()
     }
 }
 
-STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 size)
+Z7_COM7F_IMF(CExtractCallbackImp::SetTotal(UINT64 size))
 {
     //  TRACE_I("CExtractCallbackImp::SetTotal: size=" << (DWORD)size);
 
@@ -123,7 +123,7 @@ STDMETHODIMP CExtractCallbackImp::SetTotal(UINT64 size)
     return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64* completeValue)
+Z7_COM7F_IMF(CExtractCallbackImp::SetCompleted(const UINT64* completeValue))
 {
     //  TRACE_I("CExtractCallbackImp::SetCompleted: completeValue=" << (DWORD)(*completeValue));
 
@@ -137,7 +137,7 @@ STDMETHODIMP CExtractCallbackImp::SetCompleted(const UINT64* completeValue)
     return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream** outStream, INT32 askExtractMode)
+Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream** outStream, INT32 askExtractMode))
 {
     HRESULT ret = S_OK;
 
@@ -286,7 +286,7 @@ STDMETHODIMP CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
     return ret;
 }
 
-STDMETHODIMP CExtractCallbackImp::PrepareOperation(INT32 askExtractMode)
+Z7_COM7F_IMF(CExtractCallbackImp::PrepareOperation(INT32 askExtractMode))
 {
     /*  char u[1024];
   sprintf(u, "CExtractCallbackImp::PrepareOperation: askExtractMode: %d", askExtractMode);
@@ -429,7 +429,7 @@ LRESULT CExtractCallbackImp::Error(int resID, ...)
     return SendMessage(hProgWnd, WM_7ZIP, WM_7ZIP_SHOWMBOXEX, (LPARAM)&mbep);
 }
 
-STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResult)
+Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResult))
 {
     //  TRACE_I("CExtractCallbackImp::SetOperationResult: result = " << resultEOperationResult);
 
@@ -502,7 +502,7 @@ STDMETHODIMP CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
     return S_OK;
 }
 
-STDMETHODIMP CExtractCallbackImp::CryptoGetTextPassword(BSTR* password)
+Z7_COM7F_IMF(CExtractCallbackImp::CryptoGetTextPassword(BSTR* password))
 {
     if (!PasswordIsDefined /*&& !Silent*/) // Silent is for skip, which is not implemented in 7za.dll
     {
