@@ -987,7 +987,7 @@ CFoundFilesListView::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     {
                         lstrcpyn(fileName, f->Path, MAX_PATH);
                         SalPathAppend(fileName, f->Name, MAX_PATH);
-                        if (StrICmp(fileName, FileNamesEnumData.LastFileName) == 0)
+                        if (SalNameEqualOrdinalCI(fileName, -1, FileNamesEnumData.LastFileName, -1)) // feature 092: the file system's identity rule
                         {
                             ok = TRUE;
                             indexNotFound = FALSE;
@@ -1003,7 +1003,7 @@ CFoundFilesListView::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                             {
                                 lstrcpyn(fileName, f->Path, MAX_PATH);
                                 SalPathAppend(fileName, f->Name, MAX_PATH);
-                                if (StrICmp(fileName, FileNamesEnumData.LastFileName) == 0)
+                                if (SalNameEqualOrdinalCI(fileName, -1, FileNamesEnumData.LastFileName, -1))
                                     break;
                             }
                         }

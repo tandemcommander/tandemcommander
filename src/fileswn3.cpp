@@ -158,6 +158,7 @@ BOOL CFilesWindow::ReadDirectory(HWND parent, BOOL isRefresh)
         case DRIVE_REMOVABLE:
         {
             BOOL isDriveFloppy = FALSE; // floppies have their own configuration beside other removable drives
+            // encoding-check: allow acp-byte-table-on-name - the first byte of a full path: a drive letter
             int drv = UpperCase[fileName[0]] - 'A' + 1;
             if (drv >= 1 && drv <= 26) // perform a range check just to be safe
             {

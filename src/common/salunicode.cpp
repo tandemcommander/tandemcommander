@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Pavel Stupka
+﻿// SPDX-FileCopyrightText: 2026 Pavel Stupka
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
@@ -975,47 +975,61 @@ int SalNameCompareOrdinalCI(const char* a, int aLen, const char* b, int bLen)
     int la = aLen < 0 ? (int)strlen(a) : aLen;
     int lb = bLen < 0 ? (int)strlen(b) : bLen;
 
-    // tier 1: ASCII
-    if (SalBytesAreASCII(a, la) && SalBytesAreASCII(b, lb))
+    // The order is lexicographic over: the leading ASCII characters (folded to upper
+    // case), then "the tail" - everything from the first non-ASCII byte on. For two
+    // valid WTF-8 strings that IS CompareStringOrdinal(..., TRUE) on the whole strings
+    // (an ASCII unit sorts below every other unit and equals none of them - checked by
+    // saltests against the operating system's table). Written this way it is a total
+    // order over ALL byte strings, valid or not, so a sorted list may hold both.
+    int l = la < lb ? la : lb;
+    int i = 0;
+    for (; i < l; i++)
     {
-        int l = la < lb ? la : lb;
-        for (int i = 0; i < l; i++)
-        {
-            BYTE ca = SalAsciiUpper((BYTE)a[i]);
-            BYTE cb = SalAsciiUpper((BYTE)b[i]);
-            if (ca != cb)
-                return ca < cb ? -1 : 1;
-        }
-        if (la != lb)
-            return la < lb ? -1 : 1;
-        return 0;
+        BYTE ra = (BYTE)a[i];
+        BYTE rb = (BYTE)b[i];
+        if ((ra | rb) & 0x80)
+            break;
+        BYTE ca = SalAsciiUpper(ra);
+        BYTE cb = SalAsciiUpper(rb);
+        if (ca != cb)
+            return ca < cb ? -1 : 1;
     }
+    if (i == l) // one string is a prefix of the other (ignoring ASCII case): shorter is smaller
+        return la == lb ? 0 : (la < lb ? -1 : 1);
+    if (((BYTE)a[i] & 0x80) == 0)
+        return -1; // an ASCII character against a tail
+    if (((BYTE)b[i] & 0x80) == 0)
+        return 1;
 
-    // tier 2: both valid WTF-8 -> the file system's rule on UTF-16
+    // two tails: valid WTF-8 ones by the file system's rule, text that is not WTF-8 (a
+    // legacy plug-in's name) after them and among itself by the legacy byte fold
+    const char* ta = a + i;
+    const char* tb = b + i;
+    int lta = la - i;
+    int ltb = lb - i;
     WCHAR stackA[SAL_IDENT_STACK_UNITS];
     WCHAR stackB[SAL_IDENT_STACK_UNITS];
     WCHAR* heapA = NULL;
     WCHAR* heapB = NULL;
     int ua = 0;
     int ub = 0;
-    const WCHAR* wa = SalIdentToW(a, la, stackA, &heapA, &ua);
-    const WCHAR* wb = wa != NULL ? SalIdentToW(b, lb, stackB, &heapB, &ub) : NULL;
+    const WCHAR* wa = SalIdentToW(ta, lta, stackA, &heapA, &ua);
+    const WCHAR* wb = SalIdentToW(tb, ltb, stackB, &heapB, &ub);
     int ret;
     if (wa != NULL && wb != NULL)
     {
-        if (ua == 0 || ub == 0)
-            ret = ua == ub ? 0 : (ua < ub ? -1 : 1);
+        int cmp = CompareStringOrdinal(wa, ua, wb, ub, TRUE);
+        if (cmp == 0) // cannot happen with valid arguments; stay deterministic
+            ret = SalLegacyCompareCI(ta, lta, tb, ltb);
         else
-        {
-            int cmp = CompareStringOrdinal(wa, ua, wb, ub, TRUE);
-            if (cmp == 0) // cannot happen with valid arguments; stay deterministic
-                ret = SalLegacyCompareCI(a, la, b, lb);
-            else
-                ret = cmp - CSTR_EQUAL;
-        }
+            ret = cmp - CSTR_EQUAL;
     }
+    else if (wa != NULL)
+        ret = -1;
+    else if (wb != NULL)
+        ret = 1;
     else
-        ret = SalLegacyCompareCI(a, la, b, lb); // tier 3
+        ret = SalLegacyCompareCI(ta, lta, tb, ltb);
     if (heapA != NULL)
         free(heapA);
     if (heapB != NULL)
@@ -1034,6 +1048,16 @@ BOOL SalNameEqualOrdinalCI(const char* a, int aLen, const char* b, int bLen)
     {
         b = "";
         bLen = 0;
+    }
+    // Look-up loops call this once per item and almost every call differs in the first
+    // character: two ASCII first bytes that differ after the fold settle it at once, in
+    // every tier, before the strings are even measured.
+    if (aLen != 0 && bLen != 0)
+    {
+        BYTE fa = (BYTE)a[0];
+        BYTE fb = (BYTE)b[0];
+        if (((fa | fb) & 0x80) == 0 && SalAsciiUpper(fa) != SalAsciiUpper(fb))
+            return FALSE;
     }
     int la = aLen < 0 ? (int)strlen(a) : aLen;
     int lb = bLen < 0 ? (int)strlen(b) : bLen;
@@ -1093,9 +1117,9 @@ BOOL SalPathHasPrefixOrdinalCI(const char* path, const char* prefix, int prefixL
                 *pathBytes = pl;
             return TRUE;
         }
-        // An ASCII prefix can only equal ASCII units... except through a case
-        // mapping that crosses into ASCII (e.g. U+017F, should the OS table map
-        // it to 'S'): let tier 2 decide rather than assume.
+        // No character outside ASCII equals an ASCII one today (measured over the
+        // whole BMP), but that is the operating system's table, not ours: let
+        // tier 2 decide rather than assume.
     }
 
     WCHAR stackP[SAL_IDENT_STACK_UNITS];
@@ -1120,11 +1144,22 @@ BOOL SalPathHasPrefixOrdinalCI(const char* path, const char* prefix, int prefixL
             !(ut > up && wt[up - 1] >= 0xD800 && wt[up - 1] <= 0xDBFF && wt[up] >= 0xDC00 && wt[up] <= 0xDFFF) &&
             CompareStringOrdinal(wt, up, wp, up, TRUE) == CSTR_EQUAL)
         {
-            ret = TRUE;
-            if (pathBytes != NULL)
+            // the bytes of the path that hold those 'up' units, counted on the path itself
+            // (a 4-byte sequence is two units, everything else one)
+            int bytes = 0;
+            int units = 0;
+            while (units < up && bytes < pathLen)
             {
-                int n = SalWToU8(wt, up, NULL, 0); // bytes of those units + 1
-                *pathBytes = n > 0 ? n - 1 : pl;
+                BYTE lead = (BYTE)path[bytes];
+                int seq = lead < 0x80 ? 1 : lead < 0xE0 ? 2 : lead < 0xF0 ? 3 : 4;
+                units += seq == 4 ? 2 : 1;
+                bytes += seq;
+            }
+            if (units == up && bytes <= pathLen)
+            {
+                ret = TRUE;
+                if (pathBytes != NULL)
+                    *pathBytes = bytes;
             }
         }
     }

@@ -67,7 +67,7 @@ Lists the program keeps sorted to search them (selected names remembered across 
 
 - A name with an unpaired surrogate (legal on NTFS): equals itself and its ASCII-case variants; two names differing only in the surrogate differ.
 - Two spellings of the same accented letter (precomposed and decomposed): **different** names, as on NTFS.
-- Letters whose upper and lower case have different lengths in UTF-8 (dotless `ı`, long `ſ`): the "is a prefix of" decision must not cut a character.
+- Letters whose upper and lower case have different lengths in UTF-8: measured over the whole Basic Multilingual Plane there are 973 case pairs, 7 of them with a 2-byte and a 3-byte member (for example `ⱥ` U+2C65 / `Ⱥ` U+023A). No comparison may be skipped because the byte lengths differ, and "is a prefix of" must count on the path itself. (Dotless `ı` / `I` and long `ſ` / `S` are **not** the same letter for the file system.)
 - Text that is not valid UTF-8 (a legacy plug-in's name): compared exactly as before.
 - Turkish system locale: the rule does not depend on the locale.
 - Plug-ins calling the exported comparison services: unchanged results.

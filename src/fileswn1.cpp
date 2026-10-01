@@ -1951,7 +1951,9 @@ void CFilesWindow::SelectUnselectByFocusedItem(BOOL select, BOOL byName)
             int len = byName ? (itemIsDir ? item->NameLen : (int)(item->Ext - item->Name)) : (itemIsDir ? 0 : (int)lstrlen(item->Ext));
             if (!itemIsDir && byName && *item->Ext != 0)
                 len--; // skip '.'
-            if (len == focusedLen && StrNICmp(str, focusedStr, len) == 0)
+            // feature 092: the same name / the same extension by the file system's rule (the
+            // pieces end at character boundaries, so each is a string of its own)
+            if (SalNameEqualOrdinalCI(str, len, focusedStr, focusedLen))
                 SetSel(select, item);
         }
         if (SelectedCount != lastSelectdCount)
@@ -2462,7 +2464,8 @@ BOOL CFilesWindow::CommonRefresh(HWND parent, int suggestedTopIndex, const char*
             int i;
             for (i = 0; i < Dirs->Count; i++)
             {
-                if (StrICmp(Dirs->At(i).Name, suggestedFocusName) == 0)
+                // feature 092: the file system's identity rule, not the code-page byte fold
+                if (SalNameEqualOrdinalCI(Dirs->At(i).Name, -1, suggestedFocusName, -1))
                 {
                     if (suggestedFocusIndexIgnCase == -1)
                         suggestedFocusIndexIgnCase = i;
@@ -2477,7 +2480,7 @@ BOOL CFilesWindow::CommonRefresh(HWND parent, int suggestedTopIndex, const char*
             {
                 for (i = 0; i < Files->Count; i++)
                 {
-                    if (StrICmp(Files->At(i).Name, suggestedFocusName) == 0)
+                    if (SalNameEqualOrdinalCI(Files->At(i).Name, -1, suggestedFocusName, -1))
                     {
                         if (suggestedFocusIndexIgnCase == -1)
                             suggestedFocusIndexIgnCase = i + Dirs->Count;

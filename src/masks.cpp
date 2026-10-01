@@ -46,9 +46,11 @@ static BOOL AgreeMaskA(const char* filename, const char* mask, BOOL hasExtension
             return FALSE; // mask is too short
         BOOL agree;
         if (extendedMode)
+            // encoding-check: allow acp-byte-table-on-name - the byte matcher runs only for ASCII pairs and for text that is not UTF-8 (feature 004); UTF-8 names go to the wide twin
             agree = (LowerCase[*filename] == LowerCase[*mask] || *mask == '?' || // match or '?' represents any character or '#' represents any digit
                      (*mask == '#' && *filename >= '0' && *filename <= '9'));
         else
+            // encoding-check: allow acp-byte-table-on-name - the byte matcher runs only for ASCII pairs and for text that is not UTF-8 (feature 004); UTF-8 names go to the wide twin
             agree = (LowerCase[*filename] == LowerCase[*mask] || *mask == '?'); // match or '?' represents any character
         if (agree)
         {
@@ -324,6 +326,7 @@ BOOL AgreeQSMaskAux(const char* filename, BOOL hasExtension, const char* filenam
             offset = (int)(filename - filenameBase);
             return TRUE; // end of mask, 'offset' = how far it reaches into the file name
         }
+        // encoding-check: allow acp-byte-table-on-name - the quick-search matcher runs only for ASCII pairs (fileswn0.cpp); other names go to the Unicode path
         if (LowerCase[*filename] == LowerCase[*mask])
         {
             filename++;

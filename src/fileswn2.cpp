@@ -2735,8 +2735,9 @@ BOOL CFilesWindow::ChangeAndListPathOnFS(const char* fsName, int fsNameIndex, co
         for (i = 0; i < count; i++)
         {
             CFileData* f = &(files->At(i));
-            if (cutFileNameLen == f->NameLen &&
-                StrICmpEx(f->Name, cutFileNameLen, cutFileName, cutFileNameLen) == 0)
+            // feature 092: the file system's identity rule, not the code-page byte fold; no
+            // byte-length guard in front of it - equal names need not have equal UTF-8 lengths
+            if (SalNameEqualOrdinalCI(f->Name, f->NameLen, cutFileName, cutFileNameLen))
                 break;
         }
         if (i == count) // report error (the file to focus was not found)
@@ -3095,7 +3096,7 @@ BOOL CFilesWindow::ChangePathToPluginFS(const char* fsName, const char* fsUserPa
                     for (i = 0; i < Dirs->Count; i++)
                     { // for consistency with CommonRefresh we search directories first,
                         // then files (so it behaves the same in both cases)
-                        if (StrICmp(Dirs->At(i).Name, cutFileName) == 0)
+                        if (SalNameEqualOrdinalCI(Dirs->At(i).Name, -1, cutFileName, -1)) // feature 092: as in CommonRefresh
                         {
                             if (focusIndexIgnCase == -1)
                                 focusIndexIgnCase = i;
@@ -3110,7 +3111,7 @@ BOOL CFilesWindow::ChangePathToPluginFS(const char* fsName, const char* fsUserPa
                     {
                         for (i = 0; i < Files->Count; i++)
                         {
-                            if (StrICmp(Files->At(i).Name, cutFileName) == 0)
+                            if (SalNameEqualOrdinalCI(Files->At(i).Name, -1, cutFileName, -1))
                             {
                                 if (focusIndexIgnCase == -1)
                                     focusIndexIgnCase = i + Dirs->Count;

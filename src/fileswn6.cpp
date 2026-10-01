@@ -1241,6 +1241,7 @@ BOOL CFilesWindow::BuildScriptMain(COperations* script, CActionType type,
         }
 
         // check if the target is removable media (floppy, ZIP) -> a larger buffer is used for speed
+        // encoding-check: allow acp-byte-table-on-name - the first byte of a path: a drive letter
         if (LowerCase[*targetPath] >= 'a' && LowerCase[*targetPath] <= 'z' &&
             *(targetPath + 1) == ':')
         {
@@ -3177,8 +3178,9 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         if (index != j) // do not compare the same item
         {
             CFileData* f2 = j < Dirs->Count ? &Dirs->At(j) : &Files->At(j - Dirs->Count);
-            if (f2->NameLen == f->NameLen &&
-                StrNICmp(f->Name, f2->Name, f2->NameLen) == 0)
+            // feature 092: the file system's identity rule, not the code-page byte fold; no
+            // byte-length guard in front of it - equal names need not have equal UTF-8 lengths
+            if (SalNameEqualOrdinalCI(f->Name, f->NameLen, f2->Name, f2->NameLen))
             {
                 SalMessageBox(HWindow, LoadStr(IDS_UNABLETOEDITDUPFILES),
                               LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);

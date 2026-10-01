@@ -1879,7 +1879,7 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                                     for (k = 0; k < total; k++)
                                     {
                                         CFileData* f2 = &anotherPanel->Dirs->At(k);
-                                        if (StrICmp(f->Name, f2->Name) == 0)
+                                        if (SalNameEqualOrdinalCI(f->Name, f->NameLen, f2->Name, f2->NameLen)) // feature 092: the file system's identity rule
                                         {
                                             f2->CutToClip = 1;
                                             f2->Dirty = 1;
@@ -1894,7 +1894,7 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                                     for (k = 0; k < total; k++)
                                     {
                                         CFileData* f2 = &anotherPanel->Files->At(k);
-                                        if (StrICmp(f->Name, f2->Name) == 0)
+                                        if (SalNameEqualOrdinalCI(f->Name, f->NameLen, f2->Name, f2->NameLen)) // feature 092: the file system's identity rule
                                         {
                                             f2->CutToClip = 1;
                                             f2->Dirty = 1;

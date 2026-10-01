@@ -402,6 +402,7 @@ int CPackerFormatConfig::PackIsArchive(const char* archiveName, int archiveNameL
         idx = (int)strlen(archiveName) - 1;
     else
         idx = archiveNameLen - 1;
+    // encoding-check: allow acp-byte-table-on-name - a hash bucket: BuildArray files each extension under the same fold of its last byte, so the two sides agree (feature 092: deferred pair, research T4/T6)
     CStringArray* array = &Extensions[LowerCase[archiveName[idx]]];
     // take the last character as it is
     int i;

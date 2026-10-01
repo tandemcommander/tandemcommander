@@ -5,19 +5,35 @@
 `aLen` / `bLen` are byte counts or `-1` for null-terminated. NULL counts as
 an empty string.
 
-1. **Both ASCII** (no byte ≥ 0x80): bytes compared after folding `a`–`z` to
-   upper case; on a common prefix the shorter string is smaller.
-2. **Both valid WTF-8** (feature 066): converted to UTF-16 and compared with
-   `CompareStringOrdinal(…, bIgnoreCase = TRUE)` — the operating system's
-   upper-case table per code unit, then binary. No normalization, no locale,
-   no ignorable characters; lone surrogates compare as themselves.
-3. **Otherwise** (either string is not valid WTF-8): the legacy rule — bytes
-   folded to lower case by the system code page (`CharLowerBuffA`), exactly
-   what `StrICmpEx` returns; shorter is smaller on a common prefix.
+The order is lexicographic over the leading ASCII characters and then "the
+tail" (everything from the first non-ASCII byte on):
 
-Properties: total order on valid WTF-8 strings (antisymmetric, transitive);
-steps 1 and 2 are the same order (ASCII is a subset, same fold direction), so
-mixing them is consistent. `== 0` ⇔ `SalNameEqualOrdinalCI`.
+1. **Leading ASCII characters**: compared after folding `a`–`z` to upper
+   case; an ASCII character is smaller than a tail; on a common prefix the
+   shorter string is smaller.
+2. **Two valid WTF-8 tails** (feature 066): converted to UTF-16 and compared
+   with `CompareStringOrdinal(…, bIgnoreCase = TRUE)` — the operating
+   system's upper-case table per code unit, then binary. No normalization,
+   no locale, no ignorable characters; lone surrogates compare as themselves.
+3. **Two tails that are not valid WTF-8** (legacy text): bytes folded to
+   lower case by the system code page (`CharLowerA`), shorter is smaller —
+   the legacy rule, so the *equality* of two legacy strings is exactly
+   `StrICmpEx(...) == 0`.
+4. **One valid, one not**: the valid one is smaller; they are never equal.
+
+Properties: for two valid WTF-8 strings the result is that of
+`CompareStringOrdinal(…, TRUE)` on the whole strings (an ASCII unit is below
+every other unit and equal to none — asserted by a unit test against the
+operating system's table). It is a **total order over all byte strings**
+(antisymmetric, transitive), so a sorted list may mix ASCII, non-ASCII and
+legacy names. The order of ASCII strings differs from the legacy
+`StrICmpEx` only where one of ``[ \ ] ^ _ ` `` meets a letter (upper-case
+instead of lower-case fold). `== 0` ⇔ `SalNameEqualOrdinalCI`.
+
+*Revised after the analysis of stage S5*: the first version sent every pair
+with a non-WTF-8 member to the legacy comparison, which made the relation
+intransitive over a list holding valid and invalid names together (names
+pasted from the clipboard can be legacy text).
 
 ## I2 — `SalNameEqualOrdinalCI(a, aLen, b, bLen)` → BOOL
 

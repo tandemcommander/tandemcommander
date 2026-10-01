@@ -3437,11 +3437,55 @@ static void TestNameIdentity092()
                 }
             }
             printf("  name identity: %d non-ASCII characters equal an ASCII letter for the OS\n", found);
+            // the comparison relies on it: an ASCII character is below every other and equals none
+            CHECK(found == 0);
         }
         // legacy text: the old byte answer
         CHECK(SalPathHasPrefixOrdinalCI("\xC8" "dir\\x", "\xE8" "DIR", -1, &n) ==
               (CharLowerA((LPSTR)(UINT_PTR)0xC8) == CharLowerA((LPSTR)(UINT_PTR)0xE8)));
     }
+
+    // --- (8b) case pairs whose UTF-8 lengths differ (review of S2): the whole BMP is searched
+    //          for them; they are the same name, and a prefix made of one covers the bytes of
+    //          the other - so no caller may test byte lengths before comparing
+    {
+        int pairsDifferentLength = 0;
+        for (int cp = 0x80; cp < 0xD800; cp++)
+        {
+            WCHAR up[2] = {(WCHAR)cp, 0};
+            CharUpperBuffW(up, 1);
+            if (up[0] == (WCHAR)cp)
+                continue;
+            WCHAR lo[2] = {(WCHAR)cp, 0};
+            if (CompareStringOrdinal(lo, 1, up, 1, TRUE) != CSTR_EQUAL)
+                continue; // the OS table, not CharUpper, is the rule
+            std::string a = U8of092(lo), b = U8of092(up);
+            if (a.size() == b.size())
+                continue;
+            pairsDifferentLength++;
+            CHECK(SalNameEqualOrdinalCI(a.c_str(), -1, b.c_str(), -1));
+            std::string path = "C:\\" + a + "\\f";
+            std::string pre = "c:\\" + b;
+            int n = -1;
+            CHECK(SalPathHasPrefixOrdinalCI(path.c_str(), pre.c_str(), -1, &n));
+            CHECK(n == (int)(3 + a.size()) && path[n] == '\\'); // the count of the PATH, not of the prefix
+        }
+        printf("  name identity: %d case pairs differ in UTF-8 length\n", pairsDifferentLength);
+        CHECK(pairsDifferentLength > 0);
+        // two lone surrogates side by side (a non-canonical spelling of a pair): the count still
+        // follows the path's own bytes
+        int n = -1;
+        CHECK(SalPathHasPrefixOrdinalCI("\xED\xA0\xBD\xED\xB8\x80\\x", "\xED\xA0\xBD\xED\xB8\x80", -1, &n) && n == 6);
+    }
+    // the early exits of the yes/no helper do not change any answer
+    CHECK(!SalNameEqualOrdinalCI("", -1, "a", -1) && !SalNameEqualOrdinalCI("a", -1, "", -1));
+    CHECK(SalNameEqualOrdinalCI("", -1, "", -1) && SalNameEqualOrdinalCI("x", 0, "y", 0));
+    CHECK(!SalNameEqualOrdinalCI("abc", -1, "abd", -1) && SalNameEqualOrdinalCI("aBc", -1, "AbC", -1));
+    CHECK(SalNameCompareOrdinalCI("a_", -1, "aB", -1) > 0);                 // '_' against a letter, all ASCII: upper-case fold
+    CHECK(SalNameCompareOrdinalCI("a_\xC4\x8D", -1, "aB\xC4\x8D", -1) > 0); // the same with a valid non-ASCII tail
+    CHECK(SalNameCompareOrdinalCI("a_\xE8", -1, "aB\xE8", -1) > 0);         // legacy text: the leading ASCII part folds the same way
+    CHECK(SalNameCompareOrdinalCI("ab\xC4\x8D", -1, "aB", -1) > 0);         // longer, non-ASCII tail
+    CHECK(SalNameCompareOrdinalCI("aB", -1, "ab\xC4\x8D", -1) < 0);
 
     // --- (9) a consistent order: antisymmetric and transitive over a mixed set
     {
@@ -3452,7 +3496,16 @@ static void TestNameIdentity092()
                                              L"\xFF21", L"stra\x00DF" L"e", L"strasse", L"\x03C3", L"\x03A3", L"\x0436", L"\x0416"};
         for (int i = 0; i < _countof(seeds); i++)
             names.push_back(U8of092(seeds[i]));
-        names.push_back("\xE8"); // one string that is not UTF-8
+        // text that is not UTF-8, also next to ASCII and next to valid names (the mix that an
+        // "either invalid -> legacy fold" rule ordered in a cycle)
+        names.push_back("\xE8");
+        names.push_back("\xC8");
+        names.push_back("a\xE8");
+        names.push_back("a_\xE8");
+        names.push_back("aB\xE8");
+        names.push_back("\xC4");
+        names.push_back("\xC4\x8D\xFF");
+        names.push_back("ab\xFF");
         int n = (int)names.size();
         int violations = 0;
         for (int i = 0; i < n; i++)
@@ -3463,12 +3516,8 @@ static void TestNameIdentity092()
                 int ji = Sign092(SalNameCompareOrdinalCI(names[j].c_str(), -1, names[i].c_str(), -1));
                 if (ij != -ji)
                     violations++;
-                if (names[i].find('\xE8') != std::string::npos || names[j].find('\xE8') != std::string::npos)
-                    continue; // transitivity is promised for valid WTF-8 only
-                for (int k = 0; k < n; k++)
+                for (int k = 0; k < n; k++) // a total order over everything, legacy text included
                 {
-                    if (names[k] == "\xE8")
-                        continue;
                     int jk = Sign092(SalNameCompareOrdinalCI(names[j].c_str(), -1, names[k].c_str(), -1));
                     int ik = Sign092(SalNameCompareOrdinalCI(names[i].c_str(), -1, names[k].c_str(), -1));
                     if (ij <= 0 && jk <= 0 && ik > 0)
@@ -3481,7 +3530,6 @@ static void TestNameIdentity092()
         CHECK(violations == 0);
         // sort with it, then find every element again by binary search with the same comparison
         std::vector<std::string> sorted = names;
-        sorted.pop_back(); // valid WTF-8 only
         std::sort(sorted.begin(), sorted.end(), [](const std::string& x, const std::string& y)
                   { return SalNameCompareOrdinalCI(x.c_str(), -1, y.c_str(), -1) < 0; });
         int notFound = 0;

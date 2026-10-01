@@ -231,14 +231,19 @@ RULES = ("cp-acp-display", "mixed-composition", "dead-dispinfow",
          # added by feature 069 together with the F-P4-03/F-P4-07 fix, as the
          # 052 pattern requires: the rule and the fix land in one change, so it
          # never flags code that was still correct
-         "acp-title-seed")
+         "acp-title-seed",
+         # promoted by feature 092: drive-letter look-ups are no longer reported
+         # and the remaining intentional sites are annotated, so a hit is a
+         # byte table on a name again
+         "acp-byte-table-on-name")
 
 # Rules that live in scan_draft() but are now enforced: main() must merge them
 # into the strict run, otherwise they would be listed and never executed - the
 # dead-dispinfow shape, in the guard itself.
 PROMOTED_FROM_DRAFT = ("strict-probe-rejects-wtf8", "lossy-lenient-at-intake",
                        "ansi-tooltip-handler",
-                       "acp-title-seed") # feature 069
+                       "acp-title-seed", # feature 069
+                       "acp-byte-table-on-name") # feature 092
 
 # --- feature 068 draft rules (report-only until promoted) ------------------
 # Un-suffixed Win32 calls that TAKE a name or path.  Output-side calls
@@ -276,18 +281,34 @@ OPERATIONAL_SINK = re.compile(
     r'CreateProcessW|ShellExecuteW|ShellExecuteExW|SetCurrentDirectoryW|'
     r'RegSetValueExW)\s*\(')
 BYTE_TABLE = re.compile(r'\b(?:IsNotAlphaNorNum|IsAlpha|LowerCase|UpperCase)\s*\[')
+# feature 092: a table indexed by a DRIVE LETTER - the first byte of a path
+# ("path[0]", "item->DriveText[0]") or a variable that holds one ("drive") - is
+# ASCII by construction and harmless; 29 of the rule's 33 hits were of this
+# shape (068 findings P7), which made the report useless as a work list
+BYTE_TABLE_USE = re.compile(
+    r'\b(?:IsNotAlphaNorNum|IsAlpha|LowerCase|UpperCase)\s*\[([^\[\]]*(?:\[[^\[\]]*\])?[^\[\]]*)\]')
+# "[0]" counts only on an identifier that names a path, a root, a directory or a
+# drive - "f->Name[0]" is the first letter of a NAME and stays reported
+DRIVE_SHAPE = re.compile(
+    r'^\s*(?:(?:[A-Za-z_]\w*(?:->|\.))*\w*(?:[Pp]ath|[Rr]oot|[Dd]ir|[Dd]rive)\w*\s*\[\s*0\s*\]'
+    r'|[A-Za-z_]*[dD]rive\w*)\s*$')
+
+
+def byte_table_on_drive_letter_only(line):
+    """True when every byte-table use on the line is indexed by a drive letter."""
+    uses = BYTE_TABLE_USE.findall(line)
+    return bool(uses) and all(DRIVE_SHAPE.match(u) for u in uses) and \
+        len(uses) == len(BYTE_TABLE.findall(line))
 LOADSTRU8_ID = re.compile(r'\bLoadStrU8\s*\(\s*(IDS_\w+)')
 LOADSTR_ID = re.compile(r'(?<![A-Za-z_])LoadStr\s*\(\s*(IDS_\w+)')
 TITLE_SEED_SINK = re.compile(r'\b(?:SetPacker|SetUnpacker)\s*\(|\bSet\s*\(\s*\d+\s*,\s*VIEW_MODE_')
 
 # Still report-only: each is blocked on a fix deferred to its own feature (the
 # 068 review report; specs/069-finish-encoding-fixes/research.md R8).
-# acp-byte-table-on-name is the feature-069 successor of signed-char-name-byte:
-# the signed-char half of that rule rested on a void premise (/J makes plain
-# char unsigned, feature 068 ledger L07); the byte-table half is the real defect
-# and waits for the group B-2 work.
+# (acp-byte-table-on-name, the feature-069 successor of signed-char-name-byte,
+# was promoted to the strict rules by feature 092.)
 DRAFT_RULES = ("ansi-api-on-utf8-path", "cp-acp-utf8-source",
-               "acp-byte-table-on-name", "missed-twin")
+               "missed-twin")
 
 
 class Finding:
@@ -519,7 +540,8 @@ def scan_draft(only=None):
 
             # --- acp-byte-table-on-name --------------------------------
             if only in (None, "acp-byte-table-on-name"):
-                if BYTE_TABLE.search(ln) and UTF8_IDENT.search(ln):
+                if BYTE_TABLE.search(ln) and UTF8_IDENT.search(ln) and \
+                        not byte_table_on_drive_letter_only(ln):
                     if not suppressed(lines, i, "acp-byte-table-on-name"):
                         findings.append(Finding("acp-byte-table-on-name", rel, i + 1, ln))
 

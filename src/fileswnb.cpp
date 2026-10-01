@@ -927,7 +927,7 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             for (i = 0; i < total; i++)
             {
                 CFileData* f = (i < Dirs->Count) ? &Dirs->At(i) : &Files->At(i - Dirs->Count);
-                if (StrICmp(f->Name, NextFocusName) == 0)
+                if (SalNameEqualOrdinalCI(f->Name, -1, NextFocusName, -1)) // feature 092: the file system's identity rule, not the code-page byte fold
                 {
                     if (strcmp(f->Name, NextFocusName) == 0) // soubor nalezen presne
                     {
@@ -1198,13 +1198,13 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                                 name++;
 
                             CFileData* f = (index >= 0 && index < count) ? &Files->At(index) : NULL;
-                            BOOL nameIsSame = f != NULL && StrICmp(name, f->Name) == 0;
+                            BOOL nameIsSame = f != NULL && SalNameEqualOrdinalCI(name, -1, f->Name, -1); // feature 092: the file system's identity rule
                             if (nameIsSame)
                                 indexNotFound = FALSE;
                             if (f == NULL || !nameIsSame)
                             { // jmeno na indexu 'index' neni FileNamesEnumData.LastFileName, zkusime najit novy index tohoto jmena
                                 int i;
-                                for (i = 0; i < count && StrICmp(name, Files->At(i).Name) != 0; i++)
+                                for (i = 0; i < count && !SalNameEqualOrdinalCI(name, -1, Files->At(i).Name, -1); i++)
                                     ;
                                 if (i != count) // novy index nalezen
                                 {

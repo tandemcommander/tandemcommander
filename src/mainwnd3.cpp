@@ -2704,8 +2704,9 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                             for (i = 0; i < c; i++)
                             {
                                 CFileData* f = (i < inactivePanel->Dirs->Count) ? &inactivePanel->Dirs->At(i) : &inactivePanel->Files->At(i - inactivePanel->Dirs->Count);
-                                if (f->NameLen == f1->NameLen &&
-                                    StrICmp(f->Name, f1->Name) == 0)
+                                // feature 092: the file system's identity rule; no byte-length guard
+                                // in front of it - equal names need not have equal UTF-8 lengths
+                                if (SalNameEqualOrdinalCI(f->Name, f->NameLen, f1->Name, f1->NameLen))
                                 {
                                     if ((i < inactivePanel->Dirs->Count) == userMenuAdvancedData.CompareNamesAreDirs) // both items are files/directories
                                     {

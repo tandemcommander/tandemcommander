@@ -1519,6 +1519,7 @@ BOOL IsNetworkProviderDrive(const char* path, DWORD providerType)
                 else
                 {
                     if (netSource->lpLocalName != NULL &&
+                        // encoding-check: allow acp-byte-table-on-name - two drive letters ("X:" of a mapped network drive)
                         LowerCase[path[0]] == LowerCase[netSource->lpLocalName[0]])
                     {
                         provider = netSource->lpProvider;

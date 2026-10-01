@@ -280,13 +280,15 @@ BOOL SalNameEqualCI(const char* u8a, int aLen, const char* u8b, int bLen);
 // UTF-8 with the system code page table: "Č.txt" != "č.txt", yet on a Central
 // European system "ĥ" == "Ĺ".
 //
-// Three tiers, every function:
-//   1. both strings ASCII      -> byte loop, 'a'..'z' folded to UPPER case
-//   2. both valid WTF-8        -> UTF-16, CompareStringOrdinal(..., TRUE)
-//   3. either is not WTF-8     -> the legacy byte fold (CharLowerA per byte,
-//                                 shorter-is-smaller) - exactly StrICmpEx
-// Tiers 1 and 2 are the same total order (same fold direction), so sorted
-// lists may mix ASCII and non-ASCII names.
+// How two strings compare:
+//   - the leading ASCII characters by an ASCII fold to UPPER case;
+//   - from the first non-ASCII byte on ("the tail"): two valid WTF-8 tails as
+//     UTF-16 by CompareStringOrdinal(..., TRUE); two tails that are not WTF-8
+//     (a legacy plug-in's text) by the legacy byte fold (CharLowerA per byte),
+//     so their EQUALITY is exactly StrICmpEx's; a valid tail sorts before an
+//     invalid one and never equals it.
+// For valid WTF-8 that is CompareStringOrdinal on the whole strings, and it is
+// a total order over all byte strings - a sorted list may hold any mix.
 //
 // Contract: specs/092-name-identity-unicode/contracts/name-identity.md
 //

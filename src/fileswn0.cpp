@@ -3115,8 +3115,9 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
         for (i = 0; i < count; i++)
         {
             CFileData* f = (i < Dirs->Count) ? &Dirs->At(i) : &Files->At(i - Dirs->Count);
-            if (f->NameLen == (unsigned)l &&
-                StrICmpEx(f->Name, f->NameLen, NextFocusName, l) == 0 &&
+            // feature 092: the file system's identity rule, not the code-page byte fold; no
+            // byte-length guard in front of it - equal names need not have equal UTF-8 lengths
+            if (SalNameEqualOrdinalCI(f->Name, f->NameLen, NextFocusName, l) &&
                 (firstNewItemIsDir == -1 /* we don't know what it is */ ||
                  firstNewItemIsDir == 0 /* is file */ && i >= Dirs->Count ||
                  firstNewItemIsDir == 1 /* is directory */ && i < Dirs->Count))
@@ -3147,7 +3148,7 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
             for (i = 0; i < count; i++)
             {
                 CFileData* d2 = &Dirs->At(i);
-                if (StrICmpEx(d2->Name, d2->NameLen, focusData.Name, focusData.NameLen) == 0 &&
+                if (SalNameEqualOrdinalCI(d2->Name, d2->NameLen, focusData.Name, focusData.NameLen) &&
                     (!caseSensitive || StrCmpEx(d2->Name, d2->NameLen, focusData.Name, focusData.NameLen) == 0))
                 {
                     focusIndex = i;
@@ -3162,7 +3163,7 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
             for (i = 0; i < count; i++)
             {
                 CFileData* d2 = &Files->At(i);
-                if (StrICmpEx(d2->Name, d2->NameLen, focusData.Name, focusData.NameLen) == 0 &&
+                if (SalNameEqualOrdinalCI(d2->Name, d2->NameLen, focusData.Name, focusData.NameLen) &&
                     (!caseSensitive || StrCmpEx(d2->Name, d2->NameLen, focusData.Name, focusData.NameLen) == 0))
                 {
                     focusIndex = Dirs->Count + i;
