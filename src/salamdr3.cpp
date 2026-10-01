@@ -1693,15 +1693,15 @@ BOOL CPathHistoryItem::IsTheSamePath(CPathHistoryItem& item, CPluginFSInterfaceE
         {
             GetPath(buf1, 2 * MAX_PATH);
             item.GetPath(buf2, 2 * MAX_PATH);
-            if (StrICmp(buf1, buf2) == 0)
+            if (SalNameEqualOrdinalCI(buf1, -1, buf2, -1)) // feature 092: the file system's rule
                 return TRUE;
         }
         else
         {
             if (Type == 1) // archive
             {
-                if (StrICmp(PathOrArchiveOrFSName, item.PathOrArchiveOrFSName) == 0 &&  // the archive file is case-insensitive
-                    strcmp(ArchivePathOrFSUserPart, item.ArchivePathOrFSUserPart) == 0) // the path inside the archive is case-sensitive
+                if (SalNameEqualOrdinalCI(PathOrArchiveOrFSName, -1, item.PathOrArchiveOrFSName, -1) && // the archive file is case-insensitive
+                    strcmp(ArchivePathOrFSUserPart, item.ArchivePathOrFSUserPart) == 0)                 // the path inside the archive is case-sensitive
                 {
                     return TRUE;
                 }
@@ -3499,7 +3499,8 @@ void CTopIndexMem::Push(const char* path, int topIndex)
         int l = (int)strlen(Path);
         if (l > 0 && Path[l - 1] == '\\')
             l--;
-        ok = s - path == l && StrNICmp(path, Path, l) == 0;
+        // feature 092: no byte-length test - Push and FindAndPop use the same rule
+        ok = SalNameEqualOrdinalCI(path, (int)(s - path), Path, l);
     }
 
     if (ok) // it follows -> remember the next top index
@@ -3531,7 +3532,7 @@ BOOL CTopIndexMem::FindAndPop(const char* path, int& topIndex)
     int l2 = (int)strlen(Path);
     if (l2 > 0 && Path[l2 - 1] == '\\')
         l2--;
-    if (l1 == l2 && StrNICmp(path, Path, l1) == 0)
+    if (SalNameEqualOrdinalCI(path, l1, Path, l2))
     {
         if (TopIndexesCount > 0)
         {

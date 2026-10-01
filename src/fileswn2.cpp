@@ -409,8 +409,8 @@ void CFilesWindow::Execute(int index)
                 }
                 else // failure
                 {
-                    if (!IsTheSamePath(path, GetPath())) // we're not on the original path -> long jump
-                    {                                    // the condition "!noChange" is not enough - it signals "path change or reload - access-denied-dir"
+                    if (!SalPathEqualOrdinalCI(path, GetPath())) // we're not on the original path -> long jump
+                    {                                            // the condition "!noChange" is not enough - it signals "path change or reload - access-denied-dir"
                         TopIndexMem.Clear();
                     }
                     else // path unchanged (immediately shortened back to original)
@@ -1754,7 +1754,7 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
     GetIfPathIsInaccessibleGoTo(ifPathIsInaccessibleGoTo);
     if ((ifPathIsInaccessibleGoTo[0] == '\\' && ifPathIsInaccessibleGoTo[1] == '\\' ||
          ifPathIsInaccessibleGoTo[0] != 0 && ifPathIsInaccessibleGoTo[1] == ':') &&
-        !IsTheSamePath(path, ifPathIsInaccessibleGoTo))
+        !SalPathEqualOrdinalCI(path, ifPathIsInaccessibleGoTo))
     {
         canTryUserRescuePath = TRUE;
     }
@@ -1826,7 +1826,7 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
 
             if (!closeCalled)
             { // executed only during the first pass, so we can use "Is(ptDisk)" and "GetPath()"
-                BOOL samePath = (Is(ptDisk) && IsTheSamePath(GetPath(), changedPath));
+                BOOL samePath = (Is(ptDisk) && SalPathEqualOrdinalCI(GetPath(), changedPath));
                 BOOL oldCanAddToDirHistory;
                 if (samePath)
                 {
@@ -2049,7 +2049,9 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
     EndStopRefresh();
     if (setWait)
         SetCursor(oldCur);
-    BOOL ret = Is(ptDisk) && IsTheSamePath(GetPath(), path);
+    // feature 092: a path typed in another case of a non-ASCII letter is the path we landed on,
+    // not a "shorter path"
+    BOOL ret = Is(ptDisk) && SalPathEqualOrdinalCI(GetPath(), path);
     if (!ret && failReason != NULL && *failReason == CHPPFR_SUCCESS)
     {
         *failReason = CHPPFR_SHORTERPATH;
@@ -2124,7 +2126,9 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
     BOOL checkPath = TRUE;
     BOOL forceUpdateInt = FALSE; // is path change required? (possibly even to disk)
     BOOL tryPathWithArchiveOnError = isHistory;
-    if (!Is(ptZIPArchive) || StrICmp(GetZIPArchive(), archive) != 0) // not the archive or a different archive
+    // feature 092: "the archive that is open" by the file system's rule (the byte fold showed the
+    // listing of another archive when the two names collided in the code page)
+    if (!Is(ptZIPArchive) || !SalNameEqualOrdinalCI(GetZIPArchive(), -1, archive, -1)) // not the archive or a different archive
     {
 
     _REOPEN_ARCHIVE:
@@ -2231,7 +2235,7 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                         SleepIconCacheThread();
 
                     BOOL isTheSamePath = FALSE; // TRUE = the path doesn't change
-                    if (Is(ptZIPArchive) && StrICmp(GetZIPArchive(), archive) == 0)
+                    if (Is(ptZIPArchive) && SalNameEqualOrdinalCI(GetZIPArchive(), -1, archive, -1))
                     {
                         char buf[MAX_PATH];
                         strcpy(buf, *archivePath == '\\' ? archivePath + 1 : archivePath);

@@ -2146,13 +2146,14 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
 
             BOOL handsOFF = FALSE;
             CFilesWindow* otherPanel = MainWindow->GetNonActivePanel();
-            int otherPanelPathLen = (int)strlen(otherPanel->GetPath());
             int pathLen = (int)strlen(path);
             // are we changing the path of the other panel?
-            if (otherPanelPathLen >= pathLen &&
-                StrNICmp(path, otherPanel->GetPath(), pathLen) == 0 &&
-                (otherPanelPathLen == pathLen ||
-                 otherPanel->GetPath()[pathLen] == '\\'))
+            // feature 092: 'path' is the PREFIX of the other panel's path; the character after it is
+            // read at the byte count measured on that path (equal characters may differ in UTF-8 length)
+            const char* otherPath = otherPanel->GetPath();
+            int otherBytes = 0;
+            if (SalPathHasPrefixOrdinalCI(otherPath, path, pathLen, &otherBytes) &&
+                (otherPath[otherBytes] == 0 || otherPath[otherBytes] == '\\'))
             {
                 otherPanel->HandsOff(TRUE);
                 handsOFF = TRUE;

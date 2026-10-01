@@ -654,7 +654,7 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                         if (isInactiveRefresh)
                         {
-                            if (typeBackup != GetPanelType() || StrICmp(pathBackup, GetPath()) != 0)
+                            if (typeBackup != GetPanelType() || !SalNameEqualOrdinalCI(pathBackup, -1, GetPath(), -1))
                             { // pokud doslo ke zmene cesty (nejspis nekdo prave smazal adresar zobrazeny v panelu), provedeme pripadny dalsi refresh bez cekani (da se ocekavat, ze smazou i adresar nove zobrazeny v panelu, tak abysme z nej umeli rychle "vycouvat")
                                 LastInactiveRefreshEnd = LastInactiveRefreshStart;
                             }
@@ -870,7 +870,7 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             ShowWindow(MainWindow->HWindow, SW_RESTORE);
         }
-        if (Is(ptDisk) && IsTheSamePath(GetPath(), (char*)lParam) ||
+        if (Is(ptDisk) && SalPathEqualOrdinalCI(GetPath(), (char*)lParam) ||
             ChangeDir((char*)lParam))
         {
             strcpy(NextFocusName, (char*)wParam);
@@ -1191,9 +1191,12 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     if (FileNamesEnumData.LastFileName[0] != 0) // zname plne jmeno souboru na 'index', zkontrolujeme jestli nedoslo k rozesunuti/sesunuti pole + pripadne dohledame novy index
                     {
                         int pathLen = (int)strlen(GetPath());
-                        if (StrNICmp(GetPath(), FileNamesEnumData.LastFileName, pathLen) == 0)
+                        // feature 092: the panel path is the PREFIX of the file's full name; the name starts
+                        // at the byte count measured on the full name, not at pathLen
+                        int pathBytes = 0;
+                        if (SalPathHasPrefixOrdinalCI(FileNamesEnumData.LastFileName, GetPath(), pathLen, &pathBytes))
                         { // cesta k souboru se musi shodovat s cestou v panelu ("always true")
-                            const char* name = FileNamesEnumData.LastFileName + pathLen;
+                            const char* name = FileNamesEnumData.LastFileName + pathBytes;
                             if (*name == '\\' || *name == '/')
                                 name++;
 

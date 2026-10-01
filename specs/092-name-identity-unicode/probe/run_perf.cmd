@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 ::
-:: build_and_run.cmd - feature 092: builds and runs the two evidence probes,
+:: run_perf.cmd - feature 092: builds (/O2) and runs perf_probe.cpp; see build_and_run.cmd
 :: each from its own source and the product's src\common\salunicode.cpp (with
 :: the saltests stand-in precomp.h and the product's /J):
 ::   obj\case_only_probe.exe     (stage S3) "only a change of case" / "the same file"
@@ -45,8 +45,7 @@ if errorlevel 1 (
 if not exist "%OBJ%" mkdir "%OBJ%"
 
 set "FINAL=0"
-call :probe case_only_probe
-call :probe path_identity_probe
+call :probe perf_probe
 if "%FINAL%"=="0" (echo ALL PROBES PASSED) else (echo A PROBE FAILED - exit code %FINAL%)
 exit /b %FINAL%
 
@@ -54,7 +53,7 @@ exit /b %FINAL%
 :probe
 pushd "%HERE%"
 :: /J unsigned char, /RTC1, /Od, /MDd - the product's Debug switches
-cl /nologo /J /RTC1 /Od /MDd /EHsc /W3 /D_CRT_SECURE_NO_WARNINGS /I"%ROOT%src\saltests" /I"%ROOT%src\common" /Fo"%OBJ%\\" /Fe"%OBJ%\%1.exe" %1.cpp "%ROOT%src\common\salunicode.cpp" /link user32.lib >"%OBJ%\build_%1.log" 2>&1
+cl /nologo /J /O2 /MD /EHsc /W3 /D_CRT_SECURE_NO_WARNINGS /I"%ROOT%src\saltests" /I"%ROOT%src\common" /Fo"%OBJ%\\" /Fe"%OBJ%\%1.exe" %1.cpp "%ROOT%src\common\salunicode.cpp" /link user32.lib >"%OBJ%\build_%1.log" 2>&1
 set "RC=!ERRORLEVEL!"
 if not "!RC!"=="0" type "%OBJ%\build_%1.log"
 popd

@@ -972,19 +972,22 @@ int SalNameCompareOrdinalCI(const char* a, int aLen, const char* b, int bLen)
         b = "";
         bLen = 0;
     }
-    int la = aLen < 0 ? (int)strlen(a) : aLen;
-    int lb = bLen < 0 ? (int)strlen(b) : bLen;
-
     // The order is lexicographic over: the leading ASCII characters (folded to upper
     // case), then "the tail" - everything from the first non-ASCII byte on. For two
     // valid WTF-8 strings that IS CompareStringOrdinal(..., TRUE) on the whole strings
     // (an ASCII unit sorts below every other unit and equals none of them - checked by
     // saltests against the operating system's table). Written this way it is a total
     // order over ALL byte strings, valid or not, so a sorted list may hold both.
-    int l = la < lb ? la : lb;
+    // NUL-terminated strings (length -1) are not measured before they are read: most
+    // comparisons of a sort or a look-up end within the first few bytes (review of S5:
+    // two strlen calls up front made an ASCII sort 5x slower than the byte fold).
     int i = 0;
-    for (; i < l; i++)
+    while (1)
     {
+        BOOL endA = aLen < 0 ? a[i] == 0 : i >= aLen;
+        BOOL endB = bLen < 0 ? b[i] == 0 : i >= bLen;
+        if (endA || endB) // one string is a prefix of the other (ignoring ASCII case): shorter is smaller
+            return endA && endB ? 0 : (endA ? -1 : 1);
         BYTE ra = (BYTE)a[i];
         BYTE rb = (BYTE)b[i];
         if ((ra | rb) & 0x80)
@@ -993,9 +996,8 @@ int SalNameCompareOrdinalCI(const char* a, int aLen, const char* b, int bLen)
         BYTE cb = SalAsciiUpper(rb);
         if (ca != cb)
             return ca < cb ? -1 : 1;
+        i++;
     }
-    if (i == l) // one string is a prefix of the other (ignoring ASCII case): shorter is smaller
-        return la == lb ? 0 : (la < lb ? -1 : 1);
     if (((BYTE)a[i] & 0x80) == 0)
         return -1; // an ASCII character against a tail
     if (((BYTE)b[i] & 0x80) == 0)
@@ -1005,8 +1007,8 @@ int SalNameCompareOrdinalCI(const char* a, int aLen, const char* b, int bLen)
     // legacy plug-in's name) after them and among itself by the legacy byte fold
     const char* ta = a + i;
     const char* tb = b + i;
-    int lta = la - i;
-    int ltb = lb - i;
+    int lta = aLen < 0 ? (int)strlen(ta) : aLen - i;
+    int ltb = bLen < 0 ? (int)strlen(tb) : bLen - i;
     WCHAR stackA[SAL_IDENT_STACK_UNITS];
     WCHAR stackB[SAL_IDENT_STACK_UNITS];
     WCHAR* heapA = NULL;

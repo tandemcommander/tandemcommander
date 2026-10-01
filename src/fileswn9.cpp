@@ -1237,7 +1237,7 @@ void CFilesWindow::OfferArchiveUpdateIfNeeded(HWND parent, int textID, BOOL* arc
 
     CFilesWindow* otherPanel = MainWindow->LeftPanel == this ? MainWindow->RightPanel : MainWindow->LeftPanel;
     BOOL otherPanelArchMaybeUpdated = FALSE;
-    if (otherPanel->Is(ptZIPArchive) && StrICmp(GetZIPArchive(), otherPanel->GetZIPArchive()) == 0)
+    if (otherPanel->Is(ptZIPArchive) && SalNameEqualOrdinalCI(GetZIPArchive(), -1, otherPanel->GetZIPArchive(), -1))
     { // the same archive is in the other panel, we must update it as well
         otherPanel->OfferArchiveUpdateIfNeededAux(parent, textID, &otherPanelArchMaybeUpdated);
         if (otherPanelArchMaybeUpdated)

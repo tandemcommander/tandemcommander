@@ -529,7 +529,10 @@ BOOL CFindIgnore::Contains(const char* path, int startPathLen)
         {
         case fiitFull:
         {
-            if (item->Len > startPathLen && StrNICmp(path, item->Path, item->Len) == 0)
+            // feature 092: the file system's rule; the length compared with startPathLen is the one
+            // measured on 'path' (equal characters may differ in UTF-8 length)
+            int n = 0;
+            if (SalPathHasPrefixOrdinalCI(path, item->Path, item->Len, &n) && n > startPathLen)
                 return TRUE;
             break;
         }
@@ -537,7 +540,8 @@ BOOL CFindIgnore::Contains(const char* path, int startPathLen)
         case fiitRooted:
         {
             const char* noRoot = SkipRoot(path);
-            if ((noRoot - path) + item->Len > startPathLen && StrNICmp(noRoot, item->Path, item->Len) == 0)
+            int n = 0;
+            if (SalPathHasPrefixOrdinalCI(noRoot, item->Path, item->Len, &n) && (noRoot - path) + n > startPathLen)
                 return TRUE;
             break;
         }
@@ -547,7 +551,7 @@ BOOL CFindIgnore::Contains(const char* path, int startPathLen)
             const char* m = path;
             while (m != NULL)
             {
-                m = StrIStr(m, item->Path);
+                m = StrIStr(m, item->Path); // feature 092: the relative kind stays on the byte fold (no substring helper)
                 if (m != NULL) // found
                 {
                     if ((m - path) + item->Len > startPathLen) // is it a subpath? then ignore it
@@ -623,9 +627,7 @@ BOOL CFindIgnore::AddUnique(BOOL enabled, const char* path)
             continue;
         if (item->Path[itemLen - 1] == '\\') // compare without a trailing backslash
             itemLen--;
-        if (len != itemLen)
-            continue;
-        if (StrNICmp(path, item->Path, len) == 0)
+        if (SalNameEqualOrdinalCI(path, len, item->Path, itemLen)) // feature 092: no byte-length test
         {
             item->Enabled = TRUE; // always enable this item
             return TRUE;

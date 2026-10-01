@@ -3293,7 +3293,7 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
             {
                 char path[MAX_PATH];
                 GetIfPathIsInaccessibleGoTo(path, TRUE);
-                if (IsTheSamePath(path, Configuration.IfPathIsInaccessibleGoTo)) // user wants to go to My Documents
+                if (SalPathEqualOrdinalCI(path, Configuration.IfPathIsInaccessibleGoTo)) // user wants to go to My Documents
                 {
                     Configuration.IfPathIsInaccessibleGoToIsMyDocs = TRUE;
                     Configuration.IfPathIsInaccessibleGoTo[0] = 0;

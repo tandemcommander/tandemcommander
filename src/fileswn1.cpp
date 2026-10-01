@@ -223,9 +223,10 @@ BOOL CFilesWindowAncestor::GetGeneralPath(char* buf, int bufSize, BOOL convertFS
 void CFilesWindowAncestor::SetPath(const char* path)
 {
     CALL_STACK_MESSAGE2("CFilesWindowAncestor::SetPath(%s)", path);
-    if (SuppressAutoRefresh && (!Is(ptDisk) || !IsTheSamePath(path, Path)))
+    // feature 092: "the path changed" by the file system's rule
+    if (SuppressAutoRefresh && (!Is(ptDisk) || !SalPathEqualOrdinalCI(path, Path)))
         SuppressAutoRefresh = FALSE;
-    if (!IsTheSamePath(path, Path))
+    if (!SalPathEqualOrdinalCI(path, Path))
         EquivalentPairNoticeShown = FALSE; // new path - the FR-007 notice may be shown again
     DetachDirectory((CFilesWindow*)this);
     strcpy(Path, path);
@@ -370,7 +371,7 @@ BOOL CFilesWindowAncestor::SamePath(CFilesWindowAncestor* other)
         l2--;
     return (PanelType == ptDisk || PanelType == ptZIPArchive) &&
            (other->PanelType == ptDisk || other->PanelType == ptZIPArchive) &&
-           l1 == l2 && StrNICmp(Path, other->Path, l1) == 0;
+           SalNameEqualOrdinalCI(Path, l1, other->Path, l2); // feature 092: no byte-length test, equal names may differ in UTF-8 length
 }
 
 //

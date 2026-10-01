@@ -2040,15 +2040,18 @@ void CFilesWindow::AcceptChangeOnPathNotification(const char* path, BOOL includi
         SalPathRemoveBackslash(path1);
         SalPathRemoveBackslash(path2);
         int len1 = (int)strlen(path1);
-        refresh = !includingSubdirs && StrICmp(path1, path2) == 0 ||       // exact match
-                  includingSubdirs && StrNICmp(path1, path2, len1) == 0 && // prefix match
-                      (path2[len1] == 0 || path2[len1] == '\\');
+        // feature 092: path1 is the PREFIX and path2 the path; the character after the prefix is
+        // read at the byte count measured on path2 (equal characters may differ in UTF-8 length)
+        int n1 = 0;
+        refresh = !includingSubdirs && SalNameEqualOrdinalCI(path1, -1, path2, -1) ||       // exact match
+                  includingSubdirs && SalPathHasPrefixOrdinalCI(path2, path1, len1, &n1) && // prefix match
+                      (path2[n1] == 0 || path2[n1] == '\\');
         if (Is(ptDisk) && !refresh && CutDirectory(path1)) // pointless for archives
         {
             SalPathRemoveBackslash(path1);
             // on NTFS the last subdirectory timestamp also changes (unfortunately visible only after entering
             // that subdirectory, but perhaps it will be fixed eventually, so refresh proactively)
-            refresh = StrICmp(path1, path2) == 0;
+            refresh = SalNameEqualOrdinalCI(path1, -1, path2, -1);
         }
         if (refresh)
         {
@@ -2088,7 +2091,7 @@ void CFilesWindow::IconOverlaysChangedOnPath(const char* path)
         !IconOvrRefreshTimerSet && !NeedIconOvrRefreshAfterIconsReading && // icon overlay refresh not scheduled yet
         Configuration.EnableCustomIconOverlays && Is(ptDisk) &&
         (UseSystemIcons || UseThumbnails) && IconCache != NULL &&
-        IsTheSamePath(path, GetPath()))
+        SalPathEqualOrdinalCI(path, GetPath()))
     {
         DWORD elapsed = GetTickCount() - LastIconOvrRefreshTime;
         if (elapsed < ICONOVR_REFRESH_PERIOD) // wait before the next icon overlay refresh so we do not refresh too often

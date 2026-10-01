@@ -1849,7 +1849,7 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                     }
                     CFilesWindow* anotherPanel = MainWindow->LeftPanel == panel ? MainWindow->RightPanel : MainWindow->LeftPanel;
                     BOOL samePaths = panel->Is(ptDisk) && anotherPanel->Is(ptDisk) &&
-                                     IsTheSamePath(panel->GetPath(), anotherPanel->GetPath());
+                                     SalPathEqualOrdinalCI(panel->GetPath(), anotherPanel->GetPath());
                     if (anotherPanel->CutToClipChanged)
                     {
                         // before CUT and COPY clear the CutToClip flag on the other panel as well

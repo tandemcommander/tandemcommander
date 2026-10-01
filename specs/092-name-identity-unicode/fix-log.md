@@ -196,3 +196,106 @@ Recorded, not changed (all exist before this feature, none made worse):
    WTF-8", i.e. "different".
 4. The probe does not cover the 8.3 predicate, legacy text, or paths over
    520 units; the reviewer's whole-BMP run and saltests cover the helper.
+
+## S4 — core path identity (FR-006)
+
+31 lines converted, the list of `analysis-S4.md` section 5:
+
+| Group | Sites | Rule |
+|---|---|---|
+| whole-path equality | `dialogs5.cpp` + `mainwnd2.cpp` (is the rescue path "My Documents"); `fileswn1.cpp` `SetPath` x2, `SamePath` (snooper thread); `fileswn2.cpp` `Execute`, `ChangePathToDisk` x3; `fileswn7.cpp` `IconOverlaysChangedOnPath`; `fileswnb.cpp` refresh and focus-file; `shellsup.cpp`; `salamdr3.cpp` `CTopIndexMem::Push`/`FindAndPop` | `SalPathEqualOrdinalCI` / `SalNameEqualOrdinalCI` |
+| identity with consequences | `salamdr3.cpp` `CPathHistoryItem::IsTheSamePath` (disk path, archive file); `fileswn2.cpp` `ChangePathToArchive` x2 + `fileswn9.cpp` `OfferArchiveUpdateIfNeeded`; `fileswn6.cpp` `BuildScriptMain2` ("Copy of..."); `find.cpp` `AddUnique`; `shares.cpp` `PrepareSearch` | the same |
+| prefix tests | `fileswn7.cpp` `AcceptChangeOnPathNotification` x3; `fileswnb.cpp` viewer next/previous file; `fileswn5.cpp` `RenameFileInternal` (other panel releases its handles); `find.cpp` `CFindIgnore::Contains` full + rooted; `shares.cpp` `GetUNCPath` | `SalPathHasPrefixOrdinalCI`, the path indexed by the returned byte count |
+
+Every `l1 == l2 && StrNICmp(...)` lost its byte-length guard. Three sites
+passed the prefix as the first argument of `StrNICmp`; the helper takes
+`(path, prefix)`.
+
+Not converted, with the reason (all recorded for the backlog):
+
+- the disk-cache group (`cache.cpp` tmp paths, `cache.h` comparators, the
+  lower-cased archive key and `fileswn2.cpp PrepareCloseCurrentPath`, which
+  must agree with that key) - the keys are compared with `strcmp` and paths
+  inside an archive are case-sensitive by contract;
+- x86-only code (`#ifndef _WIN64`, 8 lines) - not built;
+- bodies of services exported to plug-ins: `SalParsePath`, the path half of
+  `SalSplitGeneralPath`, `PathsAreOnTheSameVolume`;
+- operands that are code-page text or of mixed encoding: the "is the DLL
+  under <install>\plugins" chain (`dialogs5.cpp`, `plugins2.cpp` x3,
+  `FindDLL`), `shellib.cpp`, `drivelst.cpp`;
+- `CFindIgnore::Contains`, relative kind (`StrIStr`, a substring search with
+  no helper);
+- `salshlib.cpp`, `CFileTimeStamps::AddFile` (`salamdr3.cpp`), `dialogs3.cpp`
+  `Path`/`PathAlt`, `GetWantedIndex` in `shares.cpp`.
+
+## S5 — sorted name lists (FR-007)
+
+One pair, both sides in one change: `SortNames` (both loops),
+`FindNameInArray`, `CDirectorySizes::GetIndex` (`salamdr6.cpp`) and
+`ContainsString` (`fileswn6.cpp`) order and search with
+`SalNameCompareOrdinalCI`. Inventory after the change - every list is
+sorted and searched by the same function:
+
+| List | Sorted by | Searched by |
+|---|---|---|
+| `CNames` x6 (stored selections, hidden names, a tab's selection, ...), case-insensitive mode | `CNames::Sort` -> `SortNames` | `CNames::Contains` -> `FindNameInArray` |
+| `CNames`, case-sensitive mode | `SortNamesCaseSensitive` | `strcmp` - unchanged |
+| drag-and-drop names | `SortNames` (`fileswna.cpp`) | `ContainsString` |
+| `usedNames` ("Copy of...") | `AddStringToNames` inserts at `ContainsString`'s index | `ContainsString` |
+| `CDirectorySizes::Names` (dead code) | `SortNames` | `GetIndex` |
+
+Nothing sorted is persisted (a tab's selection lives in memory only), so no
+list sorted by the old rule can meet the new search.
+
+## S4 + S5 — evidence and review
+
+**Probe** `probe/path_identity_probe.cpp` (run by `build_and_run.cmd`): 82
+rows, 0 failed; the 33 ASCII rows identical before and after; the ASCII
+backslash matrix (11,664 ordered pairs) shows 0 differences between
+`IsTheSamePath` and `SalPathEqualOrdinalCI`. The old rule was wrong on 26
+rows (20 false "different", 6 false "same"). A list sorted by one rule and
+searched by the other loses 74 or 81 of 322 elements - why both sides had to
+move together.
+
+**Independent review - ACCEPT**, no blocker. Its measurements: 4,000,000
+random ASCII pairs through pre/post copies of the three reversed-prefix
+sites, the find full/rooted kinds with `startPathLen`, the `GetUNCPath`
+bookkeeping and both equality shapes: 0 differences. A mixed set of 380
+strings (ASCII, valid, invalid, lone surrogate, the 2/3-byte pair): 0
+antisymmetry and 0 transitivity violations over all triples, sorted
+correctly by the product's quick sort, every element found. Archives:
+`Č.zip`/`č.zip` in two panels - each panel still flushes its own cache key,
+the update offer now also covers the other panel; `ĥ.zip`/`Ĺ.zip` - the
+shared cache key is as before, the panel no longer shows the other archive's
+listing; no new stale-cache or wrong-archive state.
+
+**The one SHOULD-FIX: the comparator as a sort comparator was 5-12x slower
+than the byte fold.** Done: NUL-terminated strings are no longer measured
+before they are read (most comparisons end in the first bytes).
+`probe/perf_probe.cpp` (`run_perf.cmd`, /O2, 100,000 names of 24-40
+characters, best of 5):
+
+| Set | sort: old -> new | 100,000 searches: old -> new |
+|---|---|---|
+| ASCII names | 12.7 -> 25.6 ms | 19.5 -> 34.5 ms |
+| half of the names accented | 13.1 -> 77.1 ms | 20.4 -> 85.1 ms |
+| every name accented behind a shared accented prefix | 24.7 -> 399.4 ms | 29.3 -> 303.4 ms |
+
+Tried and **dropped**: an in-process path (own WTF-8 decoder + the upper-case
+table read from `RtlUpcaseUnicodeChar`). It agreed with the system path on
+the whole BMP and on 400,000 random pairs, but was no faster in the sort
+(67 against 85 ns per comparison in isolation): the cost is that both
+strings must be read to their ends, because "valid WTF-8" is a property of
+the whole string and decides the order (contract I1). A comparator that can
+stop at the first difference needs another definition of the order for
+text that is not WTF-8 - a contract change, recorded for the backlog. What
+it means today: these lists are sorted when a selection is stored or names
+are hidden; with 100,000 accented names that is a few tenths of a second,
+with a few thousand it is not measurable. SC-005 (refresh) is measured in
+S6.
+
+Recorded, not changed: `CFileTimeStamps::AddFile` still folds bytes, so
+`ĥ.txt` and `Ĺ.txt` edited from one archive collide (exists before this
+feature); the probe has no verbatim pre/post bodies for `CFindIgnore`,
+`CShares`, `CPathHistoryItem` and the archive sites (the reviewer's scratch
+run covered their ASCII parity).

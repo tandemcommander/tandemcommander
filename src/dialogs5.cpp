@@ -1848,7 +1848,7 @@ void CCfgPageDrives::Transfer(CTransferInfo& ti)
         {
             ti.EditLine(IDE_DRVSPEC_ONERRGOTO, newPath, MAX_PATH);
             GetIfPathIsInaccessibleGoTo(path, TRUE);
-            if (IsTheSamePath(path, newPath)) // user wants to go to My Documents
+            if (SalPathEqualOrdinalCI(path, newPath)) // user wants to go to My Documents
             {
                 Configuration.IfPathIsInaccessibleGoToIsMyDocs = TRUE;
                 Configuration.IfPathIsInaccessibleGoTo[0] = 0;

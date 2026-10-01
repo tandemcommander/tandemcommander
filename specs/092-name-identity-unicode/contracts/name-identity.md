@@ -41,8 +41,8 @@ pasted from the clipboard can be legacy text).
 
 ## I3 — `SalPathEqualOrdinalCI(p1, p2)` → BOOL
 
-The rules of the core's `IsTheSamePath`: one trailing backslash on either
-side is ignored; otherwise I2 on the rest.
+The rules of the core's `IsTheSamePath`: one leading and one trailing
+backslash on either side are ignored; otherwise I2 on the rest.
 
 ## I4 — `SalPathHasPrefixOrdinalCI(path, prefix, prefixLen, pathBytes)` → BOOL
 

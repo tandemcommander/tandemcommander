@@ -2335,10 +2335,11 @@ void AddNewlyLoadedModulesToGlobalModulesStore();
 
 //******************************************************************************
 
-// quicksort s porovnavanim pres StrICmp
+// quicksort; compares with SalNameCompareOrdinalCI (feature 092)
 void SortNames(char* files[], int left, int right);
 
-// hleda retezec 'name' v poli 'usedNames' (pole je serazene pomoci StrICmp);
+// hleda retezec 'name' v poli 'usedNames' (pole je serazene pomoci
+// SalNameCompareOrdinalCI - SortNames nebo AddStringToNames);
 // vraci TRUE pri nalezeni + nalezeny index v 'index' (neni-li NULL); vraci
 // FALSE pokud prvek nebyl nalezen + index pro vlozeni v 'index' (neni-li NULL)
 BOOL ContainsString(TIndirectArray<char>* usedNames, const char* name, int* index = NULL);

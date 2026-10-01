@@ -232,7 +232,7 @@ void CShares::PrepareSearch(const char* path)
     {
         CSharesItem* item = Data[i];
         int itemNameLen = (int)(item->LocalName - item->LocalPath);
-        if (pathLen == itemNameLen && StrNICmp(item->LocalPath, buff, itemNameLen) == 0)
+        if (SalNameEqualOrdinalCI(item->LocalPath, itemNameLen, buff, pathLen)) // feature 092: no byte-length test
         {
             int index;
             if (!GetWantedIndex(item->LocalName, index)) // add the matching share to Wanted array only if it is not already there
@@ -261,17 +261,22 @@ BOOL CShares::GetUNCPath(const char* path, char* uncPath, int uncPathMax)
     SalPathAddBackslash(buff, MAX_PATH); // we want a backslash at the end
 
     int longestIndex = -1; // index into Data array holding the longest matching share
+    int longestBytes = 0;  // feature 092: bytes of 'path' that share's local path covers (not always its own length)
 
     int i;
     for (i = 0; i < Data.Count; i++)
     {
         CSharesItem* item = Data[i];
         int itemNameLen = (int)strlen(item->LocalPath);
-        if (StrNICmp(buff, item->LocalPath, itemNameLen) == 0)
+        int n = 0;
+        if (SalPathHasPrefixOrdinalCI(buff, item->LocalPath, itemNameLen, &n))
         {
             // look for the longest possible share that still matches the requested 'path'
             if (longestIndex == -1 || (int)strlen(Data[longestIndex]->LocalPath) < itemNameLen)
+            {
                 longestIndex = i;
+                longestBytes = n;
+            }
         }
     }
     if (longestIndex != -1)
@@ -287,9 +292,9 @@ BOOL CShares::GetUNCPath(const char* path, char* uncPath, int uncPathMax)
         strcat(unc, item->RemoteName);
         SalPathAddBackslash(unc, 2 * MAX_PATH); // we want a backslash at the end
         // from the original path, append the directories starting from the share
-        if (strlen(item->LocalPath) < strlen(path))
+        if (longestBytes < (int)strlen(path))
         {
-            const char* s = path + strlen(item->LocalPath);
+            const char* s = path + longestBytes;
             if (*s == '\\')
                 s++; // skip an optional backslash
             strcat(unc, s);

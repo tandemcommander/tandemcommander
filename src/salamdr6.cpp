@@ -613,9 +613,11 @@ LABEL_SortNames:
 
     do
     {
-        while (StrICmp(files[i], pivot) < 0 && i < right)
+        // feature 092: the file system's identity rule; FindNameInArray, CDirectorySizes::GetIndex
+        // and ContainsString search lists sorted here and must use the same comparison
+        while (SalNameCompareOrdinalCI(files[i], -1, pivot, -1) < 0 && i < right)
             i++;
-        while (StrICmp(pivot, files[j]) < 0 && j > left)
+        while (SalNameCompareOrdinalCI(pivot, -1, files[j], -1) < 0 && j > left)
             j--;
 
         if (i <= j)
@@ -733,7 +735,8 @@ BOOL FindNameInArray(TDirectArray<char*>* items, const char* name, BOOL caseSens
     while (1)
     {
         m = (l + r) / 2;
-        int res = caseSensitive ? strcmp(items->At(m), name) : StrICmp(items->At(m), name);
+        int res = caseSensitive ? strcmp(items->At(m), name)
+                                : SalNameCompareOrdinalCI(items->At(m), -1, name, -1); // as SortNames
         if (res == 0)
         {
             if (foundOnIndex != NULL)
@@ -1078,7 +1081,8 @@ int CDirectorySizes::GetIndex(const char* name)
     while (1)
     {
         m = (l + r) / 2;
-        int res = CaseSensitive ? strcmp(Names[m], name) : StrICmp(Names[m], name);
+        int res = CaseSensitive ? strcmp(Names[m], name)
+                                : SalNameCompareOrdinalCI(Names[m], -1, name, -1); // as SortNames
         if (res == 0)
             return m; // found
         else

@@ -452,8 +452,8 @@ BOOL ContainsString(TIndirectArray<char>* usedNames, const char* name, int* inde
         {
             m = (l + r) / 2;
             char* hw = usedNames->At(m);
-            int res = StrICmp(hw, name);
-            if (res == 0) // found
+            int res = SalNameCompareOrdinalCI(hw, -1, name, -1); // feature 092: as SortNames (fileswna.cpp sorts with it)
+            if (res == 0)                                        // found
             {
                 if (index != NULL)
                     *index = m;
@@ -695,8 +695,8 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
                     srcAndTgtPathsFlags |= GetPathFlagsForCopyOp(lastSourcePath, OPFL_SRCPATH_IS_NET, OPFL_SRCPATH_IS_FAST);
                     lastSourcePath[s - fileName] = 0;
                 }
-                if (IsTheSamePath(sourcePath, targetPath) && // "Copy of..." is done only if paths match
-                    makeCopyOfName)                          // check if we will need a "Copy of..." name
+                if (SalPathEqualOrdinalCI(sourcePath, targetPath) && // "Copy of..." is done only if paths match
+                    makeCopyOfName)                                  // check if we will need a "Copy of..." name
                 {
                     strcpy(targetName, s + 1); // copy the proposed full target name into targetPath
                     BOOL isKnown;
