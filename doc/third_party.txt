@@ -1,8 +1,12 @@
 ﻿Open Salamander Third Party Software Notices
 
 === Igor Pavlov and Brian Gladman === 
-The 7-ZIP plugin utilizes 7-Zip file archiver library.
-7-Zip Copyright (C) 1999-2019 Igor Pavlov
+The 7-ZIP plugin utilizes 7-Zip file archiver library (version 26.03, reduced
+to the 7z and RAR formats and modified for Tandem Commander; the changes are
+listed in src/plugins/7zip/7za/TC-PATCHES.md of the source code).
+7-Zip Copyright (C) 1999-2026 Igor Pavlov
+Licensed under the GNU LGPL, version 2.1 or later; its RAR decoder files under
+the GNU LGPL with the unRAR license restriction (see below).
 
 === Jean-loup Gailly and Mark Adler ===
 Portions of ZIP plugin utilizes zlib library.

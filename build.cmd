@@ -205,6 +205,14 @@ if exist "%OUT_DIR%\utils\salmon.exe" (
 if exist "%OUT_DIR%\utils\salmon.pdb" del /f /q "%OUT_DIR%\utils\salmon.pdb" >nul 2>&1
 if exist "%OUT_DIR%\plugins\Intermediate\salmon" rmdir /s /q "%OUT_DIR%\plugins\Intermediate\salmon" >nul 2>&1
 if exist "%OUT_DIR%\Intermediate\salmoncl.obj" del /f /q "%OUT_DIR%\Intermediate\salmoncl.obj" >nul 2>&1
+:: Feature 087: the 7zwrapper.dll helper (no caller) left the solution with the
+:: 7-Zip 26.03 engine - same reason as above.
+if exist "%OUT_DIR%\plugins\7zip\7zwrapper.dll" (
+    del /f /q "%OUT_DIR%\plugins\7zip\7zwrapper.dll" >nul 2>&1
+    echo Reconcile: removed stale plugins\7zip\7zwrapper.dll ^(helper removed in feature 087^)
+)
+for %%x in (exp lib pdb) do if exist "%OUT_DIR%\plugins\7zip\7zwrapper.%%x" del /f /q "%OUT_DIR%\plugins\7zip\7zwrapper.%%x" >nul 2>&1
+if exist "%OUT_DIR%\plugins\7zip\Intermediate\7zwrapper" rmdir /s /q "%OUT_DIR%\plugins\7zip\Intermediate\7zwrapper" >nul 2>&1
 
 :: ============================================================
 :: File-name display-encoding guard (feature 042)

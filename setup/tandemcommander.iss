@@ -220,9 +220,31 @@ begin
   Log('Feature 080: the obsolete crash-reporting helper could not be deleted and was left behind: ' + FileName);
 end;
 
+{ Feature 087: 7zwrapper.dll, a helper of the 7zip plug-in that nothing ever
+  loaded, left the product with the 7-Zip 26.03 engine; releases up to 0.1.8
+  shipped it. Removed here for the same reason and in the same way as the crash
+  reporter above - not in [InstallDelete], so that the Restart Manager list stays
+  exactly what [Files] needs. Nothing loads the file, so one attempt is enough;
+  a failure is only logged. }
+procedure RemoveStale7zWrapper;
+var
+  FileName: String;
+begin
+  FileName := ExpandConstant('{app}\plugins\7zip\7zwrapper.dll');
+  if not FileExists(FileName) then
+    exit;
+  if DeleteFile(FileName) then
+    Log('Feature 087: removed the obsolete 7zip plug-in helper: ' + FileName)
+  else
+    Log('Feature 087: the obsolete 7zip plug-in helper could not be deleted and was left behind: ' + FileName);
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
+  begin
     RemoveStaleCrashReporter;
+    RemoveStale7zWrapper;
+  end;
 end;
 

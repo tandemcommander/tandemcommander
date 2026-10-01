@@ -217,7 +217,9 @@ such a plugin yourself is outside this statement.
 
 The installer downloads nothing. It copies the program files, creates
 shortcuts and registers the program with Windows so that it can be
-uninstalled.
+uninstalled. When it updates an existing installation, it also deletes
+program files that earlier versions installed and this version no longer
+uses; it does not touch your settings or other data.
 
 Uninstalling removes the program files and the uninstall entry. It leaves in
 place:
