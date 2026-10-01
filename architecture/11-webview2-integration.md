@@ -56,8 +56,12 @@ already been used in the session.
    ```
 
    Never invent a per-plugin UDF: a different UDF spawns a second, separate,
-   cold browser tree and gains nothing from the keeper. The folder holds
-   cache only; deleting it is always safe. (Before 065 mdview used
+   cold browser tree and gains nothing from the keeper. The folder holds the
+   engine's working data — HTTP and code caches (which can include documents
+   and images that were viewed), the cookie, history and web-storage databases
+   every profile has, and since feature 085 the engine's own crash dumps (see
+   item 2). None of it is configuration; deleting the folder while no viewer
+   runs is safe. (Corrected in 085: earlier text said "cache only".) (Before 065 mdview used
    `...\Tandem Commander\mdview.WebView2`; 065 renames it and removes the
    old folder best-effort at first view.)
 
@@ -83,6 +87,31 @@ already been used in the session.
    helper**, never a per-plugin override — an override would work or not
    depending on which plugin happened to start the tree first.
 
+   **One options object** (feature 085). The whole
+   `CoreWebView2EnvironmentOptions` object — not only its argument string —
+   has one builder: **`TcWebBuildEnvOptions()` in `webhost.cpp`**, declared in
+   the internal, WRL-only `src/common/webhost/webenvopts.h` and used by the host
+   and the keeper alike (the keeper's own builder was deleted). Unlike the
+   arguments, the other options are not silently ignored: *"WebView creation
+   fails with `HRESULT_FROM_WIN32(ERROR_INVALID_STATE)` if the specified options
+   does not match the options of the WebViews that are currently running in the
+   shared browser process"* (Microsoft,
+   `CreateCoreWebView2EnvironmentWithOptions`). So a second builder that
+   drifted would break the shared tree, not just weaken it. Options set:
+
+   - `AdditionalBrowserArguments` = `TcWebBrowserArguments()`;
+   - `IsCustomCrashReportingEnabled = TRUE` — *"Windows won't send crash data
+     to Microsoft endpoint"*; the engine keeps its dumps locally under the
+     user data folder (privacy defect F4 of feature 083, decided 2026-10-01).
+     Consequence: a running instance of **0.1.8 or older** (default
+     `FALSE`) and a newer one cannot share a tree; whichever starts its engine
+     second gets `ERROR_INVALID_STATE`; its viewer reports the engine as
+     unavailable (`IDS_ENGINE_UNAVAILABLE`) and closes, until the other
+     instance closes. Accepted.
+
+   Guard: `rg -c "put_IsCustomCrashReportingEnabled" src/ --glob '!src/common/dep/**'`
+   must report exactly one file.
+
 3. **Per-controller settings stay per-plugin** — security lockdown, script
    enablement, zoom, resource interception are configured on each plugin's
    own controllers. mdview's strict lockdown (scripts off, default-deny
@@ -90,6 +119,20 @@ already been used in the session.
    WebGPU plugin may enable scripts on *its* controllers. Choose your own
    controller settings deliberately — the lockdown is per-WebView, the
    process tree is shared.
+
+   One navigation rule is **not** per-plugin: the shared host cancels every
+   navigation away from the plugin's own document and hands it to
+   `OnActivateLink` **only when the engine reports it as user-initiated**
+   (`get_IsUserInitiated`, both `NavigationStarting` and
+   `NewWindowRequested`; feature 085, privacy defect F3). A document that
+   navigates by itself (`<meta http-equiv="refresh">`, script, redirect) gets
+   nothing — before 085 it could open the default browser without a click.
+   The flag reflects *transient* user activation (a key press or click in
+   the last seconds), so a consumer that renders untrusted HTML must also
+   remove what can navigate by itself: mdview renames every raw-HTML
+   `http-equiv` attribute to `data-tc-equiv` (`htmlgen.cpp`
+   `AppendRawHtml`) — with scripts off, the meta refresh is the only such
+   way.
 
 4. **Keeper symmetry** — the shared component exists (`CTcWebKeeper`), and
    each WebView2 plugin still arms its **own** instance of it at its **own

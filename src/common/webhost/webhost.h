@@ -75,7 +75,7 @@ public:
     struct Callbacks
     {
         std::function<void()> OnReady;                            // controller ready
-        std::function<void(const std::wstring&)> OnActivateLink;  // navigation was refused
+        std::function<void(const std::wstring&)> OnActivateLink;  // a USER-initiated navigation was refused (085)
         std::function<void()> OnInitFailed;                       // env/controller failure
         std::function<void()> OnProcessFailed;                    // renderer crashed
         std::function<void(int)> OnZoomChanged;                   // engine-driven zoom, percent

@@ -16,21 +16,16 @@
 
 #include "webhost.h"
 #include "webkeeper.h"
+#include "webenvopts.h" // feature 085: the one options builder
 
 using namespace Microsoft::WRL;
 
 // The keeper must build its environment with the SAME options as every other
-// consumer (contract S2.2). Only the options OBJECT is built here -- it is a
-// WRL type and cannot cross the COM-free webhost.h; the argument STRING comes
-// from TcWebBrowserArguments(), which is its single definition in the product.
-// (Until feature 081 this function repeated the literal, and its comment
-// claimed to include the one definition, which it did not.)
-static ComPtr<CoreWebView2EnvironmentOptions> TcWebKeeperEnvOptions()
-{
-    auto options = Make<CoreWebView2EnvironmentOptions>();
-    options->put_AdditionalBrowserArguments(TcWebBrowserArguments());
-    return options;
-}
+// consumer (contract S2.2). Since feature 085 it does not build them at all:
+// TcWebBuildEnvOptions() (webhost.cpp, declared in webenvopts.h) is the one
+// builder for the host and the keeper. (Until feature 081 a local builder here
+// repeated the argument literal; from 081 to 085 it repeated the builder, which
+// would have let a new option - crash reporting - reach one and not the other.)
 
 #define TC_KEEPER_DIED (WM_APP + 1)
 
@@ -210,7 +205,7 @@ void CTcWebKeeper::Arm(const TcWebKeeperConfig& config)
 
     std::wstring udf = TcWebUserDataFolder();
     HRESULT hr = CreateCoreWebView2EnvironmentWithOptions(
-        NULL, udf.empty() ? NULL : udf.c_str(), TcWebKeeperEnvOptions().Get(),
+        NULL, udf.empty() ? NULL : udf.c_str(), TcWebBuildEnvOptions().Get(),
         Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
             [self, gen](HRESULT r, ICoreWebView2Environment* env) -> HRESULT
             {

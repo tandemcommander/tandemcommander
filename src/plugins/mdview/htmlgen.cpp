@@ -489,6 +489,56 @@ int LeaveSpan(MD_SPANTYPE type, void* detail, void* ud)
     return 0;
 }
 
+// Raw HTML is passed through verbatim (FR-020) - except an http-equiv
+// attribute, renamed to data-tc-equiv (feature 085, privacy defect F3). With
+// scripts off, <meta http-equiv="refresh" content="N;url=..."> is the one way a
+// document can navigate by itself; the shared host hands a navigation to the
+// link handler only when the engine calls it user-initiated, but that flag
+// reflects a recent key press or click (transient user activation), so a
+// refresh timed to fire while the reader scrolls could pass as one. Renamed,
+// the attribute is inert (refresh, set-cookie, default-style alike); the
+// rendered document is otherwise unchanged. Only an attribute NAME is touched:
+// "http-equiv" after white space, a quote or '/', followed by optional white
+// space (space, tab, form feed, CR, LF - all HTML whitespace) and then '=' OR
+// the end of this call. md4c delivers raw HTML at most a line per call (the
+// line break and indentation as separate calls), so the '=' may arrive in a
+// LATER call: "<meta http-equiv\n=\"refresh\" ...>" is valid HTML and was the
+// bypass the second review found. A name never spans calls (it holds no
+// whitespace). The cost of renaming at the end of a call: the bare word
+// "http-equiv" ending a raw-HTML line of prose is renamed too - cosmetic.
+static void AppendRawHtml(std::string& o, const MD_CHAR* text, MD_SIZE size)
+{
+    static const char kAttr[] = "http-equiv";
+    const MD_SIZE kLen = (MD_SIZE)(sizeof(kAttr) - 1);
+    MD_SIZE i = 0;
+    while (i < size)
+    {
+        bool hit = false;
+        if (i + kLen <= size && (i == 0 || (unsigned char)text[i - 1] <= ' ' || text[i - 1] == '"' ||
+                                 text[i - 1] == '\'' || text[i - 1] == '/'))
+        {
+            MD_SIZE k = 0;
+            while (k < kLen && (text[i + k] | 0x20) == kAttr[k])
+                k++;
+            if (k == kLen)
+            {
+                MD_SIZE j = i + kLen;
+                while (j < size && (text[j] == ' ' || text[j] == '\t' || text[j] == '\f' ||
+                                    text[j] == '\r' || text[j] == '\n'))
+                    j++;
+                hit = (j == size || text[j] == '=');
+            }
+        }
+        if (hit)
+        {
+            o += "data-tc-equiv";
+            i += kLen;
+        }
+        else
+            o += text[i++];
+    }
+}
+
 int Text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* ud)
 {
     Gen& g = *(Gen*)ud;
@@ -511,7 +561,7 @@ int Text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* ud)
     case MD_TEXT_NULLCHAR: o += "\xEF\xBF\xBD"; break; // U+FFFD
     case MD_TEXT_BR: o += "<br>\n"; break;
     case MD_TEXT_SOFTBR: o += '\n'; break;
-    case MD_TEXT_HTML: o.append(text, size); break;   // raw HTML verbatim (FR-020)
+    case MD_TEXT_HTML: AppendRawHtml(o, text, size); break; // raw HTML verbatim (FR-020), http-equiv neutralised (085)
     case MD_TEXT_ENTITY: o.append(text, size); break; // pass valid entity through
     default: EmitText(g, o, text, size); break;        // NORMAL / CODE / LATEXMATH
     }

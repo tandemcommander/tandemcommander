@@ -183,6 +183,8 @@
     </ClInclude>
     <ClInclude Include="..\..\..\common\webhost\webkeeper.h">
     </ClInclude>
+    <ClInclude Include="..\..\..\common\webhost\webenvopts.h">
+    </ClInclude>
     <ClInclude Include="..\codeview.h">
     </ClInclude>
     <ClInclude Include="..\intake.h">

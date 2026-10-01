@@ -86,6 +86,30 @@ int main()
         Check("raw <script> block passed through (inert at engine)", Has(h, "<script>window.x=1</script>"));
         // and it is NOT executed here (pure string) - documented design
     }
+    // feature 085 (F3): a document cannot navigate by itself - the http-equiv
+    // attribute of raw HTML is renamed, everything else stays verbatim
+    {
+        std::string h = Gen("<meta http-equiv=\"refresh\" content=\"1; url=https://example.com/\">\n\ntext\n");
+        Check("085 block meta refresh neutralised", !Has(h, "http-equiv") && Has(h, "data-tc-equiv=\"refresh\""));
+        Check("085 rest of the tag kept", Has(h, "content=\"1; url=https://example.com/\""));
+        h = Gen("x <meta HTTP-EQUIV = 'Refresh' content='0;url=a.md'> y\n");
+        Check("085 inline, case and spaces", !Has(h, "HTTP-EQUIV") && Has(h, "data-tc-equiv = 'Refresh'"));
+        // review 2 (REJECT): the '=' on the next line, or after a form feed
+        h = Gen("<div>\n<meta http-equiv\n=\"refresh\" content=\"1;url=https://tracker/\">\n</div>\n");
+        Check("085 block, '=' on the next line", !Has(h, "http-equiv") && Has(h, "data-tc-equiv"));
+        h = Gen("x <meta http-equiv\n=\"refresh\" content=\"1;url=https://x\"> y\n");
+        Check("085 inline, '=' on the next line", !Has(h, "http-equiv") && Has(h, "data-tc-equiv"));
+        h = Gen("<meta http-equiv\f=\"refresh\" content=\"1;url=https://x\">\n");
+        Check("085 form feed before '='", !Has(h, "http-equiv") && Has(h, "data-tc-equiv"));
+        // outside a block md4c does not take these as HTML (escaped, inert); inside
+        // a <div> block they are raw, and a browser reads the attribute
+        h = Gen("<div>\n<meta content=\"1;url=https://x\"http-equiv=refresh>\n<meta/http-equiv=refresh>\n</div>\n");
+        Check("085 after a quote or '/' (raw in a block)", !Has(h, "http-equiv") && Has(h, "<meta/data-tc-equiv=refresh>"));
+        h = Gen("<p>the http-equiv attribute</p>\n");
+        Check("085 prose in raw HTML untouched", Has(h, "the http-equiv attribute"));
+        h = Gen("The `http-equiv=refresh` trick, and http-equiv=\"refresh\" in text.\n");
+        Check("085 Markdown text untouched", Has(h, "http-equiv=refresh") && !Has(h, "data-tc-equiv"));
+    }
     // US3: local relative image is rewritten to the interceptor origin
     {
         MdHtmlResult r;

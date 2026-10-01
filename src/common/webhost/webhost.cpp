@@ -24,6 +24,7 @@
 #pragma pop_macro("new")
 
 #include "webhost.h"
+#include "webenvopts.h" // feature 085
 
 #include <memory>
 
@@ -39,19 +40,32 @@ using namespace Microsoft::WRL;
 // override -- an override would take effect or not depending on which plugin
 // happened to start the tree first.
 //
-// This is the ONE definition in the product (feature 081): the keeper builds
-// its own options object, but takes the string from here, and no plugin may
-// carry a literal of its own.
+// This is the ONE definition in the product (feature 081), and no plugin may
+// carry a literal of its own. Since feature 085 the keeper does not even build
+// its own options object: TcWebBuildEnvOptions() below serves both.
 const wchar_t* TcWebBrowserArguments()
 {
     return L"--disable-background-networking --disable-sync --disable-component-update "
            L"--disable-features=msWebOOUI,msPdfOOUI";
 }
 
-static ComPtr<CoreWebView2EnvironmentOptions> TcWebBuildEnvOptions()
+// The ONE environment-options builder (feature 085): the viewers' host below
+// and the keeper (webkeeper.cpp) both create their environment from it, so the
+// two can never differ - environments sharing a user data folder must match,
+// or the later one fails with ERROR_INVALID_STATE (Microsoft's
+// CreateCoreWebView2EnvironmentWithOptions reference). Declared in the internal
+// webenvopts.h, because the options object is a WRL type.
+//
+// IsCustomCrashReportingEnabled (feature 085, privacy defect F4): by default the
+// engine sends its crash dumps to Microsoft (respecting the OS consent); with
+// TRUE, "Windows won't send crash data to Microsoft endpoint" and the dumps stay
+// in the engine's folder under the user data folder. The program promises to
+// send nothing by itself; the viewer engine now keeps that promise too.
+ComPtr<CoreWebView2EnvironmentOptions> TcWebBuildEnvOptions()
 {
     auto options = Make<CoreWebView2EnvironmentOptions>();
     options->put_AdditionalBrowserArguments(TcWebBrowserArguments());
+    options->put_IsCustomCrashReportingEnabled(TRUE);
     return options;
 }
 
@@ -275,7 +289,18 @@ static void ApplyControllerReady(CTcWebHostImpl* impl, ICoreWebView2Controller* 
                 if (u.rfind(impl->baseUrl, 0) == 0)
                     return S_OK; // our document + #fragments
                 args->put_Cancel(TRUE);
-                if (impl->cb.OnActivateLink)
+                // Feature 085 (F3): only a navigation the USER started (a click, or
+                // Enter on a focused link) becomes a link activation. A document can
+                // navigate by itself - <meta http-equiv="refresh">, a script, a
+                // redirect - and before this check that opened the default browser
+                // at an address of the document's choosing (or spawned viewer
+                // windows / message boxes for local targets) without any action.
+                // Such navigations are still cancelled; they just do nothing.
+                // A failed query counts as "not the user" (fail closed).
+                BOOL user = FALSE;
+                if (FAILED(args->get_IsUserInitiated(&user)))
+                    user = FALSE;
+                if (user && impl->cb.OnActivateLink)
                     impl->cb.OnActivateLink(u);
                 return S_OK;
             })
@@ -292,7 +317,13 @@ static void ApplyControllerReady(CTcWebHostImpl* impl, ICoreWebView2Controller* 
                 std::wstring u = uri ? uri : L"";
                 if (uri)
                     CoTaskMemFree(uri);
-                if (impl->cb.OnActivateLink)
+                // feature 085 (F3): the same rule as the navigation gate above -
+                // a target="_blank" click opens the link, a window.open() the
+                // document made by itself does not
+                BOOL user = FALSE;
+                if (FAILED(args->get_IsUserInitiated(&user)))
+                    user = FALSE;
+                if (user && impl->cb.OnActivateLink)
                     impl->cb.OnActivateLink(u);
                 return S_OK;
             })
