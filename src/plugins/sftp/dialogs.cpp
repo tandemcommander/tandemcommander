@@ -846,11 +846,20 @@ static BOOL ConnectReadFields(HWND hwnd, CSFTPServer* s, const CSFTPServer* sele
         {
             if (forConnect)
                 lstrcpynA(ConnectPlainPassword, pwd, sizeof(ConnectPlainPassword));
+            // feature 085 (F7): with a Master Password in use but not entered, a
+            // cancelled (or failed) prompt used to save the password anyway - only
+            // scrambled, the weaker form the user chose a Master Password to avoid.
+            // Now it is not saved at all and "Save password" is cleared, as the FTP
+            // plugin has always done; the connection still uses ConnectPlainPassword.
+            if (s->SavePassword && pm != NULL && pm->IsUsingMasterPassword() &&
+                !pm->IsMasterPasswordSet() && !pm->AskForMasterPassword(hwnd))
+            {
+                s->SavePassword = FALSE;
+                CheckDlgButton(hwnd, IDC_SAVEPASSWORD, BST_UNCHECKED);
+            }
             if (s->SavePassword && pm != NULL)
             {
                 BOOL enc = pm->IsUsingMasterPassword() && pm->IsMasterPasswordSet();
-                if (pm->IsUsingMasterPassword() && !pm->IsMasterPasswordSet())
-                    enc = pm->AskForMasterPassword(hwnd);
                 BYTE* blob = NULL;
                 int blobSize = 0;
                 if (pm->EncryptPassword(pwd, &blob, &blobSize, enc) && blob != NULL)
@@ -882,11 +891,16 @@ static BOOL ConnectReadFields(HWND hwnd, CSFTPServer* s, const CSFTPServer* sele
         {
             if (forConnect)
                 lstrcpynA(ConnectPlainPassphrase, pass, sizeof(ConnectPlainPassphrase));
+            // feature 085 (F7): the same rule for the key passphrase
+            if (s->SavePassphrase && pm != NULL && pm->IsUsingMasterPassword() &&
+                !pm->IsMasterPasswordSet() && !pm->AskForMasterPassword(hwnd))
+            {
+                s->SavePassphrase = FALSE;
+                CheckDlgButton(hwnd, IDC_SAVEPASSPHRASE, BST_UNCHECKED);
+            }
             if (s->SavePassphrase && pm != NULL)
             {
                 BOOL enc = pm->IsUsingMasterPassword() && pm->IsMasterPasswordSet();
-                if (pm->IsUsingMasterPassword() && !pm->IsMasterPasswordSet())
-                    enc = pm->AskForMasterPassword(hwnd);
                 BYTE* blob = NULL;
                 int blobSize = 0;
                 if (pm->EncryptPassword(pass, &blob, &blobSize, enc) && blob != NULL)
