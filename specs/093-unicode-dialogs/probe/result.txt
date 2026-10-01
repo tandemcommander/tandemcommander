@@ -1,0 +1,84 @@
+﻿ACP = 1250   sample = 0061 0159 0416 65E5
+
+=== Dialog created with CreateDialogIndirectParamA (same DLGPROC) ===
+IsWindowUnicode: dialog=False edit=False combo=False comboEdit=False
+T1 SetWindowTextW(edit) -> GetWindowTextW: 0061 0159 003F 003F
+T1 SetWindowTextW(combo) -> GetWindowTextW: 0061 0159 003F 003F
+T2 SendMessageA(WM_SETTEXT, ACP bytes of 'a r-caron z') -> GetWindowTextW: 0061 0159 007A
+T2 SetWindowTextW(sample) -> GetWindowTextA bytes: 61-F8-3F-3F
+T3 CB_ADDSTRING (W) -> CB_GETLBTEXT (W): 0061 0159 003F 003F
+T3 CB_SETCURSEL -> GetWindowTextW(combo): 0061 0159 003F 003F
+T4 SendMessageW(EM_REPLACESEL) -> GetWindowTextW: 0061 0159 003F 003F
+T5 typed WM_CHAR, pump [PeekW + DispatchW] -> edit: 0061 0072 003F 003F
+T5 typed WM_CHAR, pump [PeekA + DispatchA] -> edit: 0061 0072 003F 003F
+T5 typed WM_CHAR, pump [PeekW + IsDialogMessageA (main loop of salamdr1.cpp)] -> edit: 0061 0059 013A
+T5 typed WM_CHAR, pump [PeekW + IsDialogMessageW] -> edit: 0061 0072 003F 003F
+T5 typed WM_CHAR, pump [PeekA + IsDialogMessageA (find.cpp / sheets.cpp loop)] -> edit: 0061 0072 003F 003F
+T5 typed WM_CHAR, pump [PeekA + IsDialogMessageW] -> edit: 0061 0072 003F 003F
+T5 surrogate pair, pump [PeekW + IsDialogMessageW] -> edit: 003F 003F
+T5 surrogate pair, pump [PeekA + IsDialogMessageA] -> edit: 003F 003F
+T5 typed into COMBO EDIT, pump [PeekW + IsDialogMessageA (main loop of salamdr1.cpp)] -> 0061 0059 013A
+T5 typed into COMBO EDIT, pump [PeekW + IsDialogMessageW] -> 0061 0072 003F 003F
+T5 typed into COMBO EDIT, pump [PeekA + IsDialogMessageA (find.cpp / sheets.cpp loop)] -> 0061 0072 003F 003F
+T6 CreateWindowExW EDIT child: IsWindowUnicode=True
+T6 SetWindowTextW -> GetWindowTextW: 0061 0159 0416 65E5
+T6 typed WM_CHAR, pump [PeekW + DispatchW] -> W child: 0061 0159 0416 65E5
+T6 typed WM_CHAR, pump [PeekA + DispatchA] -> W child: 0061 0072 003F 003F
+T6 typed WM_CHAR, pump [PeekW + IsDialogMessageA (main loop of salamdr1.cpp)] -> W child: 0061 0059 00E5
+T6 typed WM_CHAR, pump [PeekW + IsDialogMessageW] -> W child: 0061 0159 0416 65E5
+T6 typed WM_CHAR, pump [PeekA + IsDialogMessageA (find.cpp / sheets.cpp loop)] -> W child: 0061 0072 003F 003F
+T6 typed WM_CHAR, pump [PeekA + IsDialogMessageW] -> W child: 0061 0072 003F 003F
+T6b CreateWindowExA EDIT child: IsWindowUnicode=False
+T7 after SetWindowLongPtrA(GWLP_WNDPROC) subclass: IsWindowUnicode(edit)=False  existing text read W: 0061 0159 003F 003F
+T7 SetWindowTextW after A-subclass -> GetWindowTextW: 0061 0159 003F 003F
+T7 typed after A-subclass, pump [PeekW + IsDialogMessageW] -> 0061 0072 003F 003F
+T7 after restoring with SetWindowLongPtrA: IsWindowUnicode(edit)=False
+T8 after SetWindowLongPtrW(GWLP_WNDPROC) subclass: IsWindowUnicode(edit)=True
+T8 SetWindowTextW after W-subclass -> GetWindowTextW: 0061 0159 003F 003F
+T8 typed after W-subclass, pump [PeekW + IsDialogMessageW] -> 0061 0072 003F 003F
+T8 typed after W-subclass, pump [PeekW + IsDialogMessageA] -> 0061 0059 0065 013A
+
+=== Dialog created with CreateDialogIndirectParamW (same DLGPROC) ===
+IsWindowUnicode: dialog=True edit=True combo=True comboEdit=True
+T1 SetWindowTextW(edit) -> GetWindowTextW: 0061 0159 0416 65E5
+T1 SetWindowTextW(combo) -> GetWindowTextW: 0061 0159 0416 65E5
+T2 SendMessageA(WM_SETTEXT, ACP bytes of 'a r-caron z') -> GetWindowTextW: 0061 0159 007A
+T2 SetWindowTextW(sample) -> GetWindowTextA bytes: 61-F8-3F-3F
+T3 CB_ADDSTRING (W) -> CB_GETLBTEXT (W): 0061 0159 0416 65E5
+T3 CB_SETCURSEL -> GetWindowTextW(combo): 0061 0159 0416 65E5
+T4 SendMessageW(EM_REPLACESEL) -> GetWindowTextW: 0061 0159 0416 65E5
+T5 typed WM_CHAR, pump [PeekW + DispatchW] -> edit: 0061 0159 0416 65E5
+T5 typed WM_CHAR, pump [PeekA + DispatchA] -> edit: 0061 0072 003F 003F
+T5 typed WM_CHAR, pump [PeekW + IsDialogMessageA (main loop of salamdr1.cpp)] -> edit: 0061 0059 00E5
+T5 typed WM_CHAR, pump [PeekW + IsDialogMessageW] -> edit: 0061 0159 0416 65E5
+T5 typed WM_CHAR, pump [PeekA + IsDialogMessageA (find.cpp / sheets.cpp loop)] -> edit: 0061 0072 003F 003F
+T5 typed WM_CHAR, pump [PeekA + IsDialogMessageW] -> edit: 0061 0072 003F 003F
+T5 surrogate pair, pump [PeekW + IsDialogMessageW] -> edit: D83D DCC1
+T5 surrogate pair, pump [PeekA + IsDialogMessageA] -> edit: 003F 003F
+T5 typed into COMBO EDIT, pump [PeekW + IsDialogMessageA (main loop of salamdr1.cpp)] -> 0061 0059 00E5
+T5 typed into COMBO EDIT, pump [PeekW + IsDialogMessageW] -> 0061 0159 0416 65E5
+T5 typed into COMBO EDIT, pump [PeekA + IsDialogMessageA (find.cpp / sheets.cpp loop)] -> 0061 0072 003F 003F
+T6 CreateWindowExW EDIT child: IsWindowUnicode=True
+T6 SetWindowTextW -> GetWindowTextW: 0061 0159 0416 65E5
+T6 typed WM_CHAR, pump [PeekW + DispatchW] -> W child: 0061 0159 0416 65E5
+T6 typed WM_CHAR, pump [PeekA + DispatchA] -> W child: 0061 0072 003F 003F
+T6 typed WM_CHAR, pump [PeekW + IsDialogMessageA (main loop of salamdr1.cpp)] -> W child: 0061 0059 00E5
+T6 typed WM_CHAR, pump [PeekW + IsDialogMessageW] -> W child: 0061 0159 0416 65E5
+T6 typed WM_CHAR, pump [PeekA + IsDialogMessageA (find.cpp / sheets.cpp loop)] -> W child: 0061 0072 003F 003F
+T6 typed WM_CHAR, pump [PeekA + IsDialogMessageW] -> W child: 0061 0072 003F 003F
+T6b CreateWindowExA EDIT child: IsWindowUnicode=False
+T7 after SetWindowLongPtrA(GWLP_WNDPROC) subclass: IsWindowUnicode(edit)=False  existing text read W: 0061 0159 003F 003F
+T7 SetWindowTextW after A-subclass -> GetWindowTextW: 0061 0159 003F 003F
+T7 typed after A-subclass, pump [PeekW + IsDialogMessageW] -> 0061 0072 003F 003F
+T7 after restoring with SetWindowLongPtrA: IsWindowUnicode(edit)=True
+T8 after SetWindowLongPtrW(GWLP_WNDPROC) subclass: IsWindowUnicode(edit)=True
+T8 SetWindowTextW after W-subclass -> GetWindowTextW: 0061 0159 0416 65E5
+T8 typed after W-subclass, pump [PeekW + IsDialogMessageW] -> 0061 0159 0416 65E5
+T8 typed after W-subclass, pump [PeekW + IsDialogMessageA] -> 0061 0059 00E5
+
+=== Modal dialogs (the dialog manager's own message loop) ===
+T9 DialogBoxIndirectParamA, typed into template edit: IsWindowUnicode(dlg)=False IsWindowUnicode(edit)=False text=0061 0072 003F 003F
+T9 DialogBoxIndirectParamW, typed into template edit: IsWindowUnicode(dlg)=True IsWindowUnicode(edit)=True text=0061 0159 0416 65E5
+T9 DialogBoxIndirectParamA, typed into a CreateWindowExW edit child: IsWindowUnicode(dlg)=False IsWindowUnicode(edit)=True text=0061 0159 0416 65E5
+T9 DialogBoxIndirectParamW, surrogate pair typed: IsWindowUnicode(dlg)=True IsWindowUnicode(edit)=True text=D83D DCC1
+
