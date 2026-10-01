@@ -21,6 +21,7 @@
 #include "sal7zlist.h"    // feature 084
 #include "salarcmig.h"    // feature 084
 #include "salurlpwd.h"    // feature 085
+#include "salrandom.h"    // feature 086
 
 #include <map>
 #include <set>
@@ -2823,6 +2824,60 @@ static void TestUrlPasswordStrip085()
     }
 }
 
+// ----------------------------------------------------------------------------
+// feature 086: the product's one source of security-relevant random bytes
+// (src/common/salrandom.h, contracts/salrandom.md)
+
+static void TestRandom086()
+{
+    // success, and only the requested range is written (guard bytes around it)
+    {
+        unsigned char buf[16 + 8];
+        memset(buf, 0xA5, sizeof(buf));
+        CHECK(SalGenRandom(buf + 4, 16));
+        bool guards = true;
+        for (int i = 0; i < 4; i++)
+            guards = guards && buf[i] == 0xA5 && buf[sizeof(buf) - 1 - i] == 0xA5;
+        CHECK(guards);
+        bool allSame = true;
+        for (int i = 5; i < 20; i++)
+            allSame = allSame && buf[i] == buf[4];
+        CHECK(!allSame); // 16 equal bytes: probability 2^-120
+    }
+
+    // argument rules
+    {
+        unsigned char buf[4] = {1, 2, 3, 4};
+        CHECK(SalGenRandom(buf, 0));
+        CHECK(buf[0] == 1 && buf[3] == 4); // nothing written
+        CHECK(!SalGenRandom(buf, -1));
+        CHECK(buf[0] == 1 && buf[3] == 4);
+        CHECK(!SalGenRandom(NULL, 16));
+        CHECK(SalGenRandom(NULL, 0));
+    }
+
+    // two draws differ (a salt is never repeated by construction of the source)
+    {
+        unsigned char a[16], b[16];
+        CHECK(SalGenRandom(a, 16) && SalGenRandom(b, 16));
+        CHECK(memcmp(a, b, 16) != 0);
+    }
+
+    // a 64 KiB draw holds every byte value (a stuck or narrow generator - e.g.
+    // the old "(rand() >> 7) & 0xff" with a broken shift - would not)
+    {
+        std::vector<unsigned char> big(65536);
+        CHECK(SalGenRandom(big.data(), (int)big.size()));
+        bool seen[256] = {false};
+        for (unsigned char c : big)
+            seen[c] = true;
+        int values = 0;
+        for (int i = 0; i < 256; i++)
+            values += seen[i] ? 1 : 0;
+        CHECK(values == 256);
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -2851,6 +2906,7 @@ int main()
     TestSevenZipList084();
     TestArchiverMigration084();
     TestUrlPasswordStrip085();
+    TestRandom086();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -15,7 +15,8 @@ submission of 0.1.8 to item 6. The two preserved reference trees item 3 relied
 on are **no longer on disk** (see there).
 
 **Revised 2026-10-01** — item 7 (the privacy defects of feature 083) is done
-as feature 085, except F9; the GUI steps of 085 join item 3.
+as feature 085, except F9; the GUI steps of 085 join item 3. The ZIP salt
+item 085's review added is done as feature 086.
 
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
@@ -416,8 +417,11 @@ has `DisplayVersion`).
 >   neither DLL, so nothing is registered or left behind. Open question
 >   instead: is the missing copy hook (drag out of archives into Explorer)
 >   intended?
-> - **New (found by 085's review): the ZIP plugin's AES salt comes from
->   `rand()` seeded with time ^ pid** (`src/plugins/zip/crypt.cpp:118-127`,
+> - ~~**New (found by 085's review): the ZIP plugin's AES salt comes from
+>   `rand()` seeded with time ^ pid**~~ — ✅ **DONE (feature 086,
+>   2026-10-01)**: AES salts and the ZIP 2.0 header now come from
+>   `SalGenRandom` (`src/common/salrandom.h`, shared with the password
+>   manager); GUI round trip owed (`086/quickstart.md`). Original note: (`src/plugins/zip/crypt.cpp:118-127`,
 >   used by `zip/add.cpp:1632` for AES-encrypted archives). A repeated salt
 >   with the same password repeats the AES-CTR keystream. Same fix as F6
 >   (`BCryptGenRandom`); small, but it changes archive-creation code, so it is

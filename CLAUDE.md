@@ -842,3 +842,16 @@ plugin architecture preservation, UI consistency.
   - Found, not fixed: the ZIP plugin's AES salt still uses `rand()` (NEXT-WORK
     item 7). saltests 1647 → 1816, htmlgen 29 → 38. GUI steps owed
     (`quickstart.md` G1–G6). Records: `specs/085-privacy-defect-fixes/fix-log.md`.
+- 086-zip-aes-salt: **encrypted ZIP archives get unpredictable salts.** The
+  ZIP plugin's AES salt (`add.cpp`) and the random bytes of each ZIP 2.0
+  header (`crypt.cpp CryptHeader`, 10–11 of its 12) came from `rand()` seeded once per run with
+  time ^ pid — predictable (one guessable 32-bit seed), repeated only across
+  runs with an equal seed. Both, and the core password manager (085 F6), now
+  use **`SalGenRandom`** in the header-only `src/common/salrandom.h`
+  (`BCryptGenRandom`, links `bcrypt.lib` by pragma) — header-only because the
+  ZIP project cannot compile a shared `.cpp` from `src/common` (its sources
+  find `precomp.h` beside themselves). New security-relevant random bytes
+  MUST come from it. Format unchanged; old archives keep their salts. SFX
+  archives cannot use AES (`add_del.cpp:112`). saltests 1816 → 1829; probe
+  `specs/086-zip-aes-salt/probe/zip_salts.py` (self-test against 7-Zip); GUI
+  round trip owed (`quickstart.md`). Records: `specs/086-zip-aes-salt/fix-log.md`.

@@ -779,6 +779,9 @@
     <ClInclude Include="..\common\salurlpwd.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\salrandom.h">
+      <Filter>common</Filter>
+    </ClInclude>
     <ClInclude Include="..\common\salunicode.h">
       <Filter>common</Filter>
     </ClInclude>

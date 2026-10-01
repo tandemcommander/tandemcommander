@@ -73,6 +73,18 @@ without them.
   found, the message names it and points to *External Archivers Locations* or
   *Archivers Autoconfiguration*; any other launch error names the program and
   the reason instead of suggesting a step that cannot help.
+- **Encrypted ZIP archives get unpredictable salts.** When the ZIP plugin
+  encrypts a file with AES, the salt that, together with the password,
+  determines the file's key now comes from Windows' cryptographic random
+  generator; so do the random bytes of the classic ZIP 2.0 encryption header.
+  Until now both came from a generator seeded with the time and the process
+  number, so the salts of an archive could be reproduced by guessing when it
+  was made, which helps an attacker prepare a password search in advance; two
+  program runs that started with the same seed would even produce the same
+  salts. Archives made by earlier versions open as before but keep the salts
+  they were made with — re-create sensitive ones to get new salts. ZIP 2.0
+  encryption itself remains weak by design; use AES for anything that matters
+  (feature 086).
 
 ### Added
 

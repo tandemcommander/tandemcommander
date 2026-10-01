@@ -761,6 +761,8 @@
     </ClInclude>
     <ClInclude Include="..\common\salurlpwd.h">
     </ClInclude>
+    <ClInclude Include="..\common\salrandom.h">
+    </ClInclude>
     <ClInclude Include="..\common\salunicode.h">
     </ClInclude>
     <ClInclude Include="..\common\sheets.h">

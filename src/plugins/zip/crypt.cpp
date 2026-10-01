@@ -20,6 +20,7 @@
 #include "selfextr/comdefs.h"
 #include "typecons.h"
 #include "crypt.h"
+#include "../../common/salrandom.h" // feature 086: SalGenRandom
 
 //Return the next byte in the pseudo-random sequence
 __forceinline int decrypt_byte(__UINT32* keys)
@@ -117,6 +118,17 @@ void Decrypt(char* buffer, unsigned size, __UINT32* keys)
 
 void FillBufferWithRandomData(char* buf, int len)
 {
+    // feature 086: the AES salt of every encrypted file (add.cpp) and the random
+    // part of every ZIP 2.0 encryption header (CryptHeader below) come from the
+    // system's cryptographic generator. Until 0.1.8 they came from rand() seeded
+    // once per run with time ^ process id, so every salt the plugin ever wrote
+    // was a function of one guessable 32-bit seed. Salts and headers are stored
+    // in the archive, so archives made by older versions read as before.
+    if (len <= 0 || SalGenRandom(buf, len))
+        return;
+
+    // practically unreachable; a weak salt is still better than an unchanged one
+    TRACE_E("FillBufferWithRandomData(): BCryptGenRandom failed, falling back to rand()");
     static unsigned calls = 0; //ensure different random header each time
 
     if (++calls == 1)
