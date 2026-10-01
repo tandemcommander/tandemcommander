@@ -979,3 +979,16 @@ plugin architecture preservation, UI consistency.
   user's and is kept; no configuration version bump (idempotent).
   `PRIVACY.md` updated in the same change. saltests 2039 -> 2055. Records:
   `specs/090-ftp-anonymous-default/fix-log.md`.
+- 091-workflow-actions-node: **the workflows are off the Node 20 actions** -
+  `actions/checkout` v7, `actions/upload-artifact` v7, `actions/github-script`
+  v9, `microsoft/setup-msbuild` v3 (eight `uses:` lines, nothing else);
+  `ilammy/msvc-dev-cmd@v1` stays (no Node 24 release exists). **Not run** -
+  nothing is pushed from an implementation session; verified statically
+  against the upstream tags (`runs.using`, inputs, breaking changes).
+  **Finding for the maintainer**: `actions/checkout` refuses fork
+  pull-request code under `pull_request_target` since v7.0.0 and, backported
+  on 2026-07-20, on every older major too - so `pr-comments-guard.yml` has
+  failed for labelled fork pull requests since then; opting in
+  (`allow-unsafe-pr-checkout: true`) or retiring the upstream
+  comment-translation workflows is a security decision left open.
+  Record: `specs/091-workflow-actions-node/fix-log.md`.

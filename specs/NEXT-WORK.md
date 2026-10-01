@@ -393,9 +393,15 @@ has `DisplayVersion`).
   `tools\winget\publish.ps1 -Version 0.1.8 -Submit` locally. The
   `release: published` event of 2026-09-20 will not be replayed.
 
-- **P4** — `actions/checkout@v4` / `actions/upload-artifact@v4` run on the
+- ~~**P4** — `actions/checkout@v4` / `actions/upload-artifact@v4` run on the
   deprecated Node 20. Bump all four workflows together so the repository does
-  not end up with two conventions.
+  not end up with two conventions.~~ ✅ **DONE (feature 091, 2026-10-01)** —
+  static verification only; a real run is owed. **Found on the way, decision
+  needed**: `pr-comments-guard.yml` has failed at checkout for every labelled
+  fork pull request since 2026-07-20 (`actions/checkout` now refuses fork
+  code under `pull_request_target` on every major): opt in with
+  `allow-unsafe-pr-checkout: true` or retire the upstream comment-translation
+  workflows — analysis in `091-workflow-actions-node/fix-log.md`.
 - **P2** — `--scope user` has **never actually been tested**; the entry was
   blamed for the first validation failure and the machine-only manifest then
   failed identically, which refuted that. The procedure needs no new release,

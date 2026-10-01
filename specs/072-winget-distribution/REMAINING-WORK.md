@@ -276,6 +276,13 @@ Noted in `architecture/10-plugin-maintenance-outlook.md:90`.
 
 ## P4 — Node.js 20 deprecation warning in every workflow run
 
+> ✅ **DONE (feature 091, 2026-10-01)**: `actions/checkout` v7,
+> `actions/upload-artifact` v7, `actions/github-script` v9,
+> `microsoft/setup-msbuild` v3 in all five workflows. Left:
+> `ilammy/msvc-dev-cmd@v1` (no Node 24 release exists). Not run — the first
+> real run is owed. Record and two findings for the maintainer:
+> `specs/091-workflow-actions-node/fix-log.md`.
+
 `actions/checkout@v4` and `actions/upload-artifact@v4` run on Node 20, which
 GitHub has deprecated; the runner forces Node 24 and prints a warning on every
 run. It is cosmetic today and will not stay that way.

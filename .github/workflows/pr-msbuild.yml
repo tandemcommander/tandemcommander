@@ -35,12 +35,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: s
 
       - name: Setup MSBuild in PATH (VS2022)
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
 
       - name: Setup MSVC Developer Command Prompt (x64 toolchain)
         uses: ilammy/msvc-dev-cmd@v1
@@ -81,7 +81,7 @@ jobs:
 
       - name: Upload build logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: msbuild-${{ matrix.platform }}-debug-logs
           path: |

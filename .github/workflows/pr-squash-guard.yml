@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check commit count and fail if necessary
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const targetAuthors = ["Lemi257", "bellus869"];
