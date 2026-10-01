@@ -13,11 +13,11 @@
 #include "precomp.h"
 #include "render.h"
 
-#include <winhttp.h>
 #include <memory>
 
 #include "webglue.h"
 #include "webkeeper.h"
+#include "remotefetch.h" // feature 085: the consented remote-image GET
 
 // ==========================================================================
 // local file and network helpers (unchanged from the pre-081 webview.cpp)
@@ -74,77 +74,6 @@ static const wchar_t* SniffContentType(const BYTE* d, size_t n)
     if (n >= 4 && (memcmp(d, "<svg", 4) == 0 || memcmp(d, "<?xm", 4) == 0))
         return L"image/svg+xml";
     return L"application/octet-stream";
-}
-
-// Minimal WinHTTP GET (no cookies, capped size). Only reached for a remote
-// image the user explicitly consented to: the generator puts a Remote entry in
-// the image table only after View > Load Remote Images.
-static bool FetchRemote(const std::wstring& url, std::vector<BYTE>& out)
-{
-    URL_COMPONENTS uc;
-    ZeroMemory(&uc, sizeof(uc));
-    uc.dwStructSize = sizeof(uc);
-    wchar_t host[256] = {0}, path[2048] = {0};
-    uc.lpszHostName = host;
-    uc.dwHostNameLength = _countof(host);
-    uc.lpszUrlPath = path;
-    uc.dwUrlPathLength = _countof(path);
-    if (!WinHttpCrackUrl(url.c_str(), (DWORD)url.size(), 0, &uc))
-        return false;
-    bool https = (uc.nScheme == INTERNET_SCHEME_HTTPS);
-
-    HINTERNET hs = WinHttpOpen(L"OpenSalamander-mdview", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
-                               WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-    if (!hs)
-        return false;
-    bool ok = false;
-    HINTERNET hc = WinHttpConnect(hs, host, uc.nPort, 0);
-    if (hc)
-    {
-        HINTERNET hr = WinHttpOpenRequest(hc, L"GET", path, NULL, WINHTTP_NO_REFERER,
-                                          WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                          https ? WINHTTP_FLAG_SECURE : 0);
-        if (hr)
-        {
-            if (WinHttpSendRequest(hr, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-                                   WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
-                WinHttpReceiveResponse(hr, NULL))
-            {
-                out.clear();
-                DWORD avail = 0;
-                ok = true;
-                do
-                {
-                    avail = 0;
-                    if (!WinHttpQueryDataAvailable(hr, &avail))
-                    {
-                        ok = false;
-                        break;
-                    }
-                    if (avail == 0)
-                        break;
-                    size_t base = out.size();
-                    out.resize(base + avail);
-                    DWORD rd = 0;
-                    if (!WinHttpReadData(hr, &out[base], avail, &rd))
-                    {
-                        ok = false;
-                        break;
-                    }
-                    out.resize(base + rd);
-                    if (out.size() > 32u * 1024 * 1024)
-                    {
-                        ok = false;
-                        break;
-                    } // cap
-                } while (avail > 0);
-            }
-            WinHttpCloseHandle(hr);
-        }
-        WinHttpCloseHandle(hc);
-    }
-    WinHttpCloseHandle(hs);
-    return ok && !out.empty();
 }
 
 // ==========================================================================
@@ -207,7 +136,7 @@ void MdConfigureHost(TcWebHostConfig& cfg, const MdHtmlResult* doc)
             {
                 const MdImageRef& ref = doc->images[idx];
                 bool ok = (ref.kind == MdImageRef::Local) ? ReadFileBytes(ref.pathOrUrl, *scratch)
-                                                          : FetchRemote(ref.pathOrUrl, *scratch);
+                                                          : MdFetchRemote(ref.pathOrUrl, *scratch);
                 if (ok && !scratch->empty())
                 {
                     out.Data = scratch->data();

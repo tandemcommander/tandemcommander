@@ -147,6 +147,9 @@
     </ClCompile>
     <ClCompile Include="..\webglue.cpp">
     </ClCompile>
+    <ClCompile Include="..\remotefetch.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\viewer.cpp">
     </ClCompile>
     <ClCompile Include="..\darkmenu.cpp">
@@ -191,7 +194,11 @@
     </ClInclude>
     <ClInclude Include="..\..\..\common\webhost\webkeeper.h">
     </ClInclude>
+    <ClInclude Include="..\..\..\common\webhost\webenvopts.h">
+    </ClInclude>
     <ClInclude Include="..\webglue.h">
+    </ClInclude>
+    <ClInclude Include="..\remotefetch.h">
     </ClInclude>
     <ClInclude Include="..\viewer.h">
     </ClInclude>
