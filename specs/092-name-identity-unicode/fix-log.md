@@ -299,3 +299,43 @@ Recorded, not changed: `CFileTimeStamps::AddFile` still folds bytes, so
 feature); the probe has no verbatim pre/post bodies for `CFindIgnore`,
 `CShares`, `CPathHistoryItem` and the archive sites (the reviewer's scratch
 run covered their ASCII parity).
+
+## S6 — gates
+
+**SC-005, timing** (`probe/timing_probe.ps1`, 100,000 files, half with
+accented names, medians of 5). The branch base (091) was built again as a
+Release build in a separate worktree and the two builds were measured in
+turn in one session, twice:
+
+| Measure | base, round 1 / 2 | 092, round 1 / 2 | change |
+|---|---|---|---|
+| start to panels listed | 1874.0 / 1851.2 ms | 1895.6 / 1893.8 ms | +1 to +2 % |
+| refresh | 1108.1 / 1127.6 ms | 1124.6 / 1129.9 ms | +0.2 to +1.5 % |
+| refresh with all 100,000 selected | 1376.8 / 1413.6 ms | 1479.2 / 1487.2 ms | +5 to +7 % |
+
+Within the 10 % of SC-005. The refresh with a selection is the case that
+sorts and searches the name list with the new comparator.
+
+**Builds**: Debug and full Release (`build.cmd full release`: 20 plug-ins,
+189 language modules, runtime closure OK), no errors.
+
+**Tests and probes, all on the final tree** (first run, nothing repeated):
+
+| What | Result |
+|---|---|
+| saltests | 12,828 checks, 0 failed |
+| `check_encoding.py --strict` | TOTAL: 0 |
+| guard, planted defect (`LowerCase[f->Name[0]] == LowerCase[name[0]]` in a scratch copy of `fileswn0.cpp`) | reported, exit 1; control copy 0 findings |
+| `probe/build_and_run.cmd` | `case_only_probe` 0 disagreements with NTFS; `path_identity_probe` 82 rows, 0 failed |
+| `probe/focus_probe.ps1` (old = base Release, new = Debug) | old 10, new 10 lines as expected: the old build shows its three recorded defects, the new one none |
+| 088 `viewers_probe.ps1` / `longpath_probe.ps1` | 10/10, 10/10 |
+| 089 `assoc_probe.ps1` | 79 PASS, 0 FAIL |
+| 087 `run_engine_probe.py` on the Debug `7za.dll` | 33 PASS, 0 FAIL |
+| smoke: a folder with `Článek.txt`, `ĥ.txt`, `Ĺ.txt`, `a.txt`; select all, three refreshes, close | alive and responsive, exit code 0, no crash report (nothing more was checked) |
+
+The registry key `HKCU\Software\Tandem Commander` is identical before and
+after (SHA-256 `CDC4CF03...`). No test process left.
+
+**Not done**: T006 (second guard rule); the GUI steps of `quickstart.md`
+(a person); a case-sensitive directory on a share and a server with another
+case table (no such machine).

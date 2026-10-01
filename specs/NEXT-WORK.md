@@ -353,7 +353,54 @@ A sweep failure is a finding: back through fix → independent review → gates.
   plugin-facing headers, so doing them as **one** interface-107 feature
   means one version bump instead of two.
 
-## 5. Encoding: cluster B-2 next
+## 5. Encoding: cluster B-2 — ✅ core identity DONE (feature 092, 2026-10-01); the rest below
+
+**Done by 092**: finding an item by name, the overwrite/delete/rename
+decisions, core path identity and the sorted name lists use the file
+system's rule (`SalNameEqualOrdinalCI` and friends in
+`src/common/salunicode.*`; contract
+`specs/092-name-identity-unicode/contracts/name-identity.md`). The guard rule
+`acp-byte-table-on-name` is strict. What 092 left, each with its reason in
+`specs/092-name-identity-unicode/fix-log.md`:
+
+- **Delete-then-retry trusts a name rule alone** (`worker.cpp DoMoveFile`,
+  `fileswn5.cpp RenameFileInternal`): on a share whose server folds *more*
+  than Windows (NFC/NFD on a macOS server) a rename onto another spelling of
+  the same file answers "already exists", and the overwrite branch deletes
+  the target - which is the source. Older than 092, narrowed by it. The fix
+  is a file-identity test (volume serial + file index) before the delete.
+  **The first thing to do here.**
+- **The panel sort comparator is intransitive with "Use locale" off** for
+  names mixing ASCII and other characters (found by the 092 research; not
+  touched - it changes what users see).
+- **`CSalamanderDirectory`** (archive and plug-in listings) compares names by
+  the byte fold, with a case-sensitive mode chosen by the plug-in.
+- **The services exported to plug-ins** (`StrICmp`, `IsTheSamePath`,
+  `SalParsePath`, `PathsAreOnTheSameVolume`, ...) keep the byte fold: a
+  plug-in may pass text that is not UTF-8.
+- **The disk cache** keys an archive by its lower-cased (byte fold) name and
+  compares keys with `strcmp`; `PrepareCloseCurrentPath` must agree with it.
+  One change, both sides. `CCacheDirData::DetachTmpFile` has no caller.
+- **`CFileTimeStamps::AddFile`** (`salamdr3.cpp`): `ĥ.txt` and `Ĺ.txt`
+  edited from one archive collide.
+- **`UnselectItemWithName`** (`fileswn0.cpp`) uses the linguistic comparison
+  plus a byte-length guard for an identity look-up.
+- **`CFindIgnore::Contains`, relative kind** - a substring search by the byte
+  fold; the full and rooted kinds are converted.
+- **A guard rule for the old comparison functions on names** (092 task T006):
+  needs an annotation on every legitimate use first.
+- **The comparator's cost**: 2x (ASCII) to 16x (every name accented) the
+  byte fold in a sort, because text that is not WTF-8 orders by a property of
+  the whole string. A comparator that stops at the first difference needs
+  the contract's order for such text redefined.
+- **An unbounded `StrICpy` into `buf[MAX_PATH]`** at `fileswn9.cpp`
+  (`OfferArchiveUpdateIfNeeded`, the disk-cache key) - found by the 092
+  analysis, not fixed there. A path longer than 259 bytes overruns it.
+- The mask matcher, *Change Case* (B-4), the x86-only code and the
+  install-path chain (`plugins2.cpp`, ANSI operands) are not part of B-2's
+  identity work.
+
+What the section said before 092:
 
 Of the five systemic clusters in `069/REMAINING-WORK.md` §1, **B-2 is the only
 one with a ready work list**: the guard rule `acp-byte-table-on-name`, 33

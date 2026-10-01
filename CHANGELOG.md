@@ -36,7 +36,39 @@ Updates with viewer windows open, and plugin interface 107 (feature 088).
 
 Follow-ups in the 7zip plugin and in the plugin text converters (feature 089).
 
+File names that differ only in the case of an accented letter (feature 092).
+The program decided whether two names are the same name with a table for one
+code page, applied byte by byte to UTF-8 text. So `Článek.txt` and
+`článek.txt` were two different names for it although they are one file for
+Windows, and on a Central European system some unrelated names - `ĥ.txt` and
+`Ĺ.txt` - were taken for the same name. The program now uses the rule of the
+Windows file systems wherever it finds a file by name, decides about
+overwriting, deleting or renaming, compares paths, or keeps a list of names.
+
 ### Fixed
+
+- **The cursor stays on a file whose name differs only in the case of an
+  accented letter.** After a refresh, after returning from a subfolder, or
+  when another program renamed `Č.txt` to `č.txt`, the cursor jumped to
+  another file. And in a folder holding names that the old comparison
+  confused (`ĥ` and `Ĺ` on a Central European system) the cursor could land on
+  the wrong one of them - Enter then opened the other folder, F3 showed the
+  other file.
+- **Renaming a file or folder only in the case of an accented letter** is
+  treated as a rename of that one item - as it always was for `a.txt` to
+  `A.txt` - in Quick Rename, in the Rename and Move dialogs, and in a move or
+  copy onto the same folder. Two different files whose names the old
+  comparison confused now get the usual overwrite question instead of a bare
+  error.
+- **Paths are recognised as the same place regardless of the case of accented
+  letters**: a folder typed as `c:\článek` is the folder `C:\Článek` for the
+  directory history (one entry, not two), for the remembered cursor position
+  when you return to the parent folder, for the refresh after another program
+  changed the folder, for stepping to the next file in a viewer, and for an
+  archive open in both panels.
+- **Selections and hidden names survive a refresh for such names too.** The
+  lists the program keeps of selected, hidden or dragged names were ordered
+  and searched by the old comparison.
 
 - **PictView and the Database Viewer no longer write past a buffer in a deep
   folder.** When the full path of the next or previous file was 260 bytes or

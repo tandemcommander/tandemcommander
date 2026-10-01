@@ -992,3 +992,34 @@ plugin architecture preservation, UI consistency.
   (`allow-unsafe-pr-checkout: true`) or retiring the upstream
   comment-translation workflows is a security decision left open.
   Record: `specs/091-workflow-actions-node/fix-log.md`.
+- 092-name-identity-unicode: **"the same name" is the file system's rule**
+  (encoding cluster B-2, core identity part). The core compared names with
+  code-page byte tables applied to UTF-8 bytes: `Č.txt` != `č.txt`, and on
+  CP1250 `ĥ.txt` == `Ĺ.txt` (their second bytes fold together).
+  - **Helpers** (`src/common/salunicode.*`, contract
+    `specs/092-name-identity-unicode/contracts/name-identity.md`):
+    `SalNameCompareOrdinalCI`, `SalNameEqualOrdinalCI`,
+    `SalPathEqualOrdinalCI`, `SalPathHasPrefixOrdinalCI` -
+    `CompareStringOrdinal(..., TRUE)` for WTF-8, the legacy fold for text
+    that is not, a total order over both. **New identity decisions in the
+    core MUST use them**; `SalNameEqualCI` (linguistic) is for searching only.
+  - **Traps**: 7 case pairs have different UTF-8 lengths (U+023A/2C65 ...),
+    so no byte-length guard before the comparison, and after a prefix test
+    index the path by the count the helper returns; no character outside
+    ASCII equals an ASCII letter (`ı`, `ſ`, Kelvin are different names).
+  - **Converted** (73 comparisons, four reviewed stages): finding an item by
+    name (focus after refresh, viewer next/previous), overwrite / delete /
+    rename decisions (`worker.cpp`, `RenameFileInternal`, 8.3 collisions,
+    `SalSplitGeneralPath`'s rename gate), core path identity (history,
+    archive identity, prefix tests), and the sorted name lists (`SortNames`
+    + its searches - both sides in one change).
+  - **Not converted, by decision**: the comparison services exported to
+    plug-ins, `CSalamanderDirectory`, the panel sort, masks, *Change Case*,
+    the disk-cache keys, x86-only code - listed in NEXT-WORK item 5 with the
+    defects found on the way (first: delete-then-retry on a server that
+    folds more than Windows; an unbounded `StrICpy` at `fileswn9.cpp`).
+  - Guard: `acp-byte-table-on-name` is **strict** (drive-letter look-ups
+    excluded). saltests 2055 -> 12,828. Probes: `probe/build_and_run.cmd`
+    (NTFS arbitrates), `focus_probe.ps1`, `timing_probe.ps1`, `run_perf.cmd`.
+    GUI steps owed (`quickstart.md`). Records:
+    `specs/092-name-identity-unicode/fix-log.md`.
