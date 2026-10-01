@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 #include <time.h>
+#include <bcrypt.h> // feature 085: BCryptGenRandom
+#pragma comment(lib, "bcrypt.lib")
 
 #include "cfgdlg.h"
 #include "pwdmngr.h"
@@ -37,6 +39,19 @@ CSalamanderCryptAbstract* GetSalamanderCrypt();
 
 void FillBufferWithRandomData(BYTE* buf, int len)
 {
+    // feature 085 (F6): the AES salts and the Master Password verifier's salt
+    // come from the system's cryptographic generator. Until 0.1.8 they came from
+    // rand() seeded once with time ^ process id - a few bits of guessable state
+    // behind every salt. Salts are stored next to the data they protect, so
+    // everything written by older versions stays readable.
+    if (len <= 0)
+        return;
+    if (BCRYPT_SUCCESS(BCryptGenRandom(NULL, buf, (ULONG)len, BCRYPT_USE_SYSTEM_PREFERRED_RNG)))
+        return;
+
+    // practically unreachable; a weak salt is still better than an unchanged
+    // (possibly all-zero) buffer
+    TRACE_E("FillBufferWithRandomData(): BCryptGenRandom failed, falling back to rand()");
     static unsigned calls = 0; // ensure a different random header each time
 
     if (++calls == 1)
