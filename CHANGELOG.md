@@ -34,6 +34,8 @@ without them.
 
 Updates with viewer windows open, and plugin interface 107 (feature 088).
 
+Follow-ups in the 7zip plugin and in the plugin text converters (feature 089).
+
 ### Fixed
 
 - **PictView and the Database Viewer no longer write past a buffer in a deep
@@ -42,6 +44,22 @@ Updates with viewer windows open, and plugin interface 107 (feature 088).
   its toolbar - wrote the name into a buffer of 260 bytes. Depending on what
   lay behind it the viewer misbehaved or the program crashed. Both viewers
   now take names of any length.
+- **File names with an unpaired surrogate work in plugins.** A file name may
+  contain half of a UTF-16 surrogate pair (NTFS allows it, some tools produce
+  it). The program itself has handled such names since 0.1.5; the helpers
+  plugins use to convert names did not, so a plugin could fail to open such a
+  file, and the 7zip plugin replaced the character in 7z archives. Names now
+  pass through plugins unchanged in both directions.
+- **Moving files into a 7z archive no longer deletes a file that was not
+  packed.** When a file met a folder of the same name in the archive, it was
+  left out of the archive but deleted from the disk as if it had been moved.
+- **Adding a folder that already exists in a 7z archive keeps its entry.**
+  The folder's own entry (its time and attributes; for an empty folder the
+  folder itself) was dropped from the archive.
+- **Adding a file into a 7z folder whose name had to be made safe** (see
+  *Unpacking a 7z archive can no longer write outside the target folder*)
+  replaces the existing file after the usual question, instead of storing a
+  second copy.
 - **A password typed as part of an address is no longer kept in history.**
   Typing `ftp://user:password@server` into FTP Quick Connect, Change Directory
   (Shift+F7), a Copy or Move target (also the FTP plugin's download target),
@@ -212,10 +230,10 @@ Updates with viewer windows open, and plugin interface 107 (feature 088).
   Autoconfiguration*, and they appear. *RAR (WinRAR)* is offered for creating
   RAR archives when WinRAR's console program `Rar.exe` is installed.
 - **The 7zip plugin is registered for RAR** (its configuration is updated
-  once). On an installation updated from an earlier version, RAR shares the
-  7z entry in *Archives Associations in Panels*; creating a RAR archive from
-  the panel then shows that RAR archives cannot be changed, while *Pack*
-  (Alt+F5) with *RAR (WinRAR)* works as before.
+  once). In *Archives Associations in Panels* the `rar;r##` entry shows the
+  7-Zip plugin for viewing and *RAR (WinRAR)* for packing, on an updated
+  installation exactly as on a new one. With WinRAR installed, copying into
+  an open RAR archive is done by WinRAR.
 - Symbolic links in a 7z archive made on Linux or macOS are no longer
   unpacked as small text files holding the link's target. They are left out
   like the links in RAR archives, you are told how many, and *Unpack and

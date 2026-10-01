@@ -938,3 +938,35 @@ plugin architecture preservation, UI consistency.
     `oldplugin_probe.ps1` (the 0.1.8 PictView, interface 106, in the new
     core: loads, no overflow, still declines). saltests 1900 -> 1918.
     Records: `specs/088-plugin-interface-107/fix-log.md`.
+- 089-7zip-followups: **the three leftovers of 087's reviews.**
+  - **One RAR association.** `AddPanelArchiver(exts, edit FALSE, updateExts
+    TRUE)` - an installed plug-in adding view-only extensions - used to append
+    them to the plug-in's own first record, so an updated configuration got
+    `7z;rar;r##` with the plug-in as packer while a new one got the core's
+    `rar;r##` record taken over with WinRAR as packer. Now a record whose
+    **external unpacker can never browse** (`CArchiverConfig::NeverBrowses`,
+    i.e. no list command by design - RAR console) is taken over for viewing,
+    the same extensions leave the plug-in's other records, and extensions the
+    plug-in already serves are not added twice; everything else goes through
+    the unchanged legacy code (tar, uniso, unmime rely on it). 7zip plug-in
+    configuration version **5** repeats the registration once. Helpers:
+    `src/common/salarcassoc.h`. Probe `probe/assoc_probe.ps1`: the real 0.1.8
+    configuration, two 087-development shapes and a first start all end with
+    `rar;r##` = packer 1 / unpacker plug-in and `7z` = plug-in / plug-in.
+    Registry layout: `Packers & Unpackers\Archive Association\<n>`
+    (`Extension List`, `Packer Index`, `Unpacker Index`; a plug-in is
+    `-Index-1`).
+  - **`splunicode.h` is WTF-8** (was excluded from 066): strict Windows
+    conversion first, then the core's routine ported header-only - so every
+    plug-in opens a path with a lone surrogate, and the 7zip plug-in's
+    `U8ToUString`/`UStringToU8` keep such names. Malformed input still fails
+    (ftp, uncab, renamer use the failure to detect legacy text). Parity with
+    the core in saltests; the reviewer brute-forced 181,789,444 cases.
+  - **7z update matching** uses the cleaned name (`CArchiveItem::Name`,
+    `NameIsStoredName`): a file added into a cleaned-name folder replaces
+    instead of duplicating; among several items with one name the really
+    stored one is replaced. Found on the way: a matched **directory** item was
+    dropped from the archive, and on a Move a file that met a folder's name
+    was not packed but its source was deleted - both fixed.
+  - saltests 1918 -> 2039. Interface stays 107. Records:
+    `specs/089-7zip-followups/fix-log.md`.

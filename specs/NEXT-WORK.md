@@ -509,6 +509,13 @@ statement*).
 > `087-7zip-2603-rar/quickstart.md` — RAR on a fresh and on an upgraded
 > configuration (associations), the password prompt, the links message.
 > **Left**: a Unicode password prompt belongs to encoding cluster B-1.
+> ✅ **The three items below are DONE (feature 089, 2026-10-01)** — record:
+> [`089-7zip-followups/fix-log.md`](089-7zip-followups/fix-log.md): the shared
+> plug-in converters (`splunicode.h`) are WTF-8 for every plug-in; 7z update
+> matching uses the cleaned names; the core lets an installed plug-in take
+> over the association of an external archiver that can never browse, so
+> `rar;r##` ends the same on updated and new configurations. Owed (item 3):
+> `089-7zip-followups/quickstart.md`.
 > Found by the reviews and **not fixed** (older, small; one batch):
 > (a) the 7zip plug-in converts names with strict UTF-8, not the house WTF-8
 > (a lone surrogate in an archived name becomes U+FFFD; feature 066's rule);

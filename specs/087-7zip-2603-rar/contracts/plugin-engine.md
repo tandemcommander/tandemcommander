@@ -115,3 +115,7 @@ outcome for both cases; reading `plugins1.cpp` `AddPanelArchiver` showed two):
 | an installed plug-in is upgraded (configuration 1–3) | the core only lets a plug-in extend **its own** record: `rar;r##` joins the plug-in's `7z` record, whose packer is the plug-in — packing into a RAR archive from the panel ends with "Update operations are not supported". The core's `rar;r##` record stays stored and is skipped at runtime (084 FR-017), so nothing claims `rar` twice |
 
 *Pack* (Alt+F5) with *RAR (WinRAR)* is unaffected in both cases.
+
+> **Superseded by feature 089**: the core now lets an installed plug-in take
+> the `rar;r##` record over as well, so both cases end like the first row
+> (`specs/089-7zip-followups/contracts/association-takeover.md`).

@@ -29,6 +29,12 @@ taken over by a new installation) and 0 (new installation): one `rar;r##`
 record, unpacker = the plug-in, packer = RAR console as stored; the plug-in's
 own record holds `7z` only.
 
+This holds when a record of the RAR console archiver claims `rar` (every
+configuration the program itself produced). When there is none — the user
+deleted it, or gave `rar` to another plug-in or to an external archiver that
+can list — nothing is taken over and the legacy path applies (C1 step 3): the
+extensions join the plug-in's own first record, as in feature 087.
+
 ## C3 — `splunicode.h`
 
 `SplWToU8`, `SplWToU8Alloc`: total for every UTF-16 input (an unpaired
@@ -41,5 +47,8 @@ and to the core's `SalWToU8` / `SalU8ToW`
 
 ## C4 — 7z update matching
 
-`CArchiveItem::Name` holds `SalArcCleanItemPath(kpidPath)`; files are matched
-to archive items by that name.
+`CArchiveItem::Name` holds `SalArcCleanItemPath(kpidPath)` (an empty path is
+left empty); files are matched to archive items by that name. When several
+archive items share the name, the file replaces the one stored under exactly
+that name if there is one, else the first; the others stay. An archive
+directory item matched by name stays in the archive (it used to be dropped).
