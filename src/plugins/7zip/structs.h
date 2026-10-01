@@ -13,6 +13,15 @@
 inline UString U8ToUString(const char* u8) { return MultiByteToUnicodeString(u8, CP_UTF8); }
 inline AString UStringToU8(const UString& s) { return UnicodeStringToMultiByte(s, CP_UTF8); }
 
+// feature 087: empties a string that held a password. SecureZeroMemory over the
+// text cannot be optimised away; Wipe_and_Empty then clears the rest of the buffer.
+inline void WipeUString(UString& s)
+{
+    if (s.Len() != 0)
+        SecureZeroMemory(s.GetBuf(), s.Len() * sizeof(wchar_t));
+    s.Wipe_and_Empty();
+}
+
 struct CUpdateInfo
 {
     bool NewData;

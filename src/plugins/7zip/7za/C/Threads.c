@@ -170,6 +170,8 @@ static const unsigned k_StackSize_ReserveSize =
    individual thread functions and missed some (MtCoder, MtDec, BZip2, Zip);
    since 26.03 all threads start here. See ../TC-PATCHES.md. */
 #ifdef TC_7ZIP_CALLSTACK
+#include <stdlib.h> /* malloc, free */
+
 DWORD RunThreadWithCallStackObject(LPTHREAD_START_ROUTINE startAddress, LPVOID parameter);
 
 typedef struct

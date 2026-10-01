@@ -224,6 +224,7 @@ HANDLE CreateFileU8(const char* fileName, DWORD desiredAccess, DWORD shareMode,
 BOOL DeleteFileU8(const char* fileName);
 BOOL RemoveDirectoryU8(const char* dirName);
 BOOL SetFileAttributesU8(const char* fileName, DWORD fileAttributes);
+DWORD GetFileAttributesU8(const char* fileName); // feature 087
 
 extern CPluginInterface PluginInterface;
 

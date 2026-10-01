@@ -85,11 +85,20 @@ public:
     };
 
 protected:
-    BOOL CreateObject(const GUID* interfaceID, void** object);
+    // feature 087: 'format' = SALARC_FORMAT_7Z / _RAR / _RAR5 (salarcname.h)
+    BOOL CreateObject(const GUID* interfaceID, void** object, int format = 1 /* SALARC_FORMAT_7Z */);
 
 public:
     C7zClient();
     ~C7zClient();
+
+    // feature 087: the other parts of the last archive opened (multi-part RAR),
+    // full UTF-8 paths - "unpack and delete" deletes them with the first part
+    CObjectVector<AString> OpenedVolumes;
+    // feature 087: ListArchive could not add every item to the listing (a path
+    // or name too long for the panel) - what is unpacked from it is not the
+    // whole archive, so the archive must not be deleted afterwards
+    BOOL ListingIncomplete;
 
     BOOL ListArchive(const char* fileName, CSalamanderDirectoryAbstract* dir, CPluginDataInterface*& pluginData, UString& password);
 

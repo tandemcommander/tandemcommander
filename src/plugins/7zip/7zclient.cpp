@@ -12,6 +12,7 @@
 #include "open.h"
 #include "7zthreads.h"
 #include "FStreams.h"
+#include "../../common/salarcname.h" // feature 087: safe item names, signatures
 
 #include "7zip.rh"
 #include "7zip.rh2"
@@ -23,7 +24,9 @@
 //
 
 #ifndef _UNICODE
-bool g_IsNT = false;
+// feature 087: every supported Windows is NT - CLibrary::Load (the only reader)
+// then takes LoadLibraryW, so an install folder outside the code page works
+bool g_IsNT = true;
 #endif
 
 HINSTANCE g_hInstance;
@@ -33,6 +36,19 @@ HINSTANCE g_hInstance;
 //DEFINE_GUID(CLSID_CFormat7z,
 //  0x23170F69, 0x40C1, 0x278A, 0x10, 0x00, 0x00, 0x01, 0x10, 0x07, 0x00, 0x00);
 const CLSID CLSID_CFormat7z = {0x23170F69, 0x40C1, 0x278A, {0x10, 0x00, 0x00, 0x01, 0x10, 0x07, 0x00, 0x00}};
+// feature 087: the RAR handlers of the 26.03 engine (RarHandler.cpp 0x03, Rar5Handler.cpp 0xCC)
+const CLSID CLSID_CFormatRar = {0x23170F69, 0x40C1, 0x278A, {0x10, 0x00, 0x00, 0x01, 0x10, 0x03, 0x00, 0x00}};
+const CLSID CLSID_CFormatRar5 = {0x23170F69, 0x40C1, 0x278A, {0x10, 0x00, 0x00, 0x01, 0x10, 0xCC, 0x00, 0x00}};
+
+static const CLSID* FormatClsid(int format)
+{
+    switch (format)
+    {
+    case SALARC_FORMAT_RAR: return &CLSID_CFormatRar;
+    case SALARC_FORMAT_RAR5: return &CLSID_CFormatRar5;
+    default: return &CLSID_CFormat7z;
+    }
+}
 //const CLSID CLSID_CFormatZIP = {0x23170F69, 0x40C1, 0x278A, {0x10, 0x00, 0x00, 0x01, 0x10, 0x01, 0x00, 0x00}};
 
 /*
@@ -79,13 +95,14 @@ void C7zClient::CItemData::SetMethod(const char* method)
 
 C7zClient::C7zClient()
 {
+    ListingIncomplete = FALSE;
 }
 
 C7zClient::~C7zClient()
 {
 }
 
-BOOL C7zClient::CreateObject(const GUID* interfaceID, void** object)
+BOOL C7zClient::CreateObject(const GUID* interfaceID, void** object, int format)
 {
     // feature 087: the 26.03 engine's file layer is wide (FString == UString),
     // so the engine is loaded by its wide path - which also works when the
@@ -104,7 +121,7 @@ BOOL C7zClient::CreateObject(const GUID* interfaceID, void** object)
     if (createObjectFunc == 0)
         return Error(IDS_CANT_GET_CRATEOBJECT);
 
-    if (createObjectFunc(&CLSID_CFormat7z, interfaceID, object) != S_OK)
+    if (createObjectFunc(FormatClsid(format), interfaceID, object) != S_OK)
     {
         Free();
         return Error(IDS_CANT_GET_CLASS_OBJECT);
@@ -115,17 +132,29 @@ BOOL C7zClient::CreateObject(const GUID* interfaceID, void** object)
 
 BOOL C7zClient::OpenArchive(const char* fileName, IInArchive** archive, UString& password, BOOL quiet /* = FALSE*/)
 {
-    CMyComPtr<IInArchive> a;
-    if (!CreateObject(&IID_IInArchive, (void**)&a))
-        return FALSE;
-
     CRetryableInFileStream* fileSpec = new CRetryableInFileStream(NULL);
     CMyComPtr<IInStream> file = fileSpec;
 
     if (!fileSpec->Open(fileName))
         return Error(IDS_CANT_OPEN_ARCHIVE, quiet, fileName);
 
-    CArchiveOpenCallbackImp* openCallbackSpec = new CArchiveOpenCallbackImp(password);
+    // feature 087: the handler comes from the file's signature (7z, RAR 1.5-4,
+    // RAR5); the extension only decided that the plugin was asked. A file whose
+    // signature is none of them is reported as an unsupported archive.
+    BYTE head[8] = {0};
+    UInt32 headLen = 0;
+    if (file->Read(head, sizeof(head), &headLen) != S_OK || file->Seek(0, STREAM_SEEK_SET, NULL) != S_OK)
+        return Error(IDS_CANT_READ_ARCHIVE, quiet);
+    int format = SalArcDetectFormat(head, (int)headLen);
+    if (format == SALARC_FORMAT_UNKNOWN)
+        return Error(IDS_UNSUPPORTED_ARCHIVE, quiet, fileName);
+    OpenedVolumes.Clear();
+
+    CMyComPtr<IInArchive> a;
+    if (!CreateObject(&IID_IInArchive, (void**)&a, format))
+        return FALSE;
+
+    CArchiveOpenCallbackImp* openCallbackSpec = new CArchiveOpenCallbackImp(password, fileName, &OpenedVolumes);
     CMyComPtr<IArchiveOpenCallback> openCallback(openCallbackSpec);
 
     HRESULT ret = a->Open(file, 0, openCallback);
@@ -135,7 +164,13 @@ BOOL C7zClient::OpenArchive(const char* fileName, IInArchive** archive, UString&
         return FALSE;
     }
     if (S_OK != ret)
-        return Error(password.IsEmpty() ? IDS_UNSUPPORTED_ARCHIVE : IDS_CANT_OPEN_ARCHIVE_PWD, quiet, fileName);
+    {
+        BOOL hadPassword = !password.IsEmpty();
+        // feature 087: forget a password the archive did not open with, so that
+        // the next attempt asks again instead of failing with the same one
+        WipeUString(password);
+        return Error(hadPassword ? IDS_CANT_OPEN_ARCHIVE_PWD : IDS_UNSUPPORTED_ARCHIVE, quiet, fileName);
+    }
 
     *archive = a.Detach();
 
@@ -152,6 +187,7 @@ BOOL C7zClient::ListArchive(const char* fileName, CSalamanderDirectoryAbstract* 
     UINT32 numItems = 0;
     inArchive->GetNumberOfItems(&numItems);
     UINT32 i;
+    ListingIncomplete = FALSE;
     BOOL reportTooLongPathErr = TRUE;
     // Get the path-less archive file name
     LPCTSTR archiveName = _tcsrchr(fileName, '\\');
@@ -211,9 +247,18 @@ BOOL C7zClient::AddFileDir(IInArchive* archive, UINT32 idx,
                            BOOL* reportTooLongPathErr, const char* archiveName)
 {
     NWindows::NCOM::CPropVariant propVariant;
+
+    // feature 087: an NTFS alternate data stream stored as an item (RAR5, 7z)
+    // is metadata of another item, never a file of its own - not listed, so it
+    // can never be extracted (contracts/plugin-engine.md P6)
+    if (archive->GetProperty(idx, kpidIsAltStream, &propVariant) == S_OK &&
+        propVariant.vt == VT_BOOL && VARIANT_BOOLToBool(propVariant.boolVal))
+        return TRUE;
+    propVariant.Clear();
+
     // path (7za keeps it in UTF-16, the panel/interface wants UTF-8)
     archive->GetProperty(idx, kpidPath, &propVariant);
-    AString path = UStringToU8(propVariant.bstrVal);
+    AString path = UStringToU8(propVariant.vt == VT_BSTR ? propVariant.bstrVal : L"");
 
     BOOL ret = FALSE;
     LPTSTR p = NULL;
@@ -229,6 +274,24 @@ BOOL C7zClient::AddFileDir(IInArchive* archive, UINT32 idx,
         {
             path.Delete(dot, path.Len() - dot);
         }
+    }
+
+    // feature 087: the name the panel shows - and that extraction later joins
+    // to the target folder - is cleaned: no "..", no drive/UNC/absolute
+    // prefix, no ':' (streams), no characters or device names Windows forbids
+    // (contracts/item-names.md). Before 087 a crafted archive could write
+    // outside the target folder or into an alternate data stream.
+    {
+        int cleanSize = path.Len() * 2 + 8; // '_' per component at most, plus "_" and NUL
+        char* clean = (char*)malloc(cleanSize);
+        if (clean == NULL)
+        {
+            Error(IDS_INSUFFICIENT_MEMORY);
+            return FALSE;
+        }
+        SalArcCleanItemPath(path, clean, cleanSize);
+        path = clean;
+        free(clean);
     }
     try
     {
@@ -253,7 +316,7 @@ BOOL C7zClient::AddFileDir(IInArchive* archive, UINT32 idx,
             throw FALSE;
         } // if
 
-        fd.NameLen = _tcslen(fd.Name);
+        fd.NameLen = (unsigned)_tcslen(fd.Name); // 087: the 26.03 headers no longer silence C4267
         LPTSTR s = _tcsrchr(fd.Name, '.');
         if (s != NULL)
             fd.Ext = s + 1; // ".cvspass" is treated as an extension on Windows ...
@@ -330,6 +393,7 @@ BOOL C7zClient::AddFileDir(IInArchive* archive, UINT32 idx,
                 }
                 else
                     Error(IDS_ERROR);
+                ListingIncomplete = TRUE; // feature 087
                 throw FALSE;
             }
         }
@@ -357,6 +421,7 @@ BOOL C7zClient::AddFileDir(IInArchive* archive, UINT32 idx,
                 }
                 else
                     Error(IDS_ERROR);
+                ListingIncomplete = TRUE; // feature 087
                 throw FALSE;
             }
         }
@@ -457,11 +522,39 @@ int C7zClient::Decompress(CSalamanderForOperationsAbstract* salamander, const ch
 
         HRESULT result = DoDecompress(salamander, &dpo);
 
-        ret = (result == E_ABORT) ? OPER_CANCEL : ((result == S_OK) ? OPER_OK : OPER_CONTINUE);
+        // feature 087: a per-item error (wrong password, data or CRC error) is a
+        // failed extraction even when Extract() itself returns S_OK - which the
+        // 26.03 engine does (the 16.04 engine's local "JRY FIX" made Extract()
+        // return the error instead). Without this, "unpack and delete" could
+        // delete the archive after a failed item. Same rule as TestArchive. A skipped
+        // link entry (P6b) is not unpacked either, so it makes the result incomplete
+        // too; the callers report success only for OPER_OK.
+        ret = (result == E_ABORT) ? OPER_CANCEL
+                                  : ((result == S_OK && extractCallbackSpec->NumErrors == 0 &&
+                                      extractCallbackSpec->LinksSkipped == 0)
+                                         ? OPER_OK
+                                         : OPER_CONTINUE);
 
         // check the thread's return code
         if (ret == OPER_CANCEL)
             extractCallbackSpec->Cleanup();
+
+        // feature 087: after an error in an operation that used a password, the
+        // remembered password is forgotten - it may be the wrong one (7z reports a
+        // wrong password as a plain data error), and without this every later
+        // operation in the archive would fail the same way without asking
+        if (extractCallbackSpec->NumErrors > 0 && !password.IsEmpty())
+            WipeUString(password);
+
+        // feature 087: tell the user that link entries were left out (P6b)
+        if (ret != OPER_CANCEL && extractCallbackSpec->LinksSkipped > 0)
+        {
+            // a count after a colon, not a plural form: the text is machine-translated
+            char msg[1024];
+            _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_LINKS_SKIPPED), extractCallbackSpec->LinksSkipped);
+            SalamanderGeneral->SalMessageBox(SalamanderGeneral->GetMsgBoxParent(), msg, LoadStr(IDS_PLUGINNAME),
+                                             MB_OK | MB_ICONINFORMATION);
+        }
     }
     catch (int e)
     {
@@ -496,7 +589,7 @@ int C7zClient::TestArchive(CSalamanderForOperationsAbstract* salamander, const c
         }
         CMyComPtr<IArchiveExtractCallback> extractCallback(extractCallbackSpec);
 
-        extractCallbackSpec->InitTest();
+        extractCallbackSpec->InitTest(inArchive);
 
         // start extraction in a thread
         // this craziness is here because 7za.dll is multi-threaded and could not display our message boxes
@@ -1208,7 +1301,15 @@ int C7zClient::Update(CSalamanderForOperationsAbstract* salamander, const char* 
         updateCallbackSpec->Password = password;
         updateCallbackSpec->AskPassword = passwordIsDefined;
 
-        SetCompressionParams(outArchive, compressParams);
+        // feature 087: the result is checked now - 0.1.8 sent the word size as VT_I4,
+        // which the engine rejected, and the ignored error left the level's default
+        // in effect; every value the dialog offers is accepted (probe "props")
+        if (SetCompressionParams(outArchive, compressParams) != S_OK)
+        {
+            TRACE_E("7zip: the engine rejected the compression parameters");
+            Error(IDS_ERROR);
+            throw OPER_CANCEL;
+        }
 
         // start update in a thread
         // this craziness is here because 7za.dll is multi-threaded and could not display our message boxes

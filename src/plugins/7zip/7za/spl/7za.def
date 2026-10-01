@@ -3,6 +3,5 @@ EXPORTS
   GetHandlerProperty PRIVATE
   GetNumberOfFormats PRIVATE
   GetHandlerProperty2 PRIVATE
-  CreateObject PRIVATE
   GetNumberOfMethods PRIVATE
   GetMethodProperty PRIVATE

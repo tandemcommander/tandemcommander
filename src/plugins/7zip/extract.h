@@ -30,12 +30,14 @@ typedef std::map<UINT32, CArchiveItemInfo*> ItemsToExtractMap;
 // feature 087: 7-Zip 26.03 interface macros (Z7_*, every method throw())
 class CExtractCallbackImp Z7_final : public IArchiveExtractCallback,
                                      public ICryptoGetTextPassword,
+                                     public IArchiveRequestMemoryUseCallback,
                                      public CMyUnknownImp
 {
-    Z7_COM_UNKNOWN_IMP_1(ICryptoGetTextPassword)
+    Z7_COM_UNKNOWN_IMP_2(ICryptoGetTextPassword, IArchiveRequestMemoryUseCallback)
     Z7_IFACE_COM7_IMP(IProgress)
     Z7_IFACE_COM7_IMP(IArchiveExtractCallback)
     Z7_IFACE_COM7_IMP(ICryptoGetTextPassword)
+    Z7_IFACE_COM7_IMP(IArchiveRequestMemoryUseCallback) // feature 087 (P5)
 
 private:
     CQuadWord Total;
@@ -104,9 +106,10 @@ public:
     BOOL Init(IInArchive* archive, const char* outDir,
               const FILETIME& utcLastWriteTimeDefault, DWORD attributesDefault,
               BOOL silentDelete = FALSE);
-    BOOL InitTest();
+    BOOL InitTest(IInArchive* archive);
 
     int NumErrors;
+    int LinksSkipped; // feature 087: link entries not extracted (reported after the operation)
 
     const char* GetFileName() { return TargetFileName; }
     FILETIME GetLastWrite() { return ProcessedFileInfo.LastWrite; }
@@ -125,6 +128,14 @@ public:
     CQuadWord& GetCompletedSize() { return Completed; }
 
 private:
+    bool SkipCurrent; // feature 087: the current item is a skipped link
+    bool HaveOutFile; // feature 087: this callback opened an output file for the current item
+    AString CurrentItemName; // feature 087: the current item's path in the archive (UTF-8), for messages
+    bool CurrentIsDir; // feature 087: the current item is a directory this callback created
+    char* CleanName;  // feature 087: cleaned item name, U8_MAX_PATH bytes (allocated in the constructor)
+    bool IsLinkItem(UINT32 index);
+    void ForgetPassword();
+    void DiscardOutFile();
     BOOL OnDataError();
     LRESULT Error(int resID, ...);
 };

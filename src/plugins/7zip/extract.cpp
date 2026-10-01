@@ -18,6 +18,8 @@
 #include "Windows/PropVariant.h"
 #include "Windows/PropVariantConv.h"
 #include "7zip/IPassword.h"
+#include "../../common/salarcname.h" // feature 087: safe item names, signatures
+#include "open.h"                       // feature 087: AnswerArchiveMemoryRequest
 
 using namespace NWindows;
 using namespace NFile;
@@ -35,12 +37,17 @@ CExtractCallbackImp::CExtractCallbackImp(HWND _hProgWnd, UString& password,
     TargetFileName = (char*)malloc(U8_MAX_PATH);
     if (TargetFileName != NULL)
         TargetFileName[0] = '\0';
+    CleanName = (char*)malloc(U8_MAX_PATH); // feature 087: scratch for the cleaned item name
+    HaveOutFile = false;
+    CurrentIsDir = false;
+    WholeFile = TRUE;
     hProgWnd = _hProgWnd;
 }
 
 CExtractCallbackImp::~CExtractCallbackImp()
 {
     free(TargetFileName);
+    free(CleanName);
     DeleteCriticalSection(&CSExtract);
 }
 
@@ -50,6 +57,8 @@ BOOL CExtractCallbackImp::Init(IInArchive* archive, const char* outDir,
                                const FILETIME& utcLastWriteTimeDefault, DWORD attributesDefault, BOOL silentDelete /* = FALSE*/)
 {
     NumErrors = 0;
+    LinksSkipped = 0; // feature 087
+    SkipCurrent = false;
 
     UTCLastWriteTimeDefault = utcLastWriteTimeDefault;
     AttributesDefault = attributesDefault;
@@ -84,25 +93,85 @@ BOOL CExtractCallbackImp::Init(IInArchive* archive, const char* outDir,
     OverwriteSilent = 0;
     OverwriteSkip = FALSE;
     OverwriteCancel = FALSE;
+    HaveOutFile = false;
 
-    return TargetFileName != NULL; // FALSE when the constructor could not allocate the buffer
+    return TargetFileName != NULL && CleanName != NULL; // FALSE when the constructor could not allocate the buffers
 }
 
-BOOL CExtractCallbackImp::InitTest()
+BOOL CExtractCallbackImp::InitTest(IInArchive* archive)
 {
+    ArchiveHandler = archive; // feature 087: item names for messages
     NumErrors = 0;
+    LinksSkipped = 0; // feature 087
+    SkipCurrent = false;
     if (TargetFileName != NULL)
         TargetFileName[0] = '\0';
 
     OverwriteCancel = FALSE;
+    HaveOutFile = false;
     PasswordIsDefined = !Password.IsEmpty();
 
-    return TargetFileName != NULL; // FALSE when the constructor could not allocate the buffer
+    return TargetFileName != NULL && CleanName != NULL; // FALSE when the constructor could not allocate the buffers
 }
 
+// feature 087: kpidSymLink / kpidHardLink carry the link target for link
+// entries (RAR5, 7z with -snl/-snh); empty or absent for ordinary items.
+// RAR4 and 7z archives made on Unix have no such property: their symbolic
+// links are files whose data is the target text, marked only by the Unix
+// mode in the attributes (upper 16 bits, FILE_ATTRIBUTE_UNIX_EXTENSION).
+bool CExtractCallbackImp::IsLinkItem(UINT32 index)
+{
+    if (!ArchiveHandler)
+        return false;
+    const PROPID ids[] = {kpidSymLink, kpidHardLink};
+    for (PROPID id : ids)
+    {
+        NWindows::NCOM::CPropVariant prop;
+        if (ArchiveHandler->GetProperty(index, id, &prop) == S_OK && prop.vt == VT_BSTR &&
+            prop.bstrVal != NULL && prop.bstrVal[0] != 0)
+            return true;
+    }
+    NWindows::NCOM::CPropVariant attr;
+    if (ArchiveHandler->GetProperty(index, kpidAttrib, &attr) == S_OK && attr.vt == VT_UI4 &&
+        (attr.ulVal & FILE_ATTRIBUTE_UNIX_EXTENSION) != 0 && S_ISLNK(attr.ulVal >> 16))
+        return true;
+    NWindows::NCOM::CPropVariant posix;
+    if (ArchiveHandler->GetProperty(index, kpidPosixAttrib, &posix) == S_OK && posix.vt == VT_UI4 &&
+        S_ISLNK(posix.ulVal))
+        return true;
+    return false;
+}
+
+// feature 087: overwrites the session password so that the next operation asks
+// again (WipeUString cannot be optimised away, unlike a plain memset)
+void CExtractCallbackImp::ForgetPassword()
+{
+    WipeUString(Password);
+    PasswordIsDefined = false;
+}
+
+// feature 087: closes and deletes the output file of the current item, if this
+// callback opened one
+void CExtractCallbackImp::DiscardOutFile()
+{
+    OutFileStream.Release();
+    if (HaveOutFile)
+    {
+        BOOL silent = TRUE;
+        SafeDeleteFile(UStringToU8(ProcessedFileInfo.FileName), silent);
+        HaveOutFile = false;
+    }
+}
+
+// feature 087: deletes the file that was being written when the operation was
+// cancelled. Only a file this callback opened for the CURRENT item counts
+// (HaveOutFile): the old test "a stream object was ever created" also matched
+// an item the user chose to Skip at the overwrite prompt, or an unselected item
+// of a solid archive, and then deleted the user's existing file or the last
+// completely unpacked one.
 void CExtractCallbackImp::Cleanup()
 {
-    if (!WholeFile && OutFileStreamSpec != NULL)
+    if (!WholeFile && HaveOutFile)
     {
         //    TRACE_I("Cleanup File: " << UStringToU8(ProcessedFileInfo.FileName));
 
@@ -110,6 +179,7 @@ void CExtractCallbackImp::Cleanup()
 
         BOOL silent = FALSE;
         SafeDeleteFile(UStringToU8(ProcessedFileInfo.FileName), silent);
+        HaveOutFile = false;
     }
 }
 
@@ -157,6 +227,19 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
 
         *outStream = NULL;
         OutFileStream.Release();
+        SkipCurrent = false;
+        HaveOutFile = false;
+        CurrentIsDir = false;
+
+        // feature 087: the item's name for a message about it - also when testing
+        // and for an item that gets no output file
+        CurrentItemName.Empty();
+        if (ArchiveHandler)
+        {
+            NWindows::NCOM::CPropVariant path;
+            if (ArchiveHandler->GetProperty(index, kpidPath, &path) == S_OK && path.vt == VT_BSTR && path.bstrVal != NULL)
+                CurrentItemName = UStringToU8(path.bstrVal);
+        }
 
         // if we are extracting a file
         if (askExtractMode == NArchive::NExtract::NAskMode::kExtract)
@@ -167,13 +250,27 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
                 throw E_ABORT;
             }
 
-            const CArchiveItemInfo* aii = ItemsToExtract[index];
+            // feature 087: find(), not operator[] - the callback is throw() since 26.03,
+            // and operator[] would insert (allocate) for an index that is not selected
+            ItemsToExtractMap::const_iterator it = ItemsToExtract.find(index);
+            const CArchiveItemInfo* aii = (it != ItemsToExtract.end()) ? it->second : NULL;
             if (!aii)
             {
                 // Already extracted? Not selected for extraction?
                 throw S_OK;
             }
             ItemsToExtract.erase(index);
+
+            // feature 087 (contracts/plugin-engine.md P6b): a symbolic or hard link
+            // entry is never extracted - the plugin creates no links, a hard link
+            // has no data of its own (the engine answers "unsupported") and a
+            // symbolic link's data is only its target text. Counted and reported.
+            if (IsLinkItem(index))
+            {
+                LinksSkipped++;
+                SkipCurrent = true;
+                throw S_OK;
+            }
             const CFileData* fd = aii->FileData;
             // fd is certainly not NULL
 
@@ -197,7 +294,12 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
 
             // TargetDir and NameInArchive are UTF-8 (interface 104)
             strcpy(TargetFileName, TargetDir);
-            if (SalamanderGeneral->SalPathAppend(TargetFileName, aii->NameInArchive, U8_MAX_PATH))
+            // feature 087 (defence in depth): the name was cleaned when the archive
+            // was listed (7zclient.cpp AddFileDir); clean it again right where it
+            // is joined to the target, so no path can ever leave the target folder
+            // or address an alternate data stream (contracts/item-names.md)
+            if (SalArcCleanItemPath(aii->NameInArchive, CleanName, U8_MAX_PATH) &&
+                SalamanderGeneral->SalPathAppend(TargetFileName, CleanName, U8_MAX_PATH))
             {
                 ProcessedFileInfo.FileName = U8ToUString(TargetFileName);
 
@@ -208,6 +310,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
                 {
                     // create the directory if it does not already exist
                     SalamanderGeneral->CheckAndCreateDirectory(TargetFileName);
+                    CurrentIsDir = true;
                     throw S_OK;
                 }
                 else
@@ -259,12 +362,17 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
                         throw S_OK;
                     }
                     OutFileStream = outStreamLoc;
+                    // from here the file is this item's: a cancel before its result (e.g. at
+                    // the password prompt, which RAR5 shows after this call) deletes it
+                    HaveOutFile = true;
+                    WholeFile = FALSE;
                     *outStream = outStreamLoc.Detach();
                 }
             }
             else
             {
                 *outStream = NULL;
+                NumErrors++; // feature 087: the item is not unpacked - the operation is not a success
 
                 char errText[1000];
                 _snprintf_s(errText, _TRUNCATE, LoadStr(IDS_NAMEISTOOLONG), (const char*)(aii->NameInArchive), TargetFileName);
@@ -279,6 +387,10 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
     catch (HRESULT e)
     {
         ret = e;
+    }
+    catch (...) // feature 087: e.g. std::bad_alloc must not leave a throw() method
+    {
+        ret = E_OUTOFMEMORY;
     }
 
     LeaveCriticalSection(&CSExtract);
@@ -417,7 +529,7 @@ LRESULT CExtractCallbackImp::Error(int resID, ...)
     va_list arglist;
 
     va_start(arglist, resID);
-    vsprintf(msg, LoadStr(resID), arglist);
+    _vsnprintf_s(msg, _TRUNCATE, LoadStr(resID), arglist); // feature 087: bounded (long names)
     va_end(arglist);
 
     ZeroMemory(&mbep, sizeof(mbep));
@@ -435,6 +547,16 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
 
     WholeFile = TRUE;
 
+    // feature 087: a skipped link has no data to judge (a hard link reports
+    // "unsupported method") - its result is not an error of this extraction
+    if (SkipCurrent)
+    {
+        SkipCurrent = false;
+        if (TargetDir && !ItemsToExtract.size())
+            return E_STOPEXTRACTION;
+        return S_OK;
+    }
+
     switch (resultEOperationResult)
     {
     case NArchive::NExtract::NOperationResult::kOK:
@@ -443,6 +565,51 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
     default:
         NumErrors++;
 
+        // feature 087: the 26.03 engine says so when the password is wrong (RAR5
+        // checks it after the output file was created). The file is deleted, the
+        // remembered password forgotten so that the next operation asks again,
+        // and the operation stops - one message, not one per file.
+        if (resultEOperationResult == NArchive::NExtract::NOperationResult::kWrongPassword)
+        {
+            DiscardOutFile();
+            Error(IDS_DATA_ERROR_PWD, (LPCTSTR)CurrentItemName);
+            ForgetPassword();
+            return E_ABORT;
+        }
+
+        if (ExtractMode && !HaveOutFile)
+            break; // no file of this item was opened (skipped, or already reported): nothing to keep or delete
+
+        if (ExtractMode && resultEOperationResult == NArchive::NExtract::NOperationResult::kUnsupportedMethod)
+        {
+            // nothing usable was written
+            Error(IDS_UNSUPPORTED_METHOD);
+            DiscardOutFile();
+            break;
+        }
+
+        if (ExtractMode)
+        {
+            // feature 087: every other failed result (data or CRC error, unexpected
+            // end, damaged headers, ...) leaves a damaged file: the user decides
+            // whether to keep it; 0.1.8 did so for a data error only and kept the
+            // file silently otherwise
+            BOOL goOn = OnDataError();
+            HaveOutFile = false;
+            if (!goOn)
+                return E_ABORT;
+            // an error occurred during extraction; delete the file (handled by the function above) and finish
+            if (SilentDelete)
+            {
+                Error(PasswordIsDefined ? IDS_DATA_ERROR_PWD : IDS_DATA_ERROR, (LPCTSTR)ProcessedFileInfo.Name);
+                if (PasswordIsDefined)
+                    ForgetPassword(); // Allow entering another password
+                return E_ABORT;
+            }
+            return S_OK;
+        }
+
+        // testing
         switch (resultEOperationResult)
         {
         case NArchive::NExtract::NOperationResult::kUnsupportedMethod:
@@ -454,28 +621,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
             break;
 
         case NArchive::NExtract::NOperationResult::kDataError:
-            //          // use this code if a patch for the keep/delete functionality cannot be applied
-            //          if (ExtractMode)
-            //            Error(IDS_DATA_ERROR, GetAnsiString(ProcessedFileInfo.FileName));
-
-            // this code works only with the keep/delete functionality patch
-            if (ExtractMode)
-            {
-                // give the user the option to keep/delete the damaged file
-                if (!OnDataError())
-                    return E_ABORT;
-                // an error occurred during extraction; delete the file (handled by the function above) and finish
-                if (SilentDelete)
-                {
-                    Error(PasswordIsDefined ? IDS_DATA_ERROR_PWD : IDS_DATA_ERROR, (LPCTSTR)ProcessedFileInfo.Name);
-                    if (PasswordIsDefined)
-                        Password = L""; // Allow entering another password
-                    return E_ABORT;
-                }
-                return S_OK;
-            }
-
-            break;
+            break; // reported by the caller (TestArchive)
 
         default:
             Error(IDS_UNKNOWN_ERROR);
@@ -489,8 +635,12 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
         OutFileStreamSpec->SetMTime(&ProcessedFileInfo.LastWrite);
     OutFileStream.Release();
 
-    if (ExtractMode && ProcessedFileInfo.AttributesAreDefined)
+    // feature 087: only for a file this item wrote or a directory it created (the
+    // name of a skipped item is the user's own existing file)
+    if (ExtractMode && (HaveOutFile || CurrentIsDir) && ProcessedFileInfo.AttributesAreDefined)
         SetFileAttributesU8(UStringToU8(ProcessedFileInfo.FileName), ProcessedFileInfo.Attributes);
+    HaveOutFile = false;
+    CurrentIsDir = false;
 
     if (TargetDir && !ItemsToExtract.size())
     {
@@ -500,6 +650,13 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
     }
 
     return S_OK;
+}
+
+Z7_COM7F_IMF(CExtractCallbackImp::RequestMemoryUse(UInt32 /*flags*/, UInt32 /*indexType*/, UInt32 /*index*/,
+                                                   const wchar_t* /*path*/, UInt64 requiredSize,
+                                                   UInt64* allowedSize, UInt32* answerFlags))
+{
+    return AnswerArchiveMemoryRequest(requiredSize, allowedSize, answerFlags); // open.cpp (P5)
 }
 
 Z7_COM7F_IMF(CExtractCallbackImp::CryptoGetTextPassword(BSTR* password))
@@ -533,7 +690,5 @@ Z7_COM7F_IMF(CExtractCallbackImp::CryptoGetTextPassword(BSTR* password))
 */
         }
     }
-    StringToBstr(Password, password);
-
-    return S_OK;
+    return StringToBstr(Password, password); // E_OUTOFMEMORY when the BSTR cannot be allocated
 }

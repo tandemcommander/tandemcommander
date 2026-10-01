@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Open Salamander Authors
+﻿// SPDX-FileCopyrightText: 2023 Open Salamander Authors
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
@@ -56,7 +56,9 @@ int ConfigVersion = 0;
 // 3: Igor changed the default values for LZMA compression (dictionary size, etc.). There are more changes,
 //    so Honza Patera and I agreed that when importing old configurations we will
 //    ignore the compression settings and use these new defaults.
-#define CURRENT_CONFIG_VERSION 3
+// 4: feature 087 - RAR is read by the plug-in: "rar;r##" panel archiver (view only) and "*.rar" in
+//    the custom unpacker masks.
+#define CURRENT_CONFIG_VERSION 4
 const char* CONFIG_VERSION = "Version";
 
 CConfig Config;
@@ -176,7 +178,7 @@ CPluginInterfaceAbstract* WINAPI SalamanderPluginEntry(CSalamanderPluginEntryAbs
                                        FUNCTION_PANELARCHIVEREDIT | FUNCTION_CUSTOMARCHIVERPACK |
                                        FUNCTION_CONFIGURATION | FUNCTION_LOADSAVECONFIGURATION,
                                    VERSINFO_VERSION_NO_PLATFORM, VERSINFO_COPYRIGHT, LoadStr(IDS_PLUGIN_DESCRIPTION),
-                                   "7zip", "7z");
+                                   "7zip", "7z;rar");
 
     salamander->SetPluginHomePageURL("www.tandemcommander.org");
 
@@ -191,7 +193,7 @@ BOOL Warning(int resID, BOOL quiet, ...)
         buf[0] = 0;
         va_list arglist;
         va_start(arglist, quiet);
-        vsprintf(buf, LoadStr(resID), arglist);
+        _vsnprintf_s(buf, _TRUNCATE, LoadStr(resID), arglist); // feature 087: bounded (paths can be long)
         va_end(arglist);
 
         SalamanderGeneral->ShowMessageBox(buf, LoadStr(IDS_PLUGINNAME), MSGBOX_WARNING);
@@ -207,7 +209,7 @@ BOOL Error(int resID, BOOL quiet, ...)
         buf[0] = 0;
         va_list arglist;
         va_start(arglist, quiet);
-        vsprintf(buf, LoadStr(resID), arglist);
+        _vsnprintf_s(buf, _TRUNCATE, LoadStr(resID), arglist); // feature 087: bounded (paths can be long)
         va_end(arglist);
 
         SalamanderGeneral->ShowMessageBox(buf, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
@@ -223,7 +225,7 @@ BOOL Error(HWND hParent, int resID, BOOL quiet, ...)
         buf[0] = 0;
         va_list arglist;
         va_start(arglist, quiet);
-        vsprintf(buf, LoadStr(resID), arglist);
+        _vsnprintf_s(buf, _TRUNCATE, LoadStr(resID), arglist); // feature 087: bounded (paths can be long)
         va_end(arglist);
 
         SalamanderGeneral->SalMessageBox(hParent, buf, LoadStr(IDS_PLUGINNAME), MB_OK);
@@ -255,11 +257,11 @@ BOOL SysError(int resID, DWORD err, BOOL quiet, ...)
         msg[0] = 0;
         va_list arglist;
         va_start(arglist, quiet);
-        vsprintf(msg, LoadStr(resID), arglist);
+        _vsnprintf_s(msg, _TRUNCATE, LoadStr(resID), arglist); // feature 087: bounded (paths can be long)
         va_end(arglist);
 
         char buf[2048 + 4];
-        sprintf(buf, "%s\n\n%s", msg, SalamanderGeneral->GetErrorText(err));
+        _snprintf_s(buf, _TRUNCATE, "%s\n\n%s", msg, SalamanderGeneral->GetErrorText(err));
         SalamanderGeneral->ShowMessageBox(buf, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
     }
 
@@ -376,6 +378,17 @@ BOOL RemoveDirectoryU8(const char* dirName)
     DWORD err = ::GetLastError();
     free(wDirName);
     ::SetLastError(err); // preserve RemoveDirectoryW's error across free()
+    return ret;
+}
+
+// feature 087: used to tell a missing volume of a multi-part archive (open.cpp)
+DWORD GetFileAttributesU8(const char* fileName)
+{
+    WCHAR* wFileName = SplU8ToWExtAlloc(fileName);
+    if (wFileName == NULL)
+        return INVALID_FILE_ATTRIBUTES;
+    DWORD ret = ::GetFileAttributesW(wFileName);
+    free(wFileName);
     return ret;
 }
 
@@ -610,8 +623,15 @@ void CPluginInterface::Connect(HWND parent, CSalamanderConnectAbstract* salamand
 
     salamander->AddPanelArchiver("7z", TRUE, FALSE);
 
+    // feature 087 (P8): RAR is read-only, so it is registered for "view" only. On a new
+    // installation of the plug-in the core takes its "rar;r##" record over: the plug-in becomes
+    // the unpacker and the record keeps its packer (WinRAR console, feature 084). An installed
+    // plug-in (configuration 1-3) can only extend its own record, so there "rar;r##" joins the
+    // "7z" record and packing into a RAR archive ends with the plug-in's "not supported" message.
+    salamander->AddPanelArchiver("rar;r##", FALSE, ConfigVersion >= 1 && ConfigVersion < 4);
+
     salamander->AddCustomPacker("7-Zip (Plugin)", "7z", ConfigVersion < 1);
-    salamander->AddCustomUnpacker("7-Zip (Plugin)", "*.7z", ConfigVersion < 1);
+    salamander->AddCustomUnpacker("7-Zip (Plugin)", "*.7z;*.rar", ConfigVersion < 4);
 
     /* used by the export_mnu.py script, which generates salmenu.mnu for the Translator
    keep it synchronized with the calls to salamander->AddMenuItem() below...
@@ -802,7 +822,9 @@ BOOL CPluginInterfaceForArchiver::UnpackArchive(CSalamanderForOperationsAbstract
         }
 
         salamander->ProgressDialogAddText(LoadStr(IDS_UNPACKING), FALSE);
-        ret = client->Decompress(salamander, fileName, targetDir, &itemList, pluginData->Password) != OPER_CANCEL;
+        // feature 087: only a complete extraction is a success (no failed item, no link left
+        // out); Skip at the overwrite prompt is the user's choice and does not count
+        ret = client->Decompress(salamander, fileName, targetDir, &itemList, pluginData->Password) == OPER_OK;
         salamander->CloseProgressDialog();
     }
 
@@ -851,7 +873,7 @@ BOOL CPluginInterfaceForArchiver::UnpackOneFile(CSalamanderForOperationsAbstract
                                              targetDir, CQuadWord(fileData->Size), LoadStr(IDS_UNPACKING_ARCHIVE)))
         {
             salamander->OpenProgressDialog(LoadStr(IDS_UNPACKING_ARCHIVE), FALSE, NULL, FALSE);
-            ret = client->Decompress(salamander, fileName, targetDir, &archiveItems, pluginData->Password, TRUE) != OPER_CANCEL;
+            ret = client->Decompress(salamander, fileName, targetDir, &archiveItems, pluginData->Password, TRUE) == OPER_OK;
             //      ret = client->Decompress(salamander, fileName, targetDir, &archiveItems) == OPER_OK;
             salamander->CloseProgressDialog();
         }
@@ -954,7 +976,7 @@ BOOL CPluginInterfaceForArchiver::UnpackWholeArchive(CSalamanderForOperationsAbs
                         fileName, mask, targetDir, delArchiveWhenDone);
 
     if (delArchiveWhenDone)
-        archiveVolumes->Add(fileName, -2); // FIXME: once the 7-zip plugin learns multi-volume archives (.7z.001, .7z.002, etc.), we must add all archive volumes here (so the entire archive is deleted)
+        archiveVolumes->Add(fileName, -2); // the other parts of a multi-part RAR are added after unpacking (below); .7z.001 sets are not supported
     CSalamanderDirectoryAbstract* dir = SalamanderGeneral->AllocSalamanderDirectory(FALSE);
     if (dir == NULL)
         return Error(IDS_INSUFFICIENT_MEMORY);
@@ -999,7 +1021,17 @@ BOOL CPluginInterfaceForArchiver::UnpackWholeArchive(CSalamanderForOperationsAbs
                             C7zClient* client2 = ((CPluginDataInterface*)pluginData)->Get7zClient();
 
                             salamander->ProgressDialogAddText(LoadStr(IDS_UNPACKING), FALSE);
-                            ret = client2->Decompress(salamander, fileName, targetDir, &archiveItems, pluginData->Password) != OPER_CANCEL;
+                            ret = client2->Decompress(salamander, fileName, targetDir, &archiveItems, pluginData->Password) == OPER_OK;
+                            // feature 087: the core deletes the archive after TRUE ("unpack and
+                            // delete"). Items the listing could not hold were not unpacked, so
+                            // that is no success; and a multi-part RAR is deleted with all its parts.
+                            if (ret && client->ListingIncomplete)
+                                ret = FALSE;
+                            if (ret && delArchiveWhenDone)
+                            {
+                                for (unsigned v = 0; v < client2->OpenedVolumes.Size(); v++)
+                                    archiveVolumes->Add(client2->OpenedVolumes[v], -2);
+                            }
                         }
                         free(archivePath);
                     }
@@ -1594,7 +1626,9 @@ CPluginDataInterface::CPluginDataInterface(C7zClient* client)
 
 CPluginDataInterface::~CPluginDataInterface()
 {
-    Password = L"empty";
+    // feature 087: overwrite the whole buffer (assigning a shorter text, as before,
+    // left the rest of a longer password in memory)
+    WipeUString(Password);
     delete Client;
     Client = NULL;
 }

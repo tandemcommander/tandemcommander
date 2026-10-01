@@ -22,6 +22,7 @@
 #include "salarcmig.h"    // feature 084
 #include "salurlpwd.h"    // feature 085
 #include "salrandom.h"    // feature 086
+#include "salarcname.h"   // feature 087
 
 #include <map>
 #include <set>
@@ -2878,6 +2879,119 @@ static void TestRandom086()
     }
 }
 
+// ----------------------------------------------------------------------------
+// feature 087: names taken from an archive are made safe; archive signatures
+// (src/common/salarcname.h, contracts/item-names.md)
+
+static std::string Clean087(const char* in)
+{
+    char buf[1024];
+    if (!SalArcCleanItemPath(in, buf, sizeof(buf)))
+        return "<FALSE>";
+    return buf;
+}
+
+static void TestArcNames087()
+{
+    // --- ordinary names are unchanged
+    CHECK(Clean087("readme.txt") == "readme.txt");
+    CHECK(Clean087("dir\\sub\\file.txt") == "dir\\sub\\file.txt");
+    CHECK(Clean087("dir/sub/file.txt") == "dir\\sub\\file.txt"); // '/' is a separator
+    CHECK(Clean087(".cvspass") == ".cvspass");
+    CHECK(Clean087("a.b.c") == "a.b.c");
+    CHECK(Clean087("..hidden") == "..hidden");     // not a ".." component
+    CHECK(Clean087("dir\\...x") == "dir\\...x");
+    CHECK(Clean087("con.d\\x") == "_con.d\\x"); // stem "con" is reserved
+    // review of S2: the part before the first dot counts without trailing spaces;
+    // the console pseudo-files, COM0/LPT0 and the superscript digits are devices too
+    CHECK(Clean087("CON .txt") == "_CON .txt");
+    CHECK(Clean087("com1  .txt") == "_com1  .txt");
+    CHECK(Clean087("CONIN$") == "_CONIN$");
+    CHECK(Clean087("conout$.log") == "_conout$.log");
+    CHECK(Clean087("COM0") == "_COM0");
+    CHECK(Clean087("lpt0.txt") == "_lpt0.txt");
+    CHECK(Clean087("COM\xC2\xB9") == "_COM\xC2\xB9");
+    CHECK(Clean087("lpt\xC2\xB3.x") == "_lpt\xC2\xB3.x");
+    CHECK(Clean087("com\xC2\xB5") == "com\xC2\xB5"); // U+00B5 is no digit
+    CHECK(Clean087("conin") == "conin");
+    CHECK(Clean087("console.txt") == "console.txt"); // stem is not exactly "con"
+    CHECK(Clean087("com10") == "com10");
+    CHECK(Clean087("\xC4\x8D\xC3\xA1st\\\xE4\xB8\xAD\xE6\x96\x87\\\xF0\x9F\x93\x81.txt") ==
+          "\xC4\x8D\xC3\xA1st\\\xE4\xB8\xAD\xE6\x96\x87\\\xF0\x9F\x93\x81.txt"); // UTF-8 untouched
+
+    // --- climbing out: ".." and "." components are dropped
+    CHECK(Clean087("..\\..\\evil.txt") == "evil.txt");
+    CHECK(Clean087("a\\..\\..\\b") == "a\\b");
+    CHECK(Clean087("../../etc/passwd") == "etc\\passwd");
+    CHECK(Clean087(".\\.\\x") == "x");
+    CHECK(Clean087("a\\.\\b") == "a\\b");
+    CHECK(Clean087("..") == "_");
+    CHECK(Clean087(".\\.\\") == "_");
+    CHECK(Clean087("") == "_");
+    CHECK(Clean087("a\\\\\\b") == "a\\b"); // empty components
+
+    // --- absolute, drive, UNC and device prefixes
+    CHECK(Clean087("C:\\Windows\\x.dll") == "Windows\\x.dll");
+    CHECK(Clean087("c:x") == "c_x"); // not a drive: ":" replaced
+    CHECK(Clean087("C:") == "_");
+    CHECK(Clean087("\\x") == "x");
+    CHECK(Clean087("/etc/passwd") == "etc\\passwd");
+    CHECK(Clean087("\\\\srv\\share\\dir\\x") == "dir\\x");
+    CHECK(Clean087("//srv/share/x") == "x");
+    CHECK(Clean087("\\\\?\\C:\\x") == "x");
+    CHECK(Clean087("\\\\.\\C:\\x") == "x");
+    CHECK(Clean087("\\\\?\\UNC\\srv\\sh\\x") == "x");
+    CHECK(Clean087("\\\\srv") == "_");
+
+    // --- alternate data streams and forbidden characters
+    CHECK(Clean087("report.txt:secret") == "report.txt_secret");
+    CHECK(Clean087("x::$DATA") == "x__$DATA");
+    CHECK(Clean087("dir\\a:b\\c") == "dir\\a_b\\c");
+    CHECK(Clean087("a<b>c\"d|e?f*g") == "a_b_c_d_e_f_g");
+    CHECK(Clean087("tab\there\x01") == "tab_here_");
+
+    // --- trailing dots and spaces, reserved device names
+    CHECK(Clean087("a.") == "a_");
+    CHECK(Clean087("a ") == "a_");
+    CHECK(Clean087("dir. \\x") == "dir__\\x");
+    CHECK(Clean087("nul.") == "_nul_");
+    CHECK(Clean087("con") == "_con");
+    CHECK(Clean087("CON.txt") == "_CON.txt");
+    CHECK(Clean087("dir\\aux\\prn") == "dir\\_aux\\_prn");
+    CHECK(Clean087("COM1") == "_COM1");
+    CHECK(Clean087("lpt9.log") == "_lpt9.log");
+
+    // --- idempotence and the buffer limit
+    {
+        const char* samples[] = {"..\\..\\evil.txt", "C:\\a:b\\con.", "\\\\?\\UNC\\s\\h\\x y.", "ok\\name.txt", ""};
+        for (const char* s : samples)
+        {
+            std::string once = Clean087(s);
+            CHECK(Clean087(once.c_str()) == once);
+        }
+        char tiny[6];
+        CHECK(SalArcCleanItemPath("abc", tiny, sizeof(tiny)) && strcmp(tiny, "abc") == 0);
+        CHECK(!SalArcCleanItemPath("abcdefgh", tiny, sizeof(tiny)) && tiny[0] == 0);
+        CHECK(!SalArcCleanItemPath("x", tiny, 0));
+        CHECK(SalArcCleanItemPath(NULL, tiny, sizeof(tiny)) && strcmp(tiny, "_") == 0);
+    }
+
+    // --- N2 signatures
+    {
+        const BYTE z7[] = {0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C, 0x00, 0x04};
+        const BYTE r4[] = {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00, 0xCF};
+        const BYTE r5[] = {0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x01, 0x00};
+        const BYTE zip[] = {0x50, 0x4B, 0x03, 0x04, 0, 0, 0, 0};
+        CHECK(SalArcDetectFormat(z7, 8) == SALARC_FORMAT_7Z);
+        CHECK(SalArcDetectFormat(r4, 8) == SALARC_FORMAT_RAR);
+        CHECK(SalArcDetectFormat(r5, 8) == SALARC_FORMAT_RAR5);
+        CHECK(SalArcDetectFormat(zip, 8) == SALARC_FORMAT_UNKNOWN);
+        CHECK(SalArcDetectFormat(r5, 7) == SALARC_FORMAT_UNKNOWN); // 7 bytes of RAR5 = "Rar!\x1A\x07\x01": neither
+        CHECK(SalArcDetectFormat(r4, 3) == SALARC_FORMAT_UNKNOWN);
+        CHECK(SalArcDetectFormat(NULL, 8) == SALARC_FORMAT_UNKNOWN);
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -2907,6 +3021,7 @@ int main()
     TestArchiverMigration084();
     TestUrlPasswordStrip085();
     TestRandom086();
+    TestArcNames087();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
