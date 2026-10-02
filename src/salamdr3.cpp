@@ -3187,9 +3187,12 @@ void CFileTimeStamps::AddFilesToListBox(HWND list)
     int i;
     for (i = 0; i < List.Count; i++)
     {
-        char buf[MAX_PATH];
-        strcpy(buf, List[i]->ZIPRoot);
-        SalPathAppend(buf, List[i]->FileName, MAX_PATH);
+        // feature 096: room for the longest path inside an archive plus the longest name
+        // (259 + 1 + 255 bytes) - in MAX_PATH the name of a file deep in the archive did not
+        // fit and the list showed only its folder
+        char buf[3 * MAX_PATH];
+        lstrcpyn(buf, List[i]->ZIPRoot, _countof(buf));
+        SalPathAppend(buf, List[i]->FileName, _countof(buf));
         SalListBoxAddStringU8(list, buf); // names are UTF-8 (feature 010)
     }
 }
@@ -3366,16 +3369,39 @@ void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, 
         *someFilesChanged = FALSE;
     if (archMaybeUpdated != NULL)
         *archMaybeUpdated = FALSE;
-    char buf[MAX_PATH + 100];
-    WIN32_FIND_DATA data;
+    char buf[2 * MAX_PATH + 100];
+    WIN32_FIND_DATAW data;
     int i;
     for (i = List.Count - 1; i >= 0; i--)
     {
         CFileTimeStampsItem* item = List[i];
-        sprintf(buf, "%s\\%s", item->SourcePath, item->FileName);
+        _snprintf_s(buf, _TRUNCATE, "%s\\%s", item->SourcePath, item->FileName);
         BOOL kill = TRUE;
-        HANDLE find = HANDLES_Q(FindFirstFile(buf, &data));
-        if (find != INVALID_HANDLE_VALUE)
+        // feature 096: the path is UTF-8 - the code-page FindFirstFile did not find a file
+        // with a non-ASCII name, the item was dropped as "unchanged", and the edit was lost
+        // without a word (every release since the names became UTF-8 in feature 004)
+        HANDLE find = SalFindFirstFile(buf, &data);
+        if (find == INVALID_HANDLE_VALUE)
+        {
+            // only "it is not there" may drop the item; any other failure (access denied,
+            // drive not ready, network path, a name that cannot be converted) keeps it, so
+            // that a file we cannot look at is offered for the update instead of being
+            // forgotten
+            DWORD err = GetLastError();
+            if (err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND &&
+                err != ERROR_NO_MORE_FILES && err != ERROR_INVALID_DRIVE &&
+                err != ERROR_DIRECTORY && err != ERROR_BAD_PATHNAME)
+            {
+                TRACE_E("CFileTimeStamps::CheckAndPackAndClear: unable to look at the edited file, error " << err);
+                if (item->Attr == 0xFFFFFFFF) // never seen either: give the packer sane values
+                {
+                    item->Attr = FILE_ATTRIBUTE_NORMAL;
+                    item->FileSize = CQuadWord(0, 0);
+                }
+                kill = FALSE;
+            }
+        }
+        else
         {
             HANDLES(FindClose(find));
             if (CompareFileTime(&data.ftLastWriteTime, &item->LastWrite) != 0 ||    // timestamps differ
@@ -3444,7 +3470,13 @@ void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, 
                             CFileTimeStampsEnum2Info data2;
                             data2.PackList = &packList;
                             data2.Index = 0;
-                            SetCurrentDirectory(s1);
+                            { // feature 096: 's1' is UTF-8 (the pattern of RemoveTemporaryDir above)
+                                WCHAR wS1[MAX_PATH];
+                                if (SalU8ToW(s1, -1, wS1, _countof(wS1)) != 0)
+                                    SetCurrentDirectoryW(wS1);
+                                else
+                                    SetCurrentDirectory(s1);
+                            }
                             if (Panel->CheckPath(TRUE, NULL, ERROR_SUCCESS, TRUE, parent) == ERROR_SUCCESS &&
                                 PackCompress(parent, Panel, ZIPFile, r1, FALSE, s1, FileTimeStampsEnum2, &data2))
                                 loop = FALSE;

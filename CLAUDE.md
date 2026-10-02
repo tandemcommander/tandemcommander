@@ -1134,3 +1134,18 @@ plugin architecture preservation, UI consistency.
     saltests 13,032 -> 13,102. Probe `probe/longarc_probe.ps1`: 60/0
     (previous build 56/4). Records:
     `specs/095-archive-path-buffers/fix-log.md`.
+- 096-archive-edit-accented: **an edited file with a non-ASCII name is packed
+  back into its archive.** In every release so far, editing `článek.txt`
+  inside an archive (F4 or Enter) and leaving the archive lost the edit
+  without a word: `CFileTimeStamps::CheckAndPackAndClear` (`salamdr3.cpp`)
+  looked the temporary copy up with the code-page `FindFirstFile` on a UTF-8
+  path, did not find it, and dropped it as "unchanged" - a consumer feature
+  004 missed when it moved the producer to UTF-8. Fix: `SalFindFirstFile`;
+  **only "not there" may drop an item**, any other look-up failure keeps it
+  (offered for the update); wide `SetCurrentDirectory` before packing; the
+  Archive Update list shows deep names whole. Found by the probe of 095,
+  measured first (`research.md`). Probe `probe/archedit_probe.ps1`: 17 of 17
+  cases updated (before: the 7 ASCII-named ones). The maintainer's standing
+  instruction since this one: serious defects found on the way go to the
+  backlog and are then fixed one by one. Records:
+  `specs/096-archive-edit-accented/fix-log.md`.

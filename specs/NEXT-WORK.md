@@ -407,12 +407,12 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
     on Enter, an error names the cut path, or - if a file with the cut name
     exists - **another archive is opened**. A real limitation next to the
     long-path support of feature 004.
-  - **An edited file with an accented name may not be packed back into its
-    archive** - seen by the 095 probe on names made of `ř` (both builds): the
-    file is not offered for the update and the edit is lost without a
-    message. Suspected: a code-page file look-up on a UTF-8 path in
-    `CFileTimeStamps::CheckAndPackAndClear` (`salamdr3.cpp`). **Verify and
-    fix first** - silent loss of an edit.
+  - **An edited file with a non-ASCII name was not packed back into its
+    archive** - ✅ confirmed (every release) and fixed by feature 096
+    (2026-10-02): a code-page look-up of a UTF-8 path in
+    `CFileTimeStamps::CheckAndPackAndClear`. Not driven by its probe: the RAR
+    external packer with such a name; a critical shutdown with an edited
+    file.
 - The mask matcher, *Change Case* (B-4), the x86-only code and the
   install-path chain (`plugins2.cpp`, ANSI operands) are not part of B-2's
   identity work.

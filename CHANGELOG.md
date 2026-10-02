@@ -53,6 +53,15 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **An edited file with an accented name is packed back into its archive.**
+  When you edited a file inside an archive (F4, or Enter and the program it
+  opens) and its name contained any character outside plain English letters
+  - `článek.txt`, a Cyrillic name - the program did not offer to update the
+  archive when you left it or closed the program, and said nothing: **the
+  edit was lost**. This affected every release so far, for ZIP, 7z and every
+  other archive type. The archive is now updated as for any other file. A
+  temporary copy that cannot be examined for another reason is offered for
+  the update too, instead of being forgotten (feature 096).
 - **Opening or editing a file deep inside an archive works.** When the path
   of the archive, the folder inside it and the file's name together came to
   about 520 bytes or more (for example 200 + 200 + 130), Enter and F4 on the
