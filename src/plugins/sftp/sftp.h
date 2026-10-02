@@ -32,6 +32,13 @@ extern const char* LOW_MEMORY;
 // default TCP port for SSH
 #define SFTP_DEFAULT_PORT 22
 
+// feature 094: a secret field (password, key passphrase) accepts this many
+// UTF-16 units and every buffer that carries the secret holds 4 bytes per unit
+// and the terminator, so the UTF-8 form of anything the field accepts fits.
+// (511 = what an ASCII secret could be before, when the buffers had 512 bytes.)
+#define SFTP_SECRET_MAX_CHARS 511
+#define SFTP_SECRET_BUF (4 * SFTP_SECRET_MAX_CHARS + 4)
+
 // authentication method stored in a connection profile
 enum CSFTPAuthMethod
 {

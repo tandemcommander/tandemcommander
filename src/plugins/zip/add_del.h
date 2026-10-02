@@ -100,6 +100,11 @@ public:
     __UINT32 Keys[3]; //decryption keys
     //bool                NoFreeDirs;
     CExtendedOptions Options;
+    // feature 094: the byte form new items are keyed with, derived once from
+    // Options.Password (GetPackPassword), wiped in the destructor
+    char PackPassword[SALZIPPWD_FORM_BUF];
+    bool PackPasswordReady;
+    const char* GetPackPassword();
     bool RecoverOK;
     FILETIME NewestFileTime;
 

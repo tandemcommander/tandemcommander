@@ -30,8 +30,8 @@ BOOL ShowConnectDialog(HWND parent, BOOL organizeMode, CSFTPServer* result);
 // Plaintext secrets the connect dialog just captured (avoids re-prompting when
 // the user typed a password but chose not to store it). Consumed and wiped by
 // the connect flow. Empty string = not provided.
-extern char ConnectPlainPassword[512];
-extern char ConnectPlainPassphrase[512];
+extern char ConnectPlainPassword[SFTP_SECRET_BUF];
+extern char ConnectPlainPassphrase[SFTP_SECRET_BUF];
 
 // Host-key verification dialog (FR-006). 'changed' selects the "key changed"
 // warning variant. Returns one of: IDB_HOSTKEY_TRUST (trust and store),

@@ -110,10 +110,10 @@ class CPasswordDialog : public CDlgRoot
 {
     HICON Lock;
     const char* File;
-    char* Password;
+    WCHAR* Password; // feature 094: the typed text, MAX_PASSWORD units
 
 public:
-    CPasswordDialog(HWND parent, const char* file, char* password) : CDlgRoot(parent)
+    CPasswordDialog(HWND parent, const char* file, WCHAR* password) : CDlgRoot(parent)
     {
         File = file;
         Password = password;
@@ -126,7 +126,8 @@ public:
     BOOL OnOK(WORD wNotifyCode, WORD wID, HWND hwndCtl);
 };
 
-INT_PTR PasswordDialog(HWND parent, const char* file, char* password);
+// 'password' receives the typed text (UTF-16, MAX_PASSWORD units); the caller wipes it
+INT_PTR PasswordDialog(HWND parent, const char* file, WCHAR* password);
 
 class CLowDiskSpaceDialog : public CDlgRoot
 {

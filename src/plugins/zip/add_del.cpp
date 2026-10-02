@@ -38,6 +38,8 @@ CZipPack::CZipPack(const char* zipName, const char* zipRoot,
                                                                    AddFiles(256)
 {
     RecoverOK = true;
+    PackPassword[0] = 0;
+    PackPasswordReady = false;
     DiskNum = 0;
     Extract = false;
     Options.Icons = NULL;
@@ -51,8 +53,26 @@ CZipPack::CZipPack(const char* zipName, const char* zipRoot,
         *TempName = 0;
 }
 
+// feature 094 (contract Z3): code-page bytes when the system code page can
+// represent the typed text (as every version wrote them), otherwise UTF-8 -
+// never '?' in place of a character. A self-extracting archive keeps the
+// bytes the old read gave: the stub's own prompt, which is not changed,
+// reads the password exactly that way.
+const char* CZipPack::GetPackPassword()
+{
+    if (!PackPasswordReady)
+    {
+        if (SalZipPwdPackForm(Options.Password, PackPassword, sizeof(PackPassword),
+                              (Options.Action & PA_SELFEXTRACT) != 0) < 0)
+            SalZipPwdUtf8(Options.Password, PackPassword, sizeof(PackPassword));
+        PackPasswordReady = true;
+    }
+    return PackPassword;
+}
+
 CZipPack::~CZipPack()
 {
+    SecureZeroMemory(PackPassword, sizeof(PackPassword)); // feature 094
     if (Options.Icons)
         DestroyIcons(Options.Icons, Options.IconsCount);
     if (TempName)

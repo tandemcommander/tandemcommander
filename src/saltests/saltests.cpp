@@ -27,6 +27,7 @@
 #include "salarcassoc.h"  // feature 089
 #include "salftpanon.h"   // feature 090
 #include "salarcpwd.h"    // feature 093
+#include "salzippwd.h"    // feature 094
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 
 #include <map>
@@ -3487,6 +3488,197 @@ static void TestArchivePassword093()
               SalArcPwdHasLegacy(L"heslo-\x0159"));
 }
 
+// feature 094 (contract zip-password-forms.md): the byte forms of a typed ZIP
+// password (src/common/salzippwd.h). Code pages 1250 / 852 are passed
+// explicitly where the expectation is a literal; the rest is computed with
+// the same Win32 calls the old code used.
+static BOOL ZipPwdHas094(const CSalZipPwdCandidates& c, int index, int kind, const char* bytes, int len)
+{
+    return index < c.Count && c.Forms[index].Kind == kind && c.Forms[index].Len == len &&
+           memcmp(c.Forms[index].Bytes, bytes, len) == 0 && c.Forms[index].Bytes[len] == 0;
+}
+
+static void TestZipPassword094()
+{
+    const UINT cp = 1250, oem = 852;
+    CSalZipPwdCandidates c;
+    char buf[SALZIPPWD_FORM_BUF];
+    const WCHAR* typedR = L"heslo-\x0159";
+    const WCHAR* typedC = L"\x043F\x0430\x0440\x043E\x043B\x044C";
+
+    // --- ASCII: representable, exactly one candidate, pack form = the text
+    CHECK(SalZipPwdRepresentable(L"heslo123", cp) && SalZipPwdRepresentable(L"heslo123"));
+    SalZipPwdCandidates(L"heslo123", &c, cp, oem);
+    CHECK(c.Count == 1 && ZipPwdHas094(c, 0, SALZIPPWD_ACP, "heslo123", 8));
+    SalZipPwdCandidates(L"heslo123", &c); // the machine's code pages
+    CHECK(c.Count == 1 && ZipPwdHas094(c, 0, SALZIPPWD_ACP, "heslo123", 8));
+    CHECK(SalZipPwdPackForm(L"heslo123", buf, sizeof(buf), FALSE, cp) == 8 && strcmp(buf, "heslo123") == 0);
+    CHECK(SalZipPwdPackForm(L"heslo123", buf, sizeof(buf), TRUE, cp) == 8 && strcmp(buf, "heslo123") == 0);
+
+    // --- inside the code page: acp, oem, utf8 - and no fourth form (the old read equals acp)
+    CHECK(SalZipPwdRepresentable(typedR, cp));
+    SalZipPwdCandidates(typedR, &c, cp, oem);
+    CHECK(c.Count == 3);
+    CHECK(ZipPwdHas094(c, 0, SALZIPPWD_ACP, "heslo-\xF8", 7));
+    CHECK(ZipPwdHas094(c, 1, SALZIPPWD_OEM, "heslo-\xFD", 7));
+    CHECK(ZipPwdHas094(c, 2, SALZIPPWD_UTF8, "heslo-\xC5\x99", 8));
+    CHECK(SalZipPwdPackForm(typedR, buf, sizeof(buf), FALSE, cp) == 7 && strcmp(buf, "heslo-\xF8") == 0);
+    CHECK(SalZipPwdPackForm(typedR, buf, sizeof(buf), TRUE, cp) == 7 && strcmp(buf, "heslo-\xF8") == 0);
+
+    // --- outside the code page: utf8 first, then what the old code read ("??????")
+    CHECK(!SalZipPwdRepresentable(typedC, cp));
+    SalZipPwdCandidates(typedC, &c, cp, oem);
+    CHECK(c.Count == 2);
+    CHECK(ZipPwdHas094(c, 0, SALZIPPWD_UTF8, "\xD0\xBF\xD0\xB0\xD1\x80\xD0\xBE\xD0\xBB\xD1\x8C", 12));
+    CHECK(ZipPwdHas094(c, 1, SALZIPPWD_OLDREAD, "??????", 6));
+    // a new archive is keyed with UTF-8, never with the '?' form; a self-extractor keeps the old read
+    CHECK(SalZipPwdPackForm(typedC, buf, sizeof(buf), FALSE, cp) == 12 &&
+          memcmp(buf, "\xD0\xBF\xD0\xB0\xD1\x80\xD0\xBE\xD0\xBB\xD1\x8C", 13) == 0);
+    CHECK(SalZipPwdPackForm(typedC, buf, sizeof(buf), TRUE, cp) == 6 && strcmp(buf, "??????") == 0);
+    // another word of the same length: another pack form (SC-001)
+    CHECK(SalZipPwdPackForm(L"\x0434\x0440\x0443\x0433\x043E\x0439", buf, sizeof(buf), FALSE, cp) == 12 &&
+          memcmp(buf, "\xD0\xBF\xD0\xB0\xD1\x80\xD0\xBE\xD0\xBB\xD1\x8C", 12) != 0);
+    // mixed: one character outside
+    SalZipPwdCandidates(L"ab\x0416" L"cd", &c, cp, oem);
+    CHECK(c.Count == 2 && ZipPwdHas094(c, 0, SALZIPPWD_UTF8, "ab\xD0\x96" "cd", 6) &&
+          ZipPwdHas094(c, 1, SALZIPPWD_OLDREAD, "ab?cd", 5));
+
+    // --- a character the code page only approximates is NOT representable; its
+    //     old-read form is what GetDlgItemTextA gave (the best-fit letter)
+    {
+        const WCHAR* fit = L"p\xFF21"; // FULLWIDTH LATIN CAPITAL LETTER A
+        char old[16];
+        int on = WideCharToMultiByte(cp, 0, fit, 2, old, sizeof(old), NULL, NULL);
+        CHECK(on == 2);
+        CHECK(!SalZipPwdRepresentable(fit, cp));
+        SalZipPwdCandidates(fit, &c, cp, oem);
+        CHECK(c.Count == 2 && ZipPwdHas094(c, 0, SALZIPPWD_UTF8, "p\xEF\xBC\xA1", 4) &&
+              ZipPwdHas094(c, 1, SALZIPPWD_OLDREAD, old, on));
+        CHECK(on == 2 && old[1] == 'A'); // the best fit of code page 1250
+        CHECK(SalZipPwdPackForm(fit, buf, sizeof(buf), FALSE, cp) == 4 && strcmp(buf, "p\xEF\xBC\xA1") == 0);
+    }
+
+    // --- duplicates: equal byte strings are tried once
+    SalZipPwdCandidates(typedR, &c, cp, cp); // "OEM" = the same code page: two candidates
+    CHECK(c.Count == 2 && ZipPwdHas094(c, 0, SALZIPPWD_ACP, "heslo-\xF8", 7) &&
+          ZipPwdHas094(c, 1, SALZIPPWD_UTF8, "heslo-\xC5\x99", 8));
+    // a machine whose code page is UTF-8: everything is representable, acp == utf8
+    SalZipPwdCandidates(typedC, &c, CP_UTF8, CP_UTF8);
+    CHECK(c.Count == 1 && ZipPwdHas094(c, 0, SALZIPPWD_ACP, "\xD0\xBF\xD0\xB0\xD1\x80\xD0\xBE\xD0\xBB\xD1\x8C", 12));
+    CHECK(SalZipPwdRepresentable(typedC, CP_UTF8));
+
+    // --- empty and NULL: one empty candidate
+    SalZipPwdCandidates(L"", &c, cp, oem);
+    CHECK(c.Count == 1 && c.Forms[0].Len == 0 && c.Forms[0].Bytes[0] == 0);
+    SalZipPwdCandidates(NULL, &c, cp, oem);
+    CHECK(c.Count == 1 && c.Forms[0].Len == 0);
+    CHECK(SalZipPwdPackForm(L"", buf, sizeof(buf), FALSE, cp) == 0 && buf[0] == 0);
+
+    // --- an unpaired surrogate: not representable, the UTF-8 form is WTF-8 (ED A0 80)
+    SalZipPwdCandidates(L"a\xD800", &c, cp, oem);
+    CHECK(!SalZipPwdRepresentable(L"a\xD800", cp));
+    CHECK(c.Count >= 1 && ZipPwdHas094(c, 0, SALZIPPWD_UTF8, "a\xED\xA0\x80", 4));
+    CHECK(SalZipPwdPackForm(L"a\xD800", buf, sizeof(buf), FALSE, cp) == 4 && strcmp(buf, "a\xED\xA0\x80") == 0);
+    // a pair is one 4-byte sequence
+    CHECK(SalZipPwdUtf8(L"\xD83D\xDCC1", buf, sizeof(buf)) == 4 && strcmp(buf, "\xF0\x9F\x93\x81") == 0);
+    // valid text: the same bytes Windows gives
+    {
+        char win[64];
+        int wn = WideCharToMultiByte(CP_UTF8, 0, L"heslo-\x0159\x65E5\xD83D\xDCC1", -1, win, sizeof(win), NULL, NULL);
+        CHECK(SalZipPwdUtf8(L"heslo-\x0159\x65E5\xD83D\xDCC1", buf, sizeof(buf)) == wn - 1 && strcmp(buf, win) == 0);
+    }
+
+    // --- lengths: all 255 characters are used; the old read had 254
+    {
+        WCHAR w[SALZIPPWD_MAX_CHARS + 2];
+        int i;
+        for (i = 0; i < SALZIPPWD_MAX_CHARS; i++)
+            w[i] = L'a';
+        w[SALZIPPWD_MAX_CHARS] = 0;
+        CHECK(SalZipPwdPackForm(w, buf, sizeof(buf), FALSE, cp) == 255 && strlen(buf) == 255);
+        CHECK(SalZipPwdPackForm(w, buf, sizeof(buf), TRUE, cp) == 254); // the stub reads 254
+        SalZipPwdCandidates(w, &c, cp, oem);
+        // 255 x 'a', and the 254 an archive of an earlier version is keyed with
+        CHECK(c.Count == 2 && c.Forms[0].Kind == SALZIPPWD_ACP && c.Forms[0].Len == 255 &&
+              c.Forms[1].Kind == SALZIPPWD_OLDREAD && c.Forms[1].Len == 254);
+        w[254] = 0;
+        SalZipPwdCandidates(w, &c, cp, oem);
+        CHECK(c.Count == 1 && c.Forms[0].Len == 254);
+        // 255 three-byte characters: 765 bytes of UTF-8 fit the form buffer
+        for (i = 0; i < SALZIPPWD_MAX_CHARS; i++)
+            w[i] = 0x65E5;
+        w[SALZIPPWD_MAX_CHARS] = 0;
+        CHECK(SalZipPwdUtf8(w, buf, sizeof(buf)) == 765 && buf[765] == 0);
+        SalZipPwdCandidates(w, &c, cp, oem);
+        CHECK(c.Count == 2 && c.Forms[0].Kind == SALZIPPWD_UTF8 && c.Forms[0].Len == 765 &&
+              c.Forms[1].Kind == SALZIPPWD_OLDREAD && c.Forms[1].Len == 254 && c.Forms[1].Bytes[0] == '?');
+        // text longer than the field accepts is cut to the field's limit
+        w[SALZIPPWD_MAX_CHARS] = L'x';
+        w[SALZIPPWD_MAX_CHARS + 1] = 0;
+        CHECK(SalZipPwdUtf8(w, buf, sizeof(buf)) == 765);
+        // the AES boundary (128 bytes) is a matter of the form: 64 two-byte letters
+        // are 64 bytes in the code page and 128 in UTF-8; 65 are 65 and 130
+        for (i = 0; i < 65; i++)
+            w[i] = 0x0159;
+        w[64] = 0;
+        SalZipPwdCandidates(w, &c, cp, oem);
+        CHECK(c.Count == 3 && c.Forms[0].Len == 64 && c.Forms[1].Len == 64 && c.Forms[2].Len == 128);
+        CHECK(SalZipPwdPackForm(w, buf, sizeof(buf), FALSE, cp) == 64);
+        w[64] = 0x0159;
+        w[65] = 0;
+        SalZipPwdCandidates(w, &c, cp, oem);
+        CHECK(c.Forms[0].Len == 65 && c.Forms[2].Len == 130);
+        SecureZeroMemory(w, sizeof(w));
+    }
+
+    // --- arguments
+    buf[0] = 'x';
+    CHECK(SalZipPwdAcp(typedR, buf, 7, cp) == -1 && buf[0] == 0); // does not fit: nothing, never a cut password
+    CHECK(SalZipPwdAcp(typedR, buf, 8, cp) == 7);
+    CHECK(SalZipPwdUtf8(typedR, buf, 8) == -1 && buf[0] == 0);
+    CHECK(SalZipPwdUtf8(typedR, buf, 9) == 8);
+    CHECK(SalZipPwdAcp(typedR, NULL, 8, cp) == -1 && SalZipPwdUtf8(typedR, buf, 0) == -1);
+    CHECK(SalZipPwdAcp(typedC, buf, sizeof(buf), cp) == -1);
+
+    // --- wipe
+    SalZipPwdCandidates(typedR, &c, cp, oem);
+    SalZipPwdWipe(&c);
+    CHECK(c.Count == 0 && c.Forms[0].Len == 0 && c.Forms[0].Bytes[0] == 0 && c.Forms[2].Bytes[6] == 0);
+
+    // --- the machine's own code pages: the forms are what the old code produced
+    {
+        char acp[64], old[64], oemb[64];
+        BOOL used = FALSE;
+        int an;
+        if (GetACP() == CP_UTF8)
+            an = WideCharToMultiByte(CP_UTF8, 0, typedR, -1, acp, sizeof(acp), NULL, NULL);
+        else
+            an = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, typedR, -1, acp, sizeof(acp), NULL, &used);
+        WideCharToMultiByte(CP_ACP, 0, typedR, -1, old, sizeof(old), NULL, NULL); // GetDlgItemTextA
+        CHECK(SalZipPwdOldRead(typedR, buf, sizeof(buf)) == (int)strlen(old) && strcmp(buf, old) == 0);
+        CHECK(SalZipPwdRepresentable(typedR) == (an > 0 && !used));
+        if (an > 0 && !used)
+        {
+            CharToOemA(acp, oemb); // what the old InitKeys retried with
+            SalZipPwdCandidates(typedR, &c);
+            CHECK(c.Count >= 1 && ZipPwdHas094(c, 0, SALZIPPWD_ACP, acp, an - 1));
+            if (strcmp(oemb, acp) != 0)
+                CHECK(ZipPwdHas094(c, 1, SALZIPPWD_OEM, oemb, (int)strlen(oemb)));
+        }
+        if (GetACP() == 1250 && GetOEMCP() == 852)
+        {
+            SalZipPwdCandidates(typedR, &c);
+            CHECK(c.Count == 3 && ZipPwdHas094(c, 0, SALZIPPWD_ACP, "heslo-\xF8", 7) &&
+                  ZipPwdHas094(c, 1, SALZIPPWD_OEM, "heslo-\xFD", 7) &&
+                  ZipPwdHas094(c, 2, SALZIPPWD_UTF8, "heslo-\xC5\x99", 8));
+            SalZipPwdCandidates(typedC, &c);
+            CHECK(c.Count == 2 && c.Forms[0].Kind == SALZIPPWD_UTF8 && ZipPwdHas094(c, 1, SALZIPPWD_OLDREAD, "??????", 6));
+        }
+    }
+    SalZipPwdWipe(&c);
+    SecureZeroMemory(buf, sizeof(buf));
+}
+
 static void TestNameIdentity092()
 {
     // --- (1) ASCII: equality identical to the old byte fold; the three-way sign identical
@@ -3890,6 +4082,7 @@ int main()
     TestDialogText093();
     TestCmdLineOffsets093();
     TestArchivePassword093();
+    TestZipPassword094();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

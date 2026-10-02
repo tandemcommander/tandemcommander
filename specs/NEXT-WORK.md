@@ -424,9 +424,17 @@ with its reason there:
   the system's.
 - **Message boxes, master-password dialogs** (their bytes feed a key - must
   not change), **other plug-ins' dialogs** (FTP, SFTP, ZIP, renamer, ...):
-  untouched. The ZIP and SFTP password prompts were not examined for the
-  defect the 7zip plugin had - **check them next** (same shared `EditLine`,
-  which returns UTF-8).
+  untouched. **The ZIP and SFTP password prompts were examined and fixed by
+  feature 094 (2026-10-02)** - they did not have the 7zip plugin's defect,
+  but the ZIP plugin used `?` for every character outside the code page.
+  Left by 094 (`specs/094-plugin-password-encoding/fix-log.md`):
+  the self-extractor's own prompt (a separate program; a password outside
+  the code page stays `?` in a self-extracting archive, and items added to an
+  existing self-extracting archive are keyed the new way); the FTP plugin's
+  101-byte password buffer (51 or more two-byte characters fall back to a
+  code-page read) and its *Show password* read; a real OpenSSH server and a
+  key passphrase were not driven; a system with a double-byte or UTF-8 code
+  page.
 - **The plug-in copy of the dialog library** (`winliblt`) still falls back to
   a code-page read when the text does not fit the buffer.
 - **7zip plugin**: an archive that mixes the two password forms stays mixed

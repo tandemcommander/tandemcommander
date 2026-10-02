@@ -394,7 +394,7 @@ function Row([string]$Name, [string]$Typed) {
     if (-not $new.Count) { Out '   | the server saw NO password attempt' }
     foreach ($l in $new) {
         $got = ($l -split 'bytes=')[1]
-        $verdict = if ($got -eq $want) { 'EQUAL to the UTF-8 bytes of the typed text' } else { 'DIFFERENT from the UTF-8 bytes of the typed text' }
+        $verdict = if ($got -eq $want) { 'EQUAL to the UTF-8 bytes of the typed text' } elseif (-not $got) { 'EMPTY password' } else { 'DIFFERENT from the UTF-8 bytes of the typed text' }
         $show = if ($got.Length -gt 120) { $got.Substring(0, 120) + '...' } else { $got }
         Out ("   | server received: {0} -> {1} | {2}" -f (($l -split ' bytes=')[0]), $show, $verdict)
     }
@@ -432,9 +432,15 @@ try {
     Row 'S1' 'heslo123'
     Row 'S2' ('heslo-' + (S 0x159))
     Row 'S3' (S 0x43F, 0x430, 0x440, 0x43E, 0x43B, 0x44C)
-    Row 'S4' ((S 0x159) * 255)       # 510 UTF-8 bytes: fits the 512-byte buffer
-    Row 'S5' ((S 0x159) * 256)       # 512 UTF-8 bytes: does not fit
+    Row 'S4' ((S 0x159) * 255)       # 510 UTF-8 bytes: fitted the old 512-byte buffer
+    Row 'S5' ((S 0x159) * 256)       # 512 UTF-8 bytes: did not fit the old buffer
     Row 'S6' ((S 0x416) * 256)       # 512 UTF-8 bytes, outside the code page
+    Row 'S7' ((S 0x159) * 511)       # the field's limit since feature 094: 1022 UTF-8 bytes
+    Row 'S8' ((S 0x65E5) * 511)      # the field's limit, three-byte characters: 1533 UTF-8 bytes
+    Row 'S9' ((S 0xD83D, 0xDCC1) * 255)  # 510 units of four-byte characters: 1020 UTF-8 bytes
+    Row 'S10' ('a' * 511)            # the longest ASCII secret before and after
+    # more than the field accepts (a text SET into the field, not typed or pasted)
+    Row 'S11' ((S 0x65E5) * 700)     # 2100 UTF-8 bytes: more than any buffer
 }
 catch { Out ("PROBE ERROR: " + $_.Exception.Message) }
 finally {

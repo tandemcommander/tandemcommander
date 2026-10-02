@@ -3,11 +3,9 @@
 
 #pragma once
 
-#define CHECK_OUT_OEM_PASWORD
-
 #define ENCRYPT_HEADER_SIZE 12
 
-//test password and set up keys
+//test password (one byte form, see salzippwd.h) and set up keys
 int InitKeys(const char* password, const char* header, char check,
              __UINT32* keys);
 

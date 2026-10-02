@@ -275,4 +275,6 @@ the viewer may answer a server's request for Windows sign-in with your Windows
 account; cancelling the Master Password prompt saves an SFTP password or
 passphrase scrambled; the viewer engine's crash reports follow your
 Windows diagnostic-data settings; and the placeholder sent on an anonymous
-FTP login is `name@someserver.com`. Last updated 2026-10-01.
+FTP login is `name@someserver.com`; and a crash that happens while the ZIP
+plugin is using a password can write that password into the crash report.
+Last updated 2026-10-02.

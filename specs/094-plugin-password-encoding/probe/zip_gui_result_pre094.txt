@@ -1,5 +1,5 @@
-=== zip_gui_probe: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-02 12:55:05)  [094] ===
-plug-in: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\zip.spl (built 2026-10-02 14:43:09); system code page 1250
+=== zip_gui_probe: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre094\tandemcommander.exe  (built 2026-10-02 10:02:33)  [pre-094] ===
+plug-in: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre094\plugins\zip\zip.spl (built 2026-10-01 18:05:41); system code page 1250
 The "expected" column is the behaviour feature 094 specifies; the build before it is expected to differ in the rows that show the defects.
 registry export before: SHA-256 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
 ascii = heslo123; ascii2 = jine456; typed-r = heslo-\u0159; typed-c = \u043F\u0430\u0440\u043E\u043B\u044C; other-c = \u0434\u0440\u0443\u0433\u043E\u0439
@@ -16,11 +16,13 @@ U2  | zipcrypto keyed with acp of heslo-\u0159 | typed: heslo-\u0159 | unpacked 
 U3  | zipcrypto keyed with oem of heslo-\u0159 | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
     | fixture: plain.txt: zipcrypto keyed with oem = 68 65 73 6c 6f 2d fd
    process exit code: 0
-U4  | zipcrypto keyed with utf8 of heslo-\u0159 | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+U4  | zipcrypto keyed with utf8 of heslo-\u0159 | typed: heslo-\u0159 | unpacked with the right content: 0 of 1 items; prompts=2; messages=2 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: zipcrypto keyed with utf8 = 68 65 73 6c 6f 2d c5 99
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
-U5  | zipcrypto keyed with utf8 of \u043F\u0430\u0440\u043E\u043B\u044C | typed: \u043F\u0430\u0440\u043E\u043B\u044C | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+U5  | zipcrypto keyed with utf8 of \u043F\u0430\u0440\u043E\u043B\u044C | typed: \u043F\u0430\u0440\u043E\u043B\u044C | unpacked with the right content: 0 of 1 items; prompts=2; messages=2 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: zipcrypto keyed with utf8 = d0 bf d0 b0 d1 80 d0 be d0 bb d1 8c
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
 U6  | zipcrypto keyed with oldread of \u043F\u0430\u0440\u043E\u043B\u044C | typed: \u043F\u0430\u0440\u043E\u043B\u044C | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
     | fixture: plain.txt: zipcrypto keyed with oldread = 3f 3f 3f 3f 3f 3f
@@ -31,23 +33,28 @@ U7  | aes256 keyed with acp of heslo123 | typed: heslo123 | unpacked with the ri
 U8  | aes256 keyed with acp of heslo-\u0159 | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
     | fixture: plain.txt: aes256 keyed with acp = 68 65 73 6c 6f 2d f8
    process exit code: 0
-U9  | aes256 keyed with oem of heslo-\u0159 | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+U9  | aes256 keyed with oem of heslo-\u0159 | typed: heslo-\u0159 | unpacked with the right content: 0 of 1 items; prompts=2; messages=2 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: aes256 keyed with oem = 68 65 73 6c 6f 2d fd
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
-U10 | aes256 keyed with utf8 of heslo-\u0159 | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+U10 | aes256 keyed with utf8 of heslo-\u0159 | typed: heslo-\u0159 | unpacked with the right content: 0 of 1 items; prompts=2; messages=2 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: aes256 keyed with utf8 = 68 65 73 6c 6f 2d c5 99
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
-U11 | aes256 keyed with utf8 of \u043F\u0430\u0440\u043E\u043B\u044C | typed: \u043F\u0430\u0440\u043E\u043B\u044C | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+U11 | aes256 keyed with utf8 of \u043F\u0430\u0440\u043E\u043B\u044C | typed: \u043F\u0430\u0440\u043E\u043B\u044C | unpacked with the right content: 0 of 1 items; prompts=2; messages=2 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: aes256 keyed with utf8 = d0 bf d0 b0 d1 80 d0 be d0 bb d1 8c
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
 U12 | aes256 keyed with oldread of \u043F\u0430\u0440\u043E\u043B\u044C | typed: \u043F\u0430\u0440\u043E\u043B\u044C | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
     | fixture: plain.txt: aes256 keyed with oldread = 3f 3f 3f 3f 3f 3f
    process exit code: 0
-U13 | zipcrypto, deflated, keyed with utf8 of typed-r | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+U13 | zipcrypto, deflated, keyed with utf8 of typed-r | typed: heslo-\u0159 | unpacked with the right content: 0 of 1 items; prompts=2; messages=2 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: zipcrypto keyed with utf8 = 68 65 73 6c 6f 2d c5 99
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
-U14 | aes256, deflated, keyed with oem of typed-r | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+U14 | aes256, deflated, keyed with oem of typed-r | typed: heslo-\u0159 | unpacked with the right content: 0 of 1 items; prompts=2; messages=2 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: aes256 keyed with oem = 68 65 73 6c 6f 2d fd
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
 W1  | zipcrypto keyed with ascii; wrong ASCII text typed | typed: spatne | unpacked with the right content: 0 of 1 items; prompts=2; messages=2 | expected 0 items, 2 prompt(s), a message | AS EXPECTED
     | fixture: plain.txt: zipcrypto keyed with acp = 68 65 73 6c 6f 31 32 33
@@ -77,41 +84,42 @@ W7  | zipcrypto keyed with ascii, header chosen so that the wrong text "spatne" 
     | fixture: plain.txt: zipcrypto keyed with acp = 68 65 73 6c 6f 31 32 33
     | messages shown: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Error in compressed data. CRC does not match. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
    process exit code: 0
-F1  | zipcrypto keyed with oem of typed-r; the code-page form passes the check by chance (deflated) | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+F1  | zipcrypto keyed with oem of typed-r; the code-page form passes the check by chance (deflated) | typed: heslo-\u0159 | unpacked with the right content: 0 of 1 items; prompts=1; messages=1 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: header seed 103
     | fixture: plain.txt: zipcrypto keyed with oem = 68 65 73 6c 6f 2d fd
+    | messages shown: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Error in compressed data. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
    process exit code: 0
-F2  | zipcrypto keyed with utf8 of typed-r; the code-page form passes the check by chance (stored) | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+F2  | zipcrypto keyed with utf8 of typed-r; the code-page form passes the check by chance (stored) | typed: heslo-\u0159 | unpacked with the right content: 0 of 1 items; prompts=1; messages=1 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: header seed 318
     | fixture: plain.txt: zipcrypto keyed with utf8 = 68 65 73 6c 6f 2d c5 99
+    | messages shown: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Error in compressed data. CRC does not match. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
    process exit code: 0
-F3  | zipcrypto keyed with utf8 of typed-r; code-page AND OEM forms pass the check by chance (deflated) | typed: heslo-\u0159 | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
+F3  | zipcrypto keyed with utf8 of typed-r; code-page AND OEM forms pass the check by chance (deflated) | typed: heslo-\u0159 | unpacked with the right content: 0 of 1 items; prompts=1; messages=1 | expected 1 items, 1 prompt(s), no message | DIFFERENT
     | fixture: plain.txt: header seed 60084
     | fixture: plain.txt: zipcrypto keyed with utf8 = 68 65 73 6c 6f 2d c5 99
+    | messages shown: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Error in compressed data. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
    process exit code: 0
 F4  | zipcrypto keyed with the old read of typed-c; the utf8 form passes the check by chance (deflated) | typed: \u043F\u0430\u0440\u043E\u043B\u044C | unpacked with the right content: 1 of 1 items; prompts=1; messages=0 | expected 1 items, 1 prompt(s), no message | AS EXPECTED
     | fixture: plain.txt: header seed 243
     | fixture: plain.txt: zipcrypto keyed with oldread = 3f 3f 3f 3f 3f 3f
    process exit code: 0
-K1  | zipcrypto keyed with ascii; code-page and utf8 forms of a WRONG non-ASCII text pass the check; the target file exists | typed: spatne-\u017E | the user's file: untouched; prompts=2; overwrite questions=0; messages=2 | expected untouched, 2 prompts (the second one cancelled), no overwrite question | AS EXPECTED
-    | fixture: plain.txt: header seed 82870
-    | fixture: plain.txt: zipcrypto keyed with acp = 68 65 73 6c 6f 31 32 33
-    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
-   process exit code: 0
-M1  | zipcrypto: item 1 keyed with the code page, item 2 with utf8 of the same text | typed: heslo-\u0159 | unpacked with the right content: 2 of 2 items; prompts=1; messages=0 | expected 2 items, 1 prompt(s), no message | AS EXPECTED
+M1  | zipcrypto: item 1 keyed with the code page, item 2 with utf8 of the same text | typed: heslo-\u0159 | unpacked with the right content: 1 of 2 items; prompts=2; messages=1 | expected 2 items, 1 prompt(s), no message | DIFFERENT
     | fixture: one.txt: zipcrypto keyed with acp = 68 65 73 6c 6f 2d f8
     | fixture: two.txt: zipcrypto keyed with utf8 = 68 65 73 6c 6f 2d c5 99
+    | messages shown: PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
-M2  | aes256: item 1 keyed with the code page, item 2 with utf8, item 3 with oem of the same text | typed: heslo-\u0159 | unpacked with the right content: 3 of 3 items; prompts=1; messages=0 | expected 3 items, 1 prompt(s), no message | AS EXPECTED
+M2  | aes256: item 1 keyed with the code page, item 2 with utf8, item 3 with oem of the same text | typed: heslo-\u0159 | unpacked with the right content: 1 of 3 items; prompts=2; messages=1 | expected 3 items, 1 prompt(s), no message | DIFFERENT
     | fixture: one.txt: aes256 keyed with acp = 68 65 73 6c 6f 2d f8
     | fixture: two.txt: aes256 keyed with utf8 = 68 65 73 6c 6f 2d c5 99
     | fixture: three.txt: aes256 keyed with oem = 68 65 73 6c 6f 2d fd
+    | messages shown: PROMPT SHOWN AGAIN (cancelled)
    process exit code: 0
-M3  | zipcrypto: item 1 code page; item 2 utf8 with the (now preferred) code-page form passing the check by chance; item 3 code page | typed: heslo-\u0159 | unpacked with the right content: 3 of 3 items; prompts=1; messages=0 | expected 3 items, 1 prompt(s), no message | AS EXPECTED
+M3  | zipcrypto: item 1 code page; item 2 utf8 with the (now preferred) code-page form passing the check by chance; item 3 code page | typed: heslo-\u0159 | unpacked with the right content: 1 of 3 items; prompts=1; messages=1 | expected 3 items, 1 prompt(s), no message | DIFFERENT
     | fixture: one.txt: zipcrypto keyed with acp = 68 65 73 6c 6f 2d f8
     | fixture: two.txt: header seed 318
     | fixture: two.txt: zipcrypto keyed with utf8 = 68 65 73 6c 6f 2d c5 99
     | fixture: three.txt: zipcrypto keyed with acp = 68 65 73 6c 6f 2d f8
+    | messages shown: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Error in compressed data. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
    process exit code: 0
 M4  | zipcrypto: two items under two different PASSWORDS; the second prompt gets the second password | typed: heslo123 then jine456 | unpacked with the right content: 2 of 2 items; prompts=2; messages=0 | expected 2 items, 2 prompt(s), no message | AS EXPECTED
     | fixture: one.txt: zipcrypto keyed with acp = 68 65 73 6c 6f 31 32 33
@@ -132,11 +140,11 @@ P2  | new archive, ZIP 2.0 | typed: heslo-\u0159 | items: plain.txt|ZipCrypto|ac
    process exit code: 0
     | the archive unpacked through the product with heslo-\u0159: EXTRACTED (1 of 1 files equal; prompts=1; messages=0) | expected EXTRACTED | AS EXPECTED
    process exit code: 0
-P3  | new archive, ZIP 2.0 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | items: plain.txt|ZipCrypto|utf8 | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | AS EXPECTED
+P3  | new archive, ZIP 2.0 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | items: plain.txt|ZipCrypto|oldread | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | DIFFERENT
    process exit code: 0
     | the archive unpacked through the product with \u043F\u0430\u0440\u043E\u043B\u044C: EXTRACTED (1 of 1 files equal; prompts=1; messages=0) | expected EXTRACTED | AS EXPECTED
    process exit code: 0
-    | the archive unpacked through the product with \u0434\u0440\u0443\u0433\u043E\u0439: refused (0 of 1 files equal; prompts=2; messages=2) | expected refused | AS EXPECTED
+    | the archive unpacked through the product with \u0434\u0440\u0443\u0433\u043E\u0439: EXTRACTED (1 of 1 files equal; prompts=1; messages=0) | expected refused | DIFFERENT
    process exit code: 0
 P4  | new archive, AES-256 | typed: heslo123 | items: plain.txt|AES-256 AE-1|acp | 7z t -p<typed>: opens | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: acp | AS EXPECTED
    process exit code: 0
@@ -144,11 +152,11 @@ P5  | new archive, AES-256 | typed: heslo-\u0159 | items: plain.txt|AES-256 AE-1
    process exit code: 0
     | the archive unpacked through the product with heslo-\u0159: EXTRACTED (1 of 1 files equal; prompts=1; messages=0) | expected EXTRACTED | AS EXPECTED
    process exit code: 0
-P6  | new archive, AES-256 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | items: plain.txt|AES-256 AE-1|utf8 | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | AS EXPECTED
+P6  | new archive, AES-256 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | items: plain.txt|AES-256 AE-1|oldread | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | DIFFERENT
    process exit code: 0
     | the archive unpacked through the product with \u043F\u0430\u0440\u043E\u043B\u044C: EXTRACTED (1 of 1 files equal; prompts=1; messages=0) | expected EXTRACTED | AS EXPECTED
    process exit code: 0
-    | the archive unpacked through the product with \u0434\u0440\u0443\u0433\u043E\u0439: refused (0 of 1 files equal; prompts=2; messages=2) | expected refused | AS EXPECTED
+    | the archive unpacked through the product with \u0434\u0440\u0443\u0433\u043E\u0439: EXTRACTED (1 of 1 files equal; prompts=1; messages=0) | expected refused | DIFFERENT
    process exit code: 0
 A1  | file added to an archive keyed with ascii, ZIP 2.0 | typed: heslo123 | items: old.txt|ZipCrypto|acp ; plain.txt|ZipCrypto|acp | 7z t -p<typed>: opens | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: acp | AS EXPECTED
    process exit code: 0
@@ -156,29 +164,37 @@ A2  | file added to an archive keyed with typed-r (code page), ZIP 2.0 | typed: 
    process exit code: 0
     | the archive unpacked through the product with heslo-\u0159: EXTRACTED (2 of 2 files equal; prompts=1; messages=0) | expected EXTRACTED | AS EXPECTED
    process exit code: 0
-A3  | file added to an OLD archive keyed with ?????? (old read of typed-c), ZIP 2.0 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | items: old.txt|ZipCrypto|oldread ; plain.txt|ZipCrypto|utf8 | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | AS EXPECTED
+A3  | file added to an OLD archive keyed with ?????? (old read of typed-c), ZIP 2.0 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | items: old.txt|ZipCrypto|oldread ; plain.txt|ZipCrypto|oldread | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | DIFFERENT
    process exit code: 0
     | the archive unpacked through the product with \u043F\u0430\u0440\u043E\u043B\u044C: EXTRACTED (2 of 2 files equal; prompts=1; messages=0) | expected EXTRACTED | AS EXPECTED
    process exit code: 0
-A4  | file added to an OLD archive keyed with ?????? (old read of typed-c), AES-256 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | items: old.txt|AES-256 AE-2|oldread ; plain.txt|AES-256 AE-1|utf8 | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | AS EXPECTED
+A4  | file added to an OLD archive keyed with ?????? (old read of typed-c), AES-256 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | items: old.txt|AES-256 AE-2|oldread ; plain.txt|AES-256 AE-1|oldread | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | DIFFERENT
    process exit code: 0
     | the archive unpacked through the product with \u043F\u0430\u0440\u043E\u043B\u044C: EXTRACTED (2 of 2 files equal; prompts=1; messages=0) | expected EXTRACTED | AS EXPECTED
    process exit code: 0
-L1  | new archive, ZIP 2.0, 255 characters (the field limit) | typed: 255 x a | items: plain.txt|ZipCrypto|acp | 7z t -p<typed>: opens | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: acp | AS EXPECTED
+L1  | new archive, ZIP 2.0, 255 characters (the field limit) | typed: 255 x a | items: plain.txt|ZipCrypto|oldread | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: acp | DIFFERENT
    process exit code: 0
 L2  | new archive, AES-256, 129 characters: over the AES limit of 128 bytes | typed: 129 x a | NO ARCHIVE WRITTEN; messages=1 | expected no archive and a message | AS EXPECTED
     | messages shown: [#32770 'ZIP'] [Static id=2477] Password too long. The maximum password length for AES encryption is 128 characters. | [Button id=1] OK
    process exit code: 0
 L3  | new archive, AES-256, 65 two-byte letters: 65 bytes in the code page (130 as UTF-8) | typed: 65 x \u0159 | items: plain.txt|AES-256 AE-1|acp | 7z t -p<typed>: opens | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: acp | AS EXPECTED
    process exit code: 0
-L4  | new archive, AES-256, 43 Cyrillic letters: 86 bytes as UTF-8 | typed: 43 x \u0416 | items: plain.txt|AES-256 AE-1|utf8 | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | AS EXPECTED
+L4  | new archive, AES-256, 43 Cyrillic letters: 86 bytes as UTF-8 | typed: 43 x \u0416 | items: plain.txt|AES-256 AE-1|oldread | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: utf8 | DIFFERENT
    process exit code: 0
-L5  | new archive, AES-256, 65 Cyrillic letters: 130 bytes as UTF-8 - over the AES limit for the form used | typed: 65 x \u0416 | NO ARCHIVE WRITTEN; messages=1 | expected no archive and a message | AS EXPECTED
-    | messages shown: [#32770 'ZIP'] [Static id=2477] Password too long. The maximum password length for AES encryption is 128 characters. | [Button id=1] OK
+L5  | new archive, AES-256, 65 Cyrillic letters: 130 bytes as UTF-8 - over the AES limit for the form used | typed: 65 x \u0416 | items: plain.txt|AES-256 AE-1|oldread | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0 | expected plain.txt keyed with: - | DIFFERENT
    process exit code: 0
 X1  | new SELF-EXTRACTING archive, ZIP 2.0 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | NO ARCHIVE WRITTEN; messages=1 | expected an archive | DIFFERENT
     | messages shown: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor.  | [Button id=4] &Retry | [Button id=2] Cancel
 Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
 
-Rows and sub-rows: AS EXPECTED 56, DIFFERENT 1; unexpected windows at start: 0
-Test processes left: 0; fixture folder left: False; registry restored identical: True; process exit codes: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Rows and sub-rows: AS EXPECTED 33, DIFFERENT 23; unexpected windows at start: 0
+Test processes left: 0; fixture folder left: False; registry restored identical: True; process exit codes: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+--- row K1 (added to the probe after the review), run separately on this build ---
+K1  | zipcrypto keyed with ascii; code-page and utf8 forms of a WRONG non-ASCII text pass the check; the target file exists | typed: spatne-\u017E | the user's file: DELETED; prompts=1; overwrite questions=1; messages=2 | expected untouched, 2 prompts (the second one cancelled), no overwrite question | DIFFERENT
+    | fixture: plain.txt: header seed 82870
+    | fixture: plain.txt: zipcrypto keyed with acp = 68 65 73 6c 6f 31 32 33
+    | messages shown: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 58, 02.10.2026, 16:13:26, A | [Static id=1151] With file: | [Static id=184] 2 640, 01.10.2025, 12:00:00 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Error in compressed data. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+Rows and sub-rows: AS EXPECTED 0, DIFFERENT 1; unexpected windows at start: 0
+Test processes left: 0; fixture folder left: False; registry restored identical: True; process exit codes: 0

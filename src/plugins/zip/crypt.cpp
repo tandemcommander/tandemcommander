@@ -53,7 +53,7 @@ __forceinline int update_keys(int c, __UINT32* keys)
 //the given password.
 void init_keys(const char* password, __UINT32* keys)
 {
-    CALL_STACK_MESSAGE2("init_keys(%s, )", password);
+    CALL_STACK_MESSAGE1("init_keys(, )"); // feature 094: no password in the call-stack text
     keys[0] = 305419896L;
     keys[1] = 591751049L;
     keys[2] = 878082192L;
@@ -67,7 +67,7 @@ void init_keys(const char* password, __UINT32* keys)
 int testkey(const char* password, const char* header, char check,
             __UINT32* keys)
 {
-    CALL_STACK_MESSAGE4("testkey(%s, %s, %u, )", password, header, check);
+    CALL_STACK_MESSAGE2("testkey(, , %u, )", check); // feature 094: no password in the call-stack text
     char buf[ENCRYPT_HEADER_SIZE]; //decrypted header
 
     //set keys and save the encrypted header
@@ -87,21 +87,10 @@ int InitKeys(const char* password, const char* header, char check,
              __UINT32* keys)
 {
     //CALL_STACK_MESSAGE4("InitKeys(%s, %s, %c, )", password, header, check );
-    int ret;
-
-    ret = testkey(password, header, check, keys);
-
-#ifdef CHECK_OUT_OEM_PASWORD
-    if (ret)
-    {
-        char buffer[MAX_PASSWORD];
-
-        CharToOem(password, buffer);
-        ret = testkey(buffer, header, check, keys);
-    }
-#endif
-
-    return ret;
+    // feature 094: 'password' is one byte form of the typed text. The OEM form
+    // the old code tried here second is a candidate of its own now
+    // (src/common/salzippwd.h), so that it is tried for AES as well.
+    return testkey(password, header, check, keys);
 }
 
 //decrypt buffer

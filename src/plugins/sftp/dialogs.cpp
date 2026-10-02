@@ -7,8 +7,8 @@
 #include "keyload.h"
 #include "dialogs.h"
 
-char ConnectPlainPassword[512] = "";
-char ConnectPlainPassphrase[512] = "";
+char ConnectPlainPassword[SFTP_SECRET_BUF] = "";
+char ConnectPlainPassphrase[SFTP_SECRET_BUF] = "";
 
 // ---------------------------------------------------------------------------
 // UTF-8 dialog text helpers (feature 010)
@@ -88,6 +88,40 @@ BOOL SFTPThemeDlgMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, INT_PTR*
     return SalamanderGeneral->ThemeHandleCtlColor(msg, wParam, lParam, result);
 }
 
+// feature 094: reads a secret field (password, key passphrase) as UTF-8. Unlike
+// GetDlgItemTextU8 it never falls back to the code-page read: a secret that
+// does not fit gives an empty buffer instead of other bytes than were typed.
+// The fields are limited to SFTP_SECRET_MAX_CHARS and the buffers have
+// SFTP_SECRET_BUF bytes, so "does not fit" needs a text set past the limit.
+static int GetDlgItemSecretU8(HWND hwnd, int id, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return 0;
+    buf[0] = 0;
+    HWND ctrl = GetDlgItem(hwnd, id);
+    if (ctrl == NULL)
+        return 0;
+    int wchars = GetWindowTextLengthW(ctrl);
+    if (wchars <= 0)
+        return 0;
+    int len = 0;
+    WCHAR* w = (WCHAR*)malloc((wchars + 1) * sizeof(WCHAR));
+    if (w != NULL)
+    {
+        if (GetWindowTextW(ctrl, w, wchars + 1) > 0)
+        {
+            len = SplWToU8(w, buf, bufSize);
+            if (len > 0)
+                len--; // exclude the terminator
+            else
+                SecureZeroMemory(buf, bufSize);
+        }
+        SecureZeroMemory(w, (wchars + 1) * sizeof(WCHAR));
+        free(w);
+    }
+    return len;
+}
+
 // ---------------------------------------------------------------------------
 // password / passphrase prompt
 // ---------------------------------------------------------------------------
@@ -112,13 +146,16 @@ static INT_PTR CALLBACK PasswordPromptProc(HWND hwnd, UINT msg, WPARAM wParam, L
         d = (CPasswordPromptData*)lParam;
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)d);
         SetDlgItemTextU8(hwnd, IDT_PROMPTTEXT, d->Prompt); // contains the user name
+        // feature 094: what the field accepts always fits the caller's buffer as UTF-8
+        SendDlgItemMessage(hwnd, IDE_PROMPTPASSWORD, EM_LIMITTEXT,
+                           min(SFTP_SECRET_MAX_CHARS, (d->OutSize - 1) / 4), 0);
         SalamanderGeneral->MultiMonCenterWindow(hwnd, GetParent(hwnd), TRUE);
         SetFocus(GetDlgItem(hwnd, IDE_PROMPTPASSWORD));
         return FALSE;
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK)
         {
-            GetDlgItemTextU8(hwnd, IDE_PROMPTPASSWORD, d->Out, d->OutSize);
+            GetDlgItemSecretU8(hwnd, IDE_PROMPTPASSWORD, d->Out, d->OutSize);
             EndDialog(hwnd, IDOK);
             return TRUE;
         }
@@ -831,8 +868,8 @@ static BOOL ConnectReadFields(HWND hwnd, CSFTPServer* s, const CSFTPServer* sele
 
     if (authMethod == saPassword)
     {
-        char pwd[512];
-        GetDlgItemTextU8(hwnd, IDE_PASSWORD, pwd, sizeof(pwd));
+        char pwd[SFTP_SECRET_BUF];
+        GetDlgItemSecretU8(hwnd, IDE_PASSWORD, pwd, sizeof(pwd));
         // "typed" iff the user actually edited the field (Dirty). When not dirty
         // the field holds either nothing or the fixed placeholder for a stored
         // secret - both mean "keep/reuse the existing blob", never a new password.
@@ -883,8 +920,8 @@ static BOOL ConnectReadFields(HWND hwnd, CSFTPServer* s, const CSFTPServer* sele
     }
     else // key
     {
-        char pass[512];
-        GetDlgItemTextU8(hwnd, IDE_PASSPHRASE, pass, sizeof(pass));
+        char pass[SFTP_SECRET_BUF];
+        GetDlgItemSecretU8(hwnd, IDE_PASSPHRASE, pass, sizeof(pass));
         BOOL passTyped = (pass[0] != 0) && strcmp(pass, SFTP_SECRET_PLACEHOLDER) != 0 &&
                          (dd == NULL || dd->PassDirty);
         if (passTyped)
@@ -1225,6 +1262,9 @@ static INT_PTR CALLBACK ConnectProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         d = (CConnectData*)lParam;
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)d);
         d->Hwnd = hwnd;
+        // feature 094: see SFTP_SECRET_MAX_CHARS
+        SendDlgItemMessage(hwnd, IDE_PASSWORD, EM_LIMITTEXT, SFTP_SECRET_MAX_CHARS, 0);
+        SendDlgItemMessage(hwnd, IDE_PASSPHRASE, EM_LIMITTEXT, SFTP_SECRET_MAX_CHARS, 0);
         // feature 053: quick connect is transient - it must not carry anything over
         // from a previous dialog session. Reset() (not Clear()) is required: Clear()
         // would leave the last port, auth method and save-secret flags behind.

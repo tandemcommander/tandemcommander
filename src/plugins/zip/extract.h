@@ -14,6 +14,34 @@ int ExtractFiles(const char *targetDir, CExtractInfo *info);
 int ExtractSingleFile(char * targetDir, int targetDirLen,
                       CFileInfo * fileInfo, CExtractInfo * info);
 */
+// feature 094: one password typed during the operation, in all its byte forms
+// (src/common/salzippwd.h). The form is chosen per item; 'Preferred' only
+// says which one to try first and is set after an item VERIFIED with it.
+struct CZipPwdEntry
+{
+    CSalZipPwdCandidates Cands;
+    int Preferred; // index into Cands.Forms, -1 = none verified yet
+
+    CZipPwdEntry()
+    {
+        Cands.Count = 0;
+        Preferred = -1;
+    }
+    ~CZipPwdEntry() { SalZipPwdWipe(&Cands); }
+};
+
+// one byte form that passed the classic encryption's one-byte check
+struct CZipPwdPass
+{
+    CZipPwdEntry* Entry;
+    int Form;
+};
+
+#define ZIPPWD_MAX_PASS 16
+// results of CZipUnpack::ClassicChoose besides an index
+#define ZIPPWD_CHOOSE_CANCEL -2 // the user cancelled the verification
+#define ZIPPWD_CHOOSE_NONE -3   // every passing form was decoded, none verifies
+
 class CZipUnpack : public CZipCommon
 {
 public:
@@ -38,7 +66,9 @@ public:
     int OutputError;
     __UINT32 Crc;
     __UINT32 Keys[3]; //decryption keys
-    TIndirectArray2<char> Passwords;
+    TIndirectArray2<CZipPwdEntry> Passwords; // wiped by ~CZipPwdEntry
+    CZipPwdEntry* CurPwdEntry;               // the password and the form the current
+    int CurPwdForm;                          // item is being decrypted with
     bool Encrypted;
     bool AllocateWholeFile;
     bool TestAllocateWholeFile;
@@ -94,6 +124,15 @@ public:
     int ExtractFiles(const char* targetDir);
     int ExtractSingleFile(char* targetDir, int targetDirLen,
                           CFileInfo* fileInfo, BOOL* success, const char* newFileName = NULL);
+    // feature 094: password forms, see extract.cpp
+    BOOL AESTryPassword(CZipPwdEntry* entry, int strength, unsigned char* salt,
+                        WORD pwdVerFile, int* err);
+    void ClassicCollect(CZipPwdEntry* entry, const char* header, char check,
+                        CZipPwdPass* pass, int* passCount);
+    int ClassicVerify(CFileInfo* fileInfo, CLocalFileHeader* localHeader,
+                      const char* header, char check, const char* bytes);
+    int ClassicChoose(CFileInfo* fileInfo, CLocalFileHeader* localHeader,
+                      const char* header, char check, CZipPwdPass* pass, int passCount);
     int SafeRead(void* buffer, unsigned bytesToRead, bool* skipAll);
     // int SafeRead(void * buffer, unsigned bytesToRead,
     //              unsigned * bytesRead, bool * skipAll);

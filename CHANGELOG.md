@@ -53,6 +53,39 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **A ZIP password with characters outside the system code page protects the
+  archive.** The ZIP plugin replaced every character the system code page
+  does not contain with `?` before using the password - without saying so. On
+  a Czech Windows an archive encrypted with a six-letter Cyrillic word was
+  really encrypted with `??????`: any other six-letter Cyrillic word opened
+  it, and other programs refused the word you had typed. Such a password is
+  now used as typed. Passwords made of characters of the system code page
+  (for example Czech letters on a Czech Windows) are used exactly as before,
+  so 7-Zip and earlier versions keep opening new archives. **Archives you
+  made earlier with such a password still open with it** - but they stay as
+  weak as they were; to protect the content with the real password, unpack
+  the archive and pack it again. Self-extracting archives are not changed:
+  their password prompt is a separate small program that still reads the
+  password the old way. With AES encryption a password that needs more than
+  128 bytes is refused (65 or more Cyrillic letters, for example); until now
+  it was accepted and replaced by question marks.
+- **ZIP archives encrypted on other systems open.** An archive whose key was
+  made from the password's UTF-8 form (usual on Linux and macOS) never
+  opened, and an AES-encrypted archive made by a console tool that used the
+  DOS code page did not open either. The typed password is now tried in each
+  of these forms, file by file.
+- **A ZIP password of 255 characters is used whole**; the last character was
+  dropped.
+- **Less damage from a wrong ZIP password.** The classic ZIP encryption lets
+  a wrong password through its quick check about once in 256 tries; the file
+  was then unpacked as garbage over an existing file and deleted after the
+  checksum failed. Where the plugin now tries several forms of a password, it
+  checks the content before it touches the target file.
+- **The ZIP plugin no longer writes the password into the text of a crash
+  report**, and removes passwords from memory when it is done with them.
+- **A very long SFTP password or key passphrase is sent as typed.** From 512
+  bytes on (256 accented letters, for example) it was sent garbled. The
+  password fields now take up to 511 characters, all of them sent correctly.
 - **7z and RAR archives with a non-English letter in the password open, and
   the 7zip plugin encrypts with the password you type.** Since the first
   release the plugin garbled every password containing a character outside

@@ -1621,7 +1621,7 @@ int CZipPack::PackFiles()
                     FileTimeToLocalFileTime(&file.LastWrite, &ft);
                     FileTimeToDosDateTime(&ft, &date, &time);
                     check = time;
-                    CryptHeader(Options.Password, encHeader.header, check, Keys);
+                    CryptHeader(GetPackPassword(), encHeader.header, check, Keys);
                     encHeaderSize = ENCRYPT_HEADER_SIZE;
                 }
                 else
@@ -1631,7 +1631,7 @@ int CZipPack::PackFiles()
 
                     FillBufferWithRandomData((char*)encHeader.AES.salt_pwdVer, salLen);
 
-                    if (SalamanderCrypt->AESInit(&AESContext, strength, Options.Password, strlen(Options.Password),
+                    if (SalamanderCrypt->AESInit(&AESContext, strength, GetPackPassword(), strlen(GetPackPassword()),
                                                  encHeader.AES.salt_pwdVer, (LPWORD)(encHeader.AES.salt_pwdVer + salLen)) == SAL_AES_ERR_GOOD_RETURN)
                     {
                         file.Flag = next->Flag |= GPF_ENCRYPTED;

@@ -37,6 +37,8 @@
 CZipUnpack::CZipUnpack(const char* zipName, const char* zipRoot, CSalamanderForOperationsAbstract* salamander,
                        TIndirectArray2<char>* archiveVolumes) : CZipCommon(zipName, zipRoot, salamander, archiveVolumes), Passwords(8)
 {
+    CurPwdEntry = NULL;
+    CurPwdForm = 0;
     CALL_STACK_MESSAGE3("CZipUnpack::CZipUnpack(%s, %s, )", zipName, zipRoot);
     Heap = HeapCreate(HEAP_NO_SERIALIZE, INITIAL_HEAP_SIZE, MAXIMUM_HEAP_SIZE);
     if (!Heap)
@@ -1160,6 +1162,260 @@ int CZipUnpack::UnBZIP2File(CFileInfo* fileInfo, int* errorID)
     return exitCode;
 }
 
+//
+// feature 094: the byte forms of a typed password (src/common/salzippwd.h,
+// specs/094-plugin-password-encoding/contracts/zip-password-forms.md Z4)
+//
+
+// the n-th candidate of 'entry' in trying order: the form an item already
+// verified with goes first, the others keep their order
+static int PwdOrder(const CZipPwdEntry* entry, int n)
+{
+    if (entry->Preferred < 0 || entry->Preferred >= entry->Cands.Count)
+        return n;
+    if (n == 0)
+        return entry->Preferred;
+    return n <= entry->Preferred ? n - 1 : n;
+}
+
+// AES: tries the byte forms of one typed password against the 2-byte verifier.
+// On TRUE the AES context is ready (AESContextValid) and CurPwdEntry/CurPwdForm
+// say which form it is. On FALSE '*err' (may be NULL) is the message for the
+// user: as before for a single form.
+BOOL CZipUnpack::AESTryPassword(CZipPwdEntry* entry, int strength, unsigned char* salt,
+                                WORD pwdVerFile, int* err)
+{
+    CALL_STACK_MESSAGE1("CZipUnpack::AESTryPassword()");
+    bool mismatch = false, tooLong = false;
+    for (int n = 0; n < entry->Cands.Count; n++)
+    {
+        int form = PwdOrder(entry, n);
+        WORD pwdVer;
+        switch (SalamanderCrypt->AESInit(&AESContext, strength, entry->Cands.Forms[form].Bytes,
+                                         entry->Cands.Forms[form].Len, salt, &pwdVer))
+        {
+        case SAL_AES_ERR_GOOD_RETURN:
+            if (memcmp(&pwdVer, &pwdVerFile, sizeof(pwdVerFile)) == 0)
+            {
+                AESContextValid = TRUE;
+                CurPwdEntry = entry;
+                CurPwdForm = form;
+                return TRUE;
+            }
+            else
+            {
+                unsigned char dummy[AES_MAXHMAC];
+                SalamanderCrypt->AESEnd(&AESContext, dummy, NULL);
+                mismatch = true;
+            }
+            break;
+        case SAL_AES_ERR_PASSWORD_TOO_LONG:
+            tooLong = true;
+            break;
+        default:
+            if (err != NULL)
+                *err = IDS_AESERROR;
+            return FALSE;
+        }
+    }
+    if (err != NULL)
+        *err = (tooLong && !mismatch) ? IDS_PWDTOOLONG : IDS_BADPWD;
+    return FALSE;
+}
+
+// classic encryption: appends every byte form of 'entry' that passes the
+// one-byte check to 'pass'
+void CZipUnpack::ClassicCollect(CZipPwdEntry* entry, const char* header, char check,
+                                CZipPwdPass* pass, int* passCount)
+{
+    __UINT32 keys[3];
+    for (int n = 0; n < entry->Cands.Count && *passCount < ZIPPWD_MAX_PASS; n++)
+    {
+        int form = PwdOrder(entry, n);
+        if (!InitKeys(entry->Cands.Forms[form].Bytes, header, check, keys))
+        {
+            pass[*passCount].Entry = entry;
+            pass[*passCount].Form = form;
+            (*passCount)++;
+        }
+    }
+    SecureZeroMemory(keys, sizeof(keys));
+}
+
+struct CZipPwdVerify
+{
+    CZipUnpack* Unpack;
+    QWORD Left;       // encrypted bytes not read yet
+    __UINT32 Keys[3]; // of the candidate
+    __UINT32 Crc;
+    QWORD SincePump;
+    bool Cancelled;
+    bool IoError;
+};
+
+// reads the next piece of the item into the unpacker's input buffer and
+// decrypts it; 0 = nothing more / cannot read
+static unsigned VerifyRead(CZipPwdVerify* v)
+{
+    CZipUnpack* u = v->Unpack;
+    if (v->Left == 0 || v->Cancelled)
+        return 0;
+    unsigned want = (unsigned)min((QWORD)u->InBufSize, v->Left);
+    unsigned got = 0;
+    if (u->Read(u->ZipFile, u->InputBuffer, want, &got, NULL) || got != want)
+    {
+        v->IoError = true;
+        return 0;
+    }
+    v->Left -= want;
+    Decrypt(u->InputBuffer, want, v->Keys);
+    v->SincePump += want;
+    if (v->SincePump >= 4 * 1024 * 1024) // keep the progress window alive; Cancel works
+    {
+        v->SincePump = 0;
+        if (!u->Salamander->ProgressAddSize(0, TRUE))
+            v->Cancelled = true;
+    }
+    return want;
+}
+
+static void VerifyRefill(CDecompressionObject* decompress)
+{
+    CZipPwdVerify* v = (CZipPwdVerify*)decompress->UserData;
+    unsigned got = VerifyRead(v);
+    if (got == 0)
+    {
+        decompress->Input->Error = IDS_EOF;
+        return;
+    }
+    decompress->Input->NextByte = (__UINT8*)v->Unpack->InputBuffer;
+    decompress->Input->BytesLeft = got;
+}
+
+static int VerifyFlush(unsigned bytes, CDecompressionObject* decompress)
+{
+    CZipPwdVerify* v = (CZipPwdVerify*)decompress->UserData;
+    v->Crc = SalamanderGeneral->UpdateCrc32(decompress->Output->SlideWin, bytes, v->Crc);
+    return v->Cancelled ? 1 : 0;
+}
+
+// classic encryption: does the item's content verify (checksum) with the byte
+// string 'bytes'? Reads and unpacks the item without any output and without
+// the questions of the unpacking path; only a failure of reading the archive
+// shows its ordinary I/O error dialog (CZipCommon::Read). 1 = yes, 0 = no,
+// -1 = cannot tell (a method or an archive this routine does not handle, a
+// read error), -2 = cancelled by the user
+int CZipUnpack::ClassicVerify(CFileInfo* fileInfo, CLocalFileHeader* localHeader,
+                              const char* header, char check, const char* bytes)
+{
+    CALL_STACK_MESSAGE1("CZipUnpack::ClassicVerify()");
+    if (MultiVol ||
+        fileInfo->Method != CM_STORED && fileInfo->Method != CM_DEFLATED && fileInfo->Method != CM_DEFLATE64 ||
+        fileInfo->CompSize < ENCRYPT_HEADER_SIZE ||
+        fileInfo->DataOffset + fileInfo->CompSize > ZipFile->Size)
+        return -1;
+
+    CZipPwdVerify v;
+    v.Unpack = this;
+    v.Left = fileInfo->CompSize - ENCRYPT_HEADER_SIZE;
+    v.Crc = INIT_CRC;
+    v.SincePump = 0;
+    v.Cancelled = false;
+    v.IoError = false;
+    if (InitKeys(bytes, header, check, v.Keys))
+        return 0;
+    ZipFile->FilePointer = fileInfo->DataOffset + ENCRYPT_HEADER_SIZE;
+
+    int ret;
+    if (fileInfo->Method == CM_STORED)
+    {
+        unsigned got;
+        while ((got = VerifyRead(&v)) != 0)
+            v.Crc = SalamanderGeneral->UpdateCrc32(InputBuffer, got, v.Crc);
+        ret = 1;
+    }
+    else
+    {
+        CDecompressionObject decompress;
+        COutputManager output;
+        CInputManager input;
+        input.NextByte = (__UINT8*)InputBuffer;
+        input.BytesLeft = 0;
+        input.Error = 0;
+        input.Refill = VerifyRefill;
+        output.SlideWin = (__UINT8*)SlideWindow;
+        output.WinSize = WinSize;
+        output.Flush = VerifyFlush;
+        decompress.Input = &input;
+        decompress.Output = &output;
+        decompress.UserData = &v;
+        decompress.HeapInfo = (void*)Heap;
+        decompress.fixed_tl64 = (huft*)fixed_tl64;
+        decompress.fixed_td64 = (huft*)fixed_td64;
+        decompress.fixed_bl64 = fixed_bl64;
+        decompress.fixed_bd64 = fixed_bd64;
+        decompress.fixed_tl32 = (huft*)fixed_tl32;
+        decompress.fixed_td32 = (huft*)fixed_td32;
+        decompress.fixed_bl32 = fixed_bl32;
+        decompress.fixed_bd32 = fixed_bd32;
+        switch (Inflate(&decompress, fileInfo->Method == CM_DEFLATE64))
+        {
+        case 0:
+            ret = 1;
+            break;
+        case 3: // low memory
+            ret = -1;
+            break;
+        default: // bad data: the usual end of a wrong key
+            ret = 0;
+            break;
+        }
+        fixed_tl64 = decompress.fixed_tl64;
+        fixed_td64 = decompress.fixed_td64;
+        fixed_bl64 = decompress.fixed_bl64;
+        fixed_bd64 = decompress.fixed_bd64;
+        fixed_tl32 = decompress.fixed_tl32;
+        fixed_td32 = decompress.fixed_td32;
+        fixed_bl32 = decompress.fixed_bl32;
+        fixed_bd32 = decompress.fixed_bd32;
+    }
+    // the same test as after the real unpacking (see ExtractSingleFile)
+    if (ret == 1 && v.Crc != fileInfo->Crc &&
+        ((fileInfo->Flag & GPF_DATADESCR) || v.Crc != localHeader->Crc))
+        ret = 0;
+    if (v.IoError)
+        ret = -1;
+    if (v.Cancelled)
+        ret = -2;
+    SecureZeroMemory(v.Keys, sizeof(v.Keys));
+    return ret;
+}
+
+// classic encryption, more than one byte string passed the check: the index
+// of the first one the content verifies with; 0 (the first, as before this
+// feature) when it cannot be told; ZIPPWD_CHOOSE_NONE when the content was
+// decoded with every one of them and verifies with none (a wrong password);
+// ZIPPWD_CHOOSE_CANCEL when the user cancelled
+int CZipUnpack::ClassicChoose(CFileInfo* fileInfo, CLocalFileHeader* localHeader,
+                              const char* header, char check, CZipPwdPass* pass, int passCount)
+{
+    CALL_STACK_MESSAGE2("CZipUnpack::ClassicChoose(%d)", passCount);
+    for (int i = 0; i < passCount; i++)
+    {
+        switch (ClassicVerify(fileInfo, localHeader, header, check,
+                              pass[i].Entry->Cands.Forms[pass[i].Form].Bytes))
+        {
+        case 1:
+            return i;
+        case -1:
+            return 0;
+        case -2:
+            return ZIPPWD_CHOOSE_CANCEL;
+        }
+    }
+    return ZIPPWD_CHOOSE_NONE;
+}
+
 int CZipUnpack::ExtractSingleFile(char* targetDir, int targetDirLen,
                                   CFileInfo* fileInfo, BOOL* success, const char* newFileName)
 {
@@ -1175,6 +1431,7 @@ int CZipUnpack::ExtractSingleFile(char* targetDir, int targetDirLen,
     //bool                reopenZipFile;
     int result;
     bool skip, bCheckCRC = true;
+    bool verifyCancelled = false; // feature 094: Cancel while a password form was being verified
     char errBuf[128];
     CAESExtraField aesExtraField;
     /*
@@ -1185,6 +1442,8 @@ int CZipUnpack::ExtractSingleFile(char* targetDir, int targetDirLen,
           ", file attr:" << fileInfo->FileAttr);
 */
     AESContextValid = FALSE; // initialization
+    CurPwdEntry = NULL;
+    CurPwdForm = 0;
     if (success)
         *success = FALSE;
     localHeader = (CLocalFileHeader*)malloc(MAX_HEADER_SIZE);
@@ -1324,9 +1583,8 @@ int CZipUnpack::ExtractSingleFile(char* targetDir, int targetDirLen,
                                         ((AES_VERSION_1 != aesExtraField.Version) && (AES_VERSION_2 != aesExtraField.Version)))
                                         TRACE_E("POZOR: soubor '" << FileNameDisp << "' je zakryptovan neznamou verzi AES, mozne komplikace");
 
-                                    char pwd[MAX_PASSWORD];
+                                    WCHAR pwd[MAX_PASSWORD]; // feature 094: the typed text
                                     unsigned char salt[SAL_AES_MAX_SALT_LENGTH];
-                                    WORD pwdVer;
                                     WORD pwdVerFile;
                                     bool repeat;
 
@@ -1339,68 +1597,33 @@ int CZipUnpack::ExtractSingleFile(char* targetDir, int targetDirLen,
                                         SafeRead(&pwdVerFile, sizeof(pwdVerFile), NULL);
                                     if (!errorID)
                                     {
-                                        // try the cached passwords
+                                        // try the passwords typed earlier in this operation, every byte form of each
                                         int i;
-                                        for (i = 0; i < Passwords.Count; i++)
-                                        {
-                                            if (SalamanderCrypt->AESInit(&AESContext, aesExtraField.Strength,
-                                                                         Passwords[i], strlen(Passwords[i]),
-                                                                         salt, &pwdVer) == SAL_AES_ERR_GOOD_RETURN)
-                                            {
-                                                if (memcmp(&pwdVer, &pwdVerFile, sizeof(pwdVerFile)) == 0)
-                                                {
-                                                    fileInfo->DataOffset +=
-                                                        SAL_AES_SALT_LENGTH(aesExtraField.Strength) + sizeof(pwdVer);
-                                                    Encrypted = true;
-                                                    AESContextValid = TRUE;
-                                                    fileInfo->Method = aesExtraField.Method;
-                                                    break;
-                                                }
-                                                else
-                                                {
-                                                    unsigned char dummy[AES_MAXHMAC];
-                                                    SalamanderCrypt->AESEnd(&AESContext, dummy, NULL);
-                                                }
-                                            }
-                                        }
-                                        if (!AESContextValid /*i >= Passwords.Count*/) // the password was not found in the cache
+                                        for (i = 0; i < Passwords.Count && !AESContextValid; i++)
+                                            AESTryPassword(Passwords[i], aesExtraField.Strength, salt, pwdVerFile, NULL);
+                                        if (!AESContextValid) // the password was not found in the cache
                                             do
                                             {
                                                 repeat = false;
+                                                pwd[0] = 0;
                                                 switch (PasswordDialog(SalamanderGeneral->GetMsgBoxParent(),
                                                                        FileNameDisp, pwd))
                                                 {
                                                 case IDOK:
                                                 {
-                                                    int err = 0;
-                                                    switch (SalamanderCrypt->AESInit(&AESContext, aesExtraField.Strength,
-                                                                                     pwd, strlen(pwd), salt, &pwdVer))
+                                                    int err = IDS_LOWMEM;
+                                                    CZipPwdEntry* entry = new CZipPwdEntry;
+                                                    if (entry != NULL)
                                                     {
-                                                    case SAL_AES_ERR_GOOD_RETURN:
-                                                        if (memcmp(&pwdVer, &pwdVerFile, sizeof(pwdVerFile)) == 0)
+                                                        SalZipPwdCandidates(pwd, &entry->Cands);
+                                                        if (AESTryPassword(entry, aesExtraField.Strength, salt, pwdVerFile, &err))
                                                         {
-                                                            Passwords.Add(_strdup(pwd));
-                                                            fileInfo->DataOffset +=
-                                                                SAL_AES_SALT_LENGTH(aesExtraField.Strength) + sizeof(pwdVer);
-                                                            Encrypted = true;
-                                                            AESContextValid = TRUE;
-                                                            fileInfo->Method = aesExtraField.Method;
+                                                            Passwords.Add(entry);
+                                                            err = 0;
                                                         }
                                                         else
-                                                        {
-                                                            unsigned char dummy[AES_MAXHMAC];
-                                                            SalamanderCrypt->AESEnd(&AESContext, dummy, NULL);
-                                                            err = IDS_BADPWD;
-                                                        }
-                                                        break;
-                                                    case SAL_AES_ERR_PASSWORD_TOO_LONG:
-                                                        err = IDS_PWDTOOLONG;
-                                                        break;
-                                                    default:
-                                                        err = IDS_AESERROR;
-                                                        break;
+                                                            delete entry;
                                                     }
-
                                                     if (err)
                                                     {
                                                         SalamanderGeneral->ShowMessageBox(LoadStr(err),
@@ -1420,67 +1643,125 @@ int CZipUnpack::ExtractSingleFile(char* targetDir, int targetDirLen,
                                                     errorID = IDS_NODISPLAY;
                                                     break;
                                                 }
+                                                SecureZeroMemory(pwd, sizeof(pwd));
                                             } while (repeat);
+                                        if (AESContextValid)
+                                        {
+                                            fileInfo->DataOffset +=
+                                                SAL_AES_SALT_LENGTH(aesExtraField.Strength) + SAL_AES_PWD_VER_LENGTH;
+                                            Encrypted = true;
+                                            fileInfo->Method = aesExtraField.Method;
+                                        }
                                     }
                                 }
                             }
                             else
                             {
-                                char pwd[MAX_PASSWORD];
+                                WCHAR pwd[MAX_PASSWORD]; // feature 094: the typed text
                                 char check;
                                 char header[ENCRYPT_HEADER_SIZE];
-                                bool repeat;
 
                                 ZipFile->FilePointer = fileInfo->DataOffset;
                                 errorID = SafeRead(header, ENCRYPT_HEADER_SIZE, NULL);
                                 if (!errorID)
                                 {
                                     check = fileInfo->Flag & GPF_DATADESCR ? localHeader->Time >> 8 : fileInfo->Crc >> 24;
-                                    bool bFound = false;
+                                    // feature 094: every byte form of every password typed in this
+                                    // operation that passes the one-byte check
+                                    CZipPwdPass pass[ZIPPWD_MAX_PASS];
+                                    int passCount = 0;
+                                    int use = -1;                   // index into 'pass' of the form to decrypt with
+                                    CZipPwdEntry* typedEntry = NULL; // the password typed for this item, not in the cache yet
                                     int i;
                                     for (i = 0; i < Passwords.Count; i++)
-                                        if (!InitKeys(Passwords[i], header, check, Keys))
+                                        ClassicCollect(Passwords[i], header, check, pass, &passCount);
+                                    for (;;)
+                                    {
+                                        if (passCount > 0)
                                         {
-                                            fileInfo->DataOffset += ENCRYPT_HEADER_SIZE;
-                                            Encrypted = bFound = true;
+                                            // the check lets a wrong byte string through 1 time in 256: when
+                                            // more than one passed, find the one the content verifies with
+                                            // BEFORE anything is written (no output file, no overwrite question)
+                                            use = passCount > 1 ? ClassicChoose(fileInfo, localHeader, header, check, pass, passCount) : 0;
+                                            if (use != ZIPPWD_CHOOSE_NONE)
+                                                break; // a form to use, or cancelled
+                                            // the content was decoded with every form that passed and verifies
+                                            // with none: a wrong password, told as such before the target file
+                                            // is touched (with ONE passing form there is no such knowledge and
+                                            // the old path runs: unpack, checksum error)
+                                            use = -1;
+                                            passCount = 0;
+                                            if (typedEntry != NULL)
+                                            {
+                                                delete typedEntry;
+                                                typedEntry = NULL;
+                                                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_BADPWD), LoadStr(IDS_BADPWDTITLE), MSGBOX_ERROR);
+                                            }
+                                        }
+                                        // pwd not found in cache
+                                        bool again = false;
+                                        pwd[0] = 0;
+                                        switch (PasswordDialog(SalamanderGeneral->GetMsgBoxParent(), FileNameDisp, pwd))
+                                        {
+                                        case IDOK:
+                                        {
+                                            typedEntry = new CZipPwdEntry;
+                                            if (typedEntry != NULL)
+                                            {
+                                                SalZipPwdCandidates(pwd, &typedEntry->Cands);
+                                                ClassicCollect(typedEntry, header, check, pass, &passCount);
+                                            }
+                                            if (passCount == 0)
+                                            {
+                                                if (typedEntry != NULL)
+                                                    delete typedEntry;
+                                                typedEntry = NULL;
+                                                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_BADPWD), LoadStr(IDS_BADPWDTITLE), MSGBOX_ERROR);
+                                            }
+                                            again = true;
                                             break;
                                         }
-                                    //                    if (i >= Passwords.Count)// pwd not found in cache
-                                    if (!bFound) // pwd not found in cache
-                                        do
+                                        case IDC_SKIPALL:
+                                            SkipAllEncrypted = true;
+                                        case IDC_SKIP:
+                                            skip = true;
+                                            break;
+                                        case IDCANCEL:
+                                        default:
+                                            errorID = IDS_NODISPLAY;
+                                            break;
+                                        }
+                                        SecureZeroMemory(pwd, sizeof(pwd));
+                                        if (!again)
+                                            break;
+                                    }
+                                    if (use >= 0)
+                                    {
+                                        if (typedEntry != NULL)
                                         {
-                                            repeat = false;
-                                            switch (PasswordDialog(SalamanderGeneral->GetMsgBoxParent(), FileNameDisp, pwd))
-                                            {
-                                            case IDOK:
-                                                if (InitKeys(pwd, header, check, Keys))
-                                                {
-                                                    SalamanderGeneral->ShowMessageBox(LoadStr(IDS_BADPWD), LoadStr(IDS_BADPWDTITLE), MSGBOX_ERROR);
-                                                    repeat = true;
-                                                }
-                                                else
-                                                {
-                                                    Passwords.Add(_strdup(pwd));
-                                                    fileInfo->DataOffset += ENCRYPT_HEADER_SIZE;
-                                                    Encrypted = true;
-                                                }
-                                                break;
-                                            case IDC_SKIPALL:
-                                                SkipAllEncrypted = true;
-                                            case IDC_SKIP:
-                                                skip = true;
-                                                break;
-                                            case IDCANCEL:
-                                            default:
-                                                errorID = IDS_NODISPLAY;
-                                                break;
-                                            }
-                                        } while (repeat);
+                                            Passwords.Add(typedEntry);
+                                            typedEntry = NULL;
+                                        }
+                                        InitKeys(pass[use].Entry->Cands.Forms[pass[use].Form].Bytes, header, check, Keys);
+                                        CurPwdEntry = pass[use].Entry;
+                                        CurPwdForm = pass[use].Form;
+                                        fileInfo->DataOffset += ENCRYPT_HEADER_SIZE;
+                                        Encrypted = true;
+                                    }
+                                    else if (use == ZIPPWD_CHOOSE_CANCEL) // cancelled by the user while verifying
+                                    {
+                                        verifyCancelled = true;
+                                        skip = true;
+                                    }
+                                    if (typedEntry != NULL)
+                                        delete typedEntry;
                                 }
                             }
                         }
                         if (skip)
                             UserBreak = !ProgressAddSize(fileInfo->Size);
+                        if (verifyCancelled)
+                            UserBreak = true;
                     }
                     else
                         Encrypted = false;
@@ -1622,6 +1903,11 @@ int CZipUnpack::ExtractSingleFile(char* targetDir, int targetDirLen,
                                     }
                                     else
                                     {
+                                        // feature 094: the item verified (checksum; for AES the
+                                        // authentication code) - only now is its byte form remembered
+                                        // (an empty item "verifies" with any key and says nothing)
+                                        if (Encrypted && CurPwdEntry != NULL && fileInfo->Size != 0)
+                                            CurPwdEntry->Preferred = CurPwdForm;
                                         if (success)
                                         {
                                             *success = TRUE;

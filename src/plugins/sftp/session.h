@@ -61,9 +61,9 @@ struct CSFTPConnectParams
     int Port;
     char User[256];
     int AuthMethod;     // CSFTPAuthMethod
-    char Password[512]; // decrypted, in-memory only
+    char Password[SFTP_SECRET_BUF]; // decrypted, in-memory only
     char KeyFile[MAX_PATH];
-    char Passphrase[512]; // decrypted, in-memory only
+    char Passphrase[SFTP_SECRET_BUF]; // decrypted, in-memory only
     BOOL UseCompression;
     int ConnectTimeoutSec;
     int OperationTimeoutSec;

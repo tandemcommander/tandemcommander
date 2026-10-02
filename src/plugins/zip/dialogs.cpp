@@ -707,22 +707,27 @@ BOOL CPackDialog::OnOK(WORD wNotifyCode, WORD wID, HWND hwndCtl)
             return TRUE;
         }
 
-        char pwd1[MAX_PASSWORD];
-        char pwd2[MAX_PASSWORD];
+        // feature 094: the typed text is read wide and kept as UTF-16 (the code-page
+        // read turned every character outside the code page into '?' and dropped
+        // the 255th character); the byte form is derived where the archive is keyed
+        WCHAR pwd1[MAX_PASSWORD];
+        WCHAR pwd2[MAX_PASSWORD];
+        int pwdErr = 0;
 
         PackOptions->Encrypt = true;
-        if (GetDlgItemText(Dlg, IDC_PASSWORD1, pwd1, MAX_PASSWORD - 1) > 0 &&
-            GetDlgItemText(Dlg, IDC_PASSWORD2, pwd2, MAX_PASSWORD - 1) > 0)
-            if (!lstrcmp(pwd1, pwd2))
-                lstrcpy(PackOptions->Password, pwd1);
+        if (GetDlgItemTextW(Dlg, IDC_PASSWORD1, pwd1, MAX_PASSWORD) > 0 &&
+            GetDlgItemTextW(Dlg, IDC_PASSWORD2, pwd2, MAX_PASSWORD) > 0)
+            if (!wcscmp(pwd1, pwd2))
+                wcscpy(PackOptions->Password, pwd1);
             else
-            {
-                SalamanderGeneral->SalMessageBox(Dlg, LoadStr(IDS_PWDDONTMATCH), LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);
-                return TRUE;
-            }
+                pwdErr = IDS_PWDDONTMATCH;
         else
+            pwdErr = IDS_PWDTOOSHORT;
+        SecureZeroMemory(pwd1, sizeof(pwd1));
+        SecureZeroMemory(pwd2, sizeof(pwd2));
+        if (pwdErr)
         {
-            SalamanderGeneral->SalMessageBox(Dlg, LoadStr(IDS_PWDTOOSHORT), LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);
+            SalamanderGeneral->SalMessageBox(Dlg, LoadStr(pwdErr), LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);
             return TRUE;
         }
         if (SendDlgItemMessage(Dlg, IDC_ENC_ZIP20, BM_GETCHECK, 0, 0) == BST_CHECKED)
@@ -1141,13 +1146,14 @@ BOOL CPasswordDialog::OnInit(WPARAM wParam, LPARAM lParam)
 BOOL CPasswordDialog::OnOK(WORD wNotifyCode, WORD wID, HWND hwndCtl)
 {
     CALL_STACK_MESSAGE3("CPasswordDialog::OnOK(0x%X, 0x%X, )", wNotifyCode, wID);
-    if (GetDlgItemText(Dlg, IDC_PASSWORD, Password, MAX_PASSWORD - 1) == 0)
+    // feature 094: read wide, all MAX_PASSWORD - 1 characters the field accepts
+    if (GetDlgItemTextW(Dlg, IDC_PASSWORD, Password, MAX_PASSWORD) == 0)
         *Password = 0;
     EndDialog(Dlg, IDOK);
     return TRUE;
 }
 
-INT_PTR PasswordDialog(HWND parent, const char* file, char* password)
+INT_PTR PasswordDialog(HWND parent, const char* file, WCHAR* password)
 {
     CALL_STACK_MESSAGE2("PasswordDialog(, %s, )", file);
     CPasswordDialog dlg(parent, file, password);

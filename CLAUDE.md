@@ -1067,8 +1067,8 @@ plugin architecture preservation, UI consistency.
     failed block are not errors. Three reviews (REJECT: one form per archive
     broke mixed archives; REJECT: a successful extraction counted as failed;
     ACCEPT). Also fixed: a wrong password on a content-encrypted archive did
-    nothing and said nothing. **The ZIP and SFTP prompts use the same
-    `EditLine` and were not examined.**
+    nothing and said nothing. The ZIP and SFTP prompts were examined by
+    feature 094 (they do not use that `EditLine`).
   - **GUI probes run on a hidden desktop**: `tools/run_on_hidden_desktop.ps1`
     (CreateDesktop, no admin) - the maintainer works on the machine. Limits:
     no real keyboard; a menu popup may close by itself there (probe artefact,
@@ -1077,3 +1077,37 @@ plugin architecture preservation, UI consistency.
   - saltests 12,828 -> 12,973. Interface stays 107. A real-keyboard pass is
     owed (`quickstart.md`, menus first). Records:
     `specs/093-unicode-dialogs/fix-log.md`.
+- 094-plugin-password-encoding: **ZIP and SFTP passwords are the text that
+  was typed.** Measured first (`research.md`): neither plug-in had the 7zip
+  plug-in's defect - passwords inside the system code page always worked and
+  7-Zip opens what the ZIP plug-in writes.
+  - **ZIP, the real defect**: the ANSI plug-in read the Unicode field with
+    `GetDlgItemTextA`, so a character outside the code page became `?`
+    (a Cyrillic password on a Czech Windows = `??????`, opened by any other
+    word of that length); UTF-8-keyed archives never opened, OEM-keyed AES
+    ones neither; 255 characters were cut to 254; the password was in the
+    call-stack text of a crash report.
+  - **Forms** (`src/common/salzippwd.h`, header-only, contract
+    `specs/094-plugin-password-encoding/contracts/zip-password-forms.md`):
+    the typed text is UTF-16; **packing** uses code-page bytes when the text
+    is representable (strict, no best fit) - unchanged, what 7-Zip opens -
+    else UTF-8; **unpacking** tries code page, OEM, UTF-8 and `oldread` (what
+    the old read produced, incl. the 254-byte cut) **per item**. Verified
+    against the old read on a real edit control: 486,246 cases, 0
+    mismatches.
+  - **Classic encryption: verify first, write once.** Its check lets a wrong
+    key through 1 time in 256, so when more than one form passes, each is
+    verified by decoding the item without output (`ClassicVerify`) before the
+    target file is touched; none verifies = wrong password. One passing form
+    = the old path, unchanged.
+  - **Self-extracting archives keep the old read** (the stub is a separate
+    unchanged program with its own prompt).
+  - **SFTP**: secrets of 512+ UTF-8 bytes were re-read through the code page;
+    fields now take 511 characters, the whole buffer chain is 2048 bytes
+    (`SFTP_SECRET_BUF`), no code-page fallback. FTP: not changed (UTF-8
+    bytes verbatim; long-password edge recorded).
+  - No new strings; interface stays 107; `PRIVACY.md` updated (crash report).
+    saltests 12,973 -> 13,032. Probes on the hidden desktop: ZIP 56 of 57
+    rows (previous build 33; the 57th, a self-extractor row, cannot be driven
+    in a Debug tree), SFTP 11 rows. Independent review ACCEPT. Records:
+    `specs/094-plugin-password-encoding/fix-log.md`.

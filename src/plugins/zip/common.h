@@ -18,6 +18,8 @@
 // UTF-8 and may be a long path (up to 32767 UTF-16 units); see
 // doc\plugin-vnext-migration.md
 #define U8_MAX_PATH (3 * 32767 + 1) // full path in UTF-8
+
+#include "../../common/salzippwd.h" // feature 094: the byte forms of a typed password
 #define U8_MAX_NAME (3 * MAX_PATH)  // single name component in UTF-8
 #define MAX_LONG_PATH_CHARS 32767   // OS limit of a path in UTF-16 units
 
@@ -131,7 +133,7 @@ struct CExtendedOptions
     __INT64 VolumeSize; // -1 means automatic size
     bool SeqNames;
     bool Encrypt;
-    char Password[MAX_PASSWORD];
+    WCHAR Password[MAX_PASSWORD]; // feature 094: the typed text; byte form: CZipPack::PackPassword
     //for self extractor
     CSfxSettings SfxSettings;
     char About[SE_MAX_ABOUT];
@@ -149,13 +151,17 @@ struct CExtendedOptions
         Icons = NULL;
         IconsCount = 0;
     }
+    ~CExtendedOptions()
+    {
+        SecureZeroMemory(Password, sizeof(Password)); // feature 094
+    }
     CExtendedOptions& operator=(const CExtendedOptions& origin)
     {
         Action = origin.Action;
         VolumeSize = origin.VolumeSize;
         SeqNames = origin.SeqNames;
         Encrypt = origin.Encrypt;
-        strcpy(Password, origin.Password);
+        wcscpy(Password, origin.Password);
         SfxSettings = origin.SfxSettings;
         strcpy(About, origin.About);
         Icons = origin.Icons;
