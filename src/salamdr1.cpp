@@ -3530,6 +3530,7 @@ BOOL RunningInCompatibilityMode()
 void GetCommandLineParamExpandEnvVars(const char* argv, char* target, DWORD targetSize, BOOL hotpathForJumplist)
 {
     char curDir[MAX_PATH];
+    BOOL tooLong = FALSE; // feature 097: a path that does not fit 'target' is refused, never cut
     if (hotpathForJumplist)
     {
         BOOL ret = ExpandHotPath(NULL, argv, target, targetSize, FALSE); // pokud neni syntax cesty OK, vyskoci TRACE_E, coz nas netrapi
@@ -3537,7 +3538,10 @@ void GetCommandLineParamExpandEnvVars(const char* argv, char* target, DWORD targ
         {
             TRACE_E("ExpandHotPath failed.");
             // pokud expanze selze, pouzijeme retezec bez expanze
-            lstrcpyn(target, argv, targetSize);
+            if (strlen(argv) >= targetSize)
+                tooLong = TRUE;
+            else
+                lstrcpyn(target, argv, targetSize);
         }
     }
     else
@@ -3554,22 +3558,44 @@ void GetCommandLineParamExpandEnvVars(const char* argv, char* target, DWORD targ
                 WCHAR* expW = (WCHAR*)malloc(needed * sizeof(WCHAR));
                 if (expW != NULL)
                 {
-                    if (ExpandEnvironmentStringsW(argvW, expW, needed) > 0 &&
-                        SalWToU8(expW, -1, target, targetSize) != 0)
+                    if (ExpandEnvironmentStringsW(argvW, expW, needed) > 0)
                     {
-                        expanded = TRUE;
+                        char* expU8 = SalWToU8Alloc(expW, -1);
+                        if (expU8 != NULL)
+                        {
+                            size_t expLen = strlen(expU8);
+                            if (expLen < targetSize)
+                            {
+                                memcpy(target, expU8, expLen + 1);
+                                expanded = TRUE;
+                            }
+                            else
+                                tooLong = TRUE;
+                            free(expU8);
+                        }
                     }
                     free(expW);
                 }
             }
             free(argvW);
         }
-        if (!expanded)
+        if (!expanded && !tooLong)
         {
             TRACE_E("ExpandEnvironmentStrings failed.");
             // pokud expanze selze, pouzijeme retezec bez expanze
-            lstrcpyn(target, argv, targetSize);
+            if (strlen(argv) >= targetSize)
+                tooLong = TRUE;
+            else
+                lstrcpyn(target, argv, targetSize);
         }
+    }
+    if (tooLong)
+    {
+        // the cut path could name another existing folder or archive: the parameter is not
+        // applied (an empty path = "do not set") and the user is told why
+        target[0] = 0;
+        SalMessageBox(NULL, LoadStr(IDS_TOOLONGPATH), SALAMANDER_TEXT_VERSION, MB_OK | MB_ICONEXCLAMATION);
+        return;
     }
     if (!IsPluginFSPath(target))
     {

@@ -2309,7 +2309,11 @@ void CFilesWindow::SetUnescapedHotPath(int index)
     if (index < 0 || index >= HOT_PATHS_COUNT)
         return;
     char path[2 * MAX_PATH];
-    GetGeneralPath(path, 2 * MAX_PATH, TRUE);
+    if (!GetGeneralPath(path, 2 * MAX_PATH, TRUE) && strlen(path) == 2 * MAX_PATH - 1) // feature 097: a cut path is never stored
+    {
+        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        return;
+    }
     MainWindow->SetUnescapedHotPath(index, path);
 }
 
@@ -2320,7 +2324,11 @@ BOOL CFilesWindow::SetUnescapedHotPathToEmptyPos()
     if (index != -1)
     {
         char path[2 * MAX_PATH];
-        GetGeneralPath(path, 2 * MAX_PATH, TRUE);
+        if (!GetGeneralPath(path, 2 * MAX_PATH, TRUE) && strlen(path) == 2 * MAX_PATH - 1) // feature 097: a cut path is never stored
+        {
+            SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            return FALSE;
+        }
         MainWindow->SetUnescapedHotPath(index, path);
         return TRUE;
     }

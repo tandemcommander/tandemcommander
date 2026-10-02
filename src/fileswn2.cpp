@@ -2076,7 +2076,24 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                          archive, archivePath, suggestedTopIndex, suggestedFocusName,
                          forceUpdate, refreshListBox, isRefresh, canFocusFileName, isHistory);
 
-    // we make backup copies
+    // feature 097: a path that does not fit the copies below is refused, never cut - the cut
+    // name could be another existing archive (or folder in the archive); nothing is closed or
+    // changed, the panel stays where it is
+    if (strlen(archive) >= MAX_PATH || strlen(archivePath) >= MAX_PATH)
+    {
+        if (noChange != NULL)
+            *noChange = TRUE;
+        if (!isRefresh) // a refresh must not repeat the message
+        {
+            SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORCHANGINGDIR),
+                          MB_OK | MB_ICONEXCLAMATION);
+        }
+        if (failReason != NULL)
+            *failReason = CHPPFR_INVALIDPATH;
+        return FALSE;
+    }
+
+    // we make backup copies (they fit whole: see the check above)
     char backup1[MAX_PATH];
     lstrcpyn(backup1, archive, MAX_PATH);
     char backup2[MAX_PATH];
@@ -2085,8 +2102,15 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
     char backup3[MAX_PATH];
     if (suggestedFocusName != NULL)
     {
-        lstrcpyn(backup3, suggestedFocusName, MAX_PATH);
-        suggestedFocusName = backup3;
+        // feature 097: a name that does not fit cannot be in an archive listing (names there
+        // are limited to MAX_PATH - 5 bytes); focus nothing instead of a cut name
+        if (strlen(suggestedFocusName) >= MAX_PATH)
+            suggestedFocusName = NULL;
+        else
+        {
+            lstrcpyn(backup3, suggestedFocusName, MAX_PATH);
+            suggestedFocusName = backup3;
+        }
     }
 
     // restore panel state info (top-index + focused-name) before potentially closing this path

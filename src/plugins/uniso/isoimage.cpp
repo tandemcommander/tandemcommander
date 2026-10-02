@@ -832,8 +832,18 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
     {
         char errStr[MAX_PATH];
 
-        sprintf(errStr, LoadStr(IDS_CANT_OPEN_FILE), fileName);
-        return Error(errStr, GetLastError(), quiet);
+        DWORD openErr = GetLastError(); // before LoadStr can change it
+        // feature 097: bounded - 'fileName' may be longer than the buffer
+        if (_snprintf_s(errStr, _TRUNCATE, LoadStr(IDS_CANT_OPEN_FILE), fileName) < 0)
+        { // cut: drop a UTF-8 sequence the cut may have torn (only here, the text is cut anyway)
+            int n = (int)strlen(errStr);
+            while (n > 0 && ((unsigned char)errStr[n - 1] & 0xC0) == 0x80)
+                n--;
+            if (n > 0 && (unsigned char)errStr[n - 1] >= 0xC0)
+                n--;
+            errStr[n] = 0;
+        }
+        return Error(errStr, openErr, quiet);
     }
     DWORD l = 0;
     DWORD dwBytesRead;
