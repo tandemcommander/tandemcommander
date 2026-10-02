@@ -1,0 +1,65 @@
+=== zip_gui_probe: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-02 10:02:33)  [Debug-HEAD] ===
+plug-in: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\zip\zip.spl (built 2026-10-01 18:05:41); system code page 1250
+registry export before: SHA-256 F5305AEA4A533D939417C4FA2978D09BA56654DF17C3E82DB7C473ACD1987DC1
+typed-r = heslo-\u0159; typed-c = \u043F\u0430\u0440\u043E\u043B\u044C; other-c = \u0434\u0440\u0443\u0433\u043E\u0439; mixed = ab\u0416cd
+
+   process exit code: 0
+U1  | unpack zipcrypto | archive key bytes: acp of heslo123 = 68 65 73 6c 6f 31 32 33 | typed: heslo123 | EXTRACTED | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+U2  | unpack zipcrypto | archive key bytes: acp of heslo-\u0159 = 68 65 73 6c 6f 2d f8 | typed: heslo-\u0159 | EXTRACTED | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+U3  | unpack zipcrypto | archive key bytes: oem of heslo-\u0159 = 68 65 73 6c 6f 2d fd | typed: heslo-\u0159 | EXTRACTED | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+U4  | unpack zipcrypto | archive key bytes: utf8 of heslo-\u0159 = 68 65 73 6c 6f 2d c5 99 | typed: heslo-\u0159 | nothing extracted | prompts=2; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=2
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
+   process exit code: 0
+U5  | unpack aes256    | archive key bytes: acp of heslo123 = 68 65 73 6c 6f 31 32 33 | typed: heslo123 | EXTRACTED | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+U6  | unpack aes256    | archive key bytes: acp of heslo-\u0159 = 68 65 73 6c 6f 2d f8 | typed: heslo-\u0159 | EXTRACTED | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+U7  | unpack aes256    | archive key bytes: oem of heslo-\u0159 = 68 65 73 6c 6f 2d fd | typed: heslo-\u0159 | nothing extracted | prompts=2; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=2
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
+   process exit code: 0
+U8  | unpack aes256    | archive key bytes: utf8 of heslo-\u0159 = 68 65 73 6c 6f 2d c5 99 | typed: heslo-\u0159 | nothing extracted | prompts=2; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=2
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
+   process exit code: 0
+U9  | unpack zipcrypto | archive key bytes: acp of \u043F\u0430\u0440\u043E\u043B\u044C = 3f 3f 3f 3f 3f 3f | typed: \u043F\u0430\u0440\u043E\u043B\u044C | EXTRACTED | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+U10 | unpack zipcrypto | archive key bytes: acp of \u043F\u0430\u0440\u043E\u043B\u044C = 3f 3f 3f 3f 3f 3f | typed: \u0434\u0440\u0443\u0433\u043E\u0439 | EXTRACTED | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+U11 | unpack aes256    | archive key bytes: acp of \u043F\u0430\u0440\u043E\u043B\u044C = 3f 3f 3f 3f 3f 3f | typed: \u0434\u0440\u0443\u0433\u043E\u0439 | EXTRACTED | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+U12 | unpack zipcrypto | archive key bytes: utf8 of \u043F\u0430\u0440\u043E\u043B\u044C = d0 bf d0 b0 d1 80 d0 be d0 bb d1 8c | typed: \u043F\u0430\u0440\u043E\u043B\u044C | nothing extracted | prompts=2; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=2
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
+   process exit code: 0
+U13 | unpack aes256    | archive key bytes: utf8 of \u043F\u0430\u0440\u043E\u043B\u044C = d0 bf d0 b0 d1 80 d0 be d0 bb d1 8c | typed: \u043F\u0430\u0440\u043E\u043B\u044C | nothing extracted | prompts=2; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=2
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
+   process exit code: 0
+U14 | unpack zipcrypto | archive key bytes: acp of heslo123 = 68 65 73 6c 6f 31 32 33 | typed: spatne | nothing extracted | prompts=2; dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=2
+    | messages shown: [#32770 'Incorrect Password'] [Static id=2477] The password is incorrect. Please retype the password. Letters in password must be typed using the correct case. Make sure that CapsLock is not accidentally on. | [Button id=1] OK || PROMPT SHOWN AGAIN (cancelled)
+   process exit code: 0
+P1  | pack method 121 | typed: heslo123 | plain.txt|ZipCrypto|utf8, acp, oem, acp->CharToOem, utf8-as-acp->utf8 | 7z t -p<typed>: opens | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+P2  | pack method 121 | typed: heslo-\u0159 | plain.txt|ZipCrypto|acp | 7z t -p<typed>: opens | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+P3  | pack method 121 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | plain.txt|ZipCrypto|acp, oem, acp->CharToOem | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+    | the same archive against \u0434\u0440\u0443\u0433\u043E\u0439: plain.txt|ZipCrypto|acp, oem, acp->CharToOem
+   process exit code: 0
+P4  | pack method 123 | typed: heslo123 | plain.txt|AES-256 AE-1|utf8, acp, oem, acp->CharToOem, utf8-as-acp->utf8 | 7z t -p<typed>: opens | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+P5  | pack method 123 | typed: heslo-\u0159 | plain.txt|AES-256 AE-1|acp | 7z t -p<typed>: opens | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+   process exit code: 0
+P6  | pack method 123 | typed: \u043F\u0430\u0440\u043E\u043B\u044C | plain.txt|AES-256 AE-1|acp, oem, acp->CharToOem | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+    | the same archive against \u0434\u0440\u0443\u0433\u043E\u0439: plain.txt|AES-256 AE-1|acp, oem, acp->CharToOem
+   process exit code: 0
+P7  | pack method 121 | typed: ab\u0416cd | plain.txt|ZipCrypto|acp, oem, acp->CharToOem | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+    | the same archive against ab?cd: plain.txt|ZipCrypto|utf8, acp, oem, acp->CharToOem, utf8-as-acp->utf8
+   process exit code: 0
+P8  | pack method 121 | typed: 255 x a | plain.txt|ZipCrypto|NO CANDIDATE | 7z t -p<typed>: refused | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=0
+    | the same archive against 254 x a: plain.txt|ZipCrypto|utf8, acp, oem, acp->CharToOem, utf8-as-acp->utf8
+   process exit code: 0
+P9  | pack method 123 | typed: 129 x a | NO ARCHIVE WRITTEN | dialog IsWindowUnicode=False, edit IsWindowUnicode=True; messages=1: [#32770 'ZIP'] [Static id=2477] Password too long. The maximum password length for AES encryption is 128 characters. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before F5305AEA4A533D939417C4FA2978D09BA56654DF17C3E82DB7C473ACD1987DC1 / after F5305AEA4A533D939417C4FA2978D09BA56654DF17C3E82DB7C473ACD1987DC1
+
+Unexpected windows at start: 0
+Test processes left: 0; fixture folder left: False; registry restored identical: True; process exit codes: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

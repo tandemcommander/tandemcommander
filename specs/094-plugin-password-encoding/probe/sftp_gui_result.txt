@@ -1,0 +1,32 @@
+=== sftp_gui_probe: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-02 10:02:33)  [Debug-HEAD] ===
+plug-in: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\sftp\sftp.spl (built 2026-10-01 18:05:47); system code page 1250
+registry export before: SHA-256 F5305AEA4A533D939417C4FA2978D09BA56654DF17C3E82DB7C473ACD1987DC1
+server: listening 127.0.0.1:2223 paramiko 5.0.0
+
+   process exit code: 0
+S1 | typed: heslo123 (8 UTF-16 units, 8 UTF-8 bytes) | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True
+   | server received: password user=70 72 6f 62 65 len=8 utf8-valid -> 68 65 73 6c 6f 31 32 33 | EQUAL to the UTF-8 bytes of the typed text
+   | messages shown: [#32770 'SFTP Error'] [Static id=2477] Authentication failed: the server rejected the password. | [Button id=1] OK || (Change Directory shown again - cancelled)
+   process exit code: 0
+S2 | typed: heslo-\u0159 (7 UTF-16 units, 8 UTF-8 bytes) | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True
+   | server received: password user=70 72 6f 62 65 len=8 utf8-valid -> 68 65 73 6c 6f 2d c5 99 | EQUAL to the UTF-8 bytes of the typed text
+   | messages shown: [#32770 'SFTP Error'] [Static id=2477] Authentication failed: the server rejected the password. | [Button id=1] OK || (Change Directory shown again - cancelled)
+   process exit code: 0
+S3 | typed: \u043F\u0430\u0440\u043E\u043B\u044C (6 UTF-16 units, 12 UTF-8 bytes) | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True
+   | server received: password user=70 72 6f 62 65 len=12 utf8-valid -> d0 bf d0 b0 d1 80 d0 be d0 bb d1 8c | EQUAL to the UTF-8 bytes of the typed text
+   | messages shown: [#32770 'SFTP Error'] [Static id=2477] Authentication failed: the server rejected the password. | [Button id=1] OK || (Change Directory shown again - cancelled)
+   process exit code: 0
+S4 | typed: 255 x \u0159 (255 UTF-16 units, 510 UTF-8 bytes) | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True
+   | server received: password user=70 72 6f 62 65 len=510 utf8-valid -> c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 c5 99 ... | EQUAL to the UTF-8 bytes of the typed text
+   | messages shown: [#32770 'SFTP Error'] [Static id=2477] Authentication failed: the server rejected the password. | [Button id=1] OK || (Change Directory shown again - cancelled)
+   process exit code: 0
+S5 | typed: 256 x \u0159 (256 UTF-16 units, 512 UTF-8 bytes) | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True
+   | server received: password user=70 72 6f 62 65 len=256 NOT-utf8 -> f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 f8 ... | DIFFERENT from the UTF-8 bytes of the typed text
+   | messages shown: [#32770 'SFTP Error'] [Static id=2477] Authentication failed: the server rejected the password. | [Button id=1] OK || (Change Directory shown again - cancelled)
+   process exit code: 0
+S6 | typed: 256 x \u0416 (256 UTF-16 units, 512 UTF-8 bytes) | prompts=1; dialog IsWindowUnicode=False, edit IsWindowUnicode=True
+   | server received: password user=70 72 6f 62 65 len=256 utf8-valid -> 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f 3f ... | DIFFERENT from the UTF-8 bytes of the typed text
+   | messages shown: [#32770 'SFTP Error'] [Static id=2477] Authentication failed: the server rejected the password. | [Button id=1] OK || (Change Directory shown again - cancelled)
+Registry: restored; identical=True; SHA-256 before F5305AEA4A533D939417C4FA2978D09BA56654DF17C3E82DB7C473ACD1987DC1 / after F5305AEA4A533D939417C4FA2978D09BA56654DF17C3E82DB7C473ACD1987DC1
+
+Test processes left: 0; fixture folder left: False; registry restored identical: True; process exit codes: 0,0,0,0,0,0

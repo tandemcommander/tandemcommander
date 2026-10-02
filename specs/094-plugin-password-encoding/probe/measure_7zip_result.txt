@@ -1,0 +1,76 @@
+7-Zip 22.01 (x64) : Copyright (c) 1999-2022 Igor Pavlov : 2022-07-15
+ACP 1250, OEMCP 852
+password ascii    heslo123
+    utf8               68 65 73 6c 6f 31 32 33 
+    acp                68 65 73 6c 6f 31 32 33 
+    oem                68 65 73 6c 6f 31 32 33 
+    acp->CharToOem     68 65 73 6c 6f 31 32 33 
+    utf16le            68 00 65 00 73 00 6c 00 6f 00 31 00 32 00 33 00 
+    utf8-as-acp->utf8  68 65 73 6c 6f 31 32 33 
+password in-cp    heslo-\u0159
+    utf8               68 65 73 6c 6f 2d c5 99 
+    acp                68 65 73 6c 6f 2d f8 
+    oem                68 65 73 6c 6f 2d fd 
+    acp->CharToOem     68 65 73 6c 6f 2d fd 
+    utf16le            68 00 65 00 73 00 6c 00 6f 00 2d 00 59 01 
+    utf8-as-acp->utf8  68 65 73 6c 6f 2d c4 b9 e2 84 a2 
+password cyrillic \u043F\u0430\u0440\u043E\u043B\u044C
+    utf8               d0 bf d0 b0 d1 80 d0 be d0 bb d1 8c 
+    acp                3f 3f 3f 3f 3f 3f lossy
+    oem                3f 3f 3f 3f 3f 3f lossy
+    acp->CharToOem     3f 3f 3f 3f 3f 3f lossy
+    utf16le            3f 04 30 04 40 04 3e 04 3b 04 4c 04 
+    utf8-as-acp->utf8  c4 90 c5 bc c4 90 c2 b0 c5 83 e2 82 ac c4 90 c4 be c4 90 c2 bb c5 83 c5 9a 
+
+PART 1 - archives made by 7z.exe: 7z a -tzip -mem=<method> -p<typed>
+  ZipCrypto          ascii    rc=0 [ZipCrypto] opens with: utf8, acp, oem, acp->CharToOem, utf8-as-acp->utf8
+  ZipCrypto          in-cp    rc=2 7z.exe REFUSES TO CREATE THE ARCHIVE ("System ERROR: the parameter is incorrect")
+  ZipCrypto          cyrillic rc=2 7z.exe REFUSES TO CREATE THE ARCHIVE ("System ERROR: the parameter is incorrect")
+  ZipCrypto -mcu=on  ascii    rc=0 [ZipCrypto] opens with: utf8, acp, oem, acp->CharToOem, utf8-as-acp->utf8
+  ZipCrypto -mcu=on  in-cp    rc=2 7z.exe REFUSES TO CREATE THE ARCHIVE ("System ERROR: the parameter is incorrect")
+  ZipCrypto -mcu=on  cyrillic rc=2 7z.exe REFUSES TO CREATE THE ARCHIVE ("System ERROR: the parameter is incorrect")
+  AES256             ascii    rc=0 [AES-256 AE-2] opens with: utf8, acp, oem, acp->CharToOem, utf8-as-acp->utf8
+  AES256             in-cp    rc=2 7z.exe REFUSES TO CREATE THE ARCHIVE ("System ERROR: the parameter is incorrect")
+  AES256             cyrillic rc=2 7z.exe REFUSES TO CREATE THE ARCHIVE ("System ERROR: the parameter is incorrect")
+  AES256    -mcu=on  ascii    rc=0 [AES-256 AE-2] opens with: utf8, acp, oem, acp->CharToOem, utf8-as-acp->utf8
+  AES256    -mcu=on  in-cp    rc=2 7z.exe REFUSES TO CREATE THE ARCHIVE ("System ERROR: the parameter is incorrect")
+  AES256    -mcu=on  cyrillic rc=2 7z.exe REFUSES TO CREATE THE ARCHIVE ("System ERROR: the parameter is incorrect")
+
+PART 2 - archives written with an exact byte string; opened with the typed text
+  method    password bytes used         7z t     tar -xO 
+  ZipCrypto ascii    utf8               opens    opens    
+  ZipCrypto ascii    acp                (same bytes as utf8)
+  ZipCrypto ascii    oem                (same bytes as utf8)
+  ZipCrypto ascii    acp->CharToOem     (same bytes as utf8)
+  ZipCrypto ascii    utf16le            refused  refused  
+  ZipCrypto ascii    utf8-as-acp->utf8  (same bytes as utf8)
+  ZipCrypto in-cp    utf8               refused  refused  
+  ZipCrypto in-cp    acp                opens    opens    
+  ZipCrypto in-cp    oem                refused  refused  
+  ZipCrypto in-cp    acp->CharToOem     (same bytes as oem)
+  ZipCrypto in-cp    utf16le            refused  refused  
+  ZipCrypto in-cp    utf8-as-acp->utf8  refused  refused  
+  ZipCrypto cyrillic utf8               refused  refused  
+  ZipCrypto cyrillic acp                refused  opens    lossy
+  ZipCrypto cyrillic oem                (same bytes as acp)
+  ZipCrypto cyrillic acp->CharToOem     (same bytes as acp)
+  ZipCrypto cyrillic utf16le            refused  refused  
+  ZipCrypto cyrillic utf8-as-acp->utf8  refused  refused  
+  AES256    ascii    utf8               opens    opens    
+  AES256    ascii    acp                (same bytes as utf8)
+  AES256    ascii    oem                (same bytes as utf8)
+  AES256    ascii    acp->CharToOem     (same bytes as utf8)
+  AES256    ascii    utf16le            refused  refused  
+  AES256    ascii    utf8-as-acp->utf8  (same bytes as utf8)
+  AES256    in-cp    utf8               refused  refused  
+  AES256    in-cp    acp                opens    opens    
+  AES256    in-cp    oem                refused  refused  
+  AES256    in-cp    acp->CharToOem     (same bytes as oem)
+  AES256    in-cp    utf16le            refused  refused  
+  AES256    in-cp    utf8-as-acp->utf8  refused  refused  
+  AES256    cyrillic utf8               refused  refused  
+  AES256    cyrillic acp                refused  opens    lossy
+  AES256    cyrillic oem                (same bytes as acp)
+  AES256    cyrillic acp->CharToOem     (same bytes as acp)
+  AES256    cyrillic utf16le            refused  refused  
+  AES256    cyrillic utf8-as-acp->utf8  refused  refused  
