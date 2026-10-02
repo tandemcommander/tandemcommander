@@ -211,6 +211,20 @@ int SalWToU8Truncate(const WCHAR* src, char* buf, int bufSize);
 
 //
 // ****************************************************************************
+// SalU8OffsetToW (feature 093)
+//
+// Converts a BYTE offset in the null-terminated WTF-8 text 'u8' to the offset
+// of the same place counted in UTF-16 units - what EM_SETSEL and the other
+// position messages of a Unicode edit control count (a character outside the
+// BMP is two units, a lone surrogate one).  An offset inside a multi-byte
+// sequence means the start of that character; an offset behind the end means
+// the end; a negative one 0.  Returns -1 when 'u8' is NULL or not valid
+// (WTF-8) text - the caller then holds legacy code-page text.
+
+int SalU8OffsetToW(const char* u8, int byteOffset);
+
+//
+// ****************************************************************************
 // SalMnemonicMatchW (feature 093)
 //
 // TRUE when the UTF-16 unit 'typed' (WM_CHAR / WM_SYSCHAR of a wide message

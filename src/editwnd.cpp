@@ -97,78 +97,85 @@ EditWordBreakProc(LPTSTR text, int current, int textLen, int code)
     return textLen;
 }
 
-int CALLBACK
-EditWordBreakProcUNICODE(LPTSTR text, int current, int textLen, int code)
+// feature 093: word breaking on the UTF-16 text itself; 'current', 'textLen' and
+// the result are UTF-16 units, as a comctl32 6 edit control counts them (the
+// former conversion to the code page moved every offset behind a character
+// outside the BMP). 'rightBreak' is the state between a WB_ISDELIMITER and
+// the following WB_LEFT call.
+static BOOL IsCharacterDelimiterW(WCHAR ch)
 {
-    CALL_STACK_MESSAGE5("EditWordBreakProcUNICODE(%s, %d, %d, %d)", text, current, textLen, code);
+    return ch == L' ' || ch == L'/' || ch == L'\\' || ch == L';' || ch == L',' || ch == L'.';
+}
+
+static int EditWordBreakW(const WCHAR* text, int current, int textLen, int code, BOOL* rightBreak)
+{
     if (textLen == 0)
         return 0;
-
-    char buff[10000];
-    // Convert the String to ANSI
-    WideCharToMultiByte(CP_ACP, 0, (wchar_t*)text, textLen, buff, 10000, NULL, NULL);
-    buff[10000 - 1] = 0;
-    text = buff;
-
-    static BOOL gRightBreak = FALSE;
-    BOOL ebp_8 = FALSE;
-    char* ebp_10 = NULL;
-    char* esi = text + current;
+    BOOL nonDelimSeen = FALSE;
+    int pos = current;
     switch (code)
     {
     case WB_LEFT:
     {
         do
         {
-            esi = CharPrev(text, esi);
-            if (esi == text)
+            if (pos > 0)
+                pos--;
+            if (pos == 0)
                 break;
-            if (!IsCharacterDelimiter(*esi))
+            if (!IsCharacterDelimiterW(text[pos]))
             {
-                gRightBreak = FALSE;
-                ebp_8 = TRUE;
+                *rightBreak = FALSE;
+                nonDelimSeen = TRUE;
                 continue;
             }
-            if (gRightBreak)
+            if (*rightBreak)
                 break;
-            if (ebp_8)
+            if (nonDelimSeen)
                 break;
         } while (1);
-        if (esi - text <= 0)
+        if (pos <= 0)
             return 0;
-        if (esi - text >= textLen)
-            return (int)(esi - text);
-        return (int)(esi - text + 1);
+        if (pos >= textLen)
+            return pos;
+        return pos + 1;
     }
 
     case WB_RIGHT:
     {
-        gRightBreak = FALSE;
-        BOOL edi = !IsCharacterDelimiter(*esi);
-        ebp_10 = text + textLen;
-        if (esi == ebp_10)
-            return (int)(esi - text);
+        *rightBreak = FALSE;
+        if (pos >= textLen)
+            return pos;
+        BOOL inWord = !IsCharacterDelimiterW(text[pos]);
         do
         {
-            esi = CharNext(esi);
-            if (esi == ebp_10)
-                return (int)(esi - text);
+            pos++;
+            if (pos >= textLen)
+                return pos;
 
-            if (IsCharacterDelimiter(*esi))
-                edi = FALSE;
-            else if (!edi)
-                return (int)(esi - text);
+            if (IsCharacterDelimiterW(text[pos]))
+                inWord = FALSE;
+            else if (!inWord)
+                return pos;
         } while (1);
         return 0;
     }
 
     case WB_ISDELIMITER:
     {
-        gRightBreak = TRUE;
-        return IsCharacterDelimiter(text[current]);
+        *rightBreak = TRUE;
+        return current >= 0 && current < textLen && IsCharacterDelimiterW(text[current]);
     }
     }
     return textLen;
+}
+
+int CALLBACK
+EditWordBreakProcUNICODE(LPTSTR text, int current, int textLen, int code)
+{
+    CALL_STACK_MESSAGE4("EditWordBreakProcUNICODE(, %d, %d, %d)", current, textLen, code);
+    static BOOL gRightBreak = FALSE;
+    return EditWordBreakW((const WCHAR*)text, current, textLen, code, &gRightBreak);
 }
 
 const char* BACKSPACE_SUBCLASSPROC = "SALBSSubClass";
@@ -210,6 +217,21 @@ BSHandlerSubclassProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     SendMessage(hwnd, EM_SETSEL, iEnd, iEnd);
                     iStart = iEnd;
+                }
+                if (CCVerMajor >= 6)
+                {
+                    // feature 093: the control counts UTF-16 units, so the word is
+                    // looked up in the wide text (as EditWordBreakProcUNICODE does)
+                    WCHAR buffW[10000];
+                    if (GetWindowTextLengthW(hwnd) >= 10000 - 1)
+                        break;
+                    buffW[0] = 0;
+                    SendMessageW(hwnd, WM_GETTEXT, 10000, (LPARAM)buffW);
+                    BOOL rightBreak = FALSE;
+                    iStart = EditWordBreakW(buffW, iStart, iStart + 1, WB_LEFT, &rightBreak);
+                    SendMessageW(hwnd, EM_SETSEL, iStart, iEnd);
+                    SendMessageW(hwnd, EM_REPLACESEL, TRUE, (LPARAM)L"");
+                    return 0; // we handled it
                 }
                 //          if (iStart == iEnd) // nothing can't be selected
                 //          {
@@ -353,18 +375,11 @@ CEditLine::CEditLine()
 
 void CEditLine::InsertText(const char* s)
 {
-    // feature 069 (F-P6-04): 's' is UTF-8 (a panel name or path).  Sent through
-    // the ANSI SendMessage its bytes landed in the control as individual
-    // code-page characters, so Ctrl+Enter / Ctrl+Space / Ctrl+[ / Ctrl+] filled
-    // the command line with mojibake and Enter then ran the command against a
-    // name that does not exist.  The wide send makes USER32 do the same
-    // down-conversion the rest of this control already relies on
-    // (SalSetWindowTextU8 at the "run a command" site, SalComboAddStringU8 for
-    // the history), so the control keeps holding one consistent encoding and
-    // every selection offset stays exactly where it was.
-    //   A character the code page cannot express becomes '?' - visibly wrong
-    //   instead of invisibly wrong; the complete fix needs a Unicode control
-    //   (cluster B-1, see specs/069-.../research.md R2).
+    // feature 069 (F-P6-04): 's' is UTF-8 (a panel name or path) and must be
+    // converted and sent wide: sent through the ANSI SendMessage its bytes
+    // landed in the control as individual code-page characters.
+    // feature 093: the control is a Unicode control, so the text arrives as it
+    // is, also characters outside the code page; offsets are UTF-16 units.
     WCHAR* w = SalU8ToWAlloc(s);
     if (w != NULL)
     {
@@ -392,7 +407,9 @@ CEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         if (SkipCharacter)
             return 0;
-        switch ((TCHAR)wParam)
+        // feature 093: wParam is a UTF-16 unit (Unicode control); cut to a byte,
+        // U+0109 would be a Tab and U+010D an Enter
+        switch (wParam)
         {
         case '\t': // change panel
         {
@@ -407,7 +424,26 @@ CEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             else
             {
                 char cmdLine[SALCMDLINE_MAXLEN + 1];
-                SalGetWindowTextU8(HWindow, cmdLine, SALCMDLINE_MAXLEN + 1); // command line is UTF-8 (feature 005)
+                // feature 093: a command whose UTF-8 form does not fit the buffer is
+                // refused - SalGetWindowTextU8 would cut it and the cut text would run
+                BOOL cmdFits = TRUE;
+                int cmdUnits = GetWindowTextLengthW(HWindow) + 1;
+                WCHAR* cmdLineW = (WCHAR*)malloc(cmdUnits * sizeof(WCHAR));
+                if (cmdLineW != NULL)
+                {
+                    cmdLineW[0] = 0;
+                    GetWindowTextW(HWindow, cmdLineW, cmdUnits);
+                    cmdFits = SalWToU8(cmdLineW, -1, cmdLine, SALCMDLINE_MAXLEN + 1) != 0;
+                    free(cmdLineW);
+                }
+                else
+                    SalGetWindowTextU8(HWindow, cmdLine, SALCMDLINE_MAXLEN + 1); // command line is UTF-8 (feature 005)
+                if (!cmdFits)
+                {
+                    SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERROREXECCMDLINE),
+                                  MB_OK | MB_ICONEXCLAMATION);
+                    return 0;
+                }
 
                 MainWindow->SetDefaultDirectories();
 
@@ -597,7 +633,15 @@ CEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     if (selTo > l)
                         selTo = l;
                     SalSetWindowTextU8(HWindow, command); // command line is UTF-8 (feature 005)
-                    SendMessage(HWindow, EM_SETSEL, selFrom, selTo);
+                    // feature 093: the plug-in counts bytes of 'command', the control UTF-16 units
+                    int unitFrom = SalU8OffsetToW(command, selFrom);
+                    int unitTo = SalU8OffsetToW(command, selTo);
+                    if (unitFrom < 0 || unitTo < 0) // legacy code-page text: a byte is a character
+                    {
+                        unitFrom = selFrom;
+                        unitTo = selTo;
+                    }
+                    SendMessage(HWindow, EM_SETSEL, unitFrom, unitTo);
                 }
             }
             return 0;
@@ -947,7 +991,7 @@ CEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 {
                     if (altPressed)
                     {
-                        SendMessage(HWindow, WM_CHAR, '\r', 0);
+                        SendMessageW(HWindow, WM_CHAR, L'\r', 0);
                         SkipCharacter = TRUE;
                         return 0;
                     }
@@ -1091,7 +1135,7 @@ private:
     CEditLine* EditLine;              // edit line we operate on
     int EditWidth;
     int EditHeight;
-    char* TextBuff;
+    WCHAR* TextBuff; // feature 093: the edit line's text and its length in UTF-16 units
     int TextLen;
     int OldIsertMarkX;
 
@@ -1161,9 +1205,12 @@ public:
             LRESULT pos = SendMessage(EditLine->HWindow, EM_CHARFROMPOS, 0, MAKELPARAM(p.x, p.y));
             int myPos = *xPos = LOWORD(pos);
             BOOL byPass = FALSE;
+            int lastUnits = 1; // the last character: two units when it is a surrogate pair
             if (TextLen > 0 && myPos == TextLen)
             {
-                myPos--;
+                if (TextLen >= 2 && IS_LOW_SURROGATE(TextBuff[TextLen - 1]) && IS_HIGH_SURROGATE(TextBuff[TextLen - 2]))
+                    lastUnits = 2;
+                myPos -= lastUnits;
                 byPass = TRUE;
             }
             pos = SendMessage(EditLine->HWindow, EM_POSFROMCHAR, myPos, 0);
@@ -1178,7 +1225,7 @@ public:
                 HDC hDC = HANDLES(GetDC(EditLine->HWindow));
                 HFONT hOldFont = (HFONT)SelectObject(hDC, hFont);
                 SIZE sz;
-                GetTextExtentPoint32(hDC, TextBuff + TextLen - 1, 1, &sz);
+                GetTextExtentPoint32W(hDC, TextBuff + TextLen - lastUnits, lastUnits, &sz);
                 SelectObject(hDC, hOldFont);
                 HANDLES(ReleaseDC(EditLine->HWindow, hDC));
                 x += (short)sz.cx;
@@ -1190,46 +1237,41 @@ public:
         return FALSE;
     }
 
-    BOOL InsertText(POINTL pt, const char* text)
+    // feature 093: the text is UTF-16 (the control is a Unicode control); 'xPos'
+    // from HitTest is a position in UTF-16 units
+    BOOL InsertText(POINTL pt, const WCHAR* text)
     {
         int xPos;
         if (HitTest(pt, FALSE, &xPos))
         {
             SetInsertMark(-1);
-            char buff[10000];
-            lstrcpyn(buff, text, 10000);
-            char* start = buff;
+            WCHAR buff[10000];
+            lstrcpynW(buff, text, 10000);
+            int len = lstrlenW(buff);
+            if (len > 0 && len < lstrlenW(text) && IS_HIGH_SURROGATE(buff[len - 1]))
+                buff[--len] = 0; // the cut went through a surrogate pair
+            WCHAR* start = buff;
             if ((GetKeyState(VK_MENU) & 0x8000) != 0)
             {
                 // we do not want the whole path - trim it
-                int len = lstrlen(buff);
                 if (len > 2)
                 {
-                    if (buff[len - 1] == '\\')
+                    if (buff[len - 1] == L'\\')
                     {
                         buff[len - 1] = 0;
                         len--;
                     }
-                    char* p = buff + len - 1;
-                    while (p >= buff && *p != '\\')
+                    WCHAR* p = buff + len - 1;
+                    while (p >= buff && *p != L'\\')
                         p--;
-                    if (p >= buff && *p == '\\')
+                    if (p >= buff && *p == L'\\')
                         start = p + 1;
                 }
             }
             if (ImageDragging)
                 ImageDragShow(FALSE);
             SendMessage(EditLine->HWindow, EM_SETSEL, xPos, xPos);
-            // feature 069 (F-P6-04): same sink as CEditLine::InsertText - the
-            // internal archive/plugin-FS drag payload is UTF-8
-            WCHAR* startW = SalU8ToWAlloc(start);
-            if (startW != NULL)
-            {
-                SendMessageW(EditLine->HWindow, EM_REPLACESEL, TRUE, (LPARAM)startW);
-                free(startW);
-            }
-            else
-                SendMessage(EditLine->HWindow, EM_REPLACESEL, TRUE, (LPARAM)start);
+            SendMessageW(EditLine->HWindow, EM_REPLACESEL, TRUE, (LPARAM)start);
             UpdateWindow(EditLine->HWindow);
             if (ImageDragging)
                 ImageDragShow(TRUE);
@@ -1401,10 +1443,10 @@ public:
             TRACE_E("CEditDropTarget::DragEnter: Unexpected situation: TextBuff != NULL");
             free(TextBuff);
         }
-        TextLen = GetWindowTextLength(EditLine->HWindow);
-        TextBuff = (char*)malloc(TextLen + 1);
+        TextLen = GetWindowTextLengthW(EditLine->HWindow);
+        TextBuff = (WCHAR*)malloc((TextLen + 1) * sizeof(WCHAR));
         if (TextBuff != NULL)
-            TextLen = GetWindowText(EditLine->HWindow, TextBuff, TextLen + 1);
+            TextLen = GetWindowTextW(EditLine->HWindow, TextBuff, TextLen + 1);
         else
             TextLen = 0;
 
@@ -1507,17 +1549,21 @@ public:
 
         if (pDataObject->GetData(&formatEtc, &stgMedium) == S_OK)
         {
-            char* path = (char*)HANDLES(GlobalLock(stgMedium.hGlobal));
-            if (path != NULL)
+            void* data = HANDLES(GlobalLock(stgMedium.hGlobal));
+            if (data != NULL)
             {
-                // change the path
+                // feature 093: Unicode text is inserted as it is (it used to be
+                // converted to the code page first); code-page text is converted
                 if (UseUnicode)
-                    path = ConvertAllocU2A((const WCHAR*)path, -1);
-                if (path != NULL)
+                    InsertText(pt, (const WCHAR*)data);
+                else
                 {
-                    InsertText(pt, path);
-                    if (UseUnicode)
-                        free(path);
+                    WCHAR* textW = ConvertAllocA2U((const char*)data, -1);
+                    if (textW != NULL)
+                    {
+                        InsertText(pt, textW);
+                        free(textW);
+                    }
                 }
                 HANDLES(GlobalUnlock(stgMedium.hGlobal));
             }
@@ -1542,7 +1588,15 @@ public:
                 else
                     PluginFSConvertPathToExternal(path); // here 'path' must have MAX_PATH characters after the fs name (hence it is 2 * MAX_PATH long)
 
-                InsertText(pt, path);
+                // feature 069 (F-P6-04): the name is UTF-8 (legacy code-page text otherwise)
+                WCHAR* pathW = SalU8ToWAlloc(path);
+                if (pathW == NULL)
+                    pathW = ConvertAllocA2U(path, -1);
+                if (pathW != NULL)
+                {
+                    InsertText(pt, pathW);
+                    free(pathW);
+                }
             }
         }
 
@@ -1716,7 +1770,16 @@ int CInnerText::GetNeededWidth()
     {
         HFONT old = (HFONT)SelectObject(dc, EnvFont);
         SIZE s;
-        GetTextExtentPoint32(dc, Message, (int)strlen(Message), &s);
+        // feature 093: the path is UTF-8 and WM_PAINT draws it wide; measured as
+        // code-page bytes a path with non-ASCII characters got too much room
+        WCHAR* msgW = SalU8ToWAlloc(Message);
+        if (msgW != NULL)
+        {
+            GetTextExtentPoint32W(dc, msgW, lstrlenW(msgW), &s);
+            free(msgW);
+        }
+        else
+            GetTextExtentPoint32(dc, Message, (int)strlen(Message), &s);
         SelectObject(dc, old);
         HANDLES(ReleaseDC(NULL, dc));
         return s.cx + TXEL_SPACE;
@@ -1729,8 +1792,11 @@ int CInnerText::GetNeededWidth()
 // CEditWindow
 //
 
+// feature 093: the combo box and its edit are Unicode controls of comctl32 6;
+// a code-page subclass (the default of CWindow) turned each of them into a
+// code-page window, so the object is a Unicode one and the edit keeps its kind
 CEditWindow::CEditWindow()
-    : CWindow(ooStatic)
+    : CWindow(ooStatic, TRUE)
 {
     EditLine = new CEditLine();
     Text = new CInnerText(this);
@@ -1751,16 +1817,16 @@ CEditWindow::~CEditWindow()
 BOOL CEditWindow::Create(HWND hParent, int childID)
 {
     CALL_STACK_MESSAGE2("CEditWindow::Create(, %d)", childID);
-    HWND hWnd = CreateEx(0,
-                         "ComboBox",
-                         "",
-                         WS_CHILD | WS_VSCROLL | WS_CLIPSIBLINGS |
-                             CBS_AUTOHSCROLL | CBS_HASSTRINGS | CBS_DROPDOWN,
-                         0, 0, 0, 0,
-                         hParent,
-                         (HMENU)(UINT_PTR)childID,
-                         HInstance,
-                         this);
+    HWND hWnd = CreateExW(0,
+                          L"ComboBox",
+                          L"",
+                          WS_CHILD | WS_VSCROLL | WS_CLIPSIBLINGS |
+                              CBS_AUTOHSCROLL | CBS_HASSTRINGS | CBS_DROPDOWN,
+                          0, 0, 0, 0,
+                          hParent,
+                          (HMENU)(UINT_PTR)childID,
+                          HInstance,
+                          this);
     if (hWnd != NULL)
     {
         // feature 028: the command line is created after the startup theming
@@ -1770,7 +1836,7 @@ BOOL CEditWindow::Create(HWND hParent, int childID)
             SetWindowTheme(hWnd, L"DarkMode_CFD", NULL);
         if (EditLine != NULL)
         {
-            EditLine->AttachToWindow(GetWindow(HWindow, GW_CHILD));
+            EditLine->AttachToWindowKeepKind(GetWindow(HWindow, GW_CHILD));
             EditLine->RegisterDragDrop();
             InstallWordBreakProc(EditLine->HWindow);
         }
@@ -2073,7 +2139,7 @@ void CEditWindow::StoreContent()
     if (HWindow == NULL)
         return;
     ResetStoredContent();
-    int textLen = GetWindowTextLength(EditLine->HWindow);
+    int textLen = GetWindowTextLengthW(EditLine->HWindow); // UTF-16 units
     if (textLen > 0)
     {
         LastText = (char*)malloc(3 * textLen + 1); // UTF-8 worst case 3 B per WCHAR (feature 005)

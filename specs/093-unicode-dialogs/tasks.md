@@ -28,9 +28,9 @@ strict guard, probe, independent review, fixes, fix-log, commit.
 
 ## Phase 4 - User Story 5: command line (S3)
 
-- [ ] T014 [US5] src/editwnd.cpp: Unicode control; typed-character switch, selection offsets, drop position, measuring
-- [ ] T015 [US5] Probe: set, type, insert a name, run a command; editing regression
-- [ ] T016 [US5] Independent review; fixes - or revert and record; commit `[093] S3 ...`
+- [X] T014 [US5] src/editwnd.cpp: Unicode control (combo created wide, the edit keeps its kind); typed-character switch, selection offsets, drop position, measuring, word breaking in UTF-16 units; `SalU8OffsetToW` in src/common/salunicode.* with saltests
+- [X] T015 [US5] Probe: probe/cmdline_probe.ps1 (set, type, insert a name, run a command, history, word deletion, editing regression) on the new and the pre-093 build; dialogs_probe.ps1 rerun
+- [X] T016 [US5] Independent review; fixes - or revert and record; commit `[093] S3 ...`
 
 ## Phase 5 - Polish (S4)
 

@@ -3324,6 +3324,46 @@ static void TestDialogText093()
         printf("skipping the code page 1250 part of TestDialogText093 (code page %u)\n", GetACP());
 }
 
+// feature 093 (stage S3): byte offsets of UTF-8 text as UTF-16 unit offsets,
+// what a Unicode edit control (the command line) counts.
+static void TestCmdLineOffsets093()
+{
+    // a: 1 byte / 1 unit, U+0159: 2 / 1, U+0416: 2 / 1, U+65E5: 3 / 1,
+    // U+1F4C1: 4 / 2 (a surrogate pair), z: 1 / 1
+    static const char u8[] = "a\xC5\x99\xD0\x96\xE6\x97\xA5\xF0\x9F\x93\x81z";
+    //                           byte: 0  1  2  3  4  5  6  7  8  9 10 11 12 13
+    static const int units[] = {0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 6, 7};
+    for (int i = 0; i <= 13; i++)
+        CHECK(SalU8OffsetToW(u8, i) == units[i]);
+    // behind the end = the end; negative = the start
+    CHECK(SalU8OffsetToW(u8, 14) == 7 && SalU8OffsetToW(u8, 100000) == 7);
+    CHECK(SalU8OffsetToW(u8, -1) == 0 && SalU8OffsetToW(u8, -100000) == 0);
+    // the result is the length of the converted prefix
+    WCHAR w[16];
+    CHECK(SalU8ToW(u8, -1, w, 16) == 8 && w[4] == 0xD83D && w[5] == 0xDCC1 && w[6] == L'z');
+
+    // ASCII: bytes are units
+    for (int i = 0; i <= 5; i++)
+        CHECK(SalU8OffsetToW("hello", i) == i);
+    CHECK(SalU8OffsetToW("", 0) == 0 && SalU8OffsetToW("", 3) == 0);
+
+    // a lone surrogate (WTF-8: ED A0 80) is one unit; offsets inside it mean its start
+    static const char lone[] = "ab\xED\xA0\x80"
+                               "c";
+    CHECK(SalU8OffsetToW(lone, 2) == 2 && SalU8OffsetToW(lone, 3) == 2 && SalU8OffsetToW(lone, 4) == 2);
+    CHECK(SalU8OffsetToW(lone, 5) == 3 && SalU8OffsetToW(lone, 6) == 4);
+    // a lone low surrogate followed by a lone high one: two units, not a pair
+    static const char lowHigh[] = "\xED\xB0\x80\xED\xA0\x80";
+    CHECK(SalU8OffsetToW(lowHigh, 3) == 1 && SalU8OffsetToW(lowHigh, 6) == 2);
+
+    // not UTF-8 (a code-page byte, a torn sequence): the caller keeps byte offsets
+    CHECK(SalU8OffsetToW("a\xF8"
+                         "b",
+                         1) == -1);
+    CHECK(SalU8OffsetToW("a\xC5", 0) == -1 && SalU8OffsetToW("a\xC5", 1) == -1);
+    CHECK(SalU8OffsetToW(NULL, 0) == -1);
+}
+
 // feature 093 (contract P1): the two forms of a typed archive password
 // (src/common/salarcpwd.h). Code page 1250 is passed explicitly, so the
 // expectations do not depend on the machine.
@@ -3848,6 +3888,7 @@ int main()
     TestFtpAnon090();
     TestNameIdentity092();
     TestDialogText093();
+    TestCmdLineOffsets093();
     TestArchivePassword093();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);

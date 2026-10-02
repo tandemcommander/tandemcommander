@@ -27,6 +27,13 @@
     (the second line was added for stage S1: five more modal dialogs, the
     in-place editor of an edit list box, and 'drive' = a regression drive of
     the Find window - search, menu bar by Alt+letter - and of the main menu)
+    'drive' since stage S3: every top-level mnemonic of the Find window's menu
+    (F M E V O) and of the main menu (L F E C P O R H), each three ways - Alt+
+    letter as a posted WM_SYSCHAR, the plain letter inside the menu bar's own
+    loop, Alt+letter as a posted WM_SYSKEYDOWN with Alt in the shared key state
+    (AttachThreadInput + SetKeyboardState) - with the popup detected by polling
+    every 40 ms for 2 s ("opened at least once"); the Find menu is driven
+    BEFORE the search.
 
     One line per control and channel:
       surface | control | channel | classes dlg/ctl/inner | unicode dlg/ctl/inner | exp=<hex> | act=<hex> | verdict
@@ -92,6 +99,39 @@ public static class Drv093
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "SendMessageTimeoutW")] public static extern IntPtr SendTextTimeout(IntPtr h, uint msg, IntPtr w, string l, uint flags, uint timeout, out IntPtr result);
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "SendMessageTimeoutW")] public static extern IntPtr SendGetText(IntPtr h, uint msg, IntPtr w, [Out] char[] l, uint flags, uint timeout, out IntPtr result);
     [DllImport("kernel32.dll")] public static extern uint GetACP();
+    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int l, t, r, b; }
+    [StructLayout(LayoutKind.Sequential)] public struct MSG { public IntPtr hwnd; public uint message; public IntPtr wParam, lParam; public uint time; public int x, y; }
+    [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint a, uint b, bool attach);
+    [DllImport("user32.dll")] public static extern bool GetKeyboardState(byte[] s);
+    [DllImport("user32.dll")] public static extern bool SetKeyboardState(byte[] s);
+    [DllImport("user32.dll")] public static extern bool PeekMessageW(out MSG m, IntPtr h, uint a, uint b, uint remove);
+    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    public static int[] Pos(IntPtr h) { RECT r; if (!GetWindowRect(h, out r)) return new int[] { 0, 0 }; return new int[] { r.l, r.t }; }
+    // Alt+key as the keyboard delivers it: WM_SYSKEYDOWN posted (the target's loop translates it
+    // to WM_SYSCHAR) while the shared key state says Alt is down; the state is taken back after
+    // the target has served its queue. Returns "" or why the key state could not be set (the
+    // message is then posted without it).
+    public static string PostAltKey(IntPtr h, int vk, uint timeout)
+    {
+        uint pid; uint tid = GetWindowThreadProcessId(h, out pid); uint me = GetCurrentThreadId();
+        MSG m; PeekMessageW(out m, IntPtr.Zero, 0, 0, 0);
+        string note = "";
+        bool attached = AttachThreadInput(me, tid, true);
+        if (!attached) note = "AttachThreadInput failed: posted without Alt in the key state";
+        try
+        {
+            var old = new byte[256]; var st = new byte[256];
+            if (attached) { GetKeyboardState(old); st = (byte[])old.Clone(); st[0x12] = 0x80; st[0xA4] = 0x80; SetKeyboardState(st); }
+            PostMessageW(h, 0x0104, (IntPtr)vk, (IntPtr)0x20000001);
+            IntPtr res;
+            SendMessageTimeoutW(h, 0, IntPtr.Zero, IntPtr.Zero, 0, timeout, out res);
+            System.Threading.Thread.Sleep(60);
+            if (attached) { old[0x12] = 0; old[0xA4] = 0; old[0xA5] = 0; SetKeyboardState(old); }
+        }
+        finally { if (attached) AttachThreadInput(me, tid, false); }
+        return note;
+    }
 
     public static string Cls(IntPtr h) { var s = new StringBuilder(256); GetClassNameW(h, s, 256); return s.ToString(); }
     public static string Txt(IntPtr h) { var s = new StringBuilder(4096); GetWindowTextW(h, s, 4096); return s.ToString(); }
@@ -239,7 +279,7 @@ function Close-Win([int]$Id, [IntPtr]$H) {
 # closes every top-level window of the pid except the main one; records them
 function Clear-Wins([int]$Id, [string]$Where, [bool]$Record = $true) {
     for ($round = 0; $round -lt 4; $round++) {
-        $extra = @(Get-Tops $Id | Where-Object { [Drv093]::Cls($_) -ne $MainClass })
+        $extra = @(Get-Tops $Id | Where-Object { [Drv093]::Cls($_) -ne $MainClass -and [Drv093]::Cls($_) -notlike 'UAC*' })   # not the system's "UAC Input Indicator" windows of a hidden desktop
         if (-not $extra.Count) { return }
         foreach ($h in $extra) {
             if ($Record) {
@@ -463,6 +503,83 @@ function Do-CreateDir([int]$Id, [string]$Name) {
     while ($sw.Elapsed.TotalSeconds -lt 5 -and [Drv093]::IsWindow($dlg)) { Start-Sleep -Milliseconds 100 }
     Start-Sleep -Milliseconds 500
     return $how
+}
+
+# ---- menu bar (regression drive) --------------------------------------------
+function Get-Popups([int]$Id) { return @(Get-Tops $Id | Where-Object { [Drv093]::Cls($_) -eq 'PopupMenuClass' }) }
+# polls every 40 ms: the first menu popup of the pid that shows up ("opened at least once"), or $null
+function Wait-Popup([int]$Id, [double]$Seconds = 2.0) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
+        $m = Get-Popups $Id
+        if ($m.Count) { return $m[0] }
+        Start-Sleep -Milliseconds 40
+    }
+    return $null
+}
+function Wait-NoPopup([int]$Id, [double]$Seconds = 1.5) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $Seconds) { if (-not (Get-Popups $Id).Count) { return $true }; Start-Sleep -Milliseconds 40 }
+    return $false
+}
+function Post-Esc([IntPtr]$H) { [void][Drv093]::PostMessageW($H, 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($H, 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001) }
+# Esc for the popup. Returns $true when the popup was still there and went away on the Esc - the
+# menu bar's own loop is then still running; $false when it had gone by itself (the loop has ended).
+function Close-Popup([int]$Id, $Popup) {
+    Start-Sleep -Milliseconds 150
+    if (-not ((Get-Popups $Id) -contains $Popup)) { [void](Wait-NoPopup $Id); return $false }
+    Post-Esc $Popup
+    [void](Wait-NoPopup $Id)
+    Start-Sleep -Milliseconds 150
+    return $true
+}
+# popup closed and the menu bar left
+function Close-Menu([int]$Id, [IntPtr]$Wnd, $Popup) {
+    if (Close-Popup $Id $Popup) { Post-Esc $Wnd; Start-Sleep -Milliseconds 300 }
+}
+# One top-level mnemonic, three ways: Alt+letter as a posted WM_SYSCHAR; the plain letter inside
+# the menu bar's own loop (after Esc has closed the popup); Alt+letter as a posted WM_SYSKEYDOWN
+# with Alt in the key state. $Wnd: the window with the menu bar; $Target: where the keys are posted.
+# posts with $Post and waits for a popup; one more attempt when none shows up (on the interactive
+# desktop the user's own input or another window's activation closes a menu of the program).
+# $Activate: the main window takes Alt+letter only while its caption is active - asserted first.
+function Open-Menu([int]$Id, [IntPtr]$Wnd, [bool]$Activate, [scriptblock]$Post) {
+    $note = ''
+    for ($try = 1; $try -le 2; $try++) {
+        if ($Activate) { [void][Drv093]::Send($Wnd, 0x0086, 1, 0, 5000) }
+        $n = & $Post
+        if ($n) { $note = "$n " }
+        $p = Wait-Popup $Id
+        if ($p) { if ($try -gt 1) { $note += 'second attempt; ' }; return @($p, $note) }
+        Start-Sleep -Milliseconds 500
+    }
+    return @($null, $note)
+}
+function Menu-Mnemonic([int]$Id, [string]$Surface, [string]$Which, [IntPtr]$Wnd, [IntPtr]$Target, [string]$Letter) {
+    $lower = [int][char]($Letter.ToLower()); $vk = [int][char]($Letter.ToUpper())
+    $rel = { param($p) $a = [Drv093]::Pos($p); $b = [Drv093]::Pos($Wnd); "popup at {0},{1} from the window's corner" -f ($a[0] - $b[0]), ($a[1] - $b[1]) }
+    # (a) WM_SYSCHAR
+    $act = ($Which -eq 'main')
+    $r = Open-Menu $Id $Wnd $act { [void][Drv093]::PostMessageW($Target, 0x0106, [IntPtr]$lower, [IntPtr]0x20000001) }
+    $p = $r[0]
+    Row $Surface ("$Which menu by Alt+$Letter") 'E' '-' '-' 'menu opened' $(if ($p) { 'menu opened' } else { 'no menu' }) $(if ($p) { 'PASS' } else { 'FAIL' }) ("posted WM_SYSCHAR; " + $r[1] + $(if ($p) { & $rel $p } else { '' }))
+    if ($p) {
+        if (Close-Popup $Id $p) {
+            # (b) the plain letter in the menu bar's loop
+            [void][Drv093]::PostMessageW($Wnd, 0x0102, [IntPtr]$lower, [IntPtr]1)
+            $p2 = Wait-Popup $Id
+            Row $Surface ("$Which menu bar loop: plain $Letter") 'E' '-' '-' 'menu opened' $(if ($p2) { 'menu opened' } else { 'no menu' }) $(if ($p2) { 'PASS' } else { 'FAIL' }) ("posted WM_CHAR after Esc closed the popup; " + $(if ($p2) { & $rel $p2 } else { '' }))
+            if ($p2) { Close-Menu $Id $Wnd $p2 } else { Post-Esc $Wnd; Start-Sleep -Milliseconds 300 }
+        }
+        else { Row $Surface ("$Which menu bar loop: plain $Letter") 'E' '-' '-' 'menu opened' '-' 'NOT DRIVEN' 'the popup went away by itself before Esc (the menu loop has ended)' }
+    }
+    if (-not [Drv093]::IsWindow($Wnd)) { return }
+    # (c) WM_SYSKEYDOWN with Alt in the key state
+    $r = Open-Menu $Id $Wnd $act { [Drv093]::PostAltKey($Target, $vk, 5000) }
+    $p = $r[0]
+    Row $Surface ("$Which menu by Alt+$Letter (key)") 'E' '-' '-' 'menu opened' $(if ($p) { 'menu opened' } else { 'no menu' }) $(if ($p) { 'PASS' } else { 'FAIL' }) ("posted WM_SYSKEYDOWN; " + $r[1] + $(if ($p) { & $rel $p } else { '' }))
+    if ($p) { Close-Menu $Id $Wnd $p }
+    [void][Drv093]::Send($Wnd, 0, 0, 0, 5000); Start-Sleep -Milliseconds 300
 }
 
 # ---------------------------------------------------------------------------
@@ -744,8 +861,24 @@ try {
                         $dlg = Open-ByCmd $id 741
                         if ($dlg -eq [IntPtr]::Zero) { NotDriven $sf 'command 741 opened no window' }
                         else {
-                            # (1) an ASCII mask typed into Named, Find Now, the number of found items
+                            # (1) the Find window's menu bar, BEFORE the search (on a hidden desktop a popup opened
+                            # right after a search that found something is closed again by the program's menu hook
+                            # within half a second - an effect of that desktop, not of the menu bar)
                             $named = Find-Ctl $dlg 2505; $in = Inner-Edit $named
+                            $reopen = { $d2 = Open-ByCmd $id 741; if ($d2 -eq [IntPtr]::Zero) { throw 'the Find window could not be opened again' }; $d2 }
+                            foreach ($ch in 'F', 'M', 'E', 'V', 'O') {
+                                if (-not [Drv093]::IsWindow($dlg)) { $dlg = & $reopen; $named = Find-Ctl $dlg 2505; $in = Inner-Edit $named }
+                                Menu-Mnemonic $id $sf 'Find' $dlg $in $ch
+                            }
+                            if (-not [Drv093]::IsWindow($dlg)) { $dlg = & $reopen; $named = Find-Ctl $dlg 2505; $in = Inner-Edit $named }
+                            # (2) Alt + a letter that is no mnemonic of the menu (U+0159) opens nothing
+                            [void][Drv093]::PostMessageW($in, 0x0106, [IntPtr]0x159, [IntPtr]0x20000001)
+                            $seen = Wait-Popup $id 1.0
+                            Row $sf 'Find menu by Alt+U+0159' 'E' '-' '-' 'menu windows=0' ("menu windows={0}" -f $(if ($seen) { 1 } else { 0 })) $(if (-not $seen) { 'PASS' } else { 'FAIL' }) 'WM_SYSCHAR 0159: not a mnemonic of the English menu (its low byte is that of Y)'
+                            if ($seen) { Close-Menu $id $dlg $seen }
+                            if (-not [Drv093]::IsWindow($dlg)) { $dlg = & $reopen; $named = Find-Ctl $dlg 2505; $in = Inner-Edit $named }
+
+                            # (3) an ASCII mask typed into Named, Find Now, the number of found items
                             [void][Drv093]::SetText($named, '', 5000)
                             foreach ($u in '*.zip'.ToCharArray()) { [void][Drv093]::PostMessageW($in, 0x0102, [IntPtr][int]$u, [IntPtr]1) }
                             $mask = Read-Settled $dlg $named 5
@@ -765,51 +898,13 @@ try {
                             }
                             Row $sf 'Find Now, mask *.zip' 'E' '-' '-' 'items=1' ("items={0}" -f $count) $(if ($count -eq 1) { 'PASS' } else { 'FAIL' }) ("Named held '{0}', Look in held {1};{2}" -f (Esc $mask), (Hex $look), $msg)
                             Start-Sleep -Milliseconds 500
-
-                            # (2) the Find window's menu bar: Alt+F (WM_SYSCHAR) opens a menu, Esc closes it
-                            $pop = { @(Get-Tops $id | Where-Object { [Drv093]::Cls($_) -eq 'PopupMenuClass' }) }
-                            [void][Drv093]::PostMessageW($in, 0x0106, [IntPtr]0x66, [IntPtr]0x20000001)
-                            Start-Sleep -Milliseconds 800
-                            $m = & $pop
-                            Row $sf 'Find menu by Alt+F' 'E' '-' '-' 'menu windows=1' ("menu windows={0}" -f $m.Count) $(if ($m.Count -eq 1) { 'PASS' } else { 'FAIL' }) 'WM_SYSCHAR 0066 posted to the Named field'
-                            if ($m.Count) {
-                                [void][Drv093]::PostMessageW($m[0], 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($m[0], 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001)
-                                Start-Sleep -Milliseconds 600
-                                $m2 = & $pop
-                                Row $sf 'Find menu closed by Esc' 'E' '-' '-' 'menu windows=0' ("menu windows={0}" -f $m2.Count) $(if ($m2.Count -eq 0 -and [Drv093]::IsWindow($dlg)) { 'PASS' } else { 'FAIL' }) ("Find window still open: {0}" -f [Drv093]::IsWindow($dlg))
-                                # the menu bar keeps its loop after the popup has closed: one more Esc leaves it
-                                [void][Drv093]::PostMessageW($dlg, 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($dlg, 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001)
-                                Start-Sleep -Milliseconds 500
-                            }
-                            # (3) Alt + a letter that is no mnemonic of the menu (U+0159) opens nothing
-                            if ([Drv093]::IsWindow($dlg)) {
-                                $in = Inner-Edit (Find-Ctl $dlg 2505)
-                                [void][Drv093]::PostMessageW($in, 0x0106, [IntPtr]0x159, [IntPtr]0x20000001)
-                                Start-Sleep -Milliseconds 700
-                                $m = & $pop
-                                Row $sf 'Find menu by Alt+U+0159' 'E' '-' '-' 'menu windows=0' ("menu windows={0}" -f $m.Count) $(if ($m.Count -eq 0) { 'PASS' } else { 'FAIL' }) 'WM_SYSCHAR 0159: not a mnemonic of the English menu (its low byte is that of Y)'
-                                foreach ($h in $m) { [void][Drv093]::PostMessageW($h, 0x0100, [IntPtr]0x1B, [IntPtr]1); Start-Sleep -Milliseconds 300 }
-                            }
-                            else { Row $sf 'Find menu by Alt+U+0159' 'E' '-' '-' '-' '-' 'NOT DRIVEN' 'the Find window closed on the second Esc' }
                             Close-Win $id $dlg; Start-Sleep -Milliseconds 500; Clear-Wins $id $sf $false
                         }
-                        # (4) the main window's menu by Alt+F - handled only while the main window is the active one
+                        # (4) the main window's menu - handled only while the main window is the active one
                         # (the caption state is set by a sent WM_NCACTIVATE and taken back afterwards; no foreground change)
                         $mw = Get-Main $id
                         [void][Drv093]::Send($mw, 0x0086, 1, 0, 5000)
-                        [void][Drv093]::PostMessageW($mw, 0x0106, [IntPtr]0x66, [IntPtr]0x20000001)
-                        Start-Sleep -Milliseconds 800
-                        $m = @(Get-Tops $id | Where-Object { [Drv093]::Cls($_) -eq 'PopupMenuClass' })
-                        if ($m.Count -eq 1) {
-                            Row $sf 'main menu by Alt+F' 'E' '-' '-' 'menu windows=1' 'menu windows=1' 'PASS' 'WM_SYSCHAR 0066 posted to the main window'
-                            [void][Drv093]::PostMessageW($m[0], 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($m[0], 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001)
-                            Start-Sleep -Milliseconds 500
-                            [void][Drv093]::PostMessageW($mw, 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv093]::PostMessageW($mw, 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001)
-                            Start-Sleep -Milliseconds 500
-                            $m = @(Get-Tops $id | Where-Object { [Drv093]::Cls($_) -eq 'PopupMenuClass' })
-                            Row $sf 'main menu closed by Esc' 'E' '-' '-' 'menu windows=0' ("menu windows={0}" -f $m.Count) $(if ($m.Count -eq 0) { 'PASS' } else { 'FAIL' }) ''
-                        }
-                        else { Row $sf 'main menu by Alt+F' 'E' '-' '-' 'menu windows=1' ("menu windows={0}" -f $m.Count) 'NOT DRIVEN' 'no menu: the main window handles Alt+letter only while it is the active window' }
+                        foreach ($ch in 'L', 'F', 'E', 'C', 'P', 'O', 'R', 'H') { Menu-Mnemonic $id $sf 'main' $mw $mw $ch }
                         [void][Drv093]::Send($mw, 0x0086, 0, 0, 5000)
                         Sync $id
                     }

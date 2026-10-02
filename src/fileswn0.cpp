@@ -987,7 +987,7 @@ BOOL CFilesWindow::OnChar(WPARAM wParam, LPARAM lParam, LRESULT* lResult)
         {
             SendMessage(MainWindow->HWindow, WM_COMMAND, CM_EDITLINE, 0);
             // we send the character there; wParam is a UTF-16 code unit (the panel is
-            // a unicode window), PostMessageW lets the system convert it for the ANSI edit line
+            // a unicode window) and so is the edit line since feature 093: it arrives as it is
             HWND hEditLine = MainWindow->GetEditLineHWND(TRUE);
             if (hEditLine != NULL)
                 PostMessageW(hEditLine, WM_CHAR, wParam, lParam);

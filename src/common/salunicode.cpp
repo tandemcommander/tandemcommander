@@ -655,6 +655,25 @@ int SalWToU8Truncate(const WCHAR* src, char* buf, int bufSize)
     return (int)strlen(buf) + 1;
 }
 
+int SalU8OffsetToW(const char* u8, int byteOffset)
+{
+    if (u8 == NULL)
+        return -1;
+    int len = (int)strlen(u8);
+    if (len > 0 && SalU8ToW(u8, len, NULL, 0) == 0)
+        return -1; // not WTF-8
+    if (byteOffset <= 0)
+        return 0;
+    if (byteOffset > len)
+        byteOffset = len;
+    while (byteOffset > 0 && byteOffset < len && ((unsigned char)u8[byteOffset] & 0xC0) == 0x80)
+        byteOffset--; // inside a sequence: back to its lead byte
+    if (byteOffset == 0)
+        return 0;
+    int res = SalU8ToW(u8, byteOffset, NULL, 0); // includes the terminator
+    return res > 0 ? res - 1 : -1;
+}
+
 WCHAR SalACPCharToW(char c)
 {
     WCHAR w[2];

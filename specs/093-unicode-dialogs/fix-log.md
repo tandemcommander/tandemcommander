@@ -426,3 +426,169 @@ Not driven / open:
    on a machine with code page X.
 9. The edit control keeps its own copy of the typed text until the dialog is
    destroyed; only the plug-in's buffers are wiped.
+
+## S3 - the command line
+
+**Cause.** The combo box and its inner edit are Unicode controls of
+comctl32 6 whichever call creates them; each was turned into a code-page
+window by the core's own code-page subclass: `CEditWindow` (the combo, attached
+inside `CreateEx`) and `CEditLine` (the inner edit, `AttachToWindow`), both
+`CWindow` objects with the default `unicodeWnd = FALSE`. Established with two
+throw-away builds and `probe/cmdline_probe.ps1`:
+
+| Build | combo / edit Unicode | set through the combo | set to the edit | typed |
+|---|---|---|---|---|
+| pre-093 (both code-page subclasses) | False / False | lossy | lossy | lossy |
+| combo wide, edit attached the old way | True / False | lossy | lossy | lossy |
+| combo the old way, edit keeps its kind | False / True | lossy | ok | ok |
+| S3 (both) | True / True | ok | ok | ok |
+
+So each subclass loses the text that passes through its own window; both had
+to change.
+
+**What changed** (`src/editwnd.cpp` unless said otherwise):
+
+| What | Where |
+|---|---|
+| the combo is a Unicode `CWindow` created with `CreateExW`; the edit is attached with `AttachToWindowKeepKind` | `CEditWindow::CEditWindow`, `CEditWindow::Create` |
+| the typed-character switch takes the whole UTF-16 unit - cut to a byte, U+010D (`č`, on every Czech keyboard) would have run the command and U+0109 changed the panel | `CEditLine::WindowProc` `WM_CHAR` |
+| the command is read wide; a command whose UTF-8 form does not fit `SALCMDLINE_MAXLEN` is refused with the existing "too long" message instead of being run cut short | `CEditLine::WindowProc`, Enter |
+| the selection a plug-in file system returns (bytes of its UTF-8 `command`) is converted to UTF-16 units | the same; `SalU8OffsetToW` in `src/common/salunicode.*` |
+| Alt+Enter sends its `WM_CHAR` wide | `CEditLine::WindowProc` |
+| word breaking (Ctrl+Left/Right, double click) works on the UTF-16 text itself - the old callback converted to the code page first, which moved every offset behind a character outside the BMP | `EditWordBreakW`, `EditWordBreakProcUNICODE` |
+| Ctrl+Backspace reads the text wide under comctl32 6 and uses the same routine | `BSHandlerSubclassProc` |
+| drag and drop: the line's text, the drop position and the width of the last character in UTF-16 units (a surrogate pair is one character); dropped Unicode text is inserted as it is (it was converted to the code page first), dropped code-page text is converted properly | `CEditDropTarget` (`TextBuff`, `HitTest`, `InsertText`, `DragEnter`, `Drop`) |
+| the width of the path prefix is measured wide, as it is drawn (the old code measured the UTF-8 bytes as code-page characters, so EVERY path with a non-ASCII character got too much room, also one inside the code page - reviewer's measurement: ASCII folder 346 px on both builds, code-page folder 358 -> 315 px, the probe's folder 338 -> 308 px; a correct fix, and the one visible change for code-page text) | `CInnerText::GetNeededWidth` |
+| stored content: length in units | `CEditWindow::StoreContent` |
+| comment only | `fileswn0.cpp` (the forward of a character typed in the panel was already `PostMessageW`) |
+
+Looked at and left as they are: `CEditLine::InsertText` (already a wide
+`EM_REPLACESEL`), `SalSetWindowTextU8` after a command, `FillHistory`
+(`SalComboAddStringU8`), the history comparison and the password stripping of
+feature 085 (UTF-8 strings), `StoreContent` / `RestoreContent` selection
+(`EM_GETSEL` and `EM_SETSEL` of the same control, units both ways),
+`EM_SETSEL 0,-1`, `SetWindowText(HWindow, "")` on Esc, `CB_LIMITTEXT`
+(a limit in units, as before), `AttachBackspaceHandler` (W/A aware since
+feature 015), the prefix window itself (a code-page `STATIC` that paints its
+own text wide; its window text is empty).
+
+**Plug-ins.** No service returns the command line's text or its window.
+`CPluginFSInterface::ExecuteCommandLine` gets the command as UTF-8 (since
+feature 005) in a `SALCMDLINE_MAXLEN + 1` buffer and the edit as dialog
+parent - unchanged; the selection it returns is now applied correctly for
+non-ASCII text. `CSalamanderGeneral::InstallWordBreakProc` installs the
+routines above on a plug-in's own control: same breaks for text of a
+single-byte code page. Interface 107, no change.
+
+**Probe** `probe/cmdline_probe.ps1` (hidden desktop), 64 rows; text cases
+ASCII / code page (`ř ž č`) / outside it (Cyrillic, CJK, a surrogate pair):
+
+| Row | | S3 (`cmdline_result.txt`) | pre-093 (`cmdline_result_pre093.txt`) |
+|---|---|---|---|
+| C1 | combo / edit are Unicode windows | True / True | False / False |
+| C2 | set by the program (to the combo, to the edit), read back | 6 PASS | outside the code page: `?` |
+| C3 | typed (posted `WM_CHAR` per unit) | 3 PASS | outside the code page: `?` |
+| C3 | typed `x č ĉ y`: no Enter, no Tab | PASS | `ĉ` arrives as `c` |
+| C4 | Ctrl+Enter inserts the name of each of 5 files (name + space, no quotes - also for `a b.txt`, both builds) | 5 PASS | Cyrillic, CJK, emoji: `??.txt` |
+| C5 | the same into the middle of `ab`: text, caret, the next typed character | 15 PASS | ASCII and code page: text and next character PASS; the others not driven |
+| C6 | `copy nul "<name>.flag"` + Enter: the file on disk; the line is empty afterwards | 6 PASS | outside the code page: no such file (the line held `??????`) |
+| C7 | first item of the drop-down = the command; Ctrl+Down recalls it; stored `Command History` after a normal exit; URL password stripped (085) | 9 PASS | outside the code page: `?` in the list and in the registry |
+| C8 | Ctrl+Backspace twice (word, then up to the dot); Backspace on `ab`, `ař`, `aЖ`, `a📁` | 10 PASS | outside the code page: FAIL (text already `?`; the emoji is two `?`, Backspace leaves one) |
+| C9 | prefix: code-page `Static`, empty window text, width 308 px | info | 338 px |
+| C10 | ASCII: typing, Home / End / Left / Shift+Left by where the next character lands, Esc clears, focus edit -> panel | 7 PASS | 7 PASS |
+| | | **63 PASS, 0 FAIL** | 37 PASS, 17 FAIL, 3 not driven |
+
+Two of the 17 are not defects of the old build: C5 "caret" for the ASCII and
+the code-page name. Through a code-page subclass the reply to a cross-process
+`EM_GETSEL` is not the caret (it read `4,0 5,0 6,0 7,0` = the text length
+while Home / End / Left demonstrably moved it), so on the old build the caret
+is proven only by where the next character lands - which passes. No offset
+defect for code-page text was found in the old build: it never computed an
+offset from UTF-8 bytes on a path the probe reaches.
+
+Keys with Ctrl / Shift are driven by `AttachThreadInput` + `SetKeyboardState`
+from the probe and sent `WM_KEYDOWN` / `WM_KEYUP`; no input is injected.
+
+`probe/dialogs_probe.ps1`, hidden desktop, 140 rows after the menu rows were
+reworked (below):
+
+| Build | PASS | LOSSY | FAIL | NOT DRIVEN |
+|---|---|---|---|---|
+| S3 (`s3_dialogs_result.txt`) | 139 | 0 | 0 | 1 |
+| pre-093 (`s3_dialogs_result_pre093.txt`) | 109 | 30 | 1 | 0 |
+
+The two command-line rows are PASS on S3. The one FAIL of the old build is
+Find's search (its lossy *Look in* finds nothing).
+
+**"Find menu by Alt+F" was a probe artefact, not a defect.** The first S3 run
+of the probe failed that row (and the build of HEAD without S3 failed it the
+same way). The independent review found the cause: the popup does open,
+within 40 ms, on both builds; on the hidden desktop something closes it about
+0.4 s later when the row runs right after a search that FOUND an item, and
+the probe looked only after 0.8 s. The pre-093 build "passed" only because
+its lossy *Look in* found nothing and the probe then waited 8 s before the
+row; with an ASCII folder pre-093 fails the same way 3 of 3. On the
+interactive desktop the menu stays open on both builds. The likely closer is
+`MenuMessageHookProc` (`src/menu1.cpp`), which closes menus on any
+`WM_ACTIVATE` / `WM_NCACTIVATE` / `WM_KILLFOCUS` in the thread; only the hidden
+desktop has the extra "UAC Input Indicator" windows.
+
+The rows now: the menu bar is driven BEFORE Find Now; a popup is detected by
+polling every 40 ms for 2 s ("opened at least once", one more attempt when
+none shows up - never needed in the saved runs); every top-level mnemonic is
+driven - Find `F M E V O`, main window `L F E C P O R H` - three ways: Alt+
+letter as a posted `WM_SYSCHAR`, the plain letter inside the menu bar's own
+loop after Esc closed the popup, and Alt+letter as a posted `WM_SYSKEYDOWN`
+with Alt in the shared key state. Hidden desktop: main 24 / 24 on both
+builds; Find 15 / 15 on pre-093 and 14 / 15 on S3 - the one NOT DRIVEN is
+"plain F in the menu bar loop", where the first popup of the run went away by
+itself before the probe's Esc (the effect above; it differs from run to run).
+The popup positions are identical on both builds, row by row.
+**The interactive-desktop matrix is the reviewer's run, not this probe's**:
+main 16 / 16 and Find 10 / 10 on both builds, identical popup positions. An
+interactive run of this probe was started and stopped (the user was working
+at the machine); nothing of it is kept. A check with a real keyboard is owed
+to a person.
+
+saltests 12,943 -> 12,973 (`TestCmdLineOffsets093`); strict guard TOTAL 0;
+Debug build only (no Release build in this stage).
+
+**Independent review - ACCEPT.** Its own evidence, beyond the probes:
+
+- Word-break callbacks fuzzed against the old ones: ASCII text 9,897,591
+  calls, 0 differences; code page 1250 text, the old Unicode callback against
+  the new one, 3,600,000 calls, 0 differences; arbitrary UTF-16: no result
+  out of range and no break inside a surrogate pair.
+- The rewritten `CEditDropTarget` exercised in a harness, 25 cases: the same
+  results as the old class for ASCII and code-page text.
+
+Not driven / open:
+
+1. A real mouse drag through OLE onto the command line and the painting of
+   the insert mark (the class was run only in the reviewer's harness).
+2. The selection returned by a plug-in file system (`SalU8OffsetToW` at the
+   call site; the shipped plug-ins looked at return an empty line), Alt+Enter,
+   `StoreContent` / `RestoreContent` (the temporarily shown command line),
+   Ctrl+Shift+Enter (short name), Ctrl+[ / ] / Space (path insertion), Tab.
+3. Ctrl+Left / Ctrl+Right and double click in the product (the control calls
+   `EditWordBreakProcUNICODE`; fuzzed by the reviewer, and Ctrl+Backspace,
+   which uses the same routine, was driven).
+4. A real keyboard (also for the menu mnemonics), an input method editor,
+   paste from the clipboard, the dark theme, a system with a double-byte code
+   page.
+5. The word-break routine no longer treats a character the code page maps to
+   a delimiter by best fit (e.g. a full-width full stop) as a delimiter.
+6. The "too long" refusal was not driven. It is reachable only when the
+   UTF-8 form of the line exceeds 8,192 bytes (the line holds about 8,150
+   UTF-16 units, so only with non-ASCII text - e.g. more than about 2,700 CJK
+   characters). The message is the existing one and says "path"; the pre-093
+   build failed there with error 123 (the text re-read through the code
+   page), S1 would have run the command cut short.
+7. The main window's title still shows `?` for such a folder (the main
+   window is a code-page window) - seen again, not part of the stage.
+8. The probe leaves nothing; `dialogs_probe.ps1` leaves its registry backup
+   in `%TEMP%` as before.
+9. The probes export and restore the whole registry key; an installed copy
+   of the program running at the same time (seen during the last runs) shares
+   that key - a setting it saves while a probe runs is rolled back by the
+   restore.
