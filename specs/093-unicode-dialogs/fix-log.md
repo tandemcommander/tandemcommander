@@ -640,3 +640,21 @@ program at another key).
 
 **Not done / owed to a person**: `quickstart.md` - the real-keyboard pass
 (menus first), an input method editor, a mouse drag onto the command line.
+
+## S4 addendum - the probes on the visible desktop (2026-10-02)
+
+Run at the maintainer's request with the installed program closed, Debug
+build of the final tree:
+
+| Probe | Result |
+|---|---|
+| 093 `dialogs_probe` (`probe/s4_dialogs_result_visible.txt`) | **140 PASS, 0 LOSSY, 0 NOT DRIVEN, 0 FAIL** - every menu mnemonic row of the main window and of Find, including the row the hidden desktop could not drive |
+| 093 `cmdline_probe` (`probe/s4_cmdline_result_visible.txt`) | 63 PASS, 0 FAIL |
+| 093 `pwd_gui_probe` (`probe/s4_pwd_gui_result_visible.txt`) | 29 PASS, 0 FAIL |
+| 088 `longpath_probe` | 10 / 10 |
+| 088 `viewers_probe` | 9 of 10; row P4 is marked FAIL by the probe's own post-check (`RmGetList failed: 234`, i.e. the list grew between its two calls) after the product had done what the row tests: shutdown agreed in 1.4 s, the process ended, no window left |
+
+So the failures the 088 probes showed on the hidden desktop were artefacts of
+that desktop, as assumed. The registry key is identical before and after;
+no test process left. Still owed to a person: real key presses
+(`quickstart.md`).
