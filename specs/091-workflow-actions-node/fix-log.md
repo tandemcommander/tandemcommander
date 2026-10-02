@@ -78,3 +78,28 @@ too confident — see below.
 
 A real run of each workflow after the branch is merged (`quickstart.md`).
 `PRIVACY.md` and `CHANGELOG.md`: no change (no product file changed).
+
+## Decision of 2026-10-02 - fork pull requests in `pr-comments-guard.yml`
+
+The maintainer chose to **opt in**: the checkout step carries
+`allow-unsafe-pr-checkout: true`. Why it is acceptable here, and what keeps
+it so (also written as a comment at the step):
+
+- the job runs the checkout only after a maintainer put the label
+  `comments translation` on the pull request;
+- `permissions: contents: read`, `persist-credentials: false`, no secret is
+  passed to the steps that touch the checkout;
+- the steps come from the workflow file on the base branch; the checked-out
+  code is never built or run - it is preprocessed with `clang -E` and the
+  results are diffed.
+
+What remains true: `clang -E` reads whatever the pull request's files
+`#include`, so a hostile pull request can make the preprocessor read files of
+the runner; the runner is a fresh hosted machine and the job has nothing
+worth reading beyond the read-only token of the first step, which is not in
+the environment of the later steps. Adding a step that executes anything from
+the checkout would change this judgement.
+
+Not run: nothing is pushed from this session. The first labelled fork pull
+request after the push is the test.
+

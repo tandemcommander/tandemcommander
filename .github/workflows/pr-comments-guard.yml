@@ -63,6 +63,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
+          # actions/checkout refuses fork pull-request code under pull_request_target
+          # unless this is set (v7.0.0; backported to the older majors on 2026-07-20).
+          # Accepted by the maintainer on 2026-10-02 because this job: runs only for a
+          # pull request a maintainer labelled "comments translation"; has a read-only
+          # token that is not persisted; and never builds or runs the checked-out code -
+          # the steps are defined here, on the base branch, and only preprocess the
+          # files with clang -E and diff the results. Do NOT add a step that executes
+          # anything from the checkout (scripts, build, tools from the tree), and do
+          # not give this job secrets or write permissions.
+          allow-unsafe-pr-checkout: true
 
       - name: Verify comment-only changes
         if: steps.label_check.outputs.should-skip != 'true'

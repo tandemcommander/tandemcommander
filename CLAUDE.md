@@ -991,7 +991,10 @@ plugin architecture preservation, UI consistency.
   on 2026-07-20, on every older major too - so `pr-comments-guard.yml` has
   failed for labelled fork pull requests since then; opting in
   (`allow-unsafe-pr-checkout: true`) or retiring the upstream
-  comment-translation workflows is a security decision left open.
+  comment-translation workflows was a security decision - **decided
+  2026-10-02: opted in** (the job only preprocesses the checkout with
+  `clang -E`, read-only token, maintainer's label required; never add a
+  step there that runs code from the checkout).
   Record: `specs/091-workflow-actions-node/fix-log.md`.
 - 092-name-identity-unicode: **"the same name" is the file system's rule**
   (encoding cluster B-2, core identity part). The core compared names with
