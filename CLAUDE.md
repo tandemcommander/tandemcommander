@@ -898,8 +898,9 @@ plugin architecture preservation, UI consistency.
     after *Skip* + Cancel. *Unpack and delete* hands every opened RAR part to
     the core (`OpenedVolumes`) and keeps the archive when the listing was
     incomplete (`ListingIncomplete`).
-  - **Password prompt stays ANSI** (cluster B-1): only code-page characters;
-    FR-010 revised. The password is wiped (`WipeUString`) on close, after a
+  - **Password prompt** (087 said "code-page characters only"): wrong - the
+    password was garbled for every non-ASCII character since 0.1.0; fixed by
+    feature 093. The password is wiped (`WipeUString`) on close, after a
     failed open and after an operation with errors.
   - Evidence: `specs/087-7zip-2603-rar/probe/` (`7zdrive.exe` drives any
     `7za.dll`; `run_engine_probe.py`: 23 RAR files of the 084 fixtures,
@@ -1023,3 +1024,53 @@ plugin architecture preservation, UI consistency.
     (NTFS arbitrates), `focus_probe.ps1`, `timing_probe.ps1`, `run_perf.cmd`.
     GUI steps owed (`quickstart.md`). Records:
     `specs/092-name-identity-unicode/fix-log.md`.
+- 093-unicode-dialogs: **text outside the code page in Find, Configuration,
+  the command line, and the 7zip password** (encoding cluster B-1).
+  - **The premise was measured in the product and was wrong.** Research on
+    windows in a process without the comctl32 6 manifest said "a dialog
+    created with `DialogBoxParamA` has code-page controls". In the product
+    (manifest present) `Edit` and `ComboBox` are Unicode controls regardless
+    of the entry point: Change Directory, Pack, Unpack, Select, filter lose
+    nothing. **Measure in the product before converting anything**
+    (`probe/dialogs_probe.ps1`: IsWindowUnicode, prefill, set, posted
+    characters).
+  - **What loses text** - two causes only: (1) a **code-page message loop**
+    (`GetMessageA`/`IsDialogMessageA`/`DispatchMessageA`) converts typed
+    characters before the window sees them: Find's thread loop, the
+    Configuration holder (`common/sheets.cpp`), and the main loop's
+    `IsDialogMessage` are wide now; (2) a **code-page `CWindow` attached to a
+    text control** flips it: attach helpers of text fields with
+    `CWindow::AttachToWindowKeepKind` (`CComboboxEdit`, the in-place list
+    editor, the command line's `CEditWindow`/`CEditLine`). Plain
+    `AttachToWindow` on an edit is a defect; `CStaticText`/`CButton` stay
+    code-page (they pass `char*` text and go to plug-ins). Contract:
+    `specs/093-unicode-dialogs/contracts/dialog-unicode.md`.
+  - **Menu mnemonics** compare UTF-16 (`IsMenuBarMessageEx`,
+    `SalMnemonicMatchW`); the plug-in-facing `IsMenuBarMessage` is unchanged.
+    The Debug build used to crash on Alt+`ř` in the main window (RTC cast).
+  - **Command line**: `WM_CHAR` switch on the whole unit (cut to a byte,
+    U+010D was Enter), word break and Ctrl+Backspace on UTF-16, selection
+    offsets in units (`SalU8OffsetToW`), drop target wide.
+  - **Overflow**: `EditLine`/`SalGetWindowTextU8` cut at a whole character
+    (`SalWToU8Truncate`) instead of a code-page re-read.
+  - **7zip password**: winliblt's `EditLine` returns UTF-8, four consumers
+    read it as `CP_ACP` - every non-ASCII password was garbled since 0.1.0
+    (archives made elsewhere did not open; archives made by the plug-in need
+    the garbled password elsewhere). Now UTF-16 from the field to the engine.
+    **Legacy form** (`src/common/salarcpwd.h`, verified against the old code
+    on 800,776 cases) is tried **per item**: a preference test on a second
+    handler, pass 2 over refused items with the other form, pass 3 for a
+    damaged item's partial output; unrequested and declined items of a
+    failed block are not errors. Three reviews (REJECT: one form per archive
+    broke mixed archives; REJECT: a successful extraction counted as failed;
+    ACCEPT). Also fixed: a wrong password on a content-encrypted archive did
+    nothing and said nothing. **The ZIP and SFTP prompts use the same
+    `EditLine` and were not examined.**
+  - **GUI probes run on a hidden desktop**: `tools/run_on_hidden_desktop.ps1`
+    (CreateDesktop, no admin) - the maintainer works on the machine. Limits:
+    no real keyboard; a menu popup may close by itself there (probe artefact,
+    proven on both builds). Probes share `HKCU\Software\Tandem Commander`
+    with an installed instance (backup/restore of the whole key).
+  - saltests 12,828 -> 12,973. Interface stays 107. A real-keyboard pass is
+    owed (`quickstart.md`, menus first). Records:
+    `specs/093-unicode-dialogs/fix-log.md`.

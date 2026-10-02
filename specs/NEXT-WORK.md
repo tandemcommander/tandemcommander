@@ -400,6 +400,40 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   install-path chain (`plugins2.cpp`, ANSI operands) are not part of B-2's
   identity work.
 
+**B-1 (text typed into windows) - DONE where it was real (feature 093,
+2026-10-02).** Measured in the product first: with the common-controls 6
+manifest the edit and combo controls are Unicode controls even in dialogs
+created through the code-page entry point, so the "88 of 90 ANSI dialogs"
+were never lossy as a class. What was lossy and is fixed: typing in Find
+Files and in Configuration (code-page message loops), Find's *Look in* /
+*Containing* and the in-place list editor (a code-page helper attached), the
+command line, and the 7zip plugin's password (handed to the engine garbled
+since 0.1.0). Record: `specs/093-unicode-dialogs/fix-log.md`. Left, each
+with its reason there:
+
+- **A real-keyboard pass** (owed to a person, `093/quickstart.md`): Alt+F and
+  the other menu mnemonics in the main window and in Find, typing with a
+  Czech layout, an input method editor, a mouse drag onto the command line.
+  The probes post window messages; they cannot press keys.
+- **The main window's title** shows `?` for a folder named outside the code
+  page (the main window is a code-page window).
+- **The loops that only drain messages during an operation** and the menus'
+  own modal loops are still code-page loops: a character typed ahead into a
+  field while one runs is converted; an accented mnemonic typed while the
+  menu bar is active is matched only when the keyboard layout's code page is
+  the system's.
+- **Message boxes, master-password dialogs** (their bytes feed a key - must
+  not change), **other plug-ins' dialogs** (FTP, SFTP, ZIP, renamer, ...):
+  untouched. The ZIP and SFTP password prompts were not examined for the
+  defect the 7zip plugin had - **check them next** (same shared `EditLine`,
+  which returns UTF-8).
+- **The plug-in copy of the dialog library** (`winliblt`) still falls back to
+  a code-page read when the text does not fit the buffer.
+- **7zip plugin**: an archive that mixes the two password forms stays mixed
+  (the plug-in cannot re-encrypt); a damaged item under a two-form password
+  is decoded up to three times; the Test command's second pass, cancel during
+  a retry pass and RAR were not driven.
+
 What the section said before 092:
 
 Of the five systemic clusters in `069/REMAINING-WORK.md` §1, **B-2 is the only
@@ -566,7 +600,9 @@ statement*).
 > reached the engine. **Owed** (join item 3): the GUI pass of
 > `087-7zip-2603-rar/quickstart.md` — RAR on a fresh and on an upgraded
 > configuration (associations), the password prompt, the links message.
-> **Left**: a Unicode password prompt belongs to encoding cluster B-1.
+> **Left**: a Unicode password prompt belongs to encoding cluster B-1 -
+> ✅ done by feature 093 (and the password was garbled for every non-ASCII
+> character, not only limited to the code page).
 > ✅ **The three items below are DONE (feature 089, 2026-10-01)** — record:
 > [`089-7zip-followups/fix-log.md`](089-7zip-followups/fix-log.md): the shared
 > plug-in converters (`splunicode.h`) are WTF-8 for every plug-in; 7z update

@@ -592,3 +592,51 @@ Not driven / open:
    of the program running at the same time (seen during the last runs) shares
    that key - a setting it saves while a probe runs is rolled back by the
    restore.
+
+## S4 - gates
+
+All windows on the hidden desktop (`tools/run_on_hidden_desktop.ps1`); the
+maintainer closed the installed program for the final runs.
+
+| What | Result |
+|---|---|
+| Debug build; full Release build (`build.cmd full release`: 20 plug-ins, 189 language modules, runtime closure OK) | no errors |
+| saltests | 12,973 checks, 0 failed |
+| `check_encoding.py --strict` | TOTAL: 0 |
+| 093 `dialogs_probe` | 139 PASS, 0 LOSSY, 0 FAIL, 1 NOT DRIVEN (pre-093: 109 / 30 / 1) |
+| 093 `cmdline_probe` | 63 PASS, 0 FAIL (pre-093: 37 / 17) |
+| 093 `pwd_gui_probe` | 29 PASS, 0 FAIL (pre-093: 9 / 20) |
+| 093 `pwd_engine_probe` | 53 checks, 0 unexpected |
+| 092 `build_and_run.cmd` | both probes pass |
+| 092 `focus_probe`, the ten NEW rows | 10 PASS |
+| 089 `assoc_probe` | RESULT: PASS |
+| 087 `run_engine_probe.py` on the Debug `7za.dll` | 0 failed |
+| 088 `viewers_probe`, `longpath_probe` | see below |
+| registry key after everything | identical to the state before (SHA-256 `CDC4CF03...`) |
+
+**The 088 probes on the hidden desktop** were written for the visible
+desktop and count every window they did not expect:
+
+- `longpath_probe`: every step shows the right file in the right viewer
+  (titles in the log); 8 rows are marked FAIL only because the two system
+  windows of a new desktop (`UAC Input Indicator`) are counted as unexpected.
+- `viewers_probe`, two runs of the new build and one of the pre-093 build:
+  row N3 fails on both builds for the same reason (two "other windows").
+  Rows P1 / P3 / P5 failed in one run of the new build, passed in the next,
+  and P1 / P5 failed on the **pre-093** build as well: the first Code Viewer
+  (WebView2) start on a desktop that is not the input desktop sometimes takes
+  over 30 s. Not attributable to this feature; the rows passed 10/10 on the
+  visible desktop after feature 092, and nothing in 093 touches the viewers'
+  close path. Owed: one run of the two 088 probes on the visible desktop when
+  the machine is free (and making them ignore the two system window classes).
+
+**Shared registry key.** The GUI probes back up, change and restore the whole
+key `HKCU\Software\Tandem Commander`. An installed instance running at the
+same time reads the probe's temporary settings if it starts during a run,
+and loses what it saves during one. One probe run was killed mid-way on the
+maintainer's request; the key was restored from the probe's backup and
+verified. Recorded as a limit of the probes (they need a way to point the
+program at another key).
+
+**Not done / owed to a person**: `quickstart.md` - the real-keyboard pass
+(menus first), an input method editor, a mouse drag onto the command line.

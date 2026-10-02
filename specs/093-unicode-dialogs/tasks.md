@@ -34,6 +34,6 @@ strict guard, probe, independent review, fixes, fix-log, commit.
 
 ## Phase 5 - Polish (S4)
 
-- [ ] T017 Gates: Debug + full Release builds, saltests, strict guard, probes of 087/088/089/092 and of this feature
-- [ ] T018 Records: CHANGELOG, specs/NEXT-WORK.md, 069 REMAINING-WORK (B-1), CLAUDE.md, quickstart.md, fix-log.md
-- [ ] T019 Commit
+- [X] T017 Gates: Debug + full Release builds, saltests, strict guard, probes of 087/088/089/092 and of this feature
+- [X] T018 Records: CHANGELOG, specs/NEXT-WORK.md, 069 REMAINING-WORK (B-1), CLAUDE.md, quickstart.md, fix-log.md
+- [X] T019 Commit

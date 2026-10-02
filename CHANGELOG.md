@@ -45,7 +45,52 @@ Windows, and on a Central European system some unrelated names - `ĥ.txt` and
 Windows file systems wherever it finds a file by name, decides about
 overwriting, deleting or renaming, compares paths, or keeps a list of names.
 
+Text outside the system code page in Find, Configuration and the command
+line, and passwords in the 7zip plugin (feature 093). On a Czech Windows a
+character such as `Ж` or `日` typed into Find Files, into a Configuration
+page or into the command line became `?`, and the 7zip plugin handed every
+password with a non-English letter to the archive engine garbled.
+
 ### Fixed
+
+- **7z and RAR archives with a non-English letter in the password open, and
+  the 7zip plugin encrypts with the password you type.** Since the first
+  release the plugin garbled every password containing a character outside
+  ASCII (for example `ř`) before using it. An archive encrypted in another
+  program with such a password could not be opened; an archive created by
+  the plugin was encrypted with the garbled password, so other programs
+  could not open it with the password you had typed - and neither could the
+  plugin on a computer with another system code page. The password is now
+  used exactly as typed, with any characters. **Archives made by earlier
+  versions still open with the password you remember**: when the typed
+  password is refused, the plugin tries the form the earlier version used,
+  file by file, without asking again. Files you add to such an archive keep
+  the archive's existing password form, so it stays openable as a whole;
+  to get an archive every program opens with the password as typed, unpack
+  it and pack it again. (This replaces the note under *Added* that passwords
+  could contain only code-page characters - they did not work correctly
+  either.)
+- **A wrong password for a 7z archive is reported.** With a wrong password
+  for an archive whose file names are not encrypted, unpacking produced
+  nothing and showed no message. It now says that the data could not be
+  unpacked and that the password may be wrong, once per operation, and goes
+  on with the files that can be unpacked.
+- **Find Files accepts any text.** Characters outside the system code page
+  typed into *Named*, *Look in* or *Containing* became `?`, and *Look in*
+  showed `?` even for a folder it was opened from - so a search in a folder
+  named, say, in Cyrillic on a Czech Windows found nothing. The fields now
+  keep what you type and the search uses it.
+- **Configuration keeps such text when typed**: hot paths, User Menu
+  commands, arguments and directories, viewer and editor commands, and the
+  items edited in place in the lists.
+- **The command line keeps such text**: typed, pasted, dropped, or inserted
+  with Ctrl+Enter - a file named `日本.txt` was inserted as `??.txt`. The
+  command runs with the real name and the history stores it.
+- **Alt+letter with an accented letter in the main window** no longer does
+  the wrong thing: the letter was compared as a different character (`ř` as
+  `Y`), and menu shortcuts on accented letters never worked.
+- Text too long for a field's storage is cut at a whole character instead of
+  being stored with `?` in place of the characters outside the code page.
 
 - **The cursor stays on a file whose name differs only in the case of an
   accented letter.** After a refresh, after returning from a subfolder, or
@@ -215,9 +260,8 @@ overwriting, deleting or renaming, compares paths, or keeps a list of names.
   refused instead of exhausting the memory. *Unpack and delete* removes all
   parts of a split archive. **Links are not created**:
   symbolic and hard links stored in an archive are left out, and you are told
-  how many. **Passwords** can contain only characters of the system code page
-  (for example Czech letters on a Czech Windows); the password prompt cannot
-  take others yet.
+  how many. **Passwords** can contain any characters (see *Fixed*, feature
+  093).
 
 - **Cancel.** While an external archiver runs, the small "Executing external
   program" window has a *Cancel* button, and Esc does the same. It stops the
