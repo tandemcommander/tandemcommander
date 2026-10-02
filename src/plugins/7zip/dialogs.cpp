@@ -523,19 +523,45 @@ CExtOptionsDialog::CExtOptionsDialog(HWND hParent)
     Encrypt = FALSE;
 
     Archive[0] = '\0';
-    Password[0] = '\0';
-    ConfirmedPassword[0] = '\0';
+    Password[0] = 0;
+    ConfirmedPassword[0] = 0;
 
     NotAgain = FALSE;
 
     Title = NULL;
 }
 
+CExtOptionsDialog::~CExtOptionsDialog()
+{
+    WipePassword(Password);
+    WipePassword(ConfirmedPassword);
+}
+
+// feature 093: the field is read wide by the dialog itself. The shared
+// EditLine stores UTF-8 in a byte buffer and falls back to a code-page read
+// when it does not fit; a password must be neither cut nor re-encoded.
+void TransferPasswordField(HWND dialog, int ctrlID, CTransferInfo& ti, WCHAR* password)
+{
+    HWND ctrl = GetDlgItem(dialog, ctrlID);
+    if (ctrl == NULL)
+        return;
+    if (ti.Type == ttDataToWindow)
+    {
+        SendMessageW(ctrl, EM_LIMITTEXT, PASSWORD_LEN - 1, 0);
+        SetWindowTextW(ctrl, password);
+    }
+    else
+    {
+        WipePassword(password);
+        GetWindowTextW(ctrl, password, PASSWORD_LEN);
+    }
+}
+
 void CExtOptionsDialog::Transfer(CTransferInfo& ti)
 {
     ti.CheckBox(IDC_NA_ENCRYPTFILES, Encrypt);
-    ti.EditLine(IDC_NA_PASSWORD, Password, PASSWORD_LEN);
-    ti.EditLine(IDC_NA_CONFIRMPASSWORD, ConfirmedPassword, PASSWORD_LEN);
+    TransferPasswordField(HWindow, IDC_NA_PASSWORD, ti, Password);
+    TransferPasswordField(HWindow, IDC_NA_CONFIRMPASSWORD, ti, ConfirmedPassword);
 
     ti.CheckBox(IDC_NA_NOTAGAIN, NotAgain);
 
@@ -591,14 +617,14 @@ CExtOptionsDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (TransferData(ttDataFromWindow))
                 if (Encrypt)
                 {
-                    if (lstrlen(Password) <= 0)
+                    if (Password[0] == 0)
                     {
                         SalamanderGeneral->SalMessageBox(HWindow, LoadStr(IDS_EMPTYPASSWORD), LoadStr(IDS_ERROR),
                                                          MB_OK | MB_ICONEXCLAMATION);
                         return TRUE;
                     }
 
-                    if (lstrcmp(Password, ConfirmedPassword) != 0)
+                    if (wcscmp(Password, ConfirmedPassword) != 0) // exact, unit by unit
                     {
                         SalamanderGeneral->SalMessageBox(HWindow, LoadStr(IDS_PASSWORDSNOTMATCH), LoadStr(IDS_ERROR),
                                                          MB_OK | MB_ICONEXCLAMATION);
@@ -642,13 +668,18 @@ CExtOptionsDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 CEnterPasswordDialog::CEnterPasswordDialog(HWND hParent)
     : CCommonDialog(HLanguage, IDD_ENTERPASSWORD, hParent)
 {
-    Password[0] = '\0';
+    Password[0] = 0;
     //  FileName[0] = '\0';
+}
+
+CEnterPasswordDialog::~CEnterPasswordDialog()
+{
+    WipePassword(Password);
 }
 
 void CEnterPasswordDialog::Transfer(CTransferInfo& ti)
 {
-    ti.EditLine(IDC_PASSWORD, Password, PASSWORD_LEN);
+    TransferPasswordField(HWindow, IDC_PASSWORD, ti, Password);
 }
 
 INT_PTR

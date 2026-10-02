@@ -33,6 +33,13 @@ class CArchiveOpenCallbackImp Z7_final : public IArchiveOpenCallback,
 
 private:
     UString& Password;
+
+public:
+    // feature 093: the engine asked for the password / the user typed it now
+    bool PasswordAsked;
+    bool PasswordTyped;
+
+private:
     AString FolderU8;                // the opened archive's folder (UTF-8, interface 104), no trailing '\'
     UString FileNameW;               // the opened archive's file name
     CObjectVector<AString>* Volumes; // out: full UTF-8 paths of the other volumes opened (may be NULL)

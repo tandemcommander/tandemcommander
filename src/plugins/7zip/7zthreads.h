@@ -11,7 +11,8 @@
 #define WM_7ZIP_CREATEFILE 3
 #define WM_7ZIP_SHOWMBOXEX 4
 #define WM_7ZIP_DIALOGERROR 5
-#define WM_7ZIP_PASSWORD 6
+#define WM_7ZIP_PASSWORD 6   // lParam: WCHAR[PASSWORD_LEN] (feature 093)
+#define WM_7ZIP_POLLCANCEL 7 // feature 093: returns E_ABORT when the user cancelled
 
 // Argument to WM_7ZIP_CREATEFILE
 struct CCreateFileParams

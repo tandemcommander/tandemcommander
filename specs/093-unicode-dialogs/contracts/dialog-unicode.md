@@ -60,12 +60,20 @@ label-only dialogs; every plug-in dialog except the 7-Zip password prompts.
 
 ## P1 — 7-Zip password
 
-The typed password is held as UTF-16 and handed to the engine unchanged. For
-an existing archive, when the engine answers "wrong password" (or a data /
-CRC error on an encrypted item) with the true password, the plug-in tries
-once the **legacy form**: the UTF-8 bytes of the typed text read as text of
-the system code page — what versions up to and including the one before this
-feature handed to the engine. If the legacy form succeeds the operation
-continues silently. New archives are always encrypted with the true
-password. For ASCII passwords the two forms are identical and no retry
-happens.
+The typed password is held as UTF-16 and handed to the engine unchanged. An
+existing 7z archive may hold items encrypted with the **legacy form**: the
+UTF-8 bytes of the typed text read as text of the system code page — what
+versions up to and including the one before this feature handed to the
+engine. The rule is **per item**: an item refused with the preferred form
+("wrong password", or a data / CRC error on an encrypted item) is tried once
+with the other form, silently, before the user is told; an item the user
+skipped is not tried again, and an item the operation did not ask for never
+decides its result. A damaged item is reported once and keeps the
+keep-or-delete choice it always had. The preferred form is the one a test of an
+encrypted item accepts right after the password was typed (for encrypted
+headers: the one the archive opens with); it stays the session password
+unless only the other form opened anything. New archives are always encrypted
+with the true password; items added to an existing archive get the form its
+content opens with (the typed text when it opens with neither). For ASCII
+passwords the two forms are identical and no retry happens; RAR archives are
+never retried.

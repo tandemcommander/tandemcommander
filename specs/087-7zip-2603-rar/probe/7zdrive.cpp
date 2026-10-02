@@ -16,6 +16,7 @@
 //   7zdrive create  <dll> <archive.7z> <srcdir> [-p<pw>] [-mhe] [-ms=off] [-mx=<n>]
 //   7zdrive hostile <dll> <archive.7z>        (entries with unsafe names)
 //   7zdrive bigtree <dll> <archive.7z> <n>    (n tiny entries, for timing)
+//   any -p<pw> may be given as -pu:<hex>,<hex>,... (UTF-16 units; feature 093)
 //   7zdrive props   <dll> [-i4]               (every compression setting of the plugin's dialog)
 //   any command: -spl=<obj\spl\7zip.spl>      (thread trampoline check, fakespl.c)
 //
@@ -845,7 +846,22 @@ static int Run(int argc, char** argv)
         std::string a = argv[i];
         if (a.rfind("-spl=", 0) == 0)
             continue; // handled in main
-        if (a.rfind("-p", 0) == 0)
+        if (a.rfind("-pu:", 0) == 0)
+        {
+            // feature 093: the password as UTF-16 units in hex, comma separated
+            // ("-pu:68,159"), for text the ANSI command line cannot carry
+            g_password.clear();
+            for (const char* h = a.c_str() + 4; *h != 0;)
+            {
+                char* end;
+                g_password.push_back((wchar_t)strtoul(h, &end, 16));
+                h = (*end == ',') ? end + 1 : end;
+                if (end == h && *end != 0)
+                    break;
+            }
+            g_havePassword = true;
+        }
+        else if (a.rfind("-p", 0) == 0)
         {
             g_password = ArgW(a.c_str() + 2);
             g_havePassword = true;

@@ -1,0 +1,74 @@
+=== pwd_gui_probe: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-01 21:17:28)  [s2] ===
+plug-in: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\7zip.spl (built 2026-10-02 08:46:13); system code page 1250; 7-Zip 22.01 (x64) : Copyright (c) 1999-2022 Igor Pavlov : 2022-07-15
+typed-r = heslo-\u0159; legacy-r = heslo-\u0139\u2122; typed-c = \u043F\u0430\u0440\u043E\u043B\u044C; wrong-u = spatne-\u017E; other-u = jine-\u0161; long-c = 70 x U+0416
+
+   process exit code: 0
+U1  | archive by 7-Zip, content encrypted with typed-r; typed: typed-r | expected: one prompt, every file unpacked once and equal, no message | observed: prompts=1 (dlg=False edit=True); files unpacked=2, equal to the source=2 of 2; messages=0 | PASS
+   process exit code: 0
+U2  | archive by 7-Zip, headers encrypted with typed-r; typed: typed-r | expected: one prompt, every file unpacked once and equal, no message | observed: prompts=1 (dlg=False edit=True); files unpacked=2, equal to the source=2 of 2; messages=0 | PASS
+   process exit code: 0
+U3  | LEGACY archive, content encrypted with legacy-r; typed: typed-r | expected: one prompt, every file unpacked once and equal, no message | observed: prompts=1 (dlg=False edit=True); files unpacked=2, equal to the source=2 of 2; messages=0 | PASS
+   process exit code: 0
+U4  | LEGACY archive, headers encrypted with legacy-r; typed: typed-r | expected: one prompt, every file unpacked once and equal, no message | observed: prompts=1 (dlg=False edit=True); files unpacked=2, equal to the source=2 of 2; messages=0 | PASS
+   process exit code: 0
+U5  | archive by 7-Zip, content encrypted with typed-c (Cyrillic); typed: typed-c | expected: one prompt, every file unpacked once and equal, no message | observed: prompts=1 (dlg=False edit=True); files unpacked=2, equal to the source=2 of 2; messages=0 | PASS
+   process exit code: 0
+U6  | archive by 7-Zip, headers encrypted with typed-c (Cyrillic); typed: typed-c | expected: one prompt, every file unpacked once and equal, no message | observed: prompts=1 (dlg=False edit=True); files unpacked=2, equal to the source=2 of 2; messages=0 | PASS
+   process exit code: 0
+U7  | ASCII control, content encrypted with heslo123; typed: heslo123 | expected: one prompt, every file unpacked once and equal, no message | observed: prompts=1 (dlg=False edit=True); files unpacked=2, equal to the source=2 of 2; messages=0 | PASS
+   process exit code: 0
+U8  | wrong ASCII password: content encrypted with heslo123; typed: spatne | expected: one prompt, no file with the right content, the user is told | observed: prompts=1 (dlg=False edit=True); files unpacked=0, equal to the source=0 of 2; messages=1 | PASS
+    | messages shown: [#32770 '7-Zip'] [Static id=2477] Data error occured when unpacking file 'a.txt'. The wrong password may have been entered. | [Button id=1] OK buttons: 1=OK
+   process exit code: 0
+U9  | wrong non-ASCII password: content encrypted with typed-r; typed: wrong-u | expected: one prompt, no file with the right content, the user is told | observed: prompts=1 (dlg=False edit=True); files unpacked=0, equal to the source=0 of 2; messages=1 | PASS
+    | messages shown: [#32770 '7-Zip'] [Static id=2477] Data error occured when unpacking file 'a.txt'. The wrong password may have been entered. | [Button id=1] OK buttons: 1=OK
+   process exit code: 0
+U10 | wrong non-ASCII password: headers encrypted with typed-r; typed: wrong-u | expected: one prompt, no file with the right content, the user is told | observed: prompts=1 (dlg=False edit=True); files unpacked=0, equal to the source=0 of 2; messages=1 | PASS
+    | messages shown: [#32770 '7-Zip'] [Static id=2477] Cannot open archive 'C:\Users\pavel\AppData\Local\Temp\tc093_pwd\U10\panel\secret.7z'. The wrong archive password may have been entered. | [Button id=1] OK buttons: 1=OK
+   process exit code: 0
+M1  | MIXED: a.txt, b.txt under typed-r (7-Zip) + c.txt (22 KB) under legacy-r; unpack all, typed: typed-r | expected: one prompt, all three files equal, no message | observed: prompts=1; in the target: a.txt=equal, b.txt=equal, c.txt=equal; messages=0 | PASS
+   process exit code: 0
+M2  | MIXED with a tiny c.txt (the cheapest item is the legacy one); unpack all, typed: typed-r | expected: one prompt, all three files equal, no message | observed: prompts=1; in the target: a.txt=equal, b.txt=equal, c.txt=equal; messages=0 | PASS
+   process exit code: 0
+M3  | MIXED (as M1): only c.txt unpacked (mask c.txt in the Unpack dialog), typed: typed-r | expected: one prompt, c.txt equal, no message | observed: prompts=1; in the target: c.txt=equal; messages=0 | PASS
+   process exit code: 0
+M4a | ASCII mixed: a.txt, b.txt under pw1 + zadded.txt under pw2; typed: pw2 | expected: zadded.txt unpacked (as pre-093), one message about the others | observed: prompts=1; in the target: zadded.txt=equal; messages=1 | PASS
+    | messages shown: [#32770 '7-Zip'] [Static id=2477] Data error occured when unpacking file 'a.txt'. The wrong password may have been entered. | [Button id=1] OK buttons: 1=OK
+   process exit code: 0
+M4b | ASCII mixed: the same archive; typed: pw1 | expected: a.txt, b.txt unpacked (as pre-093), one message about the other | observed: prompts=1; in the target: a.txt=equal, b.txt=equal; messages=1 | PASS
+    | messages shown: [#32770 '7-Zip'] [Static id=2477] Data error occured when unpacking file 'zadded.txt'. The wrong password may have been entered. | [Button id=1] OK buttons: 1=OK
+   process exit code: 0
+M5  | DAMAGED cheapest item: legacy archive (legacy-r, not solid), packed bytes of b.txt flipped; typed: typed-r | expected: the intact a.txt unpacked and equal, one message for the damaged b.txt | observed: prompts=1; in the target: a.txt=equal; messages=1 | PASS
+    | messages shown: [#32770 '7-Zip'] [Static id=2477] Data error occured when unpacking file 'b.txt'. The wrong password may have been entered. | [Button id=1] OK buttons: 1=OK
+   process exit code: 0
+M6a | EXISTING a.txt in the target, MIXED as M1 (a.txt is met in the first pass); overwrite question: Skip | expected: asked once, a.txt on disk unchanged, b.txt and c.txt unpacked and equal, no message | observed: prompts=1; overwrite question asked 1 time(s); the user's a.txt unchanged: True; in the target: a.txt=DIFFERENT, b.txt=equal, c.txt=equal; messages=0 | PASS
+   process exit code: 0
+M6b | EXISTING a.txt in the target, MIXED as M2 (a.txt is met in the second pass); overwrite question: Skip | expected: asked once, a.txt on disk unchanged, b.txt and c.txt unpacked and equal, no message | observed: prompts=1; overwrite question asked 1 time(s); the user's a.txt unchanged: True; in the target: a.txt=DIFFERENT, b.txt=equal, c.txt=equal; messages=0 | PASS
+   process exit code: 0
+M7  | wrong non-ASCII password (wrong-u) on an archive by 7-Zip (typed-r); then Unpack again with typed-r | expected: one message, nothing (not even an empty file) in the target; a second Unpack command (a new session, so it asks in any case) unpacks with the right password | observed: first: prompts=1, messages=1, files left in the target: none; second: prompts=1, messages=0, in the target: a.txt=equal, b.txt=equal | PASS
+    | messages shown: [#32770 '7-Zip'] [Static id=2477] Data error occured when unpacking file 'a.txt'. The wrong password may have been entered. | [Button id=1] OK buttons: 1=OK
+V1  | IN THE PANEL: block a, b, e under legacy-r + d.txt under typed-r; e.txt copied out (CM_COPYFILES) twice; typed: typed-r | expected: e.txt equal both times, asked once (the password stays remembered), no message | observed: first copy: prompts=1, messages=0, target: e.txt=equal; second copy: prompts=0, messages=0, target: e.txt=equal | PASS
+   process exit code: 0
+   process exit code: 0
+X1  | RESULT: the same archive, Unpack with mask e.txt and "Delete archive after unpacking"; typed: typed-r | expected: e.txt equal, no message, the archive is deleted | observed: prompts=1; in the target: e.txt=equal; archive deleted (= the operation reported success): True; messages=0 | PASS
+   process exit code: 0
+Z1  | DAMAGED large item: legacy archive (legacy-r, not solid), p.txt (2.7 MB) with 16 packed bytes flipped + intact s.txt; typed: typed-r; question answered Keep | expected: s.txt equal; the question is asked once and Keep leaves the decoded part of p.txt (size above 0, as pre-093) | observed: prompts=1; s.txt equal: True; kept part of p.txt: 1343627 bytes (of 2700016); keep-or-delete question asked 1 time(s); messages=1 | PASS
+    | messages shown: [#32770 '7-Zip'] [Static id=2477] Error processing file 'p.txt'. The wrong password may have been entered. Do you want to delete or keep this file? | [Button id=6] &Delete | [Button id=7] &Keep | [Button id=2] Cancel buttons: 6=&Delete,7=&Keep,2=Cancel
+   process exit code: 0
+D1  | SKIP in a mis-keyed block: a, b (Delta filter, typed-r) + tiny c (legacy-r); mask b.txt, existing b.txt in the target, Skip, "Delete archive"; typed: typed-r | expected: asked once, the user's b.txt unchanged, no message, the archive is deleted (a skipped file is no failure) | observed: prompts=1; overwrite question asked 1 time(s); the user's b.txt unchanged: True; files in the target: 1; archive deleted (= success reported): True; messages=0 | PASS
+   process exit code: 0
+D2  | control for D1: the same archive and mask, no existing file | expected: b.txt equal, no message, the archive is deleted | observed: prompts=1; in the target: b.txt=equal; archive deleted (= success reported): True; messages=0 | PASS
+   process exit code: 0
+P1  | new archive packed by the plug-in, password typed-r | expected: 7-Zip tests it with typed-r, not with legacy-r | observed: dialog 'Create New Archive'; 7z t -p<typed-r>: True; 7z t -p<legacy-r>: False; messages=0 | PASS
+   process exit code: 0
+P2  | file added to a LEGACY archive (content encrypted with legacy-r), password typed-r | expected: one password: the whole archive tests with legacy-r, the file is in it | observed: dialog 'Add Files To Archive'; whole archive tests with legacy-r: True; with typed-r: False; added.txt in it: True; items: 3; messages=0 | PASS
+   process exit code: 0
+P3  | file added to an archive by 7-Zip (content encrypted with typed-r), password typed-r | expected: one password: the whole archive tests with typed-r, the file is in it | observed: whole archive tests with typed-r: True; with legacy-r: False; added.txt in it: True; items: 3; messages=0 | PASS
+   process exit code: 0
+P4  | file added to an archive encrypted with ANOTHER password (other-u), password typed-r | expected: written with the typed password: 7z t with typed-r passes for the added file, the original files still test with their own password; nothing refused | observed: added.txt tests with typed-r: True; with legacy-r: False; a.txt and b.txt still test with other-u: True; items: 3; messages=0 | PASS
+   process exit code: 0
+P5  | new archive, password of 70 Cyrillic letters (140 UTF-8 bytes: over the old 128-byte buffer) | expected: 7-Zip tests it with the typed text | observed: 7z t -p<the same 70 letters>: True; messages=0 | PASS
+Registry: restored; identical=True; SHA-256 before CDC4CF03AAE4F71AA07FFF27A6886BBA681603337B25ED02A40D820B20C007B3 / after CDC4CF03AAE4F71AA07FFF27A6886BBA681603337B25ED02A40D820B20C007B3
+
+Rows: PASS 29, FAIL 0; unexpected windows at start: 0
+Test processes left: 0; fixture folder left: False; registry restored identical: True; process exit codes: 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 #include "7za/CPP/Common/MyCom.h"
 #include "7za/CPP/Common/MyString.h"
@@ -26,6 +27,17 @@
 struct CArchiveItemInfo;
 
 typedef std::map<UINT32, CArchiveItemInfo*> ItemsToExtractMap;
+
+// feature 093 (contract P1): decides which form of a just typed password an
+// existing archive was encrypted with - the typed text, or the form versions
+// up to 0.1.8 derived from it (src/common/salarcpwd.h)
+class CPasswordFormChooser
+{
+public:
+    // in: the typed text; out: the form to use. Shows nothing, writes nothing.
+    // Returns FALSE when the user cancelled the operation meanwhile.
+    virtual BOOL ChoosePasswordForm(UString& password, HWND progressWnd) = 0;
+};
 
 // feature 087: 7-Zip 26.03 interface macros (Z7_*, every method throw())
 class CExtractCallbackImp Z7_final : public IArchiveExtractCallback,
@@ -110,6 +122,21 @@ public:
 
     int NumErrors;
     int LinksSkipped; // feature 087: link entries not extracted (reported after the operation)
+    CPasswordFormChooser* FormChooser; // feature 093: asked once per typed password; may be NULL
+
+    // feature 093 (contract P1): the other form of the password (owned by the
+    // client; NULL or empty = one form only, no second pass). In the first pass
+    // an encrypted item that fails with a wrong-password / data / CRC result is
+    // not reported: it is put on the retry list and extracted again, with the
+    // other form, by a second Extract() over exactly that list.
+    UString* OtherPassword;
+    bool BeginRetryPass();                          // after pass 1; FALSE: no second pass
+    UINT32* RetryIndices() { return &RetryList[0]; } // sorted; valid after BeginRetryPass() == true
+    UINT32 RetryCount() { return (UINT32)RetryList.size(); }
+    bool BeginRedoPass();                           // after pass 2; FALSE: no third pass
+    UINT32* RedoIndices() { return &RedoList[0]; }
+    UINT32 RedoCount() { return (UINT32)RedoList.size(); }
+    void EndRetryPass();                            // after the last pass: which form the session keeps
 
     const char* GetFileName() { return TargetFileName; }
     FILETIME GetLastWrite() { return ProcessedFileInfo.LastWrite; }
@@ -129,6 +156,26 @@ public:
 
 private:
     bool SkipCurrent; // feature 087: the current item is a skipped link
+    bool DataErrorTold; // feature 093: the "data error" of an undecodable block was shown
+    // feature 093: the two passes
+    int Pass;                       // 1; 2: the retry list with the other form; 3: the redo list with the first form
+    std::vector<UINT32> RetryList;  // items the first pass could not decode (never one the user skipped)
+    std::map<UINT32, bool> RetryHadOutput; // ... and whether the first pass had written output for them
+    std::vector<UINT32> RedoList;   // damaged items: failed in pass 2 without output after output in pass 1
+    std::vector<std::pair<UINT32, int> > UnrequestedFailed; // pass 1: items not asked for, with their result
+    std::vector<UINT32> DeclinedBlocks; // pass 1: blocks of declined items that failed the wrong-form way
+    UINT32 CurrentIndex;            // the item between GetStream and SetOperationResult
+    bool CurrentRequested;          // ... is one the operation was asked for
+    bool CurrentDeclined;           // ... was asked for, but GetStream gave the engine no stream for it
+    CArchiveItemInfo* CurrentInfo;  // ... its entry taken out of ItemsToExtract (extraction)
+    int Pass1EncOK;                 // encrypted items the preferred form opened
+    int Pass2OK;                    // items only the other form opened
+    UString PreferredForm;          // the session password while passes 2 and 3 run
+    UINT64 ProgressBase;            // progress: a later pass goes on behind the earlier ones
+    bool IsEncryptedItem(UINT32 index);
+    UINT32 BlockOf(UINT32 index);
+    bool DeferCurrent();
+    void ResetPasses();
     bool HaveOutFile; // feature 087: this callback opened an output file for the current item
     AString CurrentItemName; // feature 087: the current item's path in the archive (UTF-8), for messages
     bool CurrentIsDir; // feature 087: the current item is a directory this callback created

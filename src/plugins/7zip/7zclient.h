@@ -69,7 +69,14 @@ struct CArchiveItemInfo
 // C7zClient
 //
 
-class C7zClient : public NWindows::NDLL::CLibrary
+// feature 093: results of a password test against an archive's content
+#define PWDTEST_OK 1       // an encrypted item decodes with it
+#define PWDTEST_REFUSED 0  // it does not
+#define PWDTEST_UNKNOWN -1 // nothing to test it on (no encrypted item, archive not readable)
+#define PWDTEST_CANCEL -2  // the user cancelled
+#define PWDTEST_BLOCKS 3   // at most this many blocks are asked when both forms are refused
+
+class C7zClient : public NWindows::NDLL::CLibrary, public CPasswordFormChooser
 {
 public:
     struct CItemData
@@ -86,7 +93,11 @@ public:
 
 protected:
     // feature 087: 'format' = SALARC_FORMAT_7Z / _RAR / _RAR5 (salarcname.h)
-    BOOL CreateObject(const GUID* interfaceID, void** object, int format = 1 /* SALARC_FORMAT_7Z */);
+    // feature 093: 'keepLoaded' - an object of the engine is alive (or the engine
+    // is running on this thread's stack): the library must not be reloaded, which
+    // Load() does by freeing it first
+    BOOL CreateObject(const GUID* interfaceID, void** object, int format = 1 /* SALARC_FORMAT_7Z */,
+                      BOOL keepLoaded = FALSE);
 
 public:
     C7zClient();
@@ -99,6 +110,17 @@ public:
     // or name too long for the panel) - what is unpacked from it is not the
     // whole archive, so the archive must not be deleted afterwards
     BOOL ListingIncomplete;
+
+    // feature 093 (contract P1): called by the extract callback right after the
+    // password was typed; for a 7z archive and a password with a legacy form it
+    // tests an encrypted item with the typed text, then with the legacy form:
+    // 'password' becomes the PREFERRED form, PasswordOther the other one
+    virtual BOOL ChoosePasswordForm(UString& password, HWND progressWnd);
+
+    // feature 093: the other form of the session password of the archive this
+    // client serves (empty: the password has one form, or there is none). An
+    // item the session password does not open is tried once with it.
+    UString PasswordOther;
 
     BOOL ListArchive(const char* fileName, CSalamanderDirectoryAbstract* dir, CPluginDataInterface*& pluginData, UString& password);
 
@@ -114,7 +136,26 @@ public:
                TIndirectArray<CArchiveItemInfo>* archiveList, bool passwordIsDefined, UString& password);
 
 protected:
-    BOOL OpenArchive(const char* fileName, IInArchive** archive, UString& password, BOOL quiet = FALSE);
+    // feature 093: 'freshPassword' - 'password' was typed for this operation
+    // and never checked against the archive (a session password is not fresh)
+    BOOL OpenArchive(const char* fileName, IInArchive** archive, UString& password, BOOL quiet = FALSE,
+                     BOOL freshPassword = FALSE);
+
+    // feature 093: the last archive OpenArchive opened
+    AString OpenedName;      // full UTF-8 path
+    int OpenedFormat;        // SALARC_FORMAT_*
+    BOOL OpenAskedPassword;  // the engine needed the password to open it (encrypted headers)
+
+    // tests 'password' on the cheapest encrypted item of the 7z archive
+    // 'fileName', through a handler of its own (no file is written, nothing is
+    // shown); PWDTEST_*. Cancel is polled through 'salamander' (calling thread)
+    // or 'progressWnd' (worker thread); both may be NULL.
+    // 'which': 0 = the cheapest block's item, 1 = the next one, ... (PWDTEST_UNKNOWN when there is none)
+    int TestPassword(const char* fileName, const UString& password, int which, HWND progressWnd,
+                     CSalamanderForOperationsAbstract* salamander);
+    // typed text first, legacy form second; 'password' = the preferred form, 'other' = the other one
+    int ChooseForm(const char* fileName, UString& password, UString& other, HWND progressWnd,
+                   CSalamanderForOperationsAbstract* salamander);
 
     BOOL FillItemData(IInArchive* archive, UINT32 index, C7zClient::CItemData* itemData);
     BOOL AddFileDir(IInArchive* archive, UINT32 idx,

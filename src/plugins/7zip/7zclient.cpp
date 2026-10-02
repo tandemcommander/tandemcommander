@@ -13,6 +13,7 @@
 #include "7zthreads.h"
 #include "FStreams.h"
 #include "../../common/salarcname.h" // feature 087: safe item names, signatures
+#include "../../common/salarcpwd.h"  // feature 093: the two forms of a typed password
 
 #include "7zip.rh"
 #include "7zip.rh2"
@@ -96,14 +97,31 @@ void C7zClient::CItemData::SetMethod(const char* method)
 C7zClient::C7zClient()
 {
     ListingIncomplete = FALSE;
+    OpenedFormat = SALARC_FORMAT_UNKNOWN;
+    OpenAskedPassword = FALSE;
 }
 
 C7zClient::~C7zClient()
 {
+    WipeUString(PasswordOther); // feature 093
 }
 
-BOOL C7zClient::CreateObject(const GUID* interfaceID, void** object, int format)
+// feature 093: wipes a password on every way out of a function
+struct CWipeOnExit
 {
+    UString& S;
+    CWipeOnExit(UString& s) : S(s) {}
+    ~CWipeOnExit() { WipeUString(S); }
+};
+
+BOOL C7zClient::CreateObject(const GUID* interfaceID, void** object, int format, BOOL keepLoaded)
+{
+    if (keepLoaded && IsLoaded())
+    {
+        TCreateObjectFunc create = (TCreateObjectFunc)(void*)GetProcAddress(Get_HMODULE(), "CreateObject");
+        return create != 0 && create(FormatClsid(format), interfaceID, object) == S_OK;
+    }
+
     // feature 087: the 26.03 engine's file layer is wide (FString == UString),
     // so the engine is loaded by its wide path - which also works when the
     // installation folder is not representable in the ANSI code page
@@ -130,8 +148,294 @@ BOOL C7zClient::CreateObject(const GUID* interfaceID, void** object, int format)
     return TRUE;
 }
 
-BOOL C7zClient::OpenArchive(const char* fileName, IInArchive** archive, UString& password, BOOL quiet /* = FALSE*/)
+// ---------------------------------------------------------------------------
+// feature 093 (contract P1): which form of a typed password an existing 7z
+// archive is encrypted with. 7z cannot say "wrong password" before it decodes
+// data, and the extract callback cannot restart an extraction - so the
+// question is answered beforehand by a test (no output) of one item, on a
+// second handler object with its own file stream.
+
+class CQuietOpenCallback Z7_final : public IArchiveOpenCallback,
+                                    public ICryptoGetTextPassword,
+                                    public IArchiveRequestMemoryUseCallback,
+                                    public CMyUnknownImp
 {
+    Z7_COM_UNKNOWN_IMP_2(ICryptoGetTextPassword, IArchiveRequestMemoryUseCallback)
+    Z7_IFACE_COM7_IMP(IArchiveOpenCallback)
+    Z7_IFACE_COM7_IMP(ICryptoGetTextPassword)
+    Z7_IFACE_COM7_IMP(IArchiveRequestMemoryUseCallback)
+
+public:
+    const UString* Password;
+    bool Asked;
+    CQuietOpenCallback(const UString* password) : Password(password), Asked(false) {}
+};
+
+Z7_COM7F_IMF(CQuietOpenCallback::SetTotal(const UInt64* /*files*/, const UInt64* /*bytes*/))
+{
+    return S_OK;
+}
+
+Z7_COM7F_IMF(CQuietOpenCallback::SetCompleted(const UInt64* /*files*/, const UInt64* /*bytes*/))
+{
+    return S_OK;
+}
+
+Z7_COM7F_IMF(CQuietOpenCallback::CryptoGetTextPassword(BSTR* password))
+{
+    Asked = true;
+    return StringToBstr(*Password, password);
+}
+
+Z7_COM7F_IMF(CQuietOpenCallback::RequestMemoryUse(UInt32 /*flags*/, UInt32 /*indexType*/, UInt32 /*index*/,
+                                                  const wchar_t* /*path*/, UInt64 requiredSize,
+                                                  UInt64* allowedSize, UInt32* answerFlags))
+{
+    return AnswerArchiveMemoryRequest(requiredSize, allowedSize, answerFlags);
+}
+
+class CPasswordTestCallback Z7_final : public IArchiveExtractCallback,
+                                       public ICryptoGetTextPassword,
+                                       public IArchiveRequestMemoryUseCallback,
+                                       public CMyUnknownImp
+{
+    Z7_COM_UNKNOWN_IMP_2(ICryptoGetTextPassword, IArchiveRequestMemoryUseCallback)
+    Z7_IFACE_COM7_IMP(IProgress)
+    Z7_IFACE_COM7_IMP(IArchiveExtractCallback)
+    Z7_IFACE_COM7_IMP(ICryptoGetTextPassword)
+    Z7_IFACE_COM7_IMP(IArchiveRequestMemoryUseCallback)
+
+public:
+    const UString* Password;
+    HWND ProgressWnd;                             // cancel poll from a worker thread (may be NULL)
+    CSalamanderForOperationsAbstract* Salamander; // cancel poll on the thread that owns it (may be NULL)
+    DWORD OwnerThread;
+    bool HaveResult;
+    Int32 Result;
+    bool Cancelled;
+
+    CPasswordTestCallback(const UString* password, HWND progressWnd, CSalamanderForOperationsAbstract* salamander)
+        : Password(password), ProgressWnd(progressWnd), Salamander(salamander), OwnerThread(GetCurrentThreadId()),
+          HaveResult(false), Result(0), Cancelled(false) {}
+};
+
+Z7_COM7F_IMF(CPasswordTestCallback::SetTotal(UInt64 /*size*/))
+{
+    return S_OK;
+}
+
+Z7_COM7F_IMF(CPasswordTestCallback::SetCompleted(const UInt64* /*completeValue*/))
+{
+    // the test moves no progress bar; it only lets the user cancel
+    bool goOn = true;
+    if (Salamander != NULL)
+    {
+        if (GetCurrentThreadId() == OwnerThread)
+            goOn = Salamander->ProgressAddSize(0, TRUE) != FALSE;
+    }
+    else if (ProgressWnd != NULL)
+        goOn = (HRESULT)SendMessage(ProgressWnd, WM_7ZIP, WM_7ZIP_POLLCANCEL, 0) != E_ABORT; // the procedure returns 32 bits
+    if (!goOn)
+    {
+        Cancelled = true;
+        return E_ABORT;
+    }
+    return S_OK;
+}
+
+Z7_COM7F_IMF(CPasswordTestCallback::GetStream(UInt32 /*index*/, ISequentialOutStream** outStream, Int32 /*askExtractMode*/))
+{
+    *outStream = NULL; // a test: nothing is written
+    return S_OK;
+}
+
+Z7_COM7F_IMF(CPasswordTestCallback::PrepareOperation(Int32 /*askExtractMode*/))
+{
+    return S_OK;
+}
+
+Z7_COM7F_IMF(CPasswordTestCallback::SetOperationResult(Int32 opRes))
+{
+    if (!HaveResult || opRes != NArchive::NExtract::NOperationResult::kOK)
+        Result = opRes; // a failure is never replaced by a later success
+    HaveResult = true;
+    return S_OK;
+}
+
+Z7_COM7F_IMF(CPasswordTestCallback::CryptoGetTextPassword(BSTR* password))
+{
+    return StringToBstr(*Password, password);
+}
+
+Z7_COM7F_IMF(CPasswordTestCallback::RequestMemoryUse(UInt32 /*flags*/, UInt32 /*indexType*/, UInt32 /*index*/,
+                                                     const wchar_t* /*path*/, UInt64 requiredSize,
+                                                     UInt64* allowedSize, UInt32* answerFlags))
+{
+    return AnswerArchiveMemoryRequest(requiredSize, allowedSize, answerFlags);
+}
+
+int C7zClient::TestPassword(const char* fileName, const UString& password, int which, HWND progressWnd,
+                            CSalamanderForOperationsAbstract* salamander)
+{
+    CRetryableInFileStream* fileSpec = new CRetryableInFileStream(NULL);
+    CMyComPtr<IInStream> file = fileSpec;
+    if (!fileSpec->Open(fileName))
+        return PWDTEST_UNKNOWN;
+
+    CMyComPtr<IInArchive> a;
+    if (!CreateObject(&IID_IInArchive, (void**)&a, SALARC_FORMAT_7Z, TRUE))
+        return PWDTEST_UNKNOWN;
+
+    CQuietOpenCallback* openSpec = new CQuietOpenCallback(&password);
+    CMyComPtr<IArchiveOpenCallback> openCallback(openSpec);
+    if (a->Open(file, 0, openCallback) != S_OK)
+        return openSpec->Asked ? PWDTEST_REFUSED : PWDTEST_UNKNOWN;
+
+    // one candidate per block (solid folder): its first encrypted file. To
+    // decode an item the engine decodes its block from the start, so the cost
+    // is the size of the block up to and including the item. The candidates
+    // are taken cheapest first; 'which' picks one of the first PWDTEST_BLOCKS.
+    UInt32 numItems = 0;
+    a->GetNumberOfItems(&numItems);
+    UInt32 bestIdx[PWDTEST_BLOCKS];
+    UInt64 bestCost[PWDTEST_BLOCKS];
+    int bestCount = 0;
+    UInt32 curBlock = (UInt32)-1;
+    UInt64 run = 0;
+    bool blockDone = false;
+    for (UInt32 i = 0; i < numItems; i++)
+    {
+        NWindows::NCOM::CPropVariant block, size, enc, isDir;
+        if (a->GetProperty(i, kpidBlock, &block) != S_OK || block.vt != VT_UI4)
+            continue; // no data of its own (a directory, an empty file)
+        if (a->GetProperty(i, kpidIsDir, &isDir) == S_OK && isDir.vt == VT_BOOL && isDir.boolVal != VARIANT_FALSE)
+            continue;
+        if (block.ulVal != curBlock)
+        {
+            curBlock = block.ulVal;
+            run = 0;
+            blockDone = false;
+        }
+        if (a->GetProperty(i, kpidSize, &size) == S_OK)
+        {
+            if (size.vt == VT_UI8)
+                run += size.uhVal.QuadPart;
+            else if (size.vt == VT_UI4)
+                run += size.ulVal;
+        }
+        if (!blockDone && a->GetProperty(i, kpidEncrypted, &enc) == S_OK && enc.vt == VT_BOOL &&
+            enc.boolVal != VARIANT_FALSE)
+        {
+            blockDone = true;
+            // insert into the sorted list of the cheapest PWDTEST_BLOCKS
+            int pos = bestCount;
+            while (pos > 0 && bestCost[pos - 1] > run)
+                pos--;
+            if (pos < PWDTEST_BLOCKS)
+            {
+                int last = bestCount < PWDTEST_BLOCKS ? bestCount : PWDTEST_BLOCKS - 1;
+                for (int m = last; m > pos; m--)
+                {
+                    bestIdx[m] = bestIdx[m - 1];
+                    bestCost[m] = bestCost[m - 1];
+                }
+                bestIdx[pos] = i;
+                bestCost[pos] = run;
+                if (bestCount < PWDTEST_BLOCKS)
+                    bestCount++;
+            }
+        }
+    }
+
+    int ret = PWDTEST_UNKNOWN;
+    if (which >= 0 && which < bestCount)
+    {
+        UInt32 index = bestIdx[which];
+        CPasswordTestCallback* testSpec = new CPasswordTestCallback(&password, progressWnd, salamander);
+        CMyComPtr<IArchiveExtractCallback> testCallback(testSpec);
+        HRESULT res = a->Extract(&index, 1, 1 /* test */, testCallback);
+        if (testSpec->Cancelled || res == E_ABORT)
+            ret = PWDTEST_CANCEL;
+        else
+            ret = (res == S_OK && testSpec->HaveResult &&
+                   testSpec->Result == NArchive::NExtract::NOperationResult::kOK)
+                      ? PWDTEST_OK
+                      : PWDTEST_REFUSED;
+    }
+    a->Close();
+    return ret;
+}
+
+// The PREFERRED form of a typed password: the one that decodes a test item.
+// A refusal by both forms may be a damaged item, so up to PWDTEST_BLOCKS
+// blocks are asked. The answer is a preference only - the extraction itself
+// tries the other form for every item the preferred one does not open - so a
+// wrong preference costs time, never a file.
+// On return 'password' is the preferred form and 'other' the other one
+// ('other' is empty when the password has one form only).
+int C7zClient::ChooseForm(const char* fileName, UString& password, UString& other, HWND progressWnd,
+                          CSalamanderForOperationsAbstract* salamander)
+{
+    WipeUString(other);
+    WCHAR legacyBuf[SALARCPWD_OLD_BUFFER];
+    if (!SalArcPwdHasLegacy(password.Ptr()) || !SalArcPwdLegacy(password.Ptr(), legacyBuf, SALARCPWD_OLD_BUFFER))
+        return PWDTEST_UNKNOWN;
+    UString legacy(legacyBuf);
+    SecureZeroMemory(legacyBuf, sizeof(legacyBuf));
+
+    int res = PWDTEST_UNKNOWN;
+    bool refused = false;
+    bool useLegacy = false;
+    for (int which = 0; which < PWDTEST_BLOCKS; which++)
+    {
+        res = TestPassword(fileName, password, which, progressWnd, salamander);
+        if (res != PWDTEST_REFUSED)
+            break; // it works, there is no such block, or the user cancelled
+        refused = true;
+        res = TestPassword(fileName, legacy, which, progressWnd, salamander);
+        if (res == PWDTEST_OK)
+        {
+            useLegacy = true; // made by a version up to 0.1.8
+            break;
+        }
+        if (res == PWDTEST_CANCEL)
+            break;
+    }
+    if (res == PWDTEST_UNKNOWN && refused)
+        res = PWDTEST_REFUSED;
+
+    if (useLegacy)
+    {
+        other = password;
+        WipeUString(password);
+        password = legacy;
+    }
+    else
+        other = legacy;
+    WipeUString(legacy);
+    return res;
+}
+
+BOOL C7zClient::ChoosePasswordForm(UString& password, HWND progressWnd)
+{
+    // RAR is never written by the plug-in: no legacy form there. An ASCII
+    // password has one form only. Then there is no other form and the
+    // extraction behaves exactly as it always did.
+    WipeUString(PasswordOther);
+    if (OpenedFormat != SALARC_FORMAT_7Z || OpenedName.IsEmpty())
+        return TRUE;
+    return ChooseForm(OpenedName, password, PasswordOther, progressWnd, NULL) != PWDTEST_CANCEL;
+}
+
+BOOL C7zClient::OpenArchive(const char* fileName, IInArchive** archive, UString& password, BOOL quiet /* = FALSE*/,
+                            BOOL freshPassword /* = FALSE*/)
+{
+    OpenedName.Empty();
+    OpenedFormat = SALARC_FORMAT_UNKNOWN;
+    OpenAskedPassword = FALSE;
+    if (password.IsEmpty())
+        WipeUString(PasswordOther); // no session password: no other form of it either
+
     CRetryableInFileStream* fileSpec = new CRetryableInFileStream(NULL);
     CMyComPtr<IInStream> file = fileSpec;
 
@@ -158,13 +462,56 @@ BOOL C7zClient::OpenArchive(const char* fileName, IInArchive** archive, UString&
     CMyComPtr<IArchiveOpenCallback> openCallback(openCallbackSpec);
 
     HRESULT ret = a->Open(file, 0, openCallback);
+    OpenAskedPassword = openCallbackSpec->PasswordAsked;
     if (E_ABORT == ret)
     {
         // E_ABORT returned on Canceled Password dialog
         return FALSE;
     }
+    // feature 093 (contract P1): encrypted headers did not open with a password
+    // typed for this operation - before the user is told, the form a version up
+    // to 0.1.8 derived from the same text is tried, once and silently. Not for
+    // a remembered password (it was checked when it was typed) and not for RAR.
+    if (S_OK != ret && format == SALARC_FORMAT_7Z && openCallbackSpec->PasswordAsked &&
+        (openCallbackSpec->PasswordTyped || freshPassword) && SalArcPwdHasLegacy(password.Ptr()))
+    {
+        WCHAR legacyBuf[SALARCPWD_OLD_BUFFER];
+        UString legacy;
+        if (SalArcPwdLegacy(password.Ptr(), legacyBuf, SALARCPWD_OLD_BUFFER))
+            legacy = legacyBuf;
+        SecureZeroMemory(legacyBuf, sizeof(legacyBuf));
+        CMyComPtr<IInArchive> a2;
+        if (!legacy.IsEmpty() && file->Seek(0, STREAM_SEEK_SET, NULL) == S_OK &&
+            CreateObject(&IID_IInArchive, (void**)&a2, format, TRUE))
+        {
+            OpenedVolumes.Clear();
+            CArchiveOpenCallbackImp* spec2 = new CArchiveOpenCallbackImp(legacy, fileName, &OpenedVolumes);
+            CMyComPtr<IArchiveOpenCallback> openCallback2(spec2);
+            if (a2->Open(file, 0, openCallback2) == S_OK)
+            {
+                PasswordOther = password; // the typed text: tried per item when unpacking
+                WipeUString(password);
+                password = legacy; // the preferred form for this archive
+                a = a2;
+                ret = S_OK;
+            }
+        }
+        WipeUString(legacy);
+    }
+    else if (S_OK == ret && format == SALARC_FORMAT_7Z && openCallbackSpec->PasswordAsked &&
+             (openCallbackSpec->PasswordTyped || freshPassword))
+    {
+        // the typed text opened the headers; an item an older version added may
+        // still need the legacy form
+        WCHAR legacyBuf[SALARCPWD_OLD_BUFFER];
+        WipeUString(PasswordOther);
+        if (SalArcPwdHasLegacy(password.Ptr()) && SalArcPwdLegacy(password.Ptr(), legacyBuf, SALARCPWD_OLD_BUFFER))
+            PasswordOther = legacyBuf;
+        SecureZeroMemory(legacyBuf, sizeof(legacyBuf));
+    }
     if (S_OK != ret)
     {
+        WipeUString(PasswordOther);
         BOOL hadPassword = !password.IsEmpty();
         // feature 087: forget a password the archive did not open with, so that
         // the next attempt asks again instead of failing with the same one
@@ -173,6 +520,8 @@ BOOL C7zClient::OpenArchive(const char* fileName, IInArchive** archive, UString&
     }
 
     *archive = a.Detach();
+    OpenedName = fileName;
+    OpenedFormat = format;
 
     return TRUE;
 }
@@ -509,6 +858,8 @@ int C7zClient::Decompress(CSalamanderForOperationsAbstract* salamander, const ch
 
         FILETIME ft;
         extractCallbackSpec->Init(inArchive, outDir /*,&archiveItems*/, ft, 0, silentDelete);
+        extractCallbackSpec->FormChooser = this;               // feature 093
+        extractCallbackSpec->OtherPassword = &PasswordOther;   // feature 093
         qsort(fileIndex, count, sizeof(fileIndex[0]), compare);
 
         // start extraction in a thread
@@ -521,6 +872,26 @@ int C7zClient::Decompress(CSalamanderForOperationsAbstract* salamander, const ch
         dpo.Callback = extractCallback;
 
         HRESULT result = DoDecompress(salamander, &dpo);
+
+        // feature 093 (contract P1): items the preferred form of the password did
+        // not open are tried once with the other form - the same extraction over
+        // exactly those items, the same callback (its overwrite answers and
+        // counters go on). Not after a cancel or an error of the first pass.
+        if (result == S_OK && extractCallbackSpec->BeginRetryPass())
+        {
+            dpo.FileIndex = extractCallbackSpec->RetryIndices();
+            dpo.Count = extractCallbackSpec->RetryCount();
+            result = DoDecompress(salamander, &dpo);
+            // a damaged item that only the first form could partly decode: once
+            // more with that form, through the ordinary keep-or-delete path
+            if (result == S_OK && extractCallbackSpec->BeginRedoPass())
+            {
+                dpo.FileIndex = extractCallbackSpec->RedoIndices();
+                dpo.Count = extractCallbackSpec->RedoCount();
+                result = DoDecompress(salamander, &dpo);
+            }
+            extractCallbackSpec->EndRetryPass();
+        }
 
         // feature 087: a per-item error (wrong password, data or CRC error) is a
         // failed extraction even when Extract() itself returns S_OK - which the
@@ -545,6 +916,8 @@ int C7zClient::Decompress(CSalamanderForOperationsAbstract* salamander, const ch
         // operation in the archive would fail the same way without asking
         if (extractCallbackSpec->NumErrors > 0 && !password.IsEmpty())
             WipeUString(password);
+        if (password.IsEmpty())
+            WipeUString(PasswordOther); // feature 093
 
         // feature 087: tell the user that link entries were left out (P6b)
         if (ret != OPER_CANCEL && extractCallbackSpec->LinksSkipped > 0)
@@ -590,6 +963,8 @@ int C7zClient::TestArchive(CSalamanderForOperationsAbstract* salamander, const c
         CMyComPtr<IArchiveExtractCallback> extractCallback(extractCallbackSpec);
 
         extractCallbackSpec->InitTest(inArchive);
+        extractCallbackSpec->FormChooser = this;             // feature 093
+        extractCallbackSpec->OtherPassword = &PasswordOther; // feature 093
 
         // start extraction in a thread
         // this craziness is here because 7za.dll is multi-threaded and could not display our message boxes
@@ -602,12 +977,32 @@ int C7zClient::TestArchive(CSalamanderForOperationsAbstract* salamander, const c
 
         HRESULT result = DoDecompress(salamander, &dpo);
 
+        // feature 093: the second pass with the other form, as in Decompress
+        if (result == S_OK && extractCallbackSpec->BeginRetryPass())
+        {
+            dpo.FileIndex = extractCallbackSpec->RetryIndices();
+            dpo.Count = extractCallbackSpec->RetryCount();
+            result = DoDecompress(salamander, &dpo);
+            // a damaged item that only the first form could partly decode: once
+            // more with that form, through the ordinary keep-or-delete path
+            if (result == S_OK && extractCallbackSpec->BeginRedoPass())
+            {
+                dpo.FileIndex = extractCallbackSpec->RedoIndices();
+                dpo.Count = extractCallbackSpec->RedoCount();
+                result = DoDecompress(salamander, &dpo);
+            }
+            extractCallbackSpec->EndRetryPass();
+        }
+
         ret = (extractCallbackSpec->NumErrors > 0) ? OPER_CONTINUE : ((result == E_ABORT) ? OPER_CANCEL : ((result == S_OK) ? OPER_OK : OPER_CONTINUE));
     }
     catch (BOOL e)
     {
         ret = e;
     }
+
+    WipeUString(Password); // feature 093
+    WipeUString(PasswordOther);
 
     return ret;
 } /* C7zClient::TestArchive */
@@ -1254,6 +1649,8 @@ int C7zClient::Update(CSalamanderForOperationsAbstract* salamander, const char* 
                       const char* srcPath, BOOL isNewArchive, TIndirectArray<CFileItem>* fileList,
                       CCompressParams* compressParams, bool passwordIsDefined, UString password)
 {
+    CWipeOnExit wipePassword(password); // feature 093: this function's own copy, on every exit
+
     // UTF-8 long paths do not fit into MAX_PATH -> keep the buffer on the heap
     char* tmpName = (char*)malloc(U8_MAX_PATH);
     if (tmpName == NULL)
@@ -1299,8 +1696,27 @@ int C7zClient::Update(CSalamanderForOperationsAbstract* salamander, const char* 
         else
         {
             // adding items to an existing archive
-            if (!OpenArchive(archiveName, &inArchive, password))
+            if (!OpenArchive(archiveName, &inArchive, password, FALSE, passwordIsDefined))
                 throw OPER_CANCEL;
+
+            // feature 093 (contract P1): the typed password has a second form, the
+            // one a version up to 0.1.8 would have encrypted with. When the
+            // archive's content opens with that legacy form (and not with the
+            // typed text), the new items get it too, so that one archive does not
+            // hold both forms of one password. Content that opens with neither is
+            // encrypted with another password: the typed text is used, as for an
+            // ASCII password (a second password in an archive is legitimate).
+            // An archive that already holds both forms stays mixed: the plug-in
+            // cannot re-encrypt what is in it; the new items get the form of the
+            // first block that answers. (Encrypted headers: OpenArchive decided.)
+            if (passwordIsDefined && !OpenAskedPassword && SalArcPwdHasLegacy(password.Ptr()))
+            {
+                UString notUsed;
+                int form = ChooseForm(archiveName, password, notUsed, NULL, salamander);
+                WipeUString(notUsed);
+                if (form == PWDTEST_CANCEL)
+                    throw OPER_CANCEL;
+            }
 
             // update
             CMyComPtr<IInArchive> archive2 = inArchive;

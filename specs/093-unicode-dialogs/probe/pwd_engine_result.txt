@@ -1,0 +1,31 @@
+feature 093 S2 - engine probe; code page 1250
+engine: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip\7za.dll
+7-Zip : 7-Zip 22.01 (x64) : Copyright (c) 1999-2022 Igor Pavlov : 2022-07-15
+
+typed-r  = h e s l o - U+0159
+legacy-r = h e s l o - U+0139 U+2122      (helper: UTF-8 bytes of typed-r read with code page 1250)
+typed-c  = U+043F U+0430 U+0440 U+043E U+043B U+044C
+legacy-c = U+0110 U+017C U+0110 U+00B0 U+0143 U+20AC U+0110 U+013E U+0110 U+00BB U+0143 U+015A
+ascii    = heslo123
+
+--- archives made by 7z.exe, encrypted: content only; opened by 7za.dll ('test' = every item decoded and checked)
+archive    | typed-r   legacy-r  typed-c   legacy-c  ascii    
+typed-r    | opens     -         -         -         -        
+legacy-r   | -         opens     -         -         -        
+typed-c    | -         -         opens     -         -        
+legacy-c   | -         -         -         opens     -        
+ascii      | -         -         -         -         opens    
+
+--- archives made by 7z.exe, encrypted: headers+content; opened by 7za.dll ('test' = every item decoded and checked)
+archive    | typed-r   legacy-r  typed-c   legacy-c  ascii    
+typed-r    | opens     -         -         -         -        
+legacy-r   | -         opens     -         -         -        
+typed-c    | -         -         opens     -         -        
+legacy-c   | -         -         -         opens     -        
+ascii      | -         -         -         -         opens    
+
+--- archive made by 7za.dll with typed-r (content+headers), tested by 7z.exe
+create rc=0; 7z t -p<typed-r>: OK; 7z t -p<legacy-r>: FAILS
+
+legacy-r on code page 1250 = heslo- U+0139 U+2122 (the string measured in fix-log 'Before S2')
+RESULT: 53 checks, 0 unexpected

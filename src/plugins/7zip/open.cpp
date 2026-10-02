@@ -40,6 +40,8 @@ CArchiveOpenCallbackImp::CArchiveOpenCallbackImp(UString& password, const char* 
                                                  CObjectVector<AString>* volumes)
     : Password(password), Volumes(volumes)
 {
+    PasswordAsked = false;
+    PasswordTyped = false;
     const char* slash = archivePathU8 != NULL ? strrchr(archivePathU8, '\\') : NULL;
     if (slash != NULL)
     {
@@ -66,6 +68,7 @@ Z7_COM7F_IMF(CArchiveOpenCallbackImp::SetCompleted(const UInt64* /*files*/, cons
 
 Z7_COM7F_IMF(CArchiveOpenCallbackImp::CryptoGetTextPassword(BSTR* password))
 {
+    PasswordAsked = true;
     if (Password.IsEmpty())
     {
         CEnterPasswordDialog dlg(SalamanderGeneral->GetMsgBoxParent());
@@ -74,10 +77,10 @@ Z7_COM7F_IMF(CArchiveOpenCallbackImp::CryptoGetTextPassword(BSTR* password))
         if (res != IDOK)
             return E_ABORT;
 
-        // the password comes from our own ANSI dialog, so it is in the ACP, not
-        // UTF-8; the engine gets it as UTF-16 (feature 087: characters outside
-        // the code page cannot be typed into the ANSI dialog yet - cluster B-1)
-        Password = GetUnicodeString(dlg.GetPassword());
+        // feature 093: the dialog reads its field wide; the engine gets the
+        // typed text as it is (UTF-16), no code page in between
+        Password = dlg.GetPassword();
+        PasswordTyped = true;
     }
     return StringToBstr(Password, password); // E_OUTOFMEMORY when the BSTR cannot be allocated
 }

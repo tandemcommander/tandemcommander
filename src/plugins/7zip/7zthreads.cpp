@@ -72,10 +72,14 @@ BOOL CALLBACK SubClassedProgressDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
             CEnterPasswordDialog dlg(hWnd);
             int res = (int)dlg.Execute();
 
+            // feature 093: lParam is WCHAR[PASSWORD_LEN]; the typed text, UTF-16
             if (IDOK == res)
-                strcpy((char*)lParam, dlg.GetPassword());
+                lstrcpynW((WCHAR*)lParam, dlg.GetPassword(), PASSWORD_LEN);
             return res;
         }
+
+        case WM_7ZIP_POLLCANCEL: // feature 093: keeps the dialog alive, moves nothing
+            return Salamander->ProgressAddSize(0, TRUE) ? S_OK : E_ABORT;
         }
 
         return 0;
@@ -107,8 +111,15 @@ HRESULT LaunchAndDo7ZipTask(LPTHREAD_START_ROUTINE threadProc, LPVOID args)
     DWORD threadId;
     HANDLE hThread;
 
-    OldProgressDlgProc = (WNDPROC)GetWindowLongPtr(Salamander->ProgressGetHWND(), GWLP_WNDPROC);
-    SetWindowLongPtr(Salamander->ProgressGetHWND(), GWLP_WNDPROC, (LONG_PTR)SubClassedProgressDlgProc);
+    // feature 093: a second task on the same progress dialog (the second pass of
+    // an extraction) must not subclass it again - the "old" procedure would be
+    // this one and every message would recurse
+    WNDPROC current = (WNDPROC)GetWindowLongPtr(Salamander->ProgressGetHWND(), GWLP_WNDPROC);
+    if (current != (WNDPROC)SubClassedProgressDlgProc)
+    {
+        OldProgressDlgProc = current;
+        SetWindowLongPtr(Salamander->ProgressGetHWND(), GWLP_WNDPROC, (LONG_PTR)SubClassedProgressDlgProc);
+    }
 
     hThread = ::CreateThread(NULL, 0, threadProc, args, 0, &threadId);
 

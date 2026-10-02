@@ -22,9 +22,9 @@ strict guard, probe, independent review, fixes, fix-log, commit.
 
 ## Phase 3 - User Story 4: 7-Zip password (S2)
 
-- [ ] T011 [US4] src/plugins/7zip: Unicode password at the four sites, legacy retry (contract P1), wipe of the char buffers
-- [ ] T012 [US4] Engine probe + GUI probe (SC-004)
-- [ ] T013 [US4] Independent review; fixes; commit `[093] S2 ...`
+- [X] T011 [US4] src/plugins/7zip: Unicode password at the four sites, legacy retry (contract P1), wipe of the char buffers
+- [X] T012 [US4] Engine probe + GUI probe (SC-004)
+- [X] T013 [US4] Independent review; fixes; commit `[093] S2 ...`
 
 ## Phase 4 - User Story 5: command line (S3)
 

@@ -26,6 +26,7 @@
 #include "salplugver.h"   // feature 088
 #include "salarcassoc.h"  // feature 089
 #include "salftpanon.h"   // feature 090
+#include "salarcpwd.h"    // feature 093
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 
 #include <map>
@@ -3323,6 +3324,129 @@ static void TestDialogText093()
         printf("skipping the code page 1250 part of TestDialogText093 (code page %u)\n", GetACP());
 }
 
+// feature 093 (contract P1): the two forms of a typed archive password
+// (src/common/salarcpwd.h). Code page 1250 is passed explicitly, so the
+// expectations do not depend on the machine.
+static void TestArchivePassword093()
+{
+    WCHAR out[SALARCPWD_OLD_BUFFER];
+    const UINT cp = 1250;
+
+    // --- ASCII: one form, never a second attempt
+    CHECK(SalArcPwdIsAscii(L"") && SalArcPwdIsAscii(NULL) && SalArcPwdIsAscii(L"heslo-123 ~!"));
+    CHECK(!SalArcPwdIsAscii(L"heslo-\x0159") && !SalArcPwdIsAscii(L"\x0080"));
+    CHECK(SalArcPwdLegacy(L"heslo", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"heslo") == 0);
+    CHECK(!SalArcPwdHasLegacy(L"heslo", cp) && !SalArcPwdHasLegacy(L"", cp) && !SalArcPwdHasLegacy(NULL, cp));
+    CHECK(SalArcPwdLegacy(L"", out, SALARCPWD_OLD_BUFFER, cp) && out[0] == 0);
+
+    // --- the measured case: U+0159 = C5 99 -> U+0139 U+2122 on code page 1250
+    CHECK(SalArcPwdLegacy(L"heslo-\x0159", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"heslo-\x0139\x2122") == 0);
+    CHECK(SalArcPwdHasLegacy(L"heslo-\x0159", cp));
+    // Cyrillic "parol": D0 BF D0 B0 D1 80 D0 BE D0 BB D1 8C
+    CHECK(SalArcPwdLegacy(L"\x043F\x0430\x0440\x043E\x043B\x044C", out, SALARCPWD_OLD_BUFFER, cp) &&
+          wcscmp(out, L"\x0110\x017C\x0110\x00B0\x0143\x20AC\x0110\x013E\x0110\x00BB\x0143\x015A") == 0);
+    // U+65E5 = E6 97 A5, U+1F4C1 = F0 9F 93 81
+    CHECK(SalArcPwdLegacy(L"\x65E5", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"\x0107\x2014\x0104") == 0);
+    CHECK(SalArcPwdLegacy(L"\xD83D\xDCC1", out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 4 && out[0] == 0x0111);
+
+    // --- bytes code page 1250 does not define (81 83 88 90 98): the old code
+    //     converted with flags 0, Windows answers with the C1 control of the
+    //     same value - the legacy form must hold exactly that
+    CHECK(SalArcPwdLegacy(L"\x0141", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"\x0139\x0081") == 0); // C5 81
+    CHECK(SalArcPwdLegacy(L"\x0143", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"\x0139\x0083") == 0); // C5 83
+    CHECK(SalArcPwdLegacy(L"\x0148", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"\x0139\x0088") == 0); // C5 88
+    CHECK(SalArcPwdLegacy(L"\x0150", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"\x0139\x0090") == 0); // C5 90
+    CHECK(SalArcPwdLegacy(L"\x0158", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"\x0139\x0098") == 0); // C5 98
+    CHECK(SalArcPwdHasLegacy(L"\x0158", cp));
+
+    // --- the old 128-byte buffer: 63 x U+0159 = 126 bytes fit; 64 = 128 bytes
+    //     did not, and the old dialog then read the field as code-page text,
+    //     which the consumers decoded back to the typed text
+    WCHAR typed[SALARCPWD_OLD_BUFFER];
+    int i;
+    for (i = 0; i < 63; i++)
+        typed[i] = 0x0159;
+    typed[63] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 126 && out[0] == 0x0139 &&
+          out[125] == 0x2122);
+    typed[63] = 0x0159;
+    typed[64] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, typed) == 0);
+    CHECK(!SalArcPwdHasLegacy(typed, cp));
+    // ... and characters outside the code page became '?' there
+    for (i = 0; i < 100; i++)
+        typed[i] = 0x0416;
+    typed[100] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 100 && out[0] == L'?' && out[99] == L'?');
+    CHECK(SalArcPwdHasLegacy(typed, cp));
+    // the longest text the field takes (127 units): ASCII stays; the code-page read was cut to 127 bytes
+    for (i = 0; i < 127; i++)
+        typed[i] = L'a';
+    typed[127] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, typed) == 0);
+    for (i = 0; i < 127; i++)
+        typed[i] = 0x0159;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, typed) == 0 && !SalArcPwdHasLegacy(typed, cp));
+    // an unpaired surrogate was not UTF-8 for the old (strict) conversion: the code-page read again
+    CHECK(SalArcPwdLegacy(L"a\xD800", out, SALARCPWD_OLD_BUFFER, cp) && wcscmp(out, L"a?") == 0);
+    // three-byte characters: 42 x U+65E5 = 126 bytes fit (E6 97 A5 each), 43 = 129 bytes do not
+    for (i = 0; i < 43; i++)
+        typed[i] = 0x65E5;
+    typed[42] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 126 && out[0] == 0x0107 &&
+          out[1] == 0x2014 && out[2] == 0x0104 && out[125] == 0x0104);
+    typed[42] = 0x65E5;
+    typed[43] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 43 && out[0] == L'?' && out[42] == L'?');
+    // four-byte characters (surrogate pairs): 31 pairs = 124 bytes fit, 32 pairs = 128 bytes do not;
+    // the code-page read gives one '?' per UTF-16 unit
+    for (i = 0; i < 32; i++)
+    {
+        typed[2 * i] = 0xD83D;
+        typed[2 * i + 1] = 0xDCC1;
+    }
+    typed[62] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 124 && out[0] == 0x0111);
+    typed[62] = 0xD83D;
+    typed[64] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 64 && out[0] == L'?' && out[63] == L'?');
+    // an unpaired surrogate as the last of the 127 units the field takes: 127 code-page bytes, just fit
+    for (i = 0; i < 126; i++)
+        typed[i] = L'a';
+    typed[126] = 0xD800;
+    typed[127] = 0;
+    CHECK(SalArcPwdLegacy(typed, out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 127 && out[125] == L'a' && out[126] == L'?');
+    CHECK(SalArcPwdHasLegacy(typed, cp));
+    // one unit more (the field never gives that): the old read was cut to 127 bytes
+    {
+        WCHAR longer[130];
+        for (i = 0; i < 127; i++)
+            longer[i] = L'a';
+        longer[127] = 0xD800;
+        longer[128] = 0;
+        CHECK(SalArcPwdLegacy(longer, out, SALARCPWD_OLD_BUFFER, cp) && wcslen(out) == 127 && out[126] == L'a');
+    }
+
+    // --- a machine whose code page is UTF-8: the old code was right there
+    CHECK(SalArcPwdLegacy(L"heslo-\x0159", out, SALARCPWD_OLD_BUFFER, CP_UTF8) && wcscmp(out, L"heslo-\x0159") == 0);
+    CHECK(!SalArcPwdHasLegacy(L"heslo-\x0159", CP_UTF8));
+    // --- another code page gives another legacy form (1252: C5 = U+00C5, 99 = U+2122)
+    CHECK(SalArcPwdLegacy(L"heslo-\x0159", out, SALARCPWD_OLD_BUFFER, 1252) && wcscmp(out, L"heslo-\x00C5\x2122") == 0);
+
+    // --- arguments: a buffer too small gives FALSE and an empty string, never a cut password
+    out[0] = L'x';
+    CHECK(!SalArcPwdLegacy(L"heslo-\x0159", out, 8, cp) && out[0] == 0);
+    CHECK(SalArcPwdLegacy(L"heslo-\x0159", out, 9, cp) && wcscmp(out, L"heslo-\x0139\x2122") == 0);
+    CHECK(!SalArcPwdLegacy(L"x", NULL, 10, cp) && !SalArcPwdLegacy(L"x", out, 0, cp));
+    out[0] = L'x';
+    CHECK(!SalArcPwdLegacy(NULL, out, SALARCPWD_OLD_BUFFER, cp) && out[0] == 0);
+
+    // --- the default argument is the machine's code page
+    if (GetACP() == 1250)
+        CHECK(SalArcPwdLegacy(L"heslo-\x0159", out, SALARCPWD_OLD_BUFFER) && wcscmp(out, L"heslo-\x0139\x2122") == 0 &&
+              SalArcPwdHasLegacy(L"heslo-\x0159"));
+}
+
 static void TestNameIdentity092()
 {
     // --- (1) ASCII: equality identical to the old byte fold; the three-way sign identical
@@ -3724,6 +3848,7 @@ int main()
     TestFtpAnon090();
     TestNameIdentity092();
     TestDialogText093();
+    TestArchivePassword093();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -42,10 +42,175 @@ CExtractCallbackImp::CExtractCallbackImp(HWND _hProgWnd, UString& password,
     CurrentIsDir = false;
     WholeFile = TRUE;
     hProgWnd = _hProgWnd;
+    FormChooser = NULL;
+    OtherPassword = NULL;
+    DataErrorTold = false;
+    ResetPasses();
+}
+
+// feature 093
+void CExtractCallbackImp::ResetPasses()
+{
+    Pass = 1;
+    RetryList.clear();
+    RetryHadOutput.clear();
+    RedoList.clear();
+    UnrequestedFailed.clear();
+    DeclinedBlocks.clear();
+    CurrentIndex = 0;
+    CurrentRequested = false;
+    CurrentDeclined = false;
+    CurrentInfo = NULL;
+    Pass1EncOK = 0;
+    Pass2OK = 0;
+    ProgressBase = 0;
+    WipeUString(PreferredForm);
+}
+
+bool CExtractCallbackImp::IsEncryptedItem(UINT32 index)
+{
+    NWindows::NCOM::CPropVariant enc;
+    return ArchiveHandler && ArchiveHandler->GetProperty(index, kpidEncrypted, &enc) == S_OK &&
+           enc.vt == VT_BOOL && enc.boolVal != VARIANT_FALSE;
+}
+
+// the block (solid folder) of an item, or (UINT32)-1
+UINT32 CExtractCallbackImp::BlockOf(UINT32 index)
+{
+    NWindows::NCOM::CPropVariant block;
+    if (ArchiveHandler && ArchiveHandler->GetProperty(index, kpidBlock, &block) == S_OK && block.vt == VT_UI4)
+        return block.ulVal;
+    return (UINT32)-1;
+}
+
+// The current item goes on the retry list: what this callback wrote for it is
+// deleted without a question (never a file it did not open for this item) and
+// the item is asked for again in the second pass. Whether it had output is
+// remembered: such an item may be a damaged one (see BeginRedoPass).
+bool CExtractCallbackImp::DeferCurrent()
+{
+    try
+    {
+        if (CurrentInfo != NULL)
+            ItemsToExtract[CurrentIndex] = CurrentInfo; // GetStream took it out
+        RetryHadOutput[CurrentIndex] = HaveOutFile;
+        RetryList.push_back(CurrentIndex);
+    }
+    catch (...)
+    {
+        return false; // no memory: reported as a failed item, as before
+    }
+    DiscardOutFile();
+    return true;
+}
+
+static int CompareIndices(const void* a, const void* b)
+{
+    UINT32 x = *(const UINT32*)a, y = *(const UINT32*)b;
+    return x < y ? -1 : (x > y ? 1 : 0);
+}
+
+// Called after a first pass that ended normally. Settles the items the first
+// pass could not judge and starts the second pass when there is a retry list.
+bool CExtractCallbackImp::BeginRetryPass()
+{
+    if (Pass != 1)
+        return false;
+
+    // Items the operation did not ask for that failed in the first pass (the
+    // engine reports every item of a block up to the last requested one, the
+    // others in skip mode - 7zExtract.cpp, CFolderOutStream::OpenFile). When a
+    // requested item of the same block goes to the second pass (or would, had
+    // the user not skipped it), the block was only read with the wrong form:
+    // that says nothing and is no error. In any
+    // other block it is what it always was: a failed item, counted, a CRC
+    // error with its message.
+    for (size_t u = 0; u < UnrequestedFailed.size(); u++)
+    {
+        UINT32 block = BlockOf(UnrequestedFailed[u].first);
+        bool retried = false;
+        for (size_t r = 0; block != (UINT32)-1 && r < RetryList.size() && !retried; r++)
+            retried = BlockOf(RetryList[r]) == block;
+        // ... or a requested item of the block failed the same way but is not
+        // retried because the user skipped it: the block was mis-keyed all the same
+        for (size_t k = 0; block != (UINT32)-1 && k < DeclinedBlocks.size() && !retried; k++)
+            retried = DeclinedBlocks[k] == block;
+        if (!retried)
+        {
+            NumErrors++;
+            if (UnrequestedFailed[u].second == NArchive::NExtract::NOperationResult::kCRCError)
+                Error(IDS_CRC_FAILED);
+        }
+    }
+    UnrequestedFailed.clear();
+    DeclinedBlocks.clear();
+
+    if (RetryList.empty())
+        return false;
+    if (OtherPassword == NULL || OtherPassword->IsEmpty() || Password.IsEmpty())
+    {
+        NumErrors += (int)RetryList.size(); // cannot be retried: failed items, never a silent success
+        return false;
+    }
+    qsort(&RetryList[0], RetryList.size(), sizeof(UINT32), CompareIndices);
+    Pass = 2;
+    PreferredForm = Password;
+    Password = *OtherPassword; // 'Password' is the session password: decided again in EndRetryPass
+    PasswordIsDefined = true;
+    ProgressBase = Total.Value;
+    return true;
+}
+
+// Called after a second pass that ended normally. An item that HAD output in
+// the first pass and failed in the second one at once (no output at all) is
+// not a matter of the password's form: it is damaged. It is extracted a third
+// and last time with the form of the first pass through the ordinary path, so
+// the user gets the keep-or-delete question and the partial file, as always.
+bool CExtractCallbackImp::BeginRedoPass()
+{
+    if (Pass != 2 || RedoList.empty())
+        return false;
+    qsort(&RedoList[0], RedoList.size(), sizeof(UINT32), CompareIndices);
+    Pass = 3;
+    Password = PreferredForm;
+    PasswordIsDefined = true;
+    ProgressBase = Total.Value;
+    return true;
+}
+
+// Which form the session keeps (called once, after the last pass that ran)
+void CExtractCallbackImp::EndRetryPass()
+{
+    if (Pass != 2 && Pass != 3)
+        return;
+    if (Password.IsEmpty())
+    {
+        // forgotten by the handling of a failure: the next operation asks
+        if (OtherPassword != NULL)
+            WipeUString(*OtherPassword);
+    }
+    else if (Pass1EncOK == 0 && Pass2OK > 0 && OtherPassword != NULL && !OtherPassword->IsEmpty())
+    {
+        // everything that could be opened was opened by the other form: it is
+        // this archive's password from now on, the former one the alternative
+        UString other(*OtherPassword);
+        *OtherPassword = PreferredForm;
+        WipeUString(Password);
+        Password = other;
+        WipeUString(other);
+    }
+    else
+    {
+        WipeUString(Password);
+        Password = PreferredForm; // a minority of items does not change the session password
+    }
+    WipeUString(PreferredForm);
+    Pass = 4; // no further pass
 }
 
 CExtractCallbackImp::~CExtractCallbackImp()
 {
+    WipeUString(PreferredForm);
     free(TargetFileName);
     free(CleanName);
     DeleteCriticalSection(&CSExtract);
@@ -59,6 +224,8 @@ BOOL CExtractCallbackImp::Init(IInArchive* archive, const char* outDir,
     NumErrors = 0;
     LinksSkipped = 0; // feature 087
     SkipCurrent = false;
+    DataErrorTold = false;
+    ResetPasses();
 
     UTCLastWriteTimeDefault = utcLastWriteTimeDefault;
     AttributesDefault = attributesDefault;
@@ -101,6 +268,8 @@ BOOL CExtractCallbackImp::Init(IInArchive* archive, const char* outDir,
 BOOL CExtractCallbackImp::InitTest(IInArchive* archive)
 {
     ArchiveHandler = archive; // feature 087: item names for messages
+    DataErrorTold = false;
+    ResetPasses();
     NumErrors = 0;
     LinksSkipped = 0; // feature 087
     SkipCurrent = false;
@@ -187,7 +356,8 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetTotal(UINT64 size))
 {
     //  TRACE_I("CExtractCallbackImp::SetTotal: size=" << (DWORD)size);
 
-    Total.Value = size;
+    // feature 093: the second pass continues the bar behind the first one
+    Total.Value = (Pass >= 2 ? ProgressBase : 0) + size;
     SendMessage(hProgWnd, WM_7ZIP, WM_7ZIP_SETTOTAL, (LPARAM)&Total);
 
     return S_OK;
@@ -199,7 +369,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetCompleted(const UINT64* completeValue))
 
     if (completeValue != NULL)
     {
-        Completed.Value = *completeValue;
+        Completed.Value = (Pass >= 2 ? ProgressBase : 0) + *completeValue;
 
         return (HRESULT)SendMessage(hProgWnd, WM_7ZIP, WM_7ZIP_PROGRESS, (LPARAM)&Completed);
     }
@@ -231,6 +401,19 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
         HaveOutFile = false;
         CurrentIsDir = false;
 
+        // feature 093: which item the coming result belongs to, and whether the
+        // operation asked for it (a test asks for every item)
+        // CurrentDeclined: the item was asked for, but this callback gives the
+        // engine no stream for it (the user's Skip at the overwrite question, a
+        // file that could not be created, a name that could not be built). The
+        // 7z handler then treats the item as skipped: PrepareOperation gets
+        // kSkip, so ExtractMode is false for it (7zExtract.cpp,
+        // CFolderOutStream::OpenFile: "askMode == kExtract && !realOutStream").
+        CurrentIndex = index;
+        CurrentInfo = NULL;
+        CurrentDeclined = false;
+        CurrentRequested = (TargetDir == NULL) || ItemsToExtract.find(index) != ItemsToExtract.end();
+
         // feature 087: the item's name for a message about it - also when testing
         // and for an item that gets no output file
         CurrentItemName.Empty();
@@ -259,6 +442,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
                 // Already extracted? Not selected for extraction?
                 throw S_OK;
             }
+            CurrentInfo = it->second; // feature 093: put back if the item goes to the second pass
             ItemsToExtract.erase(index);
 
             // feature 087 (contracts/plugin-engine.md P6b): a symbolic or hard link
@@ -335,7 +519,10 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
 
                     *outStream = NULL;
                     if (OverwriteSkip)
+                    {
+                        CurrentDeclined = true; // feature 093: the user's own file stays, the item is never retried
                         throw S_OK;
+                    }
                     // the overall operation cannot continue (cancel)
                     if (OverwriteCancel)
                         throw E_ABORT;
@@ -359,6 +546,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
                     {
                         SysError(IDS_ERROR, ::GetLastError());
                         NumErrors++;
+                        CurrentDeclined = true; // feature 093: reported and counted here
                         throw S_OK;
                     }
                     OutFileStream = outStreamLoc;
@@ -373,6 +561,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
             {
                 *outStream = NULL;
                 NumErrors++; // feature 087: the item is not unpacked - the operation is not a success
+                CurrentDeclined = true; // feature 093: reported and counted here
 
                 char errText[1000];
                 _snprintf_s(errText, _TRUNCATE, LoadStr(IDS_NAMEISTOOLONG), (const char*)(aii->NameInArchive), TargetFileName);
@@ -560,9 +749,91 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
     switch (resultEOperationResult)
     {
     case NArchive::NExtract::NOperationResult::kOK:
+        // feature 093: which form opens this archive's items (EndRetryPass)
+        if (CurrentRequested && PasswordIsDefined && IsEncryptedItem(CurrentIndex))
+        {
+            if (Pass == 1)
+                Pass1EncOK++;
+            else if (Pass == 2)
+                Pass2OK++;
+        }
         break;
 
     default:
+        // feature 093 (contract P1). While the password has a second form, a
+        // failure of the kind a wrong password gives (data / CRC error, "wrong
+        // password") on an encrypted item is not a verdict yet in the FIRST pass:
+        //  - an item the operation did not ask for (the engine reports every
+        //    item of a block up to the last requested one, the others in skip
+        //    mode): noted, settled in BeginRetryPass;
+        //  - an item this callback gave no stream for (CurrentDeclined: the
+        //    user's Skip, or a file that could not be created - reported and
+        //    counted in GetStream): nothing of it was to be written, so nothing
+        //    failed; it is never extracted again;
+        //  - any other item: on the retry list, extracted again with the other
+        //    form (its partial output, if any, is deleted without a question).
+        // In the SECOND pass an item that had output in the first pass and now
+        // fails without any (reported in test mode: the block is undecodable
+        // with this form) goes to the third pass - see BeginRedoPass.
+        {
+            bool pwdLike = resultEOperationResult == NArchive::NExtract::NOperationResult::kDataError ||
+                           resultEOperationResult == NArchive::NExtract::NOperationResult::kCRCError ||
+                           resultEOperationResult == NArchive::NExtract::NOperationResult::kWrongPassword;
+            bool twoForms = PasswordIsDefined && OtherPassword != NULL && !OtherPassword->IsEmpty();
+            bool handled = false;
+            if (Pass == 1 && twoForms && pwdLike && IsEncryptedItem(CurrentIndex))
+            {
+                if (!CurrentRequested)
+                {
+                    try
+                    {
+                        UnrequestedFailed.push_back(std::make_pair(CurrentIndex, (int)resultEOperationResult));
+                        handled = true;
+                    }
+                    catch (...)
+                    {
+                    }
+                }
+                else if (CurrentDeclined)
+                {
+                    // its block was read with the wrong form: the failures of the
+                    // block's unrequested items say nothing either (BeginRetryPass)
+                    try
+                    {
+                        DeclinedBlocks.push_back(BlockOf(CurrentIndex));
+                    }
+                    catch (...)
+                    {
+                    }
+                    handled = true;
+                }
+                else
+                    handled = DeferCurrent();
+            }
+            else if (Pass == 2 && pwdLike && CurrentRequested && !CurrentDeclined && !ExtractMode && TargetDir != NULL)
+            {
+                std::map<UINT32, bool>::const_iterator had = RetryHadOutput.find(CurrentIndex);
+                if (had != RetryHadOutput.end() && had->second)
+                {
+                    try
+                    {
+                        RedoList.push_back(CurrentIndex);
+                        handled = true;
+                    }
+                    catch (...)
+                    {
+                    }
+                }
+            }
+            if (handled)
+            {
+                OutFileStream.Release();
+                HaveOutFile = false;
+                CurrentIsDir = false;
+                return S_OK;
+            }
+        }
+
         NumErrors++;
 
         // feature 087: the 26.03 engine says so when the password is wrong (RAR5
@@ -621,7 +892,19 @@ Z7_COM7F_IMF(CExtractCallbackImp::SetOperationResult(INT32 resultEOperationResul
             break;
 
         case NArchive::NExtract::NOperationResult::kDataError:
-            break; // reported by the caller (TestArchive)
+            // feature 093: when UNPACKING, the 7z handler reports the items of a
+            // block it could not decode in test mode (no output file). A wrong
+            // password ends here for every item, and nothing told the user: the
+            // operation produced no file and no message. Told once per
+            // operation; the other blocks are still unpacked (an archive may
+            // hold items under another password), the result is not OPER_OK and
+            // Decompress forgets the password.
+            if (TargetDir != NULL && CurrentRequested && !CurrentDeclined && !DataErrorTold)
+            {
+                DataErrorTold = true;
+                Error(PasswordIsDefined ? IDS_DATA_ERROR_PWD : IDS_DATA_ERROR, (LPCTSTR)CurrentItemName);
+            }
+            break; // when testing: reported by the caller (TestArchive)
 
         default:
             Error(IDS_UNKNOWN_ERROR);
@@ -663,15 +946,26 @@ Z7_COM7F_IMF(CExtractCallbackImp::CryptoGetTextPassword(BSTR* password))
 {
     if (!PasswordIsDefined /*&& !Silent*/) // Silent is for skip, which is not implemented in 7za.dll
     {
-        char pwd[PASSWORD_LEN];
+        WCHAR pwd[PASSWORD_LEN];
 
         pwd[0] = 0;
         switch (SendMessage(hProgWnd, WM_7ZIP, WM_7ZIP_PASSWORD, (LPARAM)pwd))
         {
         case IDOK:
             PasswordIsDefined = true;
-            // 'pwd' comes from our own ANSI dialog, so it is in the ACP, not UTF-8
-            Password = GetUnicodeString(pwd);
+            // feature 093: the dialog hands over the typed text as UTF-16; the
+            // engine gets it unchanged
+            Password = pwd;
+            SecureZeroMemory(pwd, sizeof(pwd));
+            // an archive made by a version up to 0.1.8 may be encrypted with the
+            // form that version derived from the same text (contract P1): decided
+            // here, once, by a test of one item on a second handler - before the
+            // engine gets any password for this extraction
+            if (FormChooser != NULL && !FormChooser->ChoosePasswordForm(Password, hProgWnd))
+            {
+                ForgetPassword();
+                return E_ABORT;
+            }
             break;
 
         case IDCANCEL:

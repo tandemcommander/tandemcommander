@@ -32,6 +32,7 @@ CArchiveUpdateCallback::CArchiveUpdateCallback(HWND _hProgWnd)
 
 CArchiveUpdateCallback::~CArchiveUpdateCallback()
 {
+    WipeUString(Password); // feature 093
     DeleteCriticalSection(&CSUpdate);
 }
 
@@ -300,15 +301,17 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::CryptoGetTextPassword2(Int32* passwordIsDef
 
     if (!PasswordIsDefined && AskPassword)
     {
-        char pwd[PASSWORD_LEN];
+        // (not reached today: AskPassword is set only together with PasswordIsDefined)
+        WCHAR pwd[PASSWORD_LEN];
 
         pwd[0] = 0;
         switch (SendMessage(hProgWnd, WM_7ZIP, WM_7ZIP_PASSWORD, (LPARAM)pwd))
         {
         case IDOK:
             PasswordIsDefined = true;
-            // 'pwd' comes from our own ANSI dialog, so it is in the ACP, not UTF-8
-            Password = GetUnicodeString(pwd);
+            // feature 093: the typed text as UTF-16, unchanged
+            Password = pwd;
+            SecureZeroMemory(pwd, sizeof(pwd));
             break;
 
         case IDCANCEL:

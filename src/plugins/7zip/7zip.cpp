@@ -1127,7 +1127,7 @@ BOOL CPluginInterfaceForArchiver::PackToArchive(CSalamanderForOperationsAbstract
 
     CCompressParams compressParams;
     bool passwordDefined = false;
-    char password[PASSWORD_LEN];
+    UString password; // feature 093: the typed text, UTF-16
     if (Config.ShowExtendedOptions)
     {
         // show the extended options dialog box
@@ -1145,7 +1145,7 @@ BOOL CPluginInterfaceForArchiver::PackToArchive(CSalamanderForOperationsAbstract
         if (res == IDOK)
         {
             passwordDefined = dlg.IsPasswordDefined() == TRUE;
-            strcpy(password, dlg.GetPassword());
+            password = dlg.GetPassword();
 
             Config.ShowExtendedOptions = dlg.GetNotAgain() == FALSE;
 
@@ -1219,9 +1219,12 @@ BOOL CPluginInterfaceForArchiver::PackToArchive(CSalamanderForOperationsAbstract
         salamander->ProgressDialogAddText(LoadStr(IDS_PACKING), FALSE);
     else
         salamander->ProgressDialogAddText(LoadStr(IDS_UPDATING), FALSE);
-    // NOTE: 'password' comes from our own ANSI dialog, so it is in the ACP, not UTF-8
+    // feature 093: the engine gets the typed text (the dialog reads its field
+    // wide). A new archive is always encrypted with it; for an existing archive
+    // Update() first finds the form its content is encrypted with (contract P1).
     BOOL ret = client.Update(salamander, fileName, sourcePath, isNewArchive, &fileList, &compressParams, passwordDefined,
-                             GetUnicodeString(password)) == OPER_OK;
+                             password) == OPER_OK;
+    WipeUString(password);
 
     // delete files afterwards if we are moving them into the archive
     if (move && ret)

@@ -80,15 +80,21 @@ protected:
 // CNewArchiveDialog
 //
 
+// feature 093: a password is UTF-16 from the field to the engine; the limit is
+// in characters (units), terminator included
 #define PASSWORD_LEN 128
+
+// feature 093: reads a password field wide / writes it back, wipes a buffer
+void TransferPasswordField(HWND dialog, int ctrlID, CTransferInfo& ti, WCHAR* password);
+inline void WipePassword(WCHAR* password) { SecureZeroMemory(password, PASSWORD_LEN * sizeof(WCHAR)); }
 
 class CExtOptionsDialog : public CCommonDialog
 {
 private:
     char Archive[MAX_PATH];
 
-    char Password[PASSWORD_LEN];
-    char ConfirmedPassword[PASSWORD_LEN];
+    WCHAR Password[PASSWORD_LEN];
+    WCHAR ConfirmedPassword[PASSWORD_LEN];
     BOOL NotAgain;
     BOOL Encrypt;
 
@@ -100,11 +106,12 @@ public:
     CCompressParams CompressParams;
 
     CExtOptionsDialog(HWND hParent);
+    ~CExtOptionsDialog();
     virtual void Transfer(CTransferInfo& ti);
     BOOL CreateChilds();
 
     BOOL IsPasswordDefined() { return Encrypt; }
-    char* GetPassword() { return Password; }
+    const WCHAR* GetPassword() { return Password; } // the typed text, UTF-16
     BOOL GetNotAgain() { return NotAgain; }
     // display only: this is an ANSI dialog, so a long or non-ASCII UTF-8 archive
     // name is truncated/garbled here; a bounded copy at least keeps it safe
@@ -124,13 +131,14 @@ class CEnterPasswordDialog : public CCommonDialog
 {
 private:
     //    char FileName[MAX_PATH];
-    char Password[PASSWORD_LEN];
+    WCHAR Password[PASSWORD_LEN];
 
 public:
     CEnterPasswordDialog(HWND hParent);
+    ~CEnterPasswordDialog();
     virtual void Transfer(CTransferInfo& ti);
 
-    char* GetPassword() { return Password; }
+    const WCHAR* GetPassword() { return Password; } // the typed text, UTF-16
     //    void SetFileName(const char *fileName) { lstrcpy(FileName, fileName); }
 
 protected:
