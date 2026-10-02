@@ -1,0 +1,101 @@
+longarc_probe (feature 095) pre095-control
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre095\tandemcommander.exe
+Date    : 2026-10-02 17:35; ACP 1250
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited095>>"$(FullName)"
+Model   : short archive path; one entry at a long inner path+name (the core caps an archive PATH at MAX_PATH bytes, so the buffers overrun only from the inner name).
+Steps   : ENTER arc.zip; NAV into the long dir; VIEW (CM_VIEW 742) or, in the S cases, EXEC (Enter on a .cmd file that writes a marker); EDIT (CM_EDIT 743); LEAVE (Backspace x2, Update All); END (alive, WM_NULL, no report, exit 0)
+
+--- I10: archive 56 bytes; inner dir 10 bytes + name 10 bytes; folded disk-cache name ~78 bytes (ASCII inner)
+I10     ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+I10     NAV    PASS       title now (tail) '...095 - dddddddddd - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+I10     VIEW   PASS       VIEWER class 'CodeView - WinLib Universal Window2', title (tail) '...p\SAL9D8.tmp\ffffff.txt [Plain Text] - Code Viewer'
+I10     EDIT   PASS       CM_EDIT posted, no message; the editor command ran (checked at LEAVE)
+I10     LEAVE  PASS       ARCHIVE UPDATED; left: True; entry after (ok,items,hex): True 5 636f6e74656e740d0a6564697465643039350d0a; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc095_long\I10\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited f... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc095_long\I10\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2... || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc095_long\I10\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting ar... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 9, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 20, 02.10.2026, 17:35:46 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+I10     END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000; Debug note: "Some monitored handles remained opened"
+
+--- I120: archive 57 bytes; inner dir 120 bytes + name 120 bytes; folded disk-cache name ~299 bytes (ASCII inner)
+I120    ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+I120    NAV    PASS       title now (tail) '...dddddddddddddddd - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+I120    VIEW   PASS       VIEWER class 'CodeView - WinLib Universal Window2', title (tail) '...fffffffffffffffffff.txt [Plain Text] - Code Viewer'
+I120    EDIT   PASS       CM_EDIT posted, no message; the editor command ran (checked at LEAVE)
+I120    LEAVE  PASS       ARCHIVE UPDATED; left: True; entry after (ok,items,hex): True 5 636f6e74656e740d0a6564697465643039350d0a; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc095_long\I120\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited ... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc095_long\I120\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=... || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc095_long\I120\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting a... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 9, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 20, 02.10.2026, 17:36:16 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+I120    END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000; Debug note: "Some monitored handles remained opened"
+
+--- I200: archive 57 bytes; inner dir 200 bytes + name 200 bytes; folded disk-cache name ~459 bytes (ASCII inner)
+I200    ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+I200    NAV    PASS       title now (tail) '...dddddddddddddddd - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+I200    VIEW   PASS       VIEWER class 'CodeView - WinLib Universal Window2', title (tail) '...fffffffffffffffffff.txt [Plain Text] - Code Viewer'
+I200    EDIT   PASS       CM_EDIT posted, no message; the editor command ran (checked at LEAVE)
+I200    LEAVE  PASS       ARCHIVE UPDATED; left: True; entry after (ok,items,hex): True 5 636f6e74656e740d0a6564697465643039350d0a; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc095_long\I200\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited ... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc095_long\I200\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=... || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc095_long\I200\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting a... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 9, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 20, 02.10.2026, 17:36:47 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+I200    END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000; Debug note: "Some monitored handles remained opened"
+
+--- I251: archive 57 bytes; inner dir 251 bytes + name 251 bytes; folded disk-cache name ~561 bytes (ASCII inner)
+I251    ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+I251    NAV    PASS       title now (tail) '...dddddddddddddddd - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+I251    VIEW   PASS       MESSAGE (name too long): [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK
+I251    EDIT   PASS       MESSAGE (name too long)
+I251    LEAVE  PASS       ARCHIVE NOT UPDATED; left: True; entry after (ok,items,hex): True 5 636f6e74656e740d0a; windows: no window
+I251    END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000
+
+--- IU60: archive 57 bytes; inner dir 120 bytes + name 116 bytes; folded disk-cache name ~295 bytes (U+0159 inner)
+IU60    ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+IU60    NAV    PASS       title now (tail) '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159 - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+IU60    VIEW   PASS       VIEWER class 'CodeView - WinLib Universal Window2', title (tail) '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159.txt [Plain Text] - Code Viewer'
+IU60    EDIT   PASS       CM_EDIT posted, no message; the editor command ran (checked at LEAVE)
+IU60    LEAVE  PASS       ARCHIVE NOT UPDATED; no update offered for the accented name (same on a name that fits and on the build before the feature - see fix-log, found not changed); left: True; entry after (ok,items,hex): True 5 636f6e74656e740d0a; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc095_long\IU60\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited ...
+IU60    END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000; Debug note: "Some monitored handles remained opened"
+
+--- IU125: archive 58 bytes; inner dir 250 bytes + name 246 bytes; folded disk-cache name ~556 bytes (U+0159 inner)
+IU125   ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+IU125   NAV    PASS       title now (tail) '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159 - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+IU125   VIEW   PASS       MESSAGE (name too long): [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK
+IU125   EDIT   PASS       MESSAGE (name too long)
+IU125   LEAVE  PASS       ARCHIVE NOT UPDATED; left: True; entry after (ok,items,hex): True 5 636f6e74656e740d0a; windows: no window
+IU125   END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000
+
+--- S130: archive 180 bytes; inner dir 200 bytes + name 130 bytes; folded disk-cache name ~512 bytes (ASCII inner)
+S130    ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+S130    NAV    PASS       title now (tail) '...dddddddddddddddd - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+S130    EXEC   PASS       Enter on the file; executed: LONG095; windows: no window
+S130    EDIT   PASS       CM_EDIT posted, no message; the editor command ran (checked at LEAVE)
+S130    LEAVE  PASS       ARCHIVE UPDATED; left: True; entry after (ok,items,hex): True 5 406563686f204c4f4e473039353e22433a5c55736572735c706176656c5c417070446174615c4c6f63616c5c54656d705c74633039355f6c6f6e675c72616e5f533133302e747874220d0a6564697465643039350d0a; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc095_long\S130\ppppppppppppppppppppppppppppppppppppp ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\arc.z ip" is about to close. If you are still editing some files from this ar... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc095_long\S130\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\arc.zip | [Static id=1151] Updated &Files: | [Butto... || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc095_long\S130\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\arc.zip | [Button id=102] Create &multi-volume arch... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 75, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 86, 02.10.2026, 17:38:36 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+S130    END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000
+
+--- S150: archive 180 bytes; inner dir 200 bytes + name 150 bytes; folded disk-cache name ~532 bytes (ASCII inner)
+S150    ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+S150    NAV    PASS       title now (tail) '...dddddddddddddddd - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+S150    EXEC   FAIL       Enter on the file; executed: <no marker file: nothing was executed>; windows: [#32770 'ZIP'] [Static id=2477] File not found. | [Button id=1] OK
+S150    EDIT   FAIL       windows: [#32770 'ZIP'] [Static id=2477] File not found. | [Button id=1] OK
+S150    LEAVE  PASS       ARCHIVE NOT UPDATED; left: True; entry after (ok,items,hex): True 5 406563686f204c4f4e473039353e22433a5c55736572735c706176656c5c417070446174615c4c6f63616c5c54656d705c74633039355f6c6f6e675c72616e5f533135302e747874220d0a; windows: no window
+S150    END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000
+
+--- SU65: archive 180 bytes; inner dir 200 bytes + name 130 bytes; folded disk-cache name ~512 bytes (U+0159 inner)
+SU65    ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+SU65    NAV    PASS       title now (tail) '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159 - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+SU65    EXEC   PASS       Enter on the file; executed: LONG095; windows: no window
+SU65    EDIT   PASS       CM_EDIT posted, no message; the editor command ran (checked at LEAVE)
+SU65    LEAVE  PASS       ARCHIVE NOT UPDATED; no update offered for the accented name (same on a name that fits and on the build before the feature - see fix-log, found not changed); left: True; entry after (ok,items,hex): True 5 406563686f204c4f4e473039353e22433a5c55736572735c706176656c5c417070446174615c4c6f63616c5c54656d705c74633039355f6c6f6e675c72616e5f535536352e747874220d0a; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc095_long\SU65\\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0...
+SU65    END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000
+
+--- SU75: archive 180 bytes; inner dir 200 bytes + name 150 bytes; folded disk-cache name ~532 bytes (U+0159 inner)
+SU75    ENTER  PASS       title now '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+SU75    NAV    PASS       title now (tail) '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159 - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+SU75    EXEC   FAIL       Enter on the file; executed: <no marker file: nothing was executed>; windows: [#32770 'ZIP'] [Static id=2477] File not found. | [Button id=1] OK
+SU75    EDIT   FAIL       windows: [#32770 'ZIP'] [Static id=2477] File not found. | [Button id=1] OK
+SU75    LEAVE  PASS       ARCHIVE NOT UPDATED; left: True; entry after (ok,items,hex): True 5 406563686f204c4f4e473039353e22433a5c55736572735c706176656c5c417070446174615c4c6f63616c5c54656d705c74633039355f6c6f6e675c72616e5f535537352e747874220d0a; windows: no window
+SU75    END    PASS       alive True; WM_NULL True; stray windows 0; new reports 0; exit 0x00000000
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== summary ===
+case    ENTER      NAV        VIEW/EXEC    EDIT       LEAVE      END       
+I10     PASS       PASS       PASS         PASS       PASS       PASS      
+I120    PASS       PASS       PASS         PASS       PASS       PASS      
+I200    PASS       PASS       PASS         PASS       PASS       PASS      
+I251    PASS       PASS       PASS         PASS       PASS       PASS      
+IU60    PASS       PASS       PASS         PASS       PASS       PASS      
+IU125   PASS       PASS       PASS         PASS       PASS       PASS      
+S130    PASS       PASS       x:PASS       PASS       PASS       PASS      
+S150    PASS       PASS       x:FAIL       FAIL       PASS       PASS      
+SU65    PASS       PASS       x:PASS       PASS       PASS       PASS      
+SU75    PASS       PASS       x:FAIL       FAIL       PASS       PASS      
+Rows: PASS 56, FAIL 4, NOT DRIVEN 0; Debug handle-note cases 4. Left running: 0; fixture removed: True; registry restored+identical: True

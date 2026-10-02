@@ -53,6 +53,12 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Opening or editing a file deep inside an archive works.** When the path
+  of the archive, the folder inside it and the file's name together came to
+  about 520 bytes or more (for example 200 + 200 + 130), Enter and F4 on the
+  file ended with "File not found" - the program asked the archiver for the
+  folder instead of the file. F3 was not affected. The right file is opened
+  now (feature 095).
 - **A ZIP password with characters outside the system code page protects the
   archive.** The ZIP plugin replaced every character the system code page
   does not contain with `?` before using the password - without saying so. On

@@ -13,6 +13,7 @@
 #include "snooper.h"
 #include "worker.h"
 #include "cache.h"
+#include "salheapstr.h" // feature 095
 #include "usermenu.h"
 #include "execute.h"
 #include "pack.h"
@@ -730,7 +731,8 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
     // if viewing/editing from the panel, obtain the full long name
     BOOL useDiskCache = FALSE;          // TRUE only for ZIP - uses disk-cache
     BOOL arcCacheCacheCopies = TRUE;    // cache copies in disk-cache unless the archiver plugin requests otherwise
-    char dcFileName[3 * MAX_PATH + 50]; // ZIP: name for disk-cache
+    CSalHeapString dcFileNameBuf;       // ZIP: name for disk-cache (feature 095: was char[3 * MAX_PATH + 50])
+    char* dcFileName = NULL;
     if (name == NULL)
     {
         int i = GetCaretIndex();
@@ -784,7 +786,14 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                 if (Is(ptZIPArchive))
                 {
                     useDiskCache = TRUE;
-                    StrICpy(dcFileName, GetZIPArchive()); // the archive file name should be compared case-insensitively (Windows file system), so we always convert it to lowercase
+                    // the archive file name should be compared case-insensitively (Windows file system), so we always convert it to lowercase;
+                    // feature 095: room for "\\" + ZIP path + "\\" + name + ":0x<pointer>"
+                    if (!dcFileNameBuf.Copy(GetZIPArchive(), strlen(GetZIPPath()) + strlen(f->Name) + 2 + 32, LowerCase))
+                    {
+                        TRACE_E(LOW_MEMORY);
+                        return;
+                    }
+                    dcFileName = dcFileNameBuf.Get();
                     if (GetZIPPath()[0] != 0)
                     {
                         if (GetZIPPath()[0] != '\\')
@@ -817,8 +826,21 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                         }
                     }
 
-                    char nameInArchive[2 * MAX_PATH];
-                    strcpy(nameInArchive, dcFileName + strlen(GetZIPArchive()) + 1);
+                    // feature 095: the name handed to the archiver stays under 2 * MAX_PATH bytes (the old
+                    // buffer: the longest one a plug-in has ever received) - longer ones are refused
+                    CSalHeapString nameInArchiveBuf;
+                    if (strlen(dcFileName + strlen(GetZIPArchive()) + 1) >= 2 * MAX_PATH)
+                    {
+                        SalMessageBox(HWindow, LoadStr(IDS_UNPACKTOOLONGNAME),
+                                      LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                        return;
+                    }
+                    if (!nameInArchiveBuf.Copy(dcFileName + strlen(GetZIPArchive()) + 1))
+                    {
+                        TRACE_E(LOW_MEMORY);
+                        return;
+                    }
+                    const char* nameInArchive = nameInArchiveBuf.Get();
 
                     // besides itself, compare the file with all the others and look for a case-sensitive identical name;
                     // if it exists, these two files must be distinguished in the disk-cache; I chose

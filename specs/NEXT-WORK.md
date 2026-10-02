@@ -393,9 +393,26 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   byte fold in a sort, because text that is not WTF-8 orders by a property of
   the whole string. A comparator that stops at the first difference needs
   the contract's order for such text redefined.
-- **An unbounded `StrICpy` into `buf[MAX_PATH]`** at `fileswn9.cpp`
-  (`OfferArchiveUpdateIfNeeded`, the disk-cache key) - found by the 092
-  analysis, not fixed there. A path longer than 259 bytes overruns it.
+- **An unbounded `StrICpy` into `buf[MAX_PATH]`** at `fileswn9.cpp` - ✅
+  feature 095 (2026-10-02): **it could not overrun** - the archive's path is
+  cut to 259 bytes before it gets there (proof in
+  `specs/095-archive-path-buffers/fix-log.md`). The four sites now use heap
+  strings anyway, and that fixed a real defect (Enter / F4 on a file whose
+  archive path + inner folder + name reach about 520 bytes). Found by 095,
+  **not fixed**:
+  - **An archive whose path is longer than 259 bytes cannot be opened**
+    (`ChangePathToArchive`, `fileswn2.cpp`: the path is cut silently, even in
+    the middle of a UTF-8 character). With accented folder names that is
+    about 130 characters. Depending on where the cut falls: nothing happens
+    on Enter, an error names the cut path, or - if a file with the cut name
+    exists - **another archive is opened**. A real limitation next to the
+    long-path support of feature 004.
+  - **An edited file with an accented name may not be packed back into its
+    archive** - seen by the 095 probe on names made of `ř` (both builds): the
+    file is not offered for the update and the edit is lost without a
+    message. Suspected: a code-page file look-up on a UTF-8 path in
+    `CFileTimeStamps::CheckAndPackAndClear` (`salamdr3.cpp`). **Verify and
+    fix first** - silent loss of an edit.
 - The mask matcher, *Change Case* (B-4), the x86-only code and the
   install-path chain (`plugins2.cpp`, ANSI operands) are not part of B-2's
   identity work.

@@ -1111,3 +1111,26 @@ plugin architecture preservation, UI consistency.
     rows (previous build 33; the 57th, a self-extractor row, cannot be driven
     in a Debug tree), SFTP 11 rows. Independent review ACCEPT. Records:
     `specs/094-plugin-password-encoding/fix-log.md`.
+- 095-archive-path-buffers: **the archive-path buffers, and what the premise
+  got wrong.** The backlog said an unbounded `StrICpy` of the panel's archive
+  path into `buf[MAX_PATH]` overruns the stack. It **could not**:
+  `ChangePathToArchive` cuts the archive path to 259 bytes
+  (`lstrcpyn(backup1, archive, MAX_PATH)`, the only non-empty writer of
+  `ZIPArchive`), and the archive listing refuses inner paths and names over
+  255 bytes (`AddFile`, in bytes) - every one of the four buffers fit its
+  maximum, one of them exactly. The four sites (`fileswn2/5/6/9.cpp`) now
+  build the disk-cache name in exact-size heap strings
+  (`src/common/salheapstr.h`, `CSalHeapString`; its folding copy is
+  byte-for-byte `StrICpy` - the cache key must not change, see 092).
+  - **The real defect it fixed** (found by the reviewer, not by the author):
+    `ExecuteFromArchive` ignored the result of two bounded appends, so with
+    archive + inner folder + name >= about 520 bytes Enter / F4 asked the
+    plug-in for the *folder* ("File not found").
+  - **Found, not fixed** (NEXT-WORK item 5): an archive at a path over 259
+    bytes cannot be opened and the cut can open *another* archive; an edited
+    file with an accented name may not be packed back.
+  - Lesson: a probe whose negative control does not fail is a finding -
+    check reachability (every writer, in bytes) before fixing an "overflow".
+    saltests 13,032 -> 13,102. Probe `probe/longarc_probe.ps1`: 60/0
+    (previous build 56/4). Records:
+    `specs/095-archive-path-buffers/fix-log.md`.

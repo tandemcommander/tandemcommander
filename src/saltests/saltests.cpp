@@ -28,6 +28,7 @@
 #include "salftpanon.h"   // feature 090
 #include "salarcpwd.h"    // feature 093
 #include "salzippwd.h"    // feature 094
+#include "salheapstr.h"   // feature 095
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 
 #include <map>
@@ -3492,6 +3493,80 @@ static void TestArchivePassword093()
 // password (src/common/salzippwd.h). Code pages 1250 / 852 are passed
 // explicitly where the expectation is a literal; the rest is computed with
 // the same Win32 calls the old code used.
+// feature 095: the heap string that replaced the stack buffers of the archive's disk-cache name
+static void TestHeapString095()
+{
+    // the core's LowerCase table is built exactly like this (InitializeCase in str.cpp)
+    unsigned char lower[256];
+    for (int i = 0; i < 256; i++)
+        lower[i] = (unsigned char)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)i);
+    // what StrICpy does (src/common/str.cpp), on a buffer that is big enough
+    auto oldFold = [&lower](char* dest, const char* src)
+    {
+        while (*src != 0)
+            *dest++ = (char)lower[(unsigned char)*src++];
+        *dest = 0;
+    };
+
+    CSalHeapString s;
+    CHECK(s.Get() == NULL && s.Size() == 0 && strcmp(s.Text(), "") == 0);
+    CHECK(!s.Copy(NULL) && s.Get() == NULL);
+
+    // --- content equals the old fold, for ASCII, UTF-8 and code-page bytes
+    const char* samples[] = {
+        "", "C:\\Temp\\Archive.ZIP", "D:\\M\xC5\xAFj disk\\\xC5\x98" "E\xC5\x98ICHA.Zip",
+        "\\\\Server\\Share\\\xC8\xD8\xDD.7Z", "X:\\\xED\xA0\x80lone.ZIP", "A\x01\x7F\x80\xFF"};
+    for (int i = 0; i < (int)(sizeof(samples) / sizeof(samples[0])); i++)
+    {
+        char expect[100];
+        oldFold(expect, samples[i]);
+        CHECK(s.Copy(samples[i], 0, lower));
+        CHECK(strcmp(s.Get(), expect) == 0 && s.Size() == (int)strlen(samples[i]) + 1);
+        CHECK(s.Copy(samples[i])); // no table: the bytes as they are
+        CHECK(strcmp(s.Get(), samples[i]) == 0);
+    }
+    CHECK(s.Copy("AbC", 0, lower) && strcmp(s.Get(), "abc") == 0);
+
+    // --- the reserve is really there: the name is completed as the callers do
+    CHECK(s.Copy("C:\\A.ZIP", 5 + 1 + 6 + 2 + 32, lower));
+    CHECK(s.Size() == 8 + 1 + 5 + 1 + 6 + 2 + 32);
+    strcat(s.Get(), "\\");
+    strcat(s.Get(), "Inner");
+    strcat(s.Get(), "\\");
+    strcat(s.Get(), "B.TXT");
+    sprintf(s.Get() + strlen(s.Get()), ":0x%p", (void*)(UINT_PTR)-1);
+    CHECK(strncmp(s.Get(), "c:\\a.zip\\Inner\\B.TXT:0x", 23) == 0 && (int)strlen(s.Get()) < s.Size());
+
+    // --- every length around the old buffer sizes, and the longest path the program holds
+    const int lens[] = {259, 260, 261, 519, 520, 619, 620, 829, 830, 4000, SAL_MAX_PATH_UTF8 - 1};
+    for (int i = 0; i < (int)(sizeof(lens) / sizeof(lens[0])); i++)
+    {
+        std::string src(lens[i], 'Q');
+        src[0] = 'C';
+        src[lens[i] / 2] = (char)0xC5; // a UTF-8 pair in the middle
+        src[lens[i] / 2 + 1] = (char)0x98;
+        std::string expect(lens[i] + 1, 0);
+        oldFold(&expect[0], src.c_str());
+        CHECK(s.Copy(src.c_str(), 3, lower));
+        CHECK(s.Size() == lens[i] + 4 && (int)strlen(s.Get()) == lens[i] && memcmp(s.Get(), expect.c_str(), lens[i] + 1) == 0);
+        CHECK(s.Get()[0] == 'c' && s.Get()[1] == 'q');
+    }
+
+    // --- Printf: the size is exact, a long argument is not cut
+    CHECK(s.Printf("Archive %s was changed.", "C:\\a.zip"));
+    CHECK(strcmp(s.Text(), "Archive C:\\a.zip was changed.") == 0 && s.Size() == (int)strlen(s.Text()) + 1);
+    {
+        std::string arg(SAL_MAX_PATH_UTF8 - 1, 'x');
+        CHECK(s.Printf("<%s>", arg.c_str()));
+        CHECK((int)strlen(s.Text()) == SAL_MAX_PATH_UTF8 + 1 && s.Text()[0] == '<' &&
+              s.Text()[SAL_MAX_PATH_UTF8] == '>' && s.Text()[SAL_MAX_PATH_UTF8 - 1] == 'x');
+    }
+    CHECK(s.Printf("%d%%", 5) && strcmp(s.Text(), "5%") == 0);
+    CHECK(!s.Printf(NULL) && strcmp(s.Text(), "") == 0 && s.Get() == NULL);
+    s.Free();
+    CHECK(s.Get() == NULL && s.Size() == 0);
+}
+
 static BOOL ZipPwdHas094(const CSalZipPwdCandidates& c, int index, int kind, const char* bytes, int len)
 {
     return index < c.Count && c.Forms[index].Kind == kind && c.Forms[index].Len == len &&
@@ -4083,6 +4158,7 @@ int main()
     TestCmdLineOffsets093();
     TestArchivePassword093();
     TestZipPassword094();
+    TestHeapString095();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -13,6 +13,7 @@
 #include "dialogs.h"
 #include "worker.h"
 #include "cache.h"
+#include "salheapstr.h" // feature 095
 #include "pack.h"
 #include "shellib.h"
 #include "filesbox.h"
@@ -3166,7 +3167,7 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
     }
 
     //---  get the full long name
-    char dcFileName[2 * MAX_PATH]; // ZIP: name for disk cache
+    CSalHeapString dcFileNameBuf; // ZIP: name for disk cache (feature 095: was char[2 * MAX_PATH])
     CFileData* f = &Files->At(index - Dirs->Count);
 
     if (!SalIsValidFileNameComponent(f->Name))
@@ -3194,9 +3195,24 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         }
     }
 
-    StrICpy(dcFileName, GetZIPArchive()); // the archive file name should be compared case-insensitively (Windows file system), so we always convert it to lowercase
-    SalPathAppend(dcFileName, GetZIPPath(), 2 * MAX_PATH);
-    SalPathAppend(dcFileName, f->Name, 2 * MAX_PATH);
+    // the archive file name should be compared case-insensitively (Windows file system), so we always convert it to lowercase
+    if (!dcFileNameBuf.Copy(GetZIPArchive(), strlen(GetZIPPath()) + strlen(f->Name) + 3, LowerCase))
+    {
+        TRACE_E(LOW_MEMORY);
+        return;
+    }
+    char* dcFileName = dcFileNameBuf.Get();
+    SalPathAppend(dcFileName, GetZIPPath(), dcFileNameBuf.Size());
+    SalPathAppend(dcFileName, f->Name, dcFileNameBuf.Size());
+    // feature 095: the name handed to the archiver stays under 2 * MAX_PATH bytes, the limit of the
+    // view path (F3); this path used to drop the file name when the whole cache name passed 520 bytes
+    const char* nameInArchive = dcFileName + strlen(GetZIPArchive()) + 1;
+    if (strlen(nameInArchive) >= 2 * MAX_PATH)
+    {
+        SalMessageBox(HWindow, LoadStr(IDS_UNPACKTOOLONGNAME),
+                      LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        return;
+    }
 
     // disk-cache settings for the plugin (default values change only for plugins)
     char arcCacheTmpPath[MAX_PATH];
@@ -3252,7 +3268,7 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
         HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
         if (PackUnpackOneFile(this, GetZIPArchive(), PluginData.GetInterface(),
-                              dcFileName + strlen(GetZIPArchive()) + 1, f, tmpPath,
+                              nameInArchive, f, tmpPath,
                               NULL, NULL))
         {
             SetCursor(oldCur);

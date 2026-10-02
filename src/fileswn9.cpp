@@ -18,6 +18,7 @@
 #include "pack.h"
 #include "shellib.h"
 #include "cache.h"
+#include "salheapstr.h" // feature 095
 extern "C"
 {
 #include "shexreg.h"
@@ -1207,9 +1208,9 @@ void CFilesWindow::OfferArchiveUpdateIfNeededAux(HWND parent, int textID, BOOL* 
     if (AssocUsed) // if the user edited files from the archive we must update them before archive operations, otherwise we would be working with outdated versions of the edited files stored directly inside the archive
     {
         // show info about the need to update the archive that contains edited files
-        char text[MAX_PATH + 500];
-        sprintf(text, LoadStrU8(textID), GetZIPArchive());
-        SalMessageBox(parent, text, LoadStr(IDS_INFOTITLE),
+        CSalHeapString text; // feature 095: the archive name may be far longer than MAX_PATH
+        text.Printf(LoadStrU8(textID), GetZIPArchive());
+        SalMessageBox(parent, text.Text(), LoadStr(IDS_INFOTITLE),
                       MSGBOXEX_OK | MSGBOXEX_ICONINFORMATION | MSGBOXEX_SILENT);
         // package the changed files, prepare them for further use
         BOOL someFilesChanged;
@@ -1221,9 +1222,11 @@ void CFilesWindow::OfferArchiveUpdateIfNeededAux(HWND parent, int textID, BOOL* 
         // if edited files might be in the disk cache, drop them to ensure they are re-extracted when accessed again
         if (someFilesChanged)
         {
-            char buf[MAX_PATH];
-            StrICpy(buf, GetZIPArchive()); // in the disk cache the archive name is in lowercase (allows case-insensitive comparison with Windows file system name)
-            DiskCache.FlushCache(buf);
+            CSalHeapString buf;                          // feature 095: was char[MAX_PATH] + StrICpy
+            if (buf.Copy(GetZIPArchive(), 0, LowerCase)) // in the disk cache the archive name is in lowercase (allows case-insensitive comparison with Windows file system name)
+                DiskCache.FlushCache(buf.Get());
+            else
+                TRACE_E(LOW_MEMORY);
         }
         AssocUsed = FALSE;
     }

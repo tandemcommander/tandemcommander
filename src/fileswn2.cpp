@@ -17,6 +17,7 @@
 #include "zip.h"
 #include "pack.h"
 #include "cache.h"
+#include "salheapstr.h" // feature 095
 #include "toolbar.h"
 extern "C"
 {
@@ -1263,10 +1264,10 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
                 if (Configuration.CnfrmCloseArchive && !CriticalShutdown)
                 {
                     char title[100];
-                    char text[MAX_PATH + 500];
+                    CSalHeapString text; // feature 095: the archive name may be far longer than MAX_PATH
                     char checkText[200];
                     sprintf(title, LoadStr(IDS_INFOTITLE));
-                    sprintf(text, LoadStrU8(IDS_ARCHIVECLOSEEDIT), GetZIPArchive());
+                    text.Printf(LoadStrU8(IDS_ARCHIVECLOSEEDIT), GetZIPArchive());
                     sprintf(checkText, LoadStr(IDS_DONTSHOWAGAIN));
                     BOOL dontShow = !Configuration.CnfrmCloseArchive;
 
@@ -1275,7 +1276,7 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
                     params.HParent = parent;
                     params.Flags = MSGBOXEX_OK | MSGBOXEX_ICONINFORMATION | MSGBOXEX_SILENT | MSGBOXEX_HINT;
                     params.Caption = title;
-                    params.Text = text;
+                    params.Text = text.Text();
                     params.CheckBoxText = checkText;
                     params.CheckBoxValue = &dontShow;
                     SalMessageBoxEx(&params);
@@ -1302,8 +1303,11 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
             CFilesWindow* another = (MainWindow->LeftPanel == this) ? MainWindow->RightPanel : MainWindow->LeftPanel;
             if (someFilesChanged || !another->Is(ptZIPArchive) || StrICmp(another->GetZIPArchive(), GetZIPArchive()) != 0)
             {
-                StrICpy(buf, GetZIPArchive()); // the disk cache stores the archive name in lowercase (allows case-insensitive comparison of the name from Windows file system)
-                DiskCache.FlushCache(buf);
+                CSalHeapString dcName;                          // feature 095: was StrICpy into buf
+                if (dcName.Copy(GetZIPArchive(), 0, LowerCase)) // the disk cache stores the archive name in lowercase (allows case-insensitive comparison of the name from Windows file system)
+                    DiskCache.FlushCache(dcName.Get());
+                else
+                    TRACE_E(LOW_MEMORY);
             }
 
             // we call the plugin's CPluginInterfaceAbstract::CanCloseArchive
@@ -1326,9 +1330,10 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
                             canclose = FALSE;
                             if (canForce && !UnattendedClose) // we can ask the user whether to force it (feature 080: not during an unattended close - the archive stays open)
                             {
-                                sprintf(buf, LoadStrU8(IDS_ARCHIVEFORCECLOSE), GetZIPArchive());
+                                CSalHeapString question; // feature 095
+                                question.Printf(LoadStrU8(IDS_ARCHIVEFORCECLOSE), GetZIPArchive());
                                 userAsked = TRUE;
-                                if (SalMessageBox(parent, buf, LoadStr(IDS_QUESTION),
+                                if (SalMessageBox(parent, question.Text(), LoadStr(IDS_QUESTION),
                                                   MB_YESNO | MB_ICONQUESTION) == IDYES) // user chooses "Close"
                                 {
                                     userForce = TRUE;
@@ -1354,8 +1359,9 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
                                     canclose = FALSE;
                                     if (canForce && !userAsked && !UnattendedClose) // we can ask the user whether to force it (feature 080: not during an unattended close)
                                     {
-                                        sprintf(buf, LoadStrU8(IDS_ARCHIVEFORCECLOSE), GetZIPArchive());
-                                        if (SalMessageBox(parent, buf, LoadStr(IDS_QUESTION),
+                                        CSalHeapString question; // feature 095
+                                        question.Printf(LoadStrU8(IDS_ARCHIVEFORCECLOSE), GetZIPArchive());
+                                        if (SalMessageBox(parent, question.Text(), LoadStr(IDS_QUESTION),
                                                           MB_YESNO | MB_ICONQUESTION) == IDYES) // user chooses "Close"
                                         {
                                             plugin->CanCloseArchive(this, GetZIPArchive(), TRUE);
