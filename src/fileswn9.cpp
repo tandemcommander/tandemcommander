@@ -1998,13 +1998,16 @@ BOOL CFilesWindow::CopyFocusedNameToClipboard(CCopyFocusedNameModeEnum mode)
         // try to convert the ordinary name to UNC form
         if (Is(ptDisk) || Is(ptZIPArchive))
         {
-            // obtain the current path in the panel
-            GetGeneralPath(buff, 2 * MAX_PATH);
-            SalPathAddBackslash(buff, 2 * MAX_PATH);
-
             CFileData* item = (FocusedIndex < Dirs->Count) ? &Dirs->At(FocusedIndex) : &Files->At(FocusedIndex - Dirs->Count);
             char itemName[SAL_FIND_NAME_U8]; // AlterFileName copies a full name unbounded (feature 027; was MAX_PATH)
             AlterFileName(itemName, item->Name, -1, Configuration.FileNameFormat, 0, FocusedIndex < Dirs->Count);
+
+            // obtain the current path in the panel
+            // feature 097: CopyUNCPathToClipboard works in 2 * MAX_PATH buffers without bounds - a
+            // location + name that does not fit them is not converted (it used to be cut, or to overrun)
+            if (!GetGeneralPath(buff, 2 * MAX_PATH) || strlen(buff) + 2 + strlen(itemName) >= 2 * MAX_PATH)
+                return FALSE;
+            SalPathAddBackslash(buff, 2 * MAX_PATH);
 
             if (CopyUNCPathToClipboard(buff, itemName, FocusedIndex < Dirs->Count, MainWindow->HWindow))
                 return TRUE;
@@ -2012,24 +2015,23 @@ BOOL CFilesWindow::CopyFocusedNameToClipboard(CCopyFocusedNameModeEnum mode)
         return FALSE;
     }
 
-    if (mode == cfnmFull)
-    {
-        // full name
-        if (Is(ptDisk) || Is(ptZIPArchive))
-        {
-            GetGeneralPath(buff, 2 * MAX_PATH);
-            SalPathAddBackslash(buff, 2 * MAX_PATH);
-        }
-    }
-
     CFileData* file = (FocusedIndex < Dirs->Count) ? &Dirs->At(FocusedIndex) : &Files->At(FocusedIndex - Dirs->Count);
     if (Is(ptDisk) || Is(ptZIPArchive) || Is(ptPluginFS) && mode == cfnmShort)
     {
         char fileName[SAL_FIND_NAME_U8]; // AlterFileName copies a full name unbounded (feature 027; was MAX_PATH)
         AlterFileName(fileName, file->Name, -1, Configuration.FileNameFormat, 0, FocusedIndex < Dirs->Count);
-        int l = (int)strlen(buff);
-        lstrcpyn(buff + l, fileName, 2 * MAX_PATH - l);
-        return CopyTextToClipboardU8(buff); // panel names/paths are UTF-8 (feature 063, contract C2)
+        // feature 097: the full name on the heap, whole (it was cut at 519 bytes on its way to the clipboard)
+        CSalPathBuf full;
+        BOOL ok = TRUE;
+        if (mode == cfnmFull && (Is(ptDisk) || Is(ptZIPArchive)))
+        {
+            CSalHeapString loc;
+            ok = loc.Copy("", SAL_TAB_LOCATION_MAX) && GetGeneralPath(loc.Get(), loc.Size()) &&
+                 full.Set(loc.Get()) && full.AppendComponent(fileName);
+        }
+        else
+            ok = full.Set(fileName);
+        return ok && CopyTextToClipboardU8(full.Get()); // panel names/paths are UTF-8 (feature 063, contract C2)
     }
     else
     {
@@ -2054,10 +2056,12 @@ BOOL CFilesWindow::CopyCurrentPathToClipboard()
 {
     CALL_STACK_MESSAGE1("CFilesWindow::CopyCurrentPathToClipboard()");
 
-    char buff[2 * MAX_PATH];
-    buff[0] = 0;
-    GetGeneralPath(buff, 2 * MAX_PATH, TRUE);
-    return CopyTextToClipboardU8(buff); // panel names/paths are UTF-8 (feature 063, contract C2)
+    // feature 097: the location whole, on the heap (it was cut at 519 bytes)
+    CSalHeapString buff;
+    if (!buff.Copy("", SAL_TAB_LOCATION_MAX))
+        return FALSE;
+    GetGeneralPath(buff.Get(), buff.Size(), TRUE);
+    return CopyTextToClipboardU8(buff.Get()); // panel names/paths are UTF-8 (feature 063, contract C2)
 }
 
 void AddStrToStr(char* dstStr, int dstBufSize, const char* srcStr)

@@ -97,7 +97,10 @@ public:
 // vytvori soubor/adresar (podle 'file') na ceste 'path' (NULL -> Window TEMP dir),
 // s prefixem 'prefix', vraci jmeno vytvoreneho souboru v 'tmpName' (min. velikost MAX_PATH),
 // vraci "uspech?" (pri neuspechu vraci pres SetLastError kod Windows chyby - pro kompatib.)
-BOOL SalGetTempFileName(const char* path, const char* prefix, char* tmpName, BOOL file);
+// 'tmpNameSize' is the size of 'tmpName' (feature 097): with the default the result is limited to
+// MAX_PATH bytes as before and a base path of MAX_PATH bytes or more fails; a caller that passes a
+// larger buffer gets a temporary name beside a long base path
+BOOL SalGetTempFileName(const char* path, const char* prefix, char* tmpName, BOOL file, int tmpNameSize = MAX_PATH);
 
 // protoze windowsova verze MoveFile nezvlada prejmenovani souboru s read-only atributem na Novellu,
 // napsali jsme si vlastni (nastane-li chyba pri MoveFile, zkusi shodit read-only, provest operaci,

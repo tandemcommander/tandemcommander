@@ -1299,8 +1299,16 @@ void CMainWindow::RefreshDirs()
 char HotPathSetBufferName[MAX_PATH];
 char HotPathSetBufferPath[HOTPATHITEM_MAXPATH];
 
-void CMainWindow::SetUnescapedHotPath(int index, const char* path)
+BOOL CMainWindow::SetUnescapedHotPath(int index, const char* path)
 {
+    // feature 097: the one place every route stores a hot path through. A hot path is expanded
+    // into buffers of 2 * MAX_PATH bytes when it is used, so a longer one could never be used -
+    // and the copies below would cut it (the cut path would then be the stored hot path).
+    if (strlen(path) >= 2 * MAX_PATH)
+    {
+        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        return FALSE;
+    }
     if (Configuration.HotPathAutoConfig)
     {
         // switch to the buffer so that Cancel works
@@ -1326,6 +1334,7 @@ void CMainWindow::SetUnescapedHotPath(int index, const char* path)
         if (Windows7AndLater)
             CreateJumpList();
     }
+    return TRUE;
 }
 
 BOOL CMainWindow::GetExpandedHotPath(HWND hParent, int index, char* buffer, int bufferSize)
@@ -1763,12 +1772,15 @@ void CMainWindow::SetTrayIconText(const char* text)
     Shell_NotifyIcon(NIM_MODIFY, &tnid);
 }
 
-void CMainWindow::GetFormatedPathForTitle(char* path)
+// feature 097: the title text is built from the WHOLE location in a buffer of 'pathSize' bytes
+// (it was built from the first 519 bytes: an archive and its folder got the same title, and a
+// cut inside a UTF-8 sequence showed the whole title as code-page text)
+static void GetFormatedPathForTitleAux(CMainWindow* wnd, char* path, int pathSize)
 {
     path[0] = 0;
     int titleBarMode = Configuration.TitleBarMode;
     // a plugin FS without support for retrieving the path for the window title can only display the Full Path
-    CFilesWindow* panel = GetActivePanel();
+    CFilesWindow* panel = wnd->GetActivePanel();
     if (panel == NULL)
     {
         path[0] = 0;
@@ -1788,7 +1800,7 @@ void CMainWindow::GetFormatedPathForTitle(char* path)
                                                              2, path, 2 * MAX_PATH))
         {
             // we should display "root\...\current directory"
-            panel->GetGeneralPath(path, 2 * MAX_PATH);
+            panel->GetGeneralPath(path, pathSize);
             if (path[0] != 0)
             {
                 char* trimStart = NULL; // place where I insert "...", after which I append 'trimEnd'
@@ -1851,7 +1863,7 @@ void CMainWindow::GetFormatedPathForTitle(char* path)
                                                              1, path, MAX_PATH))
         {
             // we should display only the current directory
-            panel->GetGeneralPath(path, 2 * MAX_PATH);
+            panel->GetGeneralPath(path, pathSize);
             if (path[0] != 0)
             {
                 if (panel->Is(ptDisk) || panel->Is(ptZIPArchive))
@@ -1899,7 +1911,7 @@ void CMainWindow::GetFormatedPathForTitle(char* path)
     case TITLE_BAR_MODE_FULLPATH:
     {
         // return the full path
-        panel->GetGeneralPath(path, 2 * MAX_PATH);
+        panel->GetGeneralPath(path, pathSize);
         break;
     }
 
@@ -1908,6 +1920,34 @@ void CMainWindow::GetFormatedPathForTitle(char* path)
         TRACE_E("Configuration.TitleBarMode = " << Configuration.TitleBarMode);
     }
     }
+}
+
+void CMainWindow::GetFormatedPathForTitle(char* path)
+{
+    // 'path' is a buffer of 2 * MAX_PATH bytes (the caller's contract): the result is cut to it
+    // at a whole character
+    path[0] = 0;
+    // sized for the location (this runs on every title update): disk path, or archive name +
+    // path in the archive; a plug-in FS path keeps the 2 * MAX_PATH convention
+    int workSize = 2 * MAX_PATH;
+    CFilesWindow* active = GetActivePanel();
+    if (active != NULL)
+    {
+        if (active->Is(ptDisk))
+            workSize += (int)strlen(active->GetPath());
+        else if (active->Is(ptZIPArchive))
+            workSize += (int)strlen(active->GetZIPArchive()) + 1 + (int)strlen(active->GetZIPPath());
+    }
+    char* work = (char*)malloc(workSize);
+    if (work == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        return;
+    }
+    GetFormatedPathForTitleAux(this, work, workSize);
+    lstrcpyn(path, work, 2 * MAX_PATH);
+    SalU8TrimIncompleteTail(path);
+    free(work);
 }
 
 void CMainWindow::SetWindowTitle(const char* text)
@@ -2322,7 +2362,17 @@ MENU_TEMPLATE_ITEM ToolbarsCtxMenu[] =
         }
     }
 
-    char HotText[2 * MAX_PATH];
+    // feature 097: the hot text whole (it was cut at 519 bytes in char[2 * MAX_PATH], and the cut
+    // text was copied to the clipboard or stored as a hot path)
+    struct CHotTextFree
+    {
+        char* P;
+        ~CHotTextFree() { free(P); }
+    } hotTextFree = {(char*)malloc(SAL_MAX_PATH_UTF8)};
+    char hotTextNone[1] = {0};
+    char* HotText = hotTextFree.P != NULL ? hotTextFree.P : hotTextNone;
+    int hotTextSize = hotTextFree.P != NULL ? SAL_MAX_PATH_UTF8 : 1;
+    HotText[0] = 0;
     int HeaderLineItem = -1; // will be filled with the item index if the user clicked on one
 
     if (panelClass)
@@ -2450,7 +2500,7 @@ MENU_TEMPLATE_ITEM InfoLineMenu[] =
 
             menu.InsertItem(0xffffffff, TRUE, &miiSep);
 
-            panel->DirectoryLine->GetHotText(HotText, _countof(HotText));
+            panel->DirectoryLine->GetHotText(HotText, hotTextSize);
             if (strlen(HotText) > 0)
             {
                 CMenuPopup* popup = new CMenuPopup();
@@ -2477,7 +2527,7 @@ MENU_TEMPLATE_ITEM InfoLineMenu[] =
         // handle hot text in the info line
         if (hit == mwhteLeftStatusLine || hit == mwhteRightStatusLine)
         {
-            panel->StatusLine->GetHotText(HotText, _countof(HotText));
+            panel->StatusLine->GetHotText(HotText, hotTextSize);
             if (strlen(HotText) > 0)
             {
                 mii.String = LoadStr(IDS_COPYTOCLIPBOARD);
@@ -2717,8 +2767,7 @@ MENU_TEMPLATE_ITEM InfoLineMenu[] =
         // catch hot paths
         if (cmd >= 20 && cmd < 50)
         {
-            SetUnescapedHotPath(cmd - 20, HotText);
-            if (!Configuration.HotPathAutoConfig)
+            if (SetUnescapedHotPath(cmd - 20, HotText) && !Configuration.HotPathAutoConfig)
                 panel->DirectoryLine->FlashText(TRUE);
         }
 

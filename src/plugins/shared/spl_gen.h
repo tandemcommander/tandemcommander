@@ -1001,7 +1001,12 @@ public:
 
     // protoze windowsova GetTempFileName nefunguje, napsali jsme si vlastni klon:
     // vytvori soubor/adresar (podle 'file') na ceste 'path' (NULL -> Windows TEMP dir),
-    // s prefixem 'prefix', vraci jmeno vytvoreneho souboru v 'tmpName' (min. velikost MAX_PATH),
+    // s prefixem 'prefix', vraci jmeno vytvoreneho souboru v 'tmpName' (min. velikost MAX_PATH,
+    // s vyjimkou nize: SAL_MAX_PATH_UTF8 pro dlouhou 'path'),
+    // since interface 107: when 'path' is MAX_PATH bytes or longer (e.g. the folder of an archive
+    // at a long path, see spl_arc.h), 'tmpName' must be a buffer of SAL_MAX_PATH_UTF8 bytes
+    // (CSalMaxPathBuffer in spl_base.h); with a shorter 'path' the result still fits MAX_PATH. A
+    // plug-in built for an older interface gets FALSE (ERROR_BUFFER_OVERFLOW) for such a 'path'
     // vraci uspech (pri neuspechu vraci v 'err' (neni-li NULL) kod Windows chyby)
     // mozne volat z libovolneho threadu
     virtual BOOL WINAPI SalGetTempFileName(const char* path, const char* prefix, char* tmpName, BOOL file, DWORD* err) = 0;

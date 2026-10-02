@@ -735,6 +735,17 @@ extern const SPackFormat PackFormat[];
 // setting error handling
 void PackSetErrorHandler(BOOL (*handler)(HWND parent, const WORD errNum, ...));
 
+// feature 097: the length of an archive's full name against what its handler takes
+// (SalArchiveNameFitsHandler in salplugver.h). 'builtForVersion' is the interface version of
+// the plug-in that handles the archive or SAL_ARCHIVE_HANDLER_EXTERNAL. Returns TRUE when the
+// name may be handed over; otherwise shows "The path specified is too long." and returns FALSE.
+BOOL PackArchiveNameFitsHandler(HWND parent, const char* archiveFileName, int builtForVersion);
+// who lists and unpacks the archive 'archiveFileName' (by its extension): returns the value for
+// SalArchiveNameFitsHandler - the interface version of the plug-in (the plug-in is loaded for it;
+// 0 when it cannot be loaded) or SAL_ARCHIVE_HANDLER_EXTERNAL; 'isArchive' gets FALSE (and the
+// result is 0) when the name is not a known archive or has no usable handler
+int PackGetUnpackerVersion(const char* archiveFileName, BOOL* isArchive);
+
 // determine the contents of the archive
 BOOL PackList(CFilesWindow* panel, const char* archiveFileName, CSalamanderDirectory& dir,
               CPluginDataInterfaceAbstract*& pluginData, CPluginData*& plugin);

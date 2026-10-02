@@ -2337,6 +2337,25 @@ static void TestCloseApp080()
     CHECK(SalViewerNameFitsPlugin(104, 0));
     CHECK(!SalViewerNameFitsPlugin(0, MAX_PATH));       // unknown version: treated as old
     CHECK(!SalViewerNameFitsPlugin(-1, MAX_PATH));
+
+    // --- feature 097: which archive file names a handler may be given
+    CHECK(SalArchiveNameFitsHandler(107, 0));
+    CHECK(SalArchiveNameFitsHandler(107, MAX_PATH - 1));
+    CHECK(SalArchiveNameFitsHandler(107, MAX_PATH));                 // 260 bytes: a current plug-in takes it
+    CHECK(SalArchiveNameFitsHandler(107, 777));
+    CHECK(SalArchiveNameFitsHandler(108, SAL_MAX_PATH_UTF8 - 1));    // the longest name the program holds
+    CHECK(!SalArchiveNameFitsHandler(107, SAL_MAX_PATH_UTF8));       // would not fit with its terminator
+    CHECK(!SalArchiveNameFitsHandler(107, 1000000));
+    CHECK(SalArchiveNameFitsHandler(106, MAX_PATH - 1));             // an older plug-in: 259 bytes as before
+    CHECK(!SalArchiveNameFitsHandler(106, MAX_PATH));                // ... and not one byte more
+    CHECK(!SalArchiveNameFitsHandler(104, 777));
+    CHECK(SalArchiveNameFitsHandler(0, MAX_PATH - 1));               // unknown version: treated as old
+    CHECK(!SalArchiveNameFitsHandler(0, MAX_PATH));
+    CHECK(!SalArchiveNameFitsHandler(-1, MAX_PATH));
+    CHECK(SalArchiveNameFitsHandler(SAL_ARCHIVE_HANDLER_EXTERNAL, MAX_PATH - 1)); // external archiver
+    CHECK(!SalArchiveNameFitsHandler(SAL_ARCHIVE_HANDLER_EXTERNAL, MAX_PATH));
+    CHECK(!SalArchiveNameFitsHandler(SAL_ARCHIVE_HANDLER_EXTERNAL, SAL_MAX_PATH_UTF8 - 1));
+    CHECK(SAL_PLUGINVER_LONG_ARCHIVE_NAMES == 107);
     CHECK(SAL_MAX_PATH_UTF8 == 3 * 32767 + 1);
 
     // every decision has a name, and only "agree" does not start with "decline"

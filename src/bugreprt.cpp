@@ -1498,9 +1498,9 @@ void CCallStack::PrintBugReport(EXCEPTION_POINTERS* Exception, DWORD ThreadID, D
 
                 case ptZIPArchive:
                 {
-                    sprintf(buf, "Archive = %s", panel->GetZIPArchive());
+                    _snprintf_s(buf, _TRUNCATE, "Archive = %s", panel->GetZIPArchive()); // the name may exceed the buffer (feature 097)
                     PrintLine(param, buf, TRUE);
-                    sprintf(buf, "ArcPath = %s", panel->GetZIPPath());
+                    _snprintf_s(buf, _TRUNCATE, "ArcPath = %s", panel->GetZIPPath());
                     PrintLine(param, buf, TRUE);
                     sprintf(buf, "Dirs = %d", panel->Dirs != NULL ? panel->Dirs->Count : -1);
                     PrintLine(param, buf, TRUE);

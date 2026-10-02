@@ -591,7 +591,7 @@ public:
                   CUserMenuAdvancedData* userMenuAdvancedData);
 
     // sets the hot path 'path' with index 'index'; receives a valid path without doubled '$' or variables
-    void SetUnescapedHotPath(int index, const char* path);
+    BOOL SetUnescapedHotPath(int index, const char* path); // FALSE = refused (the path does not fit a hot path: message shown), nothing stored
 
     // expands the hot path with index 'index' into 'buffer' of size 'bufferSize'
     // 'hParent' -- errors during path expansion will be shown for this window; if NULL, errors are suppressed

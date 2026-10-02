@@ -1793,8 +1793,21 @@ void CFilesWindow::DirectoryLineSetText()
     {
         // feature 011: a disk/archive path may be long (feature 004), the
         // filter mask is bounded by MAX_PATH - size for both, never overflow
-        char buf[SAL_MAX_PATH_UTF8 + MAX_PATH + 4];
         int pathLen = (int)strlen(path);
+        // feature 097: sized for the location (an archive name + the path inside it can pass
+        // SAL_MAX_PATH_UTF8) + the filter text (was a stack buffer of SAL_MAX_PATH_UTF8 + MAX_PATH + 4)
+        struct CBufFree
+        {
+            char* P;
+            ~CBufFree() { free(P); }
+        } bufFree = {(char*)malloc(pathLen + MAX_PATH + 4)};
+        char* buf = bufFree.P;
+        if (buf == NULL)
+        {
+            TRACE_E(LOW_MEMORY);
+            DirectoryLine->SetText(path);
+            return;
+        }
         if (Is(ptDisk) || Is(ptZIPArchive))
         {
             int l = pathLen;
@@ -2303,18 +2316,18 @@ void CFilesWindow::GotoHotPath(int index)
         ChangeDir(path);
 }
 
-void CFilesWindow::SetUnescapedHotPath(int index)
+BOOL CFilesWindow::SetUnescapedHotPath(int index)
 {
     CALL_STACK_MESSAGE2("CFilesWindow::SetUnescapedHotPath(%d)", index);
     if (index < 0 || index >= HOT_PATHS_COUNT)
-        return;
+        return FALSE;
     char path[2 * MAX_PATH];
     if (!GetGeneralPath(path, 2 * MAX_PATH, TRUE) && strlen(path) == 2 * MAX_PATH - 1) // feature 097: a cut path is never stored
     {
         SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
-        return;
+        return FALSE;
     }
-    MainWindow->SetUnescapedHotPath(index, path);
+    return MainWindow->SetUnescapedHotPath(index, path);
 }
 
 BOOL CFilesWindow::SetUnescapedHotPathToEmptyPos()
@@ -2329,8 +2342,7 @@ BOOL CFilesWindow::SetUnescapedHotPathToEmptyPos()
             SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             return FALSE;
         }
-        MainWindow->SetUnescapedHotPath(index, path);
-        return TRUE;
+        return MainWindow->SetUnescapedHotPath(index, path);
     }
     return FALSE;
 }

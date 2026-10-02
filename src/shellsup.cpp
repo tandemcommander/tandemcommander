@@ -197,8 +197,11 @@ void DoDragDropOper(BOOL copy, BOOL toArchive, const char* archiveOrFSName, cons
         }
         if (ok)
         {
-            lstrcpyn(tmp->ArchiveOrFSName, archiveOrFSName, MAX_PATH);
-            lstrcpyn(tmp->ArchivePathOrUserPart, archivePathOrUserPart, MAX_PATH);
+            // feature 097: a name that does not fit is never cut (the operation would pack into, or
+            // delete, whatever file has the cut name); the panel shows the message instead
+            tmp->NameTooLong = strlen(archiveOrFSName) >= MAX_PATH || strlen(archivePathOrUserPart) >= MAX_PATH;
+            lstrcpyn(tmp->ArchiveOrFSName, tmp->NameTooLong ? "" : archiveOrFSName, MAX_PATH);
+            lstrcpyn(tmp->ArchivePathOrUserPart, tmp->NameTooLong ? "" : archivePathOrUserPart, MAX_PATH);
             tmp->Data = data;
             PostMessage(panel->HWindow, WM_USER_DROPTOARCORFS, (WPARAM)tmp, 0);
             data = NULL;
@@ -1390,19 +1393,39 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                 i = index;
             if (i >= 0 && i < panel->Dirs->Count)
             {
+                // feature 097: whole or not at all (a cut path would be offered as a path to go to;
+                // the copy at offset 1 with the full buffer size wrote one byte past the buffer)
                 realDraggedPath[0] = 'D';
-                lstrcpyn(realDraggedPath + 1, panel->GetZIPArchive(), 2 * MAX_PATH);
-                SalPathAppend(realDraggedPath, panel->GetZIPPath(), 2 * MAX_PATH);
-                SalPathAppend(realDraggedPath, panel->Dirs->At(i).Name, 2 * MAX_PATH);
+                if (strlen(panel->GetZIPArchive()) >= 2 * MAX_PATH - 1)
+                    realDraggedPath[0] = 0;
+                else
+                {
+                    strcpy(realDraggedPath + 1, panel->GetZIPArchive());
+                    if (!SalPathAppend(realDraggedPath, panel->GetZIPPath(), 2 * MAX_PATH) ||
+                        !SalPathAppend(realDraggedPath, panel->Dirs->At(i).Name, 2 * MAX_PATH))
+                    {
+                        realDraggedPath[0] = 0;
+                    }
+                }
             }
             else
             {
                 if (i >= 0 && i >= panel->Dirs->Count && i < panel->Dirs->Count + panel->Files->Count)
                 {
+                    // feature 097: whole or not at all (a cut path would be offered as a path to go to;
+                    // the copy at offset 1 with the full buffer size wrote one byte past the buffer)
                     realDraggedPath[0] = 'F';
-                    lstrcpyn(realDraggedPath + 1, panel->GetZIPArchive(), 2 * MAX_PATH);
-                    SalPathAppend(realDraggedPath, panel->GetZIPPath(), 2 * MAX_PATH);
-                    SalPathAppend(realDraggedPath, panel->Files->At(i - panel->Dirs->Count).Name, 2 * MAX_PATH);
+                    if (strlen(panel->GetZIPArchive()) >= 2 * MAX_PATH - 1)
+                        realDraggedPath[0] = 0;
+                    else
+                    {
+                        strcpy(realDraggedPath + 1, panel->GetZIPArchive());
+                        if (!SalPathAppend(realDraggedPath, panel->GetZIPPath(), 2 * MAX_PATH) ||
+                            !SalPathAppend(realDraggedPath, panel->Files->At(i - panel->Dirs->Count).Name, 2 * MAX_PATH))
+                        {
+                            realDraggedPath[0] = 0;
+                        }
+                    }
                 }
             }
 
@@ -1431,6 +1454,19 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                 if (SalShExtSharedMemView != NULL) // shared memory is available (when copy&paste fails we cannot handle it)
                 {
                     CALL_STACK_MESSAGE1("ShellAction::archive::clipcopy_files");
+
+                    // feature 097: the data kept for the later Paste hold the archive's name in
+                    // MAX_PATH bytes (CSalShExtPastedData); a longer name is refused here - a cut
+                    // one could make the Paste list and unpack another archive
+                    if (strlen(panel->GetZIPArchive()) >= MAX_PATH || strlen(panel->GetZIPPath()) >= MAX_PATH)
+                    {
+                        SalMessageBox(MainWindow->HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE),
+                                      MB_OK | MB_ICONEXCLAMATION);
+                        if (indexes != NULL)
+                            delete[] (indexes);
+                        EndStopRefresh();
+                        return;
+                    }
 
                     // create a "fake" directory
                     char fakeRootDir[MAX_PATH];

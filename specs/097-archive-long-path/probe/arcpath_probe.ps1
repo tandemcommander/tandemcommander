@@ -63,6 +63,12 @@
     File that receives the output lines (ASCII).
 .PARAMETER Only
     Case names to run (e.g. TWIN,A260); default all.
+.PARAMETER Stage
+    The expectation the verdicts are made against. S1: every archive name of
+    260 bytes or more is refused. S2 (default): a ZIP archive is handled by a
+    plug-in built for interface 107, so A260, U130, U200, MID and TWIN OPEN
+    the requested archive (a.txt, never twin.txt); still refused: CL600 (the
+    519-byte command-line field) and the inner path of INNER.
 
 .NOTES
     Windows PowerShell 5.1 compatible; pure ASCII. Exit code = number of FAIL rows.
@@ -73,7 +79,8 @@ param(
     [string]$Label,
     [string]$OutFile,
     [string[]]$Only,
-    [string]$Python = 'python'
+    [string]$Python = 'python',
+    [ValidateSet('S1', 'S2')][string]$Stage = 'S2'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -793,18 +800,19 @@ try {
     $twinZip = $Root + '\twin.zip'; New-Zip $twinZip @('twin.txt')
 
     $all = 'ENTER', 'CHDIR', 'START'
+    $long = if ($Stage -eq 'S1') { 'refuse' } else { 'enter' }   # an archive name of 260+ bytes, ZIP plug-in
     $cases = @(
         @{ N = 'C200'; Dir = (DirA 'C200' 200); Expect = 'enter'; Routes = $all },
         @{ N = 'A259'; Dir = (DirA 'A259' 259); Expect = 'enter'; Routes = $all },
-        @{ N = 'A260'; Dir = (DirA 'A260' 260); Expect = 'refuse'; Routes = $all },
-        @{ N = 'U130'; Dir = (DirU 'U130' 112 259); Expect = 'refuse'; Routes = $all },
-        @{ N = 'U200'; Dir = (DirU 'U200' 180 259); Expect = 'refuse'; Routes = $all },
-        @{ N = 'MID'; Dir = (DirU 'MID' 112 258); Expect = 'refuse'; Routes = $all })
+        @{ N = 'A260'; Dir = (DirA 'A260' 260); Expect = $long; Routes = $all },
+        @{ N = 'U130'; Dir = (DirU 'U130' 112 259); Expect = $long; Routes = $all },
+        @{ N = 'U200'; Dir = (DirU 'U200' 180 259); Expect = $long; Routes = $all },
+        @{ N = 'MID'; Dir = (DirU 'MID' 112 258); Expect = $long; Routes = $all })
     # TWIN: <base>\<ppp>.zip is 259 bytes and is a FILE (the twin archive); the requested archive is in
     # the FOLDER <base>\<ppp>.zip<qqq>
     $tb = Base 'TWIN'
     $twinFile = $tb + '\' + ('p' * (259 - (U8Len $tb) - 5)) + '.zip'
-    $cases += @{ N = 'TWIN'; Dir = ($twinFile + ('q' * 33)); Expect = 'refuse'; Routes = $all; Twin = $twinFile }
+    $cases += @{ N = 'TWIN'; Dir = ($twinFile + ('q' * 33)); Expect = $long; Routes = $all; Twin = $twinFile }
     $cases += @{ N = 'CL600'; Dir = ((Base 'CL600') + '\' + ($R * 200) + '\' + ($R * 80)); Expect = 'refuse'; Routes = @('START') }
     $d1 = 'd1' + ('x' * 118); $d2 = 'd2' + ('x' * 118); $d3 = 'd3' + ('x' * 118)
     $cases += @{ N = 'INNER'; Dir = (Base 'INNER'); Expect = 'enter'; Inner = ($d1 + '\' + $d2 + '\' + $d3); Zip = @('a.txt', ($d1 + '/'), ($d1 + '/' + $d2 + '/'), ($d1 + '/' + $d2 + '/' + $d3 + '/')) }
@@ -813,12 +821,13 @@ try {
     $cases += @{ N = 'ISOU'; Dir = (DirU 'ISOU' 97 258); Expect = 'plug-in message'; Iso = $true }
     if ($Only) { $cases = @($cases | Where-Object { $Only -contains $_.N }) }
 
-    Out ("arcpath_probe (feature 097, S1) {0}" -f $Label)
+    Out ("arcpath_probe (feature 097, expectation of stage {0}) {1}" -f $Stage, $Label)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; ACP {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [Drv093]::GetACP())
     Out ("Config  : registry key existed {0}; fresh defaults {1}" -f $existed, $fresh)
     Out 'Routes  : ENTER (End, Enter in the archive''s folder); CHDIR (Change Directory, command 862, wide WM_SETTEXT, OK); START (-l "<archive>")'
-    Out 'Verdict : against the S1 expectation (C200, A259 open the requested archive without a message; every other case: exactly one "too long" message, panel stays, never twin.txt)'
+    if ($Stage -eq 'S1') { Out 'Verdict : against the S1 expectation (C200, A259 open the requested archive without a message; every other case: exactly one "too long" message, panel stays, never twin.txt)' }
+    else { Out 'Verdict : against the S2 expectation (every ZIP archive opens as the requested one, a.txt, without a message; CL600 and the inner path of INNER: exactly one "too long" message; never twin.txt)' }
     Out ''
     foreach ($c in $cases) {
         $c.Arc = $c.Dir + $(if ($c.Iso) { '\arc.iso' } else { '\arc.zip' })

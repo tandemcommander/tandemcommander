@@ -1407,9 +1407,13 @@ public:
         ForbiddenDataObject = forbiddenDataObject;
     }
 
-    // Returns a directory (must be exactly one)
-    BOOL GetDirFromDataObject(IDataObject* pDataObject, char* path)
+    // Returns a directory (must be exactly one). 'path' is a buffer of 'pathSize' bytes.
+    // feature 097: a path that does not fit is never cut (the cut path would be opened in the
+    // panel): 'tooLong' (may be NULL) gets TRUE and FALSE is returned.
+    BOOL GetDirFromDataObject(IDataObject* pDataObject, char* path, int pathSize, BOOL* tooLong)
     {
+        if (tooLong != NULL)
+            *tooLong = FALSE;
         FORMATETC formatEtc;
         formatEtc.cfFormat = RegisterClipboardFormat(SALCF_FAKE_REALPATH);
         formatEtc.ptd = NULL;
@@ -1431,7 +1435,12 @@ public:
                 if (data != NULL)
                 {
                     if (data[0] == 'D')
-                        lstrcpyn(path, data + 1, MAX_PATH);
+                    {
+                        if ((int)strlen(data + 1) < pathSize)
+                            strcpy(path, data + 1);
+                        else if (tooLong != NULL)
+                            *tooLong = TRUE;
+                    }
                     HANDLES(GlobalUnlock(stgMedium.hGlobal));
                 }
             }
@@ -1466,17 +1475,26 @@ public:
                             // feature 069 (F-P1-26): the payload is wide (data->fWide), and
                             // converting it through the code page discarded exactly what it
                             // carried - the strict path check right after then refused the drop
-                            if (SalWToU8(fileW, l + 1, path, MAX_PATH) == 0)
+                            if (SalWToU8(fileW, l + 1, NULL, 0) > pathSize)
+                            { // feature 097: it does not fit as UTF-8 - refuse; the code-page
+                                // fallback below could still fit and would hand on a path with
+                                // '?' in place of the characters outside the code page
+                                path[0] = 0;
+                                if (tooLong != NULL)
+                                    *tooLong = TRUE;
+                            }
+                            else if (SalWToU8(fileW, l + 1, path, pathSize) == 0)
                             { // legacy fallback.  The destination is sized from the
-                                // BUFFER, never from the source: every caller passes a
-                                // char[MAX_PATH] and a longer drop would otherwise
-                                // write past it.  On a DBCS code page the result is
+                                // BUFFER, never from the source: a longer drop would
+                                // otherwise write past it.  On a DBCS code page the result is
                                 // also not one byte per character, so the terminator
                                 // goes where the API says it wrote to, not at 'l'.
-                                int wrote = WideCharToMultiByte(CP_ACP, 0, fileW, l + 1, path, MAX_PATH, NULL, NULL);
+                                int wrote = WideCharToMultiByte(CP_ACP, 0, fileW, l + 1, path, pathSize, NULL, NULL);
                                 path[wrote > 0 ? wrote - 1 : 0] = 0;
+                                if (wrote <= 0 && tooLong != NULL && SalWToU8(fileW, l + 1, NULL, 0) >= pathSize)
+                                    *tooLong = TRUE; // valid text that only does not fit
                             }
-                            ret = TRUE;
+                            ret = path[0] != 0;
                         }
                     }
                     else
@@ -1485,8 +1503,13 @@ public:
                         int l = (int)strlen(fileA);
                         if (*(fileA + l + 1) == 0)
                         {
-                            strcpy(path, fileA);
-                            ret = TRUE;
+                            if (l < pathSize) // feature 097: was an unbounded strcpy
+                            {
+                                strcpy(path, fileA);
+                                ret = TRUE;
+                            }
+                            else if (tooLong != NULL)
+                                *tooLong = TRUE;
                         }
                     }
 
@@ -1573,8 +1596,9 @@ public:
             *pdwEffect = DROPEFFECT_COPY;
             return S_OK;
         }
-        char dummy[MAX_PATH];
-        if (GetDirFromDataObject(DataObject, dummy))
+        char dummy[2 * MAX_PATH];
+        BOOL dummyTooLong;
+        if (GetDirFromDataObject(DataObject, dummy, _countof(dummy), &dummyTooLong) || dummyTooLong) // too long: accepted, the drop shows the message
         {
             *pdwEffect = DROPEFFECT_COPY;
             return S_OK;
@@ -1609,8 +1633,9 @@ public:
                 *pdwEffect = DROPEFFECT_COPY;
                 return S_OK;
             }
-            char dummy[MAX_PATH];
-            if (GetDirFromDataObject(DataObject, dummy))
+            char dummy[2 * MAX_PATH];
+            BOOL dummyTooLong;
+            if (GetDirFromDataObject(DataObject, dummy, _countof(dummy), &dummyTooLong) || dummyTooLong)
             {
                 *pdwEffect = DROPEFFECT_COPY;
                 return S_OK;
@@ -1658,7 +1683,15 @@ public:
             {
                 if (UseUnicode)
                     path = ConvertAllocU2A((const WCHAR*)path, -1);
-                if (path != NULL)
+                if (path != NULL && strlen(path) >= _countof(Buffer))
+                {
+                    // feature 097: dropped text that does not fit 'Buffer' is refused (it was cut and the
+                    // cut path opened); lParam NULL = the panel shows "The path specified is too long."
+                    PostMessage(FilesWindow->HWindow, WM_USER_CHANGEDIR, FALSE, 0);
+                    if (UseUnicode)
+                        free(path);
+                }
+                else if (path != NULL)
                 {
                     // Adjust the path
                     lstrcpyn(Buffer, path, _countof(Buffer));
@@ -1691,8 +1724,14 @@ public:
         }
         else
         {
-            char path[MAX_PATH];
-            if (GetDirFromDataObject(pDataObject, path))
+            char path[2 * MAX_PATH]; // the size of 'Buffer' (feature 097: was MAX_PATH, the source was cut to it)
+            BOOL tooLong = FALSE;
+            if (!GetDirFromDataObject(pDataObject, path, _countof(path), &tooLong))
+            {
+                if (tooLong) // refused, nothing navigated: the panel shows the message
+                    PostMessage(FilesWindow->HWindow, WM_USER_CHANGEDIR, FALSE, 0);
+            }
+            else
             {
                 // Adjust the path
                 strcpy(Buffer, path);

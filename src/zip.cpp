@@ -984,6 +984,11 @@ BOOL CSalamanderGeneral::GetPanelPath(int panel, char* buffer, int bufferSize, i
     CFilesWindow* p = GetPanel(panel);
     if (p != NULL)
     {
+        // feature 097: the archive location and the disk path are built on the heap - they were
+        // copied without a bound into 'buf' (an overrun from 520 bytes); the caller's buffer is
+        // still protected by 'bufferSize' below. 'buf' serves the plug-in FS branch only.
+        CSalPathBuf longPath;
+        const char* result = NULL;
         char buf[2 * MAX_PATH];
         int offset = -1; // offset into the buffer for computing archiveOrFS (-1 means NULL)
         if (p->Is(ptZIPArchive))
@@ -991,13 +996,17 @@ BOOL CSalamanderGeneral::GetPanelPath(int panel, char* buffer, int bufferSize, i
             if (type != NULL)
                 *type = PATH_TYPE_ARCHIVE;
             offset = (int)strlen(p->GetZIPArchive());
-            memcpy(buf, p->GetZIPArchive(), offset + 1);
-            if (p->GetZIPPath()[0] != 0)
+            BOOL ok = longPath.Set(p->GetZIPArchive());
+            if (ok && p->GetZIPPath()[0] != 0)
             {
                 if (p->GetZIPPath()[0] != '\\')
-                    strcpy(buf + offset, "\\");
-                strcat(buf + offset, p->GetZIPPath());
+                    ok = longPath.Append("\\");
+                if (ok)
+                    ok = longPath.Append(p->GetZIPPath());
             }
+            if (!ok)
+                return FALSE; // low memory
+            result = longPath.Get();
         }
         else
         {
@@ -1025,7 +1034,7 @@ BOOL CSalamanderGeneral::GetPanelPath(int panel, char* buffer, int bufferSize, i
                 {
                     if (type != NULL)
                         *type = PATH_TYPE_WINDOWS;
-                    strcpy(buf, p->GetPath());
+                    result = p->GetPath();
                 }
                 else
                 {
@@ -1034,11 +1043,13 @@ BOOL CSalamanderGeneral::GetPanelPath(int panel, char* buffer, int bufferSize, i
                 }
             }
         }
+        if (result == NULL)
+            result = buf;
 
-        int l = (int)strlen(buf) + 1;
+        int l = (int)strlen(result) + 1;
         if (l > bufferSize)
             return bufferSize == 0; // if the user does not want the path back, we do not treat it as an error
-        memcpy(buffer, buf, l);
+        memcpy(buffer, result, l);
 
         if (archiveOrFS != NULL && offset != -1)
             *archiveOrFS = buffer + offset;
@@ -1390,7 +1401,13 @@ void CSalamanderGeneral::SkipOneActivateRefresh()
 BOOL CSalamanderGeneral::SalGetTempFileName(const char* path, const char* prefix, char* tmpName, BOOL file, DWORD* err)
 {
     CALL_STACK_MESSAGE1("CSalamanderGeneral::SalGetTempFileName()");
-    BOOL ret = ::SalGetTempFileName(path, prefix, tmpName, file);
+    // feature 097: a plug-in built for interface 107 or later may give a base path of MAX_PATH
+    // bytes or more (an archive in a deep folder) - its 'tmpName' is then SAL_MAX_PATH_UTF8 bytes
+    // (spl_gen.h); for every other call the result stays within MAX_PATH as before
+    int tmpNameSize = MAX_PATH;
+    if (path != NULL && strlen(path) >= MAX_PATH && PluginBuiltForVersion >= SAL_PLUGINVER_LONG_ARCHIVE_NAMES)
+        tmpNameSize = SAL_MAX_PATH_UTF8;
+    BOOL ret = ::SalGetTempFileName(path, prefix, tmpName, file, tmpNameSize);
     if (err != NULL)
         *err = GetLastError();
     return ret;

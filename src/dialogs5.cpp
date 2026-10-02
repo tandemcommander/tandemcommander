@@ -1476,13 +1476,17 @@ CArchiveUpdateDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     SendMessage(list, LB_GETSELITEMS, selCount, (LPARAM)indexes);
                     IntSort(indexes, 0, selCount - 1); // indexes may not be sorted, so sort them just in case
 
-                    char path[MAX_PATH];
-                    char* initPath;
-                    strcpy(path, FileStamps->GetZIPFile());
-                    if (!CutDirectory(path))
-                        initPath = NULL;
-                    else
-                        initPath = path;
+                    // feature 097: the archive's folder may be longer than MAX_PATH (was strcpy into
+                    // char[MAX_PATH]); the folder-browse dialog takes a start folder that fits MAX_PATH only
+                    CSalPathBuf path;
+                    const char* initPath = NULL;
+                    const char* zipFile = FileStamps->GetZIPFile();
+                    const char* nameStart = strrchr(zipFile, '\\');
+                    if (nameStart != NULL && nameStart - zipFile < MAX_PATH &&
+                        path.Set(zipFile, (int)(nameStart - zipFile + (nameStart - zipFile <= 2 ? 1 : 0)))) // "C:\" keeps its backslash
+                    {
+                        initPath = path.Get();
+                    }
                     if (Panel->CheckPath(TRUE, initPath) != ERROR_SUCCESS)
                         initPath = NULL;
 

@@ -1380,9 +1380,11 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
         if (shiftPressed && controlPressed && !altPressed)
         {
             SkipCharacter = TRUE;
-            MainWindow->GetActivePanel()->SetUnescapedHotPath((char)wParam == '0' ? 9 : (char)wParam - '1');
-            if (!Configuration.HotPathAutoConfig)
+            if (MainWindow->GetActivePanel()->SetUnescapedHotPath((char)wParam == '0' ? 9 : (char)wParam - '1') &&
+                !Configuration.HotPathAutoConfig)
+            {
                 MainWindow->GetActivePanel()->DirectoryLine->FlashText();
+            }
             exit = TRUE;
         }
         // go to hot path

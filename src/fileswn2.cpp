@@ -2070,16 +2070,23 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                                        int suggestedTopIndex, const char* suggestedFocusName,
                                        BOOL forceUpdate, BOOL* noChange, BOOL refreshListBox,
                                        int* failReason, BOOL isRefresh, BOOL canFocusFileName,
-                                       BOOL isHistory)
+                                       BOOL isHistory, BOOL* refusedTooLong)
 {
     CALL_STACK_MESSAGE10("CFilesWindow::ChangePathToArchive(%s, %s, %d, %s, %d, , %d, , %d, %d, %d)",
                          archive, archivePath, suggestedTopIndex, suggestedFocusName,
                          forceUpdate, refreshListBox, isRefresh, canFocusFileName, isHistory);
+    if (refusedTooLong != NULL)
+        *refusedTooLong = FALSE;
 
-    // feature 097: a path that does not fit the copies below is refused, never cut - the cut
-    // name could be another existing archive (or folder in the archive); nothing is closed or
-    // changed, the panel stays where it is
-    if (strlen(archive) >= MAX_PATH || strlen(archivePath) >= MAX_PATH)
+    // feature 097: a path that cannot be held whole is refused, never cut - the cut name could
+    // be another existing archive (or folder in the archive); nothing is closed or changed, the
+    // panel stays where it is. The path inside the archive keeps its limit (the listing
+    // structure shared with plug-ins); the archive's own name is limited by its handler, which
+    // is known only once the name is absolute - see below.
+    size_t archiveLen = strlen(archive);
+    CSalHeapString archiveBuf; // the archive name whole, with the room SalGetFullName needs to make it absolute
+    if (archiveLen >= SAL_MAX_PATH_UTF8 || strlen(archivePath) >= MAX_PATH ||
+        !archiveBuf.Copy(archive, SAL_MAX_PATH_UTF8 - 1 - archiveLen))
     {
         if (noChange != NULL)
             *noChange = TRUE;
@@ -2090,12 +2097,12 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
         }
         if (failReason != NULL)
             *failReason = CHPPFR_INVALIDPATH;
+        if (refusedTooLong != NULL)
+            *refusedTooLong = TRUE;
         return FALSE;
     }
 
     // we make backup copies (they fit whole: see the check above)
-    char backup1[MAX_PATH];
-    lstrcpyn(backup1, archive, MAX_PATH);
     char backup2[MAX_PATH];
     lstrcpyn(backup2, archivePath, MAX_PATH);
     archivePath = backup2;
@@ -2129,7 +2136,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
     int errTextID;
     //  if (!SalGetFullName(backup1, &errTextID, MainWindow->GetActivePanel()->Is(ptDisk) ?
     //                      MainWindow->GetActivePanel()->GetPath() : NULL))
-    if (!SalGetFullName(backup1, &errTextID, Is(ptDisk) ? GetPath() : NULL)) // consistent with ChangePathToDisk()
+    if (!SalGetFullName(archiveBuf.Get(), &errTextID, Is(ptDisk) ? GetPath() : NULL, NULL, NULL,
+                        SAL_MAX_PATH_UTF8)) // consistent with ChangePathToDisk()
     {
         SalMessageBox(HWindow, LoadStr(errTextID), LoadStr(IDS_ERRORCHANGINGDIR),
                       MB_OK | MB_ICONEXCLAMATION);
@@ -2137,7 +2145,32 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
             *failReason = CHPPFR_INVALIDPATH;
         return FALSE;
     }
-    archive = backup1;
+    archive = archiveBuf.Get();
+
+    // feature 097: a name of MAX_PATH bytes or more is handed only to a handler that takes it
+    // (a plug-in built for interface 107 or later); an external archiver and an older plug-in
+    // keep the old limit and get the refusal. Decided here: the name is absolute, nothing was
+    // closed yet. A name that is not an archive at all goes on to the usual "not an archive"
+    // handling; the archive already open in this panel was accepted when it was entered.
+    if (strlen(archive) >= MAX_PATH &&
+        (!Is(ptZIPArchive) || !SalNameEqualOrdinalCI(GetZIPArchive(), -1, archive, -1)))
+    {
+        BOOL isArchive;
+        int handlerVersion = PackGetUnpackerVersion(archive, &isArchive);
+        if (isArchive && !SalArchiveNameFitsHandler(handlerVersion, strlen(archive)))
+        {
+            if (!isRefresh)
+            {
+                SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORCHANGINGDIR),
+                              MB_OK | MB_ICONEXCLAMATION);
+            }
+            if (failReason != NULL)
+                *failReason = CHPPFR_INVALIDPATH;
+            if (refusedTooLong != NULL)
+                *refusedTooLong = TRUE;
+            return FALSE;
+        }
+    }
 
     //---  start the waiting cursor
     BOOL setWait = (GetCursor() != LoadCursor(NULL, IDC_WAIT)); // is it already waiting?
@@ -2150,8 +2183,10 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
     FILETIME archiveDate;  // date and time of the archive file
     CQuadWord archiveSize; // size of the archive file
 
-    char text[MAX_PATH + 500];
-    char path[MAX_PATH];
+    CSalHeapString text;      // feature 097: messages naming the archive (was char[MAX_PATH + 500])
+    CSalHeapString arcDirBuf; // feature 097: the folder of the archive (was 'path')
+    char* arcDir = NULL;
+    char path[MAX_PATH]; // the path inside the archive (limited to MAX_PATH - 1 bytes above)
     BOOL sameArch;
     BOOL checkPath = TRUE;
     BOOL forceUpdateInt = FALSE; // is path change required? (possibly even to disk)
@@ -2168,8 +2203,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
         if (PrepareCloseCurrentPath(HWindow, FALSE, TRUE, detachFS, FSTRYCLOSE_CHANGEPATH))
         { // the current path can be closed, try to open a new one
             // verify accessibility of the path containing the archive
-            strcpy(path, archive);
-            if (!CutDirectory(path, NULL))
+            arcDir = arcDirBuf.Copy(archive) ? arcDirBuf.Get() : NULL;
+            if (arcDir == NULL || !CutDirectory(arcDir, NULL))
             {
                 TRACE_E("Unexpected situation in CFilesWindow::ChangePathToArchive.");
                 if (failReason != NULL)
@@ -2187,8 +2222,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                 }
                 else
                 {
-                    if (tryPathWithArchiveOnError) // try changing to a path as close to the archive as possible
-                        ChangePathToDisk(HWindow, path, -1, NULL, noChange, refreshListBox, FALSE, isRefresh);
+                    if (tryPathWithArchiveOnError && arcDir != NULL) // try changing to a path as close to the archive as possible
+                        ChangePathToDisk(HWindow, arcDir, -1, NULL, noChange, refreshListBox, FALSE, isRefresh);
                 }
 
                 EndStopRefresh();
@@ -2199,10 +2234,10 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
             }
 
             // we skip testing network paths if we just accessed them
-            BOOL tryNet = (!Is(ptDisk) && !Is(ptZIPArchive)) || !HasTheSameRootPath(path, GetPath());
+            BOOL tryNet = (!Is(ptDisk) && !Is(ptZIPArchive)) || !HasTheSameRootPath(arcDir, GetPath());
             DWORD err, lastErr;
             BOOL pathInvalid, cut;
-            if (!SalCheckAndRestorePathWithCut(HWindow, path, tryNet, err, lastErr, pathInvalid, cut, FALSE) ||
+            if (!SalCheckAndRestorePathWithCut(HWindow, arcDir, tryNet, err, lastErr, pathInvalid, cut, FALSE) ||
                 cut)
             { // path isn't accessible or it is truncated (the archive cannot be opened)
                 if (failReason != NULL)
@@ -2211,8 +2246,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                     tryPathWithArchiveOnError = (err == ERROR_SUCCESS && !pathInvalid); // shorter path is accessible, we'll try it
                 if (!isRefresh)                                                         // during refresh path-shortening messages are not displayed
                 {
-                    sprintf(text, LoadStrU8(IDS_FILEERRORFORMAT), archive, GetErrorText(lastErr));
-                    SalMessageBox(HWindow, text, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                    text.Printf(LoadStrU8(IDS_FILEERRORFORMAT), archive, GetErrorText(lastErr));
+                    SalMessageBox(HWindow, text.Text(), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                 }
                 goto ERROR_1;
             }
@@ -2290,7 +2325,7 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                         DirectoryLine->HideThrobberAndSecurityIcon();
 
                     SetPanelType(ptZIPArchive);
-                    SetPath(path);
+                    SetPath(arcDir);
                     UpdateDriveIcon(FALSE);
                     SetArchiveDir(newArchiveDir);
                     SetPluginIface(plugin != NULL ? plugin->GetPluginInterface()->GetInterface() : NULL);
@@ -2366,9 +2401,9 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                         if (AssocUsed) // Is anything from the archive being edited?
                         {
                             // notify that there were changes and that editors should be closed
-                            char buf[MAX_PATH + 200];
-                            sprintf(buf, LoadStrU8(IDS_ARCHIVEREFRESHEDIT), GetZIPArchive());
-                            SalMessageBox(HWindow, buf, LoadStr(IDS_INFOTITLE), MB_OK | MB_ICONINFORMATION);
+                            CSalHeapString buf; // feature 097: was char[MAX_PATH + 200]
+                            buf.Printf(LoadStrU8(IDS_ARCHIVEREFRESHEDIT), GetZIPArchive());
+                            SalMessageBox(HWindow, buf.Text(), LoadStr(IDS_INFOTITLE), MB_OK | MB_ICONINFORMATION);
                         }
                         forceUpdateInt = TRUE; // nowhere to return, path change required (possibly back to disk)
                         goto _REOPEN_ARCHIVE;
@@ -2379,8 +2414,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                     err = GetLastError(); // unable to open the archive file
                     if (!isRefresh)       // during refresh missing-path messages are not displayed
                     {
-                        sprintf(text, LoadStrU8(IDS_FILEERRORFORMAT), archive, GetErrorText(err));
-                        SalMessageBox(HWindow, text, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                        text.Printf(LoadStrU8(IDS_FILEERRORFORMAT), archive, GetErrorText(err));
+                        SalMessageBox(HWindow, text.Text(), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                     }
                 }
             }

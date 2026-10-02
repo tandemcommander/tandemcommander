@@ -400,13 +400,31 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   strings anyway, and that fixed a real defect (Enter / F4 on a file whose
   archive path + inner folder + name reach about 520 bytes). Found by 095,
   **not fixed**:
-  - **An archive whose path is longer than 259 bytes cannot be opened**
-    (`ChangePathToArchive`, `fileswn2.cpp`: the path is cut silently, even in
-    the middle of a UTF-8 character). With accented folder names that is
-    about 130 characters. Depending on where the cut falls: nothing happens
-    on Enter, an error names the cut path, or - if a file with the cut name
-    exists - **another archive is opened**. A real limitation next to the
-    long-path support of feature 004.
+  - **An archive whose path is longer than 259 bytes could not be opened,
+    and the silent cut could open another archive** - ✅ fixed by feature 097
+    (2026-10-03): refused instead of cut, and archives handled by plug-ins
+    built for interface 107 open at any length (driven up to 20,000 bytes).
+    Left by 097, each with its reason in
+    `specs/097-archive-long-path/fix-log.md`: external archivers and older
+    plug-ins stay at 259 bytes; the inner path stays at 259 bytes (the
+    listing structure is shared with plug-ins); clipboard copy from and
+    drop/paste into an archive with a 260+ byte name are refused (the two
+    fields are process-internal and could be widened); `-L`/`-R`/`-A` and hot
+    paths stay at 519 bytes; a real mouse drag was not driven.
+  - **Found by the 097 review, older than 097 - queue, serious first:**
+    1. **A crash while navigating plain disk folders about 7,500-8,200
+       characters deep** (run-time check failure under
+       `CStatusWindow::BuildHotTrackItems`, `stswnd.cpp`; identical on the
+       build before 097). The practical ceiling of the long-path support.
+    2. **Change Directory with a typed path to a FILE of 260+ bytes** that is
+       not an archive: `strcpy` into `shortenedPath[MAX_PATH]`
+       (`fileswn3.cpp`) - a stack overrun reachable by typing; and
+       `uncPath` in `fileswn9.cpp` (`ClipboardPastePath` also cuts at 519
+       bytes silently).
+    3. **7zip plug-in**: `_stprintf` into `msg[1024]` with an item path from
+       inside the archive (`extract.cpp`).
+    4. `pack2.cpp` `sourceShortName[MAX_PATH]` (external packer, source
+       folder of 260+ bytes); `CPanelTmpEnumData::WorkPath` cuts.
   - **An edited file with a non-ASCII name was not packed back into its
     archive** - ✅ confirmed (every release) and fixed by feature 096
     (2026-10-02): a code-page look-up of a UTF-8 path in

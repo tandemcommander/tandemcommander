@@ -4145,9 +4145,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             // if both panels point to the same path, exit
             char leftPath[2 * MAX_PATH];
             char rightPath[2 * MAX_PATH];
-            LeftPanel->GetGeneralPath(leftPath, 2 * MAX_PATH);
-            RightPanel->GetGeneralPath(rightPath, 2 * MAX_PATH);
-            if (strcmp(leftPath, rightPath) == 0) // case sensitive; if this condition fails, it's fine
+            // feature 097: two locations that were cut are not "the same path" because their first 519 bytes are
+            BOOL leftWhole = LeftPanel->GetGeneralPath(leftPath, 2 * MAX_PATH);
+            BOOL rightWhole = RightPanel->GetGeneralPath(rightPath, 2 * MAX_PATH);
+            if (leftWhole && rightWhole && strcmp(leftPath, rightPath) == 0) // case sensitive; if this condition fails, it's fine
             {
                 SalMessageBox(HWindow, LoadStr(IDS_COMPARE_SAMEPATH), LoadStr(IDS_COMPAREDIRSTITLE), MB_OK | MB_ICONINFORMATION);
                 return 0;

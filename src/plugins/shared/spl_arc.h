@@ -28,6 +28,15 @@ class CPluginDataInterfaceAbstract;
 // CPluginInterfaceForArchiverAbstract
 //
 
+// The archive file name ('fileName' of the methods below) is a full path in UTF-8 (WTF-8).
+// A plug-in built for interface version 107 or later gets a name of up to
+// SAL_MAX_PATH_UTF8 - 1 bytes (see SAL_MAX_PATH_UTF8 and CSalMaxPathBuffer in spl_base.h): it
+// must not copy the name into a MAX_PATH buffer. A plug-in built for an older version gets a
+// name of at most MAX_PATH - 1 bytes; for a longer one the program refuses the operation
+// itself ("The path specified is too long.") and does not call the plug-in. The path inside
+// the archive ('archiveRoot', names of the listing) keeps its limits (see spl_com.h,
+// CSalamanderDirectoryAbstract::AddFile / AddDir).
+
 class CPluginInterfaceForArchiverAbstract
 {
 #ifdef INSIDE_SALAMANDER

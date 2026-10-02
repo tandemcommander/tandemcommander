@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "salheapstr.h" // feature 097
+
 #include "cfgdlg.h"
 #include "mainwnd.h"
 #include "plugins.h"
@@ -749,20 +751,17 @@ void CFilesWindow::UnpackZIPArchive(CFilesWindow* target, BOOL deleteOp, const c
                                                     &dirsCount, &filesCount);
                         if (dirsCount + filesCount > 0)
                         {
-                            char name[SAL_MAX_PATH_UTF8]; // archive disk path + in-archive path + name (feature 027; was 2*MAX_PATH)
-                            strcpy(name, GetZIPArchive());
+                            // archive disk path + in-archive path + name: on the heap, any length
+                            // (feature 097; was a stack buffer and sprintf into char[2 * MAX_PATH + 100])
+                            CSalPathBuf name;
+                            name.Set(GetZIPArchive());
                             if (GetZIPPath()[0] != 0)
-                            {
-                                if (GetZIPPath()[0] != '\\')
-                                    strcat(name, "\\");
-                                strcat(name, GetZIPPath());
-                            }
-                            strcat(name, "\\");
-                            strcat(name, Dirs->At(data.Indexes[i]).Name);
+                                name.AppendComponent(GetZIPPath());
+                            name.AppendComponent(Dirs->At(data.Indexes[i]).Name);
 
-                            char text[2 * MAX_PATH + 100];
-                            sprintf(text, LoadStrU8(IDS_NONEMPTYDIRDELCONFIRM), name);
-                            int res = SalMessageBox(HWindow, text, LoadStr(IDS_QUESTION),
+                            CSalHeapString text;
+                            text.Printf(LoadStrU8(IDS_NONEMPTYDIRDELCONFIRM), name.Get());
+                            int res = SalMessageBox(HWindow, text.Text(), LoadStr(IDS_QUESTION),
                                                     MB_YESNOCANCEL | MB_ICONQUESTION);
                             if (res == IDCANCEL)
                             {
@@ -1423,7 +1422,7 @@ void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* plugi
         const char* min = GetPath() + strlen(root);
         while (dir > min && *(dir - 1) != '\\')
             dir--;
-        if (dir < end)
+        if (dir < end && (end - dir) + 20 < MAX_PATH) // feature 097: the folder name must fit with the dot and the extension (was unbounded)
         {
             memcpy(fileBuf, dir, end - dir);
             fileBuf[end - dir] = '.';
@@ -1793,18 +1792,22 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
             }
             if (text == NULL)
             {
-                int l = (int)strlen(GetPath());
-                if (l > 0 && GetPath()[l - 1] == '\\')
-                    l--;
-                memcpy(subject, GetPath(), l);
-                sprintf(subject + l, "\\%s", file->Name);
+                // feature 097: the archive's full name on the heap (it was built in 'subject',
+                // char[MAX_PATH + 100], without a bound: an overrun from a folder of about 360 bytes)
+                CSalPathBuf arcName;
+                if (!arcName.Set(GetPath()) || !arcName.AppendComponent(file->Name))
+                {
+                    TRACE_E(LOW_MEMORY);
+                    EndStopRefresh();
+                    return;
+                }
                 char newDir[MAX_PATH];
                 if (CheckAndCreateDirectory(path, NULL, TRUE, NULL, 0, newDir, FALSE, TRUE))
                 {
                     // launch the unpacker
                     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
                     CDynamicStringImp archiveVolumes;
-                    if (!UnpackerConfig.ExecuteUnpacker(MainWindow->HWindow, this, subject, mask,
+                    if (!UnpackerConfig.ExecuteUnpacker(MainWindow->HWindow, this, arcName.Get(), mask,
                                                         path, delArchiveWhenDone,
                                                         delArchiveWhenDone ? &archiveVolumes : NULL))
                     {

@@ -68,6 +68,7 @@ struct CTmpDragDropOperData
     char ArchiveOrFSName[MAX_PATH];
     char ArchivePathOrUserPart[MAX_PATH];
     CDragDropOperData* Data;
+    BOOL NameTooLong; // feature 097: the archive name or path does not fit the fields above: nothing is done, a message is shown
 };
 
 class CCriteriaData // data pro atCopy/atMove
@@ -295,26 +296,25 @@ class CFilesWindow;
 class CFileTimeStamps
 {
 protected:
-    char ZIPFile[MAX_PATH];                   // name of the archive that stores all monitored files
+    CSalPathBuf ZIPFile;                      // name of the archive that stores all monitored files (heap: feature 097, was char[MAX_PATH])
     TIndirectArray<CFileTimeStampsItem> List; // list of files with data needed for their update
     CFilesWindow* Panel;                      // panel we work for
 
 public:
     CFileTimeStamps() : List(10, 5)
     {
-        ZIPFile[0] = 0;
         Panel = NULL;
     }
     ~CFileTimeStamps()
     {
-        if (ZIPFile[0] != 0 ||
+        if (!ZIPFile.IsEmpty() ||
             List.Count > 0)
         {
             TRACE_E("Invalid work with CFileTimeStamps.");
         }
     }
 
-    const char* GetZIPFile() { return ZIPFile; }
+    const char* GetZIPFile() { return ZIPFile.Get(); }
 
     void SetPanel(CFilesWindow* panel) { Panel = panel; }
 
@@ -1106,7 +1106,8 @@ public:
     BOOL ChangePathToArchive(const char* archive, const char* archivePath, int suggestedTopIndex = -1,
                              const char* suggestedFocusName = NULL, BOOL forceUpdate = FALSE,
                              BOOL* noChange = NULL, BOOL refreshListBox = TRUE, int* failReason = NULL,
-                             BOOL isRefresh = FALSE, BOOL canFocusFileName = FALSE, BOOL isHistory = FALSE);
+                             BOOL isRefresh = FALSE, BOOL canFocusFileName = FALSE, BOOL isHistory = FALSE,
+                             BOOL* refusedTooLong = NULL); // 'refusedTooLong' (feature 097): gets TRUE only when FALSE is returned because the path is too long for the archive's handler (or the path inside the archive is) - the panel was not touched
     // change path to the plug-in FS;
     // if suggestedTopIndex != -1 the top index will be set;
     // if suggestedFocusName != NULL and present in the new list, it will be focused;
@@ -1166,7 +1167,7 @@ public:
     BOOL ChangeDir(const char* newDir = NULL, int suggestedTopIndex = -1,
                    const char* suggestedFocusName = NULL, int mode = 3 /*change-dir*/,
                    int* failReason = NULL, BOOL convertFSPathToInternal = TRUE,
-                   BOOL showNewDirPathInErrBoxes = FALSE);
+                   BOOL showNewDirPathInErrBoxes = FALSE, BOOL* refusedTooLong = NULL);
 
     // less orthodox version of ChangeDir: returns TRUE even when ChangeDir returns FALSE and
     // 'failReason' is CHPPFR_SHORTERPATH or CHPPFR_FILENAMEFOCUSED
@@ -1306,7 +1307,7 @@ public:
     void OpenActiveFolder();
 
     void GotoHotPath(int index);
-    void SetUnescapedHotPath(int index);
+    BOOL SetUnescapedHotPath(int index); // FALSE = not assigned (invalid index, or the location does not fit: message shown)
     BOOL SetUnescapedHotPathToEmptyPos();
     void GotoRoot();
 

@@ -1211,7 +1211,10 @@ void CChangeDirDlg::Transfer(CTransferInfo& ti)
         }
         else
         {
-            SalGetWindowTextU8(hWnd, Path, 2 * MAX_PATH);
+            // feature 097: the field takes 519 CHARACTERS, the caller's buffer is SAL_MAX_PATH_UTF8
+            // bytes (ChangeDir): the text is read whole - with 2 * MAX_PATH BYTES an accented path
+            // was cut and the cut path was then opened
+            SalGetWindowTextU8(hWnd, Path, SAL_MAX_PATH_UTF8);
             AddValueToStdHistoryValues(history, CHANGEDIR_HISTORY_SIZE, Path, FALSE);
             // feature 085 (F1): 'Path' keeps a typed "ftp://user:password@host" for
             // the connection; the history entry loses the password part

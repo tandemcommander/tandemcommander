@@ -835,13 +835,18 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
         DWORD openErr = GetLastError(); // before LoadStr can change it
         // feature 097: bounded - 'fileName' may be longer than the buffer
         if (_snprintf_s(errStr, _TRUNCATE, LoadStr(IDS_CANT_OPEN_FILE), fileName) < 0)
-        { // cut: drop a UTF-8 sequence the cut may have torn (only here, the text is cut anyway)
-            int n = (int)strlen(errStr);
+        { // cut: drop a UTF-8 sequence the cut has torn - a complete last character stays
+            // (the rule of the core's SalU8TrimIncompleteTail, which a plug-in cannot link)
+            int len = (int)strlen(errStr);
+            int n = len;
             while (n > 0 && ((unsigned char)errStr[n - 1] & 0xC0) == 0x80)
-                n--;
-            if (n > 0 && (unsigned char)errStr[n - 1] >= 0xC0)
-                n--;
-            errStr[n] = 0;
+                n--; // back over the continuation bytes
+            if (n > 0)
+            {
+                unsigned char lead = (unsigned char)errStr[n - 1];
+                if (lead >= 0xC0 && len - (n - 1) < (lead >= 0xF0 ? 4 : (lead >= 0xE0 ? 3 : 2)))
+                    errStr[n - 1] = 0; // fewer bytes than the lead byte promises
+            }
         }
         return Error(errStr, openErr, quiet);
     }

@@ -279,12 +279,14 @@ BOOL CFilesWindow::SwitchToTab(int target)
     // panel while its tab bookkeeping is half switched
     BeginStopRefresh();
     int failReason = CHPPFR_SUCCESS;
+    BOOL refusedTooLong = FALSE;
     BOOL ok = ChangeDir(tab->Location, tab->TopIndex, tab->FocusName[0] != 0 ? tab->FocusName : NULL,
-                        3 /*change-dir*/, &failReason, TRUE /*external -> internal FS path*/);
+                        3 /*change-dir*/, &failReason, TRUE /*external -> internal FS path*/, FALSE, &refusedTooLong);
     EndStopRefresh();
-    if (!ok && failReason == CHPPFR_CANNOTCLOSEPATH)
+    if (!ok && (failReason == CHPPFR_CANNOTCLOSEPATH || refusedTooLong))
     {
         // the plugin refused or the user cancelled: the panel is intact, put the rest back
+        // (feature 097: also when the location was refused as too long for its archive handler)
         Tabs.ActiveIndex = oldActive;
         SortType = oldSort;
         ReverseSort = oldReverse;

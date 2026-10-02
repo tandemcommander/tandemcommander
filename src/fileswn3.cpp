@@ -1958,10 +1958,25 @@ BOOL AddWin64RedirectedDir(const char* path, CFilesArray* dirs, WIN32_FIND_DATA*
 #endif // _WIN64
 
 BOOL CFilesWindow::ChangeDir(const char* newDir, int suggestedTopIndex, const char* suggestedFocusName,
-                             int mode, int* failReason, BOOL convertFSPathToInternal, BOOL showNewDirPathInErrBoxes)
+                             int mode, int* failReason, BOOL convertFSPathToInternal, BOOL showNewDirPathInErrBoxes,
+                             BOOL* refusedTooLong)
 {
     CALL_STACK_MESSAGE7("CFilesWindow::ChangeDir(%s, %d, %s, %d, , %d, %d)", newDir, suggestedTopIndex,
                         suggestedFocusName, mode, convertFSPathToInternal, showNewDirPathInErrBoxes);
+    // feature 097: TRUE = FALSE is returned because the path is too long for the archive (or its
+    // handler) and the panel was not touched at all
+    if (refusedTooLong != NULL)
+        *refusedTooLong = FALSE;
+    BOOL tooLongRefusal = FALSE;
+    if (newDir != NULL && strlen(newDir) >= SAL_MAX_PATH_UTF8)
+    { // e.g. a tab location "archive\path in the archive" near the limit: never cut it below
+        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
+        if (failReason != NULL)
+            *failReason = CHPPFR_INVALIDPATH;
+        if (refusedTooLong != NULL)
+            *refusedTooLong = TRUE;
+        return FALSE;
+    }
 
     // backup the string (it could change during execution - e.g. Name from CFileData from panel)
     char backup[SAL_FIND_NAME_U8];
@@ -2008,7 +2023,8 @@ CHANGE_AGAIN:
                 goto CHANGE_AGAIN;
         }
         BOOL sendDirectlyToPluginLocal = sendDirectlyToPlugin;
-        TopIndexMem.Clear(); // long jump
+        // feature 097: TopIndexMem.Clear() ("long jump") moved to the places below where a path
+        // change really starts - a path that is refused leaves the panel untouched
 
     CHANGE_AGAIN_NO_DLG:
 
@@ -2079,6 +2095,7 @@ CHANGE_AGAIN:
                         if (list->At(i)->IsPathFromThisFS(fsName, fsUserPart))
                         {
                             done = TRUE;
+                            TopIndexMem.Clear(); // long jump
                             // trying to change to needed path, at the same time we will connect the detached FS
                             ret = ChangePathToDetachedFS(i, suggestedTopIndex, suggestedFocusName, TRUE,
                                                          &localFailReason, fsName, fsUserPart, mode, mode == 3);
@@ -2090,6 +2107,7 @@ CHANGE_AGAIN:
 
                 if (!pluginFailure && !done)
                 {
+                    TopIndexMem.Clear(); // long jump
                     ret = ChangePathToPluginFS(fsName, fsUserPart, suggestedTopIndex, suggestedFocusName,
                                                FALSE, mode, NULL, TRUE, &localFailReason, FALSE, mode == 3);
                 }
@@ -2357,6 +2375,7 @@ CHANGE_AGAIN:
                                             HANDLES(FindClose(h));
 
                                             // changing the path to absolute windows path
+                                            TopIndexMem.Clear(); // long jump
                                             BOOL ret = ChangePathToDisk(HWindow, copy, suggestedTopIndex, suggestedFocusName,
                                                                         NULL, TRUE, FALSE, FALSE, failReason);
                                             if (useStopRefresh)
@@ -2411,12 +2430,23 @@ CHANGE_AGAIN:
                             { // file -> is it an archive?
                                 if (PackerFormatConfig.PackIsArchive(copy))
                                 {
-                                    if ((int)strlen(*end != 0 ? end + 1 : end) >= MAX_PATH) // path in the archive is too long
+                                    // feature 097: an archive name of MAX_PATH bytes or more only for a handler that takes
+                                    // it (PackGetUnpackerVersion loads the plug-in to learn its interface version)
+                                    BOOL nameTooLong = FALSE;
+                                    if (strlen(copy) >= MAX_PATH)
                                     {
-                                        if (!SalPathAppend(copy, end + 1, SAL_MAX_PATH_UTF8)) // if extending the archive name would leave no room for the path inside the archive, use the original form of the path
+                                        BOOL isArchive;
+                                        int handlerVersion = PackGetUnpackerVersion(copy, &isArchive);
+                                        nameTooLong = isArchive && !SalArchiveNameFitsHandler(handlerVersion, strlen(copy));
+                                    }
+                                    if (nameTooLong ||
+                                        (int)strlen(*end != 0 ? end + 1 : end) >= MAX_PATH) // path in the archive is too long
+                                    {
+                                        if (*end != 0 && !SalPathAppend(copy, end + 1, SAL_MAX_PATH_UTF8)) // if extending the archive name would leave no room for the path inside the archive, use the original form of the path
                                             strcpy(copy, path);
                                         text = LoadStrU8(IDS_TOOLONGPATH);
                                         textFailReason = CHPPFR_INVALIDPATH;
+                                        tooLongRefusal = TRUE;
                                         break;
                                     }
                                     else
@@ -2425,8 +2455,13 @@ CHANGE_AGAIN:
                                             end++;
                                         // changing the path to absolute path to archive
                                         int localFailReason;
+                                        BOOL localRefused = FALSE;
+                                        TopIndexMem.Clear(); // long jump
                                         BOOL ret = ChangePathToArchive(copy, end, suggestedTopIndex, suggestedFocusName,
-                                                                       FALSE, NULL, TRUE, &localFailReason, FALSE, TRUE);
+                                                                       FALSE, NULL, TRUE, &localFailReason, FALSE, TRUE,
+                                                                       FALSE, &localRefused);
+                                        if (refusedTooLong != NULL)
+                                            *refusedTooLong = localRefused;
                                         if (!ret && localFailReason == CHPPFR_SHORTERPATH)
                                         {
                                             _snprintf_s(errBuf, _countof(errBuf), _TRUNCATE, LoadStr(IDS_PATHINARCHIVENOTFOUND), end);
@@ -2448,6 +2483,7 @@ CHANGE_AGAIN:
                                     if (*end == 0 && CutDirectory(shortenedPath, &name)) // if the path does not end with '\\' (path to a file)
                                     {
                                         // change of the path to absolute windows path + focus to the file
+                                        TopIndexMem.Clear(); // long jump
                                         ChangePathToDisk(HWindow, shortenedPath, -1, name, NULL, TRUE, FALSE, FALSE, failReason);
                                         if (useStopRefresh)
                                             EndStopRefresh(); // snooper will be started again
@@ -2542,13 +2578,17 @@ CHANGE_AGAIN:
                         EndStopRefresh(); // snopper will be started again
                     if (failReason != NULL)
                         *failReason = textFailReason;
+                    if (refusedTooLong != NULL)
+                        *refusedTooLong = tooLongRefusal;
                     return FALSE; // stop here, cannot retry
                 }
+                tooLongRefusal = FALSE;
                 goto CHANGE_AGAIN;
             }
             else
             {
                 // changing the path to absolute windows path
+                TopIndexMem.Clear(); // long jump
                 BOOL ret = ChangePathToDisk(HWindow, path, suggestedTopIndex, suggestedFocusName,
                                             NULL, TRUE, FALSE, FALSE, failReason);
                 if (useStopRefresh)

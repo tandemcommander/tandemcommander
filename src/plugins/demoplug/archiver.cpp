@@ -271,9 +271,12 @@ CPluginInterfaceForArchiver::UnpackArchive(CSalamanderForOperationsAbstract* sal
     //   moves the files to the correct location on disk (handles overwriting files, etc.):
 
     BOOL ret = FALSE;
-    char tmpExtractDir[MAX_PATH];
-    DWORD err;
-    if (!SalamanderGeneral->SalGetTempFileName(targetDir, "Sal", tmpExtractDir, FALSE, &err))
+    // 'targetDir' may be MAX_PATH bytes or longer: the result then needs a buffer of
+    // SAL_MAX_PATH_UTF8 bytes (see SalGetTempFileName in spl_gen.h, interface 107)
+    CSalMaxPathBuffer tmpExtractDir;
+    DWORD err = ERROR_NOT_ENOUGH_MEMORY;
+    if (tmpExtractDir.Get() == NULL ||
+        !SalamanderGeneral->SalGetTempFileName(targetDir, "Sal", tmpExtractDir, FALSE, &err))
     {
         char buf[100];
         sprintf(buf, "SalGetTempFileName() error: %u", err);

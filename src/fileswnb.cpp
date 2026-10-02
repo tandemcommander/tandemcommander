@@ -848,6 +848,12 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         // postprocessing provedeme jen u cest, ktere jsme ziskali jako text (a ne primo dropnutim adresare)
         // (heap buffer: the path may be long - feature 004; this is a window procedure,
         //  so a SAL_MAX_PATH_UTF8-sized stack buffer is not an option)
+        if (lParam == 0) // feature 097: the dropped path did not fit and was refused (stswnd.cpp)
+        {
+            SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORCHANGINGDIR),
+                          MB_OK | MB_ICONEXCLAMATION);
+            return 0;
+        }
         char* buff = (char*)malloc(SAL_MAX_PATH_UTF8);
         if (buff == NULL)
         {

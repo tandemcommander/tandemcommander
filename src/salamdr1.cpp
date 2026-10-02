@@ -3529,7 +3529,6 @@ BOOL RunningInCompatibilityMode()
 
 void GetCommandLineParamExpandEnvVars(const char* argv, char* target, DWORD targetSize, BOOL hotpathForJumplist)
 {
-    char curDir[MAX_PATH];
     BOOL tooLong = FALSE; // feature 097: a path that does not fit 'target' is refused, never cut
     if (hotpathForJumplist)
     {
@@ -3589,22 +3588,48 @@ void GetCommandLineParamExpandEnvVars(const char* argv, char* target, DWORD targ
                 lstrcpyn(target, argv, targetSize);
         }
     }
+    if (!tooLong && !IsPluginFSPath(target))
+    {
+        // a relative value that fits 'target' but not once it is made absolute would stay
+        // relative and be resolved against the panel's path later: refused as well. The current
+        // folder is read whole (it may be longer than MAX_PATH); when it cannot be read, a
+        // relative value is refused too.
+        char* curDirU8 = NULL;
+        DWORD need = GetCurrentDirectoryW(0, NULL);
+        if (need > 0)
+        {
+            WCHAR* curDirW = (WCHAR*)malloc((need + 1) * sizeof(WCHAR));
+            if (curDirW != NULL)
+            {
+                DWORD got = GetCurrentDirectoryW(need + 1, curDirW);
+                if (got > 0 && got <= need)
+                    curDirU8 = SalWToU8Alloc(curDirW, -1);
+                free(curDirW);
+            }
+        }
+        const char* t = target;
+        while (*t >= 1 && *t <= ' ')
+            t++;
+        BOOL isAbsolute = (t[0] != 0 && t[1] == ':' && t[2] == '\\') || (t[0] == '\\' && t[1] == '\\');
+        if (curDirU8 != NULL)
+        {
+            int errTextID = 0;
+            if (!SalGetFullName(target, &errTextID, curDirU8, NULL, NULL, targetSize) && errTextID == IDS_TOOLONGPATH)
+                tooLong = TRUE;
+            free(curDirU8);
+        }
+        else
+        {
+            if (!isAbsolute && *t != 0)
+                tooLong = TRUE;
+        }
+    }
     if (tooLong)
     {
         // the cut path could name another existing folder or archive: the parameter is not
         // applied (an empty path = "do not set") and the user is told why
         target[0] = 0;
         SalMessageBox(NULL, LoadStr(IDS_TOOLONGPATH), SALAMANDER_TEXT_VERSION, MB_OK | MB_ICONEXCLAMATION);
-        return;
-    }
-    if (!IsPluginFSPath(target))
-    {
-        WCHAR curDirW[MAX_PATH];
-        if (GetCurrentDirectoryW(_countof(curDirW), curDirW) != 0 &&
-            SalWToU8(curDirW, -1, curDir, MAX_PATH) != 0)
-        {
-            SalGetFullName(target, NULL, curDir, NULL, NULL, targetSize);
-        }
     }
 }
 

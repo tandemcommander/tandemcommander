@@ -858,9 +858,11 @@ CEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             // define hot path
             if (shiftPressed && controlPressed && !altPressed)
             {
-                MainWindow->GetActivePanel()->SetUnescapedHotPath((char)wParam == '0' ? 9 : (char)wParam - '1');
-                if (!Configuration.HotPathAutoConfig)
+                if (MainWindow->GetActivePanel()->SetUnescapedHotPath((char)wParam == '0' ? 9 : (char)wParam - '1') &&
+                    !Configuration.HotPathAutoConfig)
+                {
                     MainWindow->GetActivePanel()->DirectoryLine->FlashText();
+                }
                 exit = TRUE;
             }
 
@@ -1310,8 +1312,10 @@ public:
                 char* data = (char*)HANDLES(GlobalLock(stgMedium.hGlobal));
                 if (data != NULL)
                 {
-                    havePath = data[0] != 0 && data[1] != 0;
-                    if (data[0] != 0 && path != NULL)
+                    // feature 097: a name that does not fit the caller's MAX_PATH buffer is not
+                    // accepted (it was cut and the cut name inserted into the command line)
+                    havePath = data[0] != 0 && data[1] != 0 && strlen(data + 1) < MAX_PATH;
+                    if (havePath && path != NULL)
                         lstrcpyn(path, data + 1, MAX_PATH);
                     HANDLES(GlobalUnlock(stgMedium.hGlobal));
                 }

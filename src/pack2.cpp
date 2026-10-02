@@ -185,6 +185,11 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
                         command, initDir, expandInitDir, supportLongNames, archiveFileName,
                         sourceDir, archiveRoot, needANSIListFile);
 
+    // feature 097: an external archiver gets the name on its command line and through
+    // MAX_PATH buffers below - a longer name is refused here, never cut
+    if (!PackArchiveNameFitsHandler(parent, archiveFileName, SAL_ARCHIVE_HANDLER_EXTERNAL))
+        return FALSE;
+
     //
     // We must adjust the directory in the archive to the required format
     //
@@ -596,6 +601,11 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
     const SPackModifyTable* modifyTable = ArchiverConfig.GetPackerConfigTable(index);
     if (modifyTable->DeleteCommand == NULL) // feature 084: 7-Zip console only unpacks
         return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PACKER_UNSUP);
+
+    // feature 097: an external archiver gets the name on its command line and through
+    // MAX_PATH buffers below - a longer name is refused here, never cut
+    if (!PackArchiveNameFitsHandler(parent, archiveFileName, SAL_ARCHIVE_HANDLER_EXTERNAL))
+        return FALSE;
     // feature 084: a command using $(ListUnicodeFullName) gets the list in UTF-16
     EPackListEncoding listEnc = PackGetListEncoding(modifyTable->DeleteCommand, modifyTable->NeedANSIListFile);
 

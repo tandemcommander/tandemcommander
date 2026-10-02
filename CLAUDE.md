@@ -1149,3 +1149,42 @@ plugin architecture preservation, UI consistency.
   instruction since this one: serious defects found on the way go to the
   backlog and are then fixed one by one. Records:
   `specs/096-archive-edit-accented/fix-log.md`.
+- 097-archive-long-path: **archives in deep or accented folders open, and a
+  path is never cut.**
+  - **What was wrong**: `ChangePathToArchive` copied the archive path, the
+    inner path and the focus name with `lstrcpyn(..., MAX_PATH)` - a silent
+    cut at 259 **bytes** (about 130 accented characters), even inside a
+    UTF-8 character. Enter did nothing, or an error named the cut path, or a
+    file at the cut path - **another archive** - was opened (probe: on all
+    three routes).
+  - **S1 - refuse, never cut**: `IDS_TOOLONGPATH`, panel untouched, silent on
+    refresh; `refusedTooLong` out-flag (do NOT key on `noChange` /
+    `CHPPFR_INVALIDPATH`: a dead archive in history sets those too - the
+    review's blocker). Same for `-L/-R/-A` (519-byte fields, layout shared
+    between instances - not widened), hot paths, the path-field menu, drops
+    on the directory line and the command line.
+  - **S2 - make it work**: the rule `SalArchiveNameFitsHandler`
+    (`src/common/salplugver.h`): under 260 bytes always; longer only for a
+    plug-in **built for interface 107+** (up to `SAL_MAX_PATH_UTF8 - 1`);
+    external archivers and older plug-ins keep 259 (backstops in the
+    `CPluginData` archive wrappers and in front of the external-archiver
+    code in `pack1/2.cpp`). About 20 core buffers on the plug-in route became
+    heap strings (`CFileTimeStamps::ZIPFile`, the F8 question, `GetPanelPath`,
+    crash-report lines, title, history `IsTheSamePath`, ...). The inner path
+    keeps 259 bytes (`CSalamanderDirectory` is shared with plug-ins).
+  - **Plug-in contract (comment only, no version bump - 107 was never
+    released)**: `spl_arc.h` states the archive name may be up to
+    `SAL_MAX_PATH_UTF8 - 1` bytes for plug-ins built for 107+;
+    `SalGetTempFileName` accepts a long base path for such plug-ins (their
+    buffer must then be `CSalMaxPathBuffer`; demoplug fixed).
+  - **Evidence** (hidden desktop): `probe/arcwork_probe.ps1` 390 PASS / 0
+    FAIL - ZIP, 7z, TAR at 200-7,000 bytes: enter, view, unpack, edit +
+    update, delete, add, two panels, history, tabs; reviewer's ladder to
+    20,000 bytes; `arcpath_probe.ps1` 55 / 0 with the twin archive never
+    opened. Three reviews: S1 ACCEPT, S2 REJECT (history stuck on a dead
+    archive entry + four remaining cuts), S2 ACCEPT. saltests 13,102 ->
+    13,119.
+  - **Found, queued in NEXT-WORK item 5**: a crash navigating disk folders
+    ~7,500+ characters deep (`BuildHotTrackItems`); a typed 260+ byte file
+    path in Change Directory overruns `shortenedPath`; a 7zip message buffer.
+    Records: `specs/097-archive-long-path/fix-log.md`.

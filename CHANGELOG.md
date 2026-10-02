@@ -53,6 +53,31 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Archives in deep or accented folders open.** An archive whose full path
+  was longer than 259 bytes could not be opened in a panel - with accented
+  folder names that is a path of only about 130 characters. The path was cut
+  without a word: Enter did nothing, or an error named a path you never
+  typed, or - if a file happened to exist at the cut path - **a different
+  archive was opened**. ZIP, 7z, TAR and the other archives handled by
+  plugins now open at any path length the program can reach, and viewing,
+  unpacking, editing with update, adding and deleting work there. A path is
+  never cut any more: where a limit remains, the message "The path specified
+  is too long." is shown and nothing else happens. Limits that remain:
+  archives handled by an external archiver program and by plugins built for
+  an earlier version of the program (259 bytes); a folder *inside* an archive
+  deeper than 259 bytes; copying to the clipboard or dragging from an archive
+  whose name is longer than 259 bytes (feature 097).
+- **Paths are refused instead of being cut** in a few more places where a cut
+  path could lead somewhere else: the `-L`, `-R` and `-A` command-line
+  parameters (the program now says the path is too long instead of starting
+  in another folder), assigning a hot path, inserting a panel's path into a
+  dialog field, and dropping a path on the directory line or the command
+  line.
+- **Unpack (Alt+F9) and Pack (Alt+F5) in long folders** no longer overrun a
+  buffer: Alt+F9 on an archive in a folder of about 360 bytes or more, and
+  the default archive name from a folder name of 260 bytes or more.
+- **ISO plugin**: opening an image that cannot be read at a path of 240 bytes
+  or more could crash the plugin while it built the error message.
 - **An edited file with an accented name is packed back into its archive.**
   When you edited a file inside an archive (F4, or Enter and the program it
   opens) and its name contained any character outside plain English letters

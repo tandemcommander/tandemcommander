@@ -213,10 +213,32 @@ const char* SalPathFindFileName(const char* path)
 
 // ****************************************************************************
 
-BOOL SalGetTempFileName(const char* path, const char* prefix, char* tmpName, BOOL file)
+BOOL SalGetTempFileName(const char* path, const char* prefix, char* tmpName, BOOL file, int tmpNameSize)
 {
-    char tmpDir[MAX_PATH + 10];
+    char tmpDirStack[MAX_PATH + 10];
+    char* tmpDir = tmpDirStack;
     char* end = tmpDir + MAX_PATH + 10;
+    int limit = MAX_PATH; // the result with its terminator must fit this many bytes
+    // feature 097: a base path of MAX_PATH bytes or more, for a caller whose 'tmpName' holds it
+    struct CTmpDirFree
+    {
+        char* P;
+        ~CTmpDirFree() { free(P); }
+    } tmpDirFree = {NULL};
+    if (path != NULL && strlen(path) >= MAX_PATH && tmpNameSize > MAX_PATH)
+    {
+        size_t need = strlen(path) + MAX_PATH + 10;
+        tmpDirFree.P = (char*)malloc(need);
+        if (tmpDirFree.P == NULL)
+        {
+            TRACE_E(LOW_MEMORY);
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            return FALSE;
+        }
+        tmpDir = tmpDirFree.P;
+        end = tmpDir + need;
+        limit = tmpNameSize < (int)need ? tmpNameSize : (int)need; // never past the block (a long 'prefix')
+    }
     if (path == NULL)
     {
         // W API + convert: the A variants return CP_ACP bytes, which the
@@ -250,7 +272,7 @@ BOOL SalGetTempFileName(const char* path, const char* prefix, char* tmpName, BOO
         // is still bounded by MAX_PATH because callers pass MAX_PATH buffers -
         // fail cleanly instead of overflowing (long-path tmp support comes with
         // the callers' buffer migration)
-        if (strlen(path) >= MAX_PATH)
+        if (strlen(path) >= MAX_PATH && limit <= MAX_PATH)
         {
             TRACE_E("Too long base path in SalGetTempFileName().");
             SetLastError(ERROR_BUFFER_OVERFLOW);
@@ -265,7 +287,7 @@ BOOL SalGetTempFileName(const char* path, const char* prefix, char* tmpName, BOO
     while (s < end && *prefix != 0)
         *s++ = *prefix++;
 
-    if ((s - tmpDir) + 8 < MAX_PATH) // enough room to append "XXXX.tmp"
+    if ((s - tmpDir) + 8 < limit) // enough room to append "XXXX.tmp"
     {
         DWORD randNum = (GetTickCount() & 0xFFF);
         while (1)
@@ -1552,10 +1574,15 @@ BOOL CPathHistoryItem::Execute(CFilesWindow* panel)
         {
             if (Type == 1) // archive
             {
+                BOOL refusedTooLong = FALSE;
                 if (!panel->ChangePathToArchive(PathOrArchiveOrFSName, ArchivePathOrFSUserPart, TopIndex,
-                                                FocusedName, FALSE, NULL, TRUE, &failReason, FALSE, FALSE, TRUE))
+                                                FocusedName, FALSE, NULL, TRUE, &failReason, FALSE, FALSE, TRUE,
+                                                &refusedTooLong))
                 {
-                    if (failReason == CHPPFR_CANNOTCLOSEPATH)
+                    // feature 097: also when the path was refused as too long for this archive's
+                    // handler (the panel was not touched) - the history stays as it is. Only that
+                    // refusal: an archive that is gone must let the history move on as before.
+                    if (failReason == CHPPFR_CANNOTCLOSEPATH || refusedTooLong)
                     {
                         ret = FALSE;   // we remain in place
                         clear = FALSE; // no jump, no need to clear stored top indices
@@ -1685,15 +1712,13 @@ BOOL CPathHistoryItem::Execute(CFilesWindow* panel)
 
 BOOL CPathHistoryItem::IsTheSamePath(CPathHistoryItem& item, CPluginFSInterfaceEncapsulation* curPluginFS)
 {
-    char buf1[2 * MAX_PATH];
-    char buf2[2 * MAX_PATH];
     if (Type == item.Type)
     {
         if (Type == 0) // drive
         {
-            GetPath(buf1, 2 * MAX_PATH);
-            item.GetPath(buf2, 2 * MAX_PATH);
-            if (SalNameEqualOrdinalCI(buf1, -1, buf2, -1)) // feature 092: the file system's rule
+            // feature 097: the whole paths (they were compared through two 520-byte copies, so two
+            // paths equal in their first 519 bytes were "the same")
+            if (SalNameEqualOrdinalCI(PathOrArchiveOrFSName, -1, item.PathOrArchiveOrFSName, -1)) // feature 092: the file system's rule
                 return TRUE;
         }
         else
@@ -3089,11 +3114,17 @@ BOOL CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const ch
                               const char* fileName, const char* dosFileName,
                               const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr)
 {
-    if (ZIPFile[0] == 0)
-        strcpy(ZIPFile, zipFile);
+    if (ZIPFile.IsEmpty())
+    {
+        if (!ZIPFile.Set(zipFile)) // feature 097: the archive name whole (was strcpy into char[MAX_PATH])
+        {
+            TRACE_E(LOW_MEMORY);
+            return FALSE;
+        }
+    }
     else
     {
-        if (strcmp(zipFile, ZIPFile) != 0)
+        if (strcmp(zipFile, ZIPFile.Get()) != 0)
         {
             TRACE_E("Unexpected situation in CFileTimeStamps::AddFile().");
             return FALSE;
@@ -3478,7 +3509,7 @@ void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, 
                                     SetCurrentDirectory(s1);
                             }
                             if (Panel->CheckPath(TRUE, NULL, ERROR_SUCCESS, TRUE, parent) == ERROR_SUCCESS &&
-                                PackCompress(parent, Panel, ZIPFile, r1, FALSE, s1, FileTimeStampsEnum2, &data2))
+                                PackCompress(parent, Panel, ZIPFile.Get(), r1, FALSE, s1, FileTimeStampsEnum2, &data2))
                                 loop = FALSE;
                             else
                             {
@@ -3503,7 +3534,7 @@ void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, 
     }
 
     List.DestroyMembers();
-    ZIPFile[0] = 0;
+    ZIPFile.Clear();
     EndStopRefresh();
 }
 
@@ -3954,8 +3985,11 @@ void InvokeDirectoryMenuCommand(DWORD cmd, HWND hDialog, int editID, int editBuf
         CFilesWindow* panel = (cmd == DIRECTORY_COMMAND_LEFT) ? MainWindow->LeftPanel : MainWindow->RightPanel;
         if (panel != NULL)
         {
-            panel->GetGeneralPath(path, 2 * MAX_PATH, TRUE);
-            setPathToEdit = TRUE;
+            // feature 097: a location that does not fit 'path' is refused, never offered cut
+            if (panel->GetGeneralPath(path, 2 * MAX_PATH, TRUE) || strlen(path) != 2 * MAX_PATH - 1)
+                setPathToEdit = TRUE;
+            else
+                SalMessageBox(hDialog, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         }
         break;
     }
@@ -3976,10 +4010,12 @@ void InvokeDirectoryMenuCommand(DWORD cmd, HWND hDialog, int editID, int editBuf
     {
         if ((int)strlen(path) >= editBufSize)
         {
-            TRACE_E("InvokeDirectoryMenuCommand(): too long path! len=" << (int)strlen(path));
-            path[editBufSize - 1] = 0;
+            // feature 097: a path that does not fit the dialog's field is not inserted cut (the
+            // dialog would use the cut path on OK)
+            SalMessageBox(hDialog, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         }
-        SetEditOrComboText(GetDlgItem(hDialog, editID), path);
+        else
+            SetEditOrComboText(GetDlgItem(hDialog, editID), path);
     }
 }
 

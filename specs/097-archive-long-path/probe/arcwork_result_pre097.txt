@@ -1,0 +1,541 @@
+arcwork_probe (feature 097, S2) pre097
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre097\tandemcommander.exe
+Date    : 2026-10-02 23:35; ACP 1250
+Config  : registry key existed True; F4 editor = cmd.exe /c echo edited097>>"$(FullName)"
+
+fixture zipC200   archive full name 200 bytes / 200 characters
+fixture zipU130   archive full name 285 bytes / 173 characters
+fixture zipU200   archive full name 421 bytes / 241 characters
+fixture zipB259   archive full name 655 bytes / 259 characters
+fixture zipL300A  archive full name 300 bytes / 300 characters
+fixture zipL300U  archive full name 537 bytes / 300 characters
+fixture 7zC200    archive full name 199 bytes / 199 characters
+fixture 7zU130    archive full name 284 bytes / 172 characters
+fixture 7zU200    archive full name 420 bytes / 240 characters
+fixture 7zB259    archive full name 656 bytes / 258 characters
+fixture 7zL300A   archive full name 299 bytes / 299 characters
+fixture 7zL300U   archive full name 537 bytes / 299 characters
+fixture tarC200   archive full name 200 bytes / 200 characters
+fixture tarU130   archive full name 285 bytes / 173 characters
+fixture tarU200   archive full name 421 bytes / 241 characters
+fixture tarB259   archive full name 655 bytes / 259 characters
+fixture tarL300A  archive full name 300 bytes / 300 characters
+fixture tarL300U  archive full name 537 bytes / 300 characters
+fixture zipA1000  archive full name 1000 bytes / 1000 characters
+fixture zipE1000  archive full name 1000 bytes / 376 characters
+fixture zipA5000  archive full name 5000 bytes / 5000 characters
+fixture zipE5000  archive full name 5000 bytes / 1714 characters
+fixture 7zA1000   archive full name 999 bytes / 999 characters
+fixture 7zE1000   archive full name 999 bytes / 375 characters
+fixture 7zA5000   archive full name 4999 bytes / 4999 characters
+fixture 7zE5000   archive full name 4999 bytes / 1713 characters
+fixture tarA7000  archive full name 7000 bytes / 7000 characters
+
+--- zipC200
+zipC200 ENTER     PASS       entered; title 'T097 - ppppppppppppppppppp' -> 'T097 - arc.zip - Tandem Co'; windows (0): no window
+zipC200 VIEW      PASS       a.txt shown; viewer title (tail) '...\SAL829.tmp\a.txt [Plain Text] - Code Viewer'
+zipC200 UNPACK    PASS       a.txt unpacked, content equal; target field held the text: True; windows (0): no window
+zipC200 EDIT      PASS       editor command ran (marker in the temporary copy); F4 posted x1; windows (0): no window
+zipC200 UPDATE    PASS       archive updated (a.txt ends with the marker); left the archive: True; archive now: a.txt,del.txt,sub/b.txt; windows (4): [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc097_work\zipC200\pppppppppppppppppppppppppppppppppp ppppppppppppppppppppppppppppppppp ...(181 characters)...  close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc097_work\zipC200\ppppppppppppppppppppppppppppppppppppppppp ...(125 characters)...  Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc097_work\zipC200\ppppppppppppppppppppppppppppppppppppppppp ...(577 characters)... Don't show this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 18, 02.10.2026, 23:35:12 | [Static id=1151] With file: | [Static id=184] 29, 02.10.2026, 23:35:29 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+zipC200 REENTER   PASS       entered; title 'T097 - arc.zip - Tandem Co'; windows (0): no window
+zipC200 DELETE    PASS       del.txt deleted from the archive; archive now: a.txt,sub/b.txt; windows (1): [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete file "del.txt" from archive? | [Button id=6] &Yes | [Button id=7] &No
+zipC200 LEAVE     PASS       in the archive's folder; title 'T097 - ppppppppppppppppppp'; windows (0): no window
+zipC200 ADD       PASS       add.txt packed into the archive; target field held the text: True; archive now: a.txt,add.txt,sub/b.txt; windows (1): [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc097_work\zipC200\ppppppppppppppppppppppppppppppppppppppppp ...(577 characters)... Don't show this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+zipC200 TWO       PASS       both panels were in the archive; titles 'T097 - arc.zip - Tandem Co' / 'T097 - ppppppppppppppppppp' / 'T097 - arc.zip - Tandem Co'; windows (0): no window
+zipC200 HIST      PASS       Back returned into the archive; titles 'T097 - ppppppppppppppppppp' / 'T097 - arc.zip - Tandem Co'; windows: no window
+zipC200 TAB       PASS       the tab returned into the archive; titles new tab 'T097 - arc.zip - Tandem Co' / after leaving 'T097 - ppppppppppppppppppp' / previous tab 'T097 - arc.zip - Tandem Co'; windows (0): no window
+zipC200 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+zipC200 RESTART   PASS       started in the archive's folder (stored panel path); title 'T097 - ppppppppppppppppppp'; windows (0): no window
+zipC200 END2      PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+
+--- zipU130
+zipU130 ENTER     FAIL       NOT entered: nothing shown; title 'T097 - \u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159' -> 'T097 - \u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'; windows (0): no window
+       stopped: the panel is not inside the archive
+zipU130 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipU130 VIEW      NOT DRIVEN not driven; an earlier step failed
+zipU130 UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipU130 EDIT      NOT DRIVEN not driven; an earlier step failed
+zipU130 UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipU130 REENTER   NOT DRIVEN not driven; an earlier step failed
+zipU130 DELETE    NOT DRIVEN not driven; an earlier step failed
+zipU130 LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipU130 ADD       NOT DRIVEN not driven; an earlier step failed
+zipU130 TWO       NOT DRIVEN not driven; an earlier step failed
+zipU130 HIST      NOT DRIVEN not driven; an earlier step failed
+zipU130 TAB       NOT DRIVEN not driven; an earlier step failed
+zipU130 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- zipU200
+zipU200 ENTER     FAIL       NOT entered: nothing shown; title 'T097 - \u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159' -> 'T097 - \u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'; windows (0): no window
+       stopped: the panel is not inside the archive
+zipU200 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipU200 VIEW      NOT DRIVEN not driven; an earlier step failed
+zipU200 UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipU200 EDIT      NOT DRIVEN not driven; an earlier step failed
+zipU200 UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipU200 REENTER   NOT DRIVEN not driven; an earlier step failed
+zipU200 DELETE    NOT DRIVEN not driven; an earlier step failed
+zipU200 LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipU200 ADD       NOT DRIVEN not driven; an earlier step failed
+zipU200 TWO       NOT DRIVEN not driven; an earlier step failed
+zipU200 HIST      NOT DRIVEN not driven; an earlier step failed
+zipU200 TAB       NOT DRIVEN not driven; an earlier step failed
+zipU200 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- zipB259
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\zipB259\\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u2 ...(766 characters)... C\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC" Error: The path specified was not found. | [Button id=1] OK
+zipB259 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipB259 ENTER     NOT DRIVEN not driven; an earlier step failed
+zipB259 VIEW      NOT DRIVEN not driven; an earlier step failed
+zipB259 UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipB259 EDIT      NOT DRIVEN not driven; an earlier step failed
+zipB259 UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipB259 REENTER   NOT DRIVEN not driven; an earlier step failed
+zipB259 DELETE    NOT DRIVEN not driven; an earlier step failed
+zipB259 LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipB259 ADD       NOT DRIVEN not driven; an earlier step failed
+zipB259 TWO       NOT DRIVEN not driven; an earlier step failed
+zipB259 HIST      NOT DRIVEN not driven; an earlier step failed
+zipB259 TAB       NOT DRIVEN not driven; an earlier step failed
+zipB259 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- zipL300A
+zipL300A ENTER     FAIL       NOT entered: nothing shown; title 'T097 - ppppppppppppppppppp' -> 'T097 - ppppppppppppppppppp'; windows (0): no window
+       stopped: the panel is not inside the archive
+zipL300A END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipL300A VIEW      NOT DRIVEN not driven; an earlier step failed
+zipL300A UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipL300A EDIT      NOT DRIVEN not driven; an earlier step failed
+zipL300A UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipL300A REENTER   NOT DRIVEN not driven; an earlier step failed
+zipL300A DELETE    NOT DRIVEN not driven; an earlier step failed
+zipL300A LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipL300A ADD       NOT DRIVEN not driven; an earlier step failed
+zipL300A TWO       NOT DRIVEN not driven; an earlier step failed
+zipL300A HIST      NOT DRIVEN not driven; an earlier step failed
+zipL300A TAB       NOT DRIVEN not driven; an earlier step failed
+zipL300A RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- zipL300U
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\zipL300U\\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u ...(1230 characters)... 9\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159" Error: The path specified was not found. | [Button id=1] OK
+zipL300U END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipL300U ENTER     NOT DRIVEN not driven; an earlier step failed
+zipL300U VIEW      NOT DRIVEN not driven; an earlier step failed
+zipL300U UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipL300U EDIT      NOT DRIVEN not driven; an earlier step failed
+zipL300U UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipL300U REENTER   NOT DRIVEN not driven; an earlier step failed
+zipL300U DELETE    NOT DRIVEN not driven; an earlier step failed
+zipL300U LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipL300U ADD       NOT DRIVEN not driven; an earlier step failed
+zipL300U TWO       NOT DRIVEN not driven; an earlier step failed
+zipL300U HIST      NOT DRIVEN not driven; an earlier step failed
+zipL300U TAB       NOT DRIVEN not driven; an earlier step failed
+zipL300U RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zC200
+7zC200 ENTER     PASS       entered; title 'T097 - ppppppppppppppppppp' -> 'T097 - arc.7z - Tandem Com'; windows (0): no window
+7zC200 VIEW      PASS       a.txt shown; viewer title (tail) '...\SAL7C1.tmp\a.txt [Plain Text] - Code Viewer'
+7zC200 UNPACK    PASS       a.txt unpacked, content equal; target field held the text: True; windows (0): no window
+7zC200 EDIT      PASS       editor command ran (marker in the temporary copy); F4 posted x1; windows (0): no window
+7zC200 UPDATE    PASS       archive updated (a.txt ends with the marker); left the archive: True; archive now: a.txt,del.txt,sub/b.txt; windows (4): [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc097_work\7zC200\ppppppppppppppppppppppppppppppppppp ppppppppppppppppppppppppppppppppp ...(180 characters)...  close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc097_work\7zC200\pppppppppppppppppppppppppppppppppppppppppp ...(124 characters)...  Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static  ...(241 characters)... on't show this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 18, 02.10.2026, 23:35:12 | [Static id=1151] With file: | [Static id=184] 29, 02.10.2026, 23:37:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+7zC200 REENTER   PASS       entered; title 'T097 - arc.7z - Tandem Com'; windows (0): no window
+7zC200 DELETE    PASS       del.txt deleted from the archive; archive now: a.txt,sub/b.txt; windows (1): [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete file "del.txt" from archive? | [Button id=6] &Yes | [Button id=7] &No
+7zC200 LEAVE     PASS       in the archive's folder; title 'T097 - ppppppppppppppppppp'; windows (0): no window
+7zC200 ADD       PASS       add.txt packed into the archive; target field held the text: True; archive now: a.txt,add.txt,sub/b.txt; windows (1): [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static  ...(241 characters)... on't show this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7zC200 TWO       PASS       both panels were in the archive; titles 'T097 - arc.7z - Tandem Com' / 'T097 - ppppppppppppppppppp' / 'T097 - arc.7z - Tandem Com'; windows (0): no window
+7zC200 HIST      PASS       Back returned into the archive; titles 'T097 - ppppppppppppppppppp' / 'T097 - arc.7z - Tandem Com'; windows: no window
+7zC200 TAB       PASS       the tab returned into the archive; titles new tab 'T097 - arc.7z - Tandem Com' / after leaving 'T097 - ppppppppppppppppppp' / previous tab 'T097 - arc.7z - Tandem Com'; windows (0): no window
+7zC200 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+7zC200 RESTART   PASS       started in the archive's folder (stored panel path); title 'T097 - ppppppppppppppppppp'; windows (0): no window
+7zC200 END2      PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+
+--- 7zU130
+7zU130 ENTER     FAIL       NOT entered: nothing shown; title 'T097 - x\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159' -> 'T097 - x\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'; windows (0): no window
+       stopped: the panel is not inside the archive
+7zU130 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zU130 VIEW      NOT DRIVEN not driven; an earlier step failed
+7zU130 UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zU130 EDIT      NOT DRIVEN not driven; an earlier step failed
+7zU130 UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zU130 REENTER   NOT DRIVEN not driven; an earlier step failed
+7zU130 DELETE    NOT DRIVEN not driven; an earlier step failed
+7zU130 LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zU130 ADD       NOT DRIVEN not driven; an earlier step failed
+7zU130 TWO       NOT DRIVEN not driven; an earlier step failed
+7zU130 HIST      NOT DRIVEN not driven; an earlier step failed
+7zU130 TAB       NOT DRIVEN not driven; an earlier step failed
+7zU130 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zU200
+7zU200 ENTER     FAIL       NOT entered: nothing shown; title 'T097 - x\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159' -> 'T097 - x\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'; windows (0): no window
+       stopped: the panel is not inside the archive
+7zU200 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zU200 VIEW      NOT DRIVEN not driven; an earlier step failed
+7zU200 UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zU200 EDIT      NOT DRIVEN not driven; an earlier step failed
+7zU200 UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zU200 REENTER   NOT DRIVEN not driven; an earlier step failed
+7zU200 DELETE    NOT DRIVEN not driven; an earlier step failed
+7zU200 LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zU200 ADD       NOT DRIVEN not driven; an earlier step failed
+7zU200 TWO       NOT DRIVEN not driven; an earlier step failed
+7zU200 HIST      NOT DRIVEN not driven; an earlier step failed
+7zU200 TAB       NOT DRIVEN not driven; an earlier step failed
+7zU200 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zB259
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\7zB259\\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20 ...(765 characters)... C\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC" Error: The path specified was not found. | [Button id=1] OK
+7zB259 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zB259 ENTER     NOT DRIVEN not driven; an earlier step failed
+7zB259 VIEW      NOT DRIVEN not driven; an earlier step failed
+7zB259 UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zB259 EDIT      NOT DRIVEN not driven; an earlier step failed
+7zB259 UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zB259 REENTER   NOT DRIVEN not driven; an earlier step failed
+7zB259 DELETE    NOT DRIVEN not driven; an earlier step failed
+7zB259 LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zB259 ADD       NOT DRIVEN not driven; an earlier step failed
+7zB259 TWO       NOT DRIVEN not driven; an earlier step failed
+7zB259 HIST      NOT DRIVEN not driven; an earlier step failed
+7zB259 TAB       NOT DRIVEN not driven; an earlier step failed
+7zB259 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zL300A
+7zL300A ENTER     FAIL       NOT entered: nothing shown; title 'T097 - ppppppppppppppppppp' -> 'T097 - ppppppppppppppppppp'; windows (0): no window
+       stopped: the panel is not inside the archive
+7zL300A END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zL300A VIEW      NOT DRIVEN not driven; an earlier step failed
+7zL300A UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zL300A EDIT      NOT DRIVEN not driven; an earlier step failed
+7zL300A UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zL300A REENTER   NOT DRIVEN not driven; an earlier step failed
+7zL300A DELETE    NOT DRIVEN not driven; an earlier step failed
+7zL300A LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zL300A ADD       NOT DRIVEN not driven; an earlier step failed
+7zL300A TWO       NOT DRIVEN not driven; an earlier step failed
+7zL300A HIST      NOT DRIVEN not driven; an earlier step failed
+7zL300A TAB       NOT DRIVEN not driven; an earlier step failed
+7zL300A RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zL300U
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\7zL300U\\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0 ...(1229 characters)... 9\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159" Error: The path specified was not found. | [Button id=1] OK
+7zL300U END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zL300U ENTER     NOT DRIVEN not driven; an earlier step failed
+7zL300U VIEW      NOT DRIVEN not driven; an earlier step failed
+7zL300U UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zL300U EDIT      NOT DRIVEN not driven; an earlier step failed
+7zL300U UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zL300U REENTER   NOT DRIVEN not driven; an earlier step failed
+7zL300U DELETE    NOT DRIVEN not driven; an earlier step failed
+7zL300U LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zL300U ADD       NOT DRIVEN not driven; an earlier step failed
+7zL300U TWO       NOT DRIVEN not driven; an earlier step failed
+7zL300U HIST      NOT DRIVEN not driven; an earlier step failed
+7zL300U TAB       NOT DRIVEN not driven; an earlier step failed
+7zL300U RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- tarC200
+tarC200 ENTER     PASS       entered; title 'T097 - ppppppppppppppppppp' -> 'T097 - arc.tar - Tandem Co'; windows (0): no window
+tarC200 VIEW      PASS       a.txt shown; viewer title (tail) '...\SAL622.tmp\a.txt [Plain Text] - Code Viewer'
+tarC200 UNPACK    PASS       a.txt unpacked, content equal; target field held the text: True; windows (0): no window
+tarC200 EDIT      n/a        not supported by this archive type; -
+tarC200 UPDATE    PASS       left the archive (nothing to update); windows (0): no window
+tarC200 REENTER   PASS       entered; title 'T097 - arc.tar - Tandem Co'; windows (0): no window
+tarC200 DELETE    n/a        not supported by this archive type; -
+tarC200 LEAVE     PASS       in the archive's folder; title 'T097 - ppppppppppppppppppp'; windows (0): no window
+tarC200 ADD       n/a        not supported by this archive type; -
+tarC200 TWO       PASS       both panels were in the archive; titles 'T097 - arc.tar - Tandem Co' / 'T097 - ppppppppppppppppppp' / 'T097 - arc.tar - Tandem Co'; windows (0): no window
+tarC200 HIST      PASS       Back returned into the archive; titles 'T097 - ppppppppppppppppppp' / 'T097 - arc.tar - Tandem Co'; windows: no window
+tarC200 TAB       PASS       the tab returned into the archive; titles new tab 'T097 - arc.tar - Tandem Co' / after leaving 'T097 - ppppppppppppppppppp' / previous tab 'T097 - arc.tar - Tandem Co'; windows (0): no window
+tarC200 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+tarC200 RESTART   PASS       started in the archive's folder (stored panel path); title 'T097 - ppppppppppppppppppp'; windows (0): no window
+tarC200 END2      PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+
+--- tarU130
+tarU130 ENTER     FAIL       NOT entered: nothing shown; title 'T097 - \u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159' -> 'T097 - \u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'; windows (0): no window
+       stopped: the panel is not inside the archive
+tarU130 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+tarU130 VIEW      NOT DRIVEN not driven; an earlier step failed
+tarU130 UNPACK    NOT DRIVEN not driven; an earlier step failed
+tarU130 EDIT      NOT DRIVEN not driven; an earlier step failed
+tarU130 UPDATE    NOT DRIVEN not driven; an earlier step failed
+tarU130 REENTER   NOT DRIVEN not driven; an earlier step failed
+tarU130 DELETE    NOT DRIVEN not driven; an earlier step failed
+tarU130 LEAVE     NOT DRIVEN not driven; an earlier step failed
+tarU130 ADD       NOT DRIVEN not driven; an earlier step failed
+tarU130 TWO       NOT DRIVEN not driven; an earlier step failed
+tarU130 HIST      NOT DRIVEN not driven; an earlier step failed
+tarU130 TAB       NOT DRIVEN not driven; an earlier step failed
+tarU130 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- tarU200
+tarU200 ENTER     FAIL       NOT entered: nothing shown; title 'T097 - \u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159' -> 'T097 - \u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'; windows (0): no window
+       stopped: the panel is not inside the archive
+tarU200 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+tarU200 VIEW      NOT DRIVEN not driven; an earlier step failed
+tarU200 UNPACK    NOT DRIVEN not driven; an earlier step failed
+tarU200 EDIT      NOT DRIVEN not driven; an earlier step failed
+tarU200 UPDATE    NOT DRIVEN not driven; an earlier step failed
+tarU200 REENTER   NOT DRIVEN not driven; an earlier step failed
+tarU200 DELETE    NOT DRIVEN not driven; an earlier step failed
+tarU200 LEAVE     NOT DRIVEN not driven; an earlier step failed
+tarU200 ADD       NOT DRIVEN not driven; an earlier step failed
+tarU200 TWO       NOT DRIVEN not driven; an earlier step failed
+tarU200 HIST      NOT DRIVEN not driven; an earlier step failed
+tarU200 TAB       NOT DRIVEN not driven; an earlier step failed
+tarU200 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- tarB259
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\tarB259\\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u2 ...(766 characters)... C\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC" Error: The path specified was not found. | [Button id=1] OK
+tarB259 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+tarB259 ENTER     NOT DRIVEN not driven; an earlier step failed
+tarB259 VIEW      NOT DRIVEN not driven; an earlier step failed
+tarB259 UNPACK    NOT DRIVEN not driven; an earlier step failed
+tarB259 EDIT      NOT DRIVEN not driven; an earlier step failed
+tarB259 UPDATE    NOT DRIVEN not driven; an earlier step failed
+tarB259 REENTER   NOT DRIVEN not driven; an earlier step failed
+tarB259 DELETE    NOT DRIVEN not driven; an earlier step failed
+tarB259 LEAVE     NOT DRIVEN not driven; an earlier step failed
+tarB259 ADD       NOT DRIVEN not driven; an earlier step failed
+tarB259 TWO       NOT DRIVEN not driven; an earlier step failed
+tarB259 HIST      NOT DRIVEN not driven; an earlier step failed
+tarB259 TAB       NOT DRIVEN not driven; an earlier step failed
+tarB259 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- tarL300A
+tarL300A ENTER     FAIL       NOT entered: nothing shown; title 'T097 - ppppppppppppppppppp' -> 'T097 - ppppppppppppppppppp'; windows (0): no window
+       stopped: the panel is not inside the archive
+tarL300A END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+tarL300A VIEW      NOT DRIVEN not driven; an earlier step failed
+tarL300A UNPACK    NOT DRIVEN not driven; an earlier step failed
+tarL300A EDIT      NOT DRIVEN not driven; an earlier step failed
+tarL300A UPDATE    NOT DRIVEN not driven; an earlier step failed
+tarL300A REENTER   NOT DRIVEN not driven; an earlier step failed
+tarL300A DELETE    NOT DRIVEN not driven; an earlier step failed
+tarL300A LEAVE     NOT DRIVEN not driven; an earlier step failed
+tarL300A ADD       NOT DRIVEN not driven; an earlier step failed
+tarL300A TWO       NOT DRIVEN not driven; an earlier step failed
+tarL300A HIST      NOT DRIVEN not driven; an earlier step failed
+tarL300A TAB       NOT DRIVEN not driven; an earlier step failed
+tarL300A RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- tarL300U
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\tarL300U\\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u ...(1230 characters)... 9\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159" Error: The path specified was not found. | [Button id=1] OK
+tarL300U END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+tarL300U ENTER     NOT DRIVEN not driven; an earlier step failed
+tarL300U VIEW      NOT DRIVEN not driven; an earlier step failed
+tarL300U UNPACK    NOT DRIVEN not driven; an earlier step failed
+tarL300U EDIT      NOT DRIVEN not driven; an earlier step failed
+tarL300U UPDATE    NOT DRIVEN not driven; an earlier step failed
+tarL300U REENTER   NOT DRIVEN not driven; an earlier step failed
+tarL300U DELETE    NOT DRIVEN not driven; an earlier step failed
+tarL300U LEAVE     NOT DRIVEN not driven; an earlier step failed
+tarL300U ADD       NOT DRIVEN not driven; an earlier step failed
+tarL300U TWO       NOT DRIVEN not driven; an earlier step failed
+tarL300U HIST      NOT DRIVEN not driven; an earlier step failed
+tarL300U TAB       NOT DRIVEN not driven; an earlier step failed
+tarL300U RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- zipA1000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\zipA1000\ppppppppppppppppppppppppppppppppppp pppppppppppppppppppp ...(305 characters)... pppppppppppppppppppppppppppppppppppppp pppppp\ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp" Error: The path specified was not found. | [Button id=1] OK
+zipA1000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipA1000 ENTER     NOT DRIVEN not driven; an earlier step failed
+zipA1000 VIEW      NOT DRIVEN not driven; an earlier step failed
+zipA1000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipA1000 EDIT      NOT DRIVEN not driven; an earlier step failed
+zipA1000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipA1000 REENTER   NOT DRIVEN not driven; an earlier step failed
+zipA1000 DELETE    NOT DRIVEN not driven; an earlier step failed
+zipA1000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipA1000 ADD       NOT DRIVEN not driven; an earlier step failed
+zipA1000 TWO       NOT DRIVEN not driven; an earlier step failed
+zipA1000 HIST      NOT DRIVEN not driven; an earlier step failed
+zipA1000 TAB       NOT DRIVEN not driven; an earlier step failed
+zipA1000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- zipE1000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\zipE1000\\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u ...(767 characters)... C\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC" Error: The path specified was not found. | [Button id=1] OK
+zipE1000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipE1000 ENTER     NOT DRIVEN not driven; an earlier step failed
+zipE1000 VIEW      NOT DRIVEN not driven; an earlier step failed
+zipE1000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipE1000 EDIT      NOT DRIVEN not driven; an earlier step failed
+zipE1000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipE1000 REENTER   NOT DRIVEN not driven; an earlier step failed
+zipE1000 DELETE    NOT DRIVEN not driven; an earlier step failed
+zipE1000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipE1000 ADD       NOT DRIVEN not driven; an earlier step failed
+zipE1000 TWO       NOT DRIVEN not driven; an earlier step failed
+zipE1000 HIST      NOT DRIVEN not driven; an earlier step failed
+zipE1000 TAB       NOT DRIVEN not driven; an earlier step failed
+zipE1000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- zipA5000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\zipA5000\ppppppppppppppppppppppppppppppppppp pppppppppppppppppppp ...(305 characters)... pppppppppppppppppppppppppppppppppppppp pppppp\ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp" Error: The path specified was not found. | [Button id=1] OK
+zipA5000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipA5000 ENTER     NOT DRIVEN not driven; an earlier step failed
+zipA5000 VIEW      NOT DRIVEN not driven; an earlier step failed
+zipA5000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipA5000 EDIT      NOT DRIVEN not driven; an earlier step failed
+zipA5000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipA5000 REENTER   NOT DRIVEN not driven; an earlier step failed
+zipA5000 DELETE    NOT DRIVEN not driven; an earlier step failed
+zipA5000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipA5000 ADD       NOT DRIVEN not driven; an earlier step failed
+zipA5000 TWO       NOT DRIVEN not driven; an earlier step failed
+zipA5000 HIST      NOT DRIVEN not driven; an earlier step failed
+zipA5000 TAB       NOT DRIVEN not driven; an earlier step failed
+zipA5000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- zipE5000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\zipE5000\\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u ...(767 characters)... C\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC" Error: The path specified was not found. | [Button id=1] OK
+zipE5000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+zipE5000 ENTER     NOT DRIVEN not driven; an earlier step failed
+zipE5000 VIEW      NOT DRIVEN not driven; an earlier step failed
+zipE5000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+zipE5000 EDIT      NOT DRIVEN not driven; an earlier step failed
+zipE5000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+zipE5000 REENTER   NOT DRIVEN not driven; an earlier step failed
+zipE5000 DELETE    NOT DRIVEN not driven; an earlier step failed
+zipE5000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+zipE5000 ADD       NOT DRIVEN not driven; an earlier step failed
+zipE5000 TWO       NOT DRIVEN not driven; an earlier step failed
+zipE5000 HIST      NOT DRIVEN not driven; an earlier step failed
+zipE5000 TAB       NOT DRIVEN not driven; an earlier step failed
+zipE5000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zA1000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\7zA1000\ppppppppppppppppppppppppppppppppppp ppppppppppppppppppppp ...(305 characters)... ppppppppppppppppppppppppppppppppppppp pppppp\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp" Error: The path specified was not found. | [Button id=1] OK
+7zA1000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zA1000 ENTER     NOT DRIVEN not driven; an earlier step failed
+7zA1000 VIEW      NOT DRIVEN not driven; an earlier step failed
+7zA1000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zA1000 EDIT      NOT DRIVEN not driven; an earlier step failed
+7zA1000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zA1000 REENTER   NOT DRIVEN not driven; an earlier step failed
+7zA1000 DELETE    NOT DRIVEN not driven; an earlier step failed
+7zA1000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zA1000 ADD       NOT DRIVEN not driven; an earlier step failed
+7zA1000 TWO       NOT DRIVEN not driven; an earlier step failed
+7zA1000 HIST      NOT DRIVEN not driven; an earlier step failed
+7zA1000 TAB       NOT DRIVEN not driven; an earlier step failed
+7zA1000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zE1000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\7zE1000\\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u2 ...(766 characters)... C\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC" Error: The path specified was not found. | [Button id=1] OK
+7zE1000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zE1000 ENTER     NOT DRIVEN not driven; an earlier step failed
+7zE1000 VIEW      NOT DRIVEN not driven; an earlier step failed
+7zE1000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zE1000 EDIT      NOT DRIVEN not driven; an earlier step failed
+7zE1000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zE1000 REENTER   NOT DRIVEN not driven; an earlier step failed
+7zE1000 DELETE    NOT DRIVEN not driven; an earlier step failed
+7zE1000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zE1000 ADD       NOT DRIVEN not driven; an earlier step failed
+7zE1000 TWO       NOT DRIVEN not driven; an earlier step failed
+7zE1000 HIST      NOT DRIVEN not driven; an earlier step failed
+7zE1000 TAB       NOT DRIVEN not driven; an earlier step failed
+7zE1000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zA5000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\7zA5000\ppppppppppppppppppppppppppppppppppp ppppppppppppppppppppp ...(305 characters)... ppppppppppppppppppppppppppppppppppppp pppppp\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp" Error: The path specified was not found. | [Button id=1] OK
+7zA5000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zA5000 ENTER     NOT DRIVEN not driven; an earlier step failed
+7zA5000 VIEW      NOT DRIVEN not driven; an earlier step failed
+7zA5000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zA5000 EDIT      NOT DRIVEN not driven; an earlier step failed
+7zA5000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zA5000 REENTER   NOT DRIVEN not driven; an earlier step failed
+7zA5000 DELETE    NOT DRIVEN not driven; an earlier step failed
+7zA5000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zA5000 ADD       NOT DRIVEN not driven; an earlier step failed
+7zA5000 TWO       NOT DRIVEN not driven; an earlier step failed
+7zA5000 HIST      NOT DRIVEN not driven; an earlier step failed
+7zA5000 TAB       NOT DRIVEN not driven; an earlier step failed
+7zA5000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- 7zE5000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\7zE5000\\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u2 ...(766 characters)... C\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC" Error: The path specified was not found. | [Button id=1] OK
+7zE5000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+7zE5000 ENTER     NOT DRIVEN not driven; an earlier step failed
+7zE5000 VIEW      NOT DRIVEN not driven; an earlier step failed
+7zE5000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+7zE5000 EDIT      NOT DRIVEN not driven; an earlier step failed
+7zE5000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+7zE5000 REENTER   NOT DRIVEN not driven; an earlier step failed
+7zE5000 DELETE    NOT DRIVEN not driven; an earlier step failed
+7zE5000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+7zE5000 ADD       NOT DRIVEN not driven; an earlier step failed
+7zE5000 TWO       NOT DRIVEN not driven; an earlier step failed
+7zE5000 HIST      NOT DRIVEN not driven; an earlier step failed
+7zE5000 TAB       NOT DRIVEN not driven; an earlier step failed
+7zE5000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- tarA7000
+       stopped: Change Directory to the fixture folder: field held the text True; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_work\tarA7000\ppppppppppppppppppppppppppppppppppp pppppppppppppppppppp ...(305 characters)... pppppppppppppppppppppppppppppppppppppp pppppp\ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp" Error: The path specified was not found. | [Button id=1] OK
+tarA7000 END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+tarA7000 ENTER     NOT DRIVEN not driven; an earlier step failed
+tarA7000 VIEW      NOT DRIVEN not driven; an earlier step failed
+tarA7000 UNPACK    NOT DRIVEN not driven; an earlier step failed
+tarA7000 EDIT      NOT DRIVEN not driven; an earlier step failed
+tarA7000 UPDATE    NOT DRIVEN not driven; an earlier step failed
+tarA7000 REENTER   NOT DRIVEN not driven; an earlier step failed
+tarA7000 DELETE    NOT DRIVEN not driven; an earlier step failed
+tarA7000 LEAVE     NOT DRIVEN not driven; an earlier step failed
+tarA7000 ADD       NOT DRIVEN not driven; an earlier step failed
+tarA7000 TWO       NOT DRIVEN not driven; an earlier step failed
+tarA7000 HIST      NOT DRIVEN not driven; an earlier step failed
+tarA7000 TAB       NOT DRIVEN not driven; an earlier step failed
+tarA7000 RESTART   NOT DRIVEN not driven; an earlier step failed
+
+--- CLIP
+CLIP   COPY      NOT DRIVEN not driven; the archive was not entered; windows: no window
+CLIP   END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+
+--- RELL
+RELL   START     FAIL       OTHER MESSAGE; relative value 309 bytes, current folder 249 bytes; title 'T097 - x\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'; windows (1): [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq" Error: The path specified was not found. | [Button id=1] OK
+RELL   END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+
+--- HDEAD
+HDEAD  BACK      PASS       start folder reached at Back 3; same error twice in a row: False; sequence: Back 1: 'T097 - elsewhere - Tandem ' after "File: "Q:\arc.zip" Error: (3) Syst\u00E9m nem\u016F\u017Ee n"; Back 2: 'T097 - elsewhere - Tandem ' after "The path or file name "Q:\" is invalid. | [Button id=1] OK"; Back 3: 'T097 - start - Tandem Comm'
+HDEAD  END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== summary ===
+case      ENTER   VIEW    UNPACK  EDIT    UPDATE  REENTER DELETE  LEAVE   ADD     TWO     HIST    TAB     END     RESTART END2    
+zipC200   PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    
+zipU130   FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+zipU200   FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+zipB259   -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+zipL300A  FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+zipL300U  -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zC200    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    PASS    
+7zU130    FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zU200    FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zB259    -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zL300A   FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zL300U   -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+tarC200   PASS    PASS    PASS    n/a     PASS    PASS    n/a     PASS    n/a     PASS    PASS    PASS    PASS    PASS    PASS    
+tarU130   FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+tarU200   FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+tarB259   -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+tarL300A  FAIL    -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+tarL300U  -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+zipA1000  -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+zipE1000  -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+zipA5000  -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+zipE5000  -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zA1000   -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zE1000   -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zA5000   -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+7zE5000   -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+tarA7000  -       -       -       -       -       -       -       -       -       -       -       -       PASS    -               
+CLIP   COPY     NOT DRIVEN not driven
+CLIP   END      PASS       exit 0x00000000
+RELL   START    FAIL       OTHER MESSAGE
+RELL   END      PASS       exit 0x00000000
+HDEAD  BACK     PASS       start folder reached at Back 3
+HDEAD  END      PASS       exit 0x00000000
+Rows: PASS 70, FAIL 10, NOT DRIVEN 304, n/a 3. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -29,3 +29,26 @@ inline BOOL SalViewerNameFitsPlugin(int builtForVersion, size_t nameLen)
 {
     return builtForVersion >= SAL_PLUGINVER_LONG_VIEWER_NAMES || nameLen < MAX_PATH;
 }
+
+// feature 097: interface version from which spl_arc.h documents the archive
+// file name handed to an archiver plug-in as "up to SAL_MAX_PATH_UTF8 - 1
+// bytes"; a plug-in built for an older interface may hold it in MAX_PATH bytes
+#define SAL_PLUGINVER_LONG_ARCHIVE_NAMES 107
+
+// 'builtForVersion' value for an archive handled by an external archiver (a
+// console program that gets the name on its command line): never a long name
+#define SAL_ARCHIVE_HANDLER_EXTERNAL (-1000)
+
+// May the full name of an archive file, 'nameLen' bytes long (without the
+// terminator), be handed to its handler? 'builtForVersion' is the interface
+// version of the plug-in that handles the archive, or
+// SAL_ARCHIVE_HANDLER_EXTERNAL. A name under MAX_PATH bytes always fits; a
+// longer one only a plug-in built for interface 107 or later, and only while
+// it fits the program's own path buffers (SAL_MAX_PATH_UTF8 bytes with the
+// terminator). An unknown version (<= 0) is treated as old.
+inline BOOL SalArchiveNameFitsHandler(int builtForVersion, size_t nameLen)
+{
+    if (nameLen < MAX_PATH)
+        return TRUE;
+    return builtForVersion >= SAL_PLUGINVER_LONG_ARCHIVE_NAMES && nameLen < (size_t)(3 * 32767 + 1);
+}

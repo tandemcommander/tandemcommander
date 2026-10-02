@@ -339,6 +339,12 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
     CALL_STACK_MESSAGE1("CFilesWindow::DragDropToArcOrFS()");
     if (data->Data->Names.Count == 0)
         return; // nothing to do
+    if (data->NameTooLong) // feature 097: see DoDragDropOper
+    {
+        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH),
+                      data->Copy ? LoadStr(IDS_ERRORCOPY) : LoadStr(IDS_ERRORMOVE), MB_OK | MB_ICONEXCLAMATION);
+        return;
+    }
     if (data->Data->SrcPath[0] == 0)
     {
         SalMessageBox(HWindow, LoadStr(IDS_SRCPATHUNICODEONLY),

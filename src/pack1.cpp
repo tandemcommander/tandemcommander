@@ -259,6 +259,11 @@ BOOL PackList(CFilesWindow* panel, const char* archiveFileName, CSalamanderDirec
     //
     // We will run an external program with redirected output
     //
+    // feature 097: an external archiver gets the name on its command line and through
+    // MAX_PATH buffers below - a longer name is refused here, never cut
+    if (!PackArchiveNameFitsHandler(NULL, archiveFileName, SAL_ARCHIVE_HANDLER_EXTERNAL))
+        return FALSE;
+
     const SPackBrowseTable* browseTable = ArchiverConfig.GetUnpackerConfigTable(index);
     if (browseTable->ListCommand == NULL || browseTable->ListParser == NULL)
         return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_ARCNAME_UNSUP); // this archiver cannot browse
@@ -395,6 +400,11 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
     CALL_STACK_MESSAGE9("PackUniversalUncompress(, %s, , %s, %d, , %d, %s, %s, %s, , , %d)",
                         command, initDir, expandInitDir, supportLongNames, archiveFileName,
                         targetDir, archiveRoot, needANSIListFile);
+
+    // feature 097: an external archiver gets the name on its command line and through
+    // MAX_PATH buffers below - a longer name is refused here, never cut
+    if (!PackArchiveNameFitsHandler(parent, archiveFileName, SAL_ARCHIVE_HANDLER_EXTERNAL))
+        return FALSE;
 
     //
     // We must adjust the directory in the archive to the required format
@@ -827,6 +837,11 @@ BOOL PackUnpackOneFile(CFilesWindow* panel, const char* archiveFileName,
     {
         return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_INVALIDNAME);
     }
+
+    // feature 097: an external archiver gets the name on its command line and through
+    // MAX_PATH buffers below - a longer name is refused here, never cut
+    if (!PackArchiveNameFitsHandler(NULL, archiveFileName, SAL_ARCHIVE_HANDLER_EXTERNAL))
+        return FALSE;
 
     //
     // Create a temporary directory into which we unpack the file

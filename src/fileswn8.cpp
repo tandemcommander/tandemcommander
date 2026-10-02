@@ -13,6 +13,7 @@
 #include "worker.h"
 #include "pack.h"
 #include "mapi.h"
+#include "salheapstr.h" // feature 097
 
 //
 // ****************************************************************************
@@ -735,7 +736,7 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                                 if (hasPath)
                                     *secondPart = '\\'; // restore the path - we will edit it in the Copy/Move dialog
                                 if (backslashAtEnd || mustBePath)
-                                    SalPathAddBackslash(path, 2 * MAX_PATH + 200);
+                                    SalPathAddBackslash(path, SAL_MAX_PATH_UTF8); // feature 097: the real size of 'path'
                                 continue; // back to the copy/move dialog
                             }
 
@@ -1446,14 +1447,19 @@ BOOL CFilesWindow::OpenFocusedInOtherPanel(BOOL activate)
     if (FocusedIndex < 0 || FocusedIndex >= Files->Count + Dirs->Count)
         return FALSE; // ignore invalid index
 
-    char buff[2 * MAX_PATH];
-    buff[0] = 0;
+    // feature 097: the location + name on the heap, whole (it was cut at 519 bytes in
+    // char[2 * MAX_PATH], and the cut path was then opened in the other panel)
+    CSalHeapString buffBuf;
+    if (!buffBuf.Copy("", SAL_TAB_LOCATION_MAX))
+        return FALSE;
+    char* buff = buffBuf.Get();
+    int buffSize = buffBuf.Size();
 
     CFileData* file = (FocusedIndex < Dirs->Count) ? &Dirs->At(FocusedIndex) : &Files->At(FocusedIndex - Dirs->Count);
 
     if (Is(ptDisk) || Is(ptZIPArchive))
     {
-        GetGeneralPath(buff, 2 * MAX_PATH);
+        GetGeneralPath(buff, buffSize);
         BOOL nethoodPath = FALSE;
         if (FocusedIndex == 0 && 0 < Dirs->Count && strcmp(Dirs->At(0).Name, "..") == 0 &&
             IsUNCRootPath(buff)) // up-dir on a UNC root path => switch to Nethood
@@ -1475,9 +1481,9 @@ BOOL CFilesWindow::OpenFocusedInOtherPanel(BOOL activate)
         }
         if (!nethoodPath)
         {
-            SalPathAddBackslash(buff, 2 * MAX_PATH);
+            SalPathAddBackslash(buff, buffSize);
             int l = (int)strlen(buff);
-            lstrcpyn(buff + l, file->Name, 2 * MAX_PATH - l);
+            lstrcpyn(buff + l, file->Name, buffSize - l);
         }
     }
     else if (Is(ptPluginFS) && GetPluginFS()->NotEmpty())

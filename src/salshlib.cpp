@@ -473,6 +473,13 @@ BOOL CSalShExtPastedData::SetData(const char* archiveFileName, const char* pathI
 
     LastWndFromPasteGetData = NULL; // clear it here for the first Paste
 
+    // feature 097: never a cut name (the Paste would list and unpack whatever has that name);
+    // the caller refuses with a message first, this is the backstop
+    if (strlen(archiveFileName) >= MAX_PATH || strlen(pathInArchive) >= MAX_PATH)
+    {
+        TRACE_E("CSalShExtPastedData::SetData(): too long archive name or path!");
+        return FALSE;
+    }
     lstrcpyn(ArchiveFileName, archiveFileName, MAX_PATH);
     lstrcpyn(PathInArchive, pathInArchive, MAX_PATH);
     SelFilesAndDirs.SetCaseSensitive(namesAreCaseSensitive);

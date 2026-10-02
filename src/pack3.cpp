@@ -1330,6 +1330,39 @@ void PackSetErrorHandler(BOOL (*handler)(HWND parent, const WORD errNum, ...))
         PackErrorHandlerPtr = handler;
 }
 
+// feature 097: see pack.h
+BOOL PackArchiveNameFitsHandler(HWND parent, const char* archiveFileName, int builtForVersion)
+{
+    if (SalArchiveNameFitsHandler(builtForVersion, strlen(archiveFileName)))
+        return TRUE;
+    if (parent == NULL && MainWindow != NULL)
+        parent = MainWindow->HWindow;
+    SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_PACKERR_TITLE), MB_OK | MB_ICONEXCLAMATION);
+    return FALSE;
+}
+
+// feature 097: see pack.h
+int PackGetUnpackerVersion(const char* archiveFileName, BOOL* isArchive)
+{
+    *isArchive = FALSE;
+    int format = PackerFormatConfig.PackIsArchive(archiveFileName);
+    if (format == 0)
+        return 0;
+    int index = PackerFormatConfig.GetUnpackerIndex(format - 1);
+    if (index >= 0)
+    {
+        *isArchive = TRUE;
+        return SAL_ARCHIVE_HANDLER_EXTERNAL;
+    }
+    CPluginData* plugin = Plugins.Get(-index - 1);
+    if (plugin == NULL || !plugin->SupportPanelView)
+        return 0;
+    *isArchive = TRUE;
+    if (!plugin->InitDLL(MainWindow->HWindow)) // BuiltForVersion is valid only while the plug-in is loaded
+        return 0;
+    return plugin->BuiltForVersion;
+}
+
 //
 // ****************************************************************************
 // Running external archivers (feature 084, contract

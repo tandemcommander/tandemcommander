@@ -3679,6 +3679,8 @@ BOOL CPluginData::ListArchive(CFilesWindow* panel, const char* archiveFileName, 
     BOOL ret = FALSE;
     if (InitDLL(MainWindow->HWindow))
     {
+        if (!PackArchiveNameFitsHandler(NULL, archiveFileName, BuiltForVersion))
+            return FALSE; // feature 097: a plug-in built for an older interface gets no long archive name
         CSalamanderForOperations sc(panel);
         ret = PluginIfaceForArchiver.ListArchive(&sc, archiveFileName, &dir, pluginData);
 #ifdef _DEBUG
@@ -3699,6 +3701,8 @@ BOOL CPluginData::UnpackArchive(CFilesWindow* panel, const char* archiveFileName
     BOOL ret = FALSE;
     if (InitDLL(MainWindow->HWindow))
     {
+        if (!PackArchiveNameFitsHandler(NULL, archiveFileName, BuiltForVersion))
+            return FALSE; // feature 097: a plug-in built for an older interface gets no long archive name
         CSalamanderForOperations sc(panel);
         ret = PluginIfaceForArchiver.UnpackArchive(&sc, archiveFileName, pluginData, targetDir,
                                                    archiveRoot, nextName, param);
@@ -3716,6 +3720,8 @@ BOOL CPluginData::UnpackOneFile(CFilesWindow* panel, const char* archiveFileName
     BOOL ret = FALSE;
     if (InitDLL(MainWindow->HWindow))
     {
+        if (!PackArchiveNameFitsHandler(NULL, archiveFileName, BuiltForVersion))
+            return FALSE; // feature 097: a plug-in built for an older interface gets no long archive name
         CSalamanderForOperations sc(panel);
         CreateSafeWaitWindow(LoadStr(IDS_UNPACKINGFILEFROMARC), NULL, 2000, FALSE, MainWindow->HWindow);
         ret = PluginIfaceForArchiver.UnpackOneFile(&sc, archiveFileName, pluginData, nameInArchive,
@@ -3734,6 +3740,8 @@ BOOL CPluginData::PackToArchive(CFilesWindow* panel, const char* archiveFileName
     BOOL ret = FALSE;
     if (InitDLL(MainWindow->HWindow))
     {
+        if (!PackArchiveNameFitsHandler(NULL, archiveFileName, BuiltForVersion))
+            return FALSE; // feature 097: a plug-in built for an older interface gets no long archive name
         CSalamanderForOperations sc(panel);
         ret = PluginIfaceForArchiver.PackToArchive(&sc, archiveFileName, archiveRoot, move, sourceDir, nextName, param);
     }
@@ -3749,6 +3757,8 @@ BOOL CPluginData::DeleteFromArchive(CFilesWindow* panel, const char* archiveFile
     BOOL ret = FALSE;
     if (InitDLL(MainWindow->HWindow))
     {
+        if (!PackArchiveNameFitsHandler(NULL, archiveFileName, BuiltForVersion))
+            return FALSE; // feature 097: a plug-in built for an older interface gets no long archive name
         CSalamanderForOperations sc(panel);
         ret = PluginIfaceForArchiver.DeleteFromArchive(&sc, archiveFileName, pluginData, archiveRoot, nextName, param);
     }
@@ -3763,6 +3773,8 @@ BOOL CPluginData::UnpackWholeArchive(CFilesWindow* panel, const char* archiveFil
     BOOL ret = FALSE;
     if (InitDLL(MainWindow->HWindow))
     {
+        if (!PackArchiveNameFitsHandler(NULL, archiveFileName, BuiltForVersion))
+            return FALSE; // feature 097: a plug-in built for an older interface gets no long archive name
         CSalamanderForOperations sc(panel);
         ret = PluginIfaceForArchiver.UnpackWholeArchive(&sc, archiveFileName, mask, targetDir,
                                                         delArchiveWhenDone, archiveVolumes);
@@ -3777,6 +3789,10 @@ BOOL CPluginData::CanCloseArchive(CFilesWindow* panel, const char* archiveFileNa
     BOOL ret = TRUE;
     if (InitDLL(MainWindow->HWindow))
     {
+        // feature 097: a plug-in built for an older interface gets no long archive name; it
+        // cannot have opened this archive, so there is nothing for it to close (no message)
+        if (!SalArchiveNameFitsHandler(BuiltForVersion, strlen(archiveFileName)))
+            return TRUE;
         CSalamanderForOperations sc(panel);
         ret = PluginIfaceForArchiver.CanCloseArchive(&sc, archiveFileName, force,
                                                      (panel == MainWindow->LeftPanel) ? PANEL_LEFT : PANEL_RIGHT);
