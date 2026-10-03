@@ -1235,3 +1235,22 @@ plugin architecture preservation, UI consistency.
   the link deleted in all 8 link cases); the reviewer drove FTP against a
   local pyftpdlib server on both builds. Rule for any future "move" route:
   call the helper first. Records: `specs/099-move-into-archive-links/fix-log.md`.
+- 100-cjk-focus-name: **window titles keep characters outside the code page.**
+  A backlog note said "Change Directory to a CJK file name shows `f??.txt`";
+  measured: focus and file were right, only the **title** of every code-page
+  ("ANSI") top-level window lost the characters - `SetWindowTextW` on an A
+  window stores through the code page. Helper `SalSetWindowTitleW`
+  (`src/common/winlib.*`; header-only `SplSetWindowTitleW` in
+  `splunicode.h`): `SetWindowTextW` first (every handler and subclass still
+  sees `WM_SETTEXT`), then - for a top-level window (`WS_CHILD` clear) of the
+  calling thread - compare the stored title (`InternalGetWindowText`) and
+  correct it with `DefWindowProcW(WM_SETTEXT)`. **Controls keep plain
+  `SetWindowTextW`** (the trick would bypass a control's procedure).
+  `IsWindowUnicode` is not a reliable test (a `TTF_SUBCLASS` tooltip makes the
+  internal viewer report Unicode while storing code-page text). Used by every
+  viewer, File Comparator (worker sends `WM_USER_SETTITLEW` to the window's
+  thread), DiskMap, the main window (its "unchanged?" check reads
+  `InternalGetWindowText` - it had re-set the title on every refresh), some
+  dialogs. Probe `probe/cjk_focus_probe.ps1` 77 / 0. Found, not fixed: the
+  tray tip garbles non-ASCII names. Records:
+  `specs/100-cjk-focus-name/fix-log.md`.

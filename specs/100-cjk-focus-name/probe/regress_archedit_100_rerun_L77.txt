@@ -1,0 +1,16 @@
+archedit_probe (feature 096 measurement) feature100-rerun
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-03 13:26; ACP 1250
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited096>>"$(FullName)"
+
+--- L77: zip entry '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159.txt' (150 UTF-8 bytes in the name); mode edit/leave
+   EDIT : temporary copy: SAL171.tmp\...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159.txt (20 bytes, marker x1); tmp name equals archive name: True; windows: no window
+   LEAVE: left/ended True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc096_accent\L77\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc096_accent\L77\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id... || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc096_accent\L77\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting ... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 9, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 20, 03.10.2026, 13:26:53 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copy after: none
+   END  : exit code 0x00000000; new crash reports 0; archive (ok items markers): True 1 1; temporary copy after exit: none
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== summary ===
+case    fmt  mode        editRan  info  updateDlg  archive    tmp@leave  tmp@exit   name / other
+L77     zip  edit/leave  yes      yes   yes        UPDATED    deleted    deleted    \u0159\u0159\u0159\u0159\u0159...(442 chars escaped) 
+Left running: 0; fixture removed: True; registry restored+identical: True

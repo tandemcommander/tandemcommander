@@ -87,7 +87,7 @@ CWelcomeMsgDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             WCHAR* bufW = SplU8ToWAlloc(buf); // feature 010: the command may contain UTF-8 paths
             if (bufW != NULL)
             {
-                SetWindowTextW(HWindow, bufW);
+                SplSetWindowTitleW(HWindow, bufW); // feature 100: exact also on a code-page dialog
                 free(bufW);
             }
             else

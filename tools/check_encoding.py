@@ -352,8 +352,10 @@ def call_text(lines, i, call=PRINTF):
     return blob
 
 
+# feature 100: Sal/SplSetWindowTitleW is the wide title setter (SetWindowTextW, or the
+# Unicode default procedure on a code-page window) - a wide attempt like SetWindowTextW
 WIDE_ATTEMPT = re.compile(
-    r'\bSalU8ToW\w*\s*\(|\bSetWindowTextW\s*\(|\bSetDlgItemTextW\s*\(|'
+    r'\bSalU8ToW\w*\s*\(|\bSetWindowTextW\s*\(|\bS(?:al|pl)SetWindowTitleW\s*\(|\bSetDlgItemTextW\s*\(|'
     r'\bLVM_SETITEMTEXTW\b|\bSB_SETTEXTW\b|\bDrawTextW\s*\(|\bCB_ADDSTRING\b.*W\b')
 
 

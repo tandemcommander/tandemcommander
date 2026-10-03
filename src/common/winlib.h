@@ -335,6 +335,18 @@ protected:
 // the W APIs; invalid UTF-8 falls back to the legacy A call (transitional
 // rule identical to CTransferInfo::EditLine).
 BOOL SalSetWindowTextU8(HWND hWnd, const char* u8Text);
+// feature 100: sets a window's title from UTF-16 text so that it keeps characters outside
+// the system code page also on a code-page ("ANSI") window. SetWindowTextW on such a window
+// (or on one whose chain of window procedures ends in a code-page one) stores the title
+// through the code page: '?' for every character outside it. The helper calls SetWindowTextW
+// as always - every window procedure sees WM_SETTEXT - and then, only for a top-level window
+// (WS_CHILD clear) owned by the calling thread, compares the stored title
+// (InternalGetWindowText) with the text; when they differ it stores the UTF-16 text with
+// DefWindowProcW(WM_SETTEXT). Child windows and controls and other threads' windows get
+// exactly SetWindowTextW. A read-back in the owning process with
+// GetWindowTextW still sees '?' (WM_GETTEXT goes through the code-page window procedure) -
+// compare with InternalGetWindowText. Plug-ins: SplSetWindowTitleW (splunicode.h).
+BOOL SalSetWindowTitleW(HWND hWnd, const WCHAR* text);
 // reads wide + converts; on UTF-8 overflow/failure falls back to the legacy
 // A read (pre-004 truncation semantics); returns text length in bytes
 int SalGetWindowTextU8(HWND hWnd, char* u8Buf, int u8BufSize);

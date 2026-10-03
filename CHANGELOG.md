@@ -53,6 +53,14 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Window titles show names in any script.** The title of a viewer window
+  (Code Viewer, internal viewer, Markdown Viewer, PictView, Database Viewer,
+  File Comparator, DiskMap) and of the main window showed `?` for every
+  character outside the system code page - a Cyrillic or Chinese file name on
+  a Czech Windows, an emoji anywhere - on the taskbar and in Alt+Tab too, and
+  two such files in one folder got the same title. The file itself was always
+  the right one. The titles are exact now, and the main window no longer
+  re-sets its title on every refresh (feature 100).
 - **Moving into an archive or to an FTP server no longer deletes files
   outside the selection.** Moving (F6, drag and drop with Move, cut and
   paste) a folder that contained a junction or a symbolic link to another

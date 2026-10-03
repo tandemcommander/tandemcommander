@@ -30,6 +30,7 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h> // wmemcmp (feature 100)
 
 // ---------------------------------------------------------------------------
 // WTF-8 (feature 089). The program's names are WTF-8 since feature 066: valid
@@ -290,4 +291,43 @@ inline WCHAR* SplU8ToWExtAlloc(const char* u8path)
     }
     free(w);
     return ext;
+}
+
+// feature 100: sets a window's title from UTF-16 text so that it keeps characters outside
+// the system code page also on a code-page ("ANSI") window - a plug-in's viewer window
+// (winliblt's CWindow class) is one, and SetWindowTextW on it stores the title through the
+// code page ('?' for every character outside it). The core's twin is SalSetWindowTitleW
+// (src/common/winlib.cpp), same rule: SetWindowTextW as always - every window procedure sees
+// WM_SETTEXT - and then, only for a top-level window (WS_CHILD clear) owned by the calling
+// thread, the stored title (InternalGetWindowText) is compared with the text; when they differ
+// the UTF-16 text is stored with DefWindowProcW(WM_SETTEXT). Child windows and controls and
+// other threads' windows get exactly SetWindowTextW (a worker thread must hand the title to
+// the window's own thread). A read-back in the owning process
+// with GetWindowTextW still sees '?' - compare with InternalGetWindowText.
+inline BOOL SplSetWindowTitleW(HWND hWnd, const WCHAR* text)
+{
+    if (text == NULL)
+        text = L"";
+    BOOL ret = SetWindowTextW(hWnd, text);
+    if (!ret || hWnd == NULL)
+        return ret;
+    if ((GetWindowLongPtrW(hWnd, GWL_STYLE) & WS_CHILD) != 0) // top-level only (no WS_CAPTION test)
+        return ret;
+    if (GetWindowThreadProcessId(hWnd, NULL) != GetCurrentThreadId())
+        return ret;
+    size_t len = wcslen(text);
+    if (len > 0x7FFFFFF0)
+        return ret;
+    WCHAR stackBuf[512];
+    WCHAR* stored = len + 2 <= sizeof(stackBuf) / sizeof(stackBuf[0]) ? stackBuf : (WCHAR*)malloc((len + 2) * sizeof(WCHAR));
+    if (stored == NULL)
+        return ret;
+    stored[0] = 0;
+    int got = InternalGetWindowText(hWnd, stored, (int)len + 2); // a longer stored title reads len + 1
+    BOOL same = got == (int)len && wmemcmp(stored, text, len) == 0;
+    if (stored != stackBuf)
+        free(stored);
+    if (!same)
+        DefWindowProcW(hWnd, WM_SETTEXT, 0, (LPARAM)text);
+    return ret;
 }

@@ -1,0 +1,73 @@
+=== cmdline_probe: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-03 12:43:18)  [feature100] ===
+System code page 1250.
+Fixture: C:\Users\pavel\AppData\Local\Temp\tc093_cmd\0416 002D 0159 002D 65E5\ with files: ascii=0061 0020 0062 002E 0074 0078 0074 ; cp=0159 002E 0074 0078 0074 ; cyr=0416 0436 002E 0074 0078 0074 ; cjk=65E5 672C 002E 0074 0078 0074 ; emo=D83D DCC1 0078 002E 0074 0078 0074
+Main window title: 'T093C - \u0416-\u0159-\u65E5 - Tandem Commander 0.1.8 (x64) ST'; IsWindowUnicode=False
+C1  | -     | IsWindowUnicode combo / inner edit          | exp=True / True | act=True / True | PASS
+C2  | ascii | WM_SETTEXT to the combo, read combo         | exp=0065 0063 0068 006F 0020 0061 0062 0063 | act=0065 0063 0068 006F 0020 0061 0062 0063 | PASS | inner edit reads the same
+C2  | ascii | WM_SETTEXT to the inner edit, read edit     | exp=0065 0063 0068 006F 0020 0061 0062 0063 | act=0065 0063 0068 006F 0020 0061 0062 0063 | PASS
+C2  | cp    | WM_SETTEXT to the combo, read combo         | exp=0061 0159 017E 0020 0062 | act=0061 0159 017E 0020 0062 | PASS | inner edit reads the same
+C2  | cp    | WM_SETTEXT to the inner edit, read edit     | exp=0061 0159 017E 0020 0062 | act=0061 0159 017E 0020 0062 | PASS
+C2  | non   | WM_SETTEXT to the combo, read combo         | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | inner edit reads the same
+C2  | non   | WM_SETTEXT to the inner edit, read edit     | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS
+C3  | ascii | WM_CHAR posted per unit to the inner edit   | exp=0065 0063 0068 006F 0020 0061 0062 0063 | act=0065 0063 0068 006F 0020 0061 0062 0063 | PASS | flags now: combo=True edit=True
+C3  | cp    | WM_CHAR posted per unit to the inner edit   | exp=0061 0159 017E 0020 0062 | act=0061 0159 017E 0020 0062 | PASS | flags now: combo=True edit=True
+C3  | non   | WM_CHAR posted per unit to the inner edit   | exp=0061 0159 0416 65E5 D83D DCC1 | act=0061 0159 0416 65E5 D83D DCC1 | PASS | flags now: combo=True edit=True
+C3  | enter | typed x U+010D U+0109 y: no Enter, no Tab   | exp=0078 010D 0109 0079 | act=0078 010D 0109 0079 | PASS
+C4  | ascii | name of the focused file inserted           | exp=0061 0020 0062 002E 0074 0078 0074 0020 | act=0061 0020 0062 002E 0074 0078 0074 0020 | PASS | panel position 1
+C4  | cp    | name of the focused file inserted           | exp=0159 002E 0074 0078 0074 0020 | act=0159 002E 0074 0078 0074 0020 | PASS | panel position 2
+C4  | cyr   | name of the focused file inserted           | exp=0416 0436 002E 0074 0078 0074 0020 | act=0416 0436 002E 0074 0078 0074 0020 | PASS | panel position 3
+C4  | cjk   | name of the focused file inserted           | exp=65E5 672C 002E 0074 0078 0074 0020 | act=65E5 672C 002E 0074 0078 0074 0020 | PASS | panel position 5
+C4  | emo   | name of the focused file inserted           | exp=D83D DCC1 0078 002E 0074 0078 0074 0020 | act=D83D DCC1 0078 002E 0074 0078 0074 0020 | PASS | panel position 4
+C5  | ascii | insert into "ab" at 1: text                 | exp=0061 0061 0020 0062 002E 0074 0078 0074 0020 0062 | act=0061 0061 0020 0062 002E 0074 0078 0074 0020 0062 | PASS
+C5  | ascii | caret after the insertion (units)           | exp=9,9 | act=9,9 | PASS
+C5  | ascii | next typed character lands at the caret     | exp=0061 0061 0020 0062 002E 0074 0078 0074 0020 0058 0062 | act=0061 0061 0020 0062 002E 0074 0078 0074 0020 0058 0062 | PASS
+C5  | cp    | insert into "ab" at 1: text                 | exp=0061 0159 002E 0074 0078 0074 0020 0062 | act=0061 0159 002E 0074 0078 0074 0020 0062 | PASS
+C5  | cp    | caret after the insertion (units)           | exp=7,7 | act=7,7 | PASS
+C5  | cp    | next typed character lands at the caret     | exp=0061 0159 002E 0074 0078 0074 0020 0058 0062 | act=0061 0159 002E 0074 0078 0074 0020 0058 0062 | PASS
+C5  | cyr   | insert into "ab" at 1: text                 | exp=0061 0416 0436 002E 0074 0078 0074 0020 0062 | act=0061 0416 0436 002E 0074 0078 0074 0020 0062 | PASS
+C5  | cyr   | caret after the insertion (units)           | exp=8,8 | act=8,8 | PASS
+C5  | cyr   | next typed character lands at the caret     | exp=0061 0416 0436 002E 0074 0078 0074 0020 0058 0062 | act=0061 0416 0436 002E 0074 0078 0074 0020 0058 0062 | PASS
+C5  | cjk   | insert into "ab" at 1: text                 | exp=0061 65E5 672C 002E 0074 0078 0074 0020 0062 | act=0061 65E5 672C 002E 0074 0078 0074 0020 0062 | PASS
+C5  | cjk   | caret after the insertion (units)           | exp=8,8 | act=8,8 | PASS
+C5  | cjk   | next typed character lands at the caret     | exp=0061 65E5 672C 002E 0074 0078 0074 0020 0058 0062 | act=0061 65E5 672C 002E 0074 0078 0074 0020 0058 0062 | PASS
+C5  | emo   | insert into "ab" at 1: text                 | exp=0061 D83D DCC1 0078 002E 0074 0078 0074 0020 0062 | act=0061 D83D DCC1 0078 002E 0074 0078 0074 0020 0062 | PASS
+C5  | emo   | caret after the insertion (units)           | exp=9,9 | act=9,9 | PASS
+C5  | emo   | next typed character lands at the caret     | exp=0061 D83D DCC1 0078 002E 0074 0078 0074 0020 0058 0062 | act=0061 D83D DCC1 0078 002E 0074 0078 0074 0020 0058 0062 | PASS
+C6  | ascii | copy nul "<name>.flag" + Enter: file on disk| exp=0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 | act=0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 | PASS | the line held 0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 0022
+C6  | ascii | the line is empty after the command         | exp=<empty> | act=<empty> | PASS
+C7  | ascii | first item of the drop-down = the command   | exp=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 0022 | act=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 0022 | PASS | 3 items
+C6  | cp    | copy nul "<name>.flag" + Enter: file on disk| exp=0159 002D 017E 002E 0066 006C 0061 0067 | act=0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 ; 0159 002D 017E 002E 0066 006C 0061 0067 | PASS | the line held 0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0159 002D 017E 002E 0066 006C 0061 0067 0022
+C6  | cp    | the line is empty after the command         | exp=<empty> | act=<empty> | PASS
+C7  | cp    | first item of the drop-down = the command   | exp=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0159 002D 017E 002E 0066 006C 0061 0067 0022 | act=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0159 002D 017E 002E 0066 006C 0061 0067 0022 | PASS | 4 items
+C6  | non   | copy nul "<name>.flag" + Enter: file on disk| exp=0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 | act=0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 ; 0159 002D 017E 002E 0066 006C 0061 0067 ; 0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 | PASS | the line held 0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 0022
+C6  | non   | the line is empty after the command         | exp=<empty> | act=<empty> | PASS
+C7  | non   | first item of the drop-down = the command   | exp=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 0022 | act=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 0022 | PASS | 5 items
+C7  | non   | Ctrl+Down recalls the newest command        | exp=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 0022 | act=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 0022 | PASS
+C7  | pwd   | URL password stripped in the history        | exp=echo ftp://user@host.invalid/x >nul | act=echo ftp://user@host.invalid/x >nul | PASS
+C8  | ascii | Ctrl+Backspace at the end: last word gone   | exp=0065 0063 0068 006F 0020 0061 0062 002E 0063 0064 0020 | act=0065 0063 0068 006F 0020 0061 0062 002E 0063 0064 0020 | PASS
+C8  | ascii | Ctrl+Backspace again: up to the dot         | exp=0065 0063 0068 006F 0020 0061 0062 002E | act=0065 0063 0068 006F 0020 0061 0062 002E | PASS | caret 8,8
+C8  | cp    | Ctrl+Backspace at the end: last word gone   | exp=0065 0063 0068 006F 0020 0159 0159 002E 017E 017E 0020 | act=0065 0063 0068 006F 0020 0159 0159 002E 017E 017E 0020 | PASS
+C8  | cp    | Ctrl+Backspace again: up to the dot         | exp=0065 0063 0068 006F 0020 0159 0159 002E | act=0065 0063 0068 006F 0020 0159 0159 002E | PASS | caret 8,8
+C8  | non   | Ctrl+Backspace at the end: last word gone   | exp=0065 0063 0068 006F 0020 0416 0436 002E 65E5 672C 0020 | act=0065 0063 0068 006F 0020 0416 0436 002E 65E5 672C 0020 | PASS
+C8  | non   | Ctrl+Backspace again: up to the dot         | exp=0065 0063 0068 006F 0020 0416 0436 002E | act=0065 0063 0068 006F 0020 0416 0436 002E | PASS | caret 8,8
+C8  | ascii | Backspace (WM_CHAR 8) removes one character | exp=0061 | act=0061 | PASS
+C8  | cp    | Backspace (WM_CHAR 8) removes one character | exp=0061 | act=0061 | PASS
+C8  | non   | Backspace (WM_CHAR 8) removes one character | exp=0061 | act=0061 | PASS
+C8  | emo   | Backspace (WM_CHAR 8) removes one character | exp=0061 | act=0061 | PASS
+C9  | -     | path prefix (Static in the combo)           | exp=- | act=IsWindowUnicode=False; window text <empty>; width 308 px; edit width 1520 px | INFO | the control paints the path itself (wide), its window text is not used
+C10 | ascii | typed echo                                  | exp=echo | act=echo | PASS | EM_GETSEL: 4,4
+C10 | ascii | Home, typed 1                               | exp=1echo | act=1echo | PASS | EM_GETSEL after the key: 0,0
+C10 | ascii | End, typed 2                                | exp=1echo2 | act=1echo2 | PASS | EM_GETSEL after the key: 5,5
+C10 | ascii | Left, typed 3                               | exp=1echo32 | act=1echo32 | PASS | EM_GETSEL after the key: 5,5
+C10 | ascii | Shift+Left, typed X (replaces 3)            | exp=1echoX2 | act=1echoX2 | PASS | EM_GETSEL after the key: 5,6
+C10 | ascii | Esc clears the line                         | exp=<empty> | act=<empty> | PASS
+C10 | ascii | focus: after CM_EDITLINE -> after Esc       | exp=Edit -> SalamanderItemsBox | act=Edit -> SalamanderItemsBox | PASS | thread focus window by GetGUIThreadInfo (a hidden desktop has no foreground window)
+   process exit code: 0
+C7  | ascii | stored Command History holds the command    | exp=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 0022 | act=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0070 006C 0061 0069 006E 0020 0031 002E 0066 006C 0061 0067 0022 | PASS | 6 stored values
+C7  | cp    | stored Command History holds the command    | exp=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0159 002D 017E 002E 0066 006C 0061 0067 0022 | act=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0159 002D 017E 002E 0066 006C 0061 0067 0022 | PASS | 6 stored values
+C7  | non   | stored Command History holds the command    | exp=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 0022 | act=0063 006F 0070 0079 0020 006E 0075 006C 0020 0022 0416 0436 65E5 672C D83D DCC1 002E 0066 006C 0061 0067 0022 | PASS | 6 stored values
+C7  | pwd   | stored history: URL without the password    | exp=echo ftp://user@host.invalid/x >nul | act=echo ftp://user@host.invalid/x >nul | PASS
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 63, FAIL 0, NOT DRIVEN 0, INFO 1; unexpected windows: 0
+Test processes left: 0; fixture folder left: False; registry restored identical: True; process exit codes: 0

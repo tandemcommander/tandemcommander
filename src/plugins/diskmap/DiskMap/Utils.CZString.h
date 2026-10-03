@@ -84,7 +84,10 @@ inline BOOL ZSetWindowText(HWND hWnd, const TCHAR* text)
     int wLen;
     WCHAR* w = ZTextToW(text, (int)_tcslen(text), stackBuf, ZTEXT_STACKBUF, &wLen);
     w[wLen] = 0;
-    BOOL ret = SetWindowTextW(hWnd, w);
+    // feature 100: the DiskMap window is a code-page window - SetWindowTextW stored its title
+    // through the code page ('?' for a path outside it); SplSetWindowTitleW keeps it exact
+    // (splunicode.h comes with precomp.h)
+    BOOL ret = SplSetWindowTitleW(hWnd, w);
     ZTextFreeW(w, stackBuf);
     return ret;
 }

@@ -39,6 +39,9 @@ enum
 #define WM_USER_GETREBARHEIGHT (WM_APP + 11)
 #define WM_USER_GETHEADERHEIGHT (WM_APP + 12)
 #define WM_USER_AUTOCOPY_CHANGED (WM_APP + 13)
+// feature 100: (const WCHAR*)lParam = the window title; SENT (synchronously, like the
+// SetWindowTextW it replaces) by a worker thread so that the window's own thread sets it
+#define WM_USER_SETTITLEW (WM_APP + 14)
 
 // [wParam, (HWND)lParam] - for open plugin windows: plugin configuration has changed
 #define WM_USER_CFGCHNG (WM_APP + 3246)

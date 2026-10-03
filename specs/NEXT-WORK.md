@@ -423,9 +423,15 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        plug-in (the same loss); SFTP was already safe. Not driven: a real
        drag, the clipboard route, Explorer as the drag source (if Explorer
        itself deletes after a Move drop, that is outside the program).
-    2. Change Directory to a file whose NAME has a CJK character lands in the
-       folder, but the viewer title shows `f??.txt` (any length, older than
-       098) - input side? to measure.
+    2. Change Directory to a file whose NAME has a CJK character: the viewer
+       title showed `?` - ✅ measured and fixed by feature 100 (2026-10-03):
+       focus and file were always right; every code-page window title lost
+       such characters. **Found by 100, not fixed:** the tray icon tip
+       (`SetTrayIconText`, `mainwnd1.cpp`) copies UTF-8 into the ANSI tip
+       structure - every non-ASCII name there is garbled and can be cut
+       mid-character; the File Comparator cannot open files named outside the
+       code page at all (its dialog and `fcremote.exe` are code-page
+       programs).
     3. Smaller: the link warning names an unreadable or too-deep folder as a
        "Link"; at depth 1,001 the message says "too long"; clipboard paste
        refuses 520+ bytes although Change Directory takes any length; the

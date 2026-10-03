@@ -190,7 +190,7 @@ void CRendererWindow::SetTitle()
     // set as UTF-16 so non-ASCII file names survive; the A call is the fallback
     WCHAR* buffW = SplU8ToWAlloc(buff);
     if (buffW != NULL)
-        SetWindowTextW(Viewer->HWindow, buffW);
+        SplSetWindowTitleW(Viewer->HWindow, buffW); // feature 100: exact also on the code-page viewer window
     else
         SetWindowTextA(Viewer->HWindow, buff);
     free(buffW);

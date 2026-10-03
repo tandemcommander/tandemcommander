@@ -1396,7 +1396,7 @@ void CDriveInfo::Transfer(CTransferInfo& ti)
             WCHAR* buffW = SalU8ToWAlloc(buff);
             if (buffW != NULL)
             {
-                ::SetWindowTextW(HWindow, buffW);
+                SalSetWindowTitleW(HWindow, buffW); // feature 100: exact also on a code-page dialog
                 free(buffW);
             }
             else // not valid UTF-8 (transitional): keep the legacy path

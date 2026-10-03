@@ -297,9 +297,12 @@ void COperationDlg::SetDlgTitle(int progressValue, const char* state)
         if (textW != NULL)
         {
             WCHAR txt2W[500];
-            changed = !GetWindowTextW(HWindow, txt2W, 500) || wcscmp(textW, txt2W) != 0;
+            // feature 100: the stored title (a code-page dialog reads back '?' through
+            // GetWindowTextW, which would count as a change - and re-flash - on every call)
+            txt2W[0] = 0;
+            changed = !InternalGetWindowText(HWindow, txt2W, 500) || wcscmp(textW, txt2W) != 0;
             if (changed)
-                SetWindowTextW(HWindow, textW);
+                SplSetWindowTitleW(HWindow, textW); // feature 100: exact also on a code-page dialog
             free(textW);
         }
         else

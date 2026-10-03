@@ -1954,7 +1954,11 @@ void CMainWindow::SetWindowTitle(const char* text)
 {
     CALL_STACK_MESSAGE2("CMainWindow::SetWindowTitle(%s)", text);
     WCHAR buffW[1000]; // compare and set as wide text - the title carries UTF-8 paths (feature 004)
-    ::GetWindowTextW(HWindow, buffW, _countof(buffW));
+    // feature 100: the stored title, not GetWindowTextW - this is a code-page window, so
+    // GetWindowTextW reads the title through the code page ('?' for a path outside it), and the
+    // comparison below would find a change on every call (title and tray tip re-set each time)
+    buffW[0] = 0;
+    InternalGetWindowText(HWindow, buffW, _countof(buffW));
     buffW[_countof(buffW) - 1] = 0;
 
     char stdWndName[2 * MAX_PATH + 300];
@@ -2016,7 +2020,7 @@ void CMainWindow::SetWindowTitle(const char* text)
     {
         if (wcscmp(textW, buffW) != 0)
         {
-            ::SetWindowTextW(HWindow, textW);
+            SalSetWindowTitleW(HWindow, textW); // feature 100: exact also on this code-page window
             if (Configuration.StatusArea)
                 SetTrayIconText(text);
         }

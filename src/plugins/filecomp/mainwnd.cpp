@@ -896,7 +896,7 @@ void CMainWindow::SpawnWorker(const char* path1, const char* path2,
             WCHAR* wBuf = SplU8ToWAlloc(buf);
             if (wBuf != NULL)
             {
-                SetWindowTextW(HWindow, wBuf);
+                SplSetWindowTitleW(HWindow, wBuf); // feature 100: exact also on this code-page window
                 free(wBuf);
             }
             else
@@ -2056,7 +2056,7 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             WCHAR* wBuf = SplU8ToWAlloc(buf);
             if (wBuf != NULL)
             {
-                SetWindowTextW(HWindow, wBuf);
+                SplSetWindowTitleW(HWindow, wBuf); // feature 100: exact also on this code-page window
                 free(wBuf);
             }
             else
@@ -2154,7 +2154,7 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         WCHAR* wBuf = SplU8ToWAlloc(buf);
         if (wBuf != NULL)
         {
-            SetWindowTextW(HWindow, wBuf);
+            SplSetWindowTitleW(HWindow, wBuf); // feature 100: exact also on this code-page window
             free(wBuf);
         }
         else
@@ -2281,6 +2281,12 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         UpdateWindow(HWindow);
         return 0;
     }
+
+    case WM_USER_SETTITLEW:
+        // feature 100: the title computed by the combo-box worker (worker2.cpp); set here, on the
+        // window's own thread, because SplSetWindowTitleW may act on the window only there
+        SplSetWindowTitleW(HWindow, (const WCHAR*)lParam);
+        return 0;
 
     case WM_USER_AUTOCOPY_CHANGED:
         CheckMenuItem(GetMenu(HWindow), CM_AUTOCOPY, Configuration.AutoCopy ? (MF_BYCOMMAND | MF_CHECKED) : (MF_BYCOMMAND | MF_UNCHECKED));

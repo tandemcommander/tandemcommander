@@ -107,7 +107,10 @@ void CFilecompWorker::CompareBinaryFiles()
                 WCHAR* wBuf = SplU8ToWAlloc(buf);
                 if (wBuf != NULL)
                 {
-                    SetWindowTextW(MainWindow, wBuf);
+                    // feature 100: this is the worker thread - SetWindowTextW sent WM_SETTEXT to the
+                    // code-page window, which stored '?' for a name outside the code page; the window's
+                    // own thread sets the title exactly (same synchronous send as before)
+                    SendMessage(MainWindow, WM_USER_SETTITLEW, 0, (LPARAM)wBuf);
                     free(wBuf);
                 }
                 else

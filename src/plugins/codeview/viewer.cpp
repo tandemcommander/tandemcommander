@@ -650,7 +650,9 @@ void CViewerWindow::UpdateTitle()
         _snwprintf_s(z, _TRUNCATE, L" (%d%%)", Zoom);
         title += z;
     }
-    SetWindowTextW(HWindow, title.c_str());
+    // feature 100: the window is a code-page window (winliblt's class) - SetWindowTextW
+    // stored the title through the code page and a CJK or Cyrillic name became '?'
+    SplSetWindowTitleW(HWindow, title.c_str());
 }
 
 void CViewerWindow::UpdateStatus()

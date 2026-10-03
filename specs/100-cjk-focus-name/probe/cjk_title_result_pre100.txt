@@ -1,0 +1,74 @@
+cjk_focus_probe (feature 100), expect: before
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre100\tandemcommander.exe
+Date    : 2026-10-03 12:51; ACP 1250; registry key existed True
+
+c0r        CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt; windows after OK: no window
+c0r        LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r
+c0r        FOCUS  PASS        focused name f\u0159.txt via rename dialog 'Quick Rename', ComboBox unicode=True
+c0r        F3     PASS        exact True, code-page form False; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c0r        NAV    PASS        focused by Home + 4 x Down
+c0r        NAVF3  PASS        exact True, code-page form False; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c0r        T-INT  PASS        f\u0159.txt: exact True, code-page form False; class 'Salamander's Viewer Window' unicode=True; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt - Viewer'
+c0r        T-MD   PASS        m\u0159.md: exact True, code-page form False; class 'MDView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\m\u0159.md - Markdown Viewer (100%)'
+c0r        T-PNG  PASS        p\u0159.png: exact True, code-page form False; class 'PICTVIEW - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\p\u0159.png (4 x 4 x 16777216 colors - 100%) - PictView'
+c0r        T-CSV  PASS        c\u0159.csv: exact True, code-page form False; class 'DBVIEWER - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\c\u0159.csv - Database Viewer'
+c0r        T-MAIN PASS        d\u0159: exact True, code-page form False; stored title 'T100 - d\u0159 - Tandem Commander 0.1.8 (x64) ST'; name-change events: Change Directory 1, 5 refreshes 0; title after the refreshes unchanged True
+c0r        DISK   PASS        files on disk: a.txt, c\u0159.csv, f\u0159.txt, m\u0159.md, p\u0159.png, z.txt
+c0r        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c1ri       CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f\u65E5.txt; windows after OK: no window
+c1ri       LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri
+c1ri       FOCUS  PASS        focused name f\u65E5.txt via rename dialog 'Quick Rename', ComboBox unicode=True
+c1ri       F3     PASS        exact False, code-page form True; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f?.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c1ri       NAV    PASS        focused by Home + 4 x Down
+c1ri       NAVF3  PASS        exact False, code-page form True; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f?.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c1ri       T-INT  PASS        f\u65E5.txt: exact False, code-page form True; class 'Salamander's Viewer Window' unicode=True; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f?.txt - Viewer'
+c1ri       T-MD   PASS        m\u65E5.md: exact False, code-page form True; class 'MDView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\m?.md - Markdown Viewer (100%)'
+c1ri       T-PNG  PASS        p\u65E5.png: exact False, code-page form True; class 'PICTVIEW - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\p?.png (4 x 4 x 16777216 colors - 100%) - PictView'
+c1ri       T-CSV  PASS        c\u65E5.csv: exact False, code-page form True; class 'DBVIEWER - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\c?.csv - Database Viewer'
+c1ri       T-MAIN PASS        d\u65E5: exact False, code-page form True; stored title 'T100 - d? - Tandem Commander 0.1.8 (x64) ST'; name-change events: Change Directory 1, 5 refreshes 5; title after the refreshes unchanged True
+c1ri       DISK   PASS        files on disk: a.txt, c\u65E5.csv, f\u65E5.txt, m\u65E5.md, p\u65E5.png, z.txt
+c1ri       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c2zh       CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f\u4E2D.txt; windows after OK: no window
+c2zh       LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh
+c2zh       FOCUS  PASS        focused name f\u4E2D.txt via rename dialog 'Quick Rename', ComboBox unicode=True
+c2zh       F3     PASS        exact False, code-page form True; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f?.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c2zh       NAV    PASS        focused by Home + 4 x Down
+c2zh       NAVF3  PASS        exact False, code-page form True; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f?.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c2zh       T-INT  PASS        f\u4E2D.txt: exact False, code-page form True; class 'Salamander's Viewer Window' unicode=True; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f?.txt - Viewer'
+c2zh       T-MD   PASS        m\u4E2D.md: exact False, code-page form True; class 'MDView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\m?.md - Markdown Viewer (100%)'
+c2zh       T-PNG  PASS        p\u4E2D.png: exact False, code-page form True; class 'PICTVIEW - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\p?.png (4 x 4 x 16777216 colors - 100%) - PictView'
+c2zh       T-CSV  PASS        c\u4E2D.csv: exact False, code-page form True; class 'DBVIEWER - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\c?.csv - Database Viewer'
+c2zh       T-MAIN PASS        d\u4E2D: exact False, code-page form True; stored title 'T100 - d? - Tandem Commander 0.1.8 (x64) ST'; name-change events: Change Directory 1, 5 refreshes 5; title after the refreshes unchanged True
+c2zh       DISK   PASS        files on disk: a.txt, c\u4E2D.csv, f\u4E2D.txt, m\u4E2D.md, p\u4E2D.png, z.txt
+c2zh       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c3cyr      CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f\u0416.txt; windows after OK: no window
+c3cyr      LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr
+c3cyr      FOCUS  PASS        focused name f\u0416.txt via rename dialog 'Quick Rename', ComboBox unicode=True
+c3cyr      F3     PASS        exact False, code-page form True; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f?.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c3cyr      NAV    PASS        focused by Home + 4 x Down
+c3cyr      NAVF3  PASS        exact False, code-page form True; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f?.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c3cyr      T-INT  PASS        f\u0416.txt: exact False, code-page form True; class 'Salamander's Viewer Window' unicode=True; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f?.txt - Viewer'
+c3cyr      T-MD   PASS        m\u0416.md: exact False, code-page form True; class 'MDView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\m?.md - Markdown Viewer (100%)'
+c3cyr      T-PNG  PASS        p\u0416.png: exact False, code-page form True; class 'PICTVIEW - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\p?.png (4 x 4 x 16777216 colors - 100%) - PictView'
+c3cyr      T-CSV  PASS        c\u0416.csv: exact False, code-page form True; class 'DBVIEWER - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\c?.csv - Database Viewer'
+c3cyr      T-MAIN PASS        d\u0416: exact False, code-page form True; stored title 'T100 - d? - Tandem Commander 0.1.8 (x64) ST'; name-change events: Change Directory 1, 5 refreshes 5; title after the refreshes unchanged True
+c3cyr      DISK   PASS        files on disk: a.txt, c\u0416.csv, f\u0416.txt, m\u0416.md, p\u0416.png, z.txt
+c3cyr      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c4emo      CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f\uD83D\uDE00.txt; windows after OK: no window
+c4emo      LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo
+c4emo      FOCUS  PASS        focused name f\uD83D\uDE00.txt via rename dialog 'Quick Rename', ComboBox unicode=True
+c4emo      F3     PASS        exact False, code-page form True; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f??.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c4emo      NAV    PASS        focused by Home + 4 x Down
+c4emo      NAVF3  PASS        exact False, code-page form True; class 'CodeView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f??.txt [Plain Text] - Code Viewer'; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%'
+c4emo      T-INT  PASS        f\uD83D\uDE00.txt: exact False, code-page form True; class 'Salamander's Viewer Window' unicode=True; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f??.txt - Viewer'
+c4emo      T-MD   PASS        m\uD83D\uDE00.md: exact False, code-page form True; class 'MDView - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\m??.md - Markdown Viewer (100%)'
+c4emo      T-PNG  PASS        p\uD83D\uDE00.png: exact False, code-page form True; class 'PICTVIEW - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\p??.png (4 x 4 x 16777216 colors - 100%) - PictView'
+c4emo      T-CSV  PASS        c\uD83D\uDE00.csv: exact False, code-page form True; class 'DBVIEWER - WinLib Universal Window2' unicode=False; stored title 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\c??.csv - Database Viewer'
+c4emo      T-MAIN PASS        d\uD83D\uDE00: exact False, code-page form True; stored title 'T100 - d?? - Tandem Commander 0.1.8 (x64) ST'; name-change events: Change Directory 1, 5 refreshes 5; title after the refreshes unchanged True
+c4emo      DISK   PASS        files on disk: a.txt, c\uD83D\uDE00.csv, f\uD83D\uDE00.txt, m\uD83D\uDE00.md, p\uD83D\uDE00.png, z.txt
+c4emo      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+fc         FC     PASS        dialog [#32770 'Compare Files'] [Static id=300] &Compare file: | [Button id=104] ... | [Static id=301] &With file: | [Button id=105] ... | [Button id=1] OK | [Button id=2] Cancel | [Button id=103] &Advanced...; comparator class 'SFC Window Class' unicode=False; stored title 'b1\u0159.bin : b2\u0159.bin - File Comparator - 2 Differences'; responsive True
+fc         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 67, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

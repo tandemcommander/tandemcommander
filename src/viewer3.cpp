@@ -101,7 +101,7 @@ void CViewerWindow::SetViewerCaption()
     WCHAR* captionW = SalU8ToWAlloc(caption); // the title carries a UTF-8 file name (feature 004)
     if (captionW != NULL)
     {
-        SetWindowTextW(HWindow, captionW);
+        SalSetWindowTitleW(HWindow, captionW); // feature 100: exact also on this code-page window
         free(captionW);
     }
     else // not valid UTF-8 (transitional): keep the legacy path

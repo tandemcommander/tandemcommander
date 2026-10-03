@@ -1115,11 +1115,50 @@ BOOL SalSetWindowTextU8(HWND hWnd, const char* u8Text)
     WCHAR* w = SalU8ToWAlloc(u8Text);
     if (w != NULL)
     {
-        BOOL ret = SetWindowTextW(hWnd, w);
+        BOOL ret = SalSetWindowTitleW(hWnd, w); // feature 100: SetWindowTextW + a code-page window's title kept exact
         free(w);
         return ret;
     }
     return SetWindowText(hWnd, u8Text); // not valid UTF-8 (transitional): keep the legacy path
+}
+
+// feature 100: see winlib.h; the plug-ins' copy is SplSetWindowTitleW in splunicode.h
+BOOL SalSetWindowTitleW(HWND hWnd, const WCHAR* text)
+{
+    if (text == NULL)
+        text = L"";
+    // the usual call first: every window procedure (and subclass) sees WM_SETTEXT as before
+    BOOL ret = SetWindowTextW(hWnd, text);
+    if (!ret || hWnd == NULL)
+        return ret;
+    // only a top-level window: a child window or control is left to its own window procedure
+    // (no WS_CAPTION test: PictView's full screen is a popup without a title bar and still
+    // keeps the title the taskbar shows; where the stored title is exact the check below is a
+    // no-op, e.g. for a tooltip or a drop-down list)
+    if ((GetWindowLongPtr(hWnd, GWL_STYLE) & WS_CHILD) != 0)
+        return ret;
+    // DefWindowProc acts on the window directly: only on the thread that owns it
+    if (GetWindowThreadProcessId(hWnd, NULL) != GetCurrentThreadId())
+        return ret;
+    // the stored title (what the caption, the taskbar and Alt+Tab show) - when the text crossed a
+    // code-page window procedure on its way (the window's own, or the last one of a chain:
+    // IsWindowUnicode is not enough, the internal viewer reports a Unicode window and still
+    // stored '?'), it holds '?' instead of every character outside the code page
+    size_t len = wcslen(text);
+    if (len > 0x7FFFFFF0)
+        return ret;
+    WCHAR stackBuf[512];
+    WCHAR* stored = len + 2 <= _countof(stackBuf) ? stackBuf : (WCHAR*)malloc((len + 2) * sizeof(WCHAR));
+    if (stored == NULL)
+        return ret;
+    stored[0] = 0;
+    int got = InternalGetWindowText(hWnd, stored, (int)len + 2); // a longer stored title reads len + 1
+    BOOL same = got == (int)len && wmemcmp(stored, text, len) == 0;
+    if (stored != stackBuf)
+        free(stored);
+    if (!same) // store the UTF-16 text itself (the window procedures have already seen the message)
+        DefWindowProcW(hWnd, WM_SETTEXT, 0, (LPARAM)text);
+    return ret;
 }
 
 int SalGetWindowTextU8(HWND hWnd, char* u8Buf, int u8BufSize)

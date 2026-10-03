@@ -527,7 +527,9 @@ void CViewerWindow::UpdateTitle()
     wchar_t z[16];
     _snwprintf_s(z, _TRUNCATE, L" (%d%%)", g_zoom);
     title += z;
-    SetWindowTextW(HWindow, title.c_str());
+    // feature 100: a code-page window (winliblt's class) - SetWindowTextW stored the title
+    // through the code page ('?' for a name outside it)
+    SplSetWindowTitleW(HWindow, title.c_str());
 }
 
 // (Re)generate Html from DecodedText with the current theme/find/consent/source

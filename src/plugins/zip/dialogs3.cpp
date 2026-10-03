@@ -193,7 +193,7 @@ BOOL CCommentDialog::OnInit(WPARAM wParam, LPARAM lParam)
         WCHAR* wTitle = SplU8ToWAlloc(title);
         if (wTitle != NULL)
         {
-            SetWindowTextW(Dlg, wTitle);
+            SplSetWindowTitleW(Dlg, wTitle); // feature 100: exact also on a code-page dialog
             free(wTitle);
         }
         free(title);
