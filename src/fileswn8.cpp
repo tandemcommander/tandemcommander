@@ -624,7 +624,7 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                             data.Dirs = Dirs;
                             data.Files = Files;
                             data.ArchiveDir = GetArchiveDir();
-                            lstrcpyn(data.WorkPath, GetPath(), MAX_PATH);
+                            data.SetWorkPath(GetPath()); // feature 098: whole (it was cut at 259 bytes)
                             data.EnumLastDir = NULL;
                             data.EnumLastIndex = -1;
 
@@ -802,7 +802,7 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                                 data.Dirs = Dirs;
                                 data.Files = Files;
                                 data.ArchiveDir = GetArchiveDir();
-                                lstrcpyn(data.WorkPath, GetPath(), MAX_PATH);
+                                data.SetWorkPath(GetPath()); // feature 098: whole (it was cut at 259 bytes)
                                 data.EnumLastDir = NULL;
                                 data.EnumLastIndex = -1;
 

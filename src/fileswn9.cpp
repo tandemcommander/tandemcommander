@@ -722,6 +722,7 @@ void CFilesWindow::ClipboardPastePath()
     char buff[2 * MAX_PATH];
     buff[0] = 0;
     BOOL changePath = FALSE;
+    BOOL tooLong = FALSE; // feature 098: a path that does not fit 'buff' is refused (it was cut at 519 bytes)
 
     if (OpenClipboard(HWindow))
     {
@@ -733,17 +734,18 @@ void CFilesWindow::ClipboardPastePath()
             {
                 while (*pathW != 0 && *pathW <= L' ')
                     pathW++; // trim spaces+CR+LF before the path
-                if (ConvertU2A(pathW, -1, buff, _countof(buff)))
+                int lenW = (int)wcslen(pathW);
+                while (lenW > 0 && pathW[lenW - 1] <= L' ')
+                    lenW--; // feature 098: and after it (they are not part of the length check)
+                // feature 098: UTF-8 (WTF-8) like every panel path - ConvertU2A gave code-page bytes
+                if (lenW == 0 || SalWToU8(pathW, lenW, buff, _countof(buff)) != 0)
                     changePath = TRUE;
                 else
-                {
-                    if (buff[0] != 0 && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
-                        changePath = TRUE; // if the buffer is small, ignore it (same as ANSI version)
-                }
+                    tooLong = TRUE; // SalWToU8 is total: it fails only when the text does not fit
                 HANDLES(GlobalUnlock(handle));
             }
         }
-        if (!changePath) // probably not Unicode, try ANSI (when Unicode is present ANSI is usually broken - without diacritics)
+        if (!changePath && !tooLong) // probably not Unicode, try ANSI (when Unicode is present ANSI is usually broken - without diacritics)
         {
             handle = GetClipboardData(CF_TEXT);
             char* path = (char*)HANDLES(GlobalLock(handle));
@@ -751,9 +753,16 @@ void CFilesWindow::ClipboardPastePath()
             {
                 while (*path != 0 && *path <= ' ')
                     path++; // trim spaces+CR+LF before the path
-                lstrcpyn(buff, path, _countof(buff));
-
-                changePath = TRUE;
+                int len = (int)strlen(path);
+                while (len > 0 && (unsigned char)path[len - 1] <= ' ')
+                    len--;
+                if (len < _countof(buff))
+                {
+                    lstrcpyn(buff, path, len + 1);
+                    changePath = TRUE;
+                }
+                else
+                    tooLong = TRUE;
                 HANDLES(GlobalUnlock(handle));
             }
         }
@@ -761,6 +770,11 @@ void CFilesWindow::ClipboardPastePath()
     }
     else
         TRACE_E("OpenClipboard() has failed!");
+    if (tooLong)
+    {
+        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
+        return;
+    }
     if (changePath && PostProcessPathFromUser(HWindow, buff, _countof(buff)))
         ChangeDir(buff); // change path
 }
@@ -1876,6 +1890,18 @@ CFilesWindow::CreateDragImage(int cursorX, int cursorY, int& dxHotspot, int& dyH
     return himl;
 }
 
+// feature 098: appends 'src' to 'dst' (a buffer of 'dstSize' bytes); FALSE (and 'dst' unchanged)
+// when it does not fit - the copies below were unbounded
+static BOOL UNCAppend(char* dst, const char* src, int dstSize)
+{
+    size_t l = strlen(dst);
+    size_t n = strlen(src);
+    if (l + n >= (size_t)dstSize)
+        return FALSE;
+    memcpy(dst + l, src, n + 1);
+    return TRUE;
+}
+
 BOOL CopyUNCPathToClipboard(const char* path, const char* name, BOOL isDir, HWND hMessageParent, int nestingLevel)
 {
     char buff[2 * MAX_PATH];
@@ -1883,32 +1909,33 @@ BOOL CopyUNCPathToClipboard(const char* path, const char* name, BOOL isDir, HWND
 
     nestingLevel++; // note: also controls error messaging, we must increment it here
 
+    // feature 098: a location + name that does not fit the buffers is not converted (the Find
+    // window's caller had no guard: an overrun from 520 bytes)
+    if (strlen(path) + 2 + strlen(name) >= 2 * MAX_PATH)
+        return FALSE;
+
     strcpy(buff, path);
     SalPathAddBackslash(buff, 2 * MAX_PATH);
 
     if (buff[0] == '\\' && buff[1] == '\\')
     {
         // path is already in UNC form
-        strcat(buff, name);                 // append the focused item's name
+        strcat(buff, name);                 // append the focused item's name (fits: checked above)
         return CopyTextToClipboardU8(buff); // panel names/paths are UTF-8 (feature 063, contract C2)
     }
 
     // if it is a directory, append it to the path
     if (isDir)
-        strcat(buff, name);
+        strcat(buff, name); // fits: checked above
 
     // try to convert the local path to UNC
 
     // look for shared directories to see if any of them is part of the path
     if (Shares.GetUNCPath(buff, uncPath, 2 * MAX_PATH))
     {
-        if (!isDir)
-        {
-            // append the file name
-            SalPathAddBackslash(uncPath, 2 * MAX_PATH); // we want a backslash at the end
-            strcat(uncPath, name);
-        }
-        return CopyTextToClipboardU8(uncPath); // UTF-8 (feature 063, contract C2)
+        // append the file name (feature 098: only when it fits)
+        if (isDir || SalPathAppend(uncPath, name, 2 * MAX_PATH))
+            return CopyTextToClipboardU8(uncPath); // UTF-8 (feature 063, contract C2)
     }
 
     // it might be a mapped drive
@@ -1923,27 +1950,25 @@ BOOL CopyUNCPathToClipboard(const char* path, const char* name, BOOL isDir, HWND
     if (WNetGetConnectionW(localRootW, uncPathW, &uncPathSize) == NO_ERROR &&
         SalWToU8(uncPathW, -1, uncPath, 2 * MAX_PATH) != 0)
     {
-        SalPathAddBackslash(uncPath, 2 * MAX_PATH);
-        if (strlen(buff) > 3)
-        {
-            strcat(uncPath, buff + 3);
-            SalPathAddBackslash(uncPath, 2 * MAX_PATH);
-        }
-        if (!isDir)
-            strcat(uncPath, name);
-        if (SalGetFullName(uncPath))               // root "c:\\", others without '\\' at the end
-            return CopyTextToClipboardU8(uncPath); // UTF-8 (feature 063, contract C2)
+        // feature 098: the share name + the rest of the path + the name could pass 520 bytes
+        // (unbounded strcat); a result that does not fit is not converted
+        BOOL fits = SalPathAddBackslash(uncPath, 2 * MAX_PATH);
+        if (fits && strlen(buff) > 3)
+            fits = UNCAppend(uncPath, buff + 3, 2 * MAX_PATH) && SalPathAddBackslash(uncPath, 2 * MAX_PATH);
+        if (fits && !isDir)
+            fits = UNCAppend(uncPath, name, 2 * MAX_PATH);
+        if (fits && SalGetFullName(uncPath, NULL, NULL, NULL, NULL, 2 * MAX_PATH)) // root "c:\\", others without '\\' at the end
+            return CopyTextToClipboardU8(uncPath);                                 // UTF-8 (feature 063, contract C2)
     }
 
     // if the path is not UNC, it might be a SUBST drive
     // 10 levels of nesting must be enough even for extreme cases
     if (nestingLevel < 10 && buff[0] != '\\' && buff[1] == ':')
     {
-        char target[MAX_PATH];
-        if (GetSubstInformation(toupper(buff[0]) - 'A', target, MAX_PATH))
+        char target[2 * MAX_PATH]; // feature 098: target + the rest of the path (was MAX_PATH + unbounded strcat)
+        if (GetSubstInformation(toupper(buff[0]) - 'A', target, MAX_PATH) &&
+            SalPathAddBackslash(target, 2 * MAX_PATH) && UNCAppend(target, path + 3, 2 * MAX_PATH))
         {
-            SalPathAddBackslash(target, MAX_PATH);
-            strcat(target, path + 3);
             if (CopyUNCPathToClipboard(target, name, isDir, hMessageParent, nestingLevel))
                 return TRUE;
         }
@@ -1957,24 +1982,24 @@ BOOL CopyUNCPathToClipboard(const char* path, const char* name, BOOL isDir, HWND
         allShares.Refresh();
         if (allShares.GetUNCPath(buff, uncPath, 2 * MAX_PATH))
         {
-            if (!isDir)
-            {
-                // append the file's name
-                SalPathAddBackslash(uncPath, 2 * MAX_PATH); // we want a backslash at the end
-                strcat(uncPath, name);
-            }
-            return CopyTextToClipboardU8(uncPath); // UTF-8 (feature 063, contract C2)
+            // append the file's name (feature 098: only when it fits)
+            if (isDir || SalPathAppend(uncPath, name, 2 * MAX_PATH))
+                return CopyTextToClipboardU8(uncPath); // UTF-8 (feature 063, contract C2)
         }
 
         // all attempts failed -- give up and show an error message
         // the path cannot be converted to UNC; it's neither shared nor mapped drive
         strcpy(buff, path);
         SalPathAddBackslash(buff, 2 * MAX_PATH);
-        strcat(buff, name);
+        strcat(buff, name); // fits: checked above
 
-        wsprintf(uncPath, LoadStr(IDS_CANNOT_CREATE_UNC_NAME), buff);
-        SalMessageBox(hMessageParent, uncPath, LoadStr(IDS_INFOTITLE),
-                      MB_OK | MB_ICONINFORMATION);
+        // feature 098: sized for the text (wsprintf writes up to 1,024 bytes into the 520-byte uncPath)
+        CSalHeapString msg;
+        if (msg.Printf(LoadStr(IDS_CANNOT_CREATE_UNC_NAME), buff))
+            SalMessageBox(hMessageParent, msg.Text(), LoadStr(IDS_INFOTITLE),
+                          MB_OK | MB_ICONINFORMATION);
+        else
+            TRACE_E(LOW_MEMORY);
     }
     return FALSE;
 }

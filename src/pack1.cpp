@@ -12,6 +12,7 @@
 #include "zip.h"
 #include "pack.h"
 #include "sal7zlist.h" // feature 084
+#include "salheapstr.h" // feature 098
 
 //
 // ****************************************************************************
@@ -418,6 +419,8 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
             rootPath[0] = '\0';
         else
         {
+            if (!PackPathFitsMaxPath(parent, archiveRoot, 1)) // feature 098: the path + "\\" (it was unbounded)
+                return FALSE;
             strcpy(rootPath, archiveRoot);
             strcat(rootPath, "\\");
         }
@@ -610,8 +613,17 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
     SalDeleteFile(tmpListNameBuf);
 
     // and now finally move the files where they belong
-    char srcDir[MAX_PATH];
-    strcpy(srcDir, tmpDirNameBuf);
+    // feature 098: on the heap - the temporary folder + the path in the archive (up to 258 bytes)
+    // + "\*" passed a MAX_PATH buffer (strcat without a bound); SAL_MAX_PATH_UTF8 bytes in all, the
+    // size MoveFiles takes
+    CSalHeapString srcDirBuf;
+    if (!srcDirBuf.Copy(tmpDirNameBuf, SAL_MAX_PATH_UTF8 - strlen(tmpDirNameBuf) - 1))
+    {
+        TRACE_E(LOW_MEMORY);
+        RemoveTemporaryDir(tmpDirNameBuf);
+        return FALSE;
+    }
+    char* srcDir = srcDirBuf.Get();
     if (*rootPath != '\0')
     {
         // locate the extracted subdirectory path - names of subdirectories may not match
@@ -664,6 +676,11 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
             if (foundFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             { // attach another subdirectory on the path
                 srcDir[strlen(srcDir) - 1] = 0;
+                if (strlen(srcDir) + strlen(foundNameU8) + 3 > (size_t)srcDirBuf.Size()) // feature 098 (+ "\*" next round)
+                {
+                    RemoveTemporaryDir(tmpDirNameBuf);
+                    return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PATH, srcDir);
+                }
                 strcat(srcDir, foundNameU8);
             }
             else

@@ -647,8 +647,11 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 
         TCHAR msg[1024];
         // ProcessedFileInfo.Name is already UTF-8 (it comes from the interface)
-        _stprintf(msg, LoadStr(PasswordIsDefined ? IDS_ERROR_PROCESSING_FILE_PWD : IDS_ERROR_PROCESSING_FILE),
-                  (const char*)ProcessedFileInfo.Name);
+        // feature 098: bounded (it was an unbounded sprintf with a path from inside the archive;
+        // the listing keeps such paths at about 510 bytes, so the text is not cut in practice)
+        _snprintf_s(msg, _countof(msg), _TRUNCATE,
+                    LoadStr(PasswordIsDefined ? IDS_ERROR_PROCESSING_FILE_PWD : IDS_ERROR_PROCESSING_FILE),
+                    (const char*)ProcessedFileInfo.Name);
 
         MSGBOXEX_PARAMS mbep;
         ZeroMemory(&mbep, sizeof(mbep));

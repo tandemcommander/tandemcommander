@@ -1330,6 +1330,17 @@ void PackSetErrorHandler(BOOL (*handler)(HWND parent, const WORD errNum, ...))
         PackErrorHandlerPtr = handler;
 }
 
+// feature 098: see pack.h
+BOOL PackPathFitsMaxPath(HWND parent, const char* text, int extra)
+{
+    if (text == NULL || strlen(text) + extra < MAX_PATH)
+        return TRUE;
+    if (parent == NULL && MainWindow != NULL)
+        parent = MainWindow->HWindow;
+    SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_PACKERR_TITLE), MB_OK | MB_ICONEXCLAMATION);
+    return FALSE;
+}
+
 // feature 097: see pack.h
 BOOL PackArchiveNameFitsHandler(HWND parent, const char* archiveFileName, int builtForVersion)
 {

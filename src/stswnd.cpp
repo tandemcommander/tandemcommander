@@ -342,9 +342,9 @@ void CStatusWindow::BuildHotTrackItems()
             DWORD i;
             for (i = 0; i < (DWORD)SubTextsCount; i++)
             {
-                WORD charOffset = LOWORD(SubTexts[i]); // byte units (producers pass UTF-8 offsets)
-                WORD charLen = HIWORD(SubTexts[i]);
-                if (charOffset + charLen > (WORD)len)
+                int charOffset = LOWORD(SubTexts[i]); // byte units (producers pass UTF-8 offsets)
+                int charLen = HIWORD(SubTexts[i]);
+                if ((DWORD)(charOffset + charLen) > len) // feature 098: no 16-bit cast of the text length
                 {
                     TRACE_E("charOffset + charLen >= len");
                     continue;
@@ -372,12 +372,12 @@ void CStatusWindow::BuildHotTrackItems()
             {
                 int wOffset = U8BytesToWChars(Text, it->Offset);
                 int wChars = U8BytesToWChars(Text + it->Offset, it->Chars);
-                it->Offset = (WORD)wOffset;
-                it->Chars = (WORD)wChars;
+                it->Offset = wOffset;
+                it->Chars = wChars;
             }
             int pixelsOffset = it->Offset > 0 ? AlpDX[it->Offset - 1] : 0;
-            it->PixelsOffset = (WORD)pixelsOffset;
-            it->Pixels = it->Chars > 0 ? (WORD)(AlpDX[it->Offset + it->Chars - 1] - pixelsOffset) : 0;
+            it->PixelsOffset = pixelsOffset;
+            it->Pixels = it->Chars > 0 ? AlpDX[it->Offset + it->Chars - 1] - pixelsOffset : 0; // feature 098: no 16-bit cast
         }
     }
     SelectObject(dc, oldFont);

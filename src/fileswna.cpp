@@ -547,7 +547,7 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
         for (i = 0; i < dataEnum.IndexesCount; i++)
             nameFound[i] = i;
         dataEnum.Indexes = nameFound;
-        lstrcpyn(dataEnum.WorkPath, data->Data->SrcPath, MAX_PATH);
+        dataEnum.SetWorkPath(data->Data->SrcPath); // feature 098: whole (it was cut at 259 bytes)
         dataEnum.EnumLastIndex = -1;
 
         if (dataEnum.IndexesCount > 0)

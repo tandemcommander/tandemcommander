@@ -130,6 +130,8 @@ BOOL PackCompress(HWND parent, CFilesWindow* panel, const char* archiveFileName,
     char archiveRootPath[MAX_PATH];
     if (archiveRoot != NULL && *archiveRoot != '\0')
     {
+        if (!PackPathFitsMaxPath(parent, archiveRoot, 0)) // feature 098: it was copied without a bound
+            return FALSE;
         strcpy(archiveRootPath, archiveRoot);
         if (!modifyTable->CanPackToDir) // the archiver program does not support it
         {
@@ -189,6 +191,11 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
     // MAX_PATH buffers below - a longer name is refused here, never cut
     if (!PackArchiveNameFitsHandler(parent, archiveFileName, SAL_ARCHIVE_HANDLER_EXTERNAL))
         return FALSE;
+    // feature 098: the source folder is copied into MAX_PATH buffers below (strcpy without a bound:
+    // a stack overrun from 260 bytes) and becomes the archiver's working folder - a longer one is
+    // refused here, before the list file is written or anything is started
+    if (!PackPathFitsMaxPath(parent, sourceDir, 0))
+        return FALSE;
 
     //
     // We must adjust the directory in the archive to the required format
@@ -201,6 +208,8 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
             archiveRoot++;
         if (*archiveRoot != '\0')
         {
+            if (!PackPathFitsMaxPath(parent, archiveRoot, 1)) // feature 098: "\\" + the path (it was unbounded)
+                return FALSE;
             strcpy(rootPath, "\\");
             strcat(rootPath, archiveRoot);
             while (rootPath[0] != '\0' && rootPath[strlen(rootPath) - 1] == '\\')
@@ -621,6 +630,8 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
             rootPath[0] = '\0';
         else
         {
+            if (!PackPathFitsMaxPath(parent, archiveRoot, 1)) // feature 098: the path + "\\" (it was unbounded)
+                return FALSE;
             strcpy(rootPath, archiveRoot);
             if (rootPath[strlen(rootPath) - 1] != '\\')
                 strcat(rootPath, "\\");

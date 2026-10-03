@@ -1452,7 +1452,7 @@ CPluginInterfaceForViewer::ViewFile(const char *name, int left, int top, int wid
     viewerData.Size = sizeof(viewerData);
     viewerData.FileName = tempFileName;
     viewerData.Mode = 0;  // text mode
-    sprintf(caption, "%s - %s", name, LoadStr(IDS_UNISO));
+    _snprintf_s(caption, _TRUNCATE, "%s - %s", name, LoadStr(IDS_UNISO)); // feature 098: bounded (this block is not compiled; the live copy in uniso.cpp is bounded)
     viewerData.Caption = caption;
     viewerData.WholeCaption = TRUE;
     if (!SalamanderGeneral->ViewFileInPluginViewer(NULL, &viewerData, TRUE, "iso_dump.txt", err))

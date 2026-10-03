@@ -740,6 +740,10 @@ void PackSetErrorHandler(BOOL (*handler)(HWND parent, const WORD errNum, ...));
 // the plug-in that handles the archive or SAL_ARCHIVE_HANDLER_EXTERNAL. Returns TRUE when the
 // name may be handed over; otherwise shows "The path specified is too long." and returns FALSE.
 BOOL PackArchiveNameFitsHandler(HWND parent, const char* archiveFileName, int builtForVersion);
+// feature 098: TRUE when 'text' (a source folder or a path inside an archive for an external
+// archiver) plus 'extra' bytes fits a MAX_PATH buffer; otherwise shows "The path specified is
+// too long." (as PackArchiveNameFitsHandler) and returns FALSE - it is refused, never cut
+BOOL PackPathFitsMaxPath(HWND parent, const char* text, int extra);
 // who lists and unpacks the archive 'archiveFileName' (by its extension): returns the value for
 // SalArchiveNameFitsHandler - the interface version of the plug-in (the plug-in is loaded for it;
 // 0 when it cannot be loaded) or SAL_ARCHIVE_HANDLER_EXTERNAL; 'isArchive' gets FALSE (and the

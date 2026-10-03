@@ -30,7 +30,7 @@ BOOL ShowRetryAbortBox(HWND hParentWnd, int resID, DWORD err, ...)
     va_start(arglist, err);
 
     msg[0] = 0;
-    vsprintf(msg, LoadStr(resID), arglist);
+    _vsnprintf_s(msg, _countof(msg), _TRUNCATE, LoadStr(resID), arglist); // feature 098: bounded
     va_end(arglist);
 
     if (!_tcsncmp(msg, _T("{!}"), 3))
@@ -40,7 +40,7 @@ BOOL ShowRetryAbortBox(HWND hParentWnd, int resID, DWORD err, ...)
         strcpy(msg, fmt);
     }
     TCHAR buf[2048 + 4];
-    _stprintf(buf, _T("%s\n\n%s"), msg, SalamanderGeneral->GetErrorText(err));
+    _snprintf_s(buf, _countof(buf), _TRUNCATE, _T("%s\n\n%s"), msg, SalamanderGeneral->GetErrorText(err)); // feature 098: bounded
 
     TCHAR btnBuffer[128];
     /* used by the export_mnu.py script, which generates salmenu.mnu for the Translator

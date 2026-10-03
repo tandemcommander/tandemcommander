@@ -28,7 +28,7 @@ CPanelTmpEnumData::CPanelTmpEnumData()
     Dirs = NULL;
     Files = NULL;
     ArchiveDir = NULL;
-    WorkPath[0] = 0;
+    WorkPath = NULL;
     EnumLastDir = NULL;
     EnumLastIndex = 0;
     EnumLastPath[0] = 0;
@@ -43,6 +43,19 @@ CPanelTmpEnumData::~CPanelTmpEnumData()
 {
     if (DiskDirectoryTree != NULL)
         delete DiskDirectoryTree;
+    free(WorkPath);
+}
+
+BOOL CPanelTmpEnumData::SetWorkPath(const char* path)
+{
+    free(WorkPath);
+    WorkPath = DupStr(path);
+    if (WorkPath == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 void CPanelTmpEnumData::Reset()
@@ -813,15 +826,90 @@ void CFilesWindow::DeleteFromZIPArchive()
     UnpackZIPArchive(NULL, TRUE); // almost the same operation
 }
 
-BOOL _ReadDirectoryTree(HWND parent, char (&path)[MAX_PATH], char* name, CSalamanderDirectory* dir,
+// feature 098: the walk's nesting limit - deeper trees are reported, not walked. The find data is
+// on the heap, but the frame of _ReadDirectoryTree is still about 1.5 KB in the Debug build
+// (sub rsp,5B8h), so 1,000 levels need about 1.5 MB of stack: fine on the main thread (3 MB),
+// where every caller runs (CallPluginOperationFromDisk is main-thread only)
+#define READDIRTREE_MAX_DEPTH 1000
+
+// feature 098: the link scan before "delete files after packing" (silent mode, 'containsDirLinks'
+// not NULL) records the first folder it could not check in 'linkName' and sets SALENUM_ERROR; Pack
+// then cannot say "no links" and switches the delete off (a scan that stopped early used to read
+// as "no links", and the move then deleted files reached through a junction)
+static void NoteUncheckedFolder(int* containsDirLinks, char* linkName, const char* path, const char* name)
+{
+    if (containsDirLinks == NULL || linkName == NULL || linkName[0] != 0)
+        return;
+    size_t l = strlen(path);
+    _snprintf_s(linkName, MAX_PATH, _TRUNCATE, "%s%s%s", path,
+                name != NULL && l > 0 && path[l - 1] != '\\' ? "\\" : "", name != NULL ? name : "");
+    SalU8TrimIncompleteTail(linkName);
+}
+
+// feature 098: a folder whose full path cannot be built (or that is nested too deep) is reported
+// like a folder that cannot be read: TRUE = skip it (SALENUM_ERROR; the user's OK, or silent mode -
+// as the "cannot read" case), FALSE = stop (Cancel); it used to be skipped with no report at all
+static BOOL ReportReadDirTreeTooLong(HWND parent, const char* path, const char* name, int* errorOccured,
+                                     int* containsDirLinks, char* linkName)
+{
+    if (errorOccured != NULL)
+        *errorOccured = SALENUM_ERROR;
+    if (parent == NULL)
+    {
+        NoteUncheckedFolder(containsDirLinks, linkName, path, name);
+        return TRUE; // silent mode: skip and go on (stopping here made the link scan miss later links)
+    }
+    CSalHeapString text;
+    if (!text.Printf(LoadStrU8(IDS_NAMEISTOOLONG), name, path))
+    {
+        TRACE_E(LOW_MEMORY);
+        return FALSE;
+    }
+    if (SalMessageBox(parent, text.Text(), LoadStr(IDS_ERRORTITLE), MB_OKCANCEL | MB_ICONEXCLAMATION) == IDCANCEL)
+    {
+        if (errorOccured != NULL)
+            *errorOccured = SALENUM_CANCEL;
+        return FALSE; // user wants to quit
+    }
+    return TRUE; // user wants to continue
+}
+
+// feature 098: 'path' is a buffer of 'pathSize' bytes (SAL_MAX_PATH_UTF8 + 4 from ReadDirectoryTree;
+// it was char[MAX_PATH]); 'depth' = nesting level of 'name' (1 = a selected folder)
+BOOL _ReadDirectoryTree(HWND parent, char* path, int pathSize, char* name, CSalamanderDirectory* dir,
                         int* errorOccured, BOOL getLinkTgtFileSize, BOOL* errGetFileSizeOfLnkTgtIgnAll,
-                        int* containsDirLinks, char* linkName)
+                        int* containsDirLinks, char* linkName, int depth)
 {
     CALL_STACK_MESSAGE4("_ReadDirectoryTree(, %s, %s, , , %d, , ,)", path, name, getLinkTgtFileSize);
     char* end = path + strlen(path);
-    char text[2 * MAX_PATH + 100];
-    if ((end - path) + (*(end - 1) != '\\' ? 1 : 0) + strlen(name) + 2 >= _countof(path))
-        return TRUE; // path too long: continue without reporting the error until enumeration is complete
+    if ((end - path) + (*(end - 1) != '\\' ? 1 : 0) + strlen(name) + 2 >= (size_t)pathSize ||
+        depth > READDIRTREE_MAX_DEPTH)
+    {
+        return ReportReadDirTreeTooLong(parent, path, name, errorOccured, containsDirLinks, linkName);
+    }
+    CSalHeapString text; // feature 098: messages sized for the path (char[2 * MAX_PATH + 100])
+
+    // feature 098: the find data of this level on the heap (keeps the recursion's stack frame small)
+    struct CFrame
+    {
+        WIN32_FIND_DATAW File;
+        char NameU8[SAL_FIND_NAME_U8];       // UTF-8 of cFileName
+        char DosNameU8[SAL_FIND_DOSNAME_U8]; // UTF-8 of cAlternateFileName
+    };
+    struct CFrameHolder
+    {
+        CFrame* P;
+        CFrameHolder() { P = (CFrame*)malloc(sizeof(CFrame)); }
+        ~CFrameHolder() { free(P); }
+    } frame;
+    if (frame.P == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        if (errorOccured != NULL && *errorOccured == SALENUM_SUCCESS)
+            *errorOccured = SALENUM_ERROR;
+        NoteUncheckedFolder(containsDirLinks, linkName, path, name);
+        return parent == NULL; // silent mode: skip and go on (see ReportReadDirTreeTooLong); else stop
+    }
     if (*(end - 1) != '\\')
     {
         *end++ = '\\';
@@ -830,7 +918,7 @@ BOOL _ReadDirectoryTree(HWND parent, char (&path)[MAX_PATH], char* name, CSalama
     strcpy(end, name);
     strcat(end, "\\*");
 
-    WIN32_FIND_DATAW file;
+    WIN32_FIND_DATAW& file = frame.P->File;
     HANDLE find = SalFindFirstFile(path, &file);
     *end = 0; // restore the path
     if (find == INVALID_HANDLE_VALUE)
@@ -841,10 +929,11 @@ BOOL _ReadDirectoryTree(HWND parent, char (&path)[MAX_PATH], char* name, CSalama
             if (errorOccured != NULL)
                 *errorOccured = SALENUM_ERROR;
             strcpy(end, name);
-            sprintf(text, LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
+            NoteUncheckedFolder(containsDirLinks, linkName, path, NULL); // feature 098
+            text.Printf(LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
             *end = 0; // restore the path
             if (parent != NULL &&
-                SalMessageBox(parent, text, LoadStr(IDS_ERRORTITLE),
+                SalMessageBox(parent, text.Text(), LoadStr(IDS_ERRORTITLE),
                               MB_OKCANCEL | MB_ICONEXCLAMATION) == IDCANCEL)
             {
                 if (errorOccured != NULL)
@@ -876,12 +965,12 @@ BOOL _ReadDirectoryTree(HWND parent, char (&path)[MAX_PATH], char* name, CSalama
         else
             memset(&newF, 0, sizeof(newF));
         BOOL testFindNextErr = TRUE;
-        char nameU8[SAL_FIND_NAME_U8];       // UTF-8 of cFileName
-        char dosNameU8[SAL_FIND_DOSNAME_U8]; // UTF-8 of cAlternateFileName
+        char* nameU8 = frame.P->NameU8;       // UTF-8 of cFileName
+        char* dosNameU8 = frame.P->DosNameU8; // UTF-8 of cAlternateFileName
 
         do
         {
-            SalConvertFindDataW(&file, NULL, nameU8, sizeof(nameU8), dosNameU8, sizeof(dosNameU8));
+            SalConvertFindDataW(&file, NULL, nameU8, SAL_FIND_NAME_U8, dosNameU8, SAL_FIND_DOSNAME_U8);
             if (nameU8[0] == 0 ||
                 nameU8[0] == '.' &&
                     (nameU8[1] == 0 || (nameU8[1] == '.' && nameU8[2] == 0)))
@@ -910,7 +999,7 @@ BOOL _ReadDirectoryTree(HWND parent, char (&path)[MAX_PATH], char* name, CSalama
                     (file.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) // it's a link
                 {                                                                // for a symlink determine the target file size
                     CQuadWord size;
-                    if (SalPathAppend(path, nameU8, _countof(path)))
+                    if (SalPathAppend(path, nameU8, pathSize))
                     { // only if the path is not too long (any resulting error will be reported during enumeration)
                         if (GetLinkTgtFileSize(parent, path, NULL, &size, &cancel, errGetFileSizeOfLnkTgtIgnAll))
                             newF.Size = size;
@@ -993,13 +1082,14 @@ BOOL _ReadDirectoryTree(HWND parent, char (&path)[MAX_PATH], char* name, CSalama
                         *containsDirLinks = 1; // after finding one simulate an error to end the search immediately
                         *end2 = 0;
                         _snprintf_s(linkName, MAX_PATH, _TRUNCATE, "%s\\%s", path, nameU8); // truncation is fine, it is only for the message text
+                        SalU8TrimIncompleteTail(linkName);                                     // feature 098: never a torn character
                         ok = FALSE;
                         testFindNextErr = FALSE;
                         break;
                     }
                 }
-                if (!_ReadDirectoryTree(parent, path, nameU8, salDir, errorOccured, getLinkTgtFileSize,
-                                        errGetFileSizeOfLnkTgtIgnAll, containsDirLinks, linkName))
+                if (!_ReadDirectoryTree(parent, path, pathSize, nameU8, salDir, errorOccured, getLinkTgtFileSize,
+                                        errGetFileSizeOfLnkTgtIgnAll, containsDirLinks, linkName, depth + 1))
                 {
                     ok = FALSE;
                     testFindNextErr = FALSE;
@@ -1036,10 +1126,11 @@ BOOL _ReadDirectoryTree(HWND parent, char (&path)[MAX_PATH], char* name, CSalama
             if (errorOccured != NULL)
                 *errorOccured = SALENUM_ERROR;
             strcpy(end, name);
-            sprintf(text, LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
+            NoteUncheckedFolder(containsDirLinks, linkName, path, NULL); // feature 098
+            text.Printf(LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
             *end = 0; // restore the path
             if (parent != NULL &&
-                SalMessageBox(parent, text, LoadStr(IDS_ERRORTITLE),
+                SalMessageBox(parent, text.Text(), LoadStr(IDS_ERRORTITLE),
                               MB_OKCANCEL | MB_ICONEXCLAMATION) == IDCANCEL)
             {
                 if (errorOccured != NULL)
@@ -1067,7 +1158,8 @@ CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, in
     if (containsDirLinks != NULL)
         *containsDirLinks = 0;
     BOOL cancel = FALSE;
-    if (data->CurrentIndex >= data->IndexesCount || data->WorkPath[0] == 0)
+    if (data->CurrentIndex >= data->IndexesCount || data->WorkPath == NULL || data->WorkPath[0] == 0 ||
+        strlen(data->WorkPath) >= SAL_MAX_PATH_UTF8)
     {
         TRACE_E("Unexpected situation in ReadDirectoryTree().");
         if (errorOccured != NULL)
@@ -1076,6 +1168,19 @@ CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, in
     }
 
     BOOL errGetFileSizeOfLnkTgtIgnAll = parent == NULL; // silent mode = do not show an error, return success
+
+    // feature 098: the walk's path buffer holds any path the program handles, "\*" included (it was
+    // char[MAX_PATH]: deeper folders were skipped in silence and left out of the archive)
+    CSalHeapString pathBuf;
+    if (!pathBuf.Copy("", SAL_MAX_PATH_UTF8 + 4))
+    {
+        TRACE_E(LOW_MEMORY);
+        if (errorOccured != NULL)
+            *errorOccured = SALENUM_ERROR;
+        return NULL;
+    }
+    char* path = pathBuf.Get();
+    int pathSize = pathBuf.Size();
 
     CSalamanderDirectory* dir = containsDirLinks == NULL ? new CSalamanderDirectory(TRUE) : NULL;
     if (dir == NULL && containsDirLinks == NULL)
@@ -1133,7 +1238,6 @@ CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, in
             newF.IsOffline = f->IsOffline;
         }
 
-        char path[MAX_PATH];
         if (isDir) // directory
         {
             CSalamanderDirectory* salDir = NULL;
@@ -1154,16 +1258,17 @@ CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, in
                 if ((f->Attr & FILE_ATTRIBUTE_REPARSE_POINT) != 0) // directory link found, stop...
                 {
                     *containsDirLinks = 1;
-                    strcpy(path, data->WorkPath);
+                    strcpy(path, data->WorkPath); // fits: checked above
                     SalPathRemoveBackslash(path);
                     _snprintf_s(linkName, MAX_PATH, _TRUNCATE, "%s\\%s", path, f->Name); // truncation is fine, it is only for the message text
+                    SalU8TrimIncompleteTail(linkName);                                      // feature 098: never a torn character (the walk now reaches long paths)
                     break;
                 }
             }
 
-            strcpy(path, data->WorkPath);
-            if (!_ReadDirectoryTree(parent, path, f->Name, salDir, errorOccured, getLinkTgtFileSize,
-                                    &errGetFileSizeOfLnkTgtIgnAll, containsDirLinks, linkName))
+            strcpy(path, data->WorkPath); // fits: checked above
+            if (!_ReadDirectoryTree(parent, path, pathSize, f->Name, salDir, errorOccured, getLinkTgtFileSize,
+                                    &errGetFileSizeOfLnkTgtIgnAll, containsDirLinks, linkName, 1))
             {
                 goto RETURN_ERROR;
             }
@@ -1175,8 +1280,8 @@ CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, in
                 if (getLinkTgtFileSize && (newF.Attr & FILE_ATTRIBUTE_REPARSE_POINT) != 0)
                 { // for a symlink determine the target file size
                     CQuadWord size;
-                    strcpy(path, data->WorkPath);
-                    if (SalPathAppend(path, newF.Name, _countof(path)))
+                    strcpy(path, data->WorkPath); // fits: checked above
+                    if (SalPathAppend(path, newF.Name, pathSize))
                     { // only if the path is not too long (any resulting error will be reported during enumeration)
                         if (GetLinkTgtFileSize(parent, path, NULL, &size, &cancel, &errGetFileSizeOfLnkTgtIgnAll))
                             newF.Size = size;
@@ -1387,7 +1492,7 @@ void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* plugi
     data.Dirs = Dirs;
     data.Files = Files;
     data.ArchiveDir = GetArchiveDir();
-    lstrcpyn(data.WorkPath, GetPath(), MAX_PATH);
+    data.SetWorkPath(GetPath()); // feature 098: whole (it was cut at 259 bytes)
     data.EnumLastDir = NULL;
     data.EnumLastIndex = -1;
 
@@ -1541,7 +1646,8 @@ _PACK_AGAIN:
                 // try to find the first directory link; if found, simulate an error to stop the search
                 char linkName[MAX_PATH];
                 linkName[0] = 0;
-                ReadDirectoryTree(NULL /* silent mode */, &data, NULL, FALSE, &containsDirLinks, linkName);
+                int scanErr = SALENUM_SUCCESS; // feature 098: SALENUM_ERROR = a folder could not be checked
+                ReadDirectoryTree(NULL /* silent mode */, &data, &scanErr, FALSE, &containsDirLinks, linkName);
 
                 DestroySafeWaitWindow();
 
@@ -1553,6 +1659,18 @@ _PACK_AGAIN:
                 // Deleting the whole link is wrong because it won't show that packing failed,
                 // and deleting everything except one file after traversing the link is also wrong,
                 // because it alters the original directory content, which users report as a bug since it's unexpected.
+                // feature 098: a scan that did not look everywhere (a folder it could not read or that is
+                // too deep, low memory, an early stop) cannot say "no links": the delete is switched off
+                // exactly as for a link found - 'linkName' names the first folder that was not checked
+                if (containsDirLinks == 0 && scanErr != SALENUM_SUCCESS)
+                {
+                    if (linkName[0] == 0)
+                    {
+                        lstrcpyn(linkName, GetPath(), MAX_PATH);
+                        SalU8TrimIncompleteTail(linkName);
+                    }
+                    containsDirLinks = 1;
+                }
                 if (containsDirLinks == 1)
                 {
                     _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_DELFILESAFTERPACKINGNOLINKS), linkName);

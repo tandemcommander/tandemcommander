@@ -1681,7 +1681,9 @@ struct CPanelTmpEnumData
     char EnumTmpFileName[MAX_PATH];
 
     // for disk enumeration, enumFiles > 0
-    char WorkPath[MAX_PATH];                 // path where Files and Dirs reside, used only when browsing disk (not archives)
+    // feature 098: on the heap, whole (char[MAX_PATH] filled by lstrcpyn cut it at 259 bytes and the
+    // walk then left out the contents of every selected sub-folder); NULL = not set; see SetWorkPath
+    char* WorkPath;                          // path where Files and Dirs reside, used only when browsing disk (not archives)
     CSalamanderDirectory* DiskDirectoryTree; // replacement for Panel->ArchiveDir
     char EnumLastDosPath[MAX_PATH];          // DOS name of EnumLastPath
     char EnumTmpDosFileName[MAX_PATH];       // DOS name of EnumTmpFileName
@@ -1691,6 +1693,14 @@ struct CPanelTmpEnumData
     ~CPanelTmpEnumData();
 
     void Reset(); // sets the object to the initial enumeration state
+
+    // feature 098: sets WorkPath to a copy of 'path'; FALSE = low memory (WorkPath is NULL then
+    // and the disk walk reports an error)
+    BOOL SetWorkPath(const char* path);
+
+private:
+    CPanelTmpEnumData(const CPanelTmpEnumData&);            // not copyable (owns WorkPath)
+    CPanelTmpEnumData& operator=(const CPanelTmpEnumData&); // not copyable
 };
 
 const char* WINAPI PanelEnumDiskSelection(HWND parent, int enumFiles, const char** dosName, BOOL* isDir,

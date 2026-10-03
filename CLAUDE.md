@@ -1188,3 +1188,31 @@ plugin architecture preservation, UI consistency.
     ~7,500+ characters deep (`BuildHotTrackItems`); a typed 260+ byte file
     path in Change Directory overruns `shortenedPath`; a 7zip message buffer.
     Records: `specs/097-archive-long-path/fix-log.md`.
+- 098-long-path-overruns: **four long-path defects of every release**, found
+  by the 097 review and measured first (`research.md`):
+  - **Directory line crash** at ~7,500 characters: `CHotTrackItem`
+    (`stswnd.h`) kept pixel widths and offsets in `WORD` - now `int`.
+  - **Change Directory to a typed file path of 260+ bytes**: `strcpy` into
+    `shortenedPath[MAX_PATH]` (`fileswn3.cpp`) - heap now; `ClipboardPastePath`
+    refuses instead of cutting and reads `CF_UNICODETEXT` as UTF-8 (it fed
+    code-page bytes to a UTF-8 consumer); UNC-copy and `CShares::GetUNCPath`
+    appends bounded.
+  - **Silent loss when packing from a folder of 260+ bytes**:
+    `CPanelTmpEnumData::WorkPath` was cut at 259 bytes and `_ReadDirectoryTree`
+    returned success - sub-folder contents were left out (also built-in ZIP /
+    7z). `WorkPath` heap, walk buffer `SAL_MAX_PATH_UTF8`, per-level data on
+    the heap (Debug frame ~1.5 KB, Release ~290 B), depth limit 1,000 levels
+    reported, never silent. External packer refuses sources of 260+ bytes.
+  - **The review's blocker - the lesson**: making the silent link scan
+    report "too deep" by *stopping* made `Pack` read the early stop as "no
+    links", and *Move* then deleted files behind a junction **outside the
+    selection**. Rule now: a scan that could not check everything is "a link
+    was found" (warning, delete off). Any "is it safe to delete" check must
+    fail closed.
+  - **Found, next** (NEXT-WORK item 5): F6 / drag-and-drop *Move* into an
+    archive has no link check at all - deletes files behind a junction
+    (every release).
+  - Probes (hidden desktop): `probe/fix_probe.ps1` 107 / 0 (before: 50 / 34:
+    crashes, assertions, 16 of 16 packings losing files); regressions 095,
+    096, 097 unchanged. Reviews: REJECT (the junction blocker), ACCEPT.
+    Records: `specs/098-long-path-overruns/fix-log.md`.

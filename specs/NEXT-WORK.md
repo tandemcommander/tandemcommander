@@ -411,20 +411,28 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
     drop/paste into an archive with a 260+ byte name are refused (the two
     fields are process-internal and could be widened); `-L`/`-R`/`-A` and hot
     paths stay at 519 bytes; a real mouse drag was not driven.
-  - **Found by the 097 review, older than 097 - queue, serious first:**
-    1. **A crash while navigating plain disk folders about 7,500-8,200
-       characters deep** (run-time check failure under
-       `CStatusWindow::BuildHotTrackItems`, `stswnd.cpp`; identical on the
-       build before 097). The practical ceiling of the long-path support.
-    2. **Change Directory with a typed path to a FILE of 260+ bytes** that is
-       not an archive: `strcpy` into `shortenedPath[MAX_PATH]`
-       (`fileswn3.cpp`) - a stack overrun reachable by typing; and
-       `uncPath` in `fileswn9.cpp` (`ClipboardPastePath` also cuts at 519
-       bytes silently).
-    3. **7zip plug-in**: `_stprintf` into `msg[1024]` with an item path from
-       inside the archive (`extract.cpp`).
-    4. `pack2.cpp` `sourceShortName[MAX_PATH]` (external packer, source
-       folder of 260+ bytes); `CPanelTmpEnumData::WorkPath` cuts.
+  - **Found by the 097 review** - ✅ all fixed by feature 098 (2026-10-03):
+    the crash in deep folders, the Change Directory overrun, the UNC-copy
+    overruns, the 7zip message buffers, and a **silent loss** the
+    measurement found behind item 4: packing a selection with sub-folders
+    from a folder of 260+ bytes left out their contents.
+  - **Found by 098 - queue:**
+    1. **Moving a folder that contains a junction INTO an archive (F6, and
+       almost certainly drag & drop with Move) packs the files behind the
+       junction and DELETES them** - files outside the selection, no
+       warning, every release (driven on the builds before and after 098).
+       The Pack dialog's *Move* has a link check (fixed to fail safe by 098);
+       F6 / drag-and-drop into an archive or a plug-in file system have
+       none. **Next feature.**
+    2. Change Directory to a file whose NAME has a CJK character lands in the
+       folder, but the viewer title shows `f??.txt` (any length, older than
+       098) - input side? to measure.
+    3. Smaller: the link warning names an unreadable or too-deep folder as a
+       "Link"; at depth 1,001 the message says "too long"; clipboard paste
+       refuses 520+ bytes although Change Directory takes any length; the
+       Find window's UNC copy fails silently when too long; share-prefix
+       matching cuts at 259 bytes; dragging a directory-line component at
+       7,500+ characters would build a ~280,000-pixel drag image.
   - **An edited file with a non-ASCII name was not packed back into its
     archive** - ✅ confirmed (every release) and fixed by feature 096
     (2026-10-02): a code-page look-up of a UTF-8 path in

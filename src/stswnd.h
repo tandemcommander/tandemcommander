@@ -49,12 +49,14 @@ enum
 // (0, 3, 0, length of the three characters "DIR")
 // (5, 2, point offset of "12", length of two characters "12")
 
+// feature 098: int, not WORD - the pixel width of a path of about 7,500 characters
+// passed 65,535 (crash), and a 32,767-character path has more than 65,535 UTF-8 bytes
 struct CHotTrackItem
 {
-    WORD Offset;       // Offset of the first character; WCHAR units of TextW when the wide mirror is valid, bytes of Text otherwise (feature 010)
-    WORD Chars;        // Number of characters (same units as Offset)
-    WORD PixelsOffset; // Offset of the first character in points
-    WORD Pixels;       // Their length in points
+    int Offset;       // Offset of the first character; WCHAR units of TextW when the wide mirror is valid, bytes of Text otherwise (feature 010)
+    int Chars;        // Number of characters (same units as Offset)
+    int PixelsOffset; // Offset of the first character in points
+    int Pixels;       // Their length in points
 };
 
 class CStatusWindow : public CWindow

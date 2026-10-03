@@ -3482,7 +3482,7 @@ void CSalamanderGeneral::CallPluginOperationFromDisk(int panel, SalPluginOperati
         data.Dirs = p->Dirs;
         data.Files = p->Files;
         data.ArchiveDir = p->GetArchiveDir();
-        lstrcpyn(data.WorkPath, p->GetPath(), MAX_PATH);
+        data.SetWorkPath(p->GetPath()); // feature 098: whole (it was cut at 259 bytes)
         data.EnumLastDir = NULL;
         data.EnumLastIndex = -1;
 

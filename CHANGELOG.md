@@ -53,6 +53,26 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Packing from a long folder packs everything.** When a selection with
+  sub-folders was packed (Alt+F5, or copied into an archive) from a folder
+  whose path was 260 bytes or longer - about 130 accented characters - the
+  contents of the sub-folders were left out of the archive **without any
+  message**; with *Move* they then stayed on disk. Every file is packed now;
+  a folder that cannot be read or is nested absurdly deep is reported. A
+  *Move* into an archive whose selection contains such a folder now keeps
+  all source files (the warning shown is the one for links) (feature 098).
+- **No crash in very deep folders.** Entering a folder whose path was about
+  7,500 characters long crashed the program (the directory line); paths up
+  to the Windows limit work now, and clicking a part of the path goes there.
+- **Change Directory to a long file path** (typing the full path of a file
+  of 260 bytes or more) no longer overruns a buffer; the panel goes to the
+  folder and selects the file.
+- **Pasting a path that is too long** (Ctrl+Shift+V) shows "The path
+  specified is too long." instead of going to a cut path, and a path copied
+  from a Unicode program keeps characters outside the system code page.
+- **Copying the UNC name** of a file (on a SUBST drive or a share) no longer
+  overruns buffers with long paths.
+- **7zip plugin**: two error messages are built with a bound.
 - **Archives in deep or accented folders open.** An archive whose full path
   was longer than 259 bytes could not be opened in a panel - with accented
   folder names that is a path of only about 130 characters. The path was cut

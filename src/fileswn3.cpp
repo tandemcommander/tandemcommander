@@ -17,6 +17,7 @@
 #include "snooper.h"
 #include "zip.h"
 #include "shiconov.h"
+#include "salheapstr.h" // feature 098
 
 //
 // ****************************************************************************
@@ -2478,13 +2479,17 @@ CHANGE_AGAIN:
                                 else
                                 {
                                     char* name;
-                                    char shortenedPath[MAX_PATH];
-                                    strcpy(shortenedPath, copy);
-                                    if (*end == 0 && CutDirectory(shortenedPath, &name)) // if the path does not end with '\\' (path to a file)
+                                    // feature 098: sized for the path (was char[MAX_PATH] + strcpy: a stack overrun
+                                    // from 260 bytes); +1: CutDirectory may move the name one byte to the right
+                                    CSalHeapString shortenedPath;
+                                    BOOL copied = *end == 0 && shortenedPath.Copy(copy, 1);
+                                    if (*end == 0 && !copied)
+                                        TRACE_E(LOW_MEMORY);
+                                    if (copied && CutDirectory(shortenedPath.Get(), &name)) // if the path does not end with '\\' (path to a file)
                                     {
                                         // change of the path to absolute windows path + focus to the file
                                         TopIndexMem.Clear(); // long jump
-                                        ChangePathToDisk(HWindow, shortenedPath, -1, name, NULL, TRUE, FALSE, FALSE, failReason);
+                                        ChangePathToDisk(HWindow, shortenedPath.Get(), -1, name, NULL, TRUE, FALSE, FALSE, failReason);
                                         if (useStopRefresh)
                                             EndStopRefresh(); // snooper will be started again
                                         if (failReason != NULL && *failReason == CHPPFR_SUCCESS)
@@ -2512,10 +2517,10 @@ CHANGE_AGAIN:
                                 if (err == ERROR_INVALID_PARAMETER || err == ERROR_NOT_READY)
                                 {
                                     char drive[MAX_PATH];
-                                    lstrcpyn(drive, copy, MAX_PATH);
-                                    if (CutDirectory(drive))
+                                    CSalHeapString parentPath; // feature 098: the parent of a long path whole (it was cut to MAX_PATH)
+                                    if (parentPath.Copy(copy) && CutDirectory(parentPath.Get()))
                                     {
-                                        DWORD attrs = SalGetFileAttributes(drive);
+                                        DWORD attrs = SalGetFileAttributes(parentPath.Get());
                                         if (attrs != INVALID_FILE_ATTRIBUTES &&
                                             (attrs & FILE_ATTRIBUTE_DIRECTORY) &&
                                             (attrs & FILE_ATTRIBUTE_REPARSE_POINT))

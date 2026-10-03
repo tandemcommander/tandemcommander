@@ -288,20 +288,34 @@ BOOL CShares::GetUNCPath(const char* path, char* uncPath, int uncPathMax)
         DWORD len = MAX_PATH;
         GetComputerName(unc + 2, &len);
         strcat(unc, "\\");
+        // feature 098: the share name and the rest of the path are appended only when they fit (the
+        // rest comes from the whole 'path', up to 519 bytes: an unbounded strcat), and the result is
+        // never cut to 'uncPathMax' - a path that does not fit is not converted
+        const char* s = "";
+        if (longestBytes < (int)strlen(path))
+        {
+            s = path + longestBytes;
+            if (*s == '\\')
+                s++; // skip an optional backslash
+        }
+        if (strlen(unc) + strlen(item->RemoteName) + 1 + strlen(s) >= sizeof(unc))
+        {
+            HANDLES(LeaveCriticalSection(&CS));
+            return FALSE;
+        }
         // append the share name
         strcat(unc, item->RemoteName);
         SalPathAddBackslash(unc, 2 * MAX_PATH); // we want a backslash at the end
         // from the original path, append the directories starting from the share
-        if (longestBytes < (int)strlen(path))
-        {
-            const char* s = path + longestBytes;
-            if (*s == '\\')
-                s++; // skip an optional backslash
-            strcat(unc, s);
-        }
-        if (!SalGetFullName(unc)) // root "c\\", others without the trailing '\\' at the end
+        strcat(unc, s);
+        if (!SalGetFullName(unc, NULL, NULL, NULL, NULL, 2 * MAX_PATH)) // root "c\\", others without the trailing '\\' at the end
         {
             TRACE_E("Unexpected path in CSharesItem::GetUNCPath()");
+            HANDLES(LeaveCriticalSection(&CS));
+            return FALSE;
+        }
+        if ((int)strlen(unc) >= uncPathMax)
+        {
             HANDLES(LeaveCriticalSection(&CS));
             return FALSE;
         }
