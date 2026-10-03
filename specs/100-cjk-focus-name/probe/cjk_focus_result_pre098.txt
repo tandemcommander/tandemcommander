@@ -1,0 +1,47 @@
+cjk_focus_probe (feature 100)
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre098\tandemcommander.exe
+Date    : 2026-10-03 12:22; ACP 1250; registry key existed True
+
+c0r        CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt; windows after OK: no window
+c0r        LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r
+c0r        FOCUS  PASS        focused name f\u0159.txt via rename dialog 'Quick Rename', ComboBox unicode=True (expected f\u0159.txt)
+c0r        F3     INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c0r        NAV    PASS        focused by Home + 2 x Down (rename editor read back f\u0159.txt)
+c0r        NAVF3  INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c0r\f\u0159.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c0r        DISK   PASS        files on disk: a.txt, f\u0159.txt, z.txt
+c0r        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c1ri       CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f\u65E5.txt; windows after OK: no window
+c1ri       LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri
+c1ri       FOCUS  PASS        focused name f\u65E5.txt via rename dialog 'Quick Rename', ComboBox unicode=True (expected f\u65E5.txt)
+c1ri       F3     INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f?.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f?.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c1ri       NAV    PASS        focused by Home + 2 x Down (rename editor read back f\u65E5.txt)
+c1ri       NAVF3  INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f?.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c1ri\f?.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c1ri       DISK   PASS        files on disk: a.txt, f\u65E5.txt, z.txt
+c1ri       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c2zh       CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f\u4E2D.txt; windows after OK: no window
+c2zh       LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh
+c2zh       FOCUS  PASS        focused name f\u4E2D.txt via rename dialog 'Quick Rename', ComboBox unicode=True (expected f\u4E2D.txt)
+c2zh       F3     INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f?.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f?.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c2zh       NAV    PASS        focused by Home + 2 x Down (rename editor read back f\u4E2D.txt)
+c2zh       NAVF3  INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f?.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c2zh\f?.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c2zh       DISK   PASS        files on disk: a.txt, f\u4E2D.txt, z.txt
+c2zh       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c3cyr      CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f\u0416.txt; windows after OK: no window
+c3cyr      LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr
+c3cyr      FOCUS  PASS        focused name f\u0416.txt via rename dialog 'Quick Rename', ComboBox unicode=True (expected f\u0416.txt)
+c3cyr      F3     INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f?.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f?.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c3cyr      NAV    PASS        focused by Home + 2 x Down (rename editor read back f\u0416.txt)
+c3cyr      NAVF3  INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f?.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c3cyr\f?.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c3cyr      DISK   PASS        files on disk: a.txt, f\u0416.txt, z.txt
+c3cyr      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c4emo      CD     PASS        field held the typed text exactly: True; typed C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f\uD83D\uDE00.txt; windows after OK: no window
+c4emo      LOC    PASS        panel location C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo
+c4emo      FOCUS  PASS        focused name f\uD83D\uDE00.txt via rename dialog 'Quick Rename', ComboBox unicode=True (expected f\uD83D\uDE00.txt)
+c4emo      F3     INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f??.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f??.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c4emo      NAV    PASS        focused by Home + 2 x Down (rename editor read back f\uD83D\uDE00.txt)
+c4emo      NAVF3  INFO        class 'CodeView - WinLib Universal Window2' unicode=False; GetWindowTextW 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f??.txt [Plain Text] - Code Viewer'; InternalGetWindowText 'C:\Users\pavel\AppData\Local\Temp\tc100_cjk\c4emo\f??.txt [Plain Text] - Code Viewer'; held open: []; status bar ' 7 lines | Ln 1, Col 1 | UTF-8 | CRLF | Plain Text | 100%' (a.txt 1 line, f-file 7, z.txt 3)
+c4emo      DISK   PASS        files on disk: a.txt, f\uD83D\uDE00.txt, z.txt
+c4emo      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 30, FAIL 0. Left running: 0; fixture removed: True; registry restored+identical: True

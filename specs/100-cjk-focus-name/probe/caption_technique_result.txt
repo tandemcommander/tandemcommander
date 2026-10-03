@@ -1,0 +1,13 @@
+caption_technique_probe (feature 100); ACP-class window unicode=False; W-class window unicode=True
+f\u65E5.txt ANSI class SetWindowTextW              stored caption 'f?.txt' exact=False; GetWindowTextW in-process 'f?.txt'
+f\u65E5.txt ANSI class DefWindowProcW(WM_SETTEXT)  stored caption 'f\u65E5.txt' exact=True; GetWindowTextW in-process 'f?.txt'
+f\u65E5.txt W class    SetWindowTextW              stored caption 'f\u65E5.txt' exact=True; GetWindowTextW in-process 'f\u65E5.txt'
+f\u65E5.txt W class    DefWindowProcW(WM_SETTEXT)  stored caption 'f\u65E5.txt' exact=True; GetWindowTextW in-process 'f\u65E5.txt'
+f\uD83D\uDE00.txt ANSI class SetWindowTextW              stored caption 'f??.txt' exact=False; GetWindowTextW in-process 'f??.txt'
+f\uD83D\uDE00.txt ANSI class DefWindowProcW(WM_SETTEXT)  stored caption 'f\uD83D\uDE00.txt' exact=True; GetWindowTextW in-process 'f??.txt'
+f\uD83D\uDE00.txt W class    SetWindowTextW              stored caption 'f\uD83D\uDE00.txt' exact=True; GetWindowTextW in-process 'f\uD83D\uDE00.txt'
+f\uD83D\uDE00.txt W class    DefWindowProcW(WM_SETTEXT)  stored caption 'f\uD83D\uDE00.txt' exact=True; GetWindowTextW in-process 'f\uD83D\uDE00.txt'
+f\u0159.txt ANSI class SetWindowTextW              stored caption 'f\u0159.txt' exact=True; GetWindowTextW in-process 'f\u0159.txt'
+f\u0159.txt ANSI class DefWindowProcW(WM_SETTEXT)  stored caption 'f\u0159.txt' exact=True; GetWindowTextW in-process 'f\u0159.txt'
+f\u0159.txt W class    SetWindowTextW              stored caption 'f\u0159.txt' exact=True; GetWindowTextW in-process 'f\u0159.txt'
+f\u0159.txt W class    DefWindowProcW(WM_SETTEXT)  stored caption 'f\u0159.txt' exact=True; GetWindowTextW in-process 'f\u0159.txt'
