@@ -3513,6 +3513,137 @@ static void TestArchivePassword093()
 // explicitly where the expectation is a literal; the rest is computed with
 // the same Win32 calls the old code used.
 // feature 095: the heap string that replaced the stack buffers of the archive's disk-cache name
+// feature 101: the tray tip (SalU8ToWTruncate into NOTIFYICONDATAW::szTip, 128 units) and the
+// share look-up's whole-path, component-boundary match (SalPathIsWithinOrdinalCI)
+static void TestLeftovers101()
+{
+    WCHAR tip[128];
+    WCHAR buf[16];
+
+    // --- exact: Czech, Cyrillic, CJK and an emoji (a surrogate pair) - the ANSI tip showed the
+    //     UTF-8 bytes as code-page text
+    CHECK(SalU8ToWTruncate("d\xC5\x99" "\xD0\x96" "\xE4\xB8\xAD" "\xF0\x9F\x98\x80", tip, _countof(tip)) == 7 &&
+          wcscmp(tip, L"d\x0159\x0416\x4E2D\xD83D\xDE00") == 0);
+    CHECK(SalU8ToWTruncate("Tandem Commander", tip, _countof(tip)) == 17 && wcscmp(tip, L"Tandem Commander") == 0);
+    CHECK(SalU8ToWTruncate("", tip, _countof(tip)) == 1 && tip[0] == 0);
+
+    // --- the cut at the tip's 128 units: 126 x + an emoji = 128 units; the pair does not fit
+    //     whole into 127 units and is left out - never its high half alone
+    std::string s(126, 'x');
+    s += "\xF0\x9F\x98\x80";
+    CHECK(SalU8ToWTruncate(s.c_str(), tip, _countof(tip)) == 127 && wcslen(tip) == 126 && tip[125] == L'x');
+    // 125 x + the emoji = 127 units: fits whole
+    std::string s2(125, 'x');
+    s2 += "\xF0\x9F\x98\x80";
+    CHECK(SalU8ToWTruncate(s2.c_str(), tip, _countof(tip)) == 128 && tip[125] == 0xD83D && tip[126] == 0xDE00 && tip[127] == 0);
+    // a long Czech title: 200 x U+0159 (400 bytes) -> 127 whole characters (the ANSI tip cut at
+    // 127 BYTES, in the middle of a character)
+    std::string cz;
+    for (int i = 0; i < 200; i++)
+        cz += "\xC5\x99";
+    CHECK(SalU8ToWTruncate(cz.c_str(), tip, _countof(tip)) == 128 && wcslen(tip) == 127 && tip[126] == 0x0159);
+
+    // --- every buffer size: whole characters only, the unit behind the terminator never written
+    static const char text[] = "a\xF0\x9F\x98\x80" "b\xE4\xB8\xAD"; // a, pair, b, U+4E2D = 5 units
+    static const int whole[] = {0, 0, 1, 1, 3, 4, 5};                // units kept by bufSize
+    for (int size = 1; size <= 6; size++)
+    {
+        for (int i = 0; i < _countof(buf); i++)
+            buf[i] = L'#';
+        CHECK(SalU8ToWTruncate(text, buf, size) == whole[size] + 1);
+        CHECK((int)wcslen(buf) == whole[size] && buf[size] == L'#');
+        CHECK(wcsncmp(buf, L"a\xD83D\xDE00" L"b\x4E2D", whole[size]) == 0);
+    }
+
+    // --- lone surrogates (WTF-8) are one character each; a lone high surrogate at the cut stays
+    CHECK(SalU8ToWTruncate("ab\xED\xA0\x80", buf, 4) == 4 && wcscmp(buf, L"ab\xD800") == 0);
+    CHECK(SalU8ToWTruncate("a\xED\xA0\x80" "c", buf, 3) == 3 && wcscmp(buf, L"a\xD800") == 0);
+
+    // --- legacy code-page text (not UTF-8) is read in the system code page
+    {
+        static const char legacy[] = "dir\xE8\xF8"; // two bytes that are not UTF-8
+        WCHAR expect[16];
+        CHECK(MultiByteToWideChar(CP_ACP, 0, legacy, -1, expect, _countof(expect)) > 0);
+        CHECK(SalU8ToWTruncate(legacy, buf, _countof(buf)) == (int)wcslen(expect) + 1 && wcscmp(buf, expect) == 0);
+    }
+
+    // --- arguments
+    buf[0] = L'#';
+    CHECK(SalU8ToWTruncate(NULL, buf, _countof(buf)) == 0 && buf[0] == 0);
+    CHECK(SalU8ToWTruncate("x", NULL, 5) == 0);
+    buf[0] = L'#';
+    CHECK(SalU8ToWTruncate("x", buf, 0) == 0 && buf[0] == L'#');
+
+    // --- share matching: the folder itself and what lies under it, at a component boundary
+    int n = -1;
+    CHECK(SalPathIsWithinOrdinalCI("C:\\foo", "C:\\foo", &n) && n == 6);
+    CHECK(SalPathIsWithinOrdinalCI("C:\\Foo\\x", "c:\\fOO", &n) && n == 6);
+    CHECK(SalPathIsWithinOrdinalCI("C:\\foo\\", "C:\\foo", &n) && n == 6);
+    n = -1;
+    CHECK(!SalPathIsWithinOrdinalCI("C:\\foobar", "C:\\foo", &n) && n == 0); // the old prefix test matched
+    CHECK(!SalPathIsWithinOrdinalCI("C:\\foobar\\x", "C:\\foo", &n));
+    CHECK(!SalPathIsWithinOrdinalCI("C:\\fo", "C:\\foo", &n));
+    // a root share "C:\"
+    CHECK(SalPathIsWithinOrdinalCI("C:\\", "C:\\", &n) && n == 3);
+    CHECK(SalPathIsWithinOrdinalCI("c:\\x\\y", "C:\\", &n) && n == 3);
+    CHECK(SalPathIsWithinOrdinalCI("C:", "C:\\", &n) && n == 2);
+    CHECK(!SalPathIsWithinOrdinalCI("D:\\x", "C:\\", &n));
+    CHECK(!SalPathIsWithinOrdinalCI("C", "C:\\", &n));
+    // accented names: the identity of SalPathHasPrefixOrdinalCI (U+010C / U+010D)
+    CHECK(SalPathIsWithinOrdinalCI("C:\\\xC4\x8C\\x", "c:\\\xC4\x8D", &n) && n == 5);
+    CHECK(!SalPathIsWithinOrdinalCI("C:\\\xC4\x8C" "a\\x", "c:\\\xC4\x8D", &n));
+    // the whole path: a share at 256 + 3 bytes and a path that equals it in its first 259 bytes
+    // but continues the same component - the old code cut the path to 259 bytes and appended a
+    // backslash, so this matched; a deep path under the share matches with the right byte count
+    {
+        std::string share = "C:\\" + std::string(256, 'a');
+        CHECK(!SalPathIsWithinOrdinalCI((share + "xyz").c_str(), share.c_str(), &n));
+        std::string deep = share;
+        for (int i = 0; i < 40; i++)
+            deep += "\\" + std::string(100, 'q'); // 4,299 bytes
+        CHECK(SalPathIsWithinOrdinalCI(deep.c_str(), share.c_str(), &n) && n == (int)share.size() && deep[n] == '\\');
+        std::string deepU = "C:\\\xC5\x99" + std::string(2000, 'z') + "\\last"; // U+0159 + a 2,000-byte component
+        CHECK(SalPathIsWithinOrdinalCI(deepU.c_str(), "c:\\\xC5\x98", &n) == FALSE); // folder U+0158 does not hold U+0159zzz...
+        CHECK(SalPathIsWithinOrdinalCI(deepU.c_str(), ("C:\\\xC5\x98" + std::string(2000, 'Z')).c_str(), &n) && n == 2005);
+    }
+    // --- review NIT 1: the folder named by the move-check messages is shortened visibly
+    {
+        char out[MAX_PATH];
+        CHECK(!SalU8EllipsizeMiddle("C:\\short\\path", out, MAX_PATH) && strcmp(out, "C:\\short\\path") == 0);
+        std::string fit(MAX_PATH - 1, 'a'); // exactly fits
+        CHECK(!SalU8EllipsizeMiddle(fit.c_str(), out, MAX_PATH) && strcmp(out, fit.c_str()) == 0);
+        std::string deep = "C:\\Temp\\deep\\S\\A";
+        for (int i = 0; i < 1005; i++)
+            deep += "\\d";
+        CHECK(SalU8EllipsizeMiddle(deep.c_str(), out, MAX_PATH));
+        std::string o = out;
+        CHECK(o.size() <= MAX_PATH - 1 && o.find("...") != std::string::npos);
+        CHECK(o.compare(0, 15, deep, 0, 15) == 0);                                          // the start stays
+        CHECK(o.compare(o.size() - 20, 20, deep, deep.size() - 20, 20) == 0);                // the end stays
+        // multi-byte characters on both cuts: U+0159 (2 bytes) and U+4E2D (3 bytes) only
+        std::string acc;
+        for (int i = 0; i < 300; i++)
+            acc += (i % 2) ? "\xC5\x99" : "\xE4\xB8\xAD";
+        for (int size = 8; size <= 40; size++)
+        {
+            char shortBuf[64];
+            CHECK(SalU8EllipsizeMiddle(acc.c_str(), shortBuf, size));
+            std::string r = shortBuf;
+            CHECK((int)r.size() <= size - 1 && r.find("...") != std::string::npos);
+            WCHAR w[64];
+            CHECK(SalU8ToW(shortBuf, -1, w, 64) != 0); // whole characters only: valid UTF-8
+        }
+        CHECK(SalU8EllipsizeMiddle(acc.c_str(), out, 5) && strlen(out) <= 4 && SalU8ToW(out, -1, NULL, 0) != 0); // too small for "...": a whole-character cut
+        CHECK(!SalU8EllipsizeMiddle(NULL, out, MAX_PATH) && out[0] == 0);
+        CHECK(!SalU8EllipsizeMiddle("x", NULL, 5));
+    }
+
+    // nothing holds anything for an empty or NULL folder
+    CHECK(!SalPathIsWithinOrdinalCI("C:\\x", "", &n) && n == 0);
+    CHECK(!SalPathIsWithinOrdinalCI("C:\\x", NULL, &n));
+    CHECK(!SalPathIsWithinOrdinalCI(NULL, "C:\\", NULL));
+}
+
 static void TestHeapString095()
 {
     // the core's LowerCase table is built exactly like this (InitializeCase in str.cpp)
@@ -4178,6 +4309,7 @@ int main()
     TestArchivePassword093();
     TestZipPassword094();
     TestHeapString095();
+    TestLeftovers101();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

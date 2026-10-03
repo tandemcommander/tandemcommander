@@ -545,7 +545,9 @@ public:
     // if no such share was found, returns FALSE
     // call without PrepareSearch; scans all shares linearly
     // WARNING! not optimized for speed like PrepareSearch/Search
-    BOOL GetUNCPath(const char* path, char* uncPath, int uncPathMax);
+    // feature 101: the whole 'path' is matched; '*tooLong' (may be NULL) is set to TRUE when a
+    // share holds 'path' but its UNC form does not fit (FALSE is returned then too)
+    BOOL GetUNCPath(const char* path, char* uncPath, int uncPathMax, BOOL* tooLong = NULL);
 
     // returns the number of shared directories
     int GetCount() { return Data.Count; }

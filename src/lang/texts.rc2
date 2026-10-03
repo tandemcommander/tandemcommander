@@ -1839,6 +1839,9 @@ STRINGTABLE
  IDS_VOLMOUNTPOINT, "volume mount point"
  
  IDS_DELFILESAFTERPACKINGNOLINKS, "You are trying to move selected files and directories to archive. This is not possible because selection contains link to directory (junction point, volume mount point, or symbolic link). Please continue without deleting files from disk after packing to archive.\n\nLink: %s"
+ IDS_DELFILESAFTERPACKINGUNREADABLE, "You are trying to move selected files and directories to archive. This is not possible because a directory in the selection cannot be read, so it cannot be checked for links to directories. Files will not be deleted from disk. Please continue without deleting files from disk after packing to archive.\n\nDirectory: %s"
+ IDS_DELFILESAFTERPACKINGTOODEEP, "You are trying to move selected files and directories to archive. This is not possible because a directory in the selection is nested too deeply (more than %d levels), so it cannot be checked for links to directories. Files will not be deleted from disk. Please continue without deleting files from disk after packing to archive.\n\nDirectory: %s"
+ IDS_DIRNESTEDTOODEEP, "Directory ""%s"" is nested too deeply (more than %d levels) to be processed."
  
  IDS_BLOCKSHUTDOWNDISKOPER, "Disk operation is in progress."
  IDS_BLOCKSHUTDOWNFINDFILES, "Searching is in progress."

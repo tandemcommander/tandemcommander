@@ -53,6 +53,21 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Smaller fixes** (feature 101):
+  - The tip of the notification-area icon shows folder names with accented
+    and other non-English letters correctly (they were garbled).
+  - Pasting a path from the clipboard as a panel path (Ctrl+Shift+V) works
+    for paths of any length.
+  - *Copy UNC name* says "The path specified is too long." instead of
+    failing silently, also in the Find window.
+  - Shared folders: a share on `C:\foo` was taken for the share of
+    `C:\foobar\...` as well, and deep paths under a share were cut.
+  - Dragging part of a very long path from the directory line no longer
+    builds a drag image hundreds of thousands of pixels wide.
+  - When *Move* into an archive is refused because a folder cannot be read
+    or is nested too deeply, the message now says that (it used to speak of
+    a link), and long folder names in these messages are shortened visibly
+    with "...". New texts in all languages.
 - **Window titles show names in any script.** The title of a viewer window
   (Code Viewer, internal viewer, Markdown Viewer, PictView, Database Viewer,
   File Comparator, DiskMap) and of the main window showed `?` for every

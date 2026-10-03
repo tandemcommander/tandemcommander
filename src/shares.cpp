@@ -4,6 +4,7 @@
 
 #include "precomp.h"
 #include <lm.h>
+#include "salheapstr.h" // feature 101
 
 //****************************************************************************
 //
@@ -221,10 +222,18 @@ void CShares::PrepareSearch(const char* path)
     Wanted.DestroyMembers();
 
     // put in only the shares that lie on the requested path
-    char buff[MAX_PATH];
-    lstrcpyn(buff, path, MAX_PATH);
-    if (buff[0] != 0)                        // when we search for shares from this_computer, we must not append a backslash
-        SalPathAddBackslash(buff, MAX_PATH); // we want a backslash at the end
+    // feature 101: the whole path (it was cut to 259 bytes: a longer panel path could then equal
+    // the parent folder of a share that is not in it)
+    CSalHeapString buffStr;
+    if (!buffStr.Copy(path, 1))
+    {
+        TRACE_E(LOW_MEMORY);
+        HANDLES(LeaveCriticalSection(&CS));
+        return;
+    }
+    char* buff = buffStr.Get();
+    if (buff[0] != 0)                               // when we search for shares from this_computer, we must not append a backslash
+        SalPathAddBackslash(buff, buffStr.Size()); // we want a backslash at the end
     int pathLen = (int)strlen(buff);
 
     int i;
@@ -253,12 +262,13 @@ BOOL CShares::Search(const char* name)
     return ret;
 }
 
-BOOL CShares::GetUNCPath(const char* path, char* uncPath, int uncPathMax)
+BOOL CShares::GetUNCPath(const char* path, char* uncPath, int uncPathMax, BOOL* tooLong)
 {
     HANDLES(EnterCriticalSection(&CS));
-    char buff[MAX_PATH];
-    lstrcpyn(buff, path, MAX_PATH);
-    SalPathAddBackslash(buff, MAX_PATH); // we want a backslash at the end
+    // feature 101: the whole 'path' is matched (it was cut to 259 bytes, with a backslash
+    // appended, before the comparison), and only at a component boundary: the share of local path
+    // "C:\foo" holds "C:\foo" and "C:\foo\x", never "C:\foobar" - the prefix test alone (since
+    // Open Salamander) turned "C:\foobar\x" into "\\computer\<share of C:\foo>\bar\x"
 
     int longestIndex = -1; // index into Data array holding the longest matching share
     int longestBytes = 0;  // feature 092: bytes of 'path' that share's local path covers (not always its own length)
@@ -269,7 +279,7 @@ BOOL CShares::GetUNCPath(const char* path, char* uncPath, int uncPathMax)
         CSharesItem* item = Data[i];
         int itemNameLen = (int)strlen(item->LocalPath);
         int n = 0;
-        if (SalPathHasPrefixOrdinalCI(buff, item->LocalPath, itemNameLen, &n))
+        if (SalPathIsWithinOrdinalCI(path, item->LocalPath, &n))
         {
             // look for the longest possible share that still matches the requested 'path'
             if (longestIndex == -1 || (int)strlen(Data[longestIndex]->LocalPath) < itemNameLen)
@@ -300,6 +310,8 @@ BOOL CShares::GetUNCPath(const char* path, char* uncPath, int uncPathMax)
         }
         if (strlen(unc) + strlen(item->RemoteName) + 1 + strlen(s) >= sizeof(unc))
         {
+            if (tooLong != NULL)
+                *tooLong = TRUE; // feature 101
             HANDLES(LeaveCriticalSection(&CS));
             return FALSE;
         }
@@ -316,6 +328,8 @@ BOOL CShares::GetUNCPath(const char* path, char* uncPath, int uncPathMax)
         }
         if ((int)strlen(unc) >= uncPathMax)
         {
+            if (tooLong != NULL)
+                *tooLong = TRUE; // feature 101
             HANDLES(LeaveCriticalSection(&CS));
             return FALSE;
         }

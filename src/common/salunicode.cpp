@@ -655,6 +655,81 @@ int SalWToU8Truncate(const WCHAR* src, char* buf, int bufSize)
     return (int)strlen(buf) + 1;
 }
 
+// feature 101: see salunicode.h
+BOOL SalU8EllipsizeMiddle(const char* src, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    buf[0] = 0;
+    if (src == NULL)
+        return FALSE;
+    int len = (int)strlen(src);
+    if (len < bufSize)
+    {
+        memcpy(buf, src, len + 1);
+        return FALSE;
+    }
+    if (bufSize < 8)
+    {
+        memcpy(buf, src, bufSize - 1);
+        buf[bufSize - 1] = 0;
+        SalU8TrimIncompleteTail(buf);
+        return TRUE;
+    }
+    int room = bufSize - 1 - 3; // bytes for the start and the end
+    int head = room / 3;        // a third for the start, the rest for the end (the last folders)
+    int tail = room - head;
+    while (head > 0 && ((unsigned char)src[head] & 0xC0) == 0x80)
+        head--; // do not end the start inside a character
+    int tailStart = len - tail;
+    while (tailStart < len && ((unsigned char)src[tailStart] & 0xC0) == 0x80)
+        tailStart++; // do not begin the end inside a character
+    memcpy(buf, src, head);
+    memcpy(buf + head, "...", 3);
+    memcpy(buf + head + 3, src + tailStart, len - tailStart + 1);
+    return TRUE;
+}
+
+// feature 101: see salunicode.h
+int SalU8ToWTruncate(const char* src, WCHAR* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return 0;
+    buf[0] = 0;
+    if (src == NULL)
+        return 0;
+    WCHAR* full = NULL;
+    int units = SalU8ToW(src, -1, NULL, 0); // units + 1; 0 = not WTF-8
+    if (units > 0)
+    {
+        full = (WCHAR*)malloc(units * sizeof(WCHAR));
+        if (full != NULL && SalU8ToW(src, -1, full, units) == 0)
+            full[0] = 0;
+    }
+    else // legacy code-page text (the transitional tolerance of SalLegacyToU8Alloc)
+    {
+        units = MultiByteToWideChar(CP_ACP, 0, src, -1, NULL, 0);
+        if (units <= 0)
+            return 0;
+        full = (WCHAR*)malloc(units * sizeof(WCHAR));
+        if (full != NULL && MultiByteToWideChar(CP_ACP, 0, src, -1, full, units) == 0)
+            full[0] = 0;
+    }
+    if (full == NULL)
+        return 0; // low memory
+    int len = (int)wcslen(full);
+    if (len > bufSize - 1)
+    {
+        len = bufSize - 1;
+        if (len > 0 && IS_HIGH_SURROGATE(full[len - 1]) && IS_LOW_SURROGATE(full[len]))
+            len--; // the cut would split a surrogate pair: leave the whole character out
+    }
+    memcpy(buf, full, len * sizeof(WCHAR));
+    buf[len] = 0;
+    free(full);
+    return len + 1;
+}
+
 int SalU8OffsetToW(const char* u8, int byteOffset)
 {
     if (u8 == NULL)
@@ -1276,4 +1351,30 @@ BOOL SalPathHasPrefixOrdinalCI(const char* path, const char* prefix, int prefixL
     if (heapT != NULL)
         free(heapT);
     return ret;
+}
+
+// feature 101: see salunicode.h
+BOOL SalPathIsWithinOrdinalCI(const char* path, const char* dir, int* pathBytes)
+{
+    if (pathBytes != NULL)
+        *pathBytes = 0;
+    if (path == NULL || dir == NULL || dir[0] == 0)
+        return FALSE;
+    int dl = (int)strlen(dir);
+    BOOL dirEndsWithBackslash = dir[dl - 1] == '\\';
+    int n = 0;
+    if (SalPathHasPrefixOrdinalCI(path, dir, dl, &n))
+    {
+        if (!dirEndsWithBackslash && path[n] != 0 && path[n] != '\\')
+            return FALSE; // "C:\foo" is not a folder of "C:\foobar"
+    }
+    else
+    {
+        // "C:" is the root "C:\" without its backslash
+        if (!dirEndsWithBackslash || dl < 2 || !SalPathHasPrefixOrdinalCI(path, dir, dl - 1, &n) || path[n] != 0)
+            return FALSE;
+    }
+    if (pathBytes != NULL)
+        *pathBytes = n;
+    return TRUE;
 }

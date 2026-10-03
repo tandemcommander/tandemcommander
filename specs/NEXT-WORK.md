@@ -431,7 +431,23 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        structure - every non-ASCII name there is garbled and can be cut
        mid-character; the File Comparator cannot open files named outside the
        code page at all (its dialog and `fcremote.exe` are code-page
-       programs).
+       programs) - **next: feature 102** (measured: also a wrong-file risk
+       through best-fit mapping, `fcremote` broken for every non-ASCII name,
+       history mojibake in every language).
+    4. **The small leftovers** (tray tip, clipboard paste length, silent UNC
+       copy, share matching, drag image, accurate link/too-deep messages) -
+       ✅ feature 101 (2026-10-03). Found by 101, not fixed: the Find
+       window's *Look in* field cuts paths at 259 bytes; a message box with a
+       very long path breaks lines inside words; every clipboard *copy*
+       command fails silently when the clipboard cannot be opened; packing a
+       tree whose names *relative to the packed folder* exceed 259 bytes
+       skips those sub-folders with a message (the archiver plug-in interface
+       takes relative names of at most `MAX_PATH`).
+    5. **Same class as 102 in other plug-ins** (found by the 102 research,
+       not examined): code-page window subclasses on text controls in ftp
+       (3), zip (4), 7zip (1); `CreateFileA` fallbacks after a failed UTF-8
+       conversion in checksum, peviewer, renamer; `DragQueryFile` in dbviewer
+       and pictview; PictView's `salpvenv.exe` helper (probably dormant).
     3. Smaller: the link warning names an unreadable or too-deep folder as a
        "Link"; at depth 1,001 the message says "too long"; clipboard paste
        refuses 520+ bytes although Change Directory takes any length; the

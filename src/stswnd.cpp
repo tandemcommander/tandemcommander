@@ -2053,14 +2053,18 @@ CStatusWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                             int dxHotspot, dyHotspot;
                             int imgWidth, imgHeight;
                             hDragIL = CreateDragImage(buffer, dxHotspot, dyHotspot, imgWidth, imgHeight);
-                            ImageList_BeginDrag(hDragIL, 0, dxHotspot, dyHotspot);
+                            if (hDragIL != NULL) // feature 101: NULL = no bitmap (GDI failure): drag without an image
+                                ImageList_BeginDrag(hDragIL, 0, dxHotspot, dyHotspot);
                             ImageDragBegin(imgWidth, imgHeight, dxHotspot, dyHotspot);
 
                             DoDragDrop(dataObject, dropSource, DROPEFFECT_COPY, &dwEffect);
 
                             ImageDragEnd();
-                            ImageList_EndDrag();
-                            ImageList_Destroy(hDragIL);
+                            if (hDragIL != NULL)
+                            {
+                                ImageList_EndDrag();
+                                ImageList_Destroy(hDragIL);
+                            }
 
                             isInRect = FALSE;
                             isInSizeRect = FALSE;
@@ -2445,7 +2449,36 @@ CStatusWindow::CreateDragImage(const char* text, int& dxHotspot, int& dyHotspot,
         GetTextExtentPoint32W(hDC, textW, textLenW, &sz);
     else
         GetTextExtentPoint32(hDC, text, textLen, &sz);
-    ItemBitmap.Enlarge(sz.cx, sz.cy); // Bitmap allocation in ItemBitmap.HMemDC
+    // feature 101: the image is at most as wide as the monitor (and never over 4,096 px) - the text of
+    // a dragged component of a very long path measured about 280,000 px, and the shared ItemBitmap
+    // was enlarged to that for the rest of the session; a cut text gets an ellipsis in the middle
+    // (DT_PATH_ELLIPSIS keeps the start and the last component, the one that was dragged)
+    int maxWidth = 0;
+    MONITORINFO mi;
+    mi.cbSize = sizeof(mi);
+    if (GetMonitorInfo(MonitorFromWindow(HWindow, MONITOR_DEFAULTTONEAREST), &mi))
+        maxWidth = mi.rcMonitor.right - mi.rcMonitor.left;
+    if (maxWidth <= 0 || maxWidth > 4096)
+        maxWidth = maxWidth <= 0 ? 2048 : 4096;
+    UINT ellipsis = 0;
+    if (sz.cx > maxWidth)
+    {
+        sz.cx = maxWidth;
+        ellipsis = DT_PATH_ELLIPSIS;
+    }
+    if (sz.cx <= 0 || sz.cy <= 0 || !ItemBitmap.Enlarge(sz.cx, sz.cy)) // Bitmap allocation in ItemBitmap.HMemDC
+    {
+        // feature 101: no image (the caller drags without one) instead of drawing past the bitmap
+        TRACE_E("CStatusWindow::CreateDragImage(): no bitmap for the drag image");
+        if (textW != NULL)
+            free(textW);
+        SelectObject(hDC, hOldFont);
+        dxHotspot = -15;
+        dyHotspot = 0;
+        imgWidth = 0;
+        imgHeight = 0;
+        return NULL;
+    }
     // Paint the background
     RECT r;
     r.left = 0;
@@ -2456,9 +2489,9 @@ CStatusWindow::CreateDragImage(const char* text, int& dxHotspot, int& dyHotspot,
     int oldBkMode = SetBkMode(hDC, TRANSPARENT);
     int oldTextColor = SetTextColor(hDC, GetCOLORREF(CurrentColors[ITEM_FG_NORMAL]));
     if (textW != NULL)
-        DrawTextW(hDC, textW, textLenW, &r, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
+        DrawTextW(hDC, textW, textLenW, &r, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | ellipsis);
     else
-        DrawText(hDC, text, textLen, &r, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
+        DrawText(hDC, text, textLen, &r, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | ellipsis);
     if (textW != NULL)
         free(textW);
     SetTextColor(hDC, oldTextColor);
@@ -2468,9 +2501,16 @@ CStatusWindow::CreateDragImage(const char* text, int& dxHotspot, int& dyHotspot,
     dxHotspot = -15;
     dyHotspot = 0;
 
+    HIMAGELIST himl = ImageList_Create(sz.cx, sz.cy, ILC_COLORDDB | ILC_MASK, 1, 0);
+    if (himl == NULL) // feature 101: checked (GDI failure: drag without an image)
+    {
+        TRACE_E("CStatusWindow::CreateDragImage(): ImageList_Create failed");
+        imgWidth = 0;
+        imgHeight = 0;
+        return NULL;
+    }
     imgWidth = sz.cx;
     imgHeight = sz.cy;
-    HIMAGELIST himl = ImageList_Create(sz.cx, sz.cy, ILC_COLORDDB | ILC_MASK, 1, 0);
     SelectObject(ItemBitmap.HMemDC, ItemBitmap.HOldBmp); // Temporarily deselect the bitmap from HMemDC
     ImageList_AddMasked(himl, ItemBitmap.HBmp, GetCOLORREF(CurrentColors[ITEM_BK_NORMAL]));
     SelectObject(ItemBitmap.HMemDC, ItemBitmap.HBmp); // Select the bitmap again

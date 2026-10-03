@@ -1709,7 +1709,9 @@ private:
 // packed the files behind a junction and deleted them). Scans the selection 'data' (in
 // 'sourcePath') for links to directories. Returns 0 = no link and everything was checked (the move
 // may go on); 1 = a link was found or not everything could be checked - IDS_DELFILESAFTERPACKINGNOLINKS
-// was shown with 'title' (the move must not delete); 2 = the user cancelled the scan (ESC).
+// was shown with 'title' (the move must not delete; feature 101: for a directory that cannot be read
+// IDS_DELFILESAFTERPACKINGUNREADABLE, for one nested too deep IDS_DELFILESAFTERPACKINGTOODEEP);
+// 2 = the user cancelled the scan (ESC).
 // 'data' is left as it was (the scan builds no tree).
 int ScanMoveSelectionForDirLinks(HWND parent, CPanelTmpEnumData* data, const char* sourcePath, const char* title);
 

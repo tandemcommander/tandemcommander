@@ -211,6 +211,33 @@ int SalWToU8Truncate(const WCHAR* src, char* buf, int bufSize);
 
 //
 // ****************************************************************************
+// SalU8ToWTruncate (feature 101)
+//
+// The other direction, for a fixed UTF-16 field such as NOTIFYICONDATAW::szTip
+// (128 units): converts the null-terminated UTF-8 (WTF-8) text 'src' to UTF-16;
+// text that is not WTF-8 (legacy code-page bytes) is read in the system code
+// page.  When the result does not fit, stores as many WHOLE characters as fit -
+// a surrogate pair is never split (a lone surrogate counts as one character).
+// Always terminates 'buf'.  Returns the units written including the terminator
+// (>= 1); 0 only for a NULL argument, bufSize <= 0 or lack of memory ('buf' is
+// then empty when it exists).
+
+int SalU8ToWTruncate(const char* src, WCHAR* buf, int bufSize);
+
+//
+// ****************************************************************************
+// SalU8EllipsizeMiddle (feature 101)
+//
+// Copies the null-terminated UTF-8 (WTF-8) text 'src' into 'buf' (bufSize bytes); when it does
+// not fit, keeps its start and its end with "..." between them, cutting only at whole
+// characters, so the result is visibly shortened (for a path: the drive and the last folders
+// stay). Always terminates 'buf'. Returns TRUE when the text had to be shortened. bufSize < 8
+// (no room for start + "..." + end): a plain whole-character cut.
+
+BOOL SalU8EllipsizeMiddle(const char* src, char* buf, int bufSize);
+
+//
+// ****************************************************************************
 // SalU8OffsetToW (feature 093)
 //
 // Converts a BYTE offset in the null-terminated WTF-8 text 'u8' to the offset
@@ -356,3 +383,11 @@ BOOL SalPathEqualOrdinalCI(const char* path1, const char* path2);
 // not have equal UTF-8 lengths. A prefix that would end inside a character of
 // 'path' is not a prefix. Replaces StrNICmp(path, prefix, prefixLen) == 0.
 BOOL SalPathHasPrefixOrdinalCI(const char* path, const char* prefix, int prefixLen, int* pathBytes);
+
+// feature 101: TRUE when 'path' is the folder 'dir' itself or lies under it, by the identity
+// above and at a component boundary: in 'path', 'dir' is followed by a backslash or by the end
+// ("C:\foo" holds "C:\foo\x", not "C:\foobar"); a 'dir' ending with a backslash (a root such as
+// "C:\") needs nothing after it and also holds the same path without that backslash ("C:").
+// '*pathBytes' (may be NULL) = the bytes of 'path' that 'dir' covers (the backslash excluded in
+// the "C:" case). An empty or NULL 'dir' holds nothing. The whole 'path' is used - no length cut.
+BOOL SalPathIsWithinOrdinalCI(const char* path, const char* dir, int* pathBytes);

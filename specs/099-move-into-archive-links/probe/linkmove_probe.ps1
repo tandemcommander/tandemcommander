@@ -130,6 +130,9 @@ function Run-Case([string]$Case, [string]$Fmt, [string]$Kind) {
         $r = Serve $id 120
         $fatal = $r.Fatal; if (-not $fatal) { $fatal = Fatal-Win $id }
         $warned = @($r.Messages | Where-Object { $_ -match 'link to directory' }).Count
+        # feature 101: an unreadable folder gets its own text (IDS_DELFILESAFTERPACKINGUNREADABLE)
+        # instead of the link text; the same refusal (nothing packed, nothing deleted)
+        if ($Kind -eq 'unread') { $warned += @($r.Messages | Where-Object { $_ -match 'cannot be read, so it' }).Count }
         $xAlive = [IO.File]::Exists($LP + $x + '\x.txt')
         $left = Disk-Names $src
         $names = Arc-Names $arc

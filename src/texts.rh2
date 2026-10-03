@@ -2570,6 +2570,13 @@
 
 // Pack: Option "Delete files from disk after packing to archive" can be used only if selection contains no links to directories
 #define IDS_DELFILESAFTERPACKINGNOLINKS 14181
+// feature 101: the same check, when a directory in the selection cannot be read (so it cannot be
+// checked for links) and when one is nested deeper than the limit (%d = the limit, 1000); a
+// directory nested deeper than the limit while packing (OK = skip it, Cancel = stop). Free slots
+// of the bundle of 14181 (14176-14191), so no later string bundle changes its ordinal
+#define IDS_DELFILESAFTERPACKINGUNREADABLE 14182
+#define IDS_DELFILESAFTERPACKINGTOODEEP 14183
+#define IDS_DIRNESTEDTOODEEP            14184
 
 // Shutdown or Log Off: blocking reason: Disk operation is in progress. (e.g. Copy, Move, Delete files on disk running on background)
 #define IDS_BLOCKSHUTDOWNDISKOPER       14185

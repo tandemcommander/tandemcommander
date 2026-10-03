@@ -1254,3 +1254,17 @@ plugin architecture preservation, UI consistency.
   dialogs. Probe `probe/cjk_focus_probe.ps1` 77 / 0. Found, not fixed: the
   tray tip garbles non-ASCII names. Records:
   `specs/100-cjk-focus-name/fix-log.md`.
+- 101-small-leftovers: the minor items left by 097-100. Tray icon through
+  `NOTIFYICONDATAW` (`SalU8ToWTruncate`: cut at a whole character); clipboard
+  path paste any length; *Copy UNC name* refusals show `IDS_TOOLONGPATH`
+  (owner = the calling window, Find included); `SalPathIsWithinOrdinalCI` for
+  share matching (it had no component-boundary check since Open Salamander);
+  drag image capped to the monitor width; **three new strings** 14182-14184
+  (unreadable / too deep, in free slots of the 14181 bundle - no re-key)
+  translated by `translate.merge` (6,488 DeepL characters, 17 pins under
+  `_feature_101`: DeepL drifted to the informal register for de/fr/nl/es, a
+  Czech word in Slovak, the wrong Hungarian word for "folder");
+  `SalU8EllipsizeMiddle` shortens names in those messages visibly. 096's
+  probe flake explained: F4 acts only after the idle-time command-enabler
+  refresh - the probe now waits for idle. saltests 13,119 -> 13,278. Review
+  ACCEPT. Records: `specs/101-small-leftovers/fix-log.md`.

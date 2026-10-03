@@ -832,35 +832,83 @@ void CFilesWindow::DeleteFromZIPArchive()
 // where every caller runs (CallPluginOperationFromDisk is main-thread only)
 #define READDIRTREE_MAX_DEPTH 1000
 
+// feature 101: why the link scan could not check a folder (*uncheckedWhy), so that the message names
+// the cause - features 098/099 called every unchecked folder a "link"
+#define UNCHECKED_NONE 0
+#define UNCHECKED_UNREADABLE 1 // the folder cannot be read (also: its path cannot be built, low memory)
+#define UNCHECKED_TOODEEP 2    // the folder is nested deeper than READDIRTREE_MAX_DEPTH
+
 // feature 098: the link scan before "delete files after packing" (silent mode, 'containsDirLinks'
 // not NULL) records the first folder it could not check in 'linkName' and sets SALENUM_ERROR; Pack
 // then cannot say "no links" and switches the delete off (a scan that stopped early used to read
 // as "no links", and the move then deleted files reached through a junction)
-static void NoteUncheckedFolder(int* containsDirLinks, char* linkName, const char* path, const char* name)
+// feature 101: and why, in '*uncheckedWhy' (may be NULL)
+
+// feature 101: the folder named by the move-check messages (14181-14183) in 'linkName' (MAX_PATH
+// bytes): 'path' + '\' + 'name' ('name' may be NULL) whole when it fits, else its start and end
+// with "..." between them at whole characters - it was cut at 259 bytes with no sign of the cut
+static void SetScanFolderName(char* linkName, const char* path, const char* name)
+{
+    size_t l = strlen(path);
+    const char* sep = name != NULL && l > 0 && path[l - 1] != '\\' ? "\\" : "";
+    CSalHeapString full;
+    if (full.Printf("%s%s%s", path, sep, name != NULL ? name : ""))
+        SalU8EllipsizeMiddle(full.Text(), linkName, MAX_PATH);
+    else // low memory: the old cut
+    {
+        _snprintf_s(linkName, MAX_PATH, _TRUNCATE, "%s%s%s", path, sep, name != NULL ? name : "");
+        SalU8TrimIncompleteTail(linkName);
+    }
+}
+
+static void NoteUncheckedFolder(int* containsDirLinks, char* linkName, int* uncheckedWhy, int why,
+                                const char* path, const char* name)
 {
     if (containsDirLinks == NULL || linkName == NULL || linkName[0] != 0)
         return;
-    size_t l = strlen(path);
-    _snprintf_s(linkName, MAX_PATH, _TRUNCATE, "%s%s%s", path,
-                name != NULL && l > 0 && path[l - 1] != '\\' ? "\\" : "", name != NULL ? name : "");
-    SalU8TrimIncompleteTail(linkName);
+    SetScanFolderName(linkName, path, name);
+    if (uncheckedWhy != NULL)
+        *uncheckedWhy = why;
 }
 
 // feature 098: a folder whose full path cannot be built (or that is nested too deep) is reported
 // like a folder that cannot be read: TRUE = skip it (SALENUM_ERROR; the user's OK, or silent mode -
 // as the "cannot read" case), FALSE = stop (Cancel); it used to be skipped with no report at all
-static BOOL ReportReadDirTreeTooLong(HWND parent, const char* path, const char* name, int* errorOccured,
-                                     int* containsDirLinks, char* linkName)
+// feature 101: a folder nested too deep says so (IDS_DIRNESTEDTOODEEP) - it said the name was too long
+// feature 101 (review NIT 2): ... but only when no other box will cover it. 'relLen' = the bytes of
+// the folder's path relative to the packed folder (the work path). The tree is handed to the packer
+// by _PanelSalEnumSelection, whose names relative to the work path are MAX_PATH buffers (the plug-in
+// interface): it refuses - with its own OK/Cancel box, IDS_NAMEISTOOLONG, a real length failure -
+// the first folder whose relative path reaches MAX_PATH and skips that folder's whole subtree. A
+// folder at a relative path of MAX_PATH or more lies in such a subtree, so the depth box would be a
+// second box for the same skipped part (and today that is every too-deep folder: 1,001 levels are
+// at least 2,001 bytes). It is then skipped without a box, SALENUM_ERROR as before.
+static BOOL ReportReadDirTreeTooLong(HWND parent, const char* path, const char* name, BOOL tooDeep,
+                                     int* errorOccured, int* containsDirLinks, char* linkName, int* uncheckedWhy,
+                                     size_t relLen)
 {
     if (errorOccured != NULL)
         *errorOccured = SALENUM_ERROR;
     if (parent == NULL)
     {
-        NoteUncheckedFolder(containsDirLinks, linkName, path, name);
+        NoteUncheckedFolder(containsDirLinks, linkName, uncheckedWhy, tooDeep ? UNCHECKED_TOODEEP : UNCHECKED_UNREADABLE,
+                            path, name);
         return TRUE; // silent mode: skip and go on (stopping here made the link scan miss later links)
     }
+    if (tooDeep && relLen >= MAX_PATH)
+        return TRUE; // the enumeration refuses an ancestor of this folder for length (see above)
     CSalHeapString text;
-    if (!text.Printf(LoadStrU8(IDS_NAMEISTOOLONG), name, path))
+    BOOL ok;
+    if (tooDeep)
+    {
+        size_t l = strlen(path);
+        CSalHeapString full;
+        ok = full.Printf("%s%s%s", path, l > 0 && path[l - 1] != '\\' ? "\\" : "", name) &&
+             text.Printf(LoadStrU8(IDS_DIRNESTEDTOODEEP), full.Text(), READDIRTREE_MAX_DEPTH);
+    }
+    else
+        ok = text.Printf(LoadStrU8(IDS_NAMEISTOOLONG), name, path);
+    if (!ok)
     {
         TRACE_E(LOW_MEMORY);
         return FALSE;
@@ -876,16 +924,19 @@ static BOOL ReportReadDirTreeTooLong(HWND parent, const char* path, const char* 
 
 // feature 098: 'path' is a buffer of 'pathSize' bytes (SAL_MAX_PATH_UTF8 + 4 from ReadDirectoryTree;
 // it was char[MAX_PATH]); 'depth' = nesting level of 'name' (1 = a selected folder)
+// feature 101: 'relBase' = the bytes of the work path in 'path' (its trailing backslash included)
 BOOL _ReadDirectoryTree(HWND parent, char* path, int pathSize, char* name, CSalamanderDirectory* dir,
                         int* errorOccured, BOOL getLinkTgtFileSize, BOOL* errGetFileSizeOfLnkTgtIgnAll,
-                        int* containsDirLinks, char* linkName, int depth)
+                        int* containsDirLinks, char* linkName, int* uncheckedWhy, int depth, size_t relBase)
 {
     CALL_STACK_MESSAGE4("_ReadDirectoryTree(, %s, %s, , , %d, , ,)", path, name, getLinkTgtFileSize);
     char* end = path + strlen(path);
-    if ((end - path) + (*(end - 1) != '\\' ? 1 : 0) + strlen(name) + 2 >= (size_t)pathSize ||
-        depth > READDIRTREE_MAX_DEPTH)
+    if (depth > READDIRTREE_MAX_DEPTH ||
+        (end - path) + (*(end - 1) != '\\' ? 1 : 0) + strlen(name) + 2 >= (size_t)pathSize)
     {
-        return ReportReadDirTreeTooLong(parent, path, name, errorOccured, containsDirLinks, linkName);
+        size_t full = (end - path) + (*(end - 1) != '\\' ? 1 : 0) + strlen(name);
+        return ReportReadDirTreeTooLong(parent, path, name, depth > READDIRTREE_MAX_DEPTH, errorOccured,
+                                        containsDirLinks, linkName, uncheckedWhy, full > relBase ? full - relBase : 0);
     }
     CSalHeapString text; // feature 098: messages sized for the path (char[2 * MAX_PATH + 100])
 
@@ -907,7 +958,7 @@ BOOL _ReadDirectoryTree(HWND parent, char* path, int pathSize, char* name, CSala
         TRACE_E(LOW_MEMORY);
         if (errorOccured != NULL && *errorOccured == SALENUM_SUCCESS)
             *errorOccured = SALENUM_ERROR;
-        NoteUncheckedFolder(containsDirLinks, linkName, path, name);
+        NoteUncheckedFolder(containsDirLinks, linkName, uncheckedWhy, UNCHECKED_UNREADABLE, path, name);
         return parent == NULL; // silent mode: skip and go on (see ReportReadDirTreeTooLong); else stop
     }
     if (*(end - 1) != '\\')
@@ -929,7 +980,7 @@ BOOL _ReadDirectoryTree(HWND parent, char* path, int pathSize, char* name, CSala
             if (errorOccured != NULL)
                 *errorOccured = SALENUM_ERROR;
             strcpy(end, name);
-            NoteUncheckedFolder(containsDirLinks, linkName, path, NULL); // feature 098
+            NoteUncheckedFolder(containsDirLinks, linkName, uncheckedWhy, UNCHECKED_UNREADABLE, path, NULL); // feature 098
             text.Printf(LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
             *end = 0; // restore the path
             if (parent != NULL &&
@@ -1081,15 +1132,14 @@ BOOL _ReadDirectoryTree(HWND parent, char* path, int pathSize, char* name, CSala
                     {
                         *containsDirLinks = 1; // after finding one simulate an error to end the search immediately
                         *end2 = 0;
-                        _snprintf_s(linkName, MAX_PATH, _TRUNCATE, "%s\\%s", path, nameU8); // truncation is fine, it is only for the message text
-                        SalU8TrimIncompleteTail(linkName);                                     // feature 098: never a torn character
+                        SetScanFolderName(linkName, path, nameU8); // feature 101: shortened visibly ("..."), whole characters
                         ok = FALSE;
                         testFindNextErr = FALSE;
                         break;
                     }
                 }
                 if (!_ReadDirectoryTree(parent, path, pathSize, nameU8, salDir, errorOccured, getLinkTgtFileSize,
-                                        errGetFileSizeOfLnkTgtIgnAll, containsDirLinks, linkName, depth + 1))
+                                        errGetFileSizeOfLnkTgtIgnAll, containsDirLinks, linkName, uncheckedWhy, depth + 1, relBase))
                 {
                     ok = FALSE;
                     testFindNextErr = FALSE;
@@ -1126,7 +1176,7 @@ BOOL _ReadDirectoryTree(HWND parent, char* path, int pathSize, char* name, CSala
             if (errorOccured != NULL)
                 *errorOccured = SALENUM_ERROR;
             strcpy(end, name);
-            NoteUncheckedFolder(containsDirLinks, linkName, path, NULL); // feature 098
+            NoteUncheckedFolder(containsDirLinks, linkName, uncheckedWhy, UNCHECKED_UNREADABLE, path, NULL); // feature 098
             text.Printf(LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
             *end = 0; // restore the path
             if (parent != NULL &&
@@ -1150,7 +1200,8 @@ BOOL _ReadDirectoryTree(HWND parent, char* path, int pathSize, char* name, CSala
 }
 
 CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, int* errorOccured,
-                                        BOOL getLinkTgtFileSize, int* containsDirLinks, char* linkName)
+                                        BOOL getLinkTgtFileSize, int* containsDirLinks, char* linkName,
+                                        int* uncheckedWhy)
 {
     CALL_STACK_MESSAGE2("ReadDirectoryTree(, , , %d, ,)", getLinkTgtFileSize);
     if (errorOccured != NULL)
@@ -1260,15 +1311,17 @@ CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, in
                     *containsDirLinks = 1;
                     strcpy(path, data->WorkPath); // fits: checked above
                     SalPathRemoveBackslash(path);
-                    _snprintf_s(linkName, MAX_PATH, _TRUNCATE, "%s\\%s", path, f->Name); // truncation is fine, it is only for the message text
-                    SalU8TrimIncompleteTail(linkName);                                      // feature 098: never a torn character (the walk now reaches long paths)
+                    SetScanFolderName(linkName, path, f->Name); // feature 101: shortened visibly ("..."), whole characters
                     break;
                 }
             }
 
             strcpy(path, data->WorkPath); // fits: checked above
+            size_t relBase = strlen(path);
+            if (relBase > 0 && path[relBase - 1] != '\\')
+                relBase++; // _ReadDirectoryTree appends the backslash
             if (!_ReadDirectoryTree(parent, path, pathSize, f->Name, salDir, errorOccured, getLinkTgtFileSize,
-                                    &errGetFileSizeOfLnkTgtIgnAll, containsDirLinks, linkName, 1))
+                                    &errGetFileSizeOfLnkTgtIgnAll, containsDirLinks, linkName, uncheckedWhy, 1, relBase))
             {
                 goto RETURN_ERROR;
             }
@@ -1327,7 +1380,8 @@ int ScanMoveSelectionForDirLinks(HWND parent, CPanelTmpEnumData* data, const cha
     char linkName[MAX_PATH];
     linkName[0] = 0;
     int scanErr = SALENUM_SUCCESS; // feature 098: SALENUM_ERROR = a folder could not be checked
-    ReadDirectoryTree(NULL /* silent mode */, data, &scanErr, FALSE, &containsDirLinks, linkName);
+    int uncheckedWhy = UNCHECKED_NONE; // feature 101: why (when 'linkName' names an unchecked folder)
+    ReadDirectoryTree(NULL /* silent mode */, data, &scanErr, FALSE, &containsDirLinks, linkName, &uncheckedWhy);
 
     DestroySafeWaitWindow();
 
@@ -1342,19 +1396,30 @@ int ScanMoveSelectionForDirLinks(HWND parent, CPanelTmpEnumData* data, const cha
     // feature 098: a scan that did not look everywhere (a folder it could not read or that is
     // too deep, low memory, an early stop) cannot say "no links": the delete is switched off
     // exactly as for a link found - 'linkName' names the first folder that was not checked
+    // feature 101: ... and the message says why: a link, a folder that cannot be read, or a folder
+    // nested too deep (098/099 showed the link text for all three)
+    BOOL unchecked = FALSE;
     if (containsDirLinks == 0 && scanErr != SALENUM_SUCCESS)
     {
-        if (linkName[0] == 0)
+        if (linkName[0] == 0) // no folder was recorded (low memory, an early exit of the scan)
         {
-            lstrcpyn(linkName, sourcePath, MAX_PATH);
-            SalU8TrimIncompleteTail(linkName);
+            SalU8EllipsizeMiddle(sourcePath, linkName, MAX_PATH); // feature 101: visibly shortened when cut
+            uncheckedWhy = UNCHECKED_UNREADABLE;
         }
         containsDirLinks = 1;
+        unchecked = TRUE;
     }
     if (containsDirLinks == 1)
     {
         CSalHeapString text;
-        if (text.Printf(LoadStrU8(IDS_DELFILESAFTERPACKINGNOLINKS), linkName))
+        BOOL ok;
+        if (!unchecked)
+            ok = text.Printf(LoadStrU8(IDS_DELFILESAFTERPACKINGNOLINKS), linkName);
+        else if (uncheckedWhy == UNCHECKED_TOODEEP)
+            ok = text.Printf(LoadStrU8(IDS_DELFILESAFTERPACKINGTOODEEP), READDIRTREE_MAX_DEPTH, linkName);
+        else
+            ok = text.Printf(LoadStrU8(IDS_DELFILESAFTERPACKINGUNREADABLE), linkName);
+        if (ok)
             SalMessageBox(parent, text.Text(), title, MB_OK | MB_ICONEXCLAMATION);
         else
             TRACE_E(LOW_MEMORY);
@@ -1392,7 +1457,7 @@ const char* WINAPI PanelEnumDiskSelection(HWND parent, int enumFiles, const char
     {
         if (data->DiskDirectoryTree == NULL)
         {
-            data->DiskDirectoryTree = ReadDirectoryTree(parent, data, errorOccured, enumFiles == 3, NULL, NULL);
+            data->DiskDirectoryTree = ReadDirectoryTree(parent, data, errorOccured, enumFiles == 3, NULL, NULL, NULL);
             if (data->DiskDirectoryTree == NULL)
                 return NULL; // error, stop
         }

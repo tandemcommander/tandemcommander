@@ -132,7 +132,7 @@ $Started = New-Object System.Collections.ArrayList
 $script:Procs = @{}
 $script:ExitCodes = New-Object System.Collections.ArrayList
 $script:Lines = New-Object System.Collections.ArrayList
-$script:Lossy = 0; $script:Pass = 0; $script:NotDriven = 0; $script:Fail = 0
+$script:Lossy = 0; $script:Pass = 0; $script:NotDriven = 0; $script:Fail = 0; $script:Retries = 0
 $script:Unexpected = @()
 
 function S([int[]]$codes) { return -join ($codes | ForEach-Object { [char]$_ }) }
@@ -397,6 +397,15 @@ function PostKey([int]$Id, [int]$Vk) {
     [void][Drv093]::PostMessageW($l, 0x0100, [IntPtr]$Vk, [IntPtr]1)
     [void][Drv093]::PostMessageW($l, 0x0101, [IntPtr]$Vk, [IntPtr]0xC0000001L)
 }
+# feature 101: lets the instance go idle: a WM_NULL round trip (everything sent or posted before it
+# was handled), a pause in which the empty queue runs the program's idle pass, another round trip
+function Settle([int]$Id, [int]$Ms) {
+    $m = Get-Main $Id
+    if ($m -eq [IntPtr]::Zero) { return }
+    [void][Drv093]::Send($m, 0, 0, 0, 20000)
+    Start-Sleep -Milliseconds $Ms
+    [void][Drv093]::Send($m, 0, 0, 0, 20000)
+}
 function WinDesc([IntPtr]$H) { return ("[{0} '{1}'] {2}" -f [Drv093]::Cls($H), (Tail ([Drv093]::Txt($H)) 70), (Get-DialogText $H)) }
 $FatalRx = 'Run-Time Check|Debug Error|Assertion|Runtime Library|Stack around|bug report|abnormal|has stopped|Unhandled exception|buffer overrun'
 $TooLongRx = 'too long'
@@ -577,13 +586,38 @@ function Run-Case($c) {
             $r = Serve $id 20
             if ((Title $id) -eq $t1) { throw 'did not enter the inner folder' }
         }
-        Key $id 0x24; Key $id 0x28
-        if ($c.Mode -eq 'edit') { Post-Cmd (Get-Main $id) 743 } else { PostKey $id 0x0D }
-        $sw = [Diagnostics.Stopwatch]::StartNew(); $tmp1 = @()
-        while ($sw.Elapsed.TotalSeconds -lt 10) {
-            $tmp1 = Find-Tmp $tmpDir $tmpBefore
-            if (@($tmp1 | Where-Object { $_.Count -gt $base }).Count) { break }
-            Start-Sleep -Milliseconds 300
+        # feature 101: the posted F4 (CM_EDIT) is acted on only when the command enabler
+        # EnablerFileOnDiskOrArchive is set, and the program refreshes its enablers in the main
+        # loop's IDLE pass (salamdr1.cpp -> CMainWindow::OnEnterIdle). After Home/Down moved the
+        # caret from ".." to the file, a WM_COMMAND posted before that idle pass found the enabler
+        # still off (the caret was on "..") and was dropped in silence: the flake of 097-100.
+        # So: focus the file, let the program go idle, then post; and when no temporary copy
+        # appeared at all (the command was not acted on), focus again, wait longer and post once
+        # more - recorded as a retry. The focused item cannot be read from outside (custom list
+        # box); the temporary copy's name (tmp name equals archive name) proves the right file.
+        $script:Retry = ''
+        function Focus-And-Run([int]$Wait) {
+            Key $id 0x24; Key $id 0x28                # Home (".."), Down (the file) - synchronous
+            Settle $id $Wait                          # an idle pass refreshes the enablers
+            if ($c.Mode -eq 'edit') { Post-Cmd (Get-Main $id) 743 } else { PostKey $id 0x0D }
+        }
+        function Wait-Edit([double]$Seconds) {
+            $sw = [Diagnostics.Stopwatch]::StartNew(); $t = @()
+            while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
+                $t = Find-Tmp $tmpDir $tmpBefore
+                if (@($t | Where-Object { $_.Count -gt $base }).Count) { break }
+                Start-Sleep -Milliseconds 300
+            }
+            return , $t
+        }
+        Focus-And-Run 500
+        $tmp1 = Wait-Edit 10
+        if (-not @($tmp1).Count -and -not @(Get-Tops $id | Where-Object { [Drv093]::Cls($_) -ne $MainClass }).Count) {
+            # nothing was extracted and no window is open: the command was not acted on
+            $script:Retry = 'F4 RETRY: the first post was not acted on (no temporary copy, no window); posted again after a 1.5 s idle wait'
+            Out ('   ' + $script:Retry)
+            Focus-And-Run 1500
+            $tmp1 = Wait-Edit 10
         }
         Start-Sleep -Milliseconds 800
         $r = Serve $id 20
@@ -593,6 +627,7 @@ function Run-Case($c) {
         $row.EditRan = $(if ($edited) { 'yes' } else { 'NO' })
         Out ("   EDIT : temporary copy: {0}; tmp name equals archive name: {1}; windows: {2}" -f (TmpDesc $tmp1), $sameName, (MsgText $r))
         if ($r.Messages.Count) { $row.Other += 'at edit: ' + (MsgText $r) + ' ' }
+        if ($script:Retry) { $row.Other += 'F4 retried (first post not acted on) '; $script:Retries++ }
         Start-Sleep -Milliseconds 1200
         if ($c.Leave -eq 'leave') {
             PostKey $id 0x08; Start-Sleep -Milliseconds 1000
@@ -704,6 +739,8 @@ finally {
         $nm = $t.Name; if ($nm.Length -gt 60) { $nm = $nm.Substring(0, 30) + '...(' + $nm.Length + ' chars escaped)' }
         Out ('{0,-7} {1,-4} {2,-11} {3,-8} {4,-5} {5,-10} {6,-10} {7,-10} {8,-10} {9} {10}' -f $t.Case, $t.Fmt, $t.Mode, $t.EditRan, $t.Info, $t.UpdateDlg, $t.Archive, $t.TmpAfterLeave, $t.TmpAfterExit, $nm, $(if ($t.Other) { '| ' + $t.Other } else { '' }))
     }
+    $nUpd = @($script:Table | Where-Object { $_.Archive -eq 'UPDATED' }).Count
+    Out ("Archives UPDATED: {0} of {1}; F4/Enter retries: {2} (feature 101)" -f $nUpd, $script:Table.Count, $script:Retries)
     Out ("Left running: {0}; fixture removed: {1}; registry restored+identical: {2}" -f $leftover.Count, (-not [IO.Directory]::Exists($Root)), $restored)
     if ($OutFile) { [IO.File]::WriteAllLines($OutFile, [string[]]$script:Lines, (New-Object Text.ASCIIEncoding)) }
 }

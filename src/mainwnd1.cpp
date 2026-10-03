@@ -1727,32 +1727,37 @@ void CMainWindow::LayoutWindows()
                 MAKELONG(r.right - r.left, r.bottom - r.top));
 }
 
+// feature 101: every notification-area call uses the Unicode structure (NOTIFYICONDATAW +
+// Shell_NotifyIconW), so the tip is set from the UTF-8 title exactly - the ANSI szTip received the
+// UTF-8 bytes (read as code-page text: every non-ASCII name garbled) cut at 127 bytes, possibly in
+// the middle of a character; SalU8ToWTruncate cuts at a whole character within the 128 units
+
 void CMainWindow::AddTrayIcon(BOOL updateIcon)
 {
     CALL_STACK_MESSAGE1("CMainWindow::AddTrayIcon()");
 
-    NOTIFYICONDATA tnid;
-    tnid.cbSize = sizeof(NOTIFYICONDATA);
+    NOTIFYICONDATAW tnid = {};
+    tnid.cbSize = sizeof(NOTIFYICONDATAW);
     tnid.hWnd = HWindow;
     tnid.uID = TASKBAR_ICON_ID;
     tnid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     tnid.uCallbackMessage = WM_USER_ICON_NOTIFY;
     int resID = MainWindowIcons[Configuration.GetMainWindowIconIndex()].IconResID;
     tnid.hIcon = SalLoadIcon(HInstance, resID, IconSizes[ICONSIZE_16]);
-    lstrcpyn(tnid.szTip, MAINWINDOW_NAME, sizeof(tnid.szTip));
-    Shell_NotifyIcon(updateIcon ? NIM_MODIFY : NIM_ADD, &tnid);
+    SalU8ToWTruncate(MAINWINDOW_NAME, tnid.szTip, _countof(tnid.szTip));
+    Shell_NotifyIconW(updateIcon ? NIM_MODIFY : NIM_ADD, &tnid);
     HANDLES(DestroyIcon(tnid.hIcon));
 }
 
 void CMainWindow::RemoveTrayIcon()
 {
     CALL_STACK_MESSAGE1("CMainWindow::RemoveTrayIcon()");
-    NOTIFYICONDATA tnid;
-    tnid.cbSize = sizeof(NOTIFYICONDATA);
+    NOTIFYICONDATAW tnid = {};
+    tnid.cbSize = sizeof(NOTIFYICONDATAW);
     tnid.hWnd = HWindow;
     tnid.uID = TASKBAR_ICON_ID;
     tnid.uFlags = 0;
-    Shell_NotifyIcon(NIM_DELETE, &tnid);
+    Shell_NotifyIconW(NIM_DELETE, &tnid);
 }
 
 void CMainWindow::SetTrayIconText(const char* text)
@@ -1763,13 +1768,13 @@ void CMainWindow::SetTrayIconText(const char* text)
         TRACE_E("CMainWindow::SetTrayIconText(): !Configuration.StatusArea");
         return;
     }
-    NOTIFYICONDATA tnid;
-    tnid.cbSize = sizeof(NOTIFYICONDATA);
+    NOTIFYICONDATAW tnid = {};
+    tnid.cbSize = sizeof(NOTIFYICONDATAW);
     tnid.hWnd = HWindow;
     tnid.uID = TASKBAR_ICON_ID;
     tnid.uFlags = NIF_TIP;
-    lstrcpyn(tnid.szTip, text, sizeof(tnid.szTip));
-    Shell_NotifyIcon(NIM_MODIFY, &tnid);
+    SalU8ToWTruncate(text, tnid.szTip, _countof(tnid.szTip)); // UTF-8 title (legacy code-page text read as such)
+    Shell_NotifyIconW(NIM_MODIFY, &tnid);
 }
 
 // feature 097: the title text is built from the WHOLE location in a buffer of 'pathSize' bytes
