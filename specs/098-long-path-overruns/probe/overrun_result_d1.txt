@@ -1,0 +1,72 @@
+overrun_probe (feature 098)
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-03 06:24; ACP 1250; config key existed True
+
+=== D1 (big): walk into a chain of 180-byte components ===
+chain: 53 levels of 180 bytes; deepest built = 9647 bytes; entry (<=500) = 416 bytes at level 2
+FATAL at level 41 (target path 7475 bytes): WINDOW [#32770 'Tandem Commander 0.1.8 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC018X64-20261003-062432.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues. + CRASH REPORT TC018X64-20261003-062432.TXT
+---- crash report TC018X64-20261003-062432.TXT (head) ----
+  Tandem Commander Bug Report File
+  
+  Tandem Commander 0.1.8 (x64) (DEBUG)
+  
+  Information About Exception:
+    Exception: open salamander rtc exception
+    Exception origin: thread ID = 0xBBF4, execution address = 0x00007FFB045C41CA (KERNELBASE.dll: 0xC41CA)
+  
+  RTC Error
+    Error Number: 1
+    Description: Cast to smaller type causing loss of data
+    Line: #0
+    File: 
+    Module: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+  
+  
+  Call Stacks:
+    Thread with Exception (ID: 0xBBF4)
+    vsprintf error in: WinMainBody(0x%p, , %s, %d)
+    WinMainBody::FindLatestConfiguration
+    WinMainBody::StartupDialog
+    WinMainBody::inicialization
+    WinMainBody::load_config
+    WinMainBody::message_loop
+    CFilesBox::WindowProc(0x100, 0xD, 0x1)
+    CFilesWindow::CtrlPageDnOrEnter(0xD)
+    CFilesWindow::Execute(1)
+    vsprintf error in: CFilesWindow::ChangePathToDisk(, %s, %d, %s, , %d, %d, %d, , %d, %d)
+    CFilesWindow::CommonRefresh(, -1, (null), 0, 1, 0)
+    CFilesWindow::DirectoryLineSetText()
+    vsprintf error in: CStatusWindow::SetText(%s, %d)
+    CStatusWindow::BuildHotTrackItems()
+    ----
+    Thread ID: 0xAC20
+    ThreadBugReportF()
+    ----
+    Thread ID: 0x8998
+    ThreadCacheHandlesBody()
+    CCacheHandles::WaitForObjects(,)
+    ----
+    Thread ID: 0x1770
+    ThreadCheckPathFBody()
+    ----
+    Thread ID: 0x8114
+    ThreadSnooperBody()
+    ----
+    Thread ID: 0x9DA8
+    ThreadFindCloseChangeNotificationBody()
+    ----
+    Thread ID: 0xA454
+    IconThreadThreadFBody()
+    IconThreadThreadFBody::work
+    ----
+    Thread ID: 0x8BB0
+    IconThreadThreadFBody()
+    ----
+    Thread ID: 0xC0A0
+    ThreadSafeWaitWindowFBody()
+    ----
+    Thread ID: 0xD0F8
+---- end ----
+
+=== D1 (short): walk into a chain of 1-byte components ===
+chain: 4602 levels of 1 bytes; deepest built = 9260 bytes; entry (<=500) = 500 bytes at level 222

@@ -1,0 +1,16 @@
+overrun_probe (feature 098)
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-03 06:36; ACP 1250; config key existed True
+
+=== D2: Change Directory to a normal FILE at ~300 bytes ===
+file full path = 306 bytes: ...rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\f.txt
+FATAL: WINDOW [#32770 'Microsoft Visual C++ Runtime Library'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Debug Assertion Failed! Program: ...commander\build\tandemcommander\Debug_x64\tandemcommander.exe File: minkernel\crts\ucrt\inc\corecrt_internal_string_templates.h Line: 81 Expression: (L"Buffer is too small" && 0) For information on how your program can cause an assertion failure, see the Visual C++ documentation on asserts. (Press Retry to debug the application) 
+
+=== D3: unpack a 7z whose corrupt item has a ~1100-byte internal path ===
+stored internal path = 1104 bytes
+7z t after corruption: rc=2 (Testing archive: C:\Users\pavel\AppData\Local\Temp\tc098_overruns\d3\panel\deep.7z; Path = C:\Users\pavel\AppData\Local\Temp\tc098_overruns\d3\panel\deep.7z; ERROR: CRC Failed : LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\corruptdata.bin; Sub items Errors: 1; Archives with Errors: 1; Sub items Errors: 1)
+dialog during unpack: [#32770 '7-Zip'] [Static id=2477] Cannot add 1 or more directories to the list. The total path is too long. Some directories or files may be missing in the archive listing. | [Button id=1] OK
+NO FATAL: unpack finished; process alive = True; saw a prompt = True
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== end === left running: 0; fixture removed: True; registry restored+identical: True; fixture failures: 0
