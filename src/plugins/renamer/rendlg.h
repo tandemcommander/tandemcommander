@@ -100,6 +100,7 @@ protected:
         SkipAllBadRead, SkipAllOpenOut, SkipAllOpenIn, SkipAllFileDir,
         SkipAllDirChangeCase, SkipAllCreateDir, SkipAllDependingNames,
         SkipAllRemoveDir;
+    BOOL SkipAllSameFile; // feature 103: the target is the source itself (refused)
 
     TIndirectArray<CUndoStackEntry> UndoStack;
     BOOL Undoing;

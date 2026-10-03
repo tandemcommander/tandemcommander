@@ -1290,3 +1290,24 @@ plugin architecture preservation, UI consistency.
   (receiver now starts after `LoadConfiguration`; `HistoryLock`). Probe
   `probe/filecomp_probe.ps1` 95 / 0 (decoys never compared). Records:
   `specs/102-filecomp-unicode-names/fix-log.md`.
+- 103-same-file-delete-guard: **the source is never "the existing target".** A rename or
+  move that met "already exists" decided by the NAMES that the target was another file and
+  deleted it; on a server that folds more than Windows (NFC/NFD on macOS) the target was the
+  source. Reproduced without a Mac: `specs/103-.../probe/davnorm.py`, a standard-library WebDAV
+  server folding like macOS (the redirector answers such a rename with 183; WebDAV reports file
+  id 0) - the build before 103 **deleted the file** on Quick Rename, F6, F6 without the overwrite
+  question, and F6 between `\\localhost@port` and `\\127.0.0.1@port` (copy onto itself, then
+  the source deleted - nothing blocks `CREATE_ALWAYS` on a WebDAV alias). NTFS itself answers
+  success for its own aliases (hard link, 8.3 name, junction); copies onto SUBST / `\\localhost\C$`
+  / junction aliases survived only by the source's share mode (after "overwrite x with x?").
+  Rule, header-only `src/common/salsamefile.h` (+ UTF-8 facade in `salfileio`): identity = volume
+  serial + file id (128-bit `FileIdInfo` mirrored for 0x0601) from a `FILE_READ_ATTRIBUTES`
+  open, metadata when there is no id; rename/move onto (possibly) itself -> **self-checking
+  temporary name** (`src` -> `salXXX` -> `tgt`; if the target survives, it is another file and
+  the old handling follows; never the source's own name as the temporary one); copy (and a move
+  between roots) onto itself -> "Cannot copy/move a file to itself." (existing strings, own
+  Skip All). Sites: `DoMoveFile`, `RenameFileInternal`, `DoCopyFile`, Renamer `MoveFile` +
+  `CopyFile`, PictView rename; a symbolic link / junction moved onto what it points at is refused
+  (it deleted the file before - second review). No new string, interface 107. Probe 62/0
+  (pre-103 55/7: six losses); saltests 13,326 -> 13,438. Review: 4 SHOULD-FIX fixed, re-review ACCEPT. Records:
+  `specs/103-same-file-delete-guard/fix-log.md`.

@@ -4392,6 +4392,396 @@ static void TestFcRemote102()
     }
 }
 
+//*****************************************************************************
+//
+// feature 103: an existing target that is the source itself
+// (src/common/salsamefile.h, the UTF-8 facade in salfileio.cpp)
+//
+
+// an identity with a 64-bit id; times in whole seconds plus a sub-second part
+static CSalFileIdentity Id103(DWORD vsn, ULONGLONG idx, ULONGLONG size, ULONGLONG mSec, ULONGLONG cSec,
+                              DWORD links = 1, BOOL dir = FALSE, DWORD subSecond = 1234567)
+{
+    CSalFileIdentity id;
+    SalFileIdentityClear(&id);
+    id.Valid = TRUE;
+    id.Has64 = TRUE;
+    id.Vsn32 = vsn;
+    id.Index64 = idx;
+    id.Links = links;
+    id.Attr = dir ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_ARCHIVE;
+    id.Size = size;
+    ULONGLONG m = mSec * 10000000ULL + subSecond, c = cSec == 0 ? 0 : cSec * 10000000ULL + subSecond;
+    id.MTime.dwLowDateTime = (DWORD)m;
+    id.MTime.dwHighDateTime = (DWORD)(m >> 32);
+    id.CTime.dwLowDateTime = (DWORD)c;
+    id.CTime.dwHighDateTime = (DWORD)(c >> 32);
+    return id;
+}
+
+// A fake file system for the temporary-name route, folding names like a macOS server:
+// "cafe" + U+0301 (NFD) and "caf" + U+00E9 (NFC) are one entry, ASCII case is ignored.
+// A rename onto the identical stored name is a no-op, onto an ASCII-case variant of it a
+// case change, onto another spelling of the same entry "already exists" (the defect's
+// server answer); MoveFile semantics otherwise (never replaces).
+struct CFakeFs103
+{
+    struct CEntry
+    {
+        std::string Name, Data;
+    };
+    std::map<std::string, CEntry> E;  // folded full path -> stored name + content
+    std::set<std::string> Locked;     // folded paths that cannot be renamed away (sharing violation)
+    std::set<std::string> DenyTarget; // folded paths that cannot be created (access denied)
+    std::string DenyRestoreTo;        // folded path a move from a temporary name may not go to
+    int Moves = 0;
+
+    static std::string Key(std::string n)
+    {
+        for (size_t p; (p = n.find("\\alias\\")) != std::string::npos;) // a folder alias: D:\alias = D:\share
+            n.replace(p, 7, "\\share\\");
+        for (size_t p; (p = n.find("e\xCC\x81")) != std::string::npos;) // NFD e + acute -> NFC
+            n.replace(p, 3, "\xC3\xA9");
+        for (size_t p; (p = n.find("\xC3\x89")) != std::string::npos;) // capital E acute -> small
+            n.replace(p, 2, "\xC3\xA9");
+        for (char& c : n)
+            if (c >= 'A' && c <= 'Z')
+                c = (char)(c - 'A' + 'a');
+        return n;
+    }
+    void Add(const std::string& name, const std::string& data) { E[Key(name)] = {name, data}; }
+    BOOL Has(const std::string& name, const std::string& data) const
+    {
+        auto it = E.find(Key(name));
+        return it != E.end() && it->second.Name == name && it->second.Data == data;
+    }
+    BOOL Fail(DWORD* err, DWORD e)
+    {
+        *err = e;
+        return FALSE;
+    }
+    BOOL Move(const char* from, const char* to, DWORD* err)
+    {
+        Moves++;
+        std::string kf = Key(from), kt = Key(to);
+        auto f = E.find(kf);
+        if (f == E.end())
+            return Fail(err, ERROR_FILE_NOT_FOUND);
+        if (Locked.count(kf))
+            return Fail(err, ERROR_SHARING_VIOLATION);
+        if (!DenyRestoreTo.empty() && kt == DenyRestoreTo && strstr(from, "\\sal") != NULL)
+            return Fail(err, ERROR_ACCESS_DENIED);
+        if (DenyTarget.count(kt))
+            return Fail(err, ERROR_ACCESS_DENIED);
+        if (kt == kf) // the same entry
+        {
+            if (f->second.Name == to)
+                return TRUE;
+            if (_stricmp(f->second.Name.c_str(), to) == 0) // a plain case change
+            {
+                f->second.Name = to;
+                return TRUE;
+            }
+            return Fail(err, ERROR_ALREADY_EXISTS); // another spelling: "already exists"
+        }
+        if (E.count(kt))
+            return Fail(err, ERROR_ALREADY_EXISTS);
+        CEntry e = f->second;
+        e.Name = to;
+        E.erase(f);
+        E[kt] = e;
+        return TRUE;
+    }
+};
+
+static void TestSameFile103()
+{
+    const char* nfd = "D:\\share\\cafe\xCC\x81.txt"; // stored by the server (NFD)
+    const char* nfc = "D:\\share\\Caf\xC3\xA9.txt";   // typed by the user (NFC, capital C)
+    const DWORD exists = ERROR_ALREADY_EXISTS;
+
+    // --- the temporary name ---
+    char t[64];
+    CHECK(SalBuildTempSibling("C:\\dir\\x.txt", 0x1ABC, t, sizeof(t)) && strcmp(t, "C:\\dir\\salABC") == 0);
+    CHECK(SalBuildTempSibling("x.txt", 5, t, sizeof(t)) && strcmp(t, "sal005") == 0);
+    CHECK(SalBuildTempSibling("C:\\d\\x", 0, t, 13) && strcmp(t, "C:\\d\\sal000") == 0); // 12 bytes + NUL fit
+    CHECK(!SalBuildTempSibling("C:\\d\\x", 0, t, 12));
+
+    // --- identity: ids ---
+    CSalFileIdentity a = Id103(0x1234, 0x10, 100, 5000, 4000);
+    CSalFileIdentity same = a;
+    CHECK(SalFileIdMatch(a, same) == simEqual);
+    CHECK(SalFileIdMatch(a, Id103(0x1234, 0x11, 100, 5000, 4000)) == simDifferent);    // another file, same metadata
+    CHECK(SalFileIdMatch(a, Id103(0x9999, 0x10, 100, 5000, 4000)) == simDifferent);    // same index, other volume
+    CHECK(SalFileIdMatch(a, Id103(0x1234, 0, 100, 5000, 4000)) == simUnknown);         // a server without ids
+    CHECK(SalFileIdMatch(Id103(0, 0, 1, 1, 1), Id103(0, 0, 1, 1, 1)) == simUnknown);   // WebDAV: vsn 0, index 0
+    CHECK(SalFileIdMatch(Id103(1, 0, 1, 1, 1), Id103(2, 0, 1, 1, 1)) == simDifferent); // no ids, two volumes
+    CHECK(SalFileIdMatch(a, Id103(0x1234, ~0ULL, 100, 5000, 4000)) == simUnknown);     // all ones: not an id
+    CSalFileIdentity invalid;
+    SalFileIdentityClear(&invalid);
+    CHECK(SalFileIdMatch(a, invalid) == simUnknown && SalFileIdMatch(invalid, a) == simUnknown);
+    // 128-bit ids win over the 64-bit index (ReFS: the 64 bits may not be unique)
+    CSalFileIdentity r1 = Id103(7, 0x10, 1, 1, 1), r2 = Id103(7, 0x10, 1, 1, 1);
+    r1.Has128 = r2.Has128 = TRUE;
+    r1.Vsn64 = r2.Vsn64 = 0x77;
+    memset(r1.Id128, 0xA1, 16);
+    memset(r2.Id128, 0xA1, 16);
+    r2.Id128[15] = 0xA2;
+    CHECK(SalFileIdMatch(r1, r2) == simDifferent);
+    r2.Id128[15] = 0xA1;
+    r2.Index64 = 0x20; // the 64-bit view differs, the 128-bit one decides
+    CHECK(SalFileIdMatch(r1, r2) == simEqual);
+    memset(r2.Id128, 0, 16); // an all-zero 128-bit id is not used: back to the 64-bit index
+    CHECK(SalFileIdMatch(r1, r2) == simDifferent);
+    r2.Has128 = FALSE; // one side without FileIdInfo: the 64-bit index for both
+    r2.Index64 = 0x10;
+    CHECK(SalFileIdMatch(r1, r2) == simEqual);
+
+    // --- identity: metadata (used only when there are no ids) ---
+    CHECK(SalFileMetaEqual(a, same));
+    CHECK(SalFileMetaEqual(a, Id103(0, 0, 100, 5000, 4000, 1, FALSE, 0)));                  // rounded to seconds by a server
+    CHECK(!SalFileMetaEqual(a, Id103(0, 0, 101, 5000, 4000)));                              // size
+    CHECK(!SalFileMetaEqual(a, Id103(0, 0, 100, 5001, 4000)));                              // last write
+    CHECK(!SalFileMetaEqual(a, Id103(0, 0, 100, 5000, 4001)));                              // creation
+    CHECK(SalFileMetaEqual(a, Id103(0, 0, 100, 5000, 0)));                                  // no creation time: not compared
+    CHECK(!SalFileMetaEqual(a, Id103(0, 0, 100, 5000, 4000, 1, TRUE)));                     // a directory
+    CHECK(SalFileMetaEqual(Id103(0, 0, 0, 9, 9, 1, TRUE), Id103(0, 0, 77, 9, 9, 1, TRUE))); // directory sizes ignored
+    CHECK(!SalFileMetaEqual(a, invalid));
+
+    // --- the decision ---
+    struct CDec103
+    {
+        CSalFileIdentity S, T;
+        DWORD Err;
+        CSalExistingTargetAction Move, Copy;
+    };
+    const CDec103 dec[] = {
+        {a, a, ERROR_ACCESS_DENIED, setaLegacy, setaLegacy},                                       // not "already exists"
+        {a, a, ERROR_FILE_EXISTS, setaViaTempName, setaRefuseSame},                                // the same file
+        {a, a, exists, setaViaTempName, setaRefuseSame},                                           //
+        {Id103(1, 0x10, 100, 5000, 4000, 2), Id103(1, 0x10, 100, 5000, 4000, 2), exists,           // another hard link
+         setaViaTempName, setaLegacy},                                                             //
+        {a, Id103(0x1234, 0x10, 999, 5000, 4000), exists, setaViaTempName, setaLegacy},            // same id, a volume clone / constant id
+        {a, Id103(0x1234, 0x11, 100, 5000, 4000), exists, setaViaTempName, setaLegacy},            // other id, twin data: per-path ids? the route checks
+        {a, Id103(0x1234, 0x11, 101, 5000, 4000), exists, setaLegacy, setaLegacy},                 // another file
+        {a, Id103(0x1234, 0x11, 100, 5003, 4000), exists, setaLegacy, setaLegacy},                 // another file (written later)
+        {a, Id103(0x9999, 0x10, 100, 5000, 4000), exists, setaViaTempName, setaLegacy},            // another volume, twin data
+        {a, Id103(0x9999, 0x10, 100, 5000, 4009), exists, setaLegacy, setaLegacy},                 // another volume
+        {Id103(0, 0, 10, 50, 40), Id103(0, 0, 10, 50, 40), exists, setaViaTempName, setaRefuseSame}, // WebDAV alias
+        {Id103(0, 0, 10, 50, 40), Id103(0, 0, 11, 50, 40), exists, setaLegacy, setaLegacy},          // WebDAV, other file
+        {Id103(0, 0, 10, 50, 40), Id103(0, 0, 10, 51, 40), exists, setaLegacy, setaLegacy},          //
+        {a, invalid, exists, setaViaTempName, setaLegacy},                                         // target unreadable
+        {invalid, a, exists, setaViaTempName, setaLegacy},                                         // source unreadable
+    };
+    for (int i = 0; i < _countof(dec); i++)
+    {
+        CHECK(SalDecideExistingTarget(FALSE, dec[i].Err, dec[i].S, dec[i].T) == dec[i].Move);
+        CHECK(SalDecideExistingTarget(TRUE, dec[i].Err, dec[i].S, dec[i].T) == dec[i].Copy);
+    }
+
+    // --- a link moved onto what it points at (second review of 103) ---
+    {
+        CSalFileIdentity lnk = Id103(0x1234, 0x99, 0, 5000, 4000); // the link object itself
+        lnk.Attr |= FILE_ATTRIBUTE_REPARSE_POINT;
+        CHECK(SalLinkPointsAtTarget(lnk, a, a));                                   // through the link: the target
+        CHECK(!SalLinkPointsAtTarget(lnk, Id103(0x1234, 0x11, 1, 1, 1), a));      // points elsewhere
+        CHECK(!SalLinkPointsAtTarget(a, a, a));                                     // not a link
+        CHECK(!SalLinkPointsAtTarget(lnk, invalid, a));                             // a dangling link
+        CHECK(SalLinkPointsAtTarget(lnk, Id103(0, 0, 10, 50, 40), Id103(0, 0, 10, 50, 40))); // no ids, same metadata
+        CHECK(!SalLinkPointsAtTarget(lnk, Id103(0, 0, 10, 50, 40), Id103(0, 0, 11, 50, 40)));
+        CHECK(SalDecideExistingTarget(FALSE, exists, lnk, a) == setaLegacy); // what the rename rule alone says: the gap
+    }
+
+    // --- the temporary-name route on the folding server ---
+    char tmp[128];
+    DWORD err;
+    { // the defect's case: the target is another spelling of the source -> renamed, nothing lost
+        CFakeFs103 fs;
+        fs.Add(nfd, "PRECIOUS");
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        DWORD e0 = 0;
+        CHECK(!fs.Move(nfd, nfc, &e0) && e0 == exists); // what MoveFile answers there
+        CHECK(SalRenameViaTempName(nfd, nfc, mv, tmp, sizeof(tmp), 0, &err) == svtDone);
+        CHECK(fs.E.size() == 1 && fs.Has(nfc, "PRECIOUS"));
+    }
+    { // another file under the target name: the source comes back, nothing touched
+        CFakeFs103 fs;
+        fs.Add("D:\\share\\a.txt", "PRECIOUS");
+        fs.Add("D:\\share\\b.txt", "other");
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        CHECK(SalRenameViaTempName("D:\\share\\a.txt", "D:\\share\\b.txt", mv, tmp, sizeof(tmp), 0, &err) == svtTargetIsOther);
+        CHECK(fs.E.size() == 2 && fs.Has("D:\\share\\a.txt", "PRECIOUS") && fs.Has("D:\\share\\b.txt", "other"));
+    }
+    { // the source cannot be renamed at all: an error, nothing moved
+        CFakeFs103 fs;
+        fs.Add(nfd, "PRECIOUS");
+        fs.Locked.insert(CFakeFs103::Key(nfd));
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        CHECK(SalRenameViaTempName(nfd, nfc, mv, tmp, sizeof(tmp), 0, &err) == svtFailed && err == ERROR_SHARING_VIOLATION);
+        CHECK(fs.E.size() == 1 && fs.Has(nfd, "PRECIOUS"));
+    }
+    { // the second step fails for another reason: the source is back under its own name
+        CFakeFs103 fs;
+        fs.Add("D:\\share\\y.txt", "Y");
+        fs.DenyTarget.insert(CFakeFs103::Key("D:\\share\\x.txt"));
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        CHECK(SalRenameViaTempName("D:\\share\\y.txt", "D:\\share\\x.txt", mv, tmp, sizeof(tmp), 0, &err) == svtFailed && err == ERROR_ACCESS_DENIED);
+        CHECK(fs.E.size() == 1 && fs.Has("D:\\share\\y.txt", "Y"));
+    }
+    { // the way back fails too: the source is reported where it is
+        CFakeFs103 fs;
+        fs.Add("D:\\share\\a.txt", "PRECIOUS");
+        fs.Add("D:\\share\\b.txt", "other");
+        fs.DenyRestoreTo = CFakeFs103::Key("D:\\share\\a.txt");
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        CHECK(SalRenameViaTempName("D:\\share\\a.txt", "D:\\share\\b.txt", mv, tmp, sizeof(tmp), 0x42, &err) == svtLeftAtTemp && err == exists);
+        CHECK(strcmp(tmp, "D:\\share\\sal042") == 0 && fs.Has(tmp, "PRECIOUS") && fs.Has("D:\\share\\b.txt", "other"));
+    }
+    { // the source is itself named like a temporary name, the alias is its folder: the
+      // candidate equal to its own name is skipped (a "rename" onto its own name would succeed
+      // without moving it, and the route would take the source for another file - review 103)
+        CFakeFs103 fs;
+        fs.Add("D:\\share\\sal000", "PRECIOUS");
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        DWORD e0 = 0;
+        CHECK(!fs.Move("D:\\share\\sal000", "D:\\alias\\sal000", &e0) && e0 == exists);
+        CHECK(SalRenameViaTempName("D:\\share\\sal000", "D:\\alias\\sal000", mv, tmp, sizeof(tmp), 0, &err) == svtDone);
+        CHECK(strcmp(tmp, "D:\\share\\sal001") == 0 && fs.E.size() == 1 && fs.Has("D:\\alias\\sal000", "PRECIOUS"));
+        // the target's own name is skipped too
+        CFakeFs103 fs2;
+        fs2.Add("D:\\share\\x.txt", "PRECIOUS");
+        fs2.Add("D:\\share\\sal000", "other");
+        auto mv2 = [&fs2](const char* f, const char* to, DWORD* e) { return fs2.Move(f, to, e); };
+        CHECK(SalRenameViaTempName("D:\\share\\x.txt", "D:\\share\\SAL000", mv2, tmp, sizeof(tmp), 0, &err) == svtTargetIsOther);
+        CHECK(strcmp(tmp, "D:\\share\\sal001") == 0 && fs2.Has("D:\\share\\x.txt", "PRECIOUS") && fs2.Has("D:\\share\\sal000", "other"));
+    }
+    { // temporary names in use are skipped
+        CFakeFs103 fs;
+        fs.Add(nfd, "PRECIOUS");
+        for (int i = 0; i < 5; i++)
+        {
+            char nm[32];
+            sprintf_s(nm, "D:\\share\\SAL%03X", i);
+            fs.Add(nm, "busy");
+        }
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        CHECK(SalRenameViaTempName(nfd, nfc, mv, tmp, sizeof(tmp), 0, &err) == svtDone);
+        CHECK(fs.E.size() == 6 && fs.Has(nfc, "PRECIOUS") && strcmp(tmp, "D:\\share\\sal005") == 0);
+    }
+    { // every temporary name in use: an error, the source untouched
+        CFakeFs103 fs;
+        fs.Add(nfd, "PRECIOUS");
+        for (int i = 0; i < 0x1000; i++)
+        {
+            char nm[32];
+            sprintf_s(nm, "D:\\share\\sal%03X", i);
+            fs.Add(nm, "busy");
+        }
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        CHECK(SalRenameViaTempName(nfd, nfc, mv, tmp, sizeof(tmp), 0, &err) == svtFailed && err == exists);
+        CHECK(fs.Has(nfd, "PRECIOUS") && fs.Moves == 0x1000);
+    }
+    { // no room for the temporary name: an error before anything is moved
+        CFakeFs103 fs;
+        fs.Add(nfd, "PRECIOUS");
+        auto mv = [&fs](const char* f, const char* to, DWORD* e) { return fs.Move(f, to, e); };
+        CHECK(SalRenameViaTempName(nfd, nfc, mv, tmp, 12, 0, &err) == svtFailed && err == ERROR_FILENAME_EXCED_RANGE);
+        CHECK(fs.Moves == 0 && fs.Has(nfd, "PRECIOUS"));
+    }
+
+    // --- real files: identity through the UTF-8 facade, the route on NTFS ---
+    WCHAR tmpPathW[MAX_PATH];
+    char tmpPath[3 * MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmpPathW);
+    if (n == 0 || n >= MAX_PATH || SalWToU8(tmpPathW, -1, tmpPath, sizeof(tmpPath)) == 0)
+    {
+        printf("skipping the file part of TestSameFile103 (no temp path)\n");
+        return;
+    }
+    char dir[3 * MAX_PATH + 40];
+    sprintf_s(dir, "%ssaltests-103-%u", tmpPath, GetCurrentProcessId());
+    CHECK(SalCreateDirectory(dir, NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    std::string fa = std::string(dir) + "\\longname103a.txt", fb = std::string(dir) + "\\b.txt",
+                fc = std::string(dir) + "\\c.txt", fx = std::string(dir) + "\\x.txt", fy = std::string(dir) + "\\y.txt";
+    auto put = [](const std::string& p, const char* text) -> BOOL
+    {
+        HANDLE h = SalCreateFile(p.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD w = 0;
+        BOOL ok = h != INVALID_HANDLE_VALUE && WriteFile(h, text, (DWORD)strlen(text), &w, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    CHECK(put(fa, "PRECIOUS") && put(fc, "PRECIOUS-C")); // c: another file
+    WCHAR* wa = SalPathToWExtAlloc(fa.c_str());
+    WCHAR* wb = SalPathToWExtAlloc(fb.c_str());
+    BOOL linked = wa != NULL && wb != NULL && CreateHardLinkW(wb, wa, NULL);
+    free(wa);
+    free(wb);
+    CHECK(linked);
+    CSalFileIdentity ia, ib, ic, iaShort, idir;
+    CHECK(SalGetFileIdentity(fa.c_str(), TRUE, &ia) && ia.Valid && ia.Has64 && ia.Size == 8);
+    CHECK(SalGetFileIdentity(fb.c_str(), TRUE, &ib) && SalGetFileIdentity(fc.c_str(), FALSE, &ic));
+    CHECK(SalFileIdMatch(ia, ib) == simEqual && ia.Links == 2 && ib.Links == 2); // one file, two names
+    { // from an open (overlapped, as the asynchronous copy opens it) handle, as DoCopyFile reads the source
+        HANDLE h = SalCreateFile(fa.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                                 FILE_FLAG_OVERLAPPED | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        CSalFileIdentity ih;
+        CHECK(h != INVALID_HANDLE_VALUE && SalFileIdentityFromHandle(h, &ih) && SalFileIdMatch(ia, ih) == simEqual &&
+              SalFileMetaEqual(ia, ih));
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+    }
+    CHECK(SalFileIdMatch(ia, ic) == simDifferent);
+    CHECK(SalDecideExistingTarget(TRUE, exists, ia, ib) == setaLegacy);       // copy onto its other link: as before
+    CHECK(SalDecideExistingTarget(FALSE, exists, ia, ib) == setaViaTempName); // the route tells them apart
+    CHECK(SalDecideExistingTarget(TRUE, exists, ia, ic) == setaLegacy && SalDecideExistingTarget(FALSE, exists, ia, ic) == setaLegacy);
+    char shortPath[3 * MAX_PATH + 40];
+    if (SalGetShortPathName(fa.c_str(), shortPath, sizeof(shortPath)) && _stricmp(shortPath, fa.c_str()) != 0)
+    { // the same file under its 8.3 name: another path, the same identity
+        CHECK(SalGetFileIdentity(shortPath, TRUE, &iaShort) && SalFileIdMatch(ia, iaShort) == simEqual);
+        CHECK(SalDecideExistingTarget(FALSE, exists, ia, iaShort) == setaViaTempName);
+    }
+    else
+        printf("TestSameFile103: no 8.3 names on the temp volume - the short-name alias is not checked\n");
+    CHECK(SalGetFileIdentity(dir, TRUE, &idir) && (idir.Attr & FILE_ATTRIBUTE_DIRECTORY) && SalFileIdMatch(idir, ia) == simDifferent);
+    CSalFileIdentity none;
+    CHECK(!SalGetFileIdentity((std::string(dir) + "\\missing.txt").c_str(), TRUE, &none) && !none.Valid);
+    { // a real symbolic link to longname103a.txt (needs Developer Mode or the privilege - skipped otherwise)
+        std::string fl = std::string(dir) + "\\lnk103.txt";
+        WCHAR* wl = SalPathToWExtAlloc(fl.c_str());
+        WCHAR* wt = SalPathToWExtAlloc(fa.c_str());
+        BOOL made = wl != NULL && wt != NULL && CreateSymbolicLinkW(wl, wt, 0x2 /* SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE */);
+        free(wl);
+        free(wt);
+        if (made)
+        {
+            CSalFileIdentity il, ilThrough;
+            CHECK(SalGetFileIdentity(fl.c_str(), TRUE, &il) && (il.Attr & FILE_ATTRIBUTE_REPARSE_POINT));
+            CHECK(SalGetFileIdentity(fl.c_str(), FALSE, &ilThrough) && SalFileIdMatch(ilThrough, ia) == simEqual);
+            CHECK(SalFileIdMatch(il, ia) == simDifferent);       // the link itself is another object
+            CHECK(SalLinkPointsAtTarget(il, ilThrough, ia));     // ... but it points at the target: refused
+            CHECK(!SalLinkPointsAtTarget(il, ilThrough, ic));    // onto another file: not this rule
+            CHECK(SalDeleteFile(fl.c_str()));
+        }
+        else
+            printf("TestSameFile103: no symbolic link could be created - the link checks on disk are skipped\n");
+    }
+    // the route on NTFS: another file under the target name, then a plain rename
+    CHECK(put(fx, "X") && put(fy, "Y"));
+    char tmpName[3 * MAX_PATH + 80];
+    CHECK(SalRenameViaTempNameU8(fx.c_str(), fy.c_str(), tmpName, sizeof(tmpName), &err) == svtTargetIsOther);
+    CHECK(SalGetFileAttributes(fx.c_str()) != INVALID_FILE_ATTRIBUTES && SalGetFileAttributes(tmpName) == INVALID_FILE_ATTRIBUTES);
+    CHECK(SalDeleteFile(fy.c_str()));
+    CHECK(SalRenameViaTempNameU8(fx.c_str(), fy.c_str(), tmpName, sizeof(tmpName), &err) == svtDone);
+    CHECK(SalGetFileAttributes(fx.c_str()) == INVALID_FILE_ATTRIBUTES && SalGetFileAttributes(fy.c_str()) != INVALID_FILE_ATTRIBUTES);
+    SalDeleteFile(fa.c_str());
+    SalDeleteFile(fb.c_str());
+    SalDeleteFile(fc.c_str());
+    SalDeleteFile(fy.c_str());
+    CHECK(SalRemoveDirectory(dir));
+}
+
 int main()
 {
     TestConversions();
@@ -4433,6 +4823,7 @@ int main()
     TestHeapString095();
     TestLeftovers101();
     TestFcRemote102();
+    TestSameFile103();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

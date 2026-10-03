@@ -763,6 +763,8 @@
     </ClInclude>
     <ClInclude Include="..\common\salrandom.h">
     </ClInclude>
+    <ClInclude Include="..\common\salsamefile.h">
+    </ClInclude>
     <ClInclude Include="..\common\salunicode.h">
     </ClInclude>
     <ClInclude Include="..\common\sheets.h">

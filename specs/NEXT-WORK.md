@@ -369,7 +369,34 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   the same file answers "already exists", and the overwrite branch deletes
   the target - which is the source. Older than 092, narrowed by it. The fix
   is a file-identity test (volume serial + file index) before the delete.
-  **The first thing to do here.**
+  ✅ **Fixed by feature 103 (2026-10-03)**: reproduced first with a local
+  WebDAV server that folds names like a macOS server - the build before 103
+  deleted the file on four routes (Quick Rename, F6, F6 without the overwrite
+  question, F6 between two server names of one file = copy onto itself +
+  delete). Now the file system's identity decides; a rename/move onto
+  (possibly) itself goes through a self-checking temporary name, a copy onto
+  itself is refused ("Cannot copy/move a file to itself."); Renamer and
+  PictView's rename too. Left, each with its reason in
+  `specs/103-same-file-delete-guard/fix-log.md`: a real macOS/Samba share
+  was not driven; a copy on a file system without file ids refuses a
+  *different* file of equal size and times (WebDAV twins); a copy onto a
+  symbolic link that points at the source is now refused; hard links on file
+  systems that do not share share-mode state between two paths; the ZIP
+  plug-in can overwrite a selected source with the new archive's file after
+  "overwrite?" (another defect class); a case-sensitive folder still refuses
+  `a.txt` -> existing `A.txt` (now provably another file - could offer the
+  overwrite). Found by 103, pre-existing: **PictView's Rename fails with
+  error 32 for the image it shows** (the viewer keeps it open; both builds,
+  NTFS and WebDAV). Found by 103's second review: renaming or moving a
+  symbolic link onto the file it points at **deleted that file** (both older
+  builds) - fixed in 103; still open: **moving a FOLDER onto an alias of
+  itself between two roots** (`C:\x\F` -> `\\localhost\C$\x\`) deletes its
+  empty subfolders (files are refused, no data lost - a folder-level identity
+  check for moves between roots is missing); a hard link reached through an
+  alias still gets "overwrite x with x?" then error 32 (safe on NTFS, other
+  servers unverified); the Renamer's refusal says "already exists" (a plug-in
+  cannot reach the core's "to itself" texts without a new string or an
+  interface change).
 - **The panel sort comparator is intransitive with "Use locale" off** for
   names mixing ASCII and other characters (found by the 092 research; not
   touched - it changes what users see).

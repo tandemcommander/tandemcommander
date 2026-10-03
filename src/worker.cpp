@@ -995,6 +995,7 @@ struct CProgressDlgData
     BOOL SkipAllFileOpenOut;
     BOOL SkipAllOverwriteErr;
     BOOL SkipAllMoveErrors;
+    BOOL SkipAllSameFile; // feature 103: "Cannot copy/move a file to itself."
     BOOL SkipAllDeleteErr;
     BOOL SkipAllDirCreate;
     BOOL SkipAllDirCreateErr;
@@ -5212,6 +5213,51 @@ COPY_AGAIN:
                         if (err == ERROR_FILE_EXISTS || // overwrite the file?
                             err == ERROR_ALREADY_EXISTS)
                         {
+                            // feature 103: the existing target may be the source itself under another
+                            // name or path (SUBST, \\localhost\C$, a junction, a second server name,
+                            // another spelling on a server that folds more than Windows). Overwriting it
+                            // would truncate the source (only the source's open handle stopped that, and
+                            // not on a WebDAV alias), and a move between two roots would then delete the
+                            // source: refuse with "Cannot copy (move) a file to itself." Another hard link
+                            // of the source keeps the old handling (deleting that name keeps the data)
+                            if (!invalidTgtName && in != NULL && in != INVALID_HANDLE_VALUE)
+                            {
+                                CSalFileIdentity srcId, tgtId;
+                                SalFileIdentityFromHandle(in, &srcId);
+                                SalGetFileIdentity(op->TargetName, FALSE, &tgtId);
+                                if (SalDecideExistingTarget(TRUE, err, srcId, tgtId) == setaRefuseSame)
+                                {
+                                    WaitForSingleObject(dlgData.WorkerNotSuspended, INFINITE); // if we should be in suspend mode, wait ...
+                                    if (*dlgData.CancelWorker)
+                                        goto CANCEL_OPEN2;
+
+                                    if (dlgData.SkipAllSameFile)
+                                        goto SKIP_OPEN_OUT;
+
+                                    int ret;
+                                    ret = IDCANCEL;
+                                    char* data[4];
+                                    data[0] = (char*)&ret;
+                                    data[1] = LoadStr(isMove ? IDS_ERRORMOVE : IDS_ERRORCOPY);
+                                    data[2] = op->TargetName;
+                                    data[3] = LoadStrU8(isMove ? IDS_CANNOTMOVEFILETOITSELF : IDS_CANNOTCOPYFILETOITSELF); // the dialog shows UTF-8 here
+                                    SendMessage(hProgressDlg, WM_USER_DIALOG, 0, (LPARAM)data);
+                                    switch (ret)
+                                    {
+                                    case IDRETRY:
+                                        goto OPEN_TGT_FILE;
+
+                                    case IDB_SKIPALL:
+                                        dlgData.SkipAllSameFile = TRUE;
+                                    case IDB_SKIP:
+                                        goto SKIP_OPEN_OUT;
+
+                                    default: // IDCANCEL
+                                        goto CANCEL_OPEN2;
+                                    }
+                                }
+                            }
+
                             if (!dlgData.OverwriteAll && (dlgData.CnfrmFileOver || script->OverwriteOlder))
                             {
                                 char sAttr[101], tAttr[101];
@@ -5817,6 +5863,132 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                     err = GetLastError();
                     if (setAttr)
                         SalSetFileAttributes(sourceNameMvDir, attr);
+                }
+
+                // feature 103: "already exists" may name the SOURCE ITSELF - another spelling of its
+                // name on a server that folds more than Windows (NFC/NFD on a macOS server), an alias
+                // path. The branches below decide by the names and delete the target; the file
+                // system's identity decides here. If the target is (or may be) the source, it is never
+                // deleted: the rename goes through a temporary name, which also tells the two apart -
+                // when the target outlives the source's name it is another file (or another hard link)
+                // and the branches below follow unchanged
+                if ((err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS) && !invalidName &&
+                    sourceNameMvDir == op->SourceName && targetNameMvDir == op->TargetName)
+                {
+                    CSalFileIdentity srcId, tgtId;
+                    SalGetFileIdentity(op->SourceName, TRUE, &srcId);
+                    SalGetFileIdentity(op->TargetName, TRUE, &tgtId);
+                    // a symbolic link / junction moved onto the file (folder) it points at: the old
+                    // overwrite below deleted that file and left a link to itself (second review of 103)
+                    CSalFileIdentity srcThrough;
+                    SalFileIdentityClear(&srcThrough);
+                    if (srcId.Valid && (srcId.Attr & FILE_ATTRIBUTE_REPARSE_POINT))
+                        SalGetFileIdentity(op->SourceName, FALSE, &srcThrough);
+                    if (SalLinkPointsAtTarget(srcId, srcThrough, tgtId))
+                    {
+                        WaitForSingleObject(dlgData.WorkerNotSuspended, INFINITE); // if we should be in suspend mode, wait ...
+                        if (*dlgData.CancelWorker)
+                            return FALSE;
+                        int ret = IDB_SKIP;
+                        if (!dlgData.SkipAllSameFile)
+                        {
+                            ret = IDCANCEL;
+                            char* data[4];
+                            data[0] = (char*)&ret;
+                            data[1] = LoadStr(IDS_ERRORMOVE);
+                            data[2] = op->SourceName;
+                            data[3] = LoadStrU8(dir ? IDS_CANNOTMOVEDIRTOITSELF : IDS_CANNOTMOVEFILETOITSELF); // the dialog shows UTF-8 here
+                            SendMessage(hProgressDlg, WM_USER_DIALOG, 0, (LPARAM)data);
+                        }
+                        if (ret == IDRETRY)
+                            continue; // the move again from the start
+                        if (ret == IDB_SKIPALL)
+                            dlgData.SkipAllSameFile = TRUE;
+                        if (ret == IDB_SKIP || ret == IDB_SKIPALL)
+                        {
+                            totalDone += op->Size;
+                            script->SetProgressSize(totalDone);
+                            SetProgress(hProgressDlg, 0, CaclProg(totalDone, script->TotalSize), dlgData);
+                            return TRUE;
+                        }
+                        return FALSE; // cancel
+                    }
+                    if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName)
+                    {
+                        int tmpSize = (int)strlen(op->SourceName) + 16;
+                        char* tmp = (char*)malloc(tmpSize);
+                        DWORD tmpErr = ERROR_NOT_ENOUGH_MEMORY;
+                        CSalViaTempResult res = svtFailed;
+                        if (tmp != NULL)
+                            res = SalRenameViaTempNameU8(op->SourceName, op->TargetName, tmp, tmpSize, &tmpErr);
+                        else
+                            TRACE_E(LOW_MEMORY);
+                        if (res == svtDone)
+                        {
+                            free(tmp);
+                            if (script->CopyAttrs && (op->Attr & FILE_ATTRIBUTE_ARCHIVE) == 0) // as after a plain MoveFile above
+                                SalSetFileAttributes(targetNameMvDir, op->Attr);
+                            goto OPERATION_DONE;
+                        }
+                        if (res == svtLeftAtTemp)
+                        { // the second rename and the way back both failed: the source is under the temporary
+                            // name now - always say so (also after "Skip All": the user must learn where the
+                            // file is); Retry finishes the rename or puts the source back under its name
+                            TRACE_E("DoMoveFile(): the source could not be renamed back from " << tmp);
+                            BOOL back = FALSE;
+                            while (!back)
+                            {
+                                WaitForSingleObject(dlgData.WorkerNotSuspended, INFINITE); // if we should be in suspend mode, wait ...
+                                int ret = IDCANCEL;
+                                if (!*dlgData.CancelWorker)
+                                {
+                                    char* data[4];
+                                    data[0] = (char*)&ret;
+                                    data[1] = tmp; // where the source is now
+                                    data[2] = op->TargetName;
+                                    data[3] = GetErrorText(tmpErr);
+                                    SendMessage(hProgressDlg, WM_USER_DIALOG, dir ? 4 : 3, (LPARAM)data);
+                                }
+                                if (ret == IDRETRY)
+                                {
+                                    if (SalMoveFile(tmp, op->TargetName))
+                                    {
+                                        free(tmp);
+                                        if (script->CopyAttrs && (op->Attr & FILE_ATTRIBUTE_ARCHIVE) == 0)
+                                            SalSetFileAttributes(targetNameMvDir, op->Attr);
+                                        goto OPERATION_DONE;
+                                    }
+                                    tmpErr = GetLastError();
+                                    back = SalMoveFile(tmp, op->SourceName); // under its own name again: start over
+                                    continue;
+                                }
+                                // Skip / Cancel (also a cancel while the dialog could not be shown): one more
+                                // attempt to give the source its own name back
+                                if (!SalMoveFile(tmp, op->SourceName))
+                                    TRACE_E("DoMoveFile(): the source stays under the temporary name " << tmp);
+                                free(tmp);
+                                if (ret == IDB_SKIPALL)
+                                    dlgData.SkipAllMoveErrors = TRUE;
+                                if (ret == IDB_SKIP || ret == IDB_SKIPALL)
+                                {
+                                    totalDone += op->Size;
+                                    script->SetProgressSize(totalDone);
+                                    SetProgress(hProgressDlg, 0, CaclProg(totalDone, script->TotalSize), dlgData);
+                                    return TRUE;
+                                }
+                                return FALSE; // cancel
+                            }
+                            free(tmp);
+                            continue; // the source is back under its name: the move again from the start
+                        }
+                        if (res != svtTargetIsOther) // not renamed (the source is back): report it, the target is never touched
+                        {
+                            free(tmp);
+                            err = tmpErr;
+                            goto NORMAL_ERROR;
+                        }
+                        free(tmp); // another file: the old handling below
+                    }
                 }
 
                 // feature 092: "just a change of case" by the file system's rule, not the code-page
@@ -7945,6 +8117,7 @@ unsigned ThreadWorkerBody(void* parameter)
                                                                 dlgData.DirCrLossEncrAll = dlgData.IgnoreAllGetFileTimeErr =
                                                                     dlgData.IgnoreAllSetFileTimeErr = dlgData.SkipAllGetFileTime =
                                                                         dlgData.SkipAllSetFileTime = FALSE;
+    dlgData.SkipAllSameFile = FALSE; // feature 103
     dlgData.CnfrmFileOver = Configuration.CnfrmFileOver;
     dlgData.CnfrmDirOver = Configuration.CnfrmDirOver;
     dlgData.CnfrmSHFileOver = Configuration.CnfrmSHFileOver;

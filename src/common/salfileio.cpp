@@ -460,3 +460,32 @@ BOOL SalDecryptFile(const char* u8path)
     SalFreeKeepLastError(w);
     return ret;
 }
+
+//*****************************************************************************
+//
+// feature 103: file identity and the temporary-name route (UTF-8 facade)
+//
+
+BOOL SalGetFileIdentity(const char* u8path, BOOL linkItself, CSalFileIdentity* id)
+{
+    SalFileIdentityClear(id);
+    WCHAR* w = SalPathToWExtAlloc(u8path);
+    if (w == NULL)
+        return FALSE;
+    BOOL ret = SalGetFileIdentityW(w, linkItself, id);
+    free(w);
+    return ret;
+}
+
+CSalViaTempResult SalRenameViaTempNameU8(const char* u8src, const char* u8tgt,
+                                         char* tmpName, int tmpNameSize, DWORD* err)
+{
+    auto move = [](const char* from, const char* to, DWORD* e) -> BOOL
+    {
+        if (SalMoveFile(from, to))
+            return TRUE;
+        *e = GetLastError();
+        return FALSE;
+    };
+    return SalRenameViaTempName(u8src, u8tgt, move, tmpName, tmpNameSize, GetTickCount() / 10, err);
+}

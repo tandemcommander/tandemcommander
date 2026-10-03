@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salsamefile.h" // feature 103: is an existing target the source itself?
+
 BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
                               BOOL overwrite, BOOL isDir, BOOL& skip)
 {
@@ -27,6 +29,77 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
                         SG->SalPathFindFileName(targetName)) == 0 ||
                 SG->SalMoveFile(sourceName, targetName, &err))
                 return TRUE; // success
+
+            // feature 103: "already exists" may name the source itself (another spelling of its name
+            // on a server that folds more than Windows); the names below cannot tell, the file
+            // system's identity can. Such a target is never deleted: the rename goes through a
+            // temporary name, which also tells the two apart (a target that outlives the source's
+            // name is another file and the overwrite below follows unchanged)
+            if (err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS)
+            {
+                CSalFileIdentity srcId, tgtId;
+                WCHAR* wSrc = SplU8ToWExtAlloc(sourceName);
+                WCHAR* wTgt = SplU8ToWExtAlloc(targetName);
+                SalGetFileIdentityW(wSrc, TRUE, &srcId);
+                SalGetFileIdentityW(wTgt, TRUE, &tgtId);
+                // a symbolic link / junction renamed onto the file (folder) it points at: the overwrite
+                // below would delete that file and leave a link to itself (second review of 103)
+                CSalFileIdentity srcThrough;
+                SalFileIdentityClear(&srcThrough);
+                if (srcId.Valid && (srcId.Attr & FILE_ATTRIBUTE_REPARSE_POINT))
+                    SalGetFileIdentityW(wSrc, FALSE, &srcThrough);
+                free(wSrc);
+                free(wTgt);
+                if (SalLinkPointsAtTarget(srcId, srcThrough, tgtId)) // refused, reported as "already exists" (no new string)
+                {
+                    SetLastError(err);
+                    if (FileError(HWindow, sourceName, IDS_MOVEERROR, TRUE, &skip, &SkipAllSameFile, IDS_ERROR))
+                        continue; // retry
+                    return FALSE;
+                }
+                if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName)
+                {
+                    int tmpSize = (int)strlen(sourceName) + 16;
+                    char* tmp = (char*)malloc(tmpSize);
+                    DWORD tmpErr = ERROR_NOT_ENOUGH_MEMORY;
+                    CSalViaTempResult res = svtFailed;
+                    if (tmp != NULL)
+                    {
+                        auto move = [](const char* from, const char* to, DWORD* e) -> BOOL
+                        { return SG->SalMoveFile(from, to, e); };
+                        res = SalRenameViaTempName(sourceName, targetName, move, tmp, tmpSize, GetTickCount() / 10, &tmpErr);
+                    }
+                    if (res == svtDone)
+                    {
+                        free(tmp);
+                        return TRUE; // success
+                    }
+                    if (res == svtLeftAtTemp) // the file is under the temporary name: always say where
+                    {                         // (also after "Skip All"), then skip it
+                        const char* errText = SG->GetErrorText(tmpErr);
+                        size_t msgSize = strlen(errText) + strlen(tmp) + 4;
+                        char* msg = (char*)malloc(msgSize);
+                        if (msg != NULL)
+                            sprintf_s(msg, msgSize, "%s\n\n%s", errText, tmp);
+                        SG->SalMessageBox(HWindow, msg != NULL ? msg : tmp, LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);
+                        free(msg);
+                        free(tmp);
+                        skip = TRUE;
+                        return FALSE;
+                    }
+                    if (res != svtTargetIsOther) // not renamed (the file is back): report it, the target is never touched
+                    {
+                        SetLastError(tmpErr);
+                        BOOL retry = FileError(HWindow, sourceName, IDS_MOVEERROR,
+                                               TRUE, &skip, &SkipAllMove, IDS_ERROR);
+                        free(tmp);
+                        if (!retry)
+                            return FALSE;
+                        continue;
+                    }
+                    free(tmp); // another file: the old handling below
+                }
+            }
 
             if ((err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS) &&
                 SG->StrICmp(sourceName, targetName) != 0)
@@ -361,6 +434,25 @@ COPY_AGAIN:
                     DWORD attr = SG->SalGetFileAttributes(targetName);
                     if (err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS)
                     {
+                        // feature 103: the existing target may be the source itself under another path (an
+                        // alias root: SUBST, \\localhost\C$, a second server name). Overwriting it would
+                        // truncate the source (only its open handle stops that, and not on a WebDAV alias)
+                        // and MoveFile above then deletes the source: refused, reported as "already exists"
+                        CSalFileIdentity srcId, tgtId;
+                        SalFileIdentityFromHandle(in, &srcId);
+                        WCHAR* wTgt = SplU8ToWExtAlloc(targetName);
+                        SalGetFileIdentityW(wTgt, FALSE, &tgtId);
+                        free(wTgt);
+                        if (SalDecideExistingTarget(TRUE, err, srcId, tgtId) == setaRefuseSame)
+                        {
+                            CloseHandle(in);
+                            SetLastError(err);
+                            if (FileError(HWindow, targetName, IDS_OPENFILEERROR,
+                                          TRUE, &skip, &SkipAllSameFile, IDS_ERROR))
+                                goto COPY_AGAIN; // retry
+                            return FALSE;
+                        }
+
                         // overwrite the file?
                         if (!overwrite &&
                             !FileOverwrite(HWindow, targetName, NULL, sourceName, NULL, attr,

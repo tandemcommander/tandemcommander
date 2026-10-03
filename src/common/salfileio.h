@@ -102,3 +102,20 @@ DWORD SalSetNamedSecurityInfo(const char* u8path, SECURITY_INFORMATION si,
 // underlying API; on an unconvertible path they fail with ERROR_INVALID_NAME.
 BOOL SalEncryptFile(const char* u8path);
 BOOL SalDecryptFile(const char* u8path);
+
+//*****************************************************************************
+//
+// feature 103: is an existing target the source itself? (rules in salsamefile.h)
+//
+
+#include "salsamefile.h"
+
+// the identity of a file or directory named by a UTF-8 path (SalGetFileIdentityW through
+// the \\?\ form); FALSE when nothing could be read ('id' is then cleared)
+BOOL SalGetFileIdentity(const char* u8path, BOOL linkItself, CSalFileIdentity* id);
+
+// SalRenameViaTempName through SalMoveFile: u8src -> "sal###" beside it -> u8tgt; the
+// temporary path is written to 'tmpName' (strlen(u8src) + 8 bytes suffice) - for
+// svtLeftAtTemp it is where the source now is
+CSalViaTempResult SalRenameViaTempNameU8(const char* u8src, const char* u8tgt,
+                                         char* tmpName, int tmpNameSize, DWORD* err);

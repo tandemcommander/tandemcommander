@@ -541,6 +541,7 @@ void CRenamerDialog::ExecuteScript(CRenameScriptEntry* script, int count)
     SkipAllOverwrite = SkipAllMove = SkipAllDeleteErr = SkipAllBadWrite =
         SkipAllBadRead = SkipAllOpenOut = SkipAllOpenIn =
             SkipAllDirChangeCase = SkipAllCreateDir = FALSE;
+    SkipAllSameFile = FALSE; // feature 103
 
     Progress->SetText(LoadStr(IDS_RENAMING));
 
@@ -601,6 +602,7 @@ void CRenamerDialog::Undo()
         SkipAllBadRead = SkipAllOpenOut = SkipAllOpenIn =
             SkipAllDirChangeCase = SkipAllCreateDir = SkipAllFileDir =
                 SkipAllDependingNames = SkipAllRemoveDir = FALSE;
+    SkipAllSameFile = FALSE; // feature 103
 
     // create the progress dialog
     Progress = new CProgressDialog(HWindow);

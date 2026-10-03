@@ -53,6 +53,26 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Renaming or moving a file no longer deletes it when the server sees the
+  new name as the same file.** Some servers treat two spellings of a name as
+  one file even though Windows treats them as two, for example `café.txt`
+  with the accent stored as a separate character, as on a macOS server, and
+  `café.txt` typed on the keyboard. Renaming a file to such a spelling of its
+  own name made the program ask whether to overwrite "the existing file"
+  (both lines identical), and on Yes it deleted the file it was renaming.
+  With *Confirm file overwrite* turned off it deleted it without asking. The
+  program now asks Windows whether the existing file is the file itself, and
+  renames it through a temporary name instead. Copying a file onto another
+  path of itself - a SUBST drive, `\\localhost\C$`, a junction, or a WebDAV
+  server reached under two names - is now refused with "Cannot copy a file to
+  itself.", and so is moving it to another drive letter or server name of
+  itself ("Cannot move a file to itself."); a move within one drive through a
+  junction was always harmless (Windows leaves the file where it is). Before,
+  the program asked to overwrite the file with itself. Through WebDAV a move
+  then deleted the only copy; elsewhere a sharing error stopped it. Renaming
+  or moving a symbolic link onto the file it points at deleted that file and
+  left a link to itself; it is now refused. The Renamer plugin and PictView's
+  Rename follow the same rules (feature 103).
 - **The File Comparator compares the files you name.** With a name
   containing characters outside the system code page (a Cyrillic or Chinese
   name on a Czech Windows, an emoji) the comparison failed, and the name was

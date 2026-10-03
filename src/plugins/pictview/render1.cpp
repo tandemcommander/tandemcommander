@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include <zmouse.h>
 #include <shlobj.h>
+#include "../../common/salsamefile.h" // feature 103: is an existing target the viewed file itself?
 
 #include "lib/pvw32dll.h"
 #include "renderer.h"
@@ -2868,7 +2869,75 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
             }
             else
             {
-                if ((err == ERROR_ALREADY_EXISTS ||
+                // feature 103: "already exists" may name the viewed file itself (another spelling of
+                // its name on a server that folds more than Windows); the names below cannot tell, the
+                // file system's identity can. Such a target is never deleted: the rename goes through
+                // a temporary name, which also tells the two apart (a target that outlives the file's
+                // name is another file and the overwrite below follows unchanged)
+                BOOL keepTarget = FALSE;
+                if (err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS)
+                {
+                    CSalFileIdentity srcId, tgtId;
+                    WCHAR* wSrc = SplU8ToWExtAlloc(path);
+                    WCHAR* wTgt = SplU8ToWExtAlloc(tgtPath);
+                    SalGetFileIdentityW(wSrc, TRUE, &srcId);
+                    SalGetFileIdentityW(wTgt, TRUE, &tgtId);
+                    // a symbolic link renamed onto the file it points at: the overwrite below would delete
+                    // that file and leave a link to itself (second review of 103) - refused, reported as
+                    // "already exists" (no new string)
+                    CSalFileIdentity srcThrough;
+                    SalFileIdentityClear(&srcThrough);
+                    if (srcId.Valid && (srcId.Attr & FILE_ATTRIBUTE_REPARSE_POINT))
+                        SalGetFileIdentityW(wSrc, FALSE, &srcThrough);
+                    free(wSrc);
+                    free(wTgt);
+                    if (SalLinkPointsAtTarget(srcId, srcThrough, tgtId))
+                        keepTarget = TRUE; // 'err' (already exists) is reported below
+                    else if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName)
+                    {
+                        int tmpSize = (int)strlen(path) + 16;
+                        char* tmp = (char*)malloc(tmpSize);
+                        DWORD tmpErr = ERROR_NOT_ENOUGH_MEMORY;
+                        CSalViaTempResult res = svtFailed;
+                        if (tmp != NULL)
+                        {
+                            auto move = [](const char* from, const char* to, DWORD* e) -> BOOL
+                            { return SalamanderGeneral->SalMoveFile(from, to, e); };
+                            res = SalRenameViaTempName(path, tgtPath, move, tmp, tmpSize, GetTickCount() / 10, &tmpErr);
+                        }
+                        if (res == svtDone)
+                        {
+                            renamed = TRUE;
+                            ret = TRUE;
+                            err = ERROR_SUCCESS;
+                            if (changedPath != NULL)
+                                SalamanderGeneral->PostChangeOnPathNotification(changedPath, FALSE);
+                        }
+                        else if (res != svtTargetIsOther) // not renamed: reported below, the target is never touched
+                        {
+                            err = tmpErr;
+                            if (res == svtLeftAtTemp) // the file is under the temporary name: say where
+                            {
+                                TRACE_E("RenameFileInternal: the file could not be renamed back from " << tmp);
+                                const char* errText = SalamanderGeneral->GetErrorText(err);
+                                size_t msgSize = strlen(errText) + strlen(tmp) + 4;
+                                char* msg = (char*)malloc(msgSize);
+                                if (msg != NULL)
+                                    sprintf_s(msg, msgSize, "%s\n\n%s", errText, tmp);
+                                SalamanderGeneral->SalMessageBox(HWindow, msg != NULL ? msg : tmp, LoadStr(IDS_ERRORRENAMINGFILE),
+                                                                 MB_OK | MB_ICONEXCLAMATION);
+                                free(msg);
+                                err = ERROR_SUCCESS; // reported
+                                ret = TRUE;          // the viewed file's old name is gone: do not offer the rename again
+                            }
+                        }
+                        if (res != svtTargetIsOther)
+                            keepTarget = TRUE;
+                        free(tmp);
+                    }
+                }
+                if (!keepTarget && // feature 103
+                    (err == ERROR_ALREADY_EXISTS ||
                      err == ERROR_FILE_EXISTS) &&
                     SalamanderGeneral->StrICmp(path, tgtPath) != 0) // overwrite the file?
                 {

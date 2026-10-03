@@ -2211,11 +2211,72 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
             }
             else
             {
+                // feature 103: "already exists" may name the SOURCE ITSELF - another spelling of its name
+                // on a server that folds more than Windows (NFC/NFD on a macOS server). The branches below
+                // decide by the names and delete the target; the file system's identity decides here. If
+                // the target is (or may be) the source, it is never deleted: the rename goes through a
+                // temporary name, which also tells the two apart - when the target outlives the source's
+                // name it is another file (or another hard link) and the branches below follow unchanged
+                BOOL keepTarget = FALSE; // TRUE: the branches below must not run (the target may be the source)
+                if (err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS)
+                {
+                    CSalFileIdentity srcId, tgtId, srcThrough;
+                    SalGetFileIdentity(path, TRUE, &srcId);
+                    SalGetFileIdentity(tgtPath, TRUE, &tgtId);
+                    // a symbolic link / junction renamed onto the file (folder) it points at: the old
+                    // overwrite below deleted that file and left a link to itself (second review of 103)
+                    SalFileIdentityClear(&srcThrough);
+                    if (srcId.Valid && (srcId.Attr & FILE_ATTRIBUTE_REPARSE_POINT))
+                        SalGetFileIdentity(path, FALSE, &srcThrough);
+                    if (SalLinkPointsAtTarget(srcId, srcThrough, tgtId))
+                    {
+                        keepTarget = TRUE;
+                        err = ERROR_SUCCESS; // reported here
+                        SalMessageBox(HWindow, LoadStrU8((srcId.Attr & FILE_ATTRIBUTE_DIRECTORY) ? IDS_CANNOTMOVEDIRTOITSELF : IDS_CANNOTMOVEFILETOITSELF),
+                                      LoadStr(IDS_ERRORRENAMINGFILE), MB_OK | MB_ICONEXCLAMATION);
+                    }
+                    else if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName)
+                    {
+                        int tmpSize = (int)strlen(path) + 16;
+                        char* tmp = (char*)malloc(tmpSize);
+                        DWORD tmpErr = ERROR_NOT_ENOUGH_MEMORY;
+                        CSalViaTempResult res = svtFailed;
+                        if (tmp != NULL)
+                            res = SalRenameViaTempNameU8(path, tgtPath, tmp, tmpSize, &tmpErr);
+                        else
+                            TRACE_E(LOW_MEMORY);
+                        if (res == svtDone)
+                        {
+                            free(tmp);
+                            goto REN_OPERATION_DONE;
+                        }
+                        if (res != svtTargetIsOther) // not renamed: report it, the target is never touched
+                        {
+                            keepTarget = TRUE;
+                            err = tmpErr;
+                            if (res == svtLeftAtTemp) // the source is under the temporary name: say where
+                            {
+                                TRACE_E("CFilesWindow::RenameFileInternal(): the source could not be renamed back from " << tmp);
+                                const char* errText = GetErrorText(err);
+                                size_t msgSize = strlen(errText) + strlen(tmp) + 4;
+                                char* msg = (char*)malloc(msgSize);
+                                if (msg != NULL)
+                                    sprintf_s(msg, msgSize, "%s\n\n%s", errText, tmp);
+                                SalMessageBox(HWindow, msg != NULL ? msg : tmp, LoadStr(IDS_ERRORRENAMINGFILE), MB_OK | MB_ICONEXCLAMATION);
+                                free(msg);
+                                err = ERROR_SUCCESS; // reported
+                                ret = TRUE;          // the old name is gone: do not offer Quick Rename for it again
+                            }
+                        }
+                        free(tmp); // (svtTargetIsOther: another file - the old handling below)
+                    }
+                }
+
                 // feature 092: "just change-case" by the file system's rule, not the code-page byte fold
                 // (with the byte fold "Č.txt" -> "č.txt" was taken for two files; on a file system that
                 // answers "already exists" to such a rename, the overwrite branch below deletes the target,
                 // which is the source - NTFS renames it without complaint)
-                if (!SalNameEqualOrdinalCI(path, -1, tgtPath, -1) && // if it isn't just change-case
+                if (!keepTarget && !SalNameEqualOrdinalCI(path, -1, tgtPath, -1) && // if it isn't just change-case
                     (err == ERROR_FILE_EXISTS ||                     // check whether it's only rewriting the DOS name of the file
                      err == ERROR_ALREADY_EXISTS))
                 {
@@ -2279,7 +2340,8 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                         }
                     }
                 }
-                if ((err == ERROR_ALREADY_EXISTS ||
+                if (!keepTarget && // feature 103
+                    (err == ERROR_ALREADY_EXISTS ||
                      err == ERROR_FILE_EXISTS) &&
                     !SalNameEqualOrdinalCI(path, -1, tgtPath, -1)) // overwrite the file? (feature 092: never for a change of case)
                 {
