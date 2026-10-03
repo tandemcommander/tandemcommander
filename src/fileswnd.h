@@ -1703,6 +1703,16 @@ private:
     CPanelTmpEnumData& operator=(const CPanelTmpEnumData&); // not copyable
 };
 
+// feature 099: the link check before every move from a disk panel into an archive - the Pack
+// dialog's "delete files after packing" (since Open Salamander, fail-closed since 098), F6 into an
+// archive and drag & drop / cut + paste with Move into an archive (these had none: the plug-in
+// packed the files behind a junction and deleted them). Scans the selection 'data' (in
+// 'sourcePath') for links to directories. Returns 0 = no link and everything was checked (the move
+// may go on); 1 = a link was found or not everything could be checked - IDS_DELFILESAFTERPACKINGNOLINKS
+// was shown with 'title' (the move must not delete); 2 = the user cancelled the scan (ESC).
+// 'data' is left as it was (the scan builds no tree).
+int ScanMoveSelectionForDirLinks(HWND parent, CPanelTmpEnumData* data, const char* sourcePath, const char* title);
+
 const char* WINAPI PanelEnumDiskSelection(HWND parent, int enumFiles, const char** dosName, BOOL* isDir,
                                           CQuadWord* size, DWORD* attr, FILETIME* lastWrite, void* param,
                                           int* errorOccured);

@@ -53,6 +53,16 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Moving into an archive or to an FTP server no longer deletes files
+  outside the selection.** Moving (F6, drag and drop with Move, cut and
+  paste) a folder that contained a junction or a symbolic link to another
+  folder - or the link itself - into a ZIP, 7z or other archive packed the
+  files *behind* the link and then deleted them, without any warning; moving
+  such a folder to an FTP server did the same. Those files are not part of
+  what you moved. Moving into an archive now shows the existing warning about
+  links and does nothing; use Copy (F5) if you want the content. Moving to an
+  FTP server moves the link itself and leaves what it points to alone. Every
+  release so far was affected (feature 099).
 - **Packing from a long folder packs everything.** When a selection with
   sub-folders was packed (Alt+F5, or copied into an archive) from a folder
   whose path was 260 bytes or longer - about 130 accented characters - the

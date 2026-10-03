@@ -639,6 +639,21 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                                 continue; // back to the copy/move dialog
                             }
 
+                            // feature 099: a move must not delete what lies behind a link to a directory (F6 had
+                            // no link check: the plug-in packed the files behind a junction and deleted them).
+                            // The warning says the move is not possible: it is cancelled before anything is
+                            // packed or deleted (the user can copy with F5)
+                            if (type == atMove &&
+                                ScanMoveSelectionForDirLinks(HWindow, &data, GetPath(), LoadStr(IDS_ERRORMOVE)) != 0)
+                            {
+                                if (indexes != NULL)
+                                    delete[] (indexes);
+                                EndStopRefresh();
+                                EndSuspendMode();
+                                FilesActionInProgress = FALSE;
+                                return;
+                            }
+
                             *secondPart = 0; // 'path' holds the archive file name
                             BOOL haveSize = FALSE;
                             CQuadWord size;

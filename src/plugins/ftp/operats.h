@@ -841,6 +841,12 @@ struct CFTPDiskWork
     BOOL CanDeleteEmptyFile;                       // TRUE if an empty file can be deleted (used when canceling/on item error to decide whether to delete a zero-size file)
     TIndirectArray<CDiskListingItem>* DiskListing; // if not NULL (only when Type == fdwtListDir), this is an allocated listing
 
+    // feature 099: fdwtListDir for an upload-Move: a directory that is a link (junction, directory
+    // symbolic link) is listed as empty - its contents lie outside the moved tree, and the move
+    // would upload them and then DELETE them on disk through the link; the link itself is then
+    // removed like an emptied directory (RemoveDirectory removes only the link)
+    BOOL ListLinkAsEmpty;
+
     void CopyFrom(CFTPDiskWork* work); // copies values from 'work' into 'this'
 };
 

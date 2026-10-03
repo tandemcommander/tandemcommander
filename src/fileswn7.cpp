@@ -1312,6 +1312,57 @@ CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, in
     return dir;
 }
 
+// feature 099: see fileswnd.h
+int ScanMoveSelectionForDirLinks(HWND parent, CPanelTmpEnumData* data, const char* sourcePath, const char* title)
+{
+    CALL_STACK_MESSAGE2("ScanMoveSelectionForDirLinks(, , %s, )", sourcePath);
+    int containsDirLinks = 0;
+    SetCurrentDirectory(sourcePath);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+
+    GetAsyncKeyState(VK_ESCAPE); // initialize GetAsyncKeyState - see help
+    CreateSafeWaitWindow(LoadStr(IDS_ANALYSINGDIRTREEESC), NULL, 3000, TRUE, NULL);
+
+    // try to find the first directory link; if found, simulate an error to stop the search
+    char linkName[MAX_PATH];
+    linkName[0] = 0;
+    int scanErr = SALENUM_SUCCESS; // feature 098: SALENUM_ERROR = a folder could not be checked
+    ReadDirectoryTree(NULL /* silent mode */, data, &scanErr, FALSE, &containsDirLinks, linkName);
+
+    DestroySafeWaitWindow();
+
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+    SetCurrentDirectoryToSystem();
+    // the directory contains a link and cannot be combined with "delete files after packing":
+    // I can't handle the situation where packing a single file from the directory fails
+    // (e.g., if the file is locked or access is denied), and I entered the directory via the link.
+    // Deleting the whole link is wrong because it won't show that packing failed,
+    // and deleting everything except one file after traversing the link is also wrong,
+    // because it alters the original directory content, which users report as a bug since it's unexpected.
+    // feature 098: a scan that did not look everywhere (a folder it could not read or that is
+    // too deep, low memory, an early stop) cannot say "no links": the delete is switched off
+    // exactly as for a link found - 'linkName' names the first folder that was not checked
+    if (containsDirLinks == 0 && scanErr != SALENUM_SUCCESS)
+    {
+        if (linkName[0] == 0)
+        {
+            lstrcpyn(linkName, sourcePath, MAX_PATH);
+            SalU8TrimIncompleteTail(linkName);
+        }
+        containsDirLinks = 1;
+    }
+    if (containsDirLinks == 1)
+    {
+        CSalHeapString text;
+        if (text.Printf(LoadStrU8(IDS_DELFILESAFTERPACKINGNOLINKS), linkName))
+            SalMessageBox(parent, text.Text(), title, MB_OK | MB_ICONEXCLAMATION);
+        else
+            TRACE_E(LOW_MEMORY);
+        return 1;
+    }
+    return containsDirLinks == 2 ? 2 : 0; // 2 = user canceled loading (ESC pressed or closed the wait window)
+}
+
 const char* WINAPI PanelEnumDiskSelection(HWND parent, int enumFiles, const char** dosName, BOOL* isDir,
                                           CQuadWord* size, DWORD* attr, FILETIME* lastWrite, void* param,
                                           int* errorOccured)
@@ -1400,7 +1451,6 @@ void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* plugi
     //---  obtain the files and directories to work with
     char subject[MAX_PATH + 100]; // text for the Unpack dialog (that is being unpacked)
     char path[SAL_FIND_NAME_U8];  // AlterFileName copies a full name unbounded (feature 027; was MAX_PATH)
-    char text[1000];
     BOOL nameByItem;
     CPanelTmpEnumData data;
     BOOL subDir;
@@ -1636,49 +1686,14 @@ _PACK_AGAIN:
             BOOL performPack = TRUE;
             if (PackerConfig.Move)
             {
-                int containsDirLinks = 0;
-                SetCurrentDirectory(GetPath());
-                SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-
-                GetAsyncKeyState(VK_ESCAPE); // initialize GetAsyncKeyState - see help
-                CreateSafeWaitWindow(LoadStr(IDS_ANALYSINGDIRTREEESC), NULL, 3000, TRUE, NULL);
-
-                // try to find the first directory link; if found, simulate an error to stop the search
-                char linkName[MAX_PATH];
-                linkName[0] = 0;
-                int scanErr = SALENUM_SUCCESS; // feature 098: SALENUM_ERROR = a folder could not be checked
-                ReadDirectoryTree(NULL /* silent mode */, &data, &scanErr, FALSE, &containsDirLinks, linkName);
-
-                DestroySafeWaitWindow();
-
-                SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
-                SetCurrentDirectoryToSystem();
-                // the directory contains a link and cannot be combined with "delete files after packing":
-                // I can't handle the situation where packing a single file from the directory fails
-                // (e.g., if the file is locked or access is denied), and I entered the directory via the link.
-                // Deleting the whole link is wrong because it won't show that packing failed,
-                // and deleting everything except one file after traversing the link is also wrong,
-                // because it alters the original directory content, which users report as a bug since it's unexpected.
-                // feature 098: a scan that did not look everywhere (a folder it could not read or that is
-                // too deep, low memory, an early stop) cannot say "no links": the delete is switched off
-                // exactly as for a link found - 'linkName' names the first folder that was not checked
-                if (containsDirLinks == 0 && scanErr != SALENUM_SUCCESS)
+                // feature 099: the scan is shared with F6 and drag & drop into an archive
+                int scan = ScanMoveSelectionForDirLinks(HWindow, &data, GetPath(), LoadStr(IDS_PACKTITLE));
+                if (scan == 1) // a link, or not everything checked: the message was shown
                 {
-                    if (linkName[0] == 0)
-                    {
-                        lstrcpyn(linkName, GetPath(), MAX_PATH);
-                        SalU8TrimIncompleteTail(linkName);
-                    }
-                    containsDirLinks = 1;
-                }
-                if (containsDirLinks == 1)
-                {
-                    _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_DELFILESAFTERPACKINGNOLINKS), linkName);
-                    SalMessageBox(HWindow, text, LoadStr(IDS_PACKTITLE), MB_OK | MB_ICONEXCLAMATION);
                     PackerConfig.Move = FALSE;
                     goto _PACK_AGAIN;
                 }
-                if (containsDirLinks == 2) // user canceled loading (ESC pressed or closed the wait window)
+                if (scan == 2) // user canceled loading (ESC pressed or closed the wait window)
                     performPack = FALSE;
             }
 

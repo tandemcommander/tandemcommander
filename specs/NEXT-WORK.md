@@ -417,13 +417,12 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
     measurement found behind item 4: packing a selection with sub-folders
     from a folder of 260+ bytes left out their contents.
   - **Found by 098 - queue:**
-    1. **Moving a folder that contains a junction INTO an archive (F6, and
-       almost certainly drag & drop with Move) packs the files behind the
-       junction and DELETES them** - files outside the selection, no
-       warning, every release (driven on the builds before and after 098).
-       The Pack dialog's *Move* has a link check (fixed to fail safe by 098);
-       F6 / drag-and-drop into an archive or a plug-in file system have
-       none. **Next feature.**
+    1. **Moving a folder that contains a junction into an archive deleted
+       the files behind it** - ✅ fixed by feature 099 (2026-10-03) for F6,
+       drag and drop and paste into archives, and for upload-Move in the FTP
+       plug-in (the same loss); SFTP was already safe. Not driven: a real
+       drag, the clipboard route, Explorer as the drag source (if Explorer
+       itself deletes after a Move drop, that is outside the program).
     2. Change Directory to a file whose NAME has a CJK character lands in the
        folder, but the viewer title shows `f??.txt` (any length, older than
        098) - input side? to measure.

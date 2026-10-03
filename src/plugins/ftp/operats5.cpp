@@ -868,6 +868,7 @@ void CFTPDiskWork::CopyFrom(CFTPDiskWork* work)
     CanOverwrite = work->CanOverwrite;
     CanDeleteEmptyFile = work->CanDeleteEmptyFile;
     DiskListing = work->DiskListing;
+    ListLinkAsEmpty = work->ListLinkAsEmpty; // feature 099
 }
 
 CFTPDiskThread::CFTPDiskThread() : CThread("FTP Disk Thread"), Work(20, 50, dtNoDelete), FilesToClose(20, 50)
@@ -2024,7 +2025,18 @@ void DoListDirectory(CFTPDiskWork& localWork, BOOL& needCopyBack)
     if (SalamanderGeneral->SalPathAppend(srcPath, localWork.Name, MAX_PATH))
     {
         localWork.DiskListing = new TIndirectArray<CDiskListingItem>(100, 500);
-        if (localWork.DiskListing != NULL && localWork.DiskListing->IsGood())
+        DWORD selfAttr = localWork.ListLinkAsEmpty ? SalamanderGeneral->SalGetFileAttributes(srcPath) : INVALID_FILE_ATTRIBUTES;
+        if (localWork.DiskListing != NULL && localWork.DiskListing->IsGood() && localWork.ListLinkAsEmpty &&
+            (selfAttr == INVALID_FILE_ATTRIBUTES || (selfAttr & FILE_ATTRIBUTE_REPARSE_POINT) != 0))
+        {
+            // feature 099: an upload-Move of a link to a directory (junction, directory symbolic link):
+            // an empty listing - the files behind the link lie outside the moved tree and the move would
+            // upload them and then delete them on disk; the emptied "directory" (the link) is removed
+            // afterwards, which removes only the link.  A folder whose attributes cannot be read is
+            // treated the same way (it might be a link): nothing in it is uploaded, and removing it
+            // afterwards fails if it is a real, non-empty folder - nothing is lost
+        }
+        else if (localWork.DiskListing != NULL && localWork.DiskListing->IsGood())
         {
             SalamanderGeneral->SalPathAppend(srcPath, "*.*", MAX_PATH + 10); // cannot fail
             char* srcPathEnd = strrchr(srcPath, '\\');                       // cannot fail either

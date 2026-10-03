@@ -552,7 +552,15 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
 
         if (dataEnum.IndexesCount > 0)
         {
-            if (data->ToArchive)
+            // feature 099: a move (drag & drop with Move, cut + paste) must not delete what lies behind a
+            // link to a directory - this route had no link check; the warning says the move is not
+            // possible: nothing is packed or deleted
+            if (data->ToArchive && !data->Copy &&
+                ScanMoveSelectionForDirLinks(HWindow, &dataEnum, data->Data->SrcPath, LoadStr(IDS_ERRORMOVE)) != 0)
+            {
+                // cancelled: the warning was shown (or the user stopped the scan); the selection stays as it is
+            }
+            else if (data->ToArchive)
             {
                 //---  check whether it is a zero-length file
                 BOOL nullFile;

@@ -1216,3 +1216,22 @@ plugin architecture preservation, UI consistency.
     crashes, assertions, 16 of 16 packings losing files); regressions 095,
     096, 097 unchanged. Reviews: REJECT (the junction blocker), ACCEPT.
     Records: `specs/098-long-path-overruns/fix-log.md`.
+- 099-move-into-archive-links: **moving into an archive or to FTP never
+  deletes files behind a link.** In every release, F6 / drag & drop / paste
+  with Move of a folder holding a junction or a directory symlink (or of the
+  link itself) into an archive packed the files *behind* the link and deleted
+  them - only the Pack dialog's Move had a link check. Now one helper,
+  `ScanMoveSelectionForDirLinks` (`fileswn7.cpp`; 098's fail-closed scan:
+  0 = no link and everything checked, 1 = link or not everything checked,
+  2 = Esc), runs before every move into an archive (`FilesAction` in
+  `fileswn8.cpp`, `DragDropToArcOrFS` in `fileswna.cpp`, the Pack dialog);
+  on 1 the existing warning `IDS_DELFILESAFTERPACKINGNOLINKS` ("this is not
+  possible ...") is shown and F6 / drag & drop cancel before anything is
+  packed. **FTP plug-in had the same loss** on upload-Move: `ListLinkAsEmpty`
+  (`operats*.cpp`) lists a link (or a folder whose attributes cannot be read)
+  as empty, so nothing behind it is uploaded or deleted; the link is removed
+  and an empty folder created on the server. SFTP never descended into links.
+  Probe `probe/linkmove_probe.ps1` 24 / 0 (before: 14 / 10, the file behind
+  the link deleted in all 8 link cases); the reviewer drove FTP against a
+  local pyftpdlib server on both builds. Rule for any future "move" route:
+  call the helper first. Records: `specs/099-move-into-archive-links/fix-log.md`.

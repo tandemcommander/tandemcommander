@@ -760,6 +760,8 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
                 TRACE_E("Unexpected situation in CFTPWorker::HandleEventInWorkingState4(): DiskWorkIsUsed may not be TRUE here!");
             InitDiskWork(WORKER_DISKWORKLISTFINISHED, fdwtListDir, CurItem->Path, CurItem->Name,
                          fqiaNone, FALSE, NULL, NULL, NULL, 0, NULL);
+            // feature 099: a move never descends into a link to a directory (it deleted the files behind it)
+            DiskWork.ListLinkAsEmpty = (CurItem->Type == fqitUploadMoveExploreDir);
             if (FTPDiskThread->AddWork(&DiskWork))
             {
                 DiskWorkIsUsed = TRUE;

@@ -324,6 +324,7 @@ void CFTPWorker::InitDiskWork(DWORD msgID, CFTPDiskWorkType type, const char* pa
     if (DiskWork.DiskListing != NULL)
         TRACE_E("CFTPWorker::InitDiskWork(): DiskWork.DiskListing is not NULL!");
     DiskWork.DiskListing = NULL;
+    DiskWork.ListLinkAsEmpty = FALSE; // feature 099: set by the caller for an upload-Move listing
 
     if (DiskWork.FlushDataBuffer != NULL)
         TRACE_E("CFTPWorker::InitDiskWork(): DiskWork.FlushDataBuffer must be NULL!");
