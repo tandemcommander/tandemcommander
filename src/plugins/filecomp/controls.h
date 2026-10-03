@@ -15,7 +15,7 @@ extern HBRUSH HDitheredBrush;
 class CFileHeaderWindow : public CWindow
 {
 protected:
-    char Text[MAX_PATH];
+    char* Text; // feature 102: FC_NAME_SIZE heap buffer (was MAX_PATH); NULL on low memory
     int TextLen;
     COLORREF BkColor;
     HBRUSH BkgndBrush;

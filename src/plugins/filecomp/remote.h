@@ -22,5 +22,5 @@ protected:
     static HANDLE RemoteComparatorThread; // NOTE: thread handle intended only for use inside ThreadQueue
     static HANDLE TerminateEvent;
     virtual unsigned Body();
-    virtual void RecieveMessage(const CMessage* message);
+    virtual void RecieveMessage(const CMessage* message, int size);
 };

@@ -44,12 +44,16 @@ CHexFileViewWindow::CHexFileViewWindow(CFileViewID id) : CFileViewWindow(id, fvt
     SelectedLength = 0;
     FocusedDiffOffset = -1;
     ViewMode = fvmStandard;
+    Path = (char*)malloc(FC_NAME_SIZE); // feature 102: NULL on low memory, SetData() reports it
+    if (Path != NULL)
+        Path[0] = 0;
 }
 
 CHexFileViewWindow::~CHexFileViewWindow()
 {
     CALL_STACK_MESSAGE1("CHexFileViewWindow::~CHexFileViewWindow()");
     DestroyData();
+    free(Path);
 }
 
 void CHexFileViewWindow::DestroyData()
@@ -158,15 +162,18 @@ BOOL CHexFileViewWindow::SetData(QWORD firstDiff, const char* path, QWORD siblin
     CALL_STACK_MESSAGE2("CHexFileViewWindow::SetData(, %s, )", path);
     DestroyData();
 
+    if (Path == NULL) // feature 102: the heap buffer of the constructor
+        return Error(GetParent(HWindow), IDS_LOWMEM);
+
     // FILE_SHARE_WRITE : See also CFilecompWorker::GuardedBody()
     // 'path' is a UTF-8 interface path (interface 104) -> open via the W file API
     WCHAR* wPath = SplU8ToWExtAlloc(path);
     HANDLE hFile = wPath == NULL ? INVALID_HANDLE_VALUE
                                  : CreateFileW(wPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
     free(wPath);
-    strcpy(Path, path); // Path may be needed in Retry dialog upon WM_USER_HANDLEFILEERROR
+    CopyU8Truncated(Path, FC_NAME_SIZE, path); // Path may be needed in Retry dialog upon WM_USER_HANDLEFILEERROR
     if (hFile == INVALID_HANDLE_VALUE)
-        return Error(GetParent(HWindow), IDS_OPEN, path);
+        return ErrorU8(GetParent(HWindow), IDS_OPEN, path); // feature 102: UTF-8 template + name
 
     Mapping.SetFile(hFile, atRead);
 

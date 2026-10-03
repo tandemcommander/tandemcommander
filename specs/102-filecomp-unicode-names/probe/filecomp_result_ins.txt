@@ -1,0 +1,12 @@
+filecomp_probe (feature 102), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+fcremote: D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\filecomp\fcremote.exe; other build's fcremote: -
+Date    : 2026-10-03 20:59; ACP 1250; registry key existed True
+Long case: 206 UTF-16 units, 508 UTF-8 bytes to the R file
+
+ins        INS    PASS        fields 'a\u0416.txt' / 'b\u65E5.txt'; list[0] names the right file first and the left file second exactly: True; title 'a\u0416.txt : b\u65E5.txt - File Comparator - 1 Difference'; list[0] '1: Insert line 4 from right file (b\u65E5.txt) after line 3 in left file (a\u0416.txt)' (combo unicode True); no message
+ins        END    PASS        exit 0x00000000; WM_NULL True; stray 0; new reports 0
+disk       DISK   PASS        every fixture file is still on disk
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 3, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

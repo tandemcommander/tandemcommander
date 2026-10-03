@@ -73,98 +73,88 @@ LoadStr(int resID)
     return ret;
 }
 
-inline int IsSpace(char c) { return c == ' ' || c == '\t'; }
+// feature 102: fcremote.exe works on the UTF-16 command line and sends UTF-16 full names
+// (channel version 2, see remotmsg.h).  It still has no C runtime: heap memory comes from
+// HeapAlloc, strings are handled by the kernel32 lstr*W functions and own loops, and no
+// stack frame may grow over a page (__chkstk is in the C runtime).
 
-int RemoveQuotes(char* dest, const char* source, int len)
+static void* FcAlloc(SIZE_T size)
 {
-    int d = 0, s = 0;
-    while (s < len)
-    {
-        if (source[s] == '"')
-            s++;
-        else
-            dest[d++] = source[s++];
-    }
-    return d;
+    return HeapAlloc(GetProcessHeap(), 0, size);
 }
 
-BOOL MakeArgv(const char* commandLine, char argv[2][MAX_PATH], int& argc,
-              int maxlen, int maxarg)
+static void FcFree(void* ptr)
 {
-    argc = 0;
-    const char* start = commandLine;
-    while (*start)
+    if (ptr != NULL)
+        HeapFree(GetProcessHeap(), 0, ptr);
+}
+
+// The full name of 'arg' (FcAlloc'ed), NULL on failure.  This replaces the current directory
+// that version 1 sent along: a relative name is put on fcremote's current directory here, by
+// FcAbsoluteNameW (fcproto.h), which keeps every component exactly as typed - GetFullPathNameW
+// (used at first) drops the trailing dots and spaces of every component, so "dir.\b.txt"
+// named "dir\b.txt", a different file (review); the plug-in opens the name with the "\\?\"
+// prefix, which takes it literally.
+static WCHAR* FullPathW(const WCHAR* arg)
+{
+    DWORD size = GetCurrentDirectoryW(0, NULL);
+    WCHAR* curDir = size > 0 ? (WCHAR*)FcAlloc((SIZE_T)size * sizeof(WCHAR)) : NULL;
+    if (curDir == NULL || GetCurrentDirectoryW(size, curDir) == 0)
     {
-        // trim the whitespace at the beginning
-        while (*start && IsSpace(*start))
-            start++;
-        if (!*start || argc >= maxarg)
-            break;
-        const char* end = start;
-        // find the end of the token
-        while (*end && !IsSpace(*end))
+        FcFree(curDir);
+        return NULL;
+    }
+    // "C:name": the current directory of that drive (Windows keeps one per drive)
+    WCHAR* driveDir = NULL;
+    if (FcIsDriveW(arg) && !FcIsSlashW(arg[2]))
+    {
+        WCHAR drive[3] = {arg[0], L':', 0};
+        DWORD dsize = GetFullPathNameW(drive, 0, NULL, NULL);
+        driveDir = dsize > 0 ? (WCHAR*)FcAlloc((SIZE_T)dsize * sizeof(WCHAR)) : NULL;
+        if (driveDir != NULL && GetFullPathNameW(drive, dsize, driveDir, NULL) == 0)
         {
-            if (*end++ == '"')
-            {
-                while (*end && *end != '"')
-                    end++;
-                if (end)
-                    end++;
-                else
-                    end = start + lstrlen(start);
-            }
+            FcFree(driveDir);
+            driveDir = NULL;
         }
-        // add the token to the array
-        int len = RemoveQuotes(argv[argc], start, min((int)(end - start), maxlen - 1));
-        argv[argc++][len] = 0;
-        start = end;
     }
-    return *start == 0;
+    WCHAR* full = FcAbsoluteNameW(arg, curDir, driveDir);
+    FcFree(driveDir);
+    FcFree(curDir);
+    return full;
 }
 
-BOOL PathAppend(LPTSTR pPath, LPCTSTR pMore)
+// removes the last component of 'path' (keeps the backslash of a root "C:\")
+static void FcPathRemoveFileSpecW(WCHAR* path)
 {
-    if (pPath == NULL || pMore == NULL)
+    int len = lstrlenW(path);
+    WCHAR* iterator = path + len - 1;
+    while (iterator >= path)
     {
-        TRACE_E("pPath == NULL || pMore == NULL");
-        return FALSE;
-    }
-    if (pMore[0] == 0)
-    {
-        TRACE_E("pMore[0] == 0");
-        return TRUE;
-    }
-    int len = lstrlen(pPath);
-    // trim the trailing backslash before appending
-    if (len > 1 && pPath[len - 1] != '\\' && pMore[0] != '\\')
-    {
-        pPath[len] = '\\';
-        len++;
-    }
-    lstrcpy(pPath + len, pMore);
-    return TRUE;
-}
-
-BOOL PathRemoveFileSpec(LPTSTR pszPath)
-{
-    if (pszPath == NULL)
-    {
-        TRACE_E("pszPath == NULL");
-        return FALSE;
-    }
-    int len = lstrlen(pszPath);
-    char* iterator = pszPath + len - 1;
-    while (iterator >= pszPath)
-    {
-        if (*iterator == '\\')
+        if (*iterator == L'\\')
         {
-            if (iterator - 1 < pszPath || *(iterator - 1) == ':')
+            if (iterator - 1 < path || *(iterator - 1) == L':')
                 iterator++;
             *iterator = 0;
             break;
         }
         iterator--;
     }
+}
+
+// appends 'more' to 'path' with a backslash between them; 'path' has 'size' WCHARs
+static BOOL FcPathAppendW(WCHAR* path, const WCHAR* more, int size)
+{
+    int len = lstrlenW(path);
+    int moreLen = lstrlenW(more);
+    if (len > 1 && path[len - 1] != L'\\' && more[0] != L'\\')
+    {
+        if (len + 1 >= size)
+            return FALSE;
+        path[len++] = L'\\';
+    }
+    if (len + moreLen >= size)
+        return FALSE;
+    lstrcpyW(path + len, more);
     return TRUE;
 }
 
@@ -172,22 +162,24 @@ BOOL PathRemoveFileSpec(LPTSTR pszPath)
 #define ASFW_ANY ((DWORD) - 1)
 #endif
 
-int RemoteCompareFiles(HINSTANCE hInstance, LPTSTR lpCmdLine)
+// the name of the shared buffer of a channel version-1 receiver (CMessageCenter of 0.1.8 and
+// older: Name + " - Buffer v" + Version)
+#define MessageCenterBufferV1 MessageCenterName " - Buffer v1"
+
+#define FC_MAX_ARGS 4 // fcremote.exe [-w|--wait] first second
+
+int RemoteCompareFiles(HINSTANCE hInstance, const WCHAR* lpCmdLine)
 {
-    /*
-  char spl[MAX_PATH];
-  GetModuleFileName(hInstance, spl, MAX_PATH);
-  PathRemoveFileSpec(spl); // remove fcremote.exe
-  PathAppend(spl, "filecomp.spl");
-  DLLInstance = LoadLibraryEx(spl, NULL, LOAD_LIBRARY_AS_DATAFILE);
-*/
-    char argv[4][MAX_PATH];
-    int argc;
-    int first, second;
+    WCHAR* argv[FC_MAX_ARGS];
+    int argc = 0;
+    int first = 0, second = 0;
     BOOL wait = FALSE;
+    WCHAR* path1 = NULL;
+    WCHAR* path2 = NULL;
+    CRCMessage* msg = NULL;
 
     // prepare argv
-    BOOL argOK = MakeArgv(lpCmdLine, argv, argc, MAX_PATH, 4) &&
+    BOOL argOK = FcSplitArgsW(lpCmdLine, argv, argc, FC_MAX_ARGS) && // fcproto.h: the rules of version 1
                  3 <= argc && argc <= 4;
     if (argOK)
     {
@@ -198,7 +190,7 @@ int RemoteCompareFiles(HINSTANCE hInstance, LPTSTR lpCmdLine)
         }
         else
         {
-            if (lstrcmp(argv[1], "-w") == 0 || lstrcmp(argv[1], "--wait") == 0)
+            if (lstrcmpW(argv[1], L"-w") == 0 || lstrcmpW(argv[1], L"--wait") == 0)
                 wait = TRUE;
             else
                 argOK = FALSE;
@@ -206,51 +198,107 @@ int RemoteCompareFiles(HINSTANCE hInstance, LPTSTR lpCmdLine)
             second = 3;
         }
     }
+    if (argOK)
+    {
+        path1 = FullPathW(argv[first]);
+        path2 = FullPathW(argv[second]);
+        if (path1 == NULL || path2 == NULL)
+            argOK = FALSE;
+    }
+    FcFreeArgsW(argv, argc);
 
     if (!argOK)
     {
         MessageBox(NULL, LoadStr(IDS_INVALIDARGS), LoadStr(IDS_SPLERROR), MB_OK | MB_ICONERROR);
-        if (DLLInstance)
-            FreeLibrary(DLLInstance);
+        FcFree(path1);
+        FcFree(path2);
         return -1;
     }
 
+    // the message (channel version 2): the fixed part, then both names with their terminators
+    int len1 = lstrlenW(path1);
+    int len2 = lstrlenW(path2);
+    SIZE_T msgSize = (SIZE_T)RCMESSAGE_HEADER_SIZE + ((SIZE_T)len1 + 1 + len2 + 1) * sizeof(WCHAR);
+    if (msgSize < (SIZE_T)CMessageCenter::MaxMessage) // always so for names Windows can have
+        msg = (CRCMessage*)FcAlloc(msgSize);
+    if (msg == NULL)
+    {
+        MessageBox(NULL, LoadStr(IDS_MSGERR), LoadStr(IDS_SPLERROR), MB_OK | MB_ICONERROR);
+        FcFree(path1);
+        FcFree(path2);
+        return -1;
+    }
+    my_zeromem(msg, (int)RCMESSAGE_HEADER_SIZE);
+    msg->Header.Size = (int)msgSize;
+    msg->Magic = RCMESSAGE_MAGIC;
+    msg->Path1Len = (DWORD)len1;
+    msg->Path2Len = (DWORD)len2;
+    lstrcpyW(msg->Names, path1);
+    lstrcpyW(msg->Names + len1 + 1, path2);
+    FcFree(path1);
+    FcFree(path2);
+
     HANDLE releaseEvent = NULL;
+    HANDLE receiver = NULL;
     BOOL firstTry = TRUE;
-    BOOL ret = -1;
+    int ret = -1;
     while (1)
     {
         CMessageCenter mc(MessageCenterName, TRUE);
         if (!mc.IsGood())
         {
+            // a File Comparator of an older version is listening (channel version 1): it would
+            // not understand the message - report it instead of starting the program again
+            HANDLE oldBuffer = OpenFileMappingA(FILE_MAP_READ, FALSE, MessageCenterBufferV1);
+            if (oldBuffer != NULL)
+            {
+                CloseHandle(oldBuffer);
+                MessageBox(NULL, LoadStr(IDS_MSGERR), LoadStr(IDS_SPLERROR), MB_OK | MB_ICONERROR);
+                break;
+            }
             if (firstTry)
             {
-                // try to launch Salamander
-                char sal[MAX_PATH];
-                GetModuleFileName(hInstance, sal, MAX_PATH);
-                PathRemoveFileSpec(sal); // fcremote.exe
-                PathRemoveFileSpec(sal); // filecomp
-                PathRemoveFileSpec(sal); // plugins
-                PathAppend(sal, "tandemcommander.exe");
-
-                STARTUPINFO si;
-                PROCESS_INFORMATION pi;
-                my_zeromem(&si, sizeof(STARTUPINFO));
-                si.cb = sizeof(STARTUPINFO);
-                si.lpTitle = NULL;
-                si.dwFlags = STARTF_USESHOWWINDOW;
-                si.wShowWindow = SW_SHOWNORMAL;
-                if (!CreateProcess(sal, NULL, NULL, NULL, FALSE, CREATE_DEFAULT_ERROR_MODE | NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi))
+                // try to launch Salamander (UTF-16: the installation may be in a folder outside
+                // the code page, e.g. a per-user installation under such a user name)
+                const int salSize = 32768;
+                WCHAR* sal = (WCHAR*)FcAlloc(salSize * sizeof(WCHAR));
+                BOOL launched = FALSE;
+                if (sal != NULL)
+                {
+                    DWORD got = GetModuleFileNameW(hInstance, sal, salSize);
+                    if (got > 0 && got < (DWORD)salSize)
+                    {
+                        FcPathRemoveFileSpecW(sal); // fcremote.exe
+                        FcPathRemoveFileSpecW(sal); // filecomp
+                        FcPathRemoveFileSpecW(sal); // plugins
+                        if (FcPathAppendW(sal, L"tandemcommander.exe", salSize))
+                        {
+                            STARTUPINFOW si;
+                            PROCESS_INFORMATION pi;
+                            my_zeromem(&si, sizeof(STARTUPINFOW));
+                            si.cb = sizeof(STARTUPINFOW);
+                            si.lpTitle = NULL;
+                            si.dwFlags = STARTF_USESHOWWINDOW;
+                            si.wShowWindow = SW_SHOWNORMAL;
+                            if (CreateProcessW(sal, NULL, NULL, NULL, FALSE, CREATE_DEFAULT_ERROR_MODE | NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi))
+                            {
+                                launched = TRUE;
+                                HANDLE started =
+                                    CreateEvent(NULL, TRUE, FALSE, StartedEventName);
+                                WaitForSingleObject(started, 5000);
+                                CloseHandle(started);
+                                CloseHandle(pi.hProcess);
+                                CloseHandle(pi.hThread);
+                            }
+                        }
+                    }
+                    FcFree(sal);
+                }
+                if (!launched)
                 {
                     MessageBox(NULL, LoadStr(IDS_LAUNCHSAL), LoadStr(IDS_SPLERROR), MB_OK | MB_ICONERROR);
                     break;
                 }
-                HANDLE started =
-                    CreateEvent(NULL, TRUE, FALSE, StartedEventName);
-                WaitForSingleObject(started, 5000);
-                CloseHandle(started);
-                CloseHandle(pi.hProcess);
-                CloseHandle(pi.hThread);
                 firstTry = FALSE;
                 continue; // try again with Salamander already running
             }
@@ -258,38 +306,48 @@ int RemoteCompareFiles(HINSTANCE hInstance, LPTSTR lpCmdLine)
             break;
         }
 
-        CRCMessage msg;
-        msg.Size = sizeof(msg);
-        lstrcpyn(msg.Path1, argv[first], MAX_PATH);
-        lstrcpyn(msg.Path2, argv[second], MAX_PATH);
-        msg.Path1[MAX_PATH - 1];
-        msg.Path2[MAX_PATH - 1];
-        GetCurrentDirectory(MAX_PATH, msg.CurrentDirectory);
-
         if (wait)
         {
-            wsprintf(msg.ReleaseEvent, "FCREMOTE%X", GetCurrentProcessId());
-            releaseEvent = CreateEvent(NULL, TRUE, FALSE, msg.ReleaseEvent);
+            wsprintf(msg->ReleaseEvent, "FCREMOTE%X", GetCurrentProcessId());
+            releaseEvent = CreateEvent(NULL, TRUE, FALSE, msg->ReleaseEvent);
+            if (releaseEvent == NULL)
+                *msg->ReleaseEvent = 0;
         }
         else
-            *msg.ReleaseEvent = 0;
+            *msg->ReleaseEvent = 0;
+
+        // -w also ends when the program ends (the plug-in signals the event when the comparison
+        // window closes; a process that ends without that must not leave fcremote waiting); the
+        // process is opened BEFORE the message is sent, so an exit right after the send cannot
+        // be missed (review)
+        if (releaseEvent != NULL)
+            receiver = OpenProcess(SYNCHRONIZE, FALSE, mc.GetRecieverPid());
 
         AllowSetForegroundWindow(ASFW_ANY);
-        if (!mc.SendMessage(&msg, 5000))
+        if (!mc.SendMessage(&msg->Header, 5000))
         {
             MessageBox(NULL, LoadStr(IDS_MSGERR), LoadStr(IDS_SPLERROR), MB_OK | MB_ICONERROR);
-            break;
+            break; // feature 102: -w does not wait for a message that was never delivered
         }
         ret = 0;
         break;
     }
-    if (DLLInstance)
-        FreeLibrary(DLLInstance);
-    if (releaseEvent)
+    FcFree(msg);
+    if (releaseEvent != NULL)
     {
-        WaitForSingleObject(releaseEvent, INFINITE);
+        if (ret == 0)
+        {
+            HANDLE handles[2] = {releaseEvent, receiver};
+            DWORD res = WaitForMultipleObjects(receiver != NULL ? 2 : 1, handles, FALSE, INFINITE);
+            if (res != WAIT_OBJECT_0)
+                ret = -1; // the program ended without finishing the comparison
+        }
         CloseHandle(releaseEvent);
     }
+    if (receiver != NULL)
+        CloseHandle(receiver);
+    if (DLLInstance)
+        FreeLibrary(DLLInstance);
     return ret;
 }
 
@@ -356,6 +414,6 @@ void WinMainCRTStartup()
     // avoid critical errors such as "no disk in drive A:"
     SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
 
-    int ret = RemoteCompareFiles(GetModuleHandle(NULL), GetCommandLine());
+    int ret = RemoteCompareFiles(GetModuleHandle(NULL), GetCommandLineW()); // feature 102: UTF-16
     ExitProcess(ret);
 }

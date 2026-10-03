@@ -254,7 +254,8 @@ protected:
     int BytesPerLine;
     QWORD ViewOffset;
     QWORD SiblinkSize;
-    char Path[MAX_PATH];
+    char* Path; // feature 102: FC_NAME_SIZE heap buffer for the life of the window (was MAX_PATH;
+                // a posted WM_USER_HANDLEFILEERROR carries the pointer, so it is never reallocated)
     BOOL PaintEnabled;
     int HScrollOffs;
     QWORD FocusedDiffOffset;

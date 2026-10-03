@@ -122,6 +122,7 @@ void CEditScriptBuilder::operator()(char op, size_t off, size_t len)
 
 CWorkerFileData::CWorkerFileData()
 {
+    Name = NULL;
     File = INVALID_HANDLE_VALUE;
 }
 
@@ -129,6 +130,7 @@ CWorkerFileData::~CWorkerFileData()
 {
     if (File != INVALID_HANDLE_VALUE)
         CloseHandle(File);
+    free(Name);
 }
 
 HANDLE
@@ -148,8 +150,9 @@ CFilecompWorker::CFilecompWorker(HWND parent, HWND mainWindow, const char* name0
 {
     Parent = Parent;
     MainWindow = mainWindow;
-    strcpy(Files[0].Name, name0);
-    strcpy(Files[1].Name, name1);
+    // feature 102: names of any length (GuardedBody reports a failed copy as low memory)
+    Files[0].Name = _strdup(name0);
+    Files[1].Name = _strdup(name1);
     Options = options;
     Event = event;
 }
@@ -157,19 +160,20 @@ CFilecompWorker::CFilecompWorker(HWND parent, HWND mainWindow, const char* name0
 void CFilecompWorker::CException::Raise(int error, int lastError, ...)
 {
     CALL_STACK_MESSAGE3("CFilecompWorker::CWorkerException::Raise(%d, %d, )", error, lastError);
+    // feature 102: UTF-8 template + UTF-8 file name + the system text as UTF-8, in a buffer of
+    // the exact size (the 1,024-byte buffer overflowed with a name of more than about 980
+    // bytes, and the code-page template and system text made an invalid mix with the name)
     va_list arglist;
     va_start(arglist, lastError);
-    char buf[1024]; //temp variable
-    *buf = 0;
-    vsprintf(buf, LoadStr(error), arglist);
+    char* buf = VSprintfAlloc(LoadStrU8(error), arglist);
     va_end(arglist);
-    if (lastError != ERROR_SUCCESS)
-    {
-        int l = lstrlen(buf);
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError,
-                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf + l, 1024 - l, NULL);
-    }
-    throw CException(buf);
+    if (buf != NULL && lastError != ERROR_SUCCESS)
+        buf = AppendSystemErrorU8(buf, lastError);
+    if (buf == NULL)
+        throw CException(LoadStrU8(IDS_LOWMEM));
+    CException e(buf); // std::exception keeps its own copy of the text
+    free(buf);
+    throw e;
 }
 
 unsigned
@@ -214,6 +218,8 @@ void CFilecompWorker::GuardedBody()
 {
     // open the files
     int i;
+    if (Files[0].Name == NULL || Files[1].Name == NULL) // feature 102: _strdup in the constructor
+        throw CException(LoadStrU8(IDS_LOWMEM));
     for (i = 0; i <= 1; i++)
     {
         // Patera 2008.12.28: FILE_SHARE_WRITE added to support files locked by others

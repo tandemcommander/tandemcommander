@@ -20,6 +20,191 @@ HINSTANCE hNormalizDll = NULL;
 TNormalizeString PNormalizeString = NULL;
 BOOL AlwaysOnTop = FALSE;
 
+extern DWORD MainThreadID; // lukas/utilbase.cpp
+
+// ****************************************************************************
+//
+// feature 102: UTF-8 texts (see filecomp.h)
+//
+
+static SRWLOCK LoadStrU8Lock = SRWLOCK_INIT;
+static std::map<int, char*>* LoadStrU8Cache = NULL; // allocated on the first use
+
+const char* LoadStrU8(int resID)
+{
+    const char* ret = NULL;
+    AcquireSRWLockExclusive(&LoadStrU8Lock);
+    try
+    {
+        if (LoadStrU8Cache == NULL)
+            LoadStrU8Cache = new std::map<int, char*>;
+        std::map<int, char*>::iterator it = LoadStrU8Cache->find(resID);
+        if (it != LoadStrU8Cache->end())
+            ret = it->second;
+        else
+        {
+            char* u8 = SplWToU8Alloc(SG->LoadStrW(HLanguage, resID));
+            if (u8 != NULL)
+            {
+                try
+                {
+                    (*LoadStrU8Cache)[resID] = u8;
+                    ret = u8;
+                }
+                catch (...)
+                {
+                    free(u8);
+                }
+            }
+        }
+    }
+    catch (...)
+    {
+    }
+    ReleaseSRWLockExclusive(&LoadStrU8Lock);
+    return ret != NULL ? ret : LoadStr(resID); // low memory: the code-page form, as before
+}
+
+void ReleaseLoadStrU8()
+{
+    // review: called at unload after ThreadQueue.KillAll - a thread killed while it held the
+    // lock would leave it held for ever; then the cache is left to the process (not freed)
+    // instead of waiting for ever at exit
+    if (!TryAcquireSRWLockExclusive(&LoadStrU8Lock))
+    {
+        TRACE_E("ReleaseLoadStrU8(): the lock is held (a killed thread?), the cache is not freed");
+        return;
+    }
+    if (LoadStrU8Cache != NULL)
+    {
+        for (std::map<int, char*>::iterator it = LoadStrU8Cache->begin(); it != LoadStrU8Cache->end(); ++it)
+            free(it->second);
+        delete LoadStrU8Cache;
+        LoadStrU8Cache = NULL;
+    }
+    ReleaseSRWLockExclusive(&LoadStrU8Lock);
+}
+
+char* VSprintfAlloc(const char* format, va_list args)
+{
+    va_list args2;
+    va_copy(args2, args);
+    int len = _vscprintf(format, args2);
+    va_end(args2);
+    if (len < 0)
+        return NULL;
+    char* buf = (char*)malloc((size_t)len + 1);
+    if (buf != NULL)
+    {
+        va_copy(args2, args);
+        _vsnprintf_s(buf, (size_t)len + 1, _TRUNCATE, format, args2);
+        va_end(args2);
+    }
+    return buf;
+}
+
+char* SprintfAlloc(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    char* ret = VSprintfAlloc(format, args);
+    va_end(args);
+    return ret;
+}
+
+char* AppendSystemErrorU8(char* text, DWORD error)
+{
+    if (text == NULL)
+        return NULL;
+    WCHAR* sysW = NULL;
+    if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                       NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&sysW, 0, NULL) == 0 ||
+        sysW == NULL)
+    {
+        return text; // no system text: the message without it, as FormatMessage did before
+    }
+    char* sys = SplWToU8Alloc(sysW);
+    LocalFree(sysW);
+    if (sys == NULL)
+        return text;
+    size_t l1 = strlen(text);
+    size_t l2 = strlen(sys);
+    char* ret = (char*)realloc(text, l1 + l2 + 1);
+    if (ret != NULL)
+        memcpy(ret + l1, sys, l2 + 1);
+    else
+        ret = text; // low memory: keep the message without the system text
+    free(sys);
+    return ret;
+}
+
+BOOL CopyU8Truncated(char* dst, size_t dstSize, const char* src)
+{
+    if (dstSize == 0)
+        return FALSE;
+    size_t len = strlen(src);
+    if (len < dstSize)
+    {
+        memcpy(dst, src, len + 1);
+        return TRUE;
+    }
+    len = dstSize - 1;
+    // do not end inside a character: drop the continuation bytes and the lead byte of the
+    // character the limit cut
+    if (len > 0 && ((unsigned char)src[len] & 0xC0) == 0x80)
+    {
+        while (len > 0 && ((unsigned char)src[len] & 0xC0) == 0x80)
+            len--;
+    }
+    memcpy(dst, src, len);
+    dst[len] = 0;
+    return FALSE;
+}
+
+void LabelToU8(const char* label, char* buf, int bufSize)
+{
+    if (bufSize <= 0)
+        return;
+    buf[0] = 0;
+    if (label == NULL)
+        return;
+    WCHAR w[300];
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, label, -1, NULL, 0) > 0) // already UTF-8 (ASCII too)
+    {
+        CopyU8Truncated(buf, bufSize, label);
+        return;
+    }
+    if (MultiByteToWideChar(CP_ACP, 0, label, -1, w, _countof(w)) > 0 && SplWToU8(w, buf, bufSize) > 0)
+        return;
+    CopyU8Truncated(buf, bufSize, label);
+}
+
+BOOL ErrorU8(HWND parent, int resID, const char* name, DWORD lastError)
+{
+    CALL_STACK_MESSAGE3("ErrorU8(, %d, %s, )", resID, name);
+    char* text = SprintfAlloc(LoadStrU8(resID), name);
+    if (text != NULL && lastError != ERROR_SUCCESS)
+        text = AppendSystemErrorU8(text, lastError);
+    if (parent == HWND(-1))
+        parent = GetCurrentThreadId() == MainThreadID ? SG->GetMsgBoxParent() : NULL;
+    SG->SalMessageBox(parent, text != NULL ? text : LoadStrU8(IDS_LOWMEM), LoadStr(IDS_SPLERROR),
+                      MB_OK | MB_ICONERROR | (parent == NULL && AlwaysOnTop ? MB_TOPMOST : 0));
+    free(text);
+    return FALSE;
+}
+
+void SetWindowTitleU8(HWND hWnd, const char* text)
+{
+    WCHAR* w = SplU8ToWAlloc(text);
+    if (w != NULL)
+    {
+        SplSetWindowTitleW(hWnd, w); // feature 100: exact also on this code-page window
+        free(w);
+    }
+    else
+        SetWindowTextA(hWnd, text); // not UTF-8 (cannot happen since feature 102): never blank
+}
+
 const char* CONFIG_VERSION = "Version";
 const char* CONFIG_CONFIGURATION = "Configuration";
 const char* CONFIG_COLORS = "Colors";
@@ -101,11 +286,12 @@ CPluginInterfaceAbstract* WINAPI SalamanderPluginEntry(CSalamanderPluginEntryAbs
 
     salamander->SetPluginHomePageURL("www.tandemcommander.org");
 
-    // must be after salamander->SetBasicPluginData because worker threads use the plugin
-    // version at startup and salamander->SetBasicPluginData updates that value (it used to
-    // crash occasionally when the version string was reallocated and the freed buffer was
-    // still referenced)
-    CRemoteComparator::CreateRemoteComparator();
+    // The remote comparator (fcremote.exe's receiver) must start after
+    // salamander->SetBasicPluginData because worker threads use the plugin version at startup
+    // and salamander->SetBasicPluginData updates that value (it used to crash occasionally when
+    // the version string was reallocated and the freed buffer was still referenced).
+    // feature 102: it starts at the end of LoadConfiguration, which the core calls after this
+    // entry point (see there).
 
     return &PluginInterface;
 }
@@ -155,6 +341,7 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
                 //SG->CallLoadOrSaveConfiguration(FALSE, LoadOrSaveConfiguration, parent);
 
                 ReleaseDialogs();
+                ReleaseLoadStrU8(); // feature 102: before SG becomes invalid
                 ReleaseLCUtils();
                 MappedFontFactory.Free();
                 if (hNormalizDll)
@@ -200,8 +387,11 @@ void CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalamanderRe
     // default compare options
     DefCompareOptions = DefaultCompareOptions;
 
-    // history
-    CBHistoryEntries = 0;
+    // history (feature 102: under the lock of the comparator threads)
+    {
+        CHistoryLock lock(TRUE);
+        CBHistoryEntries = 0;
+    }
 
     // last configuration page that was opened
     LastCfgPage = 0;
@@ -284,6 +474,7 @@ void CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalamanderRe
             }
             // history of recently used files
             TCHAR buf[32];
+            CHistoryLock lock(TRUE); // feature 102
             for (; CBHistoryEntries < MAX_HISTORY_ENTRIES; CBHistoryEntries++)
             {
                 _stprintf(buf, CONFIG_HISTORY, CBHistoryEntries);
@@ -320,6 +511,13 @@ void CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalamanderRe
     // Do not allow normalization if Normaliz.dll is not present
     if (!PNormalizeString)
         DefCompareOptions.NormalizationForm = FALSE;
+
+    // feature 102: the receiver of fcremote.exe's messages starts only now, with the
+    // configuration loaded (it was started in the entry point, before the core calls this
+    // function: a message that arrived at once - fcremote starts the program and sends as soon
+    // as the receiver runs - started a comparison that read the history, the options and the
+    // configuration while this function was still writing them). Created only once.
+    CRemoteComparator::CreateRemoteComparator();
 }
 
 void CPluginInterface::SaveConfiguration(HWND parent, HKEY regKey, CSalamanderRegistryAbstract* registry)
@@ -372,6 +570,7 @@ void CPluginInterface::SaveConfiguration(HWND parent, HKEY regKey, CSalamanderRe
     {
         char buf[32];
         int i;
+        CHistoryLock lock(FALSE); // feature 102
         for (i = 0; i < CBHistoryEntries; i++)
         {
             sprintf(buf, CONFIG_HISTORY, i);
@@ -476,6 +675,7 @@ void CPluginInterface::ClearHistory(HWND parent)
     CALL_STACK_MESSAGE1("CPluginInterface::ClearHistory()");
     MainWindowQueue.BroadcastMessage(WM_USER_CLEARHISTORY, 0, 0);
     int i;
+    CHistoryLock lock(TRUE); // feature 102
     for (i = 0; i < MAX_HISTORY_ENTRIES; i++)
         CBHistory[i][0] = 0;
 }
@@ -494,8 +694,14 @@ BOOL CPluginInterfaceForMenu::ExecuteMenuItem(CSalamanderForOperationsAbstract* 
     {
     case MID_COMPAREFILES:
     {
-        char file1[MAX_PATH];
-        char file2[MAX_PATH];
+        // feature 102: room for any panel path (a 260-byte buffer made GetPanelPath fail on a
+        // path of about 86 Chinese characters and the command did nothing at all)
+        CSalMaxPathBuffer file1Buf;
+        CSalMaxPathBuffer file2Buf;
+        if (file1Buf.Get() == NULL || file2Buf.Get() == NULL)
+            return Error((HWND)-1, IDS_LOWMEM);
+        char* file1 = file1Buf.Get();
+        char* file2 = file2Buf.Get();
         const CFileData *fd1, *fd2 = NULL;
         int index = 0;
         BOOL isDir;
@@ -556,16 +762,23 @@ BOOL CPluginInterfaceForMenu::ExecuteMenuItem(CSalamanderForOperationsAbstract* 
             goto SELECTION_FINISHED; // empty panel
 
         // store the name of the first file
-        if (!SG->GetPanelPath(PANEL_SOURCE, file1, MAX_PATH, NULL, NULL))
+        // feature 102: an append that does not fit leaves the field empty (the dialog then asks
+        // for the file) instead of offering the folder as the file - it cannot happen with these
+        // buffers, which hold the longest path Windows has
+        if (!SG->GetPanelPath(PANEL_SOURCE, file1, FC_NAME_SIZE, NULL, NULL))
             return NULL;
-        SG->SalPathAppend(file1, fd1->Name, MAX_PATH);
+        if (!SG->SalPathAppend(file1, fd1->Name, FC_NAME_SIZE))
+            *file1 = 0;
 
         if (fd2 &&
             !isDir && fd2 != fd1) // in case we take the file from the focus
         {
             // store the name of the second file
-            SG->GetPanelPath(PANEL_SOURCE, file2, MAX_PATH, NULL, NULL);
-            SG->SalPathAppend(file2, fd2->Name, MAX_PATH);
+            if (!SG->GetPanelPath(PANEL_SOURCE, file2, FC_NAME_SIZE, NULL, NULL) ||
+                !SG->SalPathAppend(file2, fd2->Name, FC_NAME_SIZE))
+            {
+                *file2 = 0;
+            }
             secondFromSource = TRUE;
         }
         else
@@ -590,9 +803,10 @@ BOOL CPluginInterfaceForMenu::ExecuteMenuItem(CSalamanderForOperationsAbstract* 
                 if (fd2)
                 {
                     // store the name of the second file
-                    if (!SG->GetPanelPath(PANEL_TARGET, file2, MAX_PATH, NULL, NULL))
+                    if (!SG->GetPanelPath(PANEL_TARGET, file2, FC_NAME_SIZE, NULL, NULL))
                         return NULL;
-                    SG->SalPathAppend(file2, fd2->Name, MAX_PATH);
+                    if (!SG->SalPathAppend(file2, fd2->Name, FC_NAME_SIZE))
+                        *file2 = 0;
                 }
             }
         }
@@ -645,6 +859,12 @@ CFilecompThread::Body()
     HWND wnd;
     CCompareOptions options = DefCompareOptions;
 
+    if (Path1 == NULL || Path2 == NULL) // feature 102: heap buffers
+    {
+        Error(HWND(NULL), IDS_LOWMEM);
+        goto LBODYFINAL;
+    }
+
     if (!*Path1 || !*Path2 || !DontConfirmSelection && Configuration.ConfirmSelection)
     {
         CCompareFilesDialog* dlg = new CCompareFilesDialog(0, Path1, Path2, succes, &options);
@@ -677,14 +897,19 @@ CFilecompThread::Body()
             break;
         }
 
+        // feature 102: a wide loop - a code-page loop converts every character typed into the
+        // dialog's (Unicode) path fields to the code page, so a name outside it arrived as '?'
+        // (the feature 093 rule).  The comparator window is a code-page window and still gets
+        // its characters converted by DispatchMessageW, exactly as before; its menu is a
+        // standard menu and the accelerators are virtual-key accelerators.
         MSG msg;
-        while (IsWindow(wnd) && GetMessage(&msg, NULL, 0, 0))
+        while (IsWindow(wnd) && GetMessageW(&msg, NULL, 0, 0))
         {
-            if (!dialogBox && !TranslateAccelerator(wnd, HAccels, &msg) ||
-                dialogBox && !IsDialogMessage(wnd, &msg))
+            if (!dialogBox && !TranslateAcceleratorW(wnd, HAccels, &msg) ||
+                dialogBox && !IsDialogMessageW(wnd, &msg))
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
         }
 

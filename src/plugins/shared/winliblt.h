@@ -126,17 +126,23 @@ protected:
 class CWindow : public CWindowsObject
 {
 public:
-    CWindow(CObjectOrigin origin = ooAllocated) : CWindowsObject(origin) { DefWndProc = DefWindowProc; }
+    CWindow(CObjectOrigin origin = ooAllocated) : CWindowsObject(origin)
+    {
+        DefWndProc = DefWindowProc;
+        UnicodeWnd = FALSE;
+    }
     CWindow(HWND hDlg, int ctrlID, CObjectOrigin origin = ooAllocated)
         : CWindowsObject(origin)
     {
         DefWndProc = DefWindowProc;
+        UnicodeWnd = FALSE;
         AttachToControl(hDlg, ctrlID);
     }
     CWindow(HWND hDlg, int ctrlID, UINT helpID, CObjectOrigin origin = ooAllocated)
         : CWindowsObject(helpID, origin)
     {
         DefWndProc = DefWindowProc;
+        UnicodeWnd = FALSE;
         AttachToControl(hDlg, ctrlID);
     }
 
@@ -185,6 +191,14 @@ public:
                   LPVOID lpvParam);       // ukazatel na objekt vytvareneho okna
 
     void AttachToWindow(HWND hWnd);
+    // feature 102: opt-in twin of AttachToWindow that keeps a Unicode window Unicode (the
+    // subclass is installed with SetWindowLongPtrW and messages are forwarded with
+    // CallWindowProcW); AttachToWindow installs a code-page subclass, which turns a Unicode
+    // control (every Edit/ComboBox under comctl32 6) into a code-page window, so all text
+    // passing through it loses characters outside the code page.  A code-page window is
+    // attached exactly as by AttachToWindow.  Only a window procedure that does not depend
+    // on the character set of text messages may be attached this way.
+    void AttachToWindowKeepKind(HWND hWnd);
     void AttachToControl(HWND dlg, int ctrlID);
     void DetachWindow();
 
@@ -195,6 +209,7 @@ protected:
     virtual LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     WNDPROC DefWndProc;
+    BOOL UnicodeWnd; // feature 102: TRUE = attached by AttachToWindowKeepKind to a Unicode window
 };
 
 // ****************************************************************************

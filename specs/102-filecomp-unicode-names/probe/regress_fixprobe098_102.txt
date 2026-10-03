@@ -1,0 +1,128 @@
+fix_probe (feature 098) 102
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-03 20:41; ACP 1250; registry key existed True
+Clipboard: cannot read (Exception calling "GetDataObject" with "0" argument(s): "Po?adovan? operace se schr?nkou se nezda?ila.") - the paste rows are not driven
+
+warm-up: one click posted to the directory line of a throwaway instance
+--- d1a1k5: chain of 13 components, deepest 1500 UTF-16 units / 1500 bytes
+d1a1k5     GO     PASS        field held the text: True; windows: no window
+d1a1k5     PATH   PASS        location 1500 units: ...pppppppp\5ppppppppppppppppppp\6ppppppppppppppppppp
+d1a1k5     CLICK  PASS        client width 923 px, click x=90; landed 5 component(s) above the deepest (105 units shorter); reference 5; windows: no window; location ...ppppppppppppppppppppppppppppp\1ppppppppppppppppppp
+d1a1k5     UP     PASS        8 x Backspace; location ...\Users\pavel\AppData\Local\Temp\tc098_fix\d1d1a1k5
+d1a1k5     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- d1a8k: chain of 45 components, deepest 8000 UTF-16 units / 8000 bytes
+d1a8k      GO     PASS        field held the text: True; windows: no window
+d1a8k      PATH   PASS        location 8000 units: ...pppppppp\5ppppppppppppppppppp\6ppppppppppppppppppp
+d1a8k      CLICK  PASS        client width 923 px, click x=90; landed 5 component(s) above the deepest (105 units shorter); reference 5; windows: no window; location ...ppppppppppppppppppppppppppppp\1ppppppppppppppppppp
+d1a8k      UP     PASS        40 x Backspace; location ...:\Users\pavel\AppData\Local\Temp\tc098_fix\d1d1a8k
+d1a8k      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- d1a15k: chain of 80 components, deepest 15000 UTF-16 units / 15000 bytes
+d1a15k     GO     PASS        field held the text: True; windows: no window
+d1a15k     PATH   PASS        location 15000 units: ...pppppppp\5ppppppppppppppppppp\6ppppppppppppppppppp
+d1a15k     CLICK  PASS        client width 923 px, click x=90; landed 5 component(s) above the deepest (105 units shorter); reference 5; windows: no window; location ...ppppppppppppppppppppppppppppp\1ppppppppppppppppppp
+d1a15k     UP     PASS        75 x Backspace; location ...\Users\pavel\AppData\Local\Temp\tc098_fix\d1d1a15k
+d1a15k     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- d1a32k: chain of 165 components, deepest 32000 UTF-16 units / 32000 bytes
+d1a32k     GO     PASS        field held the text: True; windows: no window
+d1a32k     PATH   PASS        location 32000 units: ...pppppppp\5ppppppppppppppppppp\6ppppppppppppppppppp
+d1a32k     CLICK  PASS        client width 923 px, click x=90; landed 5 component(s) above the deepest (105 units shorter); reference 5; windows: no window; location ...ppppppppppppppppppppppppppppp\1ppppppppppppppppppp
+d1a32k     UP     PASS        160 x Backspace; location ...\Users\pavel\AppData\Local\Temp\tc098_fix\d1d1a32k
+d1a32k     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- d1e1k5: chain of 13 components, deepest 1500 UTF-16 units / 4358 bytes
+d1e1k5     GO     PASS        field held the text: True; windows: no window
+d1e1k5     PATH   PASS        location 1500 units: ...\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\5\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\6\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d1e1k5     CLICK  PASS        client width 923 px, click x=90; landed 5 component(s) above the deepest (105 units shorter); reference 5; windows: no window; location ...\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\1\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d1e1k5     UP     PASS        8 x Backspace; location ...\Users\pavel\AppData\Local\Temp\tc098_fix\d1d1e1k5
+d1e1k5     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- d1e8k: chain of 45 components, deepest 8000 UTF-16 units / 23796 bytes
+d1e8k      GO     PASS        field held the text: True; windows: no window
+d1e8k      PATH   PASS        location 8000 units: ...\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\5\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\6\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d1e8k      CLICK  PASS        client width 923 px, click x=90; landed 5 component(s) above the deepest (105 units shorter); reference 5; windows: no window; location ...\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\1\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d1e8k      UP     PASS        40 x Backspace; location ...:\Users\pavel\AppData\Local\Temp\tc098_fix\d1d1e8k
+d1e8k      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- d1e15k: chain of 80 components, deepest 15000 UTF-16 units / 44724 bytes
+d1e15k     GO     PASS        field held the text: True; windows: no window
+d1e15k     PATH   PASS        location 15000 units: ...\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\5\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\6\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d1e15k     CLICK  PASS        client width 923 px, click x=90; landed 5 component(s) above the deepest (105 units shorter); reference 5; windows: no window; location ...\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\1\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d1e15k     UP     PASS        75 x Backspace; location ...\Users\pavel\AppData\Local\Temp\tc098_fix\d1d1e15k
+d1e15k     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- d1e32k: chain of 165 components, deepest 32000 UTF-16 units / 95554 bytes
+d1e32k     GO     PASS        field held the text: True; windows: no window
+d1e32k     PATH   PASS        location 32000 units: ...\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\5\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\6\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d1e32k     CLICK  PASS        client width 923 px, click x=90; landed 5 component(s) above the deepest (105 units shorter); reference 5; windows: no window; location ...\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\1\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d1e32k     UP     PASS        160 x Backspace; location ...\Users\pavel\AppData\Local\Temp\tc098_fix\d1d1e32k
+d1e32k     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d2a300     GO     PASS        file path 300 bytes / 300 units; field held the text: True; windows: no window
+d2a300     FOLDER PASS        location ...ppppppppp\pppppppppppppppppppppppppppppppppppppppp
+d2a300     FOCUS  PASS        viewer title: ...pppppp\pppppppppppppppppppppppppppppppppppppppp\f.txt [Plain Text] - Code Viewer
+d2a300     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d2a1000    GO     PASS        file path 1000 bytes / 1000 units; field held the text: True; windows: no window
+d2a1000    FOLDER PASS        location ...pppppppppppppppppppppppppppppppppppppppppppppppppp
+d2a1000    FOCUS  PASS        viewer title: ...ppppppppppppppppppppppppppppppppppppppppppppppp\f.txt [Plain Text] - Code Viewer
+d2a1000    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d2u300     GO     PASS        file path 300 bytes / 180 units; field held the text: True; windows: no window
+d2u300     FOLDER PASS        location ...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159x
+d2u300     FOCUS  PASS        viewer title: ...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159x\f.txt [Plain Text] - Code Viewer
+d2u300     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d2u1000    GO     PASS        file path 1000 bytes / 531 units; field held the text: True; windows: no window
+d2u1000    FOLDER PASS        location ...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159
+d2u1000    FOCUS  PASS        viewer title: ...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\f.txt [Plain Text] - Code Viewer
+d2u1000    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d2paste    PASTE  NOT DRIVEN  the clipboard cannot be opened from this session (OpenClipboard: access denied) - read only
+d2pasteu   PASTE  NOT DRIVEN  the clipboard cannot be opened from this session (OpenClipboard: access denied) - read only
+d2pastec   PASTE  NOT DRIVEN  the clipboard cannot be opened from this session (OpenClipboard: access denied) - read only
+d4a300zipp PACK   PASS        source 300 bytes; Alt+F5 into ZIP (Plugin); archive holds [a.txt, sub1/b.txt, sub1/sub2/c.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4a300zipp END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4a300zipc PACK   PASS        source 300 bytes; F5 into "d4a300zipc.zip\"; archive holds [a.txt, seed.txt, sub1/b.txt, sub1/sub2/c.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4a300zipc END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4a3007zp  PACK   PASS        source 300 bytes; Alt+F5 into 7-Zip (Plugin); archive holds [a.txt, sub1/b.txt, sub1/sub2/c.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4a3007zp  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4a3007zc  PACK   PASS        source 300 bytes; F5 into "d4a3007zc.7z\"; archive holds [a.txt, seed.txt, sub1/b.txt, sub1/sub2/c.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4a3007zc  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4a1000zipp PACK   PASS        source 1000 bytes; Alt+F5 into ZIP (Plugin); archive holds [a.txt, sub1/b.txt, sub1/sub2/c.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4a1000zipp END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4a1000zipc PACK   PASS        source 1000 bytes; F5 into "d4a1000zipc.zip\"; archive holds [a.txt, seed.txt, sub1/b.txt, sub1/sub2/c.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4a1000zipc END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4a10007zp PACK   PASS        source 1000 bytes; Alt+F5 into 7-Zip (Plugin); archive holds [a.txt, sub1/b.txt, sub1/sub2/c.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4a10007zp END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4a10007zc PACK   PASS        source 1000 bytes; F5 into "d4a10007zc.7z\"; archive holds [a.txt, seed.txt, sub1/b.txt, sub1/sub2/c.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4a10007zc END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4u300zipp PACK   PASS        source 300 bytes; Alt+F5 into ZIP (Plugin); archive holds [a.txt, sub1/b.txt, sub1/sub2/\u010D.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4u300zipp END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4u300zipc PACK   PASS        source 300 bytes; F5 into "d4u300zipc.zip\"; archive holds [a.txt, seed.txt, sub1/b.txt, sub1/sub2/\u010D.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4u300zipc END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4u3007zp  PACK   PASS        source 300 bytes; Alt+F5 into 7-Zip (Plugin); archive holds [a.txt, sub1/b.txt, sub1/sub2/\u010D.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4u3007zp  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4u3007zc  PACK   PASS        source 300 bytes; F5 into "d4u3007zc.7z\"; archive holds [a.txt, seed.txt, sub1/b.txt, sub1/sub2/\u010D.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4u3007zc  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4u1000zipp PACK   PASS        source 1000 bytes; Alt+F5 into ZIP (Plugin); archive holds [a.txt, sub1/b.txt, sub1/sub2/\u010D.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4u1000zipp END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4u1000zipc PACK   PASS        source 1000 bytes; F5 into "d4u1000zipc.zip\"; archive holds [a.txt, seed.txt, sub1/b.txt, sub1/sub2/\u010D.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4u1000zipc END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4u10007zp PACK   PASS        source 1000 bytes; Alt+F5 into 7-Zip (Plugin); archive holds [a.txt, sub1/b.txt, sub1/sub2/\u010D.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4u10007zp END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d4u10007zc PACK   PASS        source 1000 bytes; F5 into "d4u10007zc.7z\"; archive holds [a.txt, seed.txt, sub1/b.txt, sub1/sub2/\u010D.txt]; missing []; content differs []; packer options dialog answered OK: 1; other windows: none
+d4u10007zc END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d3isoa     VIEW   PASS        ISO 2100 bytes / 2100 units; viewer title (259 units): ...ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\pppp
+d3isoa     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d3isoe     VIEW   PASS        ISO 2100 bytes / 744 units; viewer title (122 units): ...p\tc098_fix\d43d3isoe\\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC
+d3isoe     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d3crc      CRC    PASS        item path in the archive 130 bytes; message naming the whole item path: 1; windows: [#32770 '7-Zip'] [Static id=2477] Error processing file 'LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\MMMMMMMMMMMMMM MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\item.bin'. Do you want to delete or keep this file? | [Button id=6] &Delete | [Button id=7] &Keep | [Button id=2] Cancel
+d3crc      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d5sepzip   MOVE   PASS        Alt+F5 into ZIP (Plugin) with "delete files after packing"; link warning shown 1; 'too long' messages 1; X\x.txt survives: True; left in S: [A,B]; archive (deep chain omitted): [A\d\d, A\d, A\a.txt, A, B\J\x.txt, B\J, B\b.txt, B]; windows: [#32770 'Pack'] [Static id=2477] You are trying to move selected files and directories to archive. This is not possible because selection co... || [#32770 'Pack'] [Static id=209] Pack 2 directories to archive | [Static id=1150] &Packer: | [Button id=512] &Delete files from disk after pa... || [#32770 'Create New Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc098_fix\out\d5sepzip.zip | [Bu... || [#32770 'Error'] [Static id=2477] Name "d" with full path is too long. Path: A\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d...
+d5sepzip   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d5sep7z    MOVE   PASS        Alt+F5 into 7-Zip (Plugin) with "delete files after packing"; link warning shown 1; 'too long' messages 1; X\x.txt survives: True; left in S: [A,B]; archive (deep chain omitted): [A, A\d, A\d\d, B, B\J, A\a.txt, B\b.txt, B\J\x.txt]; windows: [#32770 'Pack'] [Static id=2477] You are trying to move selected files and directories to archive. This is not possible because selection co... || [#32770 'Pack'] [Static id=209] Pack 2 directories to archive | [Static id=1150] &Packer: | [Button id=512] &Delete files from disk after pa... || [#32770 'Create New Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] C... || [#32770 'Error'] [Static id=2477] Name "d" with full path is too long. Path: A\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d...
+d5sep7z    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d5samezip  MOVE   PASS        Alt+F5 into ZIP (Plugin) with "delete files after packing"; link warning shown 1; 'too long' messages 1; X\x.txt survives: True; left in S: [A]; archive (deep chain omitted): [A\d\d, A\d, A\J\x.txt, A\J, A\a.txt, A]; windows: [#32770 'Pack'] [Static id=2477] You are trying to move selected files and directories to archive. This is not possible because selection co... || [#32770 'Pack'] [Static id=209] Pack directory "A" to archive | [Static id=1150] &Packer: | [Button id=512] &Delete files from disk after pa... || [#32770 'Create New Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc098_fix\out\d5samezip.zip | [B... || [#32770 'Error'] [Static id=2477] Name "d" with full path is too long. Path: A\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d...
+d5samezip  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d5same7z   MOVE   PASS        Alt+F5 into 7-Zip (Plugin) with "delete files after packing"; link warning shown 1; 'too long' messages 1; X\x.txt survives: True; left in S: [A]; archive (deep chain omitted): [A, A\d, A\d\d, A\J, A\a.txt, A\J\x.txt]; windows: [#32770 'Pack'] [Static id=2477] You are trying to move selected files and directories to archive. This is not possible because selection co... || [#32770 'Pack'] [Static id=209] Pack directory "A" to archive | [Static id=1150] &Packer: | [Button id=512] &Delete files from disk after pa... || [#32770 'Create New Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] C... || [#32770 'Error'] [Static id=2477] Name "d" with full path is too long. Path: A\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d...
+d5same7z   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d5ctlzip   MOVE   PASS        Alt+F5 into ZIP (Plugin) with "delete files after packing"; link warning shown 1; 'too long' messages 0; X\x.txt survives: True; left in S: [B]; archive (deep chain omitted): [B\J\x.txt, B\J, B\b.txt, B]; windows: [#32770 'Pack'] [Static id=2477] You are trying to move selected files and directories to archive. This is not possible because selection co... || [#32770 'Pack'] [Static id=209] Pack directory "B" to archive | [Static id=1150] &Packer: | [Button id=512] &Delete files from disk after pa... || [#32770 'Create New Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc098_fix\out\d5ctlzip.zip | [Bu...
+d5ctlzip   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d5ctl7z    MOVE   PASS        Alt+F5 into 7-Zip (Plugin) with "delete files after packing"; link warning shown 1; 'too long' messages 0; X\x.txt survives: True; left in S: [B]; archive (deep chain omitted): [B, B\J, B\b.txt, B\J\x.txt]; windows: [#32770 'Pack'] [Static id=2477] You are trying to move selected files and directories to archive. This is not possible because selection co... || [#32770 'Pack'] [Static id=209] Pack directory "B" to archive | [Static id=1150] &Packer: | [Button id=512] &Delete files from disk after pa... || [#32770 'Create New Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] C...
+d5ctl7z    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+d5f6zip    MOVE   INFO        F6 (move) into "d5f6zip.zip\"; link warning shown 1; 'too long' messages 0; X\x.txt survives: True; left in S: [B]; archive (deep chain omitted): [seed.txt]; windows: [#32770 'Move Error'] [Static id=2477] You are trying to move selected files and directories to archive. This is not possible because select...
+d5f6zip    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 107, FAIL 0, NOT DRIVEN 3, INFO 1. Left running: 0; fixture removed: True; registry restored+identical: True

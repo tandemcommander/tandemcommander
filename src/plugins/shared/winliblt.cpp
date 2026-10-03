@@ -209,6 +209,7 @@ HWND CWindow::Create(LPCTSTR lpszClassName,  // address of registered class name
 
 void CWindow::AttachToWindow(HWND hWnd)
 {
+    UnicodeWnd = FALSE;
     DefWndProc = (WNDPROC)GetWindowLongPtr(hWnd, GWLP_WNDPROC);
     if (DefWndProc == NULL)
     {
@@ -232,6 +233,40 @@ void CWindow::AttachToWindow(HWND hWnd)
     }
 }
 
+void CWindow::AttachToWindowKeepKind(HWND hWnd)
+{
+    if (hWnd == NULL || !IsWindowUnicode(hWnd))
+    {
+        AttachToWindow(hWnd); // a code-page window: nothing to keep
+        return;
+    }
+    // feature 102: read and install the window procedure through the W entry points, so the
+    // window stays Unicode and DefWndProc is the real UTF-16 procedure (not a code-page thunk)
+    UnicodeWnd = FALSE;
+    DefWndProc = (WNDPROC)GetWindowLongPtrW(hWnd, GWLP_WNDPROC);
+    if (DefWndProc == NULL)
+    {
+        TRACE_E("Bad window handle. hWnd = " << hWnd);
+        DefWndProc = DefWindowProcW;
+        return;
+    }
+    if (!WindowsManager.AddWindow(hWnd, this))
+    {
+        TRACE_E("Error during attaching object to window.");
+        DefWndProc = DefWindowProc;
+        return;
+    }
+    HWindow = hWnd;
+    UnicodeWnd = TRUE;
+    SetWindowLongPtrW(HWindow, GWLP_WNDPROC, (LONG_PTR)CWindowProc);
+
+    if (DefWndProc == CWindow::CWindowProc) // that would be a recursion
+    {
+        TRACE_C("This should never happen.");
+        DefWndProc = DefWindowProcW;
+    }
+}
+
 void CWindow::AttachToControl(HWND dlg, int ctrlID)
 {
     if (dlg == NULL)
@@ -251,7 +286,11 @@ void CWindow::DetachWindow()
     if (HWindow != NULL)
     {
         WindowsManager.DetachWindow(HWindow);
-        SetWindowLongPtr(HWindow, GWLP_WNDPROC, (LONG_PTR)DefWndProc);
+        if (UnicodeWnd) // feature 102: give the Unicode procedure back through the W entry point
+            SetWindowLongPtrW(HWindow, GWLP_WNDPROC, (LONG_PTR)DefWndProc);
+        else
+            SetWindowLongPtr(HWindow, GWLP_WNDPROC, (LONG_PTR)DefWndProc);
+        UnicodeWnd = FALSE;
         HWindow = NULL;
     }
 }
@@ -274,6 +313,8 @@ CWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return TRUE; // pokud to neni child, ukoncime zpracovani F1
     }
     }
+    if (UnicodeWnd) // feature 102: the messages arrived as UTF-16, forward them as such
+        return CallWindowProcW((WNDPROC)DefWndProc, HWindow, uMsg, wParam, lParam);
     return CallWindowProc((WNDPROC)DefWndProc, HWindow, uMsg, wParam, lParam);
 }
 
@@ -324,9 +365,19 @@ CWindow::CWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             // pokud aktualni WndProc je jina nez nase, nebudeme ji menit,
             // protoze nekdo v rade subclasseni uz vratil puvodni WndProc
-            WNDPROC currentWndProc = (WNDPROC)GetWindowLongPtr(wnd->HWindow, GWLP_WNDPROC);
-            if (currentWndProc == CWindow::CWindowProc)
-                SetWindowLongPtr(wnd->HWindow, GWLP_WNDPROC, (LONG_PTR)wnd->DefWndProc);
+            if (wnd->UnicodeWnd) // feature 102: read and restore through the W entry points
+            {
+                WNDPROC currentWndProcW = (WNDPROC)GetWindowLongPtrW(wnd->HWindow, GWLP_WNDPROC);
+                if (currentWndProcW == CWindow::CWindowProc)
+                    SetWindowLongPtrW(wnd->HWindow, GWLP_WNDPROC, (LONG_PTR)wnd->DefWndProc);
+                wnd->UnicodeWnd = FALSE;
+            }
+            else
+            {
+                WNDPROC currentWndProc = (WNDPROC)GetWindowLongPtr(wnd->HWindow, GWLP_WNDPROC);
+                if (currentWndProc == CWindow::CWindowProc)
+                    SetWindowLongPtr(wnd->HWindow, GWLP_WNDPROC, (LONG_PTR)wnd->DefWndProc);
+            }
 
             if (wnd->IsAllocated())
                 delete wnd;

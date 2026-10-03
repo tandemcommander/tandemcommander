@@ -75,25 +75,67 @@ public:
 // CFileCompThread
 //
 
+// feature 102: every buffer holding a file name (UTF-8, WTF-8 for a lone surrogate) has
+// FC_NAME_SIZE bytes - the whole range of a Windows path (32,767 UTF-16 units, at most
+// 3 bytes each); before, 260 bytes held about 86 Chinese characters.  Such buffers live on
+// the heap.
+#define FC_NAME_SIZE SAL_MAX_PATH_UTF8
+
 class CFilecompThread : public CThread
 {
 public:
-    char Path1[MAX_PATH];
-    char Path2[MAX_PATH];
+    // feature 102: FC_NAME_SIZE heap buffers (NULL on low memory, Body() reports it); the
+    // comparator window of this thread works in them (CMainWindow::Path1/Path2)
+    char* Path1;
+    char* Path2;
     BOOL DontConfirmSelection;
     char ReleaseEvent[20];
 
     CFilecompThread(const char* file1, const char* file2, BOOL dontConfirmSelection,
                     const char* releaseEvent) : CThread("Filecomp Thread")
     {
-        strcpy(Path1, file1);
-        strcpy(Path2, file2);
+        Path1 = (char*)malloc(FC_NAME_SIZE);
+        Path2 = (char*)malloc(FC_NAME_SIZE);
+        if (Path1 != NULL)
+            lstrcpynA(Path1, file1, FC_NAME_SIZE);
+        if (Path2 != NULL)
+            lstrcpynA(Path2, file2, FC_NAME_SIZE);
         DontConfirmSelection = dontConfirmSelection;
-        strcpy(ReleaseEvent, releaseEvent);
+        lstrcpynA(ReleaseEvent, releaseEvent, _countof(ReleaseEvent));
+    }
+    virtual ~CFilecompThread()
+    {
+        free(Path1);
+        free(Path2);
     }
 
     virtual unsigned Body();
 };
+
+// feature 102: texts that embed file names are composed in UTF-8 from UTF-8 templates.
+// The plug-in's LoadStr returns the code-page form of a string, so a template with accented
+// letters (cs, de, fr, hu, sk) plus a UTF-8 name made an invalid mix that was shown garbled.
+
+// the UTF-8 form of the plug-in's string 'resID' (from SG->LoadStrW, cached for the life of
+// the plug-in, thread safe); never NULL
+const char* LoadStrU8(int resID);
+// frees the LoadStrU8 cache (plug-in unload)
+void ReleaseLoadStrU8();
+// vsprintf/sprintf into a malloc'ed buffer of the exact size; NULL on low memory
+char* VSprintfAlloc(const char* format, va_list args);
+char* SprintfAlloc(const char* format, ...);
+// returns 'text' (malloc'ed, UTF-8) with the system's text for 'error' (UTF-8, from
+// FormatMessageW) appended; 'text' is freed or reused; NULL on low memory
+char* AppendSystemErrorU8(char* text, DWORD error);
+// copies at most dstSize - 1 bytes of the UTF-8 'src' to 'dst', never ending in the middle
+// of a character; returns FALSE when 'src' had to be shortened
+BOOL CopyU8Truncated(char* dst, size_t dstSize, const char* src);
+// a label that may be code-page text (a conversion table name from convert.cfg) as UTF-8
+void LabelToU8(const char* label, char* buf, int bufSize);
+// the Error() of lukas for a template with one %s that receives a UTF-8 file name
+BOOL ErrorU8(HWND parent, int resID, const char* name, DWORD lastError = ERROR_SUCCESS);
+// sets the window title from UTF-8 text (also on this plug-in's code-page windows)
+void SetWindowTitleU8(HWND hWnd, const char* text);
 
 extern CWindowQueue MainWindowQueue; // list of all FileComp windows
 extern CThreadQueue ThreadQueue;     // list of all FileComp windows, workers, and the remote control

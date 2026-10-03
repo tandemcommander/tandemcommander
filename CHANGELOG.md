@@ -53,6 +53,23 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **The File Comparator compares the files you name.** With a name
+  containing characters outside the system code page (a Cyrillic or Chinese
+  name on a Czech Windows, an emoji) the comparison failed, and the name was
+  saved into the history as `?`. Worse, when files were dropped onto its
+  dialog or passed by another program through `fcremote.exe`, some letters
+  were replaced by look-alikes - `voilà.txt` became `voila.txt` - and **if
+  such a file existed, it was compared instead without a word**. Since the
+  first release, `fcremote.exe` (used by version-control and other programs
+  to show differences) failed for every name with a letter outside plain
+  English, even `Petrů.txt`; and the history list showed every such name
+  garbled. All of this is fixed: names of any script and length reach the
+  comparison exactly; very long paths no longer freeze the window; a folder
+  name ending with a dot or a space is no longer confused with the one
+  without. Also fixed: "Insert line" in the list of differences named the
+  wrong file; a folder dropped as the second item was taken for a file. An
+  old `fcremote.exe` copied elsewhere now reports that it does not match
+  instead of waiting forever with `-w` (feature 102).
 - **Smaller fixes** (feature 101):
   - The tip of the notification-area icon shows folder names with accented
     and other non-English letters correctly (they were garbled).

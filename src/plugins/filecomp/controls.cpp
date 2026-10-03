@@ -60,10 +60,56 @@ static int StoreHeaderText(char* dst, int dstSize, const char* text)
     return len;
 }
 
+// feature 102: 'Text' is a heap buffer of FC_NAME_SIZE bytes, so every path the comparator
+// can open fits (StoreHeaderText still bounds the copy); since feature 102 fcremote.exe
+// delivers UTF-8 too, the narrow-draw fallback below only meets text that is not UTF-8 at all
+// feature 102 (review): the header's text for a path of any length in a MAX_PATH buffer:
+// the path itself when it fits, else its root ("C:\" or "\\server\share\", when short), "...\"
+// and its end, which starts after a backslash when there is one and never inside a surrogate
+// pair - so the file name stays visible and drawing costs the same for every length
+static void HeaderDisplayText(const WCHAR* path, WCHAR* out)
+{
+    size_t len = wcslen(path);
+    if (len < MAX_PATH)
+    {
+        lstrcpynW(out, path, MAX_PATH);
+        return;
+    }
+    size_t root = 0;
+    if (path[0] != 0 && path[1] == L':' && path[2] == L'\\')
+        root = 3;
+    else if (path[0] == L'\\' && path[1] == L'\\')
+    {
+        const WCHAR* s = wcschr(path + 2, L'\\');           // after the server
+        const WCHAR* e = s != NULL ? wcschr(s + 1, L'\\') : NULL; // after the share
+        if (e != NULL)
+            root = (size_t)(e - path) + 1;
+    }
+    if (root > 60)
+        root = 0; // a long server or share name: the end of the path is what matters
+    const size_t tailMax = MAX_PATH - 1 - root - 4; // "...\"
+    size_t tailStart = len - tailMax;
+    size_t i;
+    for (i = tailStart; i < len; i++)
+    {
+        if (path[i - 1] == L'\\')
+        {
+            tailStart = i; // a whole component
+            break;
+        }
+    }
+    if (tailStart < len && path[tailStart] >= 0xDC00 && path[tailStart] <= 0xDFFF)
+        tailStart++; // not the low half of a pair
+    memcpy(out, path, root * sizeof(WCHAR));
+    memcpy(out + root, L"...\\", 4 * sizeof(WCHAR));
+    lstrcpynW(out + root + 4, path + tailStart, (int)(MAX_PATH - root - 4));
+}
+
 CFileHeaderWindow::CFileHeaderWindow(const char* text)
 {
     CALL_STACK_MESSAGE2("CFileHeaderWindow::CFileHeaderWindow(%s)", text);
-    TextLen = StoreHeaderText(Text, _countof(Text), text);
+    Text = (char*)malloc(FC_NAME_SIZE);
+    TextLen = Text != NULL ? StoreHeaderText(Text, FC_NAME_SIZE, text) : 0;
     BkgndBrush = NULL;
 }
 
@@ -72,12 +118,14 @@ CFileHeaderWindow::~CFileHeaderWindow()
     CALL_STACK_MESSAGE1("CFileHeaderWindow::~CFileHeaderWindow()");
     if (BkgndBrush)
         DeleteObject(BkgndBrush);
+    free(Text);
 }
 
 void CFileHeaderWindow::SetText(const char* text)
 {
     CALL_STACK_MESSAGE2("CFileHeaderWindow::SetText(%s)", text);
-    TextLen = StoreHeaderText(Text, _countof(Text), text); // feature 075 (D5)
+    if (Text != NULL)
+        TextLen = StoreHeaderText(Text, FC_NAME_SIZE, text); // feature 075 (D5)
     InvalidateRect(HWindow, NULL, FALSE);
     UpdateWindow(HWindow);
 }
@@ -127,13 +175,21 @@ CFileHeaderWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         // PathCompactPath() needs a copy in a local buffer, but it does not clip the text
         // 'Text' is a UTF-8 path (interface 104) -> render with the W text API so
         // non-ASCII names are not misread through the ANSI code page
-        WCHAR buff[2 * MAX_PATH];
-        if (SplU8ToW(Text, buff, _countof(buff)) > 0)
+        // feature 102: any length - a path of MAX_PATH units or more is first shortened to
+        // root + "...\" + its end (HeaderDisplayText), then PathCompactPathW fits it to the
+        // width; the cost no longer grows with the length (review: DrawTextW with
+        // DT_PATH_ELLIPSIS on the whole path grows with its square - 30,000 units took 28.5 s
+        // per repaint and froze the window)
+        WCHAR* buff = Text != NULL ? SplU8ToWAlloc(Text) : NULL;
+        if (buff != NULL)
         {
-            PathCompactPathW(dc, buff, r.right - r.left);
-            DrawTextW(dc, buff, -1, &r, /*DT_PATH_ELLIPSIS | */ DT_SINGLELINE | DT_NOPREFIX);
+            WCHAR compact[MAX_PATH];
+            HeaderDisplayText(buff, compact);
+            PathCompactPathW(dc, compact, r.right - r.left);
+            DrawTextW(dc, compact, -1, &r, /*DT_PATH_ELLIPSIS | */ DT_SINGLELINE | DT_NOPREFIX);
+            free(buff);
         }
-        else
+        else if (Text != NULL)
         {
             // feature 069 (D03): on a conversion failure fall back to the legacy
             // narrow draw instead of blanking the bar - dropping the text is a

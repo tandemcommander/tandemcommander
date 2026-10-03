@@ -10,7 +10,11 @@
 // CMessageCenter
 //
 
-const char* CMessageCenter::Version = "1";
+// feature 102: "2" - the File Comparator's message carries UTF-16 names of variable length
+// and the buffer is larger; the version is part of the shared buffer's name, so a version-1
+// sender (an fcremote.exe of 0.1.8 or older) cannot open a version-2 receiver's buffer and
+// reports an error, instead of a message being silently ignored (and "-w" waiting forever)
+const char* CMessageCenter::Version = "2";
 
 CMessageCenter::CMessageCenter(const char* name, BOOL sender)
 {
@@ -126,12 +130,20 @@ BOOL CMessageCenter::RecieveMessages(CMessageListener* listener)
     if (ret == WAIT_OBJECT_0)
     {
         // vyprazdnime message buffer
-        for (int pos = sizeof(CBuffer); pos < Buffer->WritePos;
-             pos += MESSAGE_AT_POS(pos)->Size)
+        // feature 102 (review): the buffer is shared memory any process of the session can
+        // write; every message must lie inside the mapping and inside the written part, each
+        // value is read once (a forged Size must not make the listener read past the mapping)
+        int writePos = Buffer->WritePos;
+        if (writePos > BufferSize)
+            writePos = BufferSize;
+        int pos = sizeof(CBuffer);
+        while (pos + (int)sizeof(CMessage) <= writePos)
         {
-            if (MESSAGE_AT_POS(pos)->Size == 0)
-                break; // to by byl nekonecny cyklus a navic je to nesmysl
-            listener->RecieveMessage(MESSAGE_AT_POS(pos));
+            int size = MESSAGE_AT_POS(pos)->Size;
+            if (size < (int)sizeof(CMessage) || size > writePos - pos)
+                break; // a zero size would be an endless loop; anything else is damaged
+            listener->RecieveMessage(MESSAGE_AT_POS(pos), size);
+            pos += size;
         }
     }
     // nastavime buffer na prazdny (i pro abadoned data-mutex)

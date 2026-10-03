@@ -1268,3 +1268,25 @@ plugin architecture preservation, UI consistency.
   probe flake explained: F4 acts only after the idle-time command-enabler
   refresh - the probe now waits for idle. saltests 13,119 -> 13,278. Review
   ACCEPT. Records: `specs/101-small-leftovers/fix-log.md`.
+- 102-filecomp-unicode-names: **the File Comparator compares the files you
+  name.** Its engine already opened files wide; the routes around it lost
+  names: the dialog's path combos had a **code-page subclass** (the 093
+  lesson again: `SetWindowLongPtrW`/`CallWindowProcW` now), history, drop
+  and Browse were code-page calls, and **`DragQueryFileA` / `GetCommandLineA`
+  use best-fit mapping** - `voilà` -> `voila`, `ＡＢ` -> `AB`: an existing
+  look-alike file was compared silently. `fcremote.exe` (CRT-free external
+  diff entry) sent code-page bytes to a plug-in expecting UTF-8 - broken for
+  every non-ASCII name since 004. Now: wide everywhere; plug-in-local
+  `LoadStrU8` (on `SG->LoadStrW`); heap name buffers; the header bar
+  shortens a long name *before* `DT_PATH_ELLIPSIS` (quadratic: 28 s per
+  repaint at 30,000 units); fcremote builds absolute paths itself
+  (`FcAbsoluteNameW`, `fcproto.h`) because `GetFullPathNameW` strips a
+  trailing dot from intermediate folders (`L.\f.txt` -> `L\f.txt`: another
+  file); channel version "2" in the mapping name (a mismatch fails cleanly,
+  `-w` no longer waits forever), messages bound-checked and copied once.
+  winliblt gained an opt-in `AttachToWindowKeepKind` (other plug-ins
+  unchanged byte for byte). The reviewer explained a one-time Debug
+  "Buffer is too small" assert: history written by two threads at start-up
+  (receiver now starts after `LoadConfiguration`; `HistoryLock`). Probe
+  `probe/filecomp_probe.ps1` 95 / 0 (decoys never compared). Records:
+  `specs/102-filecomp-unicode-names/fix-log.md`.

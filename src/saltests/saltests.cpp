@@ -30,6 +30,7 @@
 #include "salzippwd.h"    // feature 094
 #include "salheapstr.h"   // feature 095
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
+#include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 
 #include <map>
 #include <set>
@@ -4270,6 +4271,127 @@ static void TestNameIdentity092()
     }
 }
 
+// feature 102: the pure parts of the fcremote.exe channel (src/plugins/filecomp/fcproto.h)
+static BOOL ArgsAre102(const WCHAR* cmdLine, int maxarg, int count, const WCHAR* const* want)
+{
+    WCHAR* argv[8];
+    int argc = -1;
+    BOOL ok = FcSplitArgsW(cmdLine, argv, argc, maxarg);
+    BOOL same = ok && argc == count;
+    int i;
+    for (i = 0; same && i < count; i++)
+        same = wcscmp(argv[i], want[i]) == 0;
+    if (ok)
+        FcFreeArgsW(argv, argc);
+    return same && argc == 0;
+}
+
+static BOOL AbsIs102(const WCHAR* arg, const WCHAR* curDir, const WCHAR* driveDir, const WCHAR* want)
+{
+    WCHAR* got = FcAbsoluteNameW(arg, curDir, driveDir);
+    BOOL ok = want == NULL ? got == NULL : (got != NULL && wcscmp(got, want) == 0);
+    if (got != NULL)
+        HeapFree(GetProcessHeap(), 0, got);
+    return ok;
+}
+
+static void TestFcRemote102()
+{
+    // --- the argument split keeps version 1's rules, on UTF-16
+    const WCHAR* w1[] = {L"C:\\p\\fc.exe", L"-w", L"C:\\a b\\x.txt", L"y.txt"};
+    CHECK(ArgsAre102(L"\"C:\\p\\fc.exe\" -w \"C:\\a b\\x.txt\" y.txt", 4, 4, w1));
+    const WCHAR* w2[] = {L"fc.exe", L"ab cd", L"e"}; // a quote inside an argument, quotes removed
+    CHECK(ArgsAre102(L"fc.exe a\"b c\"d e", 4, 3, w2));
+    const WCHAR* w3[] = {L"fc.exe", L"unterminated x"}; // version 1 read past the end here
+    CHECK(ArgsAre102(L"fc.exe \"unterminated x", 4, 2, w3));
+    const WCHAR* w4[] = {L"fc.exe", L"C:\\dir\\", L"b"}; // no escape character
+    CHECK(ArgsAre102(L"fc.exe \"C:\\dir\\\" b", 4, 3, w4));
+    const WCHAR* w5[] = {L"fc.exe", L"a", L"b"}; // runs of spaces and tabs
+    CHECK(ArgsAre102(L"  fc.exe   a\tb  ", 4, 3, w5));
+    const WCHAR* w6[] = {L"fc.exe", L""}; // an empty quoted argument
+    CHECK(ArgsAre102(L"fc.exe \"\"", 4, 2, w6));
+    CHECK(ArgsAre102(L"", 4, 0, NULL));
+    // names outside the code page stay exact; a fullwidth quote (U+FF02) is an ordinary
+    // character (the code-page command line turned it into '"')
+    const WCHAR* w7[] = {L"fc.exe", L"C:\\x\\f\x65E5.txt", L"C:\\a\xFF02x\xFF02.txt", L"lone\xD800.txt"};
+    CHECK(ArgsAre102(L"fc.exe \"C:\\x\\f\x65E5.txt\" C:\\a\xFF02x\xFF02.txt \"lone\xD800.txt\"", 4, 4, w7));
+    // too many arguments: an error, nothing left allocated
+    {
+        WCHAR* argv[4];
+        int argc = -1;
+        CHECK(!FcSplitArgsW(L"fc.exe a b c d", argv, argc, 4) && argc == 0);
+    }
+
+    // --- the absolute name, every component kept as typed (review: GetFullPathNameW dropped the
+    //     trailing dots and spaces of EVERY component, "dir.\b.txt" named "dir\b.txt")
+    CHECK(AbsIs102(L"C:\\t\\dir.\\b.txt", L"C:\\cur", NULL, L"C:\\t\\dir.\\b.txt"));
+    CHECK(AbsIs102(L"C:\\t\\dir \\b.txt ", L"C:\\cur", NULL, L"C:\\t\\dir \\b.txt "));
+    CHECK(AbsIs102(L"a.", L"C:\\cur", NULL, L"C:\\cur\\a."));
+    CHECK(AbsIs102(L"L.\\f.txt", L"C:\\cur", NULL, L"C:\\cur\\L.\\f.txt"));
+    CHECK(AbsIs102(L"x/y.\\z", L"C:\\cur", NULL, L"C:\\cur\\x\\y.\\z"));                       // '/' is a separator
+    CHECK(AbsIs102(L"..\\b.txt", L"C:\\cur\\sub", NULL, L"C:\\cur\\b.txt"));                   // ".." resolved
+    CHECK(AbsIs102(L".\\.\\b.txt", L"C:\\cur", NULL, L"C:\\cur\\b.txt"));                      // "." dropped
+    CHECK(AbsIs102(L"..\\..\\..\\b.txt", L"C:\\cur", NULL, L"C:\\b.txt"));                     // never above the root
+    CHECK(AbsIs102(L"C:\\a\\\\b", L"C:\\cur", NULL, L"C:\\a\\b"));                             // empty component
+    CHECK(AbsIs102(L"x\\...\\y", L"C:\\cur", NULL, L"C:\\cur\\x\\...\\y"));                    // "..." is a name
+    CHECK(AbsIs102(L"\\top.\\f", L"D:\\cur\\x", NULL, L"D:\\top.\\f"));                        // root-relative
+    CHECK(AbsIs102(L"\\f", L"\\\\srv\\sh\\cur", NULL, L"\\\\srv\\sh\\f"));                     // root-relative on UNC
+    CHECK(AbsIs102(L"E:f.", L"C:\\cur", L"E:\\work", L"E:\\work\\f."));                       // drive-relative
+    CHECK(AbsIs102(L"E:f", L"C:\\cur", NULL, NULL));                                         // ... without its directory
+    CHECK(AbsIs102(L"\\\\srv\\sh\\d.\\f", L"C:\\cur", NULL, L"\\\\srv\\sh\\d.\\f"));
+    CHECK(AbsIs102(L"\\\\srv\\sh\\..\\..\\f", L"C:\\cur", NULL, L"\\\\srv\\sh\\f"));           // the share is the root
+    CHECK(AbsIs102(L"\\\\srv", L"C:\\cur", NULL, NULL));                                    // no share
+    CHECK(AbsIs102(L"\\\\?\\C:\\x.\\f", L"C:\\cur", NULL, L"\\\\?\\C:\\x.\\f"));               // taken as it is
+    CHECK(AbsIs102(L"f\x65E5\xD800.txt", L"C:\\\x0416", NULL, L"C:\\\x0416\\f\x65E5\xD800.txt"));
+    CHECK(AbsIs102(L"g.txt", L"\\\\?\\C:\\long", NULL, L"C:\\long\\g.txt"));                    // a "\\?\" current directory
+    CHECK(AbsIs102(L"g.txt", L"\\\\?\\UNC\\srv\\sh\\d", NULL, L"\\\\srv\\sh\\d\\g.txt"));
+    CHECK(AbsIs102(L"", L"C:\\cur", NULL, NULL));
+    CHECK(AbsIs102(L"C:\\", L"C:\\cur", NULL, L"C:\\"));
+
+    // --- the names part of a version-2 message
+    {
+        WCHAR names[8] = {L'a', L'b', 0, L'c', 0, 0x7777, 0x7777, 0x7777};
+        const int hdr = 8;
+        CHECK(FcCheckNames(hdr + 5 * 2, hdr, 2, 1, names));
+        CHECK(!FcCheckNames(hdr + 5 * 2, hdr, 3, 0, names));                        // terminator not where the length says
+        CHECK(!FcCheckNames(hdr + 5 * 2 + 1, hdr, 2, 1, names));                    // odd size
+        CHECK(!FcCheckNames(hdr + 6 * 2, hdr, 2, 1, names));                        // does not fill the message
+        CHECK(!FcCheckNames(hdr + 5 * 2, hdr, 0xFFFFFFFFu, 0xFFFFFFFFu, names));    // the sum must not wrap
+        CHECK(!FcCheckNames(hdr + 5 * 2, hdr, 0xFFFFFFFFu, 4, names));
+        CHECK(!FcCheckNames(hdr + 3, hdr, 0, 0, names));                            // shorter than two terminators
+        WCHAR unterminated[5] = {L'a', L'b', L'x', L'c', L'y'};
+        CHECK(!FcCheckNames(hdr + 5 * 2, hdr, 2, 1, unterminated));
+        WCHAR empty[2] = {0, 0};
+        CHECK(FcCheckNames(hdr + 2 * 2, hdr, 0, 0, empty));
+    }
+
+    // --- the display form of an "\\?\" name
+    {
+        char a[64];
+        strcpy_s(a, "\\\\?\\C:\\x\\a.");
+        FcDisplayFormU8(a);
+        CHECK(strcmp(a, "C:\\x\\a.") == 0);
+        strcpy_s(a, "\\\\?\\UNC\\srv\\sh\\f\xE6\x97\xA5");
+        FcDisplayFormU8(a);
+        CHECK(strcmp(a, "\\\\srv\\sh\\f\xE6\x97\xA5") == 0);
+        strcpy_s(a, "\\\\?\\unc\\s\\f");
+        FcDisplayFormU8(a);
+        CHECK(strcmp(a, "\\\\s\\f") == 0);
+        strcpy_s(a, "C:\\x\\y");
+        FcDisplayFormU8(a);
+        CHECK(strcmp(a, "C:\\x\\y") == 0);
+        strcpy_s(a, "\\\\?\\Volume{1}\\x"); // no drive: left as it is
+        FcDisplayFormU8(a);
+        CHECK(strcmp(a, "\\\\?\\Volume{1}\\x") == 0);
+        strcpy_s(a, "\\\\?\\");
+        FcDisplayFormU8(a);
+        CHECK(strcmp(a, "\\\\?\\") == 0);
+        strcpy_s(a, "\\\\server\\share\\f");
+        FcDisplayFormU8(a);
+        CHECK(strcmp(a, "\\\\server\\share\\f") == 0);
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -4310,6 +4432,7 @@ int main()
     TestZipPassword094();
     TestHeapString095();
     TestLeftovers101();
+    TestFcRemote102();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

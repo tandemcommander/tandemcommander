@@ -9,21 +9,46 @@
 //
 
 #define MAX_HISTORY_ENTRIES 20
-extern char CBHistory[MAX_HISTORY_ENTRIES][MAX_PATH];
+extern char CBHistory[MAX_HISTORY_ENTRIES][FC_NAME_SIZE]; // feature 102: was MAX_PATH
 extern int CBHistoryEntries;
+// feature 102: guards CBHistory and CBHistoryEntries (comparator threads and the main thread)
+extern SRWLOCK HistoryLock;
+class CHistoryLock
+{
+public:
+    CHistoryLock(BOOL exclusive) : Exclusive(exclusive)
+    {
+        if (Exclusive)
+            AcquireSRWLockExclusive(&HistoryLock);
+        else
+            AcquireSRWLockShared(&HistoryLock);
+    }
+    ~CHistoryLock()
+    {
+        if (Exclusive)
+            ReleaseSRWLockExclusive(&HistoryLock);
+        else
+            ReleaseSRWLockShared(&HistoryLock);
+    }
+
+private:
+    BOOL Exclusive;
+};
 
 void AddToHistory(const char* path);
 
 class CCompareFilesDialog : public CCommonDialog
 {
 protected:
+    // feature 102: buffers of FC_NAME_SIZE bytes, UTF-8 (WTF-8); the path fields are read
+    // and written as UTF-16 (they are Unicode controls kept Unicode by a W subclass)
     char *Path1,
         *Path2;
     BOOL& Succes;
     CCompareOptions* Options;
-    WNDPROC OldEditProc1, OldEditProc2;
 
 public:
+    // 'path1' and 'path2' must have FC_NAME_SIZE bytes (feature 102)
     CCompareFilesDialog(HWND parent, char* path1, char* path2, BOOL& succes, CCompareOptions* options);
     virtual ~CCompareFilesDialog() { MainWindowQueue.Remove(HWindow); }
     virtual void Validate(CTransferInfo& ti);

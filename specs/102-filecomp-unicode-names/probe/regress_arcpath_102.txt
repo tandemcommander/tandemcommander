@@ -1,0 +1,154 @@
+arcpath_probe (feature 097, expectation of stage S2) 102
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-03 20:02; ACP 1250
+Config  : registry key existed True; fresh defaults False
+Routes  : ENTER (End, Enter in the archive's folder); CHDIR (Change Directory, command 862, wide WM_SETTEXT, OK); START (-l "<archive>")
+Verdict : against the S2 expectation (every ZIP archive opens as the requested one, a.txt, without a message; CL600 and the inner path of INNER: exactly one "too long" message; never twin.txt)
+
+fixture C200   archive full name 200 bytes / 200 characters; first 259 bytes end with (fits)
+fixture A259   archive full name 259 bytes / 259 characters; first 259 bytes end with (fits)
+fixture A260   archive full name 260 bytes / 260 characters; first 259 bytes end with '...pppppppppppppp\pp\arc.zi'
+fixture U130   archive full name 281 bytes / 169 characters; first 259 bytes end with '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'
+fixture U200   archive full name 417 bytes / 237 characters; first 259 bytes end with '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'
+fixture MID    archive full name 280 bytes / 168 characters; first 259 bytes end with '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159' + half of a character
+fixture TWIN   archive full name 300 bytes / 300 characters; first 259 bytes end with '...pppppppppppppppppppp.zip'; twin archive (twin.txt) at exactly that name, 259 bytes, exists=True
+fixture CL600  archive full name 619 bytes / 339 characters; first 259 bytes end with '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159' + half of a character
+fixture INNER  archive full name 57 bytes / 57 characters; first 259 bytes end with (fits); inner path of d3 362 bytes (d1\d2 241)
+fixture ISO    archive full name 250 bytes / 250 characters; first 259 bytes end with (fits)
+fixture ISOU   archive full name 252 bytes / 155 characters; first 259 bytes end with (fits)
+
+--- C200 (expected: enter)
+C200   ENTER     PASS       ENTERED the requested archive; title before '...pppppppppppp - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+C200   ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+C200   CHDIR     PASS       ENTERED the requested archive; title before 'T097 - start - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window; the field held the text exactly
+C200   CHDIR.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+C200   START     PASS       ENTERED the requested archive; title before '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+C200   START.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+
+--- A259 (expected: enter)
+A259   ENTER     PASS       ENTERED the requested archive; title before 'T097 - p - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+A259   ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+A259   CHDIR     PASS       ENTERED the requested archive; title before 'T097 - start - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window; the field held the text exactly
+A259   CHDIR.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+A259   START     PASS       ENTERED the requested archive; title before '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+A259   START.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+
+--- A260 (expected: enter)
+A260   ENTER     PASS       ENTERED the requested archive; title before 'T097 - pp - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+A260   ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+A260   CHDIR     PASS       ENTERED the requested archive; title before 'T097 - start - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window; the field held the text exactly
+A260   CHDIR.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+A260   START     PASS       ENTERED the requested archive; title before '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+A260   START.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+
+--- U130 (expected: enter)
+U130   ENTER     PASS       ENTERED the requested archive; title before '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159 - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+U130   ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+U130   CHDIR     PASS       ENTERED the requested archive; title before 'T097 - start - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window; the field held the text exactly
+U130   CHDIR.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+U130   START     PASS       ENTERED the requested archive; title before '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+U130   START.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+
+--- U200 (expected: enter)
+U200   ENTER     PASS       ENTERED the requested archive; title before '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159 - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+U200   ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+U200   CHDIR     PASS       ENTERED the requested archive; title before 'T097 - start - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window; the field held the text exactly
+U200   CHDIR.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+U200   START     PASS       ENTERED the requested archive; title before '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+U200   START.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+
+--- MID (expected: enter)
+MID    ENTER     PASS       ENTERED the requested archive; title before '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159 - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+MID    ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+MID    CHDIR     PASS       ENTERED the requested archive; title before 'T097 - start - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window; the field held the text exactly
+MID    CHDIR.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+MID    START     PASS       ENTERED the requested archive; title before '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+MID    START.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+
+--- TWIN (expected: enter)
+TWIN   ENTER     PASS       ENTERED the requested archive; title before '...qqqqqqqqqqqq - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+TWIN   ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+TWIN   CHDIR     PASS       ENTERED the requested archive; title before 'T097 - start - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window; the field held the text exactly
+TWIN   CHDIR.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+TWIN   START     PASS       ENTERED the requested archive; title before '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST', after '...97 - arc.zip - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: a.txt; windows (0): no window
+TWIN   START.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0; Debug note: "Some monitored handles remained opened"
+
+--- CL600 (expected: refuse)
+CL600  START     PASS       REFUSED: "too long" message x1; title before '...qqqqqqqqqqqq - Tandem Commander 0.1.8 (x64) ST', after '...qqqqqqqqqqqq - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: -; windows (1): (before the main window) [#32770 'Tandem Commander 0.1.8 (x64)'] [Static id=2477] The path specified is too long. | [Button id=1] OK
+CL600  START.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+
+--- INNER (expected: enter)
+INNER  ENTER     PASS       entered; title starts 'T097 - INNER - T' before, 'T097 - arc.zip -' after; windows (0): no window
+INNER  d1        PASS       entered; title starts 'T097 - arc.zip -' before, 'T097 - d1xxxxxxx' after; windows (0): no window
+INNER  d2        PASS       entered; title starts 'T097 - d1xxxxxxx' before, 'T097 - d2xxxxxxx' after; windows (0): no window
+INNER  d3        PASS       REFUSED: "too long" message x1, panel stays in d2; title starts 'T097 - d2xxxxxxx' before, 'T097 - d2xxxxxxx' after; windows (1): [#32770 'Error Changing Directory'] [Static id=2477] The path specified is too long. | [Button id=1] OK
+INNER  END       PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+INNER  CHDIR     PASS       REFUSED: "too long" message x1, panel stays; title before 'T097 - start - Tandem Commander 0.1.8 (x64) ST', after 'T097 - start - Tandem Commander 0.1.8 (x64) ST'; F3 on the last item: -; windows (1): [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc097_arc\INNER\arc.zip\d1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxxxxxxxxxxx ...(203 characters)... xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx xxxxxxxxxxx" Error: The path specified is too long. | [Button id=1] OK; the Change Directory dialog came back x1 (cancelled); the field held the text exactly
+INNER  CHDIR.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+
+--- ISO (expected: plug-in message)
+ISO    ENTER     PASS       plug-in message "Cannot open file" x1, panel stays; windows (1): [#32770 'UnISO'] [Static id=2477] Cannot open file 'C:\Users\pavel\AppData\Local\Temp\tc097_arc\ISO\pppppppppppppppppppppppppppppppp ppppppppppppppppppppppppppppppppppppp ...(98 characters)... ppppppppppppppppppppppppppp (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=1] OK
+ISO    ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+
+--- ISOU (expected: plug-in message)
+ISOU   ENTER     PASS       plug-in message "Cannot open file" x1, panel stays; windows (1): [#32770 'UnISO'] [Static id=2477] Cannot open file 'C:\Users\pavel\AppData\Local\Temp\tc097_arc\ISOU\x\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u ...(476 characters)... 159\u0159\u0159\u0159\u0159 (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=1] OK
+ISOU   ENTER.END PASS       exit 0x00000000; alive True; WM_NULL True; stray windows 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== summary ===
+C200   ENTER      PASS       ENTERED the requested archive
+C200   ENTER.END  PASS       exit 0x00000000
+C200   CHDIR      PASS       ENTERED the requested archive
+C200   CHDIR.END  PASS       exit 0x00000000
+C200   START      PASS       ENTERED the requested archive
+C200   START.END  PASS       exit 0x00000000
+A259   ENTER      PASS       ENTERED the requested archive
+A259   ENTER.END  PASS       exit 0x00000000
+A259   CHDIR      PASS       ENTERED the requested archive
+A259   CHDIR.END  PASS       exit 0x00000000
+A259   START      PASS       ENTERED the requested archive
+A259   START.END  PASS       exit 0x00000000
+A260   ENTER      PASS       ENTERED the requested archive
+A260   ENTER.END  PASS       exit 0x00000000
+A260   CHDIR      PASS       ENTERED the requested archive
+A260   CHDIR.END  PASS       exit 0x00000000
+A260   START      PASS       ENTERED the requested archive
+A260   START.END  PASS       exit 0x00000000
+U130   ENTER      PASS       ENTERED the requested archive
+U130   ENTER.END  PASS       exit 0x00000000
+U130   CHDIR      PASS       ENTERED the requested archive
+U130   CHDIR.END  PASS       exit 0x00000000
+U130   START      PASS       ENTERED the requested archive
+U130   START.END  PASS       exit 0x00000000
+U200   ENTER      PASS       ENTERED the requested archive
+U200   ENTER.END  PASS       exit 0x00000000
+U200   CHDIR      PASS       ENTERED the requested archive
+U200   CHDIR.END  PASS       exit 0x00000000
+U200   START      PASS       ENTERED the requested archive
+U200   START.END  PASS       exit 0x00000000
+MID    ENTER      PASS       ENTERED the requested archive
+MID    ENTER.END  PASS       exit 0x00000000
+MID    CHDIR      PASS       ENTERED the requested archive
+MID    CHDIR.END  PASS       exit 0x00000000
+MID    START      PASS       ENTERED the requested archive
+MID    START.END  PASS       exit 0x00000000
+TWIN   ENTER      PASS       ENTERED the requested archive
+TWIN   ENTER.END  PASS       exit 0x00000000
+TWIN   CHDIR      PASS       ENTERED the requested archive
+TWIN   CHDIR.END  PASS       exit 0x00000000
+TWIN   START      PASS       ENTERED the requested archive
+TWIN   START.END  PASS       exit 0x00000000
+CL600  START      PASS       REFUSED: "too long" message x1
+CL600  START.END  PASS       exit 0x00000000
+INNER  ENTER      PASS       entered
+INNER  d1         PASS       entered
+INNER  d2         PASS       entered
+INNER  d3         PASS       REFUSED: "too long" message x1, panel stays in d2
+INNER  END        PASS       exit 0x00000000
+INNER  CHDIR      PASS       REFUSED: "too long" message x1, panel stays
+INNER  CHDIR.END  PASS       exit 0x00000000
+ISO    ENTER      PASS       plug-in message "Cannot open file" x1, panel stays
+ISO    ENTER.END  PASS       exit 0x00000000
+ISOU   ENTER      PASS       plug-in message "Cannot open file" x1, panel stays
+ISOU   ENTER.END  PASS       exit 0x00000000
+Rows: PASS 55, FAIL 0, NOT DRIVEN 0; rows that showed the twin archive: 0. Left running: 0; fixture removed: True; registry restored+identical: True

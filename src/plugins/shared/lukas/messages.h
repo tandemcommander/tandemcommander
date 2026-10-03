@@ -17,7 +17,10 @@ struct CMessage
 class CMessageListener
 {
 public:
-    virtual void RecieveMessage(const CMessage* message) = 0;
+    // feature 102: 'size' = the message's Size as checked against the buffer (read it, not
+    // message->Size, which another process may change meanwhile); 'message' points into the
+    // shared buffer
+    virtual void RecieveMessage(const CMessage* message, int size) = 0;
 };
 
 class CMessageCenter
@@ -49,9 +52,12 @@ private:
     };
 
 public:
+    // feature 102 (File Comparator channel version 2): room for one message with two names
+    // of 32,767 UTF-16 units (131,116 bytes, see filecomp's remotmsg.h); was 4,094.  The
+    // buffer is named after Version, so both sides of a version always agree on its size.
     enum
     {
-        BufferSize = 4094
+        BufferSize = 135168
     };
     enum
     {

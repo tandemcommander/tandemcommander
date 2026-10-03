@@ -431,9 +431,14 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        structure - every non-ASCII name there is garbled and can be cut
        mid-character; the File Comparator cannot open files named outside the
        code page at all (its dialog and `fcremote.exe` are code-page
-       programs) - **next: feature 102** (measured: also a wrong-file risk
-       through best-fit mapping, `fcremote` broken for every non-ASCII name,
-       history mojibake in every language).
+       programs) - ✅ **fixed by feature 102** (2026-10-04): every route
+       (dialog, history, drop, Browse, `fcremote`) delivers the exact name;
+       no best-fit look-alike can be compared; channel version 2. Found by
+       102, recorded: closing the program within ~1 s of `fcremote` starting
+       it asks "plugin has rejected to unload. Force?" (also before 102);
+       the 093 dialogs probe's Find-menu rows fail on the hidden desktop in
+       about one run of three on the builds before and after 102 (8 rows,
+       "no menu") - a probe/desktop artefact, the other runs pass 139/0.
     4. **The small leftovers** (tray tip, clipboard paste length, silent UNC
        copy, share matching, drag image, accurate link/too-deep messages) -
        ✅ feature 101 (2026-10-03). Found by 101, not fixed: the Find

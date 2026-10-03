@@ -16,8 +16,9 @@ void CFilecompWorker::CompareBinaryFiles()
             CException::Raise(IDS_ACCESFILE, GetLastError(), Files[i].Name);
             break;
         case 2:
-            CException(LoadStr(IDS_LOWMEM));
-            break;
+            // feature 102: UTF-8 text, and thrown - the object was constructed and dropped, so
+            // the comparison went on with a file cache that could not allocate its buffer
+            throw CException(LoadStrU8(IDS_LOWMEM));
         }
     }
 
@@ -83,28 +84,25 @@ void CFilecompWorker::CompareBinaryFiles()
                 InvalidateRect(comboHWnd, NULL, TRUE);
                 UpdateWindow(comboHWnd);
 
-                TCHAR buf[MAX_PATH * 2 + 200];
+                // feature 102: a UTF-8 template with the UTF-8 names in a buffer of the exact
+                // size (two names of 255 Chinese characters overflowed the 720-byte buffer);
+                // with the code-page template the title fell back to the code-page call and
+                // showed the names garbled in cs/de/fr/hu/sk (069 D04)
+                char* buf;
                 if (changes.size() < MaxBinChanges)
                 {
-                    TCHAR fmt[128];
+                    TCHAR fmt[512];
                     CQuadWord qSize((DWORD)changes.size(), 0);
-                    SG->ExpandPluralString(fmt, SizeOf(fmt), LoadStr(IDS_MAINWNDHEADER), 1, &qSize);
-                    _stprintf(buf, fmt, SG->SalPathFindFileName(Files[0].Name), "",
-                              SG->SalPathFindFileName(Files[1].Name), "", changes.size());
+                    SG->ExpandPluralString(fmt, SizeOf(fmt), LoadStrU8(IDS_MAINWNDHEADER), 1, &qSize);
+                    buf = SprintfAlloc(fmt, SG->SalPathFindFileName(Files[0].Name), "",
+                                       SG->SalPathFindFileName(Files[1].Name), "", changes.size());
                 }
                 else
                 {
-                    _stprintf(buf, LoadStr(IDS_MAINWNDHEADERTOOMANY),
-                              SG->SalPathFindFileName(Files[0].Name), SG->SalPathFindFileName(Files[1].Name));
+                    buf = SprintfAlloc(LoadStrU8(IDS_MAINWNDHEADERTOOMANY),
+                                       SG->SalPathFindFileName(Files[0].Name), SG->SalPathFindFileName(Files[1].Name));
                 }
-                // feature 069 (D04): the fourth window-title site, and the one
-                // that runs last on the WN_BINARY_FILES_DIFFER path - it
-                // overwrote the caption F-P5-09 had just corrected, so a binary
-                // comparison still showed the unconverted title.  Same shape as
-                // F-P5-09: wide when the buffer converts (an ASCII template plus
-                // UTF-8 names, i.e. en/nl/ro, now renders accented names right),
-                // legacy narrow call otherwise - never a blanked title.
-                WCHAR* wBuf = SplU8ToWAlloc(buf);
+                WCHAR* wBuf = buf != NULL ? SplU8ToWAlloc(buf) : NULL;
                 if (wBuf != NULL)
                 {
                     // feature 100: this is the worker thread - SetWindowTextW sent WM_SETTEXT to the
@@ -113,8 +111,9 @@ void CFilecompWorker::CompareBinaryFiles()
                     SendMessage(MainWindow, WM_USER_SETTITLEW, 0, (LPARAM)wBuf);
                     free(wBuf);
                 }
-                else
-                    SetWindowTextA(MainWindow, buf);
+                else if (buf != NULL)
+                    SetWindowTextA(MainWindow, buf); // not UTF-8 (cannot happen since feature 102)
+                free(buf);
                 PostMessage(MainWindow, WM_USER_WORKERNOTIFIES, WN_CBINIT_FINISHED, 0);
             }
         }
@@ -126,7 +125,7 @@ void CFilecompWorker::CompareBinaryFiles()
             case 2:
                 CException::Raise(IDS_ACCESFILE, GetLastError(), Files[ret - 1].Name);
             case 3:
-                throw CException(LoadStr(IDS_LOWMEM));
+                throw CException(LoadStrU8(IDS_LOWMEM)); // feature 102: UTF-8 (WN_ERROR text)
             case 4:
                 throw CAbortByUserException(); // cancel
             }

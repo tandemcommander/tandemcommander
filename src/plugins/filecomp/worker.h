@@ -258,7 +258,7 @@ protected:
 
 struct CWorkerFileData
 {
-    TCHAR Name[MAX_PATH];
+    char* Name; // feature 102: malloc'ed UTF-8 (WTF-8) name of any length (was MAX_PATH bytes)
     HANDLE File;
     QWORD Size;
 

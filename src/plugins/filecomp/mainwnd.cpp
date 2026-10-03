@@ -19,6 +19,21 @@ CBandParams BandsParams[2];
 
 const char* MAINWINDOW_CLASSNAME = "SFC Window Class";
 
+// feature 102: the dropped name 'index' as UTF-8 (WTF-8) in 'buf' of 'bufSize' bytes; the
+// name is queried with its real length (DragQueryFileW into a MAX_PATH buffer cut it)
+static BOOL DropNameToU8(HDROP drop, UINT index, char* buf, int bufSize)
+{
+    UINT len = DragQueryFileW(drop, index, NULL, 0);
+    if (len == 0)
+        return FALSE;
+    WCHAR* w = (WCHAR*)malloc(((size_t)len + 1) * sizeof(WCHAR));
+    if (w == NULL)
+        return FALSE;
+    BOOL ret = DragQueryFileW(drop, index, w, len + 1) > 0 && SplWToU8(w, buf, bufSize) > 0;
+    free(w);
+    return ret;
+}
+
 CMainWindow::CMainWindow(char* path1, char* path2, CCompareOptions* options, UINT showCmd)
 {
     CALL_STACK_MESSAGE1("CMainWindow::CMainWindow(, , )");
@@ -123,28 +138,34 @@ BOOL CMainWindow::Init()
     ComboBox = new CComboBox();
     if (!ComboBox)
         return Error(HWND(NULL), IDS_LOWMEM);
-    if (!ComboBox->CreateEx(0,
-                            "ComboBox",
-                            "",
-                            WS_CHILD | WS_VSCROLL | WS_CLIPSIBLINGS | WS_VISIBLE |
-                                CBS_DROPDOWN | CBS_AUTOHSCROLL,
-                            //CBS_DROPDOWNLIST,
-                            0, 0, 150, Height / 2,
-                            HWindow,             // parent
-                            (HMENU)IDC_DIFFLIST, // id
-                            DLLInstance,
-                            ComboBox))
+    // feature 102: the list of differences names the files; the combo box and its edit are
+    // Unicode controls (comctl32 6) and are attached keeping them Unicode - the code-page
+    // attach of CWindow::CreateEx turned them into code-page windows, and the items, filled
+    // from UTF-8 names through the code page, showed every non-ASCII name garbled
+    HWND comboHWnd = CreateWindowExW(0,
+                                     L"ComboBox",
+                                     L"",
+                                     WS_CHILD | WS_VSCROLL | WS_CLIPSIBLINGS | WS_VISIBLE |
+                                         CBS_DROPDOWN | CBS_AUTOHSCROLL,
+                                     //CBS_DROPDOWNLIST,
+                                     0, 0, 150, Height / 2,
+                                     HWindow,             // parent
+                                     (HMENU)IDC_DIFFLIST, // id
+                                     DLLInstance,
+                                     NULL);
+    if (comboHWnd == NULL)
     {
         TRACE_E("CreateWindowEx has failed; last error: " << GetLastError());
         return FALSE;
     }
+    ComboBox->AttachToWindowKeepKind(comboHWnd);
     HWND editHWnd = GetWindow(ComboBox->HWindow, GW_CHILD);
     SendMessage(editHWnd, EM_SETREADONLY, TRUE, 0);
     SendMessage(ComboBox->HWindow, WM_SETFONT, (WPARAM)EnvFont, FALSE);
 
     CComboBoxEdit* edit = new CComboBoxEdit();
     if (edit)
-        edit->AttachToWindow(editHWnd);
+        edit->AttachToWindowKeepKind(editHWnd); // feature 102: see above
     else
         TRACE_E("LOW MEMORY");
 
@@ -734,7 +755,10 @@ void CMainWindow::ResetComboBox(BOOL* cancel)
             size_t line1 = TextChanges[i].InsertPos;   // Line number of 1st inserted line.
             const char* path0 = SG->SalPathFindFileName(Path1);
             const char* path1 = SG->SalPathFindFileName(Path2);
-            char buf[MAX_PATH * 3];
+            // feature 102: UTF-8 templates and names, exact-size buffers (two names of 255
+            // Chinese characters are 1,530 bytes - the 780-byte buffer could overflow), added as
+            // UTF-16 to the Unicode combo box
+            char* buf = NULL;
 
             ++i;
 
@@ -743,35 +767,43 @@ void CMainWindow::ResetComboBox(BOOL* cancel)
                 if (inserted)
                 {
                     // change
-                    char buf2[MAX_PATH * 2];
+                    char* buf2;
                     if (deleted > 1)
-                        sprintf(buf2, LoadStr(IDS_CHANGEFROM2), i, line0 + 1, line0 + deleted, path0);
+                        buf2 = SprintfAlloc(LoadStrU8(IDS_CHANGEFROM2), i, line0 + 1, line0 + deleted, path0);
                     else
-                        sprintf(buf2, LoadStr(IDS_CHANGEFROM1), i, line0 + 1, path0);
-                    if (inserted > 1)
-                        sprintf(buf, LoadStr(IDS_CHANGETO2), buf2, line1 + 1, line1 + inserted, path1);
-                    else
-                        sprintf(buf, LoadStr(IDS_CHANGETO1), buf2, line1 + 1, path1);
+                        buf2 = SprintfAlloc(LoadStrU8(IDS_CHANGEFROM1), i, line0 + 1, path0);
+                    if (buf2 != NULL)
+                    {
+                        if (inserted > 1)
+                            buf = SprintfAlloc(LoadStrU8(IDS_CHANGETO2), buf2, line1 + 1, line1 + inserted, path1);
+                        else
+                            buf = SprintfAlloc(LoadStrU8(IDS_CHANGETO1), buf2, line1 + 1, path1);
+                        free(buf2);
+                    }
                 }
                 else
                 {
                     // delete
                     if (deleted > 1)
-                        sprintf(buf, LoadStr(IDS_DELETE2), i, line0 + 1, line0 + deleted, path0);
+                        buf = SprintfAlloc(LoadStrU8(IDS_DELETE2), i, line0 + 1, line0 + deleted, path0);
                     else
-                        sprintf(buf, LoadStr(IDS_DELETE1), i, line0 + 1, path0);
+                        buf = SprintfAlloc(LoadStrU8(IDS_DELETE1), i, line0 + 1, path0);
                 }
             }
             else
             {
-                // insert
+                // insert; feature 102: "from right file (%s) ... in left file (%s)" - the names
+                // were passed the other way round (left name as the right file's)
                 if (inserted > 1)
-                    sprintf(buf, LoadStr(IDS_ADD2), i, line1 + 1, line1 + inserted, path0, line0, path1);
+                    buf = SprintfAlloc(LoadStrU8(IDS_ADD2), i, line1 + 1, line1 + inserted, path1, line0, path0);
                 else
-                    sprintf(buf, LoadStr(IDS_ADD1), i, line1 + 1, path0, line0, path1);
+                    buf = SprintfAlloc(LoadStrU8(IDS_ADD1), i, line1 + 1, path1, line0, path0);
             }
 
-            LRESULT ret = SendMessage(ComboBox->HWindow, CB_ADDSTRING, 0, (LPARAM)buf);
+            WCHAR* bufW = buf != NULL ? SplU8ToWAlloc(buf) : NULL;
+            free(buf);
+            LRESULT ret = bufW != NULL ? SendMessageW(ComboBox->HWindow, CB_ADDSTRING, 0, (LPARAM)bufW) : CB_ERRSPACE;
+            free(bufW);
             if (ret == CB_ERR || ret == CB_ERRSPACE)
             {
                 TRACE_E("CB_ADDSTRING has failed, i = " << DWORD(i));
@@ -855,12 +887,12 @@ void CMainWindow::SpawnWorker(const char* path1, const char* path2,
             break;
         TRACE_I("HaveMessage");
         MSG msg;
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) // feature 102: wide, as the thread's main loop
         {
-            if (!TranslateAccelerator(HWindow, HAccels, &msg))
+            if (!TranslateAcceleratorW(HWindow, HAccels, &msg))
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
         }
     }
@@ -886,21 +918,16 @@ void CMainWindow::SpawnWorker(const char* path1, const char* path2,
         else
         {
             EnableInput(FALSE);
-            char buf[MAX_PATH * 2 + 200];
-            sprintf(buf, LoadStr(IDS_MAINWNDHEADERCOMPUTING), SG->SalPathFindFileName(path1),
-                    SG->SalPathFindFileName(path2));
-            // 'buf' is assembled from UTF-8 file names (interface 104) -> show via the W API
-            // feature 068 (F-P5-09): legacy fallback instead of blanking the
-            // title - this third site was missed by the first pass and is the
-            // one that also affects German
-            WCHAR* wBuf = SplU8ToWAlloc(buf);
-            if (wBuf != NULL)
+            // feature 102: a UTF-8 template with the UTF-8 names (068 F-P5-09 had to fall back
+            // to the code-page call because the template was code-page text: the names were
+            // garbled in cs/de/fr/hu/sk), in a buffer of the exact size
+            char* buf = SprintfAlloc(LoadStrU8(IDS_MAINWNDHEADERCOMPUTING), SG->SalPathFindFileName(path1),
+                                     SG->SalPathFindFileName(path2));
+            if (buf != NULL)
             {
-                SplSetWindowTitleW(HWindow, wBuf); // feature 100: exact also on this code-page window
-                free(wBuf);
+                SetWindowTitleU8(HWindow, buf);
+                free(buf);
             }
-            else
-                SetWindowTextA(HWindow, buf);
             SetWait(TRUE);
         }
     }
@@ -945,7 +972,7 @@ bool CMainWindow::TextFilesDiffer(CTextCompareResults<CChar>* res, char* message
     FileView[fviLeft] = new TTextFileViewWindow<CChar>(fviLeft, ShowWhiteSpace, this);
     if (!FileView[fviLeft])
     {
-        strcpy(message, LoadStr(IDS_LOWMEM));
+        strcpy(message, LoadStrU8(IDS_LOWMEM)); // feature 102: UTF-8 (the message may carry a name)
         return FALSE; // do not deallocate buffers provided by CTextCompareResults
     }
     FileView[fviLeft]->AttachToWindow(LeftFileViewHWnd);
@@ -960,7 +987,7 @@ bool CMainWindow::TextFilesDiffer(CTextCompareResults<CChar>* res, char* message
     FileView[fviRight] = new TTextFileViewWindow<CChar>(fviRight, ShowWhiteSpace, this);
     if (!FileView[fviRight])
     {
-        strcpy(message, LoadStr(IDS_LOWMEM));
+        strcpy(message, LoadStrU8(IDS_LOWMEM));
         return FALSE; // do not deallocate buffers provided by CTextCompareResults
     }
     FileView[fviRight]->AttachToWindow(RightFileViewHWnd);
@@ -1005,7 +1032,7 @@ bool CMainWindow::TextFilesDiffer(CTextCompareResults<CChar>* res, char* message
 
     if (cancel)
     {
-        strcpy(message, LoadStr(IDS_CANCELED));
+        strcpy(message, LoadStrU8(IDS_CANCELED));
         type = MB_ICONEXCLAMATION;
     }
     if (!success)
@@ -1228,8 +1255,16 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case CM_COMPARE:
         {
-            char path1[MAX_PATH];
-            char path2[MAX_PATH];
+            // feature 102: the dialog takes FC_NAME_SIZE buffers
+            CSalMaxPathBuffer path1Buf;
+            CSalMaxPathBuffer path2Buf;
+            char* path1 = path1Buf.Get();
+            char* path2 = path2Buf.Get();
+            if (path1 == NULL || path2 == NULL)
+            {
+                Error(HWindow, IDS_LOWMEM);
+                return 0;
+            }
             if (DataValid)
             {
                 strcpy(path1, Path1);
@@ -1572,8 +1607,18 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             POINT pt;
             int count, view = -1;
-            char path1[MAX_PATH], path2[MAX_PATH];
+            // feature 102: FC_NAME_SIZE buffers (the dialog takes them, and a dropped name of any
+            // length fits; DragQueryFileW into MAX_PATH units cut a longer name)
+            CSalMaxPathBuffer path1Buf;
+            CSalMaxPathBuffer path2Buf;
+            char* path1 = path1Buf.Get();
+            char* path2 = path2Buf.Get();
             CCompareOptions options = DefCompareOptions;
+            if (path1 == NULL || path2 == NULL)
+            {
+                Error(HWindow, IDS_LOWMEM);
+                goto LDROPERROR;
+            }
 
             if (DragQueryPoint(drop, &pt))
             {
@@ -1592,25 +1637,23 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 // shell drop paths arrive as UTF-16; store them as the UTF-8 that the
                 // Salamander interface expects (interface 104)
-                WCHAR wDrop[MAX_PATH];
-                DragQueryFileW(drop, 0, wDrop, MAX_PATH);
-                if (SplWToU8(wDrop, path1, MAX_PATH) <= 0)
+                if (!DropNameToU8(drop, 0, path1, FC_NAME_SIZE))
                     path1[0] = 0;
                 if (SG->SalGetFileAttributes(path1) & FILE_ATTRIBUTE_DIRECTORY)
                 {
-                    Error(HWindow, IDS_NOTVALIDFILE, path1);
+                    ErrorU8(HWindow, IDS_NOTVALIDFILE, path1); // feature 102: UTF-8 template + name
                     goto LDROPERROR;
                 }
             }
             if (count >= 2)
             {
-                WCHAR wDrop[MAX_PATH];
-                DragQueryFileW(drop, 1, wDrop, MAX_PATH);
-                if (SplWToU8(wDrop, path2, MAX_PATH) <= 0)
+                if (!DropNameToU8(drop, 1, path2, FC_NAME_SIZE))
                     path2[0] = 0;
-                if (SG->SalGetFileAttributes(path1) & FILE_ATTRIBUTE_DIRECTORY) // NOTE: pre-existing bug - checks path1, not path2
+                // feature 102: tests the second name (it tested the first one again, so a folder
+                // dropped as the second item was taken for a file)
+                if (SG->SalGetFileAttributes(path2) & FILE_ATTRIBUTE_DIRECTORY)
                 {
-                    Error(HWindow, IDS_NOTVALIDFILE, path2);
+                    ErrorU8(HWindow, IDS_NOTVALIDFILE, path2);
                     goto LDROPERROR;
                 }
             }
@@ -1835,15 +1878,33 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_USER_WORKERNOTIFIES:
     {
         BOOL ret = TRUE;
-        TCHAR message[1024];
+        // feature 102: the message is UTF-8 (LoadStrU8 texts; the worker's error text names a
+        // file of any length): the fixed buffer for the short texts, a heap one for an error
+        TCHAR messageBuf[1024];
+        TCHAR* message = messageBuf;
+        TCHAR* messageAlloc = NULL;
+        size_t messageSize = _countof(messageBuf);
         *message = 0;
         UINT type = MB_ICONERROR;
         LPCTSTR encoding[2] = {_T(""), _T("")};
         switch (wParam)
         {
         case WN_ERROR:
-            _tcscpy(message, (LPCTSTR)lParam);
+        {
+            const char* text = (const char*)lParam;
+            size_t need = strlen(text) + strlen(LoadStrU8(IDS_CLOSEDIFF)) + 2; // + "\n" + NUL
+            if (need > messageSize)
+            {
+                messageAlloc = (char*)malloc(need);
+                if (messageAlloc != NULL)
+                {
+                    message = messageAlloc;
+                    messageSize = need;
+                }
+            }
+            CopyU8Truncated(message, messageSize, text);
             break;
+        }
 
         case WN_WORKER_CANCELED:
         {
@@ -1880,7 +1941,7 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     }
                 }
 
-                _tcscpy(message, LoadStr(IDS_CANCELED));
+                _tcscpy(message, LoadStrU8(IDS_CANCELED));
                 type = MB_ICONEXCLAMATION;
             }
             }
@@ -1889,13 +1950,13 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WN_NO_DIFFERENCE:
             // NOTE: previously sent WN_TEXT_FILES_DIFFER did provide encoding...
-            _tcscpy(message, LoadStr(IDS_NODIFFERRENCE));
+            _tcscpy(message, LoadStrU8(IDS_NODIFFERRENCE));
             type = MB_ICONINFORMATION;
             break;
 
         case WN_NO_ALL_DIFFS_IGNORED:
             // NOTE: previously sent WN_TEXT_FILES_DIFFER did provide encoding...
-            _tcscpy(message, LoadStr(IDS_ALLDIFFSIGNORED));
+            _tcscpy(message, LoadStrU8(IDS_ALLDIFFSIGNORED));
             type = MB_ICONINFORMATION;
             break;
 
@@ -1931,7 +1992,7 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 if (!FileView[fviLeft])
                 {
                     ret = FALSE; // do not deallocate buffers provided by CDiffResults
-                    _tcscpy(message, LoadStr(IDS_LOWMEM));
+                    _tcscpy(message, LoadStrU8(IDS_LOWMEM));
                     break;
                 }
                 FileView[fviLeft]->AttachToWindow(LeftFileViewHWnd);
@@ -1951,7 +2012,7 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 if (!FileView[fviRight])
                 {
                     ret = FALSE; // do not deallocate buffers provided by CDiffResults
-                    _tcscpy(message, LoadStr(IDS_LOWMEM));
+                    _tcscpy(message, LoadStrU8(IDS_LOWMEM));
                     break;
                 }
                 FileView[fviRight]->AttachToWindow(RightFileViewHWnd);
@@ -2036,31 +2097,26 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WN_SET_PROGRESS:
         {
-            TCHAR buf[MAX_PATH * 2 + 400], fmt[128];
+            // feature 102: a UTF-8 template (ExpandPluralString works on ASCII markers, so a
+            // UTF-8 template passes through intact) with the UTF-8 names, exact-size buffer;
+            // the code-page template made the names garbled in cs/fr/hu/sk (068 F-P5-09)
+            TCHAR fmt[512];
             if (HIWORD(lParam))
             {
                 CQuadWord qLPARAM(LOWORD(lParam), 0);
-                SG->ExpandPluralString(fmt, sizeof(fmt), LoadStr(IDS_MAINWNDHEADERCOMPUTING_PROGRESS_FOUND), 1, &qLPARAM);
+                SG->ExpandPluralString(fmt, sizeof(fmt), LoadStrU8(IDS_MAINWNDHEADERCOMPUTING_PROGRESS_FOUND), 1, &qLPARAM);
             }
             else
             {
-                _tcscpy(fmt, LoadStr(IDS_MAINWNDHEADERCOMPUTING_PROGRESS));
+                CopyU8Truncated(fmt, sizeof(fmt), LoadStrU8(IDS_MAINWNDHEADERCOMPUTING_PROGRESS));
             }
-            _stprintf(buf, fmt, SG->SalPathFindFileName(Path1), SG->SalPathFindFileName(Path2),
-                      LOWORD(lParam), HIWORD(lParam));
-            // 'buf' is assembled from UTF-8 file names (interface 104) -> show via the W API
-            // feature 068 (F-P5-09): on conversion failure fall back to the
-            // legacy narrow call - the buffer mixes an ANSI LoadStr template
-            // with UTF-8 names, so in cs/fr/hu/sk the strict conversion fails
-            // and the window title was being blanked outright instead
-            WCHAR* wBuf = SplU8ToWAlloc(buf);
-            if (wBuf != NULL)
+            char* buf = SprintfAlloc(fmt, SG->SalPathFindFileName(Path1), SG->SalPathFindFileName(Path2),
+                                     LOWORD(lParam), HIWORD(lParam));
+            if (buf != NULL)
             {
-                SplSetWindowTitleW(HWindow, wBuf); // feature 100: exact also on this code-page window
-                free(wBuf);
+                SetWindowTitleU8(HWindow, buf);
+                free(buf);
             }
-            else
-                SetWindowTextA(HWindow, buf);
             return 0;
         }
 
@@ -2118,27 +2174,39 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (FirstCompare)
             {
                 type |= MB_YESNO | MSGBOXEX_ESCAPEENABLED;
-                _tcscat(message, _T("\n"));
-                _tcscat(message, LoadStr(IDS_CLOSEDIFF));
+                size_t l = strlen(message);
+                if (l < messageSize)
+                    _snprintf_s(message + l, messageSize - l, _TRUNCATE, "\n%s", LoadStrU8(IDS_CLOSEDIFF));
             }
+            // feature 102: the whole text is UTF-8 (the code-page "close?" question appended to
+            // a UTF-8 name made an invalid mix shown through the code page)
             if (SG->SalMessageBox(HWindow, message, LoadStr(IDS_PLUGINNAME), type) == IDYES)
                 PostMessage(HWindow, WM_COMMAND, CM_EXIT, 0);
         }
+        free(messageAlloc);
+        messageAlloc = NULL;
+        message = messageBuf;
 
-        TCHAR buf[MAX_PATH * 2 + 400];
+        // feature 102: the title from a UTF-8 template, UTF-8 names and UTF-8 encoding labels
+        // (a conversion table name from convert.cfg is code-page text), exact-size buffer
+        char* buf = NULL;
         if (DataValid)
         {
             //        if (DifferencesCount || (WN_NO_DIFFERENCE == wParam))
             //        { // if it is 0, set the caption later once we find all binary differences
-            TCHAR fmt[128];
+            TCHAR fmt[512];
             if (DifferencesCount)
             {
                 CQuadWord qDC(DifferencesCount, 0);
-                SG->ExpandPluralString(fmt, SizeOf(fmt), LoadStr(IDS_MAINWNDHEADER), 1, &qDC);
+                SG->ExpandPluralString(fmt, SizeOf(fmt), LoadStrU8(IDS_MAINWNDHEADER), 1, &qDC);
             }
             else
-                _tcscpy(fmt, LoadStr((WN_NO_DIFFERENCE == wParam) ? IDS_MAINWNDHEADER_NODIF : IDS_MAINWNDHEADERCOMPUTING2));
-            _stprintf(buf, fmt, SG->SalPathFindFileName(Path1), encoding[0], SG->SalPathFindFileName(Path2), encoding[1], DifferencesCount);
+                CopyU8Truncated(fmt, sizeof(fmt), LoadStrU8((WN_NO_DIFFERENCE == wParam) ? IDS_MAINWNDHEADER_NODIF : IDS_MAINWNDHEADERCOMPUTING2));
+            char enc0[400];
+            char enc1[400];
+            LabelToU8(encoding[0], enc0, sizeof(enc0));
+            LabelToU8(encoding[1], enc1, sizeof(enc1));
+            buf = SprintfAlloc(fmt, SG->SalPathFindFileName(Path1), enc0, SG->SalPathFindFileName(Path2), enc1, DifferencesCount);
             //        }
             //        else
             //        {
@@ -2146,19 +2214,13 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             //            SG->SalPathFindFileName(Path1), SG->SalPathFindFileName(Path2));
             //        }
         }
-        else
-            _tcscpy(buf, LoadStr(IDS_PLUGINNAME));
-
-        // 'buf' may carry UTF-8 file names (interface 104) -> show via the W API
-        // feature 068 (F-P5-09): legacy fallback instead of blanking the title
-        WCHAR* wBuf = SplU8ToWAlloc(buf);
-        if (wBuf != NULL)
+        if (buf != NULL)
         {
-            SplSetWindowTitleW(HWindow, wBuf); // feature 100: exact also on this code-page window
-            free(wBuf);
+            SetWindowTitleU8(HWindow, buf);
+            free(buf);
         }
         else
-            SetWindowTextA(HWindow, buf);
+            SetWindowText(HWindow, LoadStr(IDS_PLUGINNAME));
 
         if ((wParam != WN_TEXT_FILES_DIFFER) && (wParam != WN_UNICODE_FILES_DIFFER) && (wParam != WN_BINARY_FILES_DIFFER))
         {
@@ -2322,12 +2384,12 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 break;
             TRACE_I("HaveMessage");
             MSG msg;
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) // feature 102: wide, as the thread's main loop
             {
-                if (!TranslateAccelerator(HWindow, HAccels, &msg))
+                if (!TranslateAcceleratorW(HWindow, HAccels, &msg))
                 {
                     TranslateMessage(&msg);
-                    DispatchMessage(&msg);
+                    DispatchMessageW(&msg);
                 }
             }
         }
