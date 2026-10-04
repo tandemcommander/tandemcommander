@@ -456,7 +456,53 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   compares keys with `strcmp`; `PrepareCloseCurrentPath` must agree with it.
   One change, both sides. `CCacheDirData::DetachTmpFile` has no caller.
 - **`CFileTimeStamps::AddFile`** (`salamdr3.cpp`): `ĥ.txt` and `Ĺ.txt`
-  edited from one archive collide.
+  edited from one archive collide - ✅ **fixed by feature 108 (2026-10-04)**:
+  measured worse than recorded - the second edit's temporary copy was deleted
+  under the editor and never offered (7z: edit lost), and with ZIP the second
+  MEMBER vanished from the archive (19,015 colliding BMP pairs on CP1250:
+  `Í`/`Ý`, `ž`/`ż`, CJK, Cyrillic `м`/`о`, ...). Now an edited member is its
+  temporary copy by the file system's rule (`src/common/salarcedit.h`), and a
+  folder typed in another case (`arc.zip\DIR` for `Dir`) is mapped to the
+  stored spelling in F4 / F3 (one member was two copies, the second update
+  replaced the first edit). Record `specs/108-archive-edit-name-collision/fix-log.md`.
+  For ZIP the fix holds only when the two copies share one temporary folder
+  (see entry 2); for 7z both edits are always packed back.
+  **Found by 108 - queue (serious first): next feature 109 = entry 1 (data
+  loss), then 110 = entry 2.**
+  1. **(feature 109) The disk cache keys an ARCHIVE by its code-page lower-cased name**
+     (`fileswn5/6.cpp` key, flushed by that prefix in `fileswn2/9.cpp`; the
+     "other panel on the same archive?" test before the flush is `StrICmp`):
+     `ĥ.zip` and `Ĺ.zip` in one folder share their members' copies - F4 on
+     `x.txt` of `ĥ.zip` in one panel, then on `x.txt` of `Ĺ.zip` in the other
+     opened the FIRST archive's copy, and the update packed it into `Ĺ.zip`:
+     its `x.txt` silently replaced by the other archive's (measured, ZIP and
+     7z, every release; `108/probe/namecoll_probe.ps1 -CacheKeyRows`). This is
+     the disk-cache item above - one change, both sides.
+  2. **(feature 110) The ZIP plug-in matches names by `CompareStringA` + `NORM_IGNORECASE`
+     on UTF-8** (`zip/add.cpp` update matching; `del.cpp:62` delete,
+     `extract.cpp:329` extract selection): packing `ĥ.txt` into an archive
+     holding `Ĺ.txt` asks "overwrite?" for both and replaces `Ĺ.txt` - an
+     edit of ONE member of such a pair (probe rows `hL1_zip`, `hL2_zip`, both
+     builds) or an F5 of such a file into the archive deletes the other member;
+     so does an edit of BOTH when their copies land in two temporary folders
+     and are packed in two calls (108 review row `split_zip`: edit `d/Ĺ.txt`,
+     then root `ĥ.txt`, then root `Ĺ.txt` - the third copy needs a new `SAL`
+     folder, and the second call deletes the already-packed `ĥ.txt`; both
+     builds; `split_7z` passes on 108);
+     answering *Skip* to the question that pairs the wrong files can delete the
+     edited member itself (it is already marked for deletion, then not added).
+     Needs a UTF-8-aware, plug-in-side identity (header-only, like
+     `splunicode.h`; the ZIP project cannot compile shared `.cpp` files).
+  3. Small, recorded: `AddFile` returning FALSE on low memory makes
+     `ExecuteFromArchive` release the copy the editor is using (pre-existing).
+  4. For the `CSalamanderDirectory` item (108 review NIT 3/4): tar extracts
+     case-sensitively (`plugins/tar/untar.cpp:330`, `strcmp`) under a
+     case-insensitive listing - a Linux tarball with `Dir/a.txt` and
+     `DIR/b.txt` shows one merged `Dir`; a typed `arc.tar\DIR` + F3 on `b.txt`
+     worked before 108 by luck and now asks for `Dir\b.txt` (not found; from
+     the listing it failed before too). The stored-spelling rule never
+     triggers for accented case pairs (`Č`/`č`): the byte-fold listing does
+     not find such a typed folder at all.
 - **`UnselectItemWithName`** (`fileswn0.cpp`) uses the linguistic comparison
   plus a byte-length guard for an identity look-up.
 - **`CFindIgnore::Contains`, relative kind** - a substring search by the byte

@@ -1,0 +1,336 @@
+namecoll_probe (feature 108) pre108
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre108\tandemcommander.exe
+Date    : 2026-10-04 19:40; ACP 1250
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited108>>"$(FullName)"
+
+--- hL_zip: zip [both] members '\u0125.txt', '\u0139.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL5E9.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL5E9.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); SAL5E9.tmp\\u0139.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] ... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:40:11 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:40:11 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u0125.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL member 2 '\u0139.txt' MISSING; 1 entries, expected 2; member 2: -1 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL5E9.tmp
+
+--- hL_7z: 7z [both] members '\u0125.txt', '\u0139.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL898.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL898.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); SAL898.tmp\\u0139.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:40:31 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:40:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u0139.txt tag=2 markers=0 size=21
+          ENTRY \u0125.txt tag=1 markers=1 size=32
+          COUNT 2
+   VERDICT: FAIL member 2: 0 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL898.tmp
+
+--- IY_zip: zip [both] members '\u00CDtem.txt', '\u00DDtem.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL53D.tmp\\u00CDtem.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL53D.tmp\\u00CDtem.txt (tag 1, marker x1, 32 bytes); SAL53D.tmp\\u00DDtem.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\IY_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\IY_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\IY_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] ... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:41:08 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:41:08 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u00CDtem.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL member 2 '\u00DDtem.txt' MISSING; 1 entries, expected 2; member 2: -1 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL53D.tmp
+
+--- IY_7z: 7z [both] members '\u00CDtem.txt', '\u00DDtem.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL6E3.tmp\\u00CDtem.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL6E3.tmp\\u00CDtem.txt (tag 1, marker x1, 32 bytes); SAL6E3.tmp\\u00DDtem.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\IY_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\IY_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:41:28 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:41:37 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u00DDtem.txt tag=2 markers=0 size=21
+          ENTRY \u00CDtem.txt tag=1 markers=1 size=32
+          COUNT 2
+   VERDICT: FAIL member 2: 0 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL6E3.tmp
+
+--- zz_zip: zip [both] members '\u017E.txt', '\u017C.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL31A.tmp\\u017C.txt (tag 2, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL31A.tmp\\u017C.txt (tag 2, marker x1, 32 bytes); SAL31A.tmp\\u017E.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\zz_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\zz_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\zz_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] ... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:42:05 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:42:05 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u017C.txt tag=2 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL member 1 '\u017E.txt' MISSING; 1 entries, expected 2; member 1: -1 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL31A.tmp
+
+--- zz_7z: 7z [both] members '\u017E.txt', '\u017C.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL4B0.tmp\\u017C.txt (tag 2, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL4B0.tmp\\u017C.txt (tag 2, marker x1, 32 bytes); SAL4B0.tmp\\u017E.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\zz_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\zz_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:42:25 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:42:34 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u017E.txt tag=1 markers=0 size=21
+          ENTRY \u017C.txt tag=2 markers=1 size=32
+          COUNT 2
+   VERDICT: FAIL member 1: 0 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL4B0.tmp
+
+--- cjk_zip: zip [both] members '\u4E5D.txt', '\u4E4D.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SALD7.tmp\\u4E4D.txt (tag 2, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SALD7.tmp\\u4E4D.txt (tag 2, marker x1, 32 bytes); SALD7.tmp\\u4E5D.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\cjk_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\cjk_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\cjk_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006]... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:43:01 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:43:01 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u4E4D.txt tag=2 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL member 1 '\u4E5D.txt' MISSING; 1 entries, expected 2; member 1: -1 edits (expected 1)
+   left in the temp folder by the test instance, removed: SALD7.tmp
+
+--- cjk_7z: 7z [both] members '\u4E5D.txt', '\u4E4D.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL26D.tmp\\u4E4D.txt (tag 2, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL26D.tmp\\u4E4D.txt (tag 2, marker x1, 32 bytes); SAL26D.tmp\\u4E5D.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\cjk_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\cjk_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:43:22 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:43:30 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u4E5D.txt tag=1 markers=0 size=21
+          ENTRY \u4E4D.txt tag=2 markers=1 size=32
+          COUNT 2
+   VERDICT: FAIL member 1: 0 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL26D.tmp
+
+--- cyr_zip: zip [both] members '\u043C.txt', '\u043E.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SALE37.tmp\\u043C.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SALE37.tmp\\u043C.txt (tag 1, marker x1, 32 bytes); SALE37.tmp\\u043E.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\cyr_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\cyr_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\cyr_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006]... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:43:58 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:43:58 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u043C.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL member 2 '\u043E.txt' MISSING; 1 entries, expected 2; member 2: -1 edits (expected 1)
+   left in the temp folder by the test instance, removed: SALE37.tmp
+
+--- cyr_7z: 7z [both] members '\u043C.txt', '\u043E.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL154.tmp\\u043C.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL154.tmp\\u043C.txt (tag 1, marker x1, 32 bytes); SAL154.tmp\\u043E.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\cyr_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\cyr_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:44:18 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:44:27 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u043E.txt tag=2 markers=0 size=21
+          ENTRY \u043C.txt tag=1 markers=1 size=32
+          COUNT 2
+   VERDICT: FAIL member 2: 0 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL154.tmp
+
+--- hLsub_zip: zip [both] members 'slo\u017Eka/\u0125.txt', 'slo\u017Eka/\u0139.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL859.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL859.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); SAL859.tmp\\u0139.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\hLsub_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hLsub_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hLsub_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=300... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:44:58 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:44:58 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY slo\u017Eka/\u0125.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL member 2 'slo\u017Eka/\u0139.txt' MISSING; 1 entries, expected 2; member 2: -1 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL859.tmp
+
+--- hLsub_7z: 7z [both] members 'slo\u017Eka/\u0125.txt', 'slo\u017Eka/\u0139.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL827.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL827.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); SAL827.tmp\\u0139.txt (tag ?, marker x1, 11 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\hLsub_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hLsub_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:45:19 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:45:31 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY slo\u017Eka/\u0139.txt tag=2 markers=0 size=21
+          ENTRY slo\u017Eka/\u0125.txt tag=1 markers=1 size=32
+          COUNT 2
+   VERDICT: FAIL member 2: 0 edits (expected 1)
+   left in the temp folder by the test instance, removed: SAL827.tmp
+
+--- hL1_zip: zip [one] members '\u0125.txt', '\u0139.txt'; edits at panel positions 1
+   EDIT 1 (position 1): temporary copies now: SAL875.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL1_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL1_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL1_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006]... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:45:59 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:45:59 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u0125.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL member 2 '\u0139.txt' MISSING; 1 entries, expected 2; edits per member 1/-1 (expected one 1, others 0)
+
+--- hL1_7z: 7z [one] members '\u0125.txt', '\u0139.txt'; edits at panel positions 1
+   EDIT 1 (position 1): temporary copies now: SALAC9.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL1_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL1_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:46:16 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:46:25 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u0139.txt tag=2 markers=0 size=21
+          ENTRY \u0125.txt tag=1 markers=1 size=32
+          COUNT 2
+   VERDICT: PASS 
+
+--- hL2_zip: zip [one] members '\u0125.txt', '\u0139.txt'; edits at panel positions 2
+   EDIT 1 (position 2): temporary copies now: SAL741.tmp\\u0139.txt (tag 2, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL2_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL2_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL2_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006]... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:46:48 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:46:48 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u0139.txt tag=2 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL member 1 '\u0125.txt' MISSING; 1 entries, expected 2; edits per member -1/1 (expected one 1, others 0)
+
+--- hL2_7z: 7z [one] members '\u0125.txt', '\u0139.txt'; edits at panel positions 2
+   EDIT 1 (position 2): temporary copies now: SAL9C4.tmp\\u0139.txt (tag 2, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL2_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\hL2_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:47:05 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:47:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u0125.txt tag=1 markers=0 size=21
+          ENTRY \u0139.txt tag=2 markers=1 size=32
+          COUNT 2
+   VERDICT: PASS 
+
+--- nfc_zip: zip [both] members '\u00E9.txt', 'e\u0301.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL755.tmp\e\u0301.txt (tag 2, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL755.tmp\e\u0301.txt (tag 2, marker x1, 32 bytes); SAL755.tmp\\u00E9.txt (tag 1, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\nfc_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\nfc_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\nfc_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006]... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:47:41 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:47:37 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY e\u0301.txt tag=2 markers=1 size=32
+          ENTRY \u00E9.txt tag=1 markers=1 size=32
+          COUNT 2
+   VERDICT: PASS 
+
+--- nfc_7z: 7z [both] members '\u00E9.txt', 'e\u0301.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: SAL88D.tmp\e\u0301.txt (tag 2, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 2): temporary copies now: SAL88D.tmp\e\u0301.txt (tag 2, marker x1, 32 bytes); SAL88D.tmp\\u00E9.txt (tag 1, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\nfc_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\nfc_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:47:58 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:48:06 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:47:58 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:48:10 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY e\u0301.txt tag=2 markers=1 size=32
+          ENTRY \u00E9.txt tag=1 markers=1 size=32
+          COUNT 2
+   VERDICT: PASS 
+
+--- Cc_zip: zip [refused] members '\u010C.txt', '\u010D.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   EDIT 2 (position 2): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   LEAVE: left the archive True; windows: no window
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u010C.txt tag=1 markers=0 size=21
+          ENTRY \u010D.txt tag=2 markers=0 size=21
+          COUNT 2
+   VERDICT: PASS 
+
+--- Cc_7z: 7z [refused] members '\u010C.txt', '\u010D.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   EDIT 2 (position 2): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   LEAVE: left the archive True; windows: no window
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u010C.txt tag=1 markers=0 size=21
+          ENTRY \u010D.txt tag=2 markers=0 size=21
+          COUNT 2
+   VERDICT: PASS 
+
+--- Aa_zip: zip [refused] members 'A.txt', 'a.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   EDIT 2 (position 2): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   LEAVE: left the archive True; windows: no window
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY A.txt tag=1 markers=0 size=21
+          ENTRY a.txt tag=2 markers=0 size=21
+          COUNT 2
+   VERDICT: PASS 
+
+--- Aa_7z: 7z [refused] members 'A.txt', 'a.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   EDIT 2 (position 2): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   LEAVE: left the archive True; windows: no window
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY A.txt tag=1 markers=0 size=21
+          ENTRY a.txt tag=2 markers=0 size=21
+          COUNT 2
+   VERDICT: PASS 
+
+--- len_zip: zip [refused] members '\u023A.txt', '\u2C65.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   EDIT 2 (position 2): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   LEAVE: left the archive True; windows: no window
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u023A.txt tag=1 markers=0 size=21
+          ENTRY \u2C65.txt tag=2 markers=0 size=21
+          COUNT 2
+   VERDICT: PASS 
+
+--- len_7z: 7z [refused] members '\u023A.txt', '\u2C65.txt'; edits at panel positions 1,2
+   EDIT 1 (position 1): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   EDIT 2 (position 2): temporary copies now: none; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is used for more than one file in archive (such files can be opened only in viewers). | [Button id=1] OK
+   LEAVE: left the archive True; windows: no window
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u023A.txt tag=1 markers=0 size=21
+          ENTRY \u2C65.txt tag=2 markers=0 size=21
+          COUNT 2
+   VERDICT: PASS 
+
+--- same_zip: zip [same] members '\u0125.txt'; edits at panel positions 1,1
+   EDIT 1 (position 1): temporary copies now: SAL2DB.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 1): temporary copies now: SAL2DB.tmp\\u0125.txt (tag 1, marker x2, 43 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\same_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\same_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\same_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 43, 04.10.2026, 19:51:09 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u0125.txt tag=1 markers=2 size=43
+          COUNT 1
+   VERDICT: PASS 
+
+--- same_7z: 7z [same] members '\u0125.txt'; edits at panel positions 1,1
+   EDIT 1 (position 1): temporary copies now: SALF22.tmp\\u0125.txt (tag 1, marker x1, 32 bytes); windows: no window
+   EDIT 2 (position 1): temporary copies now: SALF22.tmp\\u0125.txt (tag 1, marker x2, 43 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\same_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\same_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:51:24 | [Static id=1151] With file: | [Static id=184] 43, 04.10.2026, 19:51:37 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u0125.txt tag=1 markers=2 size=43
+          COUNT 1
+   VERDICT: PASS 
+
+--- typed_zip: zip [typed] members 'Dir/x.txt'; edits at panel positions 1,1
+   in the archive by the typed path '...\arc.zip\DIR' (field held the text: True); title '... - DIR - Tandem Commander 0.1.8 (x64) ST'
+   EDIT 1 (position 1): temporary copies now: SALD0E.tmp\x.txt (tag 1, marker x1, 32 bytes); windows: no window
+   then by the listed folder: title '... - Dir - Tandem Commander 0.1.8 (x64) ST' (before '... - DIR - Tandem Commander 0.1.8 (x64) ST')
+   EDIT 2 (position 1): temporary copies now: SAL19E.tmp\x.txt (tag 1, marker x1, 32 bytes); SALD0E.tmp\x.txt (tag 1, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\typed_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\typed_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\typed_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=300... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:52:01 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\typed_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=300... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 32, 04.10.2026, 19:52:02 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:52:10 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY Dir/x.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL the member has 1 edits (expected 2: both opened the one member)
+
+--- typed_7z: 7z [typed] members 'Dir/x.txt'; edits at panel positions 1,1
+   in the archive by the typed path '...\arc.7z\DIR' (field held the text: True); title '... - DIR - Tandem Commander 0.1.8 (x64) ST'
+   EDIT 1 (position 1): temporary copies now: SAL65.tmp\x.txt (tag 1, marker x1, 32 bytes); windows: no window
+   then by the listed folder: title '... - Dir - Tandem Commander 0.1.8 (x64) ST' (before '... - DIR - Tandem Commander 0.1.8 (x64) ST')
+   EDIT 2 (position 1): temporary copies now: SAL4E5.tmp\x.txt (tag 1, marker x1, 32 bytes); SAL65.tmp\x.txt (tag 1, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\typed_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\typed_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:52:29 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:52:39 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 32, 04.10.2026, 19:52:39 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:52:48 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY Dir/x.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: FAIL the member has 1 edits (expected 2: both opened the one member)
+
+--- single_zip: zip [single] members '\u010Dl\u00E1nek.txt'; edits at panel positions 1
+   EDIT 1 (position 1): temporary copies now: SAL41.tmp\\u010Dl\u00E1nek.txt (tag 1, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\single_zip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\single_zip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc108\nc\single_zip\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=30... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:53:16 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u010Dl\u00E1nek.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: PASS 
+
+--- single_7z: 7z [single] members '\u010Dl\u00E1nek.txt'; edits at panel positions 1
+   EDIT 1 (position 1): temporary copies now: SALD17.tmp\\u010Dl\u00E1nek.txt (tag 1, marker x1, 32 bytes); windows: no window
+   LEAVE: left the archive True; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc108\nc\single_7z\arc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc108\nc\single_7z\arc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 19:53:30 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 19:53:39 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+   END  : exit code 0x00000000; new crash reports 0; archive read back:
+          ENTRY \u010Dl\u00E1nek.txt tag=1 markers=1 size=32
+          COUNT 1
+   VERDICT: PASS 
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== summary ===
+case         fmt  kind     verdict    archive (name=member tag+edits) | why
+hL_zip       zip  both     FAIL       \u0125.txt=m1+1 | member 2 '\u0139.txt' MISSING; 1 entries, expected 2; member 2: -1 edits (expected 1)
+hL_7z        7z   both     FAIL       \u0139.txt=m2+0 \u0125.txt=m1+1 | member 2: 0 edits (expected 1)
+IY_zip       zip  both     FAIL       \u00CDtem.txt=m1+1 | member 2 '\u00DDtem.txt' MISSING; 1 entries, expected 2; member 2: -1 edits (expected 1)
+IY_7z        7z   both     FAIL       \u00DDtem.txt=m2+0 \u00CDtem.txt=m1+1 | member 2: 0 edits (expected 1)
+zz_zip       zip  both     FAIL       \u017C.txt=m2+1 | member 1 '\u017E.txt' MISSING; 1 entries, expected 2; member 1: -1 edits (expected 1)
+zz_7z        7z   both     FAIL       \u017E.txt=m1+0 \u017C.txt=m2+1 | member 1: 0 edits (expected 1)
+cjk_zip      zip  both     FAIL       \u4E4D.txt=m2+1 | member 1 '\u4E5D.txt' MISSING; 1 entries, expected 2; member 1: -1 edits (expected 1)
+cjk_7z       7z   both     FAIL       \u4E5D.txt=m1+0 \u4E4D.txt=m2+1 | member 1: 0 edits (expected 1)
+cyr_zip      zip  both     FAIL       \u043C.txt=m1+1 | member 2 '\u043E.txt' MISSING; 1 entries, expected 2; member 2: -1 edits (expected 1)
+cyr_7z       7z   both     FAIL       \u043E.txt=m2+0 \u043C.txt=m1+1 | member 2: 0 edits (expected 1)
+hLsub_zip    zip  both     FAIL       slo\u017Eka/\u0125.txt=m1+1 | member 2 'slo\u017Eka/\u0139.txt' MISSING; 1 entries, expected 2; member 2: -1 edits (expected 1)
+hLsub_7z     7z   both     FAIL       slo\u017Eka/\u0139.txt=m2+0 slo\u017Eka/\u0125.txt=m1+1 | member 2: 0 edits (expected 1)
+hL1_zip      zip  one      FAIL       \u0125.txt=m1+1 | member 2 '\u0139.txt' MISSING; 1 entries, expected 2; edits per member 1/-1 (expected one 1, others 0)
+hL1_7z       7z   one      PASS       \u0139.txt=m2+0 \u0125.txt=m1+1
+hL2_zip      zip  one      FAIL       \u0139.txt=m2+1 | member 1 '\u0125.txt' MISSING; 1 entries, expected 2; edits per member -1/1 (expected one 1, others 0)
+hL2_7z       7z   one      PASS       \u0125.txt=m1+0 \u0139.txt=m2+1
+nfc_zip      zip  both     PASS       e\u0301.txt=m2+1 \u00E9.txt=m1+1
+nfc_7z       7z   both     PASS       e\u0301.txt=m2+1 \u00E9.txt=m1+1
+Cc_zip       zip  refused  PASS       \u010C.txt=m1+0 \u010D.txt=m2+0
+Cc_7z        7z   refused  PASS       \u010C.txt=m1+0 \u010D.txt=m2+0
+Aa_zip       zip  refused  PASS       A.txt=m1+0 a.txt=m2+0
+Aa_7z        7z   refused  PASS       A.txt=m1+0 a.txt=m2+0
+len_zip      zip  refused  PASS       \u023A.txt=m1+0 \u2C65.txt=m2+0
+len_7z       7z   refused  PASS       \u023A.txt=m1+0 \u2C65.txt=m2+0
+same_zip     zip  same     PASS       \u0125.txt=m1+2
+same_7z      7z   same     PASS       \u0125.txt=m1+2
+typed_zip    zip  typed    FAIL       Dir/x.txt=m1+1 | the member has 1 edits (expected 2: both opened the one member)
+typed_7z     7z   typed    FAIL       Dir/x.txt=m1+1 | the member has 1 edits (expected 2: both opened the one member)
+single_zip   zip  single   PASS       \u010Dl\u00E1nek.txt=m1+1
+single_7z    7z   single   PASS       \u010Dl\u00E1nek.txt=m1+1
+TOTAL: 14 PASS / 16 FAIL / 0 NOT DRIVEN; F4 retries 0
+Left running: 0; fixture removed: True; registry restored+identical: True

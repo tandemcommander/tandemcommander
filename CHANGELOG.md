@@ -53,6 +53,26 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Every file edited from an archive is packed back as itself.** Editing
+  two files of one archive whose names differ only in letters that a
+  Central European code page treats as one - `ĥ.txt` and `Ĺ.txt`,
+  `Ítem.txt` and `Ýtem.txt`, `ž.txt` and `ż.txt`, and many Cyrillic and
+  Chinese pairs - lost the second edit: its temporary copy was deleted while
+  the editor had it open, and leaving the archive did not offer it for the
+  update. In a ZIP archive the second file then disappeared from the
+  archive entirely when the first one was packed back. In a 7z archive both
+  edits are now packed back, each into its own file. In a ZIP archive this
+  holds only when the two temporary copies end up in one temporary folder:
+  the ZIP plugin itself still takes two such names for one, so packing back
+  an edit of only one of them, packing the two in separate steps (which
+  happens when other files were edited from the archive first), or copying
+  such a file into a ZIP archive asks to overwrite the other one as well
+  and can replace it - not fixed yet. Also: a file opened once through a
+  folder typed in another letter case (Change Directory to `archive.zip\DIR`
+  for the folder `Dir`) and once through the folder itself got two
+  temporary copies, and the second update replaced the first edit; both
+  routes now open the same copy, and the update goes into the folder as the
+  archive stores it (feature 108).
 - **A folder is never copied or moved onto another path of itself.** Moving
   a folder "into the place where it already is" through another path of
   that place - `\\localhost\C$\...`, `\\127.0.0.1\C$\...`, a mapped network

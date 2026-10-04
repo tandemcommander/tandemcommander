@@ -17,6 +17,8 @@
 #include "pack.h"
 #include "shellib.h"
 #include "filesbox.h"
+#include "zip.h"        // feature 108: CSalamanderDirectory::GetUpperDir
+#include "salarcedit.h" // feature 108
 
 // helper variables for the dialogs in BuildScriptXXX()
 BOOL ConfirmADSLossAll = FALSE;
@@ -3328,6 +3330,48 @@ void CFilesWindow::CalculateDirSizes()
     }
 }
 
+// feature 108: the panel's path inside the archive as the archive's listing stores it. The panel
+// keeps the path as it was typed (Change Directory, the command line, a hot path), and the listing
+// finds a folder by the archive's rule - so "arc.zip\DIR" shows the stored folder "Dir". An edited
+// member was identified by the typed spelling: opened once through "DIR" and once through "Dir" it got
+// two temporary copies, both packed back - the second pack replaced the first edit. A component is
+// replaced by the name the listing stores when the two are the same name by the file system's rule
+// (they differ in case only); a component the listing does not give back (low memory), or one it
+// matched only through the code-page byte fold (two different folders the listing merges - a defect
+// of its own, NEXT-WORK item 5), stays as typed - the behaviour before. The listing's rule (byte fold
+// or case-sensitive) never matches names of different byte lengths, so the copy is in place.
+BOOL GetZIPPathAsStored108(CSalamanderDirectory* archiveDir, const char* zipPath, CSalHeapString& stored)
+{
+    if (!stored.Copy(zipPath))
+        return FALSE;
+    char* path = stored.Get();
+    if (archiveDir == NULL)
+        return TRUE;
+    char* start = path;
+    if (*start == '\\')
+        start++;
+    char* comp = start;
+    while (*comp != 0)
+    {
+        char* end = comp;
+        while (*end != 0 && *end != '\\')
+            end++;
+        char saved = *end;
+        *end = 0; // 'path' is now the folder up to this component
+        const CFileData* dir = archiveDir->GetUpperDir(path);
+        if (dir != NULL && dir->Name != NULL &&
+            SalArcTakeStoredSpelling(dir->Name, (int)dir->NameLen, comp, (int)(end - comp)))
+        {
+            memcpy(comp, dir->Name, dir->NameLen);
+        }
+        *end = saved;
+        if (saved == 0)
+            break;
+        comp = end + 1;
+    }
+    return TRUE;
+}
+
 void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuParent,
                                       const POINT* editWithMenuPoint)
 {
@@ -3381,14 +3425,25 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         }
     }
 
+    // feature 108: the member's folder as the listing stores it - the disk-cache name, the name handed
+    // to the archiver and the folder the edit is packed back into (UnpackedAssocFiles) all use it, so
+    // one member opened through two spellings of its folder is one temporary copy
+    CSalHeapString zipPathBuf;
+    if (!GetZIPPathAsStored108(GetArchiveDir(), GetZIPPath(), zipPathBuf))
+    {
+        TRACE_E(LOW_MEMORY);
+        return;
+    }
+    const char* zipPath = zipPathBuf.Get();
+
     // the archive file name should be compared case-insensitively (Windows file system), so we always convert it to lowercase
-    if (!dcFileNameBuf.Copy(GetZIPArchive(), strlen(GetZIPPath()) + strlen(f->Name) + 3, LowerCase))
+    if (!dcFileNameBuf.Copy(GetZIPArchive(), strlen(zipPath) + strlen(f->Name) + 3, LowerCase))
     {
         TRACE_E(LOW_MEMORY);
         return;
     }
     char* dcFileName = dcFileNameBuf.Get();
-    SalPathAppend(dcFileName, GetZIPPath(), dcFileNameBuf.Size());
+    SalPathAppend(dcFileName, zipPath, dcFileNameBuf.Size());
     SalPathAppend(dcFileName, f->Name, dcFileNameBuf.Size());
     // feature 095: the name handed to the archiver stays under 2 * MAX_PATH bytes, the limit of the
     // view path (F3); this path used to drop the file name when the whole cache name passed 520 bytes
@@ -3527,7 +3582,7 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         }
     }
 
-    if (UnpackedAssocFiles.AddFile(GetZIPArchive(), GetZIPPath(), buf, s, dosName, lastWrite, fileSize, attr))
+    if (UnpackedAssocFiles.AddFile(GetZIPArchive(), zipPath, buf, s, dosName, lastWrite, fileSize, attr))
     {                                                                         // this file doesn't have the disk-cache 'lock' object ExecuteAssocEvent yet
         DiskCache.AssignName(dcFileName, ExecuteAssocEvent, FALSE, crtCache); // arcCacheCacheCopies has no effect – caching is done until the archive is closed, we won't unpack earlier
     }

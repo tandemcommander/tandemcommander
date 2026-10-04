@@ -349,6 +349,12 @@ public:
     void CopyFilesTo(HWND parent, int* indexes, int count, const char* initPath);
 };
 
+// feature 108 (fileswn6.cpp): 'zipPath' (a panel's path inside the archive, as typed) with every
+// folder the listing 'archiveDir' stores in another case replaced by the stored spelling - the edit
+// (F4) and the viewer (F3) name a member by it, so one member is one temporary copy; FALSE = low memory
+class CSalHeapString;
+BOOL GetZIPPathAsStored108(CSalamanderDirectory* archiveDir, const char* zipPath, CSalHeapString& stored);
+
 //****************************************************************************
 //
 // CTopIndexMem

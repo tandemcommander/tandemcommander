@@ -786,19 +786,28 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                 if (Is(ptZIPArchive))
                 {
                     useDiskCache = TRUE;
+                    // feature 108: the folder in the spelling the listing stores, as the edit (F4) names
+                    // it - one member keeps one temporary copy whichever spelling led to it
+                    CSalHeapString zipPathBuf;
+                    if (!GetZIPPathAsStored108(GetArchiveDir(), GetZIPPath(), zipPathBuf))
+                    {
+                        TRACE_E(LOW_MEMORY);
+                        return;
+                    }
+                    const char* zipPath = zipPathBuf.Get();
                     // the archive file name should be compared case-insensitively (Windows file system), so we always convert it to lowercase;
                     // feature 095: room for "\\" + ZIP path + "\\" + name + ":0x<pointer>"
-                    if (!dcFileNameBuf.Copy(GetZIPArchive(), strlen(GetZIPPath()) + strlen(f->Name) + 2 + 32, LowerCase))
+                    if (!dcFileNameBuf.Copy(GetZIPArchive(), strlen(zipPath) + strlen(f->Name) + 2 + 32, LowerCase))
                     {
                         TRACE_E(LOW_MEMORY);
                         return;
                     }
                     dcFileName = dcFileNameBuf.Get();
-                    if (GetZIPPath()[0] != 0)
+                    if (zipPath[0] != 0)
                     {
-                        if (GetZIPPath()[0] != '\\')
+                        if (zipPath[0] != '\\')
                             strcat(dcFileName, "\\");
-                        strcat(dcFileName, GetZIPPath());
+                        strcat(dcFileName, zipPath);
                     }
                     if (dcFileName[strlen(dcFileName) - 1] != '\\')
                         strcat(dcFileName, "\\");

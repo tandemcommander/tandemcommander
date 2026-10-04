@@ -14,6 +14,7 @@
 #include "execute.h"
 #include "shellib.h"
 #include "menu.h"
+#include "salarcedit.h" // feature 108
 
 CUserMenuIconBkgndReader UserMenuIconBkgndReader;
 
@@ -3142,12 +3143,15 @@ BOOL CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const ch
     }
 
     // test whether it is already present (performed after constructing the item because the strings were adjusted - '\\')
+    // feature 108: "present" = the same temporary copy on disk, by the file system's rule (salarcedit.h).
+    // The byte fold made two members whose UTF-8 names fold together on the code page (CP1250:
+    // "ĥ.txt" and "Ĺ.txt", "Ítem.txt" and "Ýtem.txt") one item: the second edit was not
+    // tracked, and the caller then released its copy from the disk cache - deleted under the editor
     int i;
     for (i = 0; i < List.Count; i++)
     {
         CFileTimeStampsItem* item2 = List[i];
-        if (StrICmp(item->FileName, item2->FileName) == 0 &&
-            StrICmp(item->SourcePath, item2->SourcePath) == 0)
+        if (SalEditedCopyIsSame(item->SourcePath, item->FileName, item2->SourcePath, item2->FileName))
         {
             delete item;
             return FALSE; // already present, do not add another one
@@ -3486,8 +3490,10 @@ void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, 
                             CFileTimeStampsItem* item2 = List[i];
                             char* r2 = item2->ZIPRoot;
                             char* s2 = item2->SourcePath;
-                            if (strcmp(r1, r2) == 0 && // identical zip root (case-sensitive comparison required - update test\A.txt and Test\b.txt must not run simultaneously)
-                                StrICmp(s1, s2) == 0)  // identical source path
+                            // identical zip root (case-sensitive comparison required - update test\A.txt and
+                            // Test\b.txt must not run simultaneously) and identical source path (feature 108:
+                            // the file system's rule, not the byte fold)
+                            if (SalEditedCopiesPackTogether(r1, s1, r2, s2))
                             {
                                 packList.Add(item2);
                                 List.Detach(i);

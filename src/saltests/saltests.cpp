@@ -30,6 +30,7 @@
 #include "salzippwd.h"    // feature 094
 #include "salheapstr.h"   // feature 095
 #include "salsafereplace.h" // feature 105
+#include "salarcedit.h"     // feature 108
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -5455,6 +5456,133 @@ static void TestFolderAlias107()
     CHECK(RemoveDirectoryW(base.c_str()));
 }
 
+// feature 108: an edited archive member is identified by its temporary copy on disk, by the file
+// system's rule (SalEditedCopyIsSame, SalEditedCopiesPackTogether - src/common/salarcedit.h)
+static BOOL LegacyFoldEqual108(const char* a, const char* b) // the old StrICmp: CharLowerA per byte
+{
+    for (;; a++, b++)
+    {
+        BYTE la = (BYTE)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)(BYTE)*a);
+        BYTE lb = (BYTE)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)(BYTE)*b);
+        if (la != lb)
+            return FALSE;
+        if (*a == 0)
+            return TRUE;
+    }
+}
+
+static void TestArchiveEdit108()
+{
+    const char* tmp = "C:\\Users\\u\\AppData\\Local\\Temp\\SAL1A2.tmp";
+    // --- names: different members (the file system keeps them apart) are different copies; on
+    //     CP1250 the old byte fold made each of these pairs one item (the defect)
+    static const char* const differ[][2] = {
+        {"\xC4\xA5" ".txt", "\xC4\xB9" ".txt"},             // h-circumflex / L-acute (C4 A5 / C4 B9)
+        {"\xC3\x8D" "tem.txt", "\xC3\x9D" "tem.txt"},       // I-acute / Y-acute
+        {"\xC5\xBE" ".txt", "\xC5\xBC" ".txt"},             // z-caron / z-dot
+        {"\xE4\xB9\x9D" ".txt", "\xE4\xB9\x8D" ".txt"},     // two CJK ideographs (U+4E5D / U+4E4D)
+        {"\xD0\xBC" ".txt", "\xD0\xBE" ".txt"},             // Cyrillic em / o
+        {"\xC4\x8C" ".txt", "\xC4\x9C" ".txt"},             // C-caron / G-circumflex
+        {"\xC3\xA9" ".txt", "e\xCC\x81" ".txt"},            // NFC / NFD: two names on NTFS
+        {"a.txt", "b.txt"},
+    };
+    for (int i = 0; i < _countof(differ); i++)
+    {
+        CHECK(!SalEditedCopyIsSame(tmp, differ[i][0], tmp, differ[i][1]));
+        CHECK(!SalEditedCopyIsSame(tmp, differ[i][1], tmp, differ[i][0]));
+        CHECK(SalEditedCopyIsSame(tmp, differ[i][0], tmp, differ[i][0])); // one member opened twice
+    }
+    if (GetACP() == 1250) // the measured defect: the legacy fold merged the first six pairs
+    {
+        for (int i = 0; i < 6; i++)
+            CHECK(LegacyFoldEqual108(differ[i][0], differ[i][1]));
+    }
+    // --- names equal by the file system's rule are ONE file on disk: one copy (the disk cache never
+    //     puts two members there under such names - CCacheDirData::ContainTmpName)
+    static const char* const same[][2] = {
+        {"\xC4\x8C" ".txt", "\xC4\x8D" ".txt"},   // C-caron / c-caron
+        {"\xC8\xBA" ".txt", "\xE2\xB1\xA5" ".txt"}, // A-stroke (2 bytes) / a-stroke (3 bytes)
+        {"A.txt", "a.txt"},
+        {"README.md", "readme.MD"},
+    };
+    for (int i = 0; i < _countof(same); i++)
+        CHECK(SalEditedCopyIsSame(tmp, same[i][0], tmp, same[i][1]));
+    // --- folders: the path rule (one leading/trailing backslash ignored, case by the file system)
+    CHECK(SalEditedCopyIsSame(tmp, "x.txt", "c:\\users\\U\\appdata\\local\\temp\\sal1a2.TMP\\", "X.TXT"));
+    CHECK(!SalEditedCopyIsSame(tmp, "x.txt", "C:\\Users\\u\\AppData\\Local\\Temp\\SAL1A3.tmp", "x.txt"));
+    CHECK(!SalEditedCopyIsSame("D:\\c\\\xC4\xA5\\SAL1.tmp", "x.txt", "D:\\c\\\xC4\xB9\\SAL1.tmp", "x.txt")); // a plug-in's own cache root
+    CHECK(SalEditedCopyIsSame("D:\\c\\\xC4\x8C\\SAL1.tmp", "x.txt", "D:\\C\\\xC4\x8D\\sal1.tmp", "x.txt"));
+    // --- one packer call: the folder in the archive byte for byte, the folder on disk by the rule
+    CHECK(SalEditedCopiesPackTogether("", tmp, "", tmp));
+    CHECK(SalEditedCopiesPackTogether("dir\\sub", tmp, "dir\\sub", "c:\\USERS\\u\\AppData\\Local\\Temp\\SAL1A2.tmp"));
+    CHECK(!SalEditedCopiesPackTogether("test", tmp, "Test", tmp)); // test\A.txt and Test\b.txt: two calls
+    CHECK(!SalEditedCopiesPackTogether("\xC4\xA5", tmp, "\xC4\xB9", tmp));
+    CHECK(!SalEditedCopiesPackTogether("", tmp, "", "C:\\Users\\u\\AppData\\Local\\Temp\\SAL1A3.tmp"));
+    // --- the stored spelling of a folder replaces the typed one only when they are one name by the
+    //     file system's rule (GetZIPPathAsStored108, fileswn6.cpp)
+    CHECK(SalArcTakeStoredSpelling("Dir", 3, "DIR", 3));
+    CHECK(SalArcTakeStoredSpelling("Dir", 3, "Dir", 3));
+    CHECK(SalArcTakeStoredSpelling("\xC4\x8C", 2, "\xC4\x8D", 2));           // C-caron / c-caron
+    CHECK(SalArcTakeStoredSpelling("slo\xC5\xBD" "ka", 6, "SLO\xC5\xBE" "KA", 6)); // Z-caron / z-caron
+    CHECK(!SalArcTakeStoredSpelling("\xC4\xA5", 2, "\xC4\xB9", 2));          // merged by the byte fold only
+    CHECK(!SalArcTakeStoredSpelling("\xC3\x8D", 2, "\xC3\x9D", 2));
+    CHECK(!SalArcTakeStoredSpelling("\xC8\xBA", 2, "\xE2\xB1\xA5", 3));      // one name, other lengths: not in place
+    CHECK(!SalArcTakeStoredSpelling("Dir", 3, "Dirx", 4));
+    CHECK(!SalArcTakeStoredSpelling("Dir", 3, "Dix", 3));
+
+    // --- real files (NTFS %TEMP%): the rule agrees with the file system
+    WCHAR t[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, t);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping the file part of TestArchiveEdit108 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(t) + L"saltests-108-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    char dirU8[3 * MAX_PATH];
+    CHECK(SalWToU8(dir.c_str(), -1, dirU8, sizeof(dirU8)) != 0);
+    std::vector<std::wstring> created;
+    // creates 'second' after 'first' in one folder: TRUE when the file system made two files
+    auto twoFiles = [&](const char* first, const char* second) -> BOOL
+    {
+        WCHAR w1[64], w2[64];
+        if (SalU8ToW(first, -1, w1, 64) == 0 || SalU8ToW(second, -1, w2, 64) == 0)
+            return FALSE;
+        std::wstring p1 = dir + L"\\" + w1, p2 = dir + L"\\" + w2;
+        HANDLE h1 = CreateFileW(p1.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (h1 == INVALID_HANDLE_VALUE)
+            return FALSE;
+        CloseHandle(h1);
+        created.push_back(p1);
+        HANDLE h2 = CreateFileW(p2.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (h2 == INVALID_HANDLE_VALUE)
+            return FALSE; // ERROR_FILE_EXISTS: the same file
+        CloseHandle(h2);
+        created.push_back(p2);
+        return TRUE;
+    };
+    for (int i = 0; i < _countof(differ); i++)
+    {
+        BOOL two = twoFiles(differ[i][0], differ[i][1]);
+        CHECK(two);
+        CHECK(two == !SalEditedCopyIsSame(dirU8, differ[i][0], dirU8, differ[i][1]));
+        for (auto& p : created)
+            DeleteFileW(p.c_str());
+        created.clear();
+    }
+    for (int i = 0; i < _countof(same); i++)
+    {
+        BOOL two = twoFiles(same[i][0], same[i][1]);
+        CHECK(!two);
+        CHECK(two == !SalEditedCopyIsSame(dirU8, same[i][0], dirU8, same[i][1]));
+        for (auto& p : created)
+            DeleteFileW(p.c_str());
+        created.clear();
+    }
+    CHECK(RemoveDirectoryW(dir.c_str()));
+}
+
 int main()
 {
     TestConversions();
@@ -5501,6 +5629,7 @@ int main()
     TestSafeReplace105();
     TestPackSelf106();
     TestFolderAlias107();
+    TestArchiveEdit108();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

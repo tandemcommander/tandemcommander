@@ -1447,3 +1447,55 @@ plugin architecture preservation, UI consistency.
   (`quickstart.md` step 5); snapshots and FAT rule-tested only; 103's `davnorm.py` now answers
   `PROPFIND /` (the `DavWWWRoot` form). saltests 13,588 -> 13,756. Records:
   `specs/107-folder-alias-move/fix-log.md`.
+- 108-archive-edit-name-collision: **edited archive members whose names
+  collide are tracked and packed back apart** (for ZIP see the plug-in
+  caveat below). NEXT-WORK item 5 (left by 092), measured first
+  (`research.md`): `CFileTimeStamps::AddFile` (`salamdr3.cpp`) called two
+  members "already present" when their UTF-8 names fold together in the code
+  page (CP1250: `ĥ`/`Ĺ`, `Í`/`Ý`, `ž`/`ż`, U+4E5D/U+4E4D, `м`/`о` - 19,015
+  BMP pairs, `probe/collision_set.py`); the caller then released the second
+  member's temporary copy, so the disk cache deleted it under the editor and
+  the edit was never offered for the update. 7z lost the edit; ZIP lost the
+  whole second MEMBER, because the ZIP plug-in's update matching
+  (`CompareStringA` + `NORM_IGNORECASE` on UTF-8, `zip/add.cpp`) replaced it
+  after an overwrite question. The inverse was real too: Change Directory to
+  `arc.zip\DIR` (stored `Dir`) gave one member two copies through the two
+  spellings and the second pack replaced the first edit.
+  - **Rule** (`src/common/salarcedit.h`, header-only on 092's helpers): an
+    edited member = its temporary copy, folder + name by the file system's
+    rule (`SalEditedCopyIsSame`); one packer call = the same folder in the
+    archive byte for byte + the same folder on disk by the rule
+    (`SalEditedCopiesPackTogether`); the disk cache already gives two members
+    two files and one member one file (092's `ContainTmpName`). Result: for
+    7z both edits of a pair are packed back; for ZIP only when the two
+    copies share one temporary folder - otherwise the ZIP plug-in's own name
+    matching can still lose one (review row `split_zip`, also before 108).
+  - **Stored spelling**: `GetZIPPathAsStored108` (`fileswn6.cpp`, declared in
+    `fileswnd.h`) maps each typed folder of the panel's archive path to the
+    listing's stored name when they are one name by the rule
+    (`SalArcTakeStoredSpelling`); used by `ExecuteFromArchive` (cache name,
+    archiver name, `AddFile` folder - packing never creates a `DIR` spelling)
+    and by `ViewFile` (F3 keeps sharing F4's copy). The panel keeps the typed
+    path. A folder matched only by the byte fold (merged by the listing)
+    stays as typed. Trap (review NIT 3): tar extracts case-sensitively under
+    a case-insensitive listing - a typed `arc.tar\DIR` over merged `Dir`/`DIR`
+    folders now asks for `Dir\b.txt` (worked before only by luck).
+  - Kept: two members equal by the rule in one folder stay refused for F4
+    (092's message) - nothing can be lost there.
+  - **Not fixed, queued (NEXT-WORK item 5; next 109, then 110)**: 109 - the
+    disk cache keys an ARCHIVE by its code-page lower-cased name -
+    `ĥ.zip` and `Ĺ.zip` share their
+    members' copies; F4 in the second (other panel) opened the first's copy
+    and the update packed it into the second archive, silently (measured,
+    `-CacheKeyRows`, both builds); 110 - the ZIP plug-in's name matching
+    (add, delete, extract) - editing one member of such a pair, packing the
+    two in separate calls, or F5 of such a file into the archive, deletes the
+    other member after an overwrite question.
+  - Review ACCEPT (no code change); its SF1/SF2 corrected the ZIP claims in
+    the records.
+  - Probe `probe/namecoll_probe.ps1` + `arcfix.py` (archives read back by
+    Python `zipfile` / `7z.exe`): 28 / 2 (the two ZIP single-edit rows, the
+    plug-in), pre-108 14 / 16. Regressions unchanged: 096 17/17, 097 arcwork
+    subset 120/0, 106 packself 70/0/4, 092 focus 10/10. saltests 13,756 ->
+    13,835. Interface stays 107, no new string, no registry change. Records:
+    `specs/108-archive-edit-name-collision/fix-log.md`.
