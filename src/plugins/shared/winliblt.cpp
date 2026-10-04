@@ -36,6 +36,7 @@
 #endif // ENABLE_PROPERTYDIALOG
 
 #include "winliblt.h"
+#include "splunicode.h" // feature 104: WTF-8 conversions in CTransferInfo::EditLine
 
 #ifdef _MSC_VER
 #ifndef itoa
@@ -462,8 +463,110 @@ BOOL CWindow::RegisterUniversalClass(UINT style, int cbClsExtra, int cbWndExtra,
 // CDialog
 //
 
+// feature 104: see WinLibSetTextLimit in winliblt.h; the size is a window property under an
+// integer atom (no reference count on a string atom per call; freed with the window)
+static ATOM WinLibTextLimitAtom()
+{
+    static ATOM atom = 0;
+    if (atom == 0)
+        atom = GlobalAddAtomA("TandemWinLibTextLimit");
+    return atom;
+}
+
+void WinLibSetTextLimit(HWND ctrl, DWORD bytes)
+{
+    ATOM atom = WinLibTextLimitAtom();
+    if (ctrl != NULL && atom != 0)
+        SetPropA(ctrl, MAKEINTATOM(atom), (HANDLE)(ULONG_PTR)bytes);
+}
+
+BOOL WinLibTextFits(HWND ctrl)
+{
+    ATOM atom = WinLibTextLimitAtom();
+    if (ctrl == NULL || atom == 0)
+        return TRUE;
+    DWORD bytes = (DWORD)(ULONG_PTR)GetPropA(ctrl, MAKEINTATOM(atom));
+    if (bytes == 0)
+        return TRUE; // not a field filled by EditLine
+    int units = GetWindowTextLengthW(ctrl);
+    if ((DWORD)units * 3 + 1 <= bytes) // fits whatever the characters
+        return TRUE;
+    WCHAR* w = (WCHAR*)malloc((units + 1) * sizeof(WCHAR));
+    if (w == NULL)
+        return TRUE; // cannot tell: EditLine decides
+    w[0] = 0;
+    GetWindowTextW(ctrl, w, units + 1);
+    char* u8 = SplWToU8Alloc(w);
+    BOOL fits = u8 == NULL || strlen(u8) < bytes;
+    free(u8);
+    free(w);
+    return fits;
+}
+
+struct CWinLibTooLongSearch
+{
+    HWND Found;
+};
+
+static BOOL CALLBACK WinLibFindTooLongProc(HWND hwnd, LPARAM lParam)
+{
+    CWinLibTooLongSearch* s = (CWinLibTooLongSearch*)lParam;
+    // only a field the user can edit is refused: a read-only, disabled or hidden field shows a
+    // value the dialog filled (e.g. a path cut to 259 bytes, possibly inside a character, and
+    // shown through the code page - its UTF-8 form can then exceed the recorded size); such a
+    // field is not read back, and refusing it would block every button but Cancel (review S1)
+    if (!IsWindowVisible(hwnd) || !IsWindowEnabled(hwnd))
+        return TRUE;
+    char cls[16];
+    if (GetClassNameA(hwnd, cls, sizeof(cls)) > 0 && lstrcmpiA(cls, "Edit") == 0 &&
+        (GetWindowLongPtr(hwnd, GWL_STYLE) & ES_READONLY) != 0)
+    {
+        return TRUE;
+    }
+    if (!WinLibTextFits(hwnd))
+    {
+        s->Found = hwnd;
+        return FALSE;
+    }
+    return TRUE;
+}
+
+HWND WinLibFindTooLongText(HWND dlg)
+{
+    CWinLibTooLongSearch s;
+    s.Found = NULL;
+    if (dlg != NULL)
+        EnumChildWindows(dlg, WinLibFindTooLongProc, (LPARAM)&s);
+    return s.Found;
+}
+
+void WinLibRefuseTooLongText(HWND dlg, HWND ctrl)
+{
+    WCHAR text[512];
+    if (FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                       ERROR_FILENAME_EXCED_RANGE, 0, text, 512, NULL) == 0)
+        lstrcpynW(text, L"The filename or extension is too long.", 512);
+    WCHAR caption[256];
+    caption[0] = 0;
+    GetWindowTextW(dlg, caption, 256);
+    MessageBoxW(dlg, text, caption, MB_OK | MB_ICONEXCLAMATION);
+    if (ctrl != NULL && IsWindowEnabled(ctrl) && IsWindowVisible(ctrl))
+    {
+        SendMessage(dlg, WM_NEXTDLGCTL, (WPARAM)ctrl, TRUE);
+        SendMessage(ctrl, EM_SETSEL, 0, -1); // an edit selects all; a combo box ignores it
+    }
+}
+
 BOOL CDialog::ValidateData()
 {
+    // feature 104: a field whose text does not fit its buffer is refused before anything is
+    // validated or transferred (see WinLibSetTextLimit) - one message, nothing stored
+    HWND tooLong = WinLibFindTooLongText(HWindow);
+    if (tooLong != NULL)
+    {
+        WinLibRefuseTooLongText(HWindow, tooLong);
+        return FALSE;
+    }
     CTransferInfo ti(HWindow, ttDataFromWindow);
     Validate(ti);
     if (!ti.IsGood())
@@ -686,6 +789,14 @@ CPropSheetPage::~CPropSheetPage()
 
 BOOL CPropSheetPage::ValidateData()
 {
+    HWND tooLong = WinLibFindTooLongText(HWindow); // feature 104: see CDialog::ValidateData
+    if (tooLong != NULL)
+    {
+        if (PropSheet_GetCurrentPageHwnd(Parent) != HWindow)
+            PropSheet_SetCurSel(Parent, HWindow, 0);
+        WinLibRefuseTooLongText(HWindow, tooLong);
+        return FALSE;
+    }
     CTransferInfo ti(HWindow, ttDataFromWindow);
     Validate(ti);
     if (!ti.IsGood())
@@ -1148,7 +1259,7 @@ void CTransferInfo::EnsureControlIsFocused(int ctrlID)
 void CTransferInfo::EditLine(int ctrlID, char* buffer, DWORD bufferSize, BOOL select)
 {
     HWND HWindow;
-    if (GetControl(HWindow, ctrlID))
+    if (GetControl(HWindow, ctrlID, Type == ttDataFromWindow && TooLongRefused)) // feature 104: see TooLongRefused
     {
         switch (Type)
         {
@@ -1156,12 +1267,18 @@ void CTransferInfo::EditLine(int ctrlID, char* buffer, DWORD bufferSize, BOOL se
         {
             // feature 005: plugin narrow buffers carry UTF-8 (interface 104);
             // standard controls are Unicode windows, so cross as UTF-16.
-            // Invalid UTF-8 falls back to the legacy A path.
-            int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer, -1, NULL, 0);
-            WCHAR* w = wlen > 0 ? (WCHAR*)malloc(wlen * sizeof(WCHAR)) : NULL;
+            // Invalid UTF-8 falls back to the legacy A path (code-page text).
+            // feature 104: WTF-8 (SplU8ToWAlloc), so a name with an unpaired
+            // surrogate is shown as itself instead of as code-page mojibake
+            WCHAR* w = SplU8ToWAlloc(buffer);
+            // feature 104: the buffer's size is recorded (refused before the transfer when the text
+            // does not fit) only for UTF-8 text; text that is not UTF-8 (a legacy code-page value,
+            // a path cut inside a character) may show longer as UTF-8 than it was - no limit, so an
+            // unchanged value never blocks the dialog (review S1); EditLine still refuses it when
+            // it is read back and does not fit
+            WinLibSetTextLimit(HWindow, w != NULL ? bufferSize : 0);
             if (w != NULL)
             {
-                MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buffer, -1, w, wlen);
                 SendMessageW(HWindow, EM_LIMITTEXT, bufferSize - 1, 0);
                 SendMessageW(HWindow, WM_SETTEXT, 0, (LPARAM)w);
                 free(w);
@@ -1178,18 +1295,45 @@ void CTransferInfo::EditLine(int ctrlID, char* buffer, DWORD bufferSize, BOOL se
 
         case ttDataFromWindow:
         {
-            // read wide and store UTF-8; when the UTF-8 result would not fit
-            // the caller's buffer, fall back to the legacy A read
+            // read wide and store UTF-8 (WTF-8). feature 104: when the UTF-8 form
+            // does not fit the caller's buffer, the field is REFUSED - the system's
+            // "too long" message, the field focused (ErrorOn), the buffer empty.
+            // The former code-page re-read (WM_GETTEXT A) converted with BEST FIT -
+            // "voila<U+00E0>" came back as "voila", a different existing name - and
+            // handed code-page bytes to a UTF-8 buffer. (The core cuts at a whole
+            // character, 093 contract D4; plug-in buffers are mostly MAX_PATH bytes
+            // for names and paths, where a cut names another file or folder.)
+            // ASCII text always fits (EM_LIMITTEXT is bufferSize - 1 units), so
+            // nothing changes for it. The A read is kept only for lack of memory.
             int wchars = GetWindowTextLengthW(HWindow) + 1;
             WCHAR* w = (WCHAR*)malloc(wchars * sizeof(WCHAR));
-            if (w != NULL)
+            if (w != NULL && bufferSize > 0)
             {
+                w[0] = 0;
                 GetWindowTextW(HWindow, w, wchars);
-                int u8len = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, w, -1, buffer, bufferSize, NULL, NULL);
-                free(w);
-                if (u8len > 0)
+                if (SplWToU8(w, buffer, (int)bufferSize) == 0) // does not fit (SplWToU8 left it empty)
+                {
+                    buffer[0] = 0;
+                    if (IsGood())
+                        ErrorOn(ctrlID); // the first failure keeps the focus
+                    TooLongRefused = TRUE;
+                    free(w);
+                    if (Quiet)
+                        break;
+                    WCHAR text[512];
+                    if (FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                                       ERROR_FILENAME_EXCED_RANGE, 0, text, 512, NULL) == 0)
+                        lstrcpynW(text, L"The filename or extension is too long.", 512);
+                    WCHAR caption[256];
+                    caption[0] = 0;
+                    GetWindowTextW(HDialog, caption, 256);
+                    MessageBoxW(HDialog, text, caption, MB_OK | MB_ICONEXCLAMATION);
                     break;
+                }
+                free(w);
+                break;
             }
+            free(w);
             SendMessage(HWindow, WM_GETTEXT, bufferSize, (LPARAM)buffer);
             break;
         }

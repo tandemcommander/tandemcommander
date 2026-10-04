@@ -479,13 +479,59 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        not examined): code-page window subclasses on text controls in ftp
        (3), zip (4), 7zip (1); `CreateFileA` fallbacks after a failed UTF-8
        conversion in checksum, peviewer, renamer; `DragQueryFile` in dbviewer
-       and pictview; PictView's `salpvenv.exe` helper (probably dormant).
+       and pictview; PictView's `salpvenv.exe` helper (probably dormant) -
+       ✅ **fixed by feature 104** (2026-10-04). Measured first: the listed
+       sites were mostly not defects (the eight subclasses carry no names
+       except ZIP's path label, the `DragQueryFile` calls only count, the
+       fallbacks are unreachable, `salpvenv.exe` is not built, shipped or
+       reachable); the real ones were elsewhere and worse - the **Renamer**
+       renamed to a best-fit look-alike (`voilà.txt` -> `voila.txt`, asking to
+       overwrite the existing one) and its mask `Ж*.txt` became the wildcard
+       `?*.txt`; the plug-in services `SafeGetOpenFileName` /
+       `SafeGetSaveFileName` / `GetTargetDirectory` (code page by contract)
+       made the Database Viewer, FTP, ZIP, PictView, CAB and Undelete open,
+       overwrite or copy into look-alike files and folders. Now two
+       header-only Unicode pickers (`splfiledlg.h`), winliblt's field reader
+       refuses instead of re-reading through the code page, the Renamer's
+       edits and loops are Unicode. Record:
+       `specs/104-plugin-unicode-names/fix-log.md`. **Found by 104, not fixed
+       (queue):**
+       1. **PictView *Save As* onto an existing file deletes it and then
+          fails** ("replace?" Yes -> the file is gone, "Unable to save the
+          image": the WIC engine of 006 cannot write images). Data loss in
+          every release since 006 - first.
+       2. Undelete applies a FAT rule (`Replace0xE5`) to UTF-8 names: a
+          name whose first byte is 0xE5 (CJK U+5000-U+5FFF) is listed with
+          `$` and restored under a garbled name; its volume layer enumerates
+          mount points with code-page calls (a mount folder named outside
+          ASCII fails or resolves to another volume).
+       3. FTP password fields keep a code-page subclass (`CPasswordEditLine`)
+          and *Show password* reads through the code page (094 left FTP
+          passwords). Since 104 an FTP password, user name, address or
+          initial path whose UTF-8 form exceeds its buffer (100 bytes for
+          a password or user name - 51+ Czech letters) is not taken: Connect
+          and Close say "too long" and keep the dialog open, the stored value
+          stays; the build before stored it as code-page bytes (such a saved
+          password still works while it is not retyped - except *Retry* in
+          the login-error dialog, which refuses it). Widening the FTP
+          buffers (and the protocol's byte form of such a password) is open.
+       4. checksum: a checksum list written in the code page with accented
+          names reports those files as missing (no encoding detection of the
+          list file).
+       5. Smaller: the plug-in folder picker does not resolve NetHood folder
+          shortcuts (the core's `GetTargetDirectory` did); diskmap's log
+          window shows paths garbled; the ZIP comment field is code page by
+          format; the ZIP self-extractor routes are unreachable (no SFX
+          package shipped) and stay code page; PictView's *Regenerate
+          thumbnail* cannot work at all since 006. Disabled plug-ins (listed
+          in `specs/104-plugin-unicode-names/research.md` 3) are unchanged.
     3. Smaller: the link warning names an unreadable or too-deep folder as a
        "Link"; at depth 1,001 the message says "too long"; clipboard paste
        refuses 520+ bytes although Change Directory takes any length; the
        Find window's UNC copy fails silently when too long; share-prefix
        matching cuts at 259 bytes; dragging a directory-line component at
-       7,500+ characters would build a ~280,000-pixel drag image.
+       7,500+ characters would build a ~280,000-pixel drag image - ✅ all
+       fixed by feature 101 (2026-10-03), see sub-item 4.
   - **An edited file with a non-ASCII name was not packed back into its
     archive** - ✅ confirmed (every release) and fixed by feature 096
     (2026-10-02): a code-page look-up of a UTF-8 path in
@@ -511,8 +557,8 @@ with its reason there:
   the other menu mnemonics in the main window and in Find, typing with a
   Czech layout, an input method editor, a mouse drag onto the command line.
   The probes post window messages; they cannot press keys.
-- **The main window's title** shows `?` for a folder named outside the code
-  page (the main window is a code-page window).
+- **The main window's title** showed `?` for a folder named outside the code
+  page - ✅ fixed by feature 100 (2026-10-03).
 - **The loops that only drain messages during an operation** and the menus'
   own modal loops are still code-page loops: a character typed ahead into a
   field while one runs is converted; an accented mnemonic typed while the

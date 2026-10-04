@@ -163,24 +163,33 @@ BOOL SetFileAttributesU8(const char* name, DWORD attrs)
     return ret;
 }
 
-void U8ToAcp(const char* u8, char* buf, int bufSize)
+void SetDlgItemTextU8OrAcp(HWND dlg, int id, const char* text)
 {
-    WCHAR* w = SplU8ToWAlloc(u8);
-    if (w == NULL || WideCharToMultiByte(CP_ACP, 0, w, -1, buf, bufSize, NULL, NULL) == 0)
-        lstrcpyn(buf, u8, bufSize); // not valid UTF-8 / not representable: use the bytes as they are
+    WCHAR* w = SplU8ToWAlloc(text);
+    if (w != NULL)
+        SetDlgItemTextW(dlg, id, w);
+    else
+        SetDlgItemTextA(dlg, id, text != NULL ? text : ""); // not UTF-8: code-page text
     free(w);
 }
 
-void AcpToU8(const char* acp, char* buf, int bufSize)
+int GetDlgItemTextU8(HWND dlg, int id, char* buf, int bufSize)
 {
-    int len = MultiByteToWideChar(CP_ACP, 0, acp, -1, NULL, 0);
-    WCHAR* w = len > 0 ? (WCHAR*)malloc(len * sizeof(WCHAR)) : NULL;
-    if (w == NULL || MultiByteToWideChar(CP_ACP, 0, acp, -1, w, len) == 0 ||
-        SplWToU8(w, buf, bufSize) == 0)
-    {
-        lstrcpyn(buf, acp, bufSize); // conversion failed: use the bytes as they are
-    }
+    if (buf == NULL || bufSize <= 0)
+        return 0;
+    buf[0] = 0;
+    HWND ctrl = GetDlgItem(dlg, id);
+    if (ctrl == NULL)
+        return 0;
+    int len = GetWindowTextLengthW(ctrl) + 1;
+    WCHAR* w = (WCHAR*)malloc(len * sizeof(WCHAR));
+    if (w == NULL)
+        return 0;
+    w[0] = 0;
+    GetWindowTextW(ctrl, w, len);
+    int ret = SplWToU8(w, buf, bufSize); // 0 (and 'buf' empty) when it does not fit
     free(w);
+    return ret;
 }
 
 // CAB format boundary: a name inside a cabinet is stored either in the local ANSI

@@ -1995,7 +1995,10 @@ void CLogs::SaveLog(HWND parent, const char* itemName, int uid)
                 OFN_NOTESTFILECREATE | OFN_HIDEREADONLY;
 
     char buf[200 + MAX_PATH];
-    if (SalamanderGeneral->SafeGetSaveFileName(&ofn))
+    // feature 104: the Unicode dialog, the name as UTF-8 - SafeGetSaveFileName (code page)
+    // gave code-page bytes to the UTF-8 file calls below: every accented name failed and a
+    // best-fit look-alike ("voila" for "voil<U+00E0>") was overwritten another existing file
+    if (SplGetFileNameU8(&ofn, TRUE))
     {
         HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
 

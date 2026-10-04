@@ -31,6 +31,7 @@
 #include "salheapstr.h"   // feature 095
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
+#include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
 
 #include <map>
 #include <set>
@@ -4782,6 +4783,102 @@ static void TestSameFile103()
     CHECK(SalRemoveDirectory(dir));
 }
 
+// feature 104: the pure parts of the plug-ins' Unicode file dialog (splfiledlg.h) and of the
+// path-label painting (splunicode.h SplShortenLongTextW)
+static BOOL OffsetsAre104(const char* u8, WORD file, WORD ext)
+{
+    WORD f = 0xFFFF, e = 0xFFFF;
+    SplFileDlgDetail::NameOffsets(u8, &f, &e);
+    return f == file && e == ext;
+}
+
+static void TestPluginFileDlg104()
+{
+    // --- nFileOffset / nFileExtension in BYTES of the UTF-8 result (the A dialog's meanings)
+    CHECK(OffsetsAre104("C:\\dir\\file.txt", 7, 12));
+    CHECK(OffsetsAre104("C:\\dir\\file", 7, 11));       // no extension: the terminator
+    CHECK(OffsetsAre104("C:\\dir\\file.", 7, 0));        // ends with a dot: 0
+    CHECK(OffsetsAre104("C:\\d.ir\\file", 8, 12));       // a dot in a folder is no extension
+    CHECK(OffsetsAre104("file.tar.gz", 0, 9));             // the last dot
+    CHECK(OffsetsAre104("C:/dir/x.y", 7, 9));              // a slash separates too
+    CHECK(OffsetsAre104(".cvspass", 0, 1));                // as Windows does: an extension
+    // "C:\<U+017E>\<U+0159>.txt": U+017E and U+0159 are 2 bytes each
+    CHECK(OffsetsAre104("C:\\\xC5\xBE\\\xC5\x99.txt", 6, 9));
+    // U+65E5 (3 bytes), U+1F4C1 (4 bytes) in the name
+    CHECK(OffsetsAre104("D:\\\xE6\x97\xA5\xF0\x9F\x93\x81.png", 3, 11));
+
+    // --- the code-page filter list as UTF-16, the list form kept (items + the final empty one)
+    {
+        static const char list[] = "Logs (*.log)\0*.log\0All\0*.*\0";
+        WCHAR* w = SplFileDlgDetail::CodePageListToWAlloc(list);
+        static const WCHAR expect[] = L"Logs (*.log)\0*.log\0All\0*.*\0";
+        CHECK(w != NULL && memcmp(w, expect, sizeof(expect)) == 0); // incl. the double terminator
+        free(w);
+        WCHAR* e = SplFileDlgDetail::CodePageListToWAlloc("\0");
+        CHECK(e != NULL && e[0] == 0 && e[1] == 0);
+        free(e);
+        CHECK(SplFileDlgDetail::CodePageListToWAlloc(NULL) == NULL);
+        // a code-page byte becomes the code page's character (the resource strings are code page)
+        char cp[] = {'a', (char)0xE8, 0, 0};
+        WCHAR expectCp[2];
+        MultiByteToWideChar(CP_ACP, 0, cp, 2, expectCp, 2);
+        WCHAR* wc = SplFileDlgDetail::CodePageListToWAlloc(cp);
+        CHECK(wc != NULL && wc[0] == L'a' && wc[1] == expectCp[1] && wc[2] == 0 && wc[3] == 0);
+        free(wc);
+        WCHAR* t = SplFileDlgDetail::CodePageToWAlloc("Save As");
+        CHECK(t != NULL && wcscmp(t, L"Save As") == 0);
+        free(t);
+        CHECK(SplFileDlgDetail::CodePageToWAlloc(NULL) == NULL);
+    }
+
+    // --- SplShortenLongTextW: nothing up to 1,024 units, then 32 + "..." + 960, never between
+    //     the halves of a surrogate pair
+    {
+        std::vector<WCHAR> buf;
+        for (int len = 1020; len <= 1030; len++)
+        {
+            buf.assign(len + 1, L'x');
+            buf[len] = 0;
+            for (int i = 0; i < len; i++)
+                buf[i] = (WCHAR)(L'A' + i % 26);
+            std::vector<WCHAR> orig(buf);
+            int n = SplShortenLongTextW(buf.data(), len);
+            if (len <= 1024)
+                CHECK(n == len && buf == orig);
+            else
+            {
+                CHECK(n == 32 + 3 + 960 && buf[n] == 0);
+                CHECK(memcmp(buf.data(), orig.data(), 32 * sizeof(WCHAR)) == 0);
+                CHECK(buf[32] == L'.' && buf[33] == L'.' && buf[34] == L'.');
+                CHECK(memcmp(buf.data() + 35, orig.data() + len - 960, 960 * sizeof(WCHAR)) == 0);
+            }
+        }
+        // a surrogate pair across the head's end and across the tail's start
+        int len = 2000;
+        buf.assign(len + 1, L'a');
+        buf[len] = 0;
+        buf[31] = 0xD83D; // high surrogate as the head's last unit
+        buf[32] = 0xDCC1;
+        buf[len - 961] = 0xD83D;
+        buf[len - 960] = 0xDCC1; // low surrogate as the tail's first unit
+        int n = SplShortenLongTextW(buf.data(), len);
+        CHECK(buf[30] == L'a' && buf[31] == L'.'); // the head ends before the pair
+        CHECK(buf[31 + 3] == L'a');                 // the tail starts after it
+        CHECK(n == 31 + 3 + 959 && buf[n] == 0);
+        BOOL noLone = TRUE;
+        for (int i = 0; i < n; i++) // no lone surrogate was produced
+        {
+            BOOL hi = buf[i] >= 0xD800 && buf[i] <= 0xDBFF, lo = buf[i] >= 0xDC00 && buf[i] <= 0xDFFF;
+            if (lo && !(i > 0 && buf[i - 1] >= 0xD800 && buf[i - 1] <= 0xDBFF))
+                noLone = FALSE;
+            if (hi && !(i + 1 < n && buf[i + 1] >= 0xDC00 && buf[i + 1] <= 0xDFFF))
+                noLone = FALSE;
+        }
+        CHECK(noLone);
+        CHECK(SplShortenLongTextW(NULL, 5000) == 5000);
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -4824,6 +4921,7 @@ int main()
     TestLeftovers101();
     TestFcRemote102();
     TestSameFile103();
+    TestPluginFileDlg104();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

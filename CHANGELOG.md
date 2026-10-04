@@ -53,6 +53,31 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **The plugins use the file and folder names you give them.** With a
+  name containing letters outside the system code page (a Russian or
+  Chinese name on a Czech Windows, an emoji) several plugins failed, showed
+  the name garbled, or - worse - replaced letters with look-alikes
+  (`voilà` became `voila`, fullwidth `ＡＢ` became `AB`) and **used another
+  existing file or folder without a word**. The Batch Rename plugin renamed
+  a file to `voila.txt` when told `voilà.txt` (and offered to overwrite the
+  existing `voila.txt`); a mask such as `Ж*.txt` became `?*.txt` and selected
+  other files for renaming; its manual list and history showed accented
+  names garbled. The Database Viewer's *Open* opened `voila.csv` instead of
+  `voilà.csv`; PictView's *Copy To* copied into the look-alike folder and
+  its *Save As* asked to replace the look-alike file; the FTP plugin's save
+  dialogs (logs, listings, server types) could overwrite a look-alike file
+  and failed for every name with an accented letter; the CAB plugin took the
+  next volume from a look-alike folder; Undelete opened a look-alike disk
+  image; the ZIP plugin's password and overwrite dialogs showed names
+  garbled. All of these now use the exact name. A name too long for a
+  plugin's field is now refused with Windows' "The filename or extension is
+  too long." instead of being changed; nothing is saved and the dialog stays
+  open. In the FTP plugin this also applies to a password or user name of
+  more than 100 bytes (about 50 accented letters): Connect and Close refuse
+  it and the saved password stays as it was - before, such a password was
+  saved and sent in the system code page. A long password saved by an
+  earlier version keeps working as long as it is not retyped; to change it,
+  enter one of at most 100 bytes (feature 104).
 - **Renaming or moving a file no longer deletes it when the server sees the
   new name as the same file.** Some servers treat two spellings of a name as
   one file even though Windows treats them as two, for example `café.txt`

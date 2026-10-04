@@ -538,8 +538,11 @@ BOOL GetOpenFileName(HWND parent, const char* title, const char* filter, char* b
     // fallback for paths that are not valid UTF-8
     WCHAR bufferW[MAX_PATH];
     WCHAR filterW[200];
-    if (SplU8ToW(buffer, bufferW, MAX_PATH) > 0 &&
-        MultiByteToWideChar(CP_ACP, 0, filter, -1, filterW, 200) > 0) // filter is ANSI resource text
+    // feature 104: a start value that is not UTF-8 (or too long) starts the dialog empty
+    // instead of switching to the code-page dialog below (whose result is code-page text)
+    if (SplU8ToW(buffer, bufferW, MAX_PATH) == 0)
+        bufferW[0] = 0;
+    if (MultiByteToWideChar(CP_ACP, 0, filter, -1, filterW, 200) > 0) // filter is ANSI resource text
     {
         WCHAR* s;
         for (s = filterW; *s != 0; s++) // build the double-null-separated list
@@ -582,12 +585,12 @@ BOOL GetOpenFileName(HWND parent, const char* title, const char* filter, char* b
             ret = save ? GetSaveFileNameW(&ofnW) : GetOpenFileNameW(&ofnW);
         }
         if (ret && SplWToU8(fileNameW, buffer, MAX_PATH) == 0)
-        { // UTF-8 form does not fit the caller's buffer: degrade like the A dialog did
-            if (WideCharToMultiByte(CP_ACP, 0, fileNameW, -1, buffer, MAX_PATH, NULL, NULL) == 0)
-            {
-                buffer[0] = 0;
-                ret = FALSE;
-            }
+        {   // feature 104: the UTF-8 form does not fit the caller's buffer - refused, never
+            // degraded to the code page (WideCharToMultiByte(CP_ACP, 0) is best fit: a look-alike
+            // existing .reg file was overwritten by the export)
+            buffer[0] = 0;
+            SplShowNameTooLong(parent, title);
+            ret = FALSE;
         }
         return ret;
     }

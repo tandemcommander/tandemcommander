@@ -1929,14 +1929,36 @@ CCopyToDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (LOWORD(wParam) == COPYTO_BR_ID[i])
             {
-                TCHAR path[MAX_PATH];
-                GetDlgItemText(HWindow, COPYTO_EL_ID[i], path, MAX_PATH);
-                if (SalamanderGeneral->GetTargetDirectory(HWindow, HWindow, path,
-                                                          LoadStr(IDS_SELECTTARGETDIR), path,
-                                                          FALSE, path))
+                // feature 104: the field and the folder picker as UTF-8 / UTF-16 - the plug-in
+                // service GetTargetDirectory returns the picked folder in the code page (best
+                // fit, its contract is frozen) and GetDlgItemText A read the field the same way,
+                // so a folder named outside the code page became '?' or a look-alike EXISTING
+                // folder, and Copy To copied the image there
+                char* cur = NULL;
+                HWND field = GetDlgItem(HWindow, COPYTO_EL_ID[i]);
+                int units = GetWindowTextLengthW(field) + 1;
+                WCHAR* curW = (WCHAR*)malloc(units * sizeof(WCHAR));
+                if (curW != NULL)
                 {
-                    SetDlgItemText(HWindow, COPYTO_EL_ID[i], path);
+                    curW[0] = 0;
+                    GetWindowTextW(field, curW, units);
+                    cur = SplWToU8Alloc(curW);
+                    free(curW);
                 }
+                // the caption is the field's text, the comment IDS_SELECTTARGETDIR (as before)
+                WCHAR* titleW = SplU8ToWAlloc(cur != NULL ? cur : "");
+                WCHAR* commentW = SplFileDlgDetail::CodePageToWAlloc(LoadStr(IDS_SELECTTARGETDIR));
+                char path[MAX_PATH];
+                if (SplBrowseForFolderU8(HWindow, HWindow, titleW, commentW, path, MAX_PATH, FALSE, cur))
+                {
+                    WCHAR* pathW = SplU8ToWAlloc(path);
+                    if (pathW != NULL)
+                        SetWindowTextW(field, pathW);
+                    free(pathW);
+                }
+                free(titleW);
+                free(commentW);
+                free(cur);
             }
         }
 

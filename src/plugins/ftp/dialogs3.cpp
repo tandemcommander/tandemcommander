@@ -180,7 +180,10 @@ void CConfigPageServers::OnExportServer(CServerType* serverType)
                 OFN_NOTESTFILECREATE | OFN_HIDEREADONLY;
 
     char buf[200 + MAX_PATH];
-    if (SalamanderGeneral->SafeGetSaveFileName(&ofn))
+    // feature 104: the Unicode dialog, the name as UTF-8 - SafeGetSaveFileName (code page)
+    // gave code-page bytes to the UTF-8 file calls below: every accented name failed and a
+    // best-fit look-alike ("voila" for "voil<U+00E0>") was overwritten another existing file
+    if (SplGetFileNameU8(&ofn, TRUE))
     {
         HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
@@ -255,7 +258,10 @@ void CConfigPageServers::OnImportServer()
 
         char buf[300 + MAX_PATH];
         char typeBuf[SERVERTYPE_MAX_SIZE + 101];
-        if (SalamanderGeneral->SafeGetOpenFileName(&ofn))
+        // feature 104: the Unicode dialog, the name as UTF-8 - SafeGetOpenFileName (code page)
+        // gave code-page bytes to the UTF-8 file calls below: every accented name failed and a
+        // best-fit look-alike ("voila" for "voil<U+00E0>") was read another existing file
+        if (SplGetFileNameU8(&ofn, FALSE))
         {
             HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
@@ -1350,14 +1356,15 @@ CEditServerTypeDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             BOOL change = FALSE; // TRUE = the data in the dialog were changed
             char buf[AUTODETCOND_MAX_SIZE];
             CTransferInfo ti(HWindow, ttDataFromWindow);
+            ti.Quiet = TRUE; // feature 104: only a comparison - a text too long for the buffer is a change, no message
             ti.EditLine(IDE_AUTODETECTCOND, buf, AUTODETCOND_MAX_SIZE);
-            if (strcmp(buf, HandleNULLStr(ServerType->AutodetectCond)) != 0)
+            if (!ti.IsGood() || strcmp(buf, HandleNULLStr(ServerType->AutodetectCond)) != 0)
                 change = TRUE;
             else
             {
                 char buf2[PARSER_MAX_SIZE];
                 ti.EditLine(IDE_PARSINGRULES, buf2, PARSER_MAX_SIZE);
-                if (strcmp(buf2, HandleNULLStr(ServerType->RulesForParsing)) != 0)
+                if (!ti.IsGood() || strcmp(buf2, HandleNULLStr(ServerType->RulesForParsing)) != 0)
                     change = TRUE;
                 else
                 {

@@ -25,6 +25,7 @@
 #include "lang\lang.rh"
 #include "chicon.h"
 #include "common.h"
+#include "splfiledlg.h" // feature 104: the Unicode open dialog
 #include "add_del.h"
 #include "dialogs.h"
 
@@ -58,7 +59,6 @@ LRESULT CALLBACK TextControlProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     {
         RECT r;
         PAINTSTRUCT ps;
-        char txt[MAX_PATH];
 
         GetClientRect(hWnd, &r);
         BeginPaint(hWnd, &ps);
@@ -71,13 +71,14 @@ LRESULT CALLBACK TextControlProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         UINT format = DT_SINGLELINE | DT_BOTTOM | DT_NOPREFIX;
         DWORD color = GetSysColor(COLOR_BTNTEXT);
         HFONT hCurrentFont = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0);
-        int ID = GetDlgCtrlID(hWnd);
         format |= DT_PATH_ELLIPSIS;
         HFONT hOldFont = (HFONT)SelectObject(ps.hdc, hCurrentFont);
         SetTextColor(ps.hdc, color);
         int prevBkMode = SetBkMode(ps.hdc, TRANSPARENT);
-        int len = GetWindowText(hWnd, txt, MAX_PATH);
-        DrawText(ps.hdc, txt, lstrlen(txt), &r, format);
+        // feature 104: the label (a file name or path) is read and drawn as UTF-16 - the
+        // former GetWindowText A + DrawText A showed '?' or a best-fit look-alike for every
+        // character outside the code page and cut the text at 259 bytes
+        SplDrawWindowTextW(hWnd, ps.hdc, &r, format);
         SetBkMode(ps.hdc, prevBkMode);
         SelectObject(ps.hdc, hOldFont);
         EndPaint(hWnd, &ps);
@@ -87,7 +88,7 @@ LRESULT CALLBACK TextControlProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         SetCursor(LoadCursor(NULL, IDC_HAND));
         return FALSE;
     }
-    return CallWindowProc(OrigTextControlProc, hWnd, uMsg, wParam, lParam);
+    return CallWindowProcW(OrigTextControlProc, hWnd, uMsg, wParam, lParam); // feature 104: a Unicode subclass
 }
 
 LRESULT CALLBACK SmallIconProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -138,10 +139,13 @@ void CDlgRoot::CenterDlgToParent()
 void CDlgRoot::SubClassStatic(DWORD wID, bool subclass)
 {
     CALL_STACK_MESSAGE3("CDlgRoot::SubClassStatic(0x%X, %d)", wID, subclass);
+    // feature 104: subclassed through the W entry points, so the label stays a Unicode
+    // window - a code-page subclass (SetWindowLongPtrA) made it store every text set into it
+    // through the code page ('?', best-fit look-alikes), even text set with SetWindowTextW
     if (subclass)
-        OrigTextControlProc = (WNDPROC)SetWindowLongPtr(GetDlgItem(Dlg, wID), GWLP_WNDPROC, (LONG_PTR)TextControlProc);
+        OrigTextControlProc = (WNDPROC)SetWindowLongPtrW(GetDlgItem(Dlg, wID), GWLP_WNDPROC, (LONG_PTR)TextControlProc);
     else
-        SetWindowLongPtr(GetDlgItem(Dlg, wID), GWLP_WNDPROC, (LONG_PTR)OrigTextControlProc);
+        SetWindowLongPtrW(GetDlgItem(Dlg, wID), GWLP_WNDPROC, (LONG_PTR)OrigTextControlProc);
 }
 
 void CDlgRoot::SubClassSmallIcon(DWORD wID, bool subclass)
@@ -1137,7 +1141,10 @@ BOOL CPasswordDialog::OnInit(WPARAM wParam, LPARAM lParam)
     if (Lock)
         SendDlgItemMessage(Dlg, IDC_LOCK, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)Lock);
     SubClassStatic(IDC_FILE, true);
-    SendDlgItemMessage(Dlg, IDC_FILE, WM_SETTEXT, 0, (LPARAM)File);
+    // feature 104: 'File' is the item's UTF-8 name - set it wide (the ANSI WM_SETTEXT drew its
+    // bytes as code-page mojibake); the code-page call stays for text that is not UTF-8
+    if (!SetDlgItemTextU8(Dlg, IDC_FILE, File))
+        SendDlgItemMessage(Dlg, IDC_FILE, WM_SETTEXT, 0, (LPARAM)File);
     SendDlgItemMessage(Dlg, IDC_PASSWORD, EM_SETLIMITTEXT, MAX_PASSWORD - 1, 0);
     CenterDlgToParent();
     return TRUE;
@@ -1246,7 +1253,9 @@ BOOL CLowDiskSpaceDialog::OnInit(WPARAM wParam, LPARAM lParam)
     }
     SubClassStatic(IDC_PATH, true);
     SendDlgItemMessage(Dlg, IDC_TEXT, WM_SETTEXT, 0, (LPARAM)Text);
-    SendDlgItemMessage(Dlg, IDC_PATH, WM_SETTEXT, 0, (LPARAM)Path);
+    // feature 104: 'Path' is the archive's UTF-8 path - set it wide, see CPasswordDialog::OnInit
+    if (!SetDlgItemTextU8(Dlg, IDC_PATH, Path))
+        SendDlgItemMessage(Dlg, IDC_PATH, WM_SETTEXT, 0, (LPARAM)Path);
     FormatNumber(FreeSpace, buf, LoadStr(IDS_BYTES));
     SendDlgItemMessage(Dlg, IDC_FREESPACE, WM_SETTEXT, 0, (LPARAM)buf);
     if (VolumeSize != -1)
@@ -1445,12 +1454,13 @@ BOOL CChangeDiskDialog2::OnBrowse(WORD wNotifyCode, WORD wID, HWND hwndCtl)
     ofn.lpstrCustomFilter = NULL;
     ofn.nMaxCustFilter = 0;
     ofn.nFilterIndex = 1;
-    // the common file dialog is ANSI -> convert the name at this boundary
-    char fileNameA[MAX_PATH];
-    if (!U8ToDlgA(FileName, fileNameA, MAX_PATH))
-        *fileNameA = 0;
-    ofn.lpstrFile = fileNameA;
-    ofn.nMaxFile = MAX_PATH;
+    // feature 104: the Unicode open dialog with the UTF-8 name (SplGetFileNameU8) - the code-page
+    // dialog (SafeGetOpenFileName) gave the picked volume's name with best fit, so a name outside
+    // the code page became '?' or a look-alike EXISTING archive, which was then read as the volume
+    char fileNameU8[U8_MAX_NAME + MAX_PATH];
+    lstrcpyn(fileNameU8, FileName, (int)sizeof(fileNameU8));
+    ofn.lpstrFile = fileNameU8;
+    ofn.nMaxFile = (DWORD)sizeof(fileNameU8);
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
     ofn.lpstrInitialDir = NULL;
@@ -1463,12 +1473,8 @@ BOOL CChangeDiskDialog2::OnBrowse(WORD wNotifyCode, WORD wID, HWND hwndCtl)
     ofn.lpfnHook = NULL;
     ofn.lpTemplateName = NULL;
 
-    if (SalamanderGeneral->SafeGetOpenFileName(&ofn))
-    {
-        char fileNameU8[U8_MAX_NAME + MAX_PATH];
-        if (DlgAToU8(fileNameA, fileNameU8, (int)sizeof(fileNameU8)))
-            SetDlgItemTextU8(Dlg, IDC_FILENAME, fileNameU8);
-    }
+    if (SplGetFileNameU8(&ofn, FALSE))
+        SetDlgItemTextU8(Dlg, IDC_FILENAME, fileNameU8);
     /*
   else
   {
@@ -1675,7 +1681,6 @@ BOOL CChangeDiskDialog3::OnBrowse(WORD wNotifyCode, WORD wID, HWND hwndCtl)
     OPENFILENAME ofn;
     memset(&ofn, 0, sizeof(ofn));
     char buf[128];
-    char buf2[MAX_PATH + 1]; // ANSI - the common file dialog is ANSI
     char nameU8[U8_MAX_NAME + MAX_PATH];
 
     ofn.lStructSize = sizeof(OPENFILENAME);
@@ -1689,11 +1694,11 @@ BOOL CChangeDiskDialog3::OnBrowse(WORD wNotifyCode, WORD wID, HWND hwndCtl)
     ofn.lpstrCustomFilter = NULL;
     ofn.nMaxCustFilter = 0;
     ofn.nFilterIndex = 1;
-    GetDlgItemTextU8(Dlg, IDC_FILENAME, nameU8, (int)sizeof(nameU8));
-    if (!U8ToDlgA(nameU8, buf2, MAX_PATH))
-        *buf2 = 0;
-    ofn.lpstrFile = buf2;
-    ofn.nMaxFile = MAX_PATH;
+    // feature 104: the Unicode open dialog with the UTF-8 name, see CChangeDiskDialog2::OnBrowse
+    if (GetDlgItemTextU8(Dlg, IDC_FILENAME, nameU8, (int)sizeof(nameU8)) <= 0)
+        *nameU8 = 0;
+    ofn.lpstrFile = nameU8;
+    ofn.nMaxFile = (DWORD)sizeof(nameU8);
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
     ofn.lpstrInitialDir = NULL;
@@ -1706,11 +1711,8 @@ BOOL CChangeDiskDialog3::OnBrowse(WORD wNotifyCode, WORD wID, HWND hwndCtl)
     ofn.lpfnHook = NULL;
     ofn.lpTemplateName = NULL;
 
-    if (SalamanderGeneral->SafeGetOpenFileName(&ofn))
-    {
-        if (DlgAToU8(buf2, nameU8, (int)sizeof(nameU8)))
-            SetDlgItemTextU8(Dlg, IDC_FILENAME, nameU8);
-    }
+    if (SplGetFileNameU8(&ofn, FALSE))
+        SetDlgItemTextU8(Dlg, IDC_FILENAME, nameU8);
     /*
   else
   {
@@ -1843,16 +1845,13 @@ BOOL COverwriteDialog::OnInit(WPARAM wParam, LPARAM lParam)
     CALL_STACK_MESSAGE3("COverwriteDialog::OnInit(0x%IX, 0x%IX)", wParam, lParam);
     SubClassStatic(IDC_FILE, true);
     // feature 068 (F-P5-08): File is a UTF-8 path, so the ANSI WM_SETTEXT drew
-    // its bytes as legacy text (mojibake). The plugin's own helper converts -
-    // but it is all-or-nothing (SplU8ToWAlloc is a strict UTF-8 decoder with no
-    // WTF-8 extension), so on failure we MUST fall back to the legacy call
+    // its bytes as legacy text (mojibake). The plugin's own helper converts (WTF-8
+    // since feature 089, so a name with an unpaired surrogate converts too); on
+    // failure - text that is not UTF-8 - we MUST fall back to the legacy call
     // rather than leave this control empty: it names the file in a destructive
-    // overwrite confirmation, and feature 066 ships names with unpaired
-    // surrogates that the strict decoder rejects.
-    // NOTE: the text still cannot show characters outside the system code page
-    // - TextControlProc (see SubClassStatic) paints with the ANSI GetWindowText
-    // and DrawText, which caps the result at CP_ACP whatever we store. Lifting
-    // that belongs to the deferred group B-1 work.
+    // overwrite confirmation.
+    // feature 104: TextControlProc (see SubClassStatic) now keeps the label a
+    // Unicode window and paints it wide, so the name shows every character.
     if (!SetDlgItemTextU8(Dlg, IDC_FILE, File))
         SendDlgItemMessage(Dlg, IDC_FILE, WM_SETTEXT, 0, (LPARAM)File);
     // feature 069 (D02): 'Attr' is UTF-8 now (GetInfo takes the date and time

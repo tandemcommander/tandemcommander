@@ -14,11 +14,15 @@ char* HandleNULLStr(char* str)
 
 void GetMyDocumentsPath(char* initDir)
 {
+    // feature 104: UTF-8 (the start folder of the Unicode file dialogs, SplGetFileNameU8);
+    // SHGetPathFromIDList A gave the code page ('?' for a user name outside it); 'initDir' is
+    // MAX_PATH bytes - a longer UTF-8 form leaves it empty (the dialog's own default folder)
     initDir[0] = 0;
     ITEMIDLIST* pidl = NULL;
     if (SHGetSpecialFolderLocation(NULL, CSIDL_PERSONAL, &pidl) == NOERROR)
     {
-        if (!SHGetPathFromIDList(pidl, initDir))
+        WCHAR pathW[MAX_PATH];
+        if (!SHGetPathFromIDListW(pidl, pathW) || SplWToU8(pathW, initDir, MAX_PATH) == 0)
             initDir[0] = 0;
         IMalloc* alloc;
         if (SUCCEEDED(CoGetMalloc(1, &alloc)))

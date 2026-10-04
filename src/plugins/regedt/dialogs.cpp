@@ -271,6 +271,14 @@ void CTransferInfoEx::EditLineW(int ctrlID, LPWSTR buffer, DWORD bufferSize, BOO
 BOOL CDialogEx::ValidateData()
 {
     CALL_STACK_MESSAGE1("CDialogEx::ValidateData()");
+    // feature 104: a field whose text does not fit its buffer is refused before anything is
+    // validated or transferred (winliblt's CDialog::ValidateData does the same)
+    HWND tooLong = WinLibFindTooLongText(HWindow);
+    if (tooLong != NULL)
+    {
+        WinLibRefuseTooLongText(HWindow, tooLong);
+        return FALSE;
+    }
     CTransferInfoEx ti(HWindow, ttDataFromWindow);
     Validate(ti);
     if (!ti.IsGood())
@@ -1048,7 +1056,7 @@ CConfigDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     pathW[0] = 0;
                     GetDlgItemTextW(HWindow, IDE_COMMAND, pathW, MAX_PATH);
                     if (SplWToU8(pathW, path, MAX_PATH) == 0)
-                        GetDlgItemText(HWindow, IDE_COMMAND, path, MAX_PATH);
+                        path[0] = 0; // feature 104: no code-page re-read (best fit); the dialog starts empty
                     if (GetOpenFileName(HWindow, NULL, LoadStr(IDS_EXEFILES), path))
                     {
                         if (SplU8ToW(path, pathW, MAX_PATH) > 0)
@@ -1266,7 +1274,7 @@ CExportDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             pathW[0] = 0;
             GetDlgItemTextW(HWindow, IDE_FILE, pathW, MAX_PATH);
             if (SplWToU8(pathW, path, MAX_PATH) == 0)
-                GetDlgItemText(HWindow, IDE_FILE, path, MAX_PATH);
+                path[0] = 0; // feature 104: no code-page re-read (best fit); the dialog starts empty
             SG->SalPathRemoveBackslash(path);
             if (GetOpenFileName(HWindow, NULL, LoadStr(IDS_REGFILES), path, TRUE))
             {

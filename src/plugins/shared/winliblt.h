@@ -46,6 +46,21 @@ class CSalamanderGeneralAbstract;
 // specs/036-plugin-dark-theme/contracts/winliblt-theming.md
 void SetupWinLibTheme(CSalamanderGeneralAbstract* salamander);
 
+// feature 104: a text field remembers the size (in BYTES, terminator included) of the buffer
+// its text goes to - CTransferInfo::EditLine records it when it fills the field; code that
+// fills a field another way can call WinLibSetTextLimit. Before a dialog's (or a property
+// page's) data are validated and transferred, every field whose text does not fit as UTF-8
+// is refused: the system's "too long" message, the field focused, nothing transferred - so a
+// refused text is never stored as an empty value or acted upon.
+void WinLibSetTextLimit(HWND ctrl, DWORD bytes);
+// TRUE when 'ctrl' has no recorded size or its text fits it as UTF-8 (WTF-8)
+BOOL WinLibTextFits(HWND ctrl);
+// the first child of 'dlg' whose text does not fit its recorded size, or NULL
+HWND WinLibFindTooLongText(HWND dlg);
+// the "too long" message (Windows' text for ERROR_FILENAME_EXCED_RANGE, the dialog's caption)
+// and the focus on 'ctrl' (the combo box for a combo box's edit)
+void WinLibRefuseTooLongText(HWND dlg, HWND ctrl);
+
 // konstanty pro stringy WinLibu (jen interni pouziti ve WinLibu)
 enum CWLS
 {
@@ -227,12 +242,22 @@ class CTransferInfo
 public:
     int FailCtrlID; // INT_MAX - vse v poradku, jinak ID controlu s chybou
     CTransferType Type;
+    // feature 104: TRUE = EditLine refuses a text whose UTF-8 form does not fit without
+    // showing the "too long" message (a transfer for a live preview, repeated on every
+    // change); the refusal itself (ErrorOn, empty buffer) is the same
+    BOOL Quiet;
+    // feature 104: TRUE after EditLine refused a text as too long; the following EditLine reads
+    // still read their fields (instead of skipping them, which left a caller's buffer as it was -
+    // uninitialized for a local one), so the transfer goes on with defined values and fails
+    BOOL TooLongRefused;
 
     CTransferInfo(HWND hDialog, CTransferType type)
     {
         HDialog = hDialog;
         FailCtrlID = INT_MAX;
         Type = type;
+        Quiet = FALSE;
+        TooLongRefused = FALSE;
     }
 
     BOOL IsGood() { return FailCtrlID == INT_MAX; }

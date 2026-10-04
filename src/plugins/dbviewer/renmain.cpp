@@ -7,6 +7,7 @@
 #include "dbviewer.rh2"
 #include "lang\lang.rh"
 #include "data.h"
+#include "splfiledlg.h" // feature 104: the Unicode open dialog
 #include "renderer.h"
 #include "dialogs.h"
 #include "dbviewer.h"
@@ -231,7 +232,11 @@ void CRendererWindow::OnFileOpen()
     ofn.nFilterIndex = 1;
     ofn.lpstrInitialDir = NULL;
     ofn.Flags = OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-    if (SalGeneral->SafeGetOpenFileName(&ofn))
+    // feature 104: the Unicode open dialog, the name comes back as UTF-8 - the core's
+    // SafeGetOpenFileName (code page) converted the picked name with best fit, so a name
+    // outside the code page opened a look-alike existing file ("voila.csv" for
+    // "voil<U+00E0>.csv") or failed with '?'
+    if (SplGetFileNameU8(&ofn, FALSE))
     {
         EnumFilesSourceUID = -1;
         OpenFile(file, TRUE);

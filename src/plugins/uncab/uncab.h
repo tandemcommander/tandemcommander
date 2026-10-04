@@ -225,12 +225,15 @@ void GetInfo(char* buffer, FILETIME* lastWrite, unsigned size);
 BOOL DeleteFileU8(const char* name);
 BOOL SetFileAttributesU8(const char* name, DWORD attrs);
 
-// the plugin's own dialogs are still created with the -A API, so their controls
-// hold text in the local ANSI code page; convert on the way in and out so that
-// everything outside the dialogs stays UTF-8 (characters the ANSI code page
-// cannot represent become '?' - a display-only limitation of the -A dialogs)
-void U8ToAcp(const char* u8, char* buf, int bufSize);
-void AcpToU8(const char* acp, char* buf, int bufSize);
+// feature 104: the plugin's dialogs are created with the -A API, but their controls are
+// Unicode windows (comctl32 6), so names cross them as UTF-16 - the former round trip
+// through the code page (U8ToAcp/AcpToU8) showed '?' and read back best-fit look-alikes.
+// SetDlgItemTextU8OrAcp: UTF-8 (WTF-8) text set wide; text that is not UTF-8 is set as
+// code-page text. GetDlgItemTextU8: the control's text as UTF-8 into 'buf'; returns the
+// bytes written including the terminator, 0 when it does not fit (never cut) - 'buf' is
+// then empty.
+void SetDlgItemTextU8OrAcp(HWND dlg, int id, const char* text);
+int GetDlgItemTextU8(HWND dlg, int id, char* buf, int bufSize);
 
 #define DUMP_MEM_OBJECTS
 

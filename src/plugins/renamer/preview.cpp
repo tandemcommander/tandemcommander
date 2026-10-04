@@ -199,12 +199,12 @@ char* CPreviewWindow::GetItemText(int index, int subItem)
                 //   }
                 //   else
                 //   {
-                *LPWORD(NewNameCache) = MAX_PATH;
-                int l = (int)SendMessage(RenamerDialog->ManualEdit->HWindow, EM_GETLINE,
-                                         index, (LPARAM)NewNameCache);
-                NewNameCache[l] = 0; // just to be sure
-
-                NewNameValid = ValidateFileName(NewNameCache, l, RenamerOptions.Spec, NULL, NULL);
+                // feature 104: the line as UTF-8 (see CRenamerDialog::GetManualModeNewName)
+                int l = GetEditLineU8(RenamerDialog->ManualEdit->HWindow, index, NewNameCache, MAX_PATH);
+                if (l == -1) // the line's UTF-8 form does not fit
+                    SalPrintf(NewNameCache, MAX_PATH, LoadStr(IDS_GENERICERR), LoadStr(IDS_EXP_SMALLBUFFER));
+                else // a missing line (fewer lines than files) is an empty name, as before
+                    NewNameValid = ValidateFileName(NewNameCache, l < 0 ? 0 : l, RenamerOptions.Spec, NULL, NULL);
                 //  }
                 // }
             }

@@ -1311,3 +1311,49 @@ plugin architecture preservation, UI consistency.
   (it deleted the file before - second review). No new string, interface 107. Probe 62/0
   (pre-103 55/7: six losses); saltests 13,326 -> 13,438. Review: 4 SHOULD-FIX fixed, re-review ACCEPT. Records:
   `specs/103-same-file-delete-guard/fix-log.md`.
+- 104-plugin-unicode-names: **the plug-ins use the names you give them** (NEXT-WORK item 5,
+  sub-item 5, the 102 class in the other plug-ins). Measured first; the backlog's list was
+  mostly wrong - the eight "code-page subclasses" carry no names (except ZIP's path label,
+  display), the `DragQueryFile` A calls only count, the `CreateFileA` fallbacks are unreachable,
+  `salpvenv.exe` is not built, shipped or reachable since 006. The real defects, all
+  reproduced on the build before (`Debug_x64_pre104`): the **Renamer** attached winliblt's
+  code-page `AttachToWindow` to its Mask / New name / Search / Replace edits and manual list
+  and ran code-page loops - a new name `voilà.txt` became `voila.txt` (with "overwrite?" for the
+  existing one), `Ж*.txt` became the wildcard `?*.txt` (other files selected); and the
+  plug-in-facing **`SafeGetOpenFileName` / `SafeGetSaveFileName` / `GetTargetDirectory` are code
+  page by contract** (best fit), so the Database Viewer opened `voila.csv`, PictView copied into
+  `voila\` and its Save As offered to replace `voila.bmp`, the FTP save dialogs overwrote
+  look-alikes and failed for every accented name, the CAB plug-in took the next volumes from
+  `voila\`, Undelete opened `voila.ima`.
+  - **Helpers** (`src/plugins/shared/splfiledlg.h`, header-only, no interface change):
+    `SplGetFileNameU8` (an `OPENFILENAMEA` whose *names* are UTF-8 and *texts* code page, run
+    as `Get{Open,Save}FileNameW`, the core's retry kept, offsets in bytes; no hooks) and
+    `SplBrowseForFolderU8` (`SHBrowseForFolderW`); `SplShowNameTooLong` = Windows' own text for
+    `ERROR_FILENAME_EXCED_RANGE` (no new string). **New plug-in code that asks for a file or
+    folder MUST use them, never the core services.** `splunicode.h` `SplDrawWindowTextW` paints
+    a path label wide (long text shortened first - 102's `DT_PATH_ELLIPSIS` lesson).
+  - **winliblt `EditLine`**: WTF-8 both ways; a text whose UTF-8 form does not fit is
+    **refused** - it was re-read through the code page (best fit). The core cuts at a whole
+    character (093 D4); plug-in buffers are 260-byte names. **A refusal must never be stored as
+    an empty value or acted upon** (review B1: the FTP Connect dialog stored an EMPTY password):
+    `EditLine` records each field's buffer size (`WinLibSetTextLimit`) and
+    `CDialog`/`CPropSheetPage::ValidateData` refuse a field that does not fit before Validate -
+    one message, nothing transferred; code that reads a field outside that path checks
+    `WinLibTextFits` (FTP Connect's kill-focus handlers). Audit of every caller in fix-log T010.
+    The dbviewer CSV separator (one code-page byte) no longer goes through `EditLine`.
+  - Renamer: `AttachToWindowKeepKind`, wide loops, the menu bar still fed code-page characters
+    (plug-in-facing `IsMenuBarMessage`), mask/history/manual list/filter/editor UTF-8. PictView
+    Save As: `GetSaveFileNameW` with its hook (the hook reads a code-page copy of the filter -
+    only `nFilterIndex`/`lCustData` from the W struct). ZIP and CAB labels: Unicode subclass.
+    Regedt Find loop wide, its editor launch ported from the Renamer. FTP/SFTP field readers
+    refuse instead of re-reading. Disabled plug-ins listed, unchanged.
+  - **Found, not fixed** (NEXT-WORK item 5, sub-item 5 queue): **PictView Save As onto an
+    existing file deletes it, then fails** (WIC cannot encode, every release since 006 - data
+    loss, first); Undelete's FAT `Replace0xE5` garbles CJK names on restore; FTP password
+    fields keep a code-page subclass; checksum lists in the code page.
+  - Probe `probe/plugnames_probe.ps1` (hidden desktop, decoys, a local FTP log server):
+    50 PASS / 0 FAIL / 6 NOT DRIVEN (before: 47 rows showing the old behaviour). saltests
+    13,438 -> 13,487. Regressions 093, 094 ZIP + SFTP, 099, 102, 103 as baseline. Review 1:
+    REJECT (B1), fixed; re-review ACCEPT (S1: the pre-check skips read-only, disabled and
+    hidden fields and only UTF-8 values get a size; NIT 1: an unchanged long password saved by
+    0.1.8 keeps working). Records: `specs/104-plugin-unicode-names/fix-log.md`.

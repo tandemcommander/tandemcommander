@@ -519,18 +519,12 @@ int CRenamerDialog::GetManualModeNewName(CSourceFile* file, int index, char* new
     }
     else
     {
-        int l = (int)SendMessage(ManualEdit->HWindow, EM_LINELENGTH, charIndex, 0);
-        if (l >= MAX_PATH - pathLen)
-        {
-            return -1;
-        }
-        else
-        {
-            *LPWORD(newName) = MAX_PATH - pathLen;
-            int l2 = (int)SendMessage(ManualEdit->HWindow, EM_GETLINE, index, (LPARAM)newName);
-            newName[l2] = 0; // just to be sure
-        }
-        return l;
+        // feature 104: the line is read as UTF-16 and stored as UTF-8 (the names' encoding);
+        // EM_GETLINE A gave the code-page form of the edit's text - '?' or a best-fit look-alike
+        // for a typed name, the raw bytes of an untouched one. The limit is in BYTES now: a
+        // name whose UTF-8 form does not fit is the "too small buffer" error, never cut.
+        int l = GetEditLineU8(ManualEdit->HWindow, index, newName, MAX_PATH - pathLen);
+        return l == -2 ? 0 : l; // a missing line: an empty name (cannot happen - Validate counts the lines)
     }
 }
 

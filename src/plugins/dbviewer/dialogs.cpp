@@ -241,16 +241,29 @@ void CCSVOptionsDialog::MyTransfer(CTransferInfo& ti, CCSVConfig* cfg)
     ti.RadioButton(IDC_CSV_DOUBLE, 1, cfg->TextQualifier);
     ti.RadioButton(IDC_CSV_QUOTES, 2, cfg->TextQualifier);
     ti.RadioButton(IDC_CSV_NONE, 3, cfg->TextQualifier);
-    char buff[2];
-    buff[0] = ' ';
-    if (ti.Type == ttDataToWindow)
+    // feature 104: the separator is ONE BYTE of the file's code page (the CSV parser compares
+    // bytes), so the field is set and read as code-page text - not through EditLine, which reads
+    // UTF-8 and would refuse a character outside ASCII in its 2-byte buffer (before 104 its
+    // code-page fallback produced this byte)
+    HWND sepEdit;
+    if (ti.GetControl(sepEdit, IDE_CSV_OTHER))
     {
-        buff[0] = cfg->ValueSeparatorChar;
-        buff[1] = 0;
+        char buff[2];
+        if (ti.Type == ttDataToWindow)
+        {
+            buff[0] = cfg->ValueSeparatorChar;
+            buff[1] = 0;
+            SendMessageA(sepEdit, EM_LIMITTEXT, 1, 0);
+            SendMessageA(sepEdit, WM_SETTEXT, 0, (LPARAM)buff);
+            SendMessageA(sepEdit, EM_SETSEL, 0, -1); // as EditLine did
+        }
+        else
+        {
+            buff[0] = 0;
+            SendMessageA(sepEdit, WM_GETTEXT, 2, (LPARAM)buff);
+            cfg->ValueSeparatorChar = buff[0]; // if the string is empty, this becomes '\0'
+        }
     }
-    ti.EditLine(IDE_CSV_OTHER, buff, 2);
-    if (ti.Type == ttDataFromWindow)
-        cfg->ValueSeparatorChar = buff[0]; // if the string is empty, this becomes '\0'
 
     ti.RadioButton(IDC_CSV_AS_FR, 0, cfg->FirstRowAsName);
     ti.RadioButton(IDC_CSV_ASHEADER, 1, cfg->FirstRowAsName);

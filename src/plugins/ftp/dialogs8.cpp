@@ -18,6 +18,7 @@ void HistoryComboBox(HWND hWindow, CTransferInfo& ti, int ctrlID, char* Text,
         {
             SendMessage(hwnd, CB_RESETCONTENT, 0, 0);
             SendMessage(hwnd, CB_LIMITTEXT, textLen - 1, 0);
+            WinLibSetTextLimit(hwnd, textLen); // feature 104: refused before the transfer when it does not fit
             WCHAR* textW = SplU8ToWAlloc(Text); // feature 010: values may contain UTF-8 paths
             if (textW != NULL)
             {
@@ -29,19 +30,33 @@ void HistoryComboBox(HWND hWindow, CTransferInfo& ti, int ctrlID, char* Text,
         }
         else
         {
-            // feature 010: read wide and store UTF-8; fall back to the A path on failure
+            // feature 010: read wide and store UTF-8
+            // feature 104: a text whose UTF-8 form does not fit 'textLen' bytes is REFUSED (the
+            // system's "too long" message, the field focused, nothing stored) - the former
+            // code-page re-read converted it with best fit, so a remote path or a command could
+            // name another file ("voila" for "voil<U+00E0>"); the A read stays only for lack of memory
             BOOL done = FALSE;
             WCHAR* textW = (WCHAR*)malloc(textLen * sizeof(WCHAR));
             if (textW != NULL)
             {
+                textW[0] = 0;
                 SendMessageW(hwnd, WM_GETTEXT, textLen, (LPARAM)textW);
                 if (SplWToU8(textW, Text, textLen) > 0)
                 {
                     SendMessage(hwnd, CB_RESETCONTENT, 0, 0);
                     SendMessage(hwnd, CB_LIMITTEXT, textLen - 1, 0);
                     SendMessageW(hwnd, WM_SETTEXT, 0, (LPARAM)textW);
-                    done = TRUE;
                 }
+                else
+                {
+                    // refused: the field keeps its text and its list (no refill below)
+                    Text[0] = 0;
+                    ti.ErrorOn(ctrlID);
+                    free(textW);
+                    SplShowNameTooLong(hWindow, NULL);
+                    return;
+                }
+                done = TRUE;
                 free(textW);
             }
             if (!done)

@@ -331,3 +331,49 @@ inline BOOL SplSetWindowTitleW(HWND hWnd, const WCHAR* text)
         DefWindowProcW(hWnd, WM_SETTEXT, 0, (LPARAM)text);
     return ret;
 }
+
+// feature 104: shortens a text of 'len' units (terminated, in place) that is longer than 1,024
+// units to its first 32 units + "..." + its last 960 units, never between the halves of a
+// surrogate pair; returns the new length (the old one when nothing was done). For a path drawn
+// with DT_PATH_ELLIPSIS, whose cost grows with the square of the length (feature 102: 28 s for
+// 30,000 units): the ellipsis then fits the shortened text as for any short name.
+inline int SplShortenLongTextW(WCHAR* text, int len)
+{
+    const int head = 32, tail = 960;
+    if (text == NULL || len <= 1024)
+        return len;
+    int h = head;
+    if (text[h - 1] >= 0xD800 && text[h - 1] <= 0xDBFF) // do not end the head with a high surrogate
+        h--;
+    int t = len - tail;
+    if (text[t] >= 0xDC00 && text[t] <= 0xDFFF) // do not start the tail with a low surrogate
+        t++;
+    text[h] = L'.';
+    text[h + 1] = L'.';
+    text[h + 2] = L'.';
+    memmove(text + h + 3, text + t, (len - t + 1) * sizeof(WCHAR));
+    return h + 3 + (len - t);
+}
+
+// feature 104: draws the text of window 'hWnd' (a static label that shows a file name or a
+// path) into 'hdc' as UTF-16, so it keeps characters outside the system code page. The ZIP and
+// CAB plug-ins paint such labels themselves with DT_PATH_ELLIPSIS; they read the text with
+// GetWindowTextA, which gives '?' or a best-fit look-alike ("voila" for "voil<U+00E0>"), and cut
+// it at 259 bytes. A long text is shortened first (SplShortenLongTextW). Returns DrawTextW's result.
+inline int SplDrawWindowTextW(HWND hWnd, HDC hdc, RECT* r, UINT format)
+{
+    int len = GetWindowTextLengthW(hWnd);
+    if (len < 0)
+        len = 0;
+    WCHAR stackBuf[1100];
+    WCHAR* text = len + 1 <= (int)(sizeof(stackBuf) / sizeof(stackBuf[0])) ? stackBuf : (WCHAR*)malloc((len + 1) * sizeof(WCHAR));
+    if (text == NULL)
+        return 0;
+    text[0] = 0;
+    len = GetWindowTextW(hWnd, text, len + 1);
+    len = SplShortenLongTextW(text, len);
+    int ret = DrawTextW(hdc, text, len, r, format);
+    if (text != stackBuf)
+        free(text);
+    return ret;
+}

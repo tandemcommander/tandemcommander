@@ -739,11 +739,15 @@ BOOL CRenamerDialog::Init()
     ManualEdit = new CNotifyEdit();
     if (!NewName || !SearchFor || !ReplaceWith || !ManualEdit)
         return FALSE;
-    MaskEdit->AttachToWindow(GetWindow(GetDlgItem(HWindow, IDC_MASK), GW_CHILD));
-    NewName->AttachToWindow(GetWindow(GetDlgItem(HWindow, IDC_NEWNAME), GW_CHILD));
-    SearchFor->AttachToWindow(GetWindow(GetDlgItem(HWindow, IDC_SEARCH), GW_CHILD));
-    ReplaceWith->AttachToWindow(GetWindow(GetDlgItem(HWindow, IDC_REPLACE), GW_CHILD));
-    ManualEdit->AttachToWindow(GetDlgItem(HWindow, IDE_MANUAL));
+    // feature 104: attached so that the edits stay Unicode windows - the code-page attach
+    // (AttachToWindow) made every text set into them or read from them pass through the code
+    // page: a new name, mask or search text outside it became '?' or a best-fit look-alike
+    // ("voila" for "voil<U+00E0>"), and the files were renamed to that look-alike
+    MaskEdit->AttachToWindowKeepKind(GetWindow(GetDlgItem(HWindow, IDC_MASK), GW_CHILD));
+    NewName->AttachToWindowKeepKind(GetWindow(GetDlgItem(HWindow, IDC_NEWNAME), GW_CHILD));
+    SearchFor->AttachToWindowKeepKind(GetWindow(GetDlgItem(HWindow, IDC_SEARCH), GW_CHILD));
+    ReplaceWith->AttachToWindowKeepKind(GetWindow(GetDlgItem(HWindow, IDC_REPLACE), GW_CHILD));
+    ManualEdit->AttachToWindowKeepKind(GetDlgItem(HWindow, IDE_MANUAL));
 
     // list view construction
     Preview = new CPreviewWindow(this);
@@ -1173,7 +1177,17 @@ void CRenamerDialog::ReloadSourceFiles()
     BOOL subdirs =
         SendDlgItemMessage(HWindow, IDC_SUBDIRS, BM_GETCHECK, 0, 0) == BST_CHECKED;
 
-    if (!GetDlgItemText(HWindow, IDC_MASK, mask, MAX_GROUPMASK))
+    // feature 104: the mask is read as UTF-16 and used as UTF-8 like the names it is matched
+    // against - GetDlgItemText A turned a character outside the code page into '?', which is a
+    // WILDCARD in a mask ("<U+0444>*.jpg" became "?*.jpg": other files were selected for renaming),
+    // and a best-fit look-alike selected the look-alike's files. A mask that does not fit
+    // selects nothing, as an empty one does.
+    mask[0] = 0;
+    char* maskU8 = GetWindowTextU8Alloc(GetDlgItem(HWindow, IDC_MASK));
+    if (maskU8 != NULL && strlen(maskU8) < MAX_GROUPMASK)
+        strcpy(mask, maskU8);
+    free(maskU8);
+    if (mask[0] == 0)
     {
         Preview->SetItemCount(0, 0, 2);
         SetDlgItemText(HWindow, IDS_COUNT, "");
@@ -1229,12 +1243,12 @@ void CRenamerDialog::ReloadSourceFiles()
             }
         }
         MSG msg;
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) // feature 104: a wide loop, see CRenamerDialogThread::Body
         {
-            if (!IsMenuBarMessage(&msg) && !IsDialogMessage(HWindow, &msg))
+            if (!IsMenuBarMessage(&msg) && !IsDialogMessageW(HWindow, &msg))
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
         }
         if (SourceFilesNeedUpdate)
@@ -1364,12 +1378,12 @@ BOOL CRenamerDialog::LoadSubdir(char* path, const char* subdir)
         }
 
         MSG msg;
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) // feature 104: a wide loop, see CRenamerDialogThread::Body
         {
-            if (!IsMenuBarMessage(&msg) && !IsDialogMessage(HWindow, &msg))
+            if (!IsMenuBarMessage(&msg) && !IsDialogMessageW(HWindow, &msg))
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
         }
 
@@ -1481,7 +1495,7 @@ BOOL CRenamerDialog::ReloadManualModeEdit()
         return Error(IDS_LOWMEM);
     buf.Get()[size] = 0;
 
-    SendMessage(ManualEdit->HWindow, WM_SETTEXT, 0, (LPARAM)buf.Get());
+    SetWindowTextU8(ManualEdit->HWindow, buf.Get()); // feature 104: the UTF-8 names as UTF-16 (WM_SETTEXT A showed them as mojibake)
 
     return TRUE;
 }
@@ -1503,6 +1517,24 @@ BOOL CRenamerDialog::IsMenuBarMessage(CONST MSG* lpMsg)
     CALL_STACK_MESSAGE1("CRenamerDialog::IsMenuBarMessage()");
     if (MenuBar == NULL)
         return FALSE;
+    // feature 104: the dialog's message loops are wide (PeekMessageW), so WM_CHAR and
+    // WM_SYSCHAR carry a UTF-16 unit; the menu bar (a core object behind the plug-in
+    // interface) expects the code-page byte a code-page loop delivers - convert, exactly (no
+    // best fit). A unit the code page lacks matches no mnemonic: not a menu bar message.
+    if ((lpMsg->message == WM_CHAR || lpMsg->message == WM_SYSCHAR) && lpMsg->wParam >= 0x80)
+    {
+        WCHAR unit = (WCHAR)lpMsg->wParam;
+        char byte[4];
+        BOOL usedDefault = FALSE;
+        if (WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, &unit, 1, byte, sizeof(byte), NULL, &usedDefault) != 1 ||
+            usedDefault)
+        {
+            return FALSE;
+        }
+        MSG msg = *lpMsg;
+        msg.wParam = (WPARAM)(unsigned char)byte[0];
+        return MenuBar->IsMenuBarMessage(&msg);
+    }
     return MenuBar->IsMenuBarMessage(lpMsg);
 }
 
@@ -1542,6 +1574,7 @@ BOOL CRenamerDialog::TransferForPreview()
 {
     CALL_STACK_MESSAGE1("CRenamerDialog::TransferForPreview()");
     CTransferInfo ti(HWindow, ttDataFromWindow);
+    ti.Quiet = TRUE; // feature 104: a text too long for its buffer shows as the preview's transfer error, no message box on every change
 
     TransferDontSaveHistory = TRUE;
     Transfer(ti);
@@ -2336,20 +2369,25 @@ CRenamerDialogThread::Body()
         DestroyWindow(wnd);
     }
 
+    // feature 104: a wide message loop (the 093 rule) - with PeekMessageA/DispatchMessageA a
+    // character typed into a field (new name, mask, search, the manual list) outside the code
+    // page arrived as '?' or as a best-fit look-alike before the field saw it. The dialog is a
+    // code-page window and gets its messages converted by DispatchMessageW as before; the
+    // accelerator table is VIRTKEY-only; the menu bar gets code-page characters (IsMenuBarMessage)
     MSG msg;
     while (IsWindow(wnd))
     {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        if (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT)
                 break; // equivalent to the situation where GetMessage() returns FALSE
 
             if (!dlg->IsMenuBarMessage(&msg) &&
-                !TranslateAccelerator(wnd, HAccels, &msg) &&
-                !IsDialogMessage(wnd, &msg))
+                !TranslateAcceleratorW(wnd, HAccels, &msg) &&
+                !IsDialogMessageW(wnd, &msg))
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
         }
         else

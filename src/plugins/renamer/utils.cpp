@@ -130,6 +130,72 @@ BOOL CreateDirectoryU8(const char* pathName)
     return ret;
 }
 
+void SetWindowTextU8(HWND hWnd, const char* text)
+{
+    WCHAR* w = SplU8ToWAlloc(text);
+    if (w != NULL)
+        SetWindowTextW(hWnd, w);
+    else
+        SetWindowTextA(hWnd, text != NULL ? text : ""); // not UTF-8: code-page text
+    free(w);
+}
+
+char* GetWindowTextU8Alloc(HWND hWnd)
+{
+    int len = GetWindowTextLengthW(hWnd) + 1;
+    WCHAR* w = (WCHAR*)malloc(len * sizeof(WCHAR));
+    if (w == NULL)
+        return NULL;
+    w[0] = 0;
+    GetWindowTextW(hWnd, w, len);
+    char* u8 = SplWToU8Alloc(w);
+    free(w);
+    return u8;
+}
+
+int GetEditLineU8(HWND edit, int line, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return -1;
+    buf[0] = 0;
+    int charIndex = (int)SendMessageW(edit, EM_LINEINDEX, line, 0);
+    if (charIndex < 0)
+        return -2; // no such line
+    int units = (int)SendMessageW(edit, EM_LINELENGTH, charIndex, 0);
+    WCHAR* w = (WCHAR*)malloc((units + 2) * sizeof(WCHAR)); // EM_GETLINE needs room for a WORD
+    if (w == NULL)
+        return -1;
+    *(WORD*)w = (WORD)(units + 1 > 0xFFFF ? 0xFFFF : units + 1);
+    int got = units > 0 ? (int)SendMessageW(edit, EM_GETLINE, line, (LPARAM)w) : 0;
+    if (got < 0)
+        got = 0;
+    if (got > units)
+        got = units;
+    w[got] = 0;                          // EM_GETLINE does not terminate
+    int ret = SplWToU8(w, buf, bufSize); // bytes incl. the terminator, 0 when it does not fit
+    free(w);
+    return ret > 0 ? ret - 1 : -1;
+}
+
+void ReplaceEditSelBytes(HWND edit, const char* bytes, BOOL canUndo)
+{
+    if (bytes == NULL)
+        bytes = "";
+    if ((unsigned char)bytes[0] == 0xEF && (unsigned char)bytes[1] == 0xBB && (unsigned char)bytes[2] == 0xBF)
+        bytes += 3; // a UTF-8 byte-order mark (an editor's) is never part of a name
+    WCHAR* w = SplU8ToWAlloc(bytes);
+    if (w == NULL) // not UTF-8: a program or an editor that writes the code page
+    {
+        int len = MultiByteToWideChar(CP_ACP, 0, bytes, -1, NULL, 0);
+        w = len > 0 ? (WCHAR*)malloc(len * sizeof(WCHAR)) : NULL;
+        if (w != NULL && MultiByteToWideChar(CP_ACP, 0, bytes, -1, w, len) <= 0)
+            w[0] = 0;
+    }
+    if (w != NULL)
+        SendMessageW(edit, EM_REPLACESEL, canUndo, (LPARAM)w);
+    free(w);
+}
+
 BOOL RemoveDirectoryU8(const char* pathName)
 {
     WCHAR* w = SplU8ToWExtAlloc(pathName);
@@ -696,6 +762,9 @@ char* Replace(char* string, char s, char d)
 BOOL GetOpenFileName(HWND parent, const char* title, const char* filter, char* buffer, BOOL save)
 {
     CALL_STACK_MESSAGE4("GetOpenFileName(, %s, %s, , %d)", title, filter, save);
+    // feature 104: 'buffer' is UTF-8 (in and out) and the Unicode dialog is used
+    // (SplGetFileNameU8) - SG->SafeGet*FileName are code-page calls that return the picked
+    // name with best fit ('?' or a look-alike existing file)
     OPENFILENAME ofn;
     char buf[200];
     lstrcpyn(buf, filter, 200);
@@ -712,10 +781,10 @@ BOOL GetOpenFileName(HWND parent, const char* title, const char* filter, char* b
     ofn.Flags = OFN_EXPLORER | OFN_HIDEREADONLY | OFN_NOCHANGEDIR /*| OFN_ENABLEHOOK*/;
 
     if (save)
-        return SG->SafeGetSaveFileName(&ofn);
+        return SplGetFileNameU8(&ofn, TRUE);
     else
     {
         ofn.Flags |= OFN_FILEMUSTEXIST;
-        return SG->SafeGetOpenFileName(&ofn);
+        return SplGetFileNameU8(&ofn, FALSE);
     }
 }

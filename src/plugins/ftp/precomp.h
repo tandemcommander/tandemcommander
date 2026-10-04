@@ -34,6 +34,7 @@
 #include "spl_zlib.h"
 
 #include "splunicode.h" // interface 104: UTF-8 <-> UTF-16 helpers for W file APIs
+#include "splfiledlg.h" // feature 104: Unicode file and folder pickers
 
 #include "dbg.h"
 #include "mhandles.h"

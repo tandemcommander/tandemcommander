@@ -15,6 +15,37 @@
 #include "undelete.h"
 
 #include "library\volenum.h"
+#include "splfiledlg.h" // feature 104: Unicode file and folder pickers
+
+// feature 104: the dialogs' path fields as UTF-8. The fields are Unicode windows (comctl32 6),
+// but they were filled with SetDlgItemText A (a UTF-8 panel path shown as mojibake) and read with
+// GetDlgItemText A (best fit: '?' or a look-alike - another existing image file or target folder).
+static void SetDlgItemTextU8(HWND dlg, int id, const char* text)
+{
+    WCHAR* w = SplU8ToWAlloc(text);
+    if (w != NULL)
+        SetDlgItemTextW(dlg, id, w);
+    else
+        SetDlgItemTextA(dlg, id, text != NULL ? text : ""); // not UTF-8: code-page text
+    free(w);
+}
+
+// FALSE (and an empty 'buf') when the text's UTF-8 form does not fit 'bufSize' bytes
+static BOOL GetDlgItemTextU8(HWND dlg, int id, char* buf, int bufSize)
+{
+    buf[0] = 0;
+    HWND ctrl = GetDlgItem(dlg, id);
+    int len = ctrl != NULL ? GetWindowTextLengthW(ctrl) + 1 : 1;
+    WCHAR* w = (WCHAR*)malloc(len * sizeof(WCHAR));
+    if (w == NULL)
+        return FALSE;
+    w[0] = 0;
+    if (ctrl != NULL)
+        GetWindowTextW(ctrl, w, len);
+    BOOL ret = SplWToU8(w, buf, bufSize) > 0;
+    free(w);
+    return ret;
+}
 
 #pragma comment(lib, "UxTheme.lib")
 
@@ -381,7 +412,7 @@ void CConnectDialog::InitDrives()
                     strcat(sourcePanelPath, "\\");
                     strncat(sourcePanelPath, data->Name, len - 1);
                     sourcePanelPath[MAX_PATH - 1] = 0;
-                    SetDlgItemText(HWindow, IDC_EDIT_IMAGE, sourcePanelPath);
+                    SetDlgItemTextU8(HWindow, IDC_EDIT_IMAGE, sourcePanelPath); // feature 104
                 }
             }
             break;
@@ -487,7 +518,14 @@ BOOL CConnectDialog::OnDialogOK()
     if (BST_CHECKED == SendMessage(GetDlgItem(HWindow, IDC_CHECK_IMAGE), BM_GETCHECK, 0, 0))
     {
         // disk image
-        GetDlgItemText(HWindow, IDC_EDIT_IMAGE, Volume, MAX_PATH);
+        char image[MAX_PATH];
+        if (!GetDlgItemTextU8(HWindow, IDC_EDIT_IMAGE, image, MAX_PATH)) // feature 104: refused, Volume kept
+        {
+            SplShowNameTooLong(HWindow, String<char>::LoadStr(IDS_UNDELETE));
+            SendMessage(HWindow, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(HWindow, IDC_EDIT_IMAGE), TRUE);
+            return FALSE;
+        }
+        lstrcpyn(Volume, image, MAX_PATH);
 
         // reset the volume if the image file does not exist
         DWORD attr = SalamanderGeneral->SalGetFileAttributes(Volume);
@@ -537,7 +575,9 @@ BOOL CConnectDialog::OnDialogOK()
 
 void CConnectDialog::OnImageBrowse()
 {
-    GetDlgItemText(HWindow, IDC_EDIT_IMAGE, Volume, MAX_PATH);
+    // feature 104: the field and the open dialog as UTF-8 / UTF-16 (SplGetFileNameU8) - the
+    // code-page dialog gave a name outside the code page as '?' or as a look-alike existing image
+    GetDlgItemTextU8(HWindow, IDC_EDIT_IMAGE, Volume, MAX_PATH); // empty when it does not fit
 
     OPENFILENAME openInfo;
     memset(&openInfo, 0, sizeof(OPENFILENAME));
@@ -549,15 +589,10 @@ void CConnectDialog::OnImageBrowse()
     openInfo.lpstrInitialDir = Volume;
     openInfo.nMaxFile = MAX_PATH;
     openInfo.Flags = OFN_FILEMUSTEXIST | OFN_READONLY;
-    BOOL ret = GetOpenFileName(&openInfo);
-    if (!ret && FNERR_INVALIDFILENAME == CommDlgExtendedError())
-    {
-        // Windows refuse to open dialog with initial path e.g. C:\. Oh well...
-        strcpy(Volume, "");
-        ret = GetOpenFileName(&openInfo);
-    }
+    // SplGetFileNameU8 retries like before when Windows refuses the initial path (e.g. C:\)
+    BOOL ret = SplGetFileNameU8(&openInfo, FALSE);
     if (ret)
-        SetDlgItemText(HWindow, IDC_EDIT_IMAGE, Volume);
+        SetDlgItemTextU8(HWindow, IDC_EDIT_IMAGE, Volume);
 }
 
 INT_PTR CConnectDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -702,12 +737,14 @@ INT_PTR CConfigDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
         case IDC_BUTTON_BROWSE:
         {
+            // feature 104: the Unicode folder picker and the field as UTF-8 (GetTargetDirectory
+            // of the plug-in interface returns the code page with best fit, see fs2.cpp)
             char path[MAX_PATH];
-            GetDlgItemText(HWindow, IDC_EDIT_TEMPPATH, path, MAX_PATH);
-            SalamanderGeneral->GetTargetDirectory(HWindow, HWindow, String<char>::LoadStr(IDS_UNDELETE),
-                                                  String<char>::LoadStr(IDS_CHOOSETEMPDIR),
-                                                  path, FALSE, path);
-            SetDlgItemText(HWindow, IDC_EDIT_TEMPPATH, path);
+            GetDlgItemTextU8(HWindow, IDC_EDIT_TEMPPATH, path, MAX_PATH);
+            if (SplBrowseForFolderU8(HWindow, HWindow, String<char>::LoadStr(IDS_UNDELETE),
+                                     String<char>::LoadStr(IDS_CHOOSETEMPDIR),
+                                     path, MAX_PATH, FALSE, path))
+                SetDlgItemTextU8(HWindow, IDC_EDIT_TEMPPATH, path);
             return TRUE;
         }
         }
@@ -739,7 +776,7 @@ INT_PTR CRestoreDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             SalamanderGeneral->MultiMonCenterWindow(HWindow, Parent, TRUE);
 
         SalamanderGeneral->GetPanelPath(PANEL_TARGET, path, MAX_PATH, NULL, NULL);
-        SetDlgItemText(HWindow, IDC_EDIT_TARGET, path);
+        SetDlgItemTextU8(HWindow, IDC_EDIT_TARGET, path); // feature 104: a UTF-8 panel path
 
         int files, dirs;
         char text1[200], text2[MAX_PATH + 100];
@@ -783,18 +820,30 @@ INT_PTR CRestoreDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
         case IDC_BUTTON_BROWSE:
         {
+            // feature 104: the Unicode folder picker and the field as UTF-8 - GetTargetDirectory
+            // (plug-in interface) returns the code page with best fit and GetDlgItemText A read
+            // the field the same way: the files were restored into a look-alike existing folder
             char title[100];
-            GetDlgItemText(HWindow, IDC_EDIT_TARGET, path, MAX_PATH);
+            char start[MAX_PATH];
+            GetDlgItemTextU8(HWindow, IDC_EDIT_TARGET, start, MAX_PATH);
             GetWindowText(HWindow, title, 100);
-            SalamanderGeneral->GetTargetDirectory(HWindow, HWindow, title, String<char>::LoadStr(IDS_CHOOSETARGET),
-                                                  path, FALSE, path);
-            SetDlgItemText(HWindow, IDC_EDIT_TARGET, path);
+            if (SplBrowseForFolderU8(HWindow, HWindow, title, String<char>::LoadStr(IDS_CHOOSETARGET),
+                                     path, MAX_PATH, FALSE, start))
+                SetDlgItemTextU8(HWindow, IDC_EDIT_TARGET, path);
             return TRUE;
         }
 
         case IDOK:
         {
-            GetDlgItemText(HWindow, IDC_EDIT_TARGET, TargetPath, MAX_PATH);
+            // feature 104: read as UTF-8; a path that does not fit is refused, never cut
+            char target[MAX_PATH];
+            if (!GetDlgItemTextU8(HWindow, IDC_EDIT_TARGET, target, MAX_PATH))
+            {
+                SplShowNameTooLong(HWindow, NULL);
+                SendMessage(HWindow, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(HWindow, IDC_EDIT_TARGET), TRUE);
+                return TRUE; // TargetPath kept, the dialog stays
+            }
+            lstrcpyn(TargetPath, target, MAX_PATH);
             break;
         }
         }

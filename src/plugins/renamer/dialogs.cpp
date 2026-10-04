@@ -245,6 +245,8 @@ void HistoryComboBox(CTransferInfo& ti, int id, char* text, int textMax,
     if (ti.Type == ttDataFromWindow)
     {
         ti.EditLine(id, text, textMax);
+        if (!ti.IsGood())
+            return; // feature 104: refused (too long for 'textMax'): the field and its list stay as they are
 
         int toMove = historySize - 1;
 
@@ -275,20 +277,30 @@ void HistoryComboBox(CTransferInfo& ti, int id, char* text, int textMax,
             history[0] = ptr;
         }
     }
+    // feature 104: the history items and the text are UTF-8 (WTF-8) and go into the combo
+    // as UTF-16; CB_ADDSTRING A and WM_SETTEXT A showed every non-ASCII entry as code-page
+    // mojibake, and after an OK the field held that mojibake (CB_SETCURSEL), so the next run
+    // renamed the files to it. Text that is not UTF-8 is added as code-page text.
     SendMessage(combo, CB_RESETCONTENT, 0, 0);
     int i;
     for (i = 0; i < historySize; i++)
     {
         if (history[i] == NULL)
             break;
-        SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)history[i]);
+        WCHAR* w = SplU8ToWAlloc(history[i]);
+        if (w != NULL)
+            SendMessageW(combo, CB_ADDSTRING, 0, (LPARAM)w);
+        else
+            SendMessageA(combo, CB_ADDSTRING, 0, (LPARAM)history[i]);
+        free(w);
     }
     if (ti.Type == ttDataFromWindow)
         SendMessage(combo, CB_SETCURSEL, 0, 0);
     else
     {
         SendMessage(combo, CB_LIMITTEXT, textMax - 1, 0);
-        SendMessage(combo, WM_SETTEXT, 0, (LPARAM)text);
+        WinLibSetTextLimit(combo, textMax); // feature 104: refused before the transfer when it does not fit
+        SetWindowTextU8(combo, text);
         SendMessage(combo, CB_SETEDITSEL, 0, -1);
     }
 }
@@ -804,7 +816,7 @@ void CCommandErrorDialog::Transfer(CTransferInfo& ti)
     CALL_STACK_MESSAGE1("CCommandErrorDialog::Transfer()");
     if (ti.Type == ttDataToWindow)
     {
-        SetDlgItemText(HWindow, IDE_COMMAND, Command);
+        SetWindowTextU8(GetDlgItem(HWindow, IDE_COMMAND), Command); // feature 104: UTF-8
         char buf[100];
         sprintf(buf, "%u (0x%x)", ExitCode, ExitCode);
         SetDlgItemText(HWindow, IDS_EXITCODE, buf);
@@ -865,13 +877,15 @@ void CProgressDialog::EmptyMessageLoop()
 {
     CALL_STACK_MESSAGE_NONE
     // drain the message loop
+    // feature 104: wide, like the renamer dialog's own loop (a code-page loop converts the
+    // characters typed into the renamer's fields meanwhile)
     MSG msg;
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
     {
-        if (!IsDialogMessage(HWindow, &msg))
+        if (!IsDialogMessageW(HWindow, &msg))
         {
             TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            DispatchMessageW(&msg);
         }
     }
 }
@@ -1026,11 +1040,16 @@ CConfigDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 if (cmd == 1)
                 {
+                    // feature 104: the field and the open dialog as UTF-8 (GetDlgItemText A and
+                    // the code-page dialog gave '?' or a look-alike program's path)
                     char path[MAX_PATH];
                     path[0] = 0;
-                    GetDlgItemText(HWindow, IDE_COMMAND, path, MAX_PATH);
+                    char* cur = GetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_COMMAND));
+                    if (cur != NULL && strlen(cur) < MAX_PATH)
+                        strcpy(path, cur);
+                    free(cur);
                     if (GetOpenFileName(HWindow, NULL, LoadStr(IDS_EXEFILES), path))
-                        SetDlgItemText(HWindow, IDE_COMMAND, path);
+                        SetWindowTextU8(GetDlgItem(HWindow, IDE_COMMAND), path);
                 }
                 else if (cmd == 30)
                 {

@@ -1546,9 +1546,23 @@ BOOL InitEXIF(HWND hParent, BOOL bSilent)
     TCHAR path[MAX_PATH];
     EXIFINITTRANSLATIONS initTransl;
 
-    GetModuleFileName(DLLInstance, path, SizeOf(path));
-    _tcscpy((LPTSTR)_tcsrchr(path, '\\') + 1, _T("exif.dll"));
-    EXIFLibrary = LoadLibrary(path); // load EXIF.DLL
+    // feature 104: the plug-in's folder is taken and the DLL loaded through the W calls - with
+    // GetModuleFileName A + LoadLibrary A an installation folder outside the code page (a
+    // per-user installation under such a user name) became '?' (EXIF unavailable) or a
+    // best-fit look-alike folder, from which another exif.dll could have been loaded
+    WCHAR pathW[MAX_PATH];
+    DWORD lenW = GetModuleFileNameW(DLLInstance, pathW, MAX_PATH);
+    WCHAR* slashW = lenW > 0 && lenW < MAX_PATH ? wcsrchr(pathW, L'\\') : NULL;
+    if (slashW != NULL && (size_t)(slashW + 1 - pathW) + 9 <= MAX_PATH)
+    {
+        lstrcpyW(slashW + 1, L"exif.dll");
+        EXIFLibrary = LoadLibraryW(pathW); // load EXIF.DLL
+    }
+    else
+        pathW[0] = 0;
+    // the name for the message (code page, as its template) and for the Debug leak list (UTF-8)
+    if (WideCharToMultiByte(CP_ACP, 0, pathW, -1, path, SizeOf(path), NULL, NULL) == 0)
+        path[0] = 0;
     if (EXIFLibrary == NULL)
     {
         if (!bSilent)
@@ -1560,7 +1574,11 @@ BOOL InitEXIF(HWND hParent, BOOL bSilent)
         }
         return FALSE;
     }
-    SalamanderDebug->AddModuleWithPossibleMemoryLeaks(path);
+    {
+        char pathU8[3 * MAX_PATH];
+        if (SplWToU8(pathW, pathU8, sizeof(pathU8)) > 0)
+            SalamanderDebug->AddModuleWithPossibleMemoryLeaks(pathU8);
+    }
     initTransl = (EXIFINITTRANSLATIONS)GetProcAddress(EXIFLibrary, "EXIFInitTranslations");
     if (initTransl)
     {

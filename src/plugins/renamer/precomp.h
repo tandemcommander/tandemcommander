@@ -30,6 +30,7 @@
 #include "spl_vers.h"
 
 #include "splunicode.h" // UTF-8 <-> UTF-16 helpers (plugin interface 104)
+#include "splfiledlg.h" // feature 104: Unicode file and folder pickers
 
 #include "dbg.h"
 #include "arraylt.h"

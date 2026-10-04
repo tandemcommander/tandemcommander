@@ -914,7 +914,10 @@ void CSrvTypeTestParserDlg::LoadTextFromFile()
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
     char buf[300 + MAX_PATH];
-    if (SalamanderGeneral->SafeGetOpenFileName(&ofn))
+    // feature 104: the Unicode dialog, the name as UTF-8 - SafeGetOpenFileName (code page)
+    // gave code-page bytes to the UTF-8 file calls below: every accented name failed and a
+    // best-fit look-alike ("voila" for "voil<U+00E0>") was read another existing file
+    if (SplGetFileNameU8(&ofn, FALSE))
     {
         HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
@@ -1304,6 +1307,7 @@ void CCopyMoveDlg::Transfer(CTransferInfo& ti)
             {
                 SalamanderGeneral->LoadComboFromStdHistoryValues(hWnd, History, HistoryCount);
                 SendMessage(hWnd, CB_LIMITTEXT, PathBufSize - 1, 0);
+                WinLibSetTextLimit(hWnd, PathBufSize); // feature 104: refused before the transfer when it does not fit
                 WCHAR* pathW = SplU8ToWAlloc(Path); // feature 010: the target path is UTF-8
                 if (pathW != NULL)
                 {
@@ -1315,16 +1319,27 @@ void CCopyMoveDlg::Transfer(CTransferInfo& ti)
             }
             else
             {
-                // feature 010: read wide and store UTF-8; fall back to the A read on failure
-                BOOL done = FALSE;
+                // feature 010: read wide and store UTF-8
+                // feature 104: a target path whose UTF-8 form does not fit is REFUSED (message,
+                // the field focused) - the former code-page re-read converted it with best fit,
+                // so the files could go to a look-alike existing folder; the A read stays only
+                // for lack of memory
                 WCHAR* pathW = (WCHAR*)malloc(PathBufSize * sizeof(WCHAR));
                 if (pathW != NULL)
                 {
+                    pathW[0] = 0;
                     SendMessageW(hWnd, WM_GETTEXT, PathBufSize, (LPARAM)pathW);
-                    done = SplWToU8(pathW, Path, PathBufSize) > 0;
+                    BOOL fits = SplWToU8(pathW, Path, PathBufSize) > 0;
                     free(pathW);
+                    if (!fits)
+                    {
+                        Path[0] = 0;
+                        ti.ErrorOn(IDC_TGTPATH);
+                        SplShowNameTooLong(HWindow, NULL);
+                        return;
+                    }
                 }
-                if (!done)
+                else
                     SendMessage(hWnd, WM_GETTEXT, PathBufSize, (LPARAM)Path);
                 SalamanderGeneral->AddValueToStdHistoryValues(History, HistoryCount, Path, FALSE);
             }

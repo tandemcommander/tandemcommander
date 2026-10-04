@@ -1,0 +1,64 @@
+plugnames_probe (feature 104), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-04 09:14; ACP 1250; registry key existed True
+
+ren-cyr    NEW    PASS        typed '\u0416\u0430\u0431\u0430.txt': field holds it exactly True ('\u0416\u0430\u0431\u0430.txt'); preview items 1; dlg False, new-name edit True; boxes: no box; folder: \u0416\u0430\u0431\u0430.txt=SRC
+ren-cyr    HIST   PASS        New name history item 0 '\u0416\u0430\u0431\u0430.txt' exact True
+ren-cyr    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-cjk    NEW    PASS        set '\u65E5\u672C\u8A9E.txt': field holds it exactly True ('\u65E5\u672C\u8A9E.txt'); preview items 1; dlg False, new-name edit True; boxes: no box; folder: \u65E5\u672C\u8A9E.txt=SRC
+ren-cjk    HIST   PASS        New name history item 0 '\u65E5\u672C\u8A9E.txt' exact True
+ren-cjk    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-emo    NEW    PASS        typed '\uD83D\uDCC1ok.txt': field holds it exactly True ('\uD83D\uDCC1ok.txt'); preview items 1; dlg False, new-name edit True; boxes: no box; folder: \uD83D\uDCC1ok.txt=SRC
+ren-emo    HIST   PASS        New name history item 0 '\uD83D\uDCC1ok.txt' exact True
+ren-emo    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-voila  NEW    PASS        set 'voil\u00E0.txt': field holds it exactly True ('voil\u00E0.txt'); preview items 1; dlg False, new-name edit True; boxes: no box; folder: voil\u00E0.txt=SRC; voila.txt=DECOY
+ren-voila  HIST   PASS        New name history item 0 'voil\u00E0.txt' exact True
+ren-voila  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-fwab   NEW    PASS        typed '\uFF21\uFF22.txt': field holds it exactly True ('\uFF21\uFF22.txt'); preview items 1; dlg False, new-name edit True; boxes: no box; folder: \uFF21\uFF22.txt=SRC; AB.txt=DECOY
+ren-fwab   HIST   PASS        New name history item 0 '\uFF21\uFF22.txt' exact True
+ren-fwab   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-lone   NEW    PASS        set 'lone\uD800x.txt': field holds it exactly True ('lone\uD800x.txt'); preview items 1; dlg False, new-name edit True; boxes: no box; folder: lone\uD800x.txt=SRC
+ren-lone   HIST   PASS        New name history item 0 'lone\uD800x.txt' exact True
+ren-lone   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-mask   MASK   PASS        mask typed '\u0416*.txt', field '\u0416*.txt'; files in the preview 1 (expected 1: only \u0416\u0430\u0431\u04301.txt)
+ren-mask   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-man-cz MAN    PASS        manual edit showed 'cl\u00E1nek.txt' (exact True); set '\u0416\u0430\u0431\u0430-2.txt', field '\u0416\u0430\u0431\u0430-2.txt'; renamed exactly True; boxes: no box; folder: \u0416\u0430\u0431\u0430-2.txt=OLD
+ren-man-cz END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-man-cjk MAN    PASS        manual edit showed '\u65E5\u672C\u8A9E.txt' (exact True); set '\u65E5\u672C\u8A9E-2.txt', field '\u65E5\u672C\u8A9E-2.txt'; renamed exactly True; boxes: no box; folder: \u65E5\u672C\u8A9E-2.txt=OLD
+ren-man-cjk END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-long   LONG   PASS        New name of 204 units / 604 UTF-8 bytes (the field's buffer: 520): renamed False; boxes: [#32770 'Batch Rename'] [Button id=2] OK | [Static id=65535] N\u00E1zev nebo p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1. ; folder: src.txt=SRC
+ren-long   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dbv-open   OPEN   PASS        viewer 'C:\Users\pavel\AppData\Local\Temp\tc104_pn\dbv\start.csv - Database Viewer' -> Open 'voil\u00E0.csv': file dialog unicode False; title now 'C:\Users\pavel\AppData\Local\Temp\tc104_pn\dbv\voil\u00E0.csv - Database Viewer'; names the file True, the decoy False; boxes: no box
+dbv-open   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pv-copyto  COPYTO PASS        field set to ...\voil\u00E0; Browse: folder dialog unicode True 'C:\Users\pavel\AppData\Local\Temp\tc104_pn\pv\voil\u00E0'; field after Browse '...a\Local\Temp\tc104_pn\pv\voil\u00E0' (exact True); copied into ...\voil\u00E0: True, into the decoy ...\voila: False; boxes: no box
+pv-copyto  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pv-saveas  SAVEAS PASS        Save As 'voil\u00E0.bmp': file dialog unicode False; a question about the decoy voila.bmp False; decoy intact True; boxes: [#32770 'PictView Error'] [Static id=2477] Unable to save the image. Error: This operation is not supported by the built-in image engine. | [Button id=1] OK; folder: exist.bmp=EXISTING; img.png=(565 bytes); voila.bmp=DECOY
+pv-saveas  FINDING INFO        Save As onto the existing exist.bmp, 'replace?' Yes: exist.bmp DELETED; boxes: [#32770 'PictView Error'] [Static id=2477] File "C:\Users\pavel\AppData\Local\Temp\tc104_pn\pvs\exist.bmp" already exists. Do you want to replace it? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel || [#32770 'PictView Error'] [Static id=2477] Unable to save the image. Error: This operation is not supported by the built-in image engine. | [Button id=1] OK
+pv-saveas  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+unc-next   NEXT   PASS        3 cabinets; the folder field '...Local\Temp\tc104_pn\cab\voil\u00E0\' (exact True); OK: boxes [#32770 'Error'] [Static id=2477] File not found. | [Button id=1] OK; extracted from the decoy's volumes: False
+unc-next   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-pwd    LABEL  PASS        password dialog label '\u0416\u0430\u0431\u0430.txt' (exact True; label window Unicode True)
+zip-pwd    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+und-image  PREFILL PASS        the image field filled from the focused file: '...AppData\Local\Temp\tc104_pn\und\\u0416\u0430\u0431\u0430.ima' (exact True)
+und-image  IMAGE  PASS        image field set to ...\voil\u00E0.ima (missing; the decoy voila.ima exists): boxes [#32770 'Undelete'] [Static id=2477] The file specified was not found. | [Button id=1] OK
+und-image  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ftp-b1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ftp-b1     OK40   PASS        password 40 x U+010D (80 bytes), Close: dialog stayed False; boxes: no box; stored password 86 bytes
+ftp-b1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ftp-b1     LONGPWD PASS        password 60 x U+010D (120 bytes), Close: dialog stayed True (a password field's text cannot be read from another process: False); boxes: [#32770 'Connect to FTP Server'] [Button id=2] OK | [Static id=65535] N\u00E1zev nebo p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1. ; after Cancel + exit the stored password is unchanged True (86 bytes)
+ftp-b1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ftp-b1     LONGUSER PASS        user name 60 x U+010D, Close: dialog stayed True; boxes: [#32770 'Connect to FTP Server'] [Button id=2] OK | [Static id=65535] N\u00E1zev nebo p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1. ; stored user name 'olduser'
+ftp-b1     CONNECT PASS        password 60 x U+010D, Connect: dialog stayed True; boxes: [#32770 'Connect to FTP Server'] [Button id=2] OK | [Static id=65535] N\u00E1zev nebo p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1. ; the server received: nothing (no connection)
+ftp-b1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ftp-b1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ftp-b1     LEGACY PASS        a password stored by the build before (code-page form, 69 bytes stored), field tabbed through, Connect: refused False; the server received: USER len=7 hex=6f6c6475736572 / PASS len=60 hex=e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8
+ftp-b1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+nd         ROUTE  NOT DRIVEN  FTP file dialogs (save log / welcome text, server-type export and import, parser test): no FTP server on the hidden desktop; the same SplGetFileNameU8 as dbv-open
+nd         ROUTE  NOT DRIVEN  ZIP change-disk Browse (multi-volume ZIP on removable media): the same SplGetFileNameU8
+nd         ROUTE  NOT DRIVEN  Undelete restore target and temp folder Browse: the same SplBrowseForFolderU8 as pv-copyto; restore needs EFS-encrypted deleted files
+nd         ROUTE  NOT DRIVEN  regedt Find typing and the external editor (needs a configured editor), renamer editor $(SalDir)
+nd         ROUTE  NOT DRIVEN  SFTP field overflow (ConnectReadFields): needs the SFTP container
+nd         ROUTE  NOT DRIVEN  an installation folder outside the code page (exif.dll, $(SalDir))
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 50, FAIL 0, NOT DRIVEN 6. Left running: 0; fixture removed: True; registry restored+identical: True

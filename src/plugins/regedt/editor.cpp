@@ -29,7 +29,7 @@ const char* EXP_DOSSYSDIR = "DOSSysDir";
 
 struct CExpData
 {
-    char Buffer[MAX_PATH];
+    char Buffer[3 * MAX_PATH]; // UTF-8 path (up to 3 bytes per character)
     const char* LongName;
     const char* DosName;
 };
@@ -186,16 +186,38 @@ ExecuteDOSFullPath(HWND msgParent, void* param)
     return data->Buffer;
 }
 
+// feature 104: the folders as UTF-8 - the variables are expanded into UTF-8 text (the names
+// and the temp file are UTF-8) and the command line is converted from UTF-8. The A calls gave
+// code-page bytes: a path outside ASCII garbled the whole command line, a character outside the
+// code page became '?' (an installation folder under such a user name, $(SalDir)).
+// 'which': 0 = Windows folder, 1 = system folder; 'dos': the short (8.3) form
+static const char* GetSystemFolderU8(CExpData* data, int which, BOOL dos)
+{
+    *data->Buffer = 0;
+    WCHAR w[MAX_PATH];
+    UINT l = which == 0 ? GetWindowsDirectoryW(w, MAX_PATH) : GetSystemDirectoryW(w, MAX_PATH);
+    if (l == 0 || l >= MAX_PATH)
+        return data->Buffer;
+    if (dos)
+    {
+        WCHAR s[MAX_PATH];
+        DWORD sl = GetShortPathNameW(w, s, MAX_PATH);
+        if (sl == 0 || sl >= MAX_PATH)
+            return data->Buffer;
+        lstrcpynW(w, s, MAX_PATH);
+    }
+    if (SplWToU8(w, data->Buffer, sizeof(data->Buffer)) == 0)
+        *data->Buffer = 0;
+    return data->Buffer;
+}
+
 const char* WINAPI
 ExecuteWinDir(HWND msgParent, void* param)
 {
     CALL_STACK_MESSAGE1("ExecuteWinDir(, )");
     CExpData* data = (CExpData*)param;
-    UINT l = GetWindowsDirectory(data->Buffer, MAX_PATH);
-    if (l < 0 || l >= MAX_PATH)
-        *data->Buffer = 0;
-    else
-        SG->SalPathAddBackslash(data->Buffer, MAX_PATH);
+    if (*GetSystemFolderU8(data, 0, FALSE) != 0)
+        SG->SalPathAddBackslash(data->Buffer, sizeof(data->Buffer));
     return data->Buffer;
 }
 
@@ -204,16 +226,8 @@ ExecuteDOSWinDir(HWND msgParent, void* param)
 {
     CALL_STACK_MESSAGE1("ExecuteDOSWinDir(, )");
     CExpData* data = (CExpData*)param;
-    UINT l = GetWindowsDirectory(data->Buffer, MAX_PATH);
-    if (l < 0 || l >= MAX_PATH)
-        *data->Buffer = 0;
-    else
-    {
-        if (GetShortPathName(data->Buffer, data->Buffer, MAX_PATH))
-            SG->SalPathAddBackslash(data->Buffer, MAX_PATH);
-        else
-            *data->Buffer = 0;
-    }
+    if (*GetSystemFolderU8(data, 0, TRUE) != 0)
+        SG->SalPathAddBackslash(data->Buffer, sizeof(data->Buffer));
     return data->Buffer;
 }
 
@@ -222,11 +236,8 @@ ExecuteSysDir(HWND msgParent, void* param)
 {
     CALL_STACK_MESSAGE1("ExecuteSysDir(, )");
     CExpData* data = (CExpData*)param;
-    UINT l = GetSystemDirectory(data->Buffer, MAX_PATH);
-    if (l < 0 || l >= MAX_PATH)
-        *data->Buffer = 0;
-    else
-        SG->SalPathAddBackslash(data->Buffer, MAX_PATH);
+    if (*GetSystemFolderU8(data, 1, FALSE) != 0)
+        SG->SalPathAddBackslash(data->Buffer, sizeof(data->Buffer));
     return data->Buffer;
 }
 
@@ -235,15 +246,30 @@ ExecuteDOSSysDir(HWND msgParent, void* param)
 {
     CALL_STACK_MESSAGE1("ExecuteDOSSysDir(, )");
     CExpData* data = (CExpData*)param;
-    UINT l = GetSystemDirectory(data->Buffer, MAX_PATH);
-    if (l < 0 || l >= MAX_PATH)
-        *data->Buffer = 0;
-    else
+    if (*GetSystemFolderU8(data, 1, TRUE) != 0)
+        SG->SalPathAddBackslash(data->Buffer, sizeof(data->Buffer));
+    return data->Buffer;
+}
+
+const char* WINAPI
+ExecuteSalDir(HWND msgParent, void* param)
+{
+    CALL_STACK_MESSAGE1("ExecuteSalDir(, )");
+    CExpData* data = (CExpData*)param;
+    *data->Buffer = 0;
+    const DWORD size = 32768;
+    WCHAR* w = (WCHAR*)malloc(size * sizeof(WCHAR));
+    if (w != NULL)
     {
-        if (GetShortPathName(data->Buffer, data->Buffer, MAX_PATH))
-            SG->SalPathAddBackslash(data->Buffer, MAX_PATH);
-        else
-            *data->Buffer = 0;
+        DWORD l = GetModuleFileNameW(NULL, w, size); // hInstance==NULL: we want the path to the EXE, not the DLL
+        WCHAR* slash = l > 0 && l < size ? wcsrchr(w, L'\\') : NULL;
+        if (slash != NULL)
+        {
+            slash[1] = 0;
+            if (SplWToU8(w, data->Buffer, sizeof(data->Buffer)) == 0)
+                *data->Buffer = 0;
+        }
+        free(w);
     }
     return data->Buffer;
 }
@@ -275,10 +301,7 @@ ExecuteWinDir2(HWND msgParent, void* param)
 {
     CALL_STACK_MESSAGE1("ExecuteWinDir2(, )");
     CExpData* data = (CExpData*)param;
-    UINT l = GetWindowsDirectory(data->Buffer, MAX_PATH);
-    if (l < 0 || l >= MAX_PATH)
-        *data->Buffer = 0;
-    else
+    if (*GetSystemFolderU8(data, 0, FALSE) != 0) // feature 104: UTF-8, see GetSystemFolderU8
         SG->SalPathRemoveBackslash(data->Buffer);
     return data->Buffer;
 }
@@ -288,21 +311,8 @@ ExecuteSysDir2(HWND msgParent, void* param)
 {
     CALL_STACK_MESSAGE1("ExecuteSysDir2(, )");
     CExpData* data = (CExpData*)param;
-    UINT l = GetSystemDirectory(data->Buffer, MAX_PATH);
-    if (l < 0 || l >= MAX_PATH)
-        *data->Buffer = 0;
-    else
+    if (*GetSystemFolderU8(data, 1, FALSE) != 0) // feature 104: UTF-8, see GetSystemFolderU8
         SG->SalPathRemoveBackslash(data->Buffer);
-    return data->Buffer;
-}
-
-const char* WINAPI
-ExecuteSalDir(HWND msgParent, void* param)
-{
-    CALL_STACK_MESSAGE1("ExecuteSalDir(, )");
-    CExpData* data = (CExpData*)param;
-    GetModuleFileName(NULL, data->Buffer, MAX_PATH); // hInstance==NULL: we want the path to the EXE, not to the DLL
-    *(strrchr(data->Buffer, '\\') + 1) = 0;
     return data->Buffer;
 }
 
@@ -386,17 +396,17 @@ BOOL ExpandCommand(const char* varText, char* buffer, int bufferLen, BOOL ignore
         return FALSE;
 }
 
-BOOL ExpandInitDir(const char* varText, char* directory,
+BOOL ExpandInitDir(const char* varText, char* directory, int directorySize,
                    const char* longName, const char* dosName)
 {
     CALL_STACK_MESSAGE4("ExpandInitDir(%s, , %s, %s)", varText, longName, dosName);
     CExpData data;
     data.LongName = longName;
     data.DosName = dosName;
-    return SG->ExpandVarString(GetParent(), varText, directory, MAX_PATH, ExpInitDirVariables, &data);
+    return SG->ExpandVarString(GetParent(), varText, directory, directorySize, ExpInitDirVariables, &data);
 }
 
-BOOL ExpandArguments(const char* varText, char* arguments,
+BOOL ExpandArguments(const char* varText, char* arguments, int argumentsSize,
                      const char* longName, const char* dosName)
 {
     CALL_STACK_MESSAGE4("ExpandArguments(%s, , %s, %s)", varText, longName,
@@ -404,59 +414,101 @@ BOOL ExpandArguments(const char* varText, char* arguments,
     CExpData data;
     data.LongName = longName;
     data.DosName = dosName;
-    return SG->ExpandVarString(GetParent(), varText, arguments, MAX_PATH, ExpArgumentsVariables, &data);
+    return SG->ExpandVarString(GetParent(), varText, arguments, argumentsSize, ExpArgumentsVariables, &data);
+}
+
+// UTF-8 path -> short (8.3) UTF-8 path; the paths are UTF-8 since plugin interface 104
+static BOOL GetShortPathNameU8(const char* path, char* buffer, int bufferSize)
+{
+    WCHAR wShort[MAX_PATH];
+    WCHAR* w = SplU8ToWAlloc(path);
+    BOOL ret = w != NULL && GetShortPathNameW(w, wShort, _countof(wShort)) > 0 &&
+               SplWToU8(wShort, buffer, bufferSize) > 0;
+    free(w);
+    return ret;
+}
+
+// text mixing UTF-8 paths and ANSI resource/config strings -> UTF-16 (UTF-8 first, ANSI fallback)
+static WCHAR* TextToWAlloc(const char* text)
+{
+    WCHAR* w = SplU8ToWAlloc(text);
+    if (w != NULL)
+        return w;
+    int len = MultiByteToWideChar(CP_ACP, 0, text, -1, NULL, 0);
+    if (len <= 0)
+        return NULL;
+    w = (WCHAR*)malloc(len * sizeof(WCHAR));
+    if (w != NULL)
+        MultiByteToWideChar(CP_ACP, 0, text, -1, w, len);
+    return w;
 }
 
 BOOL ExecuteEditor(const char* tempFile)
 {
     CALL_STACK_MESSAGE2("ExecuteEditor(%s)", tempFile);
     char command[MAX_PATH];
-    char directory[MAX_PATH];
-    char arguments[MAX_PATH];
+    char directory[3 * MAX_PATH]; // UTF-8 path (up to 3 bytes per character)
+    char arguments[3 * MAX_PATH];
 
-    char longName[MAX_PATH];
-    char dosName[MAX_PATH];
+    char longName[3 * MAX_PATH];
+    char dosName[3 * MAX_PATH];
 
-    // expand the initdir
+    // expand initdir
     SG->CutDirectory(strcpy(longName, tempFile));
-    if (!GetShortPathName(longName, dosName, MAX_PATH))
+    if (!GetShortPathNameU8(longName, dosName, _countof(dosName)))
         dosName[0] = 0;
 
     int e1, e2;
+
     if (!SG->ValidateVarString(GetParent(), Command, e1, e2, ExpCommandVariables) ||
         !ExpandCommand(Command, command, MAX_PATH, FALSE))
         return FALSE;
 
     if (!SG->ValidateVarString(GetParent(), InitDir, e1, e2, ExpInitDirVariables) ||
-        !ExpandInitDir(InitDir, directory, longName, dosName))
+        !ExpandInitDir(InitDir, directory, _countof(directory), longName, dosName))
         return FALSE;
 
-    // expand the arguments
-    if (!GetShortPathName(tempFile, dosName, MAX_PATH))
+    // expand arguments
+    if (!GetShortPathNameU8(tempFile, dosName, _countof(dosName)))
         dosName[0] = 0;
 
     if (!SG->ValidateVarString(GetParent(), Arguments, e1, e2, ExpArgumentsVariables) ||
-        !ExpandArguments(Arguments, arguments, tempFile, dosName))
+        !ExpandArguments(Arguments, arguments, _countof(arguments), tempFile, dosName))
         return FALSE;
 
     // run the command
     if (!*command)
         return Error(IDS_PROCESS);
     TBuffer<char> cmdLine;
-    if (!cmdLine.Reserve((int)strlen(command) + 3 + (int)strlen(arguments) + 1))
+    if (!cmdLine.Reserve((int)strlen(command) + 3 + (int)strlen(arguments) + 1)) // regedt's TBuffer takes an int
         return Error(IDS_LOWMEM);
-    SalPrintf(cmdLine.Get(), cmdLine.GetSize(), "\"%s\" %s", command, arguments);
+    SalPrintf(cmdLine.Get(), (unsigned int)cmdLine.GetSize(), "\"%s\" %s", command, arguments);
 
-    STARTUPINFO si;
+    // feature 104: launch the editor on the W layer (the renamer's code): the command line
+    // and the folder are UTF-8 - the temp file is <Temp>\SALxxx\_<value name>; CreateProcess A
+    // with GetShortPathName A on UTF-8 bytes garbled every non-ASCII temp path or value name
+    WCHAR* wCmdLine = TextToWAlloc(cmdLine.Get());
+    WCHAR* wDirectory = directory[0] ? TextToWAlloc(directory) : NULL;
+    if (wCmdLine == NULL)
+    {
+        free(wDirectory);
+        return Error(IDS_PROCESS);
+    }
+
+    STARTUPINFOW si;
     PROCESS_INFORMATION pi;
-    memset(&si, 0, sizeof(STARTUPINFO));
-    si.cb = sizeof(STARTUPINFO);
+    memset(&si, 0, sizeof(STARTUPINFOW));
+    si.cb = sizeof(STARTUPINFOW);
     si.lpTitle = NULL;
     si.dwFlags = STARTF_USESHOWWINDOW;
     si.wShowWindow = SW_SHOWNORMAL;
 
-    if (!CreateProcess(NULL, cmdLine.Get(), NULL, NULL, FALSE, CREATE_DEFAULT_ERROR_MODE | NORMAL_PRIORITY_CLASS,
-                       NULL, directory[0] ? directory : NULL, &si, &pi))
+    BOOL created = CreateProcessW(NULL, wCmdLine, NULL, NULL, FALSE,
+                                  CREATE_DEFAULT_ERROR_MODE | NORMAL_PRIORITY_CLASS,
+                                  NULL, wDirectory, &si, &pi);
+    free(wCmdLine);
+    free(wDirectory);
+    if (!created)
         return Error(IDS_PROCESS);
 
     CloseHandle(pi.hProcess);

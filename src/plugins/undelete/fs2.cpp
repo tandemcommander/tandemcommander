@@ -13,6 +13,7 @@
 #include "volume.h"
 #include "snapshot.h"
 #include "dataruns.h"
+#include "splfiledlg.h" // feature 104: the Unicode folder picker
 #include "stream.h"
 #include "dialogs.h"
 #include "undelete.h"
@@ -1405,8 +1406,12 @@ BOOL CPluginFSInterface::GetTempDirOutsideRoot(HWND parent, char* buffer, char**
         {
             char text[200];
             sprintf(text, String<char>::LoadStr(IDS_TEMPDIR), path[0], path[0]);
-            if (!SalamanderGeneral->GetTargetDirectory(parent, parent, String<char>::LoadStr(IDS_VIEW),
-                                                       text, ConfigTempPath, FALSE, NULL))
+            // feature 104: the Unicode folder picker, the folder as UTF-8 - the plug-in service
+            // GetTargetDirectory returns it in the code page (best fit, a frozen contract), and
+            // ConfigTempPath is used as a UTF-8 path: a folder outside ASCII failed, a look-alike
+            // existing folder received the temporary copies
+            if (!SplBrowseForFolderU8(parent, parent, String<char>::LoadStr(IDS_VIEW),
+                                      text, ConfigTempPath, MAX_PATH, FALSE, NULL))
             {
                 return FALSE;
             }

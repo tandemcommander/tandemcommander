@@ -6,6 +6,7 @@
 #include "sftputils.h"
 #include "keyload.h"
 #include "dialogs.h"
+#include "splfiledlg.h" // feature 104: SplShowNameTooLong
 
 char ConnectPlainPassword[SFTP_SECRET_BUF] = "";
 char ConnectPlainPassphrase[SFTP_SECRET_BUF] = "";
@@ -29,7 +30,10 @@ void SetDlgItemTextU8(HWND hwnd, int id, const char* text)
 
 // Reads a dialog control's text as UTF-8 via the W API (the A call would
 // convert through the ACP and mangle names). Returns the length in bytes
-// without the terminator; falls back to the A call on conversion failure.
+// without the terminator. feature 104: when the UTF-8 form does not fit
+// 'bufSize' it returns -1 and leaves 'buf' empty - the former A fallback
+// converted with best fit, so a key file path could name another existing
+// file ("voila" for "voil<U+00E0>"); the A call stays only for lack of memory.
 int GetDlgItemTextU8(HWND hwnd, int id, char* buf, int bufSize)
 {
     if (buf == NULL || bufSize <= 0)
@@ -45,16 +49,18 @@ int GetDlgItemTextU8(HWND hwnd, int id, char* buf, int bufSize)
     WCHAR* w = (WCHAR*)malloc((wchars + 1) * sizeof(WCHAR));
     if (w != NULL)
     {
-        if (GetWindowTextW(ctrl, w, wchars + 1) > 0)
-        {
-            len = SplWToU8(w, buf, bufSize);
-            if (len > 0)
-                len--; // exclude the terminator
-        }
+        w[0] = 0;
+        GetWindowTextW(ctrl, w, wchars + 1);
+        len = SplWToU8(w, buf, bufSize); // WTF-8: fails only when it does not fit
         free(w);
+        if (len == 0)
+        {
+            buf[0] = 0;
+            return -1;
+        }
+        return len - 1; // exclude the terminator
     }
-    if (len == 0) // OOM or conversion failure: A fallback (never drop text)
-        len = GetDlgItemTextA(hwnd, id, buf, bufSize);
+    len = GetDlgItemTextA(hwnd, id, buf, bufSize); // no memory for the wide copy
     return len;
 }
 
@@ -321,7 +327,16 @@ static INT_PTR CALLBACK RenameProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK)
         {
-            GetDlgItemTextU8(hwnd, IDE_RENAMENAME, d->Name, MAX_PATH);
+            // feature 104: a name whose UTF-8 form does not fit is refused - the dialog stays open
+            // with the field focused and the old name is kept (it closed with an empty name)
+            char name[MAX_PATH];
+            if (GetDlgItemTextU8(hwnd, IDE_RENAMENAME, name, MAX_PATH) < 0)
+            {
+                SplShowNameTooLong(hwnd, LoadStr(IDS_SFTPERRORTITLE));
+                SendMessage(hwnd, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hwnd, IDE_RENAMENAME), TRUE);
+                return TRUE;
+            }
+            lstrcpynA(d->Name, name, MAX_PATH);
             EndDialog(hwnd, IDOK);
             return TRUE;
         }
@@ -811,10 +826,16 @@ static void ConnectLoadServerToFields(HWND hwnd, const CSFTPServer* s)
 static BOOL ConnectReadFields(HWND hwnd, CSFTPServer* s, const CSFTPServer* selectedBookmark, BOOL forConnect)
 {
     char host[256], user[256], keyfile[MAX_PATH], initpath[1024];
-    GetDlgItemTextU8(hwnd, IDE_HOSTADDRESS, host, sizeof(host));
-    GetDlgItemTextU8(hwnd, IDE_USERNAME, user, sizeof(user));
-    GetDlgItemTextU8(hwnd, IDE_KEYFILE, keyfile, sizeof(keyfile));
-    GetDlgItemTextU8(hwnd, IDE_INITIALPATH, initpath, sizeof(initpath));
+    // feature 104: a field whose UTF-8 form does not fit is refused (the system's "too long"
+    // text), never read through the code page
+    if (GetDlgItemTextU8(hwnd, IDE_HOSTADDRESS, host, sizeof(host)) < 0 ||
+        GetDlgItemTextU8(hwnd, IDE_USERNAME, user, sizeof(user)) < 0 ||
+        GetDlgItemTextU8(hwnd, IDE_KEYFILE, keyfile, sizeof(keyfile)) < 0 ||
+        GetDlgItemTextU8(hwnd, IDE_INITIALPATH, initpath, sizeof(initpath)) < 0)
+    {
+        SplShowNameTooLong(hwnd, LoadStr(IDS_SFTPERRORTITLE));
+        return FALSE;
+    }
     int port = GetDlgItemInt(hwnd, IDE_PORT, NULL, FALSE);
     // feature 053: a server address and a valid port are needed to CONNECT, not to
     // create or save a bookmark - a user may name an entry first and fill in the

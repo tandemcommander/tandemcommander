@@ -1182,19 +1182,22 @@ CFindDialogThread::Body()
         DestroyWindow(wnd);
     }
 
+    // feature 104: a wide message loop (the 093 rule): the Find dialog is a Unicode window,
+    // but GetMessageA/DispatchMessageA turned a character typed into its fields (the search
+    // text, the key path) outside the code page into '?' before the field saw it
     MSG msg;
     BOOL haveMSG = FALSE; // FALSE means GetMessage() should be called in the loop condition
-    while (haveMSG || IsWindow(wnd) && GetMessage(&msg, NULL, 0, 0))
+    while (haveMSG || IsWindow(wnd) && GetMessageW(&msg, NULL, 0, 0))
     {
         haveMSG = FALSE;
 
-        if (!IsDialogMessage(wnd, &msg))
+        if (!IsDialogMessageW(wnd, &msg))
         {
             TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            DispatchMessageW(&msg);
         }
 
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        if (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT)
                 break;      // equivalent to GetMessage() returning FALSE

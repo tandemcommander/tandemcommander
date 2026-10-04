@@ -340,6 +340,7 @@ protected:
     int AddBookmarkMode;                       // 0 - connect, 1 - organize bookmarks, 2 - organize bookmarks + focus last bookmark
 
     char LastRawHostAddress[HOST_MAX_SIZE]; // last value entered into the "Address" edit box (after leaving the edit box it is split, so we keep it in this buffer)
+    int TooLongCtrlID;                      // feature 104: a field the user changed whose text does not fit its buffer (0 = none); Connect and Close refuse it
 
 public:
     CConnectDlg(HWND parent, int addBookmarkMode = 0);
@@ -362,6 +363,11 @@ protected:
 
     void MoveItem(HWND list, int fromIndex, int toIndex, int topIndex = -1);
     BOOL GetCurSelServer(CFTPServer** server, int* index);
+    // feature 104: TRUE when the field's text fits 'bytes' (terminator included) as UTF-8; when
+    // it does not, a field the user changed becomes TooLongCtrlID, an unchanged one (a value
+    // that was shown as it is stored - e.g. a password saved in code-page form by 0.1.8) is left
+    // alone; either way the caller must not take the text
+    BOOL ConnectFieldFits(int ctrlID, int bytes);
 
     virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 

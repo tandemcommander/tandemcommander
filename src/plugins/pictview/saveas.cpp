@@ -62,11 +62,14 @@ static PVFS_FTYPE fs_comptypes[] = {
 
 void GetMyDocumentsPath(LPTSTR initDir)
 {
+    // feature 104: UTF-8 (the start folder of the Unicode Save As dialog); 'initDir' is
+    // MAX_PATH bytes - a longer UTF-8 form leaves it empty (the dialog's own default)
     initDir[0] = 0;
     ITEMIDLIST* pidl = NULL;
     if (SHGetSpecialFolderLocation(NULL, CSIDL_PERSONAL, &pidl) == NOERROR)
     {
-        if (!SHGetPathFromIDList(pidl, initDir))
+        WCHAR pathW[MAX_PATH];
+        if (!SHGetPathFromIDListW(pidl, pathW) || SplWToU8(pathW, initDir, MAX_PATH) == 0)
             initDir[0] = 0;
         IMalloc* alloc;
         if (SUCCEEDED(CoGetMalloc(1, &alloc)))
@@ -75,6 +78,27 @@ void GetMyDocumentsPath(LPTSTR initDir)
             alloc->Release();
         }
     }
+}
+
+// feature 104: a message naming the save target: the code-page template (LoadStr) with the
+// UTF-8 name, composed as UTF-16 and stored as UTF-8 - the whole text in one encoding, so the
+// core shows the name exactly (a code-page template with a UTF-8 name in it showed one of the
+// two garbled). Falls back to the plain composition if anything fails.
+static void FormatNameMessageU8(char* out, int outSize, const char* cpTemplate, const char* u8Name)
+{
+    WCHAR* fmtW = SplFileDlgDetail::CodePageToWAlloc(cpTemplate);
+    WCHAR* nameW = SplU8ToWAlloc(u8Name);
+    BOOL done = FALSE;
+    if (fmtW != NULL && nameW != NULL)
+    {
+        WCHAR text[2048];
+        if (_snwprintf_s(text, _TRUNCATE, fmtW, nameW) >= 0 && SplWToU8(text, out, outSize) > 0)
+            done = TRUE;
+    }
+    free(fmtW);
+    free(nameW);
+    if (!done)
+        _snprintf_s(out, outSize, _TRUNCATE, cpTemplate, u8Name);
 }
 
 typedef struct tagProgBarInfo
@@ -177,8 +201,11 @@ BOOL GetFormatInfo(OPENFILENAME* lpOFN, DWORD* pFormat, LPTSTR* pExt)
 {
     // given list of filters & filter index, extract PVF_xxx & default format extension
     // returns TRUE if the format supports comment (or better to say, we support saving it ;))
+    // feature 104: 'lpOFN' may be the Unicode dialog's OPENFILENAMEW (the hook's lParam, the
+    // notification's lpOFN) - only nFilterIndex and lCustData are read from it (the same offsets
+    // in both forms); the code-page filter list comes from SAVEAS_INFO::FilterA
     int i = 2 * lpOFN->nFilterIndex - 1;
-    LPTSTR s = (LPTSTR)lpOFN->lpstrFilter;
+    LPTSTR s = (LPTSTR)((SAVEAS_INFO_PTR)lpOFN->lCustData)->FilterA;
     PVFS_FTYPE* ftype = fs_types;
 
     while (i--)
@@ -566,6 +593,69 @@ const char* StrIStr(const char* txt, const char* pattern)
     return NULL;
 }
 
+// feature 104: GetSaveFileNameW for the Save As dialog's OPENFILENAME: lpstrFile and
+// lpstrInitialDir are UTF-8 (in/out, nMaxFile bytes), lpstrFilter and lpstrDefExt code-page
+// text; the hook (SaveAsDlgProc) and the template stay. nFilterIndex, nFileOffset and
+// nFileExtension (bytes of the UTF-8 result) come back as from the A dialog. The core's
+// SafeGetSaveFileName retry (Windows refuses an initial name like "C:\") is kept. A picked
+// name whose UTF-8 form does not fit is refused with a message (FALSE, as Cancel).
+static BOOL SaveAsDialogU8(OPENFILENAME* ofn)
+{
+    const DWORD fileUnits = 32768;
+    WCHAR* file = (WCHAR*)malloc(fileUnits * sizeof(WCHAR));
+    if (file == NULL)
+        return FALSE;
+    if (SplU8ToW(ofn->lpstrFile, file, fileUnits) == 0)
+        file[0] = 0;
+    WCHAR* initDir = ofn->lpstrInitialDir != NULL && ofn->lpstrInitialDir[0] != 0 ? SplU8ToWAlloc(ofn->lpstrInitialDir) : NULL;
+    WCHAR* filter = SplFileDlgDetail::CodePageListToWAlloc(ofn->lpstrFilter);
+    WCHAR* defExt = SplFileDlgDetail::CodePageToWAlloc(ofn->lpstrDefExt);
+    WCHAR* title = SplFileDlgDetail::CodePageToWAlloc(ofn->lpstrTitle);
+
+    OPENFILENAMEW w;
+    memset(&w, 0, sizeof(w));
+    w.lStructSize = sizeof(w);
+    w.hwndOwner = ofn->hwndOwner;
+    w.hInstance = ofn->hInstance;
+    w.lpstrFilter = filter;
+    w.nFilterIndex = ofn->nFilterIndex;
+    w.lpstrFile = file;
+    w.nMaxFile = fileUnits;
+    w.lpstrInitialDir = initDir;
+    w.lpstrTitle = title;
+    w.Flags = ofn->Flags;
+    w.lpstrDefExt = defExt;
+    w.lCustData = ofn->lCustData;
+    w.lpfnHook = ofn->lpfnHook;
+    w.lpTemplateName = IS_INTRESOURCE(ofn->lpTemplateName) ? (LPCWSTR)ofn->lpTemplateName : NULL;
+
+    BOOL ret = GetSaveFileNameW(&w);
+    if (!ret && CommDlgExtendedError() == FNERR_INVALIDFILENAME)
+    {
+        file[0] = 0;
+        w.lpstrInitialDir = NULL;
+        ret = GetSaveFileNameW(&w);
+    }
+    if (ret)
+    {
+        ofn->nFilterIndex = w.nFilterIndex;
+        if (SplWToU8(file, ofn->lpstrFile, ofn->nMaxFile) == 0)
+        {
+            ofn->lpstrFile[0] = 0;
+            SplShowNameTooLong(ofn->hwndOwner, LoadStr(IDS_ERRORTITLE));
+            ret = FALSE;
+        }
+        else
+            SplFileDlgDetail::NameOffsets(ofn->lpstrFile, &ofn->nFileOffset, &ofn->nFileExtension);
+    }
+    free(file);
+    free(initDir);
+    free(filter);
+    free(defExt);
+    free(title);
+    return ret;
+}
+
 BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
 {
     static int cntClipboard = 1;
@@ -621,6 +711,7 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
     }
     // use local copy to make several simultaneously open SaveAs dialogs work
     lsai = sai;
+    lsai.FilterA = NULL; // set below, together with the filter list
     if (pInitDir)
     {
         lstrcpyn(initDir, pInitDir, SizeOf(initDir));
@@ -715,6 +806,7 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
     ofn.ofn.hInstance = HLanguage;
     ofn.ofn.lCustData = (LPARAM)&lsai;
     ofn.ofn.Flags = OFN_EXPLORER | OFN_ENABLEHOOK | OFN_ENABLETEMPLATE | OFN_PATHMUSTEXIST | OFN_LONGNAMES | OFN_NOCHANGEDIR | OFN_NOTESTFILECREATE | OFN_HIDEREADONLY;
+    lsai.FilterA = filterStr;
     lsai.pvii = &pvii;
     // Start with no rotation & no flip
     lsai.Rotation = lsai.Flip = 0;
@@ -724,7 +816,11 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
         LPTSTR s2;
         HANDLE hFile;
 
-        if (!SalamanderGeneral->SafeGetSaveFileName(&ofn.ofn))
+        // feature 104: the Unicode Save As dialog; the names (fileName, initDir) are UTF-8. The
+        // code-page dialog (SafeGetSaveFileName) gave the typed name with best fit: a name outside
+        // the code page became '?' or a look-alike - and when the look-alike existed, the
+        // "overwrite?" question below named it and Yes DELETED that other file
+        if (!SaveAsDialogU8(&ofn.ofn))
         {
             // don't save options
             return FALSE;
@@ -824,7 +920,7 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
         if (hFile != INVALID_HANDLE_VALUE)
         {
             CloseHandle(hFile);
-            _stprintf(errBuff, LoadStr(IDS_SAVE_ERR_EXISTS_OVERWRITE), fileName);
+            FormatNameMessageU8(errBuff, SizeOf(errBuff), LoadStr(IDS_SAVE_ERR_EXISTS_OVERWRITE), fileName); // feature 104
             ret = SalamanderGeneral->SalMessageBox(HWindow, errBuff,
                                                    LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_YESNOCANCEL);
             if (ret == IDCANCEL)
@@ -853,7 +949,7 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
                 if ((ret != 0xFFFFFFFF) && (ret & FILE_ATTRIBUTE_READONLY))
                 {
                     // R/O attrib
-                    _stprintf(errBuff, LoadStr(IDS_READ_ONLY_REWRITE), fileName);
+                    FormatNameMessageU8(errBuff, SizeOf(errBuff), LoadStr(IDS_READ_ONLY_REWRITE), fileName); // feature 104
                     ret = SalamanderGeneral->SalMessageBox(HWindow, errBuff,
                                                            LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_YESNOCANCEL);
                     if (ret == IDCANCEL)

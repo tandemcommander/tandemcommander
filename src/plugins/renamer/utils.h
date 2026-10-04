@@ -33,6 +33,23 @@ BOOL SetFileAttributesU8(const char* fileName, DWORD attr);
 BOOL CreateDirectoryU8(const char* pathName);
 BOOL RemoveDirectoryU8(const char* pathName);
 
+// feature 104: text of the dialog's edit controls as UTF-8. The controls are Unicode
+// windows (comctl32 6) and stay so (CWindow::AttachToWindowKeepKind); the former code-page
+// calls (WM_SETTEXT A of UTF-8 bytes, GetDlgItemText A, EM_GETLINE A) showed the names as
+// mojibake and read typed text through the code page ('?', best-fit look-alikes).
+// SetWindowTextU8: UTF-8 (WTF-8) text set wide, text that is not UTF-8 as code-page text.
+void SetWindowTextU8(HWND hWnd, const char* text);
+// the window's whole text as UTF-8 (WTF-8); free() the result; NULL on lack of memory
+char* GetWindowTextU8Alloc(HWND hWnd);
+// line 'line' of a multi-line edit as UTF-8 into 'buf' (no terminator counted); returns the
+// byte length, -1 when it does not fit 'bufSize' (incl. the terminator), -2 when the line
+// does not exist - 'buf' is then empty
+int GetEditLineU8(HWND edit, int line, char* buf, int bufSize);
+// replaces the selection of an edit with 'bytes' (an external program's output or a file
+// edited outside): a leading UTF-8 byte-order mark is dropped; UTF-8 (WTF-8) is taken as
+// such, anything else as code-page text
+void ReplaceEditSelBytes(HWND edit, const char* bytes, BOOL canUndo);
+
 BOOL FileOverwrite(HWND parent, const char* fileName1, const char* fileData1,
                    const char* fileName2, const char* fileData2, DWORD attr,
                    int shquestion, int shtitle, BOOL* skip, DWORD* silent);

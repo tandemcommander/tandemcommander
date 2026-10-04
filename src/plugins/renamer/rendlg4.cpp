@@ -23,17 +23,22 @@ BOOL CRenamerDialog::ExportToTempFile()
     }
 
     // nacteme text z controlu
-    TBuffer<char> buffer;
-    if (!buffer.Reserve(GetWindowTextLength(ManualEdit->HWindow) + 1))
+    // feature 104: as UTF-8 - the names' own bytes, which is what the file held before too
+    // (the edit showed the UTF-8 bytes as code-page characters and GetWindowText A gave them
+    // back); now the edit shows the names and the file still gets their UTF-8 form
+    char* text = GetWindowTextU8Alloc(ManualEdit->HWindow);
+    if (text == NULL)
     {
+        CloseHandle(file);
         SG->CutDirectory(TempFile);
         SG->RemoveTemporaryDir(TempFile);
         return Error(IDS_LOWMEM);
     }
-    DWORD len = GetWindowText(ManualEdit->HWindow, buffer.Get(), (int)buffer.GetSize());
+    DWORD len = (DWORD)strlen(text);
 
     DWORD written;
-    BOOL b = WriteFile(file, buffer.Get(), len, &written, NULL) || written != len;
+    BOOL b = WriteFile(file, text, len, &written, NULL) || written != len;
+    free(text);
 
     CloseHandle(file);
 
@@ -86,7 +91,7 @@ BOOL CRenamerDialog::ImportFromTempFile()
     {
         buffer.Get()[size.LoDWord] = 0;
         SendMessage(ManualEdit->HWindow, EM_SETSEL, 0, -1);
-        SendMessage(ManualEdit->HWindow, EM_REPLACESEL, FALSE, LPARAM(buffer.Get()));
+        ReplaceEditSelBytes(ManualEdit->HWindow, buffer.Get(), FALSE); // feature 104: UTF-8, else the code page
         // SendMessage(ManualEdit->HWindow, WM_SETTEXT, 0, LPARAM(buffer.Get()));
     }
     else
@@ -121,10 +126,16 @@ BOOL CRenamerDialog::ExecuteCommand(const char* command)
 {
     CALL_STACK_MESSAGE2("CRenamerDialog::ExecuteCommand(%s)", command);
     // create the command line
-    char shell[MAX_PATH];
-    if (!GetEnvironmentVariable("SHELL", shell, MAX_PATH))
+    // feature 104: the shell's path as UTF-8, like the command (the command line is built in
+    // UTF-8 and converted as such below; it was converted with CP_ACP, which garbled every
+    // non-ASCII character of a command typed in the Command dialog)
+    char shell[3 * MAX_PATH];
     {
-        if (!GetEnvironmentVariable("COMSPEC", shell, MAX_PATH))
+        WCHAR shellW[MAX_PATH];
+        DWORD n = GetEnvironmentVariableW(L"SHELL", shellW, MAX_PATH);
+        if (n == 0 || n >= MAX_PATH)
+            n = GetEnvironmentVariableW(L"COMSPEC", shellW, MAX_PATH);
+        if (n == 0 || n >= MAX_PATH || SplWToU8(shellW, shell, sizeof(shell)) == 0)
             return FALSE;
     }
 
@@ -210,24 +221,40 @@ BOOL CRenamerDialog::ExecuteCommand(const char* command)
     }
 
     // nacteme text z controlu
-    if (!buffer.Reserve(GetWindowTextLength(ManualEdit->HWindow) + 1))
+    // feature 104: as UTF-8 - the bytes the command received before too (see ExportToTempFile)
+    char* text;
+    text = GetWindowTextU8Alloc(ManualEdit->HWindow);
+    if (text == NULL || !buffer.Reserve((int)strlen(text) + 1))
     {
+        free(text);
         SG->CutDirectory(TempFile);
         SG->RemoveTemporaryDir(TempFile);
         ret = Error(IDS_LOWMEM);
         goto LERROR;
     }
     DWORD len;
-    len = GetWindowText(ManualEdit->HWindow, buffer.Get(), (int)buffer.GetSize());
+    len = (DWORD)strlen(text);
+    memcpy(buffer.Get(), text, len + 1);
+    free(text);
 
     // launch the shell on the W layer: the working directory (Root) is a UTF-8 panel path
     STARTUPINFOW si;
     PROCESS_INFORMATION pi;
     int cmdLineLen;
-    cmdLineLen = MultiByteToWideChar(CP_ACP, 0, cmdLine, -1, NULL, 0); // cmdLine is an ANSI text (shell + user command)
-    wCmdLine = cmdLineLen > 0 ? (WCHAR*)malloc(cmdLineLen * sizeof(WCHAR)) : NULL;
-    if (wCmdLine == NULL ||
-        MultiByteToWideChar(CP_ACP, 0, cmdLine, -1, wCmdLine, cmdLineLen) == 0)
+    // feature 104: cmdLine is UTF-8 (the shell's path + the command from the Command dialog,
+    // read with EditLine); text that is not UTF-8 is taken as code-page text
+    wCmdLine = SplU8ToWAlloc(cmdLine);
+    if (wCmdLine == NULL)
+    {
+        cmdLineLen = MultiByteToWideChar(CP_ACP, 0, cmdLine, -1, NULL, 0);
+        wCmdLine = cmdLineLen > 0 ? (WCHAR*)malloc(cmdLineLen * sizeof(WCHAR)) : NULL;
+        if (wCmdLine != NULL && MultiByteToWideChar(CP_ACP, 0, cmdLine, -1, wCmdLine, cmdLineLen) == 0)
+        {
+            free(wCmdLine);
+            wCmdLine = NULL;
+        }
+    }
+    if (wCmdLine == NULL)
     {
         ret = Error(IDS_PROCESS);
         goto LERROR;
@@ -330,7 +357,7 @@ BOOL CRenamerDialog::ExecuteCommand(const char* command)
     {
         buffer.Get()[size.LoDWord] = 0;
         SendMessage(ManualEdit->HWindow, EM_SETSEL, 0, -1);
-        SendMessage(ManualEdit->HWindow, EM_REPLACESEL, TRUE, LPARAM(buffer.Get()));
+        ReplaceEditSelBytes(ManualEdit->HWindow, buffer.Get(), TRUE); // feature 104: UTF-8, else the code page
         //SendMessage(ManualEdit->HWindow, WM_SETTEXT, 0, LPARAM(buffer.Get()));
     }
     else

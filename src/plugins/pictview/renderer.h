@@ -69,6 +69,9 @@ typedef struct _gen_saveas_info
     DWORD Flags;
     char Comment[SAVEAS_MAX_COMMENT_SIZE];
     LPPVImageInfo pvii;
+    // feature 104: the Save As dialog is the Unicode one, so its lpstrFilter is UTF-16; the hook
+    // reads the code-page filter list (the extensions of the formats) from here
+    LPCTSTR FilterA;
 } SAVEAS_INFO, *SAVEAS_INFO_PTR;
 
 BOOL IsCageValid(const RECT* r); // returns TRUE if r->left != 0x80000000

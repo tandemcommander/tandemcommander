@@ -31,6 +31,7 @@
 #include "spl_vers.h"
 
 #include "splunicode.h"
+#include "splfiledlg.h" // feature 104: Unicode file and folder pickers
 
 #include "dbg.h"
 #include "arraylt.h"

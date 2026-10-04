@@ -8,6 +8,7 @@
 #include "fdi.h"
 #include "uncab.h"
 #include "dialogs.h"
+#include "splfiledlg.h" // feature 104: the Unicode folder picker
 
 #include "uncab.rh"
 #include "uncab.rh2"
@@ -38,7 +39,6 @@ LRESULT CALLBACK TextControlProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     {
         RECT r;
         PAINTSTRUCT ps;
-        char txt[MAX_PATH];
 
         GetClientRect(hWnd, &r);
         BeginPaint(hWnd, &ps);
@@ -52,15 +52,16 @@ LRESULT CALLBACK TextControlProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         HFONT hOldFont = (HFONT)SelectObject(ps.hdc, hCurrentFont);
         SetTextColor(ps.hdc, SalamanderGeneral->GetThemeSysColor(COLOR_BTNTEXT)); // feature 036
         int prevBkMode = SetBkMode(ps.hdc, TRANSPARENT);
-        int len = GetWindowText(hWnd, txt, MAX_PATH);
-        DrawText(ps.hdc, txt, lstrlen(txt), &r, DT_SINGLELINE | /*DT_VCENTER*/ DT_BOTTOM | DT_NOPREFIX | DT_PATH_ELLIPSIS);
+        // feature 104: read and drawn as UTF-16 (GetWindowText A + DrawText A showed '?' or a
+        // best-fit look-alike for every character outside the code page)
+        SplDrawWindowTextW(hWnd, ps.hdc, &r, DT_SINGLELINE | /*DT_VCENTER*/ DT_BOTTOM | DT_NOPREFIX | DT_PATH_ELLIPSIS);
         SetBkMode(ps.hdc, prevBkMode);
         SelectObject(ps.hdc, hOldFont);
         EndPaint(hWnd, &ps);
         return 0;
     }
     }
-    return CallWindowProc(OrigTextControlProc, hWnd, uMsg, wParam, lParam);
+    return CallWindowProcW(OrigTextControlProc, hWnd, uMsg, wParam, lParam); // feature 104: a Unicode subclass
 }
 
 // ****************************************************************************
@@ -79,10 +80,12 @@ void CDlgRoot::CenterDlgToParent()
 void CDlgRoot::SubClassStatic(DWORD wID, BOOL subclass)
 {
     CALL_STACK_MESSAGE3("CDlgRoot::SubClassStatic(0x%X, %d)", wID, subclass);
+    // feature 104: through the W entry points, so the label stays a Unicode window (a
+    // code-page subclass stores every text set into it through the code page)
     if (subclass)
-        OrigTextControlProc = (WNDPROC)SetWindowLongPtr(GetDlgItem(Dlg, wID), GWLP_WNDPROC, (LONG_PTR)TextControlProc);
+        OrigTextControlProc = (WNDPROC)SetWindowLongPtrW(GetDlgItem(Dlg, wID), GWLP_WNDPROC, (LONG_PTR)TextControlProc);
     else
-        SetWindowLongPtr(GetDlgItem(Dlg, wID), GWLP_WNDPROC, (LONG_PTR)OrigTextControlProc);
+        SetWindowLongPtrW(GetDlgItem(Dlg, wID), GWLP_WNDPROC, (LONG_PTR)OrigTextControlProc);
 }
 
 // ****************************************************************************
@@ -156,91 +159,62 @@ BOOL CNextVolumeDialog::OnInit(WPARAM wParam, LPARAM lParam)
     char buf[1024];
     sprintf(buf, LoadStr(IDS_NEXTVOLTEXT), CabNumber);
     SendDlgItemMessage(Dlg, IDC_TEXT, WM_SETTEXT, 0, (LPARAM)buf);
-    // VolumeName/VolumePath/DiskName are UTF-8 (interface 104), the dialog controls
-    // are ANSI (the dialog is created with the -A API) -> convert for display
-    char acp[MAX_PATH];
-    U8ToAcp(DiskName, acp, MAX_PATH);
-    SendDlgItemMessage(Dlg, IDC_DISKNAME, WM_SETTEXT, 0, (LPARAM)acp);
-    U8ToAcp(VolumeName, acp, MAX_PATH);
-    SendDlgItemMessage(Dlg, IDC_CABNAME, WM_SETTEXT, 0, (LPARAM)acp);
+    // VolumeName/VolumePath/DiskName are UTF-8 (interface 104). feature 104: the controls
+    // are Unicode windows (comctl32 6, also in a dialog made by the -A API), so the names
+    // are set as UTF-16 - the former round trip through the code page showed '?' or a
+    // best-fit look-alike ("voila" for "voil<U+00E0>") and OnOK then read that look-alike
+    // back as the folder of the next volume: another existing folder could be used
+    SetDlgItemTextU8OrAcp(Dlg, IDC_DISKNAME, DiskName);
+    SetDlgItemTextU8OrAcp(Dlg, IDC_CABNAME, VolumeName);
     SendDlgItemMessage(Dlg, IDC_FILENAME, EM_SETLIMITTEXT, MAX_PATH - 1, 0);
-    U8ToAcp(VolumePath, acp, MAX_PATH);
-    SendDlgItemMessage(Dlg, IDC_FILENAME, WM_SETTEXT, 0, (LPARAM)acp);
+    SetDlgItemTextU8OrAcp(Dlg, IDC_FILENAME, VolumePath);
 
     CenterDlgToParent();
     return TRUE;
-}
-
-int CALLBACK DirectoryBrowse(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
-{
-    CALL_STACK_MESSAGE4("DirectoryBrowse(, 0x%X, 0x%IX, 0x%IX)", uMsg, lParam,
-                        lpData);
-    if (uMsg == BFFM_INITIALIZED)
-    {
-        SetWindowText(hwnd, LoadStr(IDS_BROWSEARCHIVETITLE));
-        char buf[MAX_PATH];
-        SalamanderGeneral->GetRootPath(buf, (char*)lpData);
-        SalamanderGeneral->SalPathRemoveBackslash(buf);
-        SalamanderGeneral->SalPathRemoveBackslash((char*)lpData);
-        if (lstrlen(buf) == lstrlen((char*)lpData)) // this is the root directory
-            SalamanderGeneral->SalPathAddBackslash((char*)lpData, MAX_PATH);
-        SendMessage(hwnd, BFFM_SETSELECTION, TRUE, lpData);
-    }
-    return 0;
 }
 
 BOOL CNextVolumeDialog::OnBrowse(WORD wNotifyCode, WORD wID, HWND hwndCtl)
 {
     CALL_STACK_MESSAGE3("CNextVolumeDialog::OnBrowse(0x%X, 0x%X, )", wNotifyCode,
                         wID);
-    char path[MAX_PATH];
-    // the shell browse dialog and the dialog controls are ANSI; keep the whole
-    // exchange in an ANSI buffer and convert back to UTF-8 (interface 104) at the end.
-    // VolumePath itself is only CB_MAX_CAB_PATH bytes (FDI's cap), so it must never
-    // be handed to GetDlgItemText/SHGetPathFromIDList, which write up to MAX_PATH.
-    char acpPath[MAX_PATH];
-
-    GetDlgItemText(Dlg, IDC_FILENAME, acpPath, MAX_PATH);
-
-    BROWSEINFO bi;
-    bi.hwndOwner = Dlg;
-    bi.pidlRoot = NULL;
-    bi.pszDisplayName = path;
-    char buf[1024];
-    char acpName[MAX_PATH];
-    U8ToAcp(VolumeName, acpName, MAX_PATH);
-    sprintf(buf, LoadStr(IDS_BROWSEFOLDERTEXT), acpName);
-    bi.lpszTitle = buf;
-    bi.ulFlags = BIF_RETURNONLYFSDIRS;
-    bi.lpfn = DirectoryBrowse;
-    bi.lParam = (LPARAM)acpPath;
-    LPITEMIDLIST res = SHBrowseForFolder(&bi);
-    if (res != NULL)
-    {
-        SHGetPathFromIDList(res, acpPath);
-        SetDlgItemText(Dlg, IDC_FILENAME, acpPath);
-    }
-    AcpToU8(acpPath, VolumePath, CB_MAX_CAB_PATH);
-    // release the item ID list
-    IMalloc* alloc;
-    if (SUCCEEDED(CoGetMalloc(1, &alloc)))
-    {
-        if (alloc->DidAlloc(res) == 1)
-            alloc->Free(res);
-        alloc->Release();
-    }
-
+    // feature 104: the field and the shell's folder picker are used as UTF-16 and the
+    // folder goes on as UTF-8 - the former ANSI exchange (GetDlgItemText A, SHBrowseForFolder
+    // A) converted with best fit, so a folder named outside the code page came back as '?' or
+    // as a look-alike existing folder. Only the field is changed here; OnOK takes it from there
+    // (before, a Browse also stored the code-page form in VolumePath directly).
+    char initDir[MAX_PATH * 3];
+    GetDlgItemTextU8(Dlg, IDC_FILENAME, initDir, sizeof(initDir));                   // empty when it does not fit
+    WCHAR* fmtW = SplFileDlgDetail::CodePageToWAlloc(LoadStr(IDS_BROWSEFOLDERTEXT)); // "%s" = the cabinet's name
+    WCHAR* nameW = SplU8ToWAlloc(VolumeName);
+    WCHAR comment[1024];
+    comment[0] = 0;
+    if (fmtW != NULL)
+        _snwprintf_s(comment, _TRUNCATE, fmtW, nameW != NULL ? nameW : L"");
+    free(fmtW);
+    free(nameW);
+    WCHAR* titleW = SplFileDlgDetail::CodePageToWAlloc(LoadStr(IDS_BROWSEARCHIVETITLE));
+    char picked[MAX_PATH * 3];
+    if (SplBrowseForFolderU8(Dlg, NULL, titleW, comment, picked, sizeof(picked), FALSE, initDir))
+        SetDlgItemTextU8OrAcp(Dlg, IDC_FILENAME, picked);
+    free(titleW);
     return TRUE;
 }
 
 BOOL CNextVolumeDialog::OnOK(WORD wNotifyCode, WORD wID, HWND hwndCtl)
 {
     CALL_STACK_MESSAGE3("CNextVolumeDialog::OnOK(0x%X, 0x%X, )", wNotifyCode, wID);
-    // the edit control holds ANSI text -> UTF-8 for the core calls below and for
-    // FDI (VolumePath is FDI's CB_MAX_CAB_PATH cabinet-path buffer; interface 104)
-    char acpPath[MAX_PATH];
-    GetDlgItemText(Dlg, IDC_FILENAME, acpPath, MAX_PATH);
-    AcpToU8(acpPath, VolumePath, CB_MAX_CAB_PATH);
+    // feature 104: the field is read as UTF-16 and stored as UTF-8 for the core calls below
+    // and for FDI (VolumePath is FDI's CB_MAX_CAB_PATH cabinet-path buffer; interface 104).
+    // The former GetDlgItemText A converted with best fit: a folder named outside the code
+    // page became '?' or a look-alike existing folder. A path that does not fit (with room
+    // for the backslash added below) is refused, never cut.
+    char path[CB_MAX_CAB_PATH];
+    if (GetDlgItemTextU8(Dlg, IDC_FILENAME, path, CB_MAX_CAB_PATH - 1) == 0)
+    {
+        SplShowNameTooLong(Dlg, LoadStr(IDS_ERROR));
+        return TRUE;
+    }
+    lstrcpyn(VolumePath, path, CB_MAX_CAB_PATH);
     SalamanderGeneral->SalPathAddBackslash(VolumePath, CB_MAX_CAB_PATH);
 
     char fullName[CB_MAX_CAB_PATH + CB_MAX_CABINET_NAME + 1];
@@ -359,10 +333,9 @@ BOOL CContinuedFileDialog::OnInit(WPARAM wParam, LPARAM lParam)
 {
     CALL_STACK_MESSAGE3("CContinuedFileDialog::OnInit(0x%IX, 0x%IX)", wParam, lParam);
     SubClassStatic(IDS_FILENAME, TRUE);
-    // 'File' is a UTF-8 name from the cabinet (interface 104), the control is ANSI
-    char acp[3 * MAX_PATH];
-    U8ToAcp(File, acp, sizeof(acp));
-    SendDlgItemMessage(Dlg, IDS_FILENAME, WM_SETTEXT, 0, (LPARAM)acp);
+    // 'File' is a UTF-8 name from the cabinet (interface 104); feature 104: set as UTF-16
+    // (the label is a Unicode window again, see SubClassStatic)
+    SetDlgItemTextU8OrAcp(Dlg, IDS_FILENAME, File);
 
     CenterDlgToParent();
     return TRUE;

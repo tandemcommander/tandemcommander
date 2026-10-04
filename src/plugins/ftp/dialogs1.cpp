@@ -876,6 +876,42 @@ CConnectDlg::CConnectDlg(HWND parent, int addBookmarkMode)
     ExtraDragDropItemAdded = FALSE;
     AddBookmarkMode = addBookmarkMode;
     LastRawHostAddress[0] = 0;
+    TooLongCtrlID = 0;
+}
+
+BOOL CConnectDlg::ConnectFieldFits(int ctrlID, int bytes)
+{
+    HWND ctrl = GetDlgItem(HWindow, ctrlID);
+    if (ctrl == NULL)
+        return TRUE;
+    int units = GetWindowTextLengthW(ctrl);
+    BOOL fits = TRUE;
+    if (units * 3 + 1 > bytes) // could be too long: measure
+    {
+        WCHAR* w = (WCHAR*)malloc((units + 1) * sizeof(WCHAR));
+        if (w != NULL)
+        {
+            w[0] = 0;
+            GetWindowTextW(ctrl, w, units + 1);
+            char* u8 = SplWToU8Alloc(w);
+            fits = u8 == NULL || (int)strlen(u8) < bytes;
+            free(u8);
+            free(w);
+        }
+    }
+    if (fits)
+    {
+        if (TooLongCtrlID == ctrlID)
+            TooLongCtrlID = 0;
+        return TRUE;
+    }
+    HWND edit = ctrl;
+    char cls[16];
+    if (GetClassNameA(ctrl, cls, sizeof(cls)) > 0 && lstrcmpiA(cls, "ComboBox") == 0)
+        edit = GetWindow(ctrl, GW_CHILD); // the combo box's edit
+    if (edit != NULL && SendMessage(edit, EM_GETMODIFY, 0, 0) != 0)
+        TooLongCtrlID = ctrlID;
+    return FALSE;
 }
 
 void CConnectDlg::Validate(CTransferInfo& ti)
@@ -962,6 +998,7 @@ void CConnectDlg::SelChanged()
     int i;
     if (!GetCurSelServer(&s, &i))
         return; // unexpected situation
+    TooLongCtrlID = 0; // feature 104: the fields are filled anew (a typed over-long text is discarded)
 
     BOOL lockedPassword = TRUE;
     char password[PASSWORD_MAX_SIZE];
@@ -1430,6 +1467,19 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
             CanChangeFocus = TRUE;
 
+            // feature 104: a field whose text does not fit its buffer as UTF-8 was left out when it
+            // lost the focus (the stored value is kept, see IDE_HOSTADDRESS...IDE_PASSWORD below);
+            // Connect and Close refuse it here - one message, the field focused, no connection with
+            // the old or an empty value, nothing stored
+            HWND tooLong = WinLibFindTooLongText(HWindow);
+            if (tooLong == NULL && TooLongCtrlID != 0)
+                tooLong = GetDlgItem(HWindow, TooLongCtrlID);
+            if (tooLong != NULL)
+            {
+                WinLibRefuseTooLongText(HWindow, tooLong);
+                return TRUE;
+            }
+
             if (LOWORD(wParam) == IDB_CLOSE)
             {
                 if (!ValidateData() ||
@@ -1706,7 +1756,9 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             case IDE_HOSTADDRESS:
             {
-                if (HIWORD(wParam) == CBN_KILLFOCUS)
+                // feature 104: a text that does not fit is not taken (the bookmark keeps its values,
+                // the field keeps the text); Connect / Close refuse it with a message
+                if (HIWORD(wParam) == CBN_KILLFOCUS && ConnectFieldFits(IDE_HOSTADDRESS, HOST_MAX_SIZE))
                 {
                     ti.EditLine(IDE_HOSTADDRESS, LastRawHostAddress, HOST_MAX_SIZE);
                     char buf[HOST_MAX_SIZE];
@@ -1820,7 +1872,7 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             case IDE_INITIALPATH:
             {
-                if (HIWORD(wParam) == CBN_KILLFOCUS)
+                if (HIWORD(wParam) == CBN_KILLFOCUS && ConnectFieldFits(IDE_INITIALPATH, FTP_MAX_PATH)) // feature 104: see IDE_HOSTADDRESS
                 {
                     char buf[FTP_MAX_PATH];
                     ti.EditLine(IDE_INITIALPATH, buf, FTP_MAX_PATH);
@@ -1848,7 +1900,8 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             case IDE_USERNAME:
             {
-                if (HIWORD(wParam) == EN_KILLFOCUS && !s->AnonymousConnection)
+                if (HIWORD(wParam) == EN_KILLFOCUS && !s->AnonymousConnection &&
+                    ConnectFieldFits(IDE_USERNAME, USER_MAX_SIZE)) // feature 104: see IDE_HOSTADDRESS
                 {
                     char buf[USER_MAX_SIZE];
                     ti.EditLine(IDE_USERNAME, buf, USER_MAX_SIZE);
@@ -1861,7 +1914,8 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 CSalamanderPasswordManagerAbstract* passwordManager = SalamanderGeneral->GetSalamanderPasswordManager();
                 if (HIWORD(wParam) == EN_KILLFOCUS && !s->AnonymousConnection &&
-                    (!s->SavePassword || !passwordManager->IsUsingMasterPassword() || passwordManager->IsMasterPasswordSet())) // just to be safe: exclude the case when the edit box is disabled (editing via the Unlock button)
+                    (!s->SavePassword || !passwordManager->IsUsingMasterPassword() || passwordManager->IsMasterPasswordSet()) && // just to be safe: exclude the case when the edit box is disabled (editing via the Unlock button)
+                    ConnectFieldFits(IDE_PASSWORD, PASSWORD_MAX_SIZE)) // feature 104: a password that does not fit is not taken - the stored one stays (it was erased)
                 {
                     char plainPassword[PASSWORD_MAX_SIZE];
                     ti.EditLine(IDE_PASSWORD, plainPassword, PASSWORD_MAX_SIZE);
