@@ -410,12 +410,38 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   error 32 for the image it shows** (the viewer keeps it open; both builds,
   NTFS and WebDAV). Found by 103's second review: renaming or moving a
   symbolic link onto the file it points at **deleted that file** (both older
-  builds) - fixed in 103; still open: **moving a FOLDER onto an alias of
-  itself between two roots** (`C:\x\F` -> `\\localhost\C$\x\`) deletes its
-  empty subfolders (files are refused, no data lost - a folder-level identity
-  check for moves between roots is missing); a hard link reached through an
-  alias still gets "overwrite x with x?" then error 32 (safe on NTFS, other
-  servers unverified); the Renamer's refusal says "already exists" (a plug-in
+  builds) - fixed in 103; **moving a FOLDER onto an alias of itself between
+  two roots** (`C:\x\F` -> `\\localhost\C$\x\`) deleted its empty subfolders,
+  and a hard link reached through an alias got "overwrite x with x?" then
+  error 32 - ✅ **both fixed by feature 107 (2026-10-04)**: measured wider -
+  the empty subfolders went also through a junction, the 8.3 spelling and a
+  WebDAV NFC/NFD spelling on the SAME drive, and a move INTO itself or into
+  its own subfolder through `\\localhost\C$`, `\\127.0.0.1\C$`, a mapped
+  drive, SUBST or a second WebDAV server name moved the whole content one
+  level down and deleted the originals (nothing lost, the tree gone). Now
+  the folder identity decides at script build ("Cannot move a directory to
+  itself." / "Cannot copy a file to itself.") plus a worker check for merges
+  below the top level; one hard link through an alias is "the same file";
+  record `specs/107-folder-alias-move/fix-log.md`. Found by 107, decided or
+  small (no loss): a folder COPY into itself or its own subfolder still
+  makes a snapshot copy (by name as always; a decision to confirm); a
+  refused folder copy says "Cannot copy a file to itself." and a move into a
+  subfolder "Cannot move a directory to itself." (clearer texts need two new
+  core strings through the translation pipeline); a local folder and a
+  WebDAV path of the same folder served from this machine are not
+  recognised as one (folder with an id vs. one without = two file systems,
+  chosen to avoid refusing uploads to WebDAV); two DIFFERENT WebDAV servers
+  holding one path below the server name with equal folder times count as
+  one (a refused merge - narrowed by the review's SF2 from "any folder of
+  that name"); a folder reachable through two shares of a NAS that gives
+  each share its own volume serial is not recognised (the old behaviour);
+  restoring an UNCHANGED file from a snapshot is refused "to itself" by
+  103's file rule (nothing to restore; folders from a snapshot merge);
+  snapshots and FAT volumes could not be driven here (no admin, no FAT
+  volume) - rule tests only; two differently named `@GMT` folders joined
+  by a junction could hide an alias (reasoned, not reproducible here); a merge costs ~1 ms more per folder over SMB;
+  paste and drag & drop cannot be driven on the hidden desktop (clipboard /
+  mouse) - a person's pass is owed (`107/quickstart.md` step 5). Still open: the Renamer's refusal says "already exists" (a plug-in
   cannot reach the core's "to itself" texts without a new string or an
   interface change).
 - **The panel sort comparator is intransitive with "Use locale" off** for

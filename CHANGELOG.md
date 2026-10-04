@@ -53,6 +53,25 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **A folder is never copied or moved onto another path of itself.** Moving
+  a folder "into the place where it already is" through another path of
+  that place - `\\localhost\C$\...`, `\\127.0.0.1\C$\...`, a mapped network
+  drive, a SUBST drive letter, a junction, the short (8.3) name of a folder
+  above it, a second name of a WebDAV server - deleted the folder's empty
+  subfolders, after a string of "Cannot move a file to itself." and "The
+  directory is not empty" messages. Moving a folder into itself or into one
+  of its own subfolders through such a path moved its whole content one
+  level down (`F\a.txt` became `F\F\a.txt`) and deleted the originals, and
+  a junction moved onto itself that way was deleted. No file was lost, but
+  the folder you had was rearranged. These are now
+  refused before anything is touched: "Cannot move a directory to itself."
+  (a copy onto itself: "Cannot copy a file to itself."). Copying a folder
+  into one of its own subfolders still makes a copy there, as it always did.
+  Also: copying (or moving to another drive letter or server name) a file
+  that has several hard links onto the very same file through such a path
+  asked "Overwrite?" with two identical lines and then failed with a
+  sharing error; it is now refused as "Cannot copy a file to itself." -
+  overwriting *another* hard link of the file works as before (feature 107).
 - **Packing never writes the archive over a file that is being packed.**
   When a multi-volume ZIP archive was created from a folder that held a
   file named like one of its volumes (packing into `a.zip` with `a.z01` or

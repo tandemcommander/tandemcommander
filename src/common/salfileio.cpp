@@ -466,14 +466,179 @@ BOOL SalDecryptFile(const char* u8path)
 // feature 103: file identity and the temporary-name route (UTF-8 facade)
 //
 
-BOOL SalGetFileIdentity(const char* u8path, BOOL linkItself, CSalFileIdentity* id)
+BOOL SalGetFileIdentity(const char* u8path, BOOL linkItself, CSalFileIdentity* id, BOOL volumeTraits)
 {
     SalFileIdentityClear(id);
     WCHAR* w = SalPathToWExtAlloc(u8path);
     if (w == NULL)
         return FALSE;
-    BOOL ret = SalGetFileIdentityW(w, linkItself, id);
+    BOOL ret = SalGetFileIdentityW(w, linkItself, id, volumeTraits);
     free(w);
+    return ret;
+}
+
+// feature 107: the folder holding the last component of 'u8path' (a drive or share root keeps its
+// backslash) and that component's name as the folder stores it; FALSE when either cannot be read
+static BOOL SalGetEntryOfPath(const char* u8path, CSalFileIdentity* dirId, WCHAR* storedName, int storedNameSize)
+{
+    SalFileIdentityClear(dirId);
+    storedName[0] = 0;
+    const char* slash = strrchr(u8path, '\\');
+    if (slash == NULL || slash[1] == 0)
+        return FALSE;
+    int len = (int)(slash - u8path);
+    char* dir = (char*)malloc(len + 2);
+    if (dir == NULL)
+        return FALSE;
+    memcpy(dir, u8path, len);
+    dir[len] = 0;
+    int backslashes = 0;
+    for (int i = 0; i < len; i++)
+    {
+        if (dir[i] == '\\')
+            backslashes++;
+    }
+    if ((len == 2 && dir[1] == ':') || (len > 2 && dir[0] == '\\' && dir[1] == '\\' && backslashes < 4))
+    { // "C:" -> "C:\", "\\server\share" -> "\\server\share\"
+        dir[len] = '\\';
+        dir[len + 1] = 0;
+    }
+    BOOL dirOk = SalGetFileIdentity(dir, FALSE, dirId, TRUE); // with the snapshot tag
+    free(dir);
+    WIN32_FIND_DATAW fd;
+    HANDLE h = SalFindFirstFile(u8path, &fd);
+    if (h == INVALID_HANDLE_VALUE)
+        return FALSE;
+    HANDLES(FindClose(h));
+    lstrcpynW(storedName, fd.cFileName, storedNameSize);
+    return dirOk;
+}
+
+int SalSameDirEntryU8(const char* u8src, const char* u8tgt)
+{
+    CSalFileIdentity srcDir, tgtDir;
+    WCHAR srcName[MAX_PATH], tgtName[MAX_PATH]; // cFileName is MAX_PATH
+    BOOL srcOk = SalGetEntryOfPath(u8src, &srcDir, srcName, MAX_PATH);
+    BOOL tgtOk = SalGetEntryOfPath(u8tgt, &tgtDir, tgtName, MAX_PATH);
+    return SalSameDirEntry(srcDir, tgtDir, srcOk ? srcName : NULL, tgtOk ? tgtName : NULL);
+}
+
+BOOL SalNamesLooselyEqualU8(const char* u8a, const char* u8b)
+{
+    if (SalNameEqualOrdinalCI(u8a, -1, u8b, -1))
+        return TRUE;
+    BOOL ret = FALSE;
+    WCHAR* wa = SalU8ToWAlloc(u8a);
+    WCHAR* wb = SalU8ToWAlloc(u8b);
+    WCHAR* na = wa != NULL ? SalNormalizeNFCAlloc(wa) : NULL;
+    WCHAR* nb = wb != NULL ? SalNormalizeNFCAlloc(wb) : NULL;
+    if (na != NULL && nb != NULL)
+        ret = CompareStringOrdinal(na, -1, nb, -1, TRUE) == CSTR_EQUAL;
+    free(na);
+    free(nb);
+    free(wa);
+    free(wb);
+    return ret;
+}
+
+char* SalGetFinalPathU8Alloc(const char* u8path)
+{
+    WCHAR* w = SalPathToWExtAlloc(u8path);
+    if (w == NULL)
+        return NULL;
+    HANDLE h = CreateFileW(w, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                           NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    free(w);
+    if (h == INVALID_HANDLE_VALUE)
+        return NULL;
+    char* ret = NULL;
+    DWORD need = GetFinalPathNameByHandleW(h, NULL, 0, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+    if (need > 0 && need < 0x10000)
+    {
+        WCHAR* buf = (WCHAR*)malloc((need + 1) * sizeof(WCHAR));
+        if (buf != NULL)
+        {
+            DWORD got = GetFinalPathNameByHandleW(h, buf, need + 1, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+            if (got > 0 && got <= need)
+            {
+                const WCHAR* p = buf;
+                if (wcsncmp(p, L"\\\\?\\UNC\\", 8) == 0)
+                {
+                    p += 6; // "\\?\UNC\server" -> "\\server" (the two characters before 'server' become "\\")
+                    buf[6] = L'\\';
+                    buf[7] = L'\\';
+                }
+                else if (wcsncmp(p, L"\\\\?\\", 4) == 0)
+                    p += 4;
+                ret = SalWToU8Alloc(p);
+            }
+            free(buf);
+        }
+    }
+    CloseHandle(h);
+    return ret;
+}
+
+char* SalCanonicalBelowServerU8Alloc(const char* path)
+{
+    if (path == NULL)
+        return NULL;
+    const char* rest;
+    BOOL unc = path[0] == '\\' && path[1] == '\\';
+    if (unc)
+    {
+        const char* s = strchr(path + 2, '\\'); // after "\\server" (with @SSL / @port, any spelling)
+        if (s == NULL || s[1] == 0)
+            return NULL;
+        rest = s + 1;
+        // the WebDAV redirector's root of a server ("\\host@port\DavWWWRoot\share\...") is the server
+        if (_strnicmp(rest, "DavWWWRoot", 10) == 0 && (rest[10] == '\\' || rest[10] == 0))
+            rest += rest[10] == 0 ? 10 : 11;
+        if (*rest == 0)
+            return NULL;
+    }
+    else
+    {
+        if (path[0] == 0 || path[1] != ':')
+            return NULL;
+        rest = path;
+    }
+    size_t len = strlen(rest);
+    if (len > 3 && rest[len - 1] == '\\')
+        len--;
+    char* ret = (char*)malloc(len + 3);
+    if (ret == NULL)
+        return NULL;
+    int pos = 0;
+    if (unc)
+    {
+        ret[pos++] = '\\';
+        ret[pos++] = '\\';
+    }
+    memcpy(ret + pos, rest, len);
+    ret[pos + len] = 0;
+    return ret;
+}
+
+BOOL SalPathsBelowServerLooselyEqualU8(const char* u8a, const char* u8b)
+{
+    char* fa = SalGetFinalPathU8Alloc(u8a); // a mapped drive letter, a SUBST letter, a link resolved
+    char* fb = SalGetFinalPathU8Alloc(u8b);
+    char* ca = SalCanonicalBelowServerU8Alloc(fa);
+    char* cb = SalCanonicalBelowServerU8Alloc(fb);
+    BOOL ret;
+    if (ca != NULL && cb != NULL)
+        ret = SalNamesLooselyEqualU8(ca, cb);
+    else
+    { // a side that cannot be resolved: the folder names decide (fail closed - a "maybe")
+        const char* na = strrchr(u8a, '\\');
+        const char* nb = strrchr(u8b, '\\');
+        ret = SalNamesLooselyEqualU8(na != NULL ? na + 1 : u8a, nb != NULL ? nb + 1 : u8b);
+    }
+    free(ca);
+    free(cb);
+    free(fa);
+    free(fb);
     return ret;
 }
 

@@ -100,6 +100,14 @@ class H(http.server.BaseHTTPRequestHandler):
 
     def do_PROPFIND(self):
         self.body()
+        # feature 107: the server root "/" is a collection holding "dav" - the WebDAV redirector
+        # checks it for the \\host@port\DavWWWRoot\dav\... form of the share
+        if urllib.parse.unquote(urllib.parse.urlsplit(self.path).path).strip('/') == '':
+            out = ['<?xml version="1.0" encoding="utf-8"?><D:multistatus xmlns:D="DAV:">', propxml('/', ROOT)]
+            if self.headers.get('Depth', '1') != '0':
+                out.append(propxml(PREFIX + '/', ROOT))
+            out.append('</D:multistatus>')
+            return self.reply(207, ''.join(out).encode('utf-8'))
         fs, ex = resolve(self.path)
         if fs is None or not ex:
             return self.reply(404)

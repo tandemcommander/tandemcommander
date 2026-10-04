@@ -34,6 +34,163 @@ BOOL ErrListDirSkipAll = FALSE;
 BOOL ErrTooBigFileFAT32SkipAll = FALSE;
 BOOL ErrGetFileSizeOfLnkTgtIgnAll = FALSE;
 
+//****************************************************************************
+//
+// Feature 107: a folder copied or moved onto ANOTHER PATH OF ITSELF
+//
+// The by-name checks of BuildScriptDir see only one spelling. Through an alias of the target
+// (\\localhost\C$, \\127.0.0.1\C$, a mapped drive, a SUBST letter, a junction, the 8.3 or
+// another-case spelling, a second WebDAV server name, another Unicode spelling on a folding
+// server) a move of F "into the same place" merged F into itself and then deleted its empty
+// folders (the files were refused by feature 103), and a move of F into itself or into one of
+// its subfolders between two roots moved its content one level down and deleted the emptied
+// folders. The file system's identity decides (salsamefile.h): the target folder T\name must not
+// be F, and for a move neither T nor a folder above it may be F. The identities of T and of the
+// folders above it are read once per operation (by the path as written and by the path it
+// resolves to: a junction in the middle of the path), the source's once per selected folder,
+// T\name only when it exists.
+
+struct CDirTargetChain107
+{
+    char* Key;                          // the target folder the identities belong to (NULL = none read yet)
+    TDirectArray<CSalFileIdentity> Ids; // T, its parent, ... up to the root (readable ones)
+    TDirectArray<char*> Paths;          // the path each was read by (DupStr)
+    BOOL Complete;                      // FALSE: low memory - the chain is not trusted
+
+    CDirTargetChain107() : Ids(16, 16), Paths(16, 16)
+    {
+        Key = NULL;
+        Complete = FALSE;
+    }
+    ~CDirTargetChain107() { Reset(); }
+    void Reset()
+    {
+        if (Key != NULL)
+            free(Key);
+        Key = NULL;
+        for (int i = 0; i < Paths.Count; i++)
+            free(Paths[i]);
+        Paths.DestroyMembers();
+        if (!Paths.IsGood())
+            Paths.ResetState();
+        Ids.DestroyMembers();
+        if (!Ids.IsGood())
+            Ids.ResetState();
+        Complete = FALSE;
+    }
+    BOOL AddPathAndParents(const char* path)
+    {
+        CSalHeapString up;
+        if (!up.Copy(path))
+            return FALSE;
+        do
+        {
+            CSalFileIdentity id;
+            if (SalGetFileIdentity(up.Get(), FALSE, &id, TRUE)) // through links: where the data lands
+            {
+                char* copy = DupStr(up.Get());
+                if (copy == NULL)
+                    return FALSE;
+                Paths.Add(copy);
+                if (!Paths.IsGood())
+                {
+                    Paths.ResetState();
+                    free(copy);
+                    return FALSE;
+                }
+                Ids.Add(id);
+                if (!Ids.IsGood())
+                {
+                    Ids.ResetState();
+                    return FALSE;
+                }
+            }
+        } while (CutDirectory(up.Get()));
+        return TRUE;
+    }
+    // the identities of 'targetDir' and of every folder above it (read on first use)
+    void Ensure(const char* targetDir)
+    {
+        if (Key != NULL && strcmp(Key, targetDir) == 0)
+            return;
+        Reset();
+        Key = DupStr(targetDir);
+        if (Key == NULL)
+            return;
+        Complete = AddPathAndParents(targetDir);
+        char* fin = SalGetFinalPathU8Alloc(targetDir); // a junction / symbolic link / SUBST resolved
+        if (fin != NULL)
+        {
+            if (Complete && !SalPathEqualOrdinalCI(fin, targetDir))
+                Complete = AddPathAndParents(fin);
+            free(fin);
+        }
+    }
+};
+
+// The chain of the operation being built: a CDirChainScope107 in BuildScriptMain,
+// BuildScriptMain2 and MoveFiles owns it (read anew for every operation, freed when that
+// function returns); without a scope the chain is read for each folder.
+static CDirTargetChain107* CurrentDirChain107 = NULL;
+
+struct CDirChainScope107
+{
+    CDirTargetChain107 Chain;
+    CDirTargetChain107* Prev;
+
+    CDirChainScope107()
+    {
+        Prev = CurrentDirChain107;
+        CurrentDirChain107 = &Chain;
+    }
+    ~CDirChainScope107() { CurrentDirChain107 = Prev; }
+};
+
+// 'sourceDir' (the folder being copied/moved), 'targetDir' (T, the folder it goes into),
+// 'targetFull' (T\name). Returns the message to refuse with, or 0 to go on.
+static int DirTargetIsSource107(CActionType type, const char* sourceDir, DWORD sourceDirAttr,
+                                const char* targetDir, const char* targetFull, BOOL targetExists)
+{
+    CALL_STACK_MESSAGE5("DirTargetIsSource107(%d, %s, 0x%X, %s, , )", type, sourceDir, sourceDirAttr, targetDir);
+    BOOL move = type == atMove;
+    BOOL isLink = (sourceDirAttr & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+    int refuse = move ? IDS_CANNOTMOVEDIRTOITSELF : IDS_CANNOTCOPYFILETOITSELF;
+    // 1. T\name exists and is the source: the copy/move would merge the folder into itself (a
+    //    link is compared as the link itself - moving it "onto itself" deleted the link)
+    if (targetExists)
+    {
+        CSalFileIdentity src, tgt;
+        SalGetFileIdentity(sourceDir, isLink, &src, TRUE);
+        SalGetFileIdentity(targetFull, isLink, &tgt, TRUE);
+        BOOL paths = SalFileIdMatch(src, tgt) != simUnknown || SalPathsBelowServerLooselyEqualU8(sourceDir, targetFull);
+        if (SalDirIsSame(src, tgt, move /* a move deletes the source tree: unreadable = refuse */, paths))
+            return refuse;
+    }
+    // 2. a move of a folder INTO itself or into one of its subfolders (a link moves as the link,
+    //    its content is only copied - a snapshot, as a copy into itself is)
+    if (move && !isLink)
+    {
+        CSalFileIdentity src;
+        if (SalGetFileIdentity(sourceDir, FALSE, &src, TRUE))
+        {
+            CDirTargetChain107 local;
+            CDirTargetChain107* chain = CurrentDirChain107 != NULL ? CurrentDirChain107 : &local;
+            chain->Ensure(targetDir);
+            if (!chain->Complete)
+                return refuse; // low memory: the move is not risked
+            int n = chain->Ids.Count;
+            for (int i = 0; i < n; i++)
+            {
+                const CSalFileIdentity& e = chain->Ids[i];
+                BOOL paths = SalFileIdMatch(src, e) != simUnknown || SalPathsBelowServerLooselyEqualU8(sourceDir, chain->Paths[i]);
+                if (SalDirIsSame(src, e, FALSE, paths))
+                    return refuse;
+            }
+        }
+    }
+    return 0;
+}
+
 //
 // ****************************************************************************
 // CFilesWindow
@@ -271,6 +428,7 @@ BOOL CFilesWindow::MoveFiles(const char* source, const char* target, const char*
         ErrListDirSkipAll = FALSE;
         ErrTooBigFileFAT32SkipAll = FALSE;
         ErrGetFileSizeOfLnkTgtIgnAll = FALSE;
+        CDirChainScope107 dirChainScope107; // feature 107: the target's identities, read once for this operation
 
         //---  create the script object
         COperations* script = new COperations(100, 50, NULL, NULL, NULL);
@@ -538,6 +696,7 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
     ErrListDirSkipAll = FALSE;
     ErrTooBigFileFAT32SkipAll = FALSE;
     ErrGetFileSizeOfLnkTgtIgnAll = FALSE;
+    CDirChainScope107 dirChainScope107; // feature 107: the target's identities, read once for this operation
 
     char root[MAX_PATH];
     char fsName[MAX_PATH];
@@ -1184,6 +1343,7 @@ BOOL CFilesWindow::BuildScriptMain(COperations* script, CActionType type,
     ErrListDirSkipAll = FALSE;
     ErrTooBigFileFAT32SkipAll = FALSE;
     ErrGetFileSizeOfLnkTgtIgnAll = FALSE;
+    CDirChainScope107 dirChainScope107; // feature 107: the target's identities, read once for this operation
 
     char root[MAX_PATH];
     char fsName[MAX_PATH];
@@ -1744,6 +1904,32 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             if (targetEnd != NULL)
                 *targetEnd = 0; // restoring targetPath
             return res == IDNO;
+        }
+    }
+    //---  feature 107: the target is the source folder under another path, or (a move) inside it;
+    //     the same path by name keeps its old handling below (and in BuildScriptFile)
+    if ((type == atCopy || type == atMove) && firstLevelDir && targetPath != NULL &&
+        !SalNameEqualOrdinalCI(sourcePath, -1, targetPath, -1))
+    {
+        CSalHeapString tgtDir; // T: targetPath up to the name appended above
+        int msg = 0;
+        if (tgtDir.Printf("%.*s", (int)(targetEnd - targetPath), targetPath))
+        {
+            char* t = tgtDir.Get();
+            int tl = (int)strlen(t);
+            if (tl > 3 && t[tl - 1] == '\\') // "C:\" keeps its backslash
+                t[tl - 1] = 0;
+            msg = DirTargetIsSource107(type, sourcePath, sourceDirAttr, t, targetPath,
+                                       targetPathState == tpsEncryptedExisting || targetPathState == tpsNotEncryptedExisting);
+        }
+        else
+            msg = type == atMove ? IDS_CANNOTMOVEDIRTOITSELF : 0; // low memory: a move is not risked
+        if (msg != 0)
+        {
+            *sourceEnd = 0; // restoring sourcePath
+            *targetEnd = 0; // restoring targetPath
+            SalMessageBox(MainWindow->HWindow, LoadStrU8(msg), LoadStrU8(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            return FALSE;
         }
     }
     //---

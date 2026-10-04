@@ -5225,7 +5225,12 @@ COPY_AGAIN:
                                 CSalFileIdentity srcId, tgtId;
                                 SalFileIdentityFromHandle(in, &srcId);
                                 SalGetFileIdentity(op->TargetName, FALSE, &tgtId);
-                                if (SalDecideExistingTarget(TRUE, err, srcId, tgtId) == setaRefuseSame)
+                                // feature 107: a source with more than one hard link - is the target
+                                // another link (old handling) or this very link through an alias (refuse)?
+                                int sameEntry = sseNo;
+                                if (SalDecideNeedsSameEntry(TRUE, err, srcId, tgtId))
+                                    sameEntry = SalSameDirEntryU8(op->SourceName, op->TargetName);
+                                if (SalDecideExistingTargetEx(TRUE, err, srcId, tgtId, sameEntry) == setaRefuseSame)
                                 {
                                     WaitForSingleObject(dlgData.WorkerNotSuspended, INFINITE); // if we should be in suspend mode, wait ...
                                     if (*dlgData.CancelWorker)
@@ -6996,6 +7001,53 @@ BOOL DoCreateDir(HWND hProgressDlg, char* name, DWORD attr,
                 DWORD attr2 = SalGetFileAttributes(name);
                 if (attr2 & FILE_ATTRIBUTE_DIRECTORY) // "directory overwrite"
                 {
+                    // feature 107: the existing directory may be the source directory itself under
+                    // another path (an alias below the operation's top level, e.g. a junction in the
+                    // target pointing back into the source; the top level is refused while the script
+                    // is built). Merging it into itself refused every file (feature 103) and a move
+                    // then deleted the source's empty folders: refuse, Skip leaves the whole subtree
+                    // (its deletions included) out. A move refuses also when it cannot tell.
+                    if (sourceDir != NULL && !invalidName)
+                    {
+                        CSalFileIdentity srcId, tgtId;
+                        SalGetFileIdentity(sourceDir, FALSE, &srcId, TRUE);
+                        SalGetFileIdentity(name, FALSE, &tgtId, TRUE);
+                        // without file ids (WebDAV) the paths below the server must agree: a backup
+                        // folder elsewhere on the server is never "the source" because of its times
+                        BOOL names = SalFileIdMatch(srcId, tgtId) != simUnknown ||
+                                     SalPathsBelowServerLooselyEqualU8(sourceDir, name);
+                        if (SalDirIsSame(srcId, tgtId, !script->IsCopyOperation, names))
+                        {
+                            WaitForSingleObject(dlgData.WorkerNotSuspended, INFINITE); // if we should be in suspend mode, wait ...
+                            if (*dlgData.CancelWorker)
+                                return FALSE;
+
+                            if (dlgData.SkipAllSameFile)
+                                goto SKIP_CREATE_ERROR;
+
+                            int ret = IDCANCEL;
+                            char* data[4];
+                            data[0] = (char*)&ret;
+                            data[1] = LoadStr(script->IsCopyOperation ? IDS_ERRORCOPY : IDS_ERRORMOVE);
+                            data[2] = name;
+                            data[3] = LoadStrU8(script->IsCopyOperation ? IDS_CANNOTCOPYFILETOITSELF : IDS_CANNOTMOVEDIRTOITSELF); // the dialog shows UTF-8 here
+                            SendMessage(hProgressDlg, WM_USER_DIALOG, 0, (LPARAM)data);
+                            switch (ret)
+                            {
+                            case IDRETRY:
+                                continue;
+
+                            case IDB_SKIPALL:
+                                dlgData.SkipAllSameFile = TRUE;
+                            case IDB_SKIP:
+                                goto SKIP_CREATE_ERROR;
+
+                            default: // IDCANCEL
+                                return FALSE;
+                            }
+                        }
+                    }
+
                     if (dlgData.CnfrmDirOver && !dlgData.DirOverwriteAll) // should we ask the user about overwriting the directory?
                     {
                         char sAttr[101], tAttr[101];

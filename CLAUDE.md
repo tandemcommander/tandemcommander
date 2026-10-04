@@ -1414,3 +1414,36 @@ plugin architecture preservation, UI consistency.
   `probe/packself_probe.ps1` 70/0 (before: 49/17 plus the two review rows failing). Found, not fixed: partial volumes after a failed
   multi-volume pack; the last volume not renamed when `name.zip` exists; `translate.merge
   --module zip` would re-lay out 510 controls. Records: `specs/106-zip-overwrite-source/fix-log.md`.
+- 107-folder-alias-move: **a folder is never copied or moved onto another path of itself** (103's
+  leftovers NIT 4 and NIT 5, measured first). On the build before, F6 of a folder "into the same
+  place" through `\\localhost\C$`, `\\127.0.0.1\C$`, a mapped drive, SUBST, a second WebDAV server
+  name - and on the same drive through a junction, the 8.3 spelling of a folder above it or a WebDAV
+  NFC/NFD spelling - deleted its empty subfolders; F6 into itself or into its own subfolder through
+  an other-root alias moved the whole content one level down and deleted the originals; a junction
+  below the target pointing back into the source lost an empty folder of the source; a junction moved
+  onto itself through UNC was deleted. No file content was lost (103 refuses files), copies lose
+  nothing (a copy into itself stays a snapshot copy - decision). Fix: `DirTargetIsSource107` in
+  `BuildScriptDir` (top-level folder of every copy/move route: F5/F6, paste and drag & drop via
+  `BuildScriptMain2`, the plug-ins' `MoveFiles`), only when the target differs from the source by name:
+  `T\name` exists and is the source -> refuse; a move whose target `T` or a folder above it is the
+  source -> refuse ("Cannot move a directory to itself.", a copy "Cannot copy a file to itself." - no
+  new string). `T`'s chain is read once per operation (`CDirChainScope107`) along the written path and
+  the final path (a junction in the middle). Worker: `DoCreateDir` refuses a merge into the source
+  folder itself before "Confirm Directory Overwrite" (Skip leaves the subtree and its deletions out; a
+  move fails closed). Rules in `src/common/salsamefile.h`: `SalDirIsSame` (ids; without ids equal times
+  AND the same path below the server name up to case/NFC; one side with an id and one without = two file systems, so WebDAV
+  uploads are not refused), `SalDirChainHolds`, and for hard links `SalSameDirEntry` +
+  `SalDecideExistingTargetEx`: the same directory entry through an alias (holding folders' identities +
+  `FindFirstFile`'s stored names) is refused as "to itself", another link keeps the old handling; facade
+  `SalSameDirEntryU8`, `SalGetFinalPathU8Alloc`, `SalPathsBelowServerLooselyEqualU8` in `salfileio`.
+  Independent review ACCEPT with two false refusals fixed: a folder in a snapshot (shadow-copy device
+  or `@GMT-` path; `SnapshotTag`, read only by the folder checks via `volumeTraits`) is never the live
+  one, so restoring from Previous Versions merges; FAT ids count only with equal times; on WebDAV (no
+  ids) the whole path below the server name must agree - both sides resolved first (a mapped drive ->
+  UNC, `DavWWWRoot` dropped; the targeted re-check REJECTED a typed-text version that let a mapped
+  drive and the `DavWWWRoot` form fail open) - so backup updates with equal folder times merge. Interface stays 107, no registry change. Probe
+  `specs/107-folder-alias-move/probe/folderalias_probe.ps1` 206/0 (pre-107 157/21 + 18/6: every FAIL
+  a source-tree change); paste and drag & drop NOT DRIVEN (hidden desktop) - a person's pass owed
+  (`quickstart.md` step 5); snapshots and FAT rule-tested only; 103's `davnorm.py` now answers
+  `PROPFIND /` (the `DavWWWRoot` form). saltests 13,588 -> 13,756. Records:
+  `specs/107-folder-alias-move/fix-log.md`.

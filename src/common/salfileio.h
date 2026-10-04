@@ -112,7 +112,35 @@ BOOL SalDecryptFile(const char* u8path);
 
 // the identity of a file or directory named by a UTF-8 path (SalGetFileIdentityW through
 // the \\?\ form); FALSE when nothing could be read ('id' is then cleared)
-BOOL SalGetFileIdentity(const char* u8path, BOOL linkItself, CSalFileIdentity* id);
+// 'volumeTraits' (feature 107): also SnapshotTag and WeakIds (the folder checks)
+BOOL SalGetFileIdentity(const char* u8path, BOOL linkItself, CSalFileIdentity* id, BOOL volumeTraits = FALSE);
+
+// feature 107: one directory entry or two (SalSameDirEntry: the identities of the two holding
+// folders, read through links, and the two names as stored in them)? sseYes / sseNo / sseUnknown
+int SalSameDirEntryU8(const char* u8src, const char* u8tgt);
+
+// feature 107: one name up to case and Unicode normalization (NFC) - "the same name" for a server
+// that gives no file ids (a WebDAV alias keeps the folder's name in some spelling)
+BOOL SalNamesLooselyEqualU8(const char* u8a, const char* u8b);
+
+// feature 107: "the same folder" for a server that gives no file ids (WebDAV). Both paths are
+// resolved first (SalGetFinalPathU8Alloc: a mapped or SUBST drive letter becomes the UNC path, a
+// link its target), then compared below the server name (SalCanonicalBelowServerU8Alloc), one path
+// up to case and Unicode normalization: a second name of the server (IP, localhost, @SSL, @port), a
+// mapped drive, the "DavWWWRoot" form or another spelling keep that path, a backup in another folder
+// does not. A side that cannot be resolved falls back to the folder names (a "maybe" - fail closed).
+BOOL SalPathsBelowServerLooselyEqualU8(const char* u8a, const char* u8b);
+
+// feature 107, pure: the canonical form of a RESOLVED path below its server name - a UNC path
+// "\\server\share\a" (the server with any @SSL / @port) -> "\\share\a", "\\server\DavWWWRoot\share\a"
+// -> "\\share\a"; a drive path stays as it is; a trailing backslash dropped; NULL for anything else
+// (also NULL in). malloc'ed.
+char* SalCanonicalBelowServerU8Alloc(const char* path);
+
+// feature 107: the path the file system resolves 'u8path' to (GetFinalPathNameByHandle,
+// normalized, DOS volume name; links and SUBST letters resolved), without the \\?\ prefix
+// (\\?\UNC\ becomes \\); malloc'ed UTF-8, NULL when it cannot be read
+char* SalGetFinalPathU8Alloc(const char* u8path);
 
 // SalRenameViaTempName through SalMoveFile: u8src -> "sal###" beside it -> u8tgt; the
 // temporary path is written to 'tmpName' (strlen(u8src) + 8 bytes suffice) - for

@@ -5176,6 +5176,285 @@ static void TestPackSelf106()
     CHECK(RemoveDirectoryW(dir.c_str()));
 }
 
+// feature 107: a folder copied or moved onto another path of itself, and one hard link reached
+// through an alias (SalDirIsSame, SalDirChainHolds, SalSameDirEntry, SalDecideExistingTargetEx -
+// src/common/salsamefile.h; SalSameDirEntryU8, SalGetFinalPathU8Alloc - salfileio)
+static void TestFolderAlias107()
+{
+    // --- pure: is the target folder the source folder? ---
+    CSalFileIdentity f = Id103(0x77, 0x40, 0, 5000, 4000, 1, TRUE);
+    CHECK(SalDirIsSame(f, f, FALSE));                                                 // the same id
+    CHECK(SalDirIsSame(f, Id103(0x77, 0x40, 0, 9, 9, 1, TRUE), FALSE));               // same id, times read later
+    CHECK(!SalDirIsSame(f, Id103(0x77, 0x41, 0, 5000, 4000, 1, TRUE), FALSE));        // a sibling with equal times
+    CHECK(!SalDirIsSame(f, Id103(0x78, 0x40, 0, 5000, 4000, 1, TRUE), TRUE));         // another volume
+    CSalFileIdentity dav = Id103(0, 0, 0, 5000, 4000, 1, TRUE);                       // WebDAV: no ids
+    CHECK(SalDirIsSame(dav, Id103(0, 0, 0, 5000, 4000, 1, TRUE, 99), FALSE));         // equal kind + seconds: a "maybe" = yes
+    CHECK(SalDirIsSame(dav, Id103(0, 0, 0, 5000, 0, 1, TRUE), FALSE));                // no creation time on one side
+    CHECK(!SalDirIsSame(dav, Id103(0, 0, 0, 5001, 4000, 1, TRUE), FALSE));            // another last write
+    CHECK(!SalDirIsSame(dav, Id103(0, 0, 0, 5000, 4000, 1, FALSE), FALSE));           // a file is not the folder
+    CHECK(!SalDirIsSame(Id103(1, 0, 0, 5, 4, 1, TRUE), Id103(2, 0, 0, 5, 4, 1, TRUE), TRUE)); // two volumes, no ids
+    CSalFileIdentity none;
+    SalFileIdentityClear(&none);
+    CHECK(SalDirIsSame(f, none, TRUE) && SalDirIsSame(none, f, TRUE));   // unreadable: a move refuses
+    CHECK(!SalDirIsSame(f, none, FALSE) && !SalDirIsSame(none, f, FALSE)); // ... a copy goes on
+    CHECK(SalDirIsSame(none, none, TRUE) && !SalDirIsSame(none, none, FALSE));
+
+    // --- pure: the target folder or a folder above it is the source (a move into itself) ---
+    CSalFileIdentity chain[4] = {Id103(0x77, 0x42, 0, 70, 60, 1, TRUE),  // T = F\sub
+                                 Id103(0x77, 0x40, 0, 5000, 4000, 1, TRUE), // F
+                                 Id103(0x77, 0x30, 0, 30, 20, 1, TRUE),     // F's parent
+                                 Id103(0x77, 0x05, 0, 10, 5, 1, TRUE)};     // the root
+    CHECK(SalDirChainHolds(f, chain, 4) == 1);
+    CHECK(SalDirChainHolds(chain[0], chain, 4) == 0);                        // T = F itself
+    CHECK(SalDirChainHolds(Id103(0x77, 0x41, 0, 5000, 4000, 1, TRUE), chain, 4) == -1); // a sibling: a legitimate move
+    CHECK(SalDirChainHolds(f, chain + 2, 2) == -1);                          // F's parent as the target: not "into itself"
+    CHECK(SalDirChainHolds(f, NULL, 0) == -1);
+    CHECK(SalDirChainHolds(none, chain, 4) == -1);                           // an unreadable source is not matched
+    CSalFileIdentity davChain[2] = {Id103(0, 0, 0, 70, 60, 1, TRUE), Id103(0, 0, 0, 5000, 4000, 1, TRUE)};
+    CHECK(SalDirChainHolds(dav, davChain, 2) == 1);
+    // without ids the name must agree too: siblings unpacked in one second share their times
+    BOOL nm[2] = {TRUE, FALSE};
+    CHECK(SalDirChainHolds(dav, davChain, 2, nm) == -1);
+    nm[1] = TRUE;
+    CHECK(SalDirChainHolds(dav, davChain, 2, nm) == 1);
+    CHECK(!SalDirIsSame(dav, Id103(0, 0, 0, 5000, 4000, 1, TRUE), FALSE, FALSE)); // equal times, another name
+    CHECK(SalDirIsSame(f, f, FALSE, FALSE));                                         // ids decide, the name is not asked
+    CHECK(!SalDirIsSame(f, Id103(0x77, 0x41, 0, 5000, 4000, 1, TRUE), FALSE, TRUE));
+    CHECK(SalDirIsSame(none, none, TRUE, FALSE));                                    // unreadable: still fail-closed
+    // a folder with an id against one without (local / SMB against WebDAV): two file systems
+    CHECK(!SalDirIsSame(Id103(0x77, 0x40, 0, 5000, 4000, 1, TRUE), dav, TRUE));
+    CHECK(!SalDirIsSame(dav, Id103(0x77, 0x40, 0, 5000, 4000, 1, TRUE), TRUE));
+    CHECK(!SalDirIsSame(Id103(0x77, 0x40, 0, 5000, 0, 1, TRUE), Id103(0, 0, 0, 5000, 0, 1, TRUE), TRUE)); // kept times, no creation time
+    CHECK(SalHasUsableFileId(f) && !SalHasUsableFileId(dav) && !SalHasUsableFileId(none));
+    // the name rule: case and Unicode normalization (a WebDAV / macOS spelling), nothing else
+    CHECK(SalNamesLooselyEqualU8("cafe\xCC\x81", "Caf\xC3\xA9"));
+    CHECK(SalNamesLooselyEqualU8("F", "f"));
+    CHECK(SalNamesLooselyEqualU8("\xD0\x9F\xD0\xB0\xD0\xBF\xD0\xBA\xD0\xB0", "\xD0\xBF\xD0\xB0\xD0\xBF\xD0\xBA\xD0\xB0")); // Papka / papka
+    CHECK(!SalNamesLooselyEqualU8("F", "G"));
+    CHECK(!SalNamesLooselyEqualU8("", "F"));
+    CHECK(!SalNamesLooselyEqualU8("cafe", "caf\xC3\xA9"));
+
+    // --- review SF1: snapshots (shadow copies, Previous Versions) and FAT ids ---
+    DWORD tag12 = SalSnapshotTagFromPath(L"\\Device\\HarddiskVolumeShadowCopy12\\x\\F");
+    CHECK(tag12 != 0);
+    CHECK(SalSnapshotTagFromPath(L"\\Device\\harddiskvolumeshadowcopy12") == tag12);          // case, no tail
+    CHECK(SalSnapshotTagFromPath(L"\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy12\\y") == tag12);
+    CHECK(SalSnapshotTagFromPath(L"\\Device\\HarddiskVolumeShadowCopy13\\x") != tag12);        // another snapshot
+    CHECK(SalSnapshotTagFromPath(L"\\Device\\HarddiskVolume3\\x\\F") == 0);                     // the live volume
+    CHECK(SalSnapshotTagFromPath(L"\\x\\MyHarddiskVolumeShadowCopy1\\F") == 0);                 // not a component start
+    CHECK(SalSnapshotTagFromPath(L"\\Device\\HarddiskVolumeShadowCopy\\x") == 0);              // no number
+    DWORD gmt = SalSnapshotTagFromPath(L"\\\\localhost\\C$\\@GMT-2026.10.04-12.00.00\\x\\F");
+    CHECK(gmt != 0 && gmt == SalSnapshotTagFromPath(L"\\\\127.0.0.1\\C$\\@gmt-2026.10.04-12.00.00"));
+    CHECK(gmt != SalSnapshotTagFromPath(L"\\\\localhost\\C$\\@GMT-2026.10.05-12.00.00\\x"));
+    CHECK(SalSnapshotTagFromPath(L"\\\\localhost\\C$\\@GMT-old\\x") == 0);                      // a folder named like it
+    CHECK(SalSnapshotTagFromPath(L"C:\\x\\F") == 0 && SalSnapshotTagFromPath(NULL) == 0);
+    CHECK(SalFsNameHasWeakIds(L"FAT") && SalFsNameHasWeakIds(L"FAT32") && SalFsNameHasWeakIds(L"exFAT"));
+    CHECK(!SalFsNameHasWeakIds(L"NTFS") && !SalFsNameHasWeakIds(L"ReFS") && !SalFsNameHasWeakIds(NULL));
+    CSalFileIdentity live = Id103(0x77, 0x40, 0, 5000, 4000, 1, TRUE), snap = live;
+    snap.SnapshotTag = tag12;
+    CHECK(!SalDirIsSame(live, snap, TRUE) && !SalDirIsSame(snap, live, TRUE)); // restore from a snapshot merges
+    CSalFileIdentity snap2 = snap;
+    CHECK(SalDirIsSame(snap, snap2, FALSE));                                    // two paths into one snapshot
+    snap2.SnapshotTag = SalSnapshotTagFromPath(L"\\Device\\HarddiskVolumeShadowCopy13");
+    CHECK(!SalDirIsSame(snap, snap2, FALSE));                                   // two snapshots
+    CSalFileIdentity fat = live;
+    fat.WeakIds = TRUE;
+    CHECK(SalDirIsSame(fat, fat, FALSE));                                       // FAT: equal id and times
+    CHECK(!SalDirIsSame(fat, Id103(0x77, 0x40, 0, 5001, 4000, 1, TRUE), FALSE)); // FAT: equal id, other times
+    CHECK(SalDirIsSame(live, Id103(0x77, 0x40, 0, 5001, 4000, 1, TRUE), FALSE)); // NTFS/SMB: the id decides (stale SMB times)
+    CHECK(SalSameDirEntry(live, snap, L"a.txt", L"a.txt") == sseNo);            // a hard link restored from a snapshot
+    CSalFileIdentity unk = live;
+    unk.SnapshotUnknown = TRUE;                                                 // the device could not be read
+    CHECK(SalDirIsSame(unk, snap, FALSE) && SalDirIsSame(snap, unk, FALSE));    // cannot tell: the ids decide (fail closed)
+    CHECK(SalSameDirEntry(unk, snap, L"a.txt", L"a.txt") == sseYes);
+
+    // --- review SF2 + re-check: without ids the RESOLVED path below the server must agree ---
+    auto canon = [](const char* p) -> std::string
+    {
+        char* c = SalCanonicalBelowServerU8Alloc(p);
+        std::string s = c != NULL ? c : "<null>";
+        free(c);
+        return s;
+    };
+    CHECK(canon("\\\\localhost@18107\\dav\\a\\F") == "\\\\dav\\a\\F");
+    CHECK(canon("\\\\127.0.0.1@18107\\dav\\a\\F\\") == "\\\\dav\\a\\F");                // another server name, trailing backslash
+    CHECK(canon("\\\\localhost@18107\\DavWWWRoot\\dav\\a\\F") == "\\\\dav\\a\\F");     // the redirector's root form
+    CHECK(canon("\\\\host@SSL@443\\davwwwroot\\dav\\a") == "\\\\dav\\a");              // @SSL / port, case of DavWWWRoot
+    CHECK(canon("\\\\host\\DavWWWRootX\\a") == "\\\\DavWWWRootX\\a");                  // only the whole component
+    CHECK(canon("C:\\x\\F\\") == "C:\\x\\F" && canon("C:\\") == "C:\\");
+    CHECK(canon("\\\\server") == "<null>" && canon("\\\\server\\") == "<null>" && canon("\\\\host\\DavWWWRoot") == "<null>");
+    CHECK(canon("relative\\F") == "<null>" && canon(NULL) == "<null>");
+    CHECK(SalNamesLooselyEqualU8(canon("\\\\s\\dav\\x\\cafe\xCC\x81\\F").c_str(), canon("\\\\t@1\\DavWWWRoot\\dav\\x\\Caf\xC3\xA9\\F").c_str()));
+    CHECK(!SalNamesLooselyEqualU8(canon("\\\\s\\dav\\a\\F").c_str(), canon("\\\\s\\dav\\b\\F").c_str())); // a backup in another folder
+    CHECK(!SalNamesLooselyEqualU8(canon("\\\\s\\dav\\a\\F").c_str(), canon("X:\\dav\\a\\F").c_str()));    // unresolved letter vs UNC
+
+    // --- pure: one directory entry or two (hard links) ---
+    CSalFileIdentity dirA = Id103(0x77, 0x30, 0, 30, 20, 1, TRUE), dirB = Id103(0x77, 0x31, 0, 30, 20, 1, TRUE);
+    CHECK(SalSameDirEntry(dirA, dirA, L"a.txt", L"a.txt") == sseYes);  // one folder, one stored name
+    CHECK(SalSameDirEntry(dirA, dirA, L"a.txt", L"b.txt") == sseNo);   // another link in the same folder
+    CHECK(SalSameDirEntry(dirA, dirA, L"a.txt", L"A.txt") == sseNo);   // stored names differ only in case: a case-sensitive folder
+    CHECK(SalSameDirEntry(dirA, dirB, L"a.txt", L"a.txt") == sseNo);   // a link in another folder
+    CHECK(SalSameDirEntry(dirA, none, L"a.txt", L"a.txt") == sseUnknown);
+    CHECK(SalSameDirEntry(dirA, dirA, NULL, L"a.txt") == sseUnknown);
+    CHECK(SalSameDirEntry(dav, dav, L"a.txt", L"a.txt") == sseUnknown); // no ids on the folders
+    CHECK(SalSameDirEntry(Id103(1, 0, 0, 5, 4, 1, TRUE), Id103(2, 0, 0, 5, 4, 1, TRUE), L"a", L"a") == sseNo); // two volumes
+
+    // --- pure: the copy decision with a hard-linked source ---
+    CSalFileIdentity hl = Id103(0x77, 0x90, 300, 500, 400, 2);
+    CHECK(SalDecideNeedsSameEntry(TRUE, ERROR_FILE_EXISTS, hl, hl));
+    CHECK(SalDecideNeedsSameEntry(TRUE, ERROR_ALREADY_EXISTS, hl, hl));
+    CHECK(!SalDecideNeedsSameEntry(FALSE, ERROR_FILE_EXISTS, hl, hl));                          // a rename: the temporary-name route
+    CHECK(!SalDecideNeedsSameEntry(TRUE, ERROR_ACCESS_DENIED, hl, hl));
+    CHECK(!SalDecideNeedsSameEntry(TRUE, ERROR_FILE_EXISTS, Id103(0x77, 0x90, 300, 500, 400), Id103(0x77, 0x90, 300, 500, 400))); // one link
+    CHECK(!SalDecideNeedsSameEntry(TRUE, ERROR_FILE_EXISTS, hl, Id103(0x77, 0x91, 300, 500, 400, 2))); // another file
+    CHECK(SalDecideExistingTargetEx(TRUE, ERROR_FILE_EXISTS, hl, hl, sseNo) == setaLegacy);       // another link: as before
+    CHECK(SalDecideExistingTargetEx(TRUE, ERROR_FILE_EXISTS, hl, hl, sseYes) == setaRefuseSame);  // this link through an alias
+    CHECK(SalDecideExistingTargetEx(TRUE, ERROR_FILE_EXISTS, hl, hl, sseUnknown) == setaRefuseSame); // cannot tell: refuse
+    CHECK(SalDecideExistingTargetEx(FALSE, ERROR_FILE_EXISTS, hl, hl, sseYes) == setaViaTempName); // rename unchanged
+    CHECK(SalDecideExistingTargetEx(TRUE, ERROR_ACCESS_DENIED, hl, hl, sseYes) == setaLegacy);
+    // SalDecideExistingTarget (the plug-ins) is the 103 rule: sseNo
+    CSalFileIdentity set[] = {hl, Id103(0x77, 0x90, 300, 500, 400), Id103(0x77, 0x91, 300, 500, 400), Id103(0, 0, 300, 500, 400), none};
+    for (int a = 0; a < 5; a++)
+        for (int b = 0; b < 5; b++)
+            for (int c = 0; c < 2; c++)
+                CHECK(SalDecideExistingTarget(c, ERROR_FILE_EXISTS, set[a], set[b]) ==
+                      SalDecideExistingTargetEx(c, ERROR_FILE_EXISTS, set[a], set[b], sseNo));
+
+    // --- real folders and files (NTFS %TEMP%) ---
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping the file part of TestFolderAlias107 (no temp path)\n");
+        return;
+    }
+    std::wstring base = std::wstring(tmp) + L"saltests-107-" + std::to_wstring(GetCurrentProcessId());
+    std::wstring par = base + L"\\parentlongname", F = par + L"\\F", sub = F + L"\\sub", G = par + L"\\G", other = base + L"\\other";
+    CHECK(CreateDirectoryW(base.c_str(), NULL) && CreateDirectoryW(par.c_str(), NULL) && CreateDirectoryW(F.c_str(), NULL) &&
+          CreateDirectoryW(sub.c_str(), NULL) && CreateDirectoryW(G.c_str(), NULL) && CreateDirectoryW(other.c_str(), NULL));
+    auto u8 = [](const std::wstring& w) -> std::string
+    {
+        char* p = SalWToU8Alloc(w.c_str());
+        std::string s = p != NULL ? p : "";
+        free(p);
+        return s;
+    };
+    auto idOf = [&](const std::wstring& w, CSalFileIdentity* id) -> BOOL { return SalGetFileIdentity(u8(w).c_str(), FALSE, id); };
+    CSalFileIdentity iF, iAlias, iG, iSub;
+    CHECK(idOf(F, &iF) && idOf(G, &iG) && idOf(sub, &iSub));
+    CHECK(!SalDirIsSame(iF, iG, TRUE)); // two folders created in the same second are told apart by their ids
+    {
+        CSalFileIdentity t;
+        CHECK(SalGetFileIdentity(u8(F).c_str(), FALSE, &t, TRUE) && t.SnapshotTag == 0 && !t.SnapshotUnknown && !t.WeakIds); // live NTFS
+        CHECK(SalDirIsSame(iF, t, FALSE));
+    }
+    std::wstring upper = F;
+    for (auto& ch : upper)
+        ch = (WCHAR)towupper(ch);
+    // the path rule resolves both sides first (re-check of 107): one folder by two spellings
+    CHECK(SalPathsBelowServerLooselyEqualU8(u8(F).c_str(), u8(upper).c_str()));
+    CHECK(!SalPathsBelowServerLooselyEqualU8(u8(F).c_str(), u8(G).c_str()));
+    CHECK(SalPathsBelowServerLooselyEqualU8(u8(base + L"\\gone1\\X").c_str(), u8(base + L"\\gone2\\X").c_str()));  // unresolved: the names
+    CHECK(!SalPathsBelowServerLooselyEqualU8(u8(base + L"\\gone1\\X").c_str(), u8(base + L"\\gone2\\Y").c_str()));
+    CHECK(idOf(upper, &iAlias) && SalDirIsSame(iF, iAlias, FALSE)); // another case
+    WCHAR shortPar[MAX_PATH];
+    DWORD sn = GetShortPathNameW(par.c_str(), shortPar, MAX_PATH);
+    BOOL haveShort = sn > 0 && sn < MAX_PATH && _wcsicmp(shortPar, par.c_str()) != 0;
+    if (haveShort)
+    {
+        CHECK(idOf(std::wstring(shortPar) + L"\\F", &iAlias) && SalDirIsSame(iF, iAlias, FALSE)); // the 8.3 spelling of a folder above
+        char* fin = SalGetFinalPathU8Alloc(u8(std::wstring(shortPar) + L"\\F").c_str());
+        CHECK(fin != NULL && SalPathEqualOrdinalCI(fin, u8(F).c_str())); // resolved to the long path
+        free(fin);
+    }
+    else
+        printf("TestFolderAlias107: no 8.3 names in %ls - the short-name checks are skipped\n", tmp);
+    if (tmp[1] == L':')
+    {
+        std::wstring unc = std::wstring(L"\\\\localhost\\") + tmp[0] + L"$" + F.substr(2);
+        if (idOf(unc, &iAlias) && iAlias.Has64)
+            CHECK(SalDirIsSame(iF, iAlias, FALSE)); // the loopback administrative share
+        else
+            printf("TestFolderAlias107: %ls not reachable - the UNC check is skipped\n", unc.c_str());
+    }
+    // the chain of F\sub: F is in it (a move into F\sub is refused), G's is not
+    {
+        std::vector<CSalFileIdentity> ids;
+        std::string up = u8(sub);
+        while (true)
+        {
+            CSalFileIdentity a;
+            if (SalGetFileIdentity(up.c_str(), FALSE, &a))
+                ids.push_back(a);
+            size_t cut = up.find_last_of('\\');
+            if (cut == std::string::npos || cut < 3)
+                break;
+            up.resize(cut);
+        }
+        CHECK(ids.size() >= 3);
+        int cnt = (int)ids.size();
+        CHECK(SalDirChainHolds(iF, ids.data(), cnt) == 1);
+        CHECK(SalDirChainHolds(iSub, ids.data(), cnt) == 0);
+        CHECK(SalDirChainHolds(iG, ids.data(), cnt) == -1);
+    }
+    char* fin = SalGetFinalPathU8Alloc(u8(upper).c_str());
+    CHECK(fin != NULL && strcmp(fin, u8(F).c_str()) == 0); // the stored case (temp path assumed stored as returned)
+    free(fin);
+    CHECK(SalGetFinalPathU8Alloc(u8(base + L"\\missing").c_str()) == NULL);
+    // hard links: one entry or two
+    std::wstring a = par + L"\\alongname.txt", b = par + L"\\b.txt", c = other + L"\\c.txt";
+    {
+        HANDLE h = CreateFileW(a.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        CHECK(h != INVALID_HANDLE_VALUE);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+    }
+    if (CreateHardLinkW(b.c_str(), a.c_str(), NULL) && CreateHardLinkW(c.c_str(), a.c_str(), NULL))
+    {
+        CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(b).c_str()) == sseNo);  // another link, same folder
+        CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(c).c_str()) == sseNo);  // another link, another folder
+        CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(a).c_str()) == sseYes);
+        std::wstring aUp = a;
+        for (auto& ch : aUp)
+            ch = (WCHAR)towupper(ch);
+        CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(aUp).c_str()) == sseYes); // this link under another case
+        if (haveShort)
+        {
+            CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(std::wstring(shortPar) + L"\\alongname.txt").c_str()) == sseYes); // through the 8.3 folder
+            WCHAR shortA[MAX_PATH];
+            DWORD sa = GetShortPathNameW(a.c_str(), shortA, MAX_PATH);
+            if (sa > 0 && sa < MAX_PATH)
+                CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(shortA).c_str()) == sseYes); // its own 8.3 name
+        }
+        if (tmp[1] == L':')
+        {
+            std::wstring uncA = std::wstring(L"\\\\localhost\\") + tmp[0] + L"$" + a.substr(2);
+            CSalFileIdentity ua;
+            if (SalGetFileIdentity(u8(uncA).c_str(), FALSE, &ua) && ua.Has64)
+            {
+                CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(uncA).c_str()) == sseYes);
+                std::wstring uncB = std::wstring(L"\\\\localhost\\") + tmp[0] + L"$" + b.substr(2);
+                CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(uncB).c_str()) == sseNo);
+            }
+        }
+        CHECK(SalSameDirEntryU8(u8(a).c_str(), u8(par + L"\\missing.txt").c_str()) == sseUnknown);
+        CSalFileIdentity ia, ib;
+        CHECK(idOf(a, &ia) && idOf(b, &ib) && SalDecideNeedsSameEntry(TRUE, ERROR_FILE_EXISTS, ia, ib));
+    }
+    else
+        printf("TestFolderAlias107: no hard link could be created - the link checks on disk are skipped\n");
+    // cleanup (explicit names only)
+    DeleteFileW(c.c_str());
+    DeleteFileW(b.c_str());
+    DeleteFileW(a.c_str());
+    RemoveDirectoryW(sub.c_str());
+    RemoveDirectoryW(F.c_str());
+    RemoveDirectoryW(G.c_str());
+    RemoveDirectoryW(par.c_str());
+    RemoveDirectoryW(other.c_str());
+    CHECK(RemoveDirectoryW(base.c_str()));
+}
+
 int main()
 {
     TestConversions();
@@ -5221,6 +5500,7 @@ int main()
     TestPluginFileDlg104();
     TestSafeReplace105();
     TestPackSelf106();
+    TestFolderAlias107();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
