@@ -191,9 +191,9 @@ MENU_TEMPLATE_ITEM MenuTemplate[] =
         {MNTT_PB, IDS_MENU_FILE, MNTS_B | MNTS_I | MNTS_A, CML_FILE, -1, 0, NULL},
         {MNTT_IT, IDS_MENU_FILE_OPEN, MNTS_B | MNTS_I | MNTS_A, CMD_OPEN, IDX_TB_OPEN, 0, (DWORD*)vweNotLoading},
         {MNTT_IT, IDS_MENU_FILE_REFRESH, MNTS_B | MNTS_I | MNTS_A, CMD_RELOAD, -1, 0, (DWORD*)vweFileOpened2},
-        // feature 006: Save As has no engine backing (the built-in WIC engine
-        // does not encode) - item removed; the command degrades gracefully if
-        // still reached via an accelerator
+        // feature 006 removed Save As (no encoder in the built-in WIC engine); feature 105 brings it
+        // back: Save As writes through the Windows encoders (BMP, PNG, JPEG, GIF, TIFF)
+        {MNTT_IT, IDS_MENU_FILE_SAVEAS, MNTS_B | MNTS_I | MNTS_A, CMD_SAVEAS, IDX_TB_SAVE, 0, (DWORD*)vweFileOpened},
         {MNTT_SP, -1, MNTS_B | MNTS_I | MNTS_A, 0, -1, 0, NULL},
         {MNTT_IT, IDS_MENU_FILE_CAPTURE, MNTS_B | MNTS_I | MNTS_A, CMD_CAPTURE, -1, 0, NULL},
         {MNTT_IT, IDS_MENU_FILE_SCAN, MNTS_B | MNTS_I | MNTS_A, CMD_SCAN, -1, 0, NULL},

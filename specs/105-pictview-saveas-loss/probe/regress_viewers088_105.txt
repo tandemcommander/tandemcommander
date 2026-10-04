@@ -1,0 +1,72 @@
+Program    : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Folder     : C:\Users\pavel\AppData\Local\Temp\tc088_viewers
+--- P1: Code
+       opened 0xD14040E class='CodeView - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\a_text.cpp [C++] - Code Viewer'
+       LEFT : 0xEFB003A class='TandemCommanderMainWindowVer01' title='T088P1 - tc088_viewers - Tandem Commander 0.1.8 (x64) ST'
+P1   FAIL  rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 35,3 s; windows before 4; process alive True; windows left 1; new windows 0 (+1 core wait window)
+       rm> Registered : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+       rm> Affected   : 1 process(es), reboot reasons: 0
+       rm>   pid 52908  RmMainWindow   restartable=True  status=0x1 own=True  'Tandem Commander, File Manager'  D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+       rm> RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 35,3 s
+       rm> Survivors  : 52908
+       rm>   after: pid 52908 status=0x11 restartable=True
+--- P2: Markdown
+       opened 0x106D09F8 class='MDView - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\b_doc.md - Markdown Viewer (100%)'
+       LEFT : 0x514118E class='TandemCommanderMainWindowVer01' title='T088P2 - tc088_viewers - Tandem Commander 0.1.8 (x64) ST'
+P2   FAIL  rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 35,2 s; windows before 4; process alive True; windows left 1; new windows 0 (+1 core wait window)
+       rm> Registered : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+       rm> Affected   : 1 process(es), reboot reasons: 0
+       rm>   pid 24604  RmMainWindow   restartable=True  status=0x1 own=True  'Tandem Commander, File Manager'  D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+       rm> RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 35,2 s
+       rm> Survivors  : 24604
+       rm>   after: pid 24604 status=0x11 restartable=True
+--- P3: PictView
+       opened 0xB440B78 class='PICTVIEW - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\c_pic.png (48 x 32 x 16777216 colors - 100%) - PictView'
+P3   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; windows before 4; process alive False; windows left 0; new windows 0 (+1 core wait window)
+--- P4: Database
+       opened 0x10832C6C class='DBVIEWER - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\d_table.csv - Database Viewer'
+P4   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; windows before 4; process alive False; windows left 0; new windows 0 (+1 core wait window)
+--- P5: Code + Markdown + PictView + Database
+       opened 0x6912C4A class='CodeView - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\a_text.cpp [C++] - Code Viewer'
+       opened 0x5A82C38 class='MDView - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\b_doc.md - Markdown Viewer (100%)'
+       opened 0x7332C22 class='PICTVIEW - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\c_pic.png (48 x 32 x 16777216 colors - 100%) - PictView'
+       opened 0xE4B0B62 class='DBVIEWER - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\d_table.csv - Database Viewer'
+P5   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,5 s; windows before 7; process alive False; windows left 0; new windows 0 (+1 core wait window)
+--- N1a: PictView with its Image Properties dialog
+       opened 0x1BA2C82 class='PICTVIEW - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\c_pic.png (48 x 32 x 16777216 colors - 100%) - PictView'
+       dialog 0x7352C22 class='#32770' title='Image Properties'
+N1a  PASS  obstacle: 'Image Properties' (#32770) owned by the PictView window; rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 5/5; new windows 0
+--- N1b: Database Viewer with its Go to Record dialog
+       opened 0x3281F50 class='DBVIEWER - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\d_table.csv - Database Viewer'
+       dialog 0xD0F00A8 class='#32770' title='Go to Record'
+N1b  PASS  obstacle: 'Go to Record' (#32770) owned by the Database Viewer window; rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 5/5; new windows 0
+--- N2: the program's Configuration dialog (no viewer)
+       dialog 0xEFD1A22 class='#32770' title='Configuration'
+N2   PASS  obstacle: 'Configuration' (#32770); rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 4/4; new windows 0
+--- N3: normal exit (WM_CLOSE) with a Code Viewer window open
+       opened 0xA32B6A class='CodeView - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\a_text.cpp [C++] - Code Viewer'
+       question 0x10F42BA0 class='#32770' title='Code Viewer'
+       text     [Static id=2477] Some Code Viewer windows are open. Do you want to close them? | [Button id=6] &Yes | [Button id=7] &No
+       follow-up 0x10F52BA0 class='#32770' title='Question'
+       text      [Static id=2477] Code Viewer plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No
+       STILL SHOWN: 0x7E22B50 class='UAC_InputIndicatorOverlayWnd' title='' :: 
+       STILL SHOWN: 0x1182B6E class='UAC Input Indicator' title='' :: 
+N3   FAIL  question 'Code Viewer': [Static id=2477] Some Code Viewer windows are open. Do you want to close them? | [Button id=6] &Yes | [Button id=7] &No -> No; follow-up questions 1 ['Question': [Static id=2477] Code Viewer plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No] -> No; process alive True; viewer window still there True; main window there True, enabled True; other windows 2
+--- R1: no viewer
+R1   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; windows before 3; process alive False; windows left 0; new windows 0 (+1 core wait window)
+
+=== summary ===
+P1   FAIL  rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 35,3 s; windows before 4; process alive True; windows left 1; new windows 0 (+1 core wait window)
+P2   FAIL  rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 35,2 s; windows before 4; process alive True; windows left 1; new windows 0 (+1 core wait window)
+P3   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; windows before 4; process alive False; windows left 0; new windows 0 (+1 core wait window)
+P4   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; windows before 4; process alive False; windows left 0; new windows 0 (+1 core wait window)
+P5   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,5 s; windows before 7; process alive False; windows left 0; new windows 0 (+1 core wait window)
+N1a  PASS  obstacle: 'Image Properties' (#32770) owned by the PictView window; rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 5/5; new windows 0
+N1b  PASS  obstacle: 'Go to Record' (#32770) owned by the Database Viewer window; rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 5/5; new windows 0
+N2   PASS  obstacle: 'Configuration' (#32770); rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 4/4; new windows 0
+N3   FAIL  question 'Code Viewer': [Static id=2477] Some Code Viewer windows are open. Do you want to close them? | [Button id=6] &Yes | [Button id=7] &No -> No; follow-up questions 1 ['Question': [Static id=2477] Code Viewer plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No] -> No; process alive True; viewer window still there True; main window there True, enabled True; other windows 2
+R1   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; windows before 3; process alive False; windows left 0; new windows 0 (+1 core wait window)
+Window classes: Code = 'CodeView - WinLib Universal Window2'; Database = 'DBVIEWER - WinLib Universal Window2'; Markdown = 'MDView - WinLib Universal Window2'; PictView = 'PICTVIEW - WinLib Universal Window2'
+Test processes left running: 0
+Registry   : restored; 3133 lines vs 3133; identical=True; SHA-256 1AB614304771 / 1AB614304771
+Failures: 3

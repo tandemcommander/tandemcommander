@@ -23,6 +23,9 @@ typedef DWORD SALCOLOR;
 
 // Comment size when saving
 #define SAVEAS_MAX_COMMENT_SIZE 64
+// feature 105: the comment field holds SAVEAS_MAX_COMMENT_SIZE - 1 UTF-16 units; kept as UTF-8
+// (up to 3 bytes per unit)
+#define SAVEAS_MAX_COMMENT_BYTES (3 * SAVEAS_MAX_COMMENT_SIZE)
 
 inline void SetRGBPart(SALCOLOR* salColor, COLORREF rgb)
 {
@@ -67,7 +70,7 @@ typedef struct _gen_saveas_info
     DWORD Rotation;
     DWORD Flip;
     DWORD Flags;
-    char Comment[SAVEAS_MAX_COMMENT_SIZE];
+    char Comment[SAVEAS_MAX_COMMENT_BYTES]; // UTF-8 (feature 105)
     LPPVImageInfo pvii;
     // feature 104: the Save As dialog is the Unicode one, so its lpstrFilter is UTF-16; the hook
     // reads the code-page filter list (the extensions of the formats) from here
@@ -158,6 +161,11 @@ public:
     BOOL OnFileOpen(LPCTSTR defaultDirectory); // set 'defaultDirectory' to NULL for current dir
     BOOL OnFileSaveAs(LPCTSTR pInitDir);
     BOOL SaveImage(LPCTSTR name, DWORD format, SAVEAS_INFO_PTR psai);
+    // feature 105: Save As - the image into a temporary file next to the target, which replaces the
+    // target only when complete (saveas.cpp)
+    int SaveImageSafe(LPCTSTR fileName, DWORD format, SAVEAS_INFO_PTR psai, BOOL targetExists,
+                      BOOL clearReadOnly, DWORD* win32Err, char** leftAt, BOOL* reload);
+    BOOL IsShownFile(const WCHAR* wPath);
     int OpenFile(LPCTSTR name, int ShowCmd, HBITMAP hBmp);
     int HScroll(int ScrollRequest, int ThumbPos);
     int VScroll(int ScrollRequest, int ThumbPos);

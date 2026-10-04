@@ -27,6 +27,7 @@
 #include "wicengine.h"
 
 #pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "oleaut32.lib") // VariantInit (feature 105: encoder options)
 
 //*****************************************************************************
 //
@@ -987,6 +988,8 @@ static const char* WINAPI WicGetErrorText(DWORD ErrorCode)
         return "Incorrect parameter.";
     case PVC_UNSUP_OUT_PARAMS:
         return "This operation is not supported by the built-in image engine.";
+    case PVC_WRITING_ERROR:
+        return "The image could not be written.";
     }
     return "Unknown image engine error.";
 }
@@ -1108,9 +1111,11 @@ static PVCODE WINAPI WicGetHandles2(LPPVHandle Img, LPPVImageHandles* pHandles)
 // The panel thumbnail loader (thumbs.cpp CreateThumbnail) asks PVSaveImage
 // for the decoded image as raw 32bpp rows pushed through pSii->WriteFunc at
 // natural size; the core's CSalamanderThumbnailMaker does the shrinking.
-// Exactly that subset is implemented here. Encoder formats, scaling and
-// cropping stay unsupported, so Save As, print preview and the batch JPEG
-// thumbnail operation keep their pre-048 behavior (PVC_UNSUP_OUT_PARAMS).
+// Exactly that subset is implemented here. File output, encoder formats,
+// scaling and cropping stay unsupported, so print preview, the wallpaper
+// commands and the batch JPEG thumbnail operation keep their pre-048 behavior
+// (PVC_UNSUP_OUT_PARAMS). Save As does not come here since feature 105: it
+// encodes through WicEncodeImageToFile into a temporary file.
 static PVCODE WINAPI WicSaveImage(LPPVHandle Img, const char* OutFName, LPPVSaveImageInfo pSii,
                                   TProgressProc Progress, void* AppSpecific, int ImageIndex)
 {
@@ -1176,6 +1181,750 @@ static PVCODE WINAPI WicSaveImage(LPPVHandle Img, const char* OutFName, LPPVSave
 
 //*****************************************************************************
 //
+// Save As through the Windows encoders (feature 105)
+//
+// Feature 006 left Save As without an encoder: PVSaveImage refused every file output,
+// so Save As always ended with "Unable to save the image" - after it had deleted an
+// existing target (fixed on the caller's side, saveas.cpp). The Windows Imaging
+// Component writes BMP, PNG, JPEG, GIF and TIFF; the table below is what the Save As
+// dialog offers for them (measured: specs/105-pictview-saveas-loss/research.md).
+
+enum CWicOutPalette
+{
+    wopNone,    // no palette (gray, HiColor, TrueColor)
+    wopOptimal, // the image's own colors (IWICPalette::InitializeFromBitmap)
+    wopBW,      // black and white
+    wopGray,    // 256 gray levels in an indexed format
+};
+
+struct CWicOutPlan
+{
+    GUID Container;
+    WICPixelFormatGUID PixelFormat;
+    CWicOutPalette Palette;
+    UINT PaletteColors;  // wopOptimal
+    int TiffCompression; // WICTiffCompressionOption, -1 = not TIFF
+};
+
+static void SetOutPlan(CWicOutPlan* plan, REFGUID pf, CWicOutPalette pal, UINT colors)
+{
+    plan->PixelFormat = pf;
+    plan->Palette = pal;
+    plan->PaletteColors = colors;
+}
+
+// what (format, compression, colors, color model) becomes; FALSE = not offered
+static BOOL WicPlanOutput(DWORD format, DWORD compr, DWORD colors, DWORD colorModel, CWicOutPlan* plan)
+{
+    BOOL gray = colorModel == PVCM_GRAYS;
+    enum
+    {
+        cdNone,
+        cdBW,
+        cd16,
+        cd256,
+        cdGray,
+        cdHC15,
+        cdHC16,
+        cdTC24
+    } cd = cdNone;
+    switch (colors)
+    {
+    case 2:
+        cd = cdBW;
+        break;
+    case 16:
+        cd = gray ? cdNone : cd16;
+        break;
+    case 256:
+        cd = gray ? cdGray : cd256;
+        break;
+    case PV_COLOR_HC15:
+        cd = gray ? cdNone : cdHC15;
+        break;
+    case PV_COLOR_HC16:
+        cd = gray ? cdNone : cdHC16;
+        break;
+    case PV_COLOR_TC24:
+        cd = gray ? cdNone : cdTC24;
+        break;
+    }
+    if (cd == cdNone)
+        return FALSE;
+    memset(plan, 0, sizeof(*plan));
+    plan->TiffCompression = -1;
+    switch (format)
+    {
+    case PVF_BMP: // no RLE in the Windows BMP encoder
+        if (compr != PVCS_DEFAULT && compr != PVCS_NO_COMPRESSION)
+            return FALSE;
+        plan->Container = GUID_ContainerFormatBmp;
+        switch (cd)
+        {
+        case cdBW:
+            SetOutPlan(plan, GUID_WICPixelFormat1bppIndexed, wopBW, 2);
+            return TRUE;
+        case cd16:
+            SetOutPlan(plan, GUID_WICPixelFormat4bppIndexed, wopOptimal, 16);
+            return TRUE;
+        case cd256:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppIndexed, wopOptimal, 256);
+            return TRUE;
+        case cdGray: // the BMP encoder has no 8bppGray (measured: it answers 8bppIndexed)
+            SetOutPlan(plan, GUID_WICPixelFormat8bppIndexed, wopGray, 256);
+            return TRUE;
+        case cdHC15:
+            SetOutPlan(plan, GUID_WICPixelFormat16bppBGR555, wopNone, 0);
+            return TRUE;
+        case cdHC16:
+            SetOutPlan(plan, GUID_WICPixelFormat16bppBGR565, wopNone, 0);
+            return TRUE;
+        case cdTC24:
+            SetOutPlan(plan, GUID_WICPixelFormat24bppBGR, wopNone, 0);
+            return TRUE;
+        }
+        return FALSE;
+
+    case PVF_PNG:
+        if (compr != PVCS_DEFAULT && compr != PVCS_DEFLATE)
+            return FALSE;
+        plan->Container = GUID_ContainerFormatPng;
+        switch (cd)
+        {
+        case cdBW:
+            SetOutPlan(plan, GUID_WICPixelFormatBlackWhite, wopBW, 2);
+            return TRUE;
+        case cd16:
+            SetOutPlan(plan, GUID_WICPixelFormat4bppIndexed, wopOptimal, 16);
+            return TRUE;
+        case cd256:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppIndexed, wopOptimal, 256);
+            return TRUE;
+        case cdGray:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppGray, wopNone, 0);
+            return TRUE;
+        case cdTC24:
+            SetOutPlan(plan, GUID_WICPixelFormat24bppBGR, wopNone, 0);
+            return TRUE;
+        }
+        return FALSE; // no 15/16-bit PNG
+
+    case PVF_JPG:
+        if (compr != PVCS_DEFAULT && compr != PVCS_JPEG_HUFFMAN)
+            return FALSE;
+        plan->Container = GUID_ContainerFormatJpeg;
+        if (cd == cdGray)
+        {
+            SetOutPlan(plan, GUID_WICPixelFormat8bppGray, wopNone, 0);
+            return TRUE;
+        }
+        if (cd == cdTC24)
+        {
+            SetOutPlan(plan, GUID_WICPixelFormat24bppBGR, wopNone, 0);
+            return TRUE;
+        }
+        return FALSE;
+
+    case PVF_GIF: // the GIF encoder takes 8bppIndexed only; the smaller palettes go into it
+        if (compr != PVCS_DEFAULT && compr != PVCS_LZW)
+            return FALSE;
+        plan->Container = GUID_ContainerFormatGif;
+        switch (cd)
+        {
+        case cdBW:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppIndexed, wopBW, 2);
+            return TRUE;
+        case cd16:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppIndexed, wopOptimal, 16);
+            return TRUE;
+        case cd256:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppIndexed, wopOptimal, 256);
+            return TRUE;
+        case cdGray:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppIndexed, wopGray, 256);
+            return TRUE;
+        }
+        return FALSE;
+
+    case PVF_TIFF:
+    {
+        // WICTiffCompressionOption: 0 don't care (= LZW), 1 none, 2 CCITT G3, 3 CCITT G4, 4 LZW,
+        // 5 RLE (= PackBits, tag 259 = 32773, measured), 6 ZIP (= Deflate, tag 259 = 8)
+        int opt;
+        switch (compr)
+        {
+        case PVCS_DEFAULT:
+            opt = 0;
+            break;
+        case PVCS_NO_COMPRESSION:
+            opt = 1;
+            break;
+        case PVCS_CCITT_3:
+            opt = 2;
+            break;
+        case PVCS_CCITT_4:
+            opt = 3;
+            break;
+        case PVCS_LZW:
+            opt = 4;
+            break;
+        case PVCS_PACKBITS:
+            opt = 5;
+            break;
+        case PVCS_DEFLATE:
+            opt = 6;
+            break;
+        default:
+            return FALSE; // no JPEG in TIFF, no Huffman
+        }
+        if ((opt == 2 || opt == 3) && cd != cdBW)
+            return FALSE; // CCITT is bilevel only (the encoder would turn anything into black and white)
+        plan->Container = GUID_ContainerFormatTiff;
+        plan->TiffCompression = opt;
+        switch (cd)
+        {
+        case cdBW:
+            SetOutPlan(plan, GUID_WICPixelFormatBlackWhite, wopBW, 2);
+            return TRUE;
+        case cd16:
+            SetOutPlan(plan, GUID_WICPixelFormat4bppIndexed, wopOptimal, 16);
+            return TRUE;
+        case cd256:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppIndexed, wopOptimal, 256);
+            return TRUE;
+        case cdGray:
+            SetOutPlan(plan, GUID_WICPixelFormat8bppGray, wopNone, 0);
+            return TRUE;
+        case cdTC24:
+            SetOutPlan(plan, GUID_WICPixelFormat24bppBGR, wopNone, 0);
+            return TRUE;
+        }
+        return FALSE; // no 15/16-bit TIFF
+    }
+    }
+    return FALSE;
+}
+
+BOOL WicCanEncodeFormat(DWORD format)
+{
+    CWicOutPlan plan;
+    return WicPlanOutput(format, PVCS_DEFAULT, PV_COLOR_TC24, PVCM_RGB, &plan) ||
+           WicPlanOutput(format, PVCS_DEFAULT, 256, PVCM_GRAYS, &plan);
+}
+
+// The decoded frame (32bpp BGRX, top-down, opaque) as a WIC source, transformed on the fly:
+// the flips first, then the rotation by 90 degrees clockwise (PVSF_ROTATE90 - the same turn as
+// PVChangeImage's PVCF_ROTATE90CW), colors inverted on request. No copy of the image is made.
+// Reports progress (and takes a cancel) every 16 rows it delivers; 'rowsTotal' is the number
+// of rows all readers together ask for (the palette builder reads the image once more).
+class CWicDibSource : public IWICBitmapSource
+{
+public:
+    CWicDibSource(const CWicImage* img, DWORD flags, double dpiX, double dpiY,
+                  BOOL(WINAPI* progress)(int, void*), void* appSpecific, ULONGLONG rowsTotal)
+    {
+        Refs = 1;
+        Img = img;
+        Rot90 = (flags & PVSF_ROTATE90) != 0;
+        FlipH = (flags & PVSF_FLIP_HOR) != 0;
+        FlipV = (flags & PVSF_FLIP_VERT) != 0;
+        Invert = (flags & PVSF_INVERT) != 0;
+        DpiX = dpiX;
+        DpiY = dpiY;
+        Progress = progress;
+        AppSpecific = appSpecific;
+        RowsTotal = rowsTotal;
+        RowsDone = 0;
+        Canceled = FALSE;
+    }
+
+    BOOL Canceled;
+
+    UINT OutWidth() const { return (UINT)(Rot90 ? Img->Height : Img->Width); }
+    UINT OutHeight() const { return (UINT)(Rot90 ? Img->Width : Img->Height); }
+
+    STDMETHODIMP QueryInterface(REFIID riid, void** ppv)
+    {
+        if (ppv == NULL)
+            return E_POINTER;
+        if (IsEqualIID(riid, __uuidof(IUnknown)) || IsEqualIID(riid, __uuidof(IWICBitmapSource)))
+        {
+            *ppv = (IWICBitmapSource*)this;
+            AddRef();
+            return S_OK;
+        }
+        *ppv = NULL;
+        return E_NOINTERFACE;
+    }
+    STDMETHODIMP_(ULONG)
+    AddRef() { return (ULONG)InterlockedIncrement(&Refs); }
+    STDMETHODIMP_(ULONG)
+    Release()
+    {
+        LONG r = InterlockedDecrement(&Refs);
+        if (r == 0)
+            delete this;
+        return (ULONG)r;
+    }
+    STDMETHODIMP GetSize(UINT* w, UINT* h)
+    {
+        if (w == NULL || h == NULL)
+            return E_INVALIDARG;
+        *w = OutWidth();
+        *h = OutHeight();
+        return S_OK;
+    }
+    STDMETHODIMP GetPixelFormat(WICPixelFormatGUID* pf)
+    {
+        if (pf == NULL)
+            return E_INVALIDARG;
+        *pf = GUID_WICPixelFormat32bppBGR;
+        return S_OK;
+    }
+    STDMETHODIMP GetResolution(double* x, double* y)
+    {
+        if (x == NULL || y == NULL)
+            return E_INVALIDARG;
+        *x = DpiX;
+        *y = DpiY;
+        return S_OK;
+    }
+    STDMETHODIMP CopyPalette(IWICPalette* palette)
+    {
+        UNREFERENCED_PARAMETER(palette);
+        return WINCODEC_ERR_PALETTEUNAVAILABLE;
+    }
+    STDMETHODIMP CopyPixels(const WICRect* prc, UINT stride, UINT bufSize, BYTE* buf)
+    {
+        UINT ow = OutWidth(), oh = OutHeight();
+        WICRect r = {0, 0, (INT)ow, (INT)oh};
+        if (prc != NULL)
+            r = *prc;
+        if (buf == NULL || r.X < 0 || r.Y < 0 || r.Width < 0 || r.Height < 0 ||
+            (UINT)r.X + (UINT)r.Width > ow || (UINT)r.Y + (UINT)r.Height > oh)
+            return E_INVALIDARG;
+        if (r.Width == 0 || r.Height == 0)
+            return S_OK;
+        if ((ULONGLONG)stride < (ULONGLONG)r.Width * 4 ||
+            (ULONGLONG)bufSize < (ULONGLONG)(r.Height - 1) * stride + (ULONGLONG)r.Width * 4)
+            return WINCODEC_ERR_INSUFFICIENTBUFFER;
+        const int w = Img->Width, h = Img->Height;
+        const DWORD* src = (const DWORD*)Img->DibBits;
+        const DWORD invert = Invert ? 0x00FFFFFF : 0;
+        for (int oy = r.Y; oy < r.Y + r.Height; oy++)
+        {
+            DWORD* dst = (DWORD*)(buf + (size_t)(oy - r.Y) * stride);
+            for (int ox = r.X; ox < r.X + r.Width; ox++)
+            {
+                int fx = ox, fy = oy; // a point of the flipped image
+                if (Rot90)            // output (ox, oy) of a clockwise turn = flipped (oy, h-1-ox)
+                {
+                    fx = oy;
+                    fy = h - 1 - ox;
+                }
+                int sx = FlipH ? w - 1 - fx : fx;
+                int sy = FlipV ? h - 1 - fy : fy;
+                *dst++ = (src[(size_t)sy * w + sx] ^ invert) | 0xFF000000;
+            }
+            RowsDone++;
+            if (Progress != NULL && (RowsDone & 15) == 0)
+            {
+                int done = RowsTotal != 0 ? (int)min(99, RowsDone * 100 / RowsTotal) : 0;
+                if (Progress(done, AppSpecific)) // TRUE = cancel (PictView's convention, see DecodeFrame)
+                {
+                    Canceled = TRUE;
+                    return HRESULT_FROM_WIN32(ERROR_CANCELLED);
+                }
+            }
+        }
+        return S_OK;
+    }
+
+private:
+    LONG Refs;
+    const CWicImage* Img;
+    BOOL Rot90, FlipH, FlipV, Invert;
+    double DpiX, DpiY;
+    BOOL(WINAPI* Progress)
+    (int, void*);
+    void* AppSpecific;
+    ULONGLONG RowsTotal, RowsDone;
+};
+
+// IStream over an open file handle: the encoders write into the caller's (temporary) file;
+// the first failing system call is kept so the user is told why (disk full, ...).
+class CWicHandleStream : public IStream
+{
+public:
+    CWicHandleStream(HANDLE file)
+    {
+        Refs = 1;
+        File = file;
+        LastError = 0;
+    }
+
+    DWORD LastError;
+
+    STDMETHODIMP QueryInterface(REFIID riid, void** ppv)
+    {
+        if (ppv == NULL)
+            return E_POINTER;
+        if (IsEqualIID(riid, __uuidof(IUnknown)) || IsEqualIID(riid, __uuidof(ISequentialStream)) ||
+            IsEqualIID(riid, __uuidof(IStream)))
+        {
+            *ppv = (IStream*)this;
+            AddRef();
+            return S_OK;
+        }
+        *ppv = NULL;
+        return E_NOINTERFACE;
+    }
+    STDMETHODIMP_(ULONG)
+    AddRef() { return (ULONG)InterlockedIncrement(&Refs); }
+    STDMETHODIMP_(ULONG)
+    Release()
+    {
+        LONG r = InterlockedDecrement(&Refs);
+        if (r == 0)
+            delete this;
+        return (ULONG)r;
+    }
+    STDMETHODIMP Read(void* pv, ULONG cb, ULONG* pcbRead)
+    {
+        DWORD got = 0;
+        if (!ReadFile(File, pv, cb, &got, NULL))
+            return Fail();
+        if (pcbRead != NULL)
+            *pcbRead = got;
+        return got < cb ? S_FALSE : S_OK;
+    }
+    STDMETHODIMP Write(const void* pv, ULONG cb, ULONG* pcbWritten)
+    {
+        DWORD written = 0;
+        if (!WriteFile(File, pv, cb, &written, NULL))
+            return Fail();
+        if (pcbWritten != NULL)
+            *pcbWritten = written;
+        if (written != cb)
+        {
+            if (LastError == 0)
+                LastError = ERROR_WRITE_FAULT;
+            return STG_E_WRITEFAULT;
+        }
+        return S_OK;
+    }
+    STDMETHODIMP Seek(LARGE_INTEGER move, DWORD origin, ULARGE_INTEGER* newPos)
+    {
+        // STREAM_SEEK_SET/CUR/END have the values of FILE_BEGIN/CURRENT/END
+        LARGE_INTEGER np;
+        if (origin > STREAM_SEEK_END)
+            return STG_E_INVALIDFUNCTION;
+        if (!SetFilePointerEx(File, move, &np, origin))
+            return Fail();
+        if (newPos != NULL)
+            newPos->QuadPart = (ULONGLONG)np.QuadPart;
+        return S_OK;
+    }
+    STDMETHODIMP SetSize(ULARGE_INTEGER size)
+    {
+        LARGE_INTEGER zero, pos, to;
+        zero.QuadPart = 0;
+        to.QuadPart = (LONGLONG)size.QuadPart;
+        if (!SetFilePointerEx(File, zero, &pos, FILE_CURRENT) || !SetFilePointerEx(File, to, NULL, FILE_BEGIN) ||
+            !SetEndOfFile(File) || !SetFilePointerEx(File, pos, NULL, FILE_BEGIN))
+            return Fail();
+        return S_OK;
+    }
+    STDMETHODIMP CopyTo(IStream*, ULARGE_INTEGER, ULARGE_INTEGER*, ULARGE_INTEGER*) { return E_NOTIMPL; }
+    STDMETHODIMP Commit(DWORD) { return S_OK; }
+    STDMETHODIMP Revert() { return E_NOTIMPL; }
+    STDMETHODIMP LockRegion(ULARGE_INTEGER, ULARGE_INTEGER, DWORD) { return STG_E_INVALIDFUNCTION; }
+    STDMETHODIMP UnlockRegion(ULARGE_INTEGER, ULARGE_INTEGER, DWORD) { return STG_E_INVALIDFUNCTION; }
+    STDMETHODIMP Stat(STATSTG* st, DWORD flags)
+    {
+        UNREFERENCED_PARAMETER(flags);
+        if (st == NULL)
+            return E_INVALIDARG;
+        memset(st, 0, sizeof(*st));
+        st->type = STGTY_STREAM;
+        st->grfMode = STGM_READWRITE;
+        LARGE_INTEGER size;
+        if (!GetFileSizeEx(File, &size))
+            return Fail();
+        st->cbSize.QuadPart = (ULONGLONG)size.QuadPart;
+        return S_OK;
+    }
+    STDMETHODIMP Clone(IStream** ppstm)
+    {
+        if (ppstm != NULL)
+            *ppstm = NULL;
+        return E_NOTIMPL;
+    }
+
+private:
+    LONG Refs;
+    HANDLE File;
+
+    HRESULT Fail()
+    {
+        DWORD e = GetLastError();
+        if (e == 0)
+            e = ERROR_WRITE_FAULT;
+        if (LastError == 0)
+            LastError = e;
+        return HRESULT_FROM_WIN32(e);
+    }
+};
+
+static HRESULT WriteEncoderOption(IPropertyBag2* bag, LPCOLESTR name, VARIANT* value)
+{
+    PROPBAG2 opt;
+    memset(&opt, 0, sizeof(opt));
+    opt.pstrName = (LPOLESTR)name;
+    return bag->Write(1, &opt, value);
+}
+
+int WicEncodeImageToFile(void* hPVImage, int imageIndex, HANDLE hFile, const CWicEncodeParams* p,
+                         BOOL(WINAPI* progress)(int done, void* appSpecific), void* appSpecific,
+                         DWORD* win32Err)
+{
+    *win32Err = 0;
+    CWicImage* img = (CWicImage*)hPVImage;
+    if (img == NULL || p == NULL || hFile == INVALID_HANDLE_VALUE)
+        return PVC_INVALID_HANDLE;
+    CWicOutPlan plan;
+    if (!WicPlanOutput(p->Format, p->Compression, p->Colors, p->ColorModel, &plan))
+        return PVC_UNSUP_OUT_PARAMS;
+    IWICImagingFactory* factory = GetWicFactory();
+    if (factory == NULL)
+        return PVC_EXCEPTION;
+    // the frame as the viewer holds it: a rotation done in the viewer is in the DIB already
+    PVCODE code = DecodeFrame(img, imageIndex < 0 ? 0 : imageIndex, NULL, NULL);
+    if (code != PVC_OK)
+        return code;
+    if (img->DibBits == NULL || img->Width <= 0 || img->Height <= 0)
+        return PVC_INVALID_DIMENSIONS;
+
+    double dpiX = p->HorDPI != 0 ? p->HorDPI : 96;
+    double dpiY = p->VerDPI != 0 ? p->VerDPI : 96;
+    BOOL rot = (p->Flags & PVSF_ROTATE90) != 0;
+    ULONGLONG outRows = (ULONGLONG)(rot ? img->Width : img->Height);
+    CWicDibSource* src = new CWicDibSource(img, p->Flags, dpiX, dpiY, progress, appSpecific,
+                                           outRows * (plan.Palette == wopOptimal ? 2 : 1));
+    CWicHandleStream* stream = new CWicHandleStream(hFile);
+    if (src == NULL || stream == NULL)
+    {
+        if (src != NULL)
+            src->Release();
+        if (stream != NULL)
+            stream->Release();
+        return PVC_OOM;
+    }
+
+    IWICPalette* pal = NULL;
+    IWICFormatConverter* conv = NULL;
+    IWICBitmapEncoder* enc = NULL;
+    IWICBitmapFrameEncode* frame = NULL;
+    IPropertyBag2* bag = NULL;
+    BOOL unsupported = FALSE;
+    HRESULT hr = S_OK;
+    if (plan.Palette != wopNone)
+    {
+        hr = factory->CreatePalette(&pal);
+        if (SUCCEEDED(hr))
+        {
+            if (plan.Palette == wopOptimal)
+                hr = pal->InitializeFromBitmap(src, plan.PaletteColors, FALSE);
+            else
+                hr = pal->InitializePredefined(plan.Palette == wopBW ? WICBitmapPaletteTypeFixedBW
+                                                                     : WICBitmapPaletteTypeFixedGray256,
+                                               FALSE);
+        }
+    }
+    if (SUCCEEDED(hr))
+        hr = factory->CreateFormatConverter(&conv);
+    if (SUCCEEDED(hr))
+    {
+        // fewer colors: error diffusion; gray levels and HiColor/TrueColor: plain conversion
+        BOOL dither = plan.Palette == wopOptimal || plan.Palette == wopBW;
+        hr = conv->Initialize(src, plan.PixelFormat, dither ? WICBitmapDitherTypeErrorDiffusion : WICBitmapDitherTypeNone,
+                              pal, 0.0, pal != NULL ? WICBitmapPaletteTypeCustom : WICBitmapPaletteTypeMedianCut);
+    }
+    if (SUCCEEDED(hr))
+        hr = factory->CreateEncoder(plan.Container, NULL, &enc);
+    if (SUCCEEDED(hr))
+        hr = enc->Initialize(stream, WICBitmapEncoderNoCache);
+    if (SUCCEEDED(hr))
+        hr = enc->CreateNewFrame(&frame, &bag);
+    if (SUCCEEDED(hr) && p->Format == PVF_JPG)
+    {
+        VARIANT v;
+        VariantInit(&v);
+        v.vt = VT_R4;
+        v.fltVal = (float)max(1, min(100, (int)p->JPEGQuality)) / 100.0f;
+        hr = WriteEncoderOption(bag, L"ImageQuality", &v);
+        if (SUCCEEDED(hr))
+        {
+            VariantInit(&v);
+            v.vt = VT_UI1;
+            // WICJpegYCrCbSubsamplingOption: 2 = 4:2:2 (the dialog's 2:1:1), 3 = 4:4:4 (1:1:1)
+            v.bVal = (BYTE)(p->JPEGSubsampling == 0 ? 3 : 2);
+            hr = WriteEncoderOption(bag, L"JpegYCrCbSubsampling", &v);
+        }
+    }
+    if (SUCCEEDED(hr) && plan.TiffCompression >= 0)
+    {
+        VARIANT v;
+        VariantInit(&v);
+        v.vt = VT_UI1;
+        v.bVal = (BYTE)plan.TiffCompression;
+        hr = WriteEncoderOption(bag, L"TiffCompressionMethod", &v);
+    }
+    if (SUCCEEDED(hr))
+        hr = frame->Initialize(bag);
+    if (SUCCEEDED(hr))
+        hr = frame->SetSize(src->OutWidth(), src->OutHeight());
+    if (SUCCEEDED(hr))
+        hr = frame->SetResolution(dpiX, dpiY);
+    if (SUCCEEDED(hr))
+    {
+        WICPixelFormatGUID pf = plan.PixelFormat;
+        hr = frame->SetPixelFormat(&pf);
+        if (SUCCEEDED(hr) && !IsEqualGUID(pf, plan.PixelFormat))
+        {
+            unsupported = TRUE; // the encoder wants another format: never write anything but what was offered
+            hr = WINCODEC_ERR_UNSUPPORTEDPIXELFORMAT;
+        }
+    }
+    if (SUCCEEDED(hr) && pal != NULL)
+        hr = frame->SetPalette(pal);
+    if (SUCCEEDED(hr) && p->CommentU8 != NULL && p->CommentU8[0] != 0)
+    {
+        // The comment is UTF-8 text. VT_LPSTR is written as the bytes given; VT_LPWSTR is converted
+        // to the system code page by the tEXt and TIFF writers ('?' for the rest - measured), so:
+        // JPEG COM, the GIF comment extension and TIFF ImageDescription get the UTF-8 bytes; PNG
+        // gets a tEXt chunk (Latin-1 by the PNG rules) when the text is ASCII, else an iTXt chunk
+        // (UTF-8 by the PNG rules; keyword "Comment"). BMP has no comment (the dialog offers none).
+        IWICMetadataQueryWriter* mw = NULL;
+        BOOL pngUnicode = p->Format == PVF_PNG && !SplIsASCII(p->CommentU8);
+        LPCWSTR query = NULL;
+        switch (p->Format)
+        {
+        case PVF_JPG:
+            query = L"/com/TextEntry";
+            break;
+        case PVF_GIF:
+            query = L"/commentext/TextEntry";
+            break;
+        case PVF_PNG:
+            query = pngUnicode ? L"/iTXt/TextEntry" : L"/tEXt/{str=Comment}";
+            break;
+        case PVF_TIFF:
+            query = L"/ifd/{ushort=270}";
+            break;
+        }
+        if (query != NULL)
+            hr = frame->GetMetadataQueryWriter(&mw);
+        if (query != NULL && SUCCEEDED(hr))
+        {
+            PROPVARIANT v; // borrowed strings: never PropVariantClear'ed
+            PropVariantInit(&v);
+            WCHAR* commentW = NULL;
+            if (pngUnicode)
+            {
+                v.vt = VT_LPSTR;
+                v.pszVal = (LPSTR) "Comment";
+                hr = mw->SetMetadataByName(L"/iTXt/Keyword", &v);
+                commentW = SplU8ToWAlloc(p->CommentU8);
+                if (SUCCEEDED(hr) && commentW == NULL)
+                    hr = E_INVALIDARG;
+                PropVariantInit(&v);
+                v.vt = VT_LPWSTR;
+                v.pwszVal = commentW;
+            }
+            else
+            {
+                v.vt = VT_LPSTR;
+                v.pszVal = (LPSTR)p->CommentU8;
+            }
+            if (SUCCEEDED(hr))
+                hr = mw->SetMetadataByName(query, &v);
+            free(commentW);
+        }
+        if (mw != NULL)
+            mw->Release();
+    }
+    if (SUCCEEDED(hr))
+        hr = frame->WriteSource(conv, NULL);
+    if (SUCCEEDED(hr))
+        hr = frame->Commit();
+    if (SUCCEEDED(hr))
+        hr = enc->Commit();
+
+    BOOL canceled = src->Canceled;
+    DWORD streamErr = stream->LastError;
+    if (bag != NULL)
+        bag->Release();
+    if (frame != NULL)
+        frame->Release();
+    if (enc != NULL)
+        enc->Release();
+    if (conv != NULL)
+        conv->Release();
+    if (pal != NULL)
+        pal->Release();
+    src->Release();
+    stream->Release();
+
+    if (SUCCEEDED(hr))
+        return PVC_OK;
+    if (canceled)
+        return PVC_CANCELED;
+    TRACE_E("WIC engine: encoding failed, hr=0x" << std::hex << hr);
+    if (streamErr != 0)
+    {
+        *win32Err = streamErr;
+        return PVC_WRITING_ERROR;
+    }
+    if (hr == E_OUTOFMEMORY)
+        return PVC_OOM;
+    if (unsupported || hr == WINCODEC_ERR_UNSUPPORTEDPIXELFORMAT || hr == WINCODEC_ERR_COMPONENTNOTFOUND ||
+        hr == WINCODEC_ERR_UNSUPPORTEDOPERATION)
+        return PVC_UNSUP_OUT_PARAMS;
+    if (HRESULT_FACILITY(hr) == FACILITY_WIN32)
+        *win32Err = HRESULT_CODE(hr);
+    return PVC_WRITING_ERROR;
+}
+
+int WicDetachSource(void* hPVImage)
+{
+    CWicImage* img = (CWicImage*)hPVImage;
+    if (img == NULL)
+        return PVC_INVALID_HANDLE;
+    if (img->Decoder == NULL)
+        return PVC_OK; // no file behind the image
+    if (img->HDib == NULL)
+    {
+        PVCODE code = DecodeFrame(img, (int)img->InfoFrame, NULL, NULL);
+        if (code != PVC_OK)
+            return code;
+    }
+    img->Decoder->Release(); // closes the file
+    img->Decoder = NULL;
+    if (img->Stream != NULL)
+    {
+        img->Stream->Release();
+        img->Stream = NULL;
+    }
+    // from now on the image behaves like an attached bitmap: one frame, always decoded
+    img->FrameCount = 1;
+    img->InfoFrame = 0;
+    img->DecodedFrame = 0;
+    return PVC_OK;
+}
+
+//*****************************************************************************
+//
 // Graceful stubs - operations with no engine backing (feature 006 scope)
 //
 
@@ -1188,13 +1937,15 @@ static PVCODE WINAPI WicLoadFromClipboard(LPPVHandle* Img, LPPVImageInfo pInfo, 
     return PVC_UNSUP_FILE_TYPE;
 }
 
+// the Save As dialog's question: may (format, compression, colors, color model) be offered?
+// -1 = no. PVCS_DEFAULT asks for the format's default compression. Feature 006 returned 0 -
+// "supported" - for everything, so the dialog offered every format and depth and then failed.
 static DWORD WINAPI WicIsOutCombSupported(int Fmt, int Compr, int Colors, int ColorModel)
 {
-    UNREFERENCED_PARAMETER(Fmt);
-    UNREFERENCED_PARAMETER(Compr);
-    UNREFERENCED_PARAMETER(Colors);
-    UNREFERENCED_PARAMETER(ColorModel);
-    return 0; // no output combination supported (Save As is disabled)
+    CWicOutPlan plan;
+    return WicPlanOutput((DWORD)Fmt, (DWORD)Compr, (DWORD)Colors, ColorModel == PVCM_GRAYS ? PVCM_GRAYS : PVCM_RGB, &plan)
+               ? 0
+               : (DWORD)-1;
 }
 
 static PVCODE WINAPI WicReadImageSequence(LPPVHandle Img, LPPVImageSequence* ppSeq)

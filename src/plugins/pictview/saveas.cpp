@@ -7,6 +7,9 @@
 
 #include "lib\\pvw32dll.h"
 #include "renderer.h"
+#include "wicengine.h"                   // feature 105: Save As through the Windows encoders
+#include "../../common/salsamefile.h"    // feature 105: is the target the shown file?
+#include "../../common/salsafereplace.h" // feature 105: replace only by a complete file
 #include "dialogs.h"
 #include "pictview.h"
 #include "pictview.rh"
@@ -91,6 +94,9 @@ static void FormatNameMessageU8(char* out, int outSize, const char* cpTemplate, 
     BOOL done = FALSE;
     if (fmtW != NULL && nameW != NULL)
     {
+        // feature 105: IDS_SAVEERROR has "%hs" (a char* text); the text is wide here
+        for (WCHAR* f = wcsstr(fmtW, L"%hs"); f != NULL; f = wcsstr(f + 1, L"%hs"))
+            memmove(f + 1, f + 2, (wcslen(f + 2) + 1) * sizeof(WCHAR)); // "%hs" -> "%s"
         WCHAR text[2048];
         if (_snwprintf_s(text, _TRUNCATE, fmtW, nameW) >= 0 && SplWToU8(text, out, outSize) > 0)
             done = TRUE;
@@ -146,6 +152,81 @@ BOOL WINAPI SaveProgressProcedure(int done, void* data)
     }
 
     return FALSE;
+}
+
+// feature 105: the format (PVF_xxx) of a filter pattern ("*.jpg;*.jpeg"), by the same rule as
+// GetFormatInfo (the first extension the table knows); 0 = unknown
+static DWORD FormatOfPattern(LPCTSTR s)
+{
+    PVFS_FTYPE* ftype = fs_types;
+    while ((s = _tcschr(s, '.')) != NULL)
+    {
+        s++;
+        while (ftype->ext)
+        {
+            if (!_tcsnicmp(ftype->ext, s, _tcslen(ftype->ext)))
+                return ftype->type & SAVEAS_COMMENT_MASK;
+            ftype++;
+        }
+    }
+    return 0;
+}
+
+// feature 105: 'all' is the language's "description|pattern|..." list (split in place); 'out'
+// gets the double-NUL list of the entries whose format the Windows encoders write, 'keptFull'
+// their 1-based indexes in the whole list. Returns how many were kept.
+static int BuildSaveFilter(LPTSTR all, LPTSTR out, int outSize, int* keptFull, int maxKept)
+{
+    int kept = 0, index = 0;
+    LPTSTR o = out;
+    LPTSTR end = out + outSize - 1; // room for the closing NUL
+    LPTSTR p = all;
+    while (*p != 0)
+    {
+        LPTSTR desc = p;
+        LPTSTR bar = _tcschr(p, '|');
+        if (bar == NULL)
+            break;
+        *bar = 0;
+        LPTSTR pattern = bar + 1;
+        LPTSTR bar2 = _tcschr(pattern, '|');
+        if (bar2 != NULL)
+            *bar2 = 0;
+        index++;
+        size_t descLen = _tcslen(desc), patLen = _tcslen(pattern);
+        if (WicCanEncodeFormat(FormatOfPattern(pattern)) && kept < maxKept &&
+            (size_t)(end - o) > descLen + patLen + 2)
+        {
+            memcpy(o, desc, (descLen + 1) * sizeof(TCHAR));
+            o += descLen + 1;
+            memcpy(o, pattern, (patLen + 1) * sizeof(TCHAR));
+            o += patLen + 1;
+            keptFull[kept++] = index;
+        }
+        if (bar2 == NULL)
+            break;
+        p = bar2 + 1;
+    }
+    *o = 0;
+    return kept;
+}
+
+// feature 105: the dialog's (1-based) filter index for the stored index of the whole list; a
+// stored format that is not offered any more falls back to Windows Bitmap (the old default)
+static DWORD SaveFilterShownIndex(int lastFull, LPCTSTR filter, const int* keptFull, int keptCount)
+{
+    for (int k = 0; k < keptCount; k++)
+        if (keptFull[k] == lastFull)
+            return k + 1;
+    LPCTSTR s = filter;
+    for (int k = 0; k < keptCount && *s != 0; k++)
+    {
+        s += _tcslen(s) + 1; // the pattern
+        if (FormatOfPattern(s) == PVF_BMP)
+            return k + 1;
+        s += _tcslen(s) + 1;
+    }
+    return 1;
 }
 
 void EnableDisableControls(HWND hDlg, int firstID, int lastID, BOOL bEnable)
@@ -383,9 +464,11 @@ void FillTypeFmt(HWND hDlg, OPENFILENAME* lpOFN, BOOL bUpdCompressions, BOOL bUp
         }
     }
     cnt = GetItemData(hDlg, IDC_SAVE_COMPRESSION);
-    EnableDisableControls(hDlg, IDC_SAVE_GIF_FIRST, IDC_SAVE_GIF_LAST, format == PVF_GIF);
+    // feature 105: the Windows GIF encoder has no interlacing and always writes GIF89a, the TIFF
+    // encoder has no strip size - those options stay visible but cannot be chosen
+    EnableDisableControls(hDlg, IDC_SAVE_GIF_FIRST, IDC_SAVE_GIF_LAST, FALSE);
     EnableDisableControls(hDlg, IDC_SAVE_JPEG_FIRST, IDC_SAVE_JPEG_LAST, (format == PVF_JPG) || (cnt == PVCS_JPEG_HUFFMAN));
-    EnableDisableControls(hDlg, IDC_SAVE_TIFF_FIRST, IDC_SAVE_TIFF_LAST, format == PVF_TIFF);
+    EnableDisableControls(hDlg, IDC_SAVE_TIFF_FIRST, IDC_SAVE_TIFF_LAST, FALSE);
 
     RECT r1, r2;
     GetWindowRect(GetParent(hDlg), &r1);
@@ -543,8 +626,14 @@ UINT_PTR CALLBACK SaveAsDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPar
         {
             psai->Flags |= PVSF_INVERT;
         }
-        GetDlgItemTextA(hDlg, IDC_SAVE_COMMENT, psai->Comment, SAVEAS_MAX_COMMENT_SIZE);
-        psai->Comment[SAVEAS_MAX_COMMENT_SIZE - 1] = 0;
+        {
+            // feature 105: the field is a Unicode control (the dialog is GetSaveFileNameW since 104);
+            // the comment is stored in the image as UTF-8 text
+            WCHAR commentW[SAVEAS_MAX_COMMENT_SIZE];
+            if (GetDlgItemTextW(hDlg, IDC_SAVE_COMMENT, commentW, SAVEAS_MAX_COMMENT_SIZE) == 0 ||
+                SplWToU8(commentW, psai->Comment, SAVEAS_MAX_COMMENT_BYTES) == 0)
+                psai->Comment[0] = 0;
+        }
         G.Save.Flags = 0;
         if (IsDlgButtonChecked(hDlg, IDC_SAVE_GIF_INTERLACED))
         {
@@ -735,7 +824,12 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
 
     // store the filename without path and suffix
     s = (LPTSTR)_tcsrchr(FileName, '\\');
-    _tcscpy(fileName, s ? (s + 1) : _T(""));
+    // feature 105: bounded - a name component of the shown file may take up to 765 bytes of UTF-8,
+    // 'fileName' holds MAX_PATH (a longer name is not suggested; the dialog's own default applies)
+    if (_tcslen(s ? (s + 1) : FileName) < SizeOf(fileName))
+        _tcscpy(fileName, s ? (s + 1) : _T(""));
+    else
+        fileName[0] = 0;
     s = (LPTSTR)_tcsrchr(fileName, '.');
     if (s)
         *s = 0; // ".cvspass" is extension in Windows
@@ -773,31 +867,23 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
     ofn.ofn.lStructSize = sizeof(OPENFILENAME);
     ofn.ofn.lStructSize = sizeof(ofn);
     ofn.ofn.hwndOwner = HWindow;
+    // feature 105: the dialog offers only the formats the Windows encoders write. The language's
+    // list (IDS_SAVEASFILTER*) is filtered here; G.LastSaveAsFilterIndex* keep counting in the
+    // whole list, as before (the stored value means the same to every version)
+    TCHAR filterAll[1000];
     TCHAR filterStr[1000];
-    if (pvii.Colors == 2)
+    int* lastFilterIndex = pvii.Colors == 2 ? &G.LastSaveAsFilterIndexMono : &G.LastSaveAsFilterIndexColor;
+    lstrcpyn(filterAll, LoadStr(pvii.Colors == 2 ? IDS_SAVEASFILTERMONO : IDS_SAVEASFILTERCOLOR), SizeOf(filterAll));
+    int keptFull[64]; // 1-based indexes into the whole list of the offered entries
+    int keptCount = BuildSaveFilter(filterAll, filterStr, SizeOf(filterStr), keptFull, _countof(keptFull));
+    if (keptCount == 0) // a broken translation: nothing to offer, nothing touched
     {
-        ofn.ofn.nFilterIndex = G.LastSaveAsFilterIndexMono;
-        lstrcpyn(filterStr, LoadStr(IDS_SAVEASFILTERMONO), 1000);
+        _stprintf(errBuff, LoadStr(IDS_SAVEERROR), PVW32DLL.PVGetErrorText(PVC_UNSUP_OUT_PARAMS));
+        SalamanderGeneral->SalMessageBox(HWindow, errBuff, LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OK);
+        return FALSE;
     }
-    else
-    {
-        ofn.ofn.nFilterIndex = G.LastSaveAsFilterIndexColor;
-        lstrcpyn(filterStr, LoadStr(IDS_SAVEASFILTERCOLOR), 1000);
-    }
-    s = filterStr;
-    ofn.ofn.lpstrFilter = s;
-    DWORD filtersDoubledCount = 0;
-    while (*s != 0)
-    { // create a double-null-terminated list
-        if (*s == '|')
-        {
-            *s = 0;
-            filtersDoubledCount++;
-        }
-        s++;
-    }
-    if (ofn.ofn.nFilterIndex > filtersDoubledCount / 2)
-        ofn.ofn.nFilterIndex = filtersDoubledCount / 2;
+    ofn.ofn.nFilterIndex = SaveFilterShownIndex(*lastFilterIndex, filterStr, keptFull, keptCount);
+    ofn.ofn.lpstrFilter = filterStr;
     ofn.ofn.lpstrFile = fileName;
     ofn.ofn.nMaxFile = SizeOf(fileName);
     ofn.ofn.lpstrInitialDir = initDir;
@@ -811,10 +897,11 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
     // Start with no rotation & no flip
     lsai.Rotation = lsai.Flip = 0;
     CALL_STACK_MESSAGE2(_T("OnFileSaveAs: GSFN(%s)"), FileName);
+    BOOL targetExists = FALSE;
+    BOOL clearReadOnly = FALSE;
     for (;;)
     {
         LPTSTR s2;
-        HANDLE hFile;
 
         // feature 104: the Unicode Save As dialog; the names (fileName, initDir) are UTF-8. The
         // code-page dialog (SafeGetSaveFileName) gave the typed name with best fit: a name outside
@@ -827,15 +914,9 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
         }
 
         format = 0;
-        if (pvii.Colors == 2)
-        {
-            // remember the filter index for the next time
-            G.LastSaveAsFilterIndexMono = ofn.ofn.nFilterIndex;
-        }
-        else
-        {
-            G.LastSaveAsFilterIndexColor = ofn.ofn.nFilterIndex;
-        }
+        // remember the filter index for the next time (feature 105: as an index of the whole list)
+        if (ofn.ofn.nFilterIndex >= 1 && (int)ofn.ofn.nFilterIndex <= keptCount)
+            *lastFilterIndex = keptFull[ofn.ofn.nFilterIndex - 1];
         lstrcpyn(initDir, fileName, ofn.ofn.nFileOffset);
         initDir[ofn.ofn.nFileOffset - 1] = 0;
         GetFormatInfo(&ofn.ofn, &format, &s);
@@ -911,16 +992,43 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
                 }
             }
         }
-        // 'fileName' is a UTF-8 save-target path (interface 104) -> W file API
-        WCHAR* wFileName = SplU8ToWExtAlloc(fileName);
-        hFile = wFileName == NULL ? INVALID_HANDLE_VALUE
-                                  : CreateFileW(wFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL,
-                                                OPEN_EXISTING, 0, 0);
-        free(wFileName);
-        if (hFile != INVALID_HANDLE_VALUE)
+        // feature 105: a format the Windows encoders cannot write is refused here, before anything
+        // is touched (the filtered list offers none; this is the backstop)
+        if (!WicCanEncodeFormat(format))
         {
-            CloseHandle(hFile);
-            FormatNameMessageU8(errBuff, SizeOf(errBuff), LoadStr(IDS_SAVE_ERR_EXISTS_OVERWRITE), fileName); // feature 104
+            _stprintf(errBuff, LoadStr(IDS_SAVEERROR), PVW32DLL.PVGetErrorText(PVC_UNSUP_OUT_PARAMS));
+            SalamanderGeneral->SalMessageBox(HWindow, errBuff, LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OK);
+            sai = lsai; // store options
+            return TRUE;
+        }
+        // feature 105: only LOOK at an existing target here. Before 105 the target was deleted at
+        // this point and the image written afterwards - a failed write (every write since feature
+        // 006) lost the file. Now the image goes into a temporary file and replaces the target
+        // only when complete (SaveImageSafe). The attribute query opens nothing, so it also sees
+        // a file another program - or this viewer, for the image it shows - holds open.
+        targetExists = FALSE;
+        clearReadOnly = FALSE;
+        WCHAR* wFileName = SplU8ToWExtAlloc(fileName); // 'fileName' is a UTF-8 save-target path (interface 104)
+        WIN32_FILE_ATTRIBUTE_DATA fad;
+        BOOL found = wFileName != NULL && GetFileAttributesExW(wFileName, GetFileExInfoStandard, &fad);
+        DWORD findErr = found ? NO_ERROR : (wFileName != NULL ? GetLastError() : ERROR_INVALID_NAME);
+        free(wFileName);
+        if (found)
+        {
+            if (fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) // a folder of that name: never replaced
+            {
+                SalamanderGeneral->GetErrorText(ERROR_ALREADY_EXISTS, errBuff, SizeOf(errBuff));
+                if (IDCANCEL == SalamanderGeneral->SalMessageBox(HWindow, errBuff,
+                                                                 LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OKCANCEL))
+                {
+                    sai = lsai; // store options
+                    return TRUE;
+                }
+                continue; // ask for a new name
+            }
+            // a read-only file: the read-only question only (as before)
+            BOOL readOnly = (fad.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0;
+            FormatNameMessageU8(errBuff, SizeOf(errBuff), LoadStr(readOnly ? IDS_READ_ONLY_REWRITE : IDS_SAVE_ERR_EXISTS_OVERWRITE), fileName); // feature 104
             ret = SalamanderGeneral->SalMessageBox(HWindow, errBuff,
                                                    LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_YESNOCANCEL);
             if (ret == IDCANCEL)
@@ -934,60 +1042,25 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
                 // ask for a new name
                 continue;
             }
+            targetExists = TRUE;
+            clearReadOnly = readOnly; // cleared only for the replace itself, restored if that fails
+            break;
         }
-        else
+        if (findErr == ERROR_FILE_NOT_FOUND)
+            break;
+        // the target cannot be looked at (no access to the folder, an invalid name, ...): say why
+        SalamanderGeneral->GetErrorText(findErr, errBuff, SizeOf(errBuff));
+        if (IDCANCEL == SalamanderGeneral->SalMessageBox(HWindow, errBuff,
+                                                         LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OKCANCEL))
         {
-            ret = GetLastError();
-            if (ret == ERROR_FILE_NOT_FOUND)
-            {
-                break;
-            }
-            if (ret == ERROR_ACCESS_DENIED)
-            {
-                // No rights or R/O attribute - check what is the case
-                ret = SalamanderGeneral->SalGetFileAttributes(fileName); // 0xFFFFFFFF on error
-                if ((ret != 0xFFFFFFFF) && (ret & FILE_ATTRIBUTE_READONLY))
-                {
-                    // R/O attrib
-                    FormatNameMessageU8(errBuff, SizeOf(errBuff), LoadStr(IDS_READ_ONLY_REWRITE), fileName); // feature 104
-                    ret = SalamanderGeneral->SalMessageBox(HWindow, errBuff,
-                                                           LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_YESNOCANCEL);
-                    if (ret == IDCANCEL)
-                    {
-                        sai = lsai; // store options
-                        return TRUE;
-                    }
-                    if (ret != IDYES)
-                    {
-                        // ask for a new name
-                        continue;
-                    }
-                    SalamanderGeneral->ClearReadOnlyAttr(fileName);
-                }
-                // else: no rights: DeleteFile should also fail with ERROR_ACCESS_DENIED
-            }
-        }
-        // 'fileName' is UTF-8 (interface 104) -> delete via the W file API
-        WCHAR* wDelName = SplU8ToWExtAlloc(fileName);
-        BOOL delOK = wDelName != NULL && DeleteFileW(wDelName);
-        ret = delOK ? NO_ERROR : (wDelName != NULL ? GetLastError() : ERROR_INVALID_NAME);
-        free(wDelName);
-        if (!delOK)
-        {
-            SalamanderGeneral->GetErrorText(ret, errBuff, SizeOf(errBuff));
-            if (IDCANCEL == SalamanderGeneral->SalMessageBox(HWindow, errBuff,
-                                                             LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OKCANCEL))
-            {
-                sai = lsai; // store options
-                return TRUE;
-            }
-        }
-        else
-        {
-            break; // file deleted successfully
+            sai = lsai; // store options
+            return TRUE;
         }
     }
-    ret = SaveImage(fileName, format, &lsai);
+    DWORD saveErr = 0;
+    char* leftAt = NULL;
+    BOOL reload = FALSE;
+    ret = SaveImageSafe(fileName, format, &lsai, targetExists, clearReadOnly, &saveErr, &leftAt, &reload);
 
     // report the change on the path (our file has appeared)
     TCHAR changedPath[MAX_PATH];
@@ -999,7 +1072,24 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
     {
         if (ret != PVC_CANCELED)
         {
-            _stprintf(errBuff, LoadStr(IDS_SAVEERROR), PVW32DLL.PVGetErrorText(ret)); //"Canceled (error example)");
+            // the system's text for the failed step (disk full, access denied, in use, ...), else the
+            // engine's; the temporary file that holds the only copy of the image is named
+            char errText[1000];
+            if (saveErr != 0)
+                SalamanderGeneral->GetErrorText(saveErr, errText, SizeOf(errText)); // UTF-8
+            else
+                lstrcpyn(errText, PVW32DLL.PVGetErrorText(ret), SizeOf(errText)); // ASCII
+            size_t detailSize = strlen(errText) + (leftAt != NULL ? strlen(leftAt) : 0) + 4;
+            char* detail = (char*)malloc(detailSize);
+            if (detail != NULL)
+            {
+                if (leftAt != NULL)
+                    sprintf_s(detail, detailSize, "%s\n\n%s", errText, leftAt);
+                else
+                    strcpy_s(detail, detailSize, errText);
+            }
+            FormatNameMessageU8(errBuff, SizeOf(errBuff), LoadStr(IDS_SAVEERROR), detail != NULL ? detail : errText);
+            free(detail);
             SalamanderGeneral->SalMessageBox(HWindow, errBuff, LoadStr(IDS_ERRORTITLE),
                                              MB_ICONEXCLAMATION | MB_OK);
         }
@@ -1032,8 +1122,163 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
         }
         sai.PrevInputColors = pvii.Colors;
     }
+    free(leftAt);
     sai = lsai;
+    // feature 105: the target was the file shown here - its decoder let it go for the replace; show
+    // the file as it is now (the saved image, or the untouched original after a failure)
+    if (reload && !Loading)
+        OpenFile(FileName, -1, NULL);
     return TRUE;
+}
+
+// feature 105: TRUE when 'wPath' (wide, \\?\ form) is the file this window shows (its decoder
+// keeps it open). The file system's identity decides (salsamefile.h); where it has no ids, equal
+// metadata or the same name count as "maybe" - and a maybe is treated as yes: the decoder is
+// let go and the image opened again, which costs nothing but a reload.
+BOOL CRendererWindow::IsShownFile(const WCHAR* wPath)
+{
+    if (FileName == NULL || FileName[0] == '<' || PVHandle == NULL)
+        return FALSE;
+    WCHAR* wShown = SplU8ToWExtAlloc(FileName);
+    if (wShown == NULL)
+        return FALSE;
+    BOOL same = _wcsicmp(wShown, wPath) == 0;
+    if (!same)
+    {
+        CSalFileIdentity a, b;
+        if (SalGetFileIdentityW(wShown, FALSE, &a) && SalGetFileIdentityW(wPath, FALSE, &b))
+        {
+            int m = SalFileIdMatch(a, b);
+            same = m == simEqual || (m == simUnknown && SalFileMetaEqual(a, b));
+        }
+    }
+    free(wShown);
+    return same;
+}
+
+// feature 105: Save As writes the image into a temporary file next to the target; only the
+// complete, flushed file takes the target's place (src/common/salsafereplace.h). An existing
+// target is never deleted or truncated before that, so a failure at any step - a format that
+// cannot be written, a folder without write access, a full disk, a target in use, Esc - leaves
+// it as it was. Returns a PVC_* code; '*win32Err' the system error behind a failure (0 = none,
+// the engine's text applies); '*leftAt' (UTF-8, free()) the temporary file that holds the only
+// copy of the new image when the target vanished and the file could not be moved into its
+// place (never deleted); '*reload' TRUE when the target was the file shown here (its decoder
+// was released for the replace - the caller opens the file again).
+int CRendererWindow::SaveImageSafe(LPCTSTR fileName, DWORD format, SAVEAS_INFO_PTR psai, BOOL targetExists,
+                                   BOOL clearReadOnly, DWORD* win32Err, char** leftAt, BOOL* reload)
+{
+    *win32Err = 0;
+    *leftAt = NULL;
+    *reload = FALSE;
+    if (!WicCanEncodeFormat(format))
+        return PVC_UNSUP_OUT_PARAMS; // refused before anything is touched
+
+    // the parameters as SaveImage computes them for the engine
+    CWicEncodeParams ep;
+    memset(&ep, 0, sizeof(ep));
+    ep.Format = format;
+    ep.Compression = psai->Compression;
+    ep.Colors = psai->Colors & SAVEAS_GRAY_MASK;
+    ep.ColorModel = (psai->Colors & SAVEAS_GRAY_FLAG) ? PVCM_GRAYS : PVCM_RGB;
+    ep.Flags = psai->Flags & (PVSF_INVERT | PVSF_ROTATE90 | PVSF_FLIP_HOR | PVSF_FLIP_VERT);
+    // what the window shows mirrored is saved mirrored (the window mirrors only when drawing)
+    if (fMirrorHor)
+        ep.Flags ^= PVSF_FLIP_HOR;
+    if (fMirrorVert)
+        ep.Flags ^= PVSF_FLIP_VERT;
+    ep.HorDPI = (ep.Flags & PVSF_ROTATE90) ? pvii.VerDPI : pvii.HorDPI;
+    ep.VerDPI = (ep.Flags & PVSF_ROTATE90) ? pvii.HorDPI : pvii.VerDPI;
+    ep.JPEGQuality = G.Save.JPEGQuality;
+    ep.JPEGSubsampling = G.Save.JPEGSubsampling;
+    ep.CommentU8 = psai->Comment;
+
+    WCHAR* wTarget = SplU8ToWExtAlloc(fileName);
+    if (wTarget == NULL)
+    {
+        *win32Err = ERROR_INVALID_NAME;
+        return PVC_WRITING_ERROR;
+    }
+    WCHAR* wTemp = NULL;
+    HANDLE hTemp = INVALID_HANDLE_VALUE;
+    DWORD err = 0;
+    if (!SalCreateTempNextToW(wTarget, L"pv", &wTemp, &hTemp, &err))
+    {
+        // no file can be created in the target's folder (no write access, ...): nothing touched
+        free(wTarget);
+        *win32Err = err;
+        return PVC_WRITING_ERROR;
+    }
+
+    // refresh the window so it does not look messy during longer saves after the SaveAs dialog
+    UpdateWindow(Viewer->HWindow);
+    HCURSOR hOldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
+    CALL_STACK_MESSAGE6("SaveImageSafe: %ux%ux%u, %u, %u", pvii.Width, pvii.Height, ep.Colors, ep.Format, ep.Flags);
+    sProgBarInfo pbi;
+    Viewer->InitProgressBar();
+    pbi.pViewer = Viewer;
+    pbi.lastCheckTicks = pbi.lastUpdateTicks = GetTickCount();
+    int code = WicEncodeImageToFile(PVHandle, pvii.CurrentImage, hTemp, &ep, SaveProgressProcedure, &pbi, &err);
+    Viewer->KillProgressBar();
+    SetCursor(hOldCur);
+    if (code == PVC_OK && !FlushFileBuffers(hTemp)) // complete on the disk before it replaces anything
+    {
+        err = GetLastError();
+        code = PVC_WRITING_ERROR;
+    }
+    if (!CloseHandle(hTemp) && code == PVC_OK)
+    {
+        err = GetLastError();
+        code = PVC_WRITING_ERROR;
+    }
+
+    BOOL keepTemp = FALSE; // the temporary file holds the only copy of the new image
+    if (code == PVC_OK)
+    {
+        // the decoder of the shown image keeps its file open without FILE_SHARE_DELETE: replacing
+        // it would fail with "in use" (32) - let it go; the caller opens the file again
+        if (targetExists && IsShownFile(wTarget) && WicDetachSource(PVHandle) == PVC_OK)
+            *reload = TRUE;
+        switch (SalReplaceWithTempW(wTarget, wTemp, targetExists, clearReadOnly, &err))
+        {
+        case srrDone:
+            break;
+
+        case srrLeftAtTemp: // the target is gone, the only copy of the new image is the temporary file
+        {
+            code = PVC_WRITING_ERROR;
+            keepTemp = TRUE;
+            const WCHAR* tmpName = wcsrchr(wTemp, L'\\');
+            char* tmpNameU8 = SplWToU8Alloc(tmpName != NULL ? tmpName + 1 : wTemp);
+            if (tmpNameU8 != NULL)
+            {
+                const char* slash = strrchr(fileName, '\\');
+                size_t dirLen = slash != NULL ? (size_t)(slash - fileName) + 1 : 0;
+                size_t size = dirLen + strlen(tmpNameU8) + 1;
+                *leftAt = (char*)malloc(size);
+                if (*leftAt != NULL)
+                {
+                    memcpy(*leftAt, fileName, dirLen);
+                    strcpy_s(*leftAt + dirLen, size - dirLen, tmpNameU8);
+                }
+                free(tmpNameU8);
+            }
+            TRACE_E("SaveImageSafe: the new image stayed in the temporary file, error " << err);
+            break;
+        }
+
+        default: // srrFailedKept, srrFailedBothGone: the target as it was (or already gone by others)
+            code = PVC_WRITING_ERROR;
+            break;
+        }
+    }
+    if (code != PVC_OK && !keepTemp && !DeleteFileW(wTemp)) // never delete the only copy of the image
+        TRACE_E("SaveImageSafe: cannot delete the temporary file, error " << GetLastError());
+    if (code != PVC_OK)
+        *win32Err = code == PVC_CANCELED ? 0 : err;
+    free(wTemp);
+    free(wTarget);
+    return code;
 }
 
 // saves the image into the file 'fileName' using format 'format' (PVF_xxx)

@@ -53,6 +53,24 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **PictView's *Save As* saves again, and never loses the file it replaces.**
+  Since 0.1.0 Save As (Ctrl+S) could not save anything: every format ended
+  with "Unable to save the image". Worse, when the name chosen was an
+  existing file, PictView first asked "Do you want to replace it?" and on
+  *Yes* **deleted that file** - and then failed to save, so the file was
+  simply gone. Now the image is written into a temporary file next to the target first,
+  and only a complete file takes the target's place; if anything goes wrong -
+  no permission to write in the folder, the file opened by another program, a
+  full disk, Esc during the save - the existing file stays exactly as it was
+  and the message says why. Save As writes BMP, PNG, JPEG, GIF and TIFF with
+  the built-in Windows encoders, with the dialog's color depths, compressions,
+  JPEG quality and subsampling, rotation and flip, and a comment (stored as
+  UTF-8 text); formats Windows cannot write (PCX, Targa, CEL, IFF, PNM, SGI,
+  Sun Raster, RLE, SKA, WBMP) are no longer offered, and the GIF *Interlaced*
+  and TIFF *strip* options are disabled (Windows always writes non-interlaced
+  GIF89a and its own TIFF strips). Saving over the image shown in the window
+  works and the window then shows the saved image. *File > Save As...* is
+  back in the viewer's menu (feature 105).
 - **The plugins use the file and folder names you give them.** With a
   name containing letters outside the system code page (a Russian or
   Chinese name on a Czech Windows, an emoji) several plugins failed, showed

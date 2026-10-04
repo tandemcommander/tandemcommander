@@ -2977,17 +2977,23 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
 
                             case IDYES:
                             {
-                                SalamanderGeneral->ClearReadOnlyAttr(tgtPath); // to allow it to be deleted ...
-                                if ((wTgtPath == NULL || !DeleteFileW(wTgtPath)) ||
-                                    !SalamanderGeneral->SalMoveFile(path, tgtPath, &err))
-                                {
-                                    //err = GetLastError();
-                                }
-                                else
+                                // feature 105: one replacing rename. The target used to be DELETED first and the
+                                // rename tried afterwards - a rename failing then lost the other file. (Not reached
+                                // today: the viewer holds the shown file open, so the first rename already fails
+                                // with 32.) A failed replacing rename leaves the target as it was (read-only put back)
+                                DWORD tgtAttr = wTgtPath != NULL ? GetFileAttributesW(wTgtPath) : INVALID_FILE_ATTRIBUTES;
+                                SalamanderGeneral->ClearReadOnlyAttr(tgtPath); // to allow it to be replaced ...
+                                if (wPath != NULL && wTgtPath != NULL && MoveFileExW(wPath, wTgtPath, MOVEFILE_REPLACE_EXISTING))
                                 {
                                     renamed = TRUE;
                                     err = ERROR_SUCCESS;
                                     ret = TRUE;
+                                }
+                                else
+                                {
+                                    err = (wPath == NULL || wTgtPath == NULL) ? ERROR_INVALID_NAME : GetLastError();
+                                    if (tgtAttr != INVALID_FILE_ATTRIBUTES && (tgtAttr & FILE_ATTRIBUTE_READONLY))
+                                        SetFileAttributesW(wTgtPath, tgtAttr);
                                 }
                                 // report the change on the path (renamed file)
                                 if (changedPath != NULL)

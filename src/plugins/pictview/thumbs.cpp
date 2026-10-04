@@ -10,6 +10,7 @@
 #include "pictview.rh"
 #include "pictview.rh2"
 #include "lang/lang.rh"
+#include "../../common/salsafereplace.h" // feature 105: replace only by a complete file
 
 // Salamander-proprietary flag for super-fast low-quality JPEG-decompression
 
@@ -24,13 +25,19 @@ static BOOL DeleteFileU8(const char* u8Path)
     return ret;
 }
 
-static BOOL MoveFileU8(const char* u8From, const char* u8To)
+// feature 105: the complete file 'u8New' takes the place of 'u8Target' in one step (salsafereplace.h);
+// the old code deleted the target and then moved the new file without checking the move
+static CSalReplaceResult ReplaceFileU8(const char* u8Target, const char* u8New, BOOL clearReadOnly, DWORD* err)
 {
-    WCHAR* wFrom = SplU8ToWExtAlloc(u8From);
-    WCHAR* wTo = SplU8ToWExtAlloc(u8To);
-    BOOL ret = wFrom != NULL && wTo != NULL && MoveFileW(wFrom, wTo);
-    free(wFrom);
-    free(wTo);
+    WCHAR* wTarget = SplU8ToWExtAlloc(u8Target);
+    WCHAR* wNew = SplU8ToWExtAlloc(u8New);
+    CSalReplaceResult ret = srrFailedKept;
+    if (wTarget == NULL || wNew == NULL)
+        *err = ERROR_INVALID_NAME;
+    else
+        ret = SalReplaceWithTempW(wTarget, wNew, TRUE, clearReadOnly, err);
+    free(wTarget);
+    free(wNew);
     return ret;
 }
 
@@ -402,22 +409,46 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                         }
                         else
                         {
+                            BOOL replaced = FALSE;
+                            BOOL keepNew = FALSE; // the new file is the only copy left (the original vanished)
+                            BOOL clearRO = FALSE; // agreed: the read-only attribute is cleared for the replace (and put back if it fails)
                             do
                             {
-                                if (DeleteFileU8(path))
+                                // feature 105: the new file replaces the original in one step; the original was
+                                // deleted here before and the new file moved afterwards without a check
+                                DWORD repErr = ERROR_SUCCESS;
+                                CSalReplaceResult rr = ReplaceFileU8(path, newFile, clearRO, &repErr);
+                                if (rr == srrDone)
+                                {
+                                    replaced = TRUE;
                                     break;
-                                if (flags & FL_OVERWRITE_RO_ALL)
+                                }
+                                if (rr == srrLeftAtTemp)
+                                {
+                                    keepNew = TRUE;
+                                    SalamanderGeneral->DialogError(hProgress, BUTTONS_SKIPCANCEL, newFile,
+                                                                   SalamanderGeneral->GetErrorText(repErr), LoadStr(IDS_ERRORTITLE));
+                                    flags |= FL_SKIP;
+                                    break;
+                                }
+                                flags &= ~FL_OVERWRITE_RO; // decided anew for every attempt
+                                // the read-only attribute is the reason only until the replace has been tried without
+                                // it (with "All" a failure for another reason used to loop forever)
+                                DWORD curAttr = SalamanderGeneral->SalGetFileAttributes(path);
+                                BOOL readOnly = !clearRO && repErr == ERROR_ACCESS_DENIED && curAttr != 0xFFFFFFFF &&
+                                                (curAttr & FILE_ATTRIBUTE_READONLY);
+                                if (readOnly && (flags & FL_OVERWRITE_RO_ALL))
                                 {
                                     flags |= FL_OVERWRITE_RO;
                                 }
                                 else
                                 {
-                                    int ret = GetLastError();
+                                    int ret = repErr;
                                     TCHAR errBuff[MAX_PATH + 20];
                                     int btns = BUTTONS_SKIPCANCEL;
 
                                     SalamanderGeneral->GetErrorText(ret, errBuff, SizeOf(errBuff));
-                                    if (ret == ERROR_ACCESS_DENIED)
+                                    if (readOnly)
                                     {
                                         // No rights or R/O attribute - check what is the case
                                         ret = SalamanderGeneral->SalGetFileAttributes(path); // 0xFFFFFFFF on error
@@ -458,22 +489,18 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                                         break;
                                     }
                                 }
-                                if (flags & FL_OVERWRITE_RO)
-                                {
-                                    SalamanderGeneral->ClearReadOnlyAttr(path);
-                                }
+                                clearRO = (flags & FL_OVERWRITE_RO) != 0; // cleared inside the next replace only
                             } while (flags & FL_OVERWRITE_RO);
-                            if (flags & FL_SKIP)
+                            if (replaced)
                             {
-                                // delete the temporary file
-                                DeleteFileU8(newFile);
-                            }
-                            else
-                            {
-                                MoveFileU8(newFile, path);
                                 SalamanderGeneral->CutDirectory(path);
                                 SalamanderGeneral->PostChangeOnPathNotification(path, FALSE);
                                 processed++;
+                            }
+                            else if (!keepNew)
+                            {
+                                // delete the temporary file (the original is as it was)
+                                DeleteFileU8(newFile);
                             }
                         }
                     }

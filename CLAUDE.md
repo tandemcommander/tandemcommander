@@ -1357,3 +1357,38 @@ plugin architecture preservation, UI consistency.
     REJECT (B1), fixed; re-review ACCEPT (S1: the pre-check skips read-only, disabled and
     hidden fields and only UTF-8 values get a size; NIT 1: an unchanged long password saved by
     0.1.8 keeps working). Records: `specs/104-plugin-unicode-names/fix-log.md`.
+- 105-pictview-saveas-loss: **PictView's Save As saves, and never loses the file it
+  replaces.** Measured first: worse than the 104 record - since feature 006 Save As saved
+  *nothing* (14 types offered, every one "Unable to save the image": the WIC engine stubbed file
+  output and its `PVIsOutCombSupported` said "supported" to everything), and an existing target
+  was **deleted before** that failure (every format; also in a folder that denies creating
+  files, also on Esc). Not lost before: a file held open elsewhere, the shown image ("in use");
+  a read-only file never reaches PictView (Windows' Save dialog refuses it).
+  - **Rule** (`src/common/salsafereplace.h`, header-only, wide): write `pvXXXX.tmp` next to the
+    target (`SalCreateTempNextToW`, CREATE_NEW, any length), flush, close, then
+    `SalReplaceWithTempW`: `ReplaceFileW` (attributes/ACL kept; fails with 5/32/2 leaving both
+    files intact - measured), `MoveFileExW(REPLACE_EXISTING)` only for "not supported", a new
+    name `MoveFileExW` without replace; a failure keeps the target (read-only put back) and the
+    caller deletes the temp - except when the target is already gone: the new file is moved in
+    or kept and named. "Gone" means not-found only (`SalPathIsGoneW`). **New code that replaces
+    a user's file MUST use it.**
+  - **Engine** (`wicengine.cpp`): `WicPlanOutput` table (BMP 16/256/gray/555/565/24, PNG and
+    TIFF 16/256/gray/24 + bilevel, JPEG gray/24, GIF 16/256/gray as 8bppIndexed; TIFF
+    none/LZW/Deflate/PackBits/Default=LZW, CCITT bilevel only), real `PVIsOutCombSupported`,
+    `WicEncodeImageToFile` (a no-copy `IWICBitmapSource` over the shown DIB - flips, then the
+    clockwise turn, progress/Esc every 16 rows; palette, converter, options, a file-handle
+    `IStream` that keeps the first system error), `WicDetachSource` (the decoder holds the shown
+    file without `FILE_SHARE_DELETE`: released after the new file is complete, the window reloads).
+    `PVSaveImage` file output stays refused (wallpaper unchanged). Comments are UTF-8:
+    `VT_LPWSTR` is converted to the code page by the PNG tEXt and TIFF writers (`?`, measured),
+    so JPEG/GIF/TIFF get the UTF-8 bytes and PNG `tEXt` (ASCII) or `iTXt`.
+  - **Dialog**: the language's type list filtered to BMP/GIF/JPEG/PNG/TIFF (no string change; the
+    stored index stays a whole-list index); GIF interlace/89a and TIFF strips disabled (no
+    encoder counterpart); *File > Save As* back in the menu; the suggested name no longer
+    overflows a 260-byte stack buffer (every release, 87+ CJK characters).
+  - Same one-step replace for *Regenerate thumbnail* and the *Rename* overwrite (both
+    unreachable). No new string, no interface change (107), no registry change; `PRIVACY.md`
+    mentions the `pvXXXX.tmp`. Probe `probe/saveas_probe.ps1` (hidden desktop, GDI+ decode,
+    headers read by hand): 56 PASS / 0 FAIL / 4 NOT DRIVEN, 0 files
+    lost (the build before: 7 / 49 / 4, 8 existing files deleted). saltests 13,487 -> 13,555.
+    Records: `specs/105-pictview-saveas-loss/fix-log.md`.

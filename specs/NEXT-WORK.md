@@ -317,7 +317,11 @@ A sweep failure is a finding: back through fix → independent review → gates.
 > corrected, PictView and the Database Viewer no longer overflow on a deep
 > path. **Left**: windows of the non-viewer plug-ins (File Comparator, Batch
 > Renamer, Disk Map, Checksum) still decline an update. **Owed** (joins
-> item 3): `088-plugin-interface-107/quickstart.md`.
+> item 3): `088-plugin-interface-107/quickstart.md`. Note (105 review,
+> 2026-10-04): its `viewers_probe.ps1` fails 3 rows (Code Viewer / Markdown
+> Viewer close, `ERROR_FAIL_SHUTDOWN`) on the hidden desktop - identically
+> with the 088 code rebuilt; its 10/10 ran on the visible desktop. Re-run it
+> there (or in a VM) to tell the desktop from a WebView2 runtime change.
 
 *Original entries:*
 
@@ -499,7 +503,29 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        1. **PictView *Save As* onto an existing file deletes it and then
           fails** ("replace?" Yes -> the file is gone, "Unable to save the
           image": the WIC engine of 006 cannot write images). Data loss in
-          every release since 006 - first.
+          every release since 006 - first. ✅ **Fixed by feature 105**
+          (2026-10-04). Measured first: worse than recorded - Save As saved
+          *nothing* in any format (14 types offered, none written) and the
+          existing file was deleted before every failure (also in a folder
+          that denies creating files, also when canceled). Now the image is
+          written into `pvXXXX.tmp` next to the target and only the complete,
+          flushed file replaces it (`ReplaceFileW`, `src/common/salsafereplace.h`);
+          any failure leaves the target byte-identical with the system's reason.
+          Save As writes BMP, PNG, JPEG, GIF, TIFF through the Windows encoders
+          with the dialog's depths, compressions, JPEG quality/subsampling,
+          rotation/flip and a UTF-8 comment; the type list is filtered to those
+          five; saving over the shown image works (its decoder lets the file
+          go, the window reloads); *File > Save As* is back in the menu. Same
+          one-step replace for *Regenerate thumbnail* and the *Rename*
+          overwrite (both unreachable). Record:
+          `specs/105-pictview-saveas-loss/fix-log.md`. **Found by 105, not
+          fixed (small):** PictView's *Rename* of the shown image still fails
+          with 32 (103) - `WicDetachSource` (105) now gives the way to fix it
+          (release, rename, reopen); every PNG/TIFF/ICO source asks the
+          "alpha channel will be lost" question and "2 colors"/CCITT is never
+          offered, because the WIC engine reports every image as 32-bit; the
+          wallpaper commands cannot work (no file output in the engine, and
+          `%WINDIR%` is not writable for a user).
        2. Undelete applies a FAT rule (`Replace0xE5`) to UTF-8 names: a
           name whose first byte is 0xE5 (CJK U+5000-U+5FFF) is listed with
           `$` and restored under a garbled name; its volume layer enumerates

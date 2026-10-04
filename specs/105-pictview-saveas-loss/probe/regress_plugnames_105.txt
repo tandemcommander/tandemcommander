@@ -1,0 +1,12 @@
+plugnames_probe (feature 104), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-04 10:34; ACP 1250; registry key existed True
+
+pv-copyto  COPYTO PASS        field set to ...\voil\u00E0; Browse: folder dialog unicode True 'C:\Users\pavel\AppData\Local\Temp\tc104_pn\pv\voil\u00E0'; field after Browse '...a\Local\Temp\tc104_pn\pv\voil\u00E0' (exact True); copied into ...\voil\u00E0: True, into the decoy ...\voila: False; boxes: no box
+pv-copyto  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pv-saveas  SAVEAS PASS        Save As 'voil\u00E0.bmp': file dialog unicode False; a question about the decoy voila.bmp False; decoy intact True; boxes: [#32770 'PictView'] [Static id=2477] Image saved successfully. | [Button id=1] OK | [Button id=2478] &Don't show this again; folder: exist.bmp=EXISTING; img.png=(565 bytes); voil\u00E0.bmp=(822 bytes); voila.bmp=DECOY
+pv-saveas  FINDING INFO        Save As onto the existing exist.bmp, 'replace?' Yes: exist.bmp rewritten (810 chars); boxes: [#32770 'PictView Error'] [Static id=2477] File "C:\Users\pavel\AppData\Local\Temp\tc104_pn\pvs\exist.bmp" already exists. Do you want to replace it? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel || [#32770 'PictView'] [Static id=2477] Image saved successfully. | [Button id=1] OK | [Button id=2478] &Don't show this again
+pv-saveas  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -103,6 +103,11 @@ some operations, working copies are placed in your temporary folder
 program closes. If the program crashes, leftovers can remain; for its working
 folders, the program offers to delete them the next time it starts.
 
+PictView's *Save As* first writes the image into a temporary file in the
+folder you save to (named `pv`, four characters and `.tmp`), which takes the
+chosen name only when it is complete. If the program crashes during the save,
+that file can remain there.
+
 ## Saved passwords
 
 A password is saved only if you ask for it: *Save password* in an FTP or SFTP
@@ -277,4 +282,4 @@ passphrase scrambled; the viewer engine's crash reports follow your
 Windows diagnostic-data settings; and the placeholder sent on an anonymous
 FTP login is `name@someserver.com`; and a crash that happens while the ZIP
 plugin is using a password can write that password into the crash report.
-Last updated 2026-10-02.
+Last updated 2026-10-04.

@@ -29,6 +29,7 @@
 #include "salarcpwd.h"    // feature 093
 #include "salzippwd.h"    // feature 094
 #include "salheapstr.h"   // feature 095
+#include "salsafereplace.h" // feature 105
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -4879,6 +4880,214 @@ static void TestPluginFileDlg104()
     }
 }
 
+// feature 105: an existing file is replaced only by a complete new file (src/common/salsafereplace.h)
+static void TestSafeReplace105()
+{
+    // --- pure: what follows a failed ReplaceFileW ---
+    CHECK(SalReplaceFailureNext(ERROR_ACCESS_DENIED, TRUE, TRUE) == srnKeepTarget);     // read-only target
+    CHECK(SalReplaceFailureNext(ERROR_SHARING_VIOLATION, TRUE, TRUE) == srnKeepTarget); // target in use
+    CHECK(SalReplaceFailureNext(ERROR_UNABLE_TO_REMOVE_REPLACED, TRUE, TRUE) == srnKeepTarget);
+    CHECK(SalReplaceFailureNext(ERROR_DISK_FULL, TRUE, TRUE) == srnKeepTarget);
+    CHECK(SalReplaceFailureNext(ERROR_NOT_SUPPORTED, TRUE, TRUE) == srnFallbackMove); // a file system without ReplaceFile
+    CHECK(SalReplaceFailureNext(ERROR_INVALID_FUNCTION, TRUE, TRUE) == srnFallbackMove);
+    CHECK(SalReplaceFailureNext(ERROR_INVALID_PARAMETER, TRUE, TRUE) == srnFallbackMove);
+    CHECK(SalReplaceFailureNext(ERROR_CALL_NOT_IMPLEMENTED, TRUE, TRUE) == srnFallbackMove);
+    CHECK(SalReplaceFailureNext(ERROR_NOT_SUPPORTED, TRUE, FALSE) == srnKeepTarget);              // nothing to put in place
+    CHECK(SalReplaceFailureNext(ERROR_UNABLE_TO_MOVE_REPLACEMENT, FALSE, TRUE) == srnFinishMove); // the target is gone already
+    CHECK(SalReplaceFailureNext(ERROR_FILE_NOT_FOUND, FALSE, TRUE) == srnFinishMove);             // deleted meanwhile
+    CHECK(SalReplaceFailureNext(ERROR_FILE_NOT_FOUND, FALSE, FALSE) == srnBothGone);
+
+    // --- pure: the temporary name next to the target ---
+    WCHAR* tn = SalBuildTempNextToW(L"C:\\dir\\x.png", L"pv", 0x1ABC);
+    CHECK(tn != NULL && wcscmp(tn, L"C:\\dir\\pv1ABC.tmp") == 0);
+    free(tn);
+    tn = SalBuildTempNextToW(L"x.png", L"pv", 0x12345); // no folder part; four hex digits
+    CHECK(tn != NULL && wcscmp(tn, L"pv2345.tmp") == 0);
+    free(tn);
+    tn = SalBuildTempNextToW(L"\\\\?\\C:\\d\\\x010D\xD83D\xDCC1.png", L"pv", 5); // the \\?\ form, a name outside ASCII
+    CHECK(tn != NULL && wcscmp(tn, L"\\\\?\\C:\\d\\pv0005.tmp") == 0);
+    free(tn);
+
+    // --- real files (NTFS %TEMP%) ---
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping the file part of TestSafeReplace105 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(L"\\\\?\\") + tmp + L"saltests-105-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    auto put = [](const std::wstring& p, const char* text, DWORD attr) -> BOOL
+    {
+        SetFileAttributesW(p.c_str(), FILE_ATTRIBUTE_NORMAL);
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD w = 0;
+        BOOL ok = h != INVALID_HANDLE_VALUE && WriteFile(h, text, (DWORD)strlen(text), &w, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        if (ok && attr != FILE_ATTRIBUTE_NORMAL)
+            ok = SetFileAttributesW(p.c_str(), attr);
+        return ok;
+    };
+    auto get = [](const std::wstring& p) -> std::string
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                               OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        if (h == INVALID_HANDLE_VALUE)
+            return "<missing>";
+        char b[64] = {0};
+        DWORD r = 0;
+        if (!ReadFile(h, b, sizeof(b) - 1, &r, NULL))
+            strcpy_s(b, "<unreadable>");
+        CloseHandle(h);
+        return b;
+    };
+    auto exists = [](const std::wstring& p) -> BOOL
+    { return GetFileAttributesW(p.c_str()) != INVALID_FILE_ATTRIBUTES; };
+    // a complete new file next to 'target' through SalCreateTempNextToW, holding 'text'
+    auto newTemp = [](const std::wstring& target, const char* text, std::wstring* temp) -> BOOL
+    {
+        WCHAR* p = NULL;
+        HANDLE h = INVALID_HANDLE_VALUE;
+        DWORD err = 0;
+        if (!SalCreateTempNextToW(target.c_str(), L"pv", &p, &h, &err))
+            return FALSE;
+        DWORD w = 0;
+        BOOL ok = WriteFile(h, text, (DWORD)strlen(text), &w, NULL) && FlushFileBuffers(h);
+        CloseHandle(h);
+        *temp = p;
+        free(p);
+        return ok;
+    };
+    std::wstring t = dir + L"\\t\x010D.png", other = dir + L"\\other.png", tmpFile;
+    DWORD err = 0;
+
+    // 1. the temporary file: in the target's folder, named pvXXXX.tmp, empty, open; two are two
+    {
+        WCHAR *p1 = NULL, *p2 = NULL;
+        HANDLE h1 = INVALID_HANDLE_VALUE, h2 = INVALID_HANDLE_VALUE;
+        CHECK(SalCreateTempNextToW(t.c_str(), L"pv", &p1, &h1, &err) && h1 != INVALID_HANDLE_VALUE);
+        CHECK(SalCreateTempNextToW(t.c_str(), L"pv", &p2, &h2, &err) && h2 != INVALID_HANDLE_VALUE);
+        CHECK(p1 != NULL && p2 != NULL && wcscmp(p1, p2) != 0);
+        CHECK(p1 != NULL && wcsncmp(p1, (dir + L"\\pv").c_str(), dir.size() + 3) == 0 && wcslen(p1) == dir.size() + 11);
+        LARGE_INTEGER size = {};
+        CHECK(GetFileSizeEx(h1, &size) && size.QuadPart == 0);
+        if (h1 != INVALID_HANDLE_VALUE)
+            CloseHandle(h1);
+        if (h2 != INVALID_HANDLE_VALUE)
+            CloseHandle(h2);
+        CHECK(p1 != NULL && DeleteFileW(p1));
+        CHECK(p2 != NULL && DeleteFileW(p2));
+        free(p1);
+        free(p2);
+        WCHAR* p3 = NULL;
+        HANDLE h3 = INVALID_HANDLE_VALUE;
+        err = 0;
+        CHECK(!SalCreateTempNextToW((dir + L"\\missing\\x.png").c_str(), L"pv", &p3, &h3, &err) && err == ERROR_PATH_NOT_FOUND &&
+              p3 == NULL && h3 == INVALID_HANDLE_VALUE); // no folder: an error, no endless search
+    }
+
+    // "gone" only when not found (an unreadable entry counts as present)
+    CHECK(SalPathIsGoneW((dir + L"\\nothing.png").c_str()) && SalPathIsGoneW((dir + L"\\no\\nothing.png").c_str()));
+    CHECK(!SalPathIsGoneW(dir.c_str()));
+
+    // 2. a new target
+    DeleteFileW(t.c_str());
+    CHECK(newTemp(t, "NEW", &tmpFile));
+    CHECK(SalReplaceWithTempW(t.c_str(), tmpFile.c_str(), FALSE, FALSE, &err) == srrDone);
+    CHECK(get(t) == "NEW" && !exists(tmpFile));
+
+    // 3. "new", but a file of that name appeared meanwhile: never overwritten unasked
+    CHECK(put(other, "OTHER", FILE_ATTRIBUTE_NORMAL) && newTemp(other, "NEW", &tmpFile));
+    err = 0;
+    CHECK(SalReplaceWithTempW(other.c_str(), tmpFile.c_str(), FALSE, FALSE, &err) == srrFailedKept &&
+          (err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS));
+    CHECK(get(other) == "OTHER" && get(tmpFile) == "NEW"); // the caller deletes the temporary file
+    CHECK(DeleteFileW(tmpFile.c_str()));
+
+    // 4. an existing target: replaced, keeps its attributes (hidden)
+    CHECK(put(t, "ORIG", FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_ARCHIVE) && newTemp(t, "NEW", &tmpFile));
+    CHECK(SalReplaceWithTempW(t.c_str(), tmpFile.c_str(), TRUE, FALSE, &err) == srrDone);
+    CHECK(get(t) == "NEW" && !exists(tmpFile) && (GetFileAttributesW(t.c_str()) & FILE_ATTRIBUTE_HIDDEN));
+
+    // 5. a read-only target, not agreed: kept as it was
+    CHECK(put(t, "ORIG", FILE_ATTRIBUTE_READONLY) && newTemp(t, "NEW", &tmpFile));
+    err = 0;
+    CHECK(SalReplaceWithTempW(t.c_str(), tmpFile.c_str(), TRUE, FALSE, &err) == srrFailedKept && err == ERROR_ACCESS_DENIED);
+    CHECK(get(t) == "ORIG" && (GetFileAttributesW(t.c_str()) & FILE_ATTRIBUTE_READONLY) && get(tmpFile) == "NEW");
+
+    // 6. ... agreed: replaced (the read-only attribute is gone, as the old delete + create left it)
+    CHECK(SalReplaceWithTempW(t.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+    CHECK(get(t) == "NEW" && !exists(tmpFile) && !(GetFileAttributesW(t.c_str()) & FILE_ATTRIBUTE_READONLY));
+
+    // 7. a read-only target held open without FILE_SHARE_DELETE (as the WIC decoder holds the shown
+    //    image): kept, content and read-only attribute as they were
+    CHECK(put(t, "ORIG", FILE_ATTRIBUTE_READONLY) && newTemp(t, "NEW", &tmpFile));
+    {
+        HANDLE held = CreateFileW(t.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+        CHECK(held != INVALID_HANDLE_VALUE);
+        err = 0;
+        CHECK(SalReplaceWithTempW(t.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrFailedKept && err == ERROR_SHARING_VIOLATION);
+        if (held != INVALID_HANDLE_VALUE)
+            CloseHandle(held);
+    }
+    CHECK(get(t) == "ORIG" && (GetFileAttributesW(t.c_str()) & FILE_ATTRIBUTE_READONLY) && get(tmpFile) == "NEW");
+    CHECK(DeleteFileW(tmpFile.c_str()));
+
+    // 8. the temporary file is missing: nothing happens to the target
+    err = 0;
+    CHECK(SalReplaceWithTempW(t.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrFailedKept && err != 0);
+    CHECK(get(t) == "ORIG" && (GetFileAttributesW(t.c_str()) & FILE_ATTRIBUTE_READONLY));
+    SetFileAttributesW(t.c_str(), FILE_ATTRIBUTE_NORMAL);
+
+    // 9. the target vanished after the question: the new file takes its name
+    CHECK(newTemp(t, "NEW2", &tmpFile) && DeleteFileW(t.c_str()));
+    CHECK(SalReplaceWithTempW(t.c_str(), tmpFile.c_str(), TRUE, FALSE, &err) == srrDone);
+    CHECK(get(t) == "NEW2" && !exists(tmpFile));
+
+    // 10. a folder of the target's name is never replaced
+    std::wstring sub = dir + L"\\sub.png";
+    CHECK(CreateDirectoryW(sub.c_str(), NULL) && put(sub + L"\\inner.txt", "IN", FILE_ATTRIBUTE_NORMAL));
+    CHECK(newTemp(sub, "NEW", &tmpFile));
+    err = 0;
+    CHECK(SalReplaceWithTempW(sub.c_str(), tmpFile.c_str(), TRUE, FALSE, &err) == srrFailedKept);
+    CHECK((GetFileAttributesW(sub.c_str()) & FILE_ATTRIBUTE_DIRECTORY) && get(sub + L"\\inner.txt") == "IN" && get(tmpFile) == "NEW");
+    CHECK(DeleteFileW(tmpFile.c_str()));
+
+    // 11. another hard link of the target keeps the old content (only the name is replaced)
+    std::wstring link = dir + L"\\link.png";
+    CHECK(put(t, "ORIG", FILE_ATTRIBUTE_NORMAL) && CreateHardLinkW(link.c_str(), t.c_str(), NULL) && newTemp(t, "NEW", &tmpFile));
+    CHECK(SalReplaceWithTempW(t.c_str(), tmpFile.c_str(), TRUE, FALSE, &err) == srrDone);
+    CHECK(get(t) == "NEW" && get(link) == "ORIG");
+
+    // 12. a path over MAX_PATH (the \\?\ form)
+    std::wstring deep = dir;
+    for (int i = 0; i < 6; i++)
+    {
+        deep += L"\\" + std::wstring(50, (WCHAR)(L'a' + i));
+        CHECK(CreateDirectoryW(deep.c_str(), NULL));
+    }
+    std::wstring dt = deep + L"\\deep.png";
+    CHECK(dt.size() > MAX_PATH + 4 && put(dt, "ORIG", FILE_ATTRIBUTE_NORMAL) && newTemp(dt, "NEW", &tmpFile));
+    CHECK(SalReplaceWithTempW(dt.c_str(), tmpFile.c_str(), TRUE, FALSE, &err) == srrDone && get(dt) == "NEW" && !exists(tmpFile));
+
+    // cleanup (explicit names only)
+    DeleteFileW(dt.c_str());
+    for (int i = 5; i >= 0; i--)
+    {
+        RemoveDirectoryW(deep.c_str());
+        deep.resize(deep.rfind(L'\\'));
+    }
+    SetFileAttributesW(t.c_str(), FILE_ATTRIBUTE_NORMAL);
+    DeleteFileW(t.c_str());
+    DeleteFileW(link.c_str());
+    DeleteFileW(other.c_str());
+    DeleteFileW((sub + L"\\inner.txt").c_str());
+    RemoveDirectoryW(sub.c_str());
+    CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind (no stray temporary file)
+}
+
 int main()
 {
     TestConversions();
@@ -4922,6 +5131,7 @@ int main()
     TestFcRemote102();
     TestSameFile103();
     TestPluginFileDlg104();
+    TestSafeReplace105();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
