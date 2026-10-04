@@ -53,6 +53,22 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Packing never writes the archive over a file that is being packed.**
+  When a multi-volume ZIP archive was created from a folder that held a
+  file named like one of its volumes (packing into `a.zip` with `a.z01` or
+  `a.z04` among the selected files), the ZIP plugin asked "Overwrite?" and
+  on *Yes* overwrote that file with the archive - the file was lost even on
+  a copy, and with "delete files after packing" the archive itself was
+  broken and the other packed files deleted too. In the Pack dialog,
+  choosing *Overwrite* when the archive name was one of the selected files
+  deleted that file before anything was packed, with every packer. Both are
+  now refused before anything is touched - also when the same file is
+  reached under another spelling (an 8.3 name, `\\localhost\C$\...`, another
+  letter case, a hard link): the ZIP plugin says "This file is one of the
+  files being packed", the Pack dialog "Cannot copy a file to itself." and
+  comes back. Also fixed: answering *Cancel* to the ZIP plugin's "Overwrite?"
+  question for the second or a later volume deleted the existing file you
+  had just declined to overwrite (feature 106).
 - **PictView's *Save As* saves again, and never loses the file it replaces.**
   Since 0.1.0 Save As (Ctrl+S) could not save anything: every format ended
   with "Unable to save the image". Worse, when the name chosen was an

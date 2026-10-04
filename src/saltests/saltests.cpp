@@ -5088,6 +5088,94 @@ static void TestSafeReplace105()
     CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind (no stray temporary file)
 }
 
+// feature 106: a pack operation's output is never written over one of the files it packs
+// (SalPackOutputIsSource / SalPackTargetInSelection, src/common/salsamefile.h)
+static void TestPackSelf106()
+{
+    // --- pure: an output against a source ---
+    CSalFileIdentity out = Id103(0x1234, 0x10, 8000, 5000, 4000);
+    CHECK(SalPackOutputIsSource(out, out));                                      // the same file
+    CHECK(SalPackOutputIsSource(out, Id103(0x1234, 0x10, 8000, 5000, 4000, 2))); // another hard link: same data
+    CHECK(SalPackOutputIsSource(out, Id103(0x1234, 0x10, 0, 9, 9)));             // same id, metadata changed meanwhile
+    CHECK(!SalPackOutputIsSource(out, Id103(0x1234, 0x11, 8000, 5000, 4000)));   // another file, equal metadata
+    CHECK(!SalPackOutputIsSource(out, Id103(0x9999, 0x10, 8000, 5000, 4000)));   // same index, another volume
+    // no usable ids (WebDAV, some servers): equal metadata is a "maybe" and counts as yes
+    CSalFileIdentity noId = Id103(0, 0, 8000, 5000, 4000);
+    CHECK(SalPackOutputIsSource(noId, Id103(0, 0, 8000, 5000, 4000)));
+    CHECK(SalPackOutputIsSource(noId, Id103(0, 0, 8000, 5000, 0, 1, FALSE, 99))); // no creation time, other sub-second
+    CHECK(!SalPackOutputIsSource(noId, Id103(0, 0, 8001, 5000, 4000)));           // other size
+    CHECK(!SalPackOutputIsSource(noId, Id103(0, 0, 8000, 5001, 4000)));           // other last write
+    CHECK(!SalPackOutputIsSource(noId, Id103(0, 0, 8000, 5000, 4000, 1, TRUE)));  // a directory is not the file
+    CHECK(!SalPackOutputIsSource(Id103(1, 0, 8000, 5000, 4000), Id103(2, 0, 8000, 5000, 4000))); // two volumes
+    CSalFileIdentity invalid;
+    SalFileIdentityClear(&invalid);
+    CHECK(!SalPackOutputIsSource(out, invalid) && !SalPackOutputIsSource(invalid, out)); // unreadable: not "the same"
+
+    // --- pure: the Pack dialog's selection ---
+    CSalFileIdentity arc = Id103(7, 0x50, 1000, 100, 90);
+    CSalFileIdentity anc[3] = {Id103(7, 0x40, 0, 80, 70, 1, TRUE), Id103(7, 0x30, 0, 60, 50, 1, TRUE),
+                               Id103(7, 0x05, 0, 10, 5, 1, TRUE)}; // parent, grandparent, root
+    CHECK(SalPackTargetInSelection(arc, anc, 3, arc, FALSE));                                // the archive is a selected file
+    CHECK(!SalPackTargetInSelection(arc, anc, 3, Id103(7, 0x51, 1000, 100, 90), FALSE));     // another selected file
+    CHECK(SalPackTargetInSelection(arc, anc, 3, anc[0], TRUE));                              // its folder is selected
+    CHECK(SalPackTargetInSelection(arc, anc, 3, anc[1], TRUE));                              // a folder above it is selected
+    CHECK(!SalPackTargetInSelection(arc, anc, 3, Id103(7, 0x41, 0, 80, 70, 1, TRUE), TRUE)); // a sibling folder
+    CHECK(!SalPackTargetInSelection(arc, anc, 3, arc, TRUE));                                // a "directory" equal to the file itself
+    CHECK(!SalPackTargetInSelection(arc, NULL, 0, anc[0], TRUE));                            // no folders known
+    CHECK(!SalPackTargetInSelection(arc, anc, 3, anc[0], FALSE));                            // a file item is compared with the archive only
+
+    // --- real files (NTFS %TEMP%): two spellings and a hard link of one file are one source ---
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping the file part of TestPackSelf106 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(tmp) + L"saltests-106-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    auto put = [](const std::wstring& p) -> BOOL
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD w = 0;
+        BOOL ok = h != INVALID_HANDLE_VALUE && WriteFile(h, "volume", 6, &w, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    std::wstring vol = dir + L"\\longvolumename.z01", other = dir + L"\\other.z01", link = dir + L"\\hardlink.bin";
+    CHECK(put(vol) && put(other));
+    CSalFileIdentity iVol, iAlias, iOther, iLink;
+    CHECK(SalGetFileIdentityW(vol.c_str(), FALSE, &iVol));
+    CHECK(SalGetFileIdentityW(other.c_str(), FALSE, &iOther));
+    CHECK(!SalPackOutputIsSource(iVol, iOther)); // equal size, another file
+    WCHAR shortName[MAX_PATH];
+    DWORD sn = GetShortPathNameW(vol.c_str(), shortName, MAX_PATH);
+    if (sn > 0 && sn < MAX_PATH && _wcsicmp(shortName, vol.c_str()) != 0)
+    {
+        CHECK(SalGetFileIdentityW(shortName, FALSE, &iAlias));
+        CHECK(SalPackOutputIsSource(iAlias, iVol)); // the 8.3 spelling
+    }
+    else
+        printf("TestPackSelf106: no 8.3 names in %ls - the alias check is skipped\n", tmp);
+    std::wstring upper = vol;
+    for (auto& c : upper)
+        c = (WCHAR)towupper(c);
+    CHECK(SalGetFileIdentityW(upper.c_str(), FALSE, &iAlias) && SalPackOutputIsSource(iAlias, iVol)); // another case
+    if (CreateHardLinkW(link.c_str(), vol.c_str(), NULL))
+    {
+        CHECK(SalGetFileIdentityW(link.c_str(), FALSE, &iLink));
+        CHECK(SalPackOutputIsSource(iLink, iVol)); // a truncation through the link reaches the source's data
+        DeleteFileW(link.c_str());
+    }
+    CSalFileIdentity iDir;
+    CHECK(SalGetFileIdentityW(dir.c_str(), FALSE, &iDir));
+    CHECK(SalPackTargetInSelection(iVol, &iDir, 1, iDir, TRUE)); // the archive's own folder selected
+    DeleteFileW(vol.c_str());
+    DeleteFileW(other.c_str());
+    CHECK(RemoveDirectoryW(dir.c_str()));
+}
+
 int main()
 {
     TestConversions();
@@ -5132,6 +5220,7 @@ int main()
     TestSameFile103();
     TestPluginFileDlg104();
     TestSafeReplace105();
+    TestPackSelf106();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

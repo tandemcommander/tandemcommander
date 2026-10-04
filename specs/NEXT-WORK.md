@@ -387,7 +387,24 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   symbolic link that points at the source is now refused; hard links on file
   systems that do not share share-mode state between two paths; the ZIP
   plug-in can overwrite a selected source with the new archive's file after
-  "overwrite?" (another defect class); a case-sensitive folder still refuses
+  "overwrite?" (another defect class) - ✅ **fixed by feature 106
+  (2026-10-04)**: measured worse than recorded - a multi-volume ZIP whose
+  volume name was a selected file lost that file on a Copy too, and with
+  Move broke the archive and deleted the other files; a declined
+  "overwrite?" for volume 2+ deleted the declined file; and the core's Pack
+  dialog *Overwrite* deleted a selected file named like the archive (every
+  packer). All refused now by file identity before anything is touched;
+  record `specs/106-zip-overwrite-source/fix-log.md`. Found by 106, not
+  fixed (small, no loss): a failed multi-volume pack leaves the volumes it
+  already wrote; multi-volume into `name.zip` that exists (Add) leaves the
+  last volume as `name.z0N` silently (the rename never replaces); the 7-Zip
+  plug-in packs a selected archive into itself and Move then shows "Delete
+  Error (32)" for it; the ZIP plug-in's *Add* of a selected archive reports
+  a sharing violation instead of a clear text; `translate.merge --module zip`
+  would re-lay out 510 controls of the committed ZIP translations (tool drift
+  since build 185); the Pack dialog's refusal reuses "Cannot copy a file to
+  itself." - it names no file and does not say that deselecting the archive
+  (or the folder holding it) helps (needs a new core string); a case-sensitive folder still refuses
   `a.txt` -> existing `A.txt` (now provably another file - could offer the
   overwrite). Found by 103, pre-existing: **PictView's Rename fails with
   error 32 for the image it shows** (the viewer keeps it open; both builds,

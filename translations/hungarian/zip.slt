@@ -558,4 +558,5 @@ COMMENT,"Magyar változat"
 1252,1,"KB"
 1253,1,"MB"
 1254,1,"A ZIP fájl által használd adatformátum módosítását nem támogatja a jelenlegi ZIP plugin verzió"
+1255,1,"Ez a fájl a csomagolandó fájlok egyike. Az archívum nem írhatja felül."
 

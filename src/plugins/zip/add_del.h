@@ -112,6 +112,9 @@ public:
     bool OverwriteAll;
     bool IgnoreAllFreeSp;
     QWORD DiskSize;
+    // feature 106: TempName names the volume this operation created (or confirmed overwriting) -
+    // only then may a failure delete it; a declined or refused name is the user's file
+    bool TempNameOurs;
 
     //self-extracting archives
     unsigned ArchiveHeaderOffs;
@@ -159,6 +162,10 @@ public:
     void Recover();
     int Store(__UINT64* size);
     int CreateNextFile(bool firstSfxDisk = false);
+    // feature 106: is the existing file 'nameU8' one of the files this operation packs (AddFiles)?
+    BOOL IsPackedSource(const char* nameU8);
+    // feature 106: tells the user that 'nameU8' is one of the files being packed; IDS_NODISPLAY
+    int RefusePackedSource(const char* nameU8);
     int NextDisk();
     int MatchAll();
     int WriteSfxExecutable(const char* sfxFile, const char* sfxPackage, BOOL preview, int progressMode);

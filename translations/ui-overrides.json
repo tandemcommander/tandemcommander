@@ -370,28 +370,36 @@
   },
   "zip": {
     "czech": {
-      "IDS_PLUGINNAME": "ZIP"
+      "IDS_PLUGINNAME": "ZIP",
+      "IDS_PACKEDSOURCE": "Tento soubor je jedním ze souborů, které se komprimují. Archivem ho nelze přepsat."
     },
     "slovak": {
-      "IDS_PLUGINNAME": "ZIP"
+      "IDS_PLUGINNAME": "ZIP",
+      "IDS_PACKEDSOURCE": "Tento súbor je jedným zo súborov, ktoré sa komprimujú. Archívom ho nie je možné prepísať."
     },
     "german": {
-      "IDS_PLUGINNAME": "ZIP"
+      "IDS_PLUGINNAME": "ZIP",
+      "IDS_PACKEDSOURCE": "Diese Datei gehört zu den Dateien, die gepackt werden. Sie kann nicht durch das Archiv überschrieben werden."
     },
     "french": {
-      "IDS_PLUGINNAME": "ZIP"
+      "IDS_PLUGINNAME": "ZIP",
+      "IDS_PACKEDSOURCE": "Ce fichier fait partie des fichiers en cours de compression. Il ne peut pas être remplacé par l'archive."
     },
     "spanish": {
-      "IDS_PLUGINNAME": "ZIP"
+      "IDS_PLUGINNAME": "ZIP",
+      "IDS_PACKEDSOURCE": "Este fichero es uno de los ficheros que se están comprimiendo. El archivo no puede sobrescribirlo."
     },
     "dutch": {
-      "IDS_PLUGINNAME": "ZIP"
+      "IDS_PLUGINNAME": "ZIP",
+      "IDS_PACKEDSOURCE": "Dit bestand is een van de bestanden die worden ingepakt. Het kan niet door het archief worden overschreven."
     },
     "hungarian": {
-      "IDS_PLUGINNAME": "ZIP"
+      "IDS_PLUGINNAME": "ZIP",
+      "IDS_PACKEDSOURCE": "Ez a fájl a csomagolandó fájlok egyike. Az archívum nem írhatja felül."
     },
     "romanian": {
-      "IDS_PLUGINNAME": "ZIP"
+      "IDS_PLUGINNAME": "ZIP",
+      "IDS_PACKEDSOURCE": "Acest fisier este unul dintre fisierele care sunt arhivate. Nu poate fi suprascris de arhiva."
     },
     "russian": {
       "IDS_PLUGINNAME": "ZIP"
@@ -401,6 +409,14 @@
     },
     "chinesesimplified": {
       "IDS_PLUGINNAME": "ZIP"
-    }
+    },
+    "_feature_106": [
+      "IDS_PACKEDSOURCE (feature 106): DeepL took the sentence apart - es wrote archivo for the file",
+      "(the corpus: fichero = file, archivo = archive); cs/sk/de/fr/nl/ro/hu: the archive is written",
+      "or overwritten ONTO the file. The pins say the file cannot be overwritten BY the archive and use",
+      "each corpus' word for packing (cs/sk komprimace, de Packen, fr compression, nl inpakken, hu",
+      "csomagolas, ro arhivare, es compresion). Romanian without diacritics, as the ZIP corpus:",
+      "the plug-in loads its texts through the code page, and CP1250 has no comma-below s/t."
+    ]
   }
 }

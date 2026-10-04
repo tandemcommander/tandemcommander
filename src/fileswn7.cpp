@@ -1502,6 +1502,56 @@ const char* WINAPI PanelEnumDiskSelection(HWND parent, int enumFiles, const char
     }
 }
 
+// Feature 106: the Pack dialog's "Overwrite" deletes the existing archive before the packer
+// runs. TRUE when that file is one of the files about to be packed - a selected file (under any
+// spelling: 8.3 name, \\localhost\C$, case, a hard link), or a file inside a selected folder:
+// deleting it would delete a source before it is read. The file system's identity decides
+// (SalPackTargetInSelection, salsamefile.h). Only the "Overwrite" answer pays for it: one
+// identity per selected item plus one per folder above the archive.
+static BOOL PackArchiveIsSelectedSource(const char* archive, const char* panelPath, CPanelTmpEnumData* data)
+{
+    CALL_STACK_MESSAGE2("PackArchiveIsSelectedSource(%s, , )", archive);
+    CSalFileIdentity arc;
+    if (!SalGetFileIdentity(archive, FALSE, &arc))
+        return FALSE; // nothing readable to delete - the delete reports its own error
+    CSalHeapString up;
+    if (!up.Copy(archive))
+        return TRUE; // low memory: refuse rather than guess
+    TDirectArray<CSalFileIdentity> ancestors(16, 16);
+    while (CutDirectory(up.Get())) // the archive's parent, its parent, ... up to the root
+    {
+        CSalFileIdentity a;
+        if (SalGetFileIdentity(up.Get(), FALSE, &a))
+        {
+            ancestors.Add(a);
+            if (!ancestors.IsGood())
+            {
+                ancestors.ResetState();
+                return TRUE;
+            }
+        }
+    }
+    size_t pathLen = strlen(panelPath);
+    const char* sep = (pathLen > 0 && panelPath[pathLen - 1] == '\\') ? "" : "\\";
+    CSalHeapString item;
+    for (int i = 0; i < data->IndexesCount; i++)
+    {
+        int index = data->Indexes[i];
+        BOOL isDir = index < data->Dirs->Count;
+        CFileData* f = isDir ? &data->Dirs->At(index) : &data->Files->At(index - data->Dirs->Count);
+        if (isDir && strcmp(f->Name, "..") == 0)
+            continue;
+        if (!item.Printf("%s%s%s", panelPath, sep, f->Name))
+            return TRUE;
+        CSalFileIdentity it;
+        if (!SalGetFileIdentity(item.Get(), FALSE, &it))
+            continue; // an item that cannot be read is not the existing archive
+        if (SalPackTargetInSelection(arc, ancestors.Count > 0 ? &ancestors[0] : NULL, ancestors.Count, it, isDir))
+            return TRUE;
+    }
+    return FALSE;
+}
+
 void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* pluginName, int delFilesAfterPacking)
 {
     CALL_STACK_MESSAGE4("CFilesWindow::Pack(, %d, %s, %d)", pluginIndex, pluginName, delFilesAfterPacking);
@@ -1794,20 +1844,37 @@ _PACK_AGAIN:
                                    NULL, 0, NULL, alias, NULL, NULL);
                 int msgBoxRed = msgBox.Execute();
                 performPack = (msgBoxRed == IDYES);
+                BOOL overwriteNotDone = FALSE; // feature 106: refused or failed "Overwrite"
                 if (msgBoxRed == IDNO) // OVERWRITE
                 {
-                    ClearReadOnlyAttr(fileBuf); // so it can be deleted...
-                    if (!SalDeleteFile(fileBuf))
+                    // feature 106: the existing archive is one of the files to be packed - deleting it
+                    // would delete a source before it is read; refused, nothing is touched
+                    if (PackArchiveIsSelectedSource(fileBuf, GetPath(), &data))
                     {
-                        DWORD err;
-                        err = GetLastError();
-                        SalMessageBox(HWindow, GetErrorText(err), LoadStr(IDS_ERROROVERWRITINGFILE), MB_OK | MB_ICONEXCLAMATION);
+                        SalMessageBox(HWindow, LoadStrU8(IDS_CANNOTCOPYFILETOITSELF), LoadStr(IDS_ERROROVERWRITINGFILE),
+                                      MB_OK | MB_ICONEXCLAMATION);
+                        overwriteNotDone = TRUE;
                         // fall through to _PACK_AGAIN
                     }
                     else
-                        performPack = TRUE;
+                    {
+                        ClearReadOnlyAttr(fileBuf); // so it can be deleted...
+                        if (!SalDeleteFile(fileBuf))
+                        {
+                            DWORD err;
+                            err = GetLastError();
+                            SalMessageBox(HWindow, GetErrorText(err), LoadStr(IDS_ERROROVERWRITINGFILE), MB_OK | MB_ICONEXCLAMATION);
+                            overwriteNotDone = TRUE;
+                            // fall through to _PACK_AGAIN
+                        }
+                        else
+                            performPack = TRUE;
+                    }
                 }
-                Configuration.CnfrmAddToArchive = !dontShow;
+                // feature 106 (review N2): "without asking next time" is not stored when the Overwrite
+                // it came with was refused or failed - the next pack would silently Add instead
+                if (!overwriteNotDone)
+                    Configuration.CnfrmAddToArchive = !dontShow;
                 if (!performPack)
                     goto _PACK_AGAIN;
             }

@@ -205,6 +205,7 @@ STRINGTABLE
   IDS_SIZE_KB, "KB"
   IDS_SIZE_MB, "MB"
   IDS_MODIFICATION_NOT_SUPPORTED, "The ZIP file uses data format which is not supported for modification by the current version of the ZIP plugin"
+  IDS_PACKEDSOURCE, "This file is one of the files being packed. The archive cannot be written over it."
 }
 
 STRINGTABLE

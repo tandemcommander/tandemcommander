@@ -1392,3 +1392,25 @@ plugin architecture preservation, UI consistency.
     headers read by hand): 56 PASS / 0 FAIL / 4 NOT DRIVEN, 0 files
     lost (the build before: 7 / 49 / 4, 8 existing files deleted). saltests 13,487 -> 13,555.
     Records: `specs/105-pictview-saveas-loss/fix-log.md`.
+- 106-zip-overwrite-source: **a pack never writes its archive over a file it packs.** Measured
+  first (`research.md`), worse than the 103 note: a multi-volume ZIP whose volume name was a
+  selected file (`a.z01`/`a.z04` for `a.zip`) lost that file after "Overwrite?" Yes - on a Copy
+  too (volume 1 was created before the files were even listed), and with Move broke the archive
+  and deleted the other files; any spelling (case, 8.3, `\\localhost\C$`) and a hard link. A
+  declined "Overwrite?" for volume 2+ deleted the declined file. And the core's Pack dialog
+  *Overwrite* deleted a selected file named like the archive before any packer ran (ZIP, 7-Zip).
+  Now: `SalPackOutputIsSource` / `SalPackTargetInSelection` (`salsamefile.h`, pure: same id incl.
+  hard links, or no ids + equal metadata = yes); the ZIP plug-in lists the files before creating
+  any output and checks every existing volume / self-extractor against all of them (only when
+  such an output already exists) - refused before the question with the new `IDS_PACKEDSOURCE` (1255,
+  free slot, 8 languages pinned under `_feature_106`; review SF-1: no size filter - a hard link
+  written through its other name is listed with a stale size); `TempNameOurs` - a failed multi-volume
+  pack deletes only a volume it created; the core's *Overwrite* checks the selected items and the
+  archive's folders and says "Cannot copy a file to itself." (behaviour change: an old archive
+  that is itself selected can no longer be overwritten by packing it - deselect it). Unchanged,
+  measured without loss: ordinary ZIP pack/F5/F6 into a selected archive (its open handle blocks
+  the read), 7-Zip (the old archive ends up inside), TAR (no packing); SFX unreachable; RAR not
+  driven. Interface 107, no registry change. saltests 13,555 -> 13,588. Probe
+  `probe/packself_probe.ps1` 70/0 (before: 49/17 plus the two review rows failing). Found, not fixed: partial volumes after a failed
+  multi-volume pack; the last volume not renamed when `name.zip` exists; `translate.merge
+  --module zip` would re-lay out 510 controls. Records: `specs/106-zip-overwrite-source/fix-log.md`.

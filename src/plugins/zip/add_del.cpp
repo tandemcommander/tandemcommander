@@ -46,6 +46,7 @@ CZipPack::CZipPack(const char* zipName, const char* zipRoot,
     NewestFileTime.dwLowDateTime = 0;
     NewestFileTime.dwHighDateTime = 0;
     SeccondPass = FALSE;
+    TempNameOurs = false;
     TempName = (char*)malloc(U8_MAX_PATH); // full path (UTF-8, long paths) -> heap
     if (TempName == NULL)
         ErrorID = IDS_LOWMEM;

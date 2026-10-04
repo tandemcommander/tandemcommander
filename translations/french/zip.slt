@@ -558,4 +558,5 @@ COMMENT,"Version française"
 1252,1,"Ko"
 1253,1,"Mo"
 1254,1,"Le fichier ZIP utilise un format de donnée dont la modification n'est pas supportée par la version actuelle du module ZIP"
+1255,1,"Ce fichier fait partie des fichiers en cours de compression. Il ne peut pas être remplacé par l'archive."
 

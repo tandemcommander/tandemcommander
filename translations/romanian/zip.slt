@@ -558,4 +558,5 @@ COMMENT,"Versiunea romana"
 1252,1,"KB"
 1253,1,"MB"
 1254,1,"Fisierele ZIP folosesc data format care nu e suportata pentru modificarea versiunii curente de plugin ZIP"
+1255,1,"Acest fisier este unul dintre fisierele care sunt arhivate. Nu poate fi suprascris de arhiva."
 

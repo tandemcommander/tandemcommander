@@ -267,6 +267,39 @@ inline BOOL SalLinkPointsAtTarget(const CSalFileIdentity& srcLinkItself, const C
     return ids == simUnknown && SalFileMetaEqual(srcThroughLink, tgt);
 }
 
+// Feature 106: a pack operation is about to write its output - the archive, a volume of a
+// multi-volume archive, the self-extractor - over the existing file 'out', or (the core's Pack
+// dialog, "Overwrite") to delete it first. Is that file one of the files the same operation
+// packs ('src', read through links)? Then the write would truncate or delete a source before or
+// after it is read: the archive would hold garbage, and a Move would delete the rest. TRUE for
+// the same id - also another hard link of the source, whose data a truncation reaches - and,
+// where the file system gives no usable ids, for equal metadata (a "maybe" counts as yes: the
+// operation is refused and nothing is lost).
+inline BOOL SalPackOutputIsSource(const CSalFileIdentity& out, const CSalFileIdentity& src)
+{
+    int ids = SalFileIdMatch(out, src);
+    if (ids == simEqual)
+        return TRUE;
+    return ids == simUnknown && SalFileMetaEqual(out, src);
+}
+
+// Feature 106: the same question for one selected item of the Pack dialog. 'isDir': the item is
+// a directory, whose whole tree is packed - then the archive is a source when the item is one of
+// the archive's folders ('ancestors': the identities of the archive's parent, its parent, ... up
+// to the root). A file item is a source when it is the archive itself.
+inline BOOL SalPackTargetInSelection(const CSalFileIdentity& archive, const CSalFileIdentity* ancestors,
+                                     int ancestorCount, const CSalFileIdentity& item, BOOL isDir)
+{
+    if (!isDir)
+        return SalPackOutputIsSource(archive, item);
+    for (int i = 0; i < ancestorCount; i++)
+    {
+        if (SalPackOutputIsSource(ancestors[i], item))
+            return TRUE;
+    }
+    return FALSE;
+}
+
 //*****************************************************************************
 //
 // the temporary-name route

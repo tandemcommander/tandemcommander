@@ -27,6 +27,7 @@
 #include "crypt.h"
 #include "iosfxset.h"
 #include "sfxmake/sfxmake.h"
+#include "../../common/salsamefile.h" // feature 106: is an output file one of the packed files?
 
 #ifndef SSZIP
 #include "zip.rh"
@@ -233,6 +234,39 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
     sprintf(title, LoadStr(IDS_ADDPROGTITLE), SalamanderGeneral->SalPathFindFileName(ZipName));
     Salamander->OpenProgressDialog(title, TRUE, NULL, FALSE);
 
+    // feature 106: the files to pack are listed before any output exists - the first volume (and
+    // the self-extractor) used to be created first, so a selected file of the same name was
+    // truncated before it was read; every output is now checked against this list
+    Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
+    ErrorID = EnumFiles2(next, param);
+    if (!ErrorID)
+    {
+        MatchAll();
+        if (AddFiles.Count > 0xFFFF)
+        {
+            if (Options.Action & PA_SELFEXTRACT)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_LOTFILESSFX), LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
+                ErrorID = IDS_NODISPLAY;
+                UserBreak = TRUE;
+            }
+            else
+            {
+                if (SalamanderGeneral->ShowMessageBox(LoadStr(IDS_LOTFILES),
+                                                      LoadStr(IDS_PLUGINNAME), MSGBOX_EX_QUESTION) != IDYES)
+                {
+                    ErrorID = IDS_NODISPLAY;
+                    UserBreak = TRUE;
+                }
+            }
+        }
+    }
+    if (ErrorID || NothingToDo) // nothing was created yet
+    {
+        Salamander->CloseProgressDialog();
+        return ErrorID;
+    }
+
     if (Options.Action & PA_SELFEXTRACT)
     {
         Salamander->ProgressDialogAddText(LoadStr(IDS_WRITINGEXE), FALSE);
@@ -251,6 +285,13 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
             return IDS_TOOLONGZIPNAME;
         }
 
+        if (IsPackedSource(name)) // feature 106: never asked "overwrite?" for a file being packed
+        {
+            RefusePackedSource(name);
+            free(name);
+            Salamander->CloseProgressDialog();
+            return ErrorID = IDS_NODISPLAY;
+        }
         if (TestIfExist(name))
         {
             free(name);
@@ -334,99 +375,75 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
             firstSfxDisk = true;
     }
 
-    Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
     ErrorID = CreateNextFile(firstSfxDisk);
     if (!ErrorID)
     {
-        ErrorID = EnumFiles2(next, param);
-        if (!ErrorID)
+        if (!NothingToDo && !ErrorID)
         {
-            MatchAll();
-            if (AddFiles.Count > 0xFFFF)
+            unsigned i = SIG_DATADESCR;
+            if (Write(TempFile, &i, 4, NULL))
             {
+                ErrorID = IDS_NODISPLAY;
+            }
+            else
+            {
+                // reserve space for the central directory at the beginning of the file
                 if (Options.Action & PA_SELFEXTRACT)
                 {
-                    SalamanderGeneral->ShowMessageBox(LoadStr(IDS_LOTFILESSFX), LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
-                    ErrorID = IDS_NODISPLAY;
-                    UserBreak = TRUE;
+                    ErrorID = FinishPack(FPR_SFXRESERVE);
+                    /*EONewCentrDir.*/ NewCentrDirOffs = /*(unsigned)*/ TempFile->FilePointer;
                 }
-                else
+                if (!ErrorID)
                 {
-                    if (SalamanderGeneral->ShowMessageBox(LoadStr(IDS_LOTFILES),
-                                                          LoadStr(IDS_PLUGINNAME), MSGBOX_EX_QUESTION) != IDYES)
+                    ErrorID = PackFiles();
+                    if (!ErrorID && !UserBreak)
                     {
-                        ErrorID = IDS_NODISPLAY;
-                        UserBreak = TRUE;
-                    }
-                }
-            }
-            if (!NothingToDo && !ErrorID)
-            {
-                unsigned i = SIG_DATADESCR;
-                if (Write(TempFile, &i, 4, NULL))
-                {
-                    ErrorID = IDS_NODISPLAY;
-                }
-                else
-                {
-                    // reserve space for the central directory at the beginning of the file
-                    if (Options.Action & PA_SELFEXTRACT)
-                    {
-                        ErrorID = FinishPack(FPR_SFXRESERVE);
-                        /*EONewCentrDir.*/ NewCentrDirOffs = /*(unsigned)*/ TempFile->FilePointer;
-                    }
-                    if (!ErrorID)
-                    {
-                        ErrorID = PackFiles();
+                        if (Options.Action & PA_SELFEXTRACT)
+                        {
+                            /*EONewCentrDir.*/ NewCentrDirOffs = 4;
+                            ErrorID = FinishPack(FPR_SFXEND);
+                            if (!ErrorID && /*EONewCentrDir.*/ NewCentrDirSize == 0)
+                                ErrorID = IDS_EMPTYARCHIVE;
+                        }
+                        else
+                        {
+                            ErrorID = FinishPack(FPR_NORMAL);
+                            // rename the last file
+                            if (!ErrorID && Options.SeqNames && Config.WinZipNames)
+                            {
+                                if (TempFile)
+                                {
+                                    char* name = _strdup(TempFile->FileName); // full path (UTF-8) -> heap
+                                    CloseCFile(TempFile);
+                                    TempFile = NULL;
+                                    if (name != NULL)
+                                    {
+                                        MoveFileU8(name, ZipName);
+                                        free(name);
+                                    }
+                                }
+                            }
+                        }
                         if (!ErrorID && !UserBreak)
                         {
                             if (Options.Action & PA_SELFEXTRACT)
                             {
-                                /*EONewCentrDir.*/ NewCentrDirOffs = 4;
-                                ErrorID = FinishPack(FPR_SFXEND);
-                                if (!ErrorID && /*EONewCentrDir.*/ NewCentrDirSize == 0)
-                                    ErrorID = IDS_EMPTYARCHIVE;
-                            }
-                            else
-                            {
-                                ErrorID = FinishPack(FPR_NORMAL);
-                                // rename the last file
-                                if (!ErrorID && Options.SeqNames && Config.WinZipNames)
+                                CloseCFile(TempFile);
+                                TempFile = NULL;
+                                ErrorID = WriteSFXECRec(ecrecOffs);
+                                if (!ErrorID)
                                 {
-                                    if (TempFile)
-                                    {
-                                        char* name = _strdup(TempFile->FileName); // full path (UTF-8) -> heap
-                                        CloseCFile(TempFile);
-                                        TempFile = NULL;
-                                        if (name != NULL)
-                                        {
-                                            MoveFileU8(name, ZipName);
-                                            free(name);
-                                        }
-                                    }
-                                }
-                            }
-                            if (!ErrorID && !UserBreak)
-                            {
-                                if (Options.Action & PA_SELFEXTRACT)
-                                {
-                                    CloseCFile(TempFile);
-                                    TempFile = NULL;
-                                    ErrorID = WriteSFXECRec(ecrecOffs);
+                                    ErrorID = WriteSFXCentralDir();
                                     if (!ErrorID)
                                     {
-                                        ErrorID = WriteSFXCentralDir();
-                                        if (!ErrorID)
-                                        {
-                                            if (Flush(TempFile, TempFile->OutputBuffer, TempFile->BufferPosition, NULL))
-                                                ErrorID = IDS_NODISPLAY;
-                                        }
+                                        if (Flush(TempFile, TempFile->OutputBuffer, TempFile->BufferPosition, NULL))
+                                            ErrorID = IDS_NODISPLAY;
                                     }
                                 }
-                                if (Move && !ErrorID && !UserBreak)
-                                {
-                                    ErrorID = CleanUpSource();
-                                }
+                            }
+                            if (Move && !ErrorID && !UserBreak)
+                            {
+                                ErrorID = CleanUpSource();
                             }
                         }
                     }
@@ -437,7 +454,9 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
         {
             CloseCFile(TempFile);
         }
-        if (ErrorID || UserBreak || NothingToDo)
+        // feature 106: only a volume this operation created; a name whose overwrite was declined
+        // or refused (the user's file, possibly one of the sources) is never deleted
+        if ((ErrorID || UserBreak || NothingToDo) && TempNameOurs)
             DeleteFileU8(TempName);
     }
     Salamander->CloseProgressDialog();
@@ -451,6 +470,17 @@ int CZipPack::PackSelfExtract(SalEnumSelection2 next, void* param)
 
     if (!SalamanderGeneral->SalPathRenameExtension(ZipName, ".exe", U8_MAX_PATH))
         return IDS_TOOLONGZIPNAME;
+
+    // feature 106: the files to pack are listed first, and the self-extractor is never written
+    // over one of them (it used to be created first and could truncate a selected file of its name)
+    ErrorID = EnumFiles2(next, param);
+    if (ErrorID)
+        return ErrorID;
+    if (IsPackedSource(ZipName))
+    {
+        RefusePackedSource(ZipName);
+        return ErrorID = IDS_NODISPLAY;
+    }
 
     if (TestIfExist(ZipName))
         return ErrorID;
@@ -483,7 +513,7 @@ int CZipPack::PackSelfExtract(SalEnumSelection2 next, void* param)
     Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
     if (!ErrorID)
     {
-        ErrorID = EnumFiles2(next, param);
+        // (the files were listed above, feature 106)
         if (!ErrorID)
         {
             MatchAll();
@@ -2184,6 +2214,7 @@ int CZipPack::CreateNextFile(bool firstSfxDisk)
 
     MakeFileName(DiskNum + 1, Options.SeqNames, ZipName, TempName,
                  Config.WinZipNames && !(Options.Action & PA_SELFEXTRACT));
+    TempNameOurs = false; // feature 106: not until this operation creates it
     if (SeccondPass)
     {
         switch (CreateCFile(&TempFile, TempName, GENERIC_WRITE, FILE_SHARE_READ,
@@ -2191,6 +2222,8 @@ int CZipPack::CreateNextFile(bool firstSfxDisk)
                             false, false))
         {
         case 0:
+            // feature 106 (review N3): opened by name on the disk now in the drive - it may be another
+            // disk with the user's file of that name; a failure never deletes it (TempNameOurs stays false)
             return 0;
         case ERR_LOWMEM:
             return IDS_LOWMEM;
@@ -2312,6 +2345,14 @@ int CZipPack::CreateNextFile(bool firstSfxDisk)
                 {
                     if (OverwriteAll)
                         overwrite = true;
+                    // feature 106: a volume is never written over one of the files being packed
+                    // (any spelling - the file system's identity decides); refused before the
+                    // overwrite question, and the file is left as it is
+                    if (overwrite && IsPackedSource(TempName))
+                    {
+                        error = RefusePackedSource(TempName);
+                        break;
+                    }
                     TempFile->File = CreateFileU8(TempName, GENERIC_WRITE, /*FILE_SHARE_READ*/ NULL, NULL,
                                                   overwrite ? CREATE_ALWAYS : CREATE_NEW,
                                                   FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
@@ -2322,12 +2363,17 @@ int CZipPack::CreateNextFile(bool firstSfxDisk)
                         TempFile->Flags = PE_NOSKIP;
                         TempFile->RealFilePointer = 0;
                         TempFile->BufferPosition = 0;
+                        TempNameOurs = true; // feature 106: created (or overwritten as confirmed) here
                         free(pathBuf);
                         return 0; //success
                     }
                     overwrite = false;
                     lastErr = GetLastError();
-                    if (lastErr == ERROR_FILE_EXISTS || lastErr == ERROR_ALREADY_EXISTS)
+                    if ((lastErr == ERROR_FILE_EXISTS || lastErr == ERROR_ALREADY_EXISTS) && IsPackedSource(TempName))
+                    {
+                        error = RefusePackedSource(TempName); // feature 106: see above
+                    }
+                    else if (lastErr == ERROR_FILE_EXISTS || lastErr == ERROR_ALREADY_EXISTS)
                     {
                         CFile* file;
                         int ret;
@@ -2388,6 +2434,50 @@ int CZipPack::CreateNextFile(bool firstSfxDisk)
     free(TempFile);
     TempFile = NULL;
     return error;
+}
+
+// Feature 106: TRUE when the existing file 'nameU8' - an output this operation is about to write
+// (a volume of a multi-volume archive, the self-extractor) - is one of the files it packs
+// (AddFiles), under any spelling: the 8.3 name, \\localhost\C$, another case, a hard link. Writing
+// over it would truncate a source before or after it is read (and a Move would then delete the
+// archive's own volume). The file system's identity decides (SalPackOutputIsSource,
+// salsamefile.h). Every listed file is compared: the listed size is no filter - NTFS updates the
+// size of a directory entry only for the name a write went through, so a hard-linked source can be
+// listed with a stale size (review SF-1, reproduced), and a symbolic link may be listed with 0.
+// The check runs only when an output file already exists.
+BOOL CZipPack::IsPackedSource(const char* nameU8)
+{
+    CALL_STACK_MESSAGE2("CZipPack::IsPackedSource(%s)", nameU8);
+    WCHAR* w = SplU8ToWExtAlloc(nameU8);
+    if (w == NULL)
+        return FALSE;
+    CSalFileIdentity out;
+    BOOL exists = SalGetFileIdentityW(w, FALSE, &out);
+    free(w);
+    if (!exists)
+        return FALSE; // nothing there to write over
+    for (int i = 0; i < AddFiles.Count; i++)
+    {
+        CAddInfo* src = AddFiles[i];
+        if (src->IsDir)
+            continue;
+        WCHAR* ws = SplU8ToWExtAlloc(src->Name);
+        if (ws == NULL)
+            continue;
+        CSalFileIdentity id;
+        BOOL got = SalGetFileIdentityW(ws, FALSE, &id);
+        free(ws);
+        if (got && SalPackOutputIsSource(out, id))
+            return TRUE;
+    }
+    return FALSE;
+}
+
+int CZipPack::RefusePackedSource(const char* nameU8)
+{
+    CALL_STACK_MESSAGE2("CZipPack::RefusePackedSource(%s)", nameU8);
+    ProcessError(IDS_PACKEDSOURCE, 0, nameU8, PE_NORETRY | PE_NOSKIP, NULL);
+    return IDS_NODISPLAY;
 }
 
 int CZipPack::MatchAll()
