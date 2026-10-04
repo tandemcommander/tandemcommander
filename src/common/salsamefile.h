@@ -532,6 +532,59 @@ inline BOOL SalPackTargetInSelection(const CSalFileIdentity& archive, const CSal
     return FALSE;
 }
 
+// Feature 109: may an archive opened in one panel share the disk-cache key of the archive open in
+// the other panel ('a', 'b': identities read with volumeTraits)? Sharing means the members' temporary
+// copies are shared - right for one file under two spellings (8.3 name, SUBST drive, \\localhost\C$),
+// the very defect 109 fixes for two different files. So only a certain "same": equal usable ids on
+// one volume, both in the same snapshot (the live volume or one shadow copy - a snapshot keeps the
+// serial and the ids), the snapshot known on both sides, and where the ids follow the directory
+// entry (FAT, exFAT) also equal size and times. Anything uncertain answers FALSE: two keys, two
+// copies - the behaviour before 109 - never one key for two files.
+inline BOOL SalArchiveSharesCacheKey(const CSalFileIdentity& a, const CSalFileIdentity& b)
+{
+    if (SalFileIdMatch(a, b) != simEqual)
+        return FALSE;
+    if (a.SnapshotUnknown || b.SnapshotUnknown || a.SnapshotTag != b.SnapshotTag)
+        return FALSE;
+    if ((a.WeakIds || b.WeakIds) && !SalFileMetaEqual(a, b))
+        return FALSE;
+    return TRUE;
+}
+
+// Feature 109 (review blocker): the disk-cache key a panel takes when it opens an archive while the
+// other panel shows one. An EQUAL key is no proof of one file: the other panel's key may have been
+// taken from a spelling that names another file now (a SUBST drive or a network drive re-pointed, a
+// hard link replaced) - so a share is decided by the identity whenever it could happen.
+//   keysEqual     - the own key (from the own name) equals the other panel's key
+//   namesEqual    - the two archive names are one name by the file system's rule
+//   sizeTimeEqual - the size and time this panel just read equal those the other panel listed
+//   idsRead       - both identities were read (volumeTraits); 'mine', 'theirs' valid only then
+// sakShare: take the other panel's key; sakOwn: the own key (it differs from the other's);
+// sakUnique: the own key made unique - it must not equal the other panel's key.
+enum CSalArcKeyChoice
+{
+    sakOwn,
+    sakShare,
+    sakUnique,
+};
+
+inline CSalArcKeyChoice SalArchiveCacheKeyChoice(BOOL keysEqual, BOOL namesEqual, BOOL sizeTimeEqual, BOOL idsRead,
+                                                 const CSalFileIdentity& mine, const CSalFileIdentity& theirs)
+{
+    if (!sizeTimeEqual) // not the file the other panel listed (or its listing is old): never share
+        return keysEqual ? sakUnique : sakOwn;
+    if (idsRead && SalArchiveSharesCacheKey(mine, theirs))
+        return sakShare;
+    if (!keysEqual)
+        return sakOwn;
+    // equal keys, no certain identity: the SAME name with nothing saying "another file" keeps the
+    // sharing of every release (a file system without ids - WebDAV - shown twice under one path);
+    // another name (the key was taken from another spelling) shares only on certainty
+    if (namesEqual && !(idsRead && SalFileIdMatch(mine, theirs) == simDifferent))
+        return sakShare;
+    return sakUnique;
+}
+
 //*****************************************************************************
 //
 // the temporary-name route

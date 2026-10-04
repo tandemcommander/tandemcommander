@@ -1,0 +1,385 @@
+diskcache_probe (feature 109) fixed-review
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-04 23:55; ACP 1250
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited109>>"$(FullName)"; F3 viewer = cmd.exe /c type "$(FullName)">>view.log
+
+--- twoarcF4_zip: archives '\u0125.zip' (x.txt tag 1), '\u0139.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_zip\\u0125.zip' (field held it: True); title '... \u0125.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SAL9B9.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_zip\\u0139.zip' (field held it: True); title '... \u0139.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL9B9.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SAL146.tmp\x.txt (tag 2, marker x1, 32 bytes); SAL9B9.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 4 [leave]: leave panel 1: title '...F4_zip - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_zip\\u0139.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_zip\\u0139.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_zip\\u0139.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static ... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 23:55:41 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL9B9.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [leave]: leave panel 0: title '...F4_zip - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_zip\\u0125.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_zip\\u0125.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_zip\\u0125.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static ... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 23:55:31 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          \u0125.zip: ENTRY x.txt tag=1 markers=1 size=32
+          \u0125.zip: COUNT 1
+          \u0139.zip: ENTRY x.txt tag=2 markers=1 size=32
+          \u0139.zip: COUNT 1
+   VERDICT: PASS 
+
+--- twoarcF3_zip: archives '\u0125.zip' (x.txt tag 1), '\u0139.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF3_zip\\u0125.zip' (field held it: True); title '... \u0125.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL673.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF3_zip\\u0139.zip' (field held it: True); title '... \u0139.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL673.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [f3]: F3 in panel 1: the viewer was given tag 2 with 0 edit(s); windows: no window
+          temporary copies: SAL673.tmp\x.txt (tag 1, marker x0, 21 bytes); SALDC2.tmp\x.txt (tag 2, marker x0, 21 bytes)
+   step 4 [leave]: leave panel 1: title '...F3_zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL673.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 5 [leave]: leave panel 0: title '...F3_zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          \u0125.zip: ENTRY x.txt tag=1 markers=0 size=21
+          \u0125.zip: COUNT 1
+          \u0139.zip: ENTRY x.txt tag=2 markers=0 size=21
+          \u0139.zip: COUNT 1
+   VERDICT: PASS 
+
+--- twoarcF4_7z: archives '\u0125.7z' (x.txt tag 1), '\u0139.7z' (x.txt tag 2)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_7z\\u0125.7z' (field held it: True); title '...- \u0125.7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SAL8E2.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_7z\\u0139.7z' (field held it: True); title '...- \u0139.7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL8E2.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SAL8E2.tmp\x.txt (tag 1, marker x1, 32 bytes); SALFB3.tmp\x.txt (tag 2, marker x1, 32 bytes)
+   step 4 [leave]: leave panel 1: title '...cF4_7z - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_7z\\u0139.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_7z\\u0139.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 23:56:39 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 23:56:58 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL8E2.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [leave]: leave panel 0: title '...cF4_7z - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_7z\\u0125.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4_7z\\u0125.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 04.10.2026, 23:56:39 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 23:56:48 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          \u0125.7z: ENTRY x.txt tag=1 markers=1 size=32
+          \u0125.7z: COUNT 1
+          \u0139.7z: ENTRY x.txt tag=2 markers=1 size=32
+          \u0139.7z: COUNT 1
+   VERDICT: PASS 
+
+--- twoarcF3_7z: archives '\u0125.7z' (x.txt tag 1), '\u0139.7z' (x.txt tag 2)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF3_7z\\u0125.7z' (field held it: True); title '...- \u0125.7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL4F1.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF3_7z\\u0139.7z' (field held it: True); title '...- \u0139.7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL4F1.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [f3]: F3 in panel 1: the viewer was given tag 2 with 0 edit(s); windows: no window
+          temporary copies: SAL4F1.tmp\x.txt (tag 1, marker x0, 21 bytes); SALC4F.tmp\x.txt (tag 2, marker x0, 21 bytes)
+   step 4 [leave]: leave panel 1: title '...cF3_7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL4F1.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 5 [leave]: leave panel 0: title '...cF3_7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          \u0125.7z: ENTRY x.txt tag=1 markers=0 size=21
+          \u0125.7z: COUNT 1
+          \u0139.7z: ENTRY x.txt tag=2 markers=0 size=21
+          \u0139.7z: COUNT 1
+   VERDICT: PASS 
+
+--- twoarcF4F3_zip: archives '\u0125.zip' (x.txt tag 1), '\u0139.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4F3_zip\\u0125.zip' (field held it: True); title '... \u0125.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SAL731.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4F3_zip\\u0139.zip' (field held it: True); title '... \u0139.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL731.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f3]: F3 in panel 1: the viewer was given tag 2 with 0 edit(s); windows: no window
+          temporary copies: SAL731.tmp\x.txt (tag 1, marker x1, 32 bytes); SALEBE.tmp\x.txt (tag 2, marker x0, 21 bytes)
+   step 4 [leave]: leave panel 1: title '...F3_zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL731.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [leave]: leave panel 0: title '...F3_zip - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4F3_zip\\u0125.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4F3_zip\\u0125.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\twoarcF4F3_zip\\u0125.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Stati... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 04.10.2026, 23:58:06 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          \u0125.zip: ENTRY x.txt tag=1 markers=1 size=32
+          \u0125.zip: COUNT 1
+          \u0139.zip: ENTRY x.txt tag=2 markers=0 size=21
+          \u0139.zip: COUNT 1
+   VERDICT: PASS 
+
+--- alias-ascii: archives 'arc.zip' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SALE8F.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\ARC.ZIP' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALE8F.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SALE8F.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 4 [leave]: leave panel 1: title '...-ascii - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 43, 04.10.2026, 23:58:55 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\arc.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-ascii\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 43, 04.10.2026, 23:58:56 | [Static id=1151] With file: | [Static id=184] 43, 04.10.2026, 23:58:55 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 5 [leave]: leave panel 0: title '...-ascii - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          arc.zip: ENTRY x.txt tag=1 markers=2 size=43
+          arc.zip: COUNT 1
+   VERDICT: PASS 
+
+--- alias-accent: archives '\u010Carc.zip' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010Carc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SALFDD.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010DARC.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALFDD.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SALFDD.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 4 [leave]: leave panel 1: title '...accent - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010Carc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010Carc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010Carc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Stat... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 43, 04.10.2026, 23:59:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010Carc.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010Carc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010Carc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent\\u010Carc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Stat... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 43, 04.10.2026, 23:59:42 | [Static id=1151] With file: | [Static id=184] 43, 04.10.2026, 23:59:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 5 [leave]: leave panel 0: title '...accent - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          \u010Carc.zip: ENTRY x.txt tag=1 markers=2 size=43
+          \u010Carc.zip: COUNT 1
+   VERDICT: PASS 
+
+--- alias-sfn: archives 'longarchivename109.zip' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-sfn\longarchivename109.zip' (field held it: True); title '...09.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SALDE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\ALIAS-~3\LONGAR~1.ZIP' (field held it: True); title '...09.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALDE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SALDE.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 4 [leave]: leave panel 1: title '...as-sfn - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-sfn\longarchivename109.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-sfn\longarchivename109.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-sfn\longarchivename109.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: |... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:00:25 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-sfn\longarchivename109.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-sfn\longarchivename109.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-sfn\longarchivename109.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-sfn\longarchivename109.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: |... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 43, 05.10.2026, 0:00:26 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:00:25 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 5 [leave]: leave panel 0: title '...as-sfn - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          longarchivename109.zip: ENTRY x.txt tag=1 markers=2 size=43
+          longarchivename109.zip: COUNT 1
+   VERDICT: PASS 
+
+--- alias-subst: archives 'arc.zip' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-subst\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SAL1A0.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'T:\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL1A0.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SAL1A0.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 4 [leave]: leave panel 1: title '... - T:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "T:\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] T:\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] T:\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&onfirm Password: | [Button id=3007]  Encrypti... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:01:11 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-subst\arc.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-subst\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-subst\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-subst\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 43, 05.10.2026, 0:01:12 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:01:11 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 5 [leave]: leave panel 0: title '...-subst - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          arc.zip: ENTRY x.txt tag=1 markers=2 size=43
+          arc.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+
+--- alias-unc: archives 'arc.zip' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SAL291.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL291.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SAL291.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 4 [leave]: leave panel 1: title '...as-unc - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "\\localhost\C$\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] \\localhost\C$\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] \\localhost\C$\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [S... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:01:56 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-unc\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=300... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 43, 05.10.2026, 0:01:58 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:01:56 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 5 [leave]: leave panel 0: title '...as-unc - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          arc.zip: ENTRY x.txt tag=1 markers=2 size=43
+          arc.zip: COUNT 1
+   VERDICT: PASS 
+
+--- alias-accent_7z: archives '\u010Carc.7z' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent_7z\\u010Carc.7z' (field held it: True); title '...arc.7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SAL372.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent_7z\\u010DARC.7z' (field held it: True); title '...arc.7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL372.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SAL372.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 4 [leave]: leave panel 1: title '...ent_7z - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent_7z\\u010Carc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent_7z\\u010Carc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 05.10.2026, 0:02:21 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:02:41 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent_7z\\u010Carc.7z" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent_7z\\u010Carc.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\alias-accent_7z\\u010Carc.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 43, 05.10.2026, 0:02:41 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:02:41 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 5 [leave]: leave panel 0: title '...ent_7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          \u010Carc.7z: ENTRY x.txt tag=1 markers=2 size=43
+          \u010Carc.7z: COUNT 1
+   VERDICT: PASS 
+
+--- prefix: archives 'p.zip.zip' (x.txt tag 1), 'p.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\prefix\p.zip.zip' (field held it: True); title '...ip.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SAL424.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\prefix\p.zip' (field held it: True); title '... p.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL424.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [leave]: leave panel 1: title '...prefix - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL424.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 4 [f4]: F4 in panel 0: windows: no window
+          temporary copies: SAL424.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 5 [leave]: leave panel 0: title '...prefix - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\prefix\p.zip.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\prefix\p.zip.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\prefix\p.zip.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 43, 05.10.2026, 0:03:31 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          p.zip.zip: ENTRY x.txt tag=1 markers=2 size=43
+          p.zip.zip: COUNT 1
+          p.zip: ENTRY x.txt tag=2 markers=0 size=21
+          p.zip: COUNT 1
+   VERDICT: PASS 
+
+--- reuse: archives 'r.zip' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\reuse\r.zip' (field held it: True); title '... r.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALA3A.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 2 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALA3A.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\reuse\r.zip' (field held it: True); title '... r.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALA3A.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 4 [f3]: F3 in panel 1: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALA3A.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 5 [leave]: leave panel 1: title '... reuse - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALA3A.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [leave]: leave panel 0: title '... reuse - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          r.zip: ENTRY x.txt tag=1 markers=0 size=21
+          r.zip: COUNT 1
+   VERDICT: PASS 
+
+--- reuse-accent: archives '\u010Cr.zip' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\reuse-accent\\u010Cr.zip' (field held it: True); title '...\u010Cr.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALB7E.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 2 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\reuse-accent\\u010DR.zip' (field held it: True); title '...\u010Cr.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALB7E.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [f3]: F3 in panel 1: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALB7E.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 4 [leave]: leave panel 1: title '...accent - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALB7E.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 5 [leave]: leave panel 0: title '...accent - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          \u010Cr.zip: ENTRY x.txt tag=1 markers=0 size=21
+          \u010Cr.zip: COUNT 1
+   VERDICT: PASS 
+
+--- stale-same: archives 't.zip' (x.txt tag 9)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\stale-same\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\stale-same\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 2 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALCEE.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [rewrite]: rewrote t.zip (x.txt tag 9) from outside; windows: no window
+          temporary copies: none
+   step 4 [f3]: F3 in panel 1: the viewer was given tag 9 with 0 edit(s); windows: no window
+          temporary copies: SALCEE.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 5 [f3]: F3 in panel 0: the viewer was given tag 9 with 0 edit(s); windows: no window
+          temporary copies: SALCEE.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 6 [leave]: leave panel 1: title '...e-same - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALCEE.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 7 [leave]: leave panel 0: title '...e-same - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=9 markers=0 size=21
+          t.zip: COUNT 1
+   VERDICT: PASS 
+
+--- stale-subst: archives 't.zip' (x.txt tag 9)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\stale-subst\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [cd]: cd 'T:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 2 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALF22.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [rewrite]: rewrote t.zip (x.txt tag 9) from outside; windows: no window
+          temporary copies: none
+   step 4 [f3]: F3 in panel 1: the viewer was given tag 9 with 0 edit(s); windows: no window
+          temporary copies: SALF22.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 5 [f3]: F3 in panel 0: the viewer was given tag 9 with 0 edit(s); windows: no window
+          temporary copies: SALF22.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 6 [leave]: leave panel 1: title '... - T:\ - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALF22.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 7 [leave]: leave panel 0: title '...-subst - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=9 markers=0 size=21
+          t.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+   twins: sizes 131 / 131, times equal True
+
+--- resubst: archives 'A\arc.zip' (x.txt tag 1), 'B\arc.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'T:\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\resubst\A\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 2 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL212.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [leave]: leave panel 1: title '... - T:\ - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL212.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 4 [resubst]: T: re-pointed to C:\Users\pavel\AppData\Local\Temp\tc109\dc\resubst\B
+          temporary copies: SAL212.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 5 [cd]: cd 'T:\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL212.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [f3]: F3 in panel 1: the viewer was given tag 2 with 0 edit(s); windows: no window
+          temporary copies: SAL212.tmp\x.txt (tag 1, marker x0, 21 bytes); SAL373.tmp\x.txt (tag 2, marker x0, 21 bytes)
+   step 7 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SAL212.tmp\x.txt (tag 1, marker x0, 21 bytes); SAL373.tmp\x.txt (tag 2, marker x1, 32 bytes)
+   step 8 [leave]: leave panel 1: title '... - T:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "T:\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] T:\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] T:\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&onfirm Password: | [Button id=3007]  Encrypti... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 05.10.2026, 0:07:18 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL212.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 9 [leave]: leave panel 0: title '...09 - A - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          A\arc.zip: ENTRY x.txt tag=1 markers=0 size=21
+          A\arc.zip: COUNT 1
+          B\arc.zip: ENTRY x.txt tag=2 markers=1 size=32
+          B\arc.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+
+--- renet: archives 'A\arc.zip' (x.txt tag 1), 'B\arc.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'W:\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\renet\A\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 2 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL33D.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [leave]: leave panel 1: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL33D.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 4 [renet]: W: re-mapped to \\localhost\...\B
+          temporary copies: SAL33D.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   exception: Change Directory did not change the path: cd 'W:\arc.zip' (field held it: True); title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Error'] [Static id=2477] The path or file name "W:\" is invalid. | [Button id=1] OK || [#32770 'Error'] [Static id=2477] The path or file name "W:\" is invalid. | [Button id=1] OK || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+NET USE : W: removed (exists now: False)
+   left in the temp folder by the test instance, removed: SAL33D.tmp
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== summary ===
+case             verdict    archives (name=member tag+edits) | F3 given | copies after each step | why
+twoarcF4_zip     PASS       \u0125.zip:x.txt=m1+1 \u0139.zip:x.txt=m2+1 | - | 0/1/1/2/1/0
+twoarcF3_zip     PASS       \u0125.zip:x.txt=m1+0 \u0139.zip:x.txt=m2+0 | t1+0,t2+0 | 0/1/1/2/1/0
+twoarcF4_7z      PASS       \u0125.7z:x.txt=m1+1 \u0139.7z:x.txt=m2+1 | - | 0/1/1/2/1/0
+twoarcF3_7z      PASS       \u0125.7z:x.txt=m1+0 \u0139.7z:x.txt=m2+0 | t1+0,t2+0 | 0/1/1/2/1/0
+twoarcF4F3_zip   PASS       \u0125.zip:x.txt=m1+1 \u0139.zip:x.txt=m2+0 | t2+0 | 0/1/1/2/1/0
+alias-ascii      PASS       arc.zip:x.txt=m1+2 | - | 0/1/1/1/0/0
+alias-accent     PASS       \u010Carc.zip:x.txt=m1+2 | - | 0/1/1/1/0/0
+alias-sfn        PASS       longarchivename109.zip:x.txt=m1+2 | - | 0/1/1/1/0/0
+alias-subst      PASS       arc.zip:x.txt=m1+2 | - | 0/1/1/1/0/0
+alias-unc        PASS       arc.zip:x.txt=m1+2 | - | 0/1/1/1/0/0
+alias-accent_7z  PASS       \u010Carc.7z:x.txt=m1+2 | - | 0/1/1/1/0/0
+prefix           PASS       p.zip.zip:x.txt=m1+2 p.zip:x.txt=m2+0 | - | 0/1/1/1/1/0
+reuse            PASS       r.zip:x.txt=m1+0 | t1+0,t1+0,t1+0 | 0/1/1/1/1/1/0
+reuse-accent     PASS       \u010Cr.zip:x.txt=m1+0 | t1+0,t1+0 | 0/1/1/1/1/0
+stale-same       PASS       t.zip:x.txt=m9+0 | t1+0,t9+0,t9+0 | 0/0/1/0/1/1/1/0
+stale-subst      PASS       t.zip:x.txt=m9+0 | t1+0,t9+0,t9+0 | 0/0/1/0/1/1/1/0
+resubst          PASS       A\arc.zip:x.txt=m1+0 B\arc.zip:x.txt=m2+1 | t1+0,t2+0 | 0/0/1/1/1/1/2/2/1/0
+renet            NOT DRIVEN - | - | - | NOT DRIVEN: Change Directory did not change the path: cd 'W:\arc.zip' (field held it: True); title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Error'] [Static id=2477] The path or file name "W:\" is invalid. | [Button id=1] OK || [#32770 'Error'] [Static id=2477] The path or file name "W:\" is invalid. | [Button id=1] OK || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+TOTAL: 17 PASS / 0 FAIL / 1 NOT DRIVEN; F3/F4 retries 0
+Left running: 0; fixture removed: True; registry restored+identical: True

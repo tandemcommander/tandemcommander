@@ -53,6 +53,25 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **A file viewed or edited from an archive is the file of that archive.**
+  Two archives whose names differ only in letters that a Central European
+  code page treats as one - `ĥ.zip` and `Ĺ.zip`, `Ítem.zip` and `Ýtem.zip` -
+  shared their temporary copies: with both open (one in each panel), viewing
+  (F3) a file of the second showed the file of the first, and editing (F4) a
+  file of the second opened the first archive's copy; leaving the archives
+  then packed that one copy into BOTH archives, so the second archive's file
+  was replaced by the first's without any warning. Also: leaving an archive
+  discarded the temporary copies of every archive whose name merely starts
+  with its name (`p.zip` and `p.zip.zip`), and editing such a file again
+  afterwards silently replaced the copy - with the changes not yet packed
+  back - by the file from the archive. And one archive opened in both panels
+  through two paths of the same folder (a SUBST drive letter,
+  `\\localhost\C$\...`) gave one file two temporary copies, so the second
+  update replaced the first edit; the two panels now share one copy, as they
+  already did for one path. Finally, with both panels showing one archive,
+  an update of that archive by another program was not noticed by the
+  viewer: F3 went on showing the old content until both panels had left
+  the archive (feature 109).
 - **Every file edited from an archive is packed back as itself.** Editing
   two files of one archive whose names differ only in letters that a
   Central European code page treats as one - `ĥ.txt` and `Ĺ.txt`,

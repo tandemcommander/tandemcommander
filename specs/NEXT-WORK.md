@@ -454,7 +454,8 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   plug-in may pass text that is not UTF-8.
 - **The disk cache** keys an archive by its lower-cased (byte fold) name and
   compares keys with `strcmp`; `PrepareCloseCurrentPath` must agree with it.
-  One change, both sides. `CCacheDirData::DetachTmpFile` has no caller.
+  One change, both sides. `CCacheDirData::DetachTmpFile` has no caller - ✅
+  **fixed by feature 109 (2026-10-04)**, see queue entry 1 below.
 - **`CFileTimeStamps::AddFile`** (`salamdr3.cpp`): `ĥ.txt` and `Ĺ.txt`
   edited from one archive collide - ✅ **fixed by feature 108 (2026-10-04)**:
   measured worse than recorded - the second edit's temporary copy was deleted
@@ -477,7 +478,27 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      opened the FIRST archive's copy, and the update packed it into `Ĺ.zip`:
      its `x.txt` silently replaced by the other archive's (measured, ZIP and
      7z, every release; `108/probe/namecoll_probe.ps1 -CacheKeyRows`). This is
-     the disk-cache item above - one change, both sides.
+     the disk-cache item above - one change, both sides. ✅ **Fixed by feature
+     109 (2026-10-04)**: measured worse - leaving the archives packed the one
+     shared copy into BOTH archives, F3 in the second was given the first's
+     file (also with a pending edit), and the flush by bare key PREFIX
+     (`p.zip` flushed `p.zip.zip`) marked a copy being edited there out of
+     date, so the next F4 extracted the member over the edit (lost silently,
+     every release). One key function now (`GetArchiveCacheKey`,
+     `SalNameIdentityKeyAlloc`: key equality = `SalNameEqualOrdinalCI`, legacy
+     text behind 0xFF), both builders, both flushes (key + `\`) and the
+     "other panel shows this archive?" test; one archive through a SUBST drive
+     or `\\localhost\C$` takes the other panel's key when the file identity
+     says it is one file (`SalArchiveSharesCacheKey`). Also fixed: with both
+     panels on one archive its copies survived a change of the archive on disk
+     (F3 showed the old content; every release; the first 109 version extended
+     it to the SUBST/UNC pair - caught by its own probe row) - now kept for the
+     other panel only while the archive still has the size and time the other
+     panel listed. Review (REJECT): an equal key was trusted although it could
+     come from a spelling that now names another file (SUBST / network drive
+     re-pointed) - now decided by `SalArchiveCacheKeyChoice`, else a unique key.
+     Plug-in cache services unchanged. Record
+     `specs/109-disk-cache-archive-key/fix-log.md`.
   2. **(feature 110) The ZIP plug-in matches names by `CompareStringA` + `NORM_IGNORECASE`
      on UTF-8** (`zip/add.cpp` update matching; `del.cpp:62` delete,
      `extract.cpp:329` extract selection): packing `ĥ.txt` into an archive
@@ -493,8 +514,25 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      edited member itself (it is already marked for deletion, then not added).
      Needs a UTF-8-aware, plug-in-side identity (header-only, like
      `splunicode.h`; the ZIP project cannot compile shared `.cpp` files).
+  2a. **Found by 109's review, not fixed (data loss, narrow): a flush marks a
+     copy with a pending edit out of date.** `CDiskCache::FlushCache` marks every
+     still-referenced copy of the key out of date, also one the OTHER panel
+     has open for editing (tracked in its `CFileTimeStamps`, not packed yet) -
+     after an own update in one panel (every release), and before 109's review
+     fix after a forced reopen. A re-F4 / F3 of that member in the other panel
+     before that panel's own reopen (which packs first) makes
+     `CCacheData::GetName` delete the copy and extract the member over the edit;
+     the time stamp then matches, nothing is offered. Not driven (the other
+     panel's auto refresh closed the window in every probe row). Needs a design:
+     the cache does not know `CFileTimeStamps` - e.g. never mark out of date a
+     copy that a panel tracks as edited, or let `GetName` refuse to recreate it.
   3. Small, recorded: `AddFile` returning FALSE on low memory makes
      `ExecuteFromArchive` release the copy the editor is using (pre-existing).
+     Also from 109's re-review: two panels whose archives have the same
+     spelling, equal size AND equal modification time (100 ns) across a
+     re-pointed drive letter still share copies (pre-existing; fix: store each
+     panel's file identity at open); the out-of-memory fallback of the cache
+     key can re-create sharing without a check (hardening: refuse F3/F4).
   4. For the `CSalamanderDirectory` item (108 review NIT 3/4): tar extracts
      case-sensitively (`plugins/tar/untar.cpp:330`, `strcmp`) under a
      case-insensitive listing - a Linux tarball with `Dir/a.txt` and

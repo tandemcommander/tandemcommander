@@ -3436,18 +3436,21 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
     }
     const char* zipPath = zipPathBuf.Get();
 
-    // the archive file name should be compared case-insensitively (Windows file system), so we always convert it to lowercase
-    if (!dcFileNameBuf.Copy(GetZIPArchive(), strlen(zipPath) + strlen(f->Name) + 3, LowerCase))
+    // feature 109: the archive's disk-cache key (one key exactly for one name by the file system's rule,
+    // see GetArchiveCacheKey; the code-page lower case merged "ĥ.zip" with "Ĺ.zip" - F4 in the second
+    // opened the first's copy and the update packed it into the second)
+    if (!GetArchiveCacheKey(dcFileNameBuf, strlen(zipPath) + strlen(f->Name) + 3))
     {
         TRACE_E(LOW_MEMORY);
         return;
     }
     char* dcFileName = dcFileNameBuf.Get();
+    size_t dcKeyLen = strlen(dcFileName); // the name inside the archive follows it + '\'
     SalPathAppend(dcFileName, zipPath, dcFileNameBuf.Size());
     SalPathAppend(dcFileName, f->Name, dcFileNameBuf.Size());
     // feature 095: the name handed to the archiver stays under 2 * MAX_PATH bytes, the limit of the
     // view path (F3); this path used to drop the file name when the whole cache name passed 520 bytes
-    const char* nameInArchive = dcFileName + strlen(GetZIPArchive()) + 1;
+    const char* nameInArchive = dcFileName + dcKeyLen + 1;
     if (strlen(nameInArchive) >= 2 * MAX_PATH)
     {
         SalMessageBox(HWindow, LoadStr(IDS_UNPACKTOOLONGNAME),

@@ -1300,12 +1300,53 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
             // if edited files might be in the disk cache or this archive isn't open
             // in the other panel, we'll remove its cached files; it will unpack again next time it's opened
             // (the archive might be edited in the meantime)
+            // feature 109: "the other panel shows this archive" = the two panels' disk-cache keys are equal
+            // (the code-page byte fold of the names called "ĥ.zip" and "Ĺ.zip" one archive and kept the
+            // copies of another archive), and the flush takes the key + '\\' - the bare key also flushed
+            // every archive whose name merely starts with this one's ("p.zip" flushed "p.zip.zip"),
+            // marking a copy being edited there out of date: the next F4 extracted the member over the edit
             CFilesWindow* another = (MainWindow->LeftPanel == this) ? MainWindow->RightPanel : MainWindow->LeftPanel;
-            if (someFilesChanged || !another->Is(ptZIPArchive) || StrICmp(another->GetZIPArchive(), GetZIPArchive()) != 0)
+            CSalHeapString dcName;
+            BOOL haveKey = GetArchiveCacheKey(dcName, 1);
+            BOOL anotherHasIt = FALSE;
+            if (haveKey && another->Is(ptZIPArchive))
             {
-                CSalHeapString dcName;                          // feature 095: was StrICpy into buf
-                if (dcName.Copy(GetZIPArchive(), 0, LowerCase)) // the disk cache stores the archive name in lowercase (allows case-insensitive comparison of the name from Windows file system)
+                CSalHeapString anotherKey;
+                anotherHasIt = another->GetArchiveCacheKey(anotherKey, 0) && strcmp(anotherKey.Get(), dcName.Get()) == 0;
+                if (anotherHasIt)
+                {
+                    // ... unless the archive changed on disk since the copies were made (the refresh that
+                    // reopens it - the other panel reopens it too): they are stale, and kept here F3 went
+                    // on showing the old content while both panels showed the archive. Compared with the
+                    // OTHER panel's listing - the state its kept copies come from; this panel's own size
+                    // may be the "refresh me" marker (-1: RefreshForConfig, RefreshPanelPath(force)), which
+                    // says nothing about the file (review of 109: comparing with it flushed, and marked
+                    // out of date, a copy the other panel was still editing)
+                    CQuadWord marker(-1, -1);
+                    CQuadWord listedSize = another->GetZIPArchiveSize();
+                    FILETIME listedDate = another->GetZIPArchiveDate();
+                    if (listedSize == marker) // the other panel is about to reopen: this panel's listing
+                    {
+                        listedSize = GetZIPArchiveSize();
+                        listedDate = GetZIPArchiveDate();
+                    }
+                    WIN32_FILE_ATTRIBUTE_DATA ad;
+                    if (!(listedSize == marker) &&
+                        (!SalGetFileAttributesEx(GetZIPArchive(), &ad) ||
+                         CompareFileTime(&ad.ftLastWriteTime, &listedDate) != 0 ||
+                         !(CQuadWord(ad.nFileSizeLow, ad.nFileSizeHigh) == listedSize)))
+                    {
+                        anotherHasIt = FALSE;
+                    }
+                }
+            }
+            if (someFilesChanged || !anotherHasIt)
+            {
+                if (haveKey)
+                {
+                    strcat(dcName.Get(), "\\");
                     DiskCache.FlushCache(dcName.Get());
+                }
                 else
                     TRACE_E(LOW_MEMORY);
             }
@@ -2066,6 +2107,73 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
     return ret;
 }
 
+void CFilesWindow::SetArchiveCacheKey109()
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::SetArchiveCacheKey109()");
+    CSalHeapString key;
+    TakeArchiveCacheKey(key); // forget any previous key (SetZIPArchive did too)
+    char* own = SalNameIdentityKeyAlloc(GetZIPArchive(), -1, 0);
+    if (own == NULL)
+    {
+        TRACE_E(LOW_MEMORY); // GetArchiveCacheKey() builds the same key on every use
+        return;
+    }
+    key.Adopt(own, strlen(own) + 1);
+    CFilesWindow* another = NULL;
+    if (MainWindow != NULL)
+        another = (MainWindow->LeftPanel == this) ? MainWindow->RightPanel : MainWindow->LeftPanel;
+    CSalArcKeyChoice choice = sakOwn;
+    CSalHeapString anotherKey;
+    if (another != NULL && another != this && another->Is(ptZIPArchive))
+    {
+        if (!another->GetArchiveCacheKey(anotherKey, 0))
+            choice = sakUnique; // low memory: the other key is unknown - never share blindly
+        else
+        {
+            BOOL keysEqual = strcmp(anotherKey.Get(), key.Get()) == 0;
+            // the archive's size and time as each panel read them when it opened it: a file cannot be
+            // the other one when they differ, and then the other panel's archive is not touched at all
+            // (it may lie on a share that stopped answering - the identity read would wait for it)
+            FILETIME myDate = GetZIPArchiveDate();
+            FILETIME anotherDate = another->GetZIPArchiveDate();
+            BOOL sizeTimeEqual = GetZIPArchiveSize() == another->GetZIPArchiveSize() &&
+                                 CompareFileTime(&myDate, &anotherDate) == 0;
+            // the identity is read whenever the keys could be shared - also when they are EQUAL (review
+            // of 109: the other panel's key may come from a spelling that names another file now)
+            CSalFileIdentity mine, theirs;
+            SalFileIdentityClear(&mine);
+            SalFileIdentityClear(&theirs);
+            BOOL idsRead = FALSE;
+            if (sizeTimeEqual)
+            {
+                idsRead = SalGetFileIdentity(GetZIPArchive(), FALSE, &mine, TRUE) &&
+                          SalGetFileIdentity(another->GetZIPArchive(), FALSE, &theirs, TRUE);
+            }
+            choice = SalArchiveCacheKeyChoice(keysEqual,
+                                              SalNameEqualOrdinalCI(GetZIPArchive(), -1, another->GetZIPArchive(), -1),
+                                              sizeTimeEqual, idsRead, mine, theirs);
+        }
+    }
+    if (choice == sakShare)
+        key.Swap(anotherKey);
+    else if (choice == sakUnique)
+    {
+        // the own key + 0x01 (a byte no path holds) + a number never used before in this process: no
+        // other archive's key equals it, so nothing is shared and the other panel's "does it show this
+        // archive?" test in PrepareCloseCurrentPath answers no
+        static DWORD uniqueKeyCounter = 0;
+        CSalHeapString unique;
+        if (unique.Printf("%s\x01%X", key.Get(), ++uniqueKeyCounter))
+            key.Swap(unique);
+        else
+        {
+            TRACE_E(LOW_MEMORY);
+            return; // stays empty: GetArchiveCacheKey builds the own key - see the low-memory note there
+        }
+    }
+    TakeArchiveCacheKey(key);
+}
+
 BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archivePath,
                                        int suggestedTopIndex, const char* suggestedFocusName,
                                        BOOL forceUpdate, BOOL* noChange, BOOL refreshListBox,
@@ -2332,6 +2440,7 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                     SetZIPArchive(archive);
                     SetZIPArchiveDate(archiveDate);
                     SetZIPArchiveSize(archiveSize);
+                    SetArchiveCacheKey109(); // feature 109: after the date and size (its pre-filter)
                     if (plugin != NULL)
                     {
                         PluginData.Init(pluginData, plugin->DLLName, plugin->Version,

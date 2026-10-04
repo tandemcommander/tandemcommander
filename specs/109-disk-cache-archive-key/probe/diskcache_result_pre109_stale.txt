@@ -1,0 +1,57 @@
+diskcache_probe (feature 109) pre109-stale
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre109\tandemcommander.exe
+Date    : 2026-10-04 22:28; ACP 1250
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited109>>"$(FullName)"; F3 viewer = cmd.exe /c type "$(FullName)">>view.log
+
+--- stale-same: archives 't.zip' (x.txt tag 9)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\stale-same\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\stale-same\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 2 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALD91.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [rewrite]: rewrote t.zip (x.txt tag 9) from outside; windows: no window
+          temporary copies: SALD91.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 4 [f3]: F3 in panel 1: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALD91.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 5 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALD91.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [leave]: leave panel 1: title '...e-same - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALD91.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 7 [leave]: leave panel 0: title '...e-same - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=9 markers=0 size=21
+          t.zip: COUNT 1
+   VERDICT: FAIL F3 at step 4 was given tag 1 with 0 edit(s) (expected tag 9 with 0); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 9 with 0)
+
+--- stale-subst: archives 't.zip' (x.txt tag 9)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\stale-subst\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [cd]: cd 'T:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 2 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALDF1.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [rewrite]: rewrote t.zip (x.txt tag 9) from outside; windows: no window
+          temporary copies: none
+   step 4 [f3]: F3 in panel 1: the viewer was given tag 9 with 0 edit(s); windows: no window
+          temporary copies: SALDF1.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 5 [f3]: F3 in panel 0: the viewer was given tag 9 with 0 edit(s); windows: no window
+          temporary copies: SALCCD.tmp\x.txt (tag 9, marker x0, 21 bytes); SALDF1.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 6 [leave]: leave panel 1: title '... - T:\ - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALCCD.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 7 [leave]: leave panel 0: title '...-subst - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=9 markers=0 size=21
+          t.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== summary ===
+case             verdict    archives (name=member tag+edits) | F3 given | copies after each step | why
+stale-same       FAIL       t.zip:x.txt=m9+0 | t1+0,t1+0,t1+0 | 0/0/1/1/1/1/1/0 | F3 at step 4 was given tag 1 with 0 edit(s) (expected tag 9 with 0); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 9 with 0)
+stale-subst      PASS       t.zip:x.txt=m9+0 | t1+0,t9+0,t9+0 | 0/0/1/0/1/2/1/0
+TOTAL: 1 PASS / 1 FAIL / 0 NOT DRIVEN; F3/F4 retries 0
+Left running: 0; fixture removed: True; registry restored+identical: True

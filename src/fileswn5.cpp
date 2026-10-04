@@ -795,14 +795,17 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                         return;
                     }
                     const char* zipPath = zipPathBuf.Get();
-                    // the archive file name should be compared case-insensitively (Windows file system), so we always convert it to lowercase;
-                    // feature 095: room for "\\" + ZIP path + "\\" + name + ":0x<pointer>"
-                    if (!dcFileNameBuf.Copy(GetZIPArchive(), strlen(zipPath) + strlen(f->Name) + 2 + 32, LowerCase))
+                    // feature 109: the archive's disk-cache key (one key exactly for one name by the file
+                    // system's rule, see GetArchiveCacheKey; the code-page lower case merged "ĥ.zip" with
+                    // "Ĺ.zip" and F3 showed the other archive's file); feature 095: room for "\\" + ZIP
+                    // path + "\\" + name + ":0x<pointer>"
+                    if (!GetArchiveCacheKey(dcFileNameBuf, strlen(zipPath) + strlen(f->Name) + 2 + 32))
                     {
                         TRACE_E(LOW_MEMORY);
                         return;
                     }
                     dcFileName = dcFileNameBuf.Get();
+                    size_t dcKeyLen = strlen(dcFileName); // the name inside the archive follows it + '\'
                     if (zipPath[0] != 0)
                     {
                         if (zipPath[0] != '\\')
@@ -838,13 +841,13 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                     // feature 095: the name handed to the archiver stays under 2 * MAX_PATH bytes (the old
                     // buffer: the longest one a plug-in has ever received) - longer ones are refused
                     CSalHeapString nameInArchiveBuf;
-                    if (strlen(dcFileName + strlen(GetZIPArchive()) + 1) >= 2 * MAX_PATH)
+                    if (strlen(dcFileName + dcKeyLen + 1) >= 2 * MAX_PATH)
                     {
                         SalMessageBox(HWindow, LoadStr(IDS_UNPACKTOOLONGNAME),
                                       LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                         return;
                     }
-                    if (!nameInArchiveBuf.Copy(dcFileName + strlen(GetZIPArchive()) + 1))
+                    if (!nameInArchiveBuf.Copy(dcFileName + dcKeyLen + 1))
                     {
                         TRACE_E(LOW_MEMORY);
                         return;

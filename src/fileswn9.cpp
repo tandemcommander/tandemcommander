@@ -1262,9 +1262,14 @@ void CFilesWindow::OfferArchiveUpdateIfNeededAux(HWND parent, int textID, BOOL* 
         // if edited files might be in the disk cache, drop them to ensure they are re-extracted when accessed again
         if (someFilesChanged)
         {
-            CSalHeapString buf;                          // feature 095: was char[MAX_PATH] + StrICpy
-            if (buf.Copy(GetZIPArchive(), 0, LowerCase)) // in the disk cache the archive name is in lowercase (allows case-insensitive comparison with Windows file system name)
+            // feature 109: the archive's disk-cache key + '\' (the members' names start with it; the
+            // bare key also flushed archives whose names merely start with this one's)
+            CSalHeapString buf;
+            if (GetArchiveCacheKey(buf, 1))
+            {
+                strcat(buf.Get(), "\\");
                 DiskCache.FlushCache(buf.Get());
+            }
             else
                 TRACE_E(LOW_MEMORY);
         }
@@ -1280,7 +1285,17 @@ void CFilesWindow::OfferArchiveUpdateIfNeeded(HWND parent, int textID, BOOL* arc
 
     CFilesWindow* otherPanel = MainWindow->LeftPanel == this ? MainWindow->RightPanel : MainWindow->LeftPanel;
     BOOL otherPanelArchMaybeUpdated = FALSE;
-    if (otherPanel->Is(ptZIPArchive) && SalNameEqualOrdinalCI(GetZIPArchive(), -1, otherPanel->GetZIPArchive(), -1))
+    // feature 109: the same archive = the same name, or the same disk-cache key (one file under another
+    // spelling - a SUBST drive, \\localhost\C$ - whose panels share the temporary copies)
+    BOOL otherHasIt = FALSE;
+    if (otherPanel->Is(ptZIPArchive))
+    {
+        otherHasIt = SalNameEqualOrdinalCI(GetZIPArchive(), -1, otherPanel->GetZIPArchive(), -1);
+        CSalHeapString myKey, otherKey;
+        if (!otherHasIt && GetArchiveCacheKey(myKey, 0) && otherPanel->GetArchiveCacheKey(otherKey, 0))
+            otherHasIt = strcmp(myKey.Get(), otherKey.Get()) == 0;
+    }
+    if (otherHasIt)
     { // the same archive is in the other panel, we must update it as well
         otherPanel->OfferArchiveUpdateIfNeededAux(parent, textID, &otherPanelArchMaybeUpdated);
         if (otherPanelArchMaybeUpdated)

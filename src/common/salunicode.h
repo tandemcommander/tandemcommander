@@ -391,3 +391,21 @@ BOOL SalPathHasPrefixOrdinalCI(const char* path, const char* prefix, int prefixL
 // '*pathBytes' (may be NULL) = the bytes of 'path' that 'dir' covers (the backslash excluded in
 // the "C:" case). An empty or NULL 'dir' holds nothing. The whole 'path' is used - no length cut.
 BOOL SalPathIsWithinOrdinalCI(const char* path, const char* dir, int* pathBytes);
+
+// feature 109: a KEY for the identity above - a byte string such that
+//     strcmp(key(a), key(b)) == 0  <=>  SalNameEqualOrdinalCI(a, b)
+// for any two byte strings (the whole strings; no backslash rule). For use where
+// identity must be decided by plain byte comparison - the disk cache compares its
+// keys with strcmp/strncmp and flushes by key prefix (an archive's members).
+// Valid WTF-8: every UTF-16 unit through the operating system's upper-case table
+// (the table CompareStringOrdinal(..., TRUE) uses - SalNameIdentityFoldUnit),
+// encoded back to WTF-8; an ASCII string is just upper-cased. Text that is not
+// valid WTF-8 (a legacy plug-in's code-page text): 0xFF (a byte valid WTF-8 never
+// holds) + the legacy byte fold (CharLowerA per byte) - the two tiers never meet.
+// Returns a malloc()ed key with 'reserve' more bytes after its terminator (room for
+// what the caller appends); NULL when memory is low. 'len' = bytes or -1.
+char* SalNameIdentityKeyAlloc(const char* s, int len, size_t reserve);
+
+// the per-unit fold behind SalNameIdentityKeyAlloc (exposed for saltests, which
+// prove it against CompareStringOrdinal over all 65,536 units)
+WCHAR SalNameIdentityFoldUnit(WCHAR c);

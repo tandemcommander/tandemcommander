@@ -5583,6 +5583,418 @@ static void TestArchiveEdit108()
     CHECK(RemoveDirectoryW(dir.c_str()));
 }
 
+// feature 109: the disk-cache key of an archive (SalNameIdentityKeyAlloc) and the rule for one
+// archive under two spellings (SalArchiveSharesCacheKey)
+static std::string Key109(const char* s, int len = -1)
+{
+    char* k = SalNameIdentityKeyAlloc(s, len, 0);
+    std::string r = k != NULL ? std::string(k) : std::string("<NULL>");
+    free(k);
+    return r;
+}
+
+static void TestDiskCacheKey109()
+{
+    // --- the per-unit fold IS the class representative of CompareStringOrdinal(..., TRUE), over
+    //     every one of the 65,536 units: (1) each unit equals its fold; (2) units sorted by that
+    //     comparison: neighbours that compare equal have one fold. (1) + (2) give
+    //     fold(u) == fold(v) <=> CompareStringOrdinal(u, v, TRUE) == CSTR_EQUAL
+    {
+        std::vector<WCHAR> all(65536);
+        int notInClass = 0, surrogateMoved = 0, mappedToSurrogate = 0;
+        for (int i = 0; i < 65536; i++)
+        {
+            WCHAR u = (WCHAR)i, f = SalNameIdentityFoldUnit(u);
+            all[i] = u;
+            if (CompareStringOrdinal(&u, 1, &f, 1, TRUE) != CSTR_EQUAL)
+                notInClass++;
+            BOOL sur = u >= 0xD800 && u <= 0xDFFF;
+            if (sur && f != u)
+                surrogateMoved++;
+            if (!sur && f >= 0xD800 && f <= 0xDFFF)
+                mappedToSurrogate++;
+        }
+        CHECK(notInClass == 0);
+        CHECK(surrogateMoved == 0); // lone surrogates stay lone, pairs stay pairs
+        CHECK(mappedToSurrogate == 0);
+        std::sort(all.begin(), all.end(), [](WCHAR a, WCHAR b)
+                  {
+                      int c = CompareStringOrdinal(&a, 1, &b, 1, TRUE);
+                      return c != CSTR_EQUAL ? c == CSTR_LESS_THAN : a < b;
+                  });
+        int split = 0, classes = 1;
+        for (int i = 1; i < 65536; i++)
+        {
+            if (CompareStringOrdinal(&all[i - 1], 1, &all[i], 1, TRUE) == CSTR_EQUAL)
+            {
+                if (SalNameIdentityFoldUnit(all[i - 1]) != SalNameIdentityFoldUnit(all[i]))
+                    split++;
+            }
+            else
+                classes++;
+        }
+        CHECK(split == 0);
+        CHECK(classes < 65536); // there are case pairs at all
+        for (int c = 'a'; c <= 'z'; c++)
+            CHECK(SalNameIdentityFoldUnit((WCHAR)c) == (WCHAR)(c - 32));
+        CHECK(SalNameIdentityFoldUnit(0x0131) != L'I'); // dotless i, long s, Kelvin: not ASCII letters
+        CHECK(SalNameIdentityFoldUnit(0x017F) != L'S');
+        CHECK(SalNameIdentityFoldUnit(0x212A) != L'K');
+    }
+
+    // --- archive names: the measured defect (CP1250: the old key, the code-page lower case, made
+    //     the first five "differ" pairs one archive) and names that are one name by the rule
+    static const char* const differ[][2] = {
+        {"C:\\t\\\xC4\xA5.zip", "C:\\t\\\xC4\xB9.zip"},           // h-circumflex / L-acute
+        {"C:\\t\\\xC3\x8D" "tem.7z", "C:\\t\\\xC3\x9D" "tem.7z"}, // I-acute / Y-acute
+        {"C:\\t\\\xC5\xBE.zip", "C:\\t\\\xC5\xBC.zip"},           // z-caron / z-dot
+        {"C:\\t\\\xE4\xB9\x9D.zip", "C:\\t\\\xE4\xB9\x8D.zip"},   // U+4E5D / U+4E4D
+        {"C:\\t\\\xD0\xBC.zip", "C:\\t\\\xD0\xBE.zip"},           // Cyrillic em / o
+        {"C:\\t\\\xC3\xA9.zip", "C:\\t\\e\xCC\x81.zip"},          // NFC / NFD: two files on NTFS
+        {"C:\\t\\a.zip", "C:\\t\\b.zip"},
+        {"C:\\t\\\xC4\xB1.zip", "C:\\t\\I.zip"},                  // dotless i / I
+        {"C:\\t\\\xC5\xBF.zip", "C:\\t\\S.zip"},                  // long s / S
+        {"C:\\t\\\xE2\x84\xAA.zip", "C:\\t\\K.zip"},              // Kelvin / K
+        {"C:\\t\\\xED\xA0\x80.zip", "C:\\t\\\xED\xA0\x81.zip"},   // two lone surrogates
+    };
+    for (int i = 0; i < _countof(differ); i++)
+    {
+        CHECK(Key109(differ[i][0]) != Key109(differ[i][1]));
+        CHECK(!SalNameEqualOrdinalCI(differ[i][0], -1, differ[i][1], -1));
+    }
+    if (GetACP() == 1250)
+    {
+        for (int i = 0; i < 5; i++)
+            CHECK(LegacyFoldEqual108(differ[i][0], differ[i][1])); // the old key merged them
+    }
+    static const char* const same[][2] = {
+        {"C:\\t\\\xC4\x8C.zip", "c:\\T\\\xC4\x8D.ZIP"},                         // C-caron / c-caron (the old key: two)
+        {"C:\\t\\\xC8\xBA.zip", "C:\\t\\\xE2\xB1\xA5.zip"},                     // A-stroke (2 bytes) / a-stroke (3 bytes)
+        {"C:\\Temp\\Arc.ZIP", "c:\\temp\\arc.zip"},
+        {"\\\\Server\\Share\\\xD0\x90.zip", "\\\\server\\SHARE\\\xD0\xB0.zip"}, // Cyrillic A / a
+        {"C:\\t\\\xED\xA0\x80.zip", "C:\\T\\\xED\xA0\x80.ZIP"},                 // a lone surrogate, other ASCII case
+        {"C:\\t\\\xF0\x9F\x93\x81.zip", "c:\\t\\\xF0\x9F\x93\x81.zip"},         // a pair (emoji)
+    };
+    for (int i = 0; i < _countof(same); i++)
+    {
+        CHECK(Key109(same[i][0]) == Key109(same[i][1]));
+        CHECK(SalNameEqualOrdinalCI(same[i][0], -1, same[i][1], -1));
+    }
+    if (GetACP() == 1250)
+        CHECK(!LegacyFoldEqual108(same[0][0], same[0][1])); // the old key: two keys for one archive
+    CHECK(Key109("C:\\Temp\\Arc.zip") == "C:\\TEMP\\ARC.ZIP"); // ASCII: upper case, nothing else
+    CHECK(Key109("") == "");
+    CHECK(Key109(NULL) == "");
+    CHECK(Key109("abc", 2) == "AB");
+    CHECK(Key109("\xC4\x8D", -1) == "\xC4\x8C"); // c-caron -> C-caron
+    {
+        char* k = SalNameIdentityKeyAlloc("ab", -1, 5); // the reserve is usable
+        CHECK(k != NULL);
+        if (k != NULL)
+        {
+            strcat(k, "\\x.tx");
+            CHECK(strcmp(k, "AB\\x.tx") == 0);
+            free(k);
+        }
+        k = SalNameIdentityKeyAlloc("\xC4\x8D", -1, 3); // also on the converting path
+        CHECK(k != NULL);
+        if (k != NULL)
+        {
+            strcat(k, "\\ab");
+            CHECK(strcmp(k, "\xC4\x8C\\ab") == 0);
+            free(k);
+        }
+        k = SalNameIdentityKeyAlloc("\xC8\xE8", -1, 3); // and on the legacy path
+        CHECK(k != NULL);
+        if (k != NULL)
+        {
+            strcat(k, "\\ab");
+            CHECK(strlen(k) == 6 && (BYTE)k[0] == 0xFF);
+            free(k);
+        }
+    }
+    // --- text that is not WTF-8 (a legacy plug-in's code-page text): 0xFF + the legacy fold; never
+    //     the key of valid text, even where the folded bytes happen to be valid UTF-8
+    {
+        std::string l1 = Key109("C:\\t\\\xC8\xE8.zip"); // C-caron + c-caron in CP1250: not UTF-8
+        std::string l2 = Key109("C:\\T\\\xE8\xC8.ZIP");
+        CHECK(!l1.empty() && (BYTE)l1[0] == 0xFF);
+        CHECK((l1 == l2) == (SalNameEqualOrdinalCI("C:\\t\\\xC8\xE8.zip", -1, "C:\\T\\\xE8\xC8.ZIP", -1) != FALSE));
+        CHECK(Key109("\xC1\x80\x80") != Key109("\xE1\x80\x80")); // CP1250 folds C1 to E1: still apart
+        CHECK(!SalNameEqualOrdinalCI("\xC1\x80\x80", -1, "\xE1\x80\x80", -1));
+    }
+    // --- the relation, randomly: key equality == SalNameEqualOrdinalCI, over strings built from
+    //     units with case pairs, look-alikes, both UTF-8 lengths, surrogates, combining marks
+    {
+        static const WCHAR alphabet[] = {L'a', L'A', L'k', L'K', L'i', L'I', L's', L'S', 0x0131, 0x0130, 0x017F, 0x212A,
+                                         0x010C, 0x010D, 0x0125, 0x0139, 0x013A, 0x023A, 0x2C65, 0x00E9, 0x0301, 0x00C9,
+                                         0x4E5D, 0x4E4D, 0x043C, 0x041C, 0x043E, 0x041E, 0xD800, 0xDC00, 0xD83D, 0xDCC1,
+                                         0x00DF, 0x1E9E, L'\\', L'.', 0x03A3, 0x03C3, 0x03C2, 0xFF21, 0xFF41};
+        unsigned rnd = 109;
+        auto next = [&rnd]() -> unsigned
+        {
+            rnd = rnd * 1103515245u + 12345u;
+            return (rnd >> 16) & 0x7FFF;
+        };
+        int bad = 0, equalPairs = 0;
+        for (int n = 0; n < 40000; n++)
+        {
+            WCHAR wa[8], wb[8];
+            int len = 1 + next() % 6;
+            for (int i = 0; i < len; i++)
+            {
+                wa[i] = alphabet[next() % _countof(alphabet)];
+                // b: a's unit, its fold, its linguistic lower case, or another unit
+                unsigned r = next() % 4;
+                WCHAR up = SalNameIdentityFoldUnit(wa[i]);
+                if (r == 0)
+                    wb[i] = wa[i];
+                else if (r == 1)
+                    wb[i] = up;
+                else if (r == 2)
+                    wb[i] = (WCHAR)(UINT_PTR)CharLowerW((LPWSTR)(UINT_PTR)up);
+                else
+                    wb[i] = alphabet[next() % _countof(alphabet)];
+            }
+            char a8[64], b8[64];
+            if (SalWToU8(wa, len, a8, sizeof(a8)) == 0 || SalWToU8(wb, len, b8, sizeof(b8)) == 0)
+            {
+                bad++;
+                continue;
+            }
+            BOOL eq = SalNameEqualOrdinalCI(a8, -1, b8, -1);
+            if (eq)
+                equalPairs++;
+            if ((Key109(a8) == Key109(b8)) != (eq != FALSE))
+                bad++;
+        }
+        CHECK(bad == 0);
+        CHECK(equalPairs > 1000);
+        // legacy and mixed: random bytes (mostly not UTF-8) against their byte-folded twins
+        int badL = 0;
+        for (int n = 0; n < 20000; n++)
+        {
+            char a[8], b[8];
+            int len = 1 + next() % 6;
+            for (int i = 0; i < len; i++)
+            {
+                a[i] = (char)(1 + next() % 255);
+                unsigned r = next() % 3;
+                if (r == 0)
+                    b[i] = a[i];
+                else if (r == 1)
+                    b[i] = (char)(BYTE)(UINT_PTR)CharUpperA((LPSTR)(UINT_PTR)(BYTE)a[i]);
+                else
+                    b[i] = (char)(1 + next() % 255);
+            }
+            a[len] = b[len] = 0;
+            if ((Key109(a) == Key109(b)) != (SalNameEqualOrdinalCI(a, -1, b, -1) != FALSE))
+                badL++;
+        }
+        CHECK(badL == 0);
+    }
+    // --- every pair of BMP characters whose UTF-8 bytes the code page's lower case merges (CP1250:
+    //     the 19,015 pairs of specs/108-.../probe/collision_set_cp1250.txt): the key keeps two names
+    //     apart exactly when the file system does
+    {
+        std::map<std::string, std::vector<WCHAR>> byOldKey;
+        for (int u = 0x80; u < 0x10000; u++)
+        {
+            if (u >= 0xD800 && u <= 0xDFFF)
+                continue;
+            WCHAR w = (WCHAR)u;
+            char u8[8];
+            int n = SalWToU8(&w, 1, u8, sizeof(u8));
+            if (n <= 1)
+                continue;
+            std::string old;
+            for (int i = 0; i < n - 1; i++)
+                old += (char)(BYTE)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)(BYTE)u8[i]);
+            byOldKey[old].push_back(w);
+        }
+        long long collisions = 0, wrong = 0;
+        for (auto& g : byOldKey)
+        {
+            for (size_t i = 0; i < g.second.size(); i++)
+            {
+                for (size_t j = i + 1; j < g.second.size(); j++)
+                {
+                    char a[8], b[8];
+                    SalWToU8(&g.second[i], 1, a, sizeof(a));
+                    SalWToU8(&g.second[j], 1, b, sizeof(b));
+                    BOOL eq = SalNameEqualOrdinalCI(a, -1, b, -1);
+                    if (!eq)
+                        collisions++;
+                    if ((Key109(a) == Key109(b)) != (eq != FALSE))
+                        wrong++;
+                }
+            }
+        }
+        CHECK(wrong == 0);
+        // 108's collision_set.py counted 19,015 such pairs among ASSIGNED characters (no private use,
+        // controls, unassigned code points); every non-surrogate BMP unit is taken here (22,497 on
+        // this machine's tables)
+        if (GetACP() == 1250)
+            CHECK(collisions >= 19015);
+        printf("TestDiskCacheKey109: %lld pairs merged by the old key and kept apart by the file system (ACP %u)\n",
+               collisions, GetACP());
+    }
+    // --- the flush prefix: key + '\\' takes the archive's members only ("p.zip" flushed "p.zip.zip")
+    {
+        std::string arc = Key109("C:\\t\\p.zip") + "\\";
+        std::string other = Key109("C:\\t\\p.zip.zip") + "\\x.txt";
+        std::string member = Key109("C:\\t\\P.ZIP") + "\\dir\\x.txt";
+        CHECK(strncmp(other.c_str(), arc.c_str(), arc.size()) != 0);
+        CHECK(strncmp(member.c_str(), arc.c_str(), arc.size()) == 0);
+        std::string bare = Key109("C:\\t\\p.zip");
+        CHECK(strncmp(other.c_str(), bare.c_str(), bare.size()) == 0); // what the bare key flushed
+    }
+    // --- CSalHeapString::Adopt / Swap
+    {
+        CSalHeapString s, t2;
+        char* k = SalNameIdentityKeyAlloc("x", -1, 3);
+        s.Adopt(k, 5);
+        CHECK(s.Get() == k && s.Size() == 5 && strcmp(s.Text(), "X") == 0);
+        CHECK(t2.Copy("y"));
+        s.Swap(t2);
+        CHECK(strcmp(s.Text(), "y") == 0 && strcmp(t2.Text(), "X") == 0 && t2.Size() == 5);
+        t2.Adopt(NULL, 0);
+        CHECK(t2.Get() == NULL && t2.Size() == 0);
+    }
+
+    // --- one archive under two spellings may share the key only by a certain identity
+    {
+        CSalFileIdentity a, b;
+        SalFileIdentityClear(&a);
+        a.Valid = a.Has64 = a.Has128 = TRUE;
+        a.Vsn32 = 0x1234;
+        a.Index64 = 0x00050000000012ABull;
+        a.Vsn64 = 0x1234567812345678ull;
+        memcpy(a.Id128, &a.Index64, 8);
+        a.Size = 1000;
+        a.MTime.dwLowDateTime = 100000000;
+        b = a;
+        CHECK(SalArchiveSharesCacheKey(a, b)); // 8.3 / SUBST / \\localhost\C$
+        b.Id128[0] ^= 1;
+        b.Index64 ^= 1;
+        CHECK(!SalArchiveSharesCacheKey(a, b)); // another file
+        b = a;
+        b.Vsn64 ^= 1;
+        CHECK(!SalArchiveSharesCacheKey(a, b)); // another volume
+        b = a;
+        b.SnapshotTag = 77;
+        CHECK(!SalArchiveSharesCacheKey(a, b)); // a shadow copy of it
+        b = a;
+        b.SnapshotUnknown = TRUE;
+        CHECK(!SalArchiveSharesCacheKey(a, b)); // the snapshot could not be read
+        b = a;
+        b.Has64 = b.Has128 = FALSE;
+        CHECK(!SalArchiveSharesCacheKey(a, b)); // no ids (WebDAV)
+        b = a;
+        memset(b.Id128, 0, 16);
+        b.Index64 = 0;
+        CHECK(!SalArchiveSharesCacheKey(a, b)); // ids not usable
+        b = a;
+        a.WeakIds = b.WeakIds = TRUE;
+        CHECK(SalArchiveSharesCacheKey(a, b)); // FAT: ids + equal metadata
+        b.Size = 1001;
+        CHECK(!SalArchiveSharesCacheKey(a, b)); // FAT: another file at that directory entry
+        b = a;
+        b.MTime.dwLowDateTime += 30000000;
+        CHECK(!SalArchiveSharesCacheKey(a, b));
+        b = a;
+        b.Valid = FALSE;
+        CHECK(!SalArchiveSharesCacheKey(a, b));
+
+        // review of 109: which key a panel takes (SalArchiveCacheKeyChoice) - an EQUAL key is not
+        // trusted by itself; 'other' = another file, 'noids' = a file system without ids (WebDAV)
+        CSalFileIdentity other = a, noids = a;
+        b = a;
+        a.WeakIds = b.WeakIds = other.WeakIds = noids.WeakIds = FALSE;
+        other.Index64 ^= 1;
+        other.Id128[0] ^= 1;
+        noids.Has64 = noids.Has128 = FALSE;
+        // keys differ: share only on a certain identity
+        CHECK(SalArchiveCacheKeyChoice(FALSE, FALSE, TRUE, TRUE, a, b) == sakShare);   // SUBST / UNC
+        CHECK(SalArchiveCacheKeyChoice(FALSE, FALSE, TRUE, TRUE, a, other) == sakOwn);
+        CHECK(SalArchiveCacheKeyChoice(FALSE, FALSE, TRUE, FALSE, a, b) == sakOwn);    // unreadable
+        CHECK(SalArchiveCacheKeyChoice(FALSE, FALSE, FALSE, FALSE, a, b) == sakOwn);   // size / time differ
+        // keys equal, names differ (the other key came from another spelling): the blocker - 'resubst'
+        CHECK(SalArchiveCacheKeyChoice(TRUE, FALSE, TRUE, TRUE, a, other) == sakUnique);
+        CHECK(SalArchiveCacheKeyChoice(TRUE, FALSE, TRUE, TRUE, a, b) == sakShare);
+        CHECK(SalArchiveCacheKeyChoice(TRUE, FALSE, TRUE, FALSE, a, b) == sakUnique);  // cannot tell
+        CHECK(SalArchiveCacheKeyChoice(TRUE, FALSE, TRUE, TRUE, a, noids) == sakUnique);
+        CHECK(SalArchiveCacheKeyChoice(TRUE, FALSE, FALSE, FALSE, a, b) == sakUnique);
+        // keys equal, one name: shared as in every release unless the ids say "another file" (a drive
+        // re-pointed under the same spelling) or the size / time differ
+        CHECK(SalArchiveCacheKeyChoice(TRUE, TRUE, TRUE, TRUE, a, b) == sakShare);
+        CHECK(SalArchiveCacheKeyChoice(TRUE, TRUE, TRUE, TRUE, a, noids) == sakShare);  // WebDAV twice
+        CHECK(SalArchiveCacheKeyChoice(TRUE, TRUE, TRUE, FALSE, a, b) == sakShare);     // unreadable
+        CHECK(SalArchiveCacheKeyChoice(TRUE, TRUE, TRUE, TRUE, a, other) == sakUnique);
+        CHECK(SalArchiveCacheKeyChoice(TRUE, TRUE, FALSE, FALSE, a, b) == sakUnique);
+    }
+    // --- real files (%TEMP%): one file through another case, its 8.3 name, \\localhost\C$ shares;
+    //     another file does not
+    WCHAR t[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, t);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping the file part of TestDiskCacheKey109 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(t) + L"saltests-109-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    std::wstring f1 = dir + L"\\longarchivename109.zip", f2 = dir + L"\\other109.zip";
+    const std::wstring* files[2] = {&f1, &f2};
+    for (int i = 0; i < 2; i++)
+    {
+        HANDLE h = CreateFileW(files[i]->c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        CHECK(h != INVALID_HANDLE_VALUE);
+        if (h != INVALID_HANDLE_VALUE)
+        {
+            DWORD w;
+            WriteFile(h, "PK\x05\x06", 4, &w, NULL);
+            CloseHandle(h);
+        }
+    }
+    auto u8of = [](const std::wstring& w) -> std::string
+    {
+        char b[4 * MAX_PATH];
+        return SalWToU8(w.c_str(), -1, b, sizeof(b)) != 0 ? std::string(b) : std::string();
+    };
+    auto idOf = [&](const std::wstring& w, CSalFileIdentity* id) -> BOOL
+    { return SalGetFileIdentity(u8of(w).c_str(), FALSE, id, TRUE); };
+    CSalFileIdentity i1, i2, ia;
+    CHECK(idOf(f1, &i1) && idOf(f2, &i2));
+    CHECK(SalArchiveSharesCacheKey(i1, i1));
+    CHECK(!SalArchiveSharesCacheKey(i1, i2));
+    std::wstring upper = f1;
+    for (size_t i = 0; i < upper.size(); i++)
+        upper[i] = (WCHAR)(UINT_PTR)CharUpperW((LPWSTR)(UINT_PTR)upper[i]);
+    CHECK(idOf(upper, &ia) && SalArchiveSharesCacheKey(i1, ia));
+    CHECK(Key109(u8of(upper).c_str()) == Key109(u8of(f1).c_str())); // and one key anyway
+    WCHAR shortName[MAX_PATH];
+    DWORD sn = GetShortPathNameW(f1.c_str(), shortName, MAX_PATH);
+    if (sn > 0 && sn < MAX_PATH && _wcsicmp(shortName, f1.c_str()) != 0)
+    {
+        CHECK(Key109(u8of(shortName).c_str()) != Key109(u8of(f1).c_str())); // two keys by name ...
+        CHECK(idOf(shortName, &ia) && SalArchiveSharesCacheKey(i1, ia));     // ... one file by identity
+    }
+    else
+        printf("TestDiskCacheKey109: no 8.3 names in %ls - the short-name check is skipped\n", t);
+    if (t[1] == L':')
+    {
+        std::wstring unc = std::wstring(L"\\\\localhost\\") + t[0] + L"$" + f1.substr(2);
+        if (idOf(unc, &ia) && ia.Has64)
+            CHECK(SalArchiveSharesCacheKey(i1, ia)); // the loopback administrative share
+        else
+            printf("TestDiskCacheKey109: %ls not reachable - the UNC check is skipped\n", unc.c_str());
+    }
+    DeleteFileW(f1.c_str());
+    DeleteFileW(f2.c_str());
+    CHECK(RemoveDirectoryW(dir.c_str()));
+}
+
 int main()
 {
     TestConversions();
@@ -5630,6 +6042,7 @@ int main()
     TestPackSelf106();
     TestFolderAlias107();
     TestArchiveEdit108();
+    TestDiskCacheKey109();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

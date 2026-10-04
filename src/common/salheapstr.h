@@ -100,6 +100,29 @@ public:
         BufSize = 0;
     }
 
+    // feature 109: takes over a malloc()ed buffer of 'size' bytes holding a string (or NULL:
+    // the string becomes empty); the previous buffer is freed
+    void Adopt(char* buf, size_t size)
+    {
+        Free();
+        if (buf != NULL)
+        {
+            Buf = buf;
+            BufSize = size;
+        }
+    }
+
+    // feature 109: exchanges the buffers of two strings
+    void Swap(CSalHeapString& other)
+    {
+        char* b = Buf;
+        size_t s = BufSize;
+        Buf = other.Buf;
+        BufSize = other.BufSize;
+        other.Buf = b;
+        other.BufSize = s;
+    }
+
 private:
     char* Buf;
     size_t BufSize;

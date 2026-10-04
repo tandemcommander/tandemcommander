@@ -1,0 +1,42 @@
+diskcache_probe (feature 109) fixed-renet
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-05 00:42; ACP 1250
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited109>>"$(FullName)"; F3 viewer = cmd.exe /c type "$(FullName)">>view.log
+
+--- renet: archives 'A\arc.zip' (x.txt tag 1), 'B\arc.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'W:\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\renet\A\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 2 [f3]: F3 in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALD92.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 3 [leave]: leave panel 1: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALD92.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 4 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\renet' (field held it: True); title '... renet - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALD92.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 5 [renet]: W: re-mapped to \\localhost\...\B
+          temporary copies: SALD92.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [cd]: cd 'W:\arc.zip' (field held it: True); title '...rc.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALD92.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 7 [f3]: F3 in panel 1: the viewer was given tag 2 with 0 edit(s); windows: no window
+          temporary copies: SALC9F.tmp\x.txt (tag 2, marker x0, 21 bytes); SALD92.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 8 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SALC9F.tmp\x.txt (tag 2, marker x1, 32 bytes); SALD92.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 9 [leave]: leave panel 1: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "W:\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] W:\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] W:\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&onfirm Password: | [Button id=3007]  Encrypti... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 05.10.2026, 0:43:15 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SALD92.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 10 [leave]: leave panel 0: title '...09 - A - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          A\arc.zip: ENTRY x.txt tag=1 markers=0 size=21
+          A\arc.zip: COUNT 1
+          B\arc.zip: ENTRY x.txt tag=2 markers=1 size=32
+          B\arc.zip: COUNT 1
+   VERDICT: PASS 
+NET USE : W: removed (exists now: False)
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+=== summary ===
+case             verdict    archives (name=member tag+edits) | F3 given | copies after each step | why
+renet            PASS       A\arc.zip:x.txt=m1+0 B\arc.zip:x.txt=m2+1 | t1+0,t2+0 | 0/0/1/1/1/1/1/2/2/1/0
+TOTAL: 1 PASS / 0 FAIL / 0 NOT DRIVEN; F3/F4 retries 0
+Left running: 0; fixture removed: True; registry restored+identical: True

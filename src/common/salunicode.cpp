@@ -1378,3 +1378,99 @@ BOOL SalPathIsWithinOrdinalCI(const char* path, const char* dir, int* pathBytes)
         *pathBytes = n;
     return TRUE;
 }
+
+// feature 109: see salunicode.h
+
+typedef WCHAR(NTAPI* FSalRtlUpcaseUnicodeChar)(WCHAR c);
+
+// ntdll's RtlUpcaseUnicodeChar: the upper-case table of the operating system - the one
+// CompareStringOrdinal(..., TRUE) folds with (saltests proves the two agree over every unit);
+// looked up once, NULL only if ntdll had no such export (it always has)
+static FSalRtlUpcaseUnicodeChar SalGetRtlUpcase()
+{
+    static FSalRtlUpcaseUnicodeChar fn = NULL;
+    static volatile LONG ready = 0;
+    if (!ready)
+    {
+        HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+        fn = ntdll != NULL ? (FSalRtlUpcaseUnicodeChar)(void*)GetProcAddress(ntdll, "RtlUpcaseUnicodeChar") : NULL;
+        InterlockedExchange(&ready, 1);
+    }
+    return fn;
+}
+
+WCHAR SalNameIdentityFoldUnit(WCHAR c)
+{
+    if (c < 0x80)
+        return (WCHAR)SalAsciiUpper((BYTE)c);
+    FSalRtlUpcaseUnicodeChar up = SalGetRtlUpcase();
+    // without the table a non-ASCII unit stays itself: two names that differ only in the case
+    // of such a unit then get two keys (two copies) - never one key for two different names
+    return up != NULL ? up(c) : c;
+}
+
+char* SalNameIdentityKeyAlloc(const char* s, int len, size_t reserve)
+{
+    if (s == NULL)
+    {
+        s = "";
+        len = 0;
+    }
+    if (len < 0)
+        len = (int)strlen(s);
+    if (reserve > (size_t)0x7FFFFFF0 - 8 || (size_t)len > (size_t)0x7FFFFFF0 - 8 - reserve)
+        return NULL;
+    if (SalBytesAreASCII(s, len)) // the common case: no conversion
+    {
+        char* key = (char*)malloc((size_t)len + 1 + reserve);
+        if (key == NULL)
+            return NULL;
+        for (int i = 0; i < len; i++)
+            key[i] = (char)SalAsciiUpper((BYTE)s[i]);
+        key[len] = 0;
+        return key;
+    }
+    WCHAR stackW[SAL_IDENT_STACK_UNITS];
+    WCHAR* heapW = NULL;
+    int units = 0;
+    const WCHAR* w = SalIdentToW(s, len, stackW, &heapW, &units);
+    if (w == NULL)
+    {
+        if (SalU8ToW(s, len, NULL, 0) > 0)
+            return NULL; // valid WTF-8, the conversion buffer could not be allocated: low memory
+        // not WTF-8: the legacy tier
+        char* key = (char*)malloc((size_t)len + 2 + reserve);
+        if (key == NULL)
+            return NULL;
+        const BYTE* lower = SalLegacyLowerTable();
+        key[0] = (char)0xFF;
+        for (int i = 0; i < len; i++)
+            key[i + 1] = (char)lower[(BYTE)s[i]];
+        key[len + 1] = 0;
+        return key;
+    }
+    WCHAR* folded = (WCHAR*)malloc(((size_t)units + 1) * sizeof(WCHAR));
+    char* key = NULL;
+    if (folded != NULL)
+    {
+        for (int i = 0; i < units; i++)
+            folded[i] = SalNameIdentityFoldUnit(w[i]);
+        folded[units] = 0;
+        // the fold keeps every surrogate unit as it is and maps no other unit to a surrogate
+        // (saltests), so lone surrogates stay lone and pairs stay pairs: WTF-8 encodes it 1:1
+        int need = SalWToU8(folded, units, NULL, 0); // counts the terminator
+        if (need > 0 && (size_t)need <= (size_t)0x7FFFFFF0 - reserve)
+        {
+            key = (char*)malloc((size_t)need + reserve);
+            if (key != NULL && SalWToU8(folded, units, key, need) != need)
+            {
+                free(key);
+                key = NULL;
+            }
+        }
+        free(folded);
+    }
+    if (heapW != NULL)
+        free(heapW);
+    return key;
+}

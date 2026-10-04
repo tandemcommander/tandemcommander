@@ -4,7 +4,9 @@
 
 #pragma once
 
-#define NUM_OF_CHECKTHREADS 30                   // maximum number of threads for "non-blocking" path accessibility tests
+#include "salheapstr.h" // feature 109: CFilesWindowAncestor::ZIPArchiveCacheKey (header-only, no dependencies)
+
+#define NUM_OF_CHECKTHREADS 30                  // maximum number of threads for "non-blocking" path accessibility tests
 #define ICONOVR_REFRESH_PERIOD 2000              // minimum interval between icon-overlay refreshes in the panel (see IconOverlaysChangedOnPath)
 #define MIN_DELAY_BETWEENINACTIVEREFRESHES 2000  // minimum refresh interval when the main window is inactive
 #define MAX_DELAY_BETWEENINACTIVEREFRESHES 10000 // maximum refresh interval when the main window is inactive
@@ -500,7 +502,10 @@ private:
     // when we are inside an archive:
     CSalamanderDirectory* ArchiveDir;   // content of the open archive; basic data - array of CFileData
     char ZIPArchive[SAL_MAX_PATH_UTF8]; // path to the open archive (UTF-8, long-path capable)
-    char ZIPPath[SAL_MAX_PATH_UTF8];    // path inside the open archive (UTF-8)
+    // feature 109: the disk-cache key of the open archive - the prefix of its members' keys, set by
+    // SetArchiveCacheKey109() when the archive is opened; empty = built from ZIPArchive on use
+    CSalHeapString ZIPArchiveCacheKey;
+    char ZIPPath[SAL_MAX_PATH_UTF8]; // path inside the open archive (UTF-8)
     FILETIME ZIPArchiveDate;            // archive date (used for the ".." date and during refresh)
     CQuadWord ZIPArchiveSize;           // archive size - used to detect archive changes
 
@@ -586,7 +591,17 @@ public:
     void SetMonitorChanges(BOOL monitorChanges) { MonitorChanges = monitorChanges; }
     void SetPanelType(CPanelType type) { PanelType = type; }
     void SetZIPPath(const char* path);
-    void SetZIPArchive(const char* archive);
+    void SetZIPArchive(const char* archive); // feature 109: also forgets ZIPArchiveCacheKey
+
+    // feature 109: copies the disk-cache key of the open archive into 'key' with 'reserve' more bytes
+    // after its terminator. Every name of a member in the disk cache starts with it + '\\'; built by
+    // SalNameIdentityKeyAlloc (two archive names get one key exactly when they are one name by the
+    // file system's rule - the code-page byte fold of the old key merged e.g. "ĥ.zip" and "Ĺ.zip").
+    // FALSE when memory is low.
+    BOOL GetArchiveCacheKey(CSalHeapString& key, size_t reserve);
+    // feature 109: stores 'key' as the disk-cache key of the open archive (the strings exchange their
+    // buffers; 'key' gets the previous one); only CFilesWindow::SetArchiveCacheKey109() calls it
+    void TakeArchiveCacheKey(CSalHeapString& key) { ZIPArchiveCacheKey.Swap(key); }
     void SetArchiveDir(CSalamanderDirectory* dir) { ArchiveDir = dir; }
     void SetZIPArchiveDate(FILETIME& time) { ZIPArchiveDate = time; }
     void SetZIPArchiveSize(const CQuadWord& size) { ZIPArchiveSize = size; }
@@ -1114,6 +1129,13 @@ public:
                              BOOL* noChange = NULL, BOOL refreshListBox = TRUE, int* failReason = NULL,
                              BOOL isRefresh = FALSE, BOOL canFocusFileName = FALSE, BOOL isHistory = FALSE,
                              BOOL* refusedTooLong = NULL); // 'refusedTooLong' (feature 097): gets TRUE only when FALSE is returned because the path is too long for the archive's handler (or the path inside the archive is) - the panel was not touched
+    // feature 109: sets ZIPArchiveCacheKey of the archive just opened (ZIPArchive): its own key, or the
+    // other panel's key when the other panel shows the SAME FILE under another spelling (8.3 name, SUBST
+    // drive, \\localhost\C$, ...; SalArchiveSharesCacheKey) - then the two panels share the temporary
+    // copies of the members as they do under one spelling, and two copies of one member cannot diverge.
+    // The identities are read only when both panels' archives have equal size and time (ZIPArchiveSize,
+    // ZIPArchiveDate - set them first). Called by ChangePathToArchive right after SetZIPArchive.
+    void SetArchiveCacheKey109();
     // change path to the plug-in FS;
     // if suggestedTopIndex != -1 the top index will be set;
     // if suggestedFocusName != NULL and present in the new list, it will be focused;

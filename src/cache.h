@@ -85,9 +85,12 @@ public:
     // is the tmp-file without any link? (it still has no link/it has no link anymore?)
     BOOL IsLocked() { return LockObject.Count == 0 && NewCount == 0; }
 
-    BOOL NameEqual(const char* name) { return StrICmp(Name, name) == 0; }
+    // feature 109: the keys ('Name') are compared byte for byte only (CCacheDirData::GetNameIndex,
+    // FlushCache by prefix) - the plug-ins' contract ("compared case-sensitively"); the core builds
+    // an archive's keys with SalNameIdentityKeyAlloc (CFilesWindowAncestor::GetArchiveCacheKey).
+    // The unused NameEqual (StrICmp) was removed.
     // feature 092: two tmp-names are one file on disk by the file system's rule (partner of
-    // the tests in CCacheDirData::ContainTmpName); NameEqual above is the cache key - not this stage
+    // the tests in CCacheDirData::ContainTmpName)
     BOOL TmpNameEqual(const char* tmpName) { return SalNameEqualOrdinalCI(TmpName, -1, tmpName, -1); }
 
     // waits until the tmp-file is prepared or until the method ReleaseName() is called

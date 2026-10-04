@@ -1499,3 +1499,63 @@ plugin architecture preservation, UI consistency.
     subset 120/0, 106 packself 70/0/4, 092 focus 10/10. saltests 13,756 ->
     13,835. Interface stays 107, no new string, no registry change. Records:
     `specs/108-archive-edit-name-collision/fix-log.md`.
+- 109-disk-cache-archive-key: **an archive's temporary copies belong to
+  that archive only.** NEXT-WORK item 5 queue entry 1 (from 108) and 092's
+  "disk cache" item. The disk cache keyed an archive by its code-page
+  lower-cased name (`LowerCase` on UTF-8) and compared keys with `strcmp`.
+  Measured first (`research.md`), wider than recorded:
+  - `ĥ.zip` / `Ĺ.zip` (CP1250 folds their bytes together) in two panels:
+    one shared copy; leaving the archives packed it into BOTH (each ends
+    with the first one's file + both edits); F3 in the second was given the
+    first's file, also with a pending edit. ZIP and 7z, every release.
+  - The flush took the bare key as a PREFIX: leaving `p.zip` flushed
+    `p.zip.zip`'s copies; a copy being edited there was marked out of date
+    and the next F4 (`CCacheData::GetName` -> `CleanFromDisk`) extracted
+    the member over the unsaved-to-archive edit - lost silently.
+  - Both panels on one archive: the copies were kept "for the other panel"
+    also when a refresh reopened the archive because another program had
+    changed it - F3 showed the old content (`stale-same`). The first 109
+    version spread this to the SUBST pair it unifies; its own probe row
+    caught it.
+  - Case and 8.3 spellings already arrive canonical (`ChangeDir`
+    enumerates each component); SUBST and `\\localhost\C$` gave one member
+    two copies - the second update replaced the first edit.
+  - **Key rule** (`salunicode.{h,cpp}`): `SalNameIdentityKeyAlloc` -
+    `strcmp(key(a), key(b)) == 0` <=> `SalNameEqualOrdinalCI(a, b)`; valid
+    WTF-8 through `SalNameIdentityFoldUnit` (ntdll `RtlUpcaseUnicodeChar`,
+    proven equal to `CompareStringOrdinal`'s classes over all 65,536 units
+    in saltests - `LCMapStringEx` upper case is linguistic and was not
+    used), legacy text = 0xFF + `CharLowerA` per byte (tiers never meet).
+    New byte-compared identity keys MUST use it.
+  - **Core, both sides in one change**: one key per open archive
+    (`CFilesWindowAncestor::ZIPArchiveCacheKey`, `GetArchiveCacheKey`,
+    set by `SetArchiveCacheKey109` in `ChangePathToArchive`, forgotten by
+    `SetZIPArchive`) for F3 (`fileswn5`), F4 (`fileswn6`; the archiver's
+    name taken after the key's own length), both flushes (`fileswn2`
+    `PrepareCloseCurrentPath`, `fileswn9`; key + `\`) and the
+    "other panel shows this archive?" test (keys equal AND the archive
+    still has the size/time the other panel listed). Same file under another spelling: the
+    other panel's key is taken when size/time match and
+    `SalArchiveSharesCacheKey` (`salsamefile.h`: equal usable ids, equal
+    known snapshot, FAT also equal metadata) says one file; uncertain = own
+    key. An EQUAL key is never trusted alone (review blocker: a key taken
+    from `T:\arc.zip` outlived the re-pointed SUBST and shared another
+    file's copies): `SalArchiveCacheKeyChoice` reads the identity whenever a
+    share could happen; an equal key without certainty (other than the same
+    name with no sign of another file) gets a unique suffix (0x01 + counter).
+    The freshness test compares with the OTHER panel's listing (the
+    refresh marker -1 of `RefreshForConfig` / `RefreshPanelPath(force)` made
+    it flush a copy the other panel still edited); `OfferArchiveUpdateIfNeeded`
+    takes name OR key. Queued (NEXT-WORK item 5, 2a): a flush can mark a copy
+    with a pending edit out of date at all (pre-existing). `cache.cpp`
+    unchanged (plug-in keys byte-compared by contract); dead
+    `CCacheData::NameEqual` removed; `CSalHeapString::Adopt`/`Swap`.
+  - Probe `probe/diskcache_probe.ps1` (F3 through an external viewer that
+    logs what it was given; SUBST / UNC / re-pointed drive rows): 18 / 0;
+    pre-109 9 / 9 (incl. `stale-same`). Regressions unchanged: 108 namecoll 28/2 (the
+    known ZIP plug-in rows) and `-CacheKeyRows` now 2/0, 096 17/17, 097
+    arcwork subset 120/0, 095 longarc 60/0. saltests 13,835 -> 13,973.
+    Independent review: REJECT (the equal-key blocker) - fixed; re-review ACCEPT
+    (left: equal size + 100 ns time under one re-pointed letter; the OOM key fallback).
+    Interface stays 107, no new string, no registry change. Records:
+    `specs/109-disk-cache-archive-key/fix-log.md`.

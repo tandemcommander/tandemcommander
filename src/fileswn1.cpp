@@ -358,6 +358,24 @@ void CFilesWindowAncestor::SetZIPArchive(const char* archive)
 {
     CALL_STACK_MESSAGE_NONE
     strcpy(ZIPArchive, archive);
+    ZIPArchiveCacheKey.Free(); // feature 109: the key belongs to the previous archive
+}
+
+BOOL CFilesWindowAncestor::GetArchiveCacheKey(CSalHeapString& key, size_t reserve)
+{
+    CALL_STACK_MESSAGE_NONE
+    if (ZIPArchiveCacheKey.Get() != NULL)
+        return key.Copy(ZIPArchiveCacheKey.Get(), reserve);
+    // not set (SetArchiveCacheKey109 ran out of memory): the key built from the name, as every user
+    // of the key gets it the same way while the archive is open
+    char* k = SalNameIdentityKeyAlloc(ZIPArchive, -1, reserve);
+    if (k == NULL)
+    {
+        key.Free();
+        return FALSE;
+    }
+    key.Adopt(k, strlen(k) + 1 + reserve);
+    return TRUE;
 }
 
 BOOL CFilesWindowAncestor::SamePath(CFilesWindowAncestor* other)
