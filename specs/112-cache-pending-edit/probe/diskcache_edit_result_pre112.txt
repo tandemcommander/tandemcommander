@@ -1,0 +1,336 @@
+diskcache_edit_probe (feature 112) pre-112
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre112\tandemcommander.exe
+Date    : 2026-10-06 00:15; ACP 1250; desktop 'tc_probe_72352'
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited112>>"$(FullName)"; F3 viewer = cmd.exe /c type "$(FullName)">>view.log
+
+--- own-F3: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode off
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL8DE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL8DE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4 2 P1]: F4 y.txt in panel 1: windows: no window
+          temporary copies: SAL8DE.tmp\x.txt (tag 1, marker x1, 32 bytes); SAL8DE.tmp\y.txt (tag 2, marker x1, 32 bytes)
+   step 4 [leave P1]: leave panel 1: title '...own-F3 - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:15:23 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL8DE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL8DE.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [leave P0]: leave panel 0: title '...own-F3 - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=1 markers=0 size=21
+          t.zip: ENTRY y.txt tag=2 markers=1 size=32
+          t.zip: COUNT 2
+   VERDICT: FAIL x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+
+--- own-F4: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode off
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F4\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL73E.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F4\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL73E.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4 2 P1]: F4 y.txt in panel 1: windows: no window
+          temporary copies: SAL73E.tmp\x.txt (tag 1, marker x1, 32 bytes); SAL73E.tmp\y.txt (tag 2, marker x1, 32 bytes)
+   step 4 [leave P1]: leave panel 1: title '...own-F4 - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F4\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F4\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F4\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:16:08 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL73E.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL73E.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 6 [leave P0]: leave panel 0: title '...own-F4 - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F4\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F4\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F4\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:16:23 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY y.txt tag=2 markers=1 size=32
+          t.zip: ENTRY x.txt tag=1 markers=1 size=32
+          t.zip: COUNT 2
+   VERDICT: FAIL x.txt: 1 edit(s) packed (expected 2)
+
+--- ext-ctrlR: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode off
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL389.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL389.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [rewrite 1 P1]: rewrote t.zip from outside (x.txt tag 1); windows: no window
+          temporary copies: SAL389.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 4 [refresh P1]: Ctrl+R in panel 1: title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL389.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL389.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [leave P0]: leave panel 0: title '...-ctrlR - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=1 markers=0 size=21
+          t.zip: ENTRY y.txt tag=2 markers=0 size=21
+          t.zip: COUNT 2
+   VERDICT: FAIL x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+
+--- ext-x: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode off
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-x\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SALBA1.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-x\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALBA1.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [rewrite 9 P1]: rewrote t.zip from outside (x.txt tag 9); windows: no window
+          temporary copies: SALBA1.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 4 [refresh P1]: Ctrl+R in panel 1: title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALBA1.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 9 with 0 edit(s); windows: no window
+          temporary copies: SALBA1.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 6 [leave P0]: leave panel 0: title '... ext-x - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-x\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=9 markers=0 size=21
+          t.zip: ENTRY y.txt tag=10 markers=0 size=22
+          t.zip: COUNT 2
+   VERDICT: FAIL x.txt holds member 9 (expected 1); x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 9 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+
+--- own-F3@net: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode net
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=0, Remote Do Not Refresh on Activation=1
+   step 0 [cd P0]: cd 'W:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL425.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'W:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL425.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4 2 P1]: F4 y.txt in panel 1: windows: no window
+          temporary copies: SAL425.tmp\x.txt (tag 1, marker x1, 32 bytes); SAL425.tmp\y.txt (tag 2, marker x1, 32 bytes)
+   step 4 [leave P1]: leave panel 1: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "W:\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] W:\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] W:\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&onfirm Password: | [Button id=3007]  Encryption... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:18:22 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL425.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL425.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [leave P0]: leave panel 0: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "W:\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=1 markers=0 size=21
+          t.zip: ENTRY y.txt tag=2 markers=1 size=32
+          t.zip: COUNT 2
+   VERDICT: FAIL x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+NET USE : W: removed (exists now: False)
+
+--- own-F4@net: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode net
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=0, Remote Do Not Refresh on Activation=1
+   step 0 [cd P0]: cd 'W:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL380.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'W:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL380.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4 2 P1]: F4 y.txt in panel 1: windows: no window
+          temporary copies: SAL380.tmp\x.txt (tag 1, marker x1, 32 bytes); SAL380.tmp\y.txt (tag 2, marker x1, 32 bytes)
+   step 4 [leave P1]: leave panel 1: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "W:\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] W:\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] W:\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&onfirm Password: | [Button id=3007]  Encryption... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:19:07 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL380.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL380.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 6 [leave P0]: leave panel 0: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "W:\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] W:\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] W:\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&onfirm Password: | [Button id=3007]  Encryption... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:19:22 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY y.txt tag=2 markers=1 size=32
+          t.zip: ENTRY x.txt tag=1 markers=1 size=32
+          t.zip: COUNT 2
+   VERDICT: FAIL x.txt: 1 edit(s) packed (expected 2)
+NET USE : W: removed (exists now: False)
+
+--- ext-ctrlR@net: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode net
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=0, Remote Do Not Refresh on Activation=1
+   step 0 [cd P0]: cd 'W:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL152.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'W:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL152.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [rewrite 1 P1]: rewrote t.zip from outside (x.txt tag 1); windows: no window
+          temporary copies: SAL152.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 4 [refresh P1]: Ctrl+R in panel 1: title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL152.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL152.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [leave P0]: leave panel 0: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "W:\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=1 markers=0 size=21
+          t.zip: ENTRY y.txt tag=2 markers=0 size=21
+          t.zip: COUNT 2
+   VERDICT: FAIL x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+NET USE : W: removed (exists now: False)
+
+--- ext-x@net: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode net
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=0, Remote Do Not Refresh on Activation=1
+   step 0 [cd P0]: cd 'W:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SALA73.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'W:\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALA73.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [rewrite 9 P1]: rewrote t.zip from outside (x.txt tag 9); windows: no window
+          temporary copies: SALA73.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 4 [refresh P1]: Ctrl+R in panel 1: title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALA73.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 9 with 0 edit(s); windows: no window
+          temporary copies: SALA73.tmp\x.txt (tag 9, marker x0, 21 bytes)
+   step 6 [leave P0]: leave panel 0: title '... - W:\ - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "W:\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY x.txt tag=9 markers=0 size=21
+          t.zip: ENTRY y.txt tag=10 markers=0 size=22
+          t.zip: COUNT 2
+   VERDICT: FAIL x.txt holds member 9 (expected 1); x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 9 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+NET USE : W: removed (exists now: False)
+
+--- own-F3_7z: 't.7z' (x.txt tag 1, y.txt tag 2); refresh mode off
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3_7z\t.7z' (field held it: True); title '...- t.7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL28A.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3_7z\t.7z' (field held it: True); title '...- t.7z - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL28A.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4 2 P1]: F4 y.txt in panel 1: windows: no window
+          temporary copies: SAL28A.tmp\x.txt (tag 1, marker x1, 32 bytes); SAL28A.tmp\y.txt (tag 2, marker x1, 32 bytes)
+   step 4 [leave P1]: leave panel 1: title '...-F3_7z - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3_7z\t.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3_7z\t.7z | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] Di&ctionary size: | [Static id=1307] &Word size: | [Button id=1209] Create &solid archive | [Button id=1214] &Don't show... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 06.10.2026, 0:21:02 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:21:22 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL28A.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL28A.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 6 [leave P0]: leave panel 0: title '...-F3_7z - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3_7z\t.7z" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.7z: ENTRY x.txt tag=1 markers=0 size=21
+          t.7z: ENTRY y.txt tag=2 markers=1 size=32
+          t.7z: COUNT 2
+   VERDICT: FAIL x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+
+--- own-reenter: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode off
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SALDB.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALDB.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4 2 P1]: F4 y.txt in panel 1: windows: no window
+          temporary copies: SALDB.tmp\x.txt (tag 1, marker x1, 32 bytes); SALDB.tmp\y.txt (tag 2, marker x1, 32 bytes)
+   step 4 [leave P1]: leave panel 1: title '...eenter - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=300... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:22:07 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SALDB.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 5 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALDB.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 6 [f3 1 P1]: F3 x.txt in panel 1: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SAL66B.tmp\x.txt (tag 1, marker x0, 21 bytes); SALDB.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 7 [leave P1]: leave panel 1: title '...eenter - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALDB.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 8 [leave P0]: leave panel 0: title '...eenter - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-reenter\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=300... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:21:56 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY y.txt tag=2 markers=1 size=32
+          t.zip: ENTRY x.txt tag=1 markers=1 size=32
+          t.zip: COUNT 2
+   VERDICT: PASS 
+
+--- shared: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode off
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\shared\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL707.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\shared\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL707.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4 1 P1]: F4 x.txt in panel 1: windows: no window
+          temporary copies: SAL707.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 4 [leave P1]: leave panel 1: title '...shared - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\shared\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\shared\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\shared\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 43, 06.10.2026, 0:23:01 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: SAL707.tmp\x.txt (tag 1, marker x2, 43 bytes)
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag ? with 0 edit(s); windows: [#32770 'ZIP'] [Static id=2477] File not found. | [Button id=1] OK
+          temporary copies: none
+   step 6 [leave P0]: leave panel 0: title '...shared - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\shared\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY y.txt tag=2 markers=0 size=21
+          t.zip: ENTRY x.txt tag=1 markers=2 size=43
+          t.zip: COUNT 2
+   VERDICT: FAIL F3 at step 5 was given tag ? with 0 edit(s) (expected tag 1 with 2); step 6: Archive Update not offered (expected offered)
+
+--- stamp-race: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode off
+   config: Fixed Automatic Refresh=0, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\stamp-race\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 1 with 0 edit(s); windows: no window
+          temporary copies: SALB63.tmp\x.txt (tag 1, marker x0, 21 bytes)
+   step 2 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SALB63.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [leave P0]: leave panel 0: title '...p-race - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\stamp-race\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\stamp-race\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\stamp-race\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:23:42 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY y.txt tag=2 markers=0 size=21
+          t.zip: ENTRY x.txt tag=1 markers=1 size=32
+          t.zip: COUNT 2
+   VERDICT: PASS 
+
+--- own-F3-auto: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode on (control: L must refresh first)
+   config: Fixed Automatic Refresh=1, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SAL894.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SAL894.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [f4 2 P1]: F4 y.txt in panel 1: windows: no window
+          temporary copies: SAL894.tmp\x.txt (tag 1, marker x1, 32 bytes); SAL894.tmp\y.txt (tag 2, marker x1, 32 bytes)
+   step 4 [leave P1]: leave panel 1: title '...3-auto - Tandem Commander 0.1.8 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=300... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:24:16 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\own-F3-auto\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=300... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:24:05 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 1 with 1 edit(s); windows: no window
+          temporary copies: SAL894.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 6 [leave P0]: leave panel 0: title '...3-auto - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY y.txt tag=2 markers=1 size=32
+          t.zip: ENTRY x.txt tag=1 markers=1 size=32
+          t.zip: COUNT 2
+   the left panel reopened the archive (IDS_ARCHIVEREFRESHEDIT) at step(s) 4
+   VERDICT: PASS 
+
+--- ext-ctrlR-auto: 't.zip' (x.txt tag 1, y.txt tag 2); refresh mode on (control: L must refresh first)
+   config: Fixed Automatic Refresh=1, Remote Automatic Refresh=1, Remote Do Not Refresh on Activation=0
+   step 0 [cd P0]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR-auto\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4 1 P0]: F4 x.txt in panel 0: windows: no window
+          temporary copies: SALCEE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [cd P1]: cd 'C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR-auto\t.zip' (field held it: True); title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALCEE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [rewrite 1 P1]: rewrote t.zip from outside (x.txt tag 1); windows: [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR-auto\t.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR-auto\t.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR-auto\t.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc112\dc\ext-ctrlR-auto\t.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 0:24:56 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 4 [refresh P1]: Ctrl+R in panel 1: title '... t.zip - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: none
+   step 5 [f3 1 P0]: F3 x.txt in panel 0: the viewer was given tag 1 with 1 edit(s); windows: no window
+          temporary copies: SALCEE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 6 [leave P0]: leave panel 0: title '...R-auto - Tandem Commander 0.1.8 (x64) ST'; windows: no window
+          temporary copies: SALCEE.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   END  : exit code 0x00000000; new crash reports 0
+          t.zip: ENTRY y.txt tag=2 markers=0 size=21
+          t.zip: ENTRY x.txt tag=1 markers=1 size=32
+          t.zip: COUNT 2
+   the left panel reopened the archive (IDS_ARCHIVEREFRESHEDIT) at step(s) 3
+   VERDICT: PASS 
+Registry: restored; identical=True; SHA-256 before 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126 / after 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
+
+=== summary ===
+case             verdict    archive (member=tag+edits) | F3 given | Archive Update per leave step | why
+own-F3           FAIL       x.txt=m1+0 y.txt=m2+1 | t1+0 | s4=offered,s6=none | x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+own-F4           FAIL       x.txt=m1+1 y.txt=m2+1 | - | s4=offered,s6=offered | x.txt: 1 edit(s) packed (expected 2)
+ext-ctrlR        FAIL       x.txt=m1+0 y.txt=m2+0 | t1+0 | s6=none | x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+ext-x            FAIL       x.txt=m9+0 y.txt=m10+0 | t9+0 | s6=none | x.txt holds member 9 (expected 1); x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 9 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+own-F3@net       FAIL       x.txt=m1+0 y.txt=m2+1 | t1+0 | s4=offered,s6=none | x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+own-F4@net       FAIL       x.txt=m1+1 y.txt=m2+1 | - | s4=offered,s6=offered | x.txt: 1 edit(s) packed (expected 2)
+ext-ctrlR@net    FAIL       x.txt=m1+0 y.txt=m2+0 | t1+0 | s6=none | x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+ext-x@net        FAIL       x.txt=m9+0 y.txt=m10+0 | t9+0 | s6=none | x.txt holds member 9 (expected 1); x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 9 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+own-F3_7z        FAIL       x.txt=m1+0 y.txt=m2+1 | t1+0 | s4=offered,s6=none | x.txt: 0 edit(s) packed (expected 1); F3 at step 5 was given tag 1 with 0 edit(s) (expected tag 1 with 1); step 6: Archive Update not offered (expected offered)
+own-reenter      PASS       x.txt=m1+1 y.txt=m2+1 | t1+0 | s4=offered,s8=offered
+shared           FAIL       x.txt=m1+2 y.txt=m2+0 | t?+0 | s4=offered,s6=none | F3 at step 5 was given tag ? with 0 edit(s) (expected tag 1 with 2); step 6: Archive Update not offered (expected offered)
+stamp-race       PASS       x.txt=m1+1 y.txt=m2+0 | t1+0 | s3=offered
+own-F3-auto      PASS       x.txt=m1+1 y.txt=m2+1 | t1+1 | -
+ext-ctrlR-auto   PASS       x.txt=m1+1 y.txt=m2+0 | t1+1 | -
+TOTAL: 4 PASS / 10 FAIL / 0 CLOSED / 0 NOT DRIVEN; F3/F4 retries 0
+Left running: 0; fixture removed: True; registry restored+identical: True

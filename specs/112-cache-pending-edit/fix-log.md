@@ -175,6 +175,57 @@ installed program during the day; it shares the registry key with the probes). T
 commit is preserved as `build\tandemcommander\Debug_x64_112`; the evening runs use it (not
 `Debug_x64`, which later features rebuild). Results and any fix follow in a separate commit.
 
+## GUI results (2026-10-06, hidden desktop)
+
+All runs on a hidden desktop (`tools\run_on_hidden_desktop.ps1`; the probe logged desktop
+`tc_probe_122708`), one at a time, against the preserved trees `build\tandemcommander\Debug_x64_112`
+(the build of commit `18dad50c`) and `Debug_x64_pre112`. Before and after every run: no
+`tandemcommander.exe` running, `HKCU\Software\Tandem Commander` exported - SHA-256 prefix
+`9BD42518403B7EDF` before and after each of the six runs (the new baseline after the maintainer's
+installed copy saved its settings; the probes' own backup/restore also reported identical). The
+`@net` rows mapped `W:` and removed it each time ("exists now: False"); the 109 probe's SUBST `T:`
+and `W:` removed as well; A:, O:, S:, Z: untouched. Fixtures under `%TEMP%\tc112\` removed; no
+crash report, nothing left running. The runner logs duplicated the result files and were deleted.
+
+### `diskcache_edit_probe` (T009)
+
+| Row | `Debug_x64_112` (`probe/diskcache_edit_result.txt`) | `Debug_x64_pre112` (`probe/diskcache_edit_result_pre112.txt`) |
+|---|---|---|
+| `own-F3` | PASS - F3 given x + 1 edit; L's leave offered; x 1 edit, y 1 edit | **FAIL** - F3 given x without the edit, L's leave offered nothing, x 0 edits |
+| `own-F4` | PASS - x 2 edits | **FAIL** - x 1 edit (the first lost) |
+| `ext-ctrlR` | PASS - F3 x + 1, offered, x 1 edit | **FAIL** - F3 x + 0, nothing offered, x 0 edits |
+| `ext-x` | PASS - F3 x(tag 1) + 1, offered, x tag 1 + 1 (overwrites the external x, documented) | **FAIL** - F3 tag 9 + 0, nothing offered, x tag 9 + 0 (edit lost) |
+| `own-F3@net`, `own-F4@net`, `ext-ctrlR@net`, `ext-x@net` | PASS (each as its local row) | **FAIL** (each as its local row) |
+| `own-F3_7z` | PASS | **FAIL** (x 0 edits) |
+| `own-reenter` | PASS - R's F3 gets the archive's x (its own key since 109); x 1 edit | PASS |
+| `shared` | PASS - L's F3 x + 2; both leaves offered; x 2 edits | FAIL (no loss: x 2 edits, R packed the shared copy) - see below |
+| `stamp-race` | PASS | PASS (the race was not hit by the `cmd` editor) |
+| control `own-F3-auto` | PASS - L reopened (IDS_ARCHIVEREFRESHEDIT at R's leave) and packed first | PASS - the same |
+| control `ext-ctrlR-auto` | PASS - L reopened at the rewrite | PASS - the same |
+| **Total** | **14 PASS / 0 FAIL / 0 CLOSED / 0 NOT DRIVEN**, retries 0 | **4 PASS / 10 FAIL / 0 CLOSED / 0 NOT DRIVEN**, retries 0 |
+
+No loss row was CLOSED: with Fixed Automatic Refresh = 0 the hidden desktop delivered no activation
+refresh to the left panel, so both the local and the `@net` variants carry the evidence - every one
+of the nine loss rows passes on this build and fails on the build before it.
+
+**Observed on the build before 112, `shared`** (not a loss, recorded): R packed the shared copy
+(both edits) and flushed; L's F3 then re-extracted the member from the archive through L's OLD
+listing and the ZIP plug-in answered "File not found." (the member had moved in the rewritten
+archive) - the out-of-date copy was already deleted, so L's leave found nothing and offered nothing.
+The archive was right only because R had packed the same file. With 112 the copy stays (pinned)
+and L's F3 shows it.
+
+### Regressions (T010), all on `Debug_x64_112`
+
+| Probe | Result | Recorded before |
+|---|---|---|
+| 109 `diskcache_probe` (`probe/regress_diskcache109_112.txt`) | **18 PASS / 0 FAIL / 0 NOT DRIVEN**, retries 0 (incl. `stale-same`, `stale-subst`, `prefix`, `resubst`, `renet`) | 18 / 0 (109) |
+| 108 `namecoll_probe` (`probe/regress_namecoll108_112.txt`) | **30 PASS / 0 FAIL** | 30 / 0 (110) |
+| 108 `namecoll_probe -CacheKeyRows` (`probe/regress_cachekey108_112.txt`) | **2 PASS / 0 FAIL** | 2 / 0 (109) |
+| 096 `archedit_probe` (`probe/regress_archedit096_112.txt`) | **17 of 17 UPDATED**, retries 0 | 17 of 17 |
+
+No defect found by the runs.
+
 ## Recorded, not changed
 
 - A per-member warning when the member itself changed in the archive since the F4 (row `ext-x`: L's

@@ -1718,7 +1718,8 @@ plugin architecture preservation, UI consistency.
     detected): GUI runs pending. saltests 14,169 -> 14,236. Interface stays
     107, no new string, no registry change. Records:
     `specs/112-cache-pending-edit/fix-log.md`.
-  GUI runs owed at commit time - see fix-log "Commit before the GUI runs".
+  GUI runs (2026-10-06 night): new probe 14 / 0 (pre-112 4 / 10, every loss row fails there), 109 18/0,
+  108 30/0 and 2/0, 096 17/17.
 - 113-zip-read-error-skip: **a file that cannot be read while it is added
   into an archive no longer costs the member it replaces.** The 110 note,
   measured by code reading (no GUI that day) and wider: the ZIP plug-in's
