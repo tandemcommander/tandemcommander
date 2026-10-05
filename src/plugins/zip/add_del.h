@@ -42,6 +42,36 @@ struct CAddInfo
     }
 };
 
+// feature 113: a member MatchFiles put on the delete list (DelFiles) for an added file - which
+// file replaces it, and its central directory record as it was. A member is deleted only if the
+// file replacing it is stored: when that file is not (its source cannot be opened or read and
+// the answer is Skip / Skip all), the member is copied back (temporary-copy mode, PackFiles ->
+// RestoreReplaced) or never deleted (in-place mode, DeleteReplacedAfterPack).
+struct CReplacedMember
+{
+    CFileInfo* Member;      // in DelFiles; NULL once put back or dropped from DelFiles
+    CAddInfo* Owner;        // in AddFiles
+    unsigned char* Central; // the member's central directory record (CFileHeader + name + extra + comment)
+    unsigned CentralLen;
+
+    CReplacedMember()
+    {
+        Member = NULL;
+        Owner = NULL;
+        Central = NULL;
+        CentralLen = 0;
+    }
+    ~CReplacedMember()
+    {
+        if (Central)
+            free(Central);
+    }
+};
+
+// feature 113: CFileInfo::InternalFlags of a DelFiles entry - its replacing file was not stored,
+// the member stays (in-place mode, DeleteReplacedAfterPack)
+#define IF_KEEP_MEMBER 0x100
+
 #define FPR_NORMAL 0
 #define FPR_SFXRESERVE 1
 #define FPR_SFXEND 2
@@ -82,6 +112,14 @@ class CZipPack : public CZipCommon
 public:
     //int                 ErrorID;
     TIndirectArray2<CFileInfo> DelFiles; //file header of files to be extracted
+    // feature 113: every DelFiles entry of a pack with the file that replaces it (see CReplacedMember)
+    TIndirectArray2<CReplacedMember> Replacements;
+    // feature 113: temporary-copy mode - the replaced members were left out of the new archive
+    // before packing (DeleteFiles); a file not stored gets its members copied back
+    bool ReplacedDeletedFirst;
+    // feature 113: in-place mode - DeleteFiles runs after PackFiles: the region it moves last holds
+    // the added files (their offsets move too), and it is not interrupted (everything is stored)
+    bool DeleteAfterPack;
     //unsigned            AssumedDelProgress;
     CEOCentrDirRecordEx EONewCentrDir; //end of central directory record
     QWORD NewCentrDirSize;
@@ -140,9 +178,18 @@ public:
     int PackMultiVol(SalEnumSelection2 next, void* param);
     int PackSelfExtract(SalEnumSelection2 next, void* param);
     int CountFilesInRoot(int* filesInRoot, bool* rootExist);
-    int DeleteFiles(int* deletedFiles);
+    // dataEnd: where the data after the last deleted member ends (the central directory; with
+    // DeleteAfterPack the end of the added files)
+    int DeleteFiles(int* deletedFiles, QWORD dataEnd);
     int MoveData(QWORD writePos, QWORD readPos, QWORD moveSize, char* buffer);
     void UpdateCentrDir(CFileInfo* curFile, CFileInfo* nextFile, QWORD delta);
+    // feature 113: DeleteAfterPack - the added files in the moved region get their new offsets
+    void UpdateAddedOffsets(CFileInfo* curFile, CFileInfo* nextFile, QWORD delta);
+    // feature 113: temporary-copy mode - 'owner' was not stored; its replaced members are copied
+    // back from the original archive to *writePos (which moves past them)
+    int RestoreReplaced(CAddInfo* owner, __UINT64* writePos);
+    // feature 113: in-place mode, after PackFiles - deletes the replaced members whose file was stored
+    int DeleteReplacedAfterPack();
     int WriteCentrDir();
     void AddAESExtraField(CFileInfo* fileInfo, CAESExtraField* extraAES, __UINT16* pExtraLen);
     int ExportLocalHeader(CFileInfo* fileInfo, char* buffer);
@@ -159,12 +206,14 @@ public:
     int BackupZip();
     int PackFiles();
     int FinishPack(int reason = FPR_NORMAL);
+    // feature 113: withAdded - the added files are in the archive (DeleteReplacedAfterPack failed):
+    // their entries are written too
+    void Recover(bool withAdded = false);
     int GetDirInfo(const char* name, DWORD* attr, FILETIME* lastWrite);
     int IsDirectoryEmpty(const char* name);
     int InsertDir(char* dir, TIndirectArray2<TIndirectArray2_char_>& table);
     int CleanUpSource();
     int LoadExPackOptions(unsigned flags);
-    void Recover();
     int Store(__UINT64* size);
     int CreateNextFile(bool firstSfxDisk = false);
     // feature 106: is the existing file 'nameU8' one of the files this operation packs (AddFiles)?

@@ -541,6 +541,31 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      after its member was deleted (`DeleteFiles` runs first) loses that
      member (pre-existing, also with one member; needs an I/O error).
      Record `specs/110-zip-plugin-name-matching/fix-log.md`.
+     ✅ **That note fixed by feature 113 (2026-10-05) - GUI runs pending**:
+     wider by code reading - with the "temporary copy" option off the member
+     was lost also on *Cancel* at the error, on a cancelled progress and on
+     any error while packing. Rule: a member is deleted only if the file
+     replacing it is stored. Temporary-copy mode (default): a member whose
+     file is not stored is copied back from the untouched original, byte for
+     byte, its central record relocated (`src/common/salzipmember.h`, zip64
+     handled; review S1: the plug-in's `UpdateCentrDir` now finds the zip64
+     block by its id - it assumed it first); in-place mode: pack first, then delete the stored files'
+     members (the compaction moves the added files too, uninterruptible).
+     Also fixed: an AES-encrypted file that could not be read was stored
+     incomplete after *Skip* (a Move deleted its source) and *Cancel* did not
+     stop (the MAC write replaced the error); a use-after-free on the Skip
+     path; a double free of `NewCentrDir`; a 12-byte data descriptor (no
+     signature) moved the rest of the archive 4 bytes, or silently cut the
+     first 4 bytes of the untouched member after it (both modes) - now refused
+     before anything moves (reviews S2, R1; the bound fails closed).
+     Performance note (not changed): that bound and the existing
+     `UpdateCentrDir` walk the central directory once per deleted member -
+     about n x d; one sorted offset array with bisection would serve both. 7-Zip plug-in, same loss: a file
+     replacing an archived item gets *Retry* / *Cancel* only; a file skipped
+     in a Move is no longer deleted. Probe
+     `113/probe/zipskip_probe.ps1` (37 rows, locks held by the probe) written,
+     not run yet (`113/quickstart.md`). Record
+     `specs/113-zip-read-error-skip/fix-log.md`.
   2a. **Found by 109's review, not fixed (data loss, narrow): a flush marks a
      copy with a pending edit out of date.** `CDiskCache::FlushCache` marks every
      still-referenced copy of the key out of date, also one the OTHER panel

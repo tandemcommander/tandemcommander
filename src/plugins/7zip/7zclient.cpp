@@ -1133,6 +1133,7 @@ int C7zClient::DeleteMakeUpdateList(TIndirectArray<CArchiveItem>* archiveItems, 
             ui->FileItemIndex = -1;
             ui->IsAnti = false;
             ui->NewData = ui->NewProperties = false;
+            ui->Replaces = false; // feature 113
             updateList->Add(ui);
         }
     }
@@ -1352,8 +1353,9 @@ IndirectSort(UStringVector& strings, CIntVector& indexes)
     }
 }
 
+// replaces: feature 113 - the file replaces an archived item (CUpdateInfo::Replaces)
 static int
-AddFileUpdateInfo(TIndirectArray<CUpdateInfo>* updateList, int fileIdx)
+AddFileUpdateInfo(TIndirectArray<CUpdateInfo>* updateList, int fileIdx, bool replaces = false)
 {
     CUpdateInfo* ui = new CUpdateInfo;
     if (ui == NULL)
@@ -1369,6 +1371,7 @@ AddFileUpdateInfo(TIndirectArray<CUpdateInfo>* updateList, int fileIdx)
     ui->ExistsOnDisk = true;
     ui->IsAnti = false;
     ui->ExistsInArchive = false;
+    ui->Replaces = replaces;
     updateList->Add(ui);
 
     return OPER_OK;
@@ -1389,6 +1392,7 @@ AddArchiveUpdateInfo(TIndirectArray<CUpdateInfo>* updateList, int archiveIdx)
     ui->FileItemIndex = -1;
     ui->IsAnti = false;
     ui->NewData = ui->NewProperties = false;
+    ui->Replaces = false; // feature 113
     updateList->Add(ui);
 
     return OPER_OK;
@@ -1528,7 +1532,8 @@ int C7zClient::UpdateMakeUpdateList(TIndirectArray<CFileItem>* fileList, TIndire
                 switch (mode)
                 {
                 case Overwrite:
-                    if (AddFileUpdateInfo(updateList, fileIdx) == OPER_CANCEL)
+                    // feature 113: the archived item is left off the list - its file must be stored
+                    if (AddFileUpdateInfo(updateList, fileIdx, true) == OPER_CANCEL)
                         return OPER_CANCEL;
                     fi->CanDelete = TRUE;
                     break;

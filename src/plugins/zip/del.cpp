@@ -22,6 +22,7 @@
 #include "chicon.h"
 #include "common.h"
 #include "add_del.h"
+#include "../../common/salzipmember.h" // feature 113: where a record keeps its local header offset
 
 int CZipPack::CountFilesInRoot(int* filesInRoot, bool* rootExist)
 {
@@ -81,7 +82,7 @@ int CZipPack::CountFilesInRoot(int* filesInRoot, bool* rootExist)
     return errorID;
 }
 
-int CZipPack::DeleteFiles(int* deletedFiles)
+int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
 {
     CALL_STACK_MESSAGE1("CZipPack::DeleteFiles()");
     char* buffer;
@@ -168,34 +169,60 @@ int CZipPack::DeleteFiles(int* deletedFiles)
                     else
                         descSize = sizeof(CDataDescriptor);
                 }
+                // feature 113: the same count as SalZipMemberSpan (salzipmember.h), which RestoreReplaced
+                // copies back (add.cpp asserts that the structure sizes are the header's constants)
                 delSize = sizeof(CLocalFileHeader) +
                           localHeader.NameLen +
                           localHeader.ExtraLen +
                           curFile->CompSize + descSize;
                 readPos = curFile->LocHeaderOffs + delSize;
+                // feature 113: the member must end where the next member ON DISK (or the old central
+                // directory) begins, or before. A data descriptor written without its optional signature
+                // (12 bytes, not the 16 counted above) made readPos pass it: the next DELETED member ->
+                // moveSize underflowed, the rest moved shifted by 4 bytes; an untouched member in between
+                // -> moved without its first 4 bytes (silently). Refused before anything is moved. The
+                // records above curFile still hold original offsets (earlier regions lie below it), and the
+                // added files of DeleteAfterPack begin at CentrDirOffs.
+                // The bound fails closed: a record that cannot be read (or a truncated directory) refuses too.
+                unsigned long long nextOnDisk;
+                if (!SalZipNextMemberOffset((const unsigned char*)NewCentrDir, (size_t)NewCentrDirSize,
+                                            curFile->LocHeaderOffs, CentrDirOffs, &nextOnDisk) ||
+                    readPos > nextOnDisk)
+                {
+                    Fatal = true;
+                    errorID = IDS_ERRFORMAT;
+                    break;
+                }
                 delta = readPos - writePos;
                 if (nextFile)
                     moveSize = nextFile->LocHeaderOffs - readPos;
                 else
-                    moveSize = /*EOCentrDir.*/ CentrDirOffs - readPos;
-                if (!Salamander->ProgressSetSize(CQuadWord(0, 0), CQuadWord(-1, -1), TRUE))
+                    moveSize = dataEnd - readPos; // the central directory, or the end of the added files (113)
+                // feature 113: after packing (DeleteAfterPack) a cancel is not taken - every added file is
+                // stored, and stopping half-way would leave the replaced members beside them
+                if (!Salamander->ProgressSetSize(CQuadWord(0, 0), CQuadWord(-1, -1), TRUE) && !DeleteAfterPack)
                 {
                     UserBreak = true;
                     break;
                 }
                 Salamander->ProgressSetTotalSize(CQuadWord().SetUI64(moveSize), ProgressTotalSize);
                 errorID = MoveData(writePos, readPos, moveSize, buffer);
-                UpdateCentrDir(curFile, nextFile, delta);
+                // feature 113: the directory follows the data only when the data was moved (before, the
+                // offsets were updated also after MoveData failed - in-place, a failure on the first
+                // block left every entry of the region pointing at data that had not moved)
                 if (errorID)
                     break;
+                UpdateCentrDir(curFile, nextFile, delta);
+                if (DeleteAfterPack && !nextFile)
+                    UpdateAddedOffsets(curFile, nextFile, delta); // the added files are all after the last old member
                 writePos += moveSize;
-                if (!Salamander->ProgressAddSize(localHeader.NameLen + localHeader.ExtraLen + descSize, TRUE))
+                if (!Salamander->ProgressAddSize(localHeader.NameLen + localHeader.ExtraLen + descSize, TRUE) && !DeleteAfterPack)
                 {
                     if (!UserBreak)
                         Salamander->ProgressDialogAddText(LoadStr(IDS_CANCELING), FALSE);
                     UserBreak = true;
                 }
-                if (UserBreak)
+                if (UserBreak && !DeleteAfterPack)
                 {
                     if (!Config.BackupZip)
                         i++;
@@ -274,17 +301,24 @@ void CZipPack::UpdateCentrDir(CFileInfo* curFile, CFileInfo* nextFile, QWORD del
     {
         QWORD locHeaderOffs = centrHeader->LocHeaderOffs;
         char* locHeaderOffsOffs = NULL;
+        bool noOffset = false; // feature 113: a zip64 marker without a value - never adjusted
 
-        if ((0xFFFFFFFF == locHeaderOffs) && (centrHeader->ExtraLen >= 2 + 2 + 8))
+        if (0xFFFFFFFF == locHeaderOffs)
         {
-            locHeaderOffsOffs = (char*)(centrHeader) + sizeof(CFileHeader) + centrHeader->NameLen;
-
-            locHeaderOffsOffs += 2 + 2; // HeaderID & DataSize
-            if (0xFFFFFFFF == centrHeader->CompSize)
-                locHeaderOffsOffs += 8;
-            if (0xFFFFFFFF == centrHeader->Size)
-                locHeaderOffsOffs += 8;
-            locHeaderOffs = *(QWORD*)locHeaderOffsOffs;
+            // feature 113: the zip64 block is found by its id (SalZipCentralRecordOffsetPos), not assumed
+            // to be the first block - a member put back by RestoreReplaced, or a foreign archive, can
+            // have it after an AES / time-stamp / NTFS block, and the old code then read (and wrote) the
+            // offset inside that other block
+            size_t recLen = sizeof(CFileHeader) + centrHeader->NameLen + centrHeader->ExtraLen + centrHeader->CommentLen;
+            size_t avail = (size_t)((NewCentrDir + NewCentrDirSize) - (char*)centrHeader);
+            size_t pos = SalZipCentralRecordOffsetPos((const unsigned char*)centrHeader, recLen <= avail ? recLen : avail);
+            if (pos != 0 && pos != 42)
+            {
+                locHeaderOffsOffs = (char*)(centrHeader) + pos;
+                memcpy(&locHeaderOffs, locHeaderOffsOffs, sizeof(QWORD));
+            }
+            else
+                noOffset = true; // (before: 0xFFFFFFFF - delta could be written into the 32-bit field)
         }
 
         if (locHeaderOffs == curFile->LocHeaderOffs)
@@ -304,7 +338,7 @@ void CZipPack::UpdateCentrDir(CFileInfo* curFile, CFileInfo* nextFile, QWORD del
             EONewCentrDir.DiskTotalEntries--;
             continue;
         }
-        if (locHeaderOffs > curFile->LocHeaderOffs &&
+        if (!noOffset && locHeaderOffs > curFile->LocHeaderOffs &&
             (!nextFile || locHeaderOffs < nextFile->LocHeaderOffs))
         {
             locHeaderOffs -= delta;
@@ -316,7 +350,7 @@ void CZipPack::UpdateCentrDir(CFileInfo* curFile, CFileInfo* nextFile, QWORD del
             else
             {
                 // We leave Zip64 record here even when no longer needed, it is not a violation
-                *(QWORD*)locHeaderOffsOffs = locHeaderOffs;
+                memcpy(locHeaderOffsOffs, &locHeaderOffs, sizeof(QWORD));
             }
         }
         centrHeader = (CFileHeader*)((char*)centrHeader +
@@ -328,11 +362,33 @@ void CZipPack::UpdateCentrDir(CFileInfo* curFile, CFileInfo* nextFile, QWORD del
     }
 }
 
-void CZipPack::Recover()
+void CZipPack::UpdateAddedOffsets(CFileInfo* curFile, CFileInfo* nextFile, QWORD delta)
 {
-    CALL_STACK_MESSAGE1("CZipPack::Recover()");
+    CALL_STACK_MESSAGE2("CZipPack::UpdateAddedOffsets(, , 0x%I64X)", delta);
+    int i;
+    for (i = 0; i < AddFiles.Count; i++)
+    {
+        CAddInfo* added = AddFiles[i];
+        if (added->Action != AF_ADD && added->Action != AF_OVERWRITE)
+            continue; // not stored - its offset means nothing
+        if (added->LocHeaderOffs > curFile->LocHeaderOffs &&
+            (!nextFile || added->LocHeaderOffs < nextFile->LocHeaderOffs))
+            added->LocHeaderOffs -= delta;
+    }
+}
+
+void CZipPack::Recover(bool withAdded)
+{
+    CALL_STACK_MESSAGE2("CZipPack::Recover(%d)", withAdded);
     RecoverOK = false;
     TempFile->Flags |= PE_QUIET;
+    if (withAdded)
+    {
+        // feature 113: the error came after packing (in-place mode, DeleteReplacedAfterPack): the added
+        // files are in the archive, so their entries are written with the remaining old ones
+        RecoverOK = FinishPack() == 0;
+        return;
+    }
     /*
   if (!WriteCentrDir())
     if (!WriteEOCentrDirRecord())

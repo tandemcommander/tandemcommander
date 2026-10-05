@@ -178,7 +178,7 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetStream(UInt32 index,
         if (ui->IsAnti)
             throw S_OK;
 
-        const CFileItem* fi = (*FileItems)[ui->FileItemIndex];
+        CFileItem* fi = (*FileItems)[ui->FileItemIndex]; // feature 113: CanDelete changes on a skip
         // the name is shown in Salamander's progress dialog -> UTF-8
         ProcessedFileName = UStringToU8(fi->Name);
 
@@ -202,6 +202,9 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetStream(UInt32 index,
         }
 
         // Retry / Skip / Skip All / Cancel dialog
+        // feature 113: a file that replaces an archived item gets Retry / Cancel only, also after
+        // "Skip all": the item is not on the update list, so a skip lost it (S_FALSE = the engine
+        // leaves the file out). Cancel ends the update, the archive stays as it was.
         int mbRet;
         CMyComPtr<IInStream> inStreamLoc(inStreamSpec);
         do
@@ -210,15 +213,15 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetStream(UInt32 index,
             // FullPath is UTF-16 inside 7za; the stream and Salamander want UTF-8
             if (!inStreamSpec->Open(UStringToU8(fi->FullPath)))
             {
-                mbRet = DIALOG_SKIP;
-                if (!Silent)
+                mbRet = ui->Replaces ? DIALOG_CANCEL : DIALOG_SKIP;
+                if (!Silent || ui->Replaces)
                 {
                     DWORD err = ::GetLastError();
                     AString fn = UStringToU8(fi->FullPath);
                     // Warning: GetStream can get called from a parallel thread launched by 7za.dll!
                     CDialogErrorParams dep;
 
-                    dep.Flags = BUTTONS_RETRYSKIPCANCEL;
+                    dep.Flags = ui->Replaces ? BUTTONS_RETRYCANCEL : BUTTONS_RETRYSKIPCANCEL;
                     dep.FileName = fn;
                     dep.Error = SalamanderGeneral->GetErrorText(err);
                     mbRet = (int)SendMessage(hProgWnd, WM_7ZIP, WM_7ZIP_DIALOGERROR, (LPARAM)&dep);
@@ -231,15 +234,22 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetStream(UInt32 index,
         {
         case DIALOG_OK: /* do nothing */
             break;
-        case DIALOG_CANCEL:
-            throw E_ABORT;
-            break;
         case DIALOG_SKIP:
+            if (ui->Replaces)
+                throw E_ABORT; // (not offered - see above)
+            fi->CanDelete = FALSE; // feature 113: not packed - a Move must not delete it
             throw S_FALSE;
             break;
         case DIALOG_SKIPALL:
+            if (ui->Replaces)
+                throw E_ABORT;
             Silent = TRUE;
+            fi->CanDelete = FALSE; // feature 113: see DIALOG_SKIP
             throw S_FALSE;
+            break;
+        case DIALOG_CANCEL:
+        default: // feature 113: the file is not open - never go on as if it were
+            throw E_ABORT;
             break;
         }
 

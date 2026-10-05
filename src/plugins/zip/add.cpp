@@ -29,6 +29,7 @@
 #include "sfxmake/sfxmake.h"
 #include "../../common/salsamefile.h" // feature 106: is an output file one of the packed files?
 #include "../../common/salzipname.h"  // feature 110: is a member the file being added?
+#include "../../common/salzipmember.h" // feature 113: a replaced member put back
 
 #ifndef SSZIP
 #include "zip.rh"
@@ -38,6 +39,12 @@
 #else //SSZIP
 #include "sszip/dialogs.h"
 #endif //SSZIP
+
+// feature 113: salzipmember.h counts bytes with these constants; DeleteFiles with the structures
+static_assert(sizeof(CLocalFileHeader) == SALZIP_LOCAL_FIXED, "local file header size");
+static_assert(sizeof(CFileHeader) == SALZIP_CENTRAL_FIXED, "central directory record size");
+static_assert(sizeof(CDataDescriptor) == 16 && sizeof(CZip64DataDescriptor) == 24, "data descriptor sizes");
+static_assert(GPF_DATADESCR == SALZIP_GPF_DATADESCR, "data descriptor flag");
 
 #define PUT(type, val) \
     { \
@@ -118,6 +125,16 @@ int CZipPack::PackNormal(SalEnumSelection2 next, void* param)
                     }
                     if (!ErrorID && !NothingToDo)
                     {
+                        // feature 113: a member is deleted only if the file replacing it is stored.
+                        // Temporary-copy mode (the default): the replaced members are left out of the
+                        // new archive first, as before, and PackFiles copies a member back from the
+                        // untouched original when its file is not stored (read error -> Skip).
+                        // In-place mode the old data is overwritten as it is compacted, so nothing
+                        // could be copied back: the files are packed FIRST (after the old data) and
+                        // only then are the members of the stored files deleted - the compaction
+                        // moves the added files too. A cancel or an error while packing leaves the
+                        // archive as it was (before 113: the replaced members were already gone).
+                        bool packFirst = DelFiles.Count && !Config.BackupZip && !ZeroZip;
                         if (DelFiles.Count)
                         {
                             QuickSortHeaders(0, DelFiles.Count - 1, DelFiles);
@@ -130,16 +147,19 @@ int CZipPack::PackNormal(SalEnumSelection2 next, void* param)
                                                 CQuadWord(EOCentrDir.CommentLen, 0);
                             if (Config.BackupZip)
                                 ProgressTotalSize += CQuadWord().SetUI64(DelFiles[0]->LocHeaderOffs);
+                            if (packFirst)
+                                ProgressTotalSize += AddTotalSize; // the compaction moves the added files too (estimate)
                         }
                         else if (Config.BackupZip)
                             ProgressTotalSize = CQuadWord().SetUI64(CentrDirOffs); //size of backuped file
                         else
                             ProgressTotalSize = CQuadWord(0, 0);
                         ProgressTotalSize += AddTotalSize + CQuadWord(addCount, 0);
-                        if (DelFiles.Count)
+                        if (DelFiles.Count && !packFirst)
                         {
                             int i;
-                            ErrorID = DeleteFiles(&i);
+                            ReplacedDeletedFirst = true; // feature 113: PackFiles puts back a member whose file is not stored
+                            ErrorID = DeleteFiles(&i, CentrDirOffs);
                             if (ErrorID && !Config.BackupZip && !ZeroZip)
                                 Recover();
                         }
@@ -150,7 +170,13 @@ int CZipPack::PackNormal(SalEnumSelection2 next, void* param)
                         {
                             ErrorID = PackFiles();
                             if (ErrorID && !Config.BackupZip && !ZeroZip)
-                                Recover();
+                                Recover(); // packFirst: nothing was deleted yet - the archive as it was
+                        }
+                        if (packFirst && !ErrorID && !UserBreak)
+                        {
+                            ErrorID = DeleteReplacedAfterPack();
+                            if (ErrorID)
+                                Recover(true);
                         }
                         if (!ErrorID && (!UserBreak || UserBreak && !Config.BackupZip && !ZeroZip))
                             ErrorID = FinishPack();
@@ -1085,6 +1111,7 @@ int CZipPack::LoadCentralDirectory()
                     Fatal = true;
                 }
                 free(NewCentrDir);
+                NewCentrDir = NULL; // feature 113: PackNormal frees it again (it was a double free)
             }
             else
             {
@@ -1320,8 +1347,36 @@ int CZipPack::MatchFiles(int& count)
                             break;
                         }
                         lstrcpy(newFile->Name, inZip);
+                        // feature 113: which file replaces the member, and its central record as it is now
+                        // (NewCentrDir is not changed before DeleteFiles), so it can be put back
+                        CReplacedMember* replaced = new CReplacedMember;
+                        unsigned recLen = (unsigned)sizeof(CFileHeader) + centralHeader->NameLen + centralHeader->ExtraLen +
+                                          centralHeader->CommentLen;
+                        if (replaced == NULL || (replaced->Central = (unsigned char*)malloc(recLen)) == NULL)
+                        {
+                            delete replaced;
+                            delete newFile;
+                            errorID = IDS_LOWMEM;
+                            break;
+                        }
+                        memcpy(replaced->Central, centralHeader, recLen);
+                        replaced->CentralLen = recLen;
+                        replaced->Member = newFile;
+                        replaced->Owner = next;
+                        if (!DelFiles.Add(newFile))
+                        {
+                            delete replaced;
+                            delete newFile;
+                            errorID = IDS_LOWMEM;
+                            break;
+                        }
+                        if (!Replacements.Add(replaced))
+                        {
+                            delete replaced;
+                            errorID = IDS_LOWMEM; // newFile is in DelFiles now; nothing is deleted after this error
+                            break;
+                        }
                         MatchedTotalSize += CQuadWord().SetUI64(newFile->CompSize);
-                        DelFiles.Add(newFile);
                         next->Replaced++;
 
                         if (Unix)
@@ -1522,6 +1577,7 @@ int CZipPack::PackFiles()
         writePos = /*EONewCentrDir.*/ NewCentrDirOffs;
     for (i = 0; i < AddFiles.Count && !errorID && !UserBreak; i++)
     {
+        int skipRest = 0; // feature 113: bytes of the source not read when it is skipped (progress)
         next = AddFiles[i];
         if (next->Action != AF_ADD && next->Action != AF_OVERWRITE)
             continue;
@@ -1623,6 +1679,7 @@ int CZipPack::PackFiles()
                 case ERR_SKIP:
                     UserBreak = !Salamander->ProgressAddSize((int)next->Size.Value + 1, TRUE);
                     next->Action = AF_NOADD;
+                    errorID = RestoreReplaced(next, &writePos); // feature 113: the member it was to replace stays
                     continue;
                 case ERR_CANCEL:
                     errorID = IDS_NODISPLAY;
@@ -1841,13 +1898,29 @@ int CZipPack::PackFiles()
 
                     SalamanderCrypt->AESEnd(&AESContext, mac, &macLen);
                     AESContextValid = FALSE;
-                    errorID = Write(TempFile, mac, macLen, NULL);
+                    // feature 113: the MAC ends a stored file only. Its write used to REPLACE errorID, so
+                    // a read error answered Skip or Cancel on an AES-encrypted file was lost: the partly
+                    // read file was stored as complete (a Move then deleted its source), and Cancel went
+                    // on with the operation.
                     if (!errorID)
-                        file.CompSize += macLen;
+                    {
+                        if (Write(TempFile, mac, macLen, NULL))
+                            errorID = IDS_NODISPLAY;
+                        else
+                            file.CompSize += macLen;
+                    }
                 }
             }
             next->CompSize = file.CompSize;
+            // feature 113: what was not read yet (progress after a Skip) - SourFile is freed by CloseCFile;
+            // the IDS_SKIP branch below used to read it after that
+            if (SourFile->Size > SourFile->FilePointer)
+            {
+                QWORD rest = SourFile->Size - SourFile->FilePointer;
+                skipRest = rest > 0x7FFFFFFF ? 0x7FFFFFFF : (int)rest;
+            }
             CloseCFile(SourFile);
+            SourFile = NULL;
         }
         if (!errorID && !UserBreak)
         {
@@ -1868,8 +1941,10 @@ int CZipPack::PackFiles()
             {
             case IDS_SKIP:
                 next->Action = AF_NOADD;
-                UserBreak = !Salamander->ProgressAddSize(int(SourFile->Size - SourFile->FilePointer), TRUE);
-                errorID = 0;
+                UserBreak = !Salamander->ProgressAddSize(skipRest, TRUE);
+                // feature 113: the member it was to replace stays (temporary-copy mode: copied back at
+                // writePos, over what was written of this file)
+                errorID = RestoreReplaced(next, &writePos);
                 break;
             case IDS_BADPACKLEVEL:
                 Fatal = true;
@@ -1882,6 +1957,140 @@ int CZipPack::PackFiles()
         /*EONewCentrDir.*/ NewCentrDirOffs = writePos;
     free(buffer);
     delete defObj;
+    return errorID;
+}
+
+// feature 113: temporary-copy mode. 'owner' was not stored (its source could not be opened or read
+// and the answer was Skip / Skip all), but DeleteFiles has already left the members it was to replace
+// out of the new archive. Each of them is copied back from the original archive - untouched until the
+// operation ends - to *writePos: its local header, data and data descriptor byte for byte
+// (SalZipMemberSpan, the count DeleteFiles left out; an encrypted member stays as it is), and its
+// central directory record byte for byte with the new offset (SalZipRelocateCentralRecord) appended
+// to NewCentrDir. Any failure is an error of the whole operation: the new archive is then discarded
+// and the original stays - never a member lost silently.
+int CZipPack::RestoreReplaced(CAddInfo* owner, __UINT64* writePos)
+{
+    CALL_STACK_MESSAGE1("CZipPack::RestoreReplaced(, )");
+    if (!ReplacedDeletedFirst || owner->Replaced == 0 || UserBreak)
+        return 0; // nothing was left out for it (or the operation is being cancelled - all is discarded)
+
+    char* buffer = NULL;
+    unsigned char* moved = NULL;
+    int errorID = 0;
+    int i;
+    for (i = 0; i < Replacements.Count && !errorID; i++)
+    {
+        CReplacedMember* rm = Replacements[i];
+        if (rm->Owner != owner || rm->Member == NULL)
+            continue;
+        CFileInfo* member = rm->Member;
+        if (buffer == NULL && (buffer = (char*)malloc(DECOMPRESS_INBUFFER_SIZE)) == NULL)
+        {
+            errorID = IDS_LOWMEM;
+            break;
+        }
+        // the member's size in the original archive, counted as DeleteFiles counted it
+        CLocalFileHeader localHeader;
+        unsigned bytesRead;
+        ZipFile->FilePointer = member->LocHeaderOffs;
+        int ret = Read(ZipFile, &localHeader, sizeof(CLocalFileHeader), &bytesRead, NULL);
+        if (ret || bytesRead != sizeof(CLocalFileHeader) || localHeader.Signature != SIG_LOCALFH)
+        {
+            errorID = ret ? IDS_NODISPLAY : IDS_ERRFORMAT;
+            break;
+        }
+        QWORD span = SalZipMemberSpan(localHeader.NameLen, localHeader.ExtraLen, member->CompSize, member->Flag,
+                                      member->Size, member->LocHeaderOffs);
+        // its central record at the new place (at most SALZIP_RELOCATE_GROWTH bytes longer)
+        size_t cap = (size_t)rm->CentralLen + SALZIP_RELOCATE_GROWTH;
+        unsigned char* grownMoved = (unsigned char*)realloc(moved, cap);
+        if (grownMoved == NULL)
+        {
+            errorID = IDS_LOWMEM;
+            break;
+        }
+        moved = grownMoved;
+        size_t movedLen = SalZipRelocateCentralRecord(rm->Central, rm->CentralLen, *writePos, moved, cap);
+        if (movedLen == 0)
+        {
+            errorID = IDS_ERRFORMAT; // its record cannot take the new offset - the operation is not done
+            break;
+        }
+        char* grownDir = (char*)realloc(NewCentrDir, (size_t)NewCentrDirSize + movedLen);
+        if (grownDir == NULL)
+        {
+            errorID = IDS_LOWMEM;
+            break;
+        }
+        NewCentrDir = grownDir;
+        Salamander->ProgressSetTotalSize(CQuadWord().SetUI64(span), ProgressTotalSize);
+        errorID = MoveData(*writePos, member->LocHeaderOffs, span, buffer); // original -> new archive
+        if (!errorID && UserBreak)
+            errorID = IDS_NODISPLAY; // copied only in part: the new archive is discarded
+        if (errorID)
+            break;
+        memcpy(NewCentrDir + NewCentrDirSize, moved, movedLen);
+        NewCentrDirSize += movedLen;
+        EONewCentrDir.TotalEntries++;
+        EONewCentrDir.DiskTotalEntries++;
+        *writePos += span;
+        rm->Member = NULL; // put back
+    }
+    if (buffer != NULL)
+        free(buffer);
+    if (moved != NULL)
+        free(moved);
+    return errorID;
+}
+
+// feature 113: in-place mode, after PackFiles succeeded. The replaced members are still in the
+// archive (before the added files); those whose replacing file was stored are deleted now - the
+// compaction moves the added files down too (UpdateAddedOffsets) - and those whose file was not
+// stored simply stay. The compaction is not interrupted by Cancel: every added file is stored, and
+// stopping half-way would leave old members beside their replacements.
+int CZipPack::DeleteReplacedAfterPack()
+{
+    CALL_STACK_MESSAGE1("CZipPack::DeleteReplacedAfterPack()");
+    int i;
+    for (i = 0; i < DelFiles.Count; i++)
+        DelFiles[i]->InternalFlags &= ~IF_KEEP_MEMBER; // MatchFiles copies InternalFlags uninitialized
+    for (i = 0; i < Replacements.Count; i++)
+    {
+        CReplacedMember* rm = Replacements[i];
+        if (rm->Member != NULL && rm->Owner->Action != AF_ADD && rm->Owner->Action != AF_OVERWRITE)
+            rm->Member->InternalFlags |= IF_KEEP_MEMBER;
+    }
+    for (i = 0; i < Replacements.Count; i++)
+    {
+        CReplacedMember* rm = Replacements[i];
+        if (rm->Member != NULL && (rm->Member->InternalFlags & IF_KEEP_MEMBER))
+            rm->Member = NULL; // dropped from DelFiles below
+    }
+    for (i = DelFiles.Count - 1; i >= 0; i--) // backwards: Delete moves the last entry into the hole
+    {
+        if (DelFiles[i]->InternalFlags & IF_KEEP_MEMBER)
+            DelFiles.Delete(i);
+    }
+    if (DelFiles.Count == 0)
+        return 0; // no replacing file was stored: the archive keeps every member
+    QuickSortHeaders(0, DelFiles.Count - 1, DelFiles);
+
+    // The compaction READS what PackFiles wrote through the same CFile (TempFile == ZipFile here):
+    // Read goes to the handle, so the output buffer (at least the last file's local header) must be
+    // on disk first, and CFile::Size is the size at opening (Write never changes it) - Read refuses
+    // anything beyond it ("end of file").
+    if (Flush(TempFile, TempFile->OutputBuffer, TempFile->BufferPosition, NULL))
+        return IDS_NODISPLAY;
+    TempFile->BufferPosition = 0;
+    if (ZipFile->Size < NewCentrDirOffs)
+        ZipFile->Size = NewCentrDirOffs;
+
+    Salamander->ProgressEnableCancel(FALSE);
+    DeleteAfterPack = true;
+    int deleted;
+    int errorID = DeleteFiles(&deleted, NewCentrDirOffs); // NewCentrDirOffs: the end of the added files (PackFiles)
+    DeleteAfterPack = false;
+    UserBreak = false; // a cancel pressed now came too late: everything is stored
     return errorID;
 }
 

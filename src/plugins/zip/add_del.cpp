@@ -35,8 +35,10 @@
 
 CZipPack::CZipPack(const char* zipName, const char* zipRoot,
                    CSalamanderForOperationsAbstract* salamander) : CZipCommon(zipName, zipRoot, salamander, NULL), DelFiles(256),
-                                                                   AddFiles(256)
+                                                                   Replacements(256), AddFiles(256)
 {
+    ReplacedDeletedFirst = false; // feature 113
+    DeleteAfterPack = false;      // feature 113
     RecoverOK = true;
     PackPassword[0] = 0;
     PackPasswordReady = false;
@@ -250,7 +252,7 @@ int CZipPack::DeleteFromArchive(SalEnumSelection next, void* param)
                                 ErrorID = CountFilesInRoot(&filesInRoot, &exist);
                             if (!ErrorID)
                             {
-                                ErrorID = DeleteFiles(&filesDeleted);
+                                ErrorID = DeleteFiles(&filesDeleted, CentrDirOffs);
                                 if (ErrorID && !Config.BackupZip)
                                     Recover();
                                 if (!ErrorID && (!UserBreak || UserBreak && !Config.BackupZip))

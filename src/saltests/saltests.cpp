@@ -34,6 +34,7 @@
 #include "salzipname.h"     // feature 110
 #include "salpvsource.h"    // feature 111
 #include "salcacheedit.h"   // feature 112
+#include "salzipmember.h"   // feature 113
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -6729,6 +6730,589 @@ static void TestCacheEdit112()
                parityMismatch, invariantBroken, newLosses, oldLosses, deferredLost, normalized);
 }
 
+// ---------------------------------------------------------------------------
+// feature 113: a replaced ZIP member put back (salzipmember.h)
+
+typedef std::vector<unsigned char> Bytes113;
+
+static void Put16_113(Bytes113& b, unsigned v)
+{
+    b.push_back((unsigned char)(v & 0xFF));
+    b.push_back((unsigned char)((v >> 8) & 0xFF));
+}
+static void Put32_113(Bytes113& b, unsigned long v)
+{
+    for (int i = 0; i < 4; i++)
+        b.push_back((unsigned char)((v >> (8 * i)) & 0xFF));
+}
+static void Put64_113(Bytes113& b, unsigned long long v)
+{
+    for (int i = 0; i < 8; i++)
+        b.push_back((unsigned char)((v >> (8 * i)) & 0xFF));
+}
+static unsigned Get16_113(const unsigned char* p) { return p[0] | (p[1] << 8); }
+static unsigned long Get32_113(const unsigned char* p)
+{
+    return (unsigned long)p[0] | ((unsigned long)p[1] << 8) | ((unsigned long)p[2] << 16) | ((unsigned long)p[3] << 24);
+}
+static unsigned long long Get64_113(const unsigned char* p)
+{
+    return (unsigned long long)Get32_113(p) | ((unsigned long long)Get32_113(p + 4) << 32);
+}
+
+// a central directory record; fields that are "in64" get the marker and go into a zip64 block
+// (placed after the 'before' extra bytes, followed by the 'after' extra bytes)
+struct CRec113
+{
+    unsigned VersionNeeded = 20;
+    unsigned long long Size = 100, Comp = 60, Offs = 1000;
+    unsigned long Disk = 0;
+    bool SizeIn64 = false, CompIn64 = false, OffsIn64 = false, DiskIn64 = false;
+    bool Z64Block = true; // write the zip64 block when something is in64
+    std::string Name = "dir/name.txt";
+    Bytes113 Before, After; // other extra blocks
+    std::string Comment;
+};
+
+static Bytes113 MakeRec113(const CRec113& r)
+{
+    Bytes113 z64data;
+    if (r.SizeIn64)
+        Put64_113(z64data, r.Size);
+    if (r.CompIn64)
+        Put64_113(z64data, r.Comp);
+    if (r.OffsIn64)
+        Put64_113(z64data, r.Offs);
+    if (r.DiskIn64)
+        Put32_113(z64data, r.Disk);
+    Bytes113 extra = r.Before;
+    if (r.Z64Block && !z64data.empty())
+    {
+        Put16_113(extra, 1);
+        Put16_113(extra, (unsigned)z64data.size());
+        extra.insert(extra.end(), z64data.begin(), z64data.end());
+    }
+    extra.insert(extra.end(), r.After.begin(), r.After.end());
+    Bytes113 b;
+    Put32_113(b, 0x02014B50UL);
+    Put16_113(b, (3 << 8) | 63);   // made by: Unix, 6.3
+    Put16_113(b, r.VersionNeeded); // needed
+    Put16_113(b, 0x0809);          // flag (UTF-8 + descriptor + encrypted)
+    Put16_113(b, 99);              // method (AES)
+    Put16_113(b, 0x1234);
+    Put16_113(b, 0x5678);
+    Put32_113(b, 0xCAFEBABEUL);
+    Put32_113(b, r.CompIn64 ? 0xFFFFFFFFUL : (unsigned long)r.Comp);
+    Put32_113(b, r.SizeIn64 ? 0xFFFFFFFFUL : (unsigned long)r.Size);
+    Put16_113(b, (unsigned)r.Name.size());
+    Put16_113(b, (unsigned)extra.size());
+    Put16_113(b, (unsigned)r.Comment.size());
+    Put16_113(b, r.DiskIn64 ? 0xFFFF : (unsigned)r.Disk);
+    Put16_113(b, 1);
+    Put32_113(b, 0x81A40020UL);
+    Put32_113(b, r.OffsIn64 ? 0xFFFFFFFFUL : (unsigned long)r.Offs);
+    b.insert(b.end(), r.Name.begin(), r.Name.end());
+    b.insert(b.end(), extra.begin(), extra.end());
+    b.insert(b.end(), r.Comment.begin(), r.Comment.end());
+    return b;
+}
+
+// reads a record the way the ZIP plug-in's ProcessHeader does (the first zip64 block, marked fields
+// in order); false when a marked field has no value
+static bool ParseRec113(const unsigned char* p, size_t len, unsigned long long* size, unsigned long long* comp,
+                        unsigned long long* offs, unsigned long* disk)
+{
+    if (len < 46 || Get32_113(p) != 0x02014B50UL)
+        return false;
+    size_t n = Get16_113(p + 28), x = Get16_113(p + 30), c = Get16_113(p + 32);
+    if (46 + n + x + c != len)
+        return false;
+    *size = Get32_113(p + 24);
+    *comp = Get32_113(p + 20);
+    *offs = Get32_113(p + 42);
+    *disk = Get16_113(p + 34);
+    bool needS = *size == 0xFFFFFFFFULL, needC = *comp == 0xFFFFFFFFULL, needO = *offs == 0xFFFFFFFFULL, needD = *disk == 0xFFFF;
+    if (!needS && !needC && !needO && !needD)
+        return true;
+    const unsigned char* e = p + 46 + n;
+    size_t i = 0;
+    while (i + 4 <= x)
+    {
+        size_t id = Get16_113(e + i), l = Get16_113(e + i + 2);
+        if (i + 4 + l > x)
+            return false;
+        if (id == 1)
+        {
+            const unsigned char* d = e + i + 4;
+            size_t want = (needS ? 8 : 0) + (needC ? 8 : 0) + (needO ? 8 : 0) + (needD ? 4 : 0);
+            if (l < want)
+                return false;
+            if (needS)
+                *size = Get64_113(d), d += 8;
+            if (needC)
+                *comp = Get64_113(d), d += 8;
+            if (needO)
+                *offs = Get64_113(d), d += 8;
+            if (needD)
+                *disk = Get32_113(d);
+            return true;
+        }
+        i += 4 + l;
+    }
+    return false;
+}
+
+// the extra blocks other than zip64 (id, data) - what a relocation must keep
+static std::vector<Bytes113> OtherBlocks113(const unsigned char* p, size_t len)
+{
+    std::vector<Bytes113> out;
+    size_t n = Get16_113(p + 28), x = Get16_113(p + 30);
+    const unsigned char* e = p + 46 + n;
+    size_t i = 0;
+    while (i + 4 <= x && i + 4 + Get16_113(e + i + 2) <= x)
+    {
+        size_t l = Get16_113(e + i + 2);
+        if (Get16_113(e + i) != 1)
+            out.push_back(Bytes113(e + i, e + i + 4 + l));
+        i += 4 + l;
+    }
+    return out;
+}
+
+static void TestZipMember113()
+{
+    // --- SalZipMemberSpan: the count DeleteFiles leaves out
+    CHECK(SalZipMemberSpan(5, 0, 100, 0, 200, 0) == 30 + 5 + 100);
+    CHECK(SalZipMemberSpan(5, 9, 100, 0x0800, 200, 0) == 30 + 5 + 9 + 100);                    // bit 11 is not bit 3
+    CHECK(SalZipMemberSpan(5, 9, 100, SALZIP_GPF_DATADESCR, 200, 0) == 30 + 5 + 9 + 100 + 16); // descriptor
+    CHECK(SalZipMemberSpan(5, 9, 100, SALZIP_GPF_DATADESCR, 0xFFFFFFFFULL, 0) == 30 + 5 + 9 + 100 + 24);
+    CHECK(SalZipMemberSpan(5, 9, 0xFFFFFFFFULL, SALZIP_GPF_DATADESCR, 1, 0) == 30 + 5 + 9 + 0xFFFFFFFFULL + 24);
+    CHECK(SalZipMemberSpan(5, 9, 100, SALZIP_GPF_DATADESCR, 200, 0xFFFFFFFFULL) == 30 + 5 + 9 + 100 + 24);
+    CHECK(SalZipMemberSpan(5, 9, 100, SALZIP_GPF_DATADESCR, 200, 0xFFFFFFFEULL) == 30 + 5 + 9 + 100 + 16);
+    CHECK(SalZipMemberSpan(0xFFFF, 0xFFFF, 0, 0, 0, 0) == 30 + 0xFFFFULL + 0xFFFF);
+
+    // --- SalZipCentralRecordLen
+    CRec113 base;
+    base.Comment = "a comment";
+    base.Before = Bytes113{0x55, 0x54, 5, 0, 1, 2, 3, 4, 5};                    // 0x5455 time stamp
+    base.After = Bytes113{0x01, 0x99, 7, 0, 2, 0, 'A', 'E', 3, 8, 0};             // 0x9901 AES
+    Bytes113 r0 = MakeRec113(base);
+    CHECK(SalZipCentralRecordLen(r0.data(), r0.size()) == r0.size());
+    CHECK(SalZipCentralRecordLen(r0.data(), r0.size() + 10) == r0.size());
+    CHECK(SalZipCentralRecordLen(r0.data(), r0.size() - 1) == 0);
+    CHECK(SalZipCentralRecordLen(r0.data(), 45) == 0);
+    CHECK(SalZipCentralRecordLen(NULL, 100) == 0);
+    {
+        Bytes113 bad = r0;
+        bad[0] = 0x51;
+        CHECK(SalZipCentralRecordLen(bad.data(), bad.size()) == 0);
+    }
+
+    // --- relocation, fixed cases
+    unsigned char dst[70000 + 64];
+    {
+        // 32-bit offset, new offset fits: only bytes 42..45 change
+        size_t l = SalZipRelocateCentralRecord(r0.data(), r0.size(), 0x12345678ULL, dst, sizeof(dst));
+        CHECK(l == r0.size());
+        bool sameElse = true;
+        for (size_t i = 0; i < r0.size(); i++)
+            if ((i < 42 || i > 45) && dst[i] != r0[i])
+                sameElse = false;
+        CHECK(sameElse);
+        CHECK(Get32_113(dst + 42) == 0x12345678UL);
+        CHECK(SalZipRelocateCentralRecord(r0.data(), r0.size(), 0xFFFFFFFEULL, dst, sizeof(dst)) == r0.size());
+        CHECK(Get32_113(dst + 42) == 0xFFFFFFFEUL);
+        // too small a destination; a wrong length; no destination
+        CHECK(SalZipRelocateCentralRecord(r0.data(), r0.size(), 5, dst, r0.size() - 1) == 0);
+        CHECK(SalZipRelocateCentralRecord(r0.data(), r0.size() - 1, 5, dst, sizeof(dst)) == 0);
+        CHECK(SalZipRelocateCentralRecord(r0.data(), r0.size(), 5, NULL, sizeof(dst)) == 0);
+    }
+    {
+        // 32-bit offset, new offset needs 64 bits, no zip64 block: a block is added FIRST (review S1:
+        // the ZIP plug-in writes its zip64 block first, and its UpdateCentrDir looked only there)
+        size_t l = SalZipRelocateCentralRecord(r0.data(), r0.size(), 0x100000000ULL, dst, sizeof(dst));
+        CHECK(l == r0.size() + 12);
+        unsigned long long s, c, o;
+        unsigned long d;
+        CHECK(ParseRec113(dst, l, &s, &c, &o, &d) && o == 0x100000000ULL && s == 100 && c == 60);
+        CHECK(Get32_113(dst + 42) == 0xFFFFFFFFUL);
+        CHECK(Get16_113(dst + 6) == 45);
+        CHECK(OtherBlocks113(dst, l) == OtherBlocks113(r0.data(), r0.size()));
+        CHECK(memcmp(dst + l - base.Comment.size(), base.Comment.data(), base.Comment.size()) == 0);
+        CHECK(memcmp(dst + 46, base.Name.data(), base.Name.size()) == 0);
+        CHECK(memcmp(dst + 4, r0.data() + 4, 2) == 0 && memcmp(dst + 8, r0.data() + 8, 20) == 0 &&
+              memcmp(dst + 32, r0.data() + 32, 10) == 0);
+        size_t ex = 46 + base.Name.size();
+        CHECK(Get16_113(dst + ex) == 1 && Get16_113(dst + ex + 2) == 8 && Get64_113(dst + ex + 4) == 0x100000000ULL);
+        CHECK(memcmp(dst + ex + 12, r0.data() + ex, base.Before.size() + base.After.size()) == 0); // the others follow, unchanged
+        // the minimum capacity is exactly 12 more
+        CHECK(SalZipRelocateCentralRecord(r0.data(), r0.size(), 0x100000000ULL, dst, r0.size() + 11) == 0);
+        CHECK(SalZipRelocateCentralRecord(r0.data(), r0.size(), 0x100000000ULL, dst, r0.size() + 12) == r0.size() + 12);
+    }
+    {
+        // "version needed" keeps its high byte and is not lowered
+        CRec113 v = base;
+        v.VersionNeeded = 0x0314;
+        Bytes113 r = MakeRec113(v);
+        size_t l = SalZipRelocateCentralRecord(r.data(), r.size(), 0x200000000ULL, dst, sizeof(dst));
+        CHECK(l == r.size() + 12 && Get16_113(dst + 6) == 0x032D);
+        v.VersionNeeded = 63;
+        r = MakeRec113(v);
+        l = SalZipRelocateCentralRecord(r.data(), r.size(), 0x200000000ULL, dst, sizeof(dst));
+        CHECK(l == r.size() + 12 && Get16_113(dst + 6) == 63);
+    }
+    {
+        // the offset is marked but there is no zip64 block / the block is too short: not rewritten
+        CRec113 v = base;
+        v.OffsIn64 = true;
+        v.Z64Block = false;
+        Bytes113 r = MakeRec113(v);
+        CHECK(SalZipRelocateCentralRecord(r.data(), r.size(), 5, dst, sizeof(dst)) == 0);
+        CRec113 w = base;
+        w.SizeIn64 = true;
+        Bytes113 rs = MakeRec113(w); // block holds the size only
+        rs[42] = rs[43] = rs[44] = rs[45] = 0xFF;                       // ... but the offset is marked
+        CHECK(SalZipRelocateCentralRecord(rs.data(), rs.size(), 5, dst, sizeof(dst)) == 0);
+    }
+    {
+        // a malformed extra field: a small offset is still patched in place; a large one is not
+        Bytes113 r = r0;
+        size_t extraAt = 46 + base.Name.size();
+        r[extraAt + 2] = 0x40; // the first block claims more than the field holds
+        CHECK(SalZipRelocateCentralRecord(r.data(), r.size(), 77, dst, sizeof(dst)) == r.size());
+        CHECK(Get32_113(dst + 42) == 77);
+        CHECK(SalZipRelocateCentralRecord(r.data(), r.size(), 0x100000000ULL, dst, sizeof(dst)) == 0);
+        // trailing bytes that are not a block (3 bytes)
+        CRec113 t = base;
+        t.After.push_back(0xAA);
+        t.After.push_back(0xBB);
+        t.After.push_back(0xCC);
+        Bytes113 rt = MakeRec113(t);
+        CHECK(SalZipRelocateCentralRecord(rt.data(), rt.size(), 0x100000000ULL, dst, sizeof(dst)) == 0);
+        CHECK(SalZipRelocateCentralRecord(rt.data(), rt.size(), 9, dst, sizeof(dst)) == rt.size());
+    }
+    {
+        // an extra field near its 65,535-byte limit cannot take 12 (or 8) more bytes
+        CRec113 big = base;
+        big.Before.clear();
+        big.After.clear();
+        Put16_113(big.Before, 0x7777);
+        Put16_113(big.Before, 65531 - 4);
+        big.Before.resize(65531, 0x11); // 65,531 bytes of extra field
+        big.Comment.clear();
+        Bytes113 r = MakeRec113(big);
+        CHECK(SalZipCentralRecordLen(r.data(), r.size()) == r.size());
+        CHECK(SalZipRelocateCentralRecord(r.data(), r.size(), 0x100000000ULL, dst, sizeof(dst)) == 0); // 65,543 > 65,535
+        CHECK(SalZipRelocateCentralRecord(r.data(), r.size(), 3, dst, sizeof(dst)) == r.size());
+        big.Before.clear(); // 65,523 + 12 = 65,535: still fits
+        Put16_113(big.Before, 0x7777);
+        Put16_113(big.Before, 65523 - 4);
+        big.Before.resize(65523, 0x22);
+        r = MakeRec113(big);
+        size_t l = SalZipRelocateCentralRecord(r.data(), r.size(), 0x100000000ULL, dst, sizeof(dst));
+        CHECK(l == r.size() + 12 && Get16_113(dst + 30) == 65535);
+    }
+
+    // --- review S1: where the offset is read and updated later (the plug-in's UpdateCentrDir after an
+    // F5-replace / F8 of an earlier member). Before 113 it assumed the zip64 block FIRST; now it uses
+    // SalZipCentralRecordOffsetPos (the block found by its id).
+    {
+        auto oldPos = [](const unsigned char* rec) -> size_t { // the pre-113 UpdateCentrDir, transcribed
+            if (Get32_113(rec + 42) != 0xFFFFFFFFUL || Get16_113(rec + 30) < 2 + 2 + 8)
+                return 42;
+            size_t p = 46 + Get16_113(rec + 28) + 4;
+            if (Get32_113(rec + 20) == 0xFFFFFFFFUL)
+                p += 8;
+            if (Get32_113(rec + 24) == 0xFFFFFFFFUL)
+                p += 8;
+            return p;
+        };
+        Bytes113 aes{0x01, 0x99, 7, 0, 2, 0, 'A', 'E', 3, 8, 0};    // the plug-in's own AES block
+        Bytes113 ntfs{0x0A, 0x00, 4, 0, 0, 0, 0, 0};                 // an NTFS block (header only)
+        // a member with AES + NTFS blocks put back above 4 GiB
+        CRec113 m = base;
+        m.Before = ntfs;
+        m.After = aes;
+        Bytes113 r = MakeRec113(m);
+        const unsigned long long at = 0x140000000ULL;
+        size_t l = SalZipRelocateCentralRecord(r.data(), r.size(), at, dst, sizeof(dst));
+        CHECK(l == r.size() + 12);
+        size_t pos = SalZipCentralRecordOffsetPos(dst, l);
+        CHECK(pos != 0 && pos != 42 && Get64_113(dst + pos) == at);
+        CHECK(oldPos(dst) == pos); // the layout also suits the old reader
+        // a later compaction moves it down by 'delta': written where the offset is, nothing else changes
+        Bytes113 moved(dst, dst + l);
+        unsigned long long down = at - 0x1000;
+        for (int k = 0; k < 8; k++)
+            moved[pos + k] = (unsigned char)((down >> (8 * k)) & 0xFF);
+        unsigned long long s, c, o;
+        unsigned long d;
+        CHECK(ParseRec113(moved.data(), l, &s, &c, &o, &d) && o == down);
+        CHECK(OtherBlocks113(moved.data(), l) == OtherBlocks113(r.data(), r.size())); // AES block intact
+        // a foreign record: zip64 block AFTER the AES block (other writers, or a block appended)
+        CRec113 f = base;
+        f.Before = aes;
+        f.After = ntfs;
+        f.OffsIn64 = true;
+        f.Offs = 0x180000000ULL;
+        Bytes113 rf = MakeRec113(f);
+        size_t posF = SalZipCentralRecordOffsetPos(rf.data(), rf.size());
+        CHECK(posF != 0 && posF != 42 && Get64_113(rf.data() + posF) == f.Offs);
+        CHECK(oldPos(rf.data()) != posF); // the old reader looked inside the AES block (the defect)
+        CHECK(Get64_113(rf.data() + oldPos(rf.data())) != f.Offs);
+        // with the size and the compressed size marked too
+        f.SizeIn64 = f.CompIn64 = true;
+        f.Size = 0x100000005ULL;
+        f.Comp = 0x100000006ULL;
+        rf = MakeRec113(f);
+        posF = SalZipCentralRecordOffsetPos(rf.data(), rf.size());
+        CHECK(posF != 0 && Get64_113(rf.data() + posF) == f.Offs);
+        // not marked: the 32-bit field; marked without a block / with a short block / incomplete: 0
+        CHECK(SalZipCentralRecordOffsetPos(r0.data(), r0.size()) == 42);
+        CRec113 nb = base;
+        nb.OffsIn64 = true;
+        nb.Z64Block = false;
+        Bytes113 rn = MakeRec113(nb);
+        CHECK(SalZipCentralRecordOffsetPos(rn.data(), rn.size()) == 0);
+        CHECK(SalZipCentralRecordOffsetPos(rf.data(), rf.size() - 1) == 0);
+        CRec113 sh = base;
+        sh.SizeIn64 = true;
+        Bytes113 rs = MakeRec113(sh);
+        rs[42] = rs[43] = rs[44] = rs[45] = 0xFF;
+        CHECK(SalZipCentralRecordOffsetPos(rs.data(), rs.size()) == 0);
+    }
+
+    // --- review R1: a member's computed end is bounded by the next member ON DISK
+    {
+        // NM: the bound, or ~0 for "unknown" (the bound fails closed - re-check NIT 1)
+        auto NM = [](const Bytes113& d, size_t len, unsigned long long after, unsigned long long limit) {
+            unsigned long long n = 0;
+            return SalZipNextMemberOffset(len ? d.data() : NULL, len, after, limit, &n) ? n : ~0ULL;
+        };
+        // a central directory: x at 0, y at 120 (32-bit), z at 260 (offset in zip64); w broken (marker, no block)
+        CRec113 rx = base, ry = base, rz = base, rw = base;
+        rx.Offs = 0;
+        ry.Offs = 120;
+        rz.Offs = 260;
+        rz.OffsIn64 = true;
+        rw.OffsIn64 = true;
+        rw.Z64Block = false;
+        Bytes113 dir;
+        for (const CRec113* c : {&rx, &rz, &ry}) // not in disk order
+        {
+            Bytes113 r = MakeRec113(*c);
+            dir.insert(dir.end(), r.begin(), r.end());
+        }
+        const unsigned long long cdOffs = 400;
+        CHECK(NM(dir, dir.size(), 0, cdOffs) == 120);
+        CHECK(NM(dir, dir.size(), 50, cdOffs) == 120);
+        CHECK(NM(dir, dir.size(), 120, cdOffs) == 260); // the zip64 offset counts
+        CHECK(NM(dir, dir.size(), 260, cdOffs) == cdOffs);
+        CHECK(NM(dir, dir.size(), 0, 100) == 100); // limit below every member
+        CHECK(NM(dir, 0, 0, cdOffs) == cdOffs);    // an empty directory
+        // fails closed: a truncated directory, a record whose offset cannot be read - unknown, also when
+        // the unreadable record comes after the nearer member
+        CHECK(NM(dir, dir.size() - 1, 120, cdOffs) == ~0ULL);
+        CHECK(NM(dir, dir.size() - 1, 0, cdOffs) == ~0ULL);
+        Bytes113 dirW = dir, rwb0 = MakeRec113(rw);
+        dirW.insert(dirW.end(), rwb0.begin(), rwb0.end());
+        CHECK(NM(dirW, dirW.size(), 260, cdOffs) == ~0ULL);
+        CHECK(NM(dirW, dirW.size(), 0, cdOffs) == ~0ULL);
+        Bytes113 dirW2 = rwb0;
+        dirW2.insert(dirW2.end(), dir.begin(), dir.end()); // the broken record first
+        CHECK(NM(dirW2, dirW2.size(), 0, cdOffs) == ~0ULL);
+        unsigned long long dummy = 0;
+        CHECK(!SalZipNextMemberOffset(NULL, 100, 0, cdOffs, &dummy));
+        unsigned long long o = 0;
+        Bytes113 rwb = MakeRec113(rw);
+        CHECK(!SalZipCentralRecordOffset(rwb.data(), rwb.size(), &o));
+        Bytes113 rzb = MakeRec113(rz);
+        CHECK(SalZipCentralRecordOffset(rzb.data(), rzb.size(), &o) && o == 260);
+        // the case: x (name 9, extra 4, 80 bytes of data) written with a 12-byte descriptor (no
+        // signature), y right after it. The count assumes 16 bytes: 4 past y - refused; the old guard
+        // (the next DELETED member, none -> the central directory) let it through.
+        unsigned long long realEnd = 30 + 9 + 4 + 80 + 12;
+        unsigned long long counted = SalZipMemberSpan(9, 4, 80, SALZIP_GPF_DATADESCR, 80, 0);
+        CHECK(counted == realEnd + 4);
+        CRec113 x2 = base, y2 = base;
+        x2.Offs = 0;
+        y2.Offs = realEnd;
+        Bytes113 dir2 = MakeRec113(x2), ry2 = MakeRec113(y2);
+        dir2.insert(dir2.end(), ry2.begin(), ry2.end());
+        CHECK(counted > NM(dir2, dir2.size(), 0, cdOffs)); // refused now
+        CHECK(counted <= cdOffs);                                                     // passed before
+        // with its signature (16 bytes) the end is exactly the next member: accepted
+        y2.Offs = realEnd + 4;
+        dir2 = MakeRec113(x2);
+        ry2 = MakeRec113(y2);
+        dir2.insert(dir2.end(), ry2.begin(), ry2.end());
+        CHECK(counted == NM(dir2, dir2.size(), 0, cdOffs));
+    }
+    // --- review N-a: a length below the fixed part is never read
+    {
+        unsigned char tiny[8] = {0x50, 0x4B, 1, 2, 0, 0, 0, 0};
+        CHECK(SalZipCentralRecordOffsetPos(tiny, 0) == 0);
+        CHECK(SalZipCentralRecordOffsetPos(tiny, 8) == 0);
+        CHECK(SalZipCentralRecordOffsetPos(r0.data(), 45) == 0);
+        CHECK(SalZipCentralRecordOffsetPos(NULL, 100) == 0);
+        CHECK(SalZipRelocateCentralRecord(tiny, 0, 5, dst, sizeof(dst)) == 0);
+        CHECK(SalZipRelocateCentralRecord(r0.data(), 45, 5, dst, sizeof(dst)) == 0);
+        CHECK(SalZipRelocateCentralRecord(NULL, 0, 5, dst, sizeof(dst)) == 0);
+        unsigned long long o = 0;
+        CHECK(!SalZipCentralRecordOffset(tiny, 0, &o));
+    }
+
+    // --- relocation, every combination: what a reader sees afterwards
+    const unsigned long long offsets[] = {0, 1234, 0xFFFFFFFEULL, 0xFFFFFFFFULL, 0x100000000ULL, 0x123456789ABCULL};
+    int combos = 0, bad = 0;
+    for (int mask = 0; mask < 16; mask++)
+    {
+        for (int layout = 0; layout < 4; layout++) // other blocks: none, before, after, both
+        {
+            for (unsigned long long oldOffs : {500ULL, 0x1FFFFFFFFULL})
+            {
+                for (unsigned long long newOffs : offsets)
+                {
+                    CRec113 v;
+                    v.SizeIn64 = (mask & 1) != 0;
+                    v.CompIn64 = (mask & 2) != 0;
+                    v.OffsIn64 = (mask & 4) != 0 || oldOffs >= 0xFFFFFFFFULL;
+                    v.DiskIn64 = (mask & 8) != 0;
+                    v.Size = 0x1000000AAULL;
+                    v.Comp = 0x1000000BBULL;
+                    v.Offs = oldOffs;
+                    v.Disk = 0x10000;
+                    if (!v.SizeIn64)
+                        v.Size = 77;
+                    if (!v.CompIn64)
+                        v.Comp = 66;
+                    if (!v.DiskIn64)
+                        v.Disk = 0;
+                    if (layout & 1)
+                        v.Before = Bytes113{0x55, 0x54, 1, 0, 9};
+                    if (layout & 2)
+                        v.After = Bytes113{0x75, 0x70, 3, 0, 1, 2, 3};
+                    v.Comment = (mask & 1) ? "" : "x";
+                    Bytes113 r = MakeRec113(v);
+                    size_t l = SalZipRelocateCentralRecord(r.data(), r.size(), newOffs, dst, sizeof(dst));
+                    combos++;
+                    unsigned long long s, c, o;
+                    unsigned long d;
+                    bool ok = l != 0 && ParseRec113(dst, l, &s, &c, &o, &d) && s == v.Size && c == v.Comp && o == newOffs &&
+                              d == v.Disk && OtherBlocks113(dst, l) == OtherBlocks113(r.data(), r.size()) &&
+                              memcmp(dst + 46, v.Name.data(), v.Name.size()) == 0 &&
+                              memcmp(dst + l - v.Comment.size(), v.Comment.data(), v.Comment.size()) == 0 &&
+                              memcmp(dst + 4, r.data() + 4, 2) == 0 && memcmp(dst + 8, r.data() + 8, 20) == 0 &&
+                              memcmp(dst + 32, r.data() + 32, 10) == 0;
+                    // the length grows only when the offset newly needs 64 bits
+                    size_t grow = v.OffsIn64 || newOffs < 0xFFFFFFFFULL ? 0 : ((v.SizeIn64 || v.CompIn64 || v.DiskIn64) ? 8 : 12);
+                    ok = ok && l == r.size() + grow;
+                    size_t op = l ? SalZipCentralRecordOffsetPos(dst, l) : 0; // review S1: found by its id
+                    ok = ok && op != 0 && (op == 42 ? Get32_113(dst + 42) == newOffs : Get64_113(dst + op) == newOffs);
+                    if (!ok)
+                    {
+                        bad++;
+                        if (bad <= 5)
+                            printf("TestZipMember113: mask %d layout %d old %llx new %llx -> length %zu\n", mask, layout, oldOffs,
+                                   newOffs, l);
+                    }
+                }
+            }
+        }
+    }
+    CHECK(combos == 16 * 4 * 2 * 6);
+    CHECK(bad == 0);
+
+    // --- composition: an archive written as the ZIP plug-in writes it in temporary-copy mode - the
+    // kept members, the added file, then a skipped file's member copied back with its span and its
+    // relocated record - is read back member by member (local header at each offset, same bytes)
+    {
+        struct M
+        {
+            std::string Name, Data;
+            bool Desc;
+        };
+        std::vector<M> members = {{"keep1.txt", "first member data", false},
+                                  {"repl.txt", "the member a skipped file was to replace", true},
+                                  {"keep2.txt", "third", false}};
+        Bytes113 orig;
+        std::vector<Bytes113> recs;
+        std::vector<unsigned long long> offs;
+        for (size_t k = 0; k < members.size(); k++)
+        {
+            const M& m = members[k];
+            offs.push_back(orig.size());
+            Put32_113(orig, 0x04034B50UL);
+            Put16_113(orig, 20);
+            Put16_113(orig, m.Desc ? SALZIP_GPF_DATADESCR : 0);
+            Put16_113(orig, 0);
+            Put32_113(orig, 0);
+            Put32_113(orig, m.Desc ? 0 : 0x11111111UL);
+            Put32_113(orig, m.Desc ? 0 : (unsigned long)m.Data.size());
+            Put32_113(orig, m.Desc ? 0 : (unsigned long)m.Data.size());
+            Put16_113(orig, (unsigned)m.Name.size());
+            Put16_113(orig, 4);
+            orig.insert(orig.end(), m.Name.begin(), m.Name.end());
+            Put16_113(orig, 0xCAFE);
+            Put16_113(orig, 0);
+            orig.insert(orig.end(), m.Data.begin(), m.Data.end());
+            if (m.Desc)
+            {
+                Put32_113(orig, 0x08074B50UL);
+                Put32_113(orig, 0x11111111UL);
+                Put32_113(orig, (unsigned long)m.Data.size());
+                Put32_113(orig, (unsigned long)m.Data.size());
+            }
+            CRec113 cr;
+            cr.Name = m.Name;
+            cr.Size = cr.Comp = m.Data.size();
+            cr.Offs = offs.back();
+            cr.OffsIn64 = k == 2; // the third with its offset in a zip64 block
+            recs.push_back(MakeRec113(cr));
+        }
+        // the new archive: keep1, keep2 (moved down), an added file, then repl.txt put back
+        Bytes113 out;
+        std::vector<Bytes113> outRecs;
+        auto copyMember = [&](size_t k) {
+            const unsigned char* lh = orig.data() + offs[k];
+            unsigned long long span = SalZipMemberSpan(Get16_113(lh + 26), Get16_113(lh + 28), members[k].Data.size(),
+                                                       Get16_113(lh + 6), members[k].Data.size(), offs[k]);
+            unsigned long long at = out.size();
+            out.insert(out.end(), orig.begin() + (size_t)offs[k], orig.begin() + (size_t)(offs[k] + span));
+            Bytes113 moved(recs[k].size() + SALZIP_RELOCATE_GROWTH);
+            size_t l = SalZipRelocateCentralRecord(recs[k].data(), recs[k].size(), at, moved.data(), moved.size());
+            moved.resize(l);
+            outRecs.push_back(moved);
+            return l != 0;
+        };
+        bool ok = copyMember(0) && copyMember(2);
+        Put32_113(out, 0x04034B50UL); // the added file (its record is not part of this check)
+        out.resize(out.size() + 26 + 5, 0);
+        ok = ok && copyMember(1);
+        CHECK(ok);
+        // the span of a member with a descriptor ends exactly where the next one starts
+        CHECK(offs[1] + SalZipMemberSpan((unsigned)members[1].Name.size(), 4, members[1].Data.size(), SALZIP_GPF_DATADESCR,
+                                         members[1].Data.size(), offs[1]) == offs[2]);
+        int found = 0;
+        for (size_t k = 0; k < outRecs.size(); k++)
+        {
+            unsigned long long s, c, o;
+            unsigned long d;
+            if (!ParseRec113(outRecs[k].data(), outRecs[k].size(), &s, &c, &o, &d) || o + 30 > out.size())
+                continue;
+            const unsigned char* lh = out.data() + o;
+            size_t nl = Get16_113(outRecs[k].data() + 28);
+            std::string recName((const char*)outRecs[k].data() + 46, nl);
+            if (Get32_113(lh) != 0x04034B50UL || Get16_113(lh + 26) != nl || memcmp(lh + 30, recName.data(), nl) != 0)
+                continue;
+            for (const M& m : members)
+                if (m.Name == recName && memcmp(lh + 30 + nl + Get16_113(lh + 28), m.Data.data(), m.Data.size()) == 0)
+                    found++;
+        }
+        CHECK(found == 3);
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -6780,6 +7364,7 @@ int main()
     TestZipName110();
     TestPvSource111();
     TestCacheEdit112();
+    TestZipMember113();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

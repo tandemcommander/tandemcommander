@@ -53,6 +53,10 @@ struct CUpdateInfo
     bool ExistsOnDisk;
     int FileItemIndex;
     bool IsAnti;
+
+    // feature 113: a file on disk that replaces an archived item (overwrite answered Yes / All);
+    // the item is not on the update list, so the file must be stored - it cannot be skipped
+    bool Replaces = false;
 };
 
 // used in updatecallback

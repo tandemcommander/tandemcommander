@@ -53,6 +53,25 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **A file that cannot be read while it is added into an archive no longer
+  costs the archive's own copy of it.** Adding files into a ZIP archive (F5,
+  F6, or an edited file packed back) that already holds a file of the same
+  name, answered *Yes* to "overwrite?", removed the old file from the archive
+  before the new one was read; when the new one then could not be opened
+  (another program had it open, it had vanished) or could not be read to the
+  end (a read error), and the answer was *Skip* or *Skip all*, the archive
+  lost the old file too. With the ZIP option "Use temporary copy of archive
+  for its modifications" turned off it was lost also on *Cancel* and when the
+  progress was cancelled. Now the old file stays in the archive exactly as it
+  was whenever the new one is not stored, in both modes. In the same place:
+  a file added with AES encryption that could not be read to the end was
+  stored incomplete after *Skip* (it could not be extracted, and a Move
+  deleted the original), and *Cancel* did not stop the operation - now such a
+  file is not stored and *Cancel* ends the operation. The 7zip plugin had the
+  same loss: a file replacing one in a 7z archive is now offered *Retry* and
+  *Cancel* only when it cannot be opened (*Cancel* leaves the archive as it
+  was), and a file skipped during a Move is no longer deleted although it was
+  not packed (feature 113).
 - **An edit of a file from an archive is no longer lost when the other panel
   updates the same archive.** With both panels showing one archive, a file
   opened for editing (F4) in one panel and saved, but not yet packed back,

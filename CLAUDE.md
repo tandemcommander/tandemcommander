@@ -1718,3 +1718,42 @@ plugin architecture preservation, UI consistency.
     107, no new string, no registry change. Records:
     `specs/112-cache-pending-edit/fix-log.md`.
   GUI runs owed at commit time - see fix-log "Commit before the GUI runs".
+- 113-zip-read-error-skip: **a file that cannot be read while it is added
+  into an archive no longer costs the member it replaces.** The 110 note,
+  measured by code reading (no GUI that day) and wider: the ZIP plug-in's
+  `DeleteFiles` left the replaced members out BEFORE `PackFiles` read the new
+  files, so *Skip* / *Skip all* of a source that could not be opened or read
+  lost the member; with "temporary copy" off also *Cancel*, a cancelled
+  progress and any error while packing.
+  - **Rule**: a member is deleted only if the file replacing it is stored.
+    Temporary-copy mode (default): `MatchFiles` records each replaced
+    member with its owner and central record (`CReplacedMember`), and
+    `RestoreReplaced` copies it back from the untouched original byte for
+    byte, the record relocated (`src/common/salzipmember.h`:
+    `SalZipMemberSpan`, `SalZipRelocateCentralRecord` - zip64 block patched,
+    extended or put FIRST; review S1: the plug-in's `UpdateCentrDir`
+    assumed zip64 is the first block - now found by id,
+    `SalZipCentralRecordOffsetPos`). In-place mode: pack first, then
+    `DeleteReplacedAfterPack` compacts away only the stored files' members
+    (`DeleteFiles(dataEnd)` + `DeleteAfterPack`, the added files' offsets
+    moved, uninterruptible). Trap: the compaction reads what was just
+    written through the same `CFile` - flush the output buffer and extend
+    `CFile::Size` (writes never update it) first.
+  - Also fixed: AES - the MAC write replaced the error of a skipped or
+    cancelled file (stored incomplete, a Move deleted the source, Cancel went
+    on); a use after free of `SourFile` on the Skip path; a double free of
+    `NewCentrDir`; `DeleteFiles` refuses a member whose end passes the next
+    member ON DISK (`SalZipNextMemberOffset`; a 12-byte data descriptor moved
+    the rest of the archive 4 bytes, or silently cut the first 4 bytes of the
+    untouched member after it, both modes) and
+    updates offsets only after a successful move. 7-Zip plug-in, the same loss (an *Overwrite* leaves the
+    item off 7-Zip's plan, `S_FALSE` drops the file): Retry / Cancel only for
+    a replacing file (`CUpdateInfo::Replaces`), and a file skipped in a Move
+    is no longer deleted (`CanDelete`).
+  - saltests 14,236 -> 14,327. Performance note: the bound and `UpdateCentrDir`
+    walk the directory once per deleted member (n x d). Interface stays 107, no string, no registry
+    change. Probe `probe/zipskip_probe.ps1` + `zipskip.py` (37 rows: locks
+    held by the probe - "open" / byte-range; temporary copy, AES adding,
+    in-place, 7z) written, **GUI runs pending**. Records:
+    `specs/113-zip-read-error-skip/fix-log.md`.
+  GUI runs owed at commit time - see fix-log "Pending (GUI ...)".
