@@ -174,6 +174,17 @@ public:
     {
         return this->_abort;
     }
+    // feature 118: Abort(TRUE) for an object handed over to delete itself (SetSelfDelete(TRUE)),
+    // without touching it after the hand-over - it may be deleted at once when the worker has
+    // already finished. The abort flag is set first (the object is alive then); the wait uses the
+    // thread handle taken before (the queue accepts a handle it has already closed).
+    BOOL AbortAndSelfDelete(DWORD maxwait = INFINITE)
+    {
+        HANDLE thread = this->_hThread;
+        InterlockedExchange(&this->_abort, TRUE);
+        this->SetSelfDelete(TRUE); // 'this' may be deleted from here on
+        return thread == NULL || ThreadQueue.WaitForExit(thread, maxwait);
+    }
     BOOL Abort(BOOL wait = FALSE, DWORD maxwait = INFINITE) //from the controller thread to stop the worker thread
     {
         InterlockedExchange(&this->_abort, TRUE);

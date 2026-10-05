@@ -1892,3 +1892,27 @@ plugin architecture preservation, UI consistency.
     not fixed: a path over 780 bytes aborts the Verify. Interface stays 107. Records:
     `specs/117-checksum-lists/fix-log.md`.
   GUI runs owed at commit time - see fix-log T012/T015.
+- 118-plugin-update-close: **an update goes through with a finished comparison, map or
+  verification open** (NEXT-WORK item 4 "Left", interface 107 used as is). Read the 088 contract's
+  "running operation" as work whose interruption changes or loses data: a read-only computation
+  whose only product is the view (comparison, disk scan, verification) holds nothing to lose, also
+  while it runs (recorded in `architecture/06`). Declared: the File Comparator window (cancelled
+  silently while comparing), Disk Map's map, Log window and tooltip, Checksum's Verify window, and
+  a Checksum Calculate window only while EVERY hash type it calculated is saved and unchanged -
+  one save writes one type, five are calculated by default (`HoldsWork` / `SavedTypes` with the
+  identity of each saved file / `UpdateClosesUnattended` / `WindowsHoldingWork`; a save forgets
+  the types whose file it truncates at the open and counts its own only after `ferror`/`fclose`
+  succeed - code review S1/S2). Never: the Batch Renamer (masks, Undo), every
+  dialog and message box. `Release()` during an unattended close: `CloseAllWindows(FALSE, 5000)`,
+  `KillAll(FALSE, 5000)`, and a silent refusal (closing nothing) while a window with work is open
+  (Compare Files dialog, Calculate with work, any renamer window). Fixed on the way: a comparator
+  closed while comparing lost the close and showed the result's box when the worker finished at
+  that moment; Disk Map freed its thread records before its threads ended (write into freed memory
+  after a refused `Release`); `CDiskMap::Abort()` used a finished scan worker after handing it
+  over to delete itself (`CWorkerThread::AbortAndSelfDelete`); Disk Map still loads in 103-106
+  cores, so it calls the 107 services only when `SalamanderVersion >= 107`. Recorded: Disk Map's
+  `Release` has no guard for a box or menu opened in between. Other plug-ins' windows recorded (research R6): RegEdit
+  Find and FTP Logs / Welcome still decline. saltests 14,576 (unchanged). Probe
+  `probe/update_close_probe.ps1` (20 rows, `-Expect fixed|before`) written, runs owed on
+  `Debug_x64_118` and `Debug_x64_pre118`. Records: `specs/118-plugin-update-close/fix-log.md`.
+  GUI runs owed at commit time - see fix-log "Code-only reviews".

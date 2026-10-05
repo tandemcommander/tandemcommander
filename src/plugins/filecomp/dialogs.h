@@ -46,6 +46,7 @@ protected:
         *Path2;
     BOOL& Succes;
     CCompareOptions* Options;
+    BOOL CountedOpen; // feature 118: counted in CompareDialogsOpen (WM_INITDIALOG .. WM_DESTROY)
 
 public:
     // 'path1' and 'path2' must have FC_NAME_SIZE bytes (feature 102)

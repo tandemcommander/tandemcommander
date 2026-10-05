@@ -249,6 +249,15 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
     CALL_STACK_MESSAGE2("CPluginInterface::Release(, %d)", force);
 
     BOOL ret = WindowQueue.Empty();
+    // feature 118 (interface 107): during an installer's unattended close a Batch Renamer window
+    // is never closed - it holds typed masks and the undo list of renames already done, and while
+    // a rename runs it is disabled and would not close anyway. Its windows are not declared, so
+    // the core declines before asking; this refusal (silent) covers a window opened in between.
+    if (!ret && !force && SG->IsUnattendedClose())
+    {
+        TRACE_I("CPluginInterface::Release(): unattended close: a Batch Renamer window is open - refusing");
+        return FALSE;
+    }
     if (!ret)
     {
         if (force)

@@ -72,6 +72,7 @@ CCompareFilesDialog::CCompareFilesDialog(HWND parent, LPTSTR path1, LPTSTR path2
     Path2 = path2;
     Succes = succes;
     Options = options;
+    CountedOpen = FALSE;
 }
 
 BOOL FileExists(LPCTSTR path)
@@ -399,6 +400,8 @@ CCompareFilesDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         SendMessage(HWindow, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(DLLInstance, MAKEINTRESOURCE(IDI_FCICO)));
 
+        InterlockedIncrement(&CompareDialogsOpen); // feature 118: holds typed names, see Release()
+        CountedOpen = TRUE;
         break;
     }
 
@@ -468,6 +471,11 @@ CCompareFilesDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         DragAcceptFiles(GetDlgItem(HWindow, IDE_PATH1), FALSE);
         DragAcceptFiles(GetDlgItem(HWindow, IDE_PATH2), FALSE);
+        if (CountedOpen)
+        {
+            InterlockedDecrement(&CompareDialogsOpen); // feature 118
+            CountedOpen = FALSE;
+        }
         break;
     }
 

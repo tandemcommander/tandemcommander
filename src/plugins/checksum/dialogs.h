@@ -45,6 +45,11 @@ public:
     char* Hashes[HT_COUNT];
 };
 
+// feature 118 (interface 107): the number of windows that hold work an installer's unattended
+// close must not lose (a Calculate window with a hash type not saved); CPluginInterface::Release()
+// refuses while it is not zero. Changed with Interlocked* by the dialog threads.
+extern volatile LONG WindowsHoldingWork;
+
 class CSFVMD5Dialog : public CDialog
 {
 public:
@@ -69,6 +74,15 @@ protected:
 
     void EnterDataCS() { HANDLES(EnterCriticalSection(&DataCS)); }
     void LeaveDataCS() { HANDLES(LeaveCriticalSection(&DataCS)); }
+
+    // feature 118 (interface 107): TRUE while the window holds something an installer's unattended
+    // close must not lose; a Verify window never does (it only reads the files and the list)
+    virtual BOOL HoldsWork() { return FALSE; }
+    // declares the window to the core (SetWindowClosesUnattended) when it holds nothing, withdraws
+    // the declaration when it does, and keeps WindowsHoldingWork in step; call it on the dialog's
+    // thread whenever HoldsWork() may have changed
+    void UpdateClosesUnattended();
+    BOOL CountedAsWork; // counted in WindowsHoldingWork
 
     HWND hParent;
     HWND hList;
@@ -154,7 +168,23 @@ protected:
     virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
     void OnContextMenu(int x, int y, eHASH_TYPE forceCopyHash = HT_COUNT);
     void RefreshUI();
+    // feature 118: the list is being made, or it holds hashes that were not saved
+    virtual BOOL HoldsWork();
+    // feature 118: bits (1 << eHASH_TYPE) of the hash types this window calculates
+    DWORD CalculatedTypes();
+    // feature 118: forgets the saved types whose list file is the file 'f' was opened on (it has
+    // just been truncated) - all of them when the file cannot be identified
+    void ForgetSavesOfFile(FILE* f);
 
+    BOOL WorkEnded; // feature 118: reading the folders and calculating has ended (OnThreadEnd)
+    // feature 118: bits (1 << eHASH_TYPE) of the hash types whose column was saved completely and
+    // not changed since, with the identity of the file each went to (a later save truncating
+    // that file forgets it)
+    DWORD SavedTypes;
+    struct CSavedFileId
+    {
+        DWORD Volume, IndexHigh, IndexLow;
+    } SavedFile[HT_COUNT];
     TSeedFileList* pSeedFileList;
     const char* SourcePath;
     SHashInfo HashInfo[HT_COUNT];

@@ -190,6 +190,24 @@ public:
 };
 
 CSalamanderCallback SalamanderCallback;
+
+// feature 118: the unattended-close services of plug-in interface 107 (IsUnattendedClose,
+// SetWindowClosesUnattended). Unlike the other in-tree plug-ins this one still loads in cores from
+// interface 103 on (SALSDK_COMPATIBLE_WITH_VER, precomp.h) - calling a 107 service there would
+// call past the end of the core's interface, so both are called only in a 107 core.
+#define DISKMAP_UNATTENDED_CLOSE_VER 107
+
+void DiskMapDeclareClosesUnattended(HWND hWnd)
+{
+    if (hWnd != NULL && SalamanderVersion >= DISKMAP_UNATTENDED_CLOSE_VER)
+        SalamanderGeneral->SetWindowClosesUnattended(hWnd, TRUE);
+}
+
+static BOOL DiskMapIsUnattendedClose()
+{
+    return SalamanderVersion >= DISKMAP_UNATTENDED_CLOSE_VER && SalamanderGeneral->IsUnattendedClose();
+}
+
 // ****************************************************************************
 
 char* LoadStr(int resID)
@@ -645,8 +663,13 @@ BOOL OpenDiskMapWindow(HWND parent, char* name)
 BOOL WINAPI CPluginInterface::Release(HWND parent, BOOL force)
 {
     //SalamanderGeneral->ShowMessageBox("CPluginInterface::Release", PLUGIN_NAME_EN, MSGBOX_INFO);
-    TThreadInfoItem* curThreadInfo = FirstThreadItem;
-    while (curThreadInfo != NULL)
+    // The windows close without a question (WM_CLOSE -> DestroyWindow; a running scan is aborted
+    // and waited for by the window's thread). Feature 118 (interface 107): that is also what an
+    // installer's unattended close needs - the map windows are declared (GUI.MainWindow.h) - and
+    // it gets the 5 s the 088 viewers get to let the threads end.
+    BOOL unattended = !force && DiskMapIsUnattendedClose();
+    TThreadInfoItem* curThreadInfo;
+    for (curThreadInfo = FirstThreadItem; curThreadInfo != NULL; curThreadInfo = curThreadInfo->Next)
     {
         if (curThreadInfo->Thread != 0) // belongs to an existing thread
         {
@@ -656,6 +679,17 @@ BOOL WINAPI CPluginInterface::Release(HWND parent, BOOL force)
                 PostMessage(threadWindow, WM_CLOSE, 0, 0);
             }
         }
+    }
+
+    if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
+        return FALSE; // we cannot finish yet, threads are still running
+
+    // feature 118: the items are freed only now that no window thread runs - a window thread
+    // writes 'MainWindow = 0' into its item when it ends, so freeing them before (as the code did)
+    // made a thread that outlived a refused Release() write into freed memory
+    curThreadInfo = FirstThreadItem;
+    while (curThreadInfo != NULL)
+    {
         if (curThreadInfo != &BaseThreadItem) // the first item cannot be deleted because it is not dynamic
         {
             TThreadInfoItem* tmpThreadInfo = curThreadInfo;
@@ -668,9 +702,6 @@ BOOL WINAPI CPluginInterface::Release(HWND parent, BOOL force)
             BaseThreadItem.Clear();
         }
     }
-
-    if (!ThreadQueue.KillAll(force) && !force)
-        return FALSE; // we cannot finish yet, threads are still running
 
     DestroyAcceleratorTable(hAccelTable);
     CMainWindow::UnloadResourceStrings();

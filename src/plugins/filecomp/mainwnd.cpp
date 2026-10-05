@@ -55,6 +55,7 @@ CMainWindow::CMainWindow(char* path1, char* path2, CCompareOptions* options, UIN
     OptionsChanged = FALSE;
     DetailedDifferences = ::Configuration.DetailedDifferences;
     InputEnabled = TRUE;
+    CancelWorker = CW_CONTINUE; // feature 118: read by WM_USER_WORKERNOTIFIES (was set first by SpawnWorker)
     OutOfRange = FALSE; // Used only in binary/hex view
     ShowCmd = showCmd;
     bOptionsChangedBeingHandled = FALSE;
@@ -1063,6 +1064,12 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         if (!Init())
             return -1;
+        // feature 118 (interface 107): the comparator window holds nothing to lose - it only
+        // reads the two files, also while it is comparing - so an installer's close request is not
+        // declined because of it; Release() then closes it without a question (CM_EXIT cancels a
+        // running comparison silently, see WM_USER_WORKERNOTIFIES). Its own dialogs and message
+        // boxes are separate, undeclared windows: while one is open, the program declines.
+        SG->SetWindowClosesUnattended(HWindow, TRUE);
         return 0;
     }
 
@@ -2168,6 +2175,22 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             return 0;
         }
         }
+
+        // feature 118: the window was asked to close while the worker was running (CM_EXIT set
+        // CW_EXIT) and the worker ended with a result before it saw the request - "no difference",
+        // "all differences ignored", an error: the close goes on and the result's message box is
+        // not shown (an installer's unattended close shows nothing; a person asked to close).
+        // A cancelled worker has posted CM_EXIT itself (WN_WORKER_CANCELED above).
+        if (CancelWorker == CW_EXIT && wParam != WN_WORKER_CANCELED)
+        {
+            *message = 0;
+            PostMessage(HWindow, WM_COMMAND, CM_EXIT, 0);
+        }
+        // CW_SILENT: the window is being destroyed (WM_DESTROY waits for the worker and dispatches
+        // what it sends meanwhile) or a new comparison replaces this one (SpawnWorker) - a result
+        // of the worker that is being dropped shows no message box either
+        if (CancelWorker == CW_SILENT)
+            *message = 0;
 
         if (*message)
         {

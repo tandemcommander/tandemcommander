@@ -28,7 +28,7 @@ protected:
 
     HWND DoCreate(int left, int top, int width, int height, BOOL isTopmost)
     {
-        return MyCreateWindow(
+        HWND hWnd = MyCreateWindow(
             isTopmost ? WS_EX_TOPMOST : 0, //WS_EX_TOPMOST,// | WS_EX_NOACTIVATE,
             szLogWindowClass,
             CZResourceString::GetString(IDS_DISKMAP_LOG_TITLE),
@@ -36,6 +36,14 @@ protected:
             left, top,     //X, Y
             width, height, // WIDTH, HEIGHT
             NULL);
+#ifdef SALAMANDER
+        // feature 118 (interface 107): the scan's log (owned by the map window, destroyed with it)
+        // holds nothing to lose; while it is shown it must not make an installer's close request
+        // decline - it is declared on its own, the declaration of the map does not cover it
+        extern void DiskMapDeclareClosesUnattended(HWND hWnd); // DiskMapPlugin.cpp (a 107 core only)
+        DiskMapDeclareClosesUnattended(hWnd);
+#endif
+        return hWnd;
     }
 
     void DoPaint(PAINTSTRUCT* pps) {}

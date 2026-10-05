@@ -139,3 +139,7 @@ void SetWindowTitleU8(HWND hWnd, const char* text);
 
 extern CWindowQueue MainWindowQueue; // list of all FileComp windows
 extern CThreadQueue ThreadQueue;     // list of all FileComp windows, workers, and the remote control
+
+// feature 118: open Compare Files dialogs (the modeless one and the modal one of a comparator
+// window) - they hold the names the user typed, so an unattended close never closes them
+extern volatile LONG CompareDialogsOpen;

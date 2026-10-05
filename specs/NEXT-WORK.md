@@ -315,8 +315,16 @@ A sweep failure is a finding: back through fix → independent review → gates.
 > and close them silently, so an update no longer fails because a viewer is
 > open; `SAL_MAX_PATH_UTF8` is in the plug-in headers, the buffer comments are
 > corrected, PictView and the Database Viewer no longer overflow on a deep
-> path. **Left**: windows of the non-viewer plug-ins (File Comparator, Batch
-> Renamer, Disk Map, Checksum) still decline an update. **Owed** (joins
+> path. ~~**Left**: windows of the non-viewer plug-ins (File Comparator, Batch
+> Renamer, Disk Map, Checksum) still decline an update.~~ **Fixed by feature
+> 118 - pending GUI** (`118-plugin-update-close/quickstart.md`): the File
+> Comparator, Disk Map (with its Log window and tooltip) and Checksum Verify
+> windows are declared and close silently, also while still working; a
+> Checksum Calculate window declines until every hash type it calculated is
+> saved, a Batch
+> Renamer window always declines (masks, Undo). Recorded there (research R6),
+> not changed: the Registry Editor's Find window and FTP's Logs / Welcome
+> Message windows still decline. **Owed** (joins
 > item 3): `088-plugin-interface-107/quickstart.md`. Note (105 review,
 > 2026-10-04): its `viewers_probe.ps1` fails 3 rows (Code Viewer / Markdown
 > Viewer close, `ERROR_FAIL_SHUTDOWN`) on the hidden desktop - identically
@@ -884,6 +892,25 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           package shipped) and stay code page; PictView's *Regenerate
           thumbnail* cannot work at all since 006. Disabled plug-ins (listed
           in `specs/104-plugin-unicode-names/research.md` 3) are unchanged.
+       6. **Found by 118, not fixed** (`specs/118-plugin-update-close/
+          research.md` R6, R7): checksum's Save ignored write errors - a full
+          disk left a truncated list without a word (118 only no longer
+          counts it as saved; a message with the existing
+          `IDS_ERRORCREATINGFILE` is the fix); the Registry Editor's Find
+          window and FTP's Logs / Welcome Message windows still decline an
+          update (candidates for the 107 declaration while not searching /
+          always); a worker's error box (File Comparator hex view, checksum
+          read errors) can still appear while its window closes - also on a
+          normal exit; Disk Map's `Release()` has no guard like the other
+          three: an About box, the Esc confirmation, the shell context menu
+          or a shell file operation started from the map in the
+          milliseconds between the core's decision and the plug-in's turn
+          gets `WM_CLOSE` and the map is destroyed from inside that modal or
+          menu loop (pre-existing on a normal exit too); the File Comparator
+          terminates its remote-comparator thread before a window close that
+          may time out (`Release` then returns FALSE with `fcremote.exe`
+          requests no longer served - same on the normal path). (118 fixed
+          the `CDiskMap::Abort()` use-after-free it found.)
     3. Smaller: the link warning names an unreadable or too-deep folder as a
        "Link"; at depth 1,001 the message says "too long"; clipboard paste
        refuses 520+ bytes although Change Directory takes any length; the

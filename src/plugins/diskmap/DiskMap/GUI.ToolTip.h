@@ -127,7 +127,7 @@ protected:
 
     HWND DoCreate(int left, int top, int width, int height, BOOL isTopmost)
     {
-        return MyCreateWindow(
+        HWND hWnd = MyCreateWindow(
             isTopmost ? WS_EX_TOPMOST : 0, //WS_EX_TOPMOST,// | WS_EX_NOACTIVATE,
             szToolTipWindowClass,
             TEXT("ToolTip"),
@@ -135,6 +135,14 @@ protected:
             left, top,     //X, Y
             width, height, // WIDTH, HEIGHT
             NULL);
+#ifdef SALAMANDER
+        // feature 118 (interface 107): the file tooltip is a plain popup (no tool-window style),
+        // so while it is shown the core would count it as a window it cannot account for and
+        // decline an installer's close request; it holds nothing (owned by the map window)
+        extern void DiskMapDeclareClosesUnattended(HWND hWnd); // DiskMapPlugin.cpp (a 107 core only)
+        DiskMapDeclareClosesUnattended(hWnd);
+#endif
+        return hWnd;
     }
     BOOL OnCreate(LPCREATESTRUCT lpCreateStruct)
     {

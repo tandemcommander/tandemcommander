@@ -153,14 +153,29 @@ void CPluginInterface::About(HWND parent)
 BOOL CPluginInterface::Release(HWND parent, BOOL force)
 {
     CALL_STACK_MESSAGE2("CPluginInterface::Release(, %d)", force);
+    // feature 118 (interface 107): an installer is closing the program and nobody sits at the
+    // machine. A Verify window (running or finished) and a Calculate window whose every calculated
+    // hash type was saved hold nothing to lose: they were declared and close without a question. A
+    // Calculate window that reads or calculates, or holds hashes that were not saved, is never
+    // closed here - the plug-in refuses (the core has declined before getting here, the window is
+    // undeclared; this is the guard for a change in between).
+    BOOL unattended = !force && SalamanderGeneral->IsUnattendedClose();
+    if (unattended && InterlockedCompareExchange(&WindowsHoldingWork, 0, 0) > 0)
+    {
+        TRACE_I("CPluginInterface::Release(): unattended close: a Calculate window holds unsaved work - refusing");
+        return FALSE;
+    }
     BOOL ret = ModelessQueue.Empty();
     if (!ret)
     {
-        ret = ModelessQueue.CloseAllWindows(force) || force;
+        if (unattended)
+            ret = ModelessQueue.CloseAllWindows(FALSE, 5000); // the 5 s the 088 viewers get
+        else
+            ret = ModelessQueue.CloseAllWindows(force) || force;
     }
     if (ret)
     {
-        if (!ThreadQueue.KillAll(force) && !force)
+        if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
             ret = FALSE;
         else
             ReleaseWinLib(DLLInstance);

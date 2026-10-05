@@ -117,7 +117,15 @@ protected:
 #ifdef SALAMANDER
         extern CSalamanderGeneralAbstract* SalamanderGeneral; // defined in DiskMapPlugin.cpp
         if (hWnd != NULL)
+        {
             SalamanderGeneral->ThemeApplyToTopLevel(hWnd); // feature 036: dark title bar
+            // feature 118 (interface 107): the map holds nothing to lose - it only reads the
+            // folder, also while the scan is running (an abort loses nothing but the time) - so
+            // an installer's close request is not declined because of it; Release() closes it
+            // without a question. Its About box and close confirmation are undeclared windows.
+            extern void DiskMapDeclareClosesUnattended(HWND hWnd); // DiskMapPlugin.cpp (a 107 core only)
+            DiskMapDeclareClosesUnattended(hWnd);
+        }
 #endif
         return hWnd;
     }

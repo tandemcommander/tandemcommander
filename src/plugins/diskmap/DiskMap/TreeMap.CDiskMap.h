@@ -584,8 +584,10 @@ public:
 
         this->_rootdir = NULL;
         this->_populateworker = NULL;
-        wrk->SetSelfDelete(TRUE);
-        wrk->Abort(TRUE); //TODO: should this really wait?
+        // feature 118: was SetSelfDelete(TRUE) followed by Abort(TRUE) - when the worker had already
+        // finished, SetSelfDelete deleted it at once and Abort ran on freed memory (reachable also
+        // when an installer's close ends a scan); the worker still deletes the detached root itself
+        wrk->AbortAndSelfDelete(); //TODO: should this really wait?
         return TRUE;
     }
 

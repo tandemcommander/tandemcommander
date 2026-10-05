@@ -297,6 +297,27 @@ top-level window holds nothing to lose (a viewer) declares it with
 `SetWindowClosesUnattended`; the core then does not decline the installer's
 request because of that window. Undeclared plugin windows keep declining.
 
+*What "holds nothing to lose" means* (feature 118, the reading of the 088
+contract's "running operation"): work whose interruption changes or loses
+data - a file operation, a transfer, a result that exists only in the window
+and is meant to be kept - is an operation, and its window is not declared. A
+read-only computation whose only product is what the window shows (a
+comparison, a disk scan, a verification) is not one; its window may be
+declared also while it runs, and `Release` cancels it silently. In-tree
+practice: the four viewers (088); File Comparator, Disk Map (map, Log window,
+tooltip) and Checksum Verify (118); a Checksum Calculate window only while
+every hash type it calculated is saved and unchanged (one save writes one
+type; the declaration is withdrawn the moment a save truncates the file of a
+saved type, and restored only when that save completes); the
+Batch Renamer never (masks, Undo). Every declared window's own dialogs and
+message boxes stay undeclared. `Release` during an unattended close closes
+declared windows with `CloseAllWindows(FALSE, 5000)` and lets the threads end
+with `KillAll(FALSE, 5000)`, never forced, and refuses silently (closing
+nothing) when a window that holds work is open at that moment - the core's
+decision came before, the window may have appeared since. A plugin that still
+loads in cores older than 107 (Disk Map, `SALSDK_COMPATIBLE_WITH_VER` 103)
+calls the two services only when `SalamanderVersion >= 107`.
+
 **Path buffers.** A full path or full file name handed to a plugin can be
 `SAL_MAX_PATH_UTF8` bytes long. Never receive one into a `MAX_PATH` stack
 array; use `CSalMaxPathBuffer`. For a plugin built for an interface older

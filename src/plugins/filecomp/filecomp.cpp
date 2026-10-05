@@ -15,6 +15,7 @@ CPluginInterfaceForMenu InterfaceForMenu;
 
 CWindowQueue MainWindowQueue("FileComp Windows"); // list of all plugin windows
 CThreadQueue ThreadQueue("FileComp Windows, Workers, and Remote Control");
+volatile LONG CompareDialogsOpen = 0; // feature 118, see filecomp.h
 CMappedFontFactory MappedFontFactory;
 HINSTANCE hNormalizDll = NULL;
 TNormalizeString PNormalizeString = NULL;
@@ -324,17 +325,33 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
 {
     CALL_STACK_MESSAGE2("CPluginInterface::Release(, %d)", force);
 
+    // feature 118 (interface 107): an installer is closing the program and nobody sits at the
+    // machine. A comparator window holds nothing to lose - it shows what two files contain, also
+    // while it is still comparing (it was declared at WM_CREATE) - and closes without a question;
+    // its worker is cancelled silently (CW_EXIT). A Compare Files dialog holds typed names and is
+    // never closed here: the plug-in refuses (the core has declined before getting here anyway,
+    // the dialog is an undeclared window - this is the guard for a dialog opened in between).
+    BOOL unattended = !force && SG->IsUnattendedClose();
+    if (unattended && InterlockedCompareExchange(&CompareDialogsOpen, 0, 0) > 0)
+    {
+        TRACE_I("CPluginInterface::Release(): unattended close: a Compare Files dialog is open - refusing");
+        return FALSE;
+    }
+
     BOOL ret = CRemoteComparator::Terminate(force) || force;
     if (ret)
     {
         ret = MainWindowQueue.Empty();
         if (!ret)
         {
-            ret = MainWindowQueue.CloseAllWindows(force) || force;
+            if (unattended)
+                ret = MainWindowQueue.CloseAllWindows(FALSE, 5000); // the 5 s the 088 viewers get
+            else
+                ret = MainWindowQueue.CloseAllWindows(force) || force;
         }
         if (ret)
         {
-            if (!ThreadQueue.KillAll(force) && !force)
+            if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
                 ret = FALSE;
             else
             {

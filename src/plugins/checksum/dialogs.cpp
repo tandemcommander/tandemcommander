@@ -9,9 +9,11 @@
 #include "dialogs.h"
 #include "misc.h"
 #include "../../common/salcsumlist.h" // feature 117: reading a checksum list in any encoding
+#include <io.h>                        // feature 118: _get_osfhandle (identity of a saved list file)
 
 CWindowQueue ModelessQueue("CheckSum Modeless Windows");  // list of all modeless windows
 CThreadQueue ThreadQueue("CheckSum Dialogs and Workers"); // list of all dialog and worker threads
+volatile LONG WindowsHoldingWork = 0;                     // feature 118, see dialogs.h
 
 #define BUFSIZE (4 * 65536) // buffer size for reading
 
@@ -92,6 +94,7 @@ CSFVMD5Dialog::CSFVMD5Dialog(int id, HWND parent, BOOL alwaysOnTop) : CDialog(HL
     DirtyRowMax = -1;
     ReadingDirectories = FALSE;
     StopReadingDirectories = FALSE;
+    CountedAsWork = FALSE;
 }
 
 CSFVMD5Dialog::~CSFVMD5Dialog()
@@ -212,6 +215,23 @@ void CSFVMD5Dialog::ConvertPath(char* str, char from, char to)
     {
         *str = to;
     }
+}
+
+void CSFVMD5Dialog::UpdateClosesUnattended()
+{
+    CALL_STACK_MESSAGE1("CSFVMD5Dialog::UpdateClosesUnattended()");
+    BOOL work = HoldsWork();
+    if (work != CountedAsWork)
+    {
+        if (work)
+            InterlockedIncrement(&WindowsHoldingWork);
+        else
+            InterlockedDecrement(&WindowsHoldingWork);
+        CountedAsWork = work;
+    }
+    // feature 118 (interface 107): a window that holds nothing closes without a question when an
+    // installer closes the program; one that holds work makes the program decline the request
+    SalamanderGeneral->SetWindowClosesUnattended(HWindow, !work);
 }
 
 void CSFVMD5Dialog::OnThreadEnd()
@@ -348,6 +368,7 @@ INT_PTR CSFVMD5Dialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         SetForegroundWindow(HWindow);
 
         SetTimer(HWindow, IDT_UPDATEUI, IDT_UPDATESUI_PERIOD, NULL);
+        UpdateClosesUnattended(); // feature 118: a Calculate window starts holding work, a Verify one never does
         break;
     }
 
@@ -492,6 +513,11 @@ INT_PTR CSFVMD5Dialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         ModelessQueue.Remove(HWindow);
         KillTimer(HWindow, IDT_UPDATEUI);
+        if (CountedAsWork) // feature 118
+        {
+            InterlockedDecrement(&WindowsHoldingWork);
+            CountedAsWork = FALSE;
+        }
         break;
     }
     }
@@ -509,6 +535,52 @@ CCalculateDialog::CCalculateDialog(HWND parent, BOOL alwaysOnTop, TSeedFileList*
     pSeedFileList = pFileList;
     SourcePath = sourcePath;
     memcpy(HashInfo, Config.HashInfo, sizeof(Config.HashInfo));
+    WorkEnded = FALSE;
+    SavedTypes = 0;
+    memset(SavedFile, 0, sizeof(SavedFile));
+}
+
+DWORD CCalculateDialog::CalculatedTypes()
+{
+    DWORD mask = 0;
+    for (int i = 0; i < HT_COUNT; i++)
+    {
+        if (HashInfo[i].bCalculate)
+            mask |= 1u << HashInfo[i].Type;
+    }
+    return mask;
+}
+
+BOOL CCalculateDialog::HoldsWork()
+{
+    if (!WorkEnded)
+        return TRUE; // the folders are read or the hashes calculated: the list is being made
+    // the Save button is enabled exactly when there is something to save (hashes of some files)
+    if (!IsWindowEnabled(GetDlgItem(HWindow, IDC_BUTTON_SAVE)))
+        return FALSE;
+    // one save writes one hash type: the window shows nothing that is not in a saved file only
+    // when the column of EVERY calculated type was saved (and nothing changed since)
+    DWORD calculated = CalculatedTypes();
+    return (SavedTypes & calculated) != calculated;
+}
+
+void CCalculateDialog::ForgetSavesOfFile(FILE* f)
+{
+    BY_HANDLE_FILE_INFORMATION fi;
+    HANDLE h = (HANDLE)_get_osfhandle(_fileno(f));
+    if (h == INVALID_HANDLE_VALUE || !GetFileInformationByHandle(h, &fi))
+    {
+        SavedTypes = 0; // cannot tell which saved list this file is - forget them all
+        return;
+    }
+    for (int t = 0; t < HT_COUNT; t++)
+    {
+        if ((SavedTypes & (1u << t)) != 0 && SavedFile[t].Volume == fi.dwVolumeSerialNumber &&
+            SavedFile[t].IndexHigh == fi.nFileIndexHigh && SavedFile[t].IndexLow == fi.nFileIndexLow)
+        {
+            SavedTypes &= ~(1u << t);
+        }
+    }
 }
 
 #define REFRESH_LIMIT 1000
@@ -894,6 +966,8 @@ void CCalculateDialog::OnThreadEnd()
         }
     }
     CSFVMD5Dialog::OnThreadEnd();
+    WorkEnded = TRUE;
+    UpdateClosesUnattended(); // feature 118: unsaved hashes hold work, an empty list does not
 }
 
 void CCalculateDialog::EnableButtons(BOOL bEnable)
@@ -908,6 +982,8 @@ void CCalculateDialog::DeleteItem(int index)
     CSFVMD5Dialog::DeleteItem(index);
     if (!ListView_GetItemCount(hList))
         EnableButtons(FALSE);
+    SavedTypes = 0;           // feature 118: the list differs from every saved file now
+    UpdateClosesUnattended(); // (an emptied list holds nothing)
 }
 
 // resource (ANSI) string -> UTF-16
@@ -1081,6 +1157,14 @@ void CCalculateDialog::SaveHashes()
             Error(HWindow, GetLastError(), IDS_SAVE_TITLE, IDS_ERRORCREATINGFILE);
             return;
         }
+        // feature 118: "wb" has just truncated the file - if it held one of this window's saved
+        // lists, that list is gone until this save completes (a failed write must not leave the
+        // window declared: it may hold the only good copy now)
+        eHASH_TYPE savingType = Config.HashType; // set by GetSaveFileName above
+        BY_HANDLE_FILE_INFORMATION fileId;
+        BOOL haveFileId = GetFileInformationByHandle((HANDLE)_get_osfhandle(_fileno(f)), &fileId);
+        ForgetSavesOfFile(f);
+        UpdateClosesUnattended();
 
         // Feature 117: the md5/sha* lists are written as sha256sum writes them - UTF-8 names, LF
         // line ends, no comment - because that is what the other verifiers read: GNU coreutils
@@ -1126,7 +1210,21 @@ void CCalculateDialog::SaveHashes()
             fprintf(f, "%s  %s%s", (Config.HashType == HT_CRC) ? name : hash, (Config.HashType == HT_CRC) ? hash : name, eol);
         }
 
-        fclose(f);
+        // feature 118: only a list that was written completely counts as saved (an unattended
+        // close may then close the window); a write error leaves the window holding its work
+        BOOL written = !ferror(f);
+        if (fclose(f) != 0)
+            written = FALSE;
+        if (written && haveFileId && savingType >= 0 && savingType < HT_COUNT)
+        {
+            SavedTypes |= 1u << savingType;
+            SavedFile[savingType].Volume = fileId.dwVolumeSerialNumber;
+            SavedFile[savingType].IndexHigh = fileId.nFileIndexHigh;
+            SavedFile[savingType].IndexLow = fileId.nFileIndexLow;
+            UpdateClosesUnattended();
+        }
+        else if (!written)
+            TRACE_E("CCalculateDialog::SaveHashes(): writing the list has failed");
 
         // notify a change on the path (our file was added)
         SalamanderGeneral->CutDirectory(filename);

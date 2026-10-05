@@ -53,6 +53,26 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **An update no longer fails because a finished comparison, disk map or
+  checksum verification was left open.** When an installer or a package
+  manager (winget) updates Tandem Commander while it is running, it asks the
+  program to close; since 0.1.8 the program declines while a window it cannot
+  close without asking is open - and so far that was every window of the File
+  Comparator, Disk Map, Checksum and Batch Renamer plugins. A File Comparator
+  window, a Disk Map window (with its Log window) and a Checksum Verify window
+  only show what they read, so the program now closes them and lets the update
+  go on - also while the comparison, scan or verification is still running
+  (it is cancelled, as Esc does). Windows that hold something that would be
+  lost still keep the program running, without showing anything: a Checksum
+  Calculate window with checksums that were not saved - each checksum type
+  it calculated must have been saved, as one save writes one type - or that
+  are still being calculated, a Batch Renamer window (its masks and its Undo of the renames
+  already done), and any dialog or message box of these plugins. Also fixed:
+  closing a File Comparator window while it was comparing was lost when the
+  comparison ended at that moment - the result's message box appeared instead
+  (or the window stayed open); and Disk Map could write into freed memory when
+  the program could not unload it at once, or when a scan was stopped just as
+  it finished (feature 118).
 - **Checksum lists are read in the encoding they were written in.** Verifying
   a .md5, .sha1, .sha256, .sha512 or .sfv list reported files with accented
   names as missing when the list was written in the Windows code page (Open
