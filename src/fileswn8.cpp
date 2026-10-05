@@ -655,6 +655,24 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                             }
 
                             *secondPart = 0; // 'path' holds the archive file name
+
+                            // feature 119: the archive is one of the selected items (or inside a
+                            // selected folder) - ZIP reported a sharing violation for it, 7-Zip packed
+                            // the old archive into the new one and a Move then failed to delete it
+                            // ("Delete Error", 32). Refused before anything is touched (also before the
+                            // zero-size archive below is deleted)
+                            if (PackArchiveIsSelectedSource(path, GetPath(), &data))
+                            {
+                                ShowPackIntoItselfRefusal(HWindow, path, type == atMove,
+                                                          LoadStr(type == atCopy ? IDS_ERRORCOPY : IDS_ERRORMOVE));
+                                if (indexes != NULL)
+                                    delete[] (indexes);
+                                EndStopRefresh();
+                                EndSuspendMode();
+                                FilesActionInProgress = FALSE;
+                                return;
+                            }
+
                             BOOL haveSize = FALSE;
                             CQuadWord size;
                             DWORD err;

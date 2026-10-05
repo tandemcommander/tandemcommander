@@ -1757,6 +1757,16 @@ private:
 // 'data' is left as it was (the scan builds no tree).
 int ScanMoveSelectionForDirLinks(HWND parent, CPanelTmpEnumData* data, const char* sourcePath, const char* title);
 
+// Feature 106/119: is the existing archive 'archive' one of the files about to be packed - a
+// selected item of 'data' (in 'panelPath'), under any spelling or as a hard link, or a file inside a
+// selected folder (fileswn7.cpp)? Then a pack into it would read its own output (ZIP: a sharing
+// violation; 7-Zip: the old archive inside the new one, and a Move then failed to delete it).
+BOOL PackArchiveIsSelectedSource(const char* archive, const char* panelPath, CPanelTmpEnumData* data);
+
+// Feature 119: the refusal for PackArchiveIsSelectedSource - names the archive (Name:) with "Cannot
+// copy (move) a file to itself." under 'caption' (OK only)
+void ShowPackIntoItselfRefusal(HWND parent, const char* archive, BOOL move, const char* caption);
+
 const char* WINAPI PanelEnumDiskSelection(HWND parent, int enumFiles, const char** dosName, BOOL* isDir,
                                           CQuadWord* size, DWORD* attr, FILETIME* lastWrite, void* param,
                                           int* errorOccured);

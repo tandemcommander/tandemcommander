@@ -30,6 +30,7 @@
 #include "../../common/salsamefile.h" // feature 106: is an output file one of the packed files?
 #include "../../common/salzipname.h"  // feature 110: is a member the file being added?
 #include "../../common/salzipmember.h" // feature 113: a replaced member put back
+#include "../../common/salpackvol.h"   // feature 119: the volumes a failed multi-volume pack deletes
 
 #ifndef SSZIP
 #include "zip.rh"
@@ -244,6 +245,29 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
     bool firstSfxDisk = false;
     QWORD ecrecOffs; // for SFX
 
+    // feature 119: with "WinZip names" the last volume is renamed to the archive's own name at the
+    // end - a rename that never replaces; an existing file of that name (the core's question was
+    // answered Add, or it is switched off) left the set ending with name.z0N and the old file in
+    // place, silently. Refused before anything is created, with the plug-in's own text for it.
+    // Removable media: the rename happens on the last disk - its failure is reported below.
+    if (SalMultiVolFinalNameTaken((Options.Action & PA_SELFEXTRACT) != 0, Options.SeqNames, Config.WinZipNames,
+                                  Removable, SalamanderGeneral->SalGetFileAttributes(ZipName) != INVALID_FILE_ATTRIBUTES))
+    {
+        ProcessError(IDS_CANTMULTIVOL, 0, ZipName, PE_NORETRY | PE_NOSKIP, NULL);
+        return ErrorID = IDS_NODISPLAY;
+    }
+
+    // feature 119: every volume CreateNextFile creates is recorded here; a pack that ends without
+    // a complete archive deletes them (DeleteCreatedVolumes)
+    CSalPackCreatedFiles created;
+    struct CCreatedScope
+    {
+        CZipPack* Pack;
+        CCreatedScope(CZipPack* pack, CSalPackCreatedFiles* list) : Pack(pack) { pack->CreatedVolumes = list; }
+        ~CCreatedScope() { Pack->CreatedVolumes = NULL; }
+    } createdScope(this, &created);
+    BOOL outputComplete = FALSE; // feature 119: the archive is finished - a later failure deletes nothing
+
     IgnoreAllFreeSp = false;
     OverwriteAll = false;
     EOCentrDir.Signature = SIG_EOCENTRDIR;
@@ -441,11 +465,26 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
                                 if (TempFile)
                                 {
                                     char* name = _strdup(TempFile->FileName); // full path (UTF-8) -> heap
+                                    NoteVolumeSize();                         // feature 119
                                     CloseCFile(TempFile);
                                     TempFile = NULL;
-                                    if (name != NULL)
+                                    // feature 119: the result was not checked - a set ending with
+                                    // name.z0N cannot be opened, and a Move then deleted the sources.
+                                    // A failed rename is now a failed pack: reported, the sources
+                                    // stay, the volumes this operation created are deleted
+                                    if (name == NULL)
+                                        ErrorID = IDS_LOWMEM;
+                                    else
                                     {
-                                        MoveFileU8(name, ZipName);
+                                        if (!MoveFileU8(name, ZipName))
+                                        {
+                                            DWORD err = GetLastError();
+                                            if (err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS)
+                                                ProcessError(IDS_CANTMULTIVOL, 0, ZipName, PE_NORETRY | PE_NOSKIP, NULL);
+                                            else
+                                                ProcessError(IDS_ERRCREATE, err, ZipName, PE_NORETRY | PE_NOSKIP, NULL);
+                                            ErrorID = IDS_NODISPLAY;
+                                        }
                                         free(name);
                                     }
                                 }
@@ -468,6 +507,10 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
                                     }
                                 }
                             }
+                            // feature 119: the archive is complete; whatever fails from here on
+                            // (the Move's source clean-up) never deletes it
+                            if (!ErrorID && !UserBreak)
+                                outputComplete = TRUE;
                             if (Move && !ErrorID && !UserBreak)
                             {
                                 ErrorID = CleanUpSource();
@@ -479,15 +522,80 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
         }
         if (TempFile)
         {
+            NoteVolumeSize(); // feature 119
             CloseCFile(TempFile);
+            TempFile = NULL;
         }
-        // feature 106: only a volume this operation created; a name whose overwrite was declined
-        // or refused (the user's file, possibly one of the sources) is never deleted
-        if ((ErrorID || UserBreak || NothingToDo) && TempNameOurs)
-            DeleteFileU8(TempName);
     }
+    // feature 106: only a volume this operation created; a name whose overwrite was declined or
+    // refused (the user's file, possibly one of the sources) is never deleted. Feature 119: every
+    // volume it created, not only the current one - also when volume 1 could not be created
+    // (nothing recorded then) - and nothing once the archive is complete
+    int cleanup = SalPackVolCleanupScope(ErrorID || UserBreak || NothingToDo, outputComplete, Removable);
+    if (cleanup != salPackVolDeleteNone)
+        DeleteCreatedVolumes(cleanup == salPackVolDeleteAll);
     Salamander->CloseProgressDialog();
     return ErrorID;
+}
+
+// Feature 119: the multi-volume pack ends without a complete archive (an error, a refusal, Cancel,
+// a failed rename of the last volume). Before 119 only the current volume was deleted - volumes
+// 1..n-1 stayed behind, a set that cannot be opened. A fixed disk ('all'): every recorded volume
+// whose name still holds the file this operation created (SalPackCreatedMayDelete - never another
+// file that took the name; kept when that cannot be told). Removable media: the earlier volumes are
+// on other disks and one name exists on every disk - only the most recent volume, and only while
+// TempNameOurs (NextDisk clears it when it closes a volume, before the disk is changed) and while the
+// name on the disk now in the drive is still that file (code review SF2: before, Cancel in the
+// "insert disk" dialog deleted TempName on the NEW disk - with sequential names off the user's
+// name.zip). TempNameOurs is false for a declined or refused name and for the reopened volume of a
+// self-extractor's second pass: never deleted.
+BOOL CZipPack::DeleteCreatedVolume(int i)
+{
+    WCHAR* w = SplU8ToWExtAlloc(CreatedVolumes->GetName(i));
+    if (w == NULL)
+        return FALSE; // low memory: left in place rather than deleted unchecked
+    CSalFileIdentity now;
+    BOOL exists = SalGetFileIdentityW(w, TRUE, &now);
+    BOOL del = SalPackCreatedMayDelete(CreatedVolumes->GetId(i), CreatedVolumes->GetSizeKnown(i),
+                                       CreatedVolumes->GetSize(i), exists, now);
+    if (del)
+        del = DeleteFileW(w);
+    free(w);
+    return del;
+}
+
+void CZipPack::DeleteCreatedVolumes(BOOL all)
+{
+    CALL_STACK_MESSAGE2("CZipPack::DeleteCreatedVolumes(%d)", all);
+    if (CreatedVolumes == NULL)
+    {
+        TempNameOurs = false;
+        return;
+    }
+    if (!all)
+    {
+        int last = CreatedVolumes->GetCount() - 1;
+        if (TempNameOurs && last >= 0 && strcmp(CreatedVolumes->GetName(last), TempName) == 0)
+            DeleteCreatedVolume(last);
+    }
+    else
+    {
+        for (int i = CreatedVolumes->GetCount() - 1; i >= 0; i--)
+            DeleteCreatedVolume(i);
+    }
+    CreatedVolumes->Clear();
+    TempNameOurs = false;
+}
+
+// Feature 119: the volume this operation created and is writing (TempNameOurs) is about to be
+// closed - its size on disk is recorded as the second witness for SalPackCreatedMayDelete
+void CZipPack::NoteVolumeSize()
+{
+    if (CreatedVolumes == NULL || !TempNameOurs || TempFile == NULL || TempFile->File == INVALID_HANDLE_VALUE)
+        return;
+    LARGE_INTEGER size;
+    if (GetFileSizeEx(TempFile->File, &size))
+        CreatedVolumes->SetLastSize((ULONGLONG)size.QuadPart);
 }
 
 int CZipPack::PackSelfExtract(SalEnumSelection2 next, void* param)
@@ -2590,6 +2698,28 @@ int CZipPack::CreateNextFile(bool firstSfxDisk)
                                                   FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
                     if (TempFile->File != INVALID_HANDLE_VALUE)
                     {
+                        // feature 119: recorded with its identity (read from this handle), so that a
+                        // failure deletes it later only if its name still holds this very file
+                        if (CreatedVolumes != NULL)
+                        {
+                            CSalFileIdentity id;
+                            if (!SalFileIdentityFromHandle(TempFile->File, &id))
+                            { // code review SF1: read by name at once (a FILE_READ_ATTRIBUTES open ignores
+                                // our share mode 0); still nothing -> Valid FALSE: never deleted later
+                                WCHAR* w = SplU8ToWExtAlloc(TempName);
+                                if (w == NULL || !SalGetFileIdentityW(w, TRUE, &id))
+                                    SalFileIdentityClear(&id);
+                                if (w != NULL)
+                                    free(w);
+                            }
+                            if (!CreatedVolumes->Add(TempName, id))
+                            {
+                                CloseHandle(TempFile->File); // low memory: not kept unrecorded
+                                DeleteFileU8(TempName);      // created here (or overwritten as confirmed)
+                                error = IDS_LOWMEM;
+                                break;
+                            }
+                        }
                         lstrcpy(TempFile->FileName, TempName);
                         TempFile->FilePointer = 0;
                         TempFile->Flags = PE_NOSKIP;
@@ -2743,9 +2873,13 @@ int CZipPack::NextDisk()
         {
             return IDS_NODISPLAY;
         }
+        NoteVolumeSize(); // feature 119
         CloseCFile(TempFile);
         TempFile = NULL;
     }
+    // feature 119 (code review SF2): the closed volume is complete; on removable media the next disk
+    // goes in now and TempName would name a file on THAT disk - a Cancel below must not delete it
+    TempNameOurs = false;
     DiskNum++;
     if (Removable)
     {

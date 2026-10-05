@@ -40,6 +40,7 @@
 #include "salnameorder.h"   // feature 115
 #include "salftpsecret.h"   // feature 116
 #include "salcsumlist.h"    // feature 117
+#include "salpackvol.h"     // feature 119
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -8034,6 +8035,127 @@ static void TestChecksumList117()
     CHECK(Path117(d, "x.txt", 2, &ok) == "<FALSE:>" && !ok);
 }
 
+// feature 119: what a failed multi-volume pack deletes, and the archive name the last volume is
+// renamed to (src/common/salpackvol.h)
+static void TestPackLeftovers119()
+{
+    // --- the list of created volumes ---
+    {
+        CSalPackCreatedFiles list;
+        CHECK(list.GetCount() == 0);
+        CHECK(!list.Add(NULL, Id103(1, 2, 0, 1, 1)));
+        CHECK(list.GetCount() == 0);
+        char name[32];
+        for (int i = 1; i <= 20; i++) // grows past its first capacity (8)
+        {
+            sprintf(name, "C:\\o\\a.z%02d", i);
+            CHECK(list.Add(name, Id103(7, 0x100 + i, 0, 10, 10)));
+        }
+        CHECK(list.GetCount() == 20);
+        CHECK(strcmp(list.GetName(0), "C:\\o\\a.z01") == 0 && list.GetId(0).Index64 == 0x101);
+        CHECK(strcmp(list.GetName(19), "C:\\o\\a.z20") == 0 && list.GetId(19).Index64 == 0x114);
+        sprintf(name, "changed"); // the list keeps its own copy
+        CHECK(strcmp(list.GetName(19), "C:\\o\\a.z20") == 0);
+        CHECK(list.Add("C:\\o\\\xC4\x8D\xC3\xAD.z01", Id103(7, 0x200, 0, 1, 1))); // UTF-8 kept byte for byte
+        CHECK(strcmp(list.GetName(20), "C:\\o\\\xC4\x8D\xC3\xAD.z01") == 0);
+        list.Clear();
+        CHECK(list.GetCount() == 0);
+        CHECK(list.Add("x", Id103(7, 1, 0, 1, 1)) && list.GetCount() == 1); // usable after Clear
+        CHECK(!list.GetSizeKnown(0));                                       // no size until the volume is closed
+        list.SetLastSize(4096);
+        CHECK(list.GetSizeKnown(0) && list.GetSize(0) == 4096);
+        CHECK(list.Add("y", Id103(7, 2, 0, 1, 1)) && !list.GetSizeKnown(1)); // only the last one gets it
+        CHECK(list.GetSize(0) == 4096);
+    }
+
+    // --- the clean-up scope ---
+    CHECK(SalPackVolCleanupScope(FALSE, FALSE, FALSE) == salPackVolDeleteNone); // success
+    CHECK(SalPackVolCleanupScope(FALSE, TRUE, TRUE) == salPackVolDeleteNone);
+    CHECK(SalPackVolCleanupScope(TRUE, FALSE, FALSE) == salPackVolDeleteAll);    // failed, fixed disk
+    CHECK(SalPackVolCleanupScope(TRUE, FALSE, TRUE) == salPackVolDeleteCurrent); // failed, removable media
+    CHECK(SalPackVolCleanupScope(TRUE, TRUE, FALSE) == salPackVolDeleteNone);    // the Move's clean-up failed
+    CHECK(SalPackVolCleanupScope(TRUE, TRUE, TRUE) == salPackVolDeleteNone);     // ... never the archive
+
+    // --- may a recorded volume be deleted? (keep it whenever unsure - code review SF1) ---
+    CSalFileIdentity made = Id103(0x77, 0x500, 0, 100, 100);
+    CHECK(SalPackCreatedMayDelete(made, TRUE, 4096, TRUE, Id103(0x77, 0x500, 4096, 200, 100)));  // the same file, written since
+    CHECK(SalPackCreatedMayDelete(made, FALSE, 0, TRUE, Id103(0x77, 0x500, 9, 200, 0)));         // same id, no creation time now
+    CHECK(!SalPackCreatedMayDelete(made, TRUE, 4096, TRUE, Id103(0x77, 0x500, 4096, 200, 101))); // same id, another creation time
+    CHECK(!SalPackCreatedMayDelete(made, TRUE, 0, TRUE, Id103(0x77, 0x501, 0, 100, 100)));       // another file took the name
+    CHECK(!SalPackCreatedMayDelete(made, TRUE, 0, TRUE, Id103(0x78, 0x500, 0, 100, 100)));       // another disk, same index
+    CHECK(!SalPackCreatedMayDelete(made, TRUE, 0, FALSE, made));                                 // nothing there
+    // no usable ids (a server without file ids): only the same creation time, a file, the written size
+    CSalFileIdentity noId = Id103(0, 0, 0, 1, 50);
+    CHECK(SalPackCreatedMayDelete(noId, TRUE, 9000, TRUE, Id103(0, 0, 9000, 60, 50)));           // all witnesses agree
+    CHECK(SalPackCreatedMayDelete(noId, FALSE, 0, TRUE, Id103(0, 0, 9000, 60, 50)));             // size not tracked: the time decides
+    CHECK(!SalPackCreatedMayDelete(noId, TRUE, 8000, TRUE, Id103(0, 0, 9000, 60, 50)));          // another size: replaced
+    CHECK(!SalPackCreatedMayDelete(noId, TRUE, 9000, TRUE, Id103(0, 0, 9000, 60, 51)));          // another creation time
+    CHECK(!SalPackCreatedMayDelete(noId, TRUE, 9000, TRUE, Id103(0, 0, 9000, 60, 0)));           // no creation time now
+    CHECK(!SalPackCreatedMayDelete(Id103(0, 0, 0, 1, 0), FALSE, 0, TRUE, Id103(0, 0, 9, 2, 0))); // none recorded
+    CHECK(!SalPackCreatedMayDelete(noId, FALSE, 0, TRUE, Id103(0, 0, 0, 60, 50, 1, TRUE)));      // a folder now
+    CSalFileIdentity link = Id103(0, 0, 9000, 60, 50);
+    link.Attr |= FILE_ATTRIBUTE_REPARSE_POINT;
+    CHECK(!SalPackCreatedMayDelete(noId, TRUE, 9000, TRUE, link)); // a link now
+    CSalFileIdentity unread;
+    SalFileIdentityClear(&unread);
+    CHECK(!SalPackCreatedMayDelete(unread, FALSE, 0, TRUE, made));                                 // the identity could not be read at creation: kept
+    CHECK(!SalPackCreatedMayDelete(made, FALSE, 0, TRUE, unread));                                 // ... or now
+    CHECK(!SalPackCreatedMayDelete(Id103(1, 0, 0, 1, 50), FALSE, 0, TRUE, Id103(2, 0, 0, 1, 50))); // no ids, two volumes
+
+    // --- the archive name the last volume is renamed to ---
+    CHECK(SalMultiVolFinalNameTaken(FALSE, TRUE, TRUE, FALSE, TRUE));   // fixed disk, WinZip names, name.zip exists
+    CHECK(!SalMultiVolFinalNameTaken(FALSE, TRUE, TRUE, FALSE, FALSE)); // the name is free
+    CHECK(!SalMultiVolFinalNameTaken(TRUE, TRUE, TRUE, FALSE, TRUE));   // a self-extractor: no rename
+    CHECK(!SalMultiVolFinalNameTaken(FALSE, FALSE, TRUE, FALSE, TRUE)); // one name on every disk: asked per volume
+    CHECK(!SalMultiVolFinalNameTaken(FALSE, TRUE, FALSE, FALSE, TRUE)); // name01.zip, name02.zip: no rename
+    CHECK(!SalMultiVolFinalNameTaken(FALSE, TRUE, TRUE, TRUE, TRUE));   // removable: the last disk decides
+
+    // --- real files (NTFS %TEMP%): a volume recorded from its handle, then replaced ---
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping the file part of TestPackLeftovers119 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(tmp) + L"saltests-119-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    std::wstring vol = dir + L"\\a.z01", other = dir + L"\\other.bin";
+    HANDLE h = CreateFileW(vol.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+    CHECK(h != INVALID_HANDLE_VALUE);
+    CSalFileIdentity rec;
+    CHECK(SalFileIdentityFromHandle(h, &rec));
+    DWORD w = 0;
+    CHECK(WriteFile(h, "volume data", 11, &w, NULL));
+    CloseHandle(h);
+    CSalFileIdentity now;
+    BOOL exists = SalGetFileIdentityW(vol.c_str(), TRUE, &now);
+    CHECK(exists && SalPackCreatedMayDelete(rec, TRUE, 11, exists, now)); // still the volume this operation wrote
+    // another file takes the name (the volume was moved away, a file of the user's moved in)
+    std::wstring moved = dir + L"\\moved.z01";
+    CHECK(MoveFileW(vol.c_str(), moved.c_str()));
+    h = CreateFileW(other.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+    CHECK(h != INVALID_HANDLE_VALUE);
+    CloseHandle(h);
+    CHECK(MoveFileW(other.c_str(), vol.c_str()));
+    exists = SalGetFileIdentityW(vol.c_str(), TRUE, &now);
+    CHECK(exists && !SalPackCreatedMayDelete(rec, TRUE, 11, exists, now)); // never deleted
+    CHECK(DeleteFileW(vol.c_str()));
+    exists = SalGetFileIdentityW(vol.c_str(), TRUE, &now);
+    CHECK(!exists && !SalPackCreatedMayDelete(rec, TRUE, 11, exists, now)); // gone: nothing to delete
+    exists = SalGetFileIdentityW(moved.c_str(), TRUE, &now);
+    CHECK(exists && SalPackCreatedMayDelete(rec, TRUE, 11, exists, now)); // the identity follows the file, not the name
+    // without ids (as on a server): the creation time and the size alone - the moved volume still
+    // matches, the file that took the name does not (another creation time)
+    CSalFileIdentity recNoId = rec, nowNoId = now;
+    recNoId.Has64 = recNoId.Has128 = FALSE;
+    nowNoId.Has64 = nowNoId.Has128 = FALSE;
+    CHECK(SalPackCreatedMayDelete(recNoId, TRUE, 11, TRUE, nowNoId));
+    CHECK(!SalPackCreatedMayDelete(recNoId, TRUE, 12, TRUE, nowNoId));
+    DeleteFileW(moved.c_str());
+    CHECK(RemoveDirectoryW(dir.c_str()));
+}
+
 int main()
 {
     TestConversions();
@@ -8090,6 +8212,7 @@ int main()
     TestUndeleteLeftovers115();
     TestFtpSecret116();
     TestChecksumList117();
+    TestPackLeftovers119();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

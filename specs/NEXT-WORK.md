@@ -408,11 +408,25 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   last volume as `name.z0N` silently (the rename never replaces); the 7-Zip
   plug-in packs a selected archive into itself and Move then shows "Delete
   Error (32)" for it; the ZIP plug-in's *Add* of a selected archive reports
-  a sharing violation instead of a clear text; `translate.merge --module zip`
+  a sharing violation instead of a clear text - ✅ **these four fixed by
+  feature 119 (2026-10-06, GUI runs pending)**: every volume a multi-volume
+  pack creates is recorded with its file identity and a failure deletes
+  each one still holding that file - kept when unsure (removable media:
+  only the volume still being written; nothing once the archive is
+  complete); multi-volume into an
+  existing `name.zip` is refused before anything is created with the
+  plug-in's existing `IDS_CANTMULTIVOL`, a failed final rename is reported
+  and fails the pack (before: a Move deleted the sources); the core refuses
+  every pack into an archive that is one of its own sources (Pack dialog
+  before its question, F5 / F6, drag & drop / paste) for every packer -
+  record `specs/119-packing-leftovers/fix-log.md`; `translate.merge --module zip`
   would re-lay out 510 controls of the committed ZIP translations (tool drift
   since build 185); the Pack dialog's refusal reuses "Cannot copy a file to
   itself." - it names no file and does not say that deselecting the archive
-  (or the folder holding it) helps (needs a new core string); a case-sensitive folder still refuses
+  (or the folder holding it) helps (needs a new core string) - ✅ **the name
+  is shown since feature 119** (`CFileErrorDlg` "Name:" + the to-itself
+  text, no new string); "deselecting helps" in words is still not said
+  (would need a new core string); a case-sensitive folder still refuses
   `a.txt` -> existing `A.txt` (now provably another file - could offer the
   overwrite). Found by 103, pre-existing: **PictView's Rename fails with
   error 32 for the image it shows** (the viewer keeps it open; both builds,
@@ -586,7 +600,7 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      panel's auto refresh closed the window in every probe row). Needs a design:
      the cache does not know `CFileTimeStamps` - e.g. never mark out of date a
      copy that a panel tracks as edited, or let `GetName` refuse to recreate it.
-     ✅ **Fixed by feature 112 (2026-10-05) - GUI runs pending**: the panel's
+     ✅ **Fixed by feature 112 (2026-10-05; GUI-verified 2026-10-06)**: the panel's
      lock on a tracked copy is a core-only EDIT lock (`crtCacheEdit`); a flush
      that meets it defers the out-of-date mark until the last edit lock goes
      (`src/common/salcacheedit.h`, `CSalCacheEditPin`); without an edit lock

@@ -53,6 +53,31 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **A failed multi-volume ZIP archive leaves nothing behind, and a set never
+  ends with a misnamed last volume.** When packing a multi-volume archive
+  stopped part-way - a file that could not be read, Cancel, a declined
+  "Overwrite?" question - the volumes already written stayed in the folder, a
+  set that no program can open. They are now deleted; files the operation did
+  not create are never touched (a volume name whose overwrite you confirmed
+  goes with the set; when the disk cannot tell whether a volume is still the
+  file that was written, it is kept). On removable disks only the volume
+  still being written is deleted; cancelling "insert the next disk" no longer
+  deletes the file of that name on the newly inserted disk. Packing a multi-volume archive into a name that already
+  exists (answering "Add") used to end with the last volume named `.z0N`
+  instead of `.zip`, silently - and with "Delete files after packing" the
+  files were deleted. The ZIP plugin now refuses this before it starts ("The
+  multi-volume archives can be created only like a new archive"); choose
+  "Overwrite" or another name.
+- **Packing an archive into itself is refused, with its name.** Packing
+  (Alt+F5, F5 / F6 into an archive in the other panel, drag and drop, paste)
+  into an archive that is itself one of the selected files - or lies inside a
+  selected folder - made the ZIP plugin report a sharing violation, and the
+  7zip plugin packed the old archive into the new one (with "Delete files
+  after packing" then failing with "Delete Error"). It is now refused before
+  anything happens, and the message names the archive. **Changed behaviour:**
+  the pack is refused as a whole (before, ZIP added the other files after you
+  skipped the archive) - leave the archive out of the selection. The Pack
+  dialog no longer asks "Add or Overwrite?" in that case (feature 119).
 - **An update no longer fails because a finished comparison, disk map or
   checksum verification was left open.** When an installer or a package
   manager (winget) updates Tandem Commander while it is running, it asks the

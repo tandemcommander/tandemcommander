@@ -1917,3 +1917,38 @@ plugin architecture preservation, UI consistency.
   `probe/update_close_probe.ps1` (20 rows, `-Expect fixed|before`) written, runs owed on
   `Debug_x64_118` and `Debug_x64_pre118`. Records: `specs/118-plugin-update-close/fix-log.md`.
   GUI runs owed at commit time - see fix-log "Code-only reviews".
+- 119-packing-leftovers: **the five leftovers of 106 - no stray volumes, no misnamed set, and a pack
+  into its own archive refused with the archive's name.** Measured by code reading (no GUI run was
+  allowed; the probe is pending). (1) A failed multi-volume ZIP pack deleted only the current volume
+  - volumes 1..n-1 stayed (Cancel, a source that cannot be opened, a declined "Overwrite?", 106's
+  refusal at volume n). Now `CreateNextFile` records every volume it creates with the identity from
+  its handle (`CSalPackCreatedFiles`, header-only `src/common/salpackvol.h`) and a failure deletes
+  each recorded volume only while its name still holds that file (`SalPackCreatedMayDelete`);
+  kept whenever unsure (no file ids: only with the recorded creation time and written size -
+  code review SF1); removable media: only the volume still being written (`NextDisk` stops calling
+  a closed volume "ours" before the disk can change - SF2); nothing once the archive is complete
+  (`outputComplete` - a Move's clean-up failure used to delete the last volume when WinZip names
+  were off). A pre-existing volume name overwritten after *Yes* goes with the set (decided).
+  (2) The last volume's rename to `name.zip` never replaces and was unchecked: with `name.zip`
+  existing (Add) the set ended with `name.z0N` and a Move deleted the sources. Now refused before
+  anything is created with the plug-in's existing, translated `IDS_CANTMULTIVOL` (its use had been
+  commented out since Open Salamander) where the rename will happen (`SalMultiVolFinalNameTaken`:
+  fixed disk, sequential + WinZip names, no SFX); a failed rename is reported and fails the pack.
+  (3, 4) The core refuses every pack into an archive that is one of its own sources (106's
+  `PackArchiveIsSelectedSource`, now shared) on the Pack dialog - before the "Add or Overwrite?"
+  question, which is no longer asked then - F5 / F6 and drag & drop / paste, before any packer:
+  ZIP's sharing violation and 7-Zip's archive-inside-itself + "Delete Error (32)" are gone.
+  **Behaviour change**: such a pack is refused as a whole - deselect the archive. (5) The refusal
+  names the archive: `ShowPackIntoItselfRefusal` = `CFileErrorDlg` with `IDD_ERROR3` and the
+  existing copy / move "to itself" text (no new string; "deselect" in words would need one -
+  recorded). The check pre-filters plain files when certain (usable ids, one link, the archive's
+  real folder known - SF5) and takes the archive's folders from the resolved path too. Also:
+  `DetectRemovable` asks `X:\` (also behind `\\?\`), UNC never removable. The probe library
+  `fix_probe_lib.ps1` now refuses the Default / Winlogon desktop for every probe (exit inside a
+  dot-sourced file ends only that file - it ends the process; opt-out
+  `TC_PROBE_ALLOW_VISIBLE_DESKTOP=1`). Interface 107, no registry change, no string. saltests
+  14,576 -> 14,655. Probe `probe/packleft_probe.ps1` (106's rows with 119 expectations + L, K, P
+  (paste - NOT DRIVEN without a clipboard), Czech; 110 RUN + END rows)
+  written, **GUI runs pending** (`Debug_x64_119` / `Debug_x64_pre119`). Records:
+  `specs/119-packing-leftovers/fix-log.md`.
+  GUI runs owed at commit time - see fix-log T016.

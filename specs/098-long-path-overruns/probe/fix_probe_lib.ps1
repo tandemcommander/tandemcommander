@@ -2,6 +2,34 @@
 # shared by fix_probe.ps1 and click_debug.ps1 (dot-sourced; needs $Exe). Pure ASCII.
 
 Add-Type -AssemblyName System.Windows.Forms
+# feature 119 (code review SF3): every probe that dot-sources this library drives the program's
+# windows - never on the user's desktop (Default / Winlogon); only through
+# tools\run_on_hidden_desktop.ps1. A run the user agreed to watch on the visible desktop sets
+# TC_PROBE_ALLOW_VISIBLE_DESKTOP=1 for that one run.
+if (-not ('DeskLib098' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class DeskLib098
+{
+    [DllImport("user32.dll")] public static extern IntPtr GetThreadDesktop(uint threadId);
+    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)] public static extern bool GetUserObjectInformationW(IntPtr h, int index, StringBuilder info, int length, out int needed);
+    public static string Name()
+    {
+        var sb = new StringBuilder(256); int needed;
+        if (!GetUserObjectInformationW(GetThreadDesktop(GetCurrentThreadId()), 2, sb, sb.Capacity * 2, out needed)) return "";
+        return sb.ToString();
+    }
+}
+'@
+}
+if ($env:TC_PROBE_ALLOW_VISIBLE_DESKTOP -ne '1') {
+    $libDesk = [DeskLib098]::Name()
+    # (exit in a dot-sourced file ends only this file - the probe itself must end, before it touches anything)
+    if (-not $libDesk -or $libDesk -ieq 'Default' -or $libDesk -ieq 'Winlogon') { [Console]::Out.WriteLine(("NOT RUN: this probe must run on a hidden desktop (tools\run_on_hidden_desktop.ps1); the current desktop is '{0}'" -f $libDesk)); [Console]::Out.Flush(); [Environment]::Exit(3) }
+}
 if (-not ('Drv098f' -as [type])) {
     Add-Type -TypeDefinition @'
 using System;

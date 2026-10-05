@@ -3,6 +3,8 @@
 
 #pragma once
 
+class CSalPackCreatedFiles; // feature 119, src/common/salpackvol.h
+
 //action flags
 
 #define AF_ADD 0       //add file and delete it if moving files to zip
@@ -158,6 +160,9 @@ public:
     // feature 106: TempName names the volume this operation created (or confirmed overwriting) -
     // only then may a failure delete it; a declined or refused name is the user's file
     bool TempNameOurs;
+    // feature 119: every volume this multi-volume pack created (PackMultiVol owns the list;
+    // NULL elsewhere) - a failed or cancelled pack deletes them, not only the current one
+    CSalPackCreatedFiles* CreatedVolumes;
 
     //self-extracting archives
     unsigned ArchiveHeaderOffs;
@@ -220,6 +225,15 @@ public:
     BOOL IsPackedSource(const char* nameU8);
     // feature 106: tells the user that 'nameU8' is one of the files being packed; IDS_NODISPLAY
     int RefusePackedSource(const char* nameU8);
+    // feature 119: a multi-volume pack ended without a complete archive - deletes the volumes it
+    // created ('all': a fixed disk) or, on removable media, the most recent one while it is still
+    // being written (TempNameOurs) and its name on the disk in the drive still holds it -
+    // SalPackVolCleanupScope, SalPackCreatedMayDelete, salpackvol.h; TempFile must be closed
+    void DeleteCreatedVolumes(BOOL all);
+    // feature 119: one recorded volume, if SalPackCreatedMayDelete allows; TRUE when deleted
+    BOOL DeleteCreatedVolume(int i);
+    // feature 119: records the size on disk of the volume being closed (TempNameOurs only)
+    void NoteVolumeSize();
     int NextDisk();
     int MatchAll();
     int WriteSfxExecutable(const char* sfxFile, const char* sfxPackage, BOOL preview, int progressMode);

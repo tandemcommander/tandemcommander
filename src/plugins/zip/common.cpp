@@ -2184,16 +2184,19 @@ int CZipCommon::MatchFiles(TIndirectArray2<CFileInfo>& files, TIndirectArray2<CE
 void CZipCommon::DetectRemovable()
 {
     CALL_STACK_MESSAGE1("CZipCommon::DetectRemovable()");
-    char pathRoot[MAX_PATH];
-    const char* sour = ZipName;
-    char* dest = pathRoot;
-
-    while (*sour && *sour != '\\')
-        *dest++ = *sour++;
-    *dest = 0;
-
-    if (GetDriveType(pathRoot) == DRIVE_REMOVABLE)
-        Removable = true;
+    // feature 119 (code review NIT): the root was the text before the first backslash, copied
+    // unbounded into a MAX_PATH buffer - for a UNC or \\?\ path that was "" (GetDriveType("") answers
+    // DRIVE_NO_ROOT_DIR, measured: not removable), so a \\?\X:\ path on removable media was taken for
+    // a fixed disk. Now: a drive letter (also behind \\?\) asks for "X:\"; a UNC path (\\server,
+    // \\?\UNC\) is a network path - never removable media.
+    const char* p = ZipName;
+    if (strncmp(p, "\\\\?\\", 4) == 0)
+        p += 4;
+    if (((p[0] >= 'A' && p[0] <= 'Z') || (p[0] >= 'a' && p[0] <= 'z')) && p[1] == ':')
+    {
+        char pathRoot[4] = {p[0], ':', '\\', 0};
+        Removable = GetDriveTypeA(pathRoot) == DRIVE_REMOVABLE;
+    }
     else
         Removable = false;
 }

@@ -1506,34 +1506,85 @@ const char* WINAPI PanelEnumDiskSelection(HWND parent, int enumFiles, const char
 // runs. TRUE when that file is one of the files about to be packed - a selected file (under any
 // spelling: 8.3 name, \\localhost\C$, case, a hard link), or a file inside a selected folder:
 // deleting it would delete a source before it is read. The file system's identity decides
-// (SalPackTargetInSelection, salsamefile.h). Only the "Overwrite" answer pays for it: one
-// identity per selected item plus one per folder above the archive.
-static BOOL PackArchiveIsSelectedSource(const char* archive, const char* panelPath, CPanelTmpEnumData* data)
+// (SalPackTargetInSelection, salsamefile.h). Feature 119: asked before every pack into an
+// existing archive (the Pack dialog with any answer, F5 / F6, drag & drop, paste) - a pack into
+// the archive it reads is refused for every packer. Runs only when the archive exists.
+//
+// Feature 119 (code review): the archive's folders are taken from the typed path AND from the
+// resolved one (GetFinalPathNameByHandle - a junction or a SUBST letter in the typed path hides the
+// real parents). Cost (review SF5): with no wait window an identity open per selected item froze the
+// panel over SMB, so plain files are filtered first when it is certain: the archive has usable ids
+// and exactly one name (Links == 1), and the folder that name lies in (from the resolved path) is
+// read. Not the panel folder -> no plain (non-link) file of the panel can be the archive; the panel
+// folder -> only the item named like the archive (long or 8.3 name) can be. Folders, links and
+// everything uncertain (no ids, hard links, a folder that cannot be read) keep the per-item check;
+// low memory refuses (fail closed).
+BOOL PackArchiveIsSelectedSource(const char* archive, const char* panelPath, CPanelTmpEnumData* data)
 {
     CALL_STACK_MESSAGE2("PackArchiveIsSelectedSource(%s, , )", archive);
     CSalFileIdentity arc;
     if (!SalGetFileIdentity(archive, FALSE, &arc))
-        return FALSE; // nothing readable to delete - the delete reports its own error
-    CSalHeapString up;
-    if (!up.Copy(archive))
-        return TRUE; // low memory: refuse rather than guess
+        return FALSE;                                  // nothing readable to delete - the delete reports its own error
+    char* finalPath = SalGetFinalPathU8Alloc(archive); // NULL: cannot be resolved (then the typed path only)
     TDirectArray<CSalFileIdentity> ancestors(16, 16);
-    while (CutDirectory(up.Get())) // the archive's parent, its parent, ... up to the root
+    const char* paths[2] = {archive, finalPath};
+    for (int p = 0; p < 2; p++)
     {
-        CSalFileIdentity a;
-        if (SalGetFileIdentity(up.Get(), FALSE, &a))
+        if (paths[p] == NULL)
+            continue;
+        CSalHeapString up;
+        if (!up.Copy(paths[p]))
         {
-            ancestors.Add(a);
-            if (!ancestors.IsGood())
+            free(finalPath);
+            return TRUE; // low memory: refuse rather than guess
+        }
+        while (CutDirectory(up.Get())) // the archive's parent, its parent, ... up to the root
+        {
+            CSalFileIdentity a;
+            if (SalGetFileIdentity(up.Get(), FALSE, &a))
             {
-                ancestors.ResetState();
-                return TRUE;
+                ancestors.Add(a);
+                if (!ancestors.IsGood())
+                {
+                    ancestors.ResetState();
+                    free(finalPath);
+                    return TRUE;
+                }
             }
         }
     }
+
+    // the plain-file filter (see above)
+    BOOL noPlainFile = FALSE;         // no plain file of the panel can be the archive
+    const char* onlyPlainName = NULL; // only the plain file of this name (long or 8.3) can be
+    if (finalPath != NULL && arc.Links == 1 && SalHasUsableFileId(arc))
+    {
+        CSalFileIdentity panelId, parentId;
+        CSalHeapString parent;
+        if (!parent.Copy(finalPath))
+        {
+            free(finalPath);
+            return TRUE;
+        }
+        if (CutDirectory(parent.Get()) &&
+            SalGetFileIdentity(panelPath, FALSE, &panelId) && SalHasUsableFileId(panelId) &&
+            SalGetFileIdentity(parent.Get(), FALSE, &parentId) && SalHasUsableFileId(parentId))
+        {
+            int m = SalFileIdMatch(parentId, panelId);
+            if (m == simDifferent)
+                noPlainFile = TRUE;
+            else if (m == simEqual)
+            {
+                const char* leaf = strrchr(finalPath, '\\');
+                onlyPlainName = leaf != NULL ? leaf + 1 : finalPath;
+            }
+        }
+    }
+
     size_t pathLen = strlen(panelPath);
     const char* sep = (pathLen > 0 && panelPath[pathLen - 1] == '\\') ? "" : "\\";
     CSalHeapString item;
+    BOOL ret = FALSE;
     for (int i = 0; i < data->IndexesCount; i++)
     {
         int index = data->Indexes[i];
@@ -1541,15 +1592,43 @@ static BOOL PackArchiveIsSelectedSource(const char* archive, const char* panelPa
         CFileData* f = isDir ? &data->Dirs->At(index) : &data->Files->At(index - data->Dirs->Count);
         if (isDir && strcmp(f->Name, "..") == 0)
             continue;
+        BOOL plainFile = !isDir && (f->Attr & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)) == 0;
+        if (plainFile && noPlainFile)
+            continue;
+        if (plainFile && onlyPlainName != NULL && !SalNameEqualOrdinalCI(f->Name, -1, onlyPlainName, -1) &&
+            (f->DosName == NULL || !SalNameEqualOrdinalCI(f->DosName, -1, onlyPlainName, -1)))
+        {
+            continue;
+        }
         if (!item.Printf("%s%s%s", panelPath, sep, f->Name))
-            return TRUE;
+        {
+            ret = TRUE; // low memory: refuse
+            break;
+        }
         CSalFileIdentity it;
         if (!SalGetFileIdentity(item.Get(), FALSE, &it))
             continue; // an item that cannot be read is not the existing archive
         if (SalPackTargetInSelection(arc, ancestors.Count > 0 ? &ancestors[0] : NULL, ancestors.Count, it, isDir))
-            return TRUE;
+        {
+            ret = TRUE;
+            break;
+        }
     }
-    return FALSE;
+    free(finalPath);
+    return ret;
+}
+
+// Feature 119: the refusal of a pack into an archive that is one of its own sources. Before, the
+// Pack dialog said only "Cannot copy a file to itself." (feature 106, Overwrite) and the other
+// routes reached the packer: ZIP reported a sharing violation for the archive, 7-Zip packed the old
+// archive into the new one (a Move then failed with "Delete Error (32)"). The error box names the
+// archive (Name:), so the user sees which selected item to leave out; no new string.
+void ShowPackIntoItselfRefusal(HWND parent, const char* archive, BOOL move, const char* caption)
+{
+    CALL_STACK_MESSAGE3("ShowPackIntoItselfRefusal(, %s, %d, )", archive, move);
+    CFileErrorDlg(parent, caption, archive, LoadStrU8(move ? IDS_CANNOTMOVEFILETOITSELF : IDS_CANNOTCOPYFILETOITSELF),
+                  FALSE, IDD_ERROR3)
+        .Execute();
 }
 
 void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* pluginName, int delFilesAfterPacking)
@@ -1797,6 +1876,17 @@ _PACK_AGAIN:
         nextFocus[0] = 0;
         if (SalGetFullName(fileBuf, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus))
         {
+            // feature 119: the existing archive is one of the files to be packed (selected, or inside a
+            // selected folder) - refused before the "Add or Overwrite?" question, whose every answer
+            // would fail: Overwrite deleted a source (106), Add read the archive into itself (ZIP: a
+            // sharing violation; 7-Zip: the old archive inside the new one). Nothing is touched; the
+            // dialog comes back - leave the archive out of the selection
+            if (PackArchiveIsSelectedSource(fileBuf, GetPath(), &data))
+            {
+                ShowPackIntoItselfRefusal(HWindow, fileBuf, PackerConfig.Move, LoadStr(IDS_PACKTITLE));
+                goto _PACK_AGAIN;
+            }
+
             //---  searching for a directory link in the packing source; cannot be combined with "delete files after packing"
             BOOL performPack = TRUE;
             if (PackerConfig.Move)
@@ -1848,11 +1938,11 @@ _PACK_AGAIN:
                 if (msgBoxRed == IDNO) // OVERWRITE
                 {
                     // feature 106: the existing archive is one of the files to be packed - deleting it
-                    // would delete a source before it is read; refused, nothing is touched
+                    // would delete a source before it is read; refused, nothing is touched (feature
+                    // 119 refuses this before the question - kept for a selection that changed meanwhile)
                     if (PackArchiveIsSelectedSource(fileBuf, GetPath(), &data))
                     {
-                        SalMessageBox(HWindow, LoadStrU8(IDS_CANNOTCOPYFILETOITSELF), LoadStr(IDS_ERROROVERWRITINGFILE),
-                                      MB_OK | MB_ICONEXCLAMATION);
+                        ShowPackIntoItselfRefusal(HWindow, fileBuf, PackerConfig.Move, LoadStr(IDS_ERROROVERWRITINGFILE));
                         overwriteNotDone = TRUE;
                         // fall through to _PACK_AGAIN
                     }

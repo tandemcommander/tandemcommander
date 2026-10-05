@@ -560,6 +560,15 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
             {
                 // cancelled: the warning was shown (or the user stopped the scan); the selection stays as it is
             }
+            else if (data->ToArchive &&
+                     PackArchiveIsSelectedSource(data->ArchiveOrFSName, data->Data->SrcPath, &dataEnum))
+            {
+                // feature 119: the target archive is one of the dropped / pasted items (or inside one of
+                // the folders) - refused before anything is packed, deleted or (a zero-size archive)
+                // removed; the box names the archive
+                ShowPackIntoItselfRefusal(HWindow, data->ArchiveOrFSName, !data->Copy,
+                                          LoadStr(data->Copy ? IDS_ERRORCOPY : IDS_ERRORMOVE));
+            }
             else if (data->ToArchive)
             {
                 //---  check whether it is a zero-length file
