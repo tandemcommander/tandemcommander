@@ -10,6 +10,7 @@
 #include "wicengine.h"                   // feature 105: Save As through the Windows encoders
 #include "../../common/salsamefile.h"    // feature 105: is the target the shown file?
 #include "../../common/salsafereplace.h" // feature 105: replace only by a complete file
+#include "../../common/salpvsource.h"    // feature 111: the alpha question
 #include "dialogs.h"
 #include "pictview.h"
 #include "pictview.rh"
@@ -105,6 +106,12 @@ static void FormatNameMessageU8(char* out, int outSize, const char* cpTemplate, 
     free(nameW);
     if (!done)
         _snprintf_s(out, outSize, _TRUNCATE, cpTemplate, u8Name);
+}
+
+// feature 111: the same for the wallpaper commands (render2.cpp)
+void FormatSaveErrorU8(char* out, int outSize, const char* detailU8)
+{
+    FormatNameMessageU8(out, outSize, LoadStr(IDS_SAVEERROR), detailU8);
 }
 
 typedef struct tagProgBarInfo
@@ -770,7 +777,16 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
     DWORD format;
     TCHAR initDir[MAX_PATH] = _T("");
 
-    if (((pvii.Format == PVF_ICO) || (pvii.Format == PVF_PNG) || (pvii.Format == PVF_TGA) || (pvii.Format == PVF_TIFF) || (pvii.Format == PVF_ANI) || (pvii.Format == PVF_PSD)) && (pvii.Colors == PV_COLOR_TC32))
+    // feature 111: the source as the file holds it. The engine reports every image as 32-bit (its rows),
+    // so every PNG/TIFF/ICO asked about a lost alpha channel and "2 colors" (with the CCITT TIFF
+    // compressions) was never offered; now the question comes only when the alpha channel is really
+    // used (a pixel that is not opaque), and the dialog starts from the source's depth
+    PVImageInfo srcInfo;
+    GetSourceImageInfo(&srcInfo);
+    CWicSourceFormat srcFormat;
+    BOOL alphaLost = PVHandle != NULL && WicGetSourceFormat(PVHandle, &srcFormat) &&
+                     SalAlphaWouldBeLost(srcFormat.HasAlpha, srcFormat.AlphaUsed);
+    if (alphaLost)
     {
         /*     MSGBOXEX_PARAMS  mboxParams;
 
@@ -872,8 +888,8 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
     // whole list, as before (the stored value means the same to every version)
     TCHAR filterAll[1000];
     TCHAR filterStr[1000];
-    int* lastFilterIndex = pvii.Colors == 2 ? &G.LastSaveAsFilterIndexMono : &G.LastSaveAsFilterIndexColor;
-    lstrcpyn(filterAll, LoadStr(pvii.Colors == 2 ? IDS_SAVEASFILTERMONO : IDS_SAVEASFILTERCOLOR), SizeOf(filterAll));
+    int* lastFilterIndex = srcInfo.Colors == 2 ? &G.LastSaveAsFilterIndexMono : &G.LastSaveAsFilterIndexColor;
+    lstrcpyn(filterAll, LoadStr(srcInfo.Colors == 2 ? IDS_SAVEASFILTERMONO : IDS_SAVEASFILTERCOLOR), SizeOf(filterAll));
     int keptFull[64]; // 1-based indexes into the whole list of the offered entries
     int keptCount = BuildSaveFilter(filterAll, filterStr, SizeOf(filterStr), keptFull, _countof(keptFull));
     if (keptCount == 0) // a broken translation: nothing to offer, nothing touched
@@ -893,7 +909,13 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
     ofn.ofn.lCustData = (LPARAM)&lsai;
     ofn.ofn.Flags = OFN_EXPLORER | OFN_ENABLEHOOK | OFN_ENABLETEMPLATE | OFN_PATHMUSTEXIST | OFN_LONGNAMES | OFN_NOCHANGEDIR | OFN_NOTESTFILECREATE | OFN_HIDEREADONLY;
     lsai.FilterA = filterStr;
-    lsai.pvii = &pvii;
+    lsai.pvii = &srcInfo; // feature 111: the depths are offered from the source's colors
+    // the options are kept for the next Save As without the pointer to 'srcInfo' (this function's stack)
+    auto storeOptions = [&lsai]()
+    {
+        sai = lsai;
+        sai.pvii = NULL;
+    };
     // Start with no rotation & no flip
     lsai.Rotation = lsai.Flip = 0;
     CALL_STACK_MESSAGE2(_T("OnFileSaveAs: GSFN(%s)"), FileName);
@@ -998,7 +1020,7 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
         {
             _stprintf(errBuff, LoadStr(IDS_SAVEERROR), PVW32DLL.PVGetErrorText(PVC_UNSUP_OUT_PARAMS));
             SalamanderGeneral->SalMessageBox(HWindow, errBuff, LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OK);
-            sai = lsai; // store options
+            storeOptions();
             return TRUE;
         }
         // feature 105: only LOOK at an existing target here. Before 105 the target was deleted at
@@ -1021,7 +1043,7 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
                 if (IDCANCEL == SalamanderGeneral->SalMessageBox(HWindow, errBuff,
                                                                  LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OKCANCEL))
                 {
-                    sai = lsai; // store options
+                    storeOptions();
                     return TRUE;
                 }
                 continue; // ask for a new name
@@ -1034,7 +1056,7 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
             if (ret == IDCANCEL)
             {
                 // store options
-                sai = lsai;
+                storeOptions();
                 return TRUE;
             }
             if (ret != IDYES)
@@ -1053,14 +1075,13 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
         if (IDCANCEL == SalamanderGeneral->SalMessageBox(HWindow, errBuff,
                                                          LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OKCANCEL))
         {
-            sai = lsai; // store options
+            storeOptions();
             return TRUE;
         }
     }
     DWORD saveErr = 0;
     char* leftAt = NULL;
-    BOOL reload = FALSE;
-    ret = SaveImageSafe(fileName, format, &lsai, targetExists, clearReadOnly, &saveErr, &leftAt, &reload);
+    ret = SaveImageSafe(fileName, format, &lsai, targetExists, clearReadOnly, &saveErr, &leftAt);
 
     // report the change on the path (our file has appeared)
     TCHAR changedPath[MAX_PATH];
@@ -1120,21 +1141,19 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
             Viewer->SetStatusBarTexts(IDS_SAVE_AS_SUCCESS);
             bEatSBTextOnce = TRUE;
         }
-        sai.PrevInputColors = pvii.Colors;
+        sai.PrevInputColors = srcInfo.Colors;
     }
     free(leftAt);
-    sai = lsai;
-    // feature 105: the target was the file shown here - its decoder let it go for the replace; show
-    // the file as it is now (the saved image, or the untouched original after a failure)
-    if (reload && !Loading)
-        OpenFile(FileName, -1, NULL);
+    storeOptions();
+    // feature 105 opened a shown target again here; since feature 111 the windows that let it go
+    // take it back inside EncodeReplaceSafe (reopened when replaced, re-attached when not)
     return TRUE;
 }
 
 // feature 105: TRUE when 'wPath' (wide, \\?\ form) is the file this window shows (its decoder
 // keeps it open). The file system's identity decides (salsamefile.h); where it has no ids, equal
 // metadata or the same name count as "maybe" - and a maybe is treated as yes: the decoder is
-// let go and the image opened again, which costs nothing but a reload.
+// let go and taken back afterwards, which costs nothing (feature 111: also for the other windows).
 BOOL CRendererWindow::IsShownFile(const WCHAR* wPath)
 {
     if (FileName == NULL || FileName[0] == '<' || PVHandle == NULL)
@@ -1163,14 +1182,13 @@ BOOL CRendererWindow::IsShownFile(const WCHAR* wPath)
 // it as it was. Returns a PVC_* code; '*win32Err' the system error behind a failure (0 = none,
 // the engine's text applies); '*leftAt' (UTF-8, free()) the temporary file that holds the only
 // copy of the new image when the target vanished and the file could not be moved into its
-// place (never deleted); '*reload' TRUE when the target was the file shown here (its decoder
-// was released for the replace - the caller opens the file again).
+// place (never deleted). Feature 111: a target shown in this or another viewer window is let go
+// by every such window for the replace and taken back afterwards (EncodeReplaceSafe).
 int CRendererWindow::SaveImageSafe(LPCTSTR fileName, DWORD format, SAVEAS_INFO_PTR psai, BOOL targetExists,
-                                   BOOL clearReadOnly, DWORD* win32Err, char** leftAt, BOOL* reload)
+                                   BOOL clearReadOnly, DWORD* win32Err, char** leftAt)
 {
     *win32Err = 0;
     *leftAt = NULL;
-    *reload = FALSE;
     if (!WicCanEncodeFormat(format))
         return PVC_UNSUP_OUT_PARAMS; // refused before anything is touched
 
@@ -1182,13 +1200,6 @@ int CRendererWindow::SaveImageSafe(LPCTSTR fileName, DWORD format, SAVEAS_INFO_P
     ep.Colors = psai->Colors & SAVEAS_GRAY_MASK;
     ep.ColorModel = (psai->Colors & SAVEAS_GRAY_FLAG) ? PVCM_GRAYS : PVCM_RGB;
     ep.Flags = psai->Flags & (PVSF_INVERT | PVSF_ROTATE90 | PVSF_FLIP_HOR | PVSF_FLIP_VERT);
-    // what the window shows mirrored is saved mirrored (the window mirrors only when drawing)
-    if (fMirrorHor)
-        ep.Flags ^= PVSF_FLIP_HOR;
-    if (fMirrorVert)
-        ep.Flags ^= PVSF_FLIP_VERT;
-    ep.HorDPI = (ep.Flags & PVSF_ROTATE90) ? pvii.VerDPI : pvii.HorDPI;
-    ep.VerDPI = (ep.Flags & PVSF_ROTATE90) ? pvii.HorDPI : pvii.VerDPI;
     ep.JPEGQuality = G.Save.JPEGQuality;
     ep.JPEGSubsampling = G.Save.JPEGSubsampling;
     ep.CommentU8 = psai->Comment;
@@ -1199,13 +1210,56 @@ int CRendererWindow::SaveImageSafe(LPCTSTR fileName, DWORD format, SAVEAS_INFO_P
         *win32Err = ERROR_INVALID_NAME;
         return PVC_WRITING_ERROR;
     }
+    WCHAR* wLeftAt = NULL;
+    int code = EncodeReplaceSafe(wTarget, &ep, targetExists, clearReadOnly, win32Err, &wLeftAt);
+    if (wLeftAt != NULL) // named in the target's folder as the user typed it (UTF-8)
+    {
+        const WCHAR* tmpName = wcsrchr(wLeftAt, L'\\');
+        char* tmpNameU8 = SplWToU8Alloc(tmpName != NULL ? tmpName + 1 : wLeftAt);
+        if (tmpNameU8 != NULL)
+        {
+            const char* slash = strrchr(fileName, '\\');
+            size_t dirLen = slash != NULL ? (size_t)(slash - fileName) + 1 : 0;
+            size_t size = dirLen + strlen(tmpNameU8) + 1;
+            *leftAt = (char*)malloc(size);
+            if (*leftAt != NULL)
+            {
+                memcpy(*leftAt, fileName, dirLen);
+                strcpy_s(*leftAt + dirLen, size - dirLen, tmpNameU8);
+            }
+            free(tmpNameU8);
+        }
+        free(wLeftAt);
+    }
+    free(wTarget);
+    return code;
+}
+
+// feature 111 (from 105's SaveImageSafe): encodes the shown image with 'ep' (mirror of the view
+// added here) into a temporary file next to 'wTarget' (\\?\ form) and replaces the target with it.
+// A target shown in this or another viewer window is let go by every such window just before the
+// replace and taken back after it: opened again when replaced, re-attached (no reload) when not.
+// Returns a PVC_* code; '*win32Err' as SaveImageSafe; '*wLeftAt' (free()) the temporary file that
+// holds the only copy of the new image when the target vanished meanwhile (never deleted).
+int CRendererWindow::EncodeReplaceSafe(const WCHAR* wTarget, CWicEncodeParams* ep, BOOL targetExists,
+                                       BOOL clearReadOnly, DWORD* win32Err, WCHAR** wLeftAt)
+{
+    *win32Err = 0;
+    *wLeftAt = NULL;
+    // what the window shows mirrored is saved mirrored (the window mirrors only when drawing)
+    if (fMirrorHor)
+        ep->Flags ^= PVSF_FLIP_HOR;
+    if (fMirrorVert)
+        ep->Flags ^= PVSF_FLIP_VERT;
+    ep->HorDPI = (ep->Flags & PVSF_ROTATE90) ? pvii.VerDPI : pvii.HorDPI;
+    ep->VerDPI = (ep->Flags & PVSF_ROTATE90) ? pvii.HorDPI : pvii.VerDPI;
+
     WCHAR* wTemp = NULL;
     HANDLE hTemp = INVALID_HANDLE_VALUE;
     DWORD err = 0;
     if (!SalCreateTempNextToW(wTarget, L"pv", &wTemp, &hTemp, &err))
     {
         // no file can be created in the target's folder (no write access, ...): nothing touched
-        free(wTarget);
         *win32Err = err;
         return PVC_WRITING_ERROR;
     }
@@ -1213,12 +1267,16 @@ int CRendererWindow::SaveImageSafe(LPCTSTR fileName, DWORD format, SAVEAS_INFO_P
     // refresh the window so it does not look messy during longer saves after the SaveAs dialog
     UpdateWindow(Viewer->HWindow);
     HCURSOR hOldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
-    CALL_STACK_MESSAGE6("SaveImageSafe: %ux%ux%u, %u, %u", pvii.Width, pvii.Height, ep.Colors, ep.Format, ep.Flags);
+    CALL_STACK_MESSAGE6("EncodeReplaceSafe: %ux%ux%u, %u, %u", pvii.Width, pvii.Height, ep->Colors, ep->Format, ep->Flags);
     sProgBarInfo pbi;
     Viewer->InitProgressBar();
     pbi.pViewer = Viewer;
     pbi.lastCheckTicks = pbi.lastUpdateTicks = GetTickCount();
-    int code = WicEncodeImageToFile(PVHandle, pvii.CurrentImage, hTemp, &ep, SaveProgressProcedure, &pbi, &err);
+    // feature 111 (review S1): the progress hook dispatches sent messages - while the encoder reads this
+    // image, another window's release request is refused (else a reopen would free the image under it)
+    ImageBusy++;
+    int code = WicEncodeImageToFile(PVHandle, pvii.CurrentImage, hTemp, ep, SaveProgressProcedure, &pbi, &err);
+    ImageBusy--;
     Viewer->KillProgressBar();
     SetCursor(hOldCur);
     if (code == PVC_OK && !FlushFileBuffers(hTemp)) // complete on the disk before it replaces anything
@@ -1235,49 +1293,42 @@ int CRendererWindow::SaveImageSafe(LPCTSTR fileName, DWORD format, SAVEAS_INFO_P
     BOOL keepTemp = FALSE; // the temporary file holds the only copy of the new image
     if (code == PVC_OK)
     {
-        // the decoder of the shown image keeps its file open without FILE_SHARE_DELETE: replacing
-        // it would fail with "in use" (32) - let it go; the caller opens the file again
-        if (targetExists && IsShownFile(wTarget) && WicDetachSource(PVHandle) == PVC_OK)
-            *reload = TRUE;
+        // the decoder of a shown image keeps its file open without FILE_SHARE_DELETE: replacing it
+        // would fail with "in use" (32) - every window showing the target lets it go (feature 111:
+        // also the OTHER viewer windows; before, a second window showing the file blocked the save)
+        CShownFileRelease rel;
+        rel.Own = FALSE;
+        rel.OthersCount = 0;
+        rel.Op = 0;
+        if (targetExists)
+            ReleaseShownFile(wTarget, TRUE, &rel);
+        BOOL replaced = FALSE;
         switch (SalReplaceWithTempW(wTarget, wTemp, targetExists, clearReadOnly, &err))
         {
         case srrDone:
+            replaced = TRUE;
             break;
 
         case srrLeftAtTemp: // the target is gone, the only copy of the new image is the temporary file
-        {
             code = PVC_WRITING_ERROR;
             keepTemp = TRUE;
-            const WCHAR* tmpName = wcsrchr(wTemp, L'\\');
-            char* tmpNameU8 = SplWToU8Alloc(tmpName != NULL ? tmpName + 1 : wTemp);
-            if (tmpNameU8 != NULL)
-            {
-                const char* slash = strrchr(fileName, '\\');
-                size_t dirLen = slash != NULL ? (size_t)(slash - fileName) + 1 : 0;
-                size_t size = dirLen + strlen(tmpNameU8) + 1;
-                *leftAt = (char*)malloc(size);
-                if (*leftAt != NULL)
-                {
-                    memcpy(*leftAt, fileName, dirLen);
-                    strcpy_s(*leftAt + dirLen, size - dirLen, tmpNameU8);
-                }
-                free(tmpNameU8);
-            }
-            TRACE_E("SaveImageSafe: the new image stayed in the temporary file, error " << err);
+            *wLeftAt = _wcsdup(wTemp);
+            TRACE_E("EncodeReplaceSafe: the new image stayed in the temporary file, error " << err);
             break;
-        }
 
         default: // srrFailedKept, srrFailedBothGone: the target as it was (or already gone by others)
             code = PVC_WRITING_ERROR;
             break;
         }
+        // replaced: the windows open the file again; not: the same file is taken back without a
+        // reload (feature 111 - 105 reopened it, losing the view's zoom and mirror after a failure)
+        RetakeShownFile(&rel, replaced ? sfaChanged : sfaSame, NULL);
     }
     if (code != PVC_OK && !keepTemp && !DeleteFileW(wTemp)) // never delete the only copy of the image
-        TRACE_E("SaveImageSafe: cannot delete the temporary file, error " << GetLastError());
+        TRACE_E("EncodeReplaceSafe: cannot delete the temporary file, error " << GetLastError());
     if (code != PVC_OK)
         *win32Err = code == PVC_CANCELED ? 0 : err;
     free(wTemp);
-    free(wTarget);
     return code;
 }
 

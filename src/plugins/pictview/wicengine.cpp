@@ -25,6 +25,7 @@
 #include "lib/pvw32dll.h"
 #include "pictview.h"
 #include "wicengine.h"
+#include "../../common/salpvsource.h" // feature 111: source colors, the JPEG comment's NUL
 
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "oleaut32.lib") // VariantInit (feature 105: encoder options)
@@ -103,6 +104,17 @@ struct CWicImage
     int StretchW, StretchH; // signed target size; negative = mirror; 0 = natural
     DWORD StretchMode;      // StretchBlt mode (COLORONCOLOR, ...)
     COLORREF BkColor;       // background for alpha compositing
+
+    // feature 111
+    BOOL FromFile;           // the decoder was opened on a file (OpenFromFileU8)
+    BOOL Detached;           // WicDetachSource released that decoder (WicReattachSource takes it back)
+    UINT DetachedFrameCount; // the frame count, decoded frame and info frame at the detach
+    int DetachedFrame;
+    UINT DetachedInfoFrame;
+    CWicSourceFormat Src; // the source format of frame SrcFrame (-1 = not read yet)
+    int SrcFrame;
+    BOOL AlphaUsed; // a pixel of the decoded frame AlphaFrame (-1 = none) is not opaque
+    int AlphaFrame;
 };
 
 static void FreeDib(CWicImage* img)
@@ -170,9 +182,11 @@ static BOOL BuildLines(CWicImage* img)
 }
 
 // composite premultiplied BGRA pixels in the DIB over the background colour,
-// producing an opaque image (the viewer draws with plain StretchBlt)
-static void CompositeOverBackground(CWicImage* img)
+// producing an opaque image (the viewer draws with plain StretchBlt); TRUE when a pixel
+// was not opaque (feature 111: the alpha channel is really used)
+static BOOL CompositeOverBackground(CWicImage* img)
 {
+    BOOL alphaUsed = FALSE;
     BYTE bgR = GetRValue(img->BkColor);
     BYTE bgG = GetGValue(img->BkColor);
     BYTE bgB = GetBValue(img->BkColor);
@@ -189,8 +203,106 @@ static void CompositeOverBackground(CWicImage* img)
             px[1] = (BYTE)(px[1] + ((bgG * (255 - a) + 127) / 255));
             px[2] = (BYTE)(px[2] + ((bgR * (255 - a) + 127) / 255));
             px[3] = 255;
+            alphaUsed = TRUE;
         }
     }
+    return alphaUsed;
+}
+
+// feature 111: what the source pixel format 'pf' of a frame holds (the engine always decodes to
+// 32-bit rows; this is what the FILE holds). 'fr' gives the palette of an indexed format.
+static void SourceFormatOf(REFGUID pf, IWICBitmapFrameDecode* fr, CWicSourceFormat* s)
+{
+    s->Colors = PV_COLOR_TC24;
+    s->ColorModel = PVCM_RGB;
+    s->BitsPerPixel = 0;
+    s->HasAlpha = FALSE;
+    IWICImagingFactory* factory = GetWicFactory();
+    BOOL transparency = FALSE;
+    if (factory != NULL)
+    {
+        IWICComponentInfo* ci = NULL;
+        if (SUCCEEDED(factory->CreateComponentInfo(pf, &ci)))
+        {
+            IWICPixelFormatInfo2* pi = NULL;
+            if (SUCCEEDED(ci->QueryInterface(IID_PPV_ARGS(&pi))))
+            {
+                UINT bpp = 0;
+                if (SUCCEEDED(pi->GetBitsPerPixel(&bpp)))
+                    s->BitsPerPixel = bpp;
+                pi->SupportsTransparency(&transparency); // FALSE for indexed formats (measured)
+                pi->Release();
+            }
+            ci->Release();
+        }
+    }
+    if (IsEqualGUID(pf, GUID_WICPixelFormatBlackWhite))
+        s->Colors = 2;
+    else if (IsEqualGUID(pf, GUID_WICPixelFormat1bppIndexed) || IsEqualGUID(pf, GUID_WICPixelFormat2bppIndexed) ||
+             IsEqualGUID(pf, GUID_WICPixelFormat4bppIndexed) || IsEqualGUID(pf, GUID_WICPixelFormat8bppIndexed))
+    {
+        // the palette's size, not the format's: a GIF of two colors is 8bppIndexed (measured)
+        UINT n = 0;
+        BOOL gray = FALSE;
+        IWICPalette* pal = NULL;
+        if (factory != NULL && fr != NULL && SUCCEEDED(factory->CreatePalette(&pal)))
+        {
+            UINT count = 0;
+            if (SUCCEEDED(fr->CopyPalette(pal)) && SUCCEEDED(pal->GetColorCount(&count)) && count > 0)
+            {
+                n = count;
+                pal->IsGrayscale(&gray);
+            }
+            pal->Release();
+        }
+        s->Colors = SalPaletteColorsForSave(n, s->BitsPerPixel);
+        if (gray && s->Colors == 256)
+            s->ColorModel = PVCM_GRAYS;
+    }
+    else if (IsEqualGUID(pf, GUID_WICPixelFormat2bppGray) || IsEqualGUID(pf, GUID_WICPixelFormat4bppGray) ||
+             IsEqualGUID(pf, GUID_WICPixelFormat8bppGray) || IsEqualGUID(pf, GUID_WICPixelFormat16bppGray) ||
+             IsEqualGUID(pf, GUID_WICPixelFormat16bppGrayFixedPoint) || IsEqualGUID(pf, GUID_WICPixelFormat16bppGrayHalf) ||
+             IsEqualGUID(pf, GUID_WICPixelFormat32bppGrayFloat) || IsEqualGUID(pf, GUID_WICPixelFormat32bppGrayFixedPoint))
+    {
+        s->Colors = 256; // the dialog's gray choice is 256 gray levels
+        s->ColorModel = PVCM_GRAYS;
+    }
+    else if (IsEqualGUID(pf, GUID_WICPixelFormat16bppBGR555))
+        s->Colors = PV_COLOR_HC15;
+    else if (IsEqualGUID(pf, GUID_WICPixelFormat16bppBGR565))
+        s->Colors = PV_COLOR_HC16;
+    else if (IsEqualGUID(pf, GUID_WICPixelFormat16bppBGRA5551))
+    {
+        s->Colors = PV_COLOR_HC15;
+        s->HasAlpha = TRUE;
+    }
+    else
+    {
+        if (IsEqualGUID(pf, GUID_WICPixelFormat32bppCMYK) || IsEqualGUID(pf, GUID_WICPixelFormat64bppCMYK) ||
+            IsEqualGUID(pf, GUID_WICPixelFormat40bppCMYKAlpha) || IsEqualGUID(pf, GUID_WICPixelFormat80bppCMYKAlpha))
+            s->ColorModel = PVCM_CMYK;
+        s->HasAlpha = transparency; // 32bppBGRA, 64bppRGBA, ... - not 32bppBGR (measured)
+        s->Colors = transparency ? PV_COLOR_TC32 : PV_COLOR_TC24;
+    }
+}
+
+// feature 111: the source format of 'frame' into img->Src (read once per frame, kept after a detach)
+static void EnsureSourceFormat(CWicImage* img, int frame)
+{
+    if (frame < 0)
+        frame = 0;
+    if (img->SrcFrame == frame || img->Decoder == NULL)
+        return;
+    IWICBitmapFrameDecode* fr = NULL;
+    if (FAILED(img->Decoder->GetFrame((UINT)frame, &fr)))
+        return;
+    WICPixelFormatGUID pf;
+    if (SUCCEEDED(fr->GetPixelFormat(&pf)))
+    {
+        SourceFormatOf(pf, fr, &img->Src);
+        img->SrcFrame = frame;
+    }
+    fr->Release();
 }
 
 //*****************************************************************************
@@ -274,6 +386,7 @@ static PVCODE OpenFromFileU8(CWicImage* img, const char* u8Path)
     if (FAILED(hr))
         return MapOpenHResult(hr);
     img->Decoder = dec;
+    img->FromFile = TRUE; // feature 111
     return PVC_OK;
 }
 
@@ -391,6 +504,12 @@ static PVCODE AttachBitmap(CWicImage* img, HBITMAP hBmp)
     img->InfoFrame = 0;
     img->DecodedFrame = 0;
     img->Format = PVF_BMP;
+    // feature 111: a device-dependent bitmap (clipboard, capture, scan) is 24-bit color, opaque
+    img->Src.Colors = PV_COLOR_TC24;
+    img->Src.ColorModel = PVCM_RGB;
+    img->Src.BitsPerPixel = 24;
+    img->Src.HasAlpha = FALSE;
+    img->SrcFrame = 0;
     return PVC_OK;
 }
 
@@ -487,7 +606,8 @@ static PVCODE DecodeFrame(CWicImage* img, int frame, TProgressProc progress, voi
     if (code != PVC_OK)
         return code;
 
-    CompositeOverBackground(img);
+    img->AlphaUsed = CompositeOverBackground(img); // feature 111: the alpha channel really used?
+    img->AlphaFrame = frame;
     if (!BuildLines(img))
     {
         FreeDib(img);
@@ -815,6 +935,8 @@ static PVCODE WINAPI WicOpenImageEx(LPPVHandle* Img, LPPVOpenImageExInfo oi, LPP
     if (img == NULL)
         return PVC_OOM;
     img->DecodedFrame = -1;
+    img->SrcFrame = -1;   // feature 111
+    img->AlphaFrame = -1; // feature 111
     img->FrameCount = 1;
     img->BkColor = RGB(255, 255, 255);
     img->StretchMode = COLORONCOLOR;
@@ -1676,6 +1798,57 @@ private:
     }
 };
 
+// feature 111: the Windows JPEG encoder writes the comment segment (COM) with a NUL byte after the
+// text (measured: "FF FE <len> <text> 00"); COM holds bytes, not a C string, and readers show the
+// NUL. Takes it out of the complete file: the segment's length one less, the rest of the file one
+// byte to the front. Touches nothing unless the first COM before the image data is exactly the
+// comment of 'textLen' bytes plus that NUL (SalJpegCommentNul). Returns 0 or the system error.
+static DWORD JpegDropCommentNul(HANDLE file, size_t textLen)
+{
+    auto lastError = []() -> DWORD
+    {
+        DWORD e = GetLastError();
+        return e != 0 ? e : ERROR_WRITE_FAULT;
+    };
+    LARGE_INTEGER size;
+    if (!GetFileSizeEx(file, &size))
+        return lastError();
+    BYTE head[4096];
+    DWORD headLen = (DWORD)min((LONGLONG)sizeof(head), size.QuadPart);
+    LARGE_INTEGER pos;
+    pos.QuadPart = 0;
+    DWORD got = 0;
+    if (!SetFilePointerEx(file, pos, NULL, FILE_BEGIN) || !ReadFile(file, head, headLen, &got, NULL))
+        return lastError();
+    size_t lengthAt, nulAt;
+    if (!SalJpegCommentNul(head, got, textLen, &lengthAt, &nulAt))
+        return 0;
+    // the shorter length, then everything after the NUL one byte to the front
+    DWORD len = ((DWORD)head[lengthAt] << 8) | head[lengthAt + 1];
+    BYTE newLen[2] = {(BYTE)((len - 1) >> 8), (BYTE)((len - 1) & 0xFF)};
+    DWORD done = 0;
+    pos.QuadPart = (LONGLONG)lengthAt;
+    if (!SetFilePointerEx(file, pos, NULL, FILE_BEGIN) || !WriteFile(file, newLen, 2, &done, NULL) || done != 2)
+        return lastError();
+    BYTE buf[16384];
+    LONGLONG from = (LONGLONG)nulAt + 1;
+    while (from < size.QuadPart)
+    {
+        DWORD chunk = (DWORD)min((LONGLONG)sizeof(buf), size.QuadPart - from);
+        pos.QuadPart = from;
+        if (!SetFilePointerEx(file, pos, NULL, FILE_BEGIN) || !ReadFile(file, buf, chunk, &got, NULL) || got != chunk)
+            return lastError();
+        pos.QuadPart = from - 1;
+        if (!SetFilePointerEx(file, pos, NULL, FILE_BEGIN) || !WriteFile(file, buf, chunk, &done, NULL) || done != chunk)
+            return lastError();
+        from += chunk;
+    }
+    pos.QuadPart = size.QuadPart - 1;
+    if (!SetFilePointerEx(file, pos, NULL, FILE_BEGIN) || !SetEndOfFile(file))
+        return lastError();
+    return 0;
+}
+
 static HRESULT WriteEncoderOption(IPropertyBag2* bag, LPCOLESTR name, VARIANT* value)
 {
     PROPBAG2 opt;
@@ -1805,8 +1978,15 @@ int WicEncodeImageToFile(void* hPVImage, int imageIndex, HANDLE hFile, const CWi
         // JPEG COM, the GIF comment extension and TIFF ImageDescription get the UTF-8 bytes; PNG
         // gets a tEXt chunk (Latin-1 by the PNG rules) when the text is ASCII, else an iTXt chunk
         // (UTF-8 by the PNG rules; keyword "Comment"). BMP has no comment (the dialog offers none).
+        // Feature 111: TIFF ImageDescription is an ASCII-typed tag. An ASCII comment stays exactly
+        // that; any other gets the UTF-8 bytes there - what Windows itself writes into that tag
+        // (its System.Title policy) and reads back as UTF-8 (measured), the Metadata Working
+        // Group's recommendation - and, so that no reader has to guess, the same text in XMP
+        // dc:description (x-default), which is Unicode by definition. The JPEG COM writer appends
+        // a NUL byte; it is taken out after the commit (JpegDropCommentNul).
         IWICMetadataQueryWriter* mw = NULL;
-        BOOL pngUnicode = p->Format == PVF_PNG && !SplIsASCII(p->CommentU8);
+        BOOL unicode = !SplIsASCII(p->CommentU8);
+        BOOL pngUnicode = p->Format == PVF_PNG && unicode;
         LPCWSTR query = NULL;
         switch (p->Format)
         {
@@ -1849,6 +2029,19 @@ int WicEncodeImageToFile(void* hPVImage, int imageIndex, HANDLE hFile, const CWi
             }
             if (SUCCEEDED(hr))
                 hr = mw->SetMetadataByName(query, &v);
+            if (SUCCEEDED(hr) && p->Format == PVF_TIFF && unicode) // feature 111: XMP dc:description
+            {
+                commentW = SplU8ToWAlloc(p->CommentU8);
+                if (commentW == NULL)
+                    hr = E_INVALIDARG;
+                else
+                {
+                    PropVariantInit(&v);
+                    v.vt = VT_LPWSTR;
+                    v.pwszVal = commentW;
+                    hr = mw->SetMetadataByName(L"/ifd/xmp/<xmpalt>dc:description/x-default", &v);
+                }
+            }
             free(commentW);
         }
         if (mw != NULL)
@@ -1860,6 +2053,15 @@ int WicEncodeImageToFile(void* hPVImage, int imageIndex, HANDLE hFile, const CWi
         hr = frame->Commit();
     if (SUCCEEDED(hr))
         hr = enc->Commit();
+    if (SUCCEEDED(hr) && p->Format == PVF_JPG && p->CommentU8 != NULL && p->CommentU8[0] != 0)
+    {
+        DWORD err = JpegDropCommentNul(hFile, strlen(p->CommentU8)); // feature 111
+        if (err != 0)
+        {
+            stream->LastError = err;
+            hr = HRESULT_FROM_WIN32(err);
+        }
+    }
 
     BOOL canceled = src->Canceled;
     DWORD streamErr = stream->LastError;
@@ -1909,6 +2111,12 @@ int WicDetachSource(void* hPVImage)
         if (code != PVC_OK)
             return code;
     }
+    EnsureSourceFormat(img, img->DecodedFrame); // feature 111: still known while detached
+    // feature 111: what WicReattachSource restores
+    img->Detached = img->FromFile;
+    img->DetachedFrameCount = img->FrameCount;
+    img->DetachedFrame = img->DecodedFrame;
+    img->DetachedInfoFrame = img->InfoFrame;
     img->Decoder->Release(); // closes the file
     img->Decoder = NULL;
     if (img->Stream != NULL)
@@ -1920,7 +2128,74 @@ int WicDetachSource(void* hPVImage)
     img->FrameCount = 1;
     img->InfoFrame = 0;
     img->DecodedFrame = 0;
+    if (img->SrcFrame >= 0)
+        img->SrcFrame = 0; // the source format of the frame in memory
+    if (img->AlphaFrame >= 0)
+        img->AlphaFrame = 0;
     return PVC_OK;
+}
+
+int WicReattachSource(void* hPVImage, const char* u8Path)
+{
+    CWicImage* img = (CWicImage*)hPVImage;
+    if (img == NULL || u8Path == NULL)
+        return PVC_INVALID_HANDLE;
+    if (!img->Detached || img->Decoder != NULL)
+        return PVC_OK; // nothing was let go
+    CWicImage probe;   // the new decoder is checked before it replaces anything
+    memset(&probe, 0, sizeof(probe));
+    PVCODE code = OpenFromFileU8(&probe, u8Path);
+    if (code != PVC_OK)
+        return code;
+    UINT frames = 0;
+    GUID container;
+    const char* shortName;
+    if (FAILED(probe.Decoder->GetFrameCount(&frames)) || frames != img->DetachedFrameCount ||
+        FAILED(probe.Decoder->GetContainerFormat(&container)) || MapContainerToPVF(container, &shortName) != img->Format)
+    {
+        probe.Decoder->Release(); // not the file that was let go: stay detached
+        return PVC_UNKNOWN_FILE_STRUCT;
+    }
+    img->Decoder = probe.Decoder;
+    img->FrameCount = img->DetachedFrameCount;
+    img->InfoFrame = img->DetachedInfoFrame;
+    img->DecodedFrame = img->DetachedFrame; // the image in memory IS that frame (rotations included)
+    if (img->SrcFrame >= 0)
+        img->SrcFrame = img->DetachedFrame;
+    if (img->AlphaFrame >= 0)
+        img->AlphaFrame = img->DetachedFrame;
+    img->Detached = FALSE;
+    return PVC_OK;
+}
+
+BOOL WicIsDetached(void* hPVImage)
+{
+    CWicImage* img = (CWicImage*)hPVImage;
+    return img != NULL && img->Detached && img->Decoder == NULL;
+}
+
+BOOL WicGetSourceFormat(void* hPVImage, CWicSourceFormat* out)
+{
+    CWicImage* img = (CWicImage*)hPVImage;
+    if (img == NULL || out == NULL)
+        return FALSE;
+    // the frame whose information is reported: after a page change the title is set before the new
+    // page is decoded (review S3: DecodedFrame still named the previous page then)
+    EnsureSourceFormat(img, (int)img->InfoFrame);
+    if (img->SrcFrame < 0) // cannot be read: what the rows are
+    {
+        out->Colors = PV_COLOR_TC24;
+        out->ColorModel = PVCM_RGB;
+        out->BitsPerPixel = 0;
+        out->HasAlpha = FALSE;
+        out->AlphaUsed = FALSE;
+        return TRUE;
+    }
+    *out = img->Src;
+    out->AlphaUsed = img->Src.HasAlpha && (img->AlphaFrame == img->SrcFrame ? img->AlphaUsed : TRUE);
+    if (out->Colors == PV_COLOR_TC32 && !out->AlphaUsed)
+        out->Colors = PV_COLOR_TC24; // an opaque image with an alpha channel holds 24-bit color
+    return TRUE;
 }
 
 //*****************************************************************************

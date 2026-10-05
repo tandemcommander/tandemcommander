@@ -32,6 +32,7 @@
 #include "salsafereplace.h" // feature 105
 #include "salarcedit.h"     // feature 108
 #include "salzipname.h"     // feature 110
+#include "salpvsource.h"    // feature 111
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -5996,6 +5997,67 @@ static void TestDiskCacheKey109()
     CHECK(RemoveDirectoryW(dir.c_str()));
 }
 
+// feature 111: PictView's source colors and the JPEG comment's NUL byte (src/common/salpvsource.h)
+static void TestPvSource111()
+{
+    // --- the palette's size decides the dialog's color count ---
+    CHECK(SalPaletteColorsForSave(2, 8) == 2);  // a GIF of two colors is 8bppIndexed (measured)
+    CHECK(SalPaletteColorsForSave(1, 1) == 2);  // a one-color palette
+    CHECK(SalPaletteColorsForSave(3, 2) == 16); // the dialog has no 4 colors
+    CHECK(SalPaletteColorsForSave(16, 4) == 16);
+    CHECK(SalPaletteColorsForSave(17, 8) == 256);
+    CHECK(SalPaletteColorsForSave(256, 8) == 256);
+    CHECK(SalPaletteColorsForSave(0, 1) == 2); // no palette read: from the bits per pixel
+    CHECK(SalPaletteColorsForSave(0, 2) == 16);
+    CHECK(SalPaletteColorsForSave(0, 4) == 16);
+    CHECK(SalPaletteColorsForSave(0, 8) == 256);
+    CHECK(SalPaletteColorsForSave(0, 0) == 256);
+    CHECK(SalPaletteColorsForSave(0, 32) == 256);
+
+    // --- the alpha question: only when transparency is really there ---
+    CHECK(!SalAlphaWouldBeLost(TRUE, FALSE)); // an opaque 32-bit PNG/TIFF/ICO
+    CHECK(SalAlphaWouldBeLost(TRUE, TRUE));
+    CHECK(!SalAlphaWouldBeLost(FALSE, TRUE)); // a palette's transparent color is no alpha channel
+    CHECK(!SalAlphaWouldBeLost(FALSE, FALSE));
+
+    // --- the NUL the Windows JPEG encoder appends to the comment ---
+    // SOI, APP0 (JFIF, 16 bytes), COM "Ab" + NUL (len 5), DQT start
+    const BYTE jpg[] = {0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0, 1, 1, 0, 0, 1, 0, 1, 0, 0,
+                        0xFF, 0xFE, 0x00, 0x05, 'A', 'b', 0x00, 0xFF, 0xDB, 0x00, 0x43};
+    size_t lengthAt = 0, nulAt = 0;
+    CHECK(SalJpegCommentNul(jpg, sizeof(jpg), 2, &lengthAt, &nulAt) && lengthAt == 22 && nulAt == 26);
+    CHECK(!SalJpegCommentNul(jpg, sizeof(jpg), 3, &lengthAt, &nulAt)); // another text length: untouched
+    CHECK(!SalJpegCommentNul(jpg, sizeof(jpg), 0, &lengthAt, &nulAt));
+    CHECK(!SalJpegCommentNul(jpg, 26, 2, &lengthAt, &nulAt)); // the NUL is beyond what was read
+    CHECK(!SalJpegCommentNul(jpg, 3, 2, &lengthAt, &nulAt));
+    CHECK(!SalJpegCommentNul(NULL, 0, 2, &lengthAt, &nulAt));
+    {
+        BYTE noNul[sizeof(jpg)];
+        memcpy(noNul, jpg, sizeof(jpg));
+        noNul[26] = 'c'; // a comment that does not end with a NUL (another writer): untouched
+        CHECK(!SalJpegCommentNul(noNul, sizeof(noNul), 2, &lengthAt, &nulAt));
+        memcpy(noNul, jpg, sizeof(jpg));
+        noNul[0] = 0x89; // not a JPEG
+        CHECK(!SalJpegCommentNul(noNul, sizeof(noNul), 2, &lengthAt, &nulAt));
+    }
+    {
+        // the image data (SOS) before any comment: no comment there
+        const BYTE sos[] = {0xFF, 0xD8, 0xFF, 0xDA, 0x00, 0x08, 1, 2, 3, 4, 5, 6, 0xFF, 0xFE, 0x00, 0x05, 'A', 'b', 0};
+        CHECK(!SalJpegCommentNul(sos, sizeof(sos), 2, &lengthAt, &nulAt));
+        // a broken segment chain (length 1) and a chain that leaves the markers
+        const BYTE bad[] = {0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x01, 0xFF, 0xFE, 0x00, 0x05, 'A', 'b', 0};
+        CHECK(!SalJpegCommentNul(bad, sizeof(bad), 2, &lengthAt, &nulAt));
+        const BYTE stray[] = {0xFF, 0xD8, 0x00, 0xFF, 0xFE, 0x00, 0x05, 'A', 'b', 0};
+        CHECK(!SalJpegCommentNul(stray, sizeof(stray), 2, &lengthAt, &nulAt));
+        // the comment first after SOI, UTF-8 text
+        const BYTE first[] = {0xFF, 0xD8, 0xFF, 0xFE, 0x00, 0x06, 0xC4, 0x8D, 'x', 0x00};
+        CHECK(SalJpegCommentNul(first, sizeof(first), 3, &lengthAt, &nulAt) && lengthAt == 4 && nulAt == 9);
+        // only the FIRST comment counts
+        const BYTE two[] = {0xFF, 0xD8, 0xFF, 0xFE, 0x00, 0x04, 'Z', 'Z', 0xFF, 0xFE, 0x00, 0x05, 'A', 'b', 0};
+        CHECK(!SalJpegCommentNul(two, sizeof(two), 2, &lengthAt, &nulAt));
+    }
+}
+
 // feature 110: the ZIP plug-in's member identity (salzipname.h)
 static BOOL OldZipEqual110(const std::string& a, const std::string& b, DWORD flags = NORM_IGNORECASE)
 { // what the plug-in did: CompareStringA on the UTF-8 bytes, the user's locale, an equal-length guard
@@ -6339,6 +6401,7 @@ int main()
     TestArchiveEdit108();
     TestDiskCacheKey109();
     TestZipName110();
+    TestPvSource111();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

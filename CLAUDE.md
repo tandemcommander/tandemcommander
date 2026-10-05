@@ -1613,3 +1613,69 @@ plugin architecture preservation, UI consistency.
     Independent review ACCEPT (SF1, SF2 fixed). saltests 13,973 -> 14,140. Interface stays 107,
     no new string, no registry change. Records:
     `specs/110-zip-plugin-name-matching/fix-log.md`.
+- 111-pictview-shown-image: **PictView renames, deletes and saves over the
+  image it shows.** The PictView entries of NEXT-WORK found by 103 and 105,
+  measured first (`research.md`): Rename of the shown image failed with 32
+  (NTFS and WebDAV), **Delete** of it too ("File in use" - not in the
+  backlog), a second viewer window on the file blocked Save As, Rename and
+  Delete; every opaque 32-bit PNG/TIFF/ICO asked "the alpha channel will be
+  lost", "2 colors"/CCITT were never offered, the title said 16777216 colors
+  for every image (the engine reports its 32-bit rows); the wallpaper
+  commands could not write and then called
+  `SystemParametersInfo(SPI_SETDESKWALLPAPER, NULL)` (documented: revert to
+  the default) - read, never run; TIFF tag 270 UTF-8 only, JPEG COM with a
+  NUL; a failed save over the shown image reset zoom and mirror.
+  - **Release/retake** (`render1.cpp`): before Rename, Delete and the
+    replace step of Save As every PictView window showing the file
+    (105's `IsShownFile`) lets its WIC decoder go (`WicDetachSource`);
+    afterwards `sfaSame` re-attaches without a reload (`WicReattachSource`:
+    new decoder on the current name, same container + frame count, the DIB
+    untouched - zoom, mirror, rotation stay), `sfaChanged` reopens at the
+    same zoom (the saving window drops its mirror - it is in the file),
+    `sfaGone` titles `<Deleted>`. Other windows (own threads) via
+    `WM_USER_RELEASEFILE`/`_RETAKEFILE`, `SendMessageTimeout(SMTO_NORMAL |
+    SMTO_ABORTIFHUNG, 5 s)` to a snapshot of `ViewerWindowQueue`
+    (`CViewerWindowQueue::GetWindows`); message data copied per window and
+    never freed after a time-out; a loading window keeps the file (fails "in
+    use" as before). Not chosen: `FILE_SHARE_DELETE` (pending-delete names on
+    FAT/SMB, files changing under the viewer).
+  - **Source format** (`WicGetSourceFormat`, pure rules in
+    `src/common/salpvsource.h`): the palette's size decides (a 2-color GIF is
+    8bppIndexed), `SupportsTransparency` = alpha channel, alpha use recorded
+    at decode (`CompositeOverBackground` returns it). `PVImageInfo::Colors`
+    stays TC32 (pipette/histogram read the rows by it). Used by the alpha
+    question (only real transparency), Save As default depth / mono list /
+    "2 colors" + CCITT, title, Image Information.
+  - **Wallpaper** (`render2.cpp`): 24-bit BMP via `EncodeReplaceSafe` (105's
+    temp + replace, shared with Save As) into `%LOCALAPPDATA%\Tandem
+    Commander\PictView_Wallpaper.bmp`, wide registry, `Prev*` backup,
+    `SPI_SETDESKWALLPAPER` with an explicit path (never NULL); a failed save
+    changes nothing. **Dry-run seam** `TC_PICTVIEW_WALLPAPER_DRYRUN` (a log
+    file) in the only two writers (`WpRegWrite`, `WpApply`): probes MUST use
+    it - the hidden desktop shares the user's wallpaper; the probe refuses
+    without the seam in `pictview.spl` and checks the real values before and
+    after. `PRIVACY.md` updated.
+  - **Comments**: TIFF outside ASCII = tag 270 UTF-8 (Windows' own
+    `System.Title` practice, read back as UTF-8 - measured) + XMP
+    `dc:description` (`/ifd/xmp/<xmpalt>dc:description/x-default`); JPEG COM
+    NUL removed after the commit (`JpegDropCommentNul`).
+  - Found, recorded (NEXT-WORK): pipette and histogram read the 32-bit rows
+    as 3 bytes per pixel (every release since 006); a Rename onto a file
+    another window shows still fails "in use"; GIF comments UTF-8.
+  - Probe `probe/shown_probe.ps1` + `pilcheck.py` + `mkfix111.py` (hidden
+    desktop, Pillow decode, WebDAV via 103's `davnorm.py` - `dav-fold`
+    drives 103's guard in PictView for the first time): 83/0/2; pre-111
+    49/28/7 (`-NoWallpaper`). Review REJECT (B1: a window that moved on was
+    given the old file's name or `<Deleted>`; S1: a window encoding or
+    printing let go and freed its image; S2: Restore without a backup removed
+    the wallpaper; S3: multi-page title) - fixed: the retake acts only on the
+    released, still detached image (`WicIsDetached`), `OpenFile` drops the
+    release, operation ids in every message (a take-back acts only for the
+    operation the window let go for - re-review `r-cross`) + a 1-s timer for
+    lost retakes, re-attach only for
+    the same file id + size + write time, `<Deleted>`/new name only for the
+    operation's own path (hard links), `ImageBusy` refuses during encode and
+    print, the wallpaper backup written only after SPI succeeded. Regressions: 105 saveas 56/0/4, 103 samefile 62/0, 104 PictView rows 4/0, 088 viewers 7/3 as on 105 (PictView rows pass; Code/Markdown Viewer rows fail on the hidden desktop on every build). saltests 14,140 ->
+    14,169. No new string, interface 107, no registry format change.
+    Records: `specs/111-pictview-shown-image/fix-log.md`.
+  GUI re-run of the final protocol (operation ids) owed - see fix-log T015.

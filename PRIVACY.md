@@ -95,6 +95,22 @@ documents and images you viewed, and similar internal databases — in
 the addresses the viewers use internally. The program does not clear this
 folder.
 
+### Desktop wallpaper
+
+PictView's **File → Set as Wallpaper → Center**, **Tile** and **Stretch** save
+the picture you are viewing as
+`%LOCALAPPDATA%\Tandem Commander\PictView_Wallpaper.bmp` and tell Windows to
+use that file as your desktop background (Windows records it in its own
+settings); for the chosen layout PictView sets the values `WallpaperStyle`
+and `TileWallpaper` in `HKEY_CURRENT_USER\Control Panel\Desktop`. The
+background you had before is remembered there too (the values
+`PrevWallpaper`, `PrevWallpaperStyle` and `PrevTileWallpaper`; *Set as
+Wallpaper* and **None** never remember a PictView picture there):
+**Restore Previous** switches to the remembered background and remembers the
+one it replaced, so using it again switches back (it does nothing when no
+background is remembered); **None** removes the background. The file is replaced each time
+you set a new picture; it is not deleted by the program.
+
 ### Temporary files
 
 When you open a file from an archive or from an FTP or SFTP server, or run
@@ -105,7 +121,8 @@ folders, the program offers to delete them the next time it starts.
 
 PictView's *Save As* first writes the image into a temporary file in the
 folder you save to (named `pv`, four characters and `.tmp`), which takes the
-chosen name only when it is complete. If the program crashes during the save,
+chosen name only when it is complete; the wallpaper picture is written the
+same way in `%LOCALAPPDATA%\Tandem Commander`. If the program crashes during the save,
 that file can remain there.
 
 ## Saved passwords
@@ -232,7 +249,10 @@ place:
 
 - your settings, history and saved passwords
   (`HKEY_CURRENT_USER\Software\Tandem Commander`);
-- crash reports and viewer engine data (`%LOCALAPPDATA%\Tandem Commander`);
+- crash reports, viewer engine data and a PictView wallpaper picture
+  (`%LOCALAPPDATA%\Tandem Commander`);
+- the three `Prev...` values PictView writes in
+  `HKEY_CURRENT_USER\Control Panel\Desktop` (see *Desktop wallpaper*);
 - the folder `%APPDATA%\Tandem Commander`, which the program uses as the
   default place for exported configurations;
 - any temporary files left behind by a crash.
@@ -246,7 +266,11 @@ place:
    - delete the registry key `HKEY_CURRENT_USER\Software\Tandem Commander`
      with the Registry Editor;
    - delete the folders `%LOCALAPPDATA%\Tandem Commander` and
-     `%APPDATA%\Tandem Commander`;
+     `%APPDATA%\Tandem Commander` (if a PictView picture is your desktop
+     background, choose another background first);
+   - delete the values `PrevWallpaper`, `PrevWallpaperStyle` and
+     `PrevTileWallpaper` under `HKEY_CURRENT_USER\Control Panel\Desktop`, if
+     they are there;
    - delete any configuration files you exported and any crash reports you
      copied elsewhere;
    - in your temporary folder (`%TEMP%`), delete leftover files and folders
@@ -280,6 +304,8 @@ the viewer may answer a server's request for Windows sign-in with your Windows
 account; cancelling the Master Password prompt saves an SFTP password or
 passphrase scrambled; the viewer engine's crash reports follow your
 Windows diagnostic-data settings; and the placeholder sent on an anonymous
-FTP login is `name@someserver.com`; and a crash that happens while the ZIP
-plugin is using a password can write that password into the crash report.
-Last updated 2026-10-04.
+FTP login is `name@someserver.com`; a crash that happens while the ZIP
+plugin is using a password can write that password into the crash report; and
+PictView's wallpaper commands wrote no picture file (*Restore Previous* and
+*None* did write the three `Prev...` values).
+Last updated 2026-10-05.

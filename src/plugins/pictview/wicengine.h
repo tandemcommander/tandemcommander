@@ -97,8 +97,38 @@ int WicEncodeImageToFile(void* hPVImage, int imageIndex, HANDLE hFile, const CWi
                          DWORD* win32Err);
 
 // Releases the decoder of an image opened from a file - and so the file itself, which the
-// decoder keeps open without FILE_SHARE_DELETE (it cannot be replaced or renamed meanwhile).
-// The decoded frame stays in memory and is still drawn; other frames and re-decoding are
-// gone, so the caller opens the file again afterwards. PVC_OK also for an image without a
-// file (clipboard, capture).
+// decoder keeps open without FILE_SHARE_DELETE (it cannot be replaced, renamed or deleted
+// meanwhile). The decoded frame stays in memory and is still drawn; other frames and
+// re-decoding are gone until WicReattachSource (same content: a rename, a failed replace, a
+// declined delete) or until the caller opens the file again (new content). PVC_OK also for an
+// image without a file (clipboard, capture).
 int WicDetachSource(void* hPVImage);
+
+// Feature 111: takes the file back after WicDetachSource - a new decoder on 'u8Path' (UTF-8; the
+// file's name now, e.g. after a rename), the frame count and the frame held in memory as they
+// were, the image in memory untouched (no reload: zoom, mirror and rotation stay). Only for the
+// SAME content: the caller knows the file was not rewritten. PVC_OK also when nothing was
+// detached; on failure (the file is gone, or is no longer an image of the same format) the image
+// stays detached and is still drawn from memory.
+int WicReattachSource(void* hPVImage, const char* u8Path);
+
+// Feature 111: TRUE while the image is detached from its file by WicDetachSource (and not re-attached).
+// A newly opened image never is - so a window can tell whether it still shows the image it let go.
+BOOL WicIsDetached(void* hPVImage);
+
+// Feature 111: the shown frame's source as the decoder reports it. The engine always hands the
+// viewer 32-bit rows (PVImageInfo::Colors stays PV_COLOR_TC32 - the pipette and the histogram
+// read those rows); this tells what the FILE holds, for the Save As dialog (offered and default
+// depth, the alpha question), the title and Image Information.
+struct CWicSourceFormat
+{
+    DWORD Colors;       // 2, 16, 256, PV_COLOR_HC15, PV_COLOR_HC16, PV_COLOR_TC24, PV_COLOR_TC32
+    DWORD ColorModel;   // PVCM_RGB, PVCM_GRAYS (256 gray levels or gray of more bits), PVCM_CMYK
+    DWORD BitsPerPixel; // of the source pixel format (0 = unknown)
+    BOOL HasAlpha;      // the source pixel format carries an alpha channel
+    BOOL AlphaUsed;     // ... and a pixel of the decoded frame is not opaque (TRUE while not known)
+};
+
+// FALSE when the handle is invalid. An opaque image with an alpha channel reports PV_COLOR_TC24
+// in 'Colors' (HasAlpha TRUE, AlphaUsed FALSE); PV_COLOR_TC32 means the alpha is really used.
+BOOL WicGetSourceFormat(void* hPVImage, CWicSourceFormat* out);

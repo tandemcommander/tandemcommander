@@ -408,7 +408,8 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   `a.txt` -> existing `A.txt` (now provably another file - could offer the
   overwrite). Found by 103, pre-existing: **PictView's Rename fails with
   error 32 for the image it shows** (the viewer keeps it open; both builds,
-  NTFS and WebDAV). Found by 103's second review: renaming or moving a
+  NTFS and WebDAV) - ✅ fixed by feature 111 (2026-10-05), see sub-item 5
+  queue entry 1. Found by 103's second review: renaming or moving a
   symbolic link onto the file it points at **deleted that file** (both older
   builds) - fixed in 103; **moving a FOLDER onto an alias of itself between
   two roots** (`C:\x\F` -> `\\localhost\C$\x\`) deleted its empty subfolders,
@@ -683,7 +684,32 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           "alpha channel will be lost" question and "2 colors"/CCITT is never
           offered, because the WIC engine reports every image as 32-bit; the
           wallpaper commands cannot work (no file output in the engine, and
-          `%WINDIR%` is not writable for a user).
+          `%WINDIR%` is not writable for a user). ✅ **All fixed by feature 111**
+          (2026-10-05), with the 105 review's NITs (a second window showing the
+          file blocked the save; TIFF tag 270 UTF-8 only; the JPEG COM NUL; zoom
+          and mirror reset by the reload). Measured first: *Delete* of the shown
+          image failed too ("File in use"), and the wallpaper commands of the
+          build before called `SPI_SETDESKWALLPAPER` with NULL even after their
+          failed save (code reading - never run on the maintainer's session).
+          Every PictView window showing the file lets its decoder go for Rename,
+          Delete and the replace of Save As and takes the file back (re-attached
+          without a reload when unchanged; reopened at the same zoom when
+          rewritten; `<Deleted>`); the engine reports the source's real format
+          (`WicGetSourceFormat`) to Save As, the title and Image Information;
+          the wallpaper is a BMP in `%LOCALAPPDATA%\Tandem Commander` set with an
+          explicit path (dry-run seam `TC_PICTVIEW_WALLPAPER_DRYRUN` for probes);
+          TIFF comments outside ASCII also in XMP `dc:description`, the JPEG COM
+          without its NUL. Record: `specs/111-pictview-shown-image/fix-log.md`.
+          **Found by 111, not fixed:** (a) PictView's pipette and histogram
+          read the engine's 32-bit rows as 3 bytes per pixel
+          (`PixelAccess.cpp`, `Colors >= PV_COLOR_TC24`) - the pipette shows
+          another pixel's color with shifted channels and the histogram counts
+          misaligned bytes of 3/4 of each row, every release since 006 (code
+          reading; display only); (b) a Rename onto another file that a second
+          PictView window shows still fails "in use" (only the renamed file's
+          windows let go; nothing lost); (c) the GIF comment extension gets
+          UTF-8 bytes although GIF89a defines 7-bit ASCII (no Unicode
+          alternative in GIF).
        2. Undelete applies a FAT rule (`Replace0xE5`) to UTF-8 names: a
           name whose first byte is 0xE5 (CJK U+5000-U+5FFF) is listed with
           `$` and restored under a garbled name; its volume layer enumerates

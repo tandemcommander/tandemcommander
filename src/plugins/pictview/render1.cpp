@@ -23,6 +23,7 @@
 #endif // ENABLE_TWAIN32
 #include "exif/exif.h"
 #include "PixelAccess.h"
+#include "wicengine.h" // feature 111: let the shown file go and take it back
 
 inline int sgn(int x)
 {
@@ -90,6 +91,13 @@ CRendererWindow::CRendererWindow(int enumFilesSourceUID, int enumFilesCurrentInd
     inWMSizeCnt = 0;
     pPrintDlg = NULL;
 
+    FileReleased = FALSE; // feature 111
+    ReleasedHandle = NULL;
+    ReleasedSamePath = FALSE;
+    ReleasedId = NULL;
+    ReleasedOp = 0;
+    ImageBusy = 0;
+
     SavedZoomParams = FALSE;
     SavedZoomType = eZoomGeneral;
     SavedZoomFactor = 0;
@@ -114,6 +122,7 @@ CRendererWindow::~CRendererWindow()
     if (HAreaBrush != NULL)
         DeleteObject(HAreaBrush);
     FreeComment();
+    free(ReleasedId); // feature 111
 }
 
 void CRendererWindow::SetTitle()
@@ -147,9 +156,13 @@ void CRendererWindow::SetTitle()
         {
             fname = (LPTSTR)_tcsrchr(FileName, '\\') + 1;
         }
+        // feature 111: the colors of the source file (the engine's rows are always 32-bit, so
+        // pvii.Colors said 16777216 for every image)
+        PVImageInfo src;
+        GetSourceImageInfo(&src);
         id = IDS_NCOLORS;
-        nColors = pvii.Colors; // the defaults
-        switch (pvii.Colors)
+        nColors = src.Colors; // the defaults
+        switch (src.Colors)
         {
         case PV_COLOR_HC15:
             nColors = 32768;
@@ -159,9 +172,9 @@ void CRendererWindow::SetTitle()
             break;
         case PV_COLOR_TC24:
         case PV_COLOR_TC32:
-            if (pvii.ColorModel == PVCM_CMYK)
+            if (src.ColorModel == PVCM_CMYK)
                 id = IDS_NCOLORS_CMYK;
-            else if (pvii.ColorModel == PVCM_CIELAB)
+            else if (src.ColorModel == PVCM_CIELAB)
                 id = IDS_NCOLORS_LAB;
             else
                 nColors = 16777216;
@@ -408,6 +421,7 @@ BOOL CRendererWindow::OpenFile(LPCTSTR name, int showCmd, HBITMAP hBmp)
             KillTimer(HWindow, IMGSEQ_TIMER_ID);
         }
         PVCurImgInSeq = PVSequence = NULL;
+        ForgetRelease(); // feature 111: the image that let its file go is closed here
         CALL_STACK_MESSAGE1("PVW32DLL.PVCloseImage");
         PVW32DLL.PVCloseImage(OldPVHandle);
         SetScrollPos(HWindow, SB_VERT, 0, FALSE);
@@ -2169,6 +2183,9 @@ LRESULT CRendererWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         case CAPTURE_TIMER_ID:
             ScreenCapture();
             break;
+        case RETAKE_TIMER_ID: // feature 111
+            OnRetakeTimer();
+            break;
         case BRUSH_TIMER_ID:
             DrawCageRect(NULL, &TmpCageRect);
             DrawCageRect(NULL, &SelectRect);
@@ -3036,6 +3053,370 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
     return renamed;
 }
 
+// feature 111: an operation on the file a viewer shows. The WIC decoder keeps the shown file open
+// without FILE_SHARE_DELETE, so renaming, deleting or replacing it failed with "in use" (32) - in
+// every release since feature 006, also when only ANOTHER PictView window showed the file. Every
+// window showing it now lets its decoder go first (WicDetachSource: the image stays in memory and
+// is still drawn) and takes the file back afterwards: the same content is re-attached without a
+// reload (zoom, mirror and rotation stay), a rewritten file is opened again, a deleted one keeps
+// its image titled <Deleted>.
+
+// The operations in progress (any viewer thread): a release is accepted only for an operation that
+// is still going on, and a window whose retake message got lost (a time-out) notices that its
+// operation is over and takes the file back itself (RETAKE_TIMER_ID) - review B1's late-release NIT.
+static struct CShownFileOps
+{
+    CRITICAL_SECTION CS;
+    int Next;
+    int Active[64];
+    int Count;
+
+    CShownFileOps()
+    {
+        InitializeCriticalSection(&CS);
+        Next = 0;
+        Count = 0;
+    }
+    ~CShownFileOps() { DeleteCriticalSection(&CS); }
+
+    int Begin()
+    {
+        EnterCriticalSection(&CS);
+        int op = ++Next;
+        if (op <= 0) // wrapped around
+            op = Next = 1;
+        if (Count < _countof(Active))
+            Active[Count++] = op; // when full the operation is not tracked: windows take the file back early
+        LeaveCriticalSection(&CS);
+        return op;
+    }
+    void End(int op)
+    {
+        EnterCriticalSection(&CS);
+        for (int i = 0; i < Count; i++)
+            if (Active[i] == op)
+            {
+                Active[i] = Active[--Count];
+                break;
+            }
+        LeaveCriticalSection(&CS);
+    }
+    BOOL IsActive(int op)
+    {
+        EnterCriticalSection(&CS);
+        BOOL found = FALSE;
+        for (int i = 0; i < Count && !found; i++)
+            found = Active[i] == op;
+        LeaveCriticalSection(&CS);
+        return found;
+    }
+} ShownFileOps;
+
+// TRUE when the UTF-8 'name' and the wide '\\?\' path name the same path (not just the same file)
+static BOOL SameShownPath(const char* name, const WCHAR* wPath)
+{
+    WCHAR* w = name != NULL ? SplU8ToWExtAlloc(name) : NULL;
+    BOOL same = w != NULL && wPath != NULL && _wcsicmp(w, wPath) == 0;
+    free(w);
+    return same;
+}
+
+void CRendererWindow::DropReleasedState()
+{
+    FileReleased = FALSE;
+    ReleasedHandle = NULL;
+    free(ReleasedId);
+    ReleasedId = NULL;
+    if (HWindow != NULL)
+        KillTimer(HWindow, RETAKE_TIMER_ID);
+}
+
+// WM_USER_RELEASEFILE: 0 = this window does not show 'wPath' (or the operation is over already),
+// 1 = it let the file go, 2 = it shows the file but cannot let it go now (the image is being loaded,
+// encoded or printed - the decoder or the image is in use up the stack). 'own': the window's own
+// operation - if the file is already let go for another window's operation, it is now held for this
+// one (that operation's take-back is then ignored; this one's decides - re-review NIT: it re-attached
+// in the middle of the window's own rename, which then failed "in use")
+LRESULT CRendererWindow::OnReleaseFileRequest(const WCHAR* wPath, int op, BOOL own)
+{
+    if (own && FileReleased && PVHandle != NULL && PVHandle == ReleasedHandle && WicIsDetached(PVHandle) &&
+        IsShownFile(wPath))
+    {
+        ReleasedOp = op;
+        ReleasedSamePath = SameShownPath(FileName, wPath);
+        return 1;
+    }
+    if (wPath == NULL || FileReleased || PVHandle == NULL || !IsShownFile(wPath))
+        return 0;
+    if (Loading || ImageBusy > 0)
+        return 2;
+    if (!ShownFileOps.IsActive(op))
+        return 0; // a request handled after its sender gave up waiting: nothing to let go for
+    CSalFileIdentity* id = (CSalFileIdentity*)malloc(sizeof(CSalFileIdentity));
+    WCHAR* wShown = SplU8ToWExtAlloc(FileName);
+    if (id != NULL && (wShown == NULL || !SalGetFileIdentityW(wShown, FALSE, id) || !id->Valid))
+    {
+        free(id);
+        id = NULL;
+    }
+    free(wShown);
+    if (WicDetachSource(PVHandle) != PVC_OK)
+    {
+        free(id);
+        return 2;
+    }
+    FileReleased = TRUE;
+    ReleasedHandle = PVHandle;
+    ReleasedSamePath = SameShownPath(FileName, wPath);
+    free(ReleasedId);
+    ReleasedId = id;
+    ReleasedOp = op;
+    SetTimer(HWindow, RETAKE_TIMER_ID, 1000, NULL);
+    return 1;
+}
+
+// re-attaches the decoder when 'nameU8' is the file that was let go and its content is unchanged
+// (the same file id - or, without ids, the same metadata - and the same size and last write time);
+// FALSE when not (the caller decides: open it again, or keep the image in memory)
+BOOL CRendererWindow::TakeBackIfSame(const char* nameU8)
+{
+    if (nameU8 == NULL || ReleasedId == NULL || PVHandle == NULL)
+        return FALSE;
+    WCHAR* w = SplU8ToWExtAlloc(nameU8);
+    CSalFileIdentity now;
+    BOOL same = w != NULL && SalGetFileIdentityW(w, FALSE, &now) && now.Valid;
+    free(w);
+    if (same)
+    {
+        int m = SalFileIdMatch(*ReleasedId, now);
+        same = (m == simEqual || (m == simUnknown && SalFileMetaEqual(*ReleasedId, now))) &&
+               ReleasedId->Size == now.Size && CompareFileTime(&ReleasedId->MTime, &now.MTime) == 0;
+    }
+    return same && WicReattachSource(PVHandle, nameU8) == PVC_OK;
+}
+
+// opens FileName again at the same zoom; the mirror is kept when 'keepMirror' and always when the
+// file cannot be opened (the image in memory is still what was shown)
+BOOL CRendererWindow::ReopenKeepingView(BOOL keepMirror)
+{
+    eZoomType zoomType = ZoomType;
+    __int64 zoomFactor = ZoomFactor;
+    BOOL mirrorHor = fMirrorHor, mirrorVert = fMirrorVert;
+    BOOL opened = FileName != NULL && !Loading && OpenFile(FileName, -1, NULL);
+    if (!opened || keepMirror)
+    {
+        fMirrorHor = mirrorHor; // OpenFile clears them before it knows whether it succeeds
+        fMirrorVert = mirrorVert;
+    }
+    if (opened)
+    {
+        if (zoomType == eZoomGeneral)
+        {
+            ZoomType = eZoomGeneral;
+            ZoomFactor = zoomFactor;
+            DetermineZoomIndex();
+        }
+        else if (zoomType != eZoomFullScreen)
+            ZoomType = zoomType;
+        WMSize();
+        SetTitle();
+    }
+    InvalidateRect(HWindow, NULL, FALSE);
+    return opened;
+}
+
+// WM_USER_RETAKEFILE: operation 'op' is over ('newNameU8': the file's name now, NULL = unchanged;
+// 'saver': this window wrote the file - its mirrored view went into the file)
+void CRendererWindow::OnRetakeFile(int op, CShownFileAfter after, const char* newNameU8, BOOL saver)
+{
+    if (!FileReleased || op != ReleasedOp)
+        return; // not let go, or let go for another operation: that one's take-back decides
+    // only the image that let go, and only while it is still detached: a window that opened another
+    // image meanwhile (it is free while the operation asks its questions) is not touched (review B1)
+    BOOL mine = PVHandle != NULL && PVHandle == ReleasedHandle && WicIsDetached(PVHandle);
+    BOOL samePath = ReleasedSamePath;
+    if (!mine)
+    {
+        DropReleasedState();
+        return;
+    }
+    switch (after)
+    {
+    case sfaSame: // renamed, or the operation failed or was declined
+    {
+        // the operation's path is this window's path: it takes the new name; a window that shows the
+        // file under another path (a hard link, an alias) keeps its own, unless that is gone
+        if (newNameU8 != NULL && samePath && newNameU8 != FileName &&
+            (FileName == NULL || strcmp(FileName, newNameU8) != 0))
+        {
+            if (FileName != NULL)
+                SalamanderGeneral->Free(FileName);
+            FileName = SalamanderGeneral->DupStr(newNameU8);
+            SetTitle();
+        }
+        BOOL taken = TakeBackIfSame(FileName);
+        if (!taken && newNameU8 != NULL && !samePath && TakeBackIfSame(newNameU8))
+        {
+            SalamanderGeneral->Free(FileName); // this window's path is gone, the file lives on under the new name
+            FileName = SalamanderGeneral->DupStr(newNameU8);
+            SetTitle();
+            taken = TRUE;
+        }
+        if (!taken && FileName != NULL && SalamanderGeneral->FileExists(FileName))
+        {
+            DropReleasedState();
+            ReopenKeepingView(TRUE); // the name now holds other content: show it
+            return;
+        }
+        if (!taken)
+            TRACE_I("PictView: the shown file could not be taken back, the image stays in memory");
+        break;
+    }
+
+    case sfaChanged: // the file was rewritten: open it again
+        DropReleasedState();
+        ReopenKeepingView(!saver);
+        return;
+
+    case sfaGone:
+        // deleted through this window's path; a window that shows the file under another path keeps
+        // it (a hard link survives) - re-attached if it is still there
+        if (!samePath && TakeBackIfSame(FileName))
+            break;
+        SalamanderGeneral->Free(FileName);
+        FileName = SalamanderGeneral->DupStr(LoadStr(IDS_DELETED_TITLE));
+        SetTitle();
+        break;
+
+    case sfaUnknown:
+        if (!TakeBackIfSame(FileName) && FileName != NULL && SalamanderGeneral->FileExists(FileName))
+        {
+            DropReleasedState();
+            ReopenKeepingView(TRUE);
+            return;
+        }
+        break;
+    }
+    DropReleasedState();
+}
+
+// RETAKE_TIMER_ID: the operation that asked is over but its retake message never came (it timed out,
+// or the request was handled after the sender gave up): take the file back now
+void CRendererWindow::OnRetakeTimer()
+{
+    if (!FileReleased)
+    {
+        KillTimer(HWindow, RETAKE_TIMER_ID);
+        return;
+    }
+    if (!ShownFileOps.IsActive(ReleasedOp))
+        OnRetakeFile(ReleasedOp, sfaUnknown, NULL, FALSE);
+}
+
+// the data of a WM_USER_RELEASEFILE / _RETAKEFILE message: a copy per window, freed when the window
+// answered or no longer exists; after a time-out the message may still be handled later, so its copy
+// is left alone (never freed - a rare, small leak instead of a dangling pointer)
+static BOOL SendToViewer(HWND hWnd, UINT msg, WPARAM wParam, const void* data, size_t dataSize, LRESULT* result)
+{
+    void* copy = NULL;
+    if (data != NULL)
+    {
+        copy = malloc(dataSize);
+        if (copy == NULL)
+            return FALSE;
+        memcpy(copy, data, dataSize);
+    }
+    DWORD_PTR res = 0;
+    if (!SendMessageTimeoutW(hWnd, msg, wParam, (LPARAM)copy, SMTO_NORMAL | SMTO_ABORTIFHUNG, 5000, &res))
+    {
+        if (GetLastError() == ERROR_INVALID_WINDOW_HANDLE) // the window closed meanwhile: nothing was sent
+            free(copy);
+        else
+            TRACE_E("PictView: a viewer window did not answer a file release message"); // 'copy' may still be read
+        return FALSE;
+    }
+    free(copy);
+    if (result != NULL)
+        *result = (LRESULT)res;
+    return TRUE;
+}
+
+void CRendererWindow::ReleaseShownFile(const WCHAR* wPath, BOOL own, CShownFileRelease* rel)
+{
+    rel->Own = FALSE;
+    rel->OthersCount = 0;
+    rel->Op = ShownFileOps.Begin(); // RetakeShownFile ends it, also when nothing was let go
+    if (wPath == NULL)
+        return;
+    if (own && OnReleaseFileRequest(wPath, rel->Op, TRUE) == 1)
+        rel->Own = TRUE;
+    // the other viewer windows (each in its own thread); a window that does not answer keeps the
+    // file - the operation then fails with "in use" as before, nothing is lost
+    size_t len = wcslen(wPath);
+    size_t size = sizeof(CShownFileRequest) + len * sizeof(WCHAR);
+    CShownFileRequest* req = (CShownFileRequest*)malloc(size);
+    if (req == NULL)
+        return;
+    req->Op = rel->Op;
+    memcpy(req->Path, wPath, (len + 1) * sizeof(WCHAR));
+    HWND wins[_countof(rel->Others)];
+    int n = ViewerWindowQueue.GetWindows(wins, _countof(wins));
+    if (n > (int)_countof(wins))
+        n = (int)_countof(wins);
+    for (int i = 0; i < n; i++)
+    {
+        LRESULT res = 0;
+        if (Viewer != NULL && wins[i] == Viewer->HWindow)
+            continue;
+        if (SendToViewer(wins[i], WM_USER_RELEASEFILE, 0, req, size, &res) && res == 1)
+            rel->Others[rel->OthersCount++] = wins[i];
+    }
+    free(req);
+}
+
+void CRendererWindow::RetakeShownFile(CShownFileRelease* rel, CShownFileAfter after, const char* newNameU8)
+{
+    if (rel->OthersCount > 0)
+    {
+        size_t len = newNameU8 != NULL ? strlen(newNameU8) : 0;
+        size_t size = sizeof(CShownFileRetake) + len;
+        CShownFileRetake* r = (CShownFileRetake*)malloc(size);
+        if (r != NULL)
+        {
+            r->Op = rel->Op;
+            r->After = (int)after;
+            memcpy(r->NewName, newNameU8 != NULL ? newNameU8 : "", len + 1);
+            for (int i = 0; i < rel->OthersCount; i++)
+                if (IsWindow(rel->Others[i])) // their own views stay (OnRetakeFile's 'saver' FALSE)
+                    SendToViewer(rel->Others[i], WM_USER_RETAKEFILE, 0, r, size, NULL);
+            free(r);
+        } // no memory: the windows take the file back on their timers when the operation ends
+    }
+    rel->OthersCount = 0;
+    if (rel->Own)
+    {
+        rel->Own = FALSE;
+        OnRetakeFile(rel->Op, after, newNameU8, after == sfaChanged);
+    }
+    ShownFileOps.End(rel->Op); // a window whose retake message got lost takes the file back on its timer
+}
+
+void CRendererWindow::GetSourceImageInfo(PVImageInfo* out)
+{
+    *out = pvii;
+    CWicSourceFormat sf;
+    if (PVHandle != NULL && WicGetSourceFormat(PVHandle, &sf))
+    {
+        out->Colors = sf.Colors;
+        out->ColorModel = sf.ColorModel;
+        // Image Information shows "TrueColor nBit" / "GrayScale nBit" for a bit depth, else the
+        // number of colors or "HiColor 15/16Bit"
+        BOOL counted = (sf.Colors <= 256 && sf.ColorModel != PVCM_GRAYS) || sf.Colors == PV_COLOR_HC15 ||
+                       sf.Colors == PV_COLOR_HC16;
+        out->TotalBitDepth = counted ? 0 : sf.BitsPerPixel;
+    }
+}
+
 // UTF-8 path -> double-NULL terminated UTF-16 list for SHFileOperationW; free() the result
 static WCHAR* MakeSHFileOpListW(LPCTSTR path)
 {
@@ -3121,19 +3502,23 @@ void CRendererWindow::OnDelete(BOOL toRecycle)
     fo.fAnyOperationsAborted = FALSE;
     fo.hNameMappings = NULL;
     fo.lpszProgressTitle = L"";
+    // feature 111: every viewer window showing the file lets it go (before: "File in use")
+    WCHAR* wShown = SplU8ToWExtAlloc(FileName);
+    CShownFileRelease rel;
+    ReleaseShownFile(wShown, TRUE, &rel);
     // perform the actual deletion - wonderfully simple, unfortunately it occasionally crashes for them ;-)
     CALL_STACK_MESSAGE1("CRendererWindow::OnDelete::SHFileOperationW");
     LPTSTR changedPath = _tcsdup(FileName); // the path may be longer than MAX_PATH
-    if (SHFileOperationW(&fo) == 0)
+    // from the return values we cannot tell whether the file was deleted or
+    // the user merely pressed Cancel in the confirmation dialog
+    BOOL gone = SHFileOperationW(&fo) == 0 && !SalamanderGeneral->FileExists(FileName);
+    RetakeShownFile(&rel, gone ? sfaGone : sfaSame, NULL);
+    free(wShown);
+    if (gone && _tcscmp(FileName, LoadStr(IDS_DELETED_TITLE)) != 0) // this window had no decoder to let go
     {
-        // from the return values we cannot tell whether the file was deleted or
-        // the user merely pressed Cancel in the confirmation dialog
-        if (!SalamanderGeneral->FileExists(FileName))
-        {
-            SalamanderGeneral->Free(FileName);
-            FileName = SalamanderGeneral->DupStr(LoadStr(IDS_DELETED_TITLE));
-            SetTitle();
-        }
+        SalamanderGeneral->Free(FileName);
+        FileName = SalamanderGeneral->DupStr(LoadStr(IDS_DELETED_TITLE));
+        SetTitle();
     }
     // report the change on the path (renamed file)
     if (changedPath != NULL)
@@ -3439,6 +3824,12 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
             if (dlg.Execute() == IDOK)
             {
                 BOOL tryAgain;
+                // feature 111: every viewer window showing the file lets it go for the rename (before:
+                // error 32 in every release since 006) and takes it back below
+                WCHAR* wShown = SplU8ToWExtAlloc(FileName);
+                CShownFileRelease rel;
+                ReleaseShownFile(wShown, TRUE, &rel);
+                free(wShown);
                 BOOL renamed = RenameFileInternal(oldPath, oldName, newName, &tryAgain);
                 /*  // Petr: I commented out this heavy refresh because it is obsolete - refresh happens even in Salamander's inactive main window
           int sourcePanel;
@@ -3466,9 +3857,12 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
                         free(newFileName);
                     }
                     SetTitle();
+                    // the same content under the new name: re-attached here and in the other windows
+                    RetakeShownFile(&rel, sfaSame, FileName);
                     break;
                 }
-                else if (!tryAgain)
+                RetakeShownFile(&rel, sfaSame, NULL); // not renamed: the original name
+                if (!tryAgain)
                     break;
             }
             else
@@ -3531,6 +3925,14 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
     {
         if (!Viewer->Enablers[vweFileOpened])
             return 0;
+        // feature 111 (review S1): the print dialog and the printing keep this image's handle across
+        // message loops - meanwhile another window's operation must not make this one reopen it
+        struct CImageBusyScope
+        {
+            int& Busy;
+            CImageBusyScope(int& busy) : Busy(busy) { Busy++; }
+            ~CImageBusyScope() { Busy--; }
+        } busyScope(ImageBusy);
 
         CPrintParams params;
         params.pPVII = &pvii;
@@ -3832,7 +4234,9 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
             BOOL oldCanHideCursor = CanHideCursor;
             CanHideCursor = FALSE;
 
-            CImgPropDialog dlg(HWindow, &pvii, Comment, nFrames);
+            PVImageInfo src; // feature 111: the colors and bit depth of the source file
+            GetSourceImageInfo(&src);
+            CImgPropDialog dlg(HWindow, &src, Comment, nFrames);
             dlg.Execute();
 
             CanHideCursor = oldCanHideCursor;

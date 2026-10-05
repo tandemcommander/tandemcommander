@@ -53,6 +53,34 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **PictView renames, deletes and saves over the picture it shows.** Since the
+  built-in image engine of 0.1.0, the picture shown in a PictView window could
+  not be renamed ("The process cannot access the file because it is being used
+  by another process") or deleted (Windows' "File in use"), and a second
+  PictView window showing the same picture made Save As, Rename and Delete fail
+  in the first one. Every PictView window showing the picture now lets go of it
+  for the operation and takes it back afterwards: it keeps the picture, its zoom,
+  mirror and rotation when the file did not change (renamed, or the operation
+  failed), shows the saved picture after a Save As over it, and shows the
+  picture as `<Deleted>` after Delete. A failed Save As over the shown picture no
+  longer resets the zoom and the mirror. Save As now starts from what the
+  picture really is: an opaque PNG, TIFF or icon no longer asks about losing an
+  alpha channel; a black-and-white picture is offered "2 colors" and the CCITT
+  G3/G4 TIFF compressions; gray and 16-color pictures start at 256 gray levels
+  and 16 colors; the window title and Image Information show the picture's own
+  colors and bit depth (they said 16777216 colors / TrueColor 24Bit for every
+  picture). The *Set as Wallpaper* commands work: *Center*, *Tile* and
+  *Stretch* always failed with "Unable to save the image" and then still made
+  Windows re-apply the desktop wallpaper without a file; now the picture is
+  saved as `%LOCALAPPDATA%\Tandem Commander\PictView_Wallpaper.bmp` and becomes
+  the desktop background, *Restore Previous* switches to the remembered
+  previous background (also one whose path has accented letters - it was
+  garbled; nothing happens when none is remembered) and
+  *None* removes the background; nothing changes when the picture cannot be
+  saved or Windows refuses it. A TIFF
+  comment with letters outside ASCII is now also stored as an XMP description,
+  which programs read without guessing the encoding, and a JPEG comment no
+  longer ends with a NUL byte (feature 111).
 - **Adding a file to a ZIP archive replaces only the file of that name.**
   The ZIP plugin compared names in a way that took names differing in
   letters a Central European code page treats as one - `ĥ.txt` and `Ĺ.txt`,

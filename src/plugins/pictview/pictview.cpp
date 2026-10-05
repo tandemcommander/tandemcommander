@@ -136,8 +136,8 @@ int SalamanderVersion = 0;
 // interface providing customized Windows controls used in Salamander
 CSalamanderGUIAbstract* SalamanderGUI = NULL;
 
-CWindowQueue ViewerWindowQueue("PictView Viewers"); // list of all viewer windows
-CThreadQueue ThreadQueue("PictView Viewers");       // list of all window threads
+CViewerWindowQueue ViewerWindowQueue("PictView Viewers"); // list of all viewer windows
+CThreadQueue ThreadQueue("PictView Viewers");             // list of all window threads
 
 CExtraScanImagesToOpen ExtraScanImagesToOpen; // list of all images from the scanner to open in windows
 
@@ -3114,6 +3114,20 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             SendMessage(Renderer.HWindow, uMsg, wParam, lParam);
         return 0;
     }
+
+    case WM_USER_RELEASEFILE: // feature 111: another viewer window operates on a file (render1.cpp)
+        return Renderer.HWindow != NULL && lParam != 0
+                   ? Renderer.OnReleaseFileRequest(((const CShownFileRequest*)lParam)->Path, ((const CShownFileRequest*)lParam)->Op, FALSE)
+                   : 0;
+
+    case WM_USER_RETAKEFILE:
+        if (Renderer.HWindow != NULL)
+        {
+            const CShownFileRetake* r = (const CShownFileRetake*)lParam;
+            if (r != NULL)
+                Renderer.OnRetakeFile(r->Op, (CShownFileAfter)r->After, r->NewName[0] != 0 ? r->NewName : NULL, FALSE);
+        }
+        return 0;
 
     case WM_USER_SETTINGCHANGE:
     {

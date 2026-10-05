@@ -423,6 +423,18 @@ protected:
 // asks user if we should open extra windows for extra images received from scanner
 #define WM_USER_SCAN_EXTRA_IMAGES WM_APP + 3251
 
+// feature 111: [0, const CShownFileRequest*] - sent (SendMessageTimeout, the windows live in
+// their own threads) to every other viewer window before an operation on that file: a window
+// showing it lets its decoder go. Result: 0 = not shown here, 1 = let go (send
+// WM_USER_RETAKEFILE afterwards), 2 = shown but cannot be let go now (loading)
+#define WM_USER_RELEASEFILE WM_APP + 3252
+
+// feature 111: [0, const CShownFileRetake*] - the operation is over: a window that let the file go
+// FOR THAT OPERATION takes it back (renamed: under the new name), opens it again (rewritten) or shows
+// it as deleted; a take-back of another operation is ignored (re-review: a window let go for one
+// operation was given another operation's <Deleted>)
+#define WM_USER_RETAKEFILE WM_APP + 3253
+
 // Scroll step sizes for the window
 #define XLine 10
 #define YLine 10
@@ -441,6 +453,7 @@ protected:
 #define ENABLERS_TIMER_ID 116 // id of timer to run enablers
 #define SAVEAS_TIMER_ID 117   // id of timer to wait for path in active panel
 #define CLOSEWND_TIMER_ID 118 // id of timer to close window when pop-up window is closed
+#define RETAKE_TIMER_ID 119   // feature 111: takes the shown file back if the operation that asked for it is over
 
 //
 // Functions
@@ -502,4 +515,24 @@ extern SGlobals G;
 
 extern MENU_TEMPLATE_ITEM PopupMenuTemplate[];
 
-extern CWindowQueue ViewerWindowQueue; // list of all viewer windows
+// feature 111: the viewer windows, with a snapshot of their handles (the queue is shared by the
+// viewer threads; messages are sent to the snapshot outside the queue's lock)
+class CViewerWindowQueue : public CWindowQueue
+{
+public:
+    CViewerWindowQueue(const char* queueName) : CWindowQueue(queueName) {}
+
+    // the handles of up to 'max' windows into 'buf'; returns how many there are (may exceed 'max')
+    int GetWindows(HWND* buf, int max)
+    {
+        CS.Enter();
+        int n = 0;
+        for (CWindowQueueItem* item = Head; item != NULL; item = item->Next, n++)
+            if (n < max)
+                buf[n] = item->HWindow;
+        CS.Leave();
+        return n;
+    }
+};
+
+extern CViewerWindowQueue ViewerWindowQueue; // list of all viewer windows

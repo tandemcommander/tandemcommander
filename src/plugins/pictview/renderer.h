@@ -77,6 +77,47 @@ typedef struct _gen_saveas_info
     LPCTSTR FilterA;
 } SAVEAS_INFO, *SAVEAS_INFO_PTR;
 
+// feature 111: an operation on the file a viewer shows (rename, delete, Save As over it) first lets
+// every PictView window showing that file release it - the WIC decoder keeps it open without
+// FILE_SHARE_DELETE - and afterwards each of them takes it back (render1.cpp)
+enum CShownFileAfter
+{
+    sfaSame,    // the content is the same (renamed, or the operation failed or was declined): take the
+                // file back without a reload - zoom, mirror and rotation stay
+    sfaChanged, // the file was rewritten (Save As over it): open it again (the zoom stays)
+    sfaGone,    // the file was deleted: the image stays in memory, titled <Deleted>
+    sfaUnknown, // no word from the operation (the window's timer): take the file back if it is the
+                // same file with the same content, else open it again
+};
+
+struct CShownFileRelease
+{
+    BOOL Own;        // this window let its decoder go
+    HWND Others[64]; // other viewer windows that let theirs go
+    int OthersCount;
+    int Op; // the operation (render1.cpp ShownFileOps) - active from the release until the retake
+};
+
+// the data of WM_USER_RELEASEFILE: the operation and the file (\\?\ form)
+struct CShownFileRequest
+{
+    int Op;
+    WCHAR Path[1]; // as long as needed
+};
+
+// the data of WM_USER_RETAKEFILE: the operation, what happened, the new name (UTF-8; "" = unchanged)
+struct CShownFileRetake
+{
+    int Op;
+    int After;       // CShownFileAfter
+    char NewName[1]; // as long as needed
+};
+
+struct CSalFileIdentity; // salsamefile.h
+
+// feature 111: "Unable to save the image." with the UTF-8 reason 'detailU8', as UTF-8 (saveas.cpp)
+void FormatSaveErrorU8(char* out, int outSize, const char* detailU8);
+
 BOOL IsCageValid(const RECT* r); // returns TRUE if r->left != 0x80000000
 void InvalidateCage(RECT* r);    // sets r->left = 0x80000000 (the cage is invalid and will not be shown)
 
@@ -87,6 +128,7 @@ void InvalidateCage(RECT* r);    // sets r->left = 0x80000000 (the cage is inval
 
 class CViewerWindow;
 class CPrintDlg;
+struct CWicEncodeParams; // wicengine.h
 
 class CRendererWindow : public CWindow
 {
@@ -140,6 +182,16 @@ protected:
     int EnumFilesSourceUID;    // source UID for enumerating files in the viewer
     int EnumFilesCurrentIndex; // index of the current file in the viewer within the source
 
+    // feature 111: the decoder let the shown file go for an operation on it; only that image - still
+    // detached, under the path that was asked for or another one - is taken back (review B1: a
+    // window that moved to another file meanwhile was given the old file's name or <Deleted>)
+    BOOL FileReleased;
+    LPPVHandle ReleasedHandle;    // the image that let go
+    BOOL ReleasedSamePath;        // the request named the window's own path (not a hard link / alias)
+    CSalFileIdentity* ReleasedId; // the file at the release (id, size, times; NULL = unknown)
+    int ReleasedOp;               // the operation that asked
+    int ImageBusy;                // > 0: the image is being encoded or printed - not let go (review S1)
+
     BOOL SavedZoomParams;
     eZoomType SavedZoomType;
     __int64 SavedZoomFactor;
@@ -164,8 +216,32 @@ public:
     // feature 105: Save As - the image into a temporary file next to the target, which replaces the
     // target only when complete (saveas.cpp)
     int SaveImageSafe(LPCTSTR fileName, DWORD format, SAVEAS_INFO_PTR psai, BOOL targetExists,
-                      BOOL clearReadOnly, DWORD* win32Err, char** leftAt, BOOL* reload);
+                      BOOL clearReadOnly, DWORD* win32Err, char** leftAt);
+    // feature 111: the encode-into-a-temporary-file-and-replace step of SaveImageSafe, also used by
+    // the wallpaper commands (render2.cpp); 'ep' gets the view's mirror and the DPI here
+    int EncodeReplaceSafe(const WCHAR* wTarget, CWicEncodeParams* ep, BOOL targetExists,
+                          BOOL clearReadOnly, DWORD* win32Err, WCHAR** wLeftAt);
     BOOL IsShownFile(const WCHAR* wPath);
+    // feature 111: before an operation on 'wPath' (\\?\ form): this window (if 'own') and every
+    // other viewer window showing that file let it go; after it: RetakeShownFile
+    void ReleaseShownFile(const WCHAR* wPath, BOOL own, CShownFileRelease* rel);
+    void RetakeShownFile(CShownFileRelease* rel, CShownFileAfter after, const char* newNameU8);
+    // feature 111: the two halves for this window (also the WM_USER_RELEASEFILE / _RETAKEFILE handlers)
+    LRESULT OnReleaseFileRequest(const WCHAR* wPath, int op, BOOL own);
+    void OnRetakeFile(int op, CShownFileAfter after, const char* newNameU8, BOOL saver);
+    void OnRetakeTimer();
+    BOOL TakeBackIfSame(const char* nameU8); // re-attach when 'nameU8' is the released file, unchanged
+    BOOL ReopenKeepingView(BOOL keepMirror);
+    void DropReleasedState();
+    // feature 111: a window that opens another image no longer holds a released one
+    void ForgetRelease()
+    {
+        if (FileReleased)
+            DropReleasedState();
+    }
+    // feature 111: 'pvii' as the source file holds it (colors, color model, bit depth) - for the
+    // title and Image Information; the engine's rows stay 32-bit
+    void GetSourceImageInfo(PVImageInfo* out);
     int OpenFile(LPCTSTR name, int ShowCmd, HBITMAP hBmp);
     int HScroll(int ScrollRequest, int ThumbPos);
     int VScroll(int ScrollRequest, int ThumbPos);
@@ -182,7 +258,8 @@ public:
 
     BOOL PageAvailable(BOOL next);
 
-    BOOL SaveWallpaper(LPCTSTR fileName);
+    // feature 111: the wallpaper image (render2.cpp)
+    int SaveWallpaperFile(WCHAR** path, DWORD* err);
 
 protected:
     virtual LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);

@@ -3,8 +3,11 @@
 
 #include "precomp.h"
 
+#include <shlobj.h>
+
 #include "lib/pvw32dll.h"
 #include "renderer.h"
+#include "wicengine.h" // feature 111: the wallpaper image through the Windows encoder
 #include "pictview.h"
 #include "pictview.rh"
 #include "pictview.rh2"
@@ -363,160 +366,299 @@ void CRendererWindow::ShutdownTool(void)
 // SetAsWallpaper
 //
 
-struct CWallpaper
+// Feature 111. Before: the image was "saved" by PVSaveImage into %WINDIR%\PictView_Wallpaper.bmp -
+// the WIC engine writes no files and a user cannot write into %WINDIR% - so Center, Tile and
+// Stretch always failed ("Unable to save the image"); then they, like Restore and None, called
+// SystemParametersInfo(SPI_SETDESKWALLPAPER) with NULL - documented as "reverts to the default
+// wallpaper" - and the HKCU\Control Panel\Desktop values were read through the core's UTF-8
+// registry facade but written back as code-page text (a path outside ASCII got garbled).
+// Now: a 24-bit BMP of what the window shows (the 105 rule: a temporary file next to the target,
+// replaced only when complete) at %LOCALAPPDATA%\Tandem Commander\PictView_Wallpaper.bmp, the
+// style values and the backup of the previous wallpaper (Prev*, the same value names as before)
+// written with the wide API, then SPI_SETDESKWALLPAPER with that file's path. Restore swaps the
+// current and the backed-up wallpaper (nothing when nothing is backed up), None sets no wallpaper
+// ("" - never NULL); the backup is written only after the new wallpaper took effect and never with
+// an empty value; Center/Tile/Stretch and None back up only a wallpaper that is not our own file,
+// Restore backs up the one it replaces (also ours) so that Restore again swaps back.
+//
+// Test seam: when the environment variable TC_PICTVIEW_WALLPAPER_DRYRUN names a file, no registry
+// value is written and SystemParametersInfo is not called; each of those calls is appended to that
+// file instead, one UTF-8 line each: "SET <value>=<data>", "SPI_SETDESKWALLPAPER <path>". A GUI probe
+// must never change the desktop of the session it runs in (a hidden desktop shares the user's
+// wallpaper). The wallpaper file itself is written in both modes.
+
+static const WCHAR WP_FILE_NAME[] = L"PictView_Wallpaper.bmp";
+static const WCHAR WP_DRYRUN_VAR[] = L"TC_PICTVIEW_WALLPAPER_DRYRUN";
+
+// the dry-run log named by the environment (malloc'ed), or NULL for the real calls
+static WCHAR* WpDryRunLog()
 {
-    TCHAR Wallpaper[2 * MAX_PATH];
-    TCHAR WallpaperStyle[200];
-    TCHAR TileWallpaper[200];
-};
-
-LPCTSTR REG_WALLPAPER = _T("Wallpaper");
-LPCTSTR REG_TILEWALLPAPER = _T("TileWallpaper");
-LPCTSTR REG_WALLPAPERSTYLE = _T("WallpaperStyle");
-LPCTSTR REG_PREV_WALLPAPER = _T("PrevWallpaper");
-LPCTSTR REG_PREV_TILEWALLPAPER = _T("PrevTileWallpaper");
-LPCTSTR REG_PREV_WALLPAPERSTYLE = _T("PrevWallpaperStyle");
-
-void GetWallpaper(HKEY hKey, BOOL prev, CWallpaper* wallpaper)
-{
-    DWORD size;
-    size = sizeof(wallpaper->Wallpaper);
-    if (SalamanderGeneral->SalRegQueryValueEx(hKey, prev ? REG_PREV_WALLPAPER : REG_WALLPAPER, 0, NULL,
-                                              (LPBYTE)wallpaper->Wallpaper, &size) != ERROR_SUCCESS)
-    {
-        wallpaper->Wallpaper[0] = 0;
-    }
-
-    size = sizeof(wallpaper->WallpaperStyle);
-    if (SalamanderGeneral->SalRegQueryValueEx(hKey, prev ? REG_PREV_WALLPAPERSTYLE : REG_WALLPAPERSTYLE, 0, NULL,
-                                              (LPBYTE)wallpaper->WallpaperStyle, &size) != ERROR_SUCCESS)
-    {
-        wallpaper->WallpaperStyle[0] = 0;
-    }
-
-    size = sizeof(wallpaper->TileWallpaper);
-    if (SalamanderGeneral->SalRegQueryValueEx(hKey, prev ? REG_PREV_TILEWALLPAPER : REG_TILEWALLPAPER, 0, NULL,
-                                              (LPBYTE)wallpaper->TileWallpaper, &size) != ERROR_SUCCESS)
-    {
-        wallpaper->TileWallpaper[0] = 0;
-    }
+    DWORD n = GetEnvironmentVariableW(WP_DRYRUN_VAR, NULL, 0);
+    if (n <= 1)
+        return NULL;
+    WCHAR* log = (WCHAR*)malloc(n * sizeof(WCHAR));
+    if (log != NULL && GetEnvironmentVariableW(WP_DRYRUN_VAR, log, n) == n - 1 && log[0] != 0)
+        return log;
+    free(log);
+    return NULL;
 }
 
-void SetWallpaper(HKEY hKey, BOOL prev, const CWallpaper* wallpaper)
+// one line "<a><b>" appended to the dry-run log as UTF-8
+static void WpLogLine(const WCHAR* log, const WCHAR* a, const WCHAR* b)
 {
-    // RegSetValueEx: cbData in bytes including NULL
-    // old RegSetValue: in chars excluding NULL
-    RegSetValueEx(hKey, prev ? REG_PREV_WALLPAPER : REG_WALLPAPER, 0, REG_SZ,
-                  (LPBYTE)wallpaper->Wallpaper, (DWORD)(_tcslen(wallpaper->Wallpaper) + 1) * sizeof(TCHAR));
-
-    RegSetValueEx(hKey, prev ? REG_PREV_WALLPAPERSTYLE : REG_WALLPAPERSTYLE, 0, REG_SZ,
-                  (LPBYTE)wallpaper->WallpaperStyle, (DWORD)(_tcslen(wallpaper->WallpaperStyle) + 1) * sizeof(TCHAR));
-
-    RegSetValueEx(hKey, prev ? REG_PREV_TILEWALLPAPER : REG_TILEWALLPAPER, 0, REG_SZ,
-                  (LPBYTE)wallpaper->TileWallpaper, (DWORD)(_tcslen(wallpaper->TileWallpaper) + 1) * sizeof(TCHAR));
+    size_t len = wcslen(a) + wcslen(b) + 3;
+    WCHAR* line = (WCHAR*)malloc(len * sizeof(WCHAR));
+    if (line == NULL)
+        return;
+    swprintf_s(line, len, L"%s%s\r\n", a, b);
+    char* u8 = SplWToU8Alloc(line);
+    free(line);
+    if (u8 == NULL)
+        return;
+    HANDLE h = CreateFileW(log, FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h != INVALID_HANDLE_VALUE)
+    {
+        DWORD written;
+        WriteFile(h, u8, (DWORD)strlen(u8), &written, NULL);
+        CloseHandle(h);
+    }
+    free(u8);
 }
 
-// stores the currently viewed image into the file specified by fileName (as a BMP)
-// returns TRUE if the operation succeeded, otherwise FALSE
-BOOL CRendererWindow::SaveWallpaper(LPCTSTR fileName)
+// a REG_SZ value of HKCU\Control Panel\Desktop (malloc'ed, "" when missing or not a string)
+static WCHAR* WpRegRead(HKEY key, const WCHAR* name)
 {
-    int ret;
-    SAVEAS_INFO sai;
+    DWORD type = 0, size = 0;
+    if (RegQueryValueExW(key, name, NULL, &type, NULL, &size) != ERROR_SUCCESS || (type != REG_SZ && type != REG_EXPAND_SZ))
+        size = 0;
+    WCHAR* value = (WCHAR*)malloc(size + 2 * sizeof(WCHAR));
+    if (value == NULL)
+        return NULL;
+    if (size > 0 && RegQueryValueExW(key, name, NULL, &type, (BYTE*)value, &size) != ERROR_SUCCESS)
+        size = 0;
+    value[size / sizeof(WCHAR)] = 0; // a stored value need not end with a NUL
+    return value;
+}
 
-    memset(&sai, 0, sizeof(SAVEAS_INFO));
-    sai.Colors = (pvii.Colors > 256) ? PV_COLOR_TC24 : pvii.Colors;
-
-    ret = SaveImage(fileName, PVF_BMP, &sai);
-    if (ret != PVC_OK)
+// writes a REG_SZ value - or, in the dry run, logs it
+static BOOL WpRegWrite(HKEY key, const WCHAR* name, const WCHAR* value, const WCHAR* dryLog)
+{
+    if (dryLog != NULL)
     {
-        TCHAR errBuff[1000];
-
-        _stprintf(errBuff, LoadStr(IDS_SAVEERROR), PVW32DLL.PVGetErrorText(ret)); //"Canceled (error example)");
-        SalamanderGeneral->SalMessageBox(HWindow, errBuff, LoadStr(IDS_ERRORTITLE),
-                                         MB_ICONEXCLAMATION | MB_OK);
-        return FALSE;
+        WCHAR head[64];
+        swprintf_s(head, L"SET %s=", name);
+        WpLogLine(dryLog, head, value);
+        return TRUE;
     }
+    return RegSetValueExW(key, name, 0, REG_SZ, (const BYTE*)value, (DWORD)((wcslen(value) + 1) * sizeof(WCHAR))) == ERROR_SUCCESS;
+}
 
-    return TRUE;
+// the wallpaper of the session: 'path' ("" = none; never NULL) - or, in the dry run, logged
+static BOOL WpApply(const WCHAR* path, const WCHAR* dryLog, DWORD* err)
+{
+    if (dryLog != NULL)
+    {
+        WpLogLine(dryLog, L"SPI_SETDESKWALLPAPER ", path);
+        return TRUE;
+    }
+    if (SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, (void*)path, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE))
+        return TRUE;
+    *err = GetLastError();
+    return FALSE;
+}
+
+// "Unable to save the image." with the system's reason (or the engine's), composed as UTF-8
+static void WpShowError(HWND parent, int code, DWORD err)
+{
+    char detail[1000];
+    if (err != 0)
+        SalamanderGeneral->GetErrorText(err, detail, SizeOf(detail)); // UTF-8
+    else
+        lstrcpyn(detail, PVW32DLL.PVGetErrorText(code), SizeOf(detail));
+    char msg[1200];
+    FormatSaveErrorU8(msg, SizeOf(msg), detail);
+    SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION | MB_OK);
+}
+
+// writes what the window shows into %LOCALAPPDATA%\Tandem Commander\PictView_Wallpaper.bmp;
+// '*path' (malloc'ed) is that file's plain path. Returns a PVC_* code ('*err': the system error)
+int CRendererWindow::SaveWallpaperFile(WCHAR** path, DWORD* err)
+{
+    *path = NULL;
+    *err = 0;
+    WCHAR dir[MAX_PATH];
+    if (SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, dir) != S_OK)
+    {
+        *err = ERROR_PATH_NOT_FOUND;
+        return PVC_WRITING_ERROR;
+    }
+    size_t len = wcslen(dir) + 20 + _countof(WP_FILE_NAME) + 2;
+    WCHAR* file = (WCHAR*)malloc(len * sizeof(WCHAR));
+    if (file == NULL)
+        return PVC_OOM;
+    swprintf_s(file, len, L"%s\\Tandem Commander", dir);
+    CreateDirectoryW(file, NULL); // created on demand, as for the bug reports; an error shows below
+    wcscat_s(file, len, L"\\");
+    wcscat_s(file, len, WP_FILE_NAME);
+    char* fileU8 = SplWToU8Alloc(file);
+    WCHAR* wExt = fileU8 != NULL ? SplU8ToWExtAlloc(fileU8) : NULL; // the \\?\ form for the file steps
+    free(fileU8);
+    if (wExt == NULL)
+    {
+        free(file);
+        return PVC_OOM;
+    }
+    DWORD attr = GetFileAttributesW(wExt);
+    int code;
+    if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        *err = ERROR_ALREADY_EXISTS; // a folder of that name is never replaced
+        code = PVC_WRITING_ERROR;
+    }
+    else
+    {
+        CWicEncodeParams ep;
+        memset(&ep, 0, sizeof(ep));
+        ep.Format = PVF_BMP;
+        ep.Compression = PVCS_DEFAULT;
+        ep.Colors = PV_COLOR_TC24;
+        ep.ColorModel = PVCM_RGB;
+        ep.JPEGQuality = 75;
+        WCHAR* leftAt = NULL;
+        code = EncodeReplaceSafe(wExt, &ep, attr != INVALID_FILE_ATTRIBUTES, TRUE, err, &leftAt);
+        free(leftAt); // our own file: the temporary one is not worth a message
+    }
+    free(wExt);
+    if (code == PVC_OK)
+        *path = file;
+    else
+        free(file);
+    return code;
 }
 
 void CRendererWindow::SetAsWallpaper(WORD command)
 {
-    if (FileName != NULL)
+    if (FileName == NULL)
+        return;
+    WCHAR* dryLog = WpDryRunLog();
+    HKEY key;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Control Panel\\Desktop", 0, KEY_QUERY_VALUE | KEY_SET_VALUE, &key) != ERROR_SUCCESS)
     {
-        HKEY hKey;
-        if (RegOpenKeyEx(HKEY_CURRENT_USER, _T("Control Panel\\Desktop"), 0, KEY_READ | KEY_WRITE, &hKey) == ERROR_SUCCESS)
+        free(dryLog);
+        return;
+    }
+    WCHAR* cur = WpRegRead(key, L"Wallpaper");
+    WCHAR* curStyle = WpRegRead(key, L"WallpaperStyle");
+    WCHAR* curTile = WpRegRead(key, L"TileWallpaper");
+    DWORD err = 0;
+    int code = PVC_OK;
+    if (cur != NULL && curStyle != NULL && curTile != NULL)
+    {
+        // the backup (Prev*) is written only after the new wallpaper took effect and never with an
+        // empty value; Center/Tile/Stretch and None back up only a wallpaper that is not our own file
+        // (review S2: None run twice, or after Center, destroyed a valid backup), Restore the one it
+        // replaces (so Restore again swaps back); style values written for the SPI call (Windows reads
+        // them there) are put back when the call fails
+        const WCHAR* curName = wcsrchr(cur, L'\\');
+        curName = curName != NULL ? curName + 1 : cur;
+        BOOL curWorthBackup = cur[0] != 0 && _wcsicmp(curName, WP_FILE_NAME) != 0;
+        switch (command)
         {
-            switch (command)
+        case CMD_WALLPAPER_CENTER:
+        case CMD_WALLPAPER_TILE:
+        case CMD_WALLPAPER_STRETCH:
+        {
+            WCHAR* file = NULL;
+            code = SaveWallpaperFile(&file, &err);
+            if (code != PVC_OK)
+                break; // nothing in the registry or on the desktop changes
+            WpRegWrite(key, L"WallpaperStyle", command == CMD_WALLPAPER_STRETCH ? L"2" : L"0", dryLog);
+            WpRegWrite(key, L"TileWallpaper", command == CMD_WALLPAPER_TILE ? L"1" : L"0", dryLog);
+            if (WpApply(file, dryLog, &err)) // writes the Wallpaper value itself (SPIF_UPDATEINIFILE)
             {
-            case CMD_WALLPAPER_CENTER:
-            case CMD_WALLPAPER_TILE:
-            case CMD_WALLPAPER_STRETCH:
-            {
-                LPCTSTR PICTVIEW_WALLPAPER = _T("PictView_Wallpaper.bmp");
-
-                // save the image into a BMP file in the Windows directory
-                // (where it is then left on its own); a cleaner solution is unknown
-                TCHAR fileName[MAX_PATH];
-                GetWindowsDirectory(fileName, SizeOf(fileName));
-                SalamanderGeneral->SalPathAppend(fileName, PICTVIEW_WALLPAPER, MAX_PATH);
-                if (SaveWallpaper(fileName))
+                if (curWorthBackup)
                 {
-                    CWallpaper cur;
-                    GetWallpaper(hKey, FALSE, &cur);
-
-                    // if the current wallpaper is not ours, back it up as the previous version
-                    LPCTSTR s = _tcsrchr(cur.Wallpaper, '\\');
-                    if (s == NULL)
-                        s = cur.Wallpaper;
-                    else
-                        s++;
-                    if (_tcsicmp(s, PICTVIEW_WALLPAPER) != 0)
-                        SetWallpaper(hKey, TRUE, &cur);
-
-                    _tcscpy(cur.Wallpaper, fileName);
-                    _tcscpy(cur.WallpaperStyle, command == CMD_WALLPAPER_STRETCH ? _T("2") : _T("0"));
-                    _tcscpy(cur.TileWallpaper, command == CMD_WALLPAPER_TILE ? _T("1") : _T("0"));
-                    SetWallpaper(hKey, FALSE, &cur);
+                    WpRegWrite(key, L"PrevWallpaper", cur, dryLog);
+                    WpRegWrite(key, L"PrevWallpaperStyle", curStyle, dryLog);
+                    WpRegWrite(key, L"PrevTileWallpaper", curTile, dryLog);
                 }
-
-                break;
             }
-
-            case CMD_WALLPAPER_RESTORE:
+            else
             {
-                // swap the current and previous versions
-                CWallpaper cur, prev;
-                GetWallpaper(hKey, TRUE, &prev);
-                GetWallpaper(hKey, FALSE, &cur);
-                SetWallpaper(hKey, TRUE, &cur);
-                SetWallpaper(hKey, FALSE, &prev);
-                break;
+                code = PVC_WRITING_ERROR;
+                WpRegWrite(key, L"WallpaperStyle", curStyle, dryLog);
+                WpRegWrite(key, L"TileWallpaper", curTile, dryLog);
             }
-
-            case CMD_WALLPAPER_NONE:
-            {
-                // back up the current one into prev and then clear it
-                CWallpaper cur;
-                GetWallpaper(hKey, FALSE, &cur);
-                SetWallpaper(hKey, TRUE, &cur);
-                memset(&cur, 0, sizeof(cur));
-                SetWallpaper(hKey, FALSE, &cur);
-                break;
-            }
-
-            default:
-            {
-                TRACE_E("Unknown command: " << command);
-                break;
-            }
-            }
-            RegCloseKey(hKey);
+            free(file);
+            break;
         }
 
-        // notify the OS that it should perform an update
-        SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, NULL, SPIF_SENDCHANGE);
+        case CMD_WALLPAPER_RESTORE: // swap the current and the backed-up wallpaper
+        {
+            WCHAR* prev = WpRegRead(key, L"PrevWallpaper");
+            WCHAR* prevStyle = WpRegRead(key, L"PrevWallpaperStyle");
+            WCHAR* prevTile = WpRegRead(key, L"PrevTileWallpaper");
+            // nothing backed up: nothing to restore (review S2 - it removed the wallpaper)
+            if (prev != NULL && prevStyle != NULL && prevTile != NULL && prev[0] != 0)
+            {
+                if (prevStyle[0] != 0)
+                    WpRegWrite(key, L"WallpaperStyle", prevStyle, dryLog);
+                if (prevTile[0] != 0)
+                    WpRegWrite(key, L"TileWallpaper", prevTile, dryLog);
+                if (WpApply(prev, dryLog, &err))
+                {
+                    if (cur[0] != 0) // the one replaced becomes the backup (Restore again swaps back)
+                    {
+                        WpRegWrite(key, L"PrevWallpaper", cur, dryLog);
+                        WpRegWrite(key, L"PrevWallpaperStyle", curStyle, dryLog);
+                        WpRegWrite(key, L"PrevTileWallpaper", curTile, dryLog);
+                    }
+                }
+                else
+                {
+                    code = PVC_WRITING_ERROR;
+                    if (prevStyle[0] != 0)
+                        WpRegWrite(key, L"WallpaperStyle", curStyle, dryLog);
+                    if (prevTile[0] != 0)
+                        WpRegWrite(key, L"TileWallpaper", curTile, dryLog);
+                }
+            }
+            free(prev);
+            free(prevStyle);
+            free(prevTile);
+            break;
+        }
+
+        case CMD_WALLPAPER_NONE: // no wallpaper; the current one backed up (if it is worth it)
+        {
+            if (cur[0] == 0)
+                break; // no wallpaper already
+            if (WpApply(L"", dryLog, &err))
+            {
+                if (curWorthBackup)
+                {
+                    WpRegWrite(key, L"PrevWallpaper", cur, dryLog);
+                    WpRegWrite(key, L"PrevWallpaperStyle", curStyle, dryLog);
+                    WpRegWrite(key, L"PrevTileWallpaper", curTile, dryLog);
+                }
+            }
+            else
+                code = PVC_WRITING_ERROR;
+            break;
+        }
+
+        default:
+            TRACE_E("Unknown command: " << command);
+            break;
+        }
     }
+    free(cur);
+    free(curStyle);
+    free(curTile);
+    RegCloseKey(key);
+    free(dryLog);
+    if (code != PVC_OK && code != PVC_CANCELED)
+        WpShowError(HWindow, code, err);
 }
 
 void CRendererWindow::SelectTool(eTool tool)
