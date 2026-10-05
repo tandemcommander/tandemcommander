@@ -1679,3 +1679,42 @@ plugin architecture preservation, UI consistency.
     14,169. No new string, interface 107, no registry format change.
     Records: `specs/111-pictview-shown-image/fix-log.md`.
   GUI re-run of the final protocol (operation ids) owed - see fix-log T015.
+- 112-cache-pending-edit: **a flush of the disk cache never throws away a
+  pending edit.** NEXT-WORK item 5, queue entries 2a (109's review) and 3.
+  With both panels on one archive and an F4 edit pending in the left one,
+  the right panel's flush (after its own update, or after reopening an
+  archive another program changed) marked the left copy out of date; the
+  next F3 / F4 of that member deleted it and extracted the member over the
+  edit - the stamp then matched and nothing was offered (every release;
+  only while the left panel did not refresh in between: automatic refresh
+  off, a share without notifications, Ctrl+R in the right panel).
+  - **Rule** (`src/common/salcacheedit.h`, `CSalCacheEditPin`): the panel's
+    lock on a tracked copy is a core-only EDIT lock (`crtCacheEdit`,
+    `CACHE_LOCK_EDIT` in `LockObjFlags`, was `LockObjOwner`); a flush that
+    meets it defers the out-of-date mark (`StaleAfterEdit`), set in
+    `CCacheData::WaitSatisfied` when the last edit lock goes - then an
+    unused copy is deleted at once (109's freshness kept). A mark set
+    between look-up and lock is taken over; `GetName` guards the invariant.
+    Without an edit lock the rule is the old one step by step (plug-ins
+    unchanged; saltests random parity).
+  - **F4** (`ExecuteFromArchive`): stamp, `AddFile` (three results,
+    `CFileTimeStampsAddResult`) and the edit lock BEFORE the launch, under
+    `BeginStopRefresh`; a copy that cannot be tracked is released and not
+    edited (`IDS_PACKERR_NOMEM`) - it used to be deleted under the editor;
+    the stamp of an existing copy was read after the launch (a fast editor's
+    write became "unchanged").
+  - Research correction: R re-entering the changed archive cannot reach the
+    copy (109 gives it a unique key).
+  - Trade-off (review SF1): an UNTOUCHED tracked copy is pinned too - after
+    another program changed that member, the panel that opened it shows and
+    edits the old content until Ctrl+R / leave; a size/time "untouched" test
+    was rejected (it can extract over an edit). Follow-up: a per-member
+    "changed in the archive since F4" warning (needs a string).
+  - The launch uses a heap copy of the copy's name (the record's `TmpName`
+    lives only as long as its lock; a forced Ctrl+R during the launch).
+  - Probe `probe/diskcache_edit_probe.ps1` (refresh off / `net use` drive
+    with no refresh, controls with refresh on, the left panel's refresh
+    detected): GUI runs pending. saltests 14,169 -> 14,236. Interface stays
+    107, no new string, no registry change. Records:
+    `specs/112-cache-pending-edit/fix-log.md`.
+  GUI runs owed at commit time - see fix-log "Commit before the GUI runs".

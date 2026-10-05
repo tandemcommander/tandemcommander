@@ -33,6 +33,7 @@
 #include "salarcedit.h"     // feature 108
 #include "salzipname.h"     // feature 110
 #include "salpvsource.h"    // feature 111
+#include "salcacheedit.h"   // feature 112
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -6352,6 +6353,382 @@ static void TestZipName110()
     CHECK(RemoveDirectoryW(dir.c_str()));
 }
 
+// feature 112: a model of one disk-cache record (CCacheData, cache.cpp) driven through the same steps
+// cache.cpp takes: a look-up (GetName) adds a request, AssignName turns it into a lock, ReleaseName
+// drops it, WaitSatisfied removes a lock, FlushCache / FlushOneFile meet the record. 'Pinned' = the
+// rule of feature 112 (CSalCacheEditPin, salcacheedit.h); otherwise the rule of every earlier
+// release. An "edit lock" is the panel's lock on a copy it tracks for packing back (crtCacheEdit; the
+// old rule had crtCache there). 'PendingEdit' = the copy holds a saved edit not packed yet.
+struct CCacheRec112
+{
+    bool Pinned;
+    bool Exists;
+    std::vector<bool> Locks; // true = an edit lock
+    int Requests;
+    BOOL OutOfDate;
+    BOOL Cached;
+    int Creations; // the copy was (re-)created by a look-up: the member extracted into it
+    bool PendingEdit;
+    int Losses; // re-created while it held a pending edit: the edit extracted over
+    int Normalized;
+    CSalCacheEditPin Pin;
+
+    explicit CCacheRec112(bool pinned)
+    {
+        Pinned = pinned;
+        Exists = false;
+        Requests = 0;
+        OutOfDate = Cached = FALSE;
+        Creations = Losses = Normalized = 0;
+        PendingEdit = false;
+    }
+    bool InUse() const { return !Locks.empty() || Requests > 0; }
+    int EditLocks() const { return (int)std::count(Locks.begin(), Locks.end(), true); }
+    void Delete()
+    {
+        Exists = false;
+        Locks.clear();
+        Requests = 0;
+        OutOfDate = Cached = FALSE;
+        PendingEdit = false;
+        Pin = CSalCacheEditPin();
+    }
+    void LookUp() // CDiskCache::GetName on the key
+    {
+        if (!Exists)
+        {
+            Exists = true;
+            Requests = 1;
+            Creations++;
+            return;
+        }
+        Requests++;
+        if (Pinned && Pin.Normalize(&OutOfDate))
+            Normalized++;
+        if (OutOfDate) // CCacheData::GetName: CleanFromDisk + the caller extracts over the copy
+        {
+            OutOfDate = FALSE;
+            Creations++;
+            if (PendingEdit)
+                Losses++;
+            PendingEdit = false;
+        }
+    }
+    void Assign(bool edit) // CCacheData::AssignName (crtCache / crtCacheEdit)
+    {
+        Requests--;
+        Locks.push_back(edit);
+        if (!OutOfDate)
+            Cached = TRUE;
+        if (edit && Pinned)
+            Pin.OnEditLockAdded(&OutOfDate);
+    }
+    void Release(BOOL storeInCache) // CCacheData::ReleaseName + CCacheDirData::ReleaseName
+    {
+        Requests--;
+        if (!InUse())
+        {
+            if (storeInCache && !OutOfDate)
+                Cached = TRUE;
+            if (!Cached)
+                Delete();
+        }
+    }
+    void RemoveLock(int i) // CCacheData::WaitSatisfied + CDiskCache::WaitSatisfied
+    {
+        bool edit = Locks[i];
+        Locks.erase(Locks.begin() + i);
+        if (Pinned && Pin.OnLockRemoved(edit))
+        {
+            Cached = FALSE;
+            OutOfDate = TRUE;
+        }
+        if (edit && EditLocks() == 0)
+            PendingEdit = false; // the panel packed its edits before letting go
+        if (!InUse() && !Cached)
+            Delete();
+    }
+    void Flush() // CCacheDirData::FlushCache / FlushOneFile
+    {
+        if (!Exists)
+            return;
+        CSalCacheFlushAction a;
+        if (Pinned)
+            a = Pin.OnFlush(InUse());
+        else
+            a = InUse() ? scfaMarkOutOfDate : scfaDelete;
+        if (a == scfaDelete)
+            Delete();
+        else if (a == scfaMarkOutOfDate)
+        {
+            Cached = FALSE;
+            OutOfDate = TRUE;
+        }
+    }
+    void Save() // the editor saves into the copy
+    {
+        if (EditLocks() > 0)
+            PendingEdit = true;
+    }
+    bool InvariantHolds() const
+    {
+        if (!Pinned)
+            return true;
+        if (Pin.EditLocks != EditLocks())
+            return false;
+        if (Pin.StaleAfterEdit && Pin.EditLocks == 0)
+            return false;
+        if (OutOfDate && Pin.EditLocks > 0)
+            return false;
+        return true;
+    }
+};
+
+static void TestCacheEdit112()
+{
+    // --- the rule itself ---
+    {
+        CSalCacheEditPin p;
+        CHECK(p.EditLocks == 0 && !p.StaleAfterEdit);
+        CHECK(p.OnFlush(FALSE) == scfaDelete);
+        CHECK(p.OnFlush(TRUE) == scfaMarkOutOfDate);
+        CHECK(!p.StaleAfterEdit);
+        BOOL ood = FALSE;
+        p.OnEditLockAdded(&ood);
+        CHECK(p.EditLocks == 1 && !ood && !p.StaleAfterEdit);
+        CHECK(p.OnFlush(TRUE) == scfaDeferStale && p.StaleAfterEdit);
+        CHECK(p.OnFlush(FALSE) == scfaDelete); // not in use: deleted (a record with a lock is always in use)
+        CHECK(!p.OnLockRemoved(FALSE));        // a viewer's lock: nothing
+        CHECK(p.EditLocks == 1 && p.StaleAfterEdit);
+        CHECK(p.OnLockRemoved(TRUE)); // the last edit lock: the deferred mark is due
+        CHECK(p.EditLocks == 0 && !p.StaleAfterEdit);
+        CHECK(!p.OnLockRemoved(TRUE)); // no underflow, nothing due twice
+        CHECK(p.EditLocks == 0);
+    }
+    {
+        CSalCacheEditPin p; // two edit locks (both panels track the copy): due only with the second
+        BOOL ood = FALSE;
+        p.OnEditLockAdded(&ood);
+        p.OnEditLockAdded(&ood);
+        CHECK(p.OnFlush(TRUE) == scfaDeferStale);
+        CHECK(!p.OnLockRemoved(TRUE));
+        CHECK(p.StaleAfterEdit && p.EditLocks == 1);
+        CHECK(p.OnFlush(TRUE) == scfaDeferStale);
+        CHECK(p.OnLockRemoved(TRUE));
+    }
+    {
+        CSalCacheEditPin p; // a mark set between the look-up and the edit lock is taken over
+        BOOL ood = TRUE;
+        p.OnEditLockAdded(&ood);
+        CHECK(!ood && p.StaleAfterEdit && p.EditLocks == 1);
+        CHECK(p.OnLockRemoved(TRUE));
+    }
+    {
+        CSalCacheEditPin p; // without a flush the last edit lock leaves the copy as it is (cached)
+        BOOL ood = FALSE;
+        p.OnEditLockAdded(&ood);
+        CHECK(!p.OnLockRemoved(TRUE));
+    }
+    {
+        CSalCacheEditPin p; // Normalize: a consistent record is left alone
+        BOOL ood = TRUE;
+        CHECK(!p.Normalize(&ood) && ood);
+        ood = FALSE;
+        CHECK(!p.Normalize(&ood) && !ood);
+        BOOL o2 = FALSE;
+        p.OnEditLockAdded(&o2);
+        CHECK(!p.Normalize(&ood) && !ood);
+        ood = TRUE; // broken: an out-of-date mark beside an edit lock - turned into the deferred mark
+        CHECK(p.Normalize(&ood) && !ood && p.StaleAfterEdit);
+        CSalCacheEditPin q; // broken: a deferred mark without an edit lock - becomes the real mark
+        q.StaleAfterEdit = TRUE;
+        ood = FALSE;
+        CHECK(q.Normalize(&ood) && ood && !q.StaleAfterEdit);
+    }
+
+    // --- the scenarios of research.md 2, the old rule vs feature 112 ---
+    for (int pinned = 0; pinned < 2; pinned++)
+    {
+        // S1 own-F3: L F4 x + save; R updates the archive (flush); L F3 x; L leaves (packs, lets go)
+        CCacheRec112 r(pinned != 0);
+        r.LookUp();
+        r.Assign(true); // L's edit lock
+        r.Save();
+        r.Flush(); // R's update of another member: the flush of the archive's keys
+        r.LookUp();
+        r.Assign(false); // L's F3: the viewer's lock
+        CHECK(r.Losses == (pinned ? 0 : 1));
+        CHECK(r.InvariantHolds());
+        r.RemoveLock(1); // the viewer ends
+        CHECK(r.Exists);
+        r.RemoveLock(0); // L packs and lets go
+        // new: the deferred mark - deleted; old: the re-created copy (the edit gone) stays cached
+        CHECK(pinned ? !r.Exists : r.Exists);
+        CHECK(r.InvariantHolds());
+    }
+    for (int pinned = 0; pinned < 2; pinned++)
+    {
+        // S1 own-F4: the second F4 of L on the same member (already tracked: the request is released)
+        CCacheRec112 r(pinned != 0);
+        r.LookUp();
+        r.Assign(true);
+        r.Save();
+        r.Flush();
+        r.LookUp();
+        r.Release(FALSE);
+        CHECK(r.Losses == (pinned ? 0 : 1));
+        CHECK(r.Exists && r.Locks.size() == 1);
+        r.Save();
+        r.RemoveLock(0);
+        CHECK(!r.Exists);
+    }
+    for (int pinned = 0; pinned < 2; pinned++)
+    {
+        // S6 shared: L and R track one copy; R packs and lets go, flushes; L F3; L lets go
+        CCacheRec112 r(pinned != 0);
+        r.LookUp();
+        r.Assign(true); // L
+        r.LookUp();
+        r.Assign(true); // R (the same copy, it exists)
+        r.Save();
+        r.RemoveLock(1);      // R packs (the shared file holds the edit) and lets go
+        r.PendingEdit = true; // L has not packed yet (its stamp is older than the file)
+        r.Flush();
+        r.LookUp();
+        r.Assign(false);
+        CHECK(r.Losses == (pinned ? 0 : 1));
+        r.RemoveLock(1);
+        r.RemoveLock(0);
+        CHECK(pinned ? !r.Exists : r.Exists); // as in S1 own-F3
+        CHECK(r.InvariantHolds());
+    }
+    {
+        // a flush between the look-up and the edit lock (during the extraction): the copy is fresh,
+        // not cached, and out of date only when the edit lock goes
+        CCacheRec112 r(true);
+        r.LookUp();
+        r.Flush(); // in use by the request: marked out of date
+        CHECK(r.OutOfDate);
+        r.Assign(true);
+        CHECK(!r.OutOfDate && !r.Cached && r.Pin.StaleAfterEdit && r.InvariantHolds());
+        r.Save();
+        r.LookUp();
+        r.Release(FALSE);
+        CHECK(r.Losses == 0 && r.Creations == 1);
+        r.RemoveLock(0);
+        CHECK(!r.Exists);
+    }
+    for (int pinned = 0; pinned < 2; pinned++)
+    {
+        // no flush: the panel lets go, the copy stays cached (as every release did with crtCache)
+        CCacheRec112 r(pinned != 0);
+        r.LookUp();
+        r.Assign(true);
+        r.RemoveLock(0);
+        CHECK(r.Exists && r.Cached && !r.OutOfDate);
+        r.LookUp(); // reused, not extracted again
+        CHECK(r.Creations == 1);
+        r.Release(TRUE);
+        r.Flush();
+        CHECK(!r.Exists);
+    }
+    {
+        // a viewer's copy (F3, the plug-ins): marked out of date by a flush and re-created - unchanged
+        CCacheRec112 r(true);
+        r.LookUp();
+        r.Assign(false);
+        r.Flush();
+        CHECK(r.OutOfDate);
+        r.LookUp();
+        CHECK(r.Creations == 2);
+        r.Assign(false);
+        r.RemoveLock(0);
+        r.RemoveLock(0);
+        CHECK(r.Exists && r.Cached); // the view after the re-creation: cached again
+    }
+
+    // --- random sequences: without edit locks the new rule is the old one step by step (the
+    //     plug-ins' and the viewers' use of the cache is unchanged); with them no pending edit is
+    //     ever extracted over, the invariant holds after every step and the deferred mark arrives
+    //     with the last edit lock; the old rule loses edits ---
+    unsigned seed = 112;
+    auto rnd = [&seed](int n) -> int
+    {
+        seed = seed * 1103515245u + 12345u;
+        return (int)((seed >> 16) % (unsigned)n);
+    };
+    int parityMismatch = 0, invariantBroken = 0, newLosses = 0, oldLosses = 0, deferredLost = 0, normalized = 0;
+    for (int run = 0; run < 40000; run++)
+    {
+        bool withEdit = (run % 2) == 1;
+        CCacheRec112 a(true), b(false);
+        for (int step = 0; step < 16; step++)
+        {
+            int op = rnd(6);
+            int pick = rnd(8);
+            switch (op)
+            {
+            case 0: // F4 (an edit lock) or F3 (a viewer's lock)
+            case 1:
+            {
+                bool edit = withEdit && op == 0;
+                a.LookUp();
+                b.LookUp();
+                a.Assign(edit);
+                b.Assign(edit);
+                break;
+            }
+            case 2: // a request released (already tracked / not unpacked / stored in the cache)
+            {
+                BOOL store = (pick & 1) != 0;
+                a.LookUp();
+                b.LookUp();
+                a.Release(store);
+                b.Release(store);
+                break;
+            }
+            case 3: // a lock goes
+                if (!a.Locks.empty() && a.Locks.size() == b.Locks.size())
+                {
+                    int i = pick % (int)a.Locks.size();
+                    bool due = a.Locks[i] && a.EditLocks() == 1 && a.Pin.StaleAfterEdit;
+                    a.RemoveLock(i);
+                    b.RemoveLock(i);
+                    if (due && a.Exists && !a.OutOfDate)
+                        deferredLost++;
+                }
+                break;
+            case 4: // a flush of the archive's keys
+                a.Flush();
+                b.Flush();
+                break;
+            case 5:
+                a.Save();
+                b.Save();
+                break;
+            }
+            if (!a.InvariantHolds())
+                invariantBroken++;
+            if (!withEdit &&
+                (a.Exists != b.Exists || a.OutOfDate != b.OutOfDate || a.Cached != b.Cached ||
+                 a.Creations != b.Creations || a.Locks != b.Locks || a.Requests != b.Requests))
+                parityMismatch++;
+        }
+        newLosses += a.Losses;
+        oldLosses += b.Losses;
+        normalized += a.Normalized;
+    }
+    CHECK(parityMismatch == 0);
+    CHECK(invariantBroken == 0);
+    CHECK(newLosses == 0);
+    CHECK(oldLosses > 0); // the model reproduces the defect under the old rule
+    CHECK(deferredLost == 0);
+    CHECK(normalized == 0); // the guard in the look-up never has to act
+    if (parityMismatch || invariantBroken || newLosses || !oldLosses || deferredLost || normalized)
+        printf("TestCacheEdit112: parity %d, invariant %d, losses new %d / old %d, deferred lost %d, normalized %d\n",
+               parityMismatch, invariantBroken, newLosses, oldLosses, deferredLost, normalized);
+}
+
 int main()
 {
     TestConversions();
@@ -6402,6 +6779,7 @@ int main()
     TestDiskCacheKey109();
     TestZipName110();
     TestPvSource111();
+    TestCacheEdit112();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

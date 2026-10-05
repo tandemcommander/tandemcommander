@@ -25,7 +25,7 @@ BOOL InitializeDiskCache()
 //
 
 CCacheData::CCacheData(const char* name, const char* tmpName, BOOL ownDelete,
-                       CPluginInterfaceAbstract* ownDeletePlugin) : LockObject(1, 2), LockObjOwner(1, 2)
+                       CPluginInterfaceAbstract* ownDeletePlugin) : LockObject(1, 2), LockObjFlags(1, 2)
 {
     Name = DupStr(name);
     TmpName = DupStr(tmpName);
@@ -89,7 +89,7 @@ CCacheData::~CCacheData()
     int i;
     for (i = 0; i < LockObject.Count; i++)
     {
-        if (LockObjOwner[i])
+        if (LockObjFlags[i] & CACHE_LOCK_OWNER)
             HANDLES(CloseHandle(LockObject[i]));
     }
 }
@@ -173,6 +173,11 @@ CCacheData::GetName(CDiskCache* monitor, BOOL* exists, BOOL canBlock, BOOL onlyA
     {
         if (Prepared) // tmp-file is ready
         {
+            // feature 112: a copy with an edit lock is never out of date (the mark waits for the last
+            // edit lock, see Flush()); this guards the invariant - re-creating the copy here would
+            // extract the member over the pending edit
+            if (EditPin.Normalize(&OutOfDate))
+                TRACE_E("CCacheData::GetName(): out-of-date mark and edit lock together (fixed) on " << TmpName);
             DWORD attrs = SalGetFileAttributes(TmpName);
             if (attrs == 0xFFFFFFFF || OutOfDate)
             {
@@ -249,15 +254,18 @@ BOOL CCacheData::AssignName(CCacheHandles* handles, HANDLE lock, BOOL lockOwner,
         LockObject.ResetState();
         return FALSE;
     }
-    LockObjOwner.Add(lockOwner);
-    if (!LockObjOwner.IsGood())
+    BOOL edit = remove == crtCacheEdit; // feature 112: a panel tracks this copy for packing back
+    LockObjFlags.Add((lockOwner ? CACHE_LOCK_OWNER : 0) | (edit ? CACHE_LOCK_EDIT : 0));
+    if (!LockObjFlags.IsGood())
     {
-        LockObjOwner.ResetState();
+        LockObjFlags.ResetState();
         LockObject.Delete(LockObject.Count - 1);
         return FALSE;
     }
-    if (remove == crtCache && !OutOfDate)
+    if ((remove == crtCache || edit) && !OutOfDate)
         Cached = TRUE;
+    if (edit) // after the line above: a mark taken over here leaves the copy not cached
+        EditPin.OnEditLockAdded(&OutOfDate);
 
     handles->SetBox(lock, this);
 
@@ -291,10 +299,19 @@ BOOL CCacheData::WaitSatisfied(HANDLE lock, BOOL* lastLock)
     {
         if (LockObject[i] == lock)
         {
-            if (LockObjOwner[i])
+            DWORD flags = LockObjFlags[i];
+            if (flags & CACHE_LOCK_OWNER)
                 HANDLES(CloseHandle(lock));
             LockObject.Delete(i);
-            LockObjOwner.Delete(i);
+            LockObjFlags.Delete(i);
+            // feature 112: the last edit lock went (the panel packed its edits or declined to) - a flush
+            // deferred meanwhile marks the copy out of date now; without other users the caller
+            // (CDiskCache::WaitSatisfied) then deletes it at once, as an out-of-date copy always was
+            if (EditPin.OnLockRemoved((flags & CACHE_LOCK_EDIT) != 0))
+            {
+                TRACE_I("Tmp-file " << TmpName << " is out-of-date now (the flush waited for its edit lock).");
+                SetOutOfDate();
+            }
             *lastLock = IsLocked();
             if (*lastLock)
                 LastAccess = LastAccessCounter++; // the last 'lock' is gone, so the file is now at risk
@@ -306,6 +323,20 @@ BOOL CCacheData::WaitSatisfied(HANDLE lock, BOOL* lastLock)
     while (1)
         Sleep(1000);
     return FALSE;
+}
+
+CSalCacheFlushAction CCacheData::Flush()
+{
+    CALL_STACK_MESSAGE1("CCacheData::Flush()");
+    CSalCacheFlushAction action = EditPin.OnFlush(!IsLocked());
+    if (action == scfaMarkOutOfDate) // it can't be deleted now, it will be deleted as soon as possible
+        SetOutOfDate();
+    else
+    {
+        if (action == scfaDeferStale) // feature 112: a panel has not packed its edit of this copy yet
+            TRACE_I("Tmp-file " << TmpName << " has an edit lock - it will be out-of-date when the lock goes.");
+    }
+    return action;
 }
 
 void CCacheData::PrematureDeleteByPlugin(CPluginInterfaceAbstract* ownDeletePlugin, BOOL onlyDetach)
@@ -687,18 +718,14 @@ void CCacheDirData::FlushCache(const char* name)
         if (strncmp(Names[i]->GetName(), name, nameLen) == 0) // match found
         {
             CCacheData* data = Names[i];
-            if (data->IsLocked())
+            // feature 112: in use - marked out of date, or (an edit lock) the mark waits for the lock
+            if (data->Flush() == scfaDelete)
             {
                 // we will delete the found tmp-file
                 Names.Delete(i);
                 TRACE_I("Tmp-file " << data->GetTmpName() << " was deleted.");
                 delete data;
                 i--;
-            }
-            else
-            {
-                // it can't be deleted now, it will be deleted as soon as possible
-                data->SetOutOfDate();
             }
         }
         else
@@ -712,18 +739,13 @@ BOOL CCacheDirData::FlushOneFile(const char* name)
     if (GetNameIndex(name, i)) // 'name' found at index 'i'
     {
         CCacheData* data = Names[i];
-        if (data->IsLocked())
+        // feature 112: in use - marked out of date, or (an edit lock) the mark waits for the lock
+        if (data->Flush() == scfaDelete)
         {
             // we will delete the found tmp-file
             Names.Delete(i);
             TRACE_I("Tmp-file " << data->GetTmpName() << " was deleted.");
             delete data;
-            i--;
-        }
-        else
-        {
-            // it can't be deleted now, it will be deleted as soon as possible
-            data->SetOutOfDate();
         }
         return TRUE; // deleted
     }

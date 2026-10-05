@@ -3551,27 +3551,17 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         s++;
     }
 
-    // launching the default item from the context menu (association)
-    if (edit)
-    {
-        if (editWithMenuParent != NULL && editWithMenuPoint != NULL)
-        {
-            EditFileWith(name, editWithMenuParent, editWithMenuPoint);
-        }
-        else
-            EditFile(name);
-    }
-    else
-    {
-        if (s != NULL)
-        {
-            HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
-            MainWindow->SetDefaultDirectories();
-            ExecuteAssociation(GetListBoxHWND(), buf, s);
-            SetCursor(oldCur);
-        }
-    }
-
+    // feature 112: the copy's stamp is taken and the copy is tracked and locked BEFORE the editor or
+    // the association is launched. The stamp of a copy that already existed (F3 first, or the other
+    // panel's copy) was read after the launch - an editor that wrote before that read (a script, a
+    // quick tool) made its edit part of the stamp, and the edit was dropped as "unchanged" at the
+    // update. And AddFile's FALSE meant both "already tracked" and "low memory": on low memory the
+    // copy the editor had just opened was released, i.e. deleted. Now a copy that cannot be tracked is
+    // not edited at all, and a tracked copy holds the panel's EDIT lock while the launch runs (a flush
+    // of the other panel meanwhile can no longer mark it out of date - see salcacheedit.h). No panel
+    // refreshes until the launch is done (a refresh of this panel would pack and release the copy the
+    // editor is about to open - the request of GetName() used to keep it on disk until the launch)
+    BeginStopRefresh(); // the snooper takes a break
     if (fileSize == CQuadWord(-1, -1))
     {
         HANDLE find = SalFindFirstFile(name, &data);
@@ -3585,13 +3575,76 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         }
     }
 
-    if (UnpackedAssocFiles.AddFile(GetZIPArchive(), zipPath, buf, s, dosName, lastWrite, fileSize, attr))
-    {                                                                         // this file doesn't have the disk-cache 'lock' object ExecuteAssocEvent yet
-        DiskCache.AssignName(dcFileName, ExecuteAssocEvent, FALSE, crtCache); // arcCacheCacheCopies has no effect – caching is done until the archive is closed, we won't unpack earlier
+    // the launch below works on a copy of the name: 'name' (and 's') point into the disk-cache record,
+    // which only the lock keeps alive - a release re-entered during the launch (Ctrl+R ends
+    // StopRefresh by force, CM_ACTIVEREFRESH in mainwnd3.cpp) would leave them dangling
+    CSalHeapString launchName;
+    if (!launchName.Copy(name))
+    {
+        TRACE_E(LOW_MEMORY);
+        DiskCache.ReleaseName(dcFileName, FALSE);
+        EndStopRefresh();
+        SalMessageBox(HWindow, LoadStr(IDS_PACKERR_NOMEM), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        return;
+    }
+    char* launchS = s != NULL ? launchName.Get() + (s - name) : NULL;
+
+    CFileTimeStampsAddResult tracked = UnpackedAssocFiles.AddFile(GetZIPArchive(), zipPath, buf, s, dosName,
+                                                                  lastWrite, fileSize, attr);
+    if (tracked == ftsarAdded) // this file doesn't have the disk-cache 'lock' object ExecuteAssocEvent yet
+    {
+        // arcCacheCacheCopies has no effect – caching is done until the archive is closed, we won't unpack
+        // earlier; feature 112: an EDIT lock - a flush never marks the copy out of date while it is held
+        if (!DiskCache.AssignName(dcFileName, ExecuteAssocEvent, FALSE, crtCacheEdit))
+        {
+            // low memory: the request of GetName() is gone with the failed call; the copy is not
+            // tracked and not edited - without another user the flush deletes it
+            TRACE_E("CFilesWindow::ExecuteFromArchive(): unable to lock the copy for editing.");
+            UnpackedAssocFiles.RemoveLastAdded();
+            DiskCache.FlushOneFile(dcFileName);
+            EndStopRefresh();
+            SalMessageBox(HWindow, LoadStr(IDS_PACKERR_NOMEM), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            return;
+        }
     }
     else
-    { // it is unnecessary to add the same 'lock' object to a tmp file
+    {
+        // ftsarAlreadyTracked: it is unnecessary to add the same 'lock' object to a tmp file (it holds
+        // the panel's edit lock, so releasing the request does not delete it); ftsarFailed: low memory -
+        // the copy is released and not edited (feature 112: it used to be released AFTER the editor had
+        // opened it - deleted under the editor, the edit never offered). ftsarFailed also covers a list
+        // that belongs to another archive (CFileTimeStamps::AddFile's "unexpected situation" - the list
+        // is emptied whenever the panel leaves its archive, so it cannot happen); the message is the
+        // low-memory one, the only reachable cause
         DiskCache.ReleaseName(dcFileName, FALSE);
+        if (tracked == ftsarFailed)
+        {
+            EndStopRefresh();
+            SalMessageBox(HWindow, LoadStr(IDS_PACKERR_NOMEM), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            return;
+        }
     }
     AssocUsed = TRUE;
+
+    // launching the default item from the context menu (association)
+    if (edit)
+    {
+        if (editWithMenuParent != NULL && editWithMenuPoint != NULL)
+        {
+            EditFileWith(launchName.Get(), editWithMenuParent, editWithMenuPoint);
+        }
+        else
+            EditFile(launchName.Get());
+    }
+    else
+    {
+        if (launchS != NULL)
+        {
+            HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
+            MainWindow->SetDefaultDirectories();
+            ExecuteAssociation(GetListBoxHWND(), buf, launchS);
+            SetCursor(oldCur);
+        }
+    }
+    EndStopRefresh(); // the snooper resumes now
 }

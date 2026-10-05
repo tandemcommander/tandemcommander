@@ -553,6 +553,22 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      panel's auto refresh closed the window in every probe row). Needs a design:
      the cache does not know `CFileTimeStamps` - e.g. never mark out of date a
      copy that a panel tracks as edited, or let `GetName` refuse to recreate it.
+     ✅ **Fixed by feature 112 (2026-10-05) - GUI runs pending**: the panel's
+     lock on a tracked copy is a core-only EDIT lock (`crtCacheEdit`); a flush
+     that meets it defers the out-of-date mark until the last edit lock goes
+     (`src/common/salcacheedit.h`, `CSalCacheEditPin`); without an edit lock
+     the cache behaves as before (plug-ins unchanged, saltests parity). The
+     R-side trigger (R re-entering the changed archive) was already closed by
+     109's unique key. Probe `112/probe/diskcache_edit_probe.ps1` (refresh off /
+     `net use` drive, controls, the left panel's refresh detected) written, not
+     run yet (`112/quickstart.md`). Left: a per-member warning when the member
+     itself changed in the archive since F4 (needs a string). Trade-off recorded
+     (review SF1): an UNTOUCHED tracked copy is pinned too - after another
+     program changed that member, L (not refreshed) shows and edits the old
+     content until Ctrl+R / leave (before 112 its next F3 / F4 re-extracted the
+     new one); telling "untouched" from "editor open with unsaved work" by the
+     F4 stamp could lose an edit (2-s FAT times, tools restoring the write
+     time) - the per-member warning would cover it.
   3. Small, recorded: `AddFile` returning FALSE on low memory makes
      `ExecuteFromArchive` release the copy the editor is using (pre-existing).
      Also from 109's re-review: two panels whose archives have the same
@@ -560,6 +576,12 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      re-pointed drive letter still share copies (pre-existing; fix: store each
      panel's file identity at open); the out-of-memory fallback of the cache
      key can re-create sharing without a check (hardening: refuse F3/F4).
+     ✅ The first part (`AddFile` on low memory) **fixed by feature 112**:
+     `AddFile` returns three results; `ExecuteFromArchive` tracks and locks the
+     copy BEFORE launching the editor and refuses ("Insufficient memory.") a
+     copy it cannot track; also fixed there: the stamp of an existing copy was
+     read after the launch (a fast editor's write counted as "unchanged"). The
+     two 109 re-review items stay open.
   4. For the `CSalamanderDirectory` item (108 review NIT 3/4): tar extracts
      case-sensitively (`plugins/tar/untar.cpp:330`, `strcmp`) under a
      case-insensitive listing - a Linux tarball with `Dir/a.txt` and

@@ -53,6 +53,28 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **An edit of a file from an archive is no longer lost when the other panel
+  updates the same archive.** With both panels showing one archive, a file
+  opened for editing (F4) in one panel and saved, but not yet packed back,
+  was thrown away when the other panel updated the archive (its own edits
+  packed on leaving it) or reopened it after another program had changed it:
+  viewing (F3) or editing that file again in the first panel extracted it
+  from the archive over the edit, and leaving the archive then offered
+  nothing - the edit was gone without a word. This happened whenever the
+  first panel did not refresh in between (automatic refresh off for the
+  drive, a network share that does not report changes, Ctrl+R in the other
+  panel). The edited file is now kept until its panel has packed it back. In
+  the same place: a file opened for editing whose copy already existed (viewed
+  first, or opened in the other panel) could be taken as unchanged when the
+  editor saved very quickly, and when memory ran out the copy was deleted
+  under the editor just opened; now such a file is not opened for editing and
+  "Insufficient memory." is shown. One consequence to know: a file opened
+  for editing is kept even when it was not changed, so if another program
+  changes that file in the archive meanwhile, the panel that opened it goes on
+  showing (and editing) the copy it opened until it is refreshed (Ctrl+R) or
+  the archive is left - and packing an edit of it back replaces the other
+  program's change, as it already did when the panel was refreshed first
+  (feature 112).
 - **PictView renames, deletes and saves over the picture it shows.** Since the
   built-in image engine of 0.1.0, the picture shown in a PictView window could
   not be renamed ("The process cannot access the file because it is being used

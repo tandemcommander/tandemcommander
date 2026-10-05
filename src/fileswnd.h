@@ -295,6 +295,15 @@ struct CFileTimeStampsItem
 
 class CFilesWindow;
 
+// feature 112: the result of CFileTimeStamps::AddFile (was a BOOL - FALSE meant both "already
+// tracked" and "failed", and the caller released the copy the editor was about to use)
+enum CFileTimeStampsAddResult
+{
+    ftsarAdded,          // the copy is tracked now (the caller gives it the panel's edit lock)
+    ftsarAlreadyTracked, // the same copy is tracked already (it holds the panel's edit lock)
+    ftsarFailed,         // not tracked: low memory or another archive (the caller must not edit it)
+};
+
 class CFileTimeStamps
 {
 protected:
@@ -332,10 +341,15 @@ public:
     // fileSize    - file size after extraction (used to check for changes)
     // attr        - file attributes
     //
-    // return value TRUE - the file was added; FALSE - it was not added (an error occurred or it already exists)
-    BOOL AddFile(const char* zipFile, const char* zipRoot, const char* sourcePath,
-                 const char* fileName, const char* dosFileName,
-                 const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr);
+    // feature 112: returns ftsarAdded, ftsarAlreadyTracked or ftsarFailed (see the enum); a failure
+    // leaves the list as it was (an archive name set by this call alone is forgotten again)
+    CFileTimeStampsAddResult AddFile(const char* zipFile, const char* zipRoot, const char* sourcePath,
+                                     const char* fileName, const char* dosFileName,
+                                     const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr);
+
+    // feature 112: removes the item the last successful AddFile() added (the caller could not lock its
+    // copy); an empty list forgets the archive name
+    void RemoveLastAdded();
 
     // it verifies time stamps, updates if necessary and prepares the object for further use
     void CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged = NULL, BOOL* archMaybeUpdated = NULL);

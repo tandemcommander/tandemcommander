@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "salcacheedit.h" // feature 112
+
 // initializes the disk cache, returns success
 BOOL InitializeDiskCache();
 
@@ -27,9 +29,16 @@ BOOL InitializeDiskCache();
 
 enum CCacheRemoveType // if it's possible to remove the item from cache, when it will happen?
 {
-    crtCache, // once the cache asks for it (cache size limit exceeded, ...) (FTP - speed cache)
-    crtDirect // immediately (no need to cache, remove it once it's not needed)
+    crtCache,    // once the cache asks for it (cache size limit exceeded, ...) (FTP - speed cache)
+    crtDirect,   // immediately (no need to cache, remove it once it's not needed)
+    crtCacheEdit // feature 112, core only: crtCache + an EDIT lock - a panel tracks the copy for packing
+                 // back into its archive (CFileTimeStamps); a flush never marks such a copy out of date,
+                 // the mark waits until the last edit lock goes (salcacheedit.h). Plug-ins never pass it.
 };
+
+// feature 112: flags of one lock of a CCacheData (LockObjFlags)
+#define CACHE_LOCK_OWNER 0x1 // the cache closes the lock's handle (CloseHandle) when the lock goes
+#define CACHE_LOCK_EDIT 0x2  // an edit lock (crtCacheEdit)
 
 class CDiskCache;
 class CCacheHandles;
@@ -43,8 +52,10 @@ protected:
 
     // system objects - array of (HANDLE): state "signaled" -> remove this 'lock'
     TDirectArray<HANDLE> LockObject;
-    // the object ownership - array of (BOOL): TRUE -> call CloseHandle('lock')
-    TDirectArray<BOOL> LockObjOwner;
+    // flags of each 'lock' - array of (DWORD): CACHE_LOCK_OWNER -> call CloseHandle('lock'),
+    // CACHE_LOCK_EDIT -> an edit lock (feature 112; was the BOOL array LockObjOwner)
+    TDirectArray<DWORD> LockObjFlags;
+    CSalCacheEditPin EditPin; // feature 112: edit locks and the deferred out-of-date mark
 
     BOOL Cached;                               // is it a cached tmp-file? (did CrtCache already arrive?)
     BOOL Prepared;                             // is the tmp-file prepared for use? (e.g. downloaded from FTP?)
@@ -140,6 +151,11 @@ public:
         Cached = FALSE;
         OutOfDate = TRUE;
     }
+
+    // feature 112: a flush meets this record (FlushCache, FlushOneFile); returns what to do - the
+    // record is marked out of date here (scfaMarkOutOfDate), or keeps its copy until the last edit
+    // lock goes (scfaDeferStale); scfaDelete = the caller deletes the record
+    CSalCacheFlushAction Flush();
 
     // returns item identification (path to original)
     const char* GetName() { return Name; }
@@ -415,7 +431,10 @@ public:
     // lock - when this object is "signaled", the tmp-file can be "released"
     //        (depends on 'remove')
     // lockOwner - should the cache take care of calling CloseHandle(lock)?
-    // remove - when to delete the tmp-file
+    // remove - when to delete the tmp-file (crtCacheEdit: core only, feature 112)
+    //
+    // feature 112 (recorded): a FALSE return after the name was found has consumed the request of
+    // GetName() as well - the caller must not call ReleaseName() then
     BOOL AssignName(const char* name, HANDLE lock, BOOL lockOwner, CCacheRemoveType remove);
 
     // called only when NamePrepared() or AssignName() cannot be called after GetName();
@@ -447,10 +466,14 @@ public:
     // so we leave it in temp, so that the users don't kill us), it returns success
     BOOL DetachTmpFile(const char* tmpName);
 
-    // removes all cached tmp-files beginning with 'name' (e.g. all files from one archive)
+    // removes all cached tmp-files beginning with 'name' (e.g. all files from one archive);
+    // a tmp-file in use is marked out-of-date (re-created on its next use) - feature 112: unless it
+    // holds an edit lock (crtCacheEdit): then the mark is set when its last edit lock goes, so a
+    // pending edit is never extracted over
     void FlushCache(const char* name);
 
-    // removes cached file 'name'; returns TRUE if the file was found and removed
+    // removes cached file 'name' (a tmp-file in use: as in FlushCache); returns TRUE if the file
+    // was found
     BOOL FlushOneFile(const char* name);
 
     // counts how many tmp-files are contained in disk-cache, which are deleted by the plugin 'ownDeletePlugin'

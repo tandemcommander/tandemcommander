@@ -3111,24 +3111,29 @@ BOOL CFileTimeStampsItem::Set(const char* zipRoot, const char* sourcePath, const
 // CFileTimeStamps
 //
 
-BOOL CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const char* sourcePath,
-                              const char* fileName, const char* dosFileName,
-                              const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr)
+CFileTimeStampsAddResult
+CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const char* sourcePath,
+                         const char* fileName, const char* dosFileName,
+                         const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr)
 {
+    // feature 112: three results - "already tracked" and "failed" were one FALSE, and the caller then
+    // released the copy from the disk cache: on low memory it was deleted under the editor
+    BOOL zipFileSetHere = FALSE;
     if (ZIPFile.IsEmpty())
     {
         if (!ZIPFile.Set(zipFile)) // feature 097: the archive name whole (was strcpy into char[MAX_PATH])
         {
             TRACE_E(LOW_MEMORY);
-            return FALSE;
+            return ftsarFailed;
         }
+        zipFileSetHere = TRUE;
     }
     else
     {
         if (strcmp(zipFile, ZIPFile.Get()) != 0)
         {
             TRACE_E("Unexpected situation in CFileTimeStamps::AddFile().");
-            return FALSE;
+            return ftsarFailed;
         }
     }
 
@@ -3139,7 +3144,9 @@ BOOL CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const ch
         if (item != NULL)
             delete item;
         TRACE_E(LOW_MEMORY);
-        return FALSE;
+        if (zipFileSetHere && List.Count == 0)
+            ZIPFile.Clear();
+        return ftsarFailed;
     }
 
     // test whether it is already present (performed after constructing the item because the strings were adjusted - '\\')
@@ -3154,7 +3161,7 @@ BOOL CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const ch
         if (SalEditedCopyIsSame(item->SourcePath, item->FileName, item2->SourcePath, item2->FileName))
         {
             delete item;
-            return FALSE; // already present, do not add another one
+            return ftsarAlreadyTracked; // already present, do not add another one
         }
     }
 
@@ -3163,9 +3170,22 @@ BOOL CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const ch
     {
         delete item;
         List.ResetState();
-        return FALSE;
+        TRACE_E(LOW_MEMORY);
+        if (zipFileSetHere && List.Count == 0)
+            ZIPFile.Clear();
+        return ftsarFailed;
     }
-    return TRUE;
+    return ftsarAdded;
+}
+
+void CFileTimeStamps::RemoveLastAdded()
+{
+    if (List.Count > 0)
+        List.Delete(List.Count - 1); // AddFile() appends
+    else
+        TRACE_E("CFileTimeStamps::RemoveLastAdded(): the list is empty.");
+    if (List.Count == 0)
+        ZIPFile.Clear();
 }
 
 struct CFileTimeStampsEnum2Info
