@@ -514,6 +514,32 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      edited member itself (it is already marked for deletion, then not added).
      Needs a UTF-8-aware, plug-in-side identity (header-only, like
      `splunicode.h`; the ZIP project cannot compile shared `.cpp` files).
+     ✅ **Fixed by feature 110 (2026-10-05)**: the old comparison was
+     LINGUISTIC (`CompareStringA` on UTF-8 bytes read as code-page text), not
+     the byte fold - 21,925 BMP pairs on CP1250 (`110/probe/zip_collision_set.py`).
+     Measured worse: with both members present F5 asked twice and deleted both
+     (one added); in a Unix ZIP the added file was renamed to the OTHER
+     member's spelling and then "not found"; `f_skip` lost the edited member
+     and stored the other twice. Rule `src/common/salzipname.h` (header-only,
+     092's rule: WTF-8 ordinal on UTF-16, legacy text by the old comparison,
+     never equal across, no byte-length guard; covered folder bytes counted on
+     the member) in `add.cpp CZipPack::MatchFiles` (both comparisons, Move
+     folder test, Unix spelling copy with a growing buffer). Behaviour change:
+     accented case pairs (`č`/`Č`) and the 7 different-length pairs are one
+     name now (overwrite question, as `a`/`A`). Delete and extract were
+     correct for files (index + exact name); their folder tests follow the
+     core's listing and stay (entry 4 / `CSalamanderDirectory`). Also fixed:
+     `CountFilesInRoot` (`del.cpp`) ignored case in a Unix ZIP - with `Dir/`
+     and `DIR/` deleting the last file of `Dir` lost the folder. Probe
+     `110/probe/zipname_probe.ps1`: 42/42 (build before 10 PASS / 21 FAIL,
+     review rows 3 / 8). Review SF1 (old defect, newly reachable for accented
+     case pairs): with several members one name with the added file, *Yes*
+     for one and *Skip* for another deleted the first and never stored the
+     new file (`{ax, Ax, AX}`, every release) - fixed (`CAddInfo::Replaced`).
+     Recorded, not fixed: a read error answered *Skip* during `PackFiles`
+     after its member was deleted (`DeleteFiles` runs first) loses that
+     member (pre-existing, also with one member; needs an I/O error).
+     Record `specs/110-zip-plugin-name-matching/fix-log.md`.
   2a. **Found by 109's review, not fixed (data loss, narrow): a flush marks a
      copy with a pending edit out of date.** `CDiskCache::FlushCache` marks every
      still-referenced copy of the key out of date, also one the OTHER panel
@@ -540,7 +566,12 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      worked before 108 by luck and now asks for `Dir\b.txt` (not found; from
      the listing it failed before too). The stored-spelling rule never
      triggers for accented case pairs (`Č`/`č`): the byte-fold listing does
-     not find such a typed folder at all.
+     not find such a typed folder at all. From 110: F5 / an edit into a
+     merged ZIP folder (`ĥ/` + `Ĺ/` shown as `ĥ`) now adds `ĥ/x.txt` beside
+     `Ĺ/x.txt` (before: replaced `Ĺ/x.txt`, i.e. moved it) - the panel then
+     shows two `x.txt` there; the ZIP plug-in's delete/extract folder tests
+     (`common.cpp MatchFiles`, byte fold) must change together with the
+     listing.
 - **`UnselectItemWithName`** (`fileswn0.cpp`) uses the linguistic comparison
   plus a byte-length guard for an identity look-up.
 - **`CFindIgnore::Contains`, relative kind** - a substring search by the byte

@@ -31,6 +31,7 @@
 #include "salheapstr.h"   // feature 095
 #include "salsafereplace.h" // feature 105
 #include "salarcedit.h"     // feature 108
+#include "salzipname.h"     // feature 110
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -5995,6 +5996,300 @@ static void TestDiskCacheKey109()
     CHECK(RemoveDirectoryW(dir.c_str()));
 }
 
+// feature 110: the ZIP plug-in's member identity (salzipname.h)
+static BOOL OldZipEqual110(const std::string& a, const std::string& b, DWORD flags = NORM_IGNORECASE)
+{ // what the plug-in did: CompareStringA on the UTF-8 bytes, the user's locale, an equal-length guard
+    return a.size() == b.size() &&
+           CompareStringA(LOCALE_USER_DEFAULT, flags, a.c_str(), (int)a.size(), b.c_str(), (int)b.size()) == CSTR_EQUAL;
+}
+static std::string U8of110(const WCHAR* w)
+{
+    char b[512];
+    int n = WideCharToMultiByte(CP_UTF8, 0, w, -1, b, sizeof(b), NULL, NULL);
+    return n > 0 ? std::string(b) : std::string();
+}
+
+static void TestZipName110()
+{
+    // --- pairs the old comparison took for one name (CP1250) and the file system keeps apart
+    static const char* const differ[][2] = {
+        {"\xC4\xA5" ".txt", "\xC4\xB9" ".txt"},         // h-circumflex / L-acute
+        {"\xC3\x8D" "tem.txt", "\xC3\x9D" "tem.txt"},   // I-acute / Y-acute (Czech)
+        {"\xC5\xBE" ".txt", "\xC5\xBC" ".txt"},         // z-caron / z-dot
+        {"\xE4\xB9\x9D" ".txt", "\xE4\xB9\x8D" ".txt"}, // CJK U+4E5D / U+4E4D
+        {"\xD0\xBC" ".txt", "\xD0\xBE" ".txt"},         // Cyrillic em / o
+        {"\xC3\xA9" ".txt", "e\xCC\x81" ".txt"},        // NFC / NFD (apart in both rules)
+        {"a.txt", "b.txt"},
+        {"\xC4\xB1" ".txt", "I.txt"},                   // dotless i is not I
+        {"\xE2\x84\xAA" ".txt", "K.txt"},               // Kelvin sign is not K
+    };
+    for (int i = 0; i < _countof(differ); i++)
+    {
+        CHECK(!SalZipNameEqual(differ[i][0], -1, differ[i][1], -1, TRUE));
+        CHECK(!SalZipNameEqual(differ[i][1], -1, differ[i][0], -1, TRUE));
+        CHECK(!SalZipNameEqual(differ[i][0], -1, differ[i][1], -1, FALSE));
+        CHECK(SalZipNameEqual(differ[i][0], -1, differ[i][0], -1, TRUE));
+    }
+    if (GetACP() == 1250) // the measured defect
+        for (int i = 0; i < 5; i++)
+            CHECK(OldZipEqual110(differ[i][0], differ[i][1]));
+
+    // --- one name for Windows: case pairs outside ASCII (the old comparison kept them apart),
+    //     the 7 case pairs with different UTF-8 lengths, ASCII case (unchanged)
+    std::vector<std::pair<std::string, std::string>> same = {
+        {"\xC4\x8C" ".txt", "\xC4\x8D" ".txt"}, // C-caron / c-caron
+        {"A.txt", "a.txt"},
+        {"README.md", "readme.MD"},
+        {"slo\xC5\xBD" "ka\\x.TXT", "SLO\xC5\xBE" "KA\\X.txt"},
+    };
+    static const WCHAR difflen[][2] = {{0x023A, 0x2C65}, {0x023E, 0x2C66}, {0x0250, 0x2C6F}, {0x0251, 0x2C6D},
+                                       {0x026B, 0x2C62}, {0x0271, 0x2C6E}, {0x027D, 0x2C64}};
+    for (int i = 0; i < _countof(difflen); i++)
+    {
+        WCHAR a[8] = {difflen[i][0], L'.', L't', L'x', L't', 0}, b[8] = {difflen[i][1], L'.', L't', L'x', L't', 0};
+        std::string ua = U8of110(a), ub = U8of110(b);
+        CHECK(ua.size() != ub.size());
+        CHECK(!OldZipEqual110(ua, ub)); // the old length guard
+        same.push_back({ua, ub});
+    }
+    for (auto& p : same)
+    {
+        CHECK(SalZipNameEqual(p.first.c_str(), -1, p.second.c_str(), -1, TRUE));
+        CHECK(SalZipNameEqual(p.second.c_str(), (int)p.second.size(), p.first.c_str(), (int)p.first.size(), TRUE));
+        CHECK(!SalZipNameEqual(p.first.c_str(), -1, p.second.c_str(), -1, FALSE));
+    }
+    if (GetACP() == 1250)
+        CHECK(!OldZipEqual110(same[0].first, same[0].second)); // C-caron / c-caron: two names before
+
+    // --- printable ASCII: the new rule is the old one (every pair of characters)
+    {
+        int ciDiff = 0, csDiff = 0;
+        for (int x = 32; x < 127; x++)
+            for (int y = 32; y < 127; y++)
+            {
+                std::string a = std::string("n") + (char)x + ".txt", b = std::string("n") + (char)y + ".txt";
+                if (SalZipNameEqual(a.c_str(), -1, b.c_str(), -1, TRUE) != OldZipEqual110(a, b))
+                    ciDiff++;
+                if (SalZipNameEqual(a.c_str(), -1, b.c_str(), -1, FALSE) != (x == y) ||
+                    OldZipEqual110(a, b, 0) != (x == y)) // the old case-sensitive test (Unix folder) too
+                    csDiff++;
+            }
+        CHECK(ciDiff == 0);
+        CHECK(csDiff == 0);
+    }
+    // --- ASCII names of more than one letter: the new rule is the ASCII fold, the old one was
+    //     LINGUISTIC - on a Czech, Slovak, Hungarian, Croatian ... locale a digraph ("ch") is one
+    //     letter, so "cHata.txt" and "chata.txt" were two names before and are one now (as for
+    //     Windows). Every pair of two-letter names: new == fold; the old rule's changed pairs are
+    //     counted (only "old two -> new one" may exist)
+    {
+        CHECK(SalZipNameEqual("cHata.txt", -1, "chata.txt", -1, TRUE));
+        CHECK(SalZipNameEqual("CHATA.txt", -1, "cHata.TXT", -1, TRUE));
+        CHECK(SalZipNameEqual("dZ.txt", -1, "dz.txt", -1, TRUE));
+        CHECK(SalZipNameEqual("lY.txt", -1, "ly.txt", -1, TRUE));
+        CHECK(!SalZipNameEqual("cHata.txt", -1, "chata.txt", -1, FALSE));
+        if (PRIMARYLANGID(LANGIDFROMLCID(GetUserDefaultLCID())) == LANG_CZECH)
+            CHECK(!OldZipEqual110("cHata.txt", "chata.txt")); // the measured change of direction
+        char letters[52];
+        for (int i = 0; i < 26; i++)
+        {
+            letters[i] = (char)('A' + i);
+            letters[26 + i] = (char)('a' + i);
+        }
+        int newDiff = 0, oldTwoNewOne = 0, oldOneNewTwo = 0;
+        char a[3] = {0}, b[3] = {0};
+        for (int i = 0; i < 52 * 52; i++)
+        {
+            a[0] = letters[i / 52];
+            a[1] = letters[i % 52];
+            for (int j = 0; j < 52 * 52; j++)
+            {
+                b[0] = letters[j / 52];
+                b[1] = letters[j % 52];
+                BOOL fold = (a[0] | 0x20) == (b[0] | 0x20) && (a[1] | 0x20) == (b[1] | 0x20);
+                BOOL mine = SalZipNameEqual(a, 2, b, 2, TRUE);
+                if (mine != fold)
+                    newDiff++;
+                if (fold) // only fold-equal pairs can differ from the old rule in this direction ...
+                {
+                    if (!OldZipEqual110(a, b))
+                        oldTwoNewOne++;
+                }
+                else if ((a[0] | 0x20) == (b[0] | 0x20) || (a[1] | 0x20) == (b[1] | 0x20)) // ... and near ones the other
+                {
+                    if (OldZipEqual110(a, b))
+                        oldOneNewTwo++;
+                }
+            }
+        }
+        CHECK(newDiff == 0);
+        CHECK(oldOneNewTwo == 0);
+        printf("TestZipName110: two-letter ASCII names, old rule two names / new one: %d pairs (user locale 0x%04X)\n",
+               oldTwoNewOne, (unsigned)GetUserDefaultLCID());
+    }
+
+    // --- legacy text (not WTF-8: a broken UTF-8 flag, a failed conversion): the old comparison;
+    //     never equal to a valid WTF-8 name
+    CHECK(SalZipNameEqual("\xE8" ".txt", -1, "\xC8" ".TXT", -1, TRUE) == OldZipEqual110("\xE8" ".txt", "\xC8" ".TXT"));
+    CHECK(SalZipNameEqual("\xE8" ".txt", -1, "\xE8" ".txt", -1, FALSE));
+    CHECK(!SalZipNameEqual("\xE8" ".txt", -1, "\xC4\x8D" ".txt", -1, TRUE));
+    CHECK(!SalZipNameEqual("\xC4\x8D" ".txt", -1, "\xE8" ".txt", -1, TRUE));
+    CHECK(!SalZipNameEqual("\xE8" ".txt", -1, "\xE8" ".txtx", -1, TRUE));
+    CHECK(!SalZipNameIsWtf8("\xE8" ".txt", -1));
+    CHECK(SalZipNameIsWtf8("\xC4\x8D" ".txt", -1));
+    CHECK(SalZipNameIsWtf8("\xED\xA0\x80", -1)); // a lone surrogate (066)
+    CHECK(!SalZipNameIsWtf8("\xC0\xAF", -1));    // overlong
+    CHECK(SalZipNameEqual(NULL, -1, "", -1, TRUE));
+
+    // --- names over 259 bytes take the heap buffer
+    {
+        std::string up, low, h, l;
+        for (int i = 0; i < 150; i++)
+        {
+            up += "\xC4\x8C";
+            low += "\xC4\x8D";
+            h += "\xC4\xA5";
+            l += "\xC4\xB9";
+        }
+        CHECK(SalZipNameEqual(up.c_str(), -1, low.c_str(), -1, TRUE));
+        CHECK(!SalZipNameEqual(h.c_str(), -1, l.c_str(), -1, TRUE));
+        int n = 0;
+        CHECK(SalZipNamePrefix((low + "\\x").c_str(), -1, up.c_str(), -1, TRUE, &n) && n == (int)low.size());
+        CHECK(!SalZipNamePrefix((l + "\\x").c_str(), -1, h.c_str(), -1, TRUE, &n));
+    }
+
+    // --- prefixes: covered bytes are counted on the path
+    {
+        int n = -1;
+        CHECK(SalZipNamePrefix("Dir\\x.txt", -1, "DIR", 3, TRUE, &n) && n == 3);
+        CHECK(!SalZipNamePrefix("Dir\\x.txt", -1, "DIR", 3, FALSE, &n));
+        CHECK(SalZipNamePrefix("\xE2\xB1\xA5" "\\x", -1, "\xC8\xBA", 2, TRUE, &n) && n == 3); // a-stroke under A-stroke
+        CHECK(SalZipNamePrefix("\xC8\xBA" "\\x", -1, "\xE2\xB1\xA5", 3, TRUE, &n) && n == 2);
+        CHECK(!SalZipNamePrefix("\xC4\xB9" "\\x", -1, "\xC4\xA5", 2, TRUE, &n));
+        CHECK(!SalZipNamePrefix("\xC4\x8D", -1, "\xC4", 1, TRUE, &n));                         // inside a character
+        CHECK(!SalZipNamePrefix("\xF0\x9F\x98\x80" "x", -1, "\xED\xA0\xBD", 3, TRUE, &n));       // inside a pair
+        CHECK(!SalZipNamePrefix("\xED\xA0\x80\xED\xB0\x80" "x", -1, "\xED\xA0\x80", 3, TRUE, &n)); // inside a pair of two sequences
+        CHECK(SalZipNamePrefix("\xED\xA0\x80" "x", -1, "\xED\xA0\x80", 3, TRUE, &n) && n == 3);  // a lone surrogate
+        CHECK(SalZipNamePrefix("abc", -1, "", 0, TRUE, &n) && n == 0);
+        CHECK(!SalZipNamePrefix("ab", -1, "abc", -1, TRUE, &n));
+        CHECK(SalZipNamePrefix("\xE8\\x", -1, "\xC8", 1, TRUE, &n) == OldZipEqual110("\xE8", "\xC8")); // legacy
+        CHECK(!SalZipNamePrefix("\xC4\x8D\\x", -1, "\xE8", 1, TRUE, &n)); // legacy prefix, valid path
+        CHECK(!SalZipNamePrefix("\xE8\\x", -1, "\xC4\x8D", 2, TRUE, &n)); // valid prefix, legacy path
+    }
+
+    // --- the update matching (add.cpp): panel folder + rest
+    {
+        int rb = -1;
+        CHECK(SalZipMemberIs("Dir\\x.txt", -1, "DIR\\X.TXT", -1, 3, TRUE, &rb) && rb == 3);
+        CHECK(!SalZipMemberIs("Dir\\x.txt", -1, "DIR\\x.txt", -1, 3, FALSE, &rb)); // Unix: the folder by case
+        CHECK(SalZipMemberIs("Dir\\x.txt", -1, "Dir\\X.TXT", -1, 3, FALSE, &rb));  // Unix: the name ignoring case (as before)
+        CHECK(SalZipMemberIs("\xE2\xB1\xA5" "\\x.txt", -1, "\xC8\xBA" "\\x.txt", -1, 2, TRUE, &rb) && rb == 3);
+        CHECK(!SalZipMemberIs("\xC4\xB9" "\\x.txt", -1, "\xC4\xA5" "\\x.txt", -1, 2, TRUE, &rb)); // folders h/L
+        CHECK(!SalZipMemberIs("\xC4\xB9" ".txt", -1, "\xC4\xA5" ".txt", -1, 0, TRUE, &rb));
+        CHECK(SalZipMemberIs("\xC4\x8C" ".txt", -1, "\xC4\x8D" ".txt", -1, 0, TRUE, &rb));
+        CHECK(!SalZipMemberIs("Dirx\\a", -1, "Dir\\a", -1, 3, TRUE, &rb));
+        CHECK(!SalZipMemberIs("Dir", -1, "Dir\\a", -1, 3, TRUE, &rb));
+        CHECK(!SalZipMemberIs("d\\a", -1, "d\\a", -1, 5, TRUE, &rb)); // root longer than the target
+        CHECK(SalZipMemberIsOrIsIn("d\\sub\\x.txt", -1, "D\\SUB", -1, 0, TRUE));
+        CHECK(SalZipMemberIsOrIsIn("d\\sub", -1, "D\\SUB", -1, 1, TRUE));
+        CHECK(!SalZipMemberIsOrIsIn("d\\subx\\x.txt", -1, "d\\sub", -1, 0, TRUE));
+        CHECK(!SalZipMemberIsOrIsIn("\xC4\xB9" "\\x", -1, "\xC4\xA5", -1, 0, TRUE));
+        CHECK(SalZipMemberIsOrIsIn("\xE2\xB1\xA5" "\\x.txt", -1, "\xC8\xBA", -1, 0, TRUE));
+        if (GetACP() == 1250)
+            CHECK(CompareStringA(LOCALE_USER_DEFAULT, NORM_IGNORECASE, "\xC4\xB9" "\\x", 2, "\xC4\xA5", 2) == CSTR_EQUAL); // the old Move test said "inside"
+    }
+
+    // --- parity with the core's rule (092) for valid WTF-8, the old rule for legacy text, never
+    //     equal across: every pair of strings over a hostile alphabet, and every prefix
+    {
+        static const char* const atoms[] = {"a", "A", "\\", "\xC4\x8C", "\xC4\x8D", "\xC4\xA5", "\xC4\xB9", "\xC8\xBA",
+                                            "\xE2\xB1\xA5", "\xC3\x9F", "\xE1\xBA\x9E", "\xC4\xB1", "\xE2\x84\xAA",
+                                            "\xF0\x9F\x98\x80", "\xED\xA0\x80", "\xED\xB0\x80", "\xCC\x81", "\xE8", "\xC8"};
+        std::vector<std::string> strs;
+        strs.push_back("");
+        for (const char* x : atoms)
+        {
+            strs.push_back(x);
+            for (const char* y : atoms)
+                strs.push_back(std::string(x) + y);
+        }
+        int mismatch = 0, prefixMismatch = 0, crossEqual = 0;
+        for (auto& a : strs)
+        {
+            BOOL va = SalZipNameIsWtf8(a.c_str(), (int)a.size());
+            for (auto& b : strs)
+            {
+                BOOL vb = SalZipNameIsWtf8(b.c_str(), (int)b.size());
+                BOOL mine = SalZipNameEqual(a.c_str(), (int)a.size(), b.c_str(), (int)b.size(), TRUE);
+                BOOL want;
+                if (va && vb)
+                    want = SalNameEqualOrdinalCI(a.c_str(), (int)a.size(), b.c_str(), (int)b.size());
+                else if (!va && !vb)
+                    want = (a == b) || OldZipEqual110(a, b);
+                else
+                {
+                    want = FALSE;
+                    if (mine)
+                        crossEqual++;
+                }
+                if (mine != want)
+                    mismatch++;
+                if (va && vb) // prefixes of a valid path: the core's SalPathHasPrefixOrdinalCI
+                {
+                    int n1 = -1, n2 = -1;
+                    BOOL p1 = SalZipNamePrefix(a.c_str(), (int)a.size(), b.c_str(), (int)b.size(), TRUE, &n1);
+                    BOOL p2 = SalPathHasPrefixOrdinalCI(a.c_str(), b.c_str(), (int)b.size(), &n2);
+                    if (p1 != p2 || (p1 && n1 != n2))
+                        prefixMismatch++;
+                }
+            }
+        }
+        CHECK(mismatch == 0);
+        CHECK(prefixMismatch == 0);
+        CHECK(crossEqual == 0);
+        if (mismatch || prefixMismatch || crossEqual)
+            printf("TestZipName110: %d equality / %d prefix mismatches, %d cross-equal over %d strings\n", mismatch,
+                   prefixMismatch, crossEqual, (int)strs.size());
+    }
+
+    // --- real files (NTFS %TEMP%): "the same name" = one file
+    WCHAR t[MAX_PATH];
+    DWORD tn = GetTempPathW(MAX_PATH, t);
+    if (tn == 0 || tn >= MAX_PATH)
+    {
+        printf("skipping the file part of TestZipName110 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(t) + L"saltests-110-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    auto twoFiles = [&](const std::string& first, const std::string& second) -> BOOL
+    {
+        WCHAR w1[64], w2[64];
+        if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, first.c_str(), -1, w1, 64) == 0 ||
+            MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, second.c_str(), -1, w2, 64) == 0)
+            return -1;
+        std::wstring p1 = dir + L"\\" + w1, p2 = dir + L"\\" + w2;
+        HANDLE h1 = CreateFileW(p1.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (h1 == INVALID_HANDLE_VALUE)
+            return -1;
+        CloseHandle(h1);
+        HANDLE h2 = CreateFileW(p2.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        BOOL two = h2 != INVALID_HANDLE_VALUE;
+        if (two)
+            CloseHandle(h2);
+        DeleteFileW(p1.c_str());
+        if (two)
+            DeleteFileW(p2.c_str());
+        return two;
+    };
+    for (int i = 0; i < _countof(differ); i++)
+        CHECK(twoFiles(differ[i][0], differ[i][1]) == TRUE);
+    for (auto& p : same)
+        if (p.first.find('\\') == std::string::npos)
+            CHECK(twoFiles(p.first, p.second) == FALSE);
+    CHECK(RemoveDirectoryW(dir.c_str()));
+}
+
 int main()
 {
     TestConversions();
@@ -6043,6 +6338,7 @@ int main()
     TestFolderAlias107();
     TestArchiveEdit108();
     TestDiskCacheKey109();
+    TestZipName110();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

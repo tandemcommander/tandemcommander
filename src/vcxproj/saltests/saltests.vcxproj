@@ -125,6 +125,8 @@
     </ClInclude>
     <ClInclude Include="..\..\common\salarcedit.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salzipname.h">
+    </ClInclude>
     <ClInclude Include="..\..\common\salunicode.h">
     </ClInclude>
     <ClInclude Include="..\..\saltests\precomp.h">

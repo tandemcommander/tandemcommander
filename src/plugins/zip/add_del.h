@@ -28,8 +28,13 @@ struct CAddInfo
     unsigned StartDisk;
     int Action;        //flag, see above
     int InternalFlags; // IF_xxx
+    int Replaced;      // feature 110: members put on the delete list for this file (MatchFiles)
 
-    CAddInfo() { Name = NULL; }
+    CAddInfo()
+    {
+        Name = NULL;
+        Replaced = 0;
+    }
     ~CAddInfo()
     {
         if (Name)

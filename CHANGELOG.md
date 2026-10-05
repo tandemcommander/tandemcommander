@@ -53,6 +53,30 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Adding a file to a ZIP archive replaces only the file of that name.**
+  The ZIP plugin compared names in a way that took names differing in
+  letters a Central European code page treats as one - `ĥ.txt` and `Ĺ.txt`,
+  `Ítem.txt` and `Ýtem.txt`, `ž.txt` and `ż.txt`, many Cyrillic and Chinese
+  pairs - for the same name. Copying `ĥ.txt` into an archive holding
+  `Ĺ.txt` asked to overwrite `Ĺ.txt` and, on *Yes*, replaced it; packing
+  back an edit of one such file deleted the other one from the archive; and
+  answering *Skip* to such a mismatched question while edits were packed
+  back could delete the edited file itself and store the other one twice.
+  In an archive made on Unix the copied file was even renamed to the other
+  file's name and then not found. The plugin now uses the rule of the
+  Windows file systems: names are the same only when Windows would see one
+  file. The other way round, `č.txt` copied into an archive holding `Č.txt`
+  now asks to overwrite it, as `a.txt` and `A.txt` always did (Windows
+  cannot hold both in one folder). For the same reason, on a Czech, Slovak,
+  Hungarian or Croatian system `cHata.txt` and `chata.txt` were two names
+  (the old comparison read "ch" as one letter) and are one now. And when an
+  archive held several files of one name in different letter case
+  (`ax.txt`, `Ax.txt`), answering *Yes* for one and *Skip* for another
+  deleted the first one without storing the new file; now *Skip* keeps only
+  that file and the new one is stored. Also: deleting the last file of a
+  folder in an archive made on Unix that has another folder differing only
+  in letter case (`Dir` and `DIR`) made the emptied folder disappear
+  (feature 110).
 - **A file viewed or edited from an archive is the file of that archive.**
   Two archives whose names differ only in letters that a Central European
   code page treats as one - `ĥ.zip` and `Ĺ.zip`, `Ítem.zip` and `Ýtem.zip` -
@@ -79,14 +103,11 @@ password with a non-English letter to the archive engine garbled.
   Chinese pairs - lost the second edit: its temporary copy was deleted while
   the editor had it open, and leaving the archive did not offer it for the
   update. In a ZIP archive the second file then disappeared from the
-  archive entirely when the first one was packed back. In a 7z archive both
-  edits are now packed back, each into its own file. In a ZIP archive this
-  holds only when the two temporary copies end up in one temporary folder:
-  the ZIP plugin itself still takes two such names for one, so packing back
-  an edit of only one of them, packing the two in separate steps (which
-  happens when other files were edited from the archive first), or copying
-  such a file into a ZIP archive asks to overwrite the other one as well
-  and can replace it - not fixed yet. Also: a file opened once through a
+  archive entirely when the first one was packed back. Both edits are now
+  packed back, each into its own file - in a 7z archive by this change, in
+  a ZIP archive in every case together with the ZIP plugin's own fix
+  (feature 110, above; before it, only when the two temporary copies ended
+  up in one temporary folder). Also: a file opened once through a
   folder typed in another letter case (Change Directory to `archive.zip\DIR`
   for the folder `Dir`) and once through the folder itself got two
   temporary copies, and the second update replaced the first edit; both

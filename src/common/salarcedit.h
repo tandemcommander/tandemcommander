@@ -39,7 +39,7 @@ inline BOOL SalEditedCopyIsSame(const char* sourcePath1, const char* fileName1,
 // TRUE when two edited copies are packed back by one call of the packer: they
 // go to the same folder inside the archive - compared byte for byte, the
 // packer writes the folder exactly as it is given ("test\A.txt" and
-// "Test.txt" must not be packed together) - and they lie in one folder on
+// "Test\b.txt" must not be packed together) - and they lie in one folder on
 // disk (the file system's rule).
 inline BOOL SalEditedCopiesPackTogether(const char* zipRoot1, const char* sourcePath1,
                                         const char* zipRoot2, const char* sourcePath2)

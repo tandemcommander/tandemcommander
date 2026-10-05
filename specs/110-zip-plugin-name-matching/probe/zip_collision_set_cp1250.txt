@@ -1,0 +1,28 @@
+ACP 1250, user locale 0x0405
+BMP characters examined: 55479
+merged (old comparison: one name; file system: two): 21925 pairs
+  two-byte: 275; three-byte: 19760; mixed length: 1890 (the update matching compared equal byte lengths only)
+  h-circumflex / L-acute           old True   ordinal-CI False
+  h-circumflex / l-acute           old False  ordinal-CI False
+  I-acute / Y-acute                old True   ordinal-CI False
+  z-caron / z-dot                  old True   ordinal-CI False
+  CJK U+4E5D / U+4E4D              old True   ordinal-CI False
+  Cyrillic em / o                  old True   ordinal-CI False
+  C-caron / c-caron                old False  ordinal-CI True 
+  A-stroke / a-stroke              old False  ordinal-CI True 
+  e-acute NFC / NFD                old False  ordinal-CI False
+split (file system: one name; old comparison: two): 944 pairs, of them different UTF-8 length: 7
+  U+023A / U+2C65
+  U+023E / U+2C66
+  U+0250 / U+2C6F
+  U+0251 / U+2C6D
+  U+026B / U+2C62
+  U+0271 / U+2C6E
+  U+027D / U+2C64
+printable ASCII pairs where the old comparison differs from the ASCII fold: 0
+U+00A0 NO-BREAK SPACE / U+282D BRAILLE PATTERN DOTS-1346
+U+00A0 NO-BREAK SPACE / U+2B60 LEFTWARDS TRIANGLE-HEADED ARROW
+U+282D BRAILLE PATTERN DOTS-1346 / U+2B60 LEFTWARDS TRIANGLE-HEADED ARROW
+U+00A1 INVERTED EXCLAMATION MARK / U+286D BRAILLE PATTERN DOTS-13467
+U+00A1 INVERTED EXCLAMATION MARK / U+2B61 UPWARDS TRIANGLE-HEADED ARROW
+U+286D BRAILLE PATTERN DOTS-13467 / U+2B61 UPWARDS TRIANGLE-HEADED ARROW

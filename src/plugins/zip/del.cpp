@@ -59,8 +59,12 @@ int CZipPack::CountFilesInRoot(int* filesInRoot, bool* rootExist)
             break;
         }
         tempNameLen = ProcessName(centralHeader, tempName);
-        if (CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
-                          zipRoot, rootLen, tempName, rootLen) == CSTR_EQUAL)
+        // feature 110: the folder test of the selection (CZipCommon::MatchFiles) - the files
+        // counted here are compared with the files that test chose for deletion. The old
+        // CompareString ignored case also in a Unix archive: with Dir/a.txt and DIR/b.txt,
+        // deleting a.txt counted b.txt too, and the emptied Dir disappeared from the archive.
+        if (tempNameLen >= (unsigned)rootLen &&
+            (Unix ? memcmp(tempName, zipRoot, rootLen) : SalamanderGeneral->MemICmp(tempName, zipRoot, rootLen)) == 0)
         {
             if (*(tempName + rootLen) == '\\')
                 (*filesInRoot)++;

@@ -1559,3 +1559,57 @@ plugin architecture preservation, UI consistency.
     (left: equal size + 100 ns time under one re-pointed letter; the OOM key fallback).
     Interface stays 107, no new string, no registry change. Records:
     `specs/109-disk-cache-archive-key/fix-log.md`.
+- 110-zip-plugin-name-matching: **the ZIP plug-in replaces only the member
+  that has the added file's name.** NEXT-WORK item 5 entry 2 (found by
+  108), measured first (`research.md`): `CZipPack::MatchFiles`
+  (`zip/add.cpp`) compared member names with `CompareStringA` +
+  `NORM_IGNORECASE` on the UTF-8 bytes - a LINGUISTIC comparison of
+  code-page text (not the core's byte fold): on CP1250 21,925 BMP pairs
+  were one name (`probe/zip_collision_set.py`). F5 of `ĥ.txt` into an
+  archive holding `Ĺ.txt` asked to overwrite and replaced it (both present:
+  two questions, both deleted); an F4 edit of one member deleted the other
+  (108 rows `hL1_zip`/`hL2_zip`, review `split_zip`); *Yes* then *Skip*
+  lost the edited member and stored the other twice; in a Unix ZIP the
+  added file took the OTHER member's spelling and was then "not found".
+  - **Rule** (`src/common/salzipname.h`, header-only, contract
+    `contracts/zip-member-identity.md`): two valid WTF-8 names by
+    `CompareStringOrdinal` on UTF-16 (= 092's `SalNameEqualOrdinalCI`,
+    brute-force parity in saltests), legacy (non-WTF-8) text by the old
+    `CompareStringA` with its equal-length guard, never equal across; no
+    byte-length guard for UTF-8 (7 case pairs differ in length); a prefix's
+    covered bytes are counted on the member (`SalZipNamePrefix`);
+    `SalZipMemberIs` keeps the old case rule (DOS folder + name ignore
+    case, Unix folder respects it). The ZIP project cannot compile shared
+    `.cpp` files - the header carries the core's WTF-8 decoder.
+  - **Behaviour change**: `č.txt` into `{Č.txt}` (and U+2C65/U+023A ...)
+    now asks to overwrite, as `a.txt`/`A.txt` always did; ASCII names of
+    one character unchanged, longer ones only from "two" to "one" (Czech
+    locale: `cHata.txt` = `chata.txt` now - the old linguistic comparison
+    read "ch" as one letter); OEM-named members follow the UTF-8
+    rule after `ProcessName`. F5 into a folder pair the core's listing
+    merges adds beside instead of replacing (recorded, entry 4).
+  - **Review SF1, old defect fixed**: several members one name with the
+    added file (`{ax, Ax, AX}`; with 110 also `{čx, Čx, ČX}`) - *Yes* for
+    one and *Skip* for another deleted the first and never stored the new
+    file. `CAddInfo::Replaced` (`add_del.h`): after a *Yes*, *Skip* / *Skip
+    all* / an unopenable source keep only that member. Invariant: a member
+    is deleted only if the file replacing it is stored. Probe trap: with
+    nothing left to add the plug-in skips the deletions too - test with a
+    second file in the operation.
+  - Also fixed: `CountFilesInRoot` (`del.cpp`) ignored case in a Unix ZIP -
+    deleting the last file of `Dir` beside `DIR` lost the folder; it now
+    uses the selection's test (`Unix ? memcmp : MemICmp`). The Unix
+    spelling copy grows its buffer (the member's spelling can be longer).
+  - Not changed, by decision: delete/extract selection (files by index +
+    exact name - correct; folders by the listing's byte fold),
+    `FindFile` (index-based).
+  - Found: a BACKSPACE byte in a comment of 108's `salarcedit.h` (fixed);
+    CR/NUL/TAB bytes in `tools/run_on_hidden_desktop.ps1`'s usage comment
+    (recorded).
+  - Probe `probe/zipname_probe.ps1` + `zipfix.py` (own ZIP writer/reader:
+    UTF-8, OEM, raw-byte, Unix members; F5, F6, F8, F5 out, F4): 42/0,
+    pre-110 10/21 + review rows 3/8. Regressions: 108 namecoll 30/0 (was
+    28/2), 106 packself 70/0/4, 094 ZIP 56/1 (X1 as before), 096 17/17.
+    Independent review ACCEPT (SF1, SF2 fixed). saltests 13,973 -> 14,140. Interface stays 107,
+    no new string, no registry change. Records:
+    `specs/110-zip-plugin-name-matching/fix-log.md`.

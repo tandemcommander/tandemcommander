@@ -28,6 +28,7 @@
 #include "iosfxset.h"
 #include "sfxmake/sfxmake.h"
 #include "../../common/salsamefile.h" // feature 106: is an output file one of the packed files?
+#include "../../common/salzipname.h"  // feature 110: is a member the file being added?
 
 #ifndef SSZIP
 #include "zip.rh"
@@ -1194,16 +1195,15 @@ int CZipPack::MatchFiles(int& count)
             }
             lstrcpy(destName, next->Name + SourceLen + 1);
             destLen = RootLen + next->NameLen - SourceLen - (RootLen ? 0 : 1);
+            // feature 110: names are compared by SalZipMemberIs / SalZipMemberIsOrIsIn
+            // (salzipname.h) - UTF-8 names ordinally (what Windows calls one file name), legacy
+            // text the old way. The old CompareString on the UTF-8 BYTES took e.g. h-circumflex
+            // and L-acute for one name (CP1250): adding one asked to overwrite - and deleted - the
+            // other. No byte-length guard: a few case pairs differ in UTF-8 length.
             if (next->Action == AF_NOADD && next->IsDir) // this may already apply to directories; files are skipped above
                 if (Move)
                 {
-                    if (inZipLen >= destLen &&
-                        CompareString(LOCALE_USER_DEFAULT, pathFlag,
-                                      destNameBuf, RootLen, inZip, RootLen) == CSTR_EQUAL &&
-                        CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
-                                      destNameBuf + RootLen, destLen - RootLen,
-                                      inZip + RootLen, destLen - RootLen) == CSTR_EQUAL &&
-                        (*(inZip + destLen) == '\\' || *(inZip + destLen) == 0))
+                    if (SalZipMemberIsOrIsIn(inZip, inZipLen, destNameBuf, destLen, RootLen, pathFlag == NORM_IGNORECASE))
                     {
                         next->Action = AF_DEL;
                         continue;
@@ -1211,11 +1211,8 @@ int CZipPack::MatchFiles(int& count)
                 }
                 else
                     continue;
-            if (inZipLen == destLen &&
-                CompareString(LOCALE_USER_DEFAULT, pathFlag,
-                              destNameBuf, RootLen, inZip, RootLen) == CSTR_EQUAL &&
-                CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
-                              destNameBuf + RootLen, -1, inZip + RootLen, -1) == CSTR_EQUAL)
+            int inZipRootBytes = 0; // bytes of inZip that hold ZipRoot (with UTF-8 they can differ from RootLen)
+            if (SalZipMemberIs(inZip, inZipLen, destNameBuf, destLen, RootLen, pathFlag == NORM_IGNORECASE, &inZipRootBytes))
             {
                 ProcessHeader(centralHeader, &file);
                 if (file.IsDir && next->IsDir)
@@ -1228,9 +1225,16 @@ int CZipPack::MatchFiles(int& count)
                     bool overwrite;
 
                     overwrite = false;
+                    // feature 110: a member is deleted only if the file replacing it is stored.
+                    // Several members can be one name with the added file (a DOS/Windows ZIP with
+                    // Ax.txt and ax.txt, now also accented case pairs). Once a "Yes" put one of them
+                    // on the delete list (next->Replaced), a later "Skip" keeps only THAT member: it
+                    // must not turn the whole file into "do not add" - before, the member of the
+                    // "Yes" was deleted and the new file never stored.
                     if (skipAll)
                     {
-                        next->Action = AF_NOADD;
+                        if (next->Replaced == 0)
+                            next->Action = AF_NOADD;
                         break;
                     }
                     if (overwriteAll)
@@ -1274,7 +1278,8 @@ int CZipPack::MatchFiles(int& count)
                                 case DIALOG_SKIPALL:
                                     skipAll = true;
                                 case DIALOG_SKIP:
-                                    next->Action = AF_NOADD;
+                                    if (next->Replaced == 0) // feature 110: see above
+                                        next->Action = AF_NOADD;
                                     break;
                                 case DIALOG_CANCEL:
                                 default:
@@ -1287,7 +1292,8 @@ int CZipPack::MatchFiles(int& count)
                         }
 
                         case ERR_SKIP:
-                            next->Action = AF_NOADD;
+                            if (next->Replaced == 0) // feature 110: see above
+                                next->Action = AF_NOADD;
                             break;
                         case ERR_CANCEL:
                             errorID = IDS_NODISPLAY;
@@ -1316,6 +1322,7 @@ int CZipPack::MatchFiles(int& count)
                         lstrcpy(newFile->Name, inZip);
                         MatchedTotalSize += CQuadWord().SetUI64(newFile->CompSize);
                         DelFiles.Add(newFile);
+                        next->Replaced++;
 
                         if (Unix)
                         {
@@ -1325,7 +1332,23 @@ int CZipPack::MatchFiles(int& count)
 
                             // also set the source file name to match (including case)
                             // the name of the file being overwritten
-                            strcpy(next->Name + SourceLen + 1, inZip + RootLen + (RootLen ? 1 : 0));
+                            // feature 110: the member's spelling may be longer than the source's
+                            // (U+023A / U+2C65 ... differ in UTF-8 length) and its folder part is
+                            // inZipRootBytes long - the buffer grows instead of being overrun
+                            const char* memberRel = inZip + inZipRootBytes + (RootLen ? 1 : 0);
+                            int relLen = lstrlen(memberRel);
+                            if (relLen > next->NameLen - SourceLen - 1)
+                            {
+                                char* grown = (char*)realloc(next->Name, SourceLen + 1 + relLen + 1);
+                                if (grown == NULL)
+                                {
+                                    errorID = IDS_LOWMEM;
+                                    break;
+                                }
+                                next->Name = grown;
+                            }
+                            strcpy(next->Name + SourceLen + 1, memberRel);
+                            next->NameLen = SourceLen + 1 + relLen;
                         }
                     }
                     break;
