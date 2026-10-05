@@ -39,47 +39,9 @@ template <typename CHAR>
 class OS
 {
 private:
-    typedef HANDLE(WINAPI* TFindFirstVolumeMountPoint)(const CHAR* RootPathName,
-                                                       const CHAR* VolumeMountPoint,
-                                                       DWORD BufferLength);
-    typedef BOOL(WINAPI* TFindNextVolumeMountPoint)(HANDLE FindVolumeMountPoint,
-                                                    const CHAR* VolumeMountPoint,
-                                                    DWORD BufferLength);
-    typedef BOOL(WINAPI* TFindVolumeMountPointClose)(HANDLE FindVolumeMountPoint);
-
-    typedef BOOL(WINAPI* TGetVolumeNameForVolumeMountPoint)(const CHAR* VolumeMountPoint,
-                                                            CHAR* VolumeName, DWORD BufferLength);
-    typedef BOOL(WINAPI* TGetDiskFreeSpaceEx)(const CHAR* DirectoryName,
-                                              PULARGE_INTEGER FreeBytesAvailableToCaller,
-                                              PULARGE_INTEGER TotalNumberOfBytes,
-                                              PULARGE_INTEGER TotalNumberOfFreeBytes);
-
-    typedef HANDLE(WINAPI* TFindFirstVolume)(CHAR* VolumeName, DWORD BufferLength);
-    typedef BOOL(WINAPI* TFindNextVolume)(HANDLE FindVolume, CHAR* VolumeName, DWORD BufferLength);
-    typedef BOOL(WINAPI* TFindVolumeClose)(HANDLE FindVolume);
-    typedef BOOL(WINAPI* TGetVolumePathNamesForVolumeName)(const CHAR* VolumeName, CHAR* VolumePathNames,
-                                                           DWORD BufferLength, DWORD* ReturnLength);
-    typedef DWORD(WINAPI* TGetLogicalDriveStrings)(DWORD BufferLength, CHAR* Buffer);
-
-    typedef DWORD(WINAPI* TSHGetFileInfo)(const CHAR* path, DWORD fileAttributes, SHFILEINFOW* shFileInfo,
-                                          UINT fileInfo, UINT flags);
-
-    static TFindFirstVolumeMountPoint F_FindFirstVolumeMountPoint;
-    static TFindNextVolumeMountPoint F_FindNextVolumeMountPoint;
-    static TFindVolumeMountPointClose F_FindVolumeMountPointClose;
-
-    static TGetVolumeNameForVolumeMountPoint F_GetVolumeNameForVolumeMountPoint;
-    static TGetDiskFreeSpaceEx F_GetDiskFreeSpaceEx;
-
-    static TFindFirstVolume F_FindFirstVolume;
-    static TFindNextVolume F_FindNextVolume;
-    static TFindVolumeClose F_FindVolumeClose;
-    static TGetVolumePathNamesForVolumeName F_GetVolumePathNamesForVolumeName;
-
-    static TGetLogicalDriveStrings F_GetLogicalDriveStrings;
-
-    static TSHGetFileInfo F_SHGetFileInfo;
-
+    // feature 114: the volume functions are called on the W layer (os.cpp) - the code-page
+    // entry points resolved here before (FindFirstVolumeMountPointA, GetVolumePathNamesForVolumeNameA,
+    // ...) took and returned UTF-8 paths as code-page text
     static HMODULE ImageResDLL;
 
     static BOOL OS_InitShell32Bindings();
@@ -192,98 +154,38 @@ void OS<CHAR>::OS_FreeImageResModule()
     }
 }
 
-template <typename CHAR>
-BOOL OS<CHAR>::OS_GetVolumeNameForVolumeMountPoint(const CHAR* VolumeMountPoint,
-                                                   CHAR* VolumeName, DWORD BufferLength)
-{
-    if (F_GetVolumeNameForVolumeMountPoint)
-        return F_GetVolumeNameForVolumeMountPoint(VolumeMountPoint, VolumeName, BufferLength);
-    else
-        return FALSE;
-}
+// feature 114: the volume wrappers exist for CHAR = char only, in UTF-8, on the W functions
+// (os.cpp). Paths are converted plainly (no "\?\" prefix: the volume functions take mount
+// points and volume GUID paths as they are); a result that does not fit the caller's buffer is
+// refused, never cut.
+template <>
+BOOL OS<char>::OS_GetVolumeNameForVolumeMountPoint(const char* VolumeMountPoint, char* VolumeName, DWORD BufferLength);
+template <>
+HANDLE OS<char>::OS_FindFirstVolume(char* VolumeName, DWORD BufferLength);
+template <>
+BOOL OS<char>::OS_FindNextVolume(HANDLE FindVolume, char* VolumeName, DWORD BufferLength);
+template <>
+BOOL OS<char>::OS_FindVolumeClose(HANDLE FindVolume);
+template <>
+HANDLE OS<char>::OS_FindFirstVolumeMountPoint(const char* RootPathName, char* VolumeMountPoint, DWORD BufferLength);
+template <>
+BOOL OS<char>::OS_FindNextVolumeMountPoint(HANDLE FindVolumeMountPoint, char* VolumeMountPoint, DWORD BufferLength);
+template <>
+BOOL OS<char>::OS_FindVolumeMountPointClose(HANDLE FindVolumeMountPoint);
+template <>
+DWORD OS<char>::OS_GetLogicalDriveStrings(size_t bufsize, char* buffer);
+template <>
+BOOL OS<char>::OS_GetDiskFreeSpaceEx(const char* DirectoryName, ULARGE_INTEGER* FreeBytesAvailableToCaller,
+                                     ULARGE_INTEGER* TotalNumberOfBytes, ULARGE_INTEGER* TotalNumberOfFreeBytes);
+template <>
+BOOL OS<char>::OS_GetVolumePathNamesForVolumeName(const char* VolumeName, char* VolumePathNames,
+                                                  DWORD BufferLength, DWORD* ReturnLength);
 
-template <typename CHAR>
-HANDLE OS<CHAR>::OS_FindFirstVolume(CHAR* VolumeName, DWORD BufferLength)
-{
-    if (F_FindFirstVolume)
-        return F_FindFirstVolume(VolumeName, BufferLength);
-    else
-        return NULL;
-}
-
-template <typename CHAR>
-BOOL OS<CHAR>::OS_FindNextVolume(HANDLE FindVolume, CHAR* VolumeName, DWORD BufferLength)
-{
-    if (F_FindNextVolume)
-        return F_FindNextVolume(FindVolume, VolumeName, BufferLength);
-    else
-        return FALSE;
-}
-
-template <typename CHAR>
-BOOL OS<CHAR>::OS_FindVolumeClose(HANDLE FindVolume)
-{
-    if (F_FindVolumeClose)
-        return F_FindVolumeClose(FindVolume);
-    else
-        return FALSE;
-}
-
-template <typename CHAR>
-HANDLE OS<CHAR>::OS_FindFirstVolumeMountPoint(const CHAR* RootPathName, CHAR* VolumeMountPoint, DWORD BufferLength)
-{
-    if (F_FindFirstVolumeMountPoint)
-        return F_FindFirstVolumeMountPoint(RootPathName, VolumeMountPoint, BufferLength);
-    else
-        return NULL;
-}
-
-template <typename CHAR>
-BOOL OS<CHAR>::OS_FindNextVolumeMountPoint(HANDLE FindVolumeMountPoint, CHAR* VolumeMountPoint, DWORD BufferLength)
-{
-    if (F_FindNextVolumeMountPoint)
-        return F_FindNextVolumeMountPoint(FindVolumeMountPoint, VolumeMountPoint, BufferLength);
-    else
-        return FALSE;
-}
-
-template <typename CHAR>
-BOOL OS<CHAR>::OS_FindVolumeMountPointClose(HANDLE FindVolumeMountPoint)
-{
-    if (F_FindVolumeMountPointClose)
-        return F_FindVolumeMountPointClose(FindVolumeMountPoint);
-    else
-        return FALSE;
-}
-
-template <typename CHAR>
-DWORD OS<CHAR>::OS_GetLogicalDriveStrings(size_t bufsize, CHAR* buffer)
-{
-    if (F_GetLogicalDriveStrings)
-        return F_GetLogicalDriveStrings((DWORD)bufsize, buffer);
-    else
-        return 0;
-}
-
-template <typename CHAR>
-BOOL OS<CHAR>::OS_GetDiskFreeSpaceEx(const CHAR* DirectoryName, ULARGE_INTEGER* FreeBytesAvailableToCaller,
-                                     ULARGE_INTEGER* TotalNumberOfBytes, ULARGE_INTEGER* TotalNumberOfFreeBytes)
-{
-    if (F_GetDiskFreeSpaceEx)
-        return F_GetDiskFreeSpaceEx(DirectoryName, FreeBytesAvailableToCaller, TotalNumberOfBytes, TotalNumberOfFreeBytes);
-    else
-        return FALSE;
-}
-
-template <typename CHAR>
-BOOL OS<CHAR>::OS_GetVolumePathNamesForVolumeName(const CHAR* VolumeName, CHAR* VolumePathNames,
-                                                  DWORD BufferLength, DWORD* ReturnLength)
-{
-    if (F_GetVolumePathNamesForVolumeName)
-        return F_GetVolumePathNamesForVolumeName(VolumeName, VolumePathNames, BufferLength, ReturnLength);
-    else
-        return FALSE;
-}
+// feature 114: GetVolumePathName for a UTF-8 path (the W function); FALSE when the result does
+// not fit 'rootSize' bytes. The A function read a UTF-8 path in the code page: a path through a
+// mount folder named outside ASCII "did not exist", and the volume of its nearest existing parent
+// came back - another volume than the one the path is on.
+BOOL UndGetVolumePathNameU8(const char* path, char* root, DWORD rootSize);
 
 template <typename CHAR>
 void OS<CHAR>::OS_GetVolumeName(const CHAR* root, CHAR* volumeName)
@@ -591,10 +493,8 @@ DWORD OS<CHAR>::OS_GetDriveFormFactor(const CHAR* drive)
         }
         else
         {
-            CHAR tsz[100];
-            String<CHAR>::StrCpy(tsz, drive);
-            if ((char)(tsz[String<CHAR>::StrLen(tsz) - 1]) == '\\')
-                tsz[String<CHAR>::StrLen(tsz) - 1] = 0;
+            // feature 114: an unused copy of 'drive' into CHAR[100] is gone - a volume GUID path
+            // fits, but a mount folder's path of 100+ bytes overran the stack
             h = OS_CreateFile(const_cast<CHAR*>(drive), 0, FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
         }
 

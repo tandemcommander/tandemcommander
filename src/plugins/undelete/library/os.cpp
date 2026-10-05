@@ -7,6 +7,7 @@
 
 #include "miscstr.h"
 #include "os.h"
+#include "../../../common/salvolpaths.h" // feature 114: UTF-8 <-> UTF-16 of mount paths
 
 // ***************************************************************************
 //
@@ -19,24 +20,12 @@ BOOL IsWindows95 = FALSE;
 BOOL IsWindows95OSR2AndLater = FALSE;
 BOOL IsWindowsVistaAndLater = FALSE;
 
-static HMODULE KernelModule = NULL;
 static HINSTANCE NTShell32DLLInstance = NULL;
 
 // ***************************************************************************
 //
 //  Static members
 //
-OS<char>::TFindFirstVolumeMountPoint OS<char>::F_FindFirstVolumeMountPoint = NULL;
-OS<char>::TFindNextVolumeMountPoint OS<char>::F_FindNextVolumeMountPoint = NULL;
-OS<char>::TFindVolumeMountPointClose OS<char>::F_FindVolumeMountPointClose = NULL;
-OS<char>::TGetVolumeNameForVolumeMountPoint OS<char>::F_GetVolumeNameForVolumeMountPoint = NULL;
-OS<char>::TGetDiskFreeSpaceEx OS<char>::F_GetDiskFreeSpaceEx = NULL;
-OS<char>::TFindFirstVolume OS<char>::F_FindFirstVolume = NULL;
-OS<char>::TFindNextVolume OS<char>::F_FindNextVolume = NULL;
-OS<char>::TFindVolumeClose OS<char>::F_FindVolumeClose = NULL;
-OS<char>::TGetVolumePathNamesForVolumeName OS<char>::F_GetVolumePathNamesForVolumeName = NULL;
-OS<char>::TGetLogicalDriveStrings OS<char>::F_GetLogicalDriveStrings = NULL;
-OS<char>::TSHGetFileInfo OS<char>::F_SHGetFileInfo = NULL;
 HMODULE OS<char>::ImageResDLL = NULL;
 
 // ***************************************************************************
@@ -81,136 +70,226 @@ BOOL OS_InitOSVersion()
 // ANSI versions
 //
 
-BOOL OS<char>::OS_GetVolumeNameForVolumeMountPointExists()
+// feature 114: the volume functions exist on every supported Windows (Windows 10 2004 and
+// later); the plug-in calls their W forms directly and converts UTF-8 <-> UTF-16 (the A forms
+// resolved here before read UTF-8 paths as code-page text - see UndGetVolumePathNameU8)
+BOOL OS<char>::OS_GetVolumeNameForVolumeMountPointExists() { return TRUE; }
+BOOL OS<char>::OS_VolumeEnumExists() { return TRUE; }
+BOOL OS<char>::OS_VolumeMountPointEnumExists() { return TRUE; }
+BOOL OS<char>::OS_GetLogicalDriveStringsExists() { return TRUE; }
+BOOL OS<char>::OS_GetDiskFreeSpaceExExists() { return TRUE; }
+BOOL OS<char>::OS_GetVolumePathNamesForVolumeNameExists() { return TRUE; }
+
+template <>
+BOOL OS<char>::OS_GetVolumeNameForVolumeMountPoint(const char* VolumeMountPoint, char* VolumeName, DWORD BufferLength)
 {
-    static BOOL functionsDetected = FALSE;
-
-    // check for required functions, but just once
-    if (!functionsDetected)
+    if (BufferLength > 0)
+        VolumeName[0] = 0;
+    WCHAR* mpW = SplU8ToWAlloc(VolumeMountPoint);
+    if (mpW == NULL)
     {
-        if (!KernelModule)
-            KernelModule = GetModuleHandleA("kernel32.dll");
-
-        if (KernelModule)
-            F_GetVolumeNameForVolumeMountPoint = (TGetVolumeNameForVolumeMountPoint)GetProcAddress(KernelModule, "GetVolumeNameForVolumeMountPointA");
-
-        functionsDetected = TRUE;
+        SetLastError(ERROR_INVALID_NAME);
+        return FALSE;
     }
-
-    return (F_GetVolumeNameForVolumeMountPoint != NULL);
+    WCHAR nameW[MAX_PATH];
+    BOOL ok = GetVolumeNameForVolumeMountPointW(mpW, nameW, MAX_PATH);
+    DWORD err = GetLastError();
+    free(mpW);
+    if (ok && !SalVolumePathWToU8(nameW, VolumeName, (int)BufferLength))
+    {
+        ok = FALSE;
+        err = ERROR_INSUFFICIENT_BUFFER;
+    }
+    SetLastError(ok ? NO_ERROR : err);
+    return ok;
 }
 
-BOOL OS<char>::OS_VolumeEnumExists()
+template <>
+HANDLE OS<char>::OS_FindFirstVolume(char* VolumeName, DWORD BufferLength)
 {
-    static BOOL functionsDetected = FALSE;
-
-    // check for required functions, but just once
-    if (!functionsDetected)
+    // volume GUID paths (\\?\Volume{...}\) are ASCII and always fit MAX_PATH
+    WCHAR nameW[MAX_PATH];
+    HANDLE h = FindFirstVolumeW(nameW, MAX_PATH);
+    if (h != INVALID_HANDLE_VALUE && !SalVolumePathWToU8(nameW, VolumeName, (int)BufferLength))
     {
-        if (!KernelModule)
-            KernelModule = GetModuleHandleA("kernel32.dll");
+        FindVolumeClose(h);
+        SetLastError(ERROR_INSUFFICIENT_BUFFER);
+        return INVALID_HANDLE_VALUE;
+    }
+    return h;
+}
 
-        if (KernelModule)
+template <>
+BOOL OS<char>::OS_FindNextVolume(HANDLE FindVolume, char* VolumeName, DWORD BufferLength)
+{
+    WCHAR nameW[MAX_PATH];
+    while (FindNextVolumeW(FindVolume, nameW, MAX_PATH))
+    {
+        if (SalVolumePathWToU8(nameW, VolumeName, (int)BufferLength))
+            return TRUE;
+    }
+    return FALSE; // GetLastError() is FindNextVolumeW's (ERROR_NO_MORE_FILES at the end)
+}
+
+template <>
+BOOL OS<char>::OS_FindVolumeClose(HANDLE FindVolume)
+{
+    return FindVolumeClose(FindVolume);
+}
+
+// the mount folders of a volume (relative paths, e.g. mnt\voila-with-grave\): one whose UTF-8
+// form does not fit the caller's buffer is skipped, never cut
+template <>
+BOOL OS<char>::OS_FindNextVolumeMountPoint(HANDLE FindVolumeMountPoint, char* VolumeMountPoint, DWORD BufferLength)
+{
+    WCHAR mpW[MAX_PATH];
+    while (FindNextVolumeMountPointW(FindVolumeMountPoint, mpW, MAX_PATH))
+    {
+        if (SalVolumePathWToU8(mpW, VolumeMountPoint, (int)BufferLength))
+            return TRUE;
+    }
+    return FALSE;
+}
+
+template <>
+HANDLE OS<char>::OS_FindFirstVolumeMountPoint(const char* RootPathName, char* VolumeMountPoint, DWORD BufferLength)
+{
+    WCHAR* rootW = SplU8ToWAlloc(RootPathName);
+    if (rootW == NULL)
+    {
+        SetLastError(ERROR_INVALID_NAME);
+        return INVALID_HANDLE_VALUE;
+    }
+    WCHAR mpW[MAX_PATH];
+    HANDLE h = FindFirstVolumeMountPointW(rootW, mpW, MAX_PATH);
+    free(rootW);
+    if (h == INVALID_HANDLE_VALUE)
+        return h;
+    if (SalVolumePathWToU8(mpW, VolumeMountPoint, (int)BufferLength) ||
+        OS_FindNextVolumeMountPoint(h, VolumeMountPoint, BufferLength))
+    {
+        return h;
+    }
+    FindVolumeMountPointClose(h);
+    SetLastError(ERROR_NO_MORE_FILES);
+    return INVALID_HANDLE_VALUE;
+}
+
+template <>
+BOOL OS<char>::OS_FindVolumeMountPointClose(HANDLE FindVolumeMountPoint)
+{
+    return FindVolumeMountPointClose(FindVolumeMountPoint);
+}
+
+// drive roots (C:\) are ASCII: the A function is exact here
+template <>
+DWORD OS<char>::OS_GetLogicalDriveStrings(size_t bufsize, char* buffer)
+{
+    return GetLogicalDriveStringsA((DWORD)bufsize, buffer);
+}
+
+template <>
+BOOL OS<char>::OS_GetDiskFreeSpaceEx(const char* DirectoryName, ULARGE_INTEGER* FreeBytesAvailableToCaller,
+                                     ULARGE_INTEGER* TotalNumberOfBytes, ULARGE_INTEGER* TotalNumberOfFreeBytes)
+{
+    WCHAR* dirW = SplU8ToWAlloc(DirectoryName);
+    if (dirW == NULL)
+    {
+        SetLastError(ERROR_INVALID_NAME);
+        return FALSE;
+    }
+    BOOL ok = GetDiskFreeSpaceExW(dirW, FreeBytesAvailableToCaller, TotalNumberOfBytes, TotalNumberOfFreeBytes);
+    DWORD err = GetLastError();
+    free(dirW);
+    SetLastError(err);
+    return ok;
+}
+
+// the mount paths of a volume as a UTF-8 multi-string (*ReturnLength = bytes used); a path
+// whose UTF-8 form does not fit the buffer is left out, never cut (SalVolumePathsWToU8)
+template <>
+BOOL OS<char>::OS_GetVolumePathNamesForVolumeName(const char* VolumeName, char* VolumePathNames,
+                                                  DWORD BufferLength, DWORD* ReturnLength)
+{
+    if (ReturnLength != NULL)
+        *ReturnLength = 0;
+    if (BufferLength < 2)
+    {
+        SetLastError(ERROR_INSUFFICIENT_BUFFER);
+        return FALSE;
+    }
+    VolumePathNames[0] = VolumePathNames[1] = 0;
+    WCHAR* nameW = SplU8ToWAlloc(VolumeName);
+    if (nameW == NULL)
+    {
+        SetLastError(ERROR_INVALID_NAME);
+        return FALSE;
+    }
+    DWORD lenW = MAX_PATH;
+    WCHAR* pathsW = NULL;
+    BOOL ok = FALSE;
+    DWORD err = ERROR_NOT_ENOUGH_MEMORY;
+    for (int attempt = 0; attempt < 4; attempt++)
+    {
+        free(pathsW);
+        pathsW = (WCHAR*)malloc(lenW * sizeof(WCHAR));
+        if (pathsW == NULL)
         {
-            F_FindFirstVolume = (TFindFirstVolume)GetProcAddress(KernelModule, "FindFirstVolumeA");
-            F_FindNextVolume = (TFindNextVolume)GetProcAddress(KernelModule, "FindNextVolumeA");
-            F_FindVolumeClose = (TFindVolumeClose)GetProcAddress(KernelModule, "FindVolumeClose");
+            err = ERROR_NOT_ENOUGH_MEMORY;
+            break;
         }
-        if (!F_FindFirstVolume || !F_FindNextVolume || !F_FindVolumeClose)
+        DWORD need = 0;
+        if (GetVolumePathNamesForVolumeNameW(nameW, pathsW, lenW, &need))
         {
-            F_FindFirstVolume = NULL;
-            F_FindNextVolume = NULL;
-            F_FindVolumeClose = NULL;
+            ok = TRUE;
+            break;
         }
-        functionsDetected = TRUE;
+        err = GetLastError();
+        if (err != ERROR_MORE_DATA || need <= lenW)
+            break;
+        lenW = need;
     }
-
-    return (F_FindFirstVolume != NULL);
-}
-
-BOOL OS<char>::OS_VolumeMountPointEnumExists()
-{
-    static BOOL functionsDetected = FALSE;
-
-    // check for required functions, but just once
-    if (!functionsDetected)
+    free(nameW);
+    if (ok)
     {
-        if (!KernelModule)
-            KernelModule = GetModuleHandleA("kernel32.dll");
-
-        if (KernelModule)
+        SalVolumePathsWToU8(pathsW, VolumePathNames, (int)BufferLength);
+        if (ReturnLength != NULL)
         {
-            F_FindFirstVolumeMountPoint = (TFindFirstVolumeMountPoint)GetProcAddress(KernelModule, "FindFirstVolumeMountPointA");
-            F_FindNextVolumeMountPoint = (TFindNextVolumeMountPoint)GetProcAddress(KernelModule, "FindNextVolumeMountPointA");
-            F_FindVolumeMountPointClose = (TFindVolumeMountPointClose)GetProcAddress(KernelModule, "FindVolumeMountPointClose");
+            const char* p = VolumePathNames;
+            while (*p != 0)
+                p += strlen(p) + 1;
+            *ReturnLength = (DWORD)(p - VolumePathNames) + 1;
         }
-        if (!F_FindFirstVolumeMountPoint || !F_FindNextVolumeMountPoint || !F_FindVolumeMountPointClose)
-        {
-            F_FindFirstVolumeMountPoint = NULL;
-            F_FindNextVolumeMountPoint = NULL;
-            F_FindVolumeMountPointClose = NULL;
-        }
-        functionsDetected = TRUE;
     }
-
-    return (F_FindFirstVolumeMountPoint != NULL);
+    free(pathsW);
+    SetLastError(ok ? NO_ERROR : err);
+    return ok;
 }
 
-BOOL OS<char>::OS_GetLogicalDriveStringsExists()
+BOOL UndGetVolumePathNameU8(const char* path, char* root, DWORD rootSize)
 {
-    static BOOL functionsDetected = FALSE;
-
-    // check for required functions, but just once
-    if (!functionsDetected)
+    if (rootSize > 0)
+        root[0] = 0;
+    WCHAR* pathW = SplU8ToWAlloc(path);
+    if (pathW == NULL)
     {
-        if (!KernelModule)
-            KernelModule = GetModuleHandleA("kernel32.dll");
-
-        if (KernelModule)
-            F_GetLogicalDriveStrings = (TGetLogicalDriveStrings)GetProcAddress(KernelModule, "GetLogicalDriveStringsA");
-
-        functionsDetected = TRUE;
+        SetLastError(ERROR_INVALID_NAME);
+        return FALSE;
     }
-
-    return (F_GetLogicalDriveStrings != NULL);
-}
-
-BOOL OS<char>::OS_GetDiskFreeSpaceExExists()
-{
-    static BOOL functionsDetected = FALSE;
-
-    // check for required functions, but just once
-    if (!functionsDetected)
+    // the volume path is never longer than the path itself (plus the backslash GetVolumePathNameW adds)
+    DWORD capW = (DWORD)wcslen(pathW) + MAX_PATH;
+    WCHAR* rootW = (WCHAR*)malloc(capW * sizeof(WCHAR));
+    BOOL ok = rootW != NULL && GetVolumePathNameW(pathW, rootW, capW);
+    DWORD err = rootW == NULL ? ERROR_NOT_ENOUGH_MEMORY : GetLastError();
+    free(pathW);
+    if (ok && !SalVolumePathWToU8(rootW, root, (int)rootSize))
     {
-        if (!KernelModule)
-            KernelModule = GetModuleHandleA("kernel32.dll");
-
-        if (KernelModule)
-            F_GetDiskFreeSpaceEx = (TGetDiskFreeSpaceEx)GetProcAddress(KernelModule, "GetDiskFreeSpaceExA");
-
-        functionsDetected = TRUE;
+        ok = FALSE;
+        err = ERROR_FILENAME_EXCED_RANGE;
     }
-
-    return (F_GetDiskFreeSpaceEx != NULL);
-}
-
-BOOL OS<char>::OS_GetVolumePathNamesForVolumeNameExists()
-{
-    static BOOL functionsDetected = FALSE;
-
-    // check for required functions, but just once
-    if (!functionsDetected)
-    {
-        if (!KernelModule)
-            KernelModule = GetModuleHandleA("kernel32.dll");
-
-        if (KernelModule)
-            F_GetVolumePathNamesForVolumeName = (TGetVolumePathNamesForVolumeName)GetProcAddress(KernelModule, "GetVolumePathNamesForVolumeNameA");
-
-        functionsDetected = TRUE;
-    }
-
-    return (F_GetVolumePathNamesForVolumeName != NULL);
+    free(rootW);
+    SetLastError(ok ? NO_ERROR : err);
+    return ok;
 }
 
 BOOL OS<char>::OS_InitShell32Bindings()
@@ -317,10 +396,14 @@ HICON OS<char>::OS_GetFileOrPathIconAux(const char* path, BOOL large)
 {
     __try
     {
-        SHFILEINFOA shi;
+        // feature 114: 'path' is UTF-8 (a drive root or a mount folder): the W function
+        SHFILEINFOW shi;
         shi.hIcon = NULL;
-        SHGetFileInfoA(path, 0, &shi, sizeof(shi),
-                       SHGFI_ICON | SHGFI_SHELLICONSIZE | (large ? 0 : SHGFI_SMALLICON));
+        WCHAR* pathW = SplU8ToWAlloc(path);
+        if (pathW != NULL)
+            SHGetFileInfoW(pathW, 0, &shi, sizeof(shi),
+                           SHGFI_ICON | SHGFI_SHELLICONSIZE | (large ? 0 : SHGFI_SMALLICON));
+        free(pathW);
         return shi.hIcon;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)

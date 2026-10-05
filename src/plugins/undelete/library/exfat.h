@@ -409,7 +409,10 @@ BOOL CExFATSnapshot<CHAR>::LoadDirectoryTree(FILE_RECORD_I<CHAR>* parent, DWORD 
                 DWORD firstCluster = 0;
                 BYTE secondaryCount = iter->File.SecondaryCount;
                 BOOL chainInFAT = FALSE;
-                for (int i = 0; i < secondaryCount; i++)
+                // feature 114: the entries of a set never read past the directory's buffer (a deleted
+                // directory's clusters may hold anything, SecondaryCount up to 255)
+                EXFAT_DIRENTRY* chainEnd = (EXFAT_DIRENTRY*)(dirClusterChain + dirClusterCount * this->Volume->BytesPerCluster);
+                for (int i = 0; i < secondaryCount && iter + 1 < chainEnd; i++)
                 {
                     iter++;
                     switch (iter->Generic.EntryType & ~EXFAT_ENTRY_INUSE)
@@ -433,8 +436,13 @@ BOOL CExFATSnapshot<CHAR>::LoadDirectoryTree(FILE_RECORD_I<CHAR>* parent, DWORD 
 
                     case EXFAT_ENTRY_NAMEEXT: // 0x41 || 0xC1 - File Name Extension Directory Entry
                     {
-                        memcpy(nameiter, iter->FileName.FileName, 30);
-                        nameiter += 15;
+                        // feature 114: 'name' holds 255 units (17 entries); more entries in a damaged
+                        // set wrote past it on the stack - they are checksummed but not copied
+                        if (nameiter + 15 <= name + 255)
+                        {
+                            memcpy(nameiter, iter->FileName.FileName, 30);
+                            nameiter += 15;
+                        }
                         ourChecksum = UpdateEntriesChecksum(ourChecksum, iter, FALSE);
                         break;
                     }
@@ -447,6 +455,8 @@ BOOL CExFATSnapshot<CHAR>::LoadDirectoryTree(FILE_RECORD_I<CHAR>* parent, DWORD 
                     }
                     }
                 }
+                if (namelen > (int)(nameiter - name))
+                    namelen = (int)(nameiter - name); // feature 114: never units that were not read
                 name[namelen] = 0;
 
                 // use only items with valid checksum, ignore others

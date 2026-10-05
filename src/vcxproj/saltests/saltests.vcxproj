@@ -133,6 +133,10 @@
     </ClInclude>
     <ClInclude Include="..\..\common\salzipmember.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salfatname.h">
+    </ClInclude>
+    <ClInclude Include="..\..\common\salvolpaths.h">
+    </ClInclude>
     <ClInclude Include="..\..\common\salunicode.h">
     </ClInclude>
     <ClInclude Include="..\..\saltests\precomp.h">

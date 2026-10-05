@@ -29,6 +29,10 @@ typedef unsigned __int64 QWORD;
 #define MAX_VOLNAME 100
 #define MAX_FSNAME 50
 
+// FAT only (feature 114): the name is a short name whose first byte was overwritten by the
+// deletion marker; FNName starts with the placeholder '$' and the user is asked for the character
+// when the file is restored. Set by the FAT parser from the raw entry - never inferred from a name.
+#define FR_FLAGS_NAMEFIRSTCHARLOST 0x01000000
 #define FR_FLAGS_VIRTUALDIR 0x10000000 // virtual directory such as {All Deleted Files} or {Metafiles}
 #define FR_FLAGS_METAFILE 0x20000000   // metafiles in {Metafiles} virtual directory
 #define FR_FLAGS_CHAININFAT 0x40000000 // exFAT only, cluster chain is located in FAT

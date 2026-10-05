@@ -346,7 +346,8 @@ BOOL RestoreEncryptedFiles(const char* targetPath, HWND parent)
     UndeleteGetResolvedRootPath(targetPath, resolvedPath);
 
     DWORD flags;
-    if (!GetVolumeInformation(resolvedPath, NULL, 0, NULL, NULL, &flags, NULL, 0) ||
+    // feature 114: the W layer (resolvedPath is UTF-8)
+    if (!OS<char>::OS_GetVolumeInfo(resolvedPath, NULL, 0, NULL, NULL, &flags, NULL, 0) ||
         !(flags & FILE_SUPPORTS_ENCRYPTION))
     {
         return String<char>::Error(IDS_RESTORE, IDS_NOEFS);

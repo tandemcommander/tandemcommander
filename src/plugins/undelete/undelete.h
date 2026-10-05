@@ -259,7 +259,7 @@ protected:
     QWORD FileProgress, TotalProgress, FileTotal, GrandTotal;
     CCopyProgressDlg* Progress;
     char SourcePath[MAX_PATH];
-    char AllSubstChar;
+    char AllSubstPrefix[8]; // feature 114: "All" in the damaged-name dialog - one UTF-8 character
     BOOL BackupEncryptedFiles;
 
     BOOL RootPathFromFull(const char* pluginFullPath, char* rootPath, size_t bufferSize);
@@ -270,8 +270,7 @@ protected:
     QWORD GetDirSize(FILE_RECORD_I<char>* record, int plus, BOOL* encrypted);
     QWORD GetTotalProgress(int panel, BOOL focused, int plus, BOOL* encrypted);
     void UpdateProgress();
-    void Replace0xE5(char* filename);
-    char* FixDamagedName(char* name);
+    char* FixDamagedName(FILE_RECORD_I<char>* record, char* name);
     BOOL CopyFileList(CFileList& list, char* targetPath);
     BOOL PrepareRawAPI(char* targetPath, BOOL allowBackup);
 

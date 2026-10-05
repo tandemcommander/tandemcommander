@@ -152,7 +152,7 @@ CCopyProgressDlg::CCopyProgressDlg(HWND parent, CObjectOrigin origin)
 void CCopyProgressDlg::SetSourceFileName(const char* fileName)
 {
     CALL_STACK_MESSAGE2("CCopyProgressDlg::SetSourceFileName(%s)", fileName);
-    strcpy(SrcName, fileName);
+    lstrcpyn(SrcName, fileName, _countof(SrcName)); // feature 114: was an unbounded strcpy
     Changed[0] = TRUE;
     UpdateControls();
 }
@@ -160,7 +160,7 @@ void CCopyProgressDlg::SetSourceFileName(const char* fileName)
 void CCopyProgressDlg::SetDestFileName(const char* fileName)
 {
     CALL_STACK_MESSAGE2("CCopyProgressDlg::SetDestFileName(%s)", fileName);
-    strcpy(DestName, fileName);
+    lstrcpyn(DestName, fileName, _countof(DestName)); // feature 114: was an unbounded strcpy
     Changed[1] = TRUE;
     UpdateControls();
 }
@@ -300,60 +300,80 @@ void CConnectDialog::Transfer(CTransferInfo& ti)
     ti.CheckBox(IDC_CHECK_ESTIMATEDAMAGE, ConfigEstimateDamage);
 }
 
+// feature 114: the volume list as UTF-16. Its texts are UTF-8 (mount folders and labels come from
+// the W layer); the A messages showed a mount folder or label outside ASCII as mojibake, and
+// LVM_GETITEMA gave the mount folder back through the code page - a best-fit look-alike path was
+// then opened. A text that is not UTF-8 (code-page text) is converted from the code page.
+static WCHAR* VolumeListTextW(const char* text)
+{
+    if (text == NULL)
+        text = "";
+    WCHAR* w = SplU8ToWAlloc(text);
+    if (w == NULL)
+    {
+        int n = MultiByteToWideChar(CP_ACP, 0, text, -1, NULL, 0);
+        w = (WCHAR*)malloc((n > 0 ? n : 1) * sizeof(WCHAR));
+        if (w != NULL)
+        {
+            w[0] = 0;
+            if (n > 0)
+                MultiByteToWideChar(CP_ACP, 0, text, -1, w, n);
+        }
+    }
+    return w;
+}
+
+static void SetVolumeListSubItem(HWND hList, int item, int subItem, const char* text)
+{
+    WCHAR* w = VolumeListTextW(text);
+    LVITEMW itemInfo;
+    memset(&itemInfo, 0, sizeof(itemInfo));
+    itemInfo.mask = LVIF_TEXT;
+    itemInfo.iItem = item;
+    itemInfo.iSubItem = subItem;
+    itemInfo.pszText = w != NULL ? w : const_cast<WCHAR*>(L"");
+    SendMessageW(hList, LVM_SETITEMW, 0, (LPARAM)&itemInfo);
+    free(w);
+}
+
 void CConnectDialog::AddVolumeDetails(const char* root, const char* volumeName, const char* volumeFS,
                                       const CQuadWord& bytesTotal, const CQuadWord& bytesFree,
                                       const char* volumeGUIDPath, int serial, BOOL selected)
 {
-    LVITEM itemInfo;
+    LVITEMW itemInfo;
+    memset(&itemInfo, 0, sizeof(itemInfo));
     itemInfo.iItem = serial;
 
+    WCHAR* rootW = VolumeListTextW(root);
     itemInfo.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
     itemInfo.iSubItem = 0;
-    itemInfo.pszText = const_cast<char*>(root);
+    itemInfo.pszText = rootW != NULL ? rootW : const_cast<WCHAR*>(L"");
     itemInfo.iImage = serial;
     itemInfo.stateMask = LVIS_FOCUSED; // using LVIS_FOCUSED instead of LVIS_SELECTED (we can switch to multi-select ListView)
     if (selected)
         itemInfo.state = LVIS_FOCUSED;
     else
         itemInfo.state = 0;
-    itemInfo.iItem = (int)SendMessage(hList, LVM_INSERTITEM, 0, (LPARAM)&itemInfo);
+    int item = (int)SendMessageW(hList, LVM_INSERTITEMW, 0, (LPARAM)&itemInfo);
+    free(rootW);
 
-    itemInfo.mask = LVIF_TEXT;
+    SetVolumeListSubItem(hList, item, 1, volumeName);
+    SetVolumeListSubItem(hList, item, 2, volumeFS);
 
-    itemInfo.iSubItem = 1;
-    itemInfo.pszText = const_cast<char*>(volumeName);
-    SendMessage(hList, LVM_SETITEM, 0, (LPARAM)&itemInfo);
-
-    itemInfo.iSubItem = 2;
-    itemInfo.pszText = const_cast<char*>(volumeFS);
-    SendMessage(hList, LVM_SETITEM, 0, (LPARAM)&itemInfo);
-
-    itemInfo.iSubItem = 3;
     char buf[150];
-    static char emptyBuff[] = "";
-    itemInfo.pszText = (bytesTotal != CQuadWord(-1, -1) ? SalamanderGeneral->PrintDiskSize(buf, bytesTotal, 0) : emptyBuff);
-    SendMessage(hList, LVM_SETITEM, 0, (LPARAM)&itemInfo);
+    SetVolumeListSubItem(hList, item, 3, bytesTotal != CQuadWord(-1, -1) ? SalamanderGeneral->PrintDiskSize(buf, bytesTotal, 0) : "");
+    SetVolumeListSubItem(hList, item, 4, bytesFree != CQuadWord(-1, -1) ? SalamanderGeneral->PrintDiskSize(buf, bytesFree, 0) : "");
 
-    itemInfo.iSubItem = 4;
-    itemInfo.pszText = (bytesFree != CQuadWord(-1, -1) ? SalamanderGeneral->PrintDiskSize(buf, bytesFree, 0) : emptyBuff);
-    SendMessage(hList, LVM_SETITEM, 0, (LPARAM)&itemInfo);
-
-    itemInfo.iSubItem = 5;
+    char buf2[15];
+    buf2[0] = 0;
     if (bytesTotal != CQuadWord(-1, -1))
     {
         double pct = (CQuadWord(1000, 0) * bytesFree / bytesTotal).GetDouble() / 10;
-        char buf2[15];
         sprintf(buf2, "%5.1f %%", pct);
         SalamanderGeneral->PointToLocalDecimalSeparator(buf2, _countof(buf2));
-        itemInfo.pszText = buf2;
     }
-    else
-        itemInfo.pszText = emptyBuff;
-    SendMessage(hList, LVM_SETITEM, 0, (LPARAM)&itemInfo);
-
-    itemInfo.iSubItem = 6;
-    itemInfo.pszText = const_cast<char*>(volumeGUIDPath);
-    SendMessage(hList, LVM_SETITEM, 0, (LPARAM)&itemInfo);
+    SetVolumeListSubItem(hList, item, 5, buf2);
+    SetVolumeListSubItem(hList, item, 6, volumeGUIDPath);
 }
 
 void CConnectDialog::InitDrives()
@@ -539,21 +559,31 @@ BOOL CConnectDialog::OnDialogOK()
     }
     else
     {
-        // physical disk
+        // physical disk (feature 114: read as UTF-16 and converted; a mount folder whose UTF-8
+        // form does not fit 'Volume' is replaced by the volume's GUID path, never cut)
         HWND hList2 = GetDlgItem(HWindow, IDC_LIST_VOLUMES);
-        LVITEM item;
-        item.iItem = (int)SendMessage(hList2, LVM_GETNEXTITEM, -1, LVNI_ALL | LVNI_SELECTED);
+        LVITEMW item;
+        memset(&item, 0, sizeof(item));
+        WCHAR textW[MAX_PATH];
+        item.iItem = (int)SendMessageW(hList2, LVM_GETNEXTITEM, -1, LVNI_ALL | LVNI_SELECTED);
         // get the unique volume name
+        textW[0] = 0;
         item.iSubItem = 0;
         item.mask = LVIF_TEXT;
-        item.pszText = Volume;
+        item.pszText = textW;
         item.cchTextMax = MAX_PATH;
-        SendMessage(hList2, LVM_GETITEM, 0, (LPARAM)&item);
-        if (Volume[0] == 0)
+        SendMessageW(hList2, LVM_GETITEMW, 0, (LPARAM)&item);
+        Volume[0] = 0;
+        if (textW[0] == 0 || SplWToU8(textW, Volume, MAX_PATH) <= 0)
         {
             // get GUID Path
+            textW[0] = 0;
             item.iSubItem = 6;
-            SendMessage(hList2, LVM_GETITEM, 0, (LPARAM)&item);
+            item.pszText = textW;
+            item.cchTextMax = MAX_PATH;
+            SendMessageW(hList2, LVM_GETITEMW, 0, (LPARAM)&item);
+            if (SplWToU8(textW, Volume, MAX_PATH) <= 0)
+                Volume[0] = 0;
         }
 
         // append current path, if current drive is selected
@@ -563,9 +593,13 @@ BOOL CConnectDialog::OnDialogOK()
         if (ret && sourcePanelType == PATH_TYPE_WINDOWS)
         {
             // if mount points are supported, check if we are on the correct volume
+            // feature 114: both on the W layer - the A function read the UTF-8 paths in the code
+            // page, so a panel inside a mount folder named outside ASCII and the volume chosen
+            // could both "resolve" to the parent volume, and the panel path - on another volume -
+            // replaced the volume chosen
             char vol1[MAX_PATH], vol2[MAX_PATH];
-            if (GetVolumePathName(sourcePanelPath, vol1, MAX_PATH) &&
-                GetVolumePathName(Volume, vol2, MAX_PATH) &&
+            if (UndGetVolumePathNameU8(sourcePanelPath, vol1, MAX_PATH) &&
+                UndGetVolumePathNameU8(Volume, vol2, MAX_PATH) &&
                 !strcmp(vol1, vol2))
                 strcpy(Volume, sourcePanelPath);
         }

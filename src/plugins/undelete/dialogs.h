@@ -26,7 +26,9 @@ protected:
     CGUIProgressBarAbstract *ProgressBar1, *ProgressBar2;
     CGUIStaticTextAbstract *Label1, *Label2;
     BOOL WantCancel;
-    char SrcName[MAX_PATH], DestName[MAX_PATH];
+    // feature 114: a restore source of up to 2 x MAX_PATH bytes (restore.cpp) and a target with an
+    // NTFS stream name (up to 765 bytes) were copied into MAX_PATH unbounded
+    char SrcName[4 * MAX_PATH], DestName[4 * MAX_PATH];
     DWORD LastTick, FileProgress, TotalProgress;
     BOOL Changed[4];
 

@@ -35,6 +35,8 @@
 #include "salpvsource.h"    // feature 111
 #include "salcacheedit.h"   // feature 112
 #include "salzipmember.h"   // feature 113
+#include "salfatname.h"     // feature 114
+#include "salvolpaths.h"    // feature 114
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -7313,6 +7315,235 @@ static void TestZipMember113()
     }
 }
 
+// feature 114: the Undelete plug-in's FAT short-name rules (salfatname.h) and its volume paths
+// in UTF-8 (salvolpaths.h)
+static BYTE RefFatChecksum114(const BYTE* n)
+{
+    // the FAT specification's loop, written independently: rotate right by one, add the byte
+    unsigned sum = 0;
+    for (int i = 0; i < 11; i++)
+        sum = (((sum >> 1) | ((sum & 1) << 7)) + n[i]) & 0xFF;
+    return (BYTE)sum;
+}
+
+static std::wstring Sfn114(const char* raw11, BYTE ntRes, BOOL applyCase, UINT cp, BOOL* lost, int* ret = NULL)
+{
+    WCHAR out[32];
+    int r = SalFatShortNameToW((const BYTE*)raw11, ntRes, applyCase, cp, out, 32, lost);
+    if (ret != NULL)
+        *ret = r;
+    return r > 0 ? std::wstring(out, r) : std::wstring();
+}
+
+static void TestUndeleteNames114()
+{
+    // --- checksum: against the independent loop, over every first byte of two names
+    {
+        BYTE n[11];
+        memcpy(n, "README  TXT", 11);
+        int mismatch = 0;
+        for (int b = 0; b < 256; b++)
+        {
+            n[0] = (BYTE)b;
+            if (SalFatShortNameChecksum(n) != RefFatChecksum114(n))
+                mismatch++;
+        }
+        memcpy(n, "_~1     TXT", 11);
+        for (int b = 0; b < 256; b++)
+        {
+            n[0] = (BYTE)b;
+            if (SalFatShortNameChecksum(n) != RefFatChecksum114(n))
+                mismatch++;
+        }
+        CHECK(mismatch == 0);
+        // the first byte decides the checksum one-to-one (why the candidates are few and ordered)
+        std::set<int> sums;
+        for (int b = 0; b < 256; b++)
+        {
+            n[0] = (BYTE)b;
+            sums.insert(SalFatShortNameChecksum(n));
+        }
+        CHECK(sums.size() == 256);
+    }
+
+    // --- short names: the deletion marker, the 0x05 escape, OEM bytes, the case bits
+    BOOL lost = TRUE;
+    CHECK(Sfn114("FOO     TXT", 0, TRUE, 437, &lost) == L"FOO.TXT" && !lost);
+    CHECK(Sfn114("\xE5OO     TXT", 0, TRUE, 437, &lost) == L"$OO.TXT" && lost);
+    CHECK(Sfn114("\xE5OO     TXT", 0, TRUE, 852, &lost) == L"$OO.TXT" && lost);
+    CHECK(Sfn114("\xE5       TXT", 0, TRUE, 852, &lost) == L"$.TXT" && lost);   // a one-character base
+    CHECK(Sfn114("\x05" "ABC    TXT", 0, TRUE, 852, &lost) == L"\x0148" L"ABC.TXT" && !lost); // 0xE5 in CP852 = n-caron
+    CHECK(Sfn114("\x05" "ABC    TXT", 0, TRUE, 437, &lost) == L"\x03C3" L"ABC.TXT" && !lost); // 0xE5 in CP437 = sigma
+    CHECK(Sfn114("\xAC" "L\xB5" "NEK  TXT", 0, TRUE, 852, &lost) == L"\x010C" L"L\x00C1" L"NEK.TXT" && !lost); // C-caron L A-acute NEK
+    CHECK(Sfn114("\xE5" "L\xB5" "NEK  TXT", 0, TRUE, 852, &lost) == L"$L\x00C1" L"NEK.TXT" && lost);
+    CHECK(Sfn114("README  TXT", 0x08, TRUE, 437, &lost) == L"readme.TXT");
+    CHECK(Sfn114("README  TXT", 0x10, TRUE, 437, &lost) == L"README.txt");
+    CHECK(Sfn114("README  TXT", 0x18, TRUE, 437, &lost) == L"readme.txt");
+    CHECK(Sfn114("README  TXT", 0x18, FALSE, 437, &lost) == L"README.TXT"); // shown next to a long name
+    CHECK(Sfn114("\xAC" "AJ     TXT", 0x18, TRUE, 852, &lost) == L"\x010C" L"aj.txt");     // NT lower case: A-Z only (fastfat)
+    CHECK(Sfn114("\xAC" "AJ     \x8F" "XT", 0x18, TRUE, 852, &lost) == L"\x010C" L"aj.\x0106" L"xt"); // also in the extension
+    CHECK(Sfn114("FOO        ", 0, TRUE, 437, &lost) == L"FOO");                          // no extension, no dot
+    CHECK(Sfn114("A B     TXT", 0, TRUE, 437, &lost) == L"A B.TXT");                      // only trailing spaces are padding
+    CHECK(Sfn114("FOO     T  ", 0, TRUE, 437, &lost) == L"FOO.T");
+    int r = -1;
+    CHECK(Sfn114("        TXT", 0, TRUE, 437, &lost, &r).empty() && r == 0 && !lost);      // no base: not a name
+    CHECK(Sfn114("           ", 0, TRUE, 437, &lost, &r).empty() && r == 0);
+    {
+        WCHAR tiny[5];
+        CHECK(SalFatShortNameToW((const BYTE*)"FOO     TXT", 0, TRUE, 437, tiny, 5, &lost) == 0 && tiny[0] == 0);
+        CHECK(SalFatShortNameToW((const BYTE*)"FOO     TXT", 0, TRUE, 437, tiny, 0, NULL) == 0);
+    }
+    // every first byte with every OEM code page at hand: 0xE5 -> '$' + lost, 0x05 -> the code
+    // page's character for 0xE5, anything else -> the code page's character, never '$' + lost
+    {
+        UINT cps[] = {437, 850, 852, 866, 932, 936, 949, 950};
+        int bad = 0, tested = 0;
+        for (UINT cp : cps)
+        {
+            if (!IsValidCodePage(cp))
+                continue;
+            tested++;
+            for (int b = 1; b < 256; b++)
+            {
+                if (b == ' ')
+                    continue;
+                char raw[12];
+                memcpy(raw, "XAB     TXT", 12);
+                raw[0] = (char)b;
+                BOOL l2 = FALSE;
+                std::wstring got = Sfn114(raw, 0, TRUE, cp, &l2);
+                if (b == 0xE5)
+                {
+                    if (!(l2 && got == L"$AB.TXT"))
+                        bad++;
+                    continue;
+                }
+                char want[3] = {(char)(b == 0x05 ? 0xE5 : b), 'A', 'B'};
+                WCHAR ww[8];
+                int wn = MultiByteToWideChar(cp, 0, want, 3, ww, 8);
+                std::wstring expect = std::wstring(ww, wn > 0 ? wn : 0) + L".TXT";
+                if (l2 || got != expect)
+                    bad++;
+            }
+        }
+        printf("TestUndeleteNames114: first byte x OEM code page, %d code pages, %d mismatches\n", tested, bad);
+        CHECK(tested >= 3 && bad == 0);
+    }
+
+    // --- the lost first byte: the byte Windows writes comes first
+    BYTE c[3];
+    int n = SalFatLostFirstByteCandidates(L"\x010Clanek.txt\0\xFFFF", 13, 852, 1250, c, 3); // C-caron
+    CHECK(n >= 2 && c[0] == 0xAC);
+    // a character Windows cannot put into a short name is DROPPED, not replaced (review SF1). The
+    // examples measured with dir /x (NTFS, whose generator drops every character outside ASCII by
+    // default - modelled here with CP437, which has neither C-caron nor a-acute):
+    //   "C-caron-lanek dlouhy-acute.txt" -> LNEKDL~1.TXT, "C-caron-X.txt" -> X76F3~1.TXT,
+    //   "C-caron.txt" -> 80E2~1.TXT, "U+597D.txt" -> 191D~1.TXT (hash forms)
+    n = SalFatLostFirstByteCandidates(L"\x010Clanek.txt\0\xFFFF", 13, 437, 1250, c, 3); // C-caron dropped
+    CHECK(n >= 1 && c[0] == 'L');
+    n = SalFatLostFirstByteCandidates(L"\x010Cl\x00E1nek dlouh\x00FD", 13, 437, 1250, c, 3); // 13 units, no end seen
+    CHECK(n >= 1 && c[0] == 'L');
+    n = SalFatLostFirstByteCandidates(L"\x010CX.txt\0\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF", 13, 437, 1250, c, 3);
+    CHECK(n >= 1 && c[0] == 'X');
+    // hash forms: nothing of the base name is kept - no Windows candidate; the old guess and
+    // Linux's '_' remain (the first byte of a hash form is a hex digit: no link, damaged name)
+    n = SalFatLostFirstByteCandidates(L"\x010C.txt\0\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF", 13, 437, 1250, c, 3);
+    CHECK(n == 2 && c[0] == 0xC8 && c[1] == '_'); // the old ANSI guess (CP1250 C-caron), then '_'
+    n = SalFatLostFirstByteCandidates(L"\x597D.txt\0\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF", 13, 852, 1250, c, 3); // U+597D: not in CP852
+    CHECK(n == 2 && c[0] == '?' && c[1] == '_');
+    {
+        BYTE hashForm[11];
+        memcpy(hashForm, "191D~1  TXT", 11);
+        BYTE sum = SalFatShortNameChecksum(hashForm);
+        BOOL linked = FALSE;
+        for (int i = 0; i < n; i++)
+        {
+            hashForm[0] = c[i];
+            if (SalFatShortNameChecksum(hashForm) == sum)
+                linked = TRUE;
+        }
+        CHECK(!linked); // shown as a damaged short name, as before
+    }
+    // a character in the OEM code page is kept on FAT (fastfat allows extended characters)
+    n = SalFatLostFirstByteCandidates(L"\x010Cl\x00E1nek dlouh\x00FD", 13, 852, 1250, c, 3);
+    CHECK(n >= 1 && c[0] == 0xAC);
+    n = SalFatLostFirstByteCandidates(L".gitignore\0\xFFFF\xFFFF", 13, 437, 1252, c, 3);
+    CHECK(n >= 1 && c[0] == 'G'); // a leading dot does not start the extension
+    n = SalFatLostFirstByteCandidates(L"\x597D.a.txt\0\xFFFF\xFFFF\xFFFF", 13, 852, 1250, c, 3);
+    CHECK(n >= 1 && c[0] == 'A'); // a dot before the last one: the base is "U+597D.a", 'A' kept
+    if (IsValidCodePage(936))
+    {
+        n = SalFatLostFirstByteCandidates(L"\x597D.txt\0\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF", 13, 936, 936, c, 3);
+        CHECK(n >= 1 && c[0] == 0xBA); // GBK BA C3
+    }
+    if (IsValidCodePage(932))
+    {
+        n = SalFatLostFirstByteCandidates(L"\x4E55.txt\0\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF", 13, 932, 932, c, 3);
+        CHECK(n >= 1 && c[0] == 0x05); // Shift-JIS E5 68: stored as the escape
+    }
+    n = SalFatLostFirstByteCandidates(L"readme.txt\0\xFFFF\xFFFF", 13, 437, 1252, c, 3);
+    CHECK(n >= 1 && c[0] == 'R');
+    n = SalFatLostFirstByteCandidates(L"..hidden\0\xFFFF\xFFFF\xFFFF\xFFFF", 13, 437, 1252, c, 3);
+    CHECK(n >= 1 && c[0] == 'H'); // leading dots are dropped from a short name
+    n = SalFatLostFirstByteCandidates(L"  x.txt\0\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF", 13, 437, 1252, c, 3);
+    CHECK(n >= 1 && c[0] == 'X'); // ... and spaces
+    n = SalFatLostFirstByteCandidates(L"+plus.txt\0\xFFFF\xFFFF\xFFFF", 13, 437, 1252, c, 3);
+    CHECK(n >= 1 && c[0] == '_');
+    n = SalFatLostFirstByteCandidates(L"\xD83D\xDCC1" L"x.txt\0\xFFFF\xFFFF\xFFFF\xFFFF", 13, 437, 1252, c, 3);
+    CHECK(n >= 1 && c[0] == 'X'); // a character outside the BMP is dropped
+    n = SalFatLostFirstByteCandidates(L"\0\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF\xFFFF", 13, 437, 1252, c, 3);
+    CHECK(n == 0);
+    n = SalFatLostFirstByteCandidates(L"readme.txt\0\xFFFF\xFFFF", 13, 437, 1252, c, 1);
+    CHECK(n == 1 && c[0] == 'R');
+    {
+        // no duplicates, and the whole chain: a deleted entry's long name is found again
+        n = SalFatLostFirstByteCandidates(L"\x010Clanek.txt\0\xFFFF", 13, 852, 1250, c, 3);
+        BOOL dup = FALSE;
+        for (int i = 0; i < n; i++)
+            for (int j = i + 1; j < n; j++)
+                if (c[i] == c[j])
+                    dup = TRUE;
+        CHECK(!dup);
+        BYTE stored[11];
+        memcpy(stored, "\xAC" "LANEK  TXT", 11);
+        BYTE sum = SalFatShortNameChecksum(stored); // what the long-name entries carry
+        stored[0] = 0xE5;                            // deleted
+        BOOL found = FALSE;
+        for (int i = 0; i < n && !found; i++)
+        {
+            stored[0] = c[i];
+            found = SalFatShortNameChecksum(stored) == sum;
+        }
+        CHECK(found);
+    }
+
+    // --- volume paths: UTF-16 multi-string -> UTF-8, a path that does not fit is left out
+    {
+        const WCHAR multi[] = L"C:\\mnt\\voil\x00E0\\\0D:\\\0\0";
+        char out[64];
+        memset(out, 'x', sizeof(out));
+        int k = SalVolumePathsWToU8(multi, out, sizeof(out));
+        CHECK(k == 2 && strcmp(out, "C:\\mnt\\voil\xC3\xA0\\") == 0 && strcmp(out + 15, "D:\\") == 0 && out[19] == 0);
+        memset(out, 'x', sizeof(out));
+        k = SalVolumePathsWToU8(multi, out, 10); // the first does not fit: left out, never cut
+        CHECK(k == 1 && strcmp(out, "D:\\") == 0 && out[4] == 0);
+        k = SalVolumePathsWToU8(multi, out, 4); // "D:\" + terminator needs 4, + the final one 5
+        CHECK(k == 0 && out[0] == 0);
+        const WCHAR lone[] = L"C:\\a\xD800\\\0E:\\\0\0";
+        k = SalVolumePathsWToU8(lone, out, sizeof(out));
+        CHECK(k == 1 && strcmp(out, "E:\\") == 0);
+        k = SalVolumePathsWToU8(L"\0\0", out, sizeof(out));
+        CHECK(k == 0 && out[0] == 0 && out[1] == 0);
+        k = SalVolumePathsWToU8(NULL, out, sizeof(out));
+        CHECK(k == 0 && out[0] == 0);
+        CHECK(SalVolumePathsWToU8(multi, out, 1) == 0);
+        CHECK(SalVolumePathWToU8(L"C:\\mnt\\voil\x00E0\\", out, sizeof(out)) && strcmp(out, "C:\\mnt\\voil\xC3\xA0\\") == 0);
+        CHECK(!SalVolumePathWToU8(L"C:\\mnt\\voil\x00E0\\", out, 14) && out[0] == 0); // 15 bytes needed
+        CHECK(SalVolumePathWToU8(L"C:\\mnt\\voil\x00E0\\", out, 15) && strlen(out) == 14);
+        CHECK(!SalVolumePathWToU8(L"C:\\a\xD800", out, sizeof(out)) && out[0] == 0);
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -7365,6 +7596,7 @@ int main()
     TestPvSource111();
     TestCacheEdit112();
     TestZipMember113();
+    TestUndeleteNames114();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

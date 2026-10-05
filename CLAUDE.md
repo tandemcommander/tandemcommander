@@ -1757,3 +1757,38 @@ plugin architecture preservation, UI consistency.
     in-place, 7z) written, **GUI runs pending**. Records:
     `specs/113-zip-read-error-skip/fix-log.md`.
   GUI runs owed at commit time - see fix-log "Pending (GUI ...)".
+- 114-undelete-names: **Undelete restores files under their own names, from
+  the volume chosen.** The 104 note, measured by code reading (no GUI that
+  day) and wider.
+  - **The FAT rule ran on UTF-8 names of every file system**: `Replace0xE5`
+    turned a first BYTE 0xE5 into '$' and `FixDamagedName` asked for every
+    such name - every name starting with U+5000..U+5FFF (NTFS, exFAT, FAT
+    long names) was listed as '$' + mojibake and restored under another name.
+    The rule now lives on the 11 raw bytes of a FAT short-name entry
+    (`src/common/salfatname.h`, `SalFatShortNameToW`: 0xE5 -> '$' + record
+    flag `FR_FLAGS_NAMEFIRSTCHARLOST`, 0x05 -> the real 0xE5, OEM code page,
+    NT case bits 0x08 / 0x10 on A-Z as Windows shows them); only a flagged record
+    opens the Damaged Filename dialog; "All" keeps one UTF-8 character.
+  - Also on the FAT route: short names were OEM bytes handed on as UTF-8;
+    deleted long names were lost unless the first character was ASCII (the
+    lost byte was guessed in the ANSI code page - Windows writes the OEM
+    byte of the first character it KEEPS and DROPS what it cannot write;
+    nothing kept = a hash form `191D~1.TXT` that cannot be linked back; now
+    `SalFatLostFirstByteCandidates`, first checksum match wins - the checksum
+    is a bijection of the first byte, so never all 256); unpaired surrogates
+    became U+FFFD (now WTF-8).
+  - **Volume layer W** (`os.cpp`, `salvolpaths.h`): `GetVolumePathNameA` on a
+    UTF-8 path through a mount folder outside ASCII returned the parent's
+    volume - **another volume was opened**; the mount column was code page /
+    best fit. A path that does not fit is left out or refused, never cut.
+  - Sweep: an NTFS stream name over 259 UTF-8 bytes matched the default
+    stream (its runs joined the unnamed stream); stack overruns
+    (`IDS_TEMPDIR` 226 bytes in Ukrainian into 200, `AddNumberSuffix` for two
+    equal 300+ byte names, FAT LFN loop, exFAT name entries); error texts in
+    UTF-8; EFS capability on W.
+  - saltests 14,327 -> 14,383. Interface stays 107, no string, no registry
+    change. Probe `probe/undelnames_probe.ps1` + `make_images.py` (FAT12,
+    exFAT and a duplicate-name exFAT image written byte by byte - no admin,
+    no volume opened) written, **GUI runs pending**; mount points need admin
+    (person step). Records: `specs/114-undelete-names/fix-log.md`.
+  GUI runs owed at commit time - see fix-log "Pending (GUI ...)".

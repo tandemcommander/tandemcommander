@@ -761,7 +761,29 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           name whose first byte is 0xE5 (CJK U+5000-U+5FFF) is listed with
           `$` and restored under a garbled name; its volume layer enumerates
           mount points with code-page calls (a mount folder named outside
-          ASCII fails or resolves to another volume).
+          ASCII fails or resolves to another volume). ✅ **Fixed by feature
+          114 (2026-10-05) - GUI runs pending**: measured wider by code
+          reading - the rule ran on the UTF-8 names of every file system
+          (listing, path, restore), FAT short names were OEM bytes handed on
+          as UTF-8, deleted FAT long names were lost unless their first
+          character was ASCII (the lost byte guessed in the ANSI code page),
+          and `GetVolumePathNameA` on a UTF-8 path through such a mount folder
+          opened the PARENT's volume. The rule now lives on the raw bytes of a
+          FAT short-name entry (`src/common/salfatname.h`, record flag
+          `FR_FLAGS_NAMEFIRSTCHARLOST`), the volume layer is W
+          (`salvolpaths.h`), names WTF-8; the sweep fixed an NTFS stream-name
+          buffer (a long stream name joined the default stream) and several
+          overruns. Probe `specs/114-undelete-names/probe/undelnames_probe.ps1`
+          (FAT12 / exFAT images made by `make_images.py`, no admin) written,
+          runs owed; mount points need admin (person step, `quickstart.md`).
+          **Found by 114, not fixed** (`fix-log.md`): (a) Restore Encrypted
+          Files ignores `SalPathAppend` failures - a source path over 519 /
+          259 bytes recurses into the same folder until the stack overflows
+          and restores the parent's files into the target (`restore.cpp`);
+          (b) `RemoveDuplicateFiles` compares DSSize bytes of a 44-byte
+          structure (over-read; the duplicates of {All Deleted Files} are
+          never removed); (c) name identity in the restore list / FAT
+          numbering is `_stricmp` (ASCII only - 092's rule would apply).
        3. FTP password fields keep a code-page subclass (`CPasswordEditLine`)
           and *Show password* reads through the code page (094 left FTP
           passwords). Since 104 an FTP password, user name, address or

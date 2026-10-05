@@ -237,6 +237,13 @@ BOOL CVolume<CHAR>::Open(const CHAR* rootPath)
                 {
                     // Windows NT didn't support GUID paths
                     // for old disk syntax (c:\), we need to transform it to volume path
+                    // (feature 114 review: refused when "\\.\" + the path does not fit - a mount
+                    // folder path of 256+ bytes overran 'diskVolume' by up to 4 bytes)
+                    if (String<CHAR>::StrLen(STRING_VOLUME_NT) + String<CHAR>::StrLen(rootPath) >= MAX_PATH)
+                    {
+                        SetLastError(ERROR_FILENAME_EXCED_RANGE);
+                        return String<CHAR>::SysError(IDS_UNDELETE, IDS_ERROROPENINGVOLUME);
+                    }
                     String<CHAR>::StrCpy(diskVolume, STRING_VOLUME_NT);
                     String<CHAR>::StrCat(diskVolume, rootPath);
                 }

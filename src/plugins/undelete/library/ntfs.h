@@ -378,9 +378,14 @@ BOOL CMFTSnapshot<CHAR>::ParseRecord(BYTE* data, QWORD index)
             //TRACE_I("Found data/stream.");
 
             // do we have already stream with same name?
-            CHAR streamname[MAX_PATH];
-            if (!String<CHAR>::CopyFromUnicode(streamname, (WCHAR*)(data + offset + aheader->NameOffset), aheader->NameLength, MAX_PATH))
+            // feature 114: room for the longest stream name (255 UTF-16 units = 765 bytes of UTF-8);
+            // with MAX_PATH a longer one converted to "" and its data runs were MERGED INTO THE
+            // DEFAULT STREAM (the restored file got the stream's clusters)
+            CHAR streamname[3 * MAX_PATH];
+            if (!String<CHAR>::CopyFromUnicode(streamname, (WCHAR*)(data + offset + aheader->NameOffset), aheader->NameLength, 3 * MAX_PATH))
                 return String<CHAR>::Error(IDS_UNDELETE, IDS_READINGMFT);
+            if (aheader->NameLength != 0 && streamname[0] == 0)
+                break; // a named stream that could not be converted is left out, never taken for another one
 
             // for attribute $LOGGED_UTILITY_STREAM we are interested only in these related to EFS
             if (aheader->Type == $LOGGED_UTILITY_STREAM && String<CHAR>::StrICmp(streamname, STRING_EFS))

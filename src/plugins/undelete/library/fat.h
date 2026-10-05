@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "../../../common/salfatname.h" // feature 114: the short-name rules (0xE5 marker, 0x05 escape, OEM)
+
 template <typename CHAR>
 class CClusterHeap
 {
@@ -188,8 +190,6 @@ private:
 #define MARK_DEL_DIR 0x10000000 // cluster mark for deleted directory that we already read
 
 // helper function declarations
-BOOL ConvertFATName(const char* fatName, char* name);
-BYTE ChkSum(BYTE* pFcpName);
 BOOL isupdir(DIR_ENTRY_SHORT* entry);
 
 template <typename CHAR>
@@ -551,26 +551,44 @@ BOOL CFATSnapshot<CHAR>::DecodeDirectoryClusters(BYTE* buffer, DWORD len, DIR_IT
                 DIR_ENTRY_LONG* l = (DIR_ENTRY_LONG*)(entry - 1);
                 if (islong(l->Attr))
                 {
-                    char temp2[11];
+                    BYTE temp2[11];
                     memcpy(temp2, entry->Name, 11);
-                    if (temp2[0] == 0xE5)
+                    BYTE sum = SalFatShortNameChecksum(temp2);
+                    BOOL sumKnown = TRUE;
+                    if (temp2[0] == SALFAT_NAME_DELETED)
                     {
-                        WCHAR firstchar;
-                        int i = 0;
-                        // special case: dots on the beginning of long name doesn't make it into short name
-                        while (i < 5 && (firstchar = ((WCHAR*)l->Name1)[i]) == '.')
-                            i++;
-                        // first letter reconstruction to get original checksum
-                        WideCharToMultiByte(CP_ACP, 0, &firstchar, 1, temp2, 1, NULL, NULL);
-                        temp2[0] = (char)(UINT_PTR)CharUpper((LPTSTR)temp2[0]);
+                        // first letter reconstruction to get the original checksum (feature 114:
+                        // the byte Windows writes - OEM code page, upper case, '_' for a character
+                        // outside it - then the old ANSI guess; the first that matches wins)
+                        WCHAR lfn13[13];
+                        memcpy(lfn13, l->Name1, 10);
+                        memcpy(lfn13 + 5, l->Name2, 12);
+                        memcpy(lfn13 + 11, l->Name3, 4);
+                        BYTE cand[3];
+                        int ncand = SalFatLostFirstByteCandidates(lfn13, 13, GetOEMCP(), GetACP(), cand, 3);
+                        sum = 0;
+                        BOOL found = FALSE;
+                        for (int c = 0; c < ncand && !found; c++)
+                        {
+                            temp2[0] = cand[c];
+                            BYTE s = SalFatShortNameChecksum(temp2);
+                            if (s == l->Chksum)
+                            {
+                                sum = s;
+                                found = TRUE;
+                            }
+                        }
+                        sumKnown = found; // no match: no long name belongs to this entry
                     }
-                    BYTE sum = ChkSum((BYTE*)temp2);
                     int ord;
                     int last_ord = 0;
                     BOOL existing = (entry->Name[0] != 0xE5);
 
-                    // read long records in case checksum match and ord is increasing (+1) for existing
-                    while (l >= (DIR_ENTRY_LONG*)buffer && islong(l->Attr) && l->Chksum == sum)
+                    // read long records in case checksum match and ord is increasing (+1) for existing;
+                    // feature 114: never more than the 63 entries a long name can have ('long_name' holds
+                    // 63 x 13 units) - a deleted run of entries with one checksum could be longer
+                    while (sumKnown && l >= (DIR_ENTRY_LONG*)buffer && islong(l->Attr) && l->Chksum == sum &&
+                           long_len + 13 <= 63 * 13)
                     {
                         ord = l->Ord & LONG_ENTRY_ORD_MASK;
                         if (existing && ord != last_ord + 1)
@@ -595,9 +613,13 @@ BOOL CFATSnapshot<CHAR>::DecodeDirectoryClusters(BYTE* buffer, DWORD len, DIR_IT
                 }
             }
 
-            // convert to 8.3 name
-            char name8_3[13];
-            if (!ConvertFATName(entry->Name, name8_3))
+            // convert to 8.3 name (feature 114: decoded here, from the raw bytes - the deletion
+            // marker becomes the '$' placeholder, 0x05 the real 0xE5 byte, the bytes are read in the
+            // OEM code page; nothing downstream applies a FAT rule to a name any more)
+            WCHAR name8_3[16];
+            BOOL firstCharLost = FALSE;
+            if (SalFatShortNameToW((const BYTE*)entry->Name, entry->NTRes, long_len == 0, GetOEMCP(),
+                                   name8_3, _countof(name8_3), &firstCharLost) == 0)
             {
                 TRACE_E("DecodeDirectoryClusters: Error converting to 8.3 name.");
                 continue; // skip invalid name
@@ -637,15 +659,14 @@ BOOL CFATSnapshot<CHAR>::DecodeDirectoryClusters(BYTE* buffer, DWORD len, DIR_IT
                 fname->FNName = String<CHAR>::NewFromUnicode(long_name, (unsigned long)wcslen(long_name));
                 if (fname->FNName == NULL)
                     goto lowmem;
-                fname->DOSName = String<CHAR>::NewFromASCII(name8_3);
+                fname->DOSName = String<CHAR>::NewFromUnicode(name8_3, (unsigned long)wcslen(name8_3));
                 if (fname->DOSName == NULL)
                     goto lowmem;
             }
             else
             {
-                if ((entry->NTRes & 0x08) != 0)
-                    _strlwr(name8_3);
-                fname->FNName = String<CHAR>::NewFromASCII(name8_3);
+                // the NT case bits (0x08 base, 0x10 extension) were applied by SalFatShortNameToW
+                fname->FNName = String<CHAR>::NewFromUnicode(name8_3, (unsigned long)wcslen(name8_3));
                 if (fname->FNName == NULL)
                     goto lowmem;
                 fname->DOSName = NULL;
@@ -657,6 +678,8 @@ BOOL CFATSnapshot<CHAR>::DecodeDirectoryClusters(BYTE* buffer, DWORD len, DIR_IT
             record->Flags = 0;
             if (deleteddir || entry->Name[0] == 0xE5)
                 record->Flags |= FR_FLAGS_DELETED;
+            if (long_len == 0 && firstCharLost)
+                record->Flags |= FR_FLAGS_NAMEFIRSTCHARLOST; // feature 114: the '$' stands for a lost character
 
             // filesize
 

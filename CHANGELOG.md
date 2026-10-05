@@ -53,6 +53,27 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Undelete restores deleted files under their own names, and from the
+  volume chosen.** A file whose name begins with one of 4,096 Chinese and
+  Japanese characters (U+5000 to U+5FFF) was listed with a "$" and two
+  garbled characters, and restoring it asked for "the first letter of the
+  damaged name" and wrote the file under a name that was not its own - on
+  every file system (NTFS, exFAT, FAT). A rule that belongs only to the old
+  8.3 short names of FAT disks had been applied to all names; it now applies
+  only there. On FAT disks (USB sticks, memory cards) also: short names with
+  accented letters are read correctly, a deleted file whose long name starts
+  with an accented letter, or with a letter Windows leaves out of the 8.3
+  name, keeps its long name (it was shown under its 8.3 name), the
+  lower-case markers of 8.3 names are honoured, and the
+  "All" button of the damaged-name question also remembers an accented
+  letter. A disk mounted into a folder whose name contains a character
+  outside plain English letters was shown with a wrong name, and choosing it
+  could open the disk the folder lies on instead of the mounted one. Also
+  fixed: an alternate data stream with a very long name could be mixed into
+  the file's main content when restoring from NTFS, error messages showed
+  file names garbled in translated user interfaces, and several overruns on
+  long names, including a crash when restoring two deleted files of the same
+  very long name (feature 114).
 - **A file that cannot be read while it is added into an archive no longer
   costs the archive's own copy of it.** Adding files into a ZIP archive (F5,
   F6, or an edited file packed back) that already holds a file of the same

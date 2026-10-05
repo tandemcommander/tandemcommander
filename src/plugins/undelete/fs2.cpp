@@ -119,15 +119,22 @@ BOOL CPluginFSInterface::RootPathFromFull(const char* pluginFullPath, char* root
         *sep = 0;
     }
 
-    // now determine volume root
-    BOOL ret = GetVolumePathName(pluginFullPath, rootPath, (DWORD)bufferSize);
+    // now determine volume root (feature 114: the W function - GetVolumePathNameA read the UTF-8
+    // path in the code page, a mount folder named outside ASCII "did not exist" and the volume of
+    // its nearest existing parent was opened instead)
+    BOOL ret = UndGetVolumePathNameU8(pluginFullPath, rootPath, (DWORD)bufferSize);
     if (ret)
     {
         size_t len = strlen(rootPath);
-        if ('\\' != rootPath[len - 1])
+        if (len == 0 || '\\' != rootPath[len - 1])
         {
-            rootPath[len - 1] = '\\';
-            rootPath[len] = 0;
+            if (len + 1 < bufferSize) // feature 114: appended (the old code overwrote the last character)
+            {
+                rootPath[len] = '\\';
+                rootPath[len + 1] = 0;
+            }
+            else
+                ret = FALSE;
         }
     }
     return ret;
@@ -191,24 +198,14 @@ CPluginFSInterface::IsOurPath(int currentFSNameIndex, int fsNameIndex, const cha
     return FALSE;
 }
 
-// function for comparing file names (initial '$' equals to 0xE5)
+// function for comparing file names; feature 114: the names are UTF-8 as listed - the FAT
+// parser puts the '$' placeholder for a lost first character into the name itself, so no byte
+// of a name is special here any more (an initial 0xE5 is the lead byte of U+5000..U+5FFF)
 int namecmp(char* name1, char* name2)
 {
     CALL_STACK_MESSAGE_NONE
     // CALL_STACK_MESSAGE1("namecmp(, )");
-    if ((name1[0] == '$' && name2[0] == 0xE5) || (name1[0] == 0xE5 && name2[0] == '$'))
-        return _stricmp(name1 + 1, name2 + 1);
     return _stricmp(name1, name2);
-}
-
-void CPluginFSInterface::Replace0xE5(char* filename)
-{
-    CALL_STACK_MESSAGE_NONE
-    // CALL_STACK_MESSAGE1("CPluginFSInterface::Replace0xE5()");
-    if (filename[0] == 0xE5)
-        filename[0] = '$';
-    else if (filename[0] == 0x05)
-        filename[0] = 0xE5; // there is E5 support in Kanji
 }
 
 #define PATHSEP "\\/"
@@ -456,7 +453,6 @@ CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
             FatalError = TRUE;
             return String<char>::Error(IDS_UNDELETE, IDS_LOWMEM);
         }
-        Replace0xE5(fd.Name);
         fd.NameLen = strlen(fd.Name);
         fd.Ext = fd.Name + fd.NameLen;
 
@@ -468,7 +464,6 @@ CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                 FatalError = TRUE;
                 return String<char>::Error(IDS_UNDELETE, IDS_LOWMEM);
             }
-            Replace0xE5(fd.DosName);
         }
         else
             fd.DosName = NULL;
@@ -660,29 +655,54 @@ BOOL CPluginFSInterface::AppendPath(char* buffer, char* path, char* name, BOOL* 
     return TRUE;
 }
 
-char* CPluginFSInterface::FixDamagedName(char* name)
+// TRUE when 'len' bytes at 's' are exactly one UTF-8 character
+static BOOL IsOneUtf8Char(const char* s, size_t len)
+{
+    unsigned char b = (unsigned char)s[0];
+    size_t seq = b < 0x80 ? 1 : (b >= 0xC2 && b <= 0xDF) ? 2 : (b >= 0xE0 && b <= 0xEF) ? 3 : (b >= 0xF0 && b <= 0xF4) ? 4 : 0;
+    if (seq == 0 || seq != len)
+        return FALSE;
+    for (size_t i = 1; i < len; i++)
+        if (((unsigned char)s[i] & 0xC0) != 0x80)
+            return FALSE;
+    return TRUE;
+}
+
+// Feature 114: a name is damaged only when the FAT parser says so - FR_FLAGS_NAMEFIRSTCHARLOST,
+// the first byte of a short name was overwritten by the deletion marker and the name starts with
+// the placeholder '$'. Before, any name whose first BYTE was 0xE5 counted: every UTF-8 name of
+// U+5000..U+5FFF on every file system, and the user was asked to replace one byte of it.
+char* CPluginFSInterface::FixDamagedName(FILE_RECORD_I<char>* record, char* name)
 {
     CALL_STACK_MESSAGE1("CPluginFSInterface::FixDamagedName()");
 
-    if (name[0] != 0xE5)
+    if ((record->Flags & FR_FLAGS_NAMEFIRSTCHARLOST) == 0 || name[0] != '$')
         return name;
 
     static char buffer[MAX_PATH];
-    lstrcpyn(buffer, name, MAX_PATH);
-    if (AllSubstChar)
+    const char* rest = name + 1; // the placeholder is one byte
+    if (AllSubstPrefix[0] != 0)
     {
-        buffer[0] = AllSubstChar;
+        _snprintf_s(buffer, _TRUNCATE, "%s%s", AllSubstPrefix, rest);
         return buffer;
     }
 
-    Replace0xE5(buffer);
+    lstrcpyn(buffer, name, MAX_PATH);
     if (Progress)
         Progress->SetSourceFileName(buffer);
     CFileNameDialog dlg(hErrParent, buffer);
     if (dlg.Execute())
     {
-        if (dlg.AllPressed && !strcmp(buffer + 1, name + 1))
-            AllSubstChar = buffer[0];
+        // "All": the same first character for every damaged name - remembered when the user
+        // replaced only the placeholder, by one character (UTF-8: one to four bytes)
+        size_t restLen = strlen(rest);
+        size_t bufLen = strlen(buffer);
+        if (dlg.AllPressed && bufLen > restLen && strcmp(buffer + bufLen - restLen, rest) == 0 &&
+            IsOneUtf8Char(buffer, bufLen - restLen))
+        {
+            memcpy(AllSubstPrefix, buffer, bufLen - restLen);
+            AllSubstPrefix[bufLen - restLen] = 0;
+        }
         return buffer;
     }
     else
@@ -728,7 +748,9 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
     CALL_STACK_MESSAGE2("CPluginFSInterface::CopyFile(, , %d)", view);
 
     BOOL ret;
-    char path[MAX_PATH + MAX_PATH]; // + for stream name
+    // + for a stream name: an NTFS stream name has up to 255 UTF-16 units, 765 bytes of UTF-8
+    // (feature 114: was MAX_PATH - a longer name was cut inside a character)
+    char path[MAX_PATH + 3 * MAX_PATH];
     int oldlen;
 
     if (!view)
@@ -738,11 +760,10 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
         SalamanderGeneral->SalPathAddBackslash(SourcePath, MAX_PATH);
         char* namepos = SourcePath + strlen(SourcePath);
         SalamanderGeneral->SalPathAppend(SourcePath, filename, MAX_PATH);
-        Replace0xE5(namepos);
         Progress->SetSourceFileName(SourcePath);
 
         // fix name if needed
-        char* name = FixDamagedName(filename);
+        char* name = FixDamagedName(record, filename);
         if (name == NULL)
             return FALSE;
         lstrcpyn(namepos, name, MAX_PATH - (int)(namepos - SourcePath));
@@ -804,7 +825,8 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
             if (BackupEncryptedFiles)
             {
                 lstrcpyn(pathend, ".bak", MAX_PATH);
-                strcat(SourcePath, ".bak");
+                if (strlen(SourcePath) + 4 < _countof(SourcePath)) // feature 114: was an unbounded strcat
+                    strcat(SourcePath, ".bak");
             }
         }
         else
@@ -813,7 +835,7 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
             if (stream->DSName != NULL)
             {
                 *pathend = ':';
-                lstrcpyn(pathend + 1, stream->DSName, MAX_PATH - 1);
+                lstrcpyn(pathend + 1, stream->DSName, 3 * MAX_PATH);
             }
             else
                 *pathend = 0;
@@ -1022,13 +1044,11 @@ BOOL CPluginFSInterface::CopyDir(FILE_RECORD_I<char>* record, char* filename, ch
     // print source path to the dialog box
     int oldlen = (int)strlen(SourcePath);
     SalamanderGeneral->SalPathAddBackslash(SourcePath, MAX_PATH);
-    char* namepos = SourcePath + strlen(SourcePath);
     SalamanderGeneral->SalPathAppend(SourcePath, filename, MAX_PATH);
-    Replace0xE5(namepos);
     Progress->SetSourceFileName(SourcePath);
 
     // fix name if needed
-    char* name = FixDamagedName(filename);
+    char* name = FixDamagedName(record, filename);
     if (name == NULL)
         return FALSE;
 
@@ -1168,7 +1188,7 @@ void UndeleteGetResolvedRootPath(const char* path, char* resolvedPath)
     SalamanderGeneral->ResolveSubsts(resolvedPath);
     char rootPath[MAX_PATH];
     SalamanderGeneral->GetRootPath(rootPath, resolvedPath);
-    if (!SalamanderGeneral->IsUNCPath(rootPath) && GetDriveType(rootPath) == DRIVE_FIXED) // reparse points exist only on fixed drives
+    if (!SalamanderGeneral->IsUNCPath(rootPath) && OS<char>::OS_GetVolumeType(rootPath) == VT_DRIVE_FIXED) // reparse points exist only on fixed drives (feature 114: W layer)
     {
         BOOL cutPathIsPossible = TRUE;
         SalamanderGeneral->ResolveLocalPathWithReparsePoints(resolvedPath, path, &cutPathIsPossible, NULL, NULL, NULL, NULL, NULL);
@@ -1194,7 +1214,9 @@ BOOL CPluginFSInterface::PrepareRawAPI(char* targetPath, BOOL allowBackup)
     UndeleteGetResolvedRootPath(targetPath, resolvedPath);
 
     DWORD flags;
-    if (!GetVolumeInformation(resolvedPath, NULL, 0, NULL, NULL, &flags, NULL, 0) ||
+    // feature 114: the W layer - resolvedPath is UTF-8 (a share named outside ASCII failed and
+    // the encrypted files were copied as backups although the target supports EFS)
+    if (!OS<char>::OS_GetVolumeInfo(resolvedPath, NULL, 0, NULL, NULL, &flags, NULL, 0) ||
         !(flags & FILE_SUPPORTS_ENCRYPTION))
     {
         if (allowBackup)
@@ -1297,7 +1319,7 @@ CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsName, HW
     SkipAllLongPaths = FALSE;
     SilentMask = 0;
     strcpy(SourcePath, Path);
-    AllSubstChar = 0;
+    AllSubstPrefix[0] = 0;
 
     // fixme: test if Volume is open and valid?
 
@@ -1404,8 +1426,8 @@ BOOL CPluginFSInterface::GetTempDirOutsideRoot(HWND parent, char* buffer, char**
     {
         while (ConfigTempPath[0] == 0 || SalamanderGeneral->PathsAreOnTheSameVolume(Root, ConfigTempPath, NULL))
         {
-            char text[200];
-            sprintf(text, String<char>::LoadStr(IDS_TEMPDIR), path[0], path[0]);
+            char text[1024]; // feature 114: was 200 bytes - the Ukrainian text is 226 (an overrun)
+            _snprintf_s(text, _TRUNCATE, String<char>::LoadStr(IDS_TEMPDIR), path[0], path[0]);
             // feature 104: the Unicode folder picker, the folder as UTF-8 - the plug-in service
             // GetTargetDirectory returns it in the code page (best fit, a frozen contract), and
             // ConfigTempPath is used as a UTF-8 path: a folder outside ASCII failed, a look-alike

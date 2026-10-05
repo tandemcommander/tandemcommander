@@ -53,49 +53,9 @@
 //                              of FILE_RECORD structures
 //
 
-BOOL ConvertFATName(const char* fatName, char* name) // convert name from format 83 to 8.3
-{
-    CALL_STACK_MESSAGE_NONE
-    //CALL_STACK_MESSAGE2("ConvertFATName(%s, )", fatName);
-    char* p = name;
-    for (int i = 0; i < 11; i++)
-    {
-        if (i == 8)
-        {
-            // of there is extension, insert dot
-            if (fatName[i] != ' ')
-            {
-                if (p == name) // wrong file name
-                    return FALSE;
-                *p = '.';
-                p++;
-            }
-            else
-                break; // we can leave
-        }
-        if (fatName[i] != ' ')
-        {
-            *p = fatName[i];
-            if (i == 0 && *p == 0x05)
-                *p = (char)0xE5; // 0x05 is used instead of 0xE5 in the Japan/KANJI
-            p++;
-        }
-    }
-    if (p == name)
-        return FALSE; // wrong file name
-    *p = 0;
-    return TRUE;
-}
-
-// MS function for 8.3 name checksum
-BYTE ChkSum(BYTE* pFcpName)
-{
-    CALL_STACK_MESSAGE1("ChkSum()");
-    BYTE sum = 0;
-    for (int fcbNameLen = 11; fcbNameLen != 0; fcbNameLen--)
-        sum = (((sum & 1) ? 0x80 : 0) + (sum >> 1) + *pFcpName++) & 0xff;
-    return sum;
-}
+// feature 114: ConvertFATName (which applied the 0x05 escape) and ChkSum moved to
+// src/common/salfatname.h (SalFatShortNameToW, SalFatShortNameChecksum), where the short-name
+// rules are applied to the raw entry bytes before any conversion
 
 #ifdef ENABLE_TRACE_X
 void DumpEntry(DIR_ENTRY_SHORT* entry)
