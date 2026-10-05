@@ -1098,7 +1098,10 @@ void CEnterStrDlg::Validate(CTransferInfo& ti)
 
 void CEnterStrDlg::Transfer(CTransferInfo& ti)
 {
-    ti.EditLine(IDE_STRING, Data, DataSize);
+    if (HideChars) // a password, an account or a proxy password (feature 116: 100 characters, any of them fits)
+        FTPSecretEditLine(ti, IDE_STRING, Data, DataSize);
+    else
+        ti.EditLine(IDE_STRING, Data, DataSize);
 }
 
 INT_PTR
@@ -1162,13 +1165,24 @@ void CLoginErrorDlg::Transfer(CTransferInfo& ti)
 
     if (ti.Type == ttDataFromWindow)
         proxyScriptParamsBackup = *ProxyScriptParams;
-    ti.EditLine(IDE_USERNAME, ProxyScriptParams->User, USER_MAX_SIZE);
-    ti.EditLine(IDE_PASSWORD, ProxyScriptParams->Password, PASSWORD_MAX_SIZE);
-    ti.EditLine(IDE_ACCOUNT, ProxyScriptParams->Account, ACCOUNT_MAX_SIZE);
+    // feature 116: Retry reads only the fields whose text is not the value the connection used - a
+    // field still showing it keeps that value's bytes (FTPFieldKeepsStoredValue): a user name or
+    // password that 0.1.8 saved in code-page bytes is retried as those bytes (re-read, it was
+    // refused as too long since 104, or would become other bytes); the secret fields take 100
+    // characters and hold any of them
+    BOOL fromWindow = ti.Type == ttDataFromWindow;
+    if (!fromWindow || !FTPFieldKeepsStoredValue(HWindow, IDE_USERNAME, ProxyScriptParams->User))
+        ti.EditLine(IDE_USERNAME, ProxyScriptParams->User, USER_MAX_SIZE);
+    if (!fromWindow || !FTPFieldKeepsStoredValue(HWindow, IDE_PASSWORD, ProxyScriptParams->Password))
+        FTPSecretEditLine(ti, IDE_PASSWORD, ProxyScriptParams->Password, PASSWORD_MAX_SIZE);
+    if (!fromWindow || !FTPFieldKeepsStoredValue(HWindow, IDE_ACCOUNT, ProxyScriptParams->Account))
+        FTPSecretEditLine(ti, IDE_ACCOUNT, ProxyScriptParams->Account, ACCOUNT_MAX_SIZE);
     if (ProxyUsed)
     {
-        ti.EditLine(IDE_PROXYUSER, ProxyScriptParams->ProxyUser, USER_MAX_SIZE);
-        ti.EditLine(IDE_PROXYPASSWD, ProxyScriptParams->ProxyPassword, PASSWORD_MAX_SIZE);
+        if (!fromWindow || !FTPFieldKeepsStoredValue(HWindow, IDE_PROXYUSER, ProxyScriptParams->ProxyUser))
+            ti.EditLine(IDE_PROXYUSER, ProxyScriptParams->ProxyUser, USER_MAX_SIZE);
+        if (!fromWindow || !FTPFieldKeepsStoredValue(HWindow, IDE_PROXYPASSWD, ProxyScriptParams->ProxyPassword))
+            FTPSecretEditLine(ti, IDE_PROXYPASSWD, ProxyScriptParams->ProxyPassword, PASSWORD_MAX_SIZE);
     }
     ti.CheckBox(IDC_RETRYWITHOUTASK, RetryWithoutAsking);
     if (!HideApplyToAll)
@@ -1181,6 +1195,14 @@ void CLoginErrorDlg::Transfer(CTransferInfo& ti)
                         strcmp(proxyScriptParamsBackup.Account, ProxyScriptParams->Account) != 0 ||
                         ProxyUsed && strcmp(proxyScriptParamsBackup.ProxyUser, ProxyScriptParams->ProxyUser) != 0 ||
                         ProxyUsed && strcmp(proxyScriptParamsBackup.ProxyPassword, ProxyScriptParams->ProxyPassword) != 0);
+        // feature 116: a refused field (EditLine: too long) emptied its value in place - the values
+        // the connection used come back (the dialog stays; the stored-bytes rule compares with them)
+        if (!ti.IsGood())
+        {
+            *ProxyScriptParams = proxyScriptParamsBackup;
+            LoginChanged = FALSE;
+        }
+        SecureZeroMemory(&proxyScriptParamsBackup, sizeof(proxyScriptParamsBackup)); // feature 116: it holds the passwords
     }
 }
 
@@ -1499,6 +1521,31 @@ void CProxyServerDlg::Validate(CTransferInfo& ti)
     int proxyType = (int)SendMessage(combo, CB_GETCURSEL, 0, 0);
     if (proxyType == CB_ERR || proxyType < 0 || proxyType > fpstOwnScript)
         proxyType = fpstSocks4;
+    if (proxyType == fpstSocks5)
+    {
+        // feature 116: SOCKS 5 (RFC 1929) carries at most 255 bytes of user name and of password;
+        // the password field holds up to 300 bytes - refused here instead of failing at connect
+        // (a value the field shows from storage counts with its stored bytes)
+        int userBytes = FTPFieldBytes(HWindow, IDE_PRXSRV_USER);
+        int passBytes = 0;
+        if (!IsWindowVisible(GetDlgItem(HWindow, IDB_PRXSRV_PASSWD_CHANGE))) // a locked password is checked when it is sent
+        {
+            passBytes = FTPFieldBytes(HWindow, IDE_PRXSRV_PASSWD);
+            if (passBytes > 255 && FTPFieldKeepsEncryptedValue(HWindow, IDE_PRXSRV_PASSWD, Proxy->ProxyEncryptedPassword, Proxy->ProxyEncryptedPasswordSize))
+                passBytes = FTPEncryptedValueBytes(Proxy->ProxyEncryptedPassword, Proxy->ProxyEncryptedPasswordSize);
+        }
+        int tooLong = 0;
+        if (userBytes > 255)
+            tooLong = IDE_PRXSRV_USER;
+        else if (passBytes > 255)
+            tooLong = IDE_PRXSRV_PASSWD;
+        if (tooLong != 0)
+        {
+            WinLibRefuseTooLongText(HWindow, GetDlgItem(HWindow, tooLong));
+            ti.ErrorOn(tooLong);
+            return;
+        }
+    }
     BOOL proxyHostNeeded = HaveHostAndPort((CFTPProxyServerType)proxyType);
     char proxyHost[HOST_MAX_SIZE];
     proxyHost[0] = 0;
@@ -1646,9 +1693,17 @@ void CProxyServerDlg::Transfer(CTransferInfo& ti)
         proxyPort = 0;
     }
     ti.EditLine(IDE_PRXSRV_USER, proxyUser, USER_MAX_SIZE);
+    BOOL keepStoredPassword = FALSE; // feature 116: TRUE = the field shows the stored password - its bytes stay
     if (ti.Type == ttDataToWindow || HavePassword((CFTPProxyServerType)proxyType))
     {
-        ti.EditLine(IDE_PRXSRV_PASSWD, proxyPlainPassword, PASSWORD_MAX_SIZE);
+        if (ti.Type == ttDataFromWindow && !IsWindowVisible(GetDlgItem(HWindow, IDB_PRXSRV_PASSWD_CHANGE)) &&
+            FTPFieldKeepsEncryptedValue(HWindow, IDE_PRXSRV_PASSWD, Proxy->ProxyEncryptedPassword, Proxy->ProxyEncryptedPasswordSize))
+        {
+            keepStoredPassword = TRUE; // they may be a code-page form saved by 0.1.8 (re-read, they would become UTF-8)
+            proxyPlainPassword[0] = 0;
+        }
+        else
+            FTPSecretEditLine(ti, IDE_PRXSRV_PASSWD, proxyPlainPassword, PASSWORD_MAX_SIZE); // feature 116
         ti.CheckBox(IDC_PRXSRV_SAVEPASSWD, saveProxyPassword);
     }
     else
@@ -1668,12 +1723,20 @@ void CProxyServerDlg::Transfer(CTransferInfo& ti)
     }
     if (ti.Type == ttDataToWindow)
         EnableControls(proxyType != fpstOwnScript, FALSE);
+    if (ti.Type == ttDataFromWindow && !ti.IsGood())
+    {
+        // feature 116 (the 104 rule "a refusal is never stored"): a field was refused (EditLine:
+        // too long) - nothing is stored, the proxy server keeps its values; the dialog stays with
+        // the field focused (CDialog::TransferData)
+        SecureZeroMemory(proxyPlainPassword, sizeof(proxyPlainPassword));
+        return;
+    }
     if (ti.Type == ttDataFromWindow)
     {
         BOOL deallocPassword = FALSE;                                 // FALSE = the password has not changed yet
         BYTE* proxyEncryptedPassword = Proxy->ProxyEncryptedPassword; // it may be only scrambled
         int proxyEncryptedPasswordSize = Proxy->ProxyEncryptedPasswordSize;
-        if (!IsWindowVisible(GetDlgItem(HWindow, IDB_PRXSRV_PASSWD_CHANGE)))
+        if (!IsWindowVisible(GetDlgItem(HWindow, IDB_PRXSRV_PASSWD_CHANGE)) && !keepStoredPassword) // feature 116: see keepStoredPassword
         {
             if (proxyPlainPassword[0] == 0) // store an empty password as NULL
             {
@@ -1708,6 +1771,8 @@ void CProxyServerDlg::Transfer(CTransferInfo& ti)
         }
         memset(proxyPlainPassword, 0, lstrlen(proxyPlainPassword));
     }
+    if (ti.Type == ttDataToWindow)
+        SecureZeroMemory(proxyPlainPassword, sizeof(proxyPlainPassword)); // feature 116: the plain password is in the field now
 }
 
 void CProxyServerDlg::EnableControls(BOOL initScriptText, BOOL initProxyPort)
@@ -1989,35 +2054,7 @@ CProxyServerDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_APP_SHOWPASSWORD:
     {
-        MSGBOXEX_PARAMS params;
-        memset(&params, 0, sizeof(params));
-        params.HParent = HWindow;
-        params.Flags = MSGBOXEX_YESNO | MSGBOXEX_ESCAPEENABLED |
-                       MSGBOXEX_ICONQUESTION | MSGBOXEX_SILENT;
-        params.Caption = LoadStr(IDS_FTPPLUGINTITLE);
-        params.Text = LoadStr(IDS_SHOWPASSWORD_CONFIRMATION);
-        if (SalamanderGeneral->SalMessageBoxEx(&params) == IDYES)
-        {
-            CSalamanderPasswordManagerAbstract* passwordManager = SalamanderGeneral->GetSalamanderPasswordManager();
-            // ask for the master password even if we already know it
-            if (!passwordManager->IsUsingMasterPassword() || passwordManager->AskForMasterPassword(HWindow))
-            {
-                // take the password directly from the edit line
-                char plainPassword[PASSWORD_MAX_SIZE];
-                GetWindowText((HWND)wParam, plainPassword, PASSWORD_MAX_SIZE);
-                plainPassword[PASSWORD_MAX_SIZE - 1] = 0;
-
-                char buff[1000];
-                _snprintf_s(buff, _TRUNCATE, LoadStr(IDS_PASSWORDIS), plainPassword);
-                params.Flags = MSGBOXEX_YESNO | MSGBOXEX_ESCAPEENABLED | MSGBOXEX_DEFBUTTON2 |
-                               MSGBOXEX_ICONINFORMATION | MSGBOXEX_SILENT;
-                params.Text = buff;
-                if (SalamanderGeneral->SalMessageBoxEx(&params) == IDYES)
-                    SalamanderGeneral->CopyTextToClipboard(plainPassword, -1, FALSE, NULL);
-                memset(plainPassword, 0, lstrlen(plainPassword));
-                memset(buff, 0, 1000);
-            }
-        }
+        FTPShowPasswordOfEdit(HWindow, (HWND)wParam); // feature 116: read and shown as UTF-16
         return 0;
     }
 
@@ -2097,7 +2134,7 @@ CProxyServerDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     { // empty password with Save Password turned off -> hide Unlock and show an empty password edit box
                         CTransferInfo ti(HWindow, ttDataToWindow);
                         char emptyBuff[] = "";
-                        ti.EditLine(IDE_PRXSRV_PASSWD, emptyBuff, PASSWORD_MAX_SIZE);
+                        FTPSecretEditLine(ti, IDE_PRXSRV_PASSWD, emptyBuff, PASSWORD_MAX_SIZE);
 
                         ShowHidePasswordControls(FALSE, FALSE);
                     }
@@ -2115,7 +2152,7 @@ CProxyServerDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 // the user wanted to delete the password
                 CTransferInfo ti(HWindow, ttDataToWindow);
                 char emptyBuff[] = "";
-                ti.EditLine(IDE_PRXSRV_PASSWD, emptyBuff, PASSWORD_MAX_SIZE);
+                FTPSecretEditLine(ti, IDE_PRXSRV_PASSWD, emptyBuff, PASSWORD_MAX_SIZE);
 
                 // clear the save password checkbox
                 BOOL clear = FALSE;
@@ -2145,7 +2182,7 @@ CProxyServerDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     // the user wanted to delete the password
                     CTransferInfo ti(HWindow, ttDataToWindow);
                     char emptyBuff[] = "";
-                    ti.EditLine(IDE_PRXSRV_PASSWD, emptyBuff, PASSWORD_MAX_SIZE);
+                    FTPSecretEditLine(ti, IDE_PRXSRV_PASSWD, emptyBuff, PASSWORD_MAX_SIZE);
                     // clear the save password checkbox
                     BOOL clear = FALSE;
                     ti.CheckBox(IDC_PRXSRV_SAVEPASSWD, clear);
@@ -2155,7 +2192,7 @@ CProxyServerDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     // insert the decrypted password into the edit line
                     CTransferInfo ti(HWindow, ttDataToWindow);
                     char emptyBuff[] = "";
-                    ti.EditLine(IDE_PRXSRV_PASSWD, Proxy->ProxyEncryptedPassword == NULL ? emptyBuff : proxyPlainPassword, PASSWORD_MAX_SIZE);
+                    FTPSecretEditLine(ti, IDE_PRXSRV_PASSWD, Proxy->ProxyEncryptedPassword == NULL ? emptyBuff : proxyPlainPassword, PASSWORD_MAX_SIZE);
 
                     // zero the buffer
                     if (proxyPlainPassword != NULL)

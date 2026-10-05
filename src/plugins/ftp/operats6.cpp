@@ -951,7 +951,11 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
                 BOOL fail = FALSE;
                 char errDescrBuf[300];
                 BOOL needUserInput;
-                if (Oper->PrepareNextScriptCmd(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH, &cmdLen,
+                // feature 116: 'buf' is CFTPWorker::HandleEvent's buffer of 700 + FTP_MAX_PATH bytes; it was
+                // passed as 200 + FTP_MAX_PATH, which the longest built-in login line with the 300-byte
+                // secrets (608 bytes, "PASS $(Password)@$(ProxyPassword)") would overflow - cut, CRLF included
+                static_assert(FTPLOGIN_LONGEST_BUILTIN_LINE <= 700 + FTP_MAX_PATH, "a built-in login command would be cut");
+                if (Oper->PrepareNextScriptCmd(buf, 700 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH, &cmdLen,
                                                &ProxyScriptExecPoint, ProxyScriptLastCmdReply,
                                                errDescrBuf, &needUserInput) &&
                     !needUserInput)

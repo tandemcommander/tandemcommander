@@ -1577,6 +1577,9 @@ protected:
 //
 // subclass for an edit line containing a password; on ctrl+right-click it posts
 // command WM_APP_SHOWPASSWORD to the parent
+// feature 116: attached with AttachToWindowKeepKind - the edit stays a Unicode window (a code-page
+// subclass turned every typed or shown character outside the code page into '?' or a best-fit
+// look-alike before the plug-in read the field: Cyrillic "Zhaba" -> "????", "voil<U+00E0>" -> "voila")
 
 #define WM_APP_SHOWPASSWORD WM_APP + 50 // [hWnd, lParam] - user ctrl+right-clicked in the edit line, hWnd is the edit window handle, lParam is the click position, see WM_RBUTTONDOWN/lParam
 
@@ -1588,3 +1591,29 @@ public:
 protected:
     virtual LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
+
+// feature 116: fills or reads a secret field (password, account, proxy or anonymous password):
+// CTransferInfo::EditLine, and when filling, the field's limit of SAL_FTP_SECRET_MAX_CHARS
+// characters (EditLine would set 'bufferSize' - 1 = 300); 'bufferSize' must be at least
+// SAL_FTP_SECRET_BUF (PASSWORD_MAX_SIZE, ACCOUNT_MAX_SIZE), so any accepted text fits as UTF-8
+void FTPSecretEditLine(CTransferInfo& ti, int ctrlID, char* buffer, DWORD bufferSize);
+
+// feature 116: TRUE = field 'ctrlID' shows exactly the stored value 'stored' (plain bytes), so the
+// dialog keeps the stored bytes instead of reading the field (SalFtpFieldShowsStored): a password
+// or user name that 0.1.8 saved in code-page bytes is then sent as those bytes, not re-read as
+// UTF-8 (other bytes); any other text in the field is read
+BOOL FTPFieldKeepsStoredValue(HWND dlg, int ctrlID, const char* stored);
+// the same for a stored password in the password manager's form ('encrypted' may be NULL = none);
+// FALSE when it cannot be decrypted (the dialogs lock such a field)
+BOOL FTPFieldKeepsEncryptedValue(HWND dlg, int ctrlID, const BYTE* encrypted, int encryptedSize);
+// feature 116: the bytes (terminator not counted) of the UTF-8 (WTF-8) form of field 'ctrlID'
+// (0 for a missing or empty field)
+int FTPFieldBytes(HWND dlg, int ctrlID);
+// feature 116: the bytes of a stored password in the password manager's form, 0 when there is
+// none or it cannot be decrypted
+int FTPEncryptedValueBytes(const BYTE* encrypted, int encryptedSize);
+
+// feature 116: the "show password" box (Ctrl+right click on a password field, after the
+// confirmation and the master password): the field's text read as UTF-16, shown and optionally
+// copied as Unicode text (was read through the code page: '?' and best-fit look-alikes)
+void FTPShowPasswordOfEdit(HWND dlg, HWND edit);

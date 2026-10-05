@@ -1171,16 +1171,30 @@ void CSocket::Socks5SendLogin(int index, BOOL* csLeft, BOOL isConnect)
     char buf[600];
     buf[0] = 1; // 1 = version
     int userLen = (int)strlen(HandleNULLStr(ProxyUser));
-    if (userLen > 255)
-        userLen = 255; // longer names simply cannot be entered in a SOCKS 5 request
     int passLen = (int)strlen(HandleNULLStr(ProxyPassword));
-    if (passLen > 255)
-        passLen = 255; // longer passwords simply cannot be entered in a SOCKS 5 request
+    if (userLen > 255 || passLen > 255)
+    {
+        // feature 116: a SOCKS 5 request (RFC 1929) carries at most 255 bytes of user name and of
+        // password; a longer one (the proxy password holds 300 bytes since 116) is NOT cut - a cut
+        // password fails the login anyway, possibly inside a UTF-8 character: the connection fails
+        // with the system's "too long" text (the proxy dialog refuses such a value up front)
+        ProxyErrorCode = pecSendingBytes;
+        ProxyWinError = ERROR_FILENAME_EXCED_RANGE;
+        SocketState = isConnect ? ssConnectFailed : ssListenFailed;
+        HANDLES(LeaveCriticalSection(&SocketCritSect));
+        if (isConnect)
+            ReceiveNetEvent(MAKELPARAM(FD_CONNECT, ERROR_INVALID_FUNCTION /* it just must not be NO_ERROR */), index);
+        else
+            ListeningForConnection(INADDR_NONE, 0, TRUE /* proxy error */);
+        *csLeft = TRUE;
+        return;
+    }
     buf[1] = userLen;
     memcpy(buf + 2, HandleNULLStr(ProxyUser), userLen);
     buf[2 + userLen] = passLen;
     memcpy(buf + 3 + userLen, HandleNULLStr(ProxyPassword), passLen);
     ProxySendBytes(buf, 3 + userLen + passLen, index, csLeft, isConnect);
+    SecureZeroMemory(buf, sizeof(buf)); // feature 116: it held the proxy password
 }
 
 void CSocket::Socks5SendRequest(int request, int index, BOOL* csLeft, BOOL isConnect)

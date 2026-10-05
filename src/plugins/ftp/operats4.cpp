@@ -1320,6 +1320,7 @@ void CFTPWorker::HandleEvent(CFTPWorkerEvent event, char* reply, int replySize, 
             SocketsThread->AddTimer(Msg, UID, GetTickCount() + 100, // give 0.1 seconds to possibly receive bytes from the socket (it may re-post FD_CLOSE, etc.)
                                     WORKER_CMDERRORTIMERID, NULL);  // ignore errors; at worst the user will press Stop
         }
+        SecureZeroMemory(buf, sizeof(buf)); // feature 116: the command may be "PASS <password>" (Write keeps its own copy of an unsent rest)
     }
     else
         HANDLES(LeaveCriticalSection(&WorkerCritSect));

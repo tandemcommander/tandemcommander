@@ -38,6 +38,7 @@
 #include "salfatname.h"     // feature 114
 #include "salvolpaths.h"    // feature 114
 #include "salnameorder.h"   // feature 115
+#include "salftpsecret.h"   // feature 116
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -7676,6 +7677,141 @@ static void TestUndeleteLeftovers115()
     }
 }
 
+// feature 116: the FTP plug-in's secret fields (salftpsecret.h) - a field of
+// SAL_FTP_SECRET_MAX_CHARS UTF-16 units always fits SAL_FTP_SECRET_BUF bytes as UTF-8 (WTF-8),
+// whatever the units are; one unit more may not (the field's limit is what makes "too long"
+// impossible); a field that shows the stored value keeps the stored bytes, which may not be what
+// re-reading it gives (a 0.1.8 code-page password)
+static void TestFtpSecret116()
+{
+    CHECK(SAL_FTP_SECRET_BUF == 301);
+    CHECK(SalFtpWorstUtf8Bytes(SAL_FTP_SECRET_MAX_CHARS) == SAL_FTP_SECRET_BUF - 1);
+    CHECK(SalFtpWorstUtf8Bytes(0) == 0 && SalFtpWorstUtf8Bytes(-5) == 0 && SalFtpWorstUtf8Bytes(1) == 3);
+
+    // (1) the worst cases of 100 units, plugin and core converters agree, round trip
+    struct Pattern
+    {
+        WCHAR Unit;
+        int ExpectBytes;
+    };
+    static const Pattern same[] = {{L'a', 100}, {0x010D, 200}, {0x4E2D, 300}, {0xFFFF, 300}, {0xD800, 300}, {0xDC00, 300}, {0xDBFF, 300}};
+    for (int p = 0; p < _countof(same); p++)
+    {
+        WCHAR w[SAL_FTP_SECRET_MAX_CHARS + 1];
+        for (int i = 0; i < SAL_FTP_SECRET_MAX_CHARS; i++)
+            w[i] = same[p].Unit;
+        w[SAL_FTP_SECRET_MAX_CHARS] = 0;
+        char spl[SAL_FTP_SECRET_BUF], core[SAL_FTP_SECRET_BUF];
+        int splLen = SplWToU8(w, spl, SAL_FTP_SECRET_BUF);
+        int coreLen = SalWToU8(w, -1, core, SAL_FTP_SECRET_BUF);
+        CHECK(splLen == same[p].ExpectBytes + 1 && coreLen == splLen && memcmp(spl, core, splLen) == 0);
+        WCHAR back[SAL_FTP_SECRET_MAX_CHARS + 1];
+        CHECK(SplU8ToW(spl, back, _countof(back)) == SAL_FTP_SECRET_MAX_CHARS + 1 && wcscmp(back, w) == 0);
+    }
+    {
+        // 50 surrogate pairs (emoji): 200 bytes; 99 CJK + one lone surrogate at the end: 300 bytes
+        WCHAR w[SAL_FTP_SECRET_MAX_CHARS + 1];
+        for (int i = 0; i < SAL_FTP_SECRET_MAX_CHARS; i += 2)
+        {
+            w[i] = 0xD83D;
+            w[i + 1] = 0xDCC1;
+        }
+        w[SAL_FTP_SECRET_MAX_CHARS] = 0;
+        char b[SAL_FTP_SECRET_BUF];
+        CHECK(SplWToU8(w, b, SAL_FTP_SECRET_BUF) == 201);
+        for (int i = 0; i < SAL_FTP_SECRET_MAX_CHARS - 1; i++)
+            w[i] = 0x4E2D;
+        w[SAL_FTP_SECRET_MAX_CHARS - 1] = 0xD83D; // a high surrogate without its pair
+        CHECK(SplWToU8(w, b, SAL_FTP_SECRET_BUF) == 301 && (BYTE)b[297] == 0xED && (BYTE)b[298] == 0xA0 && (BYTE)b[299] == 0xBD);
+    }
+    {
+        // random texts of 1..100 units over every kind of unit (fixed seed): always fits
+        static const WCHAR kinds[] = {L'a', L'%', 0x00E0, 0x010D, 0x0416, 0x4E2D, 0xFF21, 0xFFFF, 0xD800, 0xDBFF, 0xDC00, 0xDFFF};
+        unsigned seed = 116;
+        int worst = 0, fits = 0, cases = 20000;
+        for (int c = 0; c < cases; c++)
+        {
+            WCHAR w[SAL_FTP_SECRET_MAX_CHARS + 1];
+            seed = seed * 1103515245u + 12345u;
+            int n = 1 + (int)((seed >> 16) % SAL_FTP_SECRET_MAX_CHARS);
+            for (int i = 0; i < n; i++)
+            {
+                seed = seed * 1103515245u + 12345u;
+                int k = (int)((seed >> 16) % (_countof(kinds) + 1));
+                if (k == _countof(kinds) && i + 1 < n) // a valid pair
+                {
+                    w[i++] = 0xD83D;
+                    w[i] = 0xDE00;
+                }
+                else
+                    w[i] = kinds[k % _countof(kinds)];
+            }
+            w[n] = 0;
+            char b[SAL_FTP_SECRET_BUF];
+            int len = SplWToU8(w, b, SAL_FTP_SECRET_BUF);
+            if (len > 0 && len - 1 <= SalFtpWorstUtf8Bytes(n))
+                fits++;
+            if (len - 1 > worst)
+                worst = len - 1;
+        }
+        CHECK(fits == cases && worst <= SAL_FTP_SECRET_BUF - 1);
+    }
+
+    // (2) negative controls: one unit more can overflow; the old 101-byte buffer refused 51+ c-caron
+    {
+        WCHAR w[SAL_FTP_SECRET_MAX_CHARS + 2];
+        for (int i = 0; i < SAL_FTP_SECRET_MAX_CHARS + 1; i++)
+            w[i] = 0x4E2D;
+        w[SAL_FTP_SECRET_MAX_CHARS + 1] = 0;
+        char b[SAL_FTP_SECRET_BUF];
+        memset(b, 'x', sizeof(b));
+        CHECK(SplWToU8(w, b, SAL_FTP_SECRET_BUF) == 0 && b[0] == 0); // 303 bytes do not fit
+        int left = 0;
+        for (int i = 0; i < SAL_FTP_SECRET_BUF; i++)
+            if (b[i] != 0)
+                left++;
+        CHECK(left == 0); // nothing of the text stays in the buffer (a password, too)
+        WCHAR c51[52], c60[61];
+        for (int i = 0; i < 51; i++)
+            c51[i] = 0x010D;
+        c51[51] = 0;
+        for (int i = 0; i < 60; i++)
+            c60[i] = 0x010D;
+        c60[60] = 0;
+        char old[101];
+        CHECK(SplWToU8(c51, old, sizeof(old)) == 0);        // 102 bytes: refused by 104, cp bytes by 0.1.8
+        CHECK(SplWToU8(c60, b, SAL_FTP_SECRET_BUF) == 121); // fits now
+    }
+
+    // (3) why the stored bytes must be kept: a password 0.1.8 saved in code-page form (60 x c-caron
+    // = 60 bytes 0xE8 in CP 1250) is shown correctly, but the field reads back as other bytes
+    char legacy[61];
+    memset(legacy, 0xE8, 60);
+    legacy[60] = 0;
+    WCHAR shown[61];
+    CHECK(SplU8ToW(legacy, shown, _countof(shown)) == 0); // not UTF-8: the field shows it through the code page
+    CHECK(MultiByteToWideChar(1250, 0, legacy, -1, shown, _countof(shown)) == 61 && shown[0] == 0x010D && shown[59] == 0x010D);
+    {
+        char reread[SAL_FTP_SECRET_BUF];
+        CHECK(SplWToU8(shown, reread, sizeof(reread)) == 121 && memcmp(reread, legacy, 60) != 0);
+    }
+
+    // (4) the rule: the field's text is exactly what the stored value shows as -> keep the stored bytes
+    CHECK(SalFtpFieldShowsStored(legacy, shown, 1250));                     // the 0.1.8 form, untouched
+    CHECK(!SalFtpFieldShowsStored(legacy, shown, 1252));                    // another code page shows other letters
+    CHECK(!SalFtpFieldShowsStored(legacy, L"\x010D\x010D", 1250));          // the user typed something else
+    CHECK(SalFtpFieldShowsStored("heslo-\xC5\x99", L"heslo-\x0159", 1250)); // UTF-8 stored: keeping = reading
+    CHECK(!SalFtpFieldShowsStored("heslo-\xC5\x99", L"heslo-\x0159x", 1250));
+    CHECK(!SalFtpFieldShowsStored("heslo-\xC5\x99", L"heslo-\x00C5\x0099", 1250)); // its code-page reading is not what is shown
+    CHECK(SalFtpFieldShowsStored("lone\xED\xA0\x80x", L"lone\xD800x", 1250));      // WTF-8: a lone surrogate
+    CHECK(SalFtpFieldShowsStored("\xD0\x96\xD0\xB0", L"\x0416\x0430", 1250));
+    CHECK(!SalFtpFieldShowsStored("", L"", 1250)); // empty: always read (the same empty value)
+    CHECK(!SalFtpFieldShowsStored("", L"x", 1250));
+    CHECK(!SalFtpFieldShowsStored("x", L"", 1250)); // the field was emptied: read (delete the value)
+    CHECK(!SalFtpFieldShowsStored(NULL, L"x", 1250) && !SalFtpFieldShowsStored("x", NULL, 1250));
+    CHECK(SalFtpFieldShowsStored("abc", L"abc", 1250) && !SalFtpFieldShowsStored("abc", L"ABC", 1250)); // case matters
+}
+
 int main()
 {
     TestConversions();
@@ -7730,6 +7866,7 @@ int main()
     TestZipMember113();
     TestUndeleteNames114();
     TestUndeleteLeftovers115();
+    TestFtpSecret116();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

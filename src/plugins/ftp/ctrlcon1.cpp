@@ -608,10 +608,10 @@ BOOL CControlConnectionSocket::StartControlConnection(HWND parent, char* user, i
     int proxyLastCmdReply = -1;
     char proxyLastCmdReplyText[300];
     proxyLastCmdReplyText[0] = 0;
-    char proxySendCmdBuf[FTPCOMMAND_MAX_SIZE];
+    char proxySendCmdBuf[FTPLOGINCMD_MAX_SIZE]; // feature 116: see FTPLOGINCMD_MAX_SIZE
     proxySendCmdBuf[0] = 0;
     eSSLInit SSLInitSequence = EncryptControlConnection ? sslisAUTH : sslisNone;
-    char proxyLogCmdBuf[FTPCOMMAND_MAX_SIZE];
+    char proxyLogCmdBuf[FTPLOGINCMD_MAX_SIZE];
     proxyLogCmdBuf[0] = 0;
     char tmpCmdBuf[FTPCOMMAND_MAX_SIZE];
     tmpCmdBuf[0] = 0;

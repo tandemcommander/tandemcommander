@@ -1834,3 +1834,32 @@ plugin architecture preservation, UI consistency.
     written, **GUI runs pending**; real EFS backups NOT DRIVEN. Records:
     `specs/115-undelete-leftovers/fix-log.md`.
   GUI runs owed at commit time - see fix-log "Pending (GUI ...)".
+- 116-ftp-passwords: **FTP passwords are the text that was typed, in any script and up to 100
+  characters.** Measured first (`research.md`; scratch `probe/m116_subclass.cpp`): the password
+  fields' `CPasswordEditLine` was a code-page subclass - every character outside the code page
+  became `?` or a best-fit look-alike when typed, shown or read (`voil<U+00E0>` reads as `voila`),
+  and since the Connect dialog re-reads its password field on every focus loss, a password stored
+  correctly (typed as `ftp://user:password@host`) was saved back as `????` by tabbing through the
+  field. Now `AttachToWindowKeepKind`; *Show password* reads, composes (`LoadStrW`) and copies
+  (`CopyTextToClipboardW`) UTF-16. The secrets (password, account, proxy and anonymous passwords)
+  hold `SAL_FTP_SECRET_BUF` = 301 bytes - the UTF-8 of any 100 UTF-16 units their fields accept
+  (`FTPSecretEditLine` keeps the 100-unit limit), so they are never "too long" or cut; login
+  commands are built in `FTPLOGINCMD_MAX_SIZE` buffers (static_assert: the longest built-in line,
+  `PASS $(Password)@$(ProxyPassword)`, 608 bytes) and the workers pass their real 1,001-byte
+  buffer. Wire unchanged (UTF-8 bytes in USER / PASS / ACCT, no UTF8 negotiation); stored format
+  unchanged (the scramble's length field takes 999 bytes) - a password over 100 bytes is cut to
+  100 by 0.1.8 and older (documented). **The stored-bytes rule** (`SalFtpFieldShowsStored`,
+  `src/common/salftpsecret.h`): a field that still shows exactly what the stored value is shown
+  as keeps the stored BYTES, any other text is read, an empty field is always read - so a 0.1.8
+  code-page password works in Connect, the proxy dialog and the login-error dialog's *Retry* (104
+  T012). Do NOT use `EM_GETMODIFY` for such a decision: `WM_SETTEXT` (UI Automation, password
+  tools) clears it and the filled-in text would be ignored. User name, address and initial path
+  NOT widened (parts of the plug-in's paths) - 104's refusal stays. SOCKS 5 carries 255 bytes
+  (RFC 1929): the proxy dialog refuses more, the send never cuts. A refused transfer never stores
+  (the proxy dialog had stored an empty value since 104) and the login-error dialog restores its
+  values. Shared wipes: `EditLine`'s UTF-16 copy, `SplWToU8`'s buffer on failure. Plug-in
+  interface 107, no new string, PRIVACY.md unchanged (reason in fix-log). saltests 14,401 ->
+  14,441. Code-only review ACCEPT pending GUI. Probe
+  `probe/ftppwd_probe.ps1` (+ `ftplog_server.py`, 127.0.0.1) written, GUI runs owed. Records:
+  `specs/116-ftp-passwords/fix-log.md`.
+  GUI runs owed at commit time - see fix-log "Commit before the GUI runs".

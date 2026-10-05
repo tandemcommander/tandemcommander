@@ -817,6 +817,35 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           password still works while it is not retyped - except *Retry* in
           the login-error dialog, which refuses it). Widening the FTP
           buffers (and the protocol's byte form of such a password) is open.
+          ✅ **Fixed by feature 116 (2026-10-05) - GUI runs pending**:
+          measured first (`specs/116-ftp-passwords/research.md`) - the
+          subclass turned every character outside the code page into `?` or
+          a best-fit look-alike when typed, shown or read, and the Connect
+          dialog re-read its password field on every focus loss: a password
+          stored correctly (typed into the address) was saved back as `????`
+          by merely tabbing through the field. The subclass keeps the edit
+          Unicode; *Show password* reads, shows and copies UTF-16; the
+          secrets (password, account, proxy and anonymous passwords) hold
+          301 bytes - the UTF-8 of any 100 characters their fields accept,
+          so they are never "too long" - with the login command buffers
+          widened to match; the wire stays UTF-8 and the stored format is
+          unchanged (a password over 100 bytes is cut to 100 by older
+          versions - documented). A field that still shows the stored value
+          keeps its bytes (text comparison, `SalFtpFieldShowsStored` in
+          `src/common/salftpsecret.h`), so a 0.1.8 code-page password works
+          in Connect, Retry and the proxy dialog. User name, address and
+          initial path NOT widened (parts of the plug-in's paths) - 104's
+          refusal stays. Probe `specs/116-ftp-passwords/probe/
+          ftppwd_probe.ps1` written, runs owed. **Found by 116, not fixed**
+          (`research.md` 5): a password in a typed Change Directory path
+          over 300 bytes is cut (inside a character possible); a custom
+          proxy-script line over 1,000 bytes is still cut without CRLF; the
+          panel login's command buffer (holds `PASS <password>`) and the
+          `CProxyScriptParams` stack copies are not wiped; log / wait-window
+          texts cut long user names inside a character. Code-only review
+          ACCEPT pending GUI (fixed with it: SOCKS 5 255-byte limit, the
+          proxy dialog storing an empty value after a refusal - since 104,
+          the login-error dialog after a refusal, shared wipes).
        4. checksum: a checksum list written in the code page with accented
           names reports those files as missing (no encoding detection of the
           list file).

@@ -228,7 +228,9 @@ inline int SplWToU8(const WCHAR* w, char* buf, int bufSize)
         res = SplUnicodeDetail::WToWtf8(w, buf, bufSize); // an unpaired surrogate (0 when the buffer is too small)
     if (res <= 0)
     {
-        buf[0] = 0;
+        // feature 116: a failed conversion may have written part of the text (a password, too)
+        // into the buffer - nothing of it stays there
+        SecureZeroMemory(buf, (size_t)bufSize);
         res = 0;
     }
     return res;

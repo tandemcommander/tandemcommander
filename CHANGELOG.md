@@ -53,6 +53,32 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **FTP passwords are the text you type, in any script and up to 100
+  characters.** A character outside the Windows code page typed into the
+  password field of the FTP Connect dialog or of a proxy server - Cyrillic,
+  Chinese or Japanese, an emoji, or accented letters such as "à" on a Czech
+  Windows - was turned into "?" or into a look-alike ("a") before it was saved
+  or sent, so the login failed; "Show password" showed and copied the same "?".
+  Worse, a correctly saved password with such characters (typed as part of the
+  address, ftp://user:password@server) was saved back as question marks when
+  you merely moved through the password field. Passwords now reach the server
+  as typed (as UTF-8, as before for every other character), and "Show password"
+  shows and copies them exactly. A password, account or proxy password of up
+  to 100 characters is now always sent as typed: version 0.1.8 sent one of
+  more than 50 accented letters (or 34 Chinese characters) in another form -
+  bytes of the Windows code page, "?" for every other character. A password
+  that 0.1.8 saved in that form keeps working unchanged, also with "Retry"
+  after a failed login. Saved passwords keep their format; a password longer
+  than 100 bytes (more than 50 accented letters, or 34 Chinese characters)
+  saved by this version is cut to its first 100 bytes if you go back to
+  version 0.1.8 or older; an anonymous-login password (e-mail address) of
+  more than 100 bytes is not read by 0.1.8 at all - it uses its default and
+  saves that default over it. A SOCKS 5 proxy accepts at most 255 bytes of
+  user name and of password (its protocol's limit): a longer one is refused
+  when you enter it, and never sent cut. User names, server addresses and
+  start folders keep their limits (about 50 accented letters for a user
+  name) and are refused, not cut, when longer. A proxy server entry with a
+  refused field is no longer saved with that field empty (feature 116).
 - **Undelete's "Restore Encrypted Files from Backup" no longer crashes in
   deep folders.** Restoring a folder whose contents lie deeper than about
   260 characters of path (fewer with accented letters), or a folder holding a

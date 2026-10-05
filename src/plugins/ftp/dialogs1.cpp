@@ -100,13 +100,13 @@ void CConfigPageGeneral::Transfer(CTransferInfo& ti)
     char passwd[PASSWORD_MAX_SIZE];
     if (ti.Type == ttDataFromWindow)
     {
-        ti.EditLine(IDE_ANONYMOUSPASSWD, passwd, PASSWORD_MAX_SIZE);
+        FTPSecretEditLine(ti, IDE_ANONYMOUSPASSWD, passwd, PASSWORD_MAX_SIZE); // feature 116
         Config.SetAnonymousPasswd(passwd);
     }
     else
     {
         Config.GetAnonymousPasswd(passwd, PASSWORD_MAX_SIZE);
-        ti.EditLine(IDE_ANONYMOUSPASSWD, passwd, PASSWORD_MAX_SIZE);
+        FTPSecretEditLine(ti, IDE_ANONYMOUSPASSWD, passwd, PASSWORD_MAX_SIZE); // feature 116
     }
 }
 
@@ -1036,7 +1036,8 @@ void CConnectDlg::SelChanged()
     ti.EditLine(IDE_INITIALPATH, HandleNULLStr(s->InitialPath), FTP_MAX_PATH);
     ti.CheckBox(IDC_ANONYMOUSLOGIN, s->AnonymousConnection);
     ti.EditLine(IDE_USERNAME, HandleNULLStr(s->AnonymousConnection ? (char*)FTP_ANONYMOUS : s->UserName), USER_MAX_SIZE);
-    ti.EditLine(IDE_PASSWORD, password, PASSWORD_MAX_SIZE);
+    FTPSecretEditLine(ti, IDE_PASSWORD, password, PASSWORD_MAX_SIZE); // feature 116: 100 characters, any of them fits
+    SecureZeroMemory(password, sizeof(password));                     // feature 116: the plain password is in the field now
 
     int savePasswd = (s->AnonymousConnection || i == 0) ? FALSE : s->SavePassword;
     ti.CheckBox(IDC_SAVEPASSWORD, savePasswd);
@@ -1382,35 +1383,7 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_APP_SHOWPASSWORD:
     {
-        MSGBOXEX_PARAMS params;
-        memset(&params, 0, sizeof(params));
-        params.HParent = HWindow;
-        params.Flags = MSGBOXEX_YESNO | MSGBOXEX_ESCAPEENABLED |
-                       MSGBOXEX_ICONQUESTION | MSGBOXEX_SILENT;
-        params.Caption = LoadStr(IDS_FTPPLUGINTITLE);
-        params.Text = LoadStr(IDS_SHOWPASSWORD_CONFIRMATION);
-        if (SalamanderGeneral->SalMessageBoxEx(&params) == IDYES)
-        {
-            CSalamanderPasswordManagerAbstract* passwordManager = SalamanderGeneral->GetSalamanderPasswordManager();
-            // ask for the master password even if we already know it
-            if (!passwordManager->IsUsingMasterPassword() || passwordManager->AskForMasterPassword(HWindow))
-            {
-                // pull the password directly from the edit line
-                char plainPassword[PASSWORD_MAX_SIZE];
-                GetWindowText((HWND)wParam, plainPassword, PASSWORD_MAX_SIZE);
-                plainPassword[PASSWORD_MAX_SIZE - 1] = 0;
-
-                char buff[1000];
-                _snprintf_s(buff, _TRUNCATE, LoadStr(IDS_PASSWORDIS), plainPassword);
-                params.Flags = MSGBOXEX_YESNO | MSGBOXEX_ESCAPEENABLED | MSGBOXEX_DEFBUTTON2 |
-                               MSGBOXEX_ICONINFORMATION | MSGBOXEX_SILENT;
-                params.Text = buff;
-                if (SalamanderGeneral->SalMessageBoxEx(&params) == IDYES)
-                    SalamanderGeneral->CopyTextToClipboard(plainPassword, -1, FALSE, NULL);
-                memset(plainPassword, 0, lstrlen(plainPassword));
-                memset(buff, 0, 1000);
-            }
-        }
+        FTPShowPasswordOfEdit(HWindow, (HWND)wParam); // feature 116: read and shown as UTF-16
         return 0;
     }
 
@@ -1915,7 +1888,8 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 CSalamanderPasswordManagerAbstract* passwordManager = SalamanderGeneral->GetSalamanderPasswordManager();
                 if (HIWORD(wParam) == EN_KILLFOCUS && !s->AnonymousConnection &&
                     (!s->SavePassword || !passwordManager->IsUsingMasterPassword() || passwordManager->IsMasterPasswordSet()) && // just to be safe: exclude the case when the edit box is disabled (editing via the Unlock button)
-                    ConnectFieldFits(IDE_PASSWORD, PASSWORD_MAX_SIZE)) // feature 104: a password that does not fit is not taken - the stored one stays (it was erased)
+                    ConnectFieldFits(IDE_PASSWORD, PASSWORD_MAX_SIZE) &&                                                         // feature 104: a password that does not fit is not taken - the stored one stays (it was erased)
+                    !FTPFieldKeepsEncryptedValue(HWindow, IDE_PASSWORD, s->EncryptedPassword, s->EncryptedPasswordSize))         // feature 116: the field shows the stored password: its bytes stay (they may be a code-page form saved by 0.1.8)
                 {
                     char plainPassword[PASSWORD_MAX_SIZE];
                     ti.EditLine(IDE_PASSWORD, plainPassword, PASSWORD_MAX_SIZE);
@@ -2072,8 +2046,17 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 //
 
 CPasswordEditLine::CPasswordEditLine(HWND hDlg, int ctrlID)
-    : CWindow(hDlg, ctrlID)
+    : CWindow(ooAllocated)
 {
+    // feature 116: the edit stays a Unicode window - CWindow(hDlg, ctrlID) attached a code-page
+    // subclass (SetWindowLongPtrA), and every character outside the code page that was typed into
+    // the field or shown in it became '?' or a best-fit look-alike before anything read it
+    // (measured: specs/116-ftp-passwords/research.md 1)
+    HWND edit = hDlg != NULL ? GetDlgItem(hDlg, ctrlID) : NULL;
+    if (edit != NULL)
+        AttachToWindowKeepKind(edit);
+    else
+        TRACE_E("CPasswordEditLine: control with ctrlID = " << ctrlID << " is not in dialog.");
 }
 
 LRESULT CPasswordEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -2087,10 +2070,8 @@ LRESULT CPasswordEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         BOOL shiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
         if (IsWindowEnabled(HWindow) && controlPressed && !altPressed && !shiftPressed)
         {
-            // verify that the edit line contains something
-            char buff[2];
-            GetWindowText(HWindow, buff, 2);
-            if (buff[0] != 0)
+            // verify that the edit line contains something (feature 116: without reading the text)
+            if (GetWindowTextLengthW(HWindow) > 0)
             {
                 PostMessage(GetParent(HWindow), WM_APP_SHOWPASSWORD, (WPARAM)HWindow, lParam);
                 return 0;
@@ -2100,4 +2081,149 @@ LRESULT CPasswordEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
     }
     return CWindow::WindowProc(uMsg, wParam, lParam);
+}
+
+//
+// ****************************************************************************
+// feature 116: the secret fields (see dialogs.h)
+//
+
+void FTPSecretEditLine(CTransferInfo& ti, int ctrlID, char* buffer, DWORD bufferSize)
+{
+    if (bufferSize < SAL_FTP_SECRET_BUF)
+        TRACE_E("FTPSecretEditLine(): the buffer of control " << ctrlID << " is smaller than SAL_FTP_SECRET_BUF.");
+    ti.EditLine(ctrlID, buffer, bufferSize);
+    HWND edit;
+    if (ti.Type == ttDataToWindow && ti.GetControl(edit, ctrlID, TRUE))
+        SendMessageW(edit, EM_LIMITTEXT, SAL_FTP_SECRET_MAX_CHARS, 0); // EditLine set bufferSize - 1
+}
+
+BOOL FTPFieldKeepsStoredValue(HWND dlg, int ctrlID, const char* stored)
+{
+    HWND edit = dlg != NULL ? GetDlgItem(dlg, ctrlID) : NULL;
+    if (edit == NULL || stored == NULL || stored[0] == 0)
+        return FALSE;
+    int units = GetWindowTextLengthW(edit);
+    WCHAR* text = (WCHAR*)malloc((units + 1) * sizeof(WCHAR));
+    if (text == NULL)
+        return FALSE;
+    text[0] = 0;
+    GetWindowTextW(edit, text, units + 1);
+    BOOL keep = SalFtpFieldShowsStored(stored, text, CP_ACP) ? TRUE : FALSE;
+    SecureZeroMemory(text, (units + 1) * sizeof(WCHAR));
+    free(text);
+    return keep;
+}
+
+BOOL FTPFieldKeepsEncryptedValue(HWND dlg, int ctrlID, const BYTE* encrypted, int encryptedSize)
+{
+    if (encrypted == NULL || encryptedSize <= 0)
+        return FALSE;
+    CSalamanderPasswordManagerAbstract* passwordManager = SalamanderGeneral->GetSalamanderPasswordManager();
+    char* plain;
+    if (!passwordManager->DecryptPassword(encrypted, encryptedSize, &plain))
+        return FALSE;
+    BOOL keep = FTPFieldKeepsStoredValue(dlg, ctrlID, plain);
+    memset(plain, 0, lstrlen(plain));
+    SalamanderGeneral->Free(plain);
+    return keep;
+}
+
+int FTPFieldBytes(HWND dlg, int ctrlID)
+{
+    HWND edit = dlg != NULL ? GetDlgItem(dlg, ctrlID) : NULL;
+    if (edit == NULL)
+        return 0;
+    int units = GetWindowTextLengthW(edit);
+    if (units <= 0)
+        return 0;
+    WCHAR* text = (WCHAR*)malloc((units + 1) * sizeof(WCHAR));
+    if (text == NULL)
+        return 0;
+    text[0] = 0;
+    GetWindowTextW(edit, text, units + 1);
+    char* u8 = SplWToU8Alloc(text);
+    int bytes = u8 != NULL ? (int)strlen(u8) : 0;
+    if (u8 != NULL)
+    {
+        SecureZeroMemory(u8, bytes);
+        free(u8);
+    }
+    SecureZeroMemory(text, (units + 1) * sizeof(WCHAR));
+    free(text);
+    return bytes;
+}
+
+int FTPEncryptedValueBytes(const BYTE* encrypted, int encryptedSize)
+{
+    if (encrypted == NULL || encryptedSize <= 0)
+        return 0;
+    char* plain;
+    if (!SalamanderGeneral->GetSalamanderPasswordManager()->DecryptPassword(encrypted, encryptedSize, &plain))
+        return 0;
+    int bytes = lstrlen(plain);
+    memset(plain, 0, bytes);
+    SalamanderGeneral->Free(plain);
+    return bytes;
+}
+
+void FTPShowPasswordOfEdit(HWND dlg, HWND edit)
+{
+    MSGBOXEX_PARAMS params;
+    memset(&params, 0, sizeof(params));
+    params.HParent = dlg;
+    params.Flags = MSGBOXEX_YESNO | MSGBOXEX_ESCAPEENABLED |
+                   MSGBOXEX_ICONQUESTION | MSGBOXEX_SILENT;
+    params.Caption = LoadStr(IDS_FTPPLUGINTITLE);
+    params.Text = LoadStr(IDS_SHOWPASSWORD_CONFIRMATION);
+    if (SalamanderGeneral->SalMessageBoxEx(&params) != IDYES)
+        return;
+    CSalamanderPasswordManagerAbstract* passwordManager = SalamanderGeneral->GetSalamanderPasswordManager();
+    // ask for the master password even if we already know it
+    if (passwordManager->IsUsingMasterPassword() && !passwordManager->AskForMasterPassword(dlg))
+        return;
+
+    // pull the password directly from the edit line - as UTF-16 (it was read through the code page:
+    // '?' for every character outside it, best-fit look-alikes for some)
+    int units = GetWindowTextLengthW(edit);
+    WCHAR* password = (WCHAR*)malloc((units + 1) * sizeof(WCHAR));
+    if (password == NULL)
+        return;
+    password[0] = 0;
+    GetWindowTextW(edit, password, units + 1);
+
+    // the message is composed in UTF-16 and handed to the box as UTF-8 (WTF-8): the template from
+    // the language module and the password together (a code-page template with a UTF-8 password
+    // was a text in neither encoding)
+    const WCHAR* format = SalamanderGeneral->LoadStrW(HLanguage, IDS_PASSWORDIS);
+    size_t textSize = wcslen(format) + (size_t)units + 1;
+    WCHAR* text = (WCHAR*)malloc(textSize * sizeof(WCHAR));
+    char* textU8 = NULL;
+    if (text != NULL)
+    {
+        text[0] = 0;
+        _snwprintf_s(text, textSize, _TRUNCATE, format, password);
+        textU8 = SplWToU8Alloc(text);
+    }
+    if (textU8 != NULL)
+    {
+        params.Flags = MSGBOXEX_YESNO | MSGBOXEX_ESCAPEENABLED | MSGBOXEX_DEFBUTTON2 |
+                       MSGBOXEX_ICONINFORMATION | MSGBOXEX_SILENT;
+        params.Text = textU8;
+        if (SalamanderGeneral->SalMessageBoxEx(&params) == IDYES)
+            SalamanderGeneral->CopyTextToClipboardW(password, -1, FALSE, NULL); // Unicode text (was code-page bytes)
+    }
+    // wipe every copy of the password this function made
+    if (textU8 != NULL)
+    {
+        SecureZeroMemory(textU8, strlen(textU8));
+        free(textU8);
+    }
+    if (text != NULL)
+    {
+        SecureZeroMemory(text, textSize * sizeof(WCHAR));
+        free(text);
+    }
+    SecureZeroMemory(password, (units + 1) * sizeof(WCHAR));
+    free(password);
 }

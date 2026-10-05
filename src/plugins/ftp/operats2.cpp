@@ -845,8 +845,8 @@ BOOL CFTPOperation::PrepareNextScriptCmd(char* buf, int bufSize, char* logBuf, i
 
     CProxyScriptParams proxyScriptParams(ProxyServer, Host, Port, User, Password, Account,
                                          Password == NULL || Password[0] == 0);
-    char proxySendCmdBuf[FTPCOMMAND_MAX_SIZE];
-    char proxyLogCmdBuf[FTPCOMMAND_MAX_SIZE];
+    char proxySendCmdBuf[FTPLOGINCMD_MAX_SIZE]; // feature 116: see FTPLOGINCMD_MAX_SIZE
+    char proxyLogCmdBuf[FTPLOGINCMD_MAX_SIZE];
     BOOL ret = TRUE;
     if (*proxyScriptExecPoint == NULL)
         *proxyScriptExecPoint = ProxyScriptStartExecPoint; // prepare the first script command
@@ -890,6 +890,7 @@ BOOL CFTPOperation::PrepareNextScriptCmd(char* buf, int bufSize, char* logBuf, i
     {
         ret = FALSE;
     }
+    SecureZeroMemory(proxySendCmdBuf, sizeof(proxySendCmdBuf)); // feature 116: the command may hold a password
 
     HANDLES(LeaveCriticalSection(&OperCritSect));
     return ret;

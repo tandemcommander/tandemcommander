@@ -45,6 +45,7 @@
 #include "ftp.rh2"
 #include "lang\lang.rh"
 #include "ftputils.h"
+#include "../../common/salftpsecret.h" // feature 116: the secret fields' limits (PASSWORD_MAX_SIZE)
 #include "ftp.h"
 #include "dialogs.h"
 #include "ssl.h"

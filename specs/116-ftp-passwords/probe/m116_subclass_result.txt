@@ -1,0 +1,64 @@
+ACP 1250
+none                   TYPED W-loop heslo-<0159>                 -> edit holds heslo-<0159>                 read W heslo-<0159>
+none                   TYPED A-loop heslo-<0159>                 -> edit holds heslo-r                      read W heslo-r
+none                   SET          heslo-<0159>                 -> edit holds heslo-<0159>                 read W heslo-<0159>                 read A hex 6865736C6F2DF8
+none                   TYPED W-loop voil<00E0>                   -> edit holds voil<00E0>                   read W voil<00E0>
+none                   TYPED A-loop voil<00E0>                   -> edit holds voil<00E0>                   read W voil<00E0>
+none                   SET          voil<00E0>                   -> edit holds voil<00E0>                   read W voil<00E0>                   read A hex 766F696C61
+none                   TYPED W-loop <0416><0430><0431><0430>     -> edit holds <0416><0430><0431><0430>     read W <0416><0430><0431><0430>
+none                   TYPED A-loop <0416><0430><0431><0430>     -> edit holds ????                         read W ????
+none                   SET          <0416><0430><0431><0430>     -> edit holds <0416><0430><0431><0430>     read W <0416><0430><0431><0430>     read A hex 3F3F3F3F
+none                   TYPED W-loop <65E5><672C><8A9E>           -> edit holds <65E5><672C><8A9E>           read W <65E5><672C><8A9E>
+none                   TYPED A-loop <65E5><672C><8A9E>           -> edit holds ???                          read W ???
+none                   SET          <65E5><672C><8A9E>           -> edit holds <65E5><672C><8A9E>           read W <65E5><672C><8A9E>           read A hex 3F3F3F
+none                   TYPED W-loop <D83D><DCC1>                 -> edit holds <D83D><DCC1>                 read W <D83D><DCC1>
+none                   TYPED A-loop <D83D><DCC1>                 -> edit holds ??                           read W ??
+none                   SET          <D83D><DCC1>                 -> edit holds <D83D><DCC1>                 read W <D83D><DCC1>                 read A hex 3F3F
+none                   TYPED W-loop lone<D800>x                  -> edit holds lone<D800>x                  read W lone<D800>x
+none                   TYPED A-loop lone<D800>x                  -> edit holds lone?x                       read W lone?x
+none                   SET          lone<D800>x                  -> edit holds lone<D800>x                  read W lone<D800>x                  read A hex 6C6F6E653F78
+none                   TYPED W-loop <FF21><FF22>                 -> edit holds <FF21><FF22>                 read W <FF21><FF22>
+none                   TYPED A-loop <FF21><FF22>                 -> edit holds AB                           read W AB
+none                   SET          <FF21><FF22>                 -> edit holds <FF21><FF22>                 read W <FF21><FF22>                 read A hex 4142
+code-page subclass     TYPED W-loop heslo-<0159>                 -> edit holds heslo-r                      read W heslo-r
+code-page subclass     TYPED A-loop heslo-<0159>                 -> edit holds heslo-r                      read W heslo-r
+code-page subclass     SET          heslo-<0159>                 -> edit holds heslo-<0159>                 read W heslo-<0159>                 read A hex 6865736C6F2DF8
+code-page subclass     TYPED W-loop voil<00E0>                   -> edit holds voil<00E0>                   read W voila
+code-page subclass     TYPED A-loop voil<00E0>                   -> edit holds voil<00E0>                   read W voila
+code-page subclass     SET          voil<00E0>                   -> edit holds voila                        read W voila                        read A hex 766F696C61
+code-page subclass     TYPED W-loop <0416><0430><0431><0430>     -> edit holds ????                         read W ????
+code-page subclass     TYPED A-loop <0416><0430><0431><0430>     -> edit holds ????                         read W ????
+code-page subclass     SET          <0416><0430><0431><0430>     -> edit holds ????                         read W ????                         read A hex 3F3F3F3F
+code-page subclass     TYPED W-loop <65E5><672C><8A9E>           -> edit holds ???                          read W ???
+code-page subclass     TYPED A-loop <65E5><672C><8A9E>           -> edit holds ???                          read W ???
+code-page subclass     SET          <65E5><672C><8A9E>           -> edit holds ???                          read W ???                          read A hex 3F3F3F
+code-page subclass     TYPED W-loop <D83D><DCC1>                 -> edit holds ??                           read W ??
+code-page subclass     TYPED A-loop <D83D><DCC1>                 -> edit holds ??                           read W ??
+code-page subclass     SET          <D83D><DCC1>                 -> edit holds ??                           read W ??                           read A hex 3F3F
+code-page subclass     TYPED W-loop lone<D800>x                  -> edit holds lone?x                       read W lone?x
+code-page subclass     TYPED A-loop lone<D800>x                  -> edit holds lone?x                       read W lone?x
+code-page subclass     SET          lone<D800>x                  -> edit holds lone?x                       read W lone?x                       read A hex 6C6F6E653F78
+code-page subclass     TYPED W-loop <FF21><FF22>                 -> edit holds AB                           read W AB
+code-page subclass     TYPED A-loop <FF21><FF22>                 -> edit holds AB                           read W AB
+code-page subclass     SET          <FF21><FF22>                 -> edit holds AB                           read W AB                           read A hex 4142
+kind-keeping subclass  TYPED W-loop heslo-<0159>                 -> edit holds heslo-<0159>                 read W heslo-<0159>
+kind-keeping subclass  TYPED A-loop heslo-<0159>                 -> edit holds heslo-r                      read W heslo-r
+kind-keeping subclass  SET          heslo-<0159>                 -> edit holds heslo-<0159>                 read W heslo-<0159>                 read A hex 6865736C6F2DF8
+kind-keeping subclass  TYPED W-loop voil<00E0>                   -> edit holds voil<00E0>                   read W voil<00E0>
+kind-keeping subclass  TYPED A-loop voil<00E0>                   -> edit holds voil<00E0>                   read W voil<00E0>
+kind-keeping subclass  SET          voil<00E0>                   -> edit holds voil<00E0>                   read W voil<00E0>                   read A hex 766F696C61
+kind-keeping subclass  TYPED W-loop <0416><0430><0431><0430>     -> edit holds <0416><0430><0431><0430>     read W <0416><0430><0431><0430>
+kind-keeping subclass  TYPED A-loop <0416><0430><0431><0430>     -> edit holds ????                         read W ????
+kind-keeping subclass  SET          <0416><0430><0431><0430>     -> edit holds <0416><0430><0431><0430>     read W <0416><0430><0431><0430>     read A hex 3F3F3F3F
+kind-keeping subclass  TYPED W-loop <65E5><672C><8A9E>           -> edit holds <65E5><672C><8A9E>           read W <65E5><672C><8A9E>
+kind-keeping subclass  TYPED A-loop <65E5><672C><8A9E>           -> edit holds ???                          read W ???
+kind-keeping subclass  SET          <65E5><672C><8A9E>           -> edit holds <65E5><672C><8A9E>           read W <65E5><672C><8A9E>           read A hex 3F3F3F
+kind-keeping subclass  TYPED W-loop <D83D><DCC1>                 -> edit holds <D83D><DCC1>                 read W <D83D><DCC1>
+kind-keeping subclass  TYPED A-loop <D83D><DCC1>                 -> edit holds ??                           read W ??
+kind-keeping subclass  SET          <D83D><DCC1>                 -> edit holds <D83D><DCC1>                 read W <D83D><DCC1>                 read A hex 3F3F
+kind-keeping subclass  TYPED W-loop lone<D800>x                  -> edit holds lone<D800>x                  read W lone<D800>x
+kind-keeping subclass  TYPED A-loop lone<D800>x                  -> edit holds lone?x                       read W lone?x
+kind-keeping subclass  SET          lone<D800>x                  -> edit holds lone<D800>x                  read W lone<D800>x                  read A hex 6C6F6E653F78
+kind-keeping subclass  TYPED W-loop <FF21><FF22>                 -> edit holds <FF21><FF22>                 read W <FF21><FF22>
+kind-keeping subclass  TYPED A-loop <FF21><FF22>                 -> edit holds AB                           read W AB
+kind-keeping subclass  SET          <FF21><FF22>                 -> edit holds <FF21><FF22>                 read W <FF21><FF22>                 read A hex 4142

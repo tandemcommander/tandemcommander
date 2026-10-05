@@ -1317,6 +1317,7 @@ void CTransferInfo::EditLine(int ctrlID, char* buffer, DWORD bufferSize, BOOL se
                     if (IsGood())
                         ErrorOn(ctrlID); // the first failure keeps the focus
                     TooLongRefused = TRUE;
+                    SecureZeroMemory(w, wchars * sizeof(WCHAR)); // feature 116: the field may hold a password
                     free(w);
                     if (Quiet)
                         break;
@@ -1330,6 +1331,7 @@ void CTransferInfo::EditLine(int ctrlID, char* buffer, DWORD bufferSize, BOOL se
                     MessageBoxW(HDialog, text, caption, MB_OK | MB_ICONEXCLAMATION);
                     break;
                 }
+                SecureZeroMemory(w, wchars * sizeof(WCHAR)); // feature 116: the field may hold a password
                 free(w);
                 break;
             }

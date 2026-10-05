@@ -1973,8 +1973,8 @@ BOOL ProcessProxyScript(const char* script, const char** execPoint, int lastCmdR
              lastCmdReply != -1 && FTP_DIGIT_1(lastCmdReply) == FTP_D1_PARTIALSUCCESS /* 3xx */))
         {
             BOOL skipThisLine;
-            if (ExpandText(sendCmdBuf, sendCmdBuf == NULL ? 0 : FTPCOMMAND_MAX_SIZE,
-                           logCmdBuf, logCmdBuf == NULL ? 0 : FTPCOMMAND_MAX_SIZE,
+            if (ExpandText(sendCmdBuf, sendCmdBuf == NULL ? 0 : FTPLOGINCMD_MAX_SIZE, // feature 116: was FTPCOMMAND_MAX_SIZE (a 300-byte password was cut)
+                           logCmdBuf, logCmdBuf == NULL ? 0 : FTPLOGINCMD_MAX_SIZE,
                            lineBeg, s, scriptParams, &s, &errCode, FALSE, &skipThisLine, NULL))
             {
                 if (skipThisLine) // the line should be skipped (contains an optional variable)

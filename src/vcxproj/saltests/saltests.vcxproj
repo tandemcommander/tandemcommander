@@ -139,6 +139,8 @@
     </ClInclude>
     <ClInclude Include="..\..\common\salnameorder.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salftpsecret.h">
+    </ClInclude>
     <ClInclude Include="..\..\common\salunicode.h">
     </ClInclude>
     <ClInclude Include="..\..\saltests\precomp.h">
