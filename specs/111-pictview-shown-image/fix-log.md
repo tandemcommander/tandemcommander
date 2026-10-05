@@ -264,6 +264,21 @@ Committed after this check with the GUI runs still owed (`r-cross`, `r-nav-del`,
 the evening on the preserved build tree `build\tandemcommander\Debug_x64_111`; their results
 and any fix follow in a separate commit.
 
+**GUI runs, 2026-10-05 evening (23:15 on), hidden desktop, one at a time, no tandemcommander.exe
+running before each run; registry baseline now SHA-256 `9BD42518403B7EDF...` (the maintainer's
+installed copy saved its settings), equal before and after every run (each probe's own backup and
+restore; checked once more by a separate export afterwards); wallpaper rows on the dry-run seam,
+`wp-real` PASS in both shown-probe runs; no Recycle Bin; nothing built:**
+
+| Run | Tree | Result |
+|---|---|---|
+| `shown_probe.ps1` -> `probe/shown_result.txt` | `Debug_x64_111` | **85 PASS / 0 FAIL / 2 NOT DRIVEN** - `r-cross` PASS (B moved to y.png, x.png deleted, y.png and z.png unchanged, B and C show y.png, y.png held again, B's Save As = y.png's pixels), `r-nav-del`, `r-nav-ren`, `r-multi`, `r-print`, `hl-del`, `info-cmyk`, `wp-restore` (empty backup: empty log) PASS; `r-busy` PASS with B finished before A asked (the refusal path not exercised in this run - `r-print` covers it deterministically) |
+| `shown_probe.ps1 -NoWallpaper` -> `probe/shown_result_pre111.txt` | `Debug_x64_pre111` | 50 PASS / 29 FAIL / 7 NOT DRIVEN - `r-cross` FAIL (x.png not deleted: "File in use"); every END row PASS |
+| 105 `saveas_probe.ps1` -> `probe/regress_saveas105_111.txt` | `Debug_x64_111` | 56 PASS / 0 FAIL / 4 NOT DRIVEN, existing files LOST 0 |
+| 103 `samefile_probe.ps1 -Expect103` -> `probe/regress_samefile103_111.txt` | `Debug_x64_111` | 62 PASS / 0 FAIL (WebDAV rows driven) |
+
+No defect found; T014 is closed by these runs.
+
 ## Recorded, not changed
 
 - **PictView's pipette and histogram read the 32-bit rows as 3 bytes per pixel** (`PixelAccess.cpp`,

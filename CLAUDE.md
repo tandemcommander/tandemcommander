@@ -1678,7 +1678,8 @@ plugin architecture preservation, UI consistency.
     print, the wallpaper backup written only after SPI succeeded. Regressions: 105 saveas 56/0/4, 103 samefile 62/0, 104 PictView rows 4/0, 088 viewers 7/3 as on 105 (PictView rows pass; Code/Markdown Viewer rows fail on the hidden desktop on every build). saltests 14,140 ->
     14,169. No new string, interface 107, no registry format change.
     Records: `specs/111-pictview-shown-image/fix-log.md`.
-  GUI re-run of the final protocol (operation ids) owed - see fix-log T015.
+  GUI re-run of the final protocol (2026-10-05 evening, fix-log T015): 85 / 0 / 2 (r-cross PASS;
+  pre-111 50 / 29 / 7), regressions 105 56/0/4 (0 lost), 103 62/0.
 - 112-cache-pending-edit: **a flush of the disk cache never throws away a
   pending edit.** NEXT-WORK item 5, queue entries 2a (109's review) and 3.
   With both panels on one archive and an F4 edit pending in the left one,

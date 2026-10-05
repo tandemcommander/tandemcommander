@@ -1,6 +1,6 @@
 saveas_probe (feature 105)
-Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-05 07:12; ACP 1250; registry key existed True; backup SHA-256 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_111\tandemcommander.exe
+Date    : 2026-10-05 23:49; ACP 1250; registry key existed True; backup SHA-256 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
 
 offer      TYPES  PASS        5 types: CompuServe GIF (*.gif) | JPEG (*.jpg,*.jpeg) | Portable Network Graphics (*.png) | TIFF (*.tif) | Windows Bitmap (*.bmp); bmp: comp [Uncompressed] depth [16 colors/256 colors/256 gray levels/15bit HiColor/16bit HiColor/24bit TrueColor]; png: comp [Deflating (LZ77)] depth [16 colors/256 colors/256 gray levels/24bit TrueColor]; jpg: comp [JPEG] depth [256 gray levels/24bit TrueColor]; gif: comp [Default] depth [16 colors/256 colors/256 gray levels]; tif: comp [Default/Deflating (LZ77)/Lempel-Ziv-Welch (LZW)/PackBits/Uncompressed] depth [16 colors/256 colors/256 gray levels/24bit TrueColor]
 new-bmp    SAVE   PASS        new.bmp: BMP bpp=24 comp=0 (want /^BMP bpp=24 comp=0/); OK GDI+ 40x30 Format24bppRgb mean diff 0,0, worst 0; temp left 0; boxes: [#32770 'PictView'] [Static id=2477] Image saved successfully. | [Button id=1] OK | [Button id=2478] &Don't show this again
@@ -64,6 +64,6 @@ nd         ROUTE  NOT DRIVEN  a full disk during the save (needs a small volume:
 nd         ROUTE  NOT DRIVEN  a file system without ReplaceFile (the MoveFileEx fallback) and a target that vanishes between the question and the replace: saltests TestSafeReplace105 (pure rule + case 9)
 nd         ROUTE  NOT DRIVEN  2 colors and the CCITT G3/G4 TIFF compressions: the dialog offers them only for a bilevel source (since Open Salamander) and the WIC engine reports every image as 32-bit (feature 006) - they cannot be chosen; the encoder paths (1-bit BMP/PNG/TIFF, 2-color GIF, CCITT) were measured directly (research.md, m105b)
 nd         ROUTE  NOT DRIVEN  the Regenerate thumbnail and PictView Rename overwrite routes now replace in one step: unreachable on both builds (no scaled JPEG encoder; the viewed file is held open - Rename fails with 32 first)
-Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+Registry: restored; identical=True; SHA-256 before 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126 / after 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
 
 Rows: PASS 56, FAIL 0, NOT DRIVEN 4; existing files LOST: 0. Left running: 0; fixture removed: True; registry restored+identical: True
