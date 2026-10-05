@@ -1130,6 +1130,8 @@ static const WCHAR* SalIdentToW(const char* s, int len, WCHAR* stackBuf, WCHAR**
     return buf;
 }
 
+// copied header-only for plug-ins by salnameorder.h (feature 115) and, as equality, by
+// salzipname.h (110) - a change here must go there too (saltests' parity checks catch drift)
 int SalNameCompareOrdinalCI(const char* a, int aLen, const char* b, int bLen)
 {
     if (a == NULL)

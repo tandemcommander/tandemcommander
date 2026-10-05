@@ -37,6 +37,9 @@ public:
     static void VSPrintF(CHAR* buffer, const CHAR* pattern, va_list& marker);
     static int StrICmp(const CHAR* string1, const CHAR* string2);
     static int StrCmp(const CHAR* string1, const CHAR* string2);
+    // feature 115: the order of two file names, case ignored by the file system's rule
+    // (src/common/salnameorder.h - 092's rule); 0 = the same name. StrICmp folds ASCII only.
+    static int NameCmp(const CHAR* string1, const CHAR* string2);
     static CHAR* StrCpy(CHAR* text1, const CHAR* text2);
     static CHAR* StrCat(CHAR* text1, const CHAR* text2);
     static errno_t StrCat_s(CHAR* strDestination, size_t numberOfElements, const CHAR* strSource);

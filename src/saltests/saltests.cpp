@@ -37,6 +37,7 @@
 #include "salzipmember.h"   // feature 113
 #include "salfatname.h"     // feature 114
 #include "salvolpaths.h"    // feature 114
+#include "salnameorder.h"   // feature 115
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -7544,6 +7545,137 @@ static void TestUndeleteNames114()
     }
 }
 
+// feature 115: the Undelete plug-in's name order (salnameorder.h) is the core's
+// SalNameCompareOrdinalCI / SalNameEqualOrdinalCI exactly - for valid WTF-8, legacy bytes,
+// mixed, long (heap) names - and a sort by it keeps every group of equal names together
+static void TestUndeleteLeftovers115()
+{
+    std::vector<std::string> names = {
+        "", "a", "A", "b", "a.txt", "A.TXT", "a (1).txt", "_", "~", "z",
+        "\xC4\x8C.txt",               // C-caron
+        "\xC4\x8D.txt",               // c-caron
+        "\xC4\x8D.TXT",
+        "\xC4\x8C",
+        "\xC8\xBA", "\xE2\xB1\xA5",   // U+023A / U+2C65: one case pair, different UTF-8 lengths
+        "x\xC8\xBA", "x\xE2\xB1\xA5",
+        "\xE2\x84\xAA", "K", "k",     // Kelvin sign is not K
+        "\xC4\xB1", "i", "I",         // dotless i is not i
+        "\xC5\xBF", "s", "S",         // long s is not s
+        "\xE5\xA5\xBD.txt",           // U+597D
+        "\xE5\xA5\xBD.TXT",
+        "\xF0\x9F\x93\x81",           // a supplementary character
+        "\xED\xA0\x80x.txt",          // a lone surrogate (WTF-8)
+        "\xED\xA0\x80X.TXT",
+        "\xC8.txt", "\xE8.txt", "\xC8.TXT", // legacy code-page bytes (not UTF-8)
+        "\xC4", "\x80", "\xFF\xFE",
+        "a\xC8", "A\xE8",
+    };
+    // long names: over the 519-byte stack buffer (the heap path), equal by case only
+    std::string longA, longB;
+    for (int i = 0; i < 120; i++)
+    {
+        longA += "\xC4\x8C\xE5\xA5\xBD";
+        longB += "\xC4\x8D\xE5\xA5\xBD";
+    }
+    names.push_back(longA);
+    names.push_back(longB);
+    names.push_back(longB + "x");
+    int mismatch = 0, eqMismatch = 0;
+    for (size_t i = 0; i < names.size(); i++)
+        for (size_t j = 0; j < names.size(); j++)
+        {
+            const char* a = names[i].c_str();
+            const char* b = names[j].c_str();
+            if (Sign092(SalNameOrderCompareCI(a, -1, b, -1)) != Sign092(SalNameCompareOrdinalCI(a, -1, b, -1)))
+                mismatch++;
+            if (Sign092(SalNameOrderCompareCI(a, (int)names[i].size(), b, (int)names[j].size())) !=
+                Sign092(SalNameCompareOrdinalCI(a, (int)names[i].size(), b, (int)names[j].size())))
+                mismatch++;
+            if ((SalNameOrderEqualCI(a, -1, b, -1) != FALSE) != (SalNameEqualOrdinalCI(a, -1, b, -1) != FALSE))
+                eqMismatch++;
+            if ((SalNameOrderEqualCI(a, -1, b, -1) != FALSE) != (SalNameOrderCompareCI(a, -1, b, -1) == 0))
+                eqMismatch++;
+        }
+    CHECK(mismatch == 0);
+    CHECK(eqMismatch == 0);
+    if (mismatch != 0 || eqMismatch != 0)
+        printf("TestUndeleteLeftovers115: corpus %d order / %d equality mismatches\n", mismatch, eqMismatch);
+
+    // the defect's names and the traps, spelled out
+    CHECK(SalNameOrderEqualCI("\xC4\x8C.txt", -1, "\xC4\x8D.txt", -1));  // C-caron = c-caron (was two names)
+    CHECK(SalNameOrderEqualCI("\xC4\x8C.TXT", -1, "\xC4\x8D.txt", -1));
+    CHECK(SalNameOrderEqualCI("\xC8\xBA", -1, "\xE2\xB1\xA5", -1));      // different byte lengths
+    CHECK(!SalNameOrderEqualCI("\xE2\x84\xAA", -1, "K", -1));            // Kelvin
+    CHECK(!SalNameOrderEqualCI("\xC4\xB1", -1, "I", -1));                // dotless i
+    CHECK(SalNameOrderEqualCI("a.TXT", -1, "A.txt", -1));
+    CHECK(!SalNameOrderEqualCI("a.txt", -1, "a (1).txt", -1));
+    CHECK(SalNameOrderEqualCI("\xED\xA0\x80x.txt", -1, "\xED\xA0\x80X.TXT", -1)); // lone surrogate kept
+    CHECK(!SalNameOrderEqualCI("\xC8.txt", -1, "\xC4\x8C.txt", -1));     // legacy never equals UTF-8
+    CHECK(SalNameOrderEqualCI(longA.c_str(), -1, longB.c_str(), -1));    // heap path
+    CHECK(!SalNameOrderEqualCI(longA.c_str(), -1, (longB + "x").c_str(), -1));
+    CHECK(SalNameOrderEqualCI(NULL, -1, "", -1) && SalNameOrderCompareCI(NULL, 0, NULL, 0) == 0);
+    CHECK(SalNameOrderCompareCI("a", -1, "\xC4\x8D", -1) < 0); // ASCII sorts below a tail
+
+    // random byte strings (valid and not): the same order as the core
+    {
+        unsigned int seed = 115;
+        auto rnd = [&seed]() { seed = seed * 1103515245u + 12345u; return (seed >> 16) & 0x7FFF; };
+        const char* pieces[] = {"a", "A", "b", "\xC4\x8C", "\xC4\x8D", "\xC8\xBA", "\xE2\xB1\xA5", "\xE5\xA5\xBD",
+                                "\xED\xA0\x80", "\xF0\x9F\x93\x81", "\xC8", "\xE8", "\x80", ".", " ", "1"};
+        int bad = 0;
+        for (int n = 0; n < 20000; n++)
+        {
+            std::string x, y;
+            int lx = rnd() % 5, ly = rnd() % 5;
+            for (int k = 0; k < lx; k++)
+                x += pieces[rnd() % 16];
+            for (int k = 0; k < ly; k++)
+                y += pieces[rnd() % 16];
+            if (rnd() % 3 == 0)
+                y = x; // often equal or equal but for case
+            if (rnd() % 2 == 0)
+                for (char& c : y)
+                    if (c >= 'a' && c <= 'z')
+                        c = (char)(c - 32);
+            if (Sign092(SalNameOrderCompareCI(x.c_str(), -1, y.c_str(), -1)) != Sign092(SalNameCompareOrdinalCI(x.c_str(), -1, y.c_str(), -1)) ||
+                (SalNameOrderEqualCI(x.c_str(), -1, y.c_str(), -1) != FALSE) != (SalNameEqualOrdinalCI(x.c_str(), -1, y.c_str(), -1) != FALSE))
+                bad++;
+        }
+        CHECK(bad == 0);
+        if (bad != 0)
+            printf("TestUndeleteLeftovers115: random %d mismatches\n", bad);
+    }
+
+    // a sort by it keeps equal names together (the numbering and the duplicate scan look at
+    // neighbours only): every equal pair is in one run of equal names
+    {
+        std::vector<std::string> v = names;
+        for (size_t i = 0; i < names.size(); i += 3)
+            v.push_back(names[i]); // some names twice
+        std::sort(v.begin(), v.end(), [](const std::string& a, const std::string& b)
+                  { return SalNameOrderCompareCI(a.c_str(), -1, b.c_str(), -1) < 0; });
+        int split = 0;
+        for (size_t i = 0; i < v.size(); i++)
+            for (size_t j = i + 2; j < v.size(); j++)
+                if (SalNameOrderEqualCI(v[i].c_str(), -1, v[j].c_str(), -1))
+                    for (size_t k = i + 1; k < j; k++)
+                        if (!SalNameOrderEqualCI(v[i].c_str(), -1, v[k].c_str(), -1))
+                            split++;
+        CHECK(split == 0);
+        // C-caron.txt / c-caron.txt / c-caron.TXT: one run of three
+        size_t first = v.size(), count = 0;
+        for (size_t i = 0; i < v.size(); i++)
+            if (SalNameOrderEqualCI(v[i].c_str(), -1, "\xC4\x8D.txt", -1))
+            {
+                if (first == v.size())
+                    first = i;
+                count++;
+            }
+        CHECK(count >= 3 && first + count <= v.size() &&
+              SalNameOrderEqualCI(v[first + count - 1].c_str(), -1, "\xC4\x8C.TXT", -1));
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -7597,6 +7729,7 @@ int main()
     TestCacheEdit112();
     TestZipMember113();
     TestUndeleteNames114();
+    TestUndeleteLeftovers115();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

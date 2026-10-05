@@ -53,6 +53,23 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Undelete's "Restore Encrypted Files from Backup" no longer crashes in
+  deep folders.** Restoring a folder whose contents lie deeper than about
+  260 characters of path (fewer with accented letters), or a folder holding a
+  junction or symbolic link back to itself, made the program crash. A source
+  panel in such a deep folder restored nothing and left empty folders behind.
+  Folders of any depth are now restored; a link back into the folders being
+  restored, or the target folder lying inside them, is reported and skipped.
+  Also in Undelete: the virtual folder {All Deleted Files} of a FAT disk
+  showed a file twice when its deleted folder was found twice, and could
+  leave out a different small file (up to 20 bytes) that had the same name as
+  another; deleted files whose names differ only in the case of an accented
+  letter (for example "Č.txt" and "č.txt", one name for Windows) are now
+  numbered like "A.txt" and "a.txt" always were, instead of the second
+  asking to overwrite the first; viewing (F3) a deleted file with a long name
+  did not show it; and a failed restore of an encrypted file into its backup form
+  could delete a file of the same name without the ".bak" in the target
+  folder (feature 115).
 - **Undelete restores deleted files under their own names, and from the
   volume chosen.** A file whose name begins with one of 4,096 Chinese and
   Japanese characters (U+5000 to U+5FFF) was listed with a "$" and two

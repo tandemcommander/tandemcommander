@@ -1792,3 +1792,45 @@ plugin architecture preservation, UI consistency.
     no volume opened) written, **GUI runs pending**; mount points need admin
     (person step). Records: `specs/114-undelete-names/fix-log.md`.
   GUI runs owed at commit time - see fix-log "Pending (GUI ...)".
+- 115-undelete-leftovers: **Undelete's Restore Encrypted Files walks any
+  depth, {All Deleted Files} drops true duplicates only, one name for
+  Windows is one name.** The three "found by 114" items, measured by code
+  reading (no GUI that day) and wider.
+  - **Restore Encrypted Files** (`restore.cpp`): the source panel's path
+    was read into MAX_PATH unchecked (a deeper panel gave "" - relative
+    names); `GetDirSize` appended unchecked into that buffer - a name that
+    did not fit left the PARENT's path, the parent was listed again: a
+    stack overflow at 259 bytes (also a 2-byte overrun); junctions back to
+    an ancestor and a target inside the selection recursed without end.
+    Now an iterative walk (heap stack of searches) on heap paths of
+    `SAL_MAX_PATH_UTF8`; a name that does not fit, an unlistable folder and
+    a folder the walk is already in (103's identity - usable 128/64-bit
+    ids only - or the normalised final path: an ancestor, the target, a
+    folder the restore created) are reported -
+    Skip / Skip all / Cancel with the system's text, no new string.
+  - **{All Deleted Files}** (FAT, `fat.h RemoveDuplicateFiles`): the
+    memcmp of DSSize bytes of the 44-byte `DATA_POINTERS` never removed a
+    true duplicate (a directory cluster read twice) and removed a different
+    file of up to 20 bytes with the same name. Now size + every data-runs
+    block, against every kept item of a run of equal names.
+  - **Name identity**: `src/common/salnameorder.h` - the core's
+    `SalNameCompareOrdinalCI` / `SalNameEqualOrdinalCI` header-only for
+    plug-ins that cannot compile salunicode.cpp (saltests parity);
+    `String<char>::NameCmp` in the restore list's and the FAT listing's
+    numbering, the duplicate removal and the path lookup.
+  - The plug-in's path lookup: exact name first, then the rule (case-only
+    pairs are not numbered on NTFS / exFAT).
+  - Sweep: F3 on a deleted file with a long name (disk-cache name cut at
+    MAX_PATH - nothing shown), a failed backup-form restore deleted
+    `<name>` instead of `<name>.bak` (and a named-stream-only record the
+    existing base file), `UndeleteGetResolvedRootPath`
+    overrun, the main restore's target cut, uninitialised EFS context
+    closed, short `.bak` taken as a backup.
+  - saltests 14,383 -> 14,401. Interface stays 107, no string, no registry
+    change. Probe `probe/undelleft_probe.ps1` + `make_images115.py` (FAT12
+    / exFAT images byte by byte, deep / long / junction folders for the
+    encrypted route - plain files, no EFS certificate needed or made; the
+    command gets Ctrl+Shift+U through the registry for the session)
+    written, **GUI runs pending**; real EFS backups NOT DRIVEN. Records:
+    `specs/115-undelete-leftovers/fix-log.md`.
+  GUI runs owed at commit time - see fix-log "Pending (GUI ...)".

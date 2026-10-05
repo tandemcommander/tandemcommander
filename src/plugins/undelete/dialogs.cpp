@@ -149,10 +149,28 @@ CCopyProgressDlg::CCopyProgressDlg(HWND parent, CObjectOrigin origin)
     LastTick = 0;
 }
 
+// feature 115: a path that does not fit the label buffer is shown as "..." + its END (the name),
+// cut at a whole UTF-8 character - Restore Encrypted Files walks paths of any length, and the
+// plain cut kept the beginning and lost the name (and could end inside a character)
+static void CopyPathForLabel(char* buf, int bufSize, const char* path)
+{
+    size_t len = strlen(path);
+    if (len < (size_t)bufSize)
+    {
+        memcpy(buf, path, len + 1);
+        return;
+    }
+    const char* tail = path + len - (bufSize - 4); // "..." + tail + NUL
+    while (((unsigned char)*tail & 0xC0) == 0x80)  // not inside a character
+        tail++;
+    memcpy(buf, "...", 3);
+    memcpy(buf + 3, tail, strlen(tail) + 1);
+}
+
 void CCopyProgressDlg::SetSourceFileName(const char* fileName)
 {
     CALL_STACK_MESSAGE2("CCopyProgressDlg::SetSourceFileName(%s)", fileName);
-    lstrcpyn(SrcName, fileName, _countof(SrcName)); // feature 114: was an unbounded strcpy
+    CopyPathForLabel(SrcName, _countof(SrcName), fileName); // feature 114: was an unbounded strcpy
     Changed[0] = TRUE;
     UpdateControls();
 }
@@ -160,7 +178,7 @@ void CCopyProgressDlg::SetSourceFileName(const char* fileName)
 void CCopyProgressDlg::SetDestFileName(const char* fileName)
 {
     CALL_STACK_MESSAGE2("CCopyProgressDlg::SetDestFileName(%s)", fileName);
-    lstrcpyn(DestName, fileName, _countof(DestName)); // feature 114: was an unbounded strcpy
+    CopyPathForLabel(DestName, _countof(DestName), fileName); // feature 114: was an unbounded strcpy
     Changed[1] = TRUE;
     UpdateControls();
 }

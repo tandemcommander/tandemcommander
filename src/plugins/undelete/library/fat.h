@@ -2199,7 +2199,37 @@ int CFATSnapshot<CHAR>::compare_names(const void* elem1, const void* elem2)
 {
     DIR_ITEM_I<CHAR>* di1 = (DIR_ITEM_I<CHAR>*)elem1;
     DIR_ITEM_I<CHAR>* di2 = (DIR_ITEM_I<CHAR>*)elem2;
-    return String<CHAR>::StrICmp(di1->Record->FileNames->FNName, di2->Record->FileNames->FNName);
+    // feature 115: the file system's rule (StrICmp folded ASCII only: deleted "C-caron.txt" and
+    // "c-caron.txt" of one folder were not numbered, and the second restore asked to overwrite
+    // the first); a total order, so equal names are neighbours after the sort
+    return String<CHAR>::NameCmp(di1->Record->FileNames->FNName, di2->Record->FileNames->FNName);
+}
+
+// feature 115: do two streams hold the same data - the same size and the same data runs (the
+// same clusters in the same order)? Was memcmp(Ptrs, Ptrs, DSSize): DSSize bytes of the 44-byte
+// DATA_POINTERS structure - read past it for a file over 44 bytes and stopped at the 'Runs'
+// pointer (two allocations never equal), so the duplicates were never removed; for a file of
+// up to 20 bytes it compared only StartVCN / LastVCN / DPFlags - equal for EVERY such file, so
+// a different small file of the same name was removed from {All Deleted Files}.
+// A stream without data runs (a zero-size file) is never "the same data" (as before).
+template <typename CHAR>
+static BOOL FATSameStreamData(const DATA_STREAM_I<CHAR>* s1, const DATA_STREAM_I<CHAR>* s2)
+{
+    if (s1 == NULL || s2 == NULL || s1->DSSize != s2->DSSize || s1->Ptrs == NULL || s2->Ptrs == NULL)
+        return FALSE;
+    const DATA_POINTERS* p1 = s1->Ptrs;
+    const DATA_POINTERS* p2 = s2->Ptrs;
+    while (p1 != NULL && p2 != NULL)
+    {
+        if (p1->StartVCN != p2->StartVCN || p1->LastVCN != p2->LastVCN || p1->RunsSize != p2->RunsSize ||
+            p1->Runs == NULL || p2->Runs == NULL || memcmp(p1->Runs, p2->Runs, p1->RunsSize) != 0)
+        {
+            return FALSE;
+        }
+        p1 = p1->DPNext;
+        p2 = p2->DPNext;
+    }
+    return p1 == NULL && p2 == NULL;
 }
 
 template <typename CHAR>
@@ -2214,21 +2244,28 @@ BOOL CFATSnapshot<CHAR>::RemoveDuplicateFiles(FILE_RECORD_I<CHAR>* record)
     // sort files by name
     qsort(record->DirItems, record->NumDirItems, sizeof(DIR_ITEM_I<CHAR>), compare_names);
 
-    // remove files with same name and same data runs
+    // remove files with same name and same data (feature 115: FATSameStreamData; every kept
+    // item of the run of equal names is compared - the sort orders by name only, so a duplicate
+    // need not be next to its original: "a.txt" (X), "a.txt" (Y), "a.txt" (X))
     DIR_ITEM_I<CHAR>* di = record->DirItems;
-    DWORD j = 0;
+    DWORD j = 0;     // the last kept item
+    DWORD group = 0; // the first kept item of the run of names equal to di[j]'s
     for (DWORD i = 1; i < record->NumDirItems; i++)
     {
-        FILE_RECORD_I<CHAR>* r1 = di[j].Record;
         FILE_RECORD_I<CHAR>* r2 = di[i].Record;
-        if (String<CHAR>::StrICmp(r1->FileNames->FNName, r2->FileNames->FNName) != 0 ||
-            r1->Streams == NULL || r1->Streams->Ptrs == NULL ||
-            r2->Streams == NULL || r2->Streams->Ptrs == NULL ||
-            r1->Streams->DSSize != r2->Streams->DSSize ||
-            memcmp(r1->Streams->Ptrs, r2->Streams->Ptrs, (size_t)r1->Streams->DSSize) != 0)
+        BOOL sameName = String<CHAR>::NameCmp(di[j].Record->FileNames->FNName, r2->FileNames->FNName) == 0;
+        BOOL duplicate = FALSE;
+        if (sameName)
+        {
+            for (DWORD k = group; k <= j && !duplicate; k++)
+                duplicate = FATSameStreamData(di[k].Record->Streams, r2->Streams);
+        }
+        if (!duplicate)
         {
             j++;
             di[j] = di[i];
+            if (!sameName)
+                group = j;
         }
     }
     j++; // first item (on zero index)
@@ -2328,7 +2365,7 @@ BOOL CFATSnapshot<CHAR>::RenameDuplicateDirectories(FILE_RECORD_I<CHAR>* dir)
     {
         DWORD j = i;
         while (j + 1 < dir->NumDirItems &&
-               String<CHAR>::StrICmp(di[i].Record->FileNames->FNName, di[j + 1].Record->FileNames->FNName) == 0)
+               String<CHAR>::NameCmp(di[i].Record->FileNames->FNName, di[j + 1].Record->FileNames->FNName) == 0) // feature 115
         {
             j++;
         }

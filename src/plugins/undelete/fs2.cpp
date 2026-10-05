@@ -200,12 +200,13 @@ CPluginFSInterface::IsOurPath(int currentFSNameIndex, int fsNameIndex, const cha
 
 // function for comparing file names; feature 114: the names are UTF-8 as listed - the FAT
 // parser puts the '$' placeholder for a lost first character into the name itself, so no byte
-// of a name is special here any more (an initial 0xE5 is the lead byte of U+5000..U+5FFF)
+// of a name is special here any more (an initial 0xE5 is the lead byte of U+5000..U+5FFF);
+// feature 115: case ignored by the file system's rule (092), not by _stricmp's ASCII fold
 int namecmp(char* name1, char* name2)
 {
     CALL_STACK_MESSAGE_NONE
     // CALL_STACK_MESSAGE1("namecmp(, )");
-    return _stricmp(name1, name2);
+    return String<char>::NameCmp(name1, name2);
 }
 
 #define PATHSEP "\\/"
@@ -333,11 +334,22 @@ CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName, int fsNameI
     {
         // is on current path object with given name?
         int numitems = CurrentDir->NumDirItems;
+        // feature 115 (review SF2): the exact name first, then the file system's rule - NTFS and
+        // exFAT listings do not number names that differ only in case, so a deleted folder and
+        // a live one of such names can share a parent (a case-sensitive folder can too); the
+        // first equal one took the path to the OTHER folder (shown and restored instead)
+        int match = numitems;
+        for (int k = 0; k < numitems && match == numitems; k++)
+            if (strcmp(CurrentDir->DirItems[k].FileName->FNName, component) == 0)
+                match = k;
+        for (int k = 0; k < numitems && match == numitems; k++)
+            if (!namecmp(CurrentDir->DirItems[k].FileName->FNName, component))
+                match = k;
         int i;
         for (i = 0; i < numitems; i++)
         {
             DIR_ITEM_I<char>* di = &CurrentDir->DirItems[i];
-            if (!namecmp(di->FileName->FNName, component))
+            if (i == match)
             {
                 if (di->Record->IsDir) // yes, it is direcotry
                 {
@@ -589,7 +601,10 @@ BOOL CFileList::AddFile(DIR_ITEM_I<char>* di)
 
 static int compare_items(const void* elem1, const void* elem2)
 {
-    return _stricmp((*((FL_ITEM**)elem1))->Name, (*((FL_ITEM**)elem2))->Name);
+    // feature 115: the file system's rule - _stricmp folded ASCII only, so deleted "C-caron.txt"
+    // and "c-caron.txt" (one file for Windows) were not numbered and the second restore asked to
+    // overwrite the first; a total order, so equal names are neighbours after the sort
+    return String<char>::NameCmp((*((FL_ITEM**)elem1))->Name, (*((FL_ITEM**)elem2))->Name);
 }
 
 BOOL CFileList::RenameDuplicateFiles()
@@ -603,7 +618,7 @@ BOOL CFileList::RenameDuplicateFiles()
     for (int i = 0; i < Count - 1; i++)
     {
         int j = i;
-        while (j + 1 < Count && !_stricmp(operator[](i)->Name, operator[](j + 1)->Name))
+        while (j + 1 < Count && String<char>::NameCmp(operator[](i)->Name, operator[](j + 1)->Name) == 0)
             j++;
 
         if (j > i)
@@ -632,9 +647,12 @@ BOOL CFileList::RenameDuplicateFiles()
 BOOL CPluginFSInterface::AppendPath(char* buffer, char* path, char* name, BOOL* ret)
 {
     CALL_STACK_MESSAGE1("CPluginFSInterface::AppendPath(, , , )");
-    // join the path and name and check the length
-    lstrcpyn(buffer, path, MAX_PATH);
-    if (!SalamanderGeneral->SalPathAppend(buffer, name, MAX_PATH))
+    // join the path and name and check the length (feature 115: a target path that does not fit
+    // is refused here too - it was cut by lstrcpyn, and only the full buffer made the append fail)
+    BOOL fits = strlen(path) < MAX_PATH;
+    if (fits)
+        lstrcpyn(buffer, path, MAX_PATH);
+    if (!fits || !SalamanderGeneral->SalPathAppend(buffer, name, MAX_PATH))
     {
         *ret = TRUE;
         if (!SkipAllLongPaths)
@@ -750,7 +768,20 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
     BOOL ret;
     // + for a stream name: an NTFS stream name has up to 255 UTF-16 units, 765 bytes of UTF-8
     // (feature 114: was MAX_PATH - a longer name was cut inside a character)
-    char path[MAX_PATH + 3 * MAX_PATH];
+    // feature 115: on the heap, sized by the target - for View 'targetPath' is the full name of
+    // the disk-cache copy, which ends with the file's name (up to 765 bytes), and it was cut at
+    // MAX_PATH bytes: the copy was written under another (cut) name and the viewer opened a file
+    // that was never written
+    size_t targetLen = strlen(targetPath);
+    size_t pathSize = (view ? targetLen : MAX_PATH) + 1 + 3 * MAX_PATH + 8; // + ':' + stream name / ".bak"
+    struct CPathHolder
+    {
+        char* P;
+        ~CPathHolder() { free(P); }
+    } pathHolder = {(char*)malloc(pathSize)};
+    char* path = pathHolder.P;
+    if (path == NULL)
+        return String<char>::Error(IDS_UNDELETE, IDS_LOWMEM);
     int oldlen;
 
     if (!view)
@@ -765,7 +796,10 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
         // fix name if needed
         char* name = FixDamagedName(record, filename);
         if (name == NULL)
+        {
+            SourcePath[oldlen] = 0; // feature 115: the next item was shown under this one's folder
             return FALSE;
+        }
         lstrcpyn(namepos, name, MAX_PATH - (int)(namepos - SourcePath));
 
         // make target path
@@ -778,15 +812,18 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
     else
     {
         // for view it is simple
-        lstrcpyn(path, targetPath, MAX_PATH);
-        lstrcpyn(SourcePath, filename, MAX_PATH);
+        memcpy(path, targetPath, targetLen + 1);
+        lstrcpyn(SourcePath, filename, MAX_PATH); // display only
         oldlen = 0;
     }
 
     // allocate buffer
     BYTE* buffer = new BYTE[COPY_BUFFER];
     if (buffer == NULL)
+    {
+        SourcePath[oldlen] = 0;
         return String<char>::Error(IDS_UNDELETE, IDS_LOWMEM);
+    }
     int bufclusters = COPY_BUFFER / Volume.BytesPerCluster;
 
     // init progress
@@ -816,6 +853,15 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
     BOOL encrypted = (record->Attr & FILE_ATTRIBUTE_ENCRYPTED) != 0;
     ret = TRUE;
     BOOL deleteTargetOnError = TRUE;
+    // feature 115 (review): a record with named streams only (a damaged MFT record) creates
+    // "<name>:<stream>" - inside an EXISTING <name> without any overwrite question; the cleanup
+    // after a failure then deleted <name> itself, a file this restore did not create. Such a base
+    // file is never deleted (a partly written stream may stay in it).
+    if (!encrypted && copyStreams.Count > 0 && copyStreams[0]->DSName != NULL &&
+        SalamanderGeneral->SalGetFileAttributes(path) != INVALID_FILE_ATTRIBUTES)
+    {
+        deleteTargetOnError = FALSE;
+    }
     for (int streamIndex = 0; streamIndex < copyStreams.Count && ret; streamIndex++)
     {
         stream = copyStreams[streamIndex];
@@ -902,7 +948,7 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
                 // with SafeFileCreate anyway for error handling, but we need to close it
                 SalamanderSafeFile->SafeFileClose(&file);
 
-                PVOID context;
+                PVOID context = NULL; // feature 115: closed only when opened (was closed uninitialised)
                 DWORD result2;
                 // restore target lives on the local disk: use the W API (interface 104)
                 WCHAR* pathW = SplU8ToWExtAlloc(path);
@@ -917,7 +963,8 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
                     }
                     ret = FALSE;
                 }
-                CloseEncryptedFileRaw(context);
+                if (context != NULL)
+                    CloseEncryptedFileRaw(context);
                 free(pathW);
             }
 
@@ -1022,7 +1069,12 @@ BOOL CPluginFSInterface::CopyFile(FILE_RECORD_I<char>* record, char* filename, c
     // remove file on error (local disk target: W file API, interface 104)
     if (!ret && deleteTargetOnError)
     {
-        *pathend = 0;
+        // feature 115: an encrypted file written as a backup was created as "<name>.bak" - that
+        // is the file to remove; cutting the ".bak" deleted "<name>", a file this restore never
+        // created (the user's own file in the target folder). For streams the base file is the
+        // one created first.
+        if (!(encrypted && BackupEncryptedFiles))
+            *pathend = 0;
         SalamanderGeneral->ClearReadOnlyAttr(path);
         WCHAR* pathW = SplU8ToWExtAlloc(path);
         if (pathW != NULL)
@@ -1184,7 +1236,11 @@ BOOL CPluginFSInterface::CopyFileList(CFileList& list, char* targetPath)
 
 void UndeleteGetResolvedRootPath(const char* path, char* resolvedPath)
 {
-    strcpy(resolvedPath, path);
+    // feature 115: bounded - 'resolvedPath' is MAX_PATH bytes and 'path' can be longer (the
+    // target of a copy from the file system is up to 2 * MAX_PATH bytes, the disk-cache copy of a
+    // viewed file has the file's name of up to 765 bytes): the unbounded strcpy overran the stack.
+    // Only the root is wanted; the core's resolvers read at most MAX_PATH bytes of a path anyway.
+    lstrcpyn(resolvedPath, path, MAX_PATH);
     SalamanderGeneral->ResolveSubsts(resolvedPath);
     char rootPath[MAX_PATH];
     SalamanderGeneral->GetRootPath(rootPath, resolvedPath);

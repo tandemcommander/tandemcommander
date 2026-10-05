@@ -14,6 +14,8 @@
 #include "../dialogs.h"
 #include "../undelete.h"
 
+#include "../../../common/salnameorder.h" // feature 115: name identity by the file system's rule
+
 // ****************************************************************************
 //
 // LoadStr() - helper function for reading strings from resources
@@ -166,6 +168,15 @@ template <>
 int String<char>::StrICmp(const char* string1, const char* string2)
 {
     return _stricmp(string1, string2);
+}
+
+// feature 115: names are WTF-8 (114); _stricmp folds ASCII only, so "C-caron.txt" and
+// "c-caron.txt" - one file for Windows - were two names (not numbered: the second restore asked
+// to overwrite the first). A total order: equal names are neighbours after a sort by it.
+template <>
+int String<char>::NameCmp(const char* string1, const char* string2)
+{
+    return SalNameOrderCompareCI(string1, -1, string2, -1);
 }
 
 template <>
