@@ -53,6 +53,28 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Checksum lists are read in the encoding they were written in.** Verifying
+  a .md5, .sha1, .sha256, .sha512 or .sfv list reported files with accented
+  names as missing when the list was written in the Windows code page (Open
+  Salamander, older tools, PowerShell Set-Content), and refused a list saved
+  as UTF-8 with a byte order mark (Total Commander when a name needs Unicode,
+  PowerShell Out-File -Encoding utf8) or as UTF-16 (PowerShell 5.1 ">") as
+  "not a checksum file". The encoding is now recognised for the whole list;
+  a name that cannot be read exactly is reported missing and never matched to
+  a similar-looking file. Lines such as "./folder/file" or
+  "folder/../file" (lists made with find) were always reported missing and
+  now work; a name with "?" or "*" (what a code-page tool writes for a
+  character it cannot store) is reported missing instead of being taken as
+  a wildcard that found some other file and then ended in an error; a
+  folder named in a list is reported missing instead of an error; a name
+  with a full path is checked only when it lies on the list's own drive or
+  network share - any other, in particular a network path such as
+  \\server\share\file, is reported missing without contacting that server;
+  lines that GNU sha256sum escapes (names with a backslash) are read. Lists
+  saved by Calculate in the MD5 and SHA formats now end lines with LF and
+  have no comment line, so GNU sha256sum (also in Git for Windows) and 7-Zip
+  can check them - neither could before; SFV lists are unchanged (feature
+  117).
 - **FTP passwords are the text you type, in any script and up to 100
   characters.** A character outside the Windows code page typed into the
   password field of the FTP Connect dialog or of a proxy server - Cyrillic,

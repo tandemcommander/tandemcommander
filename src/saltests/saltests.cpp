@@ -39,6 +39,7 @@
 #include "salvolpaths.h"    // feature 114
 #include "salnameorder.h"   // feature 115
 #include "salftpsecret.h"   // feature 116
+#include "salcsumlist.h"    // feature 117
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -7812,6 +7813,227 @@ static void TestFtpSecret116()
     CHECK(SalFtpFieldShowsStored("abc", L"abc", 1250) && !SalFtpFieldShowsStored("abc", L"ABC", 1250)); // case matters
 }
 
+// feature 117: reading a checksum list (src/common/salcsumlist.h) - the encoding decided for
+// the whole file, exact conversion (never a look-alike), names that cannot be a file, the GNU
+// escape, and the path a name stands for ('.' / '..' resolved, never above the root)
+static std::string Csl117(const std::string& bytes, UINT cp, SalCslEncoding* enc = NULL, size_t* bad = NULL)
+{
+    char* t = SalCslDecode((const unsigned char*)bytes.data(), bytes.size(), cp, enc, bad);
+    std::string r = t != NULL ? std::string(t) : std::string("<NULL>");
+    free(t);
+    return r;
+}
+static std::string U16_117(const std::wstring& w, bool le)
+{
+    std::string r;
+    for (wchar_t c : w)
+    {
+        unsigned char lo = (unsigned char)(c & 0xFF), hi = (unsigned char)(c >> 8);
+        r += (char)(le ? lo : hi);
+        r += (char)(le ? hi : lo);
+    }
+    return r;
+}
+static std::string Path117(const char* dir, const char* name, size_t size = 1000, BOOL* ok = NULL)
+{
+    char out[1000];
+    int r = SalCslBuildPath(dir, name, out, size);
+    if (ok != NULL)
+        *ok = r == SAL_CSL_PATH_OK;
+    if (r == SAL_CSL_PATH_FOREIGN)
+        return std::string("<FOREIGN:") + out + ">";
+    return r == SAL_CSL_PATH_OK ? std::string(out) : std::string("<FALSE:") + out + ">";
+}
+
+static void TestChecksumList117()
+{
+    const std::string h = "0123456789abcdef0123456789abcdef  "; // an MD5 line's checksum + separator
+    SalCslEncoding e = SAL_CSL_CODEPAGE;
+    size_t bad = 99;
+
+    // ---- rule 1: one encoding for the whole file ----
+    CHECK(Csl117(h + "\xC4\x8D.txt\r\n", 1250, &e, &bad) == h + "\xC4\x8D.txt\r\n" && e == SAL_CSL_UTF8 && bad == 0);
+    CHECK(Csl117("\xEF\xBB\xBF" + h + "a\n", 1250, &e) == h + "a\n" && e == SAL_CSL_UTF8_BOM);
+    CHECK(Csl117(h + "\xE8.txt\n", 1250, &e) == h + "\xC4\x8D.txt\n" && e == SAL_CSL_CODEPAGE); // c-caron
+    CHECK(Csl117("", 1250, &e) == "" && e == SAL_CSL_UTF8);
+    CHECK(Csl117(h + "plain.txt\n", 1250, &e) == h + "plain.txt\n" && e == SAL_CSL_UTF8);
+    // a lone surrogate (WTF-8, the plug-in's own lists can hold one) keeps the file UTF-8
+    CHECK(Csl117(h + "\xED\xA0\x80.txt\n", 1250, &e) == h + "\xED\xA0\x80.txt\n" && e == SAL_CSL_UTF8);
+    // an overlong sequence is not UTF-8: code page (C0 = R-acute, 80 = euro in CP1250)
+    CHECK(Csl117(h + "\xC0\x80\n", 1250, &e) == h + "\xC5\x94\xE2\x82\xAC\n" && e == SAL_CSL_CODEPAGE);
+    // one UTF-8 line and one code-page line: the WHOLE file is code page - never mixed per line
+    // (C4 = A-umlaut, 8D = T-caron in CP1250)
+    CHECK(Csl117(h + "\xC4\x8D\n" + h + "\xE8\n", 1250, &e) == h + "\xC3\x84\xC5\xA4\n" + h + "\xC4\x8D\n" && e == SAL_CSL_CODEPAGE);
+
+    // UTF-16 with a byte order mark: CJK, a surrogate pair (emoji), a lone surrogate (WTF-8)
+    const std::wstring w = L"0123456789abcdef0123456789abcdef  \x65E5\x672C\xD83D\xDCC1\xD800x.txt\r\n";
+    const std::string wU8 = h + "\xE6\x97\xA5\xE6\x9C\xAC\xF0\x9F\x93\x81\xED\xA0\x80x.txt\r\n";
+    CHECK(Csl117("\xFF\xFE" + U16_117(w, true), 1250, &e) == wU8 && e == SAL_CSL_UTF16LE_BOM);
+    CHECK(Csl117("\xFE\xFF" + U16_117(w, false), 1250, &e) == wU8 && e == SAL_CSL_UTF16BE_BOM);
+    // without the mark (NUL bytes on one parity)
+    CHECK(Csl117(U16_117(w, true), 1250, &e) == wU8 && e == SAL_CSL_UTF16LE);
+    CHECK(Csl117(U16_117(w, false), 1250, &e) == wU8 && e == SAL_CSL_UTF16BE);
+    // a cut-off last unit -> SAL_CSL_BADCHAR; U+0000 inside -> SAL_CSL_BADCHAR (never ends the text)
+    CHECK(Csl117("\xFF\xFE" + U16_117(L"ab", true) + "c", 1250, &e, &bad) == "ab\xFF" && bad == 1);
+    CHECK(Csl117("\xFF\xFE" + U16_117(std::wstring(L"a\0b", 3), true), 1250, &e, &bad) == "a\xFF" "b" && bad == 1);
+    // a marked UTF-8 file with a broken byte: that byte only
+    CHECK(Csl117("\xEF\xBB\xBF" + h + "x\xE8y\n" + h + "\xC4\x8D\n", 1250, &e, &bad) == h + "x\xFFy\n" + h + "\xC4\x8D\n" && e == SAL_CSL_UTF8_BOM && bad == 1);
+    // a stray NUL byte in an unmarked UTF-8 text
+    CHECK(Csl117(h + std::string("a\0" "b\n", 4), 1250, &e, &bad) == h + "a\xFF" "b\n" && e == SAL_CSL_UTF8 && bad == 1);
+    // ... but a short file whose NULs sit on one parity is UTF-16 (the threshold is 1 NUL in 16 bytes)
+    CHECK(Csl117(std::string("a\0" "b\0", 4), 1250, &e) == "ab" && e == SAL_CSL_UTF16LE);
+    // NULs (review S1): trailing ones, a zero-padded tail and NULs at a line's start or end are
+    // ignored; inside a line a NUL is SAL_CSL_BADCHAR and the line is not cut
+    const std::string l80 = h + "a.txt\n" + h + "\xC4\x8D.txt\n"; // UTF-8, about 80 bytes
+    for (size_t pad : {1, 11, 13, 21, 64})
+    {
+        CHECK(Csl117(l80 + std::string(pad, '\0'), 1250, &e, &bad) == l80 && e == SAL_CSL_UTF8 && bad == 0);
+        CHECK(Csl117(h + "a.txt" + std::string(pad, '\0'), 1250, &e, &bad) == h + "a.txt" && e == SAL_CSL_UTF8 && bad == 0);
+    }
+    CHECK(Csl117(h + "\xE8.txt\n" + std::string(13, '\0'), 1250, &e, &bad) == h + "\xC4\x8D.txt\n" && e == SAL_CSL_CODEPAGE && bad == 0);
+    CHECK(Csl117(std::string("\0\0", 2) + h + std::string("a\0\r\n", 4) + h +std::string("b\0\0\n\0", 5), 1250, &e, &bad) == h + "a\r\n" + h + "b\n" && bad == 0);
+    CHECK(Csl117(h + std::string("voil\0" "a.txt\n", 11), 1250, &e, &bad) == h + "voil\xFF" "a.txt\n" && bad == 1);
+    CHECK(Csl117(h + "\xE8" + std::string("\0", 1) + "x\n", 1250, &e, &bad) == h + "\xC4\x8D\xFFx\n" && e == SAL_CSL_CODEPAGE && bad == 1);
+    // UTF-16: NUL units at a line end / after the text are ignored; a padding byte too
+    CHECK(Csl117("\xFF\xFE" + U16_117(std::wstring(L"ab\0\n\0\0", 6), true) + std::string("\0", 1), 1250, &e, &bad) == "ab\n" && bad == 0);
+    CHECK(Csl117(U16_117(L"0123456789abcdef0123456789abcdef  a.txt\r\n", true) + std::string(7, '\0'), 1250, &e, &bad) == h + "a.txt\r\n" && e == SAL_CSL_UTF16LE && bad == 0);
+    // UTF-16 without a mark needs one parity to dominate: NULs on both parities are not UTF-16
+    CHECK(Csl117(std::string("a\0b\0c\0d\0e\0f\0g\0h\0i\0\0j", 20), 1250, &e) != "" && e == SAL_CSL_UTF16LE);
+    CHECK((Csl117(std::string("a\0\0b\0\0c\0\0d", 10), 1250, &e), e) == SAL_CSL_UTF8);
+    // byte order marks at the start of a line are dropped (concatenated lists), elsewhere kept
+    CHECK(Csl117("\xEF\xBB\xBF" "a\r\n\xEF\xBB\xBF" "b\n", 1250) == "a\r\nb\n");
+    CHECK(Csl117("a\xEF\xBB\xBF" "b\n", 1250) == "a\xEF\xBB\xBF" "b\n");
+    CHECK(Csl117("\xFF\xFE" + U16_117(L"a\n\xFEFF" L"b\xFEFF", true), 1250) == "a\nb\xEF\xBB\xBF");
+
+    // ---- rule 2: exact conversion ----
+    CHECK(Csl117(h + "voil\xE0.txt\n", 1252) == h + "voil\xC3\xA0.txt\n");     // a-grave, not "voila"
+    CHECK(Csl117(h + "voil\xE0.txt\n", 1250) == h + "voil\xC5\x95.txt\n");     // CP1250: E0 = r-acute
+    CHECK(Csl117(h + "\xC6\xF3\xEA.txt\n", 1251) == h + "\xD0\x96\xD1\x83\xD0\xBA.txt\n"); // Cyrillic
+    CHECK(Csl117(h + "\x9F.txt\n", 852) == h + "\xC4\x8D.txt\n");              // OEM 852 c-caron when asked for 852
+    // a double-byte code page: a valid pair converts, a broken one is one SAL_CSL_BADCHAR and the
+    // rest of the file (its line ends, the next line) stays
+    CHECK(Csl117(h + "\x82\xA0\x82\n" + h + "b\n", 932, &e, &bad) == h + "\xE3\x81\x82\xFF\n" + h + "b\n" && e == SAL_CSL_CODEPAGE && bad == 1);
+    // no byte >= 0x80 of any code page ever becomes ASCII (a look-alike) - it is SAL_CSL_BADCHAR or
+    // exactly the character Windows defines for it
+    const UINT cps[] = {1250, 1251, 1252, 1253, 1254, 1255, 1256, 1257, 1258, 874, 437, 850, 852, 866, 932, 936, 949, 950};
+    for (UINT cp : cps)
+    {
+        bool good = true;
+        for (int b = 0x80; b <= 0xFF; b++)
+        {
+            std::string r = Csl117(std::string(1, (char)b), cp);
+            WCHAR wc[4];
+            char c1 = (char)b;
+            int n = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, &c1, 1, wc, 4);
+            if (r.empty() || (unsigned char)r[0] < 0x80)
+                good = false;
+            else if (n == 1)
+            {
+                char u8[8];
+                int m = WideCharToMultiByte(CP_UTF8, 0, wc, 1, u8, 8, NULL, NULL);
+                if (r != std::string(u8, m))
+                    good = false;
+            }
+            else if (r != "\xFF")
+                good = false;
+        }
+        CHECK(good);
+    }
+
+    // ---- rule 3: names that cannot name a file ----
+    CHECK(SalCslNameUsable("a b.txt"));
+    CHECK(SalCslNameUsable("\xC4\x8D.txt"));
+    CHECK(SalCslNameUsable("sub\\x.txt"));
+    CHECK(SalCslNameUsable("\xED\xA0\x80.txt")); // a lone surrogate is a legal NTFS name
+    CHECK(SalCslNameUsable("C:\\x\\y.txt"));
+    CHECK(!SalCslNameUsable("???.txt")); // what a code-page tool writes for Cyrillic / CJK
+    CHECK(!SalCslNameUsable("voil?.txt"));
+    CHECK(!SalCslNameUsable("*.txt"));
+    CHECK(!SalCslNameUsable("<.txt"));
+    CHECK(!SalCslNameUsable("a>b"));
+    CHECK(!SalCslNameUsable("a\"b"));
+    CHECK(!SalCslNameUsable("a|b"));
+    CHECK(!SalCslNameUsable("a\nb"));
+    CHECK(!SalCslNameUsable("a\x1F" "b"));
+    CHECK(!SalCslNameUsable("voil\xFF.txt"));
+    CHECK(!SalCslNameUsable(""));
+    CHECK(!SalCslNameUsable(NULL));
+    // ':' only right after a drive letter of an absolute name (review N1: streams, other drives)
+    CHECK(SalCslNameUsable("C:\\x.txt"));
+    CHECK(SalCslNameUsable("c:/x.txt"));
+    CHECK(!SalCslNameUsable("x.txt:secret"));
+    CHECK(!SalCslNameUsable("C:x.txt"));
+    CHECK(!SalCslNameUsable("C:"));
+    CHECK(!SalCslNameUsable("1:\\x"));
+    CHECK(!SalCslNameUsable("C:\\x:y"));
+    CHECK(!SalCslNameUsable("\\\\?\\C:\\x")); // device / extended spellings hold '?'
+
+    // ---- the GNU coreutils escape ----
+    char esc1[] = "sub\\\\x.txt"; // written by sha256sum for "sub\x.txt"
+    SalCslUnescapeName(esc1);
+    CHECK(strcmp(esc1, "sub\\x.txt") == 0);
+    char esc2[] = "a\\nb\\rc";
+    SalCslUnescapeName(esc2);
+    CHECK(strcmp(esc2, "a\nb\rc") == 0);
+    // an unknown escape and a lone backslash at the end make the name unusable (as coreutils)
+    char esc3[] = "a\\qb\\";
+    SalCslUnescapeName(esc3);
+    CHECK(strcmp(esc3, "a\xFF" "qb\xFF") == 0 && !SalCslNameUsable(esc3));
+
+    // ---- the path a name stands for ----
+    const char* d = "C:\\l\\d";
+    CHECK(Path117(d, "x.txt") == "C:\\l\\d\\x.txt");
+    CHECK(Path117(d, "./x.txt") == "C:\\l\\d\\x.txt");
+    CHECK(Path117(d, ".\\.\\x.txt") == "C:\\l\\d\\x.txt");
+    CHECK(Path117(d, "sub/../x.txt") == "C:\\l\\d\\x.txt");
+    CHECK(Path117(d, "sub/y/x.txt") == "C:\\l\\d\\sub\\y\\x.txt");
+    CHECK(Path117(d, "a//b") == "C:\\l\\d\\a\\b");
+    CHECK(Path117(d, "../x") == "C:\\l\\x");
+    CHECK(Path117(d, "../../../../x") == "C:\\x"); // never above the drive
+    CHECK(Path117(d, "\\x") == "C:\\l\\d\\x");     // one leading separator: relative, as always
+    CHECK(Path117(d, "/x") == "C:\\l\\d\\x");
+    // absolute names: only on the list's own drive / share (review B1: a UNC look-up connects to
+    // the server named and sends the user's credentials)
+    CHECK(Path117(d, "c:/l/x") == "c:\\l\\x");
+    CHECK(Path117(d, "C:\\e\\..\\f") == "C:\\f");
+    CHECK(Path117(d, "D:/e/f") == "<FOREIGN:>");
+    CHECK(Path117(d, "d:\\e\\..\\f") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\srv\\sh\\..\\..\\x") == "<FOREIGN:>");
+    CHECK(Path117(d, "//host/share/x") == "<FOREIGN:>");
+    CHECK(Path117(d, "/\\host\\share\\x") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\/host/share/x") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\localhost\\C$\\Windows\\win.ini") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\127.0.0.1@80\\x\\y") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\?\\UNC\\srv\\sh\\x") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\?\\C:\\l\\d\\x") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\.\\pipe\\x") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\.\\C:\\x") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\\\srv\\sh\\x") == "<FOREIGN:>");
+    CHECK(Path117(d, "\\\\") == "<FOREIGN:>");
+    const char* u = "\\\\srv\\sh\\d"; // a list on a share
+    CHECK(Path117(u, "\\\\SRV\\SH\\x") == "\\\\SRV\\SH\\x");           // the same share (case by the file system's rule)
+    CHECK(Path117(u, "//srv/sh/e/../x") == "\\\\srv\\sh\\x");
+    CHECK(Path117(u, "\\\\srv\\sh\\..\\..\\x") == "\\\\srv\\sh\\x"); // never above the share
+    CHECK(Path117(u, "\\\\srv\\other\\x") == "<FOREIGN:>");
+    CHECK(Path117(u, "\\\\srv2\\sh\\x") == "<FOREIGN:>");
+    CHECK(Path117(u, "\\\\srv\\sh2\\x") == "<FOREIGN:>");
+    CHECK(Path117(u, "C:\\x") == "<FOREIGN:>");
+    CHECK(Path117(u, "../../x") == "\\\\srv\\sh\\x");
+    CHECK(Path117("\\\\srv\\sh\\d", "../../x") == "\\\\srv\\sh\\x");
+    CHECK(Path117("\\\\srv\\sh\\d", "x") == "\\\\srv\\sh\\d\\x");
+    CHECK(Path117(d, "x.") == "C:\\l\\d\\x.");     // a trailing dot is another name - kept
+    CHECK(Path117(d, "x ") == "C:\\l\\d\\x ");
+    CHECK(Path117(d, "...") == "C:\\l\\d\\...");
+    CHECK(Path117(d, ".") == "C:\\l\\d");
+    CHECK(Path117("C:\\", "x") == "C:\\x");
+    CHECK(Path117("C:\\", "..") == "C:\\");
+    CHECK(Path117(d, "\xC4\x8D/\xE6\x97\xA5.txt") == "C:\\l\\d\\\xC4\x8D\\\xE6\x97\xA5.txt");
+    BOOL ok = TRUE;
+    CHECK(Path117(d, "x.txt", strlen("C:\\l\\d\\x.txt") + 1, &ok) == "C:\\l\\d\\x.txt" && ok);
+    CHECK(Path117(d, "x.txt", strlen("C:\\l\\d\\x.txt"), &ok) == "<FALSE:>" && !ok);
+    CHECK(Path117(d, "x.txt", 2, &ok) == "<FALSE:>" && !ok);
+}
+
 int main()
 {
     TestConversions();
@@ -7867,6 +8089,7 @@ int main()
     TestUndeleteNames114();
     TestUndeleteLeftovers115();
     TestFtpSecret116();
+    TestChecksumList117();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

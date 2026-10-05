@@ -849,6 +849,34 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        4. checksum: a checksum list written in the code page with accented
           names reports those files as missing (no encoding detection of the
           list file).
+          ✅ **Fixed by feature 117 (2026-10-05) - GUI runs pending**:
+          measured first (`specs/117-checksum-lists/research.md`) - besides
+          code-page lists, a UTF-8 list with a byte order mark (Total
+          Commander for Unicode names, PowerShell `Out-File -Encoding utf8`)
+          and a UTF-16 list (PowerShell 5.1 `>`) were refused as "not a
+          checksum file", every `./name` / `dir/../name` line was "missing"
+          since 0.1.0 (the extended-length path keeps `.` and `..`), the
+          existence check matched wildcards (`???.txt`, what `Set-Content`
+          writes for a Cyrillic name, found `abc.txt`, then an error box),
+          and the plug-in's own md5/sha lists were unreadable by GNU
+          coreutils (CRLF) and 7-Zip (comment line). The encoding is now
+          decided once per file (mark, UTF-16 by NUL bytes, UTF-8 when the
+          whole file is, else the code page; OEM never guessed), converted
+          exactly (an unconvertible byte makes its name "missing", shown
+          U+FFFD), wildcard names and folders are "missing", `.`/`..` are
+          resolved, an absolute name is used only on the list's own drive
+          or share (code review B1: a UNC name made Windows connect to the
+          server named and send the user's credentials - fixed before
+          release; any other absolute name is "missing" without a look-up),
+          trailing NUL padding is ignored, GNU-escaped lines read; md5/sha
+          lists are written with
+          LF and no comment (SFV unchanged). Helper
+          `src/common/salcsumlist.h`. Probe `specs/117-checksum-lists/probe/
+          csumlist_probe.ps1` written, runs owed. **Found by 117, not fixed**:
+          a list line whose path does not fit 780 bytes aborts the whole
+          Verify with "name too long" (`FILEINFO::fileName` fixed buffer);
+          an OEM list's accented names stay "missing" (no signal tells OEM
+          from the code page).
        5. Smaller: the plug-in folder picker does not resolve NetHood folder
           shortcuts (the core's `GetTargetDirectory` did); diskmap's log
           window shows paths garbled; the ZIP comment field is code page by

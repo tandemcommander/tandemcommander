@@ -1863,3 +1863,31 @@ plugin architecture preservation, UI consistency.
   `probe/ftppwd_probe.ps1` (+ `ftplog_server.py`, 127.0.0.1) written, GUI runs owed. Records:
   `specs/116-ftp-passwords/fix-log.md`.
   GUI runs owed at commit time - see fix-log "Commit before the GUI runs".
+- 117-checksum-lists: **checksum lists are read in the encoding they were written in** (NEXT-WORK
+  plug-in leftovers item 4, from 104). Measured first (`research.md`): coreutils and 7-Zip write
+  UTF-8, PowerShell 5.1 writes UTF-16 LE with a mark (`>`), UTF-8 with a mark (`Out-File -Encoding
+  utf8`) or the code page with best fit (`Set-Content`: `voila`, `???`), Open Salamander and Total
+  Commander the code page (TC: UTF-8 with a mark for Unicode names). The plug-in read only plain
+  UTF-8: code-page names "missing", marked UTF-8 and UTF-16 md5/sha lists refused; every `./x` /
+  `dir/../x` line "missing" since 004 (`\\?\` keeps `.` and `..`); the existence check was
+  `FindFirstFileW` - `???.txt` matched `abc.txt`; its own md5/sha lists were unreadable by
+  coreutils (CRLF) and 7-Zip (comment line).
+  - **Rules** (`src/common/salcsumlist.h`, header-only): the encoding is decided **once per file**
+    (mark; UTF-16 by NUL parity with strong dominance; UTF-8 if the whole file is WTF-8; else
+    `GetACP()`; trailing NULs ignored), never per line; OEM never guessed; exact conversion, an
+    undecodable byte -> 0xFF (`SAL_CSL_BADCHAR` - not 0x1A: white space is trimmed at a line start
+    and would name another file) and the name is "missing" (shown U+FFFD); a NUL inside a line is
+    0xFF, never a line end (a cut name is another file's); names with controls, `* ? < > " |` or a
+    `:` (streams) are "missing" without a look-up; `GetFileAttributesExW` (no patterns, a folder
+    is missing); `.` / `..` / `//` resolved, never above the drive or share; **an absolute name is
+    used only on the list's own drive or share - any other, every UNC / `\\?\` / `\\.\` spelling
+    included, is "missing" without any file-system call** (review B1: a UNC look-up connected to
+    any server a list named and sent the user's NTLM hash); GNU-escaped lines unescaped.
+  - **Writing**: md5/sha* lists UTF-8, LF, no comment line (coreutils and 7-Zip read them); SFV
+    unchanged.
+  - saltests 14,441 -> 14,576 (all single bytes of 18 code pages: never ASCII). Offline model
+    `probe/m117_model.cpp` 58 / 0. Code-only review: REJECT (B1 above; S1: one trailing NUL
+    refused a list 0.1.8 read), fixed. Probe `probe/csumlist_probe.ps1` written, runs owed. Found,
+    not fixed: a path over 780 bytes aborts the Verify. Interface stays 107. Records:
+    `specs/117-checksum-lists/fix-log.md`.
+  GUI runs owed at commit time - see fix-log T012/T015.

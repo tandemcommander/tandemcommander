@@ -6,6 +6,7 @@
 #include "wrappers.h"
 #include "misc.h"
 #include "tomcrypt\tomcrypt.h"
+#include "../../common/salcsumlist.h" // feature 117: SalCslUnescapeName
 
 class CCRCAlgo : public CHashAlgo
 {
@@ -263,6 +264,12 @@ bool CGenericHashAlgo::ParseDigest(char* buf, char* fileName, int fileNameLen, c
     // checksum at the beginning (before ' ') or checksum at the end (after ' ' or '=') and at the same time
     // the hash name at the beginning (before '(' or ' ')
 
+    // feature 117: GNU coreutils start the line with a backslash when the name is escaped (it
+    // holds a backslash or a line break); the prefix is skipped and the name unescaped below
+    BOOL escaped = (buf[0] == '\\');
+    if (escaped)
+        buf++;
+
     GetFirstWord(buf, pos, len, '(');
     if (len == GetIDLen())
     {
@@ -308,6 +315,8 @@ bool CGenericHashAlgo::ParseDigest(char* buf, char* fileName, int fileNameLen, c
     if ((int)strlen(buf + pos) >= fileNameLen)
         return false; // too long name
     strcpy_s(fileName, fileNameLen, buf + pos);
+    if (escaped)
+        SalCslUnescapeName(fileName);
     return true;
 }
 
