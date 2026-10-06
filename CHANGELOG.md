@@ -106,7 +106,7 @@ password with a non-English letter to the archive engine garbled.
   show another pixel; it now always shows the one under the cursor.
 - **PictView renames a picture onto a file that another PictView window
   shows.** Choosing *Rename* onto an existing file that a second PictView
-  window had open failed with "used by another process" (nothing was lost).
+  window had open failed with "Access is denied" (nothing was lost).
   After "Yes" to the overwrite question the rename now goes through, and the
   second window shows what that name holds now; a window that is printing or
   saving keeps its file and the rename is refused as before.

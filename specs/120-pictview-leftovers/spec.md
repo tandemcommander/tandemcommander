@@ -23,7 +23,7 @@ The maintainer asked for autonomy; the decisions are the author's recommended op
   fourth pixel; 180 of 185 in a 37 x 5 image) and all five histogram channels were wrong for every
   fixture; Pillow is the reference. (b) Code reading: only the windows showing the RENAMED file let
   go (111); the replacing `MoveFileExW` meets the target's decoder, which does not share delete -
-  error 32, nothing lost. (c) Measured: the Windows GIF encoder writes the given bytes in
+  error 5 (access denied - measured by the GUI run; the backlog said 32), nothing lost. (c) Measured: the Windows GIF encoder writes the given bytes in
   sub-blocks of at most 255, no NUL; it refuses XMP (`/xmp/...` answers
   `WINCODEC_ERR_PROPERTYNOTSUPPORTED`), so GIF has no Unicode alternative.
 - Q: Which consumers of the engine's pixel buffer read it? -> A: Only the pipette (status bar and

@@ -3008,7 +3008,7 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
                                 DWORD tgtAttr = wTgtPath != NULL ? GetFileAttributesW(wTgtPath) : INVALID_FILE_ATTRIBUTES;
                                 SalamanderGeneral->ClearReadOnlyAttr(tgtPath); // to allow it to be replaced ...
                                 // feature 120: another PictView window showing the TARGET held it open (its decoder
-                                // does not share delete), so the replace failed "in use" (32) - only the windows of
+                                // does not share delete), so the replace failed "access denied" (5) - only the windows of
                                 // the renamed file let go (111). Now they let the target go too, after the answer
                                 // Yes and only for the replace; afterwards each shows what its name holds (111's
                                 // operation ids keep the two releases apart). A window that is loading, encoding or

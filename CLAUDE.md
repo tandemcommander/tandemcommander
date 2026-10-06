@@ -1986,7 +1986,7 @@ plugin architecture preservation, UI consistency.
     only with `-VisiblePipette` on the visible desktop - the pipette follows
     the real cursor) written, GUI runs pending. Records:
     `specs/120-pictview-leftovers/fix-log.md`.
-  GUI runs owed at commit time - see fix-log T012.
+  GUI runs (2026-10-06): 17 / 0 / 5 (pre-120 15 / 2: rename onto a shown target "Access is denied" (5), rotation lost); 111 85/0/2, 105 56/0/4; pipette + histogram rows need an unlocked visible desktop (owed).
 - 121-small-batch: **eleven small defects of the backlog, measured first** (`research.md`; no GUI
   run allowed). Find's *Look in* holds any path the program can (`SAL_MAX_PATH_UTF8`, limit
   `SAL_MAX_PATH_W` units; a panel path that does not fit is left out, never cut - it was cut at 259

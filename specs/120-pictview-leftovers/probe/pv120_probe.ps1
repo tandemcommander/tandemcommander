@@ -90,6 +90,9 @@ public static class Drv120
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT p);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(POINT p);
+    public static IntPtr WindowFromPoint(int x, int y) { POINT p = new POINT(); p.X = x; p.Y = y; return WindowFromPoint(p); }
     [DllImport("user32.dll")] public static extern int GetWindowLongW(IntPtr h, int index);
     [DllImport("user32.dll")] static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
     [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr h);
@@ -459,13 +462,13 @@ function Run-Tgt([string]$Case) {
         Start-Sleep -Milliseconds 1200
         $ta = Title $a; $tb = Title $b; $tc = if ($c -ne [IntPtr]::Zero) { Title $c } else { '' }
         $xNow = Hash $x; $zNow = Hash $z
-        $err32 = $boxes -match '\(32\)|used by another process|in use'
+        $refused = $boxes -match "Error Renaming File"   # MoveFileExW onto a file held open answers 5 (access denied), not 32 - measured
         switch ($Case) {
             'tgt-shown' {
                 $pb = Shown-Pixels $id $b ($Out + '\' + $Case + '-b.png') @($a, $c)
                 $pc = Shown-Pixels $id $c ($Out + '\' + $Case + '-c.png') @($a, $b)
                 $ok = ($xNow -eq '<missing>') -and ($zNow -eq $hx) -and $ta.Contains('z.png') -and $tb.Contains('z.png') -and $tc.Contains('z.png') -and
-                      ($pb -match ('^40x30 ' + $pxX + '$')) -and ($pc -match ('^40x30 ' + $pxX + '$')) -and ((Held $z) -eq 32) -and -not $err32
+                      ($pb -match ('^40x30 ' + $pxX + '$')) -and ($pc -match ('^40x30 ' + $pxX + '$')) -and ((Held $z) -eq 32) -and -not $refused
                 Row $Case 'RENAME' (V $ok) ("A renames x.png onto z.png (B shows z.png, C shows x.png), Yes: x {0}, z = x's content {1}; titles A '{2}', B '{3}', C '{4}'; B shows {5} (want x's pixels {6}); C shows {7}; z held: err {8}; boxes: {9}" -f $xNow, ($zNow -eq $hx), (Tail $ta 30), (Tail $tb 30), (Tail $tc 30), $pb, $pxX, $pc, (Held $z), $boxes)
             }
             'tgt-shown-no' {
@@ -476,13 +479,13 @@ function Run-Tgt([string]$Case) {
             'tgt-shown-hl' {
                 $hzNow = Hash ($d + '\hz.png')
                 $pb = Shown-Pixels $id $b ($Out + '\' + $Case + '-b.png') @($a)
-                $ok = ($xNow -eq '<missing>') -and ($zNow -eq $hx) -and ($hzNow -eq $hz) -and $tb.Contains('hz.png') -and ($pb -match ('^40x30 ' + $pxZ + '$')) -and ((Held ($d + '\hz.png')) -eq 32) -and -not $err32
+                $ok = ($xNow -eq '<missing>') -and ($zNow -eq $hx) -and ($hzNow -eq $hz) -and $tb.Contains('hz.png') -and ($pb -match ('^40x30 ' + $pxZ + '$')) -and ((Held ($d + '\hz.png')) -eq 32) -and -not $refused
                 Row $Case 'RENAME' (V $ok) ("B shows hz.png (hard link of z.png); A renames x.png onto z.png, Yes: z = x's content {0}, hz keeps the old content {1}; B title '{2}', shows {3} (want {4}); hz held: err {5}; boxes: {6}" -f ($zNow -eq $hx), ($hzNow -eq $hz), (Tail $tb 30), $pb, $pxZ, (Held ($d + '\hz.png')), $boxes)
             }
             'tgt-shown-print' {
                 $pb = Shown-Pixels $id $b ($Out + '\' + $Case + '-b.png') @($a)
-                $ok = ($xNow -eq $hx) -and ($zNow -eq $hz) -and $err32 -and ($pb -match ('^40x30 ' + $pxZ + '$')) -and (Test-Alive $id)
-                Row $Case 'RENAME' (V $ok) ("B prints z.png while A renames x.png onto it, Yes: refused 'in use' {0}; x unchanged {1}, z unchanged {2}; B afterwards shows {3}; boxes: {4}" -f $err32, ($xNow -eq $hx), ($zNow -eq $hz), $pb, $boxes)
+                $ok = ($xNow -eq $hx) -and ($zNow -eq $hz) -and $refused -and ($pb -match ('^40x30 ' + $pxZ + '$')) -and (Test-Alive $id)
+                Row $Case 'RENAME' (V $ok) ("B prints z.png while A renames x.png onto it, Yes: refused (an error box) {0}; x unchanged {1}, z unchanged {2}; B afterwards shows {3}; boxes: {4}" -f $refused, ($xNow -eq $hx), ($zNow -eq $hz), $pb, $boxes)
             }
         }
         foreach ($w in @($c, $b, $a)) { Close-Viewer $id $w }
@@ -613,12 +616,24 @@ function Run-Pipette([string]$Case, [bool]$Mirror) {
         if (-not $sb) { Row $Case 'PIPETTE' 'FAIL' 'no status bar'; return }
         [void][Drv120]::SetForegroundWindow($w); Start-Sleep -Milliseconds 500
         $wr = New-Object Drv120+RECT; [void][Drv120]::GetWindowRect($w, [ref]$wr)
-        $samples = @()
-        foreach ($fy in 0.30, 0.45, 0.60) {
-            foreach ($fx in 0.25, 0.4, 0.5, 0.6, 0.75) {
-                $sx = [int]($wr.Left + ($wr.Right - $wr.Left) * $fx); $sy = [int]($wr.Top + ($wr.Bottom - $wr.Top) * $fy)
-                [void][Drv120]::SetCursorPos($sx, $sy); Start-Sleep -Milliseconds 250
+        $samples = @(); $seen = @{}
+        $cx = [int](($wr.Left + $wr.Right) / 2); $cy = [int](($wr.Top + $wr.Bottom) / 2)
+        $under = [Drv120]::WindowFromPoint($cx, $cy); $fg = [Drv120]::GetForegroundWindow()
+        $mine = $false; $h = $under; while ($h -ne [IntPtr]::Zero -and -not $mine) { $mine = $h -eq $w; $h = [Drv098f]::GetParent($h) }
+        if (-not $mine) {
+            # the screen shows something else at the viewer's place (the lock screen of a locked session,
+            # measured: LockScreenBackstopFrame): the cursor's messages never reach the viewer
+            Row $Case 'PIPETTE' 'NOT DRIVEN' ("the viewer is not under the cursor: the window at its center is '{0}', the foreground window '{1}' (a locked session shows the lock screen there)" -f [Drv098f]::Cls($under), [Drv098f]::Cls($fg))
+            Close-Viewer $id $w
+            return
+        }
+        # a grid over the window's middle (the image is centered; 100 %, 120 x 90 pixels)
+        for ($gy = -60; $gy -le 60; $gy += 15) {
+            for ($gx = -80; $gx -le 80; $gx += 16) {
+                $sx = $cx + $gx; $sy = $cy + $gy
+                [void][Drv120]::SetCursorPos($sx, $sy); Start-Sleep -Milliseconds 150
                 $xy = [Drv120]::SbText($sb, 1); $c = [Drv120]::SbText($sb, 3)
+                $k = "[$xy|$c]"; if ($seen.Count -lt 6 -and -not $seen.ContainsKey($k)) { $seen[$k] = 1 }
                 if ($xy -match 'X:(\d+)\s+Y:(\d+)' ) {
                     $X = [int]$Matches[1]; $Y = [int]$Matches[2]
                     if ($c -match 'R:(\d+)\s+G:(\d+)\s+B:(\d+)') { $samples += [pscustomobject]@{ X = $X; Y = $Y; Got = ('{0},{1},{2}' -f $Matches[1], $Matches[2], $Matches[3]) } }
@@ -626,7 +641,7 @@ function Run-Pipette([string]$Case, [bool]$Mirror) {
             }
         }
         [void][Drv120]::SetCursorPos($p0.X, $p0.Y)
-        if ($samples.Count -lt 6) { Row $Case 'PIPETTE' 'FAIL' ('only {0} positions over the image read (status bar X/Y + R/G/B)' -f $samples.Count) }
+        if ($samples.Count -lt 6) { Row $Case 'PIPETTE' 'FAIL' ('only {0} positions over the image read (status bar X/Y + R/G/B); window under the center: {1} (viewer {2}), foreground {3}; status bar texts seen: {4}' -f $samples.Count, [Drv098f]::Cls($under), ($under -eq $w -or [Drv098f]::GetParent($under) -eq $w), $(if ($fg -eq $w) { 'the viewer' } else { [Drv098f]::Cls($fg) }), (Esc (($seen.Keys | Select-Object -First 6) -join ' '))) }
         else {
             # the pixel SHOWN at (X, Y): mirrored, the image's column 119 - X
             $pts = @($samples | ForEach-Object { '{0},{1}' -f $(if ($Mirror) { 119 - $_.X } else { $_.X }), $_.Y })

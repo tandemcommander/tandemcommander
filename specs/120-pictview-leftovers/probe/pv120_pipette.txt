@@ -1,0 +1,11 @@
+pv120_probe (feature 120)
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_120\tandemcommander.exe
+Date    : 2026-10-06 07:28; ACP 1250; desktop 'Default'; registry key existed True; backup SHA-256 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+pip-plain  PIPETTE NOT DRIVEN  the viewer is not under the cursor: the window at its center is 'LockScreenBackstopFrame', the foreground window 'Windows.UI.Core.CoreWindow' (a locked session shows the lock screen there)
+pip-plain  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pip-mirror PIPETTE NOT DRIVEN  the viewer is not under the cursor: the window at its center is 'LockScreenBackstopFrame', the foreground window 'Windows.UI.Core.CoreWindow' (a locked session shows the lock screen there)
+pip-mirror END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 2. Left running: 0; fixture removed: True; registry restored+identical: True

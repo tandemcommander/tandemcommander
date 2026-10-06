@@ -803,8 +803,9 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           windows let go; nothing lost); (c) the GIF comment extension gets
           UTF-8 bytes although GIF89a defines 7-bit ASCII (no Unicode
           alternative in GIF).
-          ✅ **(a)-(c) fixed or decided by feature 120 (2026-10-06) - GUI
-          runs pending**: measured first with a harness that compiles the
+          ✅ **(a)-(c) fixed or decided by feature 120 (2026-10-06; GUI-verified
+          the same day 17 / 0 / 5 - pipette and histogram rows owed on an
+          unlocked visible desktop)**: measured first with a harness that compiles the
           plug-in's own engine and reader (`probe/pixharness/`): the pipette
           was wrong for 3 of 4 pixels of every row of every image (the engine
           hands out 32-bit rows for every format) and all five histogram

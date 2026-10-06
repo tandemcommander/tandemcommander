@@ -139,6 +139,54 @@ agreement. Results follow in a separate commit.
 - `RedecodeTurned` decodes synchronously (as the lazy decode at the next paint did, also without
   progress).
 
+## GUI results (2026-10-06 06:45-07:30)
+
+Run one at a time, on the preserved trees `Debug_x64_120` and `Debug_x64_pre120`; no
+tandemcommander.exe before each run; registry baseline SHA-256 `1AB614304771DBE0...` checked
+before the first run, restored and verified identical by every probe, and again by a separate
+export after the last run; `HKCU\Control Panel\Desktop` wallpaper values unchanged (111's
+`wp-real` PASS; the 111 wallpaper rows on the dry-run seam). Nothing built.
+
+| Run | Tree | Result |
+|---|---|---|
+| `pv120_probe.ps1` (hidden desktop) -> `probe/pv120_result.txt` | `Debug_x64_120` | **17 PASS / 0 FAIL / 5 NOT DRIVEN**: `tgt-shown` (z.png = x's content, A/B/C titled z.png, B and C show x's pixels, z held again, no error), `tgt-shown-no`, `tgt-shown-hl`, `tgt-shown-print`, `bk-rot` (30x40, pixel-exact), `cmt-gif-ascii`, `cmt-gif-u8`, every END row; NOT DRIVEN `hist-*` (the hidden desktop renders nothing - the capture shows no tone band), `pip-*` (no cursor) |
+| the same -> `probe/pv120_result_pre120.txt` | `Debug_x64_pre120` | 15 / **2 FAIL** / 5: `tgt-shown` FAIL (`Error Renaming File` **(5) access denied**, z.png unchanged, B still shows z), `bk-rot` FAIL (Save As 40x30 unrotated while the title says 30 x 40); `tgt-shown-hl` PASS on this build too (see below) |
+| 111 `shown_probe.ps1` -> `probe/regress_shown111_120.txt` | `Debug_x64_120` | **85 / 0 / 2** (as 111's own result), `wp-real` PASS |
+| 105 `saveas_probe.ps1` -> `probe/regress_saveas105_120.txt` | `Debug_x64_120` | **56 / 0 / 4, existing files lost 0** |
+| `pv120_probe.ps1 -VisiblePipette` (visible desktop, `TC_PROBE_ALLOW_VISIBLE_DESKTOP=1`) -> `probe/pv120_pipette.txt` | `Debug_x64_120` | `pip-plain`, `pip-mirror` **NOT DRIVEN**: the session is locked - `SetCursorPos` works, but the window at the viewer's place is `LockScreenBackstopFrame` and the foreground window the lock screen, so no mouse message reaches the viewer (two earlier attempts recorded FAIL "0 positions read" before the probe learnt to tell this). Stopped there as instructed; the control run on `Debug_x64_pre120` was not made |
+
+Findings of the runs:
+
+- **The error on the build before is 5 (access denied), not 32**: `MoveFileExW(REPLACE_EXISTING)`
+  onto a file another process holds open without `FILE_SHARE_DELETE` answers 5. The backlog (111)
+  and this feature's first records said 32 / "in use"; `research.md` and `spec.md` are corrected.
+  **Outside this folder, not edited (instruction: no edits outside `specs/120-...` during the GUI
+  runs), owed:** the `CHANGELOG.md` entry says *"failed with "used by another process""* - should
+  say *"Access is denied"*; the comment in `render1.cpp RenameFileInternal` says *"failed "in use"
+  (32)"* - should say 5; the `NEXT-WORK.md` entry says *"GUI runs pending"*.
+- **A window showing the target through a hard link never blocked the rename** (`tgt-shown-hl`
+  PASS on both builds): Windows replaces the name z.png although the same file is open through
+  hz.png without delete sharing. On this build that window lets go and re-attaches; the row
+  verifies that it keeps its own file and is held again - it is not a demonstrator of the defect.
+- `tgt-shown-print`: the refusal on both builds is the same error 5 box; probe expectation
+  corrected (see below).
+- No product defect found.
+
+Probe-only fixes made during the runs (`probe/pv120_probe.ps1`, no product file touched):
+1. `tgt-shown-print` and the "no error" checks of the other rename rows now look for the
+   `Error Renaming File` box instead of the text of error 32 (the first full run on
+   `Debug_x64_120` reported this row FAIL only because of that expectation; re-run alone and then
+   the whole probe again: PASS).
+2. The pipette rows sample a grid over the window's middle (the 120 x 90 image is centered at
+   100 %) and report NOT DRIVEN, with the window under the cursor and the foreground window named,
+   when the viewer is not under the cursor (a locked session).
+
+Still owed to a person (unlocked visible desktop): the pipette rows on both builds
+(`quickstart.md` step 4) and the histogram rows (`-Only hist-*` with
+`TC_PROBE_ALLOW_VISIBLE_DESKTOP=1` on the visible desktop, or by hand - `quickstart.md`); the
+harness covers the reader on the real engine's rows meanwhile (0 mismatches; the build before
+2,295).
+
 ## CLAUDE.md "Recent Changes" entry (proposed)
 
 - 120-pictview-leftovers: **PictView's pipette and histogram read the real

@@ -27,7 +27,8 @@ written and owed (`quickstart.md`).
    different full-screen background color, or by changing the colors in the configuration.
 4. **Rename onto a shown target**: code reading confirms 111's record - only the renamed file's
    windows are asked; the replacing `MoveFileExW` meets the target's decoder (no
-   `FILE_SHARE_DELETE`) and fails with 32. Nothing is lost.
+   `FILE_SHARE_DELETE`) and fails - measured by the GUI run on the build before: error **5**
+   (access denied), not the 32 the backlog said. Nothing is lost.
 5. **GIF comment**: the Windows GIF encoder writes the bytes as given; there is no Unicode
    alternative in GIF (XMP refused - measured); Windows shows no GIF comment at all.
 
@@ -99,7 +100,7 @@ files). The dialog's field holds 63 characters (105), so at most 189 bytes.
 `RenameFileInternal`; the first `SalMoveFile` fails "already exists"; 103's identity check finds
 another file; the overwrite question; Yes -> `MoveFileExW(MOVEFILE_REPLACE_EXISTING)`. A window
 showing the TARGET holds it open through its WIC decoder without `FILE_SHARE_DELETE` - the replace
-fails with 32 and nothing changes. 111's protocol has what is needed: `ReleaseShownFile` with
+fails (5, access denied - measured) and nothing changes. 111's protocol has what is needed: `ReleaseShownFile` with
 `own = FALSE` asks only the other windows, the operation id keeps this release apart from the
 source's (a window already released for the source answers 0), `RetakeShownFile` ends it.
 

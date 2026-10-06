@@ -12,5 +12,6 @@
 - [X] T010 Probe `probe/pv120_probe.ps1` (+ `mkfix120.py`, `ref120.py`) written; parse + C# compile + the bar reader checked on a synthetic capture
 - [X] T011 Gates: Debug build, full Release build, saltests, strict encoding guard, clang-format of the touched code
 - [X] T012 Records: fix-log, NEXT-WORK, CHANGELOG `[Unreleased]`; CLAUDE.md entry proposed in the fix-log; no commit
-- [ ] T013 GUI runs (owed): pv120 probe on `Debug_x64_120` and `Debug_x64_pre120`; regressions 111 shown_probe and 105 saveas_probe on `Debug_x64_120`; pipette rows on the visible desktop with the maintainer's agreement
+- [X] T013 GUI runs (fix-log "GUI results"): pv120 probe 17/0/5 on `Debug_x64_120`, 15/2/5 on `Debug_x64_pre120`; regressions 111 85/0/2 and 105 56/0/4 (0 lost) on `Debug_x64_120`
+- [ ] T013a Owed (session locked): the pipette rows on the visible desktop on both builds, the histogram rows where the screen renders
 - [ ] T014 Independent review
