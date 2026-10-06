@@ -63,14 +63,17 @@ protected:
     }
     void LogError(CZFile* file, DWORD dwError)
     {
-        TCHAR szBuf[120];
-        FormatMessage(
-            FORMAT_MESSAGE_FROM_SYSTEM,
-            NULL,
-            dwError,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-            szBuf, ARRAYSIZE(szBuf),
-            NULL);
+        // feature 121 (review NIT 5): a message longer than the buffer made FormatMessage fail and an
+        // uninitialised buffer was logged (and shown by the log window) - larger, checked, no inserts
+        TCHAR szBuf[512];
+        if (FormatMessage(
+                FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                dwError,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                szBuf, ARRAYSIZE(szBuf),
+                NULL) == 0)
+            _stprintf_s(szBuf, TEXT("Error %u"), (unsigned)dwError);
 
         CZString* ers = new CZString(szBuf);
         CLogItemBase* lgi = CLogger::CreateLogItem(LOG_ERROR, ers, new CZString(file));

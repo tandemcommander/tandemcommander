@@ -881,7 +881,7 @@ BOOL CFTPOperation::PrepareNextScriptCmd(char* buf, int bufSize, char* logBuf, i
                 lstrcpyn(buf, proxySendCmdBuf, bufSize);
                 if (bufSize > 0)
                     *cmdLen = (int)strlen(buf);
-                lstrcpyn(logBuf, proxyLogCmdBuf, logBufSize);
+                SplU8CopyTrunc(logBuf, logBufSize, proxyLogCmdBuf); // feature 121: cut at a whole character (a long user name)
             }
             // else ; // end of the login script
         }

@@ -16,6 +16,7 @@
 #include "usermenu.h"
 #include "execute.h"
 #include "tasklist.h"
+#include "salfindtext.h" // feature 121
 
 #include <Shlwapi.h>
 #include <uxtheme.h>
@@ -1438,20 +1439,11 @@ CFindDialog::CFindDialog(HWND hCenterAgainst, const char* initPath)
         lstrcpy(Data.NamedText, "*.*");
     if (Data.LookInText[0] == 0)
     {
-        const char* s = initPath;
-        char* d = Data.LookInText;
-        char* end = Data.LookInText + LOOKIN_TEXT_LEN - 1; // -1 leaves room for the null terminator at the end of the string
-        while (*s != 0 && d < end)
-        {
-            if (*s == ';')
-            {
-                *d++ = ';';
-                if (d >= end)
-                    break;
-            }
-            *d++ = *s++;
-        }
-        *d++ = 0;
+        // feature 121: the panel's path whole (';' doubled - the field's escape); a path that does
+        // not fit stays out - the field was MAX_PATH and the path was cut at 259 bytes (inside a
+        // UTF-8 character too), so Find searched another folder
+        if (!SalFindLookInFromPath(initPath, Data.LookInText, LOOKIN_TEXT_LEN))
+            TRACE_I("CFindDialog: the panel's path does not fit the Look in field, left empty");
     }
 }
 
@@ -1771,9 +1763,14 @@ void CFindDialog::Validate(CTransferInfo& ti)
     {
         // back up the data
         char bufNamed[NAMED_TEXT_LEN];
-        char bufLookIn[LOOKIN_TEXT_LEN];
         strcpy(bufNamed, Data.NamedText);
-        strcpy(bufLookIn, Data.LookInText);
+        // feature 121: the Look in text can be SAL_MAX_PATH_UTF8 bytes - the backup on the heap
+        char* bufLookIn = DupStr(Data.LookInText);
+        if (bufLookIn == NULL)
+        {
+            ti.ErrorOn(IDC_FIND_LOOKIN); // low memory (DupStr traced it): nothing is searched
+            return;
+        }
 
         SalGetWindowTextU8(hNamesWnd, Data.NamedText, NAMED_TEXT_LEN); // mask matched against UTF-8 names (feature 005)
         CMaskGroup mask(Data.NamedText);
@@ -1802,6 +1799,7 @@ void CFindDialog::Validate(CTransferInfo& ti)
 
         // restore data from the backup
         strcpy(Data.LookInText, bufLookIn);
+        free(bufLookIn);
         strcpy(Data.NamedText, bufNamed);
     }
 }
@@ -1813,6 +1811,12 @@ void CFindDialog::Transfer(CTransferInfo& ti)
     HistoryComboBox(HWindow, ti, IDC_FIND_LOOKIN, Data.LookInText, LOOKIN_TEXT_LEN,
                     FALSE, FIND_LOOKIN_HISTORY_SIZE, FindLookInHistory,
                     FALSE, TRUE /* feature 085: no password from a typed address */);
+    // feature 121: the field's limit in UTF-16 units whose UTF-8 always fits LOOKIN_TEXT_LEN bytes
+    // (HistoryComboBox sets textLen - 1 units: accented text that long would not fit the bytes and
+    // its read would be cut)
+    HWND hLookInCombo;
+    if (ti.GetControl(hLookInCombo, IDC_FIND_LOOKIN, TRUE))
+        SendMessage(hLookInCombo, CB_LIMITTEXT, LOOKIN_TEXT_CHARS, 0);
 
     ti.CheckBox(IDC_FIND_INCLUDE_SUBDIR, Data.SubDirectories);
     HistoryComboBox(HWindow, ti, IDC_FIND_CONTAINING, Data.GrepText, GREP_TEXT_LEN,
@@ -1927,8 +1931,11 @@ void CFindDialog::BuildSerchForData()
 
     SearchForData.DestroyMembers();
 
-    char path[MAX_PATH];
-    lstrcpy(path, Data.LookInText);
+    // feature 121: the whole Look in text (it was copied into char[MAX_PATH] - safe only while the
+    // field held MAX_PATH bytes); on the heap, it can be SAL_MAX_PATH_UTF8 bytes
+    char* path = DupStr(Data.LookInText);
+    if (path == NULL)
+        return; // low memory (DupStr traced it): no search data, the caller says "empty"
     begin = path;
     do
     {
@@ -1975,6 +1982,11 @@ void CFindDialog::BuildSerchForData()
         if (*begin != 0)
         {
             CSearchForData* item = new CSearchForData(begin, named, Data.SubDirectories);
+            if (item != NULL && item->Dir == NULL) // feature 121: low memory at the heap copy
+            {
+                delete item;
+                item = NULL;
+            }
             if (item != NULL)
             {
                 SearchForData.Add(item);
@@ -1982,6 +1994,7 @@ void CFindDialog::BuildSerchForData()
                 {
                     SearchForData.ResetState();
                     delete item;
+                    free(path);
                     return;
                 }
             }
@@ -1989,6 +2002,7 @@ void CFindDialog::BuildSerchForData()
         if (*end != 0)
             begin = end;
     } while (*end != 0);
+    free(path);
 }
 
 void CFindDialog::StartSearch(WORD command)
@@ -2783,7 +2797,7 @@ void CFindDialog::OnCopyNameToClipboard(CCopyNameToClipboardModeEnum mode)
         AlterFileName(name, data->Name, -1, FileNameFormat, 0, data->IsDir);
         CSalPathBuf buff; // UTF-8, long-path capable (feature 004)
         if (buff.Set(data->Path) && buff.AppendComponent(name))
-            CopyTextToClipboardU8(buff.Get()); // UTF-8 (feature 063, contract C2)
+            CopyTextToClipboardU8Report(HWindow, buff.Get()); // UTF-8 (feature 063, contract C2); feature 121
         else
             TRACE_E(LOW_MEMORY);
         break;
@@ -2792,13 +2806,13 @@ void CFindDialog::OnCopyNameToClipboard(CCopyNameToClipboardModeEnum mode)
     case cntcmName:
     {
         AlterFileName(name, data->Name, -1, FileNameFormat, 0, data->IsDir);
-        CopyTextToClipboardU8(name); // UTF-8 (feature 063, contract C2)
+        CopyTextToClipboardU8Report(HWindow, name); // UTF-8 (feature 063, contract C2); feature 121
         break;
     }
 
     case cntcmFullPath:
     {
-        CopyTextToClipboardU8(data->Path); // UTF-8 (feature 063, contract C2)
+        CopyTextToClipboardU8Report(HWindow, data->Path); // UTF-8 (feature 063, contract C2); feature 121
         break;
     }
 
@@ -3659,14 +3673,23 @@ MENU_TEMPLATE_ITEM FindLookInBrowseMenu[] =
                 if (cmd == 1)
                 {
                     // Browse...
-                    char path[MAX_PATH + 200];
+                    char path[2 * MAX_PATH + 8]; // feature 121: every ';' of a MAX_PATH path doubled + "; " on both sides (was MAX_PATH + 200)
                     // feature 093: the field is a Unicode control - read it wide; the
                     // selection offsets count UTF-16 units
-                    WCHAR buff[1024];
+                    // feature 121: the whole text (it was read into 1,024 units; the field holds
+                    // LOOKIN_TEXT_CHARS now) - the separators around the selection are checked in it
+                    int textLen = GetWindowTextLengthW(EditLine->HWindow);
+                    WCHAR* buff = (WCHAR*)malloc((textLen + 2) * sizeof(WCHAR));
+                    if (buff == NULL)
+                    {
+                        TRACE_E(LOW_MEMORY);
+                        return TRUE;
+                    }
                     DWORD start, end;
                     EditLine->GetSel(&start, &end);
                     buff[0] = 0;
-                    GetWindowTextW(EditLine->HWindow, buff, 1024);
+                    GetWindowTextW(EditLine->HWindow, buff, textLen + 1);
+                    buff[textLen + 1] = 0; // buff[rightIndex + 1] below may read one past the text
                     DWORD buffLen = (DWORD)wcslen(buff);
                     path[0] = 0;
                     if (start < end && end <= buffLen)
@@ -3708,6 +3731,7 @@ MENU_TEMPLATE_ITEM FindLookInBrowseMenu[] =
 
                         EditLine->ReplaceText(path);
                     }
+                    free(buff);
                     return TRUE;
                 }
                 if (cmd == 3 || cmd == 4)

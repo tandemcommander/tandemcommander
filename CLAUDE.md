@@ -1987,3 +1987,31 @@ plugin architecture preservation, UI consistency.
     the real cursor) written, GUI runs pending. Records:
     `specs/120-pictview-leftovers/fix-log.md`.
   GUI runs owed at commit time - see fix-log T012.
+- 121-small-batch: **eleven small defects of the backlog, measured first** (`research.md`; no GUI
+  run allowed). Find's *Look in* holds any path the program can (`SAL_MAX_PATH_UTF8`, limit
+  `SAL_MAX_PATH_W` units; a panel path that does not fit is left out, never cut - it was cut at 259
+  bytes, inside a character too; heap copies behind it, `CSearchForData::Dir` was an unbounded
+  `strcpy`; `src/common/salfindtext.h`). The message box breaks lines only inside a word wider than
+  the box, after a path separator when it can (`SalMsgWrapBreaks`, `src/common/salmsgwrap.h`) - it
+  cut every paragraph at its edge. Every core copy command reports a failed copy with the system's
+  reason under "Copy To Clipboard" (`CopyTextToClipboardU8Report` / `WReport` /
+  `ShowClipboardCopyError`; the copy functions leave the reason in `GetLastError`; the echo variant
+  was silent too); the plug-in services unchanged. UTF-8 error fields get `LoadStrU8` (8 sites;
+  only a code page lacking the language's letters showed it). Disk Map's log list view is Unicode
+  (`NFR_UNICODE`, `SplDisplayTextToWAlloc`). `SplBrowseForFolderU8` enables OK only for a
+  file-system item and resolves NetHood folder shortcuts (whole class id). The File Comparator's
+  `Release` closes windows that register while it waits (the fcremote "rejected to unload" race).
+  Checksum reports a failed save. FTP refuses a typed user name / host / password that does not fit
+  (`SalFtpTypedLoginTooLong`, "too long path" - a cut was another account or server), wipes the panel
+  login's last command and secret copies, cuts display texts at a whole character
+  (`SplU8CopyTrunc`). RegEdit's Find (while idle) and FTP's Logs / message windows are declared for
+  an update (interface 107). Plug-in Save dialogs put a bare proposed name into the asked folder
+  (`SplFileDlgDetail::NameIntoInitialDir`; Windows may ignore `lpstrInitialDir` - Checksum's Save
+  opened another program's folder, found by 117's GUI run). Romanian `IDS_CANTMULTIVOL`
+  capitalised and pinned. Code-only review ACCEPT (its NITs fixed: a code-page tail kept, the
+  clipboard block freed, the RegEdit declaration withdrawn before the thread, Disk Map's
+  `FormatMessage` buffer). No new string, interface 107, no registry change. saltests 17,423 ->
+  17,513. Probe `probe/batch121_probe.ps1`
+  (17 rows + END rows, `-Expect fixed|before`) written, GUI runs pending on `Debug_x64_121` /
+  `Debug_x64_pre121`. Records: `specs/121-small-batch/fix-log.md`.
+  GUI runs owed at commit time - see fix-log "Independent code-only review".

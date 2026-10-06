@@ -399,7 +399,8 @@
     },
     "romanian": {
       "IDS_PLUGINNAME": "ZIP",
-      "IDS_PACKEDSOURCE": "Acest fisier este unul dintre fisierele care sunt arhivate. Nu poate fi suprascris de arhiva."
+      "IDS_PACKEDSOURCE": "Acest fisier este unul dintre fisierele care sunt arhivate. Nu poate fi suprascris de arhiva.",
+      "IDS_CANTMULTIVOL": "Arhiva cu acelasi nume ca si fisierul exista deja.\\nArhivele multi-volum pot fi create doar ca o noua arhiva."
     },
     "russian": {
       "IDS_PLUGINNAME": "ZIP"
@@ -417,6 +418,10 @@
       "each corpus' word for packing (cs/sk komprimace, de Packen, fr compression, nl inpakken, hu",
       "csomagolas, ro arhivare, es compresion). Romanian without diacritics, as the ZIP corpus:",
       "the plug-in loads its texts through the code page, and CP1250 has no comma-below s/t."
+    ],
+    "_feature_121": [
+      "IDS_CANTMULTIVOL (feature 121, recorded by 119): the Romanian row began with a lower-case letter",
+      "(arhiva ...); capitalised, wording kept. Without diacritics like the rest of the ZIP corpus (CP1250)."
     ]
   }
 }

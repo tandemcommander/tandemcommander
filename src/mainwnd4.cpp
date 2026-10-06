@@ -330,7 +330,7 @@ void CMainWindow::MakeFileList()
                             {
                                 // the list is UTF-8 (expanded from CFileData names);
                                 // the ANSI entry point garbled it (feature 063, contract C2)
-                                CopyTextToClipboardU8(buff, fileSize, FALSE, NULL);
+                                CopyTextToClipboardU8Report(HWindow, buff, fileSize); // feature 121: a failure is reported
                             }
                             else
                             {

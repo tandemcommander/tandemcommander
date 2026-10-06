@@ -379,3 +379,90 @@ inline int SplDrawWindowTextW(HWND hWnd, HDC hdc, RECT* r, UINT format)
         free(text);
     return ret;
 }
+
+// ---------------------------------------------------------------------------
+// Feature 121: cutting UTF-8 at a whole character, and display text of either
+// encoding. A byte-count clamp (lstrcpyn, _snprintf_s with _TRUNCATE, a fixed
+// field) can cut a multi-byte character in half; the torn tail then makes the
+// strict probe fail and the whole text is shown through the code page.
+
+// drops a trailing INCOMPLETE UTF-8 sequence in place; a complete character at the
+// end is left alone (the core's SalU8TrimIncompleteTail), so it is safe to call on
+// any UTF-8 buffer
+inline void SplU8TrimTornTail(char* buf)
+{
+    if (buf == NULL)
+        return;
+    size_t len = strlen(buf);
+    size_t i = len;
+    while (i > 0 && ((unsigned char)buf[i - 1] & 0xC0) == 0x80)
+        i--; // walk back over the continuation bytes
+    if (i > 0)
+    {
+        unsigned char lead = (unsigned char)buf[i - 1];
+        if (lead >= 0xC0) // a lead byte: is its sequence complete?
+        {
+            size_t seqLen = lead >= 0xF0 ? 4 : (lead >= 0xE0 ? 3 : 2);
+            if (len - (i - 1) < seqLen)
+                buf[i - 1] = 0; // cut: drop it whole
+        }
+    }
+}
+
+// lstrcpyn(dst, src, dstSize) that never leaves a torn UTF-8 character at the end
+// (only a copy that had to be cut is trimmed - code-page text that fits is untouched)
+inline void SplU8CopyTrunc(char* dst, int dstSize, const char* src)
+{
+    if (dst == NULL || dstSize <= 0)
+        return;
+    if (src == NULL)
+    {
+        dst[0] = 0;
+        return;
+    }
+    size_t srcLen = strlen(src);
+    if (srcLen < (size_t)dstSize)
+    {
+        memcpy(dst, src, srcLen + 1);
+        return;
+    }
+    memcpy(dst, src, (size_t)dstSize - 1);
+    dst[dstSize - 1] = 0;
+    SplU8TrimTornTail(dst);
+}
+
+// text to show that is UTF-8 (WTF-8) or code-page text (a resource string, a
+// FormatMessageA text) -> UTF-16; a UTF-8 text cut by a byte clamp is shown without
+// its torn last character instead of whole through the code page. free() the result;
+// NULL only on low memory.
+inline WCHAR* SplDisplayTextToWAlloc(const char* text)
+{
+    if (text == NULL)
+        text = "";
+    WCHAR* w = SplU8ToWAlloc(text);
+    if (w != NULL)
+        return w;
+    size_t len = strlen(text);
+    char* copy = (char*)malloc(len + 1);
+    if (copy != NULL)
+    {
+        memcpy(copy, text, len + 1);
+        SplU8TrimTornTail(copy);
+        size_t kept = strlen(copy);
+        // it had a torn tail: is the rest UTF-8? Only with evidence that the text IS UTF-8 - the cut
+        // sequence had a continuation byte, or the rest holds a non-ASCII character (review NIT 1:
+        // code-page text ending in one letter >= 0xC0, "Fichier utilis<E9>", is not a torn tail)
+        if (kept < len && (len - kept >= 2 || !SplIsASCII(copy)))
+            w = SplU8ToWAlloc(copy);
+        free(copy);
+        if (w != NULL)
+            return w;
+    }
+    int n = MultiByteToWideChar(CP_ACP, 0, text, -1, NULL, 0);
+    if (n <= 0)
+        n = 1;
+    w = (WCHAR*)malloc(n * sizeof(WCHAR));
+    if (w != NULL && MultiByteToWideChar(CP_ACP, 0, text, -1, w, n) <= 0)
+        w[0] = 0;
+    return w;
+}

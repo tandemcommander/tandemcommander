@@ -71,6 +71,9 @@ protected:
             this->_hWnd, NULL, CWindow::s_hInstance, NULL);
         if (this->_hWndListView)
         {
+            // feature 121: make sure the list view asked this window (WM_NOTIFYFORMAT -> NFR_UNICODE)
+            SendMessage(this->_hWndListView, WM_NOTIFYFORMAT, (WPARAM)this->_hWnd, NF_REQUERY);
+
             DWORD exStyle = LVS_EX_FULLROWSELECT;
             //if (DllGetVersion())
             //if (Shell >= 5.80) exStyle |= LVS_EX_LABELTIP;
@@ -188,7 +191,6 @@ public:
 
     LRESULT OnNotify(int idFrom, NMHDR* pnmhdr)
     {
-        NMLVDISPINFO* plvdi;
         NMLVKEYDOWN* plvkd;
         int il;
         switch (pnmhdr->code)
@@ -200,35 +202,50 @@ public:
                 this->Hide();
             }
             return 0;
-        case LVN_GETDISPINFO:
-            plvdi = (NMLVDISPINFO*)pnmhdr;
-            CLogItemBase* lgi = this->_logger->GetLogItem(plvdi->item.iItem);
-            switch (plvdi->item.iSubItem)
+        // feature 121: the list view notifies in UTF-16 (WM_NOTIFYFORMAT below): the texts were
+        // handed to a code-page list view as they are - the paths are UTF-8, so every name
+        // outside ASCII was shown garbled (mojibake); the level names and the system's messages
+        // are code-page text, and a path the logger cut at its buffer may end in a torn character
+        case LVN_GETDISPINFOW:
+        {
+            NMLVDISPINFOW* plvdiW = (NMLVDISPINFOW*)pnmhdr;
+            CLogItemBase* lgi = this->_logger->GetLogItem(plvdiW->item.iItem);
+            const char* text = NULL;
+            switch (plvdiW->item.iSubItem)
             {
             case 0:
                 il = lgi->GetLevel();
-                plvdi->item.iImage = il;
-                plvdi->item.iIndent = 0;
-                plvdi->item.pszText = const_cast<TCHAR*>(this->_logLevels[il]->GetString());
+                plvdiW->item.iImage = il;
+                plvdiW->item.iIndent = 0;
+                text = this->_logLevels[il]->GetString();
                 break;
 
             case 1:
-                plvdi->item.pszText = const_cast<TCHAR*>(lgi->GetText());
+                text = lgi->GetText();
                 break;
 
             case 2:
-                plvdi->item.pszText = const_cast<TCHAR*>(lgi->GetPath());
+                text = lgi->GetPath();
                 break;
 
             default:
                 break;
             }
-            if (plvdi->item.pszText == NULL)
+            if ((plvdiW->item.mask & LVIF_TEXT) && plvdiW->item.pszText != NULL && plvdiW->item.cchTextMax > 0)
             {
-                static TCHAR emptyBuff[] = TEXT("");
-                plvdi->item.pszText = emptyBuff;
+                plvdiW->item.pszText[0] = 0;
+                WCHAR* w = text != NULL ? SplDisplayTextToWAlloc(text) : NULL;
+                if (w != NULL)
+                {
+                    lstrcpynW(plvdiW->item.pszText, w, plvdiW->item.cchTextMax);
+                    size_t n = wcslen(plvdiW->item.pszText);
+                    if (n > 0 && n < wcslen(w) && IS_HIGH_SURROGATE(plvdiW->item.pszText[n - 1]))
+                        plvdiW->item.pszText[n - 1] = 0; // review NIT 1: cut at a whole character
+                    free(w);
+                }
             }
             return 0;
+        }
         }
         return DefWindowProc(this->_hWnd, WM_NOTIFY, (WPARAM)(int)(idFrom), (LPARAM)(NMHDR*)(pnmhdr));
     }
@@ -253,6 +270,9 @@ public:
             return this->OnKey((UINT)(wParam), TRUE, (int)(short)LOWORD(lParam), (UINT)HIWORD(lParam))
                        ? 0
                        : DefWindowProc(hWnd, message, wParam, lParam);
+
+        case WM_NOTIFYFORMAT: // feature 121: the list view's notifications in UTF-16 (LVN_GETDISPINFOW)
+            return NFR_UNICODE;
 
         case WM_NOTIFY:
             return this->OnNotify((int)(wParam), (NMHDR*)(lParam));

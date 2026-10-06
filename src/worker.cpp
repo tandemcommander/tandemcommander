@@ -7101,7 +7101,7 @@ BOOL DoCreateDir(HWND hProgressDlg, char* name, DWORD attr,
                 data[0] = (char*)&ret;
                 data[1] = LoadStr(IDS_ERRORCREATINGDIR);
                 data[2] = name;
-                data[3] = LoadStr(IDS_NAMEALREADYUSED);
+                data[3] = LoadStrU8(IDS_NAMEALREADYUSED); // feature 121: the dialog shows UTF-8 here (exact in any code page)
                 SendMessage(hProgressDlg, WM_USER_DIALOG, 0, (LPARAM)data);
                 switch (ret)
                 {
@@ -8048,7 +8048,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
             char* data[3];
             data[0] = LoadStr((showCompressErr && (attrs & FILE_ATTRIBUTE_COMPRESSED) || !showEncryptErr) ? IDS_ERRORCOMPRESSING : IDS_ERRORENCRYPTING);
             data[1] = name;
-            data[2] = LoadStr((showCompressErr && (attrs & FILE_ATTRIBUTE_COMPRESSED) || !showEncryptErr) ? IDS_COMPRNOTSUPPORTED : IDS_ENCRYPNOTSUPPORTED);
+            data[2] = LoadStrU8((showCompressErr && (attrs & FILE_ATTRIBUTE_COMPRESSED) || !showEncryptErr) ? IDS_COMPRNOTSUPPORTED : IDS_ENCRYPNOTSUPPORTED); // feature 121: UTF-8 field
             SendMessage(hProgressDlg, WM_USER_DIALOG, 5, (LPARAM)data);
             error = ERROR_SUCCESS;
         }

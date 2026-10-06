@@ -2040,7 +2040,7 @@ void CFilesWindow::StoreGlobalSelection()
                             }
                         }
                         // names are UTF-8 (feature 063, contract C2)
-                        CopyTextToClipboardU8(buff, size);
+                        CopyTextToClipboardU8Report(HWindow, buff, size); // feature 121: a failure is reported
                         free(buff);
                     }
                     else

@@ -26,7 +26,8 @@ extern BOOL IsNotAlpha[256];
 
 #define ITEMNAME_TEXT_LEN MAX_PATH + MAX_PATH + 10
 #define NAMED_TEXT_LEN MAX_PATH  // maximum text length in the combobox
-#define LOOKIN_TEXT_LEN MAX_PATH // maximum text length in the combobox
+#define LOOKIN_TEXT_LEN SAL_MAX_PATH_UTF8 // feature 121: any path the program can (was MAX_PATH: paths were cut) - bytes of UTF-8
+#define LOOKIN_TEXT_CHARS SAL_MAX_PATH_W  // feature 121: the field's limit in UTF-16 units - their UTF-8 always fits LOOKIN_TEXT_LEN
 #define GREP_TEXT_LEN 201        // maximum text length in the combobox; NOTE: should match FIND_TEXT_LEN
 #define GREP_LINE_LEN 10000      // maximum line length for regular expressions (viewer uses a different macro)
 
@@ -71,16 +72,21 @@ class CMenuBar;
 
 struct CSearchForData
 {
-    char Dir[MAX_PATH];
+    // feature 121: on the heap, as long as the Look in field allows (SAL_MAX_PATH_UTF8; it was
+    // char[MAX_PATH] with an unbounded strcpy, safe only while the field held MAX_PATH bytes)
+    char* Dir;
     CMaskGroup MasksGroup;
     BOOL IncludeSubDirs;
 
     CSearchForData(const char* dir, const char* masksGroup, BOOL includeSubDirs)
     {
+        Dir = NULL;
         Set(dir, masksGroup, includeSubDirs);
     }
+    ~CSearchForData() { free(Dir); }
 
-    void Set(const char* dir, const char* masksGroup, BOOL includeSubDirs);
+    // FALSE on low memory (Dir is then NULL)
+    BOOL Set(const char* dir, const char* masksGroup, BOOL includeSubDirs);
     const char* GetText(int i)
     {
         switch (i)
@@ -88,7 +94,7 @@ struct CSearchForData
         case 0:
             return MasksGroup.GetMasksString();
         case 1:
-            return Dir;
+            return Dir != NULL ? Dir : "";
         default:
             return IncludeSubDirs ? LoadStr(IDS_INCLUDESUBDIRSYES) : LoadStr(IDS_INCLUDESUBDIRSNO);
         }

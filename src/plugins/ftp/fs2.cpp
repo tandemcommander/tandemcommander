@@ -579,6 +579,19 @@ BOOL CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName, int fs
                 TargetPanelPath[0] = 0;                        // the connection failed, no path change in the target panel
                 return FALSE;                                  // fatal error
             }
+            // feature 121: a typed user name, host or password that does not fit its buffer is refused
+            // (also a user part longer than the copy above: its cut could fall into the password) -
+            // lstrcpyn cut them, inside a UTF-8 character too: a cut user name or host is ANOTHER
+            // account or server, and the password would be sent there; a cut password fails anyway
+            if (SalFtpTypedLoginTooLong(userPart, FTP_USERPART_SIZE, u, USER_MAX_SIZE, host, HOST_MAX_SIZE,
+                                        password, PASSWORD_MAX_SIZE))
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TOOLONGPATH),
+                                                  LoadStr(IDS_FTPERRORTITLE), MSGBOX_ERROR);
+                memset(newUserPart, 0, FTP_USERPART_SIZE + 1); // erase the memory that contained the password
+                TargetPanelPath[0] = 0;                        // the connection failed, no path change in the target panel
+                return FALSE;                                  // fatal error
+            }
             char user[USER_MAX_SIZE];
             if (u == NULL || u != NULL && *u == 0)
                 strcpy(user, FTP_ANONYMOUS);

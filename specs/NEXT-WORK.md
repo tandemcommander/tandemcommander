@@ -694,7 +694,13 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        (dialog, history, drop, Browse, `fcremote`) delivers the exact name;
        no best-fit look-alike can be compared; channel version 2. Found by
        102, recorded: closing the program within ~1 s of `fcremote` starting
-       it asks "plugin has rejected to unload. Force?" (also before 102);
+       it asks "plugin has rejected to unload. Force?" (also before 102) -
+       ✅ **fixed by feature 121 (2026-10-06, GUI runs pending)**: the
+       comparison thread registers its window only after creating it, and
+       `Release()` found no window in that gap and waited for a thread nobody
+       asked to end; it now waits in slices of the same budget and closes every
+       window that registers meanwhile (an unattended close refuses a Compare
+       Files dialog that appears);
        the 093 dialogs probe's Find-menu rows fail on the hidden desktop in
        about one run of three on the builds before and after 102 (8 rows,
        "no menu") - a probe/desktop artefact, the other runs pass 139/0.
@@ -706,7 +712,15 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        command fails silently when the clipboard cannot be opened; packing a
        tree whose names *relative to the packed folder* exceed 259 bytes
        skips those sub-folders with a message (the archiver plug-in interface
-       takes relative names of at most `MAX_PATH`).
+       takes relative names of at most `MAX_PATH`). ✅ **The first three fixed
+       by feature 121 (2026-10-06, GUI runs pending)**: Look in holds any path
+       the program can (`SAL_MAX_PATH_UTF8`; a panel path that does not fit is
+       left out, never cut - measured wider: the cut fell inside a character
+       and a typed path was cut too); a message box breaks lines only inside a
+       word wider than the box (it cut every paragraph at its edge); every core
+       copy command reports a failure with the system's reason (also the echo
+       variant was silent). The relative-name limit of packing stays (plug-in
+       interface). Record `specs/121-small-batch/fix-log.md`.
     5. **Same class as 102 in other plug-ins** (found by the 102 research,
        not examined): code-page window subclasses on text controls in ftp
        (3), zip (4), 7zip (1); `CreateFileA` fallbacks after a failed UTF-8
@@ -889,10 +903,23 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           ACCEPT pending GUI (fixed with it: SOCKS 5 255-byte limit, the
           proxy dialog storing an empty value after a refusal - since 104,
           the login-error dialog after a refusal, shared wipes).
+          ✅ **Fixed by feature 121 (2026-10-06, GUI runs pending)**, except
+          the custom proxy-script line (unchanged, unreachable for the
+          built-in scripts): measured wider - the user name and the host of a
+          typed path were cut too (another account or server, the password
+          sent there); a typed user name, host or password that does not fit,
+          or a user part longer than its copy, is now refused with the
+          plug-in's "too long path" (`SalFtpTypedLoginTooLong`); the panel
+          login wipes its last command and its `CProxyScriptParams`; the
+          wait-window and worker log copies cut at a whole character
+          (`SplU8CopyTrunc`), the "connecting to ... as ..." text holds any
+          host and user. A typed server path that makes the user part longer
+          than 609 bytes is refused as well (it was cut; the stored path is
+          still cut at `FTP_MAX_PATH` - recorded).
        4. checksum: a checksum list written in the code page with accented
           names reports those files as missing (no encoding detection of the
           list file).
-          ✅ **Fixed by feature 117 (2026-10-05) - GUI runs pending**:
+          ✅ **Fixed by feature 117 (2026-10-05; GUI-verified 2026-10-06; found by its GUI run: Calculate's Save dialog opens in another program's last folder, not the panel folder - Windows ignores lpstrInitialDir when the proposed name has no path, both builds)**:
           measured first (`specs/117-checksum-lists/research.md`) - besides
           code-page lists, a UTF-8 list with a byte order mark (Total
           Commander for Unicode names, PowerShell `Out-File -Encoding utf8`)
@@ -920,6 +947,22 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           Verify with "name too long" (`FILEINFO::fileName` fixed buffer);
           an OEM list's accented names stay "missing" (no signal tells OEM
           from the code page).
+          Found by 117's GUI run: Checksum's Save dialog opened another
+          program's last folder instead of the panel's (Windows may ignore
+          `lpstrInitialDir`) - ✅ **fixed by feature 121 (2026-10-06, GUI
+          runs pending)**: a proposed name without a folder is put into the
+          initial folder (`SplFileDlgDetail::NameIntoInitialDir`) in
+          Checksum's Save, PictView's Save As and every `SplGetFileNameU8`
+          dialog that passes a folder (FTP's save / export / import
+          dialogs); dialogs that pass no name keep
+          `lpstrInitialDir` only (the same Windows rule - recorded); a folder
+          that is gone falls back to the bare name (the pre-121 call) before
+          the old retry with neither (coordinator review SF1). Also from that
+          review: the FTP upload target no longer takes a cut typed user name
+          for the open connection's user; recorded - a Find Look in path near
+          the program's maximum stops with a trace only (`find.cpp`), and the
+          same cut-user check in `ChangePath` with an open connection was not
+          examined.
        5. Smaller: the plug-in folder picker does not resolve NetHood folder
           shortcuts (the core's `GetTargetDirectory` did); diskmap's log
           window shows paths garbled; the ZIP comment field is code page by
@@ -927,6 +970,15 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           package shipped) and stay code page; PictView's *Regenerate
           thumbnail* cannot work at all since 006. Disabled plug-ins (listed
           in `specs/104-plugin-unicode-names/research.md` 3) are unchanged.
+          ✅ **The folder picker and the Disk Map log fixed by feature 121
+          (2026-10-06, GUI runs pending)**: `SplBrowseForFolderU8` enables OK
+          only for an item with a file-system path (`BFFM_SELCHANGED`, the
+          core's rule; the silent FALSE after OK is no longer reachable) and
+          resolves a NetHood folder shortcut to its target (the core's rule,
+          the whole class id compared - the core compared a prefix); Disk
+          Map's log list view notifies in UTF-16 and shows UTF-8, WTF-8 and
+          code-page texts exactly (a path the logger cut is shown without its
+          torn character).
        6. **Found by 118, not fixed** (`specs/118-plugin-update-close/
           research.md` R6, R7): checksum's Save ignored write errors - a full
           disk left a truncated list without a word (118 only no longer
@@ -946,6 +998,24 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           may time out (`Release` then returns FALSE with `fcremote.exe`
           requests no longer served - same on the normal path). (118 fixed
           the `CDiskMap::Abort()` use-after-free it found.)
+          ✅ **Checksum's Save and the RegEdit / FTP windows fixed by feature
+          121 (2026-10-06, GUI runs pending)**: a failed save says "Error
+          creating file." with the system's reason (`_doserrno` of the failed
+          write; the truncated file stays); the Registry Editor's Find window
+          is declared while it does not search (the core's Find rule), FTP's
+          Logs window and its welcome-message / server-reply / raw-listing
+          window always (their Save dialogs still decline). The worker error
+          boxes, Disk Map's `Release()` guard and the File Comparator's
+          receiver order remain open.
+       7. **Found by 103 and 119, small - ✅ fixed by feature 121
+          (2026-10-06)**: the UTF-8 error field of `CFileErrorDlg` got
+          code-page texts (`DoCreateDir`'s "name already used", the
+          compress/encrypt "not supported", six `safefile.cpp` texts) - drawn
+          right while the system code page matches the language (the field's
+          fallback), letters lost when it does not (French on CP1250);
+          `LoadStrU8` now. The Romanian `IDS_CANTMULTIVOL` began with a
+          lower-case letter - capitalised and pinned (`ui-overrides.json`).
+          Record `specs/121-small-batch/fix-log.md`.
     3. Smaller: the link warning names an unreadable or too-deep folder as a
        "Link"; at depth 1,001 the message says "too long"; clipboard paste
        refuses 520+ bytes although Change Directory takes any length; the

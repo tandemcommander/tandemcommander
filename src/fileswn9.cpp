@@ -1943,13 +1943,25 @@ static BOOL UNCAppend(char* dst, const char* src, int dstSize)
     return TRUE;
 }
 
+// feature 121: copies a UNC name; a refusal of the clipboard is shown and remembered
+static BOOL UNCCopyReport(HWND hMessageParent, const char* u8Text, BOOL* copyFailed)
+{
+    if (CopyTextToClipboardU8Report(hMessageParent, u8Text))
+        return TRUE;
+    *copyFailed = TRUE;
+    return FALSE;
+}
+
 // feature 101: '*tooLong' is set when a conversion was refused because its result would not fit the
 // buffers (the early check below, or a share, a mapped drive or a SUBST target that holds the path
 // but gives a UNC name that is too long); the top level then shows the "too long" message - the
 // early refusal returned FALSE in silence (the Find window's "copy UNC name" left the old clipboard
 // content, which could be pasted by mistake), the others ended in "cannot be converted to UNC"
+// feature 121: '*copyFailed' is set when the clipboard refused the converted name - the reason is
+// shown then (CopyTextToClipboardU8Report) and no other message follows (an outer level of a SUBST
+// chain went on and said "cannot be converted to UNC")
 static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL isDir, HWND hMessageParent,
-                                      int nestingLevel, BOOL* tooLong)
+                                      int nestingLevel, BOOL* tooLong, BOOL* copyFailed)
 {
     char buff[2 * MAX_PATH];
     char uncPath[2 * MAX_PATH];
@@ -1974,7 +1986,7 @@ static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL i
     {
         // path is already in UNC form
         strcat(buff, name);                 // append the focused item's name (fits: checked above)
-        return CopyTextToClipboardU8(buff); // panel names/paths are UTF-8 (feature 063, contract C2)
+        return UNCCopyReport(hMessageParent, buff, copyFailed); // UTF-8 (feature 063, contract C2); feature 121: a failure is reported
     }
 
     // if it is a directory, append it to the path
@@ -1988,7 +2000,7 @@ static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL i
     {
         // append the file name (feature 098: only when it fits)
         if (isDir || SalPathAppend(uncPath, name, 2 * MAX_PATH))
-            return CopyTextToClipboardU8(uncPath); // UTF-8 (feature 063, contract C2)
+            return UNCCopyReport(hMessageParent, uncPath, copyFailed); // UTF-8 (feature 063, contract C2); feature 121
         *tooLong = TRUE;                           // feature 101
     }
 
@@ -2016,7 +2028,7 @@ static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL i
         if (!fits)
             *tooLong = TRUE;                                                       // feature 101
         else if (SalGetFullName(uncPath, NULL, NULL, NULL, NULL, 2 * MAX_PATH)) // root "c:\\", others without '\\' at the end
-            return CopyTextToClipboardU8(uncPath);                                 // UTF-8 (feature 063, contract C2)
+            return UNCCopyReport(hMessageParent, uncPath, copyFailed);           // UTF-8 (feature 063, contract C2); feature 121
     }
 
     // if the path is not UNC, it might be a SUBST drive
@@ -2028,8 +2040,10 @@ static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL i
         {
             if (SalPathAddBackslash(target, 2 * MAX_PATH) && UNCAppend(target, path + 3, 2 * MAX_PATH))
             {
-                if (CopyUNCPathToClipboardAux(target, name, isDir, hMessageParent, nestingLevel, tooLong))
+                if (CopyUNCPathToClipboardAux(target, name, isDir, hMessageParent, nestingLevel, tooLong, copyFailed))
                     return TRUE;
+                if (*copyFailed)
+                    return FALSE; // feature 121: the clipboard's refusal was shown, nothing else to say
             }
             else
                 *tooLong = TRUE; // feature 101: the SUBST target + the rest of the path does not fit
@@ -2046,7 +2060,7 @@ static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL i
         {
             // append the file's name (feature 098: only when it fits)
             if (isDir || SalPathAppend(uncPath, name, 2 * MAX_PATH))
-                return CopyTextToClipboardU8(uncPath); // UTF-8 (feature 063, contract C2)
+                return UNCCopyReport(hMessageParent, uncPath, copyFailed); // UTF-8 (feature 063, contract C2); feature 121
             *tooLong = TRUE;                           // feature 101
         }
 
@@ -2078,7 +2092,8 @@ static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL i
 BOOL CopyUNCPathToClipboard(const char* path, const char* name, BOOL isDir, HWND hMessageParent, int nestingLevel)
 {
     BOOL tooLong = FALSE; // feature 101
-    return CopyUNCPathToClipboardAux(path, name, isDir, hMessageParent, nestingLevel, &tooLong);
+    BOOL copyFailed = FALSE; // feature 121
+    return CopyUNCPathToClipboardAux(path, name, isDir, hMessageParent, nestingLevel, &tooLong, &copyFailed);
 }
 
 BOOL CFilesWindow::CopyFocusedNameToClipboard(CCopyFocusedNameModeEnum mode)
@@ -2135,7 +2150,7 @@ BOOL CFilesWindow::CopyFocusedNameToClipboard(CCopyFocusedNameModeEnum mode)
         }
         else
             ok = full.Set(fileName);
-        return ok && CopyTextToClipboardU8(full.Get()); // panel names/paths are UTF-8 (feature 063, contract C2)
+        return ok && CopyTextToClipboardU8Report(MainWindow->HWindow, full.Get()); // UTF-8 (feature 063, contract C2); feature 121
     }
     else
     {
@@ -2149,7 +2164,7 @@ BOOL CFilesWindow::CopyFocusedNameToClipboard(CCopyFocusedNameModeEnum mode)
                 GetPluginFS()->GetPluginInterfaceForFS()->ConvertPathToExternal(GetPluginFS()->GetPluginFSName(),
                                                                                 GetPluginFS()->GetPluginFSNameIndex(),
                                                                                 buff + l);
-                return CopyTextToClipboardU8(buff); // panel names/paths are UTF-8 (feature 063, contract C2)
+                return CopyTextToClipboardU8Report(MainWindow->HWindow, buff); // UTF-8 (feature 063, contract C2); feature 121
             }
         }
     }
@@ -2165,7 +2180,7 @@ BOOL CFilesWindow::CopyCurrentPathToClipboard()
     if (!buff.Copy("", SAL_TAB_LOCATION_MAX))
         return FALSE;
     GetGeneralPath(buff.Get(), buff.Size(), TRUE);
-    return CopyTextToClipboardU8(buff.Get()); // panel names/paths are UTF-8 (feature 063, contract C2)
+    return CopyTextToClipboardU8Report(MainWindow->HWindow, buff.Get()); // UTF-8 (feature 063, contract C2); feature 121
 }
 
 void AddStrToStr(char* dstStr, int dstBufSize, const char* srcStr)

@@ -10,6 +10,7 @@
 #include "misc.h"
 #include "../../common/salcsumlist.h" // feature 117: reading a checksum list in any encoding
 #include <io.h>                        // feature 118: _get_osfhandle (identity of a saved list file)
+#include "splfiledlg.h"                // feature 121: SplFileDlgDetail::NameIntoInitialDir
 
 CWindowQueue ModelessQueue("CheckSum Modeless Windows");  // list of all modeless windows
 CThreadQueue ThreadQueue("CheckSum Dialogs and Workers"); // list of all dialog and worker threads
@@ -1044,6 +1045,9 @@ BOOL CCalculateDialog::GetSaveFileName(char* buffer, int bufferSize, const char*
     if (SplU8ToW(buffer, wFile, SizeOf(wFile)) == 0)
         wFile[0] = 0;
     WCHAR* wInitDir = SplU8ToWAlloc(SourcePath); // display form, the common dialog does not take "\\?\" paths
+    // feature 121 (found by 117's GUI run): the proposed name in the panel's folder - Windows may
+    // ignore lpstrInitialDir (the dialog opened another program's last folder); a path in lpstrFile decides
+    size_t prefixLen = SplFileDlgDetail::NameIntoInitialDir(wFile, SizeOf(wFile), wInitDir);
 
     memset(&ofn, 0, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
@@ -1077,6 +1081,9 @@ BOOL CCalculateDialog::GetSaveFileName(char* buffer, int bufferSize, const char*
     for (;;)
     {
         BOOL dlgOK = GetSaveFileNameW(&ofn);
+        if (!dlgOK && CommDlgExtendedError() == FNERR_INVALIDFILENAME && SplFileDlgDetail::BareNameBack(wFile, prefixLen))
+            dlgOK = GetSaveFileNameW(&ofn); // feature 121 (review SF1): the bare name in the folder, as before
+        prefixLen = 0; // only the first round carries the prefix
         if (!dlgOK && CommDlgExtendedError() == FNERR_INVALIDFILENAME)
         { // Windows refuses to open the dialog for an invalid/non-existent path -> retry with the default one
             wFile[0] = 0;
@@ -1165,6 +1172,7 @@ void CCalculateDialog::SaveHashes()
         BOOL haveFileId = GetFileInformationByHandle((HANDLE)_get_osfhandle(_fileno(f)), &fileId);
         ForgetSavesOfFile(f);
         UpdateClosesUnattended();
+        _doserrno = 0; // feature 121: a write error below reports its own code, never an older one
 
         // Feature 117: the md5/sha* lists are written as sha256sum writes them - UTF-8 names, LF
         // line ends, no comment - because that is what the other verifiers read: GNU coreutils
@@ -1213,8 +1221,18 @@ void CCalculateDialog::SaveHashes()
         // feature 118: only a list that was written completely counts as saved (an unattended
         // close may then close the window); a write error leaves the window holding its work
         BOOL written = !ferror(f);
+        // feature 121: the write error is reported (a full disk left a truncated list without a
+        // word since Open Salamander); the CRT keeps the system's code of the failed WriteFile in
+        // _doserrno - also for the buffered tail written by fclose, the usual place of the failure
+        DWORD writeErr = written ? ERROR_SUCCESS : (DWORD)_doserrno;
         if (fclose(f) != 0)
+        {
+            if (written)
+                writeErr = (DWORD)_doserrno;
             written = FALSE;
+        }
+        if (!written)
+            Error(HWindow, writeErr != ERROR_SUCCESS ? writeErr : ERROR_WRITE_FAULT, IDS_SAVE_TITLE, IDS_ERRORCREATINGFILE);
         if (written && haveFileId && savingType >= 0 && savingType < HT_COUNT)
         {
             SavedTypes |= 1u << savingType;

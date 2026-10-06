@@ -81,3 +81,25 @@ inline bool SalFtpFieldShowsStored(const char* stored, const WCHAR* fieldText, U
     free(shown);
     return same;
 }
+
+// Feature 121: a login typed into a path (ftp://user:password@host/path) whose parts do not fit
+// the plug-in's buffers is refused, never cut. 'userPart' is the text after "ftp:" that the plug-in
+// copies into 'userPartBufSize' bytes before splitting it; 'user', 'host' and 'password' are the
+// parts split from that copy (NULL = absent) and the sizes their buffers (terminator included).
+// lstrcpyn cut them - inside a UTF-8 character too: a cut user name or host is ANOTHER account or
+// server (and the password went there), a cut user part could end inside the password.
+inline bool SalFtpTypedLoginTooLong(const char* userPart, size_t userPartBufSize,
+                                    const char* user, size_t userBufSize,
+                                    const char* host, size_t hostBufSize,
+                                    const char* password, size_t passwordBufSize)
+{
+    if (userPart != NULL && strlen(userPart) >= userPartBufSize)
+        return true;
+    if (user != NULL && strlen(user) >= userBufSize)
+        return true;
+    if (host != NULL && strlen(host) >= hostBufSize)
+        return true;
+    if (password != NULL && strlen(password) >= passwordBufSize)
+        return true;
+    return false;
+}

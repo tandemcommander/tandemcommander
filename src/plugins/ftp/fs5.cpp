@@ -772,6 +772,15 @@ BOOL CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, const char*
                 memset(newUserPart, 0, FTP_USERPART_SIZE + 1); // wipe the memory where the password appeared
                 return FALSE;                                  // fatal error
             }
+            // feature 121: refused instead of cut (see ChangePath in fs2.cpp)
+            if (SalFtpTypedLoginTooLong(userPart, FTP_USERPART_SIZE, u, USER_MAX_SIZE, host, HOST_MAX_SIZE,
+                                        password, PASSWORD_MAX_SIZE))
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TOOLONGPATH),
+                                                  LoadStr(IDS_FTPERRORTITLE), MSGBOX_ERROR);
+                memset(newUserPart, 0, FTP_USERPART_SIZE + 1); // wipe the memory where the password appeared
+                return FALSE;                                  // fatal error
+            }
 
             lstrcpyn(Host, host, HOST_MAX_SIZE);
             Port = port;
@@ -810,6 +819,7 @@ BOOL CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, const char*
         {
             if (isFTPS != ControlConnection->GetEncryptControlConnection() ||  // should be FTPS or not, but the state differs
                 strcmp(user, User) != 0 ||                                     // different user name (case-sensitive - Unix accounts)
+                u != NULL && strlen(u) >= USER_MAX_SIZE ||                     // feature 121 (review NIT 3): 'user' was cut - never this connection's user
                 host == NULL || SalamanderGeneral->StrICmp(host, Host) != 0 || // different host (case-insensitive - Internet conventions - maybe test IP addresses later)
                 port != Port)                                                  // different port
             {

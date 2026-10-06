@@ -142,6 +142,13 @@ struct CBrowseData
 inline int CALLBACK BrowseCallback(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
 {
     CBrowseData* bd = (CBrowseData*)lpData;
+    if (uMsg == BFFM_SELCHANGED) // feature 121: as the core's dialog - OK only for a folder with a path
+    {
+        WCHAR selPath[MAX_PATH];
+        BOOL hasPath = lParam != 0 && SHGetPathFromIDListW((LPCITEMIDLIST)lParam, selPath);
+        SendMessageW(hwnd, BFFM_ENABLEOK, 0, hasPath);
+        return 0;
+    }
     if (uMsg == BFFM_INITIALIZED && bd != NULL)
     {
         if (bd->CenterWindow != NULL) // the core's browse dialog is centred on this window too
@@ -186,6 +193,145 @@ inline int CALLBACK BrowseCallback(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM l
     }
     return 0;
 }
+
+// feature 121: does the content of a desktop.ini name the "folder shortcut" class
+// {0AFACED1-E828-11D1-9187-B532F1E9575D} (the folders in NetHood / "Network
+// shortcuts" are such folders: a target.lnk inside points at the real place)?
+// The core's ResolveNetHoodPath compared only as many characters as stood between
+// the braces (a prefix match); this compares the whole class id.
+inline BOOL IsFolderShortcutIni(const char* buf, int len)
+{
+    static const char clsid[] = "0AFACED1-E828-11D1-9187-B532F1E9575D";
+    const int clsidLen = (int)(sizeof(clsid) - 1);
+    if (buf == NULL)
+        return FALSE;
+    int i = 0;
+    while (i < len)
+    {
+        if (buf[i] == '{')
+        {
+            int beg = ++i;
+            while (i < len && buf[i] != '}')
+                i++;
+            if (i < len && i - beg == clsidLen && _strnicmp(buf + beg, clsid, clsidLen) == 0)
+                return TRUE;
+        }
+        else
+            i++;
+    }
+    return FALSE;
+}
+
+// feature 121: the core's GetTargetDirectory resolved a picked NetHood folder shortcut to
+// the folder it points at (ResolveNetHoodPath); SplBrowseForFolderU8 returned the shortcut
+// folder itself - a folder holding desktop.ini and target.lnk, not the place the user
+// meant (a plug-in then copied into it, or listed it). The same rule: only on a local fixed
+// drive, only when desktop.ini names the folder shortcut class and target.lnk exists; the
+// link's path (UNC preferred, as the core) without Resolve. 'path' is the picked folder;
+// returns a malloc'ed target or NULL (no shortcut, or it cannot be read). COM must be
+// initialised on the thread (it is for SHBrowseForFolderW).
+inline WCHAR* ResolveNetHoodFolderW(const WCHAR* path)
+{
+    if (path == NULL || path[0] == 0 || path[0] == L'\\' || path[1] != L':')
+        return NULL; // UNC (or not a drive path) - cannot be NetHood
+    WCHAR root[4] = {path[0], L':', L'\\', 0};
+    if (GetDriveTypeW(root) != DRIVE_FIXED)
+        return NULL;
+    size_t len = wcslen(path);
+    WCHAR* name = (WCHAR*)malloc((len + 16) * sizeof(WCHAR));
+    if (name == NULL)
+        return NULL;
+    memcpy(name, path, (len + 1) * sizeof(WCHAR));
+    size_t dirLen = len;
+    if (dirLen > 0 && name[dirLen - 1] != L'\\')
+        name[dirLen++] = L'\\';
+    wcscpy(name + dirLen, L"desktop.ini");
+    BOOL tryTarget = FALSE;
+    HANDLE hFile = CreateFileW(name, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                               FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        if (GetFileSize(hFile, NULL) <= 1000) // the core's bound (they are about 92 bytes)
+        {
+            char buf[1000];
+            DWORD read;
+            if (ReadFile(hFile, buf, sizeof(buf), &read, NULL) && read != 0)
+                tryTarget = IsFolderShortcutIni(buf, (int)read);
+        }
+        CloseHandle(hFile);
+    }
+    WCHAR* result = NULL;
+    if (tryTarget)
+    {
+        wcscpy(name + dirLen, L"target.lnk");
+        DWORD attrs = GetFileAttributesW(name);
+        if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0)
+        {
+            IShellLinkW* link;
+            if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+            {
+                IPersistFile* fileInt;
+                if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&fileInt) == S_OK)
+                {
+                    if (fileInt->Load(name, STGM_READ) == S_OK)
+                    {
+                        WCHAR tgt[MAX_PATH];
+                        WIN32_FIND_DATAW data;
+                        if (link->GetPath(tgt, MAX_PATH, &data, SLGP_UNCPRIORITY) == NOERROR && tgt[0] != 0)
+                        {
+                            size_t tgtLen = wcslen(tgt);
+                            result = (WCHAR*)malloc((tgtLen + 1) * sizeof(WCHAR));
+                            if (result != NULL)
+                                memcpy(result, tgt, (tgtLen + 1) * sizeof(WCHAR));
+                        }
+                    }
+                    fileInt->Release();
+                }
+                link->Release();
+            }
+        }
+    }
+    free(name);
+    return result;
+}
+
+// feature 121 (found by 117's GUI run): a proposed file name WITHOUT a folder is put into the
+// folder the dialog should open in. Windows uses lpstrInitialDir only on conditions of its own
+// (since Windows 7 the dialog may open the folder the program used last - measured: Checksum's
+// Save opened another program's folder instead of the panel's), while a path in lpstrFile always
+// decides. 'file' (a buffer of 'units' WCHARs) is left alone when it is empty, already names a
+// folder or a drive, or the whole does not fit. Returns the length of the prefix it put in
+// front of the name (0 = unchanged), for BareNameBack.
+inline size_t NameIntoInitialDir(WCHAR* file, size_t units, const WCHAR* initDir)
+{
+    if (file == NULL || file[0] == 0 || initDir == NULL || initDir[0] == 0)
+        return 0;
+    if (wcspbrk(file, L"\\/:") != NULL)
+        return 0; // has a folder (or a drive) of its own
+    size_t dl = wcslen(initDir);
+    size_t fl = wcslen(file);
+    size_t sep = (initDir[dl - 1] != L'\\' && initDir[dl - 1] != L'/') ? 1 : 0;
+    if (dl + sep + fl + 1 > units)
+        return 0;
+    memmove(file + dl + sep, file, (fl + 1) * sizeof(WCHAR));
+    memcpy(file, initDir, dl * sizeof(WCHAR));
+    if (sep)
+        file[dl] = L'\\';
+    return dl + sep;
+}
+
+// feature 121 (review SF1): undoes NameIntoInitialDir - the bare name again. The dialogs refuse a
+// name in a folder that is gone (a removed USB stick remembered as the save folder) or a whole
+// that is too long (FNERR_INVALIDFILENAME); they retry with the bare name and the initial folder
+// (what Windows was given before 121 - it ignored a bad folder and kept the name), and only then
+// with neither. Returns TRUE when it changed 'file'.
+inline BOOL BareNameBack(WCHAR* file, size_t prefixLen)
+{
+    if (file == NULL || prefixLen == 0 || wcslen(file) <= prefixLen)
+        return FALSE;
+    memmove(file, file + prefixLen, (wcslen(file + prefixLen) + 1) * sizeof(WCHAR));
+    return TRUE;
+}
 } // namespace SplFileDlgDetail
 
 // GetOpenFileNameW (save == FALSE) or GetSaveFileNameW (save == TRUE) for an
@@ -216,6 +362,7 @@ inline BOOL SplGetFileNameU8(OPENFILENAMEA* ofn, BOOL save)
     if (ofn->lpstrFile[0] != 0 && SplU8ToW(ofn->lpstrFile, file, fileUnits) == 0)
         file[0] = 0; // not UTF-8 (or too long): start without a name rather than with a wrong one
     WCHAR* initDir = ofn->lpstrInitialDir != NULL ? SplU8ToWAlloc(ofn->lpstrInitialDir) : NULL;
+    size_t prefixLen = SplFileDlgDetail::NameIntoInitialDir(file, fileUnits, initDir); // feature 121: open in initDir
     WCHAR* filter = SplFileDlgDetail::CodePageListToWAlloc(ofn->lpstrFilter);
     WCHAR* title = SplFileDlgDetail::CodePageToWAlloc(ofn->lpstrTitle);
     WCHAR* defExt = SplFileDlgDetail::CodePageToWAlloc(ofn->lpstrDefExt);
@@ -240,6 +387,8 @@ inline BOOL SplGetFileNameU8(OPENFILENAMEA* ofn, BOOL save)
 #endif
 
     BOOL ret = save ? GetSaveFileNameW(&w) : GetOpenFileNameW(&w);
+    if (!ret && CommDlgExtendedError() == FNERR_INVALIDFILENAME && SplFileDlgDetail::BareNameBack(file, prefixLen))
+        ret = save ? GetSaveFileNameW(&w) : GetOpenFileNameW(&w); // feature 121 (review SF1): the bare name as before
     if (!ret && CommDlgExtendedError() == FNERR_INVALIDFILENAME)
     { // the core's SafeGet*FileName rule: Windows refuses a name like "C:\" or a missing folder
         file[0] = 0;
@@ -311,9 +460,12 @@ inline BOOL SplBrowseForFolderU8(HWND parent, HWND centerWindow, const WCHAR* ti
     if (res != NULL)
     {
         WCHAR picked[MAX_PATH];
-        if (SHGetPathFromIDListW(res, picked))
+        if (SHGetPathFromIDListW(res, picked)) // a folder without a path cannot be confirmed (BFFM_ENABLEOK)
         {
-            char* u8 = SplWToU8Alloc(picked);
+            // feature 121: a NetHood folder shortcut means the folder it points at (the core's rule)
+            WCHAR* target = SplFileDlgDetail::ResolveNetHoodFolderW(picked);
+            char* u8 = SplWToU8Alloc(target != NULL ? target : picked);
+            free(target);
             if (u8 != NULL && (int)strlen(u8) < pathSize)
             {
                 memcpy(path, u8, strlen(u8) + 1);

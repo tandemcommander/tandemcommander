@@ -736,6 +736,14 @@ BOOL CopyTextToClipboard(const char* text, int textLen = -1, BOOL showEcho = FAL
 BOOL CopyTextToClipboardU8(const char* u8Text, int textLen = -1, BOOL showEcho = FALSE, HWND hEchoParent = NULL);
 BOOL CopyTextToClipboardW(const wchar_t* text, int textLen = -1, BOOL showEcho = FALSE, HWND hEchoParent = NULL);
 BOOL CopyHTextToClipboard(HGLOBAL hGlobalText, int textLen = -1, BOOL showEcho = FALSE, HWND hEchoParent = NULL);
+// feature 121: the copy functions above leave the reason of a failure in GetLastError(); a copy
+// COMMAND the user gave reports it (the clipboard can be held open by another program - the
+// command used to do nothing in silence): the system's text under "Copy To Clipboard", no echo
+// on success. The plug-in services keep their behaviour (showEcho decides, the FTP plug-in shows
+// its own message for a FALSE).
+void ShowClipboardCopyError(HWND hParent, DWORD err);
+BOOL CopyTextToClipboardU8Report(HWND hParent, const char* u8Text, int textLen = -1);
+BOOL CopyTextToClipboardWReport(HWND hParent, const wchar_t* text, int textLen = -1);
 
 // zjisti z bufferu 'pattern' o delce 'patternLen' jestli jde o text (existuje kodova stranka,
 // ve ktere obsahuje jen povolene znaky - zobrazitelne a ridici) a pokud jde o text, zjisti take

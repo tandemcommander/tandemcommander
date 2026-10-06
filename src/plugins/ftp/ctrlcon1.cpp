@@ -615,7 +615,7 @@ BOOL CControlConnectionSocket::StartControlConnection(HWND parent, char* user, i
     proxyLogCmdBuf[0] = 0;
     char tmpCmdBuf[FTPCOMMAND_MAX_SIZE];
     tmpCmdBuf[0] = 0;
-    char connectingToAs[200];
+    char connectingToAs[200 + HOST_MAX_SIZE + USER_MAX_SIZE]; // feature 121: the text + any host and user (200 cut them, inside a character too)
     bool bModeZSent = false;
 
     if (sslisAUTH == SSLInitSequence)
@@ -1516,7 +1516,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                     welcomeMessage.Append(proxyLogCmdBuf, -1);
                                 Logs.LogMessage(logUID, proxyLogCmdBuf, -1);
 
-                                lstrcpyn(tmpCmdBuf, proxyLogCmdBuf, FTPCOMMAND_MAX_SIZE);
+                                SplU8CopyTrunc(tmpCmdBuf, FTPCOMMAND_MAX_SIZE, proxyLogCmdBuf); // feature 121: cut at a whole character
                                 char* s = strchr(tmpCmdBuf, '\r');
                                 if (s != NULL)
                                     *s = 0;
@@ -2140,6 +2140,11 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         SetupKeepAliveTimer(); // if everything is OK, set the timer for keep-alive
     else
         ReleaseKeepAlive(); // on error release keep-alive (cannot be used without an established connection)
+    // feature 121 (recorded by 116): the last login command ("PASS <password>" - later commands
+    // overwrite only its start) and the copies of the password, account and proxy password are
+    // wiped as the workers' are (operats2.cpp)
+    SecureZeroMemory(proxySendCmdBuf, sizeof(proxySendCmdBuf));
+    SecureZeroMemory(&proxyScriptParams, sizeof(proxyScriptParams));
     return ret;
 }
 

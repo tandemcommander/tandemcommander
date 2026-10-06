@@ -42,6 +42,8 @@
 #include "salcsumlist.h"    // feature 117
 #include "salpackvol.h"     // feature 119
 #include "salpvpixel.h"     // feature 120
+#include "salmsgwrap.h"     // feature 121
+#include "salfindtext.h"    // feature 121
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -8331,6 +8333,376 @@ static void TestPackLeftovers119()
     CHECK(RemoveDirectoryW(dir.c_str()));
 }
 
+// feature 121: the small batch - message box breaks, the Find window's Look in text, the
+// plug-ins' whole-character cuts and display text, the FTP typed-login refusal, the folder
+// picker's NetHood rule
+template <class CH>
+static bool Wrap121PiecesFit(const CH* text, int len, const int* adv, int maxWidth, const int* breaks, int n)
+{
+    // every piece between breaks (and white space) is at most maxWidth wide when it was split
+    int prev = 0;
+    for (int b = 0; b <= n; b++)
+    {
+        int end = b < n ? breaks[b] : len;
+        if (b < n && (end <= prev || end > len))
+            return false; // ascending, inside the text
+        if (b > 0 || n > 0)
+        {
+            long long w = 0;
+            for (int i = prev; i < end; i++)
+            {
+                if (text[i] == ' ' || text[i] == '\t' || text[i] == '\n' || text[i] == '\r')
+                    w = 0;
+                else
+                {
+                    w += adv[i];
+                    if (w > maxWidth && !(i == prev && adv[i] > maxWidth)) // one over-wide character alone is allowed
+                        return false;
+                }
+            }
+        }
+        prev = end;
+    }
+    return true;
+}
+
+static void TestSmallBatch121()
+{
+    // --- SalMsgWrapBreaks (message box) ---
+    {
+        int adv[400];
+        for (int i = 0; i < 400; i++)
+            adv[i] = 10;
+        int br[400];
+        // ordinary words: nothing to do (DrawText breaks between words)
+        const char* t1 = "Hello world, these are ordinary words of a message";
+        CHECK(SalMsgWrapBreaks(t1, (int)strlen(t1), adv, 100, br, 400) == 0);
+        // one long word without separators: cut every 10 units at max 100
+        const char* t2 = "abcdefghijabcdefghijabcdefghijabcde"; // 35
+        int n = SalMsgWrapBreaks(t2, 35, adv, 100, br, 400);
+        CHECK(n == 3 && br[0] == 10 && br[1] == 20 && br[2] == 30);
+        CHECK(Wrap121PiecesFit(t2, 35, adv, 100, br, n));
+        // the words around a long path are never broken (the old defect: every line cut at the edge)
+        const char* t3 = "Cannot open C:\\aaaaaaaaa\\bbbbbbbbb\\ccccccccc\\ddddddddd\\eeee.txt because of words";
+        int len3 = (int)strlen(t3);
+        n = SalMsgWrapBreaks(t3, len3, adv, 150, br, 400);
+        const char* p = strstr(t3, "C:\\");
+        int ps = (int)(p - t3), pe = ps + (int)strlen("C:\\aaaaaaaaa\\bbbbbbbbb\\ccccccccc\\ddddddddd\\eeee.txt");
+        CHECK(n >= 1);
+        bool inside = true;
+        for (int b = 0; b < n; b++)
+            if (br[b] <= ps || br[b] >= pe)
+                inside = false;
+        CHECK(inside);
+        CHECK(Wrap121PiecesFit(t3, len3, adv, 150, br, n));
+        // after a separator: "C:\aaaaaaaaa\" is 13 units = 130 <= 150 and >= 150 / 3
+        CHECK(n >= 1 && br[0] == ps + 13 && t3[br[0] - 1] == '\\');
+        // a separator too early (a sliver under a third of the width) is not used
+        const char* t4 = "a\\bcdefghijklmnopqrstuvwxyz"; // 27
+        n = SalMsgWrapBreaks(t4, 27, adv, 100, br, 400);
+        CHECK(n >= 1 && br[0] == 10);
+        // breaksMax is honoured
+        CHECK(SalMsgWrapBreaks(t2, 35, adv, 100, br, 2) == 2);
+        // a character wider than the box stands alone and the loop ends
+        int wide[3] = {500, 10, 10};
+        n = SalMsgWrapBreaks("Wxy", 3, wide, 100, br, 400);
+        CHECK(n == 1 && br[0] == 1);
+        // invalid input
+        CHECK(SalMsgWrapBreaks((const char*)NULL, 5, adv, 100, br, 400) == 0);
+        CHECK(SalMsgWrapBreaks(t2, 35, adv, 0, br, 400) == 0);
+        // UTF-16: a surrogate pair is never split
+        WCHAR w[40];
+        for (int i = 0; i < 39; i++)
+            w[i] = L'x';
+        w[9] = 0xD83D; // pair at 9-10: the break at 10 would split it
+        w[10] = 0xDE00;
+        w[39] = 0;
+        n = SalMsgWrapBreaks(w, 39, adv, 100, br, 400);
+        CHECK(n >= 1 && br[0] == 9);
+        bool noSplit = true;
+        for (int b = 0; b < n; b++)
+            if (br[b] > 0 && w[br[b]] >= 0xDC00 && w[br[b]] <= 0xDFFF && w[br[b] - 1] >= 0xD800 && w[br[b] - 1] <= 0xDBFF)
+                noSplit = false;
+        CHECK(noSplit);
+        // a wide pair alone at a piece start stays whole
+        int adv2[4] = {500, 0, 10, 10};
+        WCHAR w2[5] = {0xD83D, 0xDE00, L'a', L'b', 0};
+        n = SalMsgWrapBreaks(w2, 4, adv2, 100, br, 400);
+        CHECK(n == 1 && br[0] == 2);
+        // a 3,000-unit path is cut into pieces that all fit
+        static char longPath[3001];
+        for (int i = 0; i < 3000; i++)
+            longPath[i] = (i % 17 == 0) ? '\\' : 'a';
+        longPath[3000] = 0;
+        static int adv3[3000];
+        for (int i = 0; i < 3000; i++)
+            adv3[i] = 7;
+        static int br3[3000];
+        n = SalMsgWrapBreaks(longPath, 3000, adv3, 400, br3, 3000);
+        CHECK(n > 40 && Wrap121PiecesFit(longPath, 3000, adv3, 400, br3, n));
+    }
+
+    // --- SalMenuLabelToTitle (the clipboard error box's title) ---
+    {
+        char t[64];
+        SalMenuLabelToTitle(t, sizeof(t), "&Copy To Clipboard");
+        CHECK(strcmp(t, "Copy To Clipboard") == 0);
+        SalMenuLabelToTitle(t, sizeof(t), "Kop\xEDrovat do &schr\xE1nky"); // a code-page label, mark inside
+        CHECK(strcmp(t, "Kop\xEDrovat do schr\xE1nky") == 0);
+        SalMenuLabelToTitle(t, sizeof(t), "\xE5\xA4\x8D\xE5\x88\xB6 (&C)"); // CJK style: " (&C)" goes
+        CHECK(strcmp(t, "\xE5\xA4\x8D\xE5\x88\xB6") == 0);
+        SalMenuLabelToTitle(t, sizeof(t), "Save && E&xit");
+        CHECK(strcmp(t, "Save & Exit") == 0);
+        SalMenuLabelToTitle(t, sizeof(t), NULL);
+        CHECK(t[0] == 0);
+        char t4[4];
+        SalMenuLabelToTitle(t4, sizeof(t4), "&abcdef");
+        CHECK(strcmp(t4, "abc") == 0);
+    }
+
+    // --- SalFindLookInFromPath / SalFindComposeItemName (Find window) ---
+    {
+        char buf[32];
+        CHECK(SalFindLookInFromPath("C:\\a;b", buf, sizeof(buf)) && strcmp(buf, "C:\\a;;b") == 0);
+        CHECK(SalFindLookInFromPath("", buf, sizeof(buf)) && buf[0] == 0);
+        CHECK(SalFindLookInFromPath(NULL, buf, sizeof(buf)) && buf[0] == 0);
+        // exactly fits (9 bytes + terminator in 10), one more does not - never cut
+        char b10[10];
+        CHECK(SalFindLookInFromPath("C:\\abcdef", b10, sizeof(b10)) && strcmp(b10, "C:\\abcdef") == 0);
+        CHECK(!SalFindLookInFromPath("C:\\abcdefg", b10, sizeof(b10)) && b10[0] == 0);
+        CHECK(!SalFindLookInFromPath("C:\\abcde;", b10, sizeof(b10)) && b10[0] == 0); // the doubled ';' does not fit
+        CHECK(SalFindLookInFromPath("C:\\abcd;", b10, sizeof(b10)) && strcmp(b10, "C:\\abcd;;") == 0);
+        // a 600-byte accented path (the old field cut it at 259 bytes, inside a character)
+        static char deep[700], out[1024];
+        strcpy(deep, "C:\\");
+        for (int i = 0; i < 100; i++)
+            strcat(deep, "\xC4\x8D\xC5\x99\\"); // c-caron, r-caron, backslash
+        CHECK(strlen(deep) == 503);
+        CHECK(SalFindLookInFromPath(deep, out, sizeof(out)) && strcmp(out, deep) == 0);
+        // item name: whole when it fits, cut at a whole character when not
+        char name[64];
+        SalFindComposeItemName(name, sizeof(name), "*.txt", "in", "C:\\x");
+        CHECK(strcmp(name, "\"*.txt\" in \"C:\\x\"") == 0);
+        char nameSmall[20];
+        SalFindComposeItemName(nameSmall, sizeof(nameSmall), "*", "v", deep);
+        CHECK(strlen(nameSmall) <= 19 && MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, nameSmall, -1, NULL, 0) > 0);
+        CHECK(strncmp(nameSmall, "\"*\" v \"C:\\", 10) == 0);
+        SalFindComposeItemName(nameSmall, sizeof(nameSmall), NULL, NULL, NULL);
+        CHECK(strcmp(nameSmall, "\"\"  \"\"") == 0);
+    }
+
+    // --- SplU8TrimTornTail / SplU8CopyTrunc / SplDisplayTextToWAlloc (plug-ins) ---
+    {
+        char t[16];
+        strcpy(t, "ab\xC4"); // torn 2-byte lead
+        SplU8TrimTornTail(t);
+        CHECK(strcmp(t, "ab") == 0);
+        strcpy(t, "ab\xE2\x82"); // torn 3-byte sequence
+        SplU8TrimTornTail(t);
+        CHECK(strcmp(t, "ab") == 0);
+        strcpy(t, "ab\xC4\x8D"); // complete character kept
+        SplU8TrimTornTail(t);
+        CHECK(strcmp(t, "ab\xC4\x8D") == 0);
+        strcpy(t, "ab\xF0\x9F\x98"); // torn 4-byte sequence
+        SplU8TrimTornTail(t);
+        CHECK(strcmp(t, "ab") == 0);
+        SplU8TrimTornTail(NULL); // no crash
+        char d[6];
+        SplU8CopyTrunc(d, sizeof(d), "abcd\xC4\x8D"); // 6 bytes into 5: the 2-byte character would be torn
+        CHECK(strcmp(d, "abcd") == 0);
+        SplU8CopyTrunc(d, sizeof(d), "abc\xC4\x8D"); // exactly fits
+        CHECK(strcmp(d, "abc\xC4\x8D") == 0);
+        SplU8CopyTrunc(d, sizeof(d), "abcdefgh"); // ASCII cut as lstrcpyn
+        CHECK(strcmp(d, "abcde") == 0);
+        SplU8CopyTrunc(d, sizeof(d), "ab\xE1"); // code-page text that fits is untouched
+        CHECK(strcmp(d, "ab\xE1") == 0);
+        SplU8CopyTrunc(d, sizeof(d), NULL);
+        CHECK(d[0] == 0);
+        WCHAR* w = SplDisplayTextToWAlloc("C:\\\xC4\x8D.txt"); // UTF-8
+        CHECK(w != NULL && wcscmp(w, L"C:\\\x010D.txt") == 0);
+        free(w);
+        w = SplDisplayTextToWAlloc("C:\\\xC4\x8D\xC4"); // UTF-8 with a torn tail: shown without it
+        CHECK(w != NULL && wcscmp(w, L"C:\\\x010D") == 0);
+        free(w);
+        w = SplDisplayTextToWAlloc("ab\xE2\x82"); // a torn 3-byte sequence (a continuation byte left)
+        CHECK(w != NULL && wcscmp(w, L"ab") == 0);
+        free(w);
+        // review NIT 1: ASCII + one code-page letter >= 0xC0 at the end is code-page text, not a torn tail
+        w = SplDisplayTextToWAlloc("Fichier utilis\xE9");
+        WCHAR expectCp[32];
+        MultiByteToWideChar(CP_ACP, 0, "Fichier utilis\xE9", -1, expectCp, 32);
+        CHECK(w != NULL && wcscmp(w, expectCp) == 0 && wcslen(w) == 15);
+        free(w);
+        w = SplDisplayTextToWAlloc("\xED\xA0\x80x"); // WTF-8 lone surrogate
+        CHECK(w != NULL && w[0] == 0xD800 && w[1] == L'x' && w[2] == 0);
+        free(w);
+        w = SplDisplayTextToWAlloc("Chyba \xE8ten\xED"); // code-page text (not UTF-8): through the code page
+        WCHAR expect[32];
+        MultiByteToWideChar(CP_ACP, 0, "Chyba \xE8ten\xED", -1, expect, 32);
+        CHECK(w != NULL && wcscmp(w, expect) == 0);
+        free(w);
+        w = SplDisplayTextToWAlloc(NULL);
+        CHECK(w != NULL && w[0] == 0);
+        free(w);
+    }
+
+    // --- SalFtpTypedLoginTooLong (FTP Change Directory / upload target) ---
+    {
+        static char pw[400];
+        memset(pw, 0, sizeof(pw));
+        for (int i = 0; i < 300; i++)
+            pw[i] = 'p';
+        CHECK(!SalFtpTypedLoginTooLong("u:p@h", 610, "u", 101, "h", 201, pw, 301)); // 300 bytes fit 301
+        pw[300] = 'p';
+        CHECK(SalFtpTypedLoginTooLong("u:p@h", 610, "u", 101, "h", 201, pw, 301)); // 301 do not
+        CHECK(!SalFtpTypedLoginTooLong("x", 610, NULL, 101, "h", 201, NULL, 301));
+        static char user[200];
+        memset(user, 'u', 100);
+        user[100] = 0;
+        CHECK(!SalFtpTypedLoginTooLong("x", 610, user, 101, "h", 201, NULL, 301));
+        user[100] = 'u';
+        user[101] = 0;
+        CHECK(SalFtpTypedLoginTooLong("x", 610, user, 101, "h", 201, NULL, 301));
+        static char host[300];
+        memset(host, 'h', 201);
+        host[201] = 0;
+        CHECK(SalFtpTypedLoginTooLong("x", 610, NULL, 101, host, 201, NULL, 301));
+        host[200] = 0;
+        CHECK(!SalFtpTypedLoginTooLong("x", 610, NULL, 101, host, 201, NULL, 301));
+        static char part[700];
+        memset(part, 'a', 610);
+        part[610] = 0;
+        CHECK(SalFtpTypedLoginTooLong(part, 610, NULL, 101, "h", 201, NULL, 301)); // the copy would cut it
+        part[609] = 0;
+        CHECK(!SalFtpTypedLoginTooLong(part, 610, NULL, 101, "h", 201, NULL, 301));
+    }
+
+    // --- the folder picker's NetHood rule (splfiledlg.h) ---
+    {
+        const char* ini = "[.ShellClassInfo]\r\nCLSID2={0AFACED1-E828-11D1-9187-B532F1E9575D}\r\nFlags=2\r\n";
+        CHECK(SplFileDlgDetail::IsFolderShortcutIni(ini, (int)strlen(ini)));
+        const char* iniLower = "CLSID2={0afaced1-e828-11d1-9187-b532f1e9575d}";
+        CHECK(SplFileDlgDetail::IsFolderShortcutIni(iniLower, (int)strlen(iniLower)));
+        const char* iniPrefix = "CLSID2={0AFACED1}"; // the core matched a prefix; the whole id is required
+        CHECK(!SplFileDlgDetail::IsFolderShortcutIni(iniPrefix, (int)strlen(iniPrefix)));
+        const char* iniOther = "CLSID={645FF040-5081-101B-9F08-00AA002F954E}";
+        CHECK(!SplFileDlgDetail::IsFolderShortcutIni(iniOther, (int)strlen(iniOther)));
+        const char* iniOpen = "CLSID2={0AFACED1-E828-11D1-9187-B532F1E9575D"; // no closing brace
+        CHECK(!SplFileDlgDetail::IsFolderShortcutIni(iniOpen, (int)strlen(iniOpen)));
+        CHECK(!SplFileDlgDetail::IsFolderShortcutIni(NULL, 5));
+
+        // a bare proposed name goes into the folder the dialog should open in (item 12, found by 117)
+        WCHAR fn[32];
+        wcscpy(fn, L"rt");
+        size_t pre = SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
+        CHECK(wcscmp(fn, L"C:\\dir\\rt") == 0 && pre == 7);
+        // review SF1: the folder refused (gone) -> the bare name again, then the old retry
+        CHECK(SplFileDlgDetail::BareNameBack(fn, pre) && wcscmp(fn, L"rt") == 0);
+        CHECK(!SplFileDlgDetail::BareNameBack(fn, 0) && wcscmp(fn, L"rt") == 0);
+        CHECK(!SplFileDlgDetail::BareNameBack(fn, 7) && wcscmp(fn, L"rt") == 0); // never past the name
+        CHECK(!SplFileDlgDetail::BareNameBack(NULL, 3));
+        wcscpy(fn, L"rt.md5");
+        pre = SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\");
+        CHECK(pre == 3 && SplFileDlgDetail::BareNameBack(fn, pre) && wcscmp(fn, L"rt.md5") == 0);
+        wcscpy(fn, L"rt");
+        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
+        CHECK(wcscmp(fn, L"C:\\dir\\rt") == 0);
+        wcscpy(fn, L"rt.md5");
+        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\");
+        CHECK(wcscmp(fn, L"C:\\rt.md5") == 0);
+        wcscpy(fn, L"\x010D.sfv");
+        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"\\\\srv\\sh\\d\x0159");
+        CHECK(wcscmp(fn, L"\\\\srv\\sh\\d\x0159\\\x010D.sfv") == 0);
+        wcscpy(fn, L"D:\\x\\rt"); // has its own folder: unchanged
+        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
+        CHECK(wcscmp(fn, L"D:\\x\\rt") == 0);
+        wcscpy(fn, L"sub/rt");
+        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
+        CHECK(wcscmp(fn, L"sub/rt") == 0);
+        fn[0] = 0; // no name: unchanged (the dialog uses lpstrInitialDir)
+        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
+        CHECK(fn[0] == 0);
+        wcscpy(fn, L"rt");
+        SplFileDlgDetail::NameIntoInitialDir(fn, 32, NULL);
+        CHECK(wcscmp(fn, L"rt") == 0);
+        wcscpy(fn, L"rt"); // "C:\dir\rt" = 9 units + terminator: 10 fits, 9 does not
+        SplFileDlgDetail::NameIntoInitialDir(fn, 9, L"C:\\dir");
+        CHECK(wcscmp(fn, L"rt") == 0);
+        SplFileDlgDetail::NameIntoInitialDir(fn, 10, L"C:\\dir");
+        CHECK(wcscmp(fn, L"C:\\dir\\rt") == 0);
+
+        // end to end: a folder shortcut in %TEMP% (a fixed drive) pointing at another folder
+        HRESULT coInit = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+        WCHAR tmp[MAX_PATH];
+        DWORD tl = GetTempPathW(MAX_PATH, tmp);
+        WCHAR rootDir[MAX_PATH], sc[MAX_PATH], tgt[MAX_PATH], file[MAX_PATH];
+        if (tl > 0 && tl < MAX_PATH - 80)
+        {
+            swprintf(rootDir, MAX_PATH, L"%stc121_nethood_%lu", tmp, GetCurrentProcessId());
+            swprintf(sc, MAX_PATH, L"%s\\sc \x010D", rootDir);    // the shortcut folder (accented name)
+            swprintf(tgt, MAX_PATH, L"%s\\target \x0159", rootDir); // where it points
+            CreateDirectoryW(rootDir, NULL);
+            CreateDirectoryW(sc, NULL);
+            CreateDirectoryW(tgt, NULL);
+            // no desktop.ini yet: not a shortcut
+            WCHAR* r = SplFileDlgDetail::ResolveNetHoodFolderW(sc);
+            CHECK(r == NULL);
+            free(r);
+            swprintf(file, MAX_PATH, L"%s\\desktop.ini", sc);
+            HANDLE h = CreateFileW(file, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+            CHECK(h != INVALID_HANDLE_VALUE);
+            if (h != INVALID_HANDLE_VALUE)
+            {
+                DWORD wr;
+                WriteFile(h, ini, (DWORD)strlen(ini), &wr, NULL);
+                CloseHandle(h);
+            }
+            // desktop.ini but no target.lnk: not resolved
+            r = SplFileDlgDetail::ResolveNetHoodFolderW(sc);
+            CHECK(r == NULL);
+            free(r);
+            swprintf(file, MAX_PATH, L"%s\\target.lnk", sc);
+            IShellLinkW* link = NULL;
+            bool made = false;
+            if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+            {
+                link->SetPath(tgt);
+                IPersistFile* pf = NULL;
+                if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&pf) == S_OK)
+                {
+                    made = pf->Save(file, TRUE) == S_OK;
+                    pf->Release();
+                }
+                link->Release();
+            }
+            CHECK(made);
+            r = SplFileDlgDetail::ResolveNetHoodFolderW(sc);
+            CHECK(r != NULL && _wcsicmp(r, tgt) == 0);
+            free(r);
+            // with a trailing backslash too
+            WCHAR scSlash[MAX_PATH];
+            swprintf(scSlash, MAX_PATH, L"%s\\", sc);
+            r = SplFileDlgDetail::ResolveNetHoodFolderW(scSlash);
+            CHECK(r != NULL && _wcsicmp(r, tgt) == 0);
+            free(r);
+            // a UNC path is never NetHood; NULL and "" are not
+            CHECK(SplFileDlgDetail::ResolveNetHoodFolderW(L"\\\\server\\share") == NULL);
+            CHECK(SplFileDlgDetail::ResolveNetHoodFolderW(L"") == NULL);
+            CHECK(SplFileDlgDetail::ResolveNetHoodFolderW(NULL) == NULL);
+            DeleteFileW(file);
+            swprintf(file, MAX_PATH, L"%s\\desktop.ini", sc);
+            DeleteFileW(file);
+            RemoveDirectoryW(sc);
+            RemoveDirectoryW(tgt);
+            RemoveDirectoryW(rootDir);
+        }
+        else
+            CHECK(!"GetTempPathW");
+        if (SUCCEEDED(coInit))
+            CoUninitialize();
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -8389,6 +8761,7 @@ int main()
     TestChecksumList117();
     TestPackLeftovers119();
     TestPvPixel120();
+    TestSmallBatch121();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

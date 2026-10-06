@@ -850,6 +850,7 @@ CFindManageDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 if (dispInfo->ToDo == edtlbGetData)
                 {
                     lstrcpyn(dispInfo->Buffer, ((CFindOptionsItem*)dispInfo->ItemID)->ItemName, MAX_PATH); // ItemName can exceed MAX_PATH; EDTLB_DISPINFO::Buffer is a fixed edit-list-box ABI (feature 027)
+                    SalU8TrimIncompleteTail(dispInfo->Buffer); // feature 121 (review NIT 2): a cut name stays UTF-8 (the Look in part is longer now)
                     dispInfo->Bold = ((CFindOptionsItem*)dispInfo->ItemID)->AutoLoad;
                     SetWindowLongPtr(HWindow, DWLP_MSGRESULT, FALSE);
                     return TRUE;

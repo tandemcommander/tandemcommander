@@ -1,0 +1,23 @@
+# Tasks: feature 121
+
+- [X] T001 Research (research.md R1-R11) by code reading; R4 code-page measurement; preserve `Debug_x64_pre121`
+- [X] T002 Spec (Clarifications), plan, tasks, checklist
+- [X] T003 [US2] R4 `LoadStrU8` in the UTF-8 error fields (`worker.cpp`, `safefile.cpp`)
+- [X] T004 [US2] R3 clipboard: reason kept, echo not skipped, report helpers, every core copy command (`salamdr4.cpp`, `consts.h`, `fileswn1/9.cpp`, `finddlg1.cpp`, `mainwnd1/4.cpp`, `msgbox.cpp`, `viewer3.cpp`, `stswnd.cpp`)
+- [X] T005 [US2] R2 message box breaks (`salmsgwrap.h`, `msgbox.cpp`); title helper for R3
+- [X] T006 [US1] R1 Find Look in (`salfindtext.h`, `find.h`, `find.cpp`, `finddlg1.cpp`)
+- [X] T007 [US2] R5 Disk Map log Unicode (`GUI.LogWindow.h`, `splunicode.h`)
+- [X] T008 [US2] R6 folder picker (`splfiledlg.h`)
+- [X] T009 [US3] R7 File Comparator `Release` (`filecomp.cpp`)
+- [X] T010 [US2] R8 Romanian pin (`zip.slt`, `ui-overrides.json`)
+- [X] T011 [US2] R9 Checksum save error (`checksum/dialogs.cpp`)
+- [X] T012 [US2] R10 FTP refusal, wipes, whole-character cuts (`salftpsecret.h`, `fs2.cpp`, `fs5.cpp`, `ctrlcon1.cpp`, `operats2.cpp`)
+- [X] T013 [US3] R11 RegEdit Find and FTP Logs / message windows declared (`regedt/finddlg2.cpp`, `ftp/dialogs2.cpp`)
+- [X] T014 saltests `TestSmallBatch121` (17,423 -> 17,513)
+- [X] T015 Probe `probe/batch121_probe.ps1` written; PowerShell parse + C# compile checked (not run)
+- [X] T016 Gates: Debug build, full Release build, saltests, strict encoding guard
+- [X] T017 Records: fix-log, NEXT-WORK, CHANGELOG `[Unreleased]`; CLAUDE.md entry proposed in the fix-log; no commit
+- [X] T018 Code-only independent review (fix-log "Review"): ACCEPT; NITs 1-5 fixed
+- [X] T018a Item 12 (coordinator): Save dialogs' initial folder (`splfiledlg.h`, `checksum/dialogs.cpp`, `pictview/saveas.cpp`), tests, builds
+- [X] T018b Coordinator review (ACCEPT pending GUI): SF1 and NITs 1-3, 5 fixed, NIT 4 recorded; builds; `Debug_x64_121` re-copied
+- [ ] T019 GUI runs (owed): `batch121_probe.ps1` on `Debug_x64_121` (-Expect fixed) and `Debug_x64_pre121` (-Expect before); regressions 101 leftovers, 102 filecomp, 117 csumlist (the Save-folder row), 118 update-close on `Debug_x64_121`

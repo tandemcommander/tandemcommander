@@ -7,6 +7,7 @@
 #include "cfgdlg.h"
 #include "find.h"
 #include "md5.h"
+#include "salfindtext.h" // feature 121
 
 char* FindNamedHistory[FIND_NAMED_HISTORY_SIZE];
 char* FindLookInHistory[FIND_LOOKIN_HISTORY_SIZE];
@@ -163,8 +164,10 @@ CFindOptionsItem::operator=(const CFindOptionsItem& s)
 
 void CFindOptionsItem::BuildItemName()
 {
-    sprintf(ItemName, "\"%s\" %s \"%s\"",
-            NamedText, LoadStr(IDS_FF_IN), LookInText);
+    // feature 121: LookInText holds any path the program can (SAL_MAX_PATH_UTF8) - the display name
+    // (ITEMNAME_TEXT_LEN) is cut at a whole UTF-8 character instead of the sprintf overrun; "in" as
+    // UTF-8 like the rest of the name (the Romanian word starts with i-circumflex, a code-page byte inside UTF-8)
+    SalFindComposeItemName(ItemName, ITEMNAME_TEXT_LEN, NamedText, LoadStrU8(IDS_FF_IN), LookInText);
 }
 
 BOOL CFindOptionsItem::Save(HKEY hKey)
@@ -1150,11 +1153,13 @@ void CDuplicateCandidates::Examine(CGrepData* data)
 // CSearchForData
 //
 
-void CSearchForData::Set(const char* dir, const char* masksGroup, BOOL includeSubDirs)
+BOOL CSearchForData::Set(const char* dir, const char* masksGroup, BOOL includeSubDirs)
 {
-    strcpy(Dir, dir);
+    free(Dir);
+    Dir = DupStr(dir); // feature 121: whole, on the heap (DupStr traces low memory)
     MasksGroup.SetMasksString(masksGroup);
     IncludeSubDirs = includeSubDirs;
+    return Dir != NULL;
 }
 
 //*********************************************************************************
@@ -1873,7 +1878,8 @@ unsigned GrepThreadFBody(void* ptr)
             for (i = 0; i < data->Data->Count; i++)
             {
                 CSalPathBuf path; // UTF-8, long-path capable (feature 004)
-                if (!path.Set(data->Data->At(i)->Dir) || !path.AddBackslash())
+                if (data->Data->At(i)->Dir == NULL || // feature 121: heap (NULL = low memory at Set)
+                    !path.Set(data->Data->At(i)->Dir) || !path.AddBackslash())
                 {
                     TRACE_E(LOW_MEMORY);
                     data->StopSearch = TRUE;

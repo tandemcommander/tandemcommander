@@ -9,6 +9,7 @@
 #include "fileswnd.h"
 #include "mainwnd.h"
 #include "salinflt.h"
+#include "salmsgwrap.h" // feature 121: SalMenuLabelToTitle
 
 //****************************************************************************
 //
@@ -1107,8 +1108,26 @@ DWORD AddMultibyteToClipboard(const wchar_t* str, int textLen)
 
 // ****************************************************************************
 
-BOOL CopyHTextToClipboardW(HGLOBAL hGlobalText, int textLen)
+// feature 121: see consts.h; the title is the "Copy To Clipboard" menu label without its
+// accelerator mark (the echo of the copy functions used the label as it is: "&Copy To Clipboard")
+void ShowClipboardCopyError(HWND hParent, DWORD err)
 {
+    if (err == ERROR_SUCCESS)
+        err = ERROR_GEN_FAILURE;
+    char title[200];
+    SalMenuLabelToTitle(title, sizeof(title), LoadStr(IDS_COPYTOCLIPBOARD));
+    // encoding-check: allow missed-twin - the system's text alone, under the copy command's name
+    SalMessageBox(hParent, GetErrorText(err), title, MB_OK | MB_ICONEXCLAMATION);
+}
+
+// ****************************************************************************
+
+// feature 121: '*taken' (optional) = the clipboard owns 'hGlobalText' now (SetClipboardData took it);
+// when it is FALSE the caller still owns the block (it was leaked by CopyTextToClipboardW)
+static BOOL CopyHTextToClipboardWEx(HGLOBAL hGlobalText, int textLen, BOOL* taken)
+{
+    if (taken != NULL)
+        *taken = FALSE;
     if (hGlobalText == NULL)
     {
         TRACE_E("hGlobalText == NULL");
@@ -1134,6 +1153,17 @@ BOOL CopyHTextToClipboardW(HGLOBAL hGlobalText, int textLen)
 
             if (SetClipboardData(CF_UNICODETEXT, hGlobalText) == NULL) // then store the multibyte text
                 err = GetLastError();
+            else
+            {
+                // feature 121 (review NIT 2): the text is on the clipboard (Windows derives the other
+                // format from it) - the failure of the extra format is not a failed copy, and a
+                // FALSE now always means the caller still owns the block
+                if (err != ERROR_SUCCESS)
+                    TRACE_E("The second clipboard format could not be stored: " << err);
+                err = ERROR_SUCCESS;
+                if (taken != NULL)
+                    *taken = TRUE;
+            }
         }
         else
             err = GetLastError();
@@ -1148,7 +1178,13 @@ BOOL CopyHTextToClipboardW(HGLOBAL hGlobalText, int textLen)
         TRACE_E("OpenClipboard() has failed!");
     }
 
+    SetLastError(err); // feature 121: the caller can report the reason (a copy command's failure was silent)
     return err == ERROR_SUCCESS;
+}
+
+BOOL CopyHTextToClipboardW(HGLOBAL hGlobalText, int textLen)
+{
+    return CopyHTextToClipboardWEx(hGlobalText, textLen, NULL);
 }
 
 // ****************************************************************************
@@ -1176,8 +1212,18 @@ BOOL CopyTextToClipboardW(const wchar_t* text, int textLen, BOOL showEcho, HWND 
             lptstrCopy[textLen] = 0;
             HANDLES(GlobalUnlock(hglbCopy));
 
-            if (!CopyHTextToClipboardW(hglbCopy, textLen))
-                return FALSE;
+            BOOL taken;
+            if (!CopyHTextToClipboardWEx(hglbCopy, textLen, &taken))
+            {
+                // feature 121: report it like the other failures (it returned FALSE before the echo,
+                // also with showEcho - a clipboard another program held open failed in silence)
+                err = GetLastError();
+                if (err == ERROR_SUCCESS)
+                    err = ERROR_GEN_FAILURE;
+                if (!taken)
+                    NOHANDLES(GlobalFree(hglbCopy)); // review NIT 4: not the clipboard's - it leaked
+                SetLastError(err);
+            }
         }
         else
             err = GetLastError();
@@ -1188,12 +1234,12 @@ BOOL CopyTextToClipboardW(const wchar_t* text, int textLen, BOOL showEcho, HWND 
     if (showEcho)
     {
         if (err != ERROR_SUCCESS)
-            SalMessageBox(hEchoParent, GetErrorText(err), LoadStr(IDS_COPYTOCLIPBOARD),
-                          MB_OK | MB_ICONEXCLAMATION);
+            ShowClipboardCopyError(hEchoParent, err); // feature 121: the title without the menu's '&'
         else
             SalMessageBox(hEchoParent, LoadStr(IDS_TEXTCOPIED), LoadStr(IDS_INFOTITLE),
                           MB_OK | MB_ICONINFORMATION);
     }
+    SetLastError(err); // feature 121: the caller can report the reason (a copy command's failure was silent)
     return err == ERROR_SUCCESS;
 }
 
@@ -1219,6 +1265,7 @@ BOOL CopyTextToClipboardU8(const char* u8Text, int textLen, BOOL showEcho, HWND 
     // passing ANSI degrades to the legacy CP_ACP interpretation instead
     // of corrupting (the SalLegacyToU8Alloc tolerance model)
     BOOL ret = FALSE;
+    DWORD err = ERROR_NOT_ENOUGH_MEMORY; // feature 121: the reason when nothing was copied
     int wideLen = SalU8ToW(u8Text, textLen, NULL, 0); // converted units + 1
     if (wideLen > 0)
     {
@@ -1226,7 +1273,10 @@ BOOL CopyTextToClipboardU8(const char* u8Text, int textLen, BOOL showEcho, HWND 
         if (wide != NULL)
         {
             if (SalU8ToW(u8Text, textLen, wide, wideLen) > 0)
+            {
                 ret = CopyTextToClipboardW(wide, wideLen - 1, showEcho, hEchoParent);
+                err = GetLastError();
+            }
             free(wide);
         }
         else
@@ -1241,7 +1291,10 @@ BOOL CopyTextToClipboardU8(const char* u8Text, int textLen, BOOL showEcho, HWND 
             if (wide != NULL)
             {
                 if (MultiByteToWideChar(CP_ACP, 0, u8Text, textLen, wide, wideLen) > 0)
+                {
                     ret = CopyTextToClipboardW(wide, wideLen, showEcho, hEchoParent);
+                    err = GetLastError();
+                }
                 free(wide);
             }
             else
@@ -1250,10 +1303,31 @@ BOOL CopyTextToClipboardU8(const char* u8Text, int textLen, BOOL showEcho, HWND 
         else
             TRACE_E("CopyTextToClipboardU8: text conversion failed");
     }
+    SetLastError(ret ? ERROR_SUCCESS : err); // feature 121: kept over free() for CopyTextToClipboardU8Report
     return ret;
 }
 
 // ****************************************************************************
+
+BOOL CopyTextToClipboardU8Report(HWND hParent, const char* u8Text, int textLen)
+{
+    BOOL ret = CopyTextToClipboardU8(u8Text, textLen);
+    if (!ret)
+        ShowClipboardCopyError(hParent, GetLastError());
+    return ret;
+}
+
+BOOL CopyTextToClipboardWReport(HWND hParent, const wchar_t* text, int textLen)
+{
+    BOOL ret = CopyTextToClipboardW(text, textLen);
+    if (!ret)
+        ShowClipboardCopyError(hParent, GetLastError());
+    return ret;
+}
+
+// ****************************************************************************
+
+static BOOL CopyHTextToClipboardEx(HGLOBAL hGlobalText, int textLen, BOOL showEcho, HWND hEchoParent, BOOL* taken);
 
 BOOL CopyTextToClipboard(const char* text, int textLen, BOOL showEcho, HWND hEchoParent)
 {
@@ -1277,8 +1351,16 @@ BOOL CopyTextToClipboard(const char* text, int textLen, BOOL showEcho, HWND hEch
             memcpy(lptstrCopy, text, textLen);
             lptstrCopy[textLen] = 0;
             HANDLES(GlobalUnlock(hglbCopy));
-            if (!CopyHTextToClipboard(hglbCopy, textLen, NULL, FALSE))
-                return FALSE;
+            BOOL taken;
+            if (!CopyHTextToClipboardEx(hglbCopy, textLen, FALSE, NULL, &taken))
+            {
+                // feature 121: report it like the other failures (see CopyTextToClipboardW)
+                err = GetLastError();
+                if (err == ERROR_SUCCESS)
+                    err = ERROR_GEN_FAILURE;
+                if (!taken)
+                    NOHANDLES(GlobalFree(hglbCopy)); // review NIT 4: not the clipboard's - it leaked
+            }
         }
         else
             err = GetLastError();
@@ -1289,12 +1371,12 @@ BOOL CopyTextToClipboard(const char* text, int textLen, BOOL showEcho, HWND hEch
     if (showEcho)
     {
         if (err != ERROR_SUCCESS)
-            SalMessageBox(hEchoParent, GetErrorText(err), LoadStr(IDS_COPYTOCLIPBOARD),
-                          MB_OK | MB_ICONEXCLAMATION);
+            ShowClipboardCopyError(hEchoParent, err); // feature 121: the title without the menu's '&'
         else
             SalMessageBox(hEchoParent, LoadStr(IDS_TEXTCOPIED), LoadStr(IDS_INFOTITLE),
                           MB_OK | MB_ICONINFORMATION);
     }
+    SetLastError(err); // feature 121: the caller can report the reason (a copy command's failure was silent)
     return err == ERROR_SUCCESS;
 }
 
@@ -1302,6 +1384,14 @@ BOOL CopyTextToClipboard(const char* text, int textLen, BOOL showEcho, HWND hEch
 
 BOOL CopyHTextToClipboard(HGLOBAL hGlobalText, int textLen, BOOL showEcho, HWND hEchoParent)
 {
+    return CopyHTextToClipboardEx(hGlobalText, textLen, showEcho, hEchoParent, NULL);
+}
+
+// feature 121: '*taken' (optional) as in CopyHTextToClipboardWEx
+static BOOL CopyHTextToClipboardEx(HGLOBAL hGlobalText, int textLen, BOOL showEcho, HWND hEchoParent, BOOL* taken)
+{
+    if (taken != NULL)
+        *taken = FALSE;
     if (hGlobalText == NULL)
     {
         TRACE_E("hGlobalText == NULL");
@@ -1327,6 +1417,17 @@ BOOL CopyHTextToClipboard(HGLOBAL hGlobalText, int textLen, BOOL showEcho, HWND 
 
             if (SetClipboardData(CF_TEXT, hGlobalText) == NULL) // then store the multibyte text
                 err = GetLastError();
+            else
+            {
+                // feature 121 (review NIT 2): the text is on the clipboard (Windows derives the other
+                // format from it) - the failure of the extra format is not a failed copy, and a
+                // FALSE now always means the caller still owns the block
+                if (err != ERROR_SUCCESS)
+                    TRACE_E("The second clipboard format could not be stored: " << err);
+                err = ERROR_SUCCESS;
+                if (taken != NULL)
+                    *taken = TRUE;
+            }
         }
         else
             err = GetLastError();
@@ -1344,12 +1445,12 @@ BOOL CopyHTextToClipboard(HGLOBAL hGlobalText, int textLen, BOOL showEcho, HWND 
     if (showEcho)
     {
         if (err != ERROR_SUCCESS)
-            SalMessageBox(hEchoParent, GetErrorText(err), LoadStr(IDS_COPYTOCLIPBOARD),
-                          MB_OK | MB_ICONEXCLAMATION);
+            ShowClipboardCopyError(hEchoParent, err); // feature 121: the title without the menu's '&'
         else
             SalMessageBox(hEchoParent, LoadStr(IDS_TEXTCOPIED), LoadStr(IDS_INFOTITLE),
                           MB_OK | MB_ICONINFORMATION);
     }
+    SetLastError(err); // feature 121: the caller can report the reason (a copy command's failure was silent)
     return err == ERROR_SUCCESS;
 }
 

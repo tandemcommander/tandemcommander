@@ -362,8 +362,13 @@ void CFindDialog::StartSearch()
                                      this, CancelEvent);
     if (t)
     {
+        // feature 121: withdrawn before the search thread runs (review NIT 3), restored if it does not
+        SG->SetWindowClosesUnattended(HWindow, FALSE); // a running search declines an update
         if (!t->Create(ThreadQueue))
+        {
             delete t;
+            SG->SetWindowClosesUnattended(HWindow, TRUE);
+        }
         else
             ok = TRUE;
     }
@@ -685,6 +690,11 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_INITDIALOG:
     {
         //DialogStackPush(HWindow);
+
+        // feature 121 (interface 107): while it does not search, the Find window holds nothing to
+        // lose (the core's own Find window is closed for an update the same way, 080 D5) - an
+        // installer's close request need not decline for it; while searching it declines
+        SG->SetWindowClosesUnattended(HWindow, TRUE);
 
         //InstallWordBreakProc(GetDlgItem(HWindow, IDC_PATTERN), TRUE); // install WordBreakProc into the combo box
 
@@ -1075,6 +1085,7 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         // the search has finished
         SearchInProgress = FALSE;
+        SG->SetWindowClosesUnattended(HWindow, TRUE); // feature 121: see WM_INITDIALOG
         SetWindowText(GetDlgItem(HWindow, IDOK), LoadStr(IDS_START));
         CloseHandle(CancelEvent); // we will not need it anymore
         UpdateListViewItems();

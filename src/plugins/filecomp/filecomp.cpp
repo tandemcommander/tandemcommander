@@ -349,11 +349,52 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
             else
                 ret = MainWindowQueue.CloseAllWindows(force) || force;
         }
+        if (ret && !force)
+        {
+            // feature 121: a comparison started just before (fcremote.exe starting the program and
+            // sending its request at once, or the menu command) has its thread in ThreadQueue but
+            // puts its window into MainWindowQueue only after creating it - a close in that gap
+            // found no window, closed nothing, and KillAll then waited for a thread that does not
+            // end by itself: "File Comparator plugin has rejected to unload. Force?" (102 record).
+            // Wait in slices of the same budget and close every window that appears meanwhile;
+            // no new request can come (the receiver is terminated, the menu runs on this thread).
+            const DWORD budget = unattended ? 5000 : 1000; // what KillAll waited before
+            DWORD start = GetTickCount();
+            while (TRUE)
+            {
+                DWORD spent = GetTickCount() - start;
+                int slice = spent >= budget ? 0 : (budget - spent < 100 ? (int)(budget - spent) : 100);
+                if (ThreadQueue.KillAll(FALSE, slice))
+                    break; // every thread has ended
+                if (!MainWindowQueue.Empty())
+                {
+                    if (unattended && InterlockedCompareExchange(&CompareDialogsOpen, 0, 0) > 0)
+                    {
+                        // feature 118's rule: a Compare Files dialog (typed names) is never closed here
+                        TRACE_I("CPluginInterface::Release(): unattended close: a Compare Files dialog appeared - refusing");
+                        ret = FALSE;
+                        break;
+                    }
+                    TRACE_I("CPluginInterface::Release(): a window appeared while waiting - closing it too");
+                    if (!MainWindowQueue.CloseAllWindows(FALSE, unattended ? 5000 : 1000))
+                    {
+                        ret = FALSE;
+                        break;
+                    }
+                    start = GetTickCount(); // its thread gets the budget to end
+                    continue;
+                }
+                if (spent >= budget)
+                {
+                    ret = FALSE; // a thread still runs without a window (e.g. an error box)
+                    break;
+                }
+            }
+        }
         if (ret)
         {
-            if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
-                ret = FALSE;
-            else
+            if (force)
+                ThreadQueue.KillAll(TRUE); // as before: with force the plug-in is released anyway
             {
                 //SG->CallLoadOrSaveConfiguration(FALSE, LoadOrSaveConfiguration, parent);
 

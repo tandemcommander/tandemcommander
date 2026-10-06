@@ -234,7 +234,7 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
             {
                 // ERROR: filename+error, buttons retry/skip/skip all/cancel
                 ret = DialogError(hParent, allowSkip ? BUTTONS_RETRYSKIPCANCEL : BUTTONS_RETRYCANCEL,
-                                  fileName, LoadStr(IDS_NAMEALREADYUSEDFORDIR), LoadStr(IDS_ERRORCREATINGFILE));
+                                  fileName, LoadStrU8(IDS_NAMEALREADYUSEDFORDIR), LoadStr(IDS_ERRORCREATINGFILE));
             }
             switch (ret)
             {
@@ -264,7 +264,7 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                 {
                     // ERROR: filename+error, buttons retry/skip/skip all/cancel
                     ret = DialogError(hParent, allowSkip ? BUTTONS_RETRYSKIPCANCEL : BUTTONS_RETRYCANCEL,
-                                      fileName, LoadStr(IDS_NAMEALREADYUSED), LoadStr(IDS_ERRORCREATINGDIR));
+                                      fileName, LoadStrU8(IDS_NAMEALREADYUSED), LoadStr(IDS_ERRORCREATINGDIR));
                 }
                 switch (ret)
                 {
@@ -431,7 +431,7 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                     {
                         // ERROR: filename+error, buttons retry/skip/skip all/cancel
                         ret = DialogError(hParent, allowSkip ? BUTTONS_RETRYSKIPCANCEL : BUTTONS_RETRYCANCEL, namecopy,
-                                          LoadStr(IDS_NAMEALREADYUSED), LoadStr(IDS_ERRORCREATINGDIR));
+                                          LoadStrU8(IDS_NAMEALREADYUSED), LoadStr(IDS_ERRORCREATINGDIR));
                     }
                     switch (ret)
                     {
@@ -467,7 +467,7 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                 ret = DIALOG_SKIP;
             else
                 ret = DialogError(hParent, allowSkip ? BUTTONS_SKIPCANCEL : BUTTONS_OK, namecopy,
-                                  LoadStr(IDS_ERRORCREATINGROOTDIR), LoadStr(IDS_ERRORCREATINGDIR));
+                                  LoadStrU8(IDS_ERRORCREATINGROOTDIR), LoadStr(IDS_ERRORCREATINGDIR));
             switch (ret)
             {
             case DIALOG_SKIPALL:
@@ -502,7 +502,7 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                     ret = DIALOG_SKIP;
                 else
                     ret = DialogError(hParent, allowSkip ? BUTTONS_SKIPCANCEL : BUTTONS_OK, namecpy2,
-                                      LoadStr(IDS_ERRORCREATINGROOTDIR), LoadStr(IDS_ERRORCREATINGDIR));
+                                      LoadStrU8(IDS_ERRORCREATINGROOTDIR), LoadStr(IDS_ERRORCREATINGDIR));
                 switch (ret)
                 {
                 case DIALOG_SKIPALL:
@@ -538,7 +538,7 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                         {
                             // ERROR: filename+error, buttons retry/skip/skip all/cancel
                             ret = DialogError(hParent, allowSkip ? BUTTONS_RETRYSKIPCANCEL : BUTTONS_RETRYCANCEL,
-                                              namecpy2, LoadStr(IDS_NAMEALREADYUSED), LoadStr(IDS_ERRORCREATINGDIR));
+                                              namecpy2, LoadStrU8(IDS_NAMEALREADYUSED), LoadStr(IDS_ERRORCREATINGDIR));
                         }
                         switch (ret)
                         {

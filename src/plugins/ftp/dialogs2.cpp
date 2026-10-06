@@ -78,6 +78,10 @@ CWelcomeMsgDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
     case WM_INITDIALOG:
     {
+        // feature 121 (interface 107): the window only shows text (the server's welcome message, a
+        // reply, a raw listing) - an installer's close request need not decline for it; Release()
+        // closes it. Its Save As dialog is a window of its own and still declines.
+        SalamanderGeneral->SetWindowClosesUnattended(HWindow, TRUE);
         if (ServerReply)
         {
             if (SentCommand == NULL)
@@ -465,6 +469,10 @@ CLogsDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
     case WM_INITDIALOG:
     {
+        // feature 121 (interface 107): the Logs window only shows the logs (kept in memory by the
+        // plug-in) - an installer's close request need not decline for it; Release() closes it
+        // (CloseLogsDlg). Its Save dialogs are windows of their own and still decline.
+        SalamanderGeneral->SetWindowClosesUnattended(HWindow, TRUE);
         SendMessage(HWindow, WM_SETICON, ICON_BIG, (LPARAM)FTPLogIconBig);
         SendMessage(HWindow, WM_SETICON, ICON_SMALL, (LPARAM)FTPLogIcon);
 

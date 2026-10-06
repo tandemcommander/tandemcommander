@@ -11,6 +11,7 @@
 #include "mainwnd.h"
 #include "gui.h"
 #include "logo.h"
+#include "salmsgwrap.h" // feature 121
 
 // helper object for sending Ctrl+C to the parent via the WM_COPY message
 class CKeyForwarderWindow : public CWindow
@@ -191,9 +192,55 @@ BOOL CMessageBox::EscapeEnabled()
         return TRUE;
 }
 
-// returns a copy of 'src' into which 'n' characters are inserted so that the resulting maximum
-// width does not exceed 'maxWidth'. Assumes that the hDC has the correct font selected.
-// returns NULL in case of failure
+// returns a copy of 'src' into which line breaks are inserted so that no word is wider than
+// 'maxWidth' (the rest is broken between words by DrawText). Assumes that the hDC has the correct
+// font selected. Returns NULL when no break is needed or in case of failure.
+// feature 121: the breaks come from SalMsgWrapBreaks (salmsgwrap.h) - only inside a word that alone
+// is wider than the box (a long path), preferably after a path separator; before, every line was cut
+// at the box's right edge, inside words, as soon as one such word was in the text
+
+template <class CH>
+static CH* InsertEOLsAux(const CH* src, int srcLen, const int* alpDx, int maxWidth)
+{
+    // alpDx[0] = 0, alpDx[i + 1] = extent of the first i + 1 units -> per-unit advances
+    int* advance = (int*)malloc((srcLen + 1) * sizeof(int));
+    int* breaks = (int*)malloc((srcLen + 1) * sizeof(int));
+    CH* text = NULL;
+    if (advance != NULL && breaks != NULL)
+    {
+        for (int i = 0; i < srcLen; i++)
+        {
+            int a = alpDx[i + 1] - alpDx[i];
+            advance[i] = a > 0 ? a : 0;
+        }
+        int breakCount = SalMsgWrapBreaks(src, srcLen, advance, maxWidth, breaks, srcLen + 1);
+        if (breakCount > 0)
+        {
+            text = (CH*)malloc((srcLen + breakCount + 1) * sizeof(CH));
+            if (text != NULL)
+            {
+                int d = 0;
+                int b = 0;
+                for (int i = 0; i <= srcLen; i++) // including the terminator
+                {
+                    if (b < breakCount && breaks[b] == i)
+                    {
+                        text[d++] = '\n';
+                        b++;
+                    }
+                    text[d++] = src[i];
+                }
+            }
+            else
+                TRACE_E(LOW_MEMORY);
+        }
+    }
+    else
+        TRACE_E(LOW_MEMORY);
+    free(advance);
+    free(breaks);
+    return text;
+}
 
 char* DuplicateStrAndInsertEOLs(const char* src, HDC hDC, int maxWidth)
 {
@@ -212,56 +259,11 @@ char* DuplicateStrAndInsertEOLs(const char* src, HDC hDC, int maxWidth)
     alpDx[0] = 0;
 
     SIZE sz;
-    if (!GetTextExtentExPoint(hDC, src, srcLen, 0, NULL, alpDx + 1, &sz))
-    {
-        free(alpDx);
-        return NULL;
-    }
-
-    int breakCount = 0;
-    int lineLen = 0;
-    int i;
-    for (i = 0; i < srcLen; i++)
-    {
-        if (src[i] == '\n')
-        {
-            // end of line
-            lineLen = 0;
-        }
-        else
-        {
-            if (lineLen + (alpDx[i + 1] - alpDx[i]) > maxWidth)
-            {
-                alpDx[breakCount] = i;
-                breakCount++;
-                lineLen = 0;
-            }
-            else
-            {
-                lineLen += alpDx[i + 1] - alpDx[i];
-            }
-        }
-    }
-
-    if (breakCount > 0)
-    {
-        char* text = (char*)malloc((srcLen + breakCount + 1) * sizeof(char));
-        if (text != NULL)
-        {
-            memcpy(text, src, srcLen + 1);
-            int i2;
-            for (i2 = 0; i2 < breakCount; i2++)
-            {
-                memmove(text + alpDx[i2] + 1, text + alpDx[i2], srcLen - alpDx[i2] + 1 + i2);
-                text[alpDx[i2]] = '\n';
-            }
-            free(alpDx);
-            return text;
-        }
-    }
-
+    char* text = NULL;
+    if (GetTextExtentExPoint(hDC, src, srcLen, 0, NULL, alpDx + 1, &sz))
+        text = InsertEOLsAux(src, srcLen, alpDx, maxWidth);
     free(alpDx);
-    return NULL;
+    return text;
 }
 
 // feature 005: wide variant of DuplicateStrAndInsertEOLs. Message-box body
@@ -285,59 +287,11 @@ WCHAR* DuplicateStrAndInsertEOLsW(const WCHAR* src, HDC hDC, int maxWidth)
     alpDx[0] = 0;
 
     SIZE sz;
-    if (!GetTextExtentExPointW(hDC, src, srcLen, 0, NULL, alpDx + 1, &sz))
-    {
-        free(alpDx);
-        return NULL;
-    }
-
-    int breakCount = 0;
-    int lineLen = 0;
-    int i;
-    for (i = 0; i < srcLen; i++)
-    {
-        if (src[i] == L'\n')
-        {
-            lineLen = 0;
-        }
-        else
-        {
-            if (lineLen + (alpDx[i + 1] - alpDx[i]) > maxWidth)
-            {
-                // never break inside a surrogate pair
-                int brk = i;
-                if (brk > 0 && IS_LOW_SURROGATE(src[brk]) && IS_HIGH_SURROGATE(src[brk - 1]))
-                    brk--;
-                alpDx[breakCount] = brk;
-                breakCount++;
-                lineLen = 0;
-            }
-            else
-            {
-                lineLen += alpDx[i + 1] - alpDx[i];
-            }
-        }
-    }
-
-    if (breakCount > 0)
-    {
-        WCHAR* text = (WCHAR*)malloc((srcLen + breakCount + 1) * sizeof(WCHAR));
-        if (text != NULL)
-        {
-            memcpy(text, src, (srcLen + 1) * sizeof(WCHAR));
-            int i2;
-            for (i2 = 0; i2 < breakCount; i2++)
-            {
-                memmove(text + alpDx[i2] + 1, text + alpDx[i2], (srcLen - alpDx[i2] + 1 + i2) * sizeof(WCHAR));
-                text[alpDx[i2]] = L'\n';
-            }
-            free(alpDx);
-            return text;
-        }
-    }
-
+    WCHAR* text = NULL;
+    if (GetTextExtentExPointW(hDC, src, srcLen, 0, NULL, alpDx + 1, &sz))
+        text = InsertEOLsAux(src, srcLen, alpDx, maxWidth);
     free(alpDx);
-    return NULL;
+    return text;
 }
 
 BOOL CMessageBox::CopyToClipboard()
@@ -443,7 +397,7 @@ BOOL CMessageBox::CopyToClipboard()
     *ptr = 0; // terminator
 
     // the whole composed buffer is UTF-8 (feature 063, contract C2)
-    BOOL ret = CopyTextToClipboardU8(buff);
+    BOOL ret = CopyTextToClipboardU8Report(HWindow, buff); // feature 121: a failure is reported
     free(buff);
 
     return ret;

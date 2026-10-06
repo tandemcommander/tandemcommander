@@ -2327,6 +2327,8 @@ CStatusWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                                                     : CopyTextToClipboard(Text + HotItem->Offset, HotItem->Chars);
                         if (copied)
                             FlashText(TRUE);
+                        else // feature 121: a failure is reported (it was silent)
+                            ShowClipboardCopyError(MainWindow->HWindow, GetLastError());
                     }
                 }
                 if (HotSize)

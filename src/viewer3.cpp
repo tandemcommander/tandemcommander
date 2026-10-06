@@ -1611,13 +1611,17 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                         char* bytes = (char*)HANDLES(GlobalLock(h));
                         if (bytes != NULL)
                         {
-                            CopyTextToClipboardU8(bytes, (int)(endSel - startSel));
+                            CopyTextToClipboardU8Report(HWindow, bytes, (int)(endSel - startSel)); // feature 121: a failure is reported
                             HANDLES(GlobalUnlock(h));
                         }
                         NOHANDLES(GlobalFree(h)); // the U8 path made its own clipboard copy
                     }
                     else if (fatalErr || !CopyHTextToClipboard(h, (int)(endSel - startSel)))
+                    {
+                        if (!fatalErr)
+                            ShowClipboardCopyError(HWindow, GetLastError()); // feature 121: was silent
                         NOHANDLES(GlobalFree(h));
+                    }
                 }
                 if (fatalErr)
                     FatalFileErrorOccured();

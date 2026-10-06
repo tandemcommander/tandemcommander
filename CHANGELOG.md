@@ -53,6 +53,48 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **Find searches the folder you are in, however deep it is.** The *Look in*
+  field held 259 bytes - about 130 accented characters: opened from a deeper
+  folder it took the path cut there (inside a character too), so Find searched
+  another folder or none, and a longer typed path was cut the same way. The
+  field now takes any path the program can open.
+- **Message boxes break lines between words.** When a message contained a long
+  path, every line of it was cut at the box's edge, inside words. Now only the
+  path itself is split, preferably after a backslash.
+- **Copying a name, a path or text to the clipboard says when it fails.**
+  While another program held the clipboard open, *Copy Full Name*, *Copy Name*,
+  *Copy Full Path*, *Copy UNC Name*, the copy commands of the Find window, the
+  directory line, the viewer and the message boxes did nothing, silently; they
+  now show the system's reason.
+- **Save dialogs of the plugins open in the folder they should.** Checksum's
+  *Save* (the panel's folder), PictView's *Save As* (the picture's folder or
+  the folder it last saved to) and the FTP plugin's file dialogs could open in
+  a folder another program used last, because Windows may ignore the folder a
+  program asks for; the proposed name now carries the folder (if that folder
+  is gone, the dialog opens with the name alone, as before).
+- **Checksum: a list that cannot be written completely is reported.** A full
+  disk (or a file locked by another program) left a truncated checksum list
+  without a word; the plugin now shows "Error creating file" with the reason.
+- **Disk Map's log shows file names correctly** - names with letters outside
+  English were garbled there.
+- **The plugins' folder pickers follow network shortcuts** (folders in
+  *Network shortcuts* / NetHood) to the folder they point at, as the program's
+  own picker always did, and no longer accept a selection that is not a
+  folder on disk.
+- **FTP: a user name, server name or password typed into a path that is too
+  long is refused** ("too long path") instead of being cut - a cut user or
+  server name was another account or server, and the password went there.
+  The login command that carried the password is now wiped from memory after
+  the connection, like the transfer workers' copy.
+- **Closing the program right after the File Comparator's `fcremote` started
+  it no longer asks "plugin has rejected to unload. Force?"**
+- **An update goes through while the Registry Editor's Find window (not
+  searching) or FTP's Logs or server-message window is open.**
+- Smaller: the "name already used" error of a copy or move shows its
+  translation exactly also when the system's code page lacks some of its
+  letters; the Romanian ZIP message about multi-volume archives begins with a
+  capital letter.
+
 - **PictView's pipette and histogram show the picture's real colors.** Since
   the built-in image engine of 0.1.0 the pipette showed, for three of every
   four pixels, the color of another pixel with its channels mixed up, and the
