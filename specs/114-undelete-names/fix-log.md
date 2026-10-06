@@ -240,7 +240,52 @@ Committed after this check with the GUI runs still owed; the build is preserved 
 5. Debug-only: exFAT / FAT trace paths `CHAR tracePath[MAX_PATH]` with `StrCat_s` (a deep tree ends
    in the invalid-parameter handler), `TestUndeleteOnExistingFile` stream names cut at MAX_PATH.
 
-## Pending (GUI, after 18:00 - exact commands in `quickstart.md`)
+## GUI results (2026-10-06, 04:31-04:37, hidden desktop)
+
+Builds: the preserved trees `build\tandemcommander\Debug_x64_114` (undelete.spl 2026-10-05 10:38:11)
+and `Debug_x64_pre114` (09:51:50); nothing built. ACP 1250, OEM 852; no `tandemcommander.exe` running
+before or after any run; registry SHA-256 prefix `9BD42518403B7EDF` before and after every run (each
+probe also restored and verified the key itself: identical); fixtures removed; no bug report created
+(`%LOCALAPPDATA%\Tandem Commander\TC*.TXT` compared before / after the crashing run - none new).
+
+| Run | Result | File |
+|---|---|---|
+| `undelnames_probe.ps1 -Exe Debug_x64_114 -Expect fixed` | **30 PASS / 0 FAIL / 4 NOT DRIVEN** | `probe/undelnames_result.txt` |
+| `undelnames_probe.ps1 -Exe Debug_x64_pre114 -Expect before` | 27 PASS / 1 FAIL (dup END - the control) / 4 NOT DRIVEN | `probe/undelnames_result_pre114.txt` |
+| `plugnames_probe.ps1 -Exe Debug_x64_114 -Only und-image` (104) | 3 PASS / 0 FAIL | `probe/regress_plugnames104_114.txt` |
+
+- **This build**: FAT - all 13 files under exactly their names and contents (incl. `<C-caron>lanek.txt`
+  whose long name was recovered through the OEM byte, `<U+5F00><U+59CB>x.txt` through the dropped
+  characters - short name `X76F3~1`, the Zlutoucky name, `<U+5A46>.txt`, the 0x05 escape `<n-caron>BC.TXT`,
+  the OEM short name, `readme.txt` / `mixed.TXT` by the case bits, the lone surrogate); ONE Damaged
+  Filename dialog (`$91D~1.TXT` - the hash form), "All" with `<C-caron>` named `$AA.TXT` / `$OO.TXT`;
+  no extra file. exFAT - all 6 under their names, no dialog. dup - "Target path is too long" twice
+  (Skip), nothing written, no fatal window, clean exit.
+- **The build before** (every predicted defect shown): FAT - `<C-caron>lanek.txt`,
+  `<U+5F00><U+59CB>x.txt` and the Zlutoucky name lost their long names (restored as
+  `<C-caron>LANEK~1.TXT`, `<C-caron>76F3~1.TXT`, `<C-caron>LU<U+203A>OU~1.TXT` - the OEM bytes read in
+  the ANSI code page), `<U+5A46>.txt` listed `$` + mojibake and restored as `<C-caron><U+00A9><U+2020>.txt`,
+  the 0x05 escape asked for (`<C-caron>BC.TXT`), the OEM short name `<C-caron>L<A-acute>NEK2.TXT` not
+  restored ("Error Creating File" (123) - the OEM bytes as a UTF-8 name), `mixed.txt` instead of
+  `mixed.TXT`, `lone<U+FFFD>y.txt`; 8 Damaged Filename dialogs ("All" never remembered `<C-caron>`).
+  exFAT - `<U+597D>.txt` and `<U+5F00><U+59CB>.txt` asked for and restored as mojibake,
+  `lone<U+FFFD>x.txt`. dup - a fatal window: Debug CRT assertion "Buffer is too small"
+  (`corecrt_internal_string_templates.h` line 218) during the numbering, not the predicted "Stack
+  around the variable 'temp'" - the same overrun, caught one call earlier; 280 stray windows; the
+  probe ended the process (no process left, no report). Its END row FAILs as predicted.
+- **Probe defect found and fixed (probe only)**: the first pair of runs used PowerShell `@{}` maps,
+  which ignore case - the build before's `mixed.txt` matched the expected `mixed.TXT` (a FAIL in
+  the `-Expect before` run, and the fixed run's case rows proved nothing). The name maps are
+  ordinal now; both runs were repeated (the results above). The first pair's results are kept in
+  `probe/run1/` (fixed 30 / 0, before 26 / 2).
+- No defect of the 114 code found. Not driven (recorded): NTFS, volume mount points (person step,
+  T016), the connect dialog's volume list, Restore Encrypted Files.
+
+## Pending (person)
+
+- T016: a mount folder outside ASCII (administrator; `quickstart.md` "By hand").
+
+## Pending (GUI, after 18:00 - exact commands in `quickstart.md`) - DONE 2026-10-06, see "GUI results"
 
 1. `undelnames_probe.ps1` on `Debug_x64_114` (expected: every row PASS, 4 NOT DRIVEN) and on
    `Debug_x64_pre114` with `-Expect before` (predictions in `quickstart.md`).

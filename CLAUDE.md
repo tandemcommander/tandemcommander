@@ -1793,7 +1793,7 @@ plugin architecture preservation, UI consistency.
     exFAT and a duplicate-name exFAT image written byte by byte - no admin,
     no volume opened) written, **GUI runs pending**; mount points need admin
     (person step). Records: `specs/114-undelete-names/fix-log.md`.
-  GUI runs owed at commit time - see fix-log "Pending (GUI ...)".
+  GUI runs (2026-10-06 night): undelnames 30 / 0 / 4 (pre-114 27 / 1 / 4, every predicted defect seen), 104 3/0.
 - 115-undelete-leftovers: **Undelete's Restore Encrypted Files walks any
   depth, {All Deleted Files} drops true duplicates only, one name for
   Windows is one name.** The three "found by 114" items, measured by code

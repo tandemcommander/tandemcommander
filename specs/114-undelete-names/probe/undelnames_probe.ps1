@@ -118,7 +118,9 @@ function End-P([string]$Case, [int]$Id, $Before) {
 function Units([object[]]$u) { return -join ($u | ForEach-Object { [char][int]$_ }) }
 # the names and contents of the files in a folder: name -> content (names exactly, lone surrogates included)
 function Folder-Map([string]$dir) {
-    $m = @{}
+    # ordinal (case-sensitive) keys: a PowerShell @{} ignores case, and the first GUI run on the build
+    # before took its 'mixed.txt' for the expected 'mixed.TXT' (the NT case-bit row)
+    $m = New-Object System.Collections.Hashtable ([StringComparer]::Ordinal)
     if (-not [IO.Directory]::Exists($LP + $dir)) { return $m }
     foreach ($e in [IO.Directory]::GetFiles($LP + $dir)) {
         $n = $e.Substring($e.LastIndexOf('\') + 1)
@@ -205,7 +207,7 @@ function Run-Image([string]$Case, [string]$ImageFile, $Exp) {
         $r = Restore-All $id
         if ($r.Fatal) { Row $Case 'COPY' 'FAIL' ('FATAL ' + $r.Fatal + '; prompts ' + (($r.Prompts | ForEach-Object { Esc $_ }) -join ', ')); return }
         $map = Folder-Map $out
-        $expNames = @{}
+        $expNames = New-Object System.Collections.Hashtable ([StringComparer]::Ordinal)
         foreach ($e in $Exp.files) {
             $name = Units $e.units
             $expNames[$name] = $true

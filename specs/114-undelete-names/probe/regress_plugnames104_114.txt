@@ -1,0 +1,10 @@
+plugnames_probe (feature 104), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_114\tandemcommander.exe
+Date    : 2026-10-06 04:36; ACP 1250; registry key existed True
+
+und-image  PREFILL PASS        the image field filled from the focused file: '...AppData\Local\Temp\tc104_pn\und\\u0416\u0430\u0431\u0430.ima' (exact True)
+und-image  IMAGE  PASS        image field set to ...\voil\u00E0.ima (missing; the decoy voila.ima exists): boxes [#32770 'Undelete'] [Static id=2477] The file specified was not found. | [Button id=1] OK
+und-image  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126 / after 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
+
+Rows: PASS 3, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

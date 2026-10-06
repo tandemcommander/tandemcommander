@@ -1,0 +1,42 @@
+undelnames_probe (feature 114), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_114\tandemcommander.exe
+Date    : 2026-10-06 04:34; ACP 1250; OEM 852 (images made for OEM 852); desktop 'tc_probe_149432'; registry key existed True
+Images  : wrote fat114.ima (13 files), exfat114.ima (6 files), exfatdup114.ima (2 files of one 334-byte name), OEM cp 852
+
+fat        OPEN   PASS        change directory: panel: ...pData\Local\Temp\tc114_un\img\fat114.ima\{All Deleted Files}; windows: no window
+fat        clanek PASS        '\u010Clanek.txt': restored, content equal
+fat        hao    PASS        '\u010C91D~1.TXT': restored, content equal
+fat        foo    PASS        '\u010COO.TXT': restored, content equal
+fat        faa    PASS        '\u010CAA.TXT': restored, content equal
+fat        kaishi PASS        '\u5F00\u59CBx.txt': restored, content equal
+fat        ahao   PASS        'a\u597D.txt': restored, content equal
+fat        zlutoucky PASS        '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148.txt': restored, content equal
+fat        po     PASS        '\u5A46.txt': restored, content equal
+fat        escape PASS        '\u0148BC.TXT': restored, content equal
+fat        oemsfn PASS        '\u010CL\u00C1NEK2.TXT': restored, content equal
+fat        readme PASS        'readme.txt': restored, content equal
+fat        mixed  PASS        'mixed.TXT': restored, content equal
+fat        lone   PASS        'lone\uD800y.txt': restored, content equal
+fat        EXTRA  PASS        0 file(s) not expected: 
+fat        PROMPTS PASS        Damaged Filename dialogs: 1 ['$91D~1.TXT']; answered [\u010C91D~1.TXT]; copy target '...avel\AppData\Local\Temp\tc114_un\out_fat'; other boxes: none
+fat        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+exfat      OPEN   PASS        change directory: panel: ...ata\Local\Temp\tc114_un\img\exfat114.ima\{All Deleted Files}; windows: no window
+exfat      hao    PASS        '\u597D.txt': restored, content equal
+exfat      clanek PASS        '\u010Clanek.txt': restored, content equal
+exfat      ahao   PASS        'a\u597D.txt': restored, content equal
+exfat      lone   PASS        'lone\uD800x.txt': restored, content equal
+exfat      kaishi PASS        '\u5F00\u59CB.txt': restored, content equal
+exfat      zlutoucky PASS        '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148.txt': restored, content equal
+exfat      EXTRA  PASS        0 file(s) not expected: 
+exfat      PROMPTS PASS        Damaged Filename dialogs: 0 []; answered []; copy target '...el\AppData\Local\Temp\tc114_un\out_exfat'; other boxes: none
+exfat      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dup        OPEN   PASS        change directory: panel: ...\Local\Temp\tc114_un\img\exfatdup114.ima\{All Deleted Files}; windows: no window
+dup        NUMBER PASS        334-byte name twice: fatal none; boxes 2 ('too long' 2): ...ath is too long | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || ...ath is too long | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; files restored 0
+dup        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+nd         ROUTE  NOT DRIVEN  NTFS: no NTFS image can be made without admin rights or a formatter; the NTFS names take the same fixed listing / restore path (fs2.cpp) and the WTF-8 conversion (miscstr.cpp)
+nd         ROUTE  NOT DRIVEN  volume mount points: mountvol / SetVolumeMountPoint need admin rights; the W volume layer is verified by code reading and saltests (SalVolumePathsWToU8 / SalVolumePathWToU8)
+nd         ROUTE  NOT DRIVEN  the connect dialog volume list (LVM_*W): reading another process list view needs remote memory; see quickstart.md for the person step
+nd         ROUTE  NOT DRIVEN  Restore Encrypted Files (EFS backups): needs EFS-encrypted deleted files
+Registry: restored; identical=True; SHA-256 before 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126 / after 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
+
+Rows: PASS 30, FAIL 0, NOT DRIVEN 4. Left running: 0; fixture removed: True; registry restored+identical: True
