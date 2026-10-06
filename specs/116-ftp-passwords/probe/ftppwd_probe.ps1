@@ -478,7 +478,10 @@ function Run-Long {
         $sent = @(Pass-Hex $r.Lines)
         $refused = $r.Boxes.Contains((Esc $TooLongText))
         if ($Fixed) { $v = V ($sent.Count -ge 1 -and $sent[0] -ceq $want -and $r.Stored -ceq $want -and -not $refused) }
-        else { $v = V ($refused -and $sent.Count -eq 0) }
+        # the build before: refused ("too long", 104) - or, measured 2026-10-06, the code-page subclass
+        # had already turned the typed text into code-page look-alikes / '?' (100 bytes, which fit):
+        # sent garbled. Either way not the typed bytes.
+        else { $v = V (($refused -and $sent.Count -eq 0) -or ($sent.Count -ge 1 -and $sent[0] -cne $want)) }
         Row 'long' $c.Case $v ("typed 100 x {0} ({1} bytes), Connect: refused {2}; dialog stayed {3}; sent: {4}; stored {5} bytes" -f (Esc $c.Text.Substring(0, 1)), ($want.Length / 2), $refused, $r.Stayed, (SentFacts $r), $(if ($r.Stored -match '^[0-9a-f]*$') { $r.Stored.Length / 2 } else { $r.Stored }))
     }
     $r = Ftp-Run 'long' ('a' * 105) -Typed -Button 1

@@ -1,0 +1,28 @@
+ftppwd_probe (feature 116), expect: before
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre116\tandemcommander.exe
+Date    : 2026-10-06 05:00; ACP 1250; desktop tc_probe_158040; registry key existed True
+
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       CZ100  PASS        typed 100 x \u010D (200 bytes), Connect: refused False; dialog stayed False; sent: 6363636363636363636363636363636363636363636363636363636363636363...(100 bytes); stored 100 bytes
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       CJK100 PASS        typed 100 x \u4E2D (300 bytes), Connect: refused False; dialog stayed False; sent: 3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f...(100 bytes); stored 100 bytes
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       LIMIT  PASS        typed 105 x 'a': sent 6161616161616161616161616161616161616161616161616161616161616161...(100 bytes)
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       OVER   PASS        160 x c-caron SET (320 bytes, past the field's limit), Close: refused True; dialog stayed True; stored NONE
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       USER   PASS        user name 60 x c-caron SET, Close: refused True; dialog stayed True; stored user 'probe116' (user names keep 101 bytes)
+
+Server log:
+  CONN 1
+  USER len=8 hex=70726f6265313136
+  PASS len=100 hex=636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636...(108.5 bytes)
+  CONN 2
+  USER len=8 hex=70726f6265313136
+  PASS len=100 hex=3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3...(108.5 bytes)
+  CONN 3
+  USER len=8 hex=70726f6265313136
+  PASS len=100 hex=616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616...(108.5 bytes)
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0, INFO 0. Left running: 0; fixture removed: True; registry restored+identical: True

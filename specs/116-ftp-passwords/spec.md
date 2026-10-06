@@ -2,7 +2,7 @@
 
 **Feature Branch**: `116-ftp-passwords`
 **Created**: 2026-10-05
-**Status**: Implemented - GUI runs pending
+**Status**: Implemented - GUI-verified 2026-10-06 (`fix-log.md` "GUI results")
 **Input**: `specs/NEXT-WORK.md`, plug-in leftovers item 3 (left by features 094 and 104): the FTP
 password fields keep a code-page subclass (`CPasswordEditLine`) and *Show password* reads through
 the code page; since 104 a password, user name, address or initial path whose UTF-8 form exceeds

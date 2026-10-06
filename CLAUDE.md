@@ -1863,7 +1863,7 @@ plugin architecture preservation, UI consistency.
   14,441. Code-only review ACCEPT pending GUI. Probe
   `probe/ftppwd_probe.ps1` (+ `ftplog_server.py`, 127.0.0.1) written, GUI runs owed. Records:
   `specs/116-ftp-passwords/fix-log.md`.
-  GUI runs owed at commit time - see fix-log "Commit before the GUI runs".
+  GUI runs (2026-10-06): 51 / 0 / 4 (pre-116 shows every defect after a probe-only expectation fix).
 - 117-checksum-lists: **checksum lists are read in the encoding they were written in** (NEXT-WORK
   plug-in leftovers item 4, from 104). Measured first (`research.md`): coreutils and 7-Zip write
   UTF-8, PowerShell 5.1 writes UTF-16 LE with a mark (`>`), UTF-8 with a mark (`Out-File -Encoding

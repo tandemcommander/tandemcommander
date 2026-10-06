@@ -860,7 +860,7 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           password still works while it is not retyped - except *Retry* in
           the login-error dialog, which refuses it). Widening the FTP
           buffers (and the protocol's byte form of such a password) is open.
-          ✅ **Fixed by feature 116 (2026-10-05) - GUI runs pending**:
+          ✅ **Fixed by feature 116 (2026-10-05; GUI-verified 2026-10-06)**:
           measured first (`specs/116-ftp-passwords/research.md`) - the
           subclass turned every character outside the code page into `?` or
           a best-fit look-alike when typed, shown or read, and the Connect

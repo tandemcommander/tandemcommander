@@ -1,4 +1,4 @@
-# Quickstart: feature 116 - GUI runs pending
+# Quickstart: feature 116 - GUI runs done 2026-10-06 (`fix-log.md` "GUI results")
 
 Automated (hidden desktop). Preconditions: no `tandemcommander.exe` running (also not the installed
 one - every probe shares `HKCU\Software\Tandem Commander` with it); Python 3 (the log server,
@@ -81,8 +81,8 @@ instance's END row PASS (exit 0, no stray window, no new crash report).
 
 The build before (`-Expect before`): every defect row shows the defect - `uni` FALSE; `type
 cyr/cjk/emo/lone` `3f...` (fw/voila the look-alikes `4142` / `766f696c61`; `cz` INFO - depends on the
-keyboard layout's code page); `set` `?` stored; `show` `?` in the box; `long CZ100/CJK100` and
-`prompt` "too long", nothing sent; `tab` `3f3f3f3f` stored; `legacy RETRY` "too long" after Retry,
+keyboard layout's code page); `set` `?` stored; `show` `?` in the box; `long CZ100/CJK100` sent garbled (100 x `c` / `?` -
+measured; "too long" would also count); `prompt` "too long", nothing sent; `tab` `3f3f3f3f` stored; `legacy RETRY` "too long" after Retry,
 one PASS; `legacy RETYPE` refused. Controls PASS on both: `long LIMIT`, `long OVER`, `long USER`,
 `legacy KEEP`. `compat` is not driven there.
 

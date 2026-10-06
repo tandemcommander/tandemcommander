@@ -246,3 +246,56 @@ proxy dialog and the cheap wipes applied) with the GUI runs still owed; the buil
   14,441. Code-only review ACCEPT pending GUI. Probe
   `probe/ftppwd_probe.ps1` (+ `ftplog_server.py`, 127.0.0.1) written, GUI runs owed. Records:
   `specs/116-ftp-passwords/fix-log.md`.
+
+## GUI results (2026-10-06, hidden desktop)
+
+Runs through `tools\run_on_hidden_desktop.ps1`, one at a time, on the preserved trees
+`build\tandemcommander\Debug_x64_116` (this feature, built 2026-10-05 13:11) and
+`build\tandemcommander\Debug_x64_pre116` (= 115), without `-Clipboard` (clipboard history is on
+on this machine). No tandemcommander.exe running before any run; registry SHA-256 prefix
+`1AB614304771DBE0` before and after every run (the probe's own check: restored + identical, full
+hash `1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769`); the log server on
+127.0.0.1:18116 only; no network mapping touched; ACP 1250.
+
+| Run | Result file | Rows |
+|---|---|---|
+| this build, `-Expect fixed -OldExe Debug_x64_pre116` (04:47-04:54) | `probe/ftppwd_result.txt` | **51 PASS / 0 FAIL / 4 NOT DRIVEN** |
+| build before, `-Expect before` (04:54-05:00) | `probe/ftppwd_result_pre116.txt` | 42 PASS / 2 FAIL / 5 NOT DRIVEN / 1 INFO - the 2 FAIL were a probe expectation error (below) |
+| build before, `-Expect before -Only long` after the probe fix (05:01-05:02) | `probe/ftppwd_result_pre116_long.txt` | 10 PASS / 0 FAIL |
+
+This build - every row as specified, every instance's END row exit 0, no stray window, no crash
+report:
+- `uni`: the Connect dialog's password field is a Unicode window (before: FALSE).
+- `type` (posted WM_CHAR through the dialog's loop, Connect): the server received exactly the
+  UTF-8 and the bookmark stored it - `heslo-r-caron` 6865736c6f2dc599, Zhaba d096d0b0d0b1d0b0, CJK
+  e697a5e69cace8aa9e, emoji f09f9381, fullwidth AB efbca1efbca2, `voil<U+00E0>` 766f696cc3a0, the lone
+  surrogate 6c6f6e65 **eda080** 78. Before: 6865736c6f2d72 (`heslo-r`, INFO - the keyboard layout's
+  code page), 3f3f3f3f, 3f3f3f, 3f3f, 4142 (`AB`), 766f696c61 (`voila`), 6c6f6e653f78.
+- `set` (WM_SETTEXT, Close): stored exactly (before: `?` / `AB`).
+- `show`: the box shows `The password is: Zhaba<CJK><emoji>x` exactly (before: `?????????x`).
+- `long`: 100 x c-caron sent and stored as 200 bytes, 100 x U+4E2D as 300 bytes, no "too long";
+  LIMIT 100 of 105; OVER (320 bytes set from outside) refused, nothing stored; USER (60 c-caron)
+  refused, the user name kept. **Before, measured**: not refused as `research.md` expected but
+  sent garbled - the code-page subclass had already made the typed text 100 x `c` (best fit under
+  the English layout's code page) and 100 x `?`, 100 bytes, which fit the old buffer.
+- `prompt`: 100 c-caron typed into the password prompt (the 101st not taken) sent whole (before:
+  "too long", nothing sent).
+- `tab`: a stored UTF-8 Zhaba unchanged after tabbing through the field (before: `3f3f3f3f` -
+  the silent corruption of research 1, now reproduced on the build before).
+- `legacy`: KEEP byte-identical blob (both builds); RETRY - 60 x e8 sent at Connect and again
+  after Retry, no "too long" (before: "too long", one attempt); RETYPE - the retyped 120-byte
+  password sent as its UTF-8 (before: refused).
+- `compat`: FORMAT - the build before sent the 86 bytes this build stored (stored format
+  unchanged); DOWNGRADE - the build before sent the first 100 of the 200 bytes (the documented
+  downgrade limit).
+- NOT DRIVEN (as planned): the proxy server dialog, the ACCT / proxy fields of the login-error
+  dialog, a Master Password, a real keyboard / IME. The SOCKS 5 refusal (T015 S1) needs a SOCKS
+  proxy - a person step (`quickstart.md`).
+
+**Probe-only fix** (no product defect): the `long CZ100 / CJK100` rows' expectation for the build
+before ("refused") was wrong; it now accepts "refused or sent bytes other than the typed ones" -
+the defect either way. Only the `-Expect before` branch changed, so this build's run stays valid;
+the build before's `long` rows were re-run (10 / 0).
+
+**Product defects found by the runs**: none. Feature 116 is verified on the GUI except the
+NOT DRIVEN routes listed above.

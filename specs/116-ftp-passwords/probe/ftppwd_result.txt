@@ -1,0 +1,133 @@
+ftppwd_probe (feature 116), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_116\tandemcommander.exe
+Before  : build\tandemcommander\Debug_x64_pre116\tandemcommander.exe
+Date    : 2026-10-06 04:47; ACP 1250; desktop tc_probe_113176; registry key existed True
+
+type       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+uni        FIELD  PASS        IsWindowUnicode(password field) = True
+type       cz     PASS        typed heslo-\u0159 (6865736c6f2dc599); Connect: login-error dialog True; sent: 6865736c6f2dc599; stored: 6865736c6f2dc599
+type       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+type       cyr    PASS        typed \u0416\u0430\u0431\u0430 (d096d0b0d0b1d0b0); Connect: login-error dialog True; sent: d096d0b0d0b1d0b0; stored: d096d0b0d0b1d0b0
+type       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+type       cjk    PASS        typed \u65E5\u672C\u8A9E (e697a5e69cace8aa9e); Connect: login-error dialog True; sent: e697a5e69cace8aa9e; stored: e697a5e69cace8aa9e
+type       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+type       emo    PASS        typed \uD83D\uDCC1 (f09f9381); Connect: login-error dialog True; sent: f09f9381; stored: f09f9381
+type       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+type       fw     PASS        typed \uFF21\uFF22 (efbca1efbca2); Connect: login-error dialog True; sent: efbca1efbca2; stored: efbca1efbca2
+type       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+type       voila  PASS        typed voil\u00E0 (766f696cc3a0); Connect: login-error dialog True; sent: 766f696cc3a0; stored: 766f696cc3a0
+type       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+type       lone   PASS        typed lone\uD800x (6c6f6e65eda08078); Connect: login-error dialog True; sent: 6c6f6e65eda08078; stored: 6c6f6e65eda08078
+set        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+set        cyr    PASS        set \u0416\u0430\u0431\u0430, Close: dialog stayed False; boxes: no box; stored d096d0b0d0b1d0b0 (want d096d0b0d0b1d0b0)
+set        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+set        cjk    PASS        set \u65E5\u672C\u8A9E, Close: dialog stayed False; boxes: no box; stored e697a5e69cace8aa9e (want e697a5e69cace8aa9e)
+set        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+set        fw     PASS        set \uFF21\uFF22, Close: dialog stayed False; boxes: no box; stored efbca1efbca2 (want efbca1efbca2)
+set        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+set        lone   PASS        set lone\uD800x, Close: dialog stayed False; boxes: no box; stored 6c6f6e65eda08078 (want 6c6f6e65eda08078)
+show       BOX    PASS        typed \u0416\u0430\u0431\u0430\u65E5\u672C\u8A9E\uD83D\uDCC1x; the box: ...The password is: \u0416\u0430\u0431\u0430\u65E5\u672C\u8A9E\uD83D\uDCC1x Do you want to copy the password to clipboard? | [Button id=6] &Yes | [Button id=7] &No; exact True; not compared (no -Clipboard)
+show       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       CZ100  PASS        typed 100 x \u010D (200 bytes), Connect: refused False; dialog stayed False; sent: c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48d...(200 bytes); stored 200 bytes
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       CJK100 PASS        typed 100 x \u4E2D (300 bytes), Connect: refused False; dialog stayed False; sent: e4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8...(300 bytes); stored 300 bytes
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       LIMIT  PASS        typed 105 x 'a': sent 6161616161616161616161616161616161616161616161616161616161616161...(100 bytes)
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       OVER   PASS        160 x c-caron SET (320 bytes, past the field's limit), Close: refused True; dialog stayed True; stored NONE
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long       USER   PASS        user name 60 x c-caron SET, Close: refused True; dialog stayed True; stored user 'probe116' (user names keep 101 bytes)
+prompt     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+prompt     CZ100  PASS        101 x c-caron typed into the password prompt, OK: refused False; sent: c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48d...(200 bytes) / c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48d...(200 bytes) / c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48d...(200 bytes)
+tab        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+tab        UTF8   PASS        stored d096d0b0d0b1d0b0 (UTF-8 of Zhaba), field tabbed through, Close: boxes no box; stored now d096d0b0d0b1d0b0
+legacy     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+legacy     KEEP   PASS        0.1.8 form (60 x e8) tabbed through, Close: boxes no box; blob byte-identical True; stored now e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8...(60 bytes)
+legacy     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+legacy     RETRY  PASS        Connect then Retry (untouched): refused False; connections 4; sent: e8e8e8e8e8e8e8e8e8e8e8e8...(60 bytes) / e8e8e8e8e8e8e8e8e8e8e8e8...(60 bytes) / e8e8e8e8e8e8e8e8e8e8e8e8...(60 bytes) / e8e8e8e8e8e8e8e8e8e8e8e8...(60 bytes)
+legacy     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+legacy     RETYPE PASS        Zhaba[0] + 59 x c-caron (120 bytes) typed into the login-error dialog, Retry: refused False; sent: e8e8e8e8e8e8e8e8e8e8e8e8...(60 bytes) / d096c48dc48dc48dc48dc48d...(120 bytes) / d096c48dc48dc48dc48dc48d...(120 bytes) / d096c48dc48dc48dc48dc48d...(120 bytes)
+compat     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+compat     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+compat     FORMAT PASS        stored by this build: 86 bytes; the build before sent: 6865736c6f2dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48d...(86 bytes)
+compat     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+compat     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+compat     DOWNGRADE PASS        stored by this build: 200 bytes; the build before sent: c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48d...(100 bytes) (expected: the first 100 bytes - the documented downgrade limit)
+nd         ROUTE  NOT DRIVEN  the proxy server dialog (its password field, Show password and the stored-bytes rule): needs a proxy configuration - same helpers as the Connect dialog
+nd         ROUTE  NOT DRIVEN  the account (ACCT) field and the proxy fields of the login-error dialog: the log server never asks for ACCT; same helpers as its password field
+nd         ROUTE  NOT DRIVEN  a Master Password set: the stored blob is then AES-encrypted and cannot be read back by the probe
+nd         ROUTE  NOT DRIVEN  real keyboard input and an IME: posted WM_CHAR only (the hidden desktop has no input)
+
+Server log:
+  CONN 1
+  USER len=8 hex=70726f6265313136
+  PASS len=8 hex=6865736c6f2dc599
+  CONN 2
+  USER len=8 hex=70726f6265313136
+  PASS len=8 hex=d096d0b0d0b1d0b0
+  CONN 3
+  USER len=8 hex=70726f6265313136
+  PASS len=9 hex=e697a5e69cace8aa9e
+  CONN 4
+  USER len=8 hex=70726f6265313136
+  PASS len=4 hex=f09f9381
+  CONN 5
+  USER len=8 hex=70726f6265313136
+  PASS len=6 hex=efbca1efbca2
+  CONN 6
+  USER len=8 hex=70726f6265313136
+  PASS len=6 hex=766f696cc3a0
+  CONN 7
+  USER len=8 hex=70726f6265313136
+  PASS len=8 hex=6c6f6e65eda08078
+  CONN 8
+  USER len=8 hex=70726f6265313136
+  PASS len=200 hex=c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48...(208.5 bytes)
+  CONN 9
+  USER len=8 hex=70726f6265313136
+  PASS len=300 hex=e4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b8ade4b...(308.5 bytes)
+  CONN 10
+  USER len=8 hex=70726f6265313136
+  PASS len=100 hex=616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616...(108.5 bytes)
+  CONN 11
+  USER len=8 hex=70726f6265313136
+  PASS len=200 hex=c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48...(208.5 bytes)
+  CONN 12
+  USER len=8 hex=70726f6265313136
+  PASS len=200 hex=c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48...(208.5 bytes)
+  CONN 13
+  USER len=8 hex=70726f6265313136
+  PASS len=200 hex=c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48...(208.5 bytes)
+  CONN 14
+  USER len=8 hex=70726f6265313136
+  PASS len=60 hex=e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8
+  CONN 15
+  USER len=8 hex=70726f6265313136
+  PASS len=60 hex=e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8
+  CONN 16
+  USER len=8 hex=70726f6265313136
+  PASS len=60 hex=e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8
+  CONN 17
+  USER len=8 hex=70726f6265313136
+  PASS len=60 hex=e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8
+  CONN 18
+  USER len=8 hex=70726f6265313136
+  PASS len=60 hex=e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8
+  USER len=8 hex=70726f6265313136
+  PASS len=120 hex=d096c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48...(128.5 bytes)
+  CONN 19
+  USER len=8 hex=70726f6265313136
+  PASS len=120 hex=d096c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48...(128.5 bytes)
+  CONN 20
+  USER len=8 hex=70726f6265313136
+  PASS len=120 hex=d096c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48...(128.5 bytes)
+  CONN 21
+  USER len=8 hex=70726f6265313136
+  PASS len=86 hex=6865736c6f2dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48d...(94 bytes)
+  CONN 22
+  USER len=8 hex=70726f6265313136
+  PASS len=100 hex=c48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48dc48...(108.5 bytes)
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 51, FAIL 0, NOT DRIVEN 4, INFO 0. Left running: 0; fixture removed: True; registry restored+identical: True
