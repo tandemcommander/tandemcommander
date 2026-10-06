@@ -362,3 +362,48 @@ thing. `DisplayName`, `Publisher` and `ProductCode` stay.
   in formatting (list indentation, key order, header comment) but not in
   content - compared field by field - so the PR is updated by deleting the
   same single line from its `installer.yaml`, not by resubmitting.
+
+## Moderation feedback on #426090: Description without brand names (2026-10-06)
+
+The moderator (Stephen Gillie), 2026-10-06: *"I believe the Policy 1.2 check
+might be due to the several brands mentioned in the Description. Could it be
+rewritten to exclude these?"* - label `Needs-Author-Feedback` set again.
+
+What the submitted text named: Norton Commander, Open Salamander and Altap
+Salamander (ancestry), WinAPI, 7-Zip and RAR among the archive formats (ZIP,
+TAR, ISO beside them), and the command shell presets Command Prompt,
+PowerShell, Windows Terminal and Git Bash. `ShortDescription` named Open
+Salamander; the tags `explorer-replacement`, `open-salamander` and
+`salamander` carried product names too.
+
+Policy and precedent, checked first: policy 1.2 (Security) says nothing about
+names; the applicable texts are 1.1 (metadata must "accurately and clearly
+reflect the source, functionality, and features") and 2.2 (names in metadata
+must be the provider's own, licensed, or "used as otherwise permitted by
+law"). Merged file managers describe themselves in one or two neutral
+sentences (Total Commander, Far Manager, Files: no other product named;
+Double Commander: one, *"inspired by Total Commander"*). Naming the origin is
+therefore not forbidden, but the request was explicit, so it is left out of
+the three fields; the `Copyright` line keeps "portions (c) Open Salamander
+Authors" (attribution, not description).
+
+- `templates/locale.en-US.yaml.in`: `ShortDescription` and `Description`
+  rewritten to say what the program does (every claim true of 0.1.7 - command
+  shell page and Code Viewer came with 0.1.6); the three tags removed (13
+  left); an authoring comment records the rule for later versions. Format and
+  protocol names (FTP, SFTP, Markdown, Unicode) and the platform stay.
+  `InstallationNotes` still names the WebView2 runtime - an install
+  instruction, not asked about, unchanged.
+- `manifests/0.1.7/` locale file: the same lines edited **by hand**, not
+  regenerated - the template has since gained `PrivacyUrl` (feature 083),
+  which the pull request does not carry, and this push was to change only
+  what was asked. Parsed field by field, the archived file equals the file on
+  the pull request. `winget validate`: *Manifest validation succeeded* for
+  both.
+- Pull request: one additional commit on the head branch of the fork,
+  `a64404beef4c096fdfa42ace774328bcc371a4af` ("Rewrite Description without
+  third-party brand names"), locale file only (blob `1a1da94e`); installer and
+  version files byte-identical to the previous head `a6cf23e74`.
+- **Not done by the session**: the reply on the pull request. The GitHub CLI
+  is not installed on this machine (the push went through git's own stored
+  credential); the comment is the maintainer's step.
