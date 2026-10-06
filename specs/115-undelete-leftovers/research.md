@@ -88,7 +88,7 @@ a path), the `.bak` extension test, `ntfs.h` comparisons with ASCII literals (`$
 
 Fixed:
 
-- **F3 on a deleted file with a long name** (`fs2.cpp CopyFile`, view branch): `lstrcpyn(path,
+- **CORRECTED by the GUI run (2026-10-06): unreachable** - the core's disk cache refuses a temporary name of MAX_PATH+ bytes first (`cache.cpp CCacheDirData::GetName`); the heap buffer stays as a defensive change. Originally: **F3 on a deleted file with a long name** (`fs2.cpp CopyFile`, view branch): `lstrcpyn(path,
   targetPath, MAX_PATH)` - `targetPath` is the disk-cache copy's full name (TEMP + `SALxxxx.tmp\` +
   the file's name, up to 765 bytes): cut at 259 bytes, maybe inside a character. The copy was
   written under the cut name (or failed), the viewer opened the full name - never written. Every

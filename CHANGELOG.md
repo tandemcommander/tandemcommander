@@ -179,8 +179,7 @@ password with a non-English letter to the archive engine garbled.
   another; deleted files whose names differ only in the case of an accented
   letter (for example "Č.txt" and "č.txt", one name for Windows) are now
   numbered like "A.txt" and "a.txt" always were, instead of the second
-  asking to overwrite the first; viewing (F3) a deleted file with a long name
-  did not show it; and a failed restore of an encrypted file into its backup form
+  asking to overwrite the first; and a failed restore of an encrypted file into its backup form
   could delete a file of the same name without the ".bak" in the target
   folder (feature 115).
 - **Undelete restores deleted files under their own names, and from the

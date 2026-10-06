@@ -829,7 +829,7 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           structure (over-read; the duplicates of {All Deleted Files} are
           never removed); (c) name identity in the restore list / FAT
           numbering is `_stricmp` (ASCII only - 092's rule would apply).
-          ✅ **(a)-(c) fixed by feature 115 (2026-10-05) - GUI runs pending**:
+          ✅ **(a)-(c) fixed by feature 115 (2026-10-05; GUI-verified 2026-10-06)**:
           measured wider by code reading - Restore Encrypted Files read the
           source panel's path into MAX_PATH unchecked (a deeper panel gave
           "" - relative names), `GetDirSize` crashed first (259 bytes, also
@@ -841,9 +841,7 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           different files of up to 20 bytes with one name WERE "duplicates"
           (one vanished from {All Deleted Files}); now size + every data-runs
           block. (c): `src/common/salnameorder.h` (the core's
-          `SalNameCompareOrdinalCI` header-only, saltests parity). Sweep: F3
-          on a deleted file with a long name cut the disk-cache name at
-          MAX_PATH (nothing shown), a failed backup-form restore deleted
+          `SalNameCompareOrdinalCI` header-only, saltests parity). Sweep: a failed backup-form restore deleted
           `<name>` instead of `<name>.bak`, `UndeleteGetResolvedRootPath`
           overran, the main restore's target was cut, an uninitialised EFS
           context was closed. Probe `specs/115-undelete-leftovers/probe/

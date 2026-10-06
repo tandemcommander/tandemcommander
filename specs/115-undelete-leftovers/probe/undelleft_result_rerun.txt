@@ -1,0 +1,15 @@
+undelleft_probe (feature 115), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_115\tandemcommander.exe
+Date    : 2026-10-06 04:40; ACP 1250; images made for OEM 852; desktop 'tc_probe_33740'; registry key existed True
+Images  : wrote fatdup115.ima (3 groups), exfatnum115.ima (2 groups), exfatdup114.ima, OEM cp 852
+Hot key : plug-in 18 (undelete\undelete.spl): 2 menu item(s) set
+
+view       OPEN   PASS        panel: ...\Local\Temp\tc115_un\img\exfatdup114.ima\{All Deleted Files}; windows: no window
+view       VIEW   PASS        334-byte name: disk-cache files 0 (); under the full name with its content 0; viewer windows 0; fatal none; boxes 1: ...to put file to temporary directory. The resulting filename is too long. | [Button id=1] OK
+view       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+enc-loop   RESTORE FAIL        loop\back = a directory junction to loop; expected files 2: missing 0, content differs 0, extra 0; encrypted 0; fatal none; boxes 1: Name: |  | Error: | (1921) Syst\u00E9m nem\u016F\u017Ee p\u0159elo\u017Eit n\u00E1zev souboru.\u000D\u000A | &Skip | S&kip All | Cancel
+enc-loop   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+enc        EFS    PASS        EFS certificates of the user before 0, after 0 (no .bak backup in the fixtures: nothing reaches the EFS import)
+Registry: restored; identical=True; SHA-256 before 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126 / after 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
+
+Rows: PASS 5, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

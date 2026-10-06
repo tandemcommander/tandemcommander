@@ -26,9 +26,11 @@
                 PROMPTS (overwrite prompts: none / at least one), EXTRA, END
       exfat     exfatnum115.ima: caron (numbered by the restore list) and the ASCII control
                 a.txt / A.txt (numbered by both builds)
-      view      F3 on a deleted file of 114's long-name image (334-byte CJK name): the
-                disk-cache copy is written under its full name (the build before cut the copy's
-                path at MAX_PATH bytes - no file of the full name)
+      view      F3 on a deleted file of 114's long-name image (334-byte CJK name): BOTH builds -
+                the core's disk cache refuses a temporary name of MAX_PATH+ bytes ("The resulting
+                filename is too long", cache.cpp CCacheDirData::GetName) before the plug-in copies
+                anything; no fatal window, no file (GUI run 1 corrected the expectation: the
+                plug-in's cut of that name was unreachable)
       enc-deep  Restore Encrypted Files from Backup on a folder 15 levels deep (UTF-8 names,
                 ~650 bytes): every file restored in its own folder, no message (the build
                 before: GetDirSize recursed into the same folder at 259 bytes - a crash)
@@ -214,7 +216,7 @@ function Restore-All([int]$Id) {
 # serves an operation until idle: a fatal window ends it; every other box is answered Skip (173),
 # Yes (6) or OK (1)
 function Serve-Op([int]$Id, [double]$Seconds) {
-    $res = [pscustomobject]@{ Boxes = New-Object System.Collections.ArrayList; Fatal = $null }
+    $res = [pscustomobject]@{ Boxes = New-Object System.Collections.ArrayList; Raw = New-Object System.Collections.ArrayList; Fatal = $null }
     $seen = @{}; $idleSince = $null
     $sw = [Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
@@ -238,6 +240,8 @@ function Serve-Op([int]$Id, [double]$Seconds) {
             $ids = @($btn | ForEach-Object { [Drv098f]::GetDlgCtrlID($_) })
             if (($ids.Count -eq 1 -and $ids[0] -eq 2) -or ($ids.Count -eq 0)) { continue }   # progress
             [void]$res.Boxes.Add($d)
+            # GUI run 1: WinDesc keeps 300 + 300 characters of a long box - the full texts too
+            [void]$res.Raw.Add(((@([Drv098f]::Kids($h) | ForEach-Object { [Drv098f]::Txt($_) }) -join ' | ')))
             $pick = $null
             foreach ($w in @(173, 6, 1)) { $pick = $btn | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $w } | Select-Object -First 1; if ($pick) { break } }
             if ($pick) { Click $pick } else { Close-Win $h }
@@ -342,7 +346,12 @@ function Run-View($Exp) {
         $full = @($copies | Where-Object { $_.Name -ceq $name -and @($Exp.contents) -contains $_.Content })
         $viewer = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -ne $MainClass -and [Drv098f]::Cls($_) -ne '#32770' -and $known -notcontains $_ })
         $facts = ("{0}-byte name: disk-cache files {1} ({2}); under the full name with its content {3}; viewer windows {4}; fatal {5}; boxes {6}: {7}" -f $Exp.name_bytes, $copies.Count, (($copies | ForEach-Object { $_.Dir + '\' + (Tail $_.Name 20) + ' [' + $_.Name.Length + ' units]' }) -join ', '), $full.Count, $viewer.Count, $(if ($s.Fatal) { $s.Fatal } else { 'none' }), $s.Boxes.Count, $(if ($s.Boxes.Count) { (($s.Boxes | ForEach-Object { Tail $_ 90 }) -join ' || ') } else { '-' }))
-        if ($Fixed) { $v = V ($full.Count -ge 1 -and $s.Boxes.Count -eq 0 -and -not $s.Fatal) } else { $v = V ($full.Count -eq 0) }
+        # GUI run 1 (corrected expectation): the core's disk cache refuses a temporary name of MAX_PATH
+        # bytes or more (cache.cpp CCacheDirData::GetName, DCGNE_TOOLONGNAME) BEFORE the plug-in copies
+        # anything - so the plug-in's cut of that name could never happen; both builds: one message
+        # ("The resulting filename is too long"), no fatal window, no file
+        $tooLong = @($s.Boxes | Where-Object { $_ -match 'too long' }).Count
+        $v = V ($full.Count -eq 0 -and $s.Boxes.Count -eq 1 -and $tooLong -eq 1 -and -not $s.Fatal)
         Row $Case 'VIEW' $v $facts
         foreach ($w in $viewer) { [void][Drv098f]::PostMessageW($w, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) }
         Start-Sleep -Milliseconds 1000
@@ -392,11 +401,11 @@ function Open-Restore([int]$Id) {
 function Run-Restore([int]$Id, [string]$Target) {
     Post-Cmd (Get-Main $Id) 842; Start-Sleep -Milliseconds 1500; Sync $Id
     $o = Open-Restore $Id
-    if ($o.Dlg -eq [IntPtr]::Zero) { return [pscustomobject]@{ Opened = $false; Note = $o.Note; Boxes = @(); Fatal = $(if ($o.Note -like 'FATAL*') { $o.Note } else { $null }) } }
+    if ($o.Dlg -eq [IntPtr]::Zero) { return [pscustomobject]@{ Opened = $false; Note = $o.Note; Boxes = @(); Raw = @(); Fatal = $(if ($o.Note -like 'FATAL*') { $o.Note } else { $null }) } }
     [void][Drv098f]::SetText((Kid $o.Dlg 1501 'Edit'), $Target, 5000)
     Click-Ok $o.Dlg
     $s = Serve-Op $Id 180
-    return [pscustomobject]@{ Opened = $true; Note = $o.Note; Boxes = $s.Boxes; Fatal = $s.Fatal }
+    return [pscustomobject]@{ Opened = $true; Note = $o.Note; Boxes = $s.Boxes; Raw = $s.Raw; Fatal = $s.Fatal }
 }
 function Make-Name([int]$Level) {   # a folder name of 42 bytes of UTF-8 (C-caron, z-caron, u-ring)
     return ([string][char]0x010C + 'ast ' + $Level.ToString('00') + ' ' + ([string][char]0x017E * 12) + ([string][char]0x016F * 4))
@@ -415,8 +424,9 @@ function Run-Enc([string]$Case, [string]$Left, [string]$SourceDir, [string]$Out,
         $extra = @($tree.Keys | Where-Object { -not $Expected.ContainsKey($_) })
         $enc = @(); if ([IO.Directory]::Exists($LP + $Out)) { $enc = @([IO.Directory]::GetFiles($LP + $Out, '*', [IO.SearchOption]::AllDirectories) | Where-Object { ([IO.File]::GetAttributes($_) -band [IO.FileAttributes]::Encrypted) -ne 0 }) }
         $boxes = @($r.Boxes)
-        $boxOk = $(if ($ExpectedBox) { $boxes.Count -eq 1 -and $boxes[0] -match $ExpectedBox } else { $boxes.Count -eq 0 })
-        $facts = ("{0}; expected files {1}: missing {2}, content differs {3}, extra {4}{5}; encrypted {6}; fatal {7}; boxes {8}: {9}" -f $Note, $Expected.Count, $miss.Count, $bad.Count, $extra.Count, $(if ($extra.Count) { ' [' + (($extra | Select-Object -First 4 | ForEach-Object { Tail $_ 60 }) -join ', ') + ']' } else { '' }), $enc.Count, $(if ($r.Fatal) { $r.Fatal } else { 'none' }), $boxes.Count, $(if ($boxes.Count) { (($boxes | ForEach-Object { Tail $_ 120 }) -join ' || ') } else { '-' }))
+        $raw = @($r.Raw)
+        $boxOk = $(if ($ExpectedBox) { $raw.Count -eq 1 -and $raw[0] -match $ExpectedBox } else { $boxes.Count -eq 0 })
+        $facts = ("{0}; expected files {1}: missing {2}, content differs {3}, extra {4}{5}; encrypted {6}; fatal {7}; boxes {8}: {9}" -f $Note, $Expected.Count, $miss.Count, $bad.Count, $extra.Count, $(if ($extra.Count) { ' [' + (($extra | Select-Object -First 4 | ForEach-Object { Tail $_ 60 }) -join ', ') + ']' } else { '' }), $enc.Count, $(if ($r.Fatal) { $r.Fatal } else { 'none' }), $boxes.Count, $(if ($raw.Count) { (($raw | ForEach-Object { Tail $_ 200 }) -join ' || ') } else { '-' }))
         if ($Fixed) { $v = V ((-not $r.Fatal) -and $miss.Count -eq 0 -and $bad.Count -eq 0 -and $extra.Count -eq 0 -and $enc.Count -eq 0 -and $boxOk) }
         else { $v = V ([bool]$r.Fatal -or $miss.Count -gt 0 -or $extra.Count -gt 0) }
         Row $Case 'RESTORE' $v $facts
@@ -466,7 +476,8 @@ function Run-EncRows {
         if (-not [IO.Directory]::Exists($loop + '\back')) { Row 'enc-loop' 'RESTORE' 'NOT DRIVEN' ('the junction could not be made: ' + $mk) }
         else {
             $exp = @{ 'loop\a.txt' = 'TC115 loop a'; 'loop\b\c.txt' = 'TC115 loop c' }
-            Run-Enc 'enc-loop' $left $left $out $exp 'loop\back = a directory junction to loop' 'back'
+            # GUI run 1: the box's name field is drawn by the core (no window text) - the error code identifies it
+            Run-Enc 'enc-loop' $left $left $out $exp 'loop\back = a directory junction to loop' '\(1921\)'
         }
         & cmd.exe /c ('rmdir "' + $loop + '\back"') 2>&1 | Out-Null   # the link only, never what it points to
     }

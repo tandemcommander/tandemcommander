@@ -1822,8 +1822,7 @@ plugin architecture preservation, UI consistency.
     numbering, the duplicate removal and the path lookup.
   - The plug-in's path lookup: exact name first, then the rule (case-only
     pairs are not numbered on NTFS / exFAT).
-  - Sweep: F3 on a deleted file with a long name (disk-cache name cut at
-    MAX_PATH - nothing shown), a failed backup-form restore deleted
+  - Sweep: a failed backup-form restore deleted
     `<name>` instead of `<name>.bak` (and a named-stream-only record the
     existing base file), `UndeleteGetResolvedRootPath`
     overrun, the main restore's target cut, uninitialised EFS context
@@ -1835,7 +1834,7 @@ plugin architecture preservation, UI consistency.
     command gets Ctrl+Shift+U through the registry for the session)
     written, **GUI runs pending**; real EFS backups NOT DRIVEN. Records:
     `specs/115-undelete-leftovers/fix-log.md`.
-  GUI runs owed at commit time - see fix-log "Pending (GUI ...)".
+  GUI runs (2026-10-06 night): 23 / 0 / 2 (pre-115 shows every defect incl. the stack overflow), 114 30/0/4.
 - 116-ftp-passwords: **FTP passwords are the text that was typed, in any script and up to 100
   characters.** Measured first (`research.md`; scratch `probe/m116_subclass.cpp`): the password
   fields' `CPasswordEditLine` was a code-page subclass - every character outside the code page

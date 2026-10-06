@@ -1,0 +1,34 @@
+undelleft_probe (feature 115), expect: before
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre115\tandemcommander.exe
+Date    : 2026-10-06 04:43; ACP 1250; images made for OEM 852; desktop 'tc_probe_150108'; registry key existed True
+Images  : wrote fatdup115.ima (3 groups), exfatnum115.ima (2 groups), exfatdup114.ima, OEM cp 852
+Hot key : plug-in 18 (undelete\undelete.spl): 2 menu item(s) set
+
+fat        OPEN   PASS        panel: ...ta\Local\Temp\tc115_un\img\fatdup115.ima\{All Deleted Files}; windows: no window
+fat        dupe   PASS        2 file(s): 'dupe (1).txt', 'dupe (2).txt' - expected 'twice' (one file read twice (two deleted directory entries of one cluster): one copy)
+fat        tiny   PASS        1 file(s): 'same.txt' - expected 'anyone' (two different 12-byte files of one name: both (the old memcmp removed one))
+fat        caron  PASS        1 file(s): '\u010C.txt' - expected 'anyone' (C-caron.txt and c-caron.txt are one name for Windows: numbered in the listing)
+fat        EXTRA  PASS        0 file(s) of no group: 
+fat        PROMPTS PASS        overwrite prompts 1; boxes 1: ...n id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+fat        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+exfat      OPEN   PASS        panel: ...\Local\Temp\tc115_un\img\exfatnum115.ima\{All Deleted Files}; windows: no window
+exfat      caron  PASS        1 file(s): '\u010C.txt' - expected 'anyone' (C-caron.txt and c-caron.txt are one name for Windows: numbered by the restore list)
+exfat      ascii  PASS        2 file(s): 'A (1).txt', 'a (2).txt' - expected 'numbered' (the control: a.txt and A.txt numbered by both builds)
+exfat      EXTRA  PASS        0 file(s) of no group: 
+exfat      PROMPTS PASS        overwrite prompts 1; boxes 1: ...n id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+exfat      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view       OPEN   PASS        panel: ...\Local\Temp\tc115_un\img\exfatdup114.ima\{All Deleted Files}; windows: no window
+view       VIEW   PASS        334-byte name: disk-cache files 0 (); under the full name with its content 0; viewer windows 0; fatal none; boxes 1: ...to put file to temporary directory. The resulting filename is too long. | [Button id=1] OK
+view       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+enc-deep   RESTORE PASS        source tree 16 levels, deepest file 697 bytes of UTF-8 (MAX_PATH 260, 2 x MAX_PATH 520); expected files 16: missing 16, content differs 0, extra 0; encrypted 0; fatal [#32770 'Tandem Commander 0.1.8 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC018X64-20261006-044406.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.; boxes 0: -
+enc-deep   END    FAIL        exit 0x00000001; alive False; WM_NULL False; stray 0; new reports 1 [TC018X64-20261006-044406.TXT: Information About Exception: / Exception: stack overflow / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / WinMainBody::message_loop / CFilesBox::WindowProc(0x100, 0x55, 0x1) / CPlugins::HandleKeyDown(0x55, 0x1, , ) / CPluginData::ExecuteMenuItem2(, , 17, 2, ) (undelete\undelete.spl v. 1.11) / CPluginInterfaceForMenuExt::ExecuteMenuItem( , , 2, 1343)]
+enc-long   RESTORE PASS        source panel 300 bytes of UTF-8; expected files 2: missing 2, content differs 0, extra 0; encrypted 0; fatal none; boxes 1: Name: |  | Error: | (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor.\u000D\u000A | &Retry | &Skip | S&kip All | Cancel
+enc-long   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+enc-loop   RESTORE PASS        loop\back = a directory junction to loop; expected files 2: missing 2, content differs 0, extra 0; encrypted 0; fatal [#32770 'Tandem Commander 0.1.8 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC018X64-20261006-044427.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.; boxes 0: -
+enc-loop   END    FAIL        exit 0x00000001; alive False; WM_NULL False; stray 0; new reports 1 [TC018X64-20261006-044427.TXT: Information About Exception: / Exception: stack overflow / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / WinMainBody::message_loop / CFilesBox::WindowProc(0x100, 0x55, 0x1) / CPlugins::HandleKeyDown(0x55, 0x1, , ) / CPluginData::ExecuteMenuItem2(, , 17, 2, ) (undelete\undelete.spl v. 1.11) / CPluginInterfaceForMenuExt::ExecuteMenuItem( , , 2, 1343)]
+enc        EFS    PASS        EFS certificates of the user before 0, after 0 (no .bak backup in the fixtures: nothing reaches the EFS import)
+nd         ROUTE  NOT DRIVEN  real EFS backups (.bak with the ROBS signature): they need an EFS-encrypted file, so a user EFS certificate - none exists on this machine and the probe must not create one
+nd         ROUTE  NOT DRIVEN  NTFS images and EFS-encrypted deleted files (the cut .bak deletion, the bounded UndeleteGetResolvedRootPath): need admin rights / a raw volume
+Registry: restored; identical=True; SHA-256 before 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126 / after 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
+
+Rows: PASS 21, FAIL 2, NOT DRIVEN 2. Left running: 0; fixture removed: True; registry restored+identical: True

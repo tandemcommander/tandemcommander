@@ -252,3 +252,65 @@ Proposed for "Recent Changes" (plain text):
     command gets Ctrl+Shift+U through the registry for the session)
     written, **GUI runs pending**; real EFS backups NOT DRIVEN. Records:
     `specs/115-undelete-leftovers/fix-log.md`.
+
+## GUI results (2026-10-06, 04:38-04:46, hidden desktop)
+
+Runs one at a time through `tools\run_on_hidden_desktop.ps1` on the preserved trees
+`build\tandemcommander\Debug_x64_115` (undelete.spl 11:26:59) and `Debug_x64_pre115`
+(10:38:11); no `tandemcommander.exe` running before or after any run; registry SHA-256 prefix
+`9BD42518403B7EDF` before and after every run (the probe's own backup / restore reported
+identical each time); no `cipher`, no A: O: S: Z:, no Recycle Bin, no build. Logs and result
+files in `probe/` (`run_*.log`, `undelleft_result*.txt`, `regress_undelnames114_115.txt`).
+
+| Run | Result |
+|---|---|
+| 1 `undelleft_probe -Expect fixed`, 115 | PASS 21, FAIL 2, NOT DRIVEN 2 - both FAILs probe expectations (below) |
+| 1b / 1c reruns (`-Only view,enc-loop`, `-Only enc-loop`) after the probe fixes | PASS 5 / FAIL 1 (enc-loop match), then PASS 3 / FAIL 0 |
+| 1d `undelleft_probe -Expect fixed`, 115, full (final) | **PASS 23, FAIL 0, NOT DRIVEN 2** (`undelleft_result.txt`) |
+| 2 `undelleft_probe -Expect before`, pre115 | PASS 21, FAIL 2, NOT DRIVEN 2 - the 2 FAILs are the expected END rows of enc-deep / enc-loop (the crash, the control) |
+| 3 regression 114 `undelnames_probe -Expect fixed`, 115 | **PASS 30, FAIL 0, NOT DRIVEN 4** (as 114 expects) |
+
+This build (run 1d): `fat` - one `dupe.txt`; `same (1).txt` + `same (2).txt` with the two
+12-byte contents; `<c-caron> (1).txt` + `<C-caron> (2).txt`; no overwrite prompt. `exfat` -
+`<C-caron> (1).txt` + `<c-caron> (2).txt`, `A (1).txt` + `a (2).txt`, no prompt. `enc-deep` - 16 of
+16 files, deepest 697 bytes of UTF-8, no message. `enc-long` (source panel 300 bytes) - both files.
+`enc-loop` - both files, exactly one message `(1921)` (Skip), no `back` folder. No restored file
+encrypted; EFS certificates of the user 0 before / 0 after. Every END row: exit 0, no report.
+The Ctrl+Shift+U key route worked (registry: plug-in 18, 2 menu items set; restored with the key).
+
+The build before (run 2) - every defect seen where predicted: `fat` `dupe (1).txt` + `dupe (2).txt`
+(the duplicate kept), ONE `same.txt` (the other 12-byte file removed), one `<C-caron>.txt` after an
+overwrite prompt (Yes / All / Skip / Skip all / Cancel - answered Skip); `exfat` the same caron
+prompt, `a` / `A` numbered (control); `enc-deep` and `enc-loop`: "A problem has occurred, forcing
+Tandem Commander to close" - both reports `Exception: stack overflow` in
+`CPluginInterfaceForMenuExt::ExecuteMenuItem( , , 2, ...)` (undelete.spl), exit 1, 16 / 2 files
+missing; `enc-long`: error `(2)` "file not found" (the relative name), both files missing. The two
+bug reports this run created (`TC018X64-20261006-044406.TXT`, `TC018X64-20261006-044427.TXT`) were
+deleted by name by the probe (`Take-Reports`); none left (0 `TC*.TXT` after the runs).
+
+**Probe defects found by run 1, fixed in the probe only (no product change):**
+
+1. `view` - the expectation was wrong, not the product: the core's disk cache refuses a temporary
+   name of MAX_PATH bytes or more (`cache.cpp CCacheDirData::GetName`, `DCGNE_TOOLONGNAME`: "Unable
+   to put file to temporary directory. The resulting filename is too long.") BEFORE the plug-in's
+   `CopyFile` runs - so the view-branch cut at MAX_PATH bytes that research 4 called a defect was
+   **unreachable** (every name the cache accepts fits). Both builds show that one message (run 2
+   agrees). The heap buffer of `CopyFile` stays (harmless, defensive). The VIEW row now expects
+   the refusal on both builds. **Correction for the records outside this folder** (not edited
+   here - the tree is on another feature's branch): the CHANGELOG 115 sentence "viewing (F3) a
+   deleted file with a long name did not show it" and the NEXT-WORK 115 sweep item "F3 on a deleted
+   file with a long name cut the disk-cache name at MAX_PATH (nothing shown)" are wrong and should
+   be removed; likewise in the proposed CLAUDE.md entry (corrected below). With it, the
+   `UndeleteGetResolvedRootPath` overrun is reachable only through the main restore's target
+   (2 x MAX_PATH buffer), not through the view.
+2. `enc-loop` - the box matched for "back" (the path) - the box's name field is drawn by the core
+   (no window text) and `WinDesc` keeps only 300 + 300 characters; now the full child texts are
+   kept (`Raw`) and the box is identified by the error code `(1921)`.
+
+## CLAUDE.md entry - correction after the GUI runs
+
+In the proposed entry above replace the sweep's first item ("F3 on a deleted file with a long name
+(disk-cache name cut at MAX_PATH - nothing shown)") by nothing - it was unreachable (the core's
+disk cache refuses such names first) - and append to its status: "GUI verified 2026-10-06: probe
+23 PASS / 0 FAIL / 2 NOT DRIVEN on this build, the build before shows every defect (stack overflow
+in the encrypted route), 114 regression 30 / 0 / 4".

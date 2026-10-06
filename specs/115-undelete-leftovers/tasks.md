@@ -13,5 +13,5 @@
 - [X] T011 Hostile re-read of the diff (fix-log)
 - [X] T012 Records: fix-log (with the proposed CLAUDE.md entry), CHANGELOG `[Unreleased]`, NEXT-WORK (the 114 "found" entries - fixed, GUI runs pending); no commit
 - [X] T015 Code-only review (ACCEPT pending GUI): SF1 folder identity (salsamefile.h + final path), SF2 exact-name-first lookup, NITs (core comment, GetPanelPath message, unreachable branch noted), named-stream-only base never deleted; Debug + full Release rebuilt, saltests 14,401 / 0, guard 0
-- [ ] T013 [US1]-[US4] Probe on `Debug_x64_115` and `Debug_x64_pre115` (hidden desktop) - PENDING (GUI runs after 18:00, `quickstart.md`)
-- [ ] T014 Regression on `Debug_x64_115`: 114 `undelnames_probe.ps1` - PENDING
+- [X] T013 [US1]-[US3] Probe on `Debug_x64_115` (23 / 0 / 2 ND) and `Debug_x64_pre115` (every defect seen; 2 END FAIL = the crash, the control) - 2026-10-06; [US4] corrected: unreachable (the core's cache refuses the name)
+- [X] T014 Regression on `Debug_x64_115`: 114 `undelnames_probe.ps1` - 30 / 0 / 4 ND

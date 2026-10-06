@@ -62,12 +62,13 @@ deleted files).
   content); EXTRA none; PROMPTS - no overwrite prompt; END PASS.
 - `exfat` (exfatnum115.ima): `caron` as above (numbered by the restore list), `ascii` -
   `a (k).txt` / `A (k).txt`; no overwrite prompt.
-- `view`: the disk-cache copy `%TEMP%\SALxxxx.tmp\<334-byte name>` exists with the file's content,
-  no message.
+- `view` (expectation corrected by GUI run 1): one message "The resulting filename is too long" -
+  the core's disk cache refuses a temporary name of MAX_PATH+ bytes before the plug-in copies
+  anything; no fatal window, no file. The same on the build before.
 - `enc-deep`: 16 files under the same relative paths (deepest ~650 bytes), no message, none
   encrypted. `enc-long`: `x.txt` and `sub\y.txt`. `enc-loop`: `loop\a.txt`, `loop\b\c.txt`, exactly
-  one message naming `...\loop\back` ("The name of the file cannot be resolved by the system",
-  answered Skip), no `back` folder in the target. `enc EFS`: certificates before = after.
+  one message with error (1921) ("The name of the file cannot be resolved by the system",
+  answered Skip; the box's name field is drawn by the core and has no window text), no `back` folder in the target. `enc EFS`: certificates before = after.
 - If the Ctrl+Shift+U key does not open the Restore dialog, the enc rows say NOT DRIVEN (the
   `Hot key :` line shows what was set) - then the person step below.
 
@@ -78,7 +79,7 @@ The build before (`-Expect before`) - a row PASSes when the defect shows:
   Skip); PROMPTS - at least one overwrite prompt.
 - `exfat`: `caron` - one of the two (overwrite prompt); `ascii` - numbered (the control: both
   builds); PROMPTS - at least one.
-- `view`: no disk-cache file under the full name (the copy's path was cut at 259 bytes).
+- `view`: as on this build (the core refuses the name; the plug-in's cut was unreachable).
 - `enc-deep`, `enc-loop`: a fatal window or the process ends (stack overflow in `GetDirSize`);
   their END rows FAIL (the control). `enc-long`: files missing (relative names), an error box.
 
