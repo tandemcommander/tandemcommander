@@ -2,7 +2,7 @@
 
 **Feature Branch**: `118-plugin-update-close`
 **Created**: 2026-10-05
-**Status**: Implemented - GUI runs pending
+**Status**: Implemented - GUI verified (probe 58 / 0 / 0, control 67 / 0 / 0); a real update owed
 **Input**: `specs/NEXT-WORK.md` item 4, "Left" (left by feature 088): "windows of the non-viewer
 plug-ins (File Comparator, Batch Renamer, Disk Map, Checksum) still decline an update".
 

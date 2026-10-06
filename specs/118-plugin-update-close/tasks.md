@@ -27,4 +27,6 @@
       saved); `CDiskMap::Abort` use-after-free fixed (`AbortAndSelfDelete`); probe P1 (`GetWindow`
       on the wrong type), P2 (one folder per Calculate row), C5/C6 rows, M1/M2 scan state read
       from the map's menu, B1 checks the renamer window itself; rebuilt, gates repeated
-- [ ] T014 GUI runs on `Debug_x64_118` and `Debug_x64_pre118` (`quickstart.md`) - pending
+- [x] T014 GUI runs on `Debug_x64_118` (58 / 0 / 0) and `Debug_x64_pre118` (67 / 0 / 0), hidden
+      desktop, registry 1AB614304771DBE0 before and after each; probe-only fixes (fix-log "GUI
+      results")

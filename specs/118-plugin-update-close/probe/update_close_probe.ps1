@@ -193,9 +193,13 @@ function Start-P([string]$Left, [string]$Right) {
 function End-P([string]$Case, [int]$Id, $Before) {
     if (-not (Test-Alive $Id)) { return }   # ended by the request: the RM row has checked the exit code and the reports
     if (Test-Alive $Id) {
-        # the ordinary exit closes the plug-in windows itself (Release without force); dialogs first
+        # End-Row counts every window but the main one as stray, so the row's windows are closed
+        # first (as 117's End-P does): owned dialogs and boxes, then the plug-in windows themselves
         foreach ($h in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and [Drv118]::GetWindow($_, 4) -ne [IntPtr]::Zero })) { Close-Win $h }
         Start-Sleep -Milliseconds 500
+        foreach ($h in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -ne $MainClass })) { [void][Drv098f]::PostMessageW($h, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) }
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 10 -and @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -ne $MainClass }).Count) { Start-Sleep -Milliseconds 200 }
     }
     End-Row $Case $Id $null $Before
 }
@@ -255,7 +259,7 @@ function Invoke-RmWatched([int]$Id) {
     $alive = Test-Alive $Id
     $shown = @($new.Values)
     return [pscustomobject]@{ Exit = $p.ExitCode; Line = $line; Seconds = $secs; Shown = $shown; Alive = $alive; Before = $before; Output = $text
-        Other = @($shown | Where-Object { $_ -notlike ("[{0} *" -f $WaitClass) }); Wait = @($shown | Where-Object { $_ -like ("[{0} *" -f $WaitClass) }) }
+        Other = @($shown | Where-Object { -not $_.StartsWith('[' + $WaitClass + ' ') }); Wait = @($shown | Where-Object { $_.StartsWith('[' + $WaitClass + ' ') }) }
 }
 
 # One row. $Prepare (param $id) brings the instance into the row's state and returns
@@ -362,35 +366,67 @@ function Open-Calc([int]$Id) {
     return $h
 }
 # Save in the Calculate window: the type at index $TypeIndex of the save dialog's type list (it
-# offers exactly the calculated types), named $Base (no extension - the plug-in adds the type's);
+# offers exactly the calculated types), named $Base (no extension - the plug-in adds the type's).
+# GUI run 1: the Vista-style dialog of this Windows keeps its own name and ignores WM_SETTEXT on
+# its name field, so the list gets the plug-in's default name - the folder's name when the files'
+# names differ: every row therefore passes <folder>\<folder name> as $Base;
 # with $Overwrite the plug-in's "already exists - overwrite?" question is answered Yes. The 117
 # method. Returns @{ Status; Count = types offered; Type = the picked item's text }.
 function Save-ListIdx([int]$Id, [IntPtr]$Calc, [int]$TypeIndex, [string]$Base, [bool]$Overwrite = $false) {
     $res = @{ Status = ''; Count = 0; Type = '' }
     $known = Get-Tops $Id
-    Click (Kid $Calc 1003 'Button')
+    $dir = Split-Path $Base -Parent
+    $filesBefore = @(Get-ChildItem -LiteralPath $dir -File | ForEach-Object { $_.Name })
+    # WM_COMMAND IDC_BUTTON_SAVE to the dialog (run 1: a posted BM_CLICK to the button opened
+    # nothing on the hidden desktop)
+    Post-Cmd $Calc 1003
     $od = [IntPtr]::Zero
     $sw = [Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 15 -and $od -eq [IntPtr]::Zero) {
-        $c = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' -and (Kid $_ 1136 'ComboBox') }) | Select-Object -First 1
-        if ($c) { Start-Sleep -Milliseconds 1200; $od = $c }
+        $c = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' -and (Type-Combo $_) }) | Select-Object -First 1
+        if ($c) { Start-Sleep -Milliseconds 2000; $od = $c }
         Start-Sleep -Milliseconds 200
     }
-    if ($od -eq [IntPtr]::Zero) { $res.Status = 'no save dialog'; return $res }
-    $types = Kid $od 1136 'ComboBox'
+    if ($od -eq [IntPtr]::Zero) {
+        $new = @(Get-Tops $Id | Where-Object { $known -notcontains $_ } | ForEach-Object { Ctl-Dump $_ })
+        $res.Status = 'no save dialog; new windows: ' + $(if ($new.Count) { $new -join ' || ' } else { 'none' })
+        foreach ($h in @(Get-Tops $Id | Where-Object { $known -notcontains $_ })) { Close-Win $h }
+        return $res
+    }
+    $types = Type-Combo $od
     $res.Count = [int][Drv118]::SendR($types, 0x0146, 0, 0)   # CB_GETCOUNT
     if ($TypeIndex -ge $res.Count) { Post-Cmd $od 2; $res.Status = "type index $TypeIndex not offered ($($res.Count) types)"; return $res }
     [void][Drv118]::SendR($types, 0x014E, $TypeIndex, 0)      # CB_SETCURSEL
     $res.Type = [Drv098f]::GetText($types, 5000)               # the selected item's text
     $cid = [Drv098f]::GetDlgCtrlID($types); $par = [Drv098f]::GetParent($types)
     foreach ($code in @(9, 1)) { [void][Drv118]::SendR($par, 0x0111, (($code -shl 16) -bor $cid), $types.ToInt64()) }   # CBN_SELENDOK, CBN_SELCHANGE
-    Start-Sleep -Milliseconds 300
+    Start-Sleep -Milliseconds 1000
     $fn = @([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) -and [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) -eq 1148 }) | Select-Object -First 1
-    if (-not $fn) { Post-Cmd $od 2; $res.Status = 'no file name field'; return $res }
+    # the Vista-style dialog (C3 diagnostic run): the name field is the visible Edit (id 1001)
+    # inside a ComboBox whose own id is 0
+    if (-not $fn) { $fn = @([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) -and [Drv098f]::Cls([Drv098f]::GetParent($_)) -eq 'ComboBox' }) | Select-Object -First 1 }
+    if (-not $fn) { $d = Ctl-Dump $od; Post-Cmd $od 2; $res.Status = 'no file name field: ' + $d; return $res }
     [void][Drv098f]::SetText($fn, $Base, 5000)
-    $ok = Buttons $od | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 1 } | Select-Object -First 1
-    if ($ok) { Click $ok } else { Post-Cmd $od 1 }
+    $typed = [Drv098f]::GetText($fn, 5000)
+    # WM_COMMAND IDOK to the dialog (C3 diagnostic run: a posted BM_CLICK on the Save button of the
+    # Vista-style dialog did nothing on the hidden desktop)
+    Post-Cmd $od 1
     $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 10 -and [Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)) { Start-Sleep -Milliseconds 100 }
+    if ([Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)) {
+        # control run: the dialog had not taken the type selection and asked its own "replace
+        # the existing file?" (buttons with id 0) - answered by closing it (= No), then the dialog
+        # is cancelled; the caller retries
+        $asked = @()
+        foreach ($x in @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and $_ -ne $od })) {
+            $asked += (Tail (WinDesc $x) 100)
+            [void][Drv098f]::PostMessageW($x, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+        }
+        Start-Sleep -Milliseconds 800
+        Post-Cmd $od 2
+        $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 5 -and [Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)) { Start-Sleep -Milliseconds 100 }
+        $res.Status = ("the save dialog stayed open after IDOK (asked: {0}); cancelled, closed {1}" -f $(if ($asked.Count) { $asked -join ' || ' } else { 'nothing' }), (-not ([Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od))))
+        return $res
+    }
     Start-Sleep -Milliseconds 800
     $boxes = @()
     for ($round = 0; $round -lt 3; $round++) {
@@ -404,15 +440,51 @@ function Save-ListIdx([int]$Id, [IntPtr]$Calc, [int]$TypeIndex, [string]$Base, [
         Start-Sleep -Milliseconds 1000
     }
     $res.Status = $(if ($boxes.Count) { 'boxes: ' + ($boxes -join ' || ') } else { 'ok' })
+    $newFiles = @(Get-ChildItem -LiteralPath $dir -File | Where-Object { $filesBefore -notcontains $_.Name } | ForEach-Object { $_.Name })
+    $res.Status += ("; typed '{0}'; new files in the folder: {1}" -f (Tail $typed 40), $(if ($newFiles.Count) { $newFiles -join ', ' } else { 'none' }))
     return $res
+}
+# the save dialog's file type list: a ComboBox (id 1136 in both dialog styles, else any) whose
+# first item holds "*."; $null when there is none (yet)
+function Type-Combo([IntPtr]$Dlg) {
+    $combos = @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::Cls($_) -eq 'ComboBox' })
+    $pref = @($combos | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 1136 }) + @($combos | Where-Object { [Drv098f]::GetDlgCtrlID($_) -ne 1136 })
+    foreach ($c in $pref) {
+        if ([Drv118]::SendR($c, 0x0146, 0, 0) -gt 0) {   # CB_GETCOUNT
+            $cur = [Drv118]::SendR($c, 0x0147, 0, 0)       # CB_GETCURSEL
+            if ([Drv098f]::GetText($c, 3000) -match '\*\.') { return $c }
+        }
+    }
+    return $null
+}
+# class / id / parent id / text of the controls of a window (diagnostics in a NOT DRIVEN row)
+function Ctl-Dump([IntPtr]$H) {
+    $p = @()
+    foreach ($k in @([Drv098f]::Kids($H) | Where-Object { @('ComboBox', 'ComboBoxEx32', 'Edit', 'Button') -contains [Drv098f]::Cls($_) })) {
+        $p += ("{0}#{1}<{2} vis={3} '{4}'" -f [Drv098f]::Cls($k), [Drv098f]::GetDlgCtrlID($k), [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($k)), [int][Drv098f]::IsWindowVisible($k), (Tail ([Drv098f]::Txt($k)) 30))
+    }
+    return ("[{0} '{1}'] " -f [Drv098f]::Cls($H), (Tail ([Drv098f]::Txt($H)) 40)) + ($p -join ' ; ')
+}
+# Save-ListIdx, checked: the list of that type ($Base + the extension in the type's text) must
+# exist afterwards; up to three attempts (the dialog does not always take the type selection)
+function Save-TypeChecked([int]$Id, [IntPtr]$Calc, [int]$TypeIndex, [string]$Base) {
+    $all = @()
+    for ($a = 1; $a -le 3; $a++) {
+        $r = Save-ListIdx $Id $Calc $TypeIndex $Base
+        $all += ("try {0}: {1}" -f $a, $r.Status)
+        if ($r.Type -match '\*(\.[A-Za-z0-9]+)' -and (Test-Path -LiteralPath ($Base + $Matches[1]))) { break }
+        if ($r.Count -eq 0) { break }
+    }
+    $r.Status = $all -join ' / '
+    return $r
 }
 # saves every type the save dialog offers, each as $Base.<its extension>;
 # returns @{ Count; Files; Types (the dialog's item texts, e.g. "... (*.md5)"); Status }
 function Save-AllTypes([int]$Id, [IntPtr]$Calc, [string]$Base) {
-    $first = Save-ListIdx $Id $Calc 0 $Base
+    $first = Save-TypeChecked $Id $Calc 0 $Base
     $st = @("0:'" + $first.Type + "' " + $first.Status)
     $typesSeen = @($first.Type)
-    for ($i = 1; $i -lt $first.Count; $i++) { $r = Save-ListIdx $Id $Calc $i $Base; $st += ("{0}:'{1}' {2}" -f $i, $r.Type, $r.Status); $typesSeen += $r.Type }
+    for ($i = 1; $i -lt $first.Count; $i++) { $r = Save-TypeChecked $Id $Calc $i $Base; $st += ("{0}:'{1}' {2}" -f $i, $r.Type, $r.Status); $typesSeen += $r.Type }
     $files = @(Get-ChildItem -LiteralPath (Split-Path $Base -Parent) -Filter ((Split-Path $Base -Leaf) + '.*') | ForEach-Object { $_.FullName })
     return @{ Count = $first.Count; Files = $files; Types = $typesSeen; Status = ($st -join '; ') }
 }
@@ -593,7 +665,7 @@ try {
     }
     Run-Row 'C1' 'Checksum Calculate, still calculating' ($Root + '\cs_big') $false $false {
         param($id)
-        [void](Do-ChangeDir $id ($Root + '\cs_big\big.bin')); Start-Sleep -Milliseconds 500; Sync $id
+        Select-All $id   # run 1: Do-ChangeDir to the file + Ctrl+Shift+U opened nothing; select all as in C2 (big.bin + big.md5)
         $c = Open-Calc $id; $script:RowWin = $c
         Start-Sleep -Milliseconds 1200
         $saveOn = [Drv098f]::IsWindowEnabled((Kid $c 1003 'Button'))
@@ -614,7 +686,7 @@ try {
         param($id)
         Select-All $id
         $c = Calc-Finished $id; $script:RowWin = $c
-        $sv = Save-AllTypes $id $c ($Root + '\cs_c3\saved118')
+        $sv = Save-AllTypes $id $c ($Root + '\cs_c3\cs_c3')
         $script:C3Files = $sv.Files
         return @{ Reached = ($sv.Count -ge 1 -and $sv.Files.Count -eq $sv.Count); State = ("{0} type(s) offered, {1} list file(s) written; {2}" -f $sv.Count, $sv.Files.Count, $sv.Status); Work = {
                 param($id, $agreed)
@@ -625,7 +697,7 @@ try {
         param($id)
         Select-All $id
         $c = Calc-Finished $id; $script:RowWin = $c
-        $sv = Save-AllTypes $id $c ($Root + '\cs_c4\saved118')
+        $sv = Save-AllTypes $id $c ($Root + '\cs_c4\cs_c4')
         $lv = Kid $c 1001 'SysListView32'
         Lv-Key $lv 0x24   # VK_HOME: focus and select the first row (the selection mark the Del key uses)
         Lv-Key $lv 0x2E   # VK_DELETE
@@ -636,8 +708,8 @@ try {
         param($id)
         Select-All $id
         $c = Calc-Finished $id; $script:RowWin = $c
-        $r = Save-ListIdx $id $c 0 ($Root + '\cs_c5\saved118')
-        $files = @(Get-ChildItem -LiteralPath ($Root + '\cs_c5') -Filter 'saved118.*')
+        $r = Save-TypeChecked $id $c 0 ($Root + '\cs_c5\cs_c5')
+        $files = @(Get-ChildItem -LiteralPath ($Root + '\cs_c5') -Filter 'cs_c5.*')
         if ($r.Count -lt 2) { return @{ Reached = $false; State = ("only {0} hash type calculated (the configuration) - nothing left unsaved to test" -f $r.Count); Work = $null } }
         return @{ Reached = ($files.Count -eq 1); State = ("{0} types calculated, saved '{1}' only ({2}); list files {3}" -f $r.Count, $r.Type, $r.Status, $files.Count); Work = { param($id, $agreed); return (Calc-Kept 2) } }
     }
@@ -645,7 +717,7 @@ try {
         param($id)
         Select-All $id
         $c = Calc-Finished $id; $script:RowWin = $c
-        $base = $Root + '\cs_c6\saved118'
+        $base = $Root + '\cs_c6\cs_c6'
         $sv = Save-AllTypes $id $c $base
         if ($sv.Count -lt 1 -or $sv.Files.Count -ne $sv.Count) { return @{ Reached = $false; State = ('the first saves failed: ' + $sv.Status); Work = $null } }
         # the list of type 0: its extension is in the save dialog's item text ("... (*.md5)")

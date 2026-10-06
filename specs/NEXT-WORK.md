@@ -317,7 +317,7 @@ A sweep failure is a finding: back through fix → independent review → gates.
 > corrected, PictView and the Database Viewer no longer overflow on a deep
 > path. ~~**Left**: windows of the non-viewer plug-ins (File Comparator, Batch
 > Renamer, Disk Map, Checksum) still decline an update.~~ **Fixed by feature
-> 118 - pending GUI** (`118-plugin-update-close/quickstart.md`): the File
+> 118 - GUI-verified 2026-10-06: 58 / 0, the build before declines every plug-in row** (`118-plugin-update-close/quickstart.md`): the File
 > Comparator, Disk Map (with its Log window and tooltip) and Checksum Verify
 > windows are declared and close silently, also while still working; a
 > Checksum Calculate window declines until every hash type it calculated is

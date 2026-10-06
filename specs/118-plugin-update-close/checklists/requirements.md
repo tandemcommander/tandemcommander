@@ -29,5 +29,5 @@
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
-- [ ] Feature meets measurable outcomes defined in Success Criteria - SC-001 and SC-002 need the
-      pending GUI runs (`quickstart.md`); SC-003 met
+- [x] Feature meets measurable outcomes defined in Success Criteria - SC-001 (58 / 0 / 0) and
+      SC-002 (67 / 0 / 0) met by the GUI runs of 2026-10-06; SC-003 met

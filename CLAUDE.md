@@ -1915,7 +1915,7 @@ plugin architecture preservation, UI consistency.
   Find and FTP Logs / Welcome still decline. saltests 14,576 (unchanged). Probe
   `probe/update_close_probe.ps1` (20 rows, `-Expect fixed|before`) written, runs owed on
   `Debug_x64_118` and `Debug_x64_pre118`. Records: `specs/118-plugin-update-close/fix-log.md`.
-  GUI runs owed at commit time - see fix-log "Code-only reviews".
+  GUI runs (2026-10-06): 20 rows 58 / 0 (pre-118 67 / 0: every plug-in row declined); a real installer update is owed to a person.
 - 119-packing-leftovers: **the five leftovers of 106 - no stray volumes, no misnamed set, and a pack
   into its own archive refused with the archive's name.** Measured by code reading (no GUI run was
   allowed; the probe is pending). (1) A failed multi-volume ZIP pack deleted only the current volume

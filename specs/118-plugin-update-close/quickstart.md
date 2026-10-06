@@ -1,4 +1,4 @@
-# Quickstart: feature 118 - GUI runs pending
+# Quickstart: feature 118 - GUI runs done 2026-10-06 (58 / 0 / 0; control 67 / 0 / 0)
 
 Automated (hidden desktop). Preconditions: no `tandemcommander.exe` running (also not the
 installed one - every probe shares `HKCU\Software\Tandem Commander` with it; the probe refuses
@@ -21,7 +21,8 @@ The builds: `build\tandemcommander\Debug_x64_118` (the maintainer's copy of this
 `-Exe` is a parameter; nothing below depends on `Debug_x64`.
 
 Run from the repository root in Windows PowerShell, each command wrapped by the registry check
-(the export's SHA-256 must be the same before and after - `9BD42518403B7EDF...`):
+(the export's SHA-256 must be the same before and after - on 2026-10-06 `1AB614304771DBE0...`;
+pass the current value as `-RegBaseline`):
 
 ```powershell
 Set-Location D:\Projects\tandemcommander
@@ -36,9 +37,9 @@ RegHash
 1. The probe on this build and on the build before 118 (about 15 minutes each - 20 instances):
 
 ```powershell
-powershell -File tools\run_on_hidden_desktop.ps1 -Log "$P\run_118.log" -WaitSeconds 3600 -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\118-plugin-update-close\probe\update_close_probe.ps1 -Exe $E -Expect fixed -RegBaseline 9BD42518403B7EDF -OutFile $P\update_close_result.txt"
+powershell -File tools\run_on_hidden_desktop.ps1 -Log "$P\run_118.log" -WaitSeconds 3600 -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\118-plugin-update-close\probe\update_close_probe.ps1 -Exe $E -Expect fixed -RegBaseline 1AB614304771DBE0 -OutFile $P\update_close_result.txt"
 RegHash
-powershell -File tools\run_on_hidden_desktop.ps1 -Log "$P\run_pre118.log" -WaitSeconds 3600 -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\118-plugin-update-close\probe\update_close_probe.ps1 -Exe $B -Expect before -RegBaseline 9BD42518403B7EDF -OutFile $P\update_close_result_pre118.txt"
+powershell -File tools\run_on_hidden_desktop.ps1 -Log "$P\run_pre118.log" -WaitSeconds 3600 -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\118-plugin-update-close\probe\update_close_probe.ps1 -Exe $B -Expect before -RegBaseline 1AB614304771DBE0 -OutFile $P\update_close_result_pre118.txt"
 RegHash
 ```
 
@@ -64,7 +65,7 @@ This build (`-Expect fixed`), per row a STATE row PASS and an RM row PASS:
 | V2 | Verify of a 4 GB file still running | agree |
 | C1 | Calculate of a 4 GB file still running | decline; WORK: the window is still open |
 | C2 | Calculate finished, list not saved | decline; WORK: the window still holds its 2 rows |
-| C3 | Calculate finished and EVERY type the Save dialog offers saved (`saved118.<ext>` each) | agree; WORK: every saved list intact (2 checksum lines each) |
+| C3 | Calculate finished and EVERY type the Save dialog offers saved (`cs_c3.<ext>` each - the dialog keeps the plug-in's default name, the folder's) | agree; WORK: every saved list intact (2 checksum lines each) |
 | C4 | every type saved, then a row removed with Del | decline; WORK: the window holds its edited list (1 row) |
 | C5 | several types calculated, only the first saved (NOT DRIVEN if the configuration calculates one type) | decline; WORK: 2 rows kept |
 | C6 | every type saved, then type 0 saved again over its own file while the probe holds a byte-range lock on it: the open truncates, the write fails (NOT DRIVEN when the failure does not happen that way - the STATE row says how it went) | decline; WORK: 2 rows kept |

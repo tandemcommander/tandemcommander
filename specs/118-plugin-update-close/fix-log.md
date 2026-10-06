@@ -151,6 +151,67 @@ too much (safe) or too little (reopens the S1 gap on such a share - edge case).
 Committed with the GUI runs still owed; the build is preserved as `build\tandemcommander\Debug_x64_118`
 (checksum.spl 00:29). Results follow in a separate commit.
 
+## GUI results (2026-10-06, hidden desktop)
+
+Runner `tools\run_on_hidden_desktop.ps1`, one run at a time, on the preserved trees
+`build\tandemcommander\Debug_x64_118` (this feature, after the code-review fixes; plug-ins of
+00:29) and `Debug_x64_pre118` (the 117 build, the control). Registry: the export's SHA-256 was
+`1AB614304771DBE0...` (the maintainer's restored morning state) before and after every run - the
+probe's own restore reported "identical" each time; no backup was imported by hand. No
+`tandemcommander.exe` was running outside the probes.
+
+**Final results** (`probe/update_close_result.txt`, `probe/update_close_result_pre118.txt`):
+
+| Build | Rows | Result |
+|---|---|---|
+| `Debug_x64_118`, `-Expect fixed` | 20 | **PASS 58, FAIL 0, NOT DRIVEN 0** |
+| `Debug_x64_pre118`, `-Expect before` | 20 | **PASS 67, FAIL 0, NOT DRIVEN 0** |
+
+This build: the update goes through (Restart Manager shutdown 0 after 1.3-2.4 s, the process
+ended with exit code 0, no window shown but the core's wait window, no crash report) with a
+finished comparison (F1), a running comparison (F2), a finished map (M1), a scan of WinSxS still
+running (M2 - File > Abort enabled at the request), the map's Log window (M3), a finished and a
+running verification (V1, V2 - 4 GB sparse file), a Calculate window with all five types saved
+(C3 - the five lists intact afterwards), all three together (X1) and none (R1). It is declined
+(351 `ERROR_FAIL_SHUTDOWN` after 0.0 s, nothing shown, every window kept, the work still in the
+window, the ordinary exit afterwards clean) with the "files are identical" box (F3), the Compare
+Files dialog (F4), the Disk Map About box (M4), a running Calculate (C1), an unsaved list (C2),
+a saved list with a row removed (C4), five types calculated and one saved (C5 - **S2**), a failed
+re-save (C6 - **S1**: the probe's byte-range lock let the plug-in open and truncate `cs_c6.sfv`
+to 0 bytes and made the write fail; the window then held the only copy and the update was
+declined), the Batch Renamer (B1) and the Configuration dialog (N2).
+
+The control: every plug-in row declines (F1, F2, M1-M3, V1, V2, C3, X1 included - their windows
+were not declared), R1 agrees; C1-C6's work is kept. That is the 0.1.8 behaviour this feature
+changes.
+
+**Probe fixes made during the runs** (probe only - no product file was touched, nothing built):
+
+1. Run 1 (this build): `-like "[SalamanderSaveBits *"` - `[` is a wildcard; every agreeing row
+   ended in an ERROR after the request had succeeded. Now `StartsWith`.
+2. Run 1: the END rows counted the row's own plug-in windows as stray (End-Row closes only the
+   main window); End-P now closes owned dialogs, then the plug-in windows, before End-Row (as
+   117's End-P).
+3. Run 1: C1 - Change Directory to the file, then Ctrl+Shift+U opened nothing (not analysed
+   further; Calculate works on a selection, as in C2) - C1 now selects all in its folder.
+4. Runs 1-2: a posted `BM_CLICK` on Save / on the save dialog's button did nothing on the hidden
+   desktop - replaced by `WM_COMMAND` to the dialog (`IDC_BUTTON_SAVE`, then `IDOK`).
+5. Diagnostic runs (`-Only C3`, `-Only C3,C6`, `-Only C3,C4,C5,C6`, registry hash checked around
+   each): the save dialog is the Vista-style one (no control id 1136; the name field is an
+   `Edit` 1001 inside a `ComboBox` with id 0) - found by the type list's "*." items and by the
+   parent class; it keeps its own name, so each Calculate row saves under the plug-in's default
+   name (the folder's name) - `<folder>\<folder>.<ext>`.
+6. Control run 1: once, the save dialog did not take the type selection and asked its own
+   "replace?" (the list of the previous type existed) - C3 NOT DRIVEN and 140 stray boxes at the
+   end (the cleanup closed one box after another). Longer settle times, the shell's question
+   answered by closing it, the dialog cancelled, and up to three attempts per type
+   (`Save-TypeChecked`, which also checks that `<base><ext>` exists afterwards).
+
+Intermediate result files are kept as the record: `update_close_result_run1.txt` (26 / 19 / 4,
+probe bugs 1-4), `_run2.txt` (47 / 0 / 4, the save path), `_run3.txt` (58 / 0 / 0 before fix 6),
+`update_close_result_pre118_run1.txt` (63 / 1 / 1, fix 6). **No product defect was found by the
+runs.**
+
 ## Proposed CLAUDE.md entry (Recent Changes)
 
 - 118-plugin-update-close: **an update goes through with a finished comparison, map or
@@ -172,7 +233,12 @@ Committed with the GUI runs still owed; the build is preserved as `build\tandemc
   after a refused `Release`); `CDiskMap::Abort()` used a finished scan worker after handing it
   over to delete itself (`CWorkerThread::AbortAndSelfDelete`); Disk Map still loads in 103-106
   cores, so it calls the 107 services only when `SalamanderVersion >= 107`. Recorded: Disk Map's
-  `Release` has no guard for a box or menu opened in between. Other plug-ins' windows recorded (research R6): RegEdit
-  Find and FTP Logs / Welcome still decline. saltests 14,576 (unchanged). Probe
-  `probe/update_close_probe.ps1` (20 rows, `-Expect fixed|before`) written, runs owed on
-  `Debug_x64_118` and `Debug_x64_pre118`. Records: `specs/118-plugin-update-close/fix-log.md`.
+  `Release` has no guard for a box or menu opened in between. Other plug-ins' windows
+  recorded (research R6): RegEdit Find and FTP Logs / Welcome still decline. saltests 14,576
+  (unchanged). Probe
+  `probe/update_close_probe.ps1` (20 rows, `-Expect fixed|before`, hidden desktop): this build
+  58 / 0 / 0, the build before 67 / 0 / 0 (every plug-in row declines there). Probe traps
+  found on the way: `-like` with `[`, a posted `BM_CLICK` does nothing on the hidden desktop
+  (send `WM_COMMAND` to the dialog), the Vista-style save dialog has no control ids and keeps its
+  own file name. Owed to a person: a real update / winget upgrade. Records:
+  `specs/118-plugin-update-close/fix-log.md`.

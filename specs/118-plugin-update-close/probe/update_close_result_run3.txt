@@ -1,0 +1,97 @@
+update_close_probe (feature 118), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_118\tandemcommander.exe
+Date    : 2026-10-06 05:41; desktop 'tc_probe_113476'; registry key existed True; export SHA-256 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769; baseline 1AB614304771DBE0 matches: True
+Fixture : big text files 40000 lines each; sparse file 4096 MB (sparse flag True)
+Hot keys: renamer.spl id 1: 1; checksum.spl id 1: 1; checksum.spl id 2: 1; diskmap.spl id 1: 1; filecomp.spl id 1: 1
+
+--- F1: File Comparator, comparison finished (expected: agree)
+F1         STATE  PASS        comparator 'a.txt : b.txt - File Comparator - 2 Differences', finished True, boxes 0
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+F1         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- F2: File Comparator, still comparing (expected: agree)
+F2         STATE  PASS        comparator 'a.txt : b.txt - File Comparator - Computing Differences (press ESC to cancel)'
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+F2         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- F3: File Comparator, 'The files are identical' box (expected: decline)
+F3         STATE  PASS        box [#32770 'File Comparator'] [Static id=2477] The files are identical. Do you wish to close File Comparator? | [Button id=6] &Yes | [Button id=7] &No
+F3         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+F3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- F4: File Comparator, Compare Files dialog open (expected: decline)
+F4         STATE  PASS        dialog [#32770 'Compare Files'] [Static id=300] &Compare file: | [Button id=104] ... | [Static id=301] &With file: | [Button id=105] ... | [Button id=1] OK | [Button id=2] Cancel | [Button id=103] &Advanced...
+F4         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+F4         WORK   PASS        Compare Files dialog still open: True
+F4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- M1: Disk Map, scan finished (expected: agree)
+M1         STATE  PASS        map 'DiskMap - C:\Users\pavel\AppData\Local\Temp\tc118\dm_small' of a folder of 21 files, scanning False (File > Abort enabled) after 0,0 s
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+M1         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- M2: Disk Map, still scanning (expected: agree)
+M2         STATE  PASS        map 'DiskMap - C:\Windows\WinSxS', scanning True (File > Abort enabled), 1,5 s after the key
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+M2         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- M3: Disk Map, finished, Log window shown (expected: agree)
+M3         STATE  PASS        log [Zar.DM.LogWin.WC 'Log'] 
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+M3         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- M4: Disk Map, About box open (expected: decline)
+M4         STATE  PASS        box [#32770 'About Salamander DiskMap Plugin'] [Static id=2477] DiskMap 1.12 (x64) Copyright \u00A9 2009-2023 Ondrej Zarevucky Displays a treemap of files on your disk. | [Button id=1] OK
+M4         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+M4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- V1: Checksum Verify, finished (expected: agree)
+V1         STATE  PASS        verify window, result 'All files OK'
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+V1         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- V2: Checksum Verify, still verifying (expected: agree)
+V2         STATE  PASS        verify window of a 4096 MB file, finished False
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+V2         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- C1: Checksum Calculate, still calculating (expected: decline)
+C1         STATE  PASS        calculate window of a 4096 MB file, Save enabled False
+C1         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+C1         WORK   PASS        the Calculate window is still open: True
+C1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- C2: Checksum Calculate, finished, list not saved (expected: decline)
+C2         STATE  PASS        calculate window, rows 2, Save enabled, nothing saved
+C2         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+C2         WORK   PASS        the Calculate window is still open with its rows: 2 of 2
+C2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- C3: Checksum Calculate, finished, every calculated type saved (expected: agree)
+C3         STATE  PASS        5 type(s) offered, 5 list file(s) written; 0:'SFV Files (*.sfv)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.sfv; 1:'MD5 Files (*.md5)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.md5; 2:'SHA-1 Files (*.sha1)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.sha1; 3:'SHA-256 Files (*.sha256)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.sha256; 4:'SHA-512 Files (*.sha512)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.sha512
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+C3         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,8 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+C3         WORK   PASS        the saved lists are intact: 5 file(s), 0 without 2 checksum lines
+--- C4: Checksum Calculate, every type saved, then a row removed (expected: decline)
+C4         STATE  PASS        5 type(s) saved (0:'SFV Files (*.sfv)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c4\cs_c4'; new files in the folder: cs_c4.sfv; 1:'MD5 Files (*.md5)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c4\cs_c4'; new files in the folder: cs_c4.md5; 2:'SHA-1 Files (*.sha1)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c4\cs_c4'; new files in the folder: cs_c4.sha1; 3:'SHA-256 Files (*.sha256)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c4\cs_c4'; new files in the folder: cs_c4.sha256; 4:'SHA-512 Files (*.sha512)' ok; typed '...vel\AppData\Local\Temp\tc118\cs_c4\cs_c4'; new files in the folder: cs_c4.sha512); rows after Del 1 of 2
+C4         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+C4         WORK   PASS        the Calculate window is still open with its rows: 1 of 1
+C4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- C5: Checksum Calculate, several types calculated, only one saved (expected: decline)
+C5         STATE  PASS        5 types calculated, saved 'SFV Files (*.sfv)' only (ok; typed '...vel\AppData\Local\Temp\tc118\cs_c5\cs_c5'; new files in the folder: cs_c5.sfv); list files 1
+C5         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+C5         WORK   PASS        the Calculate window is still open with its rows: 2 of 2
+C5         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- C6: Checksum Calculate, every type saved, then a failed re-save over one list (expected: decline)
+C6         STATE  PASS        re-save of 'SFV Files (*.sfv)' over ...AppData\Local\Temp\tc118\cs_c6\cs_c6.sfv (103 bytes): boxes: ...\cs_c6.sfv' already exists. Do you wish to overwrite it? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel; typed '...vel\AppData\Local\Temp\tc118\cs_c6\cs_c6'; new files in the folder: none; now 0 bytes - opened and truncated, the write failed
+C6         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+C6         WORK   PASS        the Calculate window is still open with its rows: 2 of 2
+C6         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- B1: Batch Renamer dialog open (expected: decline)
+B1         STATE  PASS        renamer [#32770 'Batch Rename'] [Static id=300] &Mask: | [Button id=102] Include su&bdirectories | [Button id=1] &Rename | [Button id=105] Manua&l mode | [Static id=126] &New name: | [Static id=127] Replace | [Static id=128] &Search for: | [Static id=129] Replace w&ith: | [Button id=112] Case sensi&tive | [Button id=114] Onl&y onc ...(1)...  in each name | [Button id=113] &Whole words | [Button id=115] Re&gular expression | [Button id=123] Exclu&de extension | [Static id=130] Change case | [Static id=131] File n&ame: | [Static id=132] E&xtension: | [Button id=118] Incl&ude path part | [Static id=103] &Preview: | [Static id=122] 2 files
+B1         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+B1         WORK   PASS        the Batch Renamer window is still open: True ('Batch Rename')
+B1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- X1: File Comparator + Disk Map + Verify, all finished (expected: agree)
+X1         STATE  PASS        comparator finished True, map open, verify finished True, other boxes 0
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+X1         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,5 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- R1: no plug-in window (expected: agree)
+R1         STATE  PASS        main window only
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+R1         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+--- N2: the program's Configuration dialog (expected: decline)
+N2         STATE  PASS        dialog [#32770 'Configuration'] [#32770 id=0] Archivers | [Button id=2701] Use simple &icons in archives | [Button id=2702] &Pack to other panel | [Button id=2703] &Unpack to other panel | [Button id=2704] Unpack to &subdirectory named by archive | [Button id=5] OK | [Button id=2] Cancel | [Button id=9] Help
+N2         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+N2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 58, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
