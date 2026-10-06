@@ -132,3 +132,8 @@ struct CWicSourceFormat
 // FALSE when the handle is invalid. An opaque image with an alpha channel reports PV_COLOR_TC24
 // in 'Colors' (HasAlpha TRUE, AlphaUsed FALSE); PV_COLOR_TC32 means the alpha is really used.
 BOOL WicGetSourceFormat(void* hPVImage, CWicSourceFormat* out);
+
+// Feature 120: the size of the rows PVGetHandles2 hands out - the image held in memory, rotations
+// included. The pipette and the histogram (PixelAccess.cpp) never read past them, whatever the
+// viewer's PVImageInfo says meanwhile. FALSE when no image is held.
+BOOL WicGetRowsSize(void* hPVImage, int* width, int* height);

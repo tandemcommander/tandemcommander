@@ -41,6 +41,7 @@
 #include "salftpsecret.h"   // feature 116
 #include "salcsumlist.h"    // feature 117
 #include "salpackvol.h"     // feature 119
+#include "salpvpixel.h"     // feature 120
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -6066,6 +6067,180 @@ static void TestPvSource111()
     }
 }
 
+// feature 120: PictView's pipette and histogram read the rows by their format (salpvpixel.h)
+static BOOL Rgb120(RGBQUAD c, BYTE r, BYTE g, BYTE b)
+{
+    return c.rgbRed == r && c.rgbGreen == g && c.rgbBlue == b && c.rgbReserved == 0;
+}
+static DWORD Total120(const DWORD* a)
+{
+    DWORD t = 0;
+    for (int i = 0; i < 256; i++)
+        t += a[i];
+    return t;
+}
+static void TestPvPixel120()
+{
+    // --- bits per pixel of each row format ---
+    CHECK(SalPvRowBitsPerPixel(SAL_PV_COLOR_TC32) == 32);
+    CHECK(SalPvRowBitsPerPixel(SAL_PV_COLOR_TC24) == 24);
+    CHECK(SalPvRowBitsPerPixel(SAL_PV_COLOR_HC15) == 16);
+    CHECK(SalPvRowBitsPerPixel(SAL_PV_COLOR_HC16) == 16);
+    CHECK(SalPvRowBitsPerPixel(256) == 8);
+    CHECK(SalPvRowBitsPerPixel(17) == 8);
+    CHECK(SalPvRowBitsPerPixel(16) == 4);
+    CHECK(SalPvRowBitsPerPixel(3) == 4);
+    CHECK(SalPvRowBitsPerPixel(2) == 1);
+    CHECK(SalPvRowBitsPerPixel(1) == 1);
+    CHECK(SalPvRowBitsPerPixel(0) == 0);
+    CHECK(SalPvRowBitsPerPixel(257) == 0);
+    CHECK(SalPvRowBitsPerPixel(65531) == 0);
+
+    RGBQUAD c;
+    int ind = -5;
+    // --- the WIC engine's rows: 4 bytes per pixel (B, G, R, unused - 255 after compositing) ---
+    const BYTE tc32[] = {50, 100, 200, 255, 1, 2, 3, 255, 10, 20, 30, 255, 7, 8, 9, 255};
+    CHECK(SalPvReadRowPixel(tc32, SAL_PV_COLOR_TC32, 0, NULL, &c, &ind) && Rgb120(c, 200, 100, 50) && ind == 0);
+    CHECK(SalPvReadRowPixel(tc32, SAL_PV_COLOR_TC32, 1, NULL, &c, &ind) && Rgb120(c, 3, 2, 1));
+    CHECK(SalPvReadRowPixel(tc32, SAL_PV_COLOR_TC32, 2, NULL, &c, &ind) && Rgb120(c, 30, 20, 10));
+    CHECK(SalPvReadRowPixel(tc32, SAL_PV_COLOR_TC32, 3, NULL, &c, &ind) && Rgb120(c, 9, 8, 7));
+    // the old reader took pixel 1 from bytes 3..5: blue 255 (the unused byte), green 1, red 2
+    CHECK(tc32[3] == 255 && tc32[4] == 1 && tc32[5] == 2);
+    // 24-bit rows (3 bytes per pixel)
+    const BYTE tc24[] = {50, 100, 200, 1, 2, 3};
+    CHECK(SalPvReadRowPixel(tc24, SAL_PV_COLOR_TC24, 1, NULL, &c, &ind) && Rgb120(c, 3, 2, 1));
+    // 15/16-bit words, little-endian
+    const BYTE hc16[] = {0x00, 0xF8, 0xE0, 0x07, 0x1F, 0x00, 0xFF, 0xFF};
+    CHECK(SalPvReadRowPixel(hc16, SAL_PV_COLOR_HC16, 0, NULL, &c, &ind) && Rgb120(c, 248, 0, 0));
+    CHECK(SalPvReadRowPixel(hc16, SAL_PV_COLOR_HC16, 1, NULL, &c, &ind) && Rgb120(c, 0, 252, 0));
+    CHECK(SalPvReadRowPixel(hc16, SAL_PV_COLOR_HC16, 2, NULL, &c, &ind) && Rgb120(c, 0, 0, 248));
+    CHECK(SalPvReadRowPixel(hc16, SAL_PV_COLOR_HC16, 3, NULL, &c, &ind) && Rgb120(c, 248, 252, 248));
+    const BYTE hc15[] = {0x00, 0x7C, 0xE0, 0x03, 0x1F, 0x00};
+    CHECK(SalPvReadRowPixel(hc15, SAL_PV_COLOR_HC15, 0, NULL, &c, &ind) && Rgb120(c, 248, 0, 0));
+    CHECK(SalPvReadRowPixel(hc15, SAL_PV_COLOR_HC15, 1, NULL, &c, &ind) && Rgb120(c, 0, 248, 0));
+    CHECK(SalPvReadRowPixel(hc15, SAL_PV_COLOR_HC15, 2, NULL, &c, &ind) && Rgb120(c, 0, 0, 248));
+    // the same values as the old pipette's byte arithmetic, for every 97th word
+    for (unsigned w = 0; w < 65536; w += 97)
+    {
+        BYTE b0 = (BYTE)(w & 0xFF), b1 = (BYTE)(w >> 8);
+        const BYTE row[] = {b0, b1};
+        RGBQUAD n16, n15;
+        CHECK(SalPvReadRowPixel(row, SAL_PV_COLOR_HC16, 0, NULL, &n16, &ind));
+        CHECK(SalPvReadRowPixel(row, SAL_PV_COLOR_HC15, 0, NULL, &n15, &ind));
+        CHECK(n16.rgbBlue == (BYTE)((b0 << 3) & 0xFF) && n16.rgbGreen == (BYTE)((((b0 & 0xE0) >> 3) | (b1 << 5)) & 0xFF) &&
+              n16.rgbRed == (BYTE)(b1 & 0xF8));
+        CHECK(n15.rgbBlue == (BYTE)((b0 << 3) & 0xFF) && n15.rgbGreen == (BYTE)((((b0 & 0xE0) >> 2) | (b1 << 6)) & 0xFF) &&
+              n15.rgbRed == (BYTE)((b1 << 1) & 0xF8));
+    }
+    // palette rows: 8-bit, 4-bit (high nibble first), 1-bit (most significant bit first)
+    RGBQUAD pal[256];
+    for (int i = 0; i < 256; i++)
+    {
+        pal[i].rgbRed = (BYTE)i;
+        pal[i].rgbGreen = (BYTE)(255 - i);
+        pal[i].rgbBlue = (BYTE)(i / 2);
+        pal[i].rgbReserved = 0;
+    }
+    const BYTE p8[] = {0, 7, 255, 9};
+    CHECK(SalPvReadRowPixel(p8, 256, 2, pal, &c, &ind) && ind == 255 && Rgb120(c, 255, 0, 127));
+    CHECK(!SalPvReadRowPixel(p8, 256, 2, NULL, &c, &ind)); // no palette
+    CHECK(!SalPvReadRowPixel(p8, 200, 2, pal, &c, &ind));  // index 255 outside a 200-color palette
+    const BYTE p4[] = {0x3A, 0xF0};
+    CHECK(SalPvReadRowPixel(p4, 16, 0, pal, &c, &ind) && ind == 3);
+    CHECK(SalPvReadRowPixel(p4, 16, 1, pal, &c, &ind) && ind == 10);
+    CHECK(SalPvReadRowPixel(p4, 16, 2, pal, &c, &ind) && ind == 15);
+    const BYTE p1[] = {0x81, 0x40};
+    CHECK(SalPvReadRowPixel(p1, 2, 0, pal, &c, &ind) && ind == 1);
+    CHECK(SalPvReadRowPixel(p1, 2, 1, pal, &c, &ind) && ind == 0);
+    CHECK(SalPvReadRowPixel(p1, 2, 7, pal, &c, &ind) && ind == 1);
+    CHECK(SalPvReadRowPixel(p1, 2, 9, pal, &c, &ind) && ind == 1);
+    CHECK(!SalPvReadRowPixel(p1, 0, 0, pal, &c, &ind));    // not a row format
+    CHECK(!SalPvReadRowPixel(p1, 1000, 0, pal, &c, &ind)); // not a row format
+    CHECK(!SalPvReadRowPixel(NULL, 256, 0, pal, &c, &ind));
+
+    // --- the histogram ---
+    DWORD lum[256], red[256], green[256], blue[256], rgb[256], idx[256];
+#define CLEAR120()                         \
+    do                                     \
+    {                                      \
+        memset(lum, 0, sizeof(lum));       \
+        memset(red, 0, sizeof(red));       \
+        memset(green, 0, sizeof(green));   \
+        memset(blue, 0, sizeof(blue));     \
+        memset(rgb, 0, sizeof(rgb));       \
+        memset(idx, 0, sizeof(idx));       \
+    } while (0)
+    // six 32-bit pixels of (200, 100, 50): one level per channel; the luminosity 124 (124.2 rounded down)
+    BYTE row6[6 * 4];
+    for (int i = 0; i < 6; i++)
+    {
+        row6[4 * i] = 50;
+        row6[4 * i + 1] = 100;
+        row6[4 * i + 2] = 200;
+        row6[4 * i + 3] = 255;
+    }
+    CLEAR120();
+    SalPvHistogramRow(row6, SAL_PV_COLOR_TC32, 6, idx, lum, red, green, blue, rgb);
+    SalPvHistogramFinish(rgb);
+    CHECK(red[200] == 6 && Total120(red) == 6);
+    CHECK(green[100] == 6 && Total120(green) == 6);
+    CHECK(blue[50] == 6 && Total120(blue) == 6);
+    CHECK(lum[124] == 6 && Total120(lum) == 6);
+    CHECK(rgb[50] == 2 && rgb[100] == 2 && rgb[200] == 2 && Total120(rgb) == 6); // each level: 6 values / 3
+    CHECK(red[255] == 0 && green[255] == 0 && blue[255] == 0); // the unused byte is never a color (the old reader: 255)
+    // only the first 'width' pixels
+    CLEAR120();
+    SalPvHistogramRow(row6, SAL_PV_COLOR_TC32, 4, idx, lum, red, green, blue, rgb);
+    CHECK(red[200] == 4 && Total120(red) == 4);
+    // white and black: the luminosity's ends
+    const BYTE wb[] = {255, 255, 255, 255, 0, 0, 0, 255};
+    CLEAR120();
+    SalPvHistogramRow(wb, SAL_PV_COLOR_TC32, 2, idx, lum, red, green, blue, rgb);
+    CHECK(lum[255] == 1 && lum[0] == 1);
+    // 15/16-bit rows: red counted as red (the old histogram swapped red and blue)
+    CLEAR120();
+    SalPvHistogramRow(hc16, SAL_PV_COLOR_HC16, 1, idx, lum, red, green, blue, rgb);
+    CHECK(red[248] == 1 && blue[0] == 1 && green[0] == 1);
+    CLEAR120();
+    SalPvHistogramRow(hc15, SAL_PV_COLOR_HC15, 1, idx, lum, red, green, blue, rgb);
+    CHECK(red[248] == 1 && blue[0] == 1);
+    // palette rows count indexes - never the bytes or nibbles that pad a row
+    CLEAR120();
+    const BYTE p8pad[] = {7, 7, 9, 0xEE}; // three pixels, one padding byte
+    SalPvHistogramRow(p8pad, 256, 3, idx, lum, red, green, blue, rgb);
+    CHECK(idx[7] == 2 && idx[9] == 1 && idx[0xEE] == 0 && Total120(red) == 0);
+    CLEAR120();
+    const BYTE p4pad[] = {0x12, 0x30, 0x00, 0x00}; // three pixels (1, 2, 3), padding to four bytes
+    SalPvHistogramRow(p4pad, 16, 3, idx, lum, red, green, blue, rgb);
+    CHECK(idx[1] == 1 && idx[2] == 1 && idx[3] == 1 && idx[0] == 0);
+    CLEAR120();
+    const BYTE p1pad[] = {0xFF, 0xC0, 0x00, 0x00}; // ten pixels set, padding bits clear
+    SalPvHistogramRow(p1pad, 2, 10, idx, lum, red, green, blue, rgb);
+    CHECK(idx[1] == 10 && idx[0] == 0);
+    // a palette color added once with its count
+    CLEAR120();
+    SalPvHistogramAdd(lum, red, green, blue, rgb, pal[7], 2);
+    CHECK(red[7] == 2 && green[248] == 2 && blue[3] == 2);
+    // not a row format: nothing
+    CLEAR120();
+    SalPvHistogramRow(row6, 1000, 6, idx, lum, red, green, blue, rgb);
+    CHECK(Total120(red) == 0 && Total120(idx) == 0);
+#undef CLEAR120
+
+    // --- the shown position -> the row position (the viewer mirrors when it draws) ---
+    int rx = -1, ry = -1;
+    CHECK(SalPvShownToRow(3, 2, 40, 30, FALSE, FALSE, &rx, &ry) && rx == 3 && ry == 2);
+    CHECK(SalPvShownToRow(3, 2, 40, 30, TRUE, FALSE, &rx, &ry) && rx == 36 && ry == 2);
+    CHECK(SalPvShownToRow(3, 2, 40, 30, FALSE, TRUE, &rx, &ry) && rx == 3 && ry == 27);
+    CHECK(SalPvShownToRow(3, 2, 40, 30, TRUE, TRUE, &rx, &ry) && rx == 36 && ry == 27);
+    CHECK(SalPvShownToRow(0, 0, 1, 1, TRUE, TRUE, &rx, &ry) && rx == 0 && ry == 0);
+    CHECK(SalPvShownToRow(39, 29, 40, 30, TRUE, TRUE, &rx, &ry) && rx == 0 && ry == 0);
+    CHECK(!SalPvShownToRow(-1, 0, 40, 30, FALSE, FALSE, &rx, &ry));
+    CHECK(!SalPvShownToRow(40, 0, 40, 30, FALSE, FALSE, &rx, &ry));
+    CHECK(!SalPvShownToRow(0, 30, 40, 30, FALSE, FALSE, &rx, &ry));
+    CHECK(!SalPvShownToRow(0, 0, 0, 0, FALSE, FALSE, &rx, &ry));
+}
+
 // feature 110: the ZIP plug-in's member identity (salzipname.h)
 static BOOL OldZipEqual110(const std::string& a, const std::string& b, DWORD flags = NORM_IGNORECASE)
 { // what the plug-in did: CompareStringA on the UTF-8 bytes, the user's locale, an equal-length guard
@@ -8213,6 +8388,7 @@ int main()
     TestFtpSecret116();
     TestChecksumList117();
     TestPackLeftovers119();
+    TestPvPixel120();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

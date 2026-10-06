@@ -1952,3 +1952,39 @@ plugin architecture preservation, UI consistency.
   written, **GUI runs pending** (`Debug_x64_119` / `Debug_x64_pre119`). Records:
   `specs/119-packing-leftovers/fix-log.md`.
   GUI runs owed at commit time - see fix-log T016.
+- 120-pictview-leftovers: **PictView's pipette and histogram read the real
+  pixels; a Rename onto a file another window shows goes through; a
+  rotation survives a new background color.** The "Found by 111" entries of
+  NEXT-WORK, measured first (`research.md`) with a harness that compiles
+  the plug-in's own `wicengine.cpp` + `PixelAccess.cpp` twice (working tree
+  / git revision) and compares with Pillow (`probe/pixharness/`).
+  - **Pipette / histogram**: the WIC engine hands out 32-bit rows for every
+    image (`PV_COLOR_TC32`, stride width x 4); the reader took 3 bytes per
+    pixel - pipette wrong for 3 of 4 pixels of every row of every image,
+    all histogram channels wrong (2,295 mismatches over 9 fixtures; now 0).
+    One pure reader for both, `src/common/salpvpixel.h`
+    (`SalPvReadRowPixel`, `SalPvHistogramRow`, `SalPvShownToRow`), bounded
+    by the engine's own rows (`WicGetRowsSize`). Also: a mirrored image
+    showed the pixel opposite the cursor (the viewer mirrors at draw time,
+    the rows never are), `ClientToPicture` overflowed 32 bits zoomed into a
+    large image. Other consumers checked: clipboard and print draw through
+    `PVDrawImage`, thumbnails take 32-bit rows, Save As / wallpaper encode
+    the DIB - correct.
+  - **Rename onto a shown target**: the target's windows let it go after
+    "Yes" (`ReleaseShownFile(target, own FALSE)` around the replacing
+    `MoveFileExW`) and then show what the name holds (`sfaReplaced` = the
+    `sfaUnknown` rule: a hard link re-attaches, else reopen at the same
+    zoom); busy windows keep it ("in use" as before).
+  - **Rotation** (105's record): `WicSetBkHandle` re-decoded lazily without
+    the viewer's turns (drawn squeezed, saved unturned) - the engine counts
+    `Turns` and turns a frame it decodes again (`RedecodeTurned`).
+  - **GIF comment, decided**: ASCII as is, other text UTF-8 (GIF has no
+    Unicode alternative - the encoder refuses XMP, measured); no change.
+  - Found, recorded: the print preview is empty since 006 (`PVSaveImage`
+    with scaling refused by the WIC engine).
+  - saltests 14,655 -> 17,423. No new string, interface 107, no registry
+    change. Probe `probe/pv120_probe.ps1` (hidden desktop; the pipette rows
+    only with `-VisiblePipette` on the visible desktop - the pipette follows
+    the real cursor) written, GUI runs pending. Records:
+    `specs/120-pictview-leftovers/fix-log.md`.
+  GUI runs owed at commit time - see fix-log T012.

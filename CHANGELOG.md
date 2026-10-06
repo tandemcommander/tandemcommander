@@ -53,6 +53,26 @@ password with a non-English letter to the archive engine garbled.
 
 ### Fixed
 
+- **PictView's pipette and histogram show the picture's real colors.** Since
+  the built-in image engine of 0.1.0 the pipette showed, for three of every
+  four pixels, the color of another pixel with its channels mixed up, and the
+  histogram was wrong for every picture - the engine's rows were read in the
+  wrong format. Both now read every pixel correctly (checked against an
+  independent decoder on 24-bit, 32-bit, transparent, palette, gray and
+  black-and-white pictures). On a mirrored picture the pipette also showed the
+  pixel opposite the cursor, and on a very large picture zoomed in it could
+  show another pixel; it now always shows the one under the cursor.
+- **PictView renames a picture onto a file that another PictView window
+  shows.** Choosing *Rename* onto an existing file that a second PictView
+  window had open failed with "used by another process" (nothing was lost).
+  After "Yes" to the overwrite question the rename now goes through, and the
+  second window shows what that name holds now; a window that is printing or
+  saving keeps its file and the rename is refused as before.
+- **A rotated picture stays rotated when PictView changes its background
+  color.** With a different background color for full screen, switching to
+  full screen (or changing the colors in the configuration) undid a rotation
+  made in the viewer - also the automatic one from a photo's orientation -
+  and the picture was drawn squeezed and saved unrotated.
 - **A failed multi-volume ZIP archive leaves nothing behind, and a set never
   ends with a misnamed last volume.** When packing a multi-volume archive
   stopped part-way - a file that could not be read, Cancel, a declined

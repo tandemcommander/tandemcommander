@@ -188,8 +188,10 @@ void CViewerWindow::SetStatusBarTexts(int ID)
             RGBQUAD rgb;
 
             Renderer.ClientToPicture(&clientPt);
-            Renderer.GetRGBAtCursor(clientPt.x, clientPt.y, &rgb, &ind);
-            _stprintf(buff, LoadStr(IDS_SB_RGB), rgb.rgbRed, rgb.rgbGreen, rgb.rgbBlue);
+            if (Renderer.GetRGBAtCursor(clientPt.x, clientPt.y, &rgb, &ind)) // feature 120: nothing when unread
+                _stprintf(buff, LoadStr(IDS_SB_RGB), rgb.rgbRed, rgb.rgbGreen, rgb.rgbBlue);
+            else
+                buff[0] = 0;
         }
         else
             buff[0] = 0;

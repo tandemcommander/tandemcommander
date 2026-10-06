@@ -23,7 +23,8 @@
 #endif // ENABLE_TWAIN32
 #include "exif/exif.h"
 #include "PixelAccess.h"
-#include "wicengine.h" // feature 111: let the shown file go and take it back
+#include "wicengine.h"               // feature 111: let the shown file go and take it back
+#include "../../common/salpvpixel.h" // feature 120: the pipette reads the pixel under the cursor
 
 inline int sgn(int x)
 {
@@ -1363,9 +1364,14 @@ void CRendererWindow::PaintImageSequence(PAINTSTRUCT* ps, HDC dc, BOOL bTopLeft)
     DeleteDC(hMemDC);
 } /* CRendererWindow::PaintImageSequence */
 
+// (x, y): the shown position in the image (ClientToPicture). Feature 120: the viewer mirrors when it
+// draws, the rows stay as decoded - a mirrored image showed the color of the pixel opposite the cursor
 bool CRendererWindow::GetRGBAtCursor(int x, int y, RGBQUAD* pRGB, int* pIndex)
 {
-    return PVW32DLL.GetRGBAtCursor(PVHandle, pvii.Colors, x, y, pRGB, pIndex);
+    int rowX, rowY;
+    if (PVHandle == NULL || !SalPvShownToRow(x, y, (int)pvii.Width, (int)pvii.Height, fMirrorHor, fMirrorVert, &rowX, &rowY))
+        return false;
+    return PVW32DLL.GetRGBAtCursor(PVHandle, pvii.Colors, rowX, rowY, pRGB, pIndex);
 }
 
 void CRendererWindow::UpdatePipetteTooltip()
@@ -1394,8 +1400,9 @@ void CRendererWindow::UpdatePipetteTooltip()
     {
         int ind;
 
-        posInImg.x = pos2.x * pvii.Width / XStretchedRange;
-        posInImg.y = pos2.y * pvii.Height / YStretchedRange;
+        // feature 120: in 64 bits - a large image zoomed in overflowed 32 (another pixel, or none)
+        posInImg.x = (int)((__int64)pos2.x * pvii.Width / XStretchedRange);
+        posInImg.y = (int)((__int64)pos2.y * pvii.Height / YStretchedRange);
 
         if (GetRGBAtCursor(posInImg.x, posInImg.y, &rgb, &ind))
         {
@@ -1454,8 +1461,9 @@ void CRendererWindow::ClientToPicture(POINT* p)
         p->y = 0;
         return;
     }
-    p->x = (p->x - XStart + GetScrollPos(HWindow, SB_HORZ)) * (int)pvii.Width / XStretchedRange;
-    p->y = (p->y - YStart + GetScrollPos(HWindow, SB_VERT)) * (int)pvii.Height / YStretchedRange;
+    // feature 120: in 64 bits - a large image zoomed in overflowed 32 (e.g. 20000 pixels at 1600 %)
+    p->x = (int)((__int64)(p->x - XStart + GetScrollPos(HWindow, SB_HORZ)) * (int)pvii.Width / XStretchedRange);
+    p->y = (int)((__int64)(p->y - YStart + GetScrollPos(HWindow, SB_VERT)) * (int)pvii.Height / YStretchedRange);
 }
 
 void CRendererWindow::PictureToClient(POINT* p)
@@ -2995,12 +3003,22 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
                             case IDYES:
                             {
                                 // feature 105: one replacing rename. The target used to be DELETED first and the
-                                // rename tried afterwards - a rename failing then lost the other file. (Not reached
-                                // today: the viewer holds the shown file open, so the first rename already fails
-                                // with 32.) A failed replacing rename leaves the target as it was (read-only put back)
+                                // rename tried afterwards - a rename failing then lost the other file. A failed
+                                // replacing rename leaves the target as it was (read-only put back)
                                 DWORD tgtAttr = wTgtPath != NULL ? GetFileAttributesW(wTgtPath) : INVALID_FILE_ATTRIBUTES;
                                 SalamanderGeneral->ClearReadOnlyAttr(tgtPath); // to allow it to be replaced ...
-                                if (wPath != NULL && wTgtPath != NULL && MoveFileExW(wPath, wTgtPath, MOVEFILE_REPLACE_EXISTING))
+                                // feature 120: another PictView window showing the TARGET held it open (its decoder
+                                // does not share delete), so the replace failed "in use" (32) - only the windows of
+                                // the renamed file let go (111). Now they let the target go too, after the answer
+                                // Yes and only for the replace; afterwards each shows what its name holds (111's
+                                // operation ids keep the two releases apart). A window that is loading, encoding or
+                                // printing keeps the file: the replace fails "in use" as before, nothing changes
+                                CShownFileRelease tgtRel;
+                                ReleaseShownFile(wTgtPath, FALSE, &tgtRel);
+                                BOOL replaced = wPath != NULL && wTgtPath != NULL && MoveFileExW(wPath, wTgtPath, MOVEFILE_REPLACE_EXISTING);
+                                DWORD moveErr = replaced ? ERROR_SUCCESS : GetLastError();
+                                RetakeShownFile(&tgtRel, replaced ? sfaReplaced : sfaSame, NULL);
+                                if (replaced)
                                 {
                                     renamed = TRUE;
                                     err = ERROR_SUCCESS;
@@ -3008,7 +3026,7 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
                                 }
                                 else
                                 {
-                                    err = (wPath == NULL || wTgtPath == NULL) ? ERROR_INVALID_NAME : GetLastError();
+                                    err = (wPath == NULL || wTgtPath == NULL) ? ERROR_INVALID_NAME : moveErr;
                                     if (tgtAttr != INVALID_FILE_ATTRIBUTES && (tgtAttr & FILE_ATTRIBUTE_READONLY))
                                         SetFileAttributesW(wTgtPath, tgtAttr);
                                 }
@@ -3289,6 +3307,7 @@ void CRendererWindow::OnRetakeFile(int op, CShownFileAfter after, const char* ne
         break;
 
     case sfaUnknown:
+    case sfaReplaced: // feature 120: the same rule - this window's path decides what it shows
         if (!TakeBackIfSame(FileName) && FileName != NULL && SalamanderGeneral->FileExists(FileName))
         {
             DropReleasedState();

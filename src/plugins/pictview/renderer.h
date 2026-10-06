@@ -82,12 +82,15 @@ typedef struct _gen_saveas_info
 // FILE_SHARE_DELETE - and afterwards each of them takes it back (render1.cpp)
 enum CShownFileAfter
 {
-    sfaSame,    // the content is the same (renamed, or the operation failed or was declined): take the
-                // file back without a reload - zoom, mirror and rotation stay
-    sfaChanged, // the file was rewritten (Save As over it): open it again (the zoom stays)
-    sfaGone,    // the file was deleted: the image stays in memory, titled <Deleted>
-    sfaUnknown, // no word from the operation (the window's timer): take the file back if it is the
-                // same file with the same content, else open it again
+    sfaSame,     // the content is the same (renamed, or the operation failed or was declined): take the
+                 // file back without a reload - zoom, mirror and rotation stay
+    sfaChanged,  // the file was rewritten (Save As over it): open it again (the zoom stays)
+    sfaGone,     // the file was deleted: the image stays in memory, titled <Deleted>
+    sfaUnknown,  // no word from the operation (the window's timer): take the file back if it is the
+                 // same file with the same content, else open it again
+    sfaReplaced, // feature 120: the file at this name was replaced by another one (a rename onto it):
+                 // the window shows what its name holds now - re-attached when its own path still
+                 // holds the file it let go (a hard link), else opened again (the zoom stays)
 };
 
 struct CShownFileRelease

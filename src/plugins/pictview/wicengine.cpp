@@ -115,6 +115,10 @@ struct CWicImage
     int SrcFrame;
     BOOL AlphaUsed; // a pixel of the decoded frame AlphaFrame (-1 = none) is not opaque
     int AlphaFrame;
+
+    // feature 120: clockwise quarter turns (0..3) WicChangeImage applied to the decoded frame - a
+    // frame decoded again (another background color) is turned again
+    int Turns;
 };
 
 static void FreeDib(CWicImage* img)
@@ -617,6 +621,7 @@ static PVCODE DecodeFrame(CWicImage* img, int frame, TProgressProc progress, voi
     img->DpiY = dy > 1 ? (DWORD)(dy + 0.5) : 96;
     img->DecodedFrame = frame;
     img->InfoFrame = (UINT)frame;
+    img->Turns = 0; // feature 120: as decoded
 
     // decode is complete; report 100% but never abort a finished frame (a late
     // cancel must not suppress drawing the image we already have in the DIB)
@@ -795,6 +800,7 @@ DWORD WicPrepareThumbnailSource(void* hPVImage, int maxW, int maxH, int fastMode
         return PVC_OOM;
     }
     img->DecodedFrame = 0; // PVSaveImage's DecodeFrame becomes a no-op
+    img->Turns = 0;        // feature 120: the reduced image as decoded
     img->InfoFrame = 0;
     *effWidth = (DWORD)img->Width;
     *effHeight = (DWORD)img->Height;
@@ -1057,6 +1063,8 @@ static PVCODE WINAPI WicSetStretchParameters(LPPVHandle Img, DWORD Width, DWORD 
     return PVC_OK;
 }
 
+static void RedecodeTurned(CWicImage* img); // feature 120
+
 static PVCODE WINAPI WicSetBkHandle(LPPVHandle Img, COLORREF BkColor)
 {
     CWicImage* img = (CWicImage*)Img;
@@ -1065,9 +1073,15 @@ static PVCODE WINAPI WicSetBkHandle(LPPVHandle Img, COLORREF BkColor)
     if (img->BkColor != BkColor)
     {
         img->BkColor = BkColor;
-        // alpha was flattened against the old colour - re-decode lazily
+        // alpha was flattened against the old colour - re-decode lazily; a turned frame now, turned
+        // again (feature 120)
         if (img->Decoder != NULL && img->DecodedFrame >= 0)
-            FreeDib(img);
+        {
+            if (img->Turns == 0 || img->HDib == NULL)
+                FreeDib(img);
+            else
+                RedecodeTurned(img);
+        }
     }
     return PVC_OK;
 }
@@ -1133,20 +1147,9 @@ static PVCODE WINAPI WicSetParam(LPPVHandle Img)
 // Lossless rotation (kept real so EXIF auto-rotate works)
 //
 
-static PVCODE WINAPI WicChangeImage(LPPVHandle Img, DWORD Flags)
+// turns the image in the DIB by 90 degrees (PVCF_ROTATE90CW or PVCF_ROTATE90CCW)
+static PVCODE RotateDib(CWicImage* img, DWORD Flags)
 {
-    CWicImage* img = (CWicImage*)Img;
-    if (img == NULL)
-        return PVC_INVALID_HANDLE;
-    if (Flags != PVCF_ROTATE90CW && Flags != PVCF_ROTATE90CCW)
-        return PVC_UNSUP_OUT_PARAMS;
-    if (img->HDib == NULL)
-    {
-        PVCODE code = DecodeFrame(img, (int)img->InfoFrame, NULL, NULL);
-        if (code != PVC_OK)
-            return code;
-    }
-
     int w = img->Width;
     int h = img->Height;
     BITMAPINFO bi;
@@ -1200,6 +1203,73 @@ static PVCODE WINAPI WicChangeImage(LPPVHandle Img, DWORD Flags)
         return PVC_OOM;
     }
     return PVC_OK;
+}
+
+static PVCODE WINAPI WicChangeImage(LPPVHandle Img, DWORD Flags)
+{
+    CWicImage* img = (CWicImage*)Img;
+    if (img == NULL)
+        return PVC_INVALID_HANDLE;
+    if (Flags != PVCF_ROTATE90CW && Flags != PVCF_ROTATE90CCW)
+        return PVC_UNSUP_OUT_PARAMS;
+    if (img->HDib == NULL)
+    {
+        PVCODE code = DecodeFrame(img, (int)img->InfoFrame, NULL, NULL);
+        if (code != PVC_OK)
+            return code;
+    }
+    PVCODE code = RotateDib(img, Flags);
+    if (code == PVC_OK)
+        img->Turns = (img->Turns + (Flags == PVCF_ROTATE90CW ? 1 : 3)) & 3; // feature 120
+    return code;
+}
+
+// Feature 120 (recorded by 105): another background color needs the frame decoded again - its alpha
+// was flattened over the old color. It used to be decoded lazily from the file, and the viewer's
+// rotations went with the old image: the viewer kept the turned size, so the image was drawn
+// squeezed and saved unturned (also the pipette's rows were then of another size). A turned frame is
+// decoded again now and turned again; when that fails, the old image stays (over the old color).
+static void RedecodeTurned(CWicImage* img)
+{
+    HBITMAP oldDib = img->HDib;
+    BYTE* oldBits = img->DibBits;
+    BYTE** oldLines = img->Lines;
+    int oldW = img->Width, oldH = img->Height;
+    DWORD oldDpiX = img->DpiX, oldDpiY = img->DpiY;
+    int frame = img->DecodedFrame;
+    UINT info = img->InfoFrame;
+    int turns = img->Turns;
+    BOOL alphaUsed = img->AlphaUsed;
+    int alphaFrame = img->AlphaFrame;
+    img->HDib = NULL; // AllocDib must not free the old image
+    img->DibBits = NULL;
+    img->Lines = NULL;
+    img->DecodedFrame = -1;
+    PVCODE code = DecodeFrame(img, frame, NULL, NULL);
+    int t;
+    for (t = 0; code == PVC_OK && t < (turns == 3 ? 1 : turns); t++)
+        code = RotateDib(img, turns == 3 ? PVCF_ROTATE90CCW : PVCF_ROTATE90CW);
+    if (code == PVC_OK)
+    {
+        DeleteObject(oldDib);
+        free(oldLines);
+        img->InfoFrame = info;
+        img->Turns = turns;
+        return;
+    }
+    FreeDib(img); // what was decoded or turned of the new image
+    img->HDib = oldDib;
+    img->DibBits = oldBits;
+    img->Lines = oldLines;
+    img->Width = oldW;
+    img->Height = oldH;
+    img->DpiX = oldDpiX;
+    img->DpiY = oldDpiY;
+    img->DecodedFrame = frame;
+    img->InfoFrame = info;
+    img->Turns = turns;
+    img->AlphaUsed = alphaUsed;
+    img->AlphaFrame = alphaFrame;
 }
 
 //*****************************************************************************
@@ -1984,6 +2054,12 @@ int WicEncodeImageToFile(void* hPVImage, int imageIndex, HANDLE hFile, const CWi
         // Group's recommendation - and, so that no reader has to guess, the same text in XMP
         // dc:description (x-default), which is Unicode by definition. The JPEG COM writer appends
         // a NUL byte; it is taken out after the commit (JpegDropCommentNul).
+        // Feature 120, decided: the GIF comment extension is 7-bit ASCII by GIF89a and GIF has no
+        // Unicode alternative - the Windows GIF encoder refuses XMP (/xmp/... answers
+        // WINCODEC_ERR_PROPERTYNOTSUPPORTED, measured). An ASCII comment is what the standard
+        // defines; any other keeps its UTF-8 bytes, as JPEG and TIFF do, rather than losing the
+        // user's text (a reader that decodes the bytes as Latin-1 shows them garbled, nothing is
+        // lost). Measured: the bytes as given in sub-blocks of at most 255, no NUL.
         IWICMetadataQueryWriter* mw = NULL;
         BOOL unicode = !SplIsASCII(p->CommentU8);
         BOOL pngUnicode = p->Format == PVF_PNG && unicode;
@@ -2172,6 +2248,16 @@ BOOL WicIsDetached(void* hPVImage)
 {
     CWicImage* img = (CWicImage*)hPVImage;
     return img != NULL && img->Detached && img->Decoder == NULL;
+}
+
+BOOL WicGetRowsSize(void* hPVImage, int* width, int* height)
+{
+    CWicImage* img = (CWicImage*)hPVImage;
+    if (img == NULL || img->Lines == NULL || img->DibBits == NULL)
+        return FALSE;
+    *width = img->Width;
+    *height = img->Height;
+    return TRUE;
 }
 
 BOOL WicGetSourceFormat(void* hPVImage, CWicSourceFormat* out)

@@ -563,7 +563,7 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      after its member was deleted (`DeleteFiles` runs first) loses that
      member (pre-existing, also with one member; needs an I/O error).
      Record `specs/110-zip-plugin-name-matching/fix-log.md`.
-     ✅ **That note fixed by feature 113 (2026-10-05) - GUI runs pending**:
+     ✅ **That note fixed by feature 113 (2026-10-05; GUI-verified 2026-10-06)**:
      wider by code reading - with the "temporary copy" option off the member
      was lost also on *Cancel* at the error, on a cancelled progress and on
      any error while packing. Rule: a member is deleted only if the file
@@ -779,12 +779,35 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           windows let go; nothing lost); (c) the GIF comment extension gets
           UTF-8 bytes although GIF89a defines 7-bit ASCII (no Unicode
           alternative in GIF).
+          ✅ **(a)-(c) fixed or decided by feature 120 (2026-10-06) - GUI
+          runs pending**: measured first with a harness that compiles the
+          plug-in's own engine and reader (`probe/pixharness/`): the pipette
+          was wrong for 3 of 4 pixels of every row of every image (the engine
+          hands out 32-bit rows for every format) and all five histogram
+          channels were wrong for every image (2,295 mismatches over 9 Pillow
+          fixtures; this build 0). One reader for both
+          (`src/common/salpvpixel.h`), bounded by the engine's own rows
+          (`WicGetRowsSize`); the pipette also read the pixel opposite the
+          cursor on a mirrored image and overflowed 32 bits zoomed into a
+          large image - both fixed. (b) the windows showing the rename TARGET
+          let it go after "Yes" and then show what the name holds
+          (`sfaReplaced`; a hard link keeps its file). (c) decided: ASCII
+          stays ASCII, other text keeps its UTF-8 bytes (the Windows GIF
+          encoder refuses XMP - measured; no new string to refuse with); no
+          code change. Also fixed: 105's record "a rotation is lost when the
+          background color changes" (full screen with another background
+          color) - the engine turns a frame it decodes again. Record:
+          `specs/120-pictview-leftovers/fix-log.md`. **Found by 120, not
+          fixed:** PictView's print preview is empty in every release since
+          006 (`print.cpp CreatePreview` asks `PVSaveImage` for scaled raw
+          rows, which the WIC engine refuses; printing itself draws through
+          `PVDrawImage` and works).
        2. Undelete applies a FAT rule (`Replace0xE5`) to UTF-8 names: a
           name whose first byte is 0xE5 (CJK U+5000-U+5FFF) is listed with
           `$` and restored under a garbled name; its volume layer enumerates
           mount points with code-page calls (a mount folder named outside
           ASCII fails or resolves to another volume). ✅ **Fixed by feature
-          114 (2026-10-05) - GUI runs pending**: measured wider by code
+          114 (2026-10-05; GUI-verified 2026-10-06)**: measured wider by code
           reading - the rule ran on the UTF-8 names of every file system
           (listing, path, restore), FAT short names were OEM bytes handed on
           as UTF-8, deleted FAT long names were lost unless their first

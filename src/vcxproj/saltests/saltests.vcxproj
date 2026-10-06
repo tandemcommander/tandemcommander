@@ -129,6 +129,8 @@
     </ClInclude>
     <ClInclude Include="..\..\common\salpvsource.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salpvpixel.h">
+    </ClInclude>
     <ClInclude Include="..\..\common\salcacheedit.h">
     </ClInclude>
     <ClInclude Include="..\..\common\salzipmember.h">

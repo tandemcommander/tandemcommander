@@ -10,13 +10,36 @@
 
 #include "pictview.h"
 #include "PixelAccess.h"
+#ifndef BUILD_ENVELOPE
+#include "wicengine.h"
+#endif
+#include "../../common/salpvpixel.h" // feature 120: one row reader for the pipette and the histogram
 
-#pragma runtime_checks("", off)
-// false RTC error for PV_COLOR_HC16 mode - see https://forum.altap.cz/viewtopic.php?f=16&t=5577
+static_assert(SAL_PV_COLOR_HC15 == PV_COLOR_HC15 && SAL_PV_COLOR_HC16 == PV_COLOR_HC16 &&
+                  SAL_PV_COLOR_TC24 == PV_COLOR_TC24 && SAL_PV_COLOR_TC32 == PV_COLOR_TC32,
+              "salpvpixel.h must name the same row formats as PVW32DLL.h");
+
+// Feature 120: the rows are read by their format (src/common/salpvpixel.h). Before, every row of
+// PV_COLOR_TC24 or more was read as 3 bytes per pixel, but the WIC engine's rows are PV_COLOR_TC32
+// (4 bytes): the pipette showed another pixel's color with shifted channels and the histogram counted
+// misaligned bytes of 3/4 of every row - every release since feature 006.
+
+// the size of the rows the engine holds; FALSE when it is not known (the envelope build)
+static BOOL GetRowsSize(LPPVHandle PVHandle, int* width, int* height)
+{
+#ifdef BUILD_ENVELOPE
+    UNREFERENCED_PARAMETER(PVHandle);
+    *width = *height = INT_MAX;
+    return FALSE;
+#else
+    return WicGetRowsSize(PVHandle, width, height);
+#endif
+}
+
+// pixel (x, y) of the rows (the caller maps a shown position to it - the mirror)
 bool GetRGBAtCursor(LPPVHandle PVHandle, DWORD Colors, int x, int y, RGBQUAD* pRGB, int* pIndex)
 {
     LPPVImageHandles pHandles;
-    int ind = 0;
 
 #ifdef BUILD_ENVELOPE
     if ((PVC_OK == PVGetHandles2(PVHandle, &pHandles)) && pHandles->pLines)
@@ -25,61 +48,27 @@ bool GetRGBAtCursor(LPPVHandle PVHandle, DWORD Colors, int x, int y, RGBQUAD* pR
     if ((PVC_OK == PVW32DLL.PVGetHandles2(PVHandle, &pHandles)) && pHandles->pLines)
     {
 #endif
-        BYTE* pLine = pHandles->pLines[y];
+        int w, h;
+        // never past the rows the engine holds, whatever the caller's image information says meanwhile
+        // (the engine's own size is unknown only in the envelope build: the caller's bounds then)
+        if (x < 0 || y < 0 || (GetRowsSize(PVHandle, &w, &h) && (x >= w || y >= h)))
+            return false;
         RGBQUAD rgb;
-
-        if (Colors >= PV_COLOR_TC24)
-        {
-            rgb.rgbBlue = pLine[x * 3];
-            rgb.rgbGreen = pLine[x * 3 + 1];
-            rgb.rgbRed = pLine[x * 3 + 2];
-        }
-        else if (Colors == PV_COLOR_HC16)
-        {
-            rgb.rgbBlue = pLine[x * 2] << 3;
-            rgb.rgbGreen = ((pLine[x * 2] & 0xE0) >> 3) | (pLine[x * 2 + 1] << 5);
-            rgb.rgbRed = pLine[x * 2 + 1] & 0xF8;
-        }
-        else if (Colors == PV_COLOR_HC15)
-        {
-            rgb.rgbBlue = pLine[x * 2] << 3;
-            rgb.rgbGreen = ((pLine[x * 2] & 0xE0) >> 2) | (pLine[x * 2 + 1] << 6);
-            rgb.rgbRed = (pLine[x * 2 + 1] << 1) & 0xF8;
-        }
-        else if (Colors > 16)
-        {
-            ind = pLine[x];
-            rgb = pHandles->Palette[ind];
-        }
-        else if (Colors > 2)
-        {
-            ind = x >> 1;
-            ind = (x & 1) ? (pLine[ind] & 0x0F) : (pLine[ind] >> 4);
-            rgb = pHandles->Palette[ind];
-        }
-        else
-        {
-            ind = x >> 3;
-            ind = (pLine[ind] & (0x80 >> (x & 7))) ? 1 : 0;
-            rgb = pHandles->Palette[ind];
-        }
+        int ind;
+        if (!SalPvReadRowPixel(pHandles->pLines[y], Colors, (unsigned)x, pHandles->Palette, &rgb, &ind))
+            return false;
         *pIndex = ind;
         *pRGB = rgb;
         return true;
     }
     return false;
 }
-#pragma runtime_checks("", restore)
 
 PVCODE CalculateHistogram(LPPVHandle PVHandle, const LPPVImageInfo pvii, LPDWORD luminosity, LPDWORD red, LPDWORD green, LPDWORD blue, LPDWORD rgb)
 {
     LPPVImageHandles pHandles;
     PVCODE ret;
-    DWORD i, j;
-    int k;
-    BYTE* pLine;
-    RGBQUAD* pPalette;
-    DWORD tmp[256];
+    DWORD tmp[256]; // palette rows: the pixels of each index
 
     memset(luminosity, 0, sizeof(DWORD) * 256);
     memset(red, 0, sizeof(DWORD) * 256);
@@ -97,122 +86,29 @@ PVCODE CalculateHistogram(LPPVHandle PVHandle, const LPPVImageInfo pvii, LPDWORD
 #endif
         return ret;
     }
-    pPalette = pHandles->Palette;
-    // Check if the image is paletted and we succeed in getting the palette pointer
-    if (((pvii->Colors <= 256) && !pPalette) || !pHandles->pLines)
+    // a row format, its palette for a paletted image, and the rows
+    if (SalPvRowBitsPerPixel(pvii->Colors) == 0 || ((pvii->Colors <= 256) && !pHandles->Palette) ||
+        !pHandles->pLines)
     {
-        // What's wrong? Can this ever happen?
         return PVC_UNSUP_COLOR_DEPTH;
     }
+    // every pixel of the image once - never past the rows the engine holds
+    DWORD width = pvii->Width, height = pvii->Height;
+    int w, h;
+    if (GetRowsSize(PVHandle, &w, &h))
+    {
+        width = min(width, (DWORD)w);
+        height = min(height, (DWORD)h);
+    }
+    DWORD i;
+    for (i = 0; i < height; i++)
+        SalPvHistogramRow(pHandles->pLines[i], pvii->Colors, width, tmp, luminosity, red, green, blue, rgb);
     if (pvii->Colors <= 256)
     {
-        for (i = 0; i < pvii->Height; i++)
-        {
-            // do it in bytes
-            // optimized for maximum speed for bilevel
-            pLine = pHandles->pLines[i];
-            if ((pvii->Colors <= 16) && (pvii->Colors > 2))
-            {
-                for (j = 0; j < pvii->BytesPerLine; j++)
-                {
-                    tmp[*pLine & 15]++;
-                    tmp[*(pLine++) >> 4]++;
-                }
-            }
-            else
-            {
-                for (j = 0; j < (int)pvii->BytesPerLine; j++)
-                {
-                    tmp[*(pLine++)]++;
-                }
-            }
-        }
-        if (pvii->Colors == 2)
-        {
-            DWORD zeros, ones;
-
-            zeros = ones = 0;
-            for (i = 0; i < 256; i++)
-            {
-                for (j = 1, k = 0; j < 256; j <<= 1)
-                {
-                    if (i & j)
-                        k++;
-                }
-                zeros += tmp[i] * (8 - k); // # of zero bits
-                ones += tmp[i] * k;        // # of set bits
-            }
-            i = pvii->Width % 8;
-            if (i)
-            {
-                // removed padding bits
-                zeros -= pvii->Height * (8 - i);
-            }
-            tmp[0] = zeros;
-            tmp[1] = ones;
-        }
-        else if ((pvii->Colors <= 16) && (pvii->Width & 1))
-        {
-            // removed padding bits for 4-bit images
-            tmp[0] -= pvii->Height;
-        }
         for (i = 0; i < pvii->Colors; i++)
-        {
-            red[pPalette[i].rgbRed] += tmp[i];
-            green[pPalette[i].rgbGreen] += tmp[i];
-            blue[pPalette[i].rgbBlue] += tmp[i];
-            rgb[pPalette[i].rgbRed] += tmp[i];
-            rgb[pPalette[i].rgbGreen] += tmp[i];
-            rgb[pPalette[i].rgbBlue] += tmp[i];
-        }
-        for (i = 0; i < pvii->Colors; i++)
-        {
-            j = (299 * ((DWORD)pPalette[i].rgbRed) + 587 * ((DWORD)pPalette[i].rgbGreen) + 114 * ((DWORD)pPalette[i].rgbBlue)) / 1000;
-            luminosity[j] += tmp[i];
-        }
-        for (i = 0; i < 256; i++)
-            rgb[i] /= 3;
-        return PVC_OK;
+            if (tmp[i] != 0)
+                SalPvHistogramAdd(luminosity, red, green, blue, rgb, pHandles->Palette[i], tmp[i]);
     }
-    for (i = 0; i < pvii->Height; i++)
-    {
-        pLine = pHandles->pLines[i];
-        for (j = 0; j < pvii->Width; j++)
-        {
-            int r, g, b;
-
-            switch (pvii->Colors)
-            {
-            case PV_COLOR_HC15:
-                k = *(USHORT*)pLine;
-                pLine += 2;
-                r = (k & 31) << 3;
-                g = (k >> 2) & 0xF8;
-                b = (k >> 7) & 0xF8;
-                break;
-            case PV_COLOR_HC16:
-                k = *(USHORT*)pLine;
-                pLine += 2;
-                r = (k & 31) << 3;
-                g = (k >> 3) & 0xFC;
-                b = (k >> 8) & 0xF8;
-                break;
-            default: // 24bit, originally also 32bit
-                b = *pLine++;
-                g = *pLine++;
-                r = *pLine++;
-            }
-            red[r]++;
-            green[g]++;
-            blue[b]++;
-            k = (299 * r + 587 * g + 114 * b) / 1000;
-            luminosity[k]++;
-            rgb[r]++; // "RGB" levels from Photoshop
-            rgb[g]++;
-            rgb[b]++;
-        }
-    }
-    for (i = 0; i < 256; i++)
-        rgb[i] /= 3;
+    SalPvHistogramFinish(rgb);
     return PVC_OK;
 }
