@@ -1950,7 +1950,7 @@ plugin architecture preservation, UI consistency.
   (paste - NOT DRIVEN without a clipboard), Czech; 110 RUN + END rows)
   written, **GUI runs pending** (`Debug_x64_119` / `Debug_x64_pre119`). Records:
   `specs/119-packing-leftovers/fix-log.md`.
-  GUI runs owed at commit time - see fix-log T016.
+  GUI runs (2026-10-06): 104 / 0 / 8 (pre-119 69 / 35, incl. both sources lost by Move into an existing k.zip), UNC rows pass, 099 24/0, 110 42/0, 113 37/0; paste/drag by hand owed.
 - 120-pictview-leftovers: **PictView's pipette and histogram read the real
   pixels; a Rename onto a file another window shows goes through; a
   rotation survives a new background color.** The "Found by 111" entries of

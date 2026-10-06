@@ -409,7 +409,7 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   plug-in packs a selected archive into itself and Move then shows "Delete
   Error (32)" for it; the ZIP plug-in's *Add* of a selected archive reports
   a sharing violation instead of a clear text - ✅ **these four fixed by
-  feature 119 (2026-10-06, GUI runs pending)**: every volume a multi-volume
+  feature 119 (2026-10-06; GUI-verified the same day, 104 / 0; the paste/drag route is a by-hand step - the clipboard cannot be opened from this session)**: every volume a multi-volume
   pack creates is recorded with its file identity and a failure deletes
   each one still holding that file - kept when unsure (removable media:
   only the volume still being written; nothing once the archive is

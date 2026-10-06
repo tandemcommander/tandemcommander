@@ -203,12 +203,74 @@ are suspended - theoretical); a server reporting Links == 1 for a hard-linked fi
 Committed after this check with the GUI runs still owed; the build is preserved as
 `build\tandemcommander\Debug_x64_119` (01:14:50). Results follow in a separate commit.
 
-## Pending (GUI - the coordinator or a later session)
+## GUI results (2026-10-06, hidden desktop, one run at a time)
 
-- `packleft_probe.ps1` on `Debug_x64_119` and `Debug_x64_pre119`; regressions 099 linkmove, 110
-  zipname, 113 zipskip on `Debug_x64_119` (`quickstart.md`, registry baseline 9BD42518403B7EDF).
-- The by-hand steps in `quickstart.md`.
-- Independent review.
+Builds: `build\tandemcommander\Debug_x64_119` (the preserved build of 01:14:50) and
+`build\tandemcommander\Debug_x64_pre119`. No other Tandem Commander was running at any start. The
+registry baseline was now SHA-256 `1AB614304771DBE0...` (the maintainer restored the morning state):
+checked before and after every run - **identical every time**, each probe's own export / restore
+also reported `identical=True`; no backup was imported by hand. Fixtures removed, no instance left
+running, no crash report, every END row PASS (exit code 0, no stray window).
+
+| Run | Result | File |
+|---|---|---|
+| `packleft_probe.ps1` on **Debug_x64_119** | **PASS 104, FAIL 0, NOT DRIVEN 8** (52 RUN + 52 END; NOT DRIVEN: the 5 X rows + the 3 P rows) | `probe/packleft_result.txt`, `run_119.log` |
+| `packleft_probe.ps1` on **Debug_x64_pre119** | **PASS 69, FAIL 35, NOT DRIVEN 8** - exactly the rows `quickstart.md` predicted: every A (8), B (8), D (2), H (7), L (5) and K-add / -add-move / -noask / -cz (4) row and E-decline-vol2; the C, E-decline-vol1, F, G, A-zip-unrelated-over and K-exist-over rows pass on both | `probe/packleft_result_pre119.txt`, `run_pre119.log` |
+| 099 `linkmove_probe.ps1` on Debug_x64_119 | **PASS 24, FAIL 0** (as its baseline) | `probe/regress_linkmove_119.txt`, `run_regress099.log` |
+| 110 `zipname_probe.ps1` on Debug_x64_119 | **42 PASS / 0 FAIL / 0 NOT DRIVEN** (as its baseline) | `probe/regress_zipname_119.txt`, `run_regress110.log` |
+| 113 `zipskip_probe.ps1` on Debug_x64_119 | **37 PASS / 0 FAIL / 0 NOT DRIVEN** (as 113's own run on Debug_x64_113) | `probe/regress_zipskip_119.txt`, `run_regress113.log` |
+
+What the rows show on this build:
+
+- **The reviewer's condition holds**: `A-zip-unc-move` (the archive typed as `\\localhost\C$\...`),
+  `C-unc-copy`, `C-unc-move` and all eight B rows PASS - the refusal fires across the local and the
+  `\\localhost\C$` spelling, so the SF5 pre-filter's folder comparison matched (had it judged the
+  two folders different, `src.zip` would have been skipped and the pack would have run).
+- A / B / H: refused before any question (`Asked 0`), the box "Pack" / "Copy Error" / "Move Error"
+  with `Name:` + "Cannot copy (move) a file to itself.", the Pack dialog back; sources intact, the
+  archive unchanged (7z tests it).
+- L: the ZIP error "Cannot open or create file. (sharing violation)" for the held `z9.bin`, Cancel,
+  and `out\` holds nothing of the set; `m.z09`, `m.txt` intact; `m.z01` overwritten after *Yes*
+  is gone with the set; Move deleted no source.
+- K: "Archive of the same file name already exists ... only like a new archive" for `k.zip`,
+  nothing created, `k.zip` still holds only `old.bin`; with *Overwrite* the set ends as `k.zip`
+  and 7z tests it (2 files).
+- D / E: refused / declined at volume 4 / 2 - no volume of the abandoned set left.
+
+What the build before 119 did in the same rows (measured, `packleft_result_pre119.txt`):
+
+- L-lock-copy: `out\m.z01`, `m.z02` left behind after the Cancel (item 1); L-lock-yes-vol1:
+  `m.z01` (holding volume data) and `m.z02` left.
+- D-later-move: `a.z01`-`a.z03` of the refused archive left in the source folder; E-decline-vol2:
+  `a.z01` left beside the declined `a.z02`.
+- **K-exist-add-move: loss 2** - the set ended `k.z01`-`k.z04` beside the old `k.zip`, and the
+  Move then deleted `p.bin` and `q.bin` (their data only in the misnamed set, which 7z cannot open
+  through `k.zip`); K-exist-noask the same. Item 2 was worse than "no loss": a Move lost the
+  sources from every readable place.
+- B / H: not refused - the ZIP plug-in asked "Confirm File Overwrite" for the member, 7-Zip packed
+  the old archive into the new one (`src.7z`: "the archive itself, updated (its old content is
+  inside it)").
+- A: the question asked first, then a plain "Cannot copy a file to itself." box without `Name:`.
+
+**Paste rows (P) - NOT DRIVEN, also not on the visible desktop.** On the hidden desktop the
+clipboard could not be opened (as in 098 / 101 / 107). Before using the visible-desktop allowance I
+checked from this session: `OpenClipboard` fails with **ERROR_ACCESS_DENIED (5)** on the visible
+desktop too (STA, no other owner - the session's processes have no clipboard access; the program
+started from it would inherit that, so its own Ctrl+X / Ctrl+V would fail as well). The
+visible-desktop run was therefore not made: it would only have reported the same NOT DRIVEN rows.
+The drag & drop / paste refusal remains **by-hand step 2b** in `quickstart.md` (a person with a
+real mouse and clipboard). Its code path is `DragDropToArcOrFS` with the same
+`PackArchiveIsSelectedSource` / `ShowPackIntoItselfRefusal` pair that the H rows proved.
+
+Probe-only change during the runs: `packleft_probe.ps1`'s own desktop check now honours the same
+opt-out (`TC_PROBE_ALLOW_VISIBLE_DESKTOP=1`) as `fix_probe_lib.ps1` (it refused the Default desktop
+unconditionally); not used, see above. No product file was touched, nothing was built.
+
+## Pending
+
+- By-hand steps in `quickstart.md` (1-3, and 2b - drag & drop / paste, which no session here can
+  drive).
+- Independent review of the GUI evidence.
 
 ## Recorded, not changed
 
@@ -256,5 +318,9 @@ Committed after this check with the GUI runs still owed; the build is preserved 
   `TC_PROBE_ALLOW_VISIBLE_DESKTOP=1`). Interface 107, no registry change, no string. saltests
   14,576 -> 14,655. Probe `probe/packleft_probe.ps1` (106's rows with 119 expectations + L, K, P
   (paste - NOT DRIVEN without a clipboard), Czech; 110 RUN + END rows)
-  written, **GUI runs pending** (`Debug_x64_119` / `Debug_x64_pre119`). Records:
+  run on the hidden desktop: this build PASS 104 / FAIL 0 / NOT DRIVEN 8 (the 3 paste rows - this
+  session cannot open the clipboard, on either desktop - and 5 X rows), the build before 69 / 35
+  (every refusal and clean-up row; K-exist-add-move lost both sources: the Move deleted them into
+  the misnamed set); regressions 099 24/0, 110 42/0, 113 37/0; UNC rows PASS. Owed: by-hand drag
+  & drop / paste (quickstart 2b). Records:
   `specs/119-packing-leftovers/fix-log.md`.

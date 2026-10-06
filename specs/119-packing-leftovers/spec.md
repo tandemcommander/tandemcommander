@@ -2,7 +2,7 @@
 
 **Feature Branch**: `119-packing-leftovers`
 **Created**: 2026-10-06
-**Status**: Implemented - GUI runs pending
+**Status**: Implemented - GUI runs done (fix-log "GUI results"); by-hand drag & drop / paste owed
 **Input**: `specs/NEXT-WORK.md`, the findings of feature 106 ("Found by 106, not fixed (small, no
 loss)"): a failed multi-volume pack leaves the volumes it already wrote; multi-volume into
 `name.zip` that exists (Add) leaves the last volume as `name.z0N` silently; the 7-Zip plug-in packs

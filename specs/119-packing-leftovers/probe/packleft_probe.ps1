@@ -98,7 +98,8 @@ public static class Desk119
 '@
 }
 $deskName = [Desk119]::Name()
-if (-not $deskName -or $deskName -ieq 'Default' -or $deskName -ieq 'Winlogon') { Write-Output ("NOT RUN: this probe must run on a hidden desktop (tools\run_on_hidden_desktop.ps1); the current desktop is '{0}'" -f $deskName); exit 3 }
+# the same opt-out as fix_probe_lib.ps1, for a run the maintainer allowed on the visible desktop
+if ($env:TC_PROBE_ALLOW_VISIBLE_DESKTOP -ne '1' -and (-not $deskName -or $deskName -ieq 'Default' -or $deskName -ieq 'Winlogon')) { Write-Output ("NOT RUN: this probe must run on a hidden desktop (tools\run_on_hidden_desktop.ps1); the current desktop is '{0}'" -f $deskName); exit 3 }
 
 . (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
 if (-not ('Drv106' -as [type])) {

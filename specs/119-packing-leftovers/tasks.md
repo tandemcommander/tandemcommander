@@ -27,5 +27,9 @@
       DRIVEN without a clipboard) + by-hand step; SF5 plain-file pre-filter; NITs: ancestors from
       the resolved path, `DetectRemovable` for `\\?\` / UNC. Rebuilt, gates repeated, saltests
       14,655 / 0, `Debug_x64_119` re-copied
-- [ ] T013 GUI runs on `Debug_x64_119` and `Debug_x64_pre119` (`quickstart.md`) - pending
+- [x] T013 GUI runs on `Debug_x64_119` (PASS 104 / FAIL 0 / NOT DRIVEN 8) and `Debug_x64_pre119`
+      (69 / 35 / 8 - the predicted rows); regressions 099 24/0, 110 42/0, 113 37/0; registry
+      1AB614304771DBE0 identical before and after every run (fix-log "GUI results")
+- [ ] T017 By-hand: drag & drop and paste into the selected archive (quickstart 2b) - the clipboard
+      cannot be opened from this session on either desktop (OpenClipboard error 5)
 - [ ] T014 Independent review - pending
