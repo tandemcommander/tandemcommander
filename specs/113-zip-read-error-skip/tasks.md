@@ -15,4 +15,4 @@
 - [X] T014 Code-only review (ACCEPT pending GUI): S1 zip64 block first + `UpdateCentrDir` by id (`SalZipCentralRecordOffsetPos`), saltests; S2 guard in `DeleteFiles`; N1 offsets only after a successful move; N3 default initializer; N2 / N4 recorded; Debug + full Release rebuilt, saltests 14,301 / 0, guard 0
 - [X] T015 Re-check (ACCEPT): R1 bound by the next member on disk (`SalZipNextMemberOffset`), N-a length < 46 refused, N-b marker without value never adjusted; saltests 14,323 / 0; Debug + full Release rebuilt
 - [X] T016 Re-check 2 (ACCEPT): NIT 1 the bound fails closed (unknown -> format error), saltests 14,327 / 0; NIT 2 (n x d directory walks) recorded; Debug + full Release rebuilt
-- [X] T013 Records: fix-log (with the proposed CLAUDE.md entry), CHANGELOG `[Unreleased]`, NEXT-WORK (item 5 entry 2 note - fixed, GUI runs pending); no commit
+- [X] T013 Records: fix-log (with the proposed CLAUDE.md entry), CHANGELOG `[Unreleased]`, NEXT-WORK (item 5 entry 2 note - fixed, GUI runs pending at the time; GUI-verified 2026-10-06); no commit

@@ -203,7 +203,11 @@ consolidated, prioritized ordering of the per-feature handoffs
 `specs/072-winget-distribution/REMAINING-WORK.md`,
 `specs/080-restart-manager-upgrade/REMAINING-WORK.md`), which stay authoritative
 for the detail and the reasoning behind each item. Start there rather than
-re-deriving the order from the individual files.
+re-deriving the order from the individual files: its section *Open items at a
+glance* (revised 2026-10-06) lists what is really open - code work an agent
+can do (by severity), steps owed to a person, and decisions not to act on.
+Features up to 121 are done and GUI-verified on the hidden desktop; no
+release is being prepared (0.1.8 is the last published version).
 
 ## Constitution
 
@@ -1661,7 +1665,8 @@ plugin architecture preservation, UI consistency.
     NUL removed after the commit (`JpegDropCommentNul`).
   - Found, recorded (NEXT-WORK): pipette and histogram read the 32-bit rows
     as 3 bytes per pixel (every release since 006); a Rename onto a file
-    another window shows still fails "in use"; GIF comments UTF-8.
+    another window shows still fails (120 measured "Access is denied", 5);
+    GIF comments UTF-8 - all three closed by 120.
   - Probe `probe/shown_probe.ps1` + `pilcheck.py` + `mkfix111.py` (hidden
     desktop, Pillow decode, WebDAV via 103's `davnorm.py` - `dav-fold`
     drives 103's guard in PictView for the first time): 83/0/2; pre-111
@@ -1715,7 +1720,7 @@ plugin architecture preservation, UI consistency.
     lives only as long as its lock; a forced Ctrl+R during the launch).
   - Probe `probe/diskcache_edit_probe.ps1` (refresh off / `net use` drive
     with no refresh, controls with refresh on, the left panel's refresh
-    detected): GUI runs pending. saltests 14,169 -> 14,236. Interface stays
+    detected): results below. saltests 14,169 -> 14,236. Interface stays
     107, no new string, no registry change. Records:
     `specs/112-cache-pending-edit/fix-log.md`.
   GUI runs (2026-10-06 night): new probe 14 / 0 (pre-112 4 / 10, every loss row fails there), 109 18/0,
@@ -1756,7 +1761,7 @@ plugin architecture preservation, UI consistency.
     walk the directory once per deleted member (n x d). Interface stays 107, no string, no registry
     change. Probe `probe/zipskip_probe.ps1` + `zipskip.py` (37 rows: locks
     held by the probe - "open" / byte-range; temporary copy, AES adding,
-    in-place, 7z) written, **GUI runs pending**. Records:
+    in-place, 7z): results below. Records:
     `specs/113-zip-read-error-skip/fix-log.md`.
   GUI runs (2026-10-06 night): zipskip 37 / 0 (pre-113 11 / 26), 110 42/0, 106 70/0/4, 094 56/1 (X1).
 - 114-undelete-names: **Undelete restores files under their own names, from
@@ -1791,8 +1796,8 @@ plugin architecture preservation, UI consistency.
   - saltests 14,327 -> 14,383. Interface stays 107, no string, no registry
     change. Probe `probe/undelnames_probe.ps1` + `make_images.py` (FAT12,
     exFAT and a duplicate-name exFAT image written byte by byte - no admin,
-    no volume opened) written, **GUI runs pending**; mount points need admin
-    (person step). Records: `specs/114-undelete-names/fix-log.md`.
+    no volume opened): results below; mount points need admin (person step,
+    owed). Records: `specs/114-undelete-names/fix-log.md`.
   GUI runs (2026-10-06 night): undelnames 30 / 0 / 4 (pre-114 27 / 1 / 4, every predicted defect seen), 104 3/0.
 - 115-undelete-leftovers: **Undelete's Restore Encrypted Files walks any
   depth, {All Deleted Files} drops true duplicates only, one name for
@@ -1831,8 +1836,8 @@ plugin architecture preservation, UI consistency.
     change. Probe `probe/undelleft_probe.ps1` + `make_images115.py` (FAT12
     / exFAT images byte by byte, deep / long / junction folders for the
     encrypted route - plain files, no EFS certificate needed or made; the
-    command gets Ctrl+Shift+U through the registry for the session)
-    written, **GUI runs pending**; real EFS backups NOT DRIVEN. Records:
+    command gets Ctrl+Shift+U through the registry for the session):
+    results below; real EFS backups NOT DRIVEN (person step). Records:
     `specs/115-undelete-leftovers/fix-log.md`.
   GUI runs (2026-10-06 night): 23 / 0 / 2 (pre-115 shows every defect incl. the stack overflow), 114 30/0/4.
 - 116-ftp-passwords: **FTP passwords are the text that was typed, in any script and up to 100
@@ -1860,8 +1865,8 @@ plugin architecture preservation, UI consistency.
   (the proxy dialog had stored an empty value since 104) and the login-error dialog restores its
   values. Shared wipes: `EditLine`'s UTF-16 copy, `SplWToU8`'s buffer on failure. Plug-in
   interface 107, no new string, PRIVACY.md unchanged (reason in fix-log). saltests 14,401 ->
-  14,441. Code-only review ACCEPT pending GUI. Probe
-  `probe/ftppwd_probe.ps1` (+ `ftplog_server.py`, 127.0.0.1) written, GUI runs owed. Records:
+  14,441. Code-only review ACCEPT. Probe
+  `probe/ftppwd_probe.ps1` (+ `ftplog_server.py`, 127.0.0.1): results below. Records:
   `specs/116-ftp-passwords/fix-log.md`.
   GUI runs (2026-10-06): 51 / 0 / 4 (pre-116 shows every defect after a probe-only expectation fix).
 - 117-checksum-lists: **checksum lists are read in the encoding they were written in** (NEXT-WORK
@@ -1888,7 +1893,7 @@ plugin architecture preservation, UI consistency.
     unchanged.
   - saltests 14,441 -> 14,576 (all single bytes of 18 code pages: never ASCII). Offline model
     `probe/m117_model.cpp` 58 / 0. Code-only review: REJECT (B1 above; S1: one trailing NUL
-    refused a list 0.1.8 read), fixed. Probe `probe/csumlist_probe.ps1` written, runs owed. Found,
+    refused a list 0.1.8 read), fixed. Probe `probe/csumlist_probe.ps1`: results below. Found,
     not fixed: a path over 780 bytes aborts the Verify. Interface stays 107. Records:
     `specs/117-checksum-lists/fix-log.md`.
   GUI runs (2026-10-06): 82 / 0 (pre-117 60 / 0 showing every old defect), sha256sum and 7z read the saved list.
@@ -1912,13 +1917,13 @@ plugin architecture preservation, UI consistency.
   over to delete itself (`CWorkerThread::AbortAndSelfDelete`); Disk Map still loads in 103-106
   cores, so it calls the 107 services only when `SalamanderVersion >= 107`. Recorded: Disk Map's
   `Release` has no guard for a box or menu opened in between. Other plug-ins' windows recorded (research R6): RegEdit
-  Find and FTP Logs / Welcome still decline. saltests 14,576 (unchanged). Probe
-  `probe/update_close_probe.ps1` (20 rows, `-Expect fixed|before`) written, runs owed on
-  `Debug_x64_118` and `Debug_x64_pre118`. Records: `specs/118-plugin-update-close/fix-log.md`.
+  Find and FTP Logs / Welcome still decline (declared by 121). saltests 14,576 (unchanged). Probe
+  `probe/update_close_probe.ps1` (20 rows, `-Expect fixed|before`) on
+  `Debug_x64_118` and `Debug_x64_pre118`: results below. Records: `specs/118-plugin-update-close/fix-log.md`.
   GUI runs (2026-10-06): 20 rows 58 / 0 (pre-118 67 / 0: every plug-in row declined); a real installer update is owed to a person.
 - 119-packing-leftovers: **the five leftovers of 106 - no stray volumes, no misnamed set, and a pack
   into its own archive refused with the archive's name.** Measured by code reading (no GUI run was
-  allowed; the probe is pending). (1) A failed multi-volume ZIP pack deleted only the current volume
+  allowed that day; the probe followed, results below). (1) A failed multi-volume ZIP pack deleted only the current volume
   - volumes 1..n-1 stayed (Cancel, a source that cannot be opened, a declined "Overwrite?", 106's
   refusal at volume n). Now `CreateNextFile` records every volume it creates with the identity from
   its handle (`CSalPackCreatedFiles`, header-only `src/common/salpackvol.h`) and a failure deletes
@@ -1948,7 +1953,7 @@ plugin architecture preservation, UI consistency.
   `TC_PROBE_ALLOW_VISIBLE_DESKTOP=1`). Interface 107, no registry change, no string. saltests
   14,576 -> 14,655. Probe `probe/packleft_probe.ps1` (106's rows with 119 expectations + L, K, P
   (paste - NOT DRIVEN without a clipboard), Czech; 110 RUN + END rows)
-  written, **GUI runs pending** (`Debug_x64_119` / `Debug_x64_pre119`). Records:
+  on `Debug_x64_119` / `Debug_x64_pre119`: results below. Records:
   `specs/119-packing-leftovers/fix-log.md`.
   GUI runs (2026-10-06): 104 / 0 / 8 (pre-119 69 / 35, incl. both sources lost by Move into an existing k.zip), UNC rows pass, 099 24/0, 110 42/0, 113 37/0; paste/drag by hand owed.
 - 120-pictview-leftovers: **PictView's pipette and histogram read the real
@@ -1973,7 +1978,8 @@ plugin architecture preservation, UI consistency.
     "Yes" (`ReleaseShownFile(target, own FALSE)` around the replacing
     `MoveFileExW`) and then show what the name holds (`sfaReplaced` = the
     `sfaUnknown` rule: a hard link re-attaches, else reopen at the same
-    zoom); busy windows keep it ("in use" as before).
+    zoom); busy windows keep it (refused with "Access is denied", 5, as
+    before).
   - **Rotation** (105's record): `WicSetBkHandle` re-decoded lazily without
     the viewer's turns (drawn squeezed, saved unturned) - the engine counts
     `Turns` and turns a frame it decodes again (`RedecodeTurned`).
@@ -1984,11 +1990,11 @@ plugin architecture preservation, UI consistency.
   - saltests 14,655 -> 17,423. No new string, interface 107, no registry
     change. Probe `probe/pv120_probe.ps1` (hidden desktop; the pipette rows
     only with `-VisiblePipette` on the visible desktop - the pipette follows
-    the real cursor) written, GUI runs pending. Records:
+    the real cursor): results below. Records:
     `specs/120-pictview-leftovers/fix-log.md`.
   GUI runs (2026-10-06): 17 / 0 / 5 (pre-120 15 / 2: rename onto a shown target "Access is denied" (5), rotation lost); 111 85/0/2, 105 56/0/4; pipette + histogram rows need an unlocked visible desktop (owed).
 - 121-small-batch: **eleven small defects of the backlog, measured first** (`research.md`; no GUI
-  run allowed). Find's *Look in* holds any path the program can (`SAL_MAX_PATH_UTF8`, limit
+  run was allowed that day - the probe runs followed, results at the end). Find's *Look in* holds any path the program can (`SAL_MAX_PATH_UTF8`, limit
   `SAL_MAX_PATH_W` units; a panel path that does not fit is left out, never cut - it was cut at 259
   bytes, inside a character too; heap copies behind it, `CSearchForData::Dir` was an unbounded
   `strcpy`; `src/common/salfindtext.h`). The message box breaks lines only inside a word wider than

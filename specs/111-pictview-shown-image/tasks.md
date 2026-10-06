@@ -13,4 +13,4 @@
 - [X] T011 Gates: Debug + Release, saltests, strict encoding guard, regression probes 105, 103, 104 (PictView), 088 (PictView)
 - [X] T012 Records: fix-log, NEXT-WORK, CHANGELOG `[Unreleased]`, PRIVACY.md; the CLAUDE.md entry proposed in the fix-log; no commit (the coordinator commits after an independent review)
 - [X] T013 Independent review REJECT (B1 window that moved on, S1 busy image, S2 wallpaper backup, S3 multi-page title, NITs): fixed; probe rows r-nav-del, r-nav-ren, r-multi, r-print, r-busy, hl-del, info-cmyk, wp-restore with no backup; probe on both builds, regressions 105 + 103, Release build
-- [ ] T014 Re-review REJECT (take-back without operation id): code fixed, builds and saltests green; GUI re-run pending (installed instance running) - probe both builds incl. r-cross, regressions 105 + 103
+- [X] T014 Re-review REJECT (take-back without operation id): code fixed, builds and saltests green; T015 code-only re-check ACCEPT; GUI re-run done 2026-10-05 evening (fix-log T015): probe 85 / 0 / 2 incl. r-cross on `Debug_x64_111`, 50 / 29 / 7 on `Debug_x64_pre111`, regressions 105 56 / 0 / 4 (0 lost) and 103 62 / 0

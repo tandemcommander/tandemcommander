@@ -20,6 +20,13 @@ item 085's review added is done as feature 086. Item 8 (7-Zip engine, with
 RAR reading — 084 stage S7) is done as feature 087; its GUI pass joins item 3.
 Item 4 (plug-in interface 107) is done as feature 088.
 
+**Revised 2026-10-06** — features 089–121 are done; 111–121 were committed,
+reviewed and driven on the hidden desktop on 2026-10-05/06 (each
+`fix-log.md`, "GUI results"). Statuses below are corrected to that state,
+decisions already taken are marked, and the section *Open items at a glance*
+lists what is really left. No release is being prepared: 0.1.8 is still the
+last published version; everything since is in `CHANGELOG.md` `[Unreleased]`.
+
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
 `specs/069-finish-encoding-fixes/REMAINING-WORK.md`,
@@ -30,6 +37,169 @@ stay authoritative for the *detail and the reasoning*; this one decides the
 
 Ordering criterion: what it costs users × what it costs us. Nothing here is a
 blocker for anything already shipped.
+
+---
+
+## Open items at a glance (2026-10-06)
+
+The numbered sections further down are the evidence trail and keep the
+detail; this list is the current state, checked against them and against the
+fix-logs. "Queue 104" means the list *Found by 104, not fixed (queue)* inside
+item 5; "queue 108" the list *Found by 108* inside item 5.
+
+### A. Code work an agent can do (most severe first)
+
+Crash-class or possible loss:
+
+1. **Disk Map's `Release()` has no guard**: a box, menu or shell operation
+   opened from the map between the core's decision and the plug-in's turn gets
+   `WM_CLOSE`, and the map is destroyed inside that modal or menu loop (also on
+   a normal exit). Queue 104, entry 6 (118 R7).
+2. **Disk cache across a re-pointed drive letter**: two panels whose archives
+   have the same spelling, size and 100-ns time under a re-pointed SUBST or
+   network letter still share copies; the out-of-memory fallback of the cache
+   key can re-create sharing without a check. Queue 108, entry 3 (109
+   re-review).
+3. **Plug-in windows closing**: a worker's error box (File Comparator hex
+   view, Checksum read errors) can appear while its window closes, also on a
+   normal exit; the File Comparator ends its `fcremote` receiver thread before
+   a window close that may time out. Queue 104, entry 6 (118).
+4. **Undelete numbering** can produce a name another listed item already has
+   (`a.txt` twice and `a (1).txt` → an overwrite prompt; every release).
+   Queue 104, entry 2 (115).
+5. **Checksum**: a list line whose path does not fit 780 bytes aborts the
+   whole Verify ("name too long", `FILEINFO::fileName`). Queue 104, entry 4
+   (117).
+
+Functional, no loss:
+
+6. PictView's print preview is empty in every release since 006. Queue 104,
+   entry 1 (120).
+7. PictView's *Regenerate thumbnail* cannot work since 006. Queue 104,
+   entry 5 (104).
+8. A per-member warning when an archive member changed in the archive since
+   its F4 (needs a new string). Queue 108, entry 2a (112).
+9. B-1 leftovers: the loops that only drain messages during an operation and
+   the menus' own modal loops are code-page loops; other plug-ins' dialogs
+   were not examined. Item 5, *B-1* (093).
+10. Clearer refusal texts that need new strings: a refused folder copy says
+    "Cannot copy a file to itself." and a move into its own subfolder "Cannot
+    move a directory to itself." (107); the pack-into-itself refusal does not
+    say that deselecting helps (119); the Renamer says "already exists" (103,
+    107). Item 5, first entry.
+11. A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
+    provably another file (could offer the overwrite). Item 5, first entry
+    (106, 119).
+12. An archive whose name has 260+ bytes: clipboard copy from it and
+    drop/paste into it are refused (the two fields are process-internal and
+    could be widened). Item 5, *An unbounded `StrICpy`* (097).
+13. FTP, small: a typed server path is still cut at `FTP_MAX_PATH` when
+    stored; `ChangePath` with an open connection was not examined for the
+    cut-user case; a custom proxy-script line over 1,000 bytes is cut without
+    CRLF (unreachable for the built-in scripts). Find: a *Look in* path near
+    the program's maximum stops with a trace only. Queue 104, entries 3 and 4
+    (116, 121).
+14. Small identity leftovers outside the B-2 decision, no loss scenario
+    known: `UnselectItemWithName` (linguistic comparison + byte-length
+    guard), `CFindIgnore::Contains` relative kind, Undelete's `ViewFile`
+    disk-cache key dropping a long name. Item 5; queue 104, entry 2.
+
+Performance, tooling, cosmetics:
+
+15. ZIP: the bound and `UpdateCentrDir` walk the central directory once per
+    deleted member (n × d); one sorted offset array would serve both. Queue
+    108, entry 2 (113). The 092 comparator reads both names to their ends
+    (2x–16x the byte fold in the sorted name lists; a contract change).
+    Item 5, *The comparator's cost*.
+16. Translation tooling: `translate.merge --module zip` would re-lay out 510
+    controls of the committed ZIP translations (drift since build 185; 106);
+    the merge tool keys string tables by bundle ordinal, so removing a bundle
+    needs a re-key first (079, 084).
+17. 077 cosmetics: a version resource for `sqlite.dll`, `/guard:cf`, the dead
+    pre-Vista `ZwQueryInformationProcess` path (`salamdr6.cpp`). Item 0,
+    point 5.
+18. Probe artefacts on the hidden desktop: the 093 dialogs probe's Find-menu
+    rows fail in about one run of three (102); 088's `viewers_probe` fails
+    its Code/Markdown Viewer rows there (item 4).
+
+Large or risky, each a feature of its own:
+
+19. B-4 `AlterFileName` / *Change Case* (renames on disk; the highest risk of
+    the 068 review); F-P1-05, the archive listing display encoding (must move
+    as a whole, 069 §0b); B-3 the undocumented UTF-8 `GetErrorText` (a naive
+    sweep regresses FTP); B-5 the frozen plug-in-facing ANSI services (needs
+    an interface decision); the install-path chain (`plugins2.cpp`); the mask
+    matcher. `069/REMAINING-WORK.md` §1; item 5, end.
+
+### B. Steps owed to a person
+
+- **On-screen sweeps** (item 3): 084 archivers (probes ready), 069 §4
+  (W1–W20, V-01…V-24), 075 S1–S5 + G6, 070 §3 (codeview), 074, 081 §A–D,
+  078 panel tabs on the Release build, the 078/079 88-byte leak watch.
+- **The features' own `quickstart.md` person steps**: 085 G1–G6; 086 (an
+  encrypted ZIP round trip); 087 (RAR on a fresh and an upgraded
+  configuration, the password prompt, the links message, an update over
+  0.1.8); 088 (a real update with a viewer open, PictView with a pasted
+  image, sign-out and shutdown; `viewers_probe` once more on the visible
+  desktop); 089 (associations after an update, packing into RAR with
+  WinRAR); 090 (one anonymous FTP login against a server log); 092; 094;
+  116 (the proxy server dialog, a Master Password, a real FTP server);
+  118 (a real installer update, Disk Map's tooltip during the request);
+  121 (the folder picker's tree-view pick, FTP's welcome-message window).
+- **By hand** (agent sessions have no clipboard and no real mouse or
+  keyboard): paste and drag & drop routes of 099 (also Explorer as the drag
+  source), 107 step 5, 119 step 2b, 101's paste rows; the real-keyboard / IME
+  pass of 093 (menu mnemonics first, a mouse drag onto the command line);
+  PictView's pipette and histogram rows on an unlocked visible desktop (120).
+- **Environment or hardware**: a clean machine without the Visual C++
+  runtime (077; item 0, point 1); the elevated machine-wide update with the
+  program open, a real `winget upgrade`, real sign-out/shutdown and a
+  servicing restart (`080/REMAINING-WORK.md` P1); a real macOS or Samba
+  share (103, 107) and a case-sensitive share (092); volume mount points
+  (114, admin), snapshots and FAT volumes (107, admin); real EFS backups
+  (115, needs an EFS certificate); a SOCKS 5 proxy (116); a real OpenSSH
+  server with a key passphrase and a double-byte or UTF-8 code-page system
+  (094).
+- **Release and catalogue housekeeping** (item 6): the state of
+  `microsoft/winget-pkgs#426090`, the 0.1.8 submission, P2 (`--scope user`),
+  P3 (`checkver`); a real run of the Node 24 workflows (091); GitHub private
+  vulnerability reporting and the second `PRIVACY.md` contact line (083);
+  antivirus reputation steps (item 0, point 4).
+
+### C. Decided — not to do (re-open only with a new reason)
+
+- **B-2 systemic comparison** (panel sort, `CSalamanderDirectory`, the
+  comparison services exported to plug-ins, a guard rule): maintainer,
+  2026-10-04 (item 5). The merged `Dir`/`DIR` folders of ZIP/TAR listings
+  (queue 108, entry 4) follow the `CSalamanderDirectory` listing and move
+  with it — no loss known.
+- **Save dialogs' initial folder** (117, 121): Windows' per-program
+  first-folder rule, measured; only `IFileDialog::SetFolder` would change it
+  (a feature of its own if wanted). Queue 104, entry 4.
+- **259-byte limits kept**: external archivers, plug-ins built for an
+  interface older than 107, the inner archive path, names relative to a
+  packed folder (plug-in interface); `-L`/`-R`/`-A` and hot paths stay at 519
+  bytes (layout shared between instances) (097, 101).
+- **FTP user name, address and initial path** not widened — they are parts
+  of the plug-in's paths; refused, never cut (116).
+- **Update close**: the Batch Renamer always declines; a Checksum Calculate
+  window declines until every calculated type is saved; dialogs and message
+  boxes always decline — including FTP's Logs / Welcome *Save* dialogs (118,
+  121).
+- **Formats and old forms**: the GIF comment stays ASCII or UTF-8 (120);
+  OEM checksum lists are not guessed (117); the ZIP comment is code page by
+  format; the ZIP self-extractor routes and the SFX password prompt stay code
+  page (no SFX package is shipped; 094, 104); a 7z archive mixing the two
+  password forms stays mixed (093).
+- **Copies and identity**: a folder copied into itself or its own subfolder
+  makes a snapshot copy, as always (107); the identity limits on file systems
+  without ids (WebDAV twins, NAS shares with their own serials) are recorded
+  with reasons in 103 and 107.
+- SFTP does not split `sftp:user:password@host` (unreachable; item 7). Open
+  question for the maintainer, not a task: is the missing copy hook (drag
+  out of archives into Explorer) intended? (item 7, F8).
+- Help footers, 069's nine sites, 073 parked — *Recorded, deliberately not on
+  the list*, at the end.
 
 ---
 
@@ -131,10 +301,11 @@ released 0.1.8 will do on a user's machine.
 >    registration and false-positive submission of each release, SHA-256 +
 >    VirusTotal link in the release notes, an "antivirus warning?" FAQ page,
 >    keep the same certificate at renewal (2027-08-03).
-> 5. **Cosmetics** (076 section 3.4): version resources for `7zwrapper.dll`
->    and `sqlite.dll` (the `HIGH_PRIORITY_CLASS` item went away with the
->    helper in feature 079), `/guard:cf`, remove the dead pre-Vista
->    `ZwQueryInformationProcess` path.
+> 5. **Cosmetics** (076 section 3.4): a version resource for `sqlite.dll`
+>    (`7zwrapper.dll` was removed by feature 087; the `HIGH_PRIORITY_CLASS`
+>    item went away with the helper in feature 079), `/guard:cf`, remove the
+>    dead pre-Vista `ZwQueryInformationProcess` path (still in
+>    `salamdr6.cpp`, checked 2026-10-06).
 >
 > Ship gate for 077: the version bump came with feature 078 and the drafted
 > changelog text is now in the `## [0.1.8]` section of
@@ -240,8 +411,9 @@ is the easy half. Scope is `src/`, not `setup/`. Worth a feature of its own.
 
 ## 3. The owed on-screen sweeps (a GUI session, maintainer only)
 
-**Now the first item.** 0.1.8 is in users' hands, so these verify a shipped
-build rather than gate one.
+**The first item for a person** (agent code work: *Open items at a glance*,
+A). 0.1.8 is in users' hands, so these verify a shipped build rather than
+gate one.
 
 > **The reference trees are gone** (checked 2026-09-24): `build\tandemcommander\`
 > holds only `Release_x64` and `translator` — neither `Release_x64_prefix069\`
@@ -302,6 +474,9 @@ The features complete on paper and unverified on screen:
   such sessions: 081 found a leak of exactly that size in `CTcWebKeeper` and
   fixed it. If the report never appears again under a DBWIN listener, record
   it as explained; if it does, it was something else.
+- **The person steps of features 085–121** (their `quickstart.md` files: GUI
+  passes not run, by-hand routes such as paste and drag & drop, hardware and
+  admin steps) are listed together in *Open items at a glance*, B.
 
 Items 1 and 2 are done, so the sweep now runs against a final state.
 A sweep failure is a finding: back through fix → independent review → gates.
@@ -322,14 +497,20 @@ A sweep failure is a finding: back through fix → independent review → gates.
 > windows are declared and close silently, also while still working; a
 > Checksum Calculate window declines until every hash type it calculated is
 > saved, a Batch
-> Renamer window always declines (masks, Undo). Recorded there (research R6),
-> not changed: the Registry Editor's Find window and FTP's Logs / Welcome
-> Message windows still decline. **Owed** (joins
+> Renamer window always declines (masks, Undo). Recorded there (research R6):
+> the Registry Editor's Find window and FTP's Logs / Welcome Message windows
+> still declined - ✅ **declared by feature 121** (RegEdit's Find while it
+> does not search, FTP's windows always; GUI-verified 2026-10-06, rows R1 / L1
+> agree in 1.3 s; their *Save* dialogs still decline, as every dialog does).
+> **Owed** (joins
 > item 3): `088-plugin-interface-107/quickstart.md`. Note (105 review,
 > 2026-10-04): its `viewers_probe.ps1` fails 3 rows (Code Viewer / Markdown
 > Viewer close, `ERROR_FAIL_SHUTDOWN`) on the hidden desktop - identically
-> with the 088 code rebuilt; its 10/10 ran on the visible desktop. Re-run it
-> there (or in a VM) to tell the desktop from a WebView2 runtime change.
+> with the 088 code rebuilt; its 10/10 ran on the visible desktop (and on
+> 2026-10-02, again there, 9 of 10 - the tenth a probe post-check artefact,
+> 093 fix-log "S4 addendum"). Re-run it there (or in a VM) to tell the
+> desktop from a WebView2 runtime change - a person step (*Open items at a
+> glance*, B).
 
 *Original entries:*
 
@@ -409,7 +590,10 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   plug-in packs a selected archive into itself and Move then shows "Delete
   Error (32)" for it; the ZIP plug-in's *Add* of a selected archive reports
   a sharing violation instead of a clear text - ✅ **these four fixed by
-  feature 119 (2026-10-06; GUI-verified the same day, 104 / 0; the paste/drag route is a by-hand step - the clipboard cannot be opened from this session)**: every volume a multi-volume
+  feature 119 (2026-10-06; GUI-verified the same day, 104 / 0 / 8, the
+  build before 69 / 35 - a Move into an existing `k.zip` lost both sources
+  there; the paste/drag route is a by-hand step - the clipboard cannot be
+  opened from an agent session)**: every volume a multi-volume
   pack creates is recorded with its file identity and a failure deletes
   each one still holding that file - kept when unsure (removable media:
   only the volume still being written; nothing once the archive is
@@ -479,12 +663,15 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   Re-open an entry only with a concrete wrong-file or lost-data scenario.
 - **The panel sort comparator is intransitive with "Use locale" off** for
   names mixing ASCII and other characters (found by the 092 research; not
-  touched - it changes what users see).
+  touched - it changes what users see). *Decided 2026-10-04: not
+  implemented (above).*
 - **`CSalamanderDirectory`** (archive and plug-in listings) compares names by
-  the byte fold, with a case-sensitive mode chosen by the plug-in.
+  the byte fold, with a case-sensitive mode chosen by the plug-in. *Decided
+  2026-10-04: not implemented (above).*
 - **The services exported to plug-ins** (`StrICmp`, `IsTheSamePath`,
   `SalParsePath`, `PathsAreOnTheSameVolume`, ...) keep the byte fold: a
-  plug-in may pass text that is not UTF-8.
+  plug-in may pass text that is not UTF-8. *Decided 2026-10-04: not
+  implemented (above).*
 - **The disk cache** keys an archive by its lower-cased (byte fold) name and
   compares keys with `strcmp`; `PrepareCloseCurrentPath` must agree with it.
   One change, both sides. `CCacheDirData::DetachTmpFile` has no caller - ✅
@@ -501,8 +688,9 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   replaced the first edit). Record `specs/108-archive-edit-name-collision/fix-log.md`.
   For ZIP the fix holds only when the two copies share one temporary folder
   (see entry 2); for 7z both edits are always packed back.
-  **Found by 108 - queue (serious first): next feature 109 = entry 1 (data
-  loss), then 110 = entry 2.**
+  **Found by 108 - queue (serious first)** - entries 1, 2, 2a and the first
+  part of 3 are done (109, 110, 113, 112); open: the two 109 re-review items
+  of entry 3 and entry 4 (see *Open items at a glance*).
   1. **(feature 109) The disk cache keys an ARCHIVE by its code-page lower-cased name**
      (`fileswn5/6.cpp` key, flushed by that prefix in `fileswn2/9.cpp`; the
      "other panel on the same archive?" test before the flush is `StrICmp`):
@@ -595,8 +783,9 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      about n x d; one sorted offset array with bisection would serve both. 7-Zip plug-in, same loss: a file
      replacing an archived item gets *Retry* / *Cancel* only; a file skipped
      in a Move is no longer deleted. Probe
-     `113/probe/zipskip_probe.ps1` (37 rows, locks held by the probe) written,
-     not run yet (`113/quickstart.md`). Record
+     `113/probe/zipskip_probe.ps1` (37 rows, locks held by the probe):
+     37 / 0 on this build, 11 / 26 on the build before (exactly the predicted
+     rows); regressions 110, 106, 094 as before. Record
      `specs/113-zip-read-error-skip/fix-log.md`.
   2a. **Found by 109's review, not fixed (data loss, narrow): a flush marks a
      copy with a pending edit out of date.** `CDiskCache::FlushCache` marks every
@@ -617,8 +806,9 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      the cache behaves as before (plug-ins unchanged, saltests parity). The
      R-side trigger (R re-entering the changed archive) was already closed by
      109's unique key. Probe `112/probe/diskcache_edit_probe.ps1` (refresh off /
-     `net use` drive, controls, the left panel's refresh detected) written, not
-     run yet (`112/quickstart.md`). Left: a per-member warning when the member
+     `net use` drive, controls, the left panel's refresh detected): 14 / 0 on
+     this build, 4 / 10 on the build before (every loss row fails there);
+     regressions 109, 108, 096 unchanged. Left: a per-member warning when the member
      itself changed in the archive since F4 (needs a string). Trade-off recorded
      (review SF1): an UNTOUCHED tracked copy is pinned too - after another
      program changed that member, L (not refreshed) shows and edits the old
@@ -651,17 +841,24 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
      `Ĺ/x.txt` (before: replaced `Ĺ/x.txt`, i.e. moved it) - the panel then
      shows two `x.txt` there; the ZIP plug-in's delete/extract folder tests
      (`common.cpp MatchFiles`, byte fold) must change together with the
-     listing.
+     listing. *Status 2026-10-06: not done - it moves with the
+     `CSalamanderDirectory` listing, which the decision of 2026-10-04 leaves
+     as it is; no loss known.*
 - **`UnselectItemWithName`** (`fileswn0.cpp`) uses the linguistic comparison
-  plus a byte-length guard for an identity look-up.
+  plus a byte-length guard for an identity look-up. *Still open, low (not
+  part of the 2026-10-04 decision; no loss scenario known).*
 - **`CFindIgnore::Contains`, relative kind** - a substring search by the byte
-  fold; the full and rooted kinds are converted.
+  fold; the full and rooted kinds are converted. *Still open, low (as
+  above).*
 - **A guard rule for the old comparison functions on names** (092 task T006):
-  needs an annotation on every legitimate use first.
+  needs an annotation on every legitimate use first. *Decided 2026-10-04:
+  not implemented (above).*
 - **The comparator's cost**: 2x (ASCII) to 16x (every name accented) the
   byte fold in a sort, because text that is not WTF-8 orders by a property of
   the whole string. A comparator that stops at the first difference needs
-  the contract's order for such text redefined.
+  the contract's order for such text redefined. *Still open, low: it costs
+  the sorted name lists 092 converted (stored selections, hidden names) a
+  few tenths of a second at 100,000 accented names (092 fix-log).*
 - **An unbounded `StrICpy` into `buf[MAX_PATH]`** at `fileswn9.cpp` - ✅
   feature 095 (2026-10-02): **it could not overrun** - the archive's path is
   cut to 259 bytes before it gets there (proof in
@@ -705,7 +902,8 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        no best-fit look-alike can be compared; channel version 2. Found by
        102, recorded: closing the program within ~1 s of `fcremote` starting
        it asks "plugin has rejected to unload. Force?" (also before 102) -
-       ✅ **fixed by feature 121 (2026-10-06, GUI runs pending)**: the
+       ✅ **fixed by feature 121 (2026-10-06; GUI-verified the same day: no
+       box in 6 of 6 rounds, the build before asked in 6 of 6)**: the
        comparison thread registers its window only after creating it, and
        `Release()` found no window in that gap and waited for a thread nobody
        asked to end; it now waits in slices of the same budget and closes every
@@ -713,7 +911,9 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        Files dialog that appears);
        the 093 dialogs probe's Find-menu rows fail on the hidden desktop in
        about one run of three on the builds before and after 102 (8 rows,
-       "no menu") - a probe/desktop artefact, the other runs pass 139/0.
+       "no menu") - a probe/desktop artefact, the other runs pass 139/0
+       (still open; on the visible desktop the probe passed 140 / 0 - 093
+       fix-log, S4 addendum).
     4. **The small leftovers** (tray tip, clipboard paste length, silent UNC
        copy, share matching, drag image, accurate link/too-deep messages) -
        ✅ feature 101 (2026-10-03). Found by 101, not fixed: the Find
@@ -723,7 +923,9 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        tree whose names *relative to the packed folder* exceed 259 bytes
        skips those sub-folders with a message (the archiver plug-in interface
        takes relative names of at most `MAX_PATH`). ✅ **The first three fixed
-       by feature 121 (2026-10-06, GUI runs pending)**: Look in holds any path
+       by feature 121 (2026-10-06; GUI-verified the same day - Look in 439
+       bytes, a typed 435-byte path, message-box breaks, copy failures
+       reported; the build before showed every old behaviour)**: Look in holds any path
        the program can (`SAL_MAX_PATH_UTF8`; a panel path that does not fit is
        left out, never cut - measured wider: the cut fell inside a character
        and a typed path was cut too); a message box breaks lines only inside a
@@ -778,7 +980,8 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           offered, because the WIC engine reports every image as 32-bit; the
           wallpaper commands cannot work (no file output in the engine, and
           `%WINDIR%` is not writable for a user). ✅ **All fixed by feature 111**
-          (2026-10-05), with the 105 review's NITs (a second window showing the
+          (2026-10-05; GUI-verified that evening: 85 / 0 / 2 incl. the
+          re-review's `r-cross`, the build before 50 / 29 / 7), with the 105 review's NITs (a second window showing the
           file blocked the save; TIFF tag 270 UTF-8 only; the JPEG COM NUL; zoom
           and mirror reset by the reload). Measured first: *Delete* of the shown
           image failed too ("File in use"), and the wallpaper commands of the
@@ -800,12 +1003,15 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           misaligned bytes of 3/4 of each row, every release since 006 (code
           reading; display only); (b) a Rename onto another file that a second
           PictView window shows still fails "in use" (only the renamed file's
-          windows let go; nothing lost); (c) the GIF comment extension gets
+          windows let go; nothing lost - 120 measured the error as 5, "Access
+          is denied", not 32); (c) the GIF comment extension gets
           UTF-8 bytes although GIF89a defines 7-bit ASCII (no Unicode
           alternative in GIF).
           ✅ **(a)-(c) fixed or decided by feature 120 (2026-10-06; GUI-verified
-          the same day 17 / 0 / 5 - pipette and histogram rows owed on an
-          unlocked visible desktop)**: measured first with a harness that compiles the
+          the same day 17 / 0 / 5, the build before 15 / 2 - rename onto a
+          shown target "Access is denied" (5), rotation lost; the pipette and
+          histogram rows are owed to a person on an unlocked visible desktop -
+          the harness covers the reader meanwhile)**: measured first with a harness that compiles the
           plug-in's own engine and reader (`probe/pixharness/`): the pipette
           was wrong for 3 of 4 pixels of every row of every image (the engine
           hands out 32-bit rows for every format) and all five histogram
@@ -844,8 +1050,9 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           (`salvolpaths.h`), names WTF-8; the sweep fixed an NTFS stream-name
           buffer (a long stream name joined the default stream) and several
           overruns. Probe `specs/114-undelete-names/probe/undelnames_probe.ps1`
-          (FAT12 / exFAT images made by `make_images.py`, no admin) written,
-          runs owed; mount points need admin (person step, `quickstart.md`).
+          (FAT12 / exFAT images made by `make_images.py`, no admin): 30 / 0 / 4
+          on this build, the build before showed every predicted defect;
+          mount points need admin (person step, `quickstart.md`).
           **Found by 114, not fixed** (`fix-log.md`): (a) Restore Encrypted
           Files ignores `SalPathAppend` failures - a source path over 519 /
           259 bytes recurses into the same folder until the stack overflows
@@ -870,8 +1077,10 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           `<name>` instead of `<name>.bak`, `UndeleteGetResolvedRootPath`
           overran, the main restore's target was cut, an uninitialised EFS
           context was closed. Probe `specs/115-undelete-leftovers/probe/
-          undelleft_probe.ps1` written, runs owed; real EFS backups NOT
-          DRIVEN (no user EFS certificate here). **Found by 115, not fixed**
+          undelleft_probe.ps1`: 23 / 0 / 2 on this build; the build before
+          showed every defect (a stack overflow on the encrypted route); real
+          EFS backups NOT DRIVEN (no user EFS certificate here - a person
+          step). **Found by 115, not fixed**
           (`research.md` 4): numbering can produce a name another listed
           item has (`a (1).txt`); `ViewFile`'s disk-cache key drops a long
           name (unique per item by its pointer prefix).
@@ -904,17 +1113,22 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           in Connect, Retry and the proxy dialog. User name, address and
           initial path NOT widened (parts of the plug-in's paths) - 104's
           refusal stays. Probe `specs/116-ftp-passwords/probe/
-          ftppwd_probe.ps1` written, runs owed. **Found by 116, not fixed**
+          ftppwd_probe.ps1`: 51 / 0 / 4 on this build, the build before showed
+          every defect (the proxy dialog, a Master Password, a SOCKS 5 proxy
+          and a real keyboard / IME are person steps). **Found by 116, not fixed**
           (`research.md` 5): a password in a typed Change Directory path
           over 300 bytes is cut (inside a character possible); a custom
           proxy-script line over 1,000 bytes is still cut without CRLF; the
           panel login's command buffer (holds `PASS <password>`) and the
           `CProxyScriptParams` stack copies are not wiped; log / wait-window
           texts cut long user names inside a character. Code-only review
-          ACCEPT pending GUI (fixed with it: SOCKS 5 255-byte limit, the
-          proxy dialog storing an empty value after a refusal - since 104,
-          the login-error dialog after a refusal, shared wipes).
-          ✅ **Fixed by feature 121 (2026-10-06, GUI runs pending)**, except
+          ACCEPT, confirmed by the GUI runs (fixed with it: SOCKS 5 255-byte
+          limit, the proxy dialog storing an empty value after a refusal -
+          since 104, the login-error dialog after a refusal, shared wipes).
+          ✅ **Fixed by feature 121 (2026-10-06; GUI-verified the same day -
+          the plug-in's refusals; the core itself refuses a typed `ftp:` path
+          over 259 bytes in Change Directory and the F5 target, so a password
+          over 300 bytes cannot reach the plug-in through either route)**, except
           the custom proxy-script line (unchanged, unreachable for the
           built-in scripts): measured wider - the user name and the host of a
           typed path were cut too (another account or server, the password
@@ -930,7 +1144,9 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
        4. checksum: a checksum list written in the code page with accented
           names reports those files as missing (no encoding detection of the
           list file).
-          ✅ **Fixed by feature 117 (2026-10-05; GUI-verified 2026-10-06; found by its GUI run: Calculate's Save dialog opens in another program's last folder, not the panel folder - Windows ignores lpstrInitialDir when the proposed name has no path, both builds)**:
+          ✅ **Fixed by feature 117 (2026-10-05; GUI-verified 2026-10-06: 82 / 0,
+          the build before 60 / 0 showing every old defect; the Save-dialog
+          folder its GUI run noticed is explained below - measured by 121)**:
           measured first (`specs/117-checksum-lists/research.md`) - besides
           code-page lists, a UTF-8 list with a byte order mark (Total
           Commander for Unicode names, PowerShell `Out-File -Encoding utf8`)
@@ -953,11 +1169,12 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           lists are written with
           LF and no comment (SFV unchanged). Helper
           `src/common/salcsumlist.h`. Probe `specs/117-checksum-lists/probe/
-          csumlist_probe.ps1` written, runs owed. **Found by 117, not fixed**:
+          csumlist_probe.ps1` (results above; GNU `sha256sum -c` and `7z t`
+          read the saved list). **Found by 117, not fixed**:
           a list line whose path does not fit 780 bytes aborts the whole
           Verify with "name too long" (`FILEINFO::fileName` fixed buffer);
           an OEM list's accented names stay "missing" (no signal tells OEM
-          from the code page).
+          from the code page - a decision, 117 research E2).
           Found by 117's GUI run: Checksum's Save dialog opened another
           program's last folder instead of the panel's (Windows may ignore
           `lpstrInitialDir`) - **measured by feature 121 (2026-10-06) and
@@ -973,7 +1190,7 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           `IFileDialog::SetFolder` opens a given folder every time (a change
           of API for Checksum and `SplGetFileNameU8`, not possible for
           PictView's hooked dialog) - a feature of its own if wanted; the
-          121 change was reverted. Also from the 121 coordinator review
+          121 change was reverted. Also from the 121 coordinator
           review: the FTP upload target no longer takes a cut typed user name
           for the open connection's user; recorded - a Find Look in path near
           the program's maximum stops with a trace only (`find.cpp`), and the
@@ -987,14 +1204,18 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           thumbnail* cannot work at all since 006. Disabled plug-ins (listed
           in `specs/104-plugin-unicode-names/research.md` 3) are unchanged.
           ✅ **The folder picker and the Disk Map log fixed by feature 121
-          (2026-10-06, GUI runs pending)**: `SplBrowseForFolderU8` enables OK
+          (2026-10-06; the Disk Map log GUI-verified the same day - a junction
+          named `jříž` shown exactly, mojibake on the build before; the folder
+          picker's tree-view pick was not driven - a person step)**: `SplBrowseForFolderU8` enables OK
           only for an item with a file-system path (`BFFM_SELCHANGED`, the
           core's rule; the silent FALSE after OK is no longer reachable) and
           resolves a NetHood folder shortcut to its target (the core's rule,
           the whole class id compared - the core compared a prefix); Disk
           Map's log list view notifies in UTF-16 and shows UTF-8, WTF-8 and
           code-page texts exactly (a path the logger cut is shown without its
-          torn character).
+          torn character). Still open from this entry: PictView's
+          *Regenerate thumbnail* (see *Open items at a glance*, A 7); the ZIP
+          comment and the self-extractor routes stay code page (decided).
        6. **Found by 118, not fixed** (`specs/118-plugin-update-close/
           research.md` R6, R7): checksum's Save ignored write errors - a full
           disk left a truncated list without a word (118 only no longer
@@ -1015,7 +1236,11 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           requests no longer served - same on the normal path). (118 fixed
           the `CDiskMap::Abort()` use-after-free it found.)
           ✅ **Checksum's Save and the RegEdit / FTP windows fixed by feature
-          121 (2026-10-06, GUI runs pending)**: a failed save says "Error
+          121 (2026-10-06; GUI-verified the same day - the failed save
+          reported with the lock's reason, RegEdit's Find and FTP's Logs
+          window agree to an update in 1.3 s, the build before declined in
+          0.0 s; FTP's welcome-message window needs a server and was not
+          driven)**: a failed save says "Error
           creating file." with the system's reason (`_doserrno` of the failed
           write; the truncated file stays); the Registry Editor's Find window
           is declared while it does not search (the core's Find rule), FTP's
@@ -1024,7 +1249,8 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           boxes, Disk Map's `Release()` guard and the File Comparator's
           receiver order remain open.
        7. **Found by 103 and 119, small - ✅ fixed by feature 121
-          (2026-10-06)**: the UTF-8 error field of `CFileErrorDlg` got
+          (2026-10-06; GUI-verified: the French text exact on CP1250, "déja"
+          on the build before)**: the UTF-8 error field of `CFileErrorDlg` got
           code-page texts (`DoCreateDir`'s "name already used", the
           compress/encrypt "not supported", six `safefile.cpp` texts) - drawn
           right while the system code page matches the language (the field's
@@ -1070,22 +1296,28 @@ with its reason there:
   own modal loops are still code-page loops: a character typed ahead into a
   field while one runs is converted; an accented mnemonic typed while the
   menu bar is active is matched only when the keyboard layout's code page is
-  the system's.
+  the system's. *Still open (2026-10-06).*
 - **Message boxes, master-password dialogs** (their bytes feed a key - must
   not change), **other plug-ins' dialogs** (FTP, SFTP, ZIP, renamer, ...):
-  untouched. **The ZIP and SFTP password prompts were examined and fixed by
-  feature 094 (2026-10-02)** - they did not have the 7zip plugin's defect,
+  untouched (the Renamer's dialogs became Unicode in feature 104, FTP's
+  password fields in 116; the rest still not examined). **The ZIP and SFTP
+  password prompts were examined and fixed by feature 094 (2026-10-02)** - they did not have the 7zip plugin's defect,
   but the ZIP plugin used `?` for every character outside the code page.
   Left by 094 (`specs/094-plugin-password-encoding/fix-log.md`):
   the self-extractor's own prompt (a separate program; a password outside
   the code page stays `?` in a self-extracting archive, and items added to an
-  existing self-extracting archive are keyed the new way); the FTP plugin's
-  101-byte password buffer (51 or more two-byte characters fall back to a
-  code-page read) and its *Show password* read; a real OpenSSH server and a
-  key passphrase were not driven; a system with a double-byte or UTF-8 code
-  page.
-- **The plug-in copy of the dialog library** (`winliblt`) still falls back to
-  a code-page read when the text does not fit the buffer.
+  existing self-extracting archive are keyed the new way - decided, no SFX
+  package is shipped); ~~the FTP plugin's 101-byte password buffer (51 or
+  more two-byte characters fall back to a code-page read) and its *Show
+  password* read~~ - ✅ **fixed by feature 116** (secrets of 301 bytes, any
+  100 characters; *Show password* in UTF-16; GUI-verified 2026-10-06); a real
+  OpenSSH server and a key passphrase were not driven; a system with a
+  double-byte or UTF-8 code page (both person steps).
+- ~~**The plug-in copy of the dialog library** (`winliblt`) still falls back to
+  a code-page read when the text does not fit the buffer.~~ ✅ **Closed by
+  feature 104**: winliblt's `EditLine` is WTF-8 both ways and refuses a text
+  whose UTF-8 form does not fit (never re-read through the code page; the
+  dialog stays open and stores nothing).
 - **7zip plugin**: an archive that mixes the two password forms stays mixed
   (the plug-in cannot re-encrypt); a damaged item under a two-form password
   is decoded up to three times; the Test command's second pass, cancel during
@@ -1113,7 +1345,8 @@ check that first, and change nothing under `tools/winget/templates/` while it is
 open. **State on 2026-09-30**: #426090 (0.1.7) is still open; the moderator
 asked to drop `DisplayVersion` (same value as `PackageVersion`), done the same
 day in the PR and in `templates/installer.yaml.in` (072 fix-log), now awaiting
-re-review.
+re-review. *Not re-checked on 2026-10-06 (no `gh` in that session) - look
+first.*
 
 **Read `072/REMAINING-WORK.md` § P0 before anything else here.** An audit on
 2026-09-30 found what the moderators are likely to ask next — 0.1.7 does not
@@ -1134,12 +1367,15 @@ has `DisplayVersion`).
 - ~~**P4** — `actions/checkout@v4` / `actions/upload-artifact@v4` run on the
   deprecated Node 20. Bump all four workflows together so the repository does
   not end up with two conventions.~~ ✅ **DONE (feature 091, 2026-10-01)** —
-  static verification only; a real run is owed. **Found on the way, decision
-  needed**: `pr-comments-guard.yml` has failed at checkout for every labelled
+  static verification only; a real run is owed. **Found on the way**:
+  `pr-comments-guard.yml` has failed at checkout for every labelled
   fork pull request since 2026-07-20 (`actions/checkout` now refuses fork
-  code under `pull_request_target` on every major): opt in with
-  `allow-unsafe-pr-checkout: true` or retire the upstream comment-translation
-  workflows — analysis in `091-workflow-actions-node/fix-log.md`.
+  code under `pull_request_target` on every major) — ✅ **decided
+  2026-10-02: opted in** (`allow-unsafe-pr-checkout: true`, commit
+  `492aca7a`; the job only preprocesses the checkout with `clang -E`, with a
+  read-only token and the maintainer's label required — never add a step
+  there that runs code from the checkout). Analysis and decision in
+  `091-workflow-actions-node/fix-log.md`.
 - **P2** — `--scope user` has **never actually been tested**; the entry was
   blamed for the first validation failure and the machine-only manifest then
   failed identically, which refuted that. The procedure needs no new release,
@@ -1267,15 +1503,20 @@ statement*).
 > over the association of an external archiver that can never browse, so
 > `rar;r##` ends the same on updated and new configurations. Owed (item 3):
 > `089-7zip-followups/quickstart.md`.
-> Found by the reviews and **not fixed** (older, small; one batch):
-> (a) the 7zip plug-in converts names with strict UTF-8, not the house WTF-8
-> (a lone surrogate in an archived name becomes U+FFFD; feature 066's rule);
-> (b) adding to a 7z archive matches the *stored* names, so a file added into
+> Found by the reviews (older, small; one batch) — ✅ **all three done by
+> feature 089**, kept here as the record:
+> ~~(a) the 7zip plug-in converts names with strict UTF-8, not the house WTF-8
+> (a lone surrogate in an archived name becomes U+FFFD; feature 066's rule)~~
+> — `splunicode.h` is WTF-8;
+> ~~(b) adding to a 7z archive matches the *stored* names, so a file added into
 > a folder whose name had to be cleaned becomes a second item instead of
-> replacing; (c) on an upgraded configuration `rar` shares the plug-in's `7z`
+> replacing~~ — matching uses the cleaned name;
+> ~~(c) on an upgraded configuration `rar` shares the plug-in's `7z`
 > association record, so packing into a RAR archive from the panel is refused
 > instead of going to WinRAR as on a fresh configuration — fixing it needs a
-> core-side association migration.
+> core-side association migration~~ — the core lets the plug-in take over a
+> never-browsing archiver's record; `rar;r##` ends the same on updated and
+> new configurations (probe `089/probe/assoc_probe.ps1`).
 
 *Original entry:*
 

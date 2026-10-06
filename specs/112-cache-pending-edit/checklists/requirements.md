@@ -34,4 +34,5 @@
 - The Clarifications name the lock type and the deferred mark because the choice of design is the
   decision; the mechanism is in plan.md and research.md.
 - Decisions were taken by the author on the maintainer's instruction (recommended option, autonomy).
-- SC-001 / SC-002 need the GUI runs (pending; `quickstart.md`).
+- SC-001 / SC-002 met by the GUI runs of 2026-10-06 (`fix-log.md` "GUI results": 14 / 0 on this
+  build, 4 / 10 on the build before - every loss row fails there).

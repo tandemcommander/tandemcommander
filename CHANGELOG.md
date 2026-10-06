@@ -400,9 +400,11 @@ password with a non-English letter to the archive engine garbled.
   reached under another spelling (an 8.3 name, `\\localhost\C$\...`, another
   letter case, a hard link): the ZIP plugin says "This file is one of the
   files being packed", the Pack dialog "Cannot copy a file to itself." and
-  comes back. Also fixed: answering *Cancel* to the ZIP plugin's "Overwrite?"
-  question for the second or a later volume deleted the existing file you
-  had just declined to overwrite (feature 106).
+  comes back (with feature 119, above, before its "Add or Overwrite?"
+  question and naming the archive). Also fixed: answering *Cancel* to the
+  ZIP plugin's "Overwrite?" question for the second or a later volume
+  deleted the existing file you had just declined to overwrite (feature
+  106).
 - **PictView's *Save As* saves again, and never loses the file it replaces.**
   Since 0.1.0 Save As (Ctrl+S) could not save anything: every format ended
   with "Unable to save the image". Worse, when the name chosen was an
@@ -440,12 +442,11 @@ password with a non-English letter to the archive engine garbled.
   garbled. All of these now use the exact name. A name too long for a
   plugin's field is now refused with Windows' "The filename or extension is
   too long." instead of being changed; nothing is saved and the dialog stays
-  open. In the FTP plugin this also applies to a password or user name of
-  more than 100 bytes (about 50 accented letters): Connect and Close refuse
-  it and the saved password stays as it was - before, such a password was
-  saved and sent in the system code page. A long password saved by an
-  earlier version keeps working as long as it is not retyped; to change it,
-  enter one of at most 100 bytes (feature 104).
+  open. In the FTP plugin this also applies to a user name of more than 100
+  bytes (about 50 accented letters): Connect and Close refuse it - before,
+  such a name was saved and sent in the system code page; FTP passwords are
+  no longer limited this way (see *FTP passwords are the text you type*,
+  above) (feature 104).
 - **Renaming or moving a file no longer deletes it when the server sees the
   new name as the same file.** Some servers treat two spellings of a name as
   one file even though Windows treats them as two, for example `café.txt`
@@ -530,9 +531,10 @@ password with a non-English letter to the archive engine garbled.
 - **Change Directory to a long file path** (typing the full path of a file
   of 260 bytes or more) no longer overruns a buffer; the panel goes to the
   folder and selects the file.
-- **Pasting a path that is too long** (Ctrl+Shift+V) shows "The path
-  specified is too long." instead of going to a cut path, and a path copied
-  from a Unicode program keeps characters outside the system code page.
+- **Pasting a long path** (Ctrl+Shift+V) no longer goes to a cut path -
+  paths of any length are accepted (with feature 101, above) - and a path
+  copied from a Unicode program keeps characters outside the system code
+  page.
 - **Copying the UNC name** of a file (on a SUBST drive or a share) no longer
   overruns buffers with long paths.
 - **7zip plugin**: two error messages are built with a bound.
@@ -846,8 +848,11 @@ password with a non-English letter to the archive engine garbled.
   program declined in that state and the update failed. It still declines -
   at once, showing nothing - while a viewer has a dialog of its own open,
   while PictView shows an image that exists only in its window (pasted,
-  scanned, captured), and while a window of another plugin is open (File
-  Comparator, Batch Renamer and others).
+  scanned, captured), and while a window of another plugin that may hold
+  unsaved work is open (Batch Renamer and others; File Comparator, Disk Map
+  and Checksum Verify windows, the Registry Editor's Find window and FTP's
+  log and message windows no longer stop an update - see *Fixed*, features
+  118 and 121).
 - **Plugin interface 107** (for plugin authors): `IsUnattendedClose` and
   `SetWindowClosesUnattended`; `SAL_MAX_PATH_UTF8` and `CSalMaxPathBuffer`
   in the plugin headers; the headers now state the real size of the buffers

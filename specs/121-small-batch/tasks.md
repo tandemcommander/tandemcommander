@@ -20,4 +20,5 @@
 - [X] T018 Code-only independent review (fix-log "Review"): ACCEPT; NITs 1-5 fixed
 - [X] T018a Item 12 (coordinator): Save dialogs' initial folder - implemented, measured ineffective (K0), `lpstrInitialDir = NULL` tried, measured with a harness, **reverted** (fix-log "Item 12")
 - [X] T018b Coordinator review (ACCEPT pending GUI): SF1 and NITs 1-3, 5 fixed, NIT 4 recorded; builds; `Debug_x64_121` re-copied
-- [X] T019 GUI runs (2026-10-06, fix-log "GUI results"; K0 / item 12 FAIL - product fix owed): `batch121_probe.ps1` on `Debug_x64_121` (-Expect fixed) and `Debug_x64_pre121` (-Expect before); regressions 101 leftovers, 102 filecomp, 117 csumlist (the Save-folder row), 118 update-close on `Debug_x64_121`
+- [X] T019 GUI runs (2026-10-06, fix-log "GUI results"): `batch121_probe.ps1` on `Debug_x64_121` (-Expect fixed: every row PASS, K1 in its own run) and `Debug_x64_pre121` (-Expect before: every old behaviour, S1 "rejected to unload" 6 / 6); regressions 101 leftovers 20 / 0 / 4, 102 filecomp 94 / 0 / 1, 117 csumlist 82 / 0, 118 update-close 58 / 0 after the item-12 revert. K0 (item 12) FAIL in the first session - resolved by the revert (T018a; K0 now INFO, nothing owed)
+- [ ] T020 OWED TO A PERSON (not driven by the probe): the folder picker's tree-view pick, FTP's welcome-message window against a real server (fix-log "Recorded, not changed")

@@ -13,5 +13,5 @@
 - [X] T011 Gates: Debug build, full Release build, saltests, strict encoding guard, clang-format of the touched code
 - [X] T012 Records: fix-log, NEXT-WORK, CHANGELOG `[Unreleased]`; CLAUDE.md entry proposed in the fix-log; no commit
 - [X] T013 GUI runs (fix-log "GUI results"): pv120 probe 17/0/5 on `Debug_x64_120`, 15/2/5 on `Debug_x64_pre120`; regressions 111 85/0/2 and 105 56/0/4 (0 lost) on `Debug_x64_120`
-- [ ] T013a Owed (session locked): the pipette rows on the visible desktop on both builds, the histogram rows where the screen renders
-- [ ] T014 Independent review
+- [ ] T013a OWED TO A PERSON (the session was locked; an unlocked visible desktop is needed): the pipette rows on both builds, the histogram rows where the screen renders (`quickstart.md` step 4); the harness covers the reader on the engine's real rows meanwhile (0 mismatches, the build before 2,295)
+- [X] T014 Independent review - done as T012 (code-only review ACCEPT pending GUI, NITs recorded); the GUI runs (T013) found no product defect

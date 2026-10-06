@@ -35,5 +35,6 @@
 - The Clarifications name the two mechanisms (copy back / pack first) because choosing between
   them per mode is the decision; the code is in plan.md and research.md.
 - Decisions were taken by the author on the maintainer's instruction (recommended option, autonomy).
-- No GUI run was possible today; the build-before measurements of the GUI are part of the pending
-  probe runs - the research is by code reading plus one no-GUI premise measurement.
+- No GUI run was possible on the day of the research; the build-before measurements of the GUI
+  were made by the probe runs of 2026-10-06 (`fix-log.md` "GUI results") - the research is by code
+  reading plus one no-GUI premise measurement.

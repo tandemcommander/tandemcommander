@@ -28,8 +28,9 @@
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover the primary flows (multi-volume failure, existing name, pack into itself)
-- [x] Feature meets the measurable outcomes defined in Success Criteria - except the GUI runs, which
-      are pending (`quickstart.md`)
+- [x] Feature meets the measurable outcomes defined in Success Criteria - met by the GUI runs of
+      2026-10-06 (`fix-log.md` "GUI results": 104 / 0 / 8, the build before 69 / 35); the drag & drop
+      and paste routes (quickstart 2b) are owed to a person
 - [x] No implementation details leak into the user stories
 
 ## Notes

@@ -26,8 +26,9 @@
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
-- [ ] Feature meets measurable outcomes defined in Success Criteria - SC-001 / SC-003 need the
-      pending GUI runs (`quickstart.md`); SC-002 met
+- [x] Feature meets measurable outcomes defined in Success Criteria - SC-001 / SC-003 met by the
+      GUI runs of 2026-10-06 (`fix-log.md` "GUI results"); SC-002 met; the mount-folder step (T016,
+      admin) is owed to a person
 - [x] No implementation details leak into specification
 
 ## Notes
@@ -35,6 +36,6 @@
 - The Clarifications name the FAT bytes (0xE5, 0x05) and the record flag because where the rule
   belongs is the decision; the code is in plan.md and research.md.
 - Decisions were taken by the author on the maintainer's instruction (recommended option, autonomy).
-- No GUI run was possible today; the build-before measurements of the GUI are part of the pending
-  probe runs - the research is by code reading. Volume mount points need admin rights: verified by
+- No GUI run was possible on the day of the research; the build-before measurements of the GUI
+  were made by the probe runs of 2026-10-06 - the research is by code reading. Volume mount points need admin rights: verified by
   code reading and saltests, the person step is in quickstart.md.

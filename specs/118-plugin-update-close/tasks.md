@@ -30,3 +30,4 @@
 - [x] T014 GUI runs on `Debug_x64_118` (58 / 0 / 0) and `Debug_x64_pre118` (67 / 0 / 0), hidden
       desktop, registry 1AB614304771DBE0 before and after each; probe-only fixes (fix-log "GUI
       results")
+- [ ] T016 OWED TO A PERSON: a real installer update over an installed version with these plug-in windows open, and Disk Map's file tooltip shown during the request (no real mouse in the probe) (`quickstart.md` "Owed to a person")

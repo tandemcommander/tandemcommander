@@ -30,6 +30,9 @@
 - [x] T013 GUI runs on `Debug_x64_119` (PASS 104 / FAIL 0 / NOT DRIVEN 8) and `Debug_x64_pre119`
       (69 / 35 / 8 - the predicted rows); regressions 099 24/0, 110 42/0, 113 37/0; registry
       1AB614304771DBE0 identical before and after every run (fix-log "GUI results")
-- [ ] T017 By-hand: drag & drop and paste into the selected archive (quickstart 2b) - the clipboard
-      cannot be opened from this session on either desktop (OpenClipboard error 5)
-- [ ] T014 Independent review - pending
+- [ ] T017 By-hand, OWED TO A PERSON: drag & drop and paste into the selected archive (quickstart
+      2b) - the clipboard cannot be opened from an agent session on either desktop (OpenClipboard
+      error 5)
+- [x] T014 Independent review - done as T015 (code review, ACCEPT pending GUI) and T016 (re-review
+      of the fixes, ACCEPT pending GUI); its condition (the UNC rows pass) was met by the GUI runs
+      (T013). No separate review of the GUI evidence was made.
