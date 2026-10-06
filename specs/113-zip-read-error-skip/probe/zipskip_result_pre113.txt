@@ -1,0 +1,425 @@
+zipskip_probe (feature 113) pre-113
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre113\tandemcommander.exe
+Date    : 2026-10-06 01:13; ACP 1250; desktop 'tc_probe_142312'
+
+--- t_open_skip [copy, zip, temporary copy] F5 x.txt (cannot be opened while packing) into {x, y}: Yes, Skip
+   F5 target '...Users\pavel\AppData\Local\Temp\tc113\zs\t_open_skip\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:13:58 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=506f5942 lh=f0fe7394
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_open_skipall [copy, zip, temporary copy] as t_open_skip, Skip all
+   F5 target '...rs\pavel\AppData\Local\Temp\tc113\zs\t_open_skipall\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:14:14 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=95ae9391 lh=f5f61391
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_open_cancel [copy, zip, temporary copy] as t_open_skip, Cancel
+   F5 target '...ers\pavel\AppData\Local\Temp\tc113\zs\t_open_cancel\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:14:29 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY x.txt kind=file tag=m1 enc=none ok=1 cd=c1414754 lh=c95b5791
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- t_open_retry [copy, zip, temporary copy] as t_open_skip, the file released, Retry
+   F5 target '...sers\pavel\AppData\Local\Temp\tc113\zs\t_open_retry\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:14:45 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=c151199e lh=713d2e50
+          ENTRY x.txt kind=file tag=sS1 enc=none ok=1 cd=c3428933 lh=4a2c1dfb
+          COUNT 3
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- t_read_skip [copy, zip, temporary copy] F5 x.txt (2 MB, read error at 1 MB) into {x, y}: Yes, Skip
+   F5 target '...Users\pavel\AppData\Local\Temp\tc113\zs\t_read_skip\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:15:00 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=e7e61c7f lh=1ed19492
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_read_skipall [copy, zip, temporary copy] as t_read_skip, Skip all
+   F5 target '...rs\pavel\AppData\Local\Temp\tc113\zs\t_read_skipall\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:15:16 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=68d831b5 lh=3cd68610
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_read_cancel [copy, zip, temporary copy] as t_read_skip, Cancel
+   F5 target '...ers\pavel\AppData\Local\Temp\tc113\zs\t_read_cancel\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:15:31 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY x.txt kind=file tag=m1 enc=none ok=1 cd=c1414754 lh=c95b5791
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- t_two [copy, zip, temporary copy] F5 x.txt (cannot be opened) and z.txt (read error) into {x, z, y}: Yes, Yes, Skip, Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_two\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:15:46 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:15:46 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1... || E2: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m3 enc=none ok=1 cd=ec05ffc4 lh=abb0c661
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=de0110af lh=849333e3
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; expected z.txt=m2; keep x.txt: not in the archive; keep z.txt: not in the archive
+
+--- t_three [copy, zip, temporary copy] F5 ax.txt (cannot be opened) into {ax, Ax, AX}: All, Skip - the three members it replaces come back
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_three\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:16:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> All || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=163e8dc4 lh=8a396b12
+          COUNT 1
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected ax.txt=m1; expected Ax.txt=m2; expected AX.txt=m3; keep ax.txt: not in the archive; keep Ax.txt: not in the archive; keep AX.txt: not in the archive
+
+--- t_move [move, zip, temporary copy] F6 x.txt (cannot be opened) into {x, y}: Yes, Skip - x stays in the archive and on disk
+   F6 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_move\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:16:20 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=db2ca46d lh=78651626
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_zip64 [copy, zip, temporary copy] members with zip64 central records (offset in the zip64 block), x read error, Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_zip64\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:16:35 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=09e181d4 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=996aeccd lh=d7e23f9d
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_zc [copy, zip, temporary copy] x.txt a ZipCrypto member, x read error, Skip - it comes back and still opens
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_zc\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:16:50 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=dd02ba67 lh=b3d549a2
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_aes [copy, zip, temporary copy] x.txt an AES-256 member, x read error, Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_aes\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:17:05 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=0bac6d60 lh=5cfca608
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_desc [copy, zip, temporary copy] x.txt with a data descriptor, a comment and a time-stamp block, x read error, Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_desc\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:17:20 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=93e26aa3 lh=1e002e67
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_unix [copy, zip, temporary copy] a Unix ZIP {x, y}, x cannot be opened, Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_unix\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:17:36 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=02543131 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=bdf0792e lh=06289129
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- t_normal [copy, zip, temporary copy] control: F5 x.txt into {x, y}, Yes, no error
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\t_normal\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:17:51 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=e0534739 lh=a18563ad
+          ENTRY x.txt kind=file tag=sS1 enc=none ok=1 cd=0fdc6f0b lh=a093f3f1
+          COUNT 3
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- t_new_skip [copy, zip, temporary copy] control: F5 x.txt (not in the archive, read error) into {y}, Skip
+   F5 target '...\Users\pavel\AppData\Local\Temp\tc113\zs\t_new_skip\arc.zip\'; windows: E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m1 enc=none ok=1 cd=cc79f3b5 lh=2dd946e4
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=86dc1dc1 lh=08db412b
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- t_progress [copy, zip, temporary copy] control: F5 x.txt (128 MB) into {x, y}, Yes, the progress cancelled
+   F5 target '...\Users\pavel\AppData\Local\Temp\tc113\zs\t_progress\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 134 217 728, 06.10.2026, 1:18:19 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || PROGRESS CANCELLED at 2,3 s || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No
+          ENTRY x.txt kind=file tag=m1 enc=none ok=1 cd=c1414754 lh=c95b5791
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- e_aes_new_skip [copy, zip, temporary copy] F5 x.txt (read error) and other.txt into {y} with AES-256, Skip - x must not be stored
+   F5 target '...rs\pavel\AppData\Local\Temp\tc113\zs\e_aes_new_skip\arc.zip\'; windows: OPTIONS: encrypt, method 123 || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m1 enc=none ok=1 cd=cc79f3b5 lh=2dd946e4
+          ENTRY other.txt kind=file tag=sS2 enc=aes256 ok=1 cd=1869ab59 lh=53747e7a
+          ENTRY x.txt kind=file tag=- enc=aes256 ok=0 cd=ce50993b lh=7add26c1
+          COUNT 3
+          CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; unexpected x.txt=CORRUPT
+
+--- e_aes_new_cancel [copy, zip, temporary copy] as e_aes_new_skip, Cancel - the operation ends
+   F5 target '...\pavel\AppData\Local\Temp\tc113\zs\e_aes_new_cancel\arc.zip\'; windows: OPTIONS: encrypt, method 123 || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m1 enc=none ok=1 cd=cc79f3b5 lh=2dd946e4
+          ENTRY other.txt kind=file tag=sS2 enc=aes256 ok=1 cd=d98da03e lh=3dfc2dce
+          ENTRY x.txt kind=file tag=- enc=aes256 ok=0 cd=7a3e11a2 lh=cf040600
+          COUNT 3
+          CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; unexpected other.txt=sS2; unexpected x.txt=CORRUPT
+
+--- e_aes_move [move, zip, temporary copy] F6 x.txt (read error) and other.txt into {y} with AES-256, Skip - x stays on disk
+   F6 target '...\Users\pavel\AppData\Local\Temp\tc113\zs\e_aes_move\arc.zip\'; windows: OPTIONS: encrypt, method 123 || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m1 enc=none ok=1 cd=cc79f3b5 lh=2dd946e4
+          ENTRY other.txt kind=file tag=sS2 enc=aes256 ok=1 cd=7bd03eaa lh=7b4d0d5c
+          ENTRY x.txt kind=file tag=- enc=aes256 ok=0 cd=7fdb80cf lh=014859b2
+          COUNT 3
+          CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; unexpected x.txt=CORRUPT; source x.txt gone from disk
+
+--- e_aes_repl [copy, zip, temporary copy] F5 x.txt (read error) into {x, y} with AES-256: Yes, Skip - the plain member comes back
+   F5 target '...\Users\pavel\AppData\Local\Temp\tc113\zs\e_aes_repl\arc.zip\'; windows: OPTIONS: encrypt, method 123 || Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:19:24 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=aes256 ok=1 cd=9671e8a0 lh=7762428c
+          ENTRY x.txt kind=file tag=- enc=aes256 ok=0 cd=1072f8f5 lh=1cc9605d
+          COUNT 3
+          CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; expected x.txt=m1; unexpected x.txt=CORRUPT; keep x.txt: member bytes changed; keep x.txt: central record changed (offset excluded)
+
+--- e_zc_new_skip [copy, zip, temporary copy] control: as e_aes_new_skip with ZIP 2.0 encryption
+   F5 target '...ers\pavel\AppData\Local\Temp\tc113\zs\e_zc_new_skip\arc.zip\'; windows: OPTIONS: encrypt, method 121 || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m1 enc=none ok=1 cd=cc79f3b5 lh=2dd946e4
+          ENTRY other.txt kind=file tag=sS2 enc=zipcrypto ok=1 cd=69f216e4 lh=66d848dd
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- i_normal [copy, zip, in-place] F5 x.txt into {a, x, b, c}, Yes: the compaction moves the added files
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\i_normal\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:19:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY a.txt kind=file tag=m1 enc=none ok=1 cd=c657ef53 lh=e87cebef
+          ENTRY b.txt kind=file tag=m3 enc=none ok=1 cd=e3f1f4d4 lh=cedddbc9
+          ENTRY c.txt kind=file tag=m4 enc=none ok=1 cd=72d6d973 lh=87aaf663
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=2adf34b3 lh=7183af54
+          ENTRY x.txt kind=file tag=sS1 enc=none ok=1 cd=842785a0 lh=50b64f98
+          COUNT 5
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- i_two [copy, zip, in-place] F5 x.txt and z.txt into {x, a, z, b}, Yes, Yes: two regions
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\i_two\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:20:11 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:20:11 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY a.txt kind=file tag=m2 enc=none ok=1 cd=4e8de5b4 lh=4a58b45e
+          ENTRY b.txt kind=file tag=m4 enc=none ok=1 cd=3dda6013 lh=1226294f
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=70a247b6 lh=c2c338b3
+          ENTRY x.txt kind=file tag=sS1 enc=none ok=1 cd=bd5ab761 lh=a5a7f66f
+          ENTRY z.txt kind=file tag=sS3 enc=none ok=1 cd=332d56f1 lh=dcf92293
+          COUNT 5
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- i_open_skip [copy, zip, in-place] F5 x.txt (cannot be opened) into {x, y}: Yes, Skip
+   F5 target '...Users\pavel\AppData\Local\Temp\tc113\zs\i_open_skip\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:20:26 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=7f5d579f lh=2af8de8e
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- i_read_skip [copy, zip, in-place] F5 x.txt (read error) into {x, y}: Yes, Skip
+   F5 target '...Users\pavel\AppData\Local\Temp\tc113\zs\i_read_skip\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:20:41 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=3cec067a lh=ba7c398c
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- i_read_cancel [copy, zip, in-place] as i_read_skip, Cancel
+   F5 target '...ers\pavel\AppData\Local\Temp\tc113\zs\i_read_cancel\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 2 097 172, 06.10.2026, 1:20:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          COUNT 1
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- i_open_cancel [copy, zip, in-place] as i_open_skip, Cancel
+   F5 target '...ers\pavel\AppData\Local\Temp\tc113\zs\i_open_cancel\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:21:12 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          COUNT 1
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- i_mixed [copy, zip, in-place] F5 x.txt (cannot be opened) and z.txt into {x, a, z}: Yes, Yes, Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\i_mixed\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:21:27 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:21:27 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY a.txt kind=file tag=m2 enc=none ok=1 cd=4e8de5b4 lh=4a58b45e
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=83dc9973 lh=ad208c2c
+          ENTRY z.txt kind=file tag=sS3 enc=none ok=1 cd=1f666efe lh=aec5aac0
+          COUNT 3
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- i_move [move, zip, in-place] F6 x.txt (cannot be opened) into {x, y}: Yes, Skip
+   F6 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\i_move\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:21:43 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot open or create file. Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=1...
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=b0964657 lh=87d8ae7f
+          COUNT 2
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- i_zip64 [copy, zip, in-place] F5 y.txt into {x, y, z} with zip64 central records, Yes
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\i_zip64\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:21:59 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY x.txt kind=file tag=m1 enc=none ok=1 cd=7b82b08d lh=c95b5791
+          ENTRY z.txt kind=file tag=m3 enc=none ok=1 cd=f44f87f4 lh=78ec89be
+          ENTRY other.txt kind=file tag=sS2 enc=none ok=1 cd=4851f27f lh=00bc4b2c
+          ENTRY y.txt kind=file tag=sS1 enc=none ok=1 cd=e24fba01 lh=9f756360
+          COUNT 4
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- i_progress [copy, zip, in-place] F5 x.txt (128 MB) into {x, y}, Yes, the progress cancelled
+   F5 target '...\Users\pavel\AppData\Local\Temp\tc113\zs\i_progress\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 134 217 728, 06.10.2026, 1:22:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || PROGRESS CANCELLED at 2,3 s || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No
+          ENTRY y.txt kind=file tag=m2 enc=none ok=1 cd=da85fd24 lh=62e64837
+          COUNT 1
+          CHECK ok
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; keep x.txt: not in the archive
+
+--- i_aes_new_skip [copy, zip, in-place] F5 x.txt (read error) and other.txt into {y} with AES-256, Skip
+   F5 target '...rs\pavel\AppData\Local\Temp\tc113\zs\i_aes_new_skip\arc.zip\'; windows: OPTIONS: encrypt, method 123 || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read from file. Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip A...
+          ENTRY y.txt kind=file tag=m1 enc=none ok=1 cd=cc79f3b5 lh=2dd946e4
+          ENTRY other.txt kind=file tag=sS2 enc=aes256 ok=1 cd=ef47594b lh=b9f0e82e
+          ENTRY x.txt kind=file tag=- enc=aes256 ok=0 cd=33d38429 lh=c313d942
+          COUNT 3
+          CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream
+          ZIPFILE ok
+   END: exit 0x00000000
+   VERDICT: FAIL archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; unexpected x.txt=CORRUPT
+
+--- s_repl [copy, 7z] F5 x.txt (cannot be opened) into a 7z {x, y}: Yes, Skip if offered, else Cancel
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc113\zs\s_repl\arc.7z\'; windows: [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] ... || Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 06.10.2026, 1:22:45 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:22:45 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button...
+          ENTRY y.txt kind=file tag=m2 enc=- ok=1 cd=- lh=-
+          ENTRY other.txt kind=file tag=sS2 enc=- ok=1 cd=- lh=-
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000
+   VERDICT: FAIL expected x.txt=m1; unexpected other.txt=sS2; Skip offered in 1 error dialog(s)
+
+--- s_repl_retry [copy, 7z] as s_repl, the file released, Retry
+   F5 target '...Users\pavel\AppData\Local\Temp\tc113\zs\s_repl_retry\arc.7z\'; windows: [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] ... || Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 06.10.2026, 1:23:02 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:23:02 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button...
+          ENTRY y.txt kind=file tag=m2 enc=- ok=1 cd=- lh=-
+          ENTRY other.txt kind=file tag=sS2 enc=- ok=1 cd=- lh=-
+          ENTRY x.txt kind=file tag=sS1 enc=- ok=1 cd=- lh=-
+          COUNT 3
+          CHECK ok
+   END: exit 0x00000000
+   VERDICT: PASS 
+
+--- s_move_new [move, 7z] F6 n.txt (not in the archive, cannot be opened) and other.txt into a 7z {y}: Skip - n.txt stays on disk
+   F6 target '...:\Users\pavel\AppData\Local\Temp\tc113\zs\s_move_new\arc.7z\'; windows: [#32770 'Add Files To Archive'] [Static id=1300] Archive: | [Button id=1211] &Encrypt files | [Static id=1215] &Password: | [Static id=1216] Confirm p&assword: | [Static id=1302] Compression parameters | [Static id=1304] Compression &level: | [Static id=1305] Compression &method: | [Static id=1306] ... || E1: buttons 4,173,174,2: [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button...
+          ENTRY y.txt kind=file tag=m1 enc=- ok=1 cd=- lh=-
+          ENTRY other.txt kind=file tag=sS2 enc=- ok=1 cd=- lh=-
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000
+   VERDICT: FAIL source n.txt gone from disk
+Registry: restored; identical=True; SHA-256 before 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126 / after 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
+
+=== summary ===
+t_open_skip      copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_open_skipall   copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_open_cancel    copy  PASS       x.txt=m1 y.txt=m2 | Q=1 E=1
+t_open_retry     copy  PASS       other.txt=sS2 x.txt=sS1 y.txt=m2 | Q=1 E=1
+t_read_skip      copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_read_skipall   copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_read_cancel    copy  PASS       x.txt=m1 y.txt=m2 | Q=1 E=1
+t_two            copy  FAIL       other.txt=sS2 y.txt=m3 | Q=2 E=2 | expected x.txt=m1; expected z.txt=m2; keep x.txt: not in the archive; keep z.txt: not in the archive
+t_three          copy  FAIL       other.txt=sS2 | Q=1 E=1 | expected ax.txt=m1; expected Ax.txt=m2; expected AX.txt=m3; keep ax.txt: not in the archive; keep Ax.txt: not in the archive; keep AX.txt: not in the archive
+t_move           move  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_zip64          copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_zc             copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_aes            copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_desc           copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_unix           copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+t_normal         copy  PASS       other.txt=sS2 x.txt=sS1 y.txt=m2 | Q=1 E=0
+t_new_skip       copy  PASS       other.txt=sS2 y.txt=m1 | Q=0 E=1
+t_progress       copy  PASS       x.txt=m1 y.txt=m2 | Q=1 E=0
+e_aes_new_skip   copy  FAIL       other.txt=sS2 x.txt=CORRUPT y.txt=m1 | Q=0 E=1 | archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; unexpected x.txt=CORRUPT
+e_aes_new_cancel copy  FAIL       other.txt=sS2 x.txt=CORRUPT y.txt=m1 | Q=0 E=1 | archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; unexpected other.txt=sS2; unexpected x.txt=CORRUPT
+e_aes_move       move  FAIL       other.txt=sS2 x.txt=CORRUPT y.txt=m1 | Q=0 E=1 | archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; unexpected x.txt=CORRUPT; source x.txt gone from disk
+e_aes_repl       copy  FAIL       other.txt=sS2 x.txt=CORRUPT y.txt=m2 | Q=1 E=1 | archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; expected x.txt=m1; unexpected x.txt=CORRUPT; keep x.txt: member bytes changed; keep x.txt: central record changed (offset excluded)
+e_zc_new_skip    copy  PASS       other.txt=sS2 y.txt=m1 | Q=0 E=1
+i_normal         copy  PASS       a.txt=m1 b.txt=m3 c.txt=m4 other.txt=sS2 x.txt=sS1 | Q=1 E=0
+i_two            copy  PASS       a.txt=m2 b.txt=m4 other.txt=sS2 x.txt=sS1 z.txt=sS3 | Q=2 E=0
+i_open_skip      copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+i_read_skip      copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+i_read_cancel    copy  FAIL       y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+i_open_cancel    copy  FAIL       y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+i_mixed          copy  FAIL       a.txt=m2 other.txt=sS2 z.txt=sS3 | Q=2 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+i_move           move  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; keep x.txt: not in the archive
+i_zip64          copy  PASS       other.txt=sS2 x.txt=m1 y.txt=sS1 z.txt=m3 | Q=1 E=0
+i_progress       copy  FAIL       y.txt=m2 | Q=1 E=0 | expected x.txt=m1; keep x.txt: not in the archive
+i_aes_new_skip   copy  FAIL       other.txt=sS2 x.txt=CORRUPT y.txt=m1 | Q=0 E=1 | archive check: CHECK x.txt: Error -5 while decompressing data: incomplete or truncated stream; unexpected x.txt=CORRUPT
+s_repl           copy  FAIL       other.txt=sS2 y.txt=m2 | Q=1 E=1 | expected x.txt=m1; unexpected other.txt=sS2; Skip offered in 1 error dialog(s)
+s_repl_retry     copy  PASS       other.txt=sS2 x.txt=sS1 y.txt=m2 | Q=1 E=1
+s_move_new       move  FAIL       other.txt=sS2 y.txt=m1 | Q=0 E=1 | source n.txt gone from disk
+TOTAL: 11 PASS / 26 FAIL / 0 NOT DRIVEN
+Left running: 0; fixture removed: True; registry restored+identical: True

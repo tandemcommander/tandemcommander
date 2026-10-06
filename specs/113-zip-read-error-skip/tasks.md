@@ -9,8 +9,8 @@
 - [X] T007 [US4] S5 7-Zip: `CUpdateInfo::Replaces` (`structs.h`, `7zclient.cpp`), `GetStream` (`update.cpp`)
 - [X] T008 S6 saltests `TestZipMember113`; `salzipmember.h` listed in `saltests.vcxproj`
 - [X] T009 S7 probe written: `probe/zipskip_probe.ps1`, `probe/zipskip.py` (helper self-tested: make / read, a corrupted byte detected, 7z read)
-- [ ] T010 [US1]-[US5] Probe on `Debug_x64_113` and `Debug_x64_pre113` (hidden desktop) - PENDING (GUI runs after 18:00, `quickstart.md`)
-- [ ] T011 Regressions on `Debug_x64_113`: 110 zipname, 106 packself, 094 ZIP passwords - PENDING
+- [X] T010 [US1]-[US5] Probe on `Debug_x64_113` (37 / 0 / 0) and `Debug_x64_pre113` (11 / 26 / 0, the predicted rows) - hidden desktop, 2026-10-06
+- [X] T011 Regressions on `Debug_x64_113`: 110 zipname 42 / 0, 106 packself 70 / 0 / 4, 094 ZIP passwords 56 / 1 (X1) - as before
 - [X] T012 Gates: Debug + full Release builds, saltests 14,286 / 0, strict guard 0, BOM / CRLF of touched sources
 - [X] T014 Code-only review (ACCEPT pending GUI): S1 zip64 block first + `UpdateCentrDir` by id (`SalZipCentralRecordOffsetPos`), saltests; S2 guard in `DeleteFiles`; N1 offsets only after a successful move; N3 default initializer; N2 / N4 recorded; Debug + full Release rebuilt, saltests 14,301 / 0, guard 0
 - [X] T015 Re-check (ACCEPT): R1 bound by the next member on disk (`SalZipNextMemberOffset`), N-a length < 46 refused, N-b marker without value never adjusted; saltests 14,323 / 0; Debug + full Release rebuilt

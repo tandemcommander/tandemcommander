@@ -280,7 +280,7 @@ errors; ASCII, CRLF.
   notices), 20 plug-ins, 189 language modules, runtime closure OK. The pending GUI commands are
   unchanged (no probe row reaches 4 GiB; S1 is covered by saltests).
 
-## Pending (GUI, after 18:00 - exact commands in `quickstart.md`)
+## Pending (GUI, after 18:00 - exact commands in `quickstart.md`) - DONE, see "GUI results"
 
 1. `zipskip_probe.ps1` on `Debug_x64_113` (expected: every row PASS; progress rows may be NOT
    DRIVEN) and on `Debug_x64_pre113` (predicted failures in `quickstart.md`).
@@ -334,3 +334,45 @@ Proposed for "Recent Changes" (plain text):
     held by the probe - "open" / byte-range; temporary copy, AES adding,
     in-place, 7z) written, **GUI runs pending**. Records:
     `specs/113-zip-read-error-skip/fix-log.md`.
+
+## GUI results (2026-10-06, hidden desktop, one run at a time)
+
+All runs through `tools/run_on_hidden_desktop.ps1` against the preserved trees
+`build/tandemcommander/Debug_x64_113` (this build, copied by the coordinator after the last
+rebuild) and `Debug_x64_pre113`; no `tandemcommander.exe` running before any run; registry
+(`HKCU\Software\Tandem Commander`, the new baseline after the maintainer's installed copy saved its
+settings) SHA-256 prefix **9BD42518403B7EDF** before and after every run, and every probe's own
+backup / restore reported "identical". No network mapping touched, no Recycle Bin, nothing built.
+
+| run | build | result | file |
+|---|---|---|---|
+| `zipskip_probe.ps1` | `Debug_x64_113` | **37 PASS / 0 FAIL / 0 NOT DRIVEN** | `probe/zipskip_result.txt` (`run_113.log`) |
+| `zipskip_probe.ps1` | `Debug_x64_pre113` | **11 PASS / 26 FAIL / 0 NOT DRIVEN** - exactly the predicted rows | `probe/zipskip_result_pre113.txt` (`run_pre113.log`) |
+| 110 `zipname_probe.ps1` | `Debug_x64_113` | **42 PASS / 0 FAIL / 0 NOT DRIVEN** (as 110) | `probe/regress_zipname110_113.txt` |
+| 106 `packself_probe.ps1` | `Debug_x64_113` | **PASS 70, FAIL 0, NOT DRIVEN 4** (as 106 / 110) | `probe/regress_packself106_113.txt` |
+| 094 `zip_gui_probe.ps1` | `Debug_x64_113` | **AS EXPECTED 56, DIFFERENT 1** - X1, the self-extractor row that cannot be driven in a Debug tree (as 094 / 106 / 110) | `probe/regress_zip094_113.txt` |
+
+The build before, measured (the predictions of `quickstart.md` confirmed row by row):
+
+- Temporary copy: `t_open_skip`, `t_open_skipall`, `t_read_skip`, `t_read_skipall`, `t_two`,
+  `t_three` (all three of `ax` / `Ax` / `AX`), `t_move`, `t_zip64`, `t_zc`, `t_aes`, `t_desc`,
+  `t_unix` - the replaced member(s) **gone**. Cancel / Retry / ordinary / progress-cancel rows pass.
+- AES adding: `e_aes_new_skip`, `e_aes_repl`, `e_aes_new_cancel` - `x.txt` **stored corrupt**
+  ("incomplete or truncated stream"; `e_aes_repl` replaced the good plain member with it;
+  `e_aes_new_cancel` did not stop: `other.txt` added too); `e_aes_move` - stored corrupt AND
+  **`x.txt` deleted from disk**. ZIP 2.0 (`e_zc_new_skip`) passes.
+- In-place: `i_open_skip`, `i_read_skip`, `i_read_cancel`, `i_open_cancel`, `i_mixed`, `i_move`,
+  `i_progress` - member **gone** (also on Cancel and on the cancelled progress); `i_aes_new_skip` -
+  stored corrupt. Ordinary in-place replacements (`i_normal`, `i_two`, `i_zip64`) pass on both.
+- 7-Zip: `s_repl` - Skip offered (buttons 4,173,174,2), `x.txt` **gone**; `s_move_new` - **`n.txt`
+  deleted from disk** although not packed. `s_repl_retry` passes.
+
+This build: every one of those rows keeps the member byte for byte (the `Keep` fingerprints - local
+header + data + descriptor, and the central record except its offset - equal before / after), the
+archives check clean with the own reader and Python's `zipfile` (7z: `7z t`), sources of skipped
+files stay on disk. `s_repl` shows Retry / Cancel only (buttons 4,2); the non-replacing 7z skip
+still offers Skip (4,173,174,2). The progress was cancelled 2.3-2.4 s into the 128 MB packing in
+both progress rows on both builds (driven, not "finished first"). No `Sal*.tmp` was left beside any
+archive; no crash report; every instance exited 0.
+
+No defect found by the runs. The feature's GUI evidence is complete.

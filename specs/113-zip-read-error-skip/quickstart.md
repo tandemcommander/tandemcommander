@@ -1,4 +1,7 @@
-# Quickstart: feature 113 - GUI runs pending
+# Quickstart: feature 113
+
+Run on 2026-10-06 - results in `fix-log.md` ("GUI results"): this build 37 / 0 / 0, the build
+before 11 / 26 / 0 (the predicted rows), regressions as before.
 
 Automated (hidden desktop). Preconditions: no `tandemcommander.exe` running (also not the installed
 one - every probe shares `HKCU\Software\Tandem Commander` with it); Python 3 with `cryptography`

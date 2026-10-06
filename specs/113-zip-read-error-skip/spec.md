@@ -2,7 +2,7 @@
 
 **Feature Branch**: `113-zip-read-error-skip`
 **Created**: 2026-10-05
-**Status**: Implemented - GUI runs pending
+**Status**: Implemented - GUI runs done 2026-10-06 (37/0 this build, 11/26 the build before)
 **Input**: `specs/NEXT-WORK.md` item 5, queue entry 2, the 110 note "Recorded, not fixed": in the ZIP
 plug-in, when files are added into an existing archive, `DeleteFiles` removes the members being
 replaced BEFORE `PackFiles` reads the new files; when reading a new file fails (I/O error, locked

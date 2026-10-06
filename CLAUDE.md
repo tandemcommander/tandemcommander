@@ -1758,7 +1758,7 @@ plugin architecture preservation, UI consistency.
     held by the probe - "open" / byte-range; temporary copy, AES adding,
     in-place, 7z) written, **GUI runs pending**. Records:
     `specs/113-zip-read-error-skip/fix-log.md`.
-  GUI runs owed at commit time - see fix-log "Pending (GUI ...)".
+  GUI runs (2026-10-06 night): zipskip 37 / 0 (pre-113 11 / 26), 110 42/0, 106 70/0/4, 094 56/1 (X1).
 - 114-undelete-names: **Undelete restores files under their own names, from
   the volume chosen.** The 104 note, measured by code reading (no GUI that
   day) and wider.

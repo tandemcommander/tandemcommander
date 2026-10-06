@@ -1,0 +1,446 @@
+zipname_probe (feature 110) after-113
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_113\tandemcommander.exe
+Date    : 2026-10-06 01:23; ACP 1250; OEM 852
+
+--- c_hL [copy] F5 h-circ.txt into {L-acute.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_hL\arc.zip\'; windows: no window
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_hLboth [copy] F5 h-circ.txt into {h-circ.txt, L-acute.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_hLboth\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:24:05 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:24:05 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_hLskip [copy] as c_hLboth, the overwrite questions answered Yes, then Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_hLskip\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:24:18 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:24:18 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_IY [copy] F5 I-acute-tem.txt into {Y-acute-tem.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_IY\arc.zip\'; windows: no window
+          ENTRY \u00DDtem.txt raw=c39d74656d2e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u00CDtem.txt raw=c38d74656d2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_zz [copy] F5 z-caron.txt into {z-dot.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_zz\arc.zip\'; windows: no window
+          ENTRY \u017C.txt raw=c5bc2e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u017E.txt raw=c5be2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_cjk [copy] F5 U+4E5D.txt into {U+4E4D.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_cjk\arc.zip\'; windows: no window
+          ENTRY \u4E4D.txt raw=e4b98d2e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u4E5D.txt raw=e4b99d2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_cyr [copy] F5 em.txt into {o.txt} (Cyrillic)
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_cyr\arc.zip\'; windows: no window
+          ENTRY \u043E.txt raw=d0be2e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u043C.txt raw=d0bc2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_sub [copy] F5 of folder d (holding h-circ.txt) into {d/L-acute.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_sub\arc.zip\'; windows: no window
+          ENTRY d/\u0139.txt raw=642fc4b92e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY d/\u0125.txt raw=642fc4a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          ENTRY d/ raw=- utf8=0 host=0 kind=dir tag=- markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_inside [copy] F5 h-circ.txt into the archive folder slozka holding L-acute.txt
+   F5 target '...s\pavel\AppData\Local\Temp\tc110\zn\c_inside\arc.zip\slo\u017Eka\'; windows: no window
+          ENTRY slo\u017Eka/\u0139.txt raw=736c6fc5be6b612fc4b92e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY slo\u017Eka/\u0125.txt raw=736c6fc5be6b612fc4a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_unixhL [copy] F5 h-circ.txt into a Unix ZIP {L-acute.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_unixhL\arc.zip\'; windows: no window
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=3 kind=file tag=m1 markers=0
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_oemhL [copy] F5 h-circ.txt into an OEM-named ZIP {L-acute.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_oemhL\arc.zip\'; windows: no window
+          ENTRY \u0139.txt raw=912e747874 utf8=0 host=0 kind=file tag=m1 markers=0
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_merged [copy] F5 x.txt into folder h-circ of {h-circ/a.txt, L-acute/x.txt} (the core's listing merges the two folders)
+   F5 target '...\Users\pavel\AppData\Local\Temp\tc110\zn\c_merged\arc.zip\\u0125\'; windows: no window
+          ENTRY \u0125/a.txt raw=c4a52f612e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u0139/x.txt raw=c4b92f782e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u0125/x.txt raw=c4a52f782e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 3
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_Cc [copy] F5 c-caron.txt into {C-caron.txt} (case pair outside ASCII)
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_Cc\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:26:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u010D.txt raw=c48d2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:26:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_len [copy] F5 a-stroke.txt (3 bytes) into {A-stroke.txt} (2 bytes)
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_len\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:26:26 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u2C65.txt raw=e2b1a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:26:26 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_oemCc [copy] F5 c-caron.txt into an OEM-named ZIP {C-caron.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_oemCc\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:26:38 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u010D.txt raw=c48d2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:26:38 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_Aa [copy] F5 a.txt into {A.txt} (ASCII case)
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_Aa\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:26:51 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY a.txt raw=- utf8=0 host=0 kind=file tag=sS1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:26:51 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_same [copy] F5 x.txt into {x.txt, y.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_same\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:27:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY y.txt raw=- utf8=0 host=0 kind=file tag=m2 markers=0
+          ENTRY x.txt raw=- utf8=0 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:27:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_skip [copy] F5 x.txt into {x.txt}, Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_skip\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:27:16 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+          ENTRY x.txt raw=- utf8=0 host=0 kind=file tag=m1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:27:16 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+   VERDICT: PASS 
+
+--- c_Cc2 [copy] F5 c-caron.txt into {c-caron.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_Cc2\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:27:29 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u010D.txt raw=c48d2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:27:29 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_nfc [copy] F5 e-acute (NFC).txt into {e + combining acute (NFD).txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_nfc\arc.zip\'; windows: no window
+          ENTRY e\u0301.txt raw=65cc812e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u00E9.txt raw=c3a92e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_oem [copy] F5 c-caron.txt into an OEM-named ZIP {c-caron.txt}
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_oem\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:27:53 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u010D.txt raw=c48d2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:27:53 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_raw [copy] F5 c-caron.txt into a ZIP whose member is the CP1250 byte of c-caron flagged UTF-8 (not UTF-8)
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_raw\arc.zip\'; windows: no window
+          ENTRY <undecodable> raw=e82e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u010D.txt raw=c48d2e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- c_unixAa [copy] F5 a.txt into a Unix ZIP {A.txt} (the added file takes the member's spelling)
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\c_unixAa\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:17 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY A.txt raw=- utf8=0 host=0 kind=file tag=sS1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:17 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- c_unixlen [copy] F5 A-stroke.txt (2 bytes) into a Unix ZIP {a-stroke.txt} (3 bytes): the added file takes the member's longer spelling
+   F5 target '...:\Users\pavel\AppData\Local\Temp\tc110\zn\c_unixlen\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:29 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u2C65.txt raw=e2b1a52e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:29 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- r_3ys [copy] F5 c-caron-x.txt into {c-caron-x, C-caron-x, C-caron-X}.txt, Yes / Skip / Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3ys\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:42 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:42 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip || Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:42 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+          ENTRY \u010Cx.txt raw=c48c782e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u010CX.txt raw=c48c582e747874 utf8=1 host=0 kind=file tag=m3 markers=0
+          ENTRY \u010Dx.txt raw=c48d782e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 4
+          CHECK ok
+   END: exit 0x00000000; questions 3: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:42 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:42 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip / Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:42 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+   VERDICT: PASS 
+
+--- r_3ysA [copy] F5 ax.txt into {ax, Ax, AX}.txt (ASCII), Yes / Skip / Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3ysA\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip || Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+          ENTRY Ax.txt raw=- utf8=0 host=0 kind=file tag=m2 markers=0
+          ENTRY AX.txt raw=- utf8=0 host=0 kind=file tag=m3 markers=0
+          ENTRY ax.txt raw=- utf8=0 host=0 kind=file tag=sS1 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 4
+          CHECK ok
+   END: exit 0x00000000; questions 3: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip / Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:28:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+   VERDICT: PASS 
+
+--- r_3ysy [copy] as r_3ys, Yes / Skip / Yes
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3ysy\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip || Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u010Cx.txt raw=c48c782e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u010Dx.txt raw=c48d782e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 3
+          CHECK ok
+   END: exit 0x00000000; questions 3: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip / Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:13 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- r_3yyy [copy] as r_3ys, Yes / Yes / Yes
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3yyy\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:28 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:28 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:28 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u010Dx.txt raw=c48d782e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 3: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:28 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:28 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:28 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- r_3all [copy] as r_3ys, All
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3all\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:44 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> All
+          ENTRY \u010Dx.txt raw=c48d782e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:44 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> All
+   VERDICT: PASS 
+
+--- r_3s [copy] as r_3ys, Skip
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3s\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+          ENTRY \u010Dx.txt raw=c48d782e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u010Cx.txt raw=c48c782e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u010CX.txt raw=c48c582e747874 utf8=1 host=0 kind=file tag=m3 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 4
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:29:57 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+   VERDICT: PASS 
+
+--- r_3sa [copy] as r_3ys, Skip All
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3sa\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:09 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip All
+          ENTRY \u010Dx.txt raw=c48d782e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u010Cx.txt raw=c48c782e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u010CX.txt raw=c48c582e747874 utf8=1 host=0 kind=file tag=m3 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 4
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:09 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip All
+   VERDICT: PASS 
+
+--- r_3yskipall [copy] as r_3ys, Yes / Skip All (case folder names must differ on NTFS by more than case)
+   F5 target '...Users\pavel\AppData\Local\Temp\tc110\zn\r_3yskipall\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:22 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:22 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip All
+          ENTRY \u010Cx.txt raw=c48c782e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u010CX.txt raw=c48c582e747874 utf8=1 host=0 kind=file tag=m3 markers=0
+          ENTRY \u010Dx.txt raw=c48d782e747874 utf8=1 host=0 kind=file tag=sS1 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 4
+          CHECK ok
+   END: exit 0x00000000; questions 2: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:22 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:22 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip All
+   VERDICT: PASS 
+
+--- r_3yc [copy] as r_3ys, Yes / Cancel
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3yc\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:36 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:36 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Cancel
+          ENTRY \u010Dx.txt raw=c48d782e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u010Cx.txt raw=c48c782e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u010CX.txt raw=c48c582e747874 utf8=1 host=0 kind=file tag=m3 markers=0
+          COUNT 3
+          CHECK ok
+   END: exit 0x00000000; questions 2: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:36 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:36 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Cancel
+   VERDICT: PASS 
+
+--- r_3ysAU [copy] F5 ax.txt into a Unix ZIP {ax, Ax, AX}.txt, Skip / Yes (Unix asks again after a Skip)
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3ysAU\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:50 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:50 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY ax.txt raw=- utf8=0 host=3 kind=file tag=m1 markers=0
+          ENTRY AX.txt raw=- utf8=0 host=3 kind=file tag=m3 markers=0
+          ENTRY Ax.txt raw=- utf8=0 host=0 kind=file tag=sS1 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 4
+          CHECK ok
+   END: exit 0x00000000; questions 2: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:50 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:30:50 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- r_3ysAM [move] F6 (Move) ax.txt into {ax, Ax, AX}.txt, Yes / Skip / Skip: the source is stored, then deleted
+   F5 target 'C:\Users\pavel\AppData\Local\Temp\tc110\zn\r_3ysAM\arc.zip\'; windows: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:31:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:31:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip || Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:31:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+          ENTRY Ax.txt raw=- utf8=0 host=0 kind=file tag=m2 markers=0
+          ENTRY AX.txt raw=- utf8=0 host=0 kind=file tag=m3 markers=0
+          ENTRY ax.txt raw=- utf8=0 host=0 kind=file tag=sS1 markers=0
+          ENTRY other.txt raw=- utf8=0 host=0 kind=file tag=sS2 markers=0
+          COUNT 4
+          CHECK ok
+          source folder after the Move: empty
+   END: exit 0x00000000; questions 3: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:31:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:31:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip / Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 22, 06.10.2026, 1:31:04 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+   VERDICT: PASS 
+
+--- d_hL [del] F8 on h-circ.txt in {h-circ.txt, L-acute.txt}
+   F8 on '\u0125.txt' (position 1); windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete file "\u0125.txt" from archive? | [Button id=6] &Yes | [Button id=7] &No
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- d_unixDir [del] Unix ZIP {Dir/a.txt, DIR/b.txt}: in Dir, F8 on a.txt - Dir stays as an empty folder
+   F8 on 'a.txt' (position 1); windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete file "a.txt" from archive? | [Button id=6] &Yes | [Button id=7] &No
+          ENTRY DIR/b.txt raw=- utf8=0 host=3 kind=file tag=m2 markers=0
+          ENTRY Dir/ raw=- utf8=0 host=0 kind=dir tag=- markers=0
+          COUNT 1
+          CHECK ok
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- e_hL [ext] F5 of h-circ.txt from {h-circ.txt, L-acute.txt} to an empty folder
+   F5 of '\u0125.txt' (position 1) to out; windows: no window
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          COUNT 2
+          CHECK ok
+          out: FILE \u0125.txt tag=m1 markers=0
+   END: exit 0x00000000; questions 0: 
+   VERDICT: PASS 
+
+--- f_hL1 [edit] edit h-circ.txt of {h-circ.txt, L-acute.txt}
+   EDIT 1 '\u0125.txt' (position 1): edited True; temporary copies: SAL9D3.tmp\\u0125.txt; windows: no window
+   LEAVE: windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc110\zn\f_hL1\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited f... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc110\zn\f_hL1\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2... || Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:32:12 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=m1 markers=1
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:32:12 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- f_hL2 [edit] edit L-acute.txt of {h-circ.txt, L-acute.txt}
+   EDIT 1 '\u0139.txt' (position 2): edited True; temporary copies: SALDB0.tmp\\u0125.txt, SALDB0.tmp\\u0139.txt; windows: no window
+   LEAVE: windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc110\zn\f_hL2\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited f... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc110\zn\f_hL2\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2... || Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:32:35 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=m1 markers=0
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m2 markers=1
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 1: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:32:35 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- f_split [edit] edit d/L-acute.txt, then h-circ.txt, then L-acute.txt (108 review row split_zip)
+   EDIT 1 'd/\u0139.txt' (position 1): edited True; temporary copies: SAL3AD.tmp\\u0139.txt; windows: no window
+   EDIT 2 '\u0125.txt' (position 2): edited True; temporary copies: SAL3AD.tmp\\u0125.txt, SAL3AD.tmp\\u0139.txt; windows: no window
+   EDIT 3 '\u0139.txt' (position 3): edited True; temporary copies: SAL3AD.tmp\\u0125.txt, SAL3AD.tmp\\u0139.txt, SAL8FD.tmp\\u0139.txt; windows: no window
+   LEAVE: windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc110\zn\f_split\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc110\zn\f_split\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id... || Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:32:59 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:33:15 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:33:29 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+          ENTRY d/\u0139.txt raw=642fc4b92e747874 utf8=1 host=0 kind=file tag=m1 markers=1
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=m2 markers=1
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m3 markers=1
+          COUNT 3
+          CHECK ok
+   END: exit 0x00000000; questions 3: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:32:59 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:33:15 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q3: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:33:29 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes
+   VERDICT: PASS 
+
+--- f_skip [edit] edit both of {h-circ.txt, L-acute.txt}, overwrite questions Yes, then Skip
+   EDIT 1 '\u0125.txt' (position 1): edited True; temporary copies: SAL620.tmp\\u0125.txt; windows: no window
+   EDIT 2 '\u0139.txt' (position 2): edited True; temporary copies: SAL620.tmp\\u0125.txt, SAL620.tmp\\u0139.txt; windows: no window
+   LEAVE: windows: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc110\zn\f_skip\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited ... || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc110\zn\f_skip\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=... || Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:33:53 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes || Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:34:01 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+          ENTRY \u0139.txt raw=c4b92e747874 utf8=1 host=0 kind=file tag=m2 markers=0
+          ENTRY \u0125.txt raw=c4a52e747874 utf8=1 host=0 kind=file tag=m1 markers=1
+          COUNT 2
+          CHECK ok
+   END: exit 0x00000000; questions 2: Q1: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:33:53 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Yes / Q2: [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 06.10.2026, 1:34:01 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel -> Skip
+   VERDICT: PASS 
+Registry: restored; identical=True; SHA-256 before 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126 / after 9BD42518403B7EDF3C4388355A4C8730383E4B329BB480F4CFB7A6AE58271126
+
+=== summary ===
+c_hL        copy  PASS       Q=0 \u0139.txt=m1 \u0125.txt=sS1
+c_hLboth    copy  PASS       Q=1 \u0139.txt=m2 \u0125.txt=sS1
+c_hLskip    copy  PASS       Q=1 \u0139.txt=m2 \u0125.txt=sS1
+c_IY        copy  PASS       Q=0 \u00DDtem.txt=m1 \u00CDtem.txt=sS1
+c_zz        copy  PASS       Q=0 \u017C.txt=m1 \u017E.txt=sS1
+c_cjk       copy  PASS       Q=0 \u4E4D.txt=m1 \u4E5D.txt=sS1
+c_cyr       copy  PASS       Q=0 \u043E.txt=m1 \u043C.txt=sS1
+c_sub       copy  PASS       Q=0 d/\u0139.txt=m1 d/\u0125.txt=sS1 | dirs d/
+c_inside    copy  PASS       Q=0 slo\u017Eka/\u0139.txt=m1 slo\u017Eka/\u0125.txt=sS1
+c_unixhL    copy  PASS       Q=0 \u0139.txt=m1 \u0125.txt=sS1
+c_oemhL     copy  PASS       Q=0 \u0139.txt=m1 \u0125.txt=sS1
+c_merged    copy  PASS       Q=0 \u0125/a.txt=m1 \u0139/x.txt=m2 \u0125/x.txt=sS1
+c_Cc        copy  PASS       Q=1 \u010D.txt=sS1
+c_len       copy  PASS       Q=1 \u2C65.txt=sS1
+c_oemCc     copy  PASS       Q=1 \u010D.txt=sS1
+c_Aa        copy  PASS       Q=1 a.txt=sS1
+c_same      copy  PASS       Q=1 y.txt=m2 x.txt=sS1
+c_skip      copy  PASS       Q=1 x.txt=m1
+c_Cc2       copy  PASS       Q=1 \u010D.txt=sS1
+c_nfc       copy  PASS       Q=0 e\u0301.txt=m1 \u00E9.txt=sS1
+c_oem       copy  PASS       Q=1 \u010D.txt=sS1
+c_raw       copy  PASS       Q=0 raw:e82e747874=m1 \u010D.txt=sS1
+c_unixAa    copy  PASS       Q=1 A.txt=sS1
+c_unixlen   copy  PASS       Q=1 \u2C65.txt=sS1
+r_3ys       copy  PASS       Q=3 \u010Cx.txt=m2 \u010CX.txt=m3 \u010Dx.txt=sS1 other.txt=sS2
+r_3ysA      copy  PASS       Q=3 Ax.txt=m2 AX.txt=m3 ax.txt=sS1 other.txt=sS2
+r_3ysy      copy  PASS       Q=3 \u010Cx.txt=m2 \u010Dx.txt=sS1 other.txt=sS2
+r_3yyy      copy  PASS       Q=3 \u010Dx.txt=sS1 other.txt=sS2
+r_3all      copy  PASS       Q=1 \u010Dx.txt=sS1 other.txt=sS2
+r_3s        copy  PASS       Q=1 \u010Dx.txt=m1 \u010Cx.txt=m2 \u010CX.txt=m3 other.txt=sS2
+r_3sa       copy  PASS       Q=1 \u010Dx.txt=m1 \u010Cx.txt=m2 \u010CX.txt=m3 other.txt=sS2
+r_3yskipall copy  PASS       Q=2 \u010Cx.txt=m2 \u010CX.txt=m3 \u010Dx.txt=sS1 other.txt=sS2
+r_3yc       copy  PASS       Q=2 \u010Dx.txt=m1 \u010Cx.txt=m2 \u010CX.txt=m3
+r_3ysAU     copy  PASS       Q=2 ax.txt=m1 AX.txt=m3 Ax.txt=sS1 other.txt=sS2
+r_3ysAM     move  PASS       Q=3 Ax.txt=m2 AX.txt=m3 ax.txt=sS1 other.txt=sS2
+d_hL        del   PASS       Q=0 \u0139.txt=m2
+d_unixDir   del   PASS       Q=0 DIR/b.txt=m2 | dirs Dir/
+e_hL        ext   PASS       Q=0 \u0125.txt=m1 \u0139.txt=m2
+f_hL1       edit  PASS       Q=1 \u0139.txt=m2+0 \u0125.txt=m1+1
+f_hL2       edit  PASS       Q=1 \u0125.txt=m1+0 \u0139.txt=m2+1
+f_split     edit  PASS       Q=3 d/\u0139.txt=m1+1 \u0125.txt=m2+1 \u0139.txt=m3+1
+f_skip      edit  PASS       Q=2 \u0139.txt=m2+0 \u0125.txt=m1+1
+TOTAL: 42 PASS / 0 FAIL / 0 NOT DRIVEN
+Left running: 0; fixture removed: True; registry restored+identical: True
