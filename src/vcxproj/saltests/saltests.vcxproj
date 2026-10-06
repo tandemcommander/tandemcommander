@@ -149,6 +149,8 @@
     </ClInclude>
     <ClInclude Include="..\..\common\salfindtext.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salupdcheck.h">
+    </ClInclude>
     <ClInclude Include="..\..\common\salunicode.h">
     </ClInclude>
     <ClInclude Include="..\..\saltests\precomp.h">

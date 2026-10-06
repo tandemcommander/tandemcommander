@@ -1,0 +1,27 @@
+rawsrv on 8342, record 7635 bytes
+20:27:39 request /hdrdrip
+20:27:51 ended   [WinError 10054] Stávající pøipojení bylo vynucenì ukonèeno vzdáleným hostitelem
+20:27:51 request /bodydrip
+20:28:03 ended   [WinError 10054] Stávající pøipojení bylo vynucenì ukonèeno vzdáleným hostitelem
+20:28:03 request /noread
+20:28:16 request /nocl
+20:28:16 done    /nocl after 0.0 s
+20:28:16 request /nocl-cut
+20:28:16 done    /nocl-cut after 0.0 s
+20:28:16 request /chunkcut
+20:28:16 done    /chunkcut after 0.0 s
+20:28:17 request /chunkcut2
+20:28:17 done    /chunkcut2 after 0.0 s
+20:28:17 request /clhuge
+20:28:17 done    /clhuge after 0.0 s
+20:28:17 request /clshort
+20:28:17 done    /clshort after 0.0 s
+20:28:18 request /clzero
+20:28:18 done    /clzero after 0.0 s
+20:28:18 request /100
+20:28:19 done    /100 after 0.7 s
+20:28:39 request /bodydrip
+20:28:41 ended   [WinError 10054] Stávající pøipojení bylo vynucenì ukonèeno vzdáleným hostitelem
+20:28:41 request /hdrdrip
+20:28:43 done    /noread after 40.0 s
+20:28:43 ended   [WinError 10054] Stávající pøipojení bylo vynucenì ukonèeno vzdáleným hostitelem

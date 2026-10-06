@@ -1242,6 +1242,10 @@ struct COpenViewerData
 // po dokonceni vypisu (modalni box behem ReadDirectory by zablokoval listing)
 #define WM_USER_EQUIVPAIRNOTICE WM_APP + 416 // [0, 0]
 
+// feature 123: the worker finished a check for a new version; the main window fetches the
+// result with UpdateCheck_TakeResult() (updcheck.h)
+#define WM_USER_UPDATECHECK_DONE WM_APP + 417 // [0, 0]
+
 // states for Shift+F1 help mode
 #define HELP_INACTIVE 0 // not in Shift+F1 help mode (must be 0)
 #define HELP_ACTIVE 1   // in Shift+F1 help mode (non-zero)
@@ -1842,6 +1846,7 @@ DWORD CfgSkillLevelToMenu(BYTE cfgSkillLevel);
 #define IDT_THROBBER 949
 #define IDT_DELAYEDTHROBBER 950
 #define IDT_UPDATETASKLIST 951
+#define IDT_UPDATENOTICE 952 // feature 123: retry showing the new-version notification (main window)
 
 // POZOR: skoro vsechny funkce v teto sekci pri chybe zobrazuji hlaseni o LOAD / SAVE
 //        konfigurace, coz z nich dela nevhodne pro bezny pristup do Registry,

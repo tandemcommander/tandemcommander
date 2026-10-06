@@ -281,6 +281,8 @@ MENU_TEMPLATE_ITEM MainMenuTemplate[] =
         // [019] Program help is not built; the Help menu keeps only "About Open
         // Salamander". Removed: Contents, Index, Search, Keyboard, What is This?,
         // Official Support Forum, Task List, and the About Plugin submenu.
+        // feature 123: asks the release server for the latest version; always answers
+        {MNTT_IT, IDS_MENU_HELP_CHECKVERSION, MNTS_B | MNTS_I | MNTS_A, CM_HELP_CHECKVERSION, -1, 0, NULL},
         {MNTT_IT, IDS_MENU_HELP_ABOUT, MNTS_B | MNTS_I | MNTS_A, CM_HELP_ABOUT, -1, 0, NULL},
         {MNTT_PE},
         {MNTT_PE}, // terminator

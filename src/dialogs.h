@@ -847,12 +847,15 @@ protected:
 //
 // ****************************************************************************
 
+class CHyperLink;
+
 class CAboutDialog : public CCommonDialog
 {
 protected:
     HFONT HSmallFont;
     HBRUSH HGradientBkBrush;
     CBitmap* BackgroundBitmap;
+    CHyperLink* UpdateLink; // feature 123: "Download" / "Check now" behind the new-version line
 
 public:
     CAboutDialog(HWND parent);
@@ -860,6 +863,9 @@ public:
 
 protected:
     virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+    // feature 123: fills the line under the version from the stored update state
+    void RefreshUpdateLine();
 };
 
 //

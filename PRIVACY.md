@@ -4,11 +4,14 @@
 
 Tandem Commander is a file manager that runs entirely on your computer. It has
 no user accounts, no telemetry, no analytics and no advertising, and it sends
-nothing to the project or to its author. It uses the network only as a result
-of something you do — for example connecting to an FTP or SFTP server, loading
-the images of a Markdown document, or clicking a web link. What it stores —
-settings, history and, if you choose, saved passwords — stays in your Windows
-user profile.
+nothing to the project or to its author. With one exception it uses the
+network only as a result of something you do — for example connecting to an
+FTP or SFTP server, loading the images of a Markdown document, or clicking a
+web link. The exception is the check for a new version: unless you turn it
+off, the program asks GitHub about once a day, when it starts, which version
+of Tandem Commander is the latest (see *Checking for a new version*). What it
+stores — settings, history and, if you choose, saved passwords — stays in
+your Windows user profile.
 
 This statement covers the program and its installer as distributed by the
 Tandem Commander project, including the plugins that come with it. It does not
@@ -58,6 +61,20 @@ plugin panel sets the key at which the Windows Registry Editor opens.
 
 To show the folders of OneDrive, Dropbox and Google Drive, the program reads
 the settings those programs keep on your computer. Nothing is sent anywhere.
+
+### New version check
+
+For the check for a new version (see *Checking for a new version*) the
+program keeps, in the same registry key under `0.1\Update Check`: whether the
+check at start-up is on, when it last tried and whether the server answered,
+when it last succeeded, the number and release date of the latest version it
+learned of, and a version you chose to skip. These values are written when
+they change, not with the rest of the settings, and *Clear History* does not
+remove them. Nothing from the server's answer is stored except that version
+number and date. An exported configuration contains these values too.
+Importing a configuration, or removing a damaged one, replaces or removes
+them; if the option is not part of what is imported, the check at start-up is
+on again.
 
 ### Saved connections
 
@@ -163,9 +180,47 @@ only if you choose so there, by Windows.
 
 ## When the program uses the network
 
-The program does not contact the internet on its own: there are no update
-checks, no telemetry and no crash-report uploads. It communicates over a
-network only in these situations, each started by something you do:
+Apart from the check for a new version, the program does not contact the
+internet on its own: there is no telemetry and there are no crash-report
+uploads.
+
+### Checking for a new version
+
+When the program starts, it asks GitHub — which hosts the project's releases —
+which version of Tandem Commander is the latest, and tells you if it is newer
+than yours. This is on by default. It happens at most once in 24 hours; if the
+server could not be reached at all, the program tries again at a later start,
+at most once an hour. The same question is asked when you choose
+**Help → Check for New Version** or *Check now* in the About box.
+
+The request goes to `api.github.com` over an encrypted connection. GitHub
+receives what any web request reveals — your IP address and the time — and the
+fixed identification `TandemCommander-updatecheck`, together with two fixed
+lines saying which form of answer is expected. Nothing else is sent: not the
+version you have installed, no identifier of you, your computer or the
+installation, and nothing about your files or settings. No cookies are stored
+or sent, and the program never signs in to a server or a proxy with your
+Windows credentials. The request uses the proxy settings of Windows: if a
+proxy server is set up — or Windows finds one automatically on your network —
+the request goes through it. The request goes to GitHub, not to the project or its
+author; GitHub's privacy statement describes what GitHub does with it.
+
+From the answer the program uses only the version number and the release
+date. It downloads and installs nothing itself. *Download* — in the
+notification window and in the About box — hands the address of the new
+version's installer on github.com to your web browser, which downloads the
+file (GitHub serves it from its download servers); *Release notes* opens the
+page of that release on github.com. Both happen only when you choose them.
+
+To turn the check off, clear **Options → Configuration → General → Check for
+a new version of Tandem Commander at start-up**, or the same option in the
+notification window. The program then asks only when you choose the command
+yourself.
+
+### Other network use
+
+Everything else happens only in these situations, each started by something
+you do:
 
 - **FTP** — the program connects to the server you entered, or to a proxy you
   configured. FTP is not encrypted: your user name, password and files travel
@@ -193,10 +248,11 @@ network only in these situations, each started by something you do:
 - **Network drives and shared folders** — when you open a network location,
   Windows connects to it.
 - **Links in the program** — links in, for example, the About box, the Help
-  menu and the Plugins Manager open in your web browser or e-mail program
-  when you click them. They point to tandemcommander.org or the project's
-  GitHub pages, except the PictView plugin's home page and support address,
-  which belong to a third party, pictview.com.
+  menu, the Plugins Manager and the new-version notification open in your web
+  browser or e-mail program when you click them. They point to
+  tandemcommander.org or the project's GitHub pages, except the PictView
+  plugin's home page and support address, which belong to a third party,
+  pictview.com.
 - **E-mail** — **Files → Email** passes the selected files to your e-mail
   program; nothing is sent until you send the message there.
 
@@ -232,9 +288,10 @@ Commander" with the plugin's version number.
 ## Optional components
 
 Some plugins exist in the project's source code but are not part of the
-distributed program — among them an update checker that would contact the
-website of the original Open Salamander. They are not installed, and loading
-such a plugin yourself is outside this statement.
+distributed program — among them an old update-checker plugin that would
+contact the website of the original Open Salamander (it has nothing to do
+with the check for a new version described above). They are not installed,
+and loading such a plugin yourself is outside this statement.
 
 ## Installing and uninstalling
 
@@ -297,7 +354,9 @@ project's repository.
 ---
 
 This statement describes the version in development after Tandem Commander
-0.1.8 (`CHANGELOG.md`, *Unreleased*). In 0.1.8 itself: a password typed as part
+0.1.8 (`CHANGELOG.md`, *Unreleased*). In 0.1.8 itself: there is no check for a
+new version, so the program never contacts the internet on its own and keeps
+no `Update Check` values; a password typed as part
 of an address is saved in history as plain text; a Markdown document can open
 a link without a click; remote images identify as `OpenSalamander-mdview`, and
 the viewer may answer a server's request for Windows sign-in with your Windows
@@ -308,4 +367,4 @@ FTP login is `name@someserver.com`; a crash that happens while the ZIP
 plugin is using a password can write that password into the crash report; and
 PictView's wallpaper commands wrote no picture file (*Restore Previous* and
 *None* did write the three `Prev...` values).
-Last updated 2026-10-05.
+Last updated 2026-10-06.

@@ -1,0 +1,19 @@
+[exh_mini] adv_rtc_J.exe: 120952 cases, 0 disagreements  [grammar accepted 41984 texts that are not valid UTF-8] # cases 120952 maxus 30.9 case 57828 len 390
+[exh_mini] adv_rtc_noJ.exe: 120952 cases, 0 disagreements  [grammar accepted 41984 texts that are not valid UTF-8] # cases 120952 maxus 31.4 case 48706 len 390
+[exh_mini] adv_asan_J.exe: 120952 cases, 0 disagreements  [grammar accepted 41984 texts that are not valid UTF-8] # cases 120952 maxus 70.2 case 111533 len 392
+[exh_mini] adv_asan_noJ.exe: 120952 cases, 0 disagreements  [grammar accepted 41984 texts that are not valid UTF-8] # cases 120952 maxus 190.3 case 114513 len 396
+[exh_mini] adv_o2_J.exe: 120952 cases, 0 disagreements  [grammar accepted 41984 texts that are not valid UTF-8] # cases 120952 maxus 16.5 case 72191 len 390
+[exh_mini] oracle: {'cases': 120952, 'oracle_accepts': 264, 'oracle_valid_json': 86467, 'invalid_utf8': 49920, 'oracle_classes': {'NotJson': 34485, 'MissingField': 13034, 'BadTag': 1552, 'ForeignNotes': 18389, 'BadTime': 5173, 'None': 264, 'NoInstaller': 48055}} (14.7 s)
+[exh_short] adv_rtc_J.exe: 1118480 cases, 0 disagreements  # cases 1118480 maxus 53.6 case 122 len 2
+[exh_short] adv_rtc_noJ.exe: 1118480 cases, 0 disagreements  # cases 1118480 maxus 13.3 case 161923 len 5
+[exh_short] adv_asan_J.exe: 1118480 cases, 0 disagreements  # cases 1118480 maxus 19.4 case 995325 len 5
+[exh_short] adv_asan_noJ.exe: 1118480 cases, 0 disagreements  # cases 1118480 maxus 18.7 case 1036765 len 5
+[exh_short] adv_o2_J.exe: 1118480 cases, 0 disagreements  # cases 1118480 maxus 23.2 case 75521 len 5
+[exh_short] oracle: {'cases': 1118480, 'oracle_accepts': 0, 'oracle_valid_json': 4094, 'invalid_utf8': 0, 'oracle_classes': {'NotJson': 1118460, 'MissingField': 20}} (28.7 s)
+[exh_dup] adv_rtc_J.exe: 299 cases, 0 disagreements  # cases 299 maxus 23.8 case 120 len 446
+[exh_dup] adv_rtc_noJ.exe: 299 cases, 0 disagreements  # cases 299 maxus 25.8 case 0 len 435
+[exh_dup] adv_asan_J.exe: 299 cases, 0 disagreements  # cases 299 maxus 55.4 case 0 len 435
+[exh_dup] adv_asan_noJ.exe: 299 cases, 0 disagreements  # cases 299 maxus 55.4 case 0 len 435
+[exh_dup] adv_o2_J.exe: 299 cases, 0 disagreements  # cases 299 maxus 21.7 case 0 len 435
+[exh_dup] oracle: {'cases': 299, 'oracle_accepts': 1, 'oracle_valid_json': 299, 'invalid_utf8': 0, 'oracle_classes': {'None': 1, 'Duplicate': 245, 'MissingField': 5, 'NoInstaller': 48}} (0.2 s)
+TOTAL disagreements: 0

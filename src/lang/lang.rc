@@ -128,6 +128,8 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,1,146,282,12
     CONTROL         "&Keep environment variables updated to system values",IDC_RELOADENVVARS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,1,159,193,12
+    CONTROL         "Check for a new &version of Tandem Commander at start-up",IDC_CHECKNEWVERSION,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,1,172,282,12
 END
 
 IDD_CFGPAGE_REGIONAL DIALOGEX 65, 18, 299, 231
@@ -636,21 +638,60 @@ END
 // time from VERSINFO_COPYRIGHT_TANDEM / VERSINFO_COPYRIGHT_OPENSAL in
 // versinfo.rh2. Do not put text back: machine translation rewrote the
 // predecessor's attribution and the copyright year in all eleven languages.
-IDD_ABOUT DIALOGEX 58, 50, 299, 184
+IDD_ABOUT DIALOGEX 58, 50, 299, 195
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_BORDER
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     LTEXT           "",IDC_ABOUT_OPENSAL,10,9,143,40
     LTEXT           "",IDC_ABOUT_LOGO,174,1,123,104
-    DEFPUSHBUTTON   "Close",IDOK,124,162,50,14,WS_GROUP
+    DEFPUSHBUTTON   "Close",IDOK,124,173,50,14,WS_GROUP
     LTEXT           "Version",IDS_ABOUT_SALAMANDER,10,86,201,8
-    LTEXT           "",IDC_STATIC_1,10,97,196,8
-    LTEXT           "",IDC_STATIC_2,10,108,196,8
-    LTEXT           "Web:",IDC_STATIC_3,10,119,20,8
-    LTEXT           "tandemcommander.org",IDC_ABOUT_WWW,31,119,80,8,WS_TABSTOP
-    LTEXT           "Tandem Commander is free software",IDC_STATIC_4,10,130,165,8
-    LTEXT           "Licensed under GNU General Public License version 2 or later",IDC_STATIC_5,10,141,214,8
-    CONTROL         "",IDC_ABOUT_BOTTOM,"Static",SS_ETCHEDHORZ | WS_GROUP,2,154,294,1
+    LTEXT           "",IDC_ABOUT_UPDATE,10,97,160,8
+    LTEXT           "",IDC_ABOUT_UPDATELINK,172,97,100,8,WS_TABSTOP
+    LTEXT           "",IDC_STATIC_1,10,108,196,8
+    LTEXT           "",IDC_STATIC_2,10,119,196,8
+    LTEXT           "Web:",IDC_STATIC_3,10,130,20,8
+    LTEXT           "tandemcommander.org",IDC_ABOUT_WWW,31,130,80,8,WS_TABSTOP
+    LTEXT           "Tandem Commander is free software",IDC_STATIC_4,10,141,165,8
+    LTEXT           "Licensed under GNU General Public License version 2 or later",IDC_STATIC_5,10,152,214,8
+    CONTROL         "",IDC_ABOUT_BOTTOM,"Static",SS_ETCHEDHORZ | WS_GROUP,2,165,294,1
+END
+
+// feature 123: the notification about a new version (modeless, see upddlg.cpp). The three
+// controls without text are placeholders: the dialog reads their rectangles for the painted
+// header band (wordmark, artwork, accent line) and destroys them. The link text and the two
+// version numbers are set at run time. Tab order: buttons, check box, link.
+IDD_UPDATENOTICE DIALOGEX 0, 0, 296, 184
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Tandem Commander"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "&Download",IDOK,12,162,72,14,WS_GROUP
+    PUSHBUTTON      "Remind Me &Later",IDCANCEL,90,162,92,14
+    PUSHBUTTON      "&Skip This Version",IDC_UPDN_SKIP,188,162,96,14
+    CONTROL         "&Check for a new version at start-up",IDC_UPDN_ATSTARTUP,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,12,144,272,12
+    LTEXT           "",IDC_UPDN_NOTES,12,110,272,8,WS_TABSTOP
+    LTEXT           "",IDC_UPDN_WORDMARK,12,7,170,22
+    LTEXT           "A new version is available",IDC_UPDN_TITLE,12,32,220,13
+    LTEXT           "",IDC_UPDN_LOGO,238,2,54,48
+    CONTROL         "",IDC_UPDN_ACCENT,"Static",SS_ETCHEDHORZ,0,52,296,1
+    LTEXT           "Installed version",IDC_UPDN_INSTLABEL,24,62,104,8
+    LTEXT           "",IDC_UPDN_INSTVER,24,72,104,18
+    CONTROL         "",IDC_UPDN_ARROW,"Static",SS_OWNERDRAW,130,74,26,14
+    LTEXT           "Available version",IDC_UPDN_NEWLABEL,164,62,120,8
+    LTEXT           "",IDC_UPDN_NEWVER,164,72,120,18
+    LTEXT           "",IDC_UPDN_RELEASED,12,98,272,8
+    LTEXT           "The download opens in your web browser. Run the installer to update; your settings are kept.",IDC_UPDN_HINT,12,123,272,17
+END
+
+// feature 123: shown while a check the user asked for takes longer than a moment
+IDD_UPDATECHECKING DIALOGEX 0, 0, 200, 54
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Check for New Version"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Checking for a new version...",IDC_UPDC_TEXT,10,12,180,8
+    DEFPUSHBUTTON   "Cancel",IDCANCEL,75,32,50,14,WS_GROUP
 END
 
 IDD_DRIVEINFO DIALOGEX 16, 28, 337, 290

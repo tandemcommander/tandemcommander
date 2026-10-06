@@ -213,7 +213,33 @@
       "IDC_PANELTABS": "Zobrazit karty &v panelech",
       "IDS_PACKERR_EXEMISSING": "Archivační program „%1“ nebyl nalezen. Nastavte jeho umístění na stránce „Umístění externích archivátorů“ v konfiguraci nebo použijte příkaz „Autokonfigurace archivačních programů“ z nabídky Možnosti.",
       "IDS_DELFILESAFTERPACKINGUNREADABLE": "Pokoušíte se přesunout označené soubory a adresáře do archivu. Není to možné, protože adresář v označení nelze přečíst, a proto nelze ověřit, zda neobsahuje odkaz na adresář. Soubory nebudou z disku odstraněny. Pokračujte prosím bez odstranění souborů z disku po přidání do archivu.\\n\\nAdresář: %s",
-      "IDS_DELFILESAFTERPACKINGTOODEEP": "Pokoušíte se přesunout označené soubory a adresáře do archivu. Není to možné, protože adresář v označení je vnořen příliš hluboko (více než %d úrovní), a proto nelze ověřit, zda neobsahuje odkaz na adresář. Soubory nebudou z disku odstraněny. Pokračujte prosím bez odstranění souborů z disku po přidání do archivu.\\n\\nAdresář: %s"
+      "IDS_DELFILESAFTERPACKINGTOODEEP": "Pokoušíte se přesunout označené soubory a adresáře do archivu. Není to možné, protože adresář v označení je vnořen příliš hluboko (více než %d úrovní), a proto nelze ověřit, zda neobsahuje odkaz na adresář. Soubory nebudou z disku odstraněny. Pokračujte prosím bez odstranění souborů z disku po přidání do archivu.\\n\\nAdresář: %s",
+      "IDS_MENU_HELP_CHECKVERSION": "Zkontrolovat &novou verzi",
+      "#Check for New Version": "Zkontrolovat novou verzi",
+      "IDS_UPDATE_UPTODATE": "Tandem Commander %s je nejnovější verze.",
+      "IDS_UPDATE_ERR_UNREACHABLE": "Novou verzi se nepodařilo zkontrolovat: server s vydáními není dostupný.\\n\\nZkontrolujte připojení k internetu a zkuste to znovu.",
+      "IDS_UPDATE_ERR_REFUSED": "Novou verzi se nepodařilo zkontrolovat: server s vydáními požadavek odmítl.\\n\\nZ vaší sítě možná přišlo příliš mnoho požadavků. Zkuste to znovu za hodinu.",
+      "IDS_UPDATE_ERR_UNEXPECTED": "Novou verzi se nepodařilo zkontrolovat: server s vydáními odpověděl neočekávaně.\\n\\nZkuste to později, nebo navštivte tandemcommander.org.",
+      "IDS_UPDATE_RELEASED": "Vydáno %s",
+      "IDS_UPDATE_ABOUT_NEWER": "Je dostupná verze %s.",
+      "IDS_UPDATE_ABOUT_LATEST": "Toto je nejnovější verze (zkontrolováno %s).",
+      "IDS_UPDATE_ABOUT_NOTCHECKED": "Nová verze nebyla zkontrolována.",
+      "IDS_UPDATE_DOWNLOADLINK": "Stáhnout",
+      "IDS_UPDATE_CHECKNOWLINK": "Zkontrolovat nyní",
+      "IDS_UPDATE_NOTESLINK": "Poznámky k vydání",
+      "IDS_UPDATE_ERR_BROWSER": "Adresu se nepodařilo otevřít ve webovém prohlížeči:\\n\\n%s\\n\\nChcete adresu zkopírovat do schránky?",
+      "IDS_UPDATE_ERR_START": "Novou verzi se nepodařilo zkontrolovat: kontrolu se nepodařilo spustit. Zkuste to znovu.",
+      "IDS_UPDATE_ABOUT_LATEST_NODATE": "Toto je nejnovější verze.",
+      "IDC_UPDN_TITLE": "Je dostupná nová verze",
+      "IDC_UPDN_INSTLABEL": "Nainstalovaná verze",
+      "IDC_UPDN_NEWLABEL": "Dostupná verze",
+      "IDC_UPDN_HINT": "Stahování se otevře ve webovém prohlížeči. Aktualizaci provedete spuštěním instalátoru; nastavení zůstane zachováno.",
+      "IDC_UPDN_ATSTARTUP": "&Kontrolovat novou verzi při spuštění",
+      "#&Download": "&Stáhnout",
+      "#Remind Me &Later": "Připomenout &později",
+      "IDC_UPDN_SKIP": "Př&eskočit tuto verzi",
+      "IDC_UPDC_TEXT": "Kontroluje se nová verze...",
+      "IDC_CHECKNEWVERSION": "Kontrolovat &novou verzi programu Tandem Commander při spuštění"
     },
     "slovak": {
       "IDS_FINDLOG_TEXT": "Text",
@@ -228,7 +254,19 @@
       "IDS_PACKRET_STOPPED": "Archivačný program bol zastavený alebo čakal na odpoveď, ktorú nebolo možné poskytnúť.",
       "IDS_DELFILESAFTERPACKINGUNREADABLE": "Snažíte sa presunúť vybrané súbory a adresáre do archívu. Toto nie je možné, pretože adresár vo výbere nie je možné prečítať, a preto nie je možné overiť, či neobsahuje odkaz na adresár. Súbory nebudú z disku odstránené. Prosím, pokračujte bez odstránenia súborov z disku po pridaní do archívu.\\n\\nAdresár: %s",
       "IDS_DELFILESAFTERPACKINGTOODEEP": "Snažíte sa presunúť vybrané súbory a adresáre do archívu. Toto nie je možné, pretože adresár vo výbere je vnorený príliš hlboko (viac ako %d úrovní), a preto nie je možné overiť, či neobsahuje odkaz na adresár. Súbory nebudú z disku odstránené. Prosím, pokračujte bez odstránenia súborov z disku po pridaní do archívu.\\n\\nAdresár: %s",
-      "IDS_DIRNESTEDTOODEEP": "Adresár „%s“ je vnorený príliš hlboko (viac ako %d úrovní), aby mohol byť spracovaný."
+      "IDS_DIRNESTEDTOODEEP": "Adresár „%s“ je vnorený príliš hlboko (viac ako %d úrovní), aby mohol byť spracovaný.",
+      "IDC_CHECKNEWVERSION": "Kontrolovať novú verziu progra&mu Tandem Commander pri spustení",
+      "IDC_UPDN_ATSTARTUP": "&Kontrolovať novú verziu pri spustení",
+      "IDC_UPDN_INSTLABEL": "Nainštalovaná verzia",
+      "IDC_UPDN_HINT": "Sťahovanie sa otvorí vo webovom prehliadači. Aktualizáciu vykonáte spustením inštalátora; nastavenia zostanú zachované.",
+      "IDC_UPDC_TEXT": "Kontroluje sa nová verzia...",
+      "IDS_UPDATE_ERR_UNREACHABLE": "Novú verziu sa nepodarilo skontrolovať: server s vydaniami nie je dostupný.\\n\\nSkontrolujte pripojenie k internetu a skúste to znova.",
+      "IDS_UPDATE_ERR_REFUSED": "Novú verziu sa nepodarilo skontrolovať: server s vydaniami požiadavku odmietol.\\n\\nZ vašej siete možno prišlo príliš veľa požiadaviek. Skúste to znova o hodinu.",
+      "IDS_UPDATE_ERR_UNEXPECTED": "Novú verziu sa nepodarilo skontrolovať: server s vydaniami odpovedal neočakávane.\\n\\nSkúste to neskôr alebo navštívte tandemcommander.org.",
+      "IDS_UPDATE_RELEASED": "Vydané %s",
+      "IDS_UPDATE_ABOUT_LATEST": "Toto je najnovšia verzia (skontrolované %s).",
+      "IDS_UPDATE_CHECKNOWLINK": "Skontrolovať teraz",
+      "IDS_UPDATE_ERR_START": "Novú verziu sa nepodarilo skontrolovať: kontrolu sa nepodarilo spustiť. Skúste to znova."
     },
     "german": {
       "#Command Shell": "Eingabeaufforderung",
@@ -258,7 +296,17 @@
       "IDS_PACKERR_CANCELLED_ARC": "Der Vorgang wurde abgebrochen und das Packprogramm wurde beendet. Das Archiv „%1“ ist möglicherweise unvollständig.",
       "IDS_PACKRET_STOPPED": "Das Packprogramm wurde beendet oder wartete auf eine Antwort, die nicht gegeben werden konnte.",
       "IDS_DELFILESAFTERPACKINGUNREADABLE": "Sie versuchen, die ausgewählten Dateien und Verzeichnisse ins Archiv zu verschieben. Das ist nicht möglich, da ein Verzeichnis in der Auswahl nicht gelesen werden kann und daher nicht auf Verknüpfungen zu Verzeichnissen geprüft werden kann. Die Dateien werden nicht vom Datenträger gelöscht. Fahren Sie fort, ohne die Dateien nach dem Packen vom Datenträger zu löschen.\\n\\nVerzeichnis: %s",
-      "IDS_DELFILESAFTERPACKINGTOODEEP": "Sie versuchen, die ausgewählten Dateien und Verzeichnisse ins Archiv zu verschieben. Das ist nicht möglich, da ein Verzeichnis in der Auswahl zu tief verschachtelt ist (mehr als %d Ebenen) und daher nicht auf Verknüpfungen zu Verzeichnissen geprüft werden kann. Die Dateien werden nicht vom Datenträger gelöscht. Fahren Sie fort, ohne die Dateien nach dem Packen vom Datenträger zu löschen.\\n\\nVerzeichnis: %s"
+      "IDS_DELFILESAFTERPACKINGTOODEEP": "Sie versuchen, die ausgewählten Dateien und Verzeichnisse ins Archiv zu verschieben. Das ist nicht möglich, da ein Verzeichnis in der Auswahl zu tief verschachtelt ist (mehr als %d Ebenen) und daher nicht auf Verknüpfungen zu Verzeichnissen geprüft werden kann. Die Dateien werden nicht vom Datenträger gelöscht. Fahren Sie fort, ohne die Dateien nach dem Packen vom Datenträger zu löschen.\\n\\nVerzeichnis: %s",
+      "#Check for New Version": "Nach neuer Version suchen",
+      "IDC_UPDN_HINT": "Der Download wird in Ihrem Webbrowser geöffnet. Führen Sie das Installationsprogramm aus, um zu aktualisieren; Ihre Einstellungen bleiben erhalten.",
+      "IDS_UPDATE_ERR_UNREACHABLE": "Es konnte nicht nach einer neuen Version gesucht werden: Der Release-Server war nicht erreichbar.\\n\\nÜberprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+      "IDS_UPDATE_ERR_REFUSED": "Es konnte nicht nach einer neuen Version gesucht werden: Der Release-Server hat die Anfrage abgelehnt.\\n\\nMöglicherweise sind zu viele Anfragen aus Ihrem Netzwerk eingegangen. Versuchen Sie es in einer Stunde erneut.",
+      "IDS_UPDATE_ERR_UNEXPECTED": "Es konnte nicht nach einer neuen Version gesucht werden: Der Release-Server hat eine unerwartete Antwort gegeben.\\n\\nVersuchen Sie es später noch einmal oder besuchen Sie tandemcommander.org.",
+      "IDS_UPDATE_RELEASED": "Veröffentlicht am %s",
+      "IDS_UPDATE_ABOUT_LATEST": "Dies ist die neueste Version (geprüft am %s).",
+      "IDS_UPDATE_CHECKNOWLINK": "Jetzt suchen",
+      "IDS_UPDATE_ERR_BROWSER": "Die Adresse konnte in Ihrem Webbrowser nicht geöffnet werden:\\n\\n%s\\n\\nMöchten Sie die Adresse in die Zwischenablage kopieren?",
+      "IDS_UPDATE_ERR_START": "Es konnte nicht nach einer neuen Version gesucht werden: Die Suche konnte nicht gestartet werden. Versuchen Sie es erneut."
     },
     "french": {
       "#Command Shell": "Interpréteur de commandes",
@@ -278,7 +326,18 @@
       "IDS_EXT_7ZIP": "Programme console 7-Zip (7z.exe)",
       "IDS_DELFILESAFTERPACKINGUNREADABLE": "Vous tentez de déplacer les fichiers et les répertoires sélectionnés en archive. Cela n'est pas possible car un répertoire de la sélection ne peut pas être lu ; il est donc impossible de vérifier s'il contient des liens vers des répertoires. Les fichiers ne seront pas supprimés du disque. Veuillez poursuivre sans supprimer les fichiers du disque après compression dans l'archive.\\n\\nRépertoire : %s",
       "IDS_DELFILESAFTERPACKINGTOODEEP": "Vous tentez de déplacer les fichiers et les répertoires sélectionnés en archive. Cela n'est pas possible car un répertoire de la sélection est imbriqué trop profondément (plus de %d niveaux) ; il est donc impossible de vérifier s'il contient des liens vers des répertoires. Les fichiers ne seront pas supprimés du disque. Veuillez poursuivre sans supprimer les fichiers du disque après compression dans l'archive.\\n\\nRépertoire : %s",
-      "IDS_DIRNESTEDTOODEEP": "Le répertoire « %s » est imbriqué trop profondément (plus de %d niveaux) pour être traité."
+      "IDS_DIRNESTEDTOODEEP": "Le répertoire « %s » est imbriqué trop profondément (plus de %d niveaux) pour être traité.",
+      "IDS_MENU_HELP_CHECKVERSION": "Rechercher une &nouvelle version",
+      "#Check for New Version": "Rechercher une nouvelle version",
+      "IDC_UPDN_HINT": "Le téléchargement s'ouvre dans votre navigateur web. Lancez le programme d'installation pour effectuer la mise à jour ; vos paramètres sont conservés.",
+      "IDS_UPDATE_ERR_UNREACHABLE": "Impossible de rechercher une nouvelle version : le serveur de publication est inaccessible.\\n\\nVérifiez votre connexion Internet et réessayez.",
+      "IDS_UPDATE_ERR_REFUSED": "Impossible de rechercher une nouvelle version : le serveur de publication a refusé la demande.\\n\\nIl se peut que trop de demandes aient été envoyées depuis votre réseau. Réessayez dans une heure.",
+      "IDS_UPDATE_ERR_UNEXPECTED": "Impossible de rechercher une nouvelle version : le serveur de publication a renvoyé une réponse inattendue.\\n\\nRéessayez plus tard ou rendez-vous sur tandemcommander.org.",
+      "IDS_UPDATE_RELEASED": "Publiée le %s",
+      "IDS_UPDATE_ABOUT_NOTCHECKED": "Aucune recherche de nouvelle version n'a été effectuée.",
+      "IDS_UPDATE_NOTESLINK": "Notes de version",
+      "IDS_UPDATE_ERR_BROWSER": "L'adresse n'a pas pu être ouverte dans votre navigateur web :\\n\\n%s\\n\\nVoulez-vous copier l'adresse dans le presse-papiers ?",
+      "IDS_UPDATE_ERR_START": "Impossible de rechercher une nouvelle version : la recherche n'a pas pu être lancée. Réessayez."
     },
     "dutch": {
       "#Command Shell": "Opdracht Shell",
@@ -294,7 +353,18 @@
       "IDS_PACKERR_STARTFAIL": "Kan het archiveringsprogramma „%1“ niet starten. De fout was: %2",
       "IDS_PACKERR_CANCELLED_ARC": "De bewerking is geannuleerd en het archiveringsprogramma is gestopt. Het archief „%1“ is mogelijk onvolledig.",
       "IDS_DELFILESAFTERPACKINGUNREADABLE": "U probeert de geselecteerde bestanden en mappen naar het archief te verplaatsen. Dit is niet mogelijk omdat een map in de selectie niet kan worden gelezen, waardoor niet kan worden gecontroleerd of deze links naar mappen bevat. De bestanden worden niet van de schijf gewist. Ga verder zonder de bestanden na het archiveren van de schijf te wissen.\\n\\nMap: %s",
-      "IDS_DELFILESAFTERPACKINGTOODEEP": "U probeert de geselecteerde bestanden en mappen naar het archief te verplaatsen. Dit is niet mogelijk omdat een map in de selectie te diep genest is (meer dan %d niveaus), waardoor niet kan worden gecontroleerd of deze links naar mappen bevat. De bestanden worden niet van de schijf gewist. Ga verder zonder de bestanden na het archiveren van de schijf te wissen.\\n\\nMap: %s"
+      "IDS_DELFILESAFTERPACKINGTOODEEP": "U probeert de geselecteerde bestanden en mappen naar het archief te verplaatsen. Dit is niet mogelijk omdat een map in de selectie te diep genest is (meer dan %d niveaus), waardoor niet kan worden gecontroleerd of deze links naar mappen bevat. De bestanden worden niet van de schijf gewist. Ga verder zonder de bestanden na het archiveren van de schijf te wissen.\\n\\nMap: %s",
+      "IDC_UPDN_HINT": "De download wordt in uw webbrowser geopend. Start het installatieprogramma om bij te werken; uw instellingen blijven behouden.",
+      "IDC_UPDC_TEXT": "Controleren op een nieuwe versie...",
+      "IDS_UPDATE_ERR_UNREACHABLE": "Kon niet controleren op een nieuwe versie: de releaseserver was niet bereikbaar.\\n\\nControleer uw internetverbinding en probeer het opnieuw.",
+      "IDS_UPDATE_ERR_REFUSED": "Kon niet controleren op een nieuwe versie: de releaseserver heeft het verzoek geweigerd.\\n\\nEr zijn mogelijk te veel verzoeken vanuit uw netwerk gekomen. Probeer het over een uur opnieuw.",
+      "IDS_UPDATE_ERR_UNEXPECTED": "Kon niet controleren op een nieuwe versie: de releaseserver gaf een onverwacht antwoord.\\n\\nProbeer het later opnieuw, of ga naar tandemcommander.org.",
+      "IDS_UPDATE_RELEASED": "Uitgebracht op %s",
+      "IDS_UPDATE_ABOUT_LATEST": "Dit is de nieuwste versie (gecontroleerd op %s).",
+      "IDS_UPDATE_ERR_BROWSER": "Het adres kon niet worden geopend in uw webbrowser:\\n\\n%s\\n\\nWilt u het adres naar het klembord kopiëren?",
+      "IDS_UPDATE_ERR_START": "Kon niet controleren op een nieuwe versie: de controle kon niet worden gestart. Probeer het opnieuw.",
+      "IDC_CHECKNEWVERSION": "Bij het opstarten controleren op een nieuwe &versie van Tandem Commander",
+      "IDC_UPDN_ATSTARTUP": "Bij het opstarten &controleren op een nieuwe versie"
     },
     "hungarian": {
       "IDS_CMDSHELL_ERRNOTFOUND": "A kiválasztott parancssori program (%s) nem található ezen a számítógépen.\\n\\nVálasszon másik programot a Konfiguráció / Parancssor menüpontban.",
@@ -307,7 +377,10 @@
       "IDS_PACKRET_STOPPED": "Az archiváló leállt, vagy olyan válaszra várt, amelyet nem lehetett megadni.",
       "IDS_DELFILESAFTERPACKINGUNREADABLE": "Megpróbálja a kijelölt fájlokat és mappákat archívumba áthelyezni. Ez nem lehetséges, mert a kijelölés egyik mappája nem olvasható, ezért nem ellenőrizhető, hogy tartalmaz-e mappára mutató linket. A fájlok nem törlődnek a lemezről. Kérem, úgy folytassa, hogy az archívumba csomagolás után nem törli a fájlokat a lemezről.\\n\\nMappa: %s",
       "IDS_DELFILESAFTERPACKINGTOODEEP": "Megpróbálja a kijelölt fájlokat és mappákat archívumba áthelyezni. Ez nem lehetséges, mert a kijelölés egyik mappája túl mélyen van beágyazva (több mint %d szint), ezért nem ellenőrizhető, hogy tartalmaz-e mappára mutató linket. A fájlok nem törlődnek a lemezről. Kérem, úgy folytassa, hogy az archívumba csomagolás után nem törli a fájlokat a lemezről.\\n\\nMappa: %s",
-      "IDS_DIRNESTEDTOODEEP": "A(z) „%s” mappa túl mélyen van beágyazva (több mint %d szint) a feldolgozáshoz."
+      "IDS_DIRNESTEDTOODEEP": "A(z) „%s” mappa túl mélyen van beágyazva (több mint %d szint) a feldolgozáshoz.",
+      "IDS_UPDATE_RELEASED": "Megjelent: %s",
+      "IDS_UPDATE_ABOUT_LATEST": "Ez a legújabb verzió (ellenőrizve: %s).",
+      "IDS_UPDATE_CHECKNOWLINK": "Ellenőrzés most"
     },
     "romanian": {
       "#Command Shell": "Comanda Shell",
@@ -316,7 +389,14 @@
       "IDS_CMDSHELL_ERRNOTFOUND": "Programul de tip shell de comandă selectat (%s) nu a fost găsit pe acest computer.\\n\\nAlegeți un alt program în Configurare / Comanda Shell.",
       "IDS_CMDSHELL_ERREXEC": "Nu se poate porni programul shell de comandă:\\n%s\\n\\n%s\\n\\nPuteți schimba programul în Configurare / Comanda Shell.",
       "IDS_TABS_CLOSECONFIRM": "%d file vor fi închise când filele vor fi dezactivate. Continuați?",
-      "IDS_PACKERR_EXEMISSING": "Arhivatorul „%1” nu a fost găsit. Setați locația sa în pagina „Localizarile Arhivatorilor Externi” din configurație sau folosiți comanda „Autoconfigurare Archivatori” din meniul Optiuni."
+      "IDS_PACKERR_EXEMISSING": "Arhivatorul „%1” nu a fost găsit. Setați locația sa în pagina „Localizarile Arhivatorilor Externi” din configurație sau folosiți comanda „Autoconfigurare Archivatori” din meniul Optiuni.",
+      "IDC_CHECKNEWVERSION": "Verificați &la pornire dacă există o versiune nouă de Tandem Commander",
+      "IDS_UPDATE_RELEASED": "Lansată la %s",
+      "IDS_UPDATE_ABOUT_LATEST": "Aceasta este cea mai recentă versiune (verificată la %s).",
+      "#Remind Me &Later": "&Reamintiți-mi mai târziu",
+      "IDC_UPDN_SKIP": "&Omiteți această versiune",
+      "IDS_MENU_HELP_CHECKVERSION": "Verificați dacă există o versiu&ne nouă",
+      "#Check for New Version": "Verificare versiune nouă"
     },
     "spanish": {
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
@@ -334,7 +414,15 @@
       "IDS_PACKERR_CANCELLED_ARC": "La operación se ha cancelado y el compresor se ha detenido. Es posible que el archivo «%1» esté incompleto.",
       "IDS_PACKRET_STOPPED": "El compresor se detuvo o estaba esperando una respuesta que no se pudo dar.",
       "IDS_DELFILESAFTERPACKINGUNREADABLE": "Está intentando pasar los ficheros y directorios seleccionados a un archivo. Esto no es posible porque un directorio de la selección no se puede leer, por lo que no se puede comprobar si contiene enlaces a directorios. Los ficheros no se borrarán del disco. Por favor, continúe sin borrar los ficheros del disco tras comprimir en archivo.\\n\\nDirectorio: %s",
-      "IDS_DELFILESAFTERPACKINGTOODEEP": "Está intentando pasar los ficheros y directorios seleccionados a un archivo. Esto no es posible porque un directorio de la selección está anidado a demasiada profundidad (más de %d niveles), por lo que no se puede comprobar si contiene enlaces a directorios. Los ficheros no se borrarán del disco. Por favor, continúe sin borrar los ficheros del disco tras comprimir en archivo.\\n\\nDirectorio: %s"
+      "IDS_DELFILESAFTERPACKINGTOODEEP": "Está intentando pasar los ficheros y directorios seleccionados a un archivo. Esto no es posible porque un directorio de la selección está anidado a demasiada profundidad (más de %d niveles), por lo que no se puede comprobar si contiene enlaces a directorios. Los ficheros no se borrarán del disco. Por favor, continúe sin borrar los ficheros del disco tras comprimir en archivo.\\n\\nDirectorio: %s",
+      "IDC_CHECKNEWVERSION": "Buscar una nueva versión &de Tandem Commander al iniciar el programa",
+      "IDC_UPDN_HINT": "La descarga se abre en su navegador web. Ejecute el instalador para actualizar; su configuración se conserva.",
+      "IDS_UPDATE_ERR_UNREACHABLE": "No se ha podido comprobar si hay una nueva versión: no se ha podido acceder al servidor de versiones.\\n\\nCompruebe su conexión a Internet e inténtelo de nuevo.",
+      "IDS_UPDATE_ERR_REFUSED": "No se ha podido comprobar si hay una nueva versión: el servidor de versiones ha rechazado la solicitud.\\n\\nEs posible que se hayan enviado demasiadas solicitudes desde su red. Inténtelo de nuevo dentro de una hora.",
+      "IDS_UPDATE_ERR_UNEXPECTED": "No se ha podido comprobar si hay una nueva versión: el servidor de versiones ha dado una respuesta inesperada.\\n\\nInténtelo más tarde o visite tandemcommander.org.",
+      "IDS_UPDATE_RELEASED": "Publicada el %s",
+      "IDS_UPDATE_ERR_BROWSER": "No se ha podido abrir la dirección en su navegador web:\\n\\n%s\\n\\n¿Desea copiar la dirección al portapapeles?",
+      "IDS_UPDATE_ERR_START": "No se ha podido comprobar si hay una nueva versión: no se ha podido iniciar la comprobación. Inténtelo de nuevo."
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -366,6 +454,18 @@
       "Slovak: DeepL wrote the Czech word 'vnořený' (sk vnorený). French uses the corpus' straight",
       "apostrophe and « %s » as in the 084 pins. Romanian kept as DeepL wrote it (formal, as the",
       "071/084 pins); the short IDS_DIRNESTEDTOODEEP kept in cs/de/nl/ro/es."
+    ],
+    "_feature_123": [
+      "New version check (feature 123). Czech is pinned whole: the menu command's name is fixed by",
+      "the specification (FR-028, 'Zkontrolovat novou verzi') and the maintainer's language should not",
+      "depend on the engine's wording. German, French, Dutch and Spanish: DeepL returned the informal",
+      "register (du/tu/je/tu) for the long messages and the hint - pinned formal (Sie/vous/u/usted).",
+      "'Released %s' lost its space or was turned round in six languages ('Veroeffentlicht%s',",
+      "'%s a ete publiee', ...) - pinned with the date last; '(checked %s)' likewise. Slovak: wording",
+      "aligned with the Czech pins. Dutch: the configuration option was too long for its control",
+      "(found by both independent reviews) - shortened. Romanian: one register (formal) in the window",
+      "and one caption for the command's wait dialog and answers. Accelerators on the General page",
+      "moved off letters already used there (cs n, sk m, ro l, es d)."
     ]
   },
   "zip": {

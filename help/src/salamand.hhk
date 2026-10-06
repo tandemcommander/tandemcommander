@@ -815,6 +815,14 @@
 		<param name="Local" value="hh\salamand\othertask_shell.htm">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="New Version, Checking for">
+		<param name="Local" value="hh\salamand\othertask_newversion.htm">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Updates">
+		<param name="Local" value="hh\salamand\othertask_newversion.htm">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Open Salamander Task List">
 		<param name="Local" value="hh\salamand\othertask_tasklist.htm">
 		</OBJECT>

@@ -20,16 +20,9 @@
 #include "themes.h"
 
 #include "versinfo.rh2"
-
-// Tandem Commander brand palette (feature 032, see tools/brand/README.md);
-// the wordmark is drawn with GDI so no font has to be installed/shipped
-#define TC_COLOR_NAVY RGB(0x0A, 0x14, 0x24)           // brand navy background
-#define TC_COLOR_TEXT_DARKBG RGB(0xEA, 0xF2, 0xFB)    // "Tandem" + regular text on dark background
-#define TC_COLOR_ORANGE_DARKBG RGB(0xF9, 0x73, 0x16)  // "Commander" on dark background
-#define TC_COLOR_MUTED_DARKBG RGB(0x8F, 0xA6, 0xC4)   // version/tagline on dark background
-#define TC_COLOR_TEXT_LIGHTBG RGB(0x0A, 0x14, 0x24)   // "Tandem" + regular text on light background
-#define TC_COLOR_ORANGE_LIGHTBG RGB(0xEA, 0x6A, 0x0B) // "Commander" on light background
-#define TC_COLOR_MUTED_LIGHTBG RGB(0x5D, 0x82, 0xB8)  // version/tagline on light background
+#include "brand.h"    // the brand palette and TCPaintBrandHeader
+#include "updcheck.h" // feature 123: the About dialog shows what is known about a newer version
+#include "upddlg.h"
 
 // draws the "Tandem Commander" wordmark into 'r' (left-aligned, vertically centered);
 // shrinks the font until both parts fit the rect width
@@ -79,6 +72,32 @@ static void TCDrawWordmark(HDC hDC, const RECT* r, COLORREF tandemClr, COLORREF 
     SetBkMode(hDC, oldBkMode);
     SelectObject(hDC, hOldFont);
     HANDLES(DeleteObject(hFont));
+}
+
+// feature 123: the header band of the new-version notification - the same wordmark, artwork
+// and accent line as the About dialog, laid out for a band instead of a whole window
+int TCPaintBrandHeader(HDC hDC, const RECT* band, const RECT* wordmarkR, const RECT* logoR, int accentY)
+{
+    BOOL dark = IsDarkThemeActive();
+    SetBkColor(hDC, dark ? TC_COLOR_NAVY : RGB(255, 255, 255));
+    ExtTextOut(hDC, 0, 0, ETO_OPAQUE, band, "", 0, NULL);
+
+    CSVGSprite svgGrad;
+    CPngImage pngLogo; // hand-swappable PNG artwork (feature 035, src/res/logo.png)
+    svgGrad.Load(IDB_ABOUT_GRAD, band->right - band->left, -1, SVGSTATE_ORIGINAL);
+    pngLogo.Load(IDB_LOGO_IMAGE, logoR->right - logoR->left, logoR->bottom - logoR->top);
+
+    SIZE gradSize, logoSize;
+    svgGrad.GetSize(&gradSize);
+    pngLogo.GetSize(&logoSize);
+    int accentH = max(2, (int)gradSize.cy);
+    svgGrad.AlphaBlend(hDC, band->left, accentY, gradSize.cx, accentH, SVGSTATE_ORIGINAL);
+    pngLogo.AlphaBlend(hDC, logoR->left + (logoR->right - logoR->left - logoSize.cx) / 2,
+                       logoR->top + (logoR->bottom - logoR->top - logoSize.cy) / 2, logoSize.cx, logoSize.cy);
+    TCDrawWordmark(hDC, wordmarkR,
+                   dark ? TC_COLOR_TEXT_DARKBG : TC_COLOR_TEXT_LIGHTBG,
+                   dark ? TC_COLOR_ORANGE_DARKBG : TC_COLOR_ORANGE_LIGHTBG);
+    return accentY + accentH;
 }
 
 void GetDlgItemRectAndDestroy(HWND hWindow, int resID, RECT* r)
@@ -396,6 +415,99 @@ CAboutDialog::CAboutDialog(HWND parent)
     // must match the dialog background painted in AboutAndEvalDlgCreateBkgnd
     HGradientBkBrush = HANDLES(CreateSolidBrush(IsDarkThemeActive() ? TC_COLOR_NAVY : RGB(255, 255, 255)));
     BackgroundBitmap = NULL;
+    UpdateLink = NULL;
+}
+
+// feature 123: the line under the version - what the program last learned about newer
+// versions, from the stored state alone. Opening the dialog sends nothing; the two links act
+// only when the user chooses them.
+void CAboutDialog::RefreshUpdateLine()
+{
+    CUpdateState state;
+    CSalUpdKnownState known = UpdateCheck_GetKnownState(&state);
+    WCHAR text[300];
+    text[0] = 0;
+    const char* linkText = NULL;
+    WORD linkCommand = 0;
+    switch (known)
+    {
+    case suksNewer:
+    {
+        WCHAR version[SALUPD_VERSION_TEXT_MAX];
+        char versionA[SALUPD_VERSION_TEXT_MAX];
+        SalUpdFormatVersion(state.Latest, versionA, sizeof(versionA));
+        int i = 0;
+        for (; versionA[i] != 0; i++)
+            version[i] = versionA[i];
+        version[i] = 0;
+        _snwprintf_s(text, _TRUNCATE, LoadStrW(IDS_UPDATE_ABOUT_NEWER), version);
+        linkText = LoadStrU8(IDS_UPDATE_DOWNLOADLINK);
+        linkCommand = IDC_ABOUT_UPDATECMD; // download the installer of that version
+        break;
+    }
+
+    case suksUpToDate:
+    {
+        WCHAR date[100];
+        if (state.HasLastSuccess && UpdateCheck_FormatDate(state.LastSuccess, date, _countof(date)))
+            _snwprintf_s(text, _TRUNCATE, LoadStrW(IDS_UPDATE_ABOUT_LATEST), date);
+        else
+            lstrcpynW(text, LoadStrW(IDS_UPDATE_ABOUT_LATEST_NODATE), _countof(text));
+        break;
+    }
+
+    default: // suksNotChecked
+    {
+        lstrcpynW(text, LoadStrW(IDS_UPDATE_ABOUT_NOTCHECKED), _countof(text));
+        linkText = LoadStrU8(IDS_UPDATE_CHECKNOWLINK);
+        linkCommand = CM_HELP_CHECKVERSION;
+        break;
+    }
+    }
+
+    HWND hText = GetDlgItem(HWindow, IDC_ABOUT_UPDATE);
+    HWND hLink = GetDlgItem(HWindow, IDC_ABOUT_UPDATELINK);
+    if (hText == NULL || hLink == NULL)
+        return;
+    SetWindowTextW(hText, text);
+
+    // the link stands right behind the text: both are measured with the dialog font
+    RECT textR;
+    GetWindowRect(hText, &textR);
+    MapWindowPoints(NULL, HWindow, (POINT*)&textR, 2);
+    RECT clientR;
+    GetClientRect(HWindow, &clientR);
+    HFONT hFont = (HFONT)SendMessage(hText, WM_GETFONT, 0, 0);
+    HDC hDC = HANDLES(GetDC(HWindow));
+    HFONT hOldFont = (HFONT)SelectObject(hDC, hFont);
+    SIZE textSize = {0, 0};
+    GetTextExtentPoint32W(hDC, text, (int)wcslen(text), &textSize);
+    SIZE spaceSize = {0, 0};
+    GetTextExtentPoint32W(hDC, L" ", 1, &spaceSize);
+    SIZE linkSize = {0, 0};
+    WCHAR* linkW = linkText != NULL ? SalU8ToWAlloc(linkText, -1) : NULL;
+    if (linkW != NULL)
+        GetTextExtentPoint32W(hDC, linkW, (int)wcslen(linkW), &linkSize);
+    SelectObject(hDC, hOldFont);
+    HANDLES(ReleaseDC(HWindow, hDC));
+    if (linkW != NULL)
+        free(linkW);
+
+    int textW = textSize.cx + 2;
+    SetWindowPos(hText, NULL, 0, 0, textW, textR.bottom - textR.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+    if (linkText != NULL && UpdateLink != NULL)
+    {
+        int linkX = textR.left + textW + spaceSize.cx;
+        int linkW2 = min((int)linkSize.cx + 6, (int)(clientR.right - linkX - 4));
+        SetWindowPos(hLink, NULL, linkX, textR.top, max(linkW2, 10), textR.bottom - textR.top,
+                     SWP_NOZORDER | SWP_NOACTIVATE);
+        UpdateLink->SetText(linkText);
+        UpdateLink->SetActionPostCommand(linkCommand);
+        ShowWindow(hLink, SW_SHOWNA);
+    }
+    else
+        ShowWindow(hLink, SW_HIDE);
+    InvalidateRect(HWindow, NULL, TRUE);
 }
 
 CAboutDialog::~CAboutDialog()
@@ -508,6 +620,12 @@ CAboutDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         SetDlgItemText(HWindow, IDC_STATIC_1, VERSINFO_COPYRIGHT_TANDEM);
         SetDlgItemText(HWindow, IDC_STATIC_2, VERSINFO_COPYRIGHT_OPENSAL);
 
+        // feature 123: what is known about a newer version; a check that finishes while the
+        // dialog is open refreshes the line (WM_USER_UPDATECHECK_DONE from the main window)
+        UpdateLink = new CUpdateLink(HWindow, IDC_ABOUT_UPDATELINK); // takes Enter itself
+        RefreshUpdateLine();
+        UpdateAboutWindow = HWindow;
+
         BackgroundBitmap = AboutAndEvalDlgCreateBkgnd(HWindow);
         break;
     }
@@ -556,6 +674,39 @@ CAboutDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         SetWindowLongPtr(HWindow, DWLP_MSGRESULT, HTCAPTION);
         return HTCAPTION;
+    }
+
+    case WM_USER_UPDATECHECK_DONE: // feature 123: the stored state changed
+    {
+        RefreshUpdateLine();
+        return TRUE;
+    }
+
+    case WM_COMMAND:
+    {
+        if (LOWORD(wParam) == CM_HELP_CHECKVERSION) // the link "Check now"
+        {
+            CUpdateCheckDone done;
+            UpdateCheck_RunManualUI(HWindow, &done); // answers by itself, except "newer": the line shows it
+            RefreshUpdateLine();
+            return TRUE;
+        }
+        if (LOWORD(wParam) == IDC_ABOUT_UPDATECMD) // the link "Download"
+        {
+            CUpdateState state;
+            char url[SALUPD_URL_MAX];
+            if (UpdateCheck_GetKnownState(&state) == suksNewer && SalUpdInstallerUrl(state.Latest, url, sizeof(url)))
+                UpdateCheck_OpenUrl(HWindow, url);
+            return TRUE;
+        }
+        break;
+    }
+
+    case WM_DESTROY:
+    {
+        if (UpdateAboutWindow == HWindow)
+            UpdateAboutWindow = NULL;
+        break;
     }
     }
     return CCommonDialog::DialogProc(uMsg, wParam, lParam);

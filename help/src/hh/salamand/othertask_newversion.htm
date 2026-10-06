@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Checking for a New Version</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="../salamander_help.css" />
+<link rel="stylesheet" type="text/css" href="../salamander_help_shared.css" />
+</head>
+
+<body>
+<div id="help_page">
+<div class="header">Tandem Commander: Other Tasks</div>
+<div class="page">
+<h1>Checking for a New Version</h1>
+
+<p>Tandem Commander can tell you when a newer version has been published. It asks
+GitHub, where the project publishes its releases, which version is the latest, and
+compares it with the version you have. Only published releases with an installer are
+offered; pre-releases never are.</p>
+
+<h4>At start-up</h4>
+<p>Unless you turn it off, the program checks when it starts, at most once in 24 hours
+(when the server could not be reached at all, it tries again at a later start, at most
+once an hour).
+The check runs in the background and never delays the start. If a newer version exists,
+a window appears shortly after the main window. Without a connection, or when the
+server does not answer or answers unexpectedly, nothing is shown at all.</p>
+
+<p>The window shows the version you have, the new version and the date it was released.
+It offers:</p>
+<dl>
+<dt><i>Download</i></dt>
+<dd>Opens the installer of the new version in your web browser, which downloads it.
+Tandem Commander downloads and installs nothing itself. Run the installer to update;
+it closes the running program, replaces its files and starts it again. Your settings
+are kept.</dd>
+
+<dt><i>Remind Me Later</i></dt>
+<dd>Closes the window. The Esc key and the window's close button do the same. The
+window is shown again after the next check that finds the version, not sooner than the
+next day.</dd>
+
+<dt><i>Skip This Version</i></dt>
+<dd>Closes the window and does not show it at start-up again for this version. A still
+newer version is announced as usual. The skipped version remains visible in the About
+box and through the Help menu command.</dd>
+
+<dt><i>Release notes</i></dt>
+<dd>Opens the description of the new version in your web browser. The window stays
+open.</dd>
+
+<dt><i>Check for a new version at start-up</i></dt>
+<dd>The same option as on the <a href="configuration_gener.htm">General</a> page of the
+configuration. Clearing it takes effect at once.</dd>
+</dl>
+
+<p>The window does not block the program: you can leave it open and continue working.
+Several running copies of Tandem Commander show only one such window.</p>
+
+<h4>On demand</h4>
+<p>Choose <b>Help</b> | <b>Check for New Version</b> to ask at any time, also when the
+check at start-up is turned off. The command always answers: with the window described
+above, with a message that your version is the latest, or with a message saying why the
+check could not be made. A check that takes longer shows a small window with a
+<i>Cancel</i> button.</p>
+
+<h4>In the About box</h4>
+<p><b>Help</b> | <b>About Tandem Commander</b> shows, under your version, what the
+program last learned: that a newer version is available (with a <i>Download</i> link),
+that your version is the latest and when that was checked, or that no check has been
+made (with a <i>Check now</i> link). Opening the About box does not contact the
+server.</p>
+
+<h4>What is sent</h4>
+<p>One request to <code>api.github.com</code> over an encrypted connection, carrying the
+fixed identification <code>TandemCommander-updatecheck</code>. It does not contain the
+version you have, any identifier of you, your computer or the installation, or anything
+about your files and settings. No cookies are used. As with any web request, the server
+sees the IP address the request comes from. The privacy statement (<code>PRIVACY.md</code>
+in the project's repository) describes this in full.</p>
+
+<h4>Remarks</h4>
+<p>If you installed Tandem Commander with the Windows Package Manager, the command
+<code>winget upgrade tandemcommander</code> updates it too. A new version can reach the
+package catalogue a little later than it is announced here.</p>
+
+<p>The version that introduced this feature could not announce itself: versions before
+it do not look for new versions.</p>
+
+<h4>See Also</h4>
+<p>
+<a href="configuration_gener.htm">Configuration: General</a><br />
+</p>
+
+</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
+</div>
+</body>
+</html>

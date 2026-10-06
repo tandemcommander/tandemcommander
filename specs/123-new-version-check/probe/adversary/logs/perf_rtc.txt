@@ -1,0 +1,22 @@
+256K of [                                                  len 262144        0.1 us  stack   8192 B  ok 0 err 1
+256K of {"a":                                              len 262140        1.8 us  stack   8192 B  ok 0 err 1
+{"a": then [ to 256K                                       len 262144        0.5 us  stack   8192 B  ok 0 err 1
+string of lone high surrogates                             len 262142     1201.5 us  stack   4096 B  ok 0 err 2
+string of high surrogate + ordinary escape (re-read path)  len 262136      904.7 us  stack   8192 B  ok 0 err 2
+string of surrogate pairs                                  len 262136      612.5 us  stack   8192 B  ok 0 err 2
+the same as tag_name (stored member)                       len 262143      895.1 us  stack   8192 B  ok 0 err 2
+the same as a member name                                  len 262134      907.5 us  stack   8192 B  ok 0 err 2
+256K of spaces then {}                                     len 262144      265.1 us  stack   8192 B  ok 0 err 2
+{ 256K of spaces }                                         len 262144      265.1 us  stack   4096 B  ok 0 err 2
+a 256K-digit number                                        len 262144      334.3 us  stack   8192 B  ok 0 err 2
+array of 131K numbers                                      len 262143     2120.0 us  stack   8192 B  ok 0 err 2
+array of 87K empty arrays                                  len 262144     1196.3 us  stack   8192 B  ok 0 err 2
+43K members                                                len 262141     2635.2 us  stack   8192 B  ok 0 err 2
+20K duplicate tag_name members                             len 262139     2047.5 us  stack   8192 B  ok 0 err 3
+23K duplicate assets members                               len 262135     1688.2 us  stack   8192 B  ok 0 err 3
+valid record, 20K assets before the installer              len 262132     4447.1 us  stack   8192 B  ok 1 err 0
+valid record, 1.1K copies of the installer asset           len 262057     2716.3 us  stack   8192 B  ok 1 err 0
+valid record with a 255K body                              len 262144     1085.4 us  stack   8192 B  ok 1 err 0
+valid record, body of escaped quotes                       len 262144     1140.9 us  stack   8192 B  ok 1 err 0
+3.9K values nested to the limit (32)                       len 262111     1935.2 us  stack   8192 B  ok 0 err 2
+perf: worst time 4447.1 us, worst committed stack 8192 bytes (thread start included), failures 0

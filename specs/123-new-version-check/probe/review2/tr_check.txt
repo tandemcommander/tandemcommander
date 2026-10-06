@@ -1,0 +1,337 @@
+English:
+  13201 'Check for &New Version'
+  14103 'Check for New Version'
+  14104 'Tandem Commander %s is the latest version.'
+  14105 'Could not check for a new version: the release server could not be reached.\\n\\nCheck your internet connection and try again.'
+  14106 'Could not check for a new version: the release server refused the request.\\n\\nToo many requests may have come from your network. Try again in an hour.'
+  14107 'Could not check for a new version: the release server gave an unexpected answer.\\n\\nTry again later, or visit tandemcommander.org.'
+  14108 'Released %s'
+  14109 'Version %s is available.'
+  14110 'This is the latest version (checked %s).'
+  14111 'Not checked for a new version.'
+  14144 'Download'
+  14145 'Check now'
+  14146 'Release notes'
+  14147 'The address could not be opened in your web browser:\\n\\n%s\\n\\nDo you want to copy the address to the clipboard?'
+  14148 'Could not check for a new version: the check could not be started. Try again.'
+  14149 'This is the latest version.'
+
+== czech
+  13201 Zkontrolovat &novou verzi 
+  14103 Zkontrolovat novou verzi 
+  14104 Tandem Commander %s je nejnovější verze. 
+  14105 Novou verzi se nepodařilo zkontrolovat: server s vydáními není dostupný.\n\nZkontrolujte připojení k internetu a zkuste to znovu. 
+  14106 Novou verzi se nepodařilo zkontrolovat: server s vydáními požadavek odmítl.\n\nZ vaší sítě možná přišlo příliš mnoho požadavků. Zkuste to znovu za hodinu. 
+  14107 Novou verzi se nepodařilo zkontrolovat: server s vydáními odpověděl neočekávaně.\n\nZkuste to později, nebo navštivte tandemcommander.org. 
+  14108 Vydáno %s 
+  14109 Je dostupná verze %s. 
+  14110 Toto je nejnovější verze (zkontrolováno %s). 
+  14111 Nová verze nebyla zkontrolována. 
+  14144 Stáhnout 
+  14145 Zkontrolovat nyní 
+  14146 Poznámky k vydání 
+  14147 Adresu se nepodařilo otevřít ve webovém prohlížeči:\n\n%s\n\nChcete adresu zkopírovat do schránky? 
+  14148 Novou verzi se nepodařilo zkontrolovat: kontrolu se nepodařilo spustit. Zkuste to znovu. 
+  14149 Toto je nejnovější verze. 
+  [DIALOG 6236]
+    None None Tandem Commander
+    1 (12, 162, 72, 14) &Stáhnout
+    2 (90, 162, 92, 14) Připomenout &později
+    6250 (188, 162, 96, 14) Př&eskočit tuto verzi
+    6249 (12, 144, 272, 12) &Kontrolovat novou verzi při spuštění
+    6238 (12, 32, 220, 13) Je dostupná nová verze
+    6241 (24, 62, 104, 8) Nainstalovaná verze
+    6244 (164, 62, 120, 8) Dostupná verze
+    6248 (12, 123, 280, 17) Stahování se otevře ve webovém prohlížeči. Aktualizaci provedete spuštěním instalátoru; nastavení zůstane zachováno.
+  [DIALOG 6251]
+    None None Zkontrolovat novou verzi
+    6252 (10, 12, 180, 8) Kontroluje se nová verze...
+    2 (75, 32, 50, 14) Zrušit
+  [DIALOG 270]
+    1 (124, 173, 50, 14) Zavřít
+    271 (10, 86, 201, 8) Verze
+    1152 (10, 130, 20, 8) Web:
+    272 (31, 130, 95, 8) www.tandemcommander.org
+    1153 (10, 141, 165, 8) Tandem Commander je svobodný software
+    1154 (10, 152, 257, 8) Licencováno pod GNU General Public License verze 2 nebo novější
+  [DIALOG 300] 6255 (1, 172, 282, 12) Kontrolovat &novou verzi programu Tandem Commander při spuštění
+
+== german
+  13201 &Nach neuer Version suchen 
+  14103 Nach neuer Version suchen 
+  14104 Tandem Commander %s ist die neueste Version. 
+  14105 Es konnte nicht nach einer neuen Version gesucht werden: Der Release-Server war nicht erreichbar.\n\nÜberprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut. 
+  14106 Es konnte nicht nach einer neuen Version gesucht werden: Der Release-Server hat die Anfrage abgelehnt.\n\nMöglicherweise sind zu viele Anfragen aus Ihrem Netzwerk eingegangen. Versuchen Sie es in einer Stunde erneut. 
+  14107 Es konnte nicht nach einer neuen Version gesucht werden: Der Release-Server hat eine unerwartete Antwort gegeben.\n\nVersuchen Sie es später noch einmal oder besuchen Sie tandemcommander.org. 
+  14108 Veröffentlicht am %s 
+  14109 Version %s ist verfügbar. 
+  14110 Dies ist die neueste Version (geprüft am %s). 
+  14111 Es wurde nicht nach einer neuen Version gesucht. 
+  14144 Herunterladen 
+  14145 Jetzt suchen 
+  14146 Versionshinweise 
+  14147 Die Adresse konnte in Ihrem Webbrowser nicht geöffnet werden:\n\n%s\n\nMöchten Sie die Adresse in die Zwischenablage kopieren? 
+  14148 Es konnte nicht nach einer neuen Version gesucht werden: Die Suche konnte nicht gestartet werden. Versuchen Sie es erneut. 
+  14149 Dies ist die neueste Version. 
+  [DIALOG 6236]
+    None None Tandem Commander
+    1 (12, 162, 72, 14) D&ownload
+    2 (90, 162, 92, 14) Später &daran erinnern
+    6250 (188, 162, 104, 14) Die&se Version überspringen
+    6249 (12, 144, 272, 12) Beim Start na&ch einer neuen Version suchen
+    6238 (12, 32, 220, 13) Eine neue Version ist verfügbar
+    6241 (24, 62, 104, 8) Installierte Version
+    6244 (164, 62, 120, 8) Verfügbare Version
+    6248 (12, 123, 280, 17) Der Download wird in Ihrem Webbrowser geöffnet. Führen Sie das Installationsprogramm aus, um zu aktualisieren; Ihre Einstellungen bleiben erhalten.
+  [DIALOG 6251]
+    None None Nach neuer Version suchen
+    6252 (10, 12, 180, 8) Wird nach einer neuen Version gesucht...
+    2 (75, 32, 50, 14) Abbrechen
+  [DIALOG 270]
+    1 (124, 173, 50, 14) Schließen
+    271 (10, 86, 201, 8) Version
+    1152 (10, 130, 20, 8) Web:
+    272 (31, 130, 95, 8) www.tandemcommander.org
+    1153 (10, 141, 165, 8) Tandem Commander ist freie Software
+    1154 (10, 152, 277, 8) Lizenziert unter der GNU General Public License Version 2 oder höher
+  [DIALOG 300] 6255 (1, 172, 282, 12) Beim Start nach &einer neuen Version von Tandem Commander suchen
+
+== french
+  13201 Rechercher une &nouvelle version 
+  14103 Rechercher une nouvelle version 
+  14104 Tandem Commander %s est la dernière version. 
+  14105 Impossible de rechercher une nouvelle version : le serveur de publication est inaccessible.\n\nVérifiez votre connexion Internet et réessayez. 
+  14106 Impossible de rechercher une nouvelle version : le serveur de publication a refusé la demande.\n\nIl se peut que trop de demandes aient été envoyées depuis votre réseau. Réessayez dans une heure. 
+  14107 Impossible de rechercher une nouvelle version : le serveur de publication a renvoyé une réponse inattendue.\n\nRéessayez plus tard ou rendez-vous sur tandemcommander.org. 
+  14108 Publiée le %s 
+  14109 La version %s est disponible. 
+  14110 C'est la dernière version (vérifiée le %s). 
+  14111 Aucune recherche de nouvelle version n'a été effectuée. 
+  14144 Télécharger 
+  14145 Vérifier maintenant 
+  14146 Notes de version 
+  14147 L'adresse n'a pas pu être ouverte dans votre navigateur web :\n\n%s\n\nVoulez-vous copier l'adresse dans le presse-papiers ? 
+  14148 Impossible de rechercher une nouvelle version : la recherche n'a pas pu être lancée. Réessayez. 
+  14149 Il s'agit de la dernière version. 
+  [DIALOG 6236]
+    None None Tandem Commander
+    1 (12, 162, 72, 14) &Télécharger
+    2 (90, 162, 96, 14) Me &le rappeler plus tard
+    6250 (188, 162, 96, 14) Ignorer cette ver&sion
+    6249 (12, 144, 272, 12) Re&chercher une nouvelle version au démarrage
+    6238 (12, 32, 220, 13) Une nouvelle version est disponible
+    6241 (24, 62, 104, 8) Version installée
+    6244 (164, 62, 120, 8) Version disponible
+    6248 (12, 123, 280, 17) Le téléchargement s'ouvre dans votre navigateur web. Lancez le programme d'installation pour effectuer la mise à jour ; vos paramètres sont conservés.
+  [DIALOG 6251]
+    None None Rechercher une nouvelle version
+    6252 (10, 12, 180, 8) Recherche d'une nouvelle version...
+    2 (75, 32, 50, 14) Annuler
+  [DIALOG 270]
+    1 (124, 173, 50, 14) Fermer
+    271 (10, 86, 201, 8) Version
+    1152 (10, 130, 20, 8) Site:
+    272 (31, 130, 95, 8) www.tandemcommander.org
+    1153 (10, 141, 165, 8) Tandem Commander est un logiciel libre
+    1154 (10, 152, 257, 8) Sous licence GNU General Public License version 2 ou ultérieure
+  [DIALOG 300] 6255 (1, 172, 282, 12) Rechercher une nou&velle version de Tandem Commander au démarrage
+
+== dutch
+  13201 Co&ntroleer op nieuwe versie 
+  14103 Controleer op nieuwe versie 
+  14104 Tandem Commander %s is de nieuwste versie. 
+  14105 Kon niet controleren op een nieuwe versie: de releaseserver was niet bereikbaar.\n\nControleer uw internetverbinding en probeer het opnieuw. 
+  14106 Kon niet controleren op een nieuwe versie: de releaseserver heeft het verzoek geweigerd.\n\nEr zijn mogelijk te veel verzoeken vanuit uw netwerk gekomen. Probeer het over een uur opnieuw. 
+  14107 Kon niet controleren op een nieuwe versie: de releaseserver gaf een onverwacht antwoord.\n\nProbeer het later opnieuw, of ga naar tandemcommander.org. 
+  14108 Uitgebracht op %s 
+  14109 Versie %s is beschikbaar. 
+  14110 Dit is de nieuwste versie (gecontroleerd op %s). 
+  14111 Er is niet gecontroleerd op een nieuwe versie. 
+  14144 Download    <<< SAME-AS-ENGLISH
+  14145 Nu controleren 
+  14146 Release-opmerkingen 
+  14147 Het adres kon niet worden geopend in uw webbrowser:\n\n%s\n\nWilt u het adres naar het klembord kopiëren? 
+  14148 Kon niet controleren op een nieuwe versie: de controle kon niet worden gestart. Probeer het opnieuw. 
+  14149 Dit is de nieuwste versie. 
+  [DIALOG 6236]
+    None None Tandem Commander
+    1 (12, 162, 72, 14) &Download
+    2 (90, 162, 92, 14) Herinner me dit &later
+    6250 (188, 162, 96, 14) Deze ver&sie overslaan
+    6249 (12, 144, 272, 12) &Controleer bij het opstarten of er een nieuwe versie is
+    6238 (12, 32, 220, 13) Er is een nieuwe versie beschikbaar
+    6241 (24, 62, 104, 8) Geïnstalleerde versie
+    6244 (164, 62, 120, 8) Beschikbare versie
+    6248 (12, 123, 280, 17) De download wordt in uw webbrowser geopend. Start het installatieprogramma om bij te werken; uw instellingen blijven behouden.
+  [DIALOG 6251]
+    None None Controleer op nieuwe versie
+    6252 (10, 12, 180, 8) Controleren op een nieuwe versie...
+    2 (75, 32, 50, 14) Annuleren
+  [DIALOG 270]
+    1 (124, 173, 50, 14) Sluiten
+    271 (10, 86, 201, 8) Versie
+    1152 (10, 130, 20, 8) Web:
+    272 (31, 130, 95, 8) www.tandemcommander.org
+    1153 (10, 141, 165, 8) Tandem Commander is vrije software
+    1154 (10, 152, 216, 8) Onder de GNU General Public License versie 2 of later
+  [DIALOG 300] 6255 (1, 172, 294, 12) Controleer bij het opstarten of er een nieuwe &versie van Tandem Commander beschikbaar is
+
+== hungarian
+  13201 &Új verzió keresése 
+  14103 Új verzió keresése 
+  14104 A Tandem Commander %s a legújabb verzió. 
+  14105 Nem sikerült ellenőrizni az új verziót: a kiadási szerver nem érhető el.\n\nEllenőrizze az internetkapcsolatát, majd próbálja meg újra. 
+  14106 Nem sikerült ellenőrizni az új verziót: a kiadási szerver elutasította a kérést.\n\nLehet, hogy túl sok kérés érkezett a hálózatáról. Próbálja meg újra egy óra múlva. 
+  14107 Nem sikerült ellenőrizni az új verziót: a kiadási szerver váratlan választ adott.\n\nPróbálja meg később újra, vagy látogasson el a tandemcommander.org oldalra. 
+  14108 Megjelent: %s 
+  14109 A %s verzió elérhető. 
+  14110 Ez a legújabb verzió (ellenőrizve: %s). 
+  14111 Nem ellenőriztük, hogy van-e új verzió. 
+  14144 Letöltés 
+  14145 Ellenőrzés most 
+  14146 Kiadási megjegyzések 
+  14147 A cím nem nyitható meg a böngészőben:\n\n%s\n\nSzeretné másolni a címet a vágólapra? 
+  14148 Nem sikerült ellenőrizni az új verziót: az ellenőrzés nem indítható el. Próbálja meg újra. 
+  14149 Ez a legújabb verzió. 
+  [DIALOG 6236]
+    None None Tandem Commander
+    1 (12, 162, 72, 14) &Letöltés
+    2 (90, 162, 92, 14) &Később emlékeztessen
+    6250 (188, 162, 96, 14) &Ezt a verziót hagyja ki
+    6249 (12, 144, 272, 12) &Új verzió keresése indításkor
+    6238 (12, 32, 220, 13) Új verzió érhető el
+    6241 (24, 62, 104, 8) Telepített verzió
+    6244 (164, 62, 120, 8) Elérhető verzió
+    6248 (12, 123, 280, 17) A letöltés a böngészőben nyílik meg. Futtassa a telepítőt a frissítéshez; a beállításai megmaradnak.
+  [DIALOG 6251]
+    None None Új verzió keresése
+    6252 (10, 12, 180, 8) Új verzió keresése...
+    2 (75, 32, 50, 14) Mégse
+  [DIALOG 270]
+    1 (124, 173, 50, 14) Bezárás
+    271 (10, 86, 201, 8) Verzió
+    1152 (10, 130, 20, 8) Web:
+    272 (31, 130, 95, 8) www.tandemcommander.org
+    1153 (10, 141, 165, 8) A Tandem Commander szabad szoftver
+    1154 (10, 152, 285, 8) A GNU General Public License 2. vagy újabb verziója alapján licencelve
+  [DIALOG 300] 6255 (1, 172, 282, 12) Indításkor ellenőrizze a Tandem Commander új &verzióját
+
+== romanian
+  13201 Verifică dacă există o versiu&ne nouă 
+  14103 Verifică dacă există o versiune nouă 
+  14104 Tandem Commander %s este cea mai recentă versiune. 
+  14105 Nu s-a putut verifica dacă există o versiune nouă: nu s-a putut accesa serverul de lansare.\n\nVerificați conexiunea la internet și încercați din nou. 
+  14106 Nu s-a putut verifica dacă există o versiune nouă: serverul de lansare a refuzat solicitarea.\n\nEste posibil să fi fost trimise prea multe solicitări din rețeaua dvs. Încercați din nou peste o oră. 
+  14107 Nu s-a putut verifica dacă există o versiune nouă: serverul de lansare a dat un răspuns neașteptat.\n\nÎncercați din nou mai târziu sau vizitați tandemcommander.org. 
+  14108 Lansată la %s 
+  14109 Este disponibilă versiunea %s. 
+  14110 Aceasta este cea mai recentă versiune (verificată la %s). 
+  14111 Nu s-a verificat dacă există o versiune nouă. 
+  14144 Descărcare 
+  14145 Verificați acum 
+  14146 Note de lansare 
+  14147 Adresa nu a putut fi deschisă în browserul dvs. web:\n\n%s\n\nDoriți să copiați adresa în clipboard? 
+  14148 Nu s-a putut verifica dacă există o versiune nouă: verificarea nu a putut fi inițiată. Încercați din nou. 
+  14149 Aceasta este cea mai recentă versiune. 
+  [DIALOG 6236]
+    None None Tandem Commander
+    1 (12, 162, 72, 14) &Descărcare
+    2 (90, 162, 96, 14) &Reamintește-mi mai târziu
+    6250 (188, 162, 104, 14) &Săriți peste această versiune
+    6249 (12, 144, 272, 12) Verifi&cați dacă există o nouă versiune la pornire
+    6238 (12, 32, 220, 13) Este disponibilă o nouă versiune
+    6241 (24, 62, 104, 8) Versiunea instalată
+    6244 (164, 62, 120, 8) Versiune disponibilă
+    6248 (12, 123, 280, 17) Descărcarea se deschide în browserul dvs. web. Rulați programul de instalare pentru a actualiza; setările dvs. vor fi păstrate.
+  [DIALOG 6251]
+    None None Verificare versiune nouă
+    6252 (10, 12, 180, 8) Se verifică dacă există o versiune nouă...
+    2 (75, 32, 50, 14) Anulare
+  [DIALOG 270]
+    1 (124, 173, 50, 14) Inchide
+    271 (10, 86, 201, 8) Versiune
+    1152 (10, 130, 20, 8) Web:
+    272 (31, 130, 95, 8) www.tandemcommander.org
+    1153 (10, 141, 165, 8) Tandem Commander este un program liber
+    1154 (10, 152, 281, 8) Licențiat sub Licența Publică Generală GNU versiunea 2 sau ulterioară
+  [DIALOG 300] 6255 (1, 172, 294, 12) Se verifică &la pornire dacă există o versiune nouă de Tandem Commander
+
+== slovak
+  13201 Sko&ntrolovať novú verziu 
+  14103 Skontrolovať novú verziu 
+  14104 Tandem Commander %s je najnovšia verzia. 
+  14105 Novú verziu sa nepodarilo skontrolovať: server s vydaniami nie je dostupný.\n\nSkontrolujte pripojenie k internetu a skúste to znova. 
+  14106 Novú verziu sa nepodarilo skontrolovať: server s vydaniami požiadavku odmietol.\n\nZ vašej siete možno prišlo príliš veľa požiadaviek. Skúste to znova o hodinu. 
+  14107 Novú verziu sa nepodarilo skontrolovať: server s vydaniami odpovedal neočakávane.\n\nSkúste to neskôr alebo navštívte tandemcommander.org. 
+  14108 Vydané %s 
+  14109 Je k dispozícii verzia %s. 
+  14110 Toto je najnovšia verzia (skontrolované %s). 
+  14111 Nová verzia nebola skontrolovaná. 
+  14144 Stiahnuť 
+  14145 Skontrolovať teraz 
+  14146 Poznámky k vydaniu 
+  14147 Adresu sa nepodarilo otvoriť vo vašom webovom prehliadači:\n\n%s\n\nChcete skopírovať adresu do schránky? 
+  14148 Novú verziu sa nepodarilo skontrolovať: kontrolu sa nepodarilo spustiť. Skúste to znova. 
+  14149 Toto je najnovšia verzia. 
+  [DIALOG 6236]
+    None None Tandem Commander
+    1 (12, 162, 72, 14) S&tiahnuť
+    2 (90, 162, 92, 14) Pripomenúť &neskôr
+    6250 (188, 162, 96, 14) &Preskočiť túto verziu
+    6249 (12, 144, 272, 12) &Kontrolovať novú verziu pri spustení
+    6238 (12, 32, 220, 13) Je k dispozícii nová verzia
+    6241 (24, 62, 104, 8) Nainštalovaná verzia
+    6244 (164, 62, 120, 8) Dostupná verzia
+    6248 (12, 123, 280, 17) Sťahovanie sa otvorí vo webovom prehliadači. Aktualizáciu vykonáte spustením inštalátora; nastavenia zostanú zachované.
+  [DIALOG 6251]
+    None None Skontrolovať novú verziu
+    6252 (10, 12, 180, 8) Kontroluje sa nová verzia...
+    2 (75, 32, 50, 14) Zrušiť
+  [DIALOG 270]
+    1 (124, 173, 50, 14) Zatvoriť
+    271 (10, 86, 201, 8) Verzia
+    1152 (10, 130, 20, 8) Web:
+    272 (31, 130, 95, 8) www.tandemcommander.org
+    1153 (10, 141, 165, 8) Tandem Commander je slobodný softvér
+    1154 (10, 152, 285, 8) Licencované pod licenciou GNU General Public License verzie 2 alebo novšej
+  [DIALOG 300] 6255 (1, 172, 282, 12) Kontrolovať novú verziu progra&mu Tandem Commander pri spustení
+
+== spanish
+  13201 Buscar &nueva versión 
+  14103 Buscar nueva versión 
+  14104 Tandem Commander %s es la última versión. 
+  14105 No se ha podido comprobar si hay una nueva versión: no se ha podido acceder al servidor de versiones.\n\nCompruebe su conexión a Internet e inténtelo de nuevo. 
+  14106 No se ha podido comprobar si hay una nueva versión: el servidor de versiones ha rechazado la solicitud.\n\nEs posible que se hayan enviado demasiadas solicitudes desde su red. Inténtelo de nuevo dentro de una hora. 
+  14107 No se ha podido comprobar si hay una nueva versión: el servidor de versiones ha dado una respuesta inesperada.\n\nInténtelo más tarde o visite tandemcommander.org. 
+  14108 Publicada el %s 
+  14109 La versión %s está disponible. 
+  14110 Esta es la última versión (comprobada el %s). 
+  14111 No se ha comprobado si hay una nueva versión. 
+  14144 Descargar 
+  14145 Comprobar ahora 
+  14146 Notas de la versión 
+  14147 No se ha podido abrir la dirección en su navegador web:\n\n%s\n\n¿Desea copiar la dirección al portapapeles? 
+  14148 No se ha podido comprobar si hay una nueva versión: no se ha podido iniciar la comprobación. Inténtelo de nuevo. 
+  14149 Esta es la última versión. 
+  [DIALOG 6236]
+    None None Tandem Commander
+    1 (12, 162, 72, 14) &Descargar
+    2 (90, 162, 92, 14) Recordárme&lo más tarde
+    6250 (188, 162, 96, 14) Omitir e&sta versión
+    6249 (12, 144, 272, 12) Bus&car una nueva versión al iniciar el programa
+    6238 (12, 32, 220, 13) Hay una nueva versión disponible
+    6241 (24, 62, 104, 8) Versión instalada
+    6244 (164, 62, 120, 8) Versión disponible
+    6248 (12, 123, 280, 17) La descarga se abre en su navegador web. Ejecute el instalador para actualizar; su configuración se conserva.
+  [DIALOG 6251]
+    None None Buscar nueva versión
+    6252 (10, 12, 180, 8) Buscando una nueva versión...
+    2 (75, 32, 50, 14) Cancelar
+  [DIALOG 270]
+    1 (124, 173, 50, 14) Cerrar
+    271 (10, 86, 201, 8) Versión
+    1152 (10, 130, 20, 8) Web:
+    272 (31, 130, 95, 8) www.tandemcommander.org
+    1153 (10, 141, 165, 8) Tandem Commander es software libre
+    1154 (10, 152, 285, 8) Bajo licencia de la Licencia Pública General de GNU, versión 2 o posterior
+  [DIALOG 300] 6255 (1, 172, 285, 12) Buscar una nueva versión &de Tandem Commander al iniciar el programa

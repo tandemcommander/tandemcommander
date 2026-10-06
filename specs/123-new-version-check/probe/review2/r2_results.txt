@@ -1,0 +1,321 @@
+﻿=== 127.0.0.1:8341/latest/hang secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [12000 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [12000 ms] after send await: no
+  [12000 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 1, cancelled 0
+    [12000 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 12000 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 1, after close 0, errors 0, last error 0)
+  RESULT unreachable answered=0 version 0.0.0 in 12000 ms
+  callbacks total after 300 ms more: 2
+=== 127.0.0.1:8341/latest/slow secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 15 ms (error 0)
+    [   15 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [   15 ms] after send await: SENDREQUEST_COMPLETE
+    [   15 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   15 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: ok (announced 7635, error 0), bodyLen 239, bodyComplete 0
+  [12015 ms] sequence over: status 200, reads 239, bodyLen 239, complete 0, timedOut 1, cancelled 0
+    [12015 ms] cb REQUEST_ERROR          ctx=set winhttp thread after-close
+    REQUEST_ERROR api=2 error=12017
+    [12015 ms] cb HANDLE_CLOSING         ctx=set winhttp thread after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 12015 ms; longest blocking WinHTTP call 0 ms (); callbacks 482 (inline 240, after close 1, errors 1, last error 12017)
+  RESULT unreachable answered=1 version 0.0.0 in 12015 ms
+  callbacks total after 300 ms more: 482
+=== 127.0.0.1:8342/hdrdrip secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 16 ms (error 0)
+  [12000 ms] after send await: no
+  [12000 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 1, cancelled 0
+    [12000 ms] cb REQUEST_ERROR          ctx=set winhttp thread after-close
+    REQUEST_ERROR api=5 error=12017
+    [12000 ms] cb HANDLE_CLOSING         ctx=set winhttp thread after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 12000 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 0, after close 1, errors 1, last error 12017)
+  RESULT unreachable answered=0 version 0.0.0 in 12000 ms
+  callbacks total after 300 ms more: 2
+=== 127.0.0.1:8342/bodydrip secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [    0 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [    0 ms] after send await: SENDREQUEST_COMPLETE
+    [    0 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [    0 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: ok (announced 7635, error 0), bodyLen 30, bodyComplete 0
+  [12016 ms] sequence over: status 200, reads 30, bodyLen 30, complete 0, timedOut 1, cancelled 0
+    [12016 ms] cb REQUEST_ERROR          ctx=set winhttp thread after-close
+    REQUEST_ERROR api=2 error=12017
+    [12016 ms] cb HANDLE_CLOSING         ctx=set winhttp thread after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 12016 ms; longest blocking WinHTTP call 0 ms (); callbacks 64 (inline 31, after close 1, errors 1, last error 12017)
+  RESULT unreachable answered=1 version 0.0.0 in 12016 ms
+  callbacks total after 300 ms more: 64
+=== 127.0.0.1:8342/noread secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [12000 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [12000 ms] after send await: SENDREQUEST_COMPLETE
+    [12000 ms] cb REQUEST_ERROR          ctx=set INLINE(worker thread)
+    REQUEST_ERROR api=1 error=12002
+  [12000 ms] after receive await: no
+  [12000 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 0
+    [12000 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 12000 ms; longest blocking WinHTTP call 0 ms (); callbacks 3 (inline 2, after close 0, errors 1, last error 12002)
+  RESULT unreachable answered=0 version 0.0.0 in 12000 ms
+  callbacks total after 300 ms more: 3
+=== 127.0.0.1:8342/nocl secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [    0 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [    0 ms] after send await: SENDREQUEST_COMPLETE
+    [    0 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   16 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: failed (announced 0, error 12150), bodyLen 7635, bodyComplete 1
+  [   16 ms] sequence over: status 200, reads 2, bodyLen 7635, complete 1, timedOut 0, cancelled 0
+    [   16 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 16 ms; longest blocking WinHTTP call 16 ms (ReceiveResponse); callbacks 8 (inline 6, after close 0, errors 0, last error 0)
+  RESULT newer answered=1 version 9.9.9 in 16 ms
+  callbacks total after 300 ms more: 8
+=== 127.0.0.1:8342/nocl-cut secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [   16 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [   16 ms] after send await: SENDREQUEST_COMPLETE
+    [   16 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   16 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: failed (announced 0, error 12150), bodyLen 3817, bodyComplete 1
+  [   16 ms] sequence over: status 200, reads 1, bodyLen 3817, complete 1, timedOut 0, cancelled 0
+    [   16 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  parse refused, reason 1
+  TOTAL 16 ms; longest blocking WinHTTP call 0 ms (); callbacks 6 (inline 5, after close 0, errors 0, last error 0)
+  RESULT unexpected answered=1 version 0.0.0 in 16 ms
+  callbacks total after 300 ms more: 6
+=== 127.0.0.1:8342/chunkcut secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 15 ms (error 0)
+    [   15 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [   15 ms] after send await: SENDREQUEST_COMPLETE
+    [   15 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   15 ms] after receive await: HEADERS_AVAILABLE
+    [   15 ms] cb REQUEST_ERROR          ctx=set winhttp thread
+    REQUEST_ERROR api=2 error=12152
+  Content-Length query: failed (announced 0, error 12019), bodyLen 3817, bodyComplete 0
+  [   15 ms] sequence over: status 200, reads 1, bodyLen 3817, complete 0, timedOut 0, cancelled 0
+    [   15 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 15 ms; longest blocking WinHTTP call 0 ms (); callbacks 6 (inline 4, after close 0, errors 1, last error 12152)
+  RESULT unreachable answered=1 version 0.0.0 in 15 ms
+  callbacks total after 300 ms more: 6
+=== 127.0.0.1:8342/chunkcut2 secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 15 ms (error 0)
+    [   15 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [   15 ms] after send await: SENDREQUEST_COMPLETE
+    [   15 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   15 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: failed (announced 0, error 12019), bodyLen 7635, bodyComplete 0
+  [   15 ms] sequence over: status 200, reads 2, bodyLen 7635, complete 0, timedOut 0, cancelled 0
+    [   15 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 15 ms; longest blocking WinHTTP call 0 ms (); callbacks 7 (inline 5, after close 0, errors 0, last error 0)
+  RESULT unreachable answered=1 version 0.0.0 in 15 ms
+  callbacks total after 300 ms more: 7
+=== 127.0.0.1:8342/clhuge secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 15 ms (error 0)
+    [   15 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [   15 ms] after send await: SENDREQUEST_COMPLETE
+    [   15 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   15 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: failed (announced 0, error 534), bodyLen 7635, bodyComplete 1
+  [   15 ms] sequence over: status 200, reads 2, bodyLen 7635, complete 1, timedOut 0, cancelled 0
+    [   15 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 15 ms; longest blocking WinHTTP call 0 ms (); callbacks 8 (inline 5, after close 0, errors 0, last error 0)
+  RESULT newer answered=1 version 9.9.9 in 15 ms
+  callbacks total after 300 ms more: 8
+=== 127.0.0.1:8342/clshort secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [   16 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [   16 ms] after send await: SENDREQUEST_COMPLETE
+    [   16 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   16 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: ok (announced 7535, error 0), bodyLen 7535, bodyComplete 1
+  [   16 ms] sequence over: status 200, reads 2, bodyLen 7535, complete 1, timedOut 0, cancelled 0
+    [   16 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  parse refused, reason 1
+  TOTAL 16 ms; longest blocking WinHTTP call 0 ms (); callbacks 8 (inline 6, after close 0, errors 0, last error 0)
+  RESULT unexpected answered=1 version 0.0.0 in 16 ms
+  callbacks total after 300 ms more: 8
+=== 127.0.0.1:8342/clzero secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 16 ms (error 0)
+    [   16 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [   16 ms] after send await: SENDREQUEST_COMPLETE
+    [   16 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   16 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: ok (announced 0, error 0), bodyLen 0, bodyComplete 1
+  [   16 ms] sequence over: status 200, reads 0, bodyLen 0, complete 1, timedOut 0, cancelled 0
+    [   16 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  parse refused, reason 1
+  TOTAL 16 ms; longest blocking WinHTTP call 0 ms (); callbacks 4 (inline 3, after close 0, errors 0, last error 0)
+  RESULT unexpected answered=1 version 0.0.0 in 16 ms
+  callbacks total after 300 ms more: 4
+=== 127.0.0.1:8342/100 secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 16 ms (error 0)
+    [  219 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [  219 ms] after send await: SENDREQUEST_COMPLETE
+    [  219 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [  219 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: ok (announced 7635, error 0), bodyLen 7635, bodyComplete 1
+  [  219 ms] sequence over: status 200, reads 2, bodyLen 7635, complete 1, timedOut 0, cancelled 0
+    [  219 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 219 ms; longest blocking WinHTTP call 0 ms (); callbacks 8 (inline 6, after close 0, errors 0, last error 0)
+  RESULT newer answered=1 version 9.9.9 in 219 ms
+  callbacks total after 300 ms more: 8
+=== 127.0.0.1:8399/closedport secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [ 2047 ms] cb REQUEST_ERROR          ctx=set winhttp thread
+    REQUEST_ERROR api=5 error=12029
+  [ 2047 ms] after send await: no
+  [ 2047 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 0
+    [ 2047 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 2047 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 1, after close 0, errors 1, last error 12029)
+  RESULT unreachable answered=0 version 0.0.0 in 2047 ms
+  callbacks total after 300 ms more: 2
+=== 10.255.255.1:443/blackhole secure=1 cancelAfter=0
+  WinHttpOpen: 16 ms, ok
+  set-up done at 16 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [ 8032 ms] cb REQUEST_ERROR          ctx=set winhttp thread
+    REQUEST_ERROR api=5 error=12002
+  [ 8032 ms] after send await: no
+  [ 8032 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 0
+    [ 8032 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 8032 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 1, after close 0, errors 1, last error 12002)
+  RESULT unreachable answered=0 version 0.0.0 in 8032 ms
+  callbacks total after 300 ms more: 2
+=== 10.255.255.1:80/blackhole-plain secure=0 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 16 ms (error 0)
+    [ 8016 ms] cb REQUEST_ERROR          ctx=set winhttp thread
+    REQUEST_ERROR api=5 error=12002
+  [ 8016 ms] after send await: no
+  [ 8016 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 0
+    [ 8016 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 8016 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 1, after close 0, errors 1, last error 12002)
+  RESULT unreachable answered=0 version 0.0.0 in 8016 ms
+  callbacks total after 300 ms more: 2
+=== tc-review2-nonexistent.invalid:443/dns secure=1 cancelAfter=0
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+    [   16 ms] cb REQUEST_ERROR          ctx=set winhttp thread
+    REQUEST_ERROR api=5 error=12007
+  [   16 ms] after send await: no
+  [   16 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 0
+    [   16 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 16 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 1, after close 0, errors 1, last error 12007)
+  RESULT unreachable answered=0 version 0.0.0 in 16 ms
+  callbacks total after 300 ms more: 2
+=== 127.0.0.1:8341/latest/hang secure=0 cancelAfter=1000
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+  [ 1015 ms] after send await: no
+  [ 1015 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 1
+    [ 1015 ms] cb REQUEST_ERROR          ctx=set winhttp thread after-close
+    REQUEST_ERROR api=5 error=12017
+    [ 1015 ms] cb HANDLE_CLOSING         ctx=set winhttp thread after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 1015 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 0, after close 1, errors 1, last error 12017)
+  RESULT unreachable answered=0 version 0.0.0 in 1015 ms
+  callbacks total after 300 ms more: 2
+=== 127.0.0.1:8342/bodydrip secure=0 cancelAfter=2000
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 15 ms (error 0)
+    [   15 ms] cb SENDREQUEST_COMPLETE   ctx=set winhttp thread
+  [   15 ms] after send await: SENDREQUEST_COMPLETE
+    [   15 ms] cb HEADERS_AVAILABLE      ctx=set INLINE(worker thread)
+  [   15 ms] after receive await: HEADERS_AVAILABLE
+  Content-Length query: ok (announced 7635, error 0), bodyLen 5, bodyComplete 0
+  [ 2015 ms] sequence over: status 200, reads 5, bodyLen 5, complete 0, timedOut 0, cancelled 1
+    [ 2015 ms] cb REQUEST_ERROR          ctx=set winhttp thread after-close
+    REQUEST_ERROR api=2 error=12017
+    [ 2015 ms] cb HANDLE_CLOSING         ctx=set winhttp thread after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 2015 ms; longest blocking WinHTTP call 0 ms (); callbacks 14 (inline 6, after close 1, errors 1, last error 12017)
+  RESULT unreachable answered=1 version 0.0.0 in 2015 ms
+  callbacks total after 300 ms more: 14
+=== 127.0.0.1:8342/hdrdrip secure=0 cancelAfter=2000
+  WinHttpOpen: 16 ms, ok
+  set-up done at 16 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+  [ 2016 ms] after send await: no
+  [ 2016 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 1
+    [ 2016 ms] cb REQUEST_ERROR          ctx=set winhttp thread after-close
+    REQUEST_ERROR api=5 error=12017
+    [ 2016 ms] cb HANDLE_CLOSING         ctx=set winhttp thread after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 2016 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 0, after close 1, errors 1, last error 12017)
+  RESULT unreachable answered=0 version 0.0.0 in 2016 ms
+  callbacks total after 300 ms more: 2
+=== 10.255.255.1:443/blackhole secure=1 cancelAfter=1000
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 0 ms (error 0)
+  [ 1000 ms] after send await: no
+  [ 1000 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 1
+    [ 1000 ms] cb REQUEST_ERROR          ctx=set winhttp thread after-close
+    REQUEST_ERROR api=5 error=12017
+    [ 1000 ms] cb HANDLE_CLOSING         ctx=set winhttp thread after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 1000 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 0, after close 1, errors 1, last error 12017)
+  RESULT unreachable answered=0 version 0.0.0 in 1000 ms
+  callbacks total after 300 ms more: 2
+=== tc-review2-nonexistent.invalid:443/dns secure=1 cancelAfter=5
+  WinHttpOpen: 0 ms, ok
+  set-up done at 0 ms, callbackSet=1
+  WinHttpSendRequest returned 1 after 15 ms (error 0)
+    [   15 ms] cb REQUEST_ERROR          ctx=set winhttp thread
+    REQUEST_ERROR api=5 error=12007
+  [   15 ms] after send await: no
+  [   15 ms] sequence over: status 0, reads 0, bodyLen 0, complete 0, timedOut 0, cancelled 0
+    [   15 ms] cb HANDLE_CLOSING         ctx=set INLINE(worker thread) after-close
+  WinHttpCloseHandle(request) returned after 0 ms; HANDLE_CLOSING arrived after 0 ms
+  TOTAL 15 ms; longest blocking WinHTTP call 0 ms (); callbacks 2 (inline 1, after close 0, errors 1, last error 12007)
+  RESULT unreachable answered=0 version 0.0.0 in 15 ms
+  callbacks total after 300 ms more: 2
+ALL DONE

@@ -28,6 +28,7 @@
 #include "gui.h"
 #include <uxtheme.h>
 #include "zip.h"
+#include "upddlg.h" // feature 123: checking for a new version
 #include "tasklist.h"
 #include "jumplist.h"
 extern "C"
@@ -618,6 +619,125 @@ void RegisterRestartForUpdates()
     HRESULT hr = RegisterApplicationRestart(cmdLine, RESTART_NO_CRASH | RESTART_NO_HANG | RESTART_NO_REBOOT);
     if (FAILED(hr))
         TRACE_E("RegisterApplicationRestart() failed, hr=0x" << std::hex << hr << std::dec);
+}
+
+//
+// ****************************************************************************
+// feature 123: the notification about a new version found by the automatic check
+//
+// Contract: specs/123-new-version-check/contracts/ui.md, "Showing". The notification never
+// appears while another modal window or a menu is open, and it takes the keyboard only from a
+// user who is not doing anything.
+
+static BOOL UpdateNoticePending = FALSE;   // a start-up result waits to be shown
+static CSalUpdRelease UpdateNoticeRelease; // valid when UpdateNoticePending
+static int UpdateNoticeTries = 0;          // how many times it could not be shown yet
+
+// how long the user must have been idle for the notification to be activated
+#define UPDATENOTICE_IDLE_MS 2000
+
+// TRUE when a dialog or message box of this thread other than 'except' is on screen - also one
+// that has no owner or another owner and therefore leaves the main window enabled
+static BOOL CALLBACK UpdateNoticeOtherDialogProc(HWND hwnd, LPARAM lParam)
+{
+    HWND* data = (HWND*)lParam; // [0] in: the window to ignore, [1] out: the dialog found
+    if (hwnd != data[0] && IsWindowVisible(hwnd))
+    {
+        char cls[20];
+        if (GetClassNameA(hwnd, cls, _countof(cls)) > 0 && strcmp(cls, "#32770") == 0)
+        {
+            data[1] = hwnd;
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+void CMainWindow::TryShowUpdateNotice()
+{
+    CALL_STACK_MESSAGE1("CMainWindow::TryShowUpdateNotice()");
+    if (!UpdateNoticePending)
+    {
+        KillTimer(HWindow, IDT_UPDATENOTICE);
+        return;
+    }
+    if (UpdateNotice_FindAny() != NULL) // one notification per user: another instance shows it
+    {
+        UpdateNoticePending = FALSE;
+        KillTimer(HWindow, IDT_UPDATENOTICE);
+        return;
+    }
+    BOOL canShow = (CanClose || CanCloseButInEndSuspendMode) && // start-up finished
+                   IsWindowEnabled(HWindow) &&                  // no modal window owned by us is open
+                   IsWindowVisible(HWindow) && !IsIconic(HWindow) &&
+                   GetCapture() == NULL && // no drag, no popup menu of ours
+                   (MenuBar == NULL || !MenuBar->IsInMenuLoop());
+    if (canShow)
+    {
+        GUITHREADINFO gti;
+        gti.cbSize = sizeof(gti);
+        if (GetGUIThreadInfo(GetCurrentThreadId(), &gti) &&
+            (gti.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE | GUI_INMOVESIZE)) != 0)
+            canShow = FALSE; // a system menu (e.g. a shell context menu) or a move/size loop
+    }
+    if (canShow)
+    {
+        HWND data[2] = {NULL, NULL};
+        EnumThreadWindows(GetCurrentThreadId(), UpdateNoticeOtherDialogProc, (LPARAM)data);
+        if (data[1] != NULL)
+            canShow = FALSE; // some dialog or message box of the main thread is open
+    }
+    if (!canShow)
+    {
+        // try again in a second; after half a minute of waiting (a minimised window, a dialog
+        // left open) every ten seconds is often enough
+        if (UpdateNoticeTries < 1000)
+            UpdateNoticeTries++;
+        SetTimer(HWindow, IDT_UPDATENOTICE, UpdateNoticeTries <= 30 ? 1000 : 10000, NULL);
+        return;
+    }
+    UpdateNoticePending = FALSE;
+    KillTimer(HWindow, IDT_UPDATENOTICE);
+
+    // the keyboard is taken only from a user who is not working: our window is in front, nothing
+    // is typed in the command line and there was no input for a moment
+    BOOL activate = GetForegroundWindow() == HWindow;
+    if (activate && EditWindow != NULL && EditWindow->GetEditLine() != NULL &&
+        EditWindow->GetEditLine()->HWindow != NULL &&
+        GetWindowTextLengthW(EditWindow->GetEditLine()->HWindow) > 0)
+        activate = FALSE;
+    if (activate)
+    {
+        LASTINPUTINFO lii;
+        lii.cbSize = sizeof(lii);
+        if (GetLastInputInfo(&lii) && GetTickCount() - lii.dwTime < UPDATENOTICE_IDLE_MS)
+            activate = FALSE;
+    }
+    UpdateNotice_Show(HWindow, UpdateNoticeRelease, activate);
+}
+
+// a check for a new version finished (WM_USER_UPDATECHECK_DONE)
+void CMainWindow::OnUpdateCheckDone()
+{
+    CALL_STACK_MESSAGE1("CMainWindow::OnUpdateCheckDone()");
+    if (UpdateCheck_ManualUIWaiting())
+        return; // the command that asked for the check takes the result itself
+    CUpdateCheckDone done;
+    if (!UpdateCheck_TakeResult(&done))
+        return;
+    if (UpdateAboutWindow != NULL) // the About dialog shows what the program knows
+        PostMessage(UpdateAboutWindow, WM_USER_UPDATECHECK_DONE, 0, 0);
+    // An automatic check is silent unless it found a newer version the user did not skip; so is
+    // a result nobody waits for any more.
+    CUpdateState state;
+    UpdateCheck_LoadState(&state);
+    if (SalUpdStartupNoticeWanted(done.Result, done.Release.Version, state.HasSkipped, state.Skipped))
+    {
+        UpdateNoticeRelease = done.Release;
+        UpdateNoticePending = TRUE;
+        UpdateNoticeTries = 0;
+        TryShowUpdateNotice();
+    }
 }
 
 CSalCloseAppDecision
@@ -2898,6 +3018,15 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
             OpenHtmlHelp(NULL, HWindow, command, dwData, FALSE);
 
+            return 0;
+        }
+
+        case CM_HELP_CHECKVERSION: // feature 123: always answers
+        {
+            CUpdateCheckDone done;
+            UpdateNoticePending = FALSE; // the answer of this check replaces a waiting start-up one
+            if (UpdateCheck_RunManualUI(HWindow, &done))
+                UpdateNotice_Show(HWindow, done.Release, TRUE); // also a version skipped earlier
             return 0;
         }
 
@@ -6222,6 +6351,12 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             break;
         }
 
+        case IDT_UPDATENOTICE: // feature 123: the notification could not be shown yet
+        {
+            TryShowUpdateNotice();
+            break;
+        }
+
         case IDT_PLUGINFSTIMERS:
         {
             Plugins.HandlePluginFSTimers();
@@ -6242,6 +6377,12 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         }
         }
         break;
+    }
+
+    case WM_USER_UPDATECHECK_DONE: // feature 123
+    {
+        OnUpdateCheckDone();
+        return 0;
     }
 
     case WM_USER_SLGINCOMPLETE:
@@ -7296,6 +7437,12 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
         SHChangeNotifyRelease(); // we no longer accept Shell Notifications
         KillTimer(HWindow, IDT_ADDNEWMODULES);
+        // feature 123: a running check for a new version is aborted (the exit never waits for the
+        // network) and the notification goes without a question, as "Remind Me Later"
+        KillTimer(HWindow, IDT_UPDATENOTICE);
+        UpdateNoticePending = FALSE;
+        UpdateCheck_Shutdown();
+        UpdateNotice_Close();
         HANDLES(RevokeDragDrop(HWindow));
         if (Configuration.StatusArea)
             RemoveTrayIcon();

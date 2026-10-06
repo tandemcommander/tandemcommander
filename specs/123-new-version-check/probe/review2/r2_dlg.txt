@@ -1,0 +1,51 @@
+comctl32 6 manifest: no (user32 controls)
+WM_INITDIALOG returns 0
+  created hidden: active = owner, focus = owner's edit
+  SW_SHOWNOACTIVATE: active = owner, focus = owner's edit
+  dialog above owner in z-order: 1
+  default id (DM_GETDEFID): 1; IDOK style has BS_DEFPUSHBUTTON: 1
+  activated later: active = the dialog window itself, focus = dialog control 1
+    Enter now:
+      IsDialogMessage(VK 0x0D) -> 1; WM_COMMAND count 1, id 1
+    Tab, then where is the focus:
+      IsDialogMessage(VK 0x09) -> 1; WM_COMMAND count 0, id 0
+      focus = dialog control 2
+  owner and back: focus = dialog control 2
+  focus set to the link: focus = dialog control 6247; IDOK still drawn default: 0; default id 1
+    Enter on the link:
+      IsDialogMessage(VK 0x0D) -> 1; WM_COMMAND count 1, id 1
+    Space on the link (reaches the control when IsDialogMessage returns 0... or is translated):
+      IsDialogMessage(VK 0x20) -> 1; WM_COMMAND count 0, id 0
+    Alt+D with the focus on the link: handled 1, WM_COMMAND count 1 id 1, focus at the command = control 6247
+    mouse click on the default button with the focus on the link: focus after button-down = control 1, WM_COMMAND count 1 id 1, focus at the command = control 1
+  focused link hidden: focus = dialog control 1
+    Enter:
+      IsDialogMessage(VK 0x0D) -> 1; WM_COMMAND count 1, id 1
+    Tab:
+      IsDialogMessage(VK 0x09) -> 1; WM_COMMAND count 0, id 0
+      focus = dialog control 2
+WM_INITDIALOG returns 1
+  created hidden: active = the dialog window itself, focus = dialog control 1
+  SW_SHOWNOACTIVATE: active = the dialog window itself, focus = dialog control 1
+  dialog above owner in z-order: 1
+  default id (DM_GETDEFID): 1; IDOK style has BS_DEFPUSHBUTTON: 1
+  activated later: active = the dialog window itself, focus = dialog control 1
+    Enter now:
+      IsDialogMessage(VK 0x0D) -> 1; WM_COMMAND count 1, id 1
+    Tab, then where is the focus:
+      IsDialogMessage(VK 0x09) -> 1; WM_COMMAND count 0, id 0
+      focus = dialog control 2
+  owner and back: focus = dialog control 2
+  focus set to the link: focus = dialog control 6247; IDOK still drawn default: 0; default id 1
+    Enter on the link:
+      IsDialogMessage(VK 0x0D) -> 1; WM_COMMAND count 1, id 1
+    Space on the link (reaches the control when IsDialogMessage returns 0... or is translated):
+      IsDialogMessage(VK 0x20) -> 1; WM_COMMAND count 0, id 0
+    Alt+D with the focus on the link: handled 1, WM_COMMAND count 1 id 1, focus at the command = control 6247
+    mouse click on the default button with the focus on the link: focus after button-down = control 1, WM_COMMAND count 1 id 1, focus at the command = control 1
+  focused link hidden: focus = dialog control 1
+    Enter:
+      IsDialogMessage(VK 0x0D) -> 1; WM_COMMAND count 1, id 1
+    Tab:
+      IsDialogMessage(VK 0x09) -> 1; WM_COMMAND count 0, id 0
+      focus = dialog control 2

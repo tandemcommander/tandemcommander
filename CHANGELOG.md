@@ -11,6 +11,14 @@ plugin.
 
 ## [Unreleased]
 
+New version check (feature 123). Tandem Commander tells you when a newer
+version has been published. **It is on by default and is the first thing the
+program does on the internet without being asked:** once a day, when it
+starts, it asks GitHub which release is the latest. It sends nothing about you
+or your computer and downloads nothing; `PRIVACY.md` describes it, and one
+option turns it off. Because this version is the first that can look, you will
+first be told about the version that follows it.
+
 Working external archivers (feature 084). **External archivers never worked
 in any Tandem Commander release:** every archive operation that used an
 external program ended with "Unable to execute new process
@@ -804,6 +812,27 @@ password with a non-English letter to the archive engine garbled.
   than before, and every 7-Zip version reads them.
 
 ### Added
+
+- **Check for a new version.** When a newer version of Tandem Commander has
+  been published, a window says so shortly after the program starts: it shows
+  the version you have, the new version and its release date, and offers
+  *Download* (the installer opens in your web browser — the program downloads
+  and installs nothing itself), *Remind Me Later* and *Skip This Version*; a
+  link opens the release notes. The check runs about once a day (when the
+  server could not be reached, it is tried again at a later start, at most
+  once an hour) and never delays the start: without a connection, or when the
+  server does not answer, nothing is shown. **Help → Check for New Version** asks at any time and
+  always answers — a newer version, "the latest version", or why the check
+  could not be made. The **About** box shows what is known next to your
+  version, with a link to the download. To turn the automatic check off, clear
+  **Options → Configuration → General → Check for a new version of Tandem
+  Commander at start-up**, or the same option in the window itself. What is
+  sent: one request to `api.github.com` with the fixed identification
+  `TandemCommander-updatecheck` — not your version, no identifier, no cookies
+  (see `PRIVACY.md`). Only published releases with an installer are offered,
+  never pre-releases. If the program was installed with the Windows Package
+  Manager, `winget upgrade` may offer the new version a little later than
+  this window does; the download works in either case.
 
 - **RAR archives** (RAR 1.5–4 and RAR5) open in the panel like a folder, can
   be viewed with F3, copied from with F5 and unpacked with Alt+F9 — no other

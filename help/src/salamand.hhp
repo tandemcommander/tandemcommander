@@ -122,6 +122,7 @@ CM_DIRHISTORY=hh\salamand\navigating_dirhist.htm
 CM_CONNECTNET=hh\salamand\disk_net.htm
 CM_DISCONNECTNET=hh\salamand\disk_net.htm
 CM_DOSSHELL=hh\salamand\othertask_shell.htm
+CM_HELP_CHECKVERSION=hh\salamand\othertask_newversion.htm
 CM_REFRESHASSOC=hh\salamand\advwork_assoc.htm
 CM_SWAPPANELS=hh\salamand\environment_swappanel.htm
 CM_USERMENU_MIN=hh\salamand\advwork_usermenu.htm

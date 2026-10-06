@@ -206,8 +206,10 @@ for the detail and the reasoning behind each item. Start there rather than
 re-deriving the order from the individual files: its section *Open items at a
 glance* (revised 2026-10-06) lists what is really open - code work an agent
 can do (by severity), steps owed to a person, and decisions not to act on.
-Features up to 121 are done and GUI-verified on the hidden desktop; no
-release is being prepared (0.1.8 is the last published version).
+Features up to 121 are done and GUI-verified on the hidden desktop; feature
+123 (new version check) is implemented and verified, with its person steps
+owed (`specs/123-new-version-check/closing-report.md`); no release is being
+prepared (0.1.8 is the last published version).
 
 ## Constitution
 
@@ -2021,3 +2023,57 @@ plugin architecture preservation, UI consistency.
   17,498. Probe `probe/batch121_probe.ps1` (`-Expect fixed|before`): this build every row PASS (K0
   reported), the build before shows every old behaviour (S1 "rejected to unload" 6/6); regressions
   101, 102, 117 clean, 118 58/0 after the item 12 revert. Records: `specs/121-small-batch/fix-log.md`.
+- 123-new-version-check: **the program tells the user about a newer version** - a notification
+  shortly after start-up (on by default, about once a day), *Help > Check for New Version*, a
+  line in the About dialog, an option on Configuration > General. No version bump of its own.
+  - **Source**: one `GET https://api.github.com/repos/tandemcommander/tandemcommander/releases/latest`
+    (measured comparison of the alternatives in `source-analysis.md`: 60 requests/hour per IP,
+    a `User-Agent` is mandatory, an unauthenticated `304` still counts against the limit).
+  - **The program never opens an address from the network.** `src/common/salupdcheck.h`
+    (header-only, pure, in saltests) builds the installer and release-notes addresses from the
+    validated version; the answer must contain exactly those (tag = canonical
+    `v<a>.<b>.<c>`, asset `tandemcommander-<ver>-x64-setup.exe` in state `uploaded`, not a draft
+    or pre-release). **Consequence for releases: the installer keeps that name and a release is
+    published with its asset attached.** A small strict JSON reader lives there too (it does
+    not check the text encoding - do not reuse it for text that is shown).
+  - **Request** (`src/updcheck.cpp`): WinHTTP in **asynchronous** mode on a worker thread,
+    `winhttp.dll` delay-loaded (`sal_base.props`); fixed `User-Agent`
+    `TandemCommander-updatecheck`, no version, no identifier; cookies, authentication and
+    redirects off or the request is not sent; one 12 s deadline for the whole request, enforced
+    by the worker (`UpdAwait`); a cancel never touches WinHTTP from the main thread. The first
+    version was synchronous and cancelled by closing the handle from the main thread - Microsoft
+    forbids that, and it could not bound a dripping server.
+  - **State**: `HKCU\...\0.1\Update Check`, written at once and read fresh (not part of
+    `Configuration`, so the option holds across instances and with *Save configuration on exit*
+    off); one claim per interval under the mutex `Local\TandemCommanderUpdateCheck`; 24 h after
+    an answered attempt, 1 h after an unreachable one. Contract:
+    `specs/123-new-version-check/contracts/stored-state.md`.
+  - **Notification** (`src/upddlg.cpp`): a **modeless** dialog owned by the main window - it
+    declares `SALCLOSEAPP_WINDOW_PROP` (an installer's update goes through with it open) and,
+    when the user is working, appears without taking activation or focus: **a dialog's
+    `WM_INITDIALOG` must return FALSE for that** (TRUE gives the first control the focus and
+    with it the activation, even for a hidden dialog - the first review's blocker). Links post
+    commands that are **not** their control ids (an `SS_NOTIFY` static sends `WM_COMMAND` with
+    its own id on every click), and `CUpdateLink` takes Enter itself (an `IDOK` redirect cannot
+    tell Enter on a link from the default button's access key).
+  - Debug-only seams for probes (`TC_UPDATECHECK_URL` loopback, `..._PRETEND_VERSION`,
+    `..._OPENLOG`); absent from Release (checked by string search).
+  - `PRIVACY.md` changed in the same change: this is the first time the program contacts the
+    internet without being asked. Default-on is a documented exception to the opt-in principle
+    (as panel tabs, 078).
+  - **Verification**: tests designed and run by independent agents in two rounds - a behaviour
+    probe on the hidden desktop against a fixture server (`probe/updcheck_probe.ps1`, final run
+    238 PASS / 0 FAIL / 2 NOT DRIVEN), an adversarial differential test of the parser against
+    Python's `json` (3.77 million inputs, no security defect), two refute-first code reviews
+    (1 blocker + 8 should-fix over both rounds, all fixed). saltests 17,498 -> 18,184. Real
+    endpoint checked with Debug and Release builds. 8 languages (Czech pinned whole; 10,376
+    DeepL characters).
+  - **Traps of the session**: Bash here-documents in the agent shell collapse doubled
+    backslashes (two generated literals and one probe script were corrupted - write scripts with
+    the editor tools); a hung helper probe left the product's registry key in probe state
+    twice (restored from a verified backup); the Restart Manager restarts the program on the
+    *visible* desktop.
+  - Owed to a person: design acceptance, real keyboard / mouse / screen reader, a real browser
+    download, a real installer update; at the next release the "newer" path in a Release build
+    and one antivirus scan. Records: `specs/123-new-version-check/closing-report.md`,
+    `fix-log.md`.

@@ -44,6 +44,7 @@
 #include "salpvpixel.h"     // feature 120
 #include "salmsgwrap.h"     // feature 121
 #include "salfindtext.h"    // feature 121
+#include "salupdcheck.h"    // feature 123
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -8664,6 +8665,654 @@ static void TestSmallBatch121()
     }
 }
 
+//
+// ****************************************************************************
+// feature 123: checking for a new version - the pure rules (salupdcheck.h)
+//
+
+static const char UpdRealRecord123[] =
+#include "updcheck123_fixture.inc"
+    ;
+
+// a minimal record the reader accepts; 'tag' and the addresses are given so that tests can break each of them
+static std::string UpdMakeRecord123(const char* tag, const char* published, const char* htmlUrl,
+                                    const char* assetName, const char* assetState, const char* assetUrl,
+                                    const char* draft = "false", const char* prerelease = "false",
+                                    const char* extraTop = "", const char* extraAsset = "")
+{
+    std::string s = "{\"url\":\"https://api.github.com/x\",\"author\":{\"login\":\"a\",\"id\":1,\"site_admin\":false},";
+    s += "\"tag_name\":\"";
+    s += tag;
+    s += "\",\"draft\":";
+    s += draft;
+    s += ",\"prerelease\":";
+    s += prerelease;
+    s += ",\"published_at\":\"";
+    s += published;
+    s += "\",\"html_url\":\"";
+    s += htmlUrl;
+    s += "\",";
+    s += extraTop;
+    s += "\"assets\":[{\"id\":7,\"name\":\"";
+    s += assetName;
+    s += "\",\"uploader\":{\"login\":\"a\"},\"state\":\"";
+    s += assetState;
+    s += "\",\"size\":8247136,";
+    s += extraAsset;
+    s += "\"browser_download_url\":\"";
+    s += assetUrl;
+    s += "\"}],\"body\":\"text with \\\"tag_name\\\":\\\"v9.9.9\\\" and {braces} [x]\\n\\u010d\\ud83d\\udcc1\"}";
+    return s;
+}
+
+#define UPD_TAG_019 "v0.1.9"
+#define UPD_TIME_019 "2026-10-14T08:00:00Z"
+#define UPD_NOTES_019 "https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9"
+#define UPD_NAME_019 "tandemcommander-0.1.9-x64-setup.exe"
+#define UPD_URL_019 "https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe"
+
+static BOOL UpdParses123(const std::string& s, CSalUpdParseError* err = NULL)
+{
+    CSalUpdRelease rel;
+    return SalUpdParseLatestRelease(s.c_str(), s.size(), &rel, err);
+}
+
+static CSalUpdParseError UpdError123(const std::string& s)
+{
+    CSalUpdParseError err = supeNone;
+    CSalUpdRelease rel;
+    if (SalUpdParseLatestRelease(s.c_str(), s.size(), &rel, &err))
+        return supeNone;
+    return err;
+}
+
+static void TestUpdateCheck123()
+{
+    // ---- versions: parsing
+    CSalUpdVersion v;
+    CHECK(SalUpdParseVersion("0.1.8", -1, FALSE, &v) && v.Major == 0 && v.Minor == 1 && v.Patch == 8);
+    CHECK(SalUpdParseVersion("v0.1.8", -1, TRUE, &v) && v.Major == 0 && v.Minor == 1 && v.Patch == 8);
+    CHECK(SalUpdParseVersion("v12.345.67890", -1, TRUE, &v) && v.Major == 12 && v.Minor == 345 && v.Patch == 67890);
+    CHECK(SalUpdParseVersion("99999.99999.99999", -1, FALSE, &v) && v.Major == 99999);
+    CHECK(SalUpdParseVersion("v0.01.9", -1, TRUE, &v) && v.Minor == 1); // parses; its addresses will not match (below)
+    static const char* badVersions[] = {
+        "", "v", "0", "0.1", "0.1.", "0.1.8.", "0.1.8.0", ".1.8", "0..8", "0.1.8 ", " 0.1.8", "0.1.8\n",
+        "0.1.8-beta", "0.1.8b", "V0.1.8", "vv0.1.8", "+0.1.8", "-0.1.8", "0.-1.8", "0.1.+8", "0,1,8",
+        "100000.1.8", "0.100000.8", "0.1.100000", "0x1.1.8", "1e1.1.8", "\xEF\xBC\x90.1.8",
+        "0.1.8/", "0.1.8?x", "0.1.8#", "0.1.8%20", "..", "...", "a.b.c"};
+    for (int i = 0; i < _countof(badVersions); i++)
+    {
+        CHECK(!SalUpdParseVersion(badVersions[i], -1, FALSE, &v));
+        std::string t = std::string("v") + badVersions[i];
+        CHECK(!SalUpdParseVersion(t.c_str(), -1, TRUE, &v));
+    }
+    CHECK(!SalUpdParseVersion("0.1.8", -1, TRUE, &v));   // the tag form needs the v
+    CHECK(!SalUpdParseVersion("v0.1.8", -1, FALSE, &v)); // the stored form has none
+    CHECK(!SalUpdParseVersion(NULL, -1, FALSE, &v) && !SalUpdParseVersion("0.1.8", -1, FALSE, NULL));
+    CHECK(SalUpdParseVersion("0.1.8xyz", 5, FALSE, &v) && v.Patch == 8); // the length is honoured
+    CHECK(!SalUpdParseVersion("0.1.8", 4, FALSE, &v));
+    CHECK(!SalUpdParseVersion("0.1.8\0"
+                              "9",
+                              7, FALSE, &v)); // an embedded zero is not a digit
+
+    // ---- versions: order
+    static const CSalUpdVersion order[] = {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 8}, {0, 1, 9}, {0, 1, 10}, {0, 2, 0}, {0, 10, 0}, {1, 0, 0}, {1, 0, 1}, {2, 0, 0}, {10, 0, 0}, {99999, 99999, 99999}};
+    for (int i = 0; i < _countof(order); i++)
+    {
+        for (int j = 0; j < _countof(order); j++)
+        {
+            int c = SalUpdVersionCompare(order[i], order[j]);
+            CHECK((i < j && c < 0) || (i == j && c == 0) || (i > j && c > 0));
+        }
+    }
+
+    // ---- versions: printing and the constructed addresses
+    char buf[SALUPD_URL_MAX];
+    CSalUpdVersion v019 = {0, 1, 9};
+    CHECK(SalUpdFormatVersion(v019, buf, sizeof(buf)) && strcmp(buf, "0.1.9") == 0);
+    CHECK(SalUpdFormatVersion(order[_countof(order) - 1], buf, SALUPD_VERSION_TEXT_MAX) && strcmp(buf, "99999.99999.99999") == 0);
+    CHECK(!SalUpdFormatVersion(v019, buf, 5) && buf[0] == 0); // "0.1.9" needs 6 bytes
+    CHECK(SalUpdFormatVersion(v019, buf, 6));
+    CHECK(SalUpdInstallerUrl(v019, buf, sizeof(buf)) && strcmp(buf, UPD_URL_019) == 0);
+    CHECK(SalUpdInstallerName(v019, buf, sizeof(buf)) && strcmp(buf, UPD_NAME_019) == 0);
+    CHECK(SalUpdReleaseNotesUrl(v019, buf, sizeof(buf)) && strcmp(buf, UPD_NOTES_019) == 0);
+    // the longest version still fits the address buffer and CHyperLink's MAX_PATH action
+    CHECK(SalUpdInstallerUrl(order[_countof(order) - 1], buf, sizeof(buf)) && strlen(buf) < SALUPD_URL_MAX && strlen(buf) < MAX_PATH);
+    CHECK(!SalUpdInstallerUrl(v019, buf, 20) && buf[0] == 0);
+    CHECK(!SalUpdReleaseNotesUrl(v019, buf, 20) && buf[0] == 0);
+    // every constructed address starts with the official releases prefix and holds only URL-safe characters
+    for (int i = 0; i < _countof(order); i++)
+    {
+        for (int k = 0; k < 2; k++)
+        {
+            CHECK(k == 0 ? SalUpdInstallerUrl(order[i], buf, sizeof(buf)) : SalUpdReleaseNotesUrl(order[i], buf, sizeof(buf)));
+            CHECK(strncmp(buf, "https://github.com/tandemcommander/tandemcommander/releases/", 60) == 0);
+            BOOL safe = TRUE;
+            for (const char* p = buf; *p != 0; p++)
+            {
+                if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9') || strchr(":/.-", *p) != NULL))
+                    safe = FALSE;
+            }
+            CHECK(safe);
+        }
+    }
+
+    // ---- time
+    ULONGLONG ft;
+    CHECK(SalUpdParseUtcTime("2026-09-20T14:34:53Z", -1, &ft));
+    {
+        SYSTEMTIME st;
+        FILETIME f;
+        f.dwLowDateTime = (DWORD)(ft & 0xFFFFFFFF);
+        f.dwHighDateTime = (DWORD)(ft >> 32);
+        CHECK(FileTimeToSystemTime(&f, &st) && st.wYear == 2026 && st.wMonth == 9 && st.wDay == 20 &&
+              st.wHour == 14 && st.wMinute == 34 && st.wSecond == 53);
+    }
+    CHECK(SalUpdParseUtcTime("2028-02-29T00:00:00Z", -1, &ft)); // leap year
+    CHECK(SalUpdParseUtcTime("2000-02-29T23:59:59Z", -1, &ft));
+    static const char* badTimes[] = {
+        "", "2026-09-20", "2026-09-20T14:34:53", "2026-09-20T14:34:53z", "2026-09-20 14:34:53Z",
+        "2026-09-20T14:34:53+00:00", "2026-09-20T14:34:53.000Z", "2026-13-01T00:00:00Z", "2026-00-10T00:00:00Z",
+        "2026-02-29T00:00:00Z", "2100-02-29T00:00:00Z", "2026-04-31T00:00:00Z", "2026-01-00T00:00:00Z",
+        "2026-01-32T00:00:00Z", "2026-01-01T24:00:00Z", "2026-01-01T00:60:00Z", "2026-01-01T00:00:60Z",
+        "1600-01-01T00:00:00Z", "0000-01-01T00:00:00Z", "2026-09-20T14:34:53ZZ", " 2026-09-20T14:34:53Z",
+        "2026/09/20T14:34:53Z", "2026-9-20T14:34:53Z0", "-026-09-20T14:34:53Z", "2026-09-20T14:34:5 Z"};
+    for (int i = 0; i < _countof(badTimes); i++)
+        CHECK(!SalUpdParseUtcTime(badTimes[i], -1, &ft));
+    CHECK(!SalUpdParseUtcTime(NULL, -1, &ft) && !SalUpdParseUtcTime("2026-09-20T14:34:53Z", -1, NULL));
+
+    // ---- the JSON reader: grammar
+    static const char* goodJson[] = {
+        "{}", " { } ", "{\"a\":1}", "{\"a\":-0.5e+10,\"b\":[1,2,[3,{\"c\":null}]],\"d\":true,\"e\":false}",
+        "{\"a\":\"\\\"\\\\\\/\\b\\f\\n\\r\\t\\u00e9\\ud83d\\udcc1\"}", "\t\r\n{\"a\":[]}\r\n ", "{\"\":0}",
+        "{\"a\":0,\"a\":1}", "{\"a\":1E5}", "{\"a\":\"\xC4\x8D\"}"};
+    for (int i = 0; i < _countof(goodJson); i++)
+    {
+        CSalUpdJsonReader r(goodJson[i], strlen(goodJson[i]));
+        CHECK(r.SkipValue(1) && !r.IsFailed() && r.AtEnd());
+    }
+    static const char* badJson[] = {
+        "", " ", "{", "}", "{\"a\"}", "{\"a\":}", "{\"a\":1,}", "{,\"a\":1}", "{\"a\":1 \"b\":2}", "{a:1}",
+        "{'a':1}", "{\"a\":01}", "{\"a\":1.}", "{\"a\":.5}", "{\"a\":1e}", "{\"a\":+1}", "{\"a\":tru}",
+        "{\"a\":True}", "{\"a\":nul}", "{\"a\":\"x}", "{\"a\":\"\\x\"}", "{\"a\":\"\\u12g4\"}", "{\"a\":\"\\u12\"}",
+        "{\"a\":\"line\nbreak\"}", "{\"a\":\"tab\there\"}", "{\"a\":[1,2}", "{\"a\":[1 2]}", "{\"a\":[,1]}",
+        "{\"a\":1}}", "{\"a\":1}x", "{\"a\":1}{}", "[1,2", "{\"a\":--1}", "{\"a\":NaN}",
+        "{\"a\":Infinity}", "{\"a\":0x10}", "{\"a\"::1}", "{\"a\":1;\"b\":2}", "{\"a\":\"\\\"}"};
+    for (int i = 0; i < _countof(badJson); i++)
+    {
+        CSalUpdJsonReader r(badJson[i], strlen(badJson[i]));
+        CHECK(!(r.SkipValue(1) && !r.IsFailed() && r.AtEnd()));
+    }
+    {
+        static const char withZero[] = "{\"a\":1}\0x"; // a zero byte after the value is not white space
+        CSalUpdJsonReader r(withZero, sizeof(withZero) - 1);
+        CHECK(!(r.SkipValue(1) && r.AtEnd()));
+        static const char zeroInString[] = "{\"a\":\"x\0y\"}"; // a raw control character inside a string
+        CSalUpdJsonReader r2(zeroInString, sizeof(zeroInString) - 1);
+        CHECK(!r2.SkipValue(1));
+        CSalUpdJsonReader r3(NULL, 0);
+        CHECK(r3.IsFailed() && !r3.SkipValue(1));
+    }
+    // nesting: SALUPD_MAX_DEPTH levels pass, one more fails (arrays and objects)
+    for (int kind = 0; kind < 2; kind++)
+    {
+        for (int depth = SALUPD_MAX_DEPTH - 1; depth <= SALUPD_MAX_DEPTH + 1; depth++)
+        {
+            std::string s;
+            for (int i = 0; i < depth; i++)
+                s += kind == 0 ? "[" : "{\"a\":";
+            s += "1";
+            for (int i = 0; i < depth; i++)
+                s += kind == 0 ? "]" : "}";
+            CSalUpdJsonReader r(s.c_str(), s.size());
+            BOOL ok = r.SkipValue(1) && r.AtEnd();
+            CHECK(ok == (depth <= SALUPD_MAX_DEPTH));
+        }
+    }
+    {
+        // a deep bomb must fail fast and must not overflow the stack
+        std::string s(200000, '[');
+        CSalUpdJsonReader r(s.c_str(), s.size());
+        CHECK(!r.SkipValue(1));
+    }
+
+    // ---- the JSON reader: strings
+    {
+        char out[32];
+        BOOL bad;
+        const char* s1 = "\"a\\u010d\\ud83d\\udcc1\\n\\\"z\"";
+        CSalUpdJsonReader r1(s1, strlen(s1));
+        CHECK(r1.ReadString(out, sizeof(out), &bad) && !bad && strcmp(out, "a\xC4\x8D\xF0\x9F\x93\x81\n\"z") == 0);
+        const char* s2 = "\"\\ud83d\""; // a lone high surrogate
+        CSalUpdJsonReader r2(s2, strlen(s2));
+        CHECK(r2.ReadString(out, sizeof(out), &bad) && bad && out[0] == 0);
+        const char* s3 = "\"\\udcc1x\""; // a lone low surrogate
+        CSalUpdJsonReader r3(s3, strlen(s3));
+        CHECK(r3.ReadString(out, sizeof(out), &bad) && bad && out[0] == 0);
+        const char* s4 = "\"\\ud83d\\u0041\""; // high surrogate followed by an ordinary escape
+        CSalUpdJsonReader r4(s4, strlen(s4));
+        CHECK(r4.ReadString(out, sizeof(out), &bad) && bad && r4.AtEnd());
+        const char* s5 = "\"ab\\u0000cd\""; // an escaped NUL would cut a C string
+        CSalUpdJsonReader r5(s5, strlen(s5));
+        CHECK(r5.ReadString(out, sizeof(out), &bad) && bad && out[0] == 0);
+        const char* s6 = "\"0123456789\"";
+        CSalUpdJsonReader r6(s6, strlen(s6));
+        CHECK(r6.ReadString(out, 11, &bad) && !bad && strcmp(out, "0123456789") == 0); // fits exactly
+        CSalUpdJsonReader r7(s6, strlen(s6));
+        CHECK(r7.ReadString(out, 10, &bad) && bad && out[0] == 0 && r7.AtEnd()); // one byte short: bad, grammar intact
+        CSalUpdJsonReader r8(s2, strlen(s2));
+        CHECK(r8.ReadString(NULL, 0, NULL) && r8.AtEnd()); // skipping does not judge surrogates
+    }
+
+    // ---- the release record: the real answer for 0.1.8
+    CSalUpdRelease rel;
+    CSalUpdParseError err;
+    size_t realLen = strlen(UpdRealRecord123);
+    CHECK(realLen > 7000 && realLen < 9000);
+    CHECK(SalUpdParseLatestRelease(UpdRealRecord123, realLen, &rel, &err) && err == supeNone);
+    CHECK(rel.Version.Major == 0 && rel.Version.Minor == 1 && rel.Version.Patch == 8);
+    CHECK(strcmp(rel.PublishedText, "2026-09-20T14:34:53Z") == 0);
+    CHECK(SalUpdParseUtcTime("2026-09-20T14:34:53Z", -1, &ft) && rel.PublishedUtc == ft);
+    {
+        CSalUpdVersion v017 = {0, 1, 7}, v018 = {0, 1, 8}, v020 = {0, 2, 0};
+        CHECK(SalUpdClassify(rel, v017) == surNewer);
+        CHECK(SalUpdClassify(rel, v018) == surUpToDate);
+        CHECK(SalUpdClassify(rel, v020) == surUpToDate); // a development build newer than the latest release
+    }
+
+    // mutation sweep over the real record: whatever a damaged answer parses to, it is never another
+    // version than 0.1.8 (the addresses are constructed from the version, so that is the whole risk)
+    {
+        std::string real(UpdRealRecord123, realLen);
+        int accepted = 0, wrong = 0;
+        for (size_t i = 0; i < realLen; i++)
+        {
+            std::string m = real;
+            m.erase(i, 1); // each byte deleted
+            CSalUpdRelease r;
+            if (SalUpdParseLatestRelease(m.c_str(), m.size(), &r))
+            {
+                accepted++;
+                if (r.Version.Major != 0 || r.Version.Minor != 1 || r.Version.Patch != 8)
+                    wrong++;
+            }
+        }
+        CHECK(wrong == 0);
+        CHECK(accepted < (int)realLen); // deletions inside skipped text are harmless, the others are refused
+        static const char repl[] = "{}[]\":,\\0 v.-/";
+        int wrong2 = 0;
+        for (size_t i = 0; i < realLen; i++)
+        {
+            for (int k = 0; repl[k] != 0; k++)
+            {
+                if (real[i] == repl[k])
+                    continue;
+                std::string m = real;
+                m[i] = repl[k]; // each byte replaced by each structural character
+                CSalUpdRelease r;
+                if (SalUpdParseLatestRelease(m.c_str(), m.size(), &r) &&
+                    (r.Version.Major != 0 || r.Version.Minor != 1 || r.Version.Patch != 8))
+                    wrong2++;
+            }
+        }
+        CHECK(wrong2 == 0);
+        int wrong3 = 0;
+        for (size_t n = 0; n < realLen; n++) // every truncation is refused
+        {
+            CSalUpdRelease r;
+            if (SalUpdParseLatestRelease(real.c_str(), n, &r))
+                wrong3++;
+        }
+        CHECK(wrong3 == 0);
+        // changing the version in the tag alone is not enough: the addresses must follow
+        std::string m = real;
+        size_t pos = m.find("\"tag_name\": \"v0.1.8\"");
+        CHECK(pos != std::string::npos);
+        if (pos != std::string::npos)
+        {
+            m.replace(pos, 20, "\"tag_name\": \"v0.1.9\"");
+            CHECK(UpdError123(m) == supeForeignNotes);
+        }
+    }
+
+    // ---- the release record: the rules, one broken at a time
+    std::string good = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019);
+    CHECK(SalUpdParseLatestRelease(good.c_str(), good.size(), &rel, &err) && err == supeNone);
+    CHECK(rel.Version.Major == 0 && rel.Version.Minor == 1 && rel.Version.Patch == 9);
+    CHECK(strcmp(rel.PublishedText, UPD_TIME_019) == 0);
+    // the body of the record holds "tag_name":"v9.9.9" as text - it must not be taken for the member
+    CHECK(rel.Version.Major != 9);
+
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "true")) == supeDraft);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "null")) == supeDraft);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "0")) == supeDraft);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "\"false\"")) == supeDraft);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "true")) == supePrerelease);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "[]")) == supePrerelease);
+
+    static const char* badTags[] = {"0.1.9", "v0.1", "v0.1.9-beta", "v0.1.9 ", "V0.1.9", "v0.1.9.1", "latest", "", "v0.1.123456", "v0.1.9\\u0000"};
+    for (int i = 0; i < _countof(badTags); i++)
+        CHECK(UpdError123(UpdMakeRecord123(badTags[i], UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019)) == supeBadTag);
+    // leading zeros parse as a version, but the tag must be the canonical print of its numbers -
+    // with addresses spelled like the tag, and (found by the independent adversarial test) with
+    // canonical addresses too
+    CHECK(UpdError123(UpdMakeRecord123("v0.01.9", UPD_TIME_019, "https://github.com/tandemcommander/tandemcommander/releases/tag/v0.01.9",
+                                       "tandemcommander-0.01.9-x64-setup.exe", "uploaded",
+                                       "https://github.com/tandemcommander/tandemcommander/releases/download/v0.01.9/tandemcommander-0.01.9-x64-setup.exe")) == supeBadTag);
+    CHECK(UpdError123(UpdMakeRecord123("v00.01.009", UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019)) == supeBadTag);
+    CHECK(UpdError123(UpdMakeRecord123("v0.1.09", UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019)) == supeBadTag);
+
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, "2026-10-14", UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019)) == supeBadTime);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, "2026-02-30T08:00:00Z", UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019)) == supeBadTime);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, "", UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019)) == supeBadTime);
+
+    static const char* badNotes[] = {
+        "https://evil.example/tandemcommander/tandemcommander/releases/tag/v0.1.9",
+        "http://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9",
+        "https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.8",
+        "https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9/",
+        "https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9?x=1",
+        "https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9#frag",
+        "https://github.com/Tandemcommander/tandemcommander/releases/tag/v0.1.9",
+        "https://github.com.evil.example/tandemcommander/tandemcommander/releases/tag/v0.1.9",
+        "https://github.com@evil.example/tandemcommander/tandemcommander/releases/tag/v0.1.9",
+        " https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9",
+        "https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9\\u0000",
+        "https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9\\ud83d",
+        "javascript:alert(1)", "file:///C:/Windows/System32/calc.exe", ""};
+    for (int i = 0; i < _countof(badNotes); i++)
+        CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, badNotes[i], UPD_NAME_019, "uploaded", UPD_URL_019)) == supeForeignNotes);
+
+    static const char* badAssetUrls[] = {
+        "https://evil.example/tandemcommander-0.1.9-x64-setup.exe",
+        "http://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe",
+        "https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.8/tandemcommander-0.1.9-x64-setup.exe",
+        "https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe?x",
+        "https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/../../../../evil/x.exe",
+        "https://github.com/other/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe",
+        "https://GITHUB.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe",
+        "https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe ",
+        "file:///C:/Windows/System32/calc.exe", "calc.exe", ""};
+    for (int i = 0; i < _countof(badAssetUrls); i++)
+        CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", badAssetUrls[i])) == supeNoInstaller);
+    static const char* badAssetNames[] = {"tandemcommander-0.1.8-x64-setup.exe", "tandemcommander-0.1.9-x86-setup.exe", "setup.exe",
+                                          "Tandemcommander-0.1.9-x64-setup.exe", "tandemcommander-0.1.9-x64-setup.exe.sig", ""};
+    for (int i = 0; i < _countof(badAssetNames); i++)
+        CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, badAssetNames[i], "uploaded", UPD_URL_019)) == supeNoInstaller);
+    static const char* badStates[] = {"open", "new", "starter", "Uploaded", "uploaded ", ""};
+    for (int i = 0; i < _countof(badStates); i++)
+        CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, badStates[i], UPD_URL_019)) == supeNoInstaller);
+
+    // duplicates of members the program reads
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false",
+                                       "\"tag_name\":\"v0.1.9\",")) == supeDuplicate);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false",
+                                       "\"draft\":false,")) == supeDuplicate);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false",
+                                       "\"html_url\":\"" UPD_NOTES_019 "\",")) == supeDuplicate);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false",
+                                       "\"assets\":[],")) == supeDuplicate);
+    // an escaped member name is the same member
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false",
+                                       "\"tag\\u005fname\":\"v0.2.0\",")) == supeDuplicate);
+    // inside an asset: a second state or address disqualifies that asset
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false", "",
+                                       "\"state\":\"open\",")) == supeNoInstaller);
+    CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false", "",
+                                       "\"browser_download_url\":\"https://evil.example/x.exe\",")) == supeNoInstaller);
+
+    // missing members and wrong shapes
+    CHECK(UpdError123("{}") == supeMissingField);
+    CHECK(UpdError123("{\"tag_name\":\"v0.1.9\"}") == supeMissingField);
+    CHECK(UpdError123("[]") == supeNotJson);
+    CHECK(UpdError123("\"v0.1.9\"") == supeNotJson);
+    CHECK(UpdError123("null") == supeNotJson);
+    CHECK(UpdError123("<html><body>Sign in to the hotel network</body></html>") == supeNotJson);
+    CHECK(UpdError123("") == supeNotJson);
+    CHECK(UpdError123(good + "x") == supeNotJson);
+    CHECK(UpdError123(good + good) == supeNotJson);
+    CHECK(UpdParses123(good + " \r\n"));
+    CHECK(UpdParses123(std::string("\r\n ") + good));
+    CHECK(UpdError123(std::string("\xEF\xBB\xBF") + good) == supeNotJson); // a byte-order mark is not JSON
+    {
+        // "assets" of another type, an empty list, a list of non-objects
+        std::string a = good;
+        size_t p = a.find("\"assets\":[");
+        size_t q = a.find("],\"body\"");
+        CHECK(p != std::string::npos && q != std::string::npos);
+        if (p != std::string::npos && q != std::string::npos)
+        {
+            std::string head = a.substr(0, p), tail = a.substr(q + 1);
+            CHECK(UpdError123(head + "\"assets\":[]" + tail) == supeNoInstaller);
+            CHECK(UpdError123(head + "\"assets\":null" + tail) == supeNoInstaller);
+            CHECK(UpdError123(head + "\"assets\":{}" + tail) == supeNoInstaller);
+            CHECK(UpdError123(head + "\"assets\":\"" UPD_URL_019 "\"" + tail) == supeNoInstaller);
+            CHECK(UpdError123(head + "\"assets\":[1,null,\"x\",[],{}]" + tail) == supeNoInstaller);
+            // several assets: the installer among others is found, in any position
+            std::string other = "{\"name\":\"notes.txt\",\"state\":\"uploaded\",\"browser_download_url\":\"https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/notes.txt\"}";
+            std::string inst = "{\"browser_download_url\":\"" UPD_URL_019 "\",\"state\":\"uploaded\",\"name\":\"" UPD_NAME_019 "\"}";
+            CHECK(UpdParses123(head + "\"assets\":[" + other + "," + inst + "]" + tail));
+            CHECK(UpdParses123(head + "\"assets\":[" + inst + "," + other + "]" + tail));
+            CHECK(UpdError123(head + "\"assets\":[" + other + "," + other + "]" + tail) == supeNoInstaller);
+            // the right name and the right address in two different assets are not an installer
+            std::string half1 = "{\"name\":\"" UPD_NAME_019 "\",\"state\":\"uploaded\",\"browser_download_url\":\"https://evil.example/x.exe\"}";
+            std::string half2 = "{\"name\":\"x.exe\",\"state\":\"uploaded\",\"browser_download_url\":\"" UPD_URL_019 "\"}";
+            CHECK(UpdError123(head + "\"assets\":[" + half1 + "," + half2 + "]" + tail) == supeNoInstaller);
+            // members nested one level deeper do not count
+            CHECK(UpdError123(head + "\"assets\":[{\"uploader\":" + inst + "}]" + tail) == supeNoInstaller);
+        }
+    }
+    // members of interest nested in another object are not the record's own
+    CHECK(UpdError123("{\"release\":" + good + "}") == supeMissingField);
+    // size limits
+    {
+        std::string big = good;
+        big.insert(big.size() - 2, std::string(SALUPD_MAX_ANSWER, 'x'));
+        CHECK(big.size() > SALUPD_MAX_ANSWER && UpdError123(big) == supeNotJson);
+        std::string longTag = "v0.1.9" + std::string(SALUPD_MAX_STRING, '9');
+        CHECK(UpdError123(UpdMakeRecord123(longTag.c_str(), UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019)) == supeBadTag);
+        std::string longUrl = UPD_URL_019 + std::string(SALUPD_MAX_STRING, 'a');
+        CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", longUrl.c_str())) == supeNoInstaller);
+        CHECK(!SalUpdParseLatestRelease(good.c_str(), good.size(), NULL, &err));
+        CHECK(!SalUpdParseLatestRelease(NULL, 10, &rel, &err));
+    }
+
+    // ---- cases named by the independent adversarial test (specs/123-.../probe/adversary)
+    {
+        // nesting at the level of the record: an ignored top-level member may nest 31 arrays, not 32
+        for (int depth = 31; depth <= 32; depth++)
+        {
+            std::string extra = "\"x\":" + std::string(depth, '[') + std::string(depth, ']') + ",";
+            std::string s = UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019,
+                                             "false", "false", extra.c_str());
+            CHECK(UpdParses123(s) == (depth == 31));
+        }
+        // the size limit is exact
+        for (int over = 0; over <= 1; over++)
+        {
+            std::string s = good;
+            s.insert(s.size() - 1, std::string(SALUPD_MAX_ANSWER + over - good.size(), ' '));
+            CHECK(s.size() == (size_t)SALUPD_MAX_ANSWER + over && UpdParses123(s) == (over == 0));
+        }
+        // "\/" is a legal way to write a slash; escaped member names are the members
+        std::string esc = good;
+        size_t pos;
+        while ((pos = esc.find("https://")) != std::string::npos)
+            esc.replace(pos, 8, "https:\\/\\/");
+        CHECK(esc != good && UpdParses123(esc));
+        std::string escName = good;
+        pos = escName.find("\"state\"");
+        CHECK(pos != std::string::npos);
+        if (pos != std::string::npos)
+        {
+            escName.replace(pos, 7, "\"st\\u0061te\"");
+            CHECK(UpdParses123(escName));
+        }
+        // an asset naming itself twice is not the installer, even with the right name both times
+        CHECK(UpdError123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false", "",
+                                           "\"name\":\"" UPD_NAME_019 "\",")) == supeNoInstaller);
+        // text that is not valid UTF-8 passes through skipped strings (documented in the header);
+        // a member name that only resembles a read one is another member
+        CHECK(UpdParses123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false",
+                                            "\"note\":\"\xFF\xC0\xAF\",")));
+        CHECK(UpdParses123(UpdMakeRecord123(UPD_TAG_019, UPD_TIME_019, UPD_NOTES_019, UPD_NAME_019, "uploaded", UPD_URL_019, "false", "false",
+                                            "\"tag_name\\u0000\":\"v9.9.9\",\"tag_names\":\"v9.9.9\",")));
+        // white space that is not JSON's
+        static const char* const notSpace[] = {"\f", "\v", "\xC2\xA0", "\xE2\x80\xA8"};
+        for (int i = 0; i < _countof(notSpace); i++)
+            CHECK(UpdError123(std::string("{") + notSpace[i] + good.substr(1)) == supeNotJson);
+        // literals and numbers at their edges
+        static const char* const badEdge[] = {"{\"a\":truex}", "{\"a\":nullnull}", "{\"a\":false false}", "{\"a\":-}", "{\"a\":-01}",
+                                              "{\"a\":00}", "{\"a\":1e+}", "{\"a\":\"\\u00G1\"}", "{\"a\":\"\\u00:1\"}", "{\"a\":\"\\u00/1\"}"};
+        for (int i = 0; i < _countof(badEdge); i++)
+        {
+            CSalUpdJsonReader r(badEdge[i], strlen(badEdge[i]));
+            CHECK(!(r.SkipValue(1) && r.AtEnd()));
+        }
+        static const char* const goodEdge[] = {"{\"a\":-0}", "{\"a\":0e0}", "{\"a\":1e400}", "{\"a\":\"\\uAbCd\"}", "{\"a\":\"\x7F\"}"};
+        for (int i = 0; i < _countof(goodEdge); i++)
+        {
+            CSalUpdJsonReader r(goodEdge[i], strlen(goodEdge[i]));
+            CHECK(r.SkipValue(1) && r.AtEnd());
+        }
+        // an extracted string holds SALUPD_MAX_STRING - 1 bytes
+        for (int n = SALUPD_MAX_STRING - 1; n <= SALUPD_MAX_STRING; n++)
+        {
+            std::string s = "\"" + std::string(n, 'a') + "\"";
+            char out[SALUPD_MAX_STRING];
+            BOOL bad;
+            CSalUpdJsonReader r(s.c_str(), s.size());
+            CHECK(r.ReadString(out, sizeof(out), &bad) && bad == (n == SALUPD_MAX_STRING));
+        }
+        // time at the ends of the range
+        ULONGLONG t0;
+        CHECK(SalUpdParseUtcTime("1601-01-01T00:00:00Z", -1, &t0) && t0 == 0);
+        CHECK(SalUpdParseUtcTime("9999-12-31T23:59:59Z", -1, &t0) && t0 == 2650467743990000000ULL);
+        CHECK(SalUpdParseUtcTime("2400-02-29T00:00:00Z", -1, &t0) && !SalUpdParseUtcTime("1900-02-29T00:00:00Z", -1, &t0));
+        CHECK(!SalUpdParseUtcTime("2026-09-20T14:34:53Z", 19, &t0) && !SalUpdParseUtcTime("2026-09-20T14:34:53ZZ", 21, &t0));
+        CHECK(!SalUpdStatusWantsBody(403, NULL)); // no result wanted: must not fault
+        CHECK(SalUpdAutoCheckDue(TRUE, TRUE, 0xFFFFFFFFFFFFFFFFULL, TRUE, 0x8000000000000000ULL)); // a time far in the future
+        CHECK(!SalUpdAutoCheckDue(TRUE, TRUE, 0xFFFFFFFFFFFFFFFFULL, TRUE, 0xFFFFFFFFFFFFFFFFULL));
+        // the seam's port has no leading zero
+        int port123 = 0;
+        WCHAR path123[20];
+        CHECK(!SalUpdParseLoopbackUrl(L"http://127.0.0.1:00080/x", &port123, path123, _countof(path123)));
+        CHECK(!SalUpdParseLoopbackUrl(L"http://127.0.0.1:80/x", &port123, path123, 0) &&
+              !SalUpdParseLoopbackUrl(L"http://127.0.0.1:80/x", &port123, path123, 1) &&
+              !SalUpdParseLoopbackUrl(L"http://127.0.0.1:80/x", NULL, path123, _countof(path123)));
+    }
+
+    // ---- HTTP status classes
+    CSalUpdResult res = surCancelled;
+    CHECK(SalUpdStatusWantsBody(200, &res) && res == surCancelled);
+    CHECK(!SalUpdStatusWantsBody(403, &res) && res == surRefused);
+    CHECK(!SalUpdStatusWantsBody(429, &res) && res == surRefused);
+    static const DWORD otherStatus[] = {0, 100, 201, 204, 206, 301, 302, 304, 307, 400, 401, 404, 407, 418, 500, 502, 503, 999};
+    for (int i = 0; i < _countof(otherStatus); i++)
+    {
+        res = surCancelled;
+        CHECK(!SalUpdStatusWantsBody(otherStatus[i], &res) && res == surUnexpected);
+    }
+    CHECK(SalUpdResultIsKnowledge(surNewer) && SalUpdResultIsKnowledge(surUpToDate) && !SalUpdResultIsKnowledge(surUnreachable) &&
+          !SalUpdResultIsKnowledge(surRefused) && !SalUpdResultIsKnowledge(surUnexpected) && !SalUpdResultIsKnowledge(surCancelled));
+    CHECK(SalUpdResultWasAnswered(surNewer) && SalUpdResultWasAnswered(surUpToDate) && SalUpdResultWasAnswered(surRefused) &&
+          SalUpdResultWasAnswered(surUnexpected) && !SalUpdResultWasAnswered(surUnreachable) && !SalUpdResultWasAnswered(surCancelled));
+
+    // ---- is an automatic check due?
+    {
+        const ULONGLONG now = 134000000000000000ULL;
+        const ULONGLONG h = SALUPD_HOUR;
+        CHECK(!SalUpdAutoCheckDue(FALSE, FALSE, 0, FALSE, now)); // option off: never
+        CHECK(!SalUpdAutoCheckDue(FALSE, TRUE, now - 1000 * h, TRUE, now));
+        CHECK(SalUpdAutoCheckDue(TRUE, FALSE, 0, FALSE, now));      // never tried
+        CHECK(SalUpdAutoCheckDue(TRUE, FALSE, now + h, TRUE, now)); // "no attempt" wins over the stale time
+        CHECK(!SalUpdAutoCheckDue(TRUE, TRUE, now, TRUE, now));     // just now
+        CHECK(!SalUpdAutoCheckDue(TRUE, TRUE, now - 24 * h + 1, TRUE, now));
+        CHECK(SalUpdAutoCheckDue(TRUE, TRUE, now - 24 * h, TRUE, now)); // exactly 24 hours
+        CHECK(SalUpdAutoCheckDue(TRUE, TRUE, now - 25 * h, TRUE, now));
+        CHECK(!SalUpdAutoCheckDue(TRUE, TRUE, now - h + 1, FALSE, now)); // not reached: one hour
+        CHECK(SalUpdAutoCheckDue(TRUE, TRUE, now - h, FALSE, now));
+        CHECK(!SalUpdAutoCheckDue(TRUE, TRUE, now - 23 * h, TRUE, now)); // answered: the hour rule does not apply
+        CHECK(SalUpdAutoCheckDue(TRUE, TRUE, now + 1, TRUE, now));       // a time in the future is ignored
+        CHECK(SalUpdAutoCheckDue(TRUE, TRUE, now + 8760 * h, FALSE, now));
+        CHECK(SalUpdAutoCheckDue(TRUE, TRUE, 0, TRUE, now)); // a zero time is just very old
+        CHECK(!SalUpdAutoCheckDue(TRUE, TRUE, 0, TRUE, 0));
+    }
+
+    // ---- the start-up notification and the About dialog's state
+    {
+        CSalUpdVersion v018 = {0, 1, 8}, v020 = {0, 2, 0}, none = {0, 0, 0};
+        CHECK(SalUpdStartupNoticeWanted(surNewer, v019, FALSE, none));
+        CHECK(!SalUpdStartupNoticeWanted(surNewer, v019, TRUE, v019)); // skipped
+        CHECK(SalUpdStartupNoticeWanted(surNewer, v020, TRUE, v019));  // a newer one than the skipped
+        CHECK(SalUpdStartupNoticeWanted(surNewer, v019, TRUE, v018));  // an older skipped version does not matter
+        CHECK(SalUpdStartupNoticeWanted(surNewer, v019, TRUE, v020));  // only the exact version is skipped
+        CHECK(!SalUpdStartupNoticeWanted(surUpToDate, v019, FALSE, none));
+        CHECK(!SalUpdStartupNoticeWanted(surUnreachable, v019, FALSE, none));
+        CHECK(!SalUpdStartupNoticeWanted(surRefused, v019, FALSE, none));
+        CHECK(!SalUpdStartupNoticeWanted(surUnexpected, v019, FALSE, none));
+        CHECK(!SalUpdStartupNoticeWanted(surCancelled, v019, FALSE, none));
+        CHECK(SalUpdKnownState(FALSE, v019, v018) == suksNotChecked);
+        CHECK(SalUpdKnownState(TRUE, v019, v018) == suksNewer);
+        CHECK(SalUpdKnownState(TRUE, v018, v018) == suksUpToDate);
+        CHECK(SalUpdKnownState(TRUE, v019, v019) == suksUpToDate); // after the user installed the newer version
+        CHECK(SalUpdKnownState(TRUE, v019, v020) == suksUpToDate);
+    }
+
+    // ---- the Debug-only seam accepts the loopback address and nothing else
+    {
+        int port = 0;
+        WCHAR path[100];
+        CHECK(SalUpdParseLoopbackUrl(L"http://127.0.0.1:8123/latest/newer", &port, path, _countof(path)) && port == 8123 &&
+              wcscmp(path, L"/latest/newer") == 0);
+        CHECK(SalUpdParseLoopbackUrl(L"http://127.0.0.1:1/", &port, path, _countof(path)) && port == 1 && wcscmp(path, L"/") == 0);
+        CHECK(SalUpdParseLoopbackUrl(L"http://127.0.0.1:65535/a?b=c", &port, path, _countof(path)) && port == 65535);
+        static const WCHAR* badUrls[] = {
+            L"", L"https://127.0.0.1:8123/x", L"http://localhost:8123/x", L"http://127.0.0.2:8123/x", L"http://127.0.0.1/x",
+            L"http://127.0.0.1:/x", L"http://127.0.0.1:0/x", L"http://127.0.0.1:65536/x", L"http://127.0.0.1:123456/x",
+            L"http://127.0.0.1:8123", L"http://127.0.0.1:8123x/y", L"http://127.0.0.1:8123@evil.example/x",
+            L"http://127.0.0.1.evil.example:8123/x", L"http://evil.example/http://127.0.0.1:8123/x", L" http://127.0.0.1:8123/x",
+            L"HTTP://127.0.0.1:8123/x", L"http://127.0.0.1:8123/a b", L"http://127.0.0.1:8123/a\r\nHost: evil", L"http://127.0.0.1:8123/a#b",
+            L"http://127.0.0.1:8123/\x010D", L"http://[::1]:8123/x", L"http://0x7f.0.0.1:8123/x", L"file:///c:/x"};
+        for (int i = 0; i < _countof(badUrls); i++)
+            CHECK(!SalUpdParseLoopbackUrl(badUrls[i], &port, path, _countof(path)));
+        CHECK(!SalUpdParseLoopbackUrl(L"http://127.0.0.1:8123/latest/newer", &port, path, 13)); // the path needs 13 units + zero
+        CHECK(SalUpdParseLoopbackUrl(L"http://127.0.0.1:8123/latest/newer", &port, path, 14));
+        CHECK(!SalUpdParseLoopbackUrl(NULL, &port, path, _countof(path)));
+    }
+    CHECK(strcmp(SalUpdResultName(surRefused), "refused") == 0);
+
+    // ---- the long date without the day of the week
+    {
+        static const WCHAR* const pictures[][2] = {
+            {L"dddd, MMMM d, yyyy", L"MMMM d, yyyy"},            // en-US
+            {L"dddd d. MMMM yyyy", L"d. MMMM yyyy"},              // cs-CZ
+            {L"dddd, d. MMMM yyyy", L"d. MMMM yyyy"},             // de-DE
+            {L"dddd d MMMM yyyy", L"d MMMM yyyy"},                // fr-FR, nl-NL
+            {L"dddd, d' de 'MMMM' de 'yyyy", L"d' de 'MMMM' de 'yyyy"}, // es-ES
+            {L"yyyy. MMMM d., dddd", L"yyyy. MMMM d."},           // hu-HU: the name stands last
+            {L"d MMMM yyyy", L"d MMMM yyyy"},                     // nothing to remove
+            {L"dd MMMM yyyy", L"dd MMMM yyyy"},
+            {L"ddd, d MMM yyyy", L"d MMM yyyy"},                  // the short name too
+            {L"d MMMM yyyy 'dddd'", L"d MMMM yyyy 'dddd'"},       // quoted text is literal
+            {L"dddd', 'MMMM d'. b. 'yyyy", L"MMMM d'. b. 'yyyy"},  // se-FI: the separator is a quoted literal
+            {L"dddd'x'MMMM", L"'x'MMMM"},                           // a literal that is not a separator stays
+            {L"dddd", L""},
+            {L"dddd, ", L""},
+            {L"", L""},
+            {L"yyyy'\x5E74'M'\x6708'd'\x65E5' dddd", L"yyyy'\x5E74'M'\x6708'd'\x65E5'"}, // zh-CN shape
+        };
+        for (int i = 0; i < _countof(pictures); i++)
+        {
+            WCHAR pic[100];
+            lstrcpynW(pic, pictures[i][0], _countof(pic));
+            SalUpdStripWeekday(pic);
+            CHECK(wcscmp(pic, pictures[i][1]) == 0);
+        }
+        SalUpdStripWeekday(NULL); // must not fault
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -8723,6 +9372,7 @@ int main()
     TestPackLeftovers119();
     TestPvPixel120();
     TestSmallBatch121();
+    TestUpdateCheck123();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

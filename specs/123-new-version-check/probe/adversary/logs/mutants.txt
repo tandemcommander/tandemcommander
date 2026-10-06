@@ -1,0 +1,66 @@
+# run 1: python mutants.py (count 1500)
+depth_33               killed by hand+random: [hand] adv_asan.exe: 100 cases, 4 disagreements {'GRAMMAR_ACCEPTS_INVALID': 4, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 4} # cases 100 maxus 7652.6 cas
+depth_asset_elem       SURVIVED  <-- a hole in the suite (a non-object asset element counted one level too shallow)
+depth_asset_member     SURVIVED  <-- a hole in the suite (an asset member counted one level too shallow)
+depth_top_member       killed by hand+random: [hand] adv_asan.exe: 100 cases, 2 disagreements {'INV_ACCEPTED_BUT_GRAMMAR_FAILS': 2, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 2} # cases 100 maxus 762
+fit_off_by_one         killed by unit: ==28056==ERROR: AddressSanitizer: access-violation on unknown address 0x028522351000 (pc 0x7ff7d1c81879 bp 0x000000000000 sp 0x00e1f74ff350 T0)
+name_prefix            killed by hand+random: [struct] adv_asan.exe: 1500 cases, 13 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 13} # cases 1500 maxus 8118.4 case 645 len 261939
+url_prefix             BUILD FAILED (see E:\Projects\tandemcommander\specs\123-new-version-check\probe\adversary\out\mutants\url_prefix\build.log)
+url_bad_ignored        BUILD FAILED (see E:\Projects\tandemcommander\specs\123-new-version-check\probe\adversary\out\mutants\url_bad_ignored\build.log)
+asset_dups_ok          BUILD FAILED (see E:\Projects\tandemcommander\specs\123-new-version-check\probe\adversary\out\mutants\asset_dups_ok\build.log)
+tag_dup_ok             killed by hand+random: [hand] adv_asan.exe: 100 cases, 3 disagreements {'ERRCLASS': 2, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 1} # cases 100 maxus 7876.7 case 86 len 262144
+assets_dup_ok          killed by hand+random: [hand] adv_asan.exe: 100 cases, 2 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 2} # cases 100 maxus 8011.7 case 86 len 262144
+trailing_ok            killed by hand+random: [hand] adv_asan.exe: 100 cases, 2 disagreements {'INV_ACCEPTED_BUT_GRAMMAR_FAILS': 2, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 2} # cases 100 maxus 796
+draft_null_ok          killed by hand+random: [hand] adv_asan.exe: 100 cases, 3 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 3} # cases 100 maxus 8319.6 case 86 len 262144
+prerelease_any         killed by hand+random: [struct] adv_asan.exe: 1500 cases, 87 disagreements {'ERRCLASS': 45, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 42} # cases 1500 maxus 8363.0 case 457 le
+control_ok             killed by hand+random: [hand] adv_asan.exe: 100 cases, 1 disagreements {'GRAMMAR_ACCEPTS_INVALID': 1, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 1} # cases 100 maxus 8321.3 cas
+leap_100               SURVIVED  <-- a hole in the suite (century years are leap years)
+second_60              SURVIVED  <-- a hole in the suite (second 60 accepted)
+hour_24                SURVIVED  <-- a hole in the suite (hour 24 accepted)
+escaped_nul_ok         killed by hand+random: [hand] adv_asan.exe: 100 cases, 6 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 6} # cases 100 maxus 7851.5 case 86 len 262144
+lone_low_ok            killed by hand+random: [string] adv_asan.exe: 1500 cases, 14 disagreements {'STRING': 14} # cases 1500 maxus 0.0 case -1 len 0
+pair_low_range         killed by hand+random: [string] adv_asan.exe: 1500 cases, 2 disagreements {'STRING': 2} # cases 1500 maxus 0.0 case -1 len 0
+digits_6               killed by hand+random: [hand] adv_asan.exe: 100 cases, 1 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 1} # cases 100 maxus 8342.2 case 86 len 262144
+number_leading_zero    killed by hand+random: [hand] adv_asan.exe: 100 cases, 1 disagreements {'GRAMMAR_ACCEPTS_INVALID': 1, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 1} # cases 100 maxus 8275.2 cas
+number_no_frac_digit   killed by hand+random: [hand] adv_asan.exe: 100 cases, 1 disagreements {'GRAMMAR_ACCEPTS_INVALID': 1, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 1} # cases 100 maxus 8321.1 cas
+state_any              killed by hand+random: [hand] adv_asan.exe: 100 cases, 2 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 2} # cases 100 maxus 7874.8 case 86 len 262144
+notes_unchecked        killed by hand+random: [hand] adv_asan.exe: 100 cases, 6 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 6} # cases 100 maxus 7917.9 case 86 len 262144
+port_65536             killed by hand+random: [loopback] adv_asan.exe: 750 cases, 5 disagreements {'LOOPBACK': 5} # cases 750 maxus 0.0 case -1 len 0
+loop_hash_ok           SURVIVED  <-- a hole in the suite ('#' in the loopback path)
+loop_space_ok          killed by hand+random: [loopback] adv_asan.exe: 750 cases, 3 disagreements {'LOOPBACK': 3} # cases 750 maxus 0.0 case -1 len 0
+loop_size              killed by unit: CHECK FAILED line 718: !SalUpdParseLoopbackUrl(L"http://127.0.0.1:80/x", &port, path, 2)
+append_number_size     killed by unit: ==6892==ERROR: AddressSanitizer: access-violation on unknown address 0x029317641000 (pc 0x7ff77ba7186e bp 0x000000000000 sp 0x00e00d0ff1e0 T0)
+append_text_size       killed by unit: ==17168==ERROR: AddressSanitizer: access-violation on unknown address 0x018501341000 (pc 0x7fffe39279f5 bp 0x002a148fe5a0 sp 0x002a148fe498 T0)
+formfeed_space         SURVIVED  <-- a hole in the suite (form feed is white space)
+literal_prefix         killed by hand+random: [grammar] adv_asan.exe: 1500 cases, 2 disagreements {'GRAMMAR_ACCEPTS_INVALID': 2, 'ERRCLASS': 2} [grammar accepted 2 texts that are not valid UTF-8] 
+hex_g                  SURVIVED  <-- a hole in the suite ('G' is a hex digit)
+hex_overread           killed by hand+random: [struct_mut] adv_asan.exe: HARNESS EXIT 1 (0x1)
+last_asset_wins        killed by hand+random: [struct] adv_asan.exe: 1500 cases, 83 disagreements {'AVAILABILITY_REJECTED': 83} # cases 1500 maxus 8202.3 case 645 len 261939
+tag_v_optional         killed by hand+random: [struct] adv_asan.exe: 1500 cases, 1 disagreements {'ERRCLASS': 1} # cases 1500 maxus 8157.9 case 697 len 261615
+version_trailing       killed by unit: CHECK FAILED line 553: !SalUpdParseVersion(tag, (int)strlen(tag) + 1, TRUE, &p)
+due_strict             killed by unit: CHECK FAILED line 605: SalUpdAutoCheckDue(opt, has, last, answered, now) == ref
+due_future             killed by unit: CHECK FAILED line 605: SalUpdAutoCheckDue(opt, has, last, answered, now) == ref
+strip_ddd              killed by unit: STRIP: "ddd" -> "ddd", expected ""
+no_escaped_slash       killed by hand+random: [hand] adv_asan.exe: 100 cases, 1 disagreements {'GRAMMAR_REJECTS_VALID': 1, 'AVAILABILITY_REJECTED': 1} # cases 100 maxus 7808.7 case 86 len 262144
+status_403             killed by unit: CHECK FAILED line 576: res == ((s == 403 || s == 429) ? surRefused : surUnexpected)
+time_text_len          killed by unit: CHECK FAILED line 742: !SalUpdParseUtcTime("2026-09-20T14:34:53Z", 19, &ft)
+compare_minor          killed by unit: CHECK FAILED line 541: (c < 0) == (ref < 0) && (c > 0) == (ref > 0)
+key_no_bad             killed by unit: CHECK FAILED line 667: o[0] == 0
+empty_asset_array_skip killed by hand+random: [hand] adv_asan.exe: 100 cases, 1 disagreements {'AVAILABILITY_REJECTED': 1} # cases 100 maxus 7834.6 case 86 len 262144
+size_limit             killed by hand+random: [hand] adv_asan.exe: 100 cases, 1 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 1} # cases 100 maxus 7792.2 case 86 len 262144
+mutants: 49, killed 38, survived 8, not applied 3
+
+# run 2, after the suite gained the missing cases: ADV_MUTANT_COUNT=8000 python mutants.py <the 8 survivors and the 3 not built>
+depth_asset_elem       SURVIVED  <-- a hole in the suite (a non-object asset element counted one level too shallow)
+depth_asset_member     SURVIVED  <-- a hole in the suite (an asset member counted one level too shallow)
+url_prefix             killed by hand+random: [struct] adv_asan.exe: 8000 cases, 39 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 39} # cases 8000 maxus 8712.1 case 874 len 261305
+url_bad_ignored        SURVIVED  <-- a hole in the suite (a 'bad' address (escaped NUL / too long) compared anyway)
+asset_dups_ok          killed by hand+random: [hand] adv_asan.exe: 148 cases, 3 disagreements {'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 3} # cases 148 maxus 7865.8 case 134 len 262144
+leap_100               SURVIVED  <-- a hole in the suite (century years are leap years)
+second_60              SURVIVED  <-- a hole in the suite (second 60 accepted)
+hour_24                SURVIVED  <-- a hole in the suite (hour 24 accepted)
+loop_hash_ok           killed by hand+random: [loopback] adv_asan.exe: 4000 cases, 5 disagreements {'LOOPBACK': 5} # cases 4000 maxus 0.0 case -1 len 0
+formfeed_space         killed by hand+random: [hand] adv_asan.exe: 148 cases, 3 disagreements {'GRAMMAR_ACCEPTS_INVALID': 3, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 3} # cases 148 maxus 7920.9 cas
+hex_g                  killed by hand+random: [hand] adv_asan.exe: 148 cases, 2 disagreements {'GRAMMAR_ACCEPTS_INVALID': 2, 'SECURITY_ACCEPTED_BUT_ORACLE_REJECTS': 1, 'ERRCLASS': 1} # cases 148 m
+mutants: 11, killed 5, survived 6, not applied 0
+

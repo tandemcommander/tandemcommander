@@ -1,0 +1,10 @@
+# build products of the stand-alone harnesses (rebuild with the .cmd files beside the sources)
+*.exe
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+__pycache__/
+adversary/bin/
+adversary/obj/

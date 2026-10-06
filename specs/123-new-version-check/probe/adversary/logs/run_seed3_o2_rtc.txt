@@ -1,0 +1,34 @@
+[hand] adv_o2_J.exe: 100 cases, 0 disagreements  # cases 100 maxus 473.4 case 86 len 262144
+[hand] adv_rtc_J.exe: 100 cases, 0 disagreements  # cases 100 maxus 1228.1 case 86 len 262144
+[hand] oracle: {'cases': 100, 'oracle_accepts': 22, 'oracle_valid_json': 78, 'invalid_utf8': 0, 'oracle_classes': {'None': 22, 'NoInstaller': 17, 'Duplicate': 7, 'ForeignNotes': 11, 'BadTag': 7, 'MissingField': 3, 'Draft': 3, 'NotJson': 25, 'Prerelease': 1, 'BadTime': 4}} (0.0 s)
+[struct] adv_o2_J.exe: 40000 cases, 0 disagreements  # cases 40000 maxus 943.1 case 38250 len 261283
+[struct] adv_rtc_J.exe: 40000 cases, 0 disagreements  # cases 40000 maxus 1166.9 case 9148 len 261353
+[struct] oracle: {'cases': 40000, 'oracle_accepts': 18015, 'oracle_valid_json': 39723, 'invalid_utf8': 0, 'oracle_classes': {'Prerelease': 2559, 'Draft': 2679, 'None': 18015, 'NoInstaller': 7089, 'MissingField': 1287, 'BadTag': 2403, 'ForeignNotes': 2068, 'BadTime': 2213, 'Duplicate': 1274, 'NotJson': 413}} (34.2 s)
+[struct_mut] adv_o2_J.exe: 40000 cases, 0 disagreements  [grammar accepted 1354 texts that are not valid UTF-8] # cases 40000 maxus 509.5 case 4292 len 261296
+[struct_mut] adv_rtc_J.exe: 40000 cases, 0 disagreements  [grammar accepted 1354 texts that are not valid UTF-8] # cases 40000 maxus 1132.3 case 3010 len 261313
+[struct_mut] oracle: {'cases': 40000, 'oracle_accepts': 3458, 'oracle_valid_json': 13347, 'invalid_utf8': 3966, 'oracle_classes': {'BadTag': 809, 'NotJson': 26753, 'NoInstaller': 3254, 'Duplicate': 432, 'None': 3458, 'Draft': 872, 'Prerelease': 786, 'ForeignNotes': 1505, 'BadTime': 916, 'MissingField': 1215}} (40.9 s)
+[mini_mut] adv_o2_J.exe: 60000 cases, 0 disagreements  [grammar accepted 3263 texts that are not valid UTF-8] # cases 60000 maxus 16.5 case 9251 len 390
+[mini_mut] adv_rtc_J.exe: 60000 cases, 0 disagreements  [grammar accepted 3263 texts that are not valid UTF-8] # cases 60000 maxus 58.6 case 18870 len 390
+[mini_mut] oracle: {'cases': 60000, 'oracle_accepts': 464, 'oracle_valid_json': 30280, 'invalid_utf8': 4832, 'oracle_classes': {'NotJson': 29722, 'MissingField': 5584, 'NoInstaller': 13959, 'None': 464, 'ForeignNotes': 7618, 'BadTime': 1907, 'BadTag': 538, 'Duplicate': 208}} (2.4 s)
+[real_mut] adv_o2_J.exe: 20000 cases, 0 disagreements  [grammar accepted 1356 texts that are not valid UTF-8] # cases 20000 maxus 40.7 case 0 len 7114
+[real_mut] adv_rtc_J.exe: 20000 cases, 0 disagreements  [grammar accepted 1356 texts that are not valid UTF-8] # cases 20000 maxus 104.9 case 4031 len 7143
+[real_mut] oracle: {'cases': 20000, 'oracle_accepts': 10768, 'oracle_valid_json': 11724, 'invalid_utf8': 1987, 'oracle_classes': {'None': 10768, 'NotJson': 8276, 'ForeignNotes': 215, 'NoInstaller': 542, 'MissingField': 121, 'BadTime': 52, 'BadTag': 15, 'Duplicate': 11}} (3.4 s)
+[utf8] adv_o2_J.exe: 8000 cases, 0 disagreements  [grammar accepted 4917 texts that are not valid UTF-8] # cases 8000 maxus 491.3 case 6679 len 261535
+[utf8] adv_rtc_J.exe: 8000 cases, 0 disagreements  [grammar accepted 4917 texts that are not valid UTF-8] # cases 8000 maxus 1133.0 case 3174 len 261427
+[utf8] oracle: {'cases': 8000, 'oracle_accepts': 1506, 'oracle_valid_json': 4917, 'invalid_utf8': 8000, 'oracle_classes': {'None': 1506, 'NotJson': 3108, 'Prerelease': 281, 'NoInstaller': 1149, 'BadTime': 322, 'Duplicate': 143, 'MissingField': 410, 'BadTag': 291, 'Draft': 343, 'ForeignNotes': 447}} (7.0 s)
+[grammar] adv_o2_J.exe: 40000 cases, 0 disagreements  [grammar accepted 50 texts that are not valid UTF-8] # cases 40000 maxus 13.9 case 3343 len 2
+[grammar] adv_rtc_J.exe: 40000 cases, 0 disagreements  [grammar accepted 50 texts that are not valid UTF-8] # cases 40000 maxus 11.9 case 9899 len 6740
+[grammar] oracle: {'cases': 40000, 'oracle_accepts': 0, 'oracle_valid_json': 15418, 'invalid_utf8': 758, 'oracle_classes': {'NotJson': 35545, 'MissingField': 4374, 'Duplicate': 81}} (2.5 s)
+[string] adv_o2_J.exe: 40000 cases, 0 disagreements  # cases 40000 maxus 0.0 case -1 len 0
+[string] adv_rtc_J.exe: 40000 cases, 0 disagreements  # cases 40000 maxus 0.0 case -1 len 0
+[string] oracle: {'cases': 40000} (1.2 s)
+[version] adv_o2_J.exe: 20000 cases, 0 disagreements  # cases 20000 maxus 0.0 case -1 len 0
+[version] adv_rtc_J.exe: 20000 cases, 0 disagreements  # cases 20000 maxus 0.0 case -1 len 0
+[version] oracle: {'cases': 20000} (0.2 s)
+[time] adv_o2_J.exe: 20000 cases, 0 disagreements  # cases 20000 maxus 0.0 case -1 len 0
+[time] adv_rtc_J.exe: 20000 cases, 0 disagreements  # cases 20000 maxus 0.0 case -1 len 0
+[time] oracle: {'cases': 20000} (0.2 s)
+[loopback] adv_o2_J.exe: 20000 cases, 0 disagreements  # cases 20000 maxus 0.0 case -1 len 0
+[loopback] adv_rtc_J.exe: 20000 cases, 0 disagreements  # cases 20000 maxus 0.0 case -1 len 0
+[loopback] oracle: {'cases': 20000} (0.3 s)
+TOTAL disagreements: 0

@@ -90,6 +90,7 @@ The application links against standard Windows SDK libraries:
 | netapi32.lib | Network management |
 | msimg32.lib | Image manipulation (AlphaBlend, etc.) |
 | shlwapi.lib | Shell utility functions |
+| winhttp.lib + delayimp.lib | The check for a new version (feature 123): one HTTPS request to `api.github.com`. `winhttp.dll` is **delay-loaded** (`DelayLoadDLLs` in `src/vcxproj/sal_base.props`), so it is loaded only when a check runs, on the worker thread; a program with the check turned off never loads it. The only other WinHTTP user in the tree is the Markdown Viewer plugin (`mdview/remotefetch.cpp`); the two requests have opposite contracts and deliberately share no code. |
 
 ## Pre-Built Binaries
 

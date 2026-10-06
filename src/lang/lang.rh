@@ -691,6 +691,31 @@
 #define IDT_CMDSHELL_CUSTARGS           6232
 #define IDE_CMDSHELL_CUSTARGS           6233
 #define IDT_CMDSHELL_HINT               6234
+// feature 123: checking for a new version
+#define IDD_UPDATENOTICE                6236
+#define IDC_UPDN_WORDMARK               6237
+#define IDC_UPDN_TITLE                  6238
+#define IDC_UPDN_LOGO                   6239
+#define IDC_UPDN_ACCENT                 6240
+#define IDC_UPDN_INSTLABEL              6241
+#define IDC_UPDN_INSTVER                6242
+#define IDC_UPDN_ARROW                  6243
+#define IDC_UPDN_NEWLABEL               6244
+#define IDC_UPDN_NEWVER                 6245
+#define IDC_UPDN_RELEASED               6246
+#define IDC_UPDN_NOTES                  6247
+#define IDC_UPDN_HINT                   6248
+#define IDC_UPDN_ATSTARTUP              6249
+#define IDC_UPDN_SKIP                   6250
+#define IDD_UPDATECHECKING              6251
+#define IDC_UPDC_TEXT                   6252
+#define IDC_ABOUT_UPDATE                6253
+#define IDC_ABOUT_UPDATELINK            6254
+#define IDC_CHECKNEWVERSION             6255
+// commands the two links post to their dialogs; not control ids (a static with SS_NOTIFY
+// sends WM_COMMAND with its own id on every click)
+#define IDC_UPDN_NOTESCMD               6256
+#define IDC_ABOUT_UPDATECMD             6257
 
 // Next default values for new objects
 // 
@@ -698,7 +723,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        8200
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         6236
+#define _APS_NEXT_CONTROL_VALUE         6258
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

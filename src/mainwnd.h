@@ -576,6 +576,10 @@ public:
     // contract: specs/080-restart-manager-upgrade/contracts/close-request.md C2 + C6
     CSalCloseAppDecision DecideCloseApp();
 
+    // feature 123: checking for a new version (mainwnd3.cpp)
+    void OnUpdateCheckDone();   // WM_USER_UPDATECHECK_DONE
+    void TryShowUpdateNotice(); // shows the waiting start-up notification when nothing is in its way
+
     // called when closing a file system; the directory history stores FS
     // interfaces that must be set to NULL after closing (to prevent accidental match just because FS interfaces were allocated at the same address)
     void ClearPluginFSFromHistory(CPluginFSInterfaceAbstract* fs);

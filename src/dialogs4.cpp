@@ -5,6 +5,7 @@
 #include "precomp.h"
 
 #include "mainwnd.h"
+#include "updcheck.h" // feature 123
 #include "usermenu.h"
 #include "edtlbwnd.h"
 #include "cfgdlg.h"
@@ -786,6 +787,7 @@ void CConfigurationDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 CCfgPageGeneral::CCfgPageGeneral()
     : CCommonPropSheetPage(NULL, HLanguage, IDD_CFGPAGE_GENERAL, IDD_CFGPAGE_GENERAL, PSP_USETITLE, NULL)
 {
+    ShownCheckNewVersion = -1;
 }
 
 void CCfgPageGeneral::Validate(CTransferInfo& ti)
@@ -828,6 +830,27 @@ void CCfgPageGeneral::Transfer(CTransferInfo& ti)
     if (ti.Type == ttDataFromWindow && Configuration.ReloadEnvVariables && oldReloadEnvVariables != Configuration.ReloadEnvVariables)
     {
         InitEnvironmentVariablesDifferences();
+    }
+
+    // feature 123: the check for a new version at start-up. Not a member of Configuration: the
+    // value lives in its own registry key, is read fresh and written at once, so that it is one
+    // setting with the check box of the notification window and holds for other instances
+    // (specs/123-new-version-check/contracts/stored-state.md).
+    // The value is written only when the user changed the box on this page: the option may have
+    // been changed elsewhere meanwhile (the notification window stays usable while the
+    // configuration is open), and a page that merely showed the old state must not put it back.
+    if (ti.Type == ttDataToWindow)
+    {
+        CUpdateState updateState;
+        UpdateCheck_LoadState(&updateState);
+        ShownCheckNewVersion = updateState.CheckAtStartup ? 1 : 0;
+    }
+    int checkNewVersion = ShownCheckNewVersion == 1;
+    ti.CheckBox(IDC_CHECKNEWVERSION, checkNewVersion);
+    if (ti.Type == ttDataFromWindow && ShownCheckNewVersion != -1 && (checkNewVersion != 0) != (ShownCheckNewVersion == 1))
+    {
+        UpdateCheck_SetCheckAtStartup(checkNewVersion != 0);
+        ShownCheckNewVersion = checkNewVersion != 0 ? 1 : 0;
     }
 
     if (ti.Type == ttDataToWindow)

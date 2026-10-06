@@ -530,6 +530,10 @@
 				<param name="Local" value="hh\salamand\othertask_shell.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Checking for a New Version">
+				<param name="Local" value="hh\salamand\othertask_newversion.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Using Password Manager">
 				<param name="Local" value="hh\salamand\othertask_pwdmanager.htm">
 				</OBJECT>

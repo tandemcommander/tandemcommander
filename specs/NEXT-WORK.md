@@ -145,7 +145,19 @@ Large or risky, each a feature of its own:
   WinRAR); 090 (one anonymous FTP login against a server log); 092; 094;
   116 (the proxy server dialog, a Master Password, a real FTP server);
   118 (a real installer update, Disk Map's tooltip during the request);
-  121 (the folder picker's tree-view pick, FTP's welcome-message window).
+  121 (the folder picker's tree-view pick, FTP's welcome-message window);
+  **123 (new version check)**: design acceptance of the notification window
+  (captures in `specs/123-new-version-check/probe/shots/`, also 150 % and
+  200 %), real keyboard and mouse (typing while the notification arrives, a
+  click on each link, access keys), a screen reader, a real browser
+  download, a real installer update with the notification open
+  (`specs/123-new-version-check/closing-report.md`, "Owed to a person").
+- **At the next release, because of feature 123**: publish the release
+  **with its installer attached** and keep the asset name
+  `tandemcommander-<version>-x64-setup.exe` (the program offers a release only
+  then); afterwards check the "newer version" notification once with the
+  previous Release build against the real endpoint; run one antivirus scan of
+  the Release build (the core now makes an outbound connection at start-up).
 - **By hand** (agent sessions have no clipboard and no real mouse or
   keyboard): paste and drag & drop routes of 099 (also Explorer as the drag
   source), 107 step 5, 119 step 2b, 101's paste rows; the real-keyboard / IME

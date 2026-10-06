@@ -1,0 +1,145 @@
+== czech
+  [300] 6255  needs 348 px of 423 px  | Kontrolovat &novou verzi programu Tandem Commander při spuštění
+  [6236] 1  needs 63 px of 108 px  | &Stáhnout
+  [6236] 2  needs 116 px of 138 px  | Připomenout &později
+  [6236] 6250  needs 111 px of 144 px  | Př&eskočit tuto verzi
+  [6236] 6249  needs 198 px of 408 px  | &Kontrolovat novou verzi při spuštění
+  [6236] 6238  bold 1.4x width 183 px in 330 px  | Je dostupná nová verze
+  [6236] 6241  needs 105 px of 156 px  | Nainstalovaná verze
+  [6236] 6244  needs 83 px of 180 px  | Dostupná verze
+  [6236] 6248  wrapped height 26 px in 27 px  | Stahování se otevře ve webovém prohlížeči. Aktualizaci provedete spuštěním instalátoru; nastavení zůstane zachováno.
+  [6251] 6252  needs 139 px of 270 px  | Kontroluje se nová verze...
+  [6251] 2  needs 46 px of 75 px  | Zrušit
+  string 14109 width 201 px | Je dostupná verze 99999.99999.99999.
+  string 14110 width 307 px | Toto je nejnovější verze (zkontrolováno 14. September 2026).
+  string 14111 width 172 px | Nová verze nebyla zkontrolována.
+  string 14144 width 51 px | Stáhnout
+  string 14145 width 91 px | Zkontrolovat nyní
+  string 14149 width 127 px | Toto je nejnovější verze.
+== german
+  [300] 6255  needs 357 px of 423 px  | Beim Start nach &einer neuen Version von Tandem Commander suchen
+  [6236] 1  needs 66 px of 108 px  | D&ownload
+  [6236] 2  needs 125 px of 138 px  | Später &daran erinnern
+  [6236] 6250  needs 149 px of 156 px  | Die&se Version überspringen
+  [6236] 6249  needs 235 px of 408 px  | Beim Start na&ch einer neuen Version suchen
+  [6236] 6238  bold 1.4x width 242 px in 330 px  | Eine neue Version ist verfügbar
+  [6236] 6241  needs 96 px of 156 px  | Installierte Version
+  [6236] 6244  needs 99 px of 180 px  | Verfügbare Version
+  [6236] 6248  wrapped height 26 px in 27 px  | Der Download wird in Ihrem Webbrowser geöffnet. Führen Sie das Installationsprogramm aus, um zu aktualisieren; Ihre Einstellungen bleiben erhalten.
+  [6251] 6252  needs 206 px of 270 px  | Wird nach einer neuen Version gesucht...
+  [6251] 2  needs 71 px of 75 px  | Abbrechen
+  string 14109 width 212 px | Version 99999.99999.99999 ist verfügbar.
+  string 14110 width 307 px | Dies ist die neueste Version (geprüft am 14. September 2026).
+  string 14111 width 246 px | Es wurde nicht nach einer neuen Version gesucht.
+  string 14144 width 76 px | Herunterladen
+  string 14145 width 68 px | Jetzt suchen
+  string 14149 width 142 px | Dies ist die neueste Version.
+== french
+  [300] 6255  needs 368 px of 423 px  | Rechercher une nou&velle version de Tandem Commander au démarrage
+  [6236] 1  needs 76 px of 108 px  | &Télécharger
+  [6236] 2  needs 132 px of 144 px  | Me &le rappeler plus tard
+  [6236] 6250  needs 121 px of 144 px  | Ignorer cette ver&sion
+  [6236] 6249  needs 252 px of 408 px  | Re&chercher une nouvelle version au démarrage
+  [6236] 6238  bold 1.4x width 273 px in 330 px  | Une nouvelle version est disponible
+  [6236] 6241  needs 84 px of 156 px  | Version installée
+  [6236] 6244  needs 92 px of 180 px  | Version disponible
+  [6236] 6248  wrapped height 26 px in 27 px  | Le téléchargement s'ouvre dans votre navigateur web. Lancez le programme d'installation pour effectuer la mise à jour ; vos paramètres sont conservés.
+  [6251] 6252  needs 180 px of 270 px  | Recherche d'une nouvelle version...
+  [6251] 2  needs 56 px of 75 px  | Annuler
+  string 14109 width 229 px | La version 99999.99999.99999 est disponible.
+  string 14110 width 286 px | C'est la dernière version (vérifiée le 14. September 2026).
+  string 14111 width 280 px | Aucune recherche de nouvelle version n'a été effectuée.
+  string 14144 width 64 px | Télécharger
+  string 14145 width 98 px | Vérifier maintenant
+  string 14149 width 152 px | Il s'agit de la dernière version.
+== dutch
+  [300] 6255  needs 467 px of 441 px   <<< CLIPPED  | Controleer bij het opstarten of er een nieuwe &versie van Tandem Commander beschikbaar is
+  [6236] 1  needs 66 px of 108 px  | &Download
+  [6236] 2  needs 117 px of 138 px  | Herinner me dit &later
+  [6236] 6250  needs 125 px of 144 px  | Deze ver&sie overslaan
+  [6236] 6249  needs 285 px of 408 px  | &Controleer bij het opstarten of er een nieuwe versie is
+  [6236] 6238  bold 1.4x width 276 px in 330 px  | Er is een nieuwe versie beschikbaar
+  [6236] 6241  needs 107 px of 156 px  | Geïnstalleerde versie
+  [6236] 6244  needs 96 px of 180 px  | Beschikbare versie
+  [6236] 6248  wrapped height 26 px in 27 px  | De download wordt in uw webbrowser geopend. Start het installatieprogramma om bij te werken; uw instellingen blijven behouden.
+  [6251] 6252  needs 181 px of 270 px  | Controleren op een nieuwe versie...
+  [6251] 2  needs 68 px of 75 px  | Annuleren
+  string 14109 width 211 px | Versie 99999.99999.99999 is beschikbaar.
+  string 14110 width 321 px | Dit is de nieuwste versie (gecontroleerd op 14. September 2026).
+  string 14111 width 227 px | Er is niet gecontroleerd op een nieuwe versie.
+  string 14144 width 54 px | Download
+  string 14145 width 78 px | Nu controleren
+  string 14149 width 127 px | Dit is de nieuwste versie.
+== hungarian
+  [300] 6255  needs 293 px of 423 px  | Indításkor ellenőrizze a Tandem Commander új &verzióját
+  [6236] 1  needs 57 px of 108 px  | &Letöltés
+  [6236] 2  needs 127 px of 138 px  | &Később emlékeztessen
+  [6236] 6250  needs 125 px of 144 px  | &Ezt a verziót hagyja ki
+  [6236] 6249  needs 162 px of 408 px  | &Új verzió keresése indításkor
+  [6236] 6238  bold 1.4x width 146 px in 330 px  | Új verzió érhető el
+  [6236] 6241  needs 85 px of 156 px  | Telepített verzió
+  [6236] 6244  needs 79 px of 180 px  | Elérhető verzió
+  [6236] 6248  wrapped height 26 px in 27 px  | A letöltés a böngészőben nyílik meg. Futtassa a telepítőt a frissítéshez; a beállításai megmaradnak.
+  [6251] 6252  needs 107 px of 270 px  | Új verzió keresése...
+  [6251] 2  needs 50 px of 75 px  | Mégse
+  string 14109 width 194 px | A 99999.99999.99999 verzió elérhető.
+  string 14110 width 274 px | Ez a legújabb verzió (ellenőrizve: 14. September 2026).
+  string 14111 width 195 px | Nem ellenőriztük, hogy van-e új verzió.
+  string 14144 width 45 px | Letöltés
+  string 14145 width 81 px | Ellenőrzés most
+  string 14149 width 107 px | Ez a legújabb verzió.
+== romanian
+  [300] 6255  needs 377 px of 441 px  | Se verifică &la pornire dacă există o versiune nouă de Tandem Commander
+  [6236] 1  needs 73 px of 108 px  | &Descărcare
+  [6236] 2  needs 142 px of 144 px  | &Reamintește-mi mai târziu
+  [6236] 6250  needs 158 px of 156 px   <<< CLIPPED  | &Săriți peste această versiune
+  [6236] 6249  needs 252 px of 408 px  | Verifi&cați dacă există o nouă versiune la pornire
+  [6236] 6238  bold 1.4x width 248 px in 330 px  | Este disponibilă o nouă versiune
+  [6236] 6241  needs 98 px of 156 px  | Versiunea instalată
+  [6236] 6244  needs 100 px of 180 px  | Versiune disponibilă
+  [6236] 6248  wrapped height 26 px in 27 px  | Descărcarea se deschide în browserul dvs. web. Rulați programul de instalare pentru a actualiza; setările dvs. vor fi păstrate.
+  [6251] 6252  needs 207 px of 270 px  | Se verifică dacă există o versiune nouă...
+  [6251] 2  needs 56 px of 75 px  | Anulare
+  string 14109 width 235 px | Este disponibilă versiunea 99999.99999.99999.
+  string 14110 width 365 px | Aceasta este cea mai recentă versiune (verificată la 14. September 2026).
+  string 14111 width 222 px | Nu s-a verificat dacă există o versiune nouă.
+  string 14144 width 61 px | Descărcare
+  string 14145 width 76 px | Verificați acum
+  string 14149 width 197 px | Aceasta este cea mai recentă versiune.
+== slovak
+  [300] 6255  needs 349 px of 423 px  | Kontrolovať novú verziu progra&mu Tandem Commander pri spustení
+  [6236] 1  needs 60 px of 108 px  | S&tiahnuť
+  [6236] 2  needs 109 px of 138 px  | Pripomenúť &neskôr
+  [6236] 6250  needs 118 px of 144 px  | &Preskočiť túto verziu
+  [6236] 6249  needs 199 px of 408 px  | &Kontrolovať novú verziu pri spustení
+  [6236] 6238  bold 1.4x width 204 px in 330 px  | Je k dispozícii nová verzia
+  [6236] 6241  needs 107 px of 156 px  | Nainštalovaná verzia
+  [6236] 6244  needs 85 px of 180 px  | Dostupná verzia
+  [6236] 6248  wrapped height 26 px in 27 px  | Sťahovanie sa otvorí vo webovom prehliadači. Aktualizáciu vykonáte spustením inštalátora; nastavenia zostanú zachované.
+  [6251] 6252  needs 141 px of 270 px  | Kontroluje sa nová verzia...
+  [6251] 2  needs 47 px of 75 px  | Zrušiť
+  string 14109 width 207 px | Je k dispozícii verzia 99999.99999.99999.
+  string 14110 width 306 px | Toto je najnovšia verzia (skontrolované 14. September 2026).
+  string 14111 width 174 px | Nová verzia nebola skontrolovaná.
+  string 14144 width 48 px | Stiahnuť
+  string 14145 width 97 px | Skontrolovať teraz
+  string 14149 width 126 px | Toto je najnovšia verzia.
+== spanish
+  [300] 6255  needs 366 px of 427 px  | Buscar una nueva versión &de Tandem Commander al iniciar el programa
+  [6236] 1  needs 68 px of 108 px  | &Descargar
+  [6236] 2  needs 136 px of 138 px  | Recordárme&lo más tarde
+  [6236] 6250  needs 109 px of 144 px  | Omitir e&sta versión
+  [6236] 6249  needs 250 px of 408 px  | Bus&car una nueva versión al iniciar el programa
+  [6236] 6238  bold 1.4x width 258 px in 330 px  | Hay una nueva versión disponible
+  [6236] 6241  needs 88 px of 156 px  | Versión instalada
+  [6236] 6244  needs 92 px of 180 px  | Versión disponible
+  [6236] 6248  wrapped height 26 px in 27 px  | La descarga se abre en su navegador web. Ejecute el instalador para actualizar; su configuración se conserva.
+  [6251] 6252  needs 157 px of 270 px  | Buscando una nueva versión...
+  [6251] 2  needs 61 px of 75 px  | Cancelar
+  string 14109 width 235 px | La versión 99999.99999.99999 está disponible.
+  string 14110 width 308 px | Esta es la última versión (comprobada el 14. September 2026).
+  string 14111 width 238 px | No se ha comprobado si hay una nueva versión.
+  string 14144 width 56 px | Descargar
+  string 14145 width 91 px | Comprobar ahora
+  string 14149 width 126 px | Esta es la última versión.
+About dialog client width: 448 px; the line starts at 15 px

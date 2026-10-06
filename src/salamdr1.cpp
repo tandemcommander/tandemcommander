@@ -13,6 +13,7 @@
 #include "plugins.h"
 #include "fileswnd.h"
 #include "mainwnd.h"
+#include "updcheck.h" // feature 123
 #include "shellib.h"
 #include "worker.h"
 #include "snooper.h"
@@ -4682,6 +4683,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                     // feature 080: start-up is complete - an installer that closes us for an update
                     // (Restart Manager) may start us again afterwards
                     RegisterRestartForUpdates();
+
+                    // feature 123: start-up is complete - look for a new version when the option is on
+                    // and a check is due (registry only here; the request runs on a worker thread)
+                    UpdateCheck_OnStartupComplete(MainWindow->HWindow);
 
                     if (IsSLGIncomplete[0] != 0 && Configuration.ShowSLGIncomplete)
                         PostMessage(MainWindow->HWindow, WM_USER_SLGINCOMPLETE, 0, 0);

@@ -387,6 +387,10 @@
     </ClCompile>
     <ClCompile Include="..\cmdshell.cpp">
     </ClCompile>
+    <ClCompile Include="..\updcheck.cpp">
+    </ClCompile>
+    <ClCompile Include="..\upddlg.cpp">
+    </ClCompile>
     <ClCompile Include="..\edtlbwnd.cpp">
     </ClCompile>
     <ClCompile Include="..\execute.cpp">
@@ -890,6 +894,12 @@
     <ClInclude Include="..\stswnd.h">
     </ClInclude>
     <ClInclude Include="..\paneltabs.h">
+    </ClInclude>
+    <ClInclude Include="..\updcheck.h">
+    </ClInclude>
+    <ClInclude Include="..\upddlg.h">
+    </ClInclude>
+    <ClInclude Include="..\common\salupdcheck.h">
     </ClInclude>
     <ClInclude Include="..\pngimage.h">
     </ClInclude>

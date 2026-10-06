@@ -1,0 +1,307 @@
+Feature 123 behaviour probe; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_123\tandemcommander.exe (2026-10-06T18:41:40); desktop tc_probe_18812; 2026-10-06T19:25:09
+fixture server on 127.0.0.1:54554; dead port 54555; UI Automation available: True; old exe: C:\Program Files\Tandem Commander\tandemcommander.exe
+--- BASE
+BASE       exit   PASS        option off, 3 starts: main window after 0.43/0.32/0.42 s; exit takes 1.24/1.21/1.19 s; exit codes 0x00000000/0x00000000/0x00000000
+    (BASE took 13 s)
+--- A1
+A1         shown  PASS        notification 0.35 s after the main window became visible (main window 0.37 s after the process start); SC-001 limit 10 s
+A1         usable PASS        main window enabled True, answers WM_NULL True, the notification is owned by the main window True (modeless)
+A1         text   PASS        caption 'Tandem Commander'; heading 'A new version is available'; installed '0.1.8' (label 'Installed version'); available '0.1.9' (label 'Available version'); released 'Released 14. \u0159\u00EDjna 2026' (expected the local date of 2026-10-14T08:00Z = day 14); hint 'The download opens in your web browser. Run the installer to update; your settings are kept.'
+A1         ctls   PASS        buttons '&Download' 'Remind Me &Later' '&Skip This Version'; check box '&Check for a new version at start-up' checked True; link control 6247 present True
+A1         tab    PASS        tab order (visible WS_TABSTOP children in z-order) 1,2,6250,6249,6247; contract: Download(1), Remind Me Later(2), Skip(6250), check box(6249), link(6247); default button id 1 (button style 1)
+A1         names  PASS        names by WM_GETTEXT: link 'Release notes' (GetWindowText without the message: ''); the static before '0.1.8' is 'Installed version', before '0.1.9' is 'Available version' (contract: accessible names 'Installed version: 0.1.8' / 'Available version: 0.1.9' - here two separate statics each). UI Automation (Name|ControlType, unreliable on the hidden desktop): Download 'Download|Pane', link '|Pane', installed '0.1.8|Pane', available '0.1.9|Pane'
+A1         state  PASS        stored: Last Attempt=QWord:134357811232373541; Last Attempt Answered=DWord:1; Last Success=QWord:134357811232468625; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9; Last Attempt 1.04 s old, Last Success 1.03 s old; values outside the contract: none
+A1         props  PASS        window property TandemCommander.UpdateNotice set; TandemCommander.ClosesUnattended set True
+A1         req    PASS        version requests of this start: 1; nothing opened: True
+A1         shot   note        shot notice_0.1.9.png True
+A1         focus  note        thread focus window id 1, active window is the notification True (hidden desktop: no foreground window)
+A1         exit   PASS        exit 1.33 s, code 0x00000000
+    (A1 took 3 s)
+--- A1X
+A1X        sc001  PASS        20 of 20 starts showed the notification within 10 s; seconds after the main window: min 0.15 / avg 0.20 / max 0.24
+A1X        close  PASS        program closed 20 times with the notification open: exit 1.18..1.29 s, all exit code 0 and nothing left on screen: True
+    (A1X took 44 s)
+--- A2
+A2         same/0.1.8 PASS        release 0.1.8, installed 0.1.8: windows shown: none; requests 1; stored Last Attempt=QWord:134357811701493625; Last Attempt Answered=DWord:1; Last Success=QWord:134357811701573655; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; About: line 'This is the latest version (checked 6. \u0159\u00EDjna 2026).' link hidden; exit 1.23 s, code 0x00000000
+A2         older/0.1.8 PASS        release 0.0.1, installed 0.1.8: windows shown: none; requests 1; stored Last Attempt=QWord:134357811759857103; Last Attempt Answered=DWord:1; Last Success=QWord:134357811759943939; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.0.1; exit 1.18 s, code 0x00000000
+A2         newer-0.1.9/0.1.9 PASS        release 0.1.9, installed 0.1.9: windows shown: none; requests 1; stored Last Attempt=QWord:134357811808558356; Last Attempt Answered=DWord:1; Last Success=QWord:134357811808648899; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9; exit 1.19 s, code 0x00000000
+A2         newer-0.1.9/0.1.10 PASS        release 0.1.9, installed 0.1.10: windows shown: none; requests 1; stored Last Attempt=QWord:134357811857498064; Last Attempt Answered=DWord:1; Last Success=QWord:134357811857583139; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9; exit 1.21 s, code 0x00000000
+A2         ver-0.2.0/0.10.0 PASS        release 0.2.0, installed 0.10.0: windows shown: none; requests 1; stored Last Attempt=QWord:134357811907604874; Last Attempt Answered=DWord:1; Last Success=QWord:134357811907719981; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.2.0; exit 1.22 s, code 0x00000000
+A2         ver-0.9.99999/1.0.0 PASS        release 0.9.99999, installed 1.0.0: windows shown: none; requests 1; stored Last Attempt=QWord:134357811957560539; Last Attempt Answered=DWord:1; Last Success=QWord:134357811957656621; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.9.99999; exit 1.18 s, code 0x00000000
+    (A2 took 31 s)
+--- A4
+A4         ver-0.1.10/0.1.9 PASS        notification True after 0.19 s showing 0.1.9 -> 0.1.10; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.10/tandemcommander-0.1.10-x64-setup.exe; exit 1.18 s, code 0x00000000
+A4         ver-0.10.0/0.9.5 PASS        notification True after 0.20 s showing 0.9.5 -> 0.10.0; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v0.10.0/tandemcommander-0.10.0-x64-setup.exe; exit 1.19 s, code 0x00000000
+A4         ver-1.0.0/0.99999.99999 PASS        notification True after 0.19 s showing 0.99999.99999 -> 1.0.0; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v1.0.0/tandemcommander-1.0.0-x64-setup.exe; exit 1.18 s, code 0x00000000
+A4         two-assets/0.1.8 PASS        notification True after 0.19 s showing 0.1.8 -> 9.9.9; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v9.9.9/tandemcommander-9.9.9-x64-setup.exe; exit 1.18 s, code 0x00000000
+A4         nested-tag-first/0.1.8 PASS        notification True after 0.19 s showing 0.1.8 -> 9.9.9; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v9.9.9/tandemcommander-9.9.9-x64-setup.exe; exit 1.18 s, code 0x00000000
+A4         chunked/0.1.8 PASS        notification True after 0.17 s showing 0.1.8 -> 9.9.9; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v9.9.9/tandemcommander-9.9.9-x64-setup.exe; exit 1.21 s, code 0x00000000
+A4         slow-ok/0.1.8 PASS        notification True after 1.67 s showing 0.1.8 -> 9.9.9; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v9.9.9/tandemcommander-9.9.9-x64-setup.exe; exit 1.18 s, code 0x00000000
+A4         ver-10.12.345/9.20.1234 PASS        notification True after 0.17 s showing 9.20.1234 -> 10.12.345; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v10.12.345/tandemcommander-10.12.345-x64-setup.exe; exit 1.24 s, code 0x00000000; shot notice_10.12.345.png True
+A4         clip   FAIL        the two version numbers must not be cut off (contracts/ui.md 1: nothing clipped; a version part has up to 5 digits): 9.20.1234 -> 10.12.345: available fits (0 text pixels in the last 2 columns of a 180 px wide control) / installed: fits (0 text pixels in the last 2 columns of a 156 px wide control); 99999.99999.99999: CLIPPED (2 text pixels in the last 2 columns of a 180 px wide control)
+A4         ver-99999.99999.99999/0.1.8 PASS        notification True after 0.20 s showing 0.1.8 -> 99999.99999.99999; Download opened: https://github.com/tandemcommander/tandemcommander/releases/download/v99999.99999.99999/tandemcommander-99999.99999.99999-x64-setup.exe; exit 1.18 s, code 0x00000000; shot notice_longest_version.png True
+A4         bom    note        a record preceded by a UTF-8 byte order mark (no requirement either way): notification False; stored Last Attempt=QWord:134357812231100976; Last Attempt Answered=DWord:1
+    (A4 took 36 s)
+--- A3
+A3         prerelease PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220363515266); requests 1; opened 0; Last Attempt 3.92 s old, Answered DWord:1; exit 1.22 s, code 0x00000000
+A3         draft  PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220409069611); requests 1; opened 0; Last Attempt 3.87 s old, Answered DWord:1; exit 1.18 s, code 0x00000000
+A3         noasset PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220454042684); requests 1; opened 0; Last Attempt 3.88 s old, Answered DWord:1; exit 1.22 s, code 0x00000000
+A3         asset-not-uploaded PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220498872970); requests 1; opened 0; Last Attempt 3.85 s old, Answered DWord:1; exit 1.20 s, code 0x00000000
+A3         foreign-url PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220543425603); requests 1; opened 0; Last Attempt 3.86 s old, Answered DWord:1; exit 1.22 s, code 0x00000000
+A3         foreign-html-url PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220588187976); requests 1; opened 0; Last Attempt 3.90 s old, Answered DWord:1; exit 1.20 s, code 0x00000000
+A3         bad-tag PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220633436917); requests 1; opened 0; Last Attempt 3.86 s old, Answered DWord:1; exit 1.22 s, code 0x00000000
+A3         dup-tag PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220678259887); requests 1; opened 0; Last Attempt 3.87 s old, Answered DWord:1; exit 1.22 s, code 0x00000000
+A3         oversized PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220722938703); requests 1; opened 0; Last Attempt 4.94 s old, Answered DWord:1; exit 1.18 s, code 0x00000000
+A3         truncated PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220778563153); requests 1; opened 0; Last Attempt 3.87 s old, Answered DWord:1; exit 1.22 s, code 0x00000000
+A3         short-body FAIL        windows shown: 0.16 s: notice 'Tandem Commander' text 'A new version is available Installed version 0.1.8 Available version 9.9.9 Released 14. \u0159\u00EDjna 2026 The download opens in your web browser. Run the installer to update; your settings are kept.' buttons [1 &Download][2 Remind Me &Later][6250 &Skip This Version][6249 &Check for a new version at start-up]; knowledge unchanged False (String:9.9.9 | String:2026-10-14T08:00:00Z | QWord:134357812829377400); requests 1; opened 0; Last Attempt 5.35 s old, Answered DWord:1; exit 1.19 s, code 0x00000000
+A3         html   PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220882803345); requests 1; opened 0; Last Attempt 3.95 s old, Answered DWord:1; exit 1.22 s, code 0x00000000
+A3         empty  PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220928460338); requests 1; opened 0; Last Attempt 3.94 s old, Answered DWord:1; exit 1.22 s, code 0x00000000
+A3         403    PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355220974073650); requests 1; opened 0; Last Attempt 3.85 s old, Answered DWord:1; exit 1.19 s, code 0x00000000
+A3         429    PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221018747902); requests 1; opened 0; Last Attempt 3.98 s old, Answered DWord:1; exit 1.23 s, code 0x00000000
+A3         500    PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221064707462); requests 1; opened 0; Last Attempt 3.87 s old, Answered DWord:1; exit 1.20 s, code 0x00000000
+A3         404    PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221109432576); requests 1; opened 0; Last Attempt 3.88 s old, Answered DWord:1; exit 1.18 s, code 0x00000000
+A3         redirect PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221154578355); requests 1; opened 0; Last Attempt 4.38 s old, Answered DWord:1; exit 1.21 s, code 0x00000000
+A3         auth401 PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221204547545); requests 1; opened 0; Last Attempt 4.46 s old, Answered DWord:1; exit 1.21 s, code 0x00000000
+A3         ver-0.01.9 PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221255378957); requests 1; opened 0; Last Attempt 3.79 s old, Answered DWord:1; exit 1.17 s, code 0x00000000
+A3         ver-0.1.100000 PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221299508169); requests 1; opened 0; Last Attempt 3.87 s old, Answered DWord:1; exit 1.21 s, code 0x00000000
+A3         bad-date PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221344436040); requests 1; opened 0; Last Attempt 3.86 s old, Answered DWord:1; exit 1.19 s, code 0x00000000
+A3         wrong-asset-name PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221389265446); requests 1; opened 0; Last Attempt 3.85 s old, Answered DWord:1; exit 1.21 s, code 0x00000000
+A3         deep-nesting PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221433994523); requests 1; opened 0; Last Attempt 3.88 s old, Answered DWord:1; exit 1.20 s, code 0x00000000
+A3         array  PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221478954927); requests 1; opened 0; Last Attempt 3.84 s old, Answered DWord:1; exit 1.23 s, code 0x00000000
+A3         hang   PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221523460820); requests 1; opened 0; Last Attempt 13.44 s old, Answered DWord:0; exit 1.18 s, code 0x00000000
+A3         slow   PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355221664027622); requests 1; opened 0; Last Attempt 46.95 s old, Answered DWord:0; exit 1.22 s, code 0x00000000
+A3         DEAD   PASS        windows shown: none; knowledge unchanged True (String:0.1.9 | String:2026-10-14T08:00:00Z | QWord:134355222139804572); requests 0; opened 0; Last Attempt 8.10 s old, Answered DWord:0; exit 1.18 s, code 0x00000000
+A3         deadln FAIL        how long the automatic request stayed connected, seen by the server (contracts/update-source.md: receive 8 s, whole request 12 s): never answering server: 12.03 s; server sending 1 byte per 50 ms: still open after 45.86 s
+A3         answrd FAIL        'Last Attempt Answered' must be 1 exactly when the attempt received an HTTP status (contracts/stored-state.md): differs for slow: DWord:0 (an HTTP status was received)
+    (A3 took 186 s)
+--- B
+B          hdrs   PASS        GET /latest/same HTTP/1.1; headers: Connection: Keep-Alive | Accept: application/vnd.github+json | User-Agent: TandemCommander-updatecheck | X-GitHub-Api-Version: 2022-11-28 | Host: 127.0.0.1:54554; headers outside the contract (Connection is transport): none
+B          ua     PASS        User-Agent 'TandemCommander-updatecheck' carries no version or other number
+B          cookie PASS        the server sets a cookie with every answer; 4 requests followed (1 automatic + 2 manual in one process, 1 manual in a new process): requests carrying Cookie: 0
+B          manual PASS        automatic and manual requests carry the same header names (nothing tells them apart): accept,connection,host,user-agent,x-github-api-version
+B          auth401 PASS        requests after the auth401 answer: 1 (/latest/auth401); with Authorization / Proxy-Authorization: 0
+B          redirect PASS        requests after the redirect answer: 1 (/latest/redirect); with Authorization / Proxy-Authorization: 0
+    (B took 21 s)
+--- C1
+C1         sc003  PASS        option off, 20 starts with a newer release published: requests 0; windows none; stored state unchanged True (Check At Startup=DWord:0)
+C1         dll    PASS        winhttp.dll loaded in the process with the option off: False
+    (C1 took 95 s)
+--- C2
+C2         sc004  PASS        option on, 20 consecutive starts: requests 1; first start showed the notification True (closed with Remind Me Later); windows in the later starts: none; winhttp.dll loaded in the checking process: True
+    (C2 took 93 s)
+--- C3
+C3         three  PASS        3 instances started at the same moment, 3 repetitions: rep 1: instances 3, requests 1, notifications 1; rep 2: instances 3, requests 1, notifications 1; rep 3: instances 3, requests 1, notifications 1
+    (C3 took 38 s)
+--- C4
+C4         auto   PASS        A shows the notification; B started 25 h "later": requests 2 (2 allowed), notifications on the desktop 1, windows of B: none
+C4         manual PASS        manual check in B while A shows the notification: requests 3, notifications 1, A's window still there True, windows of B: none (that A's window is brought to the front cannot be observed here)
+    (C4 took 13 s)
+--- C6
+C6         future+1y PASS        before: Last Attempt=QWord:134673176819136430; Last Attempt Answered=DWord:1; requests 1 (expected 1); after: Last Attempt=QWord:134357816825455456; Last Attempt Answered=DWord:1; Last Success=QWord:134357816825545744; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; windows none
+C6         -2h unanswered PASS        before: Last Attempt=QWord:134357744873095250; Last Attempt Answered=DWord:0; requests 1 (expected 1); after: Last Attempt=QWord:134357816879209383; Last Attempt Answered=DWord:1; Last Success=QWord:134357816879299398; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; windows none
+C6         -30min unanswered PASS        before: Last Attempt=QWord:134357798926309719; Last Attempt Answered=DWord:0; requests 0 (expected 0); after: Last Attempt=QWord:134357798926309719; Last Attempt Answered=DWord:0; windows none
+C6         -61min no flag PASS        before: Last Attempt=QWord:134357780260058173; requests 1 (expected 1); after: Last Attempt=QWord:134357816986355067; Last Attempt Answered=DWord:1; Last Success=QWord:134357816986446427; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; windows none
+C6         -2h answered PASS        before: Last Attempt=QWord:134357745033614121; Last Attempt Answered=DWord:1; requests 0 (expected 0); after: Last Attempt=QWord:134357745033614121; Last Attempt Answered=DWord:1; windows none
+C6         -23h answered PASS        before: Last Attempt=QWord:134356989085356497; Last Attempt Answered=DWord:1; requests 0 (expected 0); after: Last Attempt=QWord:134356989085356497; Last Attempt Answered=DWord:1; windows none
+C6         -25h answered PASS        before: Last Attempt=QWord:134356917138287669; Last Attempt Answered=DWord:1; requests 1 (expected 1); after: Last Attempt=QWord:134357817144462422; Last Attempt Answered=DWord:1; Last Success=QWord:134357817144547756; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; windows none
+C6         attempt=0 PASS        before: Last Attempt=QWord:0; Last Attempt Answered=DWord:1; requests 1 (expected 1); after: Last Attempt=QWord:134357817197941659; Last Attempt Answered=DWord:1; Last Success=QWord:134357817198046150; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; windows none
+C6         attempt REG_SZ PASS        before: Last Attempt=String:yesterday; Last Attempt Answered=DWord:1; requests 1 (expected 1); after: Last Attempt=QWord:134357817252305723; Last Attempt Answered=DWord:1; Last Success=QWord:134357817252385692; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; windows none
+C6         answered REG_SZ -2h PASS        before: Last Attempt=QWord:134357745300667301; Last Attempt Answered=String:1; requests 1 (expected 1); after: Last Attempt=QWord:134357817306717664; Last Attempt Answered=DWord:1; Last Success=QWord:134357817306802739; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; windows none
+C6         option REG_SZ "0" PASS        before: Check At Startup=String:0; Last Attempt=QWord:134356917352838791; Last Attempt Answered=DWord:1; requests 1 (expected 1); after: Check At Startup=String:0; Last Attempt=QWord:134357817358908006; Last Attempt Answered=DWord:1; Last Success=QWord:134357817358998015; Latest Published=String:2026-09-20T14:34:53Z; Latest Version=String:0.1.8; windows none
+C6         option=0 -25h PASS        before: Check At Startup=DWord:0; Last Attempt=QWord:134356917405830161; Last Attempt Answered=DWord:1; requests 0 (expected 0); after: Check At Startup=DWord:0; Last Attempt=QWord:134356917405830161; Last Attempt Answered=DWord:1; windows none
+    (C6 took 64 s)
+--- C7
+C7         unreach PASS        after a start with the server not running: Last Attempt=QWord:134357817465206697; Last Attempt Answered=DWord:0; the next start 61 min later sends 1 request(s) (expected 1)
+C7         refused PASS        after a start answered 403: Last Attempt=QWord:134357817595267405; Last Attempt Answered=DWord:1; 61 min later 0 request(s) (expected 0); 25 h later 1 (expected 1)
+    (C7 took 27 s)
+--- D1
+D1         notes  PASS        Space key sent to the link control: opened https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9; expected https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9; the notification stays open True; stored state unchanged True
+D1         notes2 PASS        Enter key sent to the link control (contract: "Tab stop, Enter/Space" opens the release notes): opened https://github.com/tandemcommander/tandemcommander/releases/tag/v0.1.9; the notification stays open True
+D1         dl     PASS        Download (BM_CLICK): opened https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe; expected https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe; the notification closed True; stored state unchanged True
+D1         exit   PASS        exit 1.18 s, code 0x00000000
+    (D1 took 5 s)
+--- D3
+D3         button PASS        BM_CLICK: the notification closed True; stored state unchanged True (Last Attempt=QWord:134357817784404894; Last Attempt Answered=DWord:1; Last Success=QWord:134357817784495236; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9); restart at once: requests 0, windows none; restart 25 h later: notification again True
+D3         close  PASS        WM_SYSCOMMAND SC_CLOSE (the caption close button): the notification closed True; stored state unchanged True (Last Attempt=QWord:134357817880778790; Last Attempt Answered=DWord:1; Last Success=QWord:134357817880869180; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9); restart at once: requests 0, windows none; restart 25 h later: notification again True
+D3         esc    PASS        WM_KEYDOWN VK_ESCAPE posted to the Download button (through the message loop): the notification closed True; stored state unchanged True (Last Attempt=QWord:134357817976521202; Last Attempt Answered=DWord:1; Last Success=QWord:134357817976611316; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9); restart at once: requests 0, windows none; restart 25 h later: notification again True
+    (D3 took 29 s)
+--- D4
+D4         store  PASS        Skip This Version (BM_CLICK): closed True; stored Last Attempt=QWord:134357818074630588; Last Attempt Answered=DWord:1; Last Success=QWord:134357818074720811; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9; Skipped Version=String:0.1.9; the other values unchanged True
+D4         silent PASS        start 25 h later, same release: requests 1, windows none
+D4         about  PASS        About after the skip: line 'Version 0.1.9 is available.' link 'Download'
+D4         manual PASS        manual check after the skip: answer 'notice' after 0.05 s (no wait dialog): 'A new version is available Installed version 0.1.8 Available version 0.1.9 Released 14. \u0159\u00EDjna 2026 The download opens in your web browser. Run the installer to update; your settings are kept.' buttons [1 &Download][2 Remind Me &Later][6250 &Skip This Version][6249 &Check for a new version at start-up] versions 0.1.8 -> 0.1.9; Skipped Version still String:0.1.9
+D4         newer  PASS        0.1.9 skipped, 0.1.10 published, start 25 h later: notification True showing 0.1.8 -> 0.1.10
+D4         other  PASS        Skipped Version written from outside (as another instance would), start 25 h later: windows none
+    (D4 took 18 s)
+--- D5
+D5         off    PASS        check box was checked True; cleared by BM_CLICK; stored at once: Check At Startup=DWord:0; the notification stays open True
+D5         cfg    PASS        Configuration > General opened while the notification is open: check box 6255 present True, checked False (expected not checked)
+D5         toggle PASS        checked again -> DWord:1; cleared again -> DWord:0
+D5         later  PASS        3 starts 25 h later with the option cleared in the notification: requests 0, windows none
+D5         on     PASS        checked in Configuration > General (BM_CLICK) + OK: Check At Startup=DWord:1 while the program still runs; next start: notification True, requests 1
+    (D5 took 23 s)
+--- D6
+D6         enter  PASS        WM_KEYDOWN VK_RETURN posted to the check box (Enter = Download): closed True; opened https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe
+D6         tabkey PASS        focus sequence with five posted Tab keys: 1,2,6250,6249,6247,1 (contract: 1,2,6250,6249,6247 and round)
+D6         alt-s  PASS        WM_SYSCHAR "s" posted (Alt+S): closed True; Skipped Version String:0.1.9
+    (D6 took 6 s)
+--- E1
+E1         quiet  PASS        option off: requests before the command: 0
+E1         newer  PASS        answer 'notice' after 0.04 s (no wait dialog): 'A new version is available Installed version 0.1.8 Available version 0.1.9 Released 14. \u0159\u00EDjna 2026 The download opens in your web browser. Run the installer to update; your settings are kept.' buttons [1 &Download][2 Remind Me &Later][6250 &Skip This Version][6249 &Check for a new version at start-up]; versions 0.1.8 -> 0.1.9; requests 1; stored Check At Startup=DWord:0; Last Attempt=QWord:134357818571733977; Last Attempt Answered=DWord:1; Last Success=QWord:134357818571825077; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9
+E1         ckbox  PASS        the check box of the notification shows the option as it is (off): checked False
+E1         again  PASS        the command again at once (not throttled): answer 'notice' after 0.05 s (no wait dialog): 'A new version is available Installed version 0.1.8 Available version 0.1.9 Released 14. \u0159\u00EDjna 2026 The download opens in your web browser. Run the installer to update; your settings are kept.' buttons [1 &Download][2 Remind Me &Later][6250 &Skip This Version][6249 &Check for a new version at start-up]; requests 2
+E1         shot   note        shot answer_uptodate.png True
+E1         same   PASS        answer 'msg' after 0.04 s (no wait dialog): 'Tandem Commander 0.1.8 is the latest version.' buttons [1 OK]
+E1         older  PASS        answer 'msg' after 0.05 s (no wait dialog): 'Tandem Commander 0.1.8 is the latest version.' buttons [1 OK]
+E1         optoff PASS        after the manual checks the start-up option is still DWord:0
+E1         shot   note        shot answer_refused.png True
+E1         403    PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server refused the request. Too many requests may have come from your network. Try again in an hour.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         429    PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server refused the request. Too many requests may have come from your network. Try again in an hour.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         500    PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         404    PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         shot   note        shot answer_unexpected.png True
+E1         html   PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         empty  PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         redirect PASS        answer 'msg' after 0.06 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         auth401 PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         prerelease PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         draft  PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         noasset PASS        answer 'msg' after 0.04 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         foreign-url PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         bad-tag PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         truncated PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         oversized PASS        answer 'msg' after 0.05 s (no wait dialog): 'Could not check for a new version: the release server gave an unexpected answer. Try again later, or visit tandemcommander.org.' buttons [1 OK]; knowledge unchanged True; requests 1
+E1         shortb FAIL        answer 200 whose body breaks off (either failure class is acceptable): answer 'notice' after 0.05 s (no wait dialog): 'A new version is available Installed version 0.1.8 Available version 9.9.9 Released 14. \u0159\u00EDjna 2026 The download opens in your web browser. Run the installer to update; your settings are kept.' buttons [1 &Download][2 Remind Me &Later][6250 &Skip This Version][6249 &Check for a new version at start-up]
+E1         hang   PASS        answer 'msg' after 10.89 s (wait dialog at 0.50 s): 'Could not check for a new version: the release server could not be reached. Check your internet connection and try again.' buttons [1 OK]; SC-006 limit 15 s; wait dialog expected after about 0.5 s
+E1         shot   note        shot answer_unreachable.png True
+E1         slow   FAIL        answer 'msg' after 15.11 s (wait dialog at 0.50 s): 'Could not check for a new version: the release server could not be reached. Check your internet connection and try again.' buttons [1 OK]; SC-006 limit 15 s; wait dialog expected after about 0.5 s
+E1         exit   PASS        exit 1.18 s, code 0x00000000
+    (E1 took 40 s)
+--- E2
+E2         shot   note        shot wait_dialog.png True
+E2         button PASS        wait dialog after 0.50 s: caption 'Check for New Version', text 'Checking for a new version...', buttons [2 Cancel]; main window enabled meanwhile False, answers WM_NULL True; BM_CLICK on Cancel: closed True after 0.07 s; windows afterwards: none; knowledge unchanged True; stored Check At Startup=DWord:0; Last Attempt=QWord:134357818966350476; Last Attempt Answered=DWord:0
+E2         esc    PASS        wait dialog after 0.51 s: caption 'Check for New Version', text 'Checking for a new version...', buttons [2 Cancel]; main window enabled meanwhile False, answers WM_NULL True; WM_KEYDOWN VK_ESCAPE posted to the dialog: closed True after 0.08 s; windows afterwards: none; knowledge unchanged True; stored Check At Startup=DWord:0; Last Attempt=QWord:134357819007628550; Last Attempt Answered=DWord:0
+E2         after  PASS        a check right after the cancelled ones: answer 'msg' after 0.04 s (no wait dialog): 'Tandem Commander 0.1.8 is the latest version.' buttons [1 OK]
+E2         exit   PASS        exit 1.18 s, code 0x00000000
+    (E2 took 12 s)
+--- E3
+E3         dead   PASS        answer 'msg' after 2.12 s (wait dialog at 0.51 s): 'Could not check for a new version: the release server could not be reached. Check your internet connection and try again.' buttons [1 OK]; knowledge unchanged True; stored Check At Startup=DWord:0; Last Attempt=QWord:134357819087547493; Last Attempt Answered=DWord:0; Last Success=QWord:134355227063154600; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9
+E3         about  PASS        About after the failed check still shows what was known: line 'Version 0.1.9 is available.' link 'Download'
+    (E3 took 7 s)
+--- E4
+E4         join   PASS        automatic check in flight (answer takes 2 s, its version is skipped), then the command: answer 'notice' after 1.38 s (wait dialog at 0.49 s): 'A new version is available Installed version 0.1.8 Available version 9.9.9 Released 14. \u0159\u00EDjna 2026 The download opens in your web browser. Run the installer to update; your settings are kept.' buttons [1 &Download][2 Remind Me &Later][6250 &Skip This Version][6249 &Check for a new version at start-up] versions 0.1.8 -> 9.9.9; requests 1 (1 = the command joined the running check); notifications 1
+E4         cancel PASS        automatic check hanging, then the command: wait dialog True at 0.49 s; Cancel (BM_CLICK) closed it True; windows afterwards none; requests 1
+E4         exit   PASS        exit 1.19 s, code 0x00000000
+    (E4 took 11 s)
+--- E5
+E5         same   PASS        command with the notification for the same version open: notifications 1, other windows none, requests 1
+E5         newer  FAIL        0.1.10 published while the notification for 0.1.9 is open, then the command (US2-1: the notification with the new version is shown): notifications 1 showing 0.1.8 -> 0.1.9; stored Latest Version String:0.1.10; other windows none
+E5         dl     FAIL        Download in that window opens https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe (the latest known release is 0.1.10)
+    (E5 took 9 s)
+--- F1
+F1         none   PASS        stored: Check At Startup=DWord:0; line 'Not checked for a new version.' link 'Check now'; shot about_notchecked.png True
+F1         newer  PASS        stored: Check At Startup=DWord:0; Last Success=QWord:134355227363323802; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9; line 'Version 0.1.9 is available.' link 'Download'; shot about_newer.png True
+F1         dl     PASS        Space key sent to the Download link: opened https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe; expected https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/tandemcommander-0.1.9-x64-setup.exe; About stays open True; link tab stop True; UIA |Pane
+F1         tab    note        About tab order (visible WS_TABSTOP children): 1,6254,272
+F1         newer+skip PASS        stored: Check At Startup=DWord:0; Last Success=QWord:134355227382852123; Latest Version=String:0.1.9; Skipped Version=String:0.1.9; line 'Version 0.1.9 is available.' link 'Download'
+F1         equal  PASS        stored: Check At Startup=DWord:0; Last Success=QWord:134355227391581362; Latest Version=String:0.1.8; line 'This is the latest version (checked 3. \u0159\u00EDjna 2026).' link hidden; shot about_latest.png True
+F1         lower  PASS        stored: Check At Startup=DWord:0; Last Success=QWord:134355227403117592; Latest Version=String:0.1.5; line 'This is the latest version (checked 3. \u0159\u00EDjna 2026).' link hidden
+F1         equal nodate PASS        stored: Check At Startup=DWord:0; Latest Version=String:0.1.8; line 'This is the latest version.' link hidden
+F1         equal future PASS        stored: Check At Startup=DWord:0; Last Success=QWord:141926459420895775; Latest Version=String:0.1.8; line 'This is the latest version.' link hidden
+F1         numeric PASS        stored: Check At Startup=DWord:0; Latest Version=String:0.1.10; line 'Version 0.1.10 is available.' link 'Download'
+F1         bad abc PASS        stored: Check At Startup=DWord:0; Latest Version=String:abc; line 'Not checked for a new version.' link 'Check now'
+F1         bad 0.1 PASS        stored: Check At Startup=DWord:0; Latest Version=String:0.1; line 'Not checked for a new version.' link 'Check now'
+F1         bad 0.1.9.1 PASS        stored: Check At Startup=DWord:0; Latest Version=String:0.1.9.1; line 'Not checked for a new version.' link 'Check now'
+F1         bad v0.1.9 PASS        stored: Check At Startup=DWord:0; Latest Version=String:v0.1.9; line 'Not checked for a new version.' link 'Check now'
+F1         bad space PASS        stored: Check At Startup=DWord:0; Latest Version=String: 0.1.9; line 'Not checked for a new version.' link 'Check now'
+F1         bad 6 digits PASS        stored: Check At Startup=DWord:0; Latest Version=String:0.1.123456; line 'Not checked for a new version.' link 'Check now'
+F1         bad -1 PASS        stored: Check At Startup=DWord:0; Latest Version=String:0.1.-9; line 'Not checked for a new version.' link 'Check now'
+F1         bad huge PASS        stored: Check At Startup=DWord:0; Latest Version=String:999999999999999999999999999999999999999999999999999999999999...(20000 chars); line 'Not checked for a new version.' link 'Check now'
+F1         bad dword PASS        stored: Check At Startup=DWord:0; Latest Version=DWord:19; line 'Not checked for a new version.' link 'Check now'
+F1         raw odd PASS        stored: Check At Startup=DWord:0; Latest Version=String:0.; line 'Not checked for a new version.' link 'Check now'
+F1         raw expand PASS        stored: Check At Startup=DWord:0; Latest Version=ExpandString:0.1.9; line 'Not checked for a new version.' link 'Check now'
+F1         raw noterm PASS        stored: Check At Startup=DWord:0; Latest Version=String:0.1.9; line 'Version 0.1.9 is available.' link 'Download'
+F1         noreq  PASS        the About dialog was opened 20 times: version requests 0 (FR-024: none)
+F1         exit   PASS        exit 1.20 s, code 0x00000000
+    (F1 took 23 s)
+--- F2
+F2         403    PASS        Space on "Check now", server answers 403: answer 'msg' after 0.04 s (no wait dialog): 'Could not check for a new version: the release server refused the request. Too many requests may have come from your network. Try again in an hour.' buttons ; afterwards About open True, line 'Not checked for a new version.' link 'Check now'; requests 1
+F2         same   PASS        "Check now", up to date: answer 'msg' after 0.04 s (no wait dialog): 'Tandem Commander 0.1.8 is the latest version.' buttons ; afterwards line 'This is the latest version (checked 6. \u0159\u00EDjna 2026).' link hidden
+F2         newer  PASS        "Check now", newer release: window after the check: none (the line shows the result); line 'Version 0.1.9 is available.' link 'Download'
+F2         cancel PASS        "Check now" against a server that never answers: wait dialog True at 0.50 s; Cancel closed it True; windows afterwards none; About still open True and enabled True; line 'Not checked for a new version.' link 'Check now'
+F2         exit   PASS        exit 1.19 s, code 0x00000000
+    (F2 took 18 s)
+--- F3
+F3         line   PASS        About opened right at start: line 'Not checked for a new version.' link 'Check now'; 6 s later (the check finished meanwhile, stored Latest Version String:9.9.9): line 'Version 9.9.9 is available.' link 'Download'
+F3         waits  PASS        notification shown while the About dialog (modal) was open: False
+F3         after  PASS        after the About dialog closed: notification True (6.80 s after the watch began)
+    (F3 took 10 s)
+--- G1
+G1         box    PASS        no 'Check At Startup' value stored: check box 'Check for a new &version of Tandem Commander at start-up' visible True, checked True; previous control in the tab order '&Keep environment variables updated to system values'; box bottom 590 within the page bottom 1104; UIA Check for a new version of Tandem Commander at start-up|Pane
+G1         shot   note        shot config_general.png True
+G1         cancel PASS        cleared (BM_CLICK) then Cancel: stored value while the dialog was open <absent>, after Cancel <absent> (expected absent = on)
+G1         ok-off PASS        reopened: checked True; cleared + OK: stored at once (program still running) Check At Startup=DWord:0
+G1         shows  PASS        reopened with the stored value 0: checked False; OK without a change keeps DWord:0
+G1         fresh  PASS        value set to 1 from outside while the program runs: the page shows checked True
+G1         exit   PASS        exit 1.18 s, code 0x00000000; the exit (configuration saved) leaves the value: before Check At Startup=DWord:1; Last Attempt=QWord:134357816231480642; Last Attempt Answered=DWord:1 / after Check At Startup=DWord:1; Last Attempt=QWord:134357816231480642; Last Attempt Answered=DWord:1
+    (G1 took 10 s)
+--- G2
+G2         first  PASS        no registry key of the product at all: first start: notification True after 0.24 s; requests 1; other first-run windows: language dialog (answered OK) before the main window; version requests so far: 0; stored Last Attempt=QWord:134357819940415179; Last Attempt Answered=DWord:1; Last Success=QWord:134357819940495338; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9
+G2         cfg    PASS        Configuration: check box present True, checked True
+G2         exit   note        exit 1.22 s, code 0x00000000
+    (G2 took 4 s)
+--- H1
+H1         hang   PASS        request in flight True; exit 1.22 s, code 0x00000000; exit without the feature takes up to 1.24 s; stored Last Attempt=QWord:134357819983124001; Last Attempt Answered=DWord:0
+H1         slow   PASS        request in flight True; exit 1.20 s, code 0x00000000; exit without the feature takes up to 1.24 s; stored Last Attempt=QWord:134357820008916342; Last Attempt Answered=DWord:0
+H1         quick  PASS        closed the moment the main window appeared, 5 times: exit 1.37/1.33/1.36/1.36/1.35 s
+    (H1 took 14 s)
+--- H3
+H3         agree  PASS        WM_QUERYENDSESSION(ENDSESSION_CLOSEAPP) answered 1 with the notification open (control without it: 1); 1 = the program agrees to be closed
+H3         closes PASS        WM_ENDSESSION(TRUE, ENDSESSION_CLOSEAPP) sent: process ended True after 1.21 s, exit code 0x00000000 (control: ended True, code 0x00000000); notifications left 0; windows none
+    (H3 took 7 s)
+--- H4
+H4         start  PASS        garbage before: Check At Startup=Binary:hex 0102030405060708090A0B0C0D0E0F101112131415161718; Last Attempt=QWord:197121; Last Attempt Answered=String:yes; Last Success=DWord:-1; Latest Published=MultiString:System.String[]; Latest Version=String:777777777777777777777777777777777777777777777777777777777777...(9000 chars); Skipped Version=String:0.1.9; DROP; start: notification True 0.1.8 -> 0.1.9; after: Check At Startup=Binary:hex 0102030405060708090A0B0C0D0E0F101112131415161718; Last Attempt=QWord:134357820192795359; Last Attempt Answered=DWord:1; Last Success=QWord:134357820192885359; Latest Published=String:2026-10-14T08:00:00Z; Latest Version=String:0.1.9; Skipped Version=String:0.1.9; DROP
+H4         ckbox  PASS        Check At Startup of the wrong type reads as the default (on): check box checked True
+H4         about  PASS        About: line 'Version 0.1.9 is available.' link 'Download'
+H4         exit   PASS        exit 1.20 s, code 0x00000000
+H4         skipg  PASS        Skipped Version '0.1' (unparsable) reads as no skip: notification True
+    (H4 took 5 s)
+--- H5
+H5         shot   note        shot answer_browser_failed.png True
+H5         msg    PASS        Download when the address cannot be opened: message 'Check for New Version' text 'The address could not be opened in your web browser: https://github.com/tandemcommander/tandemcommander/releases/download/v0.1.9/ tandemcommander-0.1.9-x64-setup.exe Do you want to copy the address to the clipboard?' buttons [6 &Yes][7 &No]; the notification stays open True
+H5         copy   PASS        the address can be copied: the message asks 'Do you want to copy the address to the clipboard?' with buttons [6 &Yes][7 &No] (contract ui.md 1 words it as 'a message with the address and a Copy button'); the address is shown in one piece (no line break inside it): False; pressing Yes was NOT driven - the clipboard is shared with the user's desktop
+H5         stays  PASS        after the message was answered "No": the notification is still open True
+    (H5 took 4 s)
+--- H6
+H6         check  PASS        Update Check key denies writing: the check still runs: notification True, requests 1, error windows: none; stored Check At Startup=DWord:1
+H6         skip   PASS        Skip This Version with the store read-only: closed True, error windows none, stored unchanged True
+H6         exit   PASS        exit 1.21 s, code 0x00000000
+    (H6 took 4 s)
+--- J
+J          old    PASS        C:\Program Files\Tandem Commander\tandemcommander.exe (product version 0.1.8 (x64)) started with the Update Check values present: answers True; windows 0.28 s: other[]() '' text '' buttons ; exit 1.22 s, code 0x00000000; values unchanged True
+    (J took 6 s)
+--- S2
+S2         sc002  PASS        8 starts each; seconds from process start to a main window that answers (median; visible median; min..max): off 0.53; 0.42; 0.42..0.53 | on-same 0.53; 0.43; 0.42..0.53 | on-dead 0.53; 0.42; 0.42..0.53 | on-hang 0.53; 0.43; 0.42..0.54; largest median difference to "off": 0.00 s (limit: 15 % or 0.25 s)
+    (S2 took 65 s)
+--- ND
+ND         activ  NOT DRIVEN  contracts/ui.md 1 Showing 3: activation only when the main window is the foreground window, the command line is empty and no input for 2 s - there is no foreground window and no input on a hidden desktop
+ND         typing NOT DRIVEN  edge case: the notification never takes the keyboard away from text being typed - needs a real keyboard
+ND         menu   NOT DRIVEN  contracts/ui.md 1 Showing 1: never while a menu is open - a menu cannot be held open with posted messages; FR-019 placement of the command in the Help menu (the menu bar is a custom control without an HMENU) - only the command id 2217 was driven
+ND         lang   NOT DRIVEN  FR-028 / SC-009: other languages - the build tree under test holds only english.slg
+ND         dpi    NOT DRIVEN  SC-009: 150 % / 200 % scaling, dark theme, the maintainer's acceptance of the design - one capture at the desktop's scaling only
+ND         https  NOT DRIVEN  FR-004: TLS, certificate and host verification, proxy behaviour - the Debug seam is plain HTTP on the loopback interface; the real endpoint was not contacted
+ND         browsr NOT DRIVEN  US1-2: the default browser really starts the download - the seam logs the address instead
+ND         rm     NOT DRIVEN  feature 080 with the real Restart Manager (quickstart D) - only the two session messages were sent (row H3)
+ND         clip   NOT DRIVEN  edge case "the address can be copied": pressing Yes in the "could not be opened" message (row H5) - the clipboard is shared with the user's desktop
+ND         narr   NOT DRIVEN  screen reader pass - only UI Automation names were read (rows A1 names, F1 dl, G1 box)
+    (ND took 0 s)
+Registry: restored; identical=True; SHA-256 before D0B820067406BF05A20A0A39A0B404F366B162941F395DC315B675BD12904FB9 / after D0B820067406BF05A20A0A39A0B404F366B162941F395DC315B675BD12904FB9
+TOTAL: 193 PASS, 8 FAIL, 10 NOT DRIVEN
+   FAIL: A4 clip
+   FAIL: A3 short-body
+   FAIL: A3 deadln
+   FAIL: A3 answrd
+   FAIL: E1 shortb
+   FAIL: E1 slow
+   FAIL: E5 newer
+   FAIL: E5 dl

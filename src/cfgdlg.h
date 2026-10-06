@@ -514,6 +514,8 @@ protected:
     virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     void EnableControls();
+
+    int ShownCheckNewVersion; // feature 123: the state the page put into its check box (-1 = not yet)
 };
 
 //

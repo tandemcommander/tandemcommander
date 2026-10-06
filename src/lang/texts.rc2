@@ -165,6 +165,7 @@ STRINGTABLE
  IDS_MENU_HELP_TASKLIST,     "Task &List..."
  IDS_MENU_HELP_FORUM,        "&Report Issue on GitHub"
  IDS_MENU_HELP_ABOUTPLUGINS, "About &Plugin"
+ IDS_MENU_HELP_CHECKVERSION, "Check for &New Version"
  IDS_MENU_HELP_ABOUT,        "&About Tandem Commander"
 
 //
@@ -1829,6 +1830,23 @@ STRINGTABLE
 
  IDS_BUGREPORT_SAVED, "A problem has occurred, forcing Tandem Commander to close.\n\nA bug report has been saved to:\n%s\n\nNothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues."
  IDS_BUGREPORT_NOTSAVED, "A problem has occurred, forcing Tandem Commander to close.\n\nThe bug report could not be saved to:\n%s"
+
+ IDS_UPDATE_TITLE, "Check for New Version"
+ IDS_UPDATE_UPTODATE, "Tandem Commander %s is the latest version."
+ IDS_UPDATE_ERR_UNREACHABLE, "Could not check for a new version: the release server could not be reached.\n\nCheck your internet connection and try again."
+ IDS_UPDATE_ERR_REFUSED, "Could not check for a new version: the release server refused the request.\n\nToo many requests may have come from your network. Try again in an hour."
+ IDS_UPDATE_ERR_UNEXPECTED, "Could not check for a new version: the release server gave an unexpected answer.\n\nTry again later, or visit tandemcommander.org."
+ IDS_UPDATE_RELEASED, "Released %s"
+ IDS_UPDATE_ABOUT_NEWER, "Version %s is available."
+ IDS_UPDATE_ABOUT_LATEST, "This is the latest version (checked %s)."
+ IDS_UPDATE_ABOUT_NOTCHECKED, "Not checked for a new version."
+
+ IDS_UPDATE_DOWNLOADLINK, "Download"
+ IDS_UPDATE_CHECKNOWLINK, "Check now"
+ IDS_UPDATE_NOTESLINK, "Release notes"
+ IDS_UPDATE_ERR_BROWSER, "The address could not be opened in your web browser:\n\n%s\n\nDo you want to copy the address to the clipboard?"
+ IDS_UPDATE_ERR_START, "Could not check for a new version: the check could not be started. Try again."
+ IDS_UPDATE_ABOUT_LATEST_NODATE, "This is the latest version."
 
  IDS_SLGINCOMPLETE_TITLE, "Unfinished Translation of Tandem Commander"
  IDS_SLGINCOMPLETE_TEXT, "Translation of Tandem Commander into your language is not finished. Please consider visiting our discussion forum and joining the translation effort:"

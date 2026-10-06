@@ -1,0 +1,10 @@
+rawsrv on 8343, record 7635 bytes
+20:30:10 request http://tc-review2-target.invalid/viaproxy
+   PROXY request, Proxy-Authorization present: False
+   GET http://tc-review2-target.invalid/viaproxy HTTP/1.1 | Proxy-Connection: Keep-Alive | Accept: application/vnd.github+json | User-Agent: TandemCommander-updatecheck | X-GitHub-Api-Version: 2022-11-28 | Host: tc-review2-target.invalid |  | 
+   no second request on the proxy connection
+20:30:10 request http://tc-review2-target.invalid/viaproxy
+   PROXY request, Proxy-Authorization present: False
+   GET http://tc-review2-target.invalid/viaproxy HTTP/1.1 | Proxy-Connection: Keep-Alive | Accept: application/vnd.github+json | User-Agent: TandemCommander-updatecheck | X-GitHub-Api-Version: 2022-11-28 | Host: tc-review2-target.invalid |  | 
+   SECOND request on the proxy connection, Proxy-Authorization present: True
+   GET http://tc-review2-target.invalid/viaproxy HTTP/1.1 | Proxy-Connection: Keep-Alive | Accept: application/vnd.github+json | User-Agent: TandemCommander-updatecheck | X-GitHub-Api-Version: 2022-11-28 | Host: tc-review2-target.invalid | Proxy-Authorization: Negotiate TlRMTVNTUAABAAAAl7II4gkACQAvAAAABwAHACgAAAAKAPRlAAAAD1BDLURPTUFXT1JLR1JPVVA= |  | 

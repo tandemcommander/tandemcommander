@@ -2134,6 +2134,7 @@
 #define IDS_MENU_HELP_TASKLIST       13197
 #define IDS_MENU_HELP_ABOUTPLUGINS   13199
 #define IDS_MENU_HELP_ABOUT          13200
+#define IDS_MENU_HELP_CHECKVERSION   13201 // feature 123
 #define IDS_MENU_HELP_FORUM          13202
 
 //
@@ -2543,6 +2544,25 @@
 // bug report written by the application itself (feature 079): the closing message
 #define IDS_BUGREPORT_SAVED             14101
 #define IDS_BUGREPORT_NOTSAVED          14102
+
+// feature 123: checking for a new version. Free slots of the bundles of 14101 and 14150 (no
+// new bundle, so the translation rows keep their ordinals). %s is a version or a date the
+// program printed itself, never text from the network.
+#define IDS_UPDATE_TITLE                14103 // title of the answers of Help > Check for New Version
+#define IDS_UPDATE_UPTODATE             14104
+#define IDS_UPDATE_ERR_UNREACHABLE      14105
+#define IDS_UPDATE_ERR_REFUSED          14106
+#define IDS_UPDATE_ERR_UNEXPECTED       14107
+#define IDS_UPDATE_RELEASED             14108 // notification window: "Released <date>"
+#define IDS_UPDATE_ABOUT_NEWER          14109 // About dialog, followed by the link IDS_UPDATE_DOWNLOADLINK
+#define IDS_UPDATE_ABOUT_LATEST         14110
+#define IDS_UPDATE_ABOUT_NOTCHECKED     14111 // About dialog, followed by the link IDS_UPDATE_CHECKNOWLINK
+#define IDS_UPDATE_DOWNLOADLINK         14144
+#define IDS_UPDATE_CHECKNOWLINK         14145
+#define IDS_UPDATE_NOTESLINK            14146 // notification window: link to the release notes
+#define IDS_UPDATE_ERR_BROWSER          14147 // %s = the address that could not be opened
+#define IDS_UPDATE_ERR_START            14148
+#define IDS_UPDATE_ABOUT_LATEST_NODATE  14149
 
 // Translation of Open Salamander into your language is not finished. Please join the translation effort.
 #define IDS_SLGINCOMPLETE_TITLE         14150
