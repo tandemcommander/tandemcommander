@@ -467,6 +467,16 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
   mouse) - a person's pass is owed (`107/quickstart.md` step 5). Still open: the Renamer's refusal says "already exists" (a plug-in
   cannot reach the core's "to itself" texts without a new string or an
   interface change).
+- **Decision (maintainer, 2026-10-04): the remaining B-2 systemic work is NOT
+  implemented** - the panel sort comparator, `CSalamanderDirectory` name
+  comparison, the services exported to plug-ins and a guard rule for the old
+  comparison functions (the four entries below). Reason: they change what users
+  see (panel order, archive and plug-in listings) or what plug-ins get, with the
+  highest regression risk for a mostly theoretical gain; every identity decision
+  that could lose data was converted (092) and the data-loss consequences found
+  since were fixed one by one (103, 107-110, 112, 113, 115, 117, 119). Only the
+  disk-cache keys were done (109), because they decided which file is written.
+  Re-open an entry only with a concrete wrong-file or lost-data scenario.
 - **The panel sort comparator is intransitive with "Use locale" off** for
   names mixing ASCII and other characters (found by the 092 research; not
   touched - it changes what users see).
