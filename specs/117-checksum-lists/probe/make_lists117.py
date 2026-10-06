@@ -219,6 +219,13 @@ add('nul_tail11.sha256', 'utf8', 'sha256', 'hashfirst', [
     (CZ, CZ, 'OK', 'OK', None, ''), (JP, JP, 'OK', 'OK', None, '11 NULs of padding')],
     '\n', 'UTF-8 + 11 NULs of padding', raw_after=pad(11))
 
+# the expected names also as UTF-16 code units: Windows PowerShell 5.1's ConvertFrom-Json turns an
+# escaped lone surrogate ("\\ud800") into U+FFFD (probe run 1), the units survive
+for lst in lists:
+    for row in lst['rows']:
+        u = row['name'].encode('utf-16-le', 'surrogatepass')
+        row['name_units'] = [u[i] | (u[i + 1] << 8) for i in range(0, len(u), 2)]
+
 with open(os.path.join(root, 'expected117.json'), 'w', encoding='ascii') as f:
     json.dump({'acp': ctypes.windll.kernel32.GetACP(), 'oemcp': ctypes.windll.kernel32.GetOEMCP(),
                'lists': lists,

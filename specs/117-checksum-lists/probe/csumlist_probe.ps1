@@ -299,12 +299,13 @@ function Run-List([int]$Id, $L) {
     Row $case 'LIST' (V $listOk) $facts
     for ($i = 0; $i -lt @($L.rows).Count; $i++) {
         $e = $L.rows[$i]
+        $en = $(if ($e.name_units) { -join (@($e.name_units) | ForEach-Object { [char][int]$_ }) } else { $e.name })
         $want = $(if ($Fixed) { $e.after } else { $e.before })
-        if ($i -ge @($r.Rows).Count) { Row $case ('#' + $i) 'FAIL' ("no row; expected {0} '{1}'" -f $want, (Show $e.name)); continue }
+        if ($i -ge @($r.Rows).Count) { Row $case ('#' + $i) 'FAIL' ("no row; expected {0} '{1}'" -f $want, (Show $en)); continue }
         $g = $r.Rows[$i]
         $ok = ($g.Verdict -eq $want)
-        if ($Fixed) { $ok = $ok -and ($g.Name -ceq $e.name) }
-        Row $case ('#' + $i) (V $ok) ("{0} (icon {1}, status '{2}') expected {3}; name '{4}'{5}{6}" -f $g.Verdict, $g.Image, (Show $g.Status), $want, (Show $g.Name), $(if ($g.Name -cne $e.name) { " (list: '" + (Show $e.name) + "')" } else { '' }), $(if ($e.why) { ' - ' + $e.why } else { '' }))
+        if ($Fixed) { $ok = $ok -and ($g.Name -ceq $en) }
+        Row $case ('#' + $i) (V $ok) ("{0} (icon {1}, status '{2}') expected {3}; name '{4}'{5}{6}" -f $g.Verdict, $g.Image, (Show $g.Status), $want, (Show $g.Name), $(if ($g.Name -cne $en) { " (list: '" + (Show $en) + "')" } else { '' }), $(if ($e.why) { ' - ' + $e.why } else { '' }))
     }
 }
 
@@ -334,30 +335,100 @@ function Wait-Enabled([IntPtr]$B, [double]$Seconds) {
     while ($sw.Elapsed.TotalSeconds -lt $Seconds) { if ([Drv098f]::IsWindowEnabled($B)) { return $true }; Start-Sleep -Milliseconds 200 }
     return $false
 }
+# the texts of a window by UI Automation (a task-dialog question shows its text in DirectUI)
+function Uia-Text([IntPtr]$H) {
+    try {
+        Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
+        $el = [Windows.Automation.AutomationElement]::FromHandle($H)
+        $all = $el.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.Condition]::TrueCondition)
+        $names = @(); foreach ($a in $all) { $n = $a.Current.Name; if ($n -and $names -notcontains $n) { $names += $n } }
+        return (Esc ($names -join ' | '))
+    }
+    catch { return ('<UIA: ' + $_.Exception.Message + '>') }
+}
+# the file name field of a save dialog: legacy (an edit in combo 1148) or the common item dialog
+# (run 2: an edit id 1001 in a combo id 0 inside DUIViewWndClassName; the address bar's combo is
+# 41477 and is skipped)
+# (run 5: the first such edit is not the one shown - only visible edits, parent 1148 first, as 104)
+function Find-NameEdit([IntPtr]$Dlg) {
+    $e = @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) -and [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) -ne 41477 })
+    $f = @($e | Where-Object { [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) -eq 1148 -or [Drv098f]::GetDlgCtrlID($_) -eq 1148 }) | Select-Object -First 1
+    if ($f) { return $f }
+    return @($e | Where-Object { [Drv098f]::Cls([Drv098f]::GetParent($_)) -eq 'ComboBox' }) | Select-Object -First 1
+}
+# types text into an edit: select all, then WM_CHAR per character (run 6: WM_SETTEXT changed the
+# common item dialog's field but not the name the dialog used - it takes typed text only)
+function Type-Text([IntPtr]$E, [string]$Text) {
+    [void][Drv117]::SendR($E, 0x00B1, 0, -1)   # EM_SETSEL all
+    [void][Drv117]::SendR($E, 0x0102, 8, 0)    # WM_CHAR backspace: clear the selection
+    foreach ($ch in $Text.ToCharArray()) { [void][Drv117]::SendR($E, 0x0102, [int]$ch, 1) }
+    Start-Sleep -Milliseconds 300
+}
 # Save in the Calculate dialog: the type picked by $TypeRx, the name typed without extension
 function Save-List([int]$Id, [IntPtr]$Calc, [string]$TypeRx, [string]$Base) {
     $known = Get-Tops $Id
     Click (Kid $Calc 1003 'Button')
-    $od = [IntPtr]::Zero
+    # the common item dialog appears first without its file name area on the hidden desktop (run 1:
+    # tree, view and buttons only after 15 s) - wait for the window, then for the field (id 1148)
+    $od = [IntPtr]::Zero; $dlg = [IntPtr]::Zero
     $sw = [Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt 15 -and $od -eq [IntPtr]::Zero) {
-        $c = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' -and (Kid $_ 1136 'ComboBox') }) | Select-Object -First 1
-        if ($c) { Start-Sleep -Milliseconds 1200; $od = $c }
-        Start-Sleep -Milliseconds 200
+    while ($sw.Elapsed.TotalSeconds -lt 60 -and $od -eq [IntPtr]::Zero) {
+        if ($dlg -eq [IntPtr]::Zero) { $dlg = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' }) | Select-Object -First 1; if (-not $dlg) { $dlg = [IntPtr]::Zero } }
+        if ($dlg -ne [IntPtr]::Zero -and (Find-NameEdit $dlg)) { Start-Sleep -Milliseconds 1200; $od = $dlg }
+        Start-Sleep -Milliseconds 300
     }
-    if ($od -eq [IntPtr]::Zero) { return 'no save dialog' }
-    $types = Kid $od 1136 'ComboBox'
-    if (-not (Pick $types $TypeRx)) { $t = (Combo-Items $types) -join ' / '; Post-Cmd $od 2; return "type $TypeRx not offered: $t" }
-    $fn = @([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) -and [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) -eq 1148 }) | Select-Object -First 1
+    if ($od -eq [IntPtr]::Zero) {
+        $why = ('no save dialog with a file name field after 60 s; new windows: ' + ((@(Get-Tops $Id | Where-Object { $known -notcontains $_ }) | ForEach-Object { WinDesc $_ }) -join ' || '))
+        if ($dlg -ne [IntPtr]::Zero) { $why += ('; ids: ' + ((@([Drv098f]::Kids($dlg) | ForEach-Object { '' + [Drv098f]::GetDlgCtrlID($_) + ':' + [Drv098f]::Cls($_) }) | Select-Object -Unique) -join ',')); Post-Cmd $dlg 2; Start-Sleep -Milliseconds 800 }
+        return $why
+    }
+    $types = $null; $seenTypes = @()
+    foreach ($cb in @([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'ComboBox' })) {
+        $items = @(Combo-Items $cb); $seenTypes += ($items -join ' / ')
+        if (@($items | Where-Object { $_ -match $TypeRx }).Count) { $types = $cb; break }
+    }
+    if (-not $types -or -not (Pick $types $TypeRx)) { Post-Cmd $od 2; return "type $TypeRx not offered: " + ($seenTypes -join ' | ') }
+    $typeSel = [Drv117]::LbText($types, [int][Drv117]::SendR($types, 0x0147, 0, 0))   # CB_GETCURSEL
+    $fn = Find-NameEdit $od
     if (-not $fn) { Post-Cmd $od 2; return 'no file name field' }
-    [void][Drv098f]::SetText($fn, $Base, 5000)
+    # run 4: a whole path set into the common item dialog's field was taken as "rt" in the dialog's
+    # last folder - navigate first (the folder + OK), then the bare name + OK
     $ok = Buttons $od | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 1 } | Select-Object -First 1
+    $dir = [IO.Path]::GetDirectoryName($Base); $leaf = [IO.Path]::GetFileName($Base)
+    Type-Text $fn $dir; $setOk = 'typed'
+    $script:EditDump = ('set ' + $setOk + ' on ' + $fn + '; edits: ' + ((@([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' }) | ForEach-Object { '' + $_ + ' id ' + [Drv098f]::GetDlgCtrlID($_) + ' vis ' + [Drv098f]::IsWindowVisible($_) + ' parent ' + [Drv098f]::Cls([Drv098f]::GetParent($_)) + '/' + [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) + " '" + (Esc ([Drv098f]::GetText($_, 3000))) + "'" }) -join '; '))
+    if ($ok) { Click $ok } else { Post-Cmd $od 1 }
+    Start-Sleep -Milliseconds 2500
+    $fn = Find-NameEdit $od
+    if (-not $fn) { Post-Cmd $od 2; return 'no file name field after navigating' }
+    Type-Text $fn $leaf
     if ($ok) { Click $ok } else { Post-Cmd $od 1 }
     $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 10 -and [Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)) { Start-Sleep -Milliseconds 100 }
     Start-Sleep -Milliseconds 800
-    $extra = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and $_ -ne $od -and [Drv098f]::Cls($_) -eq '#32770' })
-    foreach ($x in $extra) { $d = WinDesc $x; Answer-Box $x; return ('box after Save: ' + (Tail $d 120)) }
-    return 'ok'
+    # questions after OK (run 3: a Yes/No box whose buttons have id 0 - the common dialog's own):
+    # answered Yes by the button text, the plug-in's Yes/No/Cancel by id 6; each recorded
+    $boxes = @()
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 8) {
+        $x = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and $_ -ne $od -and [Drv098f]::Cls($_) -eq '#32770' -and [Drv098f]::IsWindowEnabled($_) }) | Select-Object -First 1
+        if (-not $x) { Start-Sleep -Milliseconds 300; continue }
+        Start-Sleep -Milliseconds 600
+        $boxes += ((Tail (WinDesc $x) 160) + ' UIA: ' + (Uia-Text $x))
+        $yes = Buttons $x | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 6 -or [Drv098f]::Txt($_) -match '^&?(Ano|Yes)$' } | Select-Object -First 1
+        if ($yes) { Click $yes } else { Close-Win $x }
+        Start-Sleep -Milliseconds 800
+    }
+    $still = [Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)
+    if ($still) { $fnNow = [Drv098f]::GetText((Find-NameEdit $od), 5000); Post-Cmd $od 2; Start-Sleep -Milliseconds 800 }
+    return ("[{5}] type '{0}'; boxes {1}{2}; save dialog still open {3}{4}" -f $typeSel, $boxes.Count, $(if ($boxes.Count) { ': ' + ($boxes -join ' || ') } else { '' }), $still, $(if ($still) { " (name field '" + (Esc $fnNow) + "', cancelled)" } else { '' }), $script:EditDump)
+}
+# runs a console tool through cmd with stdin/stdout/stderr redirected; output lines in $script:ToolOut
+function Run-Tool([string]$Cmd) {
+    $out = $Root + '\tool_out.txt'
+    $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    try { & cmd.exe /c ($Cmd + ' <nul >"' + $out + '" 2>&1'); $ec = $LASTEXITCODE } finally { $ErrorActionPreference = $old }
+    $script:ToolOut = @(); if (Test-Path -LiteralPath $out) { $script:ToolOut = @(Get-Content -LiteralPath $out -Encoding UTF8); Remove-Item -LiteralPath $out -Force }
+    return $ec
 }
 function Bytes-Facts([string]$File) {
     $b = [IO.File]::ReadAllBytes($LP + $File)
@@ -389,7 +460,7 @@ function Run-RoundTrip {
             $s = Save-List $id $calc $t.Rx ($RtDir + '\roundtrip117')
             $f = $RtDir + '\roundtrip117.' + $t.Ext
             $saves[$t.Ext] = [IO.File]::Exists($LP + $f)
-            if (-not $saves[$t.Ext]) { Row $Case ('SAVE-' + $t.Ext) 'FAIL' ("save: {0}; the file {1} does not exist (Save enabled {2})" -f $s, (Tail $f 50), $en); continue }
+            if (-not $saves[$t.Ext]) { Row $Case ('SAVE-' + $t.Ext) 'FAIL' ("save: {0}; the file {1} does not exist (Save enabled {2}); rt holds: {3}" -f $s, (Tail $f 50), $en, ((@([IO.Directory]::GetFiles($LP + $RtDir)) | ForEach-Object { Esc ([IO.Path]::GetFileName($_)) }) -join ', ')); continue }
             $bf = Bytes-Facts $f
             $lines = @($bf.Text -split "`r?`n" | Where-Object { $_ -ne '' })
             if ($t.Ext -eq 'sha256') {
@@ -414,8 +485,10 @@ function Run-RoundTrip {
             $gnu = $null
             foreach ($c in @((Join-Path $env:ProgramFiles 'Git\usr\bin\sha256sum.exe'))) { if (Test-Path -LiteralPath $c) { $gnu = $c } }
             if ($gnu) {
-                Push-Location -LiteralPath $RtDir
-                try { $o = & $gnu -c 'roundtrip117.sha256' 2>&1 | ForEach-Object { '' + $_ }; $ec = $LASTEXITCODE } finally { Pop-Location }
+                # run 7: started directly, coreutils failed on the hidden desktop's missing standard
+                # handles ("failed to set file descriptor text/binary mode") - cmd with redirections
+                $ec = Run-Tool ('cd /d "' + $RtDir + '" && "' + $gnu + '" -c roundtrip117.sha256')
+                $o = $script:ToolOut
                 $okl = @($o | Where-Object { $_ -match ': OK$' }).Count
                 $v = $(if ($Fixed) { V ($ec -eq 0 -and $okl -eq 7) } else { V ($ec -ne 0) })
                 Row $Case 'GNU' $v ("{0} -c: exit {1}, OK lines {2}; {3}" -f $gnu, $ec, $okl, (Tail (($o | Select-Object -Last 2) -join ' | ') 160))
@@ -423,7 +496,8 @@ function Run-RoundTrip {
             else { Row $Case 'GNU' 'NOT DRIVEN' 'Git for Windows sha256sum.exe not found' }
             $z = Join-Path $env:ProgramFiles '7-Zip\7z.exe'
             if (Test-Path -LiteralPath $z) {
-                $o = & $z t -thash ($RtDir + '\roundtrip117.sha256') 2>&1 | ForEach-Object { '' + $_ }
+                [void](Run-Tool ('"' + $z + '" t -thash "' + $RtDir + '\roundtrip117.sha256"'))
+                $o = $script:ToolOut
                 $okz = [bool]($o | Where-Object { $_ -match 'Everything is Ok' })
                 $v = $(if ($Fixed) { V $okz } else { V (-not $okz) })
                 Row $Case '7ZIP' $v ("7z t -thash: Everything is Ok {0}; {1}" -f $okz, (Tail ((@($o | Where-Object { $_ -match 'ERROR|Ok|Files' }) | Select-Object -First 3) -join ' | ') 160))

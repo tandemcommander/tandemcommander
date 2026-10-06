@@ -2,7 +2,7 @@
 
 **Feature Branch**: `117-checksum-lists`
 **Created**: 2026-10-05
-**Status**: Implemented - GUI runs pending
+**Status**: Implemented - GUI verified (2026-10-06: 82 / 0, build before 60 / 0)
 **Input**: `specs/NEXT-WORK.md`, plug-in leftovers item 4 (left by feature 104): "checksum: a
 checksum list written in the code page with accented names reports those files as missing (no
 encoding detection of the list file)".

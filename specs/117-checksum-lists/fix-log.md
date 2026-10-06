@@ -177,10 +177,58 @@ Committed after this check with the GUI runs still owed; the build is preserved 
   aborts the whole Verify with "name too long" (pre-existing).
 - OEM lists (decision, research E2).
 
-## T012 - GUI runs (pending)
+## T012 - GUI results (2026-10-06, hidden desktop)
 
-Commands in `quickstart.md` (on `Debug_x64_117` and `Debug_x64_pre117`, registry hash
-`9BD42518403B7EDF` before and after).
+Runs on the preserved trees, one at a time, registry export SHA-256 `1AB614304771DBE0...` before
+and after every run (the maintainer's baseline that morning; the probe's own restore also reported
+identical every time); no network mapping touched; nothing built.
+
+| Build | Expect | Rows | Result file |
+|---|---|---|---|
+| `Debug_x64_117` | fixed | **82 PASS / 0 FAIL / 0 NOT DRIVEN** | `probe/csumlist_result.txt` |
+| `Debug_x64_pre117` | before | **60 PASS / 0 FAIL / 0 NOT DRIVEN** | `probe/csumlist_result_pre117.txt` |
+
+- **This build**: all 16 lists as expected with no box at all - the control, UTF-8 with a mark,
+  UTF-16 LE/BE with and without a mark, the GNU escape, concatenated lists, `./` / `..` / `//`,
+  the code-page lists (c-caron and r-caron OK, `voila.txt` CORRUPT - the writer's best fit, never
+  matched back to voila-grave - `???.txt` MISSING, not `abc.txt`), the broken byte (`voil<U+FFFD>`
+  MISSING), wildcards and a folder MISSING, absolute names (own drive OK; another drive,
+  `//127.0.0.1/...`, `\\?\UNC\...` and a stream MISSING), trailing NULs OK; lone-surrogate names
+  shown exactly (`lone<U+D800>.txt`). Round trip: the saved `.sha256` has no mark, no CR, no
+  comment, 7 lines; the `.sfv` CRLF with the `;` header; Verify of both 7 x OK; Git for Windows
+  `sha256sum -c` exit 0 with 7 OK; `7z t -thash` "Everything is Ok". END rows: exit 0, no stray
+  window, no crash report.
+- **The build before** (each row shows the old defect): the 7 marked UTF-8 / UTF-16 / escaped /
+  concatenated / broken lists refused ("The selected file is not a valid SFV, MD5, SHA-1, SHA-256,
+  nor SHA-512 file"); code-page c-caron and r-caron MISSING; `???.txt` and `voil?.txt` found by
+  wildcard, then an error box (Retry / Skip / Skip All) and SKIPPED; the folder `sub` SKIPPED after
+  an error box; `dotslash` 5 x MISSING; the own-drive absolute name MISSING; trailing NULs OK (as
+  the review said); its saved `.sha256` CRLF + `;` header: `sha256sum -c` exit 1 ("2 lines are
+  improperly formatted", "7 listed files could not be read"), 7-Zip "Cannot open the file as
+  [Hash] archive"; its own Verify of both lists 7 x OK.
+
+**Probe-only fixes during the runs** (no product change; run 1 of this build was 74 / 4):
+1. Expected names travel also as UTF-16 code units (`name_units`): Windows PowerShell 5.1's
+   `ConvertFrom-Json` turned the escaped lone surrogate into U+FFFD, the product showed
+   `lone<U+D800>.txt` correctly (2 rows).
+2. The save dialog is the common item dialog: no type combo id 1136 and no field id 1148 (the
+   field is an edit id 1001 in an unnamed combo); it builds its file-name area late on the hidden
+   desktop - the probe waits for the window, then the field, and finds the type combo by its items.
+3. `WM_SETTEXT` changed the field's text but not the name the dialog used (it saved "rt" - the
+   plug-in's default name - and asked about "C:\Program Files\Notepad++\rt"); the probe now types
+   (`WM_CHAR`), navigating to the folder first, then the bare name; questions after OK are answered
+   (task-dialog buttons have id 0 - by their text; text read by UI Automation for the record).
+4. Git's `sha256sum.exe` fails without valid standard handles on the hidden desktop ("failed to
+   set file descriptor text/binary mode"): both tools run through `cmd /c` with redirections.
+
+**Found during the runs, not fixed (product, pre-existing - both builds)**: the Calculate dialog's
+Save dialog does not open in the panel's folder: it opened in the folder last used by another
+program's common dialog (`C:\Program Files\Notepad++`) although the plug-in passes the panel folder
+as `lpstrInitialDir` - Windows ignores that member when it has a remembered folder for the
+dialog and `lpstrFile` holds a bare name (the plug-in's default "rt"). Saving with the proposed
+name writes the list into that other folder (a non-writable one there: Windows asked to save into
+the user folder instead). Fix direction: put the panel folder into `lpstrFile` (full default
+path). For NEXT-WORK (not edited here: outside this folder).
 
 ## Proposed CLAUDE.md entry (Recent Changes)
 

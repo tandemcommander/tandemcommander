@@ -1,0 +1,69 @@
+csumlist_probe (feature 117), expect: before
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre117\tandemcommander.exe
+Date    : 2026-10-06 05:24; ACP 1250; OEM 852; desktop 'tc_probe_133048'; registry key existed True
+Fixture : 16 lists, 9 files
+Hot keys: plug-in 4 (checksum\checksum.spl): 2 menu item(s) set
+
+utf8.sha256 LIST   PASS        UTF-8, no mark, LF (coreutils / 7-Zip / Tandem 0.1.x): the control; opened True, done True, rows 8; result 'All files OK'; boxes 0: none
+utf8.sha256 #0     PASS        OK (icon 3, status 'OK') expected OK; name '\u010De\u0161tina.txt'
+utf8.sha256 #1     PASS        OK (icon 3, status 'OK') expected OK; name 'voil\u00E0.txt' - a-grave: never the decoy
+utf8.sha256 #2     PASS        OK (icon 3, status 'OK') expected OK; name 'voila.txt' - the decoy itself
+utf8.sha256 #3     PASS        OK (icon 3, status 'OK') expected OK; name '\u0416\u0443\u043A.txt'
+utf8.sha256 #4     PASS        OK (icon 3, status 'OK') expected OK; name '\u65E5\u672C.txt'
+utf8.sha256 #5     PASS        OK (icon 3, status 'OK') expected OK; name 'sub\\u0159.txt' - subfolder
+utf8.sha256 #6     PASS        OK (icon 3, status 'OK') expected OK; name 'a b.txt'
+utf8.sha256 #7     PASS        OK (icon 3, status 'OK') expected OK; name 'lone\u00ED\u00A0\u20AC.txt' (list: 'lone\uD800.txt') - WTF-8 lone surrogate
+utf8bom.sha256 LIST   PASS        expected: refused (not a checksum file); UTF-8 with a byte order mark, CRLF (Total Commander, Out-File -Encoding utf8); opened True, done False, rows 0; result ''; boxes 1: ...tatic id=2477] The selected file is not a valid SFV, MD5, SHA-1, SHA-256, nor SHA-512 file. | [Button id=1] OK
+ps_utf16le.sha256 LIST   PASS        expected: refused (not a checksum file); UTF-16 LE with a mark, CRLF (PowerShell 5.1 > / Out-File); opened True, done False, rows 0; result ''; boxes 1: ...tatic id=2477] The selected file is not a valid SFV, MD5, SHA-1, SHA-256, nor SHA-512 file. | [Button id=1] OK
+utf16be.md5 LIST   PASS        expected: refused (not a checksum file); UTF-16 BE with a mark, "MD5 (name) = hash"; opened True, done False, rows 0; result ''; boxes 1: ...tatic id=2477] The selected file is not a valid SFV, MD5, SHA-1, SHA-256, nor SHA-512 file. | [Button id=1] OK
+utf16le_nobom.sha1 LIST   PASS        expected: refused (not a checksum file); UTF-16 LE without a mark; opened True, done False, rows 0; result ''; boxes 1: ...tatic id=2477] The selected file is not a valid SFV, MD5, SHA-1, SHA-256, nor SHA-512 file. | [Button id=1] OK
+cp1250_setcontent.sha256 LIST   PASS        code page 1250, CRLF (PowerShell Set-Content, older tools); opened True, done True, rows 5; result '1 corrupted, 2 missing, 1 skipped'; boxes 1: ...E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+cp1250_setcontent.sha256 #0     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '\u010De\u0161tina.txt' - code-page c-caron
+cp1250_setcontent.sha256 #1     PASS        OK (icon 3, status 'OK') expected OK; name 'a b.txt' - ASCII
+cp1250_setcontent.sha256 #2     PASS        CORRUPT (icon 2, status 'Corrupted') expected CORRUPT; name 'voila.txt' - the writer best-fitted voila-grave to voila: the list names the decoy - never matched back to a-grave
+cp1250_setcontent.sha256 #3     PASS        SKIPPED (icon 0, status 'Skipped') expected SKIPPED; name '???.txt' - what Set-Content wrote for the Cyrillic name: the build before found abc.txt / the Cyrillic file by wildcard
+cp1250_setcontent.sha256 #4     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name 'sub\\u0159.txt' - r-caron in sub
+opensal.sfv LIST   PASS        code page 1250 SFV with a ; header (Open Salamander, Tandem before 0.1.0); opened True, done True, rows 3; result '0 corrupted, 2 missing, 0 skipped'; boxes 0: none
+opensal.sfv #0     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '\u010De\u0161tina.txt'
+opensal.sfv #1     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name 'sub\\u0159.txt'
+opensal.sfv #2     PASS        OK (icon 3, status 'OK') expected OK; name 'a b.txt'
+oem852.md5 LIST   PASS        OEM 852 (DOS tools) - a recorded limit; opened True, done True, rows 2; result '0 corrupted, 1 missing, 0 skipped'; boxes 0: none
+oem852.md5 #0     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '\u017Ae\u00E7tina.txt' - OEM is not detected (no signal tells it from ACP): read as CP1250 "z-acute e c-cedilla tina" - reported missing
+oem852.md5 #1     PASS        OK (icon 3, status 'OK') expected OK; name 'a b.txt'
+dotslash.sha256 LIST   PASS        UTF-8 with ./ .. and // (find . -exec sha256sum {} +); opened True, done True, rows 5; result '0 corrupted, 5 missing, 0 skipped'; boxes 0: none
+dotslash.sha256 #0     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '.\\u010De\u0161tina.txt' - ./
+dotslash.sha256 #1     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '.\sub\\u0159.txt' - ./sub/
+dotslash.sha256 #2     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name 'sub\..\a b.txt' - sub/../
+dotslash.sha256 #3     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name 'sub\\\u0159.txt' - an empty component
+dotslash.sha256 #4     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '..\data\voil\u00E0.txt' - ../ back into the folder
+gnu_escape.sha256 LIST   PASS        expected: refused (not a checksum file); GNU coreutils escaped line; opened True, done False, rows 0; result ''; boxes 1: ...tatic id=2477] The selected file is not a valid SFV, MD5, SHA-1, SHA-256, nor SHA-512 file. | [Button id=1] OK
+concat.sha256 LIST   PASS        expected: refused (not a checksum file); two marked UTF-8 lists concatenated; opened True, done False, rows 0; result ''; boxes 1: ...tatic id=2477] The selected file is not a valid SFV, MD5, SHA-1, SHA-256, nor SHA-512 file. | [Button id=1] OK
+broken_utf8bom.sha256 LIST   PASS        expected: refused (not a checksum file); UTF-8 with a mark and one broken byte; opened True, done False, rows 0; result ''; boxes 1: ...tatic id=2477] The selected file is not a valid SFV, MD5, SHA-1, SHA-256, nor SHA-512 file. | [Button id=1] OK
+wild.sha256 LIST   PASS        wildcards and a folder in a UTF-8 list; opened True, done True, rows 3; result '0 corrupted, 0 missing, 2 skipped'; boxes 2: ...E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || ...ep\u0159en.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+wild.sha256 #0     PASS        SKIPPED (icon 0, status 'Skipped') expected SKIPPED; name 'voil?.txt' - a wildcard: the build before matched a voila file by look-up, then failed to open it
+wild.sha256 #1     PASS        SKIPPED (icon 0, status 'Skipped') expected SKIPPED; name 'sub' - a folder is not a file
+wild.sha256 #2     PASS        OK (icon 3, status 'OK') expected OK; name '\u65E5\u672C.txt'
+absolute.sha256 LIST   PASS        absolute names, UNC, a stream; opened True, done True, rows 6; result '0 corrupted, 5 missing, 0 skipped'; boxes 0: none
+absolute.sha256 #0     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name 'C:\Users\pavel\AppData\Local\Temp\tc117_cs\data\\u010De\u0161tina.txt' - absolute, on the list's own drive
+absolute.sha256 #1     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name 'D:\tc117-none\a b.txt' - absolute, another drive: never looked up
+absolute.sha256 #2     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '\\127.0.0.1\tc117-none\a b.txt' - UNC: never looked up (no connection)
+absolute.sha256 #3     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '\\?\UNC\127.0.0.1\tc117-none\a b.txt' - extended UNC
+absolute.sha256 #4     PASS        MISSING (icon 1, status 'Missing') expected MISSING; name '\u010De\u0161tina.txt:secret' - an alternate data stream
+absolute.sha256 #5     PASS        OK (icon 3, status 'OK') expected OK; name '\u65E5\u672C.txt'
+nul_tail1.sha256 LIST   PASS        UTF-8 + one trailing NUL; opened True, done True, rows 2; result 'All files OK'; boxes 0: none
+nul_tail1.sha256 #0     PASS        OK (icon 3, status 'OK') expected OK; name '\u010De\u0161tina.txt'
+nul_tail1.sha256 #1     PASS        OK (icon 3, status 'OK') expected OK; name '\u65E5\u672C.txt' - one NUL after the text
+nul_tail11.sha256 LIST   PASS        UTF-8 + 11 NULs of padding; opened True, done True, rows 2; result 'All files OK'; boxes 0: none
+nul_tail11.sha256 #0     PASS        OK (icon 3, status 'OK') expected OK; name '\u010De\u0161tina.txt'
+nul_tail11.sha256 #1     PASS        OK (icon 3, status 'OK') expected OK; name '\u65E5\u672C.txt' - 11 NULs of padding
+lists      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rt         SAVE-sha256 PASS        save: [set typed on 37493184; edits: 37493184 id 1001 vis True parent ComboBox/0 'C:\Users\pavel\AppData\Local\Temp\tc117_cs\rt'; 9574356 id 41477 vis False parent ComboBox/41477 ''] type 'SHA-256 Files (*.sha256)'; boxes 0; save dialog still open False; 610 bytes, mark False, CR 9, LF 9, comment header True, checksum lines 7 of 7
+rt         SAVE-sfv PASS        save: [set typed on 53022444; edits: 53022444 id 1001 vis True parent ComboBox/0 'C:\Users\pavel\AppData\Local\Temp\tc117_cs\rt'; 16323886 id 41477 vis False parent ComboBox/41477 ''] type 'SFV Files (*.sfv)'; boxes 0; save dialog still open False; 218 bytes, mark False, CR 9, LF 9, comment header True, checksum lines 7 of 7
+rt         VERIFY-sha256 PASS        rows 7, OK 7; result 'All files OK'; boxes 0; names: sub\\u0159.txt, a b.txt, \u010De\u0161tina.txt, voila.txt, voil\u00E0.txt, \u0416\u0443\u043A.txt, \u65E5\u672C.txt
+rt         VERIFY-sfv PASS        rows 7, OK 7; result 'All files OK'; boxes 0; names: sub\\u0159.txt, a b.txt, \u010De\u0161tina.txt, voila.txt, voil\u00E0.txt, \u0416\u0443\u043A.txt, \u65E5\u672C.txt
+rt         GNU    PASS        C:\Program Files\Git\usr\bin\sha256sum.exe -c: exit 1, OK lines 0; /usr/bin/sha256sum: WARNING: 2 lines are improperly formatted | /usr/bin/sha256sum: WARNING: 7 listed files could not be read
+rt         7ZIP   PASS        7z t -thash: Everything is Ok False; ERROR: C:\Users\pavel\AppData\Local\Temp\tc117_cs\rt\roundtrip117.sha256 | Open ERROR: Cannot open the file as [Hash] archive | Files: 0
+rt         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 60, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

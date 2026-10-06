@@ -1891,7 +1891,7 @@ plugin architecture preservation, UI consistency.
     refused a list 0.1.8 read), fixed. Probe `probe/csumlist_probe.ps1` written, runs owed. Found,
     not fixed: a path over 780 bytes aborts the Verify. Interface stays 107. Records:
     `specs/117-checksum-lists/fix-log.md`.
-  GUI runs owed at commit time - see fix-log T012/T015.
+  GUI runs (2026-10-06): 82 / 0 (pre-117 60 / 0 showing every old defect), sha256sum and 7z read the saved list.
 - 118-plugin-update-close: **an update goes through with a finished comparison, map or
   verification open** (NEXT-WORK item 4 "Left", interface 107 used as is). Read the 088 contract's
   "running operation" as work whose interruption changes or loses data: a read-only computation
