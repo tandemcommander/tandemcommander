@@ -960,15 +960,20 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           from the code page).
           Found by 117's GUI run: Checksum's Save dialog opened another
           program's last folder instead of the panel's (Windows may ignore
-          `lpstrInitialDir`) - ✅ **fixed by feature 121 (2026-10-06, GUI
-          runs pending)**: a proposed name without a folder is put into the
-          initial folder (`SplFileDlgDetail::NameIntoInitialDir`) in
-          Checksum's Save, PictView's Save As and every `SplGetFileNameU8`
-          dialog that passes a folder (FTP's save / export / import
-          dialogs); dialogs that pass no name keep
-          `lpstrInitialDir` only (the same Windows rule - recorded); a folder
-          that is gone falls back to the bare name (the pre-121 call) before
-          the old retry with neither (coordinator review SF1). Also from that
+          `lpstrInitialDir`) - **measured by feature 121 (2026-10-06) and
+          left as it was**: Windows records, per program PATH, the first
+          `lpstrInitialDir` it was ever given (`ComDlg32\FirstFolder`); a
+          later dialog given that same folder opens in the program's
+          last-used folder instead (`LastVisitedPidlMRU`, keyed by the file
+          name) - by design, and it happened in 117's run because the probe
+          used the same fixture folder every time. Other folders open as
+          asked. Putting the folder into `lpstrFile`, with or without
+          `lpstrInitialDir`, did NOT change it (measured: harness named
+          `tandemcommander.exe` + probe row K0); only
+          `IFileDialog::SetFolder` opens a given folder every time (a change
+          of API for Checksum and `SplGetFileNameU8`, not possible for
+          PictView's hooked dialog) - a feature of its own if wanted; the
+          121 change was reverted. Also from the 121 coordinator review
           review: the FTP upload target no longer takes a cut typed user name
           for the open connection's user; recorded - a Find Look in path near
           the program's maximum stops with a trace only (`find.cpp`), and the

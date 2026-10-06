@@ -10,7 +10,6 @@
 #include "misc.h"
 #include "../../common/salcsumlist.h" // feature 117: reading a checksum list in any encoding
 #include <io.h>                        // feature 118: _get_osfhandle (identity of a saved list file)
-#include "splfiledlg.h"                // feature 121: SplFileDlgDetail::NameIntoInitialDir
 
 CWindowQueue ModelessQueue("CheckSum Modeless Windows");  // list of all modeless windows
 CThreadQueue ThreadQueue("CheckSum Dialogs and Workers"); // list of all dialog and worker threads
@@ -1045,9 +1044,6 @@ BOOL CCalculateDialog::GetSaveFileName(char* buffer, int bufferSize, const char*
     if (SplU8ToW(buffer, wFile, SizeOf(wFile)) == 0)
         wFile[0] = 0;
     WCHAR* wInitDir = SplU8ToWAlloc(SourcePath); // display form, the common dialog does not take "\\?\" paths
-    // feature 121 (found by 117's GUI run): the proposed name in the panel's folder - Windows may
-    // ignore lpstrInitialDir (the dialog opened another program's last folder); a path in lpstrFile decides
-    size_t prefixLen = SplFileDlgDetail::NameIntoInitialDir(wFile, SizeOf(wFile), wInitDir);
 
     memset(&ofn, 0, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
@@ -1074,6 +1070,11 @@ BOOL CCalculateDialog::GetSaveFileName(char* buffer, int bufferSize, const char*
     ofn.lpstrFilter = wFilter;
     ofn.lpstrFile = wFile;
     ofn.nMaxFile = SizeOf(wFile);
+    // feature 121 item 12, measured and reverted (specs/121-small-batch/fix-log.md "Item 12"): no
+    // OPENFILENAME setting makes the dialog open in a given folder for good - Windows uses the
+    // program's remembered folder whenever lpstrInitialDir repeats the value of the process's first
+    // dialog, also with the folder in lpstrFile or lpstrInitialDir NULL; only IFileDialog::SetFolder
+    // does (a change of API, left for a feature of its own).
     ofn.lpstrInitialDir = wInitDir;
     ofn.lpstrTitle = title != NULL ? wTitle : NULL;
     ofn.Flags = OFN_PATHMUSTEXIST;
@@ -1081,9 +1082,6 @@ BOOL CCalculateDialog::GetSaveFileName(char* buffer, int bufferSize, const char*
     for (;;)
     {
         BOOL dlgOK = GetSaveFileNameW(&ofn);
-        if (!dlgOK && CommDlgExtendedError() == FNERR_INVALIDFILENAME && SplFileDlgDetail::BareNameBack(wFile, prefixLen))
-            dlgOK = GetSaveFileNameW(&ofn); // feature 121 (review SF1): the bare name in the folder, as before
-        prefixLen = 0; // only the first round carries the prefix
         if (!dlgOK && CommDlgExtendedError() == FNERR_INVALIDFILENAME)
         { // Windows refuses to open the dialog for an invalid/non-existent path -> retry with the default one
             wFile[0] = 0;

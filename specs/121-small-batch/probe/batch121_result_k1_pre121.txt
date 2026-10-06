@@ -1,0 +1,14 @@
+batch121_probe (feature 121), expect: before
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre121\tandemcommander.exe
+Date    : 2026-10-06 09:59; desktop 'tc_probe_67016'; ACP 1250; registry key existed True; export SHA-256 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769; baseline 1AB614304771DBE0 matches: True
+Fixture : Find folder 438 bytes (248 units), typed Look in 435 bytes; equivalent pair of 175 units; junction True (Junction created for C:\Users\pavel\AppData\Local\Temp\tc121\dm_??\j??? <<===>> C:\Users\pavel\AppData\Local\Temp\tc121\dm_target)
+Hot keys: regedt.spl id 1: 1; sftp.spl id 5: 0; checksum.spl id 1: 1; diskmap.spl id 1: 1; ftp.spl id 5: 1
+
+           first save: try 1: done; name field held cs; edits: 'cs'<ComboBox#0; typed the folder, then saved121; 
+K0         FOLDER INFO        Checksum's Save dialog opened in 'C:\Program Files\Notepad++' (expected: the panel's folder ...\tc121\cs)
+           first save: type 'SFV Files (*.sfv)', done; dialog title '... cs; edits: 'cs'<ComboBox#0; typed the folder, then saved121'
+K1         SAVE   PASS        re-save of 'SFV Files (*.sfv)' over the locked list: truncated, write refused; boxes after the overwrite question 0: none (expected: none (silent))
+K1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0, INFO 1. Left running: 0; fixture removed: True; registry restored+identical: True

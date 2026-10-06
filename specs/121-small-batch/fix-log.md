@@ -24,7 +24,7 @@ the installed program by day): the probe is written, its runs are owed (`quickst
 | 9 | Checksum Save silent on write errors (118) | small lists fail at `fclose` | fixed (R9), no new string |
 | 10 | FTP: typed password cut, command not wiped, torn log texts (116) | wider: user name and host cut too (another account / server) | fixed (R10) |
 | 11 | RegEdit Find, FTP Logs / Welcome block an update (118) | as recorded | fixed (R11) |
-| 12 | plug-in Save dialogs open another program's folder (117 GUI run; added by the coordinator) | Checksum, PictView Save As, `SplGetFileNameU8` pass a bare name | fixed (R12) |
+| 12 | plug-in Save dialogs open another program's folder (117 GUI run; added by the coordinator) | Windows' per-program first-folder rule (measured, "Item 12") | implemented, measured ineffective, **reverted**; recorded |
 
 ## T003 - UTF-8 error fields (`worker.cpp`, `safefile.cpp`)
 
@@ -134,19 +134,13 @@ declared again at `WM_USER_SEARCH_FINISHED` (the only places the flag changes). 
 (welcome message, server reply, raw listing) and `CLogsDlg`: declared at `WM_INITDIALOG`. Both
 plug-ins require interface 107 to load - no version guard.
 
-## T014a - Save dialogs open in the asked folder (`splfiledlg.h`, `checksum/dialogs.cpp`, `pictview/saveas.cpp`)
-
-`SplFileDlgDetail::NameIntoInitialDir(file, units, initDir)`: a non-empty proposed name without
-`\`, `/` or `:` becomes `initDir\name` when the whole fits (left alone otherwise). Called in
-`SplGetFileNameU8` (all its callers; only those that pass a folder change - FTP), Checksum's Save
-(the panel folder + the proposed name, `wFile` 2 x MAX_PATH units) and PictView's `SaveAsDialogU8`.
-The dialog returns the chosen full path as before; the invalid-name retry clears both as before.
+## T014a - Save dialogs (item 12) - reverted, see "Item 12" below
 
 ## Gates
 
 | Gate | Result |
 |---|---|
-| saltests | **17,513 checks, 0 failed** (17,423 + 90 in `TestSmallBatch121`, after both reviews and item 12) |
+| saltests | **17,498 checks, 0 failed** (17,423 + 75 in `TestSmallBatch121`; the item-12 helper tests left with the revert) |
 | strict guard (`tools\check_encoding.py --strict`) | TOTAL 0 |
 | Debug build (`build.cmd`) | exit 0; only pre-existing warnings (C4267 / C4005 / C4018 / C4244 in untouched lines of plug-ins and `salamdr2.cpp` / `zip.cpp` - surfaced because `splunicode.h` recompiled every plug-in) |
 | full Release build (`build.cmd full release`) | exit 0, BUILD SUCCEEDED; 20 plug-ins registered, 189 language modules, runtime closure OK (218 modules); the same pre-existing warnings, none in a changed line |
@@ -235,6 +229,118 @@ dialogs lost the proposed name when the folder vanished or the combined path was
 Committed with the GUI runs still owed; the build is preserved as
 `build\tandemcommander\Debug_x64_121`. Results follow in a separate commit.
 
+## GUI results (2026-10-06, hidden desktop, one run at a time)
+
+Builds: `Debug_x64_121` (this feature) and `Debug_x64_pre121` (the control). Registry export
+`1AB614304771DBE0` before and after every run (each probe also restores and verifies the key
+itself - identical every time); no instance left running, fixtures removed. ACP 1250, Czech
+Windows; the session cannot open the clipboard (rows C1-C3 rely on that).
+
+### Probe fixes made during the runs (probe only, `probe/batch121_probe.ps1`)
+
+- Run 1: the Find fixture paths were 258 / 277 bytes (did not reach the old cut) - components made
+  longer (438 / 435 bytes); `Close-Boxes` closed the Find window itself (a `#32770`) after F2 - it
+  now keeps it; `-like "[...` is a wildcard error in PowerShell (R1 / L1) - `-match` with an escaped
+  class name; D1's map and log windows are closed before its END row.
+- Run 2: the core refuses a typed Change Directory path over 259 bytes ("The path specified is too
+  long") and the F5 target field too - a password over 300 bytes cannot reach the FTP plug-in
+  through either route (the plug-in's password check is defensive); P2 dropped, P3 shortened (220
+  bytes), P4 / P5 added on the F5 target; a row whose plug-in starts connecting ends its instance
+  (the FTP wait window ignores a posted Esc).
+- Runs 3-4: K1 drives the save dialog as 117's probe does (type the folder + OK, then the name + OK -
+  the common item dialog ignores `WM_SETTEXT`); new row K0 reads the folder the dialog opened in
+  through UI Automation.
+
+### This build (`batch121_result.txt`, + `batch121_result_k1.txt` for K1)
+
+29 PASS, 1 FAIL, 1 NOT DRIVEN in the full run; K1 then PASS in its own run (the full run predates
+the K1 driving fix). Rows: F1 PASS (Look in 439 bytes = the panel path, `;` doubled), F2 PASS (1
+found), F3 PASS (typed 435 bytes, 1 found), M1 PASS (single line breaks 1, all inside the name; the
+template sentences whole), C1-C3 PASS (one box "Copy To Clipboard", "(5) Přístup byl odepřen."),
+N1 PASS (French text exact on CP1250), K1 PASS ("Error creating file." + the lock's reason, in its
+own run), D1 PASS (the junction `j\u0159\u00ED\u017E` named exactly), P1 / P5 PASS (the plug-in's
+"too long path"), P3 PASS (no refusal, connecting), P4 PASS (refused by the core), R1 / L1 PASS
+(the installer's request agreed in 1.3 s, exit 0), S1 PASS (6 of 6 rounds: no box, exit 0), every
+END row PASS. **K0 FAIL** - see the product finding below.
+
+### The build before (`batch121_result_pre121.txt`, `batch121_result_k1_pre121.txt`)
+
+The old behaviour on every row: F1 Look in 259 bytes (cut), F2 / F3 0 found (INFO), M1 a break
+inside the template, C1-C3 silent, N1 "déja" (best fit), K1 silent, D1 mojibake, P1 / P5 connecting
+with the cut user name, R1 / L1 declined in 0.0 s, **S1 "rejected to unload. Force?" in 6 of 6
+rounds**, K0 the same wrong folder. Its 2 FAIL rows are the END rows of P1 / P5 (the old build
+connects and keeps retrying 127.0.0.1:1 - the probe ends only the expected-connecting rows).
+
+### Regressions on this build
+
+| Probe | Result |
+|---|---|
+| 101 `leftovers_probe` (`leftovers101_on121.txt`) | 20 PASS / 0 FAIL / 4 NOT DRIVEN (the paste rows: no clipboard - as in 101) |
+| 102 `filecomp_probe` (`filecomp102_on121.txt`) | 94 PASS / 0 FAIL / 1 NOT DRIVEN (`mism`: no `-OtherFcremote`) |
+| 117 `csumlist_probe` (`csumlist117_on121.txt`) | 82 PASS / 0 FAIL / 0 NOT DRIVEN (its Save rows type the folder first) |
+| 118 `update_close_probe` (`update_close118_on121.txt`) | 43 PASS / 4 FAIL / 4 NOT DRIVEN - C3-C6 (Checksum saves) not reached, their END rows FAIL; control `update_close118_C3_on_pre121.txt`: C3 PASS on the build before |
+
+### Product finding of the first GUI session (resolved by the revert below)
+
+**Item 12 does not work, and it breaks 118's probe C3-C6.** Row K0: Checksum's Save dialog opens in
+`C:\Program Files\Notepad++` on BOTH builds, although 121 puts the panel folder into `lpstrFile`.
+The documented order (`OPENFILENAME::lpstrInitialDir`, Windows 7 and later) explains it: (1) if
+`lpstrInitialDir` has the value passed the first time the program used the dialog, the most
+recently used folder wins; (2) only otherwise a path in `lpstrFile`; (3) then
+`lpstrInitialDir`. Rule 1 comes BEFORE the path in `lpstrFile`. Side effect on 118's probe: it sets
+the whole path into the name field with `WM_SETTEXT`; with a bare proposed name (before) the dialog
+took it, with the full proposed path (121) the dialog keeps its own name and saves into its folder
+("cs_c3" into Notepad++ - "no permission, save into pavel?"), C3-C6 not reached. A person typing is
+not affected (the same folder and name as before 121). Proposed fix (next feature): pass
+`lpstrInitialDir = NULL` when the folder is in `lpstrFile` (rule 2 then applies), restore it for
+the bare-name retry - in `SplGetFileNameU8`, PictView's `SaveAsDialogU8` and Checksum; then re-run
+K0 and 118 C3-C6. Until then CHANGELOG's line about the Save dialogs is not true.
+
+## Item 12 - measured, reverted (2026-10-06, after the GUI runs)
+
+The coordinator asked to pass `lpstrInitialDir = NULL` when the folder is in `lpstrFile` and to
+measure. Done, built, probe row K0 on `Debug_x64_121`: **still `C:\Program Files\Notepad++`**.
+
+Measured with a harness (`scratchpad`, a C# program NAMED `tandemcommander.exe` - the remembered
+folder is keyed by the file name; hidden desktop; each dialog read through its address bar and
+cancelled), panel folder F, in this order in one process:
+
+| Variant | Opened in |
+|---|---|
+| A `lpstrInitialDir` = F, `lpstrFile` = bare name (before 121), the process's first dialog | F |
+| B `lpstrInitialDir` = NULL, `lpstrFile` = F\name (121 after the coordinator's change) | Notepad++ |
+| C `lpstrInitialDir` = F, `lpstrFile` = F\name (121 as committed) | Notepad++ |
+| F `IFileSaveDialog::SetDefaultFolder(F)` | Notepad++ |
+| G `IFileSaveDialog::SetFolder(F)` | F |
+| A again | Notepad++ |
+
+And the registry (read only): `HKCU\...\Explorer\ComDlg32\FirstFolder` holds, per program PATH
+(every build tree has its own entry), the first initial folder that program ever passed; the
+last-used folder (`LastVisitedPidlMRU`) is keyed by the file name and is shared by every copy of
+`tandemcommander.exe` - for all of them it is `C:\Program Files\Notepad++`. So: a dialog asked for
+the folder that is that program's recorded first folder opens in the last-used folder instead
+(Windows' rule 1, by design - "the program always asks for the same folder, so honour the user's
+choice"); any other folder opens as asked. 117's observation and this probe's K0 came from fixture
+folders that were the same in every run, so they had become the recorded first folder. Putting
+the folder into `lpstrFile` changes nothing of that; only `IFileDialog::SetFolder` opens a given
+folder every time - a change of API (Checksum's dialog and `SplGetFileNameU8` could move,
+PictView's hooked Save As could not), not a fix for this batch.
+
+Decision: **reverted to the behaviour before 121** (`lpstrInitialDir` = the folder, the bare
+proposed name; the old invalid-name retry) in `SplGetFileNameU8`, PictView's `SaveAsDialogU8` and
+Checksum's Save; `NameIntoInitialDir` / `BareNameBack` and their tests removed; the CHANGELOG line
+removed; the measured rule recorded at the three call sites and in NEXT-WORK (an `IFileDialog`
+feature if wanted). The review's SF1 (a lost name) is moot with the revert.
+
+After the revert (`Debug_x64_121` re-copied; registry `1AB614304771DBE0` before and after each run):
+- `batch121_probe.ps1 -Only K1` (`batch121_result_k1.txt`): K1 PASS ("Error creating file." +
+  the lock's reason); K0 INFO - opened in the panel's folder `...\tc121\cs` (this program path's
+  recorded first folder is now another one).
+- 118 `update_close_probe -Expect fixed` (`update_close118_on121.txt`): **58 PASS / 0 FAIL / 0
+  NOT DRIVEN** - C3-C6 pass again.
+- Note: the harness and every probe run add `FirstFolder` entries for the program paths they run
+  (Windows writes them; outside the program's key - not restored by the probes).
+
 ## CLAUDE.md "Recent Changes" entry (proposed)
 
 - 121-small-batch: **eleven small defects of the backlog, measured first** (`research.md`; no GUI
@@ -255,12 +361,13 @@ Committed with the GUI runs still owed; the build is preserved as
   (`SalFtpTypedLoginTooLong`, "too long path" - a cut was another account or server), wipes the panel
   login's last command and secret copies, cuts display texts at a whole character
   (`SplU8CopyTrunc`). RegEdit's Find (while idle) and FTP's Logs / message windows are declared for
-  an update (interface 107). Plug-in Save dialogs put a bare proposed name into the asked folder
-  (`SplFileDlgDetail::NameIntoInitialDir`; Windows may ignore `lpstrInitialDir` - Checksum's Save
-  opened another program's folder, found by 117's GUI run). Romanian `IDS_CANTMULTIVOL`
+  an update (interface 107). Item 12 (Save dialogs opening another folder, found by 117's GUI run)
+  measured and reverted: Windows records each program path's first initial folder
+  (`ComDlg32\FirstFolder`) and opens the last-used folder when asked for that one again; only
+  `IFileDialog::SetFolder` overrides it. Romanian `IDS_CANTMULTIVOL`
   capitalised and pinned. Code-only review ACCEPT (its NITs fixed: a code-page tail kept, the
   clipboard block freed, the RegEdit declaration withdrawn before the thread, Disk Map's
   `FormatMessage` buffer). No new string, interface 107, no registry change. saltests 17,423 ->
-  17,513. Probe `probe/batch121_probe.ps1`
-  (17 rows + END rows, `-Expect fixed|before`) written, GUI runs pending on `Debug_x64_121` /
-  `Debug_x64_pre121`. Records: `specs/121-small-batch/fix-log.md`.
+  17,498. Probe `probe/batch121_probe.ps1` (`-Expect fixed|before`): this build every row PASS (K0
+  reported), the build before shows every old behaviour (S1 "rejected to unload" 6/6); regressions
+  101, 102, 117 clean, 118 58/0 after the item 12 revert. Records: `specs/121-small-batch/fix-log.md`.

@@ -1,0 +1,14 @@
+update_close_probe (feature 118), expect: fixed
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre121\tandemcommander.exe
+Date    : 2026-10-06 10:19; desktop 'tc_probe_69464'; registry key existed True; export SHA-256 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769; baseline 1AB614304771DBE0 matches: True
+Fixture : big text files 40000 lines each; sparse file 4096 MB (sparse flag True)
+Hot keys: renamer.spl id 1: 1; checksum.spl id 1: 1; checksum.spl id 2: 1; diskmap.spl id 1: 1; filecomp.spl id 1: 1
+
+--- C3: Checksum Calculate, finished, every calculated type saved (expected: agree)
+C3         STATE  PASS        5 type(s) offered, 5 list file(s) written; 0:'SFV Files (*.sfv)' try 1: ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.sfv; 1:'MD5 Files (*.md5)' try 1: ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.md5; 2:'SHA-1 Files (*.sha1)' try 1: ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.sha1; 3:'SHA-256 Files (*.sha256)' try 1: ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.sha256; 4:'SHA-512 Files (*.sha512)' try 1: ok; typed '...vel\AppData\Local\Temp\tc118\cs_c3\cs_c3'; new files in the folder: cs_c3.sha512
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+C3         RM     PASS        rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 2,4 s; process ended True, exit code 0x00000000; new windows 0 (+1 core wait window); new crash reports 0
+C3         WORK   PASS        the saved lists are intact: 5 file(s), 0 without 2 checksum lines
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 3, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

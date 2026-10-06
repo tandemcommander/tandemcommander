@@ -104,13 +104,13 @@ open; closing the program right after fcremote started it never asks "rejected t
 - **FR-010** FTP refuses a typed login that does not fit; wipes the panel login's command and
   secret copies; cuts display texts at a whole character.
 - **FR-011** RegEdit Find (idle) and FTP Logs / message windows are declared closable for an update.
-- **FR-013** A plug-in Save dialog opens in the folder the plug-in asks for (a bare proposed name
-  is put into it).
+- **FR-013** (withdrawn after measurement - fix-log "Item 12") A plug-in Save dialog opens in the
+  folder the plug-in asks for.
 - **FR-012** No plug-in interface change (107), no registry format change, no new string.
 
 ## Success Criteria
 
-- **SC-001** saltests: all checks pass, the new pure helpers covered (17,423 -> 17,513).
+- **SC-001** saltests: all checks pass, the new pure helpers covered (17,423 -> 17,498).
 - **SC-002** Strict encoding guard TOTAL 0; Debug and full Release builds succeed.
 - **SC-003** The probe (`probe/batch121_probe.ps1`) passes every row on this build, and its control
   rows show the old behaviour on `Debug_x64_pre121` (GUI runs pending).

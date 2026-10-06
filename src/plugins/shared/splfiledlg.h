@@ -295,43 +295,6 @@ inline WCHAR* ResolveNetHoodFolderW(const WCHAR* path)
     return result;
 }
 
-// feature 121 (found by 117's GUI run): a proposed file name WITHOUT a folder is put into the
-// folder the dialog should open in. Windows uses lpstrInitialDir only on conditions of its own
-// (since Windows 7 the dialog may open the folder the program used last - measured: Checksum's
-// Save opened another program's folder instead of the panel's), while a path in lpstrFile always
-// decides. 'file' (a buffer of 'units' WCHARs) is left alone when it is empty, already names a
-// folder or a drive, or the whole does not fit. Returns the length of the prefix it put in
-// front of the name (0 = unchanged), for BareNameBack.
-inline size_t NameIntoInitialDir(WCHAR* file, size_t units, const WCHAR* initDir)
-{
-    if (file == NULL || file[0] == 0 || initDir == NULL || initDir[0] == 0)
-        return 0;
-    if (wcspbrk(file, L"\\/:") != NULL)
-        return 0; // has a folder (or a drive) of its own
-    size_t dl = wcslen(initDir);
-    size_t fl = wcslen(file);
-    size_t sep = (initDir[dl - 1] != L'\\' && initDir[dl - 1] != L'/') ? 1 : 0;
-    if (dl + sep + fl + 1 > units)
-        return 0;
-    memmove(file + dl + sep, file, (fl + 1) * sizeof(WCHAR));
-    memcpy(file, initDir, dl * sizeof(WCHAR));
-    if (sep)
-        file[dl] = L'\\';
-    return dl + sep;
-}
-
-// feature 121 (review SF1): undoes NameIntoInitialDir - the bare name again. The dialogs refuse a
-// name in a folder that is gone (a removed USB stick remembered as the save folder) or a whole
-// that is too long (FNERR_INVALIDFILENAME); they retry with the bare name and the initial folder
-// (what Windows was given before 121 - it ignored a bad folder and kept the name), and only then
-// with neither. Returns TRUE when it changed 'file'.
-inline BOOL BareNameBack(WCHAR* file, size_t prefixLen)
-{
-    if (file == NULL || prefixLen == 0 || wcslen(file) <= prefixLen)
-        return FALSE;
-    memmove(file, file + prefixLen, (wcslen(file + prefixLen) + 1) * sizeof(WCHAR));
-    return TRUE;
-}
 } // namespace SplFileDlgDetail
 
 // GetOpenFileNameW (save == FALSE) or GetSaveFileNameW (save == TRUE) for an
@@ -362,7 +325,6 @@ inline BOOL SplGetFileNameU8(OPENFILENAMEA* ofn, BOOL save)
     if (ofn->lpstrFile[0] != 0 && SplU8ToW(ofn->lpstrFile, file, fileUnits) == 0)
         file[0] = 0; // not UTF-8 (or too long): start without a name rather than with a wrong one
     WCHAR* initDir = ofn->lpstrInitialDir != NULL ? SplU8ToWAlloc(ofn->lpstrInitialDir) : NULL;
-    size_t prefixLen = SplFileDlgDetail::NameIntoInitialDir(file, fileUnits, initDir); // feature 121: open in initDir
     WCHAR* filter = SplFileDlgDetail::CodePageListToWAlloc(ofn->lpstrFilter);
     WCHAR* title = SplFileDlgDetail::CodePageToWAlloc(ofn->lpstrTitle);
     WCHAR* defExt = SplFileDlgDetail::CodePageToWAlloc(ofn->lpstrDefExt);
@@ -376,6 +338,11 @@ inline BOOL SplGetFileNameU8(OPENFILENAMEA* ofn, BOOL save)
     w.nFilterIndex = ofn->nFilterIndex;
     w.lpstrFile = file;
     w.nMaxFile = fileUnits;
+    // feature 121 item 12, measured and reverted (specs/121-small-batch/fix-log.md "Item 12"): no
+    // OPENFILENAME setting makes the dialog open in a given folder for good - Windows uses the
+    // program's remembered folder whenever lpstrInitialDir repeats the value of the process's first
+    // dialog, also with the folder in lpstrFile or lpstrInitialDir NULL; only IFileDialog::SetFolder
+    // does (a change of API, left for a feature of its own).
     w.lpstrInitialDir = initDir;
     w.lpstrTitle = title;
     w.Flags = ofn->Flags;
@@ -387,8 +354,6 @@ inline BOOL SplGetFileNameU8(OPENFILENAMEA* ofn, BOOL save)
 #endif
 
     BOOL ret = save ? GetSaveFileNameW(&w) : GetOpenFileNameW(&w);
-    if (!ret && CommDlgExtendedError() == FNERR_INVALIDFILENAME && SplFileDlgDetail::BareNameBack(file, prefixLen))
-        ret = save ? GetSaveFileNameW(&w) : GetOpenFileNameW(&w); // feature 121 (review SF1): the bare name as before
     if (!ret && CommDlgExtendedError() == FNERR_INVALIDFILENAME)
     { // the core's SafeGet*FileName rule: Windows refuses a name like "C:\" or a missing folder
         file[0] = 0;

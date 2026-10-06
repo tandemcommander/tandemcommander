@@ -704,7 +704,6 @@ static BOOL SaveAsDialogU8(OPENFILENAME* ofn)
     if (SplU8ToW(ofn->lpstrFile, file, fileUnits) == 0)
         file[0] = 0;
     WCHAR* initDir = ofn->lpstrInitialDir != NULL && ofn->lpstrInitialDir[0] != 0 ? SplU8ToWAlloc(ofn->lpstrInitialDir) : NULL;
-    size_t prefixLen = SplFileDlgDetail::NameIntoInitialDir(file, fileUnits, initDir); // feature 121: open in initDir (Windows may ignore it)
     WCHAR* filter = SplFileDlgDetail::CodePageListToWAlloc(ofn->lpstrFilter);
     WCHAR* defExt = SplFileDlgDetail::CodePageToWAlloc(ofn->lpstrDefExt);
     WCHAR* title = SplFileDlgDetail::CodePageToWAlloc(ofn->lpstrTitle);
@@ -727,8 +726,6 @@ static BOOL SaveAsDialogU8(OPENFILENAME* ofn)
     w.lpTemplateName = IS_INTRESOURCE(ofn->lpTemplateName) ? (LPCWSTR)ofn->lpTemplateName : NULL;
 
     BOOL ret = GetSaveFileNameW(&w);
-    if (!ret && CommDlgExtendedError() == FNERR_INVALIDFILENAME && SplFileDlgDetail::BareNameBack(file, prefixLen))
-        ret = GetSaveFileNameW(&w); // feature 121 (review SF1): a remembered folder that is gone - the bare name as before
     if (!ret && CommDlgExtendedError() == FNERR_INVALIDFILENAME)
     {
         file[0] = 0;

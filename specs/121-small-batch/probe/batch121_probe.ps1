@@ -28,8 +28,15 @@
       D1  Disk Map log: the "Ignoring Reparse Point" row names the accented
           junction exactly (read with LVM_GETITEMTEXTW)                          exact     mojibake
       P1  Change Directory to ftp://<101-byte user>@127.0.0.1:1/ - refused      too long  connects
-      P2  ... ftp://u:<301-byte password>@127.0.0.1:1/ - refused                too long  connects
-      P3  ... ftp://u:<150 x c-caron = 300 bytes>@127.0.0.1:1/ - NOT refused   no refusal (the same)
+      P3  ... ftp://u:<110 x c-caron = 220 bytes>@127.0.0.1:1/ - NOT refused   no refusal (the same)
+          (the plug-in starts connecting; the instance is ended by the probe, no END row)
+      P4  F5 target ftp://u:<301-byte password>@127.0.0.1:1/ - refused by the
+          core already (its target field takes 259 bytes - run 2): never cut      refused   refused
+      P5  F5 target ftp://<101-byte user>@127.0.0.1:1/ - refused by the plug-in  too long  connects
+          (run 2: a password over 300 bytes cannot reach the plug-in through Change Directory or
+          the F5 target - the core refuses typed paths over 259 bytes; the plug-in's password
+          check is defensive)
+      K0  item 12: the folder Checksum's Save dialog opens in (UI Automation)   the panel  (reported)
       R1  Registry Editor Find window open (not searching) + the installer's
           close request (rm_probe.ps1 of feature 080)                           agree     decline
       L1  FTP Logs window open + the installer's close request                  agree     decline
@@ -198,8 +205,8 @@ $script:HotKeyNote = 'not set'
 function Chars([int[]]$Codes) { return (-join ($Codes | ForEach-Object { [char]$_ })) }
 $CzRun = Chars @(0x010D, 0x0159, 0x017E, 0x00FD, 0x00E1, 0x00ED, 0x00E9, 0x016F, 0x0161, 0x011B)   # 10 accented letters, 2 bytes each
 function CzComp([int]$Reps, [string]$Tag) { return ($Tag + ($CzRun * $Reps)) }
-$FindDir = $Root + '\find\' + (CzComp 2 'a') + '\' + (CzComp 2 'b') + '\x;y ' + (CzComp 2 'c') + '\' + (CzComp 2 'd') + '\' + (CzComp 2 'e')
-$FindDir2 = $Root + '\find2\' + (CzComp 2 'p') + '\' + (CzComp 2 'q') + '\' + (CzComp 2 'r') + '\' + (CzComp 2 's') + '\' + (CzComp 2 't') + '\' + (CzComp 1 'u')
+$FindDir = $Root + '\find\' + (CzComp 4 'a') + '\' + (CzComp 4 'b') + '\x;y ' + (CzComp 4 'c') + '\' + (CzComp 4 'd') + '\' + (CzComp 3 'e')
+$FindDir2 = $Root + '\find2\' + (CzComp 4 'p') + '\' + (CzComp 4 'q') + '\' + (CzComp 4 'r') + '\' + (CzComp 4 's') + '\' + (CzComp 3 't')
 $Needle = 'needle121.txt'
 $EquivDir = $Root + '\equiv'
 $EqBase = ('x' * 170)
@@ -232,8 +239,8 @@ function Start-P([string]$Left, [string]$Right) {
     Start-Sleep -Milliseconds 1500
     return $p.Id
 }
-function Close-Boxes([int]$Id) {
-    foreach ($h in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' })) { Close-Win $h }
+function Close-Boxes([int]$Id, [IntPtr]$Keep = [IntPtr]::Zero) {
+    foreach ($h in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $_ -ne $Keep })) { Close-Win $h }
 }
 function Open-ByKey([int]$Id, [int]$Vk, [double]$Seconds = 10) {
     $known = Get-Tops $Id
@@ -329,7 +336,7 @@ function Invoke-RmWatched([int]$Id) {
     $alive = Test-Alive $Id
     $shown = @($new.Values)
     return [pscustomobject]@{ Exit = $p.ExitCode; Line = $line; Seconds = $secs; Shown = $shown; Alive = $alive; Before = $before; Output = $text
-        Other = @($shown | Where-Object { $_ -notlike ("[{0} *" -f $WaitClass) }); Wait = @($shown | Where-Object { $_ -like ("[{0} *" -f $WaitClass) }) }
+        Other = @($shown | Where-Object { $_ -notmatch ('^\[' + [regex]::Escape($WaitClass) + ' ') }); Wait = @($shown | Where-Object { $_ -match ('^\[' + [regex]::Escape($WaitClass) + ' ') }) }
 }
 # the verdict of an RM row: agree (process ended, exit 0, nothing shown but the wait window) or
 # decline (rm_probe exit 1 within 1 s, alive, windows kept, nothing new)
@@ -414,7 +421,7 @@ function Row-Find {
             $r = Find-Run $find $id
             $v = $(if ($Fixed) { V ($r.Count -eq 1 -and $r.Boxes.Count -eq 0) } else { 'INFO' })
             Row 'F2' 'FIND' $v ("Find Now from that Look in: {0} found; boxes: {1}" -f $r.Count, $(if ($r.Boxes.Count) { $r.Boxes -join ' || ' } else { 'none' }))
-            Close-Boxes $id
+            Close-Boxes $id $find
         }
         if (Want 'F3') {
             [void][Drv098f]::SetText((Find-Ctl $find 2501), $FindDir2, 5000)
@@ -422,7 +429,7 @@ function Row-Find {
             $r = Find-Run $find $id
             $v = $(if ($Fixed) { V ($typed -ceq $FindDir2 -and $r.Count -eq 1 -and $r.Boxes.Count -eq 0) } else { 'INFO' })
             Row 'F3' 'FIND' $v ("typed Look in {0} bytes held whole {1}; Find Now: {2} found; boxes: {3}" -f (U8Len $FindDir2), ($typed -ceq $FindDir2), $r.Count, $(if ($r.Boxes.Count) { $r.Boxes -join ' || ' } else { 'none' }))
-            Close-Boxes $id
+            Close-Boxes $id $find
         }
     }
     catch { Row 'F' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -541,30 +548,98 @@ function Row-French {
 
 # K1: Checksum Calculate, Save over a list file the probe holds locked (byte range): the open
 # truncates, the write fails - the 118 C6 situation; the plug-in now says so
-function Save-Type0([int]$Id, [IntPtr]$Calc, [string]$Base, [bool]$Overwrite) {
-    $res = @{ Status = ''; Type = ''; Boxes = @() }
+Add-Type -AssemblyName UIAutomationClient -ErrorAction SilentlyContinue
+function Uia-Text([IntPtr]$H) {
+    try {
+        $el = [System.Windows.Automation.AutomationElement]::FromHandle($H)
+        $all = $el.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+        $t = @(); foreach ($e in $all) { $n = $e.Current.Name; if ($n) { $t += $n } }
+        return (Esc (($t | Select-Object -Unique) -join ' | '))
+    }
+    catch { return ('<uia: ' + $_.Exception.Message + '>') }
+}
+# answers a Yes/No question of the save dialog with "No" (BM_CLICK on its second button) - 118
+# posted WM_CLOSE, which run 2 showed does not close it
+function Answer-No([IntPtr]$H) {
+    $b = @(Buttons $H)
+    if ($b.Count -ge 2) { Click $b[1] } else { [void][Drv098f]::PostMessageW($H, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) }
+}
+# types text into an edit: select all, then WM_CHAR per character (117's Type-Text)
+function Type-Text([IntPtr]$E, [string]$Text) {
+    [void][Drv121]::SendR($E, 0x00B1, 0, -1)   # EM_SETSEL all
+    [void][Drv121]::SendR($E, 0x0102, 8, 0)    # WM_CHAR backspace: clear the selection
+    foreach ($ch in $Text.ToCharArray()) { [void][Drv121]::SendR($E, 0x0102, [int]$ch, 1) }
+    Start-Sleep -Milliseconds 300
+}
+# the save dialog's file type list (118's Type-Combo)
+function Type-Combo([IntPtr]$Dlg) {
+    $combos = @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::Cls($_) -eq 'ComboBox' })
+    $pref = @($combos | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 1136 }) + @($combos | Where-Object { [Drv098f]::GetDlgCtrlID($_) -ne 1136 })
+    foreach ($c in $pref) {
+        if ([Drv121]::SendR($c, 0x0146, 0, 0) -gt 0 -and [Drv098f]::GetText($c, 3000) -match '\*\.') { return $c }
+    }
+    return $null
+}
+function Ctl-Dump([IntPtr]$H) {
+    $p = @()
+    foreach ($k in @([Drv098f]::Kids($H) | Where-Object { @('ComboBox', 'ComboBoxEx32', 'Edit', 'Button') -contains [Drv098f]::Cls($_) })) {
+        $p += ("{0}#{1}<{2} vis={3} '{4}'" -f [Drv098f]::Cls($k), [Drv098f]::GetDlgCtrlID($k), [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($k)), [int][Drv098f]::IsWindowVisible($k), (Tail ([Drv098f]::Txt($k)) 30))
+    }
+    return ("[{0} '{1}'] " -f [Drv098f]::Cls($H), (Tail ([Drv098f]::Txt($H)) 40)) + ($p -join ' ; ')
+}
+# Save in the Calculate window, type 0, as $Base (full path, no extension); with $Overwrite the
+# plug-in's "already exists" question is answered Yes. Returns @{ Status; Type; Boxes; Folder }
+# (Folder = the text of the name field as the dialog opened: item 12, the proposed name in the folder)
+function Save-Type0([int]$Id, [IntPtr]$Calc, [string]$Base, [bool]$Overwrite, [string]$Proposed = 'cs') {
+    $res = @{ Status = ''; Type = ''; Boxes = @(); Folder = ''; Address = '' }
     $known = Get-Tops $Id
-    Click (Kid $Calc 1003 'Button')
+    Post-Cmd $Calc 1003   # WM_COMMAND IDC_BUTTON_SAVE (118: a posted BM_CLICK opened nothing on the hidden desktop)
     $od = [IntPtr]::Zero
     $sw = [Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 15 -and $od -eq [IntPtr]::Zero) {
-        $c = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' -and (Kid $_ 1136 'ComboBox') }) | Select-Object -First 1
-        if ($c) { Start-Sleep -Milliseconds 1200; $od = $c }
+        $c = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' -and (Type-Combo $_) }) | Select-Object -First 1
+        if ($c) { Start-Sleep -Milliseconds 2000; $od = $c }
         Start-Sleep -Milliseconds 200
     }
-    if ($od -eq [IntPtr]::Zero) { $res.Status = 'no save dialog'; return $res }
-    $types = Kid $od 1136 'ComboBox'
+    if ($od -eq [IntPtr]::Zero) {
+        $new = @(Get-Tops $Id | Where-Object { $known -notcontains $_ } | ForEach-Object { Ctl-Dump $_ })
+        $res.Status = 'no save dialog; new windows: ' + $(if ($new.Count) { $new -join ' || ' } else { 'none' })
+        foreach ($h in @(Get-Tops $Id | Where-Object { $known -notcontains $_ })) { Close-Win $h }
+        return $res
+    }
+    $u = Uia-Text $od
+    $m = [regex]::Match($u, '(Adresa|Address): ([^|]*)')
+    $res.Address = $(if ($m.Success) { $m.Groups[2].Value.Trim() } else { '<no address element> ' + (Tail $u 200) })
+    $types = Type-Combo $od
     [void][Drv121]::SendR($types, 0x014E, 0, 0)   # CB_SETCURSEL 0
     $res.Type = [Drv098f]::GetText($types, 5000)
     $cid = [Drv098f]::GetDlgCtrlID($types); $par = [Drv098f]::GetParent($types)
     foreach ($code in @(9, 1)) { [void][Drv121]::SendR($par, 0x0111, (($code -shl 16) -bor $cid), $types.ToInt64()) }
-    Start-Sleep -Milliseconds 300
-    $fn = @([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) -and [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) -eq 1148 }) | Select-Object -First 1
-    if (-not $fn) { Post-Cmd $od 2; $res.Status = 'no file name field'; return $res }
-    [void][Drv098f]::SetText($fn, $Base, 5000)
-    $ok = Buttons $od | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 1 } | Select-Object -First 1
-    if ($ok) { Click $ok } else { Post-Cmd $od 1 }
+    Start-Sleep -Milliseconds 1000
+    $edits = @([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) })
+    $fn = @($edits | Where-Object { $t = [Drv098f]::GetText($_, 3000); $t -eq $Proposed -or $t.EndsWith('\' + $Proposed) }) | Select-Object -First 1
+    if (-not $fn) { $fn = @($edits | Where-Object { [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) -eq 1148 }) | Select-Object -First 1 }
+    if (-not $fn) { $fn = @($edits | Where-Object { [Drv098f]::Cls([Drv098f]::GetParent($_)) -eq 'ComboBox' }) | Select-Object -First 1 }
+    if (-not $fn) { $d = Ctl-Dump $od; Post-Cmd $od 2; $res.Status = 'no file name field: ' + $d; return $res }
+    $res.Folder = ('name field held ' + (Esc ([Drv098f]::GetText($fn, 3000))) + '; edits: ' + (($edits | ForEach-Object { "'" + (Esc ([Drv098f]::GetText($_, 3000))) + "'<" + [Drv098f]::Cls([Drv098f]::GetParent($_)) + '#' + [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) }) -join ', '))
+    $dir = [IO.Path]::GetDirectoryName($Base); $leaf = [IO.Path]::GetFileName($Base)
+    Type-Text $fn $dir
+    Post-Cmd $od 1   # navigate
+    Start-Sleep -Milliseconds 2500
+    $edits = @([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) })
+    $fn2 = @($edits | Where-Object { [Drv098f]::Cls([Drv098f]::GetParent($_)) -eq 'ComboBox' }) | Select-Object -First 1
+    if ($fn2) { $fn = $fn2 }
+    Type-Text $fn $leaf
+    $res.Folder += ('; typed the folder, then ' + (Esc ([Drv098f]::GetText($fn, 3000))))
+    Post-Cmd $od 1   # WM_COMMAND IDOK (118: BM_CLICK on the Vista-style Save button did nothing here)
     $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 10 -and [Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)) { Start-Sleep -Milliseconds 100 }
+    if ([Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)) {
+        foreach ($x in @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and $_ -ne $od })) { $res.Boxes += ((WinDesc $x) + ' UIA: ' + (Uia-Text $x)); Answer-No $x }
+        Start-Sleep -Milliseconds 800; Post-Cmd $od 2
+        $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 5 -and [Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)) { Start-Sleep -Milliseconds 100 }
+        $res.Status = 'the save dialog stayed open after IDOK (cancelled)'
+        return $res
+    }
     Start-Sleep -Milliseconds 800
     for ($round = 0; $round -lt 4; $round++) {
         $extra = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and $_ -ne $od -and [Drv098f]::Cls($_) -eq '#32770' })
@@ -591,8 +666,21 @@ function Row-Checksum {
         $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 60 -and -not [Drv098f]::IsWindowEnabled($save)) { Start-Sleep -Milliseconds 200 }
         if (-not [Drv098f]::IsWindowEnabled($save)) { Row 'K1' 'SAVE' 'NOT DRIVEN' 'the calculation did not finish in 60 s'; return }
         $base = $CsDir + '\saved121'
-        $first = Save-Type0 $id $calc $base $false
+        $first = $null; $tries = @()
+        for ($a = 1; $a -le 3; $a++) {
+            $first = Save-Type0 $id $calc $base $false
+            $tries += ("try {0}: {1}; {2}; {3}" -f $a, $first.Status, $first.Folder, ($first.Boxes -join ' || '))
+            if ($first.Type -match '\*(\.[A-Za-z0-9]+)' -and (Test-Path -LiteralPath ($base + $Matches[1]))) { break }
+        }
+        Out ('           first save: ' + ($tries -join ' ;; '))
+        # K0 (item 12): the dialog opens in the panel's folder
+        $addr = $first.Address
+        $inCs = ($addr -match 'tc121\\cs$' -or $addr -match '\\cs$')
+        $v0 = 'INFO'   # item 12 measured and reverted (fix-log "Item 12"): reported on both builds
+        if ($addr -like '<no address element>*') { $v0 = 'NOT DRIVEN' }
+        Row 'K0' 'FOLDER' $v0 ("Checksum's Save dialog opened in '{0}' (expected: the panel's folder ...\tc121\cs)" -f $addr)
         if ($first.Type -notmatch '\*(\.[A-Za-z0-9]+)') { Row 'K1' 'SAVE' 'NOT DRIVEN' ("no extension in the type text '{0}' ({1})" -f $first.Type, $first.Status); return }
+        Out ("           first save: type '{0}', {1}; dialog title '{2}'" -f $first.Type, $first.Status, (Tail $first.Folder 60))
         $target = $base + $Matches[1]
         if (-not (Test-Path -LiteralPath $target)) { Row 'K1' 'SAVE' 'NOT DRIVEN' ('the first save wrote no ' + (Tail $target 40) + '; boxes: ' + ($first.Boxes -join ' || ')); return }
         $lock = New-Object IO.FileStream($target, [IO.FileMode]::Open, [IO.FileAccess]::Read, ([IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete))
@@ -640,7 +728,12 @@ function Row-DiskMap {
         Row 'D1' 'LOG' $v ("log rows {0}; rows naming the junction exactly {1}; junction-like rows: {2} (expected: {3})" -f $n, $hit.Count, $(if ($jRows.Count) { ($jRows | ForEach-Object { "'" + (Esc $_.Text) + "' / '" + (Tail $_.Path 50) + "'" }) -join ' || ' } else { 'none' }), $(if ($Fixed) { 'exact' } else { 'garbled' }))
     }
     catch { Row 'D1' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
-    finally { if ($id) { End-P 'D1' $id $before } }
+    finally {
+        if ($id -and (Test-Alive $id)) {
+            foreach ($h in @(Get-Tops $id | Where-Object { @($DmLogClass, $DmClass) -contains [Drv098f]::Cls($_) })) { [void][Drv098f]::PostMessageW($h, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero); Start-Sleep -Milliseconds 700 }
+        }
+        if ($id) { End-P 'D1' $id $before }
+    }
 }
 
 # P1-P3: a typed FTP login that does not fit is refused (IDS_TOOLONGPATH of the FTP plug-in)
@@ -653,12 +746,62 @@ function Row-FtpLogin([string]$Case, [string]$Url, [bool]$WantRefused, [string]$
         $held = Do-ChangeDir $id $Url
         $new = @(Collect-New $id $known 12)
         $texts = @($new | ForEach-Object { $_.Desc })
+        Stop-FtpConnect $id
         $refused = @($texts | Where-Object { $_ -match 'too long path' }).Count
+        $coreRefused = @($texts | Where-Object { $_ -match 'path specified is too long' }).Count
         foreach ($w in $new) { if ([Drv098f]::IsWindow($w.Hwnd)) { Close-Win $w.Hwnd } }
         Start-Sleep -Milliseconds 500; Close-Boxes $id
-        if ($WantRefused) { if ($Fixed) { $ok = ($refused -eq 1) } else { $ok = ($refused -eq 0) } } else { $ok = ($refused -eq 0) }
+        if ($WantRefused) { if ($Fixed) { $ok = ($refused -eq 1) } else { $ok = ($refused -eq 0) } } else { $ok = ($refused -eq 0 -and $coreRefused -eq 0) }
         $v = V $ok; if (-not $held) { $v = 'NOT DRIVEN' }
-        Row $Case 'FTP' $v ("{0} ({1} bytes typed, field held it {2}): 'too long' boxes {3}; windows: {4}" -f $What, (U8Len $Url), $held, $refused, $(if ($texts.Count) { ($texts | ForEach-Object { Tail $_ 140 }) -join ' || ' } else { 'none' }))
+        Row $Case 'FTP' $v ("{0} ({1} bytes typed, field held it {2}): the plug-in's 'too long' boxes {3}, the core's {4}; windows: {5}" -f $What, (U8Len $Url), $held, $refused, $coreRefused, $(if ($texts.Count) { ($texts | ForEach-Object { Tail $_ 140 }) -join ' || ' } else { 'none' }))
+        if (-not $WantRefused -and @($texts | Where-Object { $_ -match 'SalamanderFTPClient' }).Count) {
+            Kill-Mine $id; Out ("           {0}: the plug-in started connecting (its wait window) - instance ended by the probe, no END row" -f $Case); $id = 0
+        }
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-P $Case $id $before } }
+}
+
+# Esc to the FTP plug-in's wait windows until none is left (20 s), then every box closed
+function Stop-FtpConnect([int]$Id) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 20) {
+        $w = @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -like 'SalamanderFTPClient*' -or [Drv098f]::Cls($_) -eq 'SalamanderSaveBits' })
+        $b = @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' })
+        if (-not $w.Count -and -not $b.Count) { break }
+        foreach ($h in $w) { [void][Drv098f]::PostMessageW($h, 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv098f]::PostMessageW($h, 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001) }
+        $m = Get-Main $Id; if ($m -ne [IntPtr]::Zero) { [void][Drv098f]::PostMessageW($m, 0x0100, [IntPtr]0x1B, [IntPtr]1); [void][Drv098f]::PostMessageW($m, 0x0101, [IntPtr]0x1B, [IntPtr]0xC0000001) }
+        foreach ($h in $b) { Close-Win $h }
+        Start-Sleep -Milliseconds 500
+    }
+}
+# P4 / P5: the upload target typed into the Copy dialog (F5 of a.txt) - the plug-in's
+# CopyOrMoveFromDiskToFS (fs5.cpp) sees up to 2 x MAX_PATH bytes
+function Row-FtpUpload([string]$Case, [string]$Url, [bool]$WantRefused, [string]$What) {
+    if (-not (Want $Case)) { return }
+    $before = Reports; $id = 0
+    try {
+        $id = Start-P $ClipDir
+        Key $id 0x24; Key $id 0x28   # Home (".."), Down (a.txt)
+        Start-Sleep -Milliseconds 400
+        $dlg = Open-ByCmd $id 727
+        if ($dlg -eq [IntPtr]::Zero) { Row $Case 'FTP' 'NOT DRIVEN' 'F5 opened no window'; return }
+        $path = Find-Ctl $dlg 210
+        if ($path -eq [IntPtr]::Zero) { Close-Win $dlg; Row $Case 'FTP' 'NOT DRIVEN' ('no target field in ' + (WinDesc $dlg)); return }
+        [void][Drv098f]::SetText($path, $Url, 5000)
+        $held = ([Drv098f]::GetText($path, 5000) -ceq $Url)
+        $known = Get-Tops $id
+        Click-Ok $dlg
+        $new = @(Collect-New $id $known 12)
+        $texts = @($new | ForEach-Object { $_.Desc })
+        $refused = @($texts | Where-Object { $_ -match 'too long path' }).Count
+        $coreRefused = @($texts | Where-Object { $_ -match 'path specified is too long' }).Count
+        foreach ($w in $new) { if ([Drv098f]::IsWindow($w.Hwnd)) { Close-Win $w.Hwnd } }
+        Stop-FtpConnect $id
+        if ($coreRefused -eq 1 -and $refused -eq 0) { $ok = $true }   # the core refuses first (097): never cut, the plug-in is not reached - both builds
+        elseif ($WantRefused) { if ($Fixed) { $ok = ($refused -eq 1) } else { $ok = ($refused -eq 0) } } else { $ok = ($refused -eq 0) }
+        $v = V $ok; if (-not $held) { $v = 'NOT DRIVEN' }
+        Row $Case 'FTP' $v ("{0} ({1} bytes typed as the F5 target, field held it {2}): the plug-in's 'too long' boxes {3}, the core's {4}; windows: {5}" -f $What, (U8Len $Url), $held, $refused, $coreRefused, $(if ($texts.Count) { ($texts | ForEach-Object { Tail $_ 140 }) -join ' || ' } else { 'none' }))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-P $Case $id $before } }
@@ -756,8 +899,9 @@ try {
     Row-Checksum
     Row-DiskMap
     Row-FtpLogin 'P1' ('ftp://' + ('u' * 101) + '@127.0.0.1:1/') $true 'user name of 101 bytes'
-    Row-FtpLogin 'P2' ('ftp://u:' + ('p' * 301) + '@127.0.0.1:1/') $true 'password of 301 bytes'
-    Row-FtpLogin 'P3' ('ftp://u:' + ([string][char]0x010D * 150) + '@127.0.0.1:1/') $false 'password of 150 c-caron = 300 bytes (fits)'
+    Row-FtpLogin 'P3' ('ftp://u:' + ([string][char]0x010D * 110) + '@127.0.0.1:1/') $false 'password of 110 c-caron = 220 bytes (fits; the whole path stays under the core limit of 259 bytes)'
+    Row-FtpUpload 'P4' ('ftp://u:' + ('p' * 301) + '@127.0.0.1:1/') $true 'password of 301 bytes'
+    Row-FtpUpload 'P5' ('ftp://' + ('u' * 101) + '@127.0.0.1:1/') $true 'user name of 101 bytes'
     Row-Rm 'R1' 0x47 'Registry Editor Find window (not searching)'
     Row-Rm 'L1' 0x4C 'FTP Logs window'
     Row-Fcremote

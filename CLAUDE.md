@@ -2005,13 +2005,13 @@ plugin architecture preservation, UI consistency.
   (`SalFtpTypedLoginTooLong`, "too long path" - a cut was another account or server), wipes the panel
   login's last command and secret copies, cuts display texts at a whole character
   (`SplU8CopyTrunc`). RegEdit's Find (while idle) and FTP's Logs / message windows are declared for
-  an update (interface 107). Plug-in Save dialogs put a bare proposed name into the asked folder
-  (`SplFileDlgDetail::NameIntoInitialDir`; Windows may ignore `lpstrInitialDir` - Checksum's Save
-  opened another program's folder, found by 117's GUI run). Romanian `IDS_CANTMULTIVOL`
+  an update (interface 107). Item 12 (Save dialogs opening another folder, found by 117's GUI run)
+  measured and reverted: Windows records each program path's first initial folder
+  (`ComDlg32\FirstFolder`) and opens the last-used folder when asked for that one again; only
+  `IFileDialog::SetFolder` overrides it. Romanian `IDS_CANTMULTIVOL`
   capitalised and pinned. Code-only review ACCEPT (its NITs fixed: a code-page tail kept, the
   clipboard block freed, the RegEdit declaration withdrawn before the thread, Disk Map's
   `FormatMessage` buffer). No new string, interface 107, no registry change. saltests 17,423 ->
-  17,513. Probe `probe/batch121_probe.ps1`
-  (17 rows + END rows, `-Expect fixed|before`) written, GUI runs pending on `Debug_x64_121` /
-  `Debug_x64_pre121`. Records: `specs/121-small-batch/fix-log.md`.
-  GUI runs owed at commit time - see fix-log "Independent code-only review".
+  17,498. Probe `probe/batch121_probe.ps1` (`-Expect fixed|before`): this build every row PASS (K0
+  reported), the build before shows every old behaviour (S1 "rejected to unload" 6/6); regressions
+  101, 102, 117 clean, 118 58/0 after the item 12 revert. Records: `specs/121-small-batch/fix-log.md`.

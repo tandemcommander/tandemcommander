@@ -1,0 +1,52 @@
+batch121_probe (feature 121), expect: before
+Program : D:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre121\tandemcommander.exe
+Date    : 2026-10-06 09:42; desktop 'tc_probe_81016'; ACP 1250; registry key existed True; export SHA-256 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769; baseline 1AB614304771DBE0 matches: True
+Fixture : Find folder 438 bytes (248 units), typed Look in 435 bytes; equivalent pair of 175 units; junction True (Junction created for C:\Users\pavel\AppData\Local\Temp\tc121\dm_Ÿý\jý¡§ <<===>> C:\Users\pavel\AppData\Local\Temp\tc121\dm_target)
+Hot keys: regedt.spl id 1: 1; sftp.spl id 5: 0; checksum.spl id 1: 1; diskmap.spl id 1: 1; ftp.spl id 5: 1
+
+F1         LOOKIN PASS        Look in 259 bytes '...\u011B\u010D\u0159\u017E\u00FD\u00E1\u00ED\u00E9\u016F\u0161\u011B\u010D\u0159\u017E\u00FD\u00E1\u00ED\u00E9\u016F\u0161\u011B\u010D\u0159\u017E\u00FD\u00E1\u00ED\u00E9\u016F\u0161\u011B\x;;y c\u010D\u0159\u017E\u00FD\u00E1\u00ED\u00E9\u016F\u0161\u011B\u010D\u0159\u017E\u00FD\u00E1\u00ED\u00E9\u016F\u0161\u011B\u010D\u0159'; the panel path escaped 439 bytes; equal False (expected: cut at 259 bytes)
+F2         FIND   INFO        Find Now from that Look in: 0 found; boxes: none
+F3         FIND   INFO        typed Look in 435 bytes held whole True; Find Now: 0 found; boxes: none
+F          END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M1         WRAP   PASS        notice of 411 characters; name found True; single line breaks 2, outside the name 1 (expected: some outside (the template cut inside words))
+           text: This folder contains entries whose names look identical but use different Unicode spellings (e.g. precomposed |  vs. decomposed accents): |  | xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\u00E9.txt |  | Windows treats them as different files. Tandem Commander preserves both names exactly as stored.
+M1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C1         CLIP   PASS        Copy Full Name (command 709), clipboard the probe could not open it either (error 5): boxes 0: none (expected: none (silent))
+C1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C2         CLIP   PASS        Copy Name (command 710), clipboard the probe could not open it either (error 5): boxes 0: none (expected: none (silent))
+C2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C3         CLIP   PASS        Copy Full Path (command 711), clipboard the probe could not open it either (error 5): boxes 0: none (expected: none (silent))
+C3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+N1         TEXT   PASS        code page 1250 holds the French text: False; error text 'ce nom de fichier est d\u00E9ja utilis\u00E9.' exact False (expected: best fit / ?)
+N1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+           first save: try 1: done; name field held cs; edits: 'cs'<ComboBox#0; typed held True;  ;; try 2: the save dialog stayed open after IDOK (cancelled); name field held cs; edits: 'cs'<ComboBox#0; typed held True; [#32770 'Save Checksum File'] [Button id=0] &Ano | [Button id=0] &Ne UIA: MainInstructionIcon | C:\Program Files\Notepad++\cs\u000D\u000ANem\u00E1te opr\u00E1vn\u011Bn\u00ED k ukl\u00E1d\u00E1n\u00ED do tohoto um\u00EDst\u011Bn\u00ED. \u000D\u000APo\u017E\u00E1dejte spr\u00E1vce o p\u0159id\u011Blen\u00ED opr\u00E1vn\u011Bn\u00ED. \u000D\u000A\u000D\u000AChcete m\u00EDsto toho soubor ulo\u017Eit do slo\u017Eky pavel? | Ano | Ne ;; try 3: the save dialog stayed open after IDOK (cancelled); name field held cs; edits: 'cs'<ComboBox#0; typed held True; [#32770 'Save Checksum File'] [Button id=0] &Ano | [Button id=0] &Ne UIA: MainInstructionIcon | C:\Program Files\Notepad++\cs\u000D\u000ANem\u00E1te opr\u00E1vn\u011Bn\u00ED k ukl\u00E1d\u00E1n\u00ED do tohoto um\u00EDst\u011Bn\u00ED. \u000D\u000APo\u017E\u00E1dejte spr\u00E1vce o p\u0159id\u011Blen\u00ED opr\u00E1vn\u011Bn\u00ED. \u000D\u000A\u000D\u000AChcete m\u00EDsto toho soubor ulo\u017Eit do slo\u017Eky pavel? | Ano | Ne
+K0         FOLDER INFO        Checksum's Save dialog opened in 'C:\Program Files\Notepad++' (expected: the panel's folder ...\tc121\cs)
+           first save: type 'SFV Files (*.sfv)', the save dialog stayed open after IDOK (cancelled); dialog title 'name field held cs; edits: 'cs'<ComboBox#0; typed held True'
+K1         SAVE   NOT DRIVEN  the first save wrote no ...AppData\Local\Temp\tc121\cs\saved121.sfv; boxes: [#32770 'Save Checksum File'] [Button id=0] &Ano | [Button id=0] &Ne UIA: MainInstructionIcon | C:\Program Files\Notepad++\cs\u000D\u000ANem\u00E1te opr\u00E1vn\u011Bn\u00ED k ukl\u00E1d\u00E1n\u00ED do tohoto um\u00EDst\u011Bn\u00ED. \u000D\u000APo\u017E\u00E1dejte spr\u00E1vce o p\u0159id\u011Blen\u00ED opr\u00E1vn\u011Bn\u00ED. \u000D\u000A\u000D\u000AChcete m\u00EDsto toho soubor ulo\u017Eit do slo\u017Eky pavel? | Ano | Ne
+K1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D1         LOG    PASS        log rows 1; rows naming the junction exactly 0; junction-like rows: 'Ignoring Reparse Point.' / '...ers\pavel\AppData\Local\Temp\tc121\dm_\u00C4\u0164\u0139\u2122\j\u0139\u2122\u0102\u00AD\u0139\u013E' (expected: garbled)
+D1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P1         FTP    PASS        user name of 101 bytes (120 bytes typed, field held it True): the plug-in's 'too long' boxes 0, the core's 0; windows: [SalamanderFTPClientSaveBits 'FTP Client'] 
+P1         END    FAIL        exit did not exit in 30 s - ended by the probe; alive True; WM_NULL True; stray 1 ([SalamanderFTPClientSaveBits 'FTP Client'] ); new reports 0
+P3         FTP    PASS        password of 110 c-caron = 220 bytes (fits; the whole path stays under the core limit of 259 bytes) (241 bytes typed, field held it True): the plug-in's 'too long' boxes 0, the core's 0; windows: [SalamanderFTPClientSaveBits 'FTP Client'] 
+           P3: the plug-in started connecting (its wait window) - instance ended by the probe, no END row
+P4         FTP    PASS        password of 301 bytes (322 bytes typed as the F5 target, field held it True): the plug-in's 'too long' boxes 0, the core's 1; windows: [#32770 'Copy Error'] [Static id=2477] The path specified is too long. | [Button id=1] OK
+P4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P5         FTP    PASS        user name of 101 bytes (120 bytes typed as the F5 target, field held it True): the plug-in's 'too long' boxes 0, the core's 0; windows: [SalamanderFTPClientSaveBits 'FTP Client'] 
+P5         END    FAIL        exit did not exit in 30 s - ended by the probe; alive True; WM_NULL True; stray 0; new reports 0
+R1         STATE  PASS        Registry Editor Find window (not searching): [#32770 'Windows Registry Search'] [Static id=700] &Search for: | [Button id=1] &Find Now | [Static id=701] &Look in: | [Button id=9] &Help | [Button id=139] Show &Options | [Static id=148] Found &Items:
+R1         RM     PASS        expected decline: rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+R1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L1         STATE  PASS        FTP Logs window: [#32770 'FTP Logs'] 
+L1         RM     PASS        expected decline: rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 2/2; new windows 0
+L1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+           round 1: main window at 0,52 s, closed at once; boxes 1 ([#32770 'Question'] [Static id=2477] File Comparator plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No); exit 0x00000000; fcremote exited True; reports 0
+           round 2: main window at 0,54 s, closed at once; boxes 1 ([#32770 'Question'] [Static id=2477] File Comparator plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No); exit 0x00000000; fcremote exited True; reports 0
+           round 3: main window at 0,51 s, closed at once; boxes 1 ([#32770 'Question'] [Static id=2477] File Comparator plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No); exit 0x00000000; fcremote exited True; reports 0
+           round 4: main window at 0,51 s, closed at once; boxes 1 ([#32770 'Question'] [Static id=2477] File Comparator plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No); exit 0x00000000; fcremote exited True; reports 0
+           round 5: main window at 0,51 s, closed at once; boxes 1 ([#32770 'Question'] [Static id=2477] File Comparator plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No); exit 0x00000000; fcremote exited True; reports 0
+           round 6: main window at 0,52 s, closed at once; boxes 1 ([#32770 'Question'] [Static id=2477] File Comparator plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No); exit 0x00000000; fcremote exited True; reports 0
+S1         START  INFO        6 rounds: 'rejected to unload' boxes 6, rounds with any box / bad exit / report 6 (expected: reported (the race is timing-dependent))
+Registry: restored; identical=True; SHA-256 before 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769 / after 1AB614304771DBE00A71EAB448FDF988EA7BCC409DE1D48407F2BB6CE63BF769
+
+Rows: PASS 26, FAIL 2, NOT DRIVEN 1, INFO 4. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -66,12 +66,6 @@ password with a non-English letter to the archive engine garbled.
   *Copy Full Path*, *Copy UNC Name*, the copy commands of the Find window, the
   directory line, the viewer and the message boxes did nothing, silently; they
   now show the system's reason.
-- **Save dialogs of the plugins open in the folder they should.** Checksum's
-  *Save* (the panel's folder), PictView's *Save As* (the picture's folder or
-  the folder it last saved to) and the FTP plugin's file dialogs could open in
-  a folder another program used last, because Windows may ignore the folder a
-  program asks for; the proposed name now carries the folder (if that folder
-  is gone, the dialog opens with the name alone, as before).
 - **Checksum: a list that cannot be written completely is reported.** A full
   disk (or a file locked by another program) left a truncated checksum list
   without a word; the plugin now shows "Error creating file" with the reason.

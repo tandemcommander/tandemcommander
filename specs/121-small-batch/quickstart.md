@@ -8,9 +8,9 @@ build\tandemcommander\Debug_x64\saltests\saltests.exe
 python tools\check_encoding.py --strict
 ```
 
-Expected: `saltests: 17513 checks, 0 failed` (`TestSmallBatch121`: the message box breaks, the
+Expected: `saltests: 17498 checks, 0 failed` (`TestSmallBatch121`: the message box breaks, the
 title helper, the Look in text and the item name, the plug-ins' whole-character cuts and display
-text, the Save dialogs' initial folder, the FTP typed-login rule, the NetHood rule including a real folder shortcut resolved end to
+text, the FTP typed-login rule, the NetHood rule including a real folder shortcut resolved end to
 end in `%TEMP%`); `TOTAL: 0 finding(s)`.
 
 ## GUI runs (owed; hidden desktop only)
@@ -72,8 +72,7 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log "$P\run_118.log" -WaitSeco
 RegHash
 ```
 
-Expected: as their own builds; 117's Save rows now find the Save dialog in the panel's folder
-(item 12 - it opened another program's last folder). Note for 101: its Find-window rows search from a short parent
+Expected: as their own builds. Note for 101: its Find-window rows search from a short parent
 because the Look in field used to cut the panel path - they still pass; its "unc" rows copy to the
 clipboard and may now show the clipboard's error box where the clipboard cannot be opened (101
 recorded "OpenClipboard fails here") - read such a row's windows before calling it a regression.

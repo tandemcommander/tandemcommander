@@ -8591,45 +8591,6 @@ static void TestSmallBatch121()
         CHECK(!SplFileDlgDetail::IsFolderShortcutIni(iniOpen, (int)strlen(iniOpen)));
         CHECK(!SplFileDlgDetail::IsFolderShortcutIni(NULL, 5));
 
-        // a bare proposed name goes into the folder the dialog should open in (item 12, found by 117)
-        WCHAR fn[32];
-        wcscpy(fn, L"rt");
-        size_t pre = SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
-        CHECK(wcscmp(fn, L"C:\\dir\\rt") == 0 && pre == 7);
-        // review SF1: the folder refused (gone) -> the bare name again, then the old retry
-        CHECK(SplFileDlgDetail::BareNameBack(fn, pre) && wcscmp(fn, L"rt") == 0);
-        CHECK(!SplFileDlgDetail::BareNameBack(fn, 0) && wcscmp(fn, L"rt") == 0);
-        CHECK(!SplFileDlgDetail::BareNameBack(fn, 7) && wcscmp(fn, L"rt") == 0); // never past the name
-        CHECK(!SplFileDlgDetail::BareNameBack(NULL, 3));
-        wcscpy(fn, L"rt.md5");
-        pre = SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\");
-        CHECK(pre == 3 && SplFileDlgDetail::BareNameBack(fn, pre) && wcscmp(fn, L"rt.md5") == 0);
-        wcscpy(fn, L"rt");
-        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
-        CHECK(wcscmp(fn, L"C:\\dir\\rt") == 0);
-        wcscpy(fn, L"rt.md5");
-        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\");
-        CHECK(wcscmp(fn, L"C:\\rt.md5") == 0);
-        wcscpy(fn, L"\x010D.sfv");
-        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"\\\\srv\\sh\\d\x0159");
-        CHECK(wcscmp(fn, L"\\\\srv\\sh\\d\x0159\\\x010D.sfv") == 0);
-        wcscpy(fn, L"D:\\x\\rt"); // has its own folder: unchanged
-        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
-        CHECK(wcscmp(fn, L"D:\\x\\rt") == 0);
-        wcscpy(fn, L"sub/rt");
-        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
-        CHECK(wcscmp(fn, L"sub/rt") == 0);
-        fn[0] = 0; // no name: unchanged (the dialog uses lpstrInitialDir)
-        SplFileDlgDetail::NameIntoInitialDir(fn, 32, L"C:\\dir");
-        CHECK(fn[0] == 0);
-        wcscpy(fn, L"rt");
-        SplFileDlgDetail::NameIntoInitialDir(fn, 32, NULL);
-        CHECK(wcscmp(fn, L"rt") == 0);
-        wcscpy(fn, L"rt"); // "C:\dir\rt" = 9 units + terminator: 10 fits, 9 does not
-        SplFileDlgDetail::NameIntoInitialDir(fn, 9, L"C:\\dir");
-        CHECK(wcscmp(fn, L"rt") == 0);
-        SplFileDlgDetail::NameIntoInitialDir(fn, 10, L"C:\\dir");
-        CHECK(wcscmp(fn, L"C:\\dir\\rt") == 0);
 
         // end to end: a folder shortcut in %TEMP% (a fixed drive) pointing at another folder
         HRESULT coInit = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);

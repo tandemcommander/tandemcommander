@@ -202,9 +202,9 @@ decision. "Before" = `build\tandemcommander\Debug_x64_pre121` (copy of the HEAD 
   `SplGetFileNameU8` - FTP's callers pass a folder (`ctrlcon2.cpp`, `dialogs2.cpp`, `dialogs3.cpp`
   x2, `dialogs4.cpp`); the Renamer and the Database Viewer pass none (unchanged by the fix).
   Not examined further: the disabled mmviewer (`SafeGet*FileName`), the core's own dialogs.
-- Decision: **fix** - `SplFileDlgDetail::NameIntoInitialDir` (`splfiledlg.h`, pure): a non-empty
-  name without `\`, `/` or `:` is prefixed with the initial folder when the whole fits; used by
-  the three. The FNERR_INVALIDFILENAME retry (no name, no folder) is unchanged.
+- First decision: put the folder into `lpstrFile` (`NameIntoInitialDir`). **Measured afterwards
+  (GUI run, fix-log "Item 12") and reverted**: it did not help - see the fix-log for the rule
+  Windows really applies (`ComDlg32\FirstFolder` per program path).
 
 ## Not taken (large, as instructed)
 
