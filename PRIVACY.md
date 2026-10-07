@@ -353,8 +353,8 @@ project's repository.
 
 ---
 
-This statement describes the version in development after Tandem Commander
-0.1.8 (`CHANGELOG.md`, *Unreleased*). In 0.1.8 itself: there is no check for a
+This statement describes Tandem Commander 0.1.9 (`CHANGELOG.md`). In 0.1.8,
+the version before it: there is no check for a
 new version, so the program never contacts the internet on its own and keeps
 no `Update Check` values; a password typed as part
 of an address is saved in history as plain text; a Markdown document can open
@@ -367,4 +367,4 @@ FTP login is `name@someserver.com`; a crash that happens while the ZIP
 plugin is using a password can write that password into the crash report; and
 PictView's wallpaper commands wrote no picture file (*Restore Previous* and
 *None* did write the three `Prev...` values).
-Last updated 2026-10-06.
+Last updated 2026-10-07.

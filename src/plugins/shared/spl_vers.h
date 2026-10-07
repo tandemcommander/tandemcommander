@@ -34,7 +34,7 @@
 // where MINORB were hundredths appended without a dot (2.53) and a zero was dropped (5.0)
 #define VERSINFO_SALAMANDER_MAJOR 0
 #define VERSINFO_SALAMANDER_MINORA 1
-#define VERSINFO_SALAMANDER_MINORB 8
+#define VERSINFO_SALAMANDER_MINORB 9
 
 #define VERSINFO_SALAMANDER_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSION_TXT
 #define VERSINFO_SAL_SHORT_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSIONSHORT_TXT
@@ -140,10 +140,20 @@
 //       without prompts and the program restarts after the update - feature
 //       080; the Markdown viewer runs on the shared WebView2 host - feature
 //       081; small hardening - feature 075; see CHANGELOG.md)
+// 193 - Tandem Commander 0.1.9 (new version check at start-up and in Help,
+//       on by default - feature 123; RAR archives read by the 7zip plugin
+//       on the 7-Zip 26.03 engine - feature 087; external archivers started
+//       directly, the MS-DOS archivers removed - feature 084; plugin
+//       interface 107 and updates with viewer windows open - features 088,
+//       118, 121; privacy fixes - features 085, 086, 090; names compared by
+//       the file system's rule and text outside the code page in dialogs,
+//       passwords and plugins - features 092-094, 100-104, 116, 117; long
+//       paths and archive data-loss fixes - features 095-099, 103, 105-115,
+//       119, 120; see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
-#define VERSINFO_BUILDNUMBER 192
+#define VERSINFO_BUILDNUMBER 193
 
 // VERSINFO_BETAVERSION_TXT:
 //
@@ -251,7 +261,7 @@
 //         configuration dialogs); pure vtable append - plugins built for
 //         104/105 keep loading and running unchanged, see
 //         specs/049-dark-mode-stabilization/contracts/plugin-theme-api-v106.md
-//   107 - after 0.1.8 (feature 088): unattended close (an installer closes the
+//   107 - 0.1.9 build 193 (feature 088): unattended close (an installer closes the
 //         program through the Restart Manager, feature 080) made visible to
 //         plugins - IsUnattendedClose and SetWindowClosesUnattended appended at
 //         the end of CSalamanderGeneralAbstract; SAL_MAX_PATH_UTF8 defined in
@@ -264,6 +274,6 @@
 //         specs/088-plugin-interface-107/contracts/plugin-api-v107.md
 
 #define LAST_VERSION_OF_SALAMANDER 107
-#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 107, first shipped after version 0.1.8."
+#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 107, first shipped in version 0.1.9."
 
 #endif // __SPL_VERS_H

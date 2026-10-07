@@ -8,12 +8,12 @@ WinAPI C++ application — no MFC, no Qt, no cross-platform frameworks.
 
 ## Product Identity (established in feature 032, renamed in feature 046)
 
-- **Product name**: Tandem Commander, version **0.1.8** (internal build 192,
-  release dated 2026-09-20 — it carries features 075, 077, 078, 079, 080
-  and 081, everything made since 0.1.7 / build 191 / tag `v0.1.7`);
+- **Product name**: Tandem Commander, version **0.1.9** (internal build 193,
+  release dated 2026-10-07 — it carries features 083–121 and 123,
+  everything made since 0.1.8 / build 192 / tag `v0.1.8`);
   released versions and what changed in each are recorded in `CHANGELOG.md`
   (mandatory per the constitution: a release bumps
-  `VERSINFO_SALAMANDER_MINORB` + `VERSINFO_BUILDNUMBER` in
+  `VERSINFO_SALAMANDER_*` + `VERSINFO_BUILDNUMBER` in
   `src/plugins/shared/spl_vers.h`, `MyAppVersion` in
   `setup/tandemcommander.iss`, and this line, in the same change as the
   changelog entry; the plugin interface version
@@ -208,8 +208,10 @@ glance* (revised 2026-10-06) lists what is really open - code work an agent
 can do (by severity), steps owed to a person, and decisions not to act on.
 Features up to 121 are done and GUI-verified on the hidden desktop; feature
 123 (new version check) is implemented and verified, with its person steps
-owed (`specs/123-new-version-check/closing-report.md`); no release is being
-prepared (0.1.8 is the last published version).
+owed (`specs/123-new-version-check/closing-report.md`). The tree is prepared
+for the **0.1.9** release (2026-10-07; build, tag, GitHub release with the
+installer attached and the winget submission are the maintainer's steps -
+the winget submission waits until `microsoft/winget-pkgs#426090` is settled).
 
 ## Constitution
 

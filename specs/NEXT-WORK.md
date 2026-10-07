@@ -27,6 +27,23 @@ decisions already taken are marked, and the section *Open items at a glance*
 lists what is really left. No release is being prepared: 0.1.8 is still the
 last published version; everything since is in `CHANGELOG.md` `[Unreleased]`.
 
+**Revised 2026-10-07** — the tree is **prepared for the 0.1.9 release**
+(build 193): `spl_vers.h`, `setup/tandemcommander.iss`, `CHANGELOG.md`
+(`## [0.1.9] — 2026-10-07`, the former `[Unreleased]` section), `PRIVACY.md`
+and `CLAUDE.md` state it; GitHub release notes are drafted as
+`temp/release_notes_v0.1.9.md` (not tracked). Owed to the maintainer:
+`build.cmd full release sign setup`, tag `v0.1.9`, the GitHub release **with
+the installer attached** under the name `tandemcommander-0.1.9-x64-setup.exe`
+(feature 123 offers a release only then), the checks listed under *At the next
+release, because of feature 123* below. **winget**: the templates were
+dry-run for 0.1.9 (`publish.ps1 -Version 0.1.9 -LocalFile ...`, validation
+succeeded, output discarded); nothing is submitted while
+`microsoft/winget-pkgs#426090` is open - keep the `Publish to winget`
+workflow disabled when the release is published, and later run
+`tools\winget\publish.ps1 -Version 0.1.9 -Submit` (or the workflow by hand).
+If the release happens on another day, change the date in the changelog
+heading and in `PRIVACY.md`.
+
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
 `specs/069-finish-encoding-fixes/REMAINING-WORK.md`,

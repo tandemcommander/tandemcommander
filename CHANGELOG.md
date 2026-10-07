@@ -9,7 +9,19 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
-## [Unreleased]
+## [0.1.9] — 2026-10-07
+
+**Build 193.** Feature release. The program now tells you when a newer
+version has been published: on by default, one request to GitHub about once a
+day, nothing about you or your computer is sent, and one option turns it off.
+RAR archives open and unpack without installing anything, on a 7-Zip engine
+updated from 16.04 to 26.03. External archivers, which never started in any
+earlier release, work; the MS-DOS archivers are gone. A long series of fixes
+ends silent data loss around archives and file operations, makes file names,
+passwords and typed text in any script work in the program and its plugins,
+opens archives and folders at very long paths, and makes PictView's Save As
+save again. The privacy defects found while writing the privacy statement are
+fixed. Plugin interface 107; plugins built for earlier versions keep working.
 
 New version check (feature 123). Tandem Commander tells you when a newer
 version has been published. **It is on by default and is the first thing the
@@ -58,6 +70,113 @@ line, and passwords in the 7zip plugin (feature 093). On a Czech Windows a
 character such as `Ж` or `日` typed into Find Files, into a Configuration
 page or into the command line became `?`, and the 7zip plugin handed every
 password with a non-English letter to the archive engine garbled.
+
+### Added
+
+- **Check for a new version.** When a newer version of Tandem Commander has
+  been published, a window says so shortly after the program starts: it shows
+  the version you have, the new version and its release date, and offers
+  *Download* (the installer opens in your web browser — the program downloads
+  and installs nothing itself), *Remind Me Later* and *Skip This Version*; a
+  link opens the release notes. The check runs about once a day (when the
+  server could not be reached, it is tried again at a later start, at most
+  once an hour) and never delays the start: without a connection, or when the
+  server does not answer, nothing is shown. **Help → Check for New Version** asks at any time and
+  always answers — a newer version, "the latest version", or why the check
+  could not be made. The **About** box shows what is known next to your
+  version, with a link to the download. To turn the automatic check off, clear
+  **Options → Configuration → General → Check for a new version of Tandem
+  Commander at start-up**, or the same option in the window itself. What is
+  sent: one request to `api.github.com` with the fixed identification
+  `TandemCommander-updatecheck` — not your version, no identifier, no cookies
+  (see `PRIVACY.md`). Only published releases with an installer are offered,
+  never pre-releases. If the program was installed with the Windows Package
+  Manager, `winget upgrade` may offer the new version a little later than
+  this window does; the download works in either case.
+
+- **RAR archives** (RAR 1.5–4 and RAR5) open in the panel like a folder, can
+  be viewed with F3, copied from with F5 and unpacked with Alt+F9 — no other
+  program needs to be installed. Encrypted archives ask for the password,
+  also before showing the file list when the list itself is encrypted. A
+  split archive (`name.part1.rar`, `name.part2.rar` … or `name.rar`,
+  `name.r00` …) opens from its first part; a missing part is reported.
+  RAR archives cannot be changed: adding, deleting or updating files is
+  refused with a message; creating RAR archives remains WinRAR's job (see
+  *Only programs that work are offered*). An archive that would need more
+  memory to unpack than half of the computer's memory, or more than 4 GB, is
+  refused instead of exhausting the memory. *Unpack and delete* removes all
+  parts of a split archive. **Links are not created**:
+  symbolic and hard links stored in an archive are left out, and you are told
+  how many. **Passwords** can contain any characters (see *Fixed*, feature
+  093).
+
+- **Cancel.** While an external archiver runs, the small "Executing external
+  program" window has a *Cancel* button, and Esc does the same. It stops the
+  archiver and anything it started. Esc also stops reading an archive's list
+  of files. Unpacking from the panel, and with the built-in 7-Zip unpacker,
+  writes nothing to the target folder when cancelled. A custom unpacker that
+  does not use `$(TargetPath)` starts in the target folder and may leave some
+  files there. After a cancelled pack or delete you are told the archive may be
+  incomplete.
+- **7-Zip.** With 7-Zip installed, ARJ and LZH/LHA archives open in the panel
+  and can be unpacked through the 7-Zip console program (`7z.exe`). File
+  names outside the system code page survive listing and unpacking.
+- **Archivers Autoconfiguration finds installed programs without a disk
+  scan.** It reads where 7-Zip and WinRAR are installed (their registry
+  entries and the Program Files folders). The drive scan is still available
+  and now looks only for `7z.exe` and `Rar.exe`.
+- **`$(ListUnicodeFullName)`** for custom packers and unpackers: the list of
+  files written in Unicode (UTF-16), for archivers that read such lists.
+
+### Changed
+
+- **An update no longer fails because a viewer window is open.** When an
+  installer or `winget upgrade` asks the running program to close, windows of
+  the Code Viewer, the Markdown Viewer, PictView and the Database Viewer are
+  now closed without a question, like the internal viewer's. Since 0.1.8 the
+  program declined in that state and the update failed. It still declines -
+  at once, showing nothing - while a viewer has a dialog of its own open,
+  while PictView shows an image that exists only in its window (pasted,
+  scanned, captured), and while a window of another plugin that may hold
+  unsaved work is open (Batch Renamer and others; File Comparator, Disk Map
+  and Checksum Verify windows, the Registry Editor's Find window and FTP's
+  log and message windows no longer stop an update - see *Fixed*, features
+  118 and 121).
+- **Plugin interface 107** (for plugin authors): `IsUnattendedClose` and
+  `SetWindowClosesUnattended`; `SAL_MAX_PATH_UTF8` and `CSalMaxPathBuffer`
+  in the plugin headers; the headers now state the real size of the buffers
+  that receive full paths (`GetNextFileNameForViewer`,
+  `GetPreviousFileNameForViewer`, `SalSplitGeneralPath`,
+  `SalSplitWindowsPath`, `CheckAndCreateDirectory`). Plugins built for
+  interface 104-106 keep working; the two viewer file-name services skip
+  files whose name does not fit the 260 bytes the old headers promised.
+- **The viewer engine's crash reports stay on your computer.** If the engine
+  that the Markdown Viewer and the Code Viewer display documents with
+  (Microsoft Edge WebView2) crashes, its crash report is no longer sent to
+  Microsoft. While Tandem Commander 0.1.5 to 0.1.8 is running at the same time
+  and has used one of these viewers, the two cannot share that engine: in the instance that starts it
+  second, the viewer reports that its display engine is unavailable and
+  closes, until the other instance is closed.
+- **Only programs that work are offered.** An external archiver's entries in
+  *Pack* (Alt+F5) and *Unpack* (Alt+F9), and the archive types it serves, are
+  offered only while its program is found. Install it and run *Archivers
+  Autoconfiguration*, and they appear. *RAR (WinRAR)* is offered for creating
+  RAR archives when WinRAR's console program `Rar.exe` is installed.
+- **The 7zip plugin is registered for RAR** (its configuration is updated
+  once). In *Archives Associations in Panels* the `rar;r##` entry shows the
+  7-Zip plugin for viewing and *RAR (WinRAR)* for packing, on an updated
+  installation exactly as on a new one. With WinRAR installed, copying into
+  an open RAR archive is done by WinRAR.
+- Symbolic links in a 7z archive made on Linux or macOS are no longer
+  unpacked as small text files holding the link's target. They are left out
+  like the links in RAR archives, you are told how many, and *Unpack and
+  delete* keeps such an archive.
+- In a 7z archive made on Linux or macOS, a backslash that is part of a
+  file name is now shown as a character of that name (as in 7-Zip itself)
+  instead of starting a new folder.
+- The DOS (8.3) variables are no longer offered in the variable menus of the
+  packer and unpacker configuration. Commands that already use them keep
+  working.
 
 ### Fixed
 
@@ -788,7 +907,7 @@ password with a non-English letter to the archive engine garbled.
 - **Unpack and delete keeps a 7z archive that did not unpack completely.**
   When a file could not be unpacked (a damaged file, a CRC error, or a name
   too long to unpack), the archive was deleted anyway. It is now kept; so is
-  an archive with links that were left out (see *RAR archives*, below).
+  an archive with links that were left out (see *RAR archives* under *Added*).
 - **Cancelling while unpacking a 7z archive no longer deletes the wrong
   file.** After choosing *Skip* for a file that already existed and then
   pressing Cancel, the plugin could delete that existing file; in an archive
@@ -810,113 +929,6 @@ password with a non-English letter to the archive engine garbled.
   archive was made with the compression level's default instead. Archives
   made now follow the setting; they may come out somewhat smaller or larger
   than before, and every 7-Zip version reads them.
-
-### Added
-
-- **Check for a new version.** When a newer version of Tandem Commander has
-  been published, a window says so shortly after the program starts: it shows
-  the version you have, the new version and its release date, and offers
-  *Download* (the installer opens in your web browser — the program downloads
-  and installs nothing itself), *Remind Me Later* and *Skip This Version*; a
-  link opens the release notes. The check runs about once a day (when the
-  server could not be reached, it is tried again at a later start, at most
-  once an hour) and never delays the start: without a connection, or when the
-  server does not answer, nothing is shown. **Help → Check for New Version** asks at any time and
-  always answers — a newer version, "the latest version", or why the check
-  could not be made. The **About** box shows what is known next to your
-  version, with a link to the download. To turn the automatic check off, clear
-  **Options → Configuration → General → Check for a new version of Tandem
-  Commander at start-up**, or the same option in the window itself. What is
-  sent: one request to `api.github.com` with the fixed identification
-  `TandemCommander-updatecheck` — not your version, no identifier, no cookies
-  (see `PRIVACY.md`). Only published releases with an installer are offered,
-  never pre-releases. If the program was installed with the Windows Package
-  Manager, `winget upgrade` may offer the new version a little later than
-  this window does; the download works in either case.
-
-- **RAR archives** (RAR 1.5–4 and RAR5) open in the panel like a folder, can
-  be viewed with F3, copied from with F5 and unpacked with Alt+F9 — no other
-  program needs to be installed. Encrypted archives ask for the password,
-  also before showing the file list when the list itself is encrypted. A
-  split archive (`name.part1.rar`, `name.part2.rar` … or `name.rar`,
-  `name.r00` …) opens from its first part; a missing part is reported.
-  RAR archives cannot be changed: adding, deleting or updating files is
-  refused with a message; creating RAR archives remains WinRAR's job (see
-  *Only programs that work are offered*). An archive that would need more
-  memory to unpack than half of the computer's memory, or more than 4 GB, is
-  refused instead of exhausting the memory. *Unpack and delete* removes all
-  parts of a split archive. **Links are not created**:
-  symbolic and hard links stored in an archive are left out, and you are told
-  how many. **Passwords** can contain any characters (see *Fixed*, feature
-  093).
-
-- **Cancel.** While an external archiver runs, the small "Executing external
-  program" window has a *Cancel* button, and Esc does the same. It stops the
-  archiver and anything it started. Esc also stops reading an archive's list
-  of files. Unpacking from the panel, and with the built-in 7-Zip unpacker,
-  writes nothing to the target folder when cancelled. A custom unpacker that
-  does not use `$(TargetPath)` starts in the target folder and may leave some
-  files there. After a cancelled pack or delete you are told the archive may be
-  incomplete.
-- **7-Zip.** With 7-Zip installed, ARJ and LZH/LHA archives open in the panel
-  and can be unpacked through the 7-Zip console program (`7z.exe`). File
-  names outside the system code page survive listing and unpacking.
-- **Archivers Autoconfiguration finds installed programs without a disk
-  scan.** It reads where 7-Zip and WinRAR are installed (their registry
-  entries and the Program Files folders). The drive scan is still available
-  and now looks only for `7z.exe` and `Rar.exe`.
-- **`$(ListUnicodeFullName)`** for custom packers and unpackers: the list of
-  files written in Unicode (UTF-16), for archivers that read such lists.
-
-### Changed
-
-- **An update no longer fails because a viewer window is open.** When an
-  installer or `winget upgrade` asks the running program to close, windows of
-  the Code Viewer, the Markdown Viewer, PictView and the Database Viewer are
-  now closed without a question, like the internal viewer's. Since 0.1.8 the
-  program declined in that state and the update failed. It still declines -
-  at once, showing nothing - while a viewer has a dialog of its own open,
-  while PictView shows an image that exists only in its window (pasted,
-  scanned, captured), and while a window of another plugin that may hold
-  unsaved work is open (Batch Renamer and others; File Comparator, Disk Map
-  and Checksum Verify windows, the Registry Editor's Find window and FTP's
-  log and message windows no longer stop an update - see *Fixed*, features
-  118 and 121).
-- **Plugin interface 107** (for plugin authors): `IsUnattendedClose` and
-  `SetWindowClosesUnattended`; `SAL_MAX_PATH_UTF8` and `CSalMaxPathBuffer`
-  in the plugin headers; the headers now state the real size of the buffers
-  that receive full paths (`GetNextFileNameForViewer`,
-  `GetPreviousFileNameForViewer`, `SalSplitGeneralPath`,
-  `SalSplitWindowsPath`, `CheckAndCreateDirectory`). Plugins built for
-  interface 104-106 keep working; the two viewer file-name services skip
-  files whose name does not fit the 260 bytes the old headers promised.
-- **The viewer engine's crash reports stay on your computer.** If the engine
-  that the Markdown Viewer and the Code Viewer display documents with
-  (Microsoft Edge WebView2) crashes, its crash report is no longer sent to
-  Microsoft. While Tandem Commander 0.1.5 to 0.1.8 is running at the same time
-  and has used one of these viewers, the two cannot share that engine: in the instance that starts it
-  second, the viewer reports that its display engine is unavailable and
-  closes, until the other instance is closed.
-- **Only programs that work are offered.** An external archiver's entries in
-  *Pack* (Alt+F5) and *Unpack* (Alt+F9), and the archive types it serves, are
-  offered only while its program is found. Install it and run *Archivers
-  Autoconfiguration*, and they appear. *RAR (WinRAR)* is offered for creating
-  RAR archives when WinRAR's console program `Rar.exe` is installed.
-- **The 7zip plugin is registered for RAR** (its configuration is updated
-  once). In *Archives Associations in Panels* the `rar;r##` entry shows the
-  7-Zip plugin for viewing and *RAR (WinRAR)* for packing, on an updated
-  installation exactly as on a new one. With WinRAR installed, copying into
-  an open RAR archive is done by WinRAR.
-- Symbolic links in a 7z archive made on Linux or macOS are no longer
-  unpacked as small text files holding the link's target. They are left out
-  like the links in RAR archives, you are told how many, and *Unpack and
-  delete* keeps such an archive.
-- In a 7z archive made on Linux or macOS, a backslash that is part of a
-  file name is now shown as a character of that name (as in 7-Zip itself)
-  instead of starting a new folder.
-- The DOS (8.3) variables are no longer offered in the variable menus of the
-  packer and unpacker configuration. Commands that already use them keep
-  working.
 
 ### Removed
 
