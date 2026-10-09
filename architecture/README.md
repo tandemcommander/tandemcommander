@@ -16,6 +16,10 @@ options, and code standards.
 | 06 | [Plugin Architecture](06-plugin-architecture.md) | Plugin API, .spl/.slg format, build configuration |
 | 07 | [Preprocessor Definitions](07-preprocessor-defs.md) | All #defines grouped by configuration scope |
 | 08 | [Code Standards](08-code-standards.md) | Encoding, formatting, C++ standard, conventions |
+| 09 | [Plugin Catalog](09-plugin-catalog.md) | All plugins categorized by purpose |
+| 10 | [Plugin Maintenance Outlook](10-plugin-maintenance-outlook.md) | Per-plugin 2026+ maintenance assessment (Czech) |
+| 11 | [WebView2 Integration](11-webview2-integration.md) | **Binding contract** for any plugin embedding WebView2 |
+| 12 | [Project Reference](12-project-reference.md) | Long form of the facts `CLAUDE.md` keeps short: identity, copyright rule, build policies, key facts, technologies |
 
 ## Quick Navigation
 
@@ -34,4 +38,5 @@ options, and code standards.
 ## See Also
 
 - [CLAUDE.md](../CLAUDE.md) — AI assistant context file (concise project summary with links to all documents)
+- [specs/FEATURE-HISTORY.md](../specs/FEATURE-HISTORY.md) — per-feature notes (what each feature changed, traps, evidence), with an index by area
 - [README.md](../README.md) — Original project README with prerequisites and building instructions
