@@ -3,7 +3,7 @@ name: Publish to winget
 # Submits the winget manifests for a released version to microsoft/winget-pkgs.
 #
 # The pull request is opened by wingetcreate on behalf of the account owning
-# secrets.WINGET_PAT (a classic PAT with the public_repo scope). That account
+# secrets.WINGET_PAT (a classic PAT with the public_repo and workflow scopes). That account
 # must have a fork of microsoft/winget-pkgs. Until the secret exists this
 # workflow still runs and still generates the manifests - it just does not
 # submit them, so the repository never goes red over a missing secret.
@@ -73,7 +73,7 @@ jobs:
           $submit = ($env:EVENT_NAME -eq 'release') -or ($env:INPUT_SUBMIT -eq 'true')
           if ($submit -and -not $env:WINGET_PAT) {
             Write-Host "WINGET_PAT is not configured - generating and validating the manifests only."
-            Write-Host "Add the secret (classic PAT, public_repo scope) to submit automatically; see tools/winget/README.md."
+            Write-Host "Add the secret (classic PAT, public_repo + workflow scopes) to submit automatically; see tools/winget/README.md."
             $submit = $false
           }
 

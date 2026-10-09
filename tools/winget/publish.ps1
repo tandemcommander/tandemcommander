@@ -44,7 +44,8 @@
 
 .PARAMETER Token
     GitHub token used by wingetcreate. Default: the WINGET_PAT environment
-    variable. A classic PAT with the public_repo scope; the account owning it
+    variable. A classic PAT with the public_repo and workflow scopes (workflow
+    lets wingetcreate bring the fork up to date); the account owning it
     must have a fork of microsoft/winget-pkgs. It is handed to wingetcreate
     through WINGET_CREATE_GITHUB_TOKEN, never on a command line.
 
@@ -333,7 +334,7 @@ if (-not $Submit) {
 
 if (-not $Token) { $Token = $env:WINGET_PAT }
 if (-not $Token) {
-    Fail 'no GitHub token - pass -Token or set WINGET_PAT (classic PAT with the public_repo scope)'
+    Fail 'no GitHub token - pass -Token or set WINGET_PAT (classic PAT with the public_repo and workflow scopes)'
 }
 
 $wc = Get-Command wingetcreate -ErrorAction SilentlyContinue
@@ -366,7 +367,15 @@ try {
 } finally {
     Remove-Item Env:\WINGET_CREATE_GITHUB_TOKEN -ErrorAction SilentlyContinue
 }
-if ($submitExit -ne 0) { Fail "wingetcreate submit failed with exit code $submitExit" }
+if ($submitExit -ne 0) {
+    Write-Host ''
+    Write-Host 'If wingetcreate reported that the fork could not be synced: the fork of'
+    Write-Host 'microsoft/winget-pkgs is behind commits that change workflow files, and a token'
+    Write-Host 'without the workflow scope may not push those. Either press "Sync fork" on the'
+    Write-Host 'fork''s GitHub page and run again, or add the workflow scope to the token.'
+    Write-Host 'See tools/winget/README.md, Troubleshooting.'
+    Fail "wingetcreate submit failed with exit code $submitExit"
+}
 
 Write-Host ''
 Write-Host "Pull request opened for $PackageIdentifier $Version."

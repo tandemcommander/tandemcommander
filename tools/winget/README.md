@@ -55,7 +55,11 @@ on its own.
    pushes the branch to that fork and opens the pull request from it.
 2. **Create a token.** GitHub → *Settings* → *Developer settings* →
    *Personal access tokens* → *Tokens (classic)* → *Generate new token*.
-   The only scope needed is **`public_repo`**. Copy the value once.
+   Scopes: **`public_repo`** and **`workflow`**. Copy the value once.
+   (`workflow` is what lets `wingetcreate` bring the fork up to date before
+   each submission: upstream regularly changes files under
+   `.github/workflows`, and GitHub refuses to let a token without that scope
+   push such commits - see *Troubleshooting*.)
 3. **For automatic submission**, add it to this repository:
    *Settings* → *Secrets and variables* → *Actions* → *New repository secret*,
    name `WINGET_PAT`. Without this secret the workflow still runs and still
@@ -205,6 +209,21 @@ above for why the manifests depend on it.
 schema. The message names the field. The schema for each file is linked from
 its first line, and editors with a YAML language server will flag mistakes as
 you type.
+
+**`The forked repository could not be synced with the upstream commits`** -
+the fork of `microsoft/winget-pkgs` is behind upstream, and among the missing
+commits is one that changes a file under `.github/workflows`. A token without
+the `workflow` scope may not push those, so `wingetcreate` cannot update the
+fork (first met with 0.1.9: fork last synced 2026-08-29, upstream workflow
+changes on 2026-09-17 and 2026-10-03). Two ways out:
+
+- *Once*: open the fork on GitHub, press **Sync fork** -> **Update branch**,
+  then run the submission again. It will come back whenever upstream touches
+  its workflows between two of our releases.
+- *For good*: give the token the `workflow` scope (GitHub -> *Settings* ->
+  *Developer settings* -> *Tokens (classic)* -> the token -> tick `workflow`
+  -> *Update token*; the value does not change, so the `WINGET_PAT` secret
+  stays valid).
 
 **`no GitHub token`** — `-Token` was not passed and `WINGET_PAT` is not set;
 see *One-time setup*.
