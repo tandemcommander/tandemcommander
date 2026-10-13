@@ -256,7 +256,7 @@ void CMainWindow::MakeFileList()
             {
                 DWORD err = GetLastError();
                 char errorText[200 + 2 * MAX_PATH];
-                sprintf(errorText, "%s\n\n%s", LoadStr(IDS_ERRORCREATINGTMPFILE),
+                _snprintf_s(errorText, _TRUNCATE, "%s\n\n%s", LoadStrU8(IDS_ERRORCREATINGTMPFILE), // UTF-8 template: the composed text is UTF-8 (feature 127)
                         GetErrorText(err));
                 SalMessageBox(HWindow, errorText, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                 fileName[0] = 0;
@@ -949,7 +949,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                             char buff[4 * MAX_PATH];
                             if (strlen(cmdLine) > 2 * MAX_PATH) // "always false" (arguments are in 'arguments'): shorten overly long command lines for error display
                                 strcpy(cmdLine + 2 * MAX_PATH - 4, "...");
-                            sprintf(buff, LoadStr(IDS_EXECERROR), cmdLine, GetErrorText(err));
+                            _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_EXECERROR), cmdLine, GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                            SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
                             SalMessageBox(parent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                             break;
                         }
@@ -1016,7 +1017,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                             char buff[4 * MAX_PATH];
                             if (strlen(cmdLine) > 2 * MAX_PATH)
                                 strcpy(cmdLine + 2 * MAX_PATH, "..."); // shorten just in case (probably never needed)
-                            sprintf(buff, LoadStr(IDS_EXECERROR), cmdLine, GetErrorText(err));
+                            _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_EXECERROR), cmdLine, GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                            SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
                             DiskCache.ReleaseName(batUniqueName, FALSE);
                             SalMessageBox(parent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                         }

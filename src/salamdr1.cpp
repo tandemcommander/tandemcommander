@@ -1125,7 +1125,8 @@ char* BuildName(char* path, char* name, char* dosName, BOOL* skip, BOOL* skipAll
     if (len >= SAL_MAX_PATH_UTF8)
     {
         char text[2 * MAX_PATH + 100];
-        _snprintf_s(text, _TRUNCATE, LoadStr(IDS_NAMEISTOOLONG), name, path);
+        _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_NAMEISTOOLONG), name, path); // UTF-8 template: the composed text is UTF-8 (feature 127)
+        SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
 
         if (skip != NULL)
         {
@@ -3432,9 +3433,10 @@ BOOL FindPluginsWithoutImportedCfg(BOOL* doNotDeleteImportedCfg)
         char skippedNames[200];
         skippedNames[0] = 0;
         if (skipped > 0)
-            sprintf(skippedNames, LoadStr(IDS_NUMOFSKIPPEDPLUGINNAMES), skipped);
+            _snprintf_s(skippedNames, _TRUNCATE, LoadStrU8(IDS_NUMOFSKIPPEDPLUGINNAMES), skipped); // UTF-8: it goes into the UTF-8 message below (feature 127)
         char msg[2000];
-        sprintf(msg, LoadStr(IDS_NOTALLPLUGINSCFGIMPORTED), names, skippedNames);
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_NOTALLPLUGINSCFGIMPORTED), names, skippedNames); // UTF-8 template: the composed text is UTF-8 (feature 127)
+        SalU8TrimIncompleteTail(msg); // a cut text ends at a whole character (feature 127)
         params.Text = msg;
         char aliasBtnNames[200];
         /* slouzi pro skript export_mnu.py, ktery generuje salmenu.mnu pro Translator

@@ -855,7 +855,7 @@ BOOL CDuplicateCandidates::GetMD5Digest(CGrepData* data, CFoundFilesData* file,
                 HANDLES(CloseHandle(hFile));
 
                 char buf[MAX_PATH + 100];
-                sprintf(buf, LoadStr(IDS_ERROR_READING_FILE2), GetErrorText(err));
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_ERROR_READING_FILE2), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
                 FIND_LOG_ITEM log;
                 log.Flags = FLI_ERROR;
                 log.Text = buf;
@@ -907,7 +907,7 @@ BOOL CDuplicateCandidates::GetMD5Digest(CGrepData* data, CFoundFilesData* file,
         DWORD err = GetLastError();
 
         char buf[MAX_PATH + 100];
-        sprintf(buf, LoadStr(IDS_ERROR_OPENING_FILE2), GetErrorText(err));
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_ERROR_OPENING_FILE2), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
         FIND_LOG_ITEM log;
         log.Flags = FLI_ERROR;
         log.Text = buf;
@@ -1025,7 +1025,7 @@ void CDuplicateCandidates::Examine(CGrepData* data)
     BOOL byContent = bySize && (data->FindDupFlags & FIND_DUPLICATES_CONTENT) != 0;
 
     // search completed, preparing results (MD5 computation may still follow)
-    data->SearchingText->Set(LoadStr(IDS_FIND_DUPS_RESULTS));
+    data->SearchingText->Set(LoadStrU8(IDS_FIND_DUPS_RESULTS));
 
     // sort them according to selected criteria
     QuickSort(0, Count - 1, byName, bySize, FALSE);
@@ -1105,7 +1105,7 @@ void CDuplicateCandidates::Examine(CGrepData* data)
             }
 
             // search finished, preparing results
-            data->SearchingText->Set(LoadStr(IDS_FIND_DUPS_RESULTS));
+            data->SearchingText->Set(LoadStrU8(IDS_FIND_DUPS_RESULTS));
 
             // sort the files again
             if (Count > 0)
@@ -1358,7 +1358,7 @@ BOOL TestFileContentAux(BOOL& ok, CQuadWord& fileOffset, const CQuadWord& totalS
         // file error
         FIND_LOG_ITEM log;
         log.Flags = FLI_ERROR;
-        log.Text = LoadStr(IDS_FILEREADERROR2);
+        log.Text = LoadStrU8(IDS_FILEREADERROR2);
         log.Path = path;
         SendMessage(data->HWindow, WM_USER_ADDLOG, (WPARAM)&log, 0);
         ok = FALSE;   // not found
@@ -1438,7 +1438,7 @@ BOOL TestFileContent(DWORD sizeLow, DWORD sizeHigh, const char* path, CGrepData*
         if (err != ERROR_SUCCESS || getLinkFileSizeErr)
         {
             char buf[MAX_PATH + 100];
-            sprintf(buf, LoadStr(getLinkFileSizeErr ? IDS_GETLINKTGTFILESIZEERROR : IDS_ERROR_OPENING_FILE2),
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(getLinkFileSizeErr ? IDS_GETLINKTGTFILESIZEERROR : IDS_ERROR_OPENING_FILE2),
                     GetErrorText(err));
             FIND_LOG_ITEM log;
             log.Flags = FLI_ERROR;
@@ -1513,7 +1513,7 @@ BOOL AddFoundItem(const char* path, const char* name, DWORD sizeLow, DWORD sizeH
     {
         FIND_LOG_ITEM log;
         log.Flags = FLI_ERROR;
-        log.Text = LoadStr(IDS_CANTSHOWRESULTS);
+        log.Text = LoadStrU8(IDS_CANTSHOWRESULTS);
         log.Path = NULL;
         SendMessage(data->HWindow, WM_USER_ADDLOG, (WPARAM)&log, 0);
 
@@ -1550,7 +1550,7 @@ void SearchDirectory(const char* path, int startPathLen,
     {
         FIND_LOG_ITEM log;
         log.Flags = FLI_INFO;
-        log.Text = LoadStr(IDS_FINDLOG_SKIP);
+        log.Text = LoadStrU8(IDS_FINDLOG_SKIP);
         log.Path = path;
         SendMessage(data->HWindow, WM_USER_ADDLOG, (WPARAM)&log, 0);
         return;
@@ -1705,7 +1705,7 @@ void SearchDirectory(const char* path, int startPathLen,
 
         if (testFindNextErr && err != ERROR_NO_MORE_FILES)
         {
-            sprintf(message, LoadStr(IDS_DIRERRORFORMAT), GetErrorText(err));
+            _snprintf_s(message, _TRUNCATE, LoadStrU8(IDS_DIRERRORFORMAT), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
             FIND_LOG_ITEM log;
             log.Flags = FLI_ERROR;
             log.Text = message;
@@ -1747,7 +1747,7 @@ void SearchDirectory(const char* path, int startPathLen,
         DWORD err = GetLastError();
         if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES)
         {
-            sprintf(message, LoadStr(IDS_DIRERRORFORMAT), GetErrorText(err));
+            _snprintf_s(message, _TRUNCATE, LoadStrU8(IDS_DIRERRORFORMAT), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
 
             FIND_LOG_ITEM log;
             log.Flags = FLI_ERROR | FLI_IGNORE;
@@ -2002,6 +2002,9 @@ void CSearchingString::Set(const char* buf)
 {
     HANDLES(EnterCriticalSection(&Section));
     lstrcpyn(Buffer + BaseLen, buf, MAX_PATH + 50 - BaseLen);
+    // feature 127: a long name is cut to the buffer - at a whole character, or the line is not
+    // UTF-8 any more and the status bar draws all of it as code page
+    SalFindTrimTornTail(Buffer + BaseLen);
     Dirty = TRUE;
     HANDLES(LeaveCriticalSection(&Section));
 }

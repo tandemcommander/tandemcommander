@@ -624,7 +624,10 @@ BOOL CPluginFSInterface::Delete(const char* fsName, int mode, HWND parent, int p
 
                 if (success && !skip && ConfirmOnNotEmptyDirDelete && !empty)
                 {
-                    sprintf(buf, LoadStr(IDS_CONFIRNNONEMPTYDELETE), f->Name);
+                    char templ[600]; // UTF-8 like the name put into it (feature 127)
+                    LoadStrU8(IDS_CONFIRNNONEMPTYDELETE, templ, _countof(templ));
+                    _snprintf_s(buf, _TRUNCATE, templ, f->Name);
+                    SplU8TrimTornTail(buf); // a very long key name is cut for the question - at a whole character
                     switch (SG->SalMessageBox(parent, buf, LoadStr(IDS_QUESTION), MB_ICONQUESTION | MB_YESNOCANCEL))
                     {
                     case IDYES:
@@ -1114,7 +1117,9 @@ BOOL CPluginFSInterface::EditNewFile()
         if (ret == ERROR_SUCCESS)
         {
             char buf[3 * MAX_FULL_KEYNAME + 200];
-            _snprintf_s(buf, sizeof(buf), _TRUNCATE, LoadStr(IDS_REPLACEVAL), fullNameA);
+            char templ[600]; // UTF-8 like the name put into it (feature 127)
+            LoadStrU8(IDS_REPLACEVAL, templ, _countof(templ));
+            _snprintf_s(buf, sizeof(buf), _TRUNCATE, templ, fullNameA);
 
             if (SG->SalMessageBox(GetParent(), buf, LoadStr(IDS_QUESTION), MB_ICONQUESTION | MB_YESNOCANCEL) != IDYES)
             {

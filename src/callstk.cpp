@@ -497,6 +497,7 @@ void InformAboutIconOvrlsHanCrash(const char* iconOvrlsHanName)
     __try
     {
         static char buf[900];
+        // encoding-check: allow mixed-composition - the handler's name is a registry key name read with RegEnumKeyExA (shiconov.cpp): code page, like the template
         _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_ICONOVRLS_CRASH), iconOvrlsHanName);
 
         MSGBOXEX_PARAMS params;

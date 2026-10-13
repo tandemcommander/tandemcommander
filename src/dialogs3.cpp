@@ -1309,7 +1309,7 @@ void CDriveInfo::Validate(CTransferInfo& ti)
             if (!res)
             {
                 char buf[MAX_PATH + 100];
-                sprintf(buf, LoadStr(IDS_UNABLETOCHANGEDRIVELABEL), GetErrorText(err));
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_UNABLETOCHANGEDRIVELABEL), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
                 SalMessageBox(HWindow, buf, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                 ti.ErrorOn(IDE_VOLNAME);
             }

@@ -1941,3 +1941,35 @@ a few early ones are out of sequence).
     through `WebView2LoaderStatic.lib`.
   - saltests 18,277 -> 18,304; `saltests --package-path <family>` prints the real lookup
     (compared with `Get-AppxPackage` by `probe/package_live.ps1`).
+- 127-mixed-template-texts: **a `LoadStr()` template with a UTF-8 name or `GetErrorText()`**
+  (GitHub issue #7, for 0.1.10). The composed bytes are not valid UTF-8 when the translation has
+  non-ASCII letters; UTF-8 sinks fall back to the code page and the name / Windows error text
+  comes out as mojibake (English cannot show it). Measured on 0.1.9 in Czech first: Find log,
+  Find status line, a Copy error box - all three of the report. The report listed 21 + 4 places;
+  an inventory of every such composition (`specs/127-mixed-template-texts/probe/scan_mixed.py`,
+  46 of 130 in the core) and a read of every sink found about 45, among them **a generated file
+  name** (`IDS_NEWNAME_COPY`), the Find window's title, the View With / Edit With menu, and five
+  Registry Editor messages. Fix: template through `LoadStrU8`, bounded composition,
+  `SalU8TrimIncompleteTail` after a composition with a path; `LoadStrU8` wraps and converts again
+  instead of answering `ERROR LOADING STRING` at the end of its buffer.
+  - **The reverse rule** (the review rejected the first version, which was green everywhere):
+    when a template becomes UTF-8, every other piece and the sink must be UTF-8 too. Three
+    regressions were caught: the Copy / Move subject ends in `CProgressDialog::SetDlgTitle`, which
+    used `SetWindowText` (A) and a 200-byte buffer - now composed wide (`ProgressTitlePieceToW`,
+    `SalSetWindowTitleW`, compare with `InternalGetWindowText`); `codetbl.cpp` had a `LoadStr()`
+    argument and A-API paths (`MsgPath()`); `salamdr1.cpp` a second code-page piece.
+  - **Right as they are** (both parts code page - do not "fix"): the font description
+    (`dialogs4/5.cpp`, `LOGFONTA`), plug-in file names in the start-up progress (`plugins2.cpp`,
+    069), `callstk.cpp` (`RegEnumKeyExA`, marked for the guard). After the fix the inventory lists
+    exactly 18 rows.
+  - Deferred to NEXT-WORK: `GetCommonFSOperSourceDescr` and `salamdr3.cpp` folder-creation texts
+    (wrapped by plug-ins in code-page sentences), the other plug-ins (137 candidates, FTP 86).
+  - Guard: `mixed-composition` counts `GetErrorText(` as a UTF-8 argument and `params.Text =` /
+    `log.Text =` as sinks (22 findings before, 0 after). It is a 14-line heuristic; it has no
+    reverse rule.
+  - Traps: `_snprintf_s(buf, _TRUNCATE, ...)` needs an array, not a pointer parameter; a line
+    inserted after the body of a brace-less `if` / `else` lands outside it; a function with
+    `__try` cannot hold an object with a destructor; PowerShell `(F 1 'a' + "b")` passes `+` as an
+    argument; "Copy to the same folder" is refused - the generated copy name comes from Paste.
+  - Probe `probe/mixed_probe.ps1`: 0.1.9 Czech FAIL 6, fixed PASS 13 / FAIL 0 / NOT DRIVEN 1
+    (the copy name: the clipboard held data the probe may not overwrite).

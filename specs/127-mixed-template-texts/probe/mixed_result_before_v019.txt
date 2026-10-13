@@ -1,0 +1,23 @@
+mixed_probe (feature 127, issue #7), expect: before, language: czech
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_v019\tandemcommander.exe
+Date    : 2026-10-13 08:18; desktop 'tc_probe_16160'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Fixture : data: 3 accented files + 'denied' (listing denied: True); big: sparse 12 GB 'P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148 01.bin'; Windows text for error 5: '(5) P\u0159\u00EDstup byl odep\u0159en'
+
+LOG        ROWS   FAIL        found 3 files; log rows 1: Chyba ## Chyba p\u0159i \u010Dten\u00ED adres\u00E1\u0159e: (5) P\u0139\u2122\u0102\u00ADstup byl odep\u0139\u2122en.   ## C:\Users\pavel\AppData\Local\Temp\tc127\data\denied; expected the text 'Chyba p\u0159i \u010Dten\u00ED adres\u00E1\u0159e: (5) P\u0159\u00EDstup byl odep\u0159en' for ...\denied
+LOG        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TITLE      TEXT   FAIL        the Find window's title while it searches: 'Vyhledat soubory a adres\u00E1\u0159e [vyhled\u00E1v\u00E1n\u00ED *.bin;\u0139\u013E*.\u0139\u2122x]'; holds the mask '*.bin;\u017E*.\u0159x' exactly: False
+STATUS     LINE   FAIL        expected 'Vyhled\u00E1v\u00E1n\u00ED: ...\P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148 01.bin': no; recognized (5 captures): Vyhled\u00E1v\u00E1n\u00ED: \u013911u\u0139Aou\u00C4\u0164k\u00C4- k\u0139Z\u0139 01 .bin | Vyhled\u00E1v\u00E1n\u00ED: \u013911u\u0139Aou\u00C4\u0164k\u00C4- k\u0139Z\u0139 Ol .bin | Vyhled\u00E1v\u00E1n\u00ED: \u013911u\u0139Aou\u00C4\u0164k\u00C4- k\u0139Z\u0139 Ol .bin
+STATUS     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BOX        TEXT   FAIL        window text equal to the expected text: False; window text: 'Chyba p\u0159i \u010Dten\u00ED adres\u00E1\u0159e "C:\Users\pavel\AppData\Local\Temp\tc127\data\denied".\u000A(5) P\u0139\u2122\u0102\u00ADstup byl odep\u0139\u2122en.\u000A'; expected: 'Chyba p\u0159i \u010Dten\u00ED adres\u00E1\u0159e "C:\Users\pavel\AppData\Local\Temp\tc127\data\denied".\u000A(5) P\u0159\u00EDstup byl odep\u0159en'
+BOX        LOOK   FAIL        drawn: the template's words exact, the Windows error text no; recognized: Chyba | x | Chyba p\u0159i \u010Dten\u00ED adres\u00E1\u0159e | (5) P\u0139 "\u00C4-stup byl odep\u0139\u201D'en. | P\u0159esko\u010Dt | P\u0159esko\u010Dt v\u0161e | Storno | Chyba | x | Chyba p\u0159i \u010Dten\u00ED adres\u00E1\u0159e | (5) P\u0139"\u00C4-stup byl odep\u0139"en. | P\u0159esko\u010Dt | P\u0159esko\u010Dt v\u0161e | Storno
+BOX        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PROGRESS   TITLE  PASS        title '(0 %) Kop\u00EDrov\u00E1n\u00ED'; the caption 'Kop\u00EDrov\u00E1n\u00ED' is a text of the translation: True
+PROGRESS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Clipboard: cannot read (Exception calling "GetDataObject" with "0" argument(s): "Po?adovan? operace se schr?nkou se nezda?ila.") - the paste rows are not driven
+COPYNAME   DISK   NOT DRIVEN  the clipboard holds data that cannot be saved and restored
+COPYNAME   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REGDEL     TEXT   FAIL        boxes: Opravdu chcete odstranit adres\u00E1\u0159 "P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148"? || Kl\u00ED\u010D "P\u0139\u2122\u0102\u00ADli\u0139\u02C7 \u0139\u013Elu\u0139\u0104ou\u00C4\u0164k\u0102\u02DD k\u0139\u017B\u0139\u0088" nen\u00ED pr\u00E1zdn\u00FD.\u000AChcete kl\u00ED\u010D odstranit?; expected the question 'Kl\u00ED\u010D "P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148" nen\u00ED pr\u00E1zdn\u00FD.\u000AChcete kl\u00ED\u010D odstranit?'
+REGDEL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 7, FAIL 6, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

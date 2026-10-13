@@ -1,0 +1,18 @@
+mixed_probe (feature 127, issue #7), expect: fixed, language: english
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 08:18; desktop 'tc_probe_29144'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Fixture : data: 3 accented files + 'denied' (listing denied: True); big: sparse 12 GB 'P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148 01.bin'; Windows text for error 5: '(5) P\u0159\u00EDstup byl odep\u0159en'
+
+LOG        ROWS   PASS        found 3 files; log rows 1: Error ## Error reading directory: (5) P\u0159\u00EDstup byl odep\u0159en.   ## C:\Users\pavel\AppData\Local\Temp\tc127\data\denied; expected the text 'Error reading directory: (5) P\u0159\u00EDstup byl odep\u0159en' for ...\denied
+LOG        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BOX        TEXT   PASS        window text equal to the expected text: True; window text: 'Cannot read directory "C:\Users\pavel\AppData\Local\Temp\tc127\data\denied".\u000A(5) P\u0159\u00EDstup byl odep\u0159en.\u000A'; expected: 'Cannot read directory "C:\Users\pavel\AppData\Local\Temp\tc127\data\denied".\u000A(5) P\u0159\u00EDstup byl odep\u0159en'
+BOX        LOOK   PASS        drawn: the template's words exact, the Windows error text exact; recognized: Error | x | Cannot read directory 'C: | (5) P\u0159\u00EDstup byl odep\u0159en. | Error | x | Cannot read directory | (5) P\u0159\u00EDstup byl odep\u0159en. | Skip | Skip All | Cancel
+BOX        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PROGRESS   TITLE  PASS        title '(0 %) Copy'; the caption 'Copy' is a text of the translation: True
+PROGRESS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Clipboard: cannot read (Exception calling "GetDataObject" with "0" argument(s): "Po?adovan? operace se schr?nkou se nezda?ila.") - the paste rows are not driven
+COPYNAME   DISK   NOT DRIVEN  the clipboard holds data that cannot be saved and restored
+COPYNAME   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

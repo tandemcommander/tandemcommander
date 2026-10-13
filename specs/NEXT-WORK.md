@@ -270,6 +270,16 @@ Code work an agent can do:
 - **A server that wants a name and password** for its share list: 125 shows the Windows error;
   it could offer the sign-in the full `\\server\share` path already has.
 - `tools/check_encoding.py` does not scan `plugins/` (found by 124).
+- **Mixed templates, the rest** (127): (1) `CSalamanderGeneral::GetCommonFSOperSourceDescr`
+  (`zip.cpp`) and the `salamdr3.cpp` texts `IDS_NAMEUSEDFORFILE` / `IDS_CREATEDIRFAILED` hand a
+  code-page template with a UTF-8 name to plug-ins (FTP, Undelete, ZIP) that wrap it in their own
+  code-page sentences - one change with those plug-ins; (2) the other plug-ins:
+  `specs/127-mixed-template-texts/probe/scan_mixed.py --plugins` lists 137 candidates (FTP 86,
+  SFTP 17, ZIP 15) - FTP has its own rules for server texts; (3) the guard has no reverse rule
+  (a `LoadStr(` piece inside a `LoadStrU8` template, an A-API sink) and its sink patterns depend
+  on the variable names `params` / `log`; (4) `menu2.cpp` `AssignHotKeys` is byte-wise with
+  code-page tables and can put `&` inside a UTF-8 sequence; (5) the Registry Editor's `%ls`
+  messages (`fs5.cpp`, `ErrorHelper`) are consistently code page but lose letters outside it.
 - Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124).
 
 Steps owed to a person:
@@ -278,6 +288,9 @@ Steps owed to a person:
   (they read the real keyboard and mouse); a real file server with visible shares, with shares
   named in another script, and one that refuses the list.
 - 124: a look at the Registry Editor panel on a real screen in Czech and German.
+- 127: Slovak, Ctrl+C / Ctrl+V of a file in its own folder - the new name reads
+  `a - Kópia.txt` (not driven: the probe may not overwrite a clipboard that holds non-text
+  data); the title of a queued Copy (`(čekající) Kopírovat ...`).
 - 126: a start of the 0.1.10 build on Windows 7 SP1 / Server 2008 R2 SP1 (the reporter of #6 is
   asked); not testable in the development environment.
 

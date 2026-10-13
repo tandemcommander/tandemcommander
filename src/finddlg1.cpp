@@ -1405,8 +1405,10 @@ CFindDialog::CFindDialog(HWND hCenterAgainst, const char* initPath)
     StateOfFindCloseQuery = sofcqNotUsed;
     CanClose = TRUE;
     GrepThread = NULL;
-    char buf[100];
-    sprintf(buf, "%s ", LoadStr(IDS_FF_SEARCHING));
+    // feature 127: the base is UTF-8 like the names appended to it - a code-page prefix made the
+    // whole line invalid UTF-8 and the status bar drew the names as code page
+    char buf[300];
+    _snprintf_s(buf, _TRUNCATE, "%s ", LoadStrU8(IDS_FF_SEARCHING));
     SearchingText.SetBase(buf);
     UpdateStatusBar = FALSE;
     ContextMenu = NULL;
@@ -2176,7 +2178,8 @@ void CFindDialog::StartSearch(WORD command)
     PostMessage(HWindow, WM_TIMER, IDT_REPAINT, 0);
 
     char buff[MAX_PATH + 100];
-    _snprintf_s(buff, _TRUNCATE, NORMAL_FINDING_CAPTION, LoadStr(IDS_FF_NAME), LoadStr(IDS_FF_NAMED), SearchForData[0]->MasksGroup.GetMasksString());
+    _snprintf_s(buff, _TRUNCATE, NORMAL_FINDING_CAPTION, LoadStrU8(IDS_FF_NAME), LoadStrU8(IDS_FF_NAMED), SearchForData[0]->MasksGroup.GetMasksString());
+    SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
     SalSetWindowTextU8(HWindow, buff);
 
     EnableControls();
@@ -2428,7 +2431,8 @@ void CFindDialog::UpdateListViewItems()
             if (SearchInProgress)
             {
                 _snprintf_s(buf, _TRUNCATE, MINIMIZED_FINDING_CAPTION, FoundFilesListView->GetCount(),
-                            LoadStr(IDS_FF_NAME), LoadStr(IDS_FF_NAMED), SearchForData[0]->MasksGroup.GetMasksString());
+                            LoadStrU8(IDS_FF_NAME), LoadStrU8(IDS_FF_NAMED), SearchForData[0]->MasksGroup.GetMasksString());
+                SalU8TrimIncompleteTail(buf); // a cut text ends at a whole character (feature 127)
             }
             else
                 lstrcpy(buf, LoadStr(IDS_FF_NAME));
@@ -3353,8 +3357,9 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (SearchInProgress && (wParam == SIZE_RESTORED || wParam == SIZE_MAXIMIZED)) // restore
         {
             char buff[MAX_PATH + 100];
-            _snprintf_s(buff, _TRUNCATE, NORMAL_FINDING_CAPTION, LoadStr(IDS_FF_NAME), LoadStr(IDS_FF_NAMED),
+            _snprintf_s(buff, _TRUNCATE, NORMAL_FINDING_CAPTION, LoadStrU8(IDS_FF_NAME), LoadStrU8(IDS_FF_NAMED),
                         SearchForData[0]->MasksGroup.GetMasksString());
+            SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
             SalSetWindowTextU8(HWindow, buff);
         }
 

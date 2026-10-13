@@ -2080,8 +2080,8 @@ static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL i
 
         // feature 098: sized for the text (wsprintf writes up to 1,024 bytes into the 520-byte uncPath)
         CSalHeapString msg;
-        if (msg.Printf(LoadStr(IDS_CANNOT_CREATE_UNC_NAME), buff))
-            SalMessageBox(hMessageParent, msg.Text(), LoadStr(IDS_INFOTITLE),
+        if (msg.Printf(LoadStrU8(IDS_CANNOT_CREATE_UNC_NAME), buff)) // UTF-8 template: the composed text is UTF-8 (feature 127)
+            SalMessageBox(hMessageParent, msg.Text(), LoadStrU8(IDS_INFOTITLE),
                           MB_OK | MB_ICONINFORMATION);
         else
             TRACE_E(LOW_MEMORY);

@@ -514,7 +514,9 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                     if (!errorReported)
                     {
                         char buf1[1024];
-                        SalPrintf(buf1, 1024, LoadStr(IDS_ENUMKEY), SG->GetErrorText(err));
+                        char templ[600]; // UTF-8 like the Windows error text put into it (feature 127)
+                        LoadStrU8(IDS_ENUMKEY, templ, _countof(templ));
+                        SalPrintf(buf1, 1024, templ, SG->GetErrorText(err));
                         MSGBOXEX_PARAMS mbp;
                         memset(&mbp, 0, sizeof(mbp));
                         mbp.HParent = SG->GetMainWindowHWND();
@@ -656,7 +658,9 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                         if (!errorReported)
                         {
                             char buf1[1024];
-                            SalPrintf(buf1, 1024, LoadStr(IDS_ENUMKEY), SG->GetErrorText(err));
+                            char templ[600]; // UTF-8 like the Windows error text put into it (feature 127)
+                            LoadStrU8(IDS_ENUMKEY, templ, _countof(templ));
+                            SalPrintf(buf1, 1024, templ, SG->GetErrorText(err));
                             MSGBOXEX_PARAMS mbp;
                             memset(&mbp, 0, sizeof(mbp));
                             mbp.HParent = SG->GetMainWindowHWND();

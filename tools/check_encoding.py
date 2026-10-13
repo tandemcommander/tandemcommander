@@ -22,8 +22,11 @@ cp-acp-display   A name is converted with WideCharToMultiByte(CP_ACP, ...) on a
 
 mixed-composition
                  A printf-family call whose FORMAT comes from LoadStr() (legacy
-                 codepage) and whose arguments include a file name (UTF-8), with
-                 the result handed to a message box.  The composed string is then
+                 codepage) and whose arguments include a file name or the text
+                 of a Windows error (GetErrorText) - both UTF-8 - with the
+                 result handed to a message box (also through
+                 MSGBOXEX_PARAMS.Text) or to the Find Files log
+                 (FIND_LOG_ITEM.Text).  The composed string is then
                  not valid UTF-8, so CMessageBox refuses its own wide drawing
                  path and falls back to the legacy one - which renders the
                  template correctly and the name as mojibake.
@@ -163,8 +166,16 @@ FMT_IS_LOADSTR = re.compile(r'\b(?:sprintf|sprintf_s|_snprintf|_snprintf_s|wspri
 # strict version of this pattern missed fileswnb.cpp:815 - the very defect that
 # prompted this feature - because the name arrived from an accessor called
 # GetEquivalentPairNoticeName().  Recorded in research.md R5.
-NAME_ARG = re.compile(r'[A-Za-z_]*(?:[Nn]ame|[Pp]ath|[Ff]ile|[Dd]ir|[Mm]ask|[Aa]rchive)[A-Za-z_]*')
-MSGBOX = re.compile(r'\b(?:SalMessageBox|SalMessageBoxEx|ShowMessageBox)\b')
+NAME_ARG = re.compile(r'[A-Za-z_]*(?:[Nn]ame|[Pp]ath|[Ff]ile|[Dd]ir|[Mm]ask|[Aa]rchive)[A-Za-z_]*'
+                      # feature 127 (GitHub #7): the text of a Windows error is UTF-8
+                      # as well (GetErrorText, feature 010)
+                      r'|\bGetErrorText\s*\(')
+# feature 127: besides a direct call, a text reaches a UTF-8 sink through the
+# MSGBOXEX_PARAMS structure (the SalMessageBoxEx call may be far below, behind
+# the comment block of the button names) and through the Find Files log
+# (FIND_LOG_ITEM.Text, shown by a list view that takes UTF-8).
+MSGBOX = re.compile(r'\b(?:SalMessageBox|SalMessageBoxEx|ShowMessageBox)\b'
+                    r'|\bparams\.Text\s*=|\blog\.Text\s*=')
 
 CP_ACP_W2A = re.compile(r'\bWideCharToMultiByte\s*\(\s*CP_ACP\b')
 # A CP_ACP conversion counts as a display path only when its result is handed

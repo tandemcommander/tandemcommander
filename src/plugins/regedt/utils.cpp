@@ -139,7 +139,8 @@ BOOL RegOperationError(int lastError, int error, int title, int keyRoot, LPWSTR 
     }
 
     char buf[1024];
-    int l = (int)strlen(strcpy(buf, LoadStr(error)));
+    LoadStrU8(error, buf, 600); // UTF-8 like the Windows error text appended to it (feature 127)
+    int l = (int)strlen(buf);
     SG->GetErrorText(lastError, buf + l, 1024 - l);
 
     char fullName[3 * MAX_FULL_KEYNAME]; // full REG name shown in an error dialog (UTF-8, interface 104)

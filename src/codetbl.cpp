@@ -41,7 +41,7 @@ char* ReadTable(const char* fileName, char* table)
             }
         }
         else
-            text = LoadStr(IDS_VIEWERBADFILESIZE);
+            text = LoadStrU8(IDS_VIEWERBADFILESIZE); // goes into a UTF-8 template (feature 127)
         HANDLES(CloseHandle(hFile));
     }
     else
@@ -50,6 +50,26 @@ char* ReadTable(const char* fileName, char* table)
     }
     return text;
 }
+
+// feature 127: the paths of this file come from GetModuleFileName (the A function: code page).
+// For a message composed with a UTF-8 template the path is given as UTF-8 too - a program
+// installed under a folder with accented letters would otherwise garble the whole message.
+// Returns 'path' itself when it already is UTF-8 (or cannot be converted). One static buffer:
+// the code tables are read by the main thread, one message at a time. (A plain function: the
+// callers use __try and may not hold objects with destructors.)
+static const char* MsgPath(const char* path)
+{
+    static char buf[3 * MAX_PATH];
+    WCHAR pathW[MAX_PATH];
+    if (path == NULL || SalU8ToW(path, -1, pathW, _countof(pathW)) != 0)
+        return path; // valid UTF-8 (ASCII included)
+    if (MultiByteToWideChar(CP_ACP, 0, path, -1, pathW, _countof(pathW)) == 0 ||
+        SalWToU8(pathW, -1, buf, _countof(buf)) == 0)
+        return path;
+    return buf;
+}
+
+#define CODETBL_TEXTBUF_SIZE (MAX_PATH + 500) // size of InitAux's 'textBuf' (feature 127: bounded compositions)
 
 void InitAux(HWND hWindow, TIndirectArray<CCodeTablesData>& Data,
              char* fileMem, DWORD fileSize, char* fileName, char* fileNameEnd, char* textBuf,
@@ -177,7 +197,8 @@ void InitAux(HWND hWindow, TIndirectArray<CCodeTablesData>& Data,
                                         text = ReadTable(fullName, table);
                                         if (text != NULL)
                                         {
-                                            sprintf(textBuf, LoadStr(IDS_VIEWERERROPENFILE), fullName, text);
+                                            _snprintf_s(textBuf, CODETBL_TEXTBUF_SIZE, _TRUNCATE, LoadStrU8(IDS_VIEWERERROPENFILE), MsgPath(fullName), text); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                                            SalU8TrimIncompleteTail(textBuf); // a cut text ends at a whole character (feature 127)
                                             text = textBuf;
                                         }
                                     }
@@ -201,7 +222,8 @@ void InitAux(HWND hWindow, TIndirectArray<CCodeTablesData>& Data,
                                                 }
                                                 else
                                                 {
-                                                    sprintf(textBuf, LoadStr(IDS_VIEWERBADINTCODING), convertCfgFileName);
+                                                    _snprintf_s(textBuf, CODETBL_TEXTBUF_SIZE, _TRUNCATE, LoadStrU8(IDS_VIEWERBADINTCODING), MsgPath(convertCfgFileName)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                                                    SalU8TrimIncompleteTail(textBuf); // a cut text ends at a whole character (feature 127)
                                                     text = textBuf;
                                                 }
                                             }
@@ -215,7 +237,8 @@ void InitAux(HWND hWindow, TIndirectArray<CCodeTablesData>& Data,
                                             text = ReadTable(fileName, table);
                                             if (text != NULL)
                                             {
-                                                sprintf(textBuf, LoadStr(IDS_VIEWERERROPENFILE), fileName, text);
+                                                _snprintf_s(textBuf, CODETBL_TEXTBUF_SIZE, _TRUNCATE, LoadStrU8(IDS_VIEWERERROPENFILE), MsgPath(fileName), text); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                                                SalU8TrimIncompleteTail(textBuf); // a cut text ends at a whole character (feature 127)
                                                 text = textBuf;
                                             }
                                         }
@@ -227,7 +250,8 @@ void InitAux(HWND hWindow, TIndirectArray<CCodeTablesData>& Data,
                         {
                             if (!white || txt < endTxt && *txt == '=')
                             {
-                                sprintf(textBuf, LoadStr(IDS_VIEWERINVALIDLINE), convertCfgFileName);
+                                _snprintf_s(textBuf, CODETBL_TEXTBUF_SIZE, _TRUNCATE, LoadStrU8(IDS_VIEWERINVALIDLINE), MsgPath(convertCfgFileName)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                                SalU8TrimIncompleteTail(textBuf); // a cut text ends at a whole character (feature 127)
                                 text = textBuf;
                             }
                             else
@@ -301,7 +325,8 @@ void InitAux(HWND hWindow, TIndirectArray<CCodeTablesData>& Data,
     {
         // file error
         char buf[MAX_PATH + 100];
-        sprintf(buf, LoadStrU8(IDS_FILEREADERROR), fileName);
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_FILEREADERROR), MsgPath(fileName));
+        SalU8TrimIncompleteTail(buf);
         SalMessageBox(hWindow, buf, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
     }
 }
@@ -329,7 +354,7 @@ CCodeTable::CCodeTable(HWND hWindow, const char* dirName)
                                         NULL));
     if (hFile != INVALID_HANDLE_VALUE)
     {
-        char textBuf[MAX_PATH + 500];
+        char textBuf[CODETBL_TEXTBUF_SIZE];
         DWORD err = NO_ERROR;
         DWORD fileSize = GetFileSize(hFile, NULL);
         if (fileSize != 0xFFFFFFFF)
@@ -361,7 +386,8 @@ CCodeTable::CCodeTable(HWND hWindow, const char* dirName)
 
         if (err != NO_ERROR)
         {
-            sprintf(textBuf, LoadStrU8(IDS_VIEWERERROPENCODES), fileName, GetErrorText(err));
+            _snprintf_s(textBuf, _TRUNCATE, LoadStrU8(IDS_VIEWERERROPENCODES), MsgPath(fileName), GetErrorText(err));
+            SalU8TrimIncompleteTail(textBuf);
             SalMessageBox(hWindow, textBuf, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         }
     }

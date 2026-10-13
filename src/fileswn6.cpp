@@ -869,9 +869,9 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
                         if (!isKnown)
                             AddStringToNames(usedNames, targetName);
                         char copyTxt[100];
-                        lstrcpyn(copyTxt, LoadStr(IDS_NEWNAME_COPY), 100);
+                        lstrcpyn(copyTxt, LoadStrU8(IDS_NEWNAME_COPY), 100); // UTF-8: the word becomes part of a file name (feature 127)
                         char ofTxt[100];
-                        lstrcpyn(ofTxt, LoadStr(IDS_NEWNAME_OF), 100);
+                        lstrcpyn(ofTxt, LoadStrU8(IDS_NEWNAME_OF), 100);
                         char copyOpenPar[100];
                         lstrcpyn(copyOpenPar, copyTxt, 98);
                         lstrcpyn(copyOpenPar + strlen(copyOpenPar), " (", 100 - (int)strlen(copyOpenPar));
@@ -1751,7 +1751,8 @@ BOOL CFilesWindow::BuildScriptDir(COperations* script, CActionType type, char* s
     if (st - sourcePath + strlen(dirName) >= SAL_MAX_PATH_UTF8 - 2) // long-path capable (feature 027; was MAX_PATH-2, which
     {                                                               // rejected folder ops in long-path dirs even though the
         *sourceEnd = 0;                                             // W-API enumeration below handles them)
-        _snprintf_s(text, _TRUNCATE, LoadStr(IDS_NAMEISTOOLONG), dirName, sourcePath);
+        _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_NAMEISTOOLONG), dirName, sourcePath); // UTF-8 template: the composed text is UTF-8 (feature 127)
+        SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
         BOOL skip = TRUE;
         if (!ErrTooLongSrcDirNameSkipAll)
         {
@@ -1820,7 +1821,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         {                                                // rejected copying a folder into a long-path target)
             *sourceEnd = 0;                              // restoring sourcePath
             *targetEnd = 0;                              // restoring targetPath
-            _snprintf_s(text, _TRUNCATE, LoadStr(IDS_TOOLONGNAME2), targetPath, s2);
+            _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_TOOLONGNAME2), targetPath, s2); // UTF-8 template: the composed text is UTF-8 (feature 127)
+            SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
             BOOL skip = TRUE;
             if (!ErrTooLongTgtDirNameSkipAll)
             {
@@ -2132,7 +2134,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                     DWORD err = GetLastError();
                                     if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES)
                                     {
-                                        _snprintf_s(text, _TRUNCATE, LoadStr(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed the message buffer (feature 012)
+                                        _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed the message buffer (feature 012)
+                                        SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
                                         BOOL skip = TRUE;
                                         if (!ErrListDirSkipAll)
                                         {
@@ -2284,8 +2287,9 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         strcpy_s(detailsTxt, LoadStr(IDS_VOLMOUNTPOINT));
                     else
                     {
-                        sprintf_s(detailsTxt, LoadStr(repPointType == 2 /* JUNCTION POINT */ ? IDS_INFODLGTYPE9 : IDS_INFODLGTYPE10),
+                        _snprintf_s(detailsTxt, _TRUNCATE, LoadStrU8(repPointType == 2 /* JUNCTION POINT */ ? IDS_INFODLGTYPE9 : IDS_INFODLGTYPE10),
                                   junctionOrSymlinkTgt);
+                        SalU8TrimIncompleteTail(detailsTxt); // a cut text ends at a whole character (feature 127)
                         int len = (int)strlen(detailsTxt);
                         if (detailsTxt[0] == '(')
                             memmove(detailsTxt, detailsTxt + 1, --len + 1);
@@ -2350,7 +2354,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             }
             if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES)
             {
-                _snprintf_s(text, _TRUNCATE, LoadStr(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed the message buffer (feature 012)
+                _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed the message buffer (feature 012)
+                SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
                 *sourceEnd = 0;                                                                          // restoring sourcePath
                 if (targetEnd != NULL)
                     *targetEnd = 0; // restoring targetPath
@@ -2507,7 +2512,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 
             if (testFindNextErr && err != ERROR_NO_MORE_FILES)
             {
-                _snprintf_s(text, _TRUNCATE, LoadStr(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed the message buffer (feature 012)
+                _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed the message buffer (feature 012)
+                SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
                 BOOL skip = TRUE;
                 if (!ErrListDirSkipAll)
                 {
@@ -2783,7 +2789,8 @@ BOOL CFilesWindow::BuildScriptFile(COperations* script, CActionType type, char* 
             int msgRes = DIALOG_YES /* Skip */;
             if (!ErrTooBigFileFAT32SkipAll)
             {
-                _snprintf_s(message, _TRUNCATE, LoadStr(IDS_FILEISTOOBIGFORFAT32), op.SourceName);
+                _snprintf_s(message, _TRUNCATE, LoadStrU8(IDS_FILEISTOOBIGFORFAT32), op.SourceName); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                SalU8TrimIncompleteTail(message); // a cut text ends at a whole character (feature 127)
                 MSGBOXEX_PARAMS params;
                 memset(&params, 0, sizeof(params));
                 params.HParent = MainWindow->HWindow;

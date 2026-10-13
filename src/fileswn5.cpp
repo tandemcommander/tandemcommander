@@ -1157,7 +1157,8 @@ BOOL ViewFileInt(HWND parent, const char* name, BOOL altView, DWORD handlerID, B
                     {
                         DWORD err = GetLastError();
                         char buff[4 * MAX_PATH];
-                        sprintf(buff, LoadStr(IDS_ERROREXECVIEW), expCommand, GetErrorText(err));
+                        _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_ERROREXECVIEW), expCommand, GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                        SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
                         SalMessageBox(parent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                     }
                     else
@@ -1176,7 +1177,8 @@ BOOL ViewFileInt(HWND parent, const char* name, BOOL altView, DWORD handlerID, B
                 else
                 {
                     char buff[4 * MAX_PATH];
-                    sprintf(buff, LoadStr(IDS_ERROREXECVIEW), expCommand, LoadStr(IDS_TOOLONGNAME));
+                    _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_ERROREXECVIEW), expCommand, LoadStrU8(IDS_TOOLONGNAME)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                    SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
                     SalMessageBox(parent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                 }
             }
@@ -1480,7 +1482,8 @@ void CFilesWindow::EditFile(char* name, DWORD handlerID)
                 {
                     DWORD err = GetLastError();
                     char buff[4 * MAX_PATH];
-                    sprintf(buff, LoadStr(IDS_ERROREXECEDIT), expCommand, GetErrorText(err));
+                    _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_ERROREXECEDIT), expCommand, GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                    SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
                     SalMessageBox(HWindow, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                 }
                 else
@@ -1492,7 +1495,8 @@ void CFilesWindow::EditFile(char* name, DWORD handlerID)
             else
             {
                 char buff[4 * MAX_PATH];
-                sprintf(buff, LoadStr(IDS_ERROREXECEDIT), expCommand, LoadStr(IDS_TOOLONGNAME));
+                _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_ERROREXECEDIT), expCommand, LoadStrU8(IDS_TOOLONGNAME)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
                 SalMessageBox(HWindow, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             }
         }
@@ -1652,7 +1656,10 @@ void CFilesWindow::FillViewWithMenu(CMenuPopup* popup)
                 imgIndex = pluginIndex;
         }
         if (item->ViewerType == VIEWER_EXTERNAL)
-            sprintf(buff, LoadStr(IDS_VIEWWITH_EXTERNAL), item->Command);
+        {
+            _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_VIEWWITH_EXTERNAL), item->Command); // UTF-8 template: the command is UTF-8 (feature 127)
+            SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
+        }
         if (item->ViewerType == VIEWER_INTERNAL)
             lstrcpy(buff, LoadStr(IDS_VIEWWITH_INTERNAL));
 
@@ -1842,7 +1849,8 @@ void CFilesWindow::FillEditWithMenu(CMenuPopup* popup)
         }
         if (!alreadyAdded)
         {
-            sprintf(buff, LoadStr(IDS_EDITWITH_EXTERNAL), item->Command);
+            _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_EDITWITH_EXTERNAL), item->Command); // UTF-8 template: the command is UTF-8 (feature 127)
+            SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
             popup->InsertItem(-1, TRUE, &mii);
         }
     }

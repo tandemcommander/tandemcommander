@@ -508,22 +508,51 @@ BOOL CProgressDialog::FlushCachedData()
     return changed;
 }
 
+// feature 127: a piece of the progress dialog's title as wide text - UTF-8 when it is valid
+// UTF-8 (the operation's subject with a file name), else the code page (texts of LoadStr())
+static void ProgressTitlePieceToW(const char* text, WCHAR* buf, int bufSize)
+{
+    buf[0] = 0;
+    if (text == NULL)
+        return;
+    if (SalU8ToW(text, -1, buf, bufSize) == 0)
+    {
+        if (MultiByteToWideChar(CP_ACP, 0, text, -1, buf, bufSize) == 0)
+        { // does not fit: as much as fits (a title, shortened for display at a whole unit)
+            MultiByteToWideChar(CP_ACP, 0, text, bufSize - 1, buf, bufSize - 1);
+            buf[bufSize - 1] = 0;
+        }
+    }
+}
+
 void CProgressDialog::SetDlgTitle(BOOL minimized)
 {
     char buf[200];
     TaskBarList3.SetProgressState(ShowPause ? TBPF_NORMAL : TBPF_PAUSED);
     if (RunningInOwnThread)
     {
+        // feature 127: the title is composed and set wide. Its pieces differ in encoding (the
+        // caption and the "paused" words are code page, the subject of a queued operation is
+        // UTF-8 with a file name), the A call showed one or the other as mojibake - and a long
+        // subject overran the 200-byte buffer
+        WCHAR pieceW[SAL_MAX_PATH_UTF8];
+        WCHAR titleW[SAL_MAX_PATH_UTF8 + 100];
         if (ShowPause)
-            sprintf(buf, "(%d %%) %s", (int)((min(1000, SummaryProgress) /*+ 5*/) / 10), Caption); // no rounding (100% must appear only at 100% and not at 99.5%)
+        {
+            ProgressTitlePieceToW(Caption, pieceW, _countof(pieceW));
+            _snwprintf_s(titleW, _TRUNCATE, L"(%d %%) %s", (int)((min(1000, SummaryProgress) /*+ 5*/) / 10), pieceW); // no rounding (100% must appear only at 100% and not at 99.5%)
+        }
         else
-            sprintf(buf, "(%s) %s", LoadStr(AutoPaused ? IDS_PROGDLGQUEUEPAUSED : IDS_PROGDLGPAUSED),
-                    AutoPaused && Script != NULL && Script->WaitInQueueSubject != NULL ? Script->WaitInQueueSubject : Caption);
-        char oldCaption[200];
-        ::GetWindowText(HWindow, oldCaption, 200);
-        oldCaption[199] = 0;
-        if (strcmp(oldCaption, buf) != 0)
-            SetWindowText(HWindow, buf);
+        {
+            ProgressTitlePieceToW(AutoPaused && Script != NULL && Script->WaitInQueueSubject != NULL ? Script->WaitInQueueSubject : Caption,
+                                  pieceW, _countof(pieceW));
+            _snwprintf_s(titleW, _TRUNCATE, L"(%s) %s", LoadStrW(AutoPaused ? IDS_PROGDLGQUEUEPAUSED : IDS_PROGDLGPAUSED), pieceW);
+        }
+        WCHAR oldTitleW[SAL_MAX_PATH_UTF8 + 100];
+        oldTitleW[0] = 0;
+        InternalGetWindowText(HWindow, oldTitleW, _countof(oldTitleW)); // the text itself (GetWindowTextW goes through the code-page window procedure)
+        if (wcscmp(oldTitleW, titleW) != 0)
+            SalSetWindowTitleW(HWindow, titleW);
     }
     else
     {

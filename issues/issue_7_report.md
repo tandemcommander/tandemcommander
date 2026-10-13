@@ -1,0 +1,62 @@
+Thank you - this report was right in every detail, including why the encoding check did not catch it. It turned out to be the visible tip of a larger class.
+
+**Verdict: valid.** Fixed for the next release, **0.1.10** (feature 127, branch `127-mixed-template-texts`).
+
+### What was measured on 0.1.9 (Czech)
+
+With an automated probe on a hidden desktop:
+
+| Case | 0.1.9 |
+|---|---|
+| Find Files log, a folder that cannot be listed | `Chyba při čtení adresáře: (5) PĹ™Ă­stup byl odepĹ™en.` (read from the list with `LVM_GETITEMTEXTW`) - **confirmed** |
+| Find Files status line during a content search | `Vyhledávání:` right, the accented file name garbage - **confirmed** |
+| Copy of a folder with a subfolder that cannot be read | the sentence right, `(5) PĹ™Ă­stup byl odepĹ™en.` - **confirmed** |
+
+`tools/check_encoding.py` with your two additions reports exactly your 21 places plus `InformAboutIconOvrlsHanCrash`, which is correct as it is (marked as the allowed exception, as you proposed).
+
+### What else was found
+
+I did not stop at the list. A script now lists every composition of a `LoadStr()` template with a name, a path or `GetErrorText()` in the main program (46 of 130), and every sink was read. Besides your 21 + 4 (`codetbl.cpp`) + the status line:
+
+- the Find window's **title** shows a non-ASCII mask as garbage (Czech, Slovak, Hungarian);
+- five more message boxes / dialog texts: viewer or editor command too long, a path not found in an archive, a UNC name that cannot be created, the target of a junction in Properties, the title sentence of Copy / Move;
+- the **View With / Edit With menu** items naming an external command;
+- **a file name**: the name the program generates for a copy pasted into the same folder (`name - Copy.ext`) took the translated word as code-page bytes - Slovak `Kópia`, Hungarian `Másolás`;
+- the Registry Editor plug-in: five questions / errors that put a key name or a Windows error text into a translated sentence;
+- `LoadStrU8()` itself: when a text did not fit the rest of its rotating buffer it returned `ERROR LOADING STRING` (`LoadStr()` reloads in that case). With more callers this became reachable; it now wraps and converts again.
+
+### What deliberately stays as it is
+
+Some compositions are **right** because both parts are code-page text; changing only the template would break them: the font description in the configuration (the face name comes from `LOGFONTA`), the plug-in file names in the start-up progress window, the handler name in the icon-overlay crash notice. After the fix the inventory lists exactly these (18 rows) and nothing else.
+
+Two places you flagged or that are related need a change **together with plug-ins** and are recorded for later rather than half-fixed: `GetCommonFSOperSourceDescr` (FTP and Undelete wrap its result in their own code-page sentences - a UTF-8 word inside would garble every item, not only accented ones) and the folder-creation errors that only ZIP uses. The other plug-ins (FTP alone has 86 such compositions and its own rules for server texts) are not part of this change.
+
+### The fix
+
+As you proposed - the template is loaded with `LoadStrU8`, unbounded `sprintf` became `_snprintf_s(..., _TRUNCATE, ...)`, a text cut to its buffer is cut at a whole UTF-8 character, the status line's base is UTF-8 and its buffer cut uses `SalFindTrimTornTail`. Differences from your patch:
+
+- about 45 places instead of 25 (see above);
+- an independent review of the first version found three places where the fix itself would have **introduced** garbage, all "UTF-8 template meets a code-page neighbour":
+  - the Copy / Move title sentence ends in the progress dialog's window title, which was set with the code-page API (and overran a 200-byte buffer with a long name) - the title is now composed and set as wide text;
+  - in `codetbl.cpp` one argument was itself a `LoadStr()` text, and the paths come from `GetModuleFileNameA` - a program installed under a folder with accented letters would have shown a garbled message; both are converted;
+  - the plug-in configuration message had a second code-page piece (`IDS_NUMOFSKIPPEDPLUGINNAMES`).
+
+### Tests
+
+Automated probe, hidden desktop, the product's registry key saved and restored:
+
+| Run | Result |
+|---|---|
+| 0.1.9, Czech | 7 pass, **6 fail**: log, status line, Find title, the Copy error box (text and drawing), the Registry Editor question |
+| fixed, Czech | **13 pass, 0 fail**, 1 not driven |
+| fixed and 0.1.9, English | 8 pass, 0 fail - identical texts |
+
+Rows: the Find log row exactly (`Chyba při čtení adresáře: (5) Přístup byl odepřen.`); the status line and the Find window's title during a search of a 12 GB sparse file named `Příliš žluťoučký kůň 01.bin` with the mask `*.bin;ž*.řx`; the Copy error box (window text exactly, and a capture of the drawing); the progress dialog's title during a running Copy; the Registry Editor's "key is not empty" question for a key named `Příliš žluťoučký kůň`.
+
+**Not driven:** the generated copy name (it needs Paste, and the test machine's clipboard held data the probe may not overwrite). That change is one line each for the two words, reviewed line by line; it will be checked by hand before the release.
+
+`check_encoding.py`: 22 findings before, 0 after; with one fixed line put back it reports that line.
+
+Unit tests 18,304 / 18,304; Debug and Release builds clean.
+
+The fix will be part of **Tandem Commander 0.1.10**.

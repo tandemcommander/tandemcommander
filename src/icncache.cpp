@@ -1236,7 +1236,7 @@ void CAssociations::ReadAssociations(BOOL showWaitWnd)
                 // Standard Edition Service Pack 2 (Build 3790), zvetseni bufferu na 10000 nepomaha, nutne
                 // ukoncit enumeraci uz pri prvni chybe, jinak zacne cyklit a zarat pamet (zrejme jde
                 // o interni chybu Windowsu), nikdo dalsi to nehlasil, takze to dal neresime
-                _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_UNABLETOGETASSOC), GetErrorText(enumRet));
+                _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_UNABLETOGETASSOC), GetErrorText(enumRet)); // UTF-8 template: the composed text is UTF-8 (feature 127)
                 SalMessageBox(parent, errBuf, LoadStr(IDS_UNABLETOGETASSOCTITLE), MB_OK | MB_ICONEXCLAMATION);
             }
             break; // konec enumerace
@@ -1283,7 +1283,7 @@ void CAssociations::ReadAssociations(BOOL showWaitWnd)
                     // Standard Edition Service Pack 2 (Build 3790), zvetseni bufferu na 10000 nepomaha, nutne
                     // ukoncit enumeraci uz pri prvni chybe, jinak zacne cyklit a zrat pamet (zrejme jde
                     // o interni chybu Windowsu), nikdo dalsi to nehlasil, takze to dal neresime
-                    _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_UNABLETOGETASSOC), GetErrorText(enumRet));
+                    _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_UNABLETOGETASSOC), GetErrorText(enumRet)); // UTF-8 template: the composed text is UTF-8 (feature 127)
                     SalMessageBox(parent, errBuf, LoadStr(IDS_UNABLETOGETASSOCTITLE), MB_OK | MB_ICONEXCLAMATION);
                 }
                 break; // konec enumerace

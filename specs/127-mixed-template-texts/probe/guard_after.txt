@@ -1,0 +1,21 @@
+== the guard on the fixed tree
+
+[strict-probe-rejects-wtf8] 0 finding(s)
+
+[lossy-lenient-at-intake] 0 finding(s)
+
+[ansi-tooltip-handler] 0 finding(s)
+
+[acp-title-seed] 0 finding(s)
+
+[acp-byte-table-on-name] 0 finding(s)
+
+TOTAL: 0 finding(s)
+
+== negative control: one fixed line put back (find.cpp, IDS_DIRERRORFORMAT) - the guard must report it
+[mixed-composition] 1 finding(s)
+  find.cpp:1708: [mixed-composition] sprintf(message, LoadStr(IDS_DIRERRORFORMAT), GetErrorText(err)); // UTF-8 template: the composed text is UTF-
+TOTAL: 1 finding(s)
+
+== restored
+TOTAL: 0 finding(s)

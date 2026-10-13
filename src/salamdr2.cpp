@@ -106,6 +106,12 @@ char* LoadStrU8(int resID, HINSTANCE hInstance)
     if (wideLen > 0)
     {
         size = SalWToU8(wide, wideLen, act, 10000 - (int)(act - buffer));
+        if (size == 0 && act > buffer)
+        { // feature 127: the text did not fit the rest of the rotating buffer (LoadStr()
+            // reloads in that case, this function gave up): once more from the beginning
+            act = buffer;
+            size = SalWToU8(wide, wideLen, act, 10000);
+        }
         if (size > 0)
             size--; // SalWToU8 counts the terminator, LoadString does not
     }

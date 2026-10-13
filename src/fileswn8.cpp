@@ -1048,11 +1048,13 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                     if (count <= 1)
                     {
                         char format[300];
-                        sprintf(format, LoadStr(type == atCopy ? IDS_COPYDLGTITLE : IDS_MOVEDLGTITLE), expanded);
+                        _snprintf_s(format, _TRUNCATE, LoadStrU8(type == atCopy ? IDS_COPYDLGTITLE : IDS_MOVEDLGTITLE), expanded); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                        SalU8TrimIncompleteTail(format); // a cut text ends at a whole character (feature 127)
                         _snprintf_s(subject, _TRUNCATE, format, formatedFileName);
                     }
                     else
-                        sprintf(subject, LoadStr(type == atCopy ? IDS_COPYDLGTITLE : IDS_MOVEDLGTITLE), expanded);
+                        _snprintf_s(subject, _TRUNCATE, LoadStrU8(type == atCopy ? IDS_COPYDLGTITLE : IDS_MOVEDLGTITLE), expanded);
+                    SalU8TrimIncompleteTail(subject); // a cut text ends at a whole character (feature 127)
                     script = new COperations(1000, 500, DupStr(subject), DupStr(GetPath()), DupStr(path));
                 }
                 else

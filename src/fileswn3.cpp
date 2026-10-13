@@ -2496,7 +2496,8 @@ CHANGE_AGAIN:
                                             *refusedTooLong = localRefused;
                                         if (!ret && localFailReason == CHPPFR_SHORTERPATH)
                                         {
-                                            _snprintf_s(errBuf, _countof(errBuf), _TRUNCATE, LoadStr(IDS_PATHINARCHIVENOTFOUND), end);
+                                            _snprintf_s(errBuf, _countof(errBuf), _TRUNCATE, LoadStrU8(IDS_PATHINARCHIVENOTFOUND), end); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                                            SalU8TrimIncompleteTail(errBuf); // a cut text ends at a whole character (feature 127)
                                             SalMessageBox(HWindow, errBuf, LoadStr(IDS_ERRORCHANGINGDIR),
                                                           MB_OK | MB_ICONEXCLAMATION);
                                         }

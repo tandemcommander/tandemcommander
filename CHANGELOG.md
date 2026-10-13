@@ -40,6 +40,18 @@ Fixes for the problems reported on GitHub after 0.1.9.
   packaged shell is simply not found. Windows 11 remains the only supported
   system; nothing changes there.
 
+- **Translated messages show names and error texts readably** (GitHub #7,
+  feature 127). In languages whose texts have accented letters, a message
+  composed from a translated sentence and a file name, a path or the reason
+  Windows gives showed one half as garbage: the Find Files status line and
+  log, the Find window's title with an accented mask, about twenty message
+  boxes (a folder that cannot be read, a name that is too long, a viewer or
+  editor that cannot be started, ...), the View With / Edit With menu, five
+  Registry Editor messages. The name the program generates for a copy pasted
+  into the same folder is spelled correctly in Slovak and Hungarian. English
+  is unchanged. The progress window's title no longer overruns its buffer
+  with a very long file name.
+
 ## [0.1.9] — 2026-10-07
 
 **Build 193.** Feature release. The program now tells you when a newer

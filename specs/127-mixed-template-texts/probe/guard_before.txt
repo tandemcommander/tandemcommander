@@ -1,0 +1,29 @@
+========================================================================
+ check_encoding.py - file-name display-encoding guard (feature 042)
+========================================================================
+
+[mixed-composition] 22 finding(s)
+  callstk.cpp:500: [mixed-composition] _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_ICONOVRLS_CRASH), iconOvrlsHanName);
+  dialogs3.cpp:1312: [mixed-composition] sprintf(buf, LoadStr(IDS_UNABLETOCHANGEDRIVELABEL), GetErrorText(err));
+  fileswn5.cpp:1160: [mixed-composition] sprintf(buff, LoadStr(IDS_ERROREXECVIEW), expCommand, GetErrorText(err));
+  fileswn5.cpp:1483: [mixed-composition] sprintf(buff, LoadStr(IDS_ERROREXECEDIT), expCommand, GetErrorText(err));
+  fileswn6.cpp:1754: [mixed-composition] _snprintf_s(text, _TRUNCATE, LoadStr(IDS_NAMEISTOOLONG), dirName, sourcePath);
+  fileswn6.cpp:1823: [mixed-composition] _snprintf_s(text, _TRUNCATE, LoadStr(IDS_TOOLONGNAME2), targetPath, s2);
+  fileswn6.cpp:2135: [mixed-composition] _snprintf_s(text, _TRUNCATE, LoadStr(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed th
+  fileswn6.cpp:2353: [mixed-composition] _snprintf_s(text, _TRUNCATE, LoadStr(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed th
+  fileswn6.cpp:2510: [mixed-composition] _snprintf_s(text, _TRUNCATE, LoadStr(IDS_CANNOTREADDIR), sourcePath, GetErrorText(err)); // path may exceed th
+  fileswn6.cpp:2786: [mixed-composition] _snprintf_s(message, _TRUNCATE, LoadStr(IDS_FILEISTOOBIGFORFAT32), op.SourceName);
+  find.cpp:858: [mixed-composition] sprintf(buf, LoadStr(IDS_ERROR_READING_FILE2), GetErrorText(err));
+  find.cpp:910: [mixed-composition] sprintf(buf, LoadStr(IDS_ERROR_OPENING_FILE2), GetErrorText(err));
+  find.cpp:1441: [mixed-composition] sprintf(buf, LoadStr(getLinkFileSizeErr ? IDS_GETLINKTGTFILESIZEERROR : IDS_ERROR_OPENING_FILE2),
+  find.cpp:1708: [mixed-composition] sprintf(message, LoadStr(IDS_DIRERRORFORMAT), GetErrorText(err));
+  find.cpp:1750: [mixed-composition] sprintf(message, LoadStr(IDS_DIRERRORFORMAT), GetErrorText(err));
+  icncache.cpp:1239: [mixed-composition] _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_UNABLETOGETASSOC), GetErrorText(enumRet));
+  icncache.cpp:1286: [mixed-composition] _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_UNABLETOGETASSOC), GetErrorText(enumRet));
+  mainwnd4.cpp:259: [mixed-composition] sprintf(errorText, "%s\n\n%s", LoadStr(IDS_ERRORCREATINGTMPFILE),
+  mainwnd4.cpp:952: [mixed-composition] sprintf(buff, LoadStr(IDS_EXECERROR), cmdLine, GetErrorText(err));
+  mainwnd4.cpp:1019: [mixed-composition] sprintf(buff, LoadStr(IDS_EXECERROR), cmdLine, GetErrorText(err));
+  salamdr1.cpp:1128: [mixed-composition] _snprintf_s(text, _TRUNCATE, LoadStr(IDS_NAMEISTOOLONG), name, path);
+  salamdr1.cpp:3437: [mixed-composition] sprintf(msg, LoadStr(IDS_NOTALLPLUGINSCFGIMPORTED), names, skippedNames);
+
+TOTAL: 22 finding(s)
