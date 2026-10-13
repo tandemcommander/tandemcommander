@@ -377,10 +377,13 @@ Code work an agent can do:
            Rename to a 250-letter name (`specs/133-sftp-server-verify/quickstart.md`).
          - still open from 131: `UploadDirRecursive` holds about 30 KB of buffers per level;
            no panel refresh after a partly failed move; untranslated English literals.
-       - FTP: download autorename shortens a name at a byte offset, possibly inside a
-         character, and creates the file with it (`operats5.cpp:1188-1193`, `1594-1602`);
-         the core cuts a typed Quick Rename name at 259 bytes before a plug-in sees it
-         (`fileswn5.cpp:2640`); `ssl.cpp:666` `name[200]` for a call that may write 256 bytes.
+       - ~~FTP: download autorename shortens a name at a byte offset; the core cuts a typed
+         Quick Rename name at 259 bytes~~ - **done, feature 137** (also the in-place rename
+         line, which fell back to a code-page name). Left: `ssl.cpp:666` `name[200]` for a call
+         that may write 256 bytes; the core's `SalMakeValidFileNameComponent` cuts at byte 256;
+         **SFTP: a memory leak after a failed SSH handshake** (debug build: "Detected memory
+         leaks!" at exit, seen once when the handshake failed - find the allocation that the
+         failed-connect path does not free).
        - DiskMap: `CZFile::GetFullName` / `GetRelativeName` skip a path part that does not fit
          and append the next - another file's path, handed to the shell menu (needs a full
          name over 780 bytes; not measured).

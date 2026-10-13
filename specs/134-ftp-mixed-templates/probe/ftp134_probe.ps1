@@ -23,6 +23,7 @@
       LOGINU8 / LOGINCP  a refused password: the server's words (UTF-8 / code page 1250) in
                 the login error dialog
       SAVELOG   the list of logs; Save log through the file dialog - the file read back
+      AUTOREN   (feature 137) automatic rename of a download whose name does not fit the folder
     A text passes when it holds every expected piece exactly and no mojibake letter.
     -Lang czech|english|...; -Expect fixed: FAIL rows count; -Expect before: recorded, the
     verdict column still says what a reader would see (FAIL = garbled).
@@ -244,6 +245,12 @@ function Allow-QueueQuestion {
         $last.Verdict = 'PASS'
         $script:Lines[$script:Lines.Count - 1] = $line.Replace(' FAIL ', ' PASS ') + ' [the queue question at exit is expected here]'
     }
+}
+
+# sets a DWORD of the FTP plug-in's configuration for this run (the registry key is restored)
+function Set-FtpConfig([string]$Name, [int]$Value) {
+    & reg.exe add "$RegKey\0.1\Plugins Configuration\FTP" /v $Name /t REG_DWORD /d $Value /f | Out-Null
+    return ("'" + $Name + "' = " + $Value + ' (reg exit ' + $LASTEXITCODE + ')')
 }
 
 # MKD rows: Create Directory with an accented name in a directory whose refusals have a set encoding
@@ -485,6 +492,46 @@ function Row-SaveLog {
     finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'SAVELOG' $id $fatal $before } }
 }
 
+# AUTOREN (feature 137): "If Cannot Create File" = rename automatically (set in the registry for
+# the run); the accented file is downloaded into a folder whose path leaves room for a part of
+# its name only - the name is shortened; the result must be a file with a valid, shorter name
+function Row-AutoRen {
+    if (-not (Want 'AUTOREN')) { return }
+    $before = Reports; $id = 0
+    # 259 bytes are the limit of the full name: the folder takes all but 13 of them
+    $prefix = $StartDir + '\'
+    $room = 259 - 13 - $Utf8.GetByteCount($prefix)       # room for 12 bytes of name: 8 + ".txt" - the 8th byte is inside a letter
+    $deep = ([string][char]0x017E) * [int][Math]::Floor($room / 2); if ($room % 2) { $deep += 'x' }
+    $target = $prefix + $deep
+    try {
+        NewDir $target
+        $id = Start-P
+        Key $id 0x09; [void](Do-ChangeDir $id $target); Sync $id; Key $id 0x09
+        $loc = Connect $id '/'
+        Key $id 0x23; Key $id 0x26                       # End, Up: the file with the accented name
+        $known = Dialogs $id
+        Post-Cmd (Get-Main $id) 727
+        $dlg = Wait-Dlg $id $known 15
+        if ($dlg -eq [IntPtr]::Zero) { Row 'AUTOREN' 'FILE' 'NOT DRIVEN' ('no Copy dialog; panel at ' + (Tail $loc 60)); return }
+        Click-Ok $dlg
+        Start-Sleep -Milliseconds 6000
+        $states = @()
+        foreach ($h in @(Get-Tops $id | Where-Object { $_ -ne (Get-Main $id) -and @([Drv098f]::Kids($_) | Where-Object { [Drv098f]::Cls($_) -eq 'SysListView32' }).Count })) {
+            foreach ($lv in @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::Cls($_) -eq 'SysListView32' })) {
+                $cnt = [LvText127]::Count($lv)
+                for ($i = 0; $i -lt [Math]::Min($cnt, 2); $i++) { for ($c = 1; $c -lt 3; $c++) { $x = [LvText127]::Cell($lv, $i, $c); if ($x) { $states += $x } } }
+            }
+            End-Operation $id $h
+        }
+        $files = @([IO.Directory]::GetFiles($LP + $target) | ForEach-Object { [IO.Path]::GetFileName($_) })
+        $full = $(if ($files.Count) { $Utf8.GetByteCount($target + '\' + $files[0]) } else { 0 })
+        $ok = $files.Count -eq 1 -and $files[0].Length -ge 2 -and $files[0].Length -lt $AccFile.Length -and $AccFile.StartsWith($files[0].Substring(0, 2)) -and ((Get-Item -LiteralPath ($LP + $target + '\' + $files[0])).Length -eq 3000) -and $full -le 259
+        Row 'AUTOREN' 'FILE' (V $ok) ("download of '{0}' ({1} bytes of name) into a folder with room for 12: files in the target: {2}; full name {3} bytes; states: {4}" -f (Esc $AccFile), $Utf8.GetByteCount($AccFile), $(if ($files.Count) { ($files | ForEach-Object { "'" + (Esc $_) + "'" }) -join ', ' } else { 'none' }), $full, (($states | Select-Object -Unique | ForEach-Object { Tail $_ 150 }) -join ' | '))
+    }
+    catch { Row 'AUTOREN' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'AUTOREN' $id $fatal $before; Allow-QueueQuestion } }
+}
+
 # LOG: enter the accented directory, open the Logs window (hot key), read its text
 function Row-Log {
     if (-not (Want 'LOG')) { return }
@@ -527,6 +574,7 @@ try {
     Set-Config
     Set-Lang ($Lang + '.slg')
     $script:KeyNote = Set-PluginHotKey '\\ftp\.spl$' 5 0x1034A
+    $script:AutoRenNote = Set-FtpConfig 'If Cannot Create File' 1
     $script:ConnKeyNote = Set-PluginHotKey '\\ftp\.spl$' 1 0x1034B
     if (Test-Path -LiteralPath $srvLog) { Remove-Item -LiteralPath $srvLog -Force }
     $py = (Get-Command python -ErrorAction Stop).Source
@@ -536,6 +584,7 @@ try {
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; desktop '{1}'; ACP {2}; registry key existed {3}; export SHA-256 {4}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [DeskLib098]::Name(), [Drv098f]::GetACP(), $existed, $regHash)
     Out ("Server  : python pid {0} on port {1} (alive {2}); hot key: {3}" -f $Server.Id, $Port, (-not $Server.HasExited), $script:KeyNote)
+    Out ("Config  : {0}" -f $script:AutoRenNote)
     Out ''
     Row-Mkd 'MKDU8' 'enc-utf8' $true
     Row-Mkd 'MKDCP' 'enc-cp' $true
@@ -549,6 +598,7 @@ try {
     Row-Login 'LOGINU8' 'refuse-u8:x' 633 @($Refused) 'the server reply (UTF-8) in the login error dialog'
     Row-Login 'LOGINCP' 'refuse-cp:x' 633 @($Refused) 'the server reply (code page 1250) in the login error dialog'
     Row-SaveLog
+    Row-AutoRen
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

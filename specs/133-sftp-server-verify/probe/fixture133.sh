@@ -26,6 +26,12 @@ if [ "$1" = "state" ]; then
     done
     echo "m1_dir=$( [ -d $B/m1/many ] && echo 1 || echo 0 )"
     echo "m2_file=$( [ -f $B/m2/one.txt ] && echo 1 || echo 0 )"
+    for t in q1 q2; do
+        echo "${t}_entries=$(count $B/$t)"
+        echo "${t}_one=$( [ -f $B/$t/one.txt ] && echo 1 || echo 0 )"
+        echo "${t}_longest=$(ls -A $B/$t | awk '{ if (length($0) > m) m = length($0) } END { print m + 0 }')"
+        echo "${t}_validutf8=$(ls -A $B/$t | iconv -f UTF-8 -t UTF-8 >/dev/null 2>&1 && echo 1 || echo 0)"
+    done
     echo "d1_tree=$( [ -e $B/d1/tree ] && echo 1 || echo 0 )"
     echo "d2_kept=$( [ -f $B/d2/tree/locked/keep.txt ] && echo 1 || echo 0 )"
     echo "d2_free=$( [ -e $B/d2/tree/free ] && echo 1 || echo 0 )"
@@ -61,6 +67,8 @@ for t in l1 l2 l3 m1; do
     for i in $(seq -w 1 30); do echo "file $i" > "$B/$t/many/f$i.txt"; done
 done
 mkdir m2 && echo one > m2/one.txt
+# q1, q2: one file each for the Quick Rename rows of feature 137
+mkdir q1 q2 && echo one > q1/one.txt && echo one > q2/one.txt
 # d1: an ordinary tree (deleted whole); d2: a tree with one directory that cannot be emptied
 mkdir -p d1/tree/a/b d1/tree/c && echo 1 > d1/tree/a/b/x.txt && echo 2 > d1/tree/c/y.txt && echo 3 > d1/tree/z.txt
 mkdir -p d2/tree/free d2/tree/locked && echo 1 > d2/tree/free/x.txt && echo 2 > d2/tree/locked/keep.txt && chmod 555 d2/tree/locked

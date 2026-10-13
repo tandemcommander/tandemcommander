@@ -36,6 +36,17 @@ plugin.
   - For plug-in authors: `GetCommonFSOperSourceDescr` returns its whole text
     as UTF-8 (it was a code-page word around a UTF-8 name).
 
+- **Quick Rename on a server refuses a name that is too long** (feature
+  137). A typed name longer than about 85 Chinese or 130 accented letters was
+  cut - possibly inside a letter - and the server was asked to rename the
+  file to the cut name; the in-place rename line could even send the name
+  through the system code page (a row of question marks). The program says
+  the name is too long and nothing is renamed. Renaming a file on a disk to
+  such a long name in the in-place line works now.
+- **FTP: automatic rename of a download** shortens a name at a whole letter.
+  With an accented or Asian name the cut could fall inside a letter and the
+  file was not downloaded at all ("the file name is incorrect").
+
 ## [0.1.10] — 2026-10-13
 
 Fixes for the problems reported on GitHub after 0.1.9.

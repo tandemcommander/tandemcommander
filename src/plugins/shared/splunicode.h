@@ -389,6 +389,21 @@ inline int SplDrawWindowTextW(HWND hWnd, HDC hdc, RECT* r, UINT format)
 // drops a trailing INCOMPLETE UTF-8 sequence in place; a complete character at the
 // end is left alone (the core's SalU8TrimIncompleteTail), so it is safe to call on
 // any UTF-8 buffer
+// feature 137: how many of the first 'bytes' bytes of the UTF-8 text 's' can be kept so that the
+// kept part ends at a character boundary (at most 'bytes'; never inside a multi-byte
+// character). 's' must hold at least 'bytes' bytes. For code that shortens a name on purpose.
+inline int SplU8WholePrefixLen(const char* s, int bytes)
+{
+    if (s == NULL || bytes <= 0)
+        return 0;
+    int n = bytes;
+    // s[n] is the first byte that is left out: when it is a continuation byte, the character
+    // it belongs to started before the cut - step back to that character's first byte
+    while (n > 0 && ((unsigned char)s[n] & 0xC0) == 0x80)
+        n--;
+    return n;
+}
+
 inline void SplU8TrimTornTail(char* buf)
 {
     if (buf == NULL)

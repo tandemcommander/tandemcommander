@@ -19,6 +19,8 @@
       P5  download that tree; P5M move it             - nothing under a shortened name, nothing deleted
       DEL delete an ordinary tree; DELKEEP a tree with a file that cannot be deleted - one message,
           no request to remove the directories above it
+      QR250 / QRLONG  Quick Rename to a name of 250 letters / to one that does not fit the
+          plug-in interface (feature 137)
       M1  move a directory of 30 files, M2 move a file - what a move leaves on the server (recorded)
       URL the address typed as sftp://user@host:port/path
       LISTCOPY / LISTMOVE / LISTPANEL - the read of the 10th entry of the directory "many" fails
@@ -226,6 +228,11 @@ try {
     Row-Op 'M1' 'm1' 1 728 $null { param($t, $s, $l, $c) @{ Ok = ($l.Count -eq 30); Facts = ("move a directory of 30 files (recorded): local files {0}; on the server afterwards: directory there {1}, files in it {2}" -f $l.Count, $s.m1_dir, $s.m1_many) } }
     Row-Op 'M2' 'm2' 1 728 $null { param($t, $s, $l, $c) @{ Ok = ($l.Count -eq 1 -and $s.m2_file -eq '0'); Facts = ("move one file: local files {0}; still on the server {1}" -f $l.Count, $s.m2_file) } }
     Row-Op 'URL' 'm2' 0 0 $null { param($t, $s, $l, $c) @{ Ok = $c.Ok; Facts = ("the address typed with two slashes (sftp://user@host:port/path): connected {0}" -f $c.Ok) } } '' $false '' 'sftp://tctest@localhost:2222'
+    # feature 137: Quick Rename (command 754) with a name that fits and with one that does not
+    $y250 = 'y' * 250
+    Row-Op 'QR250' 'q1' 1 754 $y250 { param($t, $s, $l, $c) @{ Ok = ($s.q1_one -eq '0' -and $s.q1_entries -eq '1' -and $s.q1_longest -eq '250'); Facts = ("Quick Rename to a name of 250 letters: the old name is gone {0}; entries {1}; the name on the server has {2} bytes" -f ($s.q1_one -eq '0'), $s.q1_entries, $s.q1_longest) } }
+    $cjk = ([string][char]0x4E2D) * 100 + '.txt'      # 100 CJK letters: 304 bytes of UTF-8
+    Row-Op 'QRLONG' 'q2' 1 754 $cjk { param($t, $s, $l, $c) $said = (Has $t 'too long'); @{ Ok = ($s.q2_one -eq '1' -and $s.q2_entries -eq '1' -and $said); Facts = ("Quick Rename to a name of 304 bytes (100 CJK letters): 'too long' said {0}; the file kept its name {1}; entries {2}; longest name on the server {3} bytes; the names there are valid UTF-8 {4}" -f $said, ($s.q2_one -eq '1'), $s.q2_entries, $s.q2_longest, ($s.q2_validutf8 -eq '1')) } }
     $seam = '/many;10;1'
     $LE = 'many'
     Row-Op 'LISTCOPY' 'l1' 1 727 $null { param($t, $s, $l, $c) $said = [bool](@($t | Where-Object { $_ -match 'many' -and $_ -notmatch 'Copy|typed' -and $_ -match 'list|read|Cannot|Unable|error' }).Count); @{ Skip = ($l.Count -eq 30); Ok = ($said -and $s.l1_many -eq '30'); Facts = ("copy a directory whose listing fails at the 10th entry: local files {0} of 30; an error names the directory {1}; files on the server {2}{3}" -f $l.Count, $said, $s.l1_many, $(if ($l.Count -eq 30) { ' - the seam is not in this build' } else { '' })) } } $seam

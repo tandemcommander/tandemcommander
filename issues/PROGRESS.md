@@ -109,3 +109,9 @@ of the Exif block; 82 of 82 keep everything. **Must ship with 132.** Record:
 
 `136-ftp-verify-rows`: five more rows of the FTP probe (bookmarks, password prompt, login
 error, saved log). 31 / 0 in Czech and English on the final build; nothing to fix.
+
+## Feature 137 (2026-10-13)
+
+`137-names-cut-at-byte`: Quick Rename on a server (dialog and in-place line) refuses a name
+that does not fit instead of sending a cut one; FTP's automatic rename cuts at a whole letter.
+Record: `specs/137-names-cut-at-byte/fix-log.md`.

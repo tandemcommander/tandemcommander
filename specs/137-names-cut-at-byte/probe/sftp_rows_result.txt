@@ -1,0 +1,14 @@
+sftp133_probe (feature 133), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 21:34; desktop 'tc_probe_2016'; ACP 1250; registry key existed True; export SHA-256 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+Server  : prepared: /home/tctest/tc133; p4 tree end is 4043 bytes, p5 file path 4043 bytes
+
+R2         ROW    PASS        create a directory in a read-only directory: reason shown True; entries on the server 0; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/ro2'; dialogs: typed into [Create Directory] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "newdir": Permission denied. | [Button id=1] OK || [Create Directory] came back - cancelled
+R2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+QR250      ROW    PASS        Quick Rename to a name of 250 letters: the old name is gone True; entries 1; the name on the server has 250 bytes; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/q1'; dialogs: typed into [Quick Rename]
+QR250      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+QRLONG     ROW    PASS        Quick Rename to a name of 304 bytes (100 CJK letters): 'too long' said True; the file kept its name True; entries 1; longest name on the server 7 bytes; the names there are valid UTF-8 True; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/q2'; dialogs: typed into [Quick Rename] || [#32770 'Error'] [Static id=2477] Cannot finish operation because of too long name. | [Button id=1] OK || [Quick Rename] came back - cancelled
+QRLONG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4 / after 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+
+Rows: PASS 6, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

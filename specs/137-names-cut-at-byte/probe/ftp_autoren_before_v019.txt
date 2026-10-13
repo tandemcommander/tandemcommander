@@ -1,0 +1,11 @@
+ftp134_probe (feature 134), expect: before, language: english
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_v019\tandemcommander.exe
+Date    : 2026-10-13 21:19; desktop 'tc_probe_18020'; ACP 1250; registry key existed True; export SHA-256 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+Server  : python pid 30492 on port 2134 (alive True); hot key: plug-in 9 (ftp\ftp.spl): item 5 set
+Config  : 'If Cannot Create File' = 1 (reg exit 0)
+
+AUTOREN    FILE   FAIL        download of 'p\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD.txt' (27 bytes of name) into a folder with room for 12: files in the target: none; full name 0 bytes; states: Idle | Error: Target file cannot be created or opened, system error: (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1
+AUTOREN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 1 (at exit: [#32770 'FTP Client'] [Static id=2477] Queue still contains some unfinished FTP operations. Do you want to cancel them? | [Button id=6] &Yes | [Button id=7] &No); new reports 0 [the queue question at exit is expected here]
+Registry: restored; identical=True; SHA-256 before 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4 / after 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

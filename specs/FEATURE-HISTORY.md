@@ -2170,3 +2170,15 @@ a few early ones are out of sequence).
   (`ftp134_probe.ps1`: BMK, PWD, LOGINU8, LOGINCP, SAVELOG; the server refuses users named
   `refuse-u8*` / `refuse-cp*`). 0.1.9: 6 FAIL in Czech, 3 in English; final build 31 / 0 in
   both. No defect found - the value is that the dialogs were started at all.
+- 137-names-cut-at-byte: the two "name cut at a byte" notes of 131, measured: **Quick Rename on
+  a plug-in file system** cut a typed name at 259 bytes and sent it (`lstrcpyn(newName, ...,
+  MAX_PATH)`, `fileswn5.cpp`) - refused now; the review found the worse twin in the **in-place
+  rename line**: when the UTF-8 form did not fit 259 bytes a "legacy A call" supplied the name
+  through the code page, best-fit and cut. **FTP automatic rename** cut the shortened name at a
+  byte: with an accented name the download failed with error 123 (not "another name", as the
+  note said) - `SplU8WholePrefixLen` in `splunicode.h`. Rows QR250 / QRLONG in the SFTP probe of
+  133 and AUTOREN in the FTP probe of 134 (the plug-in's setting written to
+  `Plugins Configuration\FTP` for the run).
+  - A whole-character cut can keep ZERO characters - then fail, do not create `.txt`.
+  - Linux servers hold 255 bytes per name, so the cut 259-byte name was refused by the test
+    server; the defect needs a server with longer names. Measured facts beat the note.

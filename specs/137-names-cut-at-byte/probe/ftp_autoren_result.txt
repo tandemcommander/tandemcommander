@@ -1,0 +1,11 @@
+ftp134_probe (feature 134), expect: fixed, language: czech
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 21:35; desktop 'tc_probe_14828'; ACP 1250; registry key existed True; export SHA-256 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+Server  : python pid 24480 on port 2134 (alive True); hot key: plug-in 9 (ftp\ftp.spl): item 5 set
+Config  : 'If Cannot Create File' = 1 (reg exit 0)
+
+AUTOREN    FILE   PASS        download of 'p\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD.txt' (27 bytes of name) into a folder with room for 12: files in the target: 'p\u0159\u00EDli.txt'; full name 258 bytes; states: 
+AUTOREN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4 / after 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

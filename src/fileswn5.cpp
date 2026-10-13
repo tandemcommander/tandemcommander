@@ -2637,7 +2637,18 @@ void CFilesWindow::RenameFile(int specialIndex)
                             // the OLD name (rename became a no-op / "cannot rename").
                             // Keep the original baseline when the edit is only a
                             // canonical-equivalence (NFC/NFD) change, like ptDisk.
-                            lstrcpyn(newName, SalNameEquivalent(editName, formatedFileName) ? formatedFileName : editName, MAX_PATH); // plugin QuickRename ABI caps newName at MAX_PATH (feature 027; was unbounded strcpy)
+                            const char* chosenName = SalNameEquivalent(editName, formatedFileName) ? formatedFileName : editName;
+                            // feature 137: the plug-in's QuickRename takes at most MAX_PATH - 1 bytes
+                            // (feature 027). A longer typed name used to be cut there - possibly
+                            // inside a character - and the file on the server was renamed to the
+                            // cut name. It is refused; the dialog comes back with the typed text.
+                            if (strlen(chosenName) >= MAX_PATH)
+                            {
+                                SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE),
+                                              MB_OK | MB_ICONEXCLAMATION);
+                                continue;
+                            }
+                            lstrcpyn(newName, chosenName, MAX_PATH);
                             ret = GetPluginFS()->QuickRename(GetPluginFS()->GetPluginFSName(), 2, HWindow, *f, isDir, newName, cancel);
                             if (ret || cancel)
                                 break; // not an error (cancel or success)
@@ -2933,19 +2944,34 @@ BOOL CFilesWindow::HandeQuickRenameWindowKey(WPARAM wParam)
     QuickRenameWindow.SetCloseEnabled(FALSE);
 
     HWND hWnd = QuickRenameWindow.HWindow;
-    char newName[MAX_PATH];
+    // feature 137: the typed name whole, or a refusal. The name was read into MAX_PATH UTF-16
+    // units (cut without a word) and converted into MAX_PATH bytes; when the UTF-8 form did not
+    // fit - 90 Chinese or 130 accented letters - the "legacy A call" took over: the name
+    // through the code page with best-fit mapping, cut at 259 bytes, and THAT was the new
+    // name (on a server: 100 question marks, renamed literally). A name on a disk may be that
+    // long, so the buffer has room for any name a file system holds.
+    char newName[SAL_FIND_NAME_U8];
     WCHAR newNameW[MAX_PATH]; // the edited name is Unicode (feature 004): read as wide text
     newNameW[0] = 0;
+    BOOL tooLong = GetWindowTextLengthW(hWnd) >= (int)_countof(newNameW);
     GetWindowTextW(hWnd, newNameW, _countof(newNameW));
-    if (SalWToU8(newNameW, -1, newName, MAX_PATH) == 0) // UTF-8 does not fit: keep the legacy A call
-        GetWindowText(hWnd, newName, MAX_PATH);
+    if (!tooLong && SalWToU8(newNameW, -1, newName, sizeof(newName)) == 0)
+        tooLong = TRUE;
+    // the plug-in's QuickRename takes at most MAX_PATH - 1 bytes (feature 027)
+    if (!tooLong && !Is(ptDisk) && strlen(newName) >= MAX_PATH)
+        tooLong = TRUE;
 
     // lower the thread priority to "normal" (so operations don't overload the machine)
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 
     BOOL tryAgain = FALSE;
     BOOL mayChange = FALSE;
-    if (Is(ptDisk))
+    if (tooLong)
+    {
+        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        tryAgain = TRUE; // the edit line stays, with what was typed
+    }
+    else if (Is(ptDisk))
     {
         // If this is an in-place rename and the user didn't change the name, we shouldn't
         // attempt to rename it because the user might be on a CD-ROM or other read-only disk

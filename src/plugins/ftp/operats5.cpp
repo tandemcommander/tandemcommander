@@ -1189,15 +1189,23 @@ void DoCreateDir(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL& 
                             needCopyBack = TRUE;
                             if (nameLen + suffixLen < rest)
                                 memcpy(localWork.Name + nameLen, suffix, suffixLen + 1);
-                            else
-                                memcpy(localWork.Name + rest - (suffixLen + 1), suffix, suffixLen + 1);
+                            else // feature 137: the name is shortened at a whole character (it was a byte position)
+                            {
+                                int keep = SplU8WholePrefixLen(nameBackup, rest - (suffixLen + 1));
+                                if (keep == 0) // not even the first character fits: a name of the suffix alone is not this directory's
+                                {
+                                    winErr = ERROR_FILENAME_EXCED_RANGE; // "file name is too long"
+                                    break;
+                                }
+                                memcpy(localWork.Name + keep, suffix, suffixLen + 1);
+                            }
                             if (!SalamanderGeneral->SalIsValidFileNameComponent(localWork.Name))
                             { // the resulting name is not OK, we must adjust it
                                 int newLen = (int)strlen(localWork.Name);
                                 if (newLen + 1 >= rest)
                                 {
                                     if (newLen > 1)
-                                        localWork.Name[newLen - 1] = 0;
+                                        localWork.Name[SplU8WholePrefixLen(localWork.Name, newLen - 1)] = 0; // feature 137: one whole character
                                     else
                                         localWork.Name[0] = '_';
                                 }
@@ -1592,14 +1600,29 @@ void DoCreateFile(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL&
                             if (suffixLen + 1 + (nameLen - extOffset) < rest) // if at least 1 character of the name + the suffix + the extension fits
                             {                                                 // assemble: the largest possible part of the name + suffix + extension
                                 int off = (nameLen + suffixLen < rest) ? extOffset : (rest - 1 - suffixLen - (nameLen - extOffset));
+                                // feature 137: the name is shortened at a whole character. A cut inside
+                                // an accented or Asian letter gave a name that is not valid text - the
+                                // file could not be created at all (error 123).
+                                off = SplU8WholePrefixLen(nameBackup, off);
+                                if (off == 0 && extOffset > 0) // not even the first character fits: ".txt" or " (2).txt" is not this file's name
+                                {
+                                    winErr = ERROR_FILENAME_EXCED_RANGE; // "file name is too long"
+                                    break;
+                                }
                                 memcpy(localWork.Name, nameBackup, off);
                                 memcpy(localWork.Name + off, suffix, suffixLen);
                                 memcpy(localWork.Name + off + suffixLen, nameBackup + extOffset, nameLen - extOffset + 1);
                             }
                             else // the entire extension will not fit, shorten the name without preserving the extension
                             {
-                                memcpy(localWork.Name, nameBackup, rest - (suffixLen + 1));
-                                memcpy(localWork.Name + rest - (suffixLen + 1), suffix, suffixLen + 1);
+                                int keep = SplU8WholePrefixLen(nameBackup, rest - (suffixLen + 1)); // feature 137
+                                if (keep == 0)
+                                {
+                                    winErr = ERROR_FILENAME_EXCED_RANGE; // "file name is too long"
+                                    break;
+                                }
+                                memcpy(localWork.Name, nameBackup, keep);
+                                memcpy(localWork.Name + keep, suffix, suffixLen + 1);
                             }
                             if (!SalamanderGeneral->SalIsValidFileNameComponent(localWork.Name))
                             { // the resulting name is not OK, we must adjust it
@@ -1607,7 +1630,7 @@ void DoCreateFile(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL&
                                 if (newLen + 1 >= rest)
                                 {
                                     if (newLen > 1)
-                                        localWork.Name[newLen - 1] = 0;
+                                        localWork.Name[SplU8WholePrefixLen(localWork.Name, newLen - 1)] = 0; // feature 137: one whole character
                                     else
                                         localWork.Name[0] = '_';
                                 }

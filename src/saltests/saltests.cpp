@@ -10174,6 +10174,36 @@ static void TestShellLink128()
         CoUninitialize();
 }
 
+// feature 137: a name shortened at a whole character (SplU8WholePrefixLen in splunicode.h)
+static void TestU8WholePrefix137()
+{
+    // "a" + c-caron (2 bytes) + euro (3 bytes) + folder emoji (4 bytes) + "z": 11 bytes
+    const char s[] = "a\xC4\x8D\xE2\x82\xAC\xF0\x9F\x93\x81z";
+    const int expect[12] = {0, 1, 1, 3, 3, 3, 6, 6, 6, 6, 10, 11};
+    for (int n = 0; n <= 11; n++)
+        CHECK(SplU8WholePrefixLen(s, n) == expect[n]);
+    // every kept prefix is valid UTF-8 and the longest one that fits
+    for (int n = 0; n <= 11; n++)
+    {
+        int k = SplU8WholePrefixLen(s, n);
+        char buf[16];
+        memcpy(buf, s, k);
+        buf[k] = 0;
+        WCHAR* w = SplU8ToWAlloc(buf);
+        CHECK(w != NULL);
+        free(w);
+        CHECK(k <= n && (k == n || ((unsigned char)s[n] & 0xC0) == 0x80)); // shorter only when the cut was inside a character
+        CHECK(k == 0 || ((unsigned char)s[k] & 0xC0) != 0x80);              // ends at a boundary
+        CHECK(n - k <= 3);                                                  // the longest that fits
+    }
+    CHECK(SplU8WholePrefixLen("plain.txt", 5) == 5);
+    CHECK(SplU8WholePrefixLen(NULL, 5) == 0 && SplU8WholePrefixLen("abc", 0) == 0 && SplU8WholePrefixLen("abc", -3) == 0);
+    // the case measured on 0.1.9: "prilis zlutoucky.txt" (accented) with room for 8 bytes of name
+    const char name[] = "p\xC5\x99\xC3\xADli\xC5\xA1 \xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD.txt";
+    CHECK(SplU8WholePrefixLen(name, 8) == 7); // the 8th byte is the first half of the s-caron
+    CHECK(SplU8WholePrefixLen(name, 9) == 9);
+}
+
 // feature 135: a small Exif TIFF block: IFD0 (Make, pointer to the Exif IFD), the Exif IFD with a
 // MakerNote of 12 bytes, and by 'ifd1': 0 = no IFD1, 1 = IFD1 with a JPEG thumbnail at the very
 // end, 2 = an uncompressed thumbnail (strips), 3 = a JPEG thumbnail followed by other data
@@ -10828,6 +10858,7 @@ int main(int argc, char** argv)
     TestPluginLoadStr130();
     TestJpegKeep132();
     TestExifThumb135();
+    TestU8WholePrefix137();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
