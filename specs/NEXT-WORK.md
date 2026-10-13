@@ -60,11 +60,9 @@ heading and in `PRIVACY.md`.
 ***Before 0.1.10* - steps owed to a person** (none could be done in an agent
 session; the first is the one that matters):
 
-1. **PictView *Update Thumbnail* on real camera files** (feature 132: the
-   command rewrites users' pictures again after being dead since 006; only
-   synthetic files were used) - `specs/132-pictview-thumbnail-verify/fix-log.md`,
-   section 7. If this cannot be checked, consider releasing with the menu
-   item left as it was in 0.1.9 (it then says "not supported").
+1. ~~PictView *Update Thumbnail* on real camera files~~ - done by feature 135
+   on 91 public camera samples (it found and removed real damage); a look at a
+   few own photos in the program is all that is left.
 2. SFTP against the test container: upload into a read-only directory, the
    stale-reason row, Quick Rename to a long name -
    `specs/133-sftp-server-verify/quickstart.md`.
@@ -124,10 +122,10 @@ Functional, no loss:
    entry 1 (120).
 7. ~~PictView's *Regenerate thumbnail* cannot work since 006~~ - **done, feature 132** (the
    command works and cannot replace a picture by a file that lost something). Left by 132:
-   - **owed to a person before the release**: Update Thumbnail on real camera files (Canon,
-     Nikon, Sony, Panasonic) - the Exif block is serialised again by the old libexif, and a
-     MakerNote with offsets relative to the file may not survive that; the rule of 132 does not
-     compare Exif content. Check with `exiftool -validate` or the camera maker's viewer.
+   - ~~owed before the release: Update Thumbnail on real camera files~~ - **measured and fixed
+     by feature 135**: the old libexif damaged the maker's block in 30 of 82 real files; the
+     thumbnail is swapped without moving a byte of the block now (82 of 82 the same).
+     **135 must ship with 132.** Left: a look at a few own photos in the program.
    - the viewer's Exif dialog and auto-rotation are dead for the same reason the command was
      (the built-in engine never reports `PVFF_EXIF`); switching them on is a feature of its own.
    - a refused file gets "Unable to create a file with the new thumbnail. Disk full? ..." - a

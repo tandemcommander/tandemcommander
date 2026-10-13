@@ -11,6 +11,7 @@
 #include <libexif/exif-loader.h>
 #include <libexif/exif-utils.h>
 #include <libjpeg/jpeg-data.h>
+#include "../../../common/salexifthumb.h" // Tandem Commander 135
 
 #pragma warning(push)
 #pragma warning(disable : 4267) // FIXME_X64 - warning temporarily suppressed, fix it
@@ -169,99 +170,45 @@ ExifData* get_exif_data_no_fixups(const char* fileName)
 BOOL WINAPI EXIFReplaceThumbnail(char* fileName, char* newFile, unsigned char* pData, int size)
 {
     JPEGData* pJpeg;
-    ExifData* pExif;
     BOOL ret = FALSE;
+
+    if (pData == NULL || size <= 0) // Tandem Commander 135: no picture - nothing to write (an empty JFXX block was)
+        return FALSE;
 
     pJpeg = jpeg_data_new_from_file(fileName);
     if (pJpeg)
     {
-        // NOTE: since sometime in 2009, exif_loader_get_data automatically calls
-        // exif_data_fix that fixes or removes bogus tags.
-        // I think (Patera 2009.10.06) that we better don't do it.
-        //      pExif = jpeg_data_get_exif_data(pJpeg);
-        // Tandem Commander 132: the Exif block is taken from the sections just read (the
-        // first Exif APP1 before the picture data - the block jpeg_data_set_exif_data
-        // replaces), not found again by the streaming loader: that one gives up at a block
-        // it does not know (APP12 "Ducky", APP14 "Adobe" before the Exif block), a JFXX
-        // thumbnail was then added to a file that has Exif. A block of which nothing could
-        // be read is not replaced by an empty one - the file is refused.
+        // Tandem Commander 135: the Exif block is NOT handed to libexif any more. It used to be
+        // parsed into tags and serialised again - measured on real camera files, 30 of 82 came
+        // back with a changed or shortened maker's block (MakerNote), lost tags, or the block
+        // moved (which breaks makers whose block holds offsets from the start of the Exif
+        // data). SalExifReplaceThumbnail swaps the thumbnail picture and leaves every other
+        // byte of the block where it is; a block it does not understand, or a result that
+        // does not fit a segment, is refused - nothing is written.
+        // The block is the first Exif APP1 before the picture data (132), not what the
+        // streaming loader finds: that one gives up at a block it does not know (APP12
+        // "Ducky", APP14 "Adobe" before the Exif block) and a JFXX thumbnail was then added
+        // to a file that has Exif.
         const unsigned char* exifBytes = NULL;
         unsigned int exifSize = 0;
-        BOOL hasExifBlock = jpeg_data_get_exif_bytes(pJpeg, &exifBytes, &exifSize);
-        pExif = NULL;
-        if (hasExifBlock)
+        if (jpeg_data_get_exif_bytes(pJpeg, &exifBytes, &exifSize))
         {
-            pExif = exif_data_new();
-            if (pExif)
+            unsigned char* newTiff = NULL;
+            size_t newTiffSize = 0;
+            if (pData != NULL && size > 0 && exifSize > 6 &&
+                SalExifReplaceThumbnail(exifBytes + 6, exifSize - 6, pData, (size_t)size, &newTiff, &newTiffSize))
             {
-                int ifdIndex, entries = 0;
-                exif_data_unset_option(pExif, ~0);
-                exif_data_set_data_type(pExif, EXIF_DATA_TYPE_UNKNOWN);
-                exif_data_load_data(pExif, exifBytes, exifSize);
-                for (ifdIndex = 0; ifdIndex < EXIF_IFD_COUNT; ifdIndex++)
-                    if (pExif->ifd[ifdIndex])
-                        entries += pExif->ifd[ifdIndex]->count;
-                if (!entries)
+                unsigned char* payload = malloc(newTiffSize + 6);
+                if (payload != NULL)
                 {
-                    exif_data_unref(pExif);
-                    pExif = NULL;
+                    memcpy(payload, "Exif\0\0", 6);
+                    memcpy(payload + 6, newTiff, newTiffSize);
+                    if (jpeg_data_set_exif_bytes(pJpeg, payload, (unsigned int)(newTiffSize + 6)))
+                        ret = jpeg_data_save_file(pJpeg, newFile);
+                    free(payload);
                 }
+                free(newTiff);
             }
-        }
-        if (hasExifBlock && !pExif)
-        {
-            // an Exif block that cannot be read (or low memory): nothing is written
-        }
-        else if (pExif)
-        {
-            // It is possible there is uncompressed one
-            // (e.g. Kodak-210 or Sony-D700) -> smash out all traces of it
-            // We also remove all tags that may longer have correct values
-            static int tags[] = {
-                EXIF_TAG_IMAGE_WIDTH,
-                EXIF_TAG_IMAGE_LENGTH,
-                EXIF_TAG_BITS_PER_SAMPLE,
-                EXIF_TAG_COMPRESSION,
-                EXIF_TAG_PHOTOMETRIC_INTERPRETATION,
-                EXIF_TAG_STRIP_OFFSETS,
-                EXIF_TAG_SAMPLES_PER_PIXEL,
-                EXIF_TAG_ROWS_PER_STRIP,
-                EXIF_TAG_STRIP_BYTE_COUNTS,
-                EXIF_TAG_PLANAR_CONFIGURATION,
-                EXIF_TAG_JPEG_PROC,
-                EXIF_TAG_YCBCR_COEFFICIENTS,
-                EXIF_TAG_YCBCR_SUB_SAMPLING,
-                EXIF_TAG_YCBCR_POSITIONING};
-            ExifEntry* e;
-            ExifContent* ifd = pExif->ifd[EXIF_IFD_1];
-            int i;
-
-            for (i = 0; i < sizeof(tags) / sizeof(tags[0]); i++)
-            {
-                e = exif_content_get_entry(ifd, tags[i]);
-                exif_content_remove_entry(ifd, e);
-            }
-            free(pExif->data);
-            if (pData)
-            {
-                pExif->size = size;
-                pExif->data = malloc(size);
-                memcpy(pExif->data, pData, size);
-                e = exif_entry_new();
-                exif_content_add_entry(ifd, e);
-                exif_entry_initialize(e, EXIF_TAG_COMPRESSION);
-                // JPEG compression
-                exif_set_short(e->data, exif_data_get_byte_order(pExif), 6);
-                exif_entry_unref(e);
-            }
-            else
-            {
-                pExif->size = 0;
-                pExif->data = NULL;
-            }
-            jpeg_data_set_exif_data(pJpeg, pExif);
-            exif_data_unref(pExif);
-            ret = jpeg_data_save_file(pJpeg, newFile);
         }
         else
         {

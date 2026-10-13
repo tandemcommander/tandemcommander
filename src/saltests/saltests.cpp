@@ -10174,6 +10174,267 @@ static void TestShellLink128()
         CoUninitialize();
 }
 
+// feature 135: a small Exif TIFF block: IFD0 (Make, pointer to the Exif IFD), the Exif IFD with a
+// MakerNote of 12 bytes, and by 'ifd1': 0 = no IFD1, 1 = IFD1 with a JPEG thumbnail at the very
+// end, 2 = an uncompressed thumbnail (strips), 3 = a JPEG thumbnail followed by other data
+static std::string J135Tiff(bool le, int ifd1, const std::string& thumb, const std::string& maker = "MAKERNOTE-12")
+{
+    std::string t;
+    auto p16 = [&](unsigned v) { unsigned char b[2]; SalExifPut16(b, le, v); t.append((const char*)b, 2); };
+    auto p32 = [&](unsigned long v) { unsigned char b[4]; SalExifPut32(b, le, v); t.append((const char*)b, 4); };
+    auto entry = [&](unsigned tag, unsigned type, unsigned long count, unsigned long value) { p16(tag); p16(type); p32(count); if (type == 3 && count == 1) { p16(value); p16(0); } else p32(value); };
+    t += le ? "II" : "MM";
+    p16(42);
+    p32(8);
+    // IFD0 at 8: 2 entries -> 8 + 2 + 24 + 4 = 38; "Canon\0" at 38 (6 bytes) -> Exif IFD at 44
+    const unsigned long makeAt = 38, exifIfd = 44;
+    const unsigned long noteAt = exifIfd + 2 + 12 + 4; // 62
+    const unsigned long ifd1At = noteAt + (unsigned long)maker.size() + (maker.size() & 1);
+    p16(2);
+    entry(0x010F, 2, 6, makeAt);
+    entry(0x8769, 4, 1, exifIfd);
+    p32(ifd1 != 0 ? ifd1At : 0);
+    t.append("Canon\0", 6);
+    p16(1);
+    entry(0x927C, 7, (unsigned long)maker.size(), noteAt);
+    p32(0);
+    t += maker;
+    if (maker.size() & 1)
+        t += '\0';
+    if (ifd1 == 0)
+        return t;
+    const unsigned long dataAt = ifd1At + 2 + 12 * 4 + 4;
+    p16(4);
+    entry(0x0103, 3, 1, ifd1 == 2 ? 1 : 6);
+    entry(0x0112, 3, 1, 1); // Orientation: an entry that is not about the picture's storage
+    if (ifd1 == 2)
+    {
+        entry(0x0111, 4, 1, dataAt);
+        entry(0x0117, 4, 1, (unsigned long)thumb.size());
+    }
+    else
+    {
+        entry(0x0201, 4, 1, dataAt);
+        entry(0x0202, 4, 1, (unsigned long)thumb.size());
+    }
+    p32(0);
+    t += thumb;
+    if (ifd1 == 3)
+        t += "DATA-BEHIND-THE-THUMBNAIL";
+    return t;
+}
+
+static std::string J135Replace(const std::string& tiff, const std::string& thumb)
+{
+    unsigned char* out = NULL;
+    size_t outSize = 0;
+    std::string r;
+    if (SalExifReplaceThumbnail((const unsigned char*)tiff.data(), tiff.size(), (const unsigned char*)thumb.data(), thumb.size(), &out, &outSize))
+        r.assign((const char*)out, outSize);
+    free(out);
+    return r;
+}
+
+static int J135Keeps(const std::string& o, const std::string& n)
+{
+    return SalExifRewriteKeepsData((const unsigned char*)o.data(), o.size(), (const unsigned char*)n.data(), n.size());
+}
+
+// feature 135: the thumbnail of an Exif block replaced with no other byte moved (salexifthumb.h)
+static void TestExifThumb135()
+{
+    const std::string newThumb = "\xFF\xD8 a new thumbnail picture, longer than the old one \xFF\xD9";
+    for (int e = 0; e < 2; e++)
+    {
+        const bool le = e == 0;
+        // ---- the usual case: a JPEG thumbnail at the very end - cut there, append, correct the length
+        {
+            const std::string o = J135Tiff(le, 1, "\xFF\xD8OLD-THUMBNAIL");
+            const std::string n = J135Replace(o, newThumb);
+            CSalExifLayout lo, ln;
+            CHECK(SalExifReadLayout((const unsigned char*)o.data(), o.size(), &lo) && lo.LittleEndian == (le ? 1 : 0));
+            CHECK(lo.Ifd1 != 0 && lo.Compression == 6 && lo.ThumbLen == 15 && lo.ThumbOff + lo.ThumbLen == o.size());
+            CHECK(!n.empty() && SalExifReadLayout((const unsigned char*)n.data(), n.size(), &ln));
+            CHECK(ln.Ifd1 == lo.Ifd1 && ln.ThumbOff == lo.ThumbOff && ln.ThumbLen == newThumb.size());
+            CHECK(n.size() == lo.ThumbOff + newThumb.size());
+            CHECK(n.compare(ln.ThumbOff, ln.ThumbLen, newThumb) == 0);
+            // nothing else changed: only the four bytes of the length differ before the picture
+            int differ = 0;
+            for (size_t i = 0; i < lo.ThumbOff; i++)
+                if (o[i] != n[i])
+                    differ++;
+            CHECK(differ >= 1 && differ <= 4);
+            CHECK(n.find("MAKERNOTE-12") == o.find("MAKERNOTE-12") && o.find("MAKERNOTE-12") != std::string::npos);
+            CHECK(J135Keeps(o, n) == 1);
+            CHECK(J135Keeps(o, o) == 1);
+            // a shorter picture too
+            const std::string n2 = J135Replace(o, "tiny");
+            CHECK(n2.size() == lo.ThumbOff + 4 && J135Keeps(o, n2) == 1);
+        }
+        // ---- no IFD1, an uncompressed thumbnail, a thumbnail in the middle: a new IFD1 behind everything
+        for (int kind = 0; kind <= 3; kind++)
+        {
+            if (kind == 1)
+                continue;
+            const std::string o = J135Tiff(le, kind, "OLD-THUMBNAIL");
+            const std::string n = J135Replace(o, newThumb);
+            CSalExifLayout lo, ln;
+            CHECK(SalExifReadLayout((const unsigned char*)o.data(), o.size(), &lo));
+            CHECK(!n.empty() && SalExifReadLayout((const unsigned char*)n.data(), n.size(), &ln));
+            CHECK(ln.Ifd1 >= o.size() && (ln.Ifd1 & 1) == 0);                 // appended, at an even offset
+            CHECK(ln.Compression == 6 && ln.ThumbLen == newThumb.size() && ln.ThumbOff + ln.ThumbLen == n.size());
+            CHECK(n.compare(ln.ThumbOff, ln.ThumbLen, newThumb) == 0);
+            // the whole original is still there, byte for byte, but IFD0's link
+            int differ = 0;
+            for (size_t i = 0; i < o.size(); i++)
+                if (o[i] != n[i])
+                {
+                    differ++;
+                    CHECK(i >= lo.Ifd0Link && i < lo.Ifd0Link + 4);
+                }
+            CHECK(differ >= 1);
+            // an old IFD1's entry that is not about the picture is carried over; the strip tags are not
+            CHECK(ln.Ifd1Count == (kind == 0 ? 3u : 4u));
+            if (kind != 0)
+            {
+                bool orientation = false, strips = false;
+                for (size_t i = 0; i < ln.Ifd1Count; i++)
+                {
+                    unsigned long tag = SalExifGet16((const unsigned char*)n.data() + ln.Ifd1 + 2 + 12 * i, le);
+                    orientation = orientation || tag == 0x0112;
+                    strips = strips || tag == 0x0111 || tag == 0x0117;
+                    if (i > 0)
+                        CHECK(tag > SalExifGet16((const unsigned char*)n.data() + ln.Ifd1 + 2 + 12 * (i - 1), le)); // sorted
+                }
+                CHECK(orientation && !strips);
+            }
+            CHECK(J135Keeps(o, n) == 1);
+            if (kind == 3)
+                CHECK(n.find("DATA-BEHIND-THE-THUMBNAIL") == o.find("DATA-BEHIND-THE-THUMBNAIL"));
+            // updating the result again takes the usual way and keeps it
+            const std::string n3 = J135Replace(n, "third");
+            CHECK(!n3.empty() && J135Keeps(n, n3) == 1 && n3.size() < n.size());
+        }
+    }
+    // ---- refused: not a TIFF block, cut structures, a result over a segment, no picture
+    {
+        const std::string o = J135Tiff(true, 1, "\xFF\xD8OLD-THUMBNAIL");
+        CHECK(J135Replace("", newThumb).empty());
+        CHECK(J135Replace("garbage, not a TIFF header at all", newThumb).empty());
+        CHECK(J135Replace(o.substr(0, 20), newThumb).empty());   // IFD0 leaves the data
+        std::string bad = o;
+        bad[2] = 43;                                             // not the TIFF number
+        CHECK(J135Replace(bad, newThumb).empty());
+        bad = o;
+        bad[4] = 2;                                              // IFD0 inside the header
+        CHECK(J135Replace(bad, newThumb).empty());
+        CHECK(J135Replace(o, "").empty());
+        CHECK(J135Replace(o, std::string(SALEXIF_MAX_TIFF, 'x')).empty());          // does not fit a segment
+        CHECK(!J135Replace(o, std::string(60000, 'x')).empty());
+        CHECK(J135Replace(J135Tiff(true, 0, "", std::string(30000, 'm')), std::string(40000, 'x')).empty()); // appended: too big
+        unsigned char* out = (unsigned char*)1;
+        size_t outSize = 5;
+        CHECK(!SalExifReplaceThumbnail(NULL, 100, (const unsigned char*)"x", 1, &out, &outSize) && out == NULL && outSize == 0);
+        // an IFD1 whose link leaves the data: not understood
+        std::string cut = o;
+        CSalExifLayout l;
+        CHECK(SalExifReadLayout((const unsigned char*)o.data(), o.size(), &l));
+        SalExifPut32((unsigned char*)&cut[l.Ifd0Link], 1, 60000);
+        CHECK(J135Replace(cut, newThumb).empty());
+        // a thumbnail range that leaves the block is "no thumbnail": a new IFD1 is appended
+        std::string wild = o;
+        SalExifPut32((unsigned char*)&wild[l.ThumbLenEntry + 8], 1, 50000);
+        const std::string w2 = J135Replace(wild, newThumb);
+        CHECK(!w2.empty() && w2.size() > wild.size());
+    }
+    // ---- found by the review: structures that share bytes, entries given twice, the old picture
+    {
+        auto p32at = [](std::string& t, size_t at, unsigned long v) { SalExifPut32((unsigned char*)&t[at], 1, v); };
+        const std::string o = J135Tiff(true, 1, "\xFF\xD8OLD-THUMBNAIL");
+        CSalExifLayout l;
+        CHECK(SalExifReadLayout((const unsigned char*)o.data(), o.size(), &l) && l.ThumbLen == 15);
+        // a thumbnail offset laid over the maker's block: "no thumbnail" - a new IFD1 is appended,
+        // nothing is cut and the maker's block is not zeroed
+        std::string over = o;
+        const size_t note = o.find("MAKERNOTE-12");
+        for (size_t i = 0; i < l.Ifd1Count; i++)
+            if (SalExifGet16((const unsigned char*)o.data() + l.Ifd1 + 2 + 12 * i, 1) == 0x0201)
+                p32at(over, l.Ifd1 + 2 + 12 * i + 8, (unsigned long)note);
+        CSalExifLayout lo2;
+        CHECK(SalExifReadLayout((const unsigned char*)over.data(), over.size(), &lo2) && lo2.ThumbLen == 0);
+        const std::string n = J135Replace(over, newThumb);
+        CHECK(!n.empty() && n.size() > over.size() && n.find("MAKERNOTE-12") == note && J135Keeps(over, n) == 1);
+        std::string wiped = n;
+        memset(&wiped[note], 0, 12);
+        CHECK(J135Keeps(over, wiped) == 0); // the check does not take those bytes for thumbnail bytes either
+        // IFD0's link into the Exif IFD (IFD1 == the Exif IFD), into IFD0 itself: not understood
+        std::string link = o;
+        p32at(link, l.Ifd0Link, 44);
+        CHECK(J135Replace(link, newThumb).empty() && J135Keeps(link, link) == 0);
+        link = o;
+        p32at(link, l.Ifd0Link, 8);
+        CHECK(J135Replace(link, newThumb).empty());
+        // an entry of IFD1 given twice: not understood
+        std::string twice = o;
+        for (size_t i = 0; i < l.Ifd1Count; i++)
+            if (SalExifGet16((const unsigned char*)o.data() + l.Ifd1 + 2 + 12 * i, 1) == 0x0112)
+                SalExifPut16((unsigned char*)&twice[l.Ifd1 + 2 + 12 * i], 1, 0x0201);
+        CHECK(J135Replace(twice, newThumb).empty());
+        // a picture at the end that is not a JPEG picture is not cut away (a new IFD1 is appended)
+        const std::string noJpeg = J135Tiff(true, 1, "OLD-THUMBNAIL");
+        const std::string n4 = J135Replace(noJpeg, newThumb);
+        CHECK(n4.size() > noJpeg.size() && n4.find("OLD-THUMBNAIL") != std::string::npos);
+        // a JPEG thumbnail followed by other data: appended, and the old picture is zeroed
+        const std::string mid = J135Tiff(true, 3, "\xFF\xD8OLD-PICTURE-TO-FORGET");
+        const std::string n5 = J135Replace(mid, newThumb);
+        CHECK(!n5.empty() && n5.find("OLD-PICTURE-TO-FORGET") == std::string::npos);
+        CHECK(n5.find("DATA-BEHIND-THE-THUMBNAIL") == mid.find("DATA-BEHIND-THE-THUMBNAIL") && J135Keeps(mid, n5) == 1);
+        // the usual way for a real JPEG picture at the end: nothing of it stays either
+        const std::string n6 = J135Replace(o, newThumb);
+        CHECK(n6.find("OLD-THUMBNAIL") == std::string::npos && n6.size() == l.ThumbOff + newThumb.size());
+        // offsets near 4 GB (they wrapped the bounds where size_t has 32 bits)
+        std::string distant = o;
+        p32at(distant, 4, 0xFFFFFFFEul);
+        CHECK(J135Replace(distant, newThumb).empty());
+        distant = o;
+        p32at(distant, l.Ifd0Link, 0xFFFFFFFEul);
+        CHECK(J135Replace(distant, newThumb).empty());
+    }
+    // ---- the check: what the old library did to real files is not "kept"
+    {
+        const std::string o = J135Tiff(true, 1, "\xFF\xD8OLD-THUMBNAIL");
+        const std::string n = J135Replace(o, newThumb);
+        std::string x = n;
+        x[x.find("MAKERNOTE-12") + 3] ^= 1;                      // one byte of the maker's block
+        CHECK(J135Keeps(o, x) == 0);
+        x = n;
+        x[x.find("Canon") + 1] = 'A';                            // a tag's value
+        CHECK(J135Keeps(o, x) == 0);
+        x = n;
+        x[9] ^= 1;                                               // IFD0's entry count
+        CHECK(J135Keeps(o, x) == 0);
+        // the block serialised again with a shorter maker's block: everything behind it moved
+        const std::string moved = J135Replace(J135Tiff(true, 1, "\xFF\xD8OLD-THUMBNAIL", "MAKERNOTE-"), newThumb);
+        CHECK(!moved.empty() && J135Keeps(o, moved) == 0);
+        // another byte order, no thumbnail in the new block, a new block that is not understood
+        CHECK(J135Keeps(o, J135Replace(J135Tiff(false, 1, "\xFF\xD8OLD-THUMBNAIL"), newThumb)) == 0);
+        CHECK(J135Keeps(o, J135Tiff(true, 0, "")) == 0);
+        CHECK(J135Keeps(o, "II*") == 0 && J135Keeps("garbage", n) == 0 && J135Keeps("", "") == 0);
+        // cut short: a byte of the original outside its thumbnail is missing
+        CSalExifLayout l;
+        CHECK(SalExifReadLayout((const unsigned char*)o.data(), o.size(), &l));
+        // (with the thumbnail at the end the block may be shorter than the original only inside it)
+        const std::string tiny = J135Replace(o, "t");
+        CHECK(tiny.size() < o.size() && J135Keeps(o, tiny) == 1);
+        // the original with data behind its thumbnail: those data must stay
+        const std::string o3 = J135Tiff(true, 3, "OLD-THUMBNAIL");
+        std::string n3 = J135Replace(o3, newThumb);
+        CHECK(J135Keeps(o3, n3) == 1);
+        n3[n3.find("DATA-BEHIND") + 2] = 'x';
+        CHECK(J135Keeps(o3, n3) == 0);
+    }
+}
+
 // feature 132: is a rewritten JPEG file still the user's file (saljpegkeep.h) - the check
 // PictView's Update Thumbnail makes before the file EXIF.DLL wrote replaces the original
 static void J132Seg(std::string& out, unsigned char marker, const std::string& payload)
@@ -10194,8 +10455,10 @@ static void TestJpegKeep132()
 {
     const std::string soi("\xFF\xD8", 2);
     const std::string eoi("\xFF\xD9", 2);
-    const std::string exifOld = std::string("Exif\0\0", 6) + "old tags and the old thumbnail";
-    const std::string exifNew = std::string("Exif\0\0", 6) + "tags and a new, much longer thumbnail ..........";
+    // feature 135: real (small) Exif blocks - the rule looks inside a changed one
+    const std::string tiffOld = J135Tiff(true, 1, "OLD-THUMBNAIL");
+    const std::string exifOld = std::string("Exif\0\0", 6) + tiffOld;
+    const std::string exifNew = std::string("Exif\0\0", 6) + J135Replace(tiffOld, "a new, much longer thumbnail picture ..........");
     const std::string jfif = std::string("JFIF\0", 5) + std::string("\x01\x01\x00\x00\x01\x00\x01\x00\x00", 9);
     const std::string jfxx = std::string("JFXX\0", 5) + "\x10thumbnail";
     const std::string xmp = std::string("http://ns.adobe.com/xap/1.0/\0", 29) + "<x:xmpmeta/>";
@@ -10398,8 +10661,23 @@ static void TestJpegKeep132()
     // the Exif block is gone (a JFXX block instead)
     CHECK(J132Check(exifFile, soi + app0 + appJfxx + tables + scan) == sjkExifGone);
     CHECK(J132Check(exifFile, soi + app0 + tables + scan) == sjkExifGone);
-    // a file that had none may get one
-    CHECK(J132Check(plainFile, soi + app1New + app0 + tables + scan) == sjkSame);
+    // feature 135: a file that had no Exif block gets none (the library adds a JFXX block instead)
+    CHECK(J132Check(plainFile, soi + app1New + app0 + tables + scan) == sjkCarriersDiffer);
+    // feature 135: a changed Exif block with more changed than its thumbnail
+    {
+        std::string movedBlock, otherTag;
+        J132Seg(movedBlock, 0xE1, std::string("Exif\0\0", 6) + J135Replace(J135Tiff(true, 1, "OLD-THUMBNAIL", "MAKERNOTE-"), "new"));
+        std::string t2 = tiffOld;
+        t2[t2.find("Canon") + 2] = 'N';
+        J132Seg(otherTag, 0xE1, std::string("Exif\0\0", 6) + J135Replace(t2, "new"));
+        CHECK(J132Check(exifFile, soi + app0 + movedBlock + tables + scan) == sjkExifDataDiffer);
+        CHECK(J132Check(exifFile, soi + app0 + otherTag + tables + scan) == sjkExifDataDiffer);
+        std::string fake;
+        J132Seg(fake, 0xE1, std::string("Exif\0\0", 6) + "not a TIFF block at all");
+        CHECK(J132Check(exifFile, soi + app0 + fake + tables + scan) == sjkExifDataDiffer);
+        CHECK(J132Check(soi + app0 + fake + tables + scan, soi + app0 + app1New + tables + scan) == sjkExifDataDiffer); // an original that is not understood
+        CHECK(J132Check(soi + app0 + fake + tables + scan, soi + app0 + fake + tables + scan) == sjkSame);              // ... untouched is fine
+    }
 
     // ---- files the walker does not understand: never "the same"
     CHECK(J132Check("", plainFile) == sjkOriginalNotUnderstood);
@@ -10424,13 +10702,16 @@ static void TestJpegKeep132()
         CHECK(J132Check(o1, soi + app0 + ducky + app1New + tables + scan) == sjkSame);                     // the Exif block updated
         CHECK(J132Check(o1, soi + app0 + app1New + tables + scan) == sjkSegmentsDiffer);                   // the unknown block lost
         const std::string o2 = soi + app1Old + exifOther + tables + scan;
+        std::string exifSwap;
+        J132Seg(exifSwap, 0xE1, std::string("Exif\0\0", 6) + J135Replace(tiffOld, "another picture"));
         CHECK(J132Check(o2, soi + app1New + exifOther + tables + scan) == sjkSame);
-        CHECK(J132Check(o2, soi + app1Old + exifOther2 + tables + scan) == sjkSame);          // one block changed (whichever)
-        CHECK(J132Check(o2, soi + app1New + exifOther2 + tables + scan) == sjkCarriersDiffer); // both changed
+        CHECK(J132Check(o2, soi + app1Old + exifOther2 + tables + scan) == sjkExifDataDiffer); // feature 135: changed in its tags
+        CHECK(J132Check(o2, soi + app1New + exifOther2 + tables + scan) != sjkSame);          // both changed
         CHECK(J132Check(o2, soi + app1New + tables + scan) == sjkExifGone);
         CHECK(J132Check(o2, soi + app1Old + exifOther + exifOther + tables + scan) == sjkCarriersDiffer); // a block more
         CHECK(J132Check(plainFile, soi + app1New + exifOther + app0 + tables + scan) == sjkCarriersDiffer); // none -> two
         CHECK(J132Check(plainFile, soi + app1New + app0 + appJfxx + tables + scan) == sjkCarriersDiffer);   // none -> Exif and JFXX
+        CHECK(J132Check(o2, soi + exifSwap + exifOther + tables + scan) == sjkSame);              // the first block's thumbnail
         // an old JFXX block beside Exif stays when the Exif block is updated
         CHECK(J132Check(soi + app0 + appJfxx + app1Old + tables + scan, soi + app0 + appJfxx + app1New + tables + scan) == sjkSame);
         CHECK(J132Check(soi + app0 + appJfxx + app1Old + tables + scan, soi + app0 + app1New + tables + scan) == sjkCarriersDiffer);
@@ -10456,7 +10737,7 @@ static void TestJpegKeep132()
         CHECK(has(soi + app0 + appXmp + tables + scan) == 0);          // XMP is not Exif
         CHECK(has(soi + appXmp + app1Old + tables + scan) == 1);       // Exif behind XMP
         CHECK(has(soi + app0 + appJfxx + tables + scan) == 0);
-        CHECK(has((soi + app0 + app1Old + tables + scan).substr(0, 60)) == 1); // only the beginning of the file was read
+        CHECK(has((soi + app0 + app1Old + tables + scan).substr(0, (soi + app0 + app1Old).size() + 10)) == 1); // only the beginning of the file was read
         CHECK(has((soi + app0 + app1Old).substr(0, 30)) == 0);         // the block itself is cut
         CHECK(has(soi + app0 + tables + sos + app1Old) == 0);          // "Exif" behind the picture data is not a block
         CHECK(has("") == 0 && has("GIF89a") == 0);
@@ -10546,6 +10827,7 @@ int main(int argc, char** argv)
     TestWideInserts129();
     TestPluginLoadStr130();
     TestJpegKeep132();
+    TestExifThumb135();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

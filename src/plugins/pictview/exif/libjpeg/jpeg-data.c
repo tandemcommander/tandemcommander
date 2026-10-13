@@ -545,6 +545,32 @@ jpeg_data_get_exif_bytes (JPEGData *data, const unsigned char **d, unsigned int 
 	return 0;
 }
 
+/* Tandem Commander 135: the bytes of the first Exif block (the one
+   jpeg_data_get_exif_bytes gives) replaced by a copy of 'd'; returns 0 when the file has no
+   such block or memory is low (the data are marked incomplete then - nothing is saved) */
+int
+jpeg_data_set_exif_bytes (JPEGData *data, const unsigned char *d, unsigned int size)
+{
+	unsigned int i;
+	unsigned char *copy;
+
+	if (!data || !d || size < 6) return 0;
+	for (i = 0; i < data->count; i++)
+		if (jpeg_section_is_raw_exif (&data->sections[i])) {
+			copy = malloc (size);
+			if (!copy) {
+				data->priv->incomplete = 1;
+				return 0;
+			}
+			memcpy (copy, d, size);
+			free (data->sections[i].content.generic.data);
+			data->sections[i].content.generic.data = copy;
+			data->sections[i].content.generic.size = size;
+			return 1;
+		}
+	return 0;
+}
+
 /* Tandem Commander 132: replaces the first Exif block of the file (the one
    jpeg_data_get_exif_bytes gives); every other block stays as it was read */
 void

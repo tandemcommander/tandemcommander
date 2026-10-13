@@ -69,7 +69,11 @@ Fixes for the problems reported on GitHub after 0.1.9.
   compared byte for byte first. The old Exif code would have dropped the XMP
   data of every file and written a truncated file for some; such a file is
   left untouched and reported. A file with Exif is no longer asked "this file
-  does not contain EXIF data".
+  does not contain EXIF data". The Exif data themselves are not rewritten:
+  only the thumbnail picture is swapped and every other byte of the block
+  stays where it is, so the camera maker's own data survive (feature 135 -
+  the old Exif code changed or shortened them in 30 of 82 real camera files
+  tested). The old thumbnail does not stay readable in the file.
 
 - **Plug-ins: a batch of defects found while reading them** (feature 131).
   - **FTP: an address with `%` in the host name crashed the program**

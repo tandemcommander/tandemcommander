@@ -97,3 +97,10 @@ a moved directory on the server (recorded). Record: `specs/133-sftp-server-verif
 - `134-ftp-mixed-templates`, on top of it (for the version after): the FTP client's part of
   GitHub #7 - messages, operation window and the log; measured before and after against the
   probe's own FTP server. Record: `specs/134-ftp-mixed-templates/fix-log.md`.
+
+## Feature 135 (2026-10-13, "fix what you can", the first critical point)
+
+`135-pictview-real-photos`: Update Thumbnail measured on 91 real camera files - the Exif code
+of 132 damaged the maker's data in 30 of 82. The thumbnail is now swapped without moving a byte
+of the Exif block; 82 of 82 keep everything. **Must ship with 132.** Record:
+`specs/135-pictview-real-photos/fix-log.md`.

@@ -230,9 +230,9 @@ try {
     Out ("Date    : {0}; desktop '{1}'; ACP {2}; registry key existed {3}; export SHA-256 {4}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [DeskLib098]::Name(), [Drv098f]::GetACP(), $existed, $regHash)
     Out ("Hot key : {0}; case files from {1}" -f $script:KeyNote, $Cases)
     Out ''
-    Row-Thumb 'CTRL' 'CTRL_PLAIN' 'ctrl' 'updated' 'updated' 'a plain JPEG file'
-    Row-Thumb 'EXIF' 'CTRL_EXIF' 'exif' 'updated' 'updated' 'a JPEG file with Exif tags'
-    Row-Thumb 'ACCENT' 'CTRL_PLAIN' $Accent 'updated' 'updated' 'a plain JPEG file in a folder with accented letters (owed by 131)'
+    Row-Thumb 'CTRL' 'CTRL_PLAIN' 'ctrl' 'updated' 'unchanged' 'a plain JPEG file (the library of 0.1.9 gives it an Exif block it did not have - refused since 135)'
+    Row-Thumb 'EXIF' 'CTRL_EXIF' 'exif' 'updated' '' 'a JPEG file with two Exif tags (the library of 0.1.9 happens to keep every byte of so small a block - recorded)'
+    Row-Thumb 'ACCENT' 'CTRL_PLAIN' $Accent 'updated' 'unchanged' 'a plain JPEG file in a folder with accented letters (owed by 131)'
     Row-Thumb 'XMP' 'EXIF_THEN_XMP' 'xmp' 'updated' 'unchanged' 'Exif and an XMP block (the usual file of a phone or of Lightroom)'
     Row-Thumb 'XMPONLY' 'XMP_ONLY' 'xmponly' 'updated' 'unchanged' 'an XMP block and no Exif'
     Row-Thumb 'FILL8' 'FILL_8' 'fill8' 'unchanged' 'unchanged' 'eight fill bytes before a table (allowed by the standard, more than the library reads)'

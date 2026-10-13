@@ -2148,3 +2148,19 @@ a few early ones are out of sequence).
     and the "queue still holds operations" question at exit; a PowerShell 5.1 script must stay
     ASCII (a literal U+FFFD slipped in through the editor).
   - Not driven: bookmark dialogs, password prompt, Save / Copy log, FTPS - fix-log, section 5.
+- 135-pictview-real-photos: **132 measured on real camera files - and it damaged a third of
+  them.** `probe/exif_real_measure.py` over 91 files of the public collection
+  `ianare/exif-samples`: libexif's parse-and-serialise changed or shortened the MakerNote in 23
+  of 82 (Nikon 28,378 bytes -> 1,413), moved it in 3, lost IFD0 tags; the rule of 132 passed
+  them all because it did not look inside the Exif block ("by design", and the 132 review had
+  listed MakerNote as not checked - **a "not checked" on user data is a task, not a note**).
+  Now `src/common/salexifthumb.h`: the thumbnail swapped with **no other byte moved** (cut and
+  append at the end, or a new IFD1 appended and relinked), and `SalExifRewriteKeepsData` as the
+  writer-independent check inside the rule. 82 of 82 the same; Pillow and WIC agree.
+  - Review (ASan fuzz, 2.8 M calls): the "append" way left **the old thumbnail readable in the
+    file** (privacy: people update a thumbnail after cropping) - zeroed now; allowed-to-change
+    ranges must be proved to lie apart from real data (`SalExifIfdMeets`) or a wrong length in
+    the file turns the Exif IFD into "thumbnail bytes".
+  - Traps: `far` is a Windows macro; a Bash here-document turned `\\xFF` of a Python string
+    into the byte itself inside a C++ source; `python -I` hides user-site packages (Pillow).
+  - Real sample sets for file formats are worth fetching before a writer ships, not after.

@@ -137,6 +137,8 @@
     </ClInclude>
     <ClInclude Include="..\..\common\saljpegkeep.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salexifthumb.h">
+    </ClInclude>
     <ClInclude Include="..\..\common\salfatname.h">
     </ClInclude>
     <ClInclude Include="..\..\common\salvolpaths.h">

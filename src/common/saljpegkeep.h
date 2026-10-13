@@ -26,7 +26,10 @@
 //   - everything from the SOS marker to the end of the file (the picture data, the
 //     end marker and whatever follows it - motion photos, depth maps) is the same
 //     byte for byte;
-//   - a file that had an Exif block still has one;
+//   - a file that had an Exif block still has one, and a file gets none it did not have;
+//   - inside a changed Exif block nothing but the thumbnail changed (feature 135,
+//     SalExifRewriteKeepsData: every other byte of the block is where it was - the
+//     library used to serialise the block again, and makers' data did not survive that);
 //   - the command changes ONE thing: either one Exif block (its thumbnail), or the JFXX
 //     blocks (a file without Exif) - never both, never two Exif blocks. (The library used to
 //     serialise every Exif block again, dropping tags it does not know, also when it only
@@ -40,6 +43,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include "salexifthumb.h" // feature 135: the Exif block itself
 
 enum CSalJpegKeepResult
 {
@@ -49,7 +53,8 @@ enum CSalJpegKeepResult
     sjkSegmentsDiffer,        // a segment other than the thumbnail carriers was lost, added or changed
     sjkImageDiffers,          // the data from the SOS marker to the end of the file differ
     sjkExifGone,              // the original had an Exif block and the new file has none (or fewer)
-    sjkCarriersDiffer,        // more than one thumbnail carrier changed (two Exif blocks; Exif and JFXX)
+    sjkCarriersDiffer,        // more than one thumbnail carrier changed (two Exif blocks; Exif and JFXX), or an Exif block was added
+    sjkExifDataDiffer,        // a changed Exif block differs in more than its thumbnail
 };
 
 struct CSalJpegSegment
@@ -199,16 +204,17 @@ inline CSalJpegKeepResult SalJpegRewriteKeepsFile(const unsigned char* orig, siz
         return sjkExifGone;
     // the one thing that changed
     int exifChanged = 0;
-    if (cf.ExifCount == co.ExifCount)
-    {
-        for (int i = 0; i < co.ExifCount; i++)
-            if (!SalJpegSameSegment(orig, &co.Exif[i], fresh, &cf.Exif[i]))
-                exifChanged++;
-    }
-    else if (co.ExifCount == 0 && cf.ExifCount == 1)
-        exifChanged = 1; // a file without Exif got its block
-    else
-        return sjkCarriersDiffer;
+    if (cf.ExifCount != co.ExifCount)
+        return sjkCarriersDiffer; // an Exif block is never added (a file without Exif gets a JFXX block)
+    for (int i = 0; i < co.ExifCount; i++)
+        if (!SalJpegSameSegment(orig, &co.Exif[i], fresh, &cf.Exif[i]))
+        {
+            exifChanged++;
+            // feature 135: the block's own content - behind its 6-byte "Exif\0\0"
+            if (!SalExifRewriteKeepsData(orig + co.Exif[i].Payload + 6, co.Exif[i].PayloadSize - 6,
+                                         fresh + cf.Exif[i].Payload + 6, cf.Exif[i].PayloadSize - 6))
+                return sjkExifDataDiffer;
+        }
     int jfxxChanged = cf.JfxxCount != co.JfxxCount;
     for (int i = 0; !jfxxChanged && i < co.JfxxCount; i++)
         jfxxChanged = !SalJpegSameSegment(orig, &co.Jfxx[i], fresh, &cf.Jfxx[i]);
