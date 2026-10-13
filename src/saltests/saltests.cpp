@@ -48,6 +48,7 @@
 #include "saluncserver.h"   // feature 125
 #include "salshelllink.h"   // feature 128
 #include "salinserts.h"     // feature 127
+#include "salwideinserts.h" // feature 129
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -9742,6 +9743,138 @@ static void TestInserts127()
     }
 }
 
+// feature 129: wide inserts ("%ls") of a UTF-8 template (salwideinserts.h) - what the Registry
+// Editor's messages and cache names are composed with; and the defect it replaces
+static void TestWideInserts129()
+{
+    // the defect, as measured: a narrow printf with "%ls" fails at a letter above U+00FF
+    {
+        char buf[100];
+        memset(buf, 'X', sizeof(buf));
+        int r = _snprintf_s(buf, _TRUNCATE, "key \"%ls\" end", L"Kl\x00ED\x010D");
+        CHECK(r == -1 && strstr(buf, "end") == NULL); // nothing usable; the fix does not go this way
+        r = _snprintf_s(buf, _TRUNCATE, "key \"%ls\" end", L"plain");
+        CHECK(r > 0 && strcmp(buf, "key \"plain\" end") == 0);
+    }
+
+    CHECK(!SalWideInsertsUsed(NULL) && !SalWideInsertsUsed("") && !SalWideInsertsUsed("no inserts %s %d"));
+    CHECK(!SalWideInsertsUsed("100%% %%ls")); // a percent sign, then the letters "ls"
+    CHECK(SalWideInsertsUsed("\"%ls\"") && SalWideInsertsUsed("%%%ls") && SalWideInsertsUsed("a %s b %ls"));
+    CHECK(SalWideInsertsCount(NULL) == 0 && SalWideInsertsCount("x") == 0);
+    CHECK(SalWideInsertsCount("\"%ls\\%ls\"") == 2 && SalWideInsertsCount("%ls%ls%ls") == 3);
+    CHECK(SalWideInsertsCount("%%ls %ls") == 1 && SalWideInsertsCount("%l %s %ls") == 1);
+
+    struct
+    {
+        const char* tmpl;
+        const WCHAR* a;
+        const WCHAR* b;
+        const char* want;
+    } cases[] = {
+        {"Unable to open registry key \"%ls\". ", L"HKEY_CURRENT_USER\\Software\\x", NULL, "Unable to open registry key \"HKEY_CURRENT_USER\\Software\\x\". "},
+        // the Czech template of the question with a Czech key name: UTF-8 in, UTF-8 out
+        {"C\xC3\xADlov\xC3\xBD kl\xC3\xAD\xC4\x8D \"%ls\\%ls\" neexistuje.", L"HKEY_CURRENT_USER", L"Software\\C\x00EDl \x0159x",
+         "C\xC3\xADlov\xC3\xBD kl\xC3\xAD\xC4\x8D \"HKEY_CURRENT_USER\\Software\\C\xC3\xADl \xC5\x99x\" neexistuje."},
+        {"Name:\t%ls\n\nError", L"\x039A\x03BB\x03B5\x03B9\x03B4\x03AF", NULL, "Name:\t\xCE\x9A\xCE\xBB\xCE\xB5\xCE\xB9\xCE\xB4\xCE\xAF\n\nError"},
+        {"%ls", L"\x65E5\x672C\x8A9E", NULL, "\xE6\x97\xA5\xE6\x9C\xAC\xE8\xAA\x9E"},
+        {"[%ls]", L"\xD83D\xDE00", NULL, "[\xF0\x9F\x98\x80]"},                 // a surrogate pair: one 4-byte character
+        {"[%ls]", L"a\xD83D", NULL, "[a\xEF\xBF\xBD]"},                          // an unpaired surrogate: U+FFFD
+        {"%ls\\%ls", L"HKEY_LOCAL_MACHINE", L"", "HKEY_LOCAL_MACHINE\\"},     // the root: an empty key name
+        {"%ls\\%ls", L"A", NULL, "A\\"},                                      // a missing insert gives nothing
+        {"100%% of %ls", L"x", NULL, "100% of x"},
+        {"%s %d %ls %x", L"w", NULL, "%s %d w %x"},                            // other specifications are copied as they are
+        {"ends with %", L"w", NULL, "ends with %"},
+        {"%l", L"w", NULL, "%l"},
+        {"", L"w", NULL, ""},
+    };
+    for (int i = 0; i < _countof(cases); i++)
+    {
+        const WCHAR* ins[2] = {cases[i].a, cases[i].b};
+        char* got = SalWideInsertsExpandAlloc(cases[i].tmpl, ins, 2);
+        CHECK(got != NULL && strcmp(got, cases[i].want) == 0);
+        CHECK(got != NULL && SalWideInsertsExpandTo(NULL, cases[i].tmpl, ins, 2) == strlen(got) + 1);
+        if (got != NULL)
+            free(got);
+    }
+    CHECK(SalWideInsertsExpandAlloc(NULL, NULL, 0) == NULL);
+    {
+        // a NULL array and a count below the template's inserts: nothing is read
+        char* got = SalWideInsertsExpandAlloc("a%lsb%lsc", NULL, 2);
+        CHECK(got != NULL && strcmp(got, "abc") == 0);
+        if (got != NULL)
+            free(got);
+        const WCHAR* one[1] = {L"1"};
+        got = SalWideInsertsExpandAlloc("a%lsb%lsc", one, 1);
+        CHECK(got != NULL && strcmp(got, "a1bc") == 0);
+        if (got != NULL)
+            free(got);
+    }
+    {
+        // never cut: the longest registry path (512 units of a three-byte letter) and far beyond
+        std::wstring longName(40000, L'\x65E5');
+        const WCHAR* ins[2] = {L"HKEY_CURRENT_USER", longName.c_str()};
+        char* got = SalWideInsertsExpandAlloc("\"%ls\\%ls\"", ins, 2);
+        CHECK(got != NULL && strlen(got) == 1 + 17 + 1 + 3 * 40000 + 1 && got[strlen(got) - 1] == '"');
+        if (got != NULL)
+            free(got);
+    }
+    {
+        // lower case is folded on the wide text; a byte table on UTF-8 would not do
+        struct
+        {
+            const WCHAR* in;
+            const char* want;
+        } low[] = {
+            {L"reg:\\HKEY_CURRENT_USER\\Software\\Plain 1\\V", "reg:\\hkey_current_user\\software\\plain 1\\v"},
+            {L"KL\x00CD\x010C \x017DLU\x0164", "kl\xC3\xAD\xC4\x8D \xC5\xBElu\xC5\xA5"},
+            {L"\x0391\x03A1\x03A7", "\xCE\xB1\xCF\x81\xCF\x87"},
+            {L"\x65E5\x672C", "\xE6\x97\xA5\xE6\x9C\xAC"},
+            {L"", ""},
+        };
+        for (int i = 0; i < _countof(low); i++)
+        {
+            char* got = SalWideLowerToU8Alloc(low[i].in);
+            CHECK(got != NULL && strcmp(got, low[i].want) == 0);
+            if (got != NULL)
+                free(got);
+        }
+        CHECK(SalWideLowerToU8Alloc(NULL) == NULL);
+        // pairs a byte-wise lower-case table of code page 1250 makes equal in UTF-8 (C3 8A / C3 9A ...)
+        const WCHAR* pairs[][2] = {{L"\x00EA", L"\x00FA"}, {L"\x00CA", L"\x00DA"}, {L"\x00E3", L"\x00F3"}, {L"\x010A", L"\x011A"}, {L"\x00CA", L"\x00FA"}};
+        for (int i = 0; i < _countof(pairs); i++)
+        {
+            char* a = SalWideLowerToU8Alloc(pairs[i][0]);
+            char* b = SalWideLowerToU8Alloc(pairs[i][1]);
+            CHECK(a != NULL && b != NULL && strcmp(a, b) != 0);
+            free(a);
+            free(b);
+        }
+        // the same letter in two cases is one name
+        char* a = SalWideLowerToU8Alloc(L"Software\\KL\x00CD\x010C");
+        char* b = SalWideLowerToU8Alloc(L"SOFTWARE\\kl\x00ED\x010D");
+        CHECK(a != NULL && b != NULL && strcmp(a, b) == 0);
+        free(a);
+        free(b);
+    }
+    {
+        // two different keys give two different texts (the disk cache name of a viewed value)
+        const WCHAR* k1[2] = {L"HKEY_CURRENT_USER", L"Software\\Kl\x00ED\x010D 1"};
+        const WCHAR* k2[2] = {L"HKEY_CURRENT_USER", L"Software\\Kl\x00ED\x010D 2"};
+        char* a = SalWideInsertsExpandAlloc("%ls\\%ls", k1, 2);
+        char* b = SalWideInsertsExpandAlloc("%ls\\%ls", k2, 2);
+        CHECK(a != NULL && b != NULL && strcmp(a, b) != 0);
+        // ... and an ASCII path is what the old composition gave
+        const WCHAR* k3[2] = {L"HKEY_CURRENT_USER", L"Software\\plain 1"};
+        char* c = SalWideInsertsExpandAlloc("%ls\\%ls", k3, 2);
+        char old[100];
+        _snprintf_s(old, _TRUNCATE, "%ls\\%ls", k3[0], k3[1]);
+        CHECK(c != NULL && strcmp(c, old) == 0);
+        free(a);
+        free(b);
+        free(c);
+    }
+}
+
 // feature 128 (GitHub #8): the target of a shortcut as a UTF-8 path (salshelllink.h), against
 // real .lnk files written with the wide interface in the temporary folder
 static void TestShellLink128()
@@ -9930,6 +10063,7 @@ int main(int argc, char** argv)
     TestPackageApi126();
     TestInserts127();
     TestShellLink128();
+    TestWideInserts129();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

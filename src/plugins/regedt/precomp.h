@@ -42,6 +42,7 @@
 #include "regedt.rh2"
 #include "lang\lang.rh"
 
+#include "../../common/salwideinserts.h" // feature 129
 #include "utils.h"
 #include "regedt.h"
 #include "dialogs.h"

@@ -338,9 +338,13 @@ BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
                            sourceClassName, -1,
                            targetClassName, -1) != CSTR_EQUAL)
         {
-            char fileName[MAX_FULL_KEYNAME];
-            SalPrintf(fileName, MAX_FULL_KEYNAME, "%ls\\%ls", PredefinedHKeys[sourceRoot].KeyName, source);
-            switch (SG->DialogQuestion(GetParent(), BUTTONS_YESALLCANCEL, fileName, LoadStr(IDS_COPYCLASSNAME), LoadStr(IDS_WARNING)))
+            // the key's name as UTF-8, whole (feature 129: "%ls" in a narrow printf gave nothing for
+            // a name with a letter above U+00FF)
+            char* fileName = FormatWideU8("%ls\\%ls", PredefinedHKeys[sourceRoot].KeyName, source);
+            int answer = SG->DialogQuestion(GetParent(), BUTTONS_YESALLCANCEL, fileName != NULL ? fileName : "", LoadStr(IDS_COPYCLASSNAME), LoadStr(IDS_WARNING));
+            if (fileName != NULL)
+                free(fileName);
+            switch (answer)
             {
             case DIALOG_ALL:
                 skipAllClassNames = TRUE;
@@ -865,9 +869,18 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
             }
 
             // path does not exist, ask whether to create it
-            char message[MAX_KEYNAME + 200];
-            SalPrintf(message, MAX_KEYNAME, LoadStr(IDS_CREATETARGET), PredefinedHKeys[root].KeyName, key);
-            if (SG->SalMessageBox(GetParent(), message, LoadStr(title), MB_YESNO) != IDYES)
+            // feature 129: the question names the target (it was an empty box for a name with a
+            // letter above U+00FF); a question that cannot be composed is not asked and the key
+            // is not created
+            char* message = FormatWideU8(IDS_CREATETARGET, PredefinedHKeys[root].KeyName, key);
+            if (message == NULL)
+            {
+                Error(IDS_LOWMEM);
+                continue;
+            }
+            int answer = SG->SalMessageBox(GetParent(), message, LoadStr(title), MB_YESNO);
+            free(message);
+            if (answer != IDYES)
                 continue;
 
             // create it
@@ -1010,15 +1023,15 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                                            key, sourceLen2) == CSTR_EQUAL &&
                             (key[sourceLen2] == L'\0' || key[sourceLen2] == L'\\'))
                         {
-                            char message[MAX_KEYNAME + 200];
-                            SalPrintf(message, MAX_KEYNAME + 200,
-                                      LoadStr(copy ? IDS_CANTCOPYTOITSELF2 : IDS_CANTMOVETOITSELF2),
-                                      pd->Name);
-
-                            if (SG->SalMessageBox(GetParent(), message, LoadStr(errorTitle), MB_OKCANCEL) == IDOK)
+                            // feature 129: the message names the key (it was an empty box)
+                            char* message = FormatWideU8(copy ? IDS_CANTCOPYTOITSELF2 : IDS_CANTMOVETOITSELF2, pd->Name);
+                            if (message != NULL &&
+                                SG->SalMessageBox(GetParent(), message, LoadStr(errorTitle), MB_OKCANCEL) == IDOK)
                                 skip = TRUE;
                             else
                                 success = FALSE;
+                            if (message != NULL)
+                                free(message);
                         }
 
                         if (!skip && success)

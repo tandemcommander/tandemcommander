@@ -48,3 +48,11 @@ Final numbers: saltests 18,395 / 0 failed; guard 0; probes on the final build - 
 125: 26 / 0 (1 not driven); 127 Czech 19 / 0, English 17 / 0 (clipboard rows not driven);
 128: 18 / 0; 126: 5 / 5 and no import in 218 files. Rows for the visible desktop exist but the
 workstation was locked - owed to a person.
+
+## Feature 129 (2026-10-13, asked for by the maintainer after the verification)
+
+`129-regedt-wide-inserts`, one local commit on top of `128`: the Registry Editor's empty
+"create the target key?" question, the cut key errors and the shared cache file of viewed
+values (names with a letter above U+00FF). Probe: 0.1.9 FAIL 4, fixed PASS 19 (Czech and
+English); saltests 18,447; an independent review refuted the first version (lower case by a
+byte table on UTF-8) - fixed. Record: `specs/129-regedt-wide-inserts/fix-log.md`.

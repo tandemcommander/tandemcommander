@@ -386,6 +386,37 @@ BOOL ExportValueData(int root, LPCWSTR key, LPCWSTR value, const char* tmpFileNa
     return b || Error(IDS_WRITETEMP);
 }
 
+// The name a viewed value has in the core's disk cache: "fsname:\ROOT\key\value", lower case,
+// UTF-8, in a malloc'd buffer (NULL when memory is low).
+// Feature 129: the key's path went in with "%ls" of a narrow printf, which fails for a name with
+// a letter above U+00FF - the name was then the value's name alone, the same for all such keys,
+// and their values shared one file in the cache. The name is composed wide and folded to lower
+// case there (the core's ToLowerCase is a byte table of the code page: on UTF-8 it changes
+// continuation bytes and makes different names equal).
+static char* AllocCacheName(const char* fsName, const WCHAR* rootName, const WCHAR* keyName, const char* valueName)
+{
+    int fsUnits = MultiByteToWideChar(CP_UTF8, 0, fsName, -1, NULL, 0);       // with the terminator
+    int valueUnits = MultiByteToWideChar(CP_UTF8, 0, valueName, -1, NULL, 0); // with the terminator
+    if (fsUnits <= 0 || valueUnits <= 0)
+        return NULL;
+    size_t size = fsUnits + 2 + wcslen(rootName) + 1 + wcslen(keyName) + 1 + valueUnits + 1;
+    WCHAR* name = (WCHAR*)malloc(size * sizeof(WCHAR));
+    if (name == NULL)
+        return NULL;
+    MultiByteToWideChar(CP_UTF8, 0, fsName, -1, name, fsUnits);
+    wcscat(name, L":\\");
+    wcscat(name, rootName);
+    wcscat(name, L"\\");
+    wcscat(name, keyName);
+    size_t len = wcslen(name);
+    if (len > 0 && name[len - 1] != L'\\')
+        wcscat(name, L"\\");
+    MultiByteToWideChar(CP_UTF8, 0, valueName, -1, name + wcslen(name), valueUnits);
+    char* ret = SalWideLowerToU8Alloc(name);
+    free(name);
+    return ret;
+}
+
 void CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
                                   CSalamanderForViewFileOnFSAbstract* salamander,
                                   CFileData& file)
@@ -400,15 +431,14 @@ void CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
     if (pluginData->Name == NULL && pluginData->Type == REG_NONE || CurrentKeyRoot == -1)
         return;
 
-    // build a unique file name for the disk cache (standard Salamander path format)
-    char uniqueFileName[MAX_FULL_KEYNAME + MAX_PATH];
-    SalPrintf(uniqueFileName, MAX_FULL_KEYNAME + MAX_PATH, "%s:\\%ls\\%ls", fsName,
-              PredefinedHKeys[CurrentKeyRoot].KeyName, CurrentKeyName);
-    SG->SalPathAppend(uniqueFileName, file.Name, MAX_FULL_KEYNAME + MAX_PATH);
-
-    // disk names are case-insensitive, the disk cache is case-sensitive; converting
-    // to lowercase makes the cache behave case-insensitively as well
-    SG->ToLowerCase(uniqueFileName);
+    // build a unique file name for the disk cache (standard Salamander path format); disk names
+    // are case-insensitive, the disk cache is case-sensitive, so the name is in lower case
+    char* uniqueFileName = AllocCacheName(fsName, PredefinedHKeys[CurrentKeyRoot].KeyName, CurrentKeyName, file.Name);
+    if (uniqueFileName == NULL)
+    {
+        Error(IDS_LOWMEM);
+        return;
+    }
 
     // create a file name that Windows can handle
     char fileName[MAX_PATH];
@@ -421,7 +451,10 @@ void CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
                                                                ReplaceUnsafeCharacters(fileName),
                                                                NULL, fileExists);
     if (tmpFileName == NULL)
+    {
+        free(uniqueFileName);
         return; // fatal error
+    }
 
     // prepare or refresh the key data copy in the disk cache
     BOOL newFileOK = FALSE;
@@ -446,6 +479,7 @@ void CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
     // call FreeFileNameInCache to pair with AllocFileNameInCache (linking the viewer and disk cache)
     salamander->FreeFileNameInCache(uniqueFileName, fileExists, newFileOK,
                                     newFileSize, fileLock, fileLockOwner, TRUE);
+    free(uniqueFileName);
 }
 
 BOOL CPluginFSInterface::DeleteKey(WCHAR* keyName, BOOL& skip,

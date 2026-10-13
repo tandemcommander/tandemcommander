@@ -93,9 +93,114 @@ BOOL LoadStrU8(int resID, char* buf, int bufSize)
     return FALSE;
 }
 
-BOOL ErrorHelper(HWND parent, const char* message, int lastError, va_list arglist)
+// the text of 'resID' as UTF-8 in a malloc'd buffer (NULL when memory is low)
+static char* LoadStrU8Alloc(int resID)
+{
+    const WCHAR* textW = LoadStrW(resID);
+    if (textW == NULL)
+        return NULL;
+    int size = WideCharToMultiByte(CP_UTF8, 0, textW, -1, NULL, 0, NULL, NULL); // with the terminator
+    if (size <= 0)
+        return NULL;
+    char* text = (char*)malloc(size);
+    if (text != NULL && WideCharToMultiByte(CP_UTF8, 0, textW, -1, text, size, NULL, NULL) <= 0)
+    {
+        free(text);
+        text = NULL;
+    }
+    return text;
+}
+
+char* FormatWideU8(const char* templateU8, const WCHAR* insert1, const WCHAR* insert2)
+{
+    const WCHAR* inserts[2] = {insert1, insert2};
+    return SalWideInsertsExpandAlloc(templateU8, inserts, 2);
+}
+
+char* FormatWideU8(int resID, const WCHAR* insert1, const WCHAR* insert2)
+{
+    char* templ = LoadStrU8Alloc(resID);
+    if (templ == NULL)
+        return NULL;
+    char* text = FormatWideU8(templ, insert1, insert2);
+    free(templ);
+    return text;
+}
+
+// Feature 129: an error text whose template has wide inserts ("%ls": registry names). It is
+// composed as UTF-8 - template, names and the system's reason - and never cut.
+static BOOL ErrorHelperWide(HWND parent, const char* message, int lastError, va_list arglist, int resID)
+{
+    char* templ = resID != 0 ? LoadStrU8Alloc(resID) : NULL;
+    // a literal template (no id) is ASCII; a template that could not be loaded again (low memory)
+    // is left out - 'message' is code-page text and must not be mixed with the UTF-8 names
+    const char* t = templ != NULL ? templ : (resID != 0 ? "" : message);
+    const WCHAR* inserts[8];
+    int count = SalWideInsertsCount(t);
+    if (count > 8)
+        count = 8;
+    int i;
+    for (i = 0; i < count; i++)
+        inserts[i] = va_arg(arglist, const WCHAR*);
+    char* text = SalWideInsertsExpandAlloc(t, inserts, count);
+    if (templ != NULL)
+        free(templ);
+
+    char reason[3 * 1024]; // the system's text as UTF-8
+    reason[0] = 0;
+    if (lastError != ERROR_SUCCESS)
+    {
+        WCHAR reasonW[1024];
+        reasonW[0] = 0;
+        FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError,
+                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reasonW, _countof(reasonW), NULL);
+        if (WideCharToMultiByte(CP_UTF8, 0, reasonW, -1, reason, sizeof(reason), NULL, NULL) <= 0)
+            reason[0] = 0;
+    }
+    char* whole = NULL;
+    if (text != NULL)
+    {
+        size_t textLen = strlen(text);
+        whole = (char*)malloc(textLen + 1 + strlen(reason) + 1);
+        if (whole != NULL)
+        {
+            memcpy(whole, text, textLen + 1);
+            // a space between our message and the system's reason
+            if (reason[0] != 0 && textLen > 0 && whole[textLen - 1] != ' ')
+                strcat(whole, " ");
+            strcat(whole, reason);
+        }
+        free(text);
+    }
+    // (low memory: the reason alone is better than nothing)
+    const char* shown = whole != NULL ? whole : reason;
+    if (SG)
+    {
+        if ((DWORD_PTR)parent == -1)
+            parent = SG->GetMsgBoxParent();
+        SG->SalMessageBox(parent, shown, LoadStr(IDS_REGEDTERR), MB_ICONERROR);
+    }
+    else
+    {
+        if ((DWORD_PTR)parent == -1)
+            parent = 0;
+        int units = MultiByteToWideChar(CP_UTF8, 0, shown, -1, NULL, 0);
+        WCHAR* shownW = units > 0 ? (WCHAR*)malloc(units * sizeof(WCHAR)) : NULL;
+        if (shownW != NULL && MultiByteToWideChar(CP_UTF8, 0, shown, -1, shownW, units) > 0)
+            MessageBoxW(parent, shownW, L"RegEdit - Error", MB_OK | MB_ICONERROR);
+        if (shownW != NULL)
+            free(shownW);
+    }
+    if (whole != NULL)
+        free(whole);
+    return FALSE;
+}
+
+BOOL ErrorHelper(HWND parent, const char* message, int lastError, va_list arglist, int resID)
 {
     CALL_STACK_MESSAGE3("ErrorHelper(, %s, %d, )", message, lastError);
+    if (SalWideInsertsUsed(message))
+        return ErrorHelperWide(parent, message, lastError, arglist, resID);
     char buf[2048]; //temp variable
     *buf = 0;
     vsprintf(buf, message, arglist);
@@ -130,7 +235,7 @@ BOOL Error(HWND parent, int error, ...)
     CALL_STACK_MESSAGE2("Error(, %d, )", error);
     va_list arglist;
     va_start(arglist, error);
-    BOOL ret = ErrorHelper(parent, LoadStr(error), lastError, arglist);
+    BOOL ret = ErrorHelper(parent, LoadStr(error), lastError, arglist, error);
     va_end(arglist);
     return ret;
 }
@@ -154,7 +259,7 @@ BOOL Error(int error, ...)
     CALL_STACK_MESSAGE2("Error(%d, )", error);
     va_list arglist;
     va_start(arglist, error);
-    BOOL ret = ErrorHelper(DialogStackPeek(), LoadStr(error), lastError, arglist);
+    BOOL ret = ErrorHelper(DialogStackPeek(), LoadStr(error), lastError, arglist, error);
     va_end(arglist);
     return ret;
 }
@@ -164,7 +269,7 @@ BOOL ErrorL(int lastError, HWND parent, int error, ...)
     CALL_STACK_MESSAGE3("ErrorL(%d, , %d, )", lastError, error);
     va_list arglist;
     va_start(arglist, error);
-    BOOL ret = ErrorHelper(parent, LoadStr(error), lastError, arglist);
+    BOOL ret = ErrorHelper(parent, LoadStr(error), lastError, arglist, error);
     va_end(arglist);
     return ret;
 }
@@ -174,7 +279,7 @@ BOOL ErrorL(int lastError, int error, ...)
     CALL_STACK_MESSAGE3("ErrorL(%d, %d, )", lastError, error);
     va_list arglist;
     va_start(arglist, error);
-    BOOL ret = ErrorHelper(DialogStackPeek(), LoadStr(error), lastError, arglist);
+    BOOL ret = ErrorHelper(DialogStackPeek(), LoadStr(error), lastError, arglist, error);
     va_end(arglist);
     return ret;
 }

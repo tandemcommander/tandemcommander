@@ -50,7 +50,7 @@ A static check confirms that all eleven translations of `KEY` in the repository 
 ### Left out on purpose
 
 - Column *names* (`Type/Date`, `Size`, ...) are code-page text in the whole program (the core's own columns too) and are shown correctly wherever the language fits the Windows code page; that is a separate, program-wide matter.
-- The plug-in's message boxes that put a registry name into a translated sentence belong to the class described in #7; five of them are handled there. Two older ones are **not** fixed yet and are recorded as follow-up work: the question whether to create a missing target key (Copy / Move) and the plug-in's general error box show an empty or cut text when the name has a letter outside ASCII.
+- The plug-in's message boxes that put a registry name into a translated sentence belong to the class described in #7; five of them are handled there. Two older ones were found while this fix was verified and are fixed too (feature 129): the question whether to create a missing target key (Copy / Move) was an **empty** Yes / No box, and the "unable to open registry key" error was cut, when the key's name had a letter such as `č` or `ř`. The same cause made the values of different such keys share one temporary file when viewed with F3.
 - The clipboard commands above could not be checked by the automated probe (it has no clipboard); they are checked by hand before the release.
 
 The fix will be part of **Tandem Commander 0.1.10**.

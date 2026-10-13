@@ -289,10 +289,12 @@ Code work an agent can do:
   messages (`fs5.cpp`, `ErrorHelper`) are consistently code page but lose letters outside it.
 - Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124).
 - **Found by the second verification of 124-128 (2026-10-13)**, most visible first:
-  1. Registry Editor, `%ls` messages: `fs5.cpp:869` (`IDS_CREATETARGET` - "create the target
-     key?"), `fs5.cpp:1014` and `ErrorHelper` (`regedt.cpp`) format with `%ls` in the C locale;
-     a name with a non-ASCII letter gives an **empty Yes/No box** or a text cut at that letter.
-     Compose wide (`LoadStrW` + `_vsnwprintf_s`) and show with the wide message box.
+  1. ~~Registry Editor, `%ls` messages~~ - **done, feature 129** (also the disk cache name of
+     a viewed value, which the same cause made the same for different keys). Left from it:
+     `peviewer/pefile.cpp:1819/2317/2499` prints version-resource names with a narrow `%ls`
+     (a name with a letter above U+00FF is dropped or cut in the dump - suspected, measure
+     first); `regedt/fs3.cpp:218` passes `MAX_KEYNAME` as the size of a `3 * MAX_KEYNAME`
+     buffer; Move of a key and the "class name differs" question were not driven.
   2. Mixed templates in the enabled plug-ins (127): about 100 compositions outside FTP with a
      name or an error text - `checksum/dialogs.cpp:1129` (overwrite question),
      `7zip/7zip.cpp:1538`, `7zip/extract.cpp:567/652`, `zip/main.cpp:734`,

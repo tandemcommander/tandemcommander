@@ -86,7 +86,8 @@ struct CCS
 // ****************************************************************************
 
 //char * ErrorStr(char * buf, int error, ...);
-BOOL ErrorHelper(HWND parent, const char* message, int lastError, va_list arglist);
+// 'resID' != 0: the id 'message' was loaded from (a template with wide inserts is loaded again as UTF-8)
+BOOL ErrorHelper(HWND parent, const char* message, int lastError, va_list arglist, int resID = 0);
 BOOL Error(HWND parent, int error, ...);
 BOOL Error(HWND parent, const char* error, ...);
 BOOL Error(int error, ...);
@@ -94,6 +95,12 @@ BOOL ErrorL(int lastError, HWND parent, int error, ...);
 BOOL ErrorL(int lastError, int error, ...);
 int SalPrintf(char* buffer, unsigned count, const char* format, ...);
 int SalPrintfW(LPWSTR buffer, unsigned count, LPCWSTR format, ...);
+// Feature 129: a text with wide inserts ("%ls", registry names) as UTF-8. A narrow printf converts
+// such an insert with the "C" locale and fails at the first letter above U+00FF - the text came
+// out empty or cut. Returns the WHOLE text in a malloc'd buffer (the caller frees it); NULL when
+// memory is low. The template is UTF-8 (or the text of 'resID'); see salwideinserts.h.
+char* FormatWideU8(const char* templateU8, const WCHAR* insert1, const WCHAR* insert2 = NULL);
+char* FormatWideU8(int resID, const WCHAR* insert1, const WCHAR* insert2 = NULL);
 
 // ****************************************************************************
 //

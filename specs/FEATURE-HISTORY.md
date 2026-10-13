@@ -2015,3 +2015,22 @@ a few early ones are out of sequence).
     probe row that presses a real key must check that the program under test is the active
     window first (`unc_probe.ps1` row W2 does).
   - Evidence: `specs/12N-*/fix-log.md`, section *Second verification*; `probe/*_verify2.txt`.
+- 129-regedt-wide-inserts: **a narrow printf with `%ls` fails at the first letter above U+00FF**
+  (the "C" locale; `_vsnprintf_s` gives -1 and an empty buffer, `vsprintf` stops there). In the
+  Registry Editor that made the "create the target key?" question and the self-copy message
+  **empty boxes**, cut the "unable to open / access key" errors, and - not a text at all - gave
+  the values of different keys one name in the disk cache (F3 on `v` of two keys: one file).
+  Found by the second verification of 124-128, fixed for 0.1.10. New header-only rule
+  `src/common/salwideinserts.h` (`%ls` -> UTF-8 of the wide insert, whole text on the heap;
+  `SalWideLowerToU8Alloc`), `FormatWideU8` and `ErrorHelperWide` in the plug-in. No new strings.
+  - Probe `probe/wide_probe.ps1`: 0.1.9 FAIL 4, fixed PASS 19 in Czech and English; saltests
+    18,395 -> 18,447.
+  - The review refuted the first version: a UTF-8 name kept `SG->ToLowerCase`, a **byte table of
+    the code page** - on UTF-8 it changes continuation bytes, so `ê` and `ú` (C3 AA / C3 BA on
+    1250) became one cache name, a pair that was distinct before. Fold case on the wide text.
+  - Traps: letters up to U+00FF pass `%ls` by accident - test with `č`, not `é`; a probe that
+    answers boxes must press buttons in ITS order of preference (the window's order put OK
+    before Cancel and the probe copied keys), and check the state afterwards; the internal
+    viewer's title is the cache file of a viewed plug-in item.
+  - Left (NEXT-WORK D): `peviewer/pefile.cpp` narrow `%ls`; Move and the class-name question
+    not driven.

@@ -23,6 +23,15 @@ Fixes for the problems reported on GitHub after 0.1.9.
   with accented letters on the clipboard correctly. The Size column and the
   plug-in's Find window were right and stay right.
 
+- **Registry Editor: questions and errors name the key** (feature 129).
+  Copying or moving a key to a target that does not exist asked whether to
+  create it in a box with *Yes* and *No* and **no text** when the target's
+  name held a letter such as `č`, `ř`, or any letter outside Western
+  European; "can't copy a key to itself" was empty the same way, and
+  "unable to open registry key" stopped in the middle of the name. Viewing
+  (F3) a value of such a key used one temporary file for the same-named
+  values of different keys. All four are right now, in every language.
+
 - **A server name is enough to get to its shared folders** (GitHub #5,
   feature 125). Change Directory with `\\server\` (or `\\server`) answered
   *A share name is missing in the path specified*. The program now asks the

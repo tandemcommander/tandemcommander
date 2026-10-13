@@ -1,0 +1,11 @@
+wide_probe (feature 129), expect: before, language: czech
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 11:59; desktop 'tc_probe_20900'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Fixture : HKCU:\Software\TcProbe129 with keys 'Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD 1', 'Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD 2', 'plain 1', 'plain 2', each with the text value 'v'
+
+VIEWFOLD   CACHE  FAIL        both viewers open: their cache files are different files: False; titles: 'C:\Users\pavel\AppData\Local\Temp\SAL9AA.tmp\_v - Prohl\u00ED\u017Ee\u010D' and 'C:\Users\pavel\AppData\Local\Temp\SAL9AA.tmp\_v - Prohl\u00ED\u017Ee\u010D'
+VIEWFOLD   DATA   PASS        viewer of 'zfold 1\v' shows ALPHA: True; viewer of 'zfold 2\v' shows OMEGA and not ALPHA: True; recognized: [C:\Users\pavel\AppData\Local\Temp\SAL9AA.tmp\_v - Prohl\u00ED\u017Ee\u010D] - Prohl\u00ED\u017Ee\u010D | N\u00E1pov\u011Bda N\u00E1pov\u011Bda N\u00E1pov\u011Bda N\u00E1pov\u011Bda P\u0159ev\u00E9st N\u00E1pov\u011Bda | ALPHA | o | x | N\u00E1pov\u011Bda | - Prohll\u017Ee\u010D | N\u00E1pov\u011Bda N\u00E1pov\u011Bda N\u00E1pov\u011Bda N\u00E1pov\u011Bda P\u0159ev\u00E9st N\u00E1pov\u011Bda | ALPHA | a | x | N\u00E1pov\u011Bda || [C:\Users\pavel\AppData\Local\Temp\SAL9AA.tmp\_v - Prohl\u00ED\u017Ee\u010D] - Prohl\u00ED\u017Ee\u010D | N\u00E1pov\u011Bda N\u00E1pov\u011Bda N\u00E1pov\u011Bda N\u00E1pov\u011Bda P\u0159ev\u00E9st N\u00E1pov\u011Bda | OMEGA | o | x | N\u00E1pov\u011Bda | - Prohll\u017Ee\u010D | N\u00E1pov\u011Bda N\u00E1pov\u011Bda N\u00E1pov\u011Bda N\u00E1pov\u011Bda P\u0159ev\u00E9st N\u00E1pov\u011Bda | OMEGA | a | x | N\u00E1pov\u011Bda
+VIEWFOLD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 2, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture key removed: True; registry restored+identical: True
