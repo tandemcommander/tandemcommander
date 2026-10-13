@@ -22,6 +22,16 @@ Fixes for the problems reported on GitHub after 0.1.9.
   whole character. The Size column and the plug-in's Find window were right
   and stay right.
 
+- **A server name is enough to get to its shared folders** (GitHub #5,
+  feature 125). Change Directory with `\\server\` (or `\\server`) answered
+  *A share name is missing in the path specified*. The program now asks the
+  server for its shared folders and offers them in a list under the path
+  line - visible folders first, the hidden `$` shares after them; pick one
+  and the panel opens it. A server that cannot be read is reported with the
+  reason Windows gives, and the wait can be cancelled with Esc. Nothing
+  changes where a Network plug-in is present. `PRIVACY.md` describes the new
+  request.
+
 ## [0.1.9] — 2026-10-07
 
 **Build 193.** Feature release. The program now tells you when a newer

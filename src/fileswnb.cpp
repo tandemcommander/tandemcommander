@@ -20,6 +20,7 @@ extern "C"
 }
 #include "salshlib.h"
 #include "zip.h"
+#include "saluncserver.h" // feature 125
 
 //****************************************************************************
 
@@ -1392,6 +1393,130 @@ void CFilesWindow::ClearCutToClipFlag(BOOL repaint)
     CutToClipChanged = FALSE;
     if (repaint)
         RepaintListBox(DRAWFLAG_DIRTY_ONLY | DRAWFLAG_SKIP_VISTEST);
+}
+
+int CFilesWindow::PickServerShare(const char* serverPath, char* sharePath, int sharePathSize)
+{
+    CALL_STACK_MESSAGE2("CFilesWindow::PickServerShare(%s, ,)", serverPath);
+    if (sharePath == NULL || sharePathSize <= 0)
+        return PSS_NOTHING;
+    sharePath[0] = 0;
+    char server[MAX_PATH];
+    if (!SalUncServerOfPath(serverPath, server, _countof(server)))
+        return PSS_NOTHING;
+    GetAsyncKeyState(VK_ESCAPE); // init: an ESC pressed before (it closed a menu or a dialog) must not cancel the wait
+    CUncSharesJob* job = CUncSharesJob::Start(server);
+    if (job == NULL)
+        return PSS_NOTHING;
+
+    // the server is asked on a worker thread; a quiet moment first, then the wait window with
+    // ESC / Close (the way SalCheckPath waits for a network path)
+    BOOL cancelled = FALSE;
+    if (WaitForSingleObject(job->Done, 400) == WAIT_TIMEOUT)
+    {
+        char buf[MAX_PATH + 100];
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CHECKINGPATHESC), serverPath);
+        SalU8TrimIncompleteTail(buf);
+        CreateSafeWaitWindow(buf, NULL, 600, TRUE, NULL);
+        while (WaitForSingleObject(job->Done, 100) == WAIT_TIMEOUT)
+        {
+            if (UserWantsToCancelSafeWaitWindow())
+            {
+                cancelled = TRUE;
+                break;
+            }
+        }
+        DestroySafeWaitWindow();
+        if (cancelled)
+        {
+            MSG msg; // discard the buffered ESC
+            while (PeekMessage(&msg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE))
+                ;
+        }
+    }
+    if (cancelled)
+    {
+        job->Release(); // the worker frees the job when its call returns
+        return PSS_CANCELLED;
+    }
+
+    int ret = PSS_NOTHING;
+    if (job->Count == 0)
+    {
+        if (job->Error != ERROR_SUCCESS)
+        {
+            char errBuf[2 * MAX_PATH + 300];
+            _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_PATHERRORFORMAT), serverPath, GetErrorText(job->Error));
+            SalU8TrimIncompleteTail(errBuf);
+            SalMessageBox(HWindow, errBuf, LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
+            ret = PSS_ERRORSHOWN;
+        }
+    }
+    else
+    {
+        BeginStopRefresh(); // the snooper takes a rest
+
+        CMenuPopup menu;
+        RECT r;
+        GetWindowRect(HWindow, &r);
+        BOOL exludeRect = FALSE;
+        int y = r.top;
+        if (DirectoryLine != NULL && DirectoryLine->HWindow != NULL)
+        {
+            if (DirectoryLine->GetTextFrameRect(&r))
+            {
+                y = r.bottom;
+                exludeRect = TRUE;
+                menu.SetMinWidth(r.right - r.left);
+            }
+        }
+
+        MENU_ITEM_INFO mii;
+        BOOL anyVisible = FALSE;
+        BOOL separated = FALSE;
+        int i;
+        for (i = 0; i < job->Count; i++)
+        {
+            char text[3 * MAX_PATH]; // a share name is at most 80 characters; '&' doubled
+            if (!SalUncMenuText(job->Shares[i].Name, text, _countof(text)))
+                continue; // does not fit: left out rather than shown cut
+            if (!job->Shares[i].Hidden)
+                anyVisible = TRUE;
+            else if (anyVisible && !separated)
+            { // hidden (administrative) shares follow the visible ones, set apart
+                mii.Mask = MENU_MASK_TYPE;
+                mii.Type = MENU_TYPE_SEPARATOR;
+                menu.InsertItem(-1, TRUE, &mii);
+                separated = TRUE;
+            }
+            mii.Mask = MENU_MASK_TYPE | MENU_MASK_ID | MENU_MASK_STRING;
+            mii.Type = MENU_TYPE_STRING;
+            mii.String = text;
+            mii.ID = i + 1;
+            menu.InsertItem(-1, TRUE, &mii);
+        }
+        DWORD cmd = menu.Track(MENU_TRACK_RETURNCMD | MENU_TRACK_VERTICAL, r.left, y, HWindow, exludeRect ? &r : NULL);
+
+        EndStopRefresh();
+
+        if (cmd >= 1 && (int)cmd <= job->Count)
+        {
+            if (SalUncBuildSharePath(server, job->Shares[cmd - 1].Name, sharePath, sharePathSize))
+                ret = PSS_PICKED;
+            else
+            { // refused, never cut
+                char errBuf[2 * MAX_PATH + 300];
+                _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_PATHERRORFORMAT), serverPath, LoadStrU8(IDS_TOOLONGPATH));
+                SalU8TrimIncompleteTail(errBuf);
+                SalMessageBox(HWindow, errBuf, LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
+                ret = PSS_ERRORSHOWN;
+            }
+        }
+        else
+            ret = PSS_CANCELLED;
+    }
+    job->Release();
+    return ret;
 }
 
 void CFilesWindow::OpenDirHistory()

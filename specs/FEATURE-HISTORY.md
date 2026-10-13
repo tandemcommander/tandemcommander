@@ -1898,3 +1898,28 @@ a few early ones are out of sequence).
   - View-mode commands: `CM_ACTIVEMODE_1 + template index`; Detailed is index 2 (2972).
   - Probe `probe/regkey_probe.ps1`: 0.1.9 PASS 48 / FAIL 33, fixed PASS 81 / FAIL 0. Left out:
     column names (code page in the whole program), the plug-in's message boxes (issue #7).
+- 125-unc-server-shares: **`\\server\` offers the server's shares** (GitHub issue #5, for 0.1.10).
+  An incomplete UNC path went only to a Network plug-in (`GetFirstNethoodPluginFSName`), and
+  none ships (`nethood=off`, 007): "A share name is missing in the path specified". The issue
+  proposed `nethood=on`; measured first - it works and builds unchanged, but the Debug build
+  reports **"Detected memory leaks!" at every exit** after the plug-in was used (it terminates
+  its threads with zero wait), a missing server opens an empty panel silently, and an audit found
+  more (research R2). **The plug-in policy was not changed** - recorded as a decision for the
+  maintainer in `specs/NEXT-WORK.md` section D. The core got a fallback for exactly that branch
+  of `CFilesWindow::ChangeDir`: `CUncSharesJob` (`shares.cpp`; worker thread, `NetShareEnum`
+  level 1, `WNetOpenEnumW` when the list is refused, registered with `AddAuxThread`),
+  `CFilesWindow::PickServerShare` (`fileswnb.cpp`; 400 ms quiet, then the safe wait window with
+  the existing "Checking path" text; a `CMenuPopup` under the directory line like the directory
+  history), pure rules in `src/common/saluncserver.h` (saltests). No new string. `PRIVACY.md`
+  changed in the same change.
+  - **Traps**: `small` is a macro of the Windows headers (`rpcndr.h`); a wait loop that polls
+    `UserWantsToCancelSafeWaitWindow()` must call `GetAsyncKeyState(VK_ESCAPE)` once first or an
+    Esc pressed earlier cancels it (review); a core worker thread needs the `F` -> `FEH` -> `FBody`
+    shape and `AddAuxThread` (review); at start-up an untitled `#32770` is the splash screen.
+  - **Probing a popup menu**: it is owner-drawn (`PopupMenuClass`) and takes posted
+    `WM_KEYDOWN`; the text recognition misreads short names with `$`, so the list is checked by
+    choosing the k-th item and reading the path the program then tries from the reopened Change
+    Directory field. The wait window's Esc / Close read the real keyboard and mouse - NOT DRIVEN.
+  - Debug-only seam `TC_PROBE_UNC_SHARES` / `_DELAY` / `_ERROR`
+    (`specs/125-unc-server-shares/contracts/probe-seam.md`); absent from Release (string search).
+  - Probe `probe/unc_probe.ps1`; saltests 18,184 -> 18,277.

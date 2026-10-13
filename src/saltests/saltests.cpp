@@ -45,6 +45,7 @@
 #include "salmsgwrap.h"     // feature 121
 #include "salfindtext.h"    // feature 121
 #include "salupdcheck.h"    // feature 123
+#include "saluncserver.h"   // feature 125
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -9313,6 +9314,165 @@ static void TestUpdateCheck123()
     }
 }
 
+// feature 125 (GitHub #5): a UNC path with a server and no share - the rules of saluncserver.h
+static void TestUncServer125()
+{
+    char server[40];
+
+    // --- SalUncServerOfPath: "server only" ---
+    CHECK(SalUncServerOfPath("\\\\server", server, sizeof(server)) && strcmp(server, "server") == 0);
+    CHECK(SalUncServerOfPath("\\\\server\\", server, sizeof(server)) && strcmp(server, "server") == 0);
+    CHECK(SalUncServerOfPath("\\\\192.168.1.10\\", server, sizeof(server)) && strcmp(server, "192.168.1.10") == 0);
+    CHECK(SalUncServerOfPath("\\\\fs01.corp.example.com", server, sizeof(server)) && strcmp(server, "fs01.corp.example.com") == 0);
+    CHECK(SalUncServerOfPath("\\\\a", server, sizeof(server)) && strcmp(server, "a") == 0);
+    // a server name with letters outside ASCII (UTF-8: s-caron, e-acute)
+    CHECK(SalUncServerOfPath("\\\\\xC5\xA1kola-\xC3\xA9\\", server, sizeof(server)) && strcmp(server, "\xC5\xA1kola-\xC3\xA9") == 0);
+    // not "server only"
+    CHECK(!SalUncServerOfPath("\\\\", server, sizeof(server)) && server[0] == 0);
+    CHECK(!SalUncServerOfPath("\\\\\\", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\\\server\\share", server, sizeof(server)) && server[0] == 0);
+    CHECK(!SalUncServerOfPath("\\\\server\\share\\", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\\\server\\share\\dir", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\\\server\\\\", server, sizeof(server))); // an empty share part is not "no share part"
+    CHECK(!SalUncServerOfPath("\\\\.", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\\\.\\", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\\\?", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\\\?\\", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\\\?\\C:\\", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\\\.\\PhysicalDrive0", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("C:\\", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("\\server", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("server", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("", server, sizeof(server)));
+    CHECK(!SalUncServerOfPath(NULL, server, sizeof(server)));
+    CHECK(!SalUncServerOfPath("//server/", server, sizeof(server))); // the caller normalises slashes first
+    // names that only start with a device character are servers
+    CHECK(SalUncServerOfPath("\\\\.x", server, sizeof(server)) && strcmp(server, ".x") == 0);
+    CHECK(SalUncServerOfPath("\\\\?x\\", server, sizeof(server)) && strcmp(server, "?x") == 0);
+    // the buffer: fits exactly / one byte short = refused, never cut
+    {
+        char tiny[7];
+        CHECK(SalUncServerOfPath("\\\\server", tiny, 7) && strcmp(tiny, "server") == 0);
+        memset(tiny, 'X', sizeof(tiny));
+        CHECK(!SalUncServerOfPath("\\\\server", tiny, 6) && tiny[0] == 0);
+        CHECK(!SalUncServerOfPath("\\\\server", NULL, 0));
+        CHECK(!SalUncServerOfPath("\\\\server", tiny, 0));
+    }
+
+    // --- SalUncShareOffered: folder shares only ---
+    CHECK(SalUncShareOffered(0x00000000));  // STYPE_DISKTREE
+    CHECK(SalUncShareOffered(0x80000000));  // a special folder share (C$, ADMIN$)
+    CHECK(SalUncShareOffered(0x40000000));  // a temporary folder share
+    CHECK(!SalUncShareOffered(0x00000001)); // STYPE_PRINTQ
+    CHECK(!SalUncShareOffered(0x00000002)); // STYPE_DEVICE
+    CHECK(!SalUncShareOffered(0x00000003)); // STYPE_IPC
+    CHECK(!SalUncShareOffered(0x80000003)); // IPC$
+    CHECK(!SalUncShareOffered(0x80000001));
+
+    // --- SalUncShareHidden ---
+    CHECK(SalUncShareHidden("C$", 0x80000000));
+    CHECK(SalUncShareHidden("ADMIN$", 0x80000000));
+    CHECK(SalUncShareHidden("secret$", 0));
+    CHECK(SalUncShareHidden("plain", 0x80000000)); // special without a dollar
+    CHECK(!SalUncShareHidden("DATA", 0));
+    CHECK(!SalUncShareHidden("pri$ce", 0));
+    CHECK(!SalUncShareHidden("$start", 0));
+    CHECK(!SalUncShareHidden("", 0));
+    CHECK(!SalUncShareHidden(NULL, 0));
+    CHECK(SalUncShareHidden("$", 0));
+
+    // --- SalUncShareCompare: visible first, then the file system's order ---
+    CHECK(SalUncShareCompare("zzz", FALSE, "AAA$", TRUE) < 0);
+    CHECK(SalUncShareCompare("AAA$", TRUE, "zzz", FALSE) > 0);
+    CHECK(SalUncShareCompare("apps", FALSE, "DATA", FALSE) < 0);
+    CHECK(SalUncShareCompare("DATA", FALSE, "apps", FALSE) > 0);
+    CHECK(SalUncShareCompare("Home", FALSE, "HOME", FALSE) == 0);
+    CHECK(SalUncShareCompare("C$", TRUE, "D$", TRUE) < 0);
+    CHECK(SalUncShareCompare("ADMIN$", TRUE, "C$", TRUE) < 0);
+    // c-caron in both cases is one name (the code page tables did not know that)
+    CHECK(SalUncShareCompare("\xC4\x8Ctvrt", FALSE, "\xC4\x8Dtvrt", FALSE) == 0);
+    CHECK(SalUncShareCompare("abc", FALSE, "abc", TRUE) < 0);
+    {
+        // a whole list as the worker sorts it
+        struct
+        {
+            const char* Name;
+            DWORD Type;
+        } in[] = {{"IPC$", 0x80000003}, {"D$", 0x80000000}, {"NETLOGON", 0}, {"apps", 0}, {"ADMIN$", 0x80000000}, {"HP LaserJet", 1}, {"Home", 0}, {"C$", 0x80000000}, {"DATA", 0}, {"archiv$", 0}};
+        const char* names[10];
+        BOOL hidden[10];
+        int n = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            if (!SalUncShareOffered(in[i].Type))
+                continue;
+            names[n] = in[i].Name;
+            hidden[n] = SalUncShareHidden(in[i].Name, in[i].Type);
+            n++;
+        }
+        CHECK(n == 8);
+        for (int i = 0; i < n; i++)
+            for (int j = i + 1; j < n; j++)
+                if (SalUncShareCompare(names[i], hidden[i], names[j], hidden[j]) > 0)
+                {
+                    std::swap(names[i], names[j]);
+                    std::swap(hidden[i], hidden[j]);
+                }
+        const char* want[8] = {"apps", "DATA", "Home", "NETLOGON", "ADMIN$", "archiv$", "C$", "D$"};
+        for (int i = 0; i < 8; i++)
+            CHECK(strcmp(names[i], want[i]) == 0);
+        CHECK(!hidden[3] && hidden[4]);
+    }
+
+    // --- SalUncBuildSharePath: whole or refused ---
+    {
+        char buf[32];
+        CHECK(SalUncBuildSharePath("server", "DATA", buf, sizeof(buf)) && strcmp(buf, "\\\\server\\DATA") == 0);
+        CHECK(SalUncBuildSharePath("s", "C$", buf, sizeof(buf)) && strcmp(buf, "\\\\s\\C$") == 0);
+        CHECK(SalUncBuildSharePath("server", "My Share & more", buf, sizeof(buf)) && strcmp(buf, "\\\\server\\My Share & more") == 0);
+        // "\\server\DATA" is 13 bytes + terminator
+        char tight[14];
+        CHECK(SalUncBuildSharePath("server", "DATA", tight, 14) && strcmp(tight, "\\\\server\\DATA") == 0);
+        memset(tight, 'X', sizeof(tight));
+        CHECK(!SalUncBuildSharePath("server", "DATA", tight, 13) && tight[0] == 0);
+        CHECK(!SalUncBuildSharePath("server", "DATA", tight, 1) && tight[0] == 0);
+        CHECK(!SalUncBuildSharePath("server", "DATA", NULL, 0));
+        CHECK(!SalUncBuildSharePath("", "DATA", buf, sizeof(buf)) && buf[0] == 0);
+        CHECK(!SalUncBuildSharePath("server", "", buf, sizeof(buf)));
+        CHECK(!SalUncBuildSharePath(NULL, "DATA", buf, sizeof(buf)));
+        CHECK(!SalUncBuildSharePath("server", NULL, buf, sizeof(buf)));
+        CHECK(!SalUncBuildSharePath("ser\\ver", "DATA", buf, sizeof(buf)));
+        CHECK(!SalUncBuildSharePath("server", "DA\\TA", buf, sizeof(buf)));
+        // 80 three-byte letters (the longest share name Windows allows, in a non-Latin script)
+        char share[241];
+        for (int i = 0; i < 80; i++)
+            memcpy(share + 3 * i, "\xE4\xB8\xAD", 3);
+        share[240] = 0;
+        char big[260];
+        CHECK(SalUncBuildSharePath("server", share, big, sizeof(big)) && strlen(big) == 2 + 6 + 1 + 240 && strcmp(big + 9, share) == 0);
+        char notEnough[249];
+        CHECK(!SalUncBuildSharePath("server", share, notEnough, sizeof(notEnough)) && notEnough[0] == 0);
+        // what it builds is not "server only" any more, and the server of "\\server\" comes back
+        CHECK(SalUncBuildSharePath("server", "DATA", buf, sizeof(buf)) && !SalUncServerOfPath(buf, server, sizeof(server)));
+    }
+
+    // --- SalUncMenuText: '&' doubled, whole or refused ---
+    {
+        char buf[16];
+        CHECK(SalUncMenuText("DATA", buf, sizeof(buf)) && strcmp(buf, "DATA") == 0);
+        CHECK(SalUncMenuText("R&D", buf, sizeof(buf)) && strcmp(buf, "R&&D") == 0);
+        CHECK(SalUncMenuText("&&", buf, sizeof(buf)) && strcmp(buf, "&&&&") == 0);
+        CHECK(SalUncMenuText("", buf, sizeof(buf)) && buf[0] == 0);
+        CHECK(!SalUncMenuText(NULL, buf, sizeof(buf)));
+        CHECK(SalUncMenuText("123456789012345", buf, sizeof(buf)) && strlen(buf) == 15);
+        memset(buf, 'X', sizeof(buf));
+        CHECK(!SalUncMenuText("1234567890123456", buf, sizeof(buf)) && buf[0] == 0);
+        CHECK(!SalUncMenuText("12345678901234&", buf, sizeof(buf)) && buf[0] == 0); // the doubled '&' does not fit
+        CHECK(SalUncMenuText("1234567890123&", buf, sizeof(buf)) && strcmp(buf, "1234567890123&&") == 0);
+        CHECK(!SalUncMenuText("x", buf, 0));
+    }
+}
+
 int main()
 {
     TestConversions();
@@ -9373,6 +9533,7 @@ int main()
     TestPvPixel120();
     TestSmallBatch121();
     TestUpdateCheck123();
+    TestUncServer125();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

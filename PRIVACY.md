@@ -246,7 +246,11 @@ you do:
   author pointed them; the viewer is designed so that a document cannot open
   them without a click or key press of yours.
 - **Network drives and shared folders** — when you open a network location,
-  Windows connects to it.
+  Windows connects to it. When you enter the name of a server without a shared
+  folder (`\\server\`), the program asks that server, through Windows, for
+  the list of its shared folders so that you can choose one. The list is not
+  stored; the path you typed and the folder you open are remembered like any
+  other path. The program handles no name or password for it.
 - **Links in the program** — links in, for example, the About box, the Help
   menu, the Plugins Manager and the new-version notification open in your web
   browser or e-mail program when you click them. They point to

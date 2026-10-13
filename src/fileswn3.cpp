@@ -1989,6 +1989,7 @@ BOOL CFilesWindow::ChangeDir(const char* newDir, int suggestedTopIndex, const ch
 
     MainWindow->CancelPanelsUI();                  // cancel QuickSearch and QuickEdit
     char absFSPath[MAX_PATH];                      // plugin FS paths keep the legacy convention
+    char uncSharePath[4 * MAX_PATH];               // "\\server\share" picked from the server's shares (feature 125)
     char* path = (char*)malloc(SAL_MAX_PATH_UTF8); // long-path capable (feature 004)
     if (path == NULL)
     {
@@ -2200,6 +2201,36 @@ CHANGE_AGAIN:
                         else
                             strcpy(path, absFSPath);
                         goto CHANGE_AGAIN_NO_DLG; // try to open the incomplete UNC path in the plugin
+                    }
+                    if (errTextID == IDS_SHARENAMEMISSING)
+                    { // feature 125 (GitHub #5): no Network plugin - the core reads the server's
+                        // shares itself and lets the user pick one
+                        switch (PickServerShare(path, uncSharePath, _countof(uncSharePath)))
+                        {
+                        case PSS_PICKED:
+                        {
+                            if (newDir != NULL)
+                                newDir = uncSharePath; // in case that the path is entered from outside
+                            else
+                                strcpy(path, uncSharePath);
+                            goto CHANGE_AGAIN_NO_DLG; // the ordinary change to "\\server\share"
+                        }
+
+                        case PSS_CANCELLED:
+                        case PSS_ERRORSHOWN:
+                        {
+                            if (newDir != NULL)
+                            {
+                                if (useStopRefresh)
+                                    EndStopRefresh(); // snooper will be started again
+                                if (failReason != NULL)
+                                    *failReason = CHPPFR_INVALIDPATH;
+                                return FALSE; // done, cannot retry
+                            }
+                            goto CHANGE_AGAIN; // the dialog again, the text can be corrected
+                        }
+                            // PSS_NOTHING: the message below ("a share name is missing")
+                        }
                     }
                 }
                 if (errTextID == IDS_EMPTYNAMENOTALLOWED)

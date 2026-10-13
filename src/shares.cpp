@@ -364,3 +364,278 @@ BOOL CShares::GetItem(int index, const char** localPath, const char** remoteName
     HANDLES(LeaveCriticalSection(&CS));
     return TRUE;
 }
+
+//****************************************************************************
+//
+// CUncSharesJob (feature 125)
+//
+// Reads the folder shares of one server on a worker thread. The main thread
+// waits for 'Done' (with a cancellable wait window) or abandons the job; the
+// job is freed by whoever drops the last reference. An abandoned worker ends
+// when its system call returns; only the program's exit ends one that is still
+// blocked then (AddAuxThread).
+//
+
+#include <winnetwk.h>
+#include "saluncserver.h"
+
+CUncSharesJob::CUncSharesJob()
+{
+    ServerW = NULL;
+    Shares = NULL;
+    Count = 0;
+    Error = ERROR_SUCCESS;
+    Done = NULL;
+    Refs = 1;
+    Allocated = 0;
+}
+
+CUncSharesJob::~CUncSharesJob()
+{
+    for (int i = 0; i < Count; i++)
+        free(Shares[i].Name);
+    free(Shares);
+    free(ServerW);
+    if (Done != NULL)
+        NOHANDLES(CloseHandle(Done)); // not monitored: an abandoned job may outlive the handle check at exit
+}
+
+void CUncSharesJob::Release()
+{
+    if (InterlockedDecrement(&Refs) == 0)
+        delete this;
+}
+
+// adds a share when it is a folder share; FALSE = out of memory
+BOOL CUncSharesJob::Add(const WCHAR* nameW, DWORD type)
+{
+    if (nameW == NULL || nameW[0] == 0 || !SalUncShareOffered(type))
+        return TRUE;
+    char* name = SalWToU8Alloc(nameW, -1); // the whole name, any length
+    if (name == NULL)
+        return FALSE;
+    if (Count == Allocated)
+    {
+        int newAlloc = Allocated == 0 ? 32 : 2 * Allocated;
+        CUncShare* n = (CUncShare*)realloc(Shares, newAlloc * sizeof(CUncShare));
+        if (n == NULL)
+        {
+            free(name);
+            return FALSE;
+        }
+        Shares = n;
+        Allocated = newAlloc;
+    }
+    Shares[Count].Name = name;
+    Shares[Count].Hidden = SalUncShareHidden(name, type);
+    Count++;
+    return TRUE;
+}
+
+static int UncSharesCompare(const void* a, const void* b)
+{
+    const CUncShare* sa = (const CUncShare*)a;
+    const CUncShare* sb = (const CUncShare*)b;
+    return SalUncShareCompare(sa->Name, sa->Hidden, sb->Name, sb->Hidden);
+}
+
+void CUncSharesJob::Read()
+{
+#ifdef _DEBUG
+    // probe seam, Debug builds only (specs/125-unc-server-shares/contracts/probe-seam.md)
+    {
+        WCHAR env[4000];
+        DWORD len = GetEnvironmentVariableW(L"TC_PROBE_UNC_DELAY", env, _countof(env));
+        if (len > 0 && len < _countof(env))
+            Sleep(_wtoi(env));
+        len = GetEnvironmentVariableW(L"TC_PROBE_UNC_ERROR", env, _countof(env));
+        if (len > 0 && len < _countof(env))
+        {
+            Error = (DWORD)_wtoi(env);
+            return;
+        }
+        len = GetEnvironmentVariableW(L"TC_PROBE_UNC_SHARES", env, _countof(env));
+        if (len > 0 && len < _countof(env))
+        {
+            WCHAR* s = env;
+            while (*s != 0)
+            {
+                WCHAR* e = s;
+                while (*e != 0 && *e != L'|')
+                    e++;
+                WCHAR* next = *e != 0 ? e + 1 : e;
+                *e = 0;
+                DWORD type = STYPE_DISKTREE;
+                WCHAR* star = wcschr(s, L'*');
+                if (star != NULL)
+                {
+                    *star = 0;
+                    type = wcstoul(star + 1, NULL, 10);
+                }
+                if (!Add(s, type))
+                {
+                    Error = ERROR_NOT_ENOUGH_MEMORY;
+                    return;
+                }
+                s = next;
+            }
+            qsort(Shares, Count, sizeof(CUncShare), UncSharesCompare);
+            return;
+        }
+    }
+#endif // _DEBUG
+
+    // level 1: names, types and remarks of all shares, hidden ones included
+    DWORD firstErr = ERROR_SUCCESS;
+    DWORD resume = 0;
+    NET_API_STATUS res;
+    do
+    {
+        SHARE_INFO_1* buf = NULL;
+        DWORD read = 0, total = 0;
+        res = NetShareEnum(ServerW, 1, (LPBYTE*)&buf, MAX_PREFERRED_LENGTH, &read, &total, &resume);
+        if (res == ERROR_SUCCESS || res == ERROR_MORE_DATA)
+        {
+            for (DWORD i = 0; buf != NULL && i < read; i++)
+            {
+                if (!Add(buf[i].shi1_netname, buf[i].shi1_type))
+                {
+                    NetApiBufferFree(buf);
+                    Error = ERROR_NOT_ENOUGH_MEMORY;
+                    return;
+                }
+            }
+        }
+        else
+            firstErr = res;
+        if (buf != NULL)
+            NetApiBufferFree(buf);
+    } while (res == ERROR_MORE_DATA);
+
+    // a server that was not found is not asked a second time (another network timeout)
+    BOOL notFound = firstErr == ERROR_BAD_NETPATH || firstErr == ERROR_REM_NOT_LIST ||
+                    firstErr == ERROR_NETWORK_UNREACHABLE || firstErr == ERROR_HOST_UNREACHABLE;
+    if (notFound)
+        Error = firstErr;
+    else if (firstErr != ERROR_SUCCESS && Count == 0)
+    {
+        // the share list was refused (commonly ERROR_ACCESS_DENIED): the visible disk shares as
+        // the network provider enumerates them for the session Windows already has
+        NETRESOURCEW nr;
+        memset(&nr, 0, sizeof(nr));
+        nr.dwScope = RESOURCE_GLOBALNET;
+        nr.dwType = RESOURCETYPE_DISK;
+        nr.dwDisplayType = RESOURCEDISPLAYTYPE_SERVER;
+        nr.dwUsage = RESOURCEUSAGE_CONTAINER;
+        nr.lpRemoteName = ServerW;
+        HANDLE hEnum;
+        DWORD err = WNetOpenEnumW(RESOURCE_GLOBALNET, RESOURCETYPE_DISK, 0, &nr, &hEnum);
+        if (err == NO_ERROR)
+        {
+            DWORD bufSize = 32 * 1024;
+            BYTE* buf = (BYTE*)malloc(bufSize);
+            if (buf == NULL)
+                err = ERROR_NOT_ENOUGH_MEMORY;
+            while (err == NO_ERROR)
+            {
+                DWORD count = (DWORD)-1;
+                DWORD size = bufSize;
+                err = WNetEnumResourceW(hEnum, &count, buf, &size);
+                if (err == NO_ERROR)
+                {
+                    NETRESOURCEW* r = (NETRESOURCEW*)buf;
+                    for (DWORD i = 0; i < count; i++)
+                    {
+                        const WCHAR* remote = r[i].lpRemoteName; // "\\server\share"
+                        const WCHAR* name = remote != NULL ? wcsrchr(remote, L'\\') : NULL;
+                        if (name != NULL && r[i].dwType == RESOURCETYPE_DISK && !Add(name + 1, STYPE_DISKTREE))
+                            err = ERROR_NOT_ENOUGH_MEMORY;
+                    }
+                }
+            }
+            if (err == ERROR_NO_MORE_ITEMS)
+                err = NO_ERROR;
+            free(buf);
+            WNetCloseEnum(hEnum);
+        }
+        // the first refusal is the one reported when the second way fails too
+        Error = err == NO_ERROR ? ERROR_SUCCESS : firstErr;
+    }
+    if (Count > 1)
+        qsort(Shares, Count, sizeof(CUncShare), UncSharesCompare);
+}
+
+static unsigned UncSharesThreadFBody(void* param)
+{
+    CALL_STACK_MESSAGE1("UncSharesThreadFBody()");
+    SetThreadNameInVCAndTrace("UncShares");
+    CUncSharesJob* job = (CUncSharesJob*)param;
+    job->Read();
+    SetEvent(job->Done);
+    job->Release();
+    return 0;
+}
+
+static unsigned UncSharesThreadFEH(void* param)
+{
+    CALL_STACK_MESSAGE_NONE
+#ifndef CALLSTK_DISABLE
+    __try
+    {
+#endif // CALLSTK_DISABLE
+        return UncSharesThreadFBody(param);
+#ifndef CALLSTK_DISABLE
+    }
+    __except (CCallStack::HandleException(GetExceptionInformation()))
+    {
+        TRACE_I("Thread UncShares: calling ExitProcess(1).");
+        TerminateProcess(GetCurrentProcess(), 1); // harder exit (this one still calls something)
+        return 1;
+    }
+#endif // CALLSTK_DISABLE
+}
+
+static DWORD WINAPI UncSharesThreadF(void* param)
+{
+    CALL_STACK_MESSAGE_NONE
+#ifndef CALLSTK_DISABLE
+    CCallStack stack;
+#endif // CALLSTK_DISABLE
+    return UncSharesThreadFEH(param);
+}
+
+CUncSharesJob* CUncSharesJob::Start(const char* server)
+{
+    CUncSharesJob* job = new CUncSharesJob;
+    if (job == NULL)
+        return NULL;
+    char unc[MAX_PATH + 3];
+    WCHAR* serverW = NULL;
+    if (server != NULL && strlen(server) < MAX_PATH)
+    {
+        unc[0] = '\\';
+        unc[1] = '\\';
+        strcpy(unc + 2, server);
+        serverW = SalU8ToWAlloc(unc);
+    }
+    job->ServerW = serverW;
+    job->Done = NOHANDLES(CreateEvent(NULL, TRUE, FALSE, NULL));
+    if (serverW == NULL || job->Done == NULL)
+    {
+        job->Release();
+        return NULL;
+    }
+    InterlockedIncrement(&job->Refs); // the worker's reference
+    DWORD threadID;
+    HANDLE thread = HANDLES(CreateThread(NULL, 0, UncSharesThreadF, job, 0, &threadID));
+    if (thread == NULL)
+    {
+        job->Release(); // the worker's
+        job->Release(); // ours
+        return NULL;
+    }
+    // the exit path knows the thread: a worker still blocked in a network call when the program
+    // ends (the user gave up waiting) is closed with the other auxiliary threads
+    AddAuxThread(thread, TRUE);
+    return job;
+}

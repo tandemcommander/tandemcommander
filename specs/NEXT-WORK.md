@@ -232,6 +232,47 @@ Large or risky, each a feature of its own:
 
 ---
 
+### D. From the GitHub issues after 0.1.9 (added 2026-10-13, features 124 and later)
+
+Decisions owed to the maintainer:
+
+- **Ship the Network plug-in (`nethood`)?** GitHub #5 asked for `nethood=on`. Feature 125 made
+  the reported case (`\\server\` in Change Directory) work in the core instead and left the
+  policy of feature 007 alone. Enabling the plug-in would restore the predecessor's `net:` panel
+  (a server's shares as a list in the panel, `..` from a share's root, the network root). Its
+  price, measured and audited (`specs/125-unc-server-shares/research.md` R2):
+  1. shutdown: `Release()` -> `KillAll(TRUE, 0, 0)` terminates its threads with zero wait - the
+     Debug build reports "Detected memory leaks!" at every exit after the plug-in was used;
+  2. it changes more than #5: every UNC root gains `..` to `net:`, *Go to root* jumps there, the
+     Change Drive menu's *Network* item becomes the plug-in panel (whose root depends on legacy
+     network discovery) instead of the Windows folder picker;
+  3. a server that does not exist opens an empty `net:\\name` panel with no message;
+  4. encoding and buffers: `_tcsicmp` on UTF-8 names (rule 092), `LoadStr` / `FormatMessageA`
+     texts in UTF-8 sinks, `MAX_PATH` buffers with silent cuts, an unbounded copy in
+     `ChangePath`; the core's logon path only this plug-in reaches (`drivelst.cpp`,
+     `WNetAddConnection2` / `CredUIPromptForCredentialsA`) is ANSI;
+  5. texts: "Salamander" / "Open Salamander" in `lang.rc` and in all eight `.slt` files;
+  6. public claims: `PRIVACY.md` (a plug-in enabled by default; its "scan network on start"
+     option), the plug-in counts in `CLAUDE.md`, `architecture/09`, `CHANGELOG.md`.
+  With the plug-in present the core fallback of 125 steps aside by itself.
+
+Code work an agent can do:
+
+- **The parent of a share's root** (`..` / Backspace / *Go to root* in `\\server\share`) does
+  nothing without a Network plug-in; it could offer the share list of feature 125
+  (`CFilesWindow::PickServerShare`). Not part of #5.
+- **A server that wants a name and password** for its share list: 125 shows the Windows error;
+  it could offer the sign-in the full `\\server\share` path already has.
+- `tools/check_encoding.py` does not scan `plugins/` (found by 124).
+- Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124).
+
+Steps owed to a person:
+
+- 125: Esc and the Close button of the "Checking path" wait window while a server is being read
+  (they read the real keyboard and mouse); a real file server with visible shares, with shares
+  named in another script, and one that refuses the list.
+- 124: a look at the Registry Editor panel on a real screen in Czech and German.
+
 ## R. Release 0.1.8 — ✅ PUBLISHED 2026-09-20
 
 > Tag `v0.1.8` (commit `4899f0d`) and the GitHub release (published

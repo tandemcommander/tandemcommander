@@ -18,7 +18,7 @@ How the work is organised
 | Issue | Feature | State |
 |-------|---------|-------|
 | #3 regedt KEY text | 124-regedt-key-text | **done** - committed on the branch, report `issues/issue_3_report.md` |
-| #5 `\\server\` | - | not started |
+| #5 `\\server\` | 125-unc-server-shares | **done** - core fallback (share list), plug-in policy untouched and recorded in NEXT-WORK section D; report `issues/issue_5_report.md` |
 | #6 Windows 7 start | - | not started |
 | #7 mixed templates | - | not started (also: regedt message boxes that put a UTF-8 name into a code-page template) |
 | #8 shortcuts | - | not started |

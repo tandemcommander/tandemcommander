@@ -561,6 +561,38 @@ protected:
     BOOL GetWantedIndex(const char* name, int& index);
 };
 
+// feature 125: the folder shares of one server, read on a worker thread (shares.cpp). The
+// creator waits for 'Done' and then reads 'Shares' / 'Count' / 'Error', or gives up; each side
+// calls Release() once and the last one frees the job.
+struct CUncShare
+{
+    char* Name;  // UTF-8, exactly as the server reports it (allocated)
+    BOOL Hidden; // an administrative share or a name ending with '$'
+};
+
+class CUncSharesJob
+{
+public:
+    WCHAR* ServerW;    // "\\server"
+    CUncShare* Shares; // folder shares only: visible first, then hidden, each in the name order
+    int Count;
+    DWORD Error; // ERROR_SUCCESS or why the server could not be read (valid after 'Done')
+    HANDLE Done; // manual-reset event, set by the worker
+
+    // starts reading the shares of 'server' (UTF-8, without backslashes); NULL = cannot start
+    static CUncSharesJob* Start(const char* server);
+    void Release();
+
+    void Read(); // the worker's body
+    volatile LONG Refs;
+
+protected:
+    int Allocated;
+    CUncSharesJob();
+    ~CUncSharesJob();
+    BOOL Add(const WCHAR* nameW, DWORD type);
+};
+
 class CSalamanderHelp : public CWinLibHelp
 {
 public:

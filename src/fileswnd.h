@@ -752,6 +752,12 @@ typedef PVOID HDEVNOTIFY;
 
 enum CViewModeEnum;
 
+// results of CFilesWindow::PickServerShare (feature 125)
+#define PSS_PICKED 0     // the user chose a share
+#define PSS_CANCELLED 1  // the user closed the menu or cancelled the wait
+#define PSS_ERRORSHOWN 2 // the server could not be read; the message was shown
+#define PSS_NOTHING 3    // not a server-only path, or the server offers no folder share
+
 class CFilesWindow : public CFilesWindowAncestor
 {
 public:
@@ -1638,6 +1644,12 @@ public:
     BOOL CopyCurrentPathToClipboard();
 
     void OpenDirHistory();
+
+    // feature 125: 'serverPath' is a UNC path with a server and no share ("\\server",
+    // "\\server\"). Reads the server's folder shares (worker thread, cancellable wait window)
+    // and offers them in a menu under the directory line. Returns one of PSS_xxx; with
+    // PSS_PICKED 'sharePath' holds "\\server\share".
+    int PickServerShare(const char* serverPath, char* sharePath, int sharePathSize);
 
     void OpenStopFilterMenu(); // used to disable individual filters
 
