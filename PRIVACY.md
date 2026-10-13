@@ -142,6 +142,15 @@ chosen name only when it is complete; the wallpaper picture is written the
 same way in `%LOCALAPPDATA%\Tandem Commander`. If the program crashes during the save,
 that file can remain there.
 
+PictView's *Update Thumbnail* writes the picture with its new thumbnail into
+a file of the same kind next to the picture (named `pv`, up to four
+characters and `.tmp`). It takes the picture's place only when it is complete
+and differs from the original in the thumbnail alone; otherwise it is deleted
+and the picture stays as it was. If the picture has disappeared meanwhile and
+the new file cannot be given its name, the new file is kept under the
+temporary name and the program tells you that name; if the program crashes
+during the operation, the file can remain in that folder.
+
 ## Saved passwords
 
 A password is saved only if you ask for it: *Save password* in an FTP or SFTP

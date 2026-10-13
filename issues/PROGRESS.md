@@ -141,3 +141,10 @@ attribute and owner changes are reported. Record: `specs/140-sftp-dead-session/f
 `141-mask-name-cut`: names long in UTF-8 (up to 255 letters of any script) are copied, moved
 and renamed whole; a name that does not fit is refused, never cut; FTP's automatic rename on
 upload cuts at a whole letter. Record: `specs/141-mask-name-cut/fix-log.md`.
+
+## Feature 142 (2026-10-14)
+
+`142-pictview-thumb-unicode`: PictView's Update Thumbnail and Exif information work for names
+outside the system code page and for long paths (wide exports in EXIF.DLL); failures offer
+Skip / Skip all / Cancel; `PRIVACY.md` names the temporary file. Record:
+`specs/142-pictview-thumb-unicode/fix-log.md`.

@@ -36,6 +36,19 @@ plugin.
   - For plug-in authors: `GetCommonFSOperSourceDescr` returns its whole text
     as UTF-8 (it was a code-page word around a UTF-8 name).
 
+- **PictView: Update Thumbnail works for every file name** (feature 142). A
+  photo whose name or folder has letters outside the system code page -
+  Japanese, Greek, an emoji on a Czech system - could not get its thumbnail
+  updated on a volume that keeps no short names (the default for every disk
+  but the system one): each file showed "Unable to create a file with the new
+  thumbnail. Disk full?" with OK only. The Exif library now takes any name
+  and long paths; the Exif information window likewise.
+  - A failure offers Skip / Skip all / Cancel like the command's other
+    errors, with the Windows reason where one is known; "Skip all" was never
+    honoured and is now (separately for each kind of error).
+  - A read-only picture updated with your consent is read-only again
+    afterwards.
+
 - **Long names in other scripts are copied, moved and renamed whole**
   (feature 141; so in 0.1.9 too). A file or folder whose name is long in
   Chinese, Japanese or Korean letters (from about 240 letters; Windows allows

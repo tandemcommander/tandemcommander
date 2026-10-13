@@ -18,6 +18,9 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/* Tandem Commander 142: windows.h goes before config.h, which defines "inline" away */
+#include <windows.h>
+
 #include "config.h"
 #include "jpeg-data.h"
 
@@ -383,6 +386,169 @@ jpeg_data_load_file (JPEGData *data, const char *path)
 
 	jpeg_data_load_data (data, d, size);
 	free (d);
+}
+
+/* Tandem Commander 142: the file functions for a wide path - a name in any script, and
+   "\\?\" in front for a long one (the char functions above reach only what the code page
+   and MAX_PATH allow). They return 1 on success; on failure 0 and, in *err when it is not
+   NULL, a Windows error code: the one of the file call that failed, or ERROR_INVALID_DATA
+   for a file that is not understood. A failed load marks the data incomplete (nothing can
+   be saved from them), as jpeg_data_load_file does. */
+int
+jpeg_data_load_file_w (JPEGData *data, const wchar_t *path, unsigned long *err)
+{
+	HANDLE h;
+	LARGE_INTEGER li;
+	unsigned char *d = NULL;
+	unsigned int size = 0, done = 0;
+	DWORD got, e = 0;
+
+	if (err) *err = 0;
+	if (!data || !path) {
+		if (data) data->priv->incomplete = 1;
+		if (err) *err = ERROR_INVALID_PARAMETER;
+		return 0;
+	}
+
+	/* the sharing fopen (path, "rb") asks for */
+	h = CreateFileW (path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+			 OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+	if (h == INVALID_HANDLE_VALUE) {
+		e = GetLastError ();
+		goto fail;
+	}
+	if (!GetFileSizeEx (h, &li)) {
+		e = GetLastError ();
+		CloseHandle (h);
+		goto fail;
+	}
+	/* an empty file and a size that does not fit the 32-bit offsets used here */
+	if (li.QuadPart <= 0 || li.QuadPart >= 0x7fffffff) {
+		CloseHandle (h);
+		goto fail;
+	}
+	size = (unsigned int) li.QuadPart;
+	d = malloc (size);
+	if (!d) {
+		EXIF_LOG_NO_MEMORY (data->priv->log, "jpeg-data", size);
+		e = ERROR_NOT_ENOUGH_MEMORY;
+		CloseHandle (h);
+		goto fail;
+	}
+	while (done < size) {
+		got = 0;
+		if (!ReadFile (h, d + done, size - done, &got, NULL)) {
+			e = GetLastError ();
+			break;
+		}
+		if (!got) {
+			e = ERROR_HANDLE_EOF;
+			break;
+		}
+		done += got;
+	}
+	CloseHandle (h);
+	if (done < size) {
+		free (d);
+		goto fail;
+	}
+
+	jpeg_data_load_data (data, d, size);
+	free (d);
+	if (data->priv->incomplete) {
+		if (err) *err = ERROR_INVALID_DATA;
+		return 0;
+	}
+	return 1;
+
+fail:
+	data->priv->incomplete = 1;
+	if (err) *err = e ? e : ERROR_INVALID_DATA;
+	return 0;
+}
+
+/* Tandem Commander 142: always check *err or the result of a save - the data of a file
+   that was not read whole are returned too (incomplete), like jpeg_data_new_from_file */
+JPEGData *
+jpeg_data_new_from_file_w (const wchar_t *path, unsigned long *err)
+{
+	JPEGData *data;
+
+	data = jpeg_data_new ();
+	if (!data) {
+		if (err) *err = ERROR_NOT_ENOUGH_MEMORY;
+		return (NULL);
+	}
+	jpeg_data_load_file_w (data, path, err);
+	return (data);
+}
+
+/* Tandem Commander 142: see jpeg_data_load_file_w. The file is written whole and flushed
+   before success is reported; after a failure no file is left. */
+int
+jpeg_data_save_file_w (JPEGData *data, const wchar_t *path, unsigned long *err)
+{
+	HANDLE h;
+	unsigned char *d = NULL;
+	unsigned int size = 0, done = 0;
+	DWORD put, e = 0;
+	int ok;
+
+	if (err) *err = 0;
+	if (!data || !path) {
+		if (err) *err = ERROR_INVALID_PARAMETER;
+		return 0;
+	}
+
+	jpeg_data_save_data (data, &d, &size);
+	if (!d) {
+		if (err) *err = ERROR_INVALID_DATA;
+		return 0;
+	}
+
+	/* The existing file is written over: the caller's (empty) temporary file keeps its
+	   name reserved the whole time. Only when that is refused, the file is deleted and
+	   created, as jpeg_data_save_file does (remove + fopen "wb") - a hidden or system
+	   file cannot be written over, but it can be deleted; a read-only one fails both. */
+	h = CreateFileW (path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS,
+			 FILE_ATTRIBUTE_NORMAL, NULL);
+	if (h == INVALID_HANDLE_VALUE && GetLastError () == ERROR_ACCESS_DENIED &&
+	    DeleteFileW (path))
+		h = CreateFileW (path, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS,
+				 FILE_ATTRIBUTE_NORMAL, NULL);
+	if (h == INVALID_HANDLE_VALUE) {
+		e = GetLastError ();
+		free (d);
+		if (err) *err = e ? e : ERROR_WRITE_FAULT;
+		return 0;
+	}
+	while (done < size) {
+		put = 0;
+		if (!WriteFile (h, d + done, size - done, &put, NULL)) {
+			e = GetLastError ();
+			break;
+		}
+		if (!put) {
+			e = ERROR_DISK_FULL;
+			break;
+		}
+		done += put;
+	}
+	ok = done == size;
+	if (ok && !FlushFileBuffers (h)) {
+		e = GetLastError ();
+		ok = 0;
+	}
+	if (!CloseHandle (h) && ok) {
+		e = GetLastError ();
+		ok = 0;
+	}
+	free (d);
+	if (ok)
+		return 1;
+	DeleteFileW (path);
+	if (err) *err = e ? e : ERROR_WRITE_FAULT;
+	return 0;
 }
 
 void

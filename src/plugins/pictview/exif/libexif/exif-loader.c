@@ -132,6 +132,34 @@ exif_loader_write_file (ExifLoader *l, const char *path)
 	fclose (f);
 }
 
+/* Tandem Commander 142: exif_loader_write_file for a wide path (any name; "\\?\" for a
+   long one) */
+void
+exif_loader_write_file_w (ExifLoader *l, const wchar_t *path)
+{
+	FILE *f;
+	int size;
+	unsigned char data[1024];
+
+	if (!l || !path)
+		return;
+
+	f = _wfopen (path, L"rb");
+	if (!f) {
+		exif_log (l->log, EXIF_LOG_CODE_NONE, "ExifLoader",
+			  _("The file '%s' could not be opened."), "");
+		return;
+	}
+	while (1) {
+		size = fread (data, 1, sizeof (data), f);
+		if (size <= 0)
+			break;
+		if (!exif_loader_write (l, data, size))
+			break;
+	}
+	fclose (f);
+}
+
 static unsigned int
 exif_loader_copy (ExifLoader *eld, unsigned char *buf, unsigned int len)
 {

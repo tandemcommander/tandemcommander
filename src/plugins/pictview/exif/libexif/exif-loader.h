@@ -27,6 +27,8 @@
 #include <libexif/exif-log.h>
 #include <libexif/exif-mem.h>
 
+#include <stddef.h> /* wchar_t (Tandem Commander 142) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -67,6 +69,9 @@ void        exif_loader_unref   (ExifLoader *loader);
  * \param[in] fname path to the file to read
  */
 void        exif_loader_write_file (ExifLoader *loader, const char *fname);
+
+/* Tandem Commander 142: the same for a wide path (any name; "\\?\" for a long one) */
+void        exif_loader_write_file_w (ExifLoader *loader, const wchar_t *fname);
 
 /*! Load a buffer into the #ExifLoader from a memory buffer.
  * The relevant data is copied in raw form into the #ExifLoader.

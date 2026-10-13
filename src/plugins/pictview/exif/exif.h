@@ -41,6 +41,22 @@ typedef BOOL(WINAPI* EXIFGETINFO)(const char* fileName,
 typedef BOOL(WINAPI* EXIFREPLACETHUMBNAIL)(char* fileName, char* newFile,
                                            unsigned char* pData, int size);
 
+// Feature 142: the wide entry points "EXIFGetInfoW" and "EXIFReplaceThumbnailW" - a file name
+// in any script, with "\\?\" in front for a long path (the char ones above reach only what the
+// code page of the system and MAX_PATH allow). An older EXIF.DLL does not export them: ask
+// GetProcAddress first and fall back to the char ones.
+
+// EXIFGETINFOW: as EXIFGETINFO for a file ('fileName' is always a file name, never data)
+typedef BOOL(WINAPI* EXIFGETINFOW)(const wchar_t* fileName,
+                                   EXIFENUMPROC enumFunc,
+                                   LPARAM lParam);
+
+// EXIFREPLACETHUMBNAILW: as EXIFREPLACETHUMBNAIL; after FALSE GetLastError() gives the reason:
+// the Windows error of the file call that failed, or ERROR_INVALID_DATA for a file that is
+// refused (not understood, or the new thumbnail does not fit) - nothing is written then
+typedef BOOL(WINAPI* EXIFREPLACETHUMBNAILW)(const wchar_t* fileName, const wchar_t* newFile,
+                                            unsigned char* pData, int size);
+
 typedef void(WINAPI* EXIFINITTRANSLATIONS)(LPCTSTR fname);
 
 typedef void(WINAPI* CONVERTUTF8TOUCS2)(const char* in, LPWSTR out);

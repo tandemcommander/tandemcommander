@@ -26,6 +26,8 @@
 #include <libexif/exif-data.h>
 #include <libexif/exif-log.h>
 
+#include <stddef.h> /* wchar_t (Tandem Commander 142) */
+
 typedef ExifData * JPEGContentAPP1;
 
 typedef struct _JPEGContentGeneric JPEGContentGeneric;
@@ -82,6 +84,16 @@ void      jpeg_data_save_data     (JPEGData *data, unsigned char **d,
 
 void      jpeg_data_load_file     (JPEGData *data, const char *path);
 int       jpeg_data_save_file     (JPEGData *data, const char *path);
+
+/* Tandem Commander 142: the same for a wide path (any name; "\\?\" for a long one).
+   The int ones return 1 on success, else 0 and a Windows error code in *err (may be
+   NULL); jpeg_data_new_from_file_w returns the data also after a failed load - they are
+   incomplete then and cannot be saved. */
+JPEGData *jpeg_data_new_from_file_w (const wchar_t *path, unsigned long *err);
+int       jpeg_data_load_file_w   (JPEGData *data, const wchar_t *path,
+				   unsigned long *err);
+int       jpeg_data_save_file_w   (JPEGData *data, const wchar_t *path,
+				   unsigned long *err);
 
 void      jpeg_data_set_exif_data (JPEGData *data, ExifData *exif_data);
 int       jpeg_data_get_exif_bytes (JPEGData *data, const unsigned char **d,

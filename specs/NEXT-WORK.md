@@ -62,7 +62,16 @@ session; the first is the one that matters):
 
 1. ~~PictView *Update Thumbnail* on real camera files~~ - done by feature 135
    on 91 public camera samples (it found and removed real damage); a look at a
-   few own photos in the program is all that is left.
+   few own photos in the program is all that is left. Names outside the
+   system code page on a volume without short names: done by feature 142
+   (wide exports in EXIF.DLL). Left by 142: a refused file still reads
+   "Unable to create a file with the new thumbnail. Disk full?" (a better
+   sentence needs a new string); the update changes the picture's
+   modification time and splits it from other hard links (`ReplaceFileW`); a
+   failed save of the thumbnail image is an OK-only box per file
+   (`IDS_SAVEERROR`); `EXIFGetOrientationInfo` has no wide twin; the Exif
+   information window is opened only for a flag the built-in engine never
+   sets (its wide route is verified through the library only).
 2. SFTP against the test container: upload into a read-only directory, the
    stale-reason row, Quick Rename to a long name -
    `specs/133-sftp-server-verify/quickstart.md`.

@@ -1630,12 +1630,27 @@ CExifDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
             else
             {
-                // EXIF.DLL opens the file itself and has an ANSI-only interface -> ANSI path
-                char* FileNameA = U8ToDLLPathAlloc(FileName);
-                if (FileNameA != NULL)
+                // EXIF.DLL opens the file itself. feature 142: through its wide entry point - any
+                // file name, long paths (the form the plug-in's own file calls use); an older
+                // EXIF.DLL has the code-page one only -> a code-page path or the short name
+                EXIFGETINFOW getInfoW = (EXIFGETINFOW)GetProcAddress(EXIFLibrary, "EXIFGetInfoW");
+                if (getInfoW != NULL)
                 {
-                    getInfo(FileNameA, 0, ExifEnumProc, (LPARAM)this);
-                    free(FileNameA);
+                    WCHAR* wFileName = SplU8ToWExtAlloc(FileName);
+                    if (wFileName != NULL)
+                    {
+                        getInfoW(wFileName, ExifEnumProc, (LPARAM)this);
+                        free(wFileName);
+                    }
+                }
+                else
+                {
+                    char* FileNameA = U8ToDLLPathAlloc(FileName);
+                    if (FileNameA != NULL)
+                    {
+                        getInfo(FileNameA, 0, ExifEnumProc, (LPARAM)this);
+                        free(FileNameA);
+                    }
                 }
             }
             DisableNotification = FALSE;

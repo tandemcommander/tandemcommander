@@ -1,0 +1,14 @@
+thumb132_probe (feature 132), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+EXIF.DLL: F66F15986FC98B6E2ED88C2944F1DC93B4AD0F9F1E58DDD83864C6D6D25BEBA9
+Date    : 2026-10-14 01:14; desktop 'tc_probe_20948'; ACP 1250; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Hot key : plug-in 12 (pictview\pictview.spl): item 188 set; case files from C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\3cc3c426-9583-446c-8ee9-724fd59e73d2\scratchpad\exif132\new
+
+UniRoot : E:\Projects\tandemcommander\build\tc132u; the test folder has a plain ASCII short path (a short name exists): False
+UNI        FILE   PASS        a JPEG with Exif, its name and folder in Japanese and Greek letters and an emoji, on a volume without short names: unchanged (74544 bytes); expected here: recorded; the refusal message shown: True; files in the folder: \u5199\u771F \u03C6\u03C9\u03C4\u03BF \uD83D\uDE00.jpg; dialogs: ... update the thumbnail in the Exif section of the image file(s). The rest of the file will not be modified. Proceed? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] &Update the thumbnail without asking next time -> &Yes || [#32770 'PictView'] [Static id=2477] Unable to create a file with the new thumbnail. Disk full? The old file '\u5199\u771F \u03C6\u03C9\u03C4\u03BF \uD83D\uDE00.jpg' remains unmodified. | [Button id=1] OK -> OK || [#32770 'PictView'] [Static id=2477] No JPEG images with EXIF data were found. No file was modified. | [Button id=1] OK -> OK
+UNI        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNIXMP     FILE   PASS        Exif and XMP under such a name: unchanged (74658 bytes); expected here: recorded; the refusal message shown: True; files in the folder: \u5199\u771F \u03C6\u03C9\u03C4\u03BF \uD83D\uDE00.jpg; dialogs: ... update the thumbnail in the Exif section of the image file(s). The rest of the file will not be modified. Proceed? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] &Update the thumbnail without asking next time -> &Yes || [#32770 'PictView'] [Static id=2477] Unable to create a file with the new thumbnail. Disk full? The old file '\u5199\u771F \u03C6\u03C9\u03C4\u03BF \uD83D\uDE00.jpg' remains unmodified. | [Button id=1] OK -> OK || [#32770 'PictView'] [Static id=2477] No JPEG images with EXIF data were found. No file was modified. | [Button id=1] OK -> OK
+UNIXMP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

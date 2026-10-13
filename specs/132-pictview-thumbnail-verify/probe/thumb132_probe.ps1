@@ -31,6 +31,7 @@ param(
     [ValidateSet('fixed', 'before', 'oldlib')][string]$Expect = 'fixed',
     [string]$OutFile,
     [string]$KeepDir,
+    [string]$UniRoot,      # feature 142: a folder on a volume WITHOUT short (8.3) names for the rows UNI*
     [string[]]$Only
 )
 $ErrorActionPreference = 'Stop'
@@ -185,12 +186,12 @@ function Classify([byte[]]$Orig, [string]$File, [string[]]$Marks) {
 }
 
 # one case: $Fixed / $OldLib = the outcome the row must have in those modes
-function Row-Thumb([string]$Case, [string]$Source, [string]$Dir, [string]$Fixed, [string]$OldLib, [string]$Note) {
+function Row-Thumb([string]$Case, [string]$Source, [string]$Dir, [string]$Fixed, [string]$OldLib, [string]$Note, [string]$Name = 'photo.jpg', [string]$Base = '') {
     if (-not (Want $Case)) { return }
     $before = Reports; $id = 0
     $src = Join-Path $Cases ($Source + '.jpg')
-    $folder = $Root + '\' + $Dir
-    $file = $folder + '\photo.jpg'
+    $folder = $(if ($Base) { $Base } else { $Root }) + [string][char]92 + $Dir
+    $file = $folder + [string][char]92 + $Name
     try {
         if (-not [IO.File]::Exists($src)) { Row $Case 'FILE' 'NOT DRIVEN' ('no case file ' + $src + ' (run exifdll_measure.py first)'); return }
         NewDir $folder
@@ -237,6 +238,19 @@ try {
     Row-Thumb 'XMPONLY' 'XMP_ONLY' 'xmponly' 'updated' 'unchanged' 'an XMP block and no Exif'
     Row-Thumb 'FILL8' 'FILL_8' 'fill8' 'unchanged' 'unchanged' 'eight fill bytes before a table (allowed by the standard, more than the library reads)'
     Row-Thumb 'BIGEXIF' 'EXIF_BIG' 'bigexif' '' '' 'an Exif block near 64 KB'
+    # feature 142: names outside the system code page where no short name exists (the old
+    # library takes code-page paths only)
+    $uniDir = (Chars @(0x65E5, 0x672C, 0x8A9E)) + ' ' + (Chars @(0x03B1, 0x03B2, 0x03B3))
+    $uniName = (Chars @(0x5199, 0x771F)) + ' ' + (Chars @(0x03C6, 0x03C9, 0x03C4, 0x03BF)) + ' ' + [char]::ConvertFromUtf32(0x1F600) + '.jpg'
+    if ($UniRoot) {
+        $script:UniBase = $UniRoot.TrimEnd([char]92) + [string][char]92 + 'tc132u'
+        NewDir ($script:UniBase + [string][char]92 + $uniDir)
+        $short = (New-Object -ComObject Scripting.FileSystemObject).GetFolder($script:UniBase + [string][char]92 + $uniDir).ShortPath
+        Out ('UniRoot : ' + $script:UniBase + '; the test folder has a plain ASCII short path (a short name exists): ' + ($short -notmatch '[^ -~]'))
+        Row-Thumb 'UNI' 'CTRL_EXIF' $uniDir 'updated' '' 'a JPEG with Exif, its name and folder in Japanese and Greek letters and an emoji, on a volume without short names' $uniName $script:UniBase
+        Row-Thumb 'UNIXMP' 'EXIF_THEN_XMP' ($uniDir + ' 2') 'updated' '' 'Exif and XMP under such a name' $uniName $script:UniBase
+    }
+    else { Row 'UNI' 'FILE' 'NOT DRIVEN' 'no -UniRoot given (a folder on a volume without short names)' }
     Row-Thumb 'TRAILER' 'TRAILER_FF00' 'trailer' 'updated' 'unchanged' 'data behind the picture that end with FF 00'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -245,6 +259,7 @@ finally {
     Start-Sleep -Milliseconds 600
     $restored = Restore-Reg $backup $existed
     if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }
+    try { if ($script:UniBase -and [IO.Directory]::Exists($LP + $script:UniBase)) { [IO.Directory]::Delete($LP + $script:UniBase, $true) } } catch { Out ('Fixture: could not delete ' + $script:UniBase) }
     try { if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) } }
     catch { Out ("Fixture: could not delete $Root : " + $_.Exception.Message) }
     $leftover = @($Started | Where-Object { Test-Alive $_ })

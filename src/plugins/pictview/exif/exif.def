@@ -1,9 +1,14 @@
 LIBRARY EXIF.DLL
 VERSION 8.0
 
-EXPORTS EXIFGetVersion
-EXPORTS EXIFGetInfo
-EXPORTS EXIFGetOrientationInfo
-EXPORTS EXIFReplaceThumbnail
-EXPORTS EXIFInitTranslations
-EXPORTS ConvertUTF8ToUCS2
+; Tandem Commander 142: the ordinals are written out. The linker numbers exports without
+; one by name, so the two new exports would have renumbered three of the old ones
+; (the numbers 1 to 6 are those of the library built before this change). New exports: append, next number.
+EXPORTS EXIFGetVersion @5
+EXPORTS EXIFGetInfo @3
+EXPORTS EXIFGetOrientationInfo @4
+EXPORTS EXIFReplaceThumbnail @6
+EXPORTS EXIFInitTranslations @2
+EXPORTS ConvertUTF8ToUCS2 @1
+EXPORTS EXIFReplaceThumbnailW @7
+EXPORTS EXIFGetInfoW @8

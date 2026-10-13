@@ -70,24 +70,53 @@ EXIFGetVersion()
     return EXIF_DLL_VERSION;
 }
 
-BOOL WINAPI
-EXIFGetInfo(const char* fileName, int dataLen, EXIFENUMPROC enumFunc, LPARAM lParam)
+// Tandem Commander 142: a path of the old (char) exports as the wide path fopen() made of it
+// (the code page of the system); free() the result, NULL = cannot be converted or low memory
+static wchar_t* AnsiPathToWideAlloc(const char* path)
+{
+    wchar_t* w;
+    int len;
+
+    if (path == NULL)
+        return NULL;
+    // MB_ERR_INVALID_CHARS: bytes that are no character of the code page fail the call, as
+    // they did in the CRT's fopen() - they do not become a default character (another name)
+    len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, path, -1, NULL, 0);
+    if (len <= 0)
+        return NULL;
+    w = (wchar_t*)malloc(len * sizeof(wchar_t));
+    if (w != NULL && MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, path, -1, w, len) <= 0)
+    {
+        free(w);
+        w = NULL;
+    }
+    return w;
+}
+
+// Tandem Commander 142: exif_data_new_from_file for a wide path
+static ExifData* ExifDataNewFromFileW(const wchar_t* fileName)
 {
     ExifData* ed;
+    ExifLoader* loader = exif_loader_new();
+
+    if (loader == NULL)
+        return NULL;
+    exif_loader_write_file_w(loader, fileName);
+    ed = exif_loader_get_data(loader);
+    exif_loader_unref(loader);
+    return ed;
+}
+
+// calls 'enumFunc' for the tags of 'ed' and releases 'ed' (the common part of EXIFGetInfo
+// and EXIFGetInfoW)
+static BOOL EnumExifData(ExifData* ed, EXIFENUMPROC enumFunc, LPARAM lParam)
+{
     ExifMnoteData* md;
 
     struct CEnumData data;
     data.EnumFunc = enumFunc;
     data.LParam = lParam;
 
-    if (dataLen)
-    {
-        ed = exif_data_new_from_data(fileName, dataLen);
-    }
-    else
-    {
-        ed = exif_data_new_from_file(fileName);
-    }
     if (ed == NULL)
         return FALSE;
     md = exif_data_get_mnote_data(ed);
@@ -135,6 +164,34 @@ EXIFGetInfo(const char* fileName, int dataLen, EXIFENUMPROC enumFunc, LPARAM lPa
     return TRUE;
 }
 
+// Tandem Commander 142: the file 'fileName' is a wide path - a name in any script, with "\\?\"
+// in front for a long one (EXIFGetInfo reaches only what the code page and MAX_PATH allow)
+BOOL WINAPI
+EXIFGetInfoW(const wchar_t* fileName, EXIFENUMPROC enumFunc, LPARAM lParam)
+{
+    if (fileName == NULL || enumFunc == NULL)
+        return FALSE;
+    return EnumExifData(ExifDataNewFromFileW(fileName), enumFunc, lParam);
+}
+
+BOOL WINAPI
+EXIFGetInfo(const char* fileName, int dataLen, EXIFENUMPROC enumFunc, LPARAM lParam)
+{
+    wchar_t* fileNameW;
+    BOOL ret;
+
+    if (dataLen)
+        return EnumExifData(exif_data_new_from_data(fileName, dataLen), enumFunc, lParam);
+
+    // Tandem Commander 142: a file goes through the wide entry point
+    fileNameW = AnsiPathToWideAlloc(fileName);
+    if (fileNameW == NULL)
+        return FALSE;
+    ret = EnumExifData(ExifDataNewFromFileW(fileNameW), enumFunc, lParam);
+    free(fileNameW);
+    return ret;
+}
+
 // Loads exif data without forced fixup of entries
 ExifData* get_exif_data_no_fixups(const char* fileName)
 {
@@ -167,15 +224,29 @@ ExifData* get_exif_data_no_fixups(const char* fileName)
     return ed;
 }
 
-BOOL WINAPI EXIFReplaceThumbnail(char* fileName, char* newFile, unsigned char* pData, int size)
+// The work of EXIFReplaceThumbnailW and EXIFReplaceThumbnail. Tandem Commander 142: the paths are
+// wide; '*err' gets the reason of a failure - the Windows error of the file call that failed,
+// ERROR_INVALID_DATA for a file that is refused (not understood, or the result does not fit).
+static BOOL ReplaceThumbnailW(const wchar_t* fileName, const wchar_t* newFile, unsigned char* pData, int size, DWORD* err)
 {
     JPEGData* pJpeg;
     BOOL ret = FALSE;
+    unsigned long fileErr = 0;
 
+    *err = ERROR_INVALID_DATA;
     if (pData == NULL || size <= 0) // Tandem Commander 135: no picture - nothing to write (an empty JFXX block was)
         return FALSE;
 
-    pJpeg = jpeg_data_new_from_file(fileName);
+    pJpeg = jpeg_data_new_from_file_w(fileName, &fileErr);
+    if (fileErr != 0)
+    {
+        // not read whole or not understood: nothing could be saved from such data (they are
+        // marked incomplete) - leave here, with the reason
+        *err = fileErr;
+        if (pJpeg)
+            jpeg_data_unref(pJpeg);
+        return FALSE;
+    }
     if (pJpeg)
     {
         // Tandem Commander 135: the Exif block is NOT handed to libexif any more. It used to be
@@ -204,7 +275,11 @@ BOOL WINAPI EXIFReplaceThumbnail(char* fileName, char* newFile, unsigned char* p
                     memcpy(payload, "Exif\0\0", 6);
                     memcpy(payload + 6, newTiff, newTiffSize);
                     if (jpeg_data_set_exif_bytes(pJpeg, payload, (unsigned int)(newTiffSize + 6)))
-                        ret = jpeg_data_save_file(pJpeg, newFile);
+                    {
+                        ret = jpeg_data_save_file_w(pJpeg, newFile, &fileErr);
+                        if (!ret)
+                            *err = fileErr;
+                    }
                     free(payload);
                 }
                 free(newTiff);
@@ -245,13 +320,44 @@ BOOL WINAPI EXIFReplaceThumbnail(char* fileName, char* newFile, unsigned char* p
                     // NULL temrination of JFXX, version number
                     ((WORD*)pSect->content.generic.data)[2] = 0x1000;
                     memcpy((char*)pSect->content.generic.data + 6, pData, size);
-                    ret = jpeg_data_save_file(pJpeg, newFile);
+                    ret = jpeg_data_save_file_w(pJpeg, newFile, &fileErr);
+                    if (!ret)
+                        *err = fileErr;
                     i = pJpeg->count;
                 }
             }
         }
         jpeg_data_unref(pJpeg);
     }
+    return ret;
+}
+
+// Tandem Commander 142: 'fileName' and 'newFile' are wide paths - names in any script, with
+// "\\?\" in front for long ones. After FALSE GetLastError() gives the reason: the Windows error
+// of the file call that failed, or ERROR_INVALID_DATA for a file that is refused.
+BOOL WINAPI EXIFReplaceThumbnailW(const wchar_t* fileName, const wchar_t* newFile, unsigned char* pData, int size)
+{
+    DWORD err = ERROR_INVALID_PARAMETER;
+    BOOL ret = fileName != NULL && newFile != NULL && ReplaceThumbnailW(fileName, newFile, pData, size, &err);
+
+    if (!ret)
+        SetLastError(err);
+    return ret;
+}
+
+// the old entry point: paths in the code page of the system (Tandem Commander 142: converted
+// and handed to the wide one)
+BOOL WINAPI EXIFReplaceThumbnail(char* fileName, char* newFile, unsigned char* pData, int size)
+{
+    wchar_t* fileNameW = AnsiPathToWideAlloc(fileName);
+    wchar_t* newFileW = AnsiPathToWideAlloc(newFile);
+    DWORD err = ERROR_INVALID_NAME;
+    BOOL ret = fileNameW != NULL && newFileW != NULL && ReplaceThumbnailW(fileNameW, newFileW, pData, size, &err);
+
+    free(fileNameW);
+    free(newFileW);
+    if (!ret)
+        SetLastError(err);
     return ret;
 }
 

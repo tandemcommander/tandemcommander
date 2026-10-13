@@ -2252,3 +2252,19 @@ a few early ones are out of sequence).
     a string - `$x[0]` is then its first letter: cast `[string[]]`.
   - Old crash fixed on the way: OpenVMS autorename, `a_123;1` already renamed (`semicol` not
     moved with the text; `memmove` size -1).
+- 142-pictview-thumb-unicode: **EXIF.DLL got wide exports** `EXIFReplaceThumbnailW`,
+  `EXIFGetInfoW` (appended; the old ones are CP_ACP wrappers over the same code, converted
+  with `MB_ERR_INVALID_CHARS` like the CRT's `fopen`). The plug-in looks the wide export up
+  first and passes the `SplU8ToWExtAlloc` form - the same form its own read / compare /
+  replace use - and falls back to `U8ToDLLPathAlloc` with an older DLL. Before: on a volume
+  without 8.3 names a name outside the code page could not be updated at all (OK-only "Disk
+  full?" box per file). **The six old ordinals are pinned in `exif.def`** - appending two
+  exports made the linker renumber three of them. After FALSE the library sets
+  `GetLastError` (`ERROR_INVALID_DATA` = refused file); the new file is created over the
+  plug-in's temporary file (`CREATE_ALWAYS`, no delete first - the name stays reserved).
+  `ThumbWriteFailed`: Skip / Skip all / Cancel; three separate skip-all flags (`FL_SKIP_ALL`
+  replace, `FL_RO_SKIP_ALL` read-only question, `FL_WRITE_SKIP_ALL` write); read-only put
+  back after an agreed replace.
+  - Rows UNI, UNIXMP in `thumb132_probe.ps1` (`-UniRoot <folder on a volume without short
+    names>`; on this machine C: has short names, D: and E: do not).
+  - `jpeg-data.c/.h` are ISO-8859-1: edit by bytes.

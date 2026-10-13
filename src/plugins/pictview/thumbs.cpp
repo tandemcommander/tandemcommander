@@ -143,7 +143,53 @@ static BOOL ThumbNewFileKeepsOriginal(const char* u8Orig, const char* u8New)
 #define FL_JFXX_SKIP_ALL 0x80
 #define FL_NON_JPEG_ALL 0x100
 #define FL_NON_IMG_SKIP_ALL 0x200
-#define FL_KEEP (FL_SKIP_ALL | FL_OVERWRITE_RO_ALL | FL_JFXX_ALL | FL_JFXX_SKIP_ALL | FL_NON_JPEG_ALL | FL_NON_IMG_SKIP_ALL)
+// feature 142: "Skip all" of the question about a read-only file. It shared FL_SKIP_ALL with
+// the errors - which nobody read; now that it is honoured, one must not answer the other
+// (skipping all write errors is not "leave all read-only files alone").
+#define FL_RO_SKIP_ALL 0x400
+// feature 142: "Skip all" of "the new thumbnail could not be written" (ThumbWriteFailed);
+// FL_SKIP_ALL is the one of a failed replace - an answer to one kind does not silence the other
+#define FL_WRITE_SKIP_ALL 0x800
+#define FL_KEEP (FL_SKIP_ALL | FL_OVERWRITE_RO_ALL | FL_JFXX_ALL | FL_JFXX_SKIP_ALL | FL_NON_JPEG_ALL | FL_NON_IMG_SKIP_ALL | FL_RO_SKIP_ALL | FL_WRITE_SKIP_ALL)
+
+// feature 142: the new thumbnail of the file 'name' could not be written, 'reason' says why
+// (both UTF-8): the command's Skip / Skip all / Cancel dialog. It was a box with OK only, one
+// for every file of a selection. The file is skipped; after "Skip all" (FL_WRITE_SKIP_ALL)
+// without a dialog.
+static void ThumbWriteFailed(HWND hProgress, const char* name, const char* reason, int* flags)
+{
+    *flags |= FL_SKIP;
+    if (*flags & FL_WRITE_SKIP_ALL)
+        return;
+    switch (SalamanderGeneral->DialogError(hProgress, BUTTONS_SKIPCANCEL, name, reason, LoadStr(IDS_ERRORTITLE)))
+    {
+    case DIALOG_SKIPALL:
+        *flags |= FL_WRITE_SKIP_ALL;
+        break;
+    case DIALOG_SKIP:
+        break;
+    case DIALOG_CANCEL:
+    default:
+        *flags |= FL_CANCEL;
+        break;
+    }
+}
+
+// feature 142: a file replaced with the user's consent although it was read-only is read-only
+// again (SalReplaceWithTempW clears the attribute for the replace and puts it back only when
+// the replace fails; the file in place afterwards has the attributes of the cleared original).
+// A failure is not an error of the operation - the thumbnail is updated.
+static void ThumbSetReadOnlyAgain(const char* u8Path)
+{
+    WCHAR* w = SplU8ToWExtAlloc(u8Path);
+    DWORD attr = w != NULL ? GetFileAttributesW(w) : INVALID_FILE_ATTRIBUTES;
+    if (attr == INVALID_FILE_ATTRIBUTES ||
+        (!(attr & FILE_ATTRIBUTE_READONLY) && !SetFileAttributesW(w, attr | FILE_ATTRIBUTE_READONLY)))
+    {
+        TRACE_E("UpdateThumbnails: the read-only attribute could not be set again, error " << GetLastError());
+    }
+    free(w);
+}
 
 class CEnumFiles
 {
@@ -528,23 +574,74 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
 
             if (code == PVC_OK)
             {
-                InitEXIF(hProgress, FALSE);
-                ReplaceThumbnail = (EXIFREPLACETHUMBNAIL)GetProcAddress(EXIFLibrary, "EXIFReplaceThumbnail");
-
-                if (ReplaceThumbnail)
+                // feature 142: the wide entry point of EXIF.DLL first - any file name, long paths;
+                // an older EXIF.DLL (a partly updated installation) has the code-page one only.
+                // Without the library no file can be updated: InitEXIF has said so, and once
+                // is enough (it was said for every file of the selection).
+                EXIFREPLACETHUMBNAILW ReplaceThumbnailW = NULL;
+                ReplaceThumbnail = NULL;
+                if (InitEXIF(hProgress, FALSE))
                 {
+                    ReplaceThumbnailW = (EXIFREPLACETHUMBNAILW)GetProcAddress(EXIFLibrary, "EXIFReplaceThumbnailW");
+                    ReplaceThumbnail = (EXIFREPLACETHUMBNAIL)GetProcAddress(EXIFLibrary, "EXIFReplaceThumbnail");
+                }
+                else
+                    flags |= FL_CANCEL;
+
+                if (ReplaceThumbnailW || ReplaceThumbnail)
+                {
+                    DWORD tmpErr = ERROR_SUCCESS;
+                    str = (LPTSTR)_tcsrchr(path, '\\');
                     _tcscpy(newFile, path);
                     SalamanderGeneral->CutDirectory(newFile);
-                    if (SalamanderGeneral->SalGetTempFileName(newFile, _T("pv"), newFile, TRUE, NULL))
+                    if (!SalamanderGeneral->SalGetTempFileName(newFile, _T("pv"), newFile, TRUE, &tmpErr))
                     {
-                        str = (LPTSTR)_tcsrchr(path, '\\');
-                        // EXIF.DLL has an ANSI-only interface -> ANSI paths (NULL fails the call)
-                        char* pathA = U8ToDLLPathAlloc(path);
-                        char* newFileA = U8ToDLLPathAlloc(newFile);
-                        BOOL replaced = pathA != NULL && newFileA != NULL &&
-                                        ReplaceThumbnail(pathA, newFileA, pd.wfd.Buffer, pd.wfd.Size);
-                        free(pathA);
-                        free(newFileA);
+                        // feature 142: the temporary file next to the picture cannot be created (a
+                        // folder that denies it, ...) - nothing was said; the Windows error is the
+                        // reason, the text of the former box when no error code came
+                        if (tmpErr != ERROR_SUCCESS)
+                            ThumbWriteFailed(hProgress, str ? str + 1 : path, SalamanderGeneral->GetErrorText(tmpErr), &flags);
+                        else
+                        {
+                            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_REGENERATE_THUMB_WRITEFILE), str ? str + 1 : path);
+                            SplU8TrimTornTail(msg);
+                            ThumbWriteFailed(hProgress, str ? str + 1 : path, msg, &flags);
+                        }
+                    }
+                    else
+                    {
+                        BOOL replaced = FALSE;
+                        DWORD libErr = ERROR_SUCCESS; // a Windows error known to be the reason of the failure
+                        if (ReplaceThumbnailW)
+                        {
+                            // the wide form ReadWholeFileU8, ReplaceFileU8 and DeleteFileU8 use, so the
+                            // library opens exactly the files that are compared and replaced below
+                            WCHAR* pathW = SplU8ToWExtAlloc(path);
+                            WCHAR* newFileW = SplU8ToWExtAlloc(newFile);
+                            if (pathW != NULL && newFileW != NULL)
+                            {
+                                replaced = ReplaceThumbnailW(pathW, newFileW, pd.wfd.Buffer, pd.wfd.Size);
+                                if (!replaced)
+                                {
+                                    libErr = GetLastError(); // the contract of the wide entry point (exif.h)
+                                    if (libErr == ERROR_INVALID_DATA)
+                                        libErr = ERROR_SUCCESS; // the file was refused: not an error of a file call
+                                }
+                            }
+                            free(pathW);
+                            free(newFileW);
+                        }
+                        else
+                        {
+                            // the old EXIF.DLL: code-page paths, or the short name when there is one
+                            // (NULL = the file cannot be reached this way; the call fails)
+                            char* pathA = U8ToDLLPathAlloc(path);
+                            char* newFileA = U8ToDLLPathAlloc(newFile);
+                            replaced = pathA != NULL && newFileA != NULL &&
+                                       ReplaceThumbnail(pathA, newFileA, pd.wfd.Buffer, pd.wfd.Size);
+                            free(pathA);
+                            free(newFileA);
+                        }
                         // feature 132: the library's "success" is not enough to give up the original
                         if (replaced && !ThumbNewFileKeepsOriginal(path, newFile))
                             replaced = FALSE;
@@ -552,11 +649,21 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                         {
                             // SalamanderGeneral->SalGetTempFileName created the file
                             DeleteFileU8(newFile);
-                            // feature 130: the name is UTF-8 - the template too; a buffer of its own
-                            // (the template with a name did not have to fit the _MAX_PATH of 'newFile')
-                            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_REGENERATE_THUMB_WRITEFILE), str ? str + 1 : path);
-                            SplU8TrimTornTail(msg);
-                            SalamanderGeneral->ShowMessageBox(msg, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
+                            if (libErr != ERROR_SUCCESS)
+                            {
+                                // feature 142: a file call failed in the library - its error, not "Disk full?"
+                                ThumbWriteFailed(hProgress, str ? str + 1 : path, SalamanderGeneral->GetErrorText(libErr), &flags);
+                            }
+                            else
+                            {
+                                // the file was refused (the library or the check of 132 / 135), or the
+                                // reason is not known: the text of the former box.
+                                // feature 130: the name is UTF-8 - the template too; a buffer of its own
+                                // (the template with a name did not have to fit the _MAX_PATH of 'newFile')
+                                _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_REGENERATE_THUMB_WRITEFILE), str ? str + 1 : path);
+                                SplU8TrimTornTail(msg);
+                                ThumbWriteFailed(hProgress, str ? str + 1 : path, msg, &flags);
+                            }
                         }
                         else
                         {
@@ -577,8 +684,11 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                                 if (rr == srrLeftAtTemp)
                                 {
                                     keepNew = TRUE;
-                                    SalamanderGeneral->DialogError(hProgress, BUTTONS_SKIPCANCEL, newFile,
-                                                                   SalamanderGeneral->GetErrorText(repErr), LoadStr(IDS_ERRORTITLE));
+                                    // always shown, also after "Skip all": it names the file that now holds
+                                    // the picture. feature 142: Cancel ends the command (it was ignored).
+                                    if (SalamanderGeneral->DialogError(hProgress, BUTTONS_SKIPCANCEL, newFile,
+                                                                       SalamanderGeneral->GetErrorText(repErr), LoadStr(IDS_ERRORTITLE)) == DIALOG_CANCEL)
+                                        flags |= FL_CANCEL;
                                     flags |= FL_SKIP;
                                     break;
                                 }
@@ -591,6 +701,12 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                                 if (readOnly && (flags & FL_OVERWRITE_RO_ALL))
                                 {
                                     flags |= FL_OVERWRITE_RO;
+                                }
+                                else if (flags & (readOnly ? FL_RO_SKIP_ALL : FL_SKIP_ALL))
+                                {
+                                    // feature 142: "Skip all" was stored and never read - the dialog came
+                                    // again for every following file
+                                    flags |= FL_SKIP;
                                 }
                                 else
                                 {
@@ -629,7 +745,9 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                                         flags |= FL_OVERWRITE_RO;
                                         break;
                                     case DIALOG_SKIPALL:
-                                        flags |= FL_SKIP_ALL;
+                                        // the question about a read-only file and the error have a
+                                        // "Skip all" each (feature 142)
+                                        flags |= btns == BUTTONS_YESALLSKIPCANCEL ? FL_RO_SKIP_ALL : FL_SKIP_ALL;
                                         // fall through
                                     case DIALOG_SKIP:
                                         flags |= FL_SKIP;
@@ -644,6 +762,8 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                             } while (flags & FL_OVERWRITE_RO);
                             if (replaced)
                             {
+                                if (clearRO) // feature 142: agreed to modify a read-only file - it stays read-only
+                                    ThumbSetReadOnlyAgain(path);
                                 SalamanderGeneral->CutDirectory(path);
                                 SalamanderGeneral->PostChangeOnPathNotification(path, FALSE);
                                 processed++;
