@@ -46,6 +46,7 @@
 #include "salfindtext.h"    // feature 121
 #include "salupdcheck.h"    // feature 123
 #include "saluncserver.h"   // feature 125
+#include "salshelllink.h"   // feature 128
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -9638,6 +9639,118 @@ static void TestPackageApi126()
     }
 }
 
+// feature 128 (GitHub #8): the target of a shortcut as a UTF-8 path (salshelllink.h), against
+// real .lnk files written with the wide interface in the temporary folder
+static void TestShellLink128()
+{
+    WCHAR tempW[MAX_PATH];
+    if (GetTempPathW(MAX_PATH, tempW) == 0)
+    {
+        CHECK(FALSE);
+        return;
+    }
+    HRESULT coInit = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    // the shell answers with the long form of the path: %TEMP% may be in 8.3 form
+    WCHAR tempLongW[1024];
+    DWORD longLen = GetLongPathNameW(tempW, tempLongW, _countof(tempLongW));
+    std::wstring dir = std::wstring(longLen > 0 && longLen < _countof(tempLongW) ? tempLongW : tempW) +
+                       L"saltests128_" + std::to_wstring(GetCurrentProcessId());
+    CreateDirectoryW(dir.c_str(), NULL);
+    struct
+    {
+        const WCHAR* Folder; // name of the target folder (created)
+        const char* FolderU8;
+    } cases[] = {
+        {L"t_ascii", "t_ascii"},
+        {L"t_\x00DA\x010D" L"etnictv\x00ED", "t_\xC3\x9A\xC4\x8D" "etnictv\xC3\xAD"},                     // Czech letters (the system code page on a Czech Windows)
+        {L"t_\x0391\x03C1\x03C7\x03B5\x03AF\x03BF", "t_\xCE\x91\xCF\x81\xCF\x87\xCE\xB5\xCE\xAF\xCE\xBF"}, // Greek
+        {L"t_\x4E2D\x6587 \xD83D\xDE00", "t_\xE4\xB8\xAD\xE6\x96\x87 \xF0\x9F\x98\x80"},                     // Chinese and an emoji (a surrogate pair)
+    };
+    char dirU8[1024];
+    CHECK(SalWToU8(dir.c_str(), -1, dirU8, sizeof(dirU8)) != 0);
+    for (int i = 0; i < _countof(cases); i++)
+    {
+        std::wstring target = dir + L"\\" + cases[i].Folder;
+        std::wstring lnk = dir + L"\\link" + std::to_wstring(i) + L".lnk";
+        CreateDirectoryW(target.c_str(), NULL);
+        // write the shortcut
+        IShellLinkW* link = NULL;
+        BOOL saved = FALSE;
+        if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+        {
+            IPersistFile* file = NULL;
+            if (link->SetPath(target.c_str()) == S_OK && link->QueryInterface(IID_IPersistFile, (LPVOID*)&file) == S_OK)
+            {
+                saved = file->Save(lnk.c_str(), TRUE) == S_OK;
+                file->Release();
+            }
+            link->Release();
+        }
+        CHECK(saved);
+        // read it back the way the panel does
+        link = NULL;
+        if (saved && CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+        {
+            IPersistFile* file = NULL;
+            if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&file) == S_OK)
+            {
+                CHECK(file->Load(lnk.c_str(), STGM_READ) == S_OK);
+                std::string want = std::string(dirU8) + "\\" + cases[i].FolderU8;
+                char path[2048];
+                memset(path, 'X', sizeof(path));
+                CHECK(SalShellLinkGetPathU8(link, path, sizeof(path), SLGP_UNCPRIORITY) == NOERROR);
+                CHECK(SalPathEqualOrdinalCI(path, want.c_str())); // (the shell may answer in another letter case)
+                // the path the core gets names the folder that exists
+                DWORD attr = SalGetFileAttributes(path);
+                CHECK(attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY) != 0);
+                // exact fit / one byte short: whole or refused, never cut
+                int need = (int)want.length() + 1;
+                memset(path, 'X', sizeof(path));
+                CHECK(SalShellLinkGetPathU8(link, path, need, SLGP_UNCPRIORITY) == NOERROR && SalPathEqualOrdinalCI(path, want.c_str()));
+                memset(path, 'X', sizeof(path));
+                CHECK(FAILED(SalShellLinkGetPathU8(link, path, need - 1, SLGP_UNCPRIORITY)) && path[0] == 0);
+                memset(path, 'X', sizeof(path));
+                CHECK(FAILED(SalShellLinkGetPathU8(link, path, 1, SLGP_UNCPRIORITY)) && path[0] == 0);
+                // what the A interface gave (the defect): for a non-ASCII target the bytes are not
+                // the UTF-8 path - recorded here so the reason for the wide call stays visible
+                if (i > 0 && GetACP() != CP_UTF8) // (with a UTF-8 system code page the A interface gives the same bytes)
+                {
+                    IShellLinkA* linkA = NULL;
+                    if (link->QueryInterface(IID_IShellLinkA, (LPVOID*)&linkA) == S_OK)
+                    {
+                        char pathA[MAX_PATH];
+                        pathA[0] = 0;
+                        linkA->GetPath(pathA, MAX_PATH, NULL, SLGP_UNCPRIORITY);
+                        CHECK(strcmp(pathA, want.c_str()) != 0);
+                        linkA->Release();
+                    }
+                }
+                file->Release();
+            }
+            link->Release();
+        }
+        DeleteFileW(lnk.c_str());
+        RemoveDirectoryW(target.c_str());
+    }
+    // a shortcut without a target path: not NOERROR, and an empty buffer
+    {
+        IShellLinkW* link = NULL;
+        if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+        {
+            char path[100];
+            memset(path, 'X', sizeof(path));
+            CHECK(SalShellLinkGetPathU8(link, path, sizeof(path), SLGP_UNCPRIORITY) != NOERROR && path[0] == 0);
+            link->Release();
+        }
+        char path[10] = "X";
+        CHECK(SalShellLinkGetPathU8(NULL, path, sizeof(path), 0) == E_INVALIDARG && path[0] == 0);
+        CHECK(SalShellLinkGetPathU8(NULL, NULL, 0, 0) == E_INVALIDARG);
+    }
+    RemoveDirectoryW(dir.c_str());
+    if (SUCCEEDED(coInit))
+        CoUninitialize();
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -9712,6 +9825,7 @@ int main(int argc, char** argv)
     TestUpdateCheck123();
     TestUncServer125();
     TestPackageApi126();
+    TestShellLink128();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

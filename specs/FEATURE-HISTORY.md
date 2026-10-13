@@ -1973,3 +1973,19 @@ a few early ones are out of sequence).
     argument; "Copy to the same folder" is refused - the generated copy name comes from Paste.
   - Probe `probe/mixed_probe.ps1`: 0.1.9 Czech FAIL 6, fixed PASS 13 / FAIL 0 / NOT DRIVEN 1
     (the copy name: the clipboard held data the probe may not overwrite).
+- 128-shortcut-target-unicode: **Enter on a `.lnk` reads the target wide** (GitHub issue #8, for
+  0.1.10). The report had a picture only (`ARCHIV.lnk`, error 123). Cause found by measuring:
+  `CFilesWindow::Execute` (`fileswn2.cpp`) and `FocusShortcutTarget` (`fileswn0.cpp`) used
+  `IShellLink` = `IShellLinkA`; the target arrived as code-page bytes into UTF-8 code and the path
+  check answered `ERROR_INVALID_NAME` for **every target with a non-ASCII letter**. Feature 069
+  had fixed the same thing for the drop-target code only. Now `IShellLinkW` through one
+  header-only rule, `SalShellLinkGetPathU8` (`src/common/salshelllink.h`: whole path or failure,
+  `S_FALSE` = no path), with the real buffer sizes instead of `MAX_PATH`.
+  - Probe `probe/lnk_probe.ps1`: 0.1.9 FAIL 7 of 18, fixed PASS 18. saltests 18,304 -> 18,343
+    (real shortcuts to Czech, Greek, Chinese + emoji folders).
+  - Traps: `WScript.Shell.CreateShortcut` refuses a target outside the code page - write test
+    shortcuts with `IShellLinkW`; *Go to Shortcut Target* enters a folder target; a saltests
+    check against `%TEMP%` must use the long path form and a case-insensitive compare.
+  - Left (NEXT-WORK D): `GetSHObjectName` returns code page (server links, Network plug-in only);
+    drop-target code still `MAX_PATH`; A shell calls returning paths (`SHGetFolderPath`,
+    `GetOpenFileName`).

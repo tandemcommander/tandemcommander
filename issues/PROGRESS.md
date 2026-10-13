@@ -21,4 +21,11 @@ How the work is organised
 | #5 `\\server\` | 125-unc-server-shares | **done** - core fallback (share list), plug-in policy untouched and recorded in NEXT-WORK section D; report `issues/issue_5_report.md` |
 | #6 Windows 7 start | 126-package-api-late-bind | **done** - the two functions resolved at run time; report `issues/issue_6_report.md` |
 | #7 mixed templates | 127-mixed-template-texts | **done** - about 45 places + Registry Editor + guard; report `issues/issue_7_report.md` |
-| #8 shortcuts | - | not started |
+| #8 shortcuts | 128-shortcut-target-unicode | **done** - Enter and Go to Shortcut Target read the target wide; report `issues/issue_8_report.md` (Czech) |
+
+## Finished 2026-10-13
+
+All five issues are done; each is one local commit on its own branch, stacked
+`124` -> `125` -> `126` -> `127` -> `128` (the last branch holds everything). Nothing is pushed,
+merged or released. What is left for the maintainer is in `specs/NEXT-WORK.md`, section D
+(decisions and steps owed to a person), and in each report under `issues/`.

@@ -25,6 +25,7 @@ extern "C"
 }
 #include "salshlib.h"
 #include "shellib.h"
+#include "salshelllink.h" // feature 128
 
 //
 // ****************************************************************************
@@ -97,7 +98,6 @@ void CFilesWindow::Execute(int index)
     char* path = bufs.Path;
     char* fullName = bufs.FullName;
     char* doublePath = bufs.DoublePath;
-    WIN32_FIND_DATA data;
 
     BeginStopRefresh();
 
@@ -157,9 +157,12 @@ void CFilesWindow::Execute(int index)
                 oleName[MAX_PATH - 1] = 0;
 
                 HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
-                IShellLink* link;
+                // feature 128 (GitHub #8): the WIDE interface. IShellLink (the A interface) gave the
+                // target in the code page; the core's paths are UTF-8, so every target with a
+                // letter outside ASCII failed the path check below with ERROR_INVALID_NAME (123)
+                IShellLinkW* link;
                 if (CoCreateInstance(CLSID_ShellLink, NULL,
-                                     CLSCTX_INPROC_SERVER, IID_IShellLink,
+                                     CLSCTX_INPROC_SERVER, IID_IShellLinkW,
                                      (LPVOID*)&link) == S_OK)
                 {
                     IPersistFile* fileInt;
@@ -167,7 +170,7 @@ void CFilesWindow::Execute(int index)
                     {
                         if (fileInt->Load(oleName, STGM_READ) == S_OK)
                         {
-                            if (link->GetPath(fullName, MAX_PATH, &data, SLGP_UNCPRIORITY) == NOERROR)
+                            if (SalShellLinkGetPathU8(link, fullName, SAL_MAX_PATH_UTF8, SLGP_UNCPRIORITY) == NOERROR)
                             {                                     // the obtained path will be used for accessibility test, after Resolve it may change
                                 err = CheckPath(FALSE, fullName); // fullName is a full path (shortcuts support no other)
                                 if (err != ERROR_USER_TERMINATED) // if user didn't press ESC, ignore the error
@@ -179,13 +182,13 @@ void CFilesWindow::Execute(int index)
                             {
                                 if (link->Resolve(HWindow, SLR_ANY_MATCH | SLR_UPDATE) == NOERROR)
                                 {
-                                    if (link->GetPath(fullName, MAX_PATH, &data, SLGP_UNCPRIORITY) == NOERROR)
+                                    if (SalShellLinkGetPathU8(link, fullName, SAL_MAX_PATH_UTF8, SLGP_UNCPRIORITY) == NOERROR)
                                     {
                                         // final form of fullName - we verify if it is OK
                                         err = CheckPath(TRUE, fullName); // fullName is a full path (links support no other)
                                         if (err == ERROR_SUCCESS)
                                         {
-                                            DWORD attr = SalGetFileAttributes(fullName); // obtained here because data.dwFileAttributes isn't filled
+                                            DWORD attr = SalGetFileAttributes(fullName); // (the link's find data is not asked for)
                                             if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
                                             {
                                                 linkIsDir = TRUE; // OK we try change-path-to-disk
@@ -200,7 +203,7 @@ void CFilesWindow::Execute(int index)
                                     {
                                         if (Plugins.GetFirstNethoodPluginFSName(netFSName))
                                         {
-                                            if (link->GetPath(fullName, MAX_PATH, NULL, SLGP_RAWPATH) != NOERROR)
+                                            if (SalShellLinkGetPathU8(link, fullName, SAL_MAX_PATH_UTF8, SLGP_RAWPATH) != NOERROR)
                                             { // path is not stored in the link as text, only as an ID list
                                                 fullName[0] = 0;
                                                 ITEMIDLIST* pidl;

@@ -52,6 +52,13 @@ Fixes for the problems reported on GitHub after 0.1.9.
   is unchanged. The progress window's title no longer overruns its buffer
   with a very long file name.
 
+- **Shortcuts open their targets** (GitHub #8, feature 128). Enter or a
+  double-click on a shortcut (`.lnk`) to a folder answered *(123) The
+  filename, directory name, or volume label syntax is incorrect* whenever the
+  target path held a letter outside plain ASCII - any accented letter, any
+  other script. The same for *Go to Shortcut Target*. Both read the target
+  as Unicode now, like Windows Explorer.
+
 ## [0.1.9] — 2026-10-07
 
 **Build 193.** Feature release. The program now tells you when a newer

@@ -15,6 +15,7 @@
 #include "zip.h"
 #include "shellib.h"
 #include "toolbar.h"
+#include "salshelllink.h" // feature 128
 
 //*****************************************************************************
 //
@@ -331,8 +332,8 @@ void CFilesWindow::FocusShortcutTarget(CFilesWindow* panel)
             wrongPath = TRUE;
         else
         {
-            IShellLink* link;
-            if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&link) == S_OK)
+            IShellLinkW* link; // feature 128 (GitHub #8): the wide interface - the target is a UTF-8 path of the core, see salshelllink.h
+            if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
             {
                 IPersistFile* fileInt;
                 if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&fileInt) == S_OK)
@@ -354,8 +355,7 @@ void CFilesWindow::FocusShortcutTarget(CFilesWindow* panel)
                         // if loading the link fails, it returns other errors (0x80004005)
                         if (res == NOERROR)
                         {
-                            WIN32_FIND_DATA dummyData;
-                            if (link->GetPath(fullName, MAX_PATH, &dummyData, SLGP_UNCPRIORITY) == NOERROR &&
+                            if (SalShellLinkGetPathU8(link, fullName, sizeof(fullName), SLGP_UNCPRIORITY) == NOERROR &&
                                 fullName[0] != 0 && CheckPath(FALSE, fullName) == ERROR_SUCCESS)
                             {
                                 panel->ChangeDir(fullName);
@@ -366,7 +366,7 @@ void CFilesWindow::FocusShortcutTarget(CFilesWindow* panel)
                                 char netFSName[MAX_PATH];
                                 if (Plugins.GetFirstNethoodPluginFSName(netFSName))
                                 {
-                                    if (link->GetPath(fullName, MAX_PATH, NULL, SLGP_RAWPATH) != NOERROR)
+                                    if (SalShellLinkGetPathU8(link, fullName, sizeof(fullName), SLGP_RAWPATH) != NOERROR)
                                     { // the path is not stored in the link as text, but only as an ID-list
                                         fullName[0] = 0;
                                         ITEMIDLIST* pidl;

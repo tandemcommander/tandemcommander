@@ -1,0 +1,26 @@
+lnk_probe (feature 128, issue #8), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 08:39; desktop 'tc_probe_14060'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Fixture : 1_ascii -> C:\Users\pavel\AppData\Local\Temp\tc128\t_ascii; 2_accent -> C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED; 3_greek -> C:\Users\pavel\AppData\Local\Temp\tc128\t_\u0391\u03C1\u03C7\u03B5\u03AF\u03BF; 4_deep -> C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED\\u0391\u03C1\u03C7\u03B5\u03AF\u03BF\sub; 5_\u017E\u0159x -> C:\Users\pavel\AppData\Local\Temp\tc128\t_ascii; 6_unc -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED; 7_file -> C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED\note.txt
+
+ENTER 1    LOC    PASS        ASCII path: '1_ascii.lnk' -> 'C:\Users\pavel\AppData\Local\Temp\tc128\t_ascii'; windows: no window; location 'C:\Users\pavel\AppData\Local\Temp\tc128\t_ascii' (expected 'C:\Users\pavel\AppData\Local\Temp\tc128\t_ascii')
+ENTER 1    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER 2    LOC    PASS        letters of the system code page: '2_accent.lnk' -> 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED'; windows: no window; location 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED' (expected 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED')
+ENTER 2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER 3    LOC    PASS        letters outside the system code page: '3_greek.lnk' -> 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u0391\u03C1\u03C7\u03B5\u03AF\u03BF'; windows: no window; location 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u0391\u03C1\u03C7\u03B5\u03AF\u03BF' (expected 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u0391\u03C1\u03C7\u03B5\u03AF\u03BF')
+ENTER 3    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER 4    LOC    PASS        both, deeper: '4_deep.lnk' -> 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED\\u0391\u03C1\u03C7\u03B5\u03AF\u03BF\sub'; windows: no window; location 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED\\u0391\u03C1\u03C7\u03B5\u03AF\u03BF\sub' (expected 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED\\u0391\u03C1\u03C7\u03B5\u03AF\u03BF\sub')
+ENTER 4    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER 5    LOC    PASS        the shortcut itself has an accented name: '5_\u017E\u0159x.lnk' -> 'C:\Users\pavel\AppData\Local\Temp\tc128\t_ascii'; windows: no window; location 'C:\Users\pavel\AppData\Local\Temp\tc128\t_ascii' (expected 'C:\Users\pavel\AppData\Local\Temp\tc128\t_ascii')
+ENTER 5    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER 6    LOC    PASS        a network path: '6_unc.lnk' -> '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED'; windows: no window; location '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED' (expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED')
+ENTER 6    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GOTO 2     LOC    PASS        letters of the system code page: '2_accent.lnk' -> 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED'; windows: no window; location 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED' (expected 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED')
+GOTO 2     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GOTO 3     LOC    PASS        letters outside the system code page: '3_greek.lnk' -> 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u0391\u03C1\u03C7\u03B5\u03AF\u03BF'; windows: no window; location 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u0391\u03C1\u03C7\u03B5\u03AF\u03BF' (expected 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u0391\u03C1\u03C7\u03B5\u03AF\u03BF')
+GOTO 3     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GOTO 7     LOC    PASS        a shortcut to a file: '7_file.lnk' -> 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED\note.txt'; windows: no window; location 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED' (expected 'C:\Users\pavel\AppData\Local\Temp\tc128\t_\u00DA\u010Detnictv\u00ED')
+GOTO 7     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 18, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

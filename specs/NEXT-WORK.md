@@ -269,6 +269,13 @@ Code work an agent can do:
   (`CFilesWindow::PickServerShare`). Not part of #5.
 - **A server that wants a name and password** for its share list: 125 shows the Windows error;
   it could offer the sign-in the full `\\server\share` path already has.
+- **A shell calls that return paths** (128): `GetSHObjectName` (`shellib.cpp`) converts with
+  `CP_ACP` into UTF-8 code (used by the server-link branch of shortcuts, reachable only with a
+  Network plug-in); `SHGetFolderPath` A in `drivelst.cpp` / `shiconov.cpp` (Dropbox and Google
+  Drive detection under a profile with non-ASCII letters); `GetOpenFileName` A in `execute.cpp`,
+  `dialogs5.cpp`, `viewer3.cpp`. The drop-target code for shortcuts (`shellsup.cpp`,
+  `shellib.cpp`) still limits a target to `MAX_PATH` bytes (refused, not cut) - it could use
+  `SalShellLinkGetPathU8`.
 - `tools/check_encoding.py` does not scan `plugins/` (found by 124).
 - **Mixed templates, the rest** (127): (1) `CSalamanderGeneral::GetCommonFSOperSourceDescr`
   (`zip.cpp`) and the `salamdr3.cpp` texts `IDS_NAMEUSEDFORFILE` / `IDS_CREATEDIRFAILED` hand a
@@ -288,6 +295,8 @@ Steps owed to a person:
   (they read the real keyboard and mouse); a real file server with visible shares, with shares
   named in another script, and one that refuses the list.
 - 124: a look at the Registry Editor panel on a real screen in Czech and German.
+- 128: a real mouse double-click on a shortcut to an accented folder; the reporter's own
+  shortcut (asked in the answer to #8).
 - 127: Slovak, Ctrl+C / Ctrl+V of a file in its own folder - the new name reads
   `a - Kópia.txt` (not driven: the probe may not overwrite a clipboard that holds non-text
   data); the title of a queued Copy (`(čekající) Kopírovat ...`).
