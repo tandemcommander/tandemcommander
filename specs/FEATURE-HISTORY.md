@@ -1989,3 +1989,29 @@ a few early ones are out of sequence).
   - Left (NEXT-WORK D): `GetSHObjectName` returns code page (server links, Network plug-in only);
     drop-target code still `MAX_PATH`; A shell calls returning paths (`SHGetFolderPath`,
     `GetOpenFileName`).
+- 124-128, **second verification** (2026-10-13, asked for by the maintainer): clean rebuilds,
+  every probe again on the fixed build and on 0.1.9, one refute-first agent per feature with
+  tests of its own, a review of the follow-up. No blocker; what it changed:
+  - 124: *Copy Name / Full Name / Path* of the Registry Editor went through the code-page
+    `CopyTextToClipboard` with UTF-8 text (a regression for the translated `(Default)`) -
+    `CopyTextToClipboardW`; the Find window's size cell read the core's UTF-8 number text in the
+    code page.
+  - 125: `SalUncShareNameUsable` (no slash, no `.` / `..`); a refused list is not reported as
+    "no share" when the fallback answers with nothing; the `ERROR_MORE_DATA` loop ends.
+  - 127: **the inventory script had missed whole forms** - `FormatMessage` (`PackErrorHandler`,
+    89 calls, now `src/common/salinserts.h`), `sprintf` with the `LoadStr` on another line
+    (viewer "not found", regular expression errors, unknown variables), and the byte-wise join
+    in `CMessageBox::CopyToClipboard`. Three new probe rows fail on 0.1.9.
+  - Traps: a zero from `check_encoding.py` or from an inventory script is not "complete" - have
+    someone search with another method; the hidden desktop cannot read the clipboard at all
+    (`GetDataObject` fails), so every clipboard row is a person's step; a probe started from the
+    PowerShell 7 tool needs the Windows PowerShell `PSModulePath` (`Get-FileHash` missing
+    otherwise); an external archiver whose program is not found makes its extension an ordinary
+    file (feature 084) - to reach the archivers' error handler point it to a file that is no
+    program; `.txt` opens in the Code Viewer plug-in, the internal viewer needs an unclaimed
+    extension.
+  - The visible desktop does not help while the workstation is **locked**: `OpenClipboard` is
+    "access denied" and nothing can be made the active window (the active one is `LockApp`). A
+    probe row that presses a real key must check that the program under test is the active
+    window first (`unc_probe.ps1` row W2 does).
+  - Evidence: `specs/12N-*/fix-log.md`, section *Second verification*; `probe/*_verify2.txt`.

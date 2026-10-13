@@ -900,8 +900,9 @@ BOOL DoExpandVarString(HWND msgParent, const char* varText, BOOL validateOnly, i
                                 varLen = MAX_PATH - 1;
                             memcpy(buf, var, varLen);
                             buf[varLen] = 0;
-                            char text[200];
-                            sprintf(text, LoadStr(IDS_EXP_VARNOTFOUND), buf);
+                            char text[MAX_PATH + 200];
+                            _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_EXP_VARNOTFOUND), buf); // the typed name is UTF-8 (feature 127)
+                            SalU8TrimIncompleteTail(text);
                             if (msgParent == NULL)
                                 TRACE_I(text);
                             else
@@ -954,10 +955,9 @@ BOOL DoExpandVarString(HWND msgParent, const char* varText, BOOL validateOnly, i
                             if (res == 0 || res >= MAX_PATH)
                             {
                                 char text[MAX_PATH + 100];
-                                if (res == 0)
-                                    sprintf(text, LoadStr(IDS_EXP_ENVVARNOTFOUND), envVar);
-                                else
-                                    sprintf(text, LoadStr(IDS_EXP_ENVVARTOOLARGE), envVar);
+                                // the typed name is UTF-8, so is the template (feature 127)
+                                _snprintf_s(text, _TRUNCATE, LoadStrU8(res == 0 ? IDS_EXP_ENVVARNOTFOUND : IDS_EXP_ENVVARTOOLARGE), envVar);
+                                SalU8TrimIncompleteTail(text);
                                 if (msgParent == NULL)
                                     TRACE_I(text);
                                 else

@@ -47,6 +47,7 @@
 #include "salupdcheck.h"    // feature 123
 #include "saluncserver.h"   // feature 125
 #include "salshelllink.h"   // feature 128
+#include "salinserts.h"     // feature 127
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -9444,6 +9445,16 @@ static void TestUncServer125()
         CHECK(!SalUncBuildSharePath("server", NULL, buf, sizeof(buf)));
         CHECK(!SalUncBuildSharePath("ser\\ver", "DATA", buf, sizeof(buf)));
         CHECK(!SalUncBuildSharePath("server", "DA\\TA", buf, sizeof(buf)));
+        // a slash is a separator for the path code too: "a/b" would open "\\server\a\b"
+        CHECK(!SalUncBuildSharePath("server", "a/b", buf, sizeof(buf)) && buf[0] == 0);
+        CHECK(!SalUncBuildSharePath("server", "/", buf, sizeof(buf)) && buf[0] == 0);
+        CHECK(!SalUncBuildSharePath("ser/ver", "DATA", buf, sizeof(buf)) && buf[0] == 0);
+        // ... and such a name is not offered at all
+        CHECK(SalUncShareNameUsable("DATA") && SalUncShareNameUsable("C$") && SalUncShareNameUsable("R&D") && SalUncShareNameUsable(".a"));
+        CHECK(!SalUncShareNameUsable(".") && !SalUncShareNameUsable("..")); // the path code resolves them away
+        CHECK(SalUncShareNameUsable("\xC3\x9A\xC4\x8D""etnictv\xC3\xAD"));
+        CHECK(!SalUncShareNameUsable("a/b") && !SalUncShareNameUsable("a\\b") && !SalUncShareNameUsable("/") && !SalUncShareNameUsable("\\"));
+        CHECK(!SalUncShareNameUsable("") && !SalUncShareNameUsable(NULL));
         // 80 three-byte letters (the longest share name Windows allows, in a non-Latin script)
         char share[241];
         for (int i = 0; i < 80; i++)
@@ -9639,6 +9650,98 @@ static void TestPackageApi126()
     }
 }
 
+// feature 127 (GitHub #7): the numbered inserts of the archivers' messages (salinserts.h) -
+// the expansion FormatMessage did, on bytes, so UTF-8 stays UTF-8 and nothing is cut
+static void TestInserts127()
+{
+    CHECK(SalInsertsCount(NULL) == 0);
+    CHECK(SalInsertsCount("") == 0);
+    CHECK(SalInsertsCount("no inserts") == 0);
+    CHECK(SalInsertsCount("System error: %1") == 1);
+    CHECK(SalInsertsCount("(%1) to (%2).") == 2);
+    CHECK(SalInsertsCount("%2 only") == 2);
+    CHECK(SalInsertsCount("100%% of %1") == 1);
+    CHECK(SalInsertsCount("%%1") == 0); // a percent sign and the digit one
+    CHECK(SalInsertsCount("%9%3") == 9);
+    CHECK(SalInsertsCount("%0") == 0);
+    CHECK(SalInsertsCount("ends with %") == 0);
+
+    struct
+    {
+        const char* tmpl;
+        int count;
+        const char* a;
+        const char* b;
+        const char* want;
+    } cases[] = {
+        {"System error: %1", 1, "x", NULL, "System error: x"},
+        {"Unable to start the archiver \"%1\". The error was: %2", 2, "C:\\a\\b.exe", "(2) Not found.", "Unable to start the archiver \"C:\\a\\b.exe\". The error was: (2) Not found."},
+        // Czech template and inserts, UTF-8 bytes go through untouched
+        {"Nelze spustit archiva\xC4\x8Dn\xC3\xAD program \xE2\x80\x9E%1\xE2\x80\x9C. Chyba: %2", 2, "C:\\N\xC3\xA1stroje\\\xC5\xBElu\xC5\xA5.exe", "(5) P\xC5\x99\xC3\xADstup byl odep\xC5\x99""en.",
+         "Nelze spustit archiva\xC4\x8Dn\xC3\xAD program \xE2\x80\x9E""C:\\N\xC3\xA1stroje\\\xC5\xBElu\xC5\xA5.exe\xE2\x80\x9C. Chyba: (5) P\xC5\x99\xC3\xADstup byl odep\xC5\x99""en."},
+        {"%2 before %1", 2, "one", "two", "two before one"},
+        {"%1 and %1 and %1", 1, "long insert used three times", NULL, "long insert used three times and long insert used three times and long insert used three times"},
+        {"100%% of %1%nnext", 1, "it", NULL, "100% of it\nnext"},
+        {"%1%2", 2, "", "", ""},
+        {"%1", 1, NULL, NULL, ""},              // a missing insert gives nothing
+        {"[%2]", 1, "a", "b", "[]"},            // above the count: nothing, the next argument is not read
+        {"%x%0%!", 0, NULL, NULL, "x0!"},       // unknown escapes give the character
+        {"cut %", 0, NULL, NULL, "cut "},       // a lone percent sign at the end is dropped
+        {"an insert may hold %1", 1, "%2 %% %n", "never used", "an insert may hold %2 %% %n"}, // inserts are not expanded again
+        {"", 0, NULL, NULL, ""},
+    };
+    for (int i = 0; i < _countof(cases); i++)
+    {
+        const char* ins[2] = {cases[i].a, cases[i].b};
+        char* got = SalInsertsExpandAlloc(cases[i].tmpl, ins, cases[i].count);
+        CHECK(got != NULL && strcmp(got, cases[i].want) == 0);
+        // the size asked for is exactly the text and its terminator
+        CHECK(got != NULL && SalInsertsExpandTo(NULL, cases[i].tmpl, ins, cases[i].count) == strlen(got) + 1);
+        if (got != NULL)
+            free(got);
+    }
+    CHECK(SalInsertsExpandAlloc(NULL, NULL, 0) == NULL);
+    {
+        // NULL array with a template that has inserts
+        char* got = SalInsertsExpandAlloc("a%1b", NULL, 1);
+        CHECK(got != NULL && strcmp(got, "ab") == 0);
+        if (got != NULL)
+            free(got);
+    }
+    {
+        // never cut: an insert far longer than any fixed buffer of the old code (1000 bytes)
+        std::string big(70000, 'p');
+        const char* ins[1] = {big.c_str()};
+        char* got = SalInsertsExpandAlloc("Path to file too long: %1", ins, 1);
+        CHECK(got != NULL && strlen(got) == 23 + 70000 && memcmp(got, "Path to file too long: ppp", 26) == 0 && got[23 + 69999] == 'p');
+        if (got != NULL)
+            free(got);
+    }
+    {
+        // the same answer as FormatMessageW gives for every template form the program uses
+        const WCHAR* tmplW[] = {L"System error: %1", L"(%1) to (%2).", L"%2 then %1%nline", L"100%% %1"};
+        const char* tmplA[] = {"System error: %1", "(%1) to (%2).", "%2 then %1%nline", "100%% %1"};
+        for (int i = 0; i < _countof(tmplW); i++)
+        {
+            DWORD_PTR args[2] = {(DWORD_PTR)L"first", (DWORD_PTR)L"second"};
+            WCHAR wantW[200];
+            DWORD n = FormatMessageW(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ARGUMENT_ARRAY, tmplW[i], 0, 0, wantW, _countof(wantW), (va_list*)args);
+            char want[200];
+            WideCharToMultiByte(CP_UTF8, 0, wantW, -1, want, sizeof(want), NULL, NULL);
+            // FormatMessage writes "%n" as CR LF, the program's message boxes take LF
+            std::string w(want);
+            size_t pos;
+            while ((pos = w.find("\r\n")) != std::string::npos)
+                w.erase(pos, 1);
+            const char* ins[2] = {"first", "second"};
+            char* got = SalInsertsExpandAlloc(tmplA[i], ins, SalInsertsCount(tmplA[i]));
+            CHECK(n > 0 && got != NULL && w == got);
+            if (got != NULL)
+                free(got);
+        }
+    }
+}
+
 // feature 128 (GitHub #8): the target of a shortcut as a UTF-8 path (salshelllink.h), against
 // real .lnk files written with the wide interface in the temporary folder
 static void TestShellLink128()
@@ -9825,6 +9928,7 @@ int main(int argc, char** argv)
     TestUpdateCheck123();
     TestUncServer125();
     TestPackageApi126();
+    TestInserts127();
     TestShellLink128();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);

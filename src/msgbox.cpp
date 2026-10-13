@@ -298,8 +298,23 @@ BOOL CMessageBox::CopyToClipboard()
 {
     const char* separator = "---------------------------\r\n";
 
+    // The composed buffer is UTF-8, so every piece must be: a caption or a text that still comes
+    // in the code page (LoadStr) is converted on its own - mixed with UTF-8 pieces it would turn
+    // the whole buffer into the code-page reading (feature 127).
+    char* titleU8 = SalLegacyToU8Alloc(Title != NULL ? Title : "");
+    char* textU8 = SalLegacyToU8Alloc(Text.Get() != NULL ? Text.Get() : "");
+    if (titleU8 == NULL || textU8 == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        if (titleU8 != NULL)
+            free(titleU8);
+        if (textU8 != NULL)
+            free(textU8);
+        return FALSE;
+    }
+
     // compute the total buffer size
-    const char* text = Text.Get();
+    const char* text = textU8;
     int urlTextLen = 0;
     if (URL != NULL)
     {
@@ -308,7 +323,7 @@ BOOL CMessageBox::CopyToClipboard()
             urlTextLen += (int)strlen(URLText) + 4;
     }
     int buffSize = 4 * (int)strlen(separator) +
-                   (int)strlen(Title) +
+                   (int)strlen(titleU8) +
                    2 * (int)strlen(text) + // every character may be '\n'; we'll convert them to "\r\n"
                    urlTextLen +
                    MESSAGEBOX_MAXBUTTONS * (3 * 100 + 2 + 4) + // button labels as UTF-8 (up to 3 B per WCHAR, feature 063)
@@ -320,11 +335,22 @@ BOOL CMessageBox::CopyToClipboard()
     if (buff == NULL)
     {
         TRACE_E(LOW_MEMORY);
+        free(titleU8);
+        free(textU8);
         return FALSE;
     }
 
-    DWORD written = wsprintf(buff, "%s%s\r\n%s", separator, Title, separator);
-    char* ptr = buff + written;
+    // (not wsprintf: it writes at most 1024 characters)
+    char* ptr = buff;
+    strcpy(ptr, separator);
+    ptr += strlen(ptr);
+    strcpy(ptr, titleU8);
+    ptr += strlen(ptr);
+    strcpy(ptr, "\r\n");
+    ptr += 2;
+    strcpy(ptr, separator);
+    ptr += strlen(ptr);
+    DWORD written;
 
     // convert '\n' -> "\r\n"
     while (*text != 0)
@@ -399,6 +425,8 @@ BOOL CMessageBox::CopyToClipboard()
     // the whole composed buffer is UTF-8 (feature 063, contract C2)
     BOOL ret = CopyTextToClipboardU8Report(HWindow, buff); // feature 121: a failure is reported
     free(buff);
+    free(titleU8);
+    free(textU8);
 
     return ret;
 }

@@ -414,6 +414,11 @@ BOOL CUncSharesJob::Add(const WCHAR* nameW, DWORD type)
     char* name = SalWToU8Alloc(nameW, -1); // the whole name, any length
     if (name == NULL)
         return FALSE;
+    if (!SalUncShareNameUsable(name))
+    {
+        free(name);
+        return TRUE;
+    }
     if (Count == Allocated)
     {
         int newAlloc = Allocated == 0 ? 32 : 2 * Allocated;
@@ -488,6 +493,7 @@ void CUncSharesJob::Read()
     // level 1: names, types and remarks of all shares, hidden ones included
     DWORD firstErr = ERROR_SUCCESS;
     DWORD resume = 0;
+    int rounds = 0;
     NET_API_STATUS res;
     do
     {
@@ -510,6 +516,13 @@ void CUncSharesJob::Read()
             firstErr = res;
         if (buf != NULL)
             NetApiBufferFree(buf);
+        // a server that keeps answering "more data" without an end must not hold the worker; what
+        // it gave is not a whole list, so it is reported as an error rather than shown as one
+        if (res == ERROR_MORE_DATA && (read == 0 || ++rounds >= 1000))
+        {
+            firstErr = ERROR_MORE_DATA;
+            break;
+        }
     } while (res == ERROR_MORE_DATA);
 
     // a server that was not found is not asked a second time (another network timeout)
@@ -558,9 +571,12 @@ void CUncSharesJob::Read()
             free(buf);
             WNetCloseEnum(hEnum);
         }
-        // the first refusal is the one reported when the second way fails too
-        Error = err == NO_ERROR ? ERROR_SUCCESS : firstErr;
+        // the first refusal is the one reported when the second way fails too - or answers with
+        // nothing: "no shared folder" would hide that the list was refused
+        Error = err == NO_ERROR && Count > 0 ? ERROR_SUCCESS : firstErr;
     }
+    else if (firstErr == ERROR_MORE_DATA)
+        Error = firstErr; // a list without an end (see the loop): not shown as if it were whole
     if (Count > 1)
         qsort(Shares, Count, sizeof(CUncShare), UncSharesCompare);
 }

@@ -363,6 +363,261 @@ function Row-RegDel {
     }
 }
 
+# ---- rows added by the second verification (sites the first pass had missed) ----------------
+# the text of the first message box of the program that matches $Rx (static 2477, else all texts);
+# other boxes are answered; returns @{ Text; Win; Seen }
+function Wait-Box([int]$Id, [string]$Rx, [double]$Seconds = 20, $Skip = @()) {
+    $seen = @(); $done = @{}; $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
+        foreach ($h in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $Skip -notcontains $_ })) {
+            $k = $h.ToInt64(); if ($done.ContainsKey($k)) { continue }
+            Start-Sleep -Milliseconds 700
+            $st = Kid $h 2477
+            # (no static 2477: every child's text - an archiver's output window shows it in an edit)
+            $t = $(if ($st) { [Drv098f]::GetText($st, 5000).Replace("`r", '') } else { (@([Drv098f]::Kids($h) | Where-Object { [Drv098f]::Cls($_) -ne 'Button' } | ForEach-Object { [Drv098f]::GetText($_, 5000).Replace("`r", '') } | Where-Object { $_ }) -join "`n") })
+            $done[$k] = 1; $seen += ('[' + (Esc ([Drv098f]::Txt($h))) + '] ' + (Esc $t))
+            if ($t -match $Rx) { return @{ Text = $t; Win = $h; Seen = $seen } }
+            $b = Buttons $h | Where-Object { @(1, 6) -contains [Drv098f]::GetDlgCtrlID($_) } | Select-Object -First 1
+            if ($b) { Click $b } else { Close-Win $h }
+            Start-Sleep -Milliseconds 500
+        }
+        Start-Sleep -Milliseconds 200
+    }
+    return @{ Text = $null; Win = [IntPtr]::Zero; Seen = $seen }
+}
+function Answer-Box([IntPtr]$H) {
+    if ($H -eq [IntPtr]::Zero -or -not [Drv098f]::IsWindow($H)) { return }
+    $b = Buttons $H | Where-Object { @(1, 2, 6) -contains [Drv098f]::GetDlgCtrlID($_) } | Select-Object -First 1
+    if ($b) { Click $b } else { Close-Win $H }
+    Start-Sleep -Milliseconds 600
+}
+# letters that only a wrong reading of UTF-8 bytes in the code page 1250/1252 produces
+function Garbled([string]$t) { return [bool]($t -match ('[' + (Chars @(0x0102, 0x0139, 0x00C4, 0x00C3, 0x00C5, 0x00E2, 0x20AC, 0xFFFD)) + ']')) }
+$Needle = [char]0x017E + 'lu' + [char]0x0165 + 'ou' + [char]0x010D + 'k' + [char]0x00FD      # "zlutoucky" with accents
+
+# VIEWFIND: the internal viewer, Find of a text that is not there - the message names the text
+function Row-ViewFind {
+    if (-not (Want 'VIEWFIND')) { return }
+    $before = Reports; $id = 0; $view = [IntPtr]::Zero
+    try {
+        $vdir = $Root + '\view'
+        NewDir $vdir
+        [IO.File]::WriteAllText(($vdir + '\a.q127'), "plain text`r`nof two lines`r`n")   # an extension no viewer plug-in claims
+        $id = Start-P $vdir
+        Key $id 0x24; Key $id 0x28                               # "..", a.q127
+        $view = Open-ByCmd $id 742 15                            # CM_VIEW
+        if ($view -eq [IntPtr]::Zero -or [Drv098f]::Cls($view) -eq '#32770') { Row 'VIEWFIND' 'TEXT' 'FAIL' ('no viewer window: ' + $(if ($view -ne [IntPtr]::Zero) { WinDesc $view } else { 'nothing opened' })); return }
+        Start-Sleep -Milliseconds 800
+        $known = Get-Tops $id
+        Post-Cmd $view 6063                                      # CM_FINDSET
+        $dlg = Wait-NewWin $id $known 10
+        if ($dlg -eq [IntPtr]::Zero) { Row 'VIEWFIND' 'TEXT' 'FAIL' ('the viewer''s Find dialog did not open; viewer: ' + (WinDesc $view) + '; windows: ' + ((Get-Tops $id | ForEach-Object { WinDesc $_ }) -join ' || ')); return }
+        [void][Drv098f]::SetText((Find-Ctl $dlg 6125), $Needle, 5000)      # IDC_FINDTEXT
+        Click-Ok $dlg
+        $want = (Template 12353 "Cannot find the string '%s'.").Replace('%s', $Needle)
+        $r = Wait-Box $id ([regex]::Escape($Needle) + '|%s|\?\?') 15 @($dlg)
+        $t = $r.Text
+        Row 'VIEWFIND' 'TEXT' (V ($t -ceq $want)) ("box text '{0}'; expected '{1}'; boxes: {2}" -f (Esc $t), (Esc $want), ($r.Seen -join ' || '))
+        if ($null -eq $t) {
+            # the wrong reading does not hold the searched text: show whatever box is there
+            $r2 = Wait-Box $id '.' 3 @($dlg); Answer-Box $r2.Win
+        }
+        else { Answer-Box $r.Win }
+    }
+    catch { Row 'VIEWFIND' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally {
+        if ($id) {
+            foreach ($h in @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' })) { Answer-Box $h }
+            if ($view -ne [IntPtr]::Zero -and [Drv098f]::IsWindow($view)) { Close-Win $view; Start-Sleep -Milliseconds 700 }
+            End-P 'VIEWFIND' $id $before
+        }
+        try { if ([IO.Directory]::Exists($LP + $Root + '\view')) { [IO.Directory]::Delete($LP + $Root + '\view', $true) } } catch { }
+    }
+}
+
+# REGEXP: Find Files with a broken regular expression that holds an accented letter
+function Row-RegExp {
+    if (-not (Want 'REGEXP')) { return }
+    $before = Reports; $id = 0; $find = [IntPtr]::Zero
+    try {
+        $id = Start-P $DataDir
+        $find = Open-ByCmd $id 741 10
+        if ($find -eq [IntPtr]::Zero) { throw 'Find (741) opened no window' }
+        $pattern = [char]0x017E + '('
+        [void][Drv098f]::SetText((Find-Ctl $find 2505), '*.txt', 5000)
+        [void][Drv098f]::SetText((Kid $find 2504), $pattern, 5000)
+        $chk = Kid $find 2513                                    # IDC_FIND_REGULAR
+        if (-not $chk) { throw 'the Regular expression check box (2513) was not found' }
+        [void][Drv098f]::Send($chk, 0x00F1, 1, 0, 5000)          # BM_SETCHECK
+        Post-Cmd $find 1                                         # Find Now
+        $templ = Template 12345 ("The string '%s' is not a valid regular expression." + "`n" + 'Error: %s.')
+        $head = $templ.Substring(0, $templ.IndexOf('%s')) + $pattern
+        $mid = $templ.Substring($templ.IndexOf('%s') + 2); $mid = $mid.Substring(0, $mid.IndexOf('%s'))
+        $r = Wait-Box $id '\(' 15 @($find)
+        $t = $r.Text
+        $ok = ($null -ne $t) -and $t.StartsWith($head + $mid, [StringComparison]::Ordinal) -and -not (Garbled $t) -and ($t.Length -gt ($head + $mid).Length + 3)
+        Row 'REGEXP' 'TEXT' (V $ok) ("box text '{0}'; expected to start with '{1}' and to go on with the reason, readable; boxes: {2}" -f (Esc $t), (Esc ($head + $mid)), ($r.Seen -join ' || '))
+        Answer-Box $r.Win
+    }
+    catch { Row 'REGEXP' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally {
+        if ($id) {
+            foreach ($h in @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $_ -ne $find })) { Answer-Box $h }
+            if ($find -ne [IntPtr]::Zero -and [Drv098f]::IsWindow($find)) { Close-Win $find; Start-Sleep -Milliseconds 600 }
+            End-P 'REGEXP' $id $before
+        }
+    }
+}
+
+# PACKERR: Enter on an archive whose external archiver cannot be started - the message of the
+# archivers' error handler (numbered inserts): the program's path and the Windows reason, both
+# with accented letters, inside the translated text
+function Row-PackErr {
+    if (-not (Want 'PACKERR')) { return }
+    $before = Reports; $id = 0
+    $dir = $Root + '\arc'
+    try {
+        NewDir $dir
+        [IO.File]::WriteAllBytes(($dir + '\a.arj'), [byte[]]@(0x60, 0xEA, 0x22, 0x00, 0x1E, 0x06, 0x01, 0x00, 0x10, 0x00, 0x02))
+        # the 7-Zip console (it lists *.arj) is pointed to a file that is no program, in a folder
+        # with accented letters (a program that is not there at all makes *.arj an ordinary file) -
+        # the registry is restored at the end of the probe
+        NewDir ($Root + '\prg ' + $Accent)
+        $prog = $Root + '\prg ' + $Accent + '\7z.exe'
+        [IO.File]::WriteAllText($prog, 'this is not a program')
+        $pk = "$RegKey\0.1\Packers & Unpackers\Predefined Packers"
+        $set = 0
+        foreach ($k in @(Get-ChildItem -LiteralPath ('Registry::HKEY_CURRENT_USER' + $pk.Substring(4)) -ErrorAction SilentlyContinue)) {
+            $v = $k.GetValue('Packer Executable')
+            if ($v -is [string] -and $v -match '(^|\\)7z[a]?(\.exe)?$') { Set-ItemProperty -LiteralPath $k.PSPath -Name 'Packer Executable' -Value $prog; $set++ }
+        }
+        if ($set -eq 0) { Row 'PACKERR' 'TEXT' 'NOT DRIVEN' 'no predefined archiver with a 7z program in the configuration'; return }
+        $id = Start-P $dir
+        Key $id 0x24; Key $id 0x28                               # a.arj (after "..")
+        # Enter, sent with a short limit: the message box opens inside the handling of the key
+        $list = Get-LeftList $id
+        [void][Drv098f]::Send($list, 0x0100, 0x0D, 1, 2500)
+        $err193 = '(193) ' + (New-Object ComponentModel.Win32Exception 193).Message      # ERROR_BAD_EXE_FORMAT
+        $templ = Template 11072 'Unable to start the archiver "%1". The error was: %2'
+        $wantText = $templ.Replace('%1', $prog).Replace('%2', $err193)
+        $r = Wait-Box $id '.' 20
+        $t = $r.Text
+        if ($null -eq $t) { Row 'PACKERR' 'TEXT' 'NOT DRIVEN' ('Enter on a.arj opened no message (an archiver for it is installed, or the file was opened another way); location: ' + (Esc (Get-Loc $id)) + '; windows: ' + ((Get-Tops $id | ForEach-Object { WinDesc $_ }) -join ' || ')); return }
+        # the reason differs between systems (193 or 216; the program has no text for 216): the
+        # sentence up to the reason must be exact, the reason present and readable
+        $head = $templ.Substring(0, $templ.IndexOf('%2')).Replace('%1', $prog)
+        $exact = $t.StartsWith($head, [StringComparison]::Ordinal) -and ($t.Length -gt $head.Length + 5) -and -not (Garbled $t)
+        Row 'PACKERR' 'TEXT' (V $exact) ("box text '{0}'; expected to start with '{1}' and to go on with the reason (e.g. '{2}'); boxes: {3}" -f (Esc $t), (Esc $head), (Esc $err193), ($r.Seen -join ' || '))
+        Answer-Box $r.Win
+        $x = Serve $id 10
+    }
+    catch { Row 'PACKERR' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally {
+        if ($id) { End-P 'PACKERR' $id $before }
+        foreach ($d in @($dir, ($Root + '\prg ' + $Accent))) { try { if ([IO.Directory]::Exists($LP + $d)) { [IO.Directory]::Delete($LP + $d, $true) } } catch { } }
+    }
+}
+
+# ---- rows that need the clipboard: driven on the visible desktop only (the hidden one has none)
+function Clip-Text {
+    for ($i = 0; $i -lt 10; $i++) {
+        try { if ([Windows.Forms.Clipboard]::ContainsText()) { return [Windows.Forms.Clipboard]::GetText() } } catch { }
+        Start-Sleep -Milliseconds 200
+    }
+    return ''
+}
+function Clip-Clear { for ($i = 0; $i -lt 5; $i++) { try { [Windows.Forms.Clipboard]::Clear(); return } catch { Start-Sleep -Milliseconds 200 } } }
+function Wait-PopupMenu([int]$Id, [double]$Seconds = 10) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
+        $m = @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq 'PopupMenuClass' }) | Select-Object -First 1
+        if ($m) { Start-Sleep -Milliseconds 500; return $m }
+        Start-Sleep -Milliseconds 100
+    }
+    return [IntPtr]::Zero
+}
+function Menu-Key([IntPtr]$Menu, [int]$Vk) {
+    [void][Drv098f]::PostMessageW($Menu, 0x0100, [IntPtr]$Vk, [IntPtr]1)
+    [void][Drv098f]::PostMessageW($Menu, 0x0101, [IntPtr]$Vk, [IntPtr]::new(0xC0000001L))
+    Start-Sleep -Milliseconds 300
+}
+
+# CLIPMSG: Ctrl+C in a message box (WM_COPY to it) - caption and text on the clipboard, readable
+function Row-ClipMsg {
+    if (-not (Want 'CLIPMSG')) { return }
+    $before = Reports; $id = 0
+    try {
+        Save-Clip
+        if (-not $script:ClipOk) { Row 'CLIPMSG' 'TEXT' 'NOT DRIVEN' 'no clipboard that can be saved and restored (the hidden desktop has none)'; return }
+        $id = Start-P $Root
+        Key $id 0x24; Key $id 0x28; Key $id 0x28                 # "data"
+        $dlg = Open-ByCmd $id 727 10                            # CM_COPYFILES
+        if ($dlg -eq [IntPtr]::Zero) { throw 'Copy (727) opened no window' }
+        [void][Drv098f]::SetText((Find-Ctl $dlg 210), $OutDir2, 5000)
+        Click-Ok $dlg
+        $r = Wait-Box $id 'denied' 40
+        if ($null -eq $r.Text) { Row 'CLIPMSG' 'TEXT' 'FAIL' ('no error box naming "denied"; boxes: ' + ($r.Seen -join ' || ')); return }
+        $caption = [Drv098f]::Txt($r.Win)
+        $body = $r.Text.Trim()
+        try {
+            Clip-Clear
+            [void][Drv098f]::Send($r.Win, 0x0301, 0, 0, 5000)    # WM_COPY (what Ctrl+C posts)
+            Start-Sleep -Milliseconds 600
+            $clip = Clip-Text
+        }
+        finally { Restore-Clip }
+        $flat = $clip.Replace("`r", '')
+        $ok = $flat.Contains($caption) -and $flat.Contains($body) -and -not (Garbled $clip) -and $caption.Length -gt 3 -and $body.Contains($Err5)
+        Row 'CLIPMSG' 'TEXT' (V $ok) ("clipboard after Ctrl+C in the box: '{0}'; holds the caption '{1}': {2}; holds the text '{3}': {4}" -f (Esc $clip), (Esc $caption), $flat.Contains($caption), (Esc $body), $flat.Contains($body))
+        $cancel = Buttons $r.Win | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 2 } | Select-Object -First 1
+        if ($cancel) { Click $cancel } else { Close-Win $r.Win }
+        Start-Sleep -Milliseconds 800
+        $x = Serve $id 20
+    }
+    catch { Row 'CLIPMSG' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-P 'CLIPMSG' $id $before } }
+}
+
+# CLIPREG: Registry Editor, context menu > Copy Name (the last item) on a key with an accented
+# name and on the translated "(Default)" value
+function Row-ClipReg {
+    if (-not (Want 'CLIPREG')) { return }
+    $before = Reports; $id = 0
+    $regRoot = 'HKCU:\Software\TcProbe127c'
+    try {
+        Save-Clip
+        if (-not $script:ClipOk) { Row 'CLIPREG' 'NAME' 'NOT DRIVEN' 'no clipboard that can be saved and restored (the hidden desktop has none)'; return }
+        [void](New-Item -Path ($regRoot + '\' + $Accent) -Force)
+        Set-Item -LiteralPath ($regRoot + '\' + $Accent) -Value 'x'      # the (Default) value is set
+        $defName = '(Default)'
+        if ($Lang -ne 'english') { foreach ($line in [IO.File]::ReadAllLines((Join-Path $RepoRoot ("translations\{0}\regedt.slt" -f $Lang)), $Utf8)) { if ($line -match '^1003,\d+,"(.*)"\s*$') { $defName = $Matches[1] } } }
+        $id = Start-P $StartDir
+        $got = @()
+        try {
+            foreach ($step in @(@('reg:\HKEY_CURRENT_USER\Software\TcProbe127c', $Accent), @(('reg:\HKEY_CURRENT_USER\Software\TcProbe127c\' + $Accent), $defName))) {
+                [void](Do-ChangeDir $id $step[0])
+                Sync $id; Start-Sleep -Milliseconds 1500
+                Key $id 0x24; Key $id 0x28                       # "..", the first item
+                Clip-Clear
+                Post-Cmd (Get-Main $id) 858                      # CM_CONTEXTMENU
+                $menu = Wait-PopupMenu $id 10
+                if ($menu -eq [IntPtr]::Zero) { $got += '<no menu>'; continue }
+                Menu-Key $menu 0x23; Menu-Key $menu 0x0D         # End, Enter: Copy Name
+                Start-Sleep -Milliseconds 700
+                $got += (Clip-Text)
+            }
+        }
+        finally { Restore-Clip }
+        Row 'CLIPREG' 'NAME' (V ($got.Count -eq 2 -and $got[0] -ceq $Accent)) ("Copy Name on the key: clipboard '{0}', expected '{1}'" -f (Esc $got[0]), (Esc $Accent))
+        Row 'CLIPREG' 'DEFAULT' (V ($got.Count -eq 2 -and $got[1] -ceq $defName)) ("Copy Name on the default value: clipboard '{0}', expected '{1}'" -f (Esc $got[1]), (Esc $defName))
+    }
+    catch { Row 'CLIPREG' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally {
+        if ($id) { End-P 'CLIPREG' $id $before }
+        Remove-Item -LiteralPath $regRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 # ---- main ---------------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc127_backup.reg'
 $existed = Backup-Reg $backup
@@ -383,6 +638,11 @@ try {
     Row-Progress
     Row-CopyName
     if ($Lang -ne 'english') { Row-RegDel }
+    Row-ViewFind
+    Row-RegExp
+    Row-PackErr
+    Row-ClipMsg
+    Row-ClipReg
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

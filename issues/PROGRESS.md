@@ -29,3 +29,22 @@ All five issues are done; each is one local commit on its own branch, stacked
 `124` -> `125` -> `126` -> `127` -> `128` (the last branch holds everything). Nothing is pushed,
 merged or released. What is left for the maintainer is in `specs/NEXT-WORK.md`, section D
 (decisions and steps owed to a person), and in each report under `issues/`.
+
+## Second verification 2026-10-13 (asked for by the maintainer)
+
+Clean rebuilds (Debug, Release), every probe again on the fixed build and on 0.1.9, five
+independent refute-first agents with tests of their own, a review of the follow-up fixes. No
+blocker. Follow-up fixes are one more commit on `128-shortcut-target-unicode`:
+
+- 124: Copy Name / Full Name / Path of the Registry Editor (clipboard as Unicode), the Find
+  window's size cell;
+- 125: unusable share names, a refused list reported, an end for an endless list;
+- 127: five more places in the core (viewer, regular expressions, variables, all messages of
+  the external archivers, Ctrl+C in a message box), `src/common/salinserts.h`;
+- answers `issue_3/5/7/8_report.md` corrected where they claimed too much; new items in
+  `specs/NEXT-WORK.md` section D.
+
+Final numbers: saltests 18,395 / 0 failed; guard 0; probes on the final build - 124: 81 / 0;
+125: 26 / 0 (1 not driven); 127 Czech 19 / 0, English 17 / 0 (clipboard rows not driven);
+128: 18 / 0; 126: 5 / 5 and no import in 218 files. Rows for the visible desktop exist but the
+workstation was locked - owed to a person.

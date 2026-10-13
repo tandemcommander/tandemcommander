@@ -99,3 +99,63 @@ box, unlike the plug-in.
 Not driven: Esc / Close of the wait window (real keyboard and mouse) - owed to a person; a
 server with visible shares on a real network; a server that refuses the list (the
 `WNetOpenEnumW` fallback ran only by code reading and review).
+
+## Second verification (2026-10-13, asked for by the maintainer)
+
+Everything was built again from scratch (`build.cmd rebuild full`, Debug and Release), the
+probes were run again on the fresh build and on the 0.1.9 control, and one independent agent
+per feature was told to refute the fix and to write tests of its own.
+
+Probe on the fresh build and again on the final one: **PASS 26, FAIL 0, NOT DRIVEN 1**
+(`probe/unc_result_verify2.txt`); 0.1.9 shows the error boxes. saltests: the rules checked by the
+agent's own program too, and a real `NetShareEnum` on `localhost`, `127.0.0.1`, `[::1]`.
+
+Found by the agent, no blocker:
+
+- **Fixed:** a share name with `/` (possible from a non-Windows server) was offered and then
+  opened as `\\server\a\b`, because the path code reads a slash as a separator. New rule
+  `SalUncShareNameUsable` (no `\`, no `/`, not `.` / `..`): such a name is not offered, and
+  `SalUncBuildSharePath` refuses it.
+- **Fixed:** a refused list (`NetShareEnum` fails) followed by a fallback that answers with
+  nothing ended as "A share name is missing" - the Windows reason was lost. The first refusal is
+  reported now.
+- **Fixed:** the `ERROR_MORE_DATA` loop had no end for a server that keeps saying "more data";
+  it stops after an empty round or 1,000 rounds and reports `ERROR_MORE_DATA` instead of showing
+  a part as the whole list.
+- **A claim that was too wide, corrected here and in the answer to the issue.** "No Debug leak
+  box, unlike the plug-in" holds for the rows that were driven. An abandoned worker (Esc on a
+  server that does not answer) that is still inside the network call when the program exits is
+  ended by `TerminateAuxThreads` like every auxiliary thread of the core (the path check works
+  the same way); its job object is then not freed and a Debug build reports the leak. Research
+  R5 "nothing is terminated by force" is wrong for that case. Not measured: Esc cannot be
+  driven on the hidden desktop. Different from the plug-in in degree (only in that sequence, not
+  at every exit), not in kind. Recorded in NEXT-WORK D.
+- Notes, recorded: a share name near the path limit in a non-Latin script is offered and then
+  refused by `SalGetFullName` with "A share name is missing" (R7 named the case as handled - it
+  is not); research R7 says `SAL_MAX_PATH_UTF8`, the buffer is `4 * MAX_PATH`; the request is
+  also made for a path from the command line, a hot path or a plug-in's `ChangePanelPath`, not
+  only when the name is typed (`PRIVACY.md` says "when you enter the name" - close enough, the
+  sentence about what is asked is right); `\\..\`, `\\server \` go to the network and end in
+  an error box.
+- GUI rows the agent asked for that the probe cannot drive (real keyboard or mouse): Esc and
+  the Close button of the wait window, then an immediate exit; a click on the server part of
+  the directory line.
+
+### The visible desktop (allowed by the maintainer during the verification)
+
+The maintainer allowed the probes to run on the visible desktop, to drive what the hidden one
+cannot. Rows for it were written and are in the probe, but **they could not be driven: the
+workstation was locked** (the active window was the lock screen, `LockApp`). On a locked
+session `OpenClipboard` answers "access denied" (96 tries) and no window of the session can be
+made the active one, so a real key cannot be sent to the program safely - the probe refuses to
+press a key while another window is active. Record: `probe/unc_result_visible_desktop_locked.txt`.
+To run them, unlocked and with nothing important on the clipboard:
+
+```powershell
+$env:TC_PROBE_ALLOW_VISIBLE_DESKTOP = '1'
+powershell -NoProfile -STA -ExecutionPolicy Bypass -File specs\125-unc-server-shares\probe\unc_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Expect fixed -Only W2
+```
+
+Row `W2`: a real Esc 0.3 s after the wait window appears (seam delay 8 s) - the wait window
+closes at once, no list, the Change Directory dialog is back; then the program is closed while
+the request is still out - it ends with exit code 0 before the answer would have come.

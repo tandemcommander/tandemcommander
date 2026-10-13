@@ -1,0 +1,10 @@
+unc_probe (feature 125, issue #5), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 11:14; desktop 'Default'; computer PC-DOMA; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Plug-in : plugins\nethood\nethood.spl present next to the program: False; share looked for: (none)
+
+W2         ESC    NOT DRIVEN  the program under test is not the active window - the key is not pressed into another program
+W2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 1, FAIL 0, NOT DRIVEN 1, INFO 0. Left running: 0; registry restored+identical: True

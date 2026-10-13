@@ -19,7 +19,7 @@ With an automated probe on a hidden desktop:
 I did not stop at the list. A script now lists every composition of a `LoadStr()` template with a name, a path or `GetErrorText()` in the main program (46 of 130), and every sink was read. Besides your 21 + 4 (`codetbl.cpp`) + the status line:
 
 - the Find window's **title** shows a non-ASCII mask as garbage (Czech, Slovak, Hungarian);
-- five more message boxes / dialog texts: viewer or editor command too long, a path not found in an archive, a UNC name that cannot be created, the target of a junction in Properties, the title sentence of Copy / Move;
+- five more message boxes / dialog texts: viewer or editor command too long, a path not found in an archive, a UNC name that cannot be created, the question about a link's content in Copy / Move, the title sentence of Copy / Move;
 - the **View With / Edit With menu** items naming an external command;
 - **a file name**: the name the program generates for a copy pasted into the same folder (`name - Copy.ext`) took the translated word as code-page bytes - Slovak `Kópia`, Hungarian `Másolás`;
 - the Registry Editor plug-in: five questions / errors that put a key name or a Windows error text into a translated sentence;
@@ -27,9 +27,16 @@ I did not stop at the list. A script now lists every composition of a `LoadStr()
 
 ### What deliberately stays as it is
 
-Some compositions are **right** because both parts are code-page text; changing only the template would break them: the font description in the configuration (the face name comes from `LOGFONTA`), the plug-in file names in the start-up progress window, the handler name in the icon-overlay crash notice. After the fix the inventory lists exactly these (18 rows) and nothing else.
+Some compositions are **right** because both parts are code-page text; changing only the template would break them: the font description in the configuration (the face name comes from `LOGFONTA`), the plug-in file names in the start-up progress window, the handler name in the icon-overlay crash notice. After the fix the inventory script lists only these (18 rows).
 
-Two places you flagged or that are related need a change **together with plug-ins** and are recorded for later rather than half-fixed: `GetCommonFSOperSourceDescr` (FTP and Undelete wrap its result in their own code-page sentences - a UTF-8 word inside would garble every item, not only accented ones) and the folder-creation errors that only ZIP uses. The other plug-ins (FTP alone has 86 such compositions and its own rules for server texts) are not part of this change.
+**That inventory was not the whole truth.** A second, independent verification of the finished fix found places the script cannot see (it only looks at `printf`-style calls with the `LoadStr()` inside). They are fixed as well:
+
+- the internal viewer: *Cannot find the string '...'* and the message about a broken regular expression (also in Find Files);
+- an unknown variable or environment variable in a command line (`$(...)`, `$[...]`);
+- **every message of the external archivers** (`PackErrorHandler`, 89 calls: the archiver's path, the archive name, the Windows reason) - they went through `FormatMessage` in its code-page form;
+- Ctrl+C in a message box: caption and text were joined as bytes, so with an accented caption the whole text was copied garbled - a case the first version of this fix made *more* visible.
+
+Two places you flagged or that are related need a change **together with plug-ins** and are recorded for later rather than half-fixed: `GetCommonFSOperSourceDescr` (FTP and Undelete wrap its result in their own code-page sentences - a UTF-8 word inside would garble every item, not only accented ones) and the folder-creation errors that only ZIP uses. The other plug-ins are **not part of this change**, and that is the largest thing left: a wider scan lists about 100 compositions with a name or an error text outside FTP (for example the overwrite question of Checksum, "archive is corrupted" of 7-Zip, several of SFTP and ZIP) and FTP alone has 86 with its own rules for server texts. They are recorded as follow-up work, plug-in by plug-in.
 
 ### The fix
 
@@ -47,16 +54,16 @@ Automated probe, hidden desktop, the product's registry key saved and restored:
 
 | Run | Result |
 |---|---|
-| 0.1.9, Czech | 7 pass, **6 fail**: log, status line, Find title, the Copy error box (text and drawing), the Registry Editor question |
-| fixed, Czech | **13 pass, 0 fail**, 1 not driven |
-| fixed and 0.1.9, English | 8 pass, 0 fail - identical texts |
+| 0.1.9, Czech | **9 fail**: log, status line, Find title, the Copy error box (text and drawing), the Registry Editor question, the viewer's "not found", the broken regular expression, the archiver that cannot be started |
+| fixed, Czech | **19 pass, 0 fail**; the clipboard rows not driven |
+| fixed, English | 17 pass, 0 fail; the clipboard row not driven |
 
 Rows: the Find log row exactly (`Chyba při čtení adresáře: (5) Přístup byl odepřen.`); the status line and the Find window's title during a search of a 12 GB sparse file named `Příliš žluťoučký kůň 01.bin` with the mask `*.bin;ž*.řx`; the Copy error box (window text exactly, and a capture of the drawing); the progress dialog's title during a running Copy; the Registry Editor's "key is not empty" question for a key named `Příliš žluťoučký kůň`.
 
-**Not driven:** the generated copy name (it needs Paste, and the test machine's clipboard held data the probe may not overwrite). That change is one line each for the two words, reviewed line by line; it will be checked by hand before the release.
+**Not driven:** everything that needs the clipboard (the generated copy name, Ctrl+C in a message box - the hidden test desktop has no clipboard) and the title of a *queued* Copy. These are checked by hand before the release.
 
-`check_encoding.py`: 22 findings before, 0 after; with one fixed line put back it reports that line.
+`check_encoding.py`: 22 findings before, 0 after; with one fixed line put back it reports that line. Its limits are now written down: it goes by argument names, does not see `FormatMessage` or `strcat` compositions, and does not read the plug-ins - a zero from it is necessary, not sufficient.
 
-Unit tests 18,304 / 18,304; Debug and Release builds clean.
+Unit tests 18,395 / 18,395 (the expansion of the archivers' messages is compared with `FormatMessage`; a random comparison of 279,152 templates by an independent reviewer found no difference); Debug and Release builds clean.
 
 The fix will be part of **Tandem Commander 0.1.10**.

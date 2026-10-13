@@ -2108,7 +2108,15 @@ void CFindDialog::StartSearch(WORD command)
             {
                 char buf[500];
                 if (GrepData.RegExp.GetPattern() != NULL)
-                    sprintf(buf, LoadStr(IDS_INVALIDREGEXP), GrepData.RegExp.GetPattern(), GrepData.RegExp.GetLastErrorText());
+                {
+                    // the pattern is UTF-8: the template too, and the error text (a LoadStr
+                    // text, code page) is converted (feature 127)
+                    char* errU8 = SalLegacyToU8Alloc(GrepData.RegExp.GetLastErrorText());
+                    _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_INVALIDREGEXP), GrepData.RegExp.GetPattern(), errU8 != NULL ? errU8 : "");
+                    SalU8TrimIncompleteTail(buf);
+                    if (errU8 != NULL)
+                        free(errU8);
+                }
                 else
                     strcpy(buf, GrepData.RegExp.GetLastErrorText());
                 SalMessageBox(HWindow, buf, LoadStr(IDS_ERRORFINDINGFILE), MB_OK | MB_ICONEXCLAMATION);

@@ -19,8 +19,9 @@ Fixes for the problems reported on GitHub after 0.1.9.
   "selected" text in five languages, the name of the `(Default)` value in
   four, and the data of any text value with accented letters in every
   language, English included. A long text value is now shortened after a
-  whole character. The Size column and the plug-in's Find window were right
-  and stay right.
+  whole character. *Copy Name*, *Copy Full Name* and *Copy Path* put names
+  with accented letters on the clipboard correctly. The Size column and the
+  plug-in's Find window were right and stay right.
 
 - **A server name is enough to get to its shared folders** (GitHub #5,
   feature 125). Change Directory with `\\server\` (or `\\server`) answered
@@ -38,7 +39,8 @@ Fixes for the problems reported on GitHub after 0.1.9.
   Server 2008 R2 and Windows 8.0 that ended the start without any window or
   message. They are now looked up when needed, and where they do not exist a
   packaged shell is simply not found. Windows 11 remains the only supported
-  system; nothing changes there.
+  system; nothing changes there. (The Code Viewer and Markdown Viewer
+  plug-ins still need a newer Windows.)
 
 - **Translated messages show names and error texts readably** (GitHub #7,
   feature 127). In languages whose texts have accented letters, a message
@@ -47,7 +49,9 @@ Fixes for the problems reported on GitHub after 0.1.9.
   log, the Find window's title with an accented mask, about twenty message
   boxes (a folder that cannot be read, a name that is too long, a viewer or
   editor that cannot be started, ...), the View With / Edit With menu, five
-  Registry Editor messages. The name the program generates for a copy pasted
+  Registry Editor messages, the viewer's *Cannot find the string*, the
+  message about a broken regular expression, and every message of the
+  external archivers. Ctrl+C in a message box copies its text readably. The name the program generates for a copy pasted
   into the same folder is spelled correctly in Slovak and Hungarian. English
   is unchanged. The progress window's title no longer overruns its buffer
   with a very long file name.

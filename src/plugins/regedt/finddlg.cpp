@@ -408,7 +408,7 @@ CFoundFilesData::GetText(int i, LPWSTR buffer)
         else
         {
             SG->NumberToStr(buf, CQuadWord().Set(Size, 0));
-            StrToWStr(buffer, 100, buf);
+            U8ToWStr(buffer, 100, buf); // the core's number text is UTF-8 (the group separator may not be ASCII)
             ret = buffer;
         }
         break;

@@ -106,3 +106,37 @@ an embedded NUL.
 
 Recorded, not changed: a malformed `REG_MULTI_SZ` with a single terminator shows a trailing
 space (`fs2.cpp` uses `==` where `finddlg.cpp` uses `>=`).
+
+## Second verification (2026-10-13, asked for by the maintainer)
+
+Everything was built again from scratch (`build.cmd rebuild full`, Debug and Release), the
+probes were run again on the fresh build and on the 0.1.9 control, and one independent agent
+per feature was told to refute the fix and to write tests of its own.
+
+Probe on the fresh build, all nine languages: **PASS 81, FAIL 0** (`probe/regkey_result_verify2.txt`);
+0.1.9: FAIL 31 (the text recognition reads two rows differently from run to run; the failing
+rows are the same kinds). This also answers the agent's remark that the 81-row run predated the
+second change and feature 127's edits of `fs2.cpp` / `fs3.cpp` / `utils.cpp`.
+
+Found by the agent (its own fuzz of the preview code: 400,000 inputs, no overflow, always valid
+UTF-8, `...` exactly when text is lost; English output byte-identical to 0.1.9):
+
+- **A regression of this feature, fixed.** *Copy Name* / *Copy Full Name* / *Copy Path*
+  (`fs3.cpp`) hand the panel's text to the core's `CopyTextToClipboard`, which takes code-page
+  text. Key and value names were UTF-8 there since interface 104 (so any accented name was
+  already copied garbled); 124 added the translated `(Default)` name to that. Now
+  `CopyU8TextToClipboard` converts and calls `CopyTextToClipboardW`.
+- **Same class one line below the fixed one, fixed.** `finddlg.cpp` converted the core's number
+  text (UTF-8, the group separator of the Czech format is U+00A0) with the code page: a found
+  value of 1,234 bytes showed `1Â 234`. Now `U8ToWStr`. The probe's values were under 1,000 bytes.
+- **Recorded (NEXT-WORK D), older than this feature:** the plug-in's `%ls` messages
+  (`fs5.cpp:869` `IDS_CREATETARGET`, `fs5.cpp:1014`, `ErrorHelper` in `regedt.cpp`) do not "lose
+  letters outside the code page" - in the C locale `_vsnprintf_s` fails at the first non-ASCII
+  letter: the question whether to create the target key is an **empty** Yes/No box for a name
+  like `Tést`, `ErrorHelper` stops the text at that letter.
+- Wrong in the answer to the issue, corrected there: "exactly the rows listed" (the table did
+  not list the nine LONG rows; the Hungarian selection row passes on 0.1.9); the 199-byte limit
+  of the preview is now mentioned; the `%ls` messages are not handled by #7.
+- Not covered by the probe, owed to a person: the clipboard commands above (the hidden desktop
+  cannot read the clipboard); the size prefix of the selection text (`IDS_SELECTEDSIZE`, shown
+  only for values of 1,000 bytes and more).

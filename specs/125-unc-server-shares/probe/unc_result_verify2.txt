@@ -1,0 +1,38 @@
+unc_probe (feature 125, issue #5), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 11:05; desktop 'tc_probe_19232'; computer PC-DOMA; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Plug-in : plugins\nethood\nethood.spl present next to the program: False; share looked for: (none)
+
+L1         LOOK   INFO        the menu as recognized (short names with '$' are read badly - see the crop L1_menu.png): apps | DATA | Home | NETLOGON | Sdllen\u00E9 | ADMINS | archivS | cs
+L1         ESC    PASS        after Esc: windows: Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tc125\start' (before 'C:\Users\pavel\AppData\Local\Temp\tc125\start')
+L1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L2         ITEMS  PASS        item k of the list, k = 1..9: apps , DATA , Home , NETLOGON , R&D , Sd\u00EDlen\u00E9 , ADMIN$ , archiv$ , C$; expected: apps , DATA , Home , NETLOGON , R&D , Sd\u00EDlen\u00E9 , ADMIN$ , archiv$ , C$; item 10 (one more Down wraps to the first): apps
+L2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P1         LOOK   INFO        the menu as recognized (see the crop): ADMINS
+P1         PICK   PASS        after Down, Down, Enter: windows: no window; location '\\localhost\C$' (expected \\localhost\C$)
+P1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R1         LOOK   INFO        the menu as recognized (see the crop): cs
+R1         PICK   PASS        after Down, Down, Enter: windows: no window; location '\\localhost\C$' (expected \\localhost\C$)
+R1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+E1         BOX    PASS        typed '\\tcprobe125\': windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "\\tcprobe125\" Error: (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK || Change Directory dialog opened; expected one box with '(53)'; 4,8 s; location 'C:\Users\pavel\AppData\Local\Temp\tc125\start'
+E1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+E2         BOX    PASS        typed '\\tc125-no-such-host\': windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "\\tc125-no-such-host\" Error: (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK || Change Directory dialog opened; expected one box with 'Error:'; 6,1 s; location 'C:\Users\pavel\AppData\Local\Temp\tc125\start'
+E2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+N1         BOX    PASS        typed '\\tcprobe125\': windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "\\tcprobe125\" Error: A share name is missing in the path specified. | [Button id=1] OK || Change Directory dialog opened; expected one box with 'A share name is missing'; 4,7 s; location 'C:\Users\pavel\AppData\Local\Temp\tc125\start'
+N1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S4         BOX    PASS        typed '\\': windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "\\" Error: A server name is missing in the path specified. | [Button id=1] OK || Change Directory dialog opened; expected one box with 'A server name is missing'; 4,8 s; location 'C:\Users\pavel\AppData\Local\Temp\tc125\start'
+S4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+W1         WAIT   PASS        wait window at 1,0 s: 'Tandem Commander | Checking path \u201D\\tcprobe125\", press the ESC key to cancel... | Tandem Commander | Checking path 25\", press the ESC key to cancel... | Tandem Commander | Checking path press the ESC key to cancel...'; menu at 6,7 s: True; wait window gone then: True
+W1         ESC    NOT DRIVEN  Esc / Close in the wait window read the real keyboard and mouse position (GetAsyncKeyState, GetMessagePos) - a step for a person
+W1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+A1         START  PASS        started with -l \\localhost\ ; the list came; Down, Down, Enter: windows: no window; location '\\localhost\C$' (expected \\localhost\C$)
+A1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C1         CLOSE  PASS        menu open: True; WM_CLOSE to the main window; windows seen meanwhile: [PopupMenuClass '']  || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [ ''] ; program: still running after 40 s; answers: True; reports 0
+C1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C2         CLOSE  PASS        the server is being read (seam delay 8000 ms); WM_CLOSE to the main window; windows seen meanwhile: [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [PopupMenuClass '']  || [ '']  || [SalamanderSaveBits 'Tandem Commander'] ; program: still running after 40 s; answers: True; reports 0
+C2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U1         UP     PASS        at '\\localhost\C$' (windows: no window; panel text not recorded); Backspace -> '\\localhost\C$' (windows: no window)
+U1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 26, FAIL 0, NOT DRIVEN 1, INFO 3. Left running: 0; registry restored+identical: True

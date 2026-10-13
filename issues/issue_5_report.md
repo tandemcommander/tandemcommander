@@ -35,27 +35,29 @@ When no Network plug-in is present and the path names a server without a share, 
 - choose one (arrows + Enter, or the mouse) and the panel opens `\\server\<share>`; Esc returns to the Change Directory dialog;
 - the server is asked on a worker thread: after a moment the usual *"Checking path ..., press the ESC key to cancel"* notice appears, and Esc ends the wait;
 - a server that cannot be read is reported with the path and the reason Windows gives (e.g. *(53) The network path was not found*); a server with no folder share gives the old message;
-- share names are shown and used exactly (any script, never cut).
+- share names are shown and used exactly (any script, never cut); a name the path code could not address (one with a slash, possible only from a non-Windows server) is left out.
 
 No new texts were needed, so all languages are covered. `\\` alone still reports a missing server name - without the plug-in the program has no list of servers to offer. The privacy statement has a sentence about the new request.
 
 ### Tests
 
-- 93 new unit checks of the rules (what counts as "server only", which shares are offered, hidden / visible, order, building the path without ever cutting it).
+- 101 unit checks of the rules (what counts as "server only", which shares are offered, hidden / visible, order, building the path without ever cutting it).
 - An automated probe on a hidden desktop, 30 rows on the fixed build: **26 pass, 0 fail**, 3 are informational captures and one step is left to a person:
   - the list's content and order, checked item by item (11 shares incl. a printer, `IPC$`, a Czech name and `R&D`);
   - the real thing: `\\localhost\` -> the computer's own shares -> pick `C$` -> the panel stands in `\\localhost\C$`;
   - errors: a server that does not exist, a refused list, a server with no folder share;
   - a slow server: the wait notice appears, then the list;
   - the path given on the command line (`-l \\localhost\`);
-  - closing the program while the list is open or while the server is being read: no crash, no hang, clean exit;
+  - a request to close the program while the list is open or while the server is being read: no crash, no hang; the program closes cleanly afterwards;
   - not driven by the probe: Esc in the wait notice (it reads the real keyboard) - checked by hand before the release.
 - Controls: the same probe on 0.1.9 shows the error boxes above; on a build with the plug-in, `\\localhost\` still opens `net:\\localhost`.
 - An independent code review; its findings (an Esc pressed earlier could cancel the wait, the worker thread's exception handling and its registration for the program's exit, a too generous sentence in the privacy statement) are fixed.
+- A second, independent verification of the finished fix (its own tests of the rules, a real `NetShareEnum` on this computer by name, IPv4 and IPv6): no blocker; three small things fixed (the share name with a slash, a refused list that the second way answers with nothing now reports the refusal, an end for a server that never finishes its list).
 
 ### Not part of this change
 
 - `..` / Backspace at the root of `\\server\share` still does nothing without the plug-in (it could offer the same list - noted as a follow-up).
-- A server that wants a name and password before it gives its share list: the Windows error is shown; a full `\\server\share` path offers the sign-in as before.
+- A server that wants a name and password before it gives its share list: the Windows error is shown; a full `\\server\share` path offers the sign-in as before. (This path was read and reviewed, not run - there is no such server in the test environment.)
+- One honest note on the comparison with the plug-in: if you press Esc while a server does not answer and close the program within the network timeout, the abandoned request is ended with the program's other helper threads. That is how the core's own path check works too; it is not the plug-in's leak at every exit, but it is the same kind of forced end, and it is recorded.
 
 The fix will be part of **Tandem Commander 0.1.10**.

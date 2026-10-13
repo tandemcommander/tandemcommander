@@ -28,9 +28,12 @@ All in `src/plugins/regedt`, no new strings, no interface change:
 - the selection texts (`N selected keys / values`, the size prefix) are loaded as UTF-8;
 - the name of the `(Default)` value is UTF-8 like every other name the plug-in gives to the panel (also inside the overwrite question of a copy/move);
 - the preview of text values (`REG_SZ`, `REG_EXPAND_SZ`, `REG_MULTI_SZ`) is UTF-8; a long text ends with `...` after a whole character (it used to be cut at a byte position);
-- the date and time of a key come from the wide locale functions.
+- the date and time of a key come from the wide locale functions;
+- *Copy Name*, *Copy Full Name* and *Copy Path* put the text on the clipboard as Unicode (a name with accented letters was copied garbled), and the Find window shows a size of 1,000 and more with the right group separator.
 
-The last three were found by an independent review of the first version of the fix - they sit in the same information line and had the same cause.
+The three before the last were found by an independent review of the first version of the fix - they sit in the same information line and had the same cause. The last one was found by a second, independent verification of the finished fix.
+
+One visible difference besides the encoding: the preview of a text value is limited to 199 bytes of UTF-8 (it was 199 characters), so a long text with many accented letters ends with `...` earlier.
 
 ### Tests
 
@@ -38,8 +41,8 @@ An automated probe drives the program on a hidden desktop in each of the nine sh
 
 | Build | Result |
 |---|---|
-| 0.1.9 | 48 pass, **33 fail** (exactly the rows listed above) |
-| with the fix | **81 pass, 0 fail** |
+| 0.1.9 | 48 pass, **33 fail** (the rows listed above, and the 320-byte text in every language) |
+| with the fix (run again on a clean rebuild of the final code) | **81 pass, 0 fail** |
 | the fix with the Find window line as in the proposed patch | Find window fails in Czech, German, Slovak |
 
 A static check confirms that all eleven translations of `KEY` in the repository fit whole.
@@ -47,6 +50,7 @@ A static check confirms that all eleven translations of `KEY` in the repository 
 ### Left out on purpose
 
 - Column *names* (`Type/Date`, `Size`, ...) are code-page text in the whole program (the core's own columns too) and are shown correctly wherever the language fits the Windows code page; that is a separate, program-wide matter.
-- The plug-in's message boxes that put a registry name into a translated sentence belong to the class described in #7 and are handled there.
+- The plug-in's message boxes that put a registry name into a translated sentence belong to the class described in #7; five of them are handled there. Two older ones are **not** fixed yet and are recorded as follow-up work: the question whether to create a missing target key (Copy / Move) and the plug-in's general error box show an empty or cut text when the name has a letter outside ASCII.
+- The clipboard commands above could not be checked by the automated probe (it has no clipboard); they are checked by hand before the release.
 
 The fix will be part of **Tandem Commander 0.1.10**.

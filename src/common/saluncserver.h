@@ -68,6 +68,17 @@ inline BOOL SalUncShareOffered(DWORD type)
     return (type & SALUNC_STYPE_MASK) == SALUNC_STYPE_DISKTREE;
 }
 
+// A share name a path can hold: not empty, no backslash and no slash (both are
+// separators for the path code), not "." or ".." (the path code would resolve
+// them away). Windows servers never report such a name; one from a foreign
+// server ("a/b") is left out of the list rather than offered and then opened
+// as "\\server\a\b".
+inline BOOL SalUncShareNameUsable(const char* name)
+{
+    return name != NULL && name[0] != 0 && strchr(name, '\\') == NULL && strchr(name, '/') == NULL &&
+           strcmp(name, ".") != 0 && strcmp(name, "..") != 0;
+}
+
 // Hidden: a special (administrative) share or a name ending with '$'.
 inline BOOL SalUncShareHidden(const char* name, DWORD type)
 {
@@ -87,15 +98,18 @@ inline int SalUncShareCompare(const char* nameA, BOOL hiddenA, const char* nameB
 }
 
 // "\\server\share" into 'buf'. FALSE (and an empty 'buf') when a part is
-// missing, when 'share' holds a backslash, or when the result does not fit -
-// the caller refuses the path then; it is never shortened.
+// missing, when a part holds a backslash or a slash (the path code reads both
+// as a separator, so "a/b" would open another place than the one offered), or
+// when the result does not fit - the caller refuses the path then; it is
+// never shortened.
 inline BOOL SalUncBuildSharePath(const char* server, const char* share, char* buf, int bufSize)
 {
     if (buf == NULL || bufSize <= 0)
         return FALSE;
     buf[0] = 0;
     if (server == NULL || share == NULL || server[0] == 0 || share[0] == 0 ||
-        strchr(server, '\\') != NULL || strchr(share, '\\') != NULL)
+        strchr(server, '\\') != NULL || strchr(share, '\\') != NULL ||
+        strchr(server, '/') != NULL || strchr(share, '/') != NULL)
         return FALSE;
     size_t serverLen = strlen(server);
     size_t shareLen = strlen(share);

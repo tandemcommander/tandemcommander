@@ -1,6 +1,6 @@
 mixed_probe (feature 127, issue #7), expect: fixed, language: czech
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-13 08:17; desktop 'tc_probe_23044'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Date    : 2026-10-13 11:10; desktop 'tc_probe_32828'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
 Fixture : data: 3 accented files + 'denied' (listing denied: True); big: sparse 12 GB 'P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148 01.bin'; Windows text for error 5: '(5) P\u0159\u00EDstup byl odep\u0159en'
 
 LOG        ROWS   PASS        found 3 files; log rows 1: Chyba ## Chyba p\u0159i \u010Dten\u00ED adres\u00E1\u0159e: (5) P\u0159\u00EDstup byl odep\u0159en.   ## C:\Users\pavel\AppData\Local\Temp\tc127\data\denied; expected the text 'Chyba p\u0159i \u010Dten\u00ED adres\u00E1\u0159e: (5) P\u0159\u00EDstup byl odep\u0159en' for ...\denied
@@ -18,6 +18,16 @@ COPYNAME   DISK   NOT DRIVEN  the clipboard holds data that cannot be saved and 
 COPYNAME   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 REGDEL     TEXT   PASS        boxes: Opravdu chcete odstranit adres\u00E1\u0159 "P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148"? || Kl\u00ED\u010D "P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148" nen\u00ED pr\u00E1zdn\u00FD.\u000AChcete kl\u00ED\u010D odstranit?; expected the question 'Kl\u00ED\u010D "P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148" nen\u00ED pr\u00E1zdn\u00FD.\u000AChcete kl\u00ED\u010D odstranit?'
 REGDEL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VIEWFIND   TEXT   PASS        box text 'Nelze naj\u00EDt \u0159et\u011Bzec '\u017Elu\u0165ou\u010Dk\u00FD'.'; expected 'Nelze naj\u00EDt \u0159et\u011Bzec '\u017Elu\u0165ou\u010Dk\u00FD'.'; boxes: [Naj\u00EDt] Nelze naj\u00EDt \u0159et\u011Bzec '\u017Elu\u0165ou\u010Dk\u00FD'.
+VIEWFIND   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REGEXP     TEXT   PASS        box text '\u0158et\u011Bzec '\u017E(' nen\u00ED platn\u00FD regul\u00E1rn\u00ED v\u00FDraz.\u000AChyba: Nep\u00E1ruj\u00EDc\u00ED ().'; expected to start with '\u0158et\u011Bzec '\u017E(' nen\u00ED platn\u00FD regul\u00E1rn\u00ED v\u00FDraz.\u000AChyba: ' and to go on with the reason, readable; boxes: [Chyba p\u0159i hled\u00E1n\u00ED souboru] \u0158et\u011Bzec '\u017E(' nen\u00ED platn\u00FD regul\u00E1rn\u00ED v\u00FDraz.\u000AChyba: Nep\u00E1ruj\u00EDc\u00ED ().
+REGEXP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PACKERR    TEXT   PASS        box text 'Nelze spustit archiva\u010Dn\u00ED program \u201EC:\Users\pavel\AppData\Local\Temp\tc127\prg P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148\7z.exe\u201C. Do\u0161lo k n\u00E1sleduj\u00EDc\u00ED chyb\u011B: System error 216, text description is not available.'; expected to start with 'Nelze spustit archiva\u010Dn\u00ED program \u201EC:\Users\pavel\AppData\Local\Temp\tc127\prg P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148\7z.exe\u201C. Do\u0161lo k n\u00E1sleduj\u00EDc\u00ED chyb\u011B: ' and to go on with the reason (e.g. '(193) %1 nen\u00ED platn\u00E1 aplikace typu Win32'); boxes: [Chyba komprim\u00E1toru] Nelze spustit archiva\u010Dn\u00ED program \u201EC:\Users\pavel\AppData\Local\Temp\tc127\prg P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148\7z.exe\u201C. Do\u0161lo k n\u00E1sleduj\u00EDc\u00ED chyb\u011B: System error 216, text description is not available.
+PACKERR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Clipboard: cannot read (Exception calling "GetDataObject" with "0" argument(s): "Po?adovan? operace se schr?nkou se nezda?ila.") - the paste rows are not driven
+CLIPMSG    TEXT   NOT DRIVEN  no clipboard that can be saved and restored (the hidden desktop has none)
+Clipboard: cannot read (Exception calling "GetDataObject" with "0" argument(s): "Po?adovan? operace se schr?nkou se nezda?ila.") - the paste rows are not driven
+CLIPREG    NAME   NOT DRIVEN  no clipboard that can be saved and restored (the hidden desktop has none)
 Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
 
-Rows: PASS 13, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 19, FAIL 0, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True

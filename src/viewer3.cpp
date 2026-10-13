@@ -1362,7 +1362,15 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 {
                     char buf[500];
                     if (RegExp.GetPattern() != NULL)
-                        sprintf(buf, LoadStr(IDS_INVALIDREGEXP), RegExp.GetPattern(), RegExp.GetLastErrorText());
+                    {
+                        // the pattern is UTF-8: the template too, and the error text (a LoadStr
+                        // text, code page) is converted (feature 127)
+                        char* errU8 = SalLegacyToU8Alloc(RegExp.GetLastErrorText());
+                        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_INVALIDREGEXP), RegExp.GetPattern(), errU8 != NULL ? errU8 : "");
+                        SalU8TrimIncompleteTail(buf);
+                        if (errU8 != NULL)
+                            free(errU8);
+                    }
                     else
                         strcpy(buf, RegExp.GetLastErrorText());
                     SalMessageBox(HWindow, buf, LoadStr(IDS_FINDTITLE), MB_OK | MB_ICONEXCLAMATION);
@@ -1543,7 +1551,9 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 if (!noNotFound)
                 {
                     char buff[5000];
-                    sprintf(buff, LoadStr(FindDialog.Regular ? IDS_FIND_NOREGEXPMATCH : IDS_FIND_NOMATCH), FindDialog.Text);
+                    // the searched text is UTF-8, so is the template (feature 127)
+                    _snprintf_s(buff, _TRUNCATE, LoadStrU8(FindDialog.Regular ? IDS_FIND_NOREGEXPMATCH : IDS_FIND_NOMATCH), FindDialog.Text);
+                    SalU8TrimIncompleteTail(buff);
                     SalMessageBox(HWindow, buff, LoadStr(IDS_FINDTITLE), MB_OK | MB_ICONINFORMATION | MSGBOXEX_SILENT);
                 }
             }

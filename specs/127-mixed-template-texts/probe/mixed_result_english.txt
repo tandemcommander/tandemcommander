@@ -1,10 +1,13 @@
 mixed_probe (feature 127, issue #7), expect: fixed, language: english
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-13 08:18; desktop 'tc_probe_29144'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Date    : 2026-10-13 10:53; desktop 'tc_probe_20280'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
 Fixture : data: 3 accented files + 'denied' (listing denied: True); big: sparse 12 GB 'P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148 01.bin'; Windows text for error 5: '(5) P\u0159\u00EDstup byl odep\u0159en'
 
 LOG        ROWS   PASS        found 3 files; log rows 1: Error ## Error reading directory: (5) P\u0159\u00EDstup byl odep\u0159en.   ## C:\Users\pavel\AppData\Local\Temp\tc127\data\denied; expected the text 'Error reading directory: (5) P\u0159\u00EDstup byl odep\u0159en' for ...\denied
 LOG        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TITLE      TEXT   PASS        the Find window's title while it searches: 'Find [searching *.bin;\u017E*.\u0159x]'; holds the mask '*.bin;\u017E*.\u0159x' exactly: True
+STATUS     LINE   PASS        expected 'Searching: ...\P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148 01.bin': exact; recognized (1 captures): Searching: C:\Users\pavel\AppData\Local\Temp\tc127\big\P\u015911i\u0161 \u017Elu\u0165oucky kun Ol .bin | Searching: \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148 Ol .bin | Searching: C:\Users\pavel\AppData\Local\Temp\tc127\big\P\u015911i\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148 Ol .bin
+STATUS     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 BOX        TEXT   PASS        window text equal to the expected text: True; window text: 'Cannot read directory "C:\Users\pavel\AppData\Local\Temp\tc127\data\denied".\u000A(5) P\u0159\u00EDstup byl odep\u0159en.\u000A'; expected: 'Cannot read directory "C:\Users\pavel\AppData\Local\Temp\tc127\data\denied".\u000A(5) P\u0159\u00EDstup byl odep\u0159en'
 BOX        LOOK   PASS        drawn: the template's words exact, the Windows error text exact; recognized: Error | x | Cannot read directory 'C: | (5) P\u0159\u00EDstup byl odep\u0159en. | Error | x | Cannot read directory | (5) P\u0159\u00EDstup byl odep\u0159en. | Skip | Skip All | Cancel
 BOX        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -13,6 +16,12 @@ PROGRESS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0
 Clipboard: cannot read (Exception calling "GetDataObject" with "0" argument(s): "Po?adovan? operace se schr?nkou se nezda?ila.") - the paste rows are not driven
 COPYNAME   DISK   NOT DRIVEN  the clipboard holds data that cannot be saved and restored
 COPYNAME   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VIEWFIND   TEXT   PASS        box text 'Cannot find the string '\u017Elu\u0165ou\u010Dk\u00FD'.'; expected 'Cannot find the string '\u017Elu\u0165ou\u010Dk\u00FD'.'; boxes: [Find] Cannot find the string '\u017Elu\u0165ou\u010Dk\u00FD'.
+VIEWFIND   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REGEXP     TEXT   PASS        box text 'The string '\u017E(' is not a valid regular expression.\u000AError: Unmatched ().'; expected to start with 'The string '\u017E(' is not a valid regular expression.\u000AError: ' and to go on with the reason, readable; boxes: [Error Finding File] The string '\u017E(' is not a valid regular expression.\u000AError: Unmatched ().
+REGEXP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PACKERR    TEXT   PASS        box text 'Unable to start the archiver "C:\Users\pavel\AppData\Local\Temp\tc127\prg P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148\7z.exe". The error was: System error 216, text description is not available.'; expected to start with 'Unable to start the archiver "C:\Users\pavel\AppData\Local\Temp\tc127\prg P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148\7z.exe". The error was: ' and to go on with the reason (e.g. '(193) %1 nen\u00ED platn\u00E1 aplikace typu Win32'); boxes: [Packer Error] Unable to start the archiver "C:\Users\pavel\AppData\Local\Temp\tc127\prg P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148\7z.exe". The error was: System error 216, text description is not available.
+PACKERR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
 
-Rows: PASS 8, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 17, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

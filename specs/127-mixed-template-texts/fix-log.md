@@ -108,3 +108,79 @@ probe library refuses to overwrite. Reviewed by reading (the name block appends 
 byte-wise and never compares against them); owed to a person: Slovak, Ctrl+C / Ctrl+V on a
 file in its own folder, the new name reads `a - Kópia.txt`. Also owed: the queued-operation
 title (`(čekající) Kopírovat ...`) on a real screen.
+
+## Second verification (2026-10-13, asked for by the maintainer)
+
+Everything was built again from scratch (`build.cmd rebuild full`, Debug and Release), the
+probes were run again on the fresh build and on the 0.1.9 control, and one independent agent
+per feature was told to refute the fix and to write tests of its own.
+
+**The completeness claim was wrong.** The agent wrote its own scanners and found compositions
+of the same class that `scan_mixed.py` cannot see (it looks at printf calls with an inline
+`LoadStr` and classifies by argument names). Fixed now, all in the core:
+
+| Place | Was (Czech) | Change |
+|---|---|---|
+| `viewer3.cpp` Find in the viewer, text not found | `Nelze najít řetězec 'Ĺľlu...'.` | `LoadStrU8` |
+| `viewer3.cpp`, `finddlg1.cpp` broken regular expression | the pattern garbled | `LoadStrU8`; the reason (a `LoadStr` text) converted with `SalLegacyToU8Alloc` |
+| `salamdr2.cpp` unknown variable / environment variable (3) | the typed name garbled | `LoadStrU8`; the 200-byte buffer could overflow, now `MAX_PATH + 200` and bounded |
+| `salamdr1.cpp` `PackErrorHandler` - every message of the external archivers (89 calls) | the program's path, the archive name and the Windows reason garbled (`FormatMessage` A) | UTF-8 template, inserts normalized, expanded by the new `src/common/salinserts.h` (never cut: the buffer is as long as the text) |
+| `msgbox.cpp` Ctrl+C in a message box | caption (code page) + text (UTF-8) in one buffer: the whole body copied garbled whenever the caption had an accented letter - **made visible by 127** for the boxes it fixed | caption and text normalized piece by piece; no `wsprintf` (1,024-character limit) for them |
+
+saltests `TestInserts127` (the expansion against `FormatMessageW`, UTF-8, repeated and missing
+inserts, a 70,000-byte insert). The follow-up was reviewed by another agent: 279,152 random
+templates expanded the old and the new way without a difference (apart from CR LF), all 89
+callers pass enough arguments, no translation uses another insert form.
+
+Probe, three new rows (`VIEWFIND`, `REGEXP`, `PACKERR` - the archiver pointed to a file that is
+no program in a folder with accented letters): **0.1.9 fails all three**
+(`probe/mixed_result_before_v019_new_rows.txt`), the fixed build passes. Whole probe on the
+final build: Czech **PASS 19, FAIL 0**, English PASS 17, FAIL 0; not driven: the clipboard rows.
+
+Still open, recorded in NEXT-WORK D:
+
+- the enabled plug-ins: the agent's scanner lists 428 `LoadStr` compositions, about 100 outside
+  FTP with a name or an error text (`checksum/dialogs.cpp:1129` overwrite question,
+  `7zip/7zip.cpp:1538`, `7zip/extract.cpp`, `zip/main.cpp:734`, SFTP, ZIP titles) - deferred as
+  before, but the answer to the issue now says it in numbers;
+- two inserts of the archivers' messages are not valid UTF-8 and are read as code page
+  (`pack1.cpp:288` a command line cut by `lstrcpyn`, `pack2.cpp:355` a UTF-8 path joined with an
+  OEM name) - as wrong as before;
+- `_TRUNCATE` without a tail trim at `find.cpp:858/910/1441/1708/1750`, `dialogs3.cpp:1312`,
+  `icncache.cpp:1239/1286`, `mainwnd4.cpp:259`: enough room for the eight shipped languages,
+  not for Russian / Ukrainian (disabled) with a long error text;
+- `AssignHotKeys` (`fileswn5.cpp`): with UTF-8 templates `&` can land inside a multi-byte
+  letter once the ASCII letters are used up (about 15-20 external viewers);
+- `GetErrorText` has no text for errors whose Windows message has inserts (216: "System error
+  216, text description is not available") - seen in the `PACKERR` row;
+- `check_encoding.py` at `TOTAL: 0` proves less than the first answer said (argument-name
+  heuristic, 14-line sink window, no `FormatMessage` / `strcat` / `CSalHeapString::Printf`, no
+  plug-ins, no reverse rule);
+- never driven: the `(čekající) <subject>` branch of the progress title (the branch the first
+  review's blocker was about), Ctrl+C in a message box, the copy name - all owed to a person.
+
+Wrong in the first answer, corrected: "every such composition ... the inventory lists exactly
+these 18 and nothing else"; "the target of a junction in Properties" (the changed place is the
+Copy / Move question about a link's content).
+
+### The visible desktop (allowed by the maintainer during the verification)
+
+The maintainer allowed the probes to run on the visible desktop, to drive what the hidden one
+cannot. Rows for it were written and are in the probe, but **they could not be driven: the
+workstation was locked** (the active window was the lock screen, `LockApp`). On a locked
+session `OpenClipboard` answers "access denied" (96 tries) and no window of the session can be
+made the active one, so a real key cannot be sent to the program safely - the probe refuses to
+press a key while another window is active. Record: `probe/mixed_result_visible_desktop_locked.txt`.
+To run them, unlocked and with nothing important on the clipboard:
+
+```powershell
+$env:TC_PROBE_ALLOW_VISIBLE_DESKTOP = '1'
+powershell -NoProfile -STA -ExecutionPolicy Bypass -File specs\127-mixed-template-texts\probe\mixed_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Only COPYNAME,CLIPMSG,CLIPREG
+```
+
+Rows: `COPYNAME` (add `-Lang slovak` for `a - Kópia.txt`), `CLIPMSG` (Ctrl+C in the error box of
+a Copy: caption and text on the clipboard, readable), `CLIPREG` (Registry Editor, *Copy Name* on
+a key with an accented name and on the translated `(Default)` value - feature 124's follow-up).
+The probe saves the clipboard's text and puts it back; with other data on the clipboard it
+does not run these rows. On the hidden desktop the three are NOT DRIVEN, so the whole probe
+reads **PASS 19, FAIL 0, NOT DRIVEN 3** there.

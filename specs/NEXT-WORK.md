@@ -288,6 +288,39 @@ Code work an agent can do:
   code-page tables and can put `&` inside a UTF-8 sequence; (5) the Registry Editor's `%ls`
   messages (`fs5.cpp`, `ErrorHelper`) are consistently code page but lose letters outside it.
 - Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124).
+- **Found by the second verification of 124-128 (2026-10-13)**, most visible first:
+  1. Registry Editor, `%ls` messages: `fs5.cpp:869` (`IDS_CREATETARGET` - "create the target
+     key?"), `fs5.cpp:1014` and `ErrorHelper` (`regedt.cpp`) format with `%ls` in the C locale;
+     a name with a non-ASCII letter gives an **empty Yes/No box** or a text cut at that letter.
+     Compose wide (`LoadStrW` + `_vsnwprintf_s`) and show with the wide message box.
+  2. Mixed templates in the enabled plug-ins (127): about 100 compositions outside FTP with a
+     name or an error text - `checksum/dialogs.cpp:1129` (overwrite question),
+     `7zip/7zip.cpp:1538`, `7zip/extract.cpp:567/652`, `zip/main.cpp:734`,
+     `zip/extract.cpp:71/225`, `zip/add.cpp:84/285/646`, `zip/dialogs3.cpp:192`,
+     `sftp/fs.cpp:663/908/936`, `sftp/operats.cpp`; FTP 86 more. One plug-in at a time, each with
+     a probe row in its language.
+  3. The shortcut's own path (128): `Execute` (`fileswn2.cpp`) appends the name with a limit of
+     `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";
+     `FocusShortcutTarget` (`fileswn0.cpp`) falls back to a `CP_ACP` conversion that cuts a
+     path of 260+ units.
+  4. The archivers' messages (127): two inserts are not UTF-8 - `pack1.cpp:288` (a command line
+     cut by `lstrcpyn`, possibly inside a letter) and `pack2.cpp:355` (a UTF-8 path joined with
+     an OEM name for `PACKLIST_OEM`).
+  5. `GetErrorText` gives "System error N, text description is not available" for errors whose
+     Windows text has inserts (216, 193 ...): `FormatMessage` needs `FORMAT_MESSAGE_IGNORE_INSERTS`.
+  6. The share list (125): the job of a worker that is still in the network call at exit is
+     not freed (ended by `TerminateAuxThreads`; a Debug leak report after Esc on a dead server
+     and an immediate exit) - give the exit path a way to free it, or wait for the worker
+     briefly; a share name near the path limit in a non-Latin script is offered and then
+     refused with "A share name is missing" (say "too long" instead).
+  7. `SHGetFileInfoA` texts read as UTF-8 later: `icncache.cpp:709` (type name of folders),
+     `drivelst.cpp:1115` (display name of removable drives) - suspected, measure first.
+  8. `_TRUNCATE` sites of 127 without a tail trim (`find.cpp:858/910/1441/1708/1750`,
+     `dialogs3.cpp:1312`, `icncache.cpp:1239/1286`, `mainwnd4.cpp:259`): fine for the shipped
+     languages, short for Russian / Ukrainian if they are enabled; `salamdr2.cpp` cuts a
+     variable name at `MAX_PATH - 1` bytes before it is put into the message.
+  9. `msgbox.cpp` copy to the clipboard: `URL` / `URLText` (plug-ins only) are not normalized
+     and go through `wsprintf` (1,024 characters).
 
 Steps owed to a person:
 
@@ -302,6 +335,17 @@ Steps owed to a person:
   data); the title of a queued Copy (`(čekající) Kopírovat ...`).
 - 126: a start of the 0.1.10 build on Windows 7 SP1 / Server 2008 R2 SP1 (the reporter of #6 is
   asked); not testable in the development environment.
+- **Rows written for the visible desktop, not driven yet** (the workstation was locked during
+  the second verification; commands in the *Second verification* sections of
+  `specs/125-*/fix-log.md` and `specs/127-*/fix-log.md`): `unc_probe.ps1 -Only W2` (a real Esc
+  in the wait window, then an immediate exit) and `mixed_probe.ps1 -Only
+  COPYNAME,CLIPMSG,CLIPREG`. Run them unlocked, or do the same by hand:
+- Clipboard rows (the hidden desktop has no clipboard), all in Czech:
+  Registry Editor, *Copy Name* on `(Výchozí)` and on a key `příliš` -> paste gives the exact
+  text (124); Ctrl+C in an error box that names a file (e.g. Copy of a folder with an
+  unreadable subfolder) -> the pasted text is readable, caption and body (127).
+- 125: Esc in the wait window on a server that does not answer (`\\10.255.255.1\`), then exit
+  at once: the program ends without a hang (a Debug build may report a leak, see above).
 
 ## R. Release 0.1.8 — ✅ PUBLISHED 2026-09-20
 

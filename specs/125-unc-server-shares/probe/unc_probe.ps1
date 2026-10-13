@@ -331,6 +331,85 @@ function Row-CmdLine {
     finally { Set-Seam '' '' ''; if ($id) { End-Row 'A1' $id $fatal $before } }
 }
 
+# W2: Esc in the wait window - a real key (the program reads the keyboard state), so only on
+# the visible desktop and only while the program's own window is the active one; then the
+# program is closed at once, the abandoned request still running (seam delay 8 s)
+if (-not ('Key125' -as [type])) {
+    Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class Key125
+{
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
+    [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint a, uint b, bool attach);
+    [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
+    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    public static uint ForegroundPid() { uint pid; GetWindowThreadProcessId(GetForegroundWindow(), out pid); return pid; }
+    // makes the window the active one: the right to do so is borrowed from the thread that has it now
+    public static void Activate(IntPtr h)
+    {
+        uint pid; uint fg = GetWindowThreadProcessId(GetForegroundWindow(), out pid);
+        uint me = GetCurrentThreadId();
+        bool attached = fg != 0 && fg != me && AttachThreadInput(me, fg, true);
+        BringWindowToTop(h); SetForegroundWindow(h);
+        if (attached) AttachThreadInput(me, fg, false);
+    }
+    public static void Press(byte vk) { keybd_event(vk, 0, 0, UIntPtr.Zero); System.Threading.Thread.Sleep(60); keybd_event(vk, 0, 2, UIntPtr.Zero); }
+}
+"@
+}
+function Row-WaitEsc {
+    if (-not (Want 'W2')) { return }
+    if ($env:TC_PROBE_ALLOW_VISIBLE_DESKTOP -ne '1') { Row 'W2' 'ESC' 'NOT DRIVEN' 'a real Esc key needs the visible desktop'; return }
+    $before = Reports; $id = 0; $fatal = $null
+    try {
+        Set-Seam 'DATA|apps' '8000' ''
+        $id = Start-P
+        $loc0 = Get-Loc $id
+        [Key125]::Activate((Get-Main $id)); Start-Sleep -Milliseconds 400
+        Type-Path $id '\\tcprobe125\'
+        $sw = [Diagnostics.Stopwatch]::StartNew(); $w = $null
+        while ($sw.Elapsed.TotalSeconds -lt 5 -and -not $w) {
+            $w = @([Drv098f]::Top([uint32]$id) | Where-Object { [Drv098f]::Cls($_) -eq $WaitClass }) | Select-Object -First 1
+            if (-not $w) { Start-Sleep -Milliseconds 100 }
+        }
+        if (-not $w) { Row 'W2' 'ESC' 'FAIL' 'no wait window within 5 s'; return }
+        if ([Key125]::ForegroundPid() -ne [uint32]$id) { [Key125]::Activate((Get-Main $id)); Start-Sleep -Milliseconds 400 }
+        if ([Key125]::ForegroundPid() -ne [uint32]$id) {
+            Row 'W2' 'ESC' 'NOT DRIVEN' 'the program under test is not the active window - the key is not pressed into another program'
+            $menu = Wait-Menu $id 30; if ($menu -ne [IntPtr]::Zero) { Menu-Key $menu 0x1B }
+            $r = Serve $id 20; $fatal = $r.Fatal
+            return
+        }
+        Start-Sleep -Milliseconds 300
+        $pressedAt = $sw.Elapsed.TotalSeconds
+        [Key125]::Press(0x1B)
+        $gone = -1
+        while ($sw.Elapsed.TotalSeconds -lt ($pressedAt + 4)) {
+            if (@([Drv098f]::Top([uint32]$id) | Where-Object { [Drv098f]::Cls($_) -eq $WaitClass }).Count -eq 0) { $gone = $sw.Elapsed.TotalSeconds - $pressedAt; break }
+            Start-Sleep -Milliseconds 50
+        }
+        Start-Sleep -Milliseconds 700
+        $menus = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq $MenuClass }).Count
+        $dlgs = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and [Drv098f]::Txt($_) -eq 'Change Directory' })
+        $loc = Get-Loc $id
+        Row 'W2' 'ESC' (V ($gone -ge 0 -and $gone -lt 2 -and $menus -eq 0 -and $dlgs.Count -eq 1 -and $loc -ceq $loc0)) ("Esc {0:N1} s after the wait window: the wait window closed after {1:N2} s (the answer would come after 8 s); share list shown: {2}; Change Directory dialog back: {3}; location '{4}' (before '{5}')" -f $pressedAt, $gone, $menus, $dlgs.Count, (Esc $loc), (Esc $loc0))
+        foreach ($d in $dlgs) { Close-Win $d }
+        Start-Sleep -Milliseconds 400
+        # the request is still out (about 6 s left): close the program now
+        $atClose = $sw.Elapsed.TotalSeconds
+        [void][Drv098f]::PostMessageW((Get-Main $id), 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+        $p = $script:Procs[$id]; $ended = $p.WaitForExit(6000)
+        Row 'W2' 'EXIT' (V ($ended -and $p.ExitCode -eq 0 -and ($sw.Elapsed.TotalSeconds -lt 8.4))) ("closed {0:N1} s after the start of the request (answer due at 8.4 s): ended {1}, exit code {2}, {3:N1} s after the close" -f $atClose, $ended, $(if ($ended) { $p.ExitCode } else { 'n/a' }), ($sw.Elapsed.TotalSeconds - $atClose))
+        if ($ended) { $id = 0 }                                  # (ended by this row: no END row)
+    }
+    catch { Row 'W2' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { Set-Seam '' '' ''; if ($id) { End-Row 'W2' $id $fatal $before } }
+}
+
 # W1: a slow server (seam delay 6 s): the wait window appears, then the menu
 function Row-Wait {
     if (-not (Want 'W1')) { return }
@@ -414,6 +493,7 @@ try {
         Row-Error 'N1' '\\tcprobe125\' 'IPC$*2147483651|HP LaserJet*1' '' 'A share name is missing'
         Row-Error 'S4' '\\' '' '' 'A server name is missing'
         Row-Wait
+        Row-WaitEsc
         Row-CmdLine
         Row-Close 'C1' ''
         Row-Close 'C2' '8000'

@@ -25,6 +25,7 @@
 #include "cache.h"
 #include "dialogs.h"
 #include "gui.h"
+#include "salinserts.h" // feature 127
 #include "tasklist.h"
 #include <uxtheme.h>
 #include "olespy.h"
@@ -3148,18 +3149,42 @@ void InitDefaultDir()
 BOOL PackErrorHandler(HWND parent, const WORD err, ...)
 {
     va_list argList;
-    char buff[1000];
     BOOL ret = FALSE;
 
     parent = parent == NULL ? (MainWindow != NULL ? MainWindow->HWindow : NULL) : parent;
 
+    // Feature 127: the inserts are names, paths and GetErrorText texts (UTF-8), so the template
+    // is read as UTF-8 and the message is composed here - FormatMessage (an A call) would read
+    // the bytes in the code page. Every template has plain %1..%9 string inserts only. An insert
+    // that still comes in the code page (the LoadStr texts of the archivers' return codes) is
+    // converted on its own. The message is never cut: the buffer is as long as the text.
+    const char* tmpl = LoadStrU8(err);
+    int count = SalInsertsCount(tmpl);
+    char* inserts[9];
     va_start(argList, err);
-    FormatMessage(FORMAT_MESSAGE_FROM_STRING, LoadStr(err), 0, 0, buff, 1000, &argList);
-    if (err < IDS_PACKQRY_PREFIX)
-        SalMessageBox(parent, buff, LoadStr(IDS_PACKERR_TITLE), MB_OK | MB_ICONEXCLAMATION);
-    else
-        ret = SalMessageBox(parent, buff, LoadStr(IDS_PACKERR_TITLE), MB_OKCANCEL | MB_ICONQUESTION) == IDOK;
+    int i;
+    for (i = 0; i < count; i++)
+    {
+        const char* arg = va_arg(argList, const char*);
+        inserts[i] = SalLegacyToU8Alloc(arg != NULL ? arg : "");
+    }
     va_end(argList);
+    char* buff = SalInsertsExpandAlloc(tmpl, inserts, count);
+    if (buff != NULL)
+    {
+        if (err < IDS_PACKQRY_PREFIX)
+            SalMessageBox(parent, buff, LoadStr(IDS_PACKERR_TITLE), MB_OK | MB_ICONEXCLAMATION);
+        else
+            ret = SalMessageBox(parent, buff, LoadStr(IDS_PACKERR_TITLE), MB_OKCANCEL | MB_ICONQUESTION) == IDOK;
+        free(buff);
+    }
+    else
+        TRACE_E(LOW_MEMORY);
+    for (i = 0; i < count; i++)
+    {
+        if (inserts[i] != NULL)
+            free(inserts[i]);
+    }
     return ret;
 }
 

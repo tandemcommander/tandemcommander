@@ -5,6 +5,25 @@
 
 BOOL ExportStringsForViewerInASCII = TRUE;
 
+// Copies a panel name or path to the clipboard. These are UTF-8 (interface 104; the translated
+// "(Default)" name since feature 124) and the core's CopyTextToClipboard takes code-page text,
+// so the text goes there wide.
+static void CopyU8TextToClipboard(const char* text)
+{
+    int units = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0); // with the terminator
+    if (units <= 0)
+        return;
+    WCHAR* textW = (WCHAR*)malloc(units * sizeof(WCHAR));
+    if (textW == NULL)
+    {
+        Error(IDS_LOWMEM);
+        return;
+    }
+    if (MultiByteToWideChar(CP_UTF8, 0, text, -1, textW, units) > 0)
+        SG->CopyTextToClipboardW(textW, -1, FALSE, NULL);
+    free(textW);
+}
+
 // ****************************************************************************
 //
 // CPluginFSInterface - second part
@@ -1016,7 +1035,7 @@ MENU_TEMPLATE_ITEM PanelMenu[] =
 
     case CMD_COPYNAME:
     {
-        SG->CopyTextToClipboard(fd->Name, -1, FALSE, NULL);
+        CopyU8TextToClipboard(fd->Name);
         break;
     }
 
@@ -1024,10 +1043,7 @@ MENU_TEMPLATE_ITEM PanelMenu[] =
     {
         char path[MAX_PATH];
         if (GetCurrentPath(path) && SG->SalPathAppend(path, fd->Name, MAX_PATH))
-        {
-            SG->CopyTextToClipboard(*path == '\\' ? path + 1 : path, -1,
-                                    FALSE, NULL);
-        }
+            CopyU8TextToClipboard(*path == '\\' ? path + 1 : path);
         break;
     }
 
@@ -1035,10 +1051,7 @@ MENU_TEMPLATE_ITEM PanelMenu[] =
     {
         char path[MAX_PATH];
         if (GetCurrentPath(path))
-        {
-            SG->CopyTextToClipboard(*path == '\\' ? path + 1 : path, -1,
-                                    FALSE, NULL);
-        }
+            CopyU8TextToClipboard(*path == '\\' ? path + 1 : path);
         break;
     }
 

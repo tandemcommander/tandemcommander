@@ -69,3 +69,30 @@ tree looked through for other post-Windows-7 functions). Applied:
 Noted: `saltests` itself expects both functions (it runs on a supported Windows); the fake's
 "no package" answer differs from the real one (`ERROR_SUCCESS` with count 0) - the lookup
 refuses both and the live row covers the real one.
+
+## Second verification (2026-10-13, asked for by the maintainer)
+
+Everything was built again from scratch (`build.cmd rebuild full`, Debug and Release), the
+probes were run again on the fresh build and on the 0.1.9 control, and one independent agent
+per feature was told to refute the fix and to write tests of its own.
+
+The agent could not refute the change. Its own evidence: `salshell.cpp` compiled with
+`WINVER=0x0601` has neither function among its unresolved imports; `static_assert` of both
+pointer types against the `appmodel.h` prototypes; the late-bound addresses equal the statically
+bound ones; for all 153 package families installed on this machine plus two invented ones the
+result equals the direct API calls (155 of 155); 20,000 lookups leave the handle count unchanged.
+
+On the fresh Release tree, with the agent's independent import reader: `tandemcommander.exe`
+has 794 static imports and 12 delay-loaded (`winhttp`); **no file of the 218 imports either
+function**. `probe/package_live.ps1`: 5 of 5.
+
+Corrections:
+
+- "all 5,466 static imports of the Release tree" (section 6) is not a number that can be
+  reproduced: the tree has **5,289** import rows (static and delay-load together; the 189 `.slg`
+  files have no import table).
+- "No Windows 8 functions needed to start" is true for the program; two plug-ins (`codeview`,
+  `mdview`) import `EventSetInformation` and do not load on Windows 7 - the answer to the issue
+  says so, the changelog line now too.
+- Still not verified by anyone: a real start on Windows 7 SP1 (needs the Universal C Runtime,
+  KB2999226).

@@ -72,3 +72,35 @@ could use the helper; other A shell calls that return paths (`SHGetFolderPath` i
 Not driven: a real mouse double-click (it runs the same `Execute`); the reporter's own shortcut
 (asked in the answer to the issue); whether `GetPath` returns more than `MAX_PATH` characters
 for a very long target (the helper passes a large buffer; Microsoft documents `MAX_PATH`).
+
+## Second verification (2026-10-13, asked for by the maintainer)
+
+Everything was built again from scratch (`build.cmd rebuild full`, Debug and Release), the
+probes were run again on the fresh build and on the 0.1.9 control, and one independent agent
+per feature was told to refute the fix and to write tests of its own.
+
+Probe on the fresh build: **PASS 18, FAIL 0** (`probe/lnk_result_verify2.txt`); 0.1.9: FAIL 7.
+
+The agent could not refute the fix. Its own program: 28 real shortcuts, 617 checks - ASCII,
+Czech, Greek, CJK, emoji, an unpaired surrogate, a decomposed letter, 80 CJK letters (292
+bytes), UNC with Czech letters, a share root, `C:\`, shell objects (This PC, Control Panel:
+`S_FALSE`), a target that does not exist, a relative and an environment-variable target; exact
+fit / one byte short / size 1 for every case; the guard bytes around the buffer intact. With
+the A interface the same targets give error 123 in the core's path check - the diagnosis holds.
+No other cause of the report's box was found that a working shortcut can reach.
+
+Recorded in NEXT-WORK D (older limits next to the fix):
+
+- **the shortcut's own path** is limited to `MAX_PATH` **bytes** in `Execute`
+  (`fileswn2.cpp`, `SalPathAppend(fullName, fileName, MAX_PATH)`): a `.lnk` in a folder under
+  260 characters but over 260 UTF-8 bytes (about 130 accented or 85 CJK letters) gets "name too
+  long" where Explorer opens it; in `FocusShortcutTarget` a `.lnk` path of 260+ units falls to a
+  `CP_ACP` conversion that cuts it ("not a valid shortcut");
+- `SHGetFileInfoA` in `icncache.cpp:709` (the type name of folders) and `drivelst.cpp:1115`
+  (display name of removable drives) - code-page text read as UTF-8 later, suspected;
+- the drop-target readers keep their own `MAX_PATH`-byte limit (already recorded).
+
+Wrong in the first answer, corrected: the table row `\\server\sdílení\...` (the probe used
+`\\localhost\C$\...\Účetnictví` - the share name itself had no accent); "the shortcut's own
+name does not matter" (true for its letters, not for a very long path, see above); "one common
+rule" (two older readers for dropping remain).
