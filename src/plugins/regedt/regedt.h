@@ -186,8 +186,13 @@ struct CRegTypeText
 
 extern CRegTypeText RegTypeTexts[];
 
-extern char KeyText[10];
-extern int KeyTextLen;
+// the word shown instead of a size for a key (IDS_KEY). KeyText is UTF-8 - it goes to the
+// panel (Size column, information line), which takes UTF-8; KeyTextW is the resource text
+// itself, for the plugin's own wide windows (Find). Both hold the whole text of the language
+// module, or "KEY" when that text does not fit - never a shortened text (feature 124).
+extern char KeyText[100];
+extern WCHAR KeyTextW[32];
+extern int KeyTextLen; // bytes of KeyText
 
 struct CPredefinedHKey
 {
@@ -501,3 +506,7 @@ extern BOOL WindowsVistaAndLater;
 
 char* LoadStr(int resID);
 LPWSTR LoadStrW(int resID);
+// the text 'resID' as UTF-8, for texts handed to the panel (information line, names): TRUE when
+// 'buf' holds the whole text; FALSE when it does not fit into 'bufSize' bytes - 'buf' is then an
+// empty string, never a cut text (feature 124)
+BOOL LoadStrU8(int resID, char* buf, int bufSize);

@@ -548,7 +548,7 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                         if (*name == 0)
                         {
                             hasDefault = TRUE;
-                            file.Name = SG->DupStr(LoadStr(IDS_DEFAULTVALUE));
+                            file.Name = DupStrA(LoadStrW(IDS_DEFAULTVALUE)); // UTF-8 like every name given to the panel (feature 124)
                         }
                         else
                         {
@@ -585,16 +585,43 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                         }
                         case REG_EXPAND_SZ:
                         case REG_SZ:
+                        {
+                            // the preview of the text for the Data column and the information line:
+                            // UTF-8 (the panel takes UTF-8; code-page bytes came out as replacement
+                            // characters in the information line), at most MAX_DATASIZE bytes with
+                            // the terminator; a longer text ends with "..." after a whole character
+                            // (feature 124)
                             pd->Allocated = 1;
-                            pd->DataSize = (unsigned char)min(size / 2, MAX_DATASIZE);
-                            if (pd->DataSize)
+                            pd->DataSize = 0; // nothing to show until the preview is stored
+                            int units = (int)min(size / 2, MAX_DATASIZE);
+                            char preview[3 * MAX_DATASIZE + 4];
+                            int len = units > 0 ? WideCharToMultiByte(CP_UTF8, 0, (WCHAR*)data, units, preview, 3 * MAX_DATASIZE, NULL, NULL) : 0;
+                            int textLen = 0;
+                            while (textLen < len && preview[textLen] != 0)
+                                textLen++;
+                            BOOL cut = textLen == len && (DWORD)units < size / 2; // more text follows the units taken
+                            if (textLen > MAX_DATASIZE - 1)
+                                cut = TRUE;
+                            if (cut)
                             {
-                                pd->Data = (DWORD_PTR)malloc(pd->DataSize);
-                                WStrToStr((char*)pd->Data, pd->DataSize, (WCHAR*)data, pd->DataSize);
-                                if (pd->DataSize < size / 2)
-                                    strcpy((char*)pd->Data + pd->DataSize - 4, "...");
+                                int keep = min(textLen, MAX_DATASIZE - 4);
+                                while (keep > 0 && (preview[keep] & 0xC0) == 0x80)
+                                    keep--; // not inside a character
+                                memcpy(preview + keep, "...", 3);
+                                textLen = keep + 3;
+                            }
+                            preview[textLen] = 0;
+                            if (textLen > 0)
+                            {
+                                pd->Data = (DWORD_PTR)malloc(textLen + 1);
+                                if (pd->Data != 0)
+                                {
+                                    memcpy((char*)pd->Data, preview, textLen + 1);
+                                    pd->DataSize = (unsigned char)(textLen + 1);
+                                }
                             }
                             break;
+                        }
 
                         case REG_DWORD:
                             pd->Data = *(DWORD*)data;
@@ -649,7 +676,7 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                 {
                     if (!hasDefault)
                     {
-                        file.Name = SG->DupStr(LoadStr(IDS_DEFAULTVALUE));
+                        file.Name = DupStrA(LoadStrW(IDS_DEFAULTVALUE)); // UTF-8 like every name given to the panel (feature 124)
                         file.NameLen = strlen(file.Name);
                         file.Size = CQuadWord(0, 0);
                         file.LastWrite = time;

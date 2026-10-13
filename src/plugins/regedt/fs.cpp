@@ -49,8 +49,9 @@ CRegTypeText RegTypeTexts[] =
         {Str_REG_NONE, REG_NONE, 0, 0},
         {NULL, 0, 0, 0}};
 
-char KeyText[10];
-int KeyTextLen = 10;
+char KeyText[100] = "KEY";
+WCHAR KeyTextW[32] = L"KEY";
+int KeyTextLen = 3;
 
 CPredefinedHKey PredefinedHKeys[] =
     {
@@ -104,7 +105,17 @@ BOOL InitFS()
     Len_REG_SZ = (int)strlen(Str_REG_SZ);
     Len_REG_FULL_RESOURCE_DESCRIPTOR = (int)strlen(Str_REG_FULL_RESOURCE_DESCRIPTOR);
     Len_REG_RESOURCE_REQUIREMENTS_LIST = (int)strlen(Str_REG_RESOURCE_REQUIREMENTS_LIST);
-    lstrcpyn(KeyText, LoadStr(IDS_KEY), 10);
+    // the panel takes the Size column / information line text as UTF-8; the code-page text of
+    // LoadStr() came out as replacement characters in the information line (feature 124).
+    // A translation that does not fit is not cut - the English word stays.
+    LPCWSTR keyW = LoadStrW(IDS_KEY); // never NULL (a missing text gives an error text)
+    char keyU8[_countof(KeyText)];
+    if (wcslen(keyW) < _countof(KeyTextW) &&
+        WStrToU8(keyU8, _countof(keyU8), keyW) > 0)
+    {
+        wcscpy_s(KeyTextW, keyW);
+        strcpy_s(KeyText, keyU8);
+    }
     KeyTextLen = (int)strlen(KeyText);
 
     return TRUE;

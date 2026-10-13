@@ -46,8 +46,8 @@ inline DWORD StrToWStr(WCHAR* dest, int destSize, const char* sour)
 // UTF-8 <-> UTF-16 conversions for the Salamander interface: registry key and
 // value names are natively Unicode and every name/path crossing the plugin
 // interface is UTF-8 (interface 104). The WStrToStr/StrToWStr pair above stays
-// on the ANSI code page and serves the plugin's own A dialogs, the LoadStr
-// texts and the REG_SZ value data.
+// on the ANSI code page and serves the plugin's own A dialogs and the LoadStr
+// texts.
 inline DWORD WStrToU8(char* dest, int destSize, const WCHAR* sour, int sourLen)
 {
     int ret = WideCharToMultiByte(CP_UTF8, 0, sour, sourLen, dest, destSize, NULL, NULL);

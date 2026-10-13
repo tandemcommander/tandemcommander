@@ -1874,3 +1874,27 @@ a few early ones are out of sequence).
     download, a real installer update; at the next release the "newer" path in a Release build
     and one antivirus scan. Records: `specs/123-new-version-check/closing-report.md`,
     `fix-log.md`.
+- 124-regedt-key-text: **Registry Editor's panel texts are UTF-8** (GitHub issue #3, for 0.1.10).
+  The plug-in gave the panel code-page text where the core displays UTF-8: the word for a key
+  (`IDS_KEY`), the selection templates, the name of the `(Default)` value, the preview of text
+  values, date and time of a key. Measured on 0.1.9 first (nine languages): the **information
+  line** was garbled (it has no fallback), the **Size column was right** - a cell that is not
+  valid UTF-8 is drawn as code page (`fileswn4.cpp`) - so the report's "or the Size column" did
+  not reproduce, and the report's patch would have **broken the plug-in's Find window**, which
+  converts the same text with `CP_ACP` (built as a negative control: `KLĂŤÄŚ`). The fix keeps the
+  word twice (`KeyText` UTF-8, `KeyTextW` wide), never cut (a text that does not fit becomes
+  `KEY`); `LoadStrU8` local to the plug-in; the text-data preview is UTF-8 with `...` after a
+  whole character. The first version fixed only the key word and the selection text - the
+  **independent review found the rest of the same line** (`(Default)`, value data: wrong in all
+  nine languages, English included).
+  - **Reading owner-drawn text in a probe**: `specs/124-regedt-key-text/probe/shotocr_lib.ps1` -
+    `PrintWindow` (works on the hidden desktop), crop of a child window, `Windows.Media.Ocr`
+    (only the Czech recognizer is installed) at three sizes; verdict classes `exact`, `folded`
+    (diacritics), `near` (one letter, words of 12+ letters). U+FFFD is read as some other letter,
+    so garbled text does not match. Keep the crops and look at them; the recognizer returned
+    nothing for a short English line at one size.
+  - `LoadStrW` of the core never returns NULL or an empty text (a missing string gives
+    `ERROR LOADING WIDE STRING`). `tools/check_encoding.py` does not scan `plugins/`.
+  - View-mode commands: `CM_ACTIVEMODE_1 + template index`; Detailed is index 2 (2972).
+  - Probe `probe/regkey_probe.ps1`: 0.1.9 PASS 48 / FAIL 33, fixed PASS 81 / FAIL 0. Left out:
+    column names (code page in the whole program), the plug-in's message boxes (issue #7).

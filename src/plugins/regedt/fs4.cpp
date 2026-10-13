@@ -38,7 +38,8 @@ void WINAPI GetTypeText()
             (*TransferFileData)->LastWrite.dwLowDateTime != 0)
         {
             FileTimeToSystemTime(&(*TransferFileData)->LastWrite, &st);
-            len = GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE, &st, NULL, TransferBuffer, 50) - 1;
+            WCHAR dateW[50]; // the panel takes UTF-8 (feature 124)
+            len = GetDateFormatW(LOCALE_USER_DEFAULT, DATE_SHORTDATE, &st, NULL, dateW, 50) > 0 ? (int)WStrToU8(TransferBuffer, 200, dateW) - 1 : -1;
             if (len < 0)
                 len = sprintf(TransferBuffer, "%u.%u.%u", st.wDay, st.wMonth, st.wYear);
             *TransferLen = len;
@@ -124,7 +125,8 @@ void WINAPI GetDataText()
             (*TransferFileData)->LastWrite.dwLowDateTime != 0)
         {
             FileTimeToSystemTime(&(*TransferFileData)->LastWrite, &st);
-            len = GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, TransferBuffer, 50) - 1;
+            WCHAR timeW[50]; // the panel takes UTF-8 (feature 124)
+            len = GetTimeFormatW(LOCALE_USER_DEFAULT, 0, &st, NULL, timeW, 50) > 0 ? (int)WStrToU8(TransferBuffer, 200, timeW) - 1 : -1;
             if (len < 0)
                 len = sprintf(TransferBuffer, "%u:%02u:%02u", st.wHour, st.wMinute, st.wSecond);
             *TransferLen = len;
@@ -411,16 +413,21 @@ int ExpandPluralSelection(char* buffer, int bufferSize, int files, int dirs)
 {
     CALL_STACK_MESSAGE4("ExpandPluralSelection(, %d, %d, %d)", bufferSize, files,
                         dirs);
-    char formatA[200];
+    // the result goes to the information line, which takes UTF-8: the templates are loaded as
+    // UTF-8 (a UTF-8 text is up to three times longer than the code-page one), feature 124
+    char templ[600];
+    char formatA[600];
 
     if (files > 0 && dirs > 0)
     {
         CQuadWord parametersArray[] = {CQuadWord(files, 0), CQuadWord(dirs, 0)};
-        SG->ExpandPluralString(formatA, 200, LoadStr(IDS_SELECTED3), 2, parametersArray);
+        LoadStrU8(IDS_SELECTED3, templ, _countof(templ));
+        SG->ExpandPluralString(formatA, _countof(formatA), templ, 2, parametersArray);
         return SalPrintf(buffer, bufferSize, formatA, files, dirs);
     }
     CQuadWord param = CQuadWord(files + dirs, 0);
-    SG->ExpandPluralString(formatA, 200, LoadStr(files ? IDS_SELECTED1 : IDS_SELECTED2), 1, &param);
+    LoadStrU8(files ? IDS_SELECTED1 : IDS_SELECTED2, templ, _countof(templ));
+    SG->ExpandPluralString(formatA, _countof(formatA), templ, 1, &param);
     return SalPrintf(buffer, bufferSize, formatA, files + dirs);
 }
 
@@ -475,8 +482,10 @@ BOOL CPluginDataInterface::GetInfoLineContent(
         if (displaySize)
         {
             // for simplicity we do not use "plural" strings (see SalamanderGeneral->ExpandPluralString())
-            char formatA[200];
-            SG->ExpandPluralString(formatA, 200, LoadStr(IDS_SELECTEDSIZE), 1, (CQuadWord*)&selectedSize);
+            char templ[600]; // UTF-8, like the rest of the line (feature 124)
+            char formatA[600];
+            LoadStrU8(IDS_SELECTEDSIZE, templ, _countof(templ));
+            SG->ExpandPluralString(formatA, _countof(formatA), templ, 1, (CQuadWord*)&selectedSize);
             prefix = SalPrintf(buffer, 1000, formatA, selectedSize);
 
             /*    // example of using the standard string

@@ -83,6 +83,16 @@ LPWSTR LoadStrW(int resID)
     return SG->LoadStrW(HLanguage, resID);
 }
 
+BOOL LoadStrU8(int resID, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    if (WideCharToMultiByte(CP_UTF8, 0, LoadStrW(resID), -1, buf, bufSize, NULL, NULL) > 0)
+        return TRUE;
+    buf[0] = 0; // does not fit: no text rather than a cut one or code-page bytes in a UTF-8 text
+    return FALSE;
+}
+
 BOOL ErrorHelper(HWND parent, const char* message, int lastError, va_list arglist)
 {
     CALL_STACK_MESSAGE3("ErrorHelper(, %s, %d, )", message, lastError);

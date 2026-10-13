@@ -9,6 +9,19 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
+## [0.1.10] — unreleased
+
+Fixes for the problems reported on GitHub after 0.1.9.
+
+- **Registry Editor: texts in the information line are readable in every
+  language** (GitHub #3, feature 124). In Czech, German and Slovak the word
+  for a key (`KLÍČ`) came out as replacement characters; so did the
+  "selected" text in five languages, the name of the `(Default)` value in
+  four, and the data of any text value with accented letters in every
+  language, English included. A long text value is now shortened after a
+  whole character. The Size column and the plug-in's Find window were right
+  and stay right.
+
 ## [0.1.9] — 2026-10-07
 
 **Build 193.** Feature release. The program now tells you when a newer

@@ -402,7 +402,7 @@ CFoundFilesData::GetText(int i, LPWSTR buffer)
     {
         if (IsDir)
         {
-            StrToWStr(buffer, 100, KeyText);
+            wcscpy_s(buffer, 100, KeyTextW); // the wide original: KeyText is UTF-8 (feature 124)
             ret = buffer;
         }
         else

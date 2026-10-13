@@ -171,15 +171,15 @@ BOOL TestValue(HKEY hKey, int root, LPWSTR key, LPWSTR name,
             if (name && name[0] != L'\0')
                 WStrToU8(valueName, sizeof(valueName), name);
             else
-                strcpy(valueName, LoadStr(IDS_DEFAULTVALUE));
+                LoadStrU8(IDS_DEFAULTVALUE, valueName, sizeof(valueName)); // UTF-8 like the rest of the path (feature 124)
             SalPrintf(fullFSPath, sizeof(fullFSPath), "%s\\%s\\%s", rootName, path, valueName);
 
             WStrToU8(sourceRootName, MAX_PREDEF_KEYNAME, PredefinedHKeys[sourceRoot].KeyName);
             WStrToU8(sourcePath, sizeof(sourcePath), sourceKey);
-            if (name[0] != L'\0')
+            if (sourceName && sourceName[0] != L'\0') // (the test used to look at the target's name)
                 WStrToU8(sourceValueName, sizeof(sourceValueName), sourceName);
             else
-                strcpy(sourceValueName, LoadStr(IDS_DEFAULTVALUE));
+                LoadStrU8(IDS_DEFAULTVALUE, sourceValueName, sizeof(sourceValueName));
             SalPrintf(sourceFullFSPath, sizeof(sourceFullFSPath), "%s\\%s\\%s", sourceRootName, sourcePath, sourceValueName);
 
             res = skip ? SG->DialogOverwrite(GetParent(), BUTTONS_YESALLSKIPCANCEL, fullFSPath, "", sourceFullFSPath, "") : SG->DialogOverwrite(GetParent(), BUTTONS_YESNOCANCEL, fullFSPath, "", sourceFullFSPath, "");
