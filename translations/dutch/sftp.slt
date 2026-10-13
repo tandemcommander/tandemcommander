@@ -221,7 +221,7 @@ COMMENT,"Nederlandse versie"
 95,1,"De bewerking is geannuleerd."
 
 [STRINGTABLE 6]
-96,1,"SFTP-fout%d: %s"
+96,1,"SFTP-fout %d: %s"
 97,1,"Het pad is geen map."
 98,1,"Verbinding verbroken. Maak opnieuw verbinding met %s..."
 99,1,"Symbolische koppeling naar map "%s" overgeslagen (niet gevolgd tijdens recursieve overdracht)."

@@ -130,6 +130,7 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
             }
             else
             {
+                SetLastError(err); // feature 131: the reason of the move (the calls above may have changed the last error)
                 if (!FileError(HWindow, sourceName, IDS_MOVEERROR,
                                TRUE, &skip, &SkipAllMove, IDS_ERROR))
                     return FALSE;
@@ -493,6 +494,9 @@ COPY_AGAIN:
                     {
                     NORMAL_ERROR:
 
+                        // feature 131: the reason why the target was not opened - reading its
+                        // attributes above (or restoring them) changed the last error
+                        SetLastError(err);
                         if (!FileError(HWindow, targetName, IDS_OPENFILEERROR,
                                        TRUE, &skip, &SkipAllOpenOut, IDS_ERROR))
                         {

@@ -221,7 +221,7 @@ COMMENT,"Versiunea romana"
 95,1,"Operațiunea a fost anulată."
 
 [STRINGTABLE 6]
-96,1,"%d de eroare SFTP: %s"
+96,1,"Eroare SFTP %d: %s"
 97,1,"Calea nu este un director."
 98,1,"Conexiune pierdută. Se restabilește conexiunea la %s..."
 99,1,"S-a omis legătura simbolică a directorului „%s” (nu a fost urmată în timpul transferului recursiv)."

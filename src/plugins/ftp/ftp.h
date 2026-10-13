@@ -43,6 +43,10 @@ static_assert(FTPLOGIN_LONGEST_BUILTIN_LINE <= FTPLOGINCMD_MAX_SIZE, "a built-in
 #define STC_EMPTYVAL_MAX_SIZE 101 // Server Type Columns: max length of the empty value string
 #define PROXYSRVNAME_MAX_SIZE 101 // proxy server name (see CFTPProxyServer::ProxyName)
 #define PROXYSCRIPT_MAX_SIZE 2049 // max length of a proxy script (currently 2KB) (see CFTPProxyServer::ProxyScript)
+// feature 131: an item of the combo of the Logs window: "UID: user@host:port (state, state)" - the
+// log UID, the names at their largest and 300 bytes for the port and the two translated state
+// texts (it was 300 bytes in all, written with unbounded sprintf calls)
+#define LOGSCOMBOITEM_MAX_SIZE (20 + USER_MAX_SIZE + HOST_MAX_SIZE + 300)
 
 // max length of the string that stores a Server Type Column
 #define STC_MAXCOLUMNSTR (1 + 2 * (STC_ID_MAX_SIZE + STC_NAME_MAX_SIZE + STC_DESCR_MAX_SIZE + STC_EMPTYVAL_MAX_SIZE - 4) + 10 + 10 + 2 + 1 + 8)

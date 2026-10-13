@@ -66,3 +66,12 @@ plug-ins changed (about 115 sites), a shared helper, the core's progress dialog 
 (download error with a non-UTF-8 remote name) and fixed. **FTP is left** as its own step
 (`specs/130-plugin-mixed-templates/triage/ftp.md`). Record:
 `specs/130-plugin-mixed-templates/fix-log.md`.
+
+## Feature 131 (2026-10-13, asked for by the maintainer)
+
+`131-plugin-defect-batch`, on top of `130`: the defects 130 saw on the way, each measured first.
+Fixed: an FTP crash on a host name with `%` (0.1.9 crashes in the probe), a ZIP favourite lost
+at a long name, SFTP operations on cut paths and its missing error reasons, PictView *Update
+Thumbnail* on accented paths, and about fifteen smaller ones in eleven plug-ins and the core;
+two translation errors. Several notes were not defects (recorded). Three independent reviews,
+no blocker. Record: `specs/131-plugin-defect-batch/fix-log.md`.

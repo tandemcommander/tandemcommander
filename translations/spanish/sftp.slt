@@ -221,7 +221,7 @@ COMMENT,"Versión en español"
 95,1,"Se ha cancelado la operación."
 
 [STRINGTABLE 6]
-96,1,"%d de error de SFTP: %s"
+96,1,"Error de SFTP %d: %s"
 97,1,"La ruta no es un directorio."
 98,1,"Se ha perdido la conexión. Volviendo a conectarme a %s..."
 99,1,"Se ha omitido el enlace simbólico del directorio «%s» (no se ha seguido durante la transferencia recursiva)."

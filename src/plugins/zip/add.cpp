@@ -1668,10 +1668,10 @@ int CZipPack::PackFiles()
         return IDS_LOWMEM;
     }
     sour = LoadStrU8(IDS_ADDING); // feature 130: the prefix of a UTF-8 name
-    progrText = progrTextBuf;
-    while (*sour)
-        *progrText++ = *sour++;
-    progrPrefixLen = (int)(progrText - progrTextBuf);
+    // feature 131: the prefix is bounded (it was copied without a limit); cut at a whole character
+    SplU8CopyTrunc(progrTextBuf, PROGRESS_PREFIX_SIZE, sour);
+    progrPrefixLen = (int)strlen(progrTextBuf);
+    progrText = progrTextBuf + progrPrefixLen;
     Salamander->ProgressDialogAddText(LoadStr(IDS_ADDFILES), FALSE);
     if ((Options.Action & (PA_SELFEXTRACT | PA_MULTIVOL)) == PA_SELFEXTRACT)
         writePos = ArchiveDataOffs;
@@ -1684,7 +1684,8 @@ int CZipPack::PackFiles()
         if (next->Action != AF_ADD && next->Action != AF_OVERWRITE)
             continue;
         //TRACE_I("Packing file: " << next->Name);
-        lstrcpyn(progrText, next->Name + SourceLen + 1, (int)sizeof(progrTextBuf) - progrPrefixLen);
+        // feature 131: a name that does not fit the line is shortened at a whole character (shown only)
+        SplU8CopyTrunc(progrText, (int)sizeof(progrTextBuf) - progrPrefixLen, next->Name + SourceLen + 1);
         Salamander->ProgressDialogAddText(progrTextBuf, TRUE);
         if (!Salamander->ProgressSetSize(CQuadWord(0, 0), CQuadWord(-1, -1), TRUE))
         {

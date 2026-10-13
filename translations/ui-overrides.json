@@ -11,6 +11,11 @@
     "'human' in the coverage table. Accelerators (&) must stay unique within a",
     "dialog - merge.py reports duplicates."
   ],
+  "7zip": {
+    "spanish": {
+      "IDS_TESTARCHIVEOK": "El archivo '%s' está correcto."
+    }
+  },
   "sftp": {
     "czech": {
       "IDT_HOSTADDRESS": "&Adresa:",
@@ -36,7 +41,26 @@
       "IDS_ERR_KEYPKCS8": "Privátní klíče ve formátu PKCS#8 („BEGIN PRIVATE KEY“) tato verze nepodporuje. Převeďte klíč do formátu OpenSSH nebo klasického PEM, například: ssh-keygen -p -m PEM -f <soubor s klíčem>",
       "IDS_ERR_KEYTYPEUNSUP": "Privátní klíč používá algoritmus %s, který tato verze nepodporuje (lze použít pouze klíče RSA a ECDSA). Použijte klíč RSA nebo ECDSA.",
       "IDS_CONNECTING": "Připojování k %s...",
-      "IDS_DOWNLOADINGFILE": "Stahování %s..."
+      "IDS_DOWNLOADINGFILE": "Stahování %s...",
+      "IDS_ERR_GENERIC": "Chyba SFTP %d: %s"
+    },
+    "slovak": {
+      "IDS_ERR_GENERIC": "Chyba SFTP %d: %s"
+    },
+    "french": {
+      "IDS_ERR_GENERIC": "Erreur SFTP %d : %s"
+    },
+    "romanian": {
+      "IDS_ERR_GENERIC": "Eroare SFTP %d: %s"
+    },
+    "spanish": {
+      "IDS_ERR_GENERIC": "Error de SFTP %d: %s"
+    },
+    "german": {
+      "IDS_ERR_GENERIC": "SFTP-Fehler %d: %s"
+    },
+    "dutch": {
+      "IDS_ERR_GENERIC": "SFTP-fout %d: %s"
     }
   },
   "mdview": {

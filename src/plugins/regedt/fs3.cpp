@@ -209,14 +209,20 @@ void CPluginFSInterface::AcceptChangeOnPathNotification(const char* fsName, cons
         // compare paths or at least their prefixes (only paths on our FS have a chance;
         // disk paths and paths on other FS types in 'path' are filtered out automatically
         // because they can never match 'fsName'+':' at the beginning of 'path2' below)
-        char path1[MAX_PATH * 2];
+        // feature 131: the sizes passed are the sizes of the buffers. They were MAX_KEYNAME and
+        // MAX_FULL_KEYNAME + MAX_PATH bytes for UTF-8 buffers three times as large, and 'path1' was
+        // 2 * MAX_PATH: a key name over 511 bytes of UTF-8 (171 CJK or 256 accented letters, well
+        // within MAX_KEYNAME characters) was cut and the paths never compared equal
+        char path1[3 * MAX_FULL_KEYNAME + MAX_PATH];
         char path2[3 * MAX_FULL_KEYNAME + MAX_PATH]; // UTF-8 (up to 3 bytes per character)
         char root[MAX_PREDEF_KEYNAME];               // predefined HKEY names are ASCII
         char key[3 * MAX_KEYNAME];
-        lstrcpyn(path1, path, MAX_PATH * 2);
+        if (strlen(path) >= sizeof(path1))
+            return; // longer than any path of this file system
+        lstrcpyn(path1, path, sizeof(path1));
         WStrToU8(root, MAX_PREDEF_KEYNAME, PredefinedHKeys[CurrentKeyRoot].KeyName);
-        WStrToU8(key, MAX_KEYNAME, CurrentKeyName); // compared with the UTF-8 interface 'path'
-        SalPrintf(path2, MAX_FULL_KEYNAME + MAX_PATH, "%s:\\%s\\%s", fsName, root, key);
+        WStrToU8(key, sizeof(key), CurrentKeyName); // compared with the UTF-8 interface 'path'
+        SalPrintf(path2, sizeof(path2), "%s:\\%s\\%s", fsName, root, key);
         RemoveTrailingSlashes(path1);
         RemoveTrailingSlashes(path2);
         int len1 = (int)strlen(path1);

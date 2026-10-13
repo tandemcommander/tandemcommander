@@ -171,11 +171,18 @@ struct CExtendedOptions
     }
 };
 
-#define MAX_FAVNAME 50
+// feature 131: room (with the terminator) for the translated prefix of a progress line ("adding: ",
+// "extracting: ") in front of the name
+#define PROGRESS_PREFIX_SIZE 128
+
+#define MAX_FAVNAME 50 // a favourite's name has at most MAX_FAVNAME - 1 UTF-16 units (the limit of the edit line)
+// feature 131: the name is UTF-8 from the dialog to the configuration and back (it was code page in
+// the session it was typed in and UTF-8 after a restart); 3 bytes for each UTF-16 unit
+#define MAX_FAVNAME_U8 (3 * (MAX_FAVNAME - 1) + 1)
 
 struct CFavoriteSfx
 {
-    char Name[MAX_FAVNAME];
+    char Name[MAX_FAVNAME_U8]; // UTF-8
     CSfxSettings Settings;
 };
 

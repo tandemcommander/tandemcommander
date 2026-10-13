@@ -1816,7 +1816,11 @@ bool CFileVersionResourceDumper::ReadString(CFileStream* outStream, BinaryReader
         }
 
         DWORD width = 28;
-        outStream->fprintf("    %ls", szKey);
+        // feature 131: the key goes through the code page like the value below (the dump is
+        // code-page text, the internal viewer shows it so). With "%ls" the C runtime converted it
+        // in the "C" locale: U+0080..U+00FF as the byte of that value (Latin-1, another letter in
+        // most code pages) and the output of the call ended at the first letter above U+00FF.
+        outStream->fprintf("    %s", (const char*)W2A(szKey));
         if (cchValue > 0)
         {
             outStream->fprintf(":");
@@ -2314,7 +2318,9 @@ void CCorMetadataDumper::DumpRuntimeVersion(CFileStream* outStream, IMetaDataImp
         hr = pMetaDataImport2->GetVersionString(wzVersion, _countof(wzVersion), &cchWritten);
         if (SUCCEEDED(hr))
         {
-            outStream->fprintf("  %-*s%ls\n", 31, "Runtime Version:", wzVersion);
+            // feature 131: not "%ls" - see CFileVersionResourceDumper::ReadString (here the rest
+            // of the text and the line end were lost with it)
+            outStream->fprintf("  %-*s%s\n", 31, "Runtime Version:", (const char*)W2A(wzVersion));
         }
         pMetaDataImport2->Release();
     }
@@ -2496,7 +2502,9 @@ void CCorMetadataDumper::DumpReferencedAssemblies(CFileStream* outStream, IMetaD
     while (list.Next(hItem))
     {
         PCWSTR pszName = list.GetBuffer(hItem);
-        outStream->fprintf("    %ls\n", pszName);
+        // feature 131: not "%ls" - see CFileVersionResourceDumper::ReadString (the rest of the
+        // name and the line end were lost: the next reference continued on the same line)
+        outStream->fprintf("    %s\n", (const char*)W2A(pszName));
     }
 }
 

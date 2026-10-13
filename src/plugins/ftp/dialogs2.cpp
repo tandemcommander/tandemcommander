@@ -681,11 +681,11 @@ CLogsDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         case CM_CLEARLOG:
         case CM_REMOVELOG:
         {
-            char buf[300];
+            char buf[LOGSCOMBOITEM_MAX_SIZE]; // feature 131: the size the items are composed in (CLogs::AddLogsToCombo)
             buf[0] = 0;
             HWND combo = GetDlgItem(HWindow, IDC_LISTOFLOGS);
             int i = (int)SendMessage(combo, CB_GETCURSEL, 0, 0);
-            if (i != CB_ERR && SendMessage(combo, CB_GETLBTEXTLEN, i, 0) < 300)
+            if (i != CB_ERR && SendMessage(combo, CB_GETLBTEXTLEN, i, 0) < LOGSCOMBOITEM_MAX_SIZE)
             {
                 SendMessage(combo, CB_GETLBTEXT, i, (LPARAM)buf);
                 int uid = (int)SendMessage(combo, CB_GETITEMDATA, i, 0); // x64 - log UID is an index, not a pointer

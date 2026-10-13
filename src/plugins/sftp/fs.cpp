@@ -20,6 +20,14 @@ CPluginInterfaceForFS InterfaceForFS;
 static CSFTPConnectParams g_PendingParams;
 static BOOL g_HasPending = FALSE;
 
+// feature 131: the one refusal of this file - a remote path that does not fit its buffer is
+// not acted upon in a shortened form (the shortened path names another file or directory)
+static void ShowTooLongPath(HWND parent)
+{
+    SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_SFTPERRORTITLE),
+                                     MB_OK | MB_ICONEXCLAMATION);
+}
+
 // ---------------------------------------------------------------------------
 // secret decryption helper
 // ---------------------------------------------------------------------------
@@ -134,9 +142,17 @@ void ConnectSFTPServer(HWND parent, int panel)
 
     char userPart[3072];
     const char* initPath = (srv.InitialPath != NULL && srv.InitialPath[0]) ? srv.InitialPath : "";
-    _snprintf_s(userPart, _TRUNCATE, "%s@%s:%d%s%s",
-                g_PendingParams.User, g_PendingParams.Host, g_PendingParams.Port,
-                (initPath[0] && initPath[0] != '/') ? "/" : "", initPath);
+    // (user and host 255 bytes each, the initial path 1023: it always fits; feature 131 checks
+    // it all the same - the core refuses a user part of MAX_PATH bytes or more by itself)
+    if (_snprintf_s(userPart, _TRUNCATE, "%s@%s:%d%s%s",
+                    g_PendingParams.User, g_PendingParams.Host, g_PendingParams.Port,
+                    (initPath[0] && initPath[0] != '/') ? "/" : "", initPath) < 0)
+    {
+        ShowTooLongPath(parent);
+        g_HasPending = FALSE;
+        g_PendingParams.WipeSecrets();
+        return;
+    }
 
     SalamanderGeneral->ChangePanelPathToPluginFS(panel, AssignedFSName, userPart);
     g_HasPending = FALSE;
@@ -191,7 +207,11 @@ void WINAPI CPluginInterfaceForFS::ExecuteOnFS(int panel, CPluginFSInterfaceAbst
         if (isDir == 2) // up-dir: cut the last path component
         {
             char cur[3072];
-            fs->GetCurrentPathFull(cur, sizeof(cur)); // CF-7: no MAX_PATH truncation
+            if (!fs->GetCurrentPathFull(cur, sizeof(cur))) // CF-7: no MAX_PATH truncation
+            {
+                ShowTooLongPath(SalamanderGeneral->GetMsgBoxParent()); // feature 131: nor any other
+                return;
+            }
             // strip a trailing slash (only the root user-part "user@host:port/" has one)
             int curLen = (int)strlen(cur);
             if (curLen > 0 && cur[curLen - 1] == '/')
@@ -205,7 +225,10 @@ void WINAPI CPluginInterfaceForFS::ExecuteOnFS(int panel, CPluginFSInterfaceAbst
                 // the first item - consistent with disk paths and the FTP plugin.
                 // Both Enter on ".." and Backspace route here (Execute(0) on "..").
                 char focusName[MAX_PATH];
-                lstrcpynA(focusName, lastSlash + 1, sizeof(focusName));
+                if (strlen(lastSlash + 1) < sizeof(focusName))
+                    lstrcpynA(focusName, lastSlash + 1, sizeof(focusName));
+                else
+                    focusName[0] = 0; // feature 131: no focus rather than the focus of a cut name
                 if (lastSlash == firstSlash)
                     *(lastSlash + 1) = 0; // parent is root: keep "user@host:port/"
                 else
@@ -224,11 +247,16 @@ void WINAPI CPluginInterfaceForFS::ExecuteOnFS(int panel, CPluginFSInterfaceAbst
         else
         {
             char userPart[3072];
-            fs->GetCurrentPathFull(userPart, sizeof(userPart)); // CF-7
             char full[3072];
             // CF-26: build the path from the real remote name, not the panel's
             // sanitized display name (which '?'-substitutes invalid UTF-8).
-            _snprintf_s(full, _TRUNCATE, "%s/%s", userPart, SFTPRealName(&file));
+            // feature 131: a path that does not fit is refused - cut, it opened another directory
+            if (!fs->GetCurrentPathFull(userPart, sizeof(userPart)) || // CF-7
+                _snprintf_s(full, _TRUNCATE, "%s/%s", userPart, SFTPRealName(&file)) < 0)
+            {
+                ShowTooLongPath(SalamanderGeneral->GetMsgBoxParent());
+                return;
+            }
             SalamanderGeneral->ChangePanelPathToPluginFS(panel, pluginFSName, full);
         }
     }
@@ -288,13 +316,20 @@ void CPluginFSInterface::SetConnectParams(const CSFTPConnectParams* params)
     HasParams = TRUE;
 }
 
-void CPluginFSInterface::MakeUserPart(const char* path, char* buf, int bufSize)
+BOOL CPluginFSInterface::MakeUserPart(const char* path, char* buf, int bufSize)
 {
     // bracket IPv6 literal hosts so the "host:port" split round-trips
     BOOL ipv6 = strchr(Host, ':') != NULL;
-    _snprintf_s(buf, bufSize, _TRUNCATE, "%s@%s%s%s:%d%s", User,
-                ipv6 ? "[" : "", Host, ipv6 ? "]" : "", Port,
-                (path != NULL && path[0]) ? path : "/");
+    if (_snprintf_s(buf, bufSize, _TRUNCATE, "%s@%s%s%s:%d%s", User,
+                    ipv6 ? "[" : "", Host, ipv6 ? "]" : "", Port,
+                    (path != NULL && path[0]) ? path : "/") < 0)
+    {
+        // feature 131: it does not fit - no cut path leaves this function
+        if (bufSize > 0)
+            buf[0] = 0;
+        return FALSE;
+    }
+    return TRUE;
 }
 
 BOOL CPluginFSInterface::ParseUserPart(const char* userPart, char* host, int* port, char* user,
@@ -358,7 +393,14 @@ BOOL CPluginFSInterface::ParseUserPart(const char* userPart, char* host, int* po
         }
     }
     if (slash != NULL)
+    {
+        if (strlen(slash) >= (size_t)pathSize) // feature 131: never a cut path
+        {
+            path[0] = 0;
+            return FALSE;
+        }
         lstrcpynA(path, slash, pathSize);
+    }
     else
         lstrcpynA(path, "/", pathSize);
     return TRUE;
@@ -417,16 +459,17 @@ BOOL CPluginFSInterface::EnsureConnected(HWND parent)
 
 BOOL WINAPI CPluginFSInterface::GetCurrentPath(char* userPart)
 {
-    MakeUserPart(Path, userPart, MAX_PATH);
-    return TRUE;
+    // feature 131: no success with a cut path (ChangePath keeps the current path within
+    // MAX_PATH, so this fails only if that rule is ever broken)
+    return MakeUserPart(Path, userPart, MAX_PATH);
 }
 
 // CF-7: full-size variant for the plugin's own navigation, which uses 3072-byte
 // buffers. The SDK GetCurrentPath contract mandates a MAX_PATH buffer, so it
 // would silently truncate a long remote path and navigate to the wrong place.
-void CPluginFSInterface::GetCurrentPathFull(char* buf, int bufSize)
+BOOL CPluginFSInterface::GetCurrentPathFull(char* buf, int bufSize)
 {
-    MakeUserPart(Path, buf, bufSize);
+    return MakeUserPart(Path, buf, bufSize);
 }
 
 BOOL WINAPI CPluginFSInterface::GetFullName(CFileData& file, int isDir, char* buf, int bufSize)
@@ -440,26 +483,46 @@ BOOL WINAPI CPluginFSInterface::GetFullName(CFileData& file, int isDir, char* bu
             *slash = 0;
         else
             strcpy(parent, "/");
-        MakeUserPart(parent, buf, bufSize);
-        return TRUE;
+        return MakeUserPart(parent, buf, bufSize);
     }
     char full[3072];
     // CF-26: use the real remote name, not the sanitized panel display name.
-    PosixPathAppend(Path, SFTPRealName(&file), full, sizeof(full));
-    MakeUserPart(full, buf, bufSize);
-    return TRUE;
+    // feature 131: no success with a cut name (the core uses it as a path)
+    if (PosixPathAppend(Path, SFTPRealName(&file), full, sizeof(full)) == NULL)
+    {
+        if (bufSize > 0)
+            buf[0] = 0;
+        return FALSE;
+    }
+    return MakeUserPart(full, buf, bufSize);
 }
 
 BOOL WINAPI CPluginFSInterface::GetFullFSPath(HWND parent, const char* fsName, char* path, int pathSize, BOOL& success)
 {
     // treat 'path' as a relative or absolute POSIX path on the current server
+    // feature 131: a result that does not fit is an error shown here ('success' FALSE), not
+    // a cut path the core would then change to; 'path' is written only when all of it fits
     char abs[3072];
-    if (path[0] == '/')
-        lstrcpynA(abs, path, sizeof(abs));
-    else
-        PosixPathAppend(Path, path, abs, sizeof(abs));
     char userPart[3072];
-    MakeUserPart(abs, userPart, sizeof(userPart));
+    BOOL fits;
+    if (path[0] == '/')
+    {
+        fits = strlen(path) < sizeof(abs);
+        if (fits)
+            lstrcpynA(abs, path, sizeof(abs));
+    }
+    else
+        fits = PosixPathAppend(Path, path, abs, sizeof(abs)) != NULL;
+    if (fits)
+        fits = MakeUserPart(abs, userPart, sizeof(userPart));
+    if (fits)
+        fits = strlen(fsName) + 1 + strlen(userPart) < (size_t)pathSize;
+    if (!fits)
+    {
+        ShowTooLongPath(parent);
+        success = FALSE;
+        return TRUE;
+    }
     _snprintf_s(path, pathSize, _TRUNCATE, "%s:%s", fsName, userPart);
     success = TRUE;
     return TRUE;
@@ -467,8 +530,9 @@ BOOL WINAPI CPluginFSInterface::GetFullFSPath(HWND parent, const char* fsName, c
 
 BOOL WINAPI CPluginFSInterface::GetRootPath(char* userPart)
 {
-    _snprintf_s(userPart, MAX_PATH, _TRUNCATE, "%s@%s:%d/", User, Host, Port);
-    return TRUE;
+    // feature 131: through MakeUserPart - not cut, and an IPv6 host gets its brackets like
+    // every other path of this FS (without them ParseUserPart cannot read the path back)
+    return MakeUserPart("/", userPart, MAX_PATH);
 }
 
 BOOL WINAPI CPluginFSInterface::IsCurrentPath(int currentFSNameIndex, int fsNameIndex, const char* userPart)
@@ -506,7 +570,10 @@ BOOL WINAPI CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName,
     int port;
     if (!ParseUserPart(userPart, host, &port, user, path, sizeof(path)))
     {
-        SalamanderGeneral->SalMessageBox(SalamanderGeneral->GetMsgBoxParent(), LoadStr(IDS_HOSTNAMEMISSING),
+        // feature 131: ParseUserPart also refuses a path that does not fit (it was cut); the
+        // core hands in less than MAX_PATH bytes, so this is a guard
+        SalamanderGeneral->SalMessageBox(SalamanderGeneral->GetMsgBoxParent(),
+                                         LoadStr(strlen(userPart) >= sizeof(path) ? IDS_TOOLONGPATH : IDS_HOSTNAMEMISSING),
                                          LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
@@ -575,6 +642,16 @@ BOOL WINAPI CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName,
     // resolve and verify the requested path exists (and is a directory)
     char abs[3072];
     if (!Session.RealPath(path, abs, sizeof(abs)))
+        lstrcpynA(abs, path, sizeof(abs)); // same size as 'path': fits
+
+    // feature 131: the current path must fit the core's MAX_PATH buffer for a user part
+    // (GetCurrentPath; the core also refuses to change to a longer one). The server's
+    // resolved form can be longer than what was asked for (a symbolic link to a deep
+    // directory): GetCurrentPath then gave the core a CUT path, and the 3072-byte buffers of
+    // rename / create directory / view could overflow. Such a resolved form is not adopted -
+    // the path stays as requested, which names the same directory and fits.
+    char fitProbe[MAX_PATH];
+    if (!MakeUserPart(abs, fitProbe, sizeof(fitProbe)))
         lstrcpynA(abs, path, sizeof(abs));
 
     // try to list to confirm the path; on failure, cut the last component
@@ -628,6 +705,13 @@ BOOL WINAPI CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName,
             *pathWasCut = TRUE;
     }
 
+    // feature 131: (the requested path with the port and the brackets written out can still
+    // be a few bytes over) - refuse, the current path of this FS is never one that gets cut
+    if (!MakeUserPart(abs, fitProbe, sizeof(fitProbe)))
+    {
+        ShowTooLongPath(SalamanderGeneral->GetMsgBoxParent());
+        return FALSE;
+    }
     lstrcpynA(Path, abs, sizeof(Path));
     return TRUE;
 }
@@ -708,8 +792,8 @@ BOOL WINAPI CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* di
         {
             char target[2048];
             char linkPath[3072];
-            PosixPathAppend(Path, e->Name, linkPath, sizeof(linkPath));
-            if (Session.ReadLink(linkPath, target, sizeof(target)))
+            if (PosixPathAppend(Path, e->Name, linkPath, sizeof(linkPath)) != NULL && // (does not fit: no target shown)
+                Session.ReadLink(linkPath, target, sizeof(target)))
             {
                 CSFTPItemData* d = (CSFTPItemData*)fd.PluginData;
                 if (d != NULL)
@@ -877,17 +961,25 @@ BOOL WINAPI CPluginFSInterface::ExecuteCommandLine(HWND parent, char* command, i
         command++;
     if (_strnicmp(command, "cd ", 3) == 0)
     {
-        char target[3072];
-        lstrcpynA(target, command + 3, sizeof(target));
+        // feature 131: a target that does not fit is refused, not cut (MakeUserPart leaves
+        // the deferred path empty then, and nothing is posted)
+        const char* target = command + 3;
+        BOOL fits;
         if (target[0] == '/')
-            MakeUserPart(target, g_DeferredCdUserPart, sizeof(g_DeferredCdUserPart));
+            fits = MakeUserPart(target, g_DeferredCdUserPart, sizeof(g_DeferredCdUserPart));
         else
         {
             char abs[3072];
-            PosixPathAppend(Path, target, abs, sizeof(abs));
-            MakeUserPart(abs, g_DeferredCdUserPart, sizeof(g_DeferredCdUserPart));
+            fits = PosixPathAppend(Path, target, abs, sizeof(abs)) != NULL &&
+                   MakeUserPart(abs, g_DeferredCdUserPart, sizeof(g_DeferredCdUserPart));
         }
-        SalamanderGeneral->PostMenuExtCommand(SFTPCMD_DEFERREDCD, TRUE);
+        if (fits)
+            SalamanderGeneral->PostMenuExtCommand(SFTPCMD_DEFERREDCD, TRUE);
+        else
+        {
+            g_DeferredCdUserPart[0] = 0;
+            ShowTooLongPath(parent);
+        }
     }
     command[0] = 0;
     selFrom = selTo = 0;
@@ -905,8 +997,13 @@ BOOL WINAPI CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND p
     if (!EnsureConnected(parent))
         return FALSE;
     char from[3072], to[3072];
-    PosixPathAppend(Path, SFTPRealName(&file), from, sizeof(from)); // real (unsanitized) remote name
-    PosixPathAppend(Path, newName, to, sizeof(to));
+    // feature 131: a cut 'from' renamed another item, a cut 'to' gave it another name
+    if (PosixPathAppend(Path, SFTPRealName(&file), from, sizeof(from)) == NULL || // real (unsanitized) remote name
+        PosixPathAppend(Path, newName, to, sizeof(to)) == NULL)
+    {
+        ShowTooLongPath(parent);
+        return FALSE;
+    }
     if (!Session.Rename(from, to))
     {
         char msg[1200];
@@ -932,10 +1029,22 @@ BOOL WINAPI CPluginFSInterface::CreateDir(const char* fsName, int mode, HWND par
     if (!EnsureConnected(parent))
         return FALSE;
     char full[3072];
+    // feature 131: a cut path created a directory of another name ('newName' has at most
+    // 2 * MAX_PATH bytes, so only the join with the current path can fail)
+    BOOL fits;
     if (newName[0] == '/')
-        lstrcpynA(full, newName, sizeof(full));
+    {
+        fits = strlen(newName) < sizeof(full);
+        if (fits)
+            lstrcpynA(full, newName, sizeof(full));
+    }
     else
-        PosixPathAppend(Path, newName, full, sizeof(full));
+        fits = PosixPathAppend(Path, newName, full, sizeof(full)) != NULL;
+    if (!fits)
+    {
+        ShowTooLongPath(parent);
+        return FALSE;
+    }
     if (!Session.Mkdir(full, 0755))
     {
         char msg[1200];
@@ -956,10 +1065,15 @@ void WINAPI CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
         return;
 
     char remote[3072];
-    PosixPathAppend(Path, SFTPRealName(&file), remote, sizeof(remote)); // real remote name
-
     char uniqueName[3200];
-    _snprintf_s(uniqueName, _TRUNCATE, "%s:%s@%s:%d%s", fsName, User, Host, Port, remote);
+    // feature 131: a cut remote path showed another file; a cut unique name is the cache key
+    // of another file (its cached copy would be shown)
+    if (PosixPathAppend(Path, SFTPRealName(&file), remote, sizeof(remote)) == NULL || // real remote name
+        _snprintf_s(uniqueName, _TRUNCATE, "%s:%s@%s:%d%s", fsName, User, Host, Port, remote) < 0)
+    {
+        ShowTooLongPath(parent);
+        return;
+    }
 
     BOOL fileExists = FALSE;
     const char* cacheName = salamander->AllocFileNameInCache(parent, uniqueName, file.Name, NULL, fileExists);
@@ -972,10 +1086,10 @@ void WINAPI CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
     {
         // download into the cache path
         wchar_t wpath[4096];
-        // CF-18: on conversion failure MultiByteToWideChar writes nothing; do not
-        // open CreateFileW on an uninitialized buffer.
-        if (MultiByteToWideChar(CP_UTF8, 0, cacheName, -1, wpath, 4096) == 0)
-            return;
+        // CF-18: do not open CreateFileW on an uninitialized buffer. feature 131: SplU8ToW
+        // (WTF-8 like the core's names) leaves an empty path on failure; CreateFileW then
+        // fails and FreeFileNameInCache below still runs (the 'return' here skipped it).
+        SplU8ToW(cacheName, wpath, 4096);
         HANDLE lf = CreateFileW(wpath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         if (lf != INVALID_HANDLE_VALUE)
         {
@@ -1075,7 +1189,15 @@ BOOL WINAPI CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char
 
     // only windows target paths are supported for download; mode 3 passes
     // "path\0mask\0" - the double-NUL leaves the directory part in localTarget
+    // (the core's buffer for the target has 2 * MAX_PATH bytes, so it fits; feature 131: a
+    // longer one is refused, a cut target would be another directory)
     char localTarget[2 * MAX_PATH];
+    if (strlen(targetPath) >= sizeof(localTarget))
+    {
+        ShowTooLongPath(parent);
+        cancelOrHandlePath = TRUE;
+        return TRUE;
+    }
     lstrcpynA(localTarget, targetPath, sizeof(localTarget));
 
     if (!SFTPDownloadFromPanel(parent, &Session, panel, Path, localTarget, !copy))
@@ -1101,8 +1223,14 @@ BOOL WINAPI CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, cons
         // provide the current FS path (WITH the fs-name prefix) as the suggested
         // target for the standard Copy dialog - "user@host:.." alone is not a
         // valid FS path and the default target would be rejected
+        // feature 131: a target that does not fit is not offered cut - the dialog then opens
+        // with an empty target (FALSE in mode 1)
         char up[3072];
-        MakeUserPart(Path, up, sizeof(up));
+        if (!MakeUserPart(Path, up, sizeof(up)) || strlen(fsName) + 1 + strlen(up) >= 2 * MAX_PATH)
+        {
+            targetPath[0] = 0;
+            return FALSE;
+        }
         _snprintf_s(targetPath, 2 * MAX_PATH, _TRUNCATE, "%s:%s", fsName, up);
         return TRUE;
     }

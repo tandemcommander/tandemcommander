@@ -530,8 +530,16 @@ void CSalamanderGUI::SetSubjectTruncatedText(HWND subjectWnd, const char* subjec
     }
 
     char formatedFileName[SAL_FIND_NAME_U8]; // UTF-8 name (feature 004)
-    char tmpFileName[MAX_PATH];
-    lstrcpyn(tmpFileName, fileName, MAX_PATH);
+    // feature 131: any legal name fits (it was cut at MAX_PATH bytes, possibly inside a character -
+    // then the whole subject was no longer valid UTF-8 and was shown through the code page)
+    char tmpFileName[SAL_FIND_NAME_U8];
+    if (strlen(fileName) >= _countof(tmpFileName)) // not a name: shortened for display, at a whole character
+    {
+        lstrcpyn(tmpFileName, fileName, _countof(tmpFileName));
+        SalU8TrimIncompleteTail(tmpFileName);
+    }
+    else
+        strcpy_s(tmpFileName, fileName);
     AlterFileName(formatedFileName, tmpFileName, -1, Configuration.FileNameFormat, 0, isDir);
 
     CTruncatedString subject;

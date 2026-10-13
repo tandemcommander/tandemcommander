@@ -38,7 +38,14 @@ BOOL ShowRetryAbortBox(HWND hParentWnd, int resID, DWORD err, ...)
     if (!_tcsncmp(msg, _T("{!}"), 3))
     {
         TCHAR fmt[1024];
-        SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), msg, 1, &CQuadWord().SetUI64(((int*)&err)[1]));
+        // feature 131: the number that chooses the plural form is the first variable argument (both
+        // callers pass a UInt32). It was read as ((int*)&err)[1] - on x64 that is the unused upper
+        // half of the stack slot of 'err' (the argument is 8 bytes further), i.e. a random number
+        va_start(arglist, err);
+        CQuadWord count;
+        count.SetUI64(va_arg(arglist, UInt32));
+        va_end(arglist);
+        SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), msg, 1, &count);
         strcpy(msg, fmt);
     }
     TCHAR buf[2048 + 4];

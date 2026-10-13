@@ -595,7 +595,9 @@ CExtOptionsDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             return FALSE;           // stop processing
         }
 
-        // set archive name
+        // set archive name (UTF-8). The A call is right here: the control is the core's static
+        // text attached above, its window procedure gets these bytes unchanged and reads them as
+        // UTF-8 (a W call would be converted to the code page on the way - feature 131)
         SetWindowText(GetDlgItem(HWindow, IDC_NA_ARCHIVE), Archive);
 
         // do not encrypt files by default

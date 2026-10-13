@@ -71,6 +71,10 @@ class CSalamanderCallback : public CSalamanderCallbackAbstract
 public:
     BOOL FocusFile(TCHAR const* fileName)
     {
+        // feature 131: a name that does not fit is refused - cut by lstrcpyn it would be the name of
+        // another file or folder for the panel
+        if (fileName == NULL || strlen(fileName) >= _countof(FocusPathBuf))
+            return FALSE;
         if (SalamanderGeneral->SalamanderIsNotBusy(NULL))
         {
             lstrcpyn(FocusPathBuf, fileName, _countof(FocusPathBuf));
@@ -115,6 +119,8 @@ public:
     }
     BOOL OpenFolder(TCHAR const* path)
     {
+        if (path == NULL || strlen(path) >= _countof(FocusPathBuf)) // feature 131: refused, see FocusFile
+            return FALSE;
         if (SalamanderGeneral->SalamanderIsNotBusy(NULL))
         {
             lstrcpyn(FocusPathBuf, path, _countof(FocusPathBuf));

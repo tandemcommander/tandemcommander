@@ -22,6 +22,13 @@ const TCHAR szDirectoryLineClass[] = TEXT("Zar.DM.DirLine.WC");
 #define NODEID_SIZE 0x80
 //#define NODEID_ICON 0x81 !! TODO !!
 
+// feature 131: the size of the path buffer of the directory line - the root path and the path
+// inside it are UTF-8 texts of up to 3 * MAX_PATH bytes each (the plug-in's buffers), joined by
+// a backslash. It was MAX_PATH + 4 bytes: a longer root path was dropped (an empty line, and
+// "\subdir" - another folder - for the context menu) and one of exactly that length wrote its
+// terminator behind the buffer. The arrays indexed by positions in the path follow this size.
+#define DL_PATH_BUFSIZE (6 * MAX_PATH + 3)
+
 /*
  * /-------------------------------------------NODEID_NOXY---------------------------\
  * | NODEID_ICON | NODEID_ROOT\1\2\...\NODEID_MAXP      NODEID_NONE      NODEID_SIZE |
@@ -50,6 +57,7 @@ protected:
     // Data
     CZStringBuffer* _path;
     int _rootLen;
+    BOOL _pathLost; // feature 131: a path did not fit '_path' - the line is not the folder shown: no click, no menu
     INT64 _disksize;
 
     // Cached values - size
@@ -64,12 +72,12 @@ protected:
     CZStringBuffer* _sizestrlong;  //long version "1 234 567 bytes (1,23MB)"
     CZStringBuffer* _sizestrshort; //short version "1,23MB"
 
-    TDIRNODE _nodes[3 * MAX_PATH / 2]; // node offsets are UTF-8 byte positions
+    TDIRNODE _nodes[DL_PATH_BUFSIZE / 2 + 2]; // node offsets are UTF-8 byte positions
     int _nodeCount;
     int _mouseNode;
 
-    // string for storing a copy of the path with an ellipsis (UTF-8, up to 3 bytes per character)
-    TCHAR _pathtemp[3 * MAX_PATH + 3];
+    // string for storing a copy of the path with an ellipsis (UTF-8; the path + "...")
+    TCHAR _pathtemp[DL_PATH_BUFSIZE + 3];
 
     // Cached values - colors: active/inactive
     COLORREF _backColor;
@@ -121,7 +129,7 @@ protected:
         this->_nodes[nodeid++].strpos = p;
 
         p++;
-        while (p < strlen)
+        while (p < strlen && nodeid < (int)ARRAYSIZE(this->_nodes) - 1) // one entry stays for the end mark below
         {
             while (p < strlen && str[p] != TEXT('\\'))
                 p++;
@@ -193,7 +201,7 @@ protected:
         SIZE sz;
         int sizewidth = 0;
         int pathwidth = 0;
-        int dx[3 * MAX_PATH + 3]; // byte-indexed widths (the path is UTF-8)
+        int dx[DL_PATH_BUFSIZE + 1]; // byte-indexed widths (the path is UTF-8); + the sentinel below
         // measure via the W GDI: the path is UTF-8 since plugin interface 104
         ZGetTextExtentByteDx(hdc, this->_path->GetString(), (int)this->_path->GetLength(), dx, &sz);
         pathwidth = sz.cx;
@@ -525,7 +533,7 @@ protected:
 
     void OnLButtonDown(/*BOOL fDoubleClick, */ int x, int y, UINT keyFlags)
     {
-        if (this->_mouseNode >= NODEID_ROOT && this->_mouseNode <= NODEID_MAXP)
+        if (!this->_pathLost && this->_mouseNode >= NODEID_ROOT && this->_mouseNode <= NODEID_MAXP)
         {
             int gotolevel = this->_nodeCount - this->_mouseNode - 1;
             if (gotolevel > 0)
@@ -537,12 +545,14 @@ protected:
 
     void OnContextMenu(HWND hwndContext, int xPos, int yPos)
     {
-        if (this->_mouseNode >= NODEID_ROOT && this->_mouseNode <= NODEID_MAXP)
+        if (!this->_pathLost && this->_mouseNode >= NODEID_ROOT && this->_mouseNode <= NODEID_MAXP)
         {
-            TCHAR buff[3 * MAX_PATH]; // UTF-8 path (up to 3 bytes per character)
+            // feature 131: as large as '_path' - GetSubString cuts what does not fit, and a cut
+            // path would be the path of another folder for the shell menu and for "Open"
+            TCHAR buff[DL_PATH_BUFSIZE]; // UTF-8 path
             size_t plen = this->_nodes[this->_mouseNode].strpos;
             size_t l = this->_path->GetSubString(0, plen, buff, ARRAYSIZE(buff));
-            if (l > 0)
+            if (l > 0 && l == plen)
             {
                 int icmd = 0;
                 int gotolevel = this->_nodeCount - this->_mouseNode - 1;
@@ -600,8 +610,9 @@ public:
 
         this->_sFormatter = NULL;
 
-        this->_path = new CZStringBuffer(MAX_PATH + 4);
+        this->_path = new CZStringBuffer(DL_PATH_BUFSIZE);
         this->_rootLen = 0;
+        this->_pathLost = FALSE;
         this->_disksize = -1;
         //this->_disksize = 12345678;
 
@@ -672,7 +683,14 @@ public:
 
         CZIconLoader::BeginAsyncLoadIcon(path, SHGFI_SMALLICON | SHGFI_ADDOVERLAYS, this->_hWnd, WM_APP_ICONLOADED, (void*)this->_id)->SetSelfDelete(TRUE);
 
-        this->_path->AppendAt(path, 0);
+        // feature 131: a path that does not fit is not shown in part and no older text stays in
+        // its place - the line is empty and inactive (cannot happen with today's callers, whose
+        // own buffers are 3 * MAX_PATH bytes)
+        this->_pathLost = !this->_path->CanAppendAt(path->GetLength(), 0);
+        if (this->_pathLost)
+            this->_path->Left(0);
+        else
+            this->_path->AppendAt(path, 0);
         this->_rootLen = (int)this->_path->GetLength();
 
         this->UpdateValues();
@@ -680,6 +698,8 @@ public:
     }
     BOOL SetSubPath(CZString const* subpath) //subpath does NOT start with a backslash
     {
+        if (this->_pathLost) // feature 131: no root path - nothing to append to
+            return TRUE;
         if (subpath->GetLength() == 0)
         {
             this->_path->Left(this->_rootLen);
@@ -687,7 +707,15 @@ public:
         else
         {
             //if the root "C:\" already ends with a trailing backslash
-            if (this->_path->IsCharAt(TEXT('\\'), this->_rootLen - 1)) //if _rootLen happened to be 0, it would overflow to MAX_INT and return FALSE
+            BOOL rootHasSlash = this->_path->IsCharAt(TEXT('\\'), this->_rootLen - 1); //if _rootLen happened to be 0, it would overflow to MAX_INT and return FALSE
+            // feature 131: the whole path or none of it (see SetPath)
+            if (!this->_path->CanAppendAt(subpath->GetLength() + (rootHasSlash ? 0 : 1), this->_rootLen))
+            {
+                this->_pathLost = TRUE;
+                this->_path->Left(0);
+                this->_rootLen = 0;
+            }
+            else if (rootHasSlash)
             {
                 this->_path->AppendAt(subpath, this->_rootLen);
             }

@@ -1554,10 +1554,14 @@ BOOL CFATSnapshot<CHAR>::ProcessScannedClusters()
         CLUSTER* c = &(*ScanResults)[i];
         if (!(c->flags & DC_REFERENCED))
         {
-            CHAR name[100];
-            String<CHAR>::SPrintF(name, String<CHAR>::LoadStr(IDS_VDIRECTORY), c->cluster);
+            // feature 131: the name in the encoding of the volume's names (it was code-page text)
+            CHAR* name = String<CHAR>::NewVirtualDirName(IDS_VDIRECTORY, c->cluster, TRUE);
+            if (name == NULL)
+                return String<CHAR>::Error(IDS_UNDELETE, IDS_LOWMEM);
             FILE_RECORD_I<CHAR>* r;
-            if (!AddFileOrDir(this->Root, name, TRUE, FR_FLAGS_DELETED, &r))
+            BOOL added = AddFileOrDir(this->Root, name, TRUE, FR_FLAGS_DELETED, &r); // copies the name
+            delete[] name;
+            if (!added)
                 return FALSE;
             if (!DecodeScannedCluster(r, c))
                 return FALSE;
@@ -2295,12 +2299,23 @@ BOOL CFATSnapshot<CHAR>::AddVirtualDirs()
     FILE_RECORD_I<CHAR>* metafiles;
 
     // add virtual directories {All Deleted Files} and {Metafiles} into root
-    if (!AddFileOrDir(this->Root, String<CHAR>::LoadStr(IDS_ALLDELETEDFILES), TRUE, FR_FLAGS_VIRTUALDIR, &deletedfiles))
+    // feature 131: the names in the encoding of the volume's names (they were code-page texts)
+    CHAR* vdName = String<CHAR>::NewVirtualDirName(IDS_ALLDELETEDFILES, 0, FALSE);
+    if (vdName == NULL)
+        return String<CHAR>::Error(IDS_UNDELETE, IDS_LOWMEM);
+    BOOL vdAdded = AddFileOrDir(this->Root, vdName, TRUE, FR_FLAGS_VIRTUALDIR, &deletedfiles); // copies the name
+    delete[] vdName;
+    if (!vdAdded)
         return FALSE;
     VirtualDirsCount++;
     if (this->UdFlags & UF_SHOWMETAFILES)
     {
-        if (!AddFileOrDir(this->Root, String<CHAR>::LoadStr(IDS_METAFILES), TRUE, FR_FLAGS_VIRTUALDIR, &metafiles))
+        vdName = String<CHAR>::NewVirtualDirName(IDS_METAFILES, 0, FALSE);
+        if (vdName == NULL)
+            return String<CHAR>::Error(IDS_UNDELETE, IDS_LOWMEM);
+        vdAdded = AddFileOrDir(this->Root, vdName, TRUE, FR_FLAGS_VIRTUALDIR, &metafiles); // copies the name
+        delete[] vdName;
+        if (!vdAdded)
             return FALSE;
         VirtualDirsCount++;
     }

@@ -29,6 +29,7 @@
 #include "prevsfx.h"
 
 #include "iosfxset.h"
+#include "../../common/salnameorder.h" // feature 131: the order of UTF-8 names
 
 TIndirectArray2<CFavoriteSfx> Favorities(8);
 CFavoriteSfx LastUsedSfxSet;
@@ -779,8 +780,8 @@ BOOL CAdvancedSEDialog::GetSettings(CSfxSettings* sfxSettings)
 int CompareMenuItems(char* name1, char* name2)
 {
     CALL_STACK_MESSAGE1("CompareMenuItems(, )");
-    char buf1[MAX_FAVNAME];
-    char buf2[MAX_FAVNAME];
+    char buf1[MAX_FAVNAME_U8]; // feature 131: the names are UTF-8
+    char buf2[MAX_FAVNAME_U8];
 
     // remove single '&'
     char* sour = name1;
@@ -800,7 +801,9 @@ int CompareMenuItems(char* name1, char* name2)
     }
     *dest = 0;
 
-    return SalamanderGeneral->StrICmp(buf1, buf2);
+    // feature 131: the names are UTF-8; StrICmp folds every byte through the code page's table
+    // (continuation bytes too) and made different names equal ("V\xC3\x8DR" / "V\xC3\x9DR")
+    return SalNameOrderCompareCI(buf1, -1, buf2, -1);
 
     /* this was case sensitive, otherwise OK
   int ret = 0 ;
@@ -939,9 +942,28 @@ BOOL CAdvancedSEDialog::CreateFavoritesMenu()
             mi.fType = MFT_STRING;
             mi.wID = CM_SFX_FAVORITE + i;
             mi.dwItemData = (ULONG_PTR)fav;
-            mi.dwTypeData = fav->Name;
-            mi.cch = lstrlen(mi.dwTypeData);
-            InsertMenuItem(FavoritiesMenu, i, TRUE, &mi);
+            // feature 131: the name is UTF-8 - the menu item is set wide
+            WCHAR* nameW = SplU8ToWAlloc(fav->Name);
+            if (nameW != NULL)
+            {
+                MENUITEMINFOW miW;
+                memset(&miW, 0, sizeof(miW));
+                miW.cbSize = sizeof(miW);
+                miW.fMask = mi.fMask;
+                miW.fType = mi.fType;
+                miW.wID = mi.wID;
+                miW.dwItemData = mi.dwItemData;
+                miW.dwTypeData = nameW;
+                miW.cch = lstrlenW(nameW);
+                InsertMenuItemW(FavoritiesMenu, i, TRUE, &miW);
+                free(nameW);
+            }
+            else
+            {
+                mi.dwTypeData = fav->Name;
+                mi.cch = lstrlen(mi.dwTypeData);
+                InsertMenuItem(FavoritiesMenu, i, TRUE, &mi);
+            }
         }
         memset(&mi, 0, sizeof(mi));
         mi.cbSize = sizeof(mi);
@@ -2054,6 +2076,20 @@ INT_PTR CManageFavoritiesDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lPa
     return FALSE;
 }
 
+// feature 131: a favourite's name is UTF-8 - it goes into the list box as UTF-16 (always one item,
+// the list's indexes are those of 'Favorities')
+static void AddFavoriteNameToListBox(HWND wnd, const char* name)
+{
+    WCHAR* nameW = SplU8ToWAlloc(name);
+    if (nameW != NULL)
+    {
+        SendMessageW(wnd, LB_ADDSTRING, 0, (LPARAM)nameW);
+        free(nameW);
+    }
+    else
+        SendMessageA(wnd, LB_ADDSTRING, 0, (LPARAM)name);
+}
+
 BOOL CManageFavoritiesDialog::OnInit(WPARAM wParam, LPARAM lParam)
 {
     CALL_STACK_MESSAGE1("CManageFavoritiesDialog::OnInit");
@@ -2063,7 +2099,7 @@ BOOL CManageFavoritiesDialog::OnInit(WPARAM wParam, LPARAM lParam)
     int i;
     for (i = 0; i < Favorities.Count; i++)
     {
-        SendMessage(wnd, LB_ADDSTRING, 0, (LPARAM)Favorities[i]->Name);
+        AddFavoriteNameToListBox(wnd, Favorities[i]->Name);
     }
     SendMessage(wnd, LB_SETCURSEL, 0, 0);
 
@@ -2115,7 +2151,7 @@ BOOL CManageFavoritiesDialog::OnRenameFavorite()
             int j = 0;
             for (i = 0; i < Favorities.Count; i++)
             {
-                SendMessage(wnd, LB_ADDSTRING, 0, (LPARAM)Favorities[i]->Name);
+                AddFavoriteNameToListBox(wnd, Favorities[i]->Name);
                 if (strcmp(fav->Name, Favorities[i]->Name) == 0)
                     j = i;
             }
@@ -2136,9 +2172,9 @@ BOOL CManageFavoritiesDialog::OnRemoveFavorite()
     if (i != LB_ERR && i >= 0 && i < Favorities.Count)
     {
         char buf[500];
-        // feature 130: a name typed in this session is code page, one loaded from the configuration
-        // is UTF-8 (the core's registry service)
-        char nameU8[3 * MAX_FAVNAME];
+        // feature 131: the name is UTF-8 always (feature 130: it was code page in the session it was
+        // typed in); the conversion is kept for a text that is not
+        char nameU8[3 * MAX_FAVNAME_U8];
         SplLegacyToU8(Favorities[i]->Name, nameU8, (int)sizeof(nameU8));
         _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_REMOVEWARN), nameU8);
         SplU8TrimTornTail(buf);

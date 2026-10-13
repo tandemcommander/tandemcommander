@@ -1,0 +1,9 @@
+batch131_probe (feature 131), expect: fixed, language: english
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 14:48; desktop 'tc_probe_8904'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+FTPPCT     TEXT   PASS        the program runs: True; the host name 'tc131-%s-%d-%s.invalid' is shown as typed: True; windows seen: [#32770 'FTP Error'] [Static id=2477] Unable to get IP address of server "tc131-%s-%d-%s.invalid". Error: (11001) Nen\u00ED zn\u00E1m \u017E\u00E1dn\u00FD takov\u00FD hostitel.  | [Button id=1] OK || [#32770 'Change Directory'] [Static id=1150] &Change directory to | [Button id=456] &Send path directly to plugin | [Static id=457] path hints | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+FTPPCT     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 2, FAIL 0. Left running: 0; registry restored+identical: True

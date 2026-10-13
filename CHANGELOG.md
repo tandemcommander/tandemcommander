@@ -23,6 +23,31 @@ Fixes for the problems reported on GitHub after 0.1.9.
   with accented letters on the clipboard correctly. The Size column and the
   plug-in's Find window were right and stay right.
 
+- **Plug-ins: a batch of defects found while reading them** (feature 131).
+  - **FTP: an address with `%` in the host name crashed the program**
+    (`ftp://a%sb/`) - the name was used as a format of the error text.
+  - **ZIP: a self-extractor favourite with a long name was lost.** A name of
+    about 25 accented letters (17 CJK) did not load, and the favourite with
+    all its options was deleted at the next save. Favourite names with
+    accented letters are also shown right after a restart now.
+  - **SFTP never works on a shortened path**: a remote or local path that did
+    not fit was cut and the download, upload, delete or rename went on with
+    the cut one; it is refused ("path too long") and a move deletes nothing.
+    A failed operation shows the server's reason ("Permission denied")
+    instead of nothing or the reason of an earlier failure.
+  - **PictView: *Update Thumbnail* works for files with accented letters in
+    the path** (none of them could be opened).
+  - PE Viewer: a version-resource name with a letter such as `č` no longer
+    loses the rest of its line. Undelete: the names of its virtual folders are
+    right in every language. Renamer: "Duplicate name." is no longer followed
+    by an unrelated Windows error; long search and command histories load.
+    Registry Editor: a broken regular expression in Find shows its own error
+    only. File Comparator, DiskMap, 7-Zip: buffer overruns with long font
+    names, long paths and a wrong plural. FTP: Quick Rename with a mask
+    refuses a name that is too long instead of renaming to a cut one.
+  - Spanish: 7-Zip said "El archivo '...' es Aceptar."; the "SFTP error"
+    sentence was wrong in seven languages.
+
 - **Plug-ins: messages with a file name are readable in every language**
   (feature 130, the follow-up of GitHub #7). In a translated version a
   plug-in's question or error that named a file showed the name as wrong

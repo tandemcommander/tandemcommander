@@ -21,14 +21,21 @@
 // helpers
 // ---------------------------------------------------------------------------
 
+// feature 131: UTF-8 as the core hands it (WTF-8: a local name with an unpaired surrogate
+// converts back to that name; it became U+FFFD characters = a name that does not exist).
+// A text that is not UTF-8 at all (a remote name in another encoding) is still converted
+// leniently as before, so that such a file can be stored locally.
 static BOOL Utf8ToWide(const char* s, wchar_t* out, int outCount)
 {
+    if (SplU8ToW(s, out, outCount) > 0)
+        return TRUE;
     return MultiByteToWideChar(CP_UTF8, 0, s, -1, out, outCount) > 0;
 }
 
+// feature 131: total (an unpaired surrogate is kept as WTF-8); FALSE = does not fit, 'out' empty
 static BOOL WideToUtf8(const wchar_t* s, char* out, int outCount)
 {
-    return WideCharToMultiByte(CP_UTF8, 0, s, -1, out, outCount, NULL, NULL) > 0;
+    return SplWToU8(s, out, outCount) > 0;
 }
 
 // builds a Windows long-path-capable wide path from a UTF-8 path
@@ -39,15 +46,23 @@ static void MakeLocalWidePath(const char* utf8Path, wchar_t* wide, int wideCount
     // an uninitialized stack buffer.
     if (wideCount > 0)
         wide[0] = 0;
-    Utf8ToWide(utf8Path, wide, wideCount);
+    if (!Utf8ToWide(utf8Path, wide, wideCount) && wideCount > 0)
+        wide[0] = 0; // a failed conversion may have written a part of the path
 }
 
 // Makes a single remote name component safe to use as a local file name:
 // replaces path separators and Windows-invalid characters with '_'. Prevents a
 // malicious/compromised server from escaping the target directory via a name
 // containing '\' or ':' (POSIX only reserves '/').
-static void SanitizeLocalName(const char* name, char* out, int outSize)
+// feature 131: returns FALSE ('out' empty) when the name does not fit 'out' - a name is
+// never cut (the cut name is another local file); the caller skips the item.
+static BOOL SanitizeLocalName(const char* name, char* out, int outSize)
 {
+    if (strlen(name) >= (size_t)outSize)
+    {
+        out[0] = 0;
+        return FALSE;
+    }
     int i = 0;
     for (; name[i] != 0 && i < outSize - 1; i++)
     {
@@ -63,7 +78,7 @@ static void SanitizeLocalName(const char* name, char* out, int outSize)
     if (strcmp(out, ".") == 0 || strcmp(out, "..") == 0)
     {
         lstrcpynA(out, "_", outSize);
-        return;
+        return TRUE;
     }
     // CF-16: strip trailing dots/spaces (Windows silently drops them, which can
     // collapse the name onto a different existing target) and disarm reserved
@@ -75,7 +90,7 @@ static void SanitizeLocalName(const char* name, char* out, int outSize)
     if (out[0] == 0)
     {
         lstrcpynA(out, "_", outSize);
-        return;
+        return TRUE;
     }
     char base[16];
     int b = 0;
@@ -94,11 +109,17 @@ static void SanitizeLocalName(const char* name, char* out, int outSize)
         if (strcmp(base, kReserved[r]) == 0)
         {
             char tmp[600];
-            _snprintf_s(tmp, _TRUNCATE, "_%s", out);
+            int n = _snprintf_s(tmp, _TRUNCATE, "_%s", out);
+            if (n < 0 || n >= outSize) // the added '_' does not fit
+            {
+                out[0] = 0;
+                return FALSE;
+            }
             lstrcpynA(out, tmp, outSize);
             break;
         }
     }
+    return TRUE;
 }
 
 enum COverwriteMode
@@ -114,6 +135,7 @@ struct COperationCtx
     CSFTPSession* Session;
     volatile BOOL Cancelled;
     int OverwriteMode; // COverwriteMode
+    BOOL TooLongShown; // feature 131: the "too long path" box was shown in this operation
     char Buffer[XFER_BUFSIZE];
 
     COperationCtx(HWND parent, CSFTPSession* session)
@@ -122,6 +144,7 @@ struct COperationCtx
         Session = session;
         Cancelled = FALSE;
         OverwriteMode = ovAsk;
+        TooLongShown = FALSE;
     }
     BOOL CheckCancel()
     {
@@ -134,10 +157,27 @@ struct COperationCtx
 static void WaitText(const char* fmt, const char* arg)
 {
     char msg[1024];
-    _snprintf_s(msg, _TRUNCATE, fmt, arg);
+    if (_snprintf_s(msg, _TRUNCATE, fmt, arg) < 0)
+        SplU8TrimTornTail(msg); // shown only: cut at a whole character
     // reflect current file in the wait window title area via a fresh window
     SalamanderGeneral->DestroySafeWaitWindow();
     SalamanderGeneral->CreateSafeWaitWindow(msg, LoadStr(IDS_PLUGINNAME), 0, TRUE, SalamanderGeneral->GetMainWindowHWND());
+}
+
+// feature 131: a remote or local path that does not fit its buffer is never used in a
+// shortened form (the shortened path names another file or directory): the item is skipped
+// and the operation ends as failed. Every skipped item goes to the log; the box is shown
+// once per operation (a deep tree would show it for every item).
+static void ReportTooLongPath(COperationCtx* ctx, const char* dir, const char* name)
+{
+    Logs.AppendFmt(ctx->Session->GetLogUID(), "Path too long, item skipped: %s -> %s",
+                   CSFTPMsgText(dir).Get(), CSFTPMsgText(name).Get());
+    if (!ctx->TooLongShown)
+    {
+        ctx->TooLongShown = TRUE;
+        SalamanderGeneral->SalMessageBox(ctx->Parent, LoadStr(IDS_TOOLONGPATH),
+                                         LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -160,9 +200,10 @@ static BOOL ConfirmOverwrite(COperationCtx* ctx, const char* localPath)
         return TRUE;
     if (ctx->OverwriteMode == ovSkipAll)
         return FALSE;
-    char msg[1400];
-    _snprintf_s(msg, _TRUNCATE, "The local file already exists:\n%s\n\nOverwrite it?\n"
-                "(Yes = this file, No = skip; hold nothing - use Cancel to skip the rest)", localPath);
+    char msg[4096 + 200]; // feature 131: room for the whole local path (the question itself was cut off)
+    if (_snprintf_s(msg, _TRUNCATE, "The local file already exists:\n%s\n\nOverwrite it?\n"
+                    "(Yes = this file, No = skip; hold nothing - use Cancel to skip the rest)", localPath) < 0)
+        SplU8TrimTornTail(msg);
     // Yes = overwrite this; No = skip this; Cancel = skip all remaining
     int r = SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE),
                                              MB_YESNOCANCEL | MB_ICONQUESTION);
@@ -302,9 +343,14 @@ static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const 
     {
         CSFTPDirEntry* e = entries[i];
         char rpath[4096], lpath[4096], safe[512];
-        PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath)); // real remote name
-        SanitizeLocalName(e->Name, safe, sizeof(safe));            // safe local name
-        _snprintf_s(lpath, _TRUNCATE, "%s\\%s", localDir, safe);
+        if (PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath)) == NULL || // real remote name
+            !SanitizeLocalName(e->Name, safe, sizeof(safe)) ||                    // safe local name
+            !LocalPathAppend(localDir, safe, lpath, sizeof(lpath)))
+        {
+            ReportTooLongPath(ctx, remoteDir, e->Name); // feature 131: skipped, never cut
+            agg = xrFailed;
+            continue;
+        }
         BOOL isLink = e->HasMode && SFTP_S_ISLNK(e->Mode);
         CXferResult r = DownloadRecursive(ctx, rpath, lpath, e->Mode, isLink, e->Size, depth + 1);
         if (r == xrFailed) agg = xrFailed;
@@ -328,14 +374,15 @@ static CXferResult DownloadRecursive(COperationCtx* ctx, const char* remotePath,
             Logs.AppendFmt(ctx->Session->GetLogUID(), LoadStrU8(IDS_SYMLINK_DIR_SKIPPED), CSFTPMsgText(remotePath).Get());
             return xrSkipped; // directory symlink not followed (clarification #4)
         }
-        WaitText("Downloading %s ...", PosixBaseName(remotePath));
+        // feature 131: the translated text the viewer's download already shows (a UTF-8 sentence)
+        WaitText(LoadStrU8(IDS_DOWNLOADINGFILE), CSFTPMsgText(PosixBaseName(remotePath)).Get());
         return DownloadOneFile(ctx, remotePath, localPath, size);
     }
 
     if (SFTP_S_ISDIR(mode))
         return DownloadDir(ctx, remotePath, localPath, depth);
 
-    WaitText("Downloading %s ...", PosixBaseName(remotePath));
+    WaitText(LoadStrU8(IDS_DOWNLOADINGFILE), CSFTPMsgText(PosixBaseName(remotePath)).Get());
     return DownloadOneFile(ctx, remotePath, localPath, size);
 }
 
@@ -399,9 +446,14 @@ BOOL SFTPDownloadFromPanel(HWND parent, CSFTPSession* session, int panel,
     {
         CSFTPDirEntry* e = items[i];
         char rpath[4096], lpath[4096], safe[512];
-        PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath));
-        SanitizeLocalName(e->Name, safe, sizeof(safe));
-        _snprintf_s(lpath, _TRUNCATE, "%s\\%s", targetLocalPath, safe);
+        if (PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath)) == NULL ||
+            !SanitizeLocalName(e->Name, safe, sizeof(safe)) ||
+            !LocalPathAppend(targetLocalPath, safe, lpath, sizeof(lpath)))
+        {
+            ReportTooLongPath(&ctx, remoteDir, e->Name); // feature 131: skipped (and not deleted on a move)
+            ok = FALSE;
+            continue;
+        }
         BOOL isLink = e->HasMode && SFTP_S_ISLNK(e->Mode);
         CXferResult r = DownloadRecursive(&ctx, rpath, lpath, e->Mode, isLink, e->Size, 0);
         if (r == xrFailed)
@@ -505,11 +557,17 @@ static BOOL UploadDirRecursive(COperationCtx* ctx, const char* localDir, const c
     if (selfAttr != INVALID_FILE_ATTRIBUTES && (selfAttr & FILE_ATTRIBUTE_REPARSE_POINT))
         return TRUE; // skip the link; nothing to upload
 
-    ctx->Session->Mkdir(remoteDir, 0755); // ignore "already exists"
-
     wchar_t wpattern[4096];
     char pattern[4096];
-    _snprintf_s(pattern, _TRUNCATE, "%s\\*", localDir);
+    if (!LocalPathAppend(localDir, "*", pattern, sizeof(pattern)))
+    {
+        // feature 131: a cut mask would search another directory; nothing is created remotely
+        ReportTooLongPath(ctx, localDir, "*");
+        return FALSE;
+    }
+
+    ctx->Session->Mkdir(remoteDir, 0755); // ignore "already exists"
+
     MakeLocalWidePath(pattern, wpattern, 4096);
 
     WIN32_FIND_DATAW fd;
@@ -527,11 +585,16 @@ static BOOL UploadDirRecursive(COperationCtx* ctx, const char* localDir, const c
         }
         if (wcscmp(fd.cFileName, L".") == 0 || wcscmp(fd.cFileName, L"..") == 0)
             continue;
-        char name[1024];
-        WideToUtf8(fd.cFileName, name, sizeof(name));
+        char name[1024]; // a name of the file system has at most 255 units = 765 bytes
         char lpath[4096], rpath[4096];
-        _snprintf_s(lpath, _TRUNCATE, "%s\\%s", localDir, name);
-        PosixPathAppend(remoteDir, name, rpath, sizeof(rpath));
+        if (!WideToUtf8(fd.cFileName, name, sizeof(name)) ||
+            !LocalPathAppend(localDir, name, lpath, sizeof(lpath)) ||
+            PosixPathAppend(remoteDir, name, rpath, sizeof(rpath)) == NULL)
+        {
+            ReportTooLongPath(ctx, remoteDir, name); // feature 131: skipped, never cut
+            ok = FALSE;
+            continue;
+        }
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
         {
             if (!UploadDirRecursive(ctx, lpath, rpath, depth + 1))
@@ -567,7 +630,10 @@ static void DeleteLocalTree(const char* localDir, int depth)
     }
     wchar_t wpattern[4096];
     char pattern[4096];
-    _snprintf_s(pattern, _TRUNCATE, "%s\\*", localDir);
+    // feature 131: a cut mask or a cut child path would delete in another place - nothing is
+    // deleted then (the directory stays, RemoveDirectoryW below fails on what is left in it)
+    if (!LocalPathAppend(localDir, "*", pattern, sizeof(pattern)))
+        return;
     MakeLocalWidePath(pattern, wpattern, 4096);
     WIN32_FIND_DATAW fd;
     HANDLE hFind = FindFirstFileW(wpattern, &fd);
@@ -578,8 +644,9 @@ static void DeleteLocalTree(const char* localDir, int depth)
             if (wcscmp(fd.cFileName, L".") == 0 || wcscmp(fd.cFileName, L"..") == 0)
                 continue;
             char name[1024], child[4096];
-            WideToUtf8(fd.cFileName, name, sizeof(name));
-            _snprintf_s(child, _TRUNCATE, "%s\\%s", localDir, name);
+            if (!WideToUtf8(fd.cFileName, name, sizeof(name)) ||
+                !LocalPathAppend(localDir, name, child, sizeof(child)))
+                continue;
             wchar_t wchild[4096];
             MakeLocalWidePath(child, wchild, 4096);
             if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -600,10 +667,9 @@ BOOL SFTPUploadToFS(HWND parent, CSFTPSession* session, const char* sourcePath,
                                             SalamanderGeneral->GetMainWindowHWND());
     BOOL ok = TRUE;
 
-    // the enumerator returns names relative to 'sourcePath'; ensure a separator
-    char srcBase[3072];
-    lstrcpynA(srcBase, sourcePath, sizeof(srcBase));
-    SalamanderGeneral->SalPathAddBackslash(srcBase, sizeof(srcBase));
+    // the enumerator returns names relative to 'sourcePath' (feature 131: joined below by
+    // LocalPathAppend, which adds the separator; the copy into a 3072-byte buffer cut a
+    // longer source path and the upload - and the delete of a move - went elsewhere)
 
     next(NULL, -1, NULL, NULL, NULL, NULL, NULL, nextParam, NULL); // reset enumeration
     BOOL isDir = FALSE;
@@ -617,8 +683,13 @@ BOOL SFTPUploadToFS(HWND parent, CSFTPSession* session, const char* sourcePath,
             break;
         }
         char lpath[4096], rpath[4096];
-        _snprintf_s(lpath, _TRUNCATE, "%s%s", srcBase, name);
-        PosixPathAppend(targetRemoteDir, PosixBaseName(name), rpath, sizeof(rpath));
+        if (!LocalPathAppend(sourcePath, name, lpath, sizeof(lpath)) ||
+            PosixPathAppend(targetRemoteDir, PosixBaseName(name), rpath, sizeof(rpath)) == NULL)
+        {
+            ReportTooLongPath(&ctx, targetRemoteDir, name); // feature 131: skipped (and kept on a move)
+            ok = FALSE;
+            continue;
+        }
         BOOL itemOk;
         if (isDir)
             itemOk = UploadDirRecursive(&ctx, lpath, rpath, 0);
@@ -670,7 +741,13 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
             {
                 CSFTPDirEntry* e = entries[i];
                 char child[4096];
-                PosixPathAppend(remotePath, e->Name, child, sizeof(child));
+                if (PosixPathAppend(remotePath, e->Name, child, sizeof(child)) == NULL)
+                {
+                    // feature 131: never delete the cut path; the item stays, so Rmdir below
+                    // fails and reports this directory
+                    ReportTooLongPath(ctx, remotePath, e->Name);
+                    continue;
+                }
                 BOOL childLink = e->HasMode && SFTP_S_ISLNK(e->Mode);
                 DeleteRecursive(ctx, child, e->Mode, childLink, depth + 1);
             }
@@ -712,7 +789,12 @@ BOOL SFTPDeleteFromPanel(HWND parent, CSFTPSession* session, int panel, const ch
     {
         CSFTPDirEntry* e = items[i];
         char rpath[4096];
-        PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath));
+        if (PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath)) == NULL)
+        {
+            ReportTooLongPath(&ctx, remoteDir, e->Name); // feature 131: never delete the cut path
+            ok = FALSE;
+            continue;
+        }
         WaitText("Deleting %s ...", e->Name);
         BOOL isLink = e->HasMode && SFTP_S_ISLNK(e->Mode);
         if (!DeleteRecursive(&ctx, rpath, e->Mode, isLink, 0))
@@ -752,7 +834,11 @@ static void ChmodRecursive(COperationCtx* ctx, const char* remotePath, unsigned 
                 if (e->HasMode && SFTP_S_ISLNK(e->Mode))
                     continue; // do not chmod through symlinks
                 char child[4096];
-                PosixPathAppend(remotePath, e->Name, child, sizeof(child));
+                if (PosixPathAppend(remotePath, e->Name, child, sizeof(child)) == NULL)
+                {
+                    ReportTooLongPath(ctx, remotePath, e->Name); // feature 131
+                    continue;
+                }
                 ChmodRecursive(ctx, child, mode, SFTP_S_ISDIR(e->Mode), recurse, depth + 1);
             }
         }
@@ -774,7 +860,7 @@ BOOL SFTPChangeAttrsFromPanel(HWND parent, CSFTPSession* session, int panel, con
     char label[256];
     if (items[0]->HasMode)
         mode = items[0]->Mode & 07777;
-    lstrcpynA(label, items[0]->Name, sizeof(label));
+    SplU8CopyTrunc(label, sizeof(label), items[0]->Name); // shown only: cut at a whole character (feature 131)
     BOOL multiple = items.Count > 1;
     if (multiple)
         _snprintf_s(label, _TRUNCATE, "%d item(s)", items.Count);
@@ -792,7 +878,11 @@ BOOL SFTPChangeAttrsFromPanel(HWND parent, CSFTPSession* session, int panel, con
     {
         CSFTPDirEntry* e = items[i];
         char rpath[4096];
-        PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath));
+        if (PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath)) == NULL)
+        {
+            ReportTooLongPath(&ctx, remoteDir, e->Name); // feature 131
+            continue;
+        }
         BOOL itemIsDir = e->HasMode && SFTP_S_ISDIR(e->Mode);
         ChmodRecursive(&ctx, rpath, mode, itemIsDir, recurse, 0);
         if (setTime)
@@ -831,7 +921,11 @@ static void ChownRecursive(COperationCtx* ctx, const char* remotePath,
                 if (e->HasMode && SFTP_S_ISLNK(e->Mode))
                     continue; // do not chown through symlinks
                 char child[4096];
-                PosixPathAppend(remotePath, e->Name, child, sizeof(child));
+                if (PosixPathAppend(remotePath, e->Name, child, sizeof(child)) == NULL)
+                {
+                    ReportTooLongPath(ctx, remotePath, e->Name); // feature 131
+                    continue;
+                }
                 ChownRecursive(ctx, child, uid, gid, setUid, setGid, SFTP_S_ISDIR(e->Mode), recurse, depth + 1);
             }
         }
@@ -848,7 +942,7 @@ BOOL SFTPChangeOwnerFromPanel(HWND parent, CSFTPSession* session, int panel, con
         return FALSE;
 
     char label[256];
-    lstrcpynA(label, items[0]->Name, sizeof(label));
+    SplU8CopyTrunc(label, sizeof(label), items[0]->Name); // shown only: cut at a whole character (feature 131)
     BOOL multiple = items.Count > 1;
     if (multiple)
         _snprintf_s(label, _TRUNCATE, "%d item(s)", items.Count);
@@ -874,7 +968,11 @@ BOOL SFTPChangeOwnerFromPanel(HWND parent, CSFTPSession* session, int panel, con
     {
         CSFTPDirEntry* e = items[i];
         char rpath[4096];
-        PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath));
+        if (PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath)) == NULL)
+        {
+            ReportTooLongPath(&ctx, remoteDir, e->Name); // feature 131
+            continue;
+        }
         BOOL itemIsDir = e->HasMode && SFTP_S_ISDIR(e->Mode);
         ChownRecursive(&ctx, rpath, uid, gid, setUid, setGid, itemIsDir, recurse, 0);
     }

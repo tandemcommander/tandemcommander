@@ -198,7 +198,19 @@ void WINAPI GetSzText()
                 break;
             }
             if (di->Record->Flags & FR_FLAGS_DELETED)
-                *TransferLen = sprintf(TransferBuffer, String<char>::LoadStr(resID));
+            {
+                // feature 131: a column's text is UTF-8 for the core (text that is not valid UTF-8
+                // is drawn through the code page, but code-page text can be valid UTF-8 by chance);
+                // and the resource text is copied, not used as a printf format
+                int len = SplWToU8(String<wchar_t>::LoadStr(resID), TransferBuffer, TRANSFER_BUFFER_MAX);
+                if (len > 0)
+                    *TransferLen = len - 1; // without the terminator
+                else
+                {
+                    lstrcpyn(TransferBuffer, String<char>::LoadStr(resID), TRANSFER_BUFFER_MAX);
+                    *TransferLen = (int)strlen(TransferBuffer);
+                }
+            }
             else
                 *TransferLen = 0; // don't display "Good" for existing files
         }

@@ -53,6 +53,11 @@ public:
     static wchar_t* CopyToUnicode(wchar_t* dest, const CHAR* src, unsigned long srclen, unsigned long destlen);
 
     static CHAR* LoadStr(int resID);
+    // feature 131: the name of a virtual directory made from the resource text 'resID' - in the
+    // encoding of the names read from the volume (UTF-8 for char; LoadStr is code-page text, and
+    // a name the plug-in lists, parses back from a path and creates on disk must be UTF-8).
+    // With 'useNumber' the text is a printf format with one %d for 'number'. new[]; NULL = low memory
+    static CHAR* NewVirtualDirName(int resID, DWORD number, BOOL useNumber);
     static CHAR* AddNumberSuffix(CHAR* filename, int n);
 
     static BOOL SysError(int title, int error, ...);

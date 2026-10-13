@@ -347,7 +347,9 @@ void CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalamanderRe
                             if (ExpandSfxSettings(&temp.Settings, buffer, siz) == siz)
                             {
                                 sprintf(key, CONFIG_SFXFAVNAME, i + 1);
-                                if (registry->GetValue(favKey, key, REG_SZ, temp.Name, MAX_FAVNAME))
+                                // feature 131: the registry service gives UTF-8; a name of 49 letters can
+                                // have 147 bytes (with 50 bytes the read failed and the favourite was lost)
+                                if (registry->GetValue(favKey, key, REG_SZ, temp.Name, MAX_FAVNAME_U8))
                                 {
                                     CFavoriteSfx* newSetting = new CFavoriteSfx;
                                     if (newSetting)

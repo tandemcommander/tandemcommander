@@ -1270,6 +1270,8 @@ void CRenamerDialog::ReloadSourceFiles()
         if (SourceFiles.Count > 0)
         {
             char buf[200];
+            // code-page text (the core loads the template with LoadStr for a plug-in) - the A call
+            // below is the right one (checked in feature 131)
             SG->ExpandPluralFilesDirs(buf, 200, SourceFiles.Count - dirs, dirs,
                                       epfdmNormal, FALSE);
             SetDlgItemText(HWindow, IDS_COUNT, buf);

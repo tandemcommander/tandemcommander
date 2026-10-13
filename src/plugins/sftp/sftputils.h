@@ -68,7 +68,19 @@ char* SanitizeUTF8(const char* src, char* dst, int dstSize);
 
 // Joins a POSIX directory and a name into 'dst' (size 'dstSize') using '/'.
 // Handles the root ("/") and missing trailing slash. Returns 'dst'.
+// feature 131: a result that does not fit is NOT cut - 'dst' is then empty and the
+// function returns NULL; the caller refuses the operation (a shortened path names
+// another file or directory). Every caller checks the result (feature 131).
 char* PosixPathAppend(const char* dir, const char* name, char* dst, int dstSize);
+
+// feature 131: joins a Windows directory and a name (or a "*" mask) into 'dst' using
+// '\\' (none is added when 'dir' already ends with one). Returns FALSE and leaves
+// 'dst' empty when the result does not fit - never a cut path.
+BOOL LocalPathAppend(const char* dir, const char* name, char* dst, int dstSize);
+
+// feature 131: the English name of an SFTP status code (SSH_FX_*, what
+// libssh2_sftp_last_error returns) for the "SFTP error %d: %s" reason; ASCII, never NULL.
+const char* SftpStatusName(unsigned long code);
 
 // Returns a pointer to the last path component of a POSIX path.
 const char* PosixBaseName(const char* path);

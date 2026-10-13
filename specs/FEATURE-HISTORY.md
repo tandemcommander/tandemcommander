@@ -2058,3 +2058,30 @@ a few early ones are out of sequence).
     been garbled).
   - Per-plug-in records with every composition and its verdict: `triage/*.md`; defects seen on
     the way are in NEXT-WORK D.
+- 131-plugin-defect-batch: **about thirty notes of 130 ("seen by reading"), each measured first**,
+  a verdict per item in `items/*.md`. Real and fixed, the serious ones: **FTP crashed on a host
+  name with `%`** (`ftp://a%sb/`: the name was printed into a buffer then used as a printf format;
+  `FTPDoublePercents` in `ftputils.h`); **a ZIP self-extractor favourite with a name of 50+ UTF-8
+  bytes did not load and was deleted with its options at the next save** (names are UTF-8 from the
+  dialog to the registry now, compared with `SalNameOrderCompareCI`); **SFTP acted on cut paths**
+  (`PosixPathAppend` / `LocalPathAppend` return nothing when the result does not fit and every
+  caller refuses; a move deletes nothing) and showed no or a stale reason (`SetLastErrorFromSftp`
+  reads the server's status); PictView *Update Thumbnail* could not open accented paths (a
+  code-page path for an engine that reads UTF-8) and cut paths at `_MAX_PATH` without a
+  terminator; PE Viewer's narrow `%ls`; Undelete's virtual folder names (code page used as names);
+  Renamer's stale Windows reason and its histories read with 260 bytes; DiskMap's
+  `CZStringBuffer` off by one; File Comparator's 32-byte font field; 7-Zip's `((int*)&err)[1]`.
+  Core: the last three code-page templates of `CheckAndCreateDirectory`, the plug-in dialog
+  subject cut at `MAX_PATH`. Spanish 7-Zip "es Aceptar", "SFTP error" in seven languages (pinned).
+  - **Not defects / unreachable** (recorded): the three FTP notes called most serious - `char` is
+    unsigned in every plug-in (`/J` in `plugins/shared/vcxproj/plugin_base.props`), and the core
+    never passes a user part of 260 bytes or more; 7-Zip's `SetWindowText` (A) on a core
+    `CStaticText` is right (the control reads the bytes as UTF-8 - the W call would be wrong).
+  - Probe `probe/batch131_probe.ps1`: 0.1.9 crashes, the new build shows the message. Most rows
+    need a server, a volume or a special file and were not driven (list in the fix-log). SFTP
+    harness 85 / 0; regressions 113, 117, 127, 129, 130 clean.
+  - Three reviews, no blocker: `StrICmp` on UTF-8 folds continuation bytes through the code
+    page's table (`VÍR` = `VÝR`) - a UTF-8 name is compared with the name rule; a third template
+    site in the core was missed; one unchecked join in SFTP.
+  - Left: NEXT-WORK D (PictView's EXIF writer can replace a malformed JPEG by a truncated one;
+    SFTP's silently ended listing; FTP autorename).

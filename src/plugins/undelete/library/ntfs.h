@@ -811,9 +811,9 @@ FILE_RECORD_I<CHAR>* CMFTSnapshot<CHAR>::GetVirtualDirectory(DWORD ref, int resI
     vd->FileNames = new FILE_NAME_I<CHAR>;
     if (vd->FileNames == NULL)
         return NULL;
-    CHAR text[100];
-    String<CHAR>::SPrintF(text, String<CHAR>::LoadStr(resID), ref);
-    vd->FileNames->FNName = String<CHAR>::NewStr(text);
+    // feature 131: the name in the encoding of the volume's names (it was code-page text, printed
+    // without a bound into 100 characters); only "Directory%06d" takes the number
+    vd->FileNames->FNName = String<CHAR>::NewVirtualDirName(resID, ref, resID == IDS_VDIRECTORY);
     if (vd->FileNames->FNName == NULL)
         return NULL;
 

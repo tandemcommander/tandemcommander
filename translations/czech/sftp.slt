@@ -221,7 +221,7 @@ COMMENT,"Česká verze"
 95,1,"Operace byla zrušena."
 
 [STRINGTABLE 6]
-96,1,"%d o chybě SFTP: %s"
+96,1,"Chyba SFTP %d: %s"
 97,1,"Cesta není adresář."
 98,1,"Připojení bylo přerušeno. Opětovné připojování k %s..."
 99,1,"Přeskočen symbolický odkaz na adresář „%s“ (nebyl sledován během rekurzivního přenosu)."

@@ -200,6 +200,7 @@ public:
         this->_l = _tcslen(s);
         this->_c = this->_l + 1;
         this->_s = (TCHAR*)malloc(this->_c * sizeof TCHAR);
+        memcpy(this->_s, s, this->_c * sizeof TCHAR); // feature 131: the text was not copied (the constructor is not used)
     }
     explicit CZStringBuffer(size_t size)
     {
@@ -261,15 +262,24 @@ public:
 
         return this->AppendAt(s, len, pos);
     }
+    // feature 131: TRUE when 'len' characters written at 'pos' (at the end of the text when
+    // 'pos' is behind it) fit the buffer WITH the terminator. AppendAt writes nothing when they
+    // do not, so a caller for which a lost text matters (a path) asks first.
+    BOOL CanAppendAt(size_t len, size_t pos) const
+    {
+        size_t p = min(pos, this->_l);
+        return p < this->_c && len < this->_c - p;
+    }
     CZStringBuffer* AppendAt(TCHAR const* s, size_t len, size_t pos)
     {
-        int p = (int)min(pos, this->_l);
-        if (len + p > this->_c)
-            return this; //TODO!
+        size_t p = min(pos, this->_l);
+        // feature 131: the bound counts the terminator (a text that filled the buffer exactly
+        // wrote it one character behind the buffer) and exactly 'len' characters are copied
+        // (the whole 's' was, whatever 'len' said)
+        if (!this->CanAppendAt(len, pos))
+            return this; // does not fit: nothing is changed, see CanAppendAt
 
-        //len = this->_c - this->_l - 1;
-        _tcscpy(&this->_s[p], s);
-        //memcpy(this->_s[this->_l], s, len * sizeof TCHAR);
+        memcpy(&this->_s[p], s, len * sizeof TCHAR);
 
         this->_l = len + p;
         this->_s[this->_l] = TEXT('\0');
@@ -279,8 +289,8 @@ public:
     CZStringBuffer* AppendAt(TCHAR c, size_t pos)
     {
         size_t p = min(pos, this->_l);
-        if (p >= this->_c)
-            return this; //TODO!
+        if (!this->CanAppendAt(1, pos)) // feature 131: the character and the terminator
+            return this;
 
         this->_s[p] = c;
 

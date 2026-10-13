@@ -203,11 +203,11 @@ BOOL ErrorHelper(HWND parent, const char* message, int lastError, va_list arglis
         return ErrorHelperWide(parent, message, lastError, arglist, resID);
     char buf[2048]; //temp variable
     *buf = 0;
-    vsprintf(buf, message, arglist);
+    _vsnprintf_s(buf, sizeof(buf), _TRUNCATE, message, arglist); // feature 131: bounded (it was vsprintf); a text that does not fit is cut
     if (lastError != ERROR_SUCCESS)
     {
         // insert a space between our message and the system error description
-        if (*buf != 0 && *(buf + strlen(buf) - 1) != ' ')
+        if (*buf != 0 && *(buf + strlen(buf) - 1) != ' ' && strlen(buf) + 1 < sizeof(buf)) // (room for the space: the text may fill the buffer)
             strcat(buf, " ");
         int l = lstrlen(buf);
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError,

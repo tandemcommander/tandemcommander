@@ -375,6 +375,24 @@ static void FormatResU8(char* buf, int bufSize, int resID, va_list arglist)
     TrimTornUtf8Tail(buf);
 }
 
+// feature 131: see miscstr.h. The text comes from the UTF-16 resource (as in the exFAT snapshot,
+// which always did), so "{Vsechny vymazane soubory}" with its accents is a UTF-8 name like every
+// name read from the volume; the code-page text is the fallback only when that fails.
+template <>
+char* String<char>::NewVirtualDirName(int resID, DWORD number, BOOL useNumber)
+{
+    char text[1024];
+    if (SplWToU8(String<wchar_t>::LoadStr(resID), text, sizeof(text)) <= 0)
+        lstrcpyn(text, String<char>::LoadStr(resID), sizeof(text));
+    if (!useNumber)
+        return NewStr(text);
+    char name[1024 + 32];
+    name[0] = 0;
+    _snprintf_s(name, _TRUNCATE, text, number); // bounded (it was vsprintf into 100 bytes)
+    TrimTornUtf8Tail(name);
+    return NewStr(name);
+}
+
 HWND GetParentHWND()
 {
     HWND hParent = SalamanderGeneral->GetMsgBoxParent();

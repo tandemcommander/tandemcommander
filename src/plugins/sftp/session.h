@@ -214,6 +214,12 @@ protected:
     BOOL RunConnectAttemptOnWorker(HWND parent, CSFTPHostKeyList* trustStore,
                                    CSFTPConnectResult* result);
     void SetLastErrorFromSsh(const char* prefix);
+    // feature 131: the reason of a failed SFTP request (the server's status code where
+    // there is one, else the session's error text); every SFTP operation that fails
+    // calls it, so GetLastErrorText() never holds the text of an earlier failure
+    void SetLastErrorFromSftp(const char* prefix);
+    // feature 131: "not connected" as the reason; returns FALSE for 'return' statements
+    BOOL SetLastErrorNotConnected();
     void Log(const char* text);
     void LogFmt(const char* fmt, ...);
 

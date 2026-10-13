@@ -221,7 +221,7 @@ COMMENT,"Deutsche Version"
 95,1,"Der Vorgang wurde abgebrochen."
 
 [STRINGTABLE 6]
-96,1,"SFTP-Fehler-%d: %s"
+96,1,"SFTP-Fehler %d: %s"
 97,1,"Der Pfad ist kein Verzeichnis."
 98,1,"Verbindung unterbrochen. Stelle die Verbindung zu %s wieder her..."
 99,1,"Symbolischer Link des Verzeichnisses „%s“ übersprungen (wurde bei der rekursiven Übertragung nicht verfolgt)."

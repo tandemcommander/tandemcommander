@@ -130,6 +130,43 @@ BOOL FTPHasTheSameRootPath(const char* p1, const char* p2, int userLength);
 // returns an error description
 char* FTPGetErrorText(int err, char* buf, int bufSize);
 
+// feature 131: copies 'src' to 'dst' ('dstSize' bytes) with every '%' doubled - for a text that
+// is printed into a buffer which is then used as a printf FORMAT (the connect error texts with
+// the host name): a '%' typed in a host name would be read there as a directive. A pair that
+// does not fit is left out whole. Returns FALSE when the text was cut.
+inline BOOL FTPDoublePercents(char* dst, int dstSize, const char* src)
+{
+    if (dstSize <= 0)
+        return FALSE;
+    char* d = dst;
+    char* end = dst + dstSize - 1; // room for the terminator
+    if (src != NULL)
+    {
+        while (*src != 0)
+        {
+            int need = *src == '%' ? 2 : 1;
+            if (end - d < need)
+                break;
+            if (need == 2)
+                *d++ = '%';
+            *d++ = *src++;
+        }
+    }
+    *d = 0;
+    return src == NULL || *src == 0;
+}
+
+// feature 131: 'format' was cut by a bounded printf and will be used as a printf format: drops
+// the '%' characters at its end, so that it cannot end in half a directive (a whole "%%" pair
+// at the end is dropped with them, which only loses one shown '%')
+inline void FTPDropCutFormatTail(char* format)
+{
+    char* s = format + strlen(format);
+    while (s > format && *(s - 1) == '%')
+        s--;
+    *s = 0;
+}
+
 // returns, based on the path type, the character used to separate path components (subdirectories)
 char FTPGetPathDelimiter(CFTPServerPathType pathType);
 

@@ -1967,7 +1967,7 @@ int CZipUnpack::ExtractFiles(const char* targetDir)
     WinSize = SLIDE_WINDOW_SIZE;
     localHeader = (CLocalFileHeader*)malloc(MAX_HEADER_SIZE);
     tempDir = (char*)malloc(sizeof(TCHAR) * tempDirSize);
-    progrTextBuf = (LPTSTR)malloc(sizeof(TCHAR) * (maxNameLen + 128)); // + the "extracting" prefix
+    progrTextBuf = (LPTSTR)malloc(sizeof(TCHAR) * (maxNameLen + PROGRESS_PREFIX_SIZE)); // + the "extracting" prefix
     if (!localHeader || !tempDir || !progrTextBuf ||
         !InputBuffer || !SlideWindow)
     {
@@ -2000,10 +2000,11 @@ int CZipUnpack::ExtractFiles(const char* targetDir)
                                                    targetDir, ProgressTotalSize, LoadStr(IDS_PLUGINNAME)))
         errorID = IDS_NODISPLAY;
     {
-        progrText = progrTextBuf;
         sour = LoadStrU8(Test ? IDS_TESTING : IDS_EXTRACTING); // feature 130: the prefix of a UTF-8 name
-        while (*sour)
-            *progrText++ = *sour++;
+        // feature 131: the prefix is bounded by the room the buffer has for it (it was copied
+        // without a limit); cut at a whole character
+        SplU8CopyTrunc(progrTextBuf, PROGRESS_PREFIX_SIZE, sour);
+        progrText = progrTextBuf + strlen(progrTextBuf);
         fixed_tl64 = NULL; //for
         fixed_td64 = NULL;
         fixed_tl32 = NULL; //for

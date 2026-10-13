@@ -311,6 +311,59 @@ void HandlePathRelativeToZip2Sfx(char* path, const char* zip2sfxDir)
     }
 }
 
+#ifdef ZIP_DLL
+
+// feature 131: a path in the settings file is code page (the file is read by zip2sfx.exe, a
+// code-page program; a file written by hand or by an older version) or UTF-8 (written by the
+// plug-in for a path the code page cannot hold). The plug-in works with UTF-8: valid UTF-8 is
+// kept, anything else is taken as code page. A path that does not fit is refused, never cut.
+static void ImportedPathToU8(char* path, int pathSize)
+{
+    if (SplIsASCII(path))
+        return;
+    char* u8 = SplLegacyToU8Alloc(path);
+    if (u8 != NULL && (int)strlen(u8) < pathSize)
+        strcpy(path, u8);
+    else
+        path[0] = 0;
+    if (u8 != NULL)
+        free(u8);
+}
+
+// feature 131: TRUE when the code-page form 'ansi' of a UTF-8 path can be written to the settings
+// file: it must be read back as the same path by the plug-in's import, which takes valid UTF-8
+// as UTF-8 - so code-page bytes that are not ASCII and happen to be valid UTF-8 cannot
+inline BOOL CanExportPathInCodePage(const char* ansi)
+{
+    if (SplIsASCII(ansi))
+        return TRUE;
+    WCHAR* w = SplU8ToWAlloc(ansi);
+    if (w == NULL)
+        return TRUE; // not UTF-8: the import reads it as code page
+    free(w);
+    return FALSE;
+}
+
+// feature 131: the form of the UTF-8 path 'pathU8' for the settings file: code page when that
+// loses nothing (zip2sfx.exe opens the file with a code-page call), else UTF-8 as it is
+static const char* ExportPath(char* buffer, int bufferSize, const char* pathU8)
+{
+    if (SplIsASCII(pathU8))
+        return pathU8;
+    WCHAR* w = SplU8ToWAlloc(pathU8);
+    if (w != NULL)
+    {
+        BOOL usedDefault = FALSE;
+        int res = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, w, -1, buffer, bufferSize, NULL, &usedDefault);
+        free(w);
+        if (res != 0 && !usedDefault && CanExportPathInCodePage(buffer))
+            return buffer;
+    }
+    return pathU8;
+}
+
+#endif //ZIP_DLL
+
 // return values
 //
 // 0 OK
@@ -423,6 +476,9 @@ int ImportSFXSettings(const char* textData, CSfxSettings* settings, const char* 
         if (lstrcmpi(buf1, SFX_PACKAGE) == 0)
         {
             sour = GetString(settings->SfxFile, MAX_PATH, sour);
+#ifdef ZIP_DLL
+            ImportedPathToU8(settings->SfxFile, MAX_PATH);
+#endif //ZIP_DLL
             HandlePathRelativeToZip2Sfx(settings->SfxFile, zip2sfxDir);
             continue;
         }
@@ -519,6 +575,9 @@ int ImportSFXSettings(const char* textData, CSfxSettings* settings, const char* 
         if (lstrcmpi(buf1, SFX_ICONFILE) == 0)
         {
             sour = GetString(settings->IconFile, MAX_PATH, sour);
+#ifdef ZIP_DLL
+            ImportedPathToU8(settings->IconFile, MAX_PATH);
+#endif //ZIP_DLL
             HandlePathRelativeToZip2Sfx(settings->IconFile, zip2sfxDir);
             continue;
         }
@@ -1003,7 +1062,8 @@ BOOL CZipPack::ExportSFXSettings(CFile* outFile, CSfxSettings* settings)
 
     if (WriteSFXComment(outFile, SFX_COMMENT_PACKAGE))
         return FALSE;
-    sprintf(buf1, "%s=\"%s\"\r\n", SFX_PACKAGE, ExportString(buf2, settings->SfxFile));
+    char pathBuf[MAX_PATH]; // feature 131: the code-page form of a path (the fields have MAX_PATH bytes)
+    sprintf(buf1, "%s=\"%s\"\r\n", SFX_PACKAGE, ExportString(buf2, ExportPath(pathBuf, MAX_PATH, settings->SfxFile)));
     if (Write(outFile, buf1, lstrlen(buf1), NULL))
         return FALSE;
 
@@ -1124,7 +1184,7 @@ BOOL CZipPack::ExportSFXSettings(CFile* outFile, CSfxSettings* settings)
 
     if (WriteSFXComment(outFile, SFX_COMMENT_ICOFILE))
         return FALSE;
-    sprintf(buf1, "%s=\"%s\"\r\n", SFX_ICONFILE, ExportString(buf2, settings->IconFile));
+    sprintf(buf1, "%s=\"%s\"\r\n", SFX_ICONFILE, ExportString(buf2, ExportPath(pathBuf, MAX_PATH, settings->IconFile)));
     if (Write(outFile, buf1, lstrlen(buf1), NULL))
         return FALSE;
 

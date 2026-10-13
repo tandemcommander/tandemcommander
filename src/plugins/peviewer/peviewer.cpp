@@ -409,8 +409,21 @@ BOOL CPluginInterfaceForViewer::ViewFile(LPCTSTR name, int left, int top, int wi
         // Create a temporary file and pour the module dump into it.
         // tempFileName is UTF-8 (TEMP dir may contain non-ASCII) -> use _wfopen
         WCHAR* wTempFileName = SplU8ToWExtAlloc(tempFileName);
-        FILE* outStream = wTempFileName != NULL ? _wfopen(wTempFileName, L"w")
-                                                : _tfopen(tempFileName, _T("w"));
+        // feature 131: the stream is checked - a file that could not be opened gave NULL to the
+        // dump and to fclose (the C runtime ends the program for a NULL stream). The UTF-8 name
+        // is not handed to the A function any more (it was, when the conversion failed).
+        FILE* outStream = wTempFileName != NULL ? _wfopen(wTempFileName, L"w") : NULL;
+        if (outStream == NULL)
+        {
+            if (wTempFileName != NULL)
+                DeleteFileW(wTempFileName); // SalGetTempFileName created the file
+            free(wTempFileName);
+            SetCursor(hOldCur);
+            SalGeneral->SalMessageBox(SalGeneral->GetMsgBoxParent(), LoadStr(IDS_ERR_TMP),
+                                      LoadStr(IDS_PLUGIN_NAME), MB_OK | MB_ICONEXCLAMATION);
+            UnmapFileFromMemory(hFile, hFileMapping, lpFileBase);
+            return TRUE;
+        }
         free(wTempFileName);
         if (!DumpFileInfo(lpFileBase, fileSize, outStream))
         {

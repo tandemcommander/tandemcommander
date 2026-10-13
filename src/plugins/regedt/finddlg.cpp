@@ -1548,7 +1548,14 @@ BOOL CFindThread::Init()
             {
                 const char* err = SalRegExp->GetLastErrorText();
                 if (err)
-                    Error(GetParent(), err);
+                {
+                    // feature 131: the text is an insert, not the printf format (a '%' in it was
+                    // read as a directive), and it is shown alone: Error() adds the system's text
+                    // for GetLastError(), which has nothing to do with a regular expression
+                    HWND parent = GetParent();
+                    SetLastError(ERROR_SUCCESS);
+                    Error(parent, "%s", err);
+                }
                 return FALSE;
             }
         }

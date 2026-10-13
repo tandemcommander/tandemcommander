@@ -483,7 +483,7 @@ void CConnectDialog::InitDrives()
     {
         char buf[1024];
         buf[0] = 0;
-        strcpy(buf, String<char>::LoadStr(IDS_VOLENUMERATE));
+        lstrcpyn(buf, String<char>::LoadStr(IDS_VOLENUMERATE), sizeof(buf) - 1); // feature 131: bounded, room for the " " below
         if (err != ERROR_SUCCESS)
         {
             strcat(buf, " ");

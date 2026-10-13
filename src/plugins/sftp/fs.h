@@ -71,12 +71,14 @@ public:
     // ChangePath; used by the connect flow
     void SetConnectParams(const CSFTPConnectParams* params);
 
-    // builds "user@host:port/path" into 'buf'
-    void MakeUserPart(const char* path, char* buf, int bufSize);
+    // builds "user@host:port/path" into 'buf'; feature 131: returns FALSE and leaves
+    // 'buf' empty when it does not fit - a path is never cut, the caller refuses
+    BOOL MakeUserPart(const char* path, char* buf, int bufSize);
     // like GetCurrentPath but honors the real buffer size; internal navigation
     // must not truncate a long remote path to MAX_PATH (CF-7)
-    void GetCurrentPathFull(char* buf, int bufSize);
+    BOOL GetCurrentPathFull(char* buf, int bufSize);
     // parses a user-part into host/port/user/path; returns FALSE on syntax error
+    // (feature 131: also when the path does not fit 'pathSize' - it was cut)
     static BOOL ParseUserPart(const char* userPart, char* host, int* port, char* user,
                               char* path, int pathSize);
 

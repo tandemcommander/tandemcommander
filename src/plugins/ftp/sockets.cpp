@@ -995,7 +995,11 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
                 TRACE_E("CSocket::GetProxyError(): unexpected value of ProxyErrorCode: pecConPrxSrvError!");
             if (formatBufSize > 0)
             {
-                _snprintf_s(formatBuf, formatBufSize, _TRUNCATE,
+                // feature 131: the caller uses 'formatBuf' as a printf format - a '%' of the host
+                // name is doubled, and a cut text must not end in half a directive
+                char hostEsc[2 * HOST_MAX_SIZE];
+                FTPDoublePercents(hostEsc, _countof(hostEsc), HostAddress);
+                if (_snprintf_s(formatBuf, formatBufSize, _TRUNCATE,
                             LoadStr(ProxyErrorCode == pecGettingHostIP ? IDS_GETIPERROR : ProxyErrorCode == pecSendingBytes    ? IDS_PROXYSENDREQERROR
                                                                                       : ProxyErrorCode == pecReceivingBytes    ? IDS_PROXYRECVREPERROR
                                                                                       : ProxyErrorCode == pecUnexpectedReply   ? IDS_PROXYUNEXPECTEDREPLY
@@ -1004,7 +1008,10 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
                                                                                       : ProxyErrorCode == pecUserPassAuthFail  ? IDS_PROXYERRUSERPASSFAIL
                                                                                       : ProxyErrorCode == pecListenUnsup       ? IDS_PROXYERRLISTENUNSUP
                                                                                                                                : IDS_PROXYOPENCONERROR), // ProxyErrorCode == pecProxySrvError or pecHTTPProxySrvError
-                            HostAddress, HostPort);
+                            hostEsc, HostPort) < 0)
+                {
+                    FTPDropCutFormatTail(formatBuf);
+                }
             }
             lstrcpyn(errBuf, errText, errBufSize);
         }

@@ -111,10 +111,10 @@ int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
         sour = LoadStrU8(IDS_REMOVING);
     else
         sour = LoadStrU8(IDS_DELETING);
-    progrText = progrTextBuf;
-    while (*sour)
-        *progrText++ = *sour++;
-    progrPrefixLen = (int)(progrText - progrTextBuf);
+    // feature 131: the prefix is bounded (it was copied without a limit); cut at a whole character
+    SplU8CopyTrunc(progrTextBuf, PROGRESS_PREFIX_SIZE, sour);
+    progrPrefixLen = (int)strlen(progrTextBuf);
+    progrText = progrTextBuf + progrPrefixLen;
     if (Config.BackupZip)
     {
         Salamander->ProgressDialogAddText(LoadStr(IDS_BACKUPING), TRUE);
@@ -139,7 +139,8 @@ int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
               ", isdir: " << curFile->IsDir <<
               ", file attr:" << curFile->FileAttr);
 */
-            lstrcpyn(progrText, curFile->Name + RootLen + (RootLen ? 1 : 0), (int)sizeof(progrTextBuf) - progrPrefixLen);
+            // feature 131: a name that does not fit the line is shortened at a whole character (shown only)
+            SplU8CopyTrunc(progrText, (int)sizeof(progrTextBuf) - progrPrefixLen, curFile->Name + RootLen + (RootLen ? 1 : 0));
             Salamander->ProgressDialogAddText(progrTextBuf, TRUE);
             if (i + 1 < DelFiles.Count)
                 nextFile = DelFiles[i + 1];

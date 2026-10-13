@@ -544,6 +544,13 @@ BOOL CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND parent, 
             {
                 char targetName[2 * MAX_PATH];
                 SalamanderGeneral->MaskName(targetName, 2 * MAX_PATH, file.Name, newName);
+                if (strlen(targetName) >= MAX_PATH)
+                { // feature 131: the name made by the mask does not fit 'newName' (MAX_PATH bytes by the
+                    // interface) - refused; it was cut there, also inside a character, and the file renamed to the cut name
+                    SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH),
+                                                     LoadStr(IDS_FTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                    return FALSE; // nothing renamed; the standard dialog opens again with the typed mask
+                }
                 lstrcpyn(newName, targetName, MAX_PATH);
             }
 

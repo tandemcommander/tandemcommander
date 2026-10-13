@@ -47,8 +47,15 @@ BOOL FileError(HWND parent, const char* fileName, int error,
     // text that is not valid UTF-8 through the code page (the Windows error text was garbled)
     SplU8CopyTrunc(buffer, _countof(buffer), LoadStrU8(error));
     size_t len = strlen(buffer);
-    if (err != NO_ERROR)
+    // feature 131: the Windows reason only behind a message of a failed system call - a logical
+    // error ("Duplicate name.") was followed by the text of a stale last error of an earlier call
+    if (err != NO_ERROR && FileErrorHasSystemReason(error))
     {
+        if (len > 0 && len + 1 < _countof(buffer) && buffer[len - 1] != ' ') // "Unable to read directory." has no space
+        {
+            buffer[len++] = ' ';
+            buffer[len] = 0;
+        }
         SG->GetErrorText(err, buffer + len, (int)(1024 - len));
         SplU8TrimTornTail(buffer);
     }
@@ -99,14 +106,23 @@ BOOL FileError(HWND parent, const char* fileName, int error,
     }
 }
 
+// feature 131: a name that is not UTF-8 (WTF-8) is refused. It went to the A function, which reads
+// it in the code page with best-fit mapping and can open, delete or create ANOTHER file.
+static BOOL RefuseNameNotU8()
+{
+    SetLastError(ERROR_INVALID_NAME);
+    return FALSE;
+}
+
 HANDLE CreateFileU8(const char* fileName, DWORD desiredAccess, DWORD shareMode,
                     DWORD creationDisposition, DWORD flagsAndAttributes)
 {
     WCHAR* w = SplU8ToWExtAlloc(fileName);
-    HANDLE ret = w != NULL ? CreateFileW(w, desiredAccess, shareMode, NULL, creationDisposition,
-                                         flagsAndAttributes, NULL)
-                           : CreateFileA(fileName, desiredAccess, shareMode, NULL, creationDisposition,
-                                         flagsAndAttributes, NULL);
+    HANDLE ret = INVALID_HANDLE_VALUE;
+    if (w != NULL)
+        ret = CreateFileW(w, desiredAccess, shareMode, NULL, creationDisposition, flagsAndAttributes, NULL);
+    else
+        RefuseNameNotU8();
     free(w);
     return ret;
 }
@@ -114,7 +130,7 @@ HANDLE CreateFileU8(const char* fileName, DWORD desiredAccess, DWORD shareMode,
 BOOL DeleteFileU8(const char* fileName)
 {
     WCHAR* w = SplU8ToWExtAlloc(fileName);
-    BOOL ret = w != NULL ? DeleteFileW(w) : DeleteFileA(fileName);
+    BOOL ret = w != NULL ? DeleteFileW(w) : RefuseNameNotU8();
     free(w);
     return ret;
 }
@@ -122,7 +138,7 @@ BOOL DeleteFileU8(const char* fileName)
 BOOL SetFileAttributesU8(const char* fileName, DWORD attr)
 {
     WCHAR* w = SplU8ToWExtAlloc(fileName);
-    BOOL ret = w != NULL ? SetFileAttributesW(w, attr) : SetFileAttributesA(fileName, attr);
+    BOOL ret = w != NULL ? SetFileAttributesW(w, attr) : RefuseNameNotU8();
     free(w);
     return ret;
 }
@@ -130,7 +146,7 @@ BOOL SetFileAttributesU8(const char* fileName, DWORD attr)
 BOOL CreateDirectoryU8(const char* pathName)
 {
     WCHAR* w = SplU8ToWExtAlloc(pathName);
-    BOOL ret = w != NULL ? CreateDirectoryW(w, NULL) : CreateDirectoryA(pathName, NULL);
+    BOOL ret = w != NULL ? CreateDirectoryW(w, NULL) : RefuseNameNotU8();
     free(w);
     return ret;
 }
@@ -204,7 +220,7 @@ void ReplaceEditSelBytes(HWND edit, const char* bytes, BOOL canUndo)
 BOOL RemoveDirectoryU8(const char* pathName)
 {
     WCHAR* w = SplU8ToWExtAlloc(pathName);
-    BOOL ret = w != NULL ? RemoveDirectoryW(w) : RemoveDirectoryA(pathName);
+    BOOL ret = w != NULL ? RemoveDirectoryW(w) : RefuseNameNotU8();
     free(w);
     return ret;
 }

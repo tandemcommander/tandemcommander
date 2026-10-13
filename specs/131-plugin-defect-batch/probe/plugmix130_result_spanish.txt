@@ -1,0 +1,13 @@
+plugmix_probe (feature 130), expect: fixed, language: spanish
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 14:49; desktop 'tc_probe_18660'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Fixture : 9 folders under C:\Users\pavel\AppData\Local\Temp\tc130, names 'P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148.*'; Windows text for error 32: 'Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces'
+Hot keys: ZIP - plug-in 1 (zip\zip.spl): item 3 set; Checksum - plug-in 4 (checksum\checksum.spl): item 1 set; 7-Zip - plug-in 3 (7zip\7zip.spl): item 1 set
+
+ZIPTEST    TEXT   PASS        result of Test Archive (caption 'ZIP'): 'El archivo 'C:\Users\pavel\AppData\Local\Temp\tc130\ztest\P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148.zip' est\u00E1 bien.'; expected pieces missing: none; garbled letters: False; the rest of the sentence has a letter outside ASCII: True
+ZIPTEST    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7ZTEST     TEXT   PASS        result of Test Archive (caption '7-Zip'): 'El archivo 'C:\Users\pavel\AppData\Local\Temp\tc130\stest\P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148.7z' est\u00E1 correcto.'; expected pieces missing: none; garbled letters: False; the rest of the sentence has a letter outside ASCII: True
+7ZTEST     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

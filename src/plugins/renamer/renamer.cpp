@@ -86,7 +86,7 @@ BOOL ErrorHelper(HWND parent, const char* message, int lastError, va_list arglis
     CALL_STACK_MESSAGE3("ErrorHelper(, %s, %d, )", message, lastError);
     char buf[1024]; //temp variable
     *buf = 0;
-    vsprintf(buf, message, arglist);
+    _vsnprintf_s(buf, _TRUNCATE, message, arglist); // feature 131: bounded (was vsprintf)
     if (lastError != ERROR_SUCCESS)
     {
         int l = lstrlen(buf);
@@ -313,9 +313,11 @@ void CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalamanderRe
         // history
         LoadHistory(regKey, CONFIG_MASKHISTORY, MaskHistory, buffer, MAX_GROUPMASK, registry);
         LoadHistory(regKey, CONFIG_NEWNAMEHISTORY, NewNameHistory, buffer, 2 * MAX_PATH, registry);
-        LoadHistory(regKey, CONFIG_SEARCHHISTORY, SearchHistory, buffer, MAX_PATH, registry);
+        // feature 131: read with the sizes the fields accept (IDC_SEARCH 2 * MAX_PATH, IDC_COMMAND
+        // 4096) - with MAX_PATH a longer stored item failed to load and ended the list there
+        LoadHistory(regKey, CONFIG_SEARCHHISTORY, SearchHistory, buffer, 2 * MAX_PATH, registry);
         LoadHistory(regKey, CONFIG_REPLACEHISTORY, ReplaceHistory, buffer, MAX_PATH, registry);
-        LoadHistory(regKey, CONFIG_COMMANDHISTORY, CommandHistory, buffer, MAX_PATH, registry);
+        LoadHistory(regKey, CONFIG_COMMANDHISTORY, CommandHistory, buffer, (int)sizeof(buffer), registry);
 
         // load from the registry
         registry->GetValue(regKey, CONFIG_CUSTOMFONT, REG_DWORD, &UseCustomFont, sizeof(int));

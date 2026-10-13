@@ -174,6 +174,55 @@ void CSFTPSession::SetLastErrorFromSsh(const char* prefix)
     NoteTransportError(0);
 }
 
+// feature 131: libssh2 reports every refusal by the server as one session error ("SFTP
+// Protocol Error", "Failed opening remote file"); why the server refused is in the status
+// code of the SFTP layer. The reason is a text of the plug-in where one says it, else
+// "SFTP error <code>: <name>". Any other failure (transport, timeout, memory) keeps the
+// session's text. UTF-8 like every writer of LastErrorText (feature 130).
+void CSFTPSession::SetLastErrorFromSftp(const char* prefix)
+{
+    unsigned long code = LIBSSH2_FX_OK;
+    if (Ssh != NULL && Sftp != NULL && libssh2_session_last_errno(Ssh) == LIBSSH2_ERROR_SFTP_PROTOCOL)
+        code = libssh2_sftp_last_error(Sftp);
+    if (code == LIBSSH2_FX_OK) // not a status of the server
+    {
+        SetLastErrorFromSsh(prefix);
+        return;
+    }
+    int resID = 0;
+    switch (code)
+    {
+    case LIBSSH2_FX_PERMISSION_DENIED:
+    case LIBSSH2_FX_WRITE_PROTECT:
+        resID = IDS_ERR_PERMDENIED;
+        break;
+    case LIBSSH2_FX_NO_SPACE_ON_FILESYSTEM:
+    case LIBSSH2_FX_QUOTA_EXCEEDED:
+        resID = IDS_ERR_DISKFULL;
+        break;
+    case LIBSSH2_FX_NOT_A_DIRECTORY:
+        resID = IDS_ERR_NOTADIR;
+        break;
+    }
+    char reason[400];
+    if (resID != 0)
+        SplU8CopyTrunc(reason, sizeof(reason), LoadStrU8(resID));
+    else
+    {
+        if (_snprintf_s(reason, _TRUNCATE, LoadStrU8(IDS_ERR_GENERIC), (int)code, SftpStatusName(code)) < 0)
+            SplU8TrimTornTail(reason);
+    }
+    if (_snprintf_s(LastErrorText, _TRUNCATE, "%s%s%s", prefix != NULL ? prefix : "",
+                    (prefix != NULL && prefix[0]) ? ": " : "", reason) < 0)
+        SplU8TrimTornTail(LastErrorText);
+}
+
+BOOL CSFTPSession::SetLastErrorNotConnected()
+{
+    SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_NOTCONNECTED));
+    return FALSE;
+}
+
 BOOL CSFTPSession::OpenSocket(CSFTPConnectResult* result)
 {
     char portStr[16];
@@ -1075,12 +1124,12 @@ BOOL CSFTPSession::RealPath(const char* path, char* absPath, int absPathSize)
 BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entries, volatile BOOL* cancel)
 {
     if (Sftp == NULL)
-        return FALSE;
+        return SetLastErrorNotConnected();
 
     LIBSSH2_SFTP_HANDLE* dir = libssh2_sftp_opendir(Sftp, path);
     if (dir == NULL)
     {
-        SetLastErrorFromSsh("opendir");
+        SetLastErrorFromSftp("opendir");
         return FALSE;
     }
 
@@ -1203,29 +1252,46 @@ BOOL CSFTPSession::ReadLink(const char* path, char* target, int targetSize)
 
 BOOL CSFTPSession::Mkdir(const char* path, long mode)
 {
+    // feature 131: every failure leaves its own reason (the message of the caller showed the
+    // text of an earlier failure, or none)
     if (Sftp == NULL)
+        return SetLastErrorNotConnected();
+    if (libssh2_sftp_mkdir_ex(Sftp, path, (unsigned int)strlen(path), mode) != 0)
+    {
+        SetLastErrorFromSftp(NULL);
         return FALSE;
-    return libssh2_sftp_mkdir_ex(Sftp, path, (unsigned int)strlen(path), mode) == 0;
+    }
+    return TRUE;
 }
 
 BOOL CSFTPSession::Rmdir(const char* path)
 {
     if (Sftp == NULL)
+        return SetLastErrorNotConnected();
+    if (libssh2_sftp_rmdir_ex(Sftp, path, (unsigned int)strlen(path)) != 0)
+    {
+        SetLastErrorFromSftp(NULL);
         return FALSE;
-    return libssh2_sftp_rmdir_ex(Sftp, path, (unsigned int)strlen(path)) == 0;
+    }
+    return TRUE;
 }
 
 BOOL CSFTPSession::Unlink(const char* path)
 {
     if (Sftp == NULL)
+        return SetLastErrorNotConnected();
+    if (libssh2_sftp_unlink_ex(Sftp, path, (unsigned int)strlen(path)) != 0)
+    {
+        SetLastErrorFromSftp(NULL);
         return FALSE;
-    return libssh2_sftp_unlink_ex(Sftp, path, (unsigned int)strlen(path)) == 0;
+    }
+    return TRUE;
 }
 
 BOOL CSFTPSession::Rename(const char* from, const char* to)
 {
     if (Sftp == NULL)
-        return FALSE;
+        return SetLastErrorNotConnected();
     LogFmt("Rename %s -> %s", from, to);
     // Prefer the atomic, overwrite-capable posix-rename@openssh.com extension
     // (OpenSSH and most servers advertise it); it returns OP_UNSUPPORTED quickly
@@ -1244,7 +1310,7 @@ BOOL CSFTPSession::Rename(const char* from, const char* to)
     {
         // capture the real libssh2 error - Rename previously returned FALSE
         // without setting LastErrorText, so "Cannot rename ..." showed no reason.
-        SetLastErrorFromSsh(NULL);
+        SetLastErrorFromSftp(NULL); // feature 131: the server's status, not only "SFTP Protocol Error"
         Log(LastErrorText);
     }
     return rc == 0;
@@ -1253,22 +1319,29 @@ BOOL CSFTPSession::Rename(const char* from, const char* to)
 BOOL CSFTPSession::Symlink(const char* target, const char* linkPath)
 {
     if (Sftp == NULL)
-        return FALSE;
+        return SetLastErrorNotConnected();
     // libssh2_sftp_symlink(sftp, orig, linkpath): create 'linkpath' pointing to 'orig'
     int rc = libssh2_sftp_symlink_ex(Sftp, target, (unsigned int)strlen(target),
                                      (char*)linkPath, (unsigned int)strlen(linkPath), LIBSSH2_SFTP_SYMLINK);
+    if (rc != 0)
+        SetLastErrorFromSftp(NULL);
     return rc == 0;
 }
 
 BOOL CSFTPSession::Chmod(const char* path, unsigned long mode)
 {
     if (Sftp == NULL)
-        return FALSE;
+        return SetLastErrorNotConnected();
     LIBSSH2_SFTP_ATTRIBUTES attrs;
     memset(&attrs, 0, sizeof(attrs));
     attrs.flags = LIBSSH2_SFTP_ATTR_PERMISSIONS;
     attrs.permissions = mode;
-    return libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) == 0;
+    if (libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) != 0)
+    {
+        SetLastErrorFromSftp(NULL);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 BOOL CSFTPSession::Chown(const char* path, unsigned long uid, unsigned long gid,
@@ -1277,8 +1350,13 @@ BOOL CSFTPSession::Chown(const char* path, unsigned long uid, unsigned long gid,
     // feature 018: change owner/group via SFTP setstat with UID/GID. An unset
     // field is left intact by first reading the current attrs and only
     // overriding the requested one(s).
-    if (Sftp == NULL || (!setUid && !setGid))
+    if (Sftp == NULL)
+        return SetLastErrorNotConnected();
+    if (!setUid && !setGid) // nothing to change (the dialog refuses it before)
+    {
+        SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_OG_NEEDFIELD));
         return FALSE;
+    }
     LIBSSH2_SFTP_ATTRIBUTES attrs;
     memset(&attrs, 0, sizeof(attrs));
     // start from the current uid/gid so a "leave unchanged" field keeps its value
@@ -1289,38 +1367,60 @@ BOOL CSFTPSession::Chown(const char* path, unsigned long uid, unsigned long gid,
         attrs.uid = uid;
     if (setGid)
         attrs.gid = gid;
-    return libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) == 0;
+    if (libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) != 0)
+    {
+        SetLastErrorFromSftp(NULL);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 BOOL CSFTPSession::SetMTime(const char* path, __int64 mtime)
 {
     if (Sftp == NULL)
-        return FALSE;
+        return SetLastErrorNotConnected();
     LIBSSH2_SFTP_ATTRIBUTES attrs;
     memset(&attrs, 0, sizeof(attrs));
     attrs.flags = LIBSSH2_SFTP_ATTR_ACMODTIME;
     attrs.mtime = (unsigned long)mtime;
     attrs.atime = (unsigned long)mtime;
-    return libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) == 0;
+    if (libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) != 0)
+    {
+        SetLastErrorFromSftp(NULL);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenRead(const char* path)
 {
     if (Sftp == NULL)
+    {
+        SetLastErrorNotConnected();
         return NULL;
-    return libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_FXF_READ, 0, LIBSSH2_SFTP_OPENFILE);
+    }
+    LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_FXF_READ, 0, LIBSSH2_SFTP_OPENFILE);
+    if (h == NULL)
+        SetLastErrorFromSftp(NULL); // feature 131: the reason shown by "Cannot download ..."
+    return h;
 }
 
 LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWrite(const char* path, long mode, BOOL append)
 {
     if (Sftp == NULL)
+    {
+        SetLastErrorNotConnected();
         return NULL;
+    }
     unsigned long flags = LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT;
     if (append)
         flags |= LIBSSH2_FXF_APPEND;
     else
         flags |= LIBSSH2_FXF_TRUNC;
-    return libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path), flags, mode, LIBSSH2_SFTP_OPENFILE);
+    LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path), flags, mode, LIBSSH2_SFTP_OPENFILE);
+    if (h == NULL)
+        SetLastErrorFromSftp(NULL); // feature 131: the reason shown by "Cannot upload ..."
+    return h;
 }
 
 void CSFTPSession::SeekWrite(LIBSSH2_SFTP_HANDLE* h, unsigned __int64 offset)

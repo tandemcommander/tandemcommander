@@ -311,27 +311,35 @@ Code work an agent can do:
        French line, TAR's skip line and RPM caption, ZIP's comment dialog title, PictView's
        Save As name / rename / print error, and the title of the progress dialog during a
        plug-in operation (the core change of 130).
-     - Defects seen on the way (not fixed; detail in the `triage/*.md` files):
-       `pictview/thumbs.cpp:179` cuts a UTF-8 path at `_MAX_PATH` without a terminator and
-       uses it as a path; `pictview/thumbs.cpp:277` hands a code-page path to the WIC engine
-       (Update Thumbnails on accented names - suspected); `pictview/pictview.cpp:1570-1597`
-       writes through `_tcsrchr(...) + 1` on an empty path; `filecomp/dialogs4.cpp:101` an
-       unbounded `sprintf` into the 32-byte `lfFaceName`; `regedt/regedt.cpp:206` an unbounded
-       `vsprintf` into `buf[2048]`; SFTP paths cut by `_TRUNCATE` and then used as paths
-       (`operats.cpp:306/403/532/581/619`, `fs.cpp:907-909/934`), and `Mkdir` / `Rmdir` /
-       `Unlink` / `Chmod` / `Chown` that seem never to set the error text (a stale reason);
-       FTP: a silently cut target path (`operats6.cpp:1472-1479`), remote paths cut at 301
-       bytes (`fs2.cpp:466/623/724`), a signed-char loop that cuts a reply at the first byte
-       >= 0x80 (`operats2.cpp:2465`); ZIP favourites: a name is code page in the session it
-       is typed in and UTF-8 after a restart (`dialogs.cpp:2046`), a 50-byte buffer at
-       `main.cpp:350`; 7-Zip `dialogs.cpp:599` sets the archive path with `SetWindowText` (A)
-       and `dialogs.h:118` cuts it at `MAX_PATH`; Undelete's virtual folder names are
-       code-page resource texts used as file names (`library/fat.h:1558`, `ntfs.h:815`);
-       `diskmap` `CZStringBuffer::AppendAt` off by one; the core's rename subject is cut at
-       `MAX_PATH` without a trim (`plugins3.cpp:533`); `salamdr3.cpp:1217/1264` compose
-       `LoadStr` with a UTF-8 path for the plug-ins.
-     - Translation: Spanish 7-Zip `IDS_TESTARCHIVEOK` reads "El archivo '%s' es Aceptar."
-       (pin in `translations/ui-overrides.json`).
+     - ~~Defects seen on the way~~ - **done, feature 131** (a verdict per item in
+       `specs/131-plugin-defect-batch/items/*.md`; the Spanish 7-Zip text too). Left by 131:
+       - **PictView, possible loss**: EXIF.DLL's `jpeg_data_save_file` writes whatever part of
+         a malformed JPEG it parsed and reports success, and *Update Thumbnail* then replaces
+         the user's file with it; nothing checks the output. Far more files reach that stage
+         since 131 (accented paths open now). Measure with a JPEG that WIC decodes and
+         libjpeg-data mis-parses; refuse when the output is smaller than the image data.
+       - SFTP: a listing ends silently at a name of 2,047 bytes or on a read error in the
+         middle (`session.cpp` `ListDir` returns TRUE) - a recursive download or move works
+         on an incomplete listing; `UploadDirRecursive` holds about 30 KB of buffers per level
+         (about 100 levels against the 3 MB stack - reasoned); no panel refresh after a partly
+         failed move; untranslated English literals (list in `items/sftp.md` - need new
+         strings); nothing of 131 was driven against a server (rows in `items/sftp.md`).
+       - FTP: download autorename shortens a name at a byte offset, possibly inside a
+         character, and creates the file with it (`operats5.cpp:1188-1193`, `1594-1602`);
+         the core cuts a typed Quick Rename name at 259 bytes before a plug-in sees it
+         (`fileswn5.cpp:2640`); `ssl.cpp:666` `name[200]` for a call that may write 256 bytes.
+       - DiskMap: `CZFile::GetFullName` / `GetRelativeName` skip a path part that does not fit
+         and append the next - another file's path, handed to the shell menu (needs a full
+         name over 780 bytes; not measured).
+       - PE Viewer: letters outside the code page are `?` in the dump - the dump as UTF-8
+         with a BOM is about 50 lines (`items/peviewer.md`); a decision.
+       - ZIP: a code-page `.set` whose bytes happen to be valid UTF-8 is misread on import;
+         wide messages to controls of an `A` dialog (favourites) were not seen running - a
+         CJK name is the test.
+       - Renamer: two stale reasons remain (`rendlg.cpp:1344`, `rendlg3.cpp:301`).
+       - Undelete: `dialogs.cpp:836-864` wraps the core's `GetCommonFSOperSourceDescr`.
+       - Rows of 131 not driven in the program: listed in
+         `specs/131-plugin-defect-batch/fix-log.md`, section 5.
   3. The shortcut's own path (128): `Execute` (`fileswn2.cpp`) appends the name with a limit of
      `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";
      `FocusShortcutTarget` (`fileswn0.cpp`) falls back to a `CP_ACP` conversion that cuts a

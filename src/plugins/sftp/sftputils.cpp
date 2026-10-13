@@ -228,16 +228,69 @@ char* SanitizeUTF8(const char* src, char* dst, int dstSize)
 
 char* PosixPathAppend(const char* dir, const char* name, char* dst, int dstSize)
 {
+    if (dst == NULL || dstSize <= 0)
+        return NULL;
     if (dir == NULL || dir[0] == 0)
         dir = "/";
-    int len = (int)strlen(dir);
-    if (len == 1 && dir[0] == '/')
-        _snprintf_s(dst, dstSize, _TRUNCATE, "/%s", name);
-    else if (len > 0 && dir[len - 1] == '/')
-        _snprintf_s(dst, dstSize, _TRUNCATE, "%s%s", dir, name);
-    else
-        _snprintf_s(dst, dstSize, _TRUNCATE, "%s/%s", dir, name);
+    if (name == NULL)
+        name = "";
+    size_t dirLen = strlen(dir);
+    size_t nameLen = strlen(name);
+    BOOL addSlash = dir[dirLen - 1] != '/';
+    // feature 131: a path that does not fit is not cut (the shortened path is another file)
+    if (dirLen + (addSlash ? 1 : 0) + nameLen >= (size_t)dstSize)
+    {
+        dst[0] = 0;
+        return NULL;
+    }
+    memcpy(dst, dir, dirLen);
+    if (addSlash)
+        dst[dirLen++] = '/';
+    memcpy(dst + dirLen, name, nameLen + 1);
     return dst;
+}
+
+BOOL LocalPathAppend(const char* dir, const char* name, char* dst, int dstSize)
+{
+    if (dst == NULL || dstSize <= 0)
+        return FALSE;
+    if (dir == NULL)
+        dir = "";
+    if (name == NULL)
+        name = "";
+    size_t dirLen = strlen(dir);
+    size_t nameLen = strlen(name);
+    if (dirLen == 0) // no directory: "\\name" would be the root of the current drive
+    {
+        dst[0] = 0;
+        return FALSE;
+    }
+    BOOL addSep = dir[dirLen - 1] != '\\';
+    if (dirLen + (addSep ? 1 : 0) + nameLen >= (size_t)dstSize)
+    {
+        dst[0] = 0;
+        return FALSE;
+    }
+    memcpy(dst, dir, dirLen);
+    if (addSep)
+        dst[dirLen++] = '\\';
+    memcpy(dst + dirLen, name, nameLen + 1);
+    return TRUE;
+}
+
+const char* SftpStatusName(unsigned long code)
+{
+    // SSH_FX_* of the SFTP drafts (version 3 servers send 0 - 8 only)
+    static const char* const kNames[] = {
+        "OK", "End of file", "No such file", "Permission denied", "Failure",
+        "Bad message", "No connection", "Connection lost", "Operation not supported",
+        "Invalid handle", "No such path", "File already exists", "Write protected",
+        "No media", "No space on the file system", "Quota exceeded", "Unknown principal",
+        "Lock conflict", "Directory not empty", "Not a directory", "Invalid file name",
+        "Link loop"};
+    if (code < sizeof(kNames) / sizeof(kNames[0]))
+        return kNames[code];
+    return "Unknown status";
 }
 
 const char* PosixBaseName(const char* path)

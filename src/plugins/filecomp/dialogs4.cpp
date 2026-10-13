@@ -98,10 +98,13 @@ void CPropPageGeneral::LoadControls(BOOL initCombo)
     HDC hDC = GetDC(HWindow);
 
     SendMessage(hEdit, WM_SETFONT, (WPARAM)HFont, MAKELPARAM(TRUE, 0));
-    sprintf(logFont.lfFaceName, LoadStr(IDS_FONTDESCRIPTION),
-            MulDiv(-LogFont.lfHeight, 72, GetDeviceCaps(hDC, LOGPIXELSY)),
-            LogFont.lfFaceName);
-    SetWindowText(hEdit, logFont.lfFaceName);
+    // feature 131: the description has a buffer of its own; it was printed into the 32 bytes of
+    // logFont.lfFaceName (unbounded), which "10 pt. " and a face name of 25 or more characters overran
+    char fontDescr[LF_FACESIZE + 200];
+    _snprintf_s(fontDescr, _TRUNCATE, LoadStr(IDS_FONTDESCRIPTION),
+                MulDiv(-LogFont.lfHeight, 72, GetDeviceCaps(hDC, LOGPIXELSY)),
+                LogFont.lfFaceName);
+    SetWindowText(hEdit, fontDescr);
 
     // initialize the combo boxes for character selection
     HWND whiteSpace = GetDlgItem(HWindow, IDC_WHITESPACE);

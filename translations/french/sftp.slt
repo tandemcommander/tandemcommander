@@ -221,7 +221,7 @@ COMMENT,"Version française"
 95,1,"L'opération a été annulée."
 
 [STRINGTABLE 6]
-96,1,"%d d'erreurs SFTP : %s"
+96,1,"Erreur SFTP %d : %s"
 97,1,"Le chemin n'est pas un répertoire."
 98,1,"Connexion perdue. Je me reconnecte à %s..."
 99,1,"Lien symbolique du répertoire « %s » ignoré (non suivi lors du transfert récursif)."

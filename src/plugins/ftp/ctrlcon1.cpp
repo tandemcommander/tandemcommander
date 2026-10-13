@@ -456,6 +456,21 @@ const char* GetOperationFatalErrorTxt(int opFatalError, char* errBuf)
     return e;
 }
 
+// feature 131: writes the second-level format of a connect error into 'formatBuf': 'templ'
+// (IDS_GETIPERROR, IDS_OPENCONERROR) is printed with 'host', 'ip' and 'port' and keeps one "%s"
+// for the error text, which is printed later with 'formatBuf' as the FORMAT. A '%' typed in the
+// host name is doubled, otherwise that later printf reads it as a directive (the host "a%sb"
+// made it read a string argument that is not there). The call is bounded (it was a sprintf into
+// 300 bytes with a host of up to 200); a cut text must not end in half a directive.
+static void MakeConnectErrorFormat(char* formatBuf, int formatBufSize, const char* templ,
+                                   const char* host, const char* ip, int port)
+{
+    char hostEsc[2 * HOST_MAX_SIZE];
+    FTPDoublePercents(hostEsc, _countof(hostEsc), host);
+    if (_snprintf_s(formatBuf, formatBufSize, _TRUNCATE, templ, hostEsc, ip, port) < 0)
+        FTPDropCutFormatTail(formatBuf);
+}
+
 BOOL GetToken(char** s, char** next)
 {
     char* t = *next;
@@ -675,7 +690,7 @@ RETRY_LABEL:
         {
             if (!GetHostByAddress(host, 0)) // must be outside the SocketCritSect critical section
             {                               // no chance of success -> report an error
-                sprintf(formatBuf, LoadStr(IDS_GETIPERROR), host);
+                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStr(IDS_GETIPERROR), host, "", 0);
                 opFatalErrorTextID = -1; // the text is in 'formatBuf'
                 opFatalError = NO_ERROR; // unknown error
                 state = sccsOperationFatalError;
@@ -737,7 +752,7 @@ RETRY_LABEL:
                         }
                         else // error
                         {
-                            sprintf(formatBuf, LoadStr(IDS_GETIPERROR), host);
+                            MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStr(IDS_GETIPERROR), host, "", 0);
                             opFatalErrorTextID = -1; // the text is in 'formatBuf'
                             opFatalError = data2;
                             state = sccsOperationFatalError;
@@ -903,7 +918,7 @@ RETRY_LABEL:
                             else
                             {
                                 opFatalError = data1;
-                                sprintf(formatBuf, LoadStr(IDS_OPENCONERROR), host, inet_ntoa(srvAddr), port);
+                                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStr(IDS_OPENCONERROR), host, inet_ntoa(srvAddr), port);
                             }
                             opFatalErrorTextID = -1;                  // the text is in 'formatBuf'
                             noRetryState = sccsOperationFatalError;   // if retry is not performed, transition to sccsOperationFatalError
@@ -929,7 +944,7 @@ RETRY_LABEL:
             else
             {
                 opFatalError = error;
-                sprintf(formatBuf, LoadStr(IDS_OPENCONERROR), host, inet_ntoa(srvAddr), port);
+                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStr(IDS_OPENCONERROR), host, inet_ntoa(srvAddr), port);
                 opFatalErrorTextID = -1;                // the text is in 'formatBuf'
                 noRetryState = sccsOperationFatalError; // if retry is not performed, transition to sccsOperationFatalError
                 state = sccsRetry;
@@ -1981,7 +1996,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                 f = LoadStr(opFatalErrorTextID);
             else
                 f = formatBuf;
-            sprintf(buf, f, e);
+            _snprintf_s(buf, _TRUNCATE, f, e); // feature 131: bounded
             SalamanderGeneral->SalMessageBox(parent, buf, LoadStr(IDS_FTPERRORTITLE),
                                              MB_OK | MB_ICONEXCLAMATION);
             state = sccsDone;

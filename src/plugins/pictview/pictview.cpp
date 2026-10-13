@@ -1574,7 +1574,7 @@ BOOL InitEXIF(HWND hParent, BOOL bSilent)
         if (!bSilent)
         {
             TCHAR errText[2 * MAX_PATH];
-            _stprintf(errText, LoadStr(IDS_LOADEXIF), path);
+            _snprintf_s(errText, _TRUNCATE, LoadStr(IDS_LOADEXIF), path); // bounded (feature 131)
             SalamanderGeneral->SalMessageBox(hParent, errText, LoadStr(IDS_PLUGINNAME),
                                              MB_ICONEXCLAMATION | MB_OK);
         }
@@ -1593,8 +1593,26 @@ BOOL InitEXIF(HWND hParent, BOOL bSilent)
         lstrcpyn(name, LoadStr(IDS_EXIF_LOCALIZATION_FNAME), SizeOf(name));
         if (*name && _tcscmp(name, _T("ERROR LOADING STRING")))
         {
-            _stprintf((LPTSTR)_tcsrchr(path, '\\') + 1, _T("lang\\exif\\%s"), name);
-            initTransl(path);
+            // feature 131: the name of the translation file is composed wide beside exif.dll, with
+            // a bound. It was written behind the last backslash of 'path' - which is empty when the
+            // folder needs more than MAX_PATH bytes in the code page (a double-byte one), so the
+            // write went to address 1 - and the append had no bound. EXIF.DLL opens the file with
+            // the A API: U8ToDLLPathAlloc gives a code-page path or the short name; when there is
+            // neither, the EXIF texts stay English.
+            WCHAR nameW[32];
+            WCHAR translW[MAX_PATH + 64];
+            WCHAR* dirEndW = wcsrchr(pathW, L'\\'); // 'pathW' is the full name of exif.dll here
+            if (dirEndW != NULL &&
+                MultiByteToWideChar(CP_ACP, 0, name, -1, nameW, _countof(nameW)) > 0 &&
+                _snwprintf_s(translW, _TRUNCATE, L"%.*slang\\exif\\%s", (int)(dirEndW + 1 - pathW), pathW, nameW) > 0)
+            {
+                char* translU8 = SplWToU8Alloc(translW);
+                char* translA = U8ToDLLPathAlloc(translU8); // NULL for NULL
+                if (translA != NULL)
+                    initTransl(translA);
+                free(translA);
+                free(translU8);
+            }
         }
     }
 

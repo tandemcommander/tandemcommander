@@ -20,6 +20,29 @@ void SaveHistory(HKEY regKey, const char* keyPattern, char** history,
 BOOL FileError(HWND parent, const char* fileName, int error,
                BOOL retry, BOOL* skip, BOOL* skipAll, int title);
 
+// feature 131: TRUE when the message 'error' of FileError() reports a failed system call - the
+// Windows reason (the last error) belongs behind it. FALSE for an error of the renaming itself
+// ("Duplicate name.", "Not valid filename.", ...): the last error is then a stale value of some
+// earlier call and must not be shown. A new message is "no reason" until it is added here.
+inline BOOL FileErrorHasSystemReason(int error)
+{
+    switch (error)
+    {
+    case IDS_ERRREADDIR:
+    case IDS_OVERWRITEERROR:
+    case IDS_MOVEERROR:
+    case IDS_DELETEERROR:
+    case IDS_WRITEERROR:
+    case IDS_READERROR:
+    case IDS_OPENFILEERROR:
+    case IDS_DIRCASEERROR:
+    case IDS_CREATEDIR:
+    case IDS_REMOVEDIR:
+        return TRUE;
+    }
+    return FALSE;
+}
+
 // ****************************************************************************
 //
 // File APIs for the UTF-8 paths coming from the Salamander interface (version 104);

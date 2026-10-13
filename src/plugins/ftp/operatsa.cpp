@@ -825,7 +825,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
 
                                 char mbrName[2 * MAX_PATH];
                                 char* tgtName = lstItem->Name;
-                                if (is_AS_400_QSYS_LIB_Path)
+                                if (is_AS_400_QSYS_LIB_Path && strlen(tgtName) < MAX_PATH) // feature 131: a longer name is not cut here (lstrcpyn below); it goes on whole, without the AS/400 form
                                 {
                                     lstrcpyn(mbrName, tgtName, MAX_PATH);
                                     FTPAS400AddFileNamePart(mbrName);

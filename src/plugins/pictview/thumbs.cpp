@@ -57,13 +57,36 @@ class CEnumFiles
 {
     int iFiles, iDirs, index;
     const CFileData* pFile;
-    TCHAR path[_MAX_PATH];
+    CSalMaxPathBuffer path; // feature 131: the panel path is UTF-8 and may be longer than MAX_PATH bytes
 
 public:
     CEnumFiles(void);
-    const CFileData* GetFile(LPTSTR fileName);
+    // 'fileName' gets the full name; it is EMPTY when the name does not fit 'fileNameSize'
+    // bytes - the caller refuses such a file (a full name is never cut)
+    const CFileData* GetFile(LPTSTR fileName, int fileNameSize);
     int GetFileCount(void);
 };
+
+// feature 131: the full name "path\name" into 'buf' of 'bufSize' bytes; FALSE (and an empty
+// 'buf') when it does not fit - it used to be cut at _MAX_PATH bytes and left without a terminator
+inline BOOL ThumbsMakeFullName(char* buf, int bufSize, const char* path, const char* name)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    buf[0] = 0;
+    if (path == NULL || name == NULL)
+        return FALSE;
+    size_t pathLen = strlen(path);
+    size_t nameLen = strlen(name);
+    BOOL addSlash = pathLen > 0 && path[pathLen - 1] != '\\';
+    if (pathLen + (addSlash ? 1 : 0) + nameLen >= (size_t)bufSize)
+        return FALSE;
+    memcpy(buf, path, pathLen);
+    if (addSlash)
+        buf[pathLen++] = '\\';
+    memcpy(buf + pathLen, name, nameLen + 1);
+    return TRUE;
+}
 
 /* MyMemWriteFunc - used for creating JPEG thumbnails */
 DWORD WINAPI MyMemWriteFunc(void* AppSpecific, void* pData, DWORD Size)
@@ -140,7 +163,8 @@ CEnumFiles::CEnumFiles(void)
     pFile = NULL;
     index = iFiles = iDirs = NULL;
     // We only support raw Windows-mapped (local or remote) paths
-    if (SalamanderGeneral->GetPanelPath(PANEL_SOURCE, path, SizeOf(path), &type, NULL) && (type == PATH_TYPE_WINDOWS))
+    if (path.Get() != NULL && // NULL: low memory
+        SalamanderGeneral->GetPanelPath(PANEL_SOURCE, path, path.Size(), &type, NULL) && (type == PATH_TYPE_WINDOWS))
     {
         if (!SalamanderGeneral->GetPanelSelection(PANEL_SOURCE, &iFiles, &iDirs))
         {
@@ -159,7 +183,7 @@ CEnumFiles::CEnumFiles(void)
     }
 }
 
-const CFileData* CEnumFiles::GetFile(LPTSTR fileName)
+const CFileData* CEnumFiles::GetFile(LPTSTR fileName, int fileNameSize)
 {
     const CFileData* ret;
     BOOL bDir;
@@ -176,8 +200,7 @@ const CFileData* CEnumFiles::GetFile(LPTSTR fileName)
     }
     if (ret)
     {
-        _sntprintf(fileName, _MAX_PATH, _T("%s%s%s"), path,
-                   (path[_tcslen(path) - 1] == '\\') ? _T("") : _T("\\"), ret->Name);
+        ThumbsMakeFullName(fileName, fileNameSize, path, ret->Name); // an empty 'fileName' = does not fit
     }
     return ret;
 }
@@ -226,7 +249,14 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
 {
     int fileCnt, processed = 0;
     CEnumFiles fileEnum;
-    TCHAR path[_MAX_PATH];
+    // feature 131: full names are UTF-8 and may be as long as SAL_MAX_PATH_UTF8 - heap buffers
+    // (two _MAX_PATH stack arrays before, which also served as message buffers); messages have
+    // 'msg' now
+    CSalMaxPathBuffer pathBuf;
+    CSalMaxPathBuffer newFileBuf; // SalGetTempFileName wants this size for a long folder
+    char* path = pathBuf;
+    char* newFile = newFileBuf;
+    TCHAR msg[1200];
     sThumbProgressData pd;
     const CFileData* pFile = NULL;
     int flags = 0;
@@ -249,6 +279,9 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
         }
     }
 
+    if (path == NULL || newFile == NULL)
+        return; // low memory
+
     fileCnt = fileEnum.GetFileCount();
     if (fileCnt)
     {
@@ -258,7 +291,7 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
     }
     pd.ind = -1;
     pd.Salamander = Salamander;
-    while ((pFile = fileEnum.GetFile(path)) != NULL && !(flags & FL_CANCEL))
+    while ((pFile = fileEnum.GetFile(path, pathBuf.Size())) != NULL && !(flags & FL_CANCEL))
     {
         LPPVHandle PVHandle;
         PVImageInfo pvii;
@@ -267,27 +300,47 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
         PVOpenImageExInfo oiei;
         PVSaveImageInfo sii;
         EXIFREPLACETHUMBNAIL ReplaceThumbnail;
-        TCHAR newFile[_MAX_PATH];
 
         CALL_STACK_MESSAGE1("PVW32DLL.PVOpenImageEx");
         flags &= FL_KEEP;
+        if (path[0] == 0)
+        {
+            // feature 131: the full name does not fit even the largest buffer - the file is refused
+            // (nothing is opened or replaced under a shortened name)
+            Salamander->ProgressDialogAddText(pFile->Name, TRUE /*update later*/);
+            Salamander->ProgressSetSize(CQuadWord(0, 0), CQuadWord(0, ++pd.ind), FALSE /*update now*/);
+            if (!(flags & FL_NON_IMG_SKIP_ALL))
+            {
+                switch (SalamanderGeneral->DialogError(hProgress, BUTTONS_SKIPCANCEL,
+                                                       pFile->Name, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE)))
+                {
+                case DIALOG_SKIPALL:
+                    flags |= FL_NON_IMG_SKIP_ALL;
+                    break;
+                case DIALOG_CANCEL:
+                    flags |= FL_CANCEL;
+                    break;
+                }
+            }
+            continue;
+        }
         memset(&oiei, 0, sizeof(oiei));
         oiei.cbSize = sizeof(oiei);
-        // 'path' is UTF-8, PVW32Cnv.dll wants ANSI (NULL -> the DLL just fails to open)
-        char* pathA = U8ToDLLPathAlloc(path);
-        oiei.FileName = pathA;
+        // feature 131: 'path' is UTF-8 and so is what the engine reads (the built-in WIC engine,
+        // OpenFromFileU8 in wicengine.cpp). The path used to be converted to the code page for the
+        // former ANSI-only engine - a name with a letter outside ASCII could not be opened.
+        oiei.FileName = path;
 
         Salamander->ProgressDialogAddText(str ? str + 1 : path, TRUE /*update later*/);
         Salamander->ProgressSetSize(CQuadWord(0, 0), CQuadWord(0, ++pd.ind), FALSE /*update now*/);
         code = PVW32DLL.PVOpenImageEx(&PVHandle, &oiei, &pvii, sizeof(pvii));
-        free(pathA);
         if (code != PVC_OK)
         {
             if (!(flags & FL_NON_IMG_SKIP_ALL))
             {
-                _stprintf(newFile, LoadStr(IDS_ERROR_OPENING_CONTINUE), code, PVW32DLL.PVGetErrorText(code));
+                _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERROR_OPENING_CONTINUE), code, PVW32DLL.PVGetErrorText(code));
                 switch (SalamanderGeneral->DialogError(hProgress, BUTTONS_SKIPCANCEL,
-                                                       str ? str + 1 : path, newFile, LoadStr(IDS_ERRORTITLE)))
+                                                       str ? str + 1 : path, msg, LoadStr(IDS_ERRORTITLE)))
                 {
                 case DIALOG_SKIPALL:
                     flags |= FL_NON_IMG_SKIP_ALL;
@@ -406,7 +459,6 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                             DeleteFileU8(newFile);
                             // feature 130: the name is UTF-8 - the template too; a buffer of its own
                             // (the template with a name did not have to fit the _MAX_PATH of 'newFile')
-                            char msg[1200];
                             _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_REGENERATE_THUMB_WRITEFILE), str ? str + 1 : path);
                             SplU8TrimTornTail(msg);
                             SalamanderGeneral->ShowMessageBox(msg, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
@@ -512,8 +564,8 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
             }
             else if (code != PVC_CANCELED)
             {
-                wsprintf(path, LoadStr(IDS_SAVEERROR), PVW32DLL.PVGetErrorText(code));
-                SalamanderGeneral->ShowMessageBox(path, LoadStr(IDS_ERRORTITLE), MSGBOX_ERROR);
+                _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_SAVEERROR), PVW32DLL.PVGetErrorText(code));
+                SalamanderGeneral->ShowMessageBox(msg, LoadStr(IDS_ERRORTITLE), MSGBOX_ERROR);
             }
             free(pd.wfd.Buffer);
             Salamander->ProgressSetSize(CQuadWord(0, 100), CQuadWord(0, pd.ind + 1), FALSE /*update now*/);
@@ -535,13 +587,13 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                 TCHAR fmt[128];
                 CQuadWord cnts[2] = {CQuadWord(processed, 0), CQuadWord(fileCnt - processed, 0)};
                 SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), LoadStr(IDS_N_OF_N_FILES_PROCESSED), 2, cnts);
-                _stprintf(path, fmt, processed, fileCnt);
+                _snprintf_s(msg, _TRUNCATE, fmt, processed, fileCnt);
             }
             else
             {
-                _tcscpy(path, LoadStr(IDS_NO_FILES_FOUND));
+                lstrcpyn(msg, LoadStr(IDS_NO_FILES_FOUND), SizeOf(msg));
             }
-            SalamanderGeneral->ShowMessageBox(path, LoadStr(IDS_PLUGINNAME), MSGBOX_INFO);
+            SalamanderGeneral->ShowMessageBox(msg, LoadStr(IDS_PLUGINNAME), MSGBOX_INFO);
         }
     }
     else

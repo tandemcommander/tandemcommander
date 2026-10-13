@@ -1120,6 +1120,18 @@ void RemoveEmptyDirs(const char* dir)
 
 // ****************************************************************************
 
+// feature 131: the error text for the caller's buffer; a text that does not fit ends at a whole
+// character (cut inside one it would not be valid UTF-8 and would be shown through the code page)
+static void CopyDirErrText(char* errBuf, int errBufSize, const char* text)
+{
+    if (errBufSize <= 0)
+        return;
+    BOOL cut = (int)strlen(text) >= errBufSize;
+    strncpy_s(errBuf, errBufSize, text, _TRUNCATE);
+    if (cut)
+        SalU8TrimIncompleteTail(errBuf);
+}
+
 BOOL CheckAndCreateDirectory(const char* dir, HWND parent, BOOL quiet, char* errBuf,
                              int errBufSize, char* newDir, BOOL noRetryButton,
                              BOOL manualCrDir)
@@ -1149,8 +1161,9 @@ AGAIN:
         if (dirLen <= (int)strlen(root)) // the directory is a root directory
         {
             _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CREATEDIRFAILED), dir);
+            SalU8TrimIncompleteTail(buf);
             if (errBuf != NULL)
-                strncpy_s(errBuf, errBufSize, buf, _TRUNCATE);
+                CopyDirErrText(errBuf, errBufSize, buf);
             else
                 SalMessageBox(parent, buf, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             return FALSE;
@@ -1194,8 +1207,9 @@ AGAIN:
                 if (s == NULL)
                 {
                     _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CREATEDIRFAILED), dir);
+                    SalU8TrimIncompleteTail(buf);
                     if (errBuf != NULL)
-                        strncpy_s(errBuf, errBufSize, buf, _TRUNCATE);
+                        CopyDirErrText(errBuf, errBufSize, buf);
                     else
                         SalMessageBox(parent, buf, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                     return FALSE;
@@ -1214,9 +1228,12 @@ AGAIN:
                         break; // we will build from this directory
                     else       // it is a file, that would not work ...
                     {
-                        _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_NAMEUSEDFORFILE), name);
+                        // feature 131: UTF-8 like the name (the reader of errBuf, the ZIP plug-in,
+                        // takes UTF-8 since feature 130)
+                        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_NAMEUSEDFORFILE), name);
+                        SalU8TrimIncompleteTail(buf);
                         if (errBuf != NULL)
-                            strncpy_s(errBuf, errBufSize, buf, _TRUNCATE);
+                            CopyDirErrText(errBuf, errBufSize, buf);
                         else
                         {
                             if (noRetryButton)
@@ -1261,9 +1278,10 @@ AGAIN:
                 if (invalidName || !SalCreateDirectory(name, NULL))
                 {
                     DWORD lastErr = invalidName ? ERROR_INVALID_NAME : GetLastError();
-                    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_CREATEDIRFAILED), name);
+                    _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CREATEDIRFAILED), name); // feature 131, as above
+                    SalU8TrimIncompleteTail(buf);
                     if (errBuf != NULL)
-                        strncpy_s(errBuf, errBufSize, buf, _TRUNCATE);
+                        CopyDirErrText(errBuf, errBufSize, buf);
                     else
                     {
                         if (noRetryButton)
@@ -1300,9 +1318,10 @@ AGAIN:
         return TRUE;
     else // it is a file, that would not work ...
     {
-        _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_NAMEUSEDFORFILE), dir);
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_NAMEUSEDFORFILE), dir); // feature 131: UTF-8 like the name
+        SalU8TrimIncompleteTail(buf);
         if (errBuf != NULL)
-            strncpy_s(errBuf, errBufSize, buf, _TRUNCATE);
+            CopyDirErrText(errBuf, errBufSize, buf);
         else
         {
             if (noRetryButton)

@@ -91,7 +91,7 @@ inline void WipePassword(WCHAR* password) { SecureZeroMemory(password, PASSWORD_
 class CExtOptionsDialog : public CCommonDialog
 {
 private:
-    char Archive[MAX_PATH];
+    char Archive[1024]; // UTF-8, shown only (feature 131: it was MAX_PATH bytes)
 
     WCHAR Password[PASSWORD_LEN];
     WCHAR ConfirmedPassword[PASSWORD_LEN];
@@ -113,9 +113,11 @@ public:
     BOOL IsPasswordDefined() { return Encrypt; }
     const WCHAR* GetPassword() { return Password; } // the typed text, UTF-16
     BOOL GetNotAgain() { return NotAgain; }
-    // display only: this is an ANSI dialog, so a long or non-ASCII UTF-8 archive
-    // name is truncated/garbled here; a bounded copy at least keeps it safe
-    void SetArchiveName(const char* archiveName) { lstrcpyn(Archive, archiveName, MAX_PATH); }
+    // display only. The control is the core's static text (AttachStaticText), which takes the
+    // bytes of WM_SETTEXT as UTF-8 - so the name is right there as long as it is valid UTF-8.
+    // feature 131: a name that does not fit is cut at a whole character (a cut inside one made
+    // the text invalid UTF-8 and the whole path was shown through the code page)
+    void SetArchiveName(const char* archiveName) { SplU8CopyTrunc(Archive, (int)sizeof(Archive), archiveName); }
     void SetTitle(const char* title) { Title = title; }
 
 protected:

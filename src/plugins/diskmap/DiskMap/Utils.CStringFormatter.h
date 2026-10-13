@@ -249,7 +249,7 @@ public:
                 }
             }
             size_t bytelen = CZResourceString::GetLength(bytestrid);
-            if (slen > bytelen)
+            if (slen > bytelen + 1) // feature 131: the space, the word and the terminator (was one short)
             {
                 *s++ = TEXT(' ');
                 l++;

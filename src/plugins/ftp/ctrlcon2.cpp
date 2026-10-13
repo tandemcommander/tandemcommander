@@ -1464,17 +1464,27 @@ void CLogs::AddLogsToCombo(HWND combo, int prevItemUID, int* focusIndex, BOOL* e
     if (!*empty)
     {
         HANDLES(EnterCriticalSection(&PanelCtrlConSect));
-        char buf[300];
+        // feature 131: every piece is appended bounded (it was a chain of sprintf calls into 300
+        // bytes: a user name of 100 and a host of 200 bytes overran it)
+        char buf[LOGSCOMBOITEM_MAX_SIZE];
+        int len;
         int i;
         for (i = 0; i < Data.Count; i++)
         {
             CLogData* d = Data[i];
-            sprintf(buf, "%d: ", d->UID);
+            _snprintf_s(buf, _TRUNCATE, "%d: ", d->UID);
             if (d->User != NULL && d->User[0] != 0 && strcmp(d->User, FTP_ANONYMOUS) != 0)
-                sprintf(buf + strlen(buf), "%s@", d->User);
-            sprintf(buf + strlen(buf), "%s", d->Host);
+            {
+                len = (int)strlen(buf);
+                _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, "%s@", d->User);
+            }
+            len = (int)strlen(buf);
+            _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, "%s", HandleNULLStr(d->Host));
             if (d->Port != IPPORT_FTP)
-                sprintf(buf + strlen(buf), ":%u", d->Port);
+            {
+                len = (int)strlen(buf);
+                _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, ":%u", d->Port);
+            }
 
             int fsPosID = 0;
             if (d->CtrlConOrWorker) // connection in panel
@@ -1502,12 +1512,13 @@ void CLogs::AddLogsToCombo(HWND combo, int prevItemUID, int* focusIndex, BOOL* e
                     fsPosID = IDS_OPERSTOPPED; // stopped worker
             }
 
+            len = (int)strlen(buf);
             if ((d->CtrlCon != NULL || d->WorkerIsAlive) && !d->Connected)
             {
-                sprintf(buf + strlen(buf), " (%s, %s)", LoadStr(fsPosID), LoadStr(IDS_FTPINACTIVE));
+                _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, " (%s, %s)", LoadStr(fsPosID), LoadStr(IDS_FTPINACTIVE));
             }
             else
-                sprintf(buf + strlen(buf), " (%s)", LoadStr(fsPosID));
+                _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, " (%s)", LoadStr(fsPosID));
 
             // add the assembled name + log UID
             if (i == SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)buf))
@@ -2120,8 +2131,8 @@ void CLogs::CopyLog(HWND parent, const char* itemName, int uid)
 
 void CLogs::ClearLog(HWND parent, const char* itemName, int uid)
 {
-    char buf[500];
-    sprintf(buf, LoadStr(IDS_CLEARLOGQUESTION), itemName);
+    char buf[300 + LOGSCOMBOITEM_MAX_SIZE]; // feature 131: 'itemName' is an item of the Logs combo
+    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_CLEARLOGQUESTION), itemName);
     MSGBOXEX_PARAMS params;
     memset(&params, 0, sizeof(params));
     params.HParent = parent;
@@ -2149,8 +2160,8 @@ void CLogs::ClearLog(HWND parent, const char* itemName, int uid)
 
 void CLogs::RemoveLog(HWND parent, const char* itemName, int uid)
 {
-    char buf[500];
-    sprintf(buf, LoadStr(IDS_REMOVELOGQUESTION), itemName);
+    char buf[300 + LOGSCOMBOITEM_MAX_SIZE]; // feature 131: 'itemName' is an item of the Logs combo
+    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_REMOVELOGQUESTION), itemName);
     MSGBOXEX_PARAMS params;
     memset(&params, 0, sizeof(params));
     params.HParent = parent;

@@ -2747,11 +2747,14 @@ DWORD PackSfxSettings(CSfxSettings* settings, char*& buffer, DWORD& size)
 char* FormatMessage(char* buffer, int errorID, int lastError)
 {
     CALL_STACK_MESSAGE3("FormatMessage(, %d, %d)", errorID, lastError);
-    lstrcpy(buffer, LoadStr(errorID));
-    if (lastError)
+    // feature 131: 'buffer' has at least 512 bytes (every caller gives 1,024) - the resource text is
+    // bounded by it too (it was copied without a limit and the rest could come out negative)
+    lstrcpyn(buffer, LoadStr(errorID), 512);
+    int len = lstrlen(buffer);
+    if (lastError && len < 511)
         ::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError,
-                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer + lstrlen(buffer),
-                        512 - lstrlen(buffer), NULL);
+                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buffer + len,
+                        512 - len, NULL);
     return buffer;
 }
 

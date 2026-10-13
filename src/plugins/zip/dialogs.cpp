@@ -2031,7 +2031,9 @@ CRenFavDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 BOOL CRenFavDialog::OnInit(WPARAM wParam, LPARAM lParam)
 {
     CALL_STACK_MESSAGE3("CRenFavDialog::OnInit(0x%IX, 0x%IX)", wParam, lParam);
-    SendDlgItemMessage(Dlg, IDC_NAME, WM_SETTEXT, 0, (LPARAM)Name);
+    // feature 131: the name is UTF-8 (a text that is not is shown as code-page text, as before)
+    if (!SetDlgItemTextU8(Dlg, IDC_NAME, Name))
+        SendDlgItemMessage(Dlg, IDC_NAME, WM_SETTEXT, 0, (LPARAM)Name);
     SendDlgItemMessage(Dlg, IDC_NAME, EM_SETLIMITTEXT, MAX_FAVNAME - 1, 0);
     if (Rename)
         SetWindowText(Dlg, LoadStr(IDS_RENAMEFAVSET));
@@ -2042,8 +2044,20 @@ BOOL CRenFavDialog::OnInit(WPARAM wParam, LPARAM lParam)
 BOOL CRenFavDialog::OnOK(WORD wNotifyCode, WORD wID, HWND hwndCtl)
 {
     CALL_STACK_MESSAGE3("CRenFavDialog::OnOK(0x%X, 0x%X, )", wNotifyCode, wID);
-    char buf[MAX_FAVNAME];
-    GetDlgItemText(Dlg, IDC_NAME, buf, MAX_FAVNAME - 1);
+    // feature 131: the name is read wide and kept as UTF-8 ('Name' has MAX_FAVNAME_U8 bytes); a text
+    // that does not fit is refused, never cut and never stored empty
+    char buf[MAX_FAVNAME_U8];
+    WCHAR bufW[MAX_FAVNAME + 1];
+    buf[0] = 0;
+    bufW[0] = 0;
+    int lenW = GetDlgItemTextW(Dlg, IDC_NAME, bufW, MAX_FAVNAME + 1);
+    if (lenW >= MAX_FAVNAME || (lenW > 0 && SplWToU8(bufW, buf, (int)sizeof(buf)) == 0))
+    {
+        // there is no text of the plug-in for this (the edit line's limit keeps the name shorter)
+        SalamanderGeneral->SalMessageBox(Dlg, SalamanderGeneral->GetErrorText(ERROR_BUFFER_OVERFLOW),
+                                         LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);
+        return TRUE;
+    }
     if (lstrlen(TrimTralingSpaces(buf)) == 0)
     {
         SalamanderGeneral->SalMessageBox(Dlg, LoadStr(IDS_NONTEXT), LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);

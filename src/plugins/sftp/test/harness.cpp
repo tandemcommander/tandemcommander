@@ -106,6 +106,32 @@ static void TestPaths()
     CHECK_STR(PosixPathAppend("/a/", "b", buf, sizeof(buf)), "/a/b");
     CHECK_STR(PosixPathAppend("", "x", buf, sizeof(buf)), "/x");
 
+    // feature 131: a result that does not fit is refused (NULL, empty buffer), never cut
+    char tiny[8];
+    CHECK(PosixPathAppend("/abc", "de", tiny, sizeof(tiny)) != NULL && strcmp(tiny, "/abc/de") == 0); // 7 + NUL: fits exactly
+    tiny[0] = 'z';
+    CHECK(PosixPathAppend("/abc", "def", tiny, sizeof(tiny)) == NULL && tiny[0] == 0); // one byte too long
+    CHECK(PosixPathAppend("/", "1234567", tiny, sizeof(tiny)) == NULL && tiny[0] == 0);
+    CHECK(PosixPathAppend("/", "123456", tiny, sizeof(tiny)) != NULL && strcmp(tiny, "/123456") == 0);
+    CHECK(PosixPathAppend("/abcde/", "f", tiny, sizeof(tiny)) == NULL); // the slash is not doubled, still too long
+    CHECK(PosixPathAppend("/abcd/", "f", tiny, sizeof(tiny)) != NULL && strcmp(tiny, "/abcd/f") == 0);
+    CHECK(PosixPathAppend("/a", "b", tiny, 0) == NULL);
+
+    CHECK(LocalPathAppend("C:\\a", "b", tiny, sizeof(tiny)) && strcmp(tiny, "C:\\a\\b") == 0);
+    CHECK(LocalPathAppend("C:\\", "abcd", tiny, sizeof(tiny)) && strcmp(tiny, "C:\\abcd") == 0); // no doubled backslash
+    CHECK(LocalPathAppend("C:\\ab", "*", tiny, sizeof(tiny)) && strcmp(tiny, "C:\\ab\\*") == 0);
+    tiny[0] = 'z';
+    CHECK(!LocalPathAppend("C:\\abc", "*", tiny, sizeof(tiny)) && tiny[0] == 0); // the mask would be cut off
+    CHECK(!LocalPathAppend("C:\\a", "bcd", tiny, sizeof(tiny)) && tiny[0] == 0);
+    CHECK(!LocalPathAppend("C:\\a", "b", tiny, 0));
+
+    CHECK_STR(SftpStatusName(2), "No such file");
+    CHECK_STR(SftpStatusName(3), "Permission denied");
+    CHECK_STR(SftpStatusName(4), "Failure");
+    CHECK_STR(SftpStatusName(21), "Link loop");
+    CHECK_STR(SftpStatusName(22), "Unknown status");
+    CHECK_STR(SftpStatusName(0xFFFFFFFFUL), "Unknown status");
+
     CHECK_STR(PosixBaseName("/home/user/file.txt"), "file.txt");
     CHECK_STR(PosixBaseName("/"), "");
     CHECK_STR(PosixBaseName("noslash"), "noslash");
