@@ -1,0 +1,8 @@
+package_live (feature 126): E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\saltests\saltests.exe
+Windows 10.0.26300.0; 2026-10-13 07:43
+PASS  NotepadPlusPlus_7njy0v32s6xk6: program 'C:\Program Files\WindowsApps\NotepadPlusPlus_1.0.0.0_neutral__7njy0v32s6xk6' (exit 0); Windows: C:\Program Files\WindowsApps\NotepadPlusPlus_1.0.0.0_neutral__7njy0v32s6xk6
+PASS  Microsoft.WindowsCalculator_8wekyb3d8bbwe: program 'C:\Program Files\WindowsApps\Microsoft.WindowsCalculator_11.2607.0.0_x64__8wekyb3d8bbwe' (exit 0); Windows: C:\Program Files\WindowsApps\Microsoft.WindowsCalculator_11.2607.0.0_x64__8wekyb3d8bbwe
+PASS  Microsoft.WindowsNotepad_8wekyb3d8bbwe: program 'C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2607.14.0_x64__8wekyb3d8bbwe' (exit 0); Windows: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2607.14.0_x64__8wekyb3d8bbwe
+PASS  Microsoft.WindowsTerminal_8wekyb3d8bbwe: program 'C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.24.12741.0_x64__8wekyb3d8bbwe' (exit 0); Windows: C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.24.12741.0_x64__8wekyb3d8bbwe
+PASS  TandemCommander.NoSuchFamily126_0000000000000: program '(not found)' (exit 1); expected '(not found)', exit 1
+Rows failed: 0

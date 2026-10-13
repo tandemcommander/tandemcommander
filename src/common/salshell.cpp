@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include <windows.h>
-#include <appmodel.h>
 
 #include "salunicode.h"
 #include "salpath.h"
@@ -237,17 +236,36 @@ BOOL CSalShellOsProbe::RegSubKeyString(HKEY root, const char* subKey, int index,
     return exists;
 }
 
-BOOL CSalShellOsProbe::GetPackagePath(const char* family, char* u8Buf, int bufSize) const
+BOOL SalShellResolvePackageApi(CSalShellPackageApi* api)
+{
+    if (api == NULL)
+        return FALSE;
+    api->GetPackagesByPackageFamily = NULL;
+    api->GetPackagePathByFullName = NULL;
+    // kernel32 is always loaded; GetProcAddress, unlike a static import, lets the
+    // program start where the functions do not exist (feature 126)
+    HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+    if (kernel32 != NULL)
+    {
+        api->GetPackagesByPackageFamily = (LONG(WINAPI*)(PCWSTR, UINT32*, PWSTR*, UINT32*, WCHAR*))GetProcAddress(kernel32, "GetPackagesByPackageFamily");
+        api->GetPackagePathByFullName = (LONG(WINAPI*)(PCWSTR, UINT32*, PWSTR))GetProcAddress(kernel32, "GetPackagePathByFullName");
+    }
+    return api->GetPackagesByPackageFamily != NULL && api->GetPackagePathByFullName != NULL;
+}
+
+BOOL SalShellPackagePath(const CSalShellPackageApi* api, const char* family, char* u8Buf, int bufSize)
 {
     if (u8Buf == NULL || bufSize <= 0)
         return FALSE;
     u8Buf[0] = 0;
+    if (api == NULL || api->GetPackagesByPackageFamily == NULL || api->GetPackagePathByFullName == NULL)
+        return FALSE; // a system without MSIX packages: a packaged program is simply not found
     WCHAR familyW[256];
     if (family == NULL || SalU8ToW(family, -1, familyW, _countof(familyW)) == 0)
         return FALSE;
     UINT32 count = 0;
     UINT32 bufLen = 0;
-    if (GetPackagesByPackageFamily(familyW, &count, NULL, &bufLen, NULL) != ERROR_INSUFFICIENT_BUFFER ||
+    if (api->GetPackagesByPackageFamily(familyW, &count, NULL, &bufLen, NULL) != ERROR_INSUFFICIENT_BUFFER ||
         count == 0 || bufLen == 0)
     {
         return FALSE;
@@ -256,13 +274,13 @@ BOOL CSalShellOsProbe::GetPackagePath(const char* family, char* u8Buf, int bufSi
     WCHAR* buffer = (WCHAR*)malloc(bufLen * sizeof(WCHAR));
     BOOL ok = FALSE;
     if (names != NULL && buffer != NULL &&
-        GetPackagesByPackageFamily(familyW, &count, names, &bufLen, buffer) == ERROR_SUCCESS && count > 0)
+        api->GetPackagesByPackageFamily(familyW, &count, names, &bufLen, buffer) == ERROR_SUCCESS && count > 0)
     {
         UINT32 pathLen = 0;
-        if (GetPackagePathByFullName(names[0], &pathLen, NULL) == ERROR_INSUFFICIENT_BUFFER && pathLen > 0)
+        if (api->GetPackagePathByFullName(names[0], &pathLen, NULL) == ERROR_INSUFFICIENT_BUFFER && pathLen > 0)
         {
             WCHAR* pathW = (WCHAR*)malloc(pathLen * sizeof(WCHAR));
-            if (pathW != NULL && GetPackagePathByFullName(names[0], &pathLen, pathW) == ERROR_SUCCESS)
+            if (pathW != NULL && api->GetPackagePathByFullName(names[0], &pathLen, pathW) == ERROR_SUCCESS)
                 ok = SalWToU8(pathW, -1, u8Buf, bufSize) != 0 && u8Buf[0] != 0;
             free(pathW);
         }
@@ -272,6 +290,13 @@ BOOL CSalShellOsProbe::GetPackagePath(const char* family, char* u8Buf, int bufSi
     if (!ok)
         u8Buf[0] = 0;
     return ok;
+}
+
+BOOL CSalShellOsProbe::GetPackagePath(const char* family, char* u8Buf, int bufSize) const
+{
+    CSalShellPackageApi api;
+    SalShellResolvePackageApi(&api);
+    return SalShellPackagePath(&api, family, u8Buf, bufSize);
 }
 
 //*****************************************************************************

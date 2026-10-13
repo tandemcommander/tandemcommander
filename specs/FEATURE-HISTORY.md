@@ -1923,3 +1923,21 @@ a few early ones are out of sequence).
   - Debug-only seam `TC_PROBE_UNC_SHARES` / `_DELAY` / `_ERROR`
     (`specs/125-unc-server-shares/contracts/probe-seam.md`); absent from Release (string search).
   - Probe `probe/unc_probe.ps1`; saltests 18,184 -> 18,277.
+- 126-package-api-late-bind: **no static import of the package functions** (GitHub issue #6, for
+  0.1.10). `CSalShellOsProbe::GetPackagePath` (`src/common/salshell.cpp`, feature 071) called
+  `GetPackagesByPackageFamily` (Windows 8) and `GetPackagePathByFullName` (Windows **8.1**)
+  directly; as static imports of kernel32 they stop the loader on older systems before the
+  program's own "You need at least Windows 7" check - no window, no message (0xC0000139). Now
+  `SalShellResolvePackageApi` (`GetProcAddress`, no cached state) + `SalShellPackagePath` (the
+  lookup with the two functions as a table; NULL = "not found"). **Windows 11 stays the only
+  supported system**; the failed start was not reproduced (no such machine) - verified were the
+  import tables: 796 -> 794 static imports, the two removed, none added; 0 of 218 PE files of the
+  Release tree import them.
+  - `specs/126-package-api-late-bind/probe/pe_imports.py`: a PE import-table reader in pure
+    Python (`list`, `delay`, `find`, `diff`, `check`) - use it when a "does not start" report
+    names a missing function.
+  - Known, outside the change (review): the installer ships no UCRT (Windows 7 needs
+    KB2999226); `codeview.spl` / `mdview.spl` import `advapi32!EventSetInformation` (Windows 8+)
+    through `WebView2LoaderStatic.lib`.
+  - saltests 18,277 -> 18,304; `saltests --package-path <family>` prints the real lookup
+    (compared with `Get-AppxPackage` by `probe/package_live.ps1`).

@@ -1,0 +1,12 @@
+== diff: Release tandemcommander.exe before the fix -> after
+- kernel32.dll!GetPackagePathByFullName
+- kernel32.dll!GetPackagesByPackageFamily
+static imports: 796 -> 794; removed 2, added 0
+== check: the whole Release tree
+218 PE files read under build/tandemcommander/Release_x64; files with a static import of GetPackagePathByFullName, GetPackagesByPackageFamily: 0
+exit code 0
+== the same check on the executable before the fix (control)
+tandemcommander.exe: static import KERNEL32.dll!GetPackagesByPackageFamily
+tandemcommander.exe: static import KERNEL32.dll!GetPackagePathByFullName
+1 PE files read under C:\Users\pavel\AppData\Local\Temp/tc126_before; files with a static import of GetPackagePathByFullName, GetPackagesByPackageFamily: 1
+exit code 1

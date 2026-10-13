@@ -9473,8 +9473,185 @@ static void TestUncServer125()
     }
 }
 
-int main()
+// feature 126 (GitHub #6): the package lookup of the command-shell presets takes its two
+// kernel32 functions as a table - absent on Windows 7 / 8.0, where the answer is "not found"
+namespace Pkg126
 {
+static int ListCalls, PathCalls;       // how often the fakes were called
+static LONG ListSizeAnswer;            // answer of the sizing call (normally ERROR_INSUFFICIENT_BUFFER)
+static LONG ListFillAnswer;            // answer of the filling call
+static UINT32 ListCount;               // packages reported
+static LONG PathSizeAnswer, PathFillAnswer;
+static const WCHAR* PkgFullName = L"Vendor.Shell_1.2.3.0_x64__abcdefgh12345";
+static const WCHAR* PkgFolder = L"C:\\Program Files\\WindowsApps\\Vendor.Shell_1.2.3.0_x64__abcdefgh12345";
+static WCHAR SeenFamily[300];
+static WCHAR SeenFullName[300];
+
+static void Reset()
+{
+    ListCalls = PathCalls = 0;
+    ListSizeAnswer = ERROR_INSUFFICIENT_BUFFER;
+    ListFillAnswer = ERROR_SUCCESS;
+    ListCount = 1;
+    PathSizeAnswer = ERROR_INSUFFICIENT_BUFFER;
+    PathFillAnswer = ERROR_SUCCESS;
+    SeenFamily[0] = SeenFullName[0] = 0;
+    PkgFolder = L"C:\\Program Files\\WindowsApps\\Vendor.Shell_1.2.3.0_x64__abcdefgh12345";
+}
+
+static LONG WINAPI FakeList(PCWSTR family, UINT32* count, PWSTR* names, UINT32* bufferLength, WCHAR* buffer)
+{
+    ListCalls++;
+    wcsncpy_s(SeenFamily, family, _TRUNCATE);
+    UINT32 need = (UINT32)wcslen(PkgFullName) + 1;
+    if (names == NULL || buffer == NULL)
+    {
+        *count = ListCount;
+        *bufferLength = ListCount == 0 ? 0 : need;
+        return ListSizeAnswer;
+    }
+    if (ListFillAnswer != ERROR_SUCCESS)
+        return ListFillAnswer;
+    if (*count < 1 || *bufferLength < need)
+        return ERROR_INSUFFICIENT_BUFFER;
+    wcscpy_s(buffer, *bufferLength, PkgFullName);
+    names[0] = buffer;
+    *count = 1;
+    return ERROR_SUCCESS;
+}
+
+static LONG WINAPI FakePath(PCWSTR fullName, UINT32* pathLength, PWSTR path)
+{
+    PathCalls++;
+    wcsncpy_s(SeenFullName, fullName, _TRUNCATE);
+    UINT32 need = (UINT32)wcslen(PkgFolder) + 1;
+    if (path == NULL)
+    {
+        *pathLength = need;
+        return PathSizeAnswer;
+    }
+    if (PathFillAnswer != ERROR_SUCCESS)
+        return PathFillAnswer;
+    if (*pathLength < need)
+        return ERROR_INSUFFICIENT_BUFFER;
+    wcscpy_s(path, *pathLength, PkgFolder);
+    return ERROR_SUCCESS;
+}
+} // namespace Pkg126
+
+static void TestPackageApi126()
+{
+    using namespace Pkg126;
+    char buf[600];
+    const char* family = "Vendor.Shell_abcdefgh12345";
+    const char* folderU8 = "C:\\Program Files\\WindowsApps\\Vendor.Shell_1.2.3.0_x64__abcdefgh12345";
+
+    // --- the functions are absent (Windows 7, Server 2008 R2): "not found", the buffer emptied ---
+    {
+        memset(buf, 'X', sizeof(buf));
+        CHECK(!SalShellPackagePath(NULL, family, buf, sizeof(buf)) && buf[0] == 0);
+        CSalShellPackageApi none = {NULL, NULL};
+        memset(buf, 'X', sizeof(buf));
+        CHECK(!SalShellPackagePath(&none, family, buf, sizeof(buf)) && buf[0] == 0);
+        // Windows 8.0: the list function exists, the path function does not - still "not found",
+        // and the function that exists is not even called
+        Reset();
+        CSalShellPackageApi only8 = {FakeList, NULL};
+        memset(buf, 'X', sizeof(buf));
+        CHECK(!SalShellPackagePath(&only8, family, buf, sizeof(buf)) && buf[0] == 0 && ListCalls == 0);
+        CSalShellPackageApi onlyPath = {NULL, FakePath};
+        memset(buf, 'X', sizeof(buf));
+        CHECK(!SalShellPackagePath(&onlyPath, family, buf, sizeof(buf)) && buf[0] == 0 && PathCalls == 0);
+    }
+
+    CSalShellPackageApi api = {FakeList, FakePath};
+
+    // --- the functions are present: the folder of the first package ---
+    {
+        Reset();
+        memset(buf, 'X', sizeof(buf));
+        CHECK(SalShellPackagePath(&api, family, buf, sizeof(buf)) && strcmp(buf, folderU8) == 0);
+        CHECK(ListCalls == 2 && PathCalls == 2);
+        CHECK(wcscmp(SeenFamily, L"Vendor.Shell_abcdefgh12345") == 0);
+        CHECK(wcscmp(SeenFullName, PkgFullName) == 0);
+        // a folder with letters outside ASCII comes back as UTF-8
+        Reset();
+        PkgFolder = L"C:\\Aplikace\\\x0160koln\x00ED \x4E2D";
+        CHECK(SalShellPackagePath(&api, family, buf, sizeof(buf)) && strcmp(buf, "C:\\Aplikace\\\xC5\xA0koln\xC3\xAD \xE4\xB8\xAD") == 0);
+    }
+
+    // --- every way the system can say no ---
+    {
+        auto fresh = [&buf]() { Reset(); memset(buf, 'X', sizeof(buf)); }; // every row starts from a dirty buffer
+        fresh();
+        ListCount = 0; // the family has no package
+        CHECK(!SalShellPackagePath(&api, family, buf, sizeof(buf)) && buf[0] == 0 && PathCalls == 0);
+        fresh();
+        ListSizeAnswer = ERROR_SUCCESS; // "no buffer needed" = nothing there
+        CHECK(!SalShellPackagePath(&api, family, buf, sizeof(buf)) && buf[0] == 0 && PathCalls == 0);
+        fresh();
+        ListSizeAnswer = ERROR_INVALID_PARAMETER;
+        CHECK(!SalShellPackagePath(&api, family, buf, sizeof(buf)) && buf[0] == 0 && ListCalls == 1);
+        fresh();
+        ListFillAnswer = ERROR_ACCESS_DENIED;
+        CHECK(!SalShellPackagePath(&api, family, buf, sizeof(buf)) && buf[0] == 0 && PathCalls == 0);
+        fresh();
+        PathSizeAnswer = ERROR_NOT_FOUND;
+        CHECK(!SalShellPackagePath(&api, family, buf, sizeof(buf)) && buf[0] == 0 && PathCalls == 1);
+        fresh();
+        PathFillAnswer = ERROR_ACCESS_DENIED;
+        CHECK(!SalShellPackagePath(&api, family, buf, sizeof(buf)) && buf[0] == 0 && PathCalls == 2);
+    }
+
+    // --- the caller's buffer: fits exactly / one byte short = refused, never cut ---
+    {
+        Reset();
+        size_t need = strlen(folderU8) + 1;
+        char* exact = (char*)malloc(need);
+        CHECK(exact != NULL && SalShellPackagePath(&api, family, exact, (int)need) && strcmp(exact, folderU8) == 0);
+        memset(exact, 'X', need);
+        CHECK(!SalShellPackagePath(&api, family, exact, (int)need - 1) && exact[0] == 0);
+        free(exact);
+        char one[1] = {'X'};
+        CHECK(!SalShellPackagePath(&api, family, one, 1) && one[0] == 0);
+        CHECK(!SalShellPackagePath(&api, family, NULL, 100));
+        CHECK(!SalShellPackagePath(&api, family, buf, 0));
+        CHECK(!SalShellPackagePath(&api, NULL, buf, sizeof(buf)) && buf[0] == 0);
+        // a family name that does not fit the lookup's own buffer is refused before any call
+        Reset();
+        std::string longFamily(300, 'f');
+        CHECK(!SalShellPackagePath(&api, longFamily.c_str(), buf, sizeof(buf)) && buf[0] == 0 && ListCalls == 0);
+    }
+
+    // --- the real system (the tests run on a supported Windows): both functions resolve, and a
+    //     family that cannot exist is "not found" through the real functions and the real probe ---
+    {
+        CSalShellPackageApi real = {NULL, NULL};
+        CHECK(SalShellResolvePackageApi(&real)); // (saltests is a developer tool run on a supported Windows)
+        CHECK(real.GetPackagesByPackageFamily != NULL && real.GetPackagePathByFullName != NULL);
+        CHECK(!SalShellResolvePackageApi(NULL));
+        memset(buf, 'X', sizeof(buf));
+        CHECK(!SalShellPackagePath(&real, "TandemCommander.NoSuchFamily126_0000000000000", buf, sizeof(buf)) && buf[0] == 0);
+        CSalShellOsProbe os;
+        memset(buf, 'X', sizeof(buf));
+        CHECK(!os.GetPackagePath("TandemCommander.NoSuchFamily126_0000000000000", buf, sizeof(buf)) && buf[0] == 0);
+    }
+}
+
+int main(int argc, char** argv)
+{
+    // feature 126: "saltests --package-path <family>" prints what the program's real package
+    // lookup finds on this machine (for specs/126-package-api-late-bind/probe/package_live.ps1,
+    // which compares it with what Windows reports); exit code 0 = found
+    if (argc == 3 && strcmp(argv[1], "--package-path") == 0)
+    {
+        char folder[2048];
+        CSalShellOsProbe os;
+        BOOL found = os.GetPackagePath(argv[2], folder, sizeof(folder));
+        printf("%s\n", found ? folder : "(not found)");
+        return found ? 0 : 1;
+    }
+
     TestConversions();
     TestNormalization();
     TestMatching();
@@ -9534,6 +9711,7 @@ int main()
     TestSmallBatch121();
     TestUpdateCheck123();
     TestUncServer125();
+    TestPackageApi126();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

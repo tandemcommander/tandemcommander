@@ -32,6 +32,14 @@ Fixes for the problems reported on GitHub after 0.1.9.
   changes where a Network plug-in is present. `PRIVACY.md` describes the new
   request.
 
+- **The program no longer needs Windows 8 functions to start** (GitHub #6,
+  feature 126). Two functions used to look up command shells installed as
+  Store packages were bound when the program is loaded; on Windows 7 SP1,
+  Server 2008 R2 and Windows 8.0 that ended the start without any window or
+  message. They are now looked up when needed, and where they do not exist a
+  packaged shell is simply not found. Windows 11 remains the only supported
+  system; nothing changes there.
+
 ## [0.1.9] — 2026-10-07
 
 **Build 193.** Feature release. The program now tells you when a newer

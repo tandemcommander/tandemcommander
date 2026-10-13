@@ -256,6 +256,12 @@ Decisions owed to the maintainer:
      option), the plug-in counts in `CLAUDE.md`, `architecture/09`, `CHANGELOG.md`.
   With the plug-in present the core fallback of 125 steps aside by itself.
 
+- **A deliberate Windows floor?** (GitHub #6, feature 126.) The project supports Windows 11+,
+  the code checks for Windows 7 (`salamdr1.cpp`) and is built for that API level, the installer
+  has no `MinVersion`. 126 only removed an accidental start failure on Windows 7 / 8.0. Either
+  keep "unsupported but not blocked" (the state now) or state the floor in the program and the
+  installer.
+
 Code work an agent can do:
 
 - **The parent of a share's root** (`..` / Backspace / *Go to root* in `\\server\share`) does
@@ -272,6 +278,8 @@ Steps owed to a person:
   (they read the real keyboard and mouse); a real file server with visible shares, with shares
   named in another script, and one that refuses the list.
 - 124: a look at the Registry Editor panel on a real screen in Czech and German.
+- 126: a start of the 0.1.10 build on Windows 7 SP1 / Server 2008 R2 SP1 (the reporter of #6 is
+  asked); not testable in the development environment.
 
 ## R. Release 0.1.8 — ✅ PUBLISHED 2026-09-20
 

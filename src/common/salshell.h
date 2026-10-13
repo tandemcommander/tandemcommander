@@ -72,6 +72,28 @@ public:
     virtual BOOL GetPackagePath(const char* family, char* u8Buf, int bufSize) const;
 };
 
+// feature 126 (GitHub #6): the two kernel32 functions the package lookup needs.
+// GetPackagesByPackageFamily exists since Windows 8, GetPackagePathByFullName
+// since Windows 8.1; imported statically they stopped the program before its
+// first instruction on older systems (STATUS_ENTRYPOINT_NOT_FOUND, no message).
+// They are looked up at run time; a member is NULL where the system lacks it.
+struct CSalShellPackageApi
+{
+    LONG(WINAPI* GetPackagesByPackageFamily)(PCWSTR packageFamilyName, UINT32* count, PWSTR* packageFullNames,
+                                             UINT32* bufferLength, WCHAR* buffer);
+    LONG(WINAPI* GetPackagePathByFullName)(PCWSTR packageFullName, UINT32* pathLength, PWSTR path);
+};
+
+// Fills 'api' from this system's kernel32 (nothing is cached: safe from any
+// thread). Returns TRUE when both functions exist.
+BOOL SalShellResolvePackageApi(CSalShellPackageApi* api);
+
+// The install folder of the first package of the MSIX package family 'family'
+// through 'api'. FALSE and "" when 'api' is NULL or lacks a function (a system
+// without packages), when the family has no package, on any error, and when the
+// path does not fit into 'bufSize' bytes (refused, never cut).
+BOOL SalShellPackagePath(const CSalShellPackageApi* api, const char* family, char* u8Buf, int bufSize);
+
 // Finds the program of 'preset' (sspCommandPrompt..sspGitBash) on this machine:
 // walks the preset's candidate locations in order (contracts/shell-presets.md)
 // and returns the first one that exists as a file. 'probe' NULL = the real
