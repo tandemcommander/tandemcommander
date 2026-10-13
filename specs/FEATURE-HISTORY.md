@@ -2164,3 +2164,9 @@ a few early ones are out of sequence).
   - Traps: `far` is a Windows macro; a Bash here-document turned `\\xFF` of a Python string
     into the byte itself inside a C++ source; `python -I` hides user-site packages (Pillow).
   - Real sample sets for file formats are worth fetching before a writer ships, not after.
+- 136-ftp-verify-rows: the rows 134 left "read and reviewed only" driven in the program -
+  bookmark dialogs (New / Rename / Remove), the password prompt, the login error with a UTF-8
+  and a code-page refusal, Save log read back from the file. Rows live in 134's probe
+  (`ftp134_probe.ps1`: BMK, PWD, LOGINU8, LOGINCP, SAVELOG; the server refuses users named
+  `refuse-u8*` / `refuse-cp*`). 0.1.9: 6 FAIL in Czech, 3 in English; final build 31 / 0 in
+  both. No defect found - the value is that the dialogs were started at all.

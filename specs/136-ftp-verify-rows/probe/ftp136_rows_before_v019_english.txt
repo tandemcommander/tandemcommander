@@ -1,0 +1,21 @@
+ftp134_probe (feature 134), expect: before, language: english
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_v019\tandemcommander.exe
+Date    : 2026-10-13 21:11; desktop 'tc_probe_27824'; ACP 1250; registry key existed True; export SHA-256 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+Server  : python pid 20080 on port 2134 (alive True); hot key: plug-in 9 (ftp\ftp.spl): item 5 set
+
+BMK        NEWCHK PASS        check box of the New dialog: '&Copy data from bookmark "\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148"'; pieces missing: none; mojibake: False
+BMK        RENAME PASS        label of the Rename dialog: 'Rename "\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148" to'; pieces missing: none; mojibake: False
+BMK        REMOVE PASS        question of Remove: 'Are you sure you want to remove bookmark "\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148"?'; pieces missing: none; mojibake: False
+BMK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PWD        TEXT   FAIL        the "Connecting to ... as ..." line of the password prompt (dialog 'Enter Password'): 'Connecting to "127.0.0.1" as "ji\u0139\u2122\u0102\u00AD".'; pieces missing: 'ji\u0159\u00ED'; mojibake: True
+PWD        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LOGINU8    TEXT   FAIL        the server reply (UTF-8) in the login error dialog (dialog 'Error Connecting to FTP Server'): '530 P\u0139\u2122ihl\u0102\u02C7\u0139\u02C7en\u0102\u00AD odm\u0102\u00ADtnuto: \u0139\u02C7patn\u0102\u00A9 heslo.\u000A'; pieces missing: 'P\u0159ihl\u00E1\u0161en\u00ED odm\u00EDtnuto: \u0161patn\u00E9 heslo.'; mojibake: True
+LOGINU8    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LOGINCP    TEXT   PASS        the server reply (code page 1250) in the login error dialog (dialog 'Error Connecting to FTP Server'): '530 P\u0159ihl\u00E1\u0161en\u00ED odm\u00EDtnuto: \u0161patn\u00E9 heslo.\u000A'; pieces missing: none; mojibake: False
+LOGINCP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SAVELOG    LIST   PASS        item of the list of logs: '0: 127.0.0.1:2134 (left panel)'; pieces missing: none; mojibake: False
+SAVELOG    FILE   FAIL        the saved log: 703 bytes; starts with the UTF-8 mark False; valid UTF-8 False; holds the directory name True; mojibake True; end: '" is the current directory.\u000D\u000A(21:11:58): Listing path "/\u0139\u02DDlu\u0139\u0104ou\u00C4\u0164k\u0102\u02DD k\u0139\u017B\u0139\u0088"...\u000D\u000APORT 127,0,0,1,250,46\u000D\u000A200 OK\u000D\u000ATYPE A\u000D\u000A200 OK\u000D\u000ALIST\u000D\u000A150 Here comes the directory listing.\u000D\u000A226 Directory send OK.\u000D\u000A(21:11:58): Text listing was parsed by "UNIX1" server type...\u000D\u000A'
+SAVELOG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4 / after 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+
+Rows: PASS 10, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

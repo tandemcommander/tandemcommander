@@ -10,7 +10,7 @@ foreach ($lang in 'czech', 'english') {
 python specs\134-ftp-mixed-templates\probe\compare_server_logs.py specs\134-ftp-mixed-templates\probe\server_bytes_before_czech.log $env:TEMP\tc134_bytes_czech.log
 ```
 
-Expected: `Rows: PASS 18, FAIL 0, NOT DRIVEN 0` in both languages; `different (PORT numbers
+Expected: `Rows: PASS 31, FAIL 0, NOT DRIVEN 0` in both languages (13 rows since feature 136); `different (PORT numbers
 aside): 0`. With a 0.1.10 build and `-Expect before` the Czech run shows 9 FAIL rows, the
 English one 2.
 

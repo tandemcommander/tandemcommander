@@ -104,3 +104,8 @@ a moved directory on the server (recorded). Record: `specs/133-sftp-server-verif
 of 132 damaged the maker's data in 30 of 82. The thumbnail is now swapped without moving a byte
 of the Exif block; 82 of 82 keep everything. **Must ship with 132.** Record:
 `specs/135-pictview-real-photos/fix-log.md`.
+
+## Feature 136 (2026-10-13)
+
+`136-ftp-verify-rows`: five more rows of the FTP probe (bookmarks, password prompt, login
+error, saved log). 31 / 0 in Czech and English on the final build; nothing to fix.

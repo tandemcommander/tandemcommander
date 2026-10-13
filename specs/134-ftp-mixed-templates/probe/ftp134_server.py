@@ -14,7 +14,9 @@ directory the client is in:
   elsewhere   as /enc-utf8
 
 A file whose name starts with "slow" is sent 2 KB at a time with a pause (the operation window
-of the client stays open for about 40 seconds). Anonymous and any other login are accepted.
+of the client stays open for about 40 seconds). Anonymous and any other login are accepted,
+except (feature 136) a user whose name starts with "refuse-u8" or "refuse-cp": its password is
+refused with "530 <accented sentence>" in UTF-8 or in code page 1250.
 """
 import socket
 import socketserver
@@ -129,9 +131,15 @@ class Handler(socketserver.BaseRequestHandler):
         arg = line[len(cmd) + 1:] if b' ' in line else b''
         name = self.decode_name(arg)
         if cmd == 'USER':
+            self.user = name
             self.send('331 Password required.')
         elif cmd == 'PASS':
-            self.send('230 Logged in.')
+            user = getattr(self, 'user', '')
+            if user.startswith('refuse-'):
+                text = '530 P\u0159ihl\u00e1\u0161en\u00ed odm\u00edtnuto: \u0161patn\u00e9 heslo.'
+                self.send(text.encode('cp1250' if user.startswith('refuse-cp') else 'utf-8'))
+            else:
+                self.send('230 Logged in.')
         elif cmd == 'SYST':
             self.send('215 UNIX Type: L8')
         elif cmd == 'FEAT':

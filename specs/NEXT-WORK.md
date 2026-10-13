@@ -350,9 +350,10 @@ Code work an agent can do:
      - ~~The FTP client (about 104 sites, eight steps, the log decision)~~ - **done, feature
        134** (after the 0.1.10 preparation, so for the version after it): messages, operation
        window, log (UTF-8 at the sink), code-page-only controls; the core's
-       `GetCommonFSOperSourceDescr` gives UTF-8. Left by 134: the rows not driven in the
-       program (bookmark questions, password prompt, Save / Copy log, proxy and server-type
-       lists, FTPS certificate text - `specs/134-ftp-mixed-templates/fix-log.md`, section 5);
+       `GetCommonFSOperSourceDescr` gives UTF-8. Left by 134 (after feature 136 drove the bookmark dialogs,
+       the password prompt, the login error and Save log - all pass): Copy log, proxy and
+       server-type lists, FTPS certificate text, wait windows
+       (`specs/136-ftp-verify-rows/fix-log.md`, section 3);
        a reply cut inside a character by its 300 / 700-byte buffer; the Logs window's caret
        arithmetic in bytes; the core's `PrintDiskSize` mode 2 mixed in itself.
      - ~~Defects seen on the way~~ - **done, feature 131** (a verdict per item in

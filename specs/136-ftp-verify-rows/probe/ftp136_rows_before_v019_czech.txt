@@ -1,0 +1,21 @@
+ftp134_probe (feature 134), expect: before, language: czech
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_v019\tandemcommander.exe
+Date    : 2026-10-13 21:07; desktop 'tc_probe_11508'; ACP 1250; registry key existed True; export SHA-256 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+Server  : python pid 1916 on port 2134 (alive True); hot key: plug-in 9 (ftp\ftp.spl): item 5 set
+
+BMK        NEWCHK FAIL        check box of the New dialog: '&Kop\u00EDrovat data ze z\u00E1lo\u017Eky "\u0139\u02DDlu\u0139\u0104ou\u00C4\u0164k\u0102\u02DD k\u0139\u017B\u0139\u0088"'; pieces missing: '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; mojibake: True
+BMK        RENAME FAIL        label of the Rename dialog: 'P\u0159ejmenovat "\u0139\u02DDlu\u0139\u0104ou\u00C4\u0164k\u0102\u02DD k\u0139\u017B\u0139\u0088" na'; pieces missing: '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; mojibake: True
+BMK        REMOVE FAIL        question of Remove: 'Opravdu chcete odstranit z\u00E1lo\u017Eku "\u0139\u02DDlu\u0139\u0104ou\u00C4\u0164k\u0102\u02DD k\u0139\u017B\u0139\u0088"?'; pieces missing: '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; mojibake: True
+BMK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PWD        TEXT   FAIL        the "Connecting to ... as ..." line of the password prompt (dialog 'Zadejte heslo'): 'P\u0159ipojuji na "127.0.0.1" jako "ji\u0139\u2122\u0102\u00AD".'; pieces missing: 'ji\u0159\u00ED'; mojibake: True
+PWD        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LOGINU8    TEXT   FAIL        the server reply (UTF-8) in the login error dialog (dialog 'Chyba p\u0159ipojen\u00ED na FTP server'): '530 P\u0139\u2122ihl\u0102\u02C7\u0139\u02C7en\u0102\u00AD odm\u0102\u00ADtnuto: \u0139\u02C7patn\u0102\u00A9 heslo.\u000A'; pieces missing: 'P\u0159ihl\u00E1\u0161en\u00ED odm\u00EDtnuto: \u0161patn\u00E9 heslo.'; mojibake: True
+LOGINU8    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LOGINCP    TEXT   PASS        the server reply (code page 1250) in the login error dialog (dialog 'Chyba p\u0159ipojen\u00ED na FTP server'): '530 P\u0159ihl\u00E1\u0161en\u00ED odm\u00EDtnuto: \u0161patn\u00E9 heslo.\u000A'; pieces missing: none; mojibake: False
+LOGINCP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SAVELOG    LIST   PASS        item of the list of logs: '0: 127.0.0.1:2134 (lev\u00FD panel)'; pieces missing: none; mojibake: False
+SAVELOG    FILE   FAIL        the saved log: 695 bytes; starts with the UTF-8 mark False; valid UTF-8 False; holds the directory name True; mojibake True; end: 'e current directory.\u000D\u000A(21:07:53): V\u00FDpis cesty "/\u0139\u02DDlu\u0139\u0104ou\u00C4\u0164k\u0102\u02DD k\u0139\u017B\u0139\u0088"...\u000D\u000APORT 127,0,0,1,212,177\u000D\u000A200 OK\u000D\u000ATYPE A\u000D\u000A200 OK\u000D\u000ALIST\u000D\u000A150 Here comes the directory listing.\u000D\u000A226 Directory send OK.\u000D\u000A(21:07:53): Text v\u00FDpisu byl analyzov\u00E1n podle "UNIX1" typu serveru...\u000D\u000A'
+SAVELOG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4 / after 9AA200BEEBB4957D99C6BC1069938C2094FF5CF0E29FB471923103D27B8CDDC4
+
+Rows: PASS 7, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

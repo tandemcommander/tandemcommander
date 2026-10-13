@@ -16,6 +16,13 @@
                 operation window's title and the cells of its two lists (a slow file)
       DELETE    F8 on a file with an accented name: the question, then the server's refusal
       LOG       the Logs window after entering a directory with an accented name
+    Rows of feature 136 (texts 134 changed and did not run):
+      BMK       Connect to FTP Server: a bookmark with an accented name - the check box of New,
+                the label of Rename, the question of Remove
+      PWD       an accented user name and no password: the prompt's "Connecting to ... as ..."
+      LOGINU8 / LOGINCP  a refused password: the server's words (UTF-8 / code page 1250) in
+                the login error dialog
+      SAVELOG   the list of logs; Save log through the file dialog - the file read back
     A text passes when it holds every expected piece exactly and no mojibake letter.
     -Lang czech|english|...; -Expect fixed: FAIL rows count; -Expect before: recorded, the
     verdict column still says what a reader would see (FAIL = garbled).
@@ -63,6 +70,21 @@ public static class Drv134
     [DllImport("user32.dll")] static extern bool SetKeyboardState(byte[] k);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int InternalGetWindowText(IntPtr h, StringBuilder s, int n);
     public static string Title(IntPtr h) { var s = new StringBuilder(8000); InternalGetWindowText(h, s, 8000); return s.ToString(); }
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "SendMessageTimeoutW")] static extern IntPtr SendGetBuf(IntPtr h, uint msg, IntPtr w, [Out] char[] l, uint flags, uint timeout, out IntPtr result);
+    public static long SendR(IntPtr h, uint msg, long w, long l)
+    {
+        IntPtr r; if (SendMessageTimeoutW(h, msg, (IntPtr)w, (IntPtr)l, 0, 15000, out r) == IntPtr.Zero) return -999; return r.ToInt64();
+    }
+    // the text of a combo box item, wide (CB_GETLBTEXTLEN / CB_GETLBTEXT)
+    public static string ComboText(IntPtr combo, int index)
+    {
+        long len = SendR(combo, 0x0149, index, 0);
+        if (len < 0) return null;
+        var buf = new char[len + 2]; IntPtr r;
+        SendGetBuf(combo, 0x0148, (IntPtr)index, buf, 0, 5000, out r);
+        long n = r.ToInt64(); if (n < 0) return null; if (n > len) n = len;
+        return new string(buf, 0, (int)n);
+    }
     public static string ModKey(IntPtr target, int vk, int mods)
     {
         uint pid; uint tid = GetWindowThreadProcessId(target, out pid);
@@ -339,6 +361,130 @@ function Row-Delete {
     finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'DELETE' $id $fatal $before; Allow-QueueQuestion } }
 }
 
+# ---- feature 136 ------------------------------------------------------------------------
+function Ctl([IntPtr]$Dlg, [int]$CtlId) { return @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $CtlId }) | Select-Object -First 1 }
+function CtlText([IntPtr]$Dlg, [int]$CtlId) { $c = Ctl $Dlg $CtlId; if ($c) { return [Drv098f]::GetText($c, 8000) }; return $null }
+$BmkName = [char]0x017D + 'lu' + [char]0x0165 + 'ou' + [char]0x010D + 'k' + [char]0x00FD + ' ' + $Kun     # "Zlutoucky kun"
+$UserName = 'ji' + (Chars @(0x0159, 0x00ED))                                                             # "jiri"
+$Refused = 'P' + [char]0x0159 + 'ihl' + [char]0x00E1 + [char]0x0161 + 'en' + [char]0x00ED + ' odm' + [char]0x00ED + 'tnuto: ' + [char]0x0161 + 'patn' + [char]0x00E9 + ' heslo.'
+
+# BMK: the Connect dialog (hot key on the plug-in's first menu command), no server involved
+function Row-Bmk {
+    if (-not (Want 'BMK')) { return }
+    $before = Reports; $id = 0
+    try {
+        $id = Start-P
+        $known = Dialogs $id
+        $k = [Drv134]::ModKey((Get-LeftList $id), 0x4B, 3)          # Ctrl+Shift+K = Connect to FTP Server
+        $dlg = Wait-Dlg $id $known 15
+        if ($dlg -eq [IntPtr]::Zero -or -not (Ctl $dlg 561)) { Row 'BMK' 'DIALOG' 'NOT DRIVEN' ("no Connect dialog after the hot key ({0}; key {1})" -f $script:ConnKeyNote, $k); return }
+        # New: the first bookmark
+        Click (Ctl $dlg 572)
+        $new = Wait-Dlg $id ($known + $dlg) 10
+        if ($new -eq [IntPtr]::Zero -or -not (Ctl $new 602)) { Row 'BMK' 'NEW' 'NOT DRIVEN' 'the New dialog did not open'; return }
+        [void][Drv098f]::SetText((Ctl $new 602), $BmkName, 5000)
+        Click-Ok $new
+        Start-Sleep -Milliseconds 900
+        # New again: the check box names the focused bookmark
+        Click (Ctl $dlg 572)
+        $new = Wait-Dlg $id ($known + $dlg) 10
+        if ($new -eq [IntPtr]::Zero) { Row 'BMK' 'NEWCHK' 'NOT DRIVEN' 'the second New dialog did not open' }
+        else { Judge 'BMK' 'NEWCHK' (CtlText $new 611) @($BmkName) 'check box of the New dialog'; Close-Win $new; Start-Sleep -Milliseconds 600 }
+        # Rename: the label
+        Click (Ctl $dlg 573)
+        $ren = Wait-Dlg $id ($known + $dlg) 10
+        if ($ren -eq [IntPtr]::Zero) { Row 'BMK' 'RENAME' 'NOT DRIVEN' 'the Rename dialog did not open' }
+        else { Judge 'BMK' 'RENAME' (CtlText $ren 601) @($BmkName) 'label of the Rename dialog'; Close-Win $ren; Start-Sleep -Milliseconds 600 }
+        # Remove: the question, answered No
+        Click (Ctl $dlg 574)
+        $box = Wait-Dlg $id ($known + $dlg) 10
+        if ($box -eq [IntPtr]::Zero) { Row 'BMK' 'REMOVE' 'NOT DRIVEN' 'no question after Remove' }
+        else { Judge 'BMK' 'REMOVE' (StaticText $box) @($BmkName) 'question of Remove'; $b = BtnById $box @(7, 2); if ($b) { Click $b } else { Close-Win $box }; Start-Sleep -Milliseconds 600 }
+        $c = Ctl $dlg 575; if ($c) { Click $c } else { Close-Win $dlg }
+        Start-Sleep -Milliseconds 800
+        [void](Drain $id 3)
+    }
+    catch { Row 'BMK' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'BMK' $id $fatal $before } }
+}
+
+# PWD / LOGIN: an address with a user name; the first dialog that holds control $CtlId
+function Row-Login([string]$Case, [string]$UserPart, [int]$CtlId, [string[]]$Pieces, [string]$What) {
+    if (-not (Want $Case)) { return }
+    $before = Reports; $id = 0
+    try {
+        $id = Start-P
+        $known = Dialogs $id
+        [void](Do-ChangeDir $id ('ftp://' + $UserPart + '@127.0.0.1:' + $Port + '/'))
+        $found = [IntPtr]::Zero; $sw = [Diagnostics.Stopwatch]::StartNew(); $seen = @()
+        while ($sw.Elapsed.TotalSeconds -lt 40 -and $found -eq [IntPtr]::Zero) {
+            Start-Sleep -Milliseconds 400
+            foreach ($h in @(Dialogs $id | Where-Object { $known -notcontains $_ })) {
+                if (Ctl $h $CtlId) { $found = $h; break }
+                $d = Tail (WinDesc $h) 120; if ($seen -notcontains $d) { $seen += $d }
+            }
+        }
+        if ($found -eq [IntPtr]::Zero) { Row $Case 'TEXT' 'NOT DRIVEN' ("no dialog with control {0} in 40 s; seen: {1}" -f $CtlId, ($seen -join ' || ')); [void](Drain $id 4); return }
+        Start-Sleep -Milliseconds 600
+        Judge $Case 'TEXT' (CtlText $found $CtlId) $Pieces ("{0} (dialog '{1}')" -f $What, (Esc ([Drv098f]::Txt($found))))
+        $b = BtnById $found @(2); if ($b) { Click $b } else { Close-Win $found }
+        Start-Sleep -Milliseconds 800
+        [void](Drain $id 5)
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { $fatal = Fatal-Win $id; End-Row $Case $id $fatal $before } }
+}
+
+# SAVELOG: the list of logs, Save log through the file dialog, the file read back
+function Row-SaveLog {
+    if (-not (Want 'SAVELOG')) { return }
+    $before = Reports; $id = 0
+    $target = $Root + '\saved log.txt'
+    try {
+        $id = Start-P
+        $loc = Connect $id ('/' + $AccDir + '/')
+        $knownTops = Get-Tops $id
+        $k = [Drv134]::ModKey((Get-LeftList $id), 0x4A, 3)          # Ctrl+Shift+J = Show Logs
+        $w = [IntPtr]::Zero; $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 15 -and $w -eq [IntPtr]::Zero) {
+            Start-Sleep -Milliseconds 400
+            $w = @(Get-Tops $id | Where-Object { $knownTops -notcontains $_ -and [Drv098f]::IsWindowVisible($_) -and (Ctl $_ 661) }) | Select-Object -First 1
+            if (-not $w) { $w = [IntPtr]::Zero }
+        }
+        if ($w -eq [IntPtr]::Zero) { Row 'SAVELOG' 'LIST' 'NOT DRIVEN' ("no Logs window (key {0}); panel at {1}" -f $k, (Tail $loc 60)); return }
+        Start-Sleep -Milliseconds 1200
+        $combo = Ctl $w 661
+        $sel = [Drv134]::SendR($combo, 0x0147, 0, 0)
+        $item = [Drv134]::ComboText($combo, [int][Math]::Max(0, $sel))
+        Judge 'SAVELOG' 'LIST' $item @('127.0.0.1') 'item of the list of logs'
+        $known = Dialogs $id
+        Post-Cmd $w 1207                                             # Save log
+        $fd = Wait-Dlg $id ($known + $w) 15
+        if ($fd -eq [IntPtr]::Zero) { Row 'SAVELOG' 'FILE' 'NOT DRIVEN' 'no file dialog after Save log - person step: Save log, the file starts with EF BB BF'; return }
+        $edit = @([Drv098f]::Kids($fd) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) }) | Select-Object -First 1
+        if (-not $edit) { Row 'SAVELOG' 'FILE' 'NOT DRIVEN' ('the file dialog has no name field: ' + (Tail (WinDesc $fd) 200)); Close-Win $fd; return }
+        [void][Drv098f]::SetText($edit, $target, 5000)
+        Start-Sleep -Milliseconds 400
+        $b = BtnById $fd @(1); if ($b) { Click $b }
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 10 -and -not [IO.File]::Exists($LP + $target)) { Start-Sleep -Milliseconds 300 }
+        if (-not [IO.File]::Exists($LP + $target)) { Row 'SAVELOG' 'FILE' 'NOT DRIVEN' ('the file was not written; windows: ' + ((Dialogs $id | ForEach-Object { Tail (WinDesc $_) 120 }) -join ' || ')); [void](Drain $id 4); return }
+        Start-Sleep -Milliseconds 500
+        $bytes = [IO.File]::ReadAllBytes($LP + $target)
+        $bom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+        $valid = $true; $text = ''
+        try { $text = (New-Object Text.UTF8Encoding($false, $true)).GetString($bytes) } catch { $valid = $false; $text = [Text.Encoding]::GetEncoding(1250).GetString($bytes) }
+        $ok = $bom -and $valid -and $text.Contains($AccDir) -and -not (Garbled $text)
+        $tail = $text; if ($tail.Length -gt 260) { $tail = $tail.Substring($tail.Length - 260) }
+        Row 'SAVELOG' 'FILE' (V $ok) ("the saved log: {0} bytes; starts with the UTF-8 mark {1}; valid UTF-8 {2}; holds the directory name {3}; mojibake {4}; end: '{5}'" -f $bytes.Length, $bom, $valid, $text.Contains($AccDir), (Garbled $text), (Esc $tail))
+        [void][Drv098f]::PostMessageW($w, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+        Start-Sleep -Milliseconds 800
+        [void](Drain $id 3)
+    }
+    catch { Row 'SAVELOG' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'SAVELOG' $id $fatal $before } }
+}
+
 # LOG: enter the accented directory, open the Logs window (hot key), read its text
 function Row-Log {
     if (-not (Want 'LOG')) { return }
@@ -381,6 +527,7 @@ try {
     Set-Config
     Set-Lang ($Lang + '.slg')
     $script:KeyNote = Set-PluginHotKey '\\ftp\.spl$' 5 0x1034A
+    $script:ConnKeyNote = Set-PluginHotKey '\\ftp\.spl$' 1 0x1034B
     if (Test-Path -LiteralPath $srvLog) { Remove-Item -LiteralPath $srvLog -Force }
     $py = (Get-Command python -ErrorAction Stop).Source
     $Server = Start-Process -FilePath $py -ArgumentList @(('"' + (Join-Path $PSScriptRoot 'ftp134_server.py') + '"'), $Port, ('"' + $srvLog + '"')) -PassThru -WindowStyle Hidden
@@ -397,6 +544,11 @@ try {
     Row-Copy
     Row-Delete
     Row-Log
+    Row-Bmk
+    Row-Login 'PWD' $UserName 623 @($UserName, '127.0.0.1') 'the "Connecting to ... as ..." line of the password prompt'
+    Row-Login 'LOGINU8' 'refuse-u8:x' 633 @($Refused) 'the server reply (UTF-8) in the login error dialog'
+    Row-Login 'LOGINCP' 'refuse-cp:x' 633 @($Refused) 'the server reply (code page 1250) in the login error dialog'
+    Row-SaveLog
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
