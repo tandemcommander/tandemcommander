@@ -144,6 +144,98 @@ static void TestPaths()
     CHECK(SftpMoveMayRemove(TRUE, TRUE, 0x1FFFFFFFFull, TRUE, 0x1FFFFFFFFull));
     CHECK(!SftpMoveMayRemove(TRUE, FALSE, 0, FALSE, 0));
 
+    // feature 139: the temporary name of an upload - in the target's own directory, never cut
+    {
+        char t[64];
+        CHECK(SftpTempPath("/a/b.txt", 0x1A2B3C4DUL, t, sizeof(t)));
+        CHECK_STR(t, "/a/.tcpart-1a2b3c4d");
+        CHECK(SftpTempPath("/b.txt", 0UL, t, sizeof(t))); // the root
+        CHECK_STR(t, "/.tcpart-00000000");
+        CHECK(SftpTempPath("b.txt", 0xFFFFFFFFUL, t, sizeof(t))); // no directory part
+        CHECK_STR(t, ".tcpart-ffffffff");
+        CHECK(SftpTempPath("/a/", 0xABCDEF01UL, t, sizeof(t))); // an empty last component
+        CHECK_STR(t, "/a/.tcpart-abcdef01");
+        CHECK(SftpTempPath("/dir.with.dots/x", 7UL, t, sizeof(t)));
+        CHECK_STR(t, "/dir.with.dots/.tcpart-00000007");
+        // the name does not depend on the target's name (a 255-byte name stays within the limit)
+        char longName[3 + 255 + 1];
+        memcpy(longName, "/d/", 3);
+        memset(longName + 3, 'n', 255);
+        longName[sizeof(longName) - 1] = 0;
+        CHECK(SftpTempPath(longName, 0x12345678UL, t, sizeof(t)));
+        CHECK_STR(t, "/d/.tcpart-12345678");
+        char fit[20]; // "/a/" + 16 + NUL = 20: fits exactly
+        CHECK(SftpTempPath("/a/b.txt", 0x00C0FFEEUL, fit, sizeof(fit)));
+        CHECK_STR(fit, "/a/.tcpart-00c0ffee");
+        fit[0] = 'z';
+        CHECK(!SftpTempPath("/ab/b.txt", 1UL, fit, sizeof(fit)) && fit[0] == 0); // one byte over
+        fit[0] = 'z';
+        CHECK(!SftpTempPath("/a/b.txt", 1UL, fit, 19) && fit[0] == 0);
+        CHECK(!SftpTempPath("b", 1UL, fit, 16) && fit[0] == 0); // no room for the terminator
+        CHECK(SftpTempPath("b", 1UL, fit, 17) && strcmp(fit, ".tcpart-00000001") == 0);
+        CHECK(!SftpTempPath("/a/b", 1UL, fit, 0));
+        CHECK(!SftpTempPath("/a/b", 1UL, NULL, 20));
+        fit[0] = 'z';
+        CHECK(!SftpTempPath(NULL, 1UL, fit, sizeof(fit)) && fit[0] == 0);
+    }
+    // feature 139: an upload is complete only on facts
+    CHECK(SftpUploadConfirmed(TRUE, 1234, 1234, 1234));
+    CHECK(SftpUploadConfirmed(TRUE, 0, 0, 0)); // an empty file is complete
+    CHECK(!SftpUploadConfirmed(FALSE, 1234, 1234, 1234)); // the server does not say the size
+    CHECK(!SftpUploadConfirmed(TRUE, 1233, 1234, 1234));  // the server holds less than was sent
+    CHECK(!SftpUploadConfirmed(TRUE, 1235, 1234, 1234));  // ... or more
+    CHECK(!SftpUploadConfirmed(TRUE, 1000, 1000, 1234));  // not the whole local file was sent
+    CHECK(!SftpUploadConfirmed(TRUE, 1234, 1234, 1000));  // the local file changed
+    CHECK(!SftpUploadConfirmed(TRUE, 0, 0x100000000ull, 0x100000000ull)); // no 32-bit comparison
+    CHECK(SftpUploadConfirmed(TRUE, 0x1FFFFFFFFull, 0x1FFFFFFFFull, 0x1FFFFFFFFull));
+    CHECK(!SftpUploadConfirmed(FALSE, 0, 0, 0));
+    // feature 139 (review): only "no such file / path" frees a name
+    CHECK(SftpStatusIsNotFound(2) && SftpStatusIsNotFound(10));
+    CHECK(!SftpStatusIsNotFound(0) && !SftpStatusIsNotFound(3) && !SftpStatusIsNotFound(4) && !SftpStatusIsNotFound(7) &&
+          !SftpStatusIsNotFound(11));
+    CHECK(SftpStatusIsPermission(3) && SftpStatusIsPermission(12));
+    CHECK(!SftpStatusIsPermission(0) && !SftpStatusIsPermission(4) && !SftpStatusIsPermission(8) && !SftpStatusIsPermission(14));
+    // feature 139 (review): in place only when the server said "no right" on a live session
+    CHECK(SftpTempOpenFailureNext(TRUE, 3) == tonInPlace);  // permission denied
+    CHECK(SftpTempOpenFailureNext(TRUE, 12) == tonInPlace); // write protected
+    CHECK(SftpTempOpenFailureNext(TRUE, 8) == tonInPlace);  // no exclusive create
+    CHECK(SftpTempOpenFailureNext(TRUE, 4) == tonRetryName);
+    CHECK(SftpTempOpenFailureNext(TRUE, 11) == tonRetryName);
+    CHECK(SftpTempOpenFailureNext(TRUE, 0) == tonFail);  // no status: timeout, transport
+    CHECK(SftpTempOpenFailureNext(TRUE, 14) == tonFail); // no space
+    CHECK(SftpTempOpenFailureNext(TRUE, 15) == tonFail); // quota
+    CHECK(SftpTempOpenFailureNext(TRUE, 7) == tonFail);  // connection lost
+    CHECK(SftpTempOpenFailureNext(TRUE, 2) == tonFail);  // the directory is gone
+    CHECK(SftpTempOpenFailureNext(FALSE, 3) == tonFail && SftpTempOpenFailureNext(FALSE, 4) == tonFail &&
+          SftpTempOpenFailureNext(FALSE, 8) == tonFail && SftpTempOpenFailureNext(FALSE, 0) == tonFail);
+    // feature 139 (review): the replaced file's owner and group
+    CHECK(!SftpOwnerDiffers(TRUE, 1000, 100, TRUE, 1000, 100));
+    CHECK(SftpOwnerDiffers(TRUE, 1000, 100, TRUE, 1001, 100));
+    CHECK(SftpOwnerDiffers(TRUE, 1000, 100, TRUE, 1000, 33));
+    CHECK(SftpOwnerDiffers(TRUE, 0, 0, TRUE, 1000, 1000));
+    CHECK(!SftpOwnerDiffers(FALSE, 1, 2, TRUE, 3, 4) && !SftpOwnerDiffers(TRUE, 1, 2, FALSE, 3, 4) &&
+          !SftpOwnerDiffers(FALSE, 1, 2, FALSE, 3, 4)); // not reported: not a difference
+    // feature 139 (second review): a chmod is sent only when the bits differ
+    CHECK(!SftpModeDiffers(TRUE, SFTP_S_IFREG | 0640, TRUE, SFTP_S_IFREG | 0640));
+    CHECK(!SftpModeDiffers(TRUE, SFTP_S_IFREG | 0640, TRUE, 0640)); // the type bits do not count
+    CHECK(SftpModeDiffers(TRUE, SFTP_S_IFREG | 0640, TRUE, SFTP_S_IFREG | 0600)); // the umask took a bit
+    CHECK(SftpModeDiffers(TRUE, SFTP_S_IFREG | SFTP_S_ISVTX | 0644, TRUE, SFTP_S_IFREG | 0644)); // a special bit
+    CHECK(SftpModeDiffers(TRUE, 0644, FALSE, 0644));  // not reported for the new file: set them
+    CHECK(!SftpModeDiffers(FALSE, 0600, TRUE, 0644)); // nothing known to keep
+    CHECK(!SftpModeDiffers(FALSE, 0600, FALSE, 0));
+    // feature 139: only links to another place are skipped by an upload
+    CHECK(SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT, IO_REPARSE_TAG_MOUNT_POINT)); // junction, mounted volume
+    CHECK(SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT, IO_REPARSE_TAG_SYMLINK));
+    CHECK(SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT, 0xA000001DUL));  // a WSL symbolic link
+    CHECK(!SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT, 0x9000001AUL)); // cloud files (OneDrive)
+    CHECK(!SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT, 0x9000701AUL)); // cloud files, another variant
+    CHECK(!SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT, 0x80000013UL)); // deduplication
+    CHECK(!SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY, IO_REPARSE_TAG_MOUNT_POINT)); // no reparse point: the tag field means nothing
+    CHECK(!SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY, 0));
+    CHECK(!SftpLocalDirIsLink(INVALID_FILE_ATTRIBUTES, IO_REPARSE_TAG_SYMLINK)); // attributes not read
+    CHECK((SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT, IO_REPARSE_TAG_SYMLINK) != FALSE) ==
+          (IsReparseTagNameSurrogate(IO_REPARSE_TAG_SYMLINK) != 0)); // the system's own test agrees
+
     // feature 133: only "end" completes a listing
     CHECK(SftpReadDirStep(1) == rdsEntry && SftpReadDirStep(255) == rdsEntry && SftpReadDirStep(2047) == rdsEntry);
     CHECK(SftpReadDirStep(0) == rdsEnd);

@@ -1,3 +1,3 @@
 {
-  "feature_directory": "specs/138-sftp-move-directory"
+  "feature_directory": "specs/139-sftp-no-silent-overwrite"
 }

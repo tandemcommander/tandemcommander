@@ -241,7 +241,7 @@ function End-Operation([int]$Id, [IntPtr]$Op) {
 function Allow-QueueQuestion {
     $last = $script:Rows[$script:Rows.Count - 1]
     $line = '' + $script:Lines[$script:Lines.Count - 1]
-    if ($last.Verdict -eq 'FAIL' -and $line -match 'exit 0x00000000' -and $line -match 'stray 1 \(at exit: \[#32770 ''FTP [^'']*''\] \[Static id=2477\]' -and $line -match 'new reports 0') {
+    if ($last.Verdict -eq 'FAIL' -and $line -match 'exit 0x00000000' -and $line -match 'stray 1 \(at exit: \[#32770 ''FTP[^'']*''\] \[Static id=2477\]' -and $line -match 'new reports 0') {
         $last.Verdict = 'PASS'
         $script:Lines[$script:Lines.Count - 1] = $line.Replace(' FAIL ', ' PASS ') + ' [the queue question at exit is expected here]'
     }

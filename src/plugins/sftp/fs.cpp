@@ -985,6 +985,19 @@ BOOL WINAPI CPluginFSInterface::ExecuteCommandLine(HWND parent, char* command, i
     return TRUE;
 }
 
+// feature 139: do two names of one directory differ only in the case of letters (and are not
+// byte-equal)? Compared as UTF-16 by the ordinal rule; a name that cannot be converted or does
+// not fit answers FALSE (it is then handled as another name).
+static BOOL QuickRenameOnlyCaseDiffers(const char* oldName, const char* newName)
+{
+    if (strcmp(oldName, newName) == 0)
+        return FALSE;
+    WCHAR wOld[1024], wNew[1024];
+    if (SplU8ToW(oldName, wOld, _countof(wOld)) <= 0 || SplU8ToW(newName, wNew, _countof(wNew)) <= 0)
+        return FALSE;
+    return CompareStringOrdinal(wOld, -1, wNew, -1, TRUE) == CSTR_EQUAL;
+}
+
 BOOL WINAPI CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND parent, CFileData& file,
                                             BOOL isDir, char* newName, BOOL& cancel)
 {
@@ -1003,7 +1016,67 @@ BOOL WINAPI CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND p
         ShowTooLongPath(parent);
         return FALSE;
     }
-    if (!Session.Rename(from, to))
+    if (strcmp(from, to) == 0)
+        return TRUE; // the same name: nothing to do
+    // feature 139: a name that exists already is refused - the rename used to go through the
+    // replacing posix-rename extension and the other file was gone without a word. The link
+    // itself is asked about (lstat): a dangling link holds the name too. The check is ours:
+    // that a plain rename request refuses an existing target is what OpenSSH does, not a
+    // promise of every server - so an lstat that could not tell (any failure other than "no
+    // such file") refuses the rename as well.
+    LIBSSH2_SFTP_ATTRIBUTES targetAttrs;
+    CSFTPStatResult target = Session.StatEx(to, FALSE, &targetAttrs);
+    if (target == sxError)
+    {
+        SFTPShowPathError(parent, IDS_ERR_RENAME, file.Name, Session.GetLastErrorText());
+        return FALSE;
+    }
+    BOOL replace = FALSE;
+    if (target == sxFound)
+    {
+        // A name that differs only in the case of letters: on a case-insensitive server the
+        // name found is this very item, on a case-sensitive one it is another file. The
+        // directory's listing tells: another file has an entry spelled exactly like the new
+        // name. Without such an entry the replacing request is the right one (it "replaces"
+        // the item by itself and so changes the case); a listing that fails or is not
+        // complete refuses the rename.
+        BOOL sameItem = FALSE;
+        if (QuickRenameOnlyCaseDiffers(SFTPRealName(&file), newName))
+        {
+            TIndirectArray<CSFTPDirEntry> entries(64, 64);
+            volatile BOOL stopped = FALSE;
+            if (!Session.ListDir(Path, &entries, &stopped) || stopped)
+            {
+                SFTPShowPathError(parent, IDS_ERR_RENAME, file.Name,
+                                  stopped ? "the directory could not be read whole." : Session.GetLastErrorText());
+                return FALSE;
+            }
+            // (second review) not only an entry spelled exactly like the new name: ANY entry
+            // other than the renamed item that equals the new name up to case may be what the
+            // server would replace (a server that folds case and still lists two spellings).
+            // Only when the old name is the sole such entry is the name found the item itself.
+            sameItem = TRUE;
+            const char* oldName = SFTPRealName(&file);
+            for (int i = 0; i < entries.Count; i++)
+            {
+                const char* entryName = entries[i]->Name;
+                if (strcmp(entryName, oldName) == 0)
+                    continue;
+                if (strcmp(entryName, newName) == 0 || QuickRenameOnlyCaseDiffers(entryName, newName))
+                {
+                    sameItem = FALSE;
+                    break;
+                }
+            }
+        }
+        if (!sameItem)
+        {
+            SFTPShowPathError(parent, IDS_ERR_RENAME, file.Name, "a file or directory of that name already exists.");
+            return FALSE;
+        }
+        replace = TRUE;
+    }
+    if (!Session.Rename(from, to, replace))
     {
         SFTPShowPathError(parent, IDS_ERR_RENAME, file.Name, Session.GetLastErrorText());
         return FALSE;
@@ -1251,13 +1324,16 @@ BOOL WINAPI CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, cons
         return FALSE;
     }
 
-    if (!SFTPUploadToFS(parent, &Session, sourcePath, next, nextParam, rpath, !copy))
+    BOOL done = SFTPUploadToFS(parent, &Session, sourcePath, next, nextParam, rpath, !copy);
+    // feature 139: an upload that did not end whole has put files on the server too - the
+    // panel is refreshed either way (it showed nothing of them)
+    SalamanderGeneral->PostRefreshPanelFS(this, FALSE);
+    if (!done)
     {
         if (invalidPathOrCancel != NULL)
             *invalidPathOrCancel = TRUE;
         return FALSE;
     }
-    SalamanderGeneral->PostRefreshPanelFS(this, FALSE);
     return TRUE;
 }
 

@@ -101,6 +101,55 @@ CSftpReadDirStep SftpReadDirStep(int rc);
 BOOL SftpMoveMayRemove(BOOL transferred, BOOL localSizeKnown, unsigned __int64 localSize,
                        BOOL remoteSizeKnown, unsigned __int64 remoteSize);
 
+// feature 139: the path of a temporary file in the SAME directory as 'targetPath' (so that the
+// last step of an upload is a rename inside one directory): the last component is replaced by
+// ".tcpart-XXXXXXXX" (8 lower-case hex digits of 'random'). The name does not depend on the
+// target's name - a name of 255 bytes with a suffix would pass the server's name limit.
+// Returns FALSE and an empty 'buf' when the result does not fit - never a cut path.
+BOOL SftpTempPath(const char* targetPath, unsigned long random, char* buf, int bufSize);
+
+// feature 139: is an upload complete? Only on facts: the server reports a size for the file
+// that was written, it equals the number of bytes sent, and that equals the size the local
+// file had when it was opened. Anything unknown = no (the old file is not replaced, a moved
+// source is not removed).
+BOOL SftpUploadConfirmed(BOOL remoteSizeKnown, unsigned __int64 remoteSize, unsigned __int64 bytesSent,
+                         unsigned __int64 localSize);
+
+// feature 139: the server's status (SSH_FX_*) says "nothing of that name" - the only answer
+// of an lstat after which a writer may take the name for free.
+BOOL SftpStatusIsNotFound(unsigned long status);
+
+// feature 139: the server refused for want of a right (permission denied, write protected).
+BOOL SftpStatusIsPermission(unsigned long status);
+
+// feature 139: the temporary file of an upload could not be created - what next?
+// 'connected': the session is still alive; 'status': the server's status, 0 = it sent none
+// (timeout, transport - a later open on the same session must not follow: the library would
+// resume the unanswered request and hand back the temporary file's handle).
+enum CSftpTempOpenNext
+{
+    tonFail,      // the item fails, the target is not touched
+    tonRetryName, // a file of that name exists: once more with another random name
+    tonInPlace,   // no right to create a file there (or no exclusive create): write in place, as before 139
+};
+CSftpTempOpenNext SftpTempOpenFailureNext(BOOL connected, unsigned long status);
+
+// feature 139: does the new file's owner or group differ from the replaced file's? Only when
+// the server reported both pairs; an unknown pair is not a difference.
+BOOL SftpOwnerDiffers(BOOL oldKnown, unsigned long oldUid, unsigned long oldGid,
+                      BOOL newKnown, unsigned long newUid, unsigned long newGid);
+
+// feature 139: must the permission bits of the new (still empty) file be set to the replaced
+// file's? Only the 12 permission bits count, not the type bits. Nothing to keep when the old
+// bits are not known; bits the server did not report for the new file count as different.
+BOOL SftpModeDiffers(BOOL oldKnown, unsigned long oldMode, BOOL newKnown, unsigned long newMode);
+
+// feature 139: is a local directory with these attributes and this reparse tag (FindFirstFile's
+// dwReserved0) a LINK to another place - a junction, a directory symbolic link, a mounted
+// volume (the name-surrogate tags)? Such a directory is not entered by an upload. Any other
+// reparse tag (cloud files: every OneDrive folder carries one) is an ordinary directory.
+BOOL SftpLocalDirIsLink(DWORD attributes, DWORD reparseTag);
+
 // feature 133: a message made of a template with one or two "%s" and its texts, in a buffer of
 // exactly the size needed (malloc; NULL = low memory). The messages were composed in 1,200
 // bytes: with a long path the path was cut and the reason behind it was lost. 'b' may be

@@ -2193,3 +2193,26 @@ a few early ones are out of sequence).
   - Rows M1, MTREE, MKEEP, MSKIP, MCASE, MBLOCK in the SFTP probe - the verdict is the server's
     and the disk's state, file by file.
   - Whenever a download becomes a delete: think of name collisions on the receiving side.
+- 139-sftp-no-silent-overwrite: **SFTP replaces nothing without a question and never before
+  the replacement is whole** (final review of the cycle; all of it in 0.1.9). Upload: `lstat`
+  the target, ask (`ConfirmOverwriteRemote`), write to `.tcpart-<8 hex>` in the same directory
+  (`OpenWriteNew` = CREAT|EXCL; the name does not derive from the target's - NAME_MAX), confirm
+  the size, `Rename(temp, target, replace)`. **The route is decided on the EMPTY temporary
+  file** (owner, group, permission bits made equal to the old file's, or else in place at
+  once) - the first version decided after the data and sent a file twice; between its two
+  passes a cancel truncated the target, and the complete temp was deleted before the in-place
+  write was confirmed (second review). In place (after the question, logged) only for: a link
+  or non-regular target, no right to create / rename there, another owner, set-id bits.
+  Download over a local file: `SalCreateTempNextToW` + `SalReplaceWithTempW`. Quick Rename:
+  `Rename(from, to, FALSE)` = plain `SSH_FXP_RENAME` after an `lstat`; a case-only rename is
+  decided by listing the directory. Upload restructured like 138's download (tri-state, each
+  item removes its own source, `DeleteLocalTree` gone, failed `Mkdir` / listing = failure,
+  only name-surrogate reparse points skipped - aloud, heap block per level).
+  - Rows UPASKNO, UPASKYES, UPFAIL, UPNEWFAIL, DLFAIL, RENEXIST, RENCASE, UPSYM, UPMV, UPMOVE,
+    UPLINK; seam `TC_SFTP_PROBE_XFER_FAIL="<suffix>;<bytes>"` (debug). `Row-Up`: the probe's
+    keys reach the LEFT list only - the local source is on the left.
+  - "A plain rename never replaces" is OpenSSH's behaviour, not the protocol's: never rely on
+    it alone. After a timeout libssh2 answers the next request of the same kind with the old
+    reply - a failed request must mark the session dead (`NoteTransportError`).
+  - The core shows its Copy / Move dialog again when a plug-in's operation fails: a probe
+    that answers OK to everything loops.

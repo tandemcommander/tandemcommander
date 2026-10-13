@@ -121,3 +121,11 @@ Record: `specs/137-names-cut-at-byte/fix-log.md`.
 `138-sftp-move-directory`: a moved directory leaves the SFTP server; nothing is removed that
 did not arrive whole (size confirmed), and two server names that are one Windows name are not
 merged. Record: `specs/138-sftp-move-directory/fix-log.md`.
+
+## Feature 139 (2026-10-13)
+
+`139-sftp-no-silent-overwrite`: from the final independent review - an SFTP upload asks before
+it replaces a server file and replaces it only by a complete new one; a download over a local
+file goes through a temporary file; Quick Rename refuses an existing name; a move to the server
+removes each local source only after its own upload is confirmed. Record:
+`specs/139-sftp-no-silent-overwrite/fix-log.md`.

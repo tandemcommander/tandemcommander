@@ -1,0 +1,25 @@
+sftp133_probe (feature 133), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_v019\tandemcommander.exe
+Date    : 2026-10-13 23:04; desktop 'tc_probe_34896'; ACP 1250; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Server  : prepared: /home/tctest/tc133; p4 tree end is 4043 bytes, p5 file path 4043 bytes
+
+UPASKNO    ROW    PASS        upload over an existing file, answer No: the question came False; the server's file holds 'LOCAL-NEW-CONTENT'; entries there 1; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/ua'; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "report.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+UPASKNO    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UPASKYES   ROW    PASS        upload over an existing file, answer Yes: the question came False; the server's file holds 'LOCAL-NEW-CONTENT', mode 640 (was 640); entries there 1; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/ub'; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "report.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+UPASKYES   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UPFAIL     ROW    PASS        upload over an existing file, cut after 100,000 of 300,000 bytes: the server's file holds '0123456789ABCDEF0123456789ABCDEF01234567' (300000 bytes); entries there 1; an error shown False; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/uf'; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "big.bin" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+UPFAIL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UPNEWFAIL  ROW    PASS        upload of a new file, cut after 100,000 bytes: entries on the server 1 (expected 0); an error shown False; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/un'; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "big.bin" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+UPNEWFAIL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RENEXIST   ROW    PASS        Quick Rename of a.txt to b.txt, which exists: a.txt holds '', b.txt holds 'AAA'; 'already exists' said False; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/rn'; dialogs: typed into [Quick Rename]
+RENEXIST   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UPMV       ROW    PASS        move a local tree to the server: on the server './tree ./tree/a ./tree/a/x.txt ./tree/e ./tree/y.txt'; left on the disk ''; errors shown False; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/uv'; dialogs: [#32770 'Move/Rename'] [Static id=209] &Move directory "tree" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+UPMV       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UPMOVE     ROW    PASS        move a local tree, one folder of which the server cannot create: on the server './tree ./tree/3.txt ./tree/blocked ./tree/ok ./tree/ok/1.txt' (blocked is still 'a-file'); left on the disk '' (expected 'tree tree/blocked tree/blocked/deep'); an error shown False; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/um'; dialogs: [#32770 'Move/Rename'] [Static id=209] &Move directory "tree" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+UPMOVE     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UPLINK     ROW    PASS        copy a local tree with a junction in it: on the server './tree ./tree/real ./tree/real/r.txt'; the skipped link was said False; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/ul'; dialogs: [#32770 'Copy'] [Static id=209] &Copy directory "tree" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+UPLINK     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Fixture: could not delete C:\Users\pavel\AppData\Local\Temp\tc133 : Exception calling "Delete" with "2" argument(s): "P??stup k cest? link byl odep?en."
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: False; registry restored+identical: True

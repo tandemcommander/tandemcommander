@@ -122,6 +122,7 @@ CSFTPSession::CSFTPSession()
     Connected = FALSE;
     LogUID = -1;
     LastErrorText[0] = 0;
+    LastSftpStatus = 0;
     Prompt = cpNone;
     memset(&HostKeyInfo, 0, sizeof(HostKeyInfo));
     TrustHostKeyOnce = FALSE;
@@ -184,6 +185,7 @@ void CSFTPSession::SetLastErrorFromSftp(const char* prefix)
     unsigned long code = LIBSSH2_FX_OK;
     if (Ssh != NULL && Sftp != NULL && libssh2_session_last_errno(Ssh) == LIBSSH2_ERROR_SFTP_PROTOCOL)
         code = libssh2_sftp_last_error(Sftp);
+    LastSftpStatus = code; // feature 139: 0 = the server did not answer with a status
     if (code == LIBSSH2_FX_OK) // not a status of the server
     {
         SetLastErrorFromSsh(prefix);
@@ -220,6 +222,7 @@ void CSFTPSession::SetLastErrorFromSftp(const char* prefix)
 BOOL CSFTPSession::SetLastErrorNotConnected()
 {
     SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_NOTCONNECTED));
+    LastSftpStatus = 0;
     return FALSE;
 }
 
@@ -1316,7 +1319,28 @@ BOOL CSFTPSession::Stat(const char* path, BOOL followSymlink, LIBSSH2_SFTP_ATTRI
     memset(attrs, 0, sizeof(*attrs));
     int rc = libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path),
                                   followSymlink ? LIBSSH2_SFTP_STAT : LIBSSH2_SFTP_LSTAT, attrs);
+    // feature 139: a timed-out or broken request marks the session dead like every other
+    // request does (the error text is left alone, as before). Otherwise the library keeps the
+    // half-done request and gives its late answer to the NEXT stat.
+    if (rc != 0)
+        NoteTransportError(rc);
     return rc == 0;
+}
+
+CSFTPStatResult CSFTPSession::StatEx(const char* path, BOOL followSymlink, LIBSSH2_SFTP_ATTRIBUTES* attrs)
+{
+    memset(attrs, 0, sizeof(*attrs));
+    if (Sftp == NULL)
+    {
+        SetLastErrorNotConnected();
+        return sxError;
+    }
+    int rc = libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path),
+                                  followSymlink ? LIBSSH2_SFTP_STAT : LIBSSH2_SFTP_LSTAT, attrs);
+    if (rc == 0)
+        return sxFound;
+    SetLastErrorFromSftp(NULL); // also notices a dead transport
+    return SftpStatusIsNotFound(LastSftpStatus) ? sxNotFound : sxError;
 }
 
 BOOL CSFTPSession::ReadLink(const char* path, char* target, int targetSize)
@@ -1369,24 +1393,51 @@ BOOL CSFTPSession::Unlink(const char* path)
     return TRUE;
 }
 
-BOOL CSFTPSession::Rename(const char* from, const char* to)
+BOOL CSFTPSession::Rename(const char* from, const char* to, BOOL replace)
 {
     if (Sftp == NULL)
         return SetLastErrorNotConnected();
     LogFmt("Rename %s -> %s", from, to);
-    // Prefer the atomic, overwrite-capable posix-rename@openssh.com extension
-    // (OpenSSH and most servers advertise it); it returns OP_UNSUPPORTED quickly
-    // when absent, so the fallback is cheap. The standard SSH_FXP_RENAME only
-    // carries the OVERWRITE flag for SFTP v5+, and libssh2 negotiates v3 - so a
-    // plain rename there cannot overwrite an existing target (modern OpenSSH then
-    // fails the rename with SSH_FX_FAILURE), which is why F2 rename onto an
-    // existing name failed.
-    int rc = libssh2_sftp_posix_rename_ex(Sftp, from, (unsigned int)strlen(from),
+    // Two requests exist, and they differ in what happens to an existing target:
+    //  - posix-rename@openssh.com (an extension OpenSSH and most servers advertise) is
+    //    rename(2): atomic, and it REPLACES an existing target without a word;
+    //  - the standard SSH_FXP_RENAME. libssh2 negotiates SFTP version 3 at most
+    //    (LIBSSH2_SFTP_VERSION 3; a higher version offered by the server is lowered to it),
+    //    and for a version below 5 it does not send the flags at all (sftp.c, sftp_rename:
+    //    the flags word is stored only when version >= 5) - in version 3 the request has no
+    //    way to ask for an overwrite, and the server refuses an existing target (OpenSSH:
+    //    SSH_FX_FAILURE).
+    // feature 139: the posix-rename extension used to be tried first for every rename, so
+    // Quick Rename onto an existing name replaced that other file silently. It is now used
+    // only with 'replace' (the caller asked the user). Without it only the standard request
+    // is sent, and without the OVERWRITE flag - so that it could not replace anything even
+    // if a later library negotiated version 5 (ATOMIC and NATIVE are the library's own
+    // defaults next to OVERWRITE; they only say how, not whether an existing target goes).
+    int rc;
+    if (replace)
+    {
+        rc = libssh2_sftp_posix_rename_ex(Sftp, from, (unsigned int)strlen(from),
                                           to, (unsigned int)strlen(to));
-    if (rc != 0)
+        // The plain request follows ONLY when the extension is not there: the library answers
+        // LIBSSH2_FX_OP_UNSUPPORTED itself, without sending anything, when the server did not
+        // advertise it (sftp.c, sftp_posix_rename), or the server says so. Any other failure
+        // is the answer (it used to be followed by the plain request, whose FAILURE - "the
+        // target exists" - then hid a PERMISSION_DENIED from the caller, and a timed-out
+        // request was followed by another on a dead session). The plain request cannot
+        // replace on a version 3 server; the caller copes.
+        BOOL noExtension = rc == LIBSSH2_FX_OP_UNSUPPORTED ||
+                           (rc == LIBSSH2_ERROR_SFTP_PROTOCOL && libssh2_sftp_last_error(Sftp) == LIBSSH2_FX_OP_UNSUPPORTED);
+        if (noExtension)
+            rc = libssh2_sftp_rename_ex(Sftp, from, (unsigned int)strlen(from),
+                                        to, (unsigned int)strlen(to),
+                                        LIBSSH2_SFTP_RENAME_OVERWRITE);
+    }
+    else
+    {
         rc = libssh2_sftp_rename_ex(Sftp, from, (unsigned int)strlen(from),
                                     to, (unsigned int)strlen(to),
-                                    LIBSSH2_SFTP_RENAME_OVERWRITE);
+                                    LIBSSH2_SFTP_RENAME_ATOMIC | LIBSSH2_SFTP_RENAME_NATIVE);
+    }
     if (rc != 0)
     {
         // capture the real libssh2 error - Rename previously returned FALSE
@@ -1504,6 +1555,23 @@ LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWrite(const char* path, long mode, BOOL a
     return h;
 }
 
+LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWriteNew(const char* path, long mode)
+{
+    if (Sftp == NULL)
+    {
+        SetLastErrorNotConnected();
+        return NULL;
+    }
+    // feature 139: EXCL - the server creates the file or fails; an existing file is not
+    // opened, a symbolic link of that name is not followed
+    LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path),
+                                                  LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_EXCL,
+                                                  mode, LIBSSH2_SFTP_OPENFILE);
+    if (h == NULL)
+        SetLastErrorFromSftp(NULL);
+    return h;
+}
+
 void CSFTPSession::SeekWrite(LIBSSH2_SFTP_HANDLE* h, unsigned __int64 offset)
 {
     if (h != NULL)
@@ -1535,6 +1603,22 @@ void CSFTPSession::CloseHandle(LIBSSH2_SFTP_HANDLE* h)
 {
     if (h != NULL)
         libssh2_sftp_close_handle(h);
+}
+
+BOOL CSFTPSession::CloseHandleChecked(LIBSSH2_SFTP_HANDLE* h)
+{
+    if (h == NULL)
+        return TRUE; // nothing was open
+    // (sftp.c, sftp_close_handle: the handle is freed once the server answered or the request
+    // could not be sent. When the wait for the answer times out, the blocking wrapper returns
+    // with the handle still allocated and its close half done; it is not used again here and
+    // goes with the session.)
+    if (libssh2_sftp_close_handle(h) != 0)
+    {
+        SetLastErrorFromSftp("close");
+        return FALSE;
+    }
+    return TRUE;
 }
 
 void CSFTPSession::Keepalive(int* secondsToNext)

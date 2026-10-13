@@ -43,6 +43,7 @@ param(
     [switch]$NoSeam
 )
 $ErrorActionPreference = 'Stop'
+if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | Where-Object { $_ }) }   # -File passes 'A,B' as one string
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
 if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 function Want([string]$n) { return (-not $Only) -or (@($Only | Where-Object { $n -like ($_ + '*') }).Count -gt 0) }
@@ -123,7 +124,7 @@ function Connect([int]$Id, [string]$RemoteDir, [string]$Prefix = $Addr) {
 # id (default Yes, OK), else Skip / Cancel by text; a dialog whose only button is Cancel (a
 # progress or wait window) is left alone. $FirstEdit: text for the first dialog with an edit.
 function Answer([int]$Id, [double]$Seconds = 90, [double]$Quiet = 5, [string]$FirstEdit = $null) {
-    $texts = @(); $sw = [Diagnostics.Stopwatch]::StartNew(); $last = [Diagnostics.Stopwatch]::StartNew(); $typed = $false
+    $texts = @(); $sw = [Diagnostics.Stopwatch]::StartNew(); $last = [Diagnostics.Stopwatch]::StartNew(); $typed = $false; $seenOp = $false
     while ($sw.Elapsed.TotalSeconds -lt $Seconds -and $last.Elapsed.TotalSeconds -lt $Quiet -and (Test-Alive $Id)) {
         $acted = $false
         foreach ($h in (Dialogs $Id)) {
@@ -134,6 +135,11 @@ function Answer([int]$Id, [double]$Seconds = 90, [double]$Quiet = 5, [string]$Fi
             $desc = WinDesc $h
             if ($desc -match $FatalRx) { $texts += ('FATAL ' + (Tail $desc 300)); return $texts }
             if ([Drv098f]::Txt($h) -eq 'Change Directory') { $texts += 'Change Directory dialog'; Close-Win $h; $acted = $true; break }
+            # the core shows its Copy / Move dialog again after an operation that failed: Cancel
+            if (@([Drv098f]::Kids($h) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 209 }).Count) {
+                if ($seenOp) { $texts += ('[' + (Tail ([Drv098f]::Txt($h)) 40) + '] came back - cancelled'); Close-Win $h; $acted = $true; break }
+                $seenOp = $true
+            }
             if ($FirstEdit -and -not $typed) {
                 $edit = @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) }) | Select-Object -First 1
                 if ($edit) { [void][Drv098f]::SetText($edit, $FirstEdit, 5000); $typed = $true; $texts += ('typed into [' + (Tail ([Drv098f]::Txt($h)) 40) + ']'); Click-Ok $h; $acted = $true; break }
@@ -178,7 +184,9 @@ function Row-Op([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [string]$Type
         if ($Mode -eq 'NoToOverwrite') { NewDir ($local + '\tree'); [IO.File]::WriteAllText($LP + $local + '\tree\exists.txt', 'LOCAL-ORIGINAL') }
         $script:AnswerNo = ($Mode -eq 'NoToOverwrite')
         if ($Mode -eq 'FileInTheWay') { [IO.File]::WriteAllText($LP + $local + '\proj', 'a file where the directory should go') }
+        if ($Mode -eq 'LocalBigExists') { [IO.File]::WriteAllText($LP + $local + '\big.bin', 'LOCAL-ORIGINAL') }
         if ($Seam) { $env:TC_SFTP_PROBE_LIST_FAIL = $Seam } else { Remove-Item Env:\TC_SFTP_PROBE_LIST_FAIL -ErrorAction SilentlyContinue }
+        if ($script:XferSeam) { $env:TC_SFTP_PROBE_XFER_FAIL = $script:XferSeam } else { Remove-Item Env:\TC_SFTP_PROBE_XFER_FAIL -ErrorAction SilentlyContinue }
         $id = Start-P
         # the right (target) panel shows this row's own local folder
         Key $id 0x09; [void](Do-ChangeDir $id $local); Sync $id; Key $id 0x09
@@ -199,9 +207,52 @@ function Row-Op([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [string]$Type
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally {
         Remove-Item Env:\TC_SFTP_PROBE_LIST_FAIL -ErrorAction SilentlyContinue
+        Remove-Item Env:\TC_SFTP_PROBE_XFER_FAIL -ErrorAction SilentlyContinue
+        $script:XferSeam = ''
         if ($id) { $fatal = Fatal-Win $id; End-Row $Case $id $fatal $before }
     }
 }
+
+# feature 139 - one row in the other direction: $Setup { param($local) } fills this row's local
+# folder, the server directory $Dir is the target; the local panel gets the focus ($Down times
+# Down after Home) and the core's command $Vk (727 Copy, 728 Move).
+# $Judge { param($texts, $state, $local, $conn) } - $local is the row's local folder (a path).
+function Row-Up([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [scriptblock]$Setup, [scriptblock]$Judge, [string]$Xfer = '', [bool]$No = $false) {
+    if (-not (Want $Case)) { return }
+    $before = Reports; $id = 0
+    $local = $StartDir + '\' + $Case
+    try {
+        NewDir $local
+        & $Setup $local | Out-Null
+        $script:AnswerNo = $No
+        Remove-Item Env:\TC_SFTP_PROBE_LIST_FAIL -ErrorAction SilentlyContinue
+        if ($Xfer) { $env:TC_SFTP_PROBE_XFER_FAIL = $Xfer } else { Remove-Item Env:\TC_SFTP_PROBE_XFER_FAIL -ErrorAction SilentlyContinue }
+        $id = Start-P
+        # the probe's keys go to the left list: the local source is on the left, the server on the right
+        [void](Do-ChangeDir $id $local); Sync $id; Key $id 0x09
+        $conn = Connect $id ($Base + '/' + $Dir)
+        Key $id 0x09
+        Key $id 0x24
+        for ($i = 0; $i -lt $Down; $i++) { Key $id 0x28 }
+        Post-Cmd (Get-Main $id) $Vk; Start-Sleep -Milliseconds 700
+        $texts = @(Answer $id 120 6)
+        $st = State
+        $r = & $Judge $texts $st $local $conn
+        $verdict = $(if ($Expect -eq 'before') { 'PASS' } else { V ([bool]$r.Ok) })
+        Row $Case 'ROW' $verdict ("{0}; connected: {1} [{2}] at '{3}'; dialogs: {4}" -f $r.Facts, $conn.Ok, $conn.Notes, (Tail $conn.Loc 60), $(if ($texts.Count) { $texts -join ' || ' } else { 'none' }))
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally {
+        Remove-Item Env:\TC_SFTP_PROBE_XFER_FAIL -ErrorAction SilentlyContinue
+        $script:AnswerNo = $false
+        if ($id) { $fatal = Fatal-Win $id; End-Row $Case $id $fatal $before }
+    }
+}
+function Rel([string]$Dir) {    # files and folders under $Dir, relative, with '/', sorted
+    if (-not [IO.Directory]::Exists($LP + $Dir)) { return 'gone' }
+    return ((@([IO.Directory]::GetFileSystemEntries($LP + $Dir, '*', 'AllDirectories')) | ForEach-Object { $_.Substring(($LP + $Dir).Length + 1).Replace([string][char]92, '/') } | Sort-Object) -join ' ')
+}
+function BigText { return ('0123456789ABCDEF' * 18750) }      # 300,000 bytes
 
 # ---- main ---------------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc133_backup.reg'
@@ -248,6 +299,26 @@ try {
     Row-Op 'QR250' 'q1' 1 754 $y250 { param($t, $s, $l, $c) @{ Ok = ($s.q1_one -eq '0' -and $s.q1_entries -eq '1' -and $s.q1_longest -eq '250'); Facts = ("Quick Rename to a name of 250 letters: the old name is gone {0}; entries {1}; the name on the server has {2} bytes" -f ($s.q1_one -eq '0'), $s.q1_entries, $s.q1_longest) } }
     $cjk = ([string][char]0x4E2D) * 100 + '.txt'      # 100 CJK letters: 304 bytes of UTF-8
     Row-Op 'QRLONG' 'q2' 1 754 $cjk { param($t, $s, $l, $c) $said = (Has $t 'too long'); @{ Ok = ($s.q2_one -eq '1' -and $s.q2_entries -eq '1' -and $said); Facts = ("Quick Rename to a name of 304 bytes (100 CJK letters): 'too long' said {0}; the file kept its name {1}; entries {2}; longest name on the server {3} bytes; the names there are valid UTF-8 {4}" -f $said, ($s.q2_one -eq '1'), $s.q2_entries, $s.q2_longest, ($s.q2_validutf8 -eq '1')) } }
+    # feature 139: nothing is replaced without a question, and never before its replacement is whole
+    $AE = 'already exists'
+    $one = { param($d) [IO.File]::WriteAllText($LP + $d + '\report.txt', 'LOCAL-NEW-CONTENT') }
+    $big = { param($d) [IO.File]::WriteAllText($LP + $d + '\big.bin', (BigText)) }
+    Row-Up 'UPASKNO' 'ua' 1 727 $one { param($t, $s, $l, $c) @{ Ok = ((Has $t $AE) -and $s.ua_content -eq 'SERVER-OLD' -and $s.ua_entries -eq '1'); Facts = ("upload over an existing file, answer No: the question came {0}; the server's file holds '{1}'; entries there {2}" -f (Has $t $AE), $s.ua_content, $s.ua_entries) } } '' $true
+    Row-Up 'UPASKYES' 'ub' 1 727 $one { param($t, $s, $l, $c) @{ Ok = ((Has $t $AE) -and $s.ub_content -eq 'LOCAL-NEW-CONTENT' -and $s.ub_mode -eq '640' -and $s.ub_entries -eq '1'); Facts = ("upload over an existing file, answer Yes: the question came {0}; the server's file holds '{1}', mode {2} (was 640); entries there {3}" -f (Has $t $AE), $s.ub_content, $s.ub_mode, $s.ub_entries) } }
+    Row-Up 'UPFAIL' 'uf' 1 727 $big { param($t, $s, $l, $c) @{ Ok = ($s.uf_content -eq 'SERVER-OLD' -and $s.uf_entries -eq '1' -and (Has $t 'Cannot|error|failed')); Facts = ("upload over an existing file, cut after 100,000 of 300,000 bytes: the server's file holds '{0}' ({1} bytes); entries there {2}; an error shown {3}" -f $s.uf_content, $s.uf_size, $s.uf_entries, (Has $t 'Cannot|error|failed')) } } '/big.bin;100000'
+    Row-Up 'UPNEWFAIL' 'un' 1 727 $big { param($t, $s, $l, $c) @{ Ok = ($s.un_entries -eq '0' -and (Has $t 'Cannot|error|failed')); Facts = ("upload of a new file, cut after 100,000 bytes: entries on the server {0} (expected 0); an error shown {1}" -f $s.un_entries, (Has $t 'Cannot|error|failed')) } } '/big.bin;100000'
+    $script:XferSeam = '/big.bin;100000'
+    Row-Op 'DLFAIL' 'df' 1 727 $null { param($t, $s, $l, $c) $d = $LP + $StartDir + '\DLFAIL'; $old = ''; try { $old = [IO.File]::ReadAllText($d + '\big.bin') } catch { $old = '(no file)' }; if ($old.Length -gt 40) { $old = '(' + $old.Length + ' bytes)' }; $n = @([IO.Directory]::GetFiles($d)).Count; @{ Ok = ($old -eq 'LOCAL-ORIGINAL' -and $n -eq 1 -and (Has $t $AE)); Facts = ("download over an existing local file (Yes), cut after 100,000 bytes: the local file holds '{0}'; files in the folder {1}; the question came {2}" -f $old, $n, (Has $t $AE)) } } '' $false '' '' 'LocalBigExists'
+    Row-Op 'RENEXIST' 'rn' 1 754 'b.txt' { param($t, $s, $l, $c) @{ Ok = ($s.rn_a -eq 'AAA' -and $s.rn_b -eq 'BBB' -and (Has $t $AE)); Facts = ("Quick Rename of a.txt to b.txt, which exists: a.txt holds '{0}', b.txt holds '{1}'; 'already exists' said {2}" -f $s.rn_a, $s.rn_b, (Has $t $AE)) } }
+    Row-Up 'UPSYM' 'us' 1 727 $one { param($t, $s, $l, $c) @{ Ok = ((Has $t $AE) -and $s.us_link -eq '1' -and $s.us_real -eq 'LOCAL-NEW-CONTENT' -and $s.us_entries -eq '2'); Facts = ("upload over a symbolic link (Yes): the question came {0}; the link is still a link {1}; the file it points to holds '{2}'; entries there {3} (expected 2)" -f (Has $t $AE), $s.us_link, $s.us_real, $s.us_entries) } }
+    Row-Op 'RENCASE' 'rc' 1 754 'A.txt' { param($t, $s, $l, $c) $n = ('' + $s.rc_names).Trim(); @{ Ok = ($n -eq 'A.txt' -and $s.rc_content -eq 'CCC' -and -not (Has $t 'Cannot')); Facts = ("Quick Rename of a.txt to A.txt (only the case differs): names on the server '{0}'; content '{1}'; an error shown {2}" -f $n, $s.rc_content, (Has $t 'Cannot')) } }
+    $mvok = { param($d) NewDir ($d + '\tree\a'); NewDir ($d + '\tree\e'); [IO.File]::WriteAllText($LP + $d + '\tree\a\x.txt', 'xx'); [IO.File]::WriteAllText($LP + $d + '\tree\y.txt', 'yy') }
+    Row-Up 'UPMV' 'uv' 1 728 $mvok { param($t, $s, $l, $c) $left = ('' + $s.uv_left).Trim(); $loc = Rel $l; @{ Ok = ($left -eq './tree ./tree/a ./tree/a/x.txt ./tree/e ./tree/y.txt' -and $loc -eq '' -and -not (Has $t 'Cannot')); Facts = ("move a local tree to the server: on the server '{0}'; left on the disk '{1}'; errors shown {2}" -f $left, $loc, (Has $t 'Cannot')) } }
+    # the server holds a FILE named tree/blocked: that folder cannot be created there
+    $mvblk = { param($d) NewDir ($d + '\tree\blocked\deep'); NewDir ($d + '\tree\ok'); [IO.File]::WriteAllText($LP + $d + '\tree\ok\1.txt', 'one'); [IO.File]::WriteAllText($LP + $d + '\tree\3.txt', 'three') }
+    Row-Up 'UPMOVE' 'um' 1 728 $mvblk { param($t, $s, $l, $c) $left = ('' + $s.um_left).Trim(); $loc = Rel $l; @{ Ok = ($left -eq './tree ./tree/3.txt ./tree/blocked ./tree/ok ./tree/ok/1.txt' -and $s.um_blocked -eq 'a-file' -and $loc -eq 'tree tree/blocked tree/blocked/deep' -and (Has $t 'Cannot')); Facts = ("move a local tree, one folder of which the server cannot create: on the server '{0}' (blocked is still '{1}'); left on the disk '{2}' (expected 'tree tree/blocked tree/blocked/deep'); an error shown {3}" -f $left, $s.um_blocked, $loc, (Has $t 'Cannot')) } }
+    $lnk = { param($d) NewDir ($d + '\tree\real'); NewDir ($d + '\elsewhere'); [IO.File]::WriteAllText($LP + $d + '\tree\real\r.txt', 'r'); [IO.File]::WriteAllText($LP + $d + '\elsewhere\t.txt', 't'); [void](& cmd /c mklink /J ($d + '\tree\link') ($d + '\elsewhere') 2>&1) }
+    Row-Up 'UPLINK' 'ul' 2 727 $lnk { param($t, $s, $l, $c) $left = ('' + $s.ul_left).Trim(); $said = (Has $t 'link|skipped|junction'); @{ Ok = ($left -eq './tree ./tree/real ./tree/real/r.txt' -and $said); Facts = ("copy a local tree with a junction in it: on the server '{0}'; the skipped link was said {1}" -f $left, $said) } }
     $seam = '/many;10;1'
     $LE = 'many'
     Row-Op 'LISTCOPY' 'l1' 1 727 $null { param($t, $s, $l, $c) $said = [bool](@($t | Where-Object { $_ -match 'many' -and $_ -notmatch 'Copy|typed' -and $_ -match 'list|read|Cannot|Unable|error' }).Count); @{ Skip = ($l.Count -eq 30); Ok = ($said -and $s.l1_many -eq '30'); Facts = ("copy a directory whose listing fails at the 10th entry: local files {0} of 30; an error names the directory {1}; files on the server {2}{3}" -f $l.Count, $said, $s.l1_many, $(if ($l.Count -eq 30) { ' - the seam is not in this build' } else { '' })) } } $seam
@@ -261,6 +332,8 @@ finally {
     $restored = Restore-Reg $backup $existed
     if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }
     try { [void](Server 'clean') } catch { Out ('Server: could not clean: ' + $_.Exception.Message) }
+    $junction = $StartDir + '\UPLINK\tree\link'      # a junction is removed as a link, before the tree
+    if ([IO.Directory]::Exists($junction)) { [void](& cmd /c rmdir $junction 2>&1) }
     try { if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) } }
     catch { Out ("Fixture: could not delete $Root : " + $_.Exception.Message) }
     $leftover = @($Started | Where-Object { Test-Alive $_ })

@@ -54,6 +54,14 @@ enum CSFTPConnectResult
     crTimeout,
 };
 
+// feature 139: what CSFTPSession::StatEx found out
+enum CSFTPStatResult
+{
+    sxFound = 0,    // the attributes were read
+    sxNotFound = 1, // the server said: no such file / no such path
+    sxError = 2,    // anything else - it is NOT known whether the item exists
+};
+
 // parameters needed to (re)establish a connection
 struct CSFTPConnectParams
 {
@@ -121,6 +129,10 @@ protected:
     int LogUID; // session log id, -1 = none
 
     char LastErrorText[512]; // human-readable last error
+    // feature 139: the SFTP status (SSH_FX_*) of the last failed request when the SERVER
+    // answered with one; 0 when the failure was not a status (transport, timeout, memory,
+    // not connected). Written wherever LastErrorText is written by an SFTP request.
+    unsigned long LastSftpStatus;
 
     // feature 051 connect state (worker thread <-> UI thread)
     CSFTPConnectPrompt Prompt;      // what the last attempt needs from the user
@@ -141,6 +153,9 @@ public:
 
     BOOL IsConnected() const { return Connected; }
     const char* GetLastErrorText() const { return LastErrorText; }
+    // feature 139: see LastSftpStatus (valid after a request that reported a failure through
+    // GetLastErrorText(); plain Stat does not set it - StatEx does)
+    unsigned long GetLastSftpStatus() const { return LastSftpStatus; }
 
     // Establishes the transport, verifies the host key (via 'trustStore' and,
     // when interaction is needed, prompting through 'parent'), authenticates,
@@ -164,12 +179,19 @@ public:
 
     // stat/lstat: fills a single entry's attributes.
     BOOL Stat(const char* path, BOOL followSymlink, LIBSSH2_SFTP_ATTRIBUTES* attrs);
+    // feature 139: stat/lstat that tells "nothing of that name" from "could not be found out".
+    // sxError sets GetLastErrorText() / GetLastSftpStatus(); a caller that is about to write
+    // must not take it for "nothing there".
+    CSFTPStatResult StatEx(const char* path, BOOL followSymlink, LIBSSH2_SFTP_ATTRIBUTES* attrs);
     BOOL ReadLink(const char* path, char* target, int targetSize);
 
     BOOL Mkdir(const char* path, long mode);
     BOOL Rmdir(const char* path);
     BOOL Unlink(const char* path);
-    BOOL Rename(const char* from, const char* to);
+    // feature 139: 'replace' TRUE = an existing target is replaced where the server can do it
+    // (the caller has the user's consent); FALSE = the request can never replace anything -
+    // the server refuses an existing target (Quick Rename, a new file put in place)
+    BOOL Rename(const char* from, const char* to, BOOL replace);
     BOOL Symlink(const char* target, const char* linkPath);
     BOOL Chmod(const char* path, unsigned long mode);
     // feature 018: change owner (uid) and/or group (gid); an unset field is kept
@@ -179,10 +201,19 @@ public:
     // File transfer primitives (blocking). Handles are opaque.
     LIBSSH2_SFTP_HANDLE* OpenRead(const char* path);
     LIBSSH2_SFTP_HANDLE* OpenWrite(const char* path, long mode, BOOL append);
+    // feature 139: creates a NEW file for writing (WRITE | CREAT | EXCL): fails when anything
+    // of that name exists - nothing is followed, nothing is truncated
+    LIBSSH2_SFTP_HANDLE* OpenWriteNew(const char* path, long mode);
     void SeekWrite(LIBSSH2_SFTP_HANDLE* h, unsigned __int64 offset);
     __int64 Read(LIBSSH2_SFTP_HANDLE* h, char* buf, int len);
     __int64 Write(LIBSSH2_SFTP_HANDLE* h, const char* buf, int len);
     void CloseHandle(LIBSSH2_SFTP_HANDLE* h);
+    // feature 139: the close of a written file can report that the data did not get to the
+    // disk; FALSE = the server (or the transport) reported an error - GetLastErrorText() says
+    // which. The handle must not be used again either way (the library frees it once the
+    // server answered or the request could not be sent; after a timeout of the answer it
+    // stays allocated until the session is freed - nothing here can release it).
+    BOOL CloseHandleChecked(LIBSSH2_SFTP_HANDLE* h);
 
     // Sends a keepalive if due; returns seconds until the next one is needed.
     void Keepalive(int* secondsToNext);

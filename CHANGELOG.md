@@ -36,6 +36,31 @@ plugin.
   - For plug-in authors: `GetCommonFSOperSourceDescr` returns its whole text
     as UTF-8 (it was a code-page word around a UTF-8 name).
 
+- **SFTP: nothing is replaced without a question, and never before its
+  replacement is whole** (feature 139; all of this was so in 0.1.9 too).
+  - **An upload asks before it replaces a file on the server** (Yes / No /
+    Cancel = skip the rest). It replaced it without a word.
+  - **A replaced file keeps its old content until the new one has arrived
+    whole.** An upload goes to a temporary name in the same directory
+    (`.tcpart-…`), the size the server reports is compared with the local
+    file, and only then does it take the place of the old file, with the old
+    file's owner and permissions. A download over an existing local file goes
+    through a temporary file likewise. A failed or stopped transfer leaves the
+    old file as it was and no partial file under its name. Where the server
+    does not allow this (the target is a link, the account may not create or
+    rename files there, the file belongs to another account) the file is
+    written in place as before - after the question - and the log says so.
+  - **Quick Rename to a name that already exists is refused.** It replaced
+    the other file silently.
+  - **Move to the server removes a local file only after its own upload is
+    confirmed**, and a folder when everything in it was moved. Before, the
+    local tree was deleted by listing it again after the upload - including a
+    folder the server had refused to create.
+  - A folder that is a link (junction, symbolic link) is skipped and you are
+    told once; cloud folders (OneDrive) are uploaded - they were skipped
+    silently and the upload reported success. A very deep local tree no longer
+    exhausts the stack.
+
 - **SFTP: Move from the server moves directories** (feature 138). A moved
   directory was copied and stayed on the server whole, without a word. Now
   each file is removed from the server once its local copy is confirmed (the

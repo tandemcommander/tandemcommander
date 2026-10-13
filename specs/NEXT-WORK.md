@@ -369,22 +369,46 @@ Code work an agent can do:
            item removes its source only when its local copy has the server's size; two remote
            names that are one local file are not merged). Left: the upload direction was not
            re-examined with the same eyes (case collisions on the server side do not exist,
-           but "removed only when confirmed" should be read there too).
+           but "removed only when confirmed" should be read there too) - **read and redone,
+           feature 139**: an upload asks before it replaces a server file and replaces it
+           only by a complete new one (temporary name, size confirmed, then rename); a
+           download over a local file goes through a temporary file; Quick Rename refuses an
+           existing name; a move to the server removes each local source after its own upload
+           is confirmed; link folders are skipped aloud, cloud folders uploaded; per-level
+           buffers on the heap. Left by 139 (final review, 2026-10-13; all older than this
+           cycle):
+           - **after a timeout or transport error the loops went on and libssh2 answered the
+             next request of the same kind with the earlier reply** - 139 stops the item
+             loops once the session is marked dead and records a failed `Stat`; a full pass
+             over every request type (read, write, readdir, open) is still owed;
+           - **non-regular remote files** (`/dev/zero`, a FIFO) are downloaded without end;
+           - **Change Attributes** applies one mode to files and directories alike and hides
+             failures;
+           - a replaced server file with other hard links is split from them (SFTP v3 does not
+             report the link count); ACLs and extended attributes are not carried; a
+             write-only "drop" directory fails the size confirmation; orphaned `.tcpart-*`
+             files are named in the message or the log, not cleaned up later;
+           - the questions and reasons added are English literals (no new strings).
          - a listing stopped by the user (Close in the wait window) is shown in the panel as
            the directory (old behaviour, kept).
          - an empty name or an empty NAME packet from a broken server still reads as "end of
            directory" (cannot be told apart through `libssh2_sftp_readdir_ex`).
          - owed to a person: upload into a read-only directory, the stale-reason row, Quick
            Rename to a 250-letter name (`specs/133-sftp-server-verify/quickstart.md`).
-         - still open from 131: `UploadDirRecursive` holds about 30 KB of buffers per level;
-           no panel refresh after a partly failed move; untranslated English literals.
+         - ~~still open from 131: `UploadDirRecursive` holds about 30 KB of buffers per level;
+           no panel refresh after a partly failed move~~ - done in 139; untranslated English
+           literals stay.
        - ~~FTP: download autorename shortens a name at a byte offset; the core cuts a typed
          Quick Rename name at 259 bytes~~ - **done, feature 137** (also the in-place rename
          line, which fell back to a code-page name). Left: `ssl.cpp:666` `name[200]` for a call
          that may write 256 bytes; the core's `SalMakeValidFileNameComponent` cuts at byte 256;
          **SFTP: a memory leak after a failed SSH handshake** (debug build: "Detected memory
          leaks!" at exit, seen once when the handshake failed - find the allocation that the
-         failed-connect path does not free).
+         failed-connect path does not free). **Seen a second time on 2026-10-13, on the 0.1.9
+         build**: "SSH handshake failed: Unable to exchange encryption keys" on the ninth
+         connection of a probe run (the server logged a disconnect before authentication),
+         then the leak boxes and the program did not end within 30 s. Two defects to
+         separate: why the key exchange fails now and then, and what the failed path leaves.
        - DiskMap: `CZFile::GetFullName` / `GetRelativeName` skip a path part that does not fit
          and append the next - another file's path, handed to the shell menu (needs a full
          name over 780 bytes; not measured).

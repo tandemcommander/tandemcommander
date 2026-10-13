@@ -326,3 +326,77 @@ BOOL SftpMoveMayRemove(BOOL transferred, BOOL localSizeKnown, unsigned __int64 l
 {
     return transferred && localSizeKnown && remoteSizeKnown && localSize == remoteSize;
 }
+
+BOOL SftpTempPath(const char* targetPath, unsigned long random, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    buf[0] = 0;
+    if (targetPath == NULL)
+        return FALSE;
+    const char* slash = strrchr(targetPath, '/');
+    size_t dirLen = slash != NULL ? (size_t)(slash - targetPath) + 1 : 0; // with the slash
+    const size_t nameLen = 16;                                            // ".tcpart-" + 8 hex digits
+    if (dirLen + nameLen >= (size_t)bufSize)
+        return FALSE; // never a cut path
+    memcpy(buf, targetPath, dirLen);
+    static const char kHex[] = "0123456789abcdef";
+    char* p = buf + dirLen;
+    memcpy(p, ".tcpart-", 8);
+    p += 8;
+    for (int shift = 28; shift >= 0; shift -= 4)
+        *p++ = kHex[(random >> shift) & 0xF];
+    *p = 0;
+    return TRUE;
+}
+
+BOOL SftpUploadConfirmed(BOOL remoteSizeKnown, unsigned __int64 remoteSize, unsigned __int64 bytesSent,
+                         unsigned __int64 localSize)
+{
+    return remoteSizeKnown && remoteSize == bytesSent && bytesSent == localSize;
+}
+
+BOOL SftpStatusIsNotFound(unsigned long status)
+{
+    return status == 2 || status == 10; // SSH_FX_NO_SUCH_FILE, SSH_FX_NO_SUCH_PATH
+}
+
+BOOL SftpStatusIsPermission(unsigned long status)
+{
+    return status == 3 || status == 12; // SSH_FX_PERMISSION_DENIED, SSH_FX_WRITE_PROTECT
+}
+
+CSftpTempOpenNext SftpTempOpenFailureNext(BOOL connected, unsigned long status)
+{
+    if (!connected)
+        return tonFail;
+    switch (status)
+    {
+    case 3:  // SSH_FX_PERMISSION_DENIED
+    case 12: // SSH_FX_WRITE_PROTECT
+    case 8:  // SSH_FX_OP_UNSUPPORTED
+        return tonInPlace;
+    case 4:  // SSH_FX_FAILURE (what OpenSSH answers for a name that exists)
+    case 11: // SSH_FX_FILE_ALREADY_EXISTS
+        return tonRetryName;
+    }
+    return tonFail; // 0 = no status at all (timeout, transport), quota, no space, ...
+}
+
+BOOL SftpOwnerDiffers(BOOL oldKnown, unsigned long oldUid, unsigned long oldGid,
+                      BOOL newKnown, unsigned long newUid, unsigned long newGid)
+{
+    return oldKnown && newKnown && (oldUid != newUid || oldGid != newGid);
+}
+
+BOOL SftpModeDiffers(BOOL oldKnown, unsigned long oldMode, BOOL newKnown, unsigned long newMode)
+{
+    return oldKnown && (!newKnown || (oldMode & 07777) != (newMode & 07777));
+}
+
+BOOL SftpLocalDirIsLink(DWORD attributes, DWORD reparseTag)
+{
+    if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
+        return FALSE;
+    return (reparseTag & 0x20000000) != 0; // the name-surrogate bit (IsReparseTagNameSurrogate)
+}

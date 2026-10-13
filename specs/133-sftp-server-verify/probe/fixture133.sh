@@ -38,6 +38,25 @@ if [ "$1" = "state" ]; then
     echo "ms_left=$( [ -d $B/ms/tree ] && (cd $B/ms/tree && find . -mindepth 1 | sort | tr '\n' ' ') || echo gone )"
     echo "mc_left=$( [ -d $B/mc/tree ] && (cd $B/mc/tree && find . -mindepth 1 | sort | tr '\n' ' ') || echo gone )"
     echo "mb_left=$( [ -d $B/mb/proj ] && (cd $B/mb/proj && find . -mindepth 1 | sort | tr '\n' ' ') || echo gone )"
+    for t in ua ub uf; do
+        f1=$B/$t/report.txt; [ $t = uf ] && f1=$B/$t/big.bin
+        echo "${t}_content=$(head -c 40 $f1 2>/dev/null)"
+        echo "${t}_size=$(stat -c %s $f1 2>/dev/null)"
+        echo "${t}_mode=$(stat -c %a $f1 2>/dev/null)"
+        echo "${t}_entries=$(count $B/$t)"
+    done
+    echo "un_entries=$(count $B/un)"
+    echo "rn_a=$(cat $B/rn/a.txt 2>/dev/null)"
+    echo "rn_b=$(cat $B/rn/b.txt 2>/dev/null)"
+    for t in uv um ul; do
+        echo "${t}_left=$( (cd $B/$t && find . -mindepth 1 | sort | tr '\n' ' ') )"
+    done
+    echo "us_link=$( [ -L $B/us/report.txt ] && echo 1 || echo 0 )"
+    echo "us_real=$(head -c 40 $B/us/real.txt 2>/dev/null)"
+    echo "us_entries=$(count $B/us)"
+    echo "rc_names=$(ls -A $B/rc 2>/dev/null | tr '\n' ' ')"
+    echo "rc_content=$(cat $B/rc/A.txt 2>/dev/null)"
+    echo "um_blocked=$(cat $B/um/tree/blocked 2>/dev/null)"
     echo "d1_tree=$( [ -e $B/d1/tree ] && echo 1 || echo 0 )"
     echo "d2_kept=$( [ -f $B/d2/tree/locked/keep.txt ] && echo 1 || echo 0 )"
     echo "d2_free=$( [ -e $B/d2/tree/free ] && echo 1 || echo 0 )"
@@ -84,6 +103,18 @@ mkdir -p ms/tree && echo new-content > ms/tree/exists.txt && echo other > ms/tre
 # directories whose local counterpart cannot be created (the probe puts a FILE named proj there)
 mkdir -p mc/tree && echo first-content-AAAA > mc/tree/A.txt && echo second > mc/tree/a.txt && echo third > mc/tree/b.txt
 mkdir -p mb/proj/a mb/proj/b/c
+# feature 139: ua, ub, uf hold a file an upload meets (mode 640); un is empty; df a 300,000-byte
+# file for a cut download; rn two files for a rename onto an existing name; uv, ul empty targets;
+# um holds a FILE where the uploaded tree has a folder
+mkdir ua ub uf un df rn uv ul && mkdir -p um/tree
+for t in ua ub; do printf 'SERVER-OLD' > $t/report.txt; chmod 640 $t/report.txt; done
+printf 'SERVER-OLD' > uf/big.bin; chmod 640 uf/big.bin
+head -c 300000 /dev/zero | tr '\0' 'x' > df/big.bin
+printf 'AAA' > rn/a.txt; printf 'BBB' > rn/b.txt
+printf 'a-file' > um/tree/blocked
+# us: the upload's target is a symbolic link (written through, the link stays); rc: a rename
+# that changes only the case of the name
+mkdir us rc && printf 'SERVER-OLD' > us/real.txt && ln -s real.txt us/report.txt && printf 'CCC' > rc/a.txt
 # d1: an ordinary tree (deleted whole); d2: a tree with one directory that cannot be emptied
 mkdir -p d1/tree/a/b d1/tree/c && echo 1 > d1/tree/a/b/x.txt && echo 2 > d1/tree/c/y.txt && echo 3 > d1/tree/z.txt
 mkdir -p d2/tree/free d2/tree/locked && echo 1 > d2/tree/free/x.txt && echo 2 > d2/tree/locked/keep.txt && chmod 555 d2/tree/locked
