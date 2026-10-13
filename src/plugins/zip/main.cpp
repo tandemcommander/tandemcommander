@@ -731,7 +731,9 @@ BOOL CPluginInterfaceForMenuExt::ExecuteMenuItem(CSalamanderForOperationsAbstrac
             if (ok)
             {
                 char buf[1024];
-                _snprintf_s(buf, _TRUNCATE, unpack.AllFilesOK ? LoadStr(IDS_TESTOK) : LoadStr(IDS_TESTKO), zipFile);
+                // feature 130: 'zipFile' is UTF-8, so is the template
+                _snprintf_s(buf, _TRUNCATE, unpack.AllFilesOK ? LoadStrU8(IDS_TESTOK) : LoadStrU8(IDS_TESTKO), zipFile);
+                SplU8TrimTornTail(buf);
                 SalamanderGeneral->ShowMessageBox(buf, LoadStr(IDS_PLUGINNAME), MSGBOX_INFO);
             }
             break;

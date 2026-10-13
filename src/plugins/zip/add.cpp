@@ -80,9 +80,7 @@ int CZipPack::PackNormal(SalEnumSelection2 next, void* param)
             return ErrorID = IDS_LOWMEM;
         else
             return ErrorID = IDS_NODISPLAY;
-    char title[1024];
-    sprintf(title, LoadStr(IDS_ADDPROGTITLE), SalamanderGeneral->SalPathFindFileName(ZipName));
-    Salamander->OpenProgressDialog(title, TRUE, NULL, FALSE);
+    OpenProgressDialogU8(Salamander, IDS_ADDPROGTITLE, SalamanderGeneral->SalPathFindFileName(ZipName), TRUE); // feature 130
     Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
     ErrorID = CheckZip();
     if (ZeroZip)
@@ -281,9 +279,7 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
     NewCentrDir = NULL;
     EONewCentrDir = EOCentrDir;
 
-    char title[1024];
-    sprintf(title, LoadStr(IDS_ADDPROGTITLE), SalamanderGeneral->SalPathFindFileName(ZipName));
-    Salamander->OpenProgressDialog(title, TRUE, NULL, FALSE);
+    OpenProgressDialogU8(Salamander, IDS_ADDPROGTITLE, SalamanderGeneral->SalPathFindFileName(ZipName), TRUE); // feature 130
 
     // feature 106: the files to pack are listed before any output exists - the first volume (and
     // the self-extractor) used to be created first, so a selected file of the same name was
@@ -642,9 +638,7 @@ int CZipPack::PackSelfExtract(SalEnumSelection2 next, void* param)
     EOCentrDir.CommentLen = 0;
     NewCentrDir = NULL;
     EONewCentrDir = EOCentrDir;
-    char title[1024];
-    sprintf(title, LoadStr(IDS_ADDPROGTITLE), SalamanderGeneral->SalPathFindFileName(ZipName));
-    Salamander->OpenProgressDialog(title, TRUE, NULL, FALSE);
+    OpenProgressDialogU8(Salamander, IDS_ADDPROGTITLE, SalamanderGeneral->SalPathFindFileName(ZipName), TRUE); // feature 130
     Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
     if (!ErrorID)
     {
@@ -1647,7 +1641,7 @@ int CZipPack::PackFiles()
     char progrTextBuf[U8_MAX_NAME + MAX_PATH + 32]; // UTF-8 name of the packed file
     char* progrText;
     int progrPrefixLen; //"adding: "
-    char* sour;
+    const char* sour;
     unsigned locHeadSize;
 #pragma pack(push)
 #pragma pack(1)
@@ -1673,7 +1667,7 @@ int CZipPack::PackFiles()
             delete defObj;
         return IDS_LOWMEM;
     }
-    sour = LoadStr(IDS_ADDING);
+    sour = LoadStrU8(IDS_ADDING); // feature 130: the prefix of a UTF-8 name
     progrText = progrTextBuf;
     while (*sour)
         *progrText++ = *sour++;

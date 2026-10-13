@@ -1135,7 +1135,9 @@ CRenameDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
     case WM_INITDIALOG:
     {
-        SalamanderGUI->SetSubjectTruncatedText(GetDlgItem(HWindow, IDS_SUBJECT), LoadStr(IDS_RENAME_TO),
+        // feature 130: the core composes the template with the UTF-8 name and shows the result as
+        // UTF-8 only when all of it is - the template is loaded as UTF-8
+        SalamanderGUI->SetSubjectTruncatedText(GetDlgItem(HWindow, IDS_SUBJECT), LoadStrU8(IDS_RENAME_TO),
                                                Path, FALSE, FALSE);
         break;
     }

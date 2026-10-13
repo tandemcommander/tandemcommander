@@ -564,7 +564,9 @@ Z7_COM7F_IMF(CExtractCallbackImp::GetStream(UINT32 index, ISequentialOutStream**
                 CurrentDeclined = true; // feature 093: reported and counted here
 
                 char errText[1000];
-                _snprintf_s(errText, _TRUNCATE, LoadStr(IDS_NAMEISTOOLONG), (const char*)(aii->NameInArchive), TargetFileName);
+                // feature 130: both names are UTF-8, so is the template
+                _snprintf_s(errText, _TRUNCATE, LoadStrU8(IDS_NAMEISTOOLONG), (const char*)(aii->NameInArchive), TargetFileName);
+                SplU8TrimTornTail(errText);
                 SalamanderGeneral->ShowMessageBox(errText, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
             }
         }
@@ -650,8 +652,9 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         // feature 098: bounded (it was an unbounded sprintf with a path from inside the archive;
         // the listing keeps such paths at about 510 bytes, so the text is not cut in practice)
         _snprintf_s(msg, _countof(msg), _TRUNCATE,
-                    LoadStr(PasswordIsDefined ? IDS_ERROR_PROCESSING_FILE_PWD : IDS_ERROR_PROCESSING_FILE),
+                    LoadStrU8(PasswordIsDefined ? IDS_ERROR_PROCESSING_FILE_PWD : IDS_ERROR_PROCESSING_FILE), // UTF-8 as the name (feature 130)
                     (const char*)ProcessedFileInfo.Name);
+        SplU8TrimTornTail(msg);
 
         MSGBOXEX_PARAMS mbep;
         ZeroMemory(&mbep, sizeof(mbep));
@@ -721,8 +724,10 @@ LRESULT CExtractCallbackImp::Error(int resID, ...)
     va_list arglist;
 
     va_start(arglist, resID);
-    _vsnprintf_s(msg, _TRUNCATE, LoadStr(resID), arglist); // feature 087: bounded (long names)
+    // feature 087: bounded (long names); feature 130: the names are UTF-8, so is the template
+    _vsnprintf_s(msg, _TRUNCATE, LoadStrU8(resID), arglist);
     va_end(arglist);
+    SplU8TrimTornTail(msg);
 
     ZeroMemory(&mbep, sizeof(mbep));
     mbep.HParent = hProgWnd;

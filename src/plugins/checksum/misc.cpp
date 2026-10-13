@@ -7,6 +7,7 @@
 #include "checksum.rh2"
 #include "lang\lang.rh"
 #include "misc.h"
+#include "splloadstru8.h" // SplLegacyToU8 (feature 130)
 
 BOOL Error(HWND hParent, int lastErr, int title, int error, ...)
 {
@@ -15,14 +16,23 @@ BOOL Error(HWND hParent, int lastErr, int title, int error, ...)
     *buf = 0;
     va_list arglist;
     va_start(arglist, error);
-    vsprintf(buf, LoadStr(error), arglist);
+    // feature 130: the arguments are UTF-8 file names, so the template and the Windows text
+    // are UTF-8 too (a mixed sentence is shown through the code page, the name garbled)
+    _vsnprintf_s(buf, _TRUNCATE, LoadStrU8(error), arglist);
     va_end(arglist);
+    SplU8TrimTornTail(buf);
     if (lastErr != ERROR_SUCCESS)
     {
-        strcat(buf, " ");
-        size_t l = strlen(buf);
+        char sysErr[512];
+        sysErr[0] = 0;
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastErr,
-                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf + l, (DWORD)(1024 - l), NULL);
+                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), sysErr, sizeof(sysErr), NULL);
+        size_t l = strlen(buf);
+        if (l + 2 < sizeof(buf))
+        {
+            buf[l++] = ' ';
+            SplLegacyToU8(sysErr, buf + l, (int)(sizeof(buf) - l)); // code page -> UTF-8
+        }
     }
     SalamanderGeneral->SalMessageBox(hParent, buf, LoadStr(title), MSGBOXEX_OK | MSGBOXEX_ICONEXCLAMATION);
 

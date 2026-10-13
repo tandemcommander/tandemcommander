@@ -150,8 +150,10 @@ void CSFTPSession::LogFmt(const char* fmt, ...)
     char buf[1024];
     va_list args;
     va_start(args, fmt);
-    _vsnprintf_s(buf, _TRUNCATE, fmt, args);
+    int written = _vsnprintf_s(buf, _TRUNCATE, fmt, args);
     va_end(args);
+    if (written < 0)
+        SplU8TrimTornTail(buf); // feature 130: a cut inside a character would make the line invalid
     Log(buf);
 }
 
@@ -161,9 +163,11 @@ void CSFTPSession::SetLastErrorFromSsh(const char* prefix)
     int len = 0;
     if (Ssh != NULL)
         libssh2_session_last_error(Ssh, &msg, &len, 0);
+    // feature 130: 'prefix' is UTF-8 (LoadStrU8) or ASCII; the library's text is made UTF-8
     _snprintf_s(LastErrorText, _TRUNCATE, "%s%s%s", prefix != NULL ? prefix : "",
                 (prefix != NULL && prefix[0]) ? ": " : "",
-                msg != NULL ? msg : "unknown error");
+                CSFTPMsgText(msg != NULL ? msg : "unknown error").Get());
+    SplU8TrimTornTail(LastErrorText);
     // feature 051 (U7): every failure funnels through here, so this is the one
     // place that reliably notices the transport died (Connect's own failures run
     // before Connected is set, so they cannot be misread as a lost session).
@@ -184,7 +188,9 @@ BOOL CSFTPSession::OpenSocket(CSFTPConnectResult* result)
     struct addrinfo* ai = NULL;
     if (getaddrinfo(Params.Host, portStr, &hints, &ai) != 0 || ai == NULL)
     {
-        _snprintf_s(LastErrorText, _TRUNCATE, LoadStr(IDS_ERR_RESOLVE), Params.Host);
+        // feature 130: LastErrorText is UTF-8 (the host is; a code-page template made a mix)
+        _snprintf_s(LastErrorText, _TRUNCATE, LoadStrU8(IDS_ERR_RESOLVE), Params.Host);
+        SplU8TrimTornTail(LastErrorText);
         if (result != NULL)
             *result = crResolveFailed;
         return FALSE;
@@ -370,7 +376,7 @@ BOOL CSFTPSession::OpenSocket(CSFTPConnectResult* result)
     {
         if (cancelled)
         {
-            lstrcpynA(LastErrorText, LoadStr(IDS_CANCELLED), sizeof(LastErrorText));
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_CANCELLED));
             if (result != NULL)
                 *result = crCancelled;
             return FALSE;
@@ -381,12 +387,13 @@ BOOL CSFTPSession::OpenSocket(CSFTPConnectResult* result)
         // being waited on when the budget expired.
         if (timedOut && !anyRefused)
         {
-            lstrcpynA(LastErrorText, LoadStr(IDS_ERR_TIMEOUT), sizeof(LastErrorText));
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_TIMEOUT));
             if (result != NULL)
                 *result = crTimeout;
             return FALSE;
         }
-        _snprintf_s(LastErrorText, _TRUNCATE, LoadStr(IDS_ERR_CONNECT), Params.Host, Params.Port);
+        _snprintf_s(LastErrorText, _TRUNCATE, LoadStrU8(IDS_ERR_CONNECT), Params.Host, Params.Port);
+        SplU8TrimTornTail(LastErrorText);
         if (result != NULL)
             *result = crConnectFailed;
         return FALSE;
@@ -398,7 +405,7 @@ BOOL CSFTPSession::OpenSocket(CSFTPConnectResult* result)
     // no socket to shut down - honour it here instead of starting the handshake.
     if (IsCancelRequested())
     {
-        lstrcpynA(LastErrorText, LoadStr(IDS_CANCELLED), sizeof(LastErrorText));
+        SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_CANCELLED));
         if (result != NULL)
             *result = crCancelled;
         return FALSE;
@@ -518,7 +525,7 @@ BOOL CSFTPSession::EvaluateHostKey(CSFTPHostKeyList* trustStore, CSFTPConnectRes
                       sizeof(HostKeyInfo.StoredFingerprint));
             lstrcpynA(HostKeyInfo.KeyB64, keyB64, sizeof(HostKeyInfo.KeyB64));
             Prompt = cpHostKey;
-            lstrcpynA(LastErrorText, LoadStr(IDS_ERR_HOSTKEYDECLINED), sizeof(LastErrorText));
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_HOSTKEYDECLINED));
             if (result != NULL)
                 *result = crHostKeyRejected;
         }
@@ -619,7 +626,7 @@ BOOL CSFTPSession::Authenticate(HWND parent, CSFTPConnectResult* result)
     {
         if (!hasPublicKey && authList != NULL)
         {
-            lstrcpynA(LastErrorText, LoadStr(IDS_ERR_NOAUTHMETHOD), sizeof(LastErrorText));
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_NOAUTHMETHOD));
             if (result != NULL)
                 *result = crNoAuthMethod;
             return FALSE;
@@ -631,7 +638,8 @@ BOOL CSFTPSession::Authenticate(HWND parent, CSFTPConnectResult* result)
         free(wKeyFile);
         if (!keyExists)
         {
-            _snprintf_s(LastErrorText, _TRUNCATE, LoadStr(IDS_ERR_KEYFILEMISSING), Params.KeyFile);
+            _snprintf_s(LastErrorText, _TRUNCATE, LoadStrU8(IDS_ERR_KEYFILEMISSING), Params.KeyFile);
+            SplU8TrimTornTail(LastErrorText);
             if (result != NULL)
                 *result = crKeyFileMissing;
             return FALSE;
@@ -645,10 +653,10 @@ BOOL CSFTPSession::Authenticate(HWND parent, CSFTPConnectResult* result)
         if (!KeyFileSupported(Params.KeyFile, &keyReason, keyType, sizeof(keyType)))
         {
             if (keyReason == IDS_ERR_KEYTYPEUNSUP && keyType[0] != 0)
-                _snprintf_s(LastErrorText, _TRUNCATE, LoadStr(keyReason), keyType);
+                _snprintf_s(LastErrorText, _TRUNCATE, LoadStrU8(keyReason), keyType); // keyType: ASCII, from the key file's header
             else
-                lstrcpynA(LastErrorText, LoadStr(keyReason != 0 ? keyReason : IDS_ERR_AUTHKEY),
-                          sizeof(LastErrorText));
+                SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText),
+                               LoadStrU8(keyReason != 0 ? keyReason : IDS_ERR_AUTHKEY));
             if (result != NULL)
                 *result = crAuthKey;
             return FALSE;
@@ -660,7 +668,7 @@ BOOL CSFTPSession::Authenticate(HWND parent, CSFTPConnectResult* result)
         DWORD keyDataLen = 0;
         if (!ReadKeyFileU8(Params.KeyFile, &keyData, &keyDataLen))
         {
-            lstrcpynA(LastErrorText, LoadStr(IDS_ERR_AUTHKEY), sizeof(LastErrorText));
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_AUTHKEY));
             if (result != NULL)
                 *result = crAuthKey;
             return FALSE;
@@ -684,7 +692,7 @@ BOOL CSFTPSession::Authenticate(HWND parent, CSFTPConnectResult* result)
         {
             // FR-005: a key that cannot be decrypted is not a rejected key.
             Log("Private key could not be loaded or unlocked.");
-            lstrcpynA(LastErrorText, LoadStr(IDS_ERR_KEYUNLOCK), sizeof(LastErrorText));
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_KEYUNLOCK));
             if (result != NULL)
                 *result = crKeyUnlock;
             if (KeyFileLooksEncrypted(Params.KeyFile))
@@ -693,7 +701,7 @@ BOOL CSFTPSession::Authenticate(HWND parent, CSFTPConnectResult* result)
         }
         if (failure == afTransport)
         {
-            lstrcpynA(LastErrorText, LoadStr(IDS_ERR_CONNLOST), sizeof(LastErrorText));
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_CONNLOST));
             if (result != NULL)
                 *result = crTimeout;
             return FALSE;
@@ -703,7 +711,7 @@ BOOL CSFTPSession::Authenticate(HWND parent, CSFTPConnectResult* result)
         // authentication, the UI thread offers that instead of sending the user
         // back into the connection profile.
         Log("Server rejected the private key.");
-        lstrcpynA(LastErrorText, LoadStr(IDS_ERR_AUTHKEY), sizeof(LastErrorText));
+        SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_AUTHKEY));
         if (result != NULL)
             *result = crAuthKey;
         if (hasPassword)
@@ -738,7 +746,7 @@ BOOL CSFTPSession::Authenticate(HWND parent, CSFTPConnectResult* result)
         }
     }
 
-    lstrcpynA(LastErrorText, LoadStr(IDS_ERR_AUTHPASSWORD), sizeof(LastErrorText));
+    SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_AUTHPASSWORD));
     if (result != NULL)
         *result = crAuthPassword;
     return FALSE;
@@ -808,7 +816,7 @@ BOOL CSFTPSession::ConnectAttempt(CSFTPHostKeyList* trustStore, CSFTPConnectResu
 
     if (libssh2_session_handshake(Ssh, Socket) != 0)
     {
-        SetLastErrorFromSsh(LoadStr(IDS_ERR_HANDSHAKE));
+        SetLastErrorFromSsh(LoadStrU8(IDS_ERR_HANDSHAKE));
         Log(LastErrorText);
         if (result != NULL)
             *result = crHandshakeFailed;
@@ -833,7 +841,7 @@ BOOL CSFTPSession::ConnectAttempt(CSFTPHostKeyList* trustStore, CSFTPConnectResu
     Sftp = libssh2_sftp_init(Ssh);
     if (Sftp == NULL)
     {
-        SetLastErrorFromSsh(LoadStr(IDS_ERR_SFTPINIT));
+        SetLastErrorFromSsh(LoadStrU8(IDS_ERR_SFTPINIT));
         Log(LastErrorText);
         if (result != NULL)
             *result = crSFTPInitFailed;
@@ -894,7 +902,8 @@ BOOL CSFTPSession::RunConnectAttemptOnWorker(HWND parent, CSFTPHostKeyList* trus
 
     HANDLE hThread = (HANDLE)th;
     char waitText[512];
-    _snprintf_s(waitText, _TRUNCATE, LoadStr(IDS_CONNECTING), Params.Host);
+    _snprintf_s(waitText, _TRUNCATE, LoadStrU8(IDS_CONNECTING), Params.Host); // feature 130: UTF-8 like the host
+    SplU8TrimTornTail(waitText);
     SalamanderGeneral->CreateSafeWaitWindow(waitText, LoadStr(IDS_PLUGINNAME), 500, TRUE,
                                             SalamanderGeneral->GetMainWindowHWND());
     for (;;)
@@ -917,7 +926,7 @@ BOOL CSFTPSession::RunConnectAttemptOnWorker(HWND parent, CSFTPHostKeyList* trus
         *result = ctx.Result;
     if (!ctx.Ok && IsCancelRequested())
     {
-        lstrcpynA(LastErrorText, LoadStr(IDS_CANCELLED), sizeof(LastErrorText));
+        SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_CANCELLED));
         if (result != NULL)
             *result = crCancelled;
     }
@@ -965,7 +974,7 @@ BOOL CSFTPSession::Connect(HWND parent, const CSFTPConnectParams* params,
             else if (choice != IDB_HOSTKEY_ONCE)
             {
                 Log("Host key rejected by user - connection aborted.");
-                lstrcpynA(LastErrorText, LoadStr(IDS_ERR_HOSTKEYDECLINED), sizeof(LastErrorText));
+                SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_ERR_HOSTKEYDECLINED));
                 if (result != NULL)
                     *result = crHostKeyRejected;
                 return FALSE;
@@ -979,8 +988,9 @@ BOOL CSFTPSession::Connect(HWND parent, const CSFTPConnectParams* params,
             // FR-005: the key could not be unlocked - ask again and retry.
             char prompt[1024];
             _snprintf_s(prompt, _TRUNCATE,
-                        LoadStr(Params.Passphrase[0] ? IDS_ENTERPASSPHRASE_RETRY : IDS_ENTERPASSPHRASE),
+                        LoadStrU8(Params.Passphrase[0] ? IDS_ENTERPASSPHRASE_RETRY : IDS_ENTERPASSPHRASE),
                         Params.KeyFile);
+            SplU8TrimTornTail(prompt);
             SecureZeroMemory(Params.Passphrase, sizeof(Params.Passphrase));
             if (!ShowPasswordPrompt(parent, prompt, Params.Passphrase, sizeof(Params.Passphrase)))
                 return FALSE; // cancelled: keep the key-unlock error
@@ -991,7 +1001,8 @@ BOOL CSFTPSession::Connect(HWND parent, const CSFTPConnectParams* params,
         {
             // FR-006: the server refused the key but offers password auth.
             char prompt[512];
-            _snprintf_s(prompt, _TRUNCATE, LoadStr(IDS_ENTERPASSWORD), Params.User);
+            _snprintf_s(prompt, _TRUNCATE, LoadStrU8(IDS_ENTERPASSWORD), Params.User);
+            SplU8TrimTornTail(prompt);
             SecureZeroMemory(Params.Password, sizeof(Params.Password));
             if (!ShowPasswordPrompt(parent, prompt, Params.Password, sizeof(Params.Password)))
                 return FALSE; // declined: the attempt ends with the key error
@@ -1006,7 +1017,7 @@ BOOL CSFTPSession::Connect(HWND parent, const CSFTPConnectParams* params,
 BOOL CSFTPSession::Reconnect(HWND parent, CSFTPHostKeyList* trustStore, CSFTPConnectResult* result)
 {
     Disconnect();
-    LogFmt(LoadStr(IDS_RECONNECTING), Params.Host);
+    LogFmt(LoadStrU8(IDS_RECONNECTING), Params.Host); // feature 130: the log is one UTF-8 text
     return Connect(parent, &Params, trustStore, result);
 }
 

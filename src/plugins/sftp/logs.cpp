@@ -96,6 +96,12 @@ void CLogs::Append(int uid, const char* text)
     if (uid < 0 || text == NULL)
         return;
 
+    // feature 130: the whole log is shown as ONE text (UTF-8 when valid, else through the code
+    // page), so every line is stored as UTF-8 - a line that is not (a remote name in another
+    // encoding) would turn all the others into garbage
+    CSFTPMsgText lineU8(text);
+    text = lineU8.Get();
+
     EnterCriticalSection(&Lock);
     CLogData* log = FindByUID(uid);
     if (log != NULL)
@@ -159,8 +165,10 @@ void CLogs::AppendFmt(int uid, const char* fmt, ...)
     char buf[1024];
     va_list args;
     va_start(args, fmt);
-    _vsnprintf_s(buf, _TRUNCATE, fmt, args);
+    int written = _vsnprintf_s(buf, _TRUNCATE, fmt, args);
     va_end(args);
+    if (written < 0)
+        SplU8TrimTornTail(buf); // feature 130: a cut inside a character would make the line invalid
     Append(uid, buf);
 }
 

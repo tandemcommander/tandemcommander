@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+#include "splloadstru8.h" // feature 130
+
 // enables dumping of blocks that remain allocated on the heap after the plugin finishes
 // #define DUMP_MEM
 
@@ -71,6 +73,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 char* LoadStr(int resID)
 {
     return SG->LoadStr(HLanguage, resID);
+}
+
+// feature 130: the text as UTF-8, for a sentence that holds a name or GetErrorText()
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SG, HLanguage, resID);
 }
 
 BOOL ErrorHelper(HWND parent, const char* message, int lastError, va_list arglist)

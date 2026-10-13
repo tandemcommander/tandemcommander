@@ -636,8 +636,9 @@ int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
             // header.Name is UTF-8 and can be long (GNU long names) -> bounded append
             char progresstxt[1000];
             _snprintf_s(progresstxt, _TRUNCATE, "%s%s",
-                        LoadStr(toSkip ? IDS_SKIPPROGRESS_TEXT : IDS_UNPACKPROGRESS_TEXT),
+                        LoadStrU8(toSkip ? IDS_SKIPPROGRESS_TEXT : IDS_UNPACKPROGRESS_TEXT), // UTF-8 as the name (feature 130)
                         header.Name != NULL ? header.Name : "");
+            SplU8TrimTornTail(progresstxt);
             SalamanderIf->ProgressDialogAddText(progresstxt, TRUE);
         }
     }
@@ -755,11 +756,10 @@ int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
             if (!WriteFile(file, buffer, toRead, &written, NULL) || written != toRead)
             {
                 char message[1000];
-                strcpy(message, LoadStr(IDS_TARERR_FWRITE));
-                if (written != toRead)
-                    strcat(message, LoadStr(IDS_TARERR_WRSIZE));
-                else
-                    strcat(message, SalamanderGeneral->GetErrorText(GetLastError()));
+                // feature 130: GetErrorText() is UTF-8, so is the text in front of it
+                DWORD writeErr = GetLastError();
+                _snprintf_s(message, _TRUNCATE, "%s%s", LoadStrU8(IDS_TARERR_FWRITE),
+                            written != toRead ? LoadStrU8(IDS_TARERR_WRSIZE) : SalamanderGeneral->GetErrorText(writeErr));
                 SalamanderGeneral->ShowMessageBox(message, LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
                 CloseHandle(file);
                 DeleteFileU8(extractedName);
@@ -819,8 +819,7 @@ int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
             {
                 char buffer[1000];
                 DWORD err = GetLastError();
-                strcpy(buffer, LoadStr(IDS_TARERR_FWRITE));
-                strcat(buffer, SalamanderGeneral->GetErrorText(err));
+                _snprintf_s(buffer, _TRUNCATE, "%s%s", LoadStrU8(IDS_TARERR_FWRITE), SalamanderGeneral->GetErrorText(err)); // UTF-8 (feature 130)
                 SalamanderGeneral->ShowMessageBox(buffer, LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
                 DeleteFileU8(extractedName);
                 free(extractedName);
@@ -1799,8 +1798,9 @@ BOOL CArchive::UnpackStream(const char* targetPath, BOOL doProgress,
     {
         // header.Name is UTF-8 and can be long (GNU long names) -> bounded append
         char progresstxt[1000];
-        _snprintf_s(progresstxt, _TRUNCATE, "%s%s", LoadStr(IDS_UNPACKPROGRESS_TEXT),
+        _snprintf_s(progresstxt, _TRUNCATE, "%s%s", LoadStrU8(IDS_UNPACKPROGRESS_TEXT), // UTF-8 as the name (feature 130)
                     header.Name != NULL ? header.Name : "");
+        SplU8TrimTornTail(progresstxt);
         SalamanderIf->ProgressDialogAddText(progresstxt, TRUE);
     }
     // the size field in the header may not be reliable; keep unpacking while data remains
@@ -1831,11 +1831,9 @@ BOOL CArchive::UnpackStream(const char* targetPath, BOOL doProgress,
         {
             char message[1000];
             DWORD err = GetLastError();
-            strcpy(message, LoadStr(IDS_TARERR_FWRITE));
-            if (written != read)
-                strcat(message, LoadStr(IDS_TARERR_WRSIZE));
-            else
-                strcat(message, SalamanderGeneral->GetErrorText(err));
+            // feature 130: GetErrorText() is UTF-8, so is the text in front of it
+            _snprintf_s(message, _TRUNCATE, "%s%s", LoadStrU8(IDS_TARERR_FWRITE),
+                        written != read ? LoadStrU8(IDS_TARERR_WRSIZE) : SalamanderGeneral->GetErrorText(err));
             SalamanderGeneral->ShowMessageBox(message, LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
             CloseHandle(file);
             DeleteFileU8(extractedName);
@@ -1867,8 +1865,7 @@ BOOL CArchive::UnpackStream(const char* targetPath, BOOL doProgress,
     {
         char buffer[1000];
         DWORD err = GetLastError();
-        strcpy(buffer, LoadStr(IDS_TARERR_FWRITE));
-        strcat(buffer, SalamanderGeneral->GetErrorText(err));
+        _snprintf_s(buffer, _TRUNCATE, "%s%s", LoadStrU8(IDS_TARERR_FWRITE), SalamanderGeneral->GetErrorText(err)); // UTF-8 (feature 130)
         SalamanderGeneral->ShowMessageBox(buffer, LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
         DeleteFileU8(extractedName);
         free(extractedName);

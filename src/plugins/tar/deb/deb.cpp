@@ -18,8 +18,8 @@ void ShowError(int errorID)
 {
     char txtbuf[1000];
     int err = GetLastError();
-    strcpy(txtbuf, LoadStr(errorID));
-    strcat(txtbuf, SalamanderGeneral->GetErrorText(err));
+    // feature 130: GetErrorText() is UTF-8, so is the text in front of it
+    _snprintf_s(txtbuf, _TRUNCATE, "%s%s", LoadStrU8(errorID), SalamanderGeneral->GetErrorText(err));
     SalamanderGeneral->ShowMessageBox(txtbuf, LoadStr(IDS_GZERR_TITLE), MSGBOX_ERROR);
 }
 

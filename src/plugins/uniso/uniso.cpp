@@ -7,6 +7,7 @@
 #include "uniso.h"
 #include "isoimage.h"
 #include "dialogs.h"
+#include "splloadstru8.h" // feature 130
 
 #include "uniso.rh"
 #include "uniso.rh2"
@@ -85,6 +86,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 char* LoadStr(int resID)
 {
     return SalamanderGeneral->LoadStr(HLanguage, resID);
+}
+
+// feature 130: the text as UTF-8, for a sentence that holds a file name or another UTF-8 text
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
 }
 
 //
@@ -244,21 +251,25 @@ BOOL Error(int resID, BOOL quiet, ...)
         buf[0] = 0;
         va_list arglist;
         va_start(arglist, quiet);
-        vsprintf(buf, LoadStr(resID), arglist);
+        // feature 130: some callers pass a file name (UTF-8), so the template is UTF-8
+        _vsnprintf_s(buf, _TRUNCATE, LoadStrU8(resID), arglist);
         va_end(arglist);
+        SplU8TrimTornTail(buf);
 
         SalamanderGeneral->ShowMessageBox(buf, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
     }
     return FALSE;
 }
 
-BOOL Error(char* msg, DWORD err, BOOL quiet)
+// 'msg' must be UTF-8 (LoadStrU8): it is joined with GetErrorText(), which is UTF-8 (feature 130)
+BOOL Error(const char* msg, DWORD err, BOOL quiet)
 {
     if (!quiet)
         if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES) // it is an error
         {
             char buf[1024];
-            sprintf(buf, "%s\n\n%s", msg, SalamanderGeneral->GetErrorText(err));
+            _snprintf_s(buf, _TRUNCATE, "%s\n\n%s", msg, SalamanderGeneral->GetErrorText(err));
+            SplU8TrimTornTail(buf);
             SalamanderGeneral->ShowMessageBox(buf, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
         }
 
@@ -939,7 +950,8 @@ BOOL CPluginInterfaceForViewer::ViewFile(const char* name, int left, int top, in
         vData.Size = sizeof(vData);
         vData.FileName = tempFileName;
         vData.Mode = 0;                                                            // text mode
-        _snprintf_s(caption, _TRUNCATE, "%s - %s", name, LoadStr(IDS_PLUGINNAME)); // 'name' is a UTF-8 path, may be long
+        _snprintf_s(caption, _TRUNCATE, "%s - %s", name, LoadStrU8(IDS_PLUGINNAME)); // 'name' is a UTF-8 path, may be long; the viewer takes a UTF-8 caption (feature 130)
+        SplU8TrimTornTail(caption);
         vData.Caption = caption;
         vData.WholeCaption = TRUE;
         if (!SalamanderGeneral->ViewFileInPluginViewer(NULL, &vData, TRUE, NULL, "iso_dump.txt", err))

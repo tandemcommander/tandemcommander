@@ -14,6 +14,7 @@
 #include "precomp.h"
 #include "fxfs.h"
 #include "fx_lang.rh"
+#include <splloadstru8.h> // feature 130
 
 namespace Fx
 {
@@ -773,7 +774,13 @@ namespace Fx
         fullPath.ReleaseBuffer();
         fullPath.AppendChar(TEXT(':'));
         fullPath.Append(path);
-        message.Format(IDS_FX_CHANGEPATHERRORFMT, fullPath, error);
+        // feature 130: the path is UTF-8; the template and the error text (FormatMessageA or a
+        // resource text, both code page) join it as UTF-8, or the box showed the path garbled
+        char* errorU8 = SplLegacyToU8Alloc(error);
+        message.Format(SplLoadStrU8(SalamanderGeneral, FxGetLangInstance(), IDS_FX_CHANGEPATHERRORFMT),
+                       fullPath.GetString(), errorU8 != NULL ? errorU8 : error);
+        if (errorU8 != NULL)
+            free(errorU8);
         SalamanderGeneral->ShowMessageBox(message, title, MSGBOX_ERROR);
     }
 

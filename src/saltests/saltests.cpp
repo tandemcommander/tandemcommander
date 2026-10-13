@@ -52,6 +52,7 @@
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
+#include "../plugins/shared/splloadstru8.h" // feature 130: a plug-in's resource text as UTF-8
 
 #include <map>
 #include <set>
@@ -9743,6 +9744,191 @@ static void TestInserts127()
     }
 }
 
+// feature 130: a plug-in's resource text as UTF-8 (plugins/shared/splloadstru8.h)
+struct CFakeGen130
+{
+    int WideCalls;
+    int NarrowCalls;
+    BOOL NoWide; // LoadStrW gives NULL
+    WCHAR BufW[200];
+    char BufA[200];
+    CFakeGen130() : WideCalls(0), NarrowCalls(0), NoWide(FALSE) {}
+    // like the core's: a buffer that the next call overwrites
+    WCHAR* LoadStrW(HINSTANCE module, int resID)
+    {
+        WideCalls++;
+        if (NoWide)
+            return NULL;
+        if (resID == 1)
+            wcscpy_s(BufW, L"Soubor \"%s\" ji\x017E existuje. P\x0159" L"epsat?");
+        else if (resID == 2)
+            wcscpy_s(BufW, L"\x0391\x03C1\x03C7\x03B5\x03AF\x03BF %s");
+        else
+            swprintf_s(BufW, L"text %d of %p", resID, (void*)module);
+        return BufW;
+    }
+    char* LoadStr(HINSTANCE module, int resID)
+    {
+        NarrowCalls++;
+        sprintf_s(BufA, "narrow %d", resID);
+        return BufA;
+    }
+};
+
+static DWORD WINAPI LoadStr130Thread(LPVOID param)
+{
+    CFakeGen130 gen; // each thread its own "interface" (the cache is what is shared)
+    const char** out = (const char**)param;
+    int i;
+    for (i = 0; i < 200; i++)
+        out[i] = SplLoadStrU8(&gen, (HINSTANCE)(UINT_PTR)0x70000, 1000 + i);
+    return 0;
+}
+
+static void TestPluginLoadStr130()
+{
+    HINSTANCE mod = (HINSTANCE)(UINT_PTR)0x10000;
+    HINSTANCE mod2 = (HINSTANCE)(UINT_PTR)0x20000;
+    CFakeGen130 gen;
+
+    // the defect: a code-page template with a UTF-8 name is not valid UTF-8 (so the message box
+    // shows all of it through the code page); the UTF-8 template with the same name is
+    {
+        char name[] = "P\xC5\x99\xC3\xADli\xC5\xA1 \xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD.txt";
+        char acp[100];
+        // "existuje" sentence in code page 1250 bytes: z-caron 9E, r-caron F8
+        char templ1250[] = "Soubor \"%s\" ji\x9E existuje. P\xF8" "epsat?";
+        _snprintf_s(acp, _TRUNCATE, templ1250, name);
+        WCHAR* w = SplU8ToWAlloc(acp);
+        CHECK(w == NULL); // not UTF-8: the legacy path of the box
+        if (w != NULL)
+            free(w);
+        char u8[200];
+        _snprintf_s(u8, _TRUNCATE, SplLoadStrU8(&gen, mod, 1), name);
+        w = SplU8ToWAlloc(u8);
+        CHECK(w != NULL && wcscmp(w, L"Soubor \"P\x0159\x00EDli\x0161 \x017Elu\x0165ou\x010Dk\x00FD.txt\" ji\x017E existuje. P\x0159" L"epsat?") == 0);
+        if (w != NULL)
+            free(w);
+    }
+
+    // converted once, the pointer stays the same and valid across other calls
+    {
+        gen.WideCalls = 0;
+        const char* a = SplLoadStrU8(&gen, mod, 2);
+        const char* b = SplLoadStrU8(&gen, mod, 3);
+        const char* a2 = SplLoadStrU8(&gen, mod, 2);
+        CHECK(a != NULL && a == a2 && a != b);
+        CHECK(strcmp(a, "\xCE\x91\xCF\x81\xCF\x87\xCE\xB5\xCE\xAF\xCE\xBF %s") == 0);
+        CHECK(gen.WideCalls == 2);
+        CHECK(gen.NarrowCalls == 0);
+        // unlike LoadStr: many texts in one expression
+        char all[300];
+        _snprintf_s(all, _TRUNCATE, "%s|%s|%s", SplLoadStrU8(&gen, mod, 10), SplLoadStrU8(&gen, mod, 11), SplLoadStrU8(&gen, mod, 12));
+        CHECK(strstr(all, "text 10 of") == all && strstr(all, "|text 11 of") != NULL && strstr(all, "|text 12 of") != NULL);
+        // the module is part of the key
+        const char* m1 = SplLoadStrU8(&gen, mod, 20);
+        const char* m2 = SplLoadStrU8(&gen, mod2, 20);
+        CHECK(m1 != m2 && strcmp(m1, m2) != 0);
+        // many ids: every text is its own and stays
+        const char* first = SplLoadStrU8(&gen, mod, 5000);
+        char want[60];
+        int i;
+        BOOL ok = TRUE;
+        for (i = 5000; i < 7000; i++)
+        {
+            const char* t = SplLoadStrU8(&gen, mod, i);
+            WCHAR wantW[60];
+            swprintf_s(wantW, L"text %d of %p", i, (void*)mod);
+            WideCharToMultiByte(CP_UTF8, 0, wantW, -1, want, sizeof(want), NULL, NULL);
+            if (t == NULL || strcmp(t, want) != 0)
+                ok = FALSE;
+        }
+        CHECK(ok);
+        CHECK(first == SplLoadStrU8(&gen, mod, 5000) && strstr(first, "text 5000 of") == first);
+    }
+
+    // no wide text (low memory in the core): the code-page text, as before the change; not kept
+    {
+        CFakeGen130 none;
+        none.NoWide = TRUE;
+        const char* t = SplLoadStrU8(&none, mod, 31000);
+        CHECK(t != NULL && strcmp(t, "narrow 31000") == 0);
+        none.NoWide = FALSE;
+        t = SplLoadStrU8(&none, mod, 31000);
+        CHECK(t != NULL && strstr(t, "text 31000 of") == t);
+    }
+
+    // threads: the same ids from eight threads give the same pointers
+    {
+        static const char* out[8][200];
+        HANDLE threads[8];
+        int i;
+        for (i = 0; i < 8; i++)
+            threads[i] = CreateThread(NULL, 0, LoadStr130Thread, out[i], 0, NULL);
+        WaitForMultipleObjects(8, threads, TRUE, 60000);
+        BOOL same = TRUE;
+        int j;
+        for (i = 0; i < 8; i++)
+        {
+            CloseHandle(threads[i]);
+            for (j = 0; j < 200; j++)
+            {
+                if (out[i][j] == NULL || out[i][j] != out[0][j])
+                    same = FALSE;
+            }
+        }
+        CHECK(same);
+        CHECK(strstr(out[0][199], "text 1199 of") == out[0][199]);
+    }
+
+    // a piece of either encoding as UTF-8
+    {
+        struct
+        {
+            const char* in;
+            const WCHAR* wantW; // NULL: the same bytes
+        } rows[] = {
+            {"", NULL},
+            {"plain ASCII (5)", NULL},
+            {"P\xC5\x99\xC3\xADstup byl odep\xC5\x99" "en.", NULL}, // UTF-8 stays
+            {"\xE6\x97\xA5\xE6\x9C\xAC", NULL},
+        };
+        int i;
+        for (i = 0; i < _countof(rows); i++)
+        {
+            char* got = SplLegacyToU8Alloc(rows[i].in);
+            CHECK(got != NULL && strcmp(got, rows[i].in) == 0);
+            if (got != NULL)
+                free(got);
+        }
+        CHECK(SplLegacyToU8Alloc(NULL) == NULL);
+        // code-page text: what the system's code page says it is
+        char acp[] = "caf\xE9 \xFC" "ber"; // not valid UTF-8 in any case
+        WCHAR wantW[40];
+        MultiByteToWideChar(CP_ACP, 0, acp, -1, wantW, _countof(wantW));
+        char want[100];
+        WideCharToMultiByte(CP_UTF8, 0, wantW, -1, want, sizeof(want), NULL, NULL);
+        char* got = SplLegacyToU8Alloc(acp);
+        CHECK(got != NULL && strcmp(got, want) == 0);
+        if (got != NULL)
+        {
+            WCHAR* w = SplU8ToWAlloc(got);
+            CHECK(w != NULL); // the result is always valid UTF-8
+            if (w != NULL)
+                free(w);
+            free(got);
+        }
+        // into a buffer: cut at a whole character, never an invalid tail
+        char tiny[8];
+        SplLegacyToU8("\xC5\x99\xC5\x99\xC5\x99\xC5\x99\xC5\x99", tiny, sizeof(tiny)); // 10 bytes into 8
+        CHECK(strcmp(tiny, "\xC5\x99\xC5\x99\xC5\x99") == 0);
+        SplLegacyToU8("abc", tiny, sizeof(tiny));
+        CHECK(strcmp(tiny, "abc") == 0);
+        SplLegacyToU8(NULL, tiny, sizeof(tiny));
+        CHECK(tiny[0] == 0);
+    }
+}
+
 // feature 129: wide inserts ("%ls") of a UTF-8 template (salwideinserts.h) - what the Registry
 // Editor's messages and cache names are composed with; and the defect it replaces
 static void TestWideInserts129()
@@ -10064,6 +10250,7 @@ int main(int argc, char** argv)
     TestInserts127();
     TestShellLink128();
     TestWideInserts129();
+    TestPluginLoadStr130();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

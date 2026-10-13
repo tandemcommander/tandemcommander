@@ -16,6 +16,7 @@
 // in 7zclient.cpp (Common/MyInitGuid.h); with the 26.03 headers a second
 // definition here produced duplicate IID_* symbols
 #include "7zclient.h"
+#include "splloadstru8.h" // feature 130
 
 // ****************************************************************************
 
@@ -121,6 +122,12 @@ char* LoadStr(int resID)
     return SalamanderGeneral->LoadStr(HLanguage, resID);
 }
 
+// feature 130: the text as UTF-8, for a sentence that holds a file name or another UTF-8 text
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
+}
+
 int WINAPI SalamanderPluginGetReqVer()
 {
     return LAST_VERSION_OF_SALAMANDER;
@@ -212,8 +219,10 @@ BOOL Error(int resID, BOOL quiet, ...)
         buf[0] = 0;
         va_list arglist;
         va_start(arglist, quiet);
-        _vsnprintf_s(buf, _TRUNCATE, LoadStr(resID), arglist); // feature 087: bounded (paths can be long)
+        // feature 087: bounded (paths can be long); feature 130: the paths are UTF-8, so is the template
+        _vsnprintf_s(buf, _TRUNCATE, LoadStrU8(resID), arglist);
         va_end(arglist);
+        SplU8TrimTornTail(buf);
 
         SalamanderGeneral->ShowMessageBox(buf, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
     }
@@ -260,8 +269,11 @@ BOOL SysError(int resID, DWORD err, BOOL quiet, ...)
         msg[0] = 0;
         va_list arglist;
         va_start(arglist, quiet);
-        _vsnprintf_s(msg, _TRUNCATE, LoadStr(resID), arglist); // feature 087: bounded (paths can be long)
+        // feature 087: bounded (paths can be long); feature 130: the paths and GetErrorText() are
+        // UTF-8, so is the template
+        _vsnprintf_s(msg, _TRUNCATE, LoadStrU8(resID), arglist);
         va_end(arglist);
+        SplU8TrimTornTail(msg);
 
         char buf[2048 + 4];
         _snprintf_s(buf, _TRUNCATE, "%s\n\n%s", msg, SalamanderGeneral->GetErrorText(err));
@@ -1518,7 +1530,9 @@ static BOOL TestArchive(CSalamanderForOperationsAbstract* salamander, HWND hPare
     C7zClient client;
 
     salamander->OpenProgressDialog(LoadStr(IDS_TESTING_ARCHIVE), FALSE, NULL, FALSE);
-    _snprintf_s(text, U8_MAX_PATH + 1024, _TRUNCATE, LoadStr(IDS_TESTING_ARCHIVE_NAME), cfd->Name);
+    // feature 130: the names are UTF-8, so are the three templates below
+    _snprintf_s(text, U8_MAX_PATH + 1024, _TRUNCATE, LoadStrU8(IDS_TESTING_ARCHIVE_NAME), cfd->Name);
+    SplU8TrimTornTail(text);
     salamander->ProgressDialogAddText(text, FALSE);
 
     fileName[0] = '\0';
@@ -1529,13 +1543,15 @@ static BOOL TestArchive(CSalamanderForOperationsAbstract* salamander, HWND hPare
 
     if (ret == OPER_OK)
     {
-        _snprintf_s(text, U8_MAX_PATH + 1024, _TRUNCATE, LoadStr(IDS_TESTARCHIVEOK), fileName);
+        _snprintf_s(text, U8_MAX_PATH + 1024, _TRUNCATE, LoadStrU8(IDS_TESTARCHIVEOK), fileName);
+        SplU8TrimTornTail(text);
         SalamanderGeneral->SalMessageBox(hParent, text, LoadStr(IDS_PLUGINNAME), MB_OK | MB_ICONINFORMATION);
         ret = TRUE;
     }
     else if (ret == OPER_CONTINUE)
     {
-        _snprintf_s(text, U8_MAX_PATH + 1024, _TRUNCATE, LoadStr(IDS_TESTARCHIVECORRUPTED), fileName);
+        _snprintf_s(text, U8_MAX_PATH + 1024, _TRUNCATE, LoadStrU8(IDS_TESTARCHIVECORRUPTED), fileName);
+        SplU8TrimTornTail(text);
         SalamanderGeneral->SalMessageBox(hParent, text, LoadStr(IDS_PLUGINNAME), MB_OK | MB_ICONINFORMATION);
         ret = FALSE;
     }

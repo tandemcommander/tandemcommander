@@ -8,6 +8,7 @@
 #include "checksum.h"
 #include "misc.h"
 #include "dialogs.h"
+#include "splloadstru8.h" // feature 130
 
 // ****************************************************************************
 
@@ -66,6 +67,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 char* LoadStr(int resID)
 {
     return SalamanderGeneral->LoadStr(HLanguage, resID);
+}
+
+// feature 130: the text as UTF-8, for a sentence that holds a file name or another UTF-8 text
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
 }
 
 //****************************************************************************

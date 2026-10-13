@@ -461,6 +461,9 @@ protected:
 
 char* LoadStr(int resID);
 WCHAR* LoadStrW(int resID);
+// feature 130: the text as UTF-8 (valid until the plug-in is unloaded) - for a sentence that
+// holds a file name or GetErrorText(); every other piece and the sink must be UTF-8 too
+const char* LoadStrU8(int resID);
 
 // UTF-8 name from Salamander -> ANSI path for PVW32Cnv.dll (which has no W interface);
 // falls back to the short (8.3) name, NULL when the file is unreachable via ANSI;

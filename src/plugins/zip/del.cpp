@@ -101,16 +101,16 @@ int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
     //bool              cancel =  false;
     char progrTextBuf[U8_MAX_NAME + MAX_PATH + 32]; // UTF-8 name of the deleted file
     char* progrText;
-    char* sour;
+    const char* sour;
     int progrPrefixLen; //"deleting: "
 
     buffer = (char*)malloc(DECOMPRESS_INBUFFER_SIZE);
     if (!buffer)
         return IDS_LOWMEM;
-    if (Pack)
-        sour = LoadStr(IDS_REMOVING);
+    if (Pack) // feature 130: the prefix of a UTF-8 name
+        sour = LoadStrU8(IDS_REMOVING);
     else
-        sour = LoadStr(IDS_DELETING);
+        sour = LoadStrU8(IDS_DELETING);
     progrText = progrTextBuf;
     while (*sour)
         *progrText++ = *sour++;

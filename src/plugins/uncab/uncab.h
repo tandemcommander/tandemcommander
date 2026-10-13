@@ -218,6 +218,7 @@ extern HINSTANCE HLanguage;   // handle to the SLG - language-dependent resource
 extern DWORD Options; // configuration
 
 char* LoadStr(int resID);
+const char* LoadStrU8(int resID); // UTF-8, valid until the plug-in unloads (feature 130)
 void GetInfo(char* buffer, FILETIME* lastWrite, unsigned size);
 
 // interface 104: paths crossing the plugin interface are UTF-8, so file APIs must

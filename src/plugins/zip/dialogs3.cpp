@@ -189,7 +189,9 @@ BOOL CCommentDialog::OnInit(WPARAM wParam, LPARAM lParam)
     char* title = (char*)malloc(U8_MAX_PATH + 128);
     if (title != NULL)
     {
-        _snprintf_s(title, U8_MAX_PATH + 128, _TRUNCATE, LoadStr(IDS_COMMENTDLGTITLE), PackObject->ZipName);
+        // feature 130: the UTF-8 template - with the code-page one the text was not UTF-8 and no title was set
+        _snprintf_s(title, U8_MAX_PATH + 128, _TRUNCATE, LoadStrU8(IDS_COMMENTDLGTITLE), PackObject->ZipName);
+        SplU8TrimTornTail(title);
         WCHAR* wTitle = SplU8ToWAlloc(title);
         if (wTitle != NULL)
         {
@@ -581,7 +583,8 @@ BOOL LoadLangChache(HWND parent)
                 else
                 {
                     char err[512];
-                    sprintf(err, LoadStr(r), file);
+                    _snprintf_s(err, _TRUNCATE, LoadStrU8(r), file); // feature 130: 'file' is UTF-8
+                    SplU8TrimTornTail(err);
                     if (SalamanderGeneral->SalMessageBox(parent, err, LoadStr(IDS_ERROR), MB_OKCANCEL | MB_ICONEXCLAMATION) != IDOK)
                     {
                         SfxLanguages->Destroy();

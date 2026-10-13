@@ -1,0 +1,13 @@
+plugmix_probe (feature 130), expect: before, language: slovak
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_v019\tandemcommander.exe
+Date    : 2026-10-13 13:38; desktop 'tc_probe_23660'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Fixture : 9 folders under C:\Users\pavel\AppData\Local\Temp\tc130, names 'P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148.*'; Windows text for error 32: 'Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces'
+Hot keys: ZIP - plug-in 1 (zip\zip.spl): item 3 set; Checksum - plug-in 4 (checksum\checksum.spl): item 1 set; 7-Zip - plug-in 3 (7zip\7zip.spl): item 1 set
+
+ZIPTEST    TEXT   FAIL        result of Test Archive (caption 'ZIP'): 'Arch\u00EDv 'C:\Users\pavel\AppData\Local\Temp\tc130\ztest\P\u0139\u2122\u0102\u00ADli\u0139\u02C7 \u0139\u013Elu\u0139\u0104ou\u00C4\u0164k\u0102\u02DD k\u0139\u017B\u0139\u0088.zip' je OK.'; expected pieces missing: 'C:\Users\pavel\AppData\Local\Temp\tc130\ztest\P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148.zip'; garbled letters: True; the rest of the sentence has a letter outside ASCII: True
+ZIPTEST    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7ZTEST     TEXT   FAIL        result of Test Archive (caption '7-Zip'): 'Arch\u00EDv 'C:\Users\pavel\AppData\Local\Temp\tc130\stest\P\u0139\u2122\u0102\u00ADli\u0139\u02C7 \u0139\u013Elu\u0139\u0104ou\u00C4\u0164k\u0102\u02DD k\u0139\u017B\u0139\u0088.7z' je OK.'; expected pieces missing: 'C:\Users\pavel\AppData\Local\Temp\tc130\stest\P\u0159\u00EDli\u0161 \u017Elu\u0165ou\u010Dk\u00FD k\u016F\u0148.7z'; garbled letters: True; the rest of the sentence has a letter outside ASCII: True
+7ZTEST     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

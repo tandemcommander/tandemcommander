@@ -90,6 +90,21 @@ WCHAR* LoadStrW(int resID)
     return SalamanderGeneral->LoadStrW(HLanguage, resID);
 }
 
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
+}
+
+void OpenProgressDialogU8(CSalamanderForOperationsAbstract* salamander, int titleID,
+                          const char* name, BOOL twoProgressBars)
+{
+    char title[1024];
+    // feature 130: the name is UTF-8, so is the template (the core sets the title wide)
+    _snprintf_s(title, _TRUNCATE, LoadStrU8(titleID), name);
+    SplU8TrimTornTail(title);
+    salamander->OpenProgressDialog(title, twoProgressBars, NULL, FALSE);
+}
+
 /*
 BOOL SalGetTempFileName(const char *path, const char *prefix, char *tmpName, BOOL file)
 {
@@ -883,27 +898,48 @@ int CZipCommon::ProcessError(int errorID, int lastError, const char* fileName,
         exitCode = ERR_SKIP;
     else
     { //process error and display proper dialog
+        // feature 130: the whole text is UTF-8 - 'extText' is the core's text with a path (UTF-8) and
+        // the core's dialog shows a text that is not valid UTF-8 through the code page
+        const char* text = LoadStrU8(errorID);
+        char* extU8 = NULL;
+        if (extText)
+        {
+            WCHAR* extW = SplDisplayTextToWAlloc(extText); // UTF-8 (also one cut inside a character) or code page
+            if (extW != NULL)
+            {
+                extU8 = SplWToU8Alloc(extW);
+                free(extW);
+            }
+        }
+        const char* ext = extU8 != NULL ? extU8 : extText;
         if (lastError)
         {
-            char lastErrorBuf[1024]; //temp variable
-            *lastErrorBuf = 0;
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-                              FORMAT_MESSAGE_IGNORE_INSERTS,
-                          NULL, lastError,
-                          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-                          lastErrorBuf, 1024, NULL);
-            if (extText)
-                sprintf(errorBuf, "%s\n%s\n%s", LoadStr(errorID), lastErrorBuf, extText);
+            WCHAR lastErrorBufW[1024]; //temp variable
+            *lastErrorBufW = 0;
+            FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
+                               FORMAT_MESSAGE_IGNORE_INSERTS,
+                           NULL, lastError,
+                           MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+                           lastErrorBufW, 1024, NULL);
+            char* lastErrorU8 = SplWToU8Alloc(lastErrorBufW);
+            const char* lastErrorText = lastErrorU8 != NULL ? lastErrorU8 : "";
+            if (ext)
+                _snprintf_s(errorBuf, _TRUNCATE, "%s\n%s\n%s", text, lastErrorText, ext);
             else
-                sprintf(errorBuf, "%s\n%s", LoadStr(errorID), lastErrorBuf);
+                _snprintf_s(errorBuf, _TRUNCATE, "%s\n%s", text, lastErrorText);
+            if (lastErrorU8 != NULL)
+                free(lastErrorU8);
         }
         else
         {
-            if (extText)
-                sprintf(errorBuf, "%s\n%s", LoadStr(errorID), extText);
+            if (ext)
+                _snprintf_s(errorBuf, _TRUNCATE, "%s\n%s", text, ext);
             else
-                sprintf(errorBuf, "%s", LoadStr(errorID));
+                _snprintf_s(errorBuf, _TRUNCATE, "%s", text);
         }
+        SplU8TrimTornTail(errorBuf);
+        if (extU8 != NULL)
+            free(extU8);
 
         if (flags & PE_QUIET)
             result = DIALOG_CANCEL;

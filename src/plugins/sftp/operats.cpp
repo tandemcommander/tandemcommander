@@ -207,7 +207,9 @@ static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, c
     if (h == NULL)
     {
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_DOWNLOAD), remotePath, ctx->Session->GetLastErrorText());
+        // feature 130: a UTF-8 sentence (template, path, reason) - see LoadStrU8 in sftp.h
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_DOWNLOAD), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
+        SplU8TrimTornTail(msg);
         SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         Logs.Append(ctx->Session->GetLogUID(), msg);
         return xrFailed;
@@ -219,7 +221,9 @@ static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, c
     {
         ctx->Session->CloseHandle(h);
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_OPENLOCAL), localPath);
+        // (the local path ends with the remote name - the server's bytes, not always UTF-8)
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_OPENLOCAL), CSFTPMsgText(localPath).Get());
+        SplU8TrimTornTail(msg);
         SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return xrFailed;
     }
@@ -287,7 +291,8 @@ static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const 
     if (!ctx->Session->ListDir(remoteDir, &entries, &ctx->Cancelled))
     {
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_LISTDIR), remoteDir, ctx->Session->GetLastErrorText());
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_LISTDIR), CSFTPMsgText(remoteDir).Get(), ctx->Session->GetLastErrorText());
+        SplU8TrimTornTail(msg);
         SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return xrFailed;
     }
@@ -320,7 +325,7 @@ static CXferResult DownloadRecursive(COperationCtx* ctx, const char* remotePath,
         if (ctx->Session->Stat(remotePath, TRUE, &attrs) && (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) &&
             SFTP_S_ISDIR(attrs.permissions))
         {
-            Logs.AppendFmt(ctx->Session->GetLogUID(), LoadStr(IDS_SYMLINK_DIR_SKIPPED), remotePath);
+            Logs.AppendFmt(ctx->Session->GetLogUID(), LoadStrU8(IDS_SYMLINK_DIR_SKIPPED), CSFTPMsgText(remotePath).Get());
             return xrSkipped; // directory symlink not followed (clarification #4)
         }
         WaitText("Downloading %s ...", PosixBaseName(remotePath));
@@ -428,7 +433,8 @@ static BOOL UploadOneFile(COperationCtx* ctx, const char* localPath, const char*
     if (lf == INVALID_HANDLE_VALUE)
     {
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_OPENLOCAL), localPath);
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_OPENLOCAL), localPath);
+        SplU8TrimTornTail(msg);
         SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
@@ -438,7 +444,8 @@ static BOOL UploadOneFile(COperationCtx* ctx, const char* localPath, const char*
     {
         CloseHandle(lf);
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_UPLOAD), remotePath, ctx->Session->GetLastErrorText());
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_UPLOAD), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
+        SplU8TrimTornTail(msg);
         SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
@@ -671,7 +678,8 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
         if (!ctx->Session->Rmdir(remotePath))
         {
             char msg[1200];
-            _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_RMDIR), remotePath, ctx->Session->GetLastErrorText());
+            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_RMDIR), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
+            SplU8TrimTornTail(msg);
             SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             return FALSE;
         }
@@ -681,7 +689,8 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
         if (!ctx->Session->Unlink(remotePath))
         {
             char msg[1200];
-            _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_DELETE), remotePath, ctx->Session->GetLastErrorText());
+            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_DELETE), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
+            SplU8TrimTornTail(msg);
             SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             return FALSE;
         }
@@ -728,7 +737,8 @@ static void ChmodRecursive(COperationCtx* ctx, const char* remotePath, unsigned 
     if (!ctx->Session->Chmod(remotePath, mode))
     {
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_CHMOD), remotePath, ctx->Session->GetLastErrorText());
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_CHMOD), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
+        SplU8TrimTornTail(msg);
         Logs.Append(ctx->Session->GetLogUID(), msg);
     }
     if (isDir && recurse)
@@ -806,7 +816,8 @@ static void ChownRecursive(COperationCtx* ctx, const char* remotePath,
     if (!ctx->Session->Chown(remotePath, uid, gid, setUid, setGid))
     {
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_CHOWN), remotePath, ctx->Session->GetLastErrorText());
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_CHOWN), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
+        SplU8TrimTornTail(msg);
         Logs.Append(ctx->Session->GetLogUID(), msg);
     }
     if (isDir && recurse)

@@ -25,6 +25,7 @@
 #include "PixelAccess.h"
 #include "wicengine.h"               // feature 111: let the shown file go and take it back
 #include "../../common/salpvpixel.h" // feature 120: the pipette reads the pixel under the cursor
+#include "splloadstru8.h"            // feature 130: SplLegacyToU8Alloc
 
 inline int sgn(int x)
 {
@@ -137,8 +138,8 @@ void CRendererWindow::SetTitle()
 
     if (PVHandle != NULL)
     {
-        TCHAR colors[30];
-        LPTSTR fname = FileName;
+        TCHAR colors[100];
+        LPCTSTR fname = FileName;
         int width, height, id, nColors;
         ;
 
@@ -181,23 +182,36 @@ void CRendererWindow::SetTitle()
                 nColors = 16777216;
             break;
         }
+        // feature 130: the title is one UTF-8 text - the file name is UTF-8, so the template, the
+        // colors and the plug-in's name are loaded as UTF-8 too (with the code-page texts a
+        // translated word with an accented letter sent the whole title, the name with it,
+        // through the code page)
         if (IDS_NCOLORS == id)
         {
-            TCHAR fmt[32];
+            TCHAR fmt[100];
             CQuadWord clrs(nColors, 0);
-            SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), LoadStr(id), 1, &clrs);
-            _stprintf(colors, fmt, nColors);
+            SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), LoadStrU8(id), 1, &clrs);
+            _sntprintf_s(colors, _TRUNCATE, fmt, nColors);
         }
         else
         {
-            _stprintf(colors, LoadStr(id), nColors);
+            _sntprintf_s(colors, _TRUNCATE, LoadStrU8(id), nColors);
         }
+        SplU8TrimTornTail(colors);
+        // "<Clipboard>" and the like are LoadStr() texts kept in FileName (compared with LoadStr()
+        // elsewhere): code page -> UTF-8 here; a real name is UTF-8 and stays as it is
+        char* fnameU8 = SplLegacyToU8Alloc(fname);
+        if (fnameU8 != NULL)
+            fname = fnameU8;
         if (pvii.NumOfImages == 1)
-            _sntprintf_s(buff, buffSize, _TRUNCATE, LoadStr(IDS_TITLE), fname, width, height,
-                         colors, (int)(ZoomFactor / (ZOOM_SCALE_FACTOR / 100)), LoadStr(IDS_PLUGINNAME));
+            _sntprintf_s(buff, buffSize, _TRUNCATE, LoadStrU8(IDS_TITLE), fname, width, height,
+                         colors, (int)(ZoomFactor / (ZOOM_SCALE_FACTOR / 100)), LoadStrU8(IDS_PLUGINNAME));
         else
-            _sntprintf_s(buff, buffSize, _TRUNCATE, LoadStr(IDS_TITLE_MULTI), fname, width, height,
-                         colors, pvii.CurrentImage + 1, pvii.NumOfImages, (int)(ZoomFactor / (ZOOM_SCALE_FACTOR / 100)), LoadStr(IDS_PLUGINNAME));
+            _sntprintf_s(buff, buffSize, _TRUNCATE, LoadStrU8(IDS_TITLE_MULTI), fname, width, height,
+                         colors, pvii.CurrentImage + 1, pvii.NumOfImages, (int)(ZoomFactor / (ZOOM_SCALE_FACTOR / 100)), LoadStrU8(IDS_PLUGINNAME));
+        SplU8TrimTornTail(buff);
+        if (fnameU8 != NULL)
+            free(fnameU8);
     }
     else
         _tcscpy(buff, LoadStr(IDS_PLUGINNAME));
@@ -391,16 +405,22 @@ BOOL CRendererWindow::OpenFile(LPCTSTR name, int showCmd, HBITMAP hBmp)
     if (code != PVC_OK)
     {
         // the name may be longer than MAX_PATH -> build the message on the heap
-        LPCTSTR errFmt = LoadStr(IDS_ERROR_OPENING);
+        // feature 130: one UTF-8 text - the name is UTF-8 (the code-page "<Scan>" of a scanned
+        // bitmap is converted), the engine's text is ASCII, so the template is loaded as UTF-8
+        LPCTSTR errFmt = LoadStrU8(IDS_ERROR_OPENING);
         LPCTSTR pvErr = PVW32DLL.PVGetErrorText(code);
-        size_t errSize = _tcslen(errFmt) + _tcslen(name) + _tcslen(pvErr) + 16;
+        char* nameU8 = SplLegacyToU8Alloc(name);
+        LPCTSTR shownName = nameU8 != NULL ? nameU8 : name;
+        size_t errSize = _tcslen(errFmt) + _tcslen(shownName) + _tcslen(pvErr) + 16;
         LPTSTR errText = (LPTSTR)malloc(errSize * sizeof(TCHAR));
         if (errText != NULL)
         {
-            _sntprintf_s(errText, errSize, _TRUNCATE, errFmt, name, pvErr);
+            _sntprintf_s(errText, errSize, _TRUNCATE, errFmt, shownName, pvErr);
             SalamanderGeneral->SalMessageBox(HWindow, errText, LoadStr(IDS_ERRORTITLE), MB_ICONEXCLAMATION);
             free(errText);
         }
+        if (nameU8 != NULL)
+            free(nameU8);
         // In case the new file is not recognized, we keep the old one
         if (PVHandle != NULL)
             PVW32DLL.PVCloseImage(PVHandle);
@@ -4157,8 +4177,11 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
                 Viewer->SetStatusBarTexts();
                 if (!bSuccess)
                 {
-                    TCHAR errTmp[MAX_PATH + 20];
-                    TCHAR errBuff[164];
+                    // feature 130: GetErrorText() is UTF-8, so the template and the two texts of the
+                    // other branch are loaded as UTF-8; bounded (the 164 bytes of 'errBuff' were
+                    // fewer than 'errTmp' can hold)
+                    TCHAR errTmp[1000];
+                    TCHAR errBuff[1200];
 
                     if (LastError)
                     {
@@ -4166,10 +4189,10 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
                     }
                     else
                     {
-                        _tcscpy(errTmp, LoadStr(IDS_UNKNOWN_ERROR));
-                        _tcscat(errTmp, LoadStr(IDS_CHECK_EVENTLOG));
+                        _sntprintf_s(errTmp, _TRUNCATE, "%s%s", LoadStrU8(IDS_UNKNOWN_ERROR), LoadStrU8(IDS_CHECK_EVENTLOG));
                     }
-                    _stprintf(errBuff, LoadStr(IDS_PRINTING_FAILED), errTmp);
+                    _sntprintf_s(errBuff, _TRUNCATE, LoadStrU8(IDS_PRINTING_FAILED), errTmp);
+                    SplU8TrimTornTail(errBuff);
                     SalamanderGeneral->SalMessageBox(HWindow, errBuff, LoadStr(IDS_ERRORTITLE), MB_ICONSTOP);
                 }
             }

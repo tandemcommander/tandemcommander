@@ -110,7 +110,8 @@ void ConnectSFTPServer(HWND parent, int panel)
     if (g_PendingParams.AuthMethod == saPassword && g_PendingParams.Password[0] == 0)
     {
         char prompt[512];
-        _snprintf_s(prompt, _TRUNCATE, LoadStr(IDS_ENTERPASSWORD), g_PendingParams.User);
+        _snprintf_s(prompt, _TRUNCATE, LoadStrU8(IDS_ENTERPASSWORD), g_PendingParams.User); // feature 130: UTF-8 like the user name
+        SplU8TrimTornTail(prompt);
         if (!ShowPasswordPrompt(parent, prompt, g_PendingParams.Password, sizeof(g_PendingParams.Password)))
         {
             g_PendingParams.WipeSecrets(); // CF-14: do not leave the decrypted secret behind
@@ -125,7 +126,8 @@ void ConnectSFTPServer(HWND parent, int panel)
              g_PendingParams.KeyFile[0] != 0 && KeyFileLooksEncrypted(g_PendingParams.KeyFile))
     {
         char prompt[512];
-        _snprintf_s(prompt, _TRUNCATE, LoadStr(IDS_ENTERPASSPHRASE), g_PendingParams.KeyFile);
+        _snprintf_s(prompt, _TRUNCATE, LoadStrU8(IDS_ENTERPASSPHRASE), g_PendingParams.KeyFile);
+        SplU8TrimTornTail(prompt);
         ShowPasswordPrompt(parent, prompt, g_PendingParams.Passphrase, sizeof(g_PendingParams.Passphrase));
     }
     g_HasPending = TRUE;
@@ -377,7 +379,7 @@ BOOL CPluginFSInterface::EnsureConnected(HWND parent)
     {
         Session.Disconnect();
         if (LogUID >= 0)
-            Logs.AppendFmt(LogUID, LoadStr(IDS_RECONNECTING), Host);
+            Logs.AppendFmt(LogUID, LoadStrU8(IDS_RECONNECTING), Host); // feature 130: the log is one UTF-8 text
         WasConnected = FALSE;
     }
 
@@ -558,7 +560,8 @@ BOOL WINAPI CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName,
             if (mode != 1 && Params.AuthMethod == saPassword && Params.Password[0] == 0)
             {
                 char prompt[512];
-                _snprintf_s(prompt, _TRUNCATE, LoadStr(IDS_ENTERPASSWORD), user);
+                _snprintf_s(prompt, _TRUNCATE, LoadStrU8(IDS_ENTERPASSWORD), user);
+                SplU8TrimTornTail(prompt);
                 if (!ShowPasswordPrompt(SalamanderGeneral->GetMsgBoxParent(), prompt,
                                         Params.Password, sizeof(Params.Password)))
                     return FALSE;
@@ -660,7 +663,9 @@ BOOL WINAPI CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* di
         if (!cancel) // a user-cancelled listing is not an error worth a dialog
         {
             char msg[1200];
-            _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_LISTDIR), Path, Session.GetLastErrorText());
+            // feature 130: a UTF-8 sentence (template, path, reason) - see LoadStrU8 in sftp.h
+            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_LISTDIR), CSFTPMsgText(Path).Get(), Session.GetLastErrorText());
+            SplU8TrimTornTail(msg);
             SalamanderGeneral->SalMessageBox(SalamanderGeneral->GetMsgBoxParent(), msg,
                                              LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         }
@@ -905,7 +910,8 @@ BOOL WINAPI CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND p
     if (!Session.Rename(from, to))
     {
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_RENAME), file.Name, Session.GetLastErrorText());
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_RENAME), file.Name, Session.GetLastErrorText());
+        SplU8TrimTornTail(msg);
         SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
@@ -933,7 +939,8 @@ BOOL WINAPI CPluginFSInterface::CreateDir(const char* fsName, int mode, HWND par
     if (!Session.Mkdir(full, 0755))
     {
         char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_ERR_MKDIR), newName, Session.GetLastErrorText());
+        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_MKDIR), newName, Session.GetLastErrorText());
+        SplU8TrimTornTail(msg);
         SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
@@ -983,7 +990,8 @@ void WINAPI CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
                 // The total time is bounded only by size/bandwidth, so the user
                 // must be able to abort it like any other transfer.
                 char waitText[512];
-                _snprintf_s(waitText, _TRUNCATE, LoadStr(IDS_DOWNLOADINGFILE), file.Name);
+                _snprintf_s(waitText, _TRUNCATE, LoadStrU8(IDS_DOWNLOADINGFILE), file.Name); // feature 130: UTF-8 like the name
+                SplU8TrimTornTail(waitText);
                 SalamanderGeneral->CreateSafeWaitWindow(waitText, LoadStr(IDS_PLUGINNAME), 500, TRUE,
                                                         SalamanderGeneral->GetMainWindowHWND());
                 for (;;)

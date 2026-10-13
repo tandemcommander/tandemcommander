@@ -23,6 +23,18 @@ Fixes for the problems reported on GitHub after 0.1.9.
   with accented letters on the clipboard correctly. The Size column and the
   plug-in's Find window were right and stay right.
 
+- **Plug-ins: messages with a file name are readable in every language**
+  (feature 130, the follow-up of GitHub #7). In a translated version a
+  plug-in's question or error that named a file showed the name as wrong
+  letters (`PĹ™Ă­liĹˇ` for `Příliš`) whenever the sentence itself had an
+  accented letter - Checksum's "file already exists, overwrite?", the
+  result of *Test Archive* in ZIP and 7-Zip (Slovak, Hungarian, ...), the
+  window titles of PictView, Database Viewer and PE Viewer, the errors of
+  SFTP, TAR, UnISO and Renamer with the reason Windows gives. Thirteen
+  plug-ins are corrected. The title of the progress window of an archive
+  operation shows an accented archive name right now too (it was wrong in
+  English as well). The FTP client follows separately.
+
 - **Registry Editor: questions and errors name the key** (feature 129).
   Copying or moving a key to a target that does not exist asked whether to
   create it in a box with *Yes* and *No* and **no text** when the target's

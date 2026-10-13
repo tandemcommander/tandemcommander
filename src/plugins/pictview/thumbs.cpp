@@ -404,8 +404,12 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                         {
                             // SalamanderGeneral->SalGetTempFileName created the file
                             DeleteFileU8(newFile);
-                            _stprintf(newFile, LoadStr(IDS_REGENERATE_THUMB_WRITEFILE), str ? str + 1 : path);
-                            SalamanderGeneral->ShowMessageBox(newFile, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
+                            // feature 130: the name is UTF-8 - the template too; a buffer of its own
+                            // (the template with a name did not have to fit the _MAX_PATH of 'newFile')
+                            char msg[1200];
+                            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_REGENERATE_THUMB_WRITEFILE), str ? str + 1 : path);
+                            SplU8TrimTornTail(msg);
+                            SalamanderGeneral->ShowMessageBox(msg, LoadStr(IDS_PLUGINNAME), MSGBOX_ERROR);
                         }
                         else
                         {

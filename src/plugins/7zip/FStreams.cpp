@@ -30,7 +30,9 @@ BOOL ShowRetryAbortBox(HWND hParentWnd, int resID, DWORD err, ...)
     va_start(arglist, err);
 
     msg[0] = 0;
-    _vsnprintf_s(msg, _countof(msg), _TRUNCATE, LoadStr(resID), arglist); // feature 098: bounded
+    // feature 098: bounded; feature 130: UTF-8, because GetErrorText() below is UTF-8
+    // (ExpandPluralString works on ASCII delimiters only)
+    _vsnprintf_s(msg, _countof(msg), _TRUNCATE, LoadStrU8(resID), arglist);
     va_end(arglist);
 
     if (!_tcsncmp(msg, _T("{!}"), 3))

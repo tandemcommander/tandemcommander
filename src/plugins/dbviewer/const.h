@@ -11,6 +11,7 @@
 #define WM_USER_SETTINGCHANGE WM_APP + 3248
 
 char* LoadStr(int resID);
+const char* LoadStrU8(int resID); // feature 130: UTF-8, valid until the plug-in unloads
 
 // generic Salamander interface - valid from plugin start until shutdown
 extern CSalamanderGeneralAbstract* SalGeneral;

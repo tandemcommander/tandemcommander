@@ -875,7 +875,9 @@ BOOL CRendererWindow::OnFileSaveAs(LPCTSTR pInitDir)
         }
         if (nameID != -1)
         {
-            _stprintf(fileName, _T("%s%d"), LoadStr(nameID), *pCnt);
+            // feature 130: 'fileName' is UTF-8 (the Unicode Save As dialog) - a code-page word with
+            // an accented letter ("Zachycení") was no UTF-8 and the dialog opened without a name
+            _sntprintf_s(fileName, _TRUNCATE, _T("%s%d"), LoadStrU8(nameID), *pCnt);
         }
     }
 

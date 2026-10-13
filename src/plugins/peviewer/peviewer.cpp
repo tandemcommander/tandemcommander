@@ -13,6 +13,7 @@
 #include "cfgdlg.h"
 #include "cfg.h"
 #include "splunicode.h"
+#include "splloadstru8.h"
 
 // Plugin interface object; its methods are called from Salamander.
 CPluginInterface PluginInterface;
@@ -63,6 +64,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 LPTSTR LoadStr(int resID)
 {
     return SalGeneral->LoadStr(HLanguage, resID);
+}
+
+// feature 130: the text as UTF-8, for a sentence that holds a file name (UTF-8)
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalGeneral, HLanguage, resID);
 }
 
 //
@@ -297,8 +304,9 @@ BOOL MapFileToMemory(LPCTSTR name, HANDLE& hFile, HANDLE& hFileMapping,
         if (!quietMode)
         {
             TCHAR buff[2000];
-            _sntprintf(buff, _countof(buff), LoadStr(IDS_ERR_OPEN_FILE), name);
+            _sntprintf(buff, _countof(buff), LoadStrU8(IDS_ERR_OPEN_FILE), name); // feature 130: 'name' is UTF-8
             buff[_countof(buff) - 1] = 0;
+            SplU8TrimTornTail(buff);
             SalGeneral->SalMessageBox(SalGeneral->GetMsgBoxParent(), buff,
                                       LoadStr(IDS_PLUGIN_NAME), MB_OK | MB_ICONEXCLAMATION);
         }
@@ -311,8 +319,9 @@ BOOL MapFileToMemory(LPCTSTR name, HANDLE& hFile, HANDLE& hFileMapping,
         if (!quietMode)
         {
             TCHAR buff[2000];
-            _sntprintf(buff, _countof(buff), LoadStr(IDS_ERR_OPEN_FILE), name);
+            _sntprintf(buff, _countof(buff), LoadStrU8(IDS_ERR_OPEN_FILE), name); // feature 130: 'name' is UTF-8
             buff[_countof(buff) - 1] = 0;
+            SplU8TrimTornTail(buff);
             SalGeneral->SalMessageBox(SalGeneral->GetMsgBoxParent(), buff,
                                       LoadStr(IDS_PLUGIN_NAME), MB_OK | MB_ICONEXCLAMATION);
         }
@@ -326,8 +335,9 @@ BOOL MapFileToMemory(LPCTSTR name, HANDLE& hFile, HANDLE& hFileMapping,
         if (!quietMode)
         {
             TCHAR buff[2000];
-            _sntprintf(buff, _countof(buff), LoadStr(IDS_ERR_OPEN_FILE), name);
+            _sntprintf(buff, _countof(buff), LoadStrU8(IDS_ERR_OPEN_FILE), name); // feature 130: 'name' is UTF-8
             buff[_countof(buff) - 1] = 0;
+            SplU8TrimTornTail(buff);
             SalGeneral->SalMessageBox(SalGeneral->GetMsgBoxParent(), buff,
                                       LoadStr(IDS_PLUGIN_NAME), MB_OK | MB_ICONEXCLAMATION);
         }
@@ -341,8 +351,9 @@ BOOL MapFileToMemory(LPCTSTR name, HANDLE& hFile, HANDLE& hFileMapping,
         if (!quietMode)
         {
             TCHAR buff[2000];
-            _sntprintf(buff, _countof(buff), LoadStr(IDS_ERR_OPEN_FILE), name);
+            _sntprintf(buff, _countof(buff), LoadStrU8(IDS_ERR_OPEN_FILE), name); // feature 130: 'name' is UTF-8
             buff[_countof(buff) - 1] = 0;
+            SplU8TrimTornTail(buff);
             SalGeneral->SalMessageBox(SalGeneral->GetMsgBoxParent(), buff,
                                       LoadStr(IDS_PLUGIN_NAME), MB_OK | MB_ICONEXCLAMATION);
         }
@@ -418,8 +429,11 @@ BOOL CPluginInterfaceForViewer::ViewFile(LPCTSTR name, int left, int top, int wi
         vData.Size = sizeof(vData);
         vData.FileName = tempFileName;
         vData.Mode = 0; // text mode
-        _sntprintf(caption, _countof(caption), _T("%s - %s"), name, LoadStr(IDS_PLUGIN_NAME));
+        // feature 130: the viewer shows a caption that is valid UTF-8 as UTF-8 - the translated
+        // plug-in name must not make it invalid
+        _sntprintf(caption, _countof(caption), _T("%s - %s"), name, LoadStrU8(IDS_PLUGIN_NAME));
         caption[_countof(caption) - 1] = 0;
+        SplU8TrimTornTail(caption);
         vData.Caption = caption;
         vData.WholeCaption = TRUE;
         if (!SalGeneral->ViewFileInPluginViewer(NULL, &vData, TRUE, NULL, _T("pe_dump.txt"), err))

@@ -1220,12 +1220,12 @@ int CUDF::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
             // the R attribute so the file can be deleted
             attrs &= ~FILE_ATTRIBUTE_READONLY;
             if (!SetFileAttributesU8(name, attrs))
-                Error(LoadStr(IDS_CANT_SET_ATTRS), GetLastError(), silent == 1);
+                Error(LoadStrU8(IDS_CANT_SET_ATTRS), GetLastError(), silent == 1);
 
             // the user cancelled the operation
             // delete the incomplete file afterwards
             if (!DeleteFileU8(name))
-                Error(LoadStr(IDS_CANT_DELETE_TEMP_FILE), GetLastError(), silent == 1);
+                Error(LoadStrU8(IDS_CANT_DELETE_TEMP_FILE), GetLastError(), silent == 1);
         }
         else
             SetFileAttrs(name, attrs, silent == 1);

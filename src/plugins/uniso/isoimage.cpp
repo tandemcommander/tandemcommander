@@ -108,7 +108,7 @@ void SetFileAttrs(const char* name, DWORD attrs, BOOL quiet)
     if (!SetFileAttributesU8(name, attrs)) // 'name' is UTF-8 (interface 104) -> W API
     { // set attributes - always clear Archive attribute, clearing of Read-Only attribute depends on settings
         DWORD err = GetLastError();
-        Error(LoadStr(IDS_CANT_SET_ATTRS), err, quiet);
+        Error(LoadStrU8(IDS_CANT_SET_ATTRS), err, quiet);
     }
 }
 
@@ -834,7 +834,7 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
 
         DWORD openErr = GetLastError(); // before LoadStr can change it
         // feature 097: bounded - 'fileName' may be longer than the buffer
-        if (_snprintf_s(errStr, _TRUNCATE, LoadStr(IDS_CANT_OPEN_FILE), fileName) < 0)
+        if (_snprintf_s(errStr, _TRUNCATE, LoadStrU8(IDS_CANT_OPEN_FILE), fileName) < 0)
         { // cut: drop a UTF-8 sequence the cut has torn - a complete last character stays
             // (the rule of the core's SalU8TrimIncompleteTail, which a plug-in cannot link)
             int len = (int)strlen(errStr);
@@ -1507,7 +1507,7 @@ BOOL CISOImage::UnpackDir(const char* dirName, const CFileData* fileData)
     if (!SetFileAttributesU8(dirName, attrs)) // 'dirName' is UTF-8 (interface 104) -> W API
     {
         DWORD err = GetLastError();
-        Error(LoadStr(IDS_CANT_SET_ATTRS), err);
+        Error(LoadStrU8(IDS_CANT_SET_ATTRS), err);
     }
 
     return UNPACK_OK;

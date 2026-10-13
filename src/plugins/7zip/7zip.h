@@ -203,6 +203,7 @@ struct CConfig
 extern CConfig Config;
 
 char* LoadStr(int resID);
+const char* LoadStrU8(int resID); // UTF-8, valid until the plug-in unloads (feature 130)
 void GetInfo(char* buffer, const FILETIME* lastWrite, CQuadWord size);
 void GetInfo(char* buffer, const FILETIME* lastWrite, UINT64 size);
 

@@ -85,6 +85,7 @@ extern HINSTANCE DLLInstance; // handle to the SPL - language-independent resour
 extern HINSTANCE HLanguage;   // handle to the SLG - language-dependent resources
 
 char* LoadStr(int resID);
+const char* LoadStrU8(int resID); // UTF-8, valid until the plug-in unloads (feature 130)
 INT_PTR OnConfiguration(HWND hParent);
 
 #define CMD_CALCULATE 1

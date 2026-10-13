@@ -2034,3 +2034,27 @@ a few early ones are out of sequence).
     viewer's title is the cache file of a viewed plug-in item.
   - Left (NEXT-WORK D): `peviewer/pefile.cpp` narrow `%ls`; Move and the class-name question
     not driven.
+- 130-plugin-mixed-templates: **the mixed-template defect of 127 (GitHub #7) in the plug-ins** -
+  a plug-in's `LoadStr` (code page) composed with a UTF-8 name or `GetErrorText`. 13 plug-ins
+  changed (7zip, checksum, tar, uncab, uniso, zip, sftp, renamer, dbviewer, pictview, peviewer,
+  diskmap, portables); filecomp, regedt, codeview, mdview, folders, undelete right as they are.
+  **FTP is not done** (`triage/ftp.md`: facts and an eight-step plan; needs a test server and a
+  decision about the log's bytes).
+  - New shared header `src/plugins/shared/splloadstru8.h`: `SplLoadStrU8(gen, module, id)` (a
+    per-module cache, pointer valid until unload, any thread), `SplLegacyToU8Alloc` /
+    `SplLegacyToU8`. Each plug-in: `const char* LoadStrU8(int)` next to its `LoadStr`.
+  - Core `src/zip.cpp`: the progress dialog a plug-in opens set its **title through the code
+    page** (wrong for an accented archive name in every language) - now wide; a line cut at 299
+    bytes ends at a whole character.
+  - Probe `probe/plugmix_probe.ps1` (plug-in menu commands by a hot key written to the registry
+    for the run, the method of 117): 0.1.9 Czech FAIL 4, Slovak FAIL 2; fixed 19 / 0 and 4 / 0;
+    English identical on both builds. saltests 18,447 -> 18,471.
+  - Traps: **a sentence without an accented letter works by accident** - Czech `Archiv '%s' je
+    OK.` passes on the old build, Slovak `Archív` fails: pick the language per row; a locked
+    archive is reported by the core, not the plug-in; a slim lock does not compile in plug-ins
+    built for an older Windows macro; `SplU8TrimTornTail` on code-page text drops a final
+    accented letter - trim only what was cut; a "local path" on download ends with the remote
+    name (the server's bytes) - the review found it as a regression (a readable box would have
+    been garbled).
+  - Per-plug-in records with every composition and its verdict: `triage/*.md`; defects seen on
+    the way are in NEXT-WORK D.

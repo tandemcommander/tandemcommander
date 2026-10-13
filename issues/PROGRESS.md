@@ -56,3 +56,13 @@ workstation was locked - owed to a person.
 values (names with a letter above U+00FF). Probe: 0.1.9 FAIL 4, fixed PASS 19 (Czech and
 English); saltests 18,447; an independent review refuted the first version (lower case by a
 byte table on UTF-8) - fixed. Record: `specs/129-regedt-wide-inserts/fix-log.md`.
+
+## Feature 130 (2026-10-13, asked for by the maintainer)
+
+`130-plugin-mixed-templates`, on top of `129`: the defect of issue #7 in the plug-ins. Thirteen
+plug-ins changed (about 115 sites), a shared helper, the core's progress dialog title. Probe:
+0.1.9 Czech FAIL 4 and Slovak FAIL 2, fixed 19 / 0 and 4 / 0, English identical; saltests
+18,471; regressions 127, 117, 113 clean. Two independent reviews: one regression found in SFTP
+(download error with a non-UTF-8 remote name) and fixed. **FTP is left** as its own step
+(`specs/130-plugin-mixed-templates/triage/ftp.md`). Record:
+`specs/130-plugin-mixed-templates/fix-log.md`.

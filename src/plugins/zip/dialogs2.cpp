@@ -1071,7 +1071,10 @@ BOOL CAdvancedSEDialog::OnImport()
                     if (!lang)
                     {
                         char err[1024];
-                        sprintf(err, LoadStr(IDS_NOLANGFILE), settings.SfxFile);
+                        char sfxFileU8[3 * MAX_PATH]; // feature 130: the name read from the file may be UTF-8 or code page
+                        SplLegacyToU8(settings.SfxFile, sfxFileU8, (int)sizeof(sfxFileU8));
+                        _snprintf_s(err, _TRUNCATE, LoadStrU8(IDS_NOLANGFILE), sfxFileU8);
+                        SplU8TrimTornTail(err);
                         SalamanderGeneral->SalMessageBox(Dlg, err, LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);
                     }
                     else
@@ -1617,7 +1620,10 @@ BOOL CAdvancedSEDialog::LoadFavSettings(CSfxSettings* sfxSettings)
     if (!lang)
     {
         char err[1024];
-        sprintf(err, LoadStr(IDS_NOLANGFILE), sfxSettings->SfxFile);
+        char sfxFileU8[3 * MAX_PATH]; // feature 130: the stored name may be UTF-8 or code page
+        SplLegacyToU8(sfxSettings->SfxFile, sfxFileU8, (int)sizeof(sfxFileU8));
+        _snprintf_s(err, _TRUNCATE, LoadStrU8(IDS_NOLANGFILE), sfxFileU8);
+        SplU8TrimTornTail(err);
         SalamanderGeneral->SalMessageBox(Dlg, err, LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
@@ -2130,7 +2136,12 @@ BOOL CManageFavoritiesDialog::OnRemoveFavorite()
     if (i != LB_ERR && i >= 0 && i < Favorities.Count)
     {
         char buf[500];
-        sprintf(buf, LoadStr(IDS_REMOVEWARN), Favorities[i]->Name);
+        // feature 130: a name typed in this session is code page, one loaded from the configuration
+        // is UTF-8 (the core's registry service)
+        char nameU8[3 * MAX_FAVNAME];
+        SplLegacyToU8(Favorities[i]->Name, nameU8, (int)sizeof(nameU8));
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_REMOVEWARN), nameU8);
+        SplU8TrimTornTail(buf);
         if (SalamanderGeneral->SalMessageBox(Dlg, buf, LoadStr(IDS_REMOVEWARNTITLE), MB_YESNO) == IDYES)
         {
             SendDlgItemMessage(Dlg, IDC_FAVORITIES, LB_DELETESTRING, i, 0);

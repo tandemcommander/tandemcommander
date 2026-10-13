@@ -34,8 +34,8 @@ CDecompressFile::CreateInstance(LPCTSTR fileName, DWORD inputOffset, CQuadWord i
     {
         char txtbuf[1000];
         int err = GetLastError();
-        strcpy(txtbuf, LoadStr(IDS_GZERR_FOPEN));
-        strcat(txtbuf, SalamanderGeneral->GetErrorText(err));
+        // feature 130: GetErrorText() is UTF-8, so is the text in front of it
+        _snprintf_s(txtbuf, _TRUNCATE, "%s%s", LoadStrU8(IDS_GZERR_FOPEN), SalamanderGeneral->GetErrorText(err));
         SalamanderGeneral->ShowMessageBox(txtbuf, LoadStr(IDS_GZERR_TITLE), MSGBOX_ERROR);
         return NULL;
     }
@@ -46,8 +46,7 @@ CDecompressFile::CreateInstance(LPCTSTR fileName, DWORD inputOffset, CQuadWord i
             char txtbuf[1000];
             int err = GetLastError();
             CloseHandle(file);
-            strcpy(txtbuf, LoadStr(IDS_GZERR_SEEK));
-            strcat(txtbuf, SalamanderGeneral->GetErrorText(err));
+            _snprintf_s(txtbuf, _TRUNCATE, "%s%s", LoadStrU8(IDS_GZERR_SEEK), SalamanderGeneral->GetErrorText(err));
             SalamanderGeneral->ShowMessageBox(txtbuf, LoadStr(IDS_GZERR_TITLE), MSGBOX_ERROR);
             return NULL;
         }
@@ -68,8 +67,7 @@ CDecompressFile::CreateInstance(LPCTSTR fileName, DWORD inputOffset, CQuadWord i
         // read error
         char txtbuf[1000];
         int err = GetLastError();
-        strcpy(txtbuf, LoadStr(IDS_ERR_FREAD));
-        strcat(txtbuf, SalamanderGeneral->GetErrorText(err));
+        _snprintf_s(txtbuf, _TRUNCATE, "%s%s", LoadStrU8(IDS_ERR_FREAD), SalamanderGeneral->GetErrorText(err));
         SalamanderGeneral->ShowMessageBox(txtbuf, LoadStr(IDS_GZERR_TITLE), MSGBOX_ERROR);
         free(buffer);
         CloseHandle(file);

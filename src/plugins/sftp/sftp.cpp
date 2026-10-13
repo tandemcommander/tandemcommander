@@ -99,6 +99,11 @@ char* LoadStr(int resID)
     return SalamanderGeneral->LoadStr(HLanguage, resID);
 }
 
+const char* LoadStrU8(int resID) // feature 130, see sftp.h
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
     if (fdwReason == DLL_PROCESS_ATTACH)

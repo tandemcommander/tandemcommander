@@ -502,11 +502,35 @@ public:
         //DISKMAP = 7chars
         // - = 3chars
         CZResourceString titleprefix(IDS_DISKMAP_TITLEPREFIX);
-        CZStringBuffer* title = new CZStringBuffer(16 + this->_path->GetLength());
-        title->Append(titleprefix.GetString(), titleprefix.GetLength());
-        title->Append(this->_path);
-        ZSetWindowText(this->_hWnd, title->GetString()); // the title carries the UTF-8 path
-        delete title;
+        // feature 130: the prefix is code-page text (LoadStringA), the path is UTF-8. A prefix
+        // with a letter outside ASCII (German "DiskMap – ") made the mixture invalid UTF-8 and
+        // the whole title - the path with it - went through the code page. Composed wide; the
+        // buffer is as long as the text (the 16 bytes reserved before were too few for the
+        // Spanish prefix and the path was left out).
+        WCHAR prefixW[200];
+        if (MultiByteToWideChar(CP_ACP, 0, titleprefix.GetString(), -1, prefixW, _countof(prefixW)) == 0)
+            prefixW[0] = 0;
+        WCHAR* pathW = SplU8ToWAlloc(this->_path->GetString());
+        size_t titleSize = wcslen(prefixW) + (pathW != NULL ? wcslen(pathW) : 0) + 1;
+        WCHAR* titleW = pathW != NULL ? (WCHAR*)malloc(titleSize * sizeof(WCHAR)) : NULL;
+        if (titleW != NULL)
+        {
+            wcscpy_s(titleW, titleSize, prefixW);
+            wcscat_s(titleW, titleSize, pathW);
+            SplSetWindowTitleW(this->_hWnd, titleW);
+            free(titleW);
+        }
+        else // the path is not valid UTF-8 or memory is low: as before, through the code page
+        {
+            size_t prefixLen = titleprefix.GetLength();
+            CZStringBuffer* title = new CZStringBuffer(prefixLen + this->_path->GetLength() + 1);
+            title->Append(titleprefix.GetString(), prefixLen);
+            title->Append(this->_path);
+            ZSetWindowText(this->_hWnd, title->GetString());
+            delete title;
+        }
+        if (pathW != NULL)
+            free(pathW);
 
         if (this->_dirLine)
             this->_dirLine->SetPath(this->_path);

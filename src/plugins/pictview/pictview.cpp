@@ -20,6 +20,7 @@
 #include "histwnd.h"
 #include "wicengine.h"
 #include "PixelAccess.h"
+#include "splloadstru8.h" // feature 130: LoadStrU8
 
 // plugin interface object; its methods are called from Salamander
 CPluginInterface PluginInterface;
@@ -427,6 +428,11 @@ char* LoadStr(int resID)
 WCHAR* LoadStrW(int resID)
 {
     return SalamanderGeneral->LoadStrW(HLanguage, resID);
+}
+
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
 }
 
 const char* WINAPI GetExtText(int msgID)

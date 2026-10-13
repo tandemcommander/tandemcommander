@@ -43,10 +43,15 @@ BOOL FileError(HWND parent, const char* fileName, int error,
     CALL_STACK_MESSAGE1("FileError()");
 
     char buffer[1024];
-    strcpy(buffer, LoadStr(error));
+    // feature 130: the template as UTF-8 - GetErrorText() is UTF-8 and the core's dialog shows a
+    // text that is not valid UTF-8 through the code page (the Windows error text was garbled)
+    SplU8CopyTrunc(buffer, _countof(buffer), LoadStrU8(error));
     size_t len = strlen(buffer);
     if (err != NO_ERROR)
+    {
         SG->GetErrorText(err, buffer + len, (int)(1024 - len));
+        SplU8TrimTornTail(buffer);
+    }
 
     if (skipAll && *skipAll)
     {

@@ -8,6 +8,7 @@
 #include "spl_crypt.h"
 #include "spl_bzip2.h"
 #include "splunicode.h"
+#include "splloadstru8.h" // feature 130: SplLoadStrU8, SplLegacyToU8
 
 #include "array2.h"
 
@@ -330,6 +331,13 @@ extern CConfiguration Config;
 
 char* LoadStr(int resID);
 WCHAR* LoadStrW(int resID);
+// feature 130: the text as UTF-8 - for a template that meets a file name or another UTF-8 text
+// (then every other piece of the sentence and its sink must be UTF-8 too)
+const char* LoadStrU8(int resID);
+// feature 130: opens the core's progress dialog with the title 'titleID' (a template with one
+// %s) + 'name' (UTF-8), composed as UTF-8
+void OpenProgressDialogU8(CSalamanderForOperationsAbstract* salamander, int titleID,
+                          const char* name, BOOL twoProgressBars);
 
 int InflateBuffer(char* sour, int sourSize, char* dest, int* destSize);
 int LoadSfxFileData(char* fileName, CSfxLang** lang);

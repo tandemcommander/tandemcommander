@@ -26,6 +26,41 @@ extern HICON SFTPLogIcon;
 // loads a localized string from the .slg module
 char* LoadStr(int resID);
 
+#include "splloadstru8.h"
+
+// feature 130: the same text as UTF-8 (valid until the plug-in unloads, any thread). Every
+// sentence that holds a host, user, path, remote name or GetLastErrorText() uses this one:
+// the message box, the wait window, the prompts and the log show a text that is not valid
+// UTF-8 through the code page, and the log is ONE text - a single code-page line would
+// turn every remote path in it into garbage.
+const char* LoadStrU8(int resID);
+
+// feature 130: a piece of unknown encoding for a UTF-8 sentence - a remote name is the
+// server's bytes (UTF-8 by convention, not by guarantee), a library's text. Valid UTF-8 is
+// kept, anything else is read as code-page text (what the code-page fallback of the sinks
+// did with it before). Use as a printf argument: CSFTPMsgText(remotePath).Get()
+class CSFTPMsgText
+{
+public:
+    CSFTPMsgText(const char* text)
+    {
+        Src = text != NULL ? text : "";
+        Text = SplLegacyToU8Alloc(Src);
+    }
+    ~CSFTPMsgText()
+    {
+        if (Text != NULL)
+            free(Text);
+    }
+    const char* Get() const { return Text != NULL ? Text : Src; }
+
+private:
+    CSFTPMsgText(const CSFTPMsgText&);
+    CSFTPMsgText& operator=(const CSFTPMsgText&);
+    const char* Src;
+    char* Text;
+};
+
 // frequently used
 extern const char* LOW_MEMORY;
 

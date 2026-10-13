@@ -204,9 +204,7 @@ int CZipPack::DeleteFromArchive(SalEnumSelection next, void* param)
     }
     Options.Action = PA_NORMAL;
     Options.Encrypt = false;
-    TCHAR title[1024];
-    _stprintf(title, LoadStr(IDS_DELPROGTITLE), SalamanderGeneral->SalPathFindFileName(ZipName));
-    Salamander->OpenProgressDialog(title, TRUE, NULL, FALSE);
+    OpenProgressDialogU8(Salamander, IDS_DELPROGTITLE, SalamanderGeneral->SalPathFindFileName(ZipName), TRUE); // feature 130
     Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
     ErrorID = CheckZip();
     if (!ErrorID && EOCentrDir.DiskNum == 0xFFFF)
@@ -383,7 +381,8 @@ BOOL CZipPack::LoadDefaults()
         if (!DefLanguage && LoadSfxFileData(file, &DefLanguage))
         {
             char err[512];
-            sprintf(err, LoadStr(IDS_UNABLEREADSFX2), file);
+            _snprintf_s(err, _TRUNCATE, LoadStrU8(IDS_UNABLEREADSFX2), file); // feature 130: 'file' is UTF-8
+            SplU8TrimTornTail(err);
             SalamanderGeneral->ShowMessageBox(err, LoadStr(IDS_ERROR), MSGBOX_ERROR);
             lstrcpy(Options.SfxSettings.Text, LoadStr(IDS_DEFAULTTEXT));
             lstrcpy(Options.SfxSettings.Title, LoadStr(IDS_DEFSFXTITLE));
@@ -539,9 +538,7 @@ int CZipPack::CreateSFX()
             return ErrorID = IDS_NODISPLAY;
     }
 
-    char title[1024];
-    sprintf(title, LoadStr(IDS_SFXPROGTITLE), SalamanderGeneral->SalPathFindFileName(exeName));
-    Salamander->OpenProgressDialog(title, FALSE, NULL, FALSE);
+    OpenProgressDialogU8(Salamander, IDS_SFXPROGTITLE, SalamanderGeneral->SalPathFindFileName(exeName), FALSE); // feature 130
     ProgressTotalSize = CQuadWord().SetUI64(ZipFile->Size);
     ErrorID = WriteSfxExecutable(exeName, Options.SfxSettings.SfxFile, FALSE, 1);
     if (!ErrorID)

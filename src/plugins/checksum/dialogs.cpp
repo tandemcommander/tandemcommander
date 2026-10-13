@@ -1126,7 +1126,8 @@ BOOL CCalculateDialog::GetSaveFileName(char* buffer, int bufferSize, const char*
         char name[3 * MAX_PATH], text[3 * MAX_PATH + 200];
         if (SplWToU8(wFile, name, SizeOf(name)) == 0)
             name[0] = 0;
-        _snprintf_s(text, _TRUNCATE, LoadStr(IDS_SAVE_OVERWRITE), name);
+        _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_SAVE_OVERWRITE), name); // feature 130: 'name' is UTF-8
+        SplU8TrimTornTail(text);
         int res = SalamanderGeneral->SalMessageBox(HWindow, text, LoadStr(IDS_SAVE_TITLE),
                                                    MB_YESNOCANCEL | MB_ICONQUESTION);
         if (res == IDYES)

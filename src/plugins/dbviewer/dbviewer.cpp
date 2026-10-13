@@ -11,6 +11,7 @@
 #include "dialogs.h"
 #include "dbviewer.h"
 #include "auxtools.h"
+#include "splloadstru8.h" // feature 130
 
 // untranslated plugin name (used before the language module is loaded + for debug cases where translation would be harmful)
 const char* READABLE_EN_PLUGIN_NAME = "Database Viewer";
@@ -246,6 +247,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 char* LoadStr(int resID)
 {
     return SalGeneral->LoadStr(HLanguage, resID);
+}
+
+// feature 130: the text as UTF-8, for a sentence or title that holds a file name
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalGeneral, HLanguage, resID);
 }
 
 void WINAPI HTMLHelpCallback(HWND hWindow, UINT helpID)

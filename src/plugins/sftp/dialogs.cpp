@@ -218,7 +218,8 @@ static INT_PTR CALLBACK HostKeyProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         if (d->Changed)
         {
             SetWindowTextA(hwnd, LoadStr(IDS_HOSTKEY_CHANGEDTITLE));
-            _snprintf_s(text, _TRUNCATE, LoadStr(IDS_HOSTKEY_CHANGEDTEXT),
+            // feature 130: UTF-8 like the host (key type and fingerprints are ASCII)
+            _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_HOSTKEY_CHANGEDTEXT),
                         d->KeyType, hostPort,
                         d->StoredFingerprint != NULL ? d->StoredFingerprint : "?",
                         d->Fingerprint);
@@ -227,8 +228,9 @@ static INT_PTR CALLBACK HostKeyProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
         else
         {
             SetWindowTextA(hwnd, LoadStr(IDS_HOSTKEY_NEWTITLE));
-            _snprintf_s(text, _TRUNCATE, LoadStr(IDS_HOSTKEY_NEWTEXT), hostPort, d->KeyType, d->Fingerprint);
+            _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_HOSTKEY_NEWTEXT), hostPort, d->KeyType, d->Fingerprint);
         }
+        SplU8TrimTornTail(text);
         SetDlgItemTextU8(hwnd, IDT_HOSTKEY_TEXT, text); // contains the host name
         // The warning icon is applied here rather than named in the dialog
         // template: a template-level reference would be looked up in the
@@ -291,7 +293,9 @@ int ShowHostKeyDialog(HWND parent, BOOL changed, const char* host, int port,
 int ShowResumePrompt(HWND parent, const char* fileName)
 {
     char msg[1200];
-    _snprintf_s(msg, _TRUNCATE, LoadStr(IDS_RESUME_OVERWRITE), fileName);
+    // feature 130: UTF-8 like the name; the caller passes a remote base name (the server's bytes)
+    _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_RESUME_OVERWRITE), CSFTPMsgText(fileName).Get());
+    SplU8TrimTornTail(msg);
     // Yes = resume, No = overwrite, Cancel = skip
     return SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_RESUME_TITLE),
                                             MB_YESNOCANCEL | MB_ICONQUESTION);

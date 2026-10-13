@@ -67,9 +67,7 @@ int CZipUnpack::UnpackArchive(const char* targetDir, SalEnumSelection next, void
             return ErrorID = IDS_LOWMEM;
         else
             return ErrorID = IDS_NODISPLAY;
-    char title[1024];
-    sprintf(title, LoadStr(IDS_EXTRPROGTITLE), SalamanderGeneral->SalPathFindFileName(ZipName));
-    Salamander->OpenProgressDialog(title, TRUE, NULL, FALSE);
+    OpenProgressDialogU8(Salamander, IDS_EXTRPROGTITLE, SalamanderGeneral->SalPathFindFileName(ZipName), TRUE); // feature 130
     Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
     ErrorID = CheckZip();
     if (!ErrorID && !ZeroZip)
@@ -221,9 +219,7 @@ int CZipUnpack::UnpackWholeArchive(const char* mask, const char* targetDir)
             return ErrorID = IDS_LOWMEM;
         else
             return ErrorID = IDS_NODISPLAY;
-    char title[1024];
-    sprintf(title, LoadStr(Test ? IDS_TESTPROGTITLE : IDS_EXTRPROGTITLE), SalamanderGeneral->SalPathFindFileName(ZipName));
-    Salamander->OpenProgressDialog(title, TRUE, NULL, FALSE);
+    OpenProgressDialogU8(Salamander, Test ? IDS_TESTPROGTITLE : IDS_EXTRPROGTITLE, SalamanderGeneral->SalPathFindFileName(ZipName), TRUE); // feature 130
     Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
     ErrorID = CheckZip();
     if (!ErrorID && ArchiveVolumes != NULL)
@@ -2005,7 +2001,7 @@ int CZipUnpack::ExtractFiles(const char* targetDir)
         errorID = IDS_NODISPLAY;
     {
         progrText = progrTextBuf;
-        sour = LoadStr(Test ? IDS_TESTING : IDS_EXTRACTING);
+        sour = LoadStrU8(Test ? IDS_TESTING : IDS_EXTRACTING); // feature 130: the prefix of a UTF-8 name
         while (*sour)
             *progrText++ = *sour++;
         fixed_tl64 = NULL; //for

@@ -268,6 +268,7 @@ void CZIPUnpackProgress::NewLine(const char* txt, BOOL delayedPaint)
 
         char* s = LinesCache[CacheIndex];
         char* sEnd = s + 300 - 1;
+        BOOL cut = FALSE;
         while (*txt != 0 && *txt != '\r' && *txt != '\n') // read one line + convert '/' -> '\\'
         {
             if (*txt == '/')
@@ -281,10 +282,28 @@ void CZIPUnpackProgress::NewLine(const char* txt, BOOL delayedPaint)
                 if (s < sEnd)
                     *s++ = *txt++;
                 else
+                {
                     txt++; // simply ignore the rest of the text (it would not fit in the dialog anyway)
+                    cut = TRUE;
+                }
             }
         }
         *s = 0;
+        // feature 130: a line cut inside a UTF-8 character would not be valid UTF-8 any more and
+        // the whole line would be shown through the code page
+        // (only when the rest is UTF-8: a code-page line that ends in an accented letter is whole)
+        if (cut)
+        {
+            char trimmed[300];
+            strcpy_s(trimmed, LinesCache[CacheIndex]);
+            SalU8TrimIncompleteTail(trimmed);
+            WCHAR* w = strcmp(trimmed, LinesCache[CacheIndex]) != 0 ? SalU8ToWAlloc(trimmed) : NULL;
+            if (w != NULL)
+            {
+                strcpy_s(LinesCache[CacheIndex], 300, trimmed);
+                free(w);
+            }
+        }
         DoRemapNames(LinesCache[CacheIndex], 300);
 
         // we dirtied the cache
@@ -391,7 +410,20 @@ CZIPUnpackProgress::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (ResID == IDD_ZIPUNPACKPROG && FileProgress) // it is necessary to replace the text "Total:" with "File:"
             SetDlgItemText(HWindow, IDT_PROGTITLE, LoadStr(IDS_UNPACKFILEPROGRESS));
 
-        SetWindowText(HWindow, Title);
+        // feature 130: the title a plug-in gives holds an archive name (UTF-8); it was set through
+        // the code page. A text that is not valid UTF-8 (an older plug-in) is code-page text.
+        {
+            char* titleU8 = SalLegacyToU8Alloc(Title);
+            WCHAR* titleW = titleU8 != NULL ? SalU8ToWAlloc(titleU8) : NULL;
+            if (titleW != NULL)
+                SalSetWindowTitleW(HWindow, titleW);
+            else
+                SetWindowText(HWindow, Title);
+            if (titleW != NULL)
+                free(titleW);
+            if (titleU8 != NULL)
+                free(titleU8);
+        }
         // the entire object assumes that the allocations may have failed
         int i;
         for (i = 0; i < ZIP_UNPACK_NUMLINES; i++)

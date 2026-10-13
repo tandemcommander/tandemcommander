@@ -12,6 +12,7 @@
 #include "dialogs.h"
 #include "dbviewer.h"
 #include "splunicode.h"
+#include "splloadstru8.h" // feature 130: SplLegacyToU8
 
 #define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
 #define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
@@ -285,12 +286,20 @@ void CRendererWindow::SetViewerTitle()
         return;
     if (fileName != NULL)
     {
-        sprintf(title, "%s - %s", fileName, LoadStr(IDS_PLUGINNAME));
+        // feature 130: the plug-in's name as UTF-8 - a translated name with an accented letter
+        // (code page) made the whole title invalid UTF-8 and the file name was then set
+        // through the code page (garbled)
+        _snprintf_s(title, titleSize, _TRUNCATE, "%s - %s", fileName, LoadStrU8(IDS_PLUGINNAME));
         if (UseCodeTable || Database.GetIsUnicode())
-            sprintf(title + strlen(title), " - [%s]", Coding);
+        {
+            char coding[3 * 210]; // the core's name of the conversion: UTF-8 or code page
+            SplLegacyToU8(Coding, coding, _countof(coding));
+            size_t len = strlen(title);
+            _snprintf_s(title + len, titleSize - len, _TRUNCATE, " - [%s]", coding);
+        }
     }
     else
-        sprintf(title, "%s", LoadStr(IDS_PLUGINNAME));
+        _snprintf_s(title, titleSize, _TRUNCATE, "%s", LoadStrU8(IDS_PLUGINNAME));
 
     // set as UTF-16 so non-ASCII file names survive; A call is the fallback
     WCHAR* titleW = SplU8ToWAlloc(title);

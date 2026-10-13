@@ -153,9 +153,10 @@ struct COptions
 extern COptions Options; // configuration
 
 char* LoadStr(int resID);
+const char* LoadStrU8(int resID); // UTF-8, valid until the plug-in unloads (feature 130)
 void GetInfo(char* buffer, FILETIME* lastWrite, unsigned size);
 BOOL Error(int resID, BOOL quiet = FALSE, ...);
-BOOL Error(char* msg, DWORD err, BOOL quiet = FALSE);
+BOOL Error(const char* msg, DWORD err, BOOL quiet = FALSE);
 BOOL SysError(int title, int error, ...);
 
 BOOL Warning(int resID, BOOL quiet, ...);

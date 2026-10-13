@@ -8,6 +8,7 @@
 #include "tar.h"
 #include "gzip/gzip.h"
 #include "rpm/rpm.h"
+#include "splloadstru8.h" // feature 130
 
 #include "tar.rh"
 #include "tar.rh2"
@@ -78,13 +79,19 @@ char* LoadStr(int resID)
     return SalamanderGeneral->LoadStr(HLanguage, resID);
 }
 
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
+}
+
 // combines a resource string with an optional error string
 char* LoadErr(int resID, DWORD LastError)
 {
     static char buffer[1000];
-    strcpy(buffer, LoadStr(resID));
-    if (LastError != 0)
-        strcat(buffer, SalamanderGeneral->GetErrorText(LastError));
+    // feature 130: GetErrorText() is UTF-8, so the resource text is loaded as UTF-8 too
+    _snprintf_s(buffer, _TRUNCATE, "%s%s", LoadStrU8(resID),
+                LastError != 0 ? SalamanderGeneral->GetErrorText(LastError) : "");
+    SplU8TrimTornTail(buffer);
     return buffer;
 }
 
@@ -529,9 +536,9 @@ BOOL CPluginInterfaceForViewer::ViewFile(const char* name, int left, int top, in
         SetCursor(hOldCur);
         free(buffer);
         CloseHandle(file);
-        buff[499] = '\0';
-        strcpy(buff, LoadStr(IDS_RPMERR_TMPFILE));
-        strncat(buff, name, 499 - strlen(buff));
+        // feature 130: 'name' is UTF-8, so is the text in front of it
+        _snprintf_s(buff, _TRUNCATE, "%s%s", LoadStrU8(IDS_RPMERR_TMPFILE), name);
+        SplU8TrimTornTail(buff);
         SalamanderGeneral->ShowMessageBox(buff, LoadStr(IDS_ERR_RPMTITLE), MSGBOX_ERROR);
         return FALSE;
     }
@@ -575,9 +582,13 @@ BOOL CPluginInterfaceForViewer::ViewFile(const char* name, int left, int top, in
     textViewerData.FileName = tempFileName;
     textViewerData.Mode = 0; // text mode
     char caption[500];
+    // feature 130: 'name' is UTF-8 and the viewer shows a valid UTF-8 caption as UTF-8, so the
+    // title word is UTF-8 too and a cut name does not leave half a character
     strncpy_s(caption, 451, name, _TRUNCATE);
-    strcat(caption, " - ");
-    strcat(caption, LoadStr(IDS_RPM_VIEWTITLE));
+    SplU8TrimTornTail(caption);
+    strncat_s(caption, " - ", _TRUNCATE);
+    strncat_s(caption, LoadStrU8(IDS_RPM_VIEWTITLE), _TRUNCATE);
+    SplU8TrimTornTail(caption);
     textViewerData.Caption = caption;
     textViewerData.WholeCaption = TRUE;
     // show the file in Salamander's text viewer and delete it afterwards

@@ -8,6 +8,7 @@
 #include "fdi.h"
 #include "uncab.h"
 #include "dialogs.h"
+#include "splloadstru8.h" // feature 130
 
 #include "uncab.rh"
 #include "uncab.rh2"
@@ -64,6 +65,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 char* LoadStr(int resID)
 {
     return SalamanderGeneral->LoadStr(HLanguage, resID);
+}
+
+// feature 130: the text as UTF-8, for a sentence that holds a file name or another UTF-8 text
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
 }
 
 int WINAPI SalamanderPluginGetReqVer()
@@ -491,7 +498,8 @@ BOOL CPluginInterfaceForArchiver::UnpackArchive(CSalamanderForOperationsAbstract
         return FDIError(err.erfOper);
 
     char title[1024];
-    sprintf(title, LoadStr(IDS_EXTRPROGTITLE), CurrentCAB);
+    _snprintf_s(title, _TRUNCATE, LoadStrU8(IDS_EXTRPROGTITLE), CurrentCAB); // feature 130: the name is UTF-8; the core sets the title wide
+    SplU8TrimTornTail(title);
     Salamander->OpenProgressDialog(title, TRUE, NULL, FALSE);
     Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
 
@@ -727,7 +735,8 @@ BOOL CPluginInterfaceForArchiver::UnpackWholeArchive(CSalamanderForOperationsAbs
         return FDIError(err.erfOper);
 
     char title[1024];
-    sprintf(title, LoadStr(IDS_EXTRPROGTITLE), CurrentCAB);
+    _snprintf_s(title, _TRUNCATE, LoadStrU8(IDS_EXTRPROGTITLE), CurrentCAB); // feature 130: the name is UTF-8; the core sets the title wide
+    SplU8TrimTornTail(title);
     Salamander->OpenProgressDialog(title, FALSE, NULL, FALSE);
     Salamander->ProgressDialogAddText(LoadStr(IDS_PREPAREDATA), FALSE);
 
@@ -1139,8 +1148,9 @@ CPluginInterfaceForArchiver::UnpackFile(char* fileName, DWORD size, WORD date, W
         return 0;
 
     char message[U8_MAX_CAB_NAME + 64]; // 'fileName' is a UTF-8 name inside the cabinet
-    lstrcpy(message, LoadStr(IDS_EXTRACTING));
-    lstrcat(message, fileName);
+    // feature 130: a UTF-8 prefix for the UTF-8 name (a mixed line is shown through the code page)
+    _snprintf_s(message, _TRUNCATE, "%s%s", LoadStrU8(IDS_EXTRACTING), fileName);
+    SplU8TrimTornTail(message);
     if (Action != CA_UNPACK_ONE_FILE)
         Salamander->ProgressDialogAddText(message, TRUE);
 

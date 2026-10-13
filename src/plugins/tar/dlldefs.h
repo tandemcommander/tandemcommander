@@ -15,7 +15,11 @@ extern CSalamanderGeneralAbstract* SalamanderGeneral;
 extern CSalamanderSafeFileAbstract* SalamanderSafeFile;
 
 char* LoadStr(int resID);
+// feature 130: the text as UTF-8 (valid until the plug-in unloads) - for a sentence that
+// holds a file name or GetErrorText(), which are UTF-8
+const char* LoadStrU8(int resID);
 
+// UTF-8: the resource text and the Windows error text (feature 130)
 char* LoadErr(int resID, DWORD LastError);
 
 // interface 104: paths crossing the plugin interface are UTF-8, so file APIs must

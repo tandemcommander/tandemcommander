@@ -295,12 +295,43 @@ Code work an agent can do:
      (a name with a letter above U+00FF is dropped or cut in the dump - suspected, measure
      first); `regedt/fs3.cpp:218` passes `MAX_KEYNAME` as the size of a `3 * MAX_KEYNAME`
      buffer; Move of a key and the "class name differs" question were not driven.
-  2. Mixed templates in the enabled plug-ins (127): about 100 compositions outside FTP with a
-     name or an error text - `checksum/dialogs.cpp:1129` (overwrite question),
-     `7zip/7zip.cpp:1538`, `7zip/extract.cpp:567/652`, `zip/main.cpp:734`,
-     `zip/extract.cpp:71/225`, `zip/add.cpp:84/285/646`, `zip/dialogs3.cpp:192`,
-     `sftp/fs.cpp:663/908/936`, `sftp/operats.cpp`; FTP 86 more. One plug-in at a time, each with
-     a probe row in its language.
+  2. ~~Mixed templates in the enabled plug-ins (127)~~ - **done except FTP, feature 130**
+     (13 plug-ins changed, a record per plug-in in `specs/130-plugin-mixed-templates/triage/`).
+     Left from it:
+     - **FTP** - the next step, its own feature: `triage/ftp.md` has the facts and a plan in
+       eight steps (about 104 sites). It needs (a) a local FTP server whose reply texts and
+       listing bytes can be chosen (extend `specs/116-ftp-passwords/probe/ftplog_server.py`),
+       (b) **the maintainer's decision about the log**: it is one byte string of code-page
+       templates, UTF-8 names and raw server bytes; making it readable changes the bytes of a
+       saved log file and of copied text from mixed to UTF-8.
+     - `GetCommonFSOperSourceDescr` (`src/zip.cpp`) still hands FTP and Undelete a code-page
+       word around a UTF-8 name (Copy / Move / Delete subjects) - one change with those two.
+     - Not driven by 130's probe, owed to a person or a later probe: SFTP messages (test
+       server), Renamer's error line, DiskMap's title in German / Spanish, Portables, UnCAB's
+       French line, TAR's skip line and RPM caption, ZIP's comment dialog title, PictView's
+       Save As name / rename / print error, and the title of the progress dialog during a
+       plug-in operation (the core change of 130).
+     - Defects seen on the way (not fixed; detail in the `triage/*.md` files):
+       `pictview/thumbs.cpp:179` cuts a UTF-8 path at `_MAX_PATH` without a terminator and
+       uses it as a path; `pictview/thumbs.cpp:277` hands a code-page path to the WIC engine
+       (Update Thumbnails on accented names - suspected); `pictview/pictview.cpp:1570-1597`
+       writes through `_tcsrchr(...) + 1` on an empty path; `filecomp/dialogs4.cpp:101` an
+       unbounded `sprintf` into the 32-byte `lfFaceName`; `regedt/regedt.cpp:206` an unbounded
+       `vsprintf` into `buf[2048]`; SFTP paths cut by `_TRUNCATE` and then used as paths
+       (`operats.cpp:306/403/532/581/619`, `fs.cpp:907-909/934`), and `Mkdir` / `Rmdir` /
+       `Unlink` / `Chmod` / `Chown` that seem never to set the error text (a stale reason);
+       FTP: a silently cut target path (`operats6.cpp:1472-1479`), remote paths cut at 301
+       bytes (`fs2.cpp:466/623/724`), a signed-char loop that cuts a reply at the first byte
+       >= 0x80 (`operats2.cpp:2465`); ZIP favourites: a name is code page in the session it
+       is typed in and UTF-8 after a restart (`dialogs.cpp:2046`), a 50-byte buffer at
+       `main.cpp:350`; 7-Zip `dialogs.cpp:599` sets the archive path with `SetWindowText` (A)
+       and `dialogs.h:118` cuts it at `MAX_PATH`; Undelete's virtual folder names are
+       code-page resource texts used as file names (`library/fat.h:1558`, `ntfs.h:815`);
+       `diskmap` `CZStringBuffer::AppendAt` off by one; the core's rename subject is cut at
+       `MAX_PATH` without a trim (`plugins3.cpp:533`); `salamdr3.cpp:1217/1264` compose
+       `LoadStr` with a UTF-8 path for the plug-ins.
+     - Translation: Spanish 7-Zip `IDS_TESTARCHIVEOK` reads "El archivo '%s' es Aceptar."
+       (pin in `translations/ui-overrides.json`).
   3. The shortcut's own path (128): `Execute` (`fileswn2.cpp`) appends the name with a limit of
      `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";
      `FocusShortcutTarget` (`fileswn0.cpp`) falls back to a `CP_ACP` conversion that cuts a
