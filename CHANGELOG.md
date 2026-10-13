@@ -9,7 +9,11 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
-## [0.1.11] — unreleased
+## [0.1.10] — 2026-10-14
+
+Fixes for the problems reported on GitHub after 0.1.9, and what the reviews
+of those fixes found in the FTP and SFTP clients, in PictView and in the
+handling of long names.
 
 - **FTP client: messages, the operation window and the log show names
   readably in every language** (feature 134; the last part of GitHub #7).
@@ -126,10 +130,6 @@ plugin.
 - **FTP: automatic rename of a download** shortens a name at a whole letter.
   With an accented or Asian name the cut could fall inside a letter and the
   file was not downloaded at all ("the file name is incorrect").
-
-## [0.1.10] — 2026-10-13
-
-Fixes for the problems reported on GitHub after 0.1.9.
 
 - **Registry Editor: texts in the information line are readable in every
   language** (GitHub #3, feature 124). In Czech, German and Slovak the word

@@ -156,8 +156,11 @@
 //       130; shares of a server listed for \\server - feature 125; a
 //       shortcut opens its target - feature 128; a batch of plugin defects -
 //       feature 131; PictView's Update Thumbnail works and cannot damage a
-//       picture - feature 132; SFTP: a directory not read whole is an error -
-//       feature 133; see CHANGELOG.md)
+//       picture - features 132, 135, 142; SFTP: a directory not read whole is
+//       an error, a move moves directories, nothing is replaced without a
+//       question, a lost connection stops the operation - features 133,
+//       138-140; FTP texts and the log - features 134, 136; names are never
+//       cut - features 137, 141; see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)

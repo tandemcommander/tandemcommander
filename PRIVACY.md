@@ -142,6 +142,15 @@ chosen name only when it is complete; the wallpaper picture is written the
 same way in `%LOCALAPPDATA%\Tandem Commander`. If the program crashes during the save,
 that file can remain there.
 
+The SFTP client replaces an existing file the same way: a download over a
+file you have goes first into a temporary file next to it (named `tcp`, four
+characters and `.tmp`), and an upload over a file on the server goes
+into a temporary file in the same directory on the server (named `.tcpart-`
+and eight characters). Each takes the place of the old file only when the
+transfer is complete and is removed otherwise; if the connection is lost or
+the program crashes at that moment, the file can remain, and the program
+tells you its name when it could not remove it.
+
 PictView's *Update Thumbnail* writes the picture with its new thumbnail into
 a file of the same kind next to the picture (named `pv`, up to four
 characters and `.tmp`). It takes the picture's place only when it is complete
@@ -381,4 +390,4 @@ FTP login is `name@someserver.com`; a crash that happens while the ZIP
 plugin is using a password can write that password into the crash report; and
 PictView's wallpaper commands wrote no picture file (*Restore Previous* and
 *None* did write the three `Prev...` values).
-Last updated 2026-10-13.
+Last updated 2026-10-14.

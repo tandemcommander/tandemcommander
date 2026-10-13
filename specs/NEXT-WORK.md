@@ -44,13 +44,17 @@ workflow disabled when the release is published, and later run
 If the release happens on another day, change the date in the changelog
 heading and in `PRIVACY.md`.
 
-**Revised 2026-10-13** — the tree is **prepared for the 0.1.10 release**
-(build 194, local branch `release-0.1.10` on top of `133-sftp-server-verify`;
-nothing is pushed): `spl_vers.h`, `setup/tandemcommander.iss`, `CHANGELOG.md`
-(`## [0.1.10] — 2026-10-13`), `PRIVACY.md`, `CLAUDE.md` and
+**Revised 2026-10-14** — the tree is **prepared for the 0.1.10 release**
+(build 194; the state to release is the local branch `release-0.1.10-final` on
+top of `142-pictview-thumb-unicode`. **The branch `release-0.1.10` - also on
+`origin` - is an earlier state (features up to 133, without 134–142) and must
+not be tagged**: it holds feature 132 without 135, whose Update Thumbnail
+damages the maker notes of real camera files. Nothing was pushed by the
+implementation sessions): `spl_vers.h`, `setup/tandemcommander.iss`, `CHANGELOG.md`
+(`## [0.1.10] — 2026-10-14`), `PRIVACY.md`, `CLAUDE.md` and
 `architecture/12-project-reference.md` state it; GitHub release notes are
 drafted as `temp/release_notes_v0.1.10.md` (not tracked). It carries features
-124–133. Owed to the maintainer, as for 0.1.9: merge the branches,
+124–142. Owed to the maintainer, as for 0.1.9: merge the branches,
 `build.cmd full release sign setup`, tag `v0.1.10`, the GitHub release **with
 the installer attached** as `tandemcommander-0.1.10-x64-setup.exe`, the
 feature-123 checks below, winget when `microsoft/winget-pkgs#426090` allows.

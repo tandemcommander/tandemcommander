@@ -25,8 +25,8 @@ add *Recent Changes* / *Active Technologies* sections.
 
 ## Product identity
 
-- **Tandem Commander 0.1.10** (internal build 194, release dated 2026-10-13;
-  carries features 124–133; previous: 0.1.9 / build 193 / tag
+- **Tandem Commander 0.1.10** (internal build 194, release dated 2026-10-14;
+  carries features 124–142; previous: 0.1.9 / build 193 / tag
   `v0.1.9`). Plugin interface version (`LAST_VERSION_OF_SALAMANDER`) **107** —
   independent, changes only with the plugin API.
 - **A release** bumps, in the same change as the `CHANGELOG.md` entry:
@@ -68,7 +68,7 @@ build.cmd full release sign [setup]   :: signed tree (+ signed installer)
   `src/plugins/<name>/vcxproj/<name>.vcxproj` (+ `lang_<name>.vcxproj`),
   property sheets in `src/plugins/shared/vcxproj/`.
 - All dependencies are vendored (`src/common/dep/`), zero NuGet.
-- Tests: `saltests` (pure rules from `src/common/`, 18,567 checks at 133);
+- Tests: `saltests` (pure rules from `src/common/`, 21,794 checks at 142);
   GUI probes per feature in `specs/NNN-*/probe/`.
 - Sources: UTF-8-BOM, clang-format; new comments in English (legacy Czech
   stays).
@@ -180,10 +180,11 @@ Each is one line of a longer story; the number is the feature whose entry in
 - Write scripts with the editor tools — Bash here-documents collapse doubled
   backslashes (123).
 
-## Status (2026-10-13)
+## Status (2026-10-14)
 
-Features up to 133 are done and driven on the hidden desktop (124–133 answer
-the GitHub reports after 0.1.9). The tree is **prepared for the 0.1.10
+Features up to 142 are done and driven on the hidden desktop (124–133 answer
+the GitHub reports after 0.1.9; 134–142 are what verifying and reviewing
+them found). The tree is **prepared for the 0.1.10
 release** (local branches, nothing pushed): build, tag, GitHub release with
 the installer attached and the winget submission are the maintainer's steps,
 after the person steps listed in `specs/NEXT-WORK.md` (*Before 0.1.10*).
