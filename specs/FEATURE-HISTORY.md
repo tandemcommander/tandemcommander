@@ -2182,3 +2182,14 @@ a few early ones are out of sequence).
   - A whole-character cut can keep ZERO characters - then fail, do not create `.txt`.
   - Linux servers hold 255 bytes per name, so the cut 259-byte name was refused by the test
     server; the defect needs a server with longer names. Measured facts beat the note.
+- 138-sftp-move-directory: **Move from an SFTP server moves directories** (they were copied and
+  stayed whole). Each item removes its own source: a file after `RemoveMovedFile` confirmed the
+  local size equals the server's (asked again), a directory when every item was moved. **The
+  review found the loss path before the commit**: two remote names that are ONE local file
+  (case, `a:b`/`a?b` -> `a_b`, trailing dots, 8.3 alias) - the second download overwrote the
+  first after an ordinary "overwrite?" question and both sources were removed. The operation
+  now remembers what it wrote **by file identity** and never writes such a file again. Also: no
+  resume in a move; the local directory must really exist; one box for refused removals.
+  - Rows M1, MTREE, MKEEP, MSKIP, MCASE, MBLOCK in the SFTP probe - the verdict is the server's
+    and the disk's state, file by file.
+  - Whenever a download becomes a delete: think of name collisions on the receiving side.

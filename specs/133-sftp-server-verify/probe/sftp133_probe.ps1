@@ -21,7 +21,10 @@
           no request to remove the directories above it
       QR250 / QRLONG  Quick Rename to a name of 250 letters / to one that does not fit the
           plug-in interface (feature 137)
-      M1  move a directory of 30 files, M2 move a file - what a move leaves on the server (recorded)
+      M1  move a directory of 30 files, M2 move a file; MTREE / MKEEP / MSKIP / MCASE / MBLOCK
+          (feature 138): a tree with sub-directories; with one unreadable file; with a local file
+          not overwritten; with two names that are one file on Windows; with a local folder
+          that cannot be created
       URL the address typed as sftp://user@host:port/path
       LISTCOPY / LISTMOVE / LISTPANEL - the read of the 10th entry of the directory "many" fails
           once (debug seam TC_SFTP_PROBE_LIST_FAIL; rows are NOT DRIVEN on a build without it)
@@ -137,7 +140,9 @@ function Answer([int]$Id, [double]$Seconds = 90, [double]$Quiet = 5, [string]$Fi
             }
             # the dialog with the typed text came back after an error: Cancel
             if ($typed -and @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 2477 }).Count -eq 0 -and @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) }).Count) { $texts += ('[' + (Tail ([Drv098f]::Txt($h)) 40) + '] came back - cancelled'); Close-Win $h; $acted = $true; break }
-            $b = BtnById $h @(6, 1)
+            $b = $null
+            if ($script:AnswerNo -and ($desc -match 'already exists')) { $b = BtnById $h @(7) }   # the overwrite question: No
+            if (-not $b) { $b = BtnById $h @(6, 1) }
             if (-not $b) { $b = $bs | Where-Object { [Drv098f]::Txt($_) -match '^&?(Skip|Close)$' } | Select-Object -First 1 }
             $texts += (Shorten $desc)
             if ($b) { Click $b } else { Close-Win $h }
@@ -164,12 +169,15 @@ function Has([string[]]$Texts, [string]$Rx) { return [bool](@($Texts | Where-Obj
 # one row: connect to $Dir, optionally move the focus ($Down times Down after Home), post the core's
 # command $Vk (727 Copy, 728 Move, 729 Delete, 730 Create Directory),
 # answer, then $Judge { param($texts, $state, $local, $conn) } returns @{ Ok; Facts }
-function Row-Op([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [string]$TypeText, [scriptblock]$Judge, [string]$Seam = '', [bool]$Enter = $false, [string]$LocalSub = '', [string]$Prefix = '') {
+function Row-Op([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [string]$TypeText, [scriptblock]$Judge, [string]$Seam = '', [bool]$Enter = $false, [string]$LocalSub = '', [string]$Prefix = '', [string]$Mode = '') {
     if (-not (Want $Case)) { return }
     $before = Reports; $id = 0
     $local = $StartDir + '\' + $Case + $(if ($LocalSub) { '\' + $LocalSub } else { '' })
     try {
         NewDir $local
+        if ($Mode -eq 'NoToOverwrite') { NewDir ($local + '\tree'); [IO.File]::WriteAllText($LP + $local + '\tree\exists.txt', 'LOCAL-ORIGINAL') }
+        $script:AnswerNo = ($Mode -eq 'NoToOverwrite')
+        if ($Mode -eq 'FileInTheWay') { [IO.File]::WriteAllText($LP + $local + '\proj', 'a file where the directory should go') }
         if ($Seam) { $env:TC_SFTP_PROBE_LIST_FAIL = $Seam } else { Remove-Item Env:\TC_SFTP_PROBE_LIST_FAIL -ErrorAction SilentlyContinue }
         $id = Start-P
         # the right (target) panel shows this row's own local folder
@@ -225,7 +233,14 @@ try {
     Row-Op 'P5M' 'p5m' 1 728 $null { param($t, $s, $l, $c) $sh = & $short $l; @{ Ok = ((Has $t $TL) -and $sh.Count -eq 0 -and $s.p5m_deepfiles -eq '2'); Facts = ("move that tree: 'too long' shown {0}; local files {1}, with a shortened name {2}; files on the server {3} of 2" -f (Has $t $TL), $l.Count, $sh.Count, $s.p5m_deepfiles) } } '' $false $L80
     Row-Op 'DEL' 'd1' 1 729 $null { param($t, $s, $l, $c) $err = (Has $t 'Cannot'); @{ Ok = ($s.d1_tree -eq '0' -and -not $err); Facts = ("delete an ordinary tree: gone from the server {0}; an error shown {1}" -f ($s.d1_tree -eq '0'), $err) } }
     Row-Op 'DELKEEP' 'd2' 1 729 $null { param($t, $s, $l, $c) $n = @($t | Where-Object { $_ -match 'Cannot' }).Count; @{ Ok = ($s.d2_kept -eq '1' -and $s.d2_free -eq '0' -and $n -eq 1 -and (Has $t $PD)); Facts = ("delete a tree with one file that cannot be deleted: that file is still there {0}; the rest is gone {1}; messages {2} (one, with the reason: {3})" -f $s.d2_kept, ($s.d2_free -eq '0'), $n, (Has $t $PD)) } }
-    Row-Op 'M1' 'm1' 1 728 $null { param($t, $s, $l, $c) @{ Ok = ($l.Count -eq 30); Facts = ("move a directory of 30 files (recorded): local files {0}; on the server afterwards: directory there {1}, files in it {2}" -f $l.Count, $s.m1_dir, $s.m1_many) } }
+    # feature 138: a moved directory leaves the server - and only what arrived whole
+    $M138 = ($Expect -eq 'fixed')
+    Row-Op 'M1' 'm1' 1 728 $null { param($t, $s, $l, $c) @{ Ok = ($l.Count -eq 30 -and $s.m1_dir -eq '0'); Facts = ("move a directory of 30 files: local files {0}; the directory still on the server {1} (files in it {2})" -f $l.Count, $s.m1_dir, $s.m1_many) } }
+    Row-Op 'MTREE' 'mt' 1 728 $null { param($t, $s, $l, $c) $names = (($l | ForEach-Object { $_.Replace([string][char]92, '/') } | Sort-Object) -join ' '); @{ Ok = ($s.mt_tree -eq '0' -and $l.Count -eq 3 -and $names -eq 'tree/a/b/x.txt tree/a/y.txt tree/z.txt' -and [IO.Directory]::Exists($LP + $StartDir + '\MTREE\tree\empty') -and -not (Has $t 'Cannot')); Facts = ("move a tree with sub-directories and an empty directory: local files '{0}'; the empty directory local {1}; the tree still on the server {2}; errors shown {3}" -f $names, [IO.Directory]::Exists($LP + $StartDir + '\MTREE\tree\empty'), $s.mt_tree, (Has $t 'Cannot')) } }
+    Row-Op 'MKEEP' 'mk' 1 728 $null { param($t, $s, $l, $c) $names = (($l | ForEach-Object { $_.Replace([string][char]92, '/') } | Sort-Object) -join ' '); $left = ('' + $s.mk_left).Trim(); @{ Ok = ($s.mk_secret -eq '1' -and $left -eq './sub ./sub/secret.txt' -and $names -eq 'tree/other/fine.txt tree/sub/good.txt tree/top.txt' -and (Has $t 'Permission denied')); Facts = ("move a tree with one unreadable file: left on the server '{0}' (expected './sub ./sub/secret.txt'); local files '{1}'; the reason shown {2}" -f $left, $names, (Has $t 'Permission denied')) } }
+    Row-Op 'MSKIP' 'ms' 1 728 $null { param($t, $s, $l, $c) $left = ('' + $s.ms_left).Trim(); $old = ''; try { $old = [IO.File]::ReadAllText($LP + $StartDir + '\MSKIP\tree\exists.txt').Trim() } catch { }; @{ Ok = ($left -eq './exists.txt' -and $old -eq 'LOCAL-ORIGINAL' -and $l.Count -eq 2); Facts = ("move a tree with a file that exists locally, answer No: left on the server '{0}' (expected './exists.txt'); the local file still holds '{1}'; local files {2}" -f $left, $old, $l.Count) } } '' $false '' '' 'NoToOverwrite'
+    Row-Op 'MCASE' 'mc' 1 728 $null { param($t, $s, $l, $c) $left = ('' + $s.mc_left).Trim(); $dir = $LP + $StartDir + '\MCASE\tree'; $got = @{}; foreach ($f in @([IO.Directory]::GetFiles($dir))) { $got[[IO.Path]::GetFileName($f)] = [IO.File]::ReadAllText($f).Trim() }; $one = @($got.Keys | Where-Object { $_ -ieq 'a.txt' }); $content = $(if ($one.Count -eq 1) { $got[$one[0]] } else { '' }); $kept = $(if ($content -eq 'first-content-AAAA') { './a.txt' } elseif ($content -eq 'second') { './A.txt' } else { '?' }); @{ Ok = ($one.Count -eq 1 -and $kept -ne '?' -and $left -eq $kept -and $got['b.txt'] -eq 'third' -and (Has $t 'same local name')); Facts = ("move a directory with A.txt and a.txt (one file on Windows): local '{0}' holds '{1}'; left on the server '{2}' (must be the other one: '{3}'); b.txt moved {4}; the collision said {5}" -f ($one -join ','), $content, $left, $kept, ($got['b.txt'] -eq 'third'), (Has $t 'same local name')) } }
+    Row-Op 'MBLOCK' 'mb' 1 728 $null { param($t, $s, $l, $c) $left = ('' + $s.mb_left).Trim(); @{ Ok = ($left -eq './a ./b ./b/c' -and (Has $t 'Cannot')); Facts = ("move a tree of empty directories whose local folder cannot be made (a file is in its place): left on the server '{0}' (expected './a ./b ./b/c'); an error shown {1}; the local file is still a file {2}" -f $left, (Has $t 'Cannot'), [IO.File]::Exists($LP + $StartDir + '\MBLOCK\proj')) } } '' $false '' '' 'FileInTheWay'
     Row-Op 'M2' 'm2' 1 728 $null { param($t, $s, $l, $c) @{ Ok = ($l.Count -eq 1 -and $s.m2_file -eq '0'); Facts = ("move one file: local files {0}; still on the server {1}" -f $l.Count, $s.m2_file) } }
     Row-Op 'URL' 'm2' 0 0 $null { param($t, $s, $l, $c) @{ Ok = $c.Ok; Facts = ("the address typed with two slashes (sftp://user@host:port/path): connected {0}" -f $c.Ok) } } '' $false '' 'sftp://tctest@localhost:2222'
     # feature 137: Quick Rename (command 754) with a name that fits and with one that does not

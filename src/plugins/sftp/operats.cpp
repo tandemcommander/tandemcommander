@@ -136,15 +136,66 @@ struct COperationCtx
     volatile BOOL Cancelled;
     int OverwriteMode; // COverwriteMode
     BOOL TooLongShown; // feature 131: the "too long path" box was shown in this operation
+    // feature 138: the local files this operation has written, by identity (volume + file
+    // index). Two remote names can land on ONE local file - names that differ in case, in
+    // characters Windows cannot hold (a:b / a?b -> a_b), in trailing dots, an 8.3 alias. The
+    // second download would overwrite (or "resume") the first, and a move would then remove
+    // both sources with one content left. A file of this list is never written again.
+    struct CWrittenFile
+    {
+        DWORD Volume;
+        DWORD IndexHigh;
+        DWORD IndexLow;
+    };
+    TDirectArray<CWrittenFile> Written;
+    BOOL RemovalRefusedShown; // feature 138: a source could not be removed - said once, then only logged
     char Buffer[XFER_BUFSIZE];
 
-    COperationCtx(HWND parent, CSFTPSession* session)
+    COperationCtx(HWND parent, CSFTPSession* session) : Written(64, 256)
     {
         Parent = parent;
         Session = session;
         Cancelled = FALSE;
         OverwriteMode = ovAsk;
         TooLongShown = FALSE;
+        RemovalRefusedShown = FALSE;
+    }
+    // remembers the open local file 'h' as written by this operation; FALSE = it cannot be
+    // remembered (no identity, low memory) - the caller treats the download as failed
+    BOOL NoteWritten(HANDLE h)
+    {
+        BY_HANDLE_FILE_INFORMATION info;
+        if (!GetFileInformationByHandle(h, &info))
+            return FALSE;
+        CWrittenFile w = {info.dwVolumeSerialNumber, info.nFileIndexHigh, info.nFileIndexLow};
+        Written.Add(w);
+        if (!Written.IsGood())
+        {
+            Written.ResetState();
+            return FALSE;
+        }
+        return TRUE;
+    }
+    // is the existing local file 'wpath' one this operation wrote? TRUE also when that cannot
+    // be found out (not everything checked = do not overwrite)
+    BOOL WasWritten(const wchar_t* wpath)
+    {
+        if (Written.Count == 0)
+            return FALSE;
+        HANDLE h = CreateFileW(wpath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
+                               FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        if (h == INVALID_HANDLE_VALUE)
+            return TRUE;
+        BY_HANDLE_FILE_INFORMATION info;
+        BOOL known = GetFileInformationByHandle(h, &info);
+        ::CloseHandle(h);
+        if (!known)
+            return TRUE;
+        for (int i = 0; i < Written.Count; i++)
+            if (Written[i].Volume == info.dwVolumeSerialNumber && Written[i].IndexHigh == info.nFileIndexHigh &&
+                Written[i].IndexLow == info.nFileIndexLow)
+                return TRUE;
+        return FALSE;
     }
     BOOL CheckCancel()
     {
@@ -226,8 +277,10 @@ static BOOL ConfirmOverwrite(COperationCtx* ctx, const char* localPath)
     return r == IDYES;
 }
 
+// feature 138: 'move' - the source will be removed after this download, so the local file must be
+// on the disk for certain: flushed and closed without an error
 static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, const char* localPath,
-                                   unsigned __int64 remoteSize)
+                                   unsigned __int64 remoteSize, BOOL move)
 {
     wchar_t wlocal[4096];
     MakeLocalWidePath(localPath, wlocal, 4096);
@@ -238,8 +291,20 @@ static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, c
     if (GetFileAttributesExW(wlocal, GetFileExInfoStandard, &fad) &&
         !(fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
     {
+        // feature 138: the local file is one this operation has just written - another remote
+        // name that lands on the same local file. It is not overwritten and not "resumed";
+        // this item fails and its source stays on the server.
+        if (ctx->WasWritten(wlocal))
+        {
+            SFTPShowPathError(ctx->Parent, IDS_ERR_DOWNLOAD, remotePath,
+                              "another item of this operation was already saved under the same local name; this one is skipped.",
+                              ctx->Session->GetLogUID());
+            return xrFailed;
+        }
         unsigned __int64 localSize = ((unsigned __int64)fad.nFileSizeHigh << 32) | fad.nFileSizeLow;
-        if (localSize > 0 && localSize < remoteSize && localSize >= (unsigned __int64)Config.ResumeMinFileSize)
+        // feature 138: no resume in a move - after it only the tail would be known to come from
+        // the server, yet the source would be removed on a size match
+        if (!move && localSize > 0 && localSize < remoteSize && localSize >= (unsigned __int64)Config.ResumeMinFileSize)
         {
             // partial file: offer resume (FR-011)
             int r = ShowResumePrompt(ctx->Parent, PosixBaseName(remotePath)); // Yes=resume No=overwrite Cancel=skip
@@ -305,7 +370,19 @@ static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, c
             break;
         }
     }
-    CloseHandle(lf);
+    DWORD writeErr = ERROR_SUCCESS;
+    if (res == xrOk && !ctx->NoteWritten(lf)) // (see COperationCtx::Written)
+        writeErr = ERROR_NOT_ENOUGH_MEMORY;
+    if (move && res == xrOk && writeErr == ERROR_SUCCESS && !FlushFileBuffers(lf))
+        writeErr = GetLastError();
+    if (!CloseHandle(lf) && writeErr == ERROR_SUCCESS)
+        writeErr = GetLastError();
+    if (res == xrOk && writeErr != ERROR_SUCCESS) // feature 138: not reported before - the copy counted as complete
+    {
+        res = xrFailed;
+        SFTPShowPathError(ctx->Parent, IDS_ERR_DOWNLOAD, remotePath, SalamanderGeneral->GetErrorText(writeErr),
+                          ctx->Session->GetLogUID());
+    }
     ctx->Session->CloseHandle(h);
     // CF-17: a freshly created/truncated target left partial on cancel/error
     // would replace the user's original file with garbage - remove it. (Append/
@@ -316,9 +393,56 @@ static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, c
 }
 
 static CXferResult DownloadRecursive(COperationCtx* ctx, const char* remotePath, const char* localPath,
-                                     unsigned long mode, BOOL isLink, unsigned __int64 size, int depth);
+                                     unsigned long mode, BOOL isLink, unsigned __int64 size, int depth, BOOL move);
 
-static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const char* localDir, int depth)
+// feature 138: a source of a move that stays on the server: every one goes to the log, the box
+// is shown once per operation (an account that may not delete would show it for every file)
+static void ReportNotRemoved(COperationCtx* ctx, int fmtID, const char* remotePath, const char* reason)
+{
+    if (!ctx->RemovalRefusedShown)
+    {
+        ctx->RemovalRefusedShown = TRUE;
+        SFTPShowPathError(ctx->Parent, fmtID, remotePath, reason, ctx->Session->GetLogUID());
+        return;
+    }
+    CSFTPMsgText text(remotePath);
+    char* msg = SftpFormatMsgAlloc(LoadStrU8(fmtID), text.Get(), reason);
+    if (msg != NULL)
+        Logs.Append(ctx->Session->GetLogUID(), msg);
+    free(msg);
+}
+
+// feature 138: the source file of a move is removed from the server - after its download ended
+// without an error and ONLY when the local copy is as long as the server says the source is
+// (asked again now). Returns FALSE when the source stays (said in a message; the local copy
+// stays too). A move used to remove top-level files without this check, and nothing inside a
+// directory at all - a moved directory stayed on the server whole, without a word.
+static BOOL RemoveMovedFile(COperationCtx* ctx, const char* remotePath, const char* localPath)
+{
+    wchar_t wlocal[4096];
+    MakeLocalWidePath(localPath, wlocal, 4096);
+    WIN32_FILE_ATTRIBUTE_DATA fad;
+    BOOL localKnown = GetFileAttributesExW(wlocal, GetFileExInfoStandard, &fad) &&
+                      !(fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+    unsigned __int64 localSize = localKnown ? (((unsigned __int64)fad.nFileSizeHigh << 32) | fad.nFileSizeLow) : 0;
+    LIBSSH2_SFTP_ATTRIBUTES attrs;
+    BOOL remoteKnown = ctx->Session->Stat(remotePath, TRUE, &attrs) && (attrs.flags & LIBSSH2_SFTP_ATTR_SIZE) != 0;
+    if (!SftpMoveMayRemove(TRUE, localKnown, localSize, remoteKnown, remoteKnown ? attrs.filesize : 0))
+    {
+        // (the reason is a fixed English text, like the server's own reasons)
+        ReportNotRemoved(ctx, IDS_ERR_DELETE, remotePath,
+                         "the local copy could not be confirmed complete; the file stays on the server.");
+        return FALSE;
+    }
+    if (!ctx->Session->Unlink(remotePath))
+    {
+        ReportNotRemoved(ctx, IDS_ERR_DELETE, remotePath, ctx->Session->GetLastErrorText());
+        return FALSE;
+    }
+    return TRUE;
+}
+
+static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const char* localDir, int depth, BOOL move)
 {
     if (depth > SFTP_MAX_RECURSION) // CF-5
     {
@@ -328,7 +452,16 @@ static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const 
     }
     wchar_t wdir[4096];
     MakeLocalWidePath(localDir, wdir, 4096);
-    CreateDirectoryW(wdir, NULL); // ignore "already exists"
+    CreateDirectoryW(wdir, NULL); // "already exists" is fine - what counts is checked next
+    // feature 138: the local directory must be there. Its creation was not checked: with a file
+    // of that name in the way (or no right to create it) an empty remote directory counted as
+    // "transferred", and a move removed it from the server with nothing local.
+    DWORD dirAttr = GetFileAttributesW(wdir);
+    if (dirAttr == INVALID_FILE_ATTRIBUTES || !(dirAttr & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localDir, NULL);
+        return xrFailed;
+    }
 
     TIndirectArray<CSFTPDirEntry> entries(64, 64);
     if (!ctx->Session->ListDir(remoteDir, &entries, &ctx->Cancelled))
@@ -356,17 +489,25 @@ static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const 
             continue;
         }
         BOOL isLink = e->HasMode && SFTP_S_ISLNK(e->Mode);
-        CXferResult r = DownloadRecursive(ctx, rpath, lpath, e->Mode, isLink, e->Size, depth + 1);
+        CXferResult r = DownloadRecursive(ctx, rpath, lpath, e->Mode, isLink, e->Size, depth + 1, move);
         if (r == xrFailed) agg = xrFailed;
         else if (r == xrSkipped && agg == xrOk) agg = xrSkipped;
     }
     if (ctx->Cancelled) // feature 133: the loop was left before its end
         return xrFailed;
+    // feature 138: a moved directory is removed once every item of it was moved (each item
+    // removed itself above; xrOk = all of them did, the listing was complete, nobody stopped it)
+    if (move && agg == xrOk && !ctx->Session->Rmdir(remoteDir))
+    {
+        ReportNotRemoved(ctx, IDS_ERR_RMDIR, remoteDir, ctx->Session->GetLastErrorText());
+        return xrFailed;
+    }
     return agg;
 }
 
+// feature 138: with 'move' a result of xrOk means "transferred AND removed from the server"
 static CXferResult DownloadRecursive(COperationCtx* ctx, const char* remotePath, const char* localPath,
-                                     unsigned long mode, BOOL isLink, unsigned __int64 size, int depth)
+                                     unsigned long mode, BOOL isLink, unsigned __int64 size, int depth, BOOL move)
 {
     if (ctx->CheckCancel())
         return xrFailed;
@@ -382,14 +523,20 @@ static CXferResult DownloadRecursive(COperationCtx* ctx, const char* remotePath,
         }
         // feature 131: the translated text the viewer's download already shows (a UTF-8 sentence)
         WaitText(LoadStrU8(IDS_DOWNLOADINGFILE), CSFTPMsgText(PosixBaseName(remotePath)).Get());
-        return DownloadOneFile(ctx, remotePath, localPath, size);
+        CXferResult linkRes = DownloadOneFile(ctx, remotePath, localPath, size, move);
+        if (linkRes == xrOk && move && !RemoveMovedFile(ctx, remotePath, localPath))
+            linkRes = xrFailed;
+        return linkRes;
     }
 
     if (SFTP_S_ISDIR(mode))
-        return DownloadDir(ctx, remotePath, localPath, depth);
+        return DownloadDir(ctx, remotePath, localPath, depth, move);
 
     WaitText(LoadStrU8(IDS_DOWNLOADINGFILE), CSFTPMsgText(PosixBaseName(remotePath)).Get());
-    return DownloadOneFile(ctx, remotePath, localPath, size);
+    CXferResult res = DownloadOneFile(ctx, remotePath, localPath, size, move);
+    if (res == xrOk && move && !RemoveMovedFile(ctx, remotePath, localPath))
+        res = xrFailed;
+    return res;
 }
 
 // collects the panel's selection (or focus) into 'items', storing the true
@@ -461,17 +608,11 @@ BOOL SFTPDownloadFromPanel(HWND parent, CSFTPSession* session, int panel,
             continue;
         }
         BOOL isLink = e->HasMode && SFTP_S_ISLNK(e->Mode);
-        CXferResult r = DownloadRecursive(&ctx, rpath, lpath, e->Mode, isLink, e->Size, 0);
+        // feature 138: the item removes its own source when - and only when - it arrived whole
+        // (RemoveMovedFile, DownloadDir); a source that had to stay makes the result xrFailed
+        CXferResult r = DownloadRecursive(&ctx, rpath, lpath, e->Mode, isLink, e->Size, 0, move);
         if (r == xrFailed)
             ok = FALSE;
-        else if (r == xrOk && move)
-        {
-            // delete the source ONLY when the item was fully transferred
-            if (e->HasMode && SFTP_S_ISDIR(e->Mode))
-                session->Rmdir(rpath); // best-effort; fails (kept) if not fully emptied
-            else
-                session->Unlink(rpath);
-        }
     }
 
     SalamanderGeneral->DestroySafeWaitWindow();

@@ -32,6 +32,12 @@ if [ "$1" = "state" ]; then
         echo "${t}_longest=$(ls -A $B/$t | awk '{ if (length($0) > m) m = length($0) } END { print m + 0 }')"
         echo "${t}_validutf8=$(ls -A $B/$t | iconv -f UTF-8 -t UTF-8 >/dev/null 2>&1 && echo 1 || echo 0)"
     done
+    echo "mt_tree=$( [ -e $B/mt/tree ] && echo 1 || echo 0 )"
+    echo "mk_secret=$( [ -f $B/mk/tree/sub/secret.txt ] && echo 1 || echo 0 )"
+    echo "mk_left=$( [ -d $B/mk/tree ] && (cd $B/mk/tree && find . -mindepth 1 | sort | tr '\n' ' ') || echo gone )"
+    echo "ms_left=$( [ -d $B/ms/tree ] && (cd $B/ms/tree && find . -mindepth 1 | sort | tr '\n' ' ') || echo gone )"
+    echo "mc_left=$( [ -d $B/mc/tree ] && (cd $B/mc/tree && find . -mindepth 1 | sort | tr '\n' ' ') || echo gone )"
+    echo "mb_left=$( [ -d $B/mb/proj ] && (cd $B/mb/proj && find . -mindepth 1 | sort | tr '\n' ' ') || echo gone )"
     echo "d1_tree=$( [ -e $B/d1/tree ] && echo 1 || echo 0 )"
     echo "d2_kept=$( [ -f $B/d2/tree/locked/keep.txt ] && echo 1 || echo 0 )"
     echo "d2_free=$( [ -e $B/d2/tree/free ] && echo 1 || echo 0 )"
@@ -69,6 +75,15 @@ done
 mkdir m2 && echo one > m2/one.txt
 # q1, q2: one file each for the Quick Rename rows of feature 137
 mkdir q1 q2 && echo one > q1/one.txt && echo one > q2/one.txt
+# feature 138 - move: mt a tree with sub-directories and an empty directory; mk a tree with one
+# unreadable file; ms a tree with a file that already exists locally (the probe answers No)
+mkdir -p mt/tree/a/b mt/tree/empty && echo 1 > mt/tree/a/b/x.txt && echo 22 > mt/tree/a/y.txt && echo 333 > mt/tree/z.txt
+mkdir -p mk/tree/sub mk/tree/other && echo ok > mk/tree/sub/good.txt && echo secret > mk/tree/sub/secret.txt && chmod 000 mk/tree/sub/secret.txt && echo ok2 > mk/tree/other/fine.txt && echo top > mk/tree/top.txt
+mkdir -p ms/tree && echo new-content > ms/tree/exists.txt && echo other > ms/tree/moved.txt
+# mc: two names that are one file on Windows (case), different content; mb: a tree of empty
+# directories whose local counterpart cannot be created (the probe puts a FILE named proj there)
+mkdir -p mc/tree && echo first-content-AAAA > mc/tree/A.txt && echo second > mc/tree/a.txt && echo third > mc/tree/b.txt
+mkdir -p mb/proj/a mb/proj/b/c
 # d1: an ordinary tree (deleted whole); d2: a tree with one directory that cannot be emptied
 mkdir -p d1/tree/a/b d1/tree/c && echo 1 > d1/tree/a/b/x.txt && echo 2 > d1/tree/c/y.txt && echo 3 > d1/tree/z.txt
 mkdir -p d2/tree/free d2/tree/locked && echo 1 > d2/tree/free/x.txt && echo 2 > d2/tree/locked/keep.txt && chmod 555 d2/tree/locked

@@ -365,10 +365,11 @@ Code work an agent can do:
        - ~~SFTP: a listing ends silently; nothing of 131 was driven against a server~~ -
          **done, feature 133** (probe against the container; 131's SFTP fixes seen working; a
          listing that ends early is an error). Left by 133:
-         - **a move of a directory never removes the directory**: its files are downloaded and
-           all stay on the server, without a message (measured, row M1; every release). Safe,
-           but not what Move means; deleting the children needs its own rule "everything of
-           this subtree was transferred" and its tests.
+         - ~~a move of a directory never removes the directory~~ - **done, feature 138** (each
+           item removes its source only when its local copy has the server's size; two remote
+           names that are one local file are not merged). Left: the upload direction was not
+           re-examined with the same eyes (case collisions on the server side do not exist,
+           but "removed only when confirmed" should be read there too).
          - a listing stopped by the user (Close in the wait window) is shown in the panel as
            the directory (old behaviour, kept).
          - an empty name or an empty NAME packet from a broken server still reads as "end of

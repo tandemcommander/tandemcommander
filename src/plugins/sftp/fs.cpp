@@ -1193,13 +1193,13 @@ BOOL WINAPI CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char
     }
     lstrcpynA(localTarget, targetPath, sizeof(localTarget));
 
-    if (!SFTPDownloadFromPanel(parent, &Session, panel, Path, localTarget, !copy))
-    {
-        cancelOrHandlePath = TRUE;
-        return TRUE;
-    }
+    BOOL done = SFTPDownloadFromPanel(parent, &Session, panel, Path, localTarget, !copy);
+    // feature 138: a move removes sources from the server also when it does not end whole - the
+    // panel is refreshed either way (it kept showing items that were gone)
     if (!copy)
         SalamanderGeneral->PostRefreshPanelFS(this, FALSE);
+    if (!done)
+        cancelOrHandlePath = TRUE;
     return TRUE;
 }
 

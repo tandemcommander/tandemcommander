@@ -132,6 +132,18 @@ static void TestPaths()
     CHECK_STR(SftpStatusName(22), "Unknown status");
     CHECK_STR(SftpStatusName(0xFFFFFFFFUL), "Unknown status");
 
+    // feature 138: the source of a moved file is removed only on facts
+    CHECK(SftpMoveMayRemove(TRUE, TRUE, 1234, TRUE, 1234));
+    CHECK(SftpMoveMayRemove(TRUE, TRUE, 0, TRUE, 0)); // an empty file is complete
+    CHECK(!SftpMoveMayRemove(FALSE, TRUE, 1234, TRUE, 1234)); // the transfer failed or was skipped
+    CHECK(!SftpMoveMayRemove(TRUE, FALSE, 1234, TRUE, 1234)); // the local file cannot be read
+    CHECK(!SftpMoveMayRemove(TRUE, TRUE, 1234, FALSE, 1234)); // the server does not say the size
+    CHECK(!SftpMoveMayRemove(TRUE, TRUE, 1233, TRUE, 1234));  // the copy is shorter
+    CHECK(!SftpMoveMayRemove(TRUE, TRUE, 1235, TRUE, 1234));  // ... or longer (the source changed)
+    CHECK(!SftpMoveMayRemove(TRUE, TRUE, 0x100000000ull, TRUE, 0)); // no 32-bit comparison
+    CHECK(SftpMoveMayRemove(TRUE, TRUE, 0x1FFFFFFFFull, TRUE, 0x1FFFFFFFFull));
+    CHECK(!SftpMoveMayRemove(TRUE, FALSE, 0, FALSE, 0));
+
     // feature 133: only "end" completes a listing
     CHECK(SftpReadDirStep(1) == rdsEntry && SftpReadDirStep(255) == rdsEntry && SftpReadDirStep(2047) == rdsEntry);
     CHECK(SftpReadDirStep(0) == rdsEnd);

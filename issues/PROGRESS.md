@@ -115,3 +115,9 @@ error, saved log). 31 / 0 in Czech and English on the final build; nothing to fi
 `137-names-cut-at-byte`: Quick Rename on a server (dialog and in-place line) refuses a name
 that does not fit instead of sending a cut one; FTP's automatic rename cuts at a whole letter.
 Record: `specs/137-names-cut-at-byte/fix-log.md`.
+
+## Feature 138 (2026-10-13)
+
+`138-sftp-move-directory`: a moved directory leaves the SFTP server; nothing is removed that
+did not arrive whole (size confirmed), and two server names that are one Windows name are not
+merged. Record: `specs/138-sftp-move-directory/fix-log.md`.

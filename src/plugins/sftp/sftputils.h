@@ -94,6 +94,13 @@ enum CSftpReadDirStep
 };
 CSftpReadDirStep SftpReadDirStep(int rc);
 
+// feature 138: may the source of a moved file be removed from the server? Only on facts: the
+// transfer ended without an error, the local file's size is known, the size the server
+// reports for the source (asked again after the transfer) is known, and the two are equal.
+// Anything unknown = no (the source stays; a move fails closed).
+BOOL SftpMoveMayRemove(BOOL transferred, BOOL localSizeKnown, unsigned __int64 localSize,
+                       BOOL remoteSizeKnown, unsigned __int64 remoteSize);
+
 // feature 133: a message made of a template with one or two "%s" and its texts, in a buffer of
 // exactly the size needed (malloc; NULL = low memory). The messages were composed in 1,200
 // bytes: with a long path the path was cut and the reason behind it was lost. 'b' may be

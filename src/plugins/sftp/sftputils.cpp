@@ -320,3 +320,9 @@ char* SftpFormatMsgAlloc(const char* fmt, const char* a, const char* b)
         msg[size - 1] = 0; // cannot happen with "%s" inserts only; never unterminated
     return msg;
 }
+
+BOOL SftpMoveMayRemove(BOOL transferred, BOOL localSizeKnown, unsigned __int64 localSize,
+                       BOOL remoteSizeKnown, unsigned __int64 remoteSize)
+{
+    return transferred && localSizeKnown && remoteSizeKnown && localSize == remoteSize;
+}

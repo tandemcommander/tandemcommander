@@ -36,6 +36,15 @@ plugin.
   - For plug-in authors: `GetCommonFSOperSourceDescr` returns its whole text
     as UTF-8 (it was a code-page word around a UTF-8 name).
 
+- **SFTP: Move from the server moves directories** (feature 138). A moved
+  directory was copied and stayed on the server whole, without a word. Now
+  each file is removed from the server once its local copy is confirmed (the
+  same size as the file on the server), and a directory once everything in it
+  was moved. What could not be moved stays, with the directories above it,
+  and is reported. Two files on the server whose names are one name on
+  Windows (`A.txt` and `a.txt`) are not merged: the second stays on the
+  server.
+
 - **Quick Rename on a server refuses a name that is too long** (feature
   137). A typed name longer than about 85 Chinese or 130 accented letters was
   cut - possibly inside a letter - and the server was asked to rename the
