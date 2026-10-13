@@ -1,0 +1,18 @@
+exif.dll: build/tandemcommander/Debug_x64/plugins/pictview/exif.dll
+thumbnail: 950 bytes, large thumbnail: 20383 bytes
+
+CTRL_PLAIN         ret=1  original   74474 bytes -> written   75434 bytes : ok
+CTRL_PROGRESSIVE   ret=1  original   56842 bytes -> written   57802 bytes : ok
+CTRL_EXIF          ret=1  original   74544 bytes -> written   75536 bytes : ok
+EXIF_THEN_XMP      ret=1  original   74658 bytes -> written   75650 bytes : ok
+XMP_THEN_EXIF      ret=1  original   74658 bytes -> written   75650 bytes : ok
+XMP_ONLY           ret=1  original   74588 bytes -> written   75548 bytes : ok
+FILL_8             ret=0  original   74482 bytes -> written    none bytes : refused (returned 0)
+FILL_3             ret=1  original   74477 bytes -> written   75434 bytes : ok
+EXIF_BIG           ret=0  original  134558 bytes -> written    none bytes : refused (returned 0)
+TRAILER            ret=1  original   76536 bytes -> written   77496 bytes : ok
+TRAILER_FF00       ret=1  original   76538 bytes -> written   77498 bytes : ok
+TRAILER_EXIF       ret=1  original   76606 bytes -> written   77598 bytes : ok
+CUT_IN_SCAN        ret=1  original   49649 bytes -> written   50609 bytes : ok (cut original: its data are kept)
+
+cases with a loss reported as success: 0

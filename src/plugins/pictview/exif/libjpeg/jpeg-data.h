@@ -47,6 +47,9 @@ struct _JPEGSection
 {
 	JPEGMarker marker;
 	JPEGContent content;
+	/* Tandem Commander 132: read only when marker is JPEG_MARKER_APP1: non-zero = the
+	   section is an Exif block (content.app1), zero = any other APP1 (content.generic) */
+	int exif;
 };
 
 typedef struct _JPEGData        JPEGData;
@@ -81,6 +84,8 @@ void      jpeg_data_load_file     (JPEGData *data, const char *path);
 int       jpeg_data_save_file     (JPEGData *data, const char *path);
 
 void      jpeg_data_set_exif_data (JPEGData *data, ExifData *exif_data);
+int       jpeg_data_get_exif_bytes (JPEGData *data, const unsigned char **d,
+				    unsigned int *size);
 ExifData *jpeg_data_get_exif_data (JPEGData *data);
 
 void      jpeg_data_dump (JPEGData *data);

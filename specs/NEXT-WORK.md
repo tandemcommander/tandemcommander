@@ -92,8 +92,16 @@ Functional, no loss:
 
 6. PictView's print preview is empty in every release since 006. Queue 104,
    entry 1 (120).
-7. PictView's *Regenerate thumbnail* cannot work since 006. Queue 104,
-   entry 5 (104).
+7. ~~PictView's *Regenerate thumbnail* cannot work since 006~~ - **done, feature 132** (the
+   command works and cannot replace a picture by a file that lost something). Left by 132:
+   - **owed to a person before the release**: Update Thumbnail on real camera files (Canon,
+     Nikon, Sony, Panasonic) - the Exif block is serialised again by the old libexif, and a
+     MakerNote with offsets relative to the file may not survive that; the rule of 132 does not
+     compare Exif content. Check with `exiftool -validate` or the camera maker's viewer.
+   - the viewer's Exif dialog and auto-rotation are dead for the same reason the command was
+     (the built-in engine never reports `PVFF_EXIF`); switching them on is a feature of its own.
+   - a refused file gets "Unable to create a file with the new thumbnail. Disk full? ..." - a
+     sentence of its own needs a new string; the message has no "skip all".
 8. A per-member warning when an archive member changed in the archive since
    its F4 (needs a new string). Queue 108, entry 2a (112).
 9. B-1 leftovers: the loops that only drain messages during an operation and
@@ -313,11 +321,10 @@ Code work an agent can do:
        plug-in operation (the core change of 130).
      - ~~Defects seen on the way~~ - **done, feature 131** (a verdict per item in
        `specs/131-plugin-defect-batch/items/*.md`; the Spanish 7-Zip text too). Left by 131:
-       - **PictView, possible loss**: EXIF.DLL's `jpeg_data_save_file` writes whatever part of
-         a malformed JPEG it parsed and reports success, and *Update Thumbnail* then replaces
-         the user's file with it; nothing checks the output. Far more files reach that stage
-         since 131 (accented paths open now). Measure with a JPEG that WIC decodes and
-         libjpeg-data mis-parses; refuse when the output is smaller than the image data.
+       - ~~PictView, possible loss (EXIF.DLL writes the parsed part of a malformed JPEG)~~ -
+         **measured and closed by feature 132**: real in the library, unreachable in the program
+         (the command was dead since 006); the note "far more files reach that stage since 131"
+         was wrong.
        - SFTP: a listing ends silently at a name of 2,047 bytes or on a read error in the
          middle (`session.cpp` `ListDir` returns TRUE) - a recursive download or move works
          on an incomplete listing; `UploadDirRecursive` holds about 30 KB of buffers per level

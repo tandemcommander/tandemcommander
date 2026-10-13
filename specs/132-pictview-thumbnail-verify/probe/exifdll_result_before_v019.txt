@@ -1,0 +1,18 @@
+exif.dll: build/tandemcommander/Debug_x64_v019/plugins/pictview/exif.dll
+thumbnail: 950 bytes, large thumbnail: 20383 bytes
+
+CTRL_PLAIN         ret=1  original   74474 bytes -> written   75490 bytes : ok
+CTRL_PROGRESSIVE   ret=1  original   56842 bytes -> written   57858 bytes : ok
+CTRL_EXIF          ret=1  original   74544 bytes -> written   75536 bytes : ok
+EXIF_THEN_XMP      ret=1  original   74658 bytes -> written   75560 bytes : LOSS: the XMP block is gone
+XMP_THEN_EXIF      ret=1  original   74658 bytes -> written   75712 bytes : LOSS: the XMP block is gone
+XMP_ONLY           ret=1  original   74588 bytes -> written   75490 bytes : LOSS: the XMP block is gone
+FILL_8             ret=1  original   74482 bytes -> written    1036 bytes : LOSS: the written file does not decode
+FILL_3             ret=1  original   74477 bytes -> written   75490 bytes : ok
+EXIF_BIG           ret=1  original  134558 bytes -> written  154983 bytes : LOSS: the written file does not decode
+TRAILER            ret=1  original   76536 bytes -> written   77552 bytes : ok
+TRAILER_FF00       ret=1  original   76538 bytes -> written   77552 bytes : LOSS: the last bytes of the file are gone
+TRAILER_EXIF       ret=1  original   76606 bytes -> written   77598 bytes : ok
+CUT_IN_SCAN        ret=1  original   49649 bytes -> written   50665 bytes : ok (cut original: its data are kept)
+
+cases with a loss reported as success: 6

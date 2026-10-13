@@ -75,3 +75,10 @@ at a long name, SFTP operations on cut paths and its missing error reasons, Pict
 Thumbnail* on accented paths, and about fifteen smaller ones in eleven plug-ins and the core;
 two translation errors. Several notes were not defects (recorded). Three independent reviews,
 no blocker. Record: `specs/131-plugin-defect-batch/fix-log.md`.
+
+## Feature 132 (2026-10-13, asked for by the maintainer: point 1 of four)
+
+`132-pictview-thumbnail-verify`, on top of `131`. The suspected loss in PictView's *Update
+Thumbnail* was real in the Exif library and unreachable in the program (the command was dead
+since 006). The command is repaired and protected by a rule checked independently of the
+library. Record: `specs/132-pictview-thumbnail-verify/fix-log.md`.

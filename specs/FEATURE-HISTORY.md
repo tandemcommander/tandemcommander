@@ -2085,3 +2085,25 @@ a few early ones are out of sequence).
     site in the core was missed; one unchecked join in SFTP.
   - Left: NEXT-WORK D (PictView's EXIF writer can replace a malformed JPEG by a truncated one;
     SFTP's silently ended listing; FTP autorename).
+- 132-pictview-thumbnail-verify: **Update Thumbnail repaired, with a rule that it cannot lose
+  anything**. Measured first: EXIF.DLL (the old libexif "libjpeg" reader/writer) reported success
+  for 6 of 13 shapes of JPEG it had spoiled (every APP1 parsed as Exif - **XMP became an empty
+  Exif block**; the loader returns at the first thing it does not understand and the writer
+  writes what was collected; 16-bit lengths wrap) - but **the command never reached it**: the
+  built-in engine refused the scaled JPEG in memory since 006 (the note of 131 "possible loss,
+  more files reach it now" was wrong - a premise not measured). Three independent layers:
+  `src/common/saljpegkeep.h` (`SalJpegRewriteKeepsFile`: the new file differs only in ONE
+  thumbnail carrier - an Exif APP1 or the JFXX APP0 blocks; bytes from SOS to the end of the file
+  identical; not understood = no), the plug-in's check before `SalReplaceWithTempW`, and the
+  library (no APP1 is parsed on load - raw bytes until `jpeg_data_set_exif_data` replaces the
+  first Exif block; incomplete data and oversized blocks fail the save).
+  `WicSaveJpegThumbnail` in `wicengine.cpp`.
+  - Probe `probe/thumb132_probe.ps1` in three modes: `fixed`, `before` (0.1.9: nothing happens),
+    **`oldlib`** (new plug-in + EXIF.DLL of 0.1.9: what the old library spoils is refused by the
+    plug-in alone). `probe/exifdll_measure.py` calls the DLL directly (ctypes, Pillow).
+  - Review (own ASan harness, 24,000 mutated files): an Exif block behind APP12 "Ducky" / APP14
+    was serialised again with private tags dropped while only a JFXX block was added, and the
+    rule said "same" - hence "one carrier changes" and raw Exif blocks; a wild read in libexif
+    (IFD offset near 4 GB) guarded.
+  - Traps: `jpeg-data.c` is ISO-8859-1 (edit bytes); the engine never sets `PVFF_EXIF` (the
+    viewer's Exif dialog and auto-rotation are dead - left); owed: real camera files (MakerNote).

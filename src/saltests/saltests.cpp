@@ -49,6 +49,7 @@
 #include "salshelllink.h"   // feature 128
 #include "salinserts.h"     // feature 127
 #include "salwideinserts.h" // feature 129
+#include "saljpegkeep.h"     // feature 132
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -10173,6 +10174,299 @@ static void TestShellLink128()
         CoUninitialize();
 }
 
+// feature 132: is a rewritten JPEG file still the user's file (saljpegkeep.h) - the check
+// PictView's Update Thumbnail makes before the file EXIF.DLL wrote replaces the original
+static void J132Seg(std::string& out, unsigned char marker, const std::string& payload)
+{
+    out += (char)0xFF;
+    out += (char)marker;
+    out += (char)((payload.size() + 2) >> 8);
+    out += (char)((payload.size() + 2) & 0xFF);
+    out += payload;
+}
+
+static CSalJpegKeepResult J132Check(const std::string& o, const std::string& n)
+{
+    return SalJpegRewriteKeepsFile((const unsigned char*)o.data(), o.size(), (const unsigned char*)n.data(), n.size());
+}
+
+static void TestJpegKeep132()
+{
+    const std::string soi("\xFF\xD8", 2);
+    const std::string eoi("\xFF\xD9", 2);
+    const std::string exifOld = std::string("Exif\0\0", 6) + "old tags and the old thumbnail";
+    const std::string exifNew = std::string("Exif\0\0", 6) + "tags and a new, much longer thumbnail ..........";
+    const std::string jfif = std::string("JFIF\0", 5) + std::string("\x01\x01\x00\x00\x01\x00\x01\x00\x00", 9);
+    const std::string jfxx = std::string("JFXX\0", 5) + "\x10thumbnail";
+    const std::string xmp = std::string("http://ns.adobe.com/xap/1.0/\0", 29) + "<x:xmpmeta/>";
+    const std::string dqt(65, 'q'), sof(15, 'f'), dht(30, 'h');
+    std::string sos; // the SOS segment, the picture data (with stuffing and a restart marker) and EOI
+    J132Seg(sos, 0xDA, std::string(10, 's'));
+    sos += std::string("picture\xFF\x00" "data\xFF\xD0more", 22);
+    const std::string scan = sos + eoi;
+
+    std::string tables;
+    J132Seg(tables, 0xDB, dqt);
+    J132Seg(tables, 0xC0, sof);
+    J132Seg(tables, 0xC4, dht);
+
+    std::string app0, app1Old, app1New, appXmp, appJfxx;
+    J132Seg(app0, 0xE0, jfif);
+    J132Seg(app1Old, 0xE1, exifOld);
+    J132Seg(app1New, 0xE1, exifNew);
+    J132Seg(appXmp, 0xE1, xmp);
+    J132Seg(appJfxx, 0xE0, jfxx);
+
+    // the walker itself
+    {
+        std::string f = soi + app0 + std::string("\xFF\xFF\xFF", 3) + tables + scan;
+        const unsigned char* d = (const unsigned char*)f.data();
+        size_t pos = 2;
+        CSalJpegSegment seg;
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 1 && seg.Marker == 0xE0 && seg.PayloadSize == jfif.size());
+        // three fill bytes before the DQT marker are stepped over
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 1 && seg.Marker == 0xDB && seg.PayloadSize == 65);
+        CHECK(memcmp(d + seg.Payload, dqt.data(), 65) == 0);
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 1 && seg.Marker == 0xC0);
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 1 && seg.Marker == 0xC4);
+        size_t before = pos;
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 2 && pos == before); // SOS: nothing consumed
+        CHECK(d[pos] == 0xFF && d[pos + 1] == 0xDA);
+        // not understood: end of data, a length that leaves the data, a length under 2, markers
+        // without a length, a byte that is not 0xFF
+        pos = f.size();
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 0);
+        const unsigned char cut[] = {0xFF, 0xDB, 0x00, 0x43, 1, 2, 3};
+        pos = 0;
+        CHECK(SalJpegNextSegment(cut, sizeof(cut), &pos, &seg) == 0);
+        const unsigned char exact[] = {0xFF, 0xDB, 0x00, 0x05, 1, 2, 3};
+        pos = 0;
+        CHECK(SalJpegNextSegment(exact, sizeof(exact), &pos, &seg) == 1 && pos == 7 && seg.PayloadSize == 3);
+        const unsigned char len1[] = {0xFF, 0xDB, 0x00, 0x01, 1, 2, 3};
+        pos = 0;
+        CHECK(SalJpegNextSegment(len1, sizeof(len1), &pos, &seg) == 0);
+        const unsigned char len2[] = {0xFF, 0xFE, 0x00, 0x02, 0xFF, 0xDA};
+        pos = 0;
+        CHECK(SalJpegNextSegment(len2, sizeof(len2), &pos, &seg) == 1 && seg.PayloadSize == 0 && pos == 4);
+        const unsigned char eoiOnly[] = {0xFF, 0xD9, 0, 0, 0, 0};
+        pos = 0;
+        CHECK(SalJpegNextSegment(eoiOnly, sizeof(eoiOnly), &pos, &seg) == 0);
+        const unsigned char rst[] = {0xFF, 0xD3, 0, 4, 0, 0};
+        pos = 0;
+        CHECK(SalJpegNextSegment(rst, sizeof(rst), &pos, &seg) == 0);
+        const unsigned char stuffed[] = {0xFF, 0x00, 0, 4, 0, 0};
+        pos = 0;
+        CHECK(SalJpegNextSegment(stuffed, sizeof(stuffed), &pos, &seg) == 0);
+        const unsigned char plain[] = {0x12, 0xDB, 0, 4, 0, 0};
+        pos = 0;
+        CHECK(SalJpegNextSegment(plain, sizeof(plain), &pos, &seg) == 0);
+        const unsigned char fillOnly[] = {0xFF, 0xFF, 0xFF};
+        pos = 0;
+        CHECK(SalJpegNextSegment(fillOnly, sizeof(fillOnly), &pos, &seg) == 0);
+        const unsigned char shortSeg[] = {0xFF, 0xDB, 0x00};
+        pos = 0;
+        CHECK(SalJpegNextSegment(shortSeg, sizeof(shortSeg), &pos, &seg) == 0);
+    }
+    // thumbnail carriers: an Exif APP1 and a JFXX APP0, nothing else
+    {
+        std::string f = app1Old + appXmp + appJfxx + app0;
+        const unsigned char* d = (const unsigned char*)f.data();
+        size_t pos = 0;
+        CSalJpegSegment seg;
+        int isExif = 7;
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 1 && SalJpegIsThumbnailCarrier(d, &seg, &isExif) && isExif == 1);
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 1 && !SalJpegIsThumbnailCarrier(d, &seg, &isExif) && isExif == 0); // XMP
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 1 && SalJpegIsThumbnailCarrier(d, &seg, &isExif) && isExif == 0);  // JFXX
+        CHECK(SalJpegNextSegment(d, f.size(), &pos, &seg) == 1 && !SalJpegIsThumbnailCarrier(d, &seg, &isExif));               // JFIF
+        std::string shortExif;
+        J132Seg(shortExif, 0xE1, "Exif");
+        d = (const unsigned char*)shortExif.data();
+        pos = 0;
+        CHECK(SalJpegNextSegment(d, shortExif.size(), &pos, &seg) == 1 && !SalJpegIsThumbnailCarrier(d, &seg, &isExif));
+        std::string app2;
+        J132Seg(app2, 0xE2, std::string("Exif\0\0", 6) + "x"); // "Exif" in another APPn is not the block
+        d = (const unsigned char*)app2.data();
+        pos = 0;
+        CHECK(SalJpegNextSegment(d, app2.size(), &pos, &seg) == 1 && !SalJpegIsThumbnailCarrier(d, &seg, &isExif));
+    }
+
+    // ---- the rule: what Update Thumbnail may do
+    const std::string plainFile = soi + app0 + tables + scan;
+    const std::string exifFile = soi + app0 + app1Old + tables + scan;
+    // a new Exif block in place of the old one
+    CHECK(J132Check(exifFile, soi + app0 + app1New + tables + scan) == sjkSame);
+    // a file without Exif gets a JFXX block behind its JFIF block
+    CHECK(J132Check(plainFile, soi + app0 + appJfxx + tables + scan) == sjkSame);
+    // an old JFXX block is replaced
+    {
+        std::string jfxx2;
+        J132Seg(jfxx2, 0xE0, std::string("JFXX\0", 5) + "another thumbnail");
+        CHECK(J132Check(soi + app0 + appJfxx + tables + scan, soi + app0 + jfxx2 + tables + scan) == sjkSame);
+    }
+    // nothing changed at all
+    CHECK(J132Check(exifFile, exifFile) == sjkSame);
+    // the library moves the Exif block (it is written right behind SOI when it was elsewhere)
+    CHECK(J132Check(soi + app0 + tables + app1Old + scan, soi + app1New + app0 + tables + scan) == sjkSame);
+    // the library does not write fill bytes back
+    CHECK(J132Check(soi + app0 + std::string("\xFF\xFF", 2) + tables + scan, soi + app0 + appJfxx + tables + scan) == sjkSame);
+    // XMP beside Exif stays: both orders
+    CHECK(J132Check(soi + app1Old + appXmp + tables + scan, soi + app1New + appXmp + tables + scan) == sjkSame);
+    CHECK(J132Check(soi + appXmp + app1Old + tables + scan, soi + appXmp + app1New + tables + scan) == sjkSame);
+    // data behind the picture stay
+    CHECK(J132Check(plainFile + "MOTION PHOTO", soi + app0 + appJfxx + tables + scan + "MOTION PHOTO") == sjkSame);
+    // a file cut inside the picture (no EOI) written back with all it had
+    CHECK(J132Check(soi + app0 + tables + sos, soi + app0 + appJfxx + tables + sos) == sjkSame);
+
+    // ---- the losses EXIF.DLL reported as success (measured on 0.1.9)
+    // the XMP block turned into an (empty) Exif block
+    {
+        std::string emptyExif;
+        J132Seg(emptyExif, 0xE1, std::string("Exif\0\0", 6) + "MM");
+        CHECK(J132Check(soi + app1Old + appXmp + tables + scan, soi + app1New + emptyExif + tables + scan) == sjkSegmentsDiffer);
+        CHECK(J132Check(soi + app0 + appXmp + tables + scan, soi + app0 + appJfxx + emptyExif + tables + scan) == sjkSegmentsDiffer);
+        // ... or dropped
+        CHECK(J132Check(soi + app0 + appXmp + tables + scan, soi + app0 + appJfxx + tables + scan) == sjkSegmentsDiffer);
+    }
+    // only the beginning of the file was understood and written (more fill bytes than the
+    // library reads): the new file ends behind the JFXX block
+    CHECK(J132Check(soi + app0 + std::string(8, (char)0xFF) + tables + scan, soi + app0 + appJfxx) == sjkNewNotUnderstood);
+    // ... or it has its tables but no picture
+    CHECK(J132Check(plainFile, soi + app0 + appJfxx + tables) == sjkNewNotUnderstood);
+    // the Exif block no longer fits 16 bits: its length wrapped, what follows is not a segment
+    {
+        std::string wrapped = soi;
+        wrapped += std::string("\xFF\xE1\x00\x20", 4) + std::string("Exif\0\0", 6) + std::string(70000, 'e');
+        wrapped += tables + scan;
+        CHECK(J132Check(exifFile, wrapped) != sjkSame);
+    }
+    // the last two bytes of the data behind the picture were dropped
+    CHECK(J132Check(plainFile + "TRAILER\xFF\x01", soi + app0 + appJfxx + tables + scan + "TRAILER") == sjkImageDiffers);
+    // one byte of the picture differs; the picture is shorter; the end marker is gone
+    {
+        std::string scan2 = scan;
+        scan2[20] ^= 1;
+        CHECK(J132Check(plainFile, soi + app0 + appJfxx + tables + scan2) == sjkImageDiffers);
+        CHECK(J132Check(plainFile, soi + app0 + appJfxx + tables + scan.substr(0, scan.size() - 5)) == sjkImageDiffers);
+        CHECK(J132Check(plainFile, soi + app0 + appJfxx + tables + sos) == sjkImageDiffers);
+        // one byte of the SOS header itself
+        scan2 = scan;
+        scan2[5] ^= 1;
+        CHECK(J132Check(plainFile, soi + app0 + appJfxx + tables + scan2) == sjkImageDiffers);
+    }
+    // a table changed, is missing, is doubled, tables in another order, another marker
+    {
+        std::string t2;
+        J132Seg(t2, 0xDB, std::string(65, 'Q'));
+        J132Seg(t2, 0xC0, sof);
+        J132Seg(t2, 0xC4, dht);
+        CHECK(J132Check(plainFile, soi + app0 + t2 + scan) == sjkSegmentsDiffer);
+        std::string t3;
+        J132Seg(t3, 0xDB, dqt);
+        J132Seg(t3, 0xC4, dht);
+        CHECK(J132Check(plainFile, soi + app0 + t3 + scan) == sjkSegmentsDiffer);
+        std::string t4;
+        J132Seg(t4, 0xC0, sof);
+        J132Seg(t4, 0xDB, dqt);
+        J132Seg(t4, 0xC4, dht);
+        CHECK(J132Check(plainFile, soi + app0 + t4 + scan) == sjkSegmentsDiffer);
+        std::string t5;
+        J132Seg(t5, 0xDB, dqt);
+        J132Seg(t5, 0xC2, sof);
+        J132Seg(t5, 0xC4, dht);
+        CHECK(J132Check(plainFile, soi + app0 + t5 + scan) == sjkSegmentsDiffer);
+        std::string dht2;
+        J132Seg(dht2, 0xC4, dht);
+        CHECK(J132Check(plainFile, soi + app0 + tables + dht2 + scan) == sjkSegmentsDiffer);
+        CHECK(J132Check(soi + app0 + tables + dht2 + scan, plainFile) == sjkSegmentsDiffer);
+        // a shorter segment with the same beginning
+        std::string t6;
+        J132Seg(t6, 0xDB, std::string(64, 'q'));
+        J132Seg(t6, 0xC0, sof);
+        J132Seg(t6, 0xC4, dht);
+        CHECK(J132Check(plainFile, soi + app0 + t6 + scan) == sjkSegmentsDiffer);
+    }
+    // the JFIF block, a comment, an ICC profile (APP2) are not thumbnail carriers
+    {
+        std::string com, icc;
+        J132Seg(com, 0xFE, "a comment");
+        J132Seg(icc, 0xE2, std::string("ICC_PROFILE\0", 12) + "profile");
+        CHECK(J132Check(plainFile, soi + appJfxx + tables + scan) == sjkSegmentsDiffer); // JFIF gone
+        CHECK(J132Check(soi + app0 + com + icc + tables + scan, soi + app0 + appJfxx + com + icc + tables + scan) == sjkSame);
+        CHECK(J132Check(soi + app0 + com + icc + tables + scan, soi + app0 + appJfxx + icc + tables + scan) == sjkSegmentsDiffer);
+        CHECK(J132Check(soi + app0 + com + icc + tables + scan, soi + app0 + appJfxx + com + tables + scan) == sjkSegmentsDiffer);
+    }
+    // the Exif block is gone (a JFXX block instead)
+    CHECK(J132Check(exifFile, soi + app0 + appJfxx + tables + scan) == sjkExifGone);
+    CHECK(J132Check(exifFile, soi + app0 + tables + scan) == sjkExifGone);
+    // a file that had none may get one
+    CHECK(J132Check(plainFile, soi + app1New + app0 + tables + scan) == sjkSame);
+
+    // ---- files the walker does not understand: never "the same"
+    CHECK(J132Check("", plainFile) == sjkOriginalNotUnderstood);
+    CHECK(J132Check(plainFile, "") == sjkNewNotUnderstood);
+    CHECK(J132Check("GIF89a....", plainFile) == sjkOriginalNotUnderstood);
+    CHECK(J132Check(plainFile, std::string("\xFF\xD8\x00\x00", 4)) == sjkNewNotUnderstood);
+    CHECK(J132Check(soi + app0 + tables, soi + app0 + tables) == sjkOriginalNotUnderstood); // no SOS
+    CHECK(J132Check(soi + app0 + eoi + tables + scan, soi + app0 + eoi + tables + scan) == sjkOriginalNotUnderstood);
+    CHECK(J132Check(soi + soi + app0 + tables + scan, soi + soi + app0 + tables + scan) == sjkOriginalNotUnderstood);
+    CHECK(SalJpegRewriteKeepsFile(NULL, 100, (const unsigned char*)plainFile.data(), plainFile.size()) == sjkOriginalNotUnderstood);
+    CHECK(SalJpegRewriteKeepsFile((const unsigned char*)plainFile.data(), plainFile.size(), NULL, 100) == sjkNewNotUnderstood);
+    // ---- one thing changes: one Exif block, or the JFXX blocks (found by the review: the old
+    // library serialised an Exif block again - tags dropped - while it only added a JFXX block)
+    {
+        std::string exifOther, exifOther2, ducky;
+        J132Seg(exifOther, 0xE1, std::string("Exif\0\0", 6) + "a second block, private tags");
+        J132Seg(exifOther2, 0xE1, std::string("Exif\0\0", 6) + "a second block, tags dropped");
+        J132Seg(ducky, 0xEC, std::string("Ducky\0", 6) + "\x01\x00\x04");
+        const std::string o1 = soi + app0 + ducky + app1Old + tables + scan;
+        CHECK(J132Check(o1, soi + app0 + appJfxx + ducky + app1New + tables + scan) == sjkCarriersDiffer); // Exif changed AND JFXX added
+        CHECK(J132Check(o1, soi + app0 + appJfxx + ducky + app1Old + tables + scan) == sjkSame);          // JFXX added, Exif untouched
+        CHECK(J132Check(o1, soi + app0 + ducky + app1New + tables + scan) == sjkSame);                     // the Exif block updated
+        CHECK(J132Check(o1, soi + app0 + app1New + tables + scan) == sjkSegmentsDiffer);                   // the unknown block lost
+        const std::string o2 = soi + app1Old + exifOther + tables + scan;
+        CHECK(J132Check(o2, soi + app1New + exifOther + tables + scan) == sjkSame);
+        CHECK(J132Check(o2, soi + app1Old + exifOther2 + tables + scan) == sjkSame);          // one block changed (whichever)
+        CHECK(J132Check(o2, soi + app1New + exifOther2 + tables + scan) == sjkCarriersDiffer); // both changed
+        CHECK(J132Check(o2, soi + app1New + tables + scan) == sjkExifGone);
+        CHECK(J132Check(o2, soi + app1Old + exifOther + exifOther + tables + scan) == sjkCarriersDiffer); // a block more
+        CHECK(J132Check(plainFile, soi + app1New + exifOther + app0 + tables + scan) == sjkCarriersDiffer); // none -> two
+        CHECK(J132Check(plainFile, soi + app1New + app0 + appJfxx + tables + scan) == sjkCarriersDiffer);   // none -> Exif and JFXX
+        // an old JFXX block beside Exif stays when the Exif block is updated
+        CHECK(J132Check(soi + app0 + appJfxx + app1Old + tables + scan, soi + app0 + appJfxx + app1New + tables + scan) == sjkSame);
+        CHECK(J132Check(soi + app0 + appJfxx + app1Old + tables + scan, soi + app0 + app1New + tables + scan) == sjkCarriersDiffer);
+        // more blocks of one kind than the rule tells apart: not understood
+        std::string many = soi;
+        for (int i = 0; i < SALJPEG_MAX_CARRIERS + 1; i++)
+            many += app1Old;
+        many += tables + scan;
+        CHECK(J132Check(many, many) == sjkOriginalNotUnderstood);
+        CHECK(J132Check(exifFile, many) != sjkSame);
+        std::string four = soi;
+        for (int i = 0; i < SALJPEG_MAX_CARRIERS; i++)
+            four += app1Old;
+        four += tables + scan;
+        CHECK(J132Check(four, four) == sjkSame);
+    }
+
+    // ---- has the file an Exif block (the question Update Thumbnail asks)
+    {
+        auto has = [](const std::string& f) { return SalJpegHasExif((const unsigned char*)f.data(), f.size()); };
+        CHECK(has(exifFile) == 1);
+        CHECK(has(plainFile) == 0);
+        CHECK(has(soi + app0 + appXmp + tables + scan) == 0);          // XMP is not Exif
+        CHECK(has(soi + appXmp + app1Old + tables + scan) == 1);       // Exif behind XMP
+        CHECK(has(soi + app0 + appJfxx + tables + scan) == 0);
+        CHECK(has((soi + app0 + app1Old + tables + scan).substr(0, 60)) == 1); // only the beginning of the file was read
+        CHECK(has((soi + app0 + app1Old).substr(0, 30)) == 0);         // the block itself is cut
+        CHECK(has(soi + app0 + tables + sos + app1Old) == 0);          // "Exif" behind the picture data is not a block
+        CHECK(has("") == 0 && has("GIF89a") == 0);
+        CHECK(SalJpegHasExif(NULL, 100) == 0);
+    }
+    // the smallest files
+    CHECK(J132Check(soi + sos, soi + sos) == sjkSame);
+    CHECK(J132Check(soi, soi) == sjkOriginalNotUnderstood);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -10251,6 +10545,7 @@ int main(int argc, char** argv)
     TestShellLink128();
     TestWideInserts129();
     TestPluginLoadStr130();
+    TestJpegKeep132();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

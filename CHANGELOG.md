@@ -23,6 +23,16 @@ Fixes for the problems reported on GitHub after 0.1.9.
   with accented letters on the clipboard correctly. The Size column and the
   plug-in's Find window were right and stay right.
 
+- **PictView: *Update Thumbnail* works again - and cannot damage a picture**
+  (feature 132). The command has done nothing in any release so far ("Unable
+  to save the image"). It makes the thumbnail now, and a file is replaced only
+  when the new one differs from it in the thumbnail alone: the picture, the
+  XMP data, colour profile and whatever follows the picture (motion photo) are
+  compared byte for byte first. The old Exif code would have dropped the XMP
+  data of every file and written a truncated file for some; such a file is
+  left untouched and reported. A file with Exif is no longer asked "this file
+  does not contain EXIF data".
+
 - **Plug-ins: a batch of defects found while reading them** (feature 131).
   - **FTP: an address with `%` in the host name crashed the program**
     (`ftp://a%sb/`) - the name was used as a format of the error text.

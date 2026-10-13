@@ -897,8 +897,9 @@ exif_data_load_data (ExifData *data, const unsigned char *d_orig,
 	/* Parse the actual exif data (usually offset 14 from start) */
 	exif_data_load_data_content (data, EXIF_IFD_0, d + 6, ds - 6, offset, 0);
 
-	/* IFD 1 offset */
-	if (offset + 6 + 2 > ds) {
+	/* IFD 1 offset (Tandem Commander 132: an offset near 4 GB wrapped this sum and the
+	   read below went far outside the data) */
+	if (offset > ds || offset + 6 + 2 > ds) {
 		return;
 	}
 	n = exif_get_short (d + 6 + offset, data->priv->order);

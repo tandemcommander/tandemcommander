@@ -1,0 +1,10 @@
+ACCENT    updated 74474 -> 82722 bytes; decodes to the same pixels: True; thumbnail inside: (160, 120) : ok
+BIGEXIF   unchanged (134558 bytes)
+CTRL      updated 74474 -> 82722 bytes; decodes to the same pixels: True; thumbnail inside: (160, 120) : ok
+EXIF      updated 74544 -> 82824 bytes; decodes to the same pixels: True; thumbnail inside: (160, 120) : ok
+FILL8     unchanged (74482 bytes)
+TRAILER   updated 76538 -> 84786 bytes; decodes to the same pixels: True; thumbnail inside: (160, 120) : ok
+XMP       updated 74658 -> 82938 bytes; decodes to the same pixels: True; thumbnail inside: (160, 120) : ok
+XMPONLY   updated 74588 -> 82836 bytes; decodes to the same pixels: True; thumbnail inside: (160, 120) : ok
+
+bad files: 0

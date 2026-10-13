@@ -36,6 +36,11 @@ struct _JPEGDataPrivate
 	unsigned int ref_count;
 
 	ExifLog *log;
+
+	/* Tandem Commander 132: the loader stopped before the end of the data (it does not
+	   understand the file) - such data must never be saved: the result would be the
+	   parsed beginning of the file only */
+	int incomplete;
 };
 
 JPEGData *
@@ -108,6 +113,22 @@ jpeg_data_save_file (JPEGData *data, const char *path)
 	return 0;
 }
 
+/* Tandem Commander 132: grows the output buffer; 0 = low memory */
+static int
+jpeg_data_grow (unsigned char **d, unsigned int size)
+{
+	unsigned char *n = realloc (*d, size ? size : 1);
+
+	if (!n) return 0;
+	*d = n;
+	return 1;
+}
+
+/* Tandem Commander 132: on any failure *d is NULL and *ds is 0 (jpeg_data_save_file then
+   returns 0). Failures: data the loader did not read whole, a section that does not fit
+   the 16-bit length of a JPEG segment (the length used to wrap - a broken file), an Exif
+   block that cannot be written (the marker used to be written without its length), low
+   memory. */
 void
 jpeg_data_save_data (JPEGData *data, unsigned char **d, unsigned int *ds)
 {
@@ -122,11 +143,15 @@ jpeg_data_save_data (JPEGData *data, unsigned char **d, unsigned int *ds)
 	if (!ds)
 		return;
 
-	for (*ds = i = 0; i < data->count; i++) {
+	*ds = 0;
+	if (data->priv && data->priv->incomplete)
+		goto fail;
+
+	for (i = 0; i < data->count; i++) {
 		s = data->sections[i];
 
 		/* Write the marker */
-		*d = realloc (*d, sizeof (char) * (*ds + 2));
+		if (!jpeg_data_grow (d, *ds + 2)) goto fail;
 		(*d)[*ds + 0] = 0xff;
 		(*d)[*ds + 1] = s.marker;
 		*ds += 2;
@@ -135,37 +160,53 @@ jpeg_data_save_data (JPEGData *data, unsigned char **d, unsigned int *ds)
 		case JPEG_MARKER_SOI:
 		case JPEG_MARKER_EOI:
 			break;
-		case JPEG_MARKER_APP1:
-			exif_data_save_data (s.content.app1, &ed, &eds);
-			if (!ed) break;
-			*d = realloc (*d, sizeof (char) * (*ds + 2));
-			(*d)[*ds + 0] = (eds + 2) >> 8;
-			(*d)[*ds + 1] = (eds + 2) >> 0;
-			*ds += 2;
-			*d = realloc (*d, sizeof (char) * (*ds + eds));
-			memcpy (*d + *ds, ed, eds);
-			*ds += eds;
-			free (ed);
-			break;
 		default:
-			*d = realloc (*d, sizeof (char) *
-					(*ds + s.content.generic.size + 2));
+			if (s.marker == JPEG_MARKER_APP1 && s.exif) {
+				ed = NULL;
+				eds = 0;
+				exif_data_save_data (s.content.app1, &ed, &eds);
+				if (!ed) goto fail;
+				if (eds + 2 > 0xffff || !jpeg_data_grow (d, *ds + 2 + eds)) {
+					free (ed);
+					goto fail;
+				}
+				(*d)[*ds + 0] = (eds + 2) >> 8;
+				(*d)[*ds + 1] = (eds + 2) >> 0;
+				*ds += 2;
+				memcpy (*d + *ds, ed, eds);
+				*ds += eds;
+				free (ed);
+				break;
+			}
+			if (s.content.generic.size + 2 > 0xffff ||
+			    (s.content.generic.size && !s.content.generic.data) ||
+			    !jpeg_data_grow (d, *ds + s.content.generic.size + 2))
+				goto fail;
 			(*d)[*ds + 0] = (s.content.generic.size + 2) >> 8;
 			(*d)[*ds + 1] = (s.content.generic.size + 2) >> 0;
 			*ds += 2;
-			memcpy (*d + *ds, s.content.generic.data,
-				s.content.generic.size);
+			if (s.content.generic.size)
+				memcpy (*d + *ds, s.content.generic.data,
+					s.content.generic.size);
 			*ds += s.content.generic.size;
 
 			/* In case of SOS, we need to write the data. */
 			if (s.marker == JPEG_MARKER_SOS) {
-				*d = realloc (*d, *ds + data->size);
-				memcpy (*d + *ds, data->data, data->size);
+				if (data->size && !data->data) goto fail;
+				if (!jpeg_data_grow (d, *ds + data->size)) goto fail;
+				if (data->size)
+					memcpy (*d + *ds, data->data, data->size);
 				*ds += data->size;
 			}
 			break;
 		}
 	}
+	return;
+
+fail:
+	free (*d);
+	*d = NULL;
+	*ds = 0;
 }
 
 JPEGData *
@@ -183,7 +224,7 @@ void
 jpeg_data_load_data (JPEGData *data, const unsigned char *d,
 		     unsigned int size)
 {
-	unsigned int i, o, len;
+	unsigned int i, o, len, rest, before;
 	JPEGSection *s;
 	JPEGMarker marker;
 
@@ -199,18 +240,28 @@ jpeg_data_load_data (JPEGData *data, const unsigned char *d,
 		for (i = 0; i < MIN(7, size - o); i++)
 			if (d[o + i] != 0xff)
 				break;
-		if (!JPEG_IS_MARKER (d[o + i])) {
+		/* Tandem Commander 132: every way out of this loop before the end of the
+		   data marks the result as incomplete (see _JPEGDataPrivate); the read of
+		   d[o + i] is inside the data now */
+		if (o + i >= size || !JPEG_IS_MARKER (d[o + i])) {
 			exif_log (data->priv->log, EXIF_LOG_CODE_CORRUPT_DATA, "jpeg-data",
 					_("Data does not follow JPEG specification."));
+			data->priv->incomplete = 1;
 			return;
 		}
 		marker = d[o + i];
 
-		/* Append this section */
+		/* Append this section (Tandem Commander 132: when that fails, the last
+		   section must not be taken for the new one) */
+		before = data->count;
 		jpeg_data_append_section (data);
-		if (!data->count) return;
+		if (data->count == before) {
+			data->priv->incomplete = 1;
+			return;
+		}
 		s = &data->sections[data->count - 1];
 		s->marker = marker;
+		s->exif = 0;
 		o += i + 1;
 
 		switch (s->marker) {
@@ -220,40 +271,51 @@ jpeg_data_load_data (JPEGData *data, const unsigned char *d,
 		default:
 
 			/* Read the length of the section */
+			if (o + 2 > size) { data->priv->incomplete = 1; o = size; break; }
 			len = ((d[o] << 8) | d[o + 1]) - 2;
-			if (len > size) { o = size; break; }
+			if (len > size) { data->priv->incomplete = 1; o = size; break; }
 			o += 2;
-			if (o + len > size) { o = size; break; }
+			if (o + len > size) { data->priv->incomplete = 1; o = size; break; }
 
-			switch (s->marker) {
-			case JPEG_MARKER_APP1:
-				s->content.app1 = exif_data_new_from_data (
-							d + o - 4, len + 4);
-				break;
-			default:
+			/* Tandem Commander 132: no APP1 block is parsed here - each is kept
+			   byte for byte until jpeg_data_set_exif_data replaces the Exif one.
+			   Every APP1 used to be parsed as Exif and serialised again: an XMP
+			   block ("http://ns.adobe.com/xap/1.0/") came back as an empty Exif
+			   block, and an Exif block that was not the one being updated came
+			   back with its unknown tags dropped and default tags added. */
+			{
 				s->content.generic.size = len;
 				s->content.generic.data =
-						malloc (sizeof (char) * len);
+						malloc (sizeof (char) * (len ? len : 1));
+				if (!s->content.generic.data) {
+					s->content.generic.size = 0;
+					data->priv->incomplete = 1;
+					return;
+				}
 				memcpy (s->content.generic.data, &d[o], len);
 
 				/* In case of SOS, image data will follow. */
-				if (s->marker == JPEG_MARKER_SOS) {
-					/* -2 means 'take all but the last 2 bytes which are hoped to be JPEG_MARKER_EOI */
-					data->size = size - 2 - o - len;
-					if (d[o + len + data->size] != 0xFF) {
-						/* A truncated file (i.e. w/o JPEG_MARKER_EOI at the end).
-						   Instead of trying to use the last two bytes as marker,
-						   touching memory beyond allocated memory and posssibly saving
-						   back screwed file, we rather take the rest of the file. */
-						data->size += 2;
+				if (s->marker == JPEG_MARKER_SOS && !data->data) {
+					/* Tandem Commander 132: all the rest of the file is the
+					   image data, without its last two bytes only when they
+					   are JPEG_MARKER_EOI. (The test was "the byte before the
+					   last one is 0xff": a file with data behind the picture
+					   that ended so lost its last two bytes, and the length
+					   wrapped when fewer than two bytes followed.) */
+					rest = size - o - len;
+					if (rest >= 2 && d[size - 2] == 0xff &&
+					    d[size - 1] == JPEG_MARKER_EOI)
+						rest -= 2;
+					data->data = malloc (sizeof (char) * (rest ? rest : 1));
+					if (!data->data) {
+						data->priv->incomplete = 1;
+						return;
 					}
-					data->data = malloc (
-						sizeof (char) * data->size);
+					data->size = rest;
 					memcpy (data->data, d + o + len,
 						data->size);
 					o += data->size;
 				}
-				break;
 			}
 			o += len;
 			break;
@@ -277,28 +339,40 @@ jpeg_data_load_file (JPEGData *data, const char *path)
 	FILE *f;
 	unsigned char *d;
 	unsigned int size;
+	long fsize;
 
 	if (!data) return;
 	if (!path) return;
 
 	f = fopen (path, "rb");
 	if (!f) {
+		data->priv->incomplete = 1;
 		exif_log (data->priv->log, EXIF_LOG_CODE_CORRUPT_DATA, "jpeg-data",
 				_("Path '%s' invalid."), path);
 		return;
 	}
 
-	/* For now, we read the data into memory. Patches welcome... */
+	/* For now, we read the data into memory. Patches welcome...
+	   Tandem Commander 132: a file that was not read is "incomplete" (nothing may be
+	   saved from it); a size that does not fit the 32-bit offsets used here too */
 	fseek (f, 0, SEEK_END);
-	size = ftell (f);
+	fsize = ftell (f);
 	fseek (f, 0, SEEK_SET);
+	if (fsize <= 0 || fsize >= 0x7fffffff) {
+		data->priv->incomplete = 1;
+		fclose (f);
+		return;
+	}
+	size = (unsigned int) fsize;
 	d = malloc (size);
 	if (!d) {
 		EXIF_LOG_NO_MEMORY (data->priv->log, "jpeg-data", size);
+		data->priv->incomplete = 1;
 		fclose (f);
 		return;
 	}
 	if (fread (d, 1, size, f) != size) {
+		data->priv->incomplete = 1;
 		free (d);
 		fclose (f);
 		exif_log (data->priv->log, EXIF_LOG_CODE_CORRUPT_DATA, "jpeg-data",
@@ -350,8 +424,11 @@ jpeg_data_free (JPEGData *data)
 			case JPEG_MARKER_EOI:
 				break;
 			case JPEG_MARKER_APP1:
-				exif_data_unref (s.content.app1);
-				break;
+				if (s.exif) {
+					exif_data_unref (s.content.app1);
+					break;
+				}
+				/* fall through: an APP1 that is not Exif is generic */
 			default:
 				free (s.content.generic.data);
 				break;
@@ -397,8 +474,11 @@ jpeg_data_dump (JPEGData *data)
                 case JPEG_MARKER_EOI:
 			break;
                 case JPEG_MARKER_APP1:
-			exif_data_dump (content.app1);
-			break;
+			if (data->sections[i].exif) {
+				exif_data_dump (content.app1);
+				break;
+			}
+			/* fall through */
                 default:
 			printf ("  Size: %i\n", content.generic.size);
                         printf ("  Unknown content.\n");
@@ -416,7 +496,8 @@ jpeg_data_get_section (JPEGData *data, JPEGMarker marker)
 		return (NULL);
 
 	for (i = 0; i < data->count; i++)
-		if (data->sections[i].marker == marker)
+		if (data->sections[i].marker == marker &&
+		    (marker != JPEG_MARKER_APP1 || data->sections[i].exif))
 			return (&data->sections[i]);
 	return (NULL);
 }
@@ -438,24 +519,63 @@ jpeg_data_get_exif_data (JPEGData *data)
 	return (NULL);
 }
 
+/* Tandem Commander 132: is this section an Exif block still held as raw bytes? */
+static int
+jpeg_section_is_raw_exif (const JPEGSection *s)
+{
+	return s->marker == JPEG_MARKER_APP1 && !s->exif &&
+	       s->content.generic.size >= 6 && s->content.generic.data &&
+	       !memcmp (s->content.generic.data, "Exif\0\0", 6);
+}
+
+/* Tandem Commander 132: the bytes of the first Exif block of the file ("Exif\0\0" and
+   what follows), as they are in the file; 0 when the file has none */
+int
+jpeg_data_get_exif_bytes (JPEGData *data, const unsigned char **d, unsigned int *size)
+{
+	unsigned int i;
+
+	if (!data || !d || !size) return 0;
+	for (i = 0; i < data->count; i++)
+		if (jpeg_section_is_raw_exif (&data->sections[i])) {
+			*d = data->sections[i].content.generic.data;
+			*size = data->sections[i].content.generic.size;
+			return 1;
+		}
+	return 0;
+}
+
+/* Tandem Commander 132: replaces the first Exif block of the file (the one
+   jpeg_data_get_exif_bytes gives); every other block stays as it was read */
 void
 jpeg_data_set_exif_data (JPEGData *data, ExifData *exif_data)
 {
-	JPEGSection *section;
+	JPEGSection *section = NULL;
+	unsigned int i, before;
 
 	if (!data) return;
 
-	section = jpeg_data_get_section (data, JPEG_MARKER_APP1);
+	for (i = 0; i < data->count && !section; i++)
+		if (jpeg_section_is_raw_exif (&data->sections[i]) ||
+		    (data->sections[i].marker == JPEG_MARKER_APP1 && data->sections[i].exif))
+			section = &data->sections[i];
 	if (!section) {
+		before = data->count;
 		jpeg_data_append_section (data);
-		if (data->count < 2) return;
+		if (data->count == before || data->count < 2) {
+			data->priv->incomplete = 1;
+			return;
+		}
 		memmove (&data->sections[2], &data->sections[1],
 			 sizeof (JPEGSection) * (data->count - 2));
 		section = &data->sections[1];
-	} else {
+	} else if (section->exif) {
 		exif_data_unref (section->content.app1);
+	} else {
+		free (section->content.generic.data);
 	}
 	section->marker = JPEG_MARKER_APP1;
+	section->exif = 1;
 	section->content.app1 = exif_data;
 	exif_data_ref (exif_data);
 }

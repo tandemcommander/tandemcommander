@@ -11,6 +11,7 @@
 #include "pictview.rh2"
 #include "lang/lang.rh"
 #include "../../common/salsafereplace.h" // feature 105: replace only by a complete file
+#include "../../common/saljpegkeep.h"    // feature 132: ... that is still the user's picture
 
 // Salamander-proprietary flag for super-fast low-quality JPEG-decompression
 
@@ -38,6 +39,97 @@ static CSalReplaceResult ReplaceFileU8(const char* u8Target, const char* u8New, 
         ret = SalReplaceWithTempW(wTarget, wNew, TRUE, clearReadOnly, err);
     free(wTarget);
     free(wNew);
+    return ret;
+}
+
+// feature 132: the whole file 'u8Path' in memory (malloc); NULL = cannot be read, too large or
+// low memory
+static unsigned char* ReadWholeFileU8(const char* u8Path, size_t* size)
+{
+    *size = 0;
+    WCHAR* w = SplU8ToWExtAlloc(u8Path);
+    if (w == NULL)
+        return NULL;
+    HANDLE h = CreateFileW(w, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
+                           FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    free(w);
+    if (h == INVALID_HANDLE_VALUE)
+        return NULL;
+    unsigned char* data = NULL;
+    LARGE_INTEGER li;
+    if (GetFileSizeEx(h, &li) && li.QuadPart > 0 && li.QuadPart < 0x7FFFFFFF)
+    {
+        data = (unsigned char*)malloc((size_t)li.QuadPart);
+        size_t done = 0;
+        while (data != NULL && done < (size_t)li.QuadPart)
+        {
+            DWORD read = 0;
+            DWORD want = (DWORD)min((size_t)li.QuadPart - done, (size_t)(16 * 1024 * 1024));
+            if (!ReadFile(h, data + done, want, &read, NULL) || read == 0)
+            {
+                free(data);
+                data = NULL;
+            }
+            else
+                done += read;
+        }
+        if (data != NULL)
+            *size = done;
+    }
+    CloseHandle(h);
+    return data;
+}
+
+// feature 132: has the JPEG file an Exif block? The built-in engine never reports PVFF_EXIF,
+// so every file - also one with Exif, whose Exif thumbnail is then updated - was asked the
+// question "this file does not contain EXIF data, create a JFXX thumbnail instead?". The
+// blocks before the picture data are looked at (the first megabyte of the file is enough for
+// any real file; a block that starts later counts as absent and the question is asked).
+static BOOL ThumbFileHasExif(const char* u8Path)
+{
+    WCHAR* w = SplU8ToWExtAlloc(u8Path);
+    if (w == NULL)
+        return FALSE;
+    HANDLE h = CreateFileW(w, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
+                           FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    free(w);
+    if (h == INVALID_HANDLE_VALUE)
+        return FALSE;
+    const DWORD headSize = 1024 * 1024;
+    unsigned char* head = (unsigned char*)malloc(headSize);
+    DWORD done = 0;
+    while (head != NULL && done < headSize)
+    {
+        DWORD read = 0;
+        if (!ReadFile(h, head + done, headSize - done, &read, NULL) || read == 0)
+            break;
+        done += read;
+    }
+    CloseHandle(h);
+    BOOL ret = head != NULL && SalJpegHasExif(head, done);
+    free(head);
+    return ret;
+}
+
+// feature 132: may the file EXIF.DLL wrote ('u8New') take the place of the user's file
+// ('u8Orig')? Only when it differs from it in the thumbnail's own blocks and in nothing else
+// (saljpegkeep.h). EXIF.DLL reported success also for a file of which it had understood only
+// the beginning, and it dropped the XMP block of every file. Not everything checked = no.
+static BOOL ThumbNewFileKeepsOriginal(const char* u8Orig, const char* u8New)
+{
+    size_t origSize, newSize;
+    unsigned char* orig = ReadWholeFileU8(u8Orig, &origSize);
+    unsigned char* fresh = orig != NULL ? ReadWholeFileU8(u8New, &newSize) : NULL;
+    BOOL ret = FALSE;
+    if (orig != NULL && fresh != NULL)
+    {
+        CSalJpegKeepResult res = SalJpegRewriteKeepsFile(orig, origSize, fresh, newSize);
+        ret = res == sjkSame;
+        if (!ret)
+            TRACE_E("UpdateThumbnails: the rewritten file is not the original with a new thumbnail, result " << (int)res);
+    }
+    free(orig);
+    free(fresh);
     return ret;
 }
 
@@ -369,7 +461,7 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                 }
             }
         }
-        else if (!(pvii.Flags & PVFF_EXIF))
+        else if (!(pvii.Flags & PVFF_EXIF) && !ThumbFileHasExif(path))
         {
             if (flags & FL_JFXX_SKIP_ALL)
             {
@@ -453,6 +545,9 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                                         ReplaceThumbnail(pathA, newFileA, pd.wfd.Buffer, pd.wfd.Size);
                         free(pathA);
                         free(newFileA);
+                        // feature 132: the library's "success" is not enough to give up the original
+                        if (replaced && !ThumbNewFileKeepsOriginal(path, newFile))
+                            replaced = FALSE;
                         if (!replaced)
                         {
                             // SalamanderGeneral->SalGetTempFileName created the file

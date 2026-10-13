@@ -179,8 +179,40 @@ BOOL WINAPI EXIFReplaceThumbnail(char* fileName, char* newFile, unsigned char* p
         // exif_data_fix that fixes or removes bogus tags.
         // I think (Patera 2009.10.06) that we better don't do it.
         //      pExif = jpeg_data_get_exif_data(pJpeg);
-        pExif = get_exif_data_no_fixups(fileName);
-        if (pExif)
+        // Tandem Commander 132: the Exif block is taken from the sections just read (the
+        // first Exif APP1 before the picture data - the block jpeg_data_set_exif_data
+        // replaces), not found again by the streaming loader: that one gives up at a block
+        // it does not know (APP12 "Ducky", APP14 "Adobe" before the Exif block), a JFXX
+        // thumbnail was then added to a file that has Exif. A block of which nothing could
+        // be read is not replaced by an empty one - the file is refused.
+        const unsigned char* exifBytes = NULL;
+        unsigned int exifSize = 0;
+        BOOL hasExifBlock = jpeg_data_get_exif_bytes(pJpeg, &exifBytes, &exifSize);
+        pExif = NULL;
+        if (hasExifBlock)
+        {
+            pExif = exif_data_new();
+            if (pExif)
+            {
+                int ifdIndex, entries = 0;
+                exif_data_unset_option(pExif, ~0);
+                exif_data_set_data_type(pExif, EXIF_DATA_TYPE_UNKNOWN);
+                exif_data_load_data(pExif, exifBytes, exifSize);
+                for (ifdIndex = 0; ifdIndex < EXIF_IFD_COUNT; ifdIndex++)
+                    if (pExif->ifd[ifdIndex])
+                        entries += pExif->ifd[ifdIndex]->count;
+                if (!entries)
+                {
+                    exif_data_unref(pExif);
+                    pExif = NULL;
+                }
+            }
+        }
+        if (hasExifBlock && !pExif)
+        {
+            // an Exif block that cannot be read (or low memory): nothing is written
+        }
+        else if (pExif)
         {
             // It is possible there is uncompressed one
             // (e.g. Kodak-210 or Sony-D700) -> smash out all traces of it

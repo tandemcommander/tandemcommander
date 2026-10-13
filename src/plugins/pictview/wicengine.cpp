@@ -1303,11 +1303,16 @@ static PVCODE WINAPI WicGetHandles2(LPPVHandle Img, LPPVImageHandles* pHandles)
 // The panel thumbnail loader (thumbs.cpp CreateThumbnail) asks PVSaveImage
 // for the decoded image as raw 32bpp rows pushed through pSii->WriteFunc at
 // natural size; the core's CSalamanderThumbnailMaker does the shrinking.
-// Exactly that subset is implemented here. File output, encoder formats,
-// scaling and cropping stay unsupported, so print preview, the wallpaper
-// commands and the batch JPEG thumbnail operation keep their pre-048 behavior
-// (PVC_UNSUP_OUT_PARAMS). Save As does not come here since feature 105: it
-// encodes through WicEncodeImageToFile into a temporary file.
+// Exactly that subset is implemented here, and since feature 132 a second one:
+// a JPEG picture scaled to Width x Height into the caller's memory (the
+// thumbnail of Update Thumbnail, WicSaveJpegThumbnail below). File output, other
+// encoder formats and cropping stay unsupported, so print preview and the
+// wallpaper commands keep their pre-048 behavior (PVC_UNSUP_OUT_PARAMS). Save As
+// does not come here since feature 105: it encodes through WicEncodeImageToFile
+// into a temporary file.
+static PVCODE WicSaveJpegThumbnail(CWicImage* img, LPPVSaveImageInfo pSii, TProgressProc Progress,
+                                   void* AppSpecific, int ImageIndex);
+
 static PVCODE WINAPI WicSaveImage(LPPVHandle Img, const char* OutFName, LPPVSaveImageInfo pSii,
                                   TProgressProc Progress, void* AppSpecific, int ImageIndex)
 {
@@ -1322,6 +1327,12 @@ static PVCODE WINAPI WicSaveImage(LPPVHandle Img, const char* OutFName, LPPVSave
     // Salamander-proprietary decode-speed hint set by thumbs.cpp for heavily
     // oversized images (PVSF_SUPERFAST there); accepted and ignored
     const DWORD PVSF_SUPERFAST_HINT = 0x8000000;
+
+    // feature 132: Update Thumbnail (thumbs.cpp UpdateThumbnails) asks for a small JPEG picture
+    // in memory - refused since feature 006, so the command could not work at all
+    if (pSii->Flags == PVSF_USERDEFINED_OUTPUT && pSii->WriteFunc != NULL && pSii->Format == PVF_JPG &&
+        pSii->Width > 0 && pSii->Height > 0 && pSii->CropWidth == 0 && pSii->CropHeight == 0)
+        return WicSaveJpegThumbnail(img, pSii, Progress, AppSpecific, ImageIndex);
 
     if ((pSii->Flags & PVSF_USERDEFINED_OUTPUT) == 0 || pSii->WriteFunc == NULL ||
         pSii->Format != PVF_RAW || pSii->Colors != PV_COLOR_TC32 ||
@@ -2171,6 +2182,124 @@ int WicEncodeImageToFile(void* hPVImage, int imageIndex, HANDLE hFile, const CWi
         return PVC_UNSUP_OUT_PARAMS;
     if (HRESULT_FACILITY(hr) == FACILITY_WIN32)
         *win32Err = HRESULT_CODE(hr);
+    return PVC_WRITING_ERROR;
+}
+
+// feature 132: the decoded frame scaled to pSii->Width x pSii->Height, encoded as a baseline
+// JPEG picture into memory and handed to pSii->WriteFunc in one call. Gray levels when the
+// caller asks for them (PVCM_GRAYS), 24-bit color otherwise.
+static PVCODE WicSaveJpegThumbnail(CWicImage* img, LPPVSaveImageInfo pSii, TProgressProc Progress,
+                                   void* AppSpecific, int ImageIndex)
+{
+    IWICImagingFactory* factory = GetWicFactory();
+    if (factory == NULL)
+        return PVC_EXCEPTION;
+    PVCODE code = DecodeFrame(img, ImageIndex < 0 ? 0 : ImageIndex, NULL, NULL);
+    if (code != PVC_OK)
+        return code;
+    if (img->DibBits == NULL || img->Width <= 0 || img->Height <= 0)
+        return PVC_INVALID_DIMENSIONS;
+
+    CWicDibSource* src = new CWicDibSource(img, 0, 96, 96, Progress, AppSpecific, (ULONGLONG)img->Height);
+    if (src == NULL)
+        return PVC_OOM;
+    IStream* stream = NULL;
+    IWICBitmapScaler* scaler = NULL;
+    IWICFormatConverter* conv = NULL;
+    IWICBitmapEncoder* enc = NULL;
+    IWICBitmapFrameEncode* frame = NULL;
+    IPropertyBag2* bag = NULL;
+    BOOL written = FALSE;
+    WICPixelFormatGUID want = pSii->ColorModel == PVCM_GRAYS ? GUID_WICPixelFormat8bppGray : GUID_WICPixelFormat24bppBGR;
+    HRESULT hr = CreateStreamOnHGlobal(NULL, TRUE /*free on release*/, &stream);
+    if (SUCCEEDED(hr))
+        hr = factory->CreateBitmapScaler(&scaler);
+    if (SUCCEEDED(hr))
+        hr = scaler->Initialize(src, (UINT)pSii->Width, (UINT)pSii->Height, WICBitmapInterpolationModeFant);
+    if (SUCCEEDED(hr))
+        hr = factory->CreateFormatConverter(&conv);
+    if (SUCCEEDED(hr))
+        hr = conv->Initialize(scaler, want, WICBitmapDitherTypeNone, NULL, 0.0, WICBitmapPaletteTypeCustom);
+    if (SUCCEEDED(hr))
+        hr = factory->CreateEncoder(GUID_ContainerFormatJpeg, NULL, &enc);
+    if (SUCCEEDED(hr))
+        hr = enc->Initialize(stream, WICBitmapEncoderNoCache);
+    if (SUCCEEDED(hr))
+        hr = enc->CreateNewFrame(&frame, &bag);
+    if (SUCCEEDED(hr))
+    {
+        VARIANT v;
+        VariantInit(&v);
+        v.vt = VT_R4;
+        v.fltVal = 0.8f;
+        hr = WriteEncoderOption(bag, L"ImageQuality", &v);
+    }
+    if (SUCCEEDED(hr))
+        hr = frame->Initialize(bag);
+    if (SUCCEEDED(hr))
+        hr = frame->SetSize((UINT)pSii->Width, (UINT)pSii->Height);
+    if (SUCCEEDED(hr))
+    {
+        WICPixelFormatGUID pf = want;
+        hr = frame->SetPixelFormat(&pf);
+        if (SUCCEEDED(hr) && !IsEqualGUID(pf, want))
+            hr = WINCODEC_ERR_UNSUPPORTEDPIXELFORMAT;
+    }
+    if (SUCCEEDED(hr))
+        hr = frame->WriteSource(conv, NULL);
+    if (SUCCEEDED(hr))
+        hr = frame->Commit();
+    if (SUCCEEDED(hr))
+        hr = enc->Commit();
+    if (SUCCEEDED(hr))
+    {
+        STATSTG st;
+        HGLOBAL hMem = NULL;
+        memset(&st, 0, sizeof(st));
+        hr = stream->Stat(&st, STATFLAG_NONAME);
+        if (SUCCEEDED(hr))
+            hr = GetHGlobalFromStream(stream, &hMem);
+        if (SUCCEEDED(hr) && (st.cbSize.QuadPart == 0 || st.cbSize.QuadPart > 0x7FFFFFFF))
+            hr = E_FAIL;
+        if (SUCCEEDED(hr))
+        {
+            void* data = GlobalLock(hMem);
+            if (data != NULL)
+            {
+                DWORD size = (DWORD)st.cbSize.QuadPart;
+                written = pSii->WriteFunc(AppSpecific, data, size) == size;
+                GlobalUnlock(hMem);
+            }
+            if (!written)
+                hr = E_FAIL;
+        }
+    }
+
+    BOOL canceled = src->Canceled;
+    if (bag != NULL)
+        bag->Release();
+    if (frame != NULL)
+        frame->Release();
+    if (enc != NULL)
+        enc->Release();
+    if (conv != NULL)
+        conv->Release();
+    if (scaler != NULL)
+        scaler->Release();
+    if (stream != NULL)
+        stream->Release();
+    src->Release();
+
+    if (SUCCEEDED(hr))
+        return PVC_OK;
+    if (canceled)
+        return PVC_CANCELED;
+    TRACE_E("WIC engine: thumbnail encoding failed, hr=0x" << std::hex << hr);
+    if (hr == E_OUTOFMEMORY)
+        return PVC_OOM;
+    if (hr == WINCODEC_ERR_UNSUPPORTEDPIXELFORMAT || hr == WINCODEC_ERR_COMPONENTNOTFOUND ||
+        hr == WINCODEC_ERR_UNSUPPORTEDOPERATION)
+        return PVC_UNSUP_OUT_PARAMS;
     return PVC_WRITING_ERROR;
 }
 
