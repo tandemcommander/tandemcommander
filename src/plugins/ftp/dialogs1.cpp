@@ -967,7 +967,18 @@ void CConnectDlg::Transfer(CTransferInfo& ti)
         char historyAddress[HOST_MAX_SIZE];
         lstrcpyn(historyAddress, LastRawHostAddress, HOST_MAX_SIZE);
         FTPStripAddressPassword(historyAddress);
-        SetWindowText(GetDlgItem(HWindow, IDE_HOSTADDRESS), historyAddress);
+        // feature 134: the address is UTF-8 (read wide by EditLine) - written back wide. The A call
+        // read its bytes through the code page, and HistoryComboBox below reads the field back and
+        // stores it: an address with a letter outside ASCII went to the history garbled
+        HWND addressCombo = GetDlgItem(HWindow, IDE_HOSTADDRESS);
+        WCHAR* historyAddressW = SplU8ToWAlloc(historyAddress);
+        if (historyAddressW != NULL)
+        {
+            SendMessageW(addressCombo, WM_SETTEXT, 0, (LPARAM)historyAddressW);
+            free(historyAddressW);
+        }
+        else
+            SetWindowText(addressCombo, historyAddress);
     }
     char buf[HOST_MAX_SIZE < FTP_MAX_PATH ? FTP_MAX_PATH : HOST_MAX_SIZE];
     buf[0] = 0;
@@ -990,6 +1001,34 @@ void AddToAdvancedStr(char* buf, int bufSize, const char* str)
     }
     if (len + (int)strlen(str) < bufSize)
         strcpy(buf + len, str);
+}
+
+// feature 134: adds one piece "<template with 'value'>" of the advanced-settings summary; a piece
+// longer than 36 characters is cut there - at a whole UTF-8 character (a torn one made the whole line
+// invalid UTF-8, so every name in it was shown through the code page) - and gets "...".
+// 'format' is a UTF-8 template (LoadStrU8); 'value' is UTF-8 or code-page text (the list command,
+// the "not used" proxy text, a value stored by an older version) and joins it as UTF-8.
+static void AddCutToAdvancedStr(char* buf, int bufSize, const char* format, const char* value)
+{
+    char valueU8[150]; // more than the 36 bytes shown
+    FTPTextToU8(value, valueU8, sizeof(valueU8));
+    char piece[450];
+    if (_snprintf_s(piece, sizeof(piece) - 4, _TRUNCATE, format, valueU8) < 0)
+        SplU8TrimTornTail(piece);
+    // 36 characters as before the feature (36 bytes of UTF-8 would show fewer letters of the
+    // value in every language whose template has accented letters)
+    int chars = 0;
+    char* s = piece;
+    while (*s != 0)
+    {
+        if ((*s & 0xC0) != 0x80 && ++chars > 36) // the 37th character starts here
+        {
+            strcpy(s, "...");
+            break;
+        }
+        s++;
+    }
+    AddToAdvancedStr(buf, bufSize, piece);
 }
 
 void CConnectDlg::SelChanged()
@@ -1042,122 +1081,111 @@ void CConnectDlg::SelChanged()
     int savePasswd = (s->AnonymousConnection || i == 0) ? FALSE : s->SavePassword;
     ti.CheckBox(IDC_SAVEPASSWORD, savePasswd);
 
+    // feature 134: the summary is ONE text shown wide only when all of it is valid UTF-8, and it
+    // holds UTF-8 names (proxy server, server type, target path, init commands) - so every
+    // template is loaded as UTF-8 and the pieces of another encoding are converted
     char buf[300];
     buf[0] = 0;
     char num[100];
     if (s->ProxyServerUID != -2)
     {
-        num[36] = 0;
         char proxyNameBuf[PROXYSRVNAME_MAX_SIZE];
         if (TmpFTPProxyServerList.GetProxyName(proxyNameBuf, PROXYSRVNAME_MAX_SIZE, s->ProxyServerUID))
         {
-            _snprintf_s(num, 38, _TRUNCATE, LoadStr(IDS_ADVSTRPROXYSRV), proxyNameBuf);
-            if (num[36] != 0)
-                strcpy(num + 36, "...");
-            AddToAdvancedStr(buf, 300, num);
+            AddCutToAdvancedStr(buf, 300, LoadStrU8(IDS_ADVSTRPROXYSRV), proxyNameBuf); // the name (UTF-8) or the "not used" text
         }
         else
             TRACE_E("Unexpected situation in CConnectDlg::SelChanged(): invalid ProxyServerUID!");
     }
     if (s->Port != IPPORT_FTP)
     {
-        _snprintf_s(num, _TRUNCATE, LoadStr(IDS_ADVSTRPORT), s->Port);
+        _snprintf_s(num, _TRUNCATE, LoadStrU8(IDS_ADVSTRPORT), s->Port);
+        SplU8TrimTornTail(num);
         AddToAdvancedStr(buf, 300, num);
     }
     if (s->TransferMode != 0)
     {
-        char* str;
+        const char* str;
         switch (s->TransferMode)
         {
         case 1:
-            str = LoadStr(IDS_ADVSTRTRMODBINARY);
+            str = LoadStrU8(IDS_ADVSTRTRMODBINARY);
             break;
         case 2:
-            str = LoadStr(IDS_ADVSTRTRMODASCII);
+            str = LoadStrU8(IDS_ADVSTRTRMODASCII);
             break;
         default:
-            str = LoadStr(IDS_ADVSTRTRMODAUTO);
+            str = LoadStrU8(IDS_ADVSTRTRMODAUTO);
             break;
         }
         AddToAdvancedStr(buf, 300, str);
     }
     if (s->UsePassiveMode != 2)
     {
-        AddToAdvancedStr(buf, 300, LoadStr(s->UsePassiveMode == 0 ? IDS_ADVSTRSERVERPASVNO : IDS_ADVSTRSERVERPASVYES));
+        AddToAdvancedStr(buf, 300, LoadStrU8(s->UsePassiveMode == 0 ? IDS_ADVSTRSERVERPASVNO : IDS_ADVSTRSERVERPASVYES));
     }
     if (s->KeepConnectionAlive != 2)
     {
-        AddToAdvancedStr(buf, 300, LoadStr(s->KeepConnectionAlive == 0 ? IDS_ADVSTRKEEPALIVENO : IDS_ADVSTRKEEPALIVEYES));
+        AddToAdvancedStr(buf, 300, LoadStrU8(s->KeepConnectionAlive == 0 ? IDS_ADVSTRKEEPALIVENO : IDS_ADVSTRKEEPALIVEYES));
     }
     if (s->UseMaxConcurrentConnections != 2)
     {
         if (s->UseMaxConcurrentConnections == 1)
         {
-            _snprintf_s(num, _TRUNCATE, LoadStr(IDS_ADVSTRMAXCONCURCON), s->MaxConcurrentConnections);
+            _snprintf_s(num, _TRUNCATE, LoadStrU8(IDS_ADVSTRMAXCONCURCON), s->MaxConcurrentConnections);
+            SplU8TrimTornTail(num);
             AddToAdvancedStr(buf, 300, num);
         }
         else
-            AddToAdvancedStr(buf, 300, LoadStr(IDS_ADVSTRUNLIMITEDCON));
+            AddToAdvancedStr(buf, 300, LoadStrU8(IDS_ADVSTRUNLIMITEDCON));
     }
     if (s->UseServerSpeedLimit != 2)
     {
         if (s->UseServerSpeedLimit == 1)
         {
-            _snprintf_s(num, _TRUNCATE, LoadStr(IDS_ADVSTRSPEEDLIM), s->ServerSpeedLimit);
+            _snprintf_s(num, _TRUNCATE, LoadStrU8(IDS_ADVSTRSPEEDLIM), s->ServerSpeedLimit);
+            SplU8TrimTornTail(num);
             AddToAdvancedStr(buf, 300, num);
         }
         else
-            AddToAdvancedStr(buf, 300, LoadStr(IDS_ADVSTRUNLIMITEDSPEED));
+            AddToAdvancedStr(buf, 300, LoadStrU8(IDS_ADVSTRUNLIMITEDSPEED));
     }
     if (s->ServerType != NULL)
     {
-        num[36] = 0;
         char typeBuf[SERVERTYPE_MAX_SIZE + 101];
-        _snprintf_s(num, 38, _TRUNCATE, LoadStr(IDS_ADVSTRSERVERTYPE),
-                    GetTypeNameForUser(s->ServerType, typeBuf, SERVERTYPE_MAX_SIZE + 101));
-        if (num[36] != 0)
-            strcpy(num + 36, "...");
-        AddToAdvancedStr(buf, 300, num);
+        // GetTypeNameForUser gives UTF-8 (the name and, since feature 134, its suffix)
+        AddCutToAdvancedStr(buf, 300, LoadStrU8(IDS_ADVSTRSERVERTYPE),
+                            GetTypeNameForUser(s->ServerType, typeBuf, SERVERTYPE_MAX_SIZE + 101));
     }
     if (s->TargetPanelPath != NULL && *s->TargetPanelPath != 0)
     {
-        num[36] = 0;
-        _snprintf_s(num, 38, _TRUNCATE, LoadStr(IDS_ADVSTRTARGETPATH), s->TargetPanelPath);
-        if (num[36] != 0)
-            strcpy(num + 36, "...");
-        AddToAdvancedStr(buf, 300, num);
+        AddCutToAdvancedStr(buf, 300, LoadStrU8(IDS_ADVSTRTARGETPATH), s->TargetPanelPath);
     }
     if (s->UseListingsCache != 2)
     {
-        AddToAdvancedStr(buf, 300, LoadStr(s->UseListingsCache == 0 ? IDS_ADVSTRUSECACHENO : IDS_ADVSTRUSECACHEYES));
+        AddToAdvancedStr(buf, 300, LoadStrU8(s->UseListingsCache == 0 ? IDS_ADVSTRUSECACHENO : IDS_ADVSTRUSECACHEYES));
     }
     if (s->EncryptControlConnection == 1)
     {
-        AddToAdvancedStr(buf, 300, LoadStr(s->EncryptDataConnection == 1 ? IDS_ADVSTRSSLCONTRDATA : IDS_ADVSTRSSLCONTRONLY));
+        AddToAdvancedStr(buf, 300, LoadStrU8(s->EncryptDataConnection == 1 ? IDS_ADVSTRSSLCONTRDATA : IDS_ADVSTRSSLCONTRONLY));
     }
     if (s->CompressData != -1)
     {
-        AddToAdvancedStr(buf, 300, LoadStr(s->CompressData == 0 ? IDS_ADVSTRNOMODEZ : IDS_ADVSTRMODEZ));
+        AddToAdvancedStr(buf, 300, LoadStrU8(s->CompressData == 0 ? IDS_ADVSTRNOMODEZ : IDS_ADVSTRMODEZ));
     }
 
     if (s->ListCommand != NULL)
     {
-        num[36] = 0;
-        _snprintf_s(num, 38, _TRUNCATE, LoadStr(IDS_ADVSTRLISTCOMMAND), s->ListCommand);
-        if (num[36] != 0)
-            strcpy(num + 36, "...");
-        AddToAdvancedStr(buf, 300, num);
+        // the list command is code-page text (read and written with A messages in the Advanced
+        // dialog) - only the copy shown here is converted, the stored value is not touched
+        AddCutToAdvancedStr(buf, 300, LoadStrU8(IDS_ADVSTRLISTCOMMAND), s->ListCommand);
     }
     if (s->InitFTPCommands != NULL && *s->InitFTPCommands != 0)
     {
-        num[36] = 0;
-        _snprintf_s(num, 38, _TRUNCATE, LoadStr(IDS_ADVSTRINITFTPCMDS), s->InitFTPCommands);
-        if (num[36] != 0)
-            strcpy(num + 36, "...");
-        AddToAdvancedStr(buf, 300, num);
+        AddCutToAdvancedStr(buf, 300, LoadStrU8(IDS_ADVSTRINITFTPCMDS), s->InitFTPCommands);
     }
     if (buf[0] == 0)
-        strcpy(buf, LoadStr(IDS_ADVSTRNONE));
+        lstrcpyn(buf, LoadStrU8(IDS_ADVSTRNONE), 300);
     ti.EditLine(IDE_ADVANCEDINFO, buf, 300);
 }
 
@@ -1705,7 +1733,12 @@ CConnectDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             case IDB_REMOVEBOOKMARK:
             {
                 char buf[200 + BOOKMARKNAME_MAX_SIZE];
-                sprintf(buf, LoadStr(IDS_REMOVECONFIRM), HandleNULLStr(s->ItemName));
+                // feature 134: the bookmark name is UTF-8 - the question is loaded as UTF-8 too (a name
+                // an older version stored in the code page is converted for the question)
+                char nameU8[3 * BOOKMARKNAME_MAX_SIZE];
+                FTPTextToU8(HandleNULLStr(s->ItemName), nameU8, sizeof(nameU8));
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_REMOVECONFIRM), nameU8);
+                SplU8TrimTornTail(buf);
                 if (i > 0) // quick connect cannot be deleted (should always be false)
                 {
                     MSGBOXEX_PARAMS params;

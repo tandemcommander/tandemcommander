@@ -1025,7 +1025,12 @@ CRenameDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (!NewServer) // rename
             {
-                sprintf(buf, LoadStr(IDS_RENAMESRVTO), Name);
+                // feature 134: the name is UTF-8 - the label is loaded as UTF-8 too (a name an older
+                // version stored in the code page is converted for the label)
+                char nameU8[3 * BOOKMSRVTYPE_MAX_SIZE];
+                FTPTextToU8(Name, nameU8, sizeof(nameU8));
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_RENAMESRVTO), nameU8);
+                SplU8TrimTornTail(buf);
                 WCHAR* bufW = SplU8ToWAlloc(buf); // feature 010: bookmark/server-type names are UTF-8
                 if (bufW != NULL)
                 {
@@ -1039,20 +1044,27 @@ CRenameDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 if (!ServerTypes || CopyFromName != NULL)
                 {
-                    char checkboxName[BOOKMSRVTYPE_MAX_SIZE];
-                    lstrcpyn(checkboxName, ServerTypes ? CopyFromName : Name,
-                             ServerTypes ? SERVERTYPE_MAX_SIZE - 1 : BOOKMARKNAME_MAX_SIZE);
-                    SalamanderGeneral->DuplicateAmpersands(checkboxName, ServerTypes ? SERVERTYPE_MAX_SIZE - 1 : BOOKMARKNAME_MAX_SIZE);
-                    sprintf(buf, LoadStr(ServerTypes ? IDS_SRVTYPECOPYFROM : IDS_COPYDATAFROM),
-                            checkboxName[0] != 0 ? checkboxName : LoadStr(IDS_QUICKCONNECT));
-                    WCHAR* bufW = SplU8ToWAlloc(buf); // feature 010: bookmark/server-type names are UTF-8
+                    // feature 134: the name (a bookmark name, or a server-type name with its suffix
+                    // from GetTypeNameForUser) is UTF-8 - both templates and the "Quick Connect"
+                    // text that can stand in its place are loaded as UTF-8. The name is no longer
+                    // cut at 100 bytes (inside a character, and DuplicateAmpersands drops a byte
+                    // when it has no room): the buffers take the whole name with every '&' doubled.
+                    const int nameU8Size = 3 * (BOOKMSRVTYPE_MAX_SIZE + 101);
+                    char checkboxName[2 * 3 * (BOOKMSRVTYPE_MAX_SIZE + 101)];
+                    FTPTextToU8(ServerTypes ? CopyFromName : Name, checkboxName, nameU8Size);
+                    SalamanderGeneral->DuplicateAmpersands(checkboxName, sizeof(checkboxName));
+                    char text[2 * 3 * (BOOKMSRVTYPE_MAX_SIZE + 101) + 300];
+                    _snprintf_s(text, _TRUNCATE, LoadStrU8(ServerTypes ? IDS_SRVTYPECOPYFROM : IDS_COPYDATAFROM),
+                                checkboxName[0] != 0 ? checkboxName : LoadStrU8(IDS_QUICKCONNECT));
+                    SplU8TrimTornTail(text);
+                    WCHAR* bufW = SplU8ToWAlloc(text); // feature 010: bookmark/server-type names are UTF-8
                     if (bufW != NULL)
                     {
                         SetDlgItemTextW(HWindow, IDC_COPYFOCUSEDSRV, bufW);
                         free(bufW);
                     }
                     else
-                        SetDlgItemText(HWindow, IDC_COPYFOCUSEDSRV, buf);
+                        SetDlgItemText(HWindow, IDC_COPYFOCUSEDSRV, text);
                 }
                 else // new server type + empty list = need to hide/disable the "copy from" checkbox
                 {
@@ -1066,6 +1078,22 @@ CRenameDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
     }
     return CCenteredDialog::DialogProc(uMsg, wParam, lParam);
+}
+
+// feature 134: sets the text of a dialog control wide - a text that is valid UTF-8 (a sentence
+// with a host or user name, a server reply in UTF-8) as UTF-8, any other text (a reply in the
+// code page, a plain resource text) through the code page. SetDlgItemTextA showed UTF-8 bytes
+// through the code page in every language.
+static void FTPSetDlgItemTextU8(HWND dlg, int ctrlID, const char* text)
+{
+    WCHAR* textW = SplDisplayTextToWAlloc(text);
+    if (textW != NULL)
+    {
+        SetDlgItemTextW(dlg, ctrlID, textW);
+        free(textW);
+    }
+    else
+        SetDlgItemText(dlg, ctrlID, text);
 }
 
 //
@@ -1117,7 +1145,7 @@ CEnterStrDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (Text != NULL)
             SetDlgItemText(HWindow, IDT_STRING, Text);
         if (ConnectingToAs != NULL)
-            SetDlgItemText(HWindow, IDT_CONNECTINGTOAS, ConnectingToAs);
+            FTPSetDlgItemTextU8(HWindow, IDT_CONNECTINGTOAS, ConnectingToAs); // feature 134: host and user are UTF-8
     }
     return CCenteredDialog::DialogProc(uMsg, wParam, lParam);
 }
@@ -1215,9 +1243,14 @@ CLoginErrorDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (Title != NULL)
             SetWindowText(HWindow, Title);
 
-        SetDlgItemText(HWindow, IDE_SERVERREPLY, ServerReply);
+        // feature 134: the reply is the server's bytes (or a composed error text): wide when it is
+        // valid UTF-8, else through the code page as before; the "connecting to" line holds the host
+        if (ServerReply != NULL)
+            FTPSetDlgItemTextU8(HWindow, IDE_SERVERREPLY, ServerReply);
+        else
+            SetDlgItemText(HWindow, IDE_SERVERREPLY, ServerReply);
         if (ConnectingTo != NULL)
-            SetDlgItemText(HWindow, IDT_CONNECTINGTO, ConnectingTo);
+            FTPSetDlgItemTextU8(HWindow, IDT_CONNECTINGTO, ConnectingTo);
         if (RetryWithoutAskingText != NULL)
             SetDlgItemText(HWindow, IDC_RETRYWITHOUTASK, RetryWithoutAskingText);
         if (ErrorTitle != NULL)

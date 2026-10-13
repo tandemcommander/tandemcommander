@@ -1161,31 +1161,31 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                 {
                 case fqitDeleteLink:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_DELLINK), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_DELLINK), item->Name, item->Path);
                     break;
                 }
 
                 case fqitDeleteFile:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_DELFILE), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_DELFILE), item->Name, item->Path);
                     break;
                 }
 
                 case fqitDeleteDir:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_DELDIR), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_DELDIR), item->Name, item->Path);
                     break;
                 }
 
                 case fqitDeleteExploreDir:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_DELEXPLDIR), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_DELEXPLDIR), item->Name, item->Path);
                     break;
                 }
 
                 case fqitChAttrsExploreDir:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_CHATTREXPLDIR), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_CHATTREXPLDIR), item->Name, item->Path);
                     break;
                 }
 
@@ -1193,7 +1193,7 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                 case fqitMoveResolveLink:
                 case fqitChAttrsResolveLink:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_RESLINK), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_RESLINK), item->Name, item->Path);
                     break;
                 }
 
@@ -1202,33 +1202,39 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                 {
                     if (((CFTPQueueItemCopyOrMove*)item)->Size != CQuadWord(-1, -1))
                     { // if the size is known
-                        strcpy(size, " (");
+                        // feature 134: the size joins a UTF-8 sentence. The core's PrintDiskSize gives
+                        // the unit in the code page (the number's separator in UTF-8), NumberToStr UTF-8.
+                        char num[100];
                         if (((CFTPQueueItemCopyOrMove*)item)->SizeInBytes) // size in bytes
-                            SalamanderGeneral->PrintDiskSize(size + 2, ((CFTPQueueItemCopyOrMove*)item)->Size, 0);
+                        {
+                            char numU8[300];
+                            SalamanderGeneral->PrintDiskSize(num, ((CFTPQueueItemCopyOrMove*)item)->Size, 0);
+                            FTPTextToU8(num, numU8, _countof(numU8));
+                            _snprintf_s(size, _TRUNCATE, " (%s)", numU8);
+                        }
                         else // size in blocks
                         {
-                            SalamanderGeneral->NumberToStr(size + 2, ((CFTPQueueItemCopyOrMove*)item)->Size);
-                            strcat(size, " ");
-                            strcat(size, LoadStr(IDS_OPERDOPDS_SIZEINBLOCKS));
+                            SalamanderGeneral->NumberToStr(num, ((CFTPQueueItemCopyOrMove*)item)->Size);
+                            _snprintf_s(size, _TRUNCATE, " (%s %s)", num, LoadStrU8(IDS_OPERDOPDS_SIZEINBLOCKS));
                         }
-                        strcat(size, ")");
+                        SplU8TrimTornTail(size);
                     }
                     else
                         size[0] = 0;
                     if (strcmp(((CFTPQueueItemCopyOrMove*)item)->TgtName, item->Name) == 0)
                     { // same target file name
                         _snprintf_s(buf, bufSize, _TRUNCATE,
-                                    LoadStr(item->Type == fqitCopyFileOrFileLink ? IDS_OPERDOPDS_COPY1 : IDS_OPERDOPDS_MOVE1), item->Name, size,
+                                    LoadStrU8(item->Type == fqitCopyFileOrFileLink ? IDS_OPERDOPDS_COPY1 : IDS_OPERDOPDS_MOVE1), item->Name, size,
                                     item->Path, ((CFTPQueueItemCopyOrMove*)item)->TgtPath,
-                                    LoadStr(((CFTPQueueItemCopyOrMove*)item)->AsciiTransferMode ? IDS_OPERDOPDS_ASCIITRMODE : IDS_OPERDOPDS_BINARYTRMODE));
+                                    LoadStrU8(((CFTPQueueItemCopyOrMove*)item)->AsciiTransferMode ? IDS_OPERDOPDS_ASCIITRMODE : IDS_OPERDOPDS_BINARYTRMODE));
                     }
                     else // different target file name
                     {
                         _snprintf_s(buf, bufSize, _TRUNCATE,
-                                    LoadStr(item->Type == fqitCopyFileOrFileLink ? IDS_OPERDOPDS_COPY2 : IDS_OPERDOPDS_MOVE2), item->Name, size,
+                                    LoadStrU8(item->Type == fqitCopyFileOrFileLink ? IDS_OPERDOPDS_COPY2 : IDS_OPERDOPDS_MOVE2), item->Name, size,
                                     item->Path, ((CFTPQueueItemCopyOrMove*)item)->TgtPath,
                                     ((CFTPQueueItemCopyOrMove*)item)->TgtName,
-                                    LoadStr(((CFTPQueueItemCopyOrMove*)item)->AsciiTransferMode ? IDS_OPERDOPDS_ASCIITRMODE : IDS_OPERDOPDS_BINARYTRMODE));
+                                    LoadStrU8(((CFTPQueueItemCopyOrMove*)item)->AsciiTransferMode ? IDS_OPERDOPDS_ASCIITRMODE : IDS_OPERDOPDS_BINARYTRMODE));
                     }
                     break;
                 }
@@ -1236,25 +1242,28 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                 case fqitUploadCopyFile:
                 case fqitUploadMoveFile:
                 {
-                    strcpy(size, " (");
-                    SalamanderGeneral->PrintDiskSize(size + 2, ((CFTPQueueItemCopyOrMoveUpload*)item)->Size, 0);
-                    strcat(size, ")");
+                    char num[100];
+                    char numU8[300];
+                    SalamanderGeneral->PrintDiskSize(num, ((CFTPQueueItemCopyOrMoveUpload*)item)->Size, 0);
+                    FTPTextToU8(num, numU8, _countof(numU8)); // feature 134: the unit comes in the code page
+                    _snprintf_s(size, _TRUNCATE, " (%s)", numU8);
+                    SplU8TrimTornTail(size);
 
                     CFTPQueueItemCopyOrMoveUpload* uploadItem = (CFTPQueueItemCopyOrMoveUpload*)item;
                     char* name = uploadItem->RenamedName != NULL ? uploadItem->RenamedName : uploadItem->TgtName;
                     if (strcmp(name, item->Name) == 0)
                     { // same target file name
                         _snprintf_s(buf, bufSize, _TRUNCATE,
-                                    LoadStr(item->Type == fqitUploadCopyFile ? IDS_OPERDOPDS_COPY1 : IDS_OPERDOPDS_MOVE1),
+                                    LoadStrU8(item->Type == fqitUploadCopyFile ? IDS_OPERDOPDS_COPY1 : IDS_OPERDOPDS_MOVE1),
                                     item->Name, size, item->Path, uploadItem->TgtPath,
-                                    LoadStr(uploadItem->AsciiTransferMode ? IDS_OPERDOPDS_ASCIITRMODE : IDS_OPERDOPDS_BINARYTRMODE));
+                                    LoadStrU8(uploadItem->AsciiTransferMode ? IDS_OPERDOPDS_ASCIITRMODE : IDS_OPERDOPDS_BINARYTRMODE));
                     }
                     else // different target file name
                     {
                         _snprintf_s(buf, bufSize, _TRUNCATE,
-                                    LoadStr(item->Type == fqitUploadCopyFile ? IDS_OPERDOPDS_COPY2 : IDS_OPERDOPDS_MOVE2),
+                                    LoadStrU8(item->Type == fqitUploadCopyFile ? IDS_OPERDOPDS_COPY2 : IDS_OPERDOPDS_MOVE2),
                                     item->Name, size, item->Path, uploadItem->TgtPath, name,
-                                    LoadStr(uploadItem->AsciiTransferMode ? IDS_OPERDOPDS_ASCIITRMODE : IDS_OPERDOPDS_BINARYTRMODE));
+                                    LoadStrU8(uploadItem->AsciiTransferMode ? IDS_OPERDOPDS_ASCIITRMODE : IDS_OPERDOPDS_BINARYTRMODE));
                     }
                     break;
                 }
@@ -1262,20 +1271,20 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                 case fqitMoveDeleteDir:
                 case fqitUploadMoveDeleteDir:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_MOVEDELDIR), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_MOVEDELDIR), item->Name, item->Path);
                     break;
                 }
 
                 case fqitMoveDeleteDirLink:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_MOVEDELDIRLNK), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_MOVEDELDIRLNK), item->Name, item->Path);
                     break;
                 }
 
                 case fqitCopyExploreDir:
                 case fqitUploadCopyExploreDir:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_COPYEXPLDIR), item->Name, item->Path,
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_COPYEXPLDIR), item->Name, item->Path,
                                 ((CFTPQueueItemCopyMoveExplore*)item)->TgtPath,
                                 ((CFTPQueueItemCopyMoveExplore*)item)->TgtName);
                     break;
@@ -1284,7 +1293,7 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                 case fqitMoveExploreDir:
                 case fqitUploadMoveExploreDir:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_MOVEEXPLDIR), item->Name, item->Path,
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_MOVEEXPLDIR), item->Name, item->Path,
                                 ((CFTPQueueItemCopyMoveExplore*)item)->TgtPath,
                                 ((CFTPQueueItemCopyMoveExplore*)item)->TgtName);
                     break;
@@ -1292,7 +1301,7 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
 
                 case fqitMoveExploreDirLink:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_MOVEEXPLDIRLNK), item->Name, item->Path,
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_MOVEEXPLDIRLNK), item->Name, item->Path,
                                 ((CFTPQueueItemCopyMoveExplore*)item)->TgtPath,
                                 ((CFTPQueueItemCopyMoveExplore*)item)->TgtName);
                     break;
@@ -1303,7 +1312,7 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                     sprintf(unixRights, "%03o (", ((CFTPQueueItemChAttr*)item)->Attr);
                     GetUNIXRightsStr(unixRights + strlen(unixRights), 20, ((CFTPQueueItemChAttr*)item)->Attr);
                     strcat(unixRights, ")");
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_CHATTRFILE), item->Name, item->Path, unixRights);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_CHATTRFILE), item->Name, item->Path, unixRights);
                     break;
                 }
 
@@ -1312,13 +1321,13 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                     sprintf(unixRights, "%03o (", ((CFTPQueueItemChAttrDir*)item)->Attr);
                     GetUNIXRightsStr(unixRights + strlen(unixRights), 20, ((CFTPQueueItemChAttrDir*)item)->Attr);
                     strcat(unixRights, ")");
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_CHATTRDIR), item->Name, item->Path, unixRights);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_CHATTRDIR), item->Name, item->Path, unixRights);
                     break;
                 }
 
                 case fqitChAttrsExploreDirLink:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPDS_CHATTREXPLDIRLNK), item->Name, item->Path);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPDS_CHATTREXPLDIRLNK), item->Name, item->Path);
                     break;
                 }
 
@@ -1329,11 +1338,16 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                     break;
                 }
                 }
+                // feature 134: the description is UTF-8 as a whole (templates, names, paths, size);
+                // a text cut inside a character would be shown through the code page
+                SplU8TrimTornTail(buf);
                 break;
             }
 
             case 1: // status
             {
+                // feature 134: GetProblemDescr gives UTF-8 (it may end with a server reply), so the
+                // three templates around it are UTF-8; the plain state texts stay as they are
                 char reason[500];
                 switch (item->GetItemState())
                 {
@@ -1344,14 +1358,16 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                 case sqisSkipped:
                 {
                     item->GetProblemDescr(reason, 500);
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDLGOPSTS_SKIPPED), reason);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDLGOPSTS_SKIPPED), reason);
+                    SplU8TrimTornTail(buf);
                     break;
                 }
 
                 case sqisFailed:
                 {
                     item->GetProblemDescr(reason, 500);
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDLGOPSTS_FAILED), reason);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDLGOPSTS_FAILED), reason);
+                    SplU8TrimTornTail(buf);
                     break;
                 }
 
@@ -1362,7 +1378,8 @@ void CFTPQueue::GetListViewDataFor(int index, NMLVDISPINFO* lvdi, char* buf, int
                 case sqisUserInputNeeded:
                 {
                     item->GetProblemDescr(reason, 500);
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDLGOPSTS_WAITUSER), reason);
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDLGOPSTS_WAITUSER), reason);
+                    SplU8TrimTornTail(buf);
                     break;
                 }
 

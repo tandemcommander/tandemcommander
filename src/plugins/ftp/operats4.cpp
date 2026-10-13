@@ -31,9 +31,12 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
 
             if (CurItem->Type == fqitUploadCopyExploreDir || CurItem->Type == fqitUploadMoveExploreDir)
             {
-                _snprintf_s(errText, _TRUNCATE, LoadStr(IDS_LOGMSGEXPLORINGDIR),
-                            ((CFTPQueueItemCopyMoveUploadExplore*)CurItem)->TgtName,
-                            ((CFTPQueueItemCopyMoveUploadExplore*)CurItem)->TgtPath);
+                // feature 134: a log message with a name is UTF-8 as a whole (LoadStrU8); when the
+                // buffer cuts it, it keeps its line end
+                if (_snprintf_s(errText, _TRUNCATE, LoadStrU8(IDS_LOGMSGEXPLORINGDIR),
+                                ((CFTPQueueItemCopyMoveUploadExplore*)CurItem)->TgtName,
+                                ((CFTPQueueItemCopyMoveUploadExplore*)CurItem)->TgtPath) < 0)
+                    FTPLogMsgCutKeepLineEnd(errText, _countof(errText));
                 Logs.LogMessage(LogUID, errText, -1, TRUE);
             }
 
@@ -308,7 +311,8 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                         CFTPServerPathType type = Oper->GetFTPServerPathType(ftpPath);
                         if (FTPPathAppend(type, ftpPath, FTP_MAX_PATH, CurItem->Name, TRUE))
                         { // we have the path; send CWD to the target directory on the server
-                            _snprintf_s(errText, _TRUNCATE, LoadStr(IDS_LOGMSGRESOLVINGLINK), ftpPath);
+                            if (_snprintf_s(errText, _TRUNCATE, LoadStrU8(IDS_LOGMSGRESOLVINGLINK), ftpPath) < 0) // feature 134: UTF-8 as a whole
+                                FTPLogMsgCutKeepLineEnd(errText, _countof(errText));
                             Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                             PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
@@ -554,7 +558,8 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                                     opDescrResID = IDS_LOGMSGCHATTRSDIR;
                                     break; // change directory attributes (CFTPQueueItemChAttrDir object)
                                 }
-                                _snprintf_s(errText, _TRUNCATE, LoadStr(opDescrResID), CurItem->Name, tgtName);
+                                if (_snprintf_s(errText, _TRUNCATE, LoadStrU8(opDescrResID), CurItem->Name, tgtName) < 0) // feature 134: UTF-8 as a whole
+                                    FTPLogMsgCutKeepLineEnd(errText, _countof(errText));
                                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                                 BOOL canContinue = TRUE;

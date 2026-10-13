@@ -755,8 +755,12 @@ void CPluginFSInterface::SendUserFTPCommand(HWND parent)
         char logBuf[FTPCOMMAND_MAX_SIZE + 2];
         char txtBuf[200 + FTPCOMMAND_MAX_SIZE];
         lstrcpyn(cmdBuf, dlg.Command, FTPCOMMAND_MAX_SIZE);
-        strcpy(logBuf, Config.SendSecretCommand ? LoadStr(IDS_SECRETFTPCOMMAND) : cmdBuf);
-        _snprintf_s(txtBuf, _TRUNCATE, LoadStr(IDS_LOGMSGSENDINGUSRCMD), logBuf);
+        // feature 134: the typed command is UTF-8, so the text that stands for a secret one and
+        // the template are UTF-8 too ('logBuf' is only shown: the log and the title of the reply
+        // window; what is sent is 'cmdBuf')
+        strcpy(logBuf, Config.SendSecretCommand ? LoadStrU8(IDS_SECRETFTPCOMMAND) : cmdBuf);
+        if (_snprintf_s(txtBuf, _TRUNCATE, LoadStrU8(IDS_LOGMSGSENDINGUSRCMD), logBuf) < 0)
+            FTPLogMsgCutKeepLineEnd(txtBuf, sizeof(txtBuf));
         ControlConnection->LogMessage(txtBuf, -1, TRUE);
         strcat(cmdBuf, "\r\n");
         strcat(logBuf, "\r\n");
@@ -805,7 +809,12 @@ void CPluginFSInterface::SendUserFTPCommand(HWND parent)
                 if (ok && !success && Path[0] != 0) // send succeeded, but the server reports an error (+ignore the error for an empty path) -> the user command cannot be sent
                 {                                   // be sent (it may be tied to the current path in the panel)
                     char errBuf[900 + FTP_MAX_PATH];
-                    _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR), Path, ftpReplyBuf);
+                    // feature 134: UTF-8 template + UTF-8 path + the reply as UTF-8 (at most 700
+                    // bytes of 'ftpReplyBuf' were filled for this call)
+                    char replyU8[3 * 700];
+                    FTPTextToU8(ftpReplyBuf, replyU8, sizeof(replyU8));
+                    _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR), Path, replyU8);
+                    SplU8TrimTornTail(errBuf);
                     SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                      MB_OK | MB_ICONEXCLAMATION);
                     ok = FALSE;

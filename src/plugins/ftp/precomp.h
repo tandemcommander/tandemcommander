@@ -35,6 +35,7 @@
 
 #include "splunicode.h" // interface 104: UTF-8 <-> UTF-16 helpers for W file APIs
 #include "splfiledlg.h" // feature 104: Unicode file and folder pickers
+#include "splloadstru8.h" // feature 134: resource texts as UTF-8 (LoadStrU8), texts of either encoding as UTF-8
 
 #include "dbg.h"
 #include "mhandles.h"

@@ -102,11 +102,14 @@ CSendCmdUserIfaceForListAndDownload::GetFinishedEvent()
 void CSendCmdUserIfaceForListAndDownload::InitWnd(const char* fileName, const char* host,
                                                   const char* path, CFTPServerPathType pathType)
 {
-    char buf[500];
+    // feature 134: UTF-8 templates; the file name is UTF-8, the host is made UTF-8 (an older
+    // version may have stored it in the code page); a cut text loses a torn character
+    char buf[500 + MAX_PATH];
     if (!ForDownload)
-        _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_LISTWNDDOWNLOADING), host);
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_LISTWNDDOWNLOADING), CFTPU8Name(host).Text);
     else
-        _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_LISTWNDDOWNLOADINGFILE), fileName, host);
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_LISTWNDDOWNLOADINGFILE), fileName, CFTPU8Name(host).Text);
+    SplU8TrimTornTail(buf);
     WaitWnd.SetText(buf);
     WaitWnd.SetPath(path, pathType);
 }
@@ -180,7 +183,7 @@ BOOL CSendCmdUserIfaceForListAndDownload::IsTimeout(DWORD* start, DWORD serverTi
         char errText[300];
         if (DataConnection->GetProxyTimeoutDescr(errText, 300))
         {
-            if (errBufSize > 0)
+            if (errBufSize > 0) // (all resource text: GetProxyTimeoutDescr gives a LoadStr text - right as it is)
                 _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStr(IDS_LOGMSGDATCONERROR), errText);
             *errorTextID = -1; // the description is directly in 'errBuf'
         }
@@ -503,7 +506,9 @@ BOOL CControlConnectionSocket::ListWorkingPath(HWND parent, const char* path, ch
                         BOOL skipMessage = FTPIsEmptyDirListErrReply(replyBuf);
                         if (!skipMessage)
                         {
-                            _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_LISTPATHERROR), path, replyBuf);
+                            // feature 134: UTF-8 template, the path is UTF-8, the reply (any encoding) made UTF-8
+                            _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_LISTPATHERROR), path, CFTPU8Piece(replyBuf).Text);
+                            SplU8TrimTornTail(errBuf);
                             // if the user answers IDNO, we stop - the path cannot be listed -> a path change is required
                             ret = SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                                    MB_YESNO | MSGBOXEX_ESCAPEENABLED |
@@ -553,7 +558,10 @@ BOOL CControlConnectionSocket::ListWorkingPath(HWND parent, const char* path, ch
                                 else
                                 {
                                     // display the "list can be incomplete" message; the user has not been warned yet
-                                    lstrcpyn(errBuf, LoadStr(IDS_UNABLETOREADLIST), 900 + FTP_MAX_PATH);
+                                    // feature 134: the message is UTF-8 as a whole - 'replyBuf' is a server
+                                    // reply, a LoadStr or FormatMessage text or the UTF-8 text of
+                                    // GetProxyError, and is made UTF-8 where it is printed
+                                    lstrcpyn(errBuf, LoadStrU8(IDS_UNABLETOREADLIST), 900 + FTP_MAX_PATH);
                                     int len = (int)strlen(errBuf);
                                     BOOL systErr = FALSE;
                                     BOOL trModeHint = FTP_DIGIT_1(ftpReplyCode) == FTP_D1_TRANSIENTERROR &&
@@ -593,8 +601,9 @@ BOOL CControlConnectionSocket::ListWorkingPath(HWND parent, const char* path, ch
                                         }
                                     }
                                     _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE,
-                                                LoadStr(systErr ? (trModeHint ? IDS_UNABLETOREADLISTSUFFIX3 : IDS_UNABLETOREADLISTSUFFIX) : (trModeHint ? IDS_UNABLETOREADLISTSUFFIX4 : IDS_UNABLETOREADLISTSUFFIX2)),
-                                                replyBuf);
+                                                LoadStrU8(systErr ? (trModeHint ? IDS_UNABLETOREADLISTSUFFIX3 : IDS_UNABLETOREADLISTSUFFIX) : (trModeHint ? IDS_UNABLETOREADLISTSUFFIX4 : IDS_UNABLETOREADLISTSUFFIX2)),
+                                                CFTPU8Piece(replyBuf).Text);
+                                    SplU8TrimTornTail(errBuf);
                                     SalamanderGeneral->SalMessageBox(parent, errBuf,
                                                                      LoadStr(IDS_FTPERRORTITLE),
                                                                      MB_OK | MB_ICONEXCLAMATION);
@@ -686,7 +695,8 @@ BOOL CControlConnectionSocket::ListWorkingPath(HWND parent, const char* path, ch
 
                         if (pathError) // display the path error and stop
                         {
-                            _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR), path, replyBuf);
+                            _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR), path, CFTPU8Piece(replyBuf).Text); // feature 134
+                            SplU8TrimTornTail(errBuf);
                             SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                              MB_OK | MB_ICONEXCLAMATION);
                             ret = FALSE; // stop - the path cannot be listed -> a path change is required
@@ -1319,7 +1329,10 @@ void CControlConnectionSocket::ReceivePostMessage(DWORD id, void* param)
                 {
                     if (kaDataConnection->GetProxyError(buf, 300, NULL, 0, TRUE))
                     { // log the error
-                        _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_LOGMSGDATCONERROR), buf);
+                        // feature 134: the text of GetProxyError is UTF-8 - the template too; a cut
+                        // message keeps its line end
+                        if (_snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_LOGMSGDATCONERROR), buf) < 0)
+                            FTPLogMsgCutKeepLineEnd(errBuf, _countof(errBuf));
                         Logs.LogMessage(logUID, errBuf, -1, TRUE);
                     }
                     ReleaseKeepAlive(); // we are finishing...

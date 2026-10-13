@@ -834,7 +834,15 @@ INT_PTR CRestoreDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         char text1[200], text2[MAX_PATH + 100];
         SalamanderGeneral->GetPanelSelection(PANEL_SOURCE, &files, &dirs);
         SalamanderGeneral->GetCommonFSOperSourceDescr(text2, MAX_PATH + 100, PANEL_SOURCE, files, dirs, NULL, FALSE, FALSE);
-        GetDlgItemText(HWindow, IDC_LABEL_SOURCE, text1, 200);
+        // feature 134: the subject is UTF-8 as a whole now (it was a code-page word around a
+        // UTF-8 name); the label's own text is read wide so that the sentence is UTF-8 too
+        {
+            WCHAR text1W[200];
+            text1W[0] = 0;
+            GetDlgItemTextW(HWindow, IDC_LABEL_SOURCE, text1W, 200);
+            if (SplWToU8(text1W, text1, 200) <= 0)
+                GetDlgItemText(HWindow, IDC_LABEL_SOURCE, text1, 200);
+        }
         BOOL labelSet = FALSE;
         // if it is "file \"name.txt\"" or "directory \"name\"" we find the name and the remaining text
         // we add the strings to text1 so that CSalamanderGUI::SetSubjectTruncatedText can be used
@@ -861,7 +869,7 @@ INT_PTR CRestoreDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (!labelSet)
         {
             _snprintf_s(path, _TRUNCATE, text1, text2);
-            SetDlgItemText(HWindow, IDC_LABEL_SOURCE, path);
+            SetDlgItemTextU8(HWindow, IDC_LABEL_SOURCE, path);
         }
         break;
     }

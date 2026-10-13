@@ -337,17 +337,20 @@ void CControlConnectionSocket::CloseControlConnection(HWND parent)
             // Compose the wait-window message text
             HANDLES(EnterCriticalSection(&SocketCritSect));
             Logs.LogMessage(logUID, errBuf, -1);
-            int l = (int)strlen(Host);
-            if (l > 22) // shorten the text (keep up to 22 characters, otherwise 20 + "...")
-            {
-                memcpy(errBuf, Host, 20);
-                strcpy(errBuf + 20, "...");
-            }
-            else
-                memcpy(errBuf, Host, l + 1);
+            // feature 134: the host as UTF-8 (FTPTextToU8: an older version may have stored it in
+            // the code page) for the UTF-8 template; it was cut at byte 20, inside a character too
+            char hostU8[3 * HOST_MAX_SIZE];
+            FTPTextToU8(Host, hostU8, _countof(hostU8));
             HANDLES(LeaveCriticalSection(&SocketCritSect));
+            if (strlen(hostU8) > 22) // shorten the text (keep up to 22 bytes, otherwise at most 20 + "...")
+            {
+                hostU8[20] = 0;
+                SplU8TrimTornTail(hostU8);
+                strcat(hostU8, "...");
+            }
 
-            sprintf(buf, LoadStr(IDS_CLOSINGCONNECTION), errBuf);
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CLOSINGCONNECTION), hostU8);
+            SplU8TrimTornTail(buf);
 
             waitWnd.SetText(buf);
             waitWnd.Create(GetWaitTime(showWaitWndTime));
@@ -488,7 +491,7 @@ void CControlConnectionSocket::CheckCtrlConClose(BOOL notInPanel, BOOL leftPanel
     {
         char errBuf[300];
         errBuf[0] = 0;
-        char buf[500];
+        char buf[500 + 2 * 300]; // feature 134: + room for 'errBuf' made UTF-8
 
         if (found)
         {
@@ -567,7 +570,10 @@ void CControlConnectionSocket::CheckCtrlConClose(BOOL notInPanel, BOOL leftPanel
             if (Config.WarnWhenConLost)
             {
                 BOOL actWelcomeMsg = (OurWelcomeMsgDlg != NULL && GetForegroundWindow() == OurWelcomeMsgDlg);
-                sprintf(buf, LoadStr(notInPanel ? IDS_DCONLOSTFORMATERROR : (leftPanel ? IDS_LCONLOSTFORMATERROR : IDS_RCONLOSTFORMATERROR)), errBuf);
+                // feature 134: 'errBuf' is a server reply, a stored message or an error text (any
+                // encoding) - as UTF-8 in a UTF-8 sentence; bounded (the piece may grow)
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(notInPanel ? IDS_DCONLOSTFORMATERROR : (leftPanel ? IDS_LCONLOSTFORMATERROR : IDS_RCONLOSTFORMATERROR)), CFTPU8Piece(errBuf).Text);
+                SplU8TrimTornTail(buf);
                 MSGBOXEX_PARAMS params;
                 memset(&params, 0, sizeof(params));
                 params.HParent = parent;
@@ -1453,6 +1459,87 @@ public:
 // CLogs
 //
 
+void CLogs::GetLogItemName(CLogData* d, char* buf, int bufSize)
+{
+    // feature 131: every piece is appended bounded (it was a chain of sprintf calls into 300
+    // bytes: a user name of 100 and a host of 200 bytes overran it)
+    // feature 134: the name is UTF-8 as a whole - the user and the host as UTF-8 (CFTPU8Piece:
+    // an older version may have stored them in the code page), the resource texts LoadStrU8
+    int len;
+    _snprintf_s(buf, bufSize, _TRUNCATE, "%d: ", d->UID);
+    if (d->User != NULL && d->User[0] != 0 && strcmp(d->User, FTP_ANONYMOUS) != 0)
+    {
+        len = (int)strlen(buf);
+        _snprintf_s(buf + len, bufSize - len, _TRUNCATE, "%s@", CFTPU8Name(d->User).Text);
+    }
+    len = (int)strlen(buf);
+    _snprintf_s(buf + len, bufSize - len, _TRUNCATE, "%s", CFTPU8Name(HandleNULLStr(d->Host)).Text);
+    if (d->Port != IPPORT_FTP)
+    {
+        len = (int)strlen(buf);
+        _snprintf_s(buf + len, bufSize - len, _TRUNCATE, ":%u", d->Port);
+    }
+
+    int fsPosID = 0;
+    if (d->CtrlConOrWorker) // connection in panel
+    {
+        if (d->CtrlCon != NULL)
+        {
+            if (LeftPanelCtrlCon == d->CtrlCon)
+                fsPosID = IDS_FTPINLEFTPANEL; // FS in left panel
+            else
+            {
+                if (RightPanelCtrlCon == d->CtrlCon)
+                    fsPosID = IDS_FTPINRIGHTPANEL; // FS in right panel
+                else
+                    fsPosID = IDS_FTPNOTINPANEL; // detached FS
+            }
+        }
+        else
+            fsPosID = IDS_FTPDISCONNECTED; // closed FS
+    }
+    else // connection in worker used for operation (copy/move/delete)
+    {
+        if (d->WorkerIsAlive)
+            fsPosID = IDS_FTPOPERATION; // living worker
+        else
+            fsPosID = IDS_OPERSTOPPED; // stopped worker
+    }
+
+    len = (int)strlen(buf);
+    if ((d->CtrlCon != NULL || d->WorkerIsAlive) && !d->Connected)
+    {
+        _snprintf_s(buf + len, bufSize - len, _TRUNCATE, " (%s, %s)", LoadStrU8(fsPosID), LoadStrU8(IDS_FTPINACTIVE));
+    }
+    else
+        _snprintf_s(buf + len, bufSize - len, _TRUNCATE, " (%s)", LoadStrU8(fsPosID));
+    SplU8TrimTornTail(buf);
+}
+
+void CLogs::GetLogItemNameForQuestion(int uid, const char* itemName, char* buf, int bufSize)
+{
+    // feature 134: the name is composed again from the log, as UTF-8 - 'itemName' is what the
+    // dialog read back from its combo, and a read through the A message gives code-page bytes
+    // with '?' for every character outside the code page
+    BOOL found = FALSE;
+    HANDLES(EnterCriticalSection(&LogCritSect));
+    HANDLES(EnterCriticalSection(&PanelCtrlConSect)); // the same order as in AddLogsToCombo
+    int i;
+    for (i = 0; i < Data.Count; i++)
+    {
+        if (Data[i]->UID == uid)
+        {
+            GetLogItemName(Data[i], buf, bufSize);
+            found = TRUE;
+            break;
+        }
+    }
+    HANDLES(LeaveCriticalSection(&PanelCtrlConSect));
+    HANDLES(LeaveCriticalSection(&LogCritSect));
+    if (!found) // the log is gone meanwhile: the name the dialog shows
+        FTPTextToU8(itemName, buf, bufSize);
+}
+
 void CLogs::AddLogsToCombo(HWND combo, int prevItemUID, int* focusIndex, BOOL* empty)
 {
     *focusIndex = -1; // not found
@@ -1464,64 +1551,18 @@ void CLogs::AddLogsToCombo(HWND combo, int prevItemUID, int* focusIndex, BOOL* e
     if (!*empty)
     {
         HANDLES(EnterCriticalSection(&PanelCtrlConSect));
-        // feature 131: every piece is appended bounded (it was a chain of sprintf calls into 300
-        // bytes: a user name of 100 and a host of 200 bytes overran it)
         char buf[LOGSCOMBOITEM_MAX_SIZE];
-        int len;
         int i;
         for (i = 0; i < Data.Count; i++)
         {
             CLogData* d = Data[i];
-            _snprintf_s(buf, _TRUNCATE, "%d: ", d->UID);
-            if (d->User != NULL && d->User[0] != 0 && strcmp(d->User, FTP_ANONYMOUS) != 0)
-            {
-                len = (int)strlen(buf);
-                _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, "%s@", d->User);
-            }
-            len = (int)strlen(buf);
-            _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, "%s", HandleNULLStr(d->Host));
-            if (d->Port != IPPORT_FTP)
-            {
-                len = (int)strlen(buf);
-                _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, ":%u", d->Port);
-            }
-
-            int fsPosID = 0;
-            if (d->CtrlConOrWorker) // connection in panel
-            {
-                if (d->CtrlCon != NULL)
-                {
-                    if (LeftPanelCtrlCon == d->CtrlCon)
-                        fsPosID = IDS_FTPINLEFTPANEL; // FS in left panel
-                    else
-                    {
-                        if (RightPanelCtrlCon == d->CtrlCon)
-                            fsPosID = IDS_FTPINRIGHTPANEL; // FS in right panel
-                        else
-                            fsPosID = IDS_FTPNOTINPANEL; // detached FS
-                    }
-                }
-                else
-                    fsPosID = IDS_FTPDISCONNECTED; // closed FS
-            }
-            else // connection in worker used for operation (copy/move/delete)
-            {
-                if (d->WorkerIsAlive)
-                    fsPosID = IDS_FTPOPERATION; // living worker
-                else
-                    fsPosID = IDS_OPERSTOPPED; // stopped worker
-            }
-
-            len = (int)strlen(buf);
-            if ((d->CtrlCon != NULL || d->WorkerIsAlive) && !d->Connected)
-            {
-                _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, " (%s, %s)", LoadStr(fsPosID), LoadStr(IDS_FTPINACTIVE));
-            }
-            else
-                _snprintf_s(buf + len, _countof(buf) - len, _TRUNCATE, " (%s)", LoadStr(fsPosID));
+            GetLogItemName(d, buf, _countof(buf));
 
             // add the assembled name + log UID
-            if (i == SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)buf))
+            // feature 134: the item is added wide (CB_ADDSTRING through the A message showed
+            // the UTF-8 user and host through the code page, in English too); the A message
+            // stays as the fallback for low memory
+            if (i == FTPSendListTextMsg(combo, CB_ADDSTRING, 0, buf))
                 SendMessage(combo, CB_SETITEMDATA, i, d->UID);
             if (d->UID == prevItemUID)
                 *focusIndex = i;
@@ -1807,10 +1848,97 @@ BOOL CLogs::ClosingConnection(int uid)
     return ret;
 }
 
+// feature 134: a log message ('len' bytes, not terminated) that is not ASCII, as UTF-8 in a
+// malloc'd terminated buffer: valid UTF-8 is kept; a UTF-8 text whose LAST character is not
+// valid UTF-8 (cut by a buffer inside a character - or a code-page letter at the end of a
+// message that is UTF-8 otherwise) keeps its UTF-8 part and gets those last bytes read through
+// the code page, so no letter is dropped; anything else is read through the system code page. Returns NULL when the message is to be appended as it is (low memory, or a
+// zero byte inside the message - it cannot be told what such a message is).
+static char* LogMessageToU8Alloc(const char* str, int len)
+{
+    if (len <= 0 || memchr(str, 0, len) != NULL)
+        return NULL;
+    char* copy = (char*)malloc(len + 3); // + the line end put back + the terminator
+    if (copy == NULL)
+        return NULL;
+    memcpy(copy, str, len);
+    copy[len] = 0;
+
+    WCHAR* w = SplU8ToWAlloc(copy);
+    if (w != NULL) // valid UTF-8: as it is
+    {
+        free(w);
+        return copy;
+    }
+
+    // valid UTF-8 up to its last character? Only with evidence that the text IS UTF-8 (as
+    // SplDisplayTextToWAlloc): the invalid end had a continuation byte, or the rest holds a
+    // character outside ASCII
+    int end = len;
+    while (end > 0 && (copy[end - 1] == '\r' || copy[end - 1] == '\n'))
+        end--;
+    copy[end] = 0;
+    SplU8TrimTornTail(copy);
+    int kept = (int)strlen(copy);
+    if (kept < end && (end - kept >= 2 || !SplIsASCII(copy)) && (w = SplU8ToWAlloc(copy)) != NULL)
+    {
+        free(w);
+        // the end: its bytes through the code page (a code-page letter stays a letter; a torn
+        // UTF-8 character becomes one odd character instead of spoiling the message)
+        char tail[8];
+        int tailLen = end - kept < (int)sizeof(tail) - 1 ? end - kept : (int)sizeof(tail) - 1;
+        memcpy(tail, str + kept, tailLen);
+        tail[tailLen] = 0;
+        char* tailU8 = SplLegacyToU8Alloc(tail);
+        size_t tailU8Len = tailU8 != NULL ? strlen(tailU8) : 0;
+        char* joined = (char*)malloc(kept + tailU8Len + (len - end) + 1);
+        if (joined != NULL)
+        {
+            memcpy(joined, copy, kept);
+            if (tailU8Len > 0)
+                memcpy(joined + kept, tailU8, tailU8Len);
+            memcpy(joined + kept + tailU8Len, str + end, len - end); // the line ends as they came
+            joined[kept + tailU8Len + (len - end)] = 0;
+        }
+        free(tailU8);
+        free(copy);
+        return joined; // NULL (low memory): the message is appended as it came
+    }
+    memcpy(copy, str, len); // back to the message as it came
+    copy[len] = 0;
+
+    char* u8 = SplLegacyToU8Alloc(copy); // not UTF-8: read through the code page
+    free(copy);
+    return u8;
+}
+
 BOOL CLogs::LogMessage(int uid, const char* str, int len, BOOL addTimeToLog)
 {
     if (uid == -1)
         return TRUE; // "invalid UID" means there is nothing to log
+
+    // feature 134: the log is UTF-8. It was one byte string that got code-page resource texts,
+    // UTF-8 names, replies in the server's encoding and the commands as sent, and was shown as
+    // UTF-8 only when ALL of it was valid UTF-8 - one accented directory name made the whole
+    // log show through the code page, in English too. Every message is made UTF-8 here on its
+    // own; the size limit below then counts the bytes that are really stored.
+    if (len == -1)
+        len = (int)strlen(str);
+    char* strU8 = NULL;
+    int i;
+    for (i = 0; i < len; i++)
+    {
+        if ((unsigned char)str[i] >= 0x80) // ASCII needs nothing (and no allocation)
+        {
+            strU8 = LogMessageToU8Alloc(str, len);
+            if (strU8 != NULL)
+            {
+                str = strU8;
+                len = (int)strlen(strU8);
+            }
+            break;
+        }
+    }
 
     HANDLES(EnterCriticalSection(&LogCritSect));
     BOOL ret = FALSE;
@@ -1857,6 +1985,8 @@ BOOL CLogs::LogMessage(int uid, const char* str, int len, BOOL addTimeToLog)
     else
         TRACE_I("CLogs::LogMessage(): uid (" << uid << ") not found");
     HANDLES(LeaveCriticalSection(&LogCritSect));
+    if (strU8 != NULL)
+        free(strU8);
     return ret;
 }
 
@@ -2033,8 +2163,19 @@ void CLogs::SaveLog(HWND parent, const char* itemName, int uid)
 
             HANDLES(EnterCriticalSection(&LogCritSect));
             DWORD err = NO_ERROR;
+            // feature 134: the log is UTF-8 (CLogs::LogMessage) and so is the file - it starts with
+            // the UTF-8 signature, so that an editor does not read it through the code page (the
+            // whole file is written here, into a file just created)
+            ULONG bomWritten;
+            if (!WriteFile(file, "\xEF\xBB\xBF", 3, &bomWritten, NULL))
+                err = GetLastError();
+            else
+            {
+                if (bomWritten != 3)
+                    err = ERROR_DISK_FULL;
+            }
             int i;
-            for (i = 0; i < Data.Count; i++)
+            for (i = 0; err == NO_ERROR && i < Data.Count; i++)
             {
                 CLogData* d = Data[i];
                 if (uid == -1 || d->UID == uid)
@@ -2075,7 +2216,9 @@ void CLogs::SaveLog(HWND parent, const char* itemName, int uid)
             SetCursor(oldCur);
             if (err != NO_ERROR) // display the error
             {
-                sprintf(buf, LoadStr(IDS_SAVELOGERROR), SalamanderGeneral->GetErrorText(err));
+                // feature 134: GetErrorText is UTF-8 - the template too
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SAVELOGERROR), SalamanderGeneral->GetErrorText(err));
+                SplU8TrimTornTail(buf);
                 SalamanderGeneral->SalMessageBox(parent, buf, LoadStr(IDS_FTPERRORTITLE),
                                                  MB_OK | MB_ICONEXCLAMATION);
                 FTPDeleteFileU8(fileName); // delete the file when an error occurs
@@ -2089,7 +2232,8 @@ void CLogs::SaveLog(HWND parent, const char* itemName, int uid)
         {
             DWORD err = GetLastError();
             SetCursor(oldCur);
-            sprintf(buf, LoadStr(IDS_SAVELOGERROR), SalamanderGeneral->GetErrorText(err));
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SAVELOGERROR), SalamanderGeneral->GetErrorText(err)); // feature 134
+            SplU8TrimTornTail(buf);
             SalamanderGeneral->SalMessageBox(parent, buf, LoadStr(IDS_FTPERRORTITLE),
                                              MB_OK | MB_ICONEXCLAMATION);
         }
@@ -2106,7 +2250,14 @@ void CLogs::CopyLog(HWND parent, const char* itemName, int uid)
         CLogData* d = Data[i];
         if (d->UID == uid)
         {
-            err = !SalamanderGeneral->CopyTextToClipboard(d->Text.GetString(), d->Text.Length, FALSE, NULL);
+            // feature 134: Unicode text on the clipboard - the log is UTF-8 and the core's
+            // CopyTextToClipboard takes code-page text (src/consts.h: "keeps CP_ACP semantics",
+            // it puts the bytes as CF_TEXT); a message kept as it came (see CLogs::LogMessage)
+            // makes the whole text read through the code page, as the log window does
+            WCHAR* textW = SplDisplayTextToWAlloc(d->Text.Length > 0 ? d->Text.GetString() : "");
+            err = textW == NULL || !SalamanderGeneral->CopyTextToClipboardW(textW, -1, FALSE, NULL);
+            if (textW != NULL)
+                free(textW);
             found = TRUE;
             break;
         }
@@ -2132,7 +2283,10 @@ void CLogs::CopyLog(HWND parent, const char* itemName, int uid)
 void CLogs::ClearLog(HWND parent, const char* itemName, int uid)
 {
     char buf[300 + LOGSCOMBOITEM_MAX_SIZE]; // feature 131: 'itemName' is an item of the Logs combo
-    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_CLEARLOGQUESTION), itemName);
+    char name[LOGSCOMBOITEM_MAX_SIZE];
+    GetLogItemNameForQuestion(uid, itemName, name, _countof(name));
+    _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CLEARLOGQUESTION), name); // feature 134: UTF-8 template + UTF-8 name
+    SplU8TrimTornTail(buf);
     MSGBOXEX_PARAMS params;
     memset(&params, 0, sizeof(params));
     params.HParent = parent;
@@ -2161,7 +2315,10 @@ void CLogs::ClearLog(HWND parent, const char* itemName, int uid)
 void CLogs::RemoveLog(HWND parent, const char* itemName, int uid)
 {
     char buf[300 + LOGSCOMBOITEM_MAX_SIZE]; // feature 131: 'itemName' is an item of the Logs combo
-    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_REMOVELOGQUESTION), itemName);
+    char name[LOGSCOMBOITEM_MAX_SIZE];
+    GetLogItemNameForQuestion(uid, itemName, name, _countof(name));
+    _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_REMOVELOGQUESTION), name); // feature 134: UTF-8 template + UTF-8 name
+    SplU8TrimTornTail(buf);
     MSGBOXEX_PARAMS params;
     memset(&params, 0, sizeof(params));
     params.HParent = parent;
@@ -2224,7 +2381,10 @@ void CLogs::CopyAllLogs(HWND parent)
             }
         }
         *s = 0;
-        err = !SalamanderGeneral->CopyTextToClipboard(txt, len, FALSE, NULL);
+        WCHAR* txtW = SplDisplayTextToWAlloc(txt); // feature 134: Unicode text, see CLogs::CopyLog
+        err = txtW == NULL || !SalamanderGeneral->CopyTextToClipboardW(txtW, -1, FALSE, NULL);
+        if (txtW != NULL)
+            free(txtW);
         free(txt);
     }
     else

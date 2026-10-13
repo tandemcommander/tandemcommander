@@ -283,11 +283,19 @@ void COperationDlg::SetDlgTitle(int progressValue, const char* state)
         if (progressValue != -1)
         {
             _snprintf_s(txt, _TRUNCATE, "(%d %%) %s", (int)((progressValue /*+ 5*/) / 10), TitleText); // do not round (100% must appear only at 100%, not at 99.5%)
+            SplU8TrimTornTail(txt);                                                                    // feature 134: 'TitleText' holds UTF-8 names
         }
         else
         {
             if (state != NULL)
-                _snprintf_s(txt, _TRUNCATE, "(%s) %s", state, TitleText);
+            {
+                // feature 134: 'TitleText' is UTF-8 (names) - the state word joins it as UTF-8 too
+                // (the callers load it with LoadStrU8; a size text of the core is taken either way)
+                char stateU8[200];
+                FTPTextToU8(state, stateU8, sizeof(stateU8));
+                _snprintf_s(txt, _TRUNCATE, "(%s) %s", stateU8, TitleText);
+                SplU8TrimTornTail(txt);
+            }
             else
                 text = TitleText; // progress unknown, status also unknown (shows plain title)
         }
@@ -683,19 +691,24 @@ BOOL COperationDlg::UpdateDataInDialog()
         }
         else
         {
-            const char* progressTxt = "";
+            // feature 134: the state word is loaded twice - as UTF-8 for the window title (it joins
+            // 'TitleText' with its UTF-8 names) and in the code page for the progress bar, which the
+            // core draws with an A call
+            int stateResID;
             if (operState == opstFinishedWithErrors)
-                SetDlgTitle(-1, (progressTxt = LoadStr(IDS_OPERDLGTITLE_ERRORS)));
+                stateResID = IDS_OPERDLGTITLE_ERRORS;
             else
             {
                 if (operState == opstSuccessfullyFinished || operState == opstFinishedWithSkips)
-                    SetDlgTitle(-1, (progressTxt = LoadStr(IDS_OPERDLGTITLE_DONE)));
+                    stateResID = IDS_OPERDLGTITLE_DONE;
                 else
                 {
-                    SetDlgTitle(-1, (progressTxt = LoadStr(WorkersList->EmptyOrAllShouldStop() ? IDS_OPERDLGTITLE_STOPPED : WorkersList->AtLeastOneWorkerIsWaitingForUser() ? IDS_OPERDLGTITLE_WAITING
-                                                                                                                                                                            : IDS_OPERDLGTITLE_PAUSED))); // not finished, but no workers are added, so the operation is not running...
+                    stateResID = WorkersList->EmptyOrAllShouldStop() ? IDS_OPERDLGTITLE_STOPPED : WorkersList->AtLeastOneWorkerIsWaitingForUser() ? IDS_OPERDLGTITLE_WAITING
+                                                                                                                                                  : IDS_OPERDLGTITLE_PAUSED; // not finished, but no workers are added, so the operation is not running...
                 }
             }
+            SetDlgTitle(-1, LoadStrU8(stateResID));
+            const char* progressTxt = LoadStr(stateResID);
             if ((int)ProgressValue < 0)
             {
                 if (ProgressValue == -1)

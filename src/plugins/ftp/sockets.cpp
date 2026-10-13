@@ -889,17 +889,23 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
     if (ProxyErrorCode != pecNoError)
     {
         ret = TRUE;
+        // feature 134: both texts this method gives are UTF-8 as a whole - the templates are
+        // LoadStrU8, the Windows error text and the reply of an HTTP proxy server are made
+        // UTF-8, and so is the host name (an older version may have stored it in the code
+        // page). The texts were code-page templates around a UTF-8 host name. Every text that
+        // is cut is cut at a whole character.
         char errText[300];
+        CFTPU8Name hostU8(HostAddress);
         if (ProxyErrorCode != pecUnexpectedReply && ProxyErrorCode != pecProxySrvError &&
             ProxyErrorCode != pecNoAuthUnsup && ProxyErrorCode != pecUserPassAuthUnsup &&
             ProxyErrorCode != pecUserPassAuthFail && ProxyErrorCode != pecListenUnsup &&
             ProxyErrorCode != pecHTTPProxySrvError)
         {
             if (ProxyWinError == NO_ERROR)
-                lstrcpyn(errText, LoadStr(ProxyErrorCode == pecReceivingBytes ? IDS_CONNECTIONLOSTERROR : IDS_UNKNOWNERROR), 300);
+                SplU8CopyTrunc(errText, 300, LoadStrU8(ProxyErrorCode == pecReceivingBytes ? IDS_CONNECTIONLOSTERROR : IDS_UNKNOWNERROR));
             else
             {
-                FTPGetErrorText(ProxyWinError, errText, 300);
+                FTPGetErrorTextU8(ProxyWinError, errText, 300);
                 char* s = errText + strlen(errText);
                 while (s > errText && (*(s - 1) == '\n' || *(s - 1) == '\r'))
                     s--;
@@ -924,8 +930,10 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
                         len--;
                     if (len > 299)
                         len = 299;
-                    memcpy(errText, s, len);
-                    errText[len] = 0;
+                    char replyRaw[300]; // the proxy server's bytes, any encoding
+                    memcpy(replyRaw, s, len);
+                    replyRaw[len] = 0;
+                    FTPTextToU8(replyRaw, errText, 300);
                 }
                 else
                     errText[0] = 0;
@@ -933,7 +941,7 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
             else
             {
                 if (ProxyErrorCode == pecProxySrvError)
-                    lstrcpyn(errText, LoadStr(ProxyWinError), 300);
+                    SplU8CopyTrunc(errText, 300, LoadStrU8(ProxyWinError));
                 else
                     errText[0] = 0;
             }
@@ -950,7 +958,7 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
                 case pecUnexpectedReply:
                 {
                     _snprintf_s(errBuf, errBufSize, _TRUNCATE,
-                                LoadStr(ProxyErrorCode == pecUnexpectedReply ? IDS_PROXYUNEXPECTEDREPLY : IDS_PROXYERRGETIP), HostAddress, errText);
+                                LoadStrU8(ProxyErrorCode == pecUnexpectedReply ? IDS_PROXYUNEXPECTEDREPLY : IDS_PROXYERRGETIP), hostU8.Text, errText);
                     break;
                 }
 
@@ -958,35 +966,36 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
                 case pecReceivingBytes:
                 {
                     _snprintf_s(errBuf, errBufSize, _TRUNCATE,
-                                LoadStr(ProxyErrorCode == pecSendingBytes ? IDS_PROXYERRSENDREQ : IDS_PROXYERRRECVREP), errText);
+                                LoadStrU8(ProxyErrorCode == pecSendingBytes ? IDS_PROXYERRSENDREQ : IDS_PROXYERRRECVREP), errText);
                     break;
                 }
 
                 case pecConPrxSrvError:
                 {
-                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStr(IDS_PROXYERRUNABLETOCON2), errText);
+                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStrU8(IDS_PROXYERRUNABLETOCON2), errText);
                     break;
                 }
 
                 case pecNoAuthUnsup:
-                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStr(IDS_PROXYERRNOAUTHUNSUP));
+                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStrU8(IDS_PROXYERRNOAUTHUNSUP));
                     break;
                 case pecUserPassAuthUnsup:
-                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStr(IDS_PROXYERRUSERPASSAUTHUNSUP));
+                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStrU8(IDS_PROXYERRUSERPASSAUTHUNSUP));
                     break;
                 case pecUserPassAuthFail:
-                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStr(IDS_PROXYERRUSERPASSFAIL));
+                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStrU8(IDS_PROXYERRUSERPASSFAIL));
                     break;
                 case pecListenUnsup:
-                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStr(IDS_PROXYERRLISTENUNSUP));
+                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStrU8(IDS_PROXYERRLISTENUNSUP));
                     break;
 
                 default: // pecProxySrvError, pecHTTPProxySrvError
                 {
-                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStr(IDS_PROXYERROPENCON), HostAddress, HostPort, errText);
+                    _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStrU8(IDS_PROXYERROPENCON), hostU8.Text, HostPort, errText);
                     break;
                 }
                 }
+                SplU8TrimTornTail(errBuf);
             }
         }
         else
@@ -997,10 +1006,10 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
             {
                 // feature 131: the caller uses 'formatBuf' as a printf format - a '%' of the host
                 // name is doubled, and a cut text must not end in half a directive
-                char hostEsc[2 * HOST_MAX_SIZE];
-                FTPDoublePercents(hostEsc, _countof(hostEsc), HostAddress);
+                char hostEsc[2 * 3 * HOST_MAX_SIZE];
+                FTPDoublePercents(hostEsc, _countof(hostEsc), hostU8.Text);
                 if (_snprintf_s(formatBuf, formatBufSize, _TRUNCATE,
-                            LoadStr(ProxyErrorCode == pecGettingHostIP ? IDS_GETIPERROR : ProxyErrorCode == pecSendingBytes    ? IDS_PROXYSENDREQERROR
+                            LoadStrU8(ProxyErrorCode == pecGettingHostIP ? IDS_GETIPERROR : ProxyErrorCode == pecSendingBytes    ? IDS_PROXYSENDREQERROR
                                                                                       : ProxyErrorCode == pecReceivingBytes    ? IDS_PROXYRECVREPERROR
                                                                                       : ProxyErrorCode == pecUnexpectedReply   ? IDS_PROXYUNEXPECTEDREPLY
                                                                                       : ProxyErrorCode == pecNoAuthUnsup       ? IDS_PROXYERRNOAUTHUNSUP
@@ -1010,10 +1019,11 @@ BOOL CSocket::GetProxyError(char* errBuf, int errBufSize, char* formatBuf, int f
                                                                                                                                : IDS_PROXYOPENCONERROR), // ProxyErrorCode == pecProxySrvError or pecHTTPProxySrvError
                             hostEsc, HostPort) < 0)
                 {
+                    SplU8TrimTornTail(formatBuf); // feature 134: first the torn character, then half a directive
                     FTPDropCutFormatTail(formatBuf);
                 }
             }
-            lstrcpyn(errBuf, errText, errBufSize);
+            SplU8CopyTrunc(errBuf, errBufSize, errText);
         }
     }
     HANDLES(LeaveCriticalSection(&SocketCritSect));

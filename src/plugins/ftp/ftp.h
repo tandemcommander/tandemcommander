@@ -153,7 +153,7 @@ extern BOOL WindowsVistaAndLater; // Windows Vista or later from the NT line
 extern int TargetPanelPathPanel;
 extern char TargetPanelPath[MAX_PATH];
 
-extern char UserDefinedSuffix[100]; // preloaded string for marking user-defined "server types"
+extern char UserDefinedSuffix[100]; // preloaded string for marking user-defined "server types"; UTF-8 (feature 134)
 
 extern const char* LIST_CMD_TEXT;   // text of the "LIST" FTP command
 extern const char* NLST_CMD_TEXT;   // text of the "NLST" FTP command
@@ -203,6 +203,12 @@ void ReleaseFS();
 // the string (stored in a global cyclic buffer)
 char* LoadStr(int resID);
 
+// feature 134: the same text as UTF-8 - for a sentence that holds a name, a path, a server
+// reply or an error text (they are UTF-8, or are made UTF-8 with FTPTextToU8). Valid until the
+// plug-in unloads; any number can be used in one expression; must not be modified. A text that
+// is all resource text and numbers and goes to an A-only sink stays LoadStr.
+const char* LoadStrU8(int resID);
+
 // execution of the "Connect FTP Server" command - called by Alt+F1/F2, in the Drive bars, and from the plugin menu
 void ConnectFTPServer(HWND parent, int panel);
 
@@ -236,7 +242,10 @@ void GetMyDocumentsPath(char* initDir);
 
 // returns 'typeName' in a user-visible form (with an extension, without '*');
 // 'buf'+'bufSize' define a helper buffer (a pointer to it may be returned),
-// a reasonable buffer size is (SERVERTYPE_MAX_SIZE + 101)
+// a reasonable buffer size is (SERVERTYPE_MAX_SIZE + 101).
+// Feature 134: the text is UTF-8 (the name of a user's own type with the UTF-8 suffix; a
+// built-in name is ASCII) - it needs a wide sink or one that takes UTF-8 (the core's message
+// box); for a list or a combo see FTPSendListTextMsg (ftputils.h).
 char* GetTypeNameForUser(char* typeName, char* buf, int bufSize);
 
 // loads from resources the standard column name identified by 'id' (columns for

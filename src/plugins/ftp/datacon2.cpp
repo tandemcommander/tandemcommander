@@ -423,7 +423,10 @@ void CKeepAliveDataConSocket::LogNetEventLastError(BOOL canBeProxyError)
         while (s > errBuf && (*(s - 1) == '\n' || *(s - 1) == '\r'))
             s--;
         *s = 0; // trim newline characters from the error text
-        _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_LOGMSGDATCONERROR), errBuf);
+        // feature 134: 'errBuf' is the UTF-8 text of GetProxyError or a FormatMessage text
+        // (code page) - as UTF-8 in a UTF-8 log message; a cut message keeps its line end
+        if (_snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_LOGMSGDATCONERROR), CFTPU8Piece(errBuf).Text) < 0)
+            FTPLogMsgCutKeepLineEnd(buf, _countof(buf));
         Logs.LogMessage(LogUID, buf, -1, TRUE);
     }
     HANDLES(LeaveCriticalSection(&SocketCritSect));

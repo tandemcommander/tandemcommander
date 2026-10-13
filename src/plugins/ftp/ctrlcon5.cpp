@@ -111,7 +111,9 @@ void CControlConnectionSocket::DownloadOneFile(HWND parent, const char* fileName
                                                totalAttemptNum, NULL, TRUE, NULL);
                     if (ok && !success && workPath[0] != 0) // send succeeded but the server reports an error (+ignore errors with an empty path) -> file cannot be downloaded
                     {                                       // downloaded (it is on the current path in the panel)
-                        _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR), workPath, replyBuf);
+                        // feature 134: UTF-8 template, the path is UTF-8, the reply (any encoding) made UTF-8
+                        _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR), workPath, CFTPU8Piece(replyBuf).Text);
+                        SplU8TrimTornTail(errBuf);
                         SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                          MB_OK | MB_ICONEXCLAMATION);
                         ok = FALSE;
@@ -317,7 +319,12 @@ void CControlConnectionSocket::DownloadOneFile(HWND parent, const char* fileName
                                     else
                                     {
                                         // display the message "Unable to download file from server"
-                                        _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_DOWNLOADFILEERROR), fileName, workPath);
+                                        // feature 134: the message is UTF-8 as a whole - both templates
+                                        // LoadStrU8, name and path are UTF-8, and 'replyBuf' (a server
+                                        // reply, a LoadStr or FormatMessage text, or the UTF-8 text of
+                                        // GetProxyError) is made UTF-8 where it is printed
+                                        _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_DOWNLOADFILEERROR), fileName, workPath);
+                                        SplU8TrimTornTail(errBuf);
                                         int len = (int)strlen(errBuf);
                                         BOOL isNetErr = TRUE;
                                         int useSuffixResID = IDS_DOWNLOADFILEERRORSUFIX2; // server reply:  (prefix for the message in 'replyBuf')
@@ -364,7 +371,8 @@ void CControlConnectionSocket::DownloadOneFile(HWND parent, const char* fileName
                                                 }
                                             }
                                         }
-                                        _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE, LoadStr(useSuffixResID), replyBuf);
+                                        _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE, LoadStrU8(useSuffixResID), CFTPU8Piece(replyBuf).Text);
+                                        SplU8TrimTornTail(errBuf);
                                         SalamanderGeneral->SalMessageBox(parent, errBuf,
                                                                          LoadStr(IDS_FTPERRORTITLE),
                                                                          MB_OK | MB_ICONEXCLAMATION);
@@ -437,13 +445,16 @@ void CControlConnectionSocket::DownloadOneFile(HWND parent, const char* fileName
                                     DWORD err = GetLastError();
 
                                     // display the message "Unable to download file from server"
-                                    _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_DOWNLOADFILEERROR), fileName, workPath);
+                                    // feature 134: UTF-8 as a whole (see above); the error text made UTF-8
+                                    _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_DOWNLOADFILEERROR), fileName, workPath);
+                                    SplU8TrimTornTail(errBuf);
                                     int len = (int)strlen(errBuf);
                                     if (err != NO_ERROR)
                                         FTPGetErrorText(err, replyBuf, 700);
                                     else
                                         lstrcpyn(replyBuf, LoadStr(IDS_UNKNOWNERROR), 700);
-                                    _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE, LoadStr(IDS_DOWNLOADFILEERRORSUFIX3), replyBuf);
+                                    _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE, LoadStrU8(IDS_DOWNLOADFILEERRORSUFIX3), CFTPU8Piece(replyBuf).Text);
+                                    SplU8TrimTornTail(errBuf);
                                     SalamanderGeneral->SalMessageBox(parent, errBuf,
                                                                      LoadStr(IDS_FTPERRORTITLE),
                                                                      MB_OK | MB_ICONEXCLAMATION);
@@ -468,9 +479,13 @@ void CControlConnectionSocket::DownloadOneFile(HWND parent, const char* fileName
     else
     {
         // display the message "Unable to download file from server - file is locked by another operation"
-        _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_DOWNLOADFILEERROR), fileName, workPath);
+        // feature 134: UTF-8 as a whole (name and path are UTF-8); the suffix is appended as a
+        // text, not used as a format
+        _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_DOWNLOADFILEERROR), fileName, workPath);
+        SplU8TrimTornTail(errBuf);
         int len = (int)strlen(errBuf);
-        _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE, LoadStr(IDS_DOWNLOADFILEERRORSUFIX4));
+        _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE, "%s", LoadStrU8(IDS_DOWNLOADFILEERRORSUFIX4));
+        SplU8TrimTornTail(errBuf);
         SalamanderGeneral->SalMessageBox(parent, errBuf,
                                          LoadStr(IDS_FTPERRORTITLE),
                                          MB_OK | MB_ICONEXCLAMATION);
@@ -532,7 +547,9 @@ BOOL CControlConnectionSocket::CreateDir(char* changedPath, HWND parent, char* n
                                        totalAttemptNum, NULL, TRUE, NULL);
             if (ok && !success && workPath[0] != 0) // send succeeded, but the server reports an error (+ignore errors with an empty path) -> file cannot be downloaded
             {                                       // downloaded (it is on the current path in the panel)
-                _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR), workPath, replyBuf);
+                // feature 134: UTF-8 template, the path is UTF-8, the reply (any encoding) made UTF-8
+                _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR), workPath, CFTPU8Piece(replyBuf).Text);
+                SplU8TrimTornTail(errBuf);
                 SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                  MB_OK | MB_ICONEXCLAMATION);
                 ok = FALSE;
@@ -587,7 +604,9 @@ BOOL CControlConnectionSocket::CreateDir(char* changedPath, HWND parent, char* n
                 {
                     if (!retSuccess) // do not display an error message for a successful reply
                     {
-                        _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CREATEDIRERROR), newName, replyBuf);
+                        // feature 134: UTF-8 template, the name is UTF-8, the reply (any encoding) made UTF-8
+                        _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CREATEDIRERROR), newName, CFTPU8Piece(replyBuf).Text);
+                        SplU8TrimTornTail(errBuf);
                         SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                          MB_OK | MB_ICONEXCLAMATION);
                     }
@@ -708,7 +727,9 @@ BOOL CControlConnectionSocket::QuickRename(char* changedPath, HWND parent, const
                                                totalAttemptNum, NULL, TRUE, NULL);
                     if (ok && !success && workPath[0] != 0) // send succeeded, but the server reports an error (+ignore errors for an empty path) -> file cannot be downloaded
                     {                                       // downloaded (it is on the current path in the panel)
-                        _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR), workPath, replyBuf);
+                        // feature 134: UTF-8 template, the path is UTF-8, the reply (any encoding) made UTF-8
+                        _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR), workPath, CFTPU8Piece(replyBuf).Text);
+                        SplU8TrimTornTail(errBuf);
                         SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                          MB_OK | MB_ICONEXCLAMATION);
                         ok = FALSE;
@@ -749,7 +770,9 @@ BOOL CControlConnectionSocket::QuickRename(char* changedPath, HWND parent, const
                                 }
                                 else // error
                                 {
-                                    _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_QUICKRENAMEERROR), fromName, newName, replyBuf);
+                                    // feature 134: UTF-8 template, the names are UTF-8, the reply (any encoding) made UTF-8
+                                    _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_QUICKRENAMEERROR), fromName, newName, CFTPU8Piece(replyBuf).Text);
+                                    SplU8TrimTornTail(errBuf);
                                     SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                                      MB_OK | MB_ICONEXCLAMATION);
                                 }
@@ -776,7 +799,8 @@ BOOL CControlConnectionSocket::QuickRename(char* changedPath, HWND parent, const
                         }
                         else // error (including an unexpected reply)
                         {
-                            _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_QUICKRENAMEERROR), fromName, newName, replyBuf);
+                            _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_QUICKRENAMEERROR), fromName, newName, CFTPU8Piece(replyBuf).Text); // feature 134
+                            SplU8TrimTornTail(errBuf);
                             SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                              MB_OK | MB_ICONEXCLAMATION);
                         }
@@ -807,10 +831,13 @@ BOOL CControlConnectionSocket::QuickRename(char* changedPath, HWND parent, const
     if (srcLocked || tgtLocked)
     {
         // display the message "Unable to rename file on server - src or tgt file is locked by another operation"
-        _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_QUICKRENAMEFILEERR), fromNameForSrv, newName);
+        // feature 134: UTF-8 as a whole (the names are UTF-8); the suffix is appended as a text
+        _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_QUICKRENAMEFILEERR), fromNameForSrv, newName);
+        SplU8TrimTornTail(errBuf);
         int len = (int)strlen(errBuf);
-        _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE,
-                    LoadStr(srcLocked ? IDS_QUICKRENAMEFILEERRSUF1 : IDS_QUICKRENAMEFILEERRSUF2));
+        _snprintf_s(errBuf + len, 900 + FTP_MAX_PATH - len, _TRUNCATE, "%s",
+                    LoadStrU8(srcLocked ? IDS_QUICKRENAMEFILEERRSUF1 : IDS_QUICKRENAMEFILEERRSUF2));
+        SplU8TrimTornTail(errBuf);
         SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                          MB_OK | MB_ICONEXCLAMATION);
     }
@@ -947,7 +974,10 @@ BOOL CControlConnectionSocket::OpenForListeningAndWaitForRes(HWND parent, CDataC
                         if (dataConnection->GetProxyError(buf, 300, NULL, 0, TRUE) &&
                             errBufSize > 0)
                         { // write the error to the log
-                            _snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStr(IDS_LOGMSGDATCONERROR), buf);
+                            // feature 134: the text of GetProxyError is UTF-8 - the template too; a
+                            // cut message keeps its line end
+                            if (_snprintf_s(errBuf, errBufSize, _TRUNCATE, LoadStrU8(IDS_LOGMSGDATCONERROR), buf) < 0)
+                                FTPLogMsgCutKeepLineEnd(errBuf, errBufSize);
                             Logs.LogMessage(logUID, errBuf, -1, TRUE);
                         }
                         *canRetry = TRUE;

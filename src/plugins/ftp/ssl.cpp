@@ -225,7 +225,7 @@ static bool CheckCertificate(BYTE* pCert, int certLen, LPTSTR buf, int maxlen, c
         buf[0] = 0;
     if (!pCertContext)
     {
-        lstrcpyn(buf, SalamanderGeneral->GetErrorText(GetLastError()), maxlen);
+        SplU8CopyTrunc(buf, maxlen, SalamanderGeneral->GetErrorText(GetLastError())); // feature 134: UTF-8, cut at a whole character
         return false;
     }
 
@@ -246,7 +246,7 @@ CHECK_CERT_AGAIN:
                                  NULL,
                                  &pChainContext))
     {
-        lstrcpyn(buf, SalamanderGeneral->GetErrorText(GetLastError()), maxlen);
+        SplU8CopyTrunc(buf, maxlen, SalamanderGeneral->GetErrorText(GetLastError())); // feature 134: UTF-8, cut at a whole character
         CertFreeCertificateContext(pCertContext);
         return false;
     }
@@ -273,7 +273,7 @@ CHECK_CERT_AGAIN:
     if (!CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL,
                                           pChainContext, &PolicyPara, &PolicyStatus))
     {
-        lstrcpyn(buf, SalamanderGeneral->GetErrorText(GetLastError()), maxlen);
+        SplU8CopyTrunc(buf, maxlen, SalamanderGeneral->GetErrorText(GetLastError())); // feature 134: UTF-8, cut at a whole character
         CertFreeCertificateChain(pChainContext);
         CertFreeCertificateContext(pCertContext);
         return false;
@@ -293,7 +293,7 @@ CHECK_CERT_AGAIN:
         else
         {
             ok = false;
-            lstrcpyn(buf, SalamanderGeneral->GetErrorText(PolicyStatus.dwError), maxlen);
+            SplU8CopyTrunc(buf, maxlen, SalamanderGeneral->GetErrorText(PolicyStatus.dwError)); // feature 134: UTF-8, cut at a whole character
         }
     }
     int res = CertVerifyTimeValidity(NULL, pCertContext->pCertInfo);
@@ -301,7 +301,9 @@ CHECK_CERT_AGAIN:
     {
         ok = false;
         AddNewLine(buf, maxlen);
-        lstrcpyn(buf, LoadStr((res < 0) ? IDS_SSL_ERR_NOTYETVALID : IDS_SSL_ERR_EXPIRED), maxlen);
+        // feature 134: UTF-8 like the GetErrorText text it may follow (the dialog shows the
+        // text wide); cut at a whole character
+        SplU8CopyTrunc(buf, maxlen, LoadStrU8((res < 0) ? IDS_SSL_ERR_NOTYETVALID : IDS_SSL_ERR_EXPIRED));
     }
     // Whatever flag is used, revokation check fails on most servers :-/
     /*int i;
@@ -880,8 +882,20 @@ INT_PTR CCertificateErrDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lPara
     switch (uMsg)
     {
     case WM_INITDIALOG:
-        SetDlgItemText(HWindow, IDT_CERTIFICATE_ERROR, ErrorStr);
+    {
+        // feature 134: the text is UTF-8 (GetErrorText, LoadStrU8 - see CheckCertificate) and was
+        // set through the A call: shown through the code page in every language. Set wide; a
+        // text that is not UTF-8 is read through the code page as before.
+        WCHAR* errorStrW = SplDisplayTextToWAlloc(ErrorStr);
+        if (errorStrW != NULL)
+        {
+            SetDlgItemTextW(HWindow, IDT_CERTIFICATE_ERROR, errorStrW);
+            free(errorStrW);
+        }
+        else
+            SetDlgItemText(HWindow, IDT_CERTIFICATE_ERROR, ErrorStr);
         break;
+    }
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {

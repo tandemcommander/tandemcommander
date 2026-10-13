@@ -462,13 +462,21 @@ const char* GetOperationFatalErrorTxt(int opFatalError, char* errBuf)
 // host name is doubled, otherwise that later printf reads it as a directive (the host "a%sb"
 // made it read a string argument that is not there). The call is bounded (it was a sprintf into
 // 300 bytes with a host of up to 200); a cut text must not end in half a directive.
+// feature 134: 'templ' is a LoadStrU8 text and the format is UTF-8 as a whole - the host is made
+// UTF-8 first (an older version may have stored it in the code page) and a cut text loses a
+// torn character before the check for half a directive.
 static void MakeConnectErrorFormat(char* formatBuf, int formatBufSize, const char* templ,
                                    const char* host, const char* ip, int port)
 {
-    char hostEsc[2 * HOST_MAX_SIZE];
-    FTPDoublePercents(hostEsc, _countof(hostEsc), host);
+    char hostU8[3 * HOST_MAX_SIZE];
+    FTPTextToU8(host, hostU8, _countof(hostU8));
+    char hostEsc[2 * 3 * HOST_MAX_SIZE];
+    FTPDoublePercents(hostEsc, _countof(hostEsc), hostU8);
     if (_snprintf_s(formatBuf, formatBufSize, _TRUNCATE, templ, hostEsc, ip, port) < 0)
+    {
+        SplU8TrimTornTail(formatBuf);
         FTPDropCutFormatTail(formatBuf);
+    }
 }
 
 BOOL GetToken(char** s, char** next)
@@ -569,8 +577,8 @@ BOOL CControlConnectionSocket::StartControlConnection(HWND parent, char* user, i
     char buf[1000];
     char errBuf[300];
     char errBuf2[300];
-    char formatBuf[300];
-    char retryBuf[700];
+    char formatBuf[300 + 2 * HOST_MAX_SIZE]; // feature 134: + room for a host made UTF-8
+    char retryBuf[700 + 1000];               // feature 134: IDS_WAITINGTORETRYSUF around all of 'buf'
 
     const DWORD showWaitWndTime = WAITWND_STARTCON; // show time of the wait window
     int serverTimeout = Config.GetServerRepliesTimeout() * 1000;
@@ -690,14 +698,16 @@ RETRY_LABEL:
         {
             if (!GetHostByAddress(host, 0)) // must be outside the SocketCritSect critical section
             {                               // no chance of success -> report an error
-                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStr(IDS_GETIPERROR), host, "", 0);
+                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStrU8(IDS_GETIPERROR), host, "", 0);
                 opFatalErrorTextID = -1; // the text is in 'formatBuf'
                 opFatalError = NO_ERROR; // unknown error
                 state = sccsOperationFatalError;
             }
             else
             {
-                sprintf(buf, LoadStr(IDS_GETTINGIPOFSERVER), host);
+                // feature 134: UTF-8 template + the host as UTF-8; bounded
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_GETTINGIPOFSERVER), CFTPU8Name(host).Text);
+                SplU8TrimTornTail(buf);
                 waitWnd.SetText(buf);
                 waitWnd.Create(GetWaitTime(showWaitWndTime));
 
@@ -752,7 +762,7 @@ RETRY_LABEL:
                         }
                         else // error
                         {
-                            MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStr(IDS_GETIPERROR), host, "", 0);
+                            MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStrU8(IDS_GETIPERROR), host, "", 0);
                             opFatalErrorTextID = -1; // the text is in 'formatBuf'
                             opFatalError = data2;
                             state = sccsOperationFatalError;
@@ -781,6 +791,12 @@ RETRY_LABEL:
             strcat(errBuf, " - ");
             if (GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, errBuf + strlen(errBuf), 50) == 0)
                 sprintf(errBuf + strlen(errBuf), "%u:%02u:%02u", st.wHour, st.wMinute, st.wSecond);
+            // feature 134: the log header is UTF-8 as a whole (LoadStrU8) - the date and time of
+            // the A calls above (code page), the proxy type name (a LoadStr text) and the names
+            // an older version may have stored in the code page go through CFTPU8Piece; a header
+            // cut by the buffer keeps its line end
+            CFTPU8Name timeU8(errBuf);
+            BOOL headerCut = FALSE;
 
             HANDLES(EnterCriticalSection(&SocketCritSect));
 
@@ -791,14 +807,17 @@ RETRY_LABEL:
                     Logs.CreateLog(&LogUID, Host, Port, User, this, FALSE, FALSE);
                 if (ProxyServer != NULL)
                 {
-                    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_PRXSRVLOGHEADER), Host, Port, User,
-                                ProxyServer->ProxyName, GetProxyTypeName(ProxyServer->ProxyType),
-                                proxyScriptParams.ProxyHost, proxyScriptParams.ProxyPort,
-                                proxyScriptParams.ProxyUser, host, inet_ntoa(srvAddr), port, LogUID, errBuf);
+                    headerCut = _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_PRXSRVLOGHEADER), CFTPU8Name(Host).Text, Port,
+                                            CFTPU8Name(User).Text, CFTPU8Name(ProxyServer->ProxyName).Text,
+                                            CFTPU8Name(GetProxyTypeName(ProxyServer->ProxyType)).Text,
+                                            CFTPU8Name(proxyScriptParams.ProxyHost).Text, proxyScriptParams.ProxyPort,
+                                            CFTPU8Name(proxyScriptParams.ProxyUser).Text, CFTPU8Name(host).Text,
+                                            inet_ntoa(srvAddr), port, LogUID, timeU8.Text) < 0;
                 }
                 else
                 {
-                    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_LOGHEADER), Host, inet_ntoa(srvAddr), Port, LogUID, errBuf);
+                    headerCut = _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_LOGHEADER), CFTPU8Name(Host).Text,
+                                            inet_ntoa(srvAddr), Port, LogUID, timeU8.Text) < 0;
                 }
                 if (Config.AlwaysShowLogForActPan &&
                     (!Config.UseConnectionDataFromConfig || !Config.ChangingPathInInactivePanel))
@@ -810,19 +829,24 @@ RETRY_LABEL:
             {
                 if (ProxyServer != NULL)
                 {
-                    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_PRXSRVRECONLOGHEADER), Host, Port, User,
-                                ProxyServer->ProxyName, GetProxyTypeName(ProxyServer->ProxyType),
-                                proxyScriptParams.ProxyHost, proxyScriptParams.ProxyPort,
-                                proxyScriptParams.ProxyUser, host, inet_ntoa(srvAddr), port, attemptNum, errBuf);
+                    headerCut = _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_PRXSRVRECONLOGHEADER), CFTPU8Name(Host).Text, Port,
+                                            CFTPU8Name(User).Text, CFTPU8Name(ProxyServer->ProxyName).Text,
+                                            CFTPU8Name(GetProxyTypeName(ProxyServer->ProxyType)).Text,
+                                            CFTPU8Name(proxyScriptParams.ProxyHost).Text, proxyScriptParams.ProxyPort,
+                                            CFTPU8Name(proxyScriptParams.ProxyUser).Text, CFTPU8Name(host).Text,
+                                            inet_ntoa(srvAddr), port, attemptNum, timeU8.Text) < 0;
                 }
                 else
                 {
-                    _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_RECONLOGHEADER), Host, inet_ntoa(srvAddr), Port, attemptNum, errBuf);
+                    headerCut = _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_RECONLOGHEADER), CFTPU8Name(Host).Text,
+                                            inet_ntoa(srvAddr), Port, attemptNum, timeU8.Text) < 0;
                 }
             }
             logUID = LogUID;
 
             HANDLES(LeaveCriticalSection(&SocketCritSect));
+            if (headerCut)
+                FTPLogMsgCutKeepLineEnd(buf, _countof(buf));
 
             // add the header - Host + Port + IP + User
             Logs.LogMessage(logUID, buf, -1);
@@ -834,8 +858,11 @@ RETRY_LABEL:
             if ((proxyType == fpstSocks5 || proxyType == fpstHTTP1_1) &&
                 proxyScriptParams.ProxyUser[0] != 0 && proxyScriptParams.ProxyPassword[0] == 0)
             { // the user should enter the proxy password
-                _snprintf_s(connectingToAs, _TRUNCATE, LoadStr(IDS_CONNECTINGTOAS2),
-                            proxyScriptParams.ProxyHost, proxyScriptParams.ProxyUser);
+                // feature 134: 'connectingToAs' is UTF-8 as a whole everywhere in this method
+                // (LoadStrU8 + the names as UTF-8); the dialogs show it wide (dialogs8.cpp)
+                _snprintf_s(connectingToAs, _TRUNCATE, LoadStrU8(IDS_CONNECTINGTOAS2),
+                            CFTPU8Name(proxyScriptParams.ProxyHost).Text, CFTPU8Name(proxyScriptParams.ProxyUser).Text);
+                SplU8TrimTornTail(connectingToAs);
                 if (CEnterStrDlg(parent, LoadStr(IDS_ENTERPRXPASSTITLE), LoadStr(IDS_ENTERPRXPASSTEXT),
                                  proxyScriptParams.ProxyPassword, PASSWORD_MAX_SIZE, TRUE,
                                  connectingToAs, FALSE)
@@ -857,10 +884,12 @@ RETRY_LABEL:
             Logs.RefreshListOfLogsInLogsDlg();
             if (conRes)
             {
+                // feature 134: UTF-8 templates + the host as UTF-8; bounded
                 if (proxyType == fpstNotUsed)
-                    sprintf(buf, LoadStr(IDS_OPENINGCONTOSERVER), host, inet_ntoa(srvAddr), port);
+                    _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_OPENINGCONTOSERVER), CFTPU8Name(host).Text, inet_ntoa(srvAddr), port);
                 else
-                    sprintf(buf, LoadStr(IDS_OPENINGCONTOSERVER2), proxyScriptParams.Host, proxyScriptParams.Port);
+                    _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_OPENINGCONTOSERVER2), CFTPU8Name(proxyScriptParams.Host).Text, proxyScriptParams.Port);
+                SplU8TrimTornTail(buf);
                 waitWnd.SetText(buf);
                 waitWnd.Create(GetWaitTime(showWaitWndTime));
 
@@ -913,19 +942,19 @@ RETRY_LABEL:
                             state = sccsServerReady; // we are connected
                         else                         // error
                         {
-                            if (GetProxyError(errBuf, 300, formatBuf, 300, FALSE))
+                            if (GetProxyError(errBuf, 300, formatBuf, _countof(formatBuf), FALSE)) // (both texts are UTF-8, feature 134)
                                 opFatalError = -1; // error while connecting through the proxy server: the error text is directly in 'errBuf'+'formatBuf'
                             else
                             {
                                 opFatalError = data1;
-                                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStr(IDS_OPENCONERROR), host, inet_ntoa(srvAddr), port);
+                                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStrU8(IDS_OPENCONERROR), host, inet_ntoa(srvAddr), port);
                             }
                             opFatalErrorTextID = -1;                  // the text is in 'formatBuf'
                             noRetryState = sccsOperationFatalError;   // if retry is not performed, transition to sccsOperationFatalError
                             if (opFatalError == -1 && errBuf[0] == 0) // simple error -> convert it to sccsFatalError
                             {
                                 fatalErrorTextID = -1;
-                                lstrcpyn(errBuf, formatBuf, 300);
+                                SplU8CopyTrunc(errBuf, 300, formatBuf); // feature 134: cut at a whole character
                                 noRetryState = sccsFatalError; // if retry is not performed, transition to sccsFatalError
                             }
                             state = sccsRetry;
@@ -944,7 +973,7 @@ RETRY_LABEL:
             else
             {
                 opFatalError = error;
-                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStr(IDS_OPENCONERROR), host, inet_ntoa(srvAddr), port);
+                MakeConnectErrorFormat(formatBuf, _countof(formatBuf), LoadStrU8(IDS_OPENCONERROR), host, inet_ntoa(srvAddr), port);
                 opFatalErrorTextID = -1;                // the text is in 'formatBuf'
                 noRetryState = sccsOperationFatalError; // if retry is not performed, transition to sccsOperationFatalError
                 state = sccsRetry;
@@ -1031,28 +1060,35 @@ RETRY_LABEL:
                     {
                     case sccsFatalError:
                     {
+                        // feature 134: UTF-8 templates; the error text (a LoadStr text, a server
+                        // reply or the UTF-8 text of GetProxyError) and the host as UTF-8
                         if (proxyType == fpstNotUsed)
                         {
-                            _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_WAITINGTORETRY), host, inet_ntoa(srvAddr),
-                                        port, GetFatalErrorTxt(fatalErrorTextID, errBuf));
+                            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_WAITINGTORETRY), CFTPU8Name(host).Text, inet_ntoa(srvAddr),
+                                        port, CFTPU8Piece(GetFatalErrorTxt(fatalErrorTextID, errBuf)).Text);
                         }
                         else
                         {
-                            _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_WAITINGTORETRY2), proxyScriptParams.Host,
-                                        proxyScriptParams.Port, GetFatalErrorTxt(fatalErrorTextID, errBuf));
+                            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_WAITINGTORETRY2), CFTPU8Name(proxyScriptParams.Host).Text,
+                                        proxyScriptParams.Port, CFTPU8Piece(GetFatalErrorTxt(fatalErrorTextID, errBuf)).Text);
                         }
+                        SplU8TrimTornTail(buf);
                         break;
                     }
 
                     case sccsOperationFatalError:
                     {
-                        const char* e = GetOperationFatalErrorTxt(opFatalError, errBuf);
-                        char* f;
+                        // feature 134: the sentence is UTF-8 as a whole - the format is a LoadStrU8
+                        // text or 'formatBuf' (UTF-8: MakeConnectErrorFormat, GetProxyError), the
+                        // error text (FormatMessage, a LoadStr text or a server reply) is made UTF-8
+                        CFTPU8Piece e(GetOperationFatalErrorTxt(opFatalError, errBuf));
+                        const char* f;
                         if (opFatalErrorTextID != -1)
-                            f = LoadStr(opFatalErrorTextID);
+                            f = LoadStrU8(opFatalErrorTextID);
                         else
                             f = formatBuf;
-                        _snprintf_s(buf, _TRUNCATE, f, e);
+                        _snprintf_s(buf, _TRUNCATE, f, e.Text);
+                        SplU8TrimTornTail(buf);
 
                         char* s = buf;
                         while (*s != 0 && *s != '\n')
@@ -1073,8 +1109,9 @@ RETRY_LABEL:
 
                     // show a window with the waiting message
                     int delayBetweenConRetries = Config.GetDelayBetweenConRetries();
-                    _snprintf_s(retryBuf, _TRUNCATE, LoadStr(IDS_WAITINGTORETRYSUF), buf, delayBetweenConRetries,
+                    _snprintf_s(retryBuf, _TRUNCATE, LoadStrU8(IDS_WAITINGTORETRYSUF), buf, delayBetweenConRetries, // feature 134: 'buf' is UTF-8
                                 attemptNum, Config.GetConnectRetries() + 1);
+                    SplU8TrimTornTail(retryBuf);
 
                     waitWnd.SetText(retryBuf);
                     waitWnd.Create(0);
@@ -1092,8 +1129,9 @@ RETRY_LABEL:
                             DWORD wait = delayBetweenConRetries * 1000 - (now - start);
                             if (now != start) // no point on the first pass
                             {
-                                _snprintf_s(retryBuf, _TRUNCATE, LoadStr(IDS_WAITINGTORETRYSUF), buf, (1 + (wait - 1) / 1000),
+                                _snprintf_s(retryBuf, _TRUNCATE, LoadStrU8(IDS_WAITINGTORETRYSUF), buf, (1 + (wait - 1) / 1000),
                                             attemptNum, Config.GetConnectRetries() + 1);
+                                SplU8TrimTornTail(retryBuf);
                                 waitWnd.SetText(retryBuf);
                             }
                             BOOL notTimeout = FALSE; // TRUE = it cannot be a timeout
@@ -1406,8 +1444,9 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         }
                         if (proxyScriptParams.NeedProxyPassword)
                         {
-                            _snprintf_s(connectingToAs, _TRUNCATE, LoadStr(IDS_CONNECTINGTOAS2),
-                                        proxyScriptParams.ProxyHost, proxyScriptParams.ProxyUser);
+                            _snprintf_s(connectingToAs, _TRUNCATE, LoadStrU8(IDS_CONNECTINGTOAS2),
+                                        CFTPU8Name(proxyScriptParams.ProxyHost).Text, CFTPU8Name(proxyScriptParams.ProxyUser).Text);
+                            SplU8TrimTornTail(connectingToAs);
                             if (CEnterStrDlg(parent, LoadStr(IDS_ENTERPRXPASSTITLE), LoadStr(IDS_ENTERPRXPASSTEXT),
                                              proxyScriptParams.ProxyPassword, PASSWORD_MAX_SIZE, TRUE,
                                              connectingToAs, FALSE)
@@ -1427,7 +1466,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         }
                         if (proxyScriptParams.NeedUser)
                         {
-                            _snprintf_s(connectingToAs, _TRUNCATE, LoadStr(IDS_CONNECTINGTOAS1), proxyScriptParams.Host);
+                            _snprintf_s(connectingToAs, _TRUNCATE, LoadStrU8(IDS_CONNECTINGTOAS1), CFTPU8Name(proxyScriptParams.Host).Text);
+                            SplU8TrimTornTail(connectingToAs);
                             if (CEnterStrDlg(parent, NULL, NULL, proxyScriptParams.User, USER_MAX_SIZE, FALSE,
                                              connectingToAs, FALSE)
                                     .Execute() == IDCANCEL)
@@ -1447,8 +1487,9 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         }
                         if (proxyScriptParams.NeedPassword)
                         {
-                            _snprintf_s(connectingToAs, _TRUNCATE, LoadStr(IDS_CONNECTINGTOAS2), proxyScriptParams.Host,
-                                        proxyScriptParams.User);
+                            _snprintf_s(connectingToAs, _TRUNCATE, LoadStrU8(IDS_CONNECTINGTOAS2), CFTPU8Name(proxyScriptParams.Host).Text,
+                                        CFTPU8Name(proxyScriptParams.User).Text);
+                            SplU8TrimTornTail(connectingToAs);
                             if (CEnterStrDlg(parent, LoadStr(IDS_ENTERPASSTITLE), LoadStr(IDS_ENTERPASSTEXT),
                                              proxyScriptParams.Password, PASSWORD_MAX_SIZE, TRUE,
                                              connectingToAs, TRUE)
@@ -1469,8 +1510,9 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         }
                         if (proxyScriptParams.NeedAccount)
                         {
-                            _snprintf_s(connectingToAs, _TRUNCATE, LoadStr(IDS_CONNECTINGTOAS2), proxyScriptParams.Host,
-                                        proxyScriptParams.User);
+                            _snprintf_s(connectingToAs, _TRUNCATE, LoadStrU8(IDS_CONNECTINGTOAS2), CFTPU8Name(proxyScriptParams.Host).Text,
+                                        CFTPU8Name(proxyScriptParams.User).Text);
+                            SplU8TrimTornTail(connectingToAs);
                             if (CEnterStrDlg(parent, LoadStr(IDS_ENTERACCTTITLE), LoadStr(IDS_ENTERACCTTEXT),
                                              proxyScriptParams.Account, ACCOUNT_MAX_SIZE, TRUE,
                                              connectingToAs, FALSE)
@@ -1535,7 +1577,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                 char* s = strchr(tmpCmdBuf, '\r');
                                 if (s != NULL)
                                     *s = 0;
-                                _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_SENDINGLOGINCMD), tmpCmdBuf);
+                                // feature 134: the shown copy of the command (the user name in it may be
+                                // code-page bytes of an older version) as UTF-8 in a UTF-8 sentence
+                                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SENDINGLOGINCMD), CFTPU8Piece(tmpCmdBuf).Text);
+                                SplU8TrimTornTail(buf);
                                 waitWnd.SetText(buf);
                                 waitWnd.Create(GetWaitTime(showWaitWndTime));
 
@@ -1658,7 +1703,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                                             }
                                                             else
                                                             {
-                                                                _snprintf_s(connectingToAs, _TRUNCATE, LoadStr(IDS_CONNECTINGTOAS1), proxyScriptParams.Host);
+                                                                _snprintf_s(connectingToAs, _TRUNCATE, LoadStrU8(IDS_CONNECTINGTOAS1), CFTPU8Name(proxyScriptParams.Host).Text);
+                                                                SplU8TrimTornTail(connectingToAs);
                                                                 CLoginErrorDlg dlg(parent, errBuf, &proxyScriptParams, connectingToAs,
                                                                                    NULL, NULL, NULL, FALSE, TRUE, proxyUsed);
                                                                 if (dlg.Execute() == IDOK)
@@ -1991,12 +2037,15 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                 Logs.LogMessage(logUID, buf, -1, TRUE); // add the last error text to the log
             }
             fatalErrLogMsg = TRUE;
-            char* f;
+            // feature 134: UTF-8 as a whole, see the same composition in sccsRetry
+            CFTPU8Piece eU8(e);
+            const char* f;
             if (opFatalErrorTextID != -1)
-                f = LoadStr(opFatalErrorTextID);
+                f = LoadStrU8(opFatalErrorTextID);
             else
                 f = formatBuf;
-            _snprintf_s(buf, _TRUNCATE, f, e); // feature 131: bounded
+            _snprintf_s(buf, _TRUNCATE, f, eU8.Text); // feature 131: bounded
+            SplU8TrimTornTail(buf);
             SalamanderGeneral->SalMessageBox(parent, buf, LoadStr(IDS_FTPERRORTITLE),
                                              MB_OK | MB_ICONEXCLAMATION);
             state = sccsDone;

@@ -87,7 +87,12 @@ CWelcomeMsgDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (SentCommand == NULL)
                 TRACE_E("Unexpected situation in CWelcomeMsgDlg::DialogProc().");
             char buf[300];
-            _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_SERVERREPLYTITLE), (SentCommand == NULL ? "" : SentCommand));
+            // feature 134: the command is the typed text (UTF-8) or the code-page placeholder of a
+            // secret command - it joins the title, loaded as UTF-8, as UTF-8
+            char commandU8[300];
+            FTPTextToU8(SentCommand, commandU8, sizeof(commandU8));
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SERVERREPLYTITLE), commandU8);
+            SplU8TrimTornTail(buf);
             WCHAR* bufW = SplU8ToWAlloc(buf); // feature 010: the command may contain UTF-8 paths
             if (bufW != NULL)
             {
@@ -352,7 +357,9 @@ void CWelcomeMsgDlg::OnSaveTextAs()
             SetCursor(oldCur);
             if (err != NO_ERROR) // show the error
             {
-                sprintf(buf, LoadStr(IDS_RAWLISTSAVEERROR), SalamanderGeneral->GetErrorText(err));
+                // feature 134: GetErrorText is UTF-8 - the sentence is loaded as UTF-8 too
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_RAWLISTSAVEERROR), SalamanderGeneral->GetErrorText(err));
+                SplU8TrimTornTail(buf);
                 SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                                  MB_OK | MB_ICONEXCLAMATION);
                 FTPDeleteFileU8(fileName); // delete the file if an error occurred
@@ -362,7 +369,8 @@ void CWelcomeMsgDlg::OnSaveTextAs()
         {
             DWORD err = GetLastError();
             SetCursor(oldCur);
-            sprintf(buf, LoadStr(IDS_RAWLISTSAVEERROR), SalamanderGeneral->GetErrorText(err));
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_RAWLISTSAVEERROR), SalamanderGeneral->GetErrorText(err)); // feature 134: see above
+            SplU8TrimTornTail(buf);
             SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                              MB_OK | MB_ICONEXCLAMATION);
         }
@@ -681,13 +689,20 @@ CLogsDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         case CM_CLEARLOG:
         case CM_REMOVELOG:
         {
-            char buf[LOGSCOMBOITEM_MAX_SIZE]; // feature 131: the size the items are composed in (CLogs::AddLogsToCombo)
+            // feature 134: the items are added wide (CLogs::AddLogsToCombo: host and user are UTF-8) -
+            // the item is read wide and handed on as UTF-8 (the name of the log in the questions of
+            // Clear and Remove). An item of LOGSCOMBOITEM_MAX_SIZE units (feature 131: the size the
+            // items are composed in) always fits three times as many bytes.
+            char buf[3 * LOGSCOMBOITEM_MAX_SIZE];
             buf[0] = 0;
+            WCHAR bufW[LOGSCOMBOITEM_MAX_SIZE];
+            bufW[0] = 0;
             HWND combo = GetDlgItem(HWindow, IDC_LISTOFLOGS);
             int i = (int)SendMessage(combo, CB_GETCURSEL, 0, 0);
-            if (i != CB_ERR && SendMessage(combo, CB_GETLBTEXTLEN, i, 0) < LOGSCOMBOITEM_MAX_SIZE)
+            if (i != CB_ERR && SendMessageW(combo, CB_GETLBTEXTLEN, i, 0) < LOGSCOMBOITEM_MAX_SIZE &&
+                SendMessageW(combo, CB_GETLBTEXT, i, (LPARAM)bufW) != CB_ERR &&
+                (bufW[0] == 0 || SplWToU8(bufW, buf, sizeof(buf)) > 0))
             {
-                SendMessage(combo, CB_GETLBTEXT, i, (LPARAM)buf);
                 int uid = (int)SendMessage(combo, CB_GETITEMDATA, i, 0); // x64 - log UID is an index, not a pointer
                 switch (LOWORD(wParam))
                 {

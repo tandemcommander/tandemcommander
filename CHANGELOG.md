@@ -9,6 +9,33 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
+## [0.1.11] — unreleased
+
+- **FTP client: messages, the operation window and the log show names
+  readably in every language** (feature 134; the last part of GitHub #7).
+  In languages whose texts have accented letters, a message made of a
+  translated sentence and a file, directory or bookmark name, a Windows error
+  or the server's reply showed one half as garbage: creating a directory,
+  changing a path, renaming, downloading, the Copy / Move / Delete questions,
+  the descriptions, states and title of the operation window, bookmark
+  questions. Fixed in about 120 places.
+  - **The log is readable.** One directory with an accented name made the
+    whole log of a connection show through the wrong encoding - in English
+    too. Every line is right now; a saved log is UTF-8 (with a byte-order
+    mark) and *Copy* puts Unicode text on the clipboard. **The bytes of a
+    saved log therefore differ** from earlier versions.
+  - A server reply in the system code page no longer spoils an English
+    message either.
+  - Places that could only show text of the system code page - the
+    "Connecting to ... as ..." line of the password prompt, the list of logs,
+    the lists of server types and proxy servers, the certificate error text -
+    show any name. The Quick Connect address is stored in the address history
+    as it was typed (an accented address was stored garbled).
+  - Nothing sent to a server changes.
+  - Undelete: the "restore ... to" label names the file readably.
+  - For plug-in authors: `GetCommonFSOperSourceDescr` returns its whole text
+    as UTF-8 (it was a code-page word around a UTF-8 name).
+
 ## [0.1.10] — 2026-10-13
 
 Fixes for the problems reported on GitHub after 0.1.9.

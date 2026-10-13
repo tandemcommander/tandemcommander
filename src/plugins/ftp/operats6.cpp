@@ -886,8 +886,11 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
                     }
                     else // not an FTP server error
                     {
-                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_NOTFTPSERVERERROR),
-                                    CopyStr(errBuf, 50 + FTP_MAX_PATH, reply, replySize));
+                        // feature 134: the reply is bytes of unknown encoding - the sentence is UTF-8 as a whole
+                        char replyU8[3 * (50 + FTP_MAX_PATH)];
+                        FTPTextToU8(CopyStr(errBuf, 50 + FTP_MAX_PATH, reply, replySize), replyU8, _countof(replyU8));
+                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_NOTFTPSERVERERROR), replyU8);
+                        SplU8TrimTornTail(ErrorDescr);
                         CorrectErrorDescr();
                         closeSocket = TRUE; // close the connection (no point in continuing)
 
@@ -979,8 +982,10 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
                             }
                             else // FTP_DIGIT_1(ProxyScriptLastCmdReply) == FTP_D1_PARTIALSUCCESS  // e.g. 331 User name okay, need password
                             {    // assumes we got here from fwssConWaitForScriptCmdRes and reply+replySize is still valid
-                                _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_INCOMPLETEPRXSCR3),
-                                            CopyStr(errBuf, 50 + FTP_MAX_PATH, reply, replySize));
+                                char replyU8[3 * (50 + FTP_MAX_PATH)]; // feature 134: the reply as UTF-8, with a UTF-8 template
+                                FTPTextToU8(CopyStr(errBuf, 50 + FTP_MAX_PATH, reply, replySize), replyU8, _countof(replyU8));
+                                _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_INCOMPLETEPRXSCR3), replyU8);
+                                SplU8TrimTornTail(ErrorDescr);
                                 CorrectErrorDescr();
                                 fail = TRUE;
                             }
@@ -998,7 +1003,14 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
                     if (needUserInput)
                         lstrcpyn(ErrorDescr, errDescrBuf, FTPWORKER_ERRDESCR_BUFSIZE);
                     else
-                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_ERRINPROXYSCRIPT), errDescrBuf);
+                    {
+                        // feature 134: the script's error text is a resource text of another file
+                        // (code page or UTF-8) - the sentence is UTF-8 as a whole
+                        char errDescrU8[3 * 300];
+                        FTPTextToU8(errDescrBuf, errDescrU8, _countof(errDescrU8));
+                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_ERRINPROXYSCRIPT), errDescrU8);
+                        SplU8TrimTornTail(ErrorDescr);
+                    }
                     CorrectErrorDescr();
                     fail = TRUE;
                 }
@@ -1064,7 +1076,14 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
                                     if (errBuf[0] == 0)
                                         lstrcpyn(ErrorDescr, LoadStr(errID), FTPWORKER_ERRDESCR_BUFSIZE);
                                     else
-                                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(errID), errBuf);
+                                    {
+                                        // feature 134: the text of EncryptSocket (another file: an OpenSSL text
+                                        // or a composed one, either encoding) - the sentence is UTF-8 as a whole
+                                        char sslErrU8[3 * (50 + FTP_MAX_PATH)];
+                                        FTPTextToU8(errBuf, sslErrU8, _countof(sslErrU8));
+                                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(errID), sslErrU8);
+                                        SplU8TrimTornTail(ErrorDescr);
+                                    }
                                     failed = TRUE;
                                     retryLoginWithoutAsking = err == SSLCONERR_CANRETRY;
                                 }
@@ -1188,8 +1207,11 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
                                 else
                                     retryLoginWithoutAsking = Oper->GetRetryLoginWithoutAsking();
 
-                                _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_WORKERLOGINERR),
-                                            CopyStr(errBuf, 50 + FTP_MAX_PATH, reply, replySize));
+                                // feature 134: the reply is bytes of unknown encoding - the sentence is UTF-8 as a whole
+                                char replyU8[3 * (50 + FTP_MAX_PATH)];
+                                FTPTextToU8(CopyStr(errBuf, 50 + FTP_MAX_PATH, reply, replySize), replyU8, _countof(replyU8));
+                                _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_WORKERLOGINERR), replyU8);
+                                SplU8TrimTornTail(ErrorDescr);
                                 CorrectErrorDescr();
                                 closeSocket = TRUE; // close the connection (no point in continuing)
 
@@ -1216,8 +1238,10 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
                     }
                     else // not an FTP server
                     {
-                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_NOTFTPSERVERERROR),
-                                    CopyStr(errBuf, 50 + FTP_MAX_PATH, reply, replySize));
+                        char replyU8[3 * (50 + FTP_MAX_PATH)]; // feature 134: the reply as UTF-8, with a UTF-8 template
+                        FTPTextToU8(CopyStr(errBuf, 50 + FTP_MAX_PATH, reply, replySize), replyU8, _countof(replyU8));
+                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_NOTFTPSERVERERROR), replyU8);
+                        SplU8TrimTornTail(ErrorDescr);
                         CorrectErrorDescr();
                         closeSocket = TRUE; // close the connection (no point in continuing)
 

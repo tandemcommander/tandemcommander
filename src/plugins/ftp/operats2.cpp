@@ -364,7 +364,12 @@ void CFTPOperation::SendHeaderToLog(int logUID)
     }
     if (ok)
     {
-        _snprintf_s(buf, 498, _TRUNCATE, LoadStr(titleResID), OperationSubject, Host);
+        // feature 134: both header messages are UTF-8 as a whole - the subject is the core's
+        // UTF-8 text with the name, the host a typed (UTF-8) or an older stored (code page) value
+        char hostU8[3 * HOST_MAX_SIZE];
+        FTPTextToU8(Host, hostU8, _countof(hostU8));
+        _snprintf_s(buf, 498, _TRUNCATE, LoadStrU8(titleResID), OperationSubject, hostU8);
+        SplU8TrimTornTail(buf);
         strcat(buf, "\r\n");
         Logs.LogMessage(logUID, buf, -1);
 
@@ -375,7 +380,10 @@ void CFTPOperation::SendHeaderToLog(int logUID)
         strcat(timeBuf, " - ");
         if (GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, timeBuf + strlen(timeBuf), 50) == 0)
             sprintf(timeBuf + strlen(timeBuf), "%u:%02u:%02u", st.wHour, st.wMinute, st.wSecond);
-        sprintf(buf, LoadStr(IDS_WORKERLOGHEADER), Host, Port, logUID, timeBuf);
+        char timeU8[3 * 100]; // the date and time come from the A calls = code page
+        FTPTextToU8(timeBuf, timeU8, _countof(timeU8));
+        if (_snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_WORKERLOGHEADER), hostU8, Port, logUID, timeU8) < 0)
+            FTPLogMsgCutKeepLineEnd(buf, _countof(buf)); // was an unbounded sprintf
         Logs.LogMessage(logUID, buf, -1);
     }
     HANDLES(LeaveCriticalSection(&OperCritSect));
@@ -676,8 +684,13 @@ BOOL CFTPOperation::InitOperDlg(COperationDlg* dlg)
     }
     if (ok)
     {
+        // feature 134: the title is UTF-8 as a whole (the core's subject is UTF-8 with the name;
+        // the host is typed = UTF-8, or a code-page value of an older version)
         char title[500];
-        _snprintf_s(title, _TRUNCATE, LoadStr(titleResID), OperationSubject, Host);
+        char hostU8[3 * HOST_MAX_SIZE];
+        FTPTextToU8(Host, hostU8, _countof(hostU8));
+        _snprintf_s(title, _TRUNCATE, LoadStrU8(titleResID), OperationSubject, hostU8);
+        SplU8TrimTornTail(title);
         dlg->TitleText = SalamanderGeneral->DupStr(title);
         if (dlg->TitleText == NULL)
             ok = FALSE;
@@ -768,36 +781,56 @@ void CFTPOperation::GetConnectLogMsg(BOOL isReconnect, char* buf, int bufSize, i
     srvAddr.s_addr = ServerIP;
     if (bufSize > 0)
     {
-        if (isReconnect)
+        // feature 134: a log message - UTF-8 as a whole. The names are typed (UTF-8) or values an
+        // older version stored (code page); the proxy type is a resource text and 'dateTime'
+        // comes from GetDateFormat / GetTimeFormat A (code page). Each piece is made UTF-8.
+        char hostU8[3 * HOST_MAX_SIZE];
+        char userU8[3 * USER_MAX_SIZE];
+        char conHostU8[3 * HOST_MAX_SIZE];
+        char dateTimeU8[300];
+        FTPTextToU8(Host, hostU8, _countof(hostU8));
+        FTPTextToU8(User, userU8, _countof(userU8));
+        FTPTextToU8(ConnectToHost, conHostU8, _countof(conHostU8));
+        FTPTextToU8(dateTime, dateTimeU8, _countof(dateTimeU8));
+        int res;
+        if (ProxyServer != NULL)
         {
-            if (ProxyServer != NULL)
+            char prxNameU8[3 * PROXYSRVNAME_MAX_SIZE];
+            char prxTypeU8[300];
+            char prxHostU8[3 * HOST_MAX_SIZE];
+            char prxUserU8[3 * USER_MAX_SIZE];
+            FTPTextToU8(ProxyServer->ProxyName, prxNameU8, _countof(prxNameU8));
+            FTPTextToU8(GetProxyTypeName(ProxyServer->ProxyType), prxTypeU8, _countof(prxTypeU8));
+            FTPTextToU8(ProxyServer->ProxyHost, prxHostU8, _countof(prxHostU8));
+            FTPTextToU8(ProxyServer->ProxyUser, prxUserU8, _countof(prxUserU8));
+            if (isReconnect)
             {
-                _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_PRXSRVRECONLOGHEADER), Host, Port, HandleNULLStr(User),
-                            ProxyServer->ProxyName, GetProxyTypeName(ProxyServer->ProxyType),
-                            HandleNULLStr(ProxyServer->ProxyHost), ProxyServer->ProxyPort,
-                            HandleNULLStr(ProxyServer->ProxyUser), ConnectToHost, inet_ntoa(srvAddr),
-                            ConnectToPort, attemptNumber, dateTime);
+                res = _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_PRXSRVRECONLOGHEADER), hostU8, Port, userU8,
+                                  prxNameU8, prxTypeU8, prxHostU8, ProxyServer->ProxyPort,
+                                  prxUserU8, conHostU8, inet_ntoa(srvAddr),
+                                  ConnectToPort, attemptNumber, dateTimeU8);
             }
             else
             {
-                _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_RECONLOGHEADER), ConnectToHost, inet_ntoa(srvAddr), ConnectToPort,
-                            attemptNumber, dateTime);
+                res = _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_PRXSRVWORKERCONLOGHDR), hostU8, Port, userU8,
+                                  prxNameU8, prxTypeU8, prxHostU8, ProxyServer->ProxyPort,
+                                  prxUserU8, conHostU8, inet_ntoa(srvAddr), ConnectToPort);
             }
         }
         else
         {
-            if (ProxyServer != NULL)
+            if (isReconnect)
             {
-                _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_PRXSRVWORKERCONLOGHDR), Host, Port, HandleNULLStr(User),
-                            ProxyServer->ProxyName, GetProxyTypeName(ProxyServer->ProxyType),
-                            HandleNULLStr(ProxyServer->ProxyHost), ProxyServer->ProxyPort,
-                            HandleNULLStr(ProxyServer->ProxyUser), ConnectToHost, inet_ntoa(srvAddr), ConnectToPort);
+                res = _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_RECONLOGHEADER), conHostU8, inet_ntoa(srvAddr), ConnectToPort,
+                                  attemptNumber, dateTimeU8);
             }
             else
             {
-                _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_WORKERCONLOGHDR), ConnectToHost, inet_ntoa(srvAddr), ConnectToPort);
+                res = _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_WORKERCONLOGHDR), conHostU8, inet_ntoa(srvAddr), ConnectToPort);
             }
         }
+        if (res < 0)
+            FTPLogMsgCutKeepLineEnd(buf, bufSize);
     }
     HANDLES(LeaveCriticalSection(&OperCritSect));
 }
@@ -2240,8 +2273,9 @@ void CFTPQueueItem::GetProblemDescr(char* buf, int bufSize)
             }
             }
             if (attrs == NULL)
-                attrs = LoadStr(IDS_OPERDOPPR_UNKEXISTATTR);
-            _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDOPPR_UNKNOWNATTRS), attrs); // attrs might even be NULL (on failure); _snprintf_s can cope with that
+                attrs = LoadStrU8(IDS_OPERDOPPR_UNKEXISTATTR);
+            // feature 134: 'attrs' is a column of the listing (UTF-8)
+            _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDOPPR_UNKNOWNATTRS), attrs); // attrs might even be NULL (on failure); _snprintf_s can cope with that
             break;
         }
 
@@ -2455,16 +2489,40 @@ void CFTPQueueItem::GetProblemDescr(char* buf, int bufSize)
         }
         }
     }
+    // feature 134: the description is given as UTF-8. Up to here it is resource text and a
+    // Windows error text in the code page (the texts above are loaded with LoadStr on purpose -
+    // one conversion here instead of forty); what follows is a server reply, bytes of unknown
+    // encoding, which may quote a name in UTF-8. Both halves are made UTF-8 on their own, so a
+    // UTF-8 reply no longer turns the whole state text to code page (and garbles the reply).
+    // The only callers are the three state texts of CFTPQueue::GetListViewDataFor.
+    if (bufSize > 0)
+    {
+        char* u8 = SplLegacyToU8Alloc(buf);
+        if (u8 != NULL)
+        {
+            SplU8CopyTrunc(buf, bufSize, u8);
+            free(u8);
+        }
+    }
     if (addErrAllocDescr && ErrAllocDescr != NULL && bufSize > 0)
     { // if we have some server reply, append its first line to the message
-        char* end = buf + bufSize - 1;
-        char* s = buf + strlen(buf);
-        char* src = ErrAllocDescr;
-        if (s < end)
-            *s++ = ' ';
-        while (s < end && *src >= ' ')
-            *s++ = *src++;
-        *s = 0;
+        char line[300]; // the first line of the reply as it came
+        char* d = line;
+        char* lineEnd = line + _countof(line) - 1;
+        const char* src = ErrAllocDescr;
+        while (d < lineEnd && *src >= ' ')
+            *d++ = *src++;
+        *d = 0;
+        if (*src >= ' ')
+            FTPTrimTornTailIfU8(line); // cut: not inside a character (a UTF-8 line would be read as code page)
+        char lineU8[900];
+        FTPTextToU8(line, lineU8, _countof(lineU8));
+        int len = (int)strlen(buf);
+        if (len + 1 < bufSize)
+        {
+            buf[len++] = ' ';
+            SplU8CopyTrunc(buf + len, bufSize - len, lineU8);
+        }
     }
 }
 

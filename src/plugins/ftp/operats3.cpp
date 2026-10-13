@@ -14,6 +14,19 @@ const char* GetWorkerErrorTxt(int error, char* errBuf, int errBufSize)
     return e;
 }
 
+// feature 134: CFTPWorker::ErrorDescr ('errDescr') as UTF-8 in 'buf'. The text is a server
+// reply (bytes of unknown encoding), a code-page text (a resource text, a Windows error) or a
+// UTF-8 sentence composed with a reply. A text that fills its buffer was cut, perhaps inside a
+// character - the torn end is dropped first, otherwise a UTF-8 text would be read as code page.
+static void WorkerErrDescrToU8(const char* errDescr, char* buf, int bufSize)
+{
+    char copy[FTPWORKER_ERRDESCR_BUFSIZE];
+    lstrcpyn(copy, errDescr, _countof(copy));
+    if (strlen(copy) == _countof(copy) - 1)
+        FTPTrimTornTailIfU8(copy); // a code-page text keeps its last letter
+    FTPTextToU8(copy, buf, bufSize);
+}
+
 //
 // ****************************************************************************
 // CFTPWorker
@@ -452,7 +465,11 @@ void CFTPWorker::GetListViewData(LVITEM* itemData, char* buf, int bufSize)
                         }
                         }
                         if (strResID != -1)
-                            _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(strResID), CurItem->Name);
+                        {
+                            // feature 134: the name is UTF-8, so is the template
+                            _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(strResID), CurItem->Name);
+                            SplU8TrimTornTail(buf);
+                        }
                         else
                             buf[0] = 0;
                     }
@@ -506,16 +523,24 @@ void CFTPWorker::GetListViewData(LVITEM* itemData, char* buf, int bufSize)
                         _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDLGCOACT_PAUSED));
                     else
                     {
-                        _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDLGCOACT_WAITRECON),
+                        // feature 134: ErrorDescr is a server reply (unknown encoding), a code-page
+                        // text or a UTF-8 sentence with a reply - UTF-8 here, and the template too
+                        char errU8[3 * FTPWORKER_ERRDESCR_BUFSIZE];
+                        WorkerErrDescrToU8(ErrorDescr, errU8, _countof(errU8));
+                        _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDLGCOACT_WAITRECON),
                                     Config.GetDelayBetweenConRetries(), ConnectAttemptNumber,
-                                    Config.GetConnectRetries() + 1, ErrorDescr);
+                                    Config.GetConnectRetries() + 1, errU8);
+                        SplU8TrimTornTail(buf);
                     }
                     break;
                 }
 
                 case fwsConnectionError:
                 {
-                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStr(IDS_OPERDLGCOACT_CONERROR), ErrorDescr);
+                    char errU8[3 * FTPWORKER_ERRDESCR_BUFSIZE]; // feature 134: see fwsWaitingForReconnect
+                    WorkerErrDescrToU8(ErrorDescr, errU8, _countof(errU8));
+                    _snprintf_s(buf, bufSize, _TRUNCATE, LoadStrU8(IDS_OPERDLGCOACT_CONERROR), errU8);
+                    SplU8TrimTornTail(buf);
                     break;
                 }
 
@@ -2241,8 +2266,13 @@ void CFTPWorker::HandleSocketEvent(CFTPWorkerSocketEvent event, DWORD data1, DWO
             {
                 if (!GetProxyError(errBuf, 300, NULL, 0, TRUE))
                     GetWorkerErrorTxt(data1, errBuf, 300);
+                // feature 134: the proxy error text is UTF-8 (it may hold the host name), the
+                // Windows error text code page - the sentence is UTF-8 as a whole
+                char errU8[900];
+                FTPTextToU8(errBuf, errU8, _countof(errU8));
                 HANDLES(EnterCriticalSection(&WorkerCritSect));
-                _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_WORKEROPENCONERR), errBuf);
+                _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_WORKEROPENCONERR), errU8);
+                SplU8TrimTornTail(ErrorDescr);
                 CorrectErrorDescr();
                 resEvent = fweConnectFailure;
                 HANDLES(LeaveCriticalSection(&WorkerCritSect));
@@ -2402,7 +2432,11 @@ void CFTPWorker::HandleSocketEvent(CFTPWorkerSocketEvent event, DWORD data1, DWO
                             if (WorkerDataCon != NULL ? WorkerDataCon->GetProxyTimeoutDescr(errText, 200) : WorkerUploadDataCon->GetProxyTimeoutDescr(errText, 200))
                             { // if we have any timeout description for the data connection, write it to the log
                                 HANDLES(EnterCriticalSection(&WorkerCritSect));
-                                sprintf(errBuf, LoadStr(IDS_LOGMSGDATCONERROR), errText);
+                                // feature 134: bounded (it was a sprintf) and UTF-8 as a whole
+                                char errTextU8[3 * 200];
+                                FTPTextToU8(errText, errTextU8, _countof(errTextU8));
+                                if (_snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_LOGMSGDATCONERROR), errTextU8) < 0)
+                                    FTPLogMsgCutKeepLineEnd(errBuf, _countof(errBuf));
                                 Logs.LogMessage(LogUID, errBuf, -1, TRUE);
                             }
                             else

@@ -4027,14 +4027,27 @@ void CSalamanderGeneral::GetCommonFSOperSourceDescr(char* sourceDescr, int sourc
                            sizeof(fileNameFormat), NULL);
         char formatedFileName[SAL_FIND_NAME_U8]; // UTF-8 name, the old MAX_PATH-5 limit is gone (feature 004)
         ::AlterFileName(formatedFileName, name, -1, fileNameFormat, 0, nameIsDir);
-        _snprintf_s(sourceDescr, sourceDescrSize, _TRUNCATE,
-                    ::LoadStr(nameIsDir ? (forDlgCaption ? IDS_DLG_QUESTION_DIRECTORY : IDS_QUESTION_DIRECTORY) : (forDlgCaption ? IDS_DLG_QUESTION_FILE : IDS_QUESTION_FILE)),
-                    formatedFileName);
+        // feature 134: the whole text is UTF-8. It was a code-page word around a UTF-8 name -
+        // neither encoding - and every plug-in that showed it (the FTP client's Copy / Move /
+        // Delete questions and its operation window, Undelete) showed one half wrong in any
+        // language whose word or name has an accented letter.
+        if (_snprintf_s(sourceDescr, sourceDescrSize, _TRUNCATE,
+                        LoadStrU8(nameIsDir ? (forDlgCaption ? IDS_DLG_QUESTION_DIRECTORY : IDS_QUESTION_DIRECTORY) : (forDlgCaption ? IDS_DLG_QUESTION_FILE : IDS_QUESTION_FILE)),
+                        formatedFileName) < 0)
+            SalU8TrimIncompleteTail(sourceDescr);
     }
     else // multiple directories and files
     {
         ExpandPluralFilesDirs(sourceDescr, sourceDescrSize, selectedFiles, selectedDirs,
                               epfdmNormal, forDlgCaption);
+        // feature 134: "3 souborů a 2 adresáře" comes in the code page - UTF-8 like the branch above
+        char* u8 = SalLegacyToU8Alloc(sourceDescr);
+        if (u8 != NULL)
+        {
+            if (_snprintf_s(sourceDescr, sourceDescrSize, _TRUNCATE, "%s", u8) < 0)
+                SalU8TrimIncompleteTail(sourceDescr);
+            free(u8);
+        }
     }
 }
 

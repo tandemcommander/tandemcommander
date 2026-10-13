@@ -981,7 +981,9 @@ void CSrvTypeTestParserDlg::LoadTextFromFile()
             SetCursor(oldCur);
             if (err != NO_ERROR) // display the error
             {
-                sprintf(buf, LoadStr(IDS_SRVTYPE_READRAWLISTERR), SalamanderGeneral->GetErrorText(err));
+                // feature 134: GetErrorText is UTF-8 - the sentence is loaded as UTF-8 too
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPE_READRAWLISTERR), SalamanderGeneral->GetErrorText(err));
+                SplU8TrimTornTail(buf);
                 SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                                  MB_OK | MB_ICONEXCLAMATION);
             }
@@ -993,7 +995,8 @@ void CSrvTypeTestParserDlg::LoadTextFromFile()
             if (file != INVALID_HANDLE_VALUE)
                 HANDLES(CloseHandle(file));
             SetCursor(oldCur);
-            sprintf(buf, LoadStr(IDS_SRVTYPE_READRAWLISTERR), SalamanderGeneral->GetErrorText(err));
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPE_READRAWLISTERR), SalamanderGeneral->GetErrorText(err)); // feature 134: see above
+            SplU8TrimTornTail(buf);
             SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                              MB_OK | MB_ICONEXCLAMATION);
         }

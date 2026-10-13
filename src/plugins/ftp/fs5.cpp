@@ -38,7 +38,9 @@ BOOL CPluginFSInterface::ChangeAttributes(const char* fsName, HWND parent, int p
     SalamanderGeneral->GetCommonFSOperSourceDescr(dlgSubjectSrc, MAX_PATH + 100, panel,
                                                   selectedFiles, selectedDirs, NULL, FALSE, TRUE);
     char subject[MAX_PATH + 200];
-    sprintf(subject, LoadStr(IDS_CHANGEATTRSONFTP), subjectSrc);
+    // feature 134: the core's text is UTF-8 as a whole now - the template too
+    _snprintf_s(subject, _TRUNCATE, LoadStrU8(IDS_CHANGEATTRSONFTP), subjectSrc);
+    SplU8TrimTornTail(subject);
 
     DWORD attr = -1;
     DWORD attrDiff = 0;
@@ -401,7 +403,9 @@ void CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
     }
 
     char logBuf[200 + MAX_PATH];
-    _snprintf_s(logBuf, _TRUNCATE, LoadStr(fileExists ? IDS_LOGMSGVIEWCACHEDFILE : IDS_LOGMSGVIEWFILE), file.Name);
+    // feature 134: the name is UTF-8 - the template too
+    if (_snprintf_s(logBuf, _TRUNCATE, LoadStrU8(fileExists ? IDS_LOGMSGVIEWCACHEDFILE : IDS_LOGMSGVIEWFILE), file.Name) < 0)
+        FTPLogMsgCutKeepLineEnd(logBuf, sizeof(logBuf));
     ControlConnection->LogMessage(logBuf, -1, TRUE);
 
     // determine whether a copy of the file needs to be prepared in the disk cache (download)
@@ -486,7 +490,9 @@ BOOL CPluginFSInterface::CreateDir(const char* fsName, int mode, HWND parent, ch
         else
         {
             char logBuf[200 + MAX_PATH];
-            _snprintf_s(logBuf, _TRUNCATE, LoadStr(IDS_LOGMSGCREATEDIR), newName);
+            // feature 134: the name is UTF-8 - the template too
+            if (_snprintf_s(logBuf, _TRUNCATE, LoadStrU8(IDS_LOGMSGCREATEDIR), newName) < 0)
+                FTPLogMsgCutKeepLineEnd(logBuf, sizeof(logBuf));
             ControlConnection->LogMessage(logBuf, -1, TRUE);
 
             TotalConnectAttemptNum = 1; // start of a user-requested action -> if reconnecting is needed, this is the first reconnect attempt
@@ -537,7 +543,9 @@ BOOL CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND parent, 
 
             // prepare the message for the log, print it only if the rename actually happens
             char logBuf[200 + 2 * MAX_PATH];
-            _snprintf_s(logBuf, _TRUNCATE, LoadStr(IDS_LOGMSGQUICKRENAME), file.Name, newName);
+            // feature 134: both names are UTF-8 - the template too
+            if (_snprintf_s(logBuf, _TRUNCATE, LoadStrU8(IDS_LOGMSGQUICKRENAME), file.Name, newName) < 0)
+                FTPLogMsgCutKeepLineEnd(logBuf, sizeof(logBuf));
 
             // process the mask in newName (skip if it is not a mask (contains neither '*' nor '?') - so that renaming to "test^." works)
             if (strchr(newName, '*') != NULL || strchr(newName, '?') != NULL)
@@ -1003,8 +1011,12 @@ BOOL CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, const char*
                                                 if (!done) // show the path error to the user
                                                 {
                                                     char errBuf[900 + FTP_MAX_PATH];
-                                                    _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR),
-                                                                (cutTgtPathIBMz_VM[0] != 0 ? cutTgtPathIBMz_VM : cutTgtPath), replyBuf);
+                                                    // feature 134: UTF-8 template + UTF-8 path + the reply as UTF-8
+                                                    char replyU8[3 * 700];
+                                                    FTPTextToU8(replyBuf, replyU8, sizeof(replyU8));
+                                                    _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR),
+                                                                (cutTgtPathIBMz_VM[0] != 0 ? cutTgtPathIBMz_VM : cutTgtPath), replyU8);
+                                                    SplU8TrimTornTail(errBuf);
                                                     SalamanderGeneral->ShowMessageBox(errBuf, LoadStr(IDS_FTPERRORTITLE), MSGBOX_ERROR);
                                                     return FALSE; // invalid path
                                                 }

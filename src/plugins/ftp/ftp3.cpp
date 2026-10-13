@@ -62,8 +62,9 @@ void CServerTypeList::AddNamesToCombo(HWND combo, const char* serverType, int& i
     for (i = 0; i < Count; i++)
     {
         CServerType* s = At(i);
-        SendMessage(combo, CB_ADDSTRING, 0,
-                    (LPARAM)GetTypeNameForUser(s->TypeName, buf, SERVERTYPE_MAX_SIZE + 101));
+        // feature 134: wide - the name of a user's own type is UTF-8
+        FTPSendListTextMsg(combo, CB_ADDSTRING, 0,
+                           GetTypeNameForUser(s->TypeName, buf, SERVERTYPE_MAX_SIZE + 101));
         if (serverType != NULL && index == -1 &&
             SalamanderGeneral->StrICmp(serverType, s->TypeName[0] == '*' ? s->TypeName + 1 : s->TypeName) == 0)
         {
@@ -77,7 +78,7 @@ void CServerTypeList::AddNamesToListbox(HWND listbox)
     char buf[SERVERTYPE_MAX_SIZE + 101];
     int i;
     for (i = 0; i < Count; i++)
-        SendMessage(listbox, LB_ADDSTRING, 0, (LPARAM)GetTypeNameForUser(At(i)->TypeName, buf, SERVERTYPE_MAX_SIZE + 101));
+        FTPSendListTextMsg(listbox, LB_ADDSTRING, 0, GetTypeNameForUser(At(i)->TypeName, buf, SERVERTYPE_MAX_SIZE + 101)); // feature 134: wide
 }
 
 void CServerTypeList::Load(HWND parent, HKEY regKey, CSalamanderRegistryAbstract* registry)

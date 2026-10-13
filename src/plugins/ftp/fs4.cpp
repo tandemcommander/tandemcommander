@@ -288,6 +288,15 @@ void AddStrAux(char*& s, char* end, const char* text)
         *s++ = *text++;
 }
 
+// feature 134: the same for a text of GetDateFormat / GetTimeFormat (A = code page): the
+// information line holds the UTF-8 name, so every other piece is UTF-8 too
+static void AddLegacyStrAux(char*& s, char* end, const char* text)
+{
+    char u8[300];
+    FTPTextToU8(text, u8, sizeof(u8));
+    AddStrAux(s, end, u8);
+}
+
 BOOL CFTPListingPluginDataInterface::GetInfoLineContent(int panel, const CFileData* file, BOOL isDir,
                                                         int selectedFiles, int selectedDirs,
                                                         BOOL displaySize, const CQuadWord& selectedSize,
@@ -324,8 +333,11 @@ BOOL CFTPListingPluginDataInterface::GetInfoLineContent(int panel, const CFileDa
             params[1].Set(selectedFiles, 0);
             SalamanderGeneral->NumberToStr(num1, params[0]);
             SalamanderGeneral->NumberToStr(num2, params[1]);
-            SalamanderGeneral->ExpandPluralString(buf, 1000, LoadStr(IDS_PLSTR_BLOCKSINSELFILES), 2, params);
+            // feature 134: the core's numbers are UTF-8 (the thousands separator of the system is
+            // a no-break space in many languages) - the template too
+            SalamanderGeneral->ExpandPluralString(buf, 1000, LoadStrU8(IDS_PLSTR_BLOCKSINSELFILES), 2, params);
             _snprintf_s(buffer, 1000, _TRUNCATE, buf, num1, num2);
+            SplU8TrimTornTail(buffer);
         }
         else // size in bytes
             SalamanderGeneral->ExpandPluralBytesFilesDirs(buffer, 1000, params[0], selectedFiles, 0, TRUE);
@@ -373,7 +385,7 @@ BOOL CFTPListingPluginDataInterface::GetInfoLineContent(int panel, const CFileDa
                     separate = TRUE;
                 beg = s;
                 if (isDir)
-                    AddStrAux(s, end, LoadStr(IDS_SRVTYPE_SIZEISDIR));
+                    AddStrAux(s, end, LoadStrU8(IDS_SRVTYPE_SIZEISDIR)); // feature 134: next to the UTF-8 name
                 else
                 {
                     SalamanderGeneral->NumberToStr(num1, file->Size);
@@ -408,7 +420,7 @@ BOOL CFTPListingPluginDataInterface::GetInfoLineContent(int panel, const CFileDa
                     if (GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE, &st, NULL, buf, 1000) == 0)
                         sprintf(buf, "%u.%u.%u", st.wDay, st.wMonth, st.wYear);
                 }
-                AddStrAux(s, end, buf);
+                AddLegacyStrAux(s, end, buf);
                 if (hot < hotEnd && beg < s)
                     *hot++ = MAKELONG(beg - buffer, s - beg);
                 break;
@@ -452,7 +464,7 @@ BOOL CFTPListingPluginDataInterface::GetInfoLineContent(int panel, const CFileDa
                         sprintf(buf, "%u.%u.%u", GlobalGeneralDateTimeStruct.wDay,
                                 GlobalGeneralDateTimeStruct.wMonth, GlobalGeneralDateTimeStruct.wYear);
                     }
-                    AddStrAux(s, end, buf);
+                    AddLegacyStrAux(s, end, buf);
                     if (hot < hotEnd && beg < s)
                         *hot++ = MAKELONG(beg - buffer, s - beg);
                 }
@@ -479,7 +491,7 @@ BOOL CFTPListingPluginDataInterface::GetInfoLineContent(int panel, const CFileDa
                         sprintf(buf, "%u:%02u:%02u", GlobalGeneralDateTimeStruct.wHour,
                                 GlobalGeneralDateTimeStruct.wMinute, GlobalGeneralDateTimeStruct.wSecond);
                     }
-                    AddStrAux(s, end, buf);
+                    AddLegacyStrAux(s, end, buf);
                     if (hot < hotEnd && beg < s)
                         *hot++ = MAKELONG(beg - buffer, s - beg);
                 }
@@ -520,7 +532,10 @@ BOOL CFTPListingPluginDataInterface::GetInfoLineContent(int panel, const CFileDa
         if (s < end)
             *s = 0;
         else
+        {
             *(s - 1) = 0;
+            SplU8TrimTornTail(buffer); // feature 134: a cut inside a character would make the whole line code page
+        }
         return TRUE;
     }
 }
@@ -647,7 +662,9 @@ BOOL CPluginFSInterface::Delete(const char* fsName, int mode, HWND parent, int p
         {
             // build the delete prompt
             char subject[MAX_PATH + 200];
-            sprintf(subject, LoadStr(IDS_DELETEFROMFTP), subjectSrc);
+            // feature 134: the core's text is UTF-8 as a whole now - the template too
+            _snprintf_s(subject, _TRUNCATE, LoadStrU8(IDS_DELETEFROMFTP), subjectSrc);
+            SplU8TrimTornTail(subject);
 
             // open a message box asking for delete confirmation
             const char* Shell32DLLName = "shell32.dll";
@@ -926,7 +943,9 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
     SalamanderGeneral->GetCommonFSOperSourceDescr(dlgSubjectSrc, MAX_PATH + 100, panel,
                                                   selectedFiles, selectedDirs, NULL, FALSE, TRUE);
     char subject[MAX_PATH + 200];
-    sprintf(subject, LoadStr(copy ? IDS_COPYFROMFTP : IDS_MOVEFROMFTP), subjectSrc);
+    // feature 134: the core's text is UTF-8 as a whole now - the template too
+    _snprintf_s(subject, _TRUNCATE, LoadStrU8(copy ? IDS_COPYFROMFTP : IDS_MOVEFROMFTP), subjectSrc);
+    SplU8TrimTornTail(subject);
 
     if (mode == 1 && targetPath[0] != 0) // only when opening the dialog for the first time and a target path is selected
     {

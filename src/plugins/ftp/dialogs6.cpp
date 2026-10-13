@@ -802,12 +802,7 @@ COperationDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     lvdiW->item.state = lvdi.item.state;
                 if ((lvdiW->item.mask & LVIF_TEXT) && lvdiW->item.cchTextMax > 0)
                 {
-                    if (SplU8ToW(lvdi.item.pszText, lvdiW->item.pszText, lvdiW->item.cchTextMax) == 0)
-                    { // not valid UTF-8 (transitional): legacy code-page text
-                        MultiByteToWideChar(CP_ACP, 0, lvdi.item.pszText != NULL ? lvdi.item.pszText : "", -1,
-                                            lvdiW->item.pszText, lvdiW->item.cchTextMax);
-                        lvdiW->item.pszText[lvdiW->item.cchTextMax - 1] = 0;
-                    }
+                    FTPCellTextToW(lvdi.item.pszText, lvdiW->item.pszText, lvdiW->item.cchTextMax); // feature 134
                 }
                 return FALSE; // continue processing
             }
@@ -878,12 +873,7 @@ COperationDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                         lvdiW->item.state = lvdi.item.state;
                     if ((lvdiW->item.mask & LVIF_TEXT) && lvdiW->item.cchTextMax > 0)
                     {
-                        if (SplU8ToW(lvdi.item.pszText, lvdiW->item.pszText, lvdiW->item.cchTextMax) == 0)
-                        { // not valid UTF-8 (transitional): legacy code-page text
-                            MultiByteToWideChar(CP_ACP, 0, lvdi.item.pszText != NULL ? lvdi.item.pszText : "", -1,
-                                                lvdiW->item.pszText, lvdiW->item.cchTextMax);
-                            lvdiW->item.pszText[lvdiW->item.cchTextMax - 1] = 0;
-                        }
+                        FTPCellTextToW(lvdi.item.pszText, lvdiW->item.pszText, lvdiW->item.cchTextMax); // feature 134
                     }
                     return FALSE; // continue processing
                 }

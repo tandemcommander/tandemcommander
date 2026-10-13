@@ -128,8 +128,17 @@ void CConfigPageServers::MoveItem(HWND list, int fromIndex, int toIndex)
             int topIndex = (int)SendMessage(list, LB_GETTOPINDEX, 0, 0);
             SendMessage(list, LB_DELETESTRING, fromIndex, 0);
             char typeBuf[SERVERTYPE_MAX_SIZE + 101];
-            SendMessage(list, LB_INSERTSTRING, toIndex,
-                        (LPARAM)GetTypeNameForUser(s->TypeName, typeBuf, SERVERTYPE_MAX_SIZE + 101));
+            // feature 134: the type name is UTF-8 - inserted wide (the A message showed it through
+            // the code page); a name that is not valid UTF-8 is read through the code page as before
+            char* typeName = GetTypeNameForUser(s->TypeName, typeBuf, SERVERTYPE_MAX_SIZE + 101);
+            WCHAR* typeNameW = SplDisplayTextToWAlloc(typeName);
+            if (typeNameW != NULL)
+            {
+                SendMessageW(list, LB_INSERTSTRING, toIndex, (LPARAM)typeNameW);
+                free(typeNameW);
+            }
+            else
+                SendMessage(list, LB_INSERTSTRING, toIndex, (LPARAM)typeName);
             SendMessage(list, LB_SETTOPINDEX, topIndex, 0);
             SendMessage(list, LB_SETCURSEL, toIndex, 0);
             SendMessage(list, WM_SETREDRAW, TRUE, 0);
@@ -209,7 +218,9 @@ void CConfigPageServers::OnExportServer(CServerType* serverType)
             SetCursor(oldCur);
             if (err != NO_ERROR) // display the error
             {
-                sprintf(buf, LoadStr(IDS_SRVTYPEEXPORTERROR), SalamanderGeneral->GetErrorText(err));
+                // feature 134: GetErrorText is UTF-8 - the sentence is loaded as UTF-8 too
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPEEXPORTERROR), SalamanderGeneral->GetErrorText(err));
+                SplU8TrimTornTail(buf);
                 SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                                  MB_OK | MB_ICONEXCLAMATION);
                 FTPDeleteFileU8(fileName); // delete the file if there was an error
@@ -219,7 +230,8 @@ void CConfigPageServers::OnExportServer(CServerType* serverType)
         {
             DWORD err = GetLastError();
             SetCursor(oldCur);
-            sprintf(buf, LoadStr(IDS_SRVTYPEEXPORTERROR), SalamanderGeneral->GetErrorText(err));
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPEEXPORTERROR), SalamanderGeneral->GetErrorText(err)); // feature 134: see above
+            SplU8TrimTornTail(buf);
             SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                              MB_OK | MB_ICONEXCLAMATION);
         }
@@ -286,8 +298,14 @@ void CConfigPageServers::OnImportServer()
                     int index;
                     if (TmpServerTypeList->ContainsTypeName(serverType->TypeName, NULL, &index))
                     {
-                        sprintf(buf, LoadStr(IDS_SRVTYPEOVERWRITE),
-                                GetTypeNameForUser(serverType->TypeName, typeBuf, SERVERTYPE_MAX_SIZE + 101));
+                        // feature 134: the type name is UTF-8 (GetTypeNameForUser, with its suffix) -
+                        // the question is loaded as UTF-8; a name in the code page (an imported
+                        // file of unknown origin) is converted for the question
+                        char typeNameU8[3 * (SERVERTYPE_MAX_SIZE + 101)];
+                        FTPTextToU8(GetTypeNameForUser(serverType->TypeName, typeBuf, SERVERTYPE_MAX_SIZE + 101),
+                                    typeNameU8, sizeof(typeNameU8));
+                        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPEOVERWRITE), typeNameU8);
+                        SplU8TrimTornTail(buf);
                         if (SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPPLUGINTITLE),
                                                              MB_YESNO | MSGBOXEX_ESCAPEENABLED |
                                                                  MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES)
@@ -315,12 +333,15 @@ void CConfigPageServers::OnImportServer()
                 SetCursor(oldCur);
                 if (err != NO_ERROR || errResID != 0) // display the error
                 {
+                    // feature 134: GetErrorText is UTF-8 - the sentence is loaded as UTF-8, and so is
+                    // the other text that can stand in its place
                     if (errResID != 0)
-                        sprintf(buf, LoadStr(IDS_SRVTYPEIMPORTERROR), LoadStr(errResID));
+                        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPEIMPORTERROR), LoadStrU8(errResID));
                     else
                     {
-                        sprintf(buf, LoadStr(IDS_SRVTYPEIMPORTERROR), SalamanderGeneral->GetErrorText(err));
+                        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPEIMPORTERROR), SalamanderGeneral->GetErrorText(err));
                     }
+                    SplU8TrimTornTail(buf);
                     SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                                      MB_OK | MB_ICONEXCLAMATION);
                 }
@@ -329,7 +350,8 @@ void CConfigPageServers::OnImportServer()
             {
                 DWORD err = GetLastError();
                 SetCursor(oldCur);
-                sprintf(buf, LoadStr(IDS_SRVTYPEIMPORTERROR), SalamanderGeneral->GetErrorText(err));
+                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPEIMPORTERROR), SalamanderGeneral->GetErrorText(err)); // feature 134: see above
+                SplU8TrimTornTail(buf);
                 SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                                  MB_OK | MB_ICONEXCLAMATION);
             }
@@ -429,8 +451,13 @@ CConfigPageServers::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                 case CM_REMOVESERVER:
                 {
-                    sprintf(buf, LoadStr(IDS_SRVTYPEREMOVECONF),
-                            GetTypeNameForUser(s->TypeName, typeBuf, SERVERTYPE_MAX_SIZE + 101));
+                    // feature 134: the type name is UTF-8 (GetTypeNameForUser, with its suffix) - the
+                    // question is loaded as UTF-8; a name stored in the code page is converted
+                    char typeNameU8[3 * (SERVERTYPE_MAX_SIZE + 101)];
+                    FTPTextToU8(GetTypeNameForUser(s->TypeName, typeBuf, SERVERTYPE_MAX_SIZE + 101),
+                                typeNameU8, sizeof(typeNameU8));
+                    _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPEREMOVECONF), typeNameU8);
+                    SplU8TrimTornTail(buf);
                     MSGBOXEX_PARAMS params;
                     memset(&params, 0, sizeof(params));
                     params.HParent = HWindow;
@@ -483,7 +510,9 @@ CConfigPageServers::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                         {
                             if (TmpServerTypeList->ContainsTypeName(name, LOWORD(wParam) == CM_RENAMESERVER ? s : NULL))
                             {
-                                sprintf(buf, LoadStr(IDS_SRVTYPENOTUNIQUE), name + 1);
+                                // feature 134: the name was just typed (UTF-8) - the message is loaded as UTF-8
+                                _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SRVTYPENOTUNIQUE), name + 1);
+                                SplU8TrimTornTail(buf);
                                 SalamanderGeneral->SalMessageBox(HWindow, buf, LoadStr(IDS_FTPERRORTITLE),
                                                                  MB_OK | MB_ICONEXCLAMATION);
                                 continue; // let the user change the name
@@ -892,7 +921,19 @@ void CEditServerTypeDlg::RefreshListView(BOOL onlySet, int selIndex)
         }
         else
             emptyVal = col->EmptyValue;
-        ListView_SetItemText(HListView, i, 3, emptyVal);
+        // feature 134: a typed empty value is UTF-8 (the standard text of a type is code page) -
+        // this cell is set wide; the A message showed a letter outside ASCII through the code page
+        WCHAR* emptyValW = SplDisplayTextToWAlloc(emptyVal);
+        if (emptyValW != NULL)
+        {
+            LVITEMW lviW;
+            lviW.iSubItem = 3;
+            lviW.pszText = emptyValW;
+            SendMessage(HListView, LVM_SETITEMTEXTW, i, (LPARAM)&lviW);
+            free(emptyValW);
+        }
+        else
+            ListView_SetItemText(HListView, i, 3, emptyVal);
 
         // column description
         char bufDescr[STC_DESCR_MAX_SIZE + 2];

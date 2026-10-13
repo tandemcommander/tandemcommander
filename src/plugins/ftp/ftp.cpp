@@ -233,7 +233,7 @@ BOOL WindowsVistaAndLater = FALSE; // Windows Vista or later from the NT family
 int TargetPanelPathPanel = PANEL_LEFT;
 char TargetPanelPath[MAX_PATH] = "";
 
-char UserDefinedSuffix[100] = ""; // preloaded string for marking user-defined "server type"
+char UserDefinedSuffix[100] = ""; // preloaded string for marking user-defined "server type"; UTF-8 (feature 134)
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -264,6 +264,11 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 char* LoadStr(int resID)
 {
     return SalamanderGeneral->LoadStr(HLanguage, resID);
+}
+
+const char* LoadStrU8(int resID)
+{
+    return SplLoadStrU8(SalamanderGeneral, HLanguage, resID);
 }
 
 //
@@ -315,7 +320,8 @@ CPluginInterfaceAbstract* WINAPI SalamanderPluginEntry(CSalamanderPluginEntryAbs
     SalamanderGeneral->GetConfigParameter(SALCFG_MINBEEPWHENDONE, &InactiveBeepWhenDone,
                                           sizeof(InactiveBeepWhenDone), NULL);
     SalamanderGeneral->GetLowerAndUpperCase(&LowerCase, &UpperCase);
-    lstrcpyn(UserDefinedSuffix, LoadStr(IDS_SRVTYPEUSERDEF), 100);
+    // feature 134: UTF-8 - it is appended to a server type name the user typed (UTF-8)
+    SplU8CopyTrunc(UserDefinedSuffix, 100, LoadStrU8(IDS_SRVTYPEUSERDEF));
     if (!Config.InitWithSalamanderGeneral())
         return NULL; // error
 

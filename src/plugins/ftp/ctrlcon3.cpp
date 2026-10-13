@@ -62,7 +62,7 @@ public:
 
 void CSendCmdUserIfaceWaitWnd::Init(HWND parent, const char* logCmd, const char* waitWndText)
 {
-    char buf[500];
+    char buf[500 + 2 * 300]; // feature 134: + room for the command made UTF-8
     char errBuf[300];
     if (waitWndText == NULL) // use the standard wait window text
     {
@@ -71,7 +71,13 @@ void CSendCmdUserIfaceWaitWnd::Init(HWND parent, const char* logCmd, const char*
         while (s > errBuf && (*(s - 1) == '\r' || *(s - 1) == '\n'))
             s--;
         *s = 0;
-        _snprintf_s(buf, _TRUNCATE, LoadStr(IDS_SENDINGCOMMAND), errBuf);
+        // feature 134: 'logCmd' is the command as sent - the name in it is in the code page when
+        // it can be, else UTF-8 (FTPU8NameToServer); shown as UTF-8 in a UTF-8 sentence. A
+        // command cut by the copy above is shown without its torn last character.
+        if (logCmd != NULL && strlen(logCmd) >= 300)
+            SplU8TrimTornTail(errBuf);
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_SENDINGCOMMAND), CFTPU8Piece(errBuf).Text);
+        SplU8TrimTornTail(buf);
         WaitWnd.SetText(buf);
     }
     else
@@ -97,16 +103,15 @@ BOOL CSendCmdUserIfaceWaitWnd::HandleESC(HWND parent, BOOL isSend, BOOL allowCmd
 
 void WriteUnexpReplyToLog(int logUID, char* unexpReply, int unexpReplyBufSize)
 { // helper function - write "unexpected reply: %s" to the log
-    char* s = LoadStr(IDS_LOGMSGUNEXPREPLY);
-    int ul = (int)strlen(s);
+    // feature 134: the message is UTF-8 as a whole - the reply (any encoding) is made UTF-8
+    // first, then the UTF-8 prefix is put before it; a reply that does not fit is cut at a
+    // whole character and keeps its line end ('unexpReply' is not used after this call)
+    CFTPU8Piece replyU8(unexpReply);
+    const char* s = LoadStrU8(IDS_LOGMSGUNEXPREPLY);
+    BOOL cut = _snprintf_s(unexpReply, unexpReplyBufSize, _TRUNCATE, "%s%s", s, replyU8.Text) < 0;
     int l = (int)strlen(unexpReply);
-    if (l + ul + 1 > unexpReplyBufSize)
-        l = unexpReplyBufSize - ul - 1;
-    memmove(unexpReply + ul, unexpReply, l);
-    memcpy(unexpReply, s, ul);
-    unexpReply[ul + l] = 0;
-    if (l >= 2)
-        memcpy(unexpReply + ul + l - 2, "\r\n", 2);
+    if (cut || l == 0 || unexpReply[l - 1] != '\n') // (a reply that filled its buffer has no line end)
+        FTPLogMsgCutKeepLineEnd(unexpReply, unexpReplyBufSize);
     Logs.LogMessage(logUID, unexpReply, -1);
 }
 
@@ -685,8 +690,12 @@ BOOL CControlConnectionSocket::SendFTPCommand(HWND parent, const char* ftpCmd, c
 
             if (canRetry == NULL || donotRetry) // "retry" is not possible or does not make sense
             {
-                sprintf(buf, LoadStr(opFatalErrorTextID), e);
-                SalamanderGeneral->SalMessageBox(parent, buf, LoadStr(IDS_FTPERRORTITLE),
+                // feature 134: 'e' is a FormatMessage text, a LoadStr text or a server reply (any
+                // encoding) - as UTF-8 in a UTF-8 sentence; bounded (it was a sprintf into 'buf')
+                char msg[500 + 3 * 300];
+                _snprintf_s(msg, _TRUNCATE, LoadStrU8(opFatalErrorTextID), CFTPU8Piece(e).Text);
+                SplU8TrimTornTail(msg);
+                SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_FTPERRORTITLE),
                                                  MB_OK | MB_ICONEXCLAMATION);
             }
             else
@@ -814,7 +823,9 @@ BOOL CControlConnectionSocket::GetCurrentWorkingPath(HWND parent, char* path, in
 
                 ReleaseKeepAlive(); // on error release keep-alive (cannot be used without an established connection)
 
-                sprintf(errBuf, LoadStr(IDS_GETCURWORKPATHERROR), replyBuf);
+                // feature 134: the reply (any encoding) as UTF-8 in a UTF-8 sentence; bounded
+                _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_GETCURWORKPATHERROR), CFTPU8Piece(replyBuf).Text);
+                SplU8TrimTornTail(errBuf);
                 SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                                  MB_OK | MB_ICONEXCLAMATION);
             }
@@ -1123,7 +1134,9 @@ BOOL CControlConnectionSocket::ChangeWorkingPath(BOOL notInPanel, BOOL leftPanel
     if (ret && showChangeInLog && // if it should be shown in the log
         !cutDirectory)            // only on the first pass (do not report shortening due to a faulty listing)
     {
-        _snprintf_s(errBuf, _TRUNCATE, LoadStr(forceRefresh ? IDS_LOGMSGREFRESHINGPATH : IDS_LOGMSGCHANGINGPATH), path);
+        // feature 134: a log message with a path - UTF-8 as a whole; a cut one keeps its line end
+        if (_snprintf_s(errBuf, _TRUNCATE, LoadStrU8(forceRefresh ? IDS_LOGMSGREFRESHINGPATH : IDS_LOGMSGCHANGINGPATH), path) < 0)
+            FTPLogMsgCutKeepLineEnd(errBuf, _countof(errBuf));
         LogMessage(errBuf, -1, TRUE);
     }
 
@@ -1239,7 +1252,9 @@ BOOL CControlConnectionSocket::ChangeWorkingPath(BOOL notInPanel, BOOL leftPanel
                             {
                                 if (cutDirectory && strcmp(newPath, prevUsedPath) == 0)
                                 { // the server is making fools of us (does not change the path but claims it did)
-                                    _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR), path, replyBuf);
+                                    // feature 134: UTF-8 template, the path is UTF-8, the reply (any encoding) made UTF-8
+                                    _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR), path, CFTPU8Piece(replyBuf).Text);
+                                    SplU8TrimTornTail(errBuf);
                                 }
                                 else
                                 {
@@ -1278,7 +1293,8 @@ BOOL CControlConnectionSocket::ChangeWorkingPath(BOOL notInPanel, BOOL leftPanel
                         }
                         else // error, generate a message
                         {
-                            _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR), path, replyBuf);
+                            _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR), path, CFTPU8Piece(replyBuf).Text); // feature 134
+                            SplU8TrimTornTail(errBuf);
                         }
 
                         if (strcmp(rescuePath, path) == 0)

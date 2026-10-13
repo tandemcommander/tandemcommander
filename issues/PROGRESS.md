@@ -89,3 +89,11 @@ library. Record: `specs/132-pictview-thumbnail-verify/fix-log.md`.
 test container: the fixes of 131 hold; a listing that ended with an error was taken for the
 whole directory (fixed); a move loses nothing (the recommendation's worry was wrong) but leaves
 a moved directory on the server (recorded). Record: `specs/133-sftp-server-verify/fix-log.md`.
+
+## Release preparation and feature 134 (2026-10-13, points 3 and 4 of four)
+
+- `release-0.1.10`: the tree prepared for 0.1.10 (build 194, features 124-133); tag, build and
+  publication are the maintainer's, after the person steps in `specs/NEXT-WORK.md`.
+- `134-ftp-mixed-templates`, on top of it (for the version after): the FTP client's part of
+  GitHub #7 - messages, operation window and the log; measured before and after against the
+  probe's own FTP server. Record: `specs/134-ftp-mixed-templates/fix-log.md`.

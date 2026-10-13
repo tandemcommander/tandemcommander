@@ -2127,3 +2127,24 @@ a few early ones are out of sequence).
     session's text is used only when its code is the call's code (review).
   - Probe notes: F-keys posted to the panel do nothing on the hidden desktop - post the command
     ids; a re-opened input dialog after an error must be cancelled, or the probe loops.
+- 134-ftp-mixed-templates: **the FTP client on the rule of 127 / 130, and its log as UTF-8**.
+  Map = the read-only triage of 130 (`specs/130-plugin-mixed-templates/triage/ftp.md`, about 104
+  sites); measured first with a probe and **its own FTP server** (`probe/ftp134_server.py`,
+  standard library: an accented tree, refusals with the name as UTF-8 / code page 1250 / none,
+  a slow file, every received line logged as hex): 9 garbled texts in Czech, **2 in English**
+  (the log, and a message with a code-page reply) - both only deduced by the triage. Shared
+  pieces first (`LoadStrU8`, `FTPTextToU8`, the core's `GetCommonFSOperSourceDescr` as UTF-8),
+  then **four parallel packages by file group with written contracts between them** (who gives
+  UTF-8 after the feature: `GetProxyError`, `GetTypeNameForUser`, the log sink) - the build of
+  37 files was clean at the first attempt. The log: `CLogs::LogMessage` makes every message
+  UTF-8 on its own, so 85 plain texts needed no change; Save writes a BOM, Copy is Unicode.
+  - SC "nothing sent changes" is measured: the server's byte logs before / after are identical
+    (`probe/compare_server_logs.py`).
+  - Review found one real regression: **`SplU8ToW` into a list view's 260-unit buffer returns 0
+    also when the text does not fit** - a long cell that had become valid UTF-8 fell back to
+    the code page with every accented letter doubled (`FTPCellTextToW`). And: a "torn tail"
+    rule must not drop a code-page letter - convert the tail, do not cut it.
+  - Probe traps: the `ftp\.spl$` pattern also matches `sftp.spl`; the welcome-message window
+    and the "queue still holds operations" question at exit; a PowerShell 5.1 script must stay
+    ASCII (a literal U+FFFD slipped in through the editor).
+  - Not driven: bookmark dialogs, password prompt, Save / Copy log, FTPS - fix-log, section 5.

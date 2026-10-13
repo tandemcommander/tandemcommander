@@ -210,7 +210,8 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
             {
             case fwssWorkStartWork: // determine the state of the target directory
             {
-                _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGUPLOADFILE), curItem->Name);
+                if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGUPLOADFILE), curItem->Name) < 0) // feature 134: UTF-8 as a whole
+                    FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                 if (ShouldStop)
@@ -323,7 +324,8 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                 CFTPServerPathType type = Oper->GetFTPServerPathType(ftpPath);
                 if (FTPPathAppend(type, ftpPath, FTP_MAX_PATH, curItem->TgtName, TRUE))
                 { // we have the path; send CWD to the server into the directory being examined
-                    _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGRESOLVINGLINK), ftpPath);
+                    if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGRESOLVINGLINK), ftpPath) < 0) // feature 134: UTF-8 as a whole
+                        FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                     Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                     PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
@@ -1136,11 +1138,17 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
             case fwssWorkUploadTestFileSizeOK:     // upload copy/move file: after an upload error the file size test succeeded
             case fwssWorkUploadTestFileSizeFailed: // upload copy/move file: after an upload error the file size test failed
             {
+                // feature 134: UTF-8 as a whole. The core's size text ("1 234 bytes") has its word
+                // in the code page - made UTF-8 (where the thousands separator is not ASCII the
+                // core's text is mixed in itself and the separator is then shown wrong, as before)
                 char num[100];
+                char numU8[300];
                 SalamanderGeneral->PrintDiskSize(num, OpenedInFileSize, 2);
-                _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE,
-                            LoadStr(SubState == fwssWorkUploadTestFileSizeOK ? (curItem->AsciiTransferMode ? IDS_LOGMSGUPLOADISCOMPL2 : IDS_LOGMSGUPLOADISCOMPL) : (curItem->AsciiTransferMode ? IDS_LOGMSGUPLOADISNOTCOMPL2 : IDS_LOGMSGUPLOADISNOTCOMPL)),
-                            curItem->TgtName, num);
+                FTPTextToU8(num, numU8, _countof(numU8));
+                if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE,
+                                LoadStrU8(SubState == fwssWorkUploadTestFileSizeOK ? (curItem->AsciiTransferMode ? IDS_LOGMSGUPLOADISCOMPL2 : IDS_LOGMSGUPLOADISCOMPL) : (curItem->AsciiTransferMode ? IDS_LOGMSGUPLOADISNOTCOMPL2 : IDS_LOGMSGUPLOADISNOTCOMPL)),
+                                curItem->TgtName, numU8) < 0)
+                    FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                 Queue->UpdateForceAction(CurItem, fqiaNone); // the forced action no longer applies
@@ -1658,7 +1666,14 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                                 if (errBuf[0] == 0)
                                     lstrcpyn(ErrorDescr, LoadStr(IDS_PROXYERROPENACTDATA), FTPWORKER_ERRDESCR_BUFSIZE);
                                 else
-                                    _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_LOGMSGDATCONERROR), errBuf);
+                                {
+                                    // feature 134: the proxy error text is UTF-8 (it may hold the host name) -
+                                    // the sentence is UTF-8 as a whole (it goes to the status column and to the log)
+                                    char prxErrU8[3 * (50 + FTP_MAX_PATH)];
+                                    FTPTextToU8(errBuf, prxErrU8, _countof(prxErrU8));
+                                    _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_LOGMSGDATCONERROR), prxErrU8);
+                                    SplU8TrimTornTail(ErrorDescr);
+                                }
                                 needRetry = TRUE;
                             }
                         }
@@ -1688,7 +1703,12 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                         if (errBuf[0] == 0)
                             lstrcpyn(ErrorDescr, LoadStr(IDS_PREPACTDATACONTIMEOUT), FTPWORKER_ERRDESCR_BUFSIZE);
                         else
-                            _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_LOGMSGDATCONERROR), errBuf);
+                        {
+                            char prxErrU8[3 * (50 + FTP_MAX_PATH)]; // feature 134: UTF-8 as a whole, see above
+                            FTPTextToU8(errBuf, prxErrU8, _countof(prxErrU8));
+                            _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_LOGMSGDATCONERROR), prxErrU8);
+                            SplU8TrimTornTail(ErrorDescr);
+                        }
                         needRetry = TRUE;
                         break;
                     }
@@ -1784,7 +1804,8 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
 
                     if (UploadType == utAutorename)
                     {
-                        _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGUPLOADRENFILE), curItem->RenamedName);
+                        if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGUPLOADRENFILE), curItem->RenamedName) < 0) // feature 134: UTF-8 as a whole
+                            FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                         Logs.LogMessage(LogUID, errText, -1, TRUE);
                     }
 

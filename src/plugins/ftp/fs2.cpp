@@ -200,7 +200,9 @@ BOOL CPluginFSInterface::GetFullFSPath(HWND parent, const char* fsName, char* pa
         return FALSE; // translation is not possible (the FS has not been connected yet); let Salamander report the error
 
     char errBuf[900 + FTP_MAX_PATH];
-    _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_LOGMSGCHANGINGPATH), path);
+    // feature 134: 'path' is UTF-8 - the template too, the message is not mixed inside
+    if (_snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_LOGMSGCHANGINGPATH), path) < 0)
+        FTPLogMsgCutKeepLineEnd(errBuf, sizeof(errBuf));
     ControlConnection->LogMessage(errBuf, -1, TRUE);
 
     int panel;
@@ -221,7 +223,11 @@ BOOL CPluginFSInterface::GetFullFSPath(HWND parent, const char* fsName, char* pa
         BOOL run = FALSE;
         if (!success)
         {
-            _snprintf_s(errBuf, _TRUNCATE, LoadStr(IDS_CHANGEWORKPATHERROR), path, replyBuf);
+            // feature 134: UTF-8 template + UTF-8 path + the reply (bytes of unknown encoding) as UTF-8
+            char replyU8[3 * 700];
+            FTPTextToU8(replyBuf, replyU8, sizeof(replyU8));
+            _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_CHANGEWORKPATHERROR), path, replyU8);
+            SplU8TrimTornTail(errBuf);
             SalamanderGeneral->SalMessageBox(parent, errBuf, LoadStr(IDS_FTPERRORTITLE),
                                              MB_OK | MB_ICONEXCLAMATION);
         }
@@ -1075,7 +1081,9 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
     }
 
     char logBuf[200 + FTP_MAX_PATH];
-    _snprintf_s(logBuf, _TRUNCATE, LoadStr(PathListing != NULL ? IDS_LOGMSGLISTINGCACHEDPATH : IDS_LOGMSGLISTINGPATH), Path);
+    // feature 134: 'Path' is UTF-8 - the template too
+    if (_snprintf_s(logBuf, _TRUNCATE, LoadStrU8(PathListing != NULL ? IDS_LOGMSGLISTINGCACHEDPATH : IDS_LOGMSGLISTINGPATH), Path) < 0)
+        FTPLogMsgCutKeepLineEnd(logBuf, sizeof(logBuf));
     ControlConnection->LogMessage(logBuf, -1, TRUE);
 
     //  if (PathListing != NULL && forceRefresh && !NextRefreshCanUseOldListing)  // may happen when the user requests a hard refresh and refuses to reconnect - then the cached listing is used (if available)
@@ -1261,7 +1269,12 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                 {
                     if (LastServerType[0] != 0) // "always true"
                     {
-                        _snprintf_s(logBuf, _TRUNCATE, LoadStr(IDS_LOGMSGPARSEDBYSRVTYPE), LastServerType);
+                        // feature 134: a user's own type name is UTF-8 (one stored by an older
+                        // version may be code page - read either way), the template UTF-8
+                        char typeU8[3 * SERVERTYPE_MAX_SIZE];
+                        FTPTextToU8(LastServerType, typeU8, sizeof(typeU8));
+                        if (_snprintf_s(logBuf, _TRUNCATE, LoadStrU8(IDS_LOGMSGPARSEDBYSRVTYPE), typeU8) < 0)
+                            FTPLogMsgCutKeepLineEnd(logBuf, sizeof(logBuf));
                         ControlConnection->LogMessage(logBuf, -1, TRUE);
                     }
                 }

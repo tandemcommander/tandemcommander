@@ -2661,6 +2661,9 @@ public:
     // nebo adresar ('isDir' je FALSE nebo TRUE); 'forDlgCaption' je TRUE/FALSE pokud je/neni
     // text urceny pro titulek dialogu (v anglictine nutna velka pocatecni pismena)
     // omezeni: hlavni thread (muze pracovat s panelem)
+    // Tandem Commander, feature 134: the whole text is UTF-8 (it was a code-page word around a
+    // UTF-8 name, i.e. neither). Wrap it in a UTF-8 template and show it with a wide API or a
+    // core service that takes UTF-8.
     virtual void WINAPI GetCommonFSOperSourceDescr(char* sourceDescr, int sourceDescrSize,
                                                    int panel, int selectedFiles, int selectedDirs,
                                                    const char* fileOrDirName, BOOL isDir,

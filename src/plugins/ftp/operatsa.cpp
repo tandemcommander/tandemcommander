@@ -122,7 +122,8 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
             CFTPServerPathType type = Oper->GetFTPServerPathType(ftpPath);
             if (FTPPathAppend(type, ftpPath, FTP_MAX_PATH, curItem->TgtName, TRUE))
             { // we have the path; send CWD to the directory being examined on the server
-                _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGRESOLVINGLINK), ftpPath);
+                if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGRESOLVINGLINK), ftpPath) < 0) // feature 134: UTF-8 as a whole
+                    FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                 PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
@@ -206,7 +207,8 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
                         handleShouldStop = TRUE; // check whether the worker should stop
                     else
                     {
-                        _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGCREATEDIR), curItem->TgtName);
+                        if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGCREATEDIR), curItem->TgtName) < 0) // feature 134: UTF-8 as a whole
+                            FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                         Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                         PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
@@ -531,7 +533,8 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
                         {
                             if (!nameExists) // no collision -> try to create the target directory
                             {
-                                _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGCREATEDIR), UploadAutorenameNewName);
+                                if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGCREATEDIR), UploadAutorenameNewName) < 0) // feature 134: UTF-8 as a whole
+                                    FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                                 PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,

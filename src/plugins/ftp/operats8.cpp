@@ -761,7 +761,8 @@ void CFTPWorker::HandleEventInWorkingState3(CFTPWorkerEvent event, BOOL& sendQui
                     {
                         if (DataConAllDataTransferred && CommandReplyTimeout)
                         { // we successfully received all data + the server did not respond => in 99.9% the file is completely downloaded and only the control connection is stuck (happens during uploads/downloads longer than 1.5 hours) => force Resume (it tests the file size + sets the date/time, etc.)
-                            _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGDWNLOADFORCRESUM), curItem->Name);
+                            if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGDWNLOADFORCRESUM), curItem->Name) < 0) // feature 134: UTF-8 as a whole
+                                FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                             Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                             Queue->UpdateForceAction(CurItem, fqiaResume);

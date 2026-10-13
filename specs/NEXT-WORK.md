@@ -349,6 +349,14 @@ Code work an agent can do:
        French line, TAR's skip line and RPM caption, ZIP's comment dialog title, PictView's
        Save As name / rename / print error, and the title of the progress dialog during a
        plug-in operation (the core change of 130).
+     - ~~The FTP client (about 104 sites, eight steps, the log decision)~~ - **done, feature
+       134** (after the 0.1.10 preparation, so for the version after it): messages, operation
+       window, log (UTF-8 at the sink), code-page-only controls; the core's
+       `GetCommonFSOperSourceDescr` gives UTF-8. Left by 134: the rows not driven in the
+       program (bookmark questions, password prompt, Save / Copy log, proxy and server-type
+       lists, FTPS certificate text - `specs/134-ftp-mixed-templates/fix-log.md`, section 5);
+       a reply cut inside a character by its 300 / 700-byte buffer; the Logs window's caret
+       arithmetic in bytes; the core's `PrintDiskSize` mode 2 mixed in itself.
      - ~~Defects seen on the way~~ - **done, feature 131** (a verdict per item in
        `specs/131-plugin-defect-batch/items/*.md`; the Spanish 7-Zip text too). Left by 131:
        - ~~PictView, possible loss (EXIF.DLL writes the parsed part of a malformed JPEG)~~ -

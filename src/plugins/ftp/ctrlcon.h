@@ -58,6 +58,27 @@ const char* GetFatalErrorTxt(int fatalErrorTextID, char* errBuf);
 // helper function for preparing error texts
 const char* GetOperationFatalErrorTxt(int opFatalError, char* errBuf);
 
+// feature 134: a piece of unknown encoding - a server reply, a FormatMessage text, a host or
+// user name an older version stored in the code page - as UTF-8 for ONE argument of a printf
+// whose template is LoadStrU8: CFTPU8Piece(replyBuf).Text (the temporary lives to the end of
+// the statement). Valid UTF-8 is kept, anything else is read through the code page
+// (FTPTextToU8); a longer text is cut at a whole character. For shown texts only - never for
+// a text that is sent, stored, parsed or compared.
+struct CFTPU8Piece
+{
+    char Text[2100]; // a reply of 700 bytes may triple
+
+    explicit CFTPU8Piece(const char* text) { FTPTextToU8(text, Text, sizeof(Text)); }
+};
+
+// feature 134: the same for a short piece - a host, user, proxy or log item name, a date
+struct CFTPU8Name
+{
+    char Text[3 * HOST_MAX_SIZE];
+
+    explicit CFTPU8Name(const char* text) { FTPTextToU8(text, Text, sizeof(Text)); }
+};
+
 // ****************************************************************************
 // macros:
 
@@ -204,6 +225,16 @@ protected:
     CLogsDlg* LogsDlg; // holds a pointer to the open (NULL = closed) Logs dialog
     HANDLE LogsThread; // handle of the thread in which the last opened Logs dialog ran/is running
 
+    // feature 134: the name of the log 'd' as the Logs dialog lists it ("1: user@host (FTP in
+    // left panel)"), UTF-8, into 'buf' of 'bufSize' bytes (LOGSCOMBOITEM_MAX_SIZE); call it
+    // inside LogCritSect and PanelCtrlConSect
+    void GetLogItemName(CLogData* d, char* buf, int bufSize);
+
+    // feature 134: the name of the log 'uid' for the Clear / Remove question, UTF-8; 'itemName'
+    // (the item the dialog read from its combo, any encoding) is used only when the log no
+    // longer exists; must NOT be called inside LogCritSect
+    void GetLogItemNameForQuestion(int uid, const char* itemName, char* buf, int bufSize);
+
 public:
     CLogs() : Data(5, 5)
     {
@@ -234,7 +265,13 @@ public:
     // adds the text 'str' (length 'len') to the log with UID=='uid'; if 'uid' is -1 ("invalid UID")
     // nothing is logged; if 'len' is -1, it uses "len=strlen(str)"; if 'addTimeToLog' is TRUE, the
     // current time is placed before the message; returns TRUE when the text is added to the log or
-    // when 'uid' is -1
+    // when 'uid' is -1;
+    // feature 134: the log is UTF-8 - every message is made UTF-8 here on its own: a message
+    // that is valid UTF-8 (ASCII too) is appended as it is, any other (a resource text of
+    // LoadStr, a FormatMessage text, a reply or the copy of a command in the code page) is
+    // read through the system code page. So a plain LoadStr text can be logged as before; a
+    // message COMPOSED of a template and a name, path or reply must be UTF-8 as a whole
+    // (LoadStrU8 + UTF-8 pieces), otherwise all of it is read as code page
     BOOL LogMessage(int uid, const char* str, int len, BOOL addTimeToLog = FALSE);
 
     // returns TRUE if the log with UID=='uid' is in the log array (therefore the log can be viewed

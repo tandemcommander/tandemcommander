@@ -130,6 +130,116 @@ BOOL FTPHasTheSameRootPath(const char* p1, const char* p2, int userLength);
 // returns an error description
 char* FTPGetErrorText(int err, char* buf, int bufSize);
 
+// feature 134: a text of unknown encoding - a server reply, a FormatMessage text, a value
+// stored by an older version - as UTF-8 in 'buf': valid UTF-8 (ASCII too) is kept, anything
+// else is read through the system code page; a text that does not fit is cut at a whole
+// character. 'text' and 'buf' must not overlap. For a piece that joins a UTF-8 sentence
+// (LoadStrU8) - never for a text that is sent, stored or compared.
+inline void FTPTextToU8(const char* text, char* buf, int bufSize)
+{
+    SplLegacyToU8(text != NULL ? text : "", buf, bufSize);
+}
+
+// feature 134: a text that was cut by a byte limit and may be UTF-8 or code page: when it is
+// UTF-8 with a torn last character, that character is dropped (otherwise the whole text would
+// be read through the code page). A code-page text is left as it is - SplU8TrimTornTail alone
+// would take its last accented letter.
+inline void FTPTrimTornTailIfU8(char* text)
+{
+    char* copy = _strdup(text);
+    if (copy == NULL)
+        return;
+    SplU8TrimTornTail(copy);
+    if (strlen(copy) != strlen(text))
+    {
+        WCHAR* w = SplU8ToWAlloc(copy);
+        if (w != NULL) // valid UTF-8 without the torn end: it was UTF-8
+        {
+            text[strlen(copy)] = 0;
+            free(w);
+        }
+    }
+    free(copy);
+}
+
+// feature 134: the text of a list-view cell for LVN_GETDISPINFOW: 'text' (valid UTF-8, else
+// code page) as UTF-16 in 'out' of 'outSize' units, cut to fit at a whole character.
+// SplU8ToW into the cell's buffer gives 0 also when the text does not FIT (the list view
+// offers 260 units) - a long valid UTF-8 text was then read through the code page, every
+// accented letter as two wrong ones.
+inline void FTPCellTextToW(const char* text, WCHAR* out, int outSize)
+{
+    if (out == NULL || outSize <= 0)
+        return;
+    out[0] = 0;
+    if (text == NULL)
+        return;
+    WCHAR* w = SplU8ToWAlloc(text);
+    if (w != NULL)
+    {
+        int len = lstrlenW(w);
+        int n = len < outSize - 1 ? len : outSize - 1;
+        if (n < len && n > 0 && w[n - 1] >= 0xD800 && w[n - 1] <= 0xDBFF)
+            n--; // not half of a surrogate pair
+        memcpy(out, w, n * sizeof(WCHAR));
+        out[n] = 0;
+        free(w);
+    }
+    else // not valid UTF-8 (transitional): legacy code-page text
+    {
+        MultiByteToWideChar(CP_ACP, 0, text, -1, out, outSize);
+        out[outSize - 1] = 0;
+    }
+}
+
+// feature 134: FTPGetErrorText as UTF-8 (FTPGetErrorText itself stays code page - its other
+// callers rely on that). Returns 'buf'.
+inline char* FTPGetErrorTextU8(int err, char* buf, int bufSize)
+{
+    char acp[400];
+    FTPGetErrorText(err, acp, sizeof(acp));
+    FTPTextToU8(acp, buf, bufSize);
+    return buf;
+}
+
+// feature 134: for a log message that _snprintf_s(buf, _TRUNCATE, ...) had to cut (it returned
+// a negative number): the torn character at the end is dropped and the message gets its line
+// end back - the log templates end with "\r\n" and the next message would join this one.
+inline void FTPLogMsgCutKeepLineEnd(char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize < 3)
+        return;
+    int len = (int)strlen(buf);
+    if (len >= 2 && buf[len - 2] == '\r' && buf[len - 1] == '\n')
+        return; // the cut text ends with a line end by chance
+    while (len > 0 && (buf[len - 1] == '\r' || buf[len - 1] == '\n')) // half a line end, or a lone one
+        len--;
+    if (len > bufSize - 3)
+        len = bufSize - 3;
+    buf[len] = 0;
+    SplU8TrimTornTail(buf);
+    len = (int)strlen(buf);
+    buf[len] = '\r';
+    buf[len + 1] = '\n';
+    buf[len + 2] = 0;
+}
+
+// feature 134: LB_ADDSTRING / LB_INSERTSTRING / CB_ADDSTRING / CB_INSERTSTRING ('msg') with a
+// text that is UTF-8 (a typed name, GetTypeNameForUser) or code page (a LoadStr text, a value
+// of an older version): sent wide, so the name is shown right in every language. The A message
+// showed a UTF-8 name through the code page. Returns what the message returns.
+inline LRESULT FTPSendListTextMsg(HWND ctrl, UINT msg, WPARAM wParam, const char* text)
+{
+    if (text == NULL)
+        text = "";
+    WCHAR* textW = SplDisplayTextToWAlloc(text);
+    if (textW == NULL) // low memory
+        return SendMessageA(ctrl, msg, wParam, (LPARAM)text);
+    LRESULT res = SendMessageW(ctrl, msg, wParam, (LPARAM)textW);
+    free(textW);
+    return res;
+}
+
 // feature 131: copies 'src' to 'dst' ('dstSize' bytes) with every '%' doubled - for a text that
 // is printed into a buffer which is then used as a printf FORMAT (the connect error texts with
 // the host name): a '%' typed in a host name would be read there as a directive. A pair that

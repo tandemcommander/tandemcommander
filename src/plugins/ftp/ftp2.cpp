@@ -796,7 +796,12 @@ char* GetTypeNameForUser(char* typeName, char* buf, int bufSize)
     char* txt = typeName;
     if (*txt == '*' && bufSize > 0) // a name starting with '*' means "user defined server type" - strip the character and append the suffix
     {
-        _snprintf_s(buf, bufSize, _TRUNCATE, "%s %s", txt + 1, UserDefinedSuffix);
+        // feature 134: the result is UTF-8 - the suffix is, the typed name is; a name stored by
+        // an older version in the code page is read through it
+        char nameU8[3 * SERVERTYPE_MAX_SIZE];
+        FTPTextToU8(txt + 1, nameU8, sizeof(nameU8));
+        _snprintf_s(buf, bufSize, _TRUNCATE, "%s %s", nameU8, UserDefinedSuffix);
+        SplU8TrimTornTail(buf);
         txt = buf;
     }
     return txt;
@@ -1693,7 +1698,7 @@ BOOL ExpandText(char* buf, int bufSize, char* logBuf, int logBufSize, const char
                                     txt += valLen;
                                 }
                                 if (hidden)
-                                    value = LoadStr(IDS_HIDDENPASSWORD);
+                                    value = LoadStrU8(IDS_HIDDENPASSWORD); // feature 134: only the log copy; next to a UTF-8 user name
                                 valLen = (int)strlen(value);
                                 if (hidden && logTxt < logBufEnd)
                                     *logTxt++ = '(';
@@ -2689,7 +2694,7 @@ void CFTPProxyServerList::InitCombo(HWND combo, int focusProxyUID, BOOL addDefau
     for (i = 0; i < Count; i++) // fill the combo-box list
     {
         CFTPProxyServer* proxy = At(i);
-        SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)proxy->ProxyName);
+        FTPSendListTextMsg(combo, CB_ADDSTRING, 0, proxy->ProxyName); // feature 134: wide - a typed name is UTF-8
         if (focusProxyUID >= 0 && proxy->ProxyUID == focusProxyUID)
             focusIndex = i + (addDefault ? 2 : 1);
     }
@@ -2812,7 +2817,7 @@ void CFTPProxyServerList::AddProxyServer(HWND parent, HWND combo)
             {
                 n->ProxyUID = NextFreeProxyUID++; // initialization of ProxyUID
                 // add to the combo box and focus the added item
-                SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)n->ProxyName);
+                FTPSendListTextMsg(combo, CB_ADDSTRING, 0, n->ProxyName); // feature 134: wide
                 int count = (int)SendMessage(combo, CB_GETCOUNT, 0, 0);
                 if (count != CB_ERR && count > 0)
                     PostMessage(combo, CB_SETCURSEL, count - 1, 0);
@@ -2844,7 +2849,7 @@ void CFTPProxyServerList::EditProxyServer(HWND parent, HWND combo, BOOL addDefau
             BOOL edited = (CProxyServerDlg(parent, this, e, TRUE).Execute() == IDOK);
             if (edited)
             { // just refresh the combo box
-                if (SendMessage(combo, CB_INSERTSTRING, sel, (LPARAM)e->ProxyName) == sel)
+                if (FTPSendListTextMsg(combo, CB_INSERTSTRING, sel, e->ProxyName) == sel) // feature 134: wide
                 {
                     SendMessage(combo, CB_DELETESTRING, sel + 1, 0);
                     SendMessage(combo, CB_SETCURSEL, sel, 0);
@@ -2863,7 +2868,11 @@ void CFTPProxyServerList::DeleteProxyServer(HWND parent, HWND combo, BOOL addDef
         if (index >= 0 && index < Count) // reading values in the main thread does not need a critical section
         {
             char buf[500];
-            sprintf(buf, LoadStr(IDS_WANTDELPRXSRV), At(index)->ProxyName);
+            // feature 134: the typed name is UTF-8 (one of an older version may be code page) - the template too
+            char nameU8[3 * 200]; // (the dialog stores up to 199 bytes)
+            FTPTextToU8(At(index)->ProxyName, nameU8, sizeof(nameU8));
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_WANTDELPRXSRV), nameU8);
+            SplU8TrimTornTail(buf);
             BOOL del = (SalamanderGeneral->SalMessageBox(parent, buf,
                                                          LoadStr(IDS_FTPPLUGINTITLE),
                                                          MB_YESNO | MSGBOXEX_ESCAPEENABLED |
@@ -2895,7 +2904,7 @@ void CFTPProxyServerList::MoveUpProxyServer(HWND combo, BOOL addDefault)
         int index = sel - (addDefault ? 2 : 1);
         if (index > 0 && index < Count) // reading values in the main thread does not need a critical section
         {
-            if (SendMessage(combo, CB_INSERTSTRING, sel - 1, (LPARAM)At(index)->ProxyName) == sel - 1)
+            if (FTPSendListTextMsg(combo, CB_INSERTSTRING, sel - 1, At(index)->ProxyName) == sel - 1) // feature 134: wide
             {
                 SendMessage(combo, CB_DELETESTRING, sel + 1, 0);
                 SendMessage(combo, CB_SETCURSEL, sel - 1, 0);
@@ -2918,7 +2927,7 @@ void CFTPProxyServerList::MoveDownProxyServer(HWND combo, BOOL addDefault)
         int index = sel - (addDefault ? 2 : 1);
         if (index >= 0 && index + 1 < Count) // reading values in the main thread does not need a critical section
         {
-            if (SendMessage(combo, CB_INSERTSTRING, sel, (LPARAM)At(index + 1)->ProxyName) == sel)
+            if (FTPSendListTextMsg(combo, CB_INSERTSTRING, sel, At(index + 1)->ProxyName) == sel) // feature 134: wide
             {
                 SendMessage(combo, CB_DELETESTRING, sel + 2, 0);
                 SendMessage(combo, CB_SETCURSEL, sel + 1, 0);
@@ -2936,7 +2945,9 @@ BOOL CFTPProxyServerList::GetProxyName(char* buf, int bufSize, int proxyServerUI
 {
     if (proxyServerUID == -1)
     {
-        lstrcpyn(buf, LoadStr(IDS_ADVSTRPROXYNOTUSED), bufSize);
+        // feature 134: UTF-8, as a proxy server's name is - the one caller (the summary of the
+        // Connect dialog) puts the text into a UTF-8 sentence
+        SplU8CopyTrunc(buf, bufSize, LoadStrU8(IDS_ADVSTRPROXYNOTUSED));
         return TRUE;
     }
     int i;

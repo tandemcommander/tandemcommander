@@ -176,7 +176,14 @@ void CFTPWorker::WaitForListen(CFTPWorkerEvent event, BOOL& handleShouldStop, ch
                     if (errBuf[0] == 0)
                         lstrcpyn(ErrorDescr, LoadStr(IDS_PROXYERROPENACTDATA), FTPWORKER_ERRDESCR_BUFSIZE);
                     else
-                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_LOGMSGDATCONERROR), errBuf);
+                    {
+                        // feature 134: the proxy error text is UTF-8 (it may hold the host name) -
+                        // the sentence is UTF-8 as a whole (it goes to the status column and to the log)
+                        char prxErrU8[3 * (50 + FTP_MAX_PATH)];
+                        FTPTextToU8(errBuf, prxErrU8, _countof(prxErrU8));
+                        _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_LOGMSGDATCONERROR), prxErrU8);
+                        SplU8TrimTornTail(ErrorDescr);
+                    }
                     needRetry = TRUE;
                 }
             }
@@ -207,7 +214,12 @@ void CFTPWorker::WaitForListen(CFTPWorkerEvent event, BOOL& handleShouldStop, ch
             if (errBuf[0] == 0)
                 lstrcpyn(ErrorDescr, LoadStr(IDS_PREPACTDATACONTIMEOUT), FTPWORKER_ERRDESCR_BUFSIZE);
             else
-                _snprintf_s(ErrorDescr, _TRUNCATE, LoadStr(IDS_LOGMSGDATCONERROR), errBuf);
+            {
+                char prxErrU8[3 * (50 + FTP_MAX_PATH)]; // feature 134: UTF-8 as a whole, see above
+                FTPTextToU8(errBuf, prxErrU8, _countof(prxErrU8));
+                _snprintf_s(ErrorDescr, _TRUNCATE, LoadStrU8(IDS_LOGMSGDATCONERROR), prxErrU8);
+                SplU8TrimTornTail(ErrorDescr);
+            }
             needRetry = TRUE;
             break;
         }
@@ -218,7 +230,7 @@ void CFTPWorker::WaitForListen(CFTPWorkerEvent event, BOOL& handleShouldStop, ch
             CorrectErrorDescr();
 
             // Write the timeout to the log.
-            _snprintf_s(errBuf, 50 + FTP_MAX_PATH, _TRUNCATE, "%s\r\n", ErrorDescr);
+            _snprintf_s(errBuf, 50 + FTP_MAX_PATH, _TRUNCATE, "%s\r\n", ErrorDescr); // fits: ErrorDescr has 200 bytes
             Logs.LogMessage(LogUID, errBuf, -1, TRUE);
 
             // "Manually" close the control connection.
@@ -493,7 +505,8 @@ void CFTPWorker::HandleEventInWorkingState2(CFTPWorkerEvent event, BOOL& sendQui
             CFTPServerPathType type = Oper->GetFTPServerPathType(ftpPath);
             if (UploadDirGetTgtPathListing || FTPPathAppend(type, ftpPath, FTP_MAX_PATH, CurItem->Name, TRUE))
             { // we have the path; send CWD to the server for the directory being explored
-                _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGLISTINGPATH), ftpPath);
+                if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGLISTINGPATH), ftpPath) < 0) // feature 134: UTF-8 as a whole
+                    FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
                 PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
@@ -1312,7 +1325,11 @@ void CFTPWorker::HandleEventInWorkingState2(CFTPWorkerEvent event, BOOL& sendQui
                                         {
                                             if (listingServerType[0] != 0) // "always true"
                                             {
-                                                _snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStr(IDS_LOGMSGPARSEDBYSRVTYPE), listingServerType);
+                                                // feature 134: the type name is typed (UTF-8) or a code-page value of an older version
+                                                char srvTypeU8[3 * SERVERTYPE_MAX_SIZE];
+                                                FTPTextToU8(listingServerType, srvTypeU8, _countof(srvTypeU8));
+                                                if (_snprintf_s(errText, 200 + FTP_MAX_PATH, _TRUNCATE, LoadStrU8(IDS_LOGMSGPARSEDBYSRVTYPE), srvTypeU8) < 0)
+                                                    FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                                                 Logs.LogMessage(LogUID, errText, -1, TRUE);
                                             }
 
