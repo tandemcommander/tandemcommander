@@ -2107,3 +2107,23 @@ a few early ones are out of sequence).
     (IFD offset near 4 GB) guarded.
   - Traps: `jpeg-data.c` is ISO-8859-1 (edit bytes); the engine never sets `PVFF_EXIF` (the
     viewer's Exif dialog and auto-rotation are dead - left); owed: real camera files (MakerNote).
+- 133-sftp-server-verify: **the first GUI probe of the SFTP plug-in against a server**
+  (`probe/sftp133_probe.ps1` + `probe/fixture133.sh`: container `tandem-sftp`, address typed into
+  Change Directory, password dialog answered, the core's commands 727-730 posted, the server's
+  state read through `docker exec`). It showed 131's SFTP fixes working (on 0.1.9: no reasons, a
+  file stored under a cut local name, a directory created with a 155-byte name instead of 250).
+  **`CSFTPSession::ListDir` returned TRUE for a listing that ended with an error** (`rc <= 0`
+  was "end"): a copy took 9 of 30 files without a word. Only `rc == 0` completes a listing now;
+  `DeleteRecursive` removes a directory only when every item of it is gone (no request to the
+  server "it will refuse if not empty"); messages are composed on the heap (`SFTPShowPathError`
+  - 1,200 bytes lost the reason behind a long path); `sftp://` with two slashes is accepted.
+  - **Premises corrected by measuring**: a move does not delete what it did not download - it
+    deletes only top-level files, **a moved directory stays on the server whole** (left,
+    NEXT-WORK); OpenSSH's `sftp-server` does not list names whose full path passes its `PATH_MAX`
+    (4,096 = the plug-in's own limit), so the remote "too long" refusal cannot be reached with
+    it - the local join can (a long target folder).
+  - Seam `TC_SFTP_PROBE_LIST_FAIL` (debug only) built in FIRST with the old logic, so before and
+    after come from one tree. libssh2 does not record an error for `BUFFER_TOO_SMALL` - the
+    session's text is used only when its code is the call's code (review).
+  - Probe notes: F-keys posted to the panel do nothing on the hidden desktop - post the command
+    ids; a re-opened input dialog after an error must be cancelled, or the probe loops.

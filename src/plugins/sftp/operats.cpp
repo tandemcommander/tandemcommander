@@ -180,6 +180,17 @@ static void ReportTooLongPath(COperationCtx* ctx, const char* dir, const char* n
     }
 }
 
+void SFTPShowPathError(HWND parent, int fmtID, const char* path, const char* reason, int logUID)
+{
+    CSFTPMsgText text(path); // the server's bytes are not always UTF-8
+    char* msg = SftpFormatMsgAlloc(LoadStrU8(fmtID), text.Get(), reason);
+    SalamanderGeneral->SalMessageBox(parent, msg != NULL ? msg : LOW_MEMORY, LoadStr(IDS_SFTPERRORTITLE),
+                                     MB_OK | MB_ICONEXCLAMATION);
+    if (msg != NULL && logUID != -1)
+        Logs.Append(logUID, msg);
+    free(msg);
+}
+
 // ---------------------------------------------------------------------------
 // download
 // ---------------------------------------------------------------------------
@@ -247,12 +258,7 @@ static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, c
     LIBSSH2_SFTP_HANDLE* h = ctx->Session->OpenRead(remotePath);
     if (h == NULL)
     {
-        char msg[1200];
-        // feature 130: a UTF-8 sentence (template, path, reason) - see LoadStrU8 in sftp.h
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_DOWNLOAD), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
-        SplU8TrimTornTail(msg);
-        SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
-        Logs.Append(ctx->Session->GetLogUID(), msg);
+        SFTPShowPathError(ctx->Parent, IDS_ERR_DOWNLOAD, remotePath, ctx->Session->GetLastErrorText(), ctx->Session->GetLogUID());
         return xrFailed;
     }
 
@@ -261,11 +267,7 @@ static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, c
     if (lf == INVALID_HANDLE_VALUE)
     {
         ctx->Session->CloseHandle(h);
-        char msg[1200];
-        // (the local path ends with the remote name - the server's bytes, not always UTF-8)
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_OPENLOCAL), CSFTPMsgText(localPath).Get());
-        SplU8TrimTornTail(msg);
-        SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localPath, NULL);
         return xrFailed;
     }
     if (append)
@@ -331,12 +333,14 @@ static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const 
     TIndirectArray<CSFTPDirEntry> entries(64, 64);
     if (!ctx->Session->ListDir(remoteDir, &entries, &ctx->Cancelled))
     {
-        char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_LISTDIR), CSFTPMsgText(remoteDir).Get(), ctx->Session->GetLastErrorText());
-        SplU8TrimTornTail(msg);
-        SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        SFTPShowPathError(ctx->Parent, IDS_ERR_LISTDIR, remoteDir, ctx->Session->GetLastErrorText());
         return xrFailed;
     }
+    // feature 133: a stop by the user inside the listing returns TRUE with a part of the
+    // directory - that is not a directory "fully transferred" (a move would go on to ask the
+    // server to remove it)
+    if (ctx->Cancelled)
+        return xrFailed;
 
     CXferResult agg = xrOk; // xrOk only if every child fully transferred
     for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
@@ -356,6 +360,8 @@ static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const 
         if (r == xrFailed) agg = xrFailed;
         else if (r == xrSkipped && agg == xrOk) agg = xrSkipped;
     }
+    if (ctx->Cancelled) // feature 133: the loop was left before its end
+        return xrFailed;
     return agg;
 }
 
@@ -484,10 +490,7 @@ static BOOL UploadOneFile(COperationCtx* ctx, const char* localPath, const char*
                             FILE_ATTRIBUTE_NORMAL, NULL);
     if (lf == INVALID_HANDLE_VALUE)
     {
-        char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_OPENLOCAL), localPath);
-        SplU8TrimTornTail(msg);
-        SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localPath, NULL);
         return FALSE;
     }
 
@@ -495,10 +498,7 @@ static BOOL UploadOneFile(COperationCtx* ctx, const char* localPath, const char*
     if (h == NULL)
     {
         CloseHandle(lf);
-        char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_UPLOAD), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
-        SplU8TrimTornTail(msg);
-        SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        SFTPShowPathError(ctx->Parent, IDS_ERR_UPLOAD, remotePath, ctx->Session->GetLastErrorText());
         return FALSE;
     }
 
@@ -735,29 +735,39 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
     if (!isLink && SFTP_S_ISDIR(mode))
     {
         TIndirectArray<CSFTPDirEntry> entries(64, 64);
-        if (ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
+        // feature 133: a directory that could not be listed (whole) is not emptied from the
+        // part that was read, and the server is not asked to remove it either: what it holds
+        // is not known, and "the server refuses a directory that is not empty" is the server's
+        // rule, not ours (not everything checked = not deleted). The listing's own reason is shown.
+        if (!ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
         {
-            for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
-            {
-                CSFTPDirEntry* e = entries[i];
-                char child[4096];
-                if (PosixPathAppend(remotePath, e->Name, child, sizeof(child)) == NULL)
-                {
-                    // feature 131: never delete the cut path; the item stays, so Rmdir below
-                    // fails and reports this directory
-                    ReportTooLongPath(ctx, remotePath, e->Name);
-                    continue;
-                }
-                BOOL childLink = e->HasMode && SFTP_S_ISLNK(e->Mode);
-                DeleteRecursive(ctx, child, e->Mode, childLink, depth + 1);
-            }
+            SFTPShowPathError(ctx->Parent, IDS_ERR_LISTDIR, remotePath, ctx->Session->GetLastErrorText());
+            return FALSE;
         }
+        // feature 133: the directory is removed only when every item of it is known to be gone.
+        // An item that was skipped or could not be deleted has been reported where it failed; the
+        // server used to be asked to remove each parent directory all the same (it refused, and
+        // every level added a message of its own).
+        BOOL itemsGone = TRUE;
+        for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
+        {
+            CSFTPDirEntry* e = entries[i];
+            char child[4096];
+            if (PosixPathAppend(remotePath, e->Name, child, sizeof(child)) == NULL)
+            {
+                ReportTooLongPath(ctx, remotePath, e->Name); // feature 131: never delete the cut path
+                itemsGone = FALSE;
+                continue;
+            }
+            BOOL childLink = e->HasMode && SFTP_S_ISLNK(e->Mode);
+            if (!DeleteRecursive(ctx, child, e->Mode, childLink, depth + 1))
+                itemsGone = FALSE;
+        }
+        if (ctx->Cancelled || !itemsGone)
+            return FALSE; // stopped by the user (also inside the listing), or an item stays
         if (!ctx->Session->Rmdir(remotePath))
         {
-            char msg[1200];
-            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_RMDIR), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
-            SplU8TrimTornTail(msg);
-            SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            SFTPShowPathError(ctx->Parent, IDS_ERR_RMDIR, remotePath, ctx->Session->GetLastErrorText());
             return FALSE;
         }
     }
@@ -765,10 +775,7 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
     {
         if (!ctx->Session->Unlink(remotePath))
         {
-            char msg[1200];
-            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_DELETE), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
-            SplU8TrimTornTail(msg);
-            SalamanderGeneral->SalMessageBox(ctx->Parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            SFTPShowPathError(ctx->Parent, IDS_ERR_DELETE, remotePath, ctx->Session->GetLastErrorText());
             return FALSE;
         }
     }
@@ -809,6 +816,17 @@ BOOL SFTPDeleteFromPanel(HWND parent, CSFTPSession* session, int panel, const ch
 // chmod
 // ---------------------------------------------------------------------------
 
+// feature 133: recursive chmod / chown report their failures in the session's log (no box per
+// item); a directory whose listing failed is one of them - its items were not changed
+static void LogListFailure(COperationCtx* ctx, const char* remotePath)
+{
+    CSFTPMsgText text(remotePath);
+    char* msg = SftpFormatMsgAlloc(LoadStrU8(IDS_ERR_LISTDIR), text.Get(), ctx->Session->GetLastErrorText());
+    if (msg != NULL)
+        Logs.Append(ctx->Session->GetLogUID(), msg);
+    free(msg);
+}
+
 static void ChmodRecursive(COperationCtx* ctx, const char* remotePath, unsigned long mode,
                            BOOL isDir, BOOL recurse, int depth)
 {
@@ -826,7 +844,9 @@ static void ChmodRecursive(COperationCtx* ctx, const char* remotePath, unsigned 
     if (isDir && recurse)
     {
         TIndirectArray<CSFTPDirEntry> entries(64, 64);
-        if (ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
+        if (!ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
+            LogListFailure(ctx, remotePath); // feature 133: the subtree is skipped - said in the log
+        else
         {
             for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
             {
@@ -913,7 +933,9 @@ static void ChownRecursive(COperationCtx* ctx, const char* remotePath,
     if (isDir && recurse)
     {
         TIndirectArray<CSFTPDirEntry> entries(64, 64);
-        if (ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
+        if (!ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
+            LogListFailure(ctx, remotePath); // feature 133: the subtree is skipped - said in the log
+        else
         {
             for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
             {

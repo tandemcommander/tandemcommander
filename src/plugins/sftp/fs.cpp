@@ -337,6 +337,10 @@ BOOL CPluginFSInterface::ParseUserPart(const char* userPart, char* host, int* po
 {
     // format: [user@]host[:port][/path]
     const char* p = userPart;
+    // feature 133: the form with two slashes ("sftp://user@host/path", what people type and
+    // paste) used to end with "A host name is missing in the path specified."
+    if (p[0] == '/' && p[1] == '/')
+        p += 2;
     const char* at = strchr(p, '@');
     const char* slash = strchr(p, '/');
     user[0] = 0;
@@ -746,12 +750,7 @@ BOOL WINAPI CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* di
         lstrcpynA(LastFailedListPath, Path, sizeof(LastFailedListPath));
         if (!cancel) // a user-cancelled listing is not an error worth a dialog
         {
-            char msg[1200];
-            // feature 130: a UTF-8 sentence (template, path, reason) - see LoadStrU8 in sftp.h
-            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_LISTDIR), CSFTPMsgText(Path).Get(), Session.GetLastErrorText());
-            SplU8TrimTornTail(msg);
-            SalamanderGeneral->SalMessageBox(SalamanderGeneral->GetMsgBoxParent(), msg,
-                                             LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            SFTPShowPathError(SalamanderGeneral->GetMsgBoxParent(), IDS_ERR_LISTDIR, Path, Session.GetLastErrorText());
         }
         delete listing;
         return FALSE;
@@ -1006,10 +1005,7 @@ BOOL WINAPI CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND p
     }
     if (!Session.Rename(from, to))
     {
-        char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_RENAME), file.Name, Session.GetLastErrorText());
-        SplU8TrimTornTail(msg);
-        SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        SFTPShowPathError(parent, IDS_ERR_RENAME, file.Name, Session.GetLastErrorText());
         return FALSE;
     }
     SalamanderGeneral->PostRefreshPanelFS(this, FALSE);
@@ -1047,10 +1043,7 @@ BOOL WINAPI CPluginFSInterface::CreateDir(const char* fsName, int mode, HWND par
     }
     if (!Session.Mkdir(full, 0755))
     {
-        char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_MKDIR), newName, Session.GetLastErrorText());
-        SplU8TrimTornTail(msg);
-        SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        SFTPShowPathError(parent, IDS_ERR_MKDIR, newName, Session.GetLastErrorText());
         return FALSE;
     }
     SalamanderGeneral->PostRefreshPanelFS(this, FALSE);

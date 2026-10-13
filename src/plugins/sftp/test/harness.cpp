@@ -132,6 +132,39 @@ static void TestPaths()
     CHECK_STR(SftpStatusName(22), "Unknown status");
     CHECK_STR(SftpStatusName(0xFFFFFFFFUL), "Unknown status");
 
+    // feature 133: only "end" completes a listing
+    CHECK(SftpReadDirStep(1) == rdsEntry && SftpReadDirStep(255) == rdsEntry && SftpReadDirStep(2047) == rdsEntry);
+    CHECK(SftpReadDirStep(0) == rdsEnd);
+    CHECK(SftpReadDirStep(-38) == rdsError); // LIBSSH2_ERROR_BUFFER_TOO_SMALL: a name over the buffer
+    CHECK(SftpReadDirStep(-30) == rdsError); // LIBSSH2_ERROR_SOCKET_TIMEOUT
+    CHECK(SftpReadDirStep(-31) == rdsError); // LIBSSH2_ERROR_SFTP_PROTOCOL
+    CHECK(SftpReadDirStep(-37) == rdsError); // LIBSSH2_ERROR_EAGAIN is not an end either
+    CHECK(SftpReadDirStep(-2147483647 - 1) == rdsError);
+    // feature 133: a message is never cut - the reason behind a long path stays
+    {
+        char* m = SftpFormatMsgAlloc("Cannot remove directory \"%s\": %s", "/a/b", "Permission denied.");
+        CHECK(m != NULL);
+        CHECK_STR(m, "Cannot remove directory \"/a/b\": Permission denied.");
+        free(m);
+        char longPath[4096];
+        memset(longPath, 'e', sizeof(longPath) - 1);
+        longPath[0] = '/';
+        longPath[sizeof(longPath) - 1] = 0;
+        m = SftpFormatMsgAlloc("Cannot remove directory \"%s\": %s", longPath, "SFTP error 4: Failure");
+        CHECK(m != NULL && strlen(m) == strlen("Cannot remove directory \"\": ") + 4095 + strlen("SFTP error 4: Failure"));
+        CHECK(m != NULL && strcmp(m + strlen(m) - 21, "SFTP error 4: Failure") == 0);
+        CHECK(m != NULL && strncmp(m, "Cannot remove directory \"/eee", 29) == 0);
+        free(m);
+        m = SftpFormatMsgAlloc("Cannot open \"%s\".", "C:\\x", NULL); // one insert, no second text
+        CHECK(m != NULL);
+        CHECK_STR(m, "Cannot open \"C:\\x\".");
+        free(m);
+        m = SftpFormatMsgAlloc("%s%s", NULL, NULL);
+        CHECK(m != NULL && m[0] == 0);
+        free(m);
+        CHECK(SftpFormatMsgAlloc(NULL, "a", "b") == NULL);
+    }
+
     CHECK_STR(PosixBaseName("/home/user/file.txt"), "file.txt");
     CHECK_STR(PosixBaseName("/"), "");
     CHECK_STR(PosixBaseName("noslash"), "noslash");

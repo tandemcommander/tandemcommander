@@ -82,5 +82,23 @@ BOOL LocalPathAppend(const char* dir, const char* name, char* dst, int dstSize);
 // libssh2_sftp_last_error returns) for the "SFTP error %d: %s" reason; ASCII, never NULL.
 const char* SftpStatusName(unsigned long code);
 
+// feature 133: what the result of one libssh2_sftp_readdir_ex call means for a listing.
+// Only "end" completes it: an error in the middle (a name that does not fit the buffer, a
+// broken connection, a status of the server) used to be taken for the end of the directory,
+// and a part of the directory was then shown, copied and counted as the whole of it.
+enum CSftpReadDirStep
+{
+    rdsEntry, // rc > 0: a name of rc bytes
+    rdsEnd,   // rc == 0: the server said "no more entries"
+    rdsError, // rc < 0: the listing is NOT complete
+};
+CSftpReadDirStep SftpReadDirStep(int rc);
+
+// feature 133: a message made of a template with one or two "%s" and its texts, in a buffer of
+// exactly the size needed (malloc; NULL = low memory). The messages were composed in 1,200
+// bytes: with a long path the path was cut and the reason behind it was lost. 'b' may be
+// NULL (taken as ""); a template with one "%s" ignores it.
+char* SftpFormatMsgAlloc(const char* fmt, const char* a, const char* b);
+
 // Returns a pointer to the last path component of a POSIX path.
 const char* PosixBaseName(const char* path);

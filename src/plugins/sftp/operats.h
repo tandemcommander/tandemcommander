@@ -13,6 +13,12 @@ class CSFTPSession;
 // already been shown for genuine errors).
 // ****************************************************************************
 
+// feature 133: the error box of a failed operation - the template 'fmtID' (one or two "%s"),
+// the path or name and the reason. The text is never cut (it was composed in 1,200 bytes: a
+// long path was cut and the reason behind it lost).
+// 'logUID' other than -1: the message also goes to that session's log.
+void SFTPShowPathError(HWND parent, int fmtID, const char* path, const char* reason, int logUID = -1);
+
 // Recursively downloads the panel's selected/focused items from 'remoteDir'
 // into 'targetLocalPath'. 'move' additionally deletes the source on success.
 BOOL SFTPDownloadFromPanel(HWND parent, CSFTPSession* session, int panel,

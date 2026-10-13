@@ -325,12 +325,21 @@ Code work an agent can do:
          **measured and closed by feature 132**: real in the library, unreachable in the program
          (the command was dead since 006); the note "far more files reach that stage since 131"
          was wrong.
-       - SFTP: a listing ends silently at a name of 2,047 bytes or on a read error in the
-         middle (`session.cpp` `ListDir` returns TRUE) - a recursive download or move works
-         on an incomplete listing; `UploadDirRecursive` holds about 30 KB of buffers per level
-         (about 100 levels against the 3 MB stack - reasoned); no panel refresh after a partly
-         failed move; untranslated English literals (list in `items/sftp.md` - need new
-         strings); nothing of 131 was driven against a server (rows in `items/sftp.md`).
+       - ~~SFTP: a listing ends silently; nothing of 131 was driven against a server~~ -
+         **done, feature 133** (probe against the container; 131's SFTP fixes seen working; a
+         listing that ends early is an error). Left by 133:
+         - **a move of a directory never removes the directory**: its files are downloaded and
+           all stay on the server, without a message (measured, row M1; every release). Safe,
+           but not what Move means; deleting the children needs its own rule "everything of
+           this subtree was transferred" and its tests.
+         - a listing stopped by the user (Close in the wait window) is shown in the panel as
+           the directory (old behaviour, kept).
+         - an empty name or an empty NAME packet from a broken server still reads as "end of
+           directory" (cannot be told apart through `libssh2_sftp_readdir_ex`).
+         - owed to a person: upload into a read-only directory, the stale-reason row, Quick
+           Rename to a 250-letter name (`specs/133-sftp-server-verify/quickstart.md`).
+         - still open from 131: `UploadDirRecursive` holds about 30 KB of buffers per level;
+           no panel refresh after a partly failed move; untranslated English literals.
        - FTP: download autorename shortens a name at a byte offset, possibly inside a
          character, and creates the file with it (`operats5.cpp:1188-1193`, `1594-1602`);
          the core cuts a typed Quick Rename name at 259 bytes before a plug-in sees it

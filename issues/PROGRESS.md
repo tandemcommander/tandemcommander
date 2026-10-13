@@ -82,3 +82,10 @@ no blocker. Record: `specs/131-plugin-defect-batch/fix-log.md`.
 Thumbnail* was real in the Exif library and unreachable in the program (the command was dead
 since 006). The command is repaired and protected by a rule checked independently of the
 library. Record: `specs/132-pictview-thumbnail-verify/fix-log.md`.
+
+## Feature 133 (2026-10-13, asked for by the maintainer: point 2 of four)
+
+`133-sftp-server-verify`, on top of `132`. The SFTP plug-in driven in the program against the
+test container: the fixes of 131 hold; a listing that ended with an error was taken for the
+whole directory (fixed); a move loses nothing (the recommendation's worry was wrong) but leaves
+a moved directory on the server (recorded). Record: `specs/133-sftp-server-verify/fix-log.md`.

@@ -298,3 +298,25 @@ const char* PosixBaseName(const char* path)
     const char* slash = strrchr(path, '/');
     return slash != NULL ? slash + 1 : path;
 }
+
+CSftpReadDirStep SftpReadDirStep(int rc)
+{
+    return rc > 0 ? rdsEntry : rc == 0 ? rdsEnd : rdsError;
+}
+
+char* SftpFormatMsgAlloc(const char* fmt, const char* a, const char* b)
+{
+    if (fmt == NULL)
+        return NULL;
+    if (a == NULL)
+        a = "";
+    if (b == NULL)
+        b = "";
+    size_t size = strlen(fmt) + strlen(a) + strlen(b) + 1; // each "%s" is two bytes shorter than nothing
+    char* msg = (char*)malloc(size);
+    if (msg == NULL)
+        return NULL;
+    if (_snprintf_s(msg, size, _TRUNCATE, fmt, a, b) < 0)
+        msg[size - 1] = 0; // cannot happen with "%s" inserts only; never unterminated
+    return msg;
+}

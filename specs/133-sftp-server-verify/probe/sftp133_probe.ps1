@@ -1,0 +1,252 @@
+<#
+.SYNOPSIS
+    Feature 133: the SFTP plug-in driven in the program against the test server.
+
+.DESCRIPTION
+    Runs on the hidden desktop (tools\run_on_hidden_desktop.ps1). Needs the container
+    'tandem-sftp' (localhost:2222, user tctest); the server side is prepared, read and removed
+    with fixture133.sh through 'docker exec'. Every row is its own start of the program: the
+    left panel connects by a typed address (password and host-key dialogs are answered), the
+    row's command is given, every dialog is answered and its text kept, then the state of the
+    server and of the local target folder is compared.
+
+    Rows (R / P are the rows feature 131 wrote down and could not run):
+      R1  delete a file in a read-only directory      - the message carries the server's reason
+      R2  create a directory there                    - the same
+      R3  download an unreadable file                 - the same
+      P1  enter a link to a directory 2,900 bytes deep, create a directory with a 250-byte name
+      P4  delete a tree whose files are beyond 4,095 bytes - "too long", files still there
+      P5  download that tree; P5M move it             - nothing under a shortened name, nothing deleted
+      DEL delete an ordinary tree; DELKEEP a tree with a file that cannot be deleted - one message,
+          no request to remove the directories above it
+      M1  move a directory of 30 files, M2 move a file - what a move leaves on the server (recorded)
+      URL the address typed as sftp://user@host:port/path
+      LISTCOPY / LISTMOVE / LISTPANEL - the read of the 10th entry of the directory "many" fails
+          once (debug seam TC_SFTP_PROBE_LIST_FAIL; rows are NOT DRIVEN on a build without it)
+    -Expect fixed : expectations of the final build; -Expect before : outcomes are recorded only.
+    The product's registry key is exported, restored and compared. Exit code = FAIL rows.
+
+.NOTES
+    Windows PowerShell 5.1; pure ASCII.
+#>
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true)][string]$Exe,
+    [ValidateSet('fixed', 'before')][string]$Expect = 'fixed',
+    [string]$OutFile,
+    [string[]]$Only,
+    [switch]$NoSeam
+)
+$ErrorActionPreference = 'Stop'
+$Exe = (Resolve-Path -LiteralPath $Exe).Path
+if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
+function Want([string]$n) { return (-not $Only) -or (@($Only | Where-Object { $n -like ($_ + '*') }).Count -gt 0) }
+$others = @(Get-Process tandemcommander -ErrorAction SilentlyContinue)
+if ($others.Count) { Write-Output ('NOT RUN: tandemcommander.exe already runs: ' + (($others | ForEach-Object { '' + $_.Id + ' ' + $_.Path }) -join '; ')); exit 3 }
+
+. (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
+
+$Root = $TempRoot + '\tc133'
+$StartDir = $Root + '\start'
+$Base = '/home/tctest/tc133'
+$Addr = 'sftp:tctest@localhost:2222'      # the form the plug-in shows; 'sftp://...' is the row URL
+$Password = 'tandem123'
+$FixtureText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'fixture133.sh')).Replace("`r", '')
+
+# runs fixture133.sh in the container with one argument; returns its output lines
+function Server([string]$Arg) {
+    $psi = New-Object Diagnostics.ProcessStartInfo
+    $psi.FileName = 'docker'
+    $psi.Arguments = 'exec -i -u tctest tandem-sftp bash -s ' + $Arg
+    $psi.UseShellExecute = $false; $psi.RedirectStandardInput = $true; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true; $psi.CreateNoWindow = $true
+    $p = [Diagnostics.Process]::Start($psi)
+    $p.StandardInput.Write($FixtureText); $p.StandardInput.Close()
+    $out = $p.StandardOutput.ReadToEnd(); $err = $p.StandardError.ReadToEnd()
+    $p.WaitForExit()
+    if ($p.ExitCode -ne 0) { throw ('docker exec failed (' + $p.ExitCode + '): ' + $err.Trim()) }
+    return @($out -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+function State { $h = @{}; foreach ($l in (Server 'state')) { $kv = $l -split '=', 2; if ($kv.Count -eq 2) { $h[$kv[0]] = $kv[1] } }; return $h }
+
+function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }
+function Start-P {
+    $a = @('-t', 'T133', '-l', ('"{0}"' -f $StartDir), '-r', ('"{0}"' -f $StartDir), '-p', '1')
+    $p = Start-Process -FilePath $Exe -ArgumentList $a -PassThru
+    [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 60 -and (Test-Alive $p.Id) -and (Get-Main $p.Id) -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 100 }
+    if ((Get-Main $p.Id) -eq [IntPtr]::Zero) { throw 'the program did not show its main window' }
+    if ((Get-Process -Id $p.Id).Path -ine $Exe) { throw "pid $($p.Id) is not $Exe" }
+    try { [void]$p.WaitForInputIdle(30000) } catch { }
+    Sync $p.Id
+    Start-Sleep -Milliseconds 1500
+    return $p.Id
+}
+function PostKey([int]$Id, [int]$Vk) {   # a key that opens a dialog: posted, the panel answers when it can
+    $l = Get-LeftList $Id
+    [void][Drv098f]::PostMessageW($l, 0x0100, [IntPtr]$Vk, [IntPtr]1)
+    [void][Drv098f]::PostMessageW($l, 0x0101, [IntPtr]$Vk, [IntPtr]::Zero)
+    Start-Sleep -Milliseconds 700
+}
+function Dialogs([int]$Id) { return @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and [Drv098f]::IsWindowEnabled($_) -and [Drv098f]::IsWindowVisible($_) }) }
+function BtnById([IntPtr]$Dlg, [int[]]$Ids) { foreach ($w in $Ids) { $b = Buttons $Dlg | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $w } | Select-Object -First 1; if ($b) { return $b } }; return $null }
+
+# types the address into Change Directory and answers the password / host key dialogs
+function Connect([int]$Id, [string]$RemoteDir, [string]$Prefix = $Addr) {
+    $notes = @()
+    [void](Do-ChangeDir $Id ($Prefix + $RemoteDir))
+    $sw = [Diagnostics.Stopwatch]::StartNew(); $quiet = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 45 -and $quiet.Elapsed.TotalSeconds -lt 4) {
+        $acted = $false
+        foreach ($h in (Dialogs $Id)) {
+            if ([Drv098f]::Txt($h) -eq 'Change Directory') { $notes += 'Change Directory came back'; Close-Win $h; $acted = $true; break }
+            $pw = Find-Ctl $h 630
+            if ($pw -ne [IntPtr]::Zero) { [void][Drv098f]::SetText($pw, $Password, 5000); Click-Ok $h; $notes += 'password'; $acted = $true; break }
+            $once = BtnById $h @(644, 643)
+            if ($once) { Click $once; $notes += 'host key'; $acted = $true; break }
+            $ok = BtnById $h @(1)
+            if ($ok -and (Buttons $h).Count -le 2) { $notes += ('box: ' + (Tail (WinDesc $h) 200)); Click $ok; $acted = $true; break }
+        }
+        if ($acted) { $quiet.Restart(); Start-Sleep -Milliseconds 900 } else { Start-Sleep -Milliseconds 250 }
+    }
+    Sync $Id
+    $loc = Get-Loc $Id
+    return [pscustomobject]@{ Loc = $loc; Notes = ($notes -join ', '); Ok = ($loc -like ('sftp:*' + $RemoteDir.TrimEnd('/') + '*')) }
+}
+
+# answers every dialog until none shows for $Quiet seconds: the first of the wanted buttons by
+# id (default Yes, OK), else Skip / Cancel by text; a dialog whose only button is Cancel (a
+# progress or wait window) is left alone. $FirstEdit: text for the first dialog with an edit.
+function Answer([int]$Id, [double]$Seconds = 90, [double]$Quiet = 5, [string]$FirstEdit = $null) {
+    $texts = @(); $sw = [Diagnostics.Stopwatch]::StartNew(); $last = [Diagnostics.Stopwatch]::StartNew(); $typed = $false
+    while ($sw.Elapsed.TotalSeconds -lt $Seconds -and $last.Elapsed.TotalSeconds -lt $Quiet -and (Test-Alive $Id)) {
+        $acted = $false
+        foreach ($h in (Dialogs $Id)) {
+            $bs = Buttons $h
+            $ids = @($bs | ForEach-Object { [Drv098f]::GetDlgCtrlID($_) })
+            if ($ids.Count -eq 0 -or ($ids.Count -eq 1 -and $ids[0] -eq 2)) { continue }
+            Start-Sleep -Milliseconds 500
+            $desc = WinDesc $h
+            if ($desc -match $FatalRx) { $texts += ('FATAL ' + (Tail $desc 300)); return $texts }
+            if ([Drv098f]::Txt($h) -eq 'Change Directory') { $texts += 'Change Directory dialog'; Close-Win $h; $acted = $true; break }
+            if ($FirstEdit -and -not $typed) {
+                $edit = @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) }) | Select-Object -First 1
+                if ($edit) { [void][Drv098f]::SetText($edit, $FirstEdit, 5000); $typed = $true; $texts += ('typed into [' + (Tail ([Drv098f]::Txt($h)) 40) + ']'); Click-Ok $h; $acted = $true; break }
+            }
+            # the dialog with the typed text came back after an error: Cancel
+            if ($typed -and @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 2477 }).Count -eq 0 -and @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) }).Count) { $texts += ('[' + (Tail ([Drv098f]::Txt($h)) 40) + '] came back - cancelled'); Close-Win $h; $acted = $true; break }
+            $b = BtnById $h @(6, 1)
+            if (-not $b) { $b = $bs | Where-Object { [Drv098f]::Txt($_) -match '^&?(Skip|Close)$' } | Select-Object -First 1 }
+            $texts += (Shorten $desc)
+            if ($b) { Click $b } else { Close-Win $h }
+            $acted = $true
+            break
+        }
+        if ($acted) { $last.Restart(); Start-Sleep -Milliseconds 900 } else { Start-Sleep -Milliseconds 250 }
+    }
+    return $texts
+}
+function Shorten([string]$t) { $e = [regex]::Replace((Esc $t), '(?:[def]{10,}[ /]?)+', '<long names>/'); if ($e.Length -le 520) { return $e }; return ($e.Substring(0, 300) + ' ...(' + ($e.Length - 450) + ')... ' + $e.Substring($e.Length - 150)) }
+function LocalDirs([string]$Dir) {
+    if (-not [IO.Directory]::Exists($LP + $Dir)) { return 'none' }
+    $d = @([IO.Directory]::GetDirectories($LP + $Dir, '*', 'AllDirectories'))
+    $deep = 0; foreach ($x in $d) { $n = $x.Substring(($LP + $Dir).Length).Split([char]92).Count - 1; if ($n -gt $deep) { $deep = $n } }
+    return ('' + $d.Count + ' folders, ' + $deep + ' levels')
+}
+function LocalFiles([string]$Dir) {
+    if (-not [IO.Directory]::Exists($LP + $Dir)) { return @() }
+    return @([IO.Directory]::GetFiles($LP + $Dir, '*', 'AllDirectories') | ForEach-Object { $_.Substring(($LP + $Dir).Length + 1) })
+}
+function Has([string[]]$Texts, [string]$Rx) { return [bool](@($Texts | Where-Object { $_ -match $Rx }).Count) }
+
+# one row: connect to $Dir, optionally move the focus ($Down times Down after Home), post the core's
+# command $Vk (727 Copy, 728 Move, 729 Delete, 730 Create Directory),
+# answer, then $Judge { param($texts, $state, $local, $conn) } returns @{ Ok; Facts }
+function Row-Op([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [string]$TypeText, [scriptblock]$Judge, [string]$Seam = '', [bool]$Enter = $false, [string]$LocalSub = '', [string]$Prefix = '') {
+    if (-not (Want $Case)) { return }
+    $before = Reports; $id = 0
+    $local = $StartDir + '\' + $Case + $(if ($LocalSub) { '\' + $LocalSub } else { '' })
+    try {
+        NewDir $local
+        if ($Seam) { $env:TC_SFTP_PROBE_LIST_FAIL = $Seam } else { Remove-Item Env:\TC_SFTP_PROBE_LIST_FAIL -ErrorAction SilentlyContinue }
+        $id = Start-P
+        # the right (target) panel shows this row's own local folder
+        Key $id 0x09; [void](Do-ChangeDir $id $local); Sync $id; Key $id 0x09
+        $conn = $(if ($Prefix) { Connect $id ($Base + '/' + $Dir) $Prefix } else { Connect $id ($Base + '/' + $Dir) })
+        $texts = @()
+        if ($Vk -ne 0 -or $Enter) {
+            Key $id 0x24
+            for ($i = 0; $i -lt $Down; $i++) { Key $id 0x28 }
+            if ($Enter) { Key $id 0x0D; Start-Sleep -Milliseconds 1500; $texts += (Answer $id 30 4); Sync $id; $conn = [pscustomobject]@{ Loc = (Get-Loc $id); Notes = $conn.Notes; Ok = $conn.Ok } }
+            if ($Vk -ne 0) { Post-Cmd (Get-Main $id) $Vk; Start-Sleep -Milliseconds 700; $texts += (Answer $id 120 6 $TypeText) }
+        }
+        else { $texts += (Answer $id 20 4) }
+        $st = State
+        $r = & $Judge $texts $st (LocalFiles $local) $conn
+        $verdict = $(if ($r.Skip) { 'NOT DRIVEN' } elseif ($Expect -eq 'before') { 'PASS' } else { V ([bool]$r.Ok) })
+        Row $Case 'ROW' $verdict ("{0}; local target: {5}; connected: {1} [{2}] at '{3}'; dialogs: {4}" -f $r.Facts, $conn.Ok, $conn.Notes, (Tail $conn.Loc 60), $(if ($texts.Count) { $texts -join ' || ' } else { 'none' }), (LocalDirs $local))
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally {
+        Remove-Item Env:\TC_SFTP_PROBE_LIST_FAIL -ErrorAction SilentlyContinue
+        if ($id) { $fatal = Fatal-Win $id; End-Row $Case $id $fatal $before }
+    }
+}
+
+# ---- main ---------------------------------------------------------------------------------
+$backup = Join-Path $env:TEMP 'tc133_backup.reg'
+$existed = Backup-Reg $backup
+$regHash = $(if ($existed) { (Get-FileHash -LiteralPath $backup).Hash } else { '(no key)' })
+$restored = $false; $nf = 0
+$SeamIn = (-not $NoSeam)
+try {
+    NewDir $StartDir
+    Set-Config
+    $prep = (Server '') -join ' '
+    Out ("sftp133_probe (feature 133), expect: {0}" -f $Expect)
+    Out ("Program : {0}" -f $Exe)
+    Out ("Date    : {0}; desktop '{1}'; ACP {2}; registry key existed {3}; export SHA-256 {4}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [DeskLib098]::Name(), [Drv098f]::GetACP(), $existed, $regHash)
+    Out ("Server  : {0}" -f $prep)
+    Out ''
+    $PD = 'Permission denied'
+    Row-Op 'R1' 'ro1' 1 729 $null { param($t, $s, $l, $c) @{ Ok = ((Has $t $PD) -and $s.ro1_f -eq '1'); Facts = ("delete in a read-only directory: reason shown {0}; file on the server {1}" -f (Has $t $PD), $s.ro1_f) } }
+    Row-Op 'R2' 'ro2' 0 730 'newdir' { param($t, $s, $l, $c) @{ Ok = ((Has $t $PD) -and $s.ro2_entries -eq '0'); Facts = ("create a directory in a read-only directory: reason shown {0}; entries on the server {1}" -f (Has $t $PD), $s.ro2_entries) } }
+    Row-Op 'R3' 'r3' 1 727 $null { param($t, $s, $l, $c) @{ Ok = ((Has $t $PD) -and @($l | Where-Object { $_ -match 'secret' -and (Get-Item -LiteralPath ($StartDir + '\R3\' + $_)).Length -gt 0 }).Count -eq 0); Facts = ("download an unreadable file: reason shown {0}; local files: {1}" -f (Has $t $PD), ($l -join ', ')) } }
+    $x250 = 'x' * 250
+    Row-Op 'P1' 'p1/deep' 0 730 $x250 { param($t, $s, $l, $c) @{ Ok = (($c.Loc -match '/p1/deep') -and $s.deep_longest -eq '250' -and $s.deep_entries -eq '2'); Facts = ("go to the deep link and create a directory with a 250-byte name: panel at '.../{0}'; entries in the deep directory {1}, longest name {2} bytes" -f (($c.Loc -split '/')[-2..-1] -join '/'), $s.deep_entries, $s.deep_longest) } }
+    $TL = 'too long'
+    $RD = 'Cannot remove directory'
+    Row-Op 'P4' 'p4' 1 729 $null { param($t, $s, $l, $c) $n = @($t | Where-Object { $_ -match $RD }).Count; $noReason = @($t | Where-Object { $_ -match $RD -and $_ -notmatch 'error \d+: |denied' }).Count; @{ Ok = ($s.p4_deepfiles -eq '2' -and $n -gt 0 -and $noReason -eq 0); Facts = ("delete a tree whose two files the server does not list (beyond its PATH_MAX): files still on the server {0} of 2; 'cannot remove directory' messages {1}, of them without their reason at the end {2}" -f $s.p4_deepfiles, $n, $noReason) } }
+    $L80 = 'L' * 80
+    $short = { param($l) @($l | Where-Object { $_ } | Where-Object { $n = $_.Split([char]92)[-1]; $n -match '^f+' -and $n.Length -lt 250 }) }
+    Row-Op 'P5' 'p5' 1 727 $null { param($t, $s, $l, $c) $sh = & $short $l; @{ Ok = ((Has $t $TL) -and $sh.Count -eq 0 -and $l.Count -eq 0 -and $s.p5_deepfiles -eq '2'); Facts = ("download a tree whose files would get local names beyond 4,095 bytes: 'too long' shown {0}; local files {1}, with a shortened name {2}; files on the server {3} of 2" -f (Has $t $TL), $l.Count, $sh.Count, $s.p5_deepfiles) } } '' $false $L80
+    Row-Op 'P5M' 'p5m' 1 728 $null { param($t, $s, $l, $c) $sh = & $short $l; @{ Ok = ((Has $t $TL) -and $sh.Count -eq 0 -and $s.p5m_deepfiles -eq '2'); Facts = ("move that tree: 'too long' shown {0}; local files {1}, with a shortened name {2}; files on the server {3} of 2" -f (Has $t $TL), $l.Count, $sh.Count, $s.p5m_deepfiles) } } '' $false $L80
+    Row-Op 'DEL' 'd1' 1 729 $null { param($t, $s, $l, $c) $err = (Has $t 'Cannot'); @{ Ok = ($s.d1_tree -eq '0' -and -not $err); Facts = ("delete an ordinary tree: gone from the server {0}; an error shown {1}" -f ($s.d1_tree -eq '0'), $err) } }
+    Row-Op 'DELKEEP' 'd2' 1 729 $null { param($t, $s, $l, $c) $n = @($t | Where-Object { $_ -match 'Cannot' }).Count; @{ Ok = ($s.d2_kept -eq '1' -and $s.d2_free -eq '0' -and $n -eq 1 -and (Has $t $PD)); Facts = ("delete a tree with one file that cannot be deleted: that file is still there {0}; the rest is gone {1}; messages {2} (one, with the reason: {3})" -f $s.d2_kept, ($s.d2_free -eq '0'), $n, (Has $t $PD)) } }
+    Row-Op 'M1' 'm1' 1 728 $null { param($t, $s, $l, $c) @{ Ok = ($l.Count -eq 30); Facts = ("move a directory of 30 files (recorded): local files {0}; on the server afterwards: directory there {1}, files in it {2}" -f $l.Count, $s.m1_dir, $s.m1_many) } }
+    Row-Op 'M2' 'm2' 1 728 $null { param($t, $s, $l, $c) @{ Ok = ($l.Count -eq 1 -and $s.m2_file -eq '0'); Facts = ("move one file: local files {0}; still on the server {1}" -f $l.Count, $s.m2_file) } }
+    Row-Op 'URL' 'm2' 0 0 $null { param($t, $s, $l, $c) @{ Ok = $c.Ok; Facts = ("the address typed with two slashes (sftp://user@host:port/path): connected {0}" -f $c.Ok) } } '' $false '' 'sftp://tctest@localhost:2222'
+    $seam = '/many;10;1'
+    $LE = 'many'
+    Row-Op 'LISTCOPY' 'l1' 1 727 $null { param($t, $s, $l, $c) $said = [bool](@($t | Where-Object { $_ -match 'many' -and $_ -notmatch 'Copy|typed' -and $_ -match 'list|read|Cannot|Unable|error' }).Count); @{ Skip = ($l.Count -eq 30); Ok = ($said -and $s.l1_many -eq '30'); Facts = ("copy a directory whose listing fails at the 10th entry: local files {0} of 30; an error names the directory {1}; files on the server {2}{3}" -f $l.Count, $said, $s.l1_many, $(if ($l.Count -eq 30) { ' - the seam is not in this build' } else { '' })) } } $seam
+    Row-Op 'LISTMOVE' 'l2' 1 728 $null { param($t, $s, $l, $c) $said = [bool](@($t | Where-Object { $_ -match 'many' -and $_ -notmatch 'Move|typed' -and $_ -match 'list|read|Cannot|Unable|error' }).Count); @{ Skip = ($l.Count -eq 30); Ok = ($said -and $s.l2_many -eq '30'); Facts = ("move it: local files {0} of 30; an error names the directory {1}; files on the server {2} of 30{3}" -f $l.Count, $said, $s.l2_many, $(if ($l.Count -eq 30) { ' - the seam is not in this build' } else { '' })) } } $seam
+    Row-Op 'LISTPANEL' 'l3/many' 0 0 $null { param($t, $s, $l, $c) $said = (Has $t 'Cannot list directory.*many') -or ($c.Notes -match 'Cannot list directory.*many'); $back = ($c.Loc -match '/l3$'); @{ Ok = ($said -and $back); Facts = ("go to the directory while its listing fails: an error box names it {0}; the panel shows the parent directory instead of a partial list {1} ('{2}')" -f $said, $back, (Tail $c.Loc 30)) } } $seam
+}
+catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+finally {
+    foreach ($p in @($Started)) { if (Test-Alive $p) { Stop-Process -Id $p -Force } }
+    Start-Sleep -Milliseconds 600
+    $restored = Restore-Reg $backup $existed
+    if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }
+    try { [void](Server 'clean') } catch { Out ('Server: could not clean: ' + $_.Exception.Message) }
+    try { if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) } }
+    catch { Out ("Fixture: could not delete $Root : " + $_.Exception.Message) }
+    $leftover = @($Started | Where-Object { Test-Alive $_ })
+    $np = @($script:Rows | Where-Object { $_.Verdict -eq 'PASS' }).Count
+    $nf = @($script:Rows | Where-Object { $_.Verdict -eq 'FAIL' }).Count
+    $nn = @($script:Rows | Where-Object { $_.Verdict -eq 'NOT DRIVEN' }).Count
+    Out ''
+    Out ("Rows: PASS {0}, FAIL {1}, NOT DRIVEN {2}. Left running: {3}; fixture removed: {4}; registry restored+identical: {5}" -f $np, $nf, $nn, $leftover.Count, (-not [IO.Directory]::Exists($LP + $Root)), $restored)
+    if ($OutFile) { [IO.File]::WriteAllLines($OutFile, [string[]]$script:Lines, (New-Object Text.ASCIIEncoding)) }
+}
+exit $nf

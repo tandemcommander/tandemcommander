@@ -23,6 +23,17 @@ Fixes for the problems reported on GitHub after 0.1.9.
   with accented letters on the clipboard correctly. The Size column and the
   plug-in's Find window were right and stay right.
 
+- **SFTP: a directory that could not be read whole is an error** (feature
+  133). When reading a remote directory failed in the middle, the part read
+  so far was taken for the whole directory: a copy "succeeded" with part of
+  the files and the panel showed a partial list. Now the copy or move fails
+  with "Cannot list directory ...: reason", and the panel returns to the
+  parent directory. Deleting a tree no longer asks the server to remove a
+  directory whose items could not all be deleted (one message instead of one
+  per level). Error messages with a long path keep their reason at the end.
+  An address typed as `sftp://user@host/path` is accepted. The SFTP fixes of
+  feature 131 were checked against a real server.
+
 - **PictView: *Update Thumbnail* works again - and cannot damage a picture**
   (feature 132). The command has done nothing in any release so far ("Unable
   to save the image"). It makes the thumbnail now, and a file is replaced only

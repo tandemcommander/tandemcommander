@@ -166,7 +166,7 @@ void CSFTPSession::SetLastErrorFromSsh(const char* prefix)
     // feature 130: 'prefix' is UTF-8 (LoadStrU8) or ASCII; the library's text is made UTF-8
     _snprintf_s(LastErrorText, _TRUNCATE, "%s%s%s", prefix != NULL ? prefix : "",
                 (prefix != NULL && prefix[0]) ? ": " : "",
-                CSFTPMsgText(msg != NULL ? msg : "unknown error").Get());
+                CSFTPMsgText((msg != NULL && msg[0] != 0) ? msg : "unknown error").Get()); // feature 133: also for an empty text
     SplU8TrimTornTail(LastErrorText);
     // feature 051 (U7): every failure funnels through here, so this is the one
     // place that reliably notices the transport died (Connect's own failures run
@@ -1121,10 +1121,52 @@ BOOL CSFTPSession::RealPath(const char* path, char* absPath, int absPathSize)
     return TRUE;
 }
 
+#ifdef _DEBUG
+// feature 133, probe seam (debug builds only): TC_SFTP_PROBE_LIST_FAIL = "<suffix>;<entry>;<times>"
+// makes the read of the <entry>-th name (counted without "." and "..") of a directory whose
+// path ends with <suffix> fail, for the first <times> listings of such a directory in this
+// process. Returns the entry number to fail at, or 0.
+static int ProbeListFailAt(const char* path)
+{
+    static int timesLeft = -1; // -1 = the variable was not read yet
+    static char suffix[200];
+    static int entry = 0;
+    if (timesLeft == -1)
+    {
+        char buf[300];
+        timesLeft = 0;
+        DWORD n = GetEnvironmentVariableA("TC_SFTP_PROBE_LIST_FAIL", buf, sizeof(buf));
+        if (n > 0 && n < sizeof(buf))
+        {
+            char* s1 = strchr(buf, ';');
+            char* s2 = s1 != NULL ? strchr(s1 + 1, ';') : NULL;
+            if (s2 != NULL && (size_t)(s1 - buf) < sizeof(suffix))
+            {
+                *s1 = 0;
+                lstrcpynA(suffix, buf, sizeof(suffix));
+                entry = atoi(s1 + 1);
+                timesLeft = atoi(s2 + 1);
+            }
+        }
+    }
+    if (timesLeft <= 0 || entry <= 0)
+        return 0;
+    size_t pl = strlen(path), sl = strlen(suffix);
+    if (pl < sl || strcmp(path + pl - sl, suffix) != 0)
+        return 0;
+    timesLeft--;
+    return entry;
+}
+#endif // _DEBUG
+
 BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entries, volatile BOOL* cancel)
 {
     if (Sftp == NULL)
         return SetLastErrorNotConnected();
+#ifdef _DEBUG
+    int probeFailAt = ProbeListFailAt(path);
+    int probeRead = 0;
+#endif
 
     LIBSSH2_SFTP_HANDLE* dir = libssh2_sftp_opendir(Sftp, path);
     if (dir == NULL)
@@ -1136,16 +1178,26 @@ BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entr
     char nameBuf[2048];
     char longEntry[2048];
     LIBSSH2_SFTP_ATTRIBUTES attrs;
+    // feature 133: the listing is complete only when the server said "no more entries". A
+    // failed read and low memory used to leave the loop like the end of the directory did -
+    // the part read so far was returned as the whole directory. A stop asked by the user
+    // stays what it was: TRUE with the caller's 'cancel' set (every caller looks at it).
+    BOOL complete = FALSE;
+    BOOL stopped = FALSE;
     for (;;)
     {
         if (cancel != NULL && *cancel)
+        {
+            stopped = TRUE;
             break;
+        }
         // also honor the safe-wait-window Close button so huge listings can be
         // aborted (GetSafeWaitWindowClosePressed is FALSE when no window is up)
         if (SalamanderGeneral->GetSafeWaitWindowClosePressed())
         {
             if (cancel != NULL)
                 *cancel = TRUE;
+            stopped = TRUE;
             break;
         }
         memset(&attrs, 0, sizeof(attrs));
@@ -1155,8 +1207,32 @@ BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entr
         // missing longname does not reuse the previous entry's owner/group).
         memset(longEntry, 0, sizeof(longEntry));
         int rc = libssh2_sftp_readdir_ex(dir, nameBuf, sizeof(nameBuf) - 1, longEntry, sizeof(longEntry) - 1, &attrs);
-        if (rc <= 0)
+#ifdef _DEBUG
+        if (rc > 0 && probeFailAt > 0 && !(rc <= 2 && nameBuf[0] == '.' && (rc == 1 || nameBuf[1] == '.')) &&
+            ++probeRead == probeFailAt)
+            rc = LIBSSH2_ERROR_SOCKET_TIMEOUT; // the seam: this read "failed"
+#endif
+        CSftpReadDirStep step = SftpReadDirStep(rc);
+        if (step == rdsEnd)
+        {
+            complete = TRUE;
             break;
+        }
+        if (step == rdsError)
+        {
+            // the reason, before closedir replaces the session's status. The library does not
+            // record an error for every failure of this call (a name that does not fit the
+            // buffer returns its code and leaves the session's last error as it was - the text
+            // of some earlier failure), so the session's text is used only when it belongs to
+            // this code.
+            if (Ssh != NULL && libssh2_session_last_errno(Ssh) == rc)
+                SetLastErrorFromSftp("readdir");
+            else if (rc == LIBSSH2_ERROR_BUFFER_TOO_SMALL)
+                SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_TOOLONGPATH));
+            else
+                _snprintf_s(LastErrorText, _TRUNCATE, "readdir: libssh2 error %d", rc);
+            break;
+        }
         nameBuf[rc] = 0;
 
         if (IsDotOrDotDot(nameBuf))
@@ -1164,11 +1240,15 @@ BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entr
 
         CSFTPDirEntry* e = new CSFTPDirEntry;
         if (e == NULL)
+        {
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LOW_MEMORY);
             break;
+        }
         e->Name = _strdup(nameBuf);
         if (e->Name == NULL) // CF-19: e->Name is dereferenced when building paths
         {
             delete e;
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LOW_MEMORY);
             break;
         }
         if (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS)
@@ -1221,11 +1301,12 @@ BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entr
         {
             entries->ResetState();
             delete e;
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LOW_MEMORY);
             break;
         }
     }
     libssh2_sftp_closedir(dir);
-    return TRUE;
+    return complete || stopped;
 }
 
 BOOL CSFTPSession::Stat(const char* path, BOOL followSymlink, LIBSSH2_SFTP_ATTRIBUTES* attrs)

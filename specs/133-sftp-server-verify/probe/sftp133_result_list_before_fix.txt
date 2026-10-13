@@ -1,0 +1,14 @@
+sftp133_probe (feature 133), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-13 18:26; desktop 'tc_probe_16412'; ACP 1250; registry key existed True; export SHA-256 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+Server  : prepared: /home/tctest/tc133; p4 tree end is 4043 bytes, p5 file path 4043 bytes
+
+LISTCOPY   ROW    PASS        copy a directory whose listing fails at the 10th entry: local files 9 of 30; an error names the directory False; files on the server 30; local target: 1 folders, 1 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/l1'; dialogs: [#32770 'Copy'] [Static id=209] Copy directory "many" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+LISTCOPY   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LISTMOVE   ROW    PASS        move it: local files 9 of 30; an error names the directory False; files on the server 30 of 30; local target: 1 folders, 1 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/l2'; dialogs: [#32770 'Move/Rename'] [Static id=209] Move directory "many" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+LISTMOVE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LISTPANEL  ROW    PASS        enter the directory in the panel while its listing fails: an error box names it False; the panel is at '...localhost:2222/home/tctest/tc133/l3/many'; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/l3/many'; dialogs: none
+LISTPANEL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5 / after 2865657F4AAE5292562D47C5B197CD6C3E5315BDBD392755E542DE65393AD9C5
+
+Rows: PASS 6, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
