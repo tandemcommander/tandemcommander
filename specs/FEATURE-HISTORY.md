@@ -2216,3 +2216,21 @@ a few early ones are out of sequence).
     reply - a failed request must mark the session dead (`NoteTransportError`).
   - The core shows its Copy / Move dialog again when a plug-in's operation fails: a probe
     that answers OK to everything loops.
+- 140-sftp-dead-session: **after a timeout libssh2 leaves the request "sent" and answers the
+  next request of the same kind with the OLD reply** (`session.h` `BLOCK_ADJUST`, `sftp.c`
+  per-request `*_state`; stat / lstat / setstat share one). So a timed-out request ends the
+  session: every `CSFTPSession` request returns at once on a dead session without calling the
+  library (`NoRequest`), handles of a dead session are not closed through it (a leak until
+  exit, never a double free), every loop in `operats.cpp` stops and removes nothing after it,
+  one box. **Dead = every negative return code except SFTP_PROTOCOL, BUFFER_TOO_SMALL,
+  BAD_USE** (`SftpRcIsDeadTransport`; the first version listed the dead codes and missed the
+  raw keepalive / re-key results - review); a code read from `libssh2_session_last_errno` is
+  judged by the narrow list of 051 and never EAGAIN (the library leaves EAGAIN there after a
+  successful read). `ChangePath` reconnects once instead of returning FALSE - on a refresh
+  the core would leave the file system. Special files: `SftpDownloadKind`, a stat following
+  links before anything local is created (also `ViewFile`). Refused chmod / chown / mtime:
+  counted, one box.
+  - Rows DEADCOPY, DEADDEL, DEADMOVE (seam `TC_SFTP_PROBE_TIMEOUT_AT="<path suffix>"`, debug),
+    SPZERO, SPFIFO. On 0.1.9 a link to `/dev/zero` reached 392 MB while the probe waited.
+  - The 133 listing seam does not mark the session dead on purpose (its rows test the
+    listing error path).

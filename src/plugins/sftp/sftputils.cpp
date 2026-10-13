@@ -394,6 +394,61 @@ BOOL SftpModeDiffers(BOOL oldKnown, unsigned long oldMode, BOOL newKnown, unsign
     return oldKnown && (!newKnown || (oldMode & 07777) != (newMode & 07777));
 }
 
+BOOL SftpRcIsDeadTransport(int rc)
+{
+    if (rc >= 0)
+        return FALSE; // success, a length, or one of the library's positive SSH_FX_* answers
+    switch (rc)
+    {
+    case -31: // LIBSSH2_ERROR_SFTP_PROTOCOL: the server answered - with a refusal
+    case -38: // LIBSSH2_ERROR_BUFFER_TOO_SMALL: the answer was read whole, it does not fit the caller's buffer
+    case -39: // LIBSSH2_ERROR_BAD_USE: wrong arguments - nothing was sent
+        return FALSE;
+    }
+    // Everything else, also what the library may add later. Not excepted on purpose:
+    // LIBSSH2_ERROR_ALLOC (-6) - it is also what the packet reader returns for an SFTP packet
+    // of an impossible size (sftp.c, sftp_packet_read: "Invalid SFTP packet size"), i.e. a
+    // stream that is out of step; LIBSSH2_ERROR_EAGAIN (-37) - out of a blocking call it means
+    // a half-done request; the codes of a failed key re-exchange (-5, -8, -10, -11, -14, -49),
+    // which the wait for an answer hands out from its keepalive while the request stays "sent".
+    return TRUE;
+}
+
+BOOL SftpErrnoIsDeadTransport(int code)
+{
+    switch (code)
+    {
+    case -9:  // LIBSSH2_ERROR_TIMEOUT
+    case -30: // LIBSSH2_ERROR_SOCKET_TIMEOUT
+    case -7:  // LIBSSH2_ERROR_SOCKET_SEND
+    case -43: // LIBSSH2_ERROR_SOCKET_RECV
+    case -13: // LIBSSH2_ERROR_SOCKET_DISCONNECT
+        return TRUE;
+    }
+    return FALSE; // (also LIBSSH2_ERROR_EAGAIN: it stays recorded after a read that succeeded)
+}
+
+CSftpDownloadKind SftpDownloadKind(BOOL hasMode, unsigned long mode)
+{
+    if (!hasMode)
+        return sdkUnknown;
+    switch (mode & SFTP_S_IFMT)
+    {
+    case SFTP_S_IFREG:
+        return sdkRegular;
+    case SFTP_S_IFDIR:
+        return sdkDirectory;
+    case SFTP_S_IFLNK:
+        return sdkLink;
+    case SFTP_S_IFCHR:
+    case SFTP_S_IFBLK:
+    case SFTP_S_IFIFO:
+    case SFTP_S_IFSOCK:
+        return sdkSpecial;
+    }
+    return sdkUnknown; // no type bits (a server that sends permissions only), or a type not known here
+}
+
 BOOL SftpLocalDirIsLink(DWORD attributes, DWORD reparseTag)
 {
     if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0)

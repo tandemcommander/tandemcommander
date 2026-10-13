@@ -1,0 +1,12 @@
+sftp133_probe (feature 133), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_v019\tandemcommander.exe
+Date    : 2026-10-14 00:14; desktop 'tc_probe_15816'; ACP 1250; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Server  : prepared: /home/tctest/tc133; p4 tree end is 4043 bytes, p5 file path 4043 bytes
+
+SPZERO     ROW    PASS        copy a link to /dev/zero: 'not a regular file' said False; local files 1 (391?770?000 bytes when the probe stopped waiting); local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/sz'; dialogs: [#32770 'Copy'] [Static id=209] Copy file "zero" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+SPZERO     END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0
+SPFIFO     ROW    PASS        copy a FIFO: 'not a regular file' said False; local files 0; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/sf'; dialogs: [#32770 'Copy'] [Static id=209] Copy file "pipe" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+SPFIFO     END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

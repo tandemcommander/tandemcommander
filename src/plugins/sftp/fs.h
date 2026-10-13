@@ -83,6 +83,8 @@ public:
                               char* path, int pathSize);
 
     BOOL EnsureConnected(HWND parent);
+    // feature 140: ChangePath found the session lost - connects again, once per call
+    BOOL ReconnectLostInChangePath(BOOL* reconnected);
 
     virtual BOOL WINAPI GetCurrentPath(char* userPart);
     virtual BOOL WINAPI GetFullName(CFileData& file, int isDir, char* buf, int bufSize);

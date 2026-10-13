@@ -226,6 +226,112 @@ BOOL CSFTPSession::SetLastErrorNotConnected()
     return FALSE;
 }
 
+// feature 140: SftpRcIsDeadTransport / SftpErrnoIsDeadTransport (sftputils.cpp, compiled without
+// the library's headers) hold the library's numbers - they must be these
+static_assert(LIBSSH2_ERROR_SFTP_PROTOCOL == -31 && LIBSSH2_ERROR_BUFFER_TOO_SMALL == -38 && LIBSSH2_ERROR_BAD_USE == -39 &&
+                  LIBSSH2_ERROR_TIMEOUT == -9 && LIBSSH2_ERROR_SOCKET_TIMEOUT == -30 && LIBSSH2_ERROR_SOCKET_SEND == -7 &&
+                  LIBSSH2_ERROR_SOCKET_RECV == -43 && LIBSSH2_ERROR_SOCKET_DISCONNECT == -13 &&
+                  LIBSSH2_ERROR_EAGAIN == -37 && LIBSSH2_ERROR_ALLOC == -6,
+              "SftpRcIsDeadTransport: the numbers of libssh2's error codes have changed");
+
+BOOL CSFTPSession::SetLastErrorLost(const char* detail)
+{
+    char lost[300];
+    SplU8CopyTrunc(lost, sizeof(lost), LoadStrU8(IDS_ERR_CONNLOST));
+    if (detail != NULL && detail[0] != 0)
+    {
+        char copy[sizeof(LastErrorText)]; // 'detail' may be LastErrorText itself
+        SplU8CopyTrunc(copy, sizeof(copy), detail);
+        if (_snprintf_s(LastErrorText, _TRUNCATE, "%s (%s)", lost, copy) < 0)
+            SplU8TrimTornTail(LastErrorText);
+    }
+    else
+        SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), lost);
+    LastSftpStatus = 0;
+    return FALSE;
+}
+
+BOOL CSFTPSession::NoRequest(BOOL quiet)
+{
+    if (Sftp != NULL && Connected)
+        return FALSE;
+    if (!quiet)
+    {
+        if (Sftp == NULL)
+            SetLastErrorNotConnected();
+        else
+            SetLastErrorLost(NULL);
+    }
+    return TRUE;
+}
+
+void CSFTPSession::NoteFailure(int rc, BOOL textIsSet)
+{
+    NoteTransportError(rc);
+    if (Sftp == NULL || Connected)
+        return; // the session lives: the failure is the server's answer (or a local one)
+    // this failure ended the session: the reason is the lost connection, the rest is detail
+    if (textIsSet)
+        SetLastErrorLost(LastErrorText);
+    else
+    {
+        char* msg = NULL;
+        int len = 0;
+        if (Ssh != NULL)
+            libssh2_session_last_error(Ssh, &msg, &len, 0);
+        SetLastErrorLost((msg != NULL && msg[0] != 0) ? CSFTPMsgText(msg).Get() : NULL);
+    }
+}
+
+// feature 140: the code of a call that returns a pointer and has just returned NULL. For such a
+// call the session's last error IS its own failure (every NULL path of the library records
+// one; the blocking wrapper leaves only with a code other than EAGAIN, or after the wait has
+// recorded its own). EAGAIN is still never taken from there: 0 = "not known".
+int CSFTPSession::FailedPointerCallCode()
+{
+    int code = Ssh != NULL ? libssh2_session_last_errno(Ssh) : 0;
+    return code == LIBSSH2_ERROR_EAGAIN ? 0 : code;
+}
+
+BOOL CSFTPSession::RequestFailed(int rc, const char* prefix)
+{
+    SetLastErrorFromSftp(prefix); // the reason and the server's status (if it sent one)
+    NoteFailure(rc, TRUE);
+    return FALSE;
+}
+
+#ifdef _DEBUG
+// feature 140, probe seam (debug builds only): TC_SFTP_PROBE_TIMEOUT_AT = "<path suffix>". The
+// FIRST Stat / StatEx / OpenRead / Unlink of this process whose path ends with the suffix is
+// not sent to the server and ends as a request whose answer timed out (LIBSSH2_ERROR_TIMEOUT):
+// the session is marked dead through the same code as after a real one.
+static BOOL ProbeTimeoutAt(const char* path)
+{
+    static int armed = -1; // -1 = the variable was not read yet; 0 = not set, or it has fired
+    static char suffix[200];
+    if (armed == -1)
+    {
+        DWORD n = GetEnvironmentVariableA("TC_SFTP_PROBE_TIMEOUT_AT", suffix, sizeof(suffix));
+        armed = (n > 0 && n < sizeof(suffix)) ? 1 : 0;
+    }
+    if (armed != 1 || path == NULL)
+        return FALSE;
+    size_t pl = strlen(path), sl = strlen(suffix);
+    if (pl < sl || strcmp(path + pl - sl, suffix) != 0)
+        return FALSE;
+    armed = 0; // once per process
+    return TRUE;
+}
+
+void CSFTPSession::ProbeTimedOut()
+{
+    LogFmt("Probe seam: this request is taken for timed out.");
+    SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), "API timeout expired"); // the library's text of a real one
+    LastSftpStatus = 0;
+    NoteFailure(LIBSSH2_ERROR_TIMEOUT, TRUE);
+}
+#endif // _DEBUG
+
 BOOL CSFTPSession::OpenSocket(CSFTPConnectResult* result)
 {
     char portStr[16];
@@ -1108,12 +1214,14 @@ void CSFTPSession::Disconnect()
 
 BOOL CSFTPSession::RealPath(const char* path, char* absPath, int absPathSize)
 {
-    if (Sftp == NULL)
+    if (NoRequest(TRUE)) // feature 140: nothing is sent on a dead session
         return FALSE;
     // libssh2 does not NUL-terminate; reserve a byte and always terminate
     int rc = libssh2_sftp_realpath(Sftp, path, absPath, absPathSize - 1);
     if (rc <= 0)
     {
+        if (rc < 0)
+            NoteFailure(rc, FALSE); // feature 140: a timed-out request ends the session (the caller asks IsConnected())
         // fall back to the requested path
         lstrcpynA(absPath, (path != NULL && path[0]) ? path : "/", absPathSize);
         return path != NULL && path[0] != 0;
@@ -1164,8 +1272,8 @@ static int ProbeListFailAt(const char* path)
 
 BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entries, volatile BOOL* cancel)
 {
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
+    if (NoRequest()) // feature 140
+        return FALSE;
 #ifdef _DEBUG
     int probeFailAt = ProbeListFailAt(path);
     int probeRead = 0;
@@ -1173,10 +1281,7 @@ BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entr
 
     LIBSSH2_SFTP_HANDLE* dir = libssh2_sftp_opendir(Sftp, path);
     if (dir == NULL)
-    {
-        SetLastErrorFromSftp("opendir");
-        return FALSE;
-    }
+        return RequestFailed(FailedPointerCallCode(), "opendir");
 
     char nameBuf[2048];
     char longEntry[2048];
@@ -1210,10 +1315,14 @@ BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entr
         // missing longname does not reuse the previous entry's owner/group).
         memset(longEntry, 0, sizeof(longEntry));
         int rc = libssh2_sftp_readdir_ex(dir, nameBuf, sizeof(nameBuf) - 1, longEntry, sizeof(longEntry) - 1, &attrs);
+        BOOL probeFailed = FALSE;
 #ifdef _DEBUG
         if (rc > 0 && probeFailAt > 0 && !(rc <= 2 && nameBuf[0] == '.' && (rc == 1 || nameBuf[1] == '.')) &&
             ++probeRead == probeFailAt)
+        {
             rc = LIBSSH2_ERROR_SOCKET_TIMEOUT; // the seam: this read "failed"
+            probeFailed = TRUE;
+        }
 #endif
         CSftpReadDirStep step = SftpReadDirStep(rc);
         if (step == rdsEnd)
@@ -1234,6 +1343,11 @@ BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entr
                 SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_TOOLONGPATH));
             else
                 _snprintf_s(LastErrorText, _TRUNCATE, "readdir: libssh2 error %d", rc);
+            // feature 140: a read that timed out or broke ends the session (it only failed the
+            // listing before, and the next request went out on the same connection). Not for
+            // the seam of feature 133: its rows are a listing that fails on a LIVE session.
+            if (!probeFailed)
+                NoteFailure(rc, TRUE);
             break;
         }
         nameBuf[rc] = 0;
@@ -1308,49 +1422,74 @@ BOOL CSFTPSession::ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entr
             break;
         }
     }
-    libssh2_sftp_closedir(dir);
+    // feature 140: the handle of a dead session is not closed through the library (see
+    // CloseHandle). A close that fails changes nothing about the listing - the server has said
+    // "no more entries" - but when it is the transport that failed, the session ends here and
+    // the caller's next request is not sent.
+    if (Connected)
+    {
+        int closeRc = libssh2_sftp_closedir(dir);
+        if (closeRc != 0)
+            NoteFailure(closeRc, !(complete || stopped)); // (a failed listing keeps the reason of its own failure)
+    }
     return complete || stopped;
 }
 
 BOOL CSFTPSession::Stat(const char* path, BOOL followSymlink, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 {
-    if (Sftp == NULL)
-        return FALSE;
     memset(attrs, 0, sizeof(*attrs));
+    if (NoRequest(TRUE)) // feature 140: nothing is sent on a dead session
+        return FALSE;
+#ifdef _DEBUG
+    if (ProbeTimeoutAt(path))
+    {
+        ProbeTimedOut();
+        return FALSE;
+    }
+#endif
     int rc = libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path),
                                   followSymlink ? LIBSSH2_SFTP_STAT : LIBSSH2_SFTP_LSTAT, attrs);
     // feature 139: a timed-out or broken request marks the session dead like every other
-    // request does (the error text is left alone, as before). Otherwise the library keeps the
-    // half-done request and gives its late answer to the NEXT stat.
+    // request does. Otherwise the library keeps the half-done request and gives its late
+    // answer to the NEXT stat. (The error text is left alone, as before - feature 140: except
+    // when this request ended the session; then it says so.)
     if (rc != 0)
-        NoteTransportError(rc);
+        NoteFailure(rc, FALSE);
     return rc == 0;
 }
 
 CSFTPStatResult CSFTPSession::StatEx(const char* path, BOOL followSymlink, LIBSSH2_SFTP_ATTRIBUTES* attrs)
 {
     memset(attrs, 0, sizeof(*attrs));
-    if (Sftp == NULL)
+    if (NoRequest()) // feature 140: also a dead session - sxError, never "not found"
+        return sxError;
+#ifdef _DEBUG
+    if (ProbeTimeoutAt(path))
     {
-        SetLastErrorNotConnected();
+        ProbeTimedOut();
         return sxError;
     }
+#endif
     int rc = libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path),
                                   followSymlink ? LIBSSH2_SFTP_STAT : LIBSSH2_SFTP_LSTAT, attrs);
     if (rc == 0)
         return sxFound;
-    SetLastErrorFromSftp(NULL); // also notices a dead transport
+    RequestFailed(rc, NULL); // (a dead transport: the status is 0 - sxError)
     return SftpStatusIsNotFound(LastSftpStatus) ? sxNotFound : sxError;
 }
 
 BOOL CSFTPSession::ReadLink(const char* path, char* target, int targetSize)
 {
-    if (Sftp == NULL)
+    if (NoRequest(TRUE)) // feature 140
         return FALSE;
     int rc = libssh2_sftp_symlink_ex(Sftp, path, (unsigned int)strlen(path), target, targetSize - 1,
                                      LIBSSH2_SFTP_READLINK);
     if (rc <= 0)
+    {
+        if (rc < 0)
+            NoteFailure(rc, FALSE); // feature 140
         return FALSE;
+    }
     target[rc] = 0;
     return TRUE;
 }
@@ -1359,44 +1498,47 @@ BOOL CSFTPSession::Mkdir(const char* path, long mode)
 {
     // feature 131: every failure leaves its own reason (the message of the caller showed the
     // text of an earlier failure, or none)
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
-    if (libssh2_sftp_mkdir_ex(Sftp, path, (unsigned int)strlen(path), mode) != 0)
-    {
-        SetLastErrorFromSftp(NULL);
+    // feature 140: every request below - not sent on a dead session (NoRequest); a failure
+    // that is a dead transport ends the session (RequestFailed)
+    if (NoRequest())
         return FALSE;
-    }
+    int rc = libssh2_sftp_mkdir_ex(Sftp, path, (unsigned int)strlen(path), mode);
+    if (rc != 0)
+        return RequestFailed(rc, NULL);
     return TRUE;
 }
 
 BOOL CSFTPSession::Rmdir(const char* path)
 {
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
-    if (libssh2_sftp_rmdir_ex(Sftp, path, (unsigned int)strlen(path)) != 0)
-    {
-        SetLastErrorFromSftp(NULL);
+    if (NoRequest())
         return FALSE;
-    }
+    int rc = libssh2_sftp_rmdir_ex(Sftp, path, (unsigned int)strlen(path));
+    if (rc != 0)
+        return RequestFailed(rc, NULL);
     return TRUE;
 }
 
 BOOL CSFTPSession::Unlink(const char* path)
 {
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
-    if (libssh2_sftp_unlink_ex(Sftp, path, (unsigned int)strlen(path)) != 0)
+    if (NoRequest())
+        return FALSE;
+#ifdef _DEBUG
+    if (ProbeTimeoutAt(path))
     {
-        SetLastErrorFromSftp(NULL);
+        ProbeTimedOut();
         return FALSE;
     }
+#endif
+    int rc = libssh2_sftp_unlink_ex(Sftp, path, (unsigned int)strlen(path));
+    if (rc != 0)
+        return RequestFailed(rc, NULL);
     return TRUE;
 }
 
 BOOL CSFTPSession::Rename(const char* from, const char* to, BOOL replace)
 {
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
+    if (NoRequest())
+        return FALSE;
     LogFmt("Rename %s -> %s", from, to);
     // Two requests exist, and they differ in what happens to an existing target:
     //  - posix-rename@openssh.com (an extension OpenSSH and most servers advertise) is
@@ -1427,7 +1569,9 @@ BOOL CSFTPSession::Rename(const char* from, const char* to, BOOL replace)
         // replace on a version 3 server; the caller copes.
         BOOL noExtension = rc == LIBSSH2_FX_OP_UNSUPPORTED ||
                            (rc == LIBSSH2_ERROR_SFTP_PROTOCOL && libssh2_sftp_last_error(Sftp) == LIBSSH2_FX_OP_UNSUPPORTED);
-        if (noExtension)
+        // feature 140: (and only on a session that lives - 'noExtension' is an answer of the
+        // server or of the library itself, so this is a guard)
+        if (noExtension && Connected)
             rc = libssh2_sftp_rename_ex(Sftp, from, (unsigned int)strlen(from),
                                         to, (unsigned int)strlen(to),
                                         LIBSSH2_SFTP_RENAME_OVERWRITE);
@@ -1442,7 +1586,9 @@ BOOL CSFTPSession::Rename(const char* from, const char* to, BOOL replace)
     {
         // capture the real libssh2 error - Rename previously returned FALSE
         // without setting LastErrorText, so "Cannot rename ..." showed no reason.
-        SetLastErrorFromSftp(NULL); // feature 131: the server's status, not only "SFTP Protocol Error"
+        // feature 131: the server's status, not only "SFTP Protocol Error"
+        // (LIBSSH2_FX_OP_UNSUPPORTED from the library itself is a positive number: not a transport code)
+        RequestFailed(rc, NULL);
         Log(LastErrorText);
     }
     return rc == 0;
@@ -1450,29 +1596,27 @@ BOOL CSFTPSession::Rename(const char* from, const char* to, BOOL replace)
 
 BOOL CSFTPSession::Symlink(const char* target, const char* linkPath)
 {
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
+    if (NoRequest())
+        return FALSE;
     // libssh2_sftp_symlink(sftp, orig, linkpath): create 'linkpath' pointing to 'orig'
     int rc = libssh2_sftp_symlink_ex(Sftp, target, (unsigned int)strlen(target),
                                      (char*)linkPath, (unsigned int)strlen(linkPath), LIBSSH2_SFTP_SYMLINK);
     if (rc != 0)
-        SetLastErrorFromSftp(NULL);
-    return rc == 0;
+        return RequestFailed(rc, NULL);
+    return TRUE;
 }
 
 BOOL CSFTPSession::Chmod(const char* path, unsigned long mode)
 {
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
+    if (NoRequest())
+        return FALSE;
     LIBSSH2_SFTP_ATTRIBUTES attrs;
     memset(&attrs, 0, sizeof(attrs));
     attrs.flags = LIBSSH2_SFTP_ATTR_PERMISSIONS;
     attrs.permissions = mode;
-    if (libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) != 0)
-    {
-        SetLastErrorFromSftp(NULL);
-        return FALSE;
-    }
+    int rc = libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs);
+    if (rc != 0)
+        return RequestFailed(rc, NULL);
     return TRUE;
 }
 
@@ -1482,68 +1626,80 @@ BOOL CSFTPSession::Chown(const char* path, unsigned long uid, unsigned long gid,
     // feature 018: change owner/group via SFTP setstat with UID/GID. An unset
     // field is left intact by first reading the current attrs and only
     // overriding the requested one(s).
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
+    if (NoRequest())
+        return FALSE;
     if (!setUid && !setGid) // nothing to change (the dialog refuses it before)
     {
         SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), LoadStrU8(IDS_OG_NEEDFIELD));
+        LastSftpStatus = 0;
         return FALSE;
     }
     LIBSSH2_SFTP_ATTRIBUTES attrs;
     memset(&attrs, 0, sizeof(attrs));
-    // start from the current uid/gid so a "leave unchanged" field keeps its value
-    if (libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_STAT, &attrs) != 0)
-        memset(&attrs, 0, sizeof(attrs));
+    int rc;
+    if (!setUid || !setGid)
+    {
+        // start from the current uid/gid so a "leave unchanged" field keeps its value.
+        // feature 140: when they cannot be read, nothing is changed. A failed read used to be
+        // taken for "both are 0": the field that was to stay became 0 (root) where the server
+        // let it - and after a timeout the second request went out on a dead session.
+        rc = libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_STAT, &attrs);
+        if (rc != 0)
+            return RequestFailed(rc, NULL);
+        if ((attrs.flags & LIBSSH2_SFTP_ATTR_UIDGID) == 0)
+        {
+            SplU8CopyTrunc(LastErrorText, sizeof(LastErrorText), "the server does not report the current owner and group.");
+            LastSftpStatus = 0;
+            return FALSE;
+        }
+    }
     attrs.flags = LIBSSH2_SFTP_ATTR_UIDGID;
     if (setUid)
         attrs.uid = uid;
     if (setGid)
         attrs.gid = gid;
-    if (libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) != 0)
-    {
-        SetLastErrorFromSftp(NULL);
-        return FALSE;
-    }
+    rc = libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs);
+    if (rc != 0)
+        return RequestFailed(rc, NULL);
     return TRUE;
 }
 
 BOOL CSFTPSession::SetMTime(const char* path, __int64 mtime)
 {
-    if (Sftp == NULL)
-        return SetLastErrorNotConnected();
+    if (NoRequest())
+        return FALSE;
     LIBSSH2_SFTP_ATTRIBUTES attrs;
     memset(&attrs, 0, sizeof(attrs));
     attrs.flags = LIBSSH2_SFTP_ATTR_ACMODTIME;
     attrs.mtime = (unsigned long)mtime;
     attrs.atime = (unsigned long)mtime;
-    if (libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs) != 0)
-    {
-        SetLastErrorFromSftp(NULL);
-        return FALSE;
-    }
+    int rc = libssh2_sftp_stat_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_SFTP_SETSTAT, &attrs);
+    if (rc != 0)
+        return RequestFailed(rc, NULL);
     return TRUE;
 }
 
 LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenRead(const char* path)
 {
-    if (Sftp == NULL)
+    if (NoRequest())
+        return NULL;
+#ifdef _DEBUG
+    if (ProbeTimeoutAt(path))
     {
-        SetLastErrorNotConnected();
+        ProbeTimedOut();
         return NULL;
     }
+#endif
     LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path), LIBSSH2_FXF_READ, 0, LIBSSH2_SFTP_OPENFILE);
     if (h == NULL)
-        SetLastErrorFromSftp(NULL); // feature 131: the reason shown by "Cannot download ..."
+        RequestFailed(FailedPointerCallCode(), NULL); // feature 131: the reason shown by "Cannot download ..."
     return h;
 }
 
 LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWrite(const char* path, long mode, BOOL append)
 {
-    if (Sftp == NULL)
-    {
-        SetLastErrorNotConnected();
+    if (NoRequest())
         return NULL;
-    }
     unsigned long flags = LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT;
     if (append)
         flags |= LIBSSH2_FXF_APPEND;
@@ -1551,29 +1707,28 @@ LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWrite(const char* path, long mode, BOOL a
         flags |= LIBSSH2_FXF_TRUNC;
     LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path), flags, mode, LIBSSH2_SFTP_OPENFILE);
     if (h == NULL)
-        SetLastErrorFromSftp(NULL); // feature 131: the reason shown by "Cannot upload ..."
+        RequestFailed(FailedPointerCallCode(), NULL); // feature 131: the reason shown by "Cannot upload ..."
     return h;
 }
 
 LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWriteNew(const char* path, long mode)
 {
-    if (Sftp == NULL)
-    {
-        SetLastErrorNotConnected();
+    if (NoRequest())
         return NULL;
-    }
     // feature 139: EXCL - the server creates the file or fails; an existing file is not
     // opened, a symbolic link of that name is not followed
     LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path),
                                                   LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_EXCL,
                                                   mode, LIBSSH2_SFTP_OPENFILE);
     if (h == NULL)
-        SetLastErrorFromSftp(NULL);
+        RequestFailed(FailedPointerCallCode(), NULL);
     return h;
 }
 
 void CSFTPSession::SeekWrite(LIBSSH2_SFTP_HANDLE* h, unsigned __int64 offset)
 {
+    // (talks to nobody: libssh2_sftp_seek64 only sets the offset of the next read / write and
+    // drops what the handle has buffered - nothing to gate)
     if (h != NULL)
         libssh2_sftp_seek64(h, offset);
 }
@@ -1582,9 +1737,11 @@ __int64 CSFTPSession::Read(LIBSSH2_SFTP_HANDLE* h, char* buf, int len)
 {
     if (h == NULL)
         return -1;
+    if (NoRequest()) // feature 140: a read on a dead session would hand out the late answer of an earlier request
+        return -1;
     __int64 n = libssh2_sftp_read(h, buf, len);
     if (n < 0)
-        NoteTransportError((int)n); // feature 051 (U7): notice a dropped transport
+        NoteFailure((int)n, FALSE); // feature 051 (U7): notice a dropped transport
     return n;
 }
 
@@ -1592,39 +1749,48 @@ __int64 CSFTPSession::Write(LIBSSH2_SFTP_HANDLE* h, const char* buf, int len)
 {
     if (h == NULL)
         return -1;
+    if (NoRequest()) // feature 140
+        return -1;
     // libssh2_sftp_write may accept only part of the buffer; caller loops
     __int64 n = libssh2_sftp_write(h, buf, len);
     if (n < 0)
-        NoteTransportError((int)n);
+        NoteFailure((int)n, FALSE);
     return n;
 }
 
 void CSFTPSession::CloseHandle(LIBSSH2_SFTP_HANDLE* h)
 {
-    if (h != NULL)
-        libssh2_sftp_close_handle(h);
+    if (h == NULL)
+        return;
+    // feature 140: not through the library on a dead (or freed) session - see session.h. The
+    // handle is then never touched again: nothing can free it twice.
+    if (NoRequest(TRUE))
+        return;
+    int rc = libssh2_sftp_close_handle(h);
+    if (rc != 0)
+        NoteFailure(rc, FALSE); // a close that timed out ends the session like any other request
 }
 
 BOOL CSFTPSession::CloseHandleChecked(LIBSSH2_SFTP_HANDLE* h)
 {
     if (h == NULL)
         return TRUE; // nothing was open
+    if (NoRequest()) // feature 140: not closed, so not confirmed
+        return FALSE;
     // (sftp.c, sftp_close_handle: the handle is freed once the server answered or the request
     // could not be sent. When the wait for the answer times out, the blocking wrapper returns
-    // with the handle still allocated and its close half done; it is not used again here and
-    // goes with the session.)
-    if (libssh2_sftp_close_handle(h) != 0)
-    {
-        SetLastErrorFromSftp("close");
-        return FALSE;
-    }
+    // with the handle still allocated and its close half done; it is not used again here -
+    // the session is dead from then on.)
+    int rc = libssh2_sftp_close_handle(h);
+    if (rc != 0)
+        return RequestFailed(rc, "close");
     return TRUE;
 }
 
 void CSFTPSession::Keepalive(int* secondsToNext)
 {
     int next = 0;
-    if (Ssh != NULL)
+    if (Ssh != NULL && Connected) // feature 140: nothing is sent on a session marked dead
     {
         // feature 051 (U3): the keepalive runs on the UI thread from the FS timer.
         // On a peer that vanished silently the send used to stall for the whole
@@ -1648,23 +1814,22 @@ void CSFTPSession::Keepalive(int* secondsToNext)
 // raw libssh2 error and no way to recover short of closing the panel.
 void CSFTPSession::NoteTransportError(int rc)
 {
+    // feature 140: a code a call RETURNED is judged by SftpRcIsDeadTransport (every negative
+    // code but three). With 0 the session's last error is looked at - the library does not
+    // clear it on success (EAGAIN stays there after a read that succeeded), so only the codes
+    // that are beyond doubt count on that route (SftpErrnoIsDeadTransport, the list of 051).
     int code = rc;
-    if (code == 0 && Ssh != NULL)
-        code = libssh2_session_last_errno(Ssh);
-    switch (code)
+    BOOL dead;
+    if (code != 0)
+        dead = SftpRcIsDeadTransport(code);
+    else
     {
-    case LIBSSH2_ERROR_SOCKET_SEND:
-    case LIBSSH2_ERROR_SOCKET_RECV:
-    case LIBSSH2_ERROR_SOCKET_TIMEOUT:
-    case LIBSSH2_ERROR_SOCKET_DISCONNECT:
-    case LIBSSH2_ERROR_TIMEOUT:
-        if (Connected)
-        {
-            Log("Connection to the server was lost.");
-            Connected = FALSE; // EnsureConnected() will offer to reconnect
-        }
-        break;
-    default:
-        break;
+        code = Ssh != NULL ? libssh2_session_last_errno(Ssh) : 0;
+        dead = SftpErrnoIsDeadTransport(code);
+    }
+    if (dead && Connected)
+    {
+        LogFmt("Connection to the server was lost (libssh2 error %d).", code);
+        Connected = FALSE; // EnsureConnected() will offer to reconnect
     }
 }

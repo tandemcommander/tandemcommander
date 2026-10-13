@@ -177,7 +177,9 @@ public:
     BOOL ListDir(const char* path, TIndirectArray<CSFTPDirEntry>* entries,
                  volatile BOOL* cancel);
 
-    // stat/lstat: fills a single entry's attributes.
+    // stat/lstat: fills a single entry's attributes. Leaves the error text alone - except
+    // when the connection is lost by (or before) this request (feature 140): FALSE then
+    // means "not known", never "no such file" - a caller that acts on FALSE asks IsConnected().
     BOOL Stat(const char* path, BOOL followSymlink, LIBSSH2_SFTP_ATTRIBUTES* attrs);
     // feature 139: stat/lstat that tells "nothing of that name" from "could not be found out".
     // sxError sets GetLastErrorText() / GetLastSftpStatus(); a caller that is about to write
@@ -212,7 +214,12 @@ public:
     // disk; FALSE = the server (or the transport) reported an error - GetLastErrorText() says
     // which. The handle must not be used again either way (the library frees it once the
     // server answered or the request could not be sent; after a timeout of the answer it
-    // stays allocated until the session is freed - nothing here can release it).
+    // stays allocated - nothing here can release it).
+    // feature 140: on a session that is dead (or gone) neither close calls the library - the
+    // close would wait for the timeout again, on a handle whose own request may be half done.
+    // CloseHandleChecked then returns FALSE. The handle's memory stays allocated for good:
+    // the library frees a handle only in its close (sftp.c, sftp_shutdown: "TODO ... kill any
+    // remaining sftp handles").
     BOOL CloseHandleChecked(LIBSSH2_SFTP_HANDLE* h);
 
     // Sends a keepalive if due; returns seconds until the next one is needed.
@@ -222,6 +229,11 @@ public:
     // error) is a transport-level failure, so the next operation can reconnect
     // instead of failing forever against a dead transport. Pass 0 to classify
     // the session's last error.
+    // feature 140: which codes those are: SftpRcIsDeadTransport for a code a call returned,
+    // SftpErrnoIsDeadTransport for the session's last error (sftputils.h). From then on
+    // every request method fails at once without calling the library, GetLastErrorText()
+    // says that the connection was lost and GetLastSftpStatus() is 0 - until Disconnect /
+    // Reconnect (the FS reconnects at the start of the next operation, as before).
     void NoteTransportError(int rc);
 
     // feature 051 (FR-003/SC-004): abort an in-progress connect or operation.
@@ -251,6 +263,28 @@ protected:
     void SetLastErrorFromSftp(const char* prefix);
     // feature 131: "not connected" as the reason; returns FALSE for 'return' statements
     BOOL SetLastErrorNotConnected();
+    // feature 140: "The connection to the server was lost." as the reason ('detail', may be
+    // NULL, follows in brackets); clears the SFTP status; returns FALSE for 'return' statements
+    BOOL SetLastErrorLost(const char* detail);
+    // feature 140, the gate of every request: TRUE = nothing may be sent - the session was
+    // never established (Sftp == NULL: "not connected") or it was marked dead (Connected
+    // FALSE: "the connection was lost"). After a timed-out request the library would give the
+    // late answer of that request to the next one of its kind. 'quiet': the error text and
+    // the status are left alone (plain Stat, ReadLink, RealPath).
+    BOOL NoRequest(BOOL quiet = FALSE);
+    // feature 140: called after a request failed with the library's RETURN code 'rc' (0 = not
+    // known: the session's last error decides, by the narrow list). Marks the session dead when that is a dead
+    // transport; then the error text says that the connection was lost, with the text this
+    // failure left ('textIsSet') or the library's own text as the detail.
+    void NoteFailure(int rc, BOOL textIsSet);
+    // feature 140: the libssh2 code of a pointer-returning call that has just failed (0 = not known)
+    int FailedPointerCallCode();
+    // feature 140: SetLastErrorFromSftp + NoteFailure; returns FALSE for 'return' statements
+    BOOL RequestFailed(int rc, const char* prefix);
+#ifdef _DEBUG
+    // feature 140, probe seam: the request "timed out" (see ProbeTimeoutAt in session.cpp)
+    void ProbeTimedOut();
+#endif
     void Log(const char* text);
     void LogFmt(const char* fmt, ...);
 

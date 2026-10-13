@@ -56,6 +56,10 @@ if [ "$1" = "state" ]; then
     echo "us_entries=$(count $B/us)"
     echo "rc_names=$(ls -A $B/rc 2>/dev/null | tr '\n' ' ')"
     echo "rc_content=$(cat $B/rc/A.txt 2>/dev/null)"
+    for t in dc dl dm; do
+        echo "${t}_many=$(count $B/$t/many)"
+        echo "${t}_f10=$( [ -f $B/$t/many/f10.txt ] && echo 1 || echo 0 )"
+    done
     echo "um_blocked=$(cat $B/um/tree/blocked 2>/dev/null)"
     echo "d1_tree=$( [ -e $B/d1/tree ] && echo 1 || echo 0 )"
     echo "d2_kept=$( [ -f $B/d2/tree/locked/keep.txt ] && echo 1 || echo 0 )"
@@ -115,6 +119,13 @@ printf 'a-file' > um/tree/blocked
 # us: the upload's target is a symbolic link (written through, the link stays); rc: a rename
 # that changes only the case of the name
 mkdir us rc && printf 'SERVER-OLD' > us/real.txt && ln -s real.txt us/report.txt && printf 'CCC' > rc/a.txt
+# feature 140: dc, dl, dm directories of 30 files for the lost-connection rows; sz a link to
+# /dev/zero; sf a FIFO
+for t in dc dl dm; do
+    mkdir -p "$B/$t/many"
+    for i in $(seq -w 1 30); do echo "file $i" > "$B/$t/many/f$i.txt"; done
+done
+mkdir sz sf && ln -s /dev/zero sz/zero && mkfifo sf/pipe
 # d1: an ordinary tree (deleted whole); d2: a tree with one directory that cannot be emptied
 mkdir -p d1/tree/a/b d1/tree/c && echo 1 > d1/tree/a/b/x.txt && echo 2 > d1/tree/c/y.txt && echo 3 > d1/tree/z.txt
 mkdir -p d2/tree/free d2/tree/locked && echo 1 > d2/tree/free/x.txt && echo 2 > d2/tree/locked/keep.txt && chmod 555 d2/tree/locked

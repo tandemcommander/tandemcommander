@@ -36,6 +36,21 @@ plugin.
   - For plug-in authors: `GetCommonFSOperSourceDescr` returns its whole text
     as UTF-8 (it was a code-page word around a UTF-8 name).
 
+- **SFTP: a lost connection stops the operation** (feature 140; so in 0.1.9
+  too). When a request timed out, a copy, move, delete or attribute change
+  went on with the next item - and the next answer read from the server could
+  be the late answer to the earlier request: the content of one file under
+  the name of another, a "not found" for the wrong path. Now the operation
+  ends there with one message, nothing more is sent on that connection and
+  nothing is removed on either side after it; the next operation offers to
+  reconnect as before.
+  - **Devices, FIFOs and sockets are not downloaded** (also behind a link and
+    with F3): a link to `/dev/zero` filled the disk without end, a FIFO froze
+    the program. They are reported as "not a regular file" and left in place.
+  - **Change Attributes and Change Owner say when the server refused**: one
+    message with the first refused item, its reason and the number of others.
+    Refusals went to the log only.
+
 - **SFTP: nothing is replaced without a question, and never before its
   replacement is whole** (feature 139; all of this was so in 0.1.9 too).
   - **An upload asks before it replaces a file on the server** (Yes / No /

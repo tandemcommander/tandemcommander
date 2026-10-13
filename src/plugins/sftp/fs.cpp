@@ -561,6 +561,23 @@ BOOL WINAPI CPluginFSInterface::IsOurPath(int currentFSNameIndex, int fsNameInde
     return _stricmp(host, Host) == 0 && port == Port && strcmp(user, User) == 0;
 }
 
+// feature 140: the session was lost by a request of ChangePath. Connects again - once per
+// call ('*reconnected'); TRUE = the caller repeats its requests. FALSE = the change of path
+// fails: the reconnect failed or was stopped (EnsureConnected has shown why), or this is the
+// second loss in one call (shown here).
+BOOL CPluginFSInterface::ReconnectLostInChangePath(BOOL* reconnected)
+{
+    HWND parent = SalamanderGeneral->GetMsgBoxParent();
+    if (*reconnected)
+    {
+        SalamanderGeneral->SalMessageBox(parent, Session.GetLastErrorText(), LoadStr(IDS_SFTPERRORTITLE),
+                                         MB_OK | MB_ICONEXCLAMATION);
+        return FALSE;
+    }
+    *reconnected = TRUE;
+    return EnsureConnected(parent);
+}
+
 BOOL WINAPI CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName, int fsNameIndex,
                                            const char* userPart, char* cutFileName, BOOL* pathWasCut,
                                            BOOL forceRefresh, int mode)
@@ -644,9 +661,29 @@ BOOL WINAPI CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName,
         return FALSE;
 
     // resolve and verify the requested path exists (and is a directory)
+    // feature 140: a request that times out (or breaks the transport) ends the session; what
+    // follows is not sent, and a stat that is not answered is not "no such directory" - the
+    // loop below used to cut the path down to the root on it. The session is then connected
+    // again (EnsureConnected, what the next operation would do anyway) and the path is
+    // resolved once more, ONCE: returning FALSE would make the core leave the file system on
+    // a refresh. Only when the reconnect fails (it says why itself) or the new connection is
+    // lost too (said here) does the change of path fail.
     char abs[3072];
+    char fitProbe[MAX_PATH];
+    BOOL reconnected = FALSE;
+RESOLVE_PATH:
+    if (pathWasCut != NULL)
+        *pathWasCut = FALSE;
+    if (cutFileName != NULL)
+        cutFileName[0] = 0;
     if (!Session.RealPath(path, abs, sizeof(abs)))
         lstrcpynA(abs, path, sizeof(abs)); // same size as 'path': fits
+    if (!Session.IsConnected())
+    {
+        if (!ReconnectLostInChangePath(&reconnected))
+            return FALSE;
+        goto RESOLVE_PATH;
+    }
 
     // feature 131: the current path must fit the core's MAX_PATH buffer for a user part
     // (GetCurrentPath; the core also refuses to change to a longer one). The server's
@@ -654,7 +691,6 @@ BOOL WINAPI CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName,
     // directory): GetCurrentPath then gave the core a CUT path, and the 3072-byte buffers of
     // rename / create directory / view could overflow. Such a resolved form is not adopted -
     // the path stays as requested, which names the same directory and fits.
-    char fitProbe[MAX_PATH];
     if (!MakeUserPart(abs, fitProbe, sizeof(fitProbe)))
         lstrcpynA(abs, path, sizeof(abs));
 
@@ -696,6 +732,12 @@ BOOL WINAPI CPluginFSInterface::ChangePath(int currentFSNameIndex, char* fsName,
                 continue;
             }
             break; // directory ok
+        }
+        if (!Session.IsConnected()) // feature 140: not answered - not "does not exist" (see above)
+        {
+            if (!ReconnectLostInChangePath(&reconnected))
+                return FALSE;
+            goto RESOLVE_PATH;
         }
         // path does not exist: cut last component and retry (modes 1/2/3)
         char* slash = strrchr(abs, '/');
@@ -801,7 +843,7 @@ BOOL WINAPI CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* di
                     LIBSSH2_SFTP_ATTRIBUTES ta;
                     if (Session.Stat(linkPath, TRUE, &ta) && (ta.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS))
                         d->LinkIsDir = SFTP_S_ISDIR(ta.permissions);
-                    else
+                    else if (Session.IsConnected()) // feature 140: a stat that ended the session says nothing about the link
                         d->LinkBroken = TRUE;
                 }
             }
@@ -1139,6 +1181,26 @@ void WINAPI CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
     {
         ShowTooLongPath(parent);
         return;
+    }
+
+    // feature 140: only a regular file is read (see DownloadOneFileImpl in operats.cpp): the
+    // view of a device or a FIFO - also behind a link - filled the cache without an end. What
+    // the listing shows as a regular file is not asked about again.
+    CSFTPItemData* itemData = (CSFTPItemData*)file.PluginData;
+    if (itemData == NULL || !itemData->HasMode || !SFTP_S_ISREG(itemData->Mode))
+    {
+        LIBSSH2_SFTP_ATTRIBUTES viewAttrs;
+        BOOL known = Session.Stat(remote, TRUE, &viewAttrs);
+        if (!Session.IsConnected()) // the request ended the session: nothing more is sent
+        {
+            SFTPShowPathError(parent, IDS_ERR_DOWNLOAD, file.Name, Session.GetLastErrorText());
+            return;
+        }
+        if (known && SftpDownloadKind((viewAttrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) != 0, viewAttrs.permissions) == sdkSpecial)
+        {
+            SFTPShowPathError(parent, IDS_ERR_DOWNLOAD, file.Name, "not a regular file (a device, FIFO or socket).");
+            return;
+        }
     }
 
     BOOL fileExists = FALSE;

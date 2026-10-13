@@ -236,6 +236,63 @@ static void TestPaths()
     CHECK((SftpLocalDirIsLink(FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT, IO_REPARSE_TAG_SYMLINK) != FALSE) ==
           (IsReparseTagNameSurrogate(IO_REPARSE_TAG_SYMLINK) != 0)); // the system's own test agrees
 
+    // feature 140: after which libssh2 RETURN codes nothing more is asked of the session:
+    // every negative one but three
+    CHECK(!SftpRcIsDeadTransport(-31)); // LIBSSH2_ERROR_SFTP_PROTOCOL: the server refused - the session lives
+    CHECK(!SftpRcIsDeadTransport(-38)); // LIBSSH2_ERROR_BUFFER_TOO_SMALL: a name over the buffer
+    CHECK(!SftpRcIsDeadTransport(-39)); // LIBSSH2_ERROR_BAD_USE
+    {
+        int alive = 0;
+        for (int rc = -200; rc < 0; rc++)
+            if (!SftpRcIsDeadTransport(rc))
+                alive++;
+        CHECK(alive == 3); // nothing else, also not a code a later library adds
+    }
+    CHECK(SftpRcIsDeadTransport(-9));   // LIBSSH2_ERROR_TIMEOUT
+    CHECK(SftpRcIsDeadTransport(-30));  // LIBSSH2_ERROR_SOCKET_TIMEOUT
+    CHECK(SftpRcIsDeadTransport(-7));   // LIBSSH2_ERROR_SOCKET_SEND
+    CHECK(SftpRcIsDeadTransport(-43));  // LIBSSH2_ERROR_SOCKET_RECV
+    CHECK(SftpRcIsDeadTransport(-13));  // LIBSSH2_ERROR_SOCKET_DISCONNECT
+    CHECK(SftpRcIsDeadTransport(-26));  // LIBSSH2_ERROR_CHANNEL_CLOSED
+    CHECK(SftpRcIsDeadTransport(-37));  // LIBSSH2_ERROR_EAGAIN as a return code: a half-done request
+    CHECK(SftpRcIsDeadTransport(-6));   // LIBSSH2_ERROR_ALLOC: also "Invalid SFTP packet size"
+    CHECK(SftpRcIsDeadTransport(-5) && SftpRcIsDeadTransport(-8) && SftpRcIsDeadTransport(-10) &&
+          SftpRcIsDeadTransport(-11) && SftpRcIsDeadTransport(-14) && SftpRcIsDeadTransport(-49)); // a failed re-key in the keepalive
+    CHECK(SftpRcIsDeadTransport(-41) && SftpRcIsDeadTransport(-25)); // OUT_OF_BOUNDARY, CHANNEL_PACKET_EXCEEDED
+    CHECK(SftpRcIsDeadTransport(-34));  // LIBSSH2_ERROR_INVAL: not an outcome of a request
+    CHECK(SftpRcIsDeadTransport(-2147483647 - 1));
+    CHECK(!SftpRcIsDeadTransport(0));   // success
+    CHECK(!SftpRcIsDeadTransport(1) && !SftpRcIsDeadTransport(8) && !SftpRcIsDeadTransport(4096)); // lengths, SSH_FX_* numbers
+    // feature 140: a code read from the session's last error decides only when it is beyond doubt
+    CHECK(SftpErrnoIsDeadTransport(-9) && SftpErrnoIsDeadTransport(-30) && SftpErrnoIsDeadTransport(-7) &&
+          SftpErrnoIsDeadTransport(-43) && SftpErrnoIsDeadTransport(-13));
+    CHECK(!SftpErrnoIsDeadTransport(-37)); // LIBSSH2_ERROR_EAGAIN: left there by a read that succeeded
+    CHECK(!SftpErrnoIsDeadTransport(-31) && !SftpErrnoIsDeadTransport(-38) && !SftpErrnoIsDeadTransport(-39));
+    CHECK(!SftpErrnoIsDeadTransport(-6) && !SftpErrnoIsDeadTransport(-18)); // memory; a refused password of the connect
+    CHECK(!SftpErrnoIsDeadTransport(0) && !SftpErrnoIsDeadTransport(5));
+    {
+        int dead = 0;
+        for (int code = -200; code <= 200; code++)
+            if (SftpErrnoIsDeadTransport(code))
+                dead++;
+        CHECK(dead == 5);
+    }
+    // feature 140: only a regular file (or what cannot be told) is read by a download
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFREG | 0644) == sdkRegular);
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFREG) == sdkRegular);
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFDIR | 0755) == sdkDirectory);
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFLNK | 0777) == sdkLink);
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFCHR | 0666) == sdkSpecial); // /dev/zero
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFBLK | 0660) == sdkSpecial);
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFIFO | 0644) == sdkSpecial);
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFSOCK | 0777) == sdkSpecial);
+    CHECK(SftpDownloadKind(TRUE, 0644) == sdkUnknown);            // permissions without type bits
+    CHECK(SftpDownloadKind(TRUE, 0) == sdkUnknown);
+    CHECK(SftpDownloadKind(TRUE, 0150000 | 0644) == sdkUnknown);  // a type nobody defines
+    CHECK(SftpDownloadKind(FALSE, SFTP_S_IFCHR | 0666) == sdkUnknown); // not reported: the bits mean nothing
+    CHECK(SftpDownloadKind(FALSE, SFTP_S_IFREG | 0644) == sdkUnknown);
+    CHECK(SftpDownloadKind(TRUE, SFTP_S_IFCHR | SFTP_S_ISUID | 07777) == sdkSpecial); // only the type bits decide
+
     // feature 133: only "end" completes a listing
     CHECK(SftpReadDirStep(1) == rdsEntry && SftpReadDirStep(255) == rdsEntry && SftpReadDirStep(2047) == rdsEntry);
     CHECK(SftpReadDirStep(0) == rdsEnd);

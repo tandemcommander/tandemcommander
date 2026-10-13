@@ -168,7 +168,13 @@ struct COperationCtx
     BOOL WrittenLost;         // feature 139: a written file could not be remembered (low memory): nothing is overwritten any more
     BOOL RemovalRefusedShown; // feature 138: a source could not be removed - said once, then only logged
     BOOL LinkSkippedShown;    // feature 139: a link folder was skipped by an upload - said once, then only logged
-    BOOL ConnLostShown;       // feature 139: the user was told that the connection is gone (see TransferSessionLost)
+    BOOL ConnLostShown;       // feature 139: the user was told that the connection is gone (see ReportSessionLost)
+    // feature 140: what the server refused in a change of attributes / owner. Every refusal is
+    // in the log; the user gets ONE box after the operation (the first item, its reason, how
+    // many more) - the command used to look successful.
+    int RefusedCount;
+    char* RefusedPath; // the first refused path (malloc; NULL also when it could not be kept)
+    char RefusedReason[600];
     char Buffer[XFER_BUFSIZE];
 
     COperationCtx(HWND parent, CSFTPSession* session)
@@ -183,9 +189,13 @@ struct COperationCtx
         RemovalRefusedShown = FALSE;
         LinkSkippedShown = FALSE;
         ConnLostShown = FALSE;
+        RefusedCount = 0;
+        RefusedPath = NULL;
+        RefusedReason[0] = 0;
     }
     ~COperationCtx()
     {
+        free(RefusedPath);
         while (Written != NULL)
         {
             CWrittenFile* next = Written->Next;
@@ -242,6 +252,43 @@ struct COperationCtx
             Cancelled = TRUE;
         return Cancelled;
     }
+    // feature 140: is the session gone (a request timed out, the transport broke)? From then
+    // on the session answers no request, and the operation must stop: nothing more is asked,
+    // nothing is removed or replaced on either side, and what a failed call "says" is not a
+    // fact (a failed stat is not "no such file", a failed listing not "empty"). Every loop
+    // asks before each item and after each failed request.
+    BOOL SessionLost() { return !Session->IsConnected(); }
+    // feature 140 (139 for the transfers): tells the user that the connection was lost - ONE
+    // box per operation. Not shown when a failed item's own box has said it already
+    // (ShowRequestError), and not for an operation the user stopped.
+    void ReportSessionLost()
+    {
+        if (ConnLostShown || Cancelled)
+            return;
+        ConnLostShown = TRUE;
+        char text[700]; // (UTF-8, like the texts of SFTPShowPathError)
+        LostText(text, sizeof(text));
+        Logs.Append(Session->GetLogUID(), text);
+        SalamanderGeneral->SalMessageBox(Parent, text, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+    }
+    // the sentence about the lost connection: the session's text says it (with the library's
+    // detail) from the request that ended it; should it hold something else, the plain sentence
+    void LostText(char* buf, int bufSize)
+    {
+        char lost[300];
+        SplU8CopyTrunc(lost, sizeof(lost), LoadStrU8(IDS_ERR_CONNLOST));
+        const char* text = Session->GetLastErrorText();
+        SplU8CopyTrunc(buf, bufSize, strncmp(text, lost, strlen(lost)) == 0 ? text : lost);
+    }
+    // feature 140: the server refused to change 'path' ('reason': why)
+    void NoteRefused(const char* path, const char* reason)
+    {
+        if (RefusedCount++ == 0)
+        {
+            RefusedPath = _strdup(path);
+            SplU8CopyTrunc(RefusedReason, sizeof(RefusedReason), reason != NULL ? reason : "");
+        }
+    }
 };
 
 static void WaitText(const char* fmt, const char* arg)
@@ -270,31 +317,20 @@ static void ReportTooLongPath(COperationCtx* ctx, const char* dir, const char* n
     }
 }
 
-// feature 139: is the session gone? Then nothing more of a transfer is tried: every further
-// item would wait for its own failure and show its own box. TRUE = not connected; 'what' (may
-// be NULL) goes to the log. The box is shown once per operation - and not at all when the item
-// that lost the connection has shown its error (TransferNoteFailure).
-static BOOL TransferSessionLost(COperationCtx* ctx, const char* what)
+// feature 139: is the session gone? Then nothing more is tried: every further item would wait
+// for its own failure and show its own box. TRUE = not connected; 'what' (may be NULL) goes to
+// the log. The box is shown once per operation - and not at all when the item that lost the
+// connection has shown its error (ShowRequestError).
+// feature 140: asked by every loop of every operation (it was the transfers only), before
+// each item and after each failed request.
+static BOOL StopIfSessionLost(COperationCtx* ctx, const char* what)
 {
-    if (ctx->Session->IsConnected())
+    if (!ctx->SessionLost())
         return FALSE;
     if (what != NULL)
-        Logs.AppendFmt(ctx->Session->GetLogUID(), "Not connected, not transferred: %s", CSFTPMsgText(what).Get());
-    if (!ctx->ConnLostShown)
-    {
-        ctx->ConnLostShown = TRUE;
-        SalamanderGeneral->SalMessageBox(ctx->Parent, LoadStr(IDS_ERR_CONNLOST), LoadStr(IDS_SFTPERRORTITLE),
-                                         MB_OK | MB_ICONEXCLAMATION);
-    }
+        Logs.AppendFmt(ctx->Session->GetLogUID(), "Not connected, not done: %s", CSFTPMsgText(what).Get());
+    ctx->ReportSessionLost();
     return TRUE;
-}
-
-// feature 139: an item has failed and shown its error; when the session is gone by then, that
-// box was the one telling about it
-static void TransferNoteFailure(COperationCtx* ctx)
-{
-    if (!ctx->Session->IsConnected())
-        ctx->ConnLostShown = TRUE;
 }
 
 void SFTPShowPathError(HWND parent, int fmtID, const char* path, const char* reason, int logUID)
@@ -306,6 +342,51 @@ void SFTPShowPathError(HWND parent, int fmtID, const char* path, const char* rea
     if (msg != NULL && logUID != -1)
         Logs.Append(logUID, msg);
     free(msg);
+}
+
+// feature 140: the error of a step that asked the server. While the session lives: the item's
+// box, as before. Once the connection is lost, the operation shows ONE box about it, and this
+// is the rule: the first failure met on the dead session shows its own box - the item, and as
+// the reason that the connection was lost (the session's text; a reason of the caller's that
+// says something else, e.g. where the complete new file was left, follows it) - and every
+// later one goes to the log only. Where a step has no box of its own, ReportSessionLost shows
+// the plain one instead; never both.
+static void ShowRequestError(COperationCtx* ctx, int fmtID, const char* path, const char* reason)
+{
+    int logUID = ctx->Session->GetLogUID();
+    if (!ctx->SessionLost())
+    {
+        SFTPShowPathError(ctx->Parent, fmtID, path, reason, logUID);
+        return;
+    }
+    char lost[300];
+    SplU8CopyTrunc(lost, sizeof(lost), LoadStrU8(IDS_ERR_CONNLOST));
+    const char* sessionText = ctx->Session->GetLastErrorText();
+    if (strncmp(sessionText, lost, strlen(lost)) != 0)
+        sessionText = lost;
+    char* both = NULL;
+    if (reason == NULL || reason[0] == 0)
+        reason = sessionText;
+    else if (strstr(reason, lost) == NULL) // the caller's reason does not say it
+    {
+        both = SftpFormatMsgAlloc("%s - %s", sessionText, reason);
+        if (both != NULL)
+            reason = both;
+    }
+    if (!ctx->ConnLostShown)
+    {
+        ctx->ConnLostShown = TRUE;
+        SFTPShowPathError(ctx->Parent, fmtID, path, reason, logUID);
+    }
+    else
+    {
+        CSFTPMsgText text(path);
+        char* msg = SftpFormatMsgAlloc(LoadStrU8(fmtID), text.Get(), reason);
+        if (msg != NULL)
+            Logs.Append(logUID, msg);
+        free(msg);
+    }
+    free(both);
 }
 
 // feature 139: the text of a system error as a piece of a UTF-8 message
@@ -391,23 +472,56 @@ static BOOL ConfirmOverwrite(COperationCtx* ctx, const char* localPath)
 
 // feature 138: 'move' - the source will be removed after this download, so the local file must be
 // on the disk for certain: flushed and closed without an error
+// feature 140: 'knownKind' - what the path is with links followed (CSftpDownloadKind), when the
+// caller knows: the listing's mode of an entry that is not a link, or the caller's own stat of
+// a link. -1 = not known: it is asked here.
 static CXferResult DownloadOneFileImpl(COperationCtx* ctx, const char* remotePath, const char* localPath,
-                                       unsigned __int64 remoteSize, BOOL move);
+                                       unsigned __int64 remoteSize, BOOL move, int knownKind);
 
 static CXferResult DownloadOneFile(COperationCtx* ctx, const char* remotePath, const char* localPath,
-                                   unsigned __int64 remoteSize, BOOL move)
+                                   unsigned __int64 remoteSize, BOOL move, int knownKind)
 {
-    if (TransferSessionLost(ctx, remotePath)) // feature 139: no further attempt (and box) per item
+    if (StopIfSessionLost(ctx, remotePath)) // feature 139: no further attempt (and box) per item
         return xrFailed;
-    CXferResult res = DownloadOneFileImpl(ctx, remotePath, localPath, remoteSize, move);
-    if (res == xrFailed)
-        TransferNoteFailure(ctx);
+    CXferResult res = DownloadOneFileImpl(ctx, remotePath, localPath, remoteSize, move, knownKind);
+    // the item failed on a session that is gone: said once (its own box has done so already,
+    // unless it failed without one); the caller stops
+    if (res == xrFailed && ctx->SessionLost())
+        ctx->ReportSessionLost();
     return res;
 }
 
 static CXferResult DownloadOneFileImpl(COperationCtx* ctx, const char* remotePath, const char* localPath,
-                                       unsigned __int64 remoteSize, BOOL move)
+                                       unsigned __int64 remoteSize, BOOL move, int knownKind)
 {
+    // feature 140: only a regular file is read. A device, a FIFO or a socket - also behind a
+    // symbolic link - was opened like a file: the read of /dev/zero never ends, the open of a
+    // FIFO never returns. What counts is the path with links FOLLOWED (the listing's mode of
+    // a link is the link's own), known before anything is created or asked locally. Asked of
+    // the server only when the caller does not know it. An answer the server does not give
+    // (or one without a file type) changes nothing: the open reports.
+    CSftpDownloadKind kind = sdkUnknown;
+    if (knownKind >= 0)
+        kind = (CSftpDownloadKind)knownKind;
+    else
+    {
+        LIBSSH2_SFTP_ATTRIBUTES remoteAttrs;
+        BOOL known = ctx->Session->Stat(remotePath, TRUE, &remoteAttrs);
+        if (ctx->SessionLost()) // the request ended the session: not "the server gave no answer"
+        {
+            ShowRequestError(ctx, IDS_ERR_DOWNLOAD, remotePath, ctx->Session->GetLastErrorText());
+            return xrFailed;
+        }
+        if (known)
+            kind = SftpDownloadKind((remoteAttrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) != 0, remoteAttrs.permissions);
+    }
+    if (kind == sdkSpecial)
+    {
+        SFTPShowPathError(ctx->Parent, IDS_ERR_DOWNLOAD, remotePath, "not a regular file (a device, FIFO or socket).",
+                          ctx->Session->GetLogUID());
+        return xrFailed; // (a move keeps it on the server)
+    }
+
     wchar_t wlocal[4096];
     MakeLocalWidePath(localPath, wlocal, 4096);
 
@@ -460,7 +574,7 @@ static CXferResult DownloadOneFileImpl(COperationCtx* ctx, const char* remotePat
     LIBSSH2_SFTP_HANDLE* h = ctx->Session->OpenRead(remotePath);
     if (h == NULL)
     {
-        SFTPShowPathError(ctx->Parent, IDS_ERR_DOWNLOAD, remotePath, ctx->Session->GetLastErrorText(), ctx->Session->GetLogUID());
+        ShowRequestError(ctx, IDS_ERR_DOWNLOAD, remotePath, ctx->Session->GetLastErrorText());
         return xrFailed;
     }
 
@@ -534,8 +648,11 @@ static CXferResult DownloadOneFileImpl(COperationCtx* ctx, const char* remotePat
         if (n < 0)
         {
             res = xrFailed;
-            SalamanderGeneral->SalMessageBox(ctx->Parent, LoadStr(IDS_ERR_READREMOTE),
-                                             LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            if (ctx->SessionLost()) // feature 140: that is the reason then - one box per operation
+                ShowRequestError(ctx, IDS_ERR_DOWNLOAD, remotePath, ctx->Session->GetLastErrorText());
+            else
+                SalamanderGeneral->SalMessageBox(ctx->Parent, LoadStr(IDS_ERR_READREMOTE),
+                                                 LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             break;
         }
         if (n == 0)
@@ -628,6 +745,11 @@ static CXferResult DownloadRecursive(COperationCtx* ctx, const char* remotePath,
 // is shown once per operation (an account that may not delete would show it for every file)
 static void ReportNotRemoved(COperationCtx* ctx, int fmtID, const char* remotePath, const char* reason)
 {
+    if (ctx->SessionLost()) // feature 140: not a refusal - the connection is gone (one box per operation)
+    {
+        ShowRequestError(ctx, fmtID, remotePath, reason);
+        return;
+    }
     if (!ctx->RemovalRefusedShown)
     {
         ctx->RemovalRefusedShown = TRUE;
@@ -648,6 +770,11 @@ static void ReportNotRemoved(COperationCtx* ctx, int fmtID, const char* remotePa
 // directory at all - a moved directory stayed on the server whole, without a word.
 static BOOL RemoveMovedFile(COperationCtx* ctx, const char* remotePath, const char* localPath)
 {
+    // feature 140: nothing is removed once the connection is lost (the close of the downloaded
+    // file may have been the request that timed out). The stat below cannot be answered by a
+    // dead session either - "not known" keeps the source.
+    if (StopIfSessionLost(ctx, remotePath))
+        return FALSE;
     wchar_t wlocal[4096];
     MakeLocalWidePath(localPath, wlocal, 4096);
     WIN32_FILE_ATTRIBUTE_DATA fad;
@@ -706,7 +833,7 @@ static CXferResult DownloadDir(COperationCtx* ctx, const char* remoteDir, const 
 static CXferResult DownloadDirLevel(COperationCtx* ctx, const char* remoteDir, const char* localDir, int depth,
                                     BOOL move, CDownloadLevel* lv)
 {
-    if (TransferSessionLost(ctx, remoteDir)) // feature 139
+    if (StopIfSessionLost(ctx, remoteDir)) // feature 139
         return xrFailed;
     wchar_t* wdir = lv->WDir;
     MakeLocalWidePath(localDir, wdir, 4096);
@@ -724,8 +851,7 @@ static CXferResult DownloadDirLevel(COperationCtx* ctx, const char* remoteDir, c
     TIndirectArray<CSFTPDirEntry> entries(64, 64);
     if (!ctx->Session->ListDir(remoteDir, &entries, &ctx->Cancelled))
     {
-        SFTPShowPathError(ctx->Parent, IDS_ERR_LISTDIR, remoteDir, ctx->Session->GetLastErrorText());
-        TransferNoteFailure(ctx);
+        ShowRequestError(ctx, IDS_ERR_LISTDIR, remoteDir, ctx->Session->GetLastErrorText());
         return xrFailed;
     }
     // feature 133: a stop by the user inside the listing returns TRUE with a part of the
@@ -737,7 +863,7 @@ static CXferResult DownloadDirLevel(COperationCtx* ctx, const char* remoteDir, c
     CXferResult agg = xrOk; // xrOk only if every child fully transferred
     for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
     {
-        if (TransferSessionLost(ctx, NULL)) // feature 139: the rest of the directory is not tried
+        if (StopIfSessionLost(ctx, NULL)) // feature 139: the rest of the directory is not tried
         {
             agg = xrFailed;
             break;
@@ -758,6 +884,10 @@ static CXferResult DownloadDirLevel(COperationCtx* ctx, const char* remoteDir, c
     }
     if (ctx->Cancelled) // feature 133: the loop was left before its end
         return xrFailed;
+    // feature 140: nothing is removed once the connection is lost - also when everything
+    // before went well (an empty directory: the close of its listing may be what timed out)
+    if (move && StopIfSessionLost(ctx, remoteDir))
+        return xrFailed;
     // feature 138: a moved directory is removed once every item of it was moved (each item
     // removed itself above; xrOk = all of them did, the listing was complete, nobody stopped it)
     if (move && agg == xrOk && !ctx->Session->Rmdir(remoteDir))
@@ -777,16 +907,24 @@ static CXferResult DownloadRecursive(COperationCtx* ctx, const char* remotePath,
 
     if (isLink)
     {
+        if (StopIfSessionLost(ctx, remotePath)) // feature 140
+            return xrFailed;
         LIBSSH2_SFTP_ATTRIBUTES attrs;
-        if (ctx->Session->Stat(remotePath, TRUE, &attrs) && (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) &&
-            SFTP_S_ISDIR(attrs.permissions))
+        BOOL statOk = ctx->Session->Stat(remotePath, TRUE, &attrs);
+        if (statOk && (attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) && SFTP_S_ISDIR(attrs.permissions))
         {
             Logs.AppendFmt(ctx->Session->GetLogUID(), LoadStrU8(IDS_SYMLINK_DIR_SKIPPED), CSFTPMsgText(remotePath).Get());
             return xrSkipped; // directory symlink not followed (clarification #4)
         }
+        // feature 140: what the link leads to is handed on - one stat per link. A stat the
+        // server refused (a dangling link) is "unknown": the open reports, as before. A stat
+        // that ended the session is not "not a directory" - DownloadOneFile stops at once on a
+        // session that is gone.
+        int linkKind = statOk ? (int)SftpDownloadKind((attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) != 0, attrs.permissions)
+                              : (int)sdkUnknown;
         // feature 131: the translated text the viewer's download already shows (a UTF-8 sentence)
         WaitText(LoadStrU8(IDS_DOWNLOADINGFILE), CSFTPMsgText(PosixBaseName(remotePath)).Get());
-        CXferResult linkRes = DownloadOneFile(ctx, remotePath, localPath, size, move);
+        CXferResult linkRes = DownloadOneFile(ctx, remotePath, localPath, size, move, linkKind);
         if (linkRes == xrOk && move && !RemoveMovedFile(ctx, remotePath, localPath))
             linkRes = xrFailed;
         return linkRes;
@@ -796,7 +934,9 @@ static CXferResult DownloadRecursive(COperationCtx* ctx, const char* remotePath,
         return DownloadDir(ctx, remotePath, localPath, depth, move);
 
     WaitText(LoadStrU8(IDS_DOWNLOADINGFILE), CSFTPMsgText(PosixBaseName(remotePath)).Get());
-    CXferResult res = DownloadOneFile(ctx, remotePath, localPath, size, move);
+    // feature 140: an entry the listing shows as a regular file is opened as before; anything
+    // else (a device, a FIFO, a socket, no mode at all) is asked about first
+    CXferResult res = DownloadOneFile(ctx, remotePath, localPath, size, move, SFTP_S_ISREG(mode) ? (int)sdkRegular : -1);
     if (res == xrOk && move && !RemoveMovedFile(ctx, remotePath, localPath))
         res = xrFailed;
     return res;
@@ -860,7 +1000,7 @@ BOOL SFTPDownloadFromPanel(HWND parent, CSFTPSession* session, int panel,
 
     for (int i = 0; i < items.Count && !ctx.CheckCancel(); i++)
     {
-        if (TransferSessionLost(&ctx, NULL)) // feature 139: the remaining items are not tried
+        if (StopIfSessionLost(&ctx, NULL)) // feature 139: the remaining items are not tried
         {
             ok = FALSE;
             break;
@@ -960,18 +1100,35 @@ static BOOL UploadDropTemp(COperationCtx* ctx, const char* temp)
     return FALSE;
 }
 
+// feature 140 (review): a temporary file that could not be removed where no error box of the
+// upload follows to name it - the upload was stopped, or it has succeeded (the spare copy of a
+// second transfer), or it goes on in place. The user is told its name in a box of its own;
+// the item's result is not changed by it. Called right after UploadDropTemp returned FALSE
+// (the session's text is the reason of that).
+static void UploadTellStrayTemp(COperationCtx* ctx, const char* temp, const char* remotePath)
+{
+    char why[700];
+    SplU8CopyTrunc(why, sizeof(why), ctx->Session->GetLastErrorText());
+    CSFTPMsgText target(PosixBaseName(remotePath));
+    char* reason = SftpFormatMsgAlloc("%s (a temporary file of the upload of %s; it can be deleted)", why, target.Get());
+    if (ctx->SessionLost())
+        ctx->ConnLostShown = TRUE; // this box says it: its reason is the session's text
+    SFTPShowPathError(ctx->Parent, IDS_ERR_DELETE, temp, reason != NULL ? reason : why, ctx->Session->GetLogUID());
+    free(reason);
+}
+
 // the one error box of a failed upload; 'strayTemp' (may be NULL): a temporary file that
 // could not be removed - of no use, but the user should know it is there
 static void UploadShowFailure(COperationCtx* ctx, const char* remotePath, const char* why, const char* strayTemp)
 {
     if (strayTemp == NULL)
     {
-        SFTPShowPathError(ctx->Parent, IDS_ERR_UPLOAD, remotePath, why, ctx->Session->GetLogUID());
+        ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, why); // (feature 140: one box per operation once the connection is lost)
         return;
     }
     CSFTPMsgText tempText(PosixBaseName(strayTemp));
     char* reason = SftpFormatMsgAlloc("%s (the temporary file %s could not be removed)", why, tempText.Get());
-    SFTPShowPathError(ctx->Parent, IDS_ERR_UPLOAD, remotePath, reason != NULL ? reason : why, ctx->Session->GetLogUID());
+    ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, reason != NULL ? reason : why);
     free(reason);
 }
 
@@ -1213,7 +1370,8 @@ static CXferResult UploadSecondPass(COperationCtx* ctx, HANDLE lf, const char* t
     Logs.AppendFmt(logUID, "%s: %s; the file is written in place.", CSFTPMsgText(remotePath).Get(), why);
     if (ctx->CheckCancel()) // before the old file is truncated: it is intact, the spare copy goes
     {
-        UploadDropTemp(ctx, temp);
+        if (!UploadDropTemp(ctx, temp))
+            UploadTellStrayTemp(ctx, temp, remotePath);
         return xrFailed;
     }
     BOOL truncated = TRUE; // the old content is gone for certain
@@ -1234,7 +1392,10 @@ static CXferResult UploadSecondPass(COperationCtx* ctx, HANDLE lf, const char* t
     {
         if (UploadSendAndConfirm(ctx, lf, h, remotePath, remotePath, localSize, why, whySize) == xrOk)
         {
-            UploadDropTemp(ctx, temp); // the new content is under the final name: the spare copy goes
+            // the new content is under the final name: the spare copy goes. Should it stay,
+            // the user is told its name - the upload itself is done
+            if (!UploadDropTemp(ctx, temp))
+                UploadTellStrayTemp(ctx, temp, remotePath);
             return xrOk;
         }
     }
@@ -1242,7 +1403,7 @@ static CXferResult UploadSecondPass(COperationCtx* ctx, HANDLE lf, const char* t
     char* reason = SftpFormatMsgAlloc(truncated ? "%s - the old content of the file is gone; the complete new file is left as %s"
                                                 : "%s - the old content of the file may be gone; the complete new file is left as %s",
                                       why[0] != 0 ? why : "the upload was stopped", tempText.Get());
-    SFTPShowPathError(ctx->Parent, IDS_ERR_UPLOAD, remotePath, reason != NULL ? reason : tempText.Get(), logUID);
+    ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, reason != NULL ? reason : tempText.Get());
     free(reason);
     return xrFailed;
 }
@@ -1278,7 +1439,7 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
     if (old == sxError)
     {
         CloseHandle(lf);
-        SFTPShowPathError(ctx->Parent, IDS_ERR_UPLOAD, remotePath, session->GetLastErrorText(), logUID);
+        ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, session->GetLastErrorText());
         return xrFailed;
     }
     BOOL existed = old == sxFound;
@@ -1348,7 +1509,7 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
             // is opened under the target's name - after an open that timed out the library
             // would hand the temporary file's handle to the next open
             CloseHandle(lf);
-            SFTPShowPathError(ctx->Parent, IDS_ERR_UPLOAD, remotePath, session->GetLastErrorText(), logUID);
+            ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, session->GetLastErrorText());
             return xrFailed;
         }
         if (h != NULL && existed)
@@ -1367,6 +1528,8 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
                     return xrFailed;
                 }
                 Logs.AppendFmt(logUID, "%s: %s; the file is written in place.", CSFTPMsgText(remotePath).Get(), why);
+                if (!gone)
+                    UploadTellStrayTemp(ctx, temp, remotePath);
                 inPlace = TRUE;
             }
         }
@@ -1396,6 +1559,8 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
             BOOL gone = UploadDropTemp(ctx, temp);
             if (why[0] != 0)
                 UploadShowFailure(ctx, remotePath, why, gone ? NULL : temp);
+            else if (!gone) // stopped by the user: no box of the upload - the file that stays is named all the same
+                UploadTellStrayTemp(ctx, temp, remotePath);
         }
     }
     else
@@ -1419,15 +1584,20 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
         if (h == NULL)
         {
             CloseHandle(lf);
-            SFTPShowPathError(ctx->Parent, IDS_ERR_UPLOAD, remotePath, session->GetLastErrorText(), logUID);
+            ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, session->GetLastErrorText());
             return xrFailed;
         }
         res = UploadSendAndConfirm(ctx, lf, h, remotePath, remotePath, (unsigned __int64)localSize.QuadPart, why, sizeof(why));
         if (res != xrOk && why[0] != 0) // (a failed write in place may leave a partial target, as before 139)
-            SFTPShowPathError(ctx->Parent, IDS_ERR_UPLOAD, remotePath, why, logUID);
+            ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, why);
     }
     CloseHandle(lf);
 
+    // feature 140: nothing is removed once the connection is lost - also on this side (the
+    // upload is confirmed; a request after it, the removal of a spare temporary file, may be
+    // what ended the session). The source stays; UploadOneFile says why.
+    if (res == xrOk && move && ctx->SessionLost())
+        res = xrFailed;
     if (res == xrOk && move && !DeleteFileW(wlocal))
     {
         // uploaded, but the source stays (and so does its folder); said once per operation
@@ -1440,11 +1610,11 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
 
 static CXferResult UploadOneFile(COperationCtx* ctx, const char* localPath, const char* remotePath, BOOL move)
 {
-    if (TransferSessionLost(ctx, remotePath)) // feature 139: no further attempt (and box) per item
+    if (StopIfSessionLost(ctx, remotePath)) // feature 139: no further attempt (and box) per item
         return xrFailed;
     CXferResult res = UploadOneFileImpl(ctx, localPath, remotePath, move);
-    if (res == xrFailed)
-        TransferNoteFailure(ctx);
+    if (res == xrFailed && ctx->SessionLost()) // (see DownloadOneFile)
+        ctx->ReportSessionLost();
     return res;
 }
 
@@ -1515,7 +1685,7 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
     CSFTPSession* session = ctx->Session;
     int logUID = session->GetLogUID();
 
-    if (TransferSessionLost(ctx, remoteDir)) // feature 139
+    if (StopIfSessionLost(ctx, remoteDir)) // feature 139
         return xrFailed;
     MakeLocalWidePath(localDir, lv->WSelf, 4096);
     // CF-6: never traverse a local link (junction / directory symbolic link): following it
@@ -1579,8 +1749,7 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
         {
             if (hFind != INVALID_HANDLE_VALUE)
                 FindClose(hFind);
-            SFTPShowPathError(ctx->Parent, IDS_ERR_MKDIR, remoteDir, why, logUID);
-            TransferNoteFailure(ctx);
+            ShowRequestError(ctx, IDS_ERR_MKDIR, remoteDir, why);
             return xrFailed;
         }
     }
@@ -1590,7 +1759,7 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
     BOOL more = hFind != INVALID_HANDLE_VALUE;
     while (more && !ctx->CheckCancel())
     {
-        if (TransferSessionLost(ctx, NULL)) // feature 139: the rest of the folder is not tried
+        if (StopIfSessionLost(ctx, NULL)) // feature 139: the rest of the folder is not tried
         {
             agg = xrFailed;
             break;
@@ -1638,6 +1807,8 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
         SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localDir, NULL, logUID);
         return xrFailed;
     }
+    if (move && StopIfSessionLost(ctx, remoteDir)) // feature 140: nothing is removed once the connection is lost
+        return xrFailed;
     // a moved folder is removed once every item of it was moved (each removed itself above)
     if (move && agg == xrOk && !RemoveDirectoryW(lv->WSelf))
     {
@@ -1666,7 +1837,7 @@ BOOL SFTPUploadToFS(HWND parent, CSFTPSession* session, const char* sourcePath,
     const char* name;
     while ((name = next(parent, 0, NULL, &isDir, NULL, NULL, NULL, nextParam, &err)) != NULL)
     {
-        if (ctx.CheckCancel() || TransferSessionLost(&ctx, NULL)) // feature 139: the remaining items are not tried
+        if (ctx.CheckCancel() || StopIfSessionLost(&ctx, NULL)) // feature 139: the remaining items are not tried
         {
             ok = FALSE;
             break;
@@ -1711,6 +1882,11 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
 {
     if (ctx->CheckCancel())
         return FALSE;
+    // feature 140: a delete went on after a request had timed out - every further item waited
+    // for its own failure and showed its own box, and the library answered the next request
+    // with the reply that belonged to the one before
+    if (StopIfSessionLost(ctx, remotePath))
+        return FALSE;
     if (depth > SFTP_MAX_RECURSION) // CF-5
     {
         SalamanderGeneral->SalMessageBox(ctx->Parent, LoadStr(IDS_ERR_TOODEEP),
@@ -1727,7 +1903,7 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
         // rule, not ours (not everything checked = not deleted). The listing's own reason is shown.
         if (!ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
         {
-            SFTPShowPathError(ctx->Parent, IDS_ERR_LISTDIR, remotePath, ctx->Session->GetLastErrorText());
+            ShowRequestError(ctx, IDS_ERR_LISTDIR, remotePath, ctx->Session->GetLastErrorText());
             return FALSE;
         }
         // feature 133: the directory is removed only when every item of it is known to be gone.
@@ -1737,6 +1913,11 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
         BOOL itemsGone = TRUE;
         for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
         {
+            if (StopIfSessionLost(ctx, NULL)) // feature 140: the rest is not asked for
+            {
+                itemsGone = FALSE;
+                break;
+            }
             CSFTPDirEntry* e = entries[i];
             char child[4096];
             if (PosixPathAppend(remotePath, e->Name, child, sizeof(child)) == NULL)
@@ -1751,9 +1932,13 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
         }
         if (ctx->Cancelled || !itemsGone)
             return FALSE; // stopped by the user (also inside the listing), or an item stays
+        // feature 140: also for a directory listed as empty - the close of the listing may be
+        // the request that ended the session
+        if (StopIfSessionLost(ctx, remotePath))
+            return FALSE;
         if (!ctx->Session->Rmdir(remotePath))
         {
-            SFTPShowPathError(ctx->Parent, IDS_ERR_RMDIR, remotePath, ctx->Session->GetLastErrorText());
+            ShowRequestError(ctx, IDS_ERR_RMDIR, remotePath, ctx->Session->GetLastErrorText());
             return FALSE;
         }
     }
@@ -1761,7 +1946,7 @@ static BOOL DeleteRecursive(COperationCtx* ctx, const char* remotePath, unsigned
     {
         if (!ctx->Session->Unlink(remotePath))
         {
-            SFTPShowPathError(ctx->Parent, IDS_ERR_DELETE, remotePath, ctx->Session->GetLastErrorText());
+            ShowRequestError(ctx, IDS_ERR_DELETE, remotePath, ctx->Session->GetLastErrorText());
             return FALSE;
         }
     }
@@ -1780,6 +1965,11 @@ BOOL SFTPDeleteFromPanel(HWND parent, CSFTPSession* session, int panel, const ch
 
     for (int i = 0; i < items.Count && !ctx.CheckCancel(); i++)
     {
+        if (StopIfSessionLost(&ctx, NULL)) // feature 140: the remaining items are not asked for
+        {
+            ok = FALSE;
+            break;
+        }
         CSFTPDirEntry* e = items[i];
         char rpath[4096];
         if (PosixPathAppend(remoteDir, e->Name, rpath, sizeof(rpath)) == NULL)
@@ -1802,39 +1992,94 @@ BOOL SFTPDeleteFromPanel(HWND parent, CSFTPSession* session, int panel, const ch
 // chmod
 // ---------------------------------------------------------------------------
 
-// feature 133: recursive chmod / chown report their failures in the session's log (no box per
-// item); a directory whose listing failed is one of them - its items were not changed
-static void LogListFailure(COperationCtx* ctx, const char* remotePath)
+// feature 140: a change of attributes / owner that the server refused: a line in the log (as
+// before) and counted for the one box after the operation (ShowRefused). 'what' (may be NULL)
+// goes before the reason. Not for a session that is gone - that is not a refusal, and the
+// operation says it once (ReportSessionLost).
+static void NoteAttrRefused(COperationCtx* ctx, int fmtID, const char* remotePath, const char* what, const char* reason)
 {
+    if (ctx->SessionLost())
+        return;
+    char* full = what != NULL ? SftpFormatMsgAlloc("%s: %s", what, reason) : NULL;
+    if (full != NULL)
+        reason = full;
     CSFTPMsgText text(remotePath);
-    char* msg = SftpFormatMsgAlloc(LoadStrU8(IDS_ERR_LISTDIR), text.Get(), ctx->Session->GetLastErrorText());
+    char* msg = SftpFormatMsgAlloc(LoadStrU8(fmtID), text.Get(), reason);
     if (msg != NULL)
         Logs.Append(ctx->Session->GetLogUID(), msg);
     free(msg);
+    ctx->NoteRefused(remotePath, reason);
+    free(full);
+}
+
+// feature 140: the end of a change of attributes / owner: ONE box - the lost connection, or
+// what the server refused (the first item with its reason, and how many more; all of them are
+// in the log). Change Attributes and Change Owner used to report nothing at all.
+static void ShowRefused(COperationCtx* ctx, int fmtID)
+{
+    // the lost connection is said here unless the user stopped the operation
+    BOOL sayLost = ctx->SessionLost() && !ctx->Cancelled && !ctx->ConnLostShown;
+    if (ctx->RefusedCount == 0)
+    {
+        if (sayLost)
+            ctx->ReportSessionLost();
+        return;
+    }
+    const char* reason = ctx->RefusedReason;
+    char* withCount = NULL;
+    if (ctx->RefusedCount > 1)
+    {
+        char more[100];
+        _snprintf_s(more, _TRUNCATE, "(and %d more refused; see the log)", ctx->RefusedCount - 1);
+        withCount = SftpFormatMsgAlloc("%s %s", reason, more);
+        if (withCount != NULL)
+            reason = withCount;
+    }
+    const char* path = ctx->RefusedPath != NULL ? ctx->RefusedPath : "";
+    if (!sayLost)
+        SFTPShowPathError(ctx->Parent, fmtID, path, reason); // (every refusal is in the log already)
+    else
+    {
+        // both in the ONE box: the connection was lost, and what the server had refused before
+        char lost[700];
+        ctx->LostText(lost, sizeof(lost));
+        CSFTPMsgText text(path);
+        char* refused = SftpFormatMsgAlloc(LoadStrU8(fmtID), text.Get(), reason);
+        char* both = refused != NULL ? SftpFormatMsgAlloc("%s\n\nBefore that: %s", lost, refused) : NULL;
+        ctx->ConnLostShown = TRUE;
+        Logs.Append(ctx->Session->GetLogUID(), lost);
+        SalamanderGeneral->SalMessageBox(ctx->Parent, both != NULL ? both : lost, LoadStr(IDS_SFTPERRORTITLE),
+                                         MB_OK | MB_ICONEXCLAMATION);
+        free(both);
+        free(refused);
+    }
+    free(withCount);
 }
 
 static void ChmodRecursive(COperationCtx* ctx, const char* remotePath, unsigned long mode,
                            BOOL isDir, BOOL recurse, int depth)
 {
-    if (ctx->CheckCancel())
+    if (ctx->CheckCancel() || ctx->SessionLost()) // feature 140: nothing more is asked of a session that is gone
         return;
     if (depth > SFTP_MAX_RECURSION) // CF-5
-        return;
-    if (!ctx->Session->Chmod(remotePath, mode))
     {
-        char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_CHMOD), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
-        SplU8TrimTornTail(msg);
-        Logs.Append(ctx->Session->GetLogUID(), msg);
+        NoteAttrRefused(ctx, IDS_ERR_CHMOD, remotePath, NULL, "the directory tree is too deep; nothing below was changed.");
+        return;
     }
-    if (isDir && recurse)
+    if (!ctx->Session->Chmod(remotePath, mode))
+        NoteAttrRefused(ctx, IDS_ERR_CHMOD, remotePath, NULL, ctx->Session->GetLastErrorText());
+    if (isDir && recurse && !ctx->SessionLost())
     {
         TIndirectArray<CSFTPDirEntry> entries(64, 64);
         if (!ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
-            LogListFailure(ctx, remotePath); // feature 133: the subtree is skipped - said in the log
+        {
+            // feature 133: the subtree is skipped - said in the log; feature 140: and counted
+            NoteAttrRefused(ctx, IDS_ERR_CHMOD, remotePath, "its items were not changed, the directory cannot be listed",
+                            ctx->Session->GetLastErrorText());
+        }
         else
         {
-            for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
+            for (int i = 0; i < entries.Count && !ctx->CheckCancel() && !ctx->SessionLost(); i++)
             {
                 CSFTPDirEntry* e = entries[i];
                 if (e->HasMode && SFTP_S_ISLNK(e->Mode))
@@ -1880,7 +2125,7 @@ BOOL SFTPChangeAttrsFromPanel(HWND parent, CSFTPSession* session, int panel, con
     SalamanderGeneral->CreateSafeWaitWindow(LoadStr(IDS_PLUGINNAME), LoadStr(IDS_PLUGINNAME), 500, TRUE,
                                             SalamanderGeneral->GetMainWindowHWND());
 
-    for (int i = 0; i < items.Count && !ctx.CheckCancel(); i++)
+    for (int i = 0; i < items.Count && !ctx.CheckCancel() && !ctx.SessionLost(); i++) // feature 140: stops on a lost connection
     {
         CSFTPDirEntry* e = items[i];
         char rpath[4096];
@@ -1891,11 +2136,13 @@ BOOL SFTPChangeAttrsFromPanel(HWND parent, CSFTPSession* session, int panel, con
         }
         BOOL itemIsDir = e->HasMode && SFTP_S_ISDIR(e->Mode);
         ChmodRecursive(&ctx, rpath, mode, itemIsDir, recurse, 0);
-        if (setTime)
-            session->SetMTime(rpath, mtime);
+        // feature 140: a refused time was not even in the log
+        if (setTime && !ctx.Cancelled && !ctx.SessionLost() && !session->SetMTime(rpath, mtime))
+            NoteAttrRefused(&ctx, IDS_ERR_CHMOD, rpath, "the time was not set", session->GetLastErrorText());
     }
 
     SalamanderGeneral->DestroySafeWaitWindow();
+    ShowRefused(&ctx, IDS_ERR_CHMOD); // feature 140
     return TRUE;
 }
 
@@ -1905,25 +2152,26 @@ static void ChownRecursive(COperationCtx* ctx, const char* remotePath,
                            unsigned long uid, unsigned long gid, BOOL setUid, BOOL setGid,
                            BOOL isDir, BOOL recurse, int depth)
 {
-    if (ctx->CheckCancel())
+    if (ctx->CheckCancel() || ctx->SessionLost()) // feature 140 (see ChmodRecursive)
         return;
     if (depth > SFTP_MAX_RECURSION) // CF-5
-        return;
-    if (!ctx->Session->Chown(remotePath, uid, gid, setUid, setGid))
     {
-        char msg[1200];
-        _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_ERR_CHOWN), CSFTPMsgText(remotePath).Get(), ctx->Session->GetLastErrorText());
-        SplU8TrimTornTail(msg);
-        Logs.Append(ctx->Session->GetLogUID(), msg);
+        NoteAttrRefused(ctx, IDS_ERR_CHOWN, remotePath, NULL, "the directory tree is too deep; nothing below was changed.");
+        return;
     }
-    if (isDir && recurse)
+    if (!ctx->Session->Chown(remotePath, uid, gid, setUid, setGid))
+        NoteAttrRefused(ctx, IDS_ERR_CHOWN, remotePath, NULL, ctx->Session->GetLastErrorText());
+    if (isDir && recurse && !ctx->SessionLost())
     {
         TIndirectArray<CSFTPDirEntry> entries(64, 64);
         if (!ctx->Session->ListDir(remotePath, &entries, &ctx->Cancelled))
-            LogListFailure(ctx, remotePath); // feature 133: the subtree is skipped - said in the log
+        {
+            NoteAttrRefused(ctx, IDS_ERR_CHOWN, remotePath, "its items were not changed, the directory cannot be listed",
+                            ctx->Session->GetLastErrorText());
+        }
         else
         {
-            for (int i = 0; i < entries.Count && !ctx->CheckCancel(); i++)
+            for (int i = 0; i < entries.Count && !ctx->CheckCancel() && !ctx->SessionLost(); i++)
             {
                 CSFTPDirEntry* e = entries[i];
                 if (e->HasMode && SFTP_S_ISLNK(e->Mode))
@@ -1972,7 +2220,7 @@ BOOL SFTPChangeOwnerFromPanel(HWND parent, CSFTPSession* session, int panel, con
     SalamanderGeneral->CreateSafeWaitWindow(LoadStr(IDS_PLUGINNAME), LoadStr(IDS_PLUGINNAME), 500, TRUE,
                                             SalamanderGeneral->GetMainWindowHWND());
 
-    for (int i = 0; i < items.Count && !ctx.CheckCancel(); i++)
+    for (int i = 0; i < items.Count && !ctx.CheckCancel() && !ctx.SessionLost(); i++) // feature 140
     {
         CSFTPDirEntry* e = items[i];
         char rpath[4096];
@@ -1986,5 +2234,6 @@ BOOL SFTPChangeOwnerFromPanel(HWND parent, CSFTPSession* session, int panel, con
     }
 
     SalamanderGeneral->DestroySafeWaitWindow();
+    ShowRefused(&ctx, IDS_ERR_CHOWN); // feature 140
     return TRUE;
 }

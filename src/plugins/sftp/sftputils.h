@@ -150,6 +150,38 @@ BOOL SftpModeDiffers(BOOL oldKnown, unsigned long oldMode, BOOL newKnown, unsign
 // reparse tag (cloud files: every OneDrive folder carries one) is an ordinary directory.
 BOOL SftpLocalDirIsLink(DWORD attributes, DWORD reparseTag);
 
+// feature 140: does this RETURN code of a libssh2 call (LIBSSH2_ERROR_*, a negative number)
+// mean that the connection can no longer be used? After such a failure NO further request may
+// be sent on the session: a request whose answer timed out stays "sent" in the library, and
+// the next call of the same kind does not send its own request but returns the late answer to
+// the old one (the attributes, the handle or the "not found" of another path).
+// The rule is fail-closed: EVERY negative code is "dead" except the three that are an ordinary
+// outcome of one request on a healthy session - LIBSSH2_ERROR_SFTP_PROTOCOL (-31, the server
+// refused), LIBSSH2_ERROR_BUFFER_TOO_SMALL (-38), LIBSSH2_ERROR_BAD_USE (-39). (A list of the
+// "dead" codes missed what the wait for an answer can return from its automatic keepalive: a
+// failed key re-exchange, the random generator - with the request still "sent".)
+// 0 and positive numbers are FALSE. Only for a code a call RETURNED - see the next function.
+BOOL SftpRcIsDeadTransport(int rc);
+
+// feature 140: the same question for a code read from the session's LAST error
+// (libssh2_session_last_errno), which the library does not clear on success: it can be the
+// code of an earlier call (LIBSSH2_ERROR_EAGAIN stays there after a read that succeeded).
+// Only the codes that say it beyond doubt: a timeout, a socket failure, a disconnect.
+BOOL SftpErrnoIsDeadTransport(int code);
+
+// feature 140: what a download is asked to read, by the mode the server reports for the path
+// (links followed). Only "special" is refused: reading a device or a FIFO never ends, or the
+// open never returns. Unknown (no mode, or no type bits) is read as before.
+enum CSftpDownloadKind
+{
+    sdkRegular,
+    sdkDirectory,
+    sdkLink,    // (only when the link itself was asked about)
+    sdkSpecial, // character device, block device, FIFO, socket
+    sdkUnknown, // the server reported no mode, or one without type bits (or with unknown ones)
+};
+CSftpDownloadKind SftpDownloadKind(BOOL hasMode, unsigned long mode);
+
 // feature 133: a message made of a template with one or two "%s" and its texts, in a buffer of
 // exactly the size needed (malloc; NULL = low memory). The messages were composed in 1,200
 // bytes: with a long path the path was cut and the reason behind it was lost. 'b' may be

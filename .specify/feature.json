@@ -1,3 +1,1 @@
-{
-  "feature_directory": "specs/139-sftp-no-silent-overwrite"
-}
+{"feature_directory": "specs/140-sftp-dead-session"}

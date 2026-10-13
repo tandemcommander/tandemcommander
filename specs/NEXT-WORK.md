@@ -377,13 +377,17 @@ Code work an agent can do:
            is confirmed; link folders are skipped aloud, cloud folders uploaded; per-level
            buffers on the heap. Left by 139 (final review, 2026-10-13; all older than this
            cycle):
-           - **after a timeout or transport error the loops went on and libssh2 answered the
-             next request of the same kind with the earlier reply** - 139 stops the item
-             loops once the session is marked dead and records a failed `Stat`; a full pass
-             over every request type (read, write, readdir, open) is still owed;
-           - **non-regular remote files** (`/dev/zero`, a FIFO) are downloaded without end;
-           - **Change Attributes** applies one mode to files and directories alike and hides
-             failures;
+           - ~~after a timeout or transport error the loops went on and libssh2 answered the
+             next request of the same kind with the earlier reply; non-regular remote files
+             (`/dev/zero`, a FIFO) are downloaded without end; Change Attributes hides
+             failures~~ - **done, feature 140**. Left by 140: **a decision** - a recursive
+             Change Attributes gives one mode to files and directories alike (644 on a tree
+             makes its directories unusable; needs interface and texts); owed to a person:
+             Ctrl+R on a connection that died while idle (the panel must stay on the server
+             after the reconnect), a refused Change Attributes on a file of another owner; a
+             reply shorter than the protocol allows leaves a request half-done until the next
+             timeout (no wrong answer, a wait); F3 on a file that cannot be opened shows
+             nothing; one unclosed handle per lost connection stays allocated until exit;
            - a replaced server file with other hard links is split from them (SFTP v3 does not
              report the link count); ACLs and extended attributes are not carried; a
              write-only "drop" directory fails the size confirmation; orphaned `.tcpart-*`

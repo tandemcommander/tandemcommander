@@ -129,3 +129,9 @@ it replaces a server file and replaces it only by a complete new one; a download
 file goes through a temporary file; Quick Rename refuses an existing name; a move to the server
 removes each local source only after its own upload is confirmed. Record:
 `specs/139-sftp-no-silent-overwrite/fix-log.md`.
+
+## Feature 140 (2026-10-14)
+
+`140-sftp-dead-session`: a timed-out SFTP request ends the operation (the library would answer
+the next request with the late reply); devices, FIFOs and sockets are not downloaded; refused
+attribute and owner changes are reported. Record: `specs/140-sftp-dead-session/fix-log.md`.

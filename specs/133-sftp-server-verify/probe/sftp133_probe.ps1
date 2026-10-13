@@ -187,6 +187,7 @@ function Row-Op([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [string]$Type
         if ($Mode -eq 'LocalBigExists') { [IO.File]::WriteAllText($LP + $local + '\big.bin', 'LOCAL-ORIGINAL') }
         if ($Seam) { $env:TC_SFTP_PROBE_LIST_FAIL = $Seam } else { Remove-Item Env:\TC_SFTP_PROBE_LIST_FAIL -ErrorAction SilentlyContinue }
         if ($script:XferSeam) { $env:TC_SFTP_PROBE_XFER_FAIL = $script:XferSeam } else { Remove-Item Env:\TC_SFTP_PROBE_XFER_FAIL -ErrorAction SilentlyContinue }
+        if ($script:DeadSeam) { $env:TC_SFTP_PROBE_TIMEOUT_AT = $script:DeadSeam } else { Remove-Item Env:\TC_SFTP_PROBE_TIMEOUT_AT -ErrorAction SilentlyContinue }
         $id = Start-P
         # the right (target) panel shows this row's own local folder
         Key $id 0x09; [void](Do-ChangeDir $id $local); Sync $id; Key $id 0x09
@@ -209,6 +210,8 @@ function Row-Op([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [string]$Type
         Remove-Item Env:\TC_SFTP_PROBE_LIST_FAIL -ErrorAction SilentlyContinue
         Remove-Item Env:\TC_SFTP_PROBE_XFER_FAIL -ErrorAction SilentlyContinue
         $script:XferSeam = ''
+        Remove-Item Env:\TC_SFTP_PROBE_TIMEOUT_AT -ErrorAction SilentlyContinue
+        $script:DeadSeam = ''
         if ($id) { $fatal = Fatal-Win $id; End-Row $Case $id $fatal $before }
     }
 }
@@ -319,6 +322,20 @@ try {
     Row-Up 'UPMOVE' 'um' 1 728 $mvblk { param($t, $s, $l, $c) $left = ('' + $s.um_left).Trim(); $loc = Rel $l; @{ Ok = ($left -eq './tree ./tree/3.txt ./tree/blocked ./tree/ok ./tree/ok/1.txt' -and $s.um_blocked -eq 'a-file' -and $loc -eq 'tree tree/blocked tree/blocked/deep' -and (Has $t 'Cannot')); Facts = ("move a local tree, one folder of which the server cannot create: on the server '{0}' (blocked is still '{1}'); left on the disk '{2}' (expected 'tree tree/blocked tree/blocked/deep'); an error shown {3}" -f $left, $s.um_blocked, $loc, (Has $t 'Cannot')) } }
     $lnk = { param($d) NewDir ($d + '\tree\real'); NewDir ($d + '\elsewhere'); [IO.File]::WriteAllText($LP + $d + '\tree\real\r.txt', 'r'); [IO.File]::WriteAllText($LP + $d + '\elsewhere\t.txt', 't'); [void](& cmd /c mklink /J ($d + '\tree\link') ($d + '\elsewhere') 2>&1) }
     Row-Up 'UPLINK' 'ul' 2 727 $lnk { param($t, $s, $l, $c) $left = ('' + $s.ul_left).Trim(); $said = (Has $t 'link|skipped|junction'); @{ Ok = ($left -eq './tree ./tree/real ./tree/real/r.txt' -and $said); Facts = ("copy a local tree with a junction in it: on the server '{0}'; the skipped link was said {1}" -f $left, $said) } }
+    # feature 140: a lost connection stops the operation; special files are not downloaded.
+    # $good: the local files that hold exactly their own content ("file NN" for fNN.txt)
+    $good = { param($dir) $n = 0; $bad = 0; if ([IO.Directory]::Exists($LP + $dir)) { foreach ($f in @([IO.Directory]::GetFiles($LP + $dir, 'f*.txt', 'AllDirectories'))) { $nn = [IO.Path]::GetFileNameWithoutExtension($f).Substring(1); if ([IO.File]::ReadAllText($f).Trim() -eq ('file ' + $nn)) { $n++ } else { $bad++ } } }; @($n, $bad) }
+    $boxes = { param($t) @($t | Where-Object { $_ -match 'SFTP Error' -and $_ -notmatch 'Overwrite it' }).Count }
+    $script:DeadSeam = '/f10.txt'
+    Row-Op 'DEADCOPY' 'dc' 1 727 $null { param($t, $s, $l, $c) $g = & $good ($StartDir + '\DEADCOPY'); $b = & $boxes $t; $said = (Has $t 'onnection'); @{ Skip = ($g[0] -eq 30); Ok = ($g[0] -lt 30 -and $g[1] -eq 0 -and $l.Count -eq $g[0] -and $b -le 1 -and $said -and $s.dc_many -eq '30'); Facts = ("copy 30 files, the request for f10.txt times out: local files {0}, of them with their own content {1}, with other content {2}; error boxes {3} (expected 1); the lost connection said {4}; files on the server {5}" -f $l.Count, $g[0], $g[1], $b, $said, $s.dc_many) } }
+    $script:DeadSeam = '/f10.txt'
+    Row-Op 'DEADDEL' 'dl' 1 729 $null { param($t, $s, $l, $c) $b = & $boxes $t; $said = (Has $t 'onnection'); $left = [int]$s.dl_many; @{ Skip = ($left -le 0); Ok = ($left -ge 1 -and $s.dl_f10 -eq '1' -and $b -le 1 -and $said); Facts = ("delete 30 files, the request for f10.txt times out: files still on the server {0}; f10.txt still there {1}; error boxes {2} (expected 1); the lost connection said {3}" -f $left, $s.dl_f10, $b, $said) } }
+    $script:DeadSeam = '/f10.txt'
+    Row-Op 'DEADMOVE' 'dm' 1 728 $null { param($t, $s, $l, $c) $g = & $good ($StartDir + '\DEADMOVE'); $b = & $boxes $t; $said = (Has $t 'onnection'); $left = [int]$s.dm_many; @{ Skip = ($g[0] -eq 30 -and $left -le 0); Ok = ($g[1] -eq 0 -and ($left + $g[0]) -ge 30 -and $s.dm_f10 -eq '1' -and $b -le 1 -and $said); Facts = ("move 30 files, the request for f10.txt times out: local files with their own content {0}, with other content {1}; files still on the server {2} (together at least 30: {3}); f10.txt still on the server {4}; error boxes {5}; the lost connection said {6}" -f $g[0], $g[1], $left, (($left + $g[0]) -ge 30), $s.dm_f10, $b, $said) } }
+    $NR = 'not a regular file'
+    $size = { param($dir) $n = [long]0; if ([IO.Directory]::Exists($LP + $dir)) { foreach ($f in @([IO.Directory]::GetFiles($LP + $dir, '*', 'AllDirectories'))) { $n += (New-Object IO.FileInfo $f).Length } }; $n }
+    Row-Op 'SPZERO' 'sz' 1 727 $null { param($t, $s, $l, $c) $n = & $size ($StartDir + '\SPZERO'); @{ Ok = ((Has $t $NR) -and $l.Count -eq 0); Facts = ("copy a link to /dev/zero: 'not a regular file' said {0}; local files {1} ({2:n0} bytes when the probe stopped waiting)" -f (Has $t $NR), $l.Count, $n) } }
+    Row-Op 'SPFIFO' 'sf' 1 727 $null { param($t, $s, $l, $c) @{ Ok = ((Has $t $NR) -and $l.Count -eq 0); Facts = ("copy a FIFO: 'not a regular file' said {0}; local files {1}" -f (Has $t $NR), $l.Count) } }
     $seam = '/many;10;1'
     $LE = 'many'
     Row-Op 'LISTCOPY' 'l1' 1 727 $null { param($t, $s, $l, $c) $said = [bool](@($t | Where-Object { $_ -match 'many' -and $_ -notmatch 'Copy|typed' -and $_ -match 'list|read|Cannot|Unable|error' }).Count); @{ Skip = ($l.Count -eq 30); Ok = ($said -and $s.l1_many -eq '30'); Facts = ("copy a directory whose listing fails at the 10th entry: local files {0} of 30; an error names the directory {1}; files on the server {2}{3}" -f $l.Count, $said, $s.l1_many, $(if ($l.Count -eq 30) { ' - the seam is not in this build' } else { '' })) } } $seam
