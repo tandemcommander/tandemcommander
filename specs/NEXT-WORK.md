@@ -44,6 +44,36 @@ workflow disabled when the release is published, and later run
 If the release happens on another day, change the date in the changelog
 heading and in `PRIVACY.md`.
 
+**Revised 2026-10-13** — the tree is **prepared for the 0.1.10 release**
+(build 194, local branch `release-0.1.10` on top of `133-sftp-server-verify`;
+nothing is pushed): `spl_vers.h`, `setup/tandemcommander.iss`, `CHANGELOG.md`
+(`## [0.1.10] — 2026-10-13`), `PRIVACY.md`, `CLAUDE.md` and
+`architecture/12-project-reference.md` state it; GitHub release notes are
+drafted as `temp/release_notes_v0.1.10.md` (not tracked). It carries features
+124–133. Owed to the maintainer, as for 0.1.9: merge the branches,
+`build.cmd full release sign setup`, tag `v0.1.10`, the GitHub release **with
+the installer attached** as `tandemcommander-0.1.10-x64-setup.exe`, the
+feature-123 checks below, winget when `microsoft/winget-pkgs#426090` allows.
+If the release happens on another day, change the date in the changelog
+heading and in `PRIVACY.md`.
+
+***Before 0.1.10* - steps owed to a person** (none could be done in an agent
+session; the first is the one that matters):
+
+1. **PictView *Update Thumbnail* on real camera files** (feature 132: the
+   command rewrites users' pictures again after being dead since 006; only
+   synthetic files were used) - `specs/132-pictview-thumbnail-verify/fix-log.md`,
+   section 7. If this cannot be checked, consider releasing with the menu
+   item left as it was in 0.1.9 (it then says "not supported").
+2. SFTP against the test container: upload into a read-only directory, the
+   stale-reason row, Quick Rename to a long name -
+   `specs/133-sftp-server-verify/quickstart.md`.
+3. The rows of 131 that need a volume or a special file: ZIP favourites (a
+   long name survives a restart), Undelete, Renamer ("Duplicate name."
+   alone), Registry Editor Find with `(`, DiskMap on a deep folder, the PE
+   Viewer dump - `specs/131-plugin-defect-batch/fix-log.md`, section 5.
+4. The rows 124–130 recorded as NOT DRIVEN in their fix logs (real keyboard).
+
 This file is the single entry point for "what do we do next". It consolidates
 the per-feature handoffs — `specs/072-winget-distribution/REMAINING-WORK.md`,
 `specs/069-finish-encoding-fixes/REMAINING-WORK.md`,

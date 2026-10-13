@@ -34,7 +34,7 @@
 // where MINORB were hundredths appended without a dot (2.53) and a zero was dropped (5.0)
 #define VERSINFO_SALAMANDER_MAJOR 0
 #define VERSINFO_SALAMANDER_MINORA 1
-#define VERSINFO_SALAMANDER_MINORB 9
+#define VERSINFO_SALAMANDER_MINORB 10
 
 #define VERSINFO_SALAMANDER_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSION_TXT
 #define VERSINFO_SAL_SHORT_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSIONSHORT_TXT
@@ -150,10 +150,18 @@
 //       passwords and plugins - features 092-094, 100-104, 116, 117; long
 //       paths and archive data-loss fixes - features 095-099, 103, 105-115,
 //       119, 120; see CHANGELOG.md)
+// 194 - Tandem Commander 0.1.10 (the problems reported on GitHub after 0.1.9:
+//       texts and names outside the code page in the Registry Editor, in
+//       messages of the core and of the plugins - features 124, 127, 129,
+//       130; shares of a server listed for \\server - feature 125; a
+//       shortcut opens its target - feature 128; a batch of plugin defects -
+//       feature 131; PictView's Update Thumbnail works and cannot damage a
+//       picture - feature 132; SFTP: a directory not read whole is an error -
+//       feature 133; see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
-#define VERSINFO_BUILDNUMBER 193
+#define VERSINFO_BUILDNUMBER 194
 
 // VERSINFO_BETAVERSION_TXT:
 //

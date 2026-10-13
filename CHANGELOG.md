@@ -9,7 +9,7 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
-## [0.1.10] — unreleased
+## [0.1.10] — 2026-10-13
 
 Fixes for the problems reported on GitHub after 0.1.9.
 
