@@ -19,6 +19,11 @@ BOOL AgreeMask(const char* filename, const char* mask, BOOL hasExtension, BOOL e
 // otherwise NULL; NOTE: behaves like the "copy" command in Win2K
 char* MaskName(char* buffer, int bufSize, const char* name, const char* mask);
 
+// feature 141: the same, but a result that does not fit is never used: 'cut' receives TRUE
+// and 'buffer' holds an empty string (with a NULL 'buffer' or 'name' too); returns 'buffer'.
+// The core's callers use this one - a cut name is another file's name
+char* MaskNameChecked(char* buffer, int bufSize, const char* name, const char* mask, BOOL* cut);
+
 //*****************************************************************************
 //
 // CMaskGroup

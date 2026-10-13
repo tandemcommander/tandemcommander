@@ -2234,3 +2234,21 @@ a few early ones are out of sequence).
     SPZERO, SPFIFO. On 0.1.9 a link to `/dev/zero` reached 392 MB while the probe waited.
   - The 133 listing seam does not mark the session dead on purpose (its rows test the
     listing error path).
+- 141-mask-name-cut: **`MaskName` cut silently at its buffer** (`lstrcpyn` for a NULL mask,
+  `endBuf` otherwise) and its callers gave it `2 * MAX_PATH` (+200): measured on 0.1.9 - Copy
+  / Move of a 250-CJK-letter name failed with error 123 (cut inside a letter at byte 719),
+  Quick Rename likewise at 519, and a 256-letter name was renamed silently to 173 letters.
+  The rule is now `src/common/salmaskname.h` (`SalMaskNameU8`: the whole result or an EMPTY
+  buffer + "cut"); the core calls `MaskNameChecked`; `RenameFileInternal`, the Copy / Move
+  script builder (two sites + the typed-mask buffer in `BuildScriptMain`) and Edit New File
+  refuse instead of cutting; a result over 255 UTF-16 units is "name too long"
+  (`SalNameTooLongForFileSystemU8`). `?` and literals consume whole UTF-8 characters (ASCII
+  name + ASCII mask byte-identical to before: 12 million differential cases; the plug-in
+  service `MaskName` follows). FTP upload autorename: `src/common/salftpautoren.h`
+  (`SalFtpWholePrefixLen` steps back at most 3 bytes and only onto a lead byte - code-page
+  names must not shrink to nothing as with `SplU8WholePrefixLen`).
+  - Probe `specs/141-mask-name-cut/probe/maskname_probe.ps1` (CP250, MV250, CPD250, CP200,
+    QR250, QR200, QR256). A one-element array handed to a PowerShell script block arrives as
+    a string - `$x[0]` is then its first letter: cast `[string[]]`.
+  - Old crash fixed on the way: OpenVMS autorename, `a_123;1` already renamed (`semicol` not
+    moved with the text; `memmove` size -1).

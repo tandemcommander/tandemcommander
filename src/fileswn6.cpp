@@ -14,6 +14,7 @@
 #include "worker.h"
 #include "cache.h"
 #include "salheapstr.h" // feature 095
+#include "salmaskname.h" // feature 141
 #include "pack.h"
 #include "shellib.h"
 #include "filesbox.h"
@@ -1420,10 +1421,18 @@ BOOL CFilesWindow::BuildScriptMain(COperations* script, CActionType type,
         script->ClearReadonlyMask = 0xFFFFFFFF;
 
     // the mask must not be modified via PrepareMask !!! see MaskName()
-    char nameMask[2 * MAX_PATH]; // + MAX_PATH is a reserve (Windows create paths longer than MAX_PATH)
+    // feature 141: the copy was 2 * MAX_PATH and lstrcpyn cut a typed target name at 519 bytes
+    // without a word (F5 on one file + a new name of 250 CJK letters = a copy named by the first
+    // 173). A mask that does not fit a name's buffer cannot make a name a file system stores
+    char nameMask[SAL_FIND_NAME_U8];
     if (mask != NULL)
     {
-        lstrcpyn(nameMask, mask, 2 * MAX_PATH);
+        if (strlen(mask) >= sizeof(nameMask))
+        {
+            SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            return FALSE;
+        }
+        strcpy(nameMask, mask);
         mask = nameMask;
     }
 
@@ -1805,24 +1814,43 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             targetLen++;
         }
         char* s2;
+        BOOL nameTooLong = FALSE; // feature 141: the mask's result is not a name that can be used
         if (mapName == NULL)
         {
             // Petr: a bit of a hack: the *.* mask doesn't produce a copy of the source name, which is a problem when copying
             // directories with invalid names, e.g. "c   ..." + "*.*" = "c   ", so we'll help ourselves a bit and
             // change the mask to NULL = a simple textual copy of the name
             char* opMask = mask != NULL && strcmp(mask, "*.*") == 0 ? NULL : mask;
-            s2 = MaskName(finalName, 2 * MAX_PATH + 200, dirName, opMask);
-            if (opMask != NULL)
+            // feature 141: the size passed here was 2 * MAX_PATH + 200 although the buffer is a
+            // whole path's - a directory name of 240 to 255 CJK letters was cut at 719 bytes (with
+            // the default mask by lstrcpyn, inside a letter). A result that does not fit, or that
+            // the mask made longer than a file system's name, goes the "too long name" way below
+            s2 = MaskNameChecked(finalName, SAL_MAX_PATH_UTF8, dirName, opMask, &nameTooLong);
+            if (!nameTooLong && opMask != NULL)
+            {
+                nameTooLong = SalNameTooLongForFileSystemU8(s2);
                 checkNewDirName = strcmp(s2, dirName) != 0;
+            }
+            if (nameTooLong)
+                s2 = dirName; // the name shown in the message
         }
         else
             s2 = mapName;
-        if (strlen(s2) + targetLen >= SAL_MAX_PATH_UTF8) // long-path capable (feature 027; was PATH_MAX_PATH, which
+        if (nameTooLong || strlen(s2) + targetLen >= SAL_MAX_PATH_UTF8) // long-path capable (feature 027; was PATH_MAX_PATH, which
         {                                                // rejected copying a folder into a long-path target)
             *sourceEnd = 0;                              // restoring sourcePath
             *targetEnd = 0;                              // restoring targetPath
-            _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_TOOLONGNAME2), targetPath, s2); // UTF-8 template: the composed text is UTF-8 (feature 127)
-            SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
+            // feature 141: the text is built on the heap - a name of up to 765 bytes filled 'text'
+            // and the name's line was lost; 'text' serves only when memory is low
+            CSalHeapString heapText; // freed on the return below
+            const char* tooLongText = text;
+            if (heapText.Printf(LoadStrU8(IDS_TOOLONGNAME2), targetPath, s2)) // UTF-8 template: the composed text is UTF-8 (feature 127)
+                tooLongText = heapText.Text();
+            else
+            {
+                _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_TOOLONGNAME2), targetPath, s2);
+                SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
+            }
             BOOL skip = TRUE;
             if (!ErrTooLongTgtDirNameSkipAll)
             {
@@ -1831,7 +1859,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                 params.HParent = HWindow;
                 params.Flags = MSGBOXEX_YESNOOKCANCEL | MB_ICONEXCLAMATION | MSGBOXEX_DEFBUTTON3 | MSGBOXEX_SILENT;
                 params.Caption = LoadStr(IDS_ERRORBUILDINGSCRIPT);
-                params.Text = text;
+                params.Text = tooLongText;
                 char aliasBtnNames[200];
                 /* used by export_mnu.py script that generates salmenu.mnu for the Translator
                    we let the msgbox buttons resolve hotkey collisions by simulating that it is a menu
@@ -2819,16 +2847,25 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             free(op.SourceName);
             return (msgRes == DIALOG_YES /* Skip */ || msgRes == DIALOG_NO /* Skip All */);
         }
-        char finalName[2 * MAX_PATH + 200]; // +200 is a reserve (Windows creates paths longer than MAX_PATH)
+        // feature 141: it was 2 * MAX_PATH + 200 and a name of 240 to 255 CJK letters was cut at
+        // 719 bytes (with the default mask by lstrcpyn, inside a letter). The buffer holds any name
+        // a file system stores; what does not fit it (780 bytes = over 255 UTF-16 units), or what
+        // the mask made longer than a file system's name, is refused by BuildName's
+        // "too long name" question (Skip / Skip all / Focus) with the source name
+        char finalName[SAL_FIND_NAME_U8];
         if (mapName == NULL)
         {
             // Petr: a bit of a hack: the *.* mask doesn't create a copy of the source name, which is a problem when copying
             // files with invalid names, e.g. "c   ..." + "*.*" = "c   ", so we help ourselves
             // by changing the mask to NULL = a simple textual copy of the name
             char* opMask = mask != NULL && strcmp(mask, "*.*") == 0 ? NULL : mask;
-            if ((op.TargetName = BuildName(targetPath,
-                                           MaskName(finalName, 2 * MAX_PATH + 200, fileName, opMask),
-                                           NULL, &skip, &ErrTooLongTgtNameSkipAll, sourcePath)) == NULL)
+            BOOL nameTooLong = FALSE;
+            MaskNameChecked(finalName, sizeof(finalName), fileName, opMask, &nameTooLong);
+            if (!nameTooLong && opMask != NULL)
+                nameTooLong = SalNameTooLongForFileSystemU8(finalName);
+            if ((op.TargetName = BuildName(targetPath, nameTooLong ? fileName : finalName,
+                                           NULL, &skip, &ErrTooLongTgtNameSkipAll, sourcePath,
+                                           nameTooLong)) == NULL)
             {
                 free(op.SourceName);
                 return skip;

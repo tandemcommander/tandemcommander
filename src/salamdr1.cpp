@@ -1095,7 +1095,8 @@ HICON SalLoadIcon(HINSTANCE hDLL, int id, int iconSize)
 
 // ****************************************************************************
 
-char* BuildName(char* path, char* name, char* dosName, BOOL* skip, BOOL* skipAll, const char* sourcePath)
+char* BuildName(char* path, char* name, char* dosName, BOOL* skip, BOOL* skipAll, const char* sourcePath,
+                BOOL nameTooLong)
 {
     if (skip != NULL)
         *skip = FALSE;
@@ -1123,11 +1124,20 @@ char* BuildName(char* path, char* name, char* dosName, BOOL* skip, BOOL* skipAll
             }
         }
     }
-    if (len >= SAL_MAX_PATH_UTF8)
+    if (len >= SAL_MAX_PATH_UTF8 || nameTooLong) // feature 141: or the caller's name did not fit
     {
-        char text[2 * MAX_PATH + 100];
-        _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_NAMEISTOOLONG), name, path); // UTF-8 template: the composed text is UTF-8 (feature 127)
-        SalU8TrimIncompleteTail(text); // a cut text ends at a whole character (feature 127)
+        // feature 141: the text is built on the heap - a name of up to 765 bytes filled the fixed
+        // buffer and the line with the path was lost; the fixed buffer serves only when memory is low
+        char textBuf[2 * MAX_PATH + 100];
+        CSalHeapString heapText; // freed on every way out of this block
+        const char* text = textBuf;
+        if (heapText.Printf(LoadStrU8(IDS_NAMEISTOOLONG), name, path)) // UTF-8 template: the composed text is UTF-8 (feature 127)
+            text = heapText.Text();
+        else
+        {
+            _snprintf_s(textBuf, _TRUNCATE, LoadStrU8(IDS_NAMEISTOOLONG), name, path);
+            SalU8TrimIncompleteTail(textBuf); // a cut text ends at a whole character (feature 127)
+        }
 
         if (skip != NULL)
         {

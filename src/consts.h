@@ -571,8 +571,11 @@ void AddStrToStr(char* dstStr, int dstBufSize, const char* srcStr);
 // vraci NULL a ve 'skip' TRUE), pokud user da "Skip All", nastavi 'skipAll' na TRUE
 // 'sourcePath' je pouzita pro Focus tlacitko (v panelu zobrazime prilis dlouhou komponentu ve zdrojove
 // ceste, ktera by v cilove ceste zpusobila problem).
+// feature 141: 'nameTooLong' TRUE = the caller already knows that the name cannot be used
+// (the mask's result did not fit); the "too long name" route runs at once, with 'name' as
+// the name shown and focused, and NULL is returned
 char* BuildName(char* path, char* name, char* dosName = NULL, BOOL* skip = NULL, BOOL* skipAll = NULL,
-                const char* sourcePath = NULL);
+                const char* sourcePath = NULL, BOOL nameTooLong = FALSE);
 
 // vraci z panelu datum+cas pro soubor/adresar 'f' (resi i datumy+casy dodavane pluginy - nemusi
 // byt platne)

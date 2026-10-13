@@ -1149,11 +1149,23 @@ BOOL CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, const char*
                             {
                                 // create the target name according to the operation mask (skip if it is not
                                 // a mask (contains neither '*' nor '?') - so that renaming to "test^." works)
-                                char targetName[2 * MAX_PATH];
+                                // feature 141: the buffer was 2 * MAX_PATH and a name from the disk
+                                // (up to 765 bytes of UTF-8) was cut at 519 bytes without a word. It
+                                // holds any name of a disk now; the service does not tell a cut, so
+                                // a buffer filled to its last byte is taken for one: "too long" is
+                                // said and nothing is uploaded
+                                char targetName[3 * MAX_PATH];
                                 if (useMask)
-                                    SalamanderGeneral->MaskName(targetName, 2 * MAX_PATH, name, mask);
+                                    SalamanderGeneral->MaskName(targetName, sizeof(targetName), name, mask);
                                 else
-                                    lstrcpyn(targetName, mask, 2 * MAX_PATH);
+                                    lstrcpyn(targetName, mask, sizeof(targetName));
+                                if (strlen(targetName) >= sizeof(targetName) - 1)
+                                {
+                                    SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH),
+                                                                     LoadStr(IDS_FTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                                    ok = FALSE;
+                                    break;
+                                }
                                 if (is_AS_400_QSYS_LIB_Path)
                                     FTPAS400AddFileNamePart(targetName);
 

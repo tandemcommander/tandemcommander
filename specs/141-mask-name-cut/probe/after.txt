@@ -1,0 +1,21 @@
+maskname_probe (feature 141), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 01:15; desktop 'tc_probe_5840'; ACP 1250; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+CP250      ROW    PASS        copy a file with a 254-letter name (752 bytes): the target folder holds the expected name (254 letters); the source the expected name (254 letters); dialogs: [#32770 'Copy'] [Static id=209] &Copy file "a<CJK letters>..." to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+CP250      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MV250      ROW    PASS        move it: the target folder holds the expected name (254 letters); the source nothing; dialogs: [#32770 'Move/Rename'] [Static id=209] &Move file "a<CJK letters>..." to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+MV250      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CPD250     ROW    PASS        copy a directory with a 250-letter name (748 bytes): the target folder holds the expected name (250 letters); the file inside arrived True; dialogs: [#32770 'Copy'] [Static id=209] &Copy directory "a<CJK letters>..." to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+CPD250     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CP200      ROW    PASS        copy a file with a 204-letter name (602 bytes): the target folder holds the expected name (204 letters); dialogs: [#32770 'Copy'] [Static id=209] &Copy file "a<CJK letters>..." to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+CP200      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+QR250      ROW    PASS        Quick Rename of one.txt to a 254-letter name (752 bytes): the folder holds the expected name (254 letters); dialogs: typed into [Quick Rename]
+QR250      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+QR200      ROW    PASS        Quick Rename of one.txt to a 204-letter name (602 bytes): the folder holds the expected name (204 letters); dialogs: typed into [Quick Rename]
+QR200      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+QR256      ROW    PASS        Quick Rename of one.txt to 256 letters (more than a name may have): the folder holds the expected name (7 letters); a refusal was shown True; dialogs: typed into [Quick Rename] || [#32770 'Error Renaming File'] [Static id=2477] Cannot finish operation because of too long name. | [Button id=1] OK || [Quick Rename] came back - cancelled
+QR256      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

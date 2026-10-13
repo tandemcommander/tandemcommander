@@ -36,6 +36,24 @@ plugin.
   - For plug-in authors: `GetCommonFSOperSourceDescr` returns its whole text
     as UTF-8 (it was a code-page word around a UTF-8 name).
 
+- **Long names in other scripts are copied, moved and renamed whole**
+  (feature 141; so in 0.1.9 too). A file or folder whose name is long in
+  Chinese, Japanese or Korean letters (from about 240 letters; Windows allows
+  255) could not be copied or moved at all - "the file name ... syntax is
+  incorrect" - because the name was cut inside a letter on the way. Quick
+  Rename to such a name failed the same way, and a typed name longer than
+  Windows allows was **shortened silently** (256 letters became 173). Now the
+  whole name is used, and a name that is too long is refused with a message.
+  The same for a new name typed into Copy / Move, and for Edit New File.
+  - A mask with `?` or fixed letters works on whole letters: `?.*` on
+    `été.txt` gives `é.txt` (it produced a broken name). Results for plain
+    ASCII names and masks are unchanged. For plug-in authors: the `MaskName`
+    service follows the same rule.
+  - **FTP: an automatically renamed upload is shortened at a whole letter**
+    (the download direction was repaired in 137), and a rename on an OpenVMS
+    server no longer crashes for a name like `a_123;1` that was already
+    renamed once.
+
 - **SFTP: a lost connection stops the operation** (feature 140; so in 0.1.9
   too). When a request timed out, a copy, move, delete or attribute change
   went on with the next item - and the next answer read from the server could

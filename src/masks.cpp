@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "salmaskname.h" // feature 141
+
 //
 //*****************************************************************************
 // Functions for wildcard operations
@@ -152,125 +154,20 @@ BOOL AgreeMask(const char* filename, const char* mask, BOOL hasExtension, BOOL e
     return ret;
 }
 
+// feature 141: the algorithm lives in src/common/salmaskname.h (checked by saltests)
 char* MaskName(char* buffer, int bufSize, const char* name, const char* mask)
 {
     SLOW_CALL_STACK_MESSAGE1("MaskName()");
-    if (buffer == NULL || bufSize <= 0 || name == NULL)
-        return NULL;
-    if (mask == NULL)
-    {
-        lstrcpyn(buffer, name, bufSize);
-        return buffer;
-    }
+    // the historical contract (plug-in interface): a result that does not fit is cut
+    return SalMaskNameLegacyU8(buffer, bufSize, name, mask, NULL);
+}
 
-    // the first dot in the mask separates two operational parts: the first for the name,
-    // the second for the extension (example: "a.b.c.d" + "*.*.old": "a.b.c" + "*" = "a.b.c";
-    // "d" + "*.old" = "d.old" -> the result is the combination "a.b.c.d.old")
-
-    int ignPoints = 0; // how many dots the name contains (this section corresponds to the text of the mask from the start to the first dot); the rest matches the extension (after the fisrt dot)
-    const char* n = name;
-    while (*n != 0)
-        if (*n++ == '.')
-            ignPoints++;
-    const char* s = mask;
-    while (*s != 0)
-        if (*s++ == '.')
-        {
-            ignPoints--;
-            break;
-        } // in the mask, only one dot is meaningful (name.ext); the part after the second dot will be expanded at the end of the name
-    //  while (*s != 0) if (*s++ == '.') {ignPoints--;}  // in this variant, sections in the name and mask between dots are matched from the end ("a.b.c.d" + "*.*.old": "a.b" + "*"; "c" + "*"; "d" + "old" -> "a.b.c.old")
-    if (ignPoints < 0)
-        ignPoints = 0;
-    //  if (ignPoints == 0 && *name == '.') ignPoints++;   // dot at the start of the name should be ignored (not an extension); fix: ".cvspass" is an extension in Windows...
-
-    n = name;
-    char* d = buffer;
-    char* endBuf = buffer + bufSize - 1;
-    s = mask;
-    while (*s != 0 && d < endBuf)
-    {
-        switch (*s)
-        {
-        case '*': // copy the rest of the name section (up to the "ignPoints+1"-th dot)
-        {
-            while (*n != 0)
-            {
-                if (*n == '.')
-                {
-                    if (ignPoints > 0)
-                        ignPoints--; // this dot is part of the section, continue
-                    else
-                        break;
-                }
-                *d++ = *n++;
-                if (d >= endBuf)
-                    break;
-            }
-            break;
-        }
-
-        case '?': // copy one character unless it is the end of the name section (up to the "ignPoints+1"-th dot)
-        {
-            if (*n != 0)
-            {
-                if (*n == '.')
-                {
-                    if (ignPoints > 0)
-                    {
-                        ignPoints--; // this dot is part of the section, continue
-                        *d++ = *n++;
-                    }
-                }
-                else
-                    *d++ = *n++;
-            }
-            break;
-        }
-
-        case '.': // end of the current name section (jump to the next section in the name)
-        {
-            *d++ = '.';
-            while (*n != 0)
-            {
-                if (*n == '.')
-                {
-                    if (ignPoints > 0)
-                        ignPoints--; // this dot is part of the section, continue
-                    else
-                        break;
-                }
-                n++;
-            }
-            if (*n == '.')
-                n++;
-            break;
-        }
-
-        default:
-        {
-            *d++ = *s; // regular character - just copy it
-            if (*n != 0)
-            {
-                if (*n != '.')
-                    n++; // if it isn't a '.', skip one character from the name
-                else
-                {
-                    if (ignPoints > 0)
-                    {
-                        ignPoints--;
-                        n++; // if the dot is part of the section, skip it as well
-                    }
-                }
-            }
-            break;
-        }
-        }
-        s++;
-    }
-    while (--d >= buffer && *d == '.')
-        ; // the result must be trimmed of trailing '.'
-    *++d = 0;
+char* MaskNameChecked(char* buffer, int bufSize, const char* name, const char* mask, BOOL* cut)
+{
+    SLOW_CALL_STACK_MESSAGE1("MaskNameChecked()");
+    BOOL fits = SalMaskNameU8(buffer, bufSize, name, mask); // an empty buffer when it does not fit
+    if (cut != NULL)
+        *cut = !fits;
     return buffer;
 }
 

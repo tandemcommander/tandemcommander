@@ -14,6 +14,7 @@
 #include "worker.h"
 #include "cache.h"
 #include "salheapstr.h" // feature 095
+#include "salmaskname.h" // feature 141
 #include "usermenu.h"
 #include "execute.h"
 #include "pack.h"
@@ -1518,7 +1519,11 @@ void CFilesWindow::EditNewFile()
     // restore DefaultDir
     MainWindow->UpdateDefaultDir(TRUE);
 
-    char path[MAX_PATH];
+    // feature 141: the dialog's buffer was MAX_PATH, so a typed name over 259 bytes of UTF-8
+    // (87 CJK letters) was cut there without a word and the file was created under the cut
+    // name. The buffer takes the typed text whole; this routine still works with paths up to
+    // MAX_PATH - 1 bytes, so a longer text is refused below
+    char path[SAL_MAX_PATH_UTF8];
     if (Configuration.UseEditNewFileDefault)
         lstrcpyn(path, Configuration.EditNewFileDefault, MAX_PATH);
     else
@@ -1530,7 +1535,7 @@ void CFilesWindow::EditNewFile()
 
     while (1)
     {
-        CEditNewFileDialog dlg(HWindow, path, MAX_PATH, &subject, Configuration.EditNewHistory, EDITNEW_HISTORY_SIZE);
+        CEditNewFileDialog dlg(HWindow, path, SAL_MAX_PATH_UTF8, &subject, Configuration.EditNewHistory, EDITNEW_HISTORY_SIZE);
 
         // Some users always create .txt and are satisfied with overwriting just the extension; others create various files and want to overwrite the whole name,
         // so we compromised and introduced a dedicated option for Edit New File in the configuration.
@@ -1557,6 +1562,13 @@ void CFilesWindow::EditNewFile()
         if (dlg.Execute() == IDOK)
         {
             UpdateWindow(MainWindow->HWindow);
+
+            if (strlen(path) >= MAX_PATH) // feature 141: refused, not cut; the dialog comes back with the text
+            {
+                SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE),
+                              MB_OK | MB_ICONEXCLAMATION);
+                continue;
+            }
 
             // clean the name from undesirable characters at the beginning and end
             // we do this only for the last component; the previous ones already exist and it doesn't matter
@@ -2159,11 +2171,23 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
         s++;
     if (formatedFileName[0] != 0 && *s == 0)
     {
-        char finalName[2 * MAX_PATH];
-        MaskName(finalName, 2 * MAX_PATH, f->Name, formatedFileName);
+        // feature 141: the buffer was 2 * MAX_PATH and the name was cut at 519 bytes without a
+        // word (173 CJK letters of a typed 250) - the file was renamed to the cut name. It holds
+        // any name a file system stores now; a result that does not fit it (780 bytes = over 255
+        // UTF-16 units) or is longer than a file system's name is refused, the file keeps its name
+        char finalName[SAL_FIND_NAME_U8];
+        BOOL nameCut = FALSE;
+        MaskNameChecked(finalName, sizeof(finalName), f->Name, formatedFileName, &nameCut);
 
         // clean the name from undesirable characters at the beginning and end
         MakeValidFileName(finalName);
+
+        if (nameCut || SalNameTooLongForFileSystemU8(finalName))
+        {
+            SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORRENAMINGFILE),
+                          MB_OK | MB_ICONEXCLAMATION);
+            return; // *tryAgain is TRUE: the dialog / the edit line comes back with the typed text
+        }
 
         int l = (int)strlen(GetPath());
         char tgtPath[SAL_MAX_PATH_UTF8]; // long-path capable (feature 011)

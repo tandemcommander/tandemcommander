@@ -50,6 +50,8 @@
 #include "salinserts.h"     // feature 127
 #include "salwideinserts.h" // feature 129
 #include "saljpegkeep.h"     // feature 132
+#include "salmaskname.h"     // feature 141
+#include "salftpautoren.h"   // feature 141
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -10204,6 +10206,271 @@ static void TestU8WholePrefix137()
     CHECK(SplU8WholePrefixLen(name, 9) == 9);
 }
 
+// feature 141: the name an operation mask makes (salmaskname.h) - whole, or refused
+static void TestMaskName141()
+{
+    // the results of the routine before 141 (printed by the old code; ASCII names and masks
+    // must not change by a byte)
+    static const struct
+    {
+        const char* Name;
+        const char* Mask;
+        const char* Result;
+    } table[] = {
+        {"a.b.c.d", "*.*", "a.b.c.d"},
+        {"a.b.c.d", "*", "a.b.c.d"},
+        {"a.b.c.d", "*.txt", "a.b.c.txt"},
+        {"a.b.c.d", "?.*", "a.d"},
+        {"a.b.c.d", "new.*", "new.d"},
+        {"a.b.c.d", "*.??", "a.b.c.d"},
+        {"a.b.c.d", "*.*.old", "a.b.c.d.old"}, // the example of the routine's comment
+        {"a.b.c.d", "??????.*", "a.b.c.d"},
+        {"a.b.c.d", "*.", "a.b.c"},
+        {"a.b.c.d", "x*y.z", "x.b.cy.z"},
+        {"a.b.c.d", "?", "a"},
+        {"a.b.c.d", "a?c.*", "a.c.d"},
+        {"a.b.c.d", ".*", ".d"},
+        {"a.b.c.d", "*.t?t", "a.b.c.tt"},
+        {"a.b.c.d", NULL, "a.b.c.d"},
+        {"file.txt", "*.*", "file.txt"},
+        {"file.txt", "*", "file.txt"},
+        {"file.txt", "*.txt", "file.txt"},
+        {"file.txt", "?.*", "f.txt"},
+        {"file.txt", "new.*", "new.txt"},
+        {"file.txt", "*.??", "file.tx"},
+        {"file.txt", "*.*.old", "file.txt.old"},
+        {"file.txt", "*.", "file"},
+        {"file.txt", "x*y.z", "xiley.z"},
+        {"file.txt", "a?c.*", "aic.txt"},
+        {"file.txt", ".*", ".txt"},
+        {"file.txt", "*.t?t", "file.txt"},
+        {"file", "*.*", "file"},
+        {"file", "*.txt", "file.txt"},
+        {"file", "?.*", "f"},
+        {"file", "new.*", "new"},
+        {"file", "*.*.old", "file..old"},
+        {"file", ".*", ""},
+        {"file", "*.t?t", "file.tt"},
+        {".cvspass", "*.*", ".cvspass"},
+        {".cvspass", "*", ".cvspass"},
+        {".cvspass", "*.txt", ".txt"},
+        {".cvspass", "?.*", ".cvspass"},
+        {".cvspass", "new.*", "new.cvspass"},
+        {".cvspass", "*.??", ".cv"},
+        {".cvspass", "*.", ""},
+        {".cvspass", "?", ""},
+        {".cvspass", "a?c.*", "ac.cvspass"},
+        {".cvspass", NULL, ".cvspass"},
+        {"..a", "*.*", "..a"},
+        {"..a", "*.txt", "..txt"},
+        {"..a", "new.*", "new.a"},
+        {"..a", ".*", ".a"},
+        {"a..b", "*.*", "a..b"},
+        {"a..b", "?.*", "a.b"},
+        {"a..b", "x*y.z", "x.y.z"},
+        {"a..b", "a?c.*", "a.c.b"},
+        {"name.tar.gz", "*.txt", "name.tar.txt"},
+        {"name.tar.gz", "?.*", "n.gz"},
+        {"name.tar.gz", "??????.*", "name.t.gz"},
+        {"name.tar.gz", "x*y.z", "xame.tary.z"},
+        {"name.tar.gz", "*.t?t", "name.tar.tzt"},
+        {"c   ...", "*.*", "c   "}, // why the callers turn "*.*" into a NULL mask
+        {"c   ...", "*.txt", "c   ...txt"},
+        {"c   ...", "a?c.*", "a c"},
+        {"c   ...", NULL, "c   ..."},
+        {"x", "*.*.old", "x..old"},
+        {"x", "a?c.*", "ac"},
+        {"", "*.*", ""},
+        {"", "*.txt", ".txt"},
+        {"", "*.*.old", "..old"},
+        {"", NULL, ""},
+        {"a.", "*.*", "a"},
+        {"a.", "*.*.old", "a..old"},
+        {"a.", NULL, "a."},
+        {"long name.with.dots.txt", "??????.*", "long n.txt"},
+        {"long name.with.dots.txt", "x*y.z", "xong name.with.dotsy.z"},
+        {"long name.with.dots.txt", "*.??", "long name.with.dots.tx"},
+    };
+    char buf[2048];
+    for (int i = 0; i < (int)_countof(table); i++)
+    {
+        const char* expect = table[i].Result;
+        int len = (int)strlen(expect);
+        // whole in a large buffer and in the one that fits exactly
+        memset(buf, 'Z', sizeof(buf));
+        CHECK(SalMaskNameU8(buf, 100, table[i].Name, table[i].Mask) && strcmp(buf, expect) == 0);
+        memset(buf, 'Z', sizeof(buf));
+        CHECK(SalMaskNameU8(buf, len + 1, table[i].Name, table[i].Mask) && strcmp(buf, expect) == 0 && buf[len + 1] == 'Z');
+        BOOL cut = TRUE;
+        memset(buf, 'Z', sizeof(buf));
+        CHECK(SalMaskNameLegacyU8(buf, len + 1, table[i].Name, table[i].Mask, &cut) == buf && !cut && strcmp(buf, expect) == 0);
+        if (len > 0)
+        {
+            // one byte less: refused with an empty buffer; the historical form holds the cut text and says so
+            memset(buf, 'Z', sizeof(buf));
+            CHECK(!SalMaskNameU8(buf, len, table[i].Name, table[i].Mask) && buf[0] == 0 && buf[len] == 'Z');
+            cut = FALSE;
+            memset(buf, 'Z', sizeof(buf));
+            CHECK(SalMaskNameLegacyU8(buf, len, table[i].Name, table[i].Mask, &cut) == buf && cut &&
+                  (int)strlen(buf) < len && strncmp(buf, expect, strlen(buf)) == 0 && buf[len] == 'Z');
+        }
+    }
+    // arguments
+    CHECK(SalMaskNameLegacyU8(NULL, 10, "a", "*", NULL) == NULL && SalMaskNameLegacyU8(buf, 0, "a", "*", NULL) == NULL &&
+          SalMaskNameLegacyU8(buf, 10, NULL, "*", NULL) == NULL);
+    strcpy(buf, "old");
+    CHECK(!SalMaskNameU8(buf, 10, NULL, "*") && buf[0] == 0);
+    CHECK(!SalMaskNameU8(NULL, 10, "a", "*") && !SalMaskNameU8(buf, 0, "a", "*"));
+    CHECK(SalMaskNameU8(buf, 1, "", NULL) && buf[0] == 0 && !SalMaskNameU8(buf, 1, "a", NULL) && buf[0] == 0);
+    // a result whose trailing dot is dropped fits a buffer the untrimmed text would not
+    CHECK(SalMaskNameU8(buf, 4, "abc", "*.") && strcmp(buf, "abc") == 0);
+    CHECK(!SalMaskNameU8(buf, 3, "abc", "*.") && buf[0] == 0);
+
+    // names Windows can store: 250 and 255 CJK letters (750 / 765 bytes of UTF-8)
+    const char cjk[] = "\xE4\xB8\xAD"; // U+4E2D
+    for (int letters = 250; letters <= 255; letters += 5)
+    {
+        std::string name;
+        for (int i = 0; i < letters; i++)
+            name += cjk;
+        int bytes = letters * 3;
+        CHECK(SalNameUtf16UnitsU8(name.c_str()) == letters && !SalNameTooLongForFileSystemU8(name.c_str()));
+        // the buffers before 141: 2 * MAX_PATH (rename) and 2 * MAX_PATH + 200 (copy, move) cut it
+        CHECK(!SalMaskNameU8(buf, 2 * MAX_PATH, name.c_str(), NULL) && buf[0] == 0);
+        CHECK(!SalMaskNameU8(buf, 2 * MAX_PATH + 200, name.c_str(), NULL) && buf[0] == 0);
+        BOOL cut = FALSE;
+        SalMaskNameLegacyU8(buf, 2 * MAX_PATH + 200, name.c_str(), NULL, &cut);
+        CHECK(cut && strlen(buf) == 719 && ((unsigned char)buf[718] & 0xC0) == 0x80 && (unsigned char)buf[717] == 0xE4); // what 0.1.9 used: 239 letters and two bytes of the next
+        // the buffer of a name holds it, with every mask that keeps it
+        CHECK(SalMaskNameU8(buf, SAL_FIND_NAME_U8, name.c_str(), NULL) && name == buf);
+        CHECK(SalMaskNameU8(buf, SAL_FIND_NAME_U8, name.c_str(), "*.*") && name == buf);
+        CHECK(SalMaskNameU8(buf, SAL_FIND_NAME_U8, name.c_str(), "*") && name == buf);
+        CHECK(SalMaskNameU8(buf, bytes + 1, name.c_str(), "*.*") && name == buf); // exact fit
+        CHECK(!SalMaskNameU8(buf, bytes, name.c_str(), "*.*") && buf[0] == 0);    // one byte short
+        CHECK(!SalMaskNameU8(buf, bytes, name.c_str(), NULL) && buf[0] == 0);
+        // the name typed as the new name (the mask is the name: Quick Rename, F5 with a new name)
+        CHECK(SalMaskNameU8(buf, SAL_FIND_NAME_U8, "old.txt", name.c_str()) && name == buf);
+        CHECK(!SalMaskNameU8(buf, 2 * MAX_PATH, "old.txt", name.c_str()) && buf[0] == 0);
+        // "*.bak": the result is longer than a name; it fits the buffer or not, and is told too long
+        std::string bak = name + ".bak";
+        BOOL fits = SalMaskNameU8(buf, SAL_FIND_NAME_U8, name.c_str(), "*.bak");
+        CHECK(fits == (bytes + 4 < SAL_FIND_NAME_U8) && (fits ? bak == buf : buf[0] == 0));
+        CHECK(SalMaskNameU8(buf, sizeof(buf), name.c_str(), "*.bak") && bak == buf);
+        CHECK(SalNameTooLongForFileSystemU8(buf) == (letters + 4 > 255));
+        // with an extension: "*.bak" replaces it
+        std::string withExt = name.substr(0, bytes - 12) + ".txt";
+        CHECK(SalMaskNameU8(buf, SAL_FIND_NAME_U8, withExt.c_str(), "*.bak") && name.substr(0, bytes - 12) + ".bak" == buf);
+    }
+    // whatever does not fit the buffer of a name is longer than a file system's name
+    {
+        std::string longest;
+        for (int i = 0; i < 260; i++)
+            longest += cjk; // 780 bytes: the shortest text (in units) that does not fit
+        CHECK(!SalMaskNameU8(buf, SAL_FIND_NAME_U8, longest.c_str(), NULL) && SalNameTooLongForFileSystemU8(longest.c_str()));
+        std::string emoji; // 4 bytes = 2 units each: 195 of them are 780 bytes and 390 units
+        for (int i = 0; i < 128; i++)
+            emoji += U8_FOLDER_EMOJI;
+        CHECK(SalNameUtf16UnitsU8(emoji.c_str()) == 256 && SalNameTooLongForFileSystemU8(emoji.c_str()));
+        emoji.resize(emoji.size() - 4);
+        emoji += "a";
+        CHECK(SalNameUtf16UnitsU8(emoji.c_str()) == 255 && !SalNameTooLongForFileSystemU8(emoji.c_str()));
+        CHECK(SalNameUtf16UnitsU8("") == 0 && SalNameUtf16UnitsU8(NULL) == 0 && SalNameUtf16UnitsU8("a" U8_C_CARON_NFC "\xE2\x82\xAC") == 3);
+        CHECK(SalNameUtf16UnitsU8("\xE9t\xE9") == 3 && SalNameUtf16UnitsU8("\xC4") == 1 && SalNameUtf16UnitsU8("\x8D\x8D") == 2); // not UTF-8: a byte is a character
+    }
+
+    // '?' and a literal work on whole characters (they took and skipped single bytes: half a letter)
+    const char scaron[] = "\xC5\xA1"; // U+0161
+    std::string n = std::string(scaron) + "abc.txt";
+    CHECK(SalMaskNameU8(buf, 100, n.c_str(), "?*.*") && n == buf);
+    CHECK(SalMaskNameU8(buf, 100, n.c_str(), "?.*") && std::string(scaron) + ".txt" == buf);
+    CHECK(SalMaskNameU8(buf, 100, n.c_str(), "x*.*") && strcmp(buf, "xabc.txt") == 0);
+    CHECK(SalMaskNameU8(buf, 100, "abc.txt", "\xC3\xA9*.*") && strcmp(buf, "\xC3\xA9" "bc.txt") == 0); // one literal replaces one letter
+    CHECK(SalMaskNameU8(buf, 100, "ab.txt", U8_FOLDER_EMOJI "?.*") && strcmp(buf, U8_FOLDER_EMOJI "b.txt") == 0);
+    CHECK(SalMaskNameU8(buf, 100, "\xE4\xB8\xAD\xE6\x97\xA5.txt", "??.*") && strcmp(buf, "\xE4\xB8\xAD\xE6\x97\xA5.txt") == 0);
+    CHECK(SalMaskNameU8(buf, 100, "\xE4\xB8\xAD\xE6\x97\xA5.txt", "?.*") && strcmp(buf, "\xE4\xB8\xAD.txt") == 0);
+    CHECK(SalMaskNameU8(buf, 100, "\xE4\xB8\xAD\xE6\x97\xA5.txt", "*.t?t") && strcmp(buf, "\xE4\xB8\xAD\xE6\x97\xA5.txt") == 0);
+    // text that is not UTF-8 goes byte by byte, as before
+    CHECK(SalMaskNameU8(buf, 100, "\xE9t\xE9.txt", "?.*") && strcmp(buf, "\xE9.txt") == 0);
+    CHECK(SalMaskNameU8(buf, 100, "\xE9t\xE9.txt", "x??.*") && strcmp(buf, "xt\xE9.txt") == 0);
+    CHECK(SalMaskNameU8(buf, 100, "a\xC5", "??") && strcmp(buf, "a\xC5") == 0); // a lead byte at the end of the text
+
+    // FTP, automatic rename of an upload (salftpautoren.h): the bytes taken from the end of the
+    // name part, in front of the extension, are whole characters
+    // "a" + s-caron (2 bytes) + U+4E2D (3) + folder emoji (4) + "z": 11 bytes
+    const char part[] = "a\xC5\xA1\xE4\xB8\xAD\xF0\x9F\x93\x81z";
+    const int expectCut[13] = {0, 1, 5, 5, 5, 5, 8, 8, 8, 10, 10, 11, 11}; // by 'cut' 0..12
+    for (int cut = 0; cut <= 12; cut++)
+    {
+        int c = SalFtpCutBeforeExt(part, 11, cut);
+        CHECK(c == expectCut[cut]);
+        CHECK(c >= (cut < 11 ? cut : 11) && c <= 11);                      // never less than asked
+        CHECK(c == 11 || ((unsigned char)part[11 - c] & 0xC0) != 0x80);     // what stays ends at a boundary
+        memcpy(buf, part, 11 - c);
+        buf[11 - c] = 0;
+        WCHAR* w = SplU8ToWAlloc(buf); // and is valid text
+        CHECK(w != NULL);
+        free(w);
+    }
+    CHECK(SalFtpCutBeforeExt("abcdef", 6, 2) == 2 && SalFtpCutBeforeExt("abcdef", 6, 5) == 5); // ASCII: as before
+    CHECK(SalFtpCutBeforeExt("abcdef", 6, 6) == 6 && SalFtpCutBeforeExt("abcdef", 6, 9) == 6);
+    CHECK(SalFtpCutBeforeExt(NULL, 5, 2) == 0 && SalFtpCutBeforeExt("abc", 0, 2) == 0 && SalFtpCutBeforeExt("abc", 3, -1) == 0);
+    CHECK(SalFtpCutBeforeExt(U8_FOLDER_EMOJI "a.txt", 5, 4) == 5); // nothing of the name part would stay: the caller trims the end instead
+    // the case of the plug-in: 125 accented letters + "a" (251 bytes) + ".txt", " (2)" needs 4 bytes
+    {
+        std::string acc;
+        for (int i = 0; i < 125; i++)
+            acc += scaron;
+        acc += "a";
+        CHECK(SalFtpCutBeforeExt(acc.c_str(), 251, 4) == 5); // "a" and two letters, not "a", one letter and a half
+        CHECK(SalFtpCutBeforeExt(acc.c_str(), 251, 3) == 3 && SalFtpCutBeforeExt(acc.c_str(), 251, 1) == 1);
+    }
+    // the step back is bounded (review of 141): valid UTF-8 as SplU8WholePrefixLen ...
+    const int expectKeep[12] = {0, 1, 1, 3, 3, 3, 6, 6, 6, 6, 10, 11};
+    for (int k = 0; k <= 11; k++)
+        CHECK(SalFtpWholePrefixLen(part, k) == expectKeep[k] && SalFtpWholePrefixLen(part, k) == SplU8WholePrefixLen(part, k));
+    CHECK(SalFtpWholePrefixLen(NULL, 5) == 0 && SalFtpWholePrefixLen("abc", 0) == 0 && SalFtpWholePrefixLen("abc", -1) == 0 && SalFtpWholePrefixLen("abc", 3) == 3);
+    // ... text of a code page keeps the plain byte cut unless a lead byte within 3 bytes reaches
+    // over it: a name of 267 bytes 0x80-0xAF was emptied by the unbounded step back
+    {
+        char run[300];
+        for (int i = 0; i < 267; i++)
+            run[i] = (char)(0x80 + i % 0x30);
+        run[267] = 0;
+        CHECK(SplU8WholePrefixLen(run, 255) == 0); // why the generator does not use it
+        for (int k = 1; k <= 267; k++)
+            CHECK(SalFtpWholePrefixLen(run, k) == k);
+        for (int cut = 1; cut < 267; cut++)
+            CHECK(SalFtpCutBeforeExt(run, 267, cut) == cut);
+        CHECK(SalFtpCutBeforeExt(run, 267, 267) == 267);
+    }
+    CHECK(SalFtpWholePrefixLen("ab\xE9\x80\x80\x80", 5) == 5);     // the sequence of E9 ended before the cut: a stray byte, byte cut
+    CHECK(SalFtpWholePrefixLen("ab\xE9\x80\x80\x80", 4) == 2);     // E9 80 | 80: reaches over
+    CHECK(SalFtpWholePrefixLen("ab\xC3\x80\x80", 4) == 4);         // C3 80 is complete, the next 0x80 is stray
+    CHECK(SalFtpWholePrefixLen("a\x80\x80\x80\x80\x80", 4) == 4);  // no lead byte within 3 bytes
+    CHECK(SalFtpWholePrefixLen("\xF0\x90\x80\x80", 3) == 0 && SalFtpWholePrefixLen("x\xF0\x90\x80\x80", 4) == 1);
+    {
+        // any bytes: never more than 3 back, and a shorter result drops a lead byte's sequence
+        unsigned seed = 141;
+        for (int it = 0; it < 2000; it++)
+        {
+            char rnd[40];
+            seed = seed * 1103515245u + 12345u;
+            int len = 1 + (int)((seed >> 16) % 30);
+            for (int i = 0; i < len; i++)
+            {
+                seed = seed * 1103515245u + 12345u;
+                unsigned r = (seed >> 16) & 0x7FFF;
+                rnd[i] = (char)(r % 3 == 0 ? 'a' + r % 26 : 0x80 + r % 0x80);
+            }
+            rnd[len] = 0;
+            seed = seed * 1103515245u + 12345u;
+            int cutAt = (int)((seed >> 16) % (len + 1));
+            int k = SalFtpWholePrefixLen(rnd, cutAt);
+            CHECK(k <= cutAt && k >= cutAt - 3 && k >= 0 && (k == cutAt || (unsigned char)rnd[k] >= 0xC0));
+        }
+    }
+}
+
 // feature 135: a small Exif TIFF block: IFD0 (Make, pointer to the Exif IFD), the Exif IFD with a
 // MakerNote of 12 bytes, and by 'ifd1': 0 = no IFD1, 1 = IFD1 with a JPEG thumbnail at the very
 // end, 2 = an uncompressed thumbnail (strips), 3 = a JPEG thumbnail followed by other data
@@ -10859,6 +11126,7 @@ int main(int argc, char** argv)
     TestJpegKeep132();
     TestExifThumb135();
     TestU8WholePrefix137();
+    TestMaskName141();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

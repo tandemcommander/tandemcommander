@@ -2849,11 +2849,14 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
         lstrcpyn(myOldName, oldName, SizeOf(myOldName));
         TCHAR finalName[3 * MAX_PATH];
         SalamanderGeneral->MaskName(finalName, SizeOf(finalName), myOldName, newName);
+        // feature 141: the service does not tell a cut result - a buffer filled to its last byte
+        // is taken for one and refused (the check below could never be true)
+        BOOL nameCut = _tcslen(finalName) >= SizeOf(finalName) - 1;
 
         // strip unwanted characters from the beginning and end of the name
         MakeValidFileName(finalName);
         // the name component must fit 'newName'; the path itself may be of any length
-        if (_tcslen(finalName) >= SizeOf(newName))
+        if (nameCut || _tcslen(finalName) >= SizeOf(newName))
         {
             SalamanderGeneral->SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME),
                                              LoadStr(IDS_ERRORRENAMINGFILE),

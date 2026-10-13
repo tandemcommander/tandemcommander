@@ -135,3 +135,9 @@ removes each local source only after its own upload is confirmed. Record:
 `140-sftp-dead-session`: a timed-out SFTP request ends the operation (the library would answer
 the next request with the late reply); devices, FIFOs and sockets are not downloaded; refused
 attribute and owner changes are reported. Record: `specs/140-sftp-dead-session/fix-log.md`.
+
+## Feature 141 (2026-10-14)
+
+`141-mask-name-cut`: names long in UTF-8 (up to 255 letters of any script) are copied, moved
+and renamed whole; a name that does not fit is refused, never cut; FTP's automatic rename on
+upload cuts at a whole letter. Record: `specs/141-mask-name-cut/fix-log.md`.

@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salftpautoren.h" // feature 141: the shortening step of the automatic rename
+
 #include "../../common/salurlpwd.h" // feature 085
 
 const char* FTP_ANONYMOUS = "anonymous"; // standard name for an anonymous user
@@ -2616,6 +2618,20 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                     containsSlash = TRUE;
                 }
             }
+            if (*s != 0) // feature 141: the limit stopped the copy - not in the middle of a character
+            {
+                char* whole = newName + SalFtpWholePrefixLen(originalName, (int)(s - originalName));
+                if (whole < n)
+                {
+                    n = whole;
+                    if (n > newName && *(n - 1) == '.') // the dot in front of the dropped character would end the name
+                    {
+                        n--;
+                        if (dot == n)
+                            dot = NULL;
+                    }
+                }
+            }
             *n = 0;
             if (*index == 0 && *s == 0 && !containsSlash) // newName is identical to originalName, we must adjust newName
                 *index = 1;                               // also handles the reserved names "." and ".."
@@ -2654,6 +2670,8 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                 if (255 - (n - newName) < suffixLen)
                 {
                     int cut = (int)(suffixLen - (255 - (n - newName)));
+                    if (dot != NULL)
+                        cut = SalFtpCutBeforeExt(newName, (int)(dot - newName), cut); // feature 141: whole characters (all of the name part = trim the end instead)
                     if (dot != NULL && dot - newName > cut) // shorten the name
                     {
                         memmove(dot - cut, dot, (n - dot) + 1);
@@ -2662,7 +2680,7 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                     }
                     else // just trim the end
                     {
-                        n = newName + 255 - suffixLen;
+                        n = newName + SalFtpWholePrefixLen(newName, 255 - suffixLen); // feature 141: at a whole character
                         if (dot == n - 1)
                             n--; // if a '.' would remain at the end of the name, trim it as well
                         *n = 0;
@@ -2686,7 +2704,13 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
         }
         else // at this stage the names will be valid on Windows (for FTP servers on Windows pretending to be UNIX) + ftpsptNetware + ftpsptWindows + ftpsptOS2
         {
-            lstrcpyn(newName, originalName, MAX_PATH);
+            // feature 141: the name is taken up to the length a valid name may have (MAX_PATH - 4
+            // bytes, see SalMakeValidFileNameComponent) at a whole character; lstrcpyn cut it at
+            // byte 259 and the core's routine again at 256, both possibly inside a character
+            int origLen = (int)strlen(originalName);
+            int takeLen = SalFtpWholePrefixLen(originalName, origLen < MAX_PATH - 4 ? origLen : MAX_PATH - 4);
+            memcpy(newName, originalName, takeLen);
+            newName[takeLen] = 0;
             SalamanderGeneral->SalMakeValidFileNameComponent(newName);
             if (*index == 0 && strcmp(newName, originalName) == 0)
                 *index = 1;  // newName is identical to originalName, we must adjust newName
@@ -2727,6 +2751,8 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                 if (MAX_PATH - 4 - (n - newName) < suffixLen)
                 {
                     int cut = (int)(suffixLen - (MAX_PATH - 4 - (n - newName)));
+                    if (dot != NULL)
+                        cut = SalFtpCutBeforeExt(newName, (int)(dot - newName), cut); // feature 141: whole characters (all of the name part = trim the end instead)
                     if (dot != NULL && dot - newName > cut) // shorten the name
                     {
                         memmove(dot - cut, dot, (n - dot) + 1);
@@ -2735,7 +2761,7 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                     }
                     else // just trim the end
                     {
-                        n = newName + MAX_PATH - 4 - suffixLen;
+                        n = newName + SalFtpWholePrefixLen(newName, MAX_PATH - 4 - suffixLen); // feature 141: at a whole character
                         if (dot == n - 1)
                             n--; // if a '.' would remain at the end of the name, trim it as well
                         *n = 0;
@@ -2814,6 +2840,8 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                     }
                 }
             }
+            if (*s != 0) // feature 141: the limit stopped the copy - not in the middle of a character
+                n = newName + SalFtpWholePrefixLen(originalName, (int)(s - originalName));
             *n = 0;
             if (*index == 0 && *s == 0 && !changed) // newName is identical to originalName, we must adjust newName
                 *index = 1;                         // also handles the reserved name "." (by the way: ".." -> "__" or "_.")
@@ -2846,6 +2874,8 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                                 n -= end2 - s2;
                                 if (dot != NULL)
                                     dot -= end2 - s2;
+                                if (semicol != NULL) // feature 141 (old defect): it stayed behind and, without a dot, the suffix was then inserted at a stale position (memmove of size -1)
+                                    semicol -= end2 - s2;
                             }
                         }
                     }
@@ -2855,8 +2885,12 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                 if (MAX_PATH - 4 - (n - newName) < suffixLen)
                 {
                     int cut = (int)(suffixLen - (MAX_PATH - 4 - (n - newName)));
-                    if (dot != NULL && dot - newName > cut) // shorten the name
+                    // feature 141: the bytes removed are whole characters (all of the part = the next way of shortening)
+                    int cutName = dot != NULL ? SalFtpCutBeforeExt(newName, (int)(dot - newName), cut) : 0;
+                    int cutExt = semicol != NULL ? SalFtpCutBeforeExt(newName, (int)(semicol - newName), cut) : 0;
+                    if (dot != NULL && dot - newName > cutName) // shorten the name
                     {
+                        cut = cutName;
                         memmove(dot - cut, dot, (n - dot) + 1);
                         dot -= cut;
                         if (semicol != NULL)
@@ -2865,8 +2899,9 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                     }
                     else
                     {
-                        if (semicol != NULL && semicol - newName > cut) // shortening in the extension
+                        if (semicol != NULL && semicol - newName > cutExt) // shortening in the extension
                         {
+                            cut = cutExt;
                             memmove(semicol - cut, semicol, (n - semicol) + 1);
                             if (dot != NULL && dot >= semicol - cut)
                                 dot = NULL;
@@ -2875,7 +2910,7 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                         }
                         else // just trim the end
                         {
-                            n = newName + MAX_PATH - 4 - suffixLen;
+                            n = newName + SalFtpWholePrefixLen(newName, MAX_PATH - 4 - suffixLen); // feature 141: at a whole character
                             if (semicol == n - 1)
                                 n--; // if a ';' would remain at the end of the name, trim it as well
                             *n = 0;
@@ -3172,6 +3207,16 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                 change = TRUE;
             }
         }
+        if (*s != 0) // feature 141: the limit stopped the copy - not in the middle of a character
+        {
+            char* whole = newName + SalFtpWholePrefixLen(originalName, (int)(s - originalName));
+            if (whole < n)
+            {
+                n = whole;
+                if (n > newName && *(n - 1) == '.') // the dot in front of the dropped character would end the name
+                    n--;
+            }
+        }
         *n = 0;
         if (*index == 0 && *s == 0 && !change) // newName is identical to originalName, we must adjust newName
             *index = 1;                        // also handles the reserved names "." and ".."
@@ -3180,7 +3225,7 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
             sprintf(suffix, "#%d", (*index + 1));
             suffixLen = (int)strlen(suffix);
             if (MAX_PATH - 4 - (n - newName) < suffixLen)
-                n = newName + MAX_PATH - 4 - suffixLen;
+                n = newName + SalFtpWholePrefixLen(newName, MAX_PATH - 4 - suffixLen); // feature 141: at a whole character
             memcpy(n, suffix, suffixLen + 1);
         }
         (*index)++;
@@ -3223,6 +3268,8 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                 }
             }
         }
+        if (*s != 0) // feature 141: the limit stopped the copy - not in the middle of a character
+            n = newName + SalFtpWholePrefixLen(originalName, (int)(s - originalName));
         *n = 0;
         if (*index == 0 && *s == 0 && !change) // newName is identical to originalName, we must adjust newName
             *index = 1;                        // also handles the reserved name "." (by the way: ".." -> "_.")
@@ -3264,6 +3311,8 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
             if (MAX_PATH - 4 - (n - newName) < suffixLen)
             {
                 int cut = (int)(suffixLen - (MAX_PATH - 4 - (n - newName)));
+                if (dot != NULL)
+                    cut = SalFtpCutBeforeExt(newName, (int)(dot - newName), cut); // feature 141: whole characters (all of the name part = trim the end instead)
                 if (dot != NULL && dot - newName > cut) // shortening the name
                 {
                     memmove(dot - cut, dot, (n - dot) + 1);
@@ -3272,7 +3321,7 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                 }
                 else // just trim the end
                 {
-                    n = newName + MAX_PATH - 4 - suffixLen;
+                    n = newName + SalFtpWholePrefixLen(newName, MAX_PATH - 4 - suffixLen); // feature 141: at a whole character
                     if (dot == n - 1)
                         n--; // if a '.' would remain at the end of the name, trim it as well
                     *n = 0;

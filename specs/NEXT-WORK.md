@@ -403,7 +403,20 @@ Code work an agent can do:
            no panel refresh after a partly failed move~~ - done in 139; untranslated English
            literals stay.
        - ~~FTP: download autorename shortens a name at a byte offset; the core cuts a typed
-         Quick Rename name at 259 bytes~~ - **done, feature 137** (also the in-place rename
+         Quick Rename name at 259 bytes~~ - **done, features 137 and 141** (137: the plug-in
+         route and FTP download; 141: the core's mask routine cut every long name - Copy,
+         Move, Quick Rename, the in-place line, a typed mask, Edit New File - and the FTP
+         upload autorename, which 137 had not repaired although this list said so). Left by
+         141: **`CCopyMoveDialog::Transfer` cuts typed text that does not fit the caller's
+         buffer** (Create Directory on a plug-in file system: 174 CJK letters typed, the
+         plug-in gets 173; by reading); **FTP: a file name of about 494 bytes or more makes
+         `PrepareFTPCommand` fail in its 501-byte buffer and the callers send an empty
+         command** (by reading); Paste "- Copy" naming says "cannot copy to itself" for names
+         of about 250 bytes; FTP download target name in `fs4.cpp` cut at a byte (cosmetic);
+         Edit New File is limited to paths under 260 bytes (refused now, was cut); the
+         whole-letter rule of `?` also counts two code-page bytes of a non-UTF-8 FTP server
+         as one letter when they look like UTF-8.
+         Earlier text of this item: 137 (also the in-place rename
          line, which fell back to a code-page name). Left: `ssl.cpp:666` `name[200]` for a call
          that may write 256 bytes; the core's `SalMakeValidFileNameComponent` cuts at byte 256;
          **SFTP: a memory leak after a failed SSH handshake** (debug build: "Detected memory
