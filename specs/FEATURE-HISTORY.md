@@ -2388,3 +2388,11 @@ a few early ones are out of sequence).
   set now. **Trap:** after a FAILED `ListArchive` the plug-in data must not be released - the
   7zip plug-in deletes them and leaves the pointer set (review CRITICAL, measured: a crash).
   Limit: the same size and time = unchanged. Probe 11/0, the build before 5/6.
+- 154-drain-loops-wide: **typed text survives the core's drain loops** (093's leftovers). Nine
+  loops that dispatch to windows during an operation take the wide forms (the end of suspend
+  mode, the worker's suspension, start-up, `WM_QUERYENDSESSION`, the external archiver's wait,
+  registry work, Compare Directories' and ZIP's progress, the viewer thread). Measured: Cyrillic
+  typed into the command line while the suspend-mode drain runs arrived as `???`. **Trap:** a
+  probe that posts after a sent activation races the main loop (2 of 4 caught) - hold the
+  target thread (SuspendThread) while posting. Menus unchanged (code-page mnemonics against
+  code-page texts). Probe 7/0, before 6/1 (7 of 7 runs).

@@ -196,9 +196,11 @@ Functional, no loss:
    the dialog with a marked line on screen). Left, recorded in its fix-log: a member rewritten
    with the same size and time is not told apart; a time-zone change can mark needlessly; a
    changed archive is listed twice on the refresh path.
-9. B-1 leftovers: the loops that only drain messages during an operation and
-   the menus' own modal loops are code-page loops; other plug-ins' dialogs
-   were not examined. Item 5, *B-1* (093).
+9. ~~B-1 leftovers: the loops that only drain messages during an operation~~ - **done, feature
+   154** (nine dispatching loops wide; measured on the end of suspend mode). Kept with reasons
+   (154's fix-log): the menus' own loops (code-page mnemonic against code-page menu texts -
+   consistent), help mode, the tooltip's loop, discard-only loops. Not examined: other plug-ins'
+   dialogs. Item 5, *B-1* (093).
 10. Clearer refusal texts that need new strings: a refused folder copy says
     "Cannot copy a file to itself." and a move into its own subfolder "Cannot
     move a directory to itself." (107); the pack-into-itself refusal does not
@@ -237,7 +239,9 @@ Performance, tooling, cosmetics:
     point 5.
 18. Probe artefacts on the hidden desktop: the 093 dialogs probe's Find-menu
     rows fail in about one run of three (102); 088's `viewers_probe` fails
-    its Code/Markdown Viewer rows there (item 4).
+    its Code/Markdown Viewer rows there (item 4). **Sampled by 154** (`-Only drive`): the 151 build
+    1 of 5, every build since 153 3-5 of 5 (154 excluded by bisecting; no code of 153/154 runs
+    there) - the rate depends on the build; find the mechanism before trusting these rows.
 
 Large or risky, each a feature of its own:
 

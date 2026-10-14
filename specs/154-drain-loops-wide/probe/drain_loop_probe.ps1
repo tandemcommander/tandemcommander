@@ -11,10 +11,12 @@
 
       main   posted while the program idles: the main message loop (wide since 093) dispatches it -
              the channel works on every build
-      susp   the application is deactivated and activated again (WM_ACTIVATEAPP sent FALSE, TRUE):
-             the activation posts WM_USER_END_SUSPMODE, whose handler drains the queue before the
-             panels refresh (mainwnd3.cpp); the characters are posted right after, so they are in
-             the queue when that loop runs. Before 154 the loop was a code-page loop: the Cyrillic
+      susp   the application is deactivated (WM_ACTIVATEAPP sent FALSE: suspend mode); then, with
+             the program's main thread held still (SuspendThread), WM_USER_END_SUSPMODE - what an
+             activation posts - and the characters are posted, and the thread resumed: the
+             handler (mainwnd3.cpp) drains the queue before the panels refresh, so that loop is
+             what dispatches the characters (posting them after a sent activation was a race:
+             2 of 4 runs caught them). Before 154 the loop was a code-page loop: the Cyrillic
              text arrived as '?'.
 
     MUST run through tools\run_on_hidden_desktop.ps1. Messages go only to the windows of the process
@@ -32,7 +34,43 @@ $others = @(Get-Process tandemcommander -ErrorAction SilentlyContinue)
 if ($others.Count) { Write-Output ('REFUSED: tandemcommander.exe already runs: ' + (($others | ForEach-Object { '' + $_.Id + ' ' + $_.Path }) -join '; ')); exit 99 }
 
 . (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
-if (-not ('Uni154' -as [type])) { Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class Uni154 { [DllImport("user32.dll")] public static extern bool IsWindowUnicode(IntPtr h); }' }
+if (-not ('Uni154' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class Uni154
+{
+    [DllImport("user32.dll")] public static extern bool IsWindowUnicode(IntPtr h);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("user32.dll")] static extern bool PostMessageW(IntPtr h, uint msg, IntPtr w, IntPtr l);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenThread(uint access, bool inherit, uint id);
+    [DllImport("kernel32.dll")] static extern uint SuspendThread(IntPtr h);
+    [DllImport("kernel32.dll")] static extern uint ResumeThread(IntPtr h);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+    // the window's thread held still while WM_USER_END_SUSPMODE (to 'main') and then the characters
+    // (to 'edit') are posted: both are in its queue when it runs again, in that order - the handler's
+    // drain loop is what takes the characters (a posting race otherwise decides who does)
+    public static string PostWhileHeld(IntPtr main, IntPtr edit, string text)
+    {
+        uint pid; uint tid = GetWindowThreadProcessId(main, out pid);
+        IntPtr th = OpenThread(0x0002 /* THREAD_SUSPEND_RESUME */, false, tid);
+        if (th == IntPtr.Zero) return "OpenThread failed " + Marshal.GetLastWin32Error();
+        try
+        {
+            if (SuspendThread(th) == 0xFFFFFFFF) return "SuspendThread failed";
+            try
+            {
+                PostMessageW(main, 0x8000 + 106 /* WM_USER_END_SUSPMODE */, IntPtr.Zero, IntPtr.Zero);
+                foreach (char c in text) PostMessageW(edit, 0x0102, (IntPtr)c, (IntPtr)1);
+            }
+            finally { ResumeThread(th); }
+        }
+        finally { CloseHandle(th); }
+        return "";
+    }
+}
+'@
+}
 
 function Hex([string]$s) { return (($s.ToCharArray() | ForEach-Object { '{0:X4}' -f [int]$_ }) -join ' ') }
 function S([int[]]$codes) { return -join ($codes | ForEach-Object { [char]$_ }) }
@@ -72,11 +110,13 @@ try {
         foreach ($k in $Texts.Keys) {
             $t = $Texts[$k]
             [void][Drv098f]::SetText($cb, '', 5000)
+            $how = ''
             if ($row -eq 'susp') {
-                [void][Drv098f]::Send($main, 0x001C, 0, 0, 10000)   # WM_ACTIVATEAPP FALSE: suspend mode
-                [void][Drv098f]::Send($main, 0x001C, 1, 0, 10000)   # TRUE: posts WM_USER_END_SUSPMODE
+                [void][Drv098f]::Send($main, 0x001C, 0, 0, 10000)   # WM_ACTIVATEAPP FALSE: suspend mode (ActivateSuspMode 1)
+                $how = [Uni154]::PostWhileHeld($main, $ed, $t)       # WM_USER_END_SUSPMODE, then the characters
+                if ($how) { Row ("{0}-{1}" -f $row, $k) 'TYPED' 'NOT DRIVEN' $how; continue }
             }
-            foreach ($u in $t.ToCharArray()) { [void][Drv098f]::PostMessageW($ed, 0x0102, [IntPtr][int]$u, [IntPtr]1) }
+            else { foreach ($u in $t.ToCharArray()) { [void][Drv098f]::PostMessageW($ed, 0x0102, [IntPtr][int]$u, [IntPtr]1) } }
             Start-Sleep -Milliseconds 600
             [void][Drv098f]::Send($main, 0, 0, 0, 10000)
             Start-Sleep -Milliseconds 300

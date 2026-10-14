@@ -312,12 +312,14 @@ unsigned ThreadViewerMessageLoopBody(void* parameter)
 
         MSG msg;
         HWND viewHWindow = view->HWindow; // because WM_QUIT leaves the window object unallocated
-        while (GetMessage(&msg, NULL, 0, 0))
+        // feature 154: wide, as the thread's main loop (093) - the code-page form turned a character
+        // typed meanwhile into a Unicode field and outside the layout's code page into '?'
+        while (GetMessageW(&msg, NULL, 0, 0))
         {
-            if (!TranslateAccelerator(viewHWindow, ViewerTable, &msg))
+            if (!TranslateAcceleratorW(viewHWindow, ViewerTable, &msg))
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
         }
     }

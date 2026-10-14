@@ -1,0 +1,15 @@
+drain_loop_probe (feature 154)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre152\tandemcommander.exe
+Date    : 2026-10-14 14:10; ACP 1250; desktop 'tc_probe_16140'
+
+Command line: combo Unicode True, edit Unicode True
+main-cyrillic TYPED  PASS        posted 0416 0443 043A; the field holds 0416 0443 043A
+main-latin1 TYPED  PASS        posted 00E9 00FC; the field holds 00E9 00FC
+main-ascii TYPED  PASS        posted 0061 0062 0063; the field holds 0061 0062 0063
+susp-cyrillic TYPED  FAIL        posted 0416 0443 043A; the field holds 003F 003F 003F
+susp-latin1 TYPED  PASS        posted 00E9 00FC; the field holds 00E9 00FC
+susp-ascii TYPED  PASS        posted 0061 0062 0063; the field holds 0061 0062 0063
+end        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 6, FAIL 1. Left running: 0; registry restored+identical: True

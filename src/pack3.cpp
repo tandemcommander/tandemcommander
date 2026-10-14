@@ -1745,10 +1745,12 @@ EPackRunResult PackRunArchiver(HWND parent, const char* cmdLineIn, const char* c
         if (ret == WAIT_OBJECT_0 + 1)
         {
             MSG msg;
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            // feature 154: wide, as the thread's main loop (093) - the code-page form turned a character
+            // typed meanwhile into a Unicode field and outside the layout's code page into '?'
+            while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
         }
         if ((waitShown && waitWindow.Cancelled) || UserWantsToCancelSafeWaitWindow())

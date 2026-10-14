@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Text typed while the program catches up keeps its characters**
+  (feature 154). Characters outside the keyboard layout's code page (another
+  script, emoji) typed into the command line right when the program came back
+  to the foreground or while an operation was running arrived as `?`.
+
 - **Archive Update warns when another program changed the edited member**
   (feature 153). A file opened for editing from an archive (F4) whose member
   was changed or removed in the archive by another program meanwhile is now

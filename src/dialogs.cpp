@@ -1472,10 +1472,12 @@ MENU_TEMPLATE_ITEM ProgressDialogMenu2[] =
             MSG msg; // cannot be called recursively (AcceptCommands == FALSE) -> ok
             BOOL oldCanClose = CanClose;
             CanClose = FALSE; // do not allow closing, we are inside a method
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            // feature 154: wide, as the thread's main loop (093) - the code-page form turned a character
+            // typed meanwhile into a Unicode field and outside the layout's code page into '?'
+            while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
             {
                 TranslateMessage(&msg);
-                DispatchMessage(&msg);
+                DispatchMessageW(&msg);
             }
             CanClose = oldCanClose;
 

@@ -1789,12 +1789,14 @@ void CCmpDirProgressDialog::AddSize(const CQuadWord& size)
 BOOL CCmpDirProgressDialog::Continue()
 {
     MSG msg;
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) // give the user a moment ...
+    // feature 154: wide, as the thread's main loop (093) - the code-page form turned a character
+    // typed meanwhile into a Unicode field and outside the layout's code page into '?'
+    while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) // give the user a moment ...
     {
-        if (!IsWindow(HWindow) || !IsDialogMessage(HWindow, &msg))
+        if (!IsWindow(HWindow) || !IsDialogMessageW(HWindow, &msg))
         {
             TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            DispatchMessageW(&msg);
         }
     }
 

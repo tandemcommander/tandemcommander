@@ -423,10 +423,12 @@ void CRegistryWorkerThread::WaitForWorkDoneWithMessageLoop()
             if (waitRes == WAIT_OBJECT_0 + 1) // new input
             {
                 MSG msg;
-                while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+                // feature 154: wide, as the thread's main loop (093) - the code-page form turned a character
+                // typed meanwhile into a Unicode field and outside the layout's code page into '?'
+                while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
                 {
                     TranslateMessage(&msg);
-                    DispatchMessage(&msg);
+                    DispatchMessageW(&msg);
                 }
             }
         }

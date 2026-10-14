@@ -3834,10 +3834,12 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
             PostMessage(HWindow, WM_COMMAND, CM_TOGGLEEDITLINE, TRUE);
 
         MSG msg; // process all pending messages
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        // feature 154: wide, as the thread's main loop (093) - the code-page form turned a character
+        // typed meanwhile into a Unicode field and outside the layout's code page into '?'
+        while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            DispatchMessageW(&msg);
         }
 
         // set the active panel according to command line parameters

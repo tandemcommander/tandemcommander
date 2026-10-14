@@ -6275,7 +6275,9 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             CanClose = FALSE; // don't let ourselves be closed; we are inside the method
             BOOL postWM_USER_CLOSE_MAINWND = FALSE;
             BOOL postWM_USER_FORCECLOSE_MAINWND = FALSE;
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+            // feature 154: wide, as the thread's main loop (093) - the code-page form turned a character
+            // typed meanwhile into a Unicode field and outside the layout's code page into '?'
+            while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
             {
                 if (msg.message == WM_USER_CLOSE_MAINWND && msg.hwnd == HWindow)
                     postWM_USER_CLOSE_MAINWND = TRUE;
@@ -6286,7 +6288,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                     else
                     {
                         TranslateMessage(&msg);
-                        DispatchMessage(&msg);
+                        DispatchMessageW(&msg);
                     }
                 }
             }
@@ -6936,10 +6938,12 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                             WindowsManager.CS.Leave();
                             // pretend we are responding software by pumping messages
                             MSG msg;
-                            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+                            // feature 154: wide, as the thread's main loop (093) - the code-page form turned a character
+                            // typed meanwhile into a Unicode field and outside the layout's code page into '?'
+                            while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
                             {
                                 TranslateMessage(&msg);
-                                DispatchMessage(&msg);
+                                DispatchMessageW(&msg);
                             }
                             // give the Find thread some time to react
                             Sleep(50);
