@@ -52,8 +52,9 @@ void NormalizeRect(RECT* r)
     }
 }
 
-// Path to focus, used by menu File/Focus
-TCHAR Focus_Path[MAX_PATH];
+// Path to focus, used by menu File/Focus (feature 150: UTF-8, 3 bytes per character - was MAX_PATH and
+// lstrcpyn cut a longer path: the panel went to a cut folder or focused a cut name)
+TCHAR Focus_Path[3 * MAX_PATH];
 
 // Used by SaveAs dlg to get the current path in the source(=active) panel
 HWND ghSaveAsWindow = NULL;
@@ -3819,10 +3820,15 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
             if (Viewer->IsFullScreen())
                 Viewer->ToggleFullScreen();
 
-            lstrcpyn(Focus_Path, FileName, MAX_PATH);
-            SalamanderGeneral->PostMenuExtCommand(CMD_INTERNAL_FOCUS, TRUE);
-            Sleep(500);        // switching to another window occurs, so in theory this Sleep should not hurt anything
-            Focus_Path[0] = 0; // after 0.5 seconds we no longer want the focus (handles hitting the beginning of Salamander's BUSY mode)
+            if (strlen(FileName) >= SizeOf(Focus_Path)) // feature 150: refused, never cut
+                SalamanderGeneral->SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_PLUGINNAME), MB_ICONINFORMATION);
+            else
+            {
+                lstrcpyn(Focus_Path, FileName, SizeOf(Focus_Path));
+                SalamanderGeneral->PostMenuExtCommand(CMD_INTERNAL_FOCUS, TRUE);
+                Sleep(500);        // switching to another window occurs, so in theory this Sleep should not hurt anything
+                Focus_Path[0] = 0; // after 0.5 seconds we no longer want the focus (handles hitting the beginning of Salamander's BUSY mode)
+            }
         }
         else
             SalamanderGeneral->SalMessageBox(HWindow, LoadStr(IDS_SAL_IS_BUSY), LoadStr(IDS_PLUGINNAME), MB_ICONINFORMATION);

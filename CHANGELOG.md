@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Focus from a plug-in or a message reaches files in long folders**
+  (feature 150). Focus from Checksum, PictView, the "name is too long"
+  messages and the Shares dialog cut a folder path longer than about 460
+  (PictView: 260) bytes - the panel reported an error or went to another
+  folder.
+
 - **Checksum: a list with a very long path is verified** (feature 149). A line
   whose path was longer than about 780 bytes stopped the whole check with
   "Cannot finish operation because of too long name." - also for every other

@@ -1,0 +1,11 @@
+focus_long_folder_probe (feature 150), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 11:05; desktop 'tc_probe_16124'; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Fixture : C:\Users\pavel\AppData\Local\Temp\tc150\v\list.md5: one line; the file's folder has 589 bytes
+
+--- F1: Checksum Verify, Focus on a file in a folder of about 600 bytes
+F1         FOCUS  FAIL        panel at 41 bytes 'C:\Users\pavel\AppData\Local\Temp\tc150\v' (want the 589-byte folder); boxes 1 [[#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc150\v\deep\ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb b\cccccccccccccccccccccccccccccccccccccccccccccccccc" Error: The path specified was not found. | [Button id=1] OK]
+F1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

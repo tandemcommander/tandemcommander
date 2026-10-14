@@ -160,11 +160,16 @@ Crash-class or possible loss:
    whole Verify ("name too long", `FILEINFO::fileName`). Queue 104, entry 4
    (117).
 
-5a. **`FocusNameInPanel` cuts a long folder** (found by 149's review): the core copies the folder
+5a. ~~**`FocusNameInPanel` cuts a long folder**~~ - **done, feature 150** (also PostFocusNameInPanel, PictView, the Plugins / Shares dialogs). Was (found by 149's review): the core copies the folder
    and the name into `MAX_PATH + 200` buffers with `lstrcpyn` (`src/zip.cpp`) - Focus of a file
    in a folder of 460-779 bytes (Checksum, other plug-ins) changes to a CUT folder, possibly
    another one, and may focus another file of the same name. Heap / `SAL_MAX_PATH_UTF8`
    buffers (no interface change); then `Focus_Path` of the plug-ins. Feature 150.
+
+5b. **Plugins dialog: the plug-in's path built with an unbounded `strcat`** (found by 150's
+   review, older): `dialogs5.cpp` takes `GetModuleFileName` (A, code page) into `buf[MAX_PATH]` and
+   appends `plugins\` + `DLLName` without a bound - an install folder near 259 bytes overflows; the
+   folder is not UTF-8. Small.
 
 Functional, no loss:
 

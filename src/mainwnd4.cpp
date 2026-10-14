@@ -2120,10 +2120,18 @@ void CMainWindow::PostFocusNameInPanel(int panel, const char* path, const char* 
     CFilesWindow* p = GetPanel(panel);
     if (p != NULL)
     {
-        static char pathBackup[MAX_PATH + 200];
-        static char nameBackup[MAX_PATH + 200];
-        lstrcpyn(pathBackup, path, MAX_PATH + 200);
-        lstrcpyn(nameBackup, name, MAX_PATH + 200);
+        // feature 150 (review): the posted message needs storage that outlives this call - static, but
+        // of the panel's own limits (MAX_PATH + 200 with lstrcpyn CUT the folder: the Focus button of
+        // the "name is too long" boxes, which appear exactly for long paths, opened a cut folder)
+        static char pathBackup[SAL_MAX_PATH_UTF8];
+        static char nameBackup[SAL_FIND_NAME_U8];
+        if (strlen(path) >= SAL_MAX_PATH_UTF8 || strlen(name) >= SAL_FIND_NAME_U8)
+        {
+            TRACE_E("CMainWindow::PostFocusNameInPanel(): the path or the name does not fit - ignored");
+            return;
+        }
+        strcpy(pathBackup, path);
+        strcpy(nameBackup, name);
         PostMessage(p->HWindow, WM_USER_FOCUSFILE, (WPARAM)nameBackup, (LPARAM)pathBackup);
     }
 }

@@ -6,7 +6,7 @@
 #include "lib/pvw32dll.h"
 
 // Path to focus, used by menu File/Focus
-extern TCHAR Focus_Path[MAX_PATH];
+extern TCHAR Focus_Path[3 * MAX_PATH]; // feature 150
 
 // Used by SaveAs dlg to get the current path in the source(=active) panel
 extern HWND ghSaveAsWindow;

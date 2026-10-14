@@ -2358,3 +2358,10 @@ a few early ones are out of sequence).
   `Focus_Path` instead of cutting it; `SetDispInfoText` shows a name longer than the list view's
   260-character label with a leading ellipsis (it was EMPTY - review). Probe L1; 117 82 / 0.
   Left: the core's `FocusNameInPanel` cuts at `MAX_PATH + 200` (NEXT-WORK 5a).
+- 150-focus-name-long-folder: **"show this file in a panel" never cuts the path.** Measured:
+  Checksum's Focus of a file in a 589-byte folder - "Error Changing Directory" with the path cut at
+  byte 459 (`FocusNameInPanel`: `lstrcpyn` into `MAX_PATH + 200`). Whole `CSalHeapString` copies;
+  a name of `SAL_FIND_NAME_U8` or more (no file's name; `NextFocusName`) refused. Review: the same
+  in `PostFocusNameInPanel` (the "name is too long" boxes' Focus - static buffers of the panel's
+  limits, the message is posted), PictView's `Focus_Path` (MAX_PATH -> 3 x MAX_PATH, refused
+  beyond), the Plugins / Shares dialogs. Probe F1; 149, PictView 120 unchanged.

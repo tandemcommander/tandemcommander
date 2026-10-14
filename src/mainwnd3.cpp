@@ -3185,10 +3185,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             }
 
             const char* focusPlugin = dlg.GetFocusPlugin();
-            if (focusPlugin[0] != 0)
+            CSalHeapString newPathBuf; // feature 150: the whole path (lstrcpyn into MAX_PATH cut it)
+            if (focusPlugin[0] != 0 && newPathBuf.Copy(focusPlugin, 0))
             {
-                char newPath[MAX_PATH];
-                lstrcpyn(newPath, focusPlugin, MAX_PATH);
+                char* newPath = newPathBuf.Get();
                 const char* newName;
                 char* p = strrchr(newPath, '\\');
                 if (p != NULL)
@@ -3338,10 +3338,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             {
                 // user chose Focus
                 const char* path = dlg.GetFocusedPath();
-                if (path != NULL)
+                CSalHeapString newPathBuf; // feature 150: the whole path (lstrcpyn into MAX_PATH cut it)
+                if (path != NULL && newPathBuf.Copy(path, 0))
                 {
-                    char newPath[MAX_PATH];
-                    lstrcpyn(newPath, path, MAX_PATH);
+                    char* newPath = newPathBuf.Get();
                     const char* newName;
                     char* p = strrchr(newPath, '\\');
                     if (p != NULL)

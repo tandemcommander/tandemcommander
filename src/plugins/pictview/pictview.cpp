@@ -1310,7 +1310,7 @@ BOOL CPluginInterfaceForMenuExt::ExecuteMenuItem(CSalamanderForOperationsAbstrac
 
     case CMD_INTERNAL_FOCUS:
     {
-        TCHAR focusPath[MAX_PATH];
+        TCHAR focusPath[3 * MAX_PATH]; // feature 150: as large as Focus_Path (the copy cut at MAX_PATH)
         lstrcpyn(focusPath, Focus_Path, SizeOf(focusPath));
         Focus_Path[0] = 0;
         if (focusPath[0] != 0) // only if we were lucky (we did not hit the start of Salamander's BUSY mode)

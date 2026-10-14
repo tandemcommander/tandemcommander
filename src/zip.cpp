@@ -2106,12 +2106,24 @@ void CSalamanderGeneral::FocusNameInPanel(int panel, const char* path, const cha
         return;
     }
     CFilesWindow* p = GetPanel(panel);
-    char pathBackup[MAX_PATH + 200];
-    char nameBackup[MAX_PATH + 200];
-    lstrcpyn(pathBackup, path, MAX_PATH + 200);
-    lstrcpyn(nameBackup, name, MAX_PATH + 200);
+    // feature 150: copies of the whole path and name - MAX_PATH + 200 bytes with lstrcpyn CUT a longer
+    // folder (Checksum's Focus of a file in a 589-byte folder: "Error Changing Directory" with the cut
+    // path; where the cut named another folder, the panel went there). The panel's own limits decide:
+    // the name goes into its NextFocusName (SAL_FIND_NAME_U8, every name a file system holds fits) -
+    // a longer one is no file's name and the request is refused (the old cut had kept it short)
+    if (strlen(name) >= SAL_FIND_NAME_U8)
+    {
+        TRACE_E("CSalamanderGeneral::FocusNameInPanel(): the name is longer than any file name - ignored");
+        return;
+    }
+    CSalHeapString pathBackup, nameBackup;
+    if (!pathBackup.Copy(path, 0) || !nameBackup.Copy(name, 0))
+    {
+        TRACE_E(LOW_MEMORY);
+        return;
+    }
     if (p != NULL)
-        SendMessage(p->HWindow, WM_USER_FOCUSFILE, (WPARAM)nameBackup, (LPARAM)pathBackup);
+        SendMessage(p->HWindow, WM_USER_FOCUSFILE, (WPARAM)nameBackup.Get(), (LPARAM)pathBackup.Get());
 }
 
 BOOL CSalamanderGeneral::ChangePanelPath(int panel, const char* path, int* failReason,
