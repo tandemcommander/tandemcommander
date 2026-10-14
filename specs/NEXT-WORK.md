@@ -60,6 +60,15 @@ the installer attached** as `tandemcommander-0.1.10-x64-setup.exe`, the
 feature-123 checks below, winget when `microsoft/winget-pkgs#426090` allows.
 If the release happens on another day, change the date in the changelog
 heading and in `PRIVACY.md`.
+**Closing pass on this state (2026-10-14, commit `4c852fe9`)**: `build.cmd full`
+Debug and Release succeeded, `saltests` 21,794 / 0, `check_encoding.py` TOTAL 0;
+the probes of the release's features on the Debug build (hidden desktop) - 124, 125,
+127-132, 134 (cs / en / de), 141, and the regressions 105, 113, 116, 117, 111, 120 -
+all 0 FAIL; 133: 74 / 2 - both in RENCASE, the known intermittent "SSH handshake
+failed: Unable to exchange encryption keys" with the leak boxes at exit (item 5,
+recorded below), the row alone again: PASS. Two 111 rows (WebDAV rename) were NOT
+DRIVEN because the WebClient service was not running after a restart (they pass when
+it runs; starting it needs an administrator).
 
 ***Before 0.1.10* - steps owed to a person** (none could be done in an agent
 session; the first is the one that matters):
