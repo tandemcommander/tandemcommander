@@ -2563,3 +2563,6 @@ a few early ones are out of sequence).
 - 184-pack-unpack-name-cuts: `PackListName` (`pack1.cpp`) - a name for an external archiver's list
   file whole or refused (`IDS_PACKERR_PATH`); the `CharToOem` fallback was unbounded and could
   outgrow the UTF-8 name; a drop-unpack target over MAX_PATH refused. Not driven.
+- 185-truncate-tail-trim: nine cut message texts end at a whole letter; an environment variable
+  name of MAX_PATH bytes or more is not looked up cut; a message box's URL goes to the clipboard
+  whole, as UTF-8. Not driven.

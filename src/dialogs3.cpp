@@ -1310,6 +1310,7 @@ void CDriveInfo::Validate(CTransferInfo& ti)
             {
                 char buf[MAX_PATH + 100];
                 _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_UNABLETOCHANGEDRIVELABEL), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                SalU8TrimIncompleteTail(buf);                                                            // a cut text ends at a whole letter (feature 185)
                 SalMessageBox(HWindow, buf, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                 ti.ErrorOn(IDE_VOLNAME);
             }

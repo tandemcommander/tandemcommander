@@ -906,6 +906,7 @@ BOOL DoExpandVarString(HWND msgParent, const char* varText, BOOL validateOnly, i
                                 varLen = MAX_PATH - 1;
                             memcpy(buf, var, varLen);
                             buf[varLen] = 0;
+                            SalU8TrimIncompleteTail(buf); // the typed name cut at a whole letter (feature 185)
                             char text[MAX_PATH + 200];
                             _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_EXP_VARNOTFOUND), buf); // the typed name is UTF-8 (feature 127)
                             SalU8TrimIncompleteTail(text);
@@ -950,8 +951,15 @@ BOOL DoExpandVarString(HWND msgParent, const char* varText, BOOL validateOnly, i
                         {
                             int varLen = (int)(s - var);
                             char envVar[MAX_PATH];
+                            // feature 185: a name that long is not looked up cut (another variable) -
+                            // it is not found; the message shows it cut at a whole letter
+                            char envVarShown[MAX_PATH];
+                            int shownLen = varLen >= MAX_PATH ? MAX_PATH - 1 : varLen;
+                            memcpy(envVarShown, var, shownLen);
+                            envVarShown[shownLen] = 0;
+                            SalU8TrimIncompleteTail(envVarShown);
                             if (varLen >= MAX_PATH)
-                                varLen = MAX_PATH - 1;
+                                varLen = 0;
                             memcpy(envVar, var, varLen);
                             envVar[varLen] = 0;
                             // feature 071: wide read, so a value outside the ANSI code
@@ -962,7 +970,7 @@ BOOL DoExpandVarString(HWND msgParent, const char* varText, BOOL validateOnly, i
                             {
                                 char text[MAX_PATH + 100];
                                 // the typed name is UTF-8, so is the template (feature 127)
-                                _snprintf_s(text, _TRUNCATE, LoadStrU8(res == 0 ? IDS_EXP_ENVVARNOTFOUND : IDS_EXP_ENVVARTOOLARGE), envVar);
+                                _snprintf_s(text, _TRUNCATE, LoadStrU8(res == 0 ? IDS_EXP_ENVVARNOTFOUND : IDS_EXP_ENVVARTOOLARGE), envVarShown);
                                 SalU8TrimIncompleteTail(text);
                                 if (msgParent == NULL)
                                     TRACE_I(text);

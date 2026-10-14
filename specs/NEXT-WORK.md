@@ -671,11 +671,12 @@ Code work an agent can do:
      `LoadStr`, `GetVolumeInformation` A (the CD thread, `drivelst.cpp` ~1150) and UTF-8 ones - one
      change for the drive list, measured on a machine whose display language is outside its code
      page (or with a removable / CD drive named in another script).
-  8. `_TRUNCATE` sites of 127 without a tail trim (`find.cpp:858/910/1441/1708/1750`,
+  8. ~~`_TRUNCATE` sites of 127 without a tail trim~~ - **done, feature 185**. Was: (`find.cpp:858/910/1441/1708/1750`,
      `dialogs3.cpp:1312`, `icncache.cpp:1239/1286`, `mainwnd4.cpp:259`): fine for the shipped
      languages, short for Russian / Ukrainian if they are enabled; `salamdr2.cpp` cuts a
      variable name at `MAX_PATH - 1` bytes before it is put into the message.
-  9. `msgbox.cpp` copy to the clipboard: `URL` / `URLText` (plug-ins only) are not normalized
+  9. ~~`msgbox.cpp` copy to the clipboard~~ - **done, feature 185** (left: the dialog shows a
+     plug-in's code-page URL text as UTF-8). Was: `URL` / `URLText` (plug-ins only) are not normalized
      and go through `wsprintf` (1,024 characters).
 
 Steps owed to a person:

@@ -850,6 +850,7 @@ BOOL CDuplicateCandidates::GetMD5Digest(CGrepData* data, CFoundFilesData* file,
 
                 char buf[MAX_PATH + 100];
                 _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_ERROR_READING_FILE2), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                SalU8TrimIncompleteTail(buf);                                                       // a cut text ends at a whole letter (feature 185)
                 FIND_LOG_ITEM log;
                 log.Flags = FLI_ERROR;
                 log.Text = buf;
@@ -902,6 +903,7 @@ BOOL CDuplicateCandidates::GetMD5Digest(CGrepData* data, CFoundFilesData* file,
 
         char buf[MAX_PATH + 100];
         _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_ERROR_OPENING_FILE2), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+        SalU8TrimIncompleteTail(buf);                                                       // a cut text ends at a whole letter (feature 185)
         FIND_LOG_ITEM log;
         log.Flags = FLI_ERROR;
         log.Text = buf;
@@ -1434,6 +1436,7 @@ BOOL TestFileContent(DWORD sizeLow, DWORD sizeHigh, const char* path, CGrepData*
             char buf[MAX_PATH + 100];
             _snprintf_s(buf, _TRUNCATE, LoadStrU8(getLinkFileSizeErr ? IDS_GETLINKTGTFILESIZEERROR : IDS_ERROR_OPENING_FILE2),
                     GetErrorText(err));
+            SalU8TrimIncompleteTail(buf); // a cut text ends at a whole letter (feature 185)
             FIND_LOG_ITEM log;
             log.Flags = FLI_ERROR;
             log.Text = buf;
@@ -1700,6 +1703,7 @@ void SearchDirectory(const char* path, int startPathLen,
         if (testFindNextErr && err != ERROR_NO_MORE_FILES)
         {
             _snprintf_s(message, _TRUNCATE, LoadStrU8(IDS_DIRERRORFORMAT), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+            SalU8TrimIncompleteTail(message);                                                  // a cut text ends at a whole letter (feature 185)
             FIND_LOG_ITEM log;
             log.Flags = FLI_ERROR;
             log.Text = message;
@@ -1742,6 +1746,7 @@ void SearchDirectory(const char* path, int startPathLen,
         if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES)
         {
             _snprintf_s(message, _TRUNCATE, LoadStrU8(IDS_DIRERRORFORMAT), GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+            SalU8TrimIncompleteTail(message);                                                  // a cut text ends at a whole letter (feature 185)
 
             FIND_LOG_ITEM log;
             log.Flags = FLI_ERROR | FLI_IGNORE;

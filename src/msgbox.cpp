@@ -313,14 +313,19 @@ BOOL CMessageBox::CopyToClipboard()
         return FALSE;
     }
 
+    // feature 185: the URL and its text (plug-ins) as UTF-8 like the rest - and copied whole, not by
+    // wsprintf (it writes at most 1024 characters, possibly inside a letter)
+    char* urlU8 = URL != NULL ? SalLegacyToU8Alloc(URL) : NULL;
+    char* urlTextU8 = URL != NULL && URLText != NULL ? SalLegacyToU8Alloc(URLText) : NULL;
+
     // compute the total buffer size
     const char* text = textU8;
     int urlTextLen = 0;
-    if (URL != NULL)
+    if (urlU8 != NULL)
     {
-        urlTextLen += (int)strlen(URL) + 4;
-        if (URLText != NULL)
-            urlTextLen += (int)strlen(URLText) + 4;
+        urlTextLen += (int)strlen(urlU8) + 4;
+        if (urlTextU8 != NULL)
+            urlTextLen += (int)strlen(urlTextU8) + 4;
     }
     int buffSize = 4 * (int)strlen(separator) +
                    (int)strlen(titleU8) +
@@ -337,6 +342,8 @@ BOOL CMessageBox::CopyToClipboard()
         TRACE_E(LOW_MEMORY);
         free(titleU8);
         free(textU8);
+        free(urlU8);
+        free(urlTextU8);
         return FALSE;
     }
 
@@ -360,13 +367,21 @@ BOOL CMessageBox::CopyToClipboard()
         *ptr++ = *text++;
     }
 
-    if (URL != NULL)
+    if (urlU8 != NULL)
     {
-        ptr += wsprintf(ptr, "\r\n");
-        if (URLText != NULL)
-            ptr += wsprintf(ptr, "%s ", URLText);
-        ptr += wsprintf(ptr, "%s", URL);
+        strcpy(ptr, "\r\n");
+        ptr += 2;
+        if (urlTextU8 != NULL)
+        {
+            strcpy(ptr, urlTextU8);
+            ptr += strlen(ptr);
+            *ptr++ = ' ';
+        }
+        strcpy(ptr, urlU8);
+        ptr += strlen(ptr);
     }
+    free(urlU8);
+    free(urlTextU8);
 
     written = wsprintf(ptr, "\r\n%s", separator);
     ptr += written;

@@ -259,6 +259,7 @@ void CMainWindow::MakeFileList()
                 char errorText[200 + 2 * MAX_PATH];
                 _snprintf_s(errorText, _TRUNCATE, "%s\n\n%s", LoadStrU8(IDS_ERRORCREATINGTMPFILE), // UTF-8 template: the composed text is UTF-8 (feature 127)
                         GetErrorText(err));
+                SalU8TrimIncompleteTail(errorText); // a cut text ends at a whole letter (feature 185)
                 SalMessageBox(HWindow, errorText, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                 fileName[0] = 0;
             }

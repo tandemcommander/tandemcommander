@@ -1237,6 +1237,7 @@ void CAssociations::ReadAssociations(BOOL showWaitWnd)
                 // ukoncit enumeraci uz pri prvni chybe, jinak zacne cyklit a zarat pamet (zrejme jde
                 // o interni chybu Windowsu), nikdo dalsi to nehlasil, takze to dal neresime
                 _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_UNABLETOGETASSOC), GetErrorText(enumRet)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                SalU8TrimIncompleteTail(errBuf);                                                        // a cut text ends at a whole letter (feature 185)
                 SalMessageBox(parent, errBuf, LoadStr(IDS_UNABLETOGETASSOCTITLE), MB_OK | MB_ICONEXCLAMATION);
             }
             break; // konec enumerace
@@ -1284,6 +1285,7 @@ void CAssociations::ReadAssociations(BOOL showWaitWnd)
                     // ukoncit enumeraci uz pri prvni chybe, jinak zacne cyklit a zrat pamet (zrejme jde
                     // o interni chybu Windowsu), nikdo dalsi to nehlasil, takze to dal neresime
                     _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_UNABLETOGETASSOC), GetErrorText(enumRet)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                    SalU8TrimIncompleteTail(errBuf);                                                        // a cut text ends at a whole letter (feature 185)
                     SalMessageBox(parent, errBuf, LoadStr(IDS_UNABLETOGETASSOCTITLE), MB_OK | MB_ICONEXCLAMATION);
                 }
                 break; // konec enumerace
