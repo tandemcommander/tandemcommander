@@ -210,7 +210,10 @@ Crash-class or possible loss:
    `SalDeleteFile(tgt) || SalMoveFile(src, tgt)` - a failed move leaves the target deleted (the
    user had agreed to give it up; the source keeps its name). `MoveFileExW(REPLACE_EXISTING)` does
    it in one step. Low.
-5h. **F6 Move onto an existing file deletes the target first** (found by 175's review, older,
+5h. ~~**F6 Move onto an existing file deletes the target first**~~ - **closed by measurement,
+   feature 177** (no change): a source that cannot be renamed fails the FIRST move with 32 before
+   the overwrite branch is reached - the target stays; the loss needs another program to lock the
+   source exactly between the delete and the move. Was (found by 175's review, older,
    reachable after the overwrite question): `worker.cpp` ~6238 `DoMoveFile` deletes the target and
    retries the move - a move that then fails (the source held open, an antivirus) leaves the target
    gone and the source under its old name. `MOVEFILE_REPLACE_EXISTING` in one step. Low.

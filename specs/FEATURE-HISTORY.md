@@ -2538,3 +2538,7 @@ a few early ones are out of sequence).
   exists** - the archive is moved aside (`arcXXXX.tmp` in its folder), deleted after a successful
   pack, put back after a failed or cancelled one (before: deleted first - a failed pack lost it).
   Probe `overwrite_probe.ps1` is 119's probe with its own cases.
+- 177-move-over-one-step: **closed by measurement** (no code change) - F6 Move onto an existing file
+  deletes the target, then moves; a source held open without `FILE_SHARE_DELETE` fails the first
+  move with 32 before that branch (probe `move_over_probe.ps1`: the target kept). Only a lock that
+  appears between the delete and the move loses the target.
