@@ -2403,3 +2403,9 @@ a few early ones are out of sequence).
   refused at the folder (it descended and the first file was refused "a file"; an empty folder
   not at all). **Traps:** DeepL's informal register (pins); `translate.merge --module renamer`
   re-lays out 159 controls - keep only the string entries. Probe 10/0, before 3/7.
+- 156-drag-image-text: **the selection's "N files" text in languages with accents** (a user report
+  for 0.1.9: the drag image read "vybran? 2 soubory"). `ExpandPluralFilesDirs(..., u8 = TRUE)` in
+  `CreateDragImage` (drawn as UTF-8 since 043) and in the Copy/Delete-from-archive and Pack subjects
+  (`LoadStrU8` templates - the mixed string was shown through the code page: "Kop?rovat 5 soubor?
+  z archivu do" garbled in the template). **Rule:** a text built by `ExpandPlural*` takes the
+  encoding of its sink. Probe 10/0 (Czech UI), before 8/2; the drag image is a person step.

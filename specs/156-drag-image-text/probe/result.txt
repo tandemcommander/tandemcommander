@@ -1,0 +1,18 @@
+plural_text_probe (feature 156), UI language czech.slg
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 15:06; ACP 1250; desktop 'tc_probe_8044'
+
+pack       TEXT   PASS        want 'P\u0159idat 5 soubor\u016F do archivu': 'P\u0159idat 5 soubor\u016F do archivu'
+pack       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+unpack     TEXT   PASS        want 'Kop\u00EDrovat 5 soubor\u016F z archivu do': 'Kop\u00EDrovat 5 soubor\u016F z archivu do'
+unpack     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+delete     TEXT   PASS        want 'Opravdu chcete odstranit 5 soubor\u016F z archivu?': 'Opravdu chcete odstranit 5 soubor\u016F z archivu?'
+delete     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pack-one   TEXT   PASS        want '^P\u0159idat .*a1\.txt.* do archivu$': 'P\u0159idat soubor "a1.txt" do archivu'
+pack-one   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+unpack-one TEXT   PASS        want '^Kop\u00EDrovat .*a1\.txt.* z archivu do$': 'Kop\u00EDrovat soubor "a1.txt" z archivu do'
+unpack-one END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+drag       TEXT   NOT DRIVEN  the drag image needs a mouse drag (CreateDragImage builds its text with the same ExpandPluralFilesDirs call)
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 1. Left running: 0; registry restored+identical: True

@@ -445,7 +445,9 @@ void CFilesWindow::UnpackZIPArchive(CFilesWindow* target, BOOL deleteOp, const c
             }
         }
         // build the subject for the dialog
-        ExpandPluralFilesDirs(expanded, 200, files, data.IndexesCount - files, epfdmNormal, FALSE);
+        // feature 156: UTF-8 like the template it goes into (LoadStrU8 below) - the mixed text was shown
+        // through the code page: the template's own accented letters were garbled
+        ExpandPluralFilesDirs(expanded, 200, files, data.IndexesCount - files, epfdmNormal, FALSE, TRUE);
     }
     else // take the selected file or directory
     {
@@ -1685,7 +1687,8 @@ void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* plugi
             }
         }
         // build the subject for the dialog
-        ExpandPluralFilesDirs(expanded, MAX_PATH + 100, files, data.IndexesCount - files, epfdmNormal, FALSE);
+        // feature 156: UTF-8 like the template it goes into (LoadStrU8 below)
+        ExpandPluralFilesDirs(expanded, MAX_PATH + 100, files, data.IndexesCount - files, epfdmNormal, FALSE, TRUE);
     }
     else // take the selected file or directory
     {

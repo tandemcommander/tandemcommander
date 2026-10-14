@@ -1724,7 +1724,9 @@ CFilesWindow::CreateDragImage(int cursorX, int cursorY, int& dxHotspot, int& dyH
                     files++;
             }
         }
-        ExpandPluralFilesDirs(buff, MAX_PATH, files, dirs, epfdmSelected, FALSE);
+        // feature 156: UTF-8 - the drag image draws 'buff' as UTF-8 (below); the code-page text showed
+        // "?" for every accented letter (a user report for 0.1.9: "vybran? 2 soubory")
+        ExpandPluralFilesDirs(buff, MAX_PATH, files, dirs, epfdmSelected, FALSE, TRUE);
     }
     else
     {

@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Texts about several selected files read correctly in every language**
+  (feature 156). Dragging several files showed "vybran? 2 soubory" (a
+  question mark for each accented letter); the Copy from archive, Delete from
+  archive and Pack dialogs for several files showed their sentence garbled.
+
 - **Clearer refusals** (feature 155). A folder copied onto itself says so
   (it said "Cannot copy a file to itself."), a folder moved into one of its
   own subfolders says that, packing an archive into itself tells to leave it
