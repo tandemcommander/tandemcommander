@@ -1,0 +1,11 @@
+undelnames_probe (feature 114), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 10:33; ACP 1250; OEM 852 (images made for OEM 852); desktop 'tc_probe_29516'; registry key existed True
+Images  : wrote fat114.ima (13 files), exfat114.ima (6 files), exfatdup114.ima (2 files of one 334-byte name), OEM cp 852
+
+num        OPEN   PASS        change directory: panel: ...\Local\Temp\tc114_un\img\exfatnum148.ima\{All Deleted Files}; windows: no window
+num        NUMBER FAIL        restored 2: a (1).txt=num3, a (2).txt=num2; boxes 1 [...n id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel]; fatal none (want: 3 files, 3 contents, 'a (1).txt' = num3, no box)
+num        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 2, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

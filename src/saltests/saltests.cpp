@@ -52,6 +52,7 @@
 #include "saljpegkeep.h"     // feature 132
 #include "salmaskname.h"     // feature 141
 #include "salloopclose.h"    // feature 143
+#include "salnumbername.h"   // feature 148
 #include "salftpautoren.h"   // feature 141
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
@@ -11156,6 +11157,136 @@ static void TestLoopClose143()
     CHECK(l.Last && l.CloseNow);
 }
 
+// feature 148: numbered names that skip the names the list holds (salnumbername.h)
+static BOOL Num148(const char* const* names, const BOOL* renumber, int count, const char* const* want)
+{
+    char* out[16];
+    if (!SalPickNumberedNames(count, names, renumber, out))
+        return FALSE;
+    BOOL ok = TRUE;
+    for (int i = 0; i < count; i++)
+    {
+        if (want[i] == NULL)
+            ok = ok && out[i] == NULL;
+        else
+            ok = ok && out[i] != NULL && strcmp(out[i], want[i]) == 0;
+        free(out[i]);
+    }
+    return ok;
+}
+
+static void TestNumberName148()
+{
+    // the rule of Undelete's AddNumberSuffix: before an extension of exactly three characters
+    char* n = SalNumberedNameAlloc("a.txt", 2);
+    CHECK(n != NULL && strcmp(n, "a (2).txt") == 0);
+    free(n);
+    n = SalNumberedNameAlloc("a.tar.gz", 1);
+    CHECK(n != NULL && strcmp(n, "a.tar.gz (1)") == 0);
+    free(n);
+    n = SalNumberedNameAlloc("noext", 3);
+    CHECK(n != NULL && strcmp(n, "noext (3)") == 0);
+    free(n);
+    n = SalNumberedNameAlloc(".cvspass", 1);
+    CHECK(n != NULL && strcmp(n, ".cvspass (1)") == 0);
+    free(n);
+
+    // the defect: two "a.txt" and an "a (1).txt" that keeps its name -> 2 and 3
+    {
+        const char* names[] = {"a.txt", "a.txt", "a (1).txt"};
+        BOOL ren[] = {TRUE, TRUE, FALSE};
+        const char* want[] = {"a (2).txt", "a (3).txt", NULL};
+        CHECK(Num148(names, ren, 3, want));
+    }
+    // as before when nothing is in the way
+    {
+        const char* names[] = {"a.txt", "a.txt", "b.txt"};
+        BOOL ren[] = {TRUE, TRUE, FALSE};
+        const char* want[] = {"a (1).txt", "a (2).txt", NULL};
+        CHECK(Num148(names, ren, 3, want));
+    }
+    // the file system's rule: "A (1).TXT" and a non-ASCII case pair are taken names too
+    {
+        const char* names[] = {"a.txt", "a.txt", "A (1).TXT", "\xC4\x8C.txt", "\xC4\x8C.txt", "\xC4\x8D (1).txt"};
+        BOOL ren[] = {TRUE, TRUE, FALSE, TRUE, TRUE, FALSE};
+        const char* want[] = {"a (2).txt", "a (3).txt", NULL, "\xC4\x8C (2).txt", "\xC4\x8C (3).txt", NULL};
+        CHECK(Num148(names, ren, 6, want));
+    }
+    // FAT: the existing file keeps "a.txt", the deleted ones are numbered past an existing "a (1).txt"
+    {
+        const char* names[] = {"a.txt", "a.txt", "a.txt", "a (1).txt"};
+        BOOL ren[] = {FALSE, TRUE, TRUE, FALSE};
+        const char* want[] = {NULL, "a (2).txt", "a (3).txt", NULL};
+        CHECK(Num148(names, ren, 4, want));
+    }
+    // two groups: "a (1).txt" twice is renumbered away, so the "a.txt" group may take "a (1).txt"
+    {
+        const char* names[] = {"a (1).txt", "a (1).txt", "a.txt", "a.txt"};
+        BOOL ren[] = {TRUE, TRUE, TRUE, TRUE};
+        const char* want[] = {"a (1) (1).txt", "a (1) (2).txt", "a (1).txt", "a (2).txt"};
+        CHECK(Num148(names, ren, 4, want));
+    }
+    // a new name never equals another new name ("a (2).txt" chosen for the group, then the group
+    // of the other spelling continues at 3)
+    {
+        const char* names[] = {"a.txt", "a.txt", "A.TXT"};
+        BOOL ren[] = {TRUE, TRUE, TRUE};
+        const char* want[] = {"a (1).txt", "a (2).txt", "A (3).TXT"};
+        CHECK(Num148(names, ren, 3, want));
+    }
+    // nothing to number
+    {
+        const char* names[] = {"a.txt"};
+        BOOL ren[] = {FALSE};
+        const char* want[] = {NULL};
+        CHECK(Num148(names, ren, 1, want));
+    }
+    // a large list (review of 148: the first version was quadratic): 20,000 equal names and 10,000
+    // groups of two, sorted as the callers sort - every result unique, the big group numbered 1..20000
+    {
+        const int big = 20000, groups = 10000, count = big + 2 * groups;
+        char** store = (char**)malloc(count * sizeof(char*));
+        const char** names = (const char**)malloc(count * sizeof(const char*));
+        BOOL* ren = (BOOL*)malloc(count * sizeof(BOOL));
+        char** out = (char**)malloc(count * sizeof(char*));
+        BOOL ok = store != NULL && names != NULL && ren != NULL && out != NULL;
+        for (int i = 0; ok && i < count; i++)
+        {
+            store[i] = (char*)malloc(32);
+            if (store[i] == NULL)
+            {
+                ok = FALSE;
+                break;
+            }
+            if (i < 2 * groups)
+                sprintf(store[i], "g%05d.txt", i / 2);
+            else
+                strcpy(store[i], "Thumbs.db");
+            names[i] = store[i];
+            ren[i] = TRUE;
+        }
+        DWORD t0 = GetTickCount();
+        ok = ok && SalPickNumberedNames(count, names, ren, out);
+        DWORD ms = GetTickCount() - t0;
+        if (ok)
+        {
+            qsort(out, count, sizeof(out[0]), SalNumberNameDetail::CmpPtr);
+            for (int i = 1; ok && i < count; i++)
+                ok = SalNameOrderCompareCI(out[i - 1], -1, out[i], -1) != 0;
+        }
+        CHECK(ok);
+        CHECK(ms < 10000); // seconds at most even in a Debug build (the quadratic version: minutes)
+        for (int i = 0; out != NULL && i < count; i++)
+            free(out[i]);
+        for (int i = 0; store != NULL && i < count; i++)
+            free(store[i]);
+        free(store);
+        free(names);
+        free(ren);
+        free(out);
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -11239,6 +11370,7 @@ int main(int argc, char** argv)
     TestU8WholePrefix137();
     TestMaskName141();
     TestLoopClose143();
+    TestNumberName148();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

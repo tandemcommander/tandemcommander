@@ -37,7 +37,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Privacy and security | 083, 085, 086, 090, 123 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121 |
 | PictView | 105, 111, 120 |
-| Undelete | 114, 115 |
+| Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
@@ -2340,3 +2340,13 @@ a few early ones are out of sequence).
   `Release` is started again when `Release` returns FALSE without force. 118 probe 58 / 0. Left:
   the comparator's hex view may show a stray box during `WM_DESTROY` (no crash);
   `CFileMapping::Destroy` keeps `FileSize`.
+- 148-undelete-numbering: **equal deleted names are numbered past every name the list holds.**
+  Measured: two deleted `a.txt` and a deleted `a (1).txt` restored together - "overwrite
+  `a (1).txt`?" (Yes lost the third file's content). `src/common/salnumbername.h` (header-only):
+  `SalNumberedNameAlloc` (AddNumberSuffix's rule, byte-identical without a collision),
+  `SalPickNumberedNames` - per original name the next number whose result is neither a kept name
+  nor one chosen before (`SalNameOrderCompareCI`); sorted sets with binary search (the first
+  version was quadratic - {All Deleted Files} holds thousands of `Thumbs.db`). Used by
+  `CFileList::RenameDuplicateFiles` (fs2.cpp, the restore list) and the FAT listing (`fat.h`, only
+  deleted items numbered); the FAT recursion no longer stops at a one-item folder (pre-existing).
+  114 probe: image kind `num`, row `num`; 114 33 / 0 / 4, 115 23 / 0 / 2; saltests +13.

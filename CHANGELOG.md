@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Undelete: restoring deleted files of one name never overwrites another
+  restored file** (feature 148). Two deleted `a.txt` and a deleted `a (1).txt`
+  were all named `a (1).txt` at least twice, and the restore asked to
+  overwrite one with the other. The numbers now skip the names the list
+  already has; in FAT folders below a folder with a single item the deleted
+  files of one name are numbered too.
+
 - **Checksum and File Comparator windows close reliably** (feature 147). A
   read error met just while a Checksum window was closing could block it for
   good; after a declined close the File Comparator stopped taking comparisons

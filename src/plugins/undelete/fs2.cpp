@@ -13,7 +13,8 @@
 #include "volume.h"
 #include "snapshot.h"
 #include "dataruns.h"
-#include "splfiledlg.h" // feature 104: the Unicode folder picker
+#include "splfiledlg.h"                 // feature 104: the Unicode folder picker
+#include "../../common/salnumbername.h" // feature 148: numbered names that skip the taken ones
 #include "stream.h"
 #include "dialogs.h"
 #include "undelete.h"
@@ -614,28 +615,57 @@ BOOL CFileList::RenameDuplicateFiles()
     // sort by name
     qsort(Data, Count, sizeof(FL_ITEM*), compare_items);
 
-    // rename duplicated names
-    for (int i = 0; i < Count - 1; i++)
+    // feature 148: which items get a number - every item of a group of equal names (as before); the
+    // numbers skip every name the list holds (two "a.txt" and an "a (1).txt" became "a (1).txt" twice,
+    // and the restore asked to overwrite one with the other)
+    if (Count < 2)
+        return TRUE;
+    const char** names = (const char**)malloc(Count * sizeof(const char*));
+    BOOL* renumber = (BOOL*)malloc(Count * sizeof(BOOL));
+    char** newNames = (char**)malloc(Count * sizeof(char*));
+    BOOL ok = names != NULL && renumber != NULL && newNames != NULL;
+    if (ok)
     {
-        int j = i;
-        while (j + 1 < Count && String<char>::NameCmp(operator[](i)->Name, operator[](j + 1)->Name) == 0)
-            j++;
-
-        if (j > i)
+        for (int i = 0; i < Count; i++)
         {
-            for (int k = i, n = 1; k <= j; k++)
-            {
-                FL_ITEM* item = operator[](k);
-                char* newname = String<char>::AddNumberSuffix(item->Name, n++);
-                if (newname == NULL)
-                    return String<char>::Error(IDS_UNDELETE, IDS_LOWMEM);
-                delete[] item->Name;
-                item->Name = newname;
-            }
+            names[i] = operator[](i)->Name;
+            renumber[i] = FALSE;
+        }
+        for (int i = 0; i < Count - 1; i++)
+        {
+            int j = i;
+            while (j + 1 < Count && String<char>::NameCmp(operator[](i)->Name, operator[](j + 1)->Name) == 0)
+                j++;
+            for (int k = i; j > i && k <= j; k++)
+                renumber[k] = TRUE;
             i = j;
         }
+        ok = SalPickNumberedNames(Count, names, renumber, newNames);
     }
-
+    for (int i = 0; ok && i < Count; i++)
+    {
+        if (newNames[i] == NULL)
+            continue;
+        FL_ITEM* item = operator[](i);
+        size_t l = strlen(newNames[i]) + 1;
+        char* newname = new char[l];
+        if (newname == NULL)
+        {
+            ok = FALSE;
+            break;
+        }
+        memcpy(newname, newNames[i], l);
+        delete[] item->Name;
+        item->Name = newname;
+    }
+    if (newNames != NULL && names != NULL && renumber != NULL)
+        for (int i = 0; i < Count; i++)
+            free(newNames[i]);
+    free(names);
+    free(renumber);
+    free(newNames);
+    if (!ok)
+        return String<char>::Error(IDS_UNDELETE, IDS_LOWMEM);
     return TRUE;
 }
 

@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include "../../../common/salfatname.h" // feature 114: the short-name rules (0xE5 marker, 0x05 escape, OEM)
+#include "../../../common/salfatname.h"    // feature 114: the short-name rules (0xE5 marker, 0x05 escape, OEM)
+#include "../../../common/salnumbername.h" // feature 148: numbered names that skip the taken ones
 
 template <typename CHAR>
 class CClusterHeap
@@ -2368,41 +2369,75 @@ BOOL CFATSnapshot<CHAR>::RenameDuplicateDirectories(FILE_RECORD_I<CHAR>* dir)
     CALL_STACK_MESSAGE_NONE
     // CALL_STACK_MESSAGE1("CFATSnapshot::RenameDuplicateDirectories()");
 
-    if (dir->NumDirItems < 2)
-        return TRUE;
+    // review of 148: a folder of one item returned here BEFORE the recursion below - nothing under it
+    // was ever numbered (a root holding only "Photos", "Backup" holding only "Documents")
+    if (dir->NumDirItems > 1) // sort by name
+        qsort(dir->DirItems, dir->NumDirItems, sizeof(DIR_ITEM_I<CHAR>), compare_names);
 
-    // sort by name
-    qsort(dir->DirItems, dir->NumDirItems, sizeof(DIR_ITEM_I<CHAR>), compare_names);
-
-    // rename duplicates
+    // rename duplicates: every DELETED item of a group of equal names gets a number (before the
+    // extension, test.txt -> test (1).txt); feature 148: the numbers skip every name of the folder
+    // (the existing files' and the other deleted ones') - they were counted from 1 regardless
     DIR_ITEM_I<CHAR>* di = dir->DirItems;
-    for (DWORD i = 0; i < dir->NumDirItems - 1; i++)
+    DWORD nItems = dir->NumDirItems;
+    const char** names = nItems > 1 ? (const char**)malloc(nItems * sizeof(const char*)) : NULL;
+    BOOL* renumber = nItems > 1 ? (BOOL*)malloc(nItems * sizeof(BOOL)) : NULL;
+    char** newNames = nItems > 1 ? (char**)malloc(nItems * sizeof(char*)) : NULL;
+    if (nItems > 1)
     {
-        DWORD j = i;
-        while (j + 1 < dir->NumDirItems &&
-               String<CHAR>::NameCmp(di[i].Record->FileNames->FNName, di[j + 1].Record->FileNames->FNName) == 0) // feature 115
+        BOOL ok = names != NULL && renumber != NULL && newNames != NULL;
+        BOOL any = FALSE;
+        if (ok)
         {
-            j++;
-        }
-
-        if (j > i)
-        {
-            int n = 1;
-            for (DWORD k = i; k <= j; k++)
+            for (DWORD i = 0; i < nItems; i++)
             {
-                FILE_RECORD_I<CHAR>* r = di[k].Record;
-                // if it is deleted file, add number suffix (before extension, for example test.txt -> test (1).txt)
-                if (r->Flags & FR_FLAGS_DELETED)
-                {
-                    CHAR* newname = String<CHAR>::AddNumberSuffix(r->FileNames->FNName, n++);
-                    if (newname == NULL)
-                        return String<CHAR>::Error(IDS_UNDELETE, IDS_LOWMEM);
-                    delete[] r->FileNames->FNName;
-                    r->FileNames->FNName = newname;
-                }
+                names[i] = di[i].Record->FileNames->FNName;
+                renumber[i] = FALSE;
             }
-            i = j;
+            for (DWORD i = 0; i < nItems - 1; i++)
+            {
+                DWORD j = i;
+                while (j + 1 < nItems &&
+                       String<CHAR>::NameCmp(di[i].Record->FileNames->FNName, di[j + 1].Record->FileNames->FNName) == 0) // feature 115
+                {
+                    j++;
+                }
+                for (DWORD k = i; j > i && k <= j; k++)
+                {
+                    if (di[k].Record->Flags & FR_FLAGS_DELETED)
+                    {
+                        renumber[k] = TRUE;
+                        any = TRUE;
+                    }
+                }
+                i = j;
+            }
+            if (any)
+                ok = SalPickNumberedNames((int)nItems, names, renumber, newNames);
         }
+        for (DWORD i = 0; ok && any && i < nItems; i++)
+        {
+            if (newNames[i] == NULL)
+                continue;
+            FILE_RECORD_I<CHAR>* r = di[i].Record;
+            size_t l = strlen(newNames[i]) + 1;
+            CHAR* newname = new CHAR[l];
+            if (newname == NULL)
+            {
+                ok = FALSE;
+                break;
+            }
+            memcpy(newname, newNames[i], l);
+            delete[] r->FileNames->FNName;
+            r->FileNames->FNName = newname;
+        }
+        if (names != NULL && renumber != NULL && newNames != NULL && any)
+            for (DWORD i = 0; i < nItems; i++)
+                free(newNames[i]);
+        free(names);
+        free(renumber);
+        free(newNames);
+        if (!ok)
+            return String<CHAR>::Error(IDS_UNDELETE, IDS_LOWMEM);
     }
 
     // recursion into subdirectories

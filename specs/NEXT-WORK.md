@@ -152,7 +152,8 @@ Crash-class or possible loss:
    view, Checksum read errors) can appear while its window closes, also on a
    normal exit; the File Comparator ends its `fcremote` receiver thread before
    a window close that may time out. Queue 104, entry 6 (118).
-4. **Undelete numbering** can produce a name another listed item already has
+4. ~~**Undelete numbering**~~ - **done, feature 148** (measured; also the FAT listing below a
+   one-item folder). Was: Undelete numbering can produce a name another listed item already has
    (`a.txt` twice and `a (1).txt` → an overwrite prompt; every release).
    Queue 104, entry 2 (115).
 5. **Checksum**: a list line whose path does not fit 780 bytes aborts the

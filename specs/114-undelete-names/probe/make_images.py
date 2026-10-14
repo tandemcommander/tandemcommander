@@ -400,6 +400,12 @@ def make_exfat(kind='main'):
     if kind == 'dup':
         add(LONG_DUP_NAME, 'dup1', True, True)
         add(LONG_DUP_NAME, 'dup2', True, True)
+    elif kind == 'num':
+        # feature 148: two deleted files of one name and a third whose name is what the numbering
+        # gives the first of them - the numbering must skip it
+        add('a.txt', 'num1', True, True)
+        add('a.txt', 'num2', True, True)
+        add('a (1).txt', 'num3', True, True)
     else:
         add('\u597d.txt', 'hao', True, True)
         add('\u010clanek.txt', 'clanek', True, False)
@@ -462,6 +468,9 @@ def main():
     fimg, fexp, fpr = make_fat(cp)
     eimg, eexp = make_exfat()
     dimg, dexp = make_exfat('dup')
+    nimg, nexp = make_exfat('num')  # feature 148
+    with open(os.path.join(out, 'exfatnum148.ima'), 'wb') as f:
+        f.write(nimg)
     with open(os.path.join(out, 'fat114.ima'), 'wb') as f:
         f.write(fimg)
     with open(os.path.join(out, 'exfat114.ima'), 'wb') as f:
@@ -472,7 +481,8 @@ def main():
         json.dump({'oemcp': cp,
                    'fat': {'files': fexp, 'prompts': [u16(p) for p in fpr]},
                    'exfat': {'files': eexp, 'prompts': []},
-                   'dup': {'name_units': u16(LONG_DUP_NAME), 'name_bytes': len(LONG_DUP_NAME.encode('utf-8'))}}, f, indent=1)
+                   'dup': {'name_units': u16(LONG_DUP_NAME), 'name_bytes': len(LONG_DUP_NAME.encode('utf-8'))},
+                   'num': {'files': nexp}}, f, indent=1)
     print('wrote fat114.ima (%d files), exfat114.ima (%d files), exfatdup114.ima (2 files of one %d-byte name), OEM cp %d' %
           (len(fexp), len(eexp), len(LONG_DUP_NAME.encode('utf-8')), cp))
 

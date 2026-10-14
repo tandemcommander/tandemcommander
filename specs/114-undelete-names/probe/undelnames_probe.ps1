@@ -260,6 +260,31 @@ function Run-Dup($Exp) {
     finally { if ($id) { End-P $Case $id $before } }
 }
 
+# feature 148: two deleted 'a.txt' and a deleted 'a (1).txt' restored together - the numbering of the two
+# 'a.txt' must skip the name the third one has: three files, three contents, no question
+function Run-Num($Exp) {
+    $Case = 'num'
+    $out = $Root + '\out_' + $Case; NewDir $out
+    $id = 0; $before = Reports
+    try {
+        $id = Start-P $StartDir $out
+        $o = Open-Deleted $id ($ImgDir + '\exfatnum148.ima')
+        Row $Case 'OPEN' (V $o.Ok) ("{0}: {1}" -f $o.How, $o.Facts)
+        if (-not $o.Ok) { return }
+        $r = Restore-All $id
+        $map = Folder-Map $out
+        $want = @{}; foreach ($f in $Exp.files) { $want[$f.content] = $f.tag }
+        $got = @($map.Keys | Sort-Object | ForEach-Object { "{0}={1}" -f (Esc $_), $(if ($want.ContainsKey($map[$_])) { $want[$map[$_]] } else { '?' }) })
+        $contents = @($map.Values | Sort-Object -Unique)
+        $a1 = $map['a (1).txt']
+        $ok = (-not $r.Fatal) -and ($r.Boxes.Count -eq 0) -and ($map.Count -eq 3) -and ($contents.Count -eq 3) -and ($null -ne $a1) -and ($want[$a1] -eq 'num3')
+        Row $Case 'NUMBER' (V $ok) ("restored {0}: {1}; boxes {2}{3}; fatal {4} (want: 3 files, 3 contents, 'a (1).txt' = num3, no box)" -f $map.Count, ($got -join ', '), $r.Boxes.Count,
+            $(if ($r.Boxes.Count) { ' [' + (($r.Boxes | ForEach-Object { Tail $_ 110 }) -join ' || ') + ']' } else { '' }), $(if ($r.Fatal) { Esc $r.Fatal } else { 'none' }))
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-P $Case $id $before } }
+}
+
 # ---- main ---------------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc114_un_backup.reg'
 $existed = Backup-Reg $backup
@@ -278,6 +303,7 @@ try {
     if (Want 'fat') { Run-Image 'fat' 'fat114.ima' $exp.fat }
     if (Want 'exfat') { Run-Image 'exfat' 'exfat114.ima' $exp.exfat }
     if (Want 'dup') { Run-Dup $exp.dup }
+    if (Want 'num') { Run-Num $exp.num }
     if (-not $Only) {
         foreach ($nd in @('NTFS: no NTFS image can be made without admin rights or a formatter; the NTFS names take the same fixed listing / restore path (fs2.cpp) and the WTF-8 conversion (miscstr.cpp)',
                           'volume mount points: mountvol / SetVolumeMountPoint need admin rights; the W volume layer is verified by code reading and saltests (SalVolumePathsWToU8 / SalVolumePathWToU8)',
