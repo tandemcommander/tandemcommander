@@ -524,13 +524,13 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
             }
             continue;
         }
-        if (listEnc == PACKLIST_OEM)
+        if (!PackListName(name, listEnc, namecnv, _countof(namecnv))) // feature 184: whole or refused
         {
-            if (SalU8ToOEM(name, namecnv, _countof(namecnv)) == 0)
-                CharToOem(name, namecnv); // legacy fallback
+            fclose(listFile);
+            SalDeleteFile(tmpListNameBuf);
+            SalRemoveDirectory(tmpDirNameBuf);
+            return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PATH, name);
         }
-        else
-            lstrcpyn(namecnv, name, _countof(namecnv));
         // put the name into the list
         if (!isDir)
         {
@@ -980,5 +980,43 @@ BOOL PackUnpackOneFile(CFilesWindow* panel, const char* archiveFileName,
     free(srcName);
     free(destName);
     RemoveTemporaryDir(tmpDirNameBuf);
+    return TRUE;
+}
+
+//
+// ****************************************************************************
+// PackListName (feature 184)
+//
+// A name for the line of an external archiver's list file (PACKLIST_OEM: the console code page;
+// otherwise the bytes as they are), whole or not at all - FALSE when it does not fit 'outSize'
+// bytes or cannot be converted; the caller refuses (IDS_PACKERR_PATH). The lists cut a long name
+// with lstrcpyn (the archiver got another file's name) and fell back to an unbounded CharToOem,
+// which can be longer than the UTF-8 name (a CP932 lead byte, U+FFFD under the UTF-8 code page).
+
+BOOL PackListName(const char* name, int listEnc, char* out, int outSize)
+{
+    if (name == NULL || out == NULL || outSize <= 0)
+        return FALSE;
+    out[0] = 0;
+    if (listEnc == PACKLIST_OEM)
+    {
+        if (SalU8ToOEM(name, out, outSize) != 0)
+            return TRUE;
+        // not UTF-8 or a letter the console code page lacks: the old fallback read the name as code
+        // page - the same, bounded
+        int wn = MultiByteToWideChar(CP_ACP, 0, name, -1, NULL, 0); // encoding-check: allow cp-acp-utf8-source - the legacy fallback for a name that is not UTF-8 (was CharToOem)
+        WCHAR* w = wn > 0 ? (WCHAR*)malloc(wn * sizeof(WCHAR)) : NULL;
+        if (w == NULL)
+            return FALSE;
+        MultiByteToWideChar(CP_ACP, 0, name, -1, w, wn); // encoding-check: allow cp-acp-utf8-source - the legacy fallback for a name that is not UTF-8 (was CharToOem)
+        int n = WideCharToMultiByte(CP_OEMCP, 0, w, -1, out, outSize, NULL, NULL);
+        free(w);
+        if (n == 0)
+            out[0] = 0;
+        return n > 0;
+    }
+    if (strlen(name) >= (size_t)outSize)
+        return FALSE;
+    strcpy(out, name);
     return TRUE;
 }

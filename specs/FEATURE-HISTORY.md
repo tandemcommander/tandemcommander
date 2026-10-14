@@ -2560,3 +2560,6 @@ a few early ones are out of sequence).
   EditFile, Email files, Make file list, force close, reinstall, a DOS packer) and the unpack
   dialog offered only a target that fits (measured: a Debug assertion at F5 from an archive with
   the other panel 1,062 bytes deep).
+- 184-pack-unpack-name-cuts: `PackListName` (`pack1.cpp`) - a name for an external archiver's list
+  file whole or refused (`IDS_PACKERR_PATH`); the `CharToOem` fallback was unbounded and could
+  outgrow the UTF-8 name; a drop-unpack target over MAX_PATH refused. Not driven.

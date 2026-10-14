@@ -315,13 +315,14 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
         }
         if (supportLongNames)
         {
-            if (listEnc == PACKLIST_OEM)
+            // feature 184: whole or refused (PackListName, pack1.cpp) - the CharToOem fallback
+            // wrote an unbounded conversion into namecnv[MAX_PATH]
+            if (!PackListName(name, listEnc, namecnv, _countof(namecnv)))
             {
-                if (SalU8ToOEM(name, namecnv, _countof(namecnv)) == 0)
-                    CharToOem(name, namecnv); // legacy fallback
+                fclose(listFile);
+                SalDeleteFile(tmpListNameBuf);
+                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PATH, name);
             }
-            else
-                lstrcpyn(namecnv, name, _countof(namecnv));
         }
         else
         {
@@ -711,13 +712,12 @@ BOOL PackDelFromArc(HWND parent, CFilesWindow* panel, const char* archiveFileNam
             }
             continue;
         }
-        if (listEnc == PACKLIST_OEM)
+        if (!PackListName(name, listEnc, namecnv, _countof(namecnv))) // feature 184: whole or refused
         {
-            if (SalU8ToOEM(name, namecnv, _countof(namecnv)) == 0)
-                CharToOem(name, namecnv); // legacy fallback
+            fclose(listFile);
+            SalDeleteFile(tmpListNameBuf);
+            return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PATH, name);
         }
-        else
-            lstrcpyn(namecnv, name, _countof(namecnv));
         // and put it into the list
         if (!isDir)
         {

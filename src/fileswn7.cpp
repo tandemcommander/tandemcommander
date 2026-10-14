@@ -526,7 +526,19 @@ void CFilesWindow::UnpackZIPArchive(CFilesWindow* target, BOOL deleteOp, const c
         if (tgtPath != NULL || dlg.Execute() == IDOK)
         {
             if (tgtPath != NULL)
-                lstrcpyn(path, tgtPath, MAX_PATH);
+            {
+                // feature 184: a drop target the unpack cannot take is refused - lstrcpyn cut it
+                // (another folder)
+                if (strlen(tgtPath) >= MAX_PATH)
+                {
+                    SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORCOPY), MB_OK | MB_ICONEXCLAMATION);
+                    UpdateWindow(MainWindow->HWindow);
+                    delete[] (data.Indexes);
+                    EndStopRefresh();
+                    return;
+                }
+                strcpy(path, tgtPath);
+            }
             UpdateWindow(MainWindow->HWindow);
             //---  for disk paths, convert '/' to '\\' and remove duplicate '\\'
             if (!IsPluginFSPath(path) &&

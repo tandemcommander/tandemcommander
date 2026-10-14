@@ -726,6 +726,9 @@ extern CArchiverConfig ArchiverConfig;
 extern const TPackErrorTable RARErrors;
 extern const TPackErrorTable SevenZipErrors;
 extern BOOL (*PackErrorHandlerPtr)(HWND parent, const WORD errNum, ...);
+
+// feature 184: a name for an external archiver's list file, whole or not at all (pack1.cpp)
+BOOL PackListName(const char* name, int listEnc, char* out, int outSize);
 extern const SPackFormat PackFormat[];
 
 // ****************************************************************************

@@ -210,7 +210,8 @@ Crash-class or possible loss:
    **Done, feature 183** (measured: an assertion at F5 from an archive with the other panel in a
    1,062-byte path; Email files not driven - no MAPI client). Left (its review): `fileswn7.cpp`
    ~528 `lstrcpyn(path, tgtPath, MAX_PATH)` cuts a drag & drop unpack target; `pack2.cpp` ~323
-   cuts a long name in an external packer's list file (`namecnv[MAX_PATH]`).
+   cuts a long name in an external packer's list file (`namecnv[MAX_PATH]`) - **both done, feature
+   184** (also the unpack / delete lists and the unbounded `CharToOem` fallback).
 5f. ~~**Files > Convert replaces by delete-then-move**~~ - **done, feature 175** (measured: the
    converted file lost its alternate data stream). Was (found by 173's review, older, reachable):
    `worker.cpp` ~7779 `ClearReadOnlyAttr` + `SalDeleteFile(name)` + `SalMoveFile(tmp, name)`, no
