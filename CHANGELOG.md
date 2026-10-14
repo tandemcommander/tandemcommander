@@ -11,6 +11,14 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A file with a very long name no longer stays selected after a dialog**
+  (feature 163). With nothing selected, Quick Rename, Change Attributes,
+  Change Case, Pack, Email or Convert select the file under the cursor for
+  their time; a file whose name is longer than 259 bytes (about 130 letters
+  with accents) stayed selected afterwards - the next Delete with the cursor
+  on another file offered to delete that file. Find's ignore list now treats
+  an entry like "Účty" as the same folder as "účty".
+
 - **Portables: "selected devices" in the right plural** (feature 161) - it
   always read "N selected device" (in every language the English form).
 

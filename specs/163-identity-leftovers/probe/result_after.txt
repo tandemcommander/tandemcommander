@@ -1,0 +1,19 @@
+temp_selection_probe (feature 163), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 17:04; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+QREN-LONG  DELETE PASS        long name (284 bytes, field held it True); dialog ...=1] OK | [Button id=2] Cancel | [Button id=9] Help cancelled; Delete with the focus on a.dat asked: [Static id=2477] Are you sure you want to delete file "a.dat"? | [Button id=6] &Yes | [Button id=7] &No; files kept True; after: no window
+QREN-LONG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+QREN-SHORT DELETE PASS        short name (8 bytes, field held it True); dialog ...=1] OK | [Button id=2] Cancel | [Button id=9] Help cancelled; Delete with the focus on a.dat asked: [Static id=2477] Are you sure you want to delete file "a.dat"? | [Button id=6] &Yes | [Button id=7] &No; files kept True; after: no window
+QREN-SHORT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ATTR-LONG  DELETE PASS        long name (284 bytes, field held it True); dialog ...=1] OK | [Button id=2] Cancel | [Button id=9] Help cancelled; Delete with the focus on a.dat asked: [Static id=2477] Are you sure you want to delete file "a.dat"? | [Button id=6] &Yes | [Button id=7] &No; files kept True; after: no window
+ATTR-LONG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ATTR-SHORT DELETE PASS        short name (8 bytes, field held it True); dialog ...=1] OK | [Button id=2] Cancel | [Button id=9] Help cancelled; Delete with the focus on a.dat asked: [Static id=2477] Are you sure you want to delete file "a.dat"? | [Button id=6] &Yes | [Button id=7] &No; files kept True; after: no window
+ATTR-SHORT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CASE-LONG  DELETE PASS        long name (284 bytes, field held it True); dialog ...=1] OK | [Button id=2] Cancel | [Button id=9] Help cancelled; Delete with the focus on a.dat asked: [Static id=2477] Are you sure you want to delete file "a.dat"? | [Button id=6] &Yes | [Button id=7] &No; files kept True; after: no window
+CASE-LONG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CASE-SHORT DELETE PASS        short name (8 bytes, field held it True); dialog ...=1] OK | [Button id=2] Cancel | [Button id=9] Help cancelled; Delete with the focus on a.dat asked: [Static id=2477] Are you sure you want to delete file "a.dat"? | [Button id=6] &Yes | [Button id=7] &No; files kept True; after: no window
+CASE-SHORT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 12, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

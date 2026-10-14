@@ -1842,9 +1842,8 @@ void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* plugi
     }
 
     // if no item is selected, choose the focused item and store its name
-    char temporarySelected[MAX_PATH];
-    temporarySelected[0] = 0;
-    SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+    CSalHeapString temporarySelected; // feature 163: the whole name (a cut one stayed selected)
+    SelectFocusedItemAndGetName(temporarySelected);
 
     if (delFilesAfterPacking == 1)
         PackerConfig.Move = TRUE;
@@ -2016,7 +2015,7 @@ _PACK_AGAIN:
     }
 
     // if we selected an item, deselect it again
-    UnselectItemWithName(temporarySelected);
+    UnselectItemWithName(temporarySelected.Text());
 
     UpdateWindow(MainWindow->HWindow);
     delete[] (data.Indexes);

@@ -1,0 +1,58 @@
+ftp_long_path_probe (feature 162), expect: fixed, language: czech
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 16:34; desktop 'tc_probe_29316'; ACP 1250; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Server  : python pid 28616 on port 2134 (alive True); hot key: plug-in 9 (ftp\ftp.spl): item 5 set
+Config  : 'If Cannot Create File' = 1 (reg exit 0)
+
+Boundary: the largest path the core passes on = 242 bytes (user part 259 with the trailing slash)
+FIT        PATH   PASS        typed 200 bytes; the server got: CWD /d/xxxxx...(200 bytes); CWD /d; CWD /; cut ones 0, whole 1; boxes: FTP Chyba: Nelze zm?nit cestu na FTP serveru.
+
+Cesta: /d
+Odpov?? serveru: 550 /d: No such file or directory.
+ || Uv\u00EDtac\u00ED zpr\u00E1va: 
+FIT        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+EDGE       PATH   PASS        typed 242 bytes; the server got: CWD /d/xxxxx...(242 bytes); CWD /d; CWD /; cut ones 0, whole 1; boxes: FTP Chyba: Nelze zm?nit cestu na FTP serveru.
+
+Cesta: /d
+Odpov?? serveru: 550 /d: No such file or directory.
+ || Uv\u00EDtac\u00ED zpr\u00E1va: 
+EDGE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+EDGE-OPEN  PATH   PASS        typed 242 bytes (connection open); the server got: CWD /d/xxxxx...(242 bytes); CWD /d; CWD /; cut ones 0, whole 1; boxes: FTP Chyba: Nelze zm?nit cestu na FTP serveru.
+
+Cesta: /d
+Odpov?? serveru: 550 /d: No such file or directory.
+
+EDGE-OPEN  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OVER       PATH   PASS        typed 243 bytes; the server got: no CWD/LIST of it; cut ones 0, whole 0; boxes: Chyba p\u0159i zm\u011Bn\u011B adres\u00E1\u0159e: Cesta: "ftp://127.0.0.1:2134/d/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/"
+Chyba: Zadan? cesta je p??li? dlouh?.
+OVER       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OVER-OPEN  PATH   PASS        typed 243 bytes (connection open); the server got: no CWD/LIST of it; cut ones 0, whole 0; boxes: Chyba p\u0159i zm\u011Bn\u011B adres\u00E1\u0159e: Cesta: "ftp://127.0.0.1:2134/d/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/"
+Chyba: Zadan? cesta je p??li? dlouh?.
+OVER-OPEN  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FTPMAX     PATH   PASS        typed 299 bytes; the server got: no CWD/LIST of it; cut ones 0, whole 0; boxes: Chyba p\u0159i zm\u011Bn\u011B adres\u00E1\u0159e: Cesta: "ftp://127.0.0.1:2134/d/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/"
+Chyba: Zadan? cesta je p??li? dlouh?.
+FTPMAX     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LONG       PATH   PASS        typed 400 bytes; the server got: no CWD/LIST of it; cut ones 0, whole 0; boxes: Chyba p\u0159i zm\u011Bn\u011B adres\u00E1\u0159e: Cesta: "ftp://127.0.0.1:2134/d/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/"
+Chyba: Zadan? cesta je p??li? dlouh?.
+LONG       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LONG-OPEN  PATH   PASS        typed 400 bytes (connection open); the server got: no CWD/LIST of it; cut ones 0, whole 0; boxes: Chyba p\u0159i zm\u011Bn\u011B adres\u00E1\u0159e: Cesta: "ftp://127.0.0.1:2134/d/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/"
+Chyba: Zadan? cesta je p??li? dlouh?.
+LONG-OPEN  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

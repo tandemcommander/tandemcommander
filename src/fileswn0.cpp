@@ -820,9 +820,9 @@ BOOL CFilesWindow::SelectionContainsFile()
     return FALSE;
 }
 
-void CFilesWindow::SelectFocusedItemAndGetName(char* name, int nameSize)
+void CFilesWindow::SelectFocusedItemAndGetName(CSalHeapString& name)
 {
-    name[0] = 0;
+    name.Free();
     if (GetSelCount() == 0)
     {
         int deselectIndex = GetCaretIndex();
@@ -831,15 +831,14 @@ void CFilesWindow::SelectFocusedItemAndGetName(char* name, int nameSize)
             BOOL isDir = deselectIndex < Dirs->Count;
             CFileData* f = isDir ? &Dirs->At(deselectIndex) : &Files->At(deselectIndex - Dirs->Count);
 
-            int len = (int)strlen(f->Name);
-            if (len >= nameSize)
+            // feature 163: the whole name - it was cut at MAX_PATH bytes (a 260+ byte UTF-8 name),
+            // UnselectItemWithName found no item of the cut name and the item stayed selected: the
+            // next command (Delete) acted on it while the focus was elsewhere
+            if (!name.Copy(f->Name))
             {
-                TRACE_E("len > nameMax");
-                len = nameSize - 1;
+                TRACE_E(LOW_MEMORY);
+                return; // not selected: an item without its name would never be unselected
             }
-
-            memcpy(name, f->Name, len);
-            name[len] = 0;
 
             SetSel(TRUE, deselectIndex);
             PostMessage(HWindow, WM_USER_SELCHANGED, 0, 0);
@@ -859,10 +858,12 @@ void CFilesWindow::UnselectItemWithName(const char* name)
         for (i = 0; i < count; i++)
         {
             CFileData* f = (i < Dirs->Count) ? &Dirs->At(i) : &Files->At(i - Dirs->Count);
-            if (f->NameLen == (unsigned)l &&
-                RegSetStrICmpEx(f->Name, f->NameLen, name, l, NULL) == 0)
+            // feature 163: the file system's rule (092) - the code page's linguistic fold behind a
+            // byte-length guard took another item for the name, or missed it (equal names may differ
+            // in UTF-8 length); the exact name first, as before
+            if (SalNameEqualOrdinalCI(f->Name, f->NameLen, name, l))
             {
-                if (RegSetStrCmpEx(f->Name, f->NameLen, name, l, NULL) == 0)
+                if (f->NameLen == (unsigned)l && memcmp(f->Name, name, l) == 0)
                 {
                     SetSel(FALSE, i);
                     break;

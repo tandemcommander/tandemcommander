@@ -2437,3 +2437,12 @@ a few early ones are out of sequence).
   server whole, 243 are refused by the core; the plug-in keeps 300 / 609. Find *Look in* has no
   maximum (`CSalPathBuf`). **Trap:** a plug-in's own buffers over `MAX_PATH` are not reachable
   through the core - judge a plug-in cut by the core's cap first (121 had judged by reading).
+- 163-identity-leftovers: **a long name no longer stays selected after a dialog** (item 14).
+  `SelectFocusedItemAndGetName` cut the temporarily selected name at `MAX_PATH` bytes: a 260+ byte
+  UTF-8 name stayed selected after Quick Rename / Change Attributes / Change Case / Pack / Email /
+  Convert, and the next Delete with the focus elsewhere asked to delete it (probe 9 / 3 before,
+  12 / 0 after). Now `CSalHeapString`; `UnselectItemWithName` on `SalNameEqualOrdinalCI`; Find's
+  relative ignore kind on `SalFindIgnoreRelativeMatch` (`salfindignore.h`; the old byte fold
+  missed Č/č and merged ĥ/Ĺ); Undelete's view key on the heap. **Trap:** a probe that deletes
+  `*.txt` here sends them to the maintainer's Recycle Bin ("Use Recycle Bin For") without a
+  question - use another extension and switch the bin off.

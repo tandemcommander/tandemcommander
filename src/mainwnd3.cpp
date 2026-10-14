@@ -3,6 +3,7 @@
 // CommentsTranslationProject: TRANSLATED
 
 #include "precomp.h"
+#include "salheapstr.h" // feature 163
 
 #include <shlwapi.h>
 #undef PathIsPrefix // otherwise conflicts with CSalamanderGeneral::PathIsPrefix
@@ -3725,13 +3726,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             activePanel->StoreSelection(); // save selection for Restore Selection command
 
             // if no item is selected, select the focused one and store its name
-            char temporarySelected[MAX_PATH];
-            activePanel->SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+            CSalHeapString temporarySelected; // feature 163: the whole name (a cut one stayed selected)
+            activePanel->SelectFocusedItemAndGetName(temporarySelected);
 
             activePanel->EmailFiles();
 
             // if we selected an item, deselect it again
-            activePanel->UnselectItemWithName(temporarySelected);
+            activePanel->UnselectItemWithName(temporarySelected.Text());
 
             return 0;
         }
@@ -3756,8 +3757,8 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             activePanel->StoreSelection(); // save selection for Restore Selection command
 
             // if no item is selected, select the focused one and store its name
-            char temporarySelected[MAX_PATH];
-            activePanel->SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+            CSalHeapString temporarySelected; // feature 163: the whole name (a cut one stayed selected)
+            activePanel->SelectFocusedItemAndGetName(temporarySelected);
 
             if (activePanel->Is(ptDisk)) // source is disk - all operations go here
             {
@@ -3832,7 +3833,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             }
 
             // if we selected an item temporarily, deselect it again
-            activePanel->UnselectItemWithName(temporarySelected);
+            activePanel->UnselectItemWithName(temporarySelected.Text());
 
             return 0;
         }
@@ -3890,13 +3891,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 activePanel->StoreSelection(); // save selection for Restore Selection command
 
                 // if no item is selected, choose the one under the focus and store its name
-                char temporarySelected[MAX_PATH];
-                activePanel->SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+                CSalHeapString temporarySelected; // feature 163: the whole name (a cut one stayed selected)
+                activePanel->SelectFocusedItemAndGetName(temporarySelected);
 
                 activePanel->Convert();
 
                 // if we selected an item temporarily, deselect it again
-                activePanel->UnselectItemWithName(temporarySelected);
+                activePanel->UnselectItemWithName(temporarySelected.Text());
             }
             return 0;
         }

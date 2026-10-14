@@ -205,12 +205,11 @@ void CFilesWindow::ChangeAttr(BOOL setCompress, BOOL compressed, BOOL setEncrypt
     BeginStopRefresh(); // snooper takes a break
 
     // if no item is selected, select the one under focus and store its name
-    char temporarySelected[MAX_PATH];
-    temporarySelected[0] = 0;
+    CSalHeapString temporarySelected; // feature 163: the whole name (a cut one stayed selected)
     if ((!setCompress || Configuration.CnfrmNTFSPress) &&
         (!setEncryption || Configuration.CnfrmNTFSCrypt))
     {
-        SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+        SelectFocusedItemAndGetName(temporarySelected);
     }
 
     if (Is(ptDisk))
@@ -413,7 +412,7 @@ void CFilesWindow::ChangeAttr(BOOL setCompress, BOOL compressed, BOOL setEncrypt
                     if (msgBox.Execute() != IDYES)
                     {
                         // if we selected an item, deselect it again
-                        UnselectItemWithName(temporarySelected);
+                        UnselectItemWithName(temporarySelected.Text());
                         FilesActionInProgress = FALSE;
                         EndStopRefresh(); // snooper will start again now
                         return;
@@ -428,7 +427,7 @@ void CFilesWindow::ChangeAttr(BOOL setCompress, BOOL compressed, BOOL setEncrypt
                 if (CheckPath(TRUE) != ERROR_SUCCESS)
                 {
                     // if we selected an item, we deselect it again
-                    UnselectItemWithName(temporarySelected);
+                    UnselectItemWithName(temporarySelected.Text());
                     FilesActionInProgress = FALSE;
                     EndStopRefresh(); // snooper will start again now
                     return;
@@ -467,7 +466,7 @@ void CFilesWindow::ChangeAttr(BOOL setCompress, BOOL compressed, BOOL setEncrypt
                     {
                         TRACE_E(LOW_MEMORY);
                         // if we selected an item, we deselect it again
-                        UnselectItemWithName(temporarySelected);
+                        UnselectItemWithName(temporarySelected.Text());
                         FilesActionInProgress = FALSE;
                         EndStopRefresh(); // snooper will start again now
                         return;
@@ -480,7 +479,7 @@ void CFilesWindow::ChangeAttr(BOOL setCompress, BOOL compressed, BOOL setEncrypt
                     if (i < 0 || i >= Dirs->Count + Files->Count)
                     {
                         // if we selected an item, we deselect it again
-                        UnselectItemWithName(temporarySelected);
+                        UnselectItemWithName(temporarySelected.Text());
                         FilesActionInProgress = FALSE;
                         EndStopRefresh(); // snooper will start again now
                         return;           // invalid index (no files)
@@ -488,7 +487,7 @@ void CFilesWindow::ChangeAttr(BOOL setCompress, BOOL compressed, BOOL setEncrypt
                     if (i == 0 && subDir)
                     {
                         // if we selected an item, we deselect it again
-                        UnselectItemWithName(temporarySelected);
+                        UnselectItemWithName(temporarySelected.Text());
                         FilesActionInProgress = FALSE;
                         EndStopRefresh(); // snooper will start again now
                         return;           // we do not work with ".."
@@ -662,7 +661,7 @@ void CFilesWindow::ChangeAttr(BOOL setCompress, BOOL compressed, BOOL setEncrypt
         }
     }
     // if we selected an item, we deselect it again
-    UnselectItemWithName(temporarySelected);
+    UnselectItemWithName(temporarySelected.Text());
 
     EndStopRefresh(); // snooper will start again now
 }
@@ -2553,8 +2552,8 @@ void CFilesWindow::RenameFile(int specialIndex)
         while (1)
         {
             // if no item is selected, select the one under focus and store its name
-            char temporarySelected[MAX_PATH];
-            SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+            CSalHeapString temporarySelected; // feature 163: the whole name (a cut one stayed selected)
+            SelectFocusedItemAndGetName(temporarySelected);
 
             // Since Windows Vista, Microsoft introduced a demanded feature: quick rename selects only the name without the dot and extension
             // the same code appears here four times
@@ -2577,7 +2576,7 @@ void CFilesWindow::RenameFile(int specialIndex)
             int dlgRes = (int)dlg.Execute();
 
             // if we selected an item, we deselect it again
-            UnselectItemWithName(temporarySelected);
+            UnselectItemWithName(temporarySelected.Text());
 
             if (dlgRes == IDOK)
             {
@@ -2622,13 +2621,13 @@ void CFilesWindow::RenameFile(int specialIndex)
             BOOL cancel = FALSE;
 
             // if no item is selected, select the one under focus and store its name
-            char temporarySelected[MAX_PATH];
-            SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+            CSalHeapString temporarySelected; // feature 163: the whole name (a cut one stayed selected)
+            SelectFocusedItemAndGetName(temporarySelected);
 
             BOOL ret = GetPluginFS()->QuickRename(GetPluginFS()->GetPluginFSName(), 1, HWindow, *f, isDir, newName, cancel);
 
             // if we selected an item, we deselect it again
-            UnselectItemWithName(temporarySelected);
+            UnselectItemWithName(temporarySelected.Text());
 
             if (!cancel) // not a cancel of the operation
             {
@@ -2638,7 +2637,7 @@ void CFilesWindow::RenameFile(int specialIndex)
                     {
                         // open the standard dialog
                         // if no item is selected, select the one under focus and store its name
-                        SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+                        SelectFocusedItemAndGetName(temporarySelected);
 
                         // Since Windows Vista, Microsoft introduced a demanded feature: quick rename selects only the name without the dot and extension
                         // the same code appears here four times
@@ -2658,7 +2657,7 @@ void CFilesWindow::RenameFile(int specialIndex)
                         int dlgRes = (int)dlg.Execute();
 
                         // if we selected an item, we deselect it again
-                        UnselectItemWithName(temporarySelected);
+                        UnselectItemWithName(temporarySelected.Text());
 
                         if (dlgRes == IDOK)
                         {
@@ -2862,13 +2861,13 @@ void CFilesWindow::QuickRenameBegin(int index, const RECT* labelRect)
         BOOL cancel = FALSE;
 
         // if no item is selected, select the one under focus and store its name
-        char temporarySelected[MAX_PATH];
-        SelectFocusedItemAndGetName(temporarySelected, MAX_PATH);
+        CSalHeapString temporarySelected; // feature 163: the whole name (a cut one stayed selected)
+        SelectFocusedItemAndGetName(temporarySelected);
 
         BOOL ret = GetPluginFS()->QuickRename(GetPluginFS()->GetPluginFSName(), 1, HWindow, *f, isDir, newName, cancel);
 
         // if we selected an item, we deselect it again
-        UnselectItemWithName(temporarySelected);
+        UnselectItemWithName(temporarySelected.Text());
 
         if (ret && !cancel) // operation completed successfully
         {

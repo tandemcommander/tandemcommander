@@ -15,6 +15,7 @@
 #include "dataruns.h"
 #include "splfiledlg.h"                 // feature 104: the Unicode folder picker
 #include "../../common/salnumbername.h" // feature 148: numbered names that skip the taken ones
+#include "../../common/salheapstr.h"    // feature 163: the disk-cache key of a viewed file, whole
 #include "stream.h"
 #include "dialogs.h"
 #include "undelete.h"
@@ -1544,20 +1545,24 @@ CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
         return;
 
     // prepare unique file name for disk-cache (standard Salamander path format)
-    char uniqueFileName[2 * MAX_PATH];
-    sprintf(uniqueFileName, "%IX", file.PluginData); // we don't need to test snapshot state, during CPluginFSInterface::CopyOrMoveFromFS() it is valid
-    strcat(uniqueFileName, ":");
-    strcat(uniqueFileName, fsName);
-    strcat(uniqueFileName, ":");
-    strcat(uniqueFileName, Path);
-    SalamanderGeneral->SalPathAppend(uniqueFileName + strlen(fsName) + 1, file.Name, MAX_PATH);
+    // feature 163: built whole - the name was appended at an offset that ignored the pointer prefix
+    // and with a MAX_PATH bound, so a long folder's name was dropped from the key (the pointer kept
+    // it unique); the strcat calls had no bound at all. On the heap: a FAT long name holds up to
+    // 819 UTF-16 units (feature 114) - the disk cache refuses a key it cannot take, with its message
+    CSalHeapString uniqueFileName;
+    if (!uniqueFileName.Printf("%IX:%s:%s%s%s", (UINT_PTR)file.PluginData, fsName, Path,
+                               (Path[0] != 0 && Path[strlen(Path) - 1] != '\\') ? "\\" : "", file.Name))
+    {
+        TRACE_E("CPluginFSInterface::ViewFile(): low memory for the disk-cache key");
+        return;
+    }
     // name on disk are case-insensitive, disk-cache is case-sensitive, we will convert
     // to lowercase so disk-cache will behave as case-insensitive
-    SalamanderGeneral->ToLowerCase(uniqueFileName);
+    SalamanderGeneral->ToLowerCase(uniqueFileName.Get());
 
     // get name of file copy in disk-cache
     BOOL fileExists;
-    const char* tmpFileName = salamander->AllocFileNameInCache(parent, uniqueFileName, file.Name, tempdir, fileExists);
+    const char* tmpFileName = salamander->AllocFileNameInCache(parent, uniqueFileName.Text(), file.Name, tempdir, fileExists);
     if (tmpFileName == NULL)
         return; // fatal error
 
@@ -1612,7 +1617,7 @@ CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
     }
 
     // we must call FreeFileNameInCache in pair to AllocFileNameInCache  (connect viewer and disk-cache)
-    salamander->FreeFileNameInCache(uniqueFileName, fileExists, newFileOK,
+    salamander->FreeFileNameInCache(uniqueFileName.Text(), fileExists, newFileOK,
                                     newFileSize, fileLock, fileLockOwner, FALSE);
 }
 

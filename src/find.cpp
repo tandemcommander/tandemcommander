@@ -3,6 +3,7 @@
 // CommentsTranslationProject: TRANSLATED
 
 #include "precomp.h"
+#include "salfindignore.h" // feature 163
 
 #include "cfgdlg.h"
 #include "find.h"
@@ -551,17 +552,10 @@ BOOL CFindIgnore::Contains(const char* path, int startPathLen)
 
         case fiitRelative:
         {
-            const char* m = path;
-            while (m != NULL)
-            {
-                m = StrIStr(m, item->Path); // feature 092: the relative kind stays on the byte fold (no substring helper)
-                if (m != NULL) // found
-                {
-                    if ((m - path) + item->Len > startPathLen) // is it a subpath? then ignore it
-                        return TRUE;
-                    m++; // look for another occurrence, maybe it will be in a subpath
-                }
-            }
+            // feature 163: the file system's rule (092, salfindignore.h) - StrIStr's code-page byte fold
+            // took two different UTF-8 folder names for one, and missed equal ones
+            if (SalFindIgnoreRelativeMatch(path, item->Path, item->Len, startPathLen))
+                return TRUE;
             break;
         }
         }

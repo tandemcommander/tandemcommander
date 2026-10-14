@@ -1654,7 +1654,8 @@ public:
 
     int GetSelCount(); // returns the number of selected items
 
-    void SelectFocusedItemAndGetName(char* name, int nameMax);
+    // feature 163: the name is stored whole (heap) - a cut name never matched in UnselectItemWithName
+    void SelectFocusedItemAndGetName(CSalHeapString& name);
     void UnselectItemWithName(const char* name);
 
     // returns PANEL_LEFT or PANEL_RIGHT depending on which side this panel is on

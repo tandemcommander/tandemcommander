@@ -236,7 +236,9 @@ Functional, no loss:
     CRLF (unreachable for the built-in scripts). Find: a *Look in* path near
     the program's maximum stops with a trace only. Queue 104, entries 3 and 4
     (116, 121).
-14. Small identity leftovers outside the B-2 decision, no loss scenario
+14. ~~Small identity leftovers~~ - **done, feature 163**; measuring found a loss scenario next to
+    them: a 260+ byte name stayed selected after a dialog (cut at `MAX_PATH`) and the next Delete
+    took it. Was: Small identity leftovers outside the B-2 decision, no loss scenario
     known: `UnselectItemWithName` (linguistic comparison + byte-length
     guard), `CFindIgnore::Contains` relative kind, Undelete's `ViewFile`
     disk-cache key dropping a long name. Item 5; queue 104, entry 2.

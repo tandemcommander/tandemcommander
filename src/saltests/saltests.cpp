@@ -54,6 +54,7 @@
 #include "salloopclose.h"    // feature 143
 #include "salnumbername.h"   // feature 148
 #include "salftpautoren.h"   // feature 141
+#include "salfindignore.h"   // feature 163
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11317,6 +11318,36 @@ static void TestNumberName148()
     }
 }
 
+// feature 163: the relative kind of Find's ignore list (src/common/salfindignore.h)
+static void TestFindIgnore163()
+{
+    const char* item = "\\Temp\\";
+    int il = (int)strlen(item);
+    // ASCII: as StrIStr did (case-insensitive, below the search root only)
+    CHECK(SalFindIgnoreRelativeMatch("C:\\Users\\u\\temp\\x\\", item, il, 3));
+    CHECK(SalFindIgnoreRelativeMatch("C:\\Users\\u\\TEMP\\", item, il, 3));
+    CHECK(!SalFindIgnoreRelativeMatch("C:\\Temp\\x\\", item, il, 8));      // the search root itself: not a subpath
+    CHECK(SalFindIgnoreRelativeMatch("C:\\Temp\\x\\Temp\\", item, il, 8)); // a later occurrence below the root
+    CHECK(!SalFindIgnoreRelativeMatch("C:\\Temporary\\", item, il, 0));    // the item ends with a backslash
+    CHECK(!SalFindIgnoreRelativeMatch("C:\\MyTemp\\", item, il, 0));       // it starts at a backslash
+    // UTF-8: names that fold together only on code page 1250 are two folders
+    const char* hc = "\\\xC4\xA5\\"; // \U+0125\ (h-circumflex)
+    int hl = (int)strlen(hc);
+    CHECK(SalFindIgnoreRelativeMatch("C:\\a\\\xC4\xA5\\", hc, hl, 3));
+    CHECK(SalFindIgnoreRelativeMatch("C:\\a\\\xC4\xA4\\", hc, hl, 3));  // U+0124, its capital: the same name
+    CHECK(!SalFindIgnoreRelativeMatch("C:\\a\\\xC4\xB9\\", hc, hl, 3)); // U+0139 (L-acute): another folder
+    const char* cz = "\\\xC4\x8C"
+                     "ast\\"; // \U+010Cast\ ("Cast" with C-caron)
+    CHECK(SalFindIgnoreRelativeMatch("D:\\x\\\xC4\x8D"
+                                     "AST\\y\\",
+                                     cz, (int)strlen(cz), 3)); // c-caron lower
+    CHECK(!SalFindIgnoreRelativeMatch("D:\\x\\Cast\\", cz, (int)strlen(cz), 3));
+    // degenerate input
+    CHECK(!SalFindIgnoreRelativeMatch(NULL, item, il, 0));
+    CHECK(!SalFindIgnoreRelativeMatch("C:\\Temp\\", "", 0, 0));
+    CHECK(!SalFindIgnoreRelativeMatch("C:\\Temp\\", "Temp\\", 5, 0)); // not prepared ("\" first)
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -11402,6 +11433,7 @@ int main(int argc, char** argv)
     TestMaskName141();
     TestLoopClose143();
     TestNumberName148();
+    TestFindIgnore163();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
