@@ -2446,3 +2446,12 @@ a few early ones are out of sequence).
   missed Č/č and merged ĥ/Ĺ); Undelete's view key on the heap. **Trap:** a probe that deletes
   `*.txt` here sends them to the maintainer's Recycle Bin ("Use Recycle Bin For") without a
   question - use another extension and switch the bin off.
+- 164-zip-delete-cost: **deleting many members from a large ZIP in n log n** (item 15). Per
+  deleted member `DeleteFiles` walked the central directory twice (113's bound
+  `SalZipNextMemberOffset`, `UpdateCentrDir` with a memmove): 30,000 / 15,000 took 21.9 s (Debug),
+  quadratic. `salzipdelete.h`: a sorted offset index (binary search) and one pass
+  `SalZipApplyDeletions` after the loop for the members processed so far; only when the directory
+  reads whole, the members ascend strictly and memory suffices - else the old code. After: under
+  0.5 s, 100,000 / 50,000 1.0 s. saltests compare it with a byte-level port of `UpdateCentrDir`
+  on random directories (a mutation control fails them). **Trap:** the plug-in's entry counts are
+  16-bit (165).

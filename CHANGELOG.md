@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Deleting many files from a large ZIP archive is fast** (feature 164).
+  Deleting 15,000 of 30,000 files took about 20 seconds and grew with the
+  square of the archive's size; it now takes well under a second (100,000
+  files: about one second).
+
 - **A file with a very long name no longer stays selected after a dialog**
   (feature 163). With nothing selected, Quick Rename, Change Attributes,
   Change Case, Pack, Email or Convert select the file under the cursor for

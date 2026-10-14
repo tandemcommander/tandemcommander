@@ -55,6 +55,7 @@
 #include "salnumbername.h"   // feature 148
 #include "salftpautoren.h"   // feature 141
 #include "salfindignore.h"   // feature 163
+#include "salzipdelete.h"    // feature 164
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11348,6 +11349,192 @@ static void TestFindIgnore163()
     CHECK(!SalFindIgnoreRelativeMatch("C:\\Temp\\", "Temp\\", 5, 0)); // not prepared ("\" first)
 }
 
+// feature 164: the ZIP deletion in n log n (src/common/salzipdelete.h) against the per-member
+// algorithm of del.cpp it replaces (UpdateCentrDir ported to bytes, SalZipNextMemberOffset)
+static unsigned g_lcg164 = 12345;
+static unsigned Rnd164(unsigned n)
+{
+    g_lcg164 = g_lcg164 * 1103515245u + 12345u;
+    return (g_lcg164 >> 8) % n;
+}
+static void Put32At164(std::vector<unsigned char>& v, size_t p, unsigned long x)
+{
+    for (int i = 0; i < 4; i++)
+        v[p + i] = (unsigned char)(x >> (8 * i));
+}
+// one central record: 32-bit offset, or the marker and the offset in a zip64 block (after an
+// optional foreign block when 'foreignFirst')
+static void AddRecord164(std::vector<unsigned char>& dir, unsigned long long offs, bool z64, bool foreignFirst)
+{
+    size_t at = dir.size();
+    unsigned nameLen = 1 + Rnd164(12), commentLen = Rnd164(3);
+    std::vector<unsigned char> extra;
+    if (z64)
+    {
+        if (foreignFirst)
+        {
+            unsigned char f[] = {0x0A, 0x00, 0x04, 0x00, 1, 2, 3, 4}; // NTFS-like id 10, 4 bytes
+            extra.insert(extra.end(), f, f + sizeof(f));
+        }
+        unsigned char h[] = {0x01, 0x00, 0x08, 0x00};
+        extra.insert(extra.end(), h, h + 4);
+        for (int i = 0; i < 8; i++)
+            extra.push_back((unsigned char)(offs >> (8 * i)));
+    }
+    dir.resize(at + 46 + nameLen + extra.size() + commentLen, 0);
+    Put32At164(dir, at, 0x02014B50UL);
+    dir[at + 28] = (unsigned char)nameLen;
+    dir[at + 30] = (unsigned char)extra.size();
+    dir[at + 32] = (unsigned char)commentLen;
+    Put32At164(dir, at + 20, 100); // sizes not marked
+    Put32At164(dir, at + 24, 200);
+    Put32At164(dir, at + 42, z64 ? 0xFFFFFFFFUL : (unsigned long)offs);
+    for (unsigned i = 0; i < nameLen; i++)
+        dir[at + 46 + i] = (unsigned char)('a' + Rnd164(26));
+    if (!extra.empty())
+        memcpy(&dir[at + 46 + nameLen], extra.data(), extra.size());
+}
+// UpdateCentrDir of del.cpp on bytes: one deleted member (cur, next or ~0, delta)
+static void OldUpdate164(std::vector<unsigned char>& dir, unsigned long long cur, unsigned long long next,
+                         unsigned long long delta, size_t* removed)
+{
+    using namespace salzipmember_detail;
+    size_t p = 0;
+    while (p < dir.size())
+    {
+        unsigned char* rec = &dir[p];
+        size_t recLen = 46 + (size_t)Get16(rec + 28) + Get16(rec + 30) + Get16(rec + 32);
+        unsigned long long v = Get32(rec + 42);
+        size_t pos = 0;
+        bool noOffset = false;
+        if (v == 0xFFFFFFFFULL)
+        {
+            size_t avail = dir.size() - p;
+            size_t q = SalZipCentralRecordOffsetPos(rec, recLen <= avail ? recLen : avail);
+            if (q != 0 && q != 42)
+            {
+                pos = q;
+                v = (unsigned long long)Get32(rec + q) | ((unsigned long long)Get32(rec + q + 4) << 32);
+            }
+            else
+                noOffset = true;
+        }
+        if (v == cur)
+        {
+            dir.erase(dir.begin() + p, dir.begin() + p + recLen);
+            (*removed)++;
+            continue;
+        }
+        if (!noOffset && v > cur && (next == ~0ULL || v < next))
+        {
+            v -= delta;
+            if (pos == 0)
+                Put32(rec + 42, (unsigned long)v);
+            else
+                Put64(rec + pos, v);
+        }
+        p += recLen;
+    }
+}
+static void TestZipDelete164()
+{
+    int runs = 0, boundMismatch = 0, dirMismatch = 0, countMismatch = 0;
+    for (int run = 0; run < 400; run++)
+    {
+        // members on disk: ascending offsets with gaps; some above 4 GB (zip64)
+        int n = 1 + (int)Rnd164(run < 300 ? 40 : 400);
+        std::vector<unsigned long long> offs;
+        unsigned long long o = Rnd164(100);
+        for (int i = 0; i < n; i++)
+        {
+            offs.push_back(o);
+            o += 30 + Rnd164(500) + (Rnd164(10) == 0 ? 0x100000000ULL : 0);
+        }
+        unsigned long long dataEnd = o;
+        // the directory in a shuffled order (it need not follow the disk)
+        std::vector<int> order(n);
+        for (int i = 0; i < n; i++)
+            order[i] = i;
+        for (int i = n - 1; i > 0; i--)
+            std::swap(order[i], order[Rnd164(i + 1)]);
+        std::vector<unsigned char> dir;
+        for (int i = 0; i < n; i++)
+        {
+            unsigned long long v = offs[order[i]];
+            bool z64 = v >= 0xFFFFFFFFULL || Rnd164(6) == 0;
+            AddRecord164(dir, v, z64, z64 && Rnd164(2) == 0);
+        }
+        // the deleted members: a sorted subset; the removed bytes grow along the disk
+        std::vector<unsigned long long> del;
+        for (int i = 0; i < n; i++)
+            if (Rnd164(3) == 0)
+                del.push_back(offs[i]);
+        if (del.empty())
+            del.push_back(offs[Rnd164(n)]);
+        size_t d = del.size();
+        size_t m = run % 5 == 0 ? Rnd164((unsigned)d + 1) : d; // a break part-way, sometimes
+        std::vector<unsigned long long> nxt(d), delta(d);
+        unsigned long long removedBytes = 0;
+        for (size_t k = 0; k < d; k++)
+        {
+            nxt[k] = k + 1 < d ? del[k + 1] : ~0ULL;
+            removedBytes += 30 + Rnd164(20);
+            delta[k] = removedBytes;
+        }
+
+        unsigned long long* index = NULL;
+        size_t count = 0;
+        CHECK(SalZipBuildOffsetIndex(dir.data(), dir.size(), &index, &count) == 1 && count == (size_t)n);
+        std::vector<unsigned char> oldDir = dir;
+        size_t oldRemoved = 0;
+        for (size_t k = 0; k < m; k++)
+        {
+            unsigned long long a = 0;
+            bool okOld = SalZipNextMemberOffset(oldDir.data(), oldDir.size(), del[k], dataEnd, &a);
+            unsigned long long b = SalZipNextFromIndex(index, count, del[k], dataEnd);
+            if (!okOld || a != b)
+                boundMismatch++;
+            OldUpdate164(oldDir, del[k], nxt[k], delta[k], &oldRemoved);
+        }
+        size_t newRemoved = 0;
+        size_t newLen = SalZipApplyDeletions(dir.data(), dir.size(), del.data(), nxt.data(), delta.data(), m, &newRemoved);
+        if (newLen != oldDir.size() || memcmp(dir.data(), oldDir.data(), newLen) != 0)
+            dirMismatch++;
+        if (newRemoved != oldRemoved || newRemoved != m)
+            countMismatch++;
+        free(index);
+        runs++;
+    }
+    CHECK(runs == 400);
+    CHECK(boundMismatch == 0);
+    CHECK(dirMismatch == 0);
+    CHECK(countMismatch == 0);
+    printf("TestZipDelete164: %d random directories, bound mismatches %d, directory mismatches %d, count mismatches %d\n",
+           runs, boundMismatch, dirMismatch, countMismatch);
+
+    // a record whose zip64 marker has no value: no index (the old path refuses), as SalZipNextMemberOffset
+    std::vector<unsigned char> bad;
+    AddRecord164(bad, 1000, false, false);
+    size_t at = bad.size();
+    AddRecord164(bad, 2000, false, false);
+    Put32At164(bad, at + 42, 0xFFFFFFFFUL);
+    unsigned long long* index = (unsigned long long*)1;
+    size_t count = 7;
+    unsigned long long next = 0;
+    CHECK(SalZipBuildOffsetIndex(bad.data(), bad.size(), &index, &count) == 0 && index == NULL && count == 0);
+    CHECK(!SalZipNextMemberOffset(bad.data(), bad.size(), 0, 5000, &next));
+    // a truncated directory: no index
+    CHECK(SalZipBuildOffsetIndex(bad.data(), at + 10, &index, &count) == 0);
+    // empty directory: an empty index, every bound is the limit
+    CHECK(SalZipBuildOffsetIndex(bad.data(), 0, &index, &count) == 1 && count == 0);
+    CHECK(SalZipNextFromIndex(index, count, 5, 77) == 77);
+    free(index);
+    // nothing processed: the directory unchanged
+    std::vector<unsigned char> keep = bad;
+    size_t rem = 9;
+    CHECK(SalZipApplyDeletions(bad.data(), bad.size(), NULL, NULL, NULL, 0, &rem) == bad.size() && rem == 0 && keep == bad);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -11434,6 +11621,7 @@ int main(int argc, char** argv)
     TestLoopClose143();
     TestNumberName148();
     TestFindIgnore163();
+    TestZipDelete164();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

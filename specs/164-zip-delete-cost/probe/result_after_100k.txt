@@ -1,0 +1,9 @@
+zip_delete_cost_probe (feature 164)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 17:13
+
+n100000    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+n100000    TIME   PASS        100000 members, 50000 deleted: 1,0 s; archive: COUNT 50000 KEPT 50000 DEL 50000 BAD 0; question: ...ant to delete 50000 files from archive? | [Button id=6] &Yes | [Button id=7] &No; after: no window
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 2, FAIL 0. Registry restored+identical: True

@@ -23,6 +23,7 @@
 #include "common.h"
 #include "add_del.h"
 #include "../../common/salzipmember.h" // feature 113: where a record keeps its local header offset
+#include "../../common/salzipdelete.h" // feature 164: the deletion in n log n
 
 int CZipPack::CountFilesInRoot(int* filesInRoot, bool* rootExist)
 {
@@ -126,6 +127,23 @@ int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
         Salamander->ProgressDialogAddText(LoadStr(IDS_REMOVEFILES), TRUE);
     else
         Salamander->ProgressDialogAddText(LoadStr(IDS_DELETEFILES), TRUE);
+    // feature 164: the bound and the directory update in n log n (salzipdelete.h) - both walked the
+    // whole central directory once per deleted member (n x d: 30,000 members, 15,000 deleted took
+    // 22 s). Only when the directory reads whole, the members ascend strictly and memory suffices;
+    // otherwise the per-member path below, unchanged (it refuses a directory that does not read).
+    unsigned long long* offIndex = NULL;
+    size_t offCount = 0;
+    unsigned long long* batch = NULL; // three columns of DelFiles.Count: cur, nxt, delta
+    size_t batchCount = 0;
+    bool fast = SalZipBuildOffsetIndex((const unsigned char*)NewCentrDir, (size_t)NewCentrDirSize,
+                                       &offIndex, &offCount) == 1;
+    for (int k = 0; fast && k + 1 < DelFiles.Count; k++)
+        fast = DelFiles[k]->LocHeaderOffs < DelFiles[k + 1]->LocHeaderOffs;
+    if (fast)
+    {
+        batch = (unsigned long long*)malloc(3 * (size_t)DelFiles.Count * sizeof(unsigned long long));
+        fast = batch != NULL;
+    }
     if (!errorID && !UserBreak)
     {
         writePos = DelFiles[0]->LocHeaderOffs;
@@ -186,9 +204,16 @@ int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
                 // added files of DeleteAfterPack begin at CentrDirOffs.
                 // The bound fails closed: a record that cannot be read (or a truncated directory) refuses too.
                 unsigned long long nextOnDisk;
-                if (!SalZipNextMemberOffset((const unsigned char*)NewCentrDir, (size_t)NewCentrDirSize,
-                                            curFile->LocHeaderOffs, CentrDirOffs, &nextOnDisk) ||
-                    readPos > nextOnDisk)
+                bool bounded;
+                if (fast)
+                {
+                    nextOnDisk = SalZipNextFromIndex(offIndex, offCount, curFile->LocHeaderOffs, CentrDirOffs);
+                    bounded = true;
+                }
+                else
+                    bounded = SalZipNextMemberOffset((const unsigned char*)NewCentrDir, (size_t)NewCentrDirSize,
+                                                     curFile->LocHeaderOffs, CentrDirOffs, &nextOnDisk);
+                if (!bounded || readPos > nextOnDisk)
                 {
                     Fatal = true;
                     errorID = IDS_ERRFORMAT;
@@ -213,7 +238,15 @@ int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
                 // block left every entry of the region pointing at data that had not moved)
                 if (errorID)
                     break;
-                UpdateCentrDir(curFile, nextFile, delta);
+                if (fast) // applied once after the loop, for the members processed by then
+                {
+                    batch[batchCount] = curFile->LocHeaderOffs;
+                    batch[DelFiles.Count + batchCount] = nextFile ? nextFile->LocHeaderOffs : ~0ULL;
+                    batch[2 * DelFiles.Count + batchCount] = delta;
+                    batchCount++;
+                }
+                else
+                    UpdateCentrDir(curFile, nextFile, delta);
                 if (DeleteAfterPack && !nextFile)
                     UpdateAddedOffsets(curFile, nextFile, delta); // the added files are all after the last old member
                 writePos += moveSize;
@@ -232,6 +265,17 @@ int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
             }
         }
     }
+    if (fast && batchCount > 0) // feature 164: the directory follows the data moved so far, in one pass
+    {
+        size_t removed = 0;
+        NewCentrDirSize = SalZipApplyDeletions((unsigned char*)NewCentrDir, (size_t)NewCentrDirSize, batch,
+                                               batch + DelFiles.Count, batch + 2 * DelFiles.Count, batchCount, &removed);
+        // the 16-bit counts, as the per-member decrements left them (modulo 2^16)
+        EONewCentrDir.TotalEntries = (__UINT16)(EONewCentrDir.TotalEntries - removed);
+        EONewCentrDir.DiskTotalEntries = (__UINT16)(EONewCentrDir.DiskTotalEntries - removed);
+    }
+    free(batch);
+    free(offIndex);
     *deletedFiles = i;
     if (*deletedFiles == DelFiles.Count)
         /*EONewCentrDir.*/ NewCentrDirOffs = writePos;

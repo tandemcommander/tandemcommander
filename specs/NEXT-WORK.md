@@ -245,9 +245,17 @@ Functional, no loss:
 
 Performance, tooling, cosmetics:
 
-15. ZIP: the bound and `UpdateCentrDir` walk the central directory once per
+15. ~~ZIP: n × d deletion~~ - **done, feature 164** (30,000 members / 15,000 deleted: 21.9 s ->
+    under 0.5 s; 100,000 / 50,000: 1.0 s). **Found by its review, next (165): the ZIP plug-in keeps
+    the entry counts in 16 bits** - reading a zip64 archive keeps 0xFFFF when the count is
+    >= 65,535 (`common.cpp` ~1350), deletion decrements from there, and the zip64 end record is
+    written only when the directory's size or offset needs 64 bits (`add.cpp`
+    `WriteEOCentrDirRecord`), not for 65,535+ entries: deleting 50,000 of 100,000 members writes
+    15,535 as the count; adding or packing past 65,535 files likely wraps too. Readers that trust
+    the count list fewer members. Measure first (read the end records of the probe's archives).
+    Was: ZIP: the bound and `UpdateCentrDir` walk the central directory once per
     deleted member (n × d); one sorted offset array would serve both. Queue
-    108, entry 2 (113). The 092 comparator reads both names to their ends
+    108, entry 2 (113). Left of this item: the 092 comparator reads both names to their ends
     (2x–16x the byte fold in the sorted name lists; a contract change).
     Item 5, *The comparator's cost*.
 16. Translation tooling: `translate.merge --module zip` would re-lay out 510
