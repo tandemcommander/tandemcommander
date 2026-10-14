@@ -214,7 +214,8 @@ Crash-class or possible loss:
    reachable after the overwrite question): `worker.cpp` ~6238 `DoMoveFile` deletes the target and
    retries the move - a move that then fails (the source held open, an antivirus) leaves the target
    gone and the source under its old name. `MOVEFILE_REPLACE_EXISTING` in one step. Low.
-5i. **Pack with "overwrite" deletes the existing archive before packing** (found by 175's review,
+5i. ~~**Pack with "overwrite" deletes the existing archive before packing**~~ - **done, feature
+   176** (measured: a failed pack left nothing). Was (found by 175's review,
    older, reachable): `fileswn7.cpp` ~1960 - a packer that then fails leaves the old archive lost.
    Pack into a temporary name and replace (rule 105). Medium.
 

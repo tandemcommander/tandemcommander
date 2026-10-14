@@ -2534,3 +2534,7 @@ a few early ones are out of sequence).
   alternate data stream - delete + move made a new file), Quick Rename onto an existing file with
   `MOVEFILE_REPLACE_EXISTING`. **Probe trap:** after a failed Quick Rename the dialog opens again
   - a probe that answers it retries the rename.
+- 176-pack-overwrite-safe: **Pack with "Overwrite" keeps the old archive until the new one
+  exists** - the archive is moved aside (`arcXXXX.tmp` in its folder), deleted after a successful
+  pack, put back after a failed or cancelled one (before: deleted first - a failed pack lost it).
+  Probe `overwrite_probe.ps1` is 119's probe with its own cases.

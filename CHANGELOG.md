@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Packing over an existing archive keeps it when the packing fails**
+  (feature 176). Choosing *Overwrite* deleted the existing archive before
+  packing started; when packing then failed or was cancelled, the old archive
+  was lost. It now stays until the new archive is complete.
+
 - **Files > Convert keeps what the converted files had** (feature 175). The
   conversion deleted each file and put a new one in its place, so a file lost
   its permissions and additional data streams, and could be lost if the last

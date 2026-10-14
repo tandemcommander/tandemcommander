@@ -14,6 +14,8 @@
 #include "zip.h"
 #include "pack.h"
 
+BOOL PackErrorHandler(HWND parent, const WORD err, ...); // salamdr1.cpp (feature 176)
+
 //
 // ****************************************************************************
 // CFilesWindow
@@ -1854,8 +1856,13 @@ void CFilesWindow::Pack(CFilesWindow* target, int pluginIndex, const char* plugi
     }
 
     BOOL first = TRUE;
+    // feature 176: "Overwrite" moves the existing archive aside to this name (a temporary name in its
+    // folder) instead of deleting it; it is deleted once the new archive was made, and put back when
+    // the pack fails or is cancelled - the core deleted it before packing, a failed pack lost it
+    char overwriteAside[MAX_PATH];
 
 _PACK_AGAIN:
+    overwriteAside[0] = 0;
 
     CPackDialog dlg(HWindow, fileBuf, fileBufAlt, &str, &PackerConfig);
 
@@ -1957,11 +1964,25 @@ _PACK_AGAIN:
                     }
                     else
                     {
-                        ClearReadOnlyAttr(fileBuf); // so it can be deleted...
-                        if (!SalDeleteFile(fileBuf))
+                        // feature 176: aside, not deleted (see overwriteAside)
+                        char folder[MAX_PATH];
+                        lstrcpyn(folder, fileBuf, MAX_PATH);
+                        char* lastBackslash = strrchr(folder, '\\');
+                        if (lastBackslash != NULL)
+                            *(lastBackslash + 1) = 0;
+                        BOOL aside = lastBackslash != NULL && SalGetTempFileName(folder, "arc", overwriteAside, TRUE);
+                        if (aside && !SalMoveFileEx(fileBuf, overwriteAside, MOVEFILE_REPLACE_EXISTING))
+                        {
+                            DWORD moveErr = GetLastError();
+                            SalDeleteFile(overwriteAside); // the empty name reserved above
+                            SetLastError(moveErr);
+                            aside = FALSE;
+                        }
+                        if (!aside)
                         {
                             DWORD err;
                             err = GetLastError();
+                            overwriteAside[0] = 0;
                             SalMessageBox(HWindow, GetErrorText(err), LoadStr(IDS_ERROROVERWRITINGFILE), MB_OK | MB_ICONEXCLAMATION);
                             overwriteNotDone = TRUE;
                             // fall through to _PACK_AGAIN
@@ -1983,8 +2004,36 @@ _PACK_AGAIN:
             {
                 SetCurrentDirectory(GetPath());
                 SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-                if (PackerConfig.ExecutePacker(this, fileBuf, PackerConfig.Move, GetPath(),
-                                               PanelEnumDiskSelection, &data))
+                BOOL packed = PackerConfig.ExecutePacker(this, fileBuf, PackerConfig.Move, GetPath(),
+                                                         PanelEnumDiskSelection, &data);
+                if (overwriteAside[0] != 0) // feature 176: the archive "Overwrite" moved aside
+                {
+                    // what is at the archive's name decides, not only the packer's answer: a pack
+                    // can succeed without an archive (nothing to pack), and a Move can fail after
+                    // sources were already moved into the new archive (a source that could not be
+                    // deleted, RAR's warning exit code) - such an archive is never deleted
+                    BOOL newArchive = SalGetFileAttributes(fileBuf) != INVALID_FILE_ATTRIBUTES;
+                    if (packed && newArchive) // replaced: the old archive goes
+                    {
+                        ClearReadOnlyAttr(overwriteAside); // so it can be deleted...
+                        if (!SalDeleteFile(overwriteAside))
+                            TRACE_E("Pack: unable to delete the overwritten archive kept as " << overwriteAside);
+                    }
+                    else if (newArchive && PackerConfig.Move) // failed Move: both archives stay
+                        PackErrorHandler(HWindow, IDS_PACKERR_UNABLETOREN, overwriteAside, fileBuf);
+                    else // no new archive, or a failed copy (no source touched): the old one back
+                    {
+                        if (newArchive)
+                        {
+                            ClearReadOnlyAttr(fileBuf);
+                            SalDeleteFile(fileBuf);
+                        }
+                        if (!SalMoveFileEx(overwriteAside, fileBuf, 0))
+                            PackErrorHandler(HWindow, IDS_PACKERR_UNABLETOREN, overwriteAside, fileBuf);
+                    }
+                    overwriteAside[0] = 0;
+                }
+                if (packed)
                 { // packing succeeded
                     // if (nextFocus[0] != 0) strcpy(NextFocusName, nextFocus);
                     FocusFirstNewItem = TRUE; // focus also archives renamed by a plugin (e.g. SFX -> archive.exe)
