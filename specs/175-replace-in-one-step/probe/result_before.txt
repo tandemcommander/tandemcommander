@@ -1,0 +1,17 @@
+replace_probe (feature 175), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre169\tandemcommander.exe
+Date    : 2026-10-15 00:00; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+CONV-PLAIN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CONV-PLAIN FILE   FAIL        LF checked 1; a.txt now 'a\u000Ab\u000A', its stream: GONE; attributes Archive; temporary files: ; windows: no window
+CONV-LOCKED END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CONV-LOCKED FILE   PASS        LF checked 1; a.txt now 'a\u000D\u000Ab\u000D\u000A', its stream: 'kept-stream'; attributes Archive; temporary files: ; windows: [#32770 'Error Overwriting File'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+CONV-RO    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CONV-RO    FILE   FAIL        LF checked 1; a.txt now 'a\u000Ab\u000A', its stream: GONE; attributes ReadOnly, Archive; temporary files: ; windows: no window
+REN-PLAIN  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REN-PLAIN  FILE   PASS        a2.txt 'content of b', b.txt ''; windows: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 13, 15.10.2026, 0:00:55, A | [Static id=1151] With file: | [Static id=184] 12, 15.10.2026, 0:00:55, A | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel
+REN-LOCKED END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REN-LOCKED FILE   PASS        a2.txt 'content of a2', b.txt 'content of b'; windows: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 13, 15.10.2026, 0:01:07, A | [Static id=1151] With file: | [Static id=184] 12, 15.10.2026, 0:01:07, A | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel || [#32770 'Error Renaming File'] [Static id=2477] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=1] OK || [#32770 'Quick Rename'] [Static id=209] Rename file "b.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 8, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

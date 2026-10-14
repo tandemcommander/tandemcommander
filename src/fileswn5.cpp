@@ -2430,9 +2430,15 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
 
                             case IDYES:
                             {
-                                ClearReadOnlyAttr(tgtPath); // so it can be deleted ...
-                                if (!SalDeleteFile(tgtPath) || !SalMoveFile(path, tgtPath))
+                                // feature 175: in one step - it deleted the target and then moved
+                                // the file: a failed move left the target gone
+                                BOOL tgtReadOnly = ClearReadOnlyAttr(tgtPath); // so it can be replaced ...
+                                if (!SalMoveFileEx(path, tgtPath, MOVEFILE_REPLACE_EXISTING))
+                                {
                                     err = GetLastError();
+                                    if (tgtReadOnly)
+                                        SalSetFileAttributes(tgtPath, outAttr); // the target as it was
+                                }
                                 else
                                 {
                                     err = ERROR_SUCCESS;

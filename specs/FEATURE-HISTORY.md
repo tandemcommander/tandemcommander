@@ -2529,3 +2529,8 @@ a few early ones are out of sequence).
   export fail, a failed export deleted the existing file. **Compatibility:** REGEDIT4 files of older
   versions are code page and keep importing (names via `SalLegacyToU8Alloc`, data via the W8
   helper's code-page tolerance, DBCS scanning only for REGEDIT4).
+- 175-replace-in-one-step: **Files > Convert and Quick Rename replace in one step** - Convert
+  through a flushed temporary file and `SalReplaceWithTempW` (before: the converted file lost its
+  alternate data stream - delete + move made a new file), Quick Rename onto an existing file with
+  `MOVEFILE_REPLACE_EXISTING`. **Probe trap:** after a failed Quick Rename the dialog opens again
+  - a probe that answers it retries the rename.

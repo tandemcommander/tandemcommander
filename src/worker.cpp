@@ -3,6 +3,7 @@
 // CommentsTranslationProject: TRANSLATED
 
 #include "precomp.h"
+#include "salsafereplace.h" // feature 175
 
 #include "cfgdlg.h"
 #include "worker.h"
@@ -7765,21 +7766,46 @@ CONVERT_AGAIN:
                         // close the files and update the global progress
                         // do not reuse operationDone so the progress stays correct even if the file changes "under our feet"
                         HANDLES(CloseHandle(hSource));
+                        // feature 175: the complete new content on disk before it replaces the
+                        // file (rule 105) - a failed flush is a write error like a failed write
+                        if (!FlushFileBuffers(hTarget))
+                        {
+                            DWORD flushErr = GetLastError();
+                            HANDLES(CloseHandle(hTarget));
+                            hSource = hTarget = NULL;
+                            SetLastError(flushErr);
+                            goto WRITE_ERROR_CONVERT;
+                        }
                         if (!HANDLES(CloseHandle(hTarget))) // even after a failed call we assume the handle is closed,
                         {                                   // see https://forum.altap.cz/viewtopic.php?f=6&t=8455
                             hSource = hTarget = NULL;       // (it states that the target file can be deleted, so the handle was not left open)
                             goto WRITE_ERROR_CONVERT;
                         }
                         totalDone += size;
-                        // restore attributes (write operations have trouble with read-only)
-                        if (changeAttrs)
-                            SalSetFileAttributes(tmpFileName, srcAttrs);
-                        // overwrite the original file with the temp file
+                        // overwrite the original file with the temp file - feature 175: in one step
+                        // (rule 105); it deleted the file and then moved the temporary one in: a
+                        // failed move left the file gone, and the new file lost what the user's
+                        // had (its streams, ACL, short name)
                         while (1)
                         {
-                            ClearReadOnlyAttr(name); // ensure it can be deleted
-                            if (SalDeleteFile(name))
+                            WCHAR* wName = SalPathToWExtAlloc(name);
+                            WCHAR* wTmp = SalPathToWExtAlloc(tmpFileName);
+                            DWORD replaceErr = ERROR_NOT_ENOUGH_MEMORY;
+                            CSalReplaceResult rr = srrFailedKept;
+                            if (wName != NULL && wTmp != NULL) // the user asked for it, also for a read-only file
+                                rr = SalReplaceWithTempW(wName, wTmp, TRUE, TRUE, &replaceErr);
+                            free(wName);
+                            free(wTmp);
+                            if (rr == srrDone)
                             {
+                                if (changeAttrs) // the source's attributes (read-only included) - as before
+                                    SalSetFileAttributes(name, srcAttrs);
+                                return TRUE; // success
+                            }
+                            if (rr == srrLeftAtTemp) // the file is gone, the temporary file holds the only copy
+                            {
+                                if (changeAttrs)
+                                    SalSetFileAttributes(tmpFileName, srcAttrs);
                                 while (1)
                                 {
                                     if (SalMoveFile(tmpFileName, name))
@@ -7820,7 +7846,7 @@ CONVERT_AGAIN:
                             }
                             else
                             {
-                                DWORD err = GetLastError();
+                                DWORD err = replaceErr; // the file is as it was (or someone else removed both files)
 
                                 WaitForSingleObject(dlgData.WorkerNotSuspended, INFINITE); // if we should be in suspend mode, wait ...
                                 if (*dlgData.CancelWorker)

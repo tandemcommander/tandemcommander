@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Files > Convert keeps what the converted files had** (feature 175). The
+  conversion deleted each file and put a new one in its place, so a file lost
+  its permissions and additional data streams, and could be lost if the last
+  step failed. It is now replaced in one step; Quick Rename onto an existing
+  file likewise.
+
 - **The exported configuration keeps every letter** (feature 174). Options >
   Export Configuration wrote letters outside the system's code page (Cyrillic
   folders, history, commands) as question marks, and a key or value with such

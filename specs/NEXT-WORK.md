@@ -198,16 +198,25 @@ Crash-class or possible loss:
    Western code page) is exported and re-imported as '?'. Measure (a value with such letters,
    export, read the file, import with `-C`), then a UTF-16 export ("Windows Registry Editor
    Version 5.00") and the import side to match.
-5f. **Files > Convert replaces by delete-then-move** (found by 173's review, older, reachable):
+5f. ~~**Files > Convert replaces by delete-then-move**~~ - **done, feature 175** (measured: the
+   converted file lost its alternate data stream). Was (found by 173's review, older, reachable):
    `worker.cpp` ~7779 `ClearReadOnlyAttr` + `SalDeleteFile(name)` + `SalMoveFile(tmp, name)`, no
    flush - a failed move leaves the original deleted (a Retry/Skip/Cancel box names the kept
    temporary file, so the content survives); the original's ACL and attributes are lost. Fix:
    rule 105 (`SalReplaceWithTempW`, flushed temporary file).
-5g. **Quick Rename onto an existing file deletes the target first** (found by 173's review,
+5g. ~~**Quick Rename onto an existing file deletes the target first**~~ - **done, feature 175**
+   (`MOVEFILE_REPLACE_EXISTING`). Was (found by 173's review,
    older, reachable after the overwrite question): `fileswn5.cpp` ~2433
    `SalDeleteFile(tgt) || SalMoveFile(src, tgt)` - a failed move leaves the target deleted (the
    user had agreed to give it up; the source keeps its name). `MoveFileExW(REPLACE_EXISTING)` does
    it in one step. Low.
+5h. **F6 Move onto an existing file deletes the target first** (found by 175's review, older,
+   reachable after the overwrite question): `worker.cpp` ~6238 `DoMoveFile` deletes the target and
+   retries the move - a move that then fails (the source held open, an antivirus) leaves the target
+   gone and the source under its old name. `MOVEFILE_REPLACE_EXISTING` in one step. Low.
+5i. **Pack with "overwrite" deletes the existing archive before packing** (found by 175's review,
+   older, reachable): `fileswn7.cpp` ~1960 - a packer that then fails leaves the old archive lost.
+   Pack into a temporary name and replace (rule 105). Medium.
 
 Functional, no loss:
 
