@@ -6,6 +6,7 @@
 #include "salaltername.h" // feature 169
 #include "salheapstr.h"   // feature 172
 #include "salsafereplace.h" // feature 174
+#include "salfmtinserts.h"  // feature 180
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -214,15 +215,17 @@ char* GetErrorText(DWORD error)
     // the UTF-8 path renders as mojibake; the documented result size stays
     // <= MAX_PATH+20 incl. null (spl_gen.h contract), truncation happens only
     // at a UTF-8 character boundary
+    // feature 180: a Windows text with inserts (193, 216, 34 ...) made FormatMessage fail without
+    // arguments - "System error 193, text description is not available." (salfmtinserts.h)
     BOOL haveU8 = FALSE;
     WCHAR wmsg[MAX_PATH + 20];
-    if (FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM,
+    if (FormatMessageW(SAL_FM_SYSTEM_FLAGS,
                        NULL,
                        error,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                        wmsg,
                        _countof(wmsg),
-                       NULL) != 0 &&
+                       SalFmInsertsW()) != 0 &&
         wmsg[0] != 0)
     {
         char u8msg[3 * (MAX_PATH + 20)];
@@ -245,13 +248,13 @@ char* GetErrorText(DWORD error)
     if (!haveU8) // legacy path: ANSI system text (or the ASCII fallback below)
     {
         int fl;
-        if ((fl = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+        if ((fl = FormatMessage(SAL_FM_SYSTEM_FLAGS,
                                 NULL,
                                 error,
                                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                                 act + l,
                                 MAX_PATH + 20 - l,
-                                NULL)) == 0 ||
+                                SalFmInsertsA())) == 0 ||
             *(act + l) == 0)
         {
             if ((int)error < 0)
@@ -283,13 +286,13 @@ WCHAR* GetErrorTextW(DWORD error)
     // other strings as well); either handle it via _CrtSetDebugFillThreshold or provide a smaller size)
     int l = swprintf(act, _countof(buffer) - (act - buffer), ((int)error < 0 ? L"(%08X) " : L"(%d) "), error);
     int fl;
-    if ((fl = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM,
+    if ((fl = FormatMessageW(SAL_FM_SYSTEM_FLAGS, // feature 180: texts with inserts too
                              NULL,
                              error,
                              MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                              act + l,
                              MAX_PATH + 20 - l,
-                             NULL)) == 0 ||
+                             SalFmInsertsW())) == 0 ||
         *(act + l) == 0)
     {
         if ((int)error < 0)

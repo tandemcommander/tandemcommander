@@ -1,0 +1,9 @@
+errtext_probe (feature 180), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre169\tandemcommander.exe
+Date    : 2026-10-15 00:38; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+PLUGIN     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLUGIN     TEXT   FAIL        windows: [#32770 'Tandem Commander'] [Button id=2] OK | [Static id=65535] E:\Projects\tandemcommander\src\common\handles.cpp 796: Called from: E:\Projects\tandemcommander\src\plugins1.cpp 2271: Error in function LoadLibrary: (193) Function parameters: C:\Users\pavel\AppData\Local\Temp\tc180\plug\fake.spl || [#32770 'Error'] [Static id=2477] Unable to load plugin (C:\Users\pavel\AppData\Local\Temp\tc180\plug\fake.spl) or some of its components. Error: System error 193, text description is not available. See plugin details in menu Plugins / Plugins Manager. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

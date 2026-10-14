@@ -1,0 +1,17 @@
+﻿    2  old: Systém nemůže nalézt uvedený soubor.
+       new: Systém nemůže nalézt uvedený soubor.
+    5  old: Přístup byl odepřen.
+       new: Přístup byl odepřen.
+   32  old: Proces nemá přístup k souboru, neboť jej právě využívá jiný proces.
+       new: Proces nemá přístup k souboru, neboť jej právě využívá jiný proces.
+  123  old: Název souboru či adresáře nebo jmenovka svazku je nesprávná.
+       new: Název souboru či adresáře nebo jmenovka svazku je nesprávná.
+  193  old: FAILED, last error 87
+       new: ... není platná aplikace typu Win32.
+  216  old: FAILED, last error 87
+       new: Verze programu ... není kompatibilní se spuštěnou verzí systému Windows. Projděte si systémové informace o počítači a pak se obraťte na vydavatele softwaru.
+   34  old: FAILED, last error 87
+       new: V jednotce je nesprávná disketa.
+Vložte ... (pořadové číslo diskety: ...) do jednotky ....
+ 1392  old: Soubor nebo adresář je porušen a není čitelný.
+       new: Soubor nebo adresář je porušen a není čitelný.

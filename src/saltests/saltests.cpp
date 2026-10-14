@@ -58,6 +58,7 @@
 #include "salzipdelete.h"    // feature 164
 #include "salzipcount.h"     // feature 165
 #include "salaltername.h"    // feature 169
+#include "salfmtinserts.h"   // feature 180
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11849,6 +11850,35 @@ static void TestAlterName169()
     }
 }
 
+// feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
+// formatted - before, FormatMessage without arguments failed (87) and the program showed "System
+// error N, text description is not available."; the inserts become "..." and no '%' is left
+static void TestFormatMessageInserts180()
+{
+    const DWORD codes[] = {2, 5, 32, 123, 193, 216, 34};
+    for (DWORD e : codes)
+    {
+        WCHAR w[512];
+        DWORD n = FormatMessageW(SAL_FM_SYSTEM_FLAGS, NULL, e, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), w, _countof(w), SalFmInsertsW());
+        CHECK(n > 0 && wcschr(w, L'%') == NULL);
+        char a[512];
+        n = FormatMessageA(SAL_FM_SYSTEM_FLAGS, NULL, e, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), a, sizeof(a), SalFmInsertsA());
+        CHECK(n > 0 && strchr(a, '%') == NULL);
+    }
+    // the control: without the arguments a text with an insert fails, as it did
+    {
+        WCHAR w[512];
+        DWORD n = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, 193, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), w, _countof(w), NULL);
+        CHECK(n == 0 && GetLastError() == ERROR_INVALID_PARAMETER);
+    }
+    // the inserts: "..." where the text had %1
+    {
+        WCHAR w[512];
+        DWORD n = FormatMessageW(SAL_FM_SYSTEM_FLAGS, NULL, 193, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), w, _countof(w), SalFmInsertsW());
+        CHECK(n > 0 && wcsstr(w, L"...") != NULL);
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -11938,6 +11968,7 @@ int main(int argc, char** argv)
     TestZipDelete164();
     TestZipCount165();
     TestAlterName169();
+    TestFormatMessageInserts180();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

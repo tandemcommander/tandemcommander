@@ -3,7 +3,8 @@
 // CommentsTranslationProject: TRANSLATED
 
 #include "precomp.h"
-#include "salheapstr.h" // feature 178
+#include "salheapstr.h"    // feature 178
+#include "salfmtinserts.h" // feature 180
 
 #include "menu.h"
 #include "cfgdlg.h"
@@ -1634,13 +1635,13 @@ char* CSalamanderGeneral::GetErrorText(int err, char* buf, int bufSize)
     // whole composed message to the ANSI fallback (mojibake paths)
     BOOL haveU8 = FALSE;
     WCHAR wmsg[MAX_PATH + 20];
-    if (FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM,
+    if (FormatMessageW(SAL_FM_SYSTEM_FLAGS, // feature 180: texts with inserts too
                        NULL,
                        err,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                        wmsg,
                        _countof(wmsg),
-                       NULL) != 0 &&
+                       SalFmInsertsW()) != 0 &&
         wmsg[0] != 0)
     {
         char u8msg[3 * (MAX_PATH + 20)];
@@ -1660,13 +1661,13 @@ char* CSalamanderGeneral::GetErrorText(int err, char* buf, int bufSize)
         }
     }
     if (!haveU8 && // legacy path: ANSI system text (or the ASCII fallback below)
-        (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+        (FormatMessage(SAL_FM_SYSTEM_FLAGS,
                        NULL,
                        err,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                        buf + l,
                        bufSize - l,
-                       NULL) == 0 ||
+                       SalFmInsertsA()) == 0 ||
          bufSize > l && *(buf + l) == 0))
     {
         char txt[100];

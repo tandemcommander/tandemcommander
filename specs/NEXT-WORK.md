@@ -631,8 +631,11 @@ Code work an agent can do:
   4. The archivers' messages (127): two inserts are not UTF-8 - `pack1.cpp:288` (a command line
      cut by `lstrcpyn`, possibly inside a letter) and `pack2.cpp:355` (a UTF-8 path joined with
      an OEM name for `PACKLIST_OEM`).
-  5. `GetErrorText` gives "System error N, text description is not available" for errors whose
-     Windows text has inserts (216, 193 ...): `FormatMessage` needs `FORMAT_MESSAGE_IGNORE_INSERTS`.
+  5. ~~`GetErrorText` gives "System error N, text description is not available" for errors whose
+     Windows text has inserts (216, 193 ...)~~ - **done, feature 180** (the inserts as "...",
+     `salfmtinserts.h`). Left: plug-ins with `FORMAT_MESSAGE_IGNORE_INSERTS` show a literal "%1 ..."
+     (7zip, checksum, uncab, uniso, zip, regedt, renamer, filecomp, undelete, winliblt) - cosmetic;
+     `sfx7zip/extract.c` lacks it.
   6. The share list (125): the job of a worker that is still in the network call at exit is
      not freed (ended by `TerminateAuxThreads`; a Debug leak report after Esc on a dead server
      and an immediate exit) - give the exit path a way to free it, or wait for the worker

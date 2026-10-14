@@ -7,6 +7,7 @@
 #include "../../common/salftpautoren.h" // feature 141: the shortening step of the automatic rename
 
 #include "../../common/salurlpwd.h" // feature 085
+#include "../../common/salfmtinserts.h" // feature 180
 
 const char* FTP_ANONYMOUS = "anonymous"; // standard name for an anonymous user
 
@@ -962,13 +963,13 @@ char* FTPGetErrorText(int err, char* buf, int bufSize)
     int l = 0;
     if (bufSize > 20)
         l = sprintf(buf, "(%d) ", err);
-    if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+    if (FormatMessage(SAL_FM_SYSTEM_FLAGS, // feature 180: texts with inserts too
                       NULL,
                       err,
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                       buf + l,
                       bufSize - l,
-                      NULL) == 0 ||
+                      SalFmInsertsA()) == 0 ||
         bufSize > l && *(buf + l) == 0)
     {
         char txt[100];

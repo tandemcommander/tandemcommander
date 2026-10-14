@@ -10,6 +10,7 @@
 //****************************************************************************
 
 #include "precomp.h"
+#include "../../common/salfmtinserts.h" // feature 180
 //#include <windows.h>
 #ifdef _MSC_VER
 #include <crtdbg.h>
@@ -220,13 +221,13 @@ const char* err(DWORD error)
 {
     wsprintf(__ErrorBuffer, "(%d) ", error);
     int len = (int)strlen(__ErrorBuffer);
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+    FormatMessage(SAL_FM_SYSTEM_FLAGS, // feature 180: texts with inserts too
                   NULL,
                   error,
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                   __ErrorBuffer + len,
                   __ERROR_BUFFER_SIZE - len,
-                  NULL);
+                  SalFmInserts());
     return __ErrorBuffer;
 }
 

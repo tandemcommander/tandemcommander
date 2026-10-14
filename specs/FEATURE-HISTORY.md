@@ -2546,3 +2546,7 @@ a few early ones are out of sequence).
   at `MAX_PATH`, possibly inside a letter - the FTP upload's caption); not driven (no FTP server).
 - 179-pictview-print-fit: PictView's print mirrors by a stored negative size only with Fit off (the
   preview's rule, 152) and computes the full-image size with `MulDiv` (no 32-bit wrap); not driven.
+- 180-errortext-inserts: system error texts with inserts (193, 216, 34) are formatted - every insert
+  becomes "..." (`src/common/salfmtinserts.h`: FROM_SYSTEM | ARGUMENT_ARRAY; not IGNORE_INSERTS,
+  which leaves a '%'); before: "System error 193, text description is not available.". Use the header
+  for any new FormatMessage of a system error.

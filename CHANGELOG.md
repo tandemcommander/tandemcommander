@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Error messages show the Windows text for more errors** (feature 180). Some
+  errors (for example a file that is not a valid program) were reported as
+  "System error 193, text description is not available." instead of their
+  description.
+
 - **PictView prints what its print preview shows** (feature 179). With *Scale
   to fit* a picture could be printed mirrored after a negative size had been
   typed, and a large print scale of a big picture printed a wrong size.

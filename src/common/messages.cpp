@@ -59,6 +59,7 @@ void Initialize__Messages()
 #pragma warning(3 : 4706) // warning C4706: assignment within conditional expression
 
 #include "trace.h"
+#include "salfmtinserts.h" // feature 180
 #include "messages.h"
 
 char __ResourceStringBuffer[__RESOURCE_STRING_BUFFER_SIZE] = "";
@@ -556,13 +557,13 @@ const char* err(DWORD error)
 #endif // MULTITHREADED_MESSAGES_ENABLE
         wsprintfA(__ErrorBuffer, "(%d) ", error);
         int len = (int)strlen(__ErrorBuffer);
-        FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
+        FormatMessageA(SAL_FM_SYSTEM_FLAGS, // feature 180: texts with inserts too
                        NULL,
                        error,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                        __ErrorBuffer + len,
                        __ERROR_BUFFER_SIZE - len,
-                       NULL);
+                       SalFmInsertsA());
         return __ErrorBuffer;
 #ifdef MULTITHREADED_MESSAGES_ENABLE
     }
@@ -585,13 +586,13 @@ const WCHAR* errW(DWORD error)
 #endif // MULTITHREADED_MESSAGES_ENABLE
         wsprintfW(__ErrorBufferW, L"(%d) ", error);
         int len = (int)wcslen(__ErrorBufferW);
-        FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM,
+        FormatMessageW(SAL_FM_SYSTEM_FLAGS, // feature 180: texts with inserts too
                        NULL,
                        error,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                        __ErrorBufferW + len,
                        __ERROR_BUFFER_SIZE - len,
-                       NULL);
+                       SalFmInsertsW());
         return __ErrorBufferW;
 #ifdef MULTITHREADED_MESSAGES_ENABLE
     }
