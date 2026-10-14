@@ -9,6 +9,7 @@
 #include "execute.h"
 #include "cfgdlg.h"
 #include "shellib.h"
+#include "salheapstr.h" // feature 172
 
 //******************************************************************************
 //
@@ -1715,15 +1716,22 @@ CSalamanderVarStrEntry MakeFileListExpArray[] =
 BOOL BrowseDirCommand(HWND hParent, int editlineResID, int filterResID)
 {
     CALL_STACK_MESSAGE2("BrowseDirCommand(, %d)", editlineResID);
+    // feature 172: the field's text as UTF-8 both ways - GetTargetDirectory takes and returns
+    // UTF-8, the field was read and written in the code page (a folder with accents came back
+    // garbled)
+    char text[3 * 2 * MAX_PATH + 1];
+    SalGetDlgItemTextU8(hParent, editlineResID, text, (int)sizeof(text));
     char path[MAX_PATH];
-    SendMessage(GetDlgItem(hParent, editlineResID), WM_GETTEXT,
-                MAX_PATH, (LPARAM)path);
+    if (strlen(text) < MAX_PATH)
+        strcpy(path, text);
+    else
+        path[0] = 0; // longer than a folder the browser takes: start without it
 
     CALL_STACK_MESSAGE1("BrowseDirCommand::GetOpenFileName");
     if (GetTargetDirectory(hParent, hParent, LoadStr(IDS_BROWSEDIRECTORY_TITLE), LoadStr(IDS_BROWSEDIRECTORY_TEXT), path, FALSE, path))
     {
         CALL_STACK_MESSAGE2("BrowseDirCommand::SendMessage( , , ,%s)", path);
-        SendMessage(GetDlgItem(hParent, editlineResID), WM_SETTEXT, 0, (LPARAM)path);
+        SalSetDlgItemTextU8(hParent, editlineResID, path);
         return TRUE;
     }
     return FALSE;
@@ -2140,35 +2148,43 @@ TrackExecuteMenu(HWND hParent, int buttonResID, int editlineResID,
 BOOL BrowseCommand(HWND hParent, int editlineResID, int filterResID)
 {
     CALL_STACK_MESSAGE2("BrowseCommand(, %d)", editlineResID);
-    char file[MAX_PATH];
-    SendMessage(GetDlgItem(hParent, editlineResID), WM_GETTEXT,
-                MAX_PATH, (LPARAM)file);
-    OPENFILENAME ofn;
-    memset(&ofn, 0, sizeof(OPENFILENAME));
-    ofn.lStructSize = sizeof(OPENFILENAME);
+    // feature 172: the wide dialog and the field's text as UTF-8 (like the Command Shell page,
+    // 071) - the code-page dialog and WM_GETTEXT / WM_SETTEXT turned letters outside the
+    // code page into '?'
+    char file[3 * 2 * MAX_PATH + 1]; // UTF-8 of any name the dialog returns
+    WCHAR fileW[2 * MAX_PATH];
+    SalGetDlgItemTextU8(hParent, editlineResID, file, (int)sizeof(file));
+    if (SalU8ToW(file, -1, fileW, _countof(fileW)) == 0) // a longer text: no suggestion
+        fileW[0] = 0;
+    WCHAR filterW[500];
+    lstrcpynW(filterW, LoadStrW(filterResID), _countof(filterW));
+    for (WCHAR* f = filterW; *f != 0; f++) // create a double-null terminated list
+        if (*f == L'|')
+            *f = 0;
+    OPENFILENAMEW ofn;
+    memset(&ofn, 0, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = hParent;
-    char* s = LoadStr(filterResID);
-    ofn.lpstrFilter = s;
-    while (*s != 0) // create a double-null terminated list
-    {
-        if (*s == '|')
-            *s = 0;
-        s++;
-    }
-    ofn.lpstrFile = file;
-    ofn.nMaxFile = MAX_PATH;
+    ofn.lpstrFilter = filterW;
+    ofn.lpstrFile = fileW;
+    ofn.nMaxFile = _countof(fileW);
     ofn.nFilterIndex = 1;
-    //  ofn.lpstrFileTitle = file;
-    //  ofn.nMaxFileTitle = MAX_PATH;
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
     CALL_STACK_MESSAGE1("BrowseCommand::GetOpenFileName");
-    if (GetOpenFileName(&ofn))
+    if (GetOpenFileNameW(&ofn))
     {
-        if (SalGetFullName(file))
+        if (SalWToU8(fileW, -1, file, sizeof(file)) != 0 && SalGetFullName(file, NULL, NULL, NULL, NULL, sizeof(file)))
         {
+            // the fields this fills keep MAX_PATH bytes (the command, the compared names, the
+            // icon file): a longer name is refused, never stored cut (review of 172)
+            if (strlen(file) >= MAX_PATH)
+            {
+                SalMessageBox(hParent, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                return FALSE;
+            }
             CALL_STACK_MESSAGE2("BrowseCommand::SendMessage( , , ,%s)", file);
-            SendMessage(GetDlgItem(hParent, editlineResID), WM_SETTEXT, 0, (LPARAM)file);
+            SalSetDlgItemTextU8(hParent, editlineResID, file);
             return TRUE;
         }
     }
@@ -2177,9 +2193,9 @@ BOOL BrowseCommand(HWND hParent, int editlineResID, int filterResID)
         DWORD error = CommDlgExtendedError();
         if (error == FNERR_INVALIDFILENAME)
         {
-            char buff[MAX_PATH + 100];
-            sprintf(buff, LoadStrU8(IDS_COMDLG_INVALIDFILENAME), file);
-            SalMessageBox(hParent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            CSalHeapString buff; // the whole UTF-8 text of the field
+            buff.Printf(LoadStrU8(IDS_COMDLG_INVALIDFILENAME), file);
+            SalMessageBox(hParent, buff.Size() > 0 ? buff.Get() : file, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         }
     }
     return FALSE;

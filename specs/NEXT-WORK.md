@@ -171,6 +171,27 @@ Crash-class or possible loss:
    appends `plugins\` + `DLLName` without a bound - an install folder near 259 bytes overflows; the
    folder is not UTF-8. Small.
 
+5c. **The viewer's Copy to File overwrites by deleting first** (found by 172's review, older;
+   reached by every name since 172 - before, any name with a letter outside ASCII failed earlier):
+   `viewer3.cpp` CM_COPYTOFILE writes a temporary file, then `SalDeleteFile` of the user's file and
+   `SalMoveFile` of the temporary one - a failed move (antivirus, an indexer, ACL) leaves the
+   original gone and the new content in an unnamed `sal*.tmp`; delete-then-move also drops ACLs,
+   hard links, streams. Fix: `SalReplaceWithTempW` (rule 105) and report a kept temporary file by
+   its name.
+5d. **A failed configuration export deletes the user's existing file** (found by 172's review,
+   older): the user confirms overwriting `backup.reg`; `CopyBranch` fails (`IDS_EXPORTCFG_REGERR`)
+   and `mainwnd3.cpp` CM_EXPORTCONFIG deletes the untouched old file; a write failure already
+   truncated it (`Dump` opens with `CREATE_ALWAYS`). Fix: write a temporary file next to it and
+   replace (105).
+5e. **The configuration export writes letters outside the code page as '?'** (found by 172,
+   mechanism confirmed by its review): the core stores its strings as UTF-16
+   (`SalRegSetValueExW8`), the export copies the key through reglib with A registry functions
+   (`registry.cpp` `RegEnumValueA` / `RegQueryValueExA` / `RegEnumKeyExA`) and writes a REGEDIT4
+   (code-page) file - a hot path, history or command with Cyrillic letters (or Czech ones on a
+   Western code page) is exported and re-imported as '?'. Measure (a value with such letters,
+   export, read the file, import with `-C`), then a UTF-16 export ("Windows Registry Editor
+   Version 5.00") and the import side to match.
+
 Functional, no loss:
 
 6. ~~PictView's print preview is empty in every release since 006~~ - **done, feature 152** (drawn
@@ -301,10 +322,13 @@ Large or risky, each a feature of its own:
     sweep regresses FTP); B-5 the frozen plug-in-facing ANSI services (needs
     an interface decision); ~~the install-path chain~~ (**start, language, plug-in loading done - feature 170**: under a folder
     outside the code page the program did not start; toolbar SVG icons, `sqlite.dll`, conversion
-    tables done - feature 171; **left**: configuration export's start folder `mainwnd3.cpp`, bug
-    report line, `EnumInstalledModules` (an interface question), the plug-ins' own lookups of
-    their files (12 plug-in sources with `GetModuleFileName` A); tips and SalOpen not reachable (a
-    commented-out block, `salopen.exe` not shipped) - measure each with
+    tables done - feature 171; the configuration export's dialog and every other code-page file
+    dialog of the core done - feature 172 (the viewer's Copy to File refused any accented name);
+    the plug-ins' own lookups of their files read by 172: the shipped ones are wide already (7-Zip,
+    PictView, ZIP's `GetModuleFileNameU8`) or not reachable (FTP's `utils\libeay32.dll` and ZIP's
+    SFX modules are not shipped, Portables takes only the file name, the others are off);
+    **left**: bug report line, `EnumInstalledModules` (an interface question); tips and SalOpen not
+    reachable (a commented-out block, `salopen.exe` not shipped) - measure each with
     `specs/170-*/probe/install_path_probe.ps1`; was: the install-path chain (`plugins2.cpp`; 151's review: the plug-in loader builds every plug-in's
     path with `GetModuleFileName` A + an unbounded `strcat` into `MAX_PATH` - `plugins1.cpp` load,
     `LoadLanguageModule`, `plugins2.cpp` `GetPluginDataFromSuffix` - and `DLLName` is code page for

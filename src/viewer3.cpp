@@ -12,6 +12,7 @@
 #include "shellib.h"
 #include "mainwnd.h"
 #include "codetbl.h"
+#include "salheapstr.h" // feature 172
 
 BOOL ViewerActive(HWND hwnd)
 {
@@ -938,29 +939,33 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (MouseDrag)
                 return 0;
-            char file[MAX_PATH];
-            file[0] = 0;
-            OPENFILENAME ofn;
-            memset(&ofn, 0, sizeof(OPENFILENAME));
-            ofn.lStructSize = sizeof(OPENFILENAME);
+            // feature 172: a wide dialog - the code-page one returned code-page bytes, which the
+            // viewer (UTF-8) could not open for any name with a letter outside ASCII
+            WCHAR fileW[2 * MAX_PATH];
+            fileW[0] = 0;
+            WCHAR currentDirW[MAX_PATH]; // CurrentDir is UTF-8 of fewer than MAX_PATH bytes
+            if (CurrentDir[0] == 0 || SalU8ToW(CurrentDir, -1, currentDirW, _countof(currentDirW)) == 0)
+                currentDirW[0] = 0;
+            WCHAR filterW[500];
+            lstrcpynW(filterW, LoadStrW(IDS_VIEWERFILTER), _countof(filterW));
+            for (WCHAR* f = filterW; *f != 0; f++) // create a double-null-terminated list
+                if (*f == L'|')
+                    *f = 0;
+            OPENFILENAMEW ofn;
+            memset(&ofn, 0, sizeof(ofn));
+            ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = HWindow;
-            char* s = LoadStr(IDS_VIEWERFILTER);
-            ofn.lpstrFilter = s;
-            while (*s != 0) // create a double-null-terminated list
-            {
-                if (*s == '|')
-                    *s = 0;
-                s++;
-            }
-            ofn.lpstrFile = file;
-            ofn.nMaxFile = MAX_PATH;
+            ofn.lpstrFilter = filterW;
+            ofn.lpstrFile = fileW;
+            ofn.nMaxFile = _countof(fileW);
             ofn.nFilterIndex = 1;
-            ofn.lpstrInitialDir = CurrentDir[0] != 0 ? CurrentDir : NULL;
+            ofn.lpstrInitialDir = currentDirW[0] != 0 ? currentDirW : NULL;
             ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
-            if (SafeGetOpenFileName(&ofn))
+            char file[3 * 2 * MAX_PATH + 1]; // UTF-8 of any name the dialog returns
+            if (SafeGetOpenFileNameW(&ofn) && SalWToU8(fileW, -1, file, sizeof(file)) != 0)
             {
-                if (SalGetFullName(file))
+                if (SalGetFullName(file, NULL, NULL, NULL, NULL, sizeof(file)))
                 {
                     if (Lock != NULL)
                     {
@@ -1657,30 +1662,36 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             ENTER_AGAIN:
 
-                char fileName[SAL_MAX_PATH_UTF8];       // long-path capable (feature 012)
-                lstrcpyn(fileName, FileName, MAX_PATH); // long UTF-8 name would overflow; the ANSI dialog cannot take more anyway
-                OPENFILENAME ofn;
-                memset(&ofn, 0, sizeof(OPENFILENAME));
-                ofn.lStructSize = sizeof(OPENFILENAME);
+                // feature 172: a wide dialog - the code-page one refused a name with any letter
+                // outside ASCII (its code-page bytes are not UTF-8: error 123) and showed the
+                // suggested UTF-8 name as code-page characters
+                constexpr int copyNameU8Size = 3 * 2 * MAX_PATH + 1; // UTF-8 of any name the dialog returns
+                WCHAR fileNameW[2 * MAX_PATH];
+                if (SalU8ToW(FileName, -1, fileNameW, _countof(fileNameW)) == 0) // the viewed file's name
+                    fileNameW[0] = 0;                                            // does not fit: no suggestion
+                WCHAR filterW[500];
+                lstrcpynW(filterW, LoadStrW(IDS_VIEWERFILTER), _countof(filterW));
+                for (WCHAR* f = filterW; *f != 0; f++) // create a double-null-terminated list
+                    if (*f == L'|')
+                        *f = 0;
+                WCHAR titleW[300];
+                lstrcpynW(titleW, LoadStrW(IDS_VIEWERCOPYTOFILE), _countof(titleW));
+                OPENFILENAMEW ofn;
+                memset(&ofn, 0, sizeof(ofn));
+                ofn.lStructSize = sizeof(ofn);
                 ofn.hwndOwner = HWindow;
-                char* s = LoadStr(IDS_VIEWERFILTER);
-                ofn.lpstrFilter = s;
-                while (*s != 0) // create a double-null-terminated list
-                {
-                    if (*s == '|')
-                        *s = 0;
-                    s++;
-                }
-                ofn.lpstrFile = fileName;
-                ofn.nMaxFile = MAX_PATH;
+                ofn.lpstrFilter = filterW;
+                ofn.lpstrFile = fileNameW;
+                ofn.nMaxFile = _countof(fileNameW);
                 ofn.nFilterIndex = 1;
-                ofn.lpstrTitle = LoadStr(IDS_VIEWERCOPYTOFILE);
+                ofn.lpstrTitle = titleW;
                 ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_LONGNAMES | OFN_NOCHANGEDIR;
 
-                if (SafeGetSaveFileName(&ofn))
+                char fileName[copyNameU8Size];
+                if (SafeGetSaveFileNameW(&ofn) && SalWToU8(fileNameW, -1, fileName, sizeof(fileName)) != 0)
                 {
                     int errTextID;
-                    if (!SalGetFullName(fileName, &errTextID))
+                    if (!SalGetFullName(fileName, &errTextID, NULL, NULL, NULL, sizeof(fileName)))
                     {
                         SalMessageBox(HWindow, LoadStr(errTextID), LoadStr(IDS_ERRORTITLE),
                                       MB_OK | MB_ICONEXCLAMATION);
@@ -1698,9 +1709,9 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     }
                     if (attr != 0xFFFFFFFF)
                     {
-                        char text[MAX_PATH + 300]; // fileName can approach MAX_PATH (feature 027; was 300)
-                        _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_FILEALREADYEXIST), fileName);
-                        int res = SalMessageBox(HWindow, text, LoadStr(IDS_VIEWERTITLE),
+                        CSalHeapString text; // feature 172: the whole UTF-8 name (MAX_PATH + 300 could cut it)
+                        text.Printf(LoadStrU8(IDS_FILEALREADYEXIST), fileName);
+                        int res = SalMessageBox(HWindow, text.Size() > 0 ? text.Get() : fileName, LoadStr(IDS_VIEWERTITLE),
                                                 MB_YESNOCANCEL | MB_ICONQUESTION | MB_DEFBUTTON2);
                         if (res == IDNO)
                             goto ENTER_AGAIN;
@@ -1710,9 +1721,9 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                     HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-                    char tmpFile[MAX_PATH];
+                    char tmpFile[copyNameU8Size];
                     char* endBackSlash = strrchr(fileName, '\\');
-                    char path[MAX_PATH];
+                    char path[copyNameU8Size];
                     if (endBackSlash != NULL)
                     {
                         if (attr != 0xFFFFFFFF) // file overwrite -> do it via a temp file (because of self-overwrite)
@@ -1722,7 +1733,7 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                         }
                         else
                             strcpy(tmpFile, fileName);
-                        if (attr == 0xFFFFFFFF || SalGetTempFileName(path, "sal", tmpFile, TRUE))
+                        if (attr == 0xFFFFFFFF || SalGetTempFileName(path, "sal", tmpFile, TRUE, (int)sizeof(tmpFile)))
                         {
                             HANDLE file = SalCreateFile(tmpFile, GENERIC_WRITE,
                                                         FILE_SHARE_READ, NULL,
@@ -1784,7 +1795,7 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                                 }
 
                                 // notify the change on the path (our file has appeared)
-                                lstrcpyn(path, fileName, MAX_PATH);
+                                strcpy_s(path, fileName); // the same size: never cut (feature 172)
                                 CutDirectory(path);
                                 if (MainWindow != NULL)
                                     MainWindow->PostChangeOnPathNotification(path, FALSE);

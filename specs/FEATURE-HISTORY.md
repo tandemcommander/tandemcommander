@@ -2504,3 +2504,13 @@ a few early ones are out of sequence).
   `codetbl.cpp` (no conversion table), `shiconov.cpp` (`sqlite.dll` for the Google Drive folder)
   by UTF-8 paths, wide. **Trap:** `PreloadAllConversions` enters a critical section that
   `FreePreloadedConversions` leaves - an early return there is still paired.
+- 172-core-save-dialogs: **the core's file dialogs are wide** - the export of the configuration
+  (a Cyrillic name failed as `??????.reg`), the viewer's Copy to File (refused EVERY accented name,
+  Czech too, with 123: the A dialog returns code-page bytes, the consumers are UTF-8) and Open
+  File, `BrowseCommand` / `BrowseDirCommand` of the configuration's *Browse...*. Probe 16/10 ->
+  26/0. **Traps:** the Vista dialog's name field is `Edit` 1001 in a `ComboBox` (not 1148) - a
+  probe that does not find it may click Save into the user's folder (it wrote
+  `%APPDATA%\Tandem Commander\config_.reg` once); `BrowseCommand`'s fields keep `MAX_PATH` bytes -
+  a longer name is refused. Left (NEXT-WORK 5c-5e): the viewer's overwrite deletes before it
+  moves, a failed export deletes the old file, the export writes '?' for letters outside the code
+  page (reglib reads with A functions).

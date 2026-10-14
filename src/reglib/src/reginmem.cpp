@@ -648,7 +648,12 @@ namespace RegLib
 
     BOOL CMemoryRegistry::Dump(LPCTSTR fileName, LPCTSTR clearKeyName)
     {
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+        // feature 172: the core's build - 'fileName' is UTF-8 (the export's wide save dialog)
+        HANDLE hFile = SalCreateFileNH(fileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, 0);
+#else
         HANDLE hFile = CreateFile(fileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, 0);
+#endif
 
         if (INVALID_HANDLE_VALUE != hFile)
         {

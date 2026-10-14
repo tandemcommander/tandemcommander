@@ -4,6 +4,7 @@
 
 #include "precomp.h"
 #include "salaltername.h" // feature 169
+#include "salheapstr.h"   // feature 172
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -2726,9 +2727,10 @@ BOOL SaveEditors(HKEY hKey, const char* name, CEditorMasks* editorMasks)
 
 void ShowFileError(HWND hParent, int errTextID, const char* fileName, DWORD err)
 {
-    char text[MAX_PATH + 300];
-    _snprintf_s(text, _TRUNCATE, LoadStrU8(errTextID), fileName, GetErrorText(err));
-    SalMessageBox(hParent, text, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+    // feature 172: the whole UTF-8 name on the heap (MAX_PATH + 300 bytes could cut it)
+    CSalHeapString text;
+    text.Printf(LoadStrU8(errTextID), fileName, GetErrorText(err));
+    SalMessageBox(hParent, text.Size() > 0 ? text.Get() : fileName, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
 }
 
 BOOL ExportConfiguration(HWND hParent, const char* fileName, BOOL clearKeyBeforeImport)

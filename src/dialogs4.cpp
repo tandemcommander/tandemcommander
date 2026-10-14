@@ -4417,8 +4417,8 @@ void CCfgPageCmdShell::OnPresetChanged()
 
 void CCfgPageCmdShell::OnBrowse()
 {
-    // the wide common dialog, so a path outside the ANSI code page round-trips
-    // (BrowseCommand() is the ANSI GetOpenFileName and would garble it)
+    // the wide common dialog, so a path outside the ANSI code page round-trips (own code, not
+    // BrowseCommand(): this field takes paths longer than MAX_PATH)
     WCHAR* file = (WCHAR*)malloc(SAL_MAX_PATH_W * sizeof(WCHAR));
     char* u8 = (char*)malloc(SAL_MAX_PATH_UTF8);
     if (file == NULL || u8 == NULL)

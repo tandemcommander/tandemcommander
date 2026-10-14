@@ -11,6 +11,14 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Saving and opening files with accented names from the viewer** (feature
+  172). The viewer's *Copy to File* refused every name with an accented letter
+  ("The file name is incorrect") and suggested a garbled name; its *Open File*
+  could not open such a file. Exporting the configuration under a name or into
+  a folder with letters outside the system's code page (for example Cyrillic on
+  a Czech Windows) failed, and the *Browse...* buttons of the configuration
+  garbled such paths.
+
 - **The program starts when installed in a folder with letters of another
   script** (feature 170). Installed under a folder whose name has a character
   outside the system's code page (for example a per-user install for a user

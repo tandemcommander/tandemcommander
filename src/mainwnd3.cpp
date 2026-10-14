@@ -3251,9 +3251,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 SaveConfig();
             }
 
-            char file[MAX_PATH];
-            char defDir[MAX_PATH];
-            strcpy(file, "config_.reg");
+            // feature 172: a wide dialog - the code-page one turned letters outside the code page
+            // into '?' (the export failed) and its start folder had to be code page
+            WCHAR fileW[2 * MAX_PATH];
+            lstrcpyW(fileW, L"config_.reg");
 
             BOOL clearKeyBeforeImport = TRUE;
 
@@ -3267,16 +3268,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             params.CheckBoxValue = &clearKeyBeforeImport;
             SalMessageBoxEx(&params);
 
+            char defDirU8[SAL_MODULE_PATH_U8]; // UTF-8 (069 F-P1-24, 170)
             if (WindowsVistaAndLater)
             {
-                // feature 069 (F-P1-24): CreateOurPathInRoamingAPPDATA returns
-                // UTF-8 now, but 'defDir' goes on to lpstrInitialDir of an ANSI
-                // OPENFILENAME (SafeGetSaveFileName is GetSaveFileNameA), which
-                // must keep receiving code-page bytes - the pre-Vista branch
-                // below still fills the same buffer with the ANSI producer
-                char defDirU8[SAL_MAX_PATH_UTF8];
-                if (!CreateOurPathInRoamingAPPDATA(defDirU8) ||
-                    SalU8ToACP(defDirU8, defDir, MAX_PATH) == 0)
+                if (!CreateOurPathInRoamingAPPDATA(defDirU8))
                 {
                     TRACE_E("CM_EXPORTCONFIG: unexpected situation: unable to get our directory under CSIDL_APPDATA");
                     return 0;
@@ -3284,32 +3279,35 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             }
             else
             {
-                GetModuleFileName(HInstance, defDir, MAX_PATH);
-                *strrchr(defDir, '\\') = 0;
+                if (!SalGetModuleDirU8(HInstance, defDirU8, (int)sizeof(defDirU8)))
+                    defDirU8[0] = 0;
             }
-            OPENFILENAME ofn;
-            memset(&ofn, 0, sizeof(OPENFILENAME));
-            ofn.lStructSize = sizeof(OPENFILENAME);
+            WCHAR* defDirW = SalU8ToWAlloc(defDirU8); // NULL: no start folder (the dialog picks one)
+            OPENFILENAMEW ofn;
+            memset(&ofn, 0, sizeof(ofn));
+            ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = HWindow;
-            char* s = LoadStr(IDS_REGFILTER);
-            ofn.lpstrFilter = s;
-            while (*s != 0) // create a double-null-terminated list
-            {
-                if (*s == '|')
-                    *s = 0;
-                s++;
-            }
+            WCHAR filterW[500];
+            lstrcpynW(filterW, LoadStrW(IDS_REGFILTER), _countof(filterW));
+            for (WCHAR* f = filterW; *f != 0; f++) // create a double-null-terminated list
+                if (*f == L'|')
+                    *f = 0;
+            ofn.lpstrFilter = filterW;
             ofn.nFilterIndex = 1;
-            ofn.lpstrFile = file;
-            ofn.nMaxFile = MAX_PATH;
-            ofn.lpstrInitialDir = defDir;
+            ofn.lpstrFile = fileW;
+            ofn.nMaxFile = _countof(fileW);
+            ofn.lpstrInitialDir = defDirW;
 
             ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-            ofn.lpstrDefExt = "reg";
+            ofn.lpstrDefExt = L"reg";
 
-            if (SafeGetSaveFileName(&ofn))
+            BOOL chosen = SafeGetSaveFileNameW(&ofn);
+            if (defDirW != NULL)
+                free(defDirW);
+            char file[3 * _countof(fileW)]; // UTF-8 of any name the dialog returns
+            if (chosen && SalWToU8(fileW, -1, file, sizeof(file)) != 0)
             {
-                if (SalGetFullName(file))
+                if (SalGetFullName(file, NULL, NULL, NULL, NULL, sizeof(file)))
                 {
                     // perform the export
                     if (ExportConfiguration(HWindow, file, clearKeyBeforeImport))
@@ -3318,7 +3316,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                                       MB_OK | MB_ICONINFORMATION);
                     }
                     else
-                        DeleteFile(file);
+                        SalDeleteFile(file);
                 }
             }
             return 0;

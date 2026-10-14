@@ -49,6 +49,7 @@ public: // Methods added by Jan Patera
     virtual BOOL WINAPI ClearKeyEx(HKEY key, BOOL doNotDeleteHiddenKeysAndValues, BOOL* keyIsNotEmpty) = 0;
 
     virtual void WINAPI Release() = 0;
+    // 'fileName' is UTF-8 in the code-page build (feature 172)
     virtual BOOL WINAPI Dump(LPCTSTR fileName, LPCTSTR clearKeyName) = 0;
 };
 
