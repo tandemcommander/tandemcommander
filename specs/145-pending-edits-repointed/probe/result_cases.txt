@@ -1,0 +1,95 @@
+diskcache_probe (feature 109) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 07:50; ACP 1250
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited109>>"$(FullName)"; F3 viewer = cmd.exe /c type "$(FullName)">>view.log
+   twins: sizes 131 / 131, times equal True
+
+--- resubst-pending: archives 'A\arc.zip' (x.txt tag 1), 'B\arc.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'T:\arc.zip' (field held it: True); title '...c.zip - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SALD62.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [resubst]: T: re-pointed to C:\Users\pavel\AppData\Local\Temp\tc109\dc\resubst-pending\B
+          temporary copies: SALD62.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [leave]: leave panel 1: title '...- T:\ - Tandem Commander 0.1.10 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "T:\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] T:\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Question'] [Static id=2477] Packing of updated file(s) into archive has failed. Do you want to try it again? If you choose NO, you'll get back to the Archive Update dialog, so you'll be able to copy updated file(s) to chosen disk folder (for later packing into the archive). | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] T:\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Question'] [Static id=2477] Do you want to ignore all updated files (to abort archive update)? | [Button id=6] &Yes | [Button id=7] &No
+          temporary copies: none
+   step 4 [leave]: leave panel 0: title '... - dc - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          A\arc.zip: ENTRY x.txt tag=1 markers=0 size=21
+          A\arc.zip: COUNT 1
+          B\arc.zip: ENTRY x.txt tag=2 markers=0 size=21
+          B\arc.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+
+--- replace-pending: archives 'arc.zip' (x.txt tag 1)
+   step 0 [cd]: cd 'C:\Users\pavel\AppData\Local\Temp\tc109\dc\replace-pending\arc.zip' (field held it: True); title '...c.zip - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SAL978.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [replace]: replaced arc.zip by a renamed new file (x.txt tag 9; move ok True); windows: [#32770 'Information'] [Static id=2477] Archive file "C:\Users\pavel\AppData\Local\Temp\tc109\dc\replace-pending\arc.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc109\dc\replace-pending\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] C:\Users\pavel\AppData\Local\Temp\tc109\dc\replace-pending\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] C:\Users\pavel\AppData\Local\Temp\tc109\dc\replace-pending\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static ... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 14.10.2026, 7:51:19 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 3 [leave]: leave panel 1: title '...nding - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   step 4 [leave]: leave panel 0: title '... - dc - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          arc.zip: ENTRY x.txt tag=1 markers=1 size=32
+          arc.zip: COUNT 1
+   VERDICT: PASS 
+   twins: sizes 131 / 131, times equal True
+
+--- resubst-refresh: archives 'A\arc.zip' (x.txt tag 1), 'B\arc.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'T:\arc.zip' (field held it: True); title '...c.zip - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SAL2A.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [resubst]: T: re-pointed to C:\Users\pavel\AppData\Local\Temp\tc109\dc\resubst-refresh\B
+          temporary copies: SAL2A.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 3 [refresh]: refresh panel 1: title '...c.zip - Tandem Commander 0.1.10 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive file "T:\arc.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK || [#32770 'Information'] [Static id=2477] Archive "T:\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] T:\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Question'] [Static id=2477] Packing of updated file(s) into archive has failed. Do you want to try it again? If you choose NO, you'll get back to the Archive Update dialog, so you'll be able to copy updated file(s) to chosen disk folder (for later packing into the archive). | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] T:\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Question'] [Static id=2477] Do you want to ignore all updated files (to abort archive update)? | [Button id=6] &Yes | [Button id=7] &No
+          temporary copies: none
+   step 4 [f3]: F3 in panel 1: the viewer was given tag 2 with 0 edit(s); windows: no window
+          temporary copies: SAL2A.tmp\x.txt (tag 2, marker x0, 21 bytes)
+   step 5 [leave]: leave panel 1: title '...- T:\ - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   step 6 [leave]: leave panel 0: title '... - dc - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          A\arc.zip: ENTRY x.txt tag=1 markers=0 size=21
+          A\arc.zip: COUNT 1
+          B\arc.zip: ENTRY x.txt tag=2 markers=0 size=21
+          B\arc.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+   twins: sizes 131 / 131, times equal True
+
+--- resubst-back: archives 'A\arc.zip' (x.txt tag 1), 'B\arc.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'T:\arc.zip' (field held it: True); title '...c.zip - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [f4]: F4 in panel 1: windows: no window
+          temporary copies: SALCE7.tmp\x.txt (tag 1, marker x1, 32 bytes)
+   step 2 [resubst]: T: re-pointed to C:\Users\pavel\AppData\Local\Temp\tc109\dc\resubst-back\B
+          temporary copies: SALCE7.tmp\x.txt (tag 1, marker x1, 32 bytes)
+          (the letter pointed back to A, then Yes)
+   step 3 [leave]: leave panel 1: title '...- T:\ - Tandem Commander 0.1.10 (x64) ST'; windows: [#32770 'Information'] [Static id=2477] Archive "T:\arc.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again || [#32770 'Archive Update'] [Static id=1150] Archive File: | [Static id=2731] T:\arc.zip | [Static id=1151] Updated &Files: | [Button id=1] &Update All | [Button id=2] Ig&nore All | [Button id=9] &Help | [Button id=2733] &Copy Selected To... | [Button id=2734] &Ignore Selected || [#32770 'Question'] [Static id=2477] Packing of updated file(s) into archive has failed. Do you want to try it again? If you choose NO, you'll get back to the Archive Update dialog, so you'll be able to copy updated file(s) to chosen disk folder (for later packing into the archive). | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Add Files to Archive'] [Static id=3000] Archive: | [Static id=101] T:\arc.zip | [Button id=102] Create &multi-volume archive | [Static id=3002] &Volume Size: | [Button id=125] &Name files sequentially | [Button id=104] Create &self-extracting archive | [Button id=105] &Advanced... | [Button id=106] &Encrypt files | [Static id=3005] &Password: | [Static id=3006] C&onfirm Password: | [Button id=3007]  Encrypti... || [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 21, 02.01.2026, 3:04:06 | [Static id=1151] With file: | [Static id=184] 32, 14.10.2026, 7:52:38 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+          temporary copies: none
+   step 4 [leave]: leave panel 0: title '... - dc - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          A\arc.zip: ENTRY x.txt tag=1 markers=1 size=32
+          A\arc.zip: COUNT 1
+          B\arc.zip: ENTRY x.txt tag=2 markers=0 size=21
+          B\arc.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+=== summary ===
+case             verdict    archives (name=member tag+edits) | F3 given | copies after each step | why
+resubst-pending  PASS       A\arc.zip:x.txt=m1+0 B\arc.zip:x.txt=m2+0 | - | 0/1/1/0/0
+replace-pending  PASS       arc.zip:x.txt=m1+1 | - | 0/1/0/0/0
+resubst-refresh  PASS       A\arc.zip:x.txt=m1+0 B\arc.zip:x.txt=m2+0 | t2+0 | 0/1/1/0/1/0/0
+resubst-back     PASS       A\arc.zip:x.txt=m1+1 B\arc.zip:x.txt=m2+0 | - | 0/1/1/0/0
+TOTAL: 4 PASS / 0 FAIL / 0 NOT DRIVEN; F3/F4 retries 0
+Left running: 0; fixture removed: True; registry restored+identical: True

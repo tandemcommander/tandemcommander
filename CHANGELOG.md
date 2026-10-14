@@ -11,6 +11,15 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **An edited archive member is never packed into another archive** (feature
+  145). When the drive letter an archive was opened through (SUBST or a
+  network drive) was pointed elsewhere while a member was being edited,
+  leaving the archive packed the edit into the archive the letter led to now.
+  The update is now refused ("Packing ... has failed": point the letter back
+  and try again, or copy the edited file to a folder), and a refresh reopens
+  such an archive. An archive updated in place by an archiver still takes the
+  edit.
+
 - **Archives through a re-pointed drive letter keep their own members**
   (feature 144). With both panels on the same SUBST or network drive name of
   an archive, the letter pointed to another folder in between and both

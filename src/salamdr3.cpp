@@ -3553,9 +3553,18 @@ void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, 
                                 else
                                     SetCurrentDirectory(s1);
                             }
+                            // feature 145: never into the file the archive's name leads to NOW when that is
+                            // another place than where it led at the open (a re-pointed SUBST or network
+                            // letter: the edit of one archive's member replaced the other archive's member);
+                            // refused like a failed pack - "try again?" (after pointing the letter back) or
+                            // the Archive Update dialog to copy the edited files to a folder
                             if (Panel->CheckPath(TRUE, NULL, ERROR_SUCCESS, TRUE, parent) == ERROR_SUCCESS &&
+                                !Panel->ArchiveNameLeadsElsewhere(ZIPFile.Get(), NULL) &&
                                 PackCompress(parent, Panel, ZIPFile.Get(), r1, FALSE, s1, FileTimeStampsEnum2, &data2))
+                            {
                                 loop = FALSE;
+                                Panel->RereadZIPArchiveFinalPath(); // feature 145 (review), see there
+                            }
                             else
                             {
                                 loop = SalMessageBox(parent, LoadStr(IDS_UPDATEFAILED),

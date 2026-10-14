@@ -130,7 +130,7 @@ Crash-class or possible loss:
    archive's member was packed into the second archive - its member replaced).
    Each panel keeps its archive's identity from the open; a key that could not
    be built is never rebuilt from the name.
-2a. **Pending edits packed into a re-pointed name** (found by 144's review,
+2a. ~~**Pending edits packed into a re-pointed name**~~ - **done, feature 145** (found by 144's review,
    data loss, narrow): a panel with an F4 edit of a member pending packs it, on
    leaving the archive, into the file the archive's name names now -
    `CFileTimeStamps` keeps the name; after a SUBST / network letter re-point to
@@ -139,6 +139,13 @@ Crash-class or possible loss:
    extracts the other file's member into this listing. Fix: compare the
    identity stored at the open (144) with the name's identity before packing
    back and in the refresh's "changed?" test. Feature 145.
+2b. **Archive operations through a re-pointed name** (found by 145's review,
+   data loss, narrow): F8 / F5 / F6 on a panel showing `T:\arc.zip` after the
+   letter was re-pointed (no refresh since) run `DeleteFromZIPArchive` /
+   `UnpackZIPArchive` against the archive the name names NOW with the OLD
+   listing's member names - B's members of those names are deleted. Fix: ask
+   `ArchiveNameLeadsElsewhere` (145) before an archive operation; refuse and
+   refresh. Feature 146.
 3. **Plug-in windows closing**: a worker's error box (File Comparator hex
    view, Checksum read errors) can appear while its window closes, also on a
    normal exit; the File Comparator ends its `fcremote` receiver thread before

@@ -340,6 +340,7 @@ function Serve([int]$Id, [double]$Seconds = 45) {
             $seen.Remove($key)
             $want = @(1, 6)
             if ($d -match 'temporary director') { $want = @(4) }
+            elseif ($d -match 'Packing of updated file' -and $script:PackFailedHook) { $want = @(& $script:PackFailedHook) }   # feature 145
             elseif ($d -match 'Packing of updated file') { $want = @(7); $packFailed = $true }
             elseif ($packFailed -and [Drv093]::Txt($h) -eq 'Archive Update') { $want = @(2) }
             $pick = $btn | Where-Object { $want -contains [Drv093]::GetDlgCtrlID($_) } | Select-Object -First 1
@@ -591,7 +592,7 @@ function Run-Steps($c) {
     Out ("--- {0}: archives {1}" -f $N, ((@($c.Arcs) | ForEach-Object { "'" + (Esc $_.Name) + "' (x.txt tag " + $_.Tag + ")" }) -join ', '))
     $row = [ordered]@{ Case = $N; Verdict = 'NOT DRIVEN'; Archive = '-'; Views = '-'; Copies = '-'; Why = '' }
     $id = 0
-    $snaps = @(); $views = @()
+    $snaps = @(); $views = @(); $stepWhy = @()   # feature 145: per-step expectations (Want)
     try {
         # resolve every spelling before the program starts
         $paths = @{}
@@ -662,6 +663,29 @@ function Run-Steps($c) {
                     $r = Serve $id 20
                     $note = ("rewrote {0} (x.txt tag {1}) from outside; windows: {2}" -f (Esc $a0.Name), $s.Arg, (MsgText $r))
                 }
+                'replace' {
+                    # feature 145: the archive replaced the way archivers update one - a new file written
+                    # next to it and renamed over it (a new file at the same place); x.txt now carries tag Arg
+                    $a0 = $c.Arcs[0]
+                    Start-Sleep -Milliseconds 1200
+                    $dst = $dir + '\' + $a0.Name
+                    $tmp = [IO.Path]::GetDirectoryName($dst) + '\_new_' + [IO.Path]::GetFileName($dst)
+                    [void](Invoke-ArcFix 'make' $tmp $a0.Fmt @('x.txt') ([int]$s.Arg))
+                    & cmd.exe /c ('move /y "{0}" "{1}" >nul' -f $tmp, $dst)
+                    $moved = ($LASTEXITCODE -eq 0) -and -not [IO.File]::Exists($tmp)
+                    Start-Sleep -Milliseconds 2500
+                    Settle $id 1500
+                    $r = Serve $id 20
+                    $note = ("replaced {0} by a renamed new file (x.txt tag {1}; move ok {2}); windows: {3}" -f (Esc $a0.Name), $s.Arg, $moved, (MsgText $r))
+                }
+                'refresh' {
+                    # feature 145: the panel's refresh (Ctrl+R): CM_LEFTREFRESH / CM_RIGHTREFRESH
+                    Post-Cmd (Get-Main $id) $(if ($s.P -eq 0) { 724 } else { 725 })
+                    Start-Sleep -Milliseconds 1500
+                    $r = Serve $id 40
+                    $note = ("refresh panel {0}: title '{1}'; windows: {2}" -f $s.P, (Tail (Title $id) 40), (MsgText $r))
+                    if ($r.Fatal) { throw ('FATAL window: ' + (MsgText $r)) }
+                }
                 'resubst' {
                     $ok = Set-Subst ($dir + '\' + $s.Arg)
                     if (-not $ok) { throw 'resubst failed' }
@@ -673,8 +697,12 @@ function Run-Steps($c) {
                     $note = ("{0} re-mapped to \\localhost\...\{1}" -f $script:NetDrive, (Esc $s.Arg))
                 }
                 'leave' {
+                    # feature 145: Arg 'back' = the person points the letter back to A when the pack is
+                    # refused, then answers "Try again?" Yes
+                    if ($s.Arg -eq 'back') { $script:PackFailedHook = { [void](Set-Subst ($dir + '\A')); Out '          (the letter pointed back to A, then Yes)'; 6 } }
                     PostKeyP $id $s.P 0x08; Start-Sleep -Milliseconds 1000
                     $r = Serve $id 60
+                    $script:PackFailedHook = $null
                     $note = ("leave panel {0}: title '{1}'; windows: {2}" -f $s.P, (Tail (Title $id) 40), (MsgText $r))
                     if ($r.Fatal) { throw ('FATAL window: ' + (MsgText $r)) }
                 }
@@ -682,6 +710,8 @@ function Run-Steps($c) {
             $snap = Find-Tmp $tmpBefore
             $snaps += , $snap
             Out ("   step {0} [{1}]: {2}" -f $i, $s.Op, $note)
+            if ($s.Want -and $note -notmatch $s.Want) { $stepWhy += ("step {0} [{1}]: no window matching '{2}'" -f $i, $s.Op, $s.Want) }
+            if ($s.WantNot -and $note -match $s.WantNot) { $stepWhy += ("step {0} [{1}]: a window matching '{2}'" -f $i, $s.Op, $s.WantNot) }
             Out ("          temporary copies: {0}" -f (TmpDesc $snap))
         }
         [void][Drv093]::PostMessageW((Get-Main $id), 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
@@ -697,7 +727,7 @@ function Run-Steps($c) {
         foreach ($n in $new) { Remove-Item -LiteralPath (Join-Path $ReportDir $n) -Force -ErrorAction SilentlyContinue }
         Out ("   END  : exit code {0}; new crash reports {1}" -f $ec, $new.Count)
         # ---- verdict
-        $why = @(); $desc = @()
+        $why = @($stepWhy); $desc = @()
         foreach ($a in $c.Arcs) {
             $read = Invoke-ArcFix 'read' ($dir + '\' + $a.Name) $a.Fmt @('x.txt')
             foreach ($l in $read) { Out ("          {0}: {1}" -f (Esc $a.Name), $l) }
@@ -833,6 +863,27 @@ try {
         Steps = @(@{ P = 1; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' }, @{ P = 1; Op = 'f3' }, @{ P = 1; Op = 'resubst'; Arg = 'B' }, @{ P = 0; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' },
             @{ P = 0; Op = 'f3' }, @{ P = 0; Op = 'f4' }, @{ P = 0; Op = 'leave' }, @{ P = 1; Op = 'leave' })
         Views = @(@{ Tag = 1; Markers = 0 }, @{ Tag = 2; Markers = 0 }) }
+    # feature 145: the panel has an F4 edit of A's x.txt pending when its letter is re-pointed to B (a
+    # twin); leaving the archive must not pack A's edited member into B - both archives unchanged (the
+    # pack is refused: "Packing ... has failed", No, then Cancel keeps the edited copy on disk)
+    $cases += @{ N = 'resubst-pending'; Twin = $true; Arcs = @(@{ Name = 'A\arc.zip'; Fmt = 'zip'; Tag = 1; Edits = 0 }, @{ Name = 'B\arc.zip'; Fmt = 'zip'; Tag = 2; Edits = 0 })
+        Steps = @(@{ P = 1; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' }, @{ P = 1; Op = 'f4' }, @{ P = 1; Op = 'resubst'; Arg = 'B' }, @{ P = 1; Op = 'leave' }, @{ P = 0; Op = 'leave' })
+        Views = @() }
+    # feature 145, the control of the other side: the archive replaced at the SAME place by an archiver
+    # (a new file renamed over it) while an edit is pending - the edit is still packed into it
+    $cases += @{ N = 'replace-pending'; Arcs = @(@{ Name = 'arc.zip'; Fmt = 'zip'; MakeTag = 1; Tag = 1; Edits = 1 })
+        Steps = @(@{ P = 1; Op = 'cd'; Arg = '{DIR}\arc.zip' }, @{ P = 1; Op = 'f4' }, @{ P = 1; Op = 'replace'; Arg = 9 }, @{ P = 1; Op = 'leave' }, @{ P = 0; Op = 'leave' })
+        Views = @() }
+    # feature 145 (review): the refresh after the re-point reopens the archive (the "has changed" note,
+    # then the update offer is refused) and the listing is B's - F3 gives B's x.txt, not the edited copy
+    $cases += @{ N = 'resubst-refresh'; Twin = $true; Arcs = @(@{ Name = 'A\arc.zip'; Fmt = 'zip'; Tag = 1; Edits = 0 }, @{ Name = 'B\arc.zip'; Fmt = 'zip'; Tag = 2; Edits = 0 })
+        Steps = @(@{ P = 1; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' }, @{ P = 1; Op = 'f4' }, @{ P = 1; Op = 'resubst'; Arg = 'B' }, @{ P = 1; Op = 'refresh'; Want = 'has changed\. Archive will be reopened' },
+            @{ P = 1; Op = 'f3' }, @{ P = 1; Op = 'leave' }, @{ P = 0; Op = 'leave' })
+        Views = @(@{ Tag = 2; Markers = 0 }) }
+    # feature 145 (review): refused, the person points the letter back and tries again - the edit reaches A
+    $cases += @{ N = 'resubst-back'; Twin = $true; Arcs = @(@{ Name = 'A\arc.zip'; Fmt = 'zip'; Tag = 1; Edits = 1 }, @{ Name = 'B\arc.zip'; Fmt = 'zip'; Tag = 2; Edits = 0 })
+        Steps = @(@{ P = 1; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' }, @{ P = 1; Op = 'f4' }, @{ P = 1; Op = 'resubst'; Arg = 'B' }, @{ P = 1; Op = 'leave'; Arg = 'back'; Want = 'Packing of updated file' }, @{ P = 0; Op = 'leave' })
+        Views = @() }
     if ($Only) { $cases = $cases | Where-Object { $Only -contains $_.N } }
     foreach ($c in $cases) { Run-Steps $c }
 }

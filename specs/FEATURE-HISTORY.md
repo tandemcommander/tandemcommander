@@ -2300,3 +2300,19 @@ a few early ones are out of sequence).
   - uses of the key refuse until the archive is reopened. 109 probe case `resubst-both`. Results:
   109 probe 19 / 0 / 0 (renet driven), 108 30 / 0 and 2 / 0, 112 14 / 0. **Left (review MEDIUM,
   feature 145)**: pending F4 edits are packed back into the file the name names NOW.
+- 145-pending-edits-repointed: **a pending edit is packed back only while the archive's name still
+  leads where it led at the open.** Measured (control `Debug_x64_pre145`): a panel on `T:\arc.zip`
+  with an F4 edit pending, the letter re-pointed to a twin - leaving packed the edit into the twin
+  (its member replaced); a refresh did not notice (size and time only). The decision is the FINAL
+  PATH, not the file id: archivers update by renaming a new file over the archive (a new id at the
+  same place - control `replace-pending` must keep packing). The panel keeps `ZIPArchiveFinalPath`
+  from the open's handle (`SalGetFinalPathOfHandleU8Alloc`, split from 107's helper);
+  `ArchiveNameLeadsElsewhere(name, h)`: the final paths differ (both known) or 144's volume serial
+  differs (another volume at the letter). Used in the refresh's change test (reopen) and in
+  `CheckAndPackAndClear` before `PackCompress` (refused like a failed pack: `IDS_UPDATEFAILED` -
+  Yes retries, No = Archive Update with *Copy Selected To...*); `RereadZIPArchiveFinalPath` after
+  a successful pack (a symlinked archive replaced by a file). 109 probe: op `replace`, per-step
+  `Want`, a `PackFailedHook` in `Serve`; cases `resubst-pending`, `replace-pending`,
+  `resubst-refresh`, `resubst-back` 4 / 0 (control 1 / 3); whole 109 23 / 0; 108, 112 unchanged.
+  Left: archive operations through a re-pointed name (146); false refusals after a server
+  re-spelling / DFS failover (one refused pack, recorded).

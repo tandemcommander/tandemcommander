@@ -551,6 +551,13 @@ char* SalGetFinalPathU8Alloc(const char* u8path)
     free(w);
     if (h == INVALID_HANDLE_VALUE)
         return NULL;
+    char* ret = SalGetFinalPathOfHandleU8Alloc(h);
+    CloseHandle(h);
+    return ret;
+}
+
+char* SalGetFinalPathOfHandleU8Alloc(HANDLE h)
+{
     char* ret = NULL;
     DWORD need = GetFinalPathNameByHandleW(h, NULL, 0, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
     if (need > 0 && need < 0x10000)
@@ -575,7 +582,6 @@ char* SalGetFinalPathU8Alloc(const char* u8path)
             free(buf);
         }
     }
-    CloseHandle(h);
     return ret;
 }
 

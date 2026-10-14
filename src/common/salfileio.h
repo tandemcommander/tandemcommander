@@ -141,6 +141,8 @@ char* SalCanonicalBelowServerU8Alloc(const char* path);
 // normalized, DOS volume name; links and SUBST letters resolved), without the \\?\ prefix
 // (\\?\UNC\ becomes \\); malloc'ed UTF-8, NULL when it cannot be read
 char* SalGetFinalPathU8Alloc(const char* u8path);
+// feature 145: the same for an open handle (any access)
+char* SalGetFinalPathOfHandleU8Alloc(HANDLE h);
 
 // SalRenameViaTempName through SalMoveFile: u8src -> "sal###" beside it -> u8tgt; the
 // temporary path is written to 'tmpName' (strlen(u8src) + 8 bytes suffice) - for

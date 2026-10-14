@@ -362,6 +362,7 @@ void CFilesWindowAncestor::SetZIPArchive(const char* archive)
     strcpy(ZIPArchive, archive);
     ZIPArchiveCacheKey.Free();                 // feature 109: the key belongs to the previous archive
     SalFileIdentityClear(&ZIPArchiveIdentity); // feature 144: so does the identity
+    ZIPArchiveFinalPath.Free();                // feature 145: and where the name led
     ZIPArchiveCacheKeyFailed = FALSE;
 }
 
@@ -387,6 +388,50 @@ BOOL CFilesWindowAncestor::GetArchiveCacheKey(CSalHeapString& key, size_t reserv
     }
     key.Adopt(k, strlen(k) + 1 + reserve);
     return TRUE;
+}
+
+BOOL CFilesWindowAncestor::ArchiveNameLeadsElsewhere(const char* name, HANDLE h)
+{
+    CALL_STACK_MESSAGE_NONE
+    if (name == NULL || !SalPathEqualOrdinalCI(name, ZIPArchive))
+        return FALSE; // another name: no decision, as before
+    if (h == INVALID_HANDLE_VALUE)
+        h = NULL;
+    BOOL elsewhere = FALSE;
+    if (ZIPArchiveFinalPath.Get() != NULL)
+    {
+        char* now = h != NULL ? SalGetFinalPathOfHandleU8Alloc(h) : SalGetFinalPathU8Alloc(name);
+        if (now != NULL)
+        {
+            elsewhere = !SalPathEqualOrdinalCI(now, ZIPArchiveFinalPath.Get());
+            if (elsewhere)
+                TRACE_I("ArchiveNameLeadsElsewhere: " << name << " led to " << ZIPArchiveFinalPath.Get() << ", now to " << now);
+            free(now);
+        }
+    }
+    // review of 145: another volume mounted at the same letter (a container, a re-mapped drive to
+    // a share of another volume) keeps the DOS path - the volume serial of 144's identity tells it;
+    // an archiver replacing the file in place keeps the serial
+    if (!elsewhere && ZIPArchiveIdentity.Valid && ZIPArchiveIdentity.Has64)
+    {
+        CSalFileIdentity now;
+        BOOL read = h != NULL ? SalFileIdentityFromHandle(h, &now) : SalGetFileIdentity(name, FALSE, &now, FALSE);
+        if (read && now.Has64 && now.Vsn32 != ZIPArchiveIdentity.Vsn32)
+        {
+            TRACE_I("ArchiveNameLeadsElsewhere: " << name << " is on another volume now");
+            elsewhere = TRUE;
+        }
+    }
+    return elsewhere;
+}
+
+void CFilesWindowAncestor::RereadZIPArchiveFinalPath()
+{
+    CALL_STACK_MESSAGE_NONE
+    char* now = SalGetFinalPathU8Alloc(ZIPArchive);
+    ZIPArchiveFinalPath.Free();
+    if (now != NULL)
+        ZIPArchiveFinalPath.Adopt(now, strlen(now) + 1);
 }
 
 BOOL CFilesWindowAncestor::SamePath(CFilesWindowAncestor* other)

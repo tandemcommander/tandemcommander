@@ -2300,6 +2300,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
     // feature 144: the file's identity, from the same open as the date and size
     CSalFileIdentity archiveIdentity;
     SalFileIdentityClear(&archiveIdentity);
+    // feature 145: where the archive's name led at that open (the panel takes it over)
+    CSalHeapString archiveFinalPath;
 
     CSalHeapString text;      // feature 097: messages naming the archive (was char[MAX_PATH + 500])
     CSalHeapString arcDirBuf; // feature 097: the folder of the archive (was 'path')
@@ -2393,6 +2395,10 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                         else
                             SalFileIdentityClear(&archiveIdentity);
                     }
+                    char* finalPath = SalGetFinalPathOfHandleU8Alloc(file); // feature 145
+                    archiveFinalPath.Free();
+                    if (finalPath != NULL)
+                        archiveFinalPath.Adopt(finalPath, strlen(finalPath) + 1);
                     SalGetFileSize(file, archiveSize, err2); // does it return "success"? - ignore, 'err2' is checked later
                     nullFile = archiveSize == CQuadWord(0, 0);
                     HANDLES(CloseHandle(file));
@@ -2464,7 +2470,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                     SetZIPArchive(archive);
                     SetZIPArchiveDate(archiveDate);
                     SetZIPArchiveSize(archiveSize);
-                    SetArchiveCacheKey109(archiveIdentity); // feature 109: after the date and size (its pre-filter)
+                    SetArchiveCacheKey109(archiveIdentity);    // feature 109: after the date and size (its pre-filter)
+                    TakeZIPArchiveFinalPath(archiveFinalPath); // feature 145
                     if (plugin != NULL)
                     {
                         PluginData.Init(pluginData, plugin->DLLName, plugin->Version,
@@ -2526,7 +2533,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                     BOOL change = (err != NO_ERROR ||                                     // unable to retrieve size
                                    !GetFileTime(file, NULL, NULL, &archiveDate) ||        // unable to get date & time
                                    CompareFileTime(&archiveDate, &zipArchiveDate) != 0 || // date & time differ
-                                   !IsSameZIPArchiveSize(archiveSize));                   // file size differs
+                                   !IsSameZIPArchiveSize(archiveSize) ||                  // file size differs
+                                   ArchiveNameLeadsElsewhere(archive, file));             // feature 145: another place now
                     HANDLES(CloseHandle(file));
 
                     if (change) // file changed

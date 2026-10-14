@@ -524,6 +524,10 @@ private:
     // (Valid FALSE = not read). The other panel's key choice compares with it, because the name may
     // name another file by then (a SUBST or network drive re-pointed).
     CSalFileIdentity ZIPArchiveIdentity;
+    // feature 145: where the archive's name led when this panel opened it (the final path, SUBST
+    // and network letters resolved; empty = not read). A pending edit is packed back only while the
+    // name still leads there - a re-pointed letter would pack it into another archive.
+    CSalHeapString ZIPArchiveFinalPath;
     // feature 144: SetArchiveCacheKey109() could not build the key (low memory): no key is built
     // from the name later either - it might equal the other panel's key the choice ruled out
     BOOL ZIPArchiveCacheKeyFailed;
@@ -630,6 +634,17 @@ public:
     void SetZIPArchiveIdentity(const CSalFileIdentity& id) { ZIPArchiveIdentity = id; }
     void SetArchiveCacheKeyFailed() { ZIPArchiveCacheKeyFailed = TRUE; }
     void ResetArchiveCacheKeyFailed() { ZIPArchiveCacheKeyFailed = FALSE; }
+    // feature 145: takes over the final path of the archive just opened (empty = not read; the strings
+    // exchange their buffers)
+    void TakeZIPArchiveFinalPath(CSalHeapString& finalPath) { ZIPArchiveFinalPath.Swap(finalPath); }
+    // feature 145: TRUE when the open archive's name 'name' (the panel's own ZIPArchive) leads to another
+    // place now than when the panel opened it - a re-pointed SUBST or network letter; FALSE when it
+    // leads to the same place (also a file replaced there by an archiver) or when either place
+    // cannot be told; 'h': an open handle of 'name' to ask (NULL = opened here)
+    BOOL ArchiveNameLeadsElsewhere(const char* name, HANDLE h);
+    // feature 145 (review): after the panel's own successful pack - the archiver may have replaced a
+    // link by a regular file at the name, and the next group of the same update must not be refused
+    void RereadZIPArchiveFinalPath();
     void SetArchiveDir(CSalamanderDirectory* dir) { ArchiveDir = dir; }
     void SetZIPArchiveDate(FILETIME& time) { ZIPArchiveDate = time; }
     void SetZIPArchiveSize(const CQuadWord& size) { ZIPArchiveSize = size; }
