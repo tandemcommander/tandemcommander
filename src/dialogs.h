@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "salheapstr.h" // feature 151: CPluginsDlg::FocusPlugin (header-only, no dependencies)
+
 //
 // ****************************************************************************
 
@@ -972,10 +974,12 @@ class CPluginsDlg : public CCommonDialog
 protected:
     HWND HListView; // our listview
     CToolbarHeader* Header;
-    HIMAGELIST HImageList;      // image list for the listview
-    BOOL RefreshPanels;         // should the panels be refreshed after closing the dialog?
-    BOOL DrivesBarChange;       // should the Drives bars be refreshed after closing the dialog?
-    char FocusPlugin[MAX_PATH]; // empty if no plugin should get focus; otherwise contains its path
+    HIMAGELIST HImageList; // image list for the listview
+    BOOL RefreshPanels;    // should the panels be refreshed after closing the dialog?
+    BOOL DrivesBarChange;  // should the Drives bars be refreshed after closing the dialog?
+    // empty if no plugin should get focus; otherwise its path (feature 151: UTF-8, whole - was
+    // MAX_PATH, filled from the code-page GetModuleFileName with an unbounded strcat)
+    CSalHeapString FocusPlugin;
     CHyperLink* Url;
     char ShowInBarText[200];        // text taken from the checkbox when the dialog opens
     char ShowInChDrvText[200];      // text taken from the checkbox when the dialog opens
@@ -987,7 +991,7 @@ public:
     // dialog return values:
     BOOL GetRefreshPanels() { return RefreshPanels; }
     BOOL GetDrivesBarChange() { return DrivesBarChange; }
-    const char* GetFocusPlugin() { return FocusPlugin; }
+    const char* GetFocusPlugin() { return FocusPlugin.Text(); }
 
 protected:
     virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam);

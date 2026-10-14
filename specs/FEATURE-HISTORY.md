@@ -2365,3 +2365,7 @@ a few early ones are out of sequence).
   in `PostFocusNameInPanel` (the "name is too long" boxes' Focus - static buffers of the panel's
   limits, the message is posted), PictView's `Focus_Path` (MAX_PATH -> 3 x MAX_PATH, refused
   beyond), the Plugins / Shares dialogs. Probe F1; 149, PictView 120 unchanged.
+- 151-plugins-dialog-focus-path: **the Plugins dialog's Focus builds the plug-in's path whole in
+  UTF-8** (`GetModuleFileNameU8`, `CSalHeapString FocusPlugin`) - it was `GetModuleFileName` A +
+  an unbounded `strcat` into `MAX_PATH`. Regression row P1. The loader's same pattern: NEXT-WORK
+  item 19 (the install-path chain).

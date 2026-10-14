@@ -31,7 +31,6 @@ CPluginsDlg::CPluginsDlg(HWND hParent) : CCommonDialog(HLanguage, IDD_PLUGINS, I
     HImageList = NULL;
     RefreshPanels = FALSE;
     DrivesBarChange = FALSE;
-    FocusPlugin[0] = 0;
     Url = NULL;
     ShowInBarText[0] = 0;
     ShowInChDrvText[0] = 0;
@@ -881,19 +880,27 @@ CPluginsDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             CPluginData* p = GetSelectedPlugin();
             if (p != NULL)
             {
-                char buf[MAX_PATH];
-                char* s = p->DLLName;
+                // feature 151: built whole in UTF-8 (the panel takes UTF-8 paths) - the code-page
+                // GetModuleFileName into MAX_PATH and an unbounded strcat of the DLL name overflowed
+                // an install folder near 259 bytes and named a non-ASCII one wrongly
+                const char* s = p->DLLName;
+                CSalHeapString path;
+                BOOL ok;
                 if ((*s != '\\' || *(s + 1) != '\\') && // not UNC
                     (*s == 0 || *(s + 1) != ':'))       // not "c:" -> relative path to plugins subdirectory
                 {
-                    GetModuleFileName(HInstance, buf, MAX_PATH);
-                    s = strrchr(buf, '\\') + 1;
-                    strcpy(s, "plugins\\");
-                    strcat(s, p->DLLName);
-                    s = buf;
+                    char exe[3 * MAX_PATH]; // GetModuleFileNameU8: a MAX_PATH wide name, 3 bytes per unit
+                    DWORD l = GetModuleFileNameU8(HInstance, exe, sizeof(exe));
+                    const char* slash = l != 0 && l < sizeof(exe) ? strrchr(exe, '\\') : NULL;
+                    ok = slash != NULL && path.Printf("%.*s\\plugins\\%s", (int)(slash - exe), exe, s);
                 }
-                strcpy(FocusPlugin, s);
-                PostMessage(HWindow, WM_COMMAND, IDOK, 0);
+                else
+                    ok = path.Copy(s, 0);
+                if (ok)
+                {
+                    FocusPlugin.Swap(path);
+                    PostMessage(HWindow, WM_COMMAND, IDOK, 0);
+                }
             }
             return 0;
         }

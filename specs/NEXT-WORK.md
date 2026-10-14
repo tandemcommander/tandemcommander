@@ -166,7 +166,7 @@ Crash-class or possible loss:
    another one, and may focus another file of the same name. Heap / `SAL_MAX_PATH_UTF8`
    buffers (no interface change); then `Focus_Path` of the plug-ins. Feature 150.
 
-5b. **Plugins dialog: the plug-in's path built with an unbounded `strcat`** (found by 150's
+5b. ~~**Plugins dialog: the plug-in's path built with an unbounded `strcat`**~~ - **done, feature 151** (the loader's same pattern: item 19). Was (found by 150's
    review, older): `dialogs5.cpp` takes `GetModuleFileName` (A, code page) into `buf[MAX_PATH]` and
    appends `plugins\` + `DLLName` without a bound - an install folder near 259 bytes overflows; the
    folder is not UTF-8. Small.
@@ -236,7 +236,10 @@ Large or risky, each a feature of its own:
     the 068 review); F-P1-05, the archive listing display encoding (must move
     as a whole, 069 §0b); B-3 the undocumented UTF-8 `GetErrorText` (a naive
     sweep regresses FTP); B-5 the frozen plug-in-facing ANSI services (needs
-    an interface decision); the install-path chain (`plugins2.cpp`); the mask
+    an interface decision); the install-path chain (`plugins2.cpp`; 151's review: the plug-in loader builds every plug-in's
+    path with `GetModuleFileName` A + an unbounded `strcat` into `MAX_PATH` - `plugins1.cpp` load,
+    `LoadLanguageModule`, `plugins2.cpp` `GetPluginDataFromSuffix` - and `DLLName` is code page for
+    a plug-in added in the session); the mask
     matcher. `069/REMAINING-WORK.md` §1; item 5, end.
 
 ### B. Steps owed to a person

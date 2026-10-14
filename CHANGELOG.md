@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Plug-ins dialog: Focus works in a long or non-English install folder**
+  (feature 151). Focus built the plug-in's path in the system code page into
+  a fixed buffer - an install folder with characters outside it was named
+  wrongly, and one near 260 bytes long overran the buffer.
+
 - **Focus from a plug-in or a message reaches files in long folders**
   (feature 150). Focus from Checksum, PictView, the "name is too long"
   messages and the Shares dialog cut a folder path longer than about 460

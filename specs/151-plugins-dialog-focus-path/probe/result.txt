@@ -1,0 +1,9 @@
+plugins_focus_probe (feature 151), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+
+--- P1: the Plugins dialog, the first plug-in, Focus
+P1         FOCUS  PASS        panel at 'E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\plugins\7zip' (want a folder under '...ects\tandemcommander\build\tandemcommander\Debug_x64\plugins')
+P1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; registry restored+identical: True
