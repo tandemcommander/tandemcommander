@@ -2472,3 +2472,9 @@ a few early ones are out of sequence).
   `probe/layout_check.py`; the merge cannot fix them (no free space). **Traps:** `--dry-run`
   writes nothing - measure drift with a real merge and `git checkout`; the program's dialog font
   is `MS Shell Dlg` (not `2`); a probe must not run while the maintainer's own instance runs.
+- 167-binary-cosmetics: **the 076 cosmetics** (item 17): `utils\sqlite.dll` has a version resource
+  (`src/vcxproj/sqlite/sqlite.rc`), every Release binary is built with `/guard:cf`
+  (`src/Directory.Build.targets`; `fcremote` opts out with `TcNoControlFlowGuard` - no CRT, no load
+  config, LNK4266), the dead `SalGetProcessId` (`ZwQueryInformationProcess`) removed. Release
+  probes 097, 119, 127, 088 identical to Debug. **Trap:** a project without the CRT gets the CFG
+  flag without effect - check `dumpbin /headers /loadconfig`, not the flag alone.

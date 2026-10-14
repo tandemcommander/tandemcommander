@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Hardening of the shipped files** (feature 167): every program file built
+  by the project uses Control Flow Guard, and `sqlite.dll` carries a version
+  resource naming its origin.
+
 - **The Markdown Viewer's settings are translated** (feature 166). Its
   configuration dialog was in English in every language.
 

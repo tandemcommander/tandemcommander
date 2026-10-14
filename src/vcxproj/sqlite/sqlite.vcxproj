@@ -130,6 +130,9 @@
     <ClInclude Include="..\..\common\dep\common\lstrfix.h">
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="sqlite.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets">
   </Import>
   <ImportGroup Label="ExtensionTargets">

@@ -57,4 +57,20 @@
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
+  <!--
+    Feature 167: Control Flow Guard for every Release binary (076 review, section 3.4: DEP, ASLR
+    and high-entropy VA were on, CFG was not - part of the hardening score vendors publish). The
+    compiler instruments indirect calls, the linker marks the image (DLL characteristic
+    GUARD_CF). Release only: /guard:cf does not combine with Debug's /ZI (Edit and Continue).
+    A project linked without the CRT has no load configuration for the guard (LNK4266) - the flag
+    would be set without effect; such a project sets TcNoControlFlowGuard (fcremote).
+  -->
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Release' and '$(TcNoControlFlowGuard)' != 'true'">
+    <ClCompile>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>%(AdditionalOptions) /guard:cf</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
 </Project>

@@ -1,0 +1,49 @@
+﻿// SPDX-FileCopyrightText: 2026 Pavel Stupka
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+// Feature 167: the version resource of utils\sqlite.dll (076 review, section 3.4: the only shipped
+// DLL built here whose provenance a reviewer could not read from the file). The library is SQLite
+// (public domain) as vendored in src/common/dep/sqlite; the file version is SQLite's own.
+
+#pragma code_page(65001)
+
+#include "winresrc.h"
+#include "spl_vers.h"
+
+#define SQLITE_RC_VERSION_TXT "3.28.0" // SQLITE_VERSION in src/common/dep/sqlite/sqlite3.c
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 3,28,0,0
+ PRODUCTVERSION VERSINFO_SALAMANDER_MAJOR,VERSINFO_SALAMANDER_MINORA,VERSINFO_SALAMANDER_MINORB,VERSINFO_BUILDNUMBER
+#ifdef _DEBUG
+ FILEFLAGSMASK VS_FF_DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGSMASK 0
+ FILEFLAGS 0x0L
+#endif
+ FILEOS VOS__WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Tandem Commander Project\0"
+            VALUE "FileDescription", "SQLite " SQLITE_RC_VERSION_TXT " database engine (public domain), built for Tandem Commander\0"
+            VALUE "FileVersion", SQLITE_RC_VERSION_TXT "\0"
+            VALUE "InternalName", "sqlite\0"
+            VALUE "OriginalFilename", "sqlite.dll\0"
+            VALUE "LegalCopyright", "SQLite is in the public domain (sqlite.org)\0"
+            VALUE "ProductVersion", VERSINFO_SALAMANDER_VERSION "\0"
+            VALUE "ProductName", "Tandem Commander\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 0x04b0
+    END
+END

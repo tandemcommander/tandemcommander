@@ -1204,9 +1204,6 @@ SECURITY_ATTRIBUTES* CreateAccessableSecurityAttributes(SECURITY_ATTRIBUTES* sa,
 // otherwise (on failure or on OS older than Vista) returns FALSE
 BOOL GetProcessIntegrityLevel(DWORD* integrityLevel);
 
-// same function as the API GetProcessId(), but works under W2K as well
-DWORD SalGetProcessId(HANDLE hProcess);
-
 // must be called after launching the process; stores differences in environment variables
 // so that the RegenEnvironmentVariables() function works later
 void InitEnvironmentVariablesDifferences();

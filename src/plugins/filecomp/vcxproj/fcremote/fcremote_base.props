@@ -8,6 +8,9 @@
     <IntDir>$(OutDir)Intermediate\fcremote\</IntDir>
     <GenerateManifest>false</GenerateManifest>
     <EmbedManifest>false</EmbedManifest>
+    <!-- feature 167: linked without the CRT - no load configuration for Control Flow Guard
+         (src/Directory.Build.targets would set the flag without effect, LNK4266) -->
+    <TcNoControlFlowGuard>true</TcNoControlFlowGuard>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

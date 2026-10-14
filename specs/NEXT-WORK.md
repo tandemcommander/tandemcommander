@@ -270,7 +270,9 @@ Performance, tooling, cosmetics:
     controls of the committed ZIP translations (drift since build 185; 106);
     the merge tool keys string tables by bundle ordinal, so removing a bundle
     needs a re-key first (079, 084).
-17. 077 cosmetics: a version resource for `sqlite.dll`, `/guard:cf`, the dead
+17. ~~077 cosmetics~~ - **done, feature 167** (sqlite.dll version resource, `/guard:cf` for every
+    Release binary but the CRT-less `fcremote`, the dead `SalGetProcessId` removed; Release probes
+    identical to Debug). Was: 077 cosmetics: a version resource for `sqlite.dll`, `/guard:cf`, the dead
     pre-Vista `ZwQueryInformationProcess` path (`salamdr6.cpp`). Item 0,
     point 5.
 18. Probe artefacts on the hidden desktop: the 093 dialogs probe's Find-menu
