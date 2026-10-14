@@ -1811,29 +1811,40 @@ HINSTANCE
 CSalamanderPluginEntry::LoadLanguageModule(HWND parent, const char* pluginName)
 {
     HINSTANCE lang = NULL;
-    char path[MAX_PATH];
-    char errorText[MAX_PATH + 300];
+    // feature 170: UTF-8 (the install folder may be outside the code page; GetModuleFileName A
+    // gave '?' there), loaded wide; a path that does not fit is refused, never cut (the
+    // unbounded strcat could overrun the buffer)
+    char path[SAL_MODULE_PATH_U8];
+    char errorText[SAL_MODULE_PATH_U8 + 300];
 
     // obtain the path to the plugin's LANG directory
     char* s = Plugin->DLLName;
     if ((*s != '\\' || *(s + 1) != '\\') && // not UNC
         (*s == 0 || *(s + 1) != ':'))       // not "c:" -> path relative to the plugins subdirectory
     {
-        GetModuleFileName(HInstance, path, MAX_PATH);
-        s = strrchr(path, '\\') + 1;
-        strcpy(s, "plugins\\");
-        strcat(s, Plugin->DLLName);
+        if (!SalGetModuleDirU8(HInstance, path, MAX_PATH * 3) ||
+            strlen(path) + strlen("plugins\\") + strlen(Plugin->DLLName) >= sizeof(path) - MAX_PATH)
+        {
+            TRACE_E("CSalamanderPluginEntry::LoadLanguageModule(): the plugin path does not fit: " << Plugin->DLLName);
+            return NULL;
+        }
+        strcat_s(path, "plugins\\");
+        strcat_s(path, Plugin->DLLName);
     }
     else
-        lstrcpyn(path, s, MAX_PATH);
+    {
+        if (strlen(s) >= sizeof(path) - MAX_PATH)
+            return NULL;
+        strcpy_s(path, s);
+    }
     s = strrchr(path, '\\') + 1;
-    lstrcpyn(s, "lang\\", MAX_PATH - (int)(s - path));
+    lstrcpyn(s, "lang\\", (int)sizeof(path) - (int)(s - path));
     char* slgName = path + strlen(path);
-    int slgNameBufSize = MAX_PATH - (int)(slgName - path);
+    int slgNameBufSize = (int)sizeof(path) - (int)(slgName - path);
 
     // first try to load the SLG of the language Salamander is currently running in
     lstrcpyn(slgName, Configuration.LoadedSLGName, slgNameBufSize);
-    lang = HANDLES_Q(LoadLibrary(path));
+    lang = SalLoadLibraryQ(path);
     WORD languageID = 0;
     if (lang == NULL || !IsSLGFileValid(Plugin->GetPluginDLL(), lang, languageID, NULL))
     { // the SLG doesn't exist or isn't the expected one (completely different file or at least another version)
@@ -1860,7 +1871,7 @@ CSalamanderPluginEntry::LoadLanguageModule(HWND parent, const char* pluginName)
         else // try to load the .slg chosen during the previous plugin load
         {
             lstrcpyn(slgName, Plugin->LastSLGName, slgNameBufSize);
-            lang = HANDLES_Q(LoadLibrary(path));
+            lang = SalLoadLibraryQ(path); // feature 170
             if (lang == NULL || !IsSLGFileValid(Plugin->GetPluginDLL(), lang, languageID, NULL))
             { // the SLG doesn't exist or isn't the expected one (completely different file or at least another version)
                 if (lang != NULL)
@@ -1909,7 +1920,7 @@ CSalamanderPluginEntry::LoadLanguageModule(HWND parent, const char* pluginName)
                     }
                 }
                 lstrcpyn(slgName, selSLGName, slgNameBufSize);
-                lang = HANDLES_Q(LoadLibrary(path));
+                lang = SalLoadLibraryQ(path); // feature 170
                 if (lang == NULL || !IsSLGFileValid(Plugin->GetPluginDLL(), lang, languageID, NULL))
                 { // shouldn't theoretically happen (dialog verifies the validity of the .SLG module)
                     if (lang != NULL)
@@ -2245,22 +2256,30 @@ BOOL CPluginData::InitDLL(HWND parent, BOOL quiet, BOOL waitCursor, BOOL release
                         parent, quiet, waitCursor,
                         releaseDynMenuIcons, DLLName, Version);
 
-    char bufText[MAX_PATH + 200];
+    char bufText[SAL_MODULE_PATH_U8 + 400];
 
     if (DLL == NULL && IsGood())
     {
         BOOL refreshUNCRootPaths = FALSE;
 
-        // obtain the full DLL name
-        char buf[MAX_PATH];
+        // obtain the full DLL name - feature 170: UTF-8, loaded wide (an install folder outside the
+        // code page gave '?' through GetModuleFileName A and no plug-in loaded); a path that does
+        // not fit is reported, never cut (the unbounded strcat could overrun the buffer)
+        char buf[SAL_MODULE_PATH_U8];
         char* s = DLLName;
+        BOOL pathOk = TRUE;
         if ((*s != '\\' || *(s + 1) != '\\') && // not UNC
             (*s == 0 || *(s + 1) != ':'))       // not "c:" -> path relative to the plugins subdirectory
         {
-            GetModuleFileName(HInstance, buf, MAX_PATH);
-            s = strrchr(buf, '\\') + 1;
-            strcpy(s, "plugins\\");
-            strcat(s, DLLName);
+            pathOk = SalGetModuleDirU8(HInstance, buf, MAX_PATH * 3) &&
+                     strlen(buf) + strlen("plugins\\") + strlen(DLLName) < sizeof(buf);
+            if (pathOk)
+            {
+                strcat_s(buf, "plugins\\");
+                strcat_s(buf, DLLName);
+            }
+            else
+                lstrcpyn(buf, DLLName, (int)sizeof(buf)); // for the message
             s = buf;
         }
 
@@ -2268,14 +2287,16 @@ BOOL CPluginData::InitDLL(HWND parent, BOOL quiet, BOOL waitCursor, BOOL release
         HCURSOR oldCur;
         if (waitCursor)
             oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
-        DLL = HANDLES(LoadLibrary(s));
+        DLL = pathOk ? SalLoadLibrary(s) : NULL;
+        if (!pathOk)
+            SetLastError(ERROR_FILENAME_EXCED_RANGE);
         if (waitCursor)
             SetCursor(oldCur);
         if (DLL == NULL) // error
         {
             DWORD err = GetLastError();
             // plugin metadata is UTF-8 (feature 052) - compose with the UTF-8 template
-            sprintf(bufText, LoadStrU8(IDS_UNABLETOLOADPLUGIN), Name, s, GetErrorText(err));
+            _snprintf_s(bufText, _TRUNCATE, LoadStrU8(IDS_UNABLETOLOADPLUGIN), Name, s, GetErrorText(err));
             if (!quiet)
                 SalMessageBox(parent, bufText, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONERROR);
         }
@@ -2390,10 +2411,10 @@ BOOL CPluginData::InitDLL(HWND parent, BOOL quiet, BOOL waitCursor, BOOL release
                     if (salamander.ShowError() && oldVer) // old version and it has not been reported yet...
                     {
                         if (Name == NULL || Name[0] == 0)
-                            sprintf(bufText, LoadStr(IDS_OLDPLUGINVERSION2), s);
+                            _snprintf_s(bufText, _TRUNCATE, LoadStrU8(IDS_OLDPLUGINVERSION2), s); // feature 170: s is UTF-8
                         else
                             // plugin metadata is UTF-8 (feature 052) - compose with the UTF-8 template
-                            sprintf(bufText, LoadStrU8(IDS_OLDPLUGINVERSION), Name, s);
+                            _snprintf_s(bufText, _TRUNCATE, LoadStrU8(IDS_OLDPLUGINVERSION), Name, s);
                         if (!quiet)
                             SalMessageBox(parent, bufText, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONERROR);
                     }

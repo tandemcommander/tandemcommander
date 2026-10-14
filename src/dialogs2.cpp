@@ -828,10 +828,10 @@ int CLanguageSelectorDialog::Execute()
     {
         // load the template from the best available SLG
         int index = GetPreferredLanguageIndex(SLGName);
-        char path[MAX_PATH];
-        GetModuleFileName(HInstance, path, MAX_PATH);
-        sprintf(strrchr(path, '\\') + 1, "lang\\%s", Items[index].FileName);
-        hTmpLanguage = HANDLES(LoadLibrary(path));
+        char path[SAL_MODULE_PATH_U8]; // feature 170: UTF-8, loaded wide (install folder outside the code page)
+        if (SalGetModuleDirU8(HInstance, path, MAX_PATH * 3) &&
+            _snprintf_s(path + strlen(path), _countof(path) - strlen(path), _TRUNCATE, "lang\\%s", Items[index].FileName) >= 0)
+            hTmpLanguage = SalLoadLibrary(path); // (a path that would be cut is not loaded)
         if (hTmpLanguage != NULL)
             Modul = hTmpLanguage;
     }
@@ -953,26 +953,38 @@ void CLanguageSelectorDialog::Transfer(CTransferInfo& ti)
 
 BOOL CLanguageSelectorDialog::Initialize(const char* slgSearchPath, HINSTANCE pluginDLL)
 {
-    char path[MAX_PATH];
+    // feature 170: the pattern is UTF-8 (the program's or a plug-in's folder may be outside the code
+    // page) and the folder is listed wide
+    char path[SAL_MODULE_PATH_U8];
     if (slgSearchPath == NULL)
     {
-        GetModuleFileName(NULL, path, MAX_PATH);
-        lstrcpy(strrchr(path, '\\') + 1, "lang\\*.slg");
+        if (!SalGetModuleDirU8(NULL, path, MAX_PATH * 3))
+            return TRUE; // no folder - no language found (the caller reports it)
+        strcat_s(path, "lang\\*.slg");
     }
     else
-        lstrcpyn(path, slgSearchPath, MAX_PATH);
+    {
+        if (strlen(slgSearchPath) >= sizeof(path))
+            return TRUE;
+        strcpy_s(path, slgSearchPath);
+    }
 
-    WIN32_FIND_DATA file;
-    HANDLE hFind = HANDLES_Q(FindFirstFile(path, &file));
+    WIN32_FIND_DATAW file;
+    HANDLE hFind = SalFindFirstFile(path, &file);
     if (hFind != INVALID_HANDLE_VALUE)
     {
         do
         {
-            char* point = strrchr(file.cFileName, '.');
+            char fileName[SAL_FIND_NAME_U8];
+            // a name that does not fit the SLG name buffers (Configuration.SLGName, MAX_PATH) is left
+            // out - never cut (review of 170)
+            if (SalWToU8(file.cFileName, -1, fileName, sizeof(fileName)) == 0 || strlen(fileName) >= MAX_PATH)
+                continue;
+            char* point = strrchr(fileName, '.');
             if (point != NULL && stricmp(point + 1, "slg") == 0) // it was returning *.slg*
             {
                 CLanguage lang;
-                if (lang.Init(file.cFileName, pluginDLL))
+                if (lang.Init(fileName, pluginDLL))
                 {
                     Items.Add(lang);
                     if (!Items.IsGood())
@@ -983,7 +995,7 @@ BOOL CLanguageSelectorDialog::Initialize(const char* slgSearchPath, HINSTANCE pl
                     }
                 }
             }
-        } while (FindNextFile(hFind, &file));
+        } while (SalFindNextFile(hFind, &file));
         HANDLES(FindClose(hFind));
     }
     return TRUE;

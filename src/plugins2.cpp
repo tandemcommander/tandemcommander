@@ -15,6 +15,9 @@
 #include "pack.h"
 #include "dialogs.h"
 
+// feature 170: "<the program's folder>" + tail as UTF-8 (defined below, before SearchForSPLs)
+static BOOL GetProgramSubDirU8(char* buf, int bufSize, const char* tail, char** end);
+
 // header for saving a DIB to the registry
 
 #define DIB_METHOD_STORE 1   // direct storage 1:1
@@ -1278,11 +1281,9 @@ void CPlugins::Load(HWND parent, HKEY regKey)
     DefaultConfiguration = FALSE;
     if (regKey != NULL)
     {
-        char pluginsDir[MAX_PATH];
-        GetModuleFileName(HInstance, pluginsDir, MAX_PATH);
-        char* s = strrchr(pluginsDir, '\\');
-        if (s != NULL)
-            strcpy(s + 1, "plugins");
+        char pluginsDir[SAL_MODULE_PATH_U8]; // feature 170: UTF-8
+        if (!GetProgramSubDirU8(pluginsDir, MAX_PATH * 3, "plugins", NULL))
+            strcpy(pluginsDir, "?"); // no folder: no stored path matches it
 
         HKEY itemKey;
         char buf[30];
@@ -1937,11 +1938,10 @@ CPlugins::GetPluginDataFromSuffix(const char* dllSuffix)
     if (dllSuffix != NULL)
     {
         // obtain the full name of the plugins directory
-        char fullDLLName[MAX_PATH];
-        GetModuleFileName(HInstance, fullDLLName, MAX_PATH);
-        char* name = strrchr(fullDLLName, '\\') + 1;
-        strcpy(name, "plugins\\");
-        name += strlen(name);
+        char fullDLLName[SAL_MODULE_PATH_U8]; // feature 170: UTF-8
+        char* name;
+        if (!GetProgramSubDirU8(fullDLLName, MAX_PATH * 3, "plugins\\", &name))
+            return NULL;
 
         int sufLen = (int)strlen(dllSuffix);
         int i;
@@ -1952,6 +1952,8 @@ CPlugins::GetPluginDataFromSuffix(const char* dllSuffix)
             if ((*s != '\\' || *(s + 1) != '\\') && // not UNC
                 (*s == 0 || *(s + 1) != ':'))       // not "c:" -> realtive path to plugins
             {
+                if ((int)(name - fullDLLName) + (int)strlen(data->DLLName) + 1 > (int)sizeof(fullDLLName))
+                    continue; // the suffix test needs the whole name
                 strcpy(name, data->DLLName);
                 s = fullDLLName;
             }
@@ -2808,21 +2810,42 @@ int CPlugins::GetViewerCount(int index)
 }
 
 // helper function for CPlugins::AutoInstallStdPluginsDir
-void SearchForSPLs(char* buf, char* s, TIndirectArray<char>& foundFiles, WIN32_FIND_DATA& data)
+// feature 170: "<the program's folder>" + tail as UTF-8 into buf (bufSize bytes), *end = its end;
+// FALSE when it cannot be read or does not fit (GetModuleFileName A gave '?' under an install
+// folder outside the code page, and the plug-ins were neither found nor loaded)
+static BOOL GetProgramSubDirU8(char* buf, int bufSize, const char* tail, char** end)
 {
+    if (!SalGetModuleDirU8(HInstance, buf, bufSize) || strlen(buf) + strlen(tail) >= (size_t)bufSize)
+        return FALSE;
+    strcat_s(buf, bufSize, tail);
+    if (end != NULL)
+        *end = buf + strlen(buf);
+    return TRUE;
+}
+
+// feature 170: listed wide (UTF-8 names), bounded by bufSize - a deep folder was copied without a limit
+void SearchForSPLs(char* buf, int bufSize, char* s, TIndirectArray<char>& foundFiles)
+{
+    if ((int)(s - buf) + 3 >= bufSize)
+        return;
     strcpy(s++, "\\*");
-    HANDLE find = HANDLES_Q(FindFirstFile(buf, &data));
+    WIN32_FIND_DATAW dataW;
+    HANDLE find = SalFindFirstFile(buf, &dataW);
     if (find != INVALID_HANDLE_VALUE)
     {
         do
         {
-            if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) // it's a file
+            char fileName[SAL_FIND_NAME_U8];
+            if (SalWToU8(dataW.cFileName, -1, fileName, sizeof(fileName)) == 0 ||
+                (int)(s - buf) + (int)strlen(fileName) + 3 >= bufSize)
+                continue;                                                 // a name that does not fit is left out, never cut
+            if ((dataW.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) // it's a file
             {
-                char* str = strrchr(data.cFileName, '.');
+                char* str = strrchr(fileName, '.');
                 //        if (str != NULL && str > data.cFileName && StrICmp(str, ".spl") == 0) // ".cvspass" in Windows is treated as an extension ...
                 if (str != NULL && StrICmp(str, ".spl") == 0)
                 { // SPL extension, add to the list of found files
-                    strcpy(s, data.cFileName);
+                    strcpy(s, fileName);
                     str = DupStr(buf);
                     if (str != NULL)
                     {
@@ -2839,13 +2862,13 @@ void SearchForSPLs(char* buf, char* s, TIndirectArray<char>& foundFiles, WIN32_F
             }
             else // it's a directory
             {
-                if (data.cFileName[0] != 0 && strcmp(data.cFileName, ".") != 0 && strcmp(data.cFileName, "..") != 0)
+                if (fileName[0] != 0 && strcmp(fileName, ".") != 0 && strcmp(fileName, "..") != 0)
                 { // not "." or "..", search the subdirectory...
-                    strcpy(s, data.cFileName);
-                    SearchForSPLs(buf, s + strlen(s), foundFiles, data);
+                    strcpy(s, fileName);
+                    SearchForSPLs(buf, bufSize, s + strlen(s), foundFiles);
                 }
             }
-        } while (FindNextFile(find, &data));
+        } while (SalFindNextFile(find, &dataW));
         HANDLES(FindClose(find));
     }
 }
@@ -2853,8 +2876,9 @@ void SearchForSPLs(char* buf, char* s, TIndirectArray<char>& foundFiles, WIN32_F
 BOOL SearchForAddedSPLs(char* buf, char* s, TIndirectArray<char>& foundFiles)
 { // returns TRUE if plugins from 'foundFiles' should be installed and all plugins loaded
     strcpy(s, "\\plugins.ver");
-    HANDLE file = HANDLES_Q(CreateFile(buf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                                       FILE_FLAG_SEQUENTIAL_SCAN, NULL));
+    // feature 170: buf is UTF-8 (the install folder may be outside the code page)
+    HANDLE file = SalCreateFile(buf, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                                FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     if (file != INVALID_HANDLE_VALUE)
     {
         BOOL isPluginVerNew = FALSE;
@@ -2885,7 +2909,7 @@ BOOL SearchForAddedSPLs(char* buf, char* s, TIndirectArray<char>& foundFiles)
                 char num[20];
                 lstrcpyn(num, start, (int)min(20, sep - start + 1));
                 int ver = atoi(num);
-                char name[MAX_PATH];
+                char name[SAL_MODULE_PATH_U8]; // feature 170: the folder (UTF-8) + the relative name
                 if (sep + 1 < eol)
                 {
                     lstrcpyn(name, sep + 1, (int)min(MAX_PATH, (eol - sep) - 1 + 1));
@@ -2915,10 +2939,15 @@ BOOL SearchForAddedSPLs(char* buf, char* s, TIndirectArray<char>& foundFiles)
                             name[1] != ':')                         // not a normal full path
                         {                                           // path relative to the plugins directory
                             int l = (int)(s - buf + 1);
-                            memmove(name + l, name, min((int)strlen(name) + 1, MAX_PATH - l));
-                            memcpy(name, buf, l); // assumes buf contains the path including backslash
+                            if (l + (int)strlen(name) + 1 > (int)sizeof(name))
+                                name[0] = 0; // does not fit: left out, never cut (feature 170)
+                            else
+                            {
+                                memmove(name + l, name, strlen(name) + 1);
+                                memcpy(name, buf, l); // assumes buf contains the path including backslash
+                            }
                         }
-                        DWORD attrs = SalGetFileAttributes(name);
+                        DWORD attrs = name[0] != 0 ? SalGetFileAttributes(name) : 0xFFFFFFFF;
                         if (attrs != 0xFFFFFFFF && (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0)
                         { // the name exists and it's a file
                             char* str = DupStr(name);
@@ -2960,16 +2989,10 @@ BOOL CPlugins::ReadPluginsVer(HWND parent, BOOL importFromOldConfig)
 
     BOOL ret = FALSE;
 
-    // obtain the "plugins" directory
-    char buf[MAX_PATH + 20];
-    GetModuleFileName(HInstance, buf, MAX_PATH);
-    char* s = strrchr(buf, '\\');
-    if (s != NULL)
-    {
-        strcpy(s + 1, "plugins");
-        s = s + strlen(s);
-    }
-    else
+    // obtain the "plugins" directory (feature 170: UTF-8)
+    char buf[SAL_MODULE_PATH_U8];
+    char* s;
+    if (!GetProgramSubDirU8(buf, MAX_PATH * 3, "plugins", &s))
     {
         TRACE_E("Unexpected situation in CPlugins::ReadPluginsVer().");
         return ret; // should not happen
@@ -3005,22 +3028,22 @@ BOOL CPlugins::ReadPluginsVer(HWND parent, BOOL importFromOldConfig)
             for (int i = 0; i < foundFiles.Count; i++)
             {
                 char* file = foundFiles[i];
-                if (StrNICmp(file, buf, (int)strlen(buf)) == 0 && file[strlen(buf)] == '\\')
+                if (StrNICmp(file, buf, (int)strlen(buf)) == 0 && file[strlen(buf)] == '\\' &&
+                    strlen(file) - strlen(buf) - 1 < sizeof(pluginName))
                 {
                     memmove(pluginName, file + strlen(buf) + 1, strlen(file) - strlen(buf) + 1 - 1);
                 }
-                else
+                else if (strlen(file) < sizeof(pluginName))
                     strcpy(pluginName, file);
+                else
+                    continue; // does not fit: not installed, never cut (feature 170)
                 int index;
                 if (!Plugins.FindDLL(pluginName, index))
                 {
                     // feature 069 (F-P2-04): these plugin-loading messages stay
-                    // ANSI on purpose.  The second half is a plugin path that is
-                    // deliberately NOT normalized - plugins.h's metadata contract
-                    // lists DLLName as not-normalized and plugins1.cpp loads the
-                    // plugin with the ANSI LoadLibrary on it - so pairing it with
-                    // a UTF-8 template would make the buffer invalid UTF-8 and
-                    // drop the translated half to the legacy draw as well.
+                    // code page: CWaitWindow draws its text with DrawText A. The
+                    // plug-in path is UTF-8 since feature 170 (loaded wide) and
+                    // ASCII in practice (the shipped plug-ins).
                     _snprintf_s(textProgress, _TRUNCATE, "%s\n%s", LoadStr(IDS_AUTOINSTALLPLUGINS), pluginName);
                     analysing.SetText(textProgress);
 
@@ -3253,15 +3276,9 @@ void CPlugins::RemoveNoLongerExistingPlugins(BOOL canDelPluginRegKey, BOOL loadA
                                              int maxNotLoadedPluginNames, int* numOfSkippedNotLoadedPluginNames,
                                              HWND parent)
 {
-    char buf[MAX_PATH + 20];
-    GetModuleFileName(HInstance, buf, MAX_PATH);
-    char* s = strrchr(buf, '\\');
-    if (s != NULL)
-    {
-        strcpy(s + 1, "plugins\\");
-        s = s + strlen(s);
-    }
-    else
+    char buf[SAL_MODULE_PATH_U8]; // feature 170: UTF-8 (a code-page path made every check fail)
+    char* s;
+    if (!GetProgramSubDirU8(buf, MAX_PATH * 3, "plugins\\", &s))
     {
         TRACE_E("Unexpected situation in CPlugins::RemoveNoLongerExistingPlugins().");
         return; // should not happen
@@ -3292,6 +3309,8 @@ void CPlugins::RemoveNoLongerExistingPlugins(BOOL canDelPluginRegKey, BOOL loadA
             if ((*fullName != '\\' || *(fullName + 1) != '\\') && // not UNC
                 (*fullName == 0 || *(fullName + 1) != ':'))       // not "c:" -> path relative to the plugins subdirectory
             {
+                if ((int)(s - buf) + (int)strlen(fullName) + 1 > (int)sizeof(buf))
+                    continue; // cannot be checked: kept, never removed (feature 170)
                 strcpy(s, fullName);
                 fullName = buf;
             }
@@ -3395,16 +3414,10 @@ void CPlugins::AutoInstallStdPluginsDir(HWND parent)
 {
     CALL_STACK_MESSAGE1("CPlugins::AutoInstallStdPluginsDir()");
 
-    // obtain the "plugins" directory
-    char buf[MAX_PATH + 20];
-    GetModuleFileName(HInstance, buf, MAX_PATH);
-    char* s = strrchr(buf, '\\');
-    if (s != NULL)
-    {
-        strcpy(s + 1, "plugins");
-        s = s + strlen(s);
-    }
-    else
+    // obtain the "plugins" directory (feature 170: UTF-8)
+    char buf[SAL_MODULE_PATH_U8];
+    char* s;
+    if (!GetProgramSubDirU8(buf, MAX_PATH * 3, "plugins", &s))
     {
         TRACE_E("Unexpected situation in CPlugins::AutoInstallStdPluginsDir().");
         return; // should not happen
@@ -3423,8 +3436,7 @@ void CPlugins::AutoInstallStdPluginsDir(HWND parent)
 
     // search for *.spl in the "plugins" directory and its subdirectories
     TIndirectArray<char> foundFiles(10, 10);
-    WIN32_FIND_DATA data;
-    SearchForSPLs(buf, s, foundFiles, data);
+    SearchForSPLs(buf, (int)sizeof(buf), s, foundFiles);
 
     // for progress compute the number of existing plugins that will be loaded later
     int toLoadCount = GetNumOfPluginsToLoad();
@@ -3440,12 +3452,15 @@ void CPlugins::AutoInstallStdPluginsDir(HWND parent)
         for (int i = 0; i < foundFiles.Count; i++)
         {
             char* file = foundFiles[i];
-            if (StrNICmp(file, buf, (int)strlen(buf)) == 0 && file[strlen(buf)] == '\\')
+            if (StrNICmp(file, buf, (int)strlen(buf)) == 0 && file[strlen(buf)] == '\\' &&
+                strlen(file) - strlen(buf) - 1 < sizeof(pluginName))
             {
                 memmove(pluginName, file + strlen(buf) + 1, strlen(file) - strlen(buf) + 1 - 1);
             }
-            else
+            else if (strlen(file) < sizeof(pluginName))
                 strcpy(pluginName, file);
+            else
+                continue; // does not fit: not installed, never cut (feature 170)
             int index;
             if (!Plugins.FindDLL(pluginName, index))
             {

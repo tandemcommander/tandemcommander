@@ -718,98 +718,121 @@ CPluginsDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         case IDB_PLUGINADD:
         {
             RefreshPanels = TRUE;
-            char fileName[2000];
-            fileName[0] = 0;
-            OPENFILENAME ofn;
-            memset(&ofn, 0, sizeof(OPENFILENAME));
-            ofn.lStructSize = sizeof(OPENFILENAME);
+            // feature 170: the wide dialog - the chosen names become UTF-8 like every DLLName (the
+            // code-page dialog gave names the wide plug-in loader could not open, and its initial
+            // folder was '?' under an install folder outside the code page)
+            const DWORD nameSizeW = 8000;
+            WCHAR* fileNameW = (WCHAR*)malloc(nameSizeW * sizeof(WCHAR));
+            if (fileNameW == NULL)
+            {
+                TRACE_E(LOW_MEMORY);
+                return 0;
+            }
+            fileNameW[0] = 0;
+            OPENFILENAMEW ofn;
+            memset(&ofn, 0, sizeof(ofn));
+            ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = HWindow;
-            char* s = LoadStr(IDS_PLUGINFILTER);
-            ofn.lpstrFilter = s;
-            while (*s != 0) // creating a double-null terminated list
-            {
-                if (*s == '|')
-                    *s = 0;
-                s++;
-            }
-            ofn.lpstrFile = fileName;
-            ofn.nMaxFile = 2000;
-            ofn.lpstrDefExt = "SPL";
+            WCHAR filterW[500];
+            lstrcpynW(filterW, LoadStrW(IDS_PLUGINFILTER), _countof(filterW));
+            for (WCHAR* f = filterW; *f != 0; f++) // creating a double-null terminated list
+                if (*f == L'|')
+                    *f = 0;
+            ofn.lpstrFilter = filterW;
+            ofn.lpstrFile = fileNameW;
+            ofn.nMaxFile = nameSizeW;
+            ofn.lpstrDefExt = L"SPL";
 
-            char buf[MAX_PATH];
-            GetModuleFileName(HInstance, buf, MAX_PATH);
-            s = strrchr(buf, '\\');
-            if (s != NULL)
+            char buf[SAL_MODULE_PATH_U8]; // the plug-in folder, UTF-8
+            WCHAR initDirW[2 * MAX_PATH];
+            buf[0] = 0;
+            if (SalGetModuleDirU8(HInstance, buf, 3 * MAX_PATH))
             {
-                strcpy(s + 1, "plugins");
-                ofn.lpstrInitialDir = buf;
+                strcat_s(buf, "plugins");
+                if (SalU8ToW(buf, -1, initDirW, _countof(initDirW)) != 0)
+                    ofn.lpstrInitialDir = initDirW;
             }
+            else
+                strcpy(buf, "?"); // no folder: no chosen name is taken as relative to it
 
+            WCHAR titleW[300];
+            lstrcpynW(titleW, LoadStrW(IDS_PLUGINADDTITLE), _countof(titleW));
             ofn.nFilterIndex = 1;
-            ofn.lpstrTitle = LoadStr(IDS_PLUGINADDTITLE);
+            ofn.lpstrTitle = titleW;
             ofn.Flags = OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_FILEMUSTEXIST |
                         OFN_HIDEREADONLY | OFN_LONGNAMES | OFN_NOCHANGEDIR;
 
-            if (SafeGetOpenFileName(&ofn))
+            if (SafeGetOpenFileNameW(&ofn))
             {
-                // loop over all selected names
-                char oneName[MAX_PATH];
-                char* fName = NULL;
-                int off = 0;
-                strcpy(oneName, fileName);
-                off = (int)strlen(oneName);
-                if (off + 1 < 2000 && *(fileName + off + 1) != 0) // not a single name
-                {
-                    fName = oneName + off;
-                    if (off > 0 && *(fileName + off - 1) != '\\') // missing backslash
-                    {
-                        *fName++ = '\\';
-                        *fName = 0;
-                    }
-                }
+                // one name, or the folder followed by the names (double-null terminated)
+                const WCHAR* first = fileNameW;
+                const WCHAR* cur = first + wcslen(first) + 1;
+                BOOL multi = *cur != 0;
+                if (!multi)
+                    cur = first;
 
                 BOOL pluginAdded = FALSE;
                 CPluginData* addedPlugin = NULL;
-                while (1)
+                while (*cur != 0)
                 {
-                    if (fName != NULL && off + 1 < 2000)
+                    // oneName contains the name of the x-th selected plugin (enumeration), UTF-8
+                    char oneName[SAL_MODULE_PATH_U8];
+                    BOOL nameOk;
+                    if (multi)
                     {
-                        strcpy(fName, fileName + off + 1);
-                        off += (int)(strlen(fileName + off + 1) + 1);
-                    }
-
-                    // oneName contains the name of the x-th selected plugin (enumeration)
-                    char pluginName[MAX_PATH];
-                    if (StrNICmp(oneName, buf, (int)strlen(buf)) == 0 && oneName[(int)strlen(buf)] == '\\')
-                    {
-                        memmove(pluginName, oneName + strlen(buf) + 1, strlen(oneName) - strlen(buf) + 1 - 1);
+                        char dir[SAL_MODULE_PATH_U8];
+                        char name1[SAL_FIND_NAME_U8];
+                        nameOk = SalWToU8(first, -1, dir, sizeof(dir)) != 0 && SalWToU8(cur, -1, name1, sizeof(name1)) != 0 &&
+                                 strlen(dir) + 1 + strlen(name1) < sizeof(oneName);
+                        if (nameOk)
+                        {
+                            strcpy(oneName, dir);
+                            if (oneName[0] != 0 && oneName[strlen(oneName) - 1] != '\\') // missing backslash
+                                strcat(oneName, "\\");
+                            strcat(oneName, name1);
+                        }
                     }
                     else
+                        nameOk = SalWToU8(cur, -1, oneName, sizeof(oneName)) != 0;
+
+                    char pluginName[MAX_PATH];
+                    size_t bl = strlen(buf);
+                    if (nameOk && StrNICmp(oneName, buf, (int)bl) == 0 && oneName[bl] == '\\' &&
+                        strlen(oneName) - bl - 1 < sizeof(pluginName))
+                        strcpy(pluginName, oneName + bl + 1);
+                    else if (nameOk && strlen(oneName) < sizeof(pluginName))
                         strcpy(pluginName, oneName);
-                    BOOL add = TRUE;
-                    int index;
-                    if (Plugins.FindDLL(pluginName, index))
+                    else
+                        nameOk = FALSE; // does not fit: refused, never cut
+                    if (!nameOk)
                     {
-                        char buf2[MAX_PATH + 300];
-                        // plugin metadata is UTF-8 (feature 052) - compose with the UTF-8 template
-                        sprintf(buf2, LoadStrU8(IDS_PLUGINEXISTS), Plugins.Get(index)->Name,
-                                Plugins.Get(index)->DLLName);
-                        //                add = SalMessageBox(HWindow, buf2, LoadStr(IDS_QUESTION),
-                        //                                    MB_YESNOCANCEL | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES;
-                        SalMessageBox(HWindow, buf2, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
-                        add = FALSE;
+                        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                     }
-                    if (add && Plugins.AddPlugin(HWindow, pluginName))
+                    else
                     {
-                        pluginAdded = TRUE;
-                        int pluginIndex;
-                        if (Plugins.FindDLL(pluginName, pluginIndex))
-                            addedPlugin = Plugins.Get(pluginIndex);
+                        BOOL add = TRUE;
+                        int index;
+                        if (Plugins.FindDLL(pluginName, index))
+                        {
+                            char buf2[2 * MAX_PATH + 300];
+                            // plugin metadata is UTF-8 (feature 052) - compose with the UTF-8 template
+                            _snprintf_s(buf2, _TRUNCATE, LoadStrU8(IDS_PLUGINEXISTS), Plugins.Get(index)->Name,
+                                        Plugins.Get(index)->DLLName);
+                            SalMessageBox(HWindow, buf2, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                            add = FALSE;
+                        }
+                        if (add && Plugins.AddPlugin(HWindow, pluginName))
+                        {
+                            pluginAdded = TRUE;
+                            int pluginIndex;
+                            if (Plugins.FindDLL(pluginName, pluginIndex))
+                                addedPlugin = Plugins.Get(pluginIndex);
+                        }
                     }
 
-                    // finish when two zero characters are found
-                    if (off + 1 >= 2000 || *(fileName + off + 1) == 0)
+                    if (!multi)
                         break;
+                    cur += wcslen(cur) + 1; // finish at the second zero
                 }
 
                 if (pluginAdded)
@@ -820,6 +843,7 @@ CPluginsDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     RefreshListView(FALSE, -1, addedPlugin);
                 }
             }
+            free(fileNameW);
             return 0;
         }
 

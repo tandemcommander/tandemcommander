@@ -251,6 +251,46 @@ static BOOL SalPathOp(const char* u8path, FSalPathOpW op)
     return ret;
 }
 
+// feature 170: the program's own files under an install folder outside the code page
+static HINSTANCE SalLoadLibraryImpl(const char* u8path, BOOL quiet)
+{
+    // the plain wide path (no \\?\ prefix: the loader resolves the library's dependencies from
+    // its folder; the program's folder is below MAX_PATH - GetModuleFileNameW gave it)
+    WCHAR* w = u8path != NULL ? SalU8ToWAlloc(u8path) : NULL;
+    if (w == NULL)
+    {
+        SetLastError(ERROR_INVALID_NAME);
+        return NULL;
+    }
+    HINSTANCE h = quiet ? HANDLES_Q(LoadLibraryW(w)) : HANDLES(LoadLibraryW(w));
+    SalFreeKeepLastError(w);
+    return h;
+}
+
+HINSTANCE SalLoadLibrary(const char* u8path) { return SalLoadLibraryImpl(u8path, FALSE); }
+HINSTANCE SalLoadLibraryQ(const char* u8path) { return SalLoadLibraryImpl(u8path, TRUE); }
+
+BOOL SalGetModuleDirU8(HMODULE module, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    buf[0] = 0;
+    WCHAR pathW[MAX_PATH * 2];
+    DWORD len = GetModuleFileNameW(module, pathW, _countof(pathW));
+    if (len == 0 || len >= _countof(pathW))
+        return FALSE;
+    WCHAR* slash = wcsrchr(pathW, L'\\');
+    if (slash == NULL)
+        return FALSE;
+    slash[1] = 0;
+    if (SalWToU8(pathW, -1, buf, bufSize) == 0)
+    {
+        buf[0] = 0;
+        return FALSE;
+    }
+    return TRUE;
+}
+
 BOOL SalDeleteFile(const char* u8path)
 {
     return SalPathOp(u8path, DeleteFileW);

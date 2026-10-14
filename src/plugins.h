@@ -2434,7 +2434,8 @@ class CToolBar;
 // Consumers rely on this - compose with LoadStrU8 templates and render
 // through Sal*U8 sinks. DLLName, RegKeyName, FSNames, LastSLGName,
 // PluginHomePageURL and ThumbnailMasks are ASCII by nature (paths, masks,
-// identifiers, URLs) and are not normalized.
+// identifiers, URLs) and are not normalized; DLLName is UTF-8 when it is not
+// ASCII (feature 170: the Add dialog is wide, the loader opens it wide).
 // Details: specs/052-fix-plugin-name-encoding/contracts/plugin-metadata-encoding.md
 struct CPluginData
 {

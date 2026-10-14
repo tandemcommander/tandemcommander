@@ -4172,11 +4172,15 @@ FIND_NEW_SLG_FILE:
         langChanged = TRUE;
     }
 
-    char path[MAX_PATH];
-    char errorText[MAX_PATH + 200];
-    GetModuleFileName(NULL, path, MAX_PATH);
-    sprintf(strrchr(path, '\\') + 1, "lang\\%s", Configuration.SLGName);
-    HLanguage = HANDLES(LoadLibrary(path));
+    // feature 170: the language module by a UTF-8 path, loaded wide - under an install folder
+    // outside the code page GetModuleFileName A gave '?' and the program did not start
+    char path[SAL_MODULE_PATH_U8];
+    char errorText[SAL_MODULE_PATH_U8 + 200];
+    // (no folder or a path that would be cut: nothing is loaded - a relative "lang\x.slg" would go
+    // through the DLL search order; review of 170)
+    BOOL langPathOk = SalGetModuleDirU8(NULL, path, MAX_PATH * 3) &&
+                      _snprintf_s(path + strlen(path), _countof(path) - strlen(path), _TRUNCATE, "lang\\%s", Configuration.SLGName) >= 0;
+    HLanguage = langPathOk ? SalLoadLibrary(path) : NULL;
     LanguageID = 0;
     if (HLanguage == NULL || !IsSLGFileValid(HInstance, HLanguage, LanguageID, IsSLGIncomplete))
     {
@@ -4184,19 +4188,26 @@ FIND_NEW_SLG_FILE:
             HANDLES(FreeLibrary(HLanguage));
         if (!newSLGFile) // zapamatovany .SLG soubor prestal nejspis existovat, zkusime najit jiny
         {
-            sprintf(errorText, "File %s was not found or is not valid language file.\nTandem Commander "
-                               "will try to search for some other language file (.SLG).",
-                    path);
-            MessageBox(NULL, errorText, SALAMANDER_TEXT_VERSION, MB_OK | MB_ICONERROR);
+            _snprintf_s(errorText, _TRUNCATE, "File %s was not found or is not valid language file.\nTandem Commander "
+                                              "will try to search for some other language file (.SLG).",
+                        path);
+            WCHAR* errorTextW = SalU8ToWAlloc(errorText); // the path is UTF-8 (feature 170)
+            WCHAR captionW[100];
+            if (SalU8ToW(SALAMANDER_TEXT_VERSION, -1, captionW, _countof(captionW)) == 0)
+                lstrcpyW(captionW, L"Tandem Commander");
+            MessageBoxW(NULL, errorTextW != NULL ? errorTextW : L"Language file not found.", captionW, MB_OK | MB_ICONERROR);
+            free(errorTextW);
             Configuration.SLGName[0] = 0;
             goto FIND_NEW_SLG_FILE;
         }
         else // nemelo by vubec nastat - .SLG soubor jiz byl otestovan
         {
-            sprintf(errorText, "File %s was not found or is not valid language file.\n"
-                               "Please run Tandem Commander again and try to choose some other language file.",
-                    path);
-            MessageBox(NULL, errorText, "Tandem Commander", MB_OK | MB_ICONERROR);
+            _snprintf_s(errorText, _TRUNCATE, "File %s was not found or is not valid language file.\n"
+                                              "Please run Tandem Commander again and try to choose some other language file.",
+                        path);
+            WCHAR* errorTextW = SalU8ToWAlloc(errorText); // the path is UTF-8 (feature 170)
+            MessageBoxW(NULL, errorTextW != NULL ? errorTextW : L"Language file not found.", L"Tandem Commander", MB_OK | MB_ICONERROR);
+            free(errorTextW);
             goto EXIT_1a;
         }
     }

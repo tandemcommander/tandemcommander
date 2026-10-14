@@ -113,10 +113,9 @@ BOOL MainFrameIsActive = FALSE;
 // HtmlHelp support
 //
 
-// feature 069 (F-P1-10): the install directory as UTF-8.  Only the buffers whose
-// consumers are the strict facade move to this helper - the plugin, language and
-// conversion-table loaders keep the ANSI producer they are paired with (the
-// classification is in specs/069-.../findings/c5-consumer-classification.md).
+// feature 069 (F-P1-10): the install directory as UTF-8 (falls back to the code page). The
+// language and plug-in loaders use SalGetModuleDirU8 (salfileio.h, feature 170: no fallback,
+// loaded wide); the conversion-table loader still takes the code page (NEXT-WORK).
 DWORD GetModuleFileNameU8(HMODULE module, char* buf, DWORD bufSize)
 {
     WCHAR pathW[MAX_PATH];

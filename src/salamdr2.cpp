@@ -3105,13 +3105,14 @@ BOOL IsSLGFileValid(HINSTANCE hModule, HINSTANCE hSLG, WORD& slgLangID, char* is
 BOOL CLanguage::Init(const char* fileName, HINSTANCE modul)
 {
     BOOL ret = FALSE;
-    char path[MAX_PATH];
+    char path[SAL_MODULE_PATH_U8]; // feature 170: UTF-8, loaded wide (install folder outside the code page)
     if (modul == NULL)
         modul = HInstance;
-    GetModuleFileName(modul, path, MAX_PATH);
-    sprintf(strrchr(path, '\\') + 1, "lang\\%s", fileName);
+    if (!SalGetModuleDirU8(modul, path, MAX_PATH * 3) ||
+        _snprintf_s(path + strlen(path), _countof(path) - strlen(path), _TRUNCATE, "lang\\%s", fileName) < 0)
+        return FALSE; // a path that would be cut is refused (review of 170)
 
-    HINSTANCE hLib = HANDLES(LoadLibrary(path));
+    HINSTANCE hLib = SalLoadLibrary(path);
     if (hLib != NULL)
     {
         WORD langID;

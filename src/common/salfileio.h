@@ -72,6 +72,19 @@ BOOL SalCreateProcess(const char* u8AppName, const char* u8CmdLine,
 // output fields (hInstApp, hProcess, ...) are copied back.
 BOOL SalShellExecuteEx(SHELLEXECUTEINFOA* seiA);
 
+// Feature 170: the program's own files (language modules, plug-ins) under an install folder
+// whose name is outside the system code page - GetModuleFileName A gave '?' in their place and
+// LoadLibrary A failed (the program did not start at all).
+// LoadLibraryW of a UTF-8 path, registered with the HANDLES tracker (SalLoadLibraryQ: quietly,
+// as HANDLES_Q - for a library that may be missing).
+HINSTANCE SalLoadLibrary(const char* u8path);
+HINSTANCE SalLoadLibraryQ(const char* u8path);
+// The folder of 'module' (NULL: the program) as UTF-8 with a trailing backslash into buf
+// (bufSize bytes); FALSE when it cannot be read or does not fit - never a code-page form.
+BOOL SalGetModuleDirU8(HMODULE module, char* buf, int bufSize);
+// recommended size of a buffer for SalGetModuleDirU8 plus a relative name after it
+#define SAL_MODULE_PATH_U8 (3 * MAX_PATH + 2 * MAX_PATH)
+
 BOOL SalDeleteFile(const char* u8path);
 BOOL SalRemoveDirectory(const char* u8path);
 BOOL SalCreateDirectory(const char* u8path, LPSECURITY_ATTRIBUTES securityAttributes);

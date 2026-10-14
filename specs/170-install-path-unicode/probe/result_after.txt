@@ -1,0 +1,28 @@
+install_path_probe (feature 170), expect: fixed, language czech
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 21:32; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+ASCII      START  PASS        installed in 'C:\Users\pavel\AppData\Local\Temp\tc170\TandemPlain'; title 'T170 - start - Tandem Commander 0.1.10 (x64) ST'
+ASCII      LANG   PASS        Change Directory dialog caption 'Zm\u011Bnit adres\u00E1\u0159' (English 'Change Directory' = the czech module was not loaded); windows at start: no window
+ASCII      PLUGIN PASS        after Change Directory to reg:\HKEY_CURRENT_USER the title is 'T170 - HKEY_CURRENT_USER - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+ASCII      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CZ         START  PASS        installed in 'C:\Users\pavel\AppData\Local\Temp\tc170\Tandem \u010Ce\u0161tina'; title 'T170 - start - Tandem Commander 0.1.10 (x64) ST'
+CZ         LANG   PASS        Change Directory dialog caption 'Zm\u011Bnit adres\u00E1\u0159' (English 'Change Directory' = the czech module was not loaded); windows at start: no window
+CZ         PLUGIN PASS        after Change Directory to reg:\HKEY_CURRENT_USER the title is 'T170 - HKEY_CURRENT_USER - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+CZ         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CYR        START  PASS        installed in 'C:\Users\pavel\AppData\Local\Temp\tc170\Tandem \u0416\u0443k'; title 'T170 - start - Tandem Commander 0.1.10 (x64) ST'
+CYR        LANG   PASS        Change Directory dialog caption 'Zm\u011Bnit adres\u00E1\u0159' (English 'Change Directory' = the czech module was not loaded); windows at start: no window
+CYR        PLUGIN PASS        after Change Directory to reg:\HKEY_CURRENT_USER the title is 'T170 - HKEY_CURRENT_USER - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+CYR        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CJK        START  PASS        installed in 'C:\Users\pavel\AppData\Local\Temp\tc170\Tandem \u4E2D\u6587'; title 'T170 - start - Tandem Commander 0.1.10 (x64) ST'
+CJK        LANG   PASS        Change Directory dialog caption 'Zm\u011Bnit adres\u00E1\u0159' (English 'Change Directory' = the czech module was not loaded); windows at start: no window
+CJK        PLUGIN PASS        after Change Directory to reg:\HKEY_CURRENT_USER the title is 'T170 - HKEY_CURRENT_USER - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+CJK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FRESH      START  PASS        installed in 'C:\Users\pavel\AppData\Local\Temp\tc170\Tandem \u0416f'; title 'T170 - start - Tandem Commander 0.1.10 (x64) ST'
+FRESH      LANG   PASS        Change Directory dialog caption 'Zm\u011Bnit adres\u00E1\u0159' (English 'Change Directory' = the czech module was not loaded); windows at start: no window
+FRESH      PLUGIN PASS        after Change Directory to reg:\HKEY_CURRENT_USER the title is 'T170 - HKEY_CURRENT_USER - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+FRESH      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FRESH      PLUGINS PASS        registered plug-ins before 20, after the first start 20; plugins.ver version stored 14088689 (0 = not processed)
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 21, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
