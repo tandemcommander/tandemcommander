@@ -348,11 +348,14 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
         // check the length
         if (sourceDirLen + strlen(namecnv) >= maxPath)
         {
-            char buffer[1000];
             fclose(listFile);
             SalDeleteFile(tmpListNameBuf);
-            sprintf(buffer, "%s\\%s", sourceShortName, namecnv);
-            return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PATH, buffer);
+            // feature 186: the path as UTF-8 (the source folder and the name as the core has them) -
+            // it was the console code-page forms, shown as code page (wrong letters)
+            CSalHeapString buffer;
+            size_t sdl = strlen(sourceDir);
+            buffer.Printf(sdl > 0 && sourceDir[sdl - 1] == '\\' ? "%s%s" : "%s\\%s", sourceDir, name);
+            return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PATH, buffer.Size() > 0 ? buffer.Get() : name);
         }
 
         // and put it into the list

@@ -2566,3 +2566,6 @@ a few early ones are out of sequence).
 - 185-truncate-tail-trim: nine cut message texts end at a whole letter; an environment variable
   name of MAX_PATH bytes or more is not looked up cut; a message box's URL goes to the clipboard
   whole, as UTF-8. Not driven.
+- 186-archiver-message-inserts: the external archivers' "command line too long" passes the whole
+  command line (two routes `strcpy`-ed up to 1,040 bytes into `char[1000]`); "path too long" shows
+  the UTF-8 path. Not driven.

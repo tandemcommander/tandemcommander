@@ -284,9 +284,9 @@ BOOL PackList(CFilesWindow* panel, const char* archiveFileName, CSalamanderDirec
     // check whether the command line is too long
     if (!browseTable->SupportLongNames && strlen(cmdLine) >= 128)
     {
-        char buffer[1000];
-        lstrcpyn(buffer, cmdLine, 1000);
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_CMDLNLEN, buffer);
+        // feature 186: the whole command line (the handler composes on the heap) - lstrcpyn into
+        // char[1000] could cut it inside a letter
+        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_CMDLNLEN, cmdLine);
     }
 
     CPackOutput output;
@@ -572,11 +572,11 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
     // check if the command line is too long
     if (!supportLongNames && strlen(cmdLine) >= 128)
     {
-        char buffer[1000];
         SalDeleteFile(tmpListNameBuf);
         SalRemoveDirectory(tmpDirNameBuf);
-        strcpy(buffer, cmdLine);
-        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_CMDLNLEN, buffer);
+        // feature 186: the command line itself - a strcpy of up to PACK_CMDLINE_MAXLEN (1,040) bytes
+        // into char[1000] overran the stack (the handler composes on the heap)
+        return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_CMDLNLEN, cmdLine);
     }
 
     // build the current directory
@@ -891,10 +891,9 @@ BOOL PackUnpackOneFile(CFilesWindow* panel, const char* archiveFileName,
     // check whether the command line is too long
     if (!browseTable->SupportLongNames && strlen(cmdLine) >= 128)
     {
-        char buffer[1000];
         RemoveTemporaryDir(tmpDirNameBuf);
-        strcpy(buffer, cmdLine);
-        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_CMDLNLEN, buffer);
+        // feature 186: the command line itself (a strcpy into char[1000] overran the stack)
+        return (*PackErrorHandlerPtr)(NULL, IDS_PACKERR_CMDLNLEN, cmdLine);
     }
 
     // build the current directory

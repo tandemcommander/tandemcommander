@@ -647,7 +647,8 @@ Code work an agent can do:
      `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";
      `FocusShortcutTarget` (`fileswn0.cpp`) falls back to a `CP_ACP` conversion that cuts a
      path of 260+ units.
-  4. The archivers' messages (127): two inserts are not UTF-8 - `pack1.cpp:288` (a command line
+  4. ~~The archivers' messages (127)~~ - **done, feature 186** (also two `strcpy` overruns of the
+     command line into `char[1000]`). Was: two inserts are not UTF-8 - `pack1.cpp:288` (a command line
      cut by `lstrcpyn`, possibly inside a letter) and `pack2.cpp:355` (a UTF-8 path joined with
      an OEM name for `PACKLIST_OEM`).
   5. ~~`GetErrorText` gives "System error N, text description is not available" for errors whose
