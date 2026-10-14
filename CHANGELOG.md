@@ -9,6 +9,15 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
+## [0.1.11] — unreleased
+
+- **The program starts when installed in a folder with letters of another
+  script** (feature 170). Installed under a folder whose name has a character
+  outside the system's code page (for example a per-user install for a user
+  named in Cyrillic or Chinese on a Czech or English Windows), the program did
+  not start at all; its plug-ins would not have loaded either. The Add
+  plug-in dialog takes such folders too.
+
 - **Change Case renames files with accented letters correctly** (feature 169).
   Changing the case of a name with letters outside English (Czech, Greek,
   Cyrillic, ...) failed with "The file name is incorrect" or renamed the file
