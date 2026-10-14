@@ -198,10 +198,20 @@ void DoDragDropOper(BOOL copy, BOOL toArchive, const char* archiveOrFSName, cons
         if (ok)
         {
             // feature 097: a name that does not fit is never cut (the operation would pack into, or
-            // delete, whatever file has the cut name); the panel shows the message instead
-            tmp->NameTooLong = strlen(archiveOrFSName) >= MAX_PATH || strlen(archivePathOrUserPart) >= MAX_PATH;
-            lstrcpyn(tmp->ArchiveOrFSName, tmp->NameTooLong ? "" : archiveOrFSName, MAX_PATH);
+            // delete, whatever file has the cut name); the panel shows the message instead. Feature 160:
+            // the archive's name is kept whole (the packer and the plug-in decide whether they take
+            // it, as for every other route since 097); the path inside the archive stays at 259 bytes
+            tmp->NameTooLong = strlen(archivePathOrUserPart) >= MAX_PATH;
+            tmp->ArchiveOrFSName = DupStr(archiveOrFSName);
+            if (tmp->ArchiveOrFSName == NULL)
+            {
+                TRACE_E(LOW_MEMORY);
+                ok = FALSE;
+            }
             lstrcpyn(tmp->ArchivePathOrUserPart, tmp->NameTooLong ? "" : archivePathOrUserPart, MAX_PATH);
+        }
+        if (ok)
+        {
             tmp->Data = data;
             PostMessage(panel->HWindow, WM_USER_DROPTOARCORFS, (WPARAM)tmp, 0);
             data = NULL;

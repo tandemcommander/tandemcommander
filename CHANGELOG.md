@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Dropping files into an archive with a very long name** (feature 160): an
+  archive whose full name is longer than 259 bytes refused files dropped or
+  pasted into it; ZIP, 7z and TAR take them now.
+
 - **Portables: the information line reads correctly in every language**
   (feature 159) - "selected devices" and "no devices" lost their accented
   letters.

@@ -220,7 +220,11 @@ Functional, no loss:
     exists". Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
-12. An archive whose name has 260+ bytes: clipboard copy from it and
+12. ~~An archive whose name has 260+ bytes: drop/paste into it~~ - **done, feature 160** (the name
+    on the heap; the packer asked first). The clipboard copy FROM it needs the shell extension,
+    which is not shipped (083) - unreachable. Recorded for the day the extension returns: its copy
+    hook is the code-page `ICopyHookA` and cuts the Explorer target at `MAX_PATH`, and the core cuts
+    that target again (`mainwnd3.cpp` `tgtPath`, `DoPasteOperation` `pathBuf`). Was: An archive whose name has 260+ bytes: clipboard copy from it and
     drop/paste into it are refused (the two fields are process-internal and
     could be widened). Item 5, *An unbounded `StrICpy`* (097).
 13. FTP, small: a typed server path is still cut at `FTP_MAX_PATH` when

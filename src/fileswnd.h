@@ -67,10 +67,13 @@ struct CTmpDragDropOperData
 {
     BOOL Copy;      // copy/move
     BOOL ToArchive; // archive/FS
-    char ArchiveOrFSName[MAX_PATH];
+    char* ArchiveOrFSName; // feature 160: heap, whole (was char[MAX_PATH]: a drop into an archive of 260+ bytes was refused)
     char ArchivePathOrUserPart[MAX_PATH];
     CDragDropOperData* Data;
-    BOOL NameTooLong; // feature 097: the archive name or path does not fit the fields above: nothing is done, a message is shown
+    BOOL NameTooLong; // feature 097: the path inside the archive does not fit: nothing is done, a message is shown
+
+    CTmpDragDropOperData() : Copy(FALSE), ToArchive(FALSE), ArchiveOrFSName(NULL), Data(NULL), NameTooLong(FALSE) { ArchivePathOrUserPart[0] = 0; }
+    ~CTmpDragDropOperData() { free(ArchiveOrFSName); }
 };
 
 class CCriteriaData // data pro atCopy/atMove

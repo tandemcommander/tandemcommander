@@ -2420,3 +2420,8 @@ a few early ones are out of sequence).
   10/0, before 7/3.
 - 159-portables-infoline: **the Portables information line at the device level as UTF-8**
   (`SplLoadStrU8`; it was code page - "vybran? za?izen?"). By reading; a person step.
+- 160-drop-into-long-archive: **drop / paste into an archive of a 260+ byte name** (item 12):
+  `CTmpDragDropOperData::ArchiveOrFSName` on the heap; the packer is asked before an empty archive
+  is deleted and recreated (review). The clipboard copy FROM such an archive needs the shell
+  extension - not shipped, unreachable (its copy hook is code page and cuts at `MAX_PATH`).
+  By reading (no OLE drag or clipboard on the hidden desktop); a person step.

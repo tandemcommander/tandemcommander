@@ -334,6 +334,26 @@ void CFilesWindow::RefreshVisibleItemsArray()
         VisibleItemsArraySurround.RefreshArr(this);
 }
 
+// feature 160 (review): TRUE when the packer of 'archive' takes its name - an external archiver and a
+// plug-in built for an older interface refuse a name of 260+ bytes (PackArchiveNameFitsHandler shows
+// the message); asked BEFORE anything is done to the archive. An archive no packer handles: TRUE
+// (PackCompress says why). The plug-in is loaded for the question, as PackCompress would load it.
+static BOOL ArchiveNameFitsPacker160(HWND parent, const char* archive)
+{
+    if (strlen(archive) < MAX_PATH)
+        return TRUE;
+    int format = PackerFormatConfig.PackIsArchive(archive);
+    if (format == 0)
+        return TRUE;
+    int index = PackerFormatConfig.GetPackerIndex(format - 1);
+    if (index >= 0) // an external archiver
+        return PackArchiveNameFitsHandler(parent, archive, SAL_ARCHIVE_HANDLER_EXTERNAL);
+    CPluginData* plugin = Plugins.Get(-index - 1);
+    if (plugin == NULL || !plugin->InitDLL(parent))
+        return TRUE;
+    return PackArchiveNameFitsHandler(parent, archive, plugin->BuiltForVersion);
+}
+
 void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
 {
     CALL_STACK_MESSAGE1("CFilesWindow::DragDropToArcOrFS()");
@@ -574,6 +594,11 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
                 // feature 146: a panel shows this archive but its name leads elsewhere now (a re-pointed
                 // letter) - nothing is packed; the panel is refreshed
             }
+            else if (data->ToArchive && !ArchiveNameFitsPacker160(HWindow, data->ArchiveOrFSName))
+            {
+                // feature 160 (review): the packer does not take a name this long - refused (the message is
+                // shown) BEFORE an empty archive is deleted and recreated below
+            }
             else if (data->ToArchive)
             {
                 //---  check whether it is a zero-length file
@@ -655,9 +680,12 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
 
                     //---  refresh non-automatically refreshed directories
                     // change in the directory with the target archive (archive file is modified)
-                    lstrcpyn(text, data->ArchiveOrFSName, MAX_PATH);
-                    CutDirectory(text); // 'text' is the archive name -> must always succeed
-                    MainWindow->PostChangeOnPathNotification(text, FALSE);
+                    CSalHeapString arcDir; // feature 160: the archive's name whole (was cut into 'text' at MAX_PATH)
+                    if (arcDir.Copy(data->ArchiveOrFSName, 0))
+                    {
+                        CutDirectory(arcDir.Get()); // the archive name -> must always succeed
+                        MainWindow->PostChangeOnPathNotification(arcDir.Get(), FALSE);
+                    }
                     if (!data->Copy)
                     {
                         // changes on the source path (when moving files to the archive,
@@ -667,8 +695,9 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
                 }
                 else
                 {
-                    sprintf(text, LoadStrU8(IDS_FILEERRORFORMAT), data->ArchiveOrFSName, GetErrorText(err));
-                    SalMessageBox(HWindow, text,
+                    CSalHeapString msg; // feature 160: the name of any length (text[] holds 620 bytes)
+                    msg.Printf(LoadStrU8(IDS_FILEERRORFORMAT), data->ArchiveOrFSName, GetErrorText(err));
+                    SalMessageBox(HWindow, msg.Text(),
                                   data->Copy ? LoadStr(IDS_ERRORCOPY) : LoadStr(IDS_ERRORMOVE),
                                   MB_OK | MB_ICONEXCLAMATION);
                 }
