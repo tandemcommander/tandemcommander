@@ -16,6 +16,7 @@
 #include "shellib.h"
 #include "toolbar.h"
 #include "salshelllink.h" // feature 128
+#include "salheapstr.h"   // feature 182
 
 //*****************************************************************************
 //
@@ -423,10 +424,13 @@ void CFilesWindow::FocusShortcutTarget(CFilesWindow* panel)
     }
     if (mountPoint || invalid)
     {
-        char errBuf[MAX_PATH + 300];
-        sprintf(errBuf, LoadStrU8(mountPoint ? IDS_DIRLINK_MOUNT_POINT : IDS_SHORTCUT_INVALID),
-                mountPoint ? junctionOrSymlinkTgt : shortName);
-        SalMessageBox(HWindow, errBuf, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        // feature 182: on the heap - a name of up to 765 bytes (255 CJK letters) overran
+        // char[MAX_PATH + 300] by sprintf ("Stack memory corruption")
+        CSalHeapString errBuf;
+        errBuf.Printf(LoadStrU8(mountPoint ? IDS_DIRLINK_MOUNT_POINT : IDS_SHORTCUT_INVALID),
+                      mountPoint ? junctionOrSymlinkTgt : shortName);
+        SalMessageBox(HWindow, errBuf.Size() > 0 ? errBuf.Get() : (mountPoint ? junctionOrSymlinkTgt : shortName),
+                      LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
     }
     if (wrongPath)
     {

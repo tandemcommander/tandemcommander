@@ -198,6 +198,16 @@ Crash-class or possible loss:
    Western code page) is exported and re-imported as '?'. Measure (a value with such letters,
    export, read the file, import with `-C`), then a UTF-16 export ("Windows Registry Editor
    Version 5.00") and the import side to match.
+5j. **More `sprintf` stack overruns of the same kind** (found by 182's sweep of the core,
+   older): `fileswn5.cpp` ~1260 / ~1509 `ViewFile` / `EditFile` "cannot view / edit" box -
+   `char[MAX_PATH + 300]` with the full path (a path over ~390 bytes; reached when no viewer /
+   editor mask matches - the defaults have `*.*`); `fileswn8.cpp` ~1287 Email files - a folder that
+   cannot be listed deep in the tree (`2 * MAX_PATH + 100`, default configuration); `fileswn7.cpp`
+   ~508 `UnpackZIPArchive` - `strcpy` of the other panel's path into `SAL_FIND_NAME_U8 + 200`
+   (a target folder over 979 bytes); thin margins: `mainwnd4.cpp` ~383 (Make file list, long
+   error texts), `fileswn2.cpp` ~1451 / `mainwnd4.cpp` ~139 `IDS_FSFORCECLOSE` (translated
+   template), `plugins1.cpp` ~1678 (reinstall prompt), `pack2.cpp` ~327 (DOS packers only).
+   Feature 183.
 5f. ~~**Files > Convert replaces by delete-then-move**~~ - **done, feature 175** (measured: the
    converted file lost its alternate data stream). Was (found by 173's review, older, reachable):
    `worker.cpp` ~7779 `ClearReadOnlyAttr` + `SalDeleteFile(name)` + `SalMoveFile(tmp, name)`, no
@@ -626,8 +636,8 @@ Code work an agent can do:
          `specs/131-plugin-defect-batch/fix-log.md`, section 5.
   3. ~~The shortcut's own path (128)~~ - **done, feature 181** (Enter and Focus Shortcut Target in a
      folder of 321 bytes / 301 characters). Left (found by its review): `FocusShortcutTarget`'s
-     `errBuf[MAX_PATH + 300]` + `sprintf` of a name of up to 780 bytes - a stack overrun (feature
-     182); a junction / symlink in a folder of 260+ bytes is not recognised there (the
+     `errBuf[MAX_PATH + 300]` + `sprintf` of a name of up to 765 bytes - a stack overrun (done,
+     feature 182 - measured: a crash); a junction / symlink in a folder of 260+ bytes is not recognised there (the
      `strlen < MAX_PATH` guard before `GetReparsePointDestination`); `GetSHObjectName(..., MAX_PATH)`
      cuts and widens through the code page (server links - Network plug-in only). Was: `Execute` (`fileswn2.cpp`) appends the name with a limit of
      `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";

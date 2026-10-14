@@ -1,0 +1,11 @@
+badlnk_probe (feature 182), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 01:01; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+BAD-SHORT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BAD-SHORT  MSG    PASS        name 7 bytes; windows: [#32770 'Error'] [Static id=2477] The file 'bad.lnk' is not valid shortcut nor link. | [Button id=1] OK
+BAD-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BAD-LONG   MSG    PASS        name 604 bytes; windows: ...2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D\u4E2D.lnk' is not valid shortcut nor link. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
