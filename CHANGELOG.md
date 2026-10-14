@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Checksum: a list with a very long path is verified** (feature 149). A line
+  whose path was longer than about 780 bytes stopped the whole check with
+  "Cannot finish operation because of too long name." - also for every other
+  file of the list. Such a name is shown with its end visible.
+
 - **Undelete: restoring deleted files of one name never overwrites another
   restored file** (feature 148). Two deleted `a.txt` and a deleted `a (1).txt`
   were all named `a (1).txt` at least twice, and the restore asked to

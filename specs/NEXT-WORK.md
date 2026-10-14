@@ -156,9 +156,15 @@ Crash-class or possible loss:
    one-item folder). Was: Undelete numbering can produce a name another listed item already has
    (`a.txt` twice and `a (1).txt` → an overwrite prompt; every release).
    Queue 104, entry 2 (115).
-5. **Checksum**: a list line whose path does not fit 780 bytes aborts the
+5. ~~**Checksum**~~ - **done, feature 149** (also the empty name of a long row). Was: a list line whose path does not fit 780 bytes aborts the
    whole Verify ("name too long", `FILEINFO::fileName`). Queue 104, entry 4
    (117).
+
+5a. **`FocusNameInPanel` cuts a long folder** (found by 149's review): the core copies the folder
+   and the name into `MAX_PATH + 200` buffers with `lstrcpyn` (`src/zip.cpp`) - Focus of a file
+   in a folder of 460-779 bytes (Checksum, other plug-ins) changes to a CUT folder, possibly
+   another one, and may focus another file of the same name. Heap / `SAL_MAX_PATH_UTF8`
+   buffers (no interface change); then `Focus_Path` of the plug-ins. Feature 150.
 
 Functional, no loss:
 

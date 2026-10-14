@@ -65,10 +65,31 @@ static void SetDispInfoText(NMLVDISPINFOW* plvdi, const char* text)
             text = fixed;
         }
     }
-    if (SplU8ToW(text, plvdi->item.pszText, plvdi->item.cchTextMax) == 0 &&
-        MultiByteToWideChar(CP_ACP, 0, text, -1, plvdi->item.pszText, plvdi->item.cchTextMax) == 0)
+    if (SplU8ToW(text, plvdi->item.pszText, plvdi->item.cchTextMax) == 0)
     {
-        plvdi->item.pszText[0] = 0;
+        // feature 149 (review): a name longer than the list view's label buffer (260 characters) -
+        // a path of a list line longer than 3 x MAX_PATH is admitted now - was shown EMPTY; the
+        // display keeps its end ("...\long.bin"), cut at a whole character (no surrogate split)
+        WCHAR* whole = SplU8ToWAlloc(text);
+        int max = plvdi->item.cchTextMax;
+        if (whole != NULL && max > 2)
+        {
+            size_t len = wcslen(whole);
+            size_t keep = (size_t)max - 2; // the ellipsis + the terminator
+            const WCHAR* tail = whole + (len > keep ? len - keep : 0);
+            if (len > keep && *tail >= 0xDC00 && *tail <= 0xDFFF)
+                tail++; // never start with the second half of a surrogate pair
+            if (len > keep)
+            {
+                plvdi->item.pszText[0] = 0x2026; // HORIZONTAL ELLIPSIS
+                wcscpy_s(plvdi->item.pszText + 1, max - 1, tail);
+            }
+            else
+                wcscpy_s(plvdi->item.pszText, max, whole);
+        }
+        else if (MultiByteToWideChar(CP_ACP, 0, text, -1, plvdi->item.pszText, plvdi->item.cchTextMax) == 0)
+            plvdi->item.pszText[0] = 0;
+        free(whole);
     }
     free(fixed);
 }
@@ -1866,7 +1887,18 @@ BOOL CVerifyDialog::LoadSourceFile()
             }
             memset(info, 0, sizeof(FILEINFO));
 
-            if (!pCalculator->ParseDigest(line, info->fileName, _countof(info->fileName), info->digest))
+            // feature 149: the name is part of the line (unescaping only shortens it) - a buffer of the
+            // line's length always holds it; the first line's fallback below may take the list's name
+            size_t nameSize = strlen(line) + strlen(sourceFile) + 2;
+            info->fileName = (char*)malloc(nameSize);
+            if (info->fileName == NULL)
+            {
+                Error(HWindow, 0, IDS_VERIFYTITLE, IDS_OUTOFMEM);
+                ret = FALSE;
+                delete info;
+                break;
+            }
+            if (!pCalculator->ParseDigest(line, info->fileName, (int)nameSize, info->digest))
             {
                 Error(HWindow, 0, IDS_VERIFYTITLE, IDS_TOOLONGNAME);
                 ret = FALSE;
@@ -1894,12 +1926,14 @@ BOOL CVerifyDialog::LoadSourceFile()
             if (info->fileName[0] != 0)
             {
                 // fetch file information and insert into the list
-                char path[3 * MAX_PATH]; // UTF-8 path (up to 3 bytes per character)
+                // feature 149: as long as the path is (the list's folder + the name + separators)
+                size_t pathSize = strlen(sourcePath) + strlen(info->fileName) + 3;
+                char* path = (char*)malloc(pathSize);
                 // feature 117: "./name" and "dir/../name" are resolved here (the extended-length path
                 // keeps '.' and '..' literally - every such line was "missing"); an absolute name is used
                 // only on the list's own drive or share - any other is FOREIGN and never looked up (a UNC
                 // look-up would connect to the server a list names and send the user's credentials)
-                int built = SalCslBuildPath(sourcePath, info->fileName, path, SizeOf(path));
+                int built = path != NULL ? SalCslBuildPath(sourcePath, info->fileName, path, pathSize) : SAL_CSL_PATH_TOOLONG;
                 if (built != SAL_CSL_PATH_TOOLONG)
                 {
                     // the names are WTF-8 here (LoadFile converted the list); one that holds a part
@@ -1934,12 +1968,16 @@ BOOL CVerifyDialog::LoadSourceFile()
                     if (info->bFileExist)
                         totalSize += info->size + CQuadWord(FILE_SIZE_FIX, 0);
 
-                    strcpy(info->fileName, path);
+                    free(info->fileName); // the item keeps the path (it is as long as it needs)
+                    info->fileName = path;
+                    path = NULL;
                     fileList.Add(info); // no synchronization needed, worker thread is not running, see above
                 }
                 else
                 {
-                    Error(HWindow, 0, IDS_VERIFYTITLE, IDS_TOOLONGNAME);
+                    // feature 149: only when memory ran out now (the buffer is sized by the name)
+                    free(path);
+                    Error(HWindow, 0, IDS_VERIFYTITLE, IDS_OUTOFMEM);
                     ret = FALSE;
                     delete info;
                     break;
@@ -2184,7 +2222,11 @@ INT_PTR CVerifyDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (i < 0 || i >= fileList.Count || !fileList[i]->bFileExist)
                 break;
 
-            if (SalamanderGeneral->SalamanderIsNotBusy(NULL))
+            // feature 149: a path that does not fit the focus buffer is refused, never cut (a cut path
+            // would be another file's or folder's)
+            if (strlen(fileList[i]->fileName) >= SizeOf(Focus_Path))
+                SalamanderGeneral->SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_VERIFYTITLE), MB_ICONINFORMATION);
+            else if (SalamanderGeneral->SalamanderIsNotBusy(NULL))
             {
                 lstrcpyn(Focus_Path, fileList[i]->fileName, SizeOf(Focus_Path));
                 SalamanderGeneral->PostMenuExtCommand(CMD_FOCUSFILE, TRUE);

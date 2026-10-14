@@ -1,0 +1,12 @@
+checksum_long_line_probe (feature 149), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 11:01; desktop 'tc_probe_3016'; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Fixture : C:\Users\pavel\AppData\Local\Temp\tc149\v\list.md5: normal.bin and a line whose relative path has 817 bytes (the list's folder adds 41)1
+Hot keys: renamer.spl id 1: 1; checksum.spl id 1: 1; checksum.spl id 2: 1; diskmap.spl id 1: 1; filecomp.spl id 1: 1
+
+--- L1: Verify of a list with a line longer than 780 bytes (both files match)
+L1         VERIFY PASS        rows 2 (want 2); result 'All files OK'; boxes 0 ('too long' 0)
+L1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

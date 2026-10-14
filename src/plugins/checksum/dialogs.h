@@ -199,10 +199,14 @@ protected:
 struct FILEINFO
 {
     // nothing in this structure changes after it is added to the array = no synchronized access needed
-    char fileName[3 * MAX_PATH]; // UTF-8 (up to 3 bytes per character)
+    // feature 149: UTF-8, malloc'ed and as long as the name is - a fixed 3 x MAX_PATH made a list
+    // line with a longer path stop the whole Verify ("too long name")
+    char* fileName;
     char digest[DIGEST_MAX_SIZE];
     CQuadWord size;
     BOOL bFileExist;
+
+    ~FILEINFO() { free(fileName); }
 };
 
 class CVerifyDialog : public CSFVMD5Dialog

@@ -2350,3 +2350,11 @@ a few early ones are out of sequence).
   `CFileList::RenameDuplicateFiles` (fs2.cpp, the restore list) and the FAT listing (`fat.h`, only
   deleted items numbered); the FAT recursion no longer stops at a one-item folder (pre-existing).
   114 probe: image kind `num`, row `num`; 114 33 / 0 / 4, 115 23 / 0 / 2; saltests +13.
+- 149-checksum-long-lines: **Checksum Verify takes a list line of any length.** Measured: a line
+  whose relative path had 817 bytes stopped the whole Verify ("Cannot finish operation because
+  of too long name.", no window). `FILEINFO::fileName` is a malloc'ed `char*` (destructor); the
+  loader sizes the name by the line and the path by the folder + name (`ParseDigest`,
+  `SalCslBuildPath` fail only for a small buffer); the Focus button refuses a path longer than
+  `Focus_Path` instead of cutting it; `SetDispInfoText` shows a name longer than the list view's
+  260-character label with a leading ellipsis (it was EMPTY - review). Probe L1; 117 82 / 0.
+  Left: the core's `FocusNameInPanel` cuts at `MAX_PATH + 200` (NEXT-WORK 5a).
