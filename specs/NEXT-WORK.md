@@ -210,7 +210,10 @@ Functional, no loss:
     zařízení" / "Žádná zařízení" are loaded in the code page (`wpdfsdevicelevel.cpp`,
     `IDS_SELECTEDDEVICEFMT` through `SalamanderGeneral->LoadStr`, `IDS_NODEVICEINFOLINE` through
     `::LoadString`) and drawn as UTF-8.
-11. A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
+11. ~~A case-sensitive folder refuses `a.txt` → existing `A.txt`~~ - **done, feature 158** (Quick
+    Rename and F6 offer the overwrite on identity proof; a decision recorded). Left: F5 copy within
+    the same case-sensitive folder is refused "to itself" by name; the Renamer refuses "already
+    exists". Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
 12. An archive whose name has 260+ bytes: clipboard copy from it and

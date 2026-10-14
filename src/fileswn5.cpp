@@ -2265,11 +2265,16 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                 // temporary name, which also tells the two apart - when the target outlives the source's
                 // name it is another file (or another hard link) and the branches below follow unchanged
                 BOOL keepTarget = FALSE; // TRUE: the branches below must not run (the target may be the source)
+                // feature 158: TRUE when the file system's identity proves the existing target is another file -
+                // in a case-sensitive folder "a.txt" -> existing "A.txt" is then an ordinary overwrite (it was
+                // refused as a change of case: "already exists")
+                BOOL provenOther = FALSE;
                 if (err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS)
                 {
                     CSalFileIdentity srcId, tgtId, srcThrough;
                     SalGetFileIdentity(path, TRUE, &srcId);
                     SalGetFileIdentity(tgtPath, TRUE, &tgtId);
+                    provenOther = SalFileIdMatch(srcId, tgtId) == simDifferent;
                     // a symbolic link / junction renamed onto the file (folder) it points at: the old
                     // overwrite below deleted that file and left a link to itself (second review of 103)
                     SalFileIdentityClear(&srcThrough);
@@ -2323,8 +2328,8 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                 // (with the byte fold "Č.txt" -> "č.txt" was taken for two files; on a file system that
                 // answers "already exists" to such a rename, the overwrite branch below deletes the target,
                 // which is the source - NTFS renames it without complaint)
-                if (!keepTarget && !SalNameEqualOrdinalCI(path, -1, tgtPath, -1) && // if it isn't just change-case
-                    (err == ERROR_FILE_EXISTS ||                     // check whether it's only rewriting the DOS name of the file
+                if (!keepTarget && (!SalNameEqualOrdinalCI(path, -1, tgtPath, -1) || provenOther) && // if it isn't just change-case (158: or a proven other file - its DOS-name clash is moved aside, not deleted)
+                    (err == ERROR_FILE_EXISTS ||                                                     // check whether it's only rewriting the DOS name of the file
                      err == ERROR_ALREADY_EXISTS))
                 {
                     WIN32_FIND_DATAW dataW;
@@ -2390,7 +2395,8 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                 if (!keepTarget && // feature 103
                     (err == ERROR_ALREADY_EXISTS ||
                      err == ERROR_FILE_EXISTS) &&
-                    !SalNameEqualOrdinalCI(path, -1, tgtPath, -1)) // overwrite the file? (feature 092: never for a change of case)
+                    (!SalNameEqualOrdinalCI(path, -1, tgtPath, -1) || // overwrite the file? (feature 092: never for a change of case,
+                     provenOther))                                    // feature 158: unless the target is proven another file)
                 {
                     DWORD inAttr = SalGetFileAttributes(path);
                     DWORD outAttr = SalGetFileAttributes(tgtPath);

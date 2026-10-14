@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Case-sensitive folders: renaming onto a name that differs only in case**
+  (feature 158). Where `a.txt` and `A.txt` are two files (a WSL or
+  case-sensitive folder), renaming `a.txt` to `A.txt` now asks whether to
+  overwrite `A.txt` instead of failing with "already exists".
+
 - **FTP: the information line about selected files reads correctly**
   (feature 157). With a size-in-bytes column it showed "bajt? v 3 vybran?ch
   souborech" in Czech (and the same in other languages with accents).

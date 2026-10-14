@@ -2413,3 +2413,8 @@ a few early ones are out of sequence).
   in `specs/157-*/contracts/`; interface 107 unchanged): the FTP client's information line read
   "bajt? v 3 vybran?ch souborech" (a code-page template around UTF-8 numbers, drawn as UTF-8).
   By reading (the information line exposes no text); a person step.
+- 158-case-sensitive-overwrite: **a case-sensitive folder offers the overwrite of another file**
+  (item 11): Quick Rename / F6 `a.txt` -> existing `A.txt` (another file) asks to overwrite instead
+  of "(183) already exists" - only when `SalFileIdMatch` proves two files (`provenOther`, also for
+  the 8.3-name clean-up); 092's case-only exclusion stays otherwise. A decision recorded. Probe
+  10/0, before 7/3.

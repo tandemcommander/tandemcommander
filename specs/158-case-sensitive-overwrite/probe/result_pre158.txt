@@ -1,0 +1,18 @@
+cs_overwrite_probe (feature 158) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre152\tandemcommander.exe
+Date    : 2026-10-14 15:26; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - the WebClient service is not running
+
+cs-yes     RUN    FAIL        lost=False; windows as 103 expects: False; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=other-1; a.txt=PRECIOUS-1; asked: [#32770 'Error Renaming File'] (183) Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje.  | || Quick Rename dialog re-opened (cancelled)
+cs-yes     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-no      RUN    FAIL        lost=False; windows as 103 expects: False; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=other-2; a.txt=PRECIOUS-2; asked: [#32770 'Error Renaming File'] (183) Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje.  | || Quick Rename dialog re-opened (cancelled)
+cs-no      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-hl      RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=PRECIOUS-3; asked: nothing
+cs-hl      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-f6      RUN    FAIL        lost=False; windows as 103 expects: False; focus held True; field was '...el\AppData\Local\Temp\tc158_cs\start\*.*', set '...pData\Local\Temp\tc158_cs\cs-f6\cs\A.txt'; on disk: A.txt=other-5; a.txt=PRECIOUS-5; asked: [#32770 'Error Moving File'] Moving file: | to file: | Error: | (183) Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje.  |
+cs-f6      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ci-case    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=PRECIOUS-4; asked: nothing
+ci-case    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 7, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

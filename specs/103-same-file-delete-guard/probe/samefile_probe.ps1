@@ -354,12 +354,12 @@ $Cases['hl-cpy'] = {
     @{ Asked = 'Confirm File Overwrite'; NotAsked = 'itself'; Dir = $d; Left = $d; Right = $StartDir; Focus = "$d\a.txt"; Cmd = 727; Text = "$d\b.txt"
        Check = { $x = Snap $d; Res ($x -ceq 'a.txt=PRECIOUS-HL; b.txt=PRECIOUS-HL') ((Holders $d 'PRECIOUS-HL').Count -eq 0) $x } }
 }
-$Cases['cs-qren'] = {   # a.txt and A.txt are two files here: refused as before, nothing deleted
+$Cases['cs-qren'] = {   # a.txt and A.txt are two files here: refused (103), since 158 the overwrite question (answered Yes); the source's content is never lost
     $d = New-Case 'cs-qren'; NewDir "$d\cs"
     $r = Cmd ("fsutil file setCaseSensitiveInfo `"{0}`" enable" -f "$d\cs"); if ($r.Rc -ne 0) { return @{ Skip = 'case sensitivity refused: ' + $r.Text } }
     Put "$d\cs\a.txt" 'PRECIOUS-15'; Put "$d\cs\A.txt" 'other-15'
-    @{ Asked = '\(183\)'; NotAsked = 'Confirm File Overwrite'; Dir = $d; Left = "$d\cs"; Right = $StartDir; Focus = "$d\cs\a.txt"; Cmd = 754; Text = 'A.txt'
-       Check = { $x = Snap "$d\cs"; Res ($x -ceq 'a.txt=PRECIOUS-15; A.txt=other-15' -or $x -ceq 'A.txt=other-15; a.txt=PRECIOUS-15') ((Holders "$d\cs" 'PRECIOUS-15').Count -eq 0) $x } }
+    @{ Asked = '\(183\)|Confirm File Overwrite'; Dir = $d; Left = "$d\cs"; Right = $StartDir; Focus = "$d\cs\a.txt"; Cmd = 754; Text = 'A.txt'
+       Check = { $x = Snap "$d\cs"; Res ($x -ceq 'a.txt=PRECIOUS-15; A.txt=other-15' -or $x -ceq 'A.txt=other-15; a.txt=PRECIOUS-15' -or $x -ceq 'A.txt=PRECIOUS-15') ((Holders "$d\cs" 'PRECIOUS-15').Count -eq 0) $x } }
 }
 $Cases['8dot3-qren'] = {
     $d = New-Case '8dot3-qren'; Put "$d\longfilename.txt" 'PRECIOUS-16'

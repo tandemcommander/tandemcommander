@@ -5877,12 +5877,16 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                 // deleted: the rename goes through a temporary name, which also tells the two apart -
                 // when the target outlives the source's name it is another file (or another hard link)
                 // and the branches below follow unchanged
+                // feature 158: TRUE when the file system's identity proves the existing target is another
+                // file - in a case-sensitive folder "a.txt" -> existing "A.txt" is then an ordinary overwrite
+                BOOL provenOther = FALSE;
                 if ((err == ERROR_FILE_EXISTS || err == ERROR_ALREADY_EXISTS) && !invalidName &&
                     sourceNameMvDir == op->SourceName && targetNameMvDir == op->TargetName)
                 {
                     CSalFileIdentity srcId, tgtId;
                     SalGetFileIdentity(op->SourceName, TRUE, &srcId);
                     SalGetFileIdentity(op->TargetName, TRUE, &tgtId);
+                    provenOther = SalFileIdMatch(srcId, tgtId) == simDifferent;
                     // a symbolic link / junction moved onto the file (folder) it points at: the old
                     // overwrite below deleted that file and left a link to itself (second review of 103)
                     CSalFileIdentity srcThrough;
@@ -6000,8 +6004,8 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                 // byte fold (with the byte fold "Č.txt" -> "č.txt" was taken for two files; on a file
                 // system that answers "already exists" to such a rename, the overwrite branch below
                 // deletes the target, which is the source - NTFS renames it without complaint)
-                if (!SalNameEqualOrdinalCI(op->SourceName, -1, op->TargetName, -1) && // provided this is not just a change of case
-                    (err == ERROR_FILE_EXISTS ||                                      // verify whether this is only overwriting the DOS name of the file/directory
+                if ((!SalNameEqualOrdinalCI(op->SourceName, -1, op->TargetName, -1) || provenOther) && // provided this is not just a change of case (158: or a proven other file)
+                    (err == ERROR_FILE_EXISTS ||                                                       // verify whether this is only overwriting the DOS name of the file/directory
                      err == ERROR_ALREADY_EXISTS) &&
                     targetNameMvDir == op->TargetName) // no invalid names are allowed here
                 {
@@ -6090,8 +6094,8 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
 
                 if ((err == ERROR_ALREADY_EXISTS || // theoretically can happen for directories; prevent that (overwrite prompt is only for files)
                      err == ERROR_FILE_EXISTS) &&
-                    !dir && !SalNameEqualOrdinalCI(op->SourceName, -1, op->TargetName, -1) && // feature 092: never for a change of case
-                    sourceNameMvDir == op->SourceName && targetNameMvDir == op->TargetName) // no invalid names allowed here (files only, and their names are validated)
+                    !dir && (!SalNameEqualOrdinalCI(op->SourceName, -1, op->TargetName, -1) || provenOther) && // feature 092: never for a change of case (158: unless proven another file)
+                    sourceNameMvDir == op->SourceName && targetNameMvDir == op->TargetName)                    // no invalid names allowed here (files only, and their names are validated)
                 {
                     HANDLE in, out;
                     in = SalCreateFile(op->SourceName, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
