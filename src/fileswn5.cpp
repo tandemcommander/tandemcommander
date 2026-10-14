@@ -1257,10 +1257,11 @@ BOOL ViewFileInt(HWND parent, const char* name, BOOL altView, DWORD handlerID, B
     }
     else
     {
-        char buff[MAX_PATH + 300];
+        // feature 183: on the heap - a sprintf into a fixed buffer overran the stack with a long path
+        CSalHeapString buff;
         int textID = altView ? IDS_CANT_VIEW_FILE_ALT : IDS_CANT_VIEW_FILE;
-        sprintf(buff, LoadStrU8(textID), name);
-        SalMessageBox(parent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        buff.Printf(LoadStrU8(textID), name);
+        SalMessageBox(parent, buff.Size() > 0 ? buff.Get() : name, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
     }
     return success;
 }
@@ -1506,9 +1507,10 @@ void CFilesWindow::EditFile(char* name, DWORD handlerID)
     }
     else
     {
-        char buff[MAX_PATH + 300];
-        sprintf(buff, LoadStrU8(IDS_CANT_EDIT_FILE), name);
-        SalMessageBox(HWindow, buff, LoadStr(IDS_ERRORTITLE),
+        // feature 183: on the heap - a sprintf into a fixed buffer overran the stack with a long path
+        CSalHeapString buff;
+        buff.Printf(LoadStrU8(IDS_CANT_EDIT_FILE), name);
+        SalMessageBox(HWindow, buff.Size() > 0 ? buff.Get() : name, LoadStr(IDS_ERRORTITLE),
                       MB_OK | MB_ICONEXCLAMATION);
     }
 }

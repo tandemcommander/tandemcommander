@@ -207,7 +207,10 @@ Crash-class or possible loss:
    (a target folder over 979 bytes); thin margins: `mainwnd4.cpp` ~383 (Make file list, long
    error texts), `fileswn2.cpp` ~1451 / `mainwnd4.cpp` ~139 `IDS_FSFORCECLOSE` (translated
    template), `plugins1.cpp` ~1678 (reinstall prompt), `pack2.cpp` ~327 (DOS packers only).
-   Feature 183.
+   **Done, feature 183** (measured: an assertion at F5 from an archive with the other panel in a
+   1,062-byte path; Email files not driven - no MAPI client). Left (its review): `fileswn7.cpp`
+   ~528 `lstrcpyn(path, tgtPath, MAX_PATH)` cuts a drag & drop unpack target; `pack2.cpp` ~323
+   cuts a long name in an external packer's list file (`namecnv[MAX_PATH]`).
 5f. ~~**Files > Convert replaces by delete-then-move**~~ - **done, feature 175** (measured: the
    converted file lost its alternate data stream). Was (found by 173's review, older, reachable):
    `worker.cpp` ~7779 `ClearReadOnlyAttr` + `SalDeleteFile(name)` + `SalMoveFile(tmp, name)`, no

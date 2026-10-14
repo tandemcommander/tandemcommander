@@ -1,0 +1,12 @@
+overrun_probe (feature 183), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre169\tandemcommander.exe
+Date    : 2026-10-15 01:15; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+           left panel: C:\Users\pavel\AppData\Local\Temp\tc183\arc\a.zip
+UNPACK-LONG END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0; FATAL: [#32770 'Microsoft Visual C++ Runtime Library'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Debug Assertion Failed! Program: ...er\build\tandemcommander\Debug_x64_pre169\tandemcommander.exe File: minkernel\crts\ucrt\inc\corecrt_internal_string_templates.h Line: 81 Expression: (L"Buffer is too small" && 0) For information on how your program can cause an assertion failure, see the Visual C++ documentation on asserts. (Press Retry to debug the application) 
+UNPACK-LONG DIALOG FAIL        right panel 1062 bytes (in it: True); window: ..." && 0) For information on how your program can cause an assertion failure, see the Visual C++ documentation on asserts. (Press Retry to debug the application) ; FATAL [#32770 'Microsoft Visual C++ Runtime Library'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Debug Assertion Failed! Program: ...er\build\tandemcommander\Debug_x64_pre169\tandemcommander.exe File: minkernel\crts\ucrt\inc\corecrt_internal_string_templates.h Line: 81 Expression: (L"Buffer is too small" && 0) For information on how your program can cause an assertion failure, see the Visual C++ documentation on asserts. (Press Retry to debug the application) 
+EMAIL-DEEP END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+EMAIL-DEEP BOX    NOT DRIVEN  no listing error box (no MAPI client?): no window
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 1, FAIL 2, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

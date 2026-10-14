@@ -3,6 +3,7 @@
 // CommentsTranslationProject: TRANSLATED
 
 #include "precomp.h"
+#include "salheapstr.h" // feature 183
 
 #include "stswnd.h"
 #include "editwnd.h"
@@ -143,9 +144,9 @@ BOOL CMainWindow::CloseDetachedFS(HWND parent, CPluginFSInterfaceEncapsulation* 
         if (!detachedFS->NotEmpty() || !detachedFS->GetCurrentPath(s))
             *s = 0; // cannot obtain the user portion
 
-        char buf[2 * MAX_PATH + 100];
-        sprintf(buf, LoadStrU8(IDS_FSFORCECLOSE), path);
-        if (SalMessageBox(parent, buf, LoadStr(IDS_QUESTION),
+        CSalHeapString buf; // feature 183: a translated template left a thin margin in 2 * MAX_PATH + 100
+        buf.Printf(LoadStrU8(IDS_FSFORCECLOSE), path);
+        if (SalMessageBox(parent, buf.Size() > 0 ? buf.Get() : path, LoadStr(IDS_QUESTION),
                           MB_YESNO | MB_ICONQUESTION) == IDYES) // user chooses "close"
         {
             detachedFS->TryCloseOrDetach(TRUE, FALSE, dummy, FSTRYCLOSE_UNLOADCLOSEDETACHEDFS);
@@ -380,9 +381,10 @@ void CMainWindow::MakeFileList()
             else
             {
                 DWORD err = GetLastError();
-                char message[MAX_PATH + 100];
-                sprintf(message, LoadStrU8(IDS_FILEERRORFORMAT), fileName, GetErrorText(err));
-                SalMessageBox(HWindow, message, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                // feature 183: on the heap - a sprintf into a fixed buffer overran the stack with a long path
+                CSalHeapString message;
+                message.Printf(LoadStrU8(IDS_FILEERRORFORMAT), fileName, GetErrorText(err));
+                SalMessageBox(HWindow, message.Size() > 0 ? message.Get() : fileName, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             }
         }
     }

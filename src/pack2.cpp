@@ -3,6 +3,7 @@
 // CommentsTranslationProject: TRANSLATED
 
 #include "precomp.h"
+#include "salheapstr.h" // feature 183
 
 #include "cfgdlg.h"
 #include "zip.h"
@@ -326,14 +327,12 @@ BOOL PackUniversalCompress(HWND parent, const char* command, TPackErrorTable* co
         {
             if (SalGetShortPathName(name, namecnv, MAX_PATH) == 0)
             {
-                char buffer[1000];
-                strcpy(buffer, "File: ");
-                strcat(buffer, name);
-                strcat(buffer, ", GetShortPathName: ");
-                strcat(buffer, GetErrorText(GetLastError()));
+                // feature 183: on the heap - a strcat of a long relative name overran char[1000]
+                CSalHeapString buffer;
+                buffer.Printf("File: %s, GetShortPathName: %s", name, GetErrorText(GetLastError()));
                 fclose(listFile);
                 SalDeleteFile(tmpListNameBuf);
-                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer);
+                return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, buffer.Size() > 0 ? buffer.Get() : name);
             }
             if (listEnc == PACKLIST_OEM)
             { // 'namecnv' is the 8.3 form here, ASCII in practice

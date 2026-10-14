@@ -3,6 +3,7 @@
 // CommentsTranslationProject: TRANSLATED
 
 #include "precomp.h"
+#include "salheapstr.h" // feature 183
 
 #include "menu.h"
 #include "cfgdlg.h"
@@ -1673,10 +1674,11 @@ BOOL CSalamanderPluginEntry::SetBasicPluginData(const char* pluginName, DWORD fu
         Plugin->SupportViewer && !supportViewer ||
         Plugin->SupportFS && !supportFS)
     { // downgrading capabilities is not possible ...
-        char bufText[MAX_PATH + 200];
-        // plugin metadata is UTF-8 (feature 052) - compose with the UTF-8 template
-        sprintf(bufText, LoadStrU8(IDS_REINSTALLPLUGIN), Plugin->Name, Plugin->DLLName);
-        SalMessageBox(Parent, bufText, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONERROR);
+        // plugin metadata is UTF-8 (feature 052) - compose with the UTF-8 template; feature 183: on
+        // the heap (an absolute DLLName of a plug-in added from anywhere overran MAX_PATH + 200)
+        CSalHeapString bufText;
+        bufText.Printf(LoadStrU8(IDS_REINSTALLPLUGIN), Plugin->Name, Plugin->DLLName);
+        SalMessageBox(Parent, bufText.Size() > 0 ? bufText.Get() : Plugin->DLLName, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONERROR);
         Error = TRUE;
         return FALSE;
     }

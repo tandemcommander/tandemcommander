@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **No crash with very long paths in several messages** (feature 183). Copying
+  from an archive into a very deep folder, and a few error messages that name
+  a long path, could overrun a buffer.
+
 - **No crash on a broken shortcut with a long name** (feature 182). *Go to
   Shortcut Target* on a damaged shortcut whose name was long (for example in
   Chinese) crashed the program.

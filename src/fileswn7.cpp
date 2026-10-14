@@ -505,9 +505,15 @@ void CFilesWindow::UnpackZIPArchive(CFilesWindow* target, BOOL deleteOp, const c
         //---  obtain the target directory
         if (target != NULL && target->Is(ptDisk))
         {
-            strcpy(path, target->GetPath());
-
-            target->UserWorkedOnThisPath = TRUE; // default action = operate with the path in the target panel
+            // feature 183: only a path the dialog can hold (MAX_PATH) - a strcpy of a longer one
+            // overran 'path'; a longer one is not offered (never a cut path)
+            if (strlen(target->GetPath()) < MAX_PATH)
+            {
+                strcpy(path, target->GetPath());
+                target->UserWorkedOnThisPath = TRUE; // default action = operate with the path in the target panel
+            }
+            else
+                path[0] = 0;
         }
         else
             path[0] = 0;

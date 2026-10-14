@@ -1284,9 +1284,10 @@ BOOL EmailFilesAddDirectory(CSimpleMAPI* mapi, const char* path, BOOL* errGetFil
         DWORD err = GetLastError();
         if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES)
         {
-            char text[2 * MAX_PATH + 100];
-            sprintf(text, LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
-            if (SalMessageBox(MainWindow->HWindow, text, LoadStr(IDS_ERRORTITLE),
+            // feature 183: on the heap - a sprintf into a fixed buffer overran the stack with a long path
+            CSalHeapString text;
+            text.Printf(LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
+            if (SalMessageBox(MainWindow->HWindow, text.Size() > 0 ? text.Get() : path, LoadStr(IDS_ERRORTITLE),
                               MB_OKCANCEL | MB_ICONEXCLAMATION) == IDCANCEL)
             {
                 SetCursor(LoadCursor(NULL, IDC_WAIT));

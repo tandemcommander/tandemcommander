@@ -1247,7 +1247,6 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
 {
     CALL_STACK_MESSAGE4("CFilesWindow::PrepareCloseCurrentPath(, %d, %d, , %d)",
                         canForce, canDetach, tryCloseReason);
-    char buf[2 * MAX_PATH + 100];
 
     if (Is(ptDisk))
     {
@@ -1450,8 +1449,9 @@ BOOL CFilesWindow::PrepareCloseCurrentPath(HWND parent, BOOL canForce, BOOL canD
                     {
                         char path[2 * MAX_PATH];
                         GetGeneralPath(path, 2 * MAX_PATH);
-                        sprintf(buf, LoadStrU8(IDS_FSFORCECLOSE), path);
-                        if (SalMessageBox(parent, buf, LoadStr(IDS_QUESTION),
+                        CSalHeapString forceText; // feature 183: on the heap (a translated template left a thin margin in char[2 * MAX_PATH + 100])
+                        forceText.Printf(LoadStrU8(IDS_FSFORCECLOSE), path);
+                        if (SalMessageBox(parent, forceText.Size() > 0 ? forceText.Get() : path, LoadStr(IDS_QUESTION),
                                           MB_YESNO | MB_ICONQUESTION) == IDYES) // user chooses "Close"
                         {
                             GetPluginFS()->TryCloseOrDetach(TRUE, FALSE, detachFS, tryCloseReason);

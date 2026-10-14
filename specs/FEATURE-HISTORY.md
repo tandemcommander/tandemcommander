@@ -2556,3 +2556,7 @@ a few early ones are out of sequence).
 - 182-shortcut-error-long-name: Focus Shortcut Target on a broken `.lnk` with a long name crashed
   ("Stack memory corruption": `sprintf` into `char[MAX_PATH + 300]`) - the text on the heap. Its
   review's sweep found more of the class (NEXT-WORK 5j, feature 183).
+- 183-message-overruns: seven message texts with a name or path composed on the heap (ViewFile /
+  EditFile, Email files, Make file list, force close, reinstall, a DOS packer) and the unpack
+  dialog offered only a target that fits (measured: a Debug assertion at F5 from an archive with
+  the other panel 1,062 bytes deep).

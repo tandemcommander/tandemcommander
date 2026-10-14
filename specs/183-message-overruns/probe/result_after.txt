@@ -1,0 +1,12 @@
+overrun_probe (feature 183), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 01:19; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+           left panel: C:\Users\pavel\AppData\Local\Temp\tc183\arc\a.zip
+UNPACK-LONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNPACK-LONG DIALOG PASS        right panel 1062 bytes (in it: True); window: [#32770 'Copy'] [Static id=209] Copy file "x.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+EMAIL-DEEP END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+EMAIL-DEEP BOX    NOT DRIVEN  no listing error box (no MAPI client?): no window
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 3, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True
