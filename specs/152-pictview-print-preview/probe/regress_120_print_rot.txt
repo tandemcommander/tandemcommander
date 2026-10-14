@@ -1,0 +1,11 @@
+pv120_probe (feature 120)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 11:54; ACP 1250; desktop 'tc_probe_16020'; registry key existed True; backup SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+tgt-shown-print RENAME PASS        B prints z.png while A renames x.png onto it, Yes: refused (an error box) True; x unchanged True, z unchanged True; B afterwards shows 40x30 fb87bf2f8ad79ea5; boxes: [#32770 'Confirm File Overwrite'] [Static id=3000] Overwrite file: | [Static id=2181] C:\Users\pavel\AppData\Local\Temp\tc120\p\tgt-shown-print\z.png | [Static id=2182] 191, 14.10.2026, 11:54:54 | [Static id=3001] With file: | [Static id=2183] C:\Users\pavel\AppData\Local\Temp\tc120\p\tgt-shown-print\x.png | [Static id=2184] 122, 14.10.2026, 11:54:54 | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel || [#32770 'Error Renaming File'] [Static id=2477] (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=1] OK || [#32770 'Rename File'] [Static id=2171] Rename file "z.png" to | [Button id=1] OK | [Button id=2] Cancel
+tgt-shown-print END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+bk-rot     ROTATE PASS        rotated right, full screen on and off (another background color): title 30x40 -> 30x40; Save As of the shown image 30x40 f90f91b29f4b7ca1 (want 30x40 f90f91b29f4b7ca1)
+bk-rot     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

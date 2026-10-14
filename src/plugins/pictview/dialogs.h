@@ -373,6 +373,7 @@ public:
 protected:
     HBITMAP hPreview;
     int previousPrevWidth, previousPrevHeight;
+    BOOL previousSelection; // feature 152: what the cached preview was made for
 
     virtual LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
@@ -394,7 +395,8 @@ public:
     // CAST1: the caller of CPrintDlg is responsible for filling it
     LPPVImageInfo pPVII;
     LPPVHandle PVHandle;
-    // selected area in image coordinates
+    // selected area in the coordinates of the picture as shown (mirrored as the viewer shows it -
+    // feature 152: the print and the preview take it so)
     const RECT* ImageCage; // if NULL, no selection exists
 
     // CAST2: can set default values via the Clear() method
@@ -411,6 +413,10 @@ public:
     BOOL bKeepAspect;  // used only when bFit is TRUE
     CUnitsEnum Units;  // units used by all editboxes
     BOOL bMirrorHor, bMirrorVert;
+    // feature 152: the viewer's stretch (PVSetStretchParameters, signed by its mirroring) - the
+    // preview is drawn through the engine's stretch as the print is, and gives it back afterwards;
+    // 0 = not known (no preview is drawn then)
+    int DisplayStretchX, DisplayStretchY;
 
 public:
     CPrintParams()

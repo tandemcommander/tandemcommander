@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **PictView: the print preview shows the picture** (feature 152). The
+  preview in the Print dialog stayed an empty page in every release since
+  the image engine was replaced; it now shows the picture as it will be
+  printed - mirrored or turned as in the viewer, only the selection when
+  printing the selected area.
+
 - **Plug-ins dialog: Focus works in a long or non-English install folder**
   (feature 151). Focus built the plug-in's path in the system code page into
   a fixed buffer - an install folder with characters outside it was named

@@ -3988,6 +3988,10 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
         params.ImageCage = IsCageValid(&SelectRect) ? &SelectRect : NULL;
         params.bMirrorHor = fMirrorHor;
         params.bMirrorVert = fMirrorVert;
+        // feature 152: what the preview gives back after drawing through the engine's stretch (the
+        // same values the print restores below)
+        params.DisplayStretchX = XStretchedRange * (1 - 2 * fMirrorHor);
+        params.DisplayStretchY = YStretchedRange * (1 - 2 * fMirrorVert);
 
         CALL_STACK_MESSAGE1("CMD_PRINT 1");
 
@@ -4009,7 +4013,12 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
 
         if (pPrintDlg != NULL)
         {
-            if (pPrintDlg->Execute() == IDOK)
+            INT_PTR printRes = pPrintDlg->Execute();
+            // feature 152 (review): the preview gives back the stretch of the dialog's start; a resize
+            // meanwhile (a maximized viewer at a display change) set another one - the live one again
+            PVW32DLL.PVSetStretchParameters(PVHandle, XStretchedRange * (1 - 2 * fMirrorHor),
+                                            YStretchedRange * (1 - 2 * fMirrorVert), COLORONCOLOR);
+            if (printRes == IDOK)
             {
                 DOCINFO docInfo;
                 HDC HPrinterDC = pPrintDlg->HPrinterDC;

@@ -173,8 +173,14 @@ Crash-class or possible loss:
 
 Functional, no loss:
 
-6. PictView's print preview is empty in every release since 006. Queue 104,
-   entry 1 (120).
+6. ~~PictView's print preview is empty in every release since 006~~ - **done, feature 152** (drawn
+   the way the print draws; owed to a person: one print compared with the preview). Left by 152's
+   review, print side, older:
+6a. **PictView print: Fit mode still mirrors by a negative stored size; a large print scale wraps.**
+   `render1.cpp` CMD_PRINT: with *Scale to fit* the print mirrors when the stored `Width`/`Height`
+   is negative (typed negative, then Fit checked again) while the dialog and the preview show the
+   picture upright; `prevWidth * pvii.Width / selWidth` is unsigned 32-bit and wraps at a large
+   scale of a big image (600 dpi, ~2000 %, 50,000 px) - a wrong size printed. Small.
 7. ~~PictView's *Regenerate thumbnail* cannot work since 006~~ - **done, feature 132** (the
    command works and cannot replace a picture by a file that lost something). Left by 132:
    - ~~owed before the release: Update Thumbnail on real camera files~~ - **measured and fixed
@@ -257,6 +263,8 @@ Large or risky, each a feature of its own:
   116 (the proxy server dialog, a Master Password, a real FTP server);
   118 (a real installer update, Disk Map's tooltip during the request);
   121 (the folder picker's tree-view pick, FTP's welcome-message window);
+  152 (one PictView print - a printer or *Microsoft Print to PDF* - compared with its preview:
+  plain, mirrored, a selection);
   **123 (new version check)**: design acceptance of the notification window
   (captures in `specs/123-new-version-check/probe/shots/`, also 150 % and
   200 %), real keyboard and mouse (typing while the notification arrives, a

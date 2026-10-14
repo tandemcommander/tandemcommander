@@ -170,7 +170,8 @@ protected:
     HWND PipWindow;
     TCHAR toolTipText[68];
     HBRUSH HAreaBrush;
-    // SelectRect is in absolute image coordinates and is unaffected by zoom or scroll
+    // SelectRect is in absolute image coordinates and is unaffected by zoom or scroll; the picture
+    // as shown, i.e. mirrored when the viewer mirrors it (feature 152's review)
     RECT SelectRect;    // selected area; left = 0x8000000 if no selection (in image coordinates)
     POINT LButtonDown;  // client-window coordinates where the user pressed LBUTTON (to detect drag start)
     RECT TmpCageRect;   // cage currently being dragged (zoom || select); in image coordinates; left/top = anchor; right/bottom = cursor

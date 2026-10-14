@@ -2369,3 +2369,13 @@ a few early ones are out of sequence).
   UTF-8** (`GetModuleFileNameU8`, `CSalHeapString FocusPlugin`) - it was `GetModuleFileName` A +
   an unbounded `strcat` into `MAX_PATH`. Regression row P1. The loader's same pattern: NEXT-WORK
   item 19 (the install-path chain).
+- 152-pictview-print-preview: **PictView's print preview shows the picture** - empty since 006:
+  `CreatePreview` asked `PVSaveImage` for scaled raw rows, which the WIC engine refuses
+  (`PVC_UNSUP_OUT_PARAMS`). Drawn now like the print: `PVSetStretchParameters` (signed = mirror) +
+  `PVDrawImage` into a DIB, the viewer's stretch given back (`CPrintParams::DisplayStretchX/Y`, and
+  the live one again after the dialog). `SelectRect` is in the coordinates of the picture *as
+  shown* (mirrored). The cache is keyed on `bSelection` too. **Trap:** the preview control answers
+  `WM_PRINTCLIENT` so a probe can capture it - `PrintWindow` of the *dialog* (flags 0) works on the
+  hidden desktop, `PrintWindow` of a child control returns FALSE; a viewer check comparing only the
+  picture's box passed the negative control (compare the colors' counts). Probe 21/0, control 7
+  FAIL. Print-side leftovers: NEXT-WORK 6a.

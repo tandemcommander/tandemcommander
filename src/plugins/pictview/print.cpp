@@ -14,99 +14,77 @@
 
 #define PREVIEW_MARGIN 8 // page offset from the preview edge in points
 
-typedef struct _prevWriteInfo
-{
-    char* pBits;
-    char* pCurPos;
-    DWORD size;
-} sPrevWriteInfo, *psPrevWriteInfo;
-
-DWORD WINAPI PreviewSeek(void* AppSpecific, LONG NewPos, int Origin)
-{
-    psPrevWriteInfo pPWI = (psPrevWriteInfo)AppSpecific;
-    return NewPos;
-}
-
-DWORD WINAPI PreviewWrite(void* AppSpecific, void* pData, DWORD Size)
-{
-    psPrevWriteInfo pPWI = (psPrevWriteInfo)AppSpecific;
-    if (Size > pPWI->size - (pPWI->pCurPos - pPWI->pBits))
-    {
-        Size = (DWORD)(pPWI->size - (pPWI->pCurPos - pPWI->pBits));
-    }
-    memcpy(pPWI->pCurPos, pData, Size);
-    pPWI->pCurPos += Size;
-    return Size;
-} /* PreviewWrite */
-
+// feature 152: the preview is drawn the way the print is drawn (render1.cpp, CMD_PRINT): the image
+// stretched by the engine (PVSetStretchParameters - negative sizes mirror), placed so that a printed
+// selection fills it, through PVDrawImage into the bitmap; then the viewer's stretch is given back.
+// It asked PVSaveImage for scaled raw rows before, which the WIC engine of feature 006 does not
+// produce (raw output only at the natural size) - the preview stayed empty in every release since.
+// 'width' / 'height' are negative for a negative printed width / height (as Params.Width / Height).
 HBITMAP CreatePreview(CPrintParams* pParams, int width, int height, const RECT* pCrop)
 {
-    BITMAPINFO bi;
-    HBITMAP hBmp;
-    sPrevWriteInfo pwi;
-    PVSaveImageInfo sii;
-    PVCODE code;
+    BOOL negW = width < 0, negH = height < 0;
+    width = abs(width);
+    height = abs(height);
+    if (width == 0 || height == 0 || pParams->pPVII == NULL || pParams->DisplayStretchX == 0 || pParams->DisplayStretchY == 0)
+        return NULL;
+    int imgW = (int)pParams->pPVII->Width;
+    int imgH = (int)pParams->pPVII->Height;
+    if (imgW <= 0 || imgH <= 0)
+        return NULL;
 
+    BITMAPINFO bi;
     memset(&bi, 0, sizeof(bi));
-    memset(&sii, 0, sizeof(sii));
-    sii.Flags |= PVSF_FLIP_VERT;
-    if (width < 0)
-    {
-        sii.Flags |= PVSF_FLIP_HOR;
-        width = -width;
-    }
-    if (height < 0)
-    {
-        sii.Flags ^= PVSF_FLIP_VERT;
-        height = -height;
-    }
     bi.bmiHeader.biSize = sizeof(bi.bmiHeader);
     bi.bmiHeader.biPlanes = 1;
     bi.bmiHeader.biBitCount = 32;
     bi.bmiHeader.biWidth = width;
     bi.bmiHeader.biHeight = height;
-    hBmp = CreateDIBSection(NULL, &bi, DIB_RGB_COLORS, (void**)&pwi.pBits, NULL, 0);
-    if (!hBmp)
+    void* bits = NULL;
+    HBITMAP hBmp = CreateDIBSection(NULL, &bi, DIB_RGB_COLORS, &bits, NULL, 0);
+    if (hBmp == NULL)
+        return NULL;
+    HDC hDC = CreateCompatibleDC(NULL);
+    if (hDC == NULL)
     {
+        DeleteObject(hBmp);
         return NULL;
     }
-    pwi.pCurPos = pwi.pBits;
-    pwi.size = width * height * 4;
-    sii.cbSize = sizeof(sii);
-    sii.Colors = PV_COLOR_TC32;
-    sii.Format = PVF_RAW;
-    sii.Height = height;
-    sii.Width = width;
-    sii.Flags |= PVSF_USERDEFINED_OUTPUT;
-    sii.WriteFunc = PreviewWrite;
-    sii.SeekFunc = PreviewSeek;
-    if (pParams->bMirrorHor)
-        sii.Flags ^= PVSF_FLIP_HOR;
-    if (pParams->bMirrorVert)
-        sii.Flags ^= PVSF_FLIP_VERT;
-    if (pCrop)
+    HBITMAP hOld = (HBITMAP)SelectObject(hDC, hBmp);
+    RECT all = {0, 0, width, height};
+    FillRect(hDC, &all, (HBRUSH)GetStockObject(WHITE_BRUSH));
+
+    // the full image's size and its top-left corner (the print's arithmetic)
+    int fullW = width, fullH = height, left = 0, top = 0;
+    if (pCrop != NULL)
     {
-        sii.CropLeft = pCrop->left;
-        sii.CropTop = pCrop->top;
-        sii.CropWidth = pCrop->right - pCrop->left + 1;
-        sii.CropHeight = pCrop->bottom - pCrop->top + 1;
-        // Mirror is applied before crop
-        if (pParams->bMirrorHor)
+        int selW = pCrop->right - pCrop->left + 1;
+        int selH = pCrop->bottom - pCrop->top + 1;
+        if (selW > 0 && selH > 0)
         {
-            sii.CropLeft = pParams->pPVII->Width - pCrop->right - 1;
-        }
-        if (pParams->bMirrorVert)
-        {
-            sii.CropTop = pParams->pPVII->Height - pCrop->bottom - 1;
+            fullW = MulDiv(width, imgW, selW);
+            fullH = MulDiv(height, imgH, selH);
+            double scaleX = (double)fullW / imgW;
+            double scaleY = (double)fullH / imgH;
+            left = negW ? -(int)((imgW - pCrop->right - 1) * scaleX) : -(int)(pCrop->left * scaleX);
+            top = negH ? -(int)((imgH - pCrop->bottom - 1) * scaleY) : -(int)(pCrop->top * scaleY);
         }
     }
-    code = PVW32DLL.PVSaveImage(pParams->PVHandle, NULL, &sii, NULL, &pwi, pParams->pPVII->CurrentImage);
+    int stretchW = fullW * (1 - 2 * ((pParams->bMirrorHor ? 1 : 0) ^ (negW ? 1 : 0)));
+    int stretchH = fullH * (1 - 2 * ((pParams->bMirrorVert ? 1 : 0) ^ (negH ? 1 : 0)));
+    PVCODE code = PVW32DLL.PVSetStretchParameters(pParams->PVHandle, stretchW, stretchH, COLORONCOLOR);
     if (code == PVC_OK)
+        code = PVW32DLL.PVDrawImage(pParams->PVHandle, hDC, left, top, &all);
+    // the viewer's own stretch back (as the print does after StartPage)
+    PVW32DLL.PVSetStretchParameters(pParams->PVHandle, pParams->DisplayStretchX, pParams->DisplayStretchY, COLORONCOLOR);
+
+    SelectObject(hDC, hOld);
+    DeleteDC(hDC);
+    if (code != PVC_OK)
     {
-        return hBmp;
+        DeleteObject(hBmp);
+        return NULL;
     }
-    DeleteObject(hBmp);
-    return NULL;
+    return hBmp;
 } /* CreatePreview */
 
 //****************************************************************************
@@ -120,6 +98,7 @@ CPreviewWnd::CPreviewWnd(HWND hDlg, int ctrlID, CPrintDlg* printDlg)
     pPrintDlg = printDlg;
     hPreview = NULL;
     previousPrevWidth = previousPrevHeight = 0;
+    previousSelection = FALSE;
 }
 
 CPreviewWnd::~CPreviewWnd()
@@ -241,7 +220,8 @@ void CPreviewWnd::Paint(HDC hDC)
         prevWidth = (int)(pPrintDlg->Params.Width * ratioX);
         prevHeight = (int)(pPrintDlg->Params.Height * ratioY);
     }
-    if ((previousPrevWidth != prevWidth) || (previousPrevHeight != prevHeight))
+    if ((previousPrevWidth != prevWidth) || (previousPrevHeight != prevHeight) ||
+        previousSelection != pPrintDlg->Params.bSelection) // feature 152: the selection at an unchanged size too
     {
         // Options have changed -> preview size has changed
         if (hPreview)
@@ -256,6 +236,7 @@ void CPreviewWnd::Paint(HDC hDC)
                                  pPrintDlg->Params.bSelection ? pPrintDlg->Params.ImageCage : NULL);
         previousPrevWidth = prevWidth;
         previousPrevHeight = prevHeight;
+        previousSelection = pPrintDlg->Params.bSelection;
     }
 
     prevWidth = abs(prevWidth);
@@ -335,6 +316,12 @@ CPreviewWnd::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         EndPaint(HWindow, &ps);
         return 0;
     }
+
+    case WM_PRINTCLIENT: // feature 152: the preview can be captured (PrintWindow) where nothing is shown
+    {
+        Paint((HDC)wParam);
+        return 0;
+    }
     }
 
     return CWindow::WindowProc(uMsg, wParam, lParam);
@@ -358,6 +345,8 @@ void CPrintParams::Clear()
     bFit = TRUE;
     bKeepAspect = TRUE;
     Units = untMM;
+    DisplayStretchX = 0; // feature 152
+    DisplayStretchY = 0;
 }
 
 //****************************************************************************
@@ -977,6 +966,8 @@ void CPrintDlg::UpdateImageParams(CPrintParams* printParams)
     Params.ImageCage = printParams->ImageCage;
     Params.bMirrorHor = printParams->bMirrorHor;
     Params.bMirrorVert = printParams->bMirrorVert;
+    Params.DisplayStretchX = printParams->DisplayStretchX; // feature 152
+    Params.DisplayStretchY = printParams->DisplayStretchY;
 }
 
 double CPrintDlg::GetNumber(HWND hEdit)
