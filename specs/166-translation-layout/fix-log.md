@@ -43,6 +43,14 @@ controls of the committed ZIP translations (drift since build 185)".
 
 Build: `build.cmd full` BUILD SUCCEEDED (language modules with the new texts).
 
+## Evidence on screen
+
+`probe/cfgshot_probe.ps1` (after the maintainer closed the program), Czech, Configuration >
+Viewer, the committed translation: `probe/cfg_viewer_czech_committed.png` shows exactly what the
+measurement says - "Velikost" (of "Velikost tabulatoru:"), "Vynutit Textovy rezim pro" and
+"Vynutit Sestnactkovy rezim" (without "soubory:"), "napoveda k ma", "Barva normalniho" /
+"Barva vybraneho" (without "textu"). Registry restored, identical.
+
 ## Left
 
 - The bundle re-key of the merge tool (the second half of item 16) - not touched.
