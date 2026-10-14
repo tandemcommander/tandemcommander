@@ -1,0 +1,9 @@
+zip_count_probe (feature 165), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 18:26; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+WRONG-70K  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+WRONG-70K  COUNT  FAIL        70000 members, *.del deleted: expected 35000; RECORDS 35000 EOCD 65535 65535 Z64 yes 18446744073709521080 18446744073709521080 EFFECTIVE 18446744073709521080 ZIPFILE 35000 clean OK 0; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete 35000 files from archive? | [Button id=6] &Yes | [Button id=7] &No
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

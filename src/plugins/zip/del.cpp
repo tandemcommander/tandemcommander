@@ -273,6 +273,8 @@ int CZipPack::DeleteFiles(int* deletedFiles, QWORD dataEnd)
         // the 16-bit counts, as the per-member decrements left them (modulo 2^16)
         EONewCentrDir.TotalEntries = (__UINT16)(EONewCentrDir.TotalEntries - removed);
         EONewCentrDir.DiskTotalEntries = (__UINT16)(EONewCentrDir.DiskTotalEntries - removed);
+        EONewCentrDir.TotalEntries64 -= removed; // feature 165
+        EONewCentrDir.DiskTotalEntries64 -= removed;
     }
     free(batch);
     free(offIndex);
@@ -381,6 +383,8 @@ void CZipPack::UpdateCentrDir(CFileInfo* curFile, CFileInfo* nextFile, QWORD del
             memmove(centrHeader, sour, size);
             EONewCentrDir.TotalEntries--;
             EONewCentrDir.DiskTotalEntries--;
+            EONewCentrDir.TotalEntries64--; // feature 165
+            EONewCentrDir.DiskTotalEntries64--;
             continue;
         }
         if (!noOffset && locHeaderOffs > curFile->LocHeaderOffs &&

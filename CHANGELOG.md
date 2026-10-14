@@ -11,6 +11,14 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **ZIP archives with 65,535 files or more record their number correctly**
+  (feature 165). Packing 70,000 files wrote "4,464" as the archive's count
+  of files, and adding to or deleting from such an archive counted wrongly
+  too; a program that trusts that number showed only part of the archive.
+  The data itself was intact. Large archives now carry the count in their
+  zip64 record, and an archive with a wrong count from an earlier version
+  gets the right one the next time it is changed.
+
 - **Deleting many files from a large ZIP archive is fast** (feature 164).
   Deleting 15,000 of 30,000 files took about 20 seconds and grew with the
   square of the archive's size; it now takes well under a second (100,000

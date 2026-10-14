@@ -90,6 +90,7 @@ int CZipPack::PackNormal(SalEnumSelection2 next, void* param)
         EOCentrDir.StartDisk = 0;
         EOCentrDir.DiskTotalEntries = 0;
         EOCentrDir.TotalEntries = 0;
+        EOCentrDir.DiskTotalEntries64 = EOCentrDir.TotalEntries64 = 0; // feature 165
         /*EOCentrDir.*/ CentrDirSize = 0;
         /*EOCentrDir.*/ CentrDirOffs = 0;
         EOCentrDir.CommentLen = 0;
@@ -273,6 +274,7 @@ int CZipPack::PackMultiVol(SalEnumSelection2 next, void* param)
     EOCentrDir.StartDisk = 0;
     EOCentrDir.DiskTotalEntries = 0;
     EOCentrDir.TotalEntries = 0;
+    EOCentrDir.DiskTotalEntries64 = EOCentrDir.TotalEntries64 = 0; // feature 165
     /*EOCentrDir.*/ NewCentrDirSize = CentrDirSize = 0;
     /*EOCentrDir.*/ NewCentrDirOffs = CentrDirOffs = 4;
     EOCentrDir.CommentLen = 0;
@@ -633,6 +635,7 @@ int CZipPack::PackSelfExtract(SalEnumSelection2 next, void* param)
     EOCentrDir.StartDisk = 0;
     EOCentrDir.DiskTotalEntries = 0;
     EOCentrDir.TotalEntries = 0;
+    EOCentrDir.DiskTotalEntries64 = EOCentrDir.TotalEntries64 = 0; // feature 165
     /*EOCentrDir.*/ NewCentrDirSize = CentrDirSize = 0;
     /*EOCentrDir.*/ NewCentrDirOffs = CentrDirOffs = 4;
     EOCentrDir.CommentLen = 0;
@@ -708,6 +711,18 @@ int CZipPack::WriteEOCentrDirRecord()
     unsigned comLen = Comment ? EONewCentrDir.CommentLen : 0;
     unsigned len = 0;
 
+    // feature 165: 65,535 entries or more need the zip64 end record (it was written only for the
+    // directory's size or offset - the 16-bit counts wrapped)
+    // A self-extracting archive keeps the 16-bit counts: its stub reads the end record where the zip64
+    // records would be (FinishPack writes EOCentrDirOffs into its header) and it takes at most 65,535
+    // files (IDS_LOTFILESSFX) - review of 165
+    unsigned short total16, disk16;
+    if (SalZipEndRecordCounts(EONewCentrDir.TotalEntries64, EONewCentrDir.DiskTotalEntries64, &total16, &disk16) &&
+        !(Options.Action & PA_SELFEXTRACT))
+        len = sizeof(CZip64EOCentrDirRecord) + sizeof(CZip64EOCentrDirLocator);
+    EONewCentrDir.TotalEntries = total16;
+    EONewCentrDir.DiskTotalEntries = disk16;
+
     if (NewCentrDirSize < 0xFFFFFFFF)
         EONewCentrDir.CentrDirSize = (__UINT32)NewCentrDirSize;
     else
@@ -730,6 +745,7 @@ int CZipPack::WriteEOCentrDirRecord()
         if (error)
             return error;
         EONewCentrDir.DiskTotalEntries = 0;
+        EONewCentrDir.DiskTotalEntries64 = 0; // feature 165
     }
     EONewCentrDir.DiskNum = DiskNum;
     if (len > 0)
@@ -742,15 +758,15 @@ int CZipPack::WriteEOCentrDirRecord()
         cdr64.Version = cdr64.VersionExtr = VN_ZIP64;
         cdr64.DiskNum = DiskNum;
         cdr64.StartDisk = EONewCentrDir.StartDisk;
-        cdr64.DiskTotalEntries = EONewCentrDir.DiskTotalEntries;
-        cdr64.TotalEntries = EONewCentrDir.TotalEntries;
+        cdr64.DiskTotalEntries = EONewCentrDir.DiskTotalEntries64; // feature 165: the 64-bit counts
+        cdr64.TotalEntries = EONewCentrDir.TotalEntries64;
         cdr64.CentrDirSize = NewCentrDirSize;
         cdr64.CentrDirOffs = NewCentrDirOffs;
 
         cdl64.Signature = SIG_ZIP64LOCATOR;
         cdl64.Zip64StartDisk = DiskNum; // ???
         cdl64.Zip64Offset = TempFile->FilePointer;
-        cdl64.TotalDisks = 1; // ???
+        cdl64.TotalDisks = DiskNum + 1; // feature 165: the disks of a multi-volume archive (this is the last one)
 
         if (Write(TempFile, &cdr64, sizeof(CZip64EOCentrDirRecord), NULL))
         {
@@ -1007,6 +1023,7 @@ int CZipPack::WriteCentralHeader(CFileInfo* fileInfo, char* buffer, BOOL first, 
         if (error)
             return error;
         EONewCentrDir.DiskTotalEntries = 0;
+        EONewCentrDir.DiskTotalEntries64 = 0; // feature 165
     }
     if (first && Options.Action & PA_MULTIVOL &&
         reason != FPR_SFXEND && reason != FPR_WRITE)
@@ -1020,6 +1037,8 @@ int CZipPack::WriteCentralHeader(CFileInfo* fileInfo, char* buffer, BOOL first, 
         /*EONewCentrDir.*/ NewCentrDirSize += centrDirSizeUpd;
         EONewCentrDir.TotalEntries++;
         EONewCentrDir.DiskTotalEntries++;
+        EONewCentrDir.TotalEntries64++; // feature 165
+        EONewCentrDir.DiskTotalEntries64++;
     case FPR_WRITE:
         if (Write(TempFile, buffer, centrDirSizeUpd, NULL))
             return IDS_NODISPLAY;
@@ -1027,6 +1046,7 @@ int CZipPack::WriteCentralHeader(CFileInfo* fileInfo, char* buffer, BOOL first, 
     case FPR_SFXEND:
         /*EONewCentrDir.*/ NewCentrDirSize += centrDirSizeUpd;
         EONewCentrDir.TotalEntries++;
+        EONewCentrDir.TotalEntries64++; // feature 165
         //EONewCentrDir.DiskTotalEntries++; // hopefully such a minor offense will not matter much
         break;
     case FPR_SFXRESERVE:
@@ -1220,6 +1240,17 @@ int CZipPack::LoadCentralDirectory()
                 EONewCentrDir = EOCentrDir;
                 NewCentrDirSize = CentrDirSize;
                 NewCentrDirOffs = CentrDirOffs;
+                // feature 165: the archive is written with the records it has - its end record may
+                // say otherwise (an earlier version wrote 4,464 for 70,000; counting down from such
+                // a value would underflow). A directory that does not read whole keeps the end
+                // record's counts (deleting from it refuses, feature 113).
+                unsigned long long records;
+                if (SalZipCountCentralRecords((const unsigned char*)NewCentrDir, (size_t)NewCentrDirSize, &records))
+                {
+                    EONewCentrDir.TotalEntries64 = records;
+                    if (!MultiVol)
+                        EONewCentrDir.DiskTotalEntries64 = records;
+                }
             }
         }
     }
@@ -2136,6 +2167,8 @@ int CZipPack::RestoreReplaced(CAddInfo* owner, __UINT64* writePos)
         NewCentrDirSize += movedLen;
         EONewCentrDir.TotalEntries++;
         EONewCentrDir.DiskTotalEntries++;
+        EONewCentrDir.TotalEntries64++; // feature 165
+        EONewCentrDir.DiskTotalEntries64++;
         *writePos += span;
         rm->Member = NULL; // put back
     }

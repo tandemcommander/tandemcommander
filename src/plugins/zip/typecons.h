@@ -4,6 +4,7 @@
 #pragma once
 
 #include "selfextr/comdefs.h"
+#include "../../common/salzipcount.h" // feature 165: the end records' entry counts
 
 //types defintions
 
@@ -65,6 +66,11 @@ typedef struct
         };
     };
     __UINT8* Comment; //zipfile comment (variable size)
+    // feature 165: the counts in 64 bits (the fields above hold 16; 0xFFFF there means "see the
+    // zip64 end record") - counted here, the 16-bit fields derived from them when written
+    // (SalZipEndRecordCounts, salzipcount.h)
+    __UINT64 TotalEntries64;
+    __UINT64 DiskTotalEntries64;
 } CEOCentrDirRecordEx;
 
 typedef struct

@@ -56,6 +56,7 @@
 #include "salftpautoren.h"   // feature 141
 #include "salfindignore.h"   // feature 163
 #include "salzipdelete.h"    // feature 164
+#include "salzipcount.h"     // feature 165
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11535,6 +11536,44 @@ static void TestZipDelete164()
     CHECK(SalZipApplyDeletions(bad.data(), bad.size(), NULL, NULL, NULL, 0, &rem) == bad.size() && rem == 0 && keep == bad);
 }
 
+// feature 165: the entry counts of a ZIP archive's end records (src/common/salzipcount.h)
+static void TestZipCount165()
+{
+    unsigned short t = 1, d = 1;
+    CHECK(!SalZipEndRecordCounts(0, 0, &t, &d) && t == 0 && d == 0);
+    CHECK(!SalZipEndRecordCounts(35000, 35000, &t, &d) && t == 35000 && d == 35000);
+    CHECK(!SalZipEndRecordCounts(65534, 65534, &t, &d) && t == 65534 && d == 65534); // the largest 16-bit count
+    CHECK(SalZipEndRecordCounts(65535, 65535, &t, &d) && t == 0xFFFF && d == 0xFFFF); // 0xFFFF = "see zip64"
+    CHECK(SalZipEndRecordCounts(70000, 70000, &t, &d) && t == 0xFFFF && d == 0xFFFF);
+    CHECK(SalZipEndRecordCounts(70000, 1200, &t, &d) && t == 0xFFFF && d == 1200); // a multi-volume last disk
+    CHECK(SalZipEndRecordCounts(100, 0x100000000ULL, &t, &d) && t == 100 && d == 0xFFFF);
+    // what the plug-in wrote before: 100,000 members read (16-bit 0xFFFF kept), 50,000 deleted
+    unsigned short old16 = 0xFFFF;
+    old16 = (unsigned short)(old16 - 50000);
+    CHECK(old16 == 15535);
+    unsigned long long n64 = SalZipReadEntryCount(0xFFFF, true, 100000) - 50000;
+    CHECK(!SalZipEndRecordCounts(n64, n64, &t, &d) && t == 50000);
+    // reading
+    CHECK(SalZipReadEntryCount(1234, false, 99) == 1234);
+    CHECK(SalZipReadEntryCount(0xFFFF, true, 70000) == 70000);
+    CHECK(SalZipReadEntryCount(0xFFFF, false, 0) == 0xFFFF); // no zip64 record: the field is the count
+    CHECK(SalZipReadEntryCount(1234, true, 70000) == 1234);   // the field does not point to zip64 (APPNOTE)
+    // the records of a loaded directory (the count a changed archive is written with)
+    std::vector<unsigned char> dir;
+    for (int i = 0; i < 3; i++)
+    {
+        size_t at = dir.size();
+        dir.resize(at + 46 + 2, 0);
+        dir[at] = 0x50, dir[at + 1] = 0x4B, dir[at + 2] = 0x01, dir[at + 3] = 0x02;
+        dir[at + 28] = 2;
+    }
+    unsigned long long c = 9;
+    CHECK(SalZipCountCentralRecords(dir.data(), dir.size(), &c) && c == 3);
+    CHECK(!SalZipCountCentralRecords(dir.data(), dir.size() - 1, &c) && c == 2); // a cut last record
+    CHECK(SalZipCountCentralRecords(NULL, 0, &c) && c == 0);
+    CHECK(!SalZipCountCentralRecords(NULL, 5, &c));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -11622,6 +11661,7 @@ int main(int argc, char** argv)
     TestNumberName148();
     TestFindIgnore163();
     TestZipDelete164();
+    TestZipCount165();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

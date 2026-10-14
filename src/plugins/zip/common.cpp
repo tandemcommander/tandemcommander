@@ -532,6 +532,11 @@ int CZipCommon::CheckZip()
         ErrorID = CheckZipFormat();
         if (!ErrorID)
             ErrorID = FindEOCentrDirSig(NULL);
+        if (!ErrorID) // feature 165: the 64-bit counts (a zip64 end record replaces them below)
+        {
+            EOCentrDir.TotalEntries64 = EOCentrDir.TotalEntries;
+            EOCentrDir.DiskTotalEntries64 = EOCentrDir.DiskTotalEntries;
+        }
         if (!ErrorID)
             ErrorID = FindZip64EOCentrDirLocator();
         //    if (!ErrorID && Zip64 && !Extract) ErrorID = IDS_ERRZIP64;
@@ -1349,6 +1354,10 @@ int CZipCommon::FindZip64EOCentrDirLocator()
         EOCentrDir.DiskTotalEntries = __UINT16(zip64Record.DiskTotalEntries);
     if (zip64Record.TotalEntries < 0xFFFF)
         EOCentrDir.TotalEntries = __UINT16(zip64Record.TotalEntries);
+    // feature 165: the counts as the zip64 end record holds them (65,535 and more kept 0xFFFF in
+    // the 16-bit fields above, and every later change counted from there)
+    EOCentrDir.TotalEntries64 = SalZipReadEntryCount(EOCentrDir.TotalEntries, true, zip64Record.TotalEntries);
+    EOCentrDir.DiskTotalEntries64 = SalZipReadEntryCount(EOCentrDir.DiskTotalEntries, true, zip64Record.DiskTotalEntries);
     if (EOCentrDir.CentrDirSize == 0xFFFFFFFF)
     {
         CentrDirSize = zip64Record.CentrDirSize;

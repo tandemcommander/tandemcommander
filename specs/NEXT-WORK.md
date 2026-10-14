@@ -246,7 +246,8 @@ Functional, no loss:
 Performance, tooling, cosmetics:
 
 15. ~~ZIP: n × d deletion~~ - **done, feature 164** (30,000 members / 15,000 deleted: 21.9 s ->
-    under 0.5 s; 100,000 / 50,000: 1.0 s). **Found by its review, next (165): the ZIP plug-in keeps
+    under 0.5 s; 100,000 / 50,000: 1.0 s). **Found by its review - done, feature 165** (probe 14 / 0; before:
+    Pack of 70,000 wrote 4,464): the ZIP plug-in kept
     the entry counts in 16 bits** - reading a zip64 archive keeps 0xFFFF when the count is
     >= 65,535 (`common.cpp` ~1350), deletion decrements from there, and the zip64 end record is
     written only when the directory's size or offset needs 64 bits (`add.cpp`
@@ -270,6 +271,9 @@ Performance, tooling, cosmetics:
     its Code/Markdown Viewer rows there (item 4). **Sampled by 154** (`-Only drive`): the 151 build
     1 of 5, every build since 153 3-5 of 5 (154 excluded by bisecting; no code of 153/154 runs
     there) - the rate depends on the build; find the mechanism before trusting these rows.
+    106's `packself_probe.ps1` row A-zip-noask-refused expects the "already exists" question
+    before the refusal - stale since 119 (refused before the question; 119's `packleft_probe.ps1`
+    carries the row with the new expectation). Use packleft for Pack regressions (found by 165).
 
 Large or risky, each a feature of its own:
 

@@ -2455,3 +2455,12 @@ a few early ones are out of sequence).
   0.5 s, 100,000 / 50,000 1.0 s. saltests compare it with a byte-level port of `UpdateCentrDir`
   on random directories (a mutation control fails them). **Trap:** the plug-in's entry counts are
   16-bit (165).
+- 165-zip-entry-count: **ZIP archives of 65,535+ entries get the right count** (found by 164's
+  review). The counts lived only in the end record's 16-bit fields: Pack of 70,000 wrote 4,464,
+  Add to 66,000 wrote 464, deletions counted down from 0xFFFF; zip64 end records only for size or
+  offset. Now 64-bit counts in `CEOCentrDirRecordEx`, derived when written
+  (`salzipcount.h` `SalZipEndRecordCounts`, zip64 from 65,535 on), a changed archive is written
+  with its walked record count (repairs archives earlier versions wrote). **Traps:** a
+  self-extracting archive keeps 16-bit counts (its stub reads the end record where zip64 records
+  would go); the data was intact all along - Python's zipfile walks by size, so a count check
+  must read the end records themselves (`probe/zipcount.py`).
