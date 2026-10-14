@@ -660,7 +660,8 @@ Code work an agent can do:
      not freed (ended by `TerminateAuxThreads`; a Debug leak report after Esc on a dead server
      and an immediate exit) - give the exit path a way to free it, or wait for the worker
      briefly; a share name near the path limit in a non-Latin script is offered and then
-     refused with "A share name is missing" (say "too long" instead).
+     refused with "A share name is missing" (say "too long" instead). **Done, feature 187** (the share name;
+     the worker job at exit is left).
   7. `SHGetFileInfoA` texts read as UTF-8 later: `icncache.cpp:709` (type name of folders),
      `drivelst.cpp:1115` (display name of removable drives) - suspected, measure first.
      **Read 2026-10-15:** the panel measures and draws these texts as UTF-8 with a code-page

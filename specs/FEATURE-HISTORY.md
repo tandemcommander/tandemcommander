@@ -2569,3 +2569,5 @@ a few early ones are out of sequence).
 - 186-archiver-message-inserts: the external archivers' "command line too long" passes the whole
   command line (two routes `strcpy`-ed up to 1,040 bytes into `char[1000]`); "path too long" shows
   the UTF-8 path. Not driven.
+- 187-share-name-too-long: `SalGetFullName` says "too long" (`IDS_TOOLONGPATH`) for a UNC server or
+  share part over MAX_PATH - it said "a share / server name is missing" and offered the share list.

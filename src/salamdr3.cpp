@@ -483,7 +483,7 @@ BOOL SalGetFullName(char* name, int* errTextID, const char* curDir, char* nextFo
                 if (*s == '\\')
                     s++;
                 if (s - name > MAX_PATH - 1)
-                    err = IDS_SERVERNAMEMISSING; // found text is too long to be a server name
+                    err = IDS_TOOLONGPATH; // feature 187: too long to be a server name ("a server name is missing" before)
                 else
                 {
                     if (*s == 0 || *s == '\\')
@@ -497,7 +497,7 @@ BOOL SalGetFullName(char* name, int* errTextID, const char* curDir, char* nextFo
                         while (*s != 0 && *s != '\\')
                             s++; // skipping the share name
                         if ((s - name) + 1 > MAX_PATH - 1)
-                            err = IDS_SHARENAMEMISSING; // found text is too long to be a share name (+1 for the trailing backslash)
+                            err = IDS_TOOLONGPATH; // feature 187: too long to be a share name (+1 for the trailing backslash); it said "a share name is missing" and offered the share list
                         if (*s == '\\')
                             s++;
                     }
