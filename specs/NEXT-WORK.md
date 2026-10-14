@@ -227,7 +227,10 @@ Functional, no loss:
     that target again (`mainwnd3.cpp` `tgtPath`, `DoPasteOperation` `pathBuf`). Was: An archive whose name has 260+ bytes: clipboard copy from it and
     drop/paste into it are refused (the two fields are process-internal and
     could be widened). Item 5, *An unbounded `StrICpy`* (097).
-13. FTP, small: a typed server path is still cut at `FTP_MAX_PATH` when
+13. ~~FTP, small: typed server path cut at `FTP_MAX_PATH`~~ - **closed by measurement, feature
+    162** (no change): the core hands a plug-in at most 259 bytes of user part, the plug-in keeps
+    300 / 609 - not reachable (probe 16 / 0); Find *Look in* has no maximum (`CSalPathBuf`); the
+    proxy-script line is sized for every variable at its maximum (116) - accepted. Was: FTP, small: a typed server path is still cut at `FTP_MAX_PATH` when
     stored; `ChangePath` with an open connection was not examined for the
     cut-user case; a custom proxy-script line over 1,000 bytes is cut without
     CRLF (unreachable for the built-in scripts). Find: a *Look in* path near

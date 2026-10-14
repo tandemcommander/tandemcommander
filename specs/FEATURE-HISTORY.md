@@ -2430,3 +2430,10 @@ a few early ones are out of sequence).
   the brace; a pattern per language pinned in `ui-overrides.json` (cs "2 vybraná / 5 vybraných
   zařízení"). **Trap:** `{n:...}` is 1-based and a group without an index takes the NEXT
   parameter. Checked with a port of the expander (`probe/plural161.py`).
+- 162-ftp-long-typed-path: **a typed FTP path is never cut at `FTP_MAX_PATH` - measured, no
+  change** (item 13). The core hands a plug-in at most 259 bytes of user part
+  (`ChangePathToPluginFS`, `ChangeDir` "plugins do not support longer paths",
+  `ChangeAndListPathOnFS` `user[MAX_PATH]`; the F5 target field, 121): 242 bytes of path reach the
+  server whole, 243 are refused by the core; the plug-in keeps 300 / 609. Find *Look in* has no
+  maximum (`CSalPathBuf`). **Trap:** a plug-in's own buffers over `MAX_PATH` are not reachable
+  through the core - judge a plug-in cut by the core's cap first (121 had judged by reading).
