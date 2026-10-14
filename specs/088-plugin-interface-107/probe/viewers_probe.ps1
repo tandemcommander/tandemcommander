@@ -252,7 +252,9 @@ try {
                 $viewerThere = [bool]($wins | Where-Object { $_.H -eq $v.H })
                 $mainThere = [bool]($wins | Where-Object { $_.Class -eq $script:MainClass })
                 $mainEnabled = [bool]($wins | Where-Object { $_.Class -eq $script:MainClass -and $_.Enabled })
-                $extra = @($wins | Where-Object { $_.H -ne $v.H -and $_.Class -ne $script:MainClass })
+                # feature 168: Windows 11's input indicator windows belong to the process too (as in
+                # fix_probe_lib's $SystemClasses) - not windows the program left open
+                $extra = @($wins | Where-Object { $_.H -ne $v.H -and $_.Class -ne $script:MainClass -and @('UAC_InputIndicatorOverlayWnd', 'UAC Input Indicator') -notcontains $_.Class })
                 foreach ($e in $extra) { Write-Host ("       STILL SHOWN: " + (Format-Win $e) + ' :: ' + (Get-DialogText $e.H)) }
                 $ok = $alive -and $viewerThere -and $mainThere -and $mainEnabled -and ($extra.Count -eq 0)
                 Report 'N3' $ok ("question '{0}': {1} -> No; follow-up questions {7} [{8}] -> No; process alive {2}; viewer window still there {3}; main window there {4}, enabled {5}; other windows {6}" -f `

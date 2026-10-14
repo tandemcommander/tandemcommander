@@ -557,7 +557,7 @@ function Open-Menu([int]$Id, [IntPtr]$Wnd, [bool]$Activate, [scriptblock]$Post) 
 }
 function Menu-Mnemonic([int]$Id, [string]$Surface, [string]$Which, [IntPtr]$Wnd, [IntPtr]$Target, [string]$Letter) {
     $lower = [int][char]($Letter.ToLower()); $vk = [int][char]($Letter.ToUpper())
-    $rel = { param($p) $a = [Drv093]::Pos($p); $b = [Drv093]::Pos($Wnd); "popup at {0},{1} from the window's corner" -f ($a[0] - $b[0]), ($a[1] - $b[1]) }
+    $rel = { param($p) $a = [Drv093]::Pos($p); $b = [Drv093]::Pos($Wnd); $q = 0; $tp = [Drv093]::GetWindowThreadProcessId($p, [ref]$q); $tw = [Drv093]::GetWindowThreadProcessId($Wnd, [ref]$q); "popup at {0},{1} from the window's corner; popup thread {2}, window thread {3}{4}" -f ($a[0] - $b[0]), ($a[1] - $b[1]), $tp, $tw, $(if ($tp -ne $tw) { ' FOREIGN' } else { '' }) }
     # (a) WM_SYSCHAR
     $act = ($Which -eq 'main')
     $r = Open-Menu $Id $Wnd $act { [void][Drv093]::PostMessageW($Target, 0x0106, [IntPtr]$lower, [IntPtr]0x20000001) }
@@ -865,7 +865,13 @@ try {
                             # right after a search that found something is closed again by the program's menu hook
                             # within half a second - an effect of that desktop, not of the menu bar)
                             $named = Find-Ctl $dlg 2505; $in = Inner-Edit $named
-                            $reopen = { $d2 = Open-ByCmd $id 741; if ($d2 -eq [IntPtr]::Zero) { throw 'the Find window could not be opened again' }; $d2 }
+                            # feature 168 (NEXT-WORK item 18): the Find window settles first. Measured: the
+                            # first popup posted right after the window opened was sometimes gone before the
+                            # probe saw its thread (thread 0) - closed by the window's own start-up - and
+                            # the menu bar's loop, left running by that, swallowed every later Alt+letter
+                            # (8 FAIL rows in 1 to 5 runs of 5)
+                            [void][Drv093]::Send($dlg, 0, 0, 0, 5000); Start-Sleep -Milliseconds 1500; [void][Drv093]::Send($dlg, 0, 0, 0, 5000)
+                            $reopen = { $d2 = Open-ByCmd $id 741; if ($d2 -eq [IntPtr]::Zero) { throw 'the Find window could not be opened again' }; [void][Drv093]::Send($d2, 0, 0, 0, 5000); Start-Sleep -Milliseconds 1500; $d2 }
                             foreach ($ch in 'F', 'M', 'E', 'V', 'O') {
                                 if (-not [Drv093]::IsWindow($dlg)) { $dlg = & $reopen; $named = Find-Ctl $dlg 2505; $in = Inner-Edit $named }
                                 Menu-Mnemonic $id $sf 'Find' $dlg $in $ch

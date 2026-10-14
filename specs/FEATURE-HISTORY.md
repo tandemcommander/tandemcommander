@@ -2478,3 +2478,8 @@ a few early ones are out of sequence).
   config, LNK4266), the dead `SalGetProcessId` (`ZwQueryInformationProcess`) removed. Release
   probes 097, 119, 127, 088 identical to Debug. **Trap:** a project without the CRT gets the CFG
   flag without effect - check `dumpbin /headers /loadconfig`, not the flag alone.
+- 168-probe-artefacts: **item 18's probe artefacts explained** - 088 `viewers_probe` N3 counted
+  Windows 11's UAC input indicator windows; 093's Find-menu rows broke after the first popup was
+  closed by the Find window's start-up (the probe now lets it settle: 6 / 6 clean). **Trap:** a
+  posted Esc to any window of the thread ends `CMenuBar`'s loop (`PeekMessage(NULL)`) - a
+  hypothesis that the loop survives was wrong; log the popup's thread (0 = already gone).

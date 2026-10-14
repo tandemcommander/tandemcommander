@@ -1,0 +1,64 @@
+=== dialogs_probe: E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-14 19:31:13) ===
+System code page 1250. Test text: 0061 0159 0416 65E5 D83D DCC1
+Manifest: embedded dependency on Microsoft.Windows.Common-Controls, version '6.0.0.0'
+Fixture: C:\Users\pavel\AppData\Local\Temp\tc093_dlg\{0416 002D 043F 0440 043E 0435 043A 0442 | 65E5 672C | D83D DCC1}\<test text>.zip
+Seeded in the registry: Hot Paths\30 Name=<test text> Path=<cjk folder>; User Menu\1 (seeded=True) Command=<cjk folder>\x.exe Arguments=<test text> Initial Directory=<cjk folder>
+
+--- instance in the 'cyr' folder (0416 002D 043F 0440 043E 0435 043A 0442); all surfaces, all channels ---
+   main window title: 'T093 - \u0416-\u043F\u0440\u043E\u0435\u043A\u0442 - Tandem Commander 0.1.10 (x64) ST'
+Loaded comctl32.dll: C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.9711_none_3e07b8b0e334e825\COMCTL32.dll
+Main window: IsWindowUnicode=False
+drive     | Find menu by Alt+F        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 8,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu bar loop: plain F| E | - | - | exp=menu opened | act=- | NOT DRIVEN | the popup went away by itself before Esc (the menu loop has ended)
+drive     | Find menu by Alt+F (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 8,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+M        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 47,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu bar loop: plain M| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 47,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+M (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 47,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+E        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 125,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu bar loop: plain E| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 125,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+E (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 125,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+V        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 161,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu bar loop: plain V| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 161,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+V (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 161,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+O        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 202,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu bar loop: plain O| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 202,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+O (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 202,52 from the window's corner; popup thread 9212, window thread 9212
+drive     | Find menu by Alt+U+0159   | E | - | - | exp=menu windows=0 | act=menu windows=0 | PASS | WM_SYSCHAR 0159: not a mnemonic of the English menu (its low byte is that of Y)
+drive     | Find Now, mask *.zip      | E | - | - | exp=items=1 | act=items=1 | PASS | Named held '*.zip', Look in held 0043 003A 005C 0055 0073 0065 0072 0073 005C 0070 0061 0076 0065 006C 005C 0041 0070 0070 0044 0061 0074 0061 005C 004C 006F 0063 0061 006C 005C 0054 0065 006D 0070 005C 0074 0063 0030 0039 0033 005F 0064 006C 0067 005C 0416 002D 043F 0440 043E 0435 043A 0442;
+drive     | main menu by Alt+L        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 19,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu bar loop: plain L| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 19,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+L (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 19,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+F        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 55,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu bar loop: plain F| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 55,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+F (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 55,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+E        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 94,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu bar loop: plain E| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 94,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+E (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 94,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+C        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 130,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu bar loop: plain C| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 130,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+C (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 130,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+P        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 208,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu bar loop: plain P| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 208,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+P (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 208,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+O        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 263,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu bar loop: plain O| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 263,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+O (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 263,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+R        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 321,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu bar loop: plain R| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 321,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+R (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 321,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+H        | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSCHAR; popup at 365,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu bar loop: plain H| E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_CHAR after Esc closed the popup; popup at 365,55 from the window's corner; popup thread 14784, window thread 14784
+drive     | main menu by Alt+H (key)  | E | - | - | exp=menu opened | act=menu opened | PASS | posted WM_SYSKEYDOWN; popup at 365,55 from the window's corner; popup thread 14784, window thread 14784
+   process exit code: 0
+
+--- instance in the 'cjk' folder (65E5 672C); Create Directory, Change Directory, Pack, Unpack, Find only ---
+   main window title: 'T093 - \u65E5\u672C - Tandem Commander 0.1.10 (x64) ST'
+   process exit code: 0
+
+--- instance in the 'emo' folder (D83D DCC1); Create Directory, Change Directory, Pack, Unpack, Find only ---
+   main window title: 'T093 - \uD83D\uDCC1 - Tandem Commander 0.1.10 (x64) ST'
+   process exit code: 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 40, LOSSY 0, NOT DRIVEN 1, FAIL 0; unexpected windows: 0
+Test processes left: 0; fixture folder left: False; registry restored identical: True; process exit codes: 0,0,0

@@ -1,0 +1,25 @@
+﻿Program    : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Folder     : C:\Users\pavel\AppData\Local\Temp\tc088_viewers
+--- P1: Code
+       opened 0x9106DA class='CodeView - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\a_text.cpp [C++] - Code Viewer'
+P1   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; windows before 4; process alive False; windows left 0; new windows 0 (+1 core wait window)
+--- P2: Markdown
+       opened 0x48B0B68 class='MDView - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\b_doc.md - Markdown Viewer (100%)'
+P2   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; windows before 4; process alive False; windows left 0; new windows 0 (+1 core wait window)
+--- N3: normal exit (WM_CLOSE) with a Code Viewer window open
+       opened 0x8B07DE class='CodeView - WinLib Universal Window2' title='C:\Users\pavel\AppData\Local\Temp\tc088_viewers\a_text.cpp [C++] - Code Viewer'
+       question 0xAE0BF4 class='#32770' title='Code Viewer'
+       text     [Static id=2477] Some Code Viewer windows are open. Do you want to close them? | [Button id=6] &Yes | [Button id=7] &No
+       follow-up 0xAF0BF4 class='#32770' title='Question'
+       text      [Static id=2477] Code Viewer plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No
+N3   PASS  question 'Code Viewer': [Static id=2477] Some Code Viewer windows are open. Do you want to close them? | [Button id=6] &Yes | [Button id=7] &No -> No; follow-up questions 1 ['Question': [Static id=2477] Code Viewer plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No] -> No; process alive True; viewer window still there True; main window there True, enabled True; other windows 0
+
+=== summary ===
+P1   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,4 s; windows before 4; process alive False; windows left 0; new windows 0 (+1 core wait window)
+P2   PASS  rm_probe exit 0; RmShutdown : 0 (ERROR_SUCCESS) after 1,3 s; windows before 4; process alive False; windows left 0; new windows 0 (+1 core wait window)
+N3   PASS  question 'Code Viewer': [Static id=2477] Some Code Viewer windows are open. Do you want to close them? | [Button id=6] &Yes | [Button id=7] &No -> No; follow-up questions 1 ['Question': [Static id=2477] Code Viewer plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No] -> No; process alive True; viewer window still there True; main window there True, enabled True; other windows 0
+Window classes: Code = 'CodeView - WinLib Universal Window2'; Markdown = 'MDView - WinLib Universal Window2'
+Test processes left running: 0
+Registry   : restored; 2738 lines vs 2738; identical=True; SHA-256 B9F961F80D09 / B9F961F80D09
+Failures: 0
+run_on_hidden_desktop: exit code 0

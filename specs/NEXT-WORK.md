@@ -275,7 +275,13 @@ Performance, tooling, cosmetics:
     identical to Debug). Was: 077 cosmetics: a version resource for `sqlite.dll`, `/guard:cf`, the dead
     pre-Vista `ZwQueryInformationProcess` path (`salamdr6.cpp`). Item 0,
     point 5.
-18. Probe artefacts on the hidden desktop: the 093 dialogs probe's Find-menu
+18. ~~Probe artefacts~~ - **done, feature 168**: 088's Code/Markdown rows pass now, its N3 counted
+    Windows 11's UAC indicator windows (ignored now); 093's Find-menu rows failed after the first
+    popup was closed by the window's start-up - the probe lets the window settle (6 / 6 runs FAIL
+    0). **Recorded by 168 (product, from reading)**: a `CMenuBar` popup closed by anything but
+    Esc / Alt / a click leaves the bar's loop running - it then swallows plain characters typed
+    into the window until Esc / Alt / a click; not seen by a person yet.
+    Was: Probe artefacts on the hidden desktop: the 093 dialogs probe's Find-menu
     rows fail in about one run of three (102); 088's `viewers_probe` fails
     its Code/Markdown Viewer rows there (item 4). **Sampled by 154** (`-Only drive`): the 151 build
     1 of 5, every build since 153 3-5 of 5 (154 excluded by bisecting; no code of 153/154 runs
