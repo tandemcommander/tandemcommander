@@ -1,0 +1,19 @@
+plugin_close_box_probe (feature 147), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 10:26; desktop 'tc_probe_30188'; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Fixture : C:\Users\pavel\AppData\Local\Temp\tc147\fc_same (two equal text files), C:\Users\pavel\AppData\Local\Temp\tc147\cs_lock\locked.bin (2 MB, the probe locks its first MB during the rows)
+Hot keys: renamer.spl id 1: 1; checksum.spl id 1: 1; checksum.spl id 2: 1; diskmap.spl id 1: 1; filecomp.spl id 1: 1
+
+--- K1: File Comparator, 'The files are identical' box open (expected: the program ends cleanly)
+K1         STATE  PASS        comparator box [#32770 'File Comparator'] [Static id=2477] The files are identical. Do you wish to close File Comparator? | [Button id=6] &Yes | [Button id=7] &No
+K1         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- K2: Checksum Calculate, its read-error box open (expected: the program ends cleanly)
+K2         STATE  PASS        read-error box [#32770 'Read error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel over [#32770 'Calculate Checksums'] [SysListView32 id=1001] List1 | [Static id=1007] Calculating: | [Button id=1002] Con&figure... | [Button id=1003] &Save... | [Button id=1004] &Stop
+K2         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- K3: installer: Checksum Calculate, its read-error box open (expected: decline)
+K3         STATE  PASS        read-error box [#32770 'Read error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Proces nem\u016F\u017Ee pracovat se souborem, nebo\u0165 jin\u00FD proces uzamkl \u010D\u00E1st tohoto souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel over [#32770 'Calculate Checksums'] [SysListView32 id=1001] List1 | [Static id=1007] Calculating: | [Button id=1002] Con&figure... | [Button id=1003] &Save... | [Button id=1004] &Stop
+K3         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+K3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 7, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

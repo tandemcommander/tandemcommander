@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Checksum and File Comparator windows close reliably** (feature 147). A
+  read error met just while a Checksum window was closing could block it for
+  good; after a declined close the File Comparator stopped taking comparisons
+  from other programs (fcremote).
+
 - **Deleting, copying or viewing in an archive through a drive letter that
   was pointed elsewhere no longer acts on the other archive** (feature 146).
   F8 deleted the members of the same names from the archive the letter led

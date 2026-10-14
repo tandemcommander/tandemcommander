@@ -507,7 +507,18 @@ INT_PTR CSFVMD5Dialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (hThread != NULL) // if we started the thread, close it and wait for it
         {
             bTerminateThread = TRUE;
-            ThreadQueue.WaitForExit(hThread, INFINITE);
+            // feature 147: the wait handles the messages other threads SEND to this one (not the posted
+            // ones): an error box the worker opens just before it sees the flag is owned by this window,
+            // and creating it sends to this thread (EnableWindow) - a plain wait deadlocked both threads.
+            // Such a box is closed at once (as Cancel; the worker then ends - the flag is set).
+            while (!ThreadQueue.WaitForExit(hThread, 0))
+            {
+                if (iThreadID != 0)
+                    SalamanderGeneral->CloseAllOwnedEnabledDialogs(HWindow, iThreadID);
+                MsgWaitForMultipleObjects(0, NULL, FALSE, 50, QS_SENDMESSAGE);
+                MSG msg;
+                PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE | PM_QS_SENDMESSAGE);
+            }
             hThread = NULL;
             iThreadID = 0;
         }
@@ -834,7 +845,7 @@ unsigned CCalculateThread::Body()
             break;
         }
         if (!SafeOpenCreateFile(path, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN,
-                                &hFile, &skip, &silent, dialog->HWindow))
+                                &hFile, &skip, &silent, dialog->HWindow, Terminate))
             break;
         if (skip)
         {
@@ -870,7 +881,7 @@ unsigned CCalculateThread::Body()
         do
         {
             char buffer[BUFSIZE];
-            if (!SafeReadFile(hFile, buffer, BUFSIZE, &nr, path, dialog->HWindow, &skippedReadError, &skipAllReadErrors))
+            if (!SafeReadFile(hFile, buffer, BUFSIZE, &nr, path, dialog->HWindow, &skippedReadError, &skipAllReadErrors, Terminate))
             {
                 nr = 0; // read error
                 if (skippedReadError)
@@ -2012,7 +2023,7 @@ unsigned CVerifyThread::Body()
         // open the file
         HANDLE hFile;
         if (!SafeOpenCreateFile(info->fileName, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN,
-                                &hFile, &skip, &silent, dialog->HWindow))
+                                &hFile, &skip, &silent, dialog->HWindow, Terminate))
         {
             dialog->SetItemTextAndIcon(i, 2, LoadStr(IDS_CANCELED));
             dialog->bCanceled = TRUE;
@@ -2033,7 +2044,7 @@ unsigned CVerifyThread::Body()
         do
         {
             char buffer[BUFSIZE];
-            if (!SafeReadFile(hFile, buffer, BUFSIZE, &nr, info->fileName, dialog->HWindow))
+            if (!SafeReadFile(hFile, buffer, BUFSIZE, &nr, info->fileName, dialog->HWindow, NULL, NULL, Terminate))
             {
                 dialog->bCanceled = TRUE;
                 *Terminate = TRUE;

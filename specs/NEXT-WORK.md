@@ -146,7 +146,9 @@ Crash-class or possible loss:
    listing's member names - B's members of those names are deleted. Fix: ask
    `ArchiveNameLeadsElsewhere` (145) before an archive operation; refuse and
    refresh. Feature 146.
-3. **Plug-in windows closing**: a worker's error box (File Comparator hex
+3. ~~**Plug-in windows closing**~~ - **done, feature 147** (measured: with a box OPEN both
+   plug-ins already close cleanly; the Checksum deadlock race and the fcremote receiver fixed by
+   reading; the comparator's hex-view stray box recorded there, no crash path). Was: a worker's error box (File Comparator hex
    view, Checksum read errors) can appear while its window closes, also on a
    normal exit; the File Comparator ends its `fcremote` receiver thread before
    a window close that may time out. Queue 104, entry 6 (118).

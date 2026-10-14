@@ -411,6 +411,11 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
             }
         }
     }
+    // feature 147: the receiver of fcremote.exe's requests was ended at the start; when the plug-in stays
+    // loaded (its windows did not close in time and the core asks "force?" or abandons an installer's
+    // close) it is started again - fcremote comparisons stopped working until the next start
+    if (!ret && !force)
+        CRemoteComparator::CreateRemoteComparator();
     _CrtCheckMemory();
     return ret;
 }

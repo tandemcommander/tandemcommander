@@ -40,7 +40,7 @@ BOOL Error(HWND hParent, int lastErr, int title, int error, ...)
 }
 
 BOOL SafeReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nBytesToRead, DWORD* pnBytesRead, char* fileName,
-                  HWND parent, BOOL* skippedReadError, BOOL* skipAllReadErrors)
+                  HWND parent, BOOL* skippedReadError, BOOL* skipAllReadErrors, const BOOL* terminate)
 {
     if (skippedReadError != NULL)
         *skippedReadError = FALSE;
@@ -51,6 +51,9 @@ BOOL SafeReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nBytesToRead, DWORD* pnBy
             *skippedReadError = TRUE;
             return FALSE;
         }
+        if (terminate != NULL && *terminate)
+            return FALSE; // feature 147: the window is closing - no box (it would be owned by a window
+                          // whose thread waits for this one), the read fails as cancelled
         int lastErr = GetLastError();
         char error[1024];
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastErr,
@@ -93,7 +96,8 @@ BOOL SafeWriteFile(HANDLE hFile, LPVOID lpBuffer, DWORD nBytesToWrite, DWORD* pn
 }
 
 BOOL SafeOpenCreateFile(LPCTSTR fileName, DWORD desiredAccess, DWORD shareMode, DWORD creationDisposition,
-                        DWORD flagsAndAttributes, HANDLE* hFile, BOOL* skip, int* silent, HWND parent)
+                        DWORD flagsAndAttributes, HANDLE* hFile, BOOL* skip, int* silent, HWND parent,
+                        const BOOL* terminate)
 {
     CALL_STACK_MESSAGE6("SafeOpenCreateFile(%s, 0x%X, 0x%X, 0x%X, 0x%X, , , )", fileName, desiredAccess,
                         shareMode, creationDisposition, flagsAndAttributes);
@@ -107,6 +111,11 @@ BOOL SafeOpenCreateFile(LPCTSTR fileName, DWORD desiredAccess, DWORD shareMode, 
                                                      flagsAndAttributes, NULL)) == INVALID_HANDLE_VALUE &&
            ((silent != NULL) ? !*silent : 1))
     {
+        if (terminate != NULL && *terminate)
+        {
+            free(wFileName); // feature 147: the window is closing - no box, the open fails as cancelled
+            return FALSE;
+        }
         int lastErr = GetLastError();
         char error[1024];
         strcpy(error, LoadStr(IDS_ERROROPENING));

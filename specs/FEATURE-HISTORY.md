@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121 |
 | PictView | 105, 111, 120 |
 | Undelete | 114, 115 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check) | 071, 078, 123 |
@@ -2329,3 +2329,14 @@ a few early ones are out of sequence).
   `delete`; cases `resubst-delete`, `resubst-f4back` (controls FAIL); whole 109 25 / 0; 108, 112
   unchanged. Left: paste of items copied before the panel left / reopened; no final path from
   the redirector = only the volume serial.
+- 147-plugin-close-boxes: **measured first: with a File Comparator or Checksum box OPEN, a normal
+  exit closes cleanly and an installer's close declines** (both defer their close while a box is
+  open - `CM_EXIT` / `WM_CLOSE` close the owned dialogs and repeat); probe K1-K3 7 / 0 before and
+  after. By reading: Checksum's `WM_DESTROY` waited `INFINITE` without handling messages while a
+  worker's `DialogError` (owner = that window, `DialogBoxParam` -> `EnableWindow` = a send to it)
+  could block - a deadlock; now the wait handles SENT messages only (`PM_QS_SENDMESSAGE`) and
+  closes a box that slipped through, and `SafeReadFile` / `SafeOpenCreateFile` show no box once the
+  worker's `Terminate` is set. File Comparator: the fcremote receiver ended at the start of
+  `Release` is started again when `Release` returns FALSE without force. 118 probe 58 / 0. Left:
+  the comparator's hex view may show a stray box during `WM_DESTROY` (no crash);
+  `CFileMapping::Destroy` keeps `FileSize`.
