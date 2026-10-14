@@ -643,6 +643,15 @@ Code work an agent can do:
      refused with "A share name is missing" (say "too long" instead).
   7. `SHGetFileInfoA` texts read as UTF-8 later: `icncache.cpp:709` (type name of folders),
      `drivelst.cpp:1115` (display name of removable drives) - suspected, measure first.
+     **Read 2026-10-15:** the panel measures and draws these texts as UTF-8 with a code-page
+     fallback (`fileswn2.cpp` ~4191, `fileswn4.cpp` ~908 / 973), so a code-page text is shown right
+     where the Windows display language is in the program's code page (this machine: Czech, 1250 -
+     not reproducible). Wrong only with a display language outside it (an English non-Unicode
+     locale with a Czech display language): `SHGetFileInfoA` gives '?' already. The same holds for
+     `UpDirTypeName` (`salamdr1.cpp` 917, `LoadStr` - code page). The drive menu's texts mix
+     `LoadStr`, `GetVolumeInformation` A (the CD thread, `drivelst.cpp` ~1150) and UTF-8 ones - one
+     change for the drive list, measured on a machine whose display language is outside its code
+     page (or with a removable / CD drive named in another script).
   8. `_TRUNCATE` sites of 127 without a tail trim (`find.cpp:858/910/1441/1708/1750`,
      `dialogs3.cpp:1312`, `icncache.cpp:1239/1286`, `mainwnd4.cpp:259`): fine for the shipped
      languages, short for Russian / Ukrainian if they are enabled; `salamdr2.cpp` cuts a
