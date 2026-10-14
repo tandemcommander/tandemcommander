@@ -9,7 +9,12 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
-## [0.1.11] — unreleased
+- **Change Case renames files with accented letters correctly** (feature 169).
+  Changing the case of a name with letters outside English (Czech, Greek,
+  Cyrillic, ...) failed with "The file name is incorrect" or renamed the file
+  to a different, garbled name ("žluťoučký kůň.txt" became
+  "żLUťOUďKý Kůň.TXT"). The panel's name format option showed such names
+  garbled too.
 
 - **Hardening of the shipped files** (feature 167): every program file built
   by the project uses Control Flow Guard, and `sqlite.dll` carries a version

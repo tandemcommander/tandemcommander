@@ -292,7 +292,10 @@ Performance, tooling, cosmetics:
 
 Large or risky, each a feature of its own:
 
-19. B-4 `AlterFileName` / *Change Case* (renames on disk; the highest risk of
+19. ~~B-4 `AlterFileName` / *Change Case*~~ - **done, feature 169** (before: Change Case renamed
+    "žluťoučký kůň.txt" to "żLUťOUďKý Kůň.TXT"; now whole UTF-8 letters, the length kept;
+    found by its review: `zip.cpp` ~4041 `lstrcpyn(nameBuf, fileOrDirName, MAX_PATH)` can cut a
+    name inside a character). Was: B-4 `AlterFileName` / *Change Case* (renames on disk; the highest risk of
     the 068 review); F-P1-05, the archive listing display encoding (must move
     as a whole, 069 §0b); B-3 the undocumented UTF-8 `GetErrorText` (a naive
     sweep regresses FTP); B-5 the frozen plug-in-facing ANSI services (needs

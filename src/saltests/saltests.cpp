@@ -57,6 +57,7 @@
 #include "salfindignore.h"   // feature 163
 #include "salzipdelete.h"    // feature 164
 #include "salzipcount.h"     // feature 165
+#include "salaltername.h"    // feature 169
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11574,6 +11575,280 @@ static void TestZipCount165()
     CHECK(!SalZipCountCentralRecords(NULL, 5, &c));
 }
 
+// feature 169: the letter case of a UTF-8 name (src/common/salaltername.h) - the old
+// AlterFileName (salamdr2.cpp before 169) ported with ASCII tables, for the equivalence on ASCII
+static char Low169(char c) { return (c >= 'A' && c <= 'Z') ? (char)(c - 'A' + 'a') : c; }
+static char Up169(char c) { return (c >= 'a' && c <= 'z') ? (char)(c - 'a' + 'A') : c; }
+static void OldAlter169(char* tgtName, char* filename, int format, int change, BOOL dir)
+{
+    if (format == 6)
+        format = dir ? 3 : 2;
+    if (format == 7 && change != 0)
+        format = (change == 1) ? 1 : 2;
+    char* ext = NULL;
+    if (change != 0 && format != 5 && format != 7)
+    {
+        char* s = filename;
+        while (*s != 0)
+            if (*s++ == '.')
+                ext = s;
+        if (change == 1)
+        {
+            if (ext != NULL)
+                *(ext - 1) = 0;
+        }
+        else
+        {
+            if (ext == NULL || *ext == 0)
+            {
+                strcpy(tgtName, filename);
+                return;
+            }
+            memmove(tgtName, filename, ext - filename);
+            tgtName += ext - filename;
+            filename = ext;
+        }
+    }
+    switch (format)
+    {
+    case 5:
+    {
+        char* s = filename;
+        int c = 8;
+        while (c-- && *s != 0 && *s == Up169(*s) && *s != '.')
+            s++;
+        if (*s == '.')
+            s++;
+        else if (*s != 0)
+        {
+            strcpy(tgtName, filename);
+            break;
+        }
+        c = 3;
+        while (c-- && *s != 0 && *s != '.' && *s == Up169(*s))
+            s++;
+        if (*s != 0)
+        {
+            strcpy(tgtName, filename);
+            break;
+        }
+        BOOL capital = TRUE;
+        char *tgt = tgtName, *name = filename;
+        while (*name != 0)
+        {
+            if (!capital)
+            {
+                *tgt++ = Low169(*name);
+                if (*name++ == ' ')
+                    capital = TRUE;
+            }
+            else
+            {
+                *tgt++ = Up169(*name);
+                if (*name++ != ' ')
+                    capital = FALSE;
+            }
+        }
+        *tgt = 0;
+        break;
+    }
+    case 1:
+    {
+        BOOL capital = TRUE;
+        char *tgt = tgtName, *name = filename;
+        while (*name != 0)
+        {
+            if (!capital)
+            {
+                *tgt++ = Low169(*name);
+                if (*name == ' ' || *name == '.')
+                    capital = TRUE;
+            }
+            else
+            {
+                *tgt++ = Up169(*name);
+                if (*name != ' ' || *name == '.')
+                    capital = FALSE;
+            }
+            name++;
+        }
+        *tgt = 0;
+        break;
+    }
+    case 2:
+    {
+        char *tgt = tgtName, *name = filename;
+        while (*name != 0)
+            *tgt++ = Low169(*name++);
+        *tgt = 0;
+        break;
+    }
+    case 3:
+    {
+        char *tgt = tgtName, *name = filename;
+        while (*name != 0)
+            *tgt++ = Up169(*name++);
+        *tgt = 0;
+        break;
+    }
+    case 7:
+    {
+        char* s = filename;
+        while (*s != 0)
+            if (*s++ == '.')
+                ext = s;
+        if (ext == NULL)
+            ext = s;
+        BOOL capital = TRUE;
+        char *tgt = tgtName, *name = filename;
+        while (name < ext)
+        {
+            if (!capital)
+            {
+                *tgt++ = Low169(*name);
+                if (*name++ == ' ')
+                    capital = TRUE;
+            }
+            else
+            {
+                *tgt++ = Up169(*name);
+                if (*name++ != ' ')
+                    capital = FALSE;
+            }
+        }
+        while (*name != 0)
+            *tgt++ = Low169(*name++);
+        *tgt = 0;
+        break;
+    }
+    default:
+        strcpy(tgtName, filename);
+        break;
+    }
+    if (change == 1 && format != 5 && format != 7)
+    {
+        if (ext != NULL)
+        {
+            *--ext = '.';
+            strcpy(tgtName + (ext - filename), ext);
+        }
+    }
+}
+static std::string Alter169(const char* name, int format, int change = 0, BOOL dir = FALSE)
+{
+    char src[600], tgt[600];
+    strcpy(src, name);
+    memset(tgt, 'Z', sizeof(tgt));
+    SalAlterFileNameU8(tgt, src, -1, format, change, dir);
+    return std::string(tgt);
+}
+static void TestAlterName169()
+{
+    // ASCII: the same bytes as the old algorithm, every format and mode, random names
+    const char alphabet[] = "aAbBzZ09 .-_~!";
+    unsigned seed = 169;
+    int compared = 0, differ = 0;
+    for (int run = 0; run < 4000; run++)
+    {
+        char name[24];
+        seed = seed * 1103515245u + 12345u;
+        int len = 1 + (int)((seed >> 8) % 20);
+        for (int i = 0; i < len; i++)
+        {
+            seed = seed * 1103515245u + 12345u;
+            name[i] = alphabet[(seed >> 8) % (sizeof(alphabet) - 1)];
+        }
+        name[len] = 0;
+        for (int format = 1; format <= 7; format++)
+            for (int change = 0; change <= 2; change++)
+                for (int dir = 0; dir <= 1; dir++)
+                {
+                    char a[64], b[64], n1[24], n2[24];
+                    strcpy(n1, name);
+                    strcpy(n2, name);
+                    OldAlter169(a, n1, format, change, dir);
+                    SalAlterFileNameU8(b, n2, -1, format, change, dir);
+                    compared++;
+                    if (strcmp(a, b) != 0 || strcmp(n1, name) != 0 || strcmp(n2, name) != 0)
+                        differ++;
+                }
+    }
+    CHECK(differ == 0);
+    printf("TestAlterName169: %d ASCII cases against the old algorithm, %d differ\n", compared, differ);
+
+    // UTF-8: whole letters (the probe's names)
+    CHECK(Alter169("\xC5\xA0\xC3\x81RKA.TXT", 2) == "\xC5\xA1\xC3\xA1rka.txt");                       // S-caron A-acute -> lower
+    CHECK(Alter169("\xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD k\xC5\xAF\xC5\x88.txt", 3) ==
+          "\xC5\xBDLU\xC5\xA4OU\xC4\x8CK\xC3\x9D K\xC5\xAE\xC5\x87.TXT");                              // zlutoucky kun -> upper
+    CHECK(Alter169("\xCE\xB5\xCE\xBB\xCE\xBB\xCE\xB7\xCE\xBD\xCE\xB9\xCE\xBA\xCE\xB1.txt", 3) ==
+          "\xCE\x95\xCE\x9B\xCE\x9B\xCE\x97\xCE\x9D\xCE\x99\xCE\x9A\xCE\x91.TXT");                      // Greek -> upper
+    CHECK(Alter169("\xD0\xBF\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82 \xD0\xBC\xD0\xB8\xD1\x80.txt", 1) ==
+          "\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82 \xD0\x9C\xD0\xB8\xD1\x80.Txt");             // Cyrillic, words capitalized
+    CHECK(Alter169("\xC4\x8C" "ERN\xC3\x81 KO\xC4\x8C" "KA.TXT", 7) == "\xC4\x8C" "ern\xC3\xA1 Ko\xC4\x8D" "ka.txt"); // name mixed, ext lower
+    CHECK(Alter169("\xC5\xA0\xC3\x81RKA.TXT", 2, 1) == "\xC5\xA1\xC3\xA1rka.TXT");                     // only the name
+    CHECK(Alter169("\xC5\xA1rka.\xC4\x8D" "ap", 3, 2) == "\xC5\xA1rka.\xC4\x8C" "AP");                   // only the extension
+    // the length is kept: a letter whose pair has another UTF-8 length stays
+    CHECK(Alter169("\xC4\xB0stanbul", 2) == "\xC4\xB0stanbul");     // U+0130 (lower: i, 1 byte)
+    CHECK(Alter169("\xC4\xB1zmir", 3) == "\xC4\xB1ZMIR");             // U+0131 (upper: I, 1 byte)
+    CHECK(Alter169("stra\xC3\x9F" "e", 3) == "STRA\xC3\x9F" "E");     // sharp s has no 2-byte capital
+    // bytes that are no letter are copied: an emoji, an invalid byte, a WTF-8 lone surrogate
+    CHECK(Alter169("a\xF0\x9F\x98\x80" "b.TXT", 2) == "a\xF0\x9F\x98\x80" "b.txt");
+    CHECK(Alter169("A\xFF" "B", 2) == "a\xFF" "b");
+    CHECK(Alter169("A\xED\xA0\x80" "B", 2) == "a\xED\xA0\x80" "b");
+    CHECK(Alter169("A\xC3", 2) == "a\xC3"); // a cut sequence at the end
+    // the explorer style: an 8.3 capital ASCII name only
+    CHECK(Alter169("README.TXT", 5) == "Readme.txt");
+    CHECK(Alter169("\xC4\x8C" "TI.TXT", 5) == "\xC4\x8C" "TI.TXT"); // not ASCII: not a DOS name, unchanged
+    // the length guard really works: Windows maps U+023A (2 bytes) to U+2C65 (3 bytes) - kept
+    {
+        WCHAR in[1] = {0x023A}, out[4] = {0};
+        int n = LCMapStringEx(LOCALE_NAME_INVARIANT, LCMAP_LOWERCASE, in, 1, out, 4, NULL, NULL, 0);
+        CHECK(n == 1 && out[0] == 0x2C65);
+        CHECK(Alter169("\xC8\xBA" "B", 2) == "\xC8\xBA" "b");
+    }
+    // the cost the panel pays with a name format other than "as is" (RefreshListBox maps every
+    // item): 100,000 names of 20 CJK letters and 100,000 of 20 Czech letters
+    {
+        std::string cjk, cz;
+        for (int i = 0; i < 20; i++)
+        {
+            cjk += "\xE4\xB8\xAD";
+            cz += "\xC5\xA1";
+        }
+        cjk += ".txt";
+        cz += ".txt";
+        LARGE_INTEGER f, t0, t1, t2;
+        QueryPerformanceFrequency(&f);
+        QueryPerformanceCounter(&t0);
+        char tgt[256], src[256];
+        for (int i = 0; i < 100000; i++)
+        {
+            strcpy(src, cjk.c_str());
+            SalAlterFileNameU8(tgt, src, -1, 1, 0, FALSE);
+        }
+        QueryPerformanceCounter(&t1);
+        for (int i = 0; i < 100000; i++)
+        {
+            strcpy(src, cz.c_str());
+            SalAlterFileNameU8(tgt, src, -1, 1, 0, FALSE);
+        }
+        QueryPerformanceCounter(&t2);
+        double msCjk = 1000.0 * (t1.QuadPart - t0.QuadPart) / f.QuadPart;
+        double msCz = 1000.0 * (t2.QuadPart - t1.QuadPart) / f.QuadPart;
+        printf("TestAlterName169: 100,000 names of 20 CJK letters %.0f ms, of 20 Czech letters %.0f ms\n", msCjk, msCz);
+    }
+    // the result never outgrows the source
+    {
+        const char* names[] = {"\xC4\xB0\xC4\xB1\xC3\x9F\xC5\xBF", "\xC8\xBA\xC8\xBE", "\xE1\xBA\x9E"};
+        bool same = true;
+        for (const char* n : names)
+            for (int f = 1; f <= 7; f++)
+                if (Alter169(n, f).size() != strlen(n))
+                    same = false;
+        CHECK(same);
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -11662,6 +11937,7 @@ int main(int argc, char** argv)
     TestFindIgnore163();
     TestZipDelete164();
     TestZipCount165();
+    TestAlterName169();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

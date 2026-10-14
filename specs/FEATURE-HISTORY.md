@@ -2483,3 +2483,11 @@ a few early ones are out of sequence).
   closed by the Find window's start-up (the probe now lets it settle: 6 / 6 clean). **Trap:** a
   posted Esc to any window of the thread ends `CMenuBar`'s loop (`PeekMessage(NULL)`) - a
   hypothesis that the loop survives was wrong; log the popup's thread (0 = already gone).
+- 169-change-case-utf8: **Change Case renames accented names correctly** (B-4, 068 F-P5-13).
+  `AlterFileName` folded UTF-8 bytes with the code page's tables: Change Case renamed
+  "žluťoučký kůň.txt" to "żLUťOUďKý Kůň.TXT" (a valid, different name), "ελληνικα" to
+  "ελληνΥΪα", failed with error 123 for others; the panel's name format option showed the same.
+  `salaltername.h`: whole characters via `LCMapStringEx` (invariant), only same-length mappings -
+  the name keeps its byte length (callers' buffers). saltests: 168,000 ASCII cases equal to the old
+  algorithm. **Trap:** `fix_probe_lib`'s `Find-Ctl` finds edits and combo boxes only - a probe
+  that sets radio buttons through it sets nothing (look the button up; `BM_CLICK`).
