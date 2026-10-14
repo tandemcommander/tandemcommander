@@ -216,6 +216,13 @@ def widen(section: Section, classes: ControlClasses | None = None) -> list[Widen
             cap = CLOSED_DROPDOWN_CY if other.numbers[0] in dropdown else None
             if ox > x and _overlaps_vertically(row, other, cap):
                 limit = min(limit, ox - 2)
+            # Feature 166: nor past the frame of a group box it sits in - a row whose
+            # rectangle holds the control's whole height and its left edge (a group box,
+            # often IDC_STATIC, so found by geometry rather than by id). The label used
+            # to grow across the frame up to the dialog's edge.
+            gx, gy, gcx, gcy = other.numbers[1:5]
+            if gx < x < gx + gcx and gy < y and y + cy <= gy + gcy:
+                limit = min(limit, gx + gcx - MARGIN)
 
         new_cx = min(needed, limit - x)
         if new_cx > cx:

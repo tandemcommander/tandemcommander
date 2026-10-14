@@ -73,22 +73,27 @@
     },
     "slovak": {
       "IDS_MENU_VIEW": "&Zobraziť",
-      "IDS_MENU_VIEW_FOLLOWSYS": "Použiť motív s&ystému"
+      "IDS_MENU_VIEW_FOLLOWSYS": "Použiť motív s&ystému",
+      "#&Keep the rendering engine ready for instant viewing": "Udržiavať vy&kresľovací modul pripravený na okamžité zobrazenie"
     },
     "german": {
-      "IDS_MENU_VIEW_FOLLOWSYS": "S&ystemdesign folgen"
+      "IDS_MENU_VIEW_FOLLOWSYS": "S&ystemdesign folgen",
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Markdown-Dateien öffnen sich dann nach der ersten Anzeige sofort; dafür bleibt bis zum Sitzungsende etwas Speicher belegt."
     },
     "french": {
       "IDS_MENU_VIEW": "Afficha&ge",
-      "IDS_MENU_VIEW_FOLLOWSYS": "Suivre le thème du s&ystème"
+      "IDS_MENU_VIEW_FOLLOWSYS": "Suivre le thème du s&ystème",
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Les fichiers Markdown s’ouvrent ensuite instantanément ; un peu de mémoire reste occupée jusqu’à la fin de la session."
     },
     "dutch": {
       "IDS_MENU_VIEW": "Beel&d",
-      "IDS_MENU_VIEW_FOLLOWSYS": "S&ysteemthema volgen"
+      "IDS_MENU_VIEW_FOLLOWSYS": "S&ysteemthema volgen",
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Markdown-bestanden openen dan na de eerste weergave direct; tot het einde van de sessie blijft wat geheugen bezet."
     },
     "hungarian": {
       "IDS_MENU_VIEW": "&Nézet",
-      "IDS_MENU_VIEW_FOLLOWSYS": "Rendszertéma k&övetése"
+      "IDS_MENU_VIEW_FOLLOWSYS": "Rendszertéma k&övetése",
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "A Markdown-fájlok ezután az első megnyitás után azonnal megjelennek; a munkamenet végéig kevés memória foglalt marad."
     },
     "romanian": {
       "IDS_MENU_VIEW": "&Vizualizare",
@@ -96,7 +101,8 @@
     },
     "spanish": {
       "IDS_MENU_VIEW": "&Ver",
-      "IDS_MENU_VIEW_FOLLOWSYS": "Seguir el tema del s&istema"
+      "IDS_MENU_VIEW_FOLLOWSYS": "Seguir el tema del s&istema",
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Los archivos Markdown se abren al instante tras la primera vista; hasta el final de la sesión queda ocupada algo de memoria."
     }
   },
   "codeview": {
@@ -203,7 +209,8 @@
       "#Solarized Dark": "Solarized Dark",
       "#Catppuccin Mocha": "Catppuccin Mocha",
       "#Gruvbox Dark": "Gruvbox Dark",
-      "#Nord": "Nord"
+      "#Nord": "Nord",
+      "#&Keep the rendering engine ready for instant viewing": "Udržiavať vy&kresľovací modul pripravený na okamžité zobrazenie"
     },
     "spanish": {
       "IDS_PLUGINNAME": "Code Viewer",

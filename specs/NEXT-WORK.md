@@ -259,7 +259,14 @@ Performance, tooling, cosmetics:
     108, entry 2 (113). Left of this item: the 092 comparator reads both names to their ends
     (2x–16x the byte fold in the sorted name lists; a contract change).
     Item 5, *The comparator's cost*.
-16. Translation tooling: `translate.merge --module zip` would re-lay out 510
+16. ~~Translation drift~~ - **measured, feature 166**: the drift is 063's glyph allowance the
+    committed files predate (about 20 lines per language for ZIP, not 510); the Markdown Viewer's
+    configuration dialog was English in every language (translated); `widen` no longer crosses a
+    group box frame. **New, found by 166: 711 clipped labels** in the 8 shipped translations
+    (cs 72, de 99, fr 163, nl 83, hu 46, ro 76, sk 84, es 88; English 0) -
+    `specs/166-translation-layout/probe/layout_check.py --list` names each; the merge cannot fix
+    them (no free space) - shorter texts or wider dialogs per language, checked with pictures
+    (`probe/cfgshot_probe.ps1`). Left of the item: the bundle re-key below. Was: Translation tooling: `translate.merge --module zip` would re-lay out 510
     controls of the committed ZIP translations (drift since build 185; 106);
     the merge tool keys string tables by bundle ordinal, so removing a bundle
     needs a re-key first (079, 084).

@@ -11,6 +11,9 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **The Markdown Viewer's settings are translated** (feature 166). Its
+  configuration dialog was in English in every language.
+
 - **ZIP archives with 65,535 files or more record their number correctly**
   (feature 165). Packing 70,000 files wrote "4,464" as the archive's count
   of files, and adding to or deleting from such an archive counted wrongly

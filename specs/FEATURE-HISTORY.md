@@ -2464,3 +2464,11 @@ a few early ones are out of sequence).
   self-extracting archive keeps 16-bit counts (its stub reads the end record where zip64 records
   would go); the data was intact all along - Python's zipfile walks by size, so a count check
   must read the end records themselves (`probe/zipcount.py`).
+- 166-translation-layout: **the translation drift measured; the Markdown Viewer's configuration
+  translated** (item 16). The ZIP drift is 063's check box allowance (about 20 lines per
+  language). The Markdown dialog 310 (088) was English in all 8 languages - translated, the notes
+  that needed three lines in two pinned. `widen` no longer grows past a group box frame.
+  **Measured: 711 clipped labels** in the shipped translations (English 0) -
+  `probe/layout_check.py`; the merge cannot fix them (no free space). **Traps:** `--dry-run`
+  writes nothing - measure drift with a real merge and `git checkout`; the program's dialog font
+  is `MS Shell Dlg` (not `2`); a probe must not run while the maintainer's own instance runs.
