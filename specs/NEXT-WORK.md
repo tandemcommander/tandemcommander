@@ -624,7 +624,12 @@ Code work an agent can do:
        - Undelete: `dialogs.cpp:836-864` wraps the core's `GetCommonFSOperSourceDescr`.
        - Rows of 131 not driven in the program: listed in
          `specs/131-plugin-defect-batch/fix-log.md`, section 5.
-  3. The shortcut's own path (128): `Execute` (`fileswn2.cpp`) appends the name with a limit of
+  3. ~~The shortcut's own path (128)~~ - **done, feature 181** (Enter and Focus Shortcut Target in a
+     folder of 321 bytes / 301 characters). Left (found by its review): `FocusShortcutTarget`'s
+     `errBuf[MAX_PATH + 300]` + `sprintf` of a name of up to 780 bytes - a stack overrun (feature
+     182); a junction / symlink in a folder of 260+ bytes is not recognised there (the
+     `strlen < MAX_PATH` guard before `GetReparsePointDestination`); `GetSHObjectName(..., MAX_PATH)`
+     cuts and widens through the code page (server links - Network plug-in only). Was: `Execute` (`fileswn2.cpp`) appends the name with a limit of
      `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";
      `FocusShortcutTarget` (`fileswn0.cpp`) falls back to a `CP_ACP` conversion that cuts a
      path of 260+ units.

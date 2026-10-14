@@ -139,7 +139,9 @@ void CFilesWindow::Execute(int index)
             if (StrICmp(file->Ext, "lnk") == 0) // is it not a directory shortcut?
             {
                 strcpy(fullName, GetPath());
-                if (!SalPathAppend(fullName, fileName, MAX_PATH))
+                // feature 181: the whole UTF-8 path (MAX_PATH bytes refused a shortcut in a folder
+                // of 130 Czech letters as "too long")
+                if (!SalPathAppend(fullName, fileName, SAL_MAX_PATH_UTF8))
                 {
                     SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORCHANGINGDIR),
                                   MB_OK | MB_ICONEXCLAMATION);
@@ -147,14 +149,17 @@ void CFilesWindow::Execute(int index)
                     EndStopRefresh();
                     return;
                 }
-                OLECHAR oleName[MAX_PATH];
                 // feature 069 (F-P1-25): the value is UTF-8 - try the strict conversion first
                 // and keep the code-page widening as the fallback (the shape shellib.cpp:1600
                 // already uses); widening a UTF-8 name through the code page hands the shell a
-                // name it cannot resolve.
-                if (SalU8ToW(fullName, -1, oleName, MAX_PATH) == 0)
-                    MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, fullName, -1, oleName, MAX_PATH);
-                oleName[MAX_PATH - 1] = 0;
+                // name it cannot resolve. Feature 181: on the heap, the whole name (a path of
+                // MAX_PATH characters or more in the \\?\ form the shell link can open)
+                struct COleName
+                {
+                    WCHAR* P;
+                    ~COleName() { free(P); }
+                } oleNameBuf = {SalShellLinkLoadNameAlloc(fullName)}; // salshelllink.h
+                const OLECHAR* oleName = oleNameBuf.P != NULL ? oleNameBuf.P : L"";
 
                 HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
                 // feature 128 (GitHub #8): the WIDE interface. IShellLink (the A interface) gave the

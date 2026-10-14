@@ -1,0 +1,17 @@
+lnk_probe (feature 181), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 00:58; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+LNK-SHORT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LNK-SHORT  TARGET PASS        folder 45 bytes; panel before Enter '...ers\pavel\AppData\Local\Temp\tc181\short', after '...rs\pavel\AppData\Local\Temp\tc181\target'; windows: no window
+LNK-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LNK-LONG   TARGET PASS        folder 321 bytes; panel before Enter '...\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B', after '...rs\pavel\AppData\Local\Temp\tc181\target'; windows: no window
+LNK-VERYLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LNK-VERYLONG TARGET PASS        folder 301 bytes; panel before Enter '...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', after '...rs\pavel\AppData\Local\Temp\tc181\target'; windows: no window
+FOCUS-LONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FOCUS-LONG TARGET PASS        folder 322 bytes; panel before Enter '...\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B\u010D\u0159\u017E\u0161\u011B', after '...rs\pavel\AppData\Local\Temp\tc181\target'; windows: no window
+FOCUS-VERYLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FOCUS-VERYLONG TARGET PASS        folder 302 bytes; panel before Enter '...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', after '...rs\pavel\AppData\Local\Temp\tc181\target'; windows: no window
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

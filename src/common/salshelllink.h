@@ -29,6 +29,7 @@
 
 #include <shlobj.h>
 #include "salunicode.h"
+#include "salpath.h"
 
 // Returns NOERROR when 'path' holds the target path; S_FALSE when the shortcut
 // has no path (a target that is not a file system object, e.g. a server - the
@@ -59,4 +60,31 @@ inline HRESULT SalShellLinkGetPathU8(IShellLinkW* link, char* path, int pathSize
     }
     free(pathW);
     return res;
+}
+
+// Feature 181: the name IPersistFile::Load is given for the shortcut file 'u8path' (a path of the
+// core): the whole path as UTF-16, in the \\?\ form when it has MAX_PATH characters or more (Load
+// opens the file through CreateFileW). A path that is not valid UTF-8 (unexpected) is widened through
+// the code page, as before. The callers had it in OLECHAR[MAX_PATH]: a shortcut in a folder of
+// MAX_PATH characters or more was "not a valid shortcut". malloc'ed (free it); NULL on low memory.
+inline WCHAR* SalShellLinkLoadNameAlloc(const char* u8path)
+{
+    if (u8path == NULL)
+        return NULL;
+    WCHAR* w = SalU8ToWAlloc(u8path);
+    if (w != NULL)
+    {
+        if (wcslen(w) < MAX_PATH)
+            return w;
+        free(w);
+        return SalPathToWExtAlloc(u8path); // NULL: longer than any path Windows knows
+    }
+    int n = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, u8path, -1, NULL, 0);
+    w = n > 0 ? (WCHAR*)malloc(n * sizeof(WCHAR)) : NULL;
+    if (w != NULL && MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, u8path, -1, w, n) == 0)
+    {
+        free(w);
+        w = NULL;
+    }
+    return w;
 }

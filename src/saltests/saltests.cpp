@@ -11850,6 +11850,33 @@ static void TestAlterName169()
     }
 }
 
+// feature 181: the name a shortcut is loaded by (salshelllink.h) - whole, \\?\ from MAX_PATH
+// characters on, a code-page name widened as before
+static void TestShellLinkLoadName181()
+{
+    WCHAR* w = SalShellLinkLoadNameAlloc("C:\\a\\go.lnk");
+    CHECK(w != NULL && wcscmp(w, L"C:\\a\\go.lnk") == 0);
+    free(w);
+    // 130 Czech letters: 260 bytes of UTF-8, fewer than MAX_PATH characters - plain, whole
+    std::string cz = "C:\\";
+    for (int i = 0; i < 130; i++)
+        cz += "\xC4\x8D"; // c-caron
+    cz += "\\go.lnk";
+    w = SalShellLinkLoadNameAlloc(cz.c_str());
+    CHECK(w != NULL && wcslen(w) == 3 + 130 + 7 && wcsncmp(w, L"\\\\?\\", 4) != 0 && w[3] == 0x10D);
+    free(w);
+    // more than MAX_PATH characters: the \\?\ form, whole
+    std::string lat = "C:\\" + std::string(300, 'x') + "\\go.lnk";
+    w = SalShellLinkLoadNameAlloc(lat.c_str());
+    CHECK(w != NULL && wcsncmp(w, L"\\\\?\\C:\\", 7) == 0 && wcslen(w) == 4 + lat.size());
+    free(w);
+    // not UTF-8 (a code-page byte): widened, not refused
+    w = SalShellLinkLoadNameAlloc("C:\\\xE8.lnk");
+    CHECK(w != NULL && wcslen(w) == 8);
+    free(w);
+    CHECK(SalShellLinkLoadNameAlloc(NULL) == NULL);
+}
+
 // feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
 // formatted - before, FormatMessage without arguments failed (87) and the program showed "System
 // error N, text description is not available."; the inserts become "..." and no '%' is left
@@ -11969,6 +11996,7 @@ int main(int argc, char** argv)
     TestZipCount165();
     TestAlterName169();
     TestFormatMessageInserts180();
+    TestShellLinkLoadName181();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

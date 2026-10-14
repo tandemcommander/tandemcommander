@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Shortcuts in deep folders open** (feature 181). A shortcut in a folder with
+  a long path (for example many accented letters) was refused as "too long" or
+  "not a valid shortcut".
+
 - **Error messages show the Windows text for more errors** (feature 180). Some
   errors (for example a file that is not a valid program) were reported as
   "System error 193, text description is not available." instead of their

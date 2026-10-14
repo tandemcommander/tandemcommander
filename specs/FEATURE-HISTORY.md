@@ -2550,3 +2550,6 @@ a few early ones are out of sequence).
   becomes "..." (`src/common/salfmtinserts.h`: FROM_SYSTEM | ARGUMENT_ARRAY; not IGNORE_INSERTS,
   which leaves a '%'); before: "System error 193, text description is not available.". Use the header
   for any new FormatMessage of a system error.
+- 181-shortcut-long-folder: a `.lnk` in a folder of more than MAX_PATH bytes / characters opens
+  (Enter, Focus Shortcut Target) - `SalShellLinkLoadNameAlloc` (`salshelllink.h`): the Load name on
+  the heap, `\\?\` from MAX_PATH characters on.
