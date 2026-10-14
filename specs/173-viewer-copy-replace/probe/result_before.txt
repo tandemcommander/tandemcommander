@@ -1,0 +1,18 @@
+copy_replace_probe (feature 173), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre169\tandemcommander.exe
+Date    : 2026-10-14 23:17; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+PLAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLAIN      KEPT   FAIL        creation time 2001-02-03 04:05:06 (was 2001-02-03 04:05:06); attributes Archive
+PLAIN      TARGET PASS        target now: the new content; temporary files:  (named in a message: 0); windows: [#32770 'Viewer'] [Static id=2477] File "C:\Users\pavel\AppData\Local\Temp\tc173\dst-PLAIN\t.txt" already exists. Do you want to replace it? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel
+HELD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+HELD       TARGET PASS        target now: the new content; temporary files:  (named in a message: 0); windows: [#32770 'Viewer'] [Static id=2477] File "C:\Users\pavel\AppData\Local\Temp\tc173\dst-HELD\t.txt" already exists. Do you want to replace it? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel
+LOCKED     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LOCKED     TARGET PASS        target now: the old content; temporary files:  (named in a message: 0); windows: [#32770 'Viewer'] [Static id=2477] File "C:\Users\pavel\AppData\Local\Temp\tc173\dst-LOCKED\t.txt" already exists. Do you want to replace it? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel || [#32770 'Error'] [Static id=2477] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=1] OK
+RO         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RO         TARGET PASS        target now: the old content; temporary files:  (named in a message: 0); the save dialog stayed open; windows: [#32770 'Copy To File'] [Button id=0] OK
+SELF       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SELF       TARGET PASS        target now: the new content; temporary files:  (named in a message: 0); windows: [#32770 'Viewer'] [Static id=2477] File "C:\Users\pavel\AppData\Local\Temp\tc173\src-SELF\a.dat" already exists. Do you want to replace it? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 10, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

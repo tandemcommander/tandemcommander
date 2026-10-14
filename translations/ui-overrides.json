@@ -301,6 +301,7 @@
       "IDS_UPDATE_ERR_START": "Novú verziu sa nepodarilo skontrolovať: kontrolu sa nepodarilo spustiť. Skúste to znova."
     },
     "german": {
+      "IDS_VIEWERCOPYKEPTTEMP": "Die Datei „%s“ wurde entfernt, aber der neue Inhalt konnte nicht an ihre Stelle gesetzt werden.\\nFehler: %s\\n\\nDer neue Inhalt befindet sich in der Datei „%s“. Benennen Sie diese Datei um, um sie wiederherzustellen.",
       "#Command Shell": "Eingabeaufforderung",
       "IDT_CMDSHELL_INTRO": "Der Befehl „Eingabeaufforderung“ (Num /, Strg+/, die Schaltfläche in der Symbolleiste) öffnet dieses Programm im Verzeichnis des aktiven Panels:",
       "IDS_CMDSHELL_PRESETNOTFOUND": "Das ausgewählte Programm wurde auf diesem Computer nicht gefunden. Wählen Sie ein anderes aus, oder wählen Sie „Benutzerdefiniertes Programm“ und geben Sie seinen Pfad ein.",
@@ -342,6 +343,7 @@
       "IDS_PACKINTOITSELF": "Ein Archiv kann nicht in sich selbst gepackt werden. Lassen Sie das Archiv (oder das Verzeichnis, in dem es sich befindet) bei der Auswahl weg."
     },
     "french": {
+      "IDS_VIEWERCOPYKEPTTEMP": "Le fichier « %s » a été supprimé, mais le nouveau contenu n'a pas pu être mis à sa place.\\nErreur : %s\\n\\nLe nouveau contenu se trouve dans le fichier « %s ». Renommez ce fichier pour le restaurer.",
       "#Command Shell": "Interpréteur de commandes",
       "IDT_CMDSHELL_INTRO": "La commande « Interpréteur de commandes » (Num /, Ctrl+/, le bouton de la barre d'outils) ouvre ce programme dans le répertoire du panneau actif :",
       "IDS_CMDSHELL_PRESETNOTFOUND": "Le programme sélectionné est introuvable sur cet ordinateur. Choisissez-en un autre, ou sélectionnez « Programme personnalisé » et saisissez son chemin.",
@@ -439,6 +441,7 @@
       "#Check for New Version": "Verificare versiune nouă"
     },
     "spanish": {
+      "IDS_VIEWERCOPYKEPTTEMP": "El archivo «%s» se ha eliminado, pero no se ha podido colocar el nuevo contenido en su lugar.\\nError: %s\\n\\nEl nuevo contenido está en el archivo «%s». Cambie el nombre de ese archivo para restaurarlo.",
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
       "IDS_CMDSHELL_PRESETNOTFOUND": "El programa seleccionado no se ha encontrado en este equipo. Elija otro, o seleccione «Programa personalizado» e introduzca su ruta.",
       "IDS_CMDSHELL_PROGRAMREQUIRED": "Introduzca el programa que se ejecutará como shell de comandos.",

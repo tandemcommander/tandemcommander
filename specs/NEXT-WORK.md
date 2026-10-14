@@ -171,13 +171,16 @@ Crash-class or possible loss:
    appends `plugins\` + `DLLName` without a bound - an install folder near 259 bytes overflows; the
    folder is not UTF-8. Small.
 
-5c. **The viewer's Copy to File overwrites by deleting first** (found by 172's review, older;
+5c. ~~**The viewer's Copy to File overwrites by deleting first**~~ - **done, feature 173**
+   (`SalReplaceWithTempW`; the loss itself not producible on Windows 11 NTFS - POSIX delete -
+   measured instead: the replaced file lost its Hidden attribute; a person step on a FAT stick or
+   a network share with the target held open by another program). Was (found by 172's review, older;
    reached by every name since 172 - before, any name with a letter outside ASCII failed earlier):
    `viewer3.cpp` CM_COPYTOFILE writes a temporary file, then `SalDeleteFile` of the user's file and
    `SalMoveFile` of the temporary one - a failed move (antivirus, an indexer, ACL) leaves the
    original gone and the new content in an unnamed `sal*.tmp`; delete-then-move also drops ACLs,
-   hard links, streams. Fix: `SalReplaceWithTempW` (rule 105) and report a kept temporary file by
-   its name.
+   attributes, streams (hard-link sharing is lost by `ReplaceFileW` too). Fix: `SalReplaceWithTempW`
+   (rule 105) and report a kept temporary file by its name.
 5d. **A failed configuration export deletes the user's existing file** (found by 172's review,
    older): the user confirms overwriting `backup.reg`; `CopyBranch` fails (`IDS_EXPORTCFG_REGERR`)
    and `mainwnd3.cpp` CM_EXPORTCONFIG deletes the untouched old file; a write failure already
@@ -191,6 +194,16 @@ Crash-class or possible loss:
    Western code page) is exported and re-imported as '?'. Measure (a value with such letters,
    export, read the file, import with `-C`), then a UTF-16 export ("Windows Registry Editor
    Version 5.00") and the import side to match.
+5f. **Files > Convert replaces by delete-then-move** (found by 173's review, older, reachable):
+   `worker.cpp` ~7779 `ClearReadOnlyAttr` + `SalDeleteFile(name)` + `SalMoveFile(tmp, name)`, no
+   flush - a failed move leaves the original deleted (a Retry/Skip/Cancel box names the kept
+   temporary file, so the content survives); the original's ACL and attributes are lost. Fix:
+   rule 105 (`SalReplaceWithTempW`, flushed temporary file).
+5g. **Quick Rename onto an existing file deletes the target first** (found by 173's review,
+   older, reachable after the overwrite question): `fileswn5.cpp` ~2433
+   `SalDeleteFile(tgt) || SalMoveFile(src, tgt)` - a failed move leaves the target deleted (the
+   user had agreed to give it up; the source keeps its name). `MoveFileExW(REPLACE_EXISTING)` does
+   it in one step. Low.
 
 Functional, no loss:
 

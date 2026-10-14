@@ -12,7 +12,8 @@
 #include "shellib.h"
 #include "mainwnd.h"
 #include "codetbl.h"
-#include "salheapstr.h" // feature 172
+#include "salheapstr.h"     // feature 172
+#include "salsafereplace.h" // feature 173
 
 BOOL ViewerActive(HWND hwnd)
 {
@@ -1763,33 +1764,61 @@ CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                                     }
                                     off += len;
                                 }
-                                HANDLES(CloseHandle(file));
-                                if (fatalErr || off != end)
+                                BOOL complete = !fatalErr && off == end;
+                                // feature 173: the complete new content on disk before it replaces
+                                // anything - a failed flush or close (a delayed write error on a
+                                // network or removable drive) is a write error (rule 105)
+                                if (complete && attr != 0xFFFFFFFF && !FlushFileBuffers(file))
+                                {
+                                    DWORD err = GetLastError();
+                                    SetCursor(oldCur);
+                                    SalMessageBox(HWindow, GetErrorText(err),
+                                                  LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                                    complete = FALSE;
+                                }
+                                if (!HANDLES(CloseHandle(file)) && complete && attr != 0xFFFFFFFF)
+                                {
+                                    DWORD err = GetLastError();
+                                    SetCursor(oldCur);
+                                    SalMessageBox(HWindow, GetErrorText(err),
+                                                  LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                                    complete = FALSE;
+                                }
+                                if (!complete)
                                     SalDeleteFile(tmpFile); // delete it if an error occurs
                                 else
                                 {
                                     if (attr != 0xFFFFFFFF) // overwrite: tmp -> fileName
                                     {
-                                        BOOL setAttr = ClearReadOnlyAttr(fileName, attr); // for the case of a read-only file
-                                        if (SalDeleteFile(fileName))
+                                        // feature 173: the complete temporary file takes the target's place
+                                        // in one step (rule 105) - it deleted the target and then moved the
+                                        // temporary file in: a failed move left the target gone and the new
+                                        // content in an unnamed temporary file
+                                        WCHAR* wTarget = SalPathToWExtAlloc(fileName);
+                                        WCHAR* wTemp = SalPathToWExtAlloc(tmpFile);
+                                        DWORD err = ERROR_NOT_ENOUGH_MEMORY;
+                                        CSalReplaceResult rr = srrFailedKept;
+                                        if (wTarget != NULL && wTemp != NULL) // the user agreed to replace it, also a read-only one
+                                            rr = SalReplaceWithTempW(wTarget, wTemp, TRUE, TRUE, &err);
+                                        free(wTarget);
+                                        free(wTemp);
+                                        if (rr != srrDone)
                                         {
-                                            if (!SalMoveFile(tmpFile, fileName))
+                                            SetCursor(oldCur);
+                                            if (rr == srrLeftAtTemp) // the target is gone: the temporary file holds the only copy
                                             {
-                                                DWORD err = GetLastError();
-                                                SetCursor(oldCur);
+                                                CSalHeapString text;
+                                                text.Printf(LoadStrU8(IDS_VIEWERCOPYKEPTTEMP), fileName, GetErrorText(err), tmpFile);
+                                                SalMessageBox(HWindow, text.Size() > 0 ? text.Get() : tmpFile,
+                                                              LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                                            }
+                                            else
+                                            {
+                                                if (rr == srrFailedKept)
+                                                    SalDeleteFile(tmpFile); // the target is as it was; the temporary file is useless
                                                 SalMessageBox(HWindow, GetErrorText(err),
                                                               LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                                             }
-                                        }
-                                        else
-                                        {
-                                            DWORD err = GetLastError();
-                                            if (setAttr)
-                                                SalSetFileAttributes(fileName, attr); // restore the original attributes
-                                            SalDeleteFile(tmpFile);                   // the file cannot be overwritten; delete the temp file (it's useless)
-                                            SetCursor(oldCur);
-                                            SalMessageBox(HWindow, GetErrorText(err),
-                                                          LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
                                         }
                                     }
                                 }

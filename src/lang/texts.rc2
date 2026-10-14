@@ -1292,6 +1292,7 @@ STRINGTABLE
  IDS_CANNOTCOPYDIRTOITSELF, "Cannot copy a directory to itself."
  IDS_CANNOTMOVEDIRINTOITSELF, "Cannot move a directory into itself or into one of its subdirectories."
  IDS_PACKINTOITSELF, "Cannot pack an archive into itself. Leave the archive (or the directory that contains it) out of the selection."
+ IDS_VIEWERCOPYKEPTTEMP, "The file ""%s"" was removed, but the new content could not be put in its place.\nError: %s\n\nThe new content is in the file ""%s"". Rename that file to restore it."
 
  IDS_CREDENTIALCONFLICT, "Multiple connections to a server or shared resource by the same user, using more than one user name, are not allowed. Disconnect all previous connections to the server or shared resource and try again."
 

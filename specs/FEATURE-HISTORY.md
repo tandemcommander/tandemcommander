@@ -2514,3 +2514,10 @@ a few early ones are out of sequence).
   a longer name is refused. Left (NEXT-WORK 5c-5e): the viewer's overwrite deletes before it
   moves, a failed export deletes the old file, the export writes '?' for letters outside the code
   page (reglib reads with A functions).
+- 173-viewer-copy-replace: **the viewer's Copy to File replaces in one step** (`SalReplaceWithTempW`,
+  rule 105; string 12164 names a temporary file that kept the only copy). **Trap for probes:** on
+  Windows 11 NTFS a delete with another `FILE_SHARE_DELETE` handle open is POSIX-immediate - the
+  classic "delete pending, the move fails" needs FAT or SMB; measure what delete-then-move loses
+  instead (attributes; the creation time survives by NTFS name tunnelling). **Translations:**
+  `translate.merge` now also re-lays out ~20 controls per language (166's `widen`) - commit only the
+  new entry unless the layout is the subject.

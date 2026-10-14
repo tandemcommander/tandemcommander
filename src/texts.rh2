@@ -1576,6 +1576,8 @@
 #define IDS_CANNOTCOPYDIRTOITSELF    12161 // feature 155
 #define IDS_CANNOTMOVEDIRINTOITSELF  12162 // feature 155
 #define IDS_PACKINTOITSELF           12163 // feature 155
+// the viewer's Copy to File: the old file is gone and the new content stayed in the temporary file: target name, error text, temporary file name (feature 173)
+#define IDS_VIEWERCOPYKEPTTEMP       12164 // feature 173
 
 // error during reconnecting network drive: see ERROR_SESSION_CREDENTIAL_CONFLICT (used text is from XP/Vista system error description, previous versions of Windows have too short description)
 #define IDS_CREDENTIALCONFLICT       12165

@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **The viewer's Copy to File replaces a file safely** (feature 173). Copying
+  onto an existing file deleted it first and then moved the new content in; if
+  that move failed, the original was gone. The new content now takes the
+  file's place in one step, and the file keeps its attributes.
+
 - **Saving and opening files with accented names from the viewer** (feature
   172). The viewer's *Copy to File* refused every name with an accented letter
   ("The file name is incorrect") and suggested a garbled name; its *Open File*
