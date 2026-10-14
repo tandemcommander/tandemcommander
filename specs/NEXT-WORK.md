@@ -204,9 +204,12 @@ Functional, no loss:
 10. ~~Clearer refusal texts~~ - **done, feature 155** (folder copy / move into itself, the pack
     into itself with "leave it out of the selection", the Renamer's own texts; an empty folder
     copied onto itself is refused now - a decision recorded in its fix-log).
-10a. **FTP information line: "bajt? v 3 vybran?ch souborech"** (found by 156's review): the "size
-    in bytes" branch of `plugins/ftp/fs4.cpp` takes `ExpandPluralBytesFilesDirs` through the plug-in
-    API in the code page (`zip.cpp`) while the core draws the line as UTF-8. Fix in the plug-in.
+10a. ~~FTP information line: "bajt? v 3 vybran?ch souborech"~~ - **done, feature 157** (the API
+    returns UTF-8; owed to a person: one look with an FTP server).
+10b. **Portables information line at the device level** (found by 157's review): "vybrané
+    zařízení" / "Žádná zařízení" are loaded in the code page (`wpdfsdevicelevel.cpp`,
+    `IDS_SELECTEDDEVICEFMT` through `SalamanderGeneral->LoadStr`, `IDS_NODEVICEINFOLINE` through
+    `::LoadString`) and drawn as UTF-8.
 11. A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).

@@ -2409,3 +2409,7 @@ a few early ones are out of sequence).
   (`LoadStrU8` templates - the mixed string was shown through the code page: "Kop?rovat 5 soubor?
   z archivu do" garbled in the template). **Rule:** a text built by `ExpandPlural*` takes the
   encoding of its sink. Probe 10/0 (Czech UI), before 8/2; the drag image is a person step.
+- 157-ftp-infoline-plural: **the plug-in API `ExpandPluralBytesFilesDirs` returns UTF-8** (contract
+  in `specs/157-*/contracts/`; interface 107 unchanged): the FTP client's information line read
+  "bajt? v 3 vybran?ch souborech" (a code-page template around UTF-8 numbers, drawn as UTF-8).
+  By reading (the information line exposes no text); a person step.

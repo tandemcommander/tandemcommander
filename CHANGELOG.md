@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **FTP: the information line about selected files reads correctly**
+  (feature 157). With a size-in-bytes column it showed "bajt? v 3 vybran?ch
+  souborech" in Czech (and the same in other languages with accents).
+
 - **Texts about several selected files read correctly in every language**
   (feature 156). Dragging several files showed "vybran? 2 soubory" (a
   question mark for each accented letter); the Copy from archive, Delete from

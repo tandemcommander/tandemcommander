@@ -2644,6 +2644,9 @@ public:
     // CPluginDataInterfaceAbstract::GetInfoLineContent); vysledny text se vraci v bufferu
     // 'buffer' o velikosti 'bufferSize' bytu; vraci delku vysledneho textu
     // mozne volat z libovolneho threadu
+    // Tandem Commander, feature 157: the text is UTF-8 (it was a code-page template around UTF-8
+    // numbers, i.e. neither) - the information line takes UTF-8; show it elsewhere with a wide API
+    // or a core service that takes UTF-8.
     virtual int WINAPI ExpandPluralBytesFilesDirs(char* buffer, int bufferSize,
                                                   const CQuadWord& selectedBytes, int files, int dirs,
                                                   BOOL useSubTexts) = 0;

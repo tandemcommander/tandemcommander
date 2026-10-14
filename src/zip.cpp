@@ -3977,7 +3977,10 @@ int CSalamanderGeneral::ExpandPluralBytesFilesDirs(char* buffer, int bufferSize,
 {
     CALL_STACK_MESSAGE6("CSalamanderGeneral::FreeSalamanderMaskGroup(, %d, %g, %d, %d, %d)",
                         bufferSize, selectedBytes.GetDouble(), files, dirs, useSubTexts);
-    return ::ExpandPluralBytesFilesDirs(buffer, bufferSize, selectedBytes, files, dirs, useSubTexts);
+    // feature 157: UTF-8 (the template too) - the text is meant for the information line, which the
+    // core draws as UTF-8, and NumberToStr gives its digits with a UTF-8 thousands separator; the
+    // code-page template made "bajt? v 3 vybran?ch souborech" in the FTP client
+    return ::ExpandPluralBytesFilesDirs(buffer, bufferSize, selectedBytes, files, dirs, useSubTexts, TRUE);
 }
 
 void CSalamanderGeneral::GetCommonFSOperSourceDescr(char* sourceDescr, int sourceDescrSize,
