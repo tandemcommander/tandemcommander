@@ -1856,6 +1856,24 @@ void SetThreadNameInVCAndTrace(const char* name)
     SetThreadNameInVC(name);
 }
 
+// feature 188: the same for the other users of SHGetFolderPath A (the Dropbox and Google Drive
+// detection): the code-page path failed the UTF-8 facade for an account name with diacritics
+BOOL SalGetFolderPathU8(int csidl, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    buf[0] = 0;
+    WCHAR pathW[MAX_PATH];
+    if (SHGetFolderPathW(NULL, csidl, NULL, 0 /* SHGFP_TYPE_CURRENT */, pathW) != S_OK)
+        return FALSE;
+    if (SalWToU8(pathW, -1, buf, bufSize) == 0)
+    {
+        buf[0] = 0;
+        return FALSE;
+    }
+    return TRUE;
+}
+
 // feature 069 (F-P1-08): the ANSI SHGetFolderPath returns %APPDATA% through the
 // code page, and this value is then handed to the strict UTF-8 facade
 // (FileExists / SalGetFileAttributes) - so on an account whose name is not

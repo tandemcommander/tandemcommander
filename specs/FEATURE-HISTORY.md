@@ -2571,3 +2571,6 @@ a few early ones are out of sequence).
   the UTF-8 path. Not driven.
 - 187-share-name-too-long: `SalGetFullName` says "too long" (`IDS_TOOLONGPATH`) for a UNC server or
   share part over MAX_PATH - it said "a share / server name is missing" and offered the share list.
+- 188-cloud-folder-detect: Dropbox and Google Drive detection read the shell folders as UTF-8
+  (`SalGetFolderPathU8`) - the code-page `SHGetFolderPath` A failed `FileExists` under an account name
+  with diacritics. Not driven.

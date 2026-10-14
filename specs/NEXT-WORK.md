@@ -507,8 +507,8 @@ Code work an agent can do:
   it could offer the sign-in the full `\\server\share` path already has.
 - **A shell calls that return paths** (128): `GetSHObjectName` (`shellib.cpp`) converts with
   `CP_ACP` into UTF-8 code (used by the server-link branch of shortcuts, reachable only with a
-  Network plug-in); `SHGetFolderPath` A in `drivelst.cpp` / `shiconov.cpp` (Dropbox and Google
-  Drive detection under a profile with non-ASCII letters); `GetOpenFileName` A in `execute.cpp`,
+  Network plug-in); ~~`SHGetFolderPath` A in `drivelst.cpp` / `shiconov.cpp` (Dropbox and Google
+  Drive detection under a profile with non-ASCII letters)~~ (done, feature 188); `GetOpenFileName` A in `execute.cpp`,
   `dialogs5.cpp`, `viewer3.cpp`. The drop-target code for shortcuts (`shellsup.cpp`,
   `shellib.cpp`) still limits a target to `MAX_PATH` bytes (refused, not cut) - it could use
   `SalShellLinkGetPathU8`.

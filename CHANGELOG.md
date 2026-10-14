@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Dropbox and Google Drive folders are recognised under any account name**
+  (feature 188). With an account name containing accented letters, the folder
+  icons of Dropbox and Google Drive were not shown.
+
 - **No crash with very long paths in several messages** (feature 183). Copying
   from an archive into a very deep folder, and a few error messages that name
   a long path, could overrun a buffer.

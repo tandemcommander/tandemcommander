@@ -112,19 +112,21 @@ BOOL GetGoogleDrivePath(char* gdPath, int gdPathMax, CSQLite3DynLoadBase** sqlit
     *pathIsFromConfig = FALSE;
 
     WCHAR widePath[MAX_PATH]; // we still cannot handle longer paths anyway
-    char mbPath[MAX_PATH];    // ANSI or UTF8 path
-    char sDbPath[MAX_PATH];
-    if (SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0 /* SHGFP_TYPE_CURRENT */, sDbPath) == S_OK)
+    char mbPath[3 * MAX_PATH]; // UTF-8 path
+    // feature 188: UTF-8 paths (the code-page one of SHGetFolderPath A failed FileExists for an
+    // account name with diacritics - Google Drive was never found there)
+    char sDbPath[3 * MAX_PATH];
+    if (SalGetFolderPathU8(CSIDL_LOCAL_APPDATA, sDbPath, sizeof(sDbPath)))
     {
         BOOL pathOK = FALSE;
         char* sDbPathEnd = sDbPath + strlen(sDbPath);
-        if (SalPathAppend(sDbPath, "Google\\Drive\\user_default\\sync_config.db", MAX_PATH) &&
+        if (SalPathAppend(sDbPath, "Google\\Drive\\user_default\\sync_config.db", sizeof(sDbPath)) &&
             FileExists(sDbPath))
             pathOK = TRUE;
         if (!pathOK)
         {
             *sDbPathEnd = 0;
-            if (SalPathAppend(sDbPath, "Google\\Drive\\sync_config.db", MAX_PATH) &&
+            if (SalPathAppend(sDbPath, "Google\\Drive\\sync_config.db", sizeof(sDbPath)) &&
                 FileExists(sDbPath))
                 pathOK = TRUE;
         }
@@ -138,11 +140,9 @@ BOOL GetGoogleDrivePath(char* gdPath, int gdPathMax, CSQLite3DynLoadBase** sqlit
                 sqlite3_stmt* pStmt;
                 char utf8Select[] = "SELECT data_value FROM data WHERE entry_key = 'local_sync_root_path';"; // UTF8 string (if any extra character is added, it must be converted ANSI->UTF-8)
 
-                // sqlite3_open_v2 requires a UTF-8 path, so convert it from ANSI to UTF-8
-                if (ConvertA2U(sDbPath, -1, widePath, _countof(widePath)) &&
-                    ConvertU2A(widePath, -1, mbPath, _countof(mbPath), FALSE, CP_UTF8))
+                // sqlite3_open_v2 requires a UTF-8 path - sDbPath is one (feature 188)
                 {
-                    int iSts = sqlite3_Dyn->open_v2(mbPath, &pDb, SQLITE_OPEN_READONLY, NULL);
+                    int iSts = sqlite3_Dyn->open_v2(sDbPath, &pDb, SQLITE_OPEN_READONLY, NULL);
                     if (!iSts)
                     {
                         iSts = sqlite3_Dyn->prepare_v2(pDb, utf8Select, -1, &pStmt, NULL);
@@ -177,7 +177,7 @@ BOOL GetGoogleDrivePath(char* gdPath, int gdPathMax, CSQLite3DynLoadBase** sqlit
                                     *pathIsFromConfig = TRUE;
                                 }
                                 else
-                                    TRACE_E("SQLite: cannot get value (or value too big or not convertible to ANSI string) from " << sDbPath);
+                                    TRACE_E("SQLite: cannot get value (or value too big or not convertible) from " << sDbPath);
                             }
                             else
                                 TRACE_E("SQLite: cannot step " << sDbPath);
@@ -204,9 +204,8 @@ BOOL GetGoogleDrivePath(char* gdPath, int gdPathMax, CSQLite3DynLoadBase** sqlit
 
     if (!ret)
     {
-        if (SHGetFolderPath(NULL, WindowsVistaAndLater ? CSIDL_PROFILE : CSIDL_MYDOCUMENTS,
-                            NULL, 0 /* SHGFP_TYPE_CURRENT */, mbPath) == S_OK &&
-            SalPathAppend(mbPath, "Google Drive", MAX_PATH) &&
+        if (SalGetFolderPathU8(WindowsVistaAndLater ? CSIDL_PROFILE : CSIDL_MYDOCUMENTS, mbPath, sizeof(mbPath)) &&
+            SalPathAppend(mbPath, "Google Drive", sizeof(mbPath)) &&
             (int)strlen(mbPath) < gdPathMax)
         {
             TRACE_I("Using default Google Drive path instead: " << mbPath);

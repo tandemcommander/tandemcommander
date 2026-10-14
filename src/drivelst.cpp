@@ -1372,26 +1372,28 @@ void InitDropboxPath()
     if (!alreadyCalled) // it makes sense to find the path only once, then we just ignore it
     {
         DropboxPath[0] = 0;
-        char sDbPath[MAX_PATH];
+        // feature 188: UTF-8 paths (the code-page one of SHGetFolderPath A failed FileExists for an
+        // account name with diacritics - Dropbox was never found there)
+        char sDbPath[3 * MAX_PATH];
         BOOL cfgAlreadyFound = FALSE;
-        if (SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0 /* SHGFP_TYPE_CURRENT */, sDbPath) == S_OK)
+        if (SalGetFolderPathU8(CSIDL_APPDATA, sDbPath, sizeof(sDbPath)))
         {
-            if (SalPathAppend(sDbPath, "Dropbox\\host.db", MAX_PATH) && FileExists(sDbPath))
+            if (SalPathAppend(sDbPath, "Dropbox\\host.db", sizeof(sDbPath)) && FileExists(sDbPath))
                 cfgAlreadyFound = TRUE;
         }
         else
             TRACE_E("Cannot get value of CSIDL_APPDATA!");
         if (cfgAlreadyFound ||
-            SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0 /* SHGFP_TYPE_CURRENT */, sDbPath) == S_OK)
+            SalGetFolderPathU8(CSIDL_LOCAL_APPDATA, sDbPath, sizeof(sDbPath)))
         {
             if (cfgAlreadyFound ||
-                SalPathAppend(sDbPath, "Dropbox\\host.db", MAX_PATH) && FileExists(sDbPath))
+                SalPathAppend(sDbPath, "Dropbox\\host.db", sizeof(sDbPath)) && FileExists(sDbPath))
             {
-                HANDLE hFile = HANDLES_Q(CreateFile(sDbPath, GENERIC_READ,
-                                                    FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-                                                    OPEN_EXISTING,
-                                                    FILE_FLAG_SEQUENTIAL_SCAN,
-                                                    NULL));
+                HANDLE hFile = SalCreateFile(sDbPath, GENERIC_READ,
+                                             FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                                             OPEN_EXISTING,
+                                             FILE_FLAG_SEQUENTIAL_SCAN,
+                                             NULL);
                 if (hFile != INVALID_HANDLE_VALUE)
                 {
                     LARGE_INTEGER size;

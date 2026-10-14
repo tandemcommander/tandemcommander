@@ -2510,6 +2510,9 @@ BOOL GetOurPathInRoamingAPPDATA(char* buf);
 // neni-li 'buf' NULL, jde o buffer o velikosti MAX_PATH, ve kterem se vraci tato cesta
 // POZOR: pouziti jen Vista+
 BOOL CreateOurPathInRoamingAPPDATA(char* buf);
+// feature 188: a shell folder (CSIDL_xxx) as a UTF-8 path; FALSE when it cannot be got or does
+// not fit 'bufSize' bytes (never cut)
+BOOL SalGetFolderPathU8(int csidl, char* buf, int bufSize);
 
 #ifndef _WIN64
 
