@@ -18,11 +18,9 @@ char* ReadTable(const char* fileName, char* table)
 { // reads the 'fileName' file, converts it using 'table'; returns an error message on failure, otherwise NULL
     CALL_STACK_MESSAGE2("ReadTable(%s,)", fileName);
     char* text = NULL;
-    HANDLE hFile = HANDLES_Q(CreateFile(fileName, GENERIC_READ,
-                                        FILE_SHARE_READ, NULL,
-                                        OPEN_EXISTING,
-                                        FILE_FLAG_SEQUENTIAL_SCAN,
-                                        NULL));
+    // feature 171: fileName is UTF-8 (the program's folder may be outside the code page), opened wide
+    HANDLE hFile = SalCreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                                 FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     if (hFile != INVALID_HANDLE_VALUE)
     {
         if (GetFileSize(hFile, NULL) == 256)
@@ -51,7 +49,8 @@ char* ReadTable(const char* fileName, char* table)
     return text;
 }
 
-// feature 127: the paths of this file come from GetModuleFileName (the A function: code page).
+// feature 127: the paths of this file came from GetModuleFileName (the A function: code page);
+// since feature 171 they are UTF-8 (SalGetModuleDirU8) - a full name in convert.cfg may still be one.
 // For a message composed with a UTF-8 template the path is given as UTF-8 too - a program
 // installed under a folder with accented letters would otherwise garble the whole message.
 // Returns 'path' itself when it already is UTF-8 (or cannot be converted). One static buffer:
@@ -80,8 +79,8 @@ void InitAux(HWND hWindow, TIndirectArray<CCodeTablesData>& Data,
     char* name;
     char table[256];
 
-    char convertCfgFileName[MAX_PATH]; // for error messages
-    strcpy(convertCfgFileName, fileName);
+    char convertCfgFileName[SAL_MODULE_PATH_U8]; // for error messages (feature 171: as large as fileName)
+    strcpy_s(convertCfgFileName, fileName);
 
     BOOL comment;
     char* text; // != NULL - means an error message
@@ -175,7 +174,7 @@ void InitAux(HWND hWindow, TIndirectArray<CCodeTablesData>& Data,
                             memcpy(name, beg, l);
                             name[l] = 0;
 
-                            int maxFileNameLen = (int)(MAX_PATH - (fileNameEnd - fileName) - 1);
+                            int maxFileNameLen = (int)(SAL_MODULE_PATH_U8 - (fileNameEnd - fileName) - 1); // the caller's buffer (feature 171)
                             int i;
                             for (i = 0; i < 256; i++)
                                 table[i] = i;
@@ -340,18 +339,22 @@ CCodeTable::CCodeTable(HWND hWindow, const char* dirName)
     strcpy(DirectoryName, dirName);
     State = ctsDefaultValues;
 
-    char fileName[MAX_PATH];
-    GetModuleFileName(HInstance, fileName, MAX_PATH);
-    char* fileNameEnd = strrchr(fileName, '\\') + 1;
-    sprintf(fileNameEnd, "convert\\%s\\", dirName);
-    fileNameEnd += strlen(fileNameEnd);
-    strcpy(fileNameEnd, "convert.cfg");
-
-    HANDLE hFile = HANDLES_Q(CreateFile(fileName, GENERIC_READ,
-                                        FILE_SHARE_READ, NULL,
-                                        OPEN_EXISTING,
-                                        FILE_FLAG_SEQUENTIAL_SCAN,
-                                        NULL));
+    // feature 171: UTF-8 and wide (an install folder outside the code page gave '?' through
+    // GetModuleFileName A - no conversion table loaded); InitAux takes a SAL_MODULE_PATH_U8 buffer
+    char fileName[SAL_MODULE_PATH_U8];
+    char* fileNameEnd = NULL;
+    HANDLE hFile = INVALID_HANDLE_VALUE;
+    if (SalGetModuleDirU8(HInstance, fileName, 3 * MAX_PATH))
+    {
+        fileNameEnd = fileName + strlen(fileName);
+        if (_snprintf_s(fileNameEnd, _countof(fileName) - (fileNameEnd - fileName) - 16, _TRUNCATE, "convert\\%s\\", dirName) >= 0)
+        {
+            fileNameEnd += strlen(fileNameEnd);
+            strcpy(fileNameEnd, "convert.cfg");
+            hFile = SalCreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                                  FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+        }
+    }
     if (hFile != INVALID_HANDLE_VALUE)
     {
         char textBuf[CODETBL_TEXTBUF_SIZE];
@@ -477,22 +480,29 @@ void CCodeTables::PreloadAllConversions()
     HANDLES(EnterCriticalSection(&PreloadCS));
     Preloaded.DestroyMembers();
 
-    char path[MAX_PATH];
-    GetModuleFileName(NULL, path, MAX_PATH);
-    lstrcpy(strrchr(path, '\\') + 1, "convert\\*.*");
-
-    WIN32_FIND_DATA find;
-    HANDLE hFind = HANDLES_Q(FindFirstFile(path, &find));
+    // feature 171: the convert folder by a UTF-8 path, listed wide (an install folder outside the
+    // code page gave '?' through GetModuleFileName A and no table was found)
+    char path[SAL_MODULE_PATH_U8];
+    WIN32_FIND_DATAW find;
+    HANDLE hFind = INVALID_HANDLE_VALUE; // no folder: nothing listed (PreloadCS is left below)
+    if (SalGetModuleDirU8(NULL, path, 3 * MAX_PATH))
+    {
+        strcat_s(path, "convert\\*.*");
+        hFind = SalFindFirstFile(path, &find);
+    }
     if (hFind != INVALID_HANDLE_VALUE)
     {
         do
         {
-            if (find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            char dirName[SAL_FIND_NAME_U8];
+            if ((find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+                SalWToU8(find.cFileName, -1, dirName, sizeof(dirName)) != 0 &&
+                strlen(dirName) < MAX_PATH) // CCodeTable::DirectoryName holds MAX_PATH
             {
-                if (find.cFileName[0] != 0 && strcmp(find.cFileName, ".") != 0 && strcmp(find.cFileName, "..") != 0)
+                if (dirName[0] != 0 && strcmp(dirName, ".") != 0 && strcmp(dirName, "..") != 0)
                 {
                     // try to open the internal convert.cfg file
-                    CCodeTable* table = new CCodeTable(NULL, find.cFileName);
+                    CCodeTable* table = new CCodeTable(NULL, dirName);
                     if (table == NULL)
                     {
                         TRACE_E(LOW_MEMORY);
@@ -512,7 +522,7 @@ void CCodeTables::PreloadAllConversions()
                         delete table; //  we are not interested in the default table -- discard it
                 }
             }
-        } while (FindNextFile(hFind, &find));
+        } while (SalFindNextFile(hFind, &find));
         HANDLES(FindClose(hFind));
     }
 }

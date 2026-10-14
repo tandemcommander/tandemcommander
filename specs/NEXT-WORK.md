@@ -300,10 +300,11 @@ Large or risky, each a feature of its own:
     as a whole, 069 §0b); B-3 the undocumented UTF-8 `GetErrorText` (a naive
     sweep regresses FTP); B-5 the frozen plug-in-facing ANSI services (needs
     an interface decision); ~~the install-path chain~~ (**start, language, plug-in loading done - feature 170**: under a folder
-    outside the code page the program did not start; **left**: toolbar SVG icons `svg.cpp`,
-    `sqlite.dll` `shiconov.cpp`, conversion tables `codetbl.cpp`, tips `dialogs6.cpp`, SalOpen
-    `salamdr4.cpp`, configuration export `mainwnd3.cpp`, bug report, `EnumInstalledModules` (an
-    interface question), the plug-ins' own lookups of their files - measure each with
+    outside the code page the program did not start; toolbar SVG icons, `sqlite.dll`, conversion
+    tables done - feature 171; **left**: configuration export's start folder `mainwnd3.cpp`, bug
+    report line, `EnumInstalledModules` (an interface question), the plug-ins' own lookups of
+    their files (12 plug-in sources with `GetModuleFileName` A); tips and SalOpen not reachable (a
+    commented-out block, `salopen.exe` not shipped) - measure each with
     `specs/170-*/probe/install_path_probe.ps1`; was: the install-path chain (`plugins2.cpp`; 151's review: the plug-in loader builds every plug-in's
     path with `GetModuleFileName` A + an unbounded `strcat` into `MAX_PATH` - `plugins1.cpp` load,
     `LoadLanguageModule`, `plugins2.cpp` `GetPluginDataFromSuffix` - and `DLLName` is code page for

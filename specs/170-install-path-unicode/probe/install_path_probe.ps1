@@ -23,7 +23,8 @@ param(
     [ValidateSet('fixed', 'before')][string]$Expect = 'fixed',
     [string]$OutFile,
     [string[]]$Only,
-    [string]$Lang = 'czech'
+    [string]$Lang = 'czech',
+    [string]$ShotDir
 )
 $ErrorActionPreference = 'Stop'
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
@@ -33,6 +34,7 @@ $others = @(Get-Process tandemcommander -ErrorAction SilentlyContinue)
 if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; exit 99 }
 
 . (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
+. (Join-Path $PSScriptRoot '..\..\124-regedt-key-text\probe\shotocr_lib.ps1')
 $Root = $TempRoot + '\tc170'
 $StartDir = $Root + '\start'
 $SrcTree = Split-Path -Parent $Exe
@@ -76,6 +78,10 @@ function Run-Case([string]$Case, [string]$Folder) {
         $id = $p.Id
         [void][Drv098f]::Send((Get-Main $id), 0, 0, 0, 20000); Start-Sleep -Milliseconds 1500
         Row $Case 'START' 'PASS' ("installed in '{0}'; title '{1}'" -f (Esc $dst), (Esc ([Drv098f]::Txt((Get-Main $id)))))
+        if ($ShotDir) {   # a picture of the main window (the toolbar icons come from toolbars\*.svg)
+            $png = Join-Path $ShotDir ($Case + '_main.png')
+            Row $Case 'PICTURE' 'INFO' ("main window captured {0}: {1}" -f [Shot124]::Capture((Get-Main $id), $png), $png)
+        }
         $r0 = Serve $id 10
         # the language: the caption of the Change Directory dialog
         $cd = Open-ByCmd $id 862 10

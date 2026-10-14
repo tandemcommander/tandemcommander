@@ -2499,3 +2499,8 @@ a few early ones are out of sequence).
   the Add plug-in dialog wide. Probe 21 / 0 (before 8 / 4; also the first start after an update:
   20 of 20 plug-ins kept). **Trap:** a copy of the build in a temporary folder shares the registry
   key - `Plugins.ver Version (x64)` = 0 forces the first-start processing for a test.
+- 171-install-path-rest: **toolbar icons, conversion tables and sqlite.dll from such a folder**
+  (after 170): `svg.cpp` (the toolbar fell back to the old bitmaps - seen in a picture),
+  `codetbl.cpp` (no conversion table), `shiconov.cpp` (`sqlite.dll` for the Google Drive folder)
+  by UTF-8 paths, wide. **Trap:** `PreloadAllConversions` enters a critical section that
+  `FreePreloadedConversions` leaves - an early return there is still paired.

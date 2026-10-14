@@ -2985,8 +2985,9 @@ void CConversionTablesDialog::Transfer(CTransferInfo& ti)
             SalListViewSetItemTextU8(HListView, index - 1, 0, winCodePageDescription);
             sprintf(buff, "%u", winCodePageIdentifier);
             ListView_SetItemText(HListView, index - 1, 1, buff);
-            sprintf(buff, "convert\\%s\\convert.cfg", dirName);
-            ListView_SetItemText(HListView, index - 1, 2, buff);
+            // feature 171: the folder name is UTF-8 (listed wide)
+            _snprintf_s(buff, _TRUNCATE, "convert\\%s\\convert.cfg", dirName);
+            SalListViewSetItemTextU8(HListView, index - 1, 2, buff);
         }
         sprintf(buff, "%u", GetACP());
         SetDlgItemText(HWindow, IDC_CT_CODEPAGE, buff);

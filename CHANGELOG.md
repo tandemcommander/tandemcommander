@@ -16,7 +16,10 @@ plugin.
   outside the system's code page (for example a per-user install for a user
   named in Cyrillic or Chinese on a Czech or English Windows), the program did
   not start at all; its plug-ins would not have loaded either. The Add
-  plug-in dialog takes such folders too.
+  plug-in dialog takes such folders too. From such a folder the toolbar now
+  shows its current icons instead of the old ones, the viewer and Convert find
+  their conversion tables, and the Google Drive folder is found for the icon
+  overlays (feature 171).
 
 - **Change Case renames files with accented letters correctly** (feature 169).
   Changing the case of a name with letters outside English (Czech, Greek,

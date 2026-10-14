@@ -49,14 +49,11 @@ TIndirectArray<CShellIconOverlayItem2> ListOfShellIconOverlays(15, 5); // list o
 //
 // *****************************************************************************
 
+// feature 171: UTF-8 (the program's folder may be outside the code page), loaded wide
 BOOL GetSQLitePath(char* path, int pathSize)
 {
-    if (!GetModuleFileName(NULL, path, pathSize))
+    if (!SalGetModuleDirU8(NULL, path, pathSize))
         return FALSE;
-    char* ptr = strrchr(path, '\\');
-    if (ptr == NULL)
-        return FALSE;
-    *ptr = 0;
     return SalPathAppend(path, "utils\\sqlite.dll", pathSize);
 }
 
@@ -83,10 +80,10 @@ struct CSQLite3DynLoad : public CSQLite3DynLoadBase
 
 CSQLite3DynLoad::CSQLite3DynLoad()
 {
-    char sqlitePath[MAX_PATH];
-    if (GetSQLitePath(sqlitePath, MAX_PATH))
+    char sqlitePath[SAL_MODULE_PATH_U8];
+    if (GetSQLitePath(sqlitePath, (int)sizeof(sqlitePath)))
     {
-        SQLite3DLL = HANDLES(LoadLibrary(sqlitePath));
+        SQLite3DLL = SalLoadLibrary(sqlitePath);
         if (SQLite3DLL != NULL)
         {
             open_v2 = (FT_sqlite3_open_v2)GetProcAddress(SQLite3DLL, "sqlite3_open_v2");

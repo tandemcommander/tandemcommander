@@ -115,7 +115,7 @@ BOOL MainFrameIsActive = FALSE;
 
 // feature 069 (F-P1-10): the install directory as UTF-8 (falls back to the code page). The
 // language and plug-in loaders use SalGetModuleDirU8 (salfileio.h, feature 170: no fallback,
-// loaded wide); the conversion-table loader still takes the code page (NEXT-WORK).
+// loaded wide), and so does the conversion-table loader (feature 171).
 DWORD GetModuleFileNameU8(HMODULE module, char* buf, DWORD bufSize)
 {
     WCHAR pathW[MAX_PATH];

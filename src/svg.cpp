@@ -53,11 +53,9 @@ DWORD GetSVGSysColor(int index)
 char* ReadSVGFile(const char* fileName)
 {
     char* buff = NULL;
-    HANDLE hFile = HANDLES_Q(CreateFile(fileName, GENERIC_READ,
-                                        FILE_SHARE_READ, NULL,
-                                        OPEN_EXISTING,
-                                        FILE_FLAG_SEQUENTIAL_SCAN,
-                                        NULL));
+    // feature 171: fileName is UTF-8 (the program's folder), opened wide - quietly (a missing dark variant is normal)
+    HANDLE hFile = SalCreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                                 FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     if (hFile != INVALID_HANDLE_VALUE)
     {
         DWORD size = GetFileSize(hFile, NULL);
@@ -104,27 +102,25 @@ static DWORD ThemeDarkAdaptSVGColor(DWORD abgr)
 // Renders icons for which we have an SVG representation
 void RenderSVGImage(NSVGrasterizer* rast, HDC hDC, int x, int y, const char* svgName, int iconSize, COLORREF bkColor, BOOL enabled)
 {
-    char svgFile[2 * MAX_PATH];
-    GetModuleFileName(NULL, svgFile, _countof(svgFile));
-    char* s = strrchr(svgFile, '\\');
+    // feature 171: the program's folder as UTF-8 and the file read wide - under an install folder
+    // outside the code page GetModuleFileName A gave '?' and every icon fell back to the old bitmaps
+    char svgFile[SAL_MODULE_PATH_U8];
+    char* s = SalGetModuleDirU8(NULL, svgFile, 3 * MAX_PATH) ? svgFile + strlen(svgFile) - 1 : NULL;
     char* svg = NULL;
     BOOL darkOverride = FALSE; // hand-tuned dark variant loaded (used verbatim)
     if (s != NULL)
     {
+        int room = (int)(_countof(svgFile) - (s + 1 - svgFile));
         // feature 029: while the Dark theme is active a hand-tuned variant in
         // toolbars\dark\ takes precedence over the automatic adaptation
         // (contract: specs/029-dark-toolbar-icons/contracts/dark-icon-override.md)
-        if (IsDarkThemeActive())
+        if (IsDarkThemeActive() && _snprintf_s(s + 1, room, _TRUNCATE, "toolbars\\dark\\%s.svg", svgName) >= 0)
         {
-            sprintf(s + 1, "toolbars\\dark\\%s.svg", svgName);
             svg = ReadSVGFile(svgFile);
             darkOverride = (svg != NULL);
         }
-        if (svg == NULL)
-        {
-            sprintf(s + 1, "toolbars\\%s.svg", svgName);
+        if (svg == NULL && _snprintf_s(s + 1, room, _TRUNCATE, "toolbars\\%s.svg", svgName) >= 0)
             svg = ReadSVGFile(svgFile);
-        }
     }
     if (svg != NULL)
     {
