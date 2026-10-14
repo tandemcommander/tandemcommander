@@ -13,12 +13,13 @@
 
 BOOL StrEndsWith(LPCTSTR txt, LPCTSTR pattern, size_t patternLen);
 
-static LPTSTR SeparateStr(LPTSTR s)
+// 'mbcs': the text is in a DBCS-capable code page (a REGEDIT4 file); FALSE for UTF-8 (feature 174)
+static LPTSTR SeparateStr(LPTSTR s, BOOL mbcs)
 {
     while (*s)
     {
 #ifndef _UNICODE
-        if (IsDBCSLeadByte(*s))
+        if (mbcs && IsDBCSLeadByte(*s))
         {
             s++;
             if (!*s)
@@ -81,6 +82,13 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
     {
         bReg5File = TRUE;
     }
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+    else if ((BYTE)line[0] == 0xEF && (BYTE)line[1] == 0xBB && (BYTE)line[2] == 0xBF &&
+             !strcmp(line + 3, "Windows Registry Editor Version 5.00"))
+    {
+        bReg5File = TRUE; // ConvertIfNeeded made UTF-8 of it, its BOM included (feature 174)
+    }
+#endif
     else if (!_tcscmp(line, _T("REGEDIT4")))
     {
         bReg5File = FALSE;
@@ -89,6 +97,11 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
     {
         return RPE_NOT_REG_FILE;
     }
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+    const BOOL mbcs = !bReg5File; // a v5 file was made UTF-8; a REGEDIT4 one is code page
+#else
+    const BOOL mbcs = TRUE;
+#endif
     while (NULL != (line = _tcstok(NULL, _T("\r\n"))))
     {
         if (!*line)
@@ -167,7 +180,7 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
             while (*s && nBrackets)
             {
 #ifndef _UNICODE
-                if (IsDBCSLeadByte(*s))
+                if (mbcs && IsDBCSLeadByte(*s))
                 {
                     s++;
                     if (!*s)
@@ -224,7 +237,7 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
 
             if (*line != '@')
             {
-                s = SeparateStr(++line);
+                s = SeparateStr(++line, mbcs);
 
                 if (!*s)
                 {
@@ -384,7 +397,13 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                 {
                     size_t srcLen = (val2 - val) / sizeof(WCHAR);
                     LPWSTR srcVal = (LPWSTR)val;
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+                    // feature 174: UTF-8 for the core (its string data are UTF-8 - SalRegSetValueExW8);
+                    // the code page made '?' of the letters outside it
+                    int len = srcLen > 0 ? SalWToU8(srcVal, (int)srcLen, NULL, 0) - 1 : 0; // without SalWToU8's own terminator
+#else
                     int len = WideCharToMultiByte(CP_ACP, 0, srcVal, (int)srcLen, NULL, 0, NULL, NULL);
+#endif
 
                     if (len > 0)
                     {
@@ -402,7 +421,20 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                         {
                             val = (LPBYTE)buf;
                         }
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+                        char* u8 = SalWToU8Alloc(srcVal, (int)srcLen);
+                        if (u8 == NULL)
+                        {
+                            if (valTmp)
+                                free(valTmp);
+                            ret = RPE_OUT_OF_MEMORY;
+                            break;
+                        }
+                        memcpy(val, u8, len);
+                        free(u8);
+#else
                         WideCharToMultiByte(CP_ACP, 0, srcVal, (int)srcLen, (LPSTR)val, len, NULL, NULL);
+#endif
                     }
                     val2 = val + max(len, 0);
                 }
@@ -421,7 +453,7 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
             else if (*s == '\"')
             { // MBCS-safe
                 LPTSTR val = ++s;
-                s = SeparateStr(s);
+                s = SeparateStr(s, mbcs);
                 if (s)
                 {
                     if (pRegistry->SetValue(hKey, line, REG_SZ, val, sizeof(TCHAR) * (DWORD)(_tcslen(val) + 1)))
@@ -464,6 +496,18 @@ DWORD ConvertIfNeeded(LPTSTR* pBuf, DWORD size)
         !wcsncmp(((LPWSTR)buf) + 1, L"Windows Registry Editor Version 5.00",
                  SizeOf(L"Windows Registry Editor Version 5.00") - 1))
     {
+#if defined(INSIDE_SALAMANDER)
+        // feature 174: UTF-8 (WTF-8) for the core, its byte order mark included (Parse knows it) -
+        // the code page made '?' of every letter outside it
+        char* bufA = SalWToU8Alloc((LPWSTR)buf, (int)(size / sizeof(WCHAR)));
+        if (!bufA)
+        {
+            return 0;
+        }
+        free(buf);
+        buf = bufA;
+        size = (DWORD)strlen(bufA);
+#else
         char* bufA;
         int sizeA = WideCharToMultiByte(CP_ACP, 0, (LPWSTR)buf, size / sizeof(WCHAR), NULL, 0, NULL, NULL);
 
@@ -476,6 +520,7 @@ DWORD ConvertIfNeeded(LPTSTR* pBuf, DWORD size)
         free(buf);
         buf = bufA;
         size = sizeA;
+#endif
     }
 #else
     if (!strncmp((char*)buf, "REGEDIT4", sizeof("REGEDIT4") - 1))

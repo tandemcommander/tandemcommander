@@ -2521,3 +2521,11 @@ a few early ones are out of sequence).
   instead (attributes; the creation time survives by NTFS name tunnelling). **Translations:**
   `translate.merge` now also re-lays out ~20 controls per language (166's `widen`) - commit only the
   new entry unless the layout is the subject.
+- 174-config-export-unicode: **the configuration export is UTF-16 v5 and never deletes a backup**:
+  reglib's system registry (core build) works through the W functions with UTF-8 names and
+  `SalRegQueryValueExW8` / `SalRegSetValueExW8` data; the dump is composed in memory and written as
+  "Windows Registry Editor Version 5.00" through a temporary file and `SalReplaceWithTempW`; a v5
+  import becomes UTF-8. Before: Cyrillic values exported as '?', a Cyrillic key name made the whole
+  export fail, a failed export deleted the existing file. **Compatibility:** REGEDIT4 files of older
+  versions are code page and keep importing (names via `SalLegacyToU8Alloc`, data via the W8
+  helper's code-page tolerance, DBCS scanning only for REGEDIT4).

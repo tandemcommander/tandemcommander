@@ -1,0 +1,34 @@
+cfg_content_probe (feature 174), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre169\tandemcommander.exe
+Date    : 2026-10-14 23:45; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+VAL-EXP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+           file: code page, header REGEDIT4, 2747 lines
+VAL-EXP-ASCII LINE   PASS        want "Ascii"="plain text"; file "Ascii"="plain text"
+VAL-EXP-CZ LINE   PASS        want "Cz"="\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148"; file "Cz"="\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148"
+VAL-EXP-CYR LINE   FAIL        want "Cyr"="\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440"; file "Cyr"="?????? ???"
+VAL-EXP-EMOJI LINE   FAIL        want "Emoji"="smile \uD83D\uDE00"; file "Emoji"="smile ??"
+           import boxes: [#32770 ''] 
+VAL-IMP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VAL-IMP-ASCII VALUE  PASS        want 'plain text'; got 'plain text'
+VAL-IMP-CZ VALUE  PASS        want '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; got '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'
+VAL-IMP-CYR VALUE  FAIL        want '\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; got '?????? ???'
+VAL-IMP-EMOJI VALUE  FAIL        want 'smile \uD83D\uDE00'; got 'smile ??'
+VAL-IMP-EXP VALUE  FAIL        want '%TEMP%\\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; got '%TEMP%\?????? ???\u0000\u011A'
+VAL-IMP-MULTI VALUE  FAIL        want '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148|\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; got '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148|?????? ???||\u011A\u011A'
+NAME-EXP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+NAME-EXP   FILE   FAIL        no file; ; [#32770 'Error'] [Static id=2477] Unable to export configuration to the file. Error reading configuration from registry. | [Button id=1] OK
+LONG-EXP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LONG-EXP   FILE   FAIL        no file; ; [#32770 'Error'] [Static id=2477] Unable to export configuration to the file. Error reading configuration from registry. | [Button id=1] OK
+KEEPOLD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+KEEPOLD    FILE   FAIL        the backup now: MISSING; other files: ; windows: [#32770 'Error'] [Static id=2477] Unable to export configuration to the file. Error writing configuration to the file. File: C:\Users\pavel\AppData\Local\Temp\tc174\keepold\backup.reg | [Button id=1] OK
+KEEPLOCK   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+KEEPLOCK   FILE   PASS        the backup now: the old content; other files: ; windows: [#32770 'Error'] [Static id=2477] Unable to export configuration to the file. Error writing configuration to the file. File: C:\Users\pavel\AppData\Local\Temp\tc174\keeplock\backup.reg | [Button id=1] OK
+LEGACY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LEGACY     VALUE  PASS        want '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; got '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; boxes: [#32770 ''] 
+REG5       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REG5       VALUE  FAIL        want '\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; got '?????? ???'; boxes: [#32770 ''] 
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+APPDATA: the folder the export created removed (it was empty)
+
+Rows: PASS 14, FAIL 10, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

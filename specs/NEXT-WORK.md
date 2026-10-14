@@ -181,12 +181,16 @@ Crash-class or possible loss:
    original gone and the new content in an unnamed `sal*.tmp`; delete-then-move also drops ACLs,
    attributes, streams (hard-link sharing is lost by `ReplaceFileW` too). Fix: `SalReplaceWithTempW`
    (rule 105) and report a kept temporary file by its name.
-5d. **A failed configuration export deletes the user's existing file** (found by 172's review,
+5d. ~~**A failed configuration export deletes the user's existing file**~~ - **done, feature 174**
+   (measured: a backup held open by another program was deleted). Was (found by 172's review,
    older): the user confirms overwriting `backup.reg`; `CopyBranch` fails (`IDS_EXPORTCFG_REGERR`)
    and `mainwnd3.cpp` CM_EXPORTCONFIG deletes the untouched old file; a write failure already
    truncated it (`Dump` opens with `CREATE_ALWAYS`). Fix: write a temporary file next to it and
    replace (105).
-5e. **The configuration export writes letters outside the code page as '?'** (found by 172,
+5e. ~~**The configuration export writes letters outside the code page as '?'**~~ - **done, feature
+   174** (measured worse: a key or value name outside the code page made the whole export fail;
+   REG_EXPAND_SZ / REG_MULTI_SZ came back with garbage; the export is UTF-16 v5 now, REGEDIT4
+   files keep importing). Was (found by 172,
    mechanism confirmed by its review): the core stores its strings as UTF-16
    (`SalRegSetValueExW8`), the export copies the key through reglib with A registry functions
    (`registry.cpp` `RegEnumValueA` / `RegQueryValueExA` / `RegEnumKeyExA`) and writes a REGEDIT4

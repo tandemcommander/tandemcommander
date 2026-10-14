@@ -5,6 +5,7 @@
 #include "precomp.h"
 #include "salaltername.h" // feature 169
 #include "salheapstr.h"   // feature 172
+#include "salsafereplace.h" // feature 174
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -2733,6 +2734,69 @@ void ShowFileError(HWND hParent, int errTextID, const char* fileName, DWORD err)
     SalMessageBox(hParent, text.Size() > 0 ? text.Get() : fileName, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
 }
 
+// feature 174: the exported file is written next to the target as a temporary file and takes its
+// place only when it is complete (rule 105) - the export wrote the target directly (CREATE_ALWAYS
+// truncated an existing backup first) and deleted it after any failure, also a backup it had not
+// touched. 'fileName' is UTF-8.
+static BOOL WriteExportedConfiguration(HWND hParent, const char* fileName, const BYTE* data, DWORD dataSize)
+{
+    WCHAR* target = SalPathToWExtAlloc(fileName);
+    if (target == NULL)
+    {
+        ShowFileError(hParent, IDS_EXPORTCFG_FILEERR, fileName, 0 /* not used */);
+        return FALSE;
+    }
+    BOOL targetExisted = GetFileAttributesW(target) != INVALID_FILE_ATTRIBUTES;
+    WCHAR* temp = NULL;
+    HANDLE h = INVALID_HANDLE_VALUE;
+    DWORD err = 0;
+    BOOL ret = FALSE;
+    if (SalCreateTempNextToW(target, L"cfg", &temp, &h, &err))
+    {
+        DWORD written = 0;
+        BOOL complete = WriteFile(h, data, dataSize, &written, NULL) && written == dataSize &&
+                        FlushFileBuffers(h);
+        if (!complete)
+            err = GetLastError();
+        if (!CloseHandle(h) && complete)
+        {
+            err = GetLastError();
+            complete = FALSE;
+        }
+        if (complete)
+        {
+            switch (SalReplaceWithTempW(target, temp, targetExisted, FALSE, &err))
+            {
+            case srrDone:
+                ret = TRUE;
+                break;
+
+            case srrLeftAtTemp: // the old file is gone, the temporary file holds the only copy
+            {
+                char* tempU8 = SalWToU8Alloc(temp);
+                CSalHeapString text;
+                text.Printf(LoadStrU8(IDS_VIEWERCOPYKEPTTEMP), fileName, GetErrorText(err), tempU8 != NULL ? tempU8 : "?");
+                SalMessageBox(hParent, text.Size() > 0 ? text.Get() : fileName, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                free(tempU8);
+                free(temp);
+                free(target);
+                return FALSE;
+            }
+
+            default: // the target is as it was (or a third party removed both)
+                break;
+            }
+        }
+        if (!ret)
+            DeleteFileW(temp);
+        free(temp);
+    }
+    if (!ret)
+        ShowFileError(hParent, IDS_EXPORTCFG_FILEERR, fileName, err);
+    free(target);
+    return ret;
+}
+
 BOOL ExportConfiguration(HWND hParent, const char* fileName, BOOL clearKeyBeforeImport)
 {
     if (SALAMANDER_ROOT_REG == NULL)
@@ -2754,10 +2818,15 @@ BOOL ExportConfiguration(HWND hParent, const char* fileName, BOOL clearKeyBefore
         if (RPE_OK == regerr)
         {
             memReg->RemoveHiddenKeysAndValues(); // cut out keys and values that should not be exported
-            if (!memReg->Dump(fileName, clearKeyBeforeImport ? keyName : NULL))
+            LPBYTE data = NULL;
+            DWORD dataSize = 0;
+            if (!memReg->DumpToBuffer(clearKeyBeforeImport ? keyName : NULL, &data, &dataSize))
                 ShowFileError(hParent, IDS_EXPORTCFG_FILEERR, fileName, 0 /* not used */);
             else
-                ret = TRUE;
+            {
+                ret = WriteExportedConfiguration(hParent, fileName, data, dataSize);
+                free(data);
+            }
         }
         else
             ShowFileError(hParent, IDS_EXPORTCFG_REGERR, fileName, 0 /* not used */);

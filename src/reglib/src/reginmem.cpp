@@ -9,6 +9,40 @@
 
 #define REG_MAX_KEY_NAME_LEN 256
 
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+// feature 174: in the core's build the dump is composed in memory as UTF-8 and DumpToBuffer turns
+// it into a UTF-16 "Windows Registry Editor Version 5.00" file (a REGEDIT4 file is code page: the
+// letters outside it became '?'); the dump functions below write into this sink
+struct CRegDumpSink
+{
+    char* Buf;
+    size_t Len;
+    size_t Cap;
+};
+
+static BOOL RegDumpWrite(HANDLE h, LPCVOID data, DWORD size, LPDWORD written, LPOVERLAPPED)
+{
+    CRegDumpSink* sink = (CRegDumpSink*)h;
+    *written = 0;
+    if (sink->Len + size + 1 > sink->Cap)
+    {
+        size_t cap = sink->Cap * 2;
+        if (cap < sink->Len + size + 1 + 65536)
+            cap = sink->Len + size + 1 + 65536;
+        char* b = (char*)realloc(sink->Buf, cap);
+        if (b == NULL)
+            return FALSE;
+        sink->Buf = b;
+        sink->Cap = cap;
+    }
+    memcpy(sink->Buf + sink->Len, data, size);
+    sink->Len += size;
+    *written = size;
+    return TRUE;
+}
+#define WriteFile RegDumpWrite
+#endif // INSIDE_SALAMANDER && !_UNICODE
+
 BOOL StrEndsWith(LPCTSTR txt, LPCTSTR pattern, size_t patternLen);
 
 namespace RegLib
@@ -116,6 +150,7 @@ namespace RegLib
 
         virtual void WINAPI Release();
         virtual BOOL WINAPI Dump(LPCTSTR fileName, LPCTSTR clearKeyName);
+        virtual BOOL WINAPI DumpToBuffer(LPCTSTR clearKeyName, LPBYTE* data, DWORD* dataSize);
 
     private:
         CRootKey RootKey;
@@ -185,9 +220,11 @@ namespace RegLib
             }
             else
             {
+#if !defined(INSIDE_SALAMANDER)
                 if (IsDBCSLeadByte(*s))
                     *d++ = *s++;
-                *d++ = *s++;
+#endif
+                *d++ = *s++; // the core's build: one byte of UTF-8 (feature 174)
             }
 #endif
             if (d - buf >= SizeOf(buf) - 2)
@@ -457,9 +494,11 @@ namespace RegLib
             }
             else
             {
+#if !defined(INSIDE_SALAMANDER)
                 if (IsDBCSLeadByte(*n))
                     *s++ = *n++;
-                *s++ = *n++;
+#endif
+                *s++ = *n++; // the core's build: one byte of UTF-8 (feature 174)
             }
 #endif
         }
@@ -538,6 +577,26 @@ namespace RegLib
                 size_t buflen = SizeOf(buf) - _tcslen(buf) - _tcslen(pValue->Name) - 3, srclen = pValue->Size;
                 LPTSTR d = buf + _tcslen(buf);
                 LPBYTE src = pValue->Value.data;
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+                // feature 174: a v5 file holds REG_EXPAND_SZ / REG_MULTI_SZ data as UTF-16 (the
+                // memory registry has them as UTF-8, terminators included)
+                struct CFreeOnExit
+                {
+                    WCHAR* P;
+                    ~CFreeOnExit() { free(P); }
+                } srcW = {NULL};
+                if ((pValue->Type == REG_EXPAND_SZ || pValue->Type == REG_MULTI_SZ) && srclen > 0)
+                {
+                    int wlen = SalU8ToW((const char*)src, (int)srclen, NULL, 0); // units + 1
+                    if (wlen <= 1 || (srcW.P = (WCHAR*)malloc(wlen * sizeof(WCHAR))) == NULL ||
+                        SalU8ToW((const char*)src, (int)srclen, srcW.P, wlen) == 0)
+                    {
+                        return FALSE;
+                    }
+                    src = (LPBYTE)srcW.P;
+                    srclen = (size_t)(wlen - 1) * sizeof(WCHAR);
+                }
+#endif
                 DWORD size2, nBytesWritten2;
                 if ((long)buflen < 0)
                     buflen = 6; // allow just one sequence on this line...
@@ -646,14 +705,89 @@ namespace RegLib
         delete this;
     }
 
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+#undef WriteFile // the real one from here on
+
+    BOOL CMemoryRegistry::DumpToBuffer(LPCTSTR clearKeyName, LPBYTE* data, DWORD* dataSize)
+    {
+        *data = NULL;
+        *dataSize = 0;
+        CRegDumpSink sink = {NULL, 0, 0};
+        HANDLE h = (HANDLE)&sink;
+        // the full key path of the deepest key: UTF-8 names of up to 765 bytes each
+        const size_t sSize = 64 * 1024;
+        struct CFreeOnExit
+        {
+            TCHAR* P;
+            ~CFreeOnExit() { free(P); }
+        } sBuf = {(TCHAR*)malloc(sSize * sizeof(TCHAR))};
+        TCHAR* s = sBuf.P;
+        if (s == NULL)
+            return FALSE;
+        DWORD n;
+        static const char hdr[] = "Windows Registry Editor Version 5.00\r\n";
+        BOOL ret = RegDumpWrite(h, hdr, (DWORD)(sizeof(hdr) - 1), &n, NULL);
+        if (clearKeyName != NULL && ret)
+        {
+            _snprintf_s(s, sSize, _TRUNCATE, "\r\n[-%s]\r\n", clearKeyName);
+            ret = RegDumpWrite(h, s, (DWORD)strlen(s), &n, NULL);
+        }
+        if (ret)
+        {
+            s[0] = '\r';
+            s[1] = '\n';
+            s[2] = '[';
+            ret = RootKey.Dump(h, s, s + 3, sSize - 3);
+        }
+        if (ret)
+        {
+            int wlen = SalU8ToW(sink.Buf, (int)sink.Len, NULL, 0);                   // units + 1 (our terminator)
+            WCHAR* w = wlen > 1 ? (WCHAR*)malloc((wlen + 1) * sizeof(WCHAR)) : NULL; // + the BOM
+            if (w != NULL && SalU8ToW(sink.Buf, (int)sink.Len, w + 1, wlen) != 0)
+            {
+                w[0] = 0xFEFF;     // the byte order mark regedit writes
+                *data = (LPBYTE)w; // BOM + the text, no terminator
+                *dataSize = (DWORD)wlen * sizeof(WCHAR);
+            }
+            else
+            {
+                free(w);
+                ret = FALSE;
+            }
+        }
+        free(sink.Buf);
+        return ret;
+    }
+
     BOOL CMemoryRegistry::Dump(LPCTSTR fileName, LPCTSTR clearKeyName)
     {
-#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
-        // feature 172: the core's build - 'fileName' is UTF-8 (the export's wide save dialog)
+        // the core writes the file itself (a temporary file, then the replace - ExportConfiguration);
+        // this stays for the interface: 'fileName' is UTF-8
+        LPBYTE data;
+        DWORD size;
+        if (!DumpToBuffer(clearKeyName, &data, &size))
+            return FALSE;
         HANDLE hFile = SalCreateFileNH(fileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, 0);
-#else
+        DWORD written = 0;
+        BOOL ret = hFile != INVALID_HANDLE_VALUE && WriteFile(hFile, data, size, &written, NULL) && written == size;
+        if (hFile != INVALID_HANDLE_VALUE)
+            CloseHandle(hFile);
+        free(data);
+        return ret;
+    }
+
+#else // INSIDE_SALAMANDER && !_UNICODE
+
+    BOOL CMemoryRegistry::DumpToBuffer(LPCTSTR /*clearKeyName*/, LPBYTE* data, DWORD* dataSize)
+    {
+        *data = NULL;
+        *dataSize = 0;
+        return FALSE;
+    }
+
+    BOOL CMemoryRegistry::Dump(LPCTSTR fileName, LPCTSTR clearKeyName)
+    {
         HANDLE hFile = CreateFile(fileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, 0);
-#endif
 
         if (INVALID_HANDLE_VALUE != hFile)
         {
@@ -686,6 +820,8 @@ namespace RegLib
         }
         return FALSE;
     }
+
+#endif // INSIDE_SALAMANDER && !_UNICODE
 
     BOOL CMemoryRegistry::ClearKey(HKEY key)
     {
@@ -756,7 +892,9 @@ namespace RegLib
         }
         while (*name)
         {
-            TCHAR keyName[REG_MAX_KEY_NAME_LEN], *s;
+            // feature 174: a key name has up to 255 characters - in UTF-8 up to 3 bytes each; the
+            // bound leaves room for the terminator (it let one byte past the buffer)
+            TCHAR keyName[3 * (REG_MAX_KEY_NAME_LEN - 1) + 1], *s;
 
             s = keyName;
             while (*name)
@@ -766,7 +904,7 @@ namespace RegLib
                     name++;
                     break;
                 }
-                if (s - keyName < SizeOf(keyName))
+                if (s - keyName < SizeOf(keyName) - 1)
                 {
                     *s++ = *name++;
                     continue;

@@ -7,17 +7,21 @@
 
 #include "regparse.h"
 
-static eRPE_ERROR CopyKey(CSalamanderRegistryExAbstract* pInReg, HKEY hInKey, CSalamanderRegistryExAbstract* pOutReg, HKEY hOutKey)
+// feature 174: the names of keys and values in one buffer of the largest size a value name can
+// have (16,383 characters; 3 bytes each in UTF-8) - with MAX_PATH a longer name ended the
+// enumeration as if there were no more, and the export left the rest out silently. The buffer is
+// shared by the whole recursion: a name is not used after the call that goes one level down.
+static const DWORD REG_COPY_NAME_SIZE = 3 * 16384 + 1;
+
+static eRPE_ERROR CopyKey(CSalamanderRegistryExAbstract* pInReg, HKEY hInKey, CSalamanderRegistryExAbstract* pOutReg, HKEY hOutKey, LPTSTR name)
 {
     eRPE_ERROR ret = RPE_OK;
-
-    TCHAR name[MAX_PATH];
 
     DWORD indKey;
     for (indKey = 0;; indKey++)
     {
         HKEY hSubInKey, hSubOutKey;
-        if (!pInReg->EnumKey(hInKey, indKey, name, SizeOf(name)))
+        if (!pInReg->EnumKey(hInKey, indKey, name, REG_COPY_NAME_SIZE))
         {
             break;
         }
@@ -30,7 +34,7 @@ static eRPE_ERROR CopyKey(CSalamanderRegistryExAbstract* pInReg, HKEY hInKey, CS
             pInReg->CloseKey(hSubInKey);
             return RPE_KEY_CREATE;
         }
-        ret = CopyKey(pInReg, hSubInKey, pOutReg, hSubOutKey);
+        ret = CopyKey(pInReg, hSubInKey, pOutReg, hSubOutKey, name);
         pInReg->CloseKey(hSubInKey);
         pOutReg->CloseKey(hSubOutKey);
         if (RPE_OK != ret)
@@ -46,7 +50,7 @@ static eRPE_ERROR CopyKey(CSalamanderRegistryExAbstract* pInReg, HKEY hInKey, CS
         BYTE data[256];
         LPBYTE dataPtr = data;
 
-        if (!pInReg->EnumValue(hInKey, indVal, name, SizeOf(name), &valType, NULL, NULL))
+        if (!pInReg->EnumValue(hInKey, indVal, name, REG_COPY_NAME_SIZE, &valType, NULL, NULL))
         {
             break;
         }
@@ -148,7 +152,9 @@ eRPE_ERROR CopyBranch(LPCTSTR branch, CSalamanderRegistryExAbstract* pInReg, CSa
 
     if (pOutReg->CreateKey(hParentKey, branch, hOutKey))
     {
-        ret = CopyKey(pInReg, hInKey, pOutReg, hOutKey);
+        LPTSTR name = (LPTSTR)malloc(REG_COPY_NAME_SIZE * sizeof(TCHAR));
+        ret = name != NULL ? CopyKey(pInReg, hInKey, pOutReg, hOutKey, name) : RPE_OUT_OF_MEMORY;
+        free(name);
         pOutReg->CloseKey(hOutKey);
     }
     else

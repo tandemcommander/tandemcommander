@@ -51,6 +51,10 @@ public: // Methods added by Jan Patera
     virtual void WINAPI Release() = 0;
     // 'fileName' is UTF-8 in the code-page build (feature 172)
     virtual BOOL WINAPI Dump(LPCTSTR fileName, LPCTSTR clearKeyName) = 0;
+    // feature 174 (the core's build): the dump as the bytes of a UTF-16 "Windows Registry Editor
+    // Version 5.00" file, its byte order mark included; '*data' is malloc'ed (free it). The system
+    // registry and other builds return FALSE.
+    virtual BOOL WINAPI DumpToBuffer(LPCTSTR clearKeyName, LPBYTE* data, DWORD* dataSize) = 0;
 };
 
 #ifdef UNICODE

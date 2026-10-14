@@ -3309,14 +3309,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             {
                 if (SalGetFullName(file, NULL, NULL, NULL, NULL, sizeof(file)))
                 {
-                    // perform the export
+                    // perform the export; a failure leaves the file as it was (feature 174: it was
+                    // deleted - also an older backup the export had not touched)
                     if (ExportConfiguration(HWindow, file, clearKeyBeforeImport))
                     {
                         SalMessageBox(HWindow, LoadStr(IDS_CONFIGEXPORTED), LoadStr(IDS_INFOTITLE),
                                       MB_OK | MB_ICONINFORMATION);
                     }
-                    else
-                        SalDeleteFile(file);
                 }
             }
             return 0;

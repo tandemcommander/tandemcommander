@@ -1,0 +1,46 @@
+cfg_content_probe (feature 174), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 23:44; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; ACP 1250
+
+VAL-EXP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+           file: UTF-16, header Windows Registry Editor Version 5.00, 2749 lines
+VAL-EXP-ASCII LINE   PASS        want "Ascii"="plain text"; file "Ascii"="plain text"
+VAL-EXP-CZ LINE   PASS        want "Cz"="\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148"; file "Cz"="\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148"
+VAL-EXP-CYR LINE   PASS        want "Cyr"="\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440"; file "Cyr"="\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440"
+VAL-EXP-EMOJI LINE   PASS        want "Emoji"="smile \uD83D\uDE00"; file "Emoji"="smile \uD83D\uDE00"
+           import boxes: [#32770 ''] 
+VAL-IMP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VAL-IMP-ASCII VALUE  PASS        want 'plain text'; got 'plain text'
+VAL-IMP-CZ VALUE  PASS        want '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; got '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'
+VAL-IMP-CYR VALUE  PASS        want '\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; got '\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'
+VAL-IMP-EMOJI VALUE  PASS        want 'smile \uD83D\uDE00'; got 'smile \uD83D\uDE00'
+VAL-IMP-EXP VALUE  PASS        want '%TEMP%\\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; got '%TEMP%\\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'
+VAL-IMP-MULTI VALUE  PASS        want '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148|\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; got '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148|\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'
+NAME-EXP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+           file: UTF-16, header Windows Registry Editor Version 5.00, 2744 lines
+NAME-EXP-VNAME LINE   PASS        want "\u0418\u043C\u044F"="y"; file "\u0418\u043C\u044F"="y"
+NAME-EXP-KEY LINE   PASS        file [HKEY_CURRENT_USER\Software\Tandem Commander\0.1\Probe174\\u041A\u043B\u044E\u0447]
+           import boxes: [#32770 ''] 
+NAME-IMP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+NAME-IMP-VNAME VALUE  PASS        the Cyrillic value name: 'y'; names read back: \u0418\u043C\u044F,<subkey>v
+NAME-IMP-KEY VALUE  PASS        the Cyrillic subkey's v: 'x'
+LONG-EXP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+           file: UTF-16, header Windows Registry Editor Version 5.00, 2744 lines
+LONG-EXP-VNAME LINE   PASS        a value name of 601 characters; the file's line has 601
+LONG-EXP-KEY LINE   PASS        a key name of 200 characters: in the file
+           import boxes: [#32770 ''] 
+LONG-IMP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LONG-IMP-VNAME VALUE  PASS        the long value name: 'z'
+LONG-IMP-KEY VALUE  PASS        the long key's w: 'q'
+KEEPOLD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+KEEPOLD    FILE   PASS        the backup now: new content; other files: ; windows: [#32770 'Information'] [Static id=2477] Configuration was successfully exported. | [Button id=1] OK
+KEEPLOCK   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+KEEPLOCK   FILE   PASS        the backup now: the old content; other files: ; windows: [#32770 'Error'] [Static id=2477] Unable to export configuration to the file. Error writing configuration to the file. File: C:\Users\pavel\AppData\Local\Temp\tc174\keeplock\backup.reg | [Button id=1] OK
+LEGACY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LEGACY     VALUE  PASS        want '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; got '\u017Dlu\u0165ou\u010Dk\u00FD k\u016F\u0148'; boxes: [#32770 ''] 
+REG5       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REG5       VALUE  PASS        want '\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; got '\u041F\u0440\u0438\u0432\u0435\u0442 \u043C\u0438\u0440'; boxes: [#32770 ''] 
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+APPDATA: the folder the export created removed (it was empty)
+
+Rows: PASS 32, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

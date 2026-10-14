@@ -11,6 +11,14 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **The exported configuration keeps every letter** (feature 174). Options >
+  Export Configuration wrote letters outside the system's code page (Cyrillic
+  folders, history, commands) as question marks, and a key or value with such
+  a name made the export fail. The export is now a Unicode registry file, and
+  importing it restores everything; files exported by older versions keep
+  importing. A failed export no longer deletes the file it was meant to
+  replace.
+
 - **The viewer's Copy to File replaces a file safely** (feature 173). Copying
   onto an existing file deleted it first and then moved the new content in; if
   that move failed, the original was gone. The new content now takes the

@@ -2352,10 +2352,24 @@ LONG SalRegQueryValueEx(HKEY hKey, LPCSTR lpValueName, LPDWORD lpReserved,
 LONG SalRegQueryValueExW8(HKEY hKey, LPCSTR lpValueName, LPDWORD lpType,
                           LPBYTE lpData, LPDWORD lpcbData)
 {
+    // a value name may have up to 16,383 characters: one that does not fit the stack buffer goes
+    // to the heap (feature 174 - the export of such a value failed with ERROR_INVALID_PARAMETER)
     WCHAR nameW[512];
-    if (lpValueName != NULL && SalU8ToW(lpValueName, -1, nameW, _countof(nameW)) == 0)
-        return ERROR_INVALID_PARAMETER;
-    const WCHAR* name = lpValueName == NULL ? NULL : nameW;
+    struct CFreeName
+    {
+        WCHAR* P;
+        ~CFreeName() { free(P); }
+    } nameHeap = {NULL};
+    const WCHAR* name = NULL;
+    if (lpValueName != NULL)
+    {
+        if (SalU8ToW(lpValueName, -1, nameW, _countof(nameW)) != 0)
+            name = nameW;
+        else if ((nameHeap.P = SalU8ToWAlloc(lpValueName)) != NULL)
+            name = nameHeap.P;
+        else
+            return ERROR_INVALID_PARAMETER;
+    }
 
     DWORD type = REG_NONE;
     DWORD wsize = 0;
@@ -2443,10 +2457,24 @@ LONG SalRegQueryValueExW8(HKEY hKey, LPCSTR lpValueName, LPDWORD lpType,
 LONG SalRegSetValueExW8(HKEY hKey, LPCSTR lpValueName, DWORD type,
                         CONST BYTE* lpData, DWORD cbData)
 {
+    // a value name may have up to 16,383 characters: one that does not fit the stack buffer goes
+    // to the heap (feature 174 - the export of such a value failed with ERROR_INVALID_PARAMETER)
     WCHAR nameW[512];
-    if (lpValueName != NULL && SalU8ToW(lpValueName, -1, nameW, _countof(nameW)) == 0)
-        return ERROR_INVALID_PARAMETER;
-    const WCHAR* name = lpValueName == NULL ? NULL : nameW;
+    struct CFreeName
+    {
+        WCHAR* P;
+        ~CFreeName() { free(P); }
+    } nameHeap = {NULL};
+    const WCHAR* name = NULL;
+    if (lpValueName != NULL)
+    {
+        if (SalU8ToW(lpValueName, -1, nameW, _countof(nameW)) != 0)
+            name = nameW;
+        else if ((nameHeap.P = SalU8ToWAlloc(lpValueName)) != NULL)
+            name = nameHeap.P;
+        else
+            return ERROR_INVALID_PARAMETER;
+    }
 
     if ((type == REG_SZ || type == REG_EXPAND_SZ || type == REG_MULTI_SZ) &&
         lpData != NULL && cbData > 0)
