@@ -2418,3 +2418,5 @@ a few early ones are out of sequence).
   of "(183) already exists" - only when `SalFileIdMatch` proves two files (`provenOther`, also for
   the 8.3-name clean-up); 092's case-only exclusion stays otherwise. A decision recorded. Probe
   10/0, before 7/3.
+- 159-portables-infoline: **the Portables information line at the device level as UTF-8**
+  (`SplLoadStrU8`; it was code page - "vybran? za?izen?"). By reading; a person step.

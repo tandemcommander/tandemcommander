@@ -18,6 +18,7 @@
 #include "wpddeviceicons.h"
 #include "device.h"
 #include "lang/lang.rh"
+#include <splloadstru8.h> // feature 159
 
 extern CWpdDeviceIcons g_oDeviceIcons;
 extern CWpdDeviceList g_oDeviceList;
@@ -252,10 +253,12 @@ BOOL WINAPI CWpdDevicePluginDataInterface::GetInfoLineContent(
         CQuadWord selectedDirsQWord;
         selectedDirsQWord.Set(selectedDirs, 0);
         TCHAR buf[200];
+        // feature 159: UTF-8 - the core draws the information line as UTF-8 (the code-page text lost
+        // every accented letter of "selected device(s)" in Czech)
         SalamanderGeneral->ExpandPluralString(
             buf,
             _countof(buf),
-            SalamanderGeneral->LoadStr(FxGetLangInstance(), IDS_SELECTEDDEVICEFMT),
+            SplLoadStrU8(SalamanderGeneral, FxGetLangInstance(), IDS_SELECTEDDEVICEFMT),
             1,
             &selectedDirsQWord);
         StringCchPrintf(buffer, 1000, buf, selectedDirs);
@@ -282,7 +285,8 @@ BOOL WINAPI CWpdDevicePluginDataInterface::GetInfoLineContent(
     }
     else
     {
-        ::LoadString(FxGetLangInstance(), IDS_NODEVICEINFOLINE, buffer, 1000);
+        // feature 159: UTF-8 as above (::LoadString gave the code page)
+        StringCchCopy(buffer, 1000, SplLoadStrU8(SalamanderGeneral, FxGetLangInstance(), IDS_NODEVICEINFOLINE));
         return TRUE;
     }
 }

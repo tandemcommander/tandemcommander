@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Portables: the information line reads correctly in every language**
+  (feature 159) - "selected devices" and "no devices" lost their accented
+  letters.
+
 - **Case-sensitive folders: renaming onto a name that differs only in case**
   (feature 158). Where `a.txt` and `A.txt` are two files (a WSL or
   case-sensitive folder), renaming `a.txt` to `A.txt` now asks whether to
