@@ -3,6 +3,7 @@
 // CommentsTranslationProject: TRANSLATED
 
 #include "precomp.h"
+#include "salheapstr.h" // feature 178
 
 #include "menu.h"
 #include "cfgdlg.h"
@@ -4013,7 +4014,6 @@ void CSalamanderGeneral::GetCommonFSOperSourceDescr(char* sourceDescr, int sourc
     {
         BOOL nameIsDir;
         char* name;
-        char nameBuf[MAX_PATH];
         if (panel != -1)
         {
             const CFileData* f;
@@ -4035,15 +4035,23 @@ void CSalamanderGeneral::GetCommonFSOperSourceDescr(char* sourceDescr, int sourc
         }
         else
         {
-            lstrcpyn(nameBuf, fileOrDirName, MAX_PATH);
-            name = nameBuf;
+            // feature 178: the whole name (lstrcpyn into MAX_PATH cut a long UTF-8 name, also inside a
+            // letter); with change 0 AlterFileName only reads it
+            name = (char*)fileOrDirName;
             nameIsDir = isDir;
         }
         int fileNameFormat;
         GetConfigParameter(SALCFG_FILENAMEFORMAT, &fileNameFormat,
                            sizeof(fileNameFormat), NULL);
-        char formatedFileName[SAL_FIND_NAME_U8]; // UTF-8 name, the old MAX_PATH-5 limit is gone (feature 004)
-        ::AlterFileName(formatedFileName, name, -1, fileNameFormat, 0, nameIsDir);
+        // UTF-8 name of any length (feature 178: a buffer of its own size - AlterFileName keeps the
+        // length, 169); the text below is cut at a whole letter if it does not fit 'sourceDescr'
+        CSalHeapString formatedBuf;
+        const char* formatedFileName = name; // low memory: the name as it is
+        if (formatedBuf.Copy(name))
+        {
+            ::AlterFileName(formatedBuf.Get(), name, -1, fileNameFormat, 0, nameIsDir);
+            formatedFileName = formatedBuf.Get();
+        }
         // feature 134: the whole text is UTF-8. It was a code-page word around a UTF-8 name -
         // neither encoding - and every plug-in that showed it (the FTP client's Copy / Move /
         // Delete questions and its operation window, Undelete) showed one half wrong in any

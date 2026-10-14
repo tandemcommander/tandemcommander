@@ -2542,3 +2542,5 @@ a few early ones are out of sequence).
   deletes the target, then moves; a source held open without `FILE_SHARE_DELETE` fails the first
   move with 32 before that branch (probe `move_over_probe.ps1`: the target kept). Only a lock that
   appears between the delete and the move loses the target.
+- 178-fsoper-descr-long-name: `GetCommonFSOperSourceDescr` keeps a name it is given whole (it was cut
+  at `MAX_PATH`, possibly inside a letter - the FTP upload's caption); not driven (no FTP server).
