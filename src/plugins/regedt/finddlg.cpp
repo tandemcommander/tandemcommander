@@ -283,37 +283,33 @@ CFoundFilesData::CFoundFilesData(LPWSTR name, int root, LPWSTR key, DWORD type,
         {
         case REG_MULTI_SZ:
         {
-            // replace separator NULL characters with spaces
-            WCHAR* ptr = (WCHAR*)data;
-            while (ptr < (WCHAR*)data + min(size / 2, MAX_DATASIZE))
-            {
-                if (*ptr == L'\0')
-                {
-                    if (ptr + 2 >= (WCHAR*)data + size / 2)
-                    {
-                        size -= 2; // do not count the last '\0'; there are two of them
-                        break;
-                    }
-                    else
-                    {
-                        *ptr = L' ';
-                    }
-                }
-                ptr++;
-            }
+            // the strings separated by spaces; the NULs at the end are the end (feature 189)
+            size = 2 * SalMultiSzToLine((WCHAR*)data, size / 2);
             // keep going
         }
         case REG_EXPAND_SZ:
         case REG_SZ:
         {
-            DWORD truncated = min(size, MAX_DATASIZE * 2);
-            if (size)
+            // feature 189: always a terminated copy - a text stored without its terminator (or a
+            // list with one NUL, whose NUL the old loop dropped) was read past the end of the copy
+            DWORD units = min(size / 2, MAX_DATASIZE);
+            if (units > 0)
             {
-                Allocated = 1;
-                Data = (DWORD_PTR)malloc(truncated);
-                memcpy((void*)Data, data, truncated);
-                if (truncated < size)
-                    wcscpy((LPWSTR)Data + truncated / 2 - 4, L"...");
+                WCHAR* copy = (WCHAR*)malloc((units + 1) * sizeof(WCHAR));
+                if (copy != NULL)
+                {
+                    memcpy(copy, data, units * sizeof(WCHAR));
+                    copy[units] = L'\0';
+                    if (units < size / 2) // cut (units == MAX_DATASIZE): "..." after a whole character
+                    {
+                        DWORD keep = units - 4;
+                        if (keep > 0 && IS_HIGH_SURROGATE(copy[keep - 1]))
+                            keep--;
+                        wcscpy(copy + keep, L"...");
+                    }
+                    Allocated = 1;
+                    Data = (DWORD_PTR)copy;
+                }
             }
             break;
         }
@@ -1092,14 +1088,12 @@ BOOL CFindThread::Test(char* text, int len, BOOL name, DWORD type)
         {
             if (!name)
             {
-                if (type == REG_SZ || type == REG_EXPAND_SZ)
-                {
-                    len = max(0, len - 2); // trim the terminating NULL
-                }
-                else
-                {
-                    len = max(0, len - 4); // trim the terminating NULL
-                }
+                // the text without the NULs at its end, however many there are (feature 189: a
+                // fixed 2 or 4 bytes cut the last letter of a text or list stored with fewer)
+                int units = max(0, len) / 2;
+                while (units > 0 && ((LPWSTR)text)[units - 1] == L'\0')
+                    units--;
+                len = units * 2;
             }
 
             len /= 2;

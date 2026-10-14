@@ -43,6 +43,7 @@
 #include "lang\lang.rh"
 
 #include "../../common/salwideinserts.h" // feature 129
+#include "../../common/salmultisz.h"     // feature 189
 #include "utils.h"
 #include "regedt.h"
 #include "dialogs.h"

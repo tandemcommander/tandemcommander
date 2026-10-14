@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Registry Editor shows text values to their end, and only to it**
+  (feature 189). A multi-string value stored with one closing character showed
+  a trailing space; in the Find window such a value, or a text with an odd
+  length, was followed by stray characters, and a regular-expression search
+  missed its last letter.
+
 - **Dropbox and Google Drive folders are recognised under any account name**
   (feature 188). With an account name containing accented letters, the folder
   icons of Dropbox and Google Drive were not shown.

@@ -565,24 +565,9 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                         {
                         case REG_MULTI_SZ:
                         {
-                            // replace separator NULL characters with spaces
-                            WCHAR* ptr = (WCHAR*)data;
-                            while (ptr < (WCHAR*)data + min(size / 2, MAX_DATASIZE))
-                            {
-                                if (*ptr == L'\0')
-                                {
-                                    if (ptr + 2 == (WCHAR*)data + size / 2)
-                                    {
-                                        size -= 2; // ignore the last '\0'; there are two of them
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        *ptr = L' ';
-                                    }
-                                }
-                                ptr++;
-                            }
+                            // the strings separated by spaces; the NULs at the end are the end - a
+                            // list stored with one NUL showed a trailing space (feature 189)
+                            size = 2 * SalMultiSzToLine((WCHAR*)data, size / 2);
                             // continue processing
                         }
                         case REG_EXPAND_SZ:

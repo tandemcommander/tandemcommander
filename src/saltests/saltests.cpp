@@ -59,6 +59,7 @@
 #include "salzipcount.h"     // feature 165
 #include "salaltername.h"    // feature 169
 #include "salfmtinserts.h"   // feature 180
+#include "salmultisz.h"      // feature 189
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11877,6 +11878,40 @@ static void TestShellLinkLoadName181()
     CHECK(SalShellLinkLoadNameAlloc(NULL) == NULL);
 }
 
+// feature 189: a REG_MULTI_SZ list as one line (salmultisz.h) - the NULs at the end are the end
+// whatever their number (one NUL showed a trailing space), the ones inside are separators
+static void TestMultiSzToLine189()
+{
+    struct Case
+    {
+        const WCHAR* data;
+        DWORD units;
+        const WCHAR* line;
+        DWORD ret;
+    };
+    const Case cases[] = {
+        {L"alpha\0beta\0", 12, L"alpha beta", 11}, // proper: two NULs at the end
+        {L"alpha\0beta", 11, L"alpha beta", 11},   // one NUL (the second is the literal's)
+        {L"alpha\0beta", 10, L"alpha beta", 10},   // none: no terminator counted
+        {L"zeta\0\0\0", 7, L"zeta", 5},            // more NULs than two
+        {L"a\0\0b\0", 6, L"a  b", 5},              // an empty string inside stays a gap
+        {L"\0", 2, L"", 1},                        // the empty list
+        {L"", 1, L"", 1},                          // one NUL
+        {L"", 0, L"", 0},                          // no data
+    };
+    for (const Case& c : cases)
+    {
+        WCHAR buf[32];
+        memcpy(buf, c.data, c.units * sizeof(WCHAR));
+        buf[c.units] = 0xFFFF; // a sentinel: the rule does not write past 'units'
+        DWORD n = SalMultiSzToLine(buf, c.units);
+        CHECK(n == c.ret && buf[c.units] == 0xFFFF);
+        size_t len = wcslen(c.line);
+        CHECK(n >= len && wcsncmp(buf, c.line, len) == 0 && (n == len || buf[len] == 0));
+    }
+    CHECK(SalMultiSzToLine(NULL, 4) == 0);
+}
+
 // feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
 // formatted - before, FormatMessage without arguments failed (87) and the program showed "System
 // error N, text description is not available."; the inserts become "..." and no '%' is left
@@ -11997,6 +12032,7 @@ int main(int argc, char** argv)
     TestAlterName169();
     TestFormatMessageInserts180();
     TestShellLinkLoadName181();
+    TestMultiSzToLine189();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

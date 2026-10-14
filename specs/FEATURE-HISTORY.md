@@ -2574,3 +2574,8 @@ a few early ones are out of sequence).
 - 188-cloud-folder-detect: Dropbox and Google Drive detection read the shell folders as UTF-8
   (`SalGetFolderPathU8`) - the code-page `SHGetFolderPath` A failed `FileExists` under an account name
   with diacritics. Not driven.
+- 189-regedt-multisz-end: Registry Editor - a `REG_MULTI_SZ` is one line whatever the number of NULs
+  at its end (`salmultisz.h`, panel and Find); the Find window's copy of a text value is always
+  terminated (it read past it: debug-heap fence bytes in the Data cell); its regexp search trims
+  the NULs at the end, not a fixed 2 / 4 bytes. Windows adds a NUL when it reads back a text stored
+  without one. Probe `multisz_probe.ps1` 3 / 4 -> 6 / 0 (+ RX, blocked by 190).

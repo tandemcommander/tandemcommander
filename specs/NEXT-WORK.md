@@ -523,7 +523,8 @@ Code work an agent can do:
   on the variable names `params` / `log`; (4) `menu2.cpp` `AssignHotKeys` is byte-wise with
   code-page tables and can put `&` inside a UTF-8 sequence; (5) the Registry Editor's `%ls`
   messages (`fs5.cpp`, `ErrorHelper`) are consistently code page but lose letters outside it.
-- Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124).
+- ~~Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124)~~ -
+  **done, feature 189** (also the Find window read past its copy of such a value).
 - **Found by the second verification of 124-128 (2026-10-13)**, most visible first:
   1. ~~Registry Editor, `%ls` messages~~ - **done, feature 129** (also the disk cache name of
      a viewed value, which the same cause made the same for different keys). Left from it:
