@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121 |
 | Long paths, buffers | 088, 095, 097, 098, 121 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107, closing for an update (Restart Manager) | 080, 088, 118, 121 |
@@ -2287,3 +2287,16 @@ a few early ones are out of sequence).
   forced unload during a shell command still terminates the map's thread (Debug: leak reports) -
   the force semantics of every release. Probe `probe/release_guard_probe.ps1` (E0-E6, M1-M3,
   U1-U4): 34 / 0, control 27 / 7; 118 rows M1-M4, X1 11 / 0. saltests 21,794 -> 21,829. Review: File > Exit / Esc through `CloseOrDefer` (MEDIUM); the abandon drops only Release's request (`DISKMAP_CLOSE_FROM_RELEASE` in `wParam`; second round).
+- 144-archive-key-repointed-drive: **the key choice of 109 compares with the identity the other panel
+  read at ITS open.** Measured on 0.1.10: both panels on `T:rc.zip`, the SUBST letter re-pointed
+  from A to B between the opens (twins: equal size and time) - the second panel's F3 showed A's
+  member and its F4 edit was packed into B (B's member replaced, silently): `SetArchiveCacheKey109`
+  read BOTH identities through the names at the second open, and both names named B. Now
+  `CFilesWindowAncestor::ZIPArchiveIdentity` is taken from the very handle that gives the archive's
+  date and size (`SalFileIdentityFromHandle` + `SalFileIdentityVolumeTraits`, passed to
+  `SetArchiveCacheKey109(listedIdentity)`), the other panel's archive is never read by name there
+  (also no wait on a dead share); `SalArchiveCacheKeyChoice` unchanged. `ZIPArchiveCacheKeyFailed`:
+  a key that could not be built (memory) is never rebuilt from the name (it could equal the other's)
+  - uses of the key refuse until the archive is reopened. 109 probe case `resubst-both`. Results:
+  109 probe 19 / 0 / 0 (renet driven), 108 30 / 0 and 2 / 0, 112 14 / 0. **Left (review MEDIUM,
+  feature 145)**: pending F4 edits are packed back into the file the name names NOW.

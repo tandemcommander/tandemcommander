@@ -825,6 +825,14 @@ try {
         $cases += @{ N = $rs.N; Twin = $rs.Twin; Arcs = @(@{ Name = 'A\arc.zip'; Fmt = 'zip'; Tag = 1; Edits = 0 }, @{ Name = 'B\arc.zip'; Fmt = 'zip'; Tag = 2; Edits = 1 })
             Steps = $st; Views = @(@{ Tag = 1; Markers = 0 }, @{ Tag = 2; Markers = 0 }) }
     }
+    # feature 144: both panels on ONE spelling <letter>:\arc.zip, the letter re-pointed from A to B
+    # between the two opens; A\arc.zip and B\arc.zip have the same size and time (twins). The right
+    # panel opens it (A) and views x.txt; the left one opens it (now B): its F3 must give B's x.txt
+    # (tag 2), not the right panel's copy of A's, and its edit must reach B\arc.zip only
+    $cases += @{ N = 'resubst-both'; Twin = $true; Arcs = @(@{ Name = 'A\arc.zip'; Fmt = 'zip'; Tag = 1; Edits = 0 }, @{ Name = 'B\arc.zip'; Fmt = 'zip'; Tag = 2; Edits = 1 })
+        Steps = @(@{ P = 1; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' }, @{ P = 1; Op = 'f3' }, @{ P = 1; Op = 'resubst'; Arg = 'B' }, @{ P = 0; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' },
+            @{ P = 0; Op = 'f3' }, @{ P = 0; Op = 'f4' }, @{ P = 0; Op = 'leave' }, @{ P = 1; Op = 'leave' })
+        Views = @(@{ Tag = 1; Markers = 0 }, @{ Tag = 2; Markers = 0 }) }
     if ($Only) { $cases = $cases | Where-Object { $Only -contains $_.N } }
     foreach ($c in $cases) { Run-Steps $c }
 }

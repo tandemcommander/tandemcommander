@@ -42,7 +42,7 @@
 - [x] T016 Independent refute-first review of the diff (agent); fix what it finds
 - [x] T017 Full probe on the final build; keep `probe/result.txt`
 - [x] T018 Records: `fix-log.md` (results), `specs/FEATURE-HISTORY.md` entry `- 143-...`, `specs/NEXT-WORK.md` (A.1 done, 118 R7 corrected: the menu was not "milliseconds"), `CHANGELOG.md` `[0.1.11] — unreleased`, spec status
-- [ ] T019 Commit on `143-diskmap-release-guard`
+- [x] T019 Commit on `143-diskmap-release-guard`
 
 ## Dependencies
 

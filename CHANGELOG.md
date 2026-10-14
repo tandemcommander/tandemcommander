@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Archives through a re-pointed drive letter keep their own members**
+  (feature 144). With both panels on the same SUBST or network drive name of
+  an archive, the letter pointed to another folder in between and both
+  archives of the same size and time, viewing or editing a member in the
+  second panel worked on the FIRST archive's member - and the edit was packed
+  into the second archive, replacing its own member.
+
 - **Disk Map: closing the program with a map's context menu open no longer
   crashes** (feature 143). The same was true while Windows' own confirmation of
   a command chosen from that menu (Delete) was open, and when an installer

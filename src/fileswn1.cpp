@@ -42,6 +42,8 @@ CFilesWindowAncestor::CFilesWindowAncestor()
     ArchiveDir = NULL;
     ZIPArchive[0] = 0;
     ZIPPath[0] = 0;
+    SalFileIdentityClear(&ZIPArchiveIdentity); // feature 144
+    ZIPArchiveCacheKeyFailed = FALSE;
 
     PluginFS.Init(NULL, NULL, NULL, NULL, NULL, NULL, -1, 0, 0, 0);
     PluginFSDir = NULL;
@@ -358,7 +360,9 @@ void CFilesWindowAncestor::SetZIPArchive(const char* archive)
 {
     CALL_STACK_MESSAGE_NONE
     strcpy(ZIPArchive, archive);
-    ZIPArchiveCacheKey.Free(); // feature 109: the key belongs to the previous archive
+    ZIPArchiveCacheKey.Free();                 // feature 109: the key belongs to the previous archive
+    SalFileIdentityClear(&ZIPArchiveIdentity); // feature 144: so does the identity
+    ZIPArchiveCacheKeyFailed = FALSE;
 }
 
 BOOL CFilesWindowAncestor::GetArchiveCacheKey(CSalHeapString& key, size_t reserve)
@@ -366,8 +370,15 @@ BOOL CFilesWindowAncestor::GetArchiveCacheKey(CSalHeapString& key, size_t reserv
     CALL_STACK_MESSAGE_NONE
     if (ZIPArchiveCacheKey.Get() != NULL)
         return key.Copy(ZIPArchiveCacheKey.Get(), reserve);
-    // not set (SetArchiveCacheKey109 ran out of memory): the key built from the name, as every user
-    // of the key gets it the same way while the archive is open
+    if (ZIPArchiveCacheKeyFailed)
+    {
+        // feature 144: the key could not be built when the archive was opened - the one built from
+        // the name might be the other panel's, which the choice ruled out (its copies would be shared)
+        key.Free();
+        return FALSE;
+    }
+    // not set and no failure recorded (SetArchiveCacheKey109 has not run for this name): the key built
+    // from the name, as every user of the key gets it the same way while the archive is open
     char* k = SalNameIdentityKeyAlloc(ZIPArchive, -1, reserve);
     if (k == NULL)
     {

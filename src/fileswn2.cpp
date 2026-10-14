@@ -2110,15 +2110,22 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
     return ret;
 }
 
-void CFilesWindow::SetArchiveCacheKey109()
+void CFilesWindow::SetArchiveCacheKey109(const CSalFileIdentity& listedIdentity)
 {
     CALL_STACK_MESSAGE1("CFilesWindow::SetArchiveCacheKey109()");
     CSalHeapString key;
     TakeArchiveCacheKey(key); // forget any previous key (SetZIPArchive did too)
+    // feature 144: the identity of the file this panel has just listed (taken from the open that gave its
+    // date and size) - kept for the other panel's choice, which must not read this archive by name
+    const CSalFileIdentity& mine = listedIdentity;
+    BOOL mineRead = mine.Valid;
+    SetZIPArchiveIdentity(mine);
+    ResetArchiveCacheKeyFailed(); // (SetZIPArchive did too - kept self-contained like the key)
     char* own = SalNameIdentityKeyAlloc(GetZIPArchive(), -1, 0);
     if (own == NULL)
     {
-        TRACE_E(LOW_MEMORY); // GetArchiveCacheKey() builds the same key on every use
+        TRACE_E(LOW_MEMORY);
+        SetArchiveCacheKeyFailed(); // feature 144: no key is built from the name later
         return;
     }
     key.Adopt(own, strlen(own) + 1);
@@ -2141,17 +2148,13 @@ void CFilesWindow::SetArchiveCacheKey109()
             FILETIME anotherDate = another->GetZIPArchiveDate();
             BOOL sizeTimeEqual = GetZIPArchiveSize() == another->GetZIPArchiveSize() &&
                                  CompareFileTime(&myDate, &anotherDate) == 0;
-            // the identity is read whenever the keys could be shared - also when they are EQUAL (review
-            // of 109: the other panel's key may come from a spelling that names another file now)
-            CSalFileIdentity mine, theirs;
-            SalFileIdentityClear(&mine);
-            SalFileIdentityClear(&theirs);
-            BOOL idsRead = FALSE;
-            if (sizeTimeEqual)
-            {
-                idsRead = SalGetFileIdentity(GetZIPArchive(), FALSE, &mine, TRUE) &&
-                          SalGetFileIdentity(another->GetZIPArchive(), FALSE, &theirs, TRUE);
-            }
+            // the identities decide whenever the keys could be shared - also when they are EQUAL (review
+            // of 109: the other panel's key may come from a spelling that names another file now).
+            // Feature 144: the other panel's identity as IT read it at its open - read again through its
+            // name now, a re-pointed SUBST or network drive gave THIS file's identity twice (measured: the
+            // second panel was given the first archive's copies and its edit was packed into this one)
+            const CSalFileIdentity& theirs = another->GetZIPArchiveIdentity();
+            BOOL idsRead = sizeTimeEqual && mineRead && theirs.Valid;
             choice = SalArchiveCacheKeyChoice(keysEqual,
                                               SalNameEqualOrdinalCI(GetZIPArchive(), -1, another->GetZIPArchive(), -1),
                                               sizeTimeEqual, idsRead, mine, theirs);
@@ -2171,7 +2174,8 @@ void CFilesWindow::SetArchiveCacheKey109()
         else
         {
             TRACE_E(LOW_MEMORY);
-            return; // stays empty: GetArchiveCacheKey builds the own key - see the low-memory note there
+            SetArchiveCacheKeyFailed(); // feature 144: the own key would be the other's - never built
+            return;
         }
     }
     TakeArchiveCacheKey(key);
@@ -2293,6 +2297,9 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
     BOOL nullFile;         // TRUE if the archive is an empty file (size==0)
     FILETIME archiveDate;  // date and time of the archive file
     CQuadWord archiveSize; // size of the archive file
+    // feature 144: the file's identity, from the same open as the date and size
+    CSalFileIdentity archiveIdentity;
+    SalFileIdentityClear(&archiveIdentity);
 
     CSalHeapString text;      // feature 097: messages naming the archive (was char[MAX_PATH + 500])
     CSalHeapString arcDirBuf; // feature 097: the folder of the archive (was 'path')
@@ -2372,6 +2379,20 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                 if (file != INVALID_HANDLE_VALUE)
                 {
                     GetFileTime(file, NULL, NULL, &archiveDate);
+                    // feature 144 (review): the identity from this handle - the date and size of the very
+                    // file it names (a second open by name later could meet another file: a re-pointed
+                    // drive letter); not read = cleared (the safe side: never shared on certainty)
+                    if (SalFileIdentityFromHandle(file, &archiveIdentity))
+                    {
+                        WCHAR* arcW = SalPathToWExtAlloc(archive);
+                        if (arcW != NULL)
+                        {
+                            SalFileIdentityVolumeTraits(file, arcW, &archiveIdentity);
+                            free(arcW);
+                        }
+                        else
+                            SalFileIdentityClear(&archiveIdentity);
+                    }
                     SalGetFileSize(file, archiveSize, err2); // does it return "success"? - ignore, 'err2' is checked later
                     nullFile = archiveSize == CQuadWord(0, 0);
                     HANDLES(CloseHandle(file));
@@ -2443,7 +2464,7 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
                     SetZIPArchive(archive);
                     SetZIPArchiveDate(archiveDate);
                     SetZIPArchiveSize(archiveSize);
-                    SetArchiveCacheKey109(); // feature 109: after the date and size (its pre-filter)
+                    SetArchiveCacheKey109(archiveIdentity); // feature 109: after the date and size (its pre-filter)
                     if (plugin != NULL)
                     {
                         PluginData.Init(pluginData, plugin->DLLName, plugin->Version,

@@ -517,8 +517,16 @@ private:
     CSalamanderDirectory* ArchiveDir;   // content of the open archive; basic data - array of CFileData
     char ZIPArchive[SAL_MAX_PATH_UTF8]; // path to the open archive (UTF-8, long-path capable)
     // feature 109: the disk-cache key of the open archive - the prefix of its members' keys, set by
-    // SetArchiveCacheKey109() when the archive is opened; empty = built from ZIPArchive on use
+    // SetArchiveCacheKey109() when the archive is opened; empty = built from ZIPArchive on use, unless
+    // building it failed (ZIPArchiveCacheKeyFailed, feature 144)
     CSalHeapString ZIPArchiveCacheKey;
+    // feature 144: the identity of the archive's file as this panel read it when it opened the archive
+    // (Valid FALSE = not read). The other panel's key choice compares with it, because the name may
+    // name another file by then (a SUBST or network drive re-pointed).
+    CSalFileIdentity ZIPArchiveIdentity;
+    // feature 144: SetArchiveCacheKey109() could not build the key (low memory): no key is built
+    // from the name later either - it might equal the other panel's key the choice ruled out
+    BOOL ZIPArchiveCacheKeyFailed;
     char ZIPPath[SAL_MAX_PATH_UTF8]; // path inside the open archive (UTF-8)
     FILETIME ZIPArchiveDate;            // archive date (used for the ".." date and during refresh)
     CQuadWord ZIPArchiveSize;           // archive size - used to detect archive changes
@@ -592,6 +600,7 @@ public:
     FILETIME GetZIPArchiveDate() { return ZIPArchiveDate; }
     BOOL IsSameZIPArchiveSize(const CQuadWord& size) { return ZIPArchiveSize == size; }
     CQuadWord GetZIPArchiveSize() { return ZIPArchiveSize; }
+    const CSalFileIdentity& GetZIPArchiveIdentity() { return ZIPArchiveIdentity; } // feature 144
     BOOL GetSuppressAutoRefresh() { return SuppressAutoRefresh; }
     BOOL GetEquivalentPairNoticeShown() { return EquivalentPairNoticeShown; }
     void SetEquivalentPairNoticeShown(BOOL shown) { EquivalentPairNoticeShown = shown; }
@@ -611,11 +620,16 @@ public:
     // after its terminator. Every name of a member in the disk cache starts with it + '\\'; built by
     // SalNameIdentityKeyAlloc (two archive names get one key exactly when they are one name by the
     // file system's rule - the code-page byte fold of the old key merged e.g. "ĥ.zip" and "Ĺ.zip").
-    // FALSE when memory is low.
+    // FALSE when memory is low - and (feature 144) for as long as the archive is open after the key
+    // could not be built when it was opened (no copy exists under any key then).
     BOOL GetArchiveCacheKey(CSalHeapString& key, size_t reserve);
     // feature 109: stores 'key' as the disk-cache key of the open archive (the strings exchange their
     // buffers; 'key' gets the previous one); only CFilesWindow::SetArchiveCacheKey109() calls it
     void TakeArchiveCacheKey(CSalHeapString& key) { ZIPArchiveCacheKey.Swap(key); }
+    // feature 144: only CFilesWindow::SetArchiveCacheKey109() calls them
+    void SetZIPArchiveIdentity(const CSalFileIdentity& id) { ZIPArchiveIdentity = id; }
+    void SetArchiveCacheKeyFailed() { ZIPArchiveCacheKeyFailed = TRUE; }
+    void ResetArchiveCacheKeyFailed() { ZIPArchiveCacheKeyFailed = FALSE; }
     void SetArchiveDir(CSalamanderDirectory* dir) { ArchiveDir = dir; }
     void SetZIPArchiveDate(FILETIME& time) { ZIPArchiveDate = time; }
     void SetZIPArchiveSize(const CQuadWord& size) { ZIPArchiveSize = size; }
@@ -1153,9 +1167,12 @@ public:
     // other panel's key when the other panel shows the SAME FILE under another spelling (8.3 name, SUBST
     // drive, \\localhost\C$, ...; SalArchiveSharesCacheKey) - then the two panels share the temporary
     // copies of the members as they do under one spelling, and two copies of one member cannot diverge.
-    // The identities are read only when both panels' archives have equal size and time (ZIPArchiveSize,
-    // ZIPArchiveDate - set them first). Called by ChangePathToArchive right after SetZIPArchive.
-    void SetArchiveCacheKey109();
+    // The decision is taken only when both panels' archives have equal size and time (ZIPArchiveSize,
+    // ZIPArchiveDate - set them first). Feature 144: the own identity is read and stored at every open
+    // (ZIPArchiveIdentity) and compared with the identity the other panel stored at ITS open - the
+    // other panel's archive is never read by name here. Called by ChangePathToArchive right after
+    // SetZIPArchive.
+    void SetArchiveCacheKey109(const CSalFileIdentity& listedIdentity);
     // change path to the plug-in FS;
     // if suggestedTopIndex != -1 the top index will be set;
     // if suggestedFocusName != NULL and present in the new list, it will be focused;

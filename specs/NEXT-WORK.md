@@ -125,11 +125,20 @@ Crash-class or possible loss:
    Yes) during a shell command terminates the map's thread inside the shell, as
    in every release; the real-mouse rows of its `quickstart.md` are owed to a
    person.
-2. **Disk cache across a re-pointed drive letter**: two panels whose archives
-   have the same spelling, size and 100-ns time under a re-pointed SUBST or
-   network letter still share copies; the out-of-memory fallback of the cache
-   key can re-create sharing without a check. Queue 108, entry 3 (109
-   re-review).
+2. ~~**Disk cache across a re-pointed drive letter**~~ - **done, feature 144**
+   (2026-10-14; measured worse: the second panel's F4 edit of the FIRST
+   archive's member was packed into the second archive - its member replaced).
+   Each panel keeps its archive's identity from the open; a key that could not
+   be built is never rebuilt from the name.
+2a. **Pending edits packed into a re-pointed name** (found by 144's review,
+   data loss, narrow): a panel with an F4 edit of a member pending packs it, on
+   leaving the archive, into the file the archive's name names now -
+   `CFileTimeStamps` keeps the name; after a SUBST / network letter re-point to
+   a twin (same size and time) nothing notices. Also `OfferArchiveUpdateIfNeeded`
+   matches the other panel by name, and an F3 of a member not cached yet
+   extracts the other file's member into this listing. Fix: compare the
+   identity stored at the open (144) with the name's identity before packing
+   back and in the refresh's "changed?" test. Feature 145.
 3. **Plug-in windows closing**: a worker's error box (File Comparator hex
    view, Checksum read errors) can appear while its window closes, also on a
    normal exit; the File Comparator ends its `fcremote` receiver thread before
