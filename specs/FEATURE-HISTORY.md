@@ -2425,3 +2425,8 @@ a few early ones are out of sequence).
   is deleted and recreated (review). The clipboard copy FROM such an archive needs the shell
   extension - not shipped, unreachable (its copy hook is code page and cuts at `MAX_PATH`).
   By reading (no OLE drag or clipboard on the hidden desktop); a person step.
+- 161-portables-plural: **Portables "N selected devices" takes its plural** (upstream): the
+  pattern `{2:s|0||1|s}` named a parameter that does not exist, `ExpandPluralString` stopped at
+  the brace; a pattern per language pinned in `ui-overrides.json` (cs "2 vybraná / 5 vybraných
+  zařízení"). **Trap:** `{n:...}` is 1-based and a group without an index takes the NEXT
+  parameter. Checked with a port of the expander (`probe/plural161.py`).

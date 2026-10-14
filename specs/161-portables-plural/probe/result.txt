@@ -1,0 +1,10 @@
+english-old  0 selected device<STOP: index 2 out of range> | 1 selected device<STOP: index 2 out of range> | 2 selected device<STOP: index 2 out of range> | 5 selected device<STOP: index 2 out of range> | 21 selected device<STOP: index 2 out of range>
+english      0 selected devices | 1 selected device | 2 selected devices | 5 selected devices | 21 selected devices
+czech        0 vybraných zařízení | 1 vybrané zařízení | 2 vybraná zařízení | 5 vybraných zařízení | 21 vybraných zařízení
+slovak       0 vybraných zariadení | 1 vybrané zariadenie | 2 vybrané zariadenia | 5 vybraných zariadení | 21 vybraných zariadení
+german       0 ausgewählte Geräte | 1 ausgewähltes Gerät | 2 ausgewählte Geräte | 5 ausgewählte Geräte | 21 ausgewählte Geräte
+french       0 appareils sélectionnés | 1 appareil sélectionné | 2 appareils sélectionnés | 5 appareils sélectionnés | 21 appareils sélectionnés
+dutch        0 geselecteerde apparaten | 1 geselecteerd apparaat | 2 geselecteerde apparaten | 5 geselecteerde apparaten | 21 geselecteerde apparaten
+hungarian    0 kiválasztott eszköz | 1 kiválasztott eszköz | 2 kiválasztott eszköz | 5 kiválasztott eszköz | 21 kiválasztott eszköz
+romanian     0 dispozitive selectate | 1 dispozitiv selectat | 2 dispozitive selectate | 5 dispozitive selectate | 21 dispozitive selectate
+spanish      0 dispositivos seleccionados | 1 dispositivo seleccionado | 2 dispositivos seleccionados | 5 dispositivos seleccionados | 21 dispositivos seleccionados

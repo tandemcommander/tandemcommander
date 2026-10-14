@@ -43,6 +43,7 @@ drove adding up to 7,000 bytes).
 
 - Debug build clean; `check_encoding.py` TOTAL 0.
 - Regression: 119 `packleft_probe` 104/0 (`probe/regress_packleft119_160.txt`); 097 `arcwork_probe`
-  (archives of long paths; it drives no drop) - running at the commit, its result recorded after.
+  (archives of long paths; it drives no drop) 390/0, 21 n/a (`probe/regress_arcwork097_160.txt`,
+  recorded after the commit).
 - Owed to a person: drop files onto a ZIP of a 260+ byte path (an archive panel and a disk panel),
   and onto an empty `.rar` of such a path (refused, the file untouched).

@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\portables\portables.atp"
 TEXTVERSION,"0.1 (x64)"
-VERSION,"0,1,0,185"
+VERSION,"0,1,0,194"
 
 [TRANSLATION]
 LANGID,1031
@@ -10,7 +10,7 @@ WEB,"www.tandemcommander.org"
 COMMENT,"Deutsche Version"
 
 [STRINGTABLE 0]
-128,1,"{!}%d ausgewähltes Gerät{2:s|0||1|s}"
+128,1,"{!}%d ausgewählte{ Geräte|0|s Gerät|1| Geräte}"
 129,1,"Keine Geräte"
 
 [STRINGTABLE 1]

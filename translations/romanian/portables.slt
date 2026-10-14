@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\portables\portables.atp"
 TEXTVERSION,"0.1 (x64)"
-VERSION,"0,1,0,185"
+VERSION,"0,1,0,194"
 
 [TRANSLATION]
 LANGID,1048
@@ -10,7 +10,7 @@ WEB,"www.tandemcommander.org"
 COMMENT,"Versiunea romana"
 
 [STRINGTABLE 0]
-128,1,"{!}%d dispozitiv selectat{2:s|0||1|s}"
+128,1,"{!}%d dispozitiv{e|0||1|e} selectat{1:e|0||1|e}"
 129,1,"Niciun dispozitiv"
 
 [STRINGTABLE 1]

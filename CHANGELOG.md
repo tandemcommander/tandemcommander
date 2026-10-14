@@ -11,6 +11,9 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Portables: "selected devices" in the right plural** (feature 161) - it
+  always read "N selected device" (in every language the English form).
+
 - **Dropping files into an archive with a very long name** (feature 160): an
   archive whose full name is longer than 259 bytes refused files dropped or
   pasted into it; ZIP, 7z and TAR take them now.

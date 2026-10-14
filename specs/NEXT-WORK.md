@@ -210,7 +210,7 @@ Functional, no loss:
     zařízení" / "Žádná zařízení" are loaded in the code page (`wpdfsdevicelevel.cpp`,
     `IDS_SELECTEDDEVICEFMT` through `SalamanderGeneral->LoadStr`, `IDS_NODEVICEINFOLINE` through
     `::LoadString`) and drawn as UTF-8.
-10c. **Portables: "N selected device" never takes its plural** (found by 159's review, upstream):
+10c. ~~Portables: "N selected device" never takes its plural~~ - **done, feature 161**. Was (found by 159's review, upstream):
     `IDS_SELECTEDDEVICEFMT` "{!}%d selected device{2:s|0||1|s}" names a parameter that does not exist,
     `ExpandPluralString` stops at the brace; all translations copied the English suffix - a string
     fix with a plural pattern per language (cs, de, fr, hu, ro, sk, nl, es).

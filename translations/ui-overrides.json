@@ -592,5 +592,31 @@
       "IDS_MOVETOITSELF": "Imposible trasladar un fichero a sí mismo.",
       "IDS_MOVEDIRTOITSELF": "Imposible trasladar un directorio a sí mismo."
     }
+  },
+  "portables": {
+    "czech": {
+      "IDS_SELECTEDDEVICEFMT": "{!}%d vybran{ých zařízení|0|é zařízení|1|á zařízení|4|ých zařízení}"
+    },
+    "slovak": {
+      "IDS_SELECTEDDEVICEFMT": "{!}%d vybran{ých zariadení|0|é zariadenie|1|é zariadenia|4|ých zariadení}"
+    },
+    "german": {
+      "IDS_SELECTEDDEVICEFMT": "{!}%d ausgewählte{ Geräte|0|s Gerät|1| Geräte}"
+    },
+    "french": {
+      "IDS_SELECTEDDEVICEFMT": "{!}%d appareil{s|0||1|s} sélectionné{1:s|0||1|s}"
+    },
+    "dutch": {
+      "IDS_SELECTEDDEVICEFMT": "{!}%d geselecteerd{e apparaten|0| apparaat|1|e apparaten}"
+    },
+    "hungarian": {
+      "IDS_SELECTEDDEVICEFMT": "{!}%d kiválasztott eszköz{|0||1|}"
+    },
+    "romanian": {
+      "IDS_SELECTEDDEVICEFMT": "{!}%d dispozitiv{e|0||1|e} selectat{1:e|0||1|e}"
+    },
+    "spanish": {
+      "IDS_SELECTEDDEVICEFMT": "{!}%d dispositivo{s|0||1|s} seleccionado{1:s|0||1|s}"
+    }
   }
 }

@@ -77,7 +77,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_SELECTEDDEVICEFMT   "{!}%d selected device{2:s|0||1|s}"
+    IDS_SELECTEDDEVICEFMT   "{!}%d selected device{s|0||1|s}"
     IDS_NODEVICEINFOLINE    "No devices"
 END
 
