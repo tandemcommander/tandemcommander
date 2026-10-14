@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121 |
 | PictView | 105, 111, 120 |
 | Undelete | 114, 115 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check) | 071, 078, 123 |
@@ -2268,3 +2268,22 @@ a few early ones are out of sequence).
   - Rows UNI, UNIXMP in `thumb132_probe.ps1` (`-UniRoot <folder on a volume without short
     names>`; on this machine C: has short names, D: and E: do not).
   - `jpeg-data.c/.h` are ISO-8859-1: edit by bytes.
+- 143-diskmap-release-guard: **a Disk Map window is never destroyed inside one of its loops.**
+  Measured on 0.1.10 (`probe/result_pre143.txt`): the program's normal exit crashed (access
+  violation in freed `CShellMenu`) with the map's context menu or a shell command's window (the
+  Delete confirmation runs on the map's thread inside `InvokeCommand`) open, and an installer's
+  close with the menu open was NOT declined (a popup menu is no undeclared window) and crashed the
+  same way - 118's record "milliseconds" was wrong. Rule `src/common/salloopclose.h` (header-only,
+  `TestLoopClose143`): the window counts its loops (menu, own box, shell command;
+  `GUI.LoopGuard.h` RAII scopes - the shell scope covers the WHOLE shell menu functions, shell
+  extensions may pump messages in an STA call); `WM_CLOSE` first in `WndProc` (before
+  `HandleMenuMessage`, which gets every message while a menu is open): inside a loop the close is
+  pending, `EndMenu`, `IDCANCEL` to the thread's enabled `#32770` owned by the map (never while a
+  shell command runs), closed by a posted `WM_CLOSE` when the last loop ends. File > Exit and Esc go
+  the same way (`CloseOrDefer`; review MEDIUM). While inside a loop the map withdraws its 107
+  declaration (`SetWindowClosesUnattended(h, FALSE)`), `DiskMapLoopsOpen` counts it and `Release`
+  refuses an unattended close; when `KillAll` gives up, `Release` posts `WM_APP_CLOSEABANDONED`
+  and the pending close is dropped (review LOW: the map closed by itself after "force? No"). A
+  forced unload during a shell command still terminates the map's thread (Debug: leak reports) -
+  the force semantics of every release. Probe `probe/release_guard_probe.ps1` (E0-E6, M1-M3,
+  U1-U4): 34 / 0, control 27 / 7; 118 rows M1-M4, X1 11 / 0. saltests 21,794 -> 21,829. Review: File > Exit / Esc through `CloseOrDefer` (MEDIUM); the abandon drops only Release's request (`DISKMAP_CLOSE_FROM_RELEASE` in `wParam`; second round).

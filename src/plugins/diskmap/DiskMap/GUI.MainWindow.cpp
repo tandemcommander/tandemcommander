@@ -8,6 +8,13 @@ CZLocalizer* CMainWindow::s_localizer = NULL;
 
 LRESULT CMainWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    // feature 143: first - also before the shell menu's handler below, which is handed every
+    // message while a context menu is open. Inside a loop of this thread the close waits.
+    if (message == WM_CLOSE && this->OnClose(wParam == DISKMAP_CLOSE_FROM_RELEASE))
+        return 0;
+    if (message == WM_APP_CLOSEABANDONED)
+        return this->OnCloseAbandoned(), 0;
+
     if (this->_shellmenu && this->_shellmenu->HandleMenuMessage(message, wParam, lParam))
     {
         return 0;

@@ -9,6 +9,15 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
+## [0.1.11] — unreleased
+
+- **Disk Map: closing the program with a map's context menu open no longer
+  crashes** (feature 143). The same was true while Windows' own confirmation of
+  a command chosen from that menu (Delete) was open, and when an installer
+  closed the program for an update while the menu was open. A map closes now
+  when its menu or box has ended; the confirmation of a shell command is left
+  for you to answer, and the map closes after it.
+
 ## [0.1.10] — 2026-10-14
 
 Fixes for the problems reported on GitHub after 0.1.9, and what the reviews

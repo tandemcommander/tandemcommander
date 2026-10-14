@@ -183,6 +183,8 @@
     </ClInclude>
     <ClInclude Include="..\DiskMap\GUI.MainWindow.h">
     </ClInclude>
+    <ClInclude Include="..\DiskMap\GUI.LoopGuard.h">
+    </ClInclude>
     <ClInclude Include="..\DiskMap\GUI.ShellMenu.h">
     </ClInclude>
     <ClInclude Include="..\DiskMap\GUI.ToolTip.h">

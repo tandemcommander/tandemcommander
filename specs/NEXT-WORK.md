@@ -118,10 +118,13 @@ item 5; "queue 108" the list *Found by 108* inside item 5.
 
 Crash-class or possible loss:
 
-1. **Disk Map's `Release()` has no guard**: a box, menu or shell operation
-   opened from the map between the core's decision and the plug-in's turn gets
-   `WM_CLOSE`, and the map is destroyed inside that modal or menu loop (also on
-   a normal exit). Queue 104, entry 6 (118 R7).
+1. ~~**Disk Map's `Release()` has no guard**~~ - **done, feature 143**
+   (2026-10-14; measured worse: the normal exit crashed with the map's context
+   menu or a shell command's confirmation open, and an installer's close with
+   the menu open was not even declined). Left by 143: a forced unload ("force?"
+   Yes) during a shell command terminates the map's thread inside the shell, as
+   in every release; the real-mouse rows of its `quickstart.md` are owed to a
+   person.
 2. **Disk cache across a re-pointed drive letter**: two panels whose archives
    have the same spelling, size and 100-ns time under a re-pointed SUBST or
    network letter still share copies; the out-of-memory fallback of the cache
@@ -1530,12 +1533,10 @@ system's rule (`SalNameEqualOrdinalCI` and friends in
           update (candidates for the 107 declaration while not searching /
           always); a worker's error box (File Comparator hex view, checksum
           read errors) can still appear while its window closes - also on a
-          normal exit; Disk Map's `Release()` has no guard like the other
-          three: an About box, the Esc confirmation, the shell context menu
-          or a shell file operation started from the map in the
-          milliseconds between the core's decision and the plug-in's turn
-          gets `WM_CLOSE` and the map is destroyed from inside that modal or
-          menu loop (pre-existing on a normal exit too); the File Comparator
+          normal exit; ~~Disk Map's `Release()` has no guard like the other
+          three~~ (done, feature 143 - not "milliseconds": an open context
+          menu did not decline an update at all, and a normal exit crashed);
+          the File Comparator
           terminates its remote-comparator thread before a window close that
           may time out (`Release` then returns FALSE with `fcremote.exe`
           requests no longer served - same on the normal path). (118 fixed

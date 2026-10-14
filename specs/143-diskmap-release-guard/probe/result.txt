@@ -1,0 +1,64 @@
+release_guard_probe (feature 143), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 05:50; desktop 'tc_probe_29236'; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Fixture : C:\Users\pavel\AppData\Local\Temp\tc143\dm and C:\Users\pavel\AppData\Local\Temp\tc143\unc, 5 files each (1 to 25 KB); unc seen as \\localhost\C$\Users\pavel\AppData\Local\Temp\tc143\unc
+Hot keys: renamer.spl id 1: 1; checksum.spl id 1: 1; checksum.spl id 2: 1; diskmap.spl id 1: 1; filecomp.spl id 1: 1
+
+--- E0: map finished, no loop (expected: the program ends cleanly)
+E0         STATE  PASS        map 'DiskMap - C:\Users\pavel\AppData\Local\Temp\tc143\dm', scan finished
+E0         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- E1: file context menu open (expected: the program ends cleanly)
+E1         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti)
+E1         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- E2: About box open (expected: the program ends cleanly)
+E2         STATE  PASS        About box [#32770 'About Salamander DiskMap Plugin'] [Static id=2477] DiskMap 1.12 (x64) Copyright \u00A9 2009-2023 Ondrej Zarevucky Displays a treemap of files on your disk. | [Button id=1] OK
+E2         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- E3: Esc close confirmation open (expected: the program ends cleanly)
+E3         STATE  PASS        confirmation [#32770 'DiskMap'] [Static id=2477] Do you want to close DiskMap? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] Don't show this message again and close DiskMap without asking
+           shown: 0,1 s [SalamanderSaveBits 'Tandem Commander'] 
+E3         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- E4: shell Delete confirmation open, the person answers it first (expected: the program ends cleanly)
+E4         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti) ;; Delete (item 30) -> [#32770 'Odstranit soubor'] [Static id=16779] Opravdu chcete trvale odstranit tento soubor? | [Button id=6] &Ano | [Button id=2] &Ne | [Static id=0] f5.txt | [Static id=0] Typ: Soubor TXT Velikost: 24,4 kB Datum zm\u011Bny: \u200E14.\u200E10.\u200E2026 \u200F\u200E5:50; its thread 20896 (the map's 20896)
+           shown: 3,0 s the probe answered the shell confirmation No (button 2)
+           shown: 1,0 s [#32770 'Question'] [Static id=2477] DiskMap plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No
+E4         EXIT   PASS        0x00000000; after 4,9 s; crash reports 0; fatal window False; the core's force question asked; files in the folder 5 (before 5)
+--- E5: shell Delete confirmation open, the person forces the unload first (expected: the program ends cleanly)
+E5         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti) ;; Delete (item 30) -> [#32770 'Odstranit soubor'] [Static id=16779] Opravdu chcete trvale odstranit tento soubor? | [Button id=6] &Ano | [Button id=2] &Ne | [Static id=0] f5.txt | [Static id=0] Typ: Soubor TXT Velikost: 24,4 kB Datum zm\u011Bny: \u200E14.\u200E10.\u200E2026 \u200F\u200E5:50; its thread 18764 (the map's 18764)
+           shown: 5,1 s [#32770 'Heap Message'] [Button id=2] OK | [Static id=65535] Detected memory leaks!
+           shown: 3,0 s [#32770 'Tandem Commander'] [Button id=6] &Ano | [Button id=7] &Ne | [Static id=65535] E:\Projects\tandemcommander\src\common\handles.cpp 560: Some monitored handles remained opened. Number of opened handles: 1 Do you want to list opened handles to Trace Server (ensure it is running) ?
+           shown: 1,1 s [#32770 'Question'] [Static id=2477] DiskMap plugin has rejected to unload. Do you want to force it to unload? | [Button id=6] &Yes | [Button id=7] &No
+           shown: 1,8 s [SalamanderSaveBits 'Tandem Commander'] 
+E5         EXIT   PASS        0x00000000; after 5,2 s; crash reports 0; fatal window False; the core's force question asked; files in the folder 5 (before 5); Debug note: the leak reports of a forced unload (handles, CRT)
+--- E6: shell Delete confirmation open, the force question answered No
+E6         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti) ;; Delete (item 30) -> [#32770 'Odstranit soubor'] [Static id=16779] Opravdu chcete trvale odstranit tento soubor? | [Button id=6] &Ano | [Button id=2] &Ne | [Static id=0] f5.txt | [Static id=0] Typ: Soubor TXT Velikost: 24,4 kB Datum zm\u011Bny: \u200E14.\u200E10.\u200E2026 \u200F\u200E5:50; its thread 2004 (the map's 2004)
+E6         KEPT   PASS        force question answered No, then the shell's No: the program runs True; the map is open True; files 5 (before 5)
+E6         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- M1: the map closed by File > Exit
+M1         MAP    PASS        File > Exit (115): the map is closed (want closed); the program runs True; boxes 0
+M1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- M2: the map closed by Esc, confirmation Yes
+M2         MAP    PASS        Esc, confirmation Yes: the map is closed (want closed); the program runs True; boxes 0
+M2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- M3: Esc, confirmation No - the map stays
+M3         MAP    PASS        Esc, confirmation No: the map is open (want kept); the program runs True; boxes 0
+M3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- U1: installer: file context menu open (expected: decline)
+U1         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti)
+U1         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+U1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- U2: installer: About box open (expected: decline)
+U2         STATE  PASS        About box [#32770 'About Salamander DiskMap Plugin'] [Static id=2477] DiskMap 1.12 (x64) Copyright \u00A9 2009-2023 Ondrej Zarevucky Displays a treemap of files on your disk. | [Button id=1] OK
+U2         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+U2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- U3: installer: Esc close confirmation open (expected: decline)
+U3         STATE  PASS        confirmation [#32770 'DiskMap'] [Static id=2477] Do you want to close DiskMap? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] Don't show this message again and close DiskMap without asking
+U3         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+U3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- U4: installer: shell Delete confirmation open (expected: decline)
+U4         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti) ;; Delete (item 30) -> [#32770 'Odstranit soubor'] [Static id=16779] Opravdu chcete trvale odstranit tento soubor? | [Button id=6] &Ano | [Button id=2] &Ne | [Static id=0] f5.txt | [Static id=0] Typ: Soubor TXT Velikost: 24,4 kB Datum zm\u011Bny: \u200E14.\u200E10.\u200E2026 \u200F\u200E5:50; its thread 23744 (the map's 23744)
+U4         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+U4         WORK   PASS        the shell confirmation was still open True (answered No by the probe); files 5 (before 5)
+U4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 34, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

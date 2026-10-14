@@ -36,6 +36,11 @@
 
 const TCHAR szMainWindowWindowClass[] = TEXT("Zar.DM.MainWin.WC");
 
+// feature 143 (DiskMapPlugin.cpp): a map window entered its first loop ('inLoop' TRUE) or left
+// its last one; counts it for Release() and withdraws / gives back ('declare') its declaration
+// "closes unattended" in a 107 core
+void DiskMapLoopStateChanged(HWND hWnd, BOOL inLoop, BOOL declare);
+
 class CDiskMapViewConnector : public CViewConnectorBase
 {
 protected:
@@ -81,7 +86,7 @@ public:
 #endif
 };
 
-class CMainWindow : public CFrameWindow
+class CMainWindow : public CFrameWindow, public CMapLoopOwner
 {
 protected:
     static CZLocalizer* s_localizer;
@@ -98,6 +103,9 @@ protected:
     CZString* _path;
 
     CDiskMapViewConnector* _connector;
+
+    // feature 143: the loops this window's thread is inside of (menu, own box, shell command)
+    CSalLoopCloseState _loop;
 
 #ifdef SALAMANDER
     CSalamanderCallbackAbstract* _callback;
@@ -170,6 +178,8 @@ protected:
         switch (id)
         {
         case IDM_HELP_ABOUT:
+        {
+            CMapLoopScope loop(this, slkOwnBox); // feature 143: a close request cancels the box
 #ifdef SALAMANDER
             if (this->_callback != NULL)
                 this->_callback->About(this->_hWnd);
@@ -177,6 +187,7 @@ protected:
             CAboutDialog::ShowModal(CWindow::s_hInstance, this->_hWnd);
 #endif
             return TRUE;
+        }
 
         case IDM_FILE_FOCUSINSALAMANDER:
 #ifdef SALAMANDER
@@ -246,7 +257,7 @@ protected:
 #endif
             return TRUE;
         case IDM_FILE_EXIT:
-            this->Destroy();
+            this->CloseOrDefer(); // feature 143: not inside a loop of this thread
             return TRUE;
         }
         return FALSE;
@@ -298,8 +309,15 @@ protected:
             else
             {
 #ifdef SALAMANDER
-                if (this->_callback && this->_callback->ConfirmClose(this->_hWnd))
-                    this->Destroy();
+                BOOL close;
+                {
+                    // feature 143: a close request from outside cancels the confirmation - and
+                    // closes the map after it (the request is the answer)
+                    CMapLoopScope loop(this, slkOwnBox);
+                    close = this->_callback && this->_callback->ConfirmClose(this->_hWnd);
+                }
+                if (close)
+                    this->CloseOrDefer(); // feature 143: an outer loop (a shell command) may still run
 #endif
             }
             break;
@@ -369,6 +387,7 @@ protected:
     {
         this->_tooltip = new CFileInfoTooltip(this->_hWnd);
         this->_shellmenu = new CShellMenu(this->_hWnd);
+        this->_shellmenu->SetLoopOwner(this); // feature 143
 
         int top = 1;
         this->_dirLine = new CDirectoryLine(this->_hWnd, top, this->_logger, this->_tooltip, this->_shellmenu);
@@ -399,6 +418,19 @@ protected:
 
         return true;
     }
+    // feature 143: a dialog of this thread owned by the map (no shell command is open when this is
+    // called, so it is the About box or the close confirmation) is cancelled
+    static BOOL CALLBACK CancelOwnBox(HWND hWnd, LPARAM lParam)
+    {
+        TCHAR cls[16];
+        if (GetWindow(hWnd, GW_OWNER) == (HWND)lParam && IsWindowEnabled(hWnd) &&
+            GetClassName(hWnd, cls, ARRAYSIZE(cls)) > 0 && lstrcmp(cls, TEXT("#32770")) == 0)
+        {
+            PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(IDCANCEL, BN_CLICKED), 0);
+        }
+        return TRUE;
+    }
+
     void OnDestroy()
     {
         if (this->_shellmenu)
@@ -447,12 +479,62 @@ public:
 
         this->_logger = new CLogger();
         this->_logWindow = NULL;
+
+        SalLoopInit(&this->_loop);
     }
     ~CMainWindow()
     {
         if (this->_logger)
             delete this->_logger;
         this->_logger = NULL;
+    }
+
+    // feature 143: CMapLoopOwner - the first loop withdraws the declaration "closes unattended"
+    // (and counts the window for Release), the last one gives it back or carries out a close
+    // that arrived meanwhile
+    void LoopEnter(CSalLoopKind kind)
+    {
+        if (SalLoopEnter(&this->_loop, kind))
+            DiskMapLoopStateChanged(this->_hWnd, TRUE, FALSE);
+    }
+    void LoopLeave(CSalLoopKind kind)
+    {
+        CSalLoopLeave r = SalLoopLeave(&this->_loop, kind);
+        if (!r.Last)
+            return;
+        DiskMapLoopStateChanged(this->_hWnd, FALSE, r.Redeclare);
+        if (r.CloseNow && this->_hWnd != NULL)
+            PostMessage(this->_hWnd, WM_CLOSE, 0, 0); // handled outside every loop now
+    }
+    // WM_CLOSE: TRUE when the close waits for a loop (the message is handled), FALSE to close now
+    // 'fromRelease': posted by the plug-in's Release() (DISKMAP_CLOSE_FROM_RELEASE) - only such a
+    // request is given up by WM_APP_CLOSEABANDONED
+    BOOL OnClose(BOOL fromRelease)
+    {
+        CSalLoopClose c = SalLoopCloseRequest(&this->_loop, fromRelease);
+        if (c.CloseNow)
+            return FALSE;
+        TRACE_I("DiskMap: a close request inside a loop - deferred (menu " << this->_loop.Menus << ", own boxes "
+                                                                           << this->_loop.OwnBoxes << ", shell " << this->_loop.ShellCommands << ")");
+        if (c.EndMenu)
+            EndMenu(); // TrackPopupMenuEx returns 0: no command runs
+        if (c.CancelOwnBoxes)
+            EnumThreadWindows(GetCurrentThreadId(), CMainWindow::CancelOwnBox, (LPARAM)this->_hWnd);
+        return TRUE;
+    }
+    // the map's own close routes (File > Exit, Esc) go the same way as WM_CLOSE: inside a loop the
+    // window must not be destroyed either (review of 143)
+    void CloseOrDefer()
+    {
+        if (!this->OnClose(FALSE))
+            this->Destroy();
+    }
+    // WM_APP_CLOSEABANDONED: Release() gave up the close it asked for (the core asks "force?" or
+    // abandons an installer's close) - the map stays when its loop ends
+    void OnCloseAbandoned()
+    {
+        if (SalLoopCloseAbandon(&this->_loop))
+            TRACE_I("DiskMap: the deferred close was given up by Release()");
     }
 
 #ifdef SALAMANDER

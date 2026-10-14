@@ -131,6 +131,8 @@ Each is one line of a longer story; the number is the feature whose entry in
 - Closing for an installer's update: decide at the question without side
   effects, act at the instruction with `UnattendedClose`; a plugin window
   with nothing to lose declares `SetWindowClosesUnattended` (080, 088, 118).
+  A plug-in window is never destroyed inside a menu, box or shell command of
+  its own thread: count them and defer the close (`salloopclose.h`, 143).
 - WebView2: `architecture/11-webview2-integration.md` is binding — one user
   data folder, one `TcWebBrowserArguments()` (exactly one definition in the
   tree), one environment-options builder; host code lives in

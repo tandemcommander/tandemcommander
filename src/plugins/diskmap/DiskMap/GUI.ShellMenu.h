@@ -52,6 +52,8 @@ http://blogs.msdn.com/oldnewthing/archive/2004/10/07/239197.aspx
 #define IDM_OPEN 0x7010
 #define IDM_GOTO 0x7011
 
+#include "GUI.LoopGuard.h" // feature 143
+
 class CShellMenu
 {
 protected:
@@ -62,6 +64,7 @@ protected:
     IShellFolder* _pDesktop;
 
     HWND _hWnd;
+    CMapLoopOwner* _loopOwner; // feature 143: the map window, which counts the menu and the shell commands
 
     //  PURPOSE:    This routine takes a full path to a file and converts that
     //  to a fully qualified ITEMIDLIST.
@@ -240,6 +243,7 @@ public:
         this->_pcm2 = NULL;
         this->_pcm3 = NULL;
         this->_hWnd = hWnd;
+        this->_loopOwner = NULL;
         if (FAILED(SHGetDesktopFolder(&this->_pDesktop)))
         {
             this->_pDesktop = NULL;
@@ -260,6 +264,8 @@ public:
             this->_pDesktop->Release();
         this->_pDesktop = NULL;
     }
+    void SetLoopOwner(CMapLoopOwner* owner) { this->_loopOwner = owner; }
+
     BOOL HandleMenuMessage(UINT uiMsg, WPARAM wParam, LPARAM lParam)
     {
         if (this->_pcm3)
@@ -285,6 +291,10 @@ public:
     BOOL InvokeDefaultCommand(TCHAR* filename)
     {
         //if (this->_pcm != NULL) return FALSE; //the menu is open
+        // feature 143 (review): the whole function - shell extensions run in GetUIObjectOfFile,
+        // QueryContextMenu and Release too and may pump messages (an STA call to another
+        // apartment); a close request meanwhile waits until the function returns
+        CMapLoopScope shellCalls(this->_loopOwner, slkShell);
 
 #ifdef UNICODE
         WCHAR* wFileName = filename;
@@ -316,6 +326,9 @@ public:
                         info.hwnd = this->_hWnd;
                         info.lpVerb = MAKEINTRESOURCEA(id - SCRATCH_QCM_FIRST);
                         info.nShow = SW_SHOWNORMAL;
+                        // feature 143: the shell command may show windows on this thread; a close
+                        // request meanwhile waits until it returns
+                        CMapLoopScope loop(this->_loopOwner, slkShell);
                         res = (SUCCEEDED(pcm->InvokeCommand(&info)));
                     }
                 }
@@ -334,6 +347,10 @@ public:
     {
         if (this->_pcm != NULL)
             return NULL; //menu already open
+        // feature 143 (review): the whole function - shell extensions run in GetUIObjectOfFile,
+        // QueryContextMenu and Release too and may pump messages (an STA call to another
+        // apartment); a close request meanwhile waits until the function returns
+        CMapLoopScope shellCalls(this->_loopOwner, slkShell);
 
         POINT pt = {xPos, yPos};
         /*if (pt.x == -1 && pt.y == -1) {
@@ -412,7 +429,12 @@ MENU_TEMPLATE_ITEM FileMenu[] =
                     this->_pcm->QueryInterface(IID_IContextMenu2, (void**)&this->_pcm2);
                     this->_pcm->QueryInterface(IID_IContextMenu3, (void**)&this->_pcm3);
 
-                    int iCmd = TrackPopupMenuEx(hmenu, TPM_RETURNCMD, pt.x, pt.y, this->_hWnd, NULL);
+                    int iCmd;
+                    {
+                        // feature 143: a close request inside the menu ends it without a command
+                        CMapLoopScope loop(this->_loopOwner, slkMenu);
+                        iCmd = TrackPopupMenuEx(hmenu, TPM_RETURNCMD, pt.x, pt.y, this->_hWnd, NULL);
+                    }
 
                     if (this->_pcm2)
                     {
@@ -455,6 +477,7 @@ MENU_TEMPLATE_ITEM FileMenu[] =
                         info.lpVerbW = MAKEINTRESOURCEW(iCmd - SCRATCH_QCM_FIRST);
                         info.nShow = SW_SHOWNORMAL;
                         info.ptInvoke = pt;
+                        CMapLoopScope loop(this->_loopOwner, slkShell); // feature 143, see InvokeDefaultCommand
                         this->_pcm->InvokeCommand((LPCMINVOKECOMMANDINFO)&info);
                     }
                 }
@@ -473,6 +496,10 @@ MENU_TEMPLATE_ITEM FileMenu[] =
     {
         if (this->_pcm != NULL)
             return NULL; //menu already open
+        // feature 143 (review): the whole function - shell extensions run in GetUIObjectOfFile,
+        // QueryContextMenu and Release too and may pump messages (an STA call to another
+        // apartment); a close request meanwhile waits until the function returns
+        CMapLoopScope shellCalls(this->_loopOwner, slkShell);
 
         POINT pt = {xPos, yPos};
         /*if (pt.x == -1 && pt.y == -1) {
@@ -549,7 +576,12 @@ MENU_TEMPLATE_ITEM DirMenu[] =
                     this->_pcm->QueryInterface(IID_IContextMenu2, (void**)&this->_pcm2);
                     this->_pcm->QueryInterface(IID_IContextMenu3, (void**)&this->_pcm3);
 
-                    int iCmd = TrackPopupMenuEx(hmenu, TPM_RETURNCMD, pt.x, pt.y, this->_hWnd, NULL);
+                    int iCmd;
+                    {
+                        // feature 143: a close request inside the menu ends it without a command
+                        CMapLoopScope loop(this->_loopOwner, slkMenu);
+                        iCmd = TrackPopupMenuEx(hmenu, TPM_RETURNCMD, pt.x, pt.y, this->_hWnd, NULL);
+                    }
 
                     if (this->_pcm2)
                     {
@@ -588,6 +620,7 @@ MENU_TEMPLATE_ITEM DirMenu[] =
                         info.lpVerbW = MAKEINTRESOURCEW(iCmd - SCRATCH_QCM_FIRST);
                         info.nShow = SW_SHOWNORMAL;
                         info.ptInvoke = pt;
+                        CMapLoopScope loop(this->_loopOwner, slkShell); // feature 143, see InvokeDefaultCommand
                         this->_pcm->InvokeCommand((LPCMINVOKECOMMANDINFO)&info);
                     }
                 }

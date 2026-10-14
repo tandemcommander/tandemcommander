@@ -51,6 +51,7 @@
 #include "salwideinserts.h" // feature 129
 #include "saljpegkeep.h"     // feature 132
 #include "salmaskname.h"     // feature 141
+#include "salloopclose.h"    // feature 143
 #include "salftpautoren.h"   // feature 141
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
@@ -11045,6 +11046,116 @@ static void TestJpegKeep132()
     CHECK(J132Check(soi, soi) == sjkOriginalNotUnderstood);
 }
 
+// feature 143: a close request for a window inside one of its own loops (salloopclose.h)
+static void TestLoopClose143()
+{
+    CSalLoopCloseState s;
+    SalLoopInit(&s);
+
+    // no loop: close as before, nothing pending, an unbalanced leave reports nothing
+    CSalLoopClose c = SalLoopCloseRequest(&s, TRUE);
+    CHECK(c.CloseNow && !c.EndMenu && !c.CancelOwnBoxes && !SalLoopClosePending(&s));
+    CSalLoopLeave l = SalLoopLeave(&s, slkMenu);
+    CHECK(!l.Last && !l.CloseNow && !l.Redeclare && s.Menus == 0);
+
+    // a menu: pending, the menu is ended; leaving it carries the close out once
+    CHECK(SalLoopEnter(&s, slkMenu));
+    c = SalLoopCloseRequest(&s, TRUE);
+    CHECK(!c.CloseNow && c.EndMenu && !c.CancelOwnBoxes && SalLoopClosePending(&s));
+    c = SalLoopCloseRequest(&s, TRUE); // a second request inside the same loop
+    CHECK(!c.CloseNow && c.EndMenu && SalLoopClosePending(&s));
+    l = SalLoopLeave(&s, slkMenu);
+    CHECK(l.Last && l.CloseNow && !l.Redeclare && !SalLoopClosePending(&s));
+    CHECK(SalLoopCloseRequest(&s, TRUE).CloseNow); // the posted WM_CLOSE: now it closes
+
+    // a menu without a request: the declaration comes back
+    SalLoopInit(&s);
+    CHECK(SalLoopEnter(&s, slkMenu));
+    l = SalLoopLeave(&s, slkMenu);
+    CHECK(l.Last && !l.CloseNow && l.Redeclare);
+
+    // an own box: pending, the box is cancelled
+    SalLoopInit(&s);
+    CHECK(SalLoopEnter(&s, slkOwnBox));
+    c = SalLoopCloseRequest(&s, TRUE);
+    CHECK(!c.CloseNow && !c.EndMenu && c.CancelOwnBoxes);
+    l = SalLoopLeave(&s, slkOwnBox);
+    CHECK(l.Last && l.CloseNow);
+
+    // a shell command: pending only - its windows are never answered
+    SalLoopInit(&s);
+    CHECK(SalLoopEnter(&s, slkShell));
+    c = SalLoopCloseRequest(&s, TRUE);
+    CHECK(!c.CloseNow && !c.EndMenu && !c.CancelOwnBoxes && SalLoopClosePending(&s));
+    l = SalLoopLeave(&s, slkShell);
+    CHECK(l.Last && l.CloseNow);
+
+    // nested: a menu's command runs a shell command which opens an own box - no box is cancelled
+    // while the shell runs; only the last leave closes
+    SalLoopInit(&s);
+    CHECK(SalLoopEnter(&s, slkMenu));
+    CHECK(!SalLoopEnter(&s, slkShell)); // not the first loop
+    CHECK(!SalLoopEnter(&s, slkOwnBox));
+    c = SalLoopCloseRequest(&s, TRUE);
+    CHECK(!c.CloseNow && c.EndMenu && !c.CancelOwnBoxes);
+    l = SalLoopLeave(&s, slkOwnBox);
+    CHECK(!l.Last && !l.CloseNow && SalLoopClosePending(&s));
+    l = SalLoopLeave(&s, slkShell);
+    CHECK(!l.Last && !l.CloseNow && SalLoopClosePending(&s));
+    l = SalLoopLeave(&s, slkMenu);
+    CHECK(l.Last && l.CloseNow && !l.Redeclare && !SalLoopClosePending(&s));
+
+    // an own box after the shell command ended: cancelled again
+    SalLoopInit(&s);
+    SalLoopEnter(&s, slkShell);
+    SalLoopEnter(&s, slkOwnBox);
+    CHECK(!SalLoopCloseRequest(&s, TRUE).CancelOwnBoxes);
+    SalLoopLeave(&s, slkShell);
+    CHECK(SalLoopCloseRequest(&s, TRUE).CancelOwnBoxes);
+    l = SalLoopLeave(&s, slkOwnBox);
+    CHECK(l.Last && l.CloseNow);
+
+    // a leave of a kind that is not open never drives a counter below zero and closes nothing early
+    SalLoopInit(&s);
+    SalLoopEnter(&s, slkOwnBox);
+    SalLoopCloseRequest(&s, TRUE);
+    l = SalLoopLeave(&s, slkMenu);
+    CHECK(!l.Last && !l.CloseNow && s.Menus == 0 && s.OwnBoxes == 1 && SalLoopClosePending(&s));
+    l = SalLoopLeave(&s, slkOwnBox);
+    CHECK(l.Last && l.CloseNow);
+
+    // a request given up by its sender (Release returned FALSE): the window stays and is declared again
+    SalLoopInit(&s);
+    SalLoopEnter(&s, slkShell);
+    SalLoopCloseRequest(&s, TRUE);
+    CHECK(SalLoopCloseAbandon(&s) && !SalLoopClosePending(&s));
+    CHECK(!SalLoopCloseAbandon(&s));
+    l = SalLoopLeave(&s, slkShell);
+    CHECK(l.Last && !l.CloseNow && l.Redeclare);
+    // a new request after the abandon closes again
+    SalLoopEnter(&s, slkShell);
+    SalLoopCloseRequest(&s, TRUE);
+    SalLoopCloseAbandon(&s);
+    SalLoopCloseRequest(&s, TRUE);
+    l = SalLoopLeave(&s, slkShell);
+    CHECK(l.Last && l.CloseNow);
+    // review of 143: the person's own close (File > Exit, the close button) during a shell command is
+    // not given up with Release's request
+    SalLoopInit(&s);
+    SalLoopEnter(&s, slkShell);
+    SalLoopCloseRequest(&s, TRUE);  // Release
+    SalLoopCloseRequest(&s, FALSE); // the person
+    CHECK(!SalLoopCloseAbandon(&s) && SalLoopClosePending(&s));
+    l = SalLoopLeave(&s, slkShell);
+    CHECK(l.Last && l.CloseNow && !SalLoopClosePending(&s));
+    // only the person's: an abandon does nothing
+    SalLoopEnter(&s, slkShell);
+    SalLoopCloseRequest(&s, FALSE);
+    CHECK(!SalLoopCloseAbandon(&s));
+    l = SalLoopLeave(&s, slkShell);
+    CHECK(l.Last && l.CloseNow);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -11127,6 +11238,7 @@ int main(int argc, char** argv)
     TestExifThumb135();
     TestU8WholePrefix137();
     TestMaskName141();
+    TestLoopClose143();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

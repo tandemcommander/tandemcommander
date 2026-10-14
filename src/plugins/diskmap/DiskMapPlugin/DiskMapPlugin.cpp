@@ -214,6 +214,29 @@ static BOOL DiskMapIsUnattendedClose()
     return SalamanderVersion >= DISKMAP_UNATTENDED_CLOSE_VER && SalamanderGeneral->IsUnattendedClose();
 }
 
+// feature 143: map windows whose thread is inside one of its loops (a popup menu, the About box, the
+// close confirmation, a shell command - GUI.LoopGuard.h). Such a window does not let a close request
+// destroy it inside the loop; while it is inside one it is not declared "closes unattended" (the core
+// declines an installer at its question), and Release() refuses an unattended close (the guard for a
+// loop opened between the core's question and the plug-in's turn - FR-006 of 118 for this plug-in).
+static volatile LONG DiskMapLoopsOpen = 0;
+
+void DiskMapLoopStateChanged(HWND hWnd, BOOL inLoop, BOOL declare)
+{
+    if (inLoop)
+    {
+        InterlockedIncrement(&DiskMapLoopsOpen);
+        if (hWnd != NULL && SalamanderVersion >= DISKMAP_UNATTENDED_CLOSE_VER)
+            SalamanderGeneral->SetWindowClosesUnattended(hWnd, FALSE);
+    }
+    else
+    {
+        InterlockedDecrement(&DiskMapLoopsOpen);
+        if (declare)
+            DiskMapDeclareClosesUnattended(hWnd);
+    }
+}
+
 // ****************************************************************************
 
 char* LoadStr(int resID)
@@ -673,7 +696,15 @@ BOOL WINAPI CPluginInterface::Release(HWND parent, BOOL force)
     // and waited for by the window's thread). Feature 118 (interface 107): that is also what an
     // installer's unattended close needs - the map windows are declared (GUI.MainWindow.h) - and
     // it gets the 5 s the 088 viewers get to let the threads end.
+    // Feature 143: a map inside one of its loops (menu, own box, shell command) does not close there -
+    // it ends the menu or its own box and closes when the loop returns (GUI.MainWindow.h, OnClose).
     BOOL unattended = !force && DiskMapIsUnattendedClose();
+    if (unattended && InterlockedCompareExchange(&DiskMapLoopsOpen, 0, 0) > 0)
+    {
+        // feature 143: a map is inside a menu, a box or a shell command - nothing is closed
+        TRACE_I("CPluginInterface::Release(): unattended close: a map window is inside a menu, box or shell command - refusing");
+        return FALSE;
+    }
     TThreadInfoItem* curThreadInfo;
     for (curThreadInfo = FirstThreadItem; curThreadInfo != NULL; curThreadInfo = curThreadInfo->Next)
     {
@@ -682,13 +713,24 @@ BOOL WINAPI CPluginInterface::Release(HWND parent, BOOL force)
             HWND threadWindow = curThreadInfo->MainWindow; // we must copy it because it can change at any time
             if (threadWindow != 0)                         // the window still exists
             {
-                PostMessage(threadWindow, WM_CLOSE, 0, 0);
+                PostMessage(threadWindow, WM_CLOSE, DISKMAP_CLOSE_FROM_RELEASE, 0); // feature 143: marked, see WM_APP_CLOSEABANDONED
             }
         }
     }
 
     if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
+    {
+        // feature 143 (review): a map still inside a shell command keeps its close pending; the close
+        // asked for is given up here (the core asks "force?" or abandons an installer's close), so
+        // the map must not close by itself later when the command returns
+        for (curThreadInfo = FirstThreadItem; curThreadInfo != NULL; curThreadInfo = curThreadInfo->Next)
+        {
+            HWND threadWindow = curThreadInfo->MainWindow;
+            if (curThreadInfo->Thread != 0 && threadWindow != 0)
+                PostMessage(threadWindow, WM_APP_CLOSEABANDONED, 0, 0);
+        }
         return FALSE; // we cannot finish yet, threads are still running
+    }
 
     // feature 118: the items are freed only now that no window thread runs - a window thread
     // writes 'MainWindow = 0' into its item when it ends, so freeing them before (as the code did)

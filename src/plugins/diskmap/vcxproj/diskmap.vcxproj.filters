@@ -102,6 +102,9 @@
     <ClInclude Include="..\DiskMap\GUI.MainWindow.h">
       <Filter>TreeMap</Filter>
     </ClInclude>
+    <ClInclude Include="..\DiskMap\GUI.LoopGuard.h">
+      <Filter>TreeMap</Filter>
+    </ClInclude>
     <ClInclude Include="..\DiskMap\GUI.ShellMenu.h">
       <Filter>TreeMap</Filter>
     </ClInclude>

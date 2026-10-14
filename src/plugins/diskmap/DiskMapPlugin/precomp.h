@@ -18,8 +18,10 @@
 #define SALAMANDER
 //#define TRACE_ENABLE
 #define WM_APP_ICONLOADED (WM_APP + 1)
-#define WM_APP_DIRPOPULATED (WM_APP + 2) //wParam = 0; lParam = CZRoot
-#define WM_APP_LOGUPDATED (WM_APP + 3)   //wParam = count; lParam = logger
+#define WM_APP_DIRPOPULATED (WM_APP + 2)   //wParam = 0; lParam = CZRoot
+#define WM_APP_LOGUPDATED (WM_APP + 3)     //wParam = count; lParam = logger
+#define WM_APP_CLOSEABANDONED (WM_APP + 4) // feature 143: Release() gave up the close it asked for
+#define DISKMAP_CLOSE_FROM_RELEASE 0x143   // feature 143: wParam of the WM_CLOSE Release() posts
 
 #define WIN32_LEAN_AND_MEAN // exclude rarely-used stuff from Windows headers
 // Windows Header Files:

@@ -1,0 +1,68 @@
+release_guard_probe (feature 143), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre143\tandemcommander.exe
+Date    : 2026-10-14 05:43; desktop 'tc_probe_19096'; registry key existed True; export SHA-256 C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+Fixture : C:\Users\pavel\AppData\Local\Temp\tc143\dm and C:\Users\pavel\AppData\Local\Temp\tc143\unc, 5 files each (1 to 25 KB); unc seen as \\localhost\C$\Users\pavel\AppData\Local\Temp\tc143\unc
+Hot keys: renamer.spl id 1: 1; checksum.spl id 1: 1; checksum.spl id 2: 1; diskmap.spl id 1: 1; filecomp.spl id 1: 1
+
+--- E0: map finished, no loop (expected: the program ends cleanly)
+E0         STATE  PASS        map 'DiskMap - C:\Users\pavel\AppData\Local\Temp\tc143\dm', scan finished
+E0         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- E1: file context menu open (expected: the program ends cleanly)
+E1         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti)
+           shown: 0,1 s [#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261014-054410.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.
+E1         EXIT   FAIL        still running after 25 s - ended by the probe; after 0,1 s; crash reports 1 [TC0110X64-20261014-054410.TXT: Information About Exception: / Exception: access violation: read on 0xFFFFFFFFFFFFFFFF / WindowThreadBody() / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / WinMainBody::message_loop / CMainWindow::WindowProc(0x8193, 0x0, 0x0) / WM_USER_CLOSE_MAINWND::1 / WM_USER_CLOSE_MAINWND::2 / CPlugins::UnloadAll()]; fatal window True; the core's force question not asked
+--- E2: About box open (expected: the program ends cleanly)
+E2         STATE  PASS        About box [#32770 'About Salamander DiskMap Plugin'] [Static id=2477] DiskMap 1.12 (x64) Copyright \u00A9 2009-2023 Ondrej Zarevucky Displays a treemap of files on your disk. | [Button id=1] OK
+E2         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- E3: Esc close confirmation open (expected: the program ends cleanly)
+E3         STATE  PASS        confirmation [#32770 'DiskMap'] [Static id=2477] Do you want to close DiskMap? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] Don't show this message again and close DiskMap without asking
+E3         EXIT   PASS        0x00000000; after 1,3 s; crash reports 0; fatal window False; the core's force question not asked
+--- E4: shell Delete confirmation open, the person answers it first (expected: the program ends cleanly)
+E4         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti) ;; Delete (item 30) -> [#32770 'Odstranit soubor'] [Static id=16779] Opravdu chcete trvale odstranit tento soubor? | [Button id=6] &Ano | [Button id=2] &Ne | [Static id=0] f5.txt | [Static id=0] Typ: Soubor TXT Velikost: 24,4 kB Datum zm\u011Bny: \u200E14.\u200E10.\u200E2026 \u200F\u200E5:43; its thread 29588 (the map's 29588)
+           shown: 0,2 s [#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261014-054428.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.
+E4         EXIT   FAIL        still running after 25 s - ended by the probe; after 0,2 s; crash reports 1 [TC0110X64-20261014-054428.TXT: Information About Exception: / Exception: access violation: read on 0xFFFFFFFFFFFFFFFF / WindowThreadBody() / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / WinMainBody::message_loop / CMainWindow::WindowProc(0x8193, 0x0, 0x0) / WM_USER_CLOSE_MAINWND::1 / WM_USER_CLOSE_MAINWND::2 / CPlugins::UnloadAll()]; fatal window True; the core's force question not asked; files in the folder 5 (before 5)
+--- E5: shell Delete confirmation open, the person forces the unload first (expected: the program ends cleanly)
+E5         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti) ;; Delete (item 30) -> [#32770 'Odstranit soubor'] [Static id=16779] Opravdu chcete trvale odstranit tento soubor? | [Button id=6] &Ano | [Button id=2] &Ne | [Static id=0] f5.txt | [Static id=0] Typ: Soubor TXT Velikost: 24,4 kB Datum zm\u011Bny: \u200E14.\u200E10.\u200E2026 \u200F\u200E5:43; its thread 7276 (the map's 7276)
+           shown: 0,2 s [#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261014-054436.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.
+E5         EXIT   FAIL        still running after 25 s - ended by the probe; after 0,2 s; crash reports 1 [TC0110X64-20261014-054436.TXT: Information About Exception: / Exception: access violation: read on 0xFFFFFFFFFFFFFFFF / WindowThreadBody() / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / WinMainBody::message_loop / CMainWindow::WindowProc(0x8193, 0x0, 0x0) / WM_USER_CLOSE_MAINWND::1 / WM_USER_CLOSE_MAINWND::2 / CPlugins::UnloadAll()]; fatal window True; the core's force question not asked; files in the folder 5 (before 5)
+--- E6: shell Delete confirmation open, the force question answered No
+E6         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti) ;; Delete (item 30) -> [#32770 'Odstranit soubor'] [Static id=16779] Opravdu chcete trvale odstranit tento soubor? | [Button id=6] &Ano | [Button id=2] &Ne | [Static id=0] f5.txt | [Static id=0] Typ: Soubor TXT Velikost: 24,4 kB Datum zm\u011Bny: \u200E14.\u200E10.\u200E2026 \u200F\u200E5:43; its thread 7148 (the map's 7148)
+E6         QUESTION FAIL        the core did not ask about the plug-in that does not unload
+E6         END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 1 [TC0110X64-20261014-054443.TXT: Information About Exception: / Exception: access violation: read on 0xFFFFFFFFFFFFFFFF / WindowThreadBody() / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / WinMainBody::message_loop / CMainWindow::WindowProc(0x8193, 0x0, 0x0) / WM_USER_CLOSE_MAINWND::1 / WM_USER_CLOSE_MAINWND::2 / CPlugins::UnloadAll()]
+--- M1: the map closed by File > Exit
+M1         MAP    PASS        File > Exit (115): the map is closed (want closed); the program runs True; boxes 0
+M1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- M2: the map closed by Esc, confirmation Yes
+M2         MAP    PASS        Esc, confirmation Yes: the map is closed (want closed); the program runs True; boxes 0
+M2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- M3: Esc, confirmation No - the map stays
+M3         MAP    PASS        Esc, confirmation No: the map is open (want kept); the program runs True; boxes 0
+M3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- U1: installer: file context menu open (expected: decline)
+U1         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti)
+           shown: [SalamanderSaveBits 'Tandem Commander'] 
+           shown: [#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261014-054527.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.
+U1         RM     FAIL        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 40,0 s; process alive True; windows kept 1/3; new windows 2
+           rm> Registered : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre143\tandemcommander.exe
+           rm> Affected   : 1 process(es), reboot reasons: 0
+           rm>   pid 16024  RmMainWindow   restartable=True  status=0x1 own=True  'Tandem Commander, File Manager'  E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre143\tandemcommander.exe
+           rm> RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 40,0 s
+           rm> Survivors  : 16024
+           rm>   after: pid 16024 status=0x11 restartable=True
+U1         END    FAIL        exit 0x00000001; alive False; WM_NULL False; stray 0; new reports 1 [TC0110X64-20261014-054527.TXT: Information About Exception: / Exception: access violation: read on 0xFFFFFFFFFFFFFFFF / WindowThreadBody() / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / WinMainBody::message_loop / CMainWindow::WindowProc(0x16, 0x1, 0x1) / CMainWindow::WindowProc(0x11, 0x0, 0x1) / WM_USER_CLOSE_MAINWND::1 / WM_USER_CLOSE_MAINWND::2]
+--- U2: installer: About box open (expected: decline)
+U2         STATE  PASS        About box [#32770 'About Salamander DiskMap Plugin'] [Static id=2477] DiskMap 1.12 (x64) Copyright \u00A9 2009-2023 Ondrej Zarevucky Displays a treemap of files on your disk. | [Button id=1] OK
+U2         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+U2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- U3: installer: Esc close confirmation open (expected: decline)
+U3         STATE  PASS        confirmation [#32770 'DiskMap'] [Static id=2477] Do you want to close DiskMap? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] Don't show this message again and close DiskMap without asking
+U3         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+U3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+--- U4: installer: shell Delete confirmation open (expected: decline)
+U4         STATE  PASS        menu [#32768 ''] : 33 items (...Certum SmartSign | Kop\u00ED&rovat jako cestu | &Sd\u00EDlet | Obnovit p\u0159edc&hoz\u00ED verze | &Odeslat | Vyj&mout | &Kop\u00EDrovat | Vytvo\u0159it &z\u00E1stupce | O&dstranit | Vlast&nosti) ;; Delete (item 30) -> [#32770 'Odstranit soubor'] [Static id=16779] Opravdu chcete trvale odstranit tento soubor? | [Button id=6] &Ano | [Button id=2] &Ne | [Static id=0] f5.txt | [Static id=0] Typ: Soubor TXT Velikost: 24,4 kB Datum zm\u011Bny: \u200E14.\u200E10.\u200E2026 \u200F\u200E5:43; its thread 28312 (the map's 28312)
+U4         RM     PASS        rm_probe exit 1; RmShutdown : 351 (ERROR_FAIL_SHUTDOWN) after 0,0 s; process alive True; windows kept 3/3; new windows 0
+U4         WORK   PASS        the shell confirmation was still open True (answered No by the probe); files 5 (before 5)
+U4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 27, FAIL 7, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
