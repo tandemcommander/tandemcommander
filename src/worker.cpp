@@ -7030,7 +7030,7 @@ BOOL DoCreateDir(HWND hProgressDlg, char* name, DWORD attr,
                             data[0] = (char*)&ret;
                             data[1] = LoadStr(script->IsCopyOperation ? IDS_ERRORCOPY : IDS_ERRORMOVE);
                             data[2] = name;
-                            data[3] = LoadStrU8(script->IsCopyOperation ? IDS_CANNOTCOPYFILETOITSELF : IDS_CANNOTMOVEDIRTOITSELF); // the dialog shows UTF-8 here
+                            data[3] = LoadStrU8(script->IsCopyOperation ? IDS_CANNOTCOPYDIRTOITSELF : IDS_CANNOTMOVEDIRTOITSELF); // the dialog shows UTF-8 here (feature 155: a folder's text for the copy)
                             SendMessage(hProgressDlg, WM_USER_DIALOG, 0, (LPARAM)data);
                             switch (ret)
                             {

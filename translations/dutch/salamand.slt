@@ -2641,6 +2641,9 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 82]
 12160,1,"Het pad "%s" weigert te sluiten.\nWilt u het sluiten forceren?"
+12161,1,"Een map kan niet naar zichzelf worden gekopieerd."
+12162,1,"Een map kan niet naar zichzelf of naar een van de submappen worden verplaatst."
+12163,1,"Een archief kan niet in zichzelf worden ingepakt. Laat het archief (of de map waarin het staat) buiten de selectie."
 12165,1,"Meerdere verbindingen naar een server of een gedeelde bron door dezelfde gebruiker met verschillende gebruikersnamen, zijn niet toegestaan. Verbreek alle vorige verbindingen naar de server of bron en probeer opnieuw."
 12170,1,"Wilt u alle geselecteerde bestanden ignoreren (uitsluiten van archief actualiseren)?"
 12171,1,"Wilt u alle geactualiseerde bestanden ignoreren (archief actualiseren afbreken)?"

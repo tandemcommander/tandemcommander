@@ -157,7 +157,8 @@ static int DirTargetIsSource107(CActionType type, const char* sourceDir, DWORD s
     CALL_STACK_MESSAGE5("DirTargetIsSource107(%d, %s, 0x%X, %s, , )", type, sourceDir, sourceDirAttr, targetDir);
     BOOL move = type == atMove;
     BOOL isLink = (sourceDirAttr & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
-    int refuse = move ? IDS_CANNOTMOVEDIRTOITSELF : IDS_CANNOTCOPYFILETOITSELF;
+    // feature 155: a folder's own texts - a copy said "Cannot copy a file to itself."
+    int refuse = move ? IDS_CANNOTMOVEDIRTOITSELF : IDS_CANNOTCOPYDIRTOITSELF;
     // 1. T\name exists and is the source: the copy/move would merge the folder into itself (a
     //    link is compared as the link itself - moving it "onto itself" deleted the link)
     if (targetExists)
@@ -180,14 +181,14 @@ static int DirTargetIsSource107(CActionType type, const char* sourceDir, DWORD s
             CDirTargetChain107* chain = CurrentDirChain107 != NULL ? CurrentDirChain107 : &local;
             chain->Ensure(targetDir);
             if (!chain->Complete)
-                return refuse; // low memory: the move is not risked
+                return refuse; // low memory: the move is not risked (the reason is not known)
             int n = chain->Ids.Count;
             for (int i = 0; i < n; i++)
             {
                 const CSalFileIdentity& e = chain->Ids[i];
                 BOOL paths = SalFileIdMatch(src, e) != simUnknown || SalPathsBelowServerLooselyEqualU8(sourceDir, chain->Paths[i]);
                 if (SalDirIsSame(src, e, FALSE, paths))
-                    return refuse;
+                    return IDS_CANNOTMOVEDIRINTOITSELF; // feature 155: it said "to itself"
             }
         }
     }
@@ -1939,7 +1940,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         }
     }
     //---  feature 107: the target is the source folder under another path, or (a move) inside it;
-    //     the same path by name keeps its old handling below (and in BuildScriptFile)
+    //     the same path by name keeps its handling below (a copy refused at the folder since 155)
     if ((type == atCopy || type == atMove) && firstLevelDir && targetPath != NULL &&
         !SalNameEqualOrdinalCI(sourcePath, -1, targetPath, -1))
     {
@@ -1963,6 +1964,17 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             SalMessageBox(MainWindow->HWindow, LoadStrU8(msg), LoadStrU8(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             return FALSE;
         }
+    }
+    //--- feature 155: a folder copied onto itself by name is refused as a folder - it descended and
+    //    BuildScriptFile refused its first file ("Cannot copy a file to itself."; an empty folder not
+    //    at all); the move's same-name branch follows
+    if (type == atCopy && targetPath != NULL && SalNameEqualOrdinalCI(sourcePath, -1, targetPath, -1))
+    {
+        *sourceEnd = 0; // restoring sourcePath
+        *targetEnd = 0; // restoring targetPath
+        SalMessageBox(MainWindow->HWindow, LoadStrU8(IDS_CANNOTCOPYDIRTOITSELF),
+                      LoadStrU8(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+        return FALSE;
     }
     //---
     if (type == atMove)

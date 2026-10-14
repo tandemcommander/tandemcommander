@@ -2641,6 +2641,9 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 82]
 12160,1,"Cesta "%s" odmítá uzavření.\nVynutit jeho uzavření?"
+12161,1,"Nelze zkopírovat adresář do sebe sama."
+12162,1,"Nelze přesunout adresář do sebe sama ani do jednoho z jeho podadresářů."
+12163,1,"Archiv nelze zabalit do sebe sama. Vynechte archiv (nebo adresář, který jej obsahuje) z výběru."
 12165,1,"Více spojení se serverem nebo sdíleným prostředkem pod stejným uživatelem, používajícím více než jedno uživatelské jméno, není povoleno. Odpojte všechna předchozí spojení se serverem nebo sdíleným zdrojem a opakujte akci."
 12170,1,"Chcete ignorovat všechny vybrané soubory (vyjmout je z aktualizace archivu)?"
 12171,1,"Přejete si ignorovat všechny aktualizované soubory (přerušit aktualizaci archivu)?"

@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Clearer refusals** (feature 155). A folder copied onto itself says so
+  (it said "Cannot copy a file to itself."), a folder moved into one of its
+  own subfolders says that, packing an archive into itself tells to leave it
+  out of the selection, and the Batch Renamer says "Cannot move a file to
+  itself." instead of "already exists". An empty folder copied onto itself is
+  refused too.
+
 - **Text typed while the program catches up keeps its characters**
   (feature 154). Characters outside the keyboard layout's code page (another
   script, emoji) typed into the command line right when the program came back

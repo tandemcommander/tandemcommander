@@ -1628,12 +1628,13 @@ BOOL PackArchiveIsSelectedSource(const char* archive, const char* panelPath, CPa
 // Pack dialog said only "Cannot copy a file to itself." (feature 106, Overwrite) and the other
 // routes reached the packer: ZIP reported a sharing violation for the archive, 7-Zip packed the old
 // archive into the new one (a Move then failed with "Delete Error (32)"). The error box names the
-// archive (Name:), so the user sees which selected item to leave out; no new string.
+// archive (Name:), so the user sees which selected item to leave out; feature 155: and says that it
+// is to be left out (the copy / move text "Cannot copy a file to itself." said neither).
 void ShowPackIntoItselfRefusal(HWND parent, const char* archive, BOOL move, const char* caption)
 {
     CALL_STACK_MESSAGE3("ShowPackIntoItselfRefusal(, %s, %d, )", archive, move);
-    CFileErrorDlg(parent, caption, archive, LoadStrU8(move ? IDS_CANNOTMOVEFILETOITSELF : IDS_CANNOTCOPYFILETOITSELF),
-                  FALSE, IDD_ERROR3)
+    UNREFERENCED_PARAMETER(move);
+    CFileErrorDlg(parent, caption, archive, LoadStrU8(IDS_PACKINTOITSELF), FALSE, IDD_ERROR3)
         .Execute();
 }
 

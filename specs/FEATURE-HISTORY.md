@@ -2396,3 +2396,10 @@ a few early ones are out of sequence).
   probe that posts after a sent activation races the main loop (2 of 4 caught) - hold the
   target thread (SuspendThread) while posting. Menus unchanged (code-page mnemonics against
   code-page texts). Probe 7/0, before 6/1 (7 of 7 runs).
+- 155-refusal-texts: **refusals say what is refused** (item 10). Core 12161-12163 (folder copied
+  onto itself, moved into itself / a subfolder, pack into itself with "leave it out of the
+  selection"), Renamer 1243/1287 (a file / a folder moved onto itself; the Renamer has no copy
+  mode - its copy onto itself is a cross-root rename). A folder copied onto itself BY NAME is now
+  refused at the folder (it descended and the first file was refused "a file"; an empty folder
+  not at all). **Traps:** DeepL's informal register (pins); `translate.merge --module renamer`
+  re-lays out 159 controls - keep only the string entries. Probe 10/0, before 3/7.

@@ -201,11 +201,9 @@ Functional, no loss:
    (154's fix-log): the menus' own loops (code-page mnemonic against code-page menu texts -
    consistent), help mode, the tooltip's loop, discard-only loops. Not examined: other plug-ins'
    dialogs. Item 5, *B-1* (093).
-10. Clearer refusal texts that need new strings: a refused folder copy says
-    "Cannot copy a file to itself." and a move into its own subfolder "Cannot
-    move a directory to itself." (107); the pack-into-itself refusal does not
-    say that deselecting helps (119); the Renamer says "already exists" (103,
-    107). Item 5, first entry.
+10. ~~Clearer refusal texts~~ - **done, feature 155** (folder copy / move into itself, the pack
+    into itself with "leave it out of the selection", the Renamer's own texts; an empty folder
+    copied onto itself is refused now - a decision recorded in its fix-log).
 11. A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
@@ -273,7 +271,7 @@ Large or risky, each a feature of its own:
   152 (one PictView print - a printer or *Microsoft Print to PDF* - compared with its preview:
   plain, mirrored, a selection);
   153 (the Archive Update dialog with a marked line: readable, scrolls; English and one
-  translated language);
+  translated language); 155 (one refusal of each kind on screen in a translated language);
   **123 (new version check)**: design acceptance of the notification window
   (captures in `specs/123-new-version-check/probe/shots/`, also 150 % and
   200 %), real keyboard and mouse (typing while the notification arrives, a

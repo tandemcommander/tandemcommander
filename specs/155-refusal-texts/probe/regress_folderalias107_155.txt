@@ -1,0 +1,219 @@
+folderalias_probe (feature 107) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 14:30; ACP 1250; registry key existed True; Expect107 True
+Clipboard: cannot read (Exception calling "GetDataObject" with "0" argument(s): "Po?adovan? operace se schr?nkou se nezda?ila.") - the paste rows are not driven
+WebDAV  : NOT AVAILABLE - the WebClient service is not running
+
+a-plain-cpy RUN    PASS        cpy -> ...\pavel\AppData\Local\Temp\tc107\fa\a-plain-cpy\parentlong\F\; 4s; lost 0 [-]; missing 0 [-]; added 8 [F\F/, F\F\a.txt=A-a-plain-cpy, F\F\empty/, F\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+a-plain-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-plain-mov RUN    PASS        mov -> ...\pavel\AppData\Local\Temp\tc107\fa\a-plain-mov\parentlong\F\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+a-plain-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-plain-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+a-plain-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+b-plain-cpy RUN    PASS        cpy -> ...rs\pavel\AppData\Local\Temp\tc107\fa\b-plain-cpy\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot copy a directory to itself. |
+b-plain-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-plain-mov RUN    PASS        mov -> ...rs\pavel\AppData\Local\Temp\tc107\fa\b-plain-mov\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory to itself. |
+b-plain-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-plain-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+b-plain-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+c-plain-cpy RUN    PASS        cpy -> ...el\AppData\Local\Temp\tc107\fa\c-plain-cpy\parentlong\F\sub\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\sub\F/, F\sub\F\a.txt=A-c-plain-cpy, F\sub\F\empty/, F\sub\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+c-plain-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-plain-mov RUN    PASS        mov -> ...el\AppData\Local\Temp\tc107\fa\c-plain-mov\parentlong\F\sub\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+c-plain-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-plain-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+c-plain-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+a-unc-cpy  RUN    PASS        cpy -> ...rs\pavel\AppData\Local\Temp\tc107\fa\a-unc-cpy\parentlong\F\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\F/, F\F\a.txt=A-a-unc-cpy, F\F\empty/, F\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+a-unc-cpy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-unc-mov  RUN    PASS        mov -> ...rs\pavel\AppData\Local\Temp\tc107\fa\a-unc-mov\parentlong\F\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+a-unc-mov  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-unc-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+a-unc-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+b-unc-cpy  RUN    PASS        cpy -> ...sers\pavel\AppData\Local\Temp\tc107\fa\b-unc-cpy\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot copy a directory to itself. |
+b-unc-cpy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-unc-mov  RUN    PASS        mov -> ...sers\pavel\AppData\Local\Temp\tc107\fa\b-unc-mov\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory to itself. |
+b-unc-mov  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-unc-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+b-unc-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+c-unc-cpy  RUN    PASS        cpy -> ...avel\AppData\Local\Temp\tc107\fa\c-unc-cpy\parentlong\F\sub\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\sub\F/, F\sub\F\a.txt=A-c-unc-cpy, F\sub\F\empty/, F\sub\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+c-unc-cpy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-unc-mov  RUN    PASS        mov -> ...avel\AppData\Local\Temp\tc107\fa\c-unc-mov\parentlong\F\sub\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+c-unc-mov  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-unc-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+c-unc-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+a-ip-cpy   RUN    PASS        cpy -> ...ers\pavel\AppData\Local\Temp\tc107\fa\a-ip-cpy\parentlong\F\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\F/, F\F\a.txt=A-a-ip-cpy, F\F\empty/, F\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+a-ip-cpy   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-ip-mov   RUN    PASS        mov -> ...ers\pavel\AppData\Local\Temp\tc107\fa\a-ip-mov\parentlong\F\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+a-ip-mov   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-ip-cpy   RUN    PASS        cpy -> ...Users\pavel\AppData\Local\Temp\tc107\fa\b-ip-cpy\parentlong\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot copy a directory to itself. |
+b-ip-cpy   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-ip-mov   RUN    PASS        mov -> ...Users\pavel\AppData\Local\Temp\tc107\fa\b-ip-mov\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory to itself. |
+b-ip-mov   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-ip-cpy   RUN    PASS        cpy -> ...pavel\AppData\Local\Temp\tc107\fa\c-ip-cpy\parentlong\F\sub\; 4s; lost 0 [-]; missing 0 [-]; added 8 [F\sub\F/, F\sub\F\a.txt=A-c-ip-cpy, F\sub\F\empty/, F\sub\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+c-ip-cpy   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-ip-mov   RUN    PASS        mov -> ...pavel\AppData\Local\Temp\tc107\fa\c-ip-mov\parentlong\F\sub\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+c-ip-mov   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-subst-cpy RUN    PASS        cpy -> T:\F\; 4s; lost 0 [-]; missing 0 [-]; added 8 [F\F/, F\F\a.txt=A-a-subst-cpy, F\F\empty/, F\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+a-subst-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-subst-mov RUN    PASS        mov -> T:\F\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+a-subst-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-subst-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+a-subst-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+b-subst-cpy RUN    PASS        cpy -> T:\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot copy a directory to itself. |
+b-subst-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-subst-mov RUN    PASS        mov -> T:\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory to itself. |
+b-subst-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-subst-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+b-subst-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+c-subst-cpy RUN    PASS        cpy -> T:\F\sub\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\sub\F/, F\sub\F\a.txt=A-c-subst-cpy, F\sub\F\empty/, F\sub\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+c-subst-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-subst-mov RUN    PASS        mov -> T:\F\sub\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+c-subst-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-subst-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+c-subst-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+a-junc-cpy RUN    PASS        cpy -> C:\Users\pavel\AppData\Local\Temp\tc107\fa\a-junc-cpy\j\F\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\F/, F\F\a.txt=A-a-junc-cpy, F\F\empty/, F\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+a-junc-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-junc-mov RUN    PASS        mov -> C:\Users\pavel\AppData\Local\Temp\tc107\fa\a-junc-mov\j\F\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+a-junc-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-junc-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+a-junc-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+b-junc-cpy RUN    PASS        cpy -> C:\Users\pavel\AppData\Local\Temp\tc107\fa\b-junc-cpy\j\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot copy a directory to itself. |
+b-junc-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-junc-mov RUN    PASS        mov -> C:\Users\pavel\AppData\Local\Temp\tc107\fa\b-junc-mov\j\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory to itself. |
+b-junc-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-junc-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+b-junc-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+c-junc-cpy RUN    PASS        cpy -> ...\Users\pavel\AppData\Local\Temp\tc107\fa\c-junc-cpy\j\F\sub\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\sub\F/, F\sub\F\a.txt=A-c-junc-cpy, F\sub\F\empty/, F\sub\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+c-junc-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-junc-mov RUN    PASS        mov -> ...\Users\pavel\AppData\Local\Temp\tc107\fa\c-junc-mov\j\F\sub\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+c-junc-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-junc-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+c-junc-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+a-short-cpy RUN    PASS        cpy -> ...rs\pavel\AppData\Local\Temp\tc107\fa\a-short-cpy\PARENT~1\F\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\F/, F\F\a.txt=A-a-short-cpy, F\F\empty/, F\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+a-short-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-short-mov RUN    PASS        mov -> ...rs\pavel\AppData\Local\Temp\tc107\fa\a-short-mov\PARENT~1\F\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+a-short-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-short-cpy RUN    PASS        cpy -> ...sers\pavel\AppData\Local\Temp\tc107\fa\b-short-cpy\PARENT~1\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot copy a directory to itself. |
+b-short-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-short-mov RUN    PASS        mov -> ...sers\pavel\AppData\Local\Temp\tc107\fa\b-short-mov\PARENT~1\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory to itself. |
+b-short-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-short-cpy RUN    PASS        cpy -> ...avel\AppData\Local\Temp\tc107\fa\c-short-cpy\PARENT~1\F\sub\; 4s; lost 0 [-]; missing 0 [-]; added 8 [F\sub\F/, F\sub\F\a.txt=A-c-short-cpy, F\sub\F\empty/, F\sub\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+c-short-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-short-mov RUN    PASS        mov -> ...avel\AppData\Local\Temp\tc107\fa\c-short-mov\PARENT~1\F\sub\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+c-short-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-case-cpy RUN    PASS        cpy -> ...s\pavel\AppData\Local\Temp\tc107\fa\a-case-cpy\PARENTLONG\F\; 4s; lost 0 [-]; missing 0 [-]; added 8 [F\F/, F\F\a.txt=A-a-case-cpy, F\F\empty/, F\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+a-case-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-case-mov RUN    PASS        mov -> ...s\pavel\AppData\Local\Temp\tc107\fa\a-case-mov\PARENTLONG\F\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+a-case-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-case-cpy RUN    PASS        cpy -> ...ers\pavel\AppData\Local\Temp\tc107\fa\b-case-cpy\PARENTLONG\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot copy a directory to itself. |
+b-case-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-case-mov RUN    PASS        mov -> ...ers\pavel\AppData\Local\Temp\tc107\fa\b-case-mov\PARENTLONG\; 3,9s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: nothing
+b-case-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-case-cpy RUN    PASS        cpy -> ...vel\AppData\Local\Temp\tc107\fa\c-case-cpy\PARENTLONG\F\sub\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\sub\F/, F\sub\F\a.txt=A-c-case-cpy, F\sub\F\empty/, F\sub\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+c-case-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-case-mov RUN    PASS        mov -> ...vel\AppData\Local\Temp\tc107\fa\c-case-mov\PARENTLONG\F\sub\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+c-case-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-net-cpy  RUN    PASS        cpy -> ...rs\pavel\AppData\Local\Temp\tc107\fa\a-net-cpy\parentlong\F\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\F/, F\F\a.txt=A-a-net-cpy, F\F\empty/, F\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+a-net-cpy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-net-mov  RUN    PASS        mov -> ...rs\pavel\AppData\Local\Temp\tc107\fa\a-net-mov\parentlong\F\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+a-net-mov  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-net-cpy  RUN    PASS        cpy -> ...sers\pavel\AppData\Local\Temp\tc107\fa\b-net-cpy\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot copy a directory to itself. |
+b-net-cpy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+b-net-mov  RUN    PASS        mov -> ...sers\pavel\AppData\Local\Temp\tc107\fa\b-net-mov\parentlong\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory to itself. |
+b-net-mov  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-net-cpy  RUN    PASS        cpy -> ...avel\AppData\Local\Temp\tc107\fa\c-net-cpy\parentlong\F\sub\; 3,9s; lost 0 [-]; missing 0 [-]; added 8 [F\sub\F/, F\sub\F\a.txt=A-c-net-cpy, F\sub\F\empty/, F\sub\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+c-net-cpy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+c-net-mov  RUN    PASS        mov -> ...avel\AppData\Local\Temp\tc107\fa\c-net-mov\parentlong\F\sub\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory into itself or into one of its subdirectories. |
+c-net-mov  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+a-davx-cpy RUN    NOT DRIVEN  the WebClient service is not running
+a-davx-mov RUN    NOT DRIVEN  the WebClient service is not running
+a-davx-pcpy RUN    NOT DRIVEN  the WebClient service is not running
+a-davx-pmov RUN    NOT DRIVEN  the WebClient service is not running
+b-davx-cpy RUN    NOT DRIVEN  the WebClient service is not running
+b-davx-mov RUN    NOT DRIVEN  the WebClient service is not running
+b-davx-pcpy RUN    NOT DRIVEN  the WebClient service is not running
+b-davx-pmov RUN    NOT DRIVEN  the WebClient service is not running
+c-davx-cpy RUN    NOT DRIVEN  the WebClient service is not running
+c-davx-mov RUN    NOT DRIVEN  the WebClient service is not running
+c-davx-pcpy RUN    NOT DRIVEN  the WebClient service is not running
+c-davx-pmov RUN    NOT DRIVEN  the WebClient service is not running
+a-davn-cpy RUN    NOT DRIVEN  the WebClient service is not running
+a-davn-mov RUN    NOT DRIVEN  the WebClient service is not running
+b-davn-cpy RUN    NOT DRIVEN  the WebClient service is not running
+b-davn-mov RUN    NOT DRIVEN  the WebClient service is not running
+c-davn-cpy RUN    NOT DRIVEN  the WebClient service is not running
+c-davn-mov RUN    NOT DRIVEN  the WebClient service is not running
+a-davy-cpy RUN    NOT DRIVEN  the WebClient service is not running
+a-davy-mov RUN    NOT DRIVEN  the WebClient service is not running
+b-davy-cpy RUN    NOT DRIVEN  the WebClient service is not running
+b-davy-mov RUN    NOT DRIVEN  the WebClient service is not running
+c-davy-cpy RUN    NOT DRIVEN  the WebClient service is not running
+c-davy-mov RUN    NOT DRIVEN  the WebClient service is not running
+a-davw-cpy RUN    NOT DRIVEN  the WebClient service is not running
+a-davw-mov RUN    NOT DRIVEN  the WebClient service is not running
+b-davw-cpy RUN    NOT DRIVEN  the WebClient service is not running
+b-davw-mov RUN    NOT DRIVEN  the WebClient service is not running
+c-davw-cpy RUN    NOT DRIVEN  the WebClient service is not running
+c-davw-mov RUN    NOT DRIVEN  the WebClient service is not running
+q-short-qren RUN    PASS        qren -> FOLDER~1; 3,9s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: nothing
+q-short-qren END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+q-case-qren RUN    PASS        qren -> f; 3,9s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: nothing
+q-case-qren END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-unc-cpy-same RUN    PASS        cpy -> ...avel\AppData\Local\Temp\tc107\fa\hl-unc-cpy-same\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+hl-unc-cpy-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-unc-mov-same RUN    PASS        mov -> ...avel\AppData\Local\Temp\tc107\fa\hl-unc-mov-same\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Move Error'] Name: | Error: | Cannot move a file to itself. |
+hl-unc-mov-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-ip-cpy-same RUN    PASS        cpy -> ...pavel\AppData\Local\Temp\tc107\fa\hl-ip-cpy-same\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+hl-ip-cpy-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-ip-mov-same RUN    PASS        mov -> ...pavel\AppData\Local\Temp\tc107\fa\hl-ip-mov-same\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Move Error'] Name: | Error: | Cannot move a file to itself. |
+hl-ip-mov-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-subst-cpy-same RUN    PASS        cpy -> T:\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+hl-subst-cpy-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-subst-mov-same RUN    PASS        mov -> T:\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Move Error'] Name: | Error: | Cannot move a file to itself. |
+hl-subst-mov-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-junc-cpy-same RUN    PASS        cpy -> ...\Users\pavel\AppData\Local\Temp\tc107\fa\hl-junc-cpy-same\j\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+hl-junc-cpy-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-junc-mov-same RUN    PASS        mov -> ...\Users\pavel\AppData\Local\Temp\tc107\fa\hl-junc-mov-same\j\; 4s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: nothing
+hl-junc-mov-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-short-cpy-same RUN    PASS        cpy -> ...avel\AppData\Local\Temp\tc107\fa\hl-short-cpy-same\PARENT~1\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+hl-short-cpy-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-short-mov-same RUN    PASS        mov -> ...avel\AppData\Local\Temp\tc107\fa\hl-short-mov-same\PARENT~1\; 3,9s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: nothing
+hl-short-mov-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-net-cpy-same RUN    PASS        cpy -> ...avel\AppData\Local\Temp\tc107\fa\hl-net-cpy-same\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+hl-net-cpy-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-net-mov-same RUN    PASS        mov -> ...avel\AppData\Local\Temp\tc107\fa\hl-net-mov-same\parentlong\; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Move Error'] Name: | Error: | Cannot move a file to itself. |
+hl-net-mov-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-unc-cpy-other RUN    PASS        cpy -> ...ppData\Local\Temp\tc107\fa\hl-unc-cpy-other\parentlong\b.txt; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Confirm File Overwrite'] Overwrite file: | 25, 14.10.2026, 14:41:50, A | With file: | 25, 14.10.2026, 14:41:50, A |
+hl-unc-cpy-other END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-plain-cpy-other RUN    PASS        cpy -> ...Data\Local\Temp\tc107\fa\hl-plain-cpy-other\parentlong\b.txt; 5,3s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Confirm File Overwrite'] Overwrite file: | 27, 14.10.2026, 14:42:01, A | With file: | 27, 14.10.2026, 14:42:01, A |
+hl-plain-cpy-other END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+deep-junc-mov RUN    PASS        mov -> ...:\Users\pavel\AppData\Local\Temp\tc107\fa\deep-junc-mov\dst\; 7,1s; lost 0 [-]; missing 4 [src\F\a.txt=A-deep-junc-mov, src\F\empty/, src\F\\u041F\u0430\u043F\u043A\u0430/, src\F\\u041F\u0430\u043F\u043A\u0430\c.txt=C-deep-junc-mov]; added 4 [dst\F\a.txt=A-deep-junc-mov, dst\F\empty/, dst\F\\u041F\u0430\u043F\u043A\u0430/, dst\F\\u041F\u0430\u043F\u043A\u0430\c.txt=C-deep-junc-mov]; 107-windows True; focus True; asked: ['Move Error'] Name: | Error: | Cannot move a directory to itself. | || ['Error Deleting Directory'] Name: | Error: | (145) Adres\u00E1\u0159 nen\u00ED pr\u00E1zdn\u00FD.  |
+deep-junc-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+deep-junc-unc-mov RUN    PASS        mov -> ...ers\pavel\AppData\Local\Temp\tc107\fa\deep-junc-unc-mov\dst\; 7s; lost 0 [-]; missing 4 [src\F\a.txt=A-deep-junc-unc-mov, src\F\empty/, src\F\\u041F\u0430\u043F\u043A\u0430/, src\F\\u041F\u0430\u043F\u043A\u0430\c.txt=C-deep-junc-unc-mov]; added 4 [dst\F\a.txt=A-deep-junc-unc-mov, dst\F\empty/, dst\F\\u041F\u0430\u043F\u043A\u0430/, dst\F\\u041F\u0430\u043F\u043A\u0430\c.txt=C-deep-junc-unc-mov]; 107-windows True; focus True; asked: ['Move Error'] Name: | Error: | Cannot move a directory to itself. | || ['Error Deleting Directory'] Name: | Error: | (145) Adres\u00E1\u0159 nen\u00ED pr\u00E1zdn\u00FD.  |
+deep-junc-unc-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+jlink-unc-mov RUN    PASS        mov -> ...\pavel\AppData\Local\Temp\tc107\fa\jlink-unc-mov\parentlong\; 5,2s; lost 0 [-]; missing 0 [-]; added 0 [-]; 107-windows True; focus True; asked: ['Error'] Cannot move a directory to itself. |
+jlink-unc-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dav-merge-mov RUN    NOT DRIVEN  the WebClient service is not running
+dav-twin-merge RUN    NOT DRIVEN  the WebClient service is not running
+dav-bak-cpy RUN    NOT DRIVEN  the WebClient service is not running
+dav-bak-mov RUN    NOT DRIVEN  the WebClient service is not running
+norm-ascii-cpy RUN    PASS        cpy -> ...\Users\pavel\AppData\Local\Temp\tc107\fa\norm-ascii-cpy\dst\; 4s; lost 0 [-]; missing 0 [-]; added 8 [dst\F/, dst\F\a.txt=A-norm-ascii-cpy, dst\F\empty/, dst\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+norm-ascii-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-ascii-mov RUN    PASS        mov -> ...\Users\pavel\AppData\Local\Temp\tc107\fa\norm-ascii-mov\dst\; 3,9s; lost 0 [-]; missing 8 [src\F/, src\F\a.txt=A-norm-ascii-mov, src\F\empty/, src\F\sub/, src\F\sub\b.txt=B-norm-ascii-mov, src\F\sub\deep/, src\F\\u041F\u0430\u043F\u043A\u0430/, src\F\\u041F\u0430\u043F\u043A\u0430\c.txt=C-norm-ascii-mov]; added 8 [dst\F/, dst\F\a.txt=A-norm-ascii-mov, dst\F\empty/, dst\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+norm-ascii-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-cyr-cpy RUN    PASS        cpy -> ...:\Users\pavel\AppData\Local\Temp\tc107\fa\norm-cyr-cpy\\u0426\u0435\u043B\u044C\; 4s; lost 0 [-]; missing 0 [-]; added 8 [\u0426\u0435\u043B\u044C\F/, \u0426\u0435\u043B\u044C\F\a.txt=A-norm-cyr-cpy, \u0426\u0435\u043B\u044C\F\empty/, \u0426\u0435\u043B\u044C\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+norm-cyr-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-cyr-mov RUN    PASS        mov -> ...:\Users\pavel\AppData\Local\Temp\tc107\fa\norm-cyr-mov\\u0426\u0435\u043B\u044C\; 4s; lost 0 [-]; missing 8 [\u0414\u043E\u043A\u0443\u043C\F/, \u0414\u043E\u043A\u0443\u043C\F\a.txt=A-norm-cyr-mov, \u0414\u043E\u043A\u0443\u043C\F\empty/, \u0414\u043E\u043A\u0443\u043C\F\sub/, \u0414\u043E\u043A\u0443\u043C\F\sub\b.txt=B-norm-cyr-mov, \u0414\u043E\u043A\u0443\u043C\F\sub\deep/, \u0414\u043E\u043A\u0443\u043C\F\\u041F\u0430\u043F\u043A\u0430/, \u0414\u043E\u043A\u0443\u043C\F\\u041F\u0430\u043F\u043A\u0430\c.txt=C-norm-cyr-mov]; added 8 [\u0426\u0435\u043B\u044C\F/, \u0426\u0435\u043B\u044C\F\a.txt=A-norm-cyr-mov, \u0426\u0435\u043B\u044C\F\empty/, \u0426\u0435\u043B\u044C\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+norm-cyr-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-unc-mov RUN    PASS        mov -> ...C$\Users\pavel\AppData\Local\Temp\tc107\fa\norm-unc-mov\dst\; 3,9s; lost 0 [-]; missing 8 [src\F/, src\F\a.txt=A-norm-unc-mov, src\F\empty/, src\F\sub/, src\F\sub\b.txt=B-norm-unc-mov, src\F\sub\deep/, src\F\\u041F\u0430\u043F\u043A\u0430/, src\F\\u041F\u0430\u043F\u043A\u0430\c.txt=C-norm-unc-mov]; added 8 [dst\F/, dst\F\a.txt=A-norm-unc-mov, dst\F\empty/, dst\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+norm-unc-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-unc-cpy RUN    PASS        cpy -> ...C$\Users\pavel\AppData\Local\Temp\tc107\fa\norm-unc-cpy\dst\; 4s; lost 0 [-]; missing 0 [-]; added 8 [dst\F/, dst\F\a.txt=A-norm-unc-cpy, dst\F\empty/, dst\F\sub/ ... (+4)]; 107-windows True; focus True; asked: nothing
+norm-unc-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-cyr-pmov RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+norm-ascii-pcpy RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop); paste builds its script in DropCopyMove/BuildScriptMain2 like drag and drop, which is not driven either
+norm-merge-unc-mov RUN    PASS        mov -> ...rs\pavel\AppData\Local\Temp\tc107\fa\norm-merge-unc-mov\dst\; 3,9s; lost 0 [-]; missing 8 [src\F/, src\F\a.txt=A-norm-merge-unc-mov, src\F\empty/, src\F\sub/, src\F\sub\b.txt=B-norm-merge-unc-mov, src\F\sub\deep/, src\F\\u041F\u0430\u043F\u043A\u0430/, src\F\\u041F\u0430\u043F\u043A\u0430\c.txt=C-norm-merge-unc-mov]; added 7 [dst\F\a.txt=A-norm-merge-unc-mov, dst\F\empty/, dst\F\sub/, dst\F\sub\b.txt=B-norm-merge-unc-mov ... (+3)]; 107-windows True; focus True; asked: nothing
+norm-merge-unc-mov END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-merge-cpy RUN    PASS        cpy -> ...\Users\pavel\AppData\Local\Temp\tc107\fa\norm-merge-cpy\dst\; 3,9s; lost 0 [-]; missing 0 [-]; added 7 [dst\F\a.txt=A-norm-merge-cpy, dst\F\empty/, dst\F\sub/, dst\F\sub\b.txt=B-norm-merge-cpy ... (+3)]; 107-windows True; focus True; asked: nothing
+norm-merge-cpy END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+Rows: PASS 150, FAIL 0, NOT DRIVEN 60. Left running: 0; fixture removed: True; subst removed: True; net use removed: True; registry restored+identical: True

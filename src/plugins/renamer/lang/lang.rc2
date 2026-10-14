@@ -255,6 +255,8 @@ STRINGTABLE
   IDS_OPENFILEERROR, "Unable to open file: "
   IDS_DIRCASEERROR, "Unable to modify case of the directory name: "
   IDS_CREATEDIR, "Unable to create directory: "
+  IDS_MOVETOITSELF, "Cannot move a file to itself."
+  IDS_MOVEDIRTOITSELF, "Cannot move a directory to itself."
   IDS_UNDOING, "Undoing rename operation..."
   IDS_REMOVEDIR,"Unable to remove directory: "
   IDS_UNDOQUEST, "Undo rename operation?"

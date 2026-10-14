@@ -2641,6 +2641,9 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 82]
 12160,1,"A(z) "%s" elérési út visszautasította a bezárást.\nRákényszeríti a bezárásra?"
+12161,1,"Egy mappát nem lehet önmagába másolni."
+12162,1,"Egy mappát nem lehet önmagába vagy valamelyik almappájába áthelyezni."
+12163,1,"Egy archívumot nem lehet önmagába csomagolni. Hagyja ki az archívumot (vagy az azt tartalmazó mappát) a kiválasztásból."
 12165,1,"Egy felhasználó több felhasználónévvel nem csatlakozhat ugyanarra a szerverre vagy megosztott forrásra. Szakítson meg minden korábbi kapcsolatot a szerverrel vagy a forrással és próbálja újra."
 12170,1,"Biztos átugrik minden kijelölt fájlt (kizárva őket a frissítésből)?"
 12171,1,"Biztos figyelmen kívül hagy minden frissített fájlt (megszakítva az archívum frissítését)?"

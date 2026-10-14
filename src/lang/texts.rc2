@@ -1289,6 +1289,9 @@ STRINGTABLE
  IDS_SAVECFG_EXPFILEEXISTS, "The file ""%s"" was found. This file contains exported configuration which is loaded on every start of Tandem Commander. If you don't want to load configuration from this file, rename or delete it. Press OK to save configuration or Cancel to focus the file."
 
  IDS_FSFORCECLOSE, "The path ""%s"" has rejected to close.\nDo you want to force it to close?"
+ IDS_CANNOTCOPYDIRTOITSELF, "Cannot copy a directory to itself."
+ IDS_CANNOTMOVEDIRINTOITSELF, "Cannot move a directory into itself or into one of its subdirectories."
+ IDS_PACKINTOITSELF, "Cannot pack an archive into itself. Leave the archive (or the directory that contains it) out of the selection."
 
  IDS_CREDENTIALCONFLICT, "Multiple connections to a server or shared resource by the same user, using more than one user name, are not allowed. Disconnect all previous connections to the server or shared resource and try again."
 

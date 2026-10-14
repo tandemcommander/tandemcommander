@@ -2641,6 +2641,9 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 82]
 12160,1,"Calea "%s" a  refuzat sa se inchida.\nDoriti s-o inchideti fortat?"
+12161,1,"Nu se poate copia un director în el însuși."
+12162,1,"Nu se poate muta un director în el însuși sau într-unul dintre subdirectoarele sale."
+12163,1,"Nu se poate comprima o arhivă în ea însăși. Excludeți arhiva (sau directorul care o conține) din selecție."
 12165,1,"Mai multe conexiuni la un server sau resurse folosite de acelasi utilizator, folosind mai mult de un nume utilizator, nu sunt permise. Inchideti toate conexiunile cu serverul in afara de una sau resursele folosite si incercati din nou."
 12170,1,"Doriti sa ignorati toate fisierele selectate (pentru a le exclude din actualizarea arhivei)?"
 12171,1,"Doriti sa ignorati toate fisierele actualizate (pentru a opri actualizarea arhivei)?"

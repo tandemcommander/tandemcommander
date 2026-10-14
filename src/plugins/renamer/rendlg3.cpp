@@ -50,10 +50,12 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
                     SalGetFileIdentityW(wSrc, FALSE, &srcThrough);
                 free(wSrc);
                 free(wTgt);
-                if (SalLinkPointsAtTarget(srcId, srcThrough, tgtId)) // refused, reported as "already exists" (no new string)
+                if (SalLinkPointsAtTarget(srcId, srcThrough, tgtId)) // refused (feature 155: said "already exists")
                 {
-                    SetLastError(err);
-                    if (FileError(HWindow, sourceName, IDS_MOVEERROR, TRUE, &skip, &SkipAllSameFile, IDS_ERROR))
+                    SetLastError(NO_ERROR);
+                    // a junction renamed onto the folder it points at is a folder (review of 155)
+                    if (FileError(HWindow, sourceName, (srcId.Attr & FILE_ATTRIBUTE_DIRECTORY) ? IDS_MOVEDIRTOITSELF : IDS_MOVETOITSELF,
+                                  TRUE, &skip, &SkipAllSameFile, IDS_ERROR))
                         continue; // retry
                     return FALSE;
                 }
@@ -447,8 +449,10 @@ COPY_AGAIN:
                         if (SalDecideExistingTarget(TRUE, err, srcId, tgtId) == setaRefuseSame)
                         {
                             CloseHandle(in);
-                            SetLastError(err);
-                            if (FileError(HWindow, targetName, IDS_OPENFILEERROR,
+                            // feature 155: its own text - it said "already exists"; a move (the only caller is the
+                            // rename into another root), so "move" (review of 155)
+                            SetLastError(NO_ERROR);
+                            if (FileError(HWindow, targetName, IDS_MOVETOITSELF,
                                           TRUE, &skip, &SkipAllSameFile, IDS_ERROR))
                                 goto COPY_AGAIN; // retry
                             return FALSE;

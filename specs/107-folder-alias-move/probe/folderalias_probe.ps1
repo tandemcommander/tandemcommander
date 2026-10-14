@@ -321,8 +321,10 @@ function Expect-Of([string]$shape, [string]$route, [string]$alias) {
     $move = $route -in 'mov', 'pmov'
     # another case of the same path is the same path by name: 092's case-only rename (a no-op here)
     if ($move -and $shape -eq 'b' -and $alias -eq 'case') { return @{ Asked = '^nothing$'; NotAsked = 'Error'; Expect = 'same' } }
-    if ($move) { return @{ Asked = 'Cannot move a directory to itself'; NotAsked = 'Confirm Directory Overwrite|Confirm File Overwrite|Error (Moving|Deleting)|Move Error|Copy Error'; Expect = 'same' } }
-    if ($shape -eq 'b') { return @{ Asked = 'Cannot copy a file to itself'; NotAsked = 'Confirm Directory Overwrite|Confirm File Overwrite|Error (Moving|Deleting)|Move Error|Copy Error'; Expect = 'same' } }
+    # feature 155: the folder's own texts ("into itself or into one of its subdirectories", "Cannot copy a
+    # directory"); the older wording kept for the builds before
+    if ($move) { return @{ Asked = 'Cannot move a directory (to itself|into itself or into one of its subdirectories)'; NotAsked = 'Confirm Directory Overwrite|Confirm File Overwrite|Error (Moving|Deleting)|Move Error|Copy Error'; Expect = 'same' } }
+    if ($shape -eq 'b') { return @{ Asked = 'Cannot copy a (file|directory) to itself'; NotAsked = 'Confirm Directory Overwrite|Confirm File Overwrite|Error (Moving|Deleting)|Move Error|Copy Error'; Expect = 'same' } }
     return @{ Asked = '.'; NotAsked = 'Error'; Expect = 'nested' }
 }
 

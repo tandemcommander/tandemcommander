@@ -2641,6 +2641,9 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 82]
 12160,1,"Refus de fermeture du répertoire "%s".\nForcer la fermeture ?"
+12161,1,"Impossible de copier un répertoire vers lui-même."
+12162,1,"Impossible de déplacer un répertoire vers lui-même ou vers l'un de ses sous-répertoires."
+12163,1,"Impossible de compresser une archive dans elle-même. N'incluez pas l'archive (ou le répertoire qui la contient) dans la sélection."
 12165,1,"Les connexions simultanées à un serveur ou à une ressource partagée par le même utilisateur qui utilise plusieurs noms d'utilisateur sont interdites. Fermer toutes les connexions ouvertes et réessayer."
 12170,1,"Ignorer les fichiers sélectionnés (et donc les exclure de la mise à jour de l'archive) ?"
 12171,1,"Ignorer tous les fichiers mis à jours (et donc arrêter la mise à jour de l'archive) ?"

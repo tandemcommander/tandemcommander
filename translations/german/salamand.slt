@@ -2641,6 +2641,9 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 82]
 12160,1,"Das Schließen des Pfades "%s" wurde verweigert.\nMöchten Sie das Schließen erzwingen?"
+12161,1,"Ein Verzeichnis kann nicht in sich selbst kopiert werden."
+12162,1,"Ein Verzeichnis kann nicht in sich selbst oder in eines seiner Unterverzeichnisse verschoben werden."
+12163,1,"Ein Archiv kann nicht in sich selbst gepackt werden. Lassen Sie das Archiv (oder das Verzeichnis, in dem es sich befindet) bei der Auswahl weg."
 12165,1,"Mehrere Verbindungen mit unterschiedlichen Benutzernamen zu einem Server oder einer Freigabe sind nicht erlaubt. Trennen Sie alle bisherigen Verbindungen zum Server oder der Freigabe und versuchen Sie es erneut."
 12170,1,"Alle ausgewählten Dateien ignorieren (um sie bei der Archivaktualisierung auszuschließen)?"
 12171,1,"Alle aktualisierten Dateien ignorieren (um die Archivaktualisierung abzubrechen)?"

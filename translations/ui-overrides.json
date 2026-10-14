@@ -263,7 +263,8 @@
       "#Remind Me &Later": "Připomenout &později",
       "IDC_UPDN_SKIP": "Př&eskočit tuto verzi",
       "IDC_UPDC_TEXT": "Kontroluje se nová verze...",
-      "IDC_CHECKNEWVERSION": "Kontrolovat &novou verzi programu Tandem Commander při spuštění"
+      "IDC_CHECKNEWVERSION": "Kontrolovat &novou verzi programu Tandem Commander při spuštění",
+      "IDS_CANNOTMOVEDIRINTOITSELF": "Nelze přesunout adresář do sebe sama ani do jednoho z jeho podadresářů."
     },
     "slovak": {
       "IDS_FINDLOG_TEXT": "Text",
@@ -330,7 +331,8 @@
       "IDS_UPDATE_ABOUT_LATEST": "Dies ist die neueste Version (geprüft am %s).",
       "IDS_UPDATE_CHECKNOWLINK": "Jetzt suchen",
       "IDS_UPDATE_ERR_BROWSER": "Die Adresse konnte in Ihrem Webbrowser nicht geöffnet werden:\\n\\n%s\\n\\nMöchten Sie die Adresse in die Zwischenablage kopieren?",
-      "IDS_UPDATE_ERR_START": "Es konnte nicht nach einer neuen Version gesucht werden: Die Suche konnte nicht gestartet werden. Versuchen Sie es erneut."
+      "IDS_UPDATE_ERR_START": "Es konnte nicht nach einer neuen Version gesucht werden: Die Suche konnte nicht gestartet werden. Versuchen Sie es erneut.",
+      "IDS_PACKINTOITSELF": "Ein Archiv kann nicht in sich selbst gepackt werden. Lassen Sie das Archiv (oder das Verzeichnis, in dem es sich befindet) bei der Auswahl weg."
     },
     "french": {
       "#Command Shell": "Interpréteur de commandes",
@@ -361,7 +363,8 @@
       "IDS_UPDATE_ABOUT_NOTCHECKED": "Aucune recherche de nouvelle version n'a été effectuée.",
       "IDS_UPDATE_NOTESLINK": "Notes de version",
       "IDS_UPDATE_ERR_BROWSER": "L'adresse n'a pas pu être ouverte dans votre navigateur web :\\n\\n%s\\n\\nVoulez-vous copier l'adresse dans le presse-papiers ?",
-      "IDS_UPDATE_ERR_START": "Impossible de rechercher une nouvelle version : la recherche n'a pas pu être lancée. Réessayez."
+      "IDS_UPDATE_ERR_START": "Impossible de rechercher une nouvelle version : la recherche n'a pas pu être lancée. Réessayez.",
+      "IDS_PACKINTOITSELF": "Impossible de compresser une archive dans elle-même. N'incluez pas l'archive (ou le répertoire qui la contient) dans la sélection."
     },
     "dutch": {
       "#Command Shell": "Opdracht Shell",
@@ -388,7 +391,10 @@
       "IDS_UPDATE_ERR_BROWSER": "Het adres kon niet worden geopend in uw webbrowser:\\n\\n%s\\n\\nWilt u het adres naar het klembord kopiëren?",
       "IDS_UPDATE_ERR_START": "Kon niet controleren op een nieuwe versie: de controle kon niet worden gestart. Probeer het opnieuw.",
       "IDC_CHECKNEWVERSION": "Bij het opstarten controleren op een nieuwe &versie van Tandem Commander",
-      "IDC_UPDN_ATSTARTUP": "Bij het opstarten &controleren op een nieuwe versie"
+      "IDC_UPDN_ATSTARTUP": "Bij het opstarten &controleren op een nieuwe versie",
+      "IDS_PACKINTOITSELF": "Een archief kan niet in zichzelf worden ingepakt. Laat het archief (of de map waarin het staat) buiten de selectie.",
+      "IDS_CANNOTCOPYDIRTOITSELF": "Een map kan niet naar zichzelf worden gekopieerd.",
+      "IDS_CANNOTMOVEDIRINTOITSELF": "Een map kan niet naar zichzelf of naar een van de submappen worden verplaatst."
     },
     "hungarian": {
       "IDS_CMDSHELL_ERRNOTFOUND": "A kiválasztott parancssori program (%s) nem található ezen a számítógépen.\\n\\nVálasszon másik programot a Konfiguráció / Parancssor menüpontban.",
@@ -404,7 +410,10 @@
       "IDS_DIRNESTEDTOODEEP": "A(z) „%s” mappa túl mélyen van beágyazva (több mint %d szint) a feldolgozáshoz.",
       "IDS_UPDATE_RELEASED": "Megjelent: %s",
       "IDS_UPDATE_ABOUT_LATEST": "Ez a legújabb verzió (ellenőrizve: %s).",
-      "IDS_UPDATE_CHECKNOWLINK": "Ellenőrzés most"
+      "IDS_UPDATE_CHECKNOWLINK": "Ellenőrzés most",
+      "IDS_CANNOTCOPYDIRTOITSELF": "Egy mappát nem lehet önmagába másolni.",
+      "IDS_CANNOTMOVEDIRINTOITSELF": "Egy mappát nem lehet önmagába vagy valamelyik almappájába áthelyezni.",
+      "IDS_PACKINTOITSELF": "Egy archívumot nem lehet önmagába csomagolni. Hagyja ki az archívumot (vagy az azt tartalmazó mappát) a kiválasztásból."
     },
     "romanian": {
       "#Command Shell": "Comanda Shell",
@@ -446,7 +455,9 @@
       "IDS_UPDATE_ERR_UNEXPECTED": "No se ha podido comprobar si hay una nueva versión: el servidor de versiones ha dado una respuesta inesperada.\\n\\nInténtelo más tarde o visite tandemcommander.org.",
       "IDS_UPDATE_RELEASED": "Publicada el %s",
       "IDS_UPDATE_ERR_BROWSER": "No se ha podido abrir la dirección en su navegador web:\\n\\n%s\\n\\n¿Desea copiar la dirección al portapapeles?",
-      "IDS_UPDATE_ERR_START": "No se ha podido comprobar si hay una nueva versión: no se ha podido iniciar la comprobación. Inténtelo de nuevo."
+      "IDS_UPDATE_ERR_START": "No se ha podido comprobar si hay una nueva versión: no se ha podido iniciar la comprobación. Inténtelo de nuevo.",
+      "IDS_PACKINTOITSELF": "No se puede comprimir un archivo en sí mismo. Deje el archivo (o el directorio que lo contiene) fuera de la selección.",
+      "IDS_CANNOTMOVEDIRINTOITSELF": "No se puede trasladar un directorio a sí mismo ni a uno de sus subdirectorios."
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -547,5 +558,39 @@
       "IDS_CANTMULTIVOL (feature 121, recorded by 119): the Romanian row began with a lower-case letter",
       "(arhiva ...); capitalised, wording kept. Without diacritics like the rest of the ZIP corpus (CP1250)."
     ]
+  },
+  "renamer": {
+    "czech": {
+      "IDS_MOVETOITSELF": "Nelze přesunout soubor do sebe samého.",
+      "IDS_MOVEDIRTOITSELF": "Nelze přesunout adresář do sebe samého."
+    },
+    "german": {
+      "IDS_MOVETOITSELF": "Kann die Datei nicht auf sich selbst verschieben.",
+      "IDS_MOVEDIRTOITSELF": "Kann das Verzeichnis nicht auf sich selbst verschieben."
+    },
+    "french": {
+      "IDS_MOVETOITSELF": "Impossible de déplacer un fichier sur lui-même.",
+      "IDS_MOVEDIRTOITSELF": "Impossible de déplacer un répertoire sur lui-même."
+    },
+    "dutch": {
+      "IDS_MOVETOITSELF": "Kan bestand niet naar zichzelf verschuiven.",
+      "IDS_MOVEDIRTOITSELF": "Kan map niet naar zichzelf verschuiven."
+    },
+    "hungarian": {
+      "IDS_MOVETOITSELF": "Nem helyezhető át a fájl önmagába.",
+      "IDS_MOVEDIRTOITSELF": "Nem helyezhető át a mappa önmagába."
+    },
+    "romanian": {
+      "IDS_MOVETOITSELF": "Nu pot muta un fisier peste el insusi.",
+      "IDS_MOVEDIRTOITSELF": "Nu pot muta un director peste el insusi."
+    },
+    "slovak": {
+      "IDS_MOVETOITSELF": "Nie je možné presunúť súbor do seba samého.",
+      "IDS_MOVEDIRTOITSELF": "Nie je možné presunúť adresár do seba samého."
+    },
+    "spanish": {
+      "IDS_MOVETOITSELF": "Imposible trasladar un fichero a sí mismo.",
+      "IDS_MOVEDIRTOITSELF": "Imposible trasladar un directorio a sí mismo."
+    }
   }
 }
