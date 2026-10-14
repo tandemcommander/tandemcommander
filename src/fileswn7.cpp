@@ -680,7 +680,10 @@ void CFilesWindow::UnpackZIPArchive(CFilesWindow* target, BOOL deleteOp, const c
 
                     //---  actual unpacking
                     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-                    if (PackUncompress(MainWindow->HWindow, this, GetZIPArchive(), PluginData.GetInterface(),
+                    // feature 146: not when the archive's name leads elsewhere now than when it was
+                    // listed (a re-pointed letter) - this listing's names would come from another archive
+                    if (!RefuseOperationIfArchiveMoved(HWindow, GetZIPArchive()) &&
+                        PackUncompress(MainWindow->HWindow, this, GetZIPArchive(), PluginData.GetInterface(),
                                        path, GetZIPPath(), PanelSalEnumSelection, &data))
                     {                        // unpacking succeeded
                         if (tgtPath == NULL) // if it is not drag&drop (selection is not cleared there)
@@ -794,7 +797,10 @@ void CFilesWindow::UnpackZIPArchive(CFilesWindow* target, BOOL deleteOp, const c
                     cancel = TRUE;
             }
             //---  actual deletion
-            if (!cancel)
+            // feature 146: not when the archive's name leads elsewhere now than when it was listed (a
+            // re-pointed letter: F8 deleted the other archive's members of these names); checked after
+            // the questions, right before the archive is touched
+            if (!cancel && !RefuseOperationIfArchiveMoved(HWindow, GetZIPArchive()))
             {
                 SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
                 if (PackDelFromArc(MainWindow->HWindow, this, GetZIPArchive(), PluginData.GetInterface(),

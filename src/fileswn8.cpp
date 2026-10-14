@@ -672,6 +672,17 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                                 FilesActionInProgress = FALSE;
                                 return;
                             }
+                            // feature 146: not into an archive a panel shows whose name leads elsewhere now
+                            // (a re-pointed letter: the files would land in another archive than the listed one)
+                            if (target->RefuseOperationIfArchiveMoved(HWindow, path))
+                            {
+                                if (indexes != NULL)
+                                    delete[] (indexes);
+                                EndStopRefresh();
+                                EndSuspendMode();
+                                FilesActionInProgress = FALSE;
+                                return;
+                            }
 
                             BOOL haveSize = FALSE;
                             CQuadWord size;

@@ -139,7 +139,7 @@ Crash-class or possible loss:
    extracts the other file's member into this listing. Fix: compare the
    identity stored at the open (144) with the name's identity before packing
    back and in the refresh's "changed?" test. Feature 145.
-2b. **Archive operations through a re-pointed name** (found by 145's review,
+2b. ~~**Archive operations through a re-pointed name**~~ - **done, feature 146** (found by 145's review,
    data loss, narrow): F8 / F5 / F6 on a panel showing `T:\arc.zip` after the
    letter was re-pointed (no refresh since) run `DeleteFromZIPArchive` /
    `UnpackZIPArchive` against the archive the name names NOW with the OLD

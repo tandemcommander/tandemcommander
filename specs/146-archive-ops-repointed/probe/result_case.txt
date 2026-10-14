@@ -1,0 +1,50 @@
+diskcache_probe (feature 109) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-14 09:24; ACP 1250
+Config  : registry key existed True; fresh defaults False; F4 editor = cmd.exe /c echo edited109>>"$(FullName)"; F3 viewer = cmd.exe /c type "$(FullName)">>view.log
+   twins: sizes 131 / 131, times equal True
+
+--- resubst-delete: archives 'A\arc.zip' (x.txt tag 1), 'B\arc.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'T:\arc.zip' (field held it: True); title '...c.zip - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [resubst]: T: re-pointed to C:\Users\pavel\AppData\Local\Temp\tc109\dc\resubst-delete\B
+          temporary copies: none
+   step 2 [delete]: F8 in panel 1: windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete file "x.txt" from archive? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Information'] [Static id=2477] Archive file "T:\arc.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK
+          temporary copies: none
+   step 3 [leave]: leave panel 1: title '...- T:\ - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          A\arc.zip: ENTRY x.txt tag=1 markers=0 size=21
+          A\arc.zip: COUNT 1
+          B\arc.zip: ENTRY x.txt tag=2 markers=0 size=21
+          B\arc.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+   twins: sizes 131 / 131, times equal True
+
+--- resubst-f4back: archives 'A\arc.zip' (x.txt tag 1), 'B\arc.zip' (x.txt tag 2)
+   step 0 [cd]: cd 'T:\arc.zip' (field held it: True); title '...c.zip - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   step 1 [resubst]: T: re-pointed to C:\Users\pavel\AppData\Local\Temp\tc109\dc\resubst-f4back\B
+          temporary copies: none
+   step 2 [f4]: F4 in panel 1: windows: [#32770 'Information'] [Static id=2477] Archive file "T:\arc.zip" has changed. Archive will be reopened in panel. | [Button id=1] OK
+          temporary copies: none
+   step 3 [resubst]: T: re-pointed to C:\Users\pavel\AppData\Local\Temp\tc109\dc\resubst-f4back\A
+          temporary copies: none
+   step 4 [leave]: leave panel 1: title '...- T:\ - Tandem Commander 0.1.10 (x64) ST'; windows: no window
+          temporary copies: none
+   END  : exit code 0x00000000; new crash reports 0
+          A\arc.zip: ENTRY x.txt tag=1 markers=0 size=21
+          A\arc.zip: COUNT 1
+          B\arc.zip: ENTRY x.txt tag=2 markers=0 size=21
+          B\arc.zip: COUNT 1
+   VERDICT: PASS 
+SUBST   : T: removed (exists now: False)
+Registry: restored; identical=True; SHA-256 before C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1 / after C552FF4798361F67193BF53C8E46D390CFF9A527CFDC4209C137140E9915D5B1
+
+=== summary ===
+case             verdict    archives (name=member tag+edits) | F3 given | copies after each step | why
+resubst-delete   PASS       A\arc.zip:x.txt=m1+0 B\arc.zip:x.txt=m2+0 | - | 0/0/0/0
+resubst-f4back   PASS       A\arc.zip:x.txt=m1+0 B\arc.zip:x.txt=m2+0 | - | 0/0/0/0/0
+TOTAL: 2 PASS / 0 FAIL / 0 NOT DRIVEN; F3/F4 retries 0
+Left running: 0; fixture removed: True; registry restored+identical: True

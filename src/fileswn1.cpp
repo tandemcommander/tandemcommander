@@ -425,6 +425,33 @@ BOOL CFilesWindowAncestor::ArchiveNameLeadsElsewhere(const char* name, HANDLE h)
     return elsewhere;
 }
 
+BOOL CFilesWindowAncestor::ShowsArchiveThatMoved(const char* archiveName)
+{
+    CALL_STACK_MESSAGE_NONE
+    return PanelType == ptZIPArchive && archiveName != NULL && SalPathEqualOrdinalCI(archiveName, ZIPArchive) &&
+           ArchiveNameLeadsElsewhere(archiveName, NULL);
+}
+
+BOOL CFilesWindow::RefuseOperationIfArchiveMoved(HWND parent, const char* archiveName)
+{
+    CALL_STACK_MESSAGE2("CFilesWindow::RefuseOperationIfArchiveMoved(, %s)", archiveName);
+    if (!ShowsArchiveThatMoved(archiveName))
+        return FALSE;
+    TRACE_I("RefuseOperationIfArchiveMoved: " << archiveName << " leads elsewhere than when it was listed - refused, refreshing");
+    if (!AssocUsed) // with edits pending the refresh shows the same note itself (ChangePathToArchive)
+    {
+        CSalHeapString buf;
+        if (buf.Printf(LoadStrU8(IDS_ARCHIVEREFRESHEDIT), archiveName))
+            SalMessageBox(parent, buf.Text(), LoadStr(IDS_INFOTITLE), MB_OK | MB_ICONINFORMATION);
+    }
+    // the refresh idiom of OfferArchiveUpdateIfNeeded (deferred while refreshes are stopped)
+    HANDLES(EnterCriticalSection(&TimeCounterSection));
+    int t = MyTimeCounter++;
+    HANDLES(LeaveCriticalSection(&TimeCounterSection));
+    PostMessage(HWindow, WM_USER_REFRESH_DIR, 0, t);
+    return TRUE;
+}
+
 void CFilesWindowAncestor::RereadZIPArchiveFinalPath()
 {
     CALL_STACK_MESSAGE_NONE

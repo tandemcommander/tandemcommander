@@ -3555,7 +3555,10 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
         BeginStopRefresh(); // the snooper can take a break
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
         HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
-        if (PackUnpackOneFile(this, GetZIPArchive(), PluginData.GetInterface(),
+        // feature 146: not from an archive whose name leads elsewhere now (a re-pointed letter): the
+        // edited copy would be another archive's member, packed back here once the letter returned
+        if (!RefuseOperationIfArchiveMoved(HWindow, GetZIPArchive()) &&
+            PackUnpackOneFile(this, GetZIPArchive(), PluginData.GetInterface(),
                               nameInArchive, f, tmpPath,
                               NULL, NULL))
         {

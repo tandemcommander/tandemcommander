@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Deleting, copying or viewing in an archive through a drive letter that
+  was pointed elsewhere no longer acts on the other archive** (feature 146).
+  F8 deleted the members of the same names from the archive the letter led
+  to now; F4 could put the other archive's member back into this one. Such an
+  operation is refused with the note that the archive has changed, and the
+  panel is reopened.
+
 - **An edited archive member is never packed into another archive** (feature
   145). When the drive letter an archive was opened through (SUBST or a
   network drive) was pointed elsewhere while a member was being edited,

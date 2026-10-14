@@ -678,6 +678,17 @@ function Run-Steps($c) {
                     $r = Serve $id 20
                     $note = ("replaced {0} by a renamed new file (x.txt tag {1}; move ok {2}); windows: {3}" -f (Esc $a0.Name), $s.Arg, $moved, (MsgText $r))
                 }
+                'delete' {
+                    # feature 146: F8 on x.txt (the first item after '..') in panel P - CM_DELETEFILES;
+                    # the confirmations are answered Yes by Serve
+                    KeyP $id $s.P 0x24; KeyP $id $s.P 0x28
+                    Settle $id 800
+                    Post-Cmd (Get-Main $id) 729
+                    Start-Sleep -Milliseconds 1200
+                    $r = Serve $id 40
+                    $note = ("F8 in panel {0}: windows: {1}" -f $s.P, (MsgText $r))
+                    if ($r.Fatal) { throw ('FATAL window: ' + (MsgText $r)) }
+                }
                 'refresh' {
                     # feature 145: the panel's refresh (Ctrl+R): CM_LEFTREFRESH / CM_RIGHTREFRESH
                     Post-Cmd (Get-Main $id) $(if ($s.P -eq 0) { 724 } else { 725 })
@@ -883,6 +894,17 @@ try {
     # feature 145 (review): refused, the person points the letter back and tries again - the edit reaches A
     $cases += @{ N = 'resubst-back'; Twin = $true; Arcs = @(@{ Name = 'A\arc.zip'; Fmt = 'zip'; Tag = 1; Edits = 1 }, @{ Name = 'B\arc.zip'; Fmt = 'zip'; Tag = 2; Edits = 0 })
         Steps = @(@{ P = 1; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' }, @{ P = 1; Op = 'f4' }, @{ P = 1; Op = 'resubst'; Arg = 'B' }, @{ P = 1; Op = 'leave'; Arg = 'back'; Want = 'Packing of updated file' }, @{ P = 0; Op = 'leave' })
+        Views = @() }
+    # feature 146: F8 on x.txt of a panel whose letter was re-pointed (to a twin) since it listed A -
+    # must not delete B's x.txt; the operation is refused with the "has changed, will be reopened"
+    # note and the panel shows B's archive
+    $cases += @{ N = 'resubst-delete'; Twin = $true; Arcs = @(@{ Name = 'A\arc.zip'; Fmt = 'zip'; Tag = 1; Edits = 0 }, @{ Name = 'B\arc.zip'; Fmt = 'zip'; Tag = 2; Edits = 0 })
+        Steps = @(@{ P = 1; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' }, @{ P = 1; Op = 'resubst'; Arg = 'B' }, @{ P = 1; Op = 'delete'; Want = 'has changed\. Archive will be reopened' }, @{ P = 1; Op = 'leave' })
+        Views = @() }
+    # feature 146 (review): F4 through the re-pointed name, then the letter pointed back before leaving -
+    # the copy of B's x.txt must not be made (refused with the note), so nothing can be packed into A
+    $cases += @{ N = 'resubst-f4back'; Twin = $true; Arcs = @(@{ Name = 'A\arc.zip'; Fmt = 'zip'; Tag = 1; Edits = 0 }, @{ Name = 'B\arc.zip'; Fmt = 'zip'; Tag = 2; Edits = 0 })
+        Steps = @(@{ P = 1; Op = 'cd'; Arg = '{SUBST:A}\arc.zip' }, @{ P = 1; Op = 'resubst'; Arg = 'B' }, @{ P = 1; Op = 'f4'; Want = 'has changed\. Archive will be reopened' }, @{ P = 1; Op = 'resubst'; Arg = 'A' }, @{ P = 1; Op = 'leave' })
         Views = @() }
     if ($Only) { $cases = $cases | Where-Object { $Only -contains $_.N } }
     foreach ($c in $cases) { Run-Steps $c }

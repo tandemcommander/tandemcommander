@@ -645,6 +645,9 @@ public:
     // feature 145 (review): after the panel's own successful pack - the archiver may have replaced a
     // link by a regular file at the name, and the next group of the same update must not be refused
     void RereadZIPArchiveFinalPath();
+    // feature 146: is 'archiveName' the archive this panel shows, and does its name lead elsewhere now
+    // than when the panel listed it? (ArchiveNameLeadsElsewhere for the panel's own archive only)
+    BOOL ShowsArchiveThatMoved(const char* archiveName);
     void SetArchiveDir(CSalamanderDirectory* dir) { ArchiveDir = dir; }
     void SetZIPArchiveDate(FILETIME& time) { ZIPArchiveDate = time; }
     void SetZIPArchiveSize(const CQuadWord& size) { ZIPArchiveSize = size; }
@@ -1188,6 +1191,14 @@ public:
     // other panel's archive is never read by name here. Called by ChangePathToArchive right after
     // SetZIPArchive.
     void SetArchiveCacheKey109(const CSalFileIdentity& listedIdentity);
+    // feature 146: an operation on the archive 'archiveName' through THIS panel (delete from it, unpack
+    // from it - also F3 / F4 of a member -, pack into it) must not run while this panel shows that
+    // archive but its name leads elsewhere now than when the panel listed it (a re-pointed SUBST or
+    // network letter): the listing is another archive's - F8 deleted the other archive's members.
+    // Called right before the archive is touched. TRUE = refused: the person is told the archive
+    // changed (unless the refresh will say it - edits pending) and the panel is refreshed (it reopens
+    // what the name holds now); FALSE = go ahead.
+    BOOL RefuseOperationIfArchiveMoved(HWND parent, const char* archiveName);
     // change path to the plug-in FS;
     // if suggestedTopIndex != -1 the top index will be set;
     // if suggestedFocusName != NULL and present in the new list, it will be focused;

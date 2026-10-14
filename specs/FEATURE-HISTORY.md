@@ -2316,3 +2316,16 @@ a few early ones are out of sequence).
   `resubst-refresh`, `resubst-back` 4 / 0 (control 1 / 3); whole 109 23 / 0; 108, 112 unchanged.
   Left: archive operations through a re-pointed name (146); false refusals after a server
   re-spelling / DFS failover (one refused pack, recorded).
+- 146-archive-ops-repointed: **no archive operation through a name that leads elsewhere than when the
+  panel listed it.** Measured: F8 on x.txt through a re-pointed `T:` deleted the twin's x.txt; F4
+  through it, then the letter pointed back, put the twin's member into the first archive (review).
+  `CFilesWindow::RefuseOperationIfArchiveMoved(parent, name)` - the ACTING panel only, 145's
+  `ArchiveNameLeadsElsewhere`; the existing `IDS_ARCHIVEREFRESHEDIT` note (not when edits are
+  pending - the refresh shows it) and `WM_USER_REFRESH_DIR`. Checked RIGHT BEFORE the archive is
+  touched (after the confirmations): `PackUncompress` / `PackDelFromArc` in `UnpackZIPArchive`,
+  both `PackUnpackOneFile` (F3 / F4, as a failed unpack), packing into the target panel's archive
+  (`FilesAction`, `fileswna.cpp`), the paste of copied archive items (`salshlib.cpp`). Do not post
+  `CM_LEFTREFRESH` / `CM_RIGHTREFRESH` from code - they zero the stop counters. 109 probe ops
+  `delete`; cases `resubst-delete`, `resubst-f4back` (controls FAIL); whole 109 25 / 0; 108, 112
+  unchanged. Left: paste of items copied before the panel left / reopened; no final path from
+  the redirector = only the volume serial.

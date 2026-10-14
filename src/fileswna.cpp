@@ -569,6 +569,11 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
                 ShowPackIntoItselfRefusal(HWindow, data->ArchiveOrFSName, !data->Copy,
                                           LoadStr(data->Copy ? IDS_ERRORCOPY : IDS_ERRORMOVE));
             }
+            else if (data->ToArchive && RefuseOperationIfArchiveMoved(HWindow, data->ArchiveOrFSName))
+            {
+                // feature 146: a panel shows this archive but its name leads elsewhere now (a re-pointed
+                // letter) - nothing is packed; the panel is refreshed
+            }
             else if (data->ToArchive)
             {
                 //---  check whether it is a zero-length file

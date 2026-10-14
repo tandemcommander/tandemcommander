@@ -907,7 +907,10 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
                         HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
                         BOOL renamingNotSupported = FALSE;
-                        if (PackUnpackOneFile(this, GetZIPArchive(), PluginData.GetInterface(), nameInArchive, f, tmpPath,
+                        // feature 146: not from an archive whose name leads elsewhere now (a re-pointed
+                        // letter) - the copy would be another archive's member under this archive's key
+                        if (!RefuseOperationIfArchiveMoved(HWindow, GetZIPArchive()) &&
+                            PackUnpackOneFile(this, GetZIPArchive(), PluginData.GetInterface(), nameInArchive, f, tmpPath,
                                               validTmpName[0] == 0 ? NULL : validTmpName,
                                               validTmpName[0] == 0 ? NULL : &renamingNotSupported))
                         {

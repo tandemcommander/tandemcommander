@@ -633,6 +633,13 @@ void CSalShExtPastedData::DoPasteOperation(BOOL copy, const char* tgtPath)
         CFilesWindow* panel = j == 0 ? MainWindow->GetActivePanel() : MainWindow->GetNonActivePanel();
         if (panel->Is(ptZIPArchive) && StrICmp(ArchiveFileName, panel->GetZIPArchive()) == 0)
         { // the panel contains our archive
+            // feature 146: its name leads elsewhere now than when it was listed (a re-pointed letter):
+            // the listing's members would be unpacked from another archive - refused, refreshed
+            if (panel->RefuseOperationIfArchiveMoved(MainWindow->HWindow, ArchiveFileName))
+            {
+                EndStopRefresh(); // the snooper starts now
+                return;
+            }
             BOOL archMaybeUpdated;
             panel->OfferArchiveUpdateIfNeeded(MainWindow->HWindow, IDS_ARCHIVECLOSEEDIT2, &archMaybeUpdated);
             if (archMaybeUpdated)

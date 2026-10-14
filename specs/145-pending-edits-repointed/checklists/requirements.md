@@ -1,4 +1,4 @@
-# Specification Quality Checklist: an archive's copies are never another archive's
+# Specification Quality Checklist: a pending edit is never packed into another archive
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-14
