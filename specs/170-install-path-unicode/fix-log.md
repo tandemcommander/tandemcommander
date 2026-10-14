@@ -53,4 +53,25 @@ Build: BUILD SUCCEEDED; saltests 22,323 / 0; `check_encoding.py` TOTAL 0.
 
 ## Review
 
-See below.
+Independent refute-first review (read-only): nothing CRITICAL; checked: the size checks keep
+`strcat_s` / `strcpy_s` from aborting, `SearchForSPLs` terminates and is bounded,
+`RemoveNoLongerExistingPlugins` fails closed, the registry gives `dllName` as UTF-8 (so the folder
+comparison matches), `LoadLibraryW` searches as `LoadLibraryA`, the HANDLES records pair.
+- SHOULD-FIX, taken: a language file name of 260+ UTF-8 bytes would overflow `SLGName` /
+  `selSLGName` (`MAX_PATH`) - such names are left out by the search.
+- SHOULD-FIX, taken: `_snprintf_s(_TRUNCATE)` could still cut a language path - refused now
+  (`CLanguage::Init`, the dialog's template, the start).
+- SHOULD-FIX, taken: the start's guard did not act (an empty folder became a relative
+  `lang\<name>`, loaded through the DLL search order) - nothing is loaded then.
+- Regression, taken: the Add plug-in dialog (`dialogs5.cpp`) was code page - a plug-in added from
+  a non-ASCII folder would have got a code-page DLLName the wide loader cannot open. The dialog is
+  wide now (`SafeGetOpenFileNameW`); a name that does not fit is refused. Not driven (a file
+  dialog on the hidden desktop) - owed to a person: Plugins > Add from a folder with accents.
+- NIT, taken: the stale comments (`plugins2.cpp`, `mainwnd3.cpp`, `plugins.h` - DLLName may be
+  UTF-8); the first error box keeps its old title.
+- Recorded (NEXT-WORK): the core places still in the code page (toolbar SVG icons `svg.cpp`,
+  `sqlite.dll` `shiconov.cpp`, conversion tables `codetbl.cpp`, tips `dialogs6.cpp`, SalOpen
+  `salamdr4.cpp`, configuration export `mainwnd3.cpp`, bug report, `EnumInstalledModules`), the
+  plug-ins' own lookups of their files, `StrNICmp` (not the 092 rule) for the plug-in folder prefix.
+
+Final build: BUILD SUCCEEDED; the probe 21 / 0; 151 plugins_focus 2 / 0; registry identical.

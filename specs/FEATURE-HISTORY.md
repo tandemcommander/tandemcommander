@@ -2491,3 +2491,11 @@ a few early ones are out of sequence).
   the name keeps its byte length (callers' buffers). saltests: 168,000 ASCII cases equal to the old
   algorithm. **Trap:** `fix_probe_lib`'s `Find-Ctl` finds edits and combo boxes only - a probe
   that sets radio buttons through it sets nothing (look the button up; `BM_CLICK`).
+- 170-install-path-unicode: **the program starts from an install folder outside the code page**
+  (item 19, the install-path chain). `GetModuleFileName` A gave '?' (a per-user install under a
+  user name in another script): the language module did not load - the program did not start -
+  and no plug-in would have loaded. `SalLoadLibrary` / `SalGetModuleDirU8` (`salfileio.h`), the
+  start, the language dialog, `CLanguage::Init`, the plug-in loader and its folder searches wide;
+  the Add plug-in dialog wide. Probe 21 / 0 (before 8 / 4; also the first start after an update:
+  20 of 20 plug-ins kept). **Trap:** a copy of the build in a temporary folder shares the registry
+  key - `Plugins.ver Version (x64)` = 0 forces the first-start processing for a test.

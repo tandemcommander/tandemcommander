@@ -299,7 +299,12 @@ Large or risky, each a feature of its own:
     the 068 review); F-P1-05, the archive listing display encoding (must move
     as a whole, 069 §0b); B-3 the undocumented UTF-8 `GetErrorText` (a naive
     sweep regresses FTP); B-5 the frozen plug-in-facing ANSI services (needs
-    an interface decision); the install-path chain (`plugins2.cpp`; 151's review: the plug-in loader builds every plug-in's
+    an interface decision); ~~the install-path chain~~ (**start, language, plug-in loading done - feature 170**: under a folder
+    outside the code page the program did not start; **left**: toolbar SVG icons `svg.cpp`,
+    `sqlite.dll` `shiconov.cpp`, conversion tables `codetbl.cpp`, tips `dialogs6.cpp`, SalOpen
+    `salamdr4.cpp`, configuration export `mainwnd3.cpp`, bug report, `EnumInstalledModules` (an
+    interface question), the plug-ins' own lookups of their files - measure each with
+    `specs/170-*/probe/install_path_probe.ps1`; was: the install-path chain (`plugins2.cpp`; 151's review: the plug-in loader builds every plug-in's
     path with `GetModuleFileName` A + an unbounded `strcat` into `MAX_PATH` - `plugins1.cpp` load,
     `LoadLanguageModule`, `plugins2.cpp` `GetPluginDataFromSuffix` - and `DLLName` is code page for
     a plug-in added in the session); the mask
