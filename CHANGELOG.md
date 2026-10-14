@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **No crash on a broken shortcut with a long name** (feature 182). *Go to
+  Shortcut Target* on a damaged shortcut whose name was long (for example in
+  Chinese) crashed the program.
+
 - **Shortcuts in deep folders open** (feature 181). A shortcut in a folder with
   a long path (for example many accented letters) was refused as "too long" or
   "not a valid shortcut".

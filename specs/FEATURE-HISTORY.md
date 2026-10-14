@@ -2553,3 +2553,6 @@ a few early ones are out of sequence).
 - 181-shortcut-long-folder: a `.lnk` in a folder of more than MAX_PATH bytes / characters opens
   (Enter, Focus Shortcut Target) - `SalShellLinkLoadNameAlloc` (`salshelllink.h`): the Load name on
   the heap, `\\?\` from MAX_PATH characters on.
+- 182-shortcut-error-long-name: Focus Shortcut Target on a broken `.lnk` with a long name crashed
+  ("Stack memory corruption": `sprintf` into `char[MAX_PATH + 300]`) - the text on the heap. Its
+  review's sweep found more of the class (NEXT-WORK 5j, feature 183).
