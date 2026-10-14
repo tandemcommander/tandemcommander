@@ -58,3 +58,50 @@ inline BOOL SalArcTakeStoredSpelling(const char* stored, int storedLen, const ch
 {
     return storedLen == typedLen && SalNameEqualOrdinalCI(stored, storedLen, typed, typedLen);
 }
+
+// Feature 153: the Archive Update dialog marks a file whose member another program changed in the
+// archive since the file was opened for editing (F4) - "Update" then replaces that change. The
+// member's size and time as listed at the F4 and the archive file's own time and size at the F4
+// are kept with the edited copy (CFileTimeStampsItem); at the update the archive file is looked at
+// again and, only when it changed, listed again to compare the member.
+
+// TRUE when the archive file may have changed since the F4: either stamp is not known, or its time
+// or size differs. FALSE (the archive is the file it was) needs no new listing.
+inline BOOL SalArchiveChangedSinceEdit(BOOL editKnown, unsigned __int64 editTime, unsigned __int64 editSize,
+                                       BOOL nowKnown, unsigned __int64 nowTime, unsigned __int64 nowSize)
+{
+    return !editKnown || !nowKnown || editTime != nowTime || editSize != nowSize;
+}
+
+// Where the edited member stands in the archive's listing now.
+enum CSalEditedMemberNow
+{
+    semnUnknown, // no listing, or no single member answers to the name
+    semnMissing, // the folder holds no member of that name
+    semnListed,  // one member: its size and time are compared
+};
+
+// The member is looked up in its folder of the new listing by its exact name first, then by the file
+// system's rule (the F4 refused a name with a twin by that rule, so one is expected): 'exact' and
+// 'byRule' are the numbers of members found each way. Two candidates are not guessed between.
+inline CSalEditedMemberNow SalEditedMemberFound(int exact, int byRule)
+{
+    if (exact == 1)
+        return semnListed;
+    if (exact == 0 && byRule == 1)
+        return semnListed;
+    if (exact == 0 && byRule == 0)
+        return semnMissing;
+    return semnUnknown;
+}
+
+// TRUE = mark the file: the member was removed, changed (size or time differ from the F4's listing),
+// or cannot be told apart (fail closed - the mark only warns, nothing is withheld).
+inline BOOL SalEditedMemberChangedInArchive(CSalEditedMemberNow now,
+                                            unsigned __int64 editTime, unsigned __int64 editSize,
+                                            unsigned __int64 nowTime, unsigned __int64 nowSize)
+{
+    if (now != semnListed)
+        return TRUE;
+    return editTime != nowTime || editSize != nowSize;
+}

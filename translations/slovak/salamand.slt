@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\salamand\salamand.atp"
-TEXTVERSION,"0.1.8 (x64)"
-VERSION,"0,1,8,192"
+TEXTVERSION,"0.1.10 (x64)"
+VERSION,"0,1,10,194"
 
 [TRANSLATION]
 LANGID,1051
@@ -2646,6 +2646,7 @@ SLGINCOMPLETE,""
 12171,1,"Prajete si ignorovať všetky aktualizované súbory (prerušiť aktualizáciu archívu)?"
 12172,1,"Kopírovať zmenené súbory"
 12173,1,"Vyberte cieľový adresár pre zmenené súbory."
+12174,1,"%s   (zmenené v archíve od jeho otvorenia – aktualizácia prepíše túto zmenu)"
 
 [STRINGTABLE 83]
 12180,1,"Prebieha kontrola cesty "%s", stlačte Esc pre zrušenie..."

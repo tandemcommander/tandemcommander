@@ -5607,6 +5607,36 @@ static void TestArchiveEdit108()
     CHECK(RemoveDirectoryW(dir.c_str()));
 }
 
+// feature 153: the Archive Update dialog's mark of a member another program changed in the archive
+// since the F4 (src/common/salarcedit.h)
+static void TestMemberChanged153()
+{
+    const unsigned __int64 t = 133000000000000000ULL, s = 21;
+    // --- the archive file: the same time and size = no new listing; anything unknown or different = look
+    CHECK(!SalArchiveChangedSinceEdit(TRUE, t, s, TRUE, t, s));
+    CHECK(SalArchiveChangedSinceEdit(TRUE, t, s, TRUE, t + 1, s)); // rewritten in place, same size
+    CHECK(SalArchiveChangedSinceEdit(TRUE, t, s, TRUE, t, s + 1)); // grown with the same time
+    CHECK(SalArchiveChangedSinceEdit(FALSE, t, s, TRUE, t, s));    // unknown at the F4
+    CHECK(SalArchiveChangedSinceEdit(TRUE, t, s, FALSE, t, s));    // cannot be read now
+    CHECK(SalArchiveChangedSinceEdit(FALSE, 0, 0, FALSE, 0, 0));
+    // --- the member in the new listing: the exact name first, then the file system's rule; never a guess
+    CHECK(SalEditedMemberFound(1, 0) == semnListed);
+    CHECK(SalEditedMemberFound(1, 1) == semnListed); // "x.txt" exact beside a new "X.TXT": the exact one
+    CHECK(SalEditedMemberFound(0, 1) == semnListed); // stored as "X.txt" now
+    CHECK(SalEditedMemberFound(0, 0) == semnMissing);
+    CHECK(SalEditedMemberFound(0, 2) == semnUnknown); // two candidates by the rule
+    CHECK(SalEditedMemberFound(2, 0) == semnUnknown); // an archive with the name twice
+    CHECK(SalEditedMemberFound(2, 3) == semnUnknown);
+    // --- the mark: removed, changed or unknown = marked; the same size and time = plain
+    CHECK(!SalEditedMemberChangedInArchive(semnListed, t, s, t, s));
+    CHECK(SalEditedMemberChangedInArchive(semnListed, t, s, t + 20000000, s)); // the member's time
+    CHECK(SalEditedMemberChangedInArchive(semnListed, t, s, t, s + 7));        // the member's size
+    CHECK(SalEditedMemberChangedInArchive(semnListed, t, s, t - 1, s));
+    CHECK(SalEditedMemberChangedInArchive(semnMissing, t, s, 0, 0));
+    CHECK(SalEditedMemberChangedInArchive(semnUnknown, t, s, t, s)); // fail closed: only a warning
+    CHECK(SalEditedMemberChangedInArchive(semnMissing, 0, 0, 0, 0));
+}
+
 // feature 109: the disk-cache key of an archive (SalNameIdentityKeyAlloc) and the rule for one
 // archive under two spellings (SalArchiveSharesCacheKey)
 static std::string Key109(const char* s, int len = -1)
@@ -11346,6 +11376,7 @@ int main(int argc, char** argv)
     TestPackSelf106();
     TestFolderAlias107();
     TestArchiveEdit108();
+    TestMemberChanged153();
     TestDiskCacheKey109();
     TestZipName110();
     TestPvSource111();

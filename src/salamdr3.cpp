@@ -10,6 +10,7 @@
 #include "fileswnd.h"
 #include "cfgdlg.h"
 #include "dialogs.h"
+#include "zip.h" // feature 153: CSalamanderDirectory (a listing for the Archive Update marks)
 #include "pack.h"
 #include "execute.h"
 #include "shellib.h"
@@ -3080,6 +3081,8 @@ CFileTimeStampsItem::CFileTimeStampsItem()
     memset(&LastWrite, 0, sizeof(LastWrite));
     FileSize = CQuadWord(0, 0);
     Attr = 0;
+    memset(&Arc, 0, sizeof(Arc)); // feature 153: nothing known
+    ChangedInArchive = FALSE;
 }
 
 CFileTimeStampsItem::~CFileTimeStampsItem()
@@ -3133,7 +3136,8 @@ BOOL CFileTimeStampsItem::Set(const char* zipRoot, const char* sourcePath, const
 CFileTimeStampsAddResult
 CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const char* sourcePath,
                          const char* fileName, const char* dosFileName,
-                         const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr)
+                         const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr,
+                         const CFileTimeStampsArcStamp* arc)
 {
     // feature 112: three results - "already tracked" and "failed" were one FALSE, and the caller then
     // released the copy from the disk cache: on low memory it was deleted under the editor
@@ -3167,6 +3171,8 @@ CFileTimeStamps::AddFile(const char* zipFile, const char* zipRoot, const char* s
             ZIPFile.Clear();
         return ftsarFailed;
     }
+    if (arc != NULL) // feature 153
+        item->Arc = *arc;
 
     // test whether it is already present (performed after constructing the item because the strings were adjusted - '\\')
     // feature 108: "present" = the same temporary copy on disk, by the file system's rule (salarcedit.h).
@@ -3267,7 +3273,39 @@ void CFileTimeStamps::AddFilesToListBox(HWND list)
         char buf[3 * MAX_PATH];
         lstrcpyn(buf, List[i]->ZIPRoot, _countof(buf));
         SalPathAppend(buf, List[i]->FileName, _countof(buf));
-        SalListBoxAddStringU8(list, buf); // names are UTF-8 (feature 010)
+        // feature 153: a file whose member another program changed in the archive since the F4 says
+        // so - "Update" replaces that change (the list keeps the order of List: the buttons use indexes)
+        CSalHeapString marked;
+        if (List[i]->ChangedInArchive && marked.Printf(LoadStrU8(IDS_ARCUPDATECHANGEDINARC), buf))
+            SalListBoxAddStringU8(list, marked.Text());
+        else
+            SalListBoxAddStringU8(list, buf); // names are UTF-8 (feature 010)
+    }
+
+    // feature 153 (review): the list has a horizontal scroll bar, but it never scrolled - nothing set
+    // the extent; the whole of a long line (a deep name, the mark of a changed member) is reachable now
+    HDC dc = GetDC(list);
+    if (dc != NULL)
+    {
+        HGDIOBJ oldFont = SelectObject(dc, (HFONT)SendMessage(list, WM_GETFONT, 0, 0));
+        int widest = 0;
+        int count = (int)SendMessageW(list, LB_GETCOUNT, 0, 0);
+        for (i = 0; i < count; i++)
+        {
+            int len = (int)SendMessageW(list, LB_GETTEXTLEN, i, 0);
+            if (len <= 0)
+                continue;
+            WCHAR* text = (WCHAR*)malloc((len + 1) * sizeof(WCHAR));
+            if (text == NULL)
+                break;
+            SIZE sz;
+            if (SendMessageW(list, LB_GETTEXT, i, (LPARAM)text) > 0 && GetTextExtentPoint32W(dc, text, len, &sz) && sz.cx > widest)
+                widest = sz.cx;
+            free(text);
+        }
+        SelectObject(dc, oldFont);
+        ReleaseDC(list, dc);
+        SendMessage(list, LB_SETHORIZONTALEXTENT, widest + 2 * GetSystemMetrics(SM_CXEDGE) + 4, 0);
     }
 }
 
@@ -3434,6 +3472,129 @@ void CFileTimeStamps::CopyFilesTo(HWND parent, int* indexes, int count, const ch
     }
 }
 
+BOOL GetArchiveFileStamp153(const char* archive, FILETIME& time, CQuadWord& size)
+{
+    HANDLE file = SalCreateFile(archive, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+    if (file == INVALID_HANDLE_VALUE)
+        return FALSE;
+    DWORD err = NO_ERROR;
+    SalGetFileSize(file, size, err);
+    BOOL ok = err == NO_ERROR && GetFileTime(file, NULL, NULL, &time);
+    HANDLES(CloseHandle(file));
+    return ok;
+}
+
+static unsigned __int64 FileTimeValue153(const FILETIME& t)
+{
+    return ((unsigned __int64)t.dwHighDateTime << 32) | t.dwLowDateTime;
+}
+
+void CFileTimeStamps::MarkChangedInArchive(HWND parent)
+{
+    CALL_STACK_MESSAGE1("CFileTimeStamps::MarkChangedInArchive()");
+    FILETIME nowTime;
+    CQuadWord nowSize(0, 0);
+    memset(&nowTime, 0, sizeof(nowTime));
+    BOOL nowKnown = GetArchiveFileStamp153(ZIPFile.Get(), nowTime, nowSize);
+    if (!nowKnown)
+    {
+        // review: the archive cannot be read now (locked, a share away, deleted) - "changed in the
+        // archive" would mislead; the packing that follows reports the failure itself
+        for (int k = 0; k < List.Count; k++)
+            List[k]->ChangedInArchive = FALSE;
+        return;
+    }
+
+    // the archive as it is now - listed once, only when some item's archive changed since its F4
+    CSalamanderDirectory* dir = NULL;
+    CPluginDataInterfaceAbstract* pluginData = NULL;
+    CPluginData* plugin = NULL;
+    BOOL listed = FALSE, listTried = FALSE;
+    int i;
+    for (i = 0; i < List.Count; i++)
+    {
+        CFileTimeStampsItem* item = List[i];
+        item->ChangedInArchive = FALSE;
+        if (!item->Arc.MemberKnown)
+            continue; // nothing to compare with
+        if (!SalArchiveChangedSinceEdit(item->Arc.ArchiveKnown, FileTimeValue153(item->Arc.ArchiveTime),
+                                        item->Arc.ArchiveSize.Value, nowKnown, FileTimeValue153(nowTime),
+                                        nowSize.Value))
+        {
+            continue; // the archive file is the one of the F4
+        }
+        if (!listTried)
+        {
+            listTried = TRUE;
+            dir = new CSalamanderDirectory(FALSE);
+            if (dir != NULL && nowKnown)
+            {
+                dir->AllocAddCache();
+                SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+                CreateSafeWaitWindow(LoadStr(IDS_LISTINGARCHIVE), NULL, 2000, FALSE, parent);
+                listed = PackList(Panel, ZIPFile.Get(), *dir, pluginData, plugin);
+                DestroySafeWaitWindow();
+                SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+                dir->FreeAddCache();
+            }
+        }
+        CSalEditedMemberNow now = semnUnknown;
+        CFileData* member = NULL;
+        if (listed)
+        {
+            CFilesArray* files = dir->GetFiles(item->ZIPRoot);
+            if (files == NULL)
+                now = semnMissing; // its folder is gone
+            else
+            {
+                int exact = 0, byRule = 0;
+                CFileData* exactF = NULL;
+                CFileData* ruleF = NULL;
+                int k;
+                for (k = 0; k < files->Count; k++)
+                {
+                    CFileData* f = &files->At(k);
+                    if (strcmp(f->Name, item->FileName) == 0)
+                    {
+                        exact++;
+                        exactF = f;
+                    }
+                    else if (SalNameEqualOrdinalCI(f->Name, f->NameLen, item->FileName, -1))
+                    {
+                        byRule++;
+                        ruleF = f;
+                    }
+                }
+                now = SalEditedMemberFound(exact, byRule);
+                member = exact == 1 ? exactF : ruleF;
+            }
+        }
+        item->ChangedInArchive = SalEditedMemberChangedInArchive(
+            now, FileTimeValue153(item->Arc.MemberTime), item->Arc.MemberSize.Value,
+            member != NULL ? FileTimeValue153(member->LastWrite) : 0, member != NULL ? member->Size.Value : 0);
+    }
+
+    if (dir != NULL) // the listing's plug-in data released as CSalShExtPastedData does (salshlib.cpp)
+    {
+        // review: only after a successful listing - a plug-in whose ListArchive fails may leave
+        // 'pluginData' pointing at what it deleted already (7zip.cpp; the contract ignores it then,
+        // and the panel's failed listing only deletes the directory, fileswn2.cpp)
+        if (listed && pluginData != NULL && plugin != NULL)
+        {
+            CPluginDataInterfaceEncapsulation data(pluginData, plugin->DLLName, plugin->Version,
+                                                   plugin->GetPluginInterface()->GetInterface(), plugin->BuiltForVersion);
+            BOOL releaseFiles = data.CallReleaseForFiles();
+            BOOL releaseDirs = data.CallReleaseForDirs();
+            if (releaseFiles || releaseDirs)
+                dir->ReleasePluginData(data, releaseFiles, releaseDirs);
+            CPluginInterfaceEncapsulation pluginIface(data.GetPluginInterface(), data.GetBuiltForVersion());
+            pluginIface.ReleasePluginDataInterface(data.GetInterface());
+        }
+        dir->Clear(NULL);
+        delete dir;
+    }
+}
+
 void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, BOOL* archMaybeUpdated)
 {
     CALL_STACK_MESSAGE1("CFileTimeStamps::CheckAndPackAndClear()");
@@ -3501,6 +3662,7 @@ void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, 
         // but we must not delete them either — after startup, the user must still have a chance to manually pack the updated files into the archive
         if (!CriticalShutdown)
         {
+            MarkChangedInArchive(parent); // feature 153: before the dialog lists the files
             CArchiveUpdateDlg dlg(parent, this, Panel);
             BOOL showDlg = TRUE;
             while (showDlg)

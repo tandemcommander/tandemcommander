@@ -3444,6 +3444,15 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
     CSalHeapString dcFileNameBuf; // ZIP: name for disk cache (feature 095: was char[2 * MAX_PATH])
     CFileData* f = &Files->At(index - Dirs->Count);
 
+    // feature 153: the member as listed and the archive file as it is, before anything is extracted
+    // (an archive changed between this look and the extraction only makes a needless mark later)
+    CFileTimeStampsArcStamp arcStamp;
+    memset(&arcStamp, 0, sizeof(arcStamp));
+    arcStamp.MemberKnown = TRUE;
+    arcStamp.MemberTime = f->LastWrite;
+    arcStamp.MemberSize = f->Size;
+    arcStamp.ArchiveKnown = GetArchiveFileStamp153(GetZIPArchive(), arcStamp.ArchiveTime, arcStamp.ArchiveSize);
+
     if (!SalIsValidFileNameComponent(f->Name))
     {
         SalMessageBox(HWindow, LoadStr(IDS_UNABLETOEDITINVFILES),
@@ -3637,7 +3646,7 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
     char* launchS = s != NULL ? launchName.Get() + (s - name) : NULL;
 
     CFileTimeStampsAddResult tracked = UnpackedAssocFiles.AddFile(GetZIPArchive(), zipPath, buf, s, dosName,
-                                                                  lastWrite, fileSize, attr);
+                                                                  lastWrite, fileSize, attr, &arcStamp);
     if (tracked == ftsarAdded) // this file doesn't have the disk-cache 'lock' object ExecuteAssocEvent yet
     {
         // arcCacheCacheCopies has no effect – caching is done until the archive is closed, we won't unpack

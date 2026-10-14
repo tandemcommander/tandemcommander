@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\salamand\salamand.atp"
-TEXTVERSION,"0.1.8 (x64)"
-VERSION,"0,1,8,192"
+TEXTVERSION,"0.1.10 (x64)"
+VERSION,"0,1,10,194"
 
 [TRANSLATION]
 LANGID,1048
@@ -2646,6 +2646,7 @@ SLGINCOMPLETE,""
 12171,1,"Doriti sa ignorati toate fisierele actualizate (pentru a opri actualizarea arhivei)?"
 12172,1,"Copie Fisierele Actualizate"
 12173,1,"Selectati directorul tinta pentru fisierele actualizate."
+12174,1,"%s   (modificat în arhivă de la deschiderea acesteia – actualizarea va suprascrie acea modificare)"
 
 [STRINGTABLE 83]
 12180,1,"Verific calea "%s", apasa tasta ESC pentru anulare..."

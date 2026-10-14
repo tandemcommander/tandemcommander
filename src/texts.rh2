@@ -1585,6 +1585,7 @@
 #define IDS_BROWSEARCUPDATE          12172
 // archive update dialog: "copy selected to": text of browse dialog
 #define IDS_BROWSEARCUPDATETEXT      12173
+#define IDS_ARCUPDATECHANGEDINARC    12174 // feature 153
 // during path checking: "checking path %s, press ESC to cancel..."
 #define IDS_CHECKINGPATHESC          12180
 // during path listing (reading): "reading path %s, press ESC to cancel..."

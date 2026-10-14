@@ -191,8 +191,11 @@ Functional, no loss:
      (the built-in engine never reports `PVFF_EXIF`); switching them on is a feature of its own.
    - a refused file gets "Unable to create a file with the new thumbnail. Disk full? ..." - a
      sentence of its own needs a new string; the message has no "skip all".
-8. A per-member warning when an archive member changed in the archive since
-   its F4 (needs a new string). Queue 108, entry 2a (112).
+8. ~~A per-member warning when an archive member changed in the archive since
+   its F4~~ - **done, feature 153** (the Archive Update dialog marks the line; owed to a person:
+   the dialog with a marked line on screen). Left, recorded in its fix-log: a member rewritten
+   with the same size and time is not told apart; a time-zone change can mark needlessly; a
+   changed archive is listed twice on the refresh path.
 9. B-1 leftovers: the loops that only drain messages during an operation and
    the menus' own modal loops are code-page loops; other plug-ins' dialogs
    were not examined. Item 5, *B-1* (093).
@@ -265,6 +268,8 @@ Large or risky, each a feature of its own:
   121 (the folder picker's tree-view pick, FTP's welcome-message window);
   152 (one PictView print - a printer or *Microsoft Print to PDF* - compared with its preview:
   plain, mirrored, a selection);
+  153 (the Archive Update dialog with a marked line: readable, scrolls; English and one
+  translated language);
   **123 (new version check)**: design acceptance of the notification window
   (captures in `specs/123-new-version-check/probe/shots/`, also 150 % and
   200 %), real keyboard and mouse (typing while the notification arrives, a

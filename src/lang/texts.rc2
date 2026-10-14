@@ -1297,6 +1297,7 @@ STRINGTABLE
 
  IDS_BROWSEARCUPDATE, "Copy Updated Files"
  IDS_BROWSEARCUPDATETEXT, "Select the target folder for updated files."
+ IDS_ARCUPDATECHANGEDINARC, "%s   (changed in the archive since it was opened - updating overwrites that change)"
 
  IDS_SEARCHINGTEXTESC, "Searching text, press the ESC key to cancel..."
 

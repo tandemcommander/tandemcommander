@@ -2379,3 +2379,12 @@ a few early ones are out of sequence).
   hidden desktop, `PrintWindow` of a child control returns FALSE; a viewer check comparing only the
   picture's box passed the negative control (compare the colors' counts). Probe 21/0, control 7
   FAIL. Print-side leftovers: NEXT-WORK 6a.
+- 153-archive-member-changed-warning: **the Archive Update dialog marks a file whose member
+  another program changed in the archive since the F4** (112's trade-off SF1). The F4 keeps the
+  member's listed size/time and the archive file's time/size (`CFileTimeStampsArcStamp`);
+  `CFileTimeStamps::MarkChangedInArchive` compares the archive file first and lists it again
+  (`PackList`, a temporary directory) only when it changed; rules in `salarcedit.h` (+ saltests).
+  New string 12174 (`IDS_ARCUPDATECHANGEDINARC`), eight languages; the list's horizontal extent is
+  set now. **Trap:** after a FAILED `ListArchive` the plug-in data must not be released - the
+  7zip plug-in deletes them and leaves the pointer set (review CRITICAL, measured: a crash).
+  Limit: the same size and time = unchanged. Probe 11/0, the build before 5/6.

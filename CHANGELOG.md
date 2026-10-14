@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Archive Update warns when another program changed the edited member**
+  (feature 153). A file opened for editing from an archive (F4) whose member
+  was changed or removed in the archive by another program meanwhile is now
+  marked in the Archive Update dialog - updating it overwrites that change.
+  The dialog's list also scrolls sideways now.
+
 - **PictView: the print preview shows the picture** (feature 152). The
   preview in the Print dialog stayed an empty page in every release since
   the image engine was replaced; it now shows the picture as it will be

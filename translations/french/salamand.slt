@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\salamand\salamand.atp"
-TEXTVERSION,"0.1.8 (x64)"
-VERSION,"0,1,8,192"
+TEXTVERSION,"0.1.10 (x64)"
+VERSION,"0,1,10,194"
 
 [TRANSLATION]
 LANGID,1036
@@ -2646,6 +2646,7 @@ SLGINCOMPLETE,""
 12171,1,"Ignorer tous les fichiers mis à jours (et donc arrêter la mise à jour de l'archive) ?"
 12172,1,"Copier les fichiers mis à jour"
 12173,1,"Sélectionner le répertoire de destination des fichiers mis à jours."
+12174,1,"%s   (modifié dans l’archive depuis son ouverture – la mise à jour écrasera cette modification)"
 
 [STRINGTABLE 83]
 12180,1,"Contrôle du chemin d'accès "%s", taper la touche Échappement pour annuler..."

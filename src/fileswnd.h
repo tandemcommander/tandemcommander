@@ -275,6 +275,18 @@ public:
 // CFileTimeStamps
 //
 
+// feature 153: the member and the archive file as they were at the F4 (salarcedit.h) - the Archive
+// Update dialog marks a file whose member another program changed in the archive since
+struct CFileTimeStampsArcStamp
+{
+    BOOL MemberKnown; // MemberTime / MemberSize: the member's listing at the F4
+    FILETIME MemberTime;
+    CQuadWord MemberSize;
+    BOOL ArchiveKnown; // ArchiveTime / ArchiveSize: the archive file at the F4 (GetArchiveFileStamp153)
+    FILETIME ArchiveTime;
+    CQuadWord ArchiveSize;
+};
+
 struct CFileTimeStampsItem
 {
     char *ZIPRoot,
@@ -284,6 +296,8 @@ struct CFileTimeStampsItem
     FILETIME LastWrite;
     CQuadWord FileSize;
     DWORD Attr;
+    CFileTimeStampsArcStamp Arc; // feature 153 (MemberKnown FALSE = no warning is decided for it)
+    BOOL ChangedInArchive;       // feature 153: marked in the Archive Update dialog
 
     CFileTimeStampsItem();
     ~CFileTimeStampsItem();
@@ -343,13 +357,20 @@ public:
     //
     // feature 112: returns ftsarAdded, ftsarAlreadyTracked or ftsarFailed (see the enum); a failure
     // leaves the list as it was (an archive name set by this call alone is forgotten again)
+    // feature 153: 'arc' - the member and the archive at the F4 (NULL = not known); an item already
+    // tracked keeps the stamp of its first F4
     CFileTimeStampsAddResult AddFile(const char* zipFile, const char* zipRoot, const char* sourcePath,
                                      const char* fileName, const char* dosFileName,
-                                     const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr);
+                                     const FILETIME& lastWrite, const CQuadWord& fileSize, DWORD attr,
+                                     const CFileTimeStampsArcStamp* arc = NULL);
 
     // feature 112: removes the item the last successful AddFile() added (the caller could not lock its
     // copy); an empty list forgets the archive name
     void RemoveLastAdded();
+
+    // feature 153: marks the items whose member another program changed in the archive since the F4
+    // (ChangedInArchive); lists the archive again only when its file changed
+    void MarkChangedInArchive(HWND parent);
 
     // it verifies time stamps, updates if necessary and prepares the object for further use
     void CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged = NULL, BOOL* archMaybeUpdated = NULL);
@@ -369,6 +390,9 @@ public:
 // folder the listing 'archiveDir' stores in another case replaced by the stored spelling - the edit
 // (F4) and the viewer (F3) name a member by it, so one member is one temporary copy; FALSE = low memory
 class CSalHeapString;
+// feature 153 (salamdr3.cpp): the archive file's last write time and size, as the panel's refresh
+// reads them (GetFileTime, SalGetFileSize of an opened handle); FALSE = it cannot be opened or read
+BOOL GetArchiveFileStamp153(const char* archive, FILETIME& time, CQuadWord& size);
 BOOL GetZIPPathAsStored108(CSalamanderDirectory* archiveDir, const char* zipPath, CSalHeapString& stored);
 
 //****************************************************************************
