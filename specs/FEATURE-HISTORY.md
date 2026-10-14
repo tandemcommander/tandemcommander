@@ -2544,3 +2544,5 @@ a few early ones are out of sequence).
   appears between the delete and the move loses the target.
 - 178-fsoper-descr-long-name: `GetCommonFSOperSourceDescr` keeps a name it is given whole (it was cut
   at `MAX_PATH`, possibly inside a letter - the FTP upload's caption); not driven (no FTP server).
+- 179-pictview-print-fit: PictView's print mirrors by a stored negative size only with Fit off (the
+  preview's rule, 152) and computes the full-image size with `MulDiv` (no 32-bit wrap); not driven.

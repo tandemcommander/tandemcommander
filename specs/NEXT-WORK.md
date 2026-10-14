@@ -227,7 +227,8 @@ Functional, no loss:
 6. ~~PictView's print preview is empty in every release since 006~~ - **done, feature 152** (drawn
    the way the print draws; owed to a person: one print compared with the preview). Left by 152's
    review, print side, older:
-6a. **PictView print: Fit mode still mirrors by a negative stored size; a large print scale wraps.**
+6a. ~~**PictView print: Fit mode still mirrors by a negative stored size; a large print scale wraps.**~~
+   - **done, feature 179** (the print follows the preview's rule; owed to a person: one print).
    `render1.cpp` CMD_PRINT: with *Scale to fit* the print mirrors when the stored `Width`/`Height`
    is negative (typed negative, then Fit checked again) while the dialog and the preview show the
    picture upright; `prevWidth * pvii.Width / selWidth` is unsigned 32-bit and wraps at a large

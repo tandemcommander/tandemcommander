@@ -4084,6 +4084,11 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
                     prevHeight = abs((int)(pPrintDlg->Params.Height * scaleY));
                 }
                 prevLeft = prevTop = 0;
+                // feature 179: a negative printed width / height mirrors only when it is the size
+                // printed - with "Fit" the stored size is not used, and the dialog and the preview
+                // (print.cpp, CreatePreview) show the picture upright; the print mirrored it
+                const BOOL negW = !pPrintDlg->Params.bFit && pPrintDlg->Params.Width < 0;
+                const BOOL negH = !pPrintDlg->Params.bFit && pPrintDlg->Params.Height < 0;
                 // get top-left coordinates
                 if (!pPrintDlg->Params.bFit || pPrintDlg->Params.bKeepAspect)
                 {
@@ -4112,12 +4117,14 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
                     // get real image size for scaling
                     selWidth = params.ImageCage->right - params.ImageCage->left + 1;
                     selHeight = params.ImageCage->bottom - params.ImageCage->top + 1;
-                    prevWidth = prevWidth * pvii.Width / selWidth;
-                    prevHeight = prevHeight * pvii.Height / selHeight;
+                    // feature 179: a 64-bit intermediate, as the preview (an unsigned 32-bit product wrapped at
+                    // a large scale of a big image)
+                    prevWidth = MulDiv(prevWidth, (int)pvii.Width, selWidth);
+                    prevHeight = MulDiv(prevHeight, (int)pvii.Height, selHeight);
                     scaleX = (double)prevWidth / pvii.Width;
                     scaleY = (double)prevHeight / pvii.Height;
                     // get the top left corner of the full image
-                    if (pPrintDlg->Params.Width < 0)
+                    if (negW)
                     {
                         prevLeft -= (int)((pvii.Width - params.ImageCage->right - 1) * scaleX);
                     }
@@ -4125,7 +4132,7 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
                     {
                         prevLeft -= (int)(params.ImageCage->left * scaleX);
                     }
-                    if (pPrintDlg->Params.Height < 0)
+                    if (negH)
                     {
                         prevTop -= (int)((pvii.Height - params.ImageCage->bottom - 1) * scaleY);
                     }
@@ -4145,8 +4152,8 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
                 {
                     if (StartPage(HPrinterDC) > 0)
                     {
-                        DWORD stretchedWidth = prevWidth * (1 - 2 * (pPrintDlg->Params.bMirrorHor ^ (pPrintDlg->Params.Width < 0)));
-                        DWORD stretchedHeight = prevHeight * (1 - 2 * (pPrintDlg->Params.bMirrorVert ^ (pPrintDlg->Params.Height < 0)));
+                        DWORD stretchedWidth = prevWidth * (1 - 2 * ((pPrintDlg->Params.bMirrorHor ? 1 : 0) ^ (negW ? 1 : 0)));
+                        DWORD stretchedHeight = prevHeight * (1 - 2 * ((pPrintDlg->Params.bMirrorVert ? 1 : 0) ^ (negH ? 1 : 0)));
 
                         CALL_STACK_MESSAGE4("CMD_PRINT 3: %ux%u, %u", stretchedWidth, stretchedHeight, pvii.Colors);
                         PVW32DLL.PVSetStretchParameters(PVHandle, stretchedWidth, stretchedHeight, COLORONCOLOR);

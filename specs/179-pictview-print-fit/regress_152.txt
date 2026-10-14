@@ -1,0 +1,28 @@
+print_preview_probe (feature 152)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 00:29; desktop 'tc_probe_10952'; default printer 'PDF24'
+
+plain      PREVIEW PASS        capture 313x313 (m0 PrintWindow False most 010203; m1 PrintWindow False most 010203; m2 PrintWindow True most F0F0F0): red 8112@(103,117), green 8190@(207,117), blue 8216@(103,195), yellow 8295@(207,195); colored box 209x157 at 51,78; the dialog: 21,1667 x 15,875, fit 1, keep aspect 1
+plain      VIEWER PASS        before the dialog: red 1200 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459; after: red 1200 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459
+plain      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mirror-h   PREVIEW PASS        capture 313x313 (m0 PrintWindow False most 010203; m1 PrintWindow False most 010203; m2 PrintWindow True most F0F0F0): red 8190@(207,117), green 8112@(103,117), blue 8295@(207,195), yellow 8216@(103,195); colored box 209x157 at 51,78; the dialog: 21,1667 x 15,875, fit 1, keep aspect 1
+mirror-h   VIEWER PASS        before the dialog: red 1200 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459; after: red 1200 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459
+mirror-h   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mirror-v   PREVIEW PASS        capture 313x313 (m0 PrintWindow False most 010203; m1 PrintWindow False most 010203; m2 PrintWindow True most F0F0F0): red 8216@(103,195), green 8295@(207,195), blue 8112@(103,117), yellow 8190@(207,117); colored box 209x157 at 51,78; the dialog: 21,1667 x 15,875, fit 1, keep aspect 1
+mirror-v   VIEWER PASS        before the dialog: red 1200 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459; after: red 1200 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459
+mirror-v   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rotate     PREVIEW PASS        capture 313x313 (m0 PrintWindow False most 010203; m1 PrintWindow False most 010203; m2 PrintWindow True most F0F0F0): red 14595@(207,86), green 14700@(207,226), blue 14456@(103,86), yellow 14560@(103,226); colored box 209x279 at 51,17; the dialog: 15,875 x 21,1667, fit 1, keep aspect 1
+rotate     VIEWER PASS        before the dialog: red 1200 green 1200 blue 1200 yellow 1200; box 60x80 at 747,449; after: red 1200 green 1200 blue 1200 yellow 1200; box 60x80 at 747,449
+rotate     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sel-all    PREVIEW PASS        capture 313x313 (m0 PrintWindow False most 010203; m1 PrintWindow False most 010203; m2 PrintWindow True most F0F0F0): red 8112@(103,117), green 8190@(207,117), blue 8216@(103,195), yellow 8295@(207,195); colored box 209x157 at 51,78; the dialog: 21,1667 x 15,875, fit 1, keep aspect 1
+sel-all    VIEWER PASS        before the dialog: red 1166 green 1165 blue 1199 yellow 1201; box 80x60 at 737,459; after: red 1165 green 1164 blue 1199 yellow 1201; box 80x60 at 737,459
+sel-all    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sel-part   PREVIEW PASS        capture 313x313 (m0 PrintWindow False most 010203; m1 PrintWindow False most 010203; m2 PrintWindow True most FF0000): red 58509@(155,156), green 0@(-1,-1), blue 0@(-1,-1), yellow 0@(-1,-1); colored box 197x297 at 57,8; the dialog: 0,5292 x 0,7937, fit 1, keep aspect 1
+sel-part   VIEWER PASS        before the dialog: red 1197 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459; after: red 1199 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459
+sel-part   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+reopen     PREVIEW PASS        capture 313x313 (m0 PrintWindow False most 010203; m1 PrintWindow False most 010203; m2 PrintWindow True most F0F0F0): red 8112@(103,117), green 8190@(207,117), blue 8216@(103,195), yellow 8295@(207,195); colored box 209x157 at 51,78; the dialog: 21,1667 x 15,875, fit 1, keep aspect 1
+reopen     VIEWER PASS        before the dialog: red 1200 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459; after: red 1200 green 1200 blue 1200 yellow 1200; box 80x60 at 737,459
+reopen     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 21, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

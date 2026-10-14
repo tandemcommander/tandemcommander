@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **PictView prints what its print preview shows** (feature 179). With *Scale
+  to fit* a picture could be printed mirrored after a negative size had been
+  typed, and a large print scale of a big picture printed a wrong size.
+
 - **Packing over an existing archive keeps it when the packing fails**
   (feature 176). Choosing *Overwrite* deleted the existing archive before
   packing started; when packing then failed or was cancelled, the old archive
