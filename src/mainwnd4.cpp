@@ -4,6 +4,7 @@
 
 #include "precomp.h"
 #include "salheapstr.h" // feature 183
+#include "salbatchtext.h" // feature 226
 
 #include "stswnd.h"
 #include "editwnd.h"
@@ -390,6 +391,54 @@ void CMainWindow::MakeFileList()
         }
     }
     EndStopRefresh(); // the snooper will start again now
+}
+
+// feature 226: writes the User Menu's batch text in the encoding cmd.exe reads it in (salbatchtext.h);
+// FALSE with the last error set when it cannot (a name not valid UTF-8, low memory, a write error)
+static BOOL WriteUserMenuBat(HANDLE file, const CSalBatchText* bat)
+{
+    char* oem;
+    int oemLen;
+    BOOL outOfMemory;
+    UINT oemCP = GetOEMCP();
+    DWORD written;
+    char line[SALBATCH_LINE_SIZE];
+    WCHAR sysDirW[MAX_PATH];
+    char sysDir[3 * MAX_PATH]; // chcp.com by its absolute path (salbatchtext.h)
+    UINT sysLen = GetSystemDirectoryW(sysDirW, MAX_PATH);
+    if (sysLen == 0 || sysLen >= MAX_PATH || SalWToU8(sysDirW, -1, sysDir, (int)sizeof(sysDir)) == 0)
+        sysDir[0] = 0;
+    if (SalBatchIsAscii(bat->Text, bat->Len)) // as before, byte for byte
+        return WriteFile(file, bat->Text, (DWORD)bat->Len, &written, NULL);
+    switch (SalBatchChooseEncoding(bat->Text, bat->Len, oemCP, &oem, &oemLen, &outOfMemory))
+    {
+    case SALBATCH_OEM:
+    {
+        SalBatchCodePageLine(oemCP, TRUE, sysDir, line, (int)sizeof(line));
+        BOOL ok = WriteFile(file, line, (DWORD)strlen(line), &written, NULL) &&
+                  WriteFile(file, oem, (DWORD)oemLen, &written, NULL);
+        DWORD err = GetLastError();
+        free(oem);
+        SetLastError(err);
+        return ok;
+    }
+
+    case SALBATCH_UTF8:
+    {
+        SalBatchCodePageLine(CP_UTF8, TRUE, sysDir, line, (int)sizeof(line));
+        if (!WriteFile(file, line, (DWORD)strlen(line), &written, NULL) ||
+            !WriteFile(file, bat->Text, (DWORD)bat->Len, &written, NULL))
+        {
+            return FALSE;
+        }
+        SalBatchCodePageLine(oemCP, FALSE, sysDir, line, (int)sizeof(line));
+        return WriteFile(file, line, (DWORD)strlen(line), &written, NULL);
+    }
+
+    default: // a name with an unpaired surrogate: no batch file holds it - never run with another name
+        SetLastError(outOfMemory ? ERROR_NOT_ENOUGH_MEMORY : ERROR_NO_UNICODE_TRANSLATION);
+        return FALSE;
+    }
 }
 
 // see description in mainwnd.h
@@ -835,6 +884,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             HANDLE file;
             char batUniqueName[50]; // we need a unique name for the batch file in the cache
             DWORD lastErr;
+            CSalBatchText bat;             // feature 226: the batch text (UTF-8), written once its encoding is known
+            BOOL skipErrorMessage = FALSE; // feature 226: set before the goto ERROR_LABEL below (it was read uninitialized)
 
         _TRY_AGAIN:
 
@@ -876,9 +927,6 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             char path[MAX_PATH], name[MAX_PATH];
             BOOL error;
             error = FALSE;
-            BOOL skipErrorMessage;
-            skipErrorMessage = FALSE;
-            DWORD written;
             BOOL fileNameUsed;
             BOOL firstRound;
             firstRound = TRUE;
@@ -903,24 +951,21 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                 {
                     if (buildBat) // building a .bat file
                     {
-                        char initDirOEM[MAX_PATH];
-                        char cmdLineOEM[USRMNUCMDLINE_MAXLEN];
-                        CharToOem(initDir, initDirOEM);
-                        CharToOem(cmdLine, cmdLineOEM);
+                        // feature 226: the lines are collected in UTF-8 (CharToOem read this UTF-8
+                        // text as the ANSI code page - accented names became other letters)
                         batNotEmpty = TRUE;
-                        if ((initDirOEM[0] != 0 &&
-                                 (initDirOEM[1] == ':' && // "@C:"
-                                  (!WriteFile(file, "@", 1, &written, NULL) ||
-                                   !WriteFile(file, initDirOEM, 2, &written, NULL) ||
-                                   !WriteFile(file, "\r\n", 2, &written, NULL))) ||
-                             (initDirOEM[1] == ':' && // "@cd C:\\path"
-                              (!WriteFile(file, "@cd \"", 5, &written, NULL) ||
-                               !WriteFile(file, initDirOEM, (DWORD)strlen(initDirOEM), &written, NULL) ||
-                               !WriteFile(file, "\"\r\n", 3, &written, NULL)))) ||
-                            !WriteFile(file, "call ", 5, &written, NULL) ||
-                            !WriteFile(file, cmdLineOEM, (DWORD)strlen(cmdLineOEM), &written, NULL) ||
-                            !WriteFile(file, "\r\n", 2, &written, NULL))
+                        // "@cd /d "C:\\path" || exit /b 1": a folder that is not there (renamed, a drive
+                        // that is gone) ends the batch file - "@C:" + "@cd" went on and the command ran
+                        // in the panel's folder (second review of 226)
+                        if ((initDir[0] != 0 && initDir[1] == ':' && // initDir[1] read only when there is one
+                             (!bat.Append("@cd /d \"") ||
+                              !bat.Append(initDir) ||
+                              !bat.Append("\" || exit /b 1\r\n"))) ||
+                            !bat.Append("call ") ||
+                            !bat.Append(cmdLine) ||
+                            !bat.Append("\r\n"))
                         {
+                            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
                             error = TRUE;
                             break;
                         }
@@ -977,6 +1022,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 
             if (buildBat)
             {
+                if (!error && batNotEmpty && !WriteUserMenuBat(file, &bat)) // feature 226
+                    error = TRUE;
                 lastErr = GetLastError();
                 DWORD size;
                 size = GetFileSize(file, NULL);
@@ -1009,7 +1056,9 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 
                         PROCESS_INFORMATION pi;
 
-                        GetEnvironmentVariable("COMSPEC", cmdLine, USRMNUCMDLINE_MAXLEN - 20);
+                        DWORD comspecLen = SalGetEnvVarU8("COMSPEC", cmdLine, USRMNUCMDLINE_MAXLEN - 20); // feature 226: UTF-8 for SalCreateProcess (was ANSI)
+                        if (comspecLen == 0 || comspecLen >= USRMNUCMDLINE_MAXLEN - 20)
+                            cmdLine[0] = 0;
                         AddDoubleQuotesIfNeeded(cmdLine, USRMNUCMDLINE_MAXLEN - 10); // CreateProcess requires the name with spaces in quotes (otherwise it tries various options, see help)
                         if (!UserMenuItems->At(itemIndex)->UseWindow || UserMenuItems->At(itemIndex)->CloseShell)
                             strcat(cmdLine, " /C "); // run command and close immediately after it finishes

@@ -956,6 +956,11 @@ HICON SalLoadIcon(HINSTANCE hDLL, int id, int iconSize);
 // SetCurrentDirectory(systemovy adresar) - odpojeni od adresare v panelu
 void SetCurrentDirectoryToSystem();
 
+// feature 226: SetCurrentDirectory for a UTF-8 path (the A call read its bytes as the ANSI code
+// page: a folder with letters outside ASCII was never set - the current folder stayed where it
+// was); FALSE when it cannot be set
+BOOL SalSetCurrentDirectoryU8(const char* path);
+
 // nahradi substy v ceste 'resPath' jejich cilovymi cestami (prevod na cestu bez SUBST drive-letters);
 // vraci FALSE pri chybe
 BOOL ResolveSubsts(char* resPath);

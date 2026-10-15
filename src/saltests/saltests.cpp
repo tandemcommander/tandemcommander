@@ -63,6 +63,7 @@
 #include "salreparse.h"      // feature 197
 #include "salshortname.h"    // feature 203
 #include "salu8fold.h"       // feature 210
+#include "salbatchtext.h"    // feature 226
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -12054,6 +12055,94 @@ static void TestU8Fold210()
     CHECK(SalU8Advance(z, ze, 0) == z);
 }
 
+// feature 226: the encoding of the User Menu's batch file
+static std::string Batch226(const char* u8, UINT cp, CSalBatchEncoding* enc)
+{
+    char* out;
+    int outLen;
+    BOOL oom;
+    *enc = SalBatchChooseEncoding(u8, (int)strlen(u8), cp, &out, &outLen, &oom);
+    CHECK(!oom);
+    std::string r = out != NULL ? std::string(out, (size_t)outLen) : std::string();
+    if (out != NULL)
+        CHECK((int)strlen(out) == outLen);
+    free(out);
+    return r;
+}
+
+static void TestBatchText226()
+{
+    CSalBatchEncoding e;
+    CHECK(Batch226("call copy a.txt b.txt\r\n", 852, &e) == "call copy a.txt b.txt\r\n");
+    CHECK(e == SALBATCH_OEM);
+    // z-caron, r-caron, u-ring: in OEM 852 0xA7 0xFD 0x85 (CharToOem of the UTF-8 bytes gave other letters)
+    CHECK(Batch226("\xC5\xBE\xC5\x99\xC5\xAF", 852, &e) == "\xA7\xFD\x85");
+    CHECK(e == SALBATCH_OEM);
+    // the same letters are not in OEM 437: UTF-8 (no best fit - z-caron is not "z")
+    CHECK(Batch226("\xC5\xBE.txt", 437, &e).empty());
+    CHECK(e == SALBATCH_UTF8);
+    // CJK on a European system: UTF-8; in OEM 936 (Simplified Chinese): its two bytes
+    CHECK(Batch226("\xE4\xB8\xAD", 852, &e).empty());
+    CHECK(e == SALBATCH_UTF8);
+    CHECK(Batch226("\xE4\xB8\xAD", 936, &e) == "\xD6\xD0");
+    CHECK(e == SALBATCH_OEM);
+    // a WTF-8 surrogate or a broken byte: refused, never written changed
+    CHECK(Batch226("a\xED\xA0\x80.txt", 852, &e).empty());
+    CHECK(e == SALBATCH_REFUSED);
+    CHECK(Batch226("a\xC5.txt", 852, &e).empty());
+    CHECK(e == SALBATCH_REFUSED);
+    CHECK(Batch226("a\xED\xA0\x80.txt", CP_UTF8, &e).empty());
+    CHECK(e == SALBATCH_REFUSED);
+    // an OEM code page of 65001: the text as it is
+    CHECK(Batch226("\xE4\xB8\xAD", CP_UTF8, &e) == "\xE4\xB8\xAD");
+    CHECK(e == SALBATCH_OEM);
+    // a character with only a best-fit form in 852 (a-grave): UTF-8
+    CHECK(Batch226("\xC3\xA0", 852, &e).empty());
+    CHECK(e == SALBATCH_UTF8);
+    // empty text
+    CHECK(Batch226("", 852, &e).empty());
+    CHECK(e == SALBATCH_OEM);
+
+    // the code-page lines run chcp.com by its full path (never a chcp.bat of the current folder)
+    char line[SALBATCH_LINE_SIZE];
+    // the absolute system folder when it is ASCII (a child environment may lack SystemRoot)
+    SalBatchCodePageLine(65001, TRUE, "C:\\WINDOWS\\system32", line, (int)sizeof(line));
+    CHECK(strcmp(line, "@\"C:\\WINDOWS\\system32\\chcp.com\" 65001>nul || exit /b 1\r\n") == 0);
+    SalBatchCodePageLine(852, FALSE, "C:\\WINDOWS\\system32\\", line, (int)sizeof(line));
+    CHECK(strcmp(line, "@\"C:\\WINDOWS\\system32\\chcp.com\" 852>nul\r\n") == 0);
+    // otherwise (none, not ASCII, a quote or a percent sign in it) %SystemRoot%
+    SalBatchCodePageLine(65001, TRUE, NULL, line, (int)sizeof(line));
+    CHECK(strcmp(line, "@\"%SystemRoot%\\System32\\chcp.com\" 65001>nul || exit /b 1\r\n") == 0);
+    SalBatchCodePageLine(852, FALSE, "", line, (int)sizeof(line));
+    CHECK(strcmp(line, "@\"%SystemRoot%\\System32\\chcp.com\" 852>nul\r\n") == 0);
+    SalBatchCodePageLine(852, FALSE, "C:\\W\xC5\xBE\\system32", line, (int)sizeof(line));
+    CHECK(strcmp(line, "@\"%SystemRoot%\\System32\\chcp.com\" 852>nul\r\n") == 0);
+    SalBatchCodePageLine(852, FALSE, "C:\\100%\\system32", line, (int)sizeof(line));
+    CHECK(strcmp(line, "@\"%SystemRoot%\\System32\\chcp.com\" 852>nul\r\n") == 0);
+    SalBatchCodePageLine(852, FALSE, "C:\\a\"b", line, (int)sizeof(line));
+    CHECK(strcmp(line, "@\"%SystemRoot%\\System32\\chcp.com\" 852>nul\r\n") == 0);
+    std::string longDir = "C:\\" + std::string(MAX_PATH - 4, 'd'); // MAX_PATH - 1 bytes: fits the line
+    SalBatchCodePageLine(4294967295u, TRUE, longDir.c_str(), line, (int)sizeof(line));
+    CHECK(strlen(line) < sizeof(line) - 1 && strstr(line, "|| exit /b 1\r\n") != NULL);
+    CHECK(SalBatchIsAscii("call copy a b\r\n", 15));
+    CHECK(SalBatchIsAscii("", 0));
+    CHECK(!SalBatchIsAscii("a\xC5\xBE", 3));
+    CHECK(!SalBatchIsAscii("\x80", 1));
+
+    CSalBatchText t;
+    CHECK(t.Text == NULL && t.Len == 0);
+    CHECK(t.Append("@C:"));
+    CHECK(t.Append("\r\nxyz", 2));
+    CHECK(t.Len == 5 && strcmp(t.Text, "@C:\r\n") == 0);
+    std::string big(1000, 'x');
+    for (int i = 0; i < 100; i++)
+        CHECK(t.Append(big.c_str()));
+    CHECK(t.Len == 100005 && t.Text[t.Len] == 0 && t.Text[100004] == 'x');
+    CHECK(!t.Append("x", -1));
+    CHECK(!t.Append("x", 0x40000000));
+    CHECK(t.Len == 100005);
+}
+
 static void TestMultiSzToLine189()
 {
     struct Case
@@ -12213,6 +12302,7 @@ int main(int argc, char** argv)
     TestShortNameClashError203();
     TestNameIsOnlyShortNameOf204();
     TestU8Fold210();
+    TestBatchText226();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

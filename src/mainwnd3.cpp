@@ -2864,7 +2864,12 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 }
 
                 CUMDataFromPanel data(activePanel);
-                SetCurrentDirectory(activePanel->GetPath());
+                // feature 226: a command without an initial directory runs in the panel's folder
+                // (the A call never set a folder with letters outside ASCII - the command ran in
+                // the program's resting current folder, the system folder); when it cannot be set,
+                // that system folder - never another panel's
+                if (!SalSetCurrentDirectoryU8(activePanel->GetPath()))
+                    SetCurrentDirectoryToSystem();
                 UserMenu(HWindow, LOWORD(wParam) - CM_USERMENU_MIN, GetNextFileFromPanel,
                          &data, &userMenuAdvancedData);
                 SetCurrentDirectoryToSystem();

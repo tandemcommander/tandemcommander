@@ -1008,6 +1008,14 @@ void SetCurrentDirectoryToSystem()
     SetCurrentDirectory(buf);
 }
 
+BOOL SalSetCurrentDirectoryU8(const char* path)
+{
+    WCHAR* w = SalU8ToWAlloc(path);
+    BOOL ok = w != NULL && SetCurrentDirectoryW(w);
+    free(w);
+    return ok;
+}
+
 // ****************************************************************************
 
 // feature 212: is the directory 'dir' (UTF-8) a link that is never walked? Asked without a

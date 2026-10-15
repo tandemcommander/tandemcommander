@@ -11,6 +11,16 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **User Menu: commands run through the command shell work with accented
+  names** (feature 226). An item set to run through the command shell got
+  file and folder names with letters outside English garbled, so it did
+  not find the file (or found another one); a command with a relative name
+  did not run in a panel folder with such letters; and when the item's
+  initial folder did not exist, the command ran in the panel's folder
+  instead. The names now reach the command unchanged (also Chinese or
+  Japanese ones), the command runs in the panel's folder, and a missing
+  initial folder stops it.
+
 - **User Menu: a command is not run in a shortened folder** (feature 225).
   A User Menu command on the ".." item or in an empty panel whose folder
   path is very long ran in a shortened path - another folder. It is now

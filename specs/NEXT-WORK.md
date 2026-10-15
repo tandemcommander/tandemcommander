@@ -705,8 +705,16 @@ Code work an agent can do:
          LengthOfFileIdentifier + 1)`);
          tar's gzip name cut at 259 bytes and extracted under it; ~~the User Menu
          `mainwnd4.cpp:411-433`~~ (done, feature 225 - only the up-dir / empty-panel path was acted
-         on; left: **the User Menu's .bat ("Through shell") converts its UTF-8 command line and
-         folder with `CharToOem` (`mainwnd4.cpp` ~918) - an accented path becomes other letters**;
+         on; left: ~~the User Menu's .bat converts its UTF-8 text with `CharToOem`~~ (done, feature
+         226; left from its reviews: **`%` and `^` in a name change it in the batch file** -
+         a lone `%` is dropped, `call` doubles `^` - the command can act on another file, to
+         measure; a UNC panel folder or Initial Directory - cmd refuses a UNC current folder and
+         runs in C:\Windows, a UNC Initial Directory writes no `cd`; the Find window's User Menu
+         route sets no current folder and races the main thread's `SetCurrentDirectory` (pass
+         `lpCurrentDirectory` instead); a panel folder that cannot be set falls back to System32
+         - refuse a relative command instead; a failed chcp / `cd` ends a hidden batch silently;
+         a kept shell ends at the OEM code page; `editwnd.cpp:355/482` read COMSPEC with the A
+         call; the other A `SetCurrentDirectory` calls on UTF-8 paths are speed hints only);
          long paths in the User Menu) and Compare Directories `mainwnd5.cpp:1560/1584` cut disk
          names at MAX_PATH and act on them; `fileswna.cpp:396` cuts `SrcPath`);
          ~~SFTP: a memory leak after a failed SSH handshake~~ - **done, feature 217** (reproduced

@@ -2767,3 +2767,12 @@ a few early ones are out of sequence).
   in the cut folder. Refused now ("name too long"). A first, wider version was rejected by the review
   (it changed nothing else and ran a partial .bat). By reading. The .bat's `CharToOem` of UTF-8 text:
   NEXT-WORK.
+- 226-user-menu-batch-encoding: the User Menu's "through a shell" batch file converted its UTF-8
+  command line and folder with `CharToOem` (ANSI in) - every non-ASCII name garbled; its current
+  folder was set with the A `SetCurrentDirectory` (failed for such folders - System32). Now the
+  text is collected (`salbatchtext.h`, saltests): ASCII as before; exact OEM form -> a chcp line +
+  OEM bytes; else UTF-8 between chcp 65001 and back; an unpaired surrogate refused. **chcp.com by
+  its absolute path** (review: a bare `chcp` ran a planted chcp.bat - control confirmed); `cd /d
+  ... || exit /b 1` (a missing Initial Directory ran the command in the panel's folder);
+  `SalSetCurrentDirectoryU8`. Probe `um226_probe.ps1` 11 FAIL -> 28 / 0. Trap: a shell with
+  `NoDefaultCurrentDirectoryInExePath` set hides the planted-file case - the probe removes it.
