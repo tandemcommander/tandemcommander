@@ -2752,3 +2752,8 @@ a few early ones are out of sequence).
   limited; the review's MUST: else partial listings), `SalNamePrefixBytesU8`, whole-character cuts,
   the ZIP listing skips a too-long item, uniso's path buffers widened. Contract note. Probe
   `editname222_probe.ps1` 5 / 3 -> 10 / 0.
+- 223-uniso-crafted-image: the ISO plug-in used lengths from the image unchecked (an HFS+ name into
+  `wchar_t[256]`, Rock Ridge entry lengths, directory records); checked now. Rock Ridge names in a
+  continuation area (CE) are followed - a 200-letter name was extracted as 146 letters (measured with
+  a `genisoimage -R` image); never a cut name. Probe `iso223_probe.ps1` 4 / 0. HFS+ B-tree loader:
+  NEXT-WORK.

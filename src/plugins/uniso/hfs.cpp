@@ -262,7 +262,9 @@ BOOL CHFS::GetRootName(char* rootName, int maxlen)
         int nameLen = FromM16(pKey->nodeName.length);
         wchar_t fileNameW[256];
 
-        if ((keyLen <= 6) || (nameLen == 0) || (pKey->parentID != FromM32(kHFSRootParentID)))
+        // feature 223: the length is read from the image - over the 255 units of HFSUniStr255 it
+        // overran 'fileNameW[256]' (a crafted image wrote past the stack buffer)
+        if ((keyLen <= 6) || (nameLen == 0) || (nameLen > 255) || (pKey->parentID != FromM32(kHFSRootParentID)))
             continue; // skip threads
         for (int j = 0; j < nameLen; j++)
             fileNameW[j] = FromM16(pKey->nodeName.unicode[j]);
@@ -306,6 +308,11 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         if ((keyLen <= 6) || (nameLen == 0) || (bSkipRootParent && pKey->parentID == FromM32(kHFSRootParentID)))
         {
             continue; // Skip threads with empty name and RootParent already used as volume label
+        }
+        if (nameLen > 255) // feature 223: as in GetRootName - never past 'fileNameW[256]'
+        {
+            TRACE_E("CHFS::ListDirectory(): a name longer than 255 units in the catalog, skipped");
+            continue;
         }
         for (int j = 0; j < nameLen; j++)
             fileNameW[j] = FromM16(pKey->nodeName.unicode[j]);

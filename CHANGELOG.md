@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **ISO images: long Rock Ridge names are kept, damaged images are safer**
+  (feature 223). A file with a long Rock Ridge name (about 150 letters or
+  more) was listed and extracted under a shortened name; it is now read
+  whole. The ISO plug-in also checks the lengths an image declares
+  before using them.
+
 - **Archives with long file names open** (feature 222). A ZIP (or another
   archive) containing a file whose name has more than 255 bytes - for
   example about 86 Chinese or 128 Cyrillic letters, still a valid

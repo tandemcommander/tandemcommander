@@ -161,7 +161,8 @@ void CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
 {
     // processing extensions
     const char* srcSU = src + dr.LengthOfFileIdentifier;
-    const char* srcEnd = src + (dr.LengthOfDirectoryRecord - 34);
+    // feature 223: the record ends at its start + its length ('src' is its start + 33)
+    const char* srcEnd = src + (dr.LengthOfDirectoryRecord - 33);
     int len = dr.LengthOfDirectoryRecord - 34;
 
     if (dr.LengthOfFileIdentifier % 2 == 0)
@@ -170,7 +171,7 @@ void CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
     }
 
     // check whether there is any extension in the 'system use area'
-    if (srcSU < srcEnd && (Ext != extJoliet))
+    if (srcSU + sizeof(CRRExtHeader) <= srcEnd && (Ext != extJoliet)) // feature 223: a whole header
     {
         EExt ext = extNone;
 
@@ -188,19 +189,72 @@ void CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
         case extRockRidge:
         {
             BOOL bNM = FALSE;
+            BOOL nmContinues = FALSE; // the last NM part said the name goes on
+            BOOL broken = FALSE;
 
-            while (srcSU < srcEnd)
+            // feature 223: the lengths come from the image - a length under 5 made the copy
+            // unbounded (and 0 looped forever), the NM parts were appended past 'extFileName';
+            // such an entry ends the parsing and the plain ISO 9660 name is used. A name that goes
+            // on in a continuation area (CE - a Rock Ridge name longer than the record holds) is
+            // read from there too: it was cut (a file of a 200-letter name extracted under 146)
+            const char* area = srcSU;
+            const char* areaEnd = srcEnd;
+            BYTE ceSector[SECTOR_SIZE];
+            for (int hop = 0;; hop++)
             {
-                memcpy(&rrHeader, srcSU, sizeof(rrHeader));
-
-                if (strncmp((char*)rrHeader.Signature, "NM", 2) == 0)
+                BOOL ce = FALSE;
+                DWORD ceBlock = 0, ceOffset = 0, ceLen = 0;
+                while (area + sizeof(rrHeader) <= areaEnd)
                 {
-                    bNM = TRUE;
-                    strncat(extFileName, srcSU + 5, rrHeader.Length - 5);
-                }
+                    memcpy(&rrHeader, area, sizeof(rrHeader));
+                    if (rrHeader.Length < sizeof(rrHeader) || area + rrHeader.Length > areaEnd)
+                    {
+                        broken = TRUE;
+                        break;
+                    }
 
-                srcSU += rrHeader.Length;
-            } // while
+                    if (strncmp((char*)rrHeader.Signature, "ST", 2) == 0)
+                        break; // the terminator: what follows is not an entry
+
+                    if (strncmp((char*)rrHeader.Signature, "NM", 2) == 0)
+                    {
+                        size_t part = rrHeader.Length >= 5 ? (size_t)(rrHeader.Length - 5) : 0;
+                        size_t have = strlen(extFileName);
+                        if (rrHeader.Length < 5 || have + part >= sizeof(extFileName))
+                        {
+                            broken = TRUE;
+                            break;
+                        }
+                        bNM = TRUE;
+                        nmContinues = (((const BYTE*)area)[4] & 0x01) != 0; // NM flags: CONTINUE
+                        memcpy(extFileName + have, area + 5, part);
+                        extFileName[have + part] = 0;
+                    }
+                    else if (strncmp((char*)rrHeader.Signature, "CE", 2) == 0 && rrHeader.Length >= 28)
+                    { // the continuation area: block, offset, length (both-endian - the first four bytes)
+                        ce = TRUE;
+                        memcpy(&ceBlock, area + 4, 4);
+                        memcpy(&ceOffset, area + 12, 4);
+                        memcpy(&ceLen, area + 20, 4);
+                    }
+
+                    area += rrHeader.Length;
+                } // while
+                if (broken || !ce || hop >= 8 || (bNM && !nmContinues)) // a whole name: no other entry is needed
+                    break;
+                // the continuation area lies in one sector here (as the image tools write it)
+                if (ceOffset >= SECTOR_SIZE || ceLen == 0 || ceLen > SECTOR_SIZE - ceOffset ||
+                    ceBlock < ExtentOffset ||
+                    Image->ReadBlock(ceBlock - ExtentOffset, SECTOR_SIZE, ceSector) != SECTOR_SIZE)
+                {
+                    broken = TRUE;
+                    break;
+                }
+                area = (const char*)ceSector + ceOffset;
+                areaEnd = area + ceLen;
+            }
+            if (broken || nmContinues) // never a cut name: the plain ISO 9660 name then
+                bNM = FALSE;
 
             if (bNM)
             {
@@ -489,6 +543,16 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
         // Safety check
         if ((dirRecord.LocationOfExtent != SWAPDWORD(dirRecord.LocationOfExtentA)) || (dirRecord.DataLength != SWAPDWORD(dirRecord.DataLengthA)))
         {
+            delete[] data; // feature 223: it was left allocated
+            Error(IDS_ERROR_LISTING_IMAGE, FALSE, block);
+            return ERR_TERMINATE;
+        }
+        // feature 223: the record and its name lie inside the data read (its lengths come from the
+        // image; the name and the system use area were read past the buffer)
+        if (dirRecord.LengthOfDirectoryRecord < 34 || offset + dirRecord.LengthOfDirectoryRecord > size ||
+            33 + dirRecord.LengthOfFileIdentifier > dirRecord.LengthOfDirectoryRecord)
+        {
+            delete[] data;
             Error(IDS_ERROR_LISTING_IMAGE, FALSE, block);
             return ERR_TERMINATE;
         }

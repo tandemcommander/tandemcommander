@@ -1,0 +1,11 @@
+iso223_probe (feature 223) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 18:53; registry key existed True
+
+ISO-F5     RUN    PASS        location 'C:\Users\pavel\AppData\Local\Temp\tc223\ISO-F5\a.iso'; top.txt extracted with its content True; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ISO-F5     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RR-LONG    RUN    PASS        the 200-letter name extracted with its content True; extracted name lengths: 200; at the open: no window; F5: ...Static id=209] Copy file "zrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+RR-LONG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

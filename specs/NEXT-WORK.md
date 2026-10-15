@@ -694,8 +694,11 @@ Code work an agent can do:
          that may write 256 bytes~~ - **done, feature 216** (also the SSL log lines' encoding); ~~the core's `SalMakeValidFileNameComponent` cuts at byte 256~~ - **done, feature 222**
          (measured worse: a ZIP with a member of 86+ CJK letters could not be opened; left by its
          review: F3 / F4 of such names refused by the disk cache's folder limit; folders over 255
-         bytes in archives are skipped; uniso `hfs.cpp:263-310` stack overflow from a crafted
-         image, `iso9660.cpp:197` `strncat` with a Rock Ridge length under 5, Joliet names cut;
+         bytes in archives are skipped; ~~uniso `hfs.cpp:263-310`, `iso9660.cpp:197` `strncat`~~ - **done, feature 223** (also Rock
+         Ridge names in a continuation area, read whole; left: the HFS+ B-tree loader `hfs.cpp`
+         ~676-715 / 454 trusts the image's node numbers, links and record offsets; a fuzzing pass);
+         Joliet names cut at their UCS-2 byte length (`iso9660.cpp` `lstrcpyn(fileName, src,
+         LengthOfFileIdentifier + 1)`);
          tar's gzip name cut at 259 bytes and extracted under it; the User Menu
          `mainwnd4.cpp:411-433` and Compare Directories `mainwnd5.cpp:1560/1584` cut disk names at
          MAX_PATH and act on them; `fileswna.cpp:396` cuts `SrcPath`);
