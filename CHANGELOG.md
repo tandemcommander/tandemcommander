@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A folder whose name contains %...% opens as it is** (feature 238). A
+  folder named, for example, "p%OS%q", given on the command line or typed
+  into Change Directory, opened "pWindows_NTq" instead (the text between
+  the percent signs was read as an environment variable). An existing
+  folder now wins; a path that does not exist as typed is still expanded.
+
 - **Menus: accented shortcut letters work in drop-down menus** (feature
   237). In menus such as the plug-in menus, a shortcut letter outside
   English (Č, Ř, ...) could not be typed, and a typed letter could select

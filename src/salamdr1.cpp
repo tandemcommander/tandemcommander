@@ -3586,7 +3586,17 @@ void GetCommandLineParamExpandEnvVars(const char* argv, char* target, DWORD targ
         // feature 004: expand through the W API - the A variant would destroy
         // UTF-8 bytes it interprets as the active code page
         BOOL expanded = FALSE;
-        WCHAR* argvW = SalU8ToWAlloc(argv, -1);
+        // feature 238: a folder whose name holds %...% and exists as given is not expanded
+        // a relative argument is checked against the current folder (second review of 238)
+        char* curDir238 = NULL;
+        DWORD curNeed238 = GetCurrentDirectoryW(0, NULL);
+        WCHAR* curW238 = curNeed238 > 0 ? (WCHAR*)malloc((curNeed238 + 1) * sizeof(WCHAR)) : NULL;
+        if (curW238 != NULL && GetCurrentDirectoryW(curNeed238 + 1, curW238) > 0)
+            curDir238 = SalWToU8Alloc(curW238, -1);
+        free(curW238);
+        BOOL literal = SalPercentPathExistsLiterally(argv, curDir238);
+        free(curDir238);
+        WCHAR* argvW = literal ? NULL : SalU8ToWAlloc(argv, -1);
         if (argvW != NULL)
         {
             DWORD needed = ExpandEnvironmentStringsW(argvW, NULL, 0);
@@ -3618,7 +3628,8 @@ void GetCommandLineParamExpandEnvVars(const char* argv, char* target, DWORD targ
         }
         if (!expanded && !tooLong)
         {
-            TRACE_E("ExpandEnvironmentStrings failed.");
+            if (!literal)
+                TRACE_E("ExpandEnvironmentStrings failed.");
             // pokud expanze selze, pouzijeme retezec bez expanze
             if (strlen(argv) >= targetSize)
                 tooLong = TRUE;

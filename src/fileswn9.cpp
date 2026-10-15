@@ -664,6 +664,10 @@ BOOL CFilesWindow::PostProcessPathFromUser(HWND parent, char* buff, int buffSize
             return TRUE; // let the FS plugin handle the processing
     }
 
+    // feature 238: a folder whose name holds %...% and exists as typed is not expanded (another folder)
+    if (SalPercentPathExistsLiterally(buff, Is(ptDisk) ? GetPath() : NULL)) // archive / FS panel: relative paths expanded
+        return TRUE;
+
     // expand ENV variables (as frequently requested on the forum and for internal use)
     // if an ENV variable does not exist, a directory with the same name gets a chance to be expanded
     // feature 069 (F-P1-23): the ANSI expansion substitutes the variable's value

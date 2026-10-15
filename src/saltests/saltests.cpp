@@ -66,6 +66,7 @@
 #include "salbatchtext.h"    // feature 226
 #include "salnamerun.h"      // feature 230
 #include "salmenuhotkey.h"   // feature 236
+#include "salpctpath.h"      // feature 238
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -12317,6 +12318,28 @@ static void TestMenuHotKey236()
     }
 }
 
+// feature 238: a path with %...% - the part checked as it is, how the path is anchored
+static void TestPercentPath238()
+{
+    CHECK(SalPercentPrefixLen("C:\\x\\p%OS%q") == 11);
+    CHECK(SalPercentPrefixLen("C:\\x\\p%OS%q\\a.zip\\inner") == 11);
+    CHECK(SalPercentPrefixLen("C:\\a%b\\c%d%\\e") == 11); // the last component holding a '%'
+    CHECK(SalPercentPrefixLen("C:\\x\\y") == 0);
+    CHECK(SalPercentPrefixLen("%TEMP%\\x") == 6);
+    CHECK(SalPercentPrefixLen("C:/x/p%q/y") == 8);
+    CHECK(SalPercentPrefixLen("") == 0);
+    CHECK(SalPercentPathKind("C:\\x") == 1);
+    CHECK(SalPercentPathKind("C:/x") == 1);
+    CHECK(SalPercentPathKind("C:x") == 0);
+    CHECK(SalPercentPathKind("\\\\srv\\share") == 2);
+    CHECK(SalPercentPathKind("//srv/share") == 2);
+    CHECK(SalPercentPathKind("p%OS%q") == 3);
+    CHECK(SalPercentPathKind("..\\p%OS%q") == 3);
+    CHECK(SalPercentPathKind("%TEMP%") == 3);
+    CHECK(SalPercentPathKind("\\x") == 4);
+    CHECK(SalPercentPathKind("") == 0);
+}
+
 static void TestMultiSzToLine189()
 {
     struct Case
@@ -12480,6 +12503,7 @@ int main(int argc, char** argv)
     TestBatchEscape229();
     TestNameExactInCIRun230();
     TestMenuHotKey236();
+    TestPercentPath238();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

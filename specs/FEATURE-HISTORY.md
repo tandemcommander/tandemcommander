@@ -2826,3 +2826,7 @@ a few early ones are out of sequence).
   accented mnemonics never matched; C4 of "&Č" matched "ä"). Now characters: `SalMenuKeyMatch`
   (`SalMnemonicMatchW`, as the menu bar since 093). Limits: a DBCS / 65001 key byte matches nothing
   (a wide popup loop owed); `WM_MENUCHAR` passes no character (upstream) - NEXT-WORK.
+- 238-literal-percent-paths: a command-line / typed path always had %VAR% expanded - "p%OS%q" opened
+  "pWindows_NTq". Now the part up to the last '%' component existing as written wins (`salpctpath.h`,
+  saltests); not checked: network paths (stall), a relative path starting with a defined variable
+  (stray "%APPDATA%" folders). Probe `pct238_probe.ps1` 4 FAIL -> 14 / 0. Two reviews.

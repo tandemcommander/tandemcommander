@@ -15,6 +15,7 @@
 #include "execute.h"
 #include "shellib.h"
 #include "menu.h"
+#include "salpctpath.h" // feature 238
 #include "salarcedit.h" // feature 108
 #include "salshortname.h" // feature 204
 
@@ -1006,6 +1007,71 @@ void SetCurrentDirectoryToSystem()
     char buf[MAX_PATH];
     GetSystemDirectory(buf, MAX_PATH);
     SetCurrentDirectory(buf);
+}
+
+BOOL SalPercentPathExistsLiterally(const char* path, const char* baseDir)
+{
+    if (path == NULL || strchr(path, '%') == NULL)
+        return FALSE;
+    // the path made absolute (salpctpath.h); a network path (and a drive-relative "X:name") is not
+    // checked - a server that does not answer would stall here, before the cancellable check of
+    // ChangeDir (review): expanded. (A local folder that is a link to a share is checked.)
+    int kind = SalPercentPathKind(path);
+    // a relative path that starts with a defined variable ("%APPDATA%\\x") is the variable -
+    // programs create stray folders named "%APPDATA%"; such a folder stays reachable as ".\\%APPDATA%"
+    // (second review of 238)
+    if (kind == 3 && path[0] == '%')
+    {
+        const char* end = strchr(path + 1, '%');
+        if (end != NULL && end > path + 1)
+        {
+            char name[256];
+            int nameLen = (int)(end - path - 1);
+            if (nameLen < (int)sizeof(name))
+            {
+                memcpy(name, path + 1, nameLen);
+                name[nameLen] = 0;
+                char value[8];
+                if (SalGetEnvVarU8(name, value, sizeof(value)) != 0) // defined (any length)
+                    return FALSE;
+            }
+        }
+    }
+    const char* head = NULL;
+    int headLen = 0;
+    const char* sep = "";
+    if (kind == 1)
+        ;
+    else if (kind == 3 && baseDir != NULL && SalPercentPathKind(baseDir) == 1)
+    {
+        head = baseDir;
+        headLen = (int)strlen(baseDir);
+        if (headLen > 0 && baseDir[headLen - 1] != '\\')
+            sep = "\\";
+    }
+    else if (kind == 4 && baseDir != NULL && SalPercentPathKind(baseDir) == 1)
+    {
+        head = baseDir; // its drive ("C:")
+        headLen = 2;
+    }
+    else
+        return FALSE;
+    size_t total = (size_t)headLen + strlen(sep) + strlen(path) + 1;
+    char* abs = (char*)malloc(total);
+    if (abs == NULL)
+        return FALSE;
+    memcpy(abs, head != NULL ? head : "", headLen);
+    strcpy(abs + headLen, sep);
+    strcat(abs, path);
+    WCHAR root[4] = {(WCHAR)(unsigned char)abs[0], L':', L'\\', 0};
+    BOOL exists = FALSE;
+    if (GetDriveTypeW(root) != DRIVE_REMOTE) // a mapped network drive: as a network path
+    {
+        abs[SalPercentPrefixLen(abs)] = 0; // up to the last component holding a '%' ("p%OS%q\\a.zip\\x")
+        exists = SalGetFileAttributes(abs) != INVALID_FILE_ATTRIBUTES;
+    }
+    free(abs);
+    return exists;
 }
 
 BOOL SalSetCurrentDirectoryU8(const char* path)

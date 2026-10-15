@@ -962,6 +962,13 @@ void SetCurrentDirectoryToSystem();
 // was); FALSE when it cannot be set
 BOOL SalSetCurrentDirectoryU8(const char* path);
 
+// feature 238: TRUE when the UTF-8 'path' holds a '%' and its part up to the last component with a
+// '%' exists as it is - a folder named "p%OS%q" is opened literally, not expanded to another folder
+// ("pWindows_NTq"); a path that does not exist literally is still expanded (%USERPROFILE%\x). A
+// relative path is checked against 'baseDir' (a local "X:\..." folder, may be NULL); a network
+// path is never checked (salpctpath.h)
+BOOL SalPercentPathExistsLiterally(const char* path, const char* baseDir = NULL);
+
 // feature 230: does the folder 'dir' (UTF-8) tell names apart by case (fsutil setCaseSensitiveInfo,
 // a WSL folder)? FALSE when it does not or when it cannot be told (a network share, another file
 // system)
