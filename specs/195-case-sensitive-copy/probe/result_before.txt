@@ -1,0 +1,18 @@
+cs_copy_probe (feature 195) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 03:16; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - not used by this probe
+
+cs-new     RUN    FAIL        lost=False; windows as 103 expects: False; focus held True; field was '...el\AppData\Local\Temp\tc195_cs\start\*.*', set '...Data\Local\Temp\tc195_cs\cs-new\cs\A.txt'; on disk: a.txt=PRECIOUS-1; asked: [#32770 'Error'] Cannot copy a file to itself. |
+cs-new     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-other   RUN    FAIL        lost=False; windows as 103 expects: False; focus held True; field was '...el\AppData\Local\Temp\tc195_cs\start\*.*', set '...ta\Local\Temp\tc195_cs\cs-other\cs\A.txt'; on disk: A.txt=other-2; a.txt=PRECIOUS-2; asked: [#32770 'Error'] Cannot copy a file to itself. |
+cs-other   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-hl      RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc195_cs\start\*.*', set '...pData\Local\Temp\tc195_cs\cs-hl\cs\A.txt'; on disk: a.txt=PRECIOUS-3; A.txt=PRECIOUS-3; asked: [#32770 'Error'] Cannot copy a file to itself. |
+cs-hl      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-dir     RUN    FAIL        lost=False; windows as 103 expects: False; focus held True; field was '...el\AppData\Local\Temp\tc195_cs\start\*.*', set '...\AppData\Local\Temp\tc195_cs\cs-dir\cs\D'; on disk: d/ | D: (gone); asked: [#32770 'Error'] Cannot copy a directory to itself. |
+cs-dir     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ci-case    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc195_cs\start\*.*', set '...ppData\Local\Temp\tc195_cs\ci-case\A.txt'; on disk: a.txt=PRECIOUS-4; asked: [#32770 'Error'] Cannot copy a file to itself. |
+ci-case    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 7, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

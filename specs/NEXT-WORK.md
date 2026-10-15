@@ -281,9 +281,9 @@ Functional, no loss:
     `ExpandPluralString` stops at the brace; all translations copied the English suffix - a string
     fix with a plural pattern per language (cs, de, fr, hu, ro, sk, nl, es).
 11. ~~A case-sensitive folder refuses `a.txt` → existing `A.txt`~~ - **done, feature 158** (Quick
-    Rename and F6 offer the overwrite on identity proof; a decision recorded). Left: F5 copy within
-    the same case-sensitive folder is refused "to itself" by name; the Renamer refuses "already
-    exists". Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
+    Rename and F6 offer the overwrite on identity proof; a decision recorded). Left: ~~F5 copy within
+    the same case-sensitive folder is refused "to itself" by name~~ (**done, feature 195**); the
+    Renamer refuses "already exists". Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
 12. ~~An archive whose name has 260+ bytes: drop/paste into it~~ - **done, feature 160** (the name
@@ -508,8 +508,8 @@ Code work an agent can do:
 - **A shell calls that return paths** (128): `GetSHObjectName` (`shellib.cpp`) converts with
   `CP_ACP` into UTF-8 code (used by the server-link branch of shortcuts, reachable only with a
   Network plug-in); ~~`SHGetFolderPath` A in `drivelst.cpp` / `shiconov.cpp` (Dropbox and Google
-  Drive detection under a profile with non-ASCII letters)~~ (done, feature 188); `GetOpenFileName` A in `execute.cpp`,
-  `dialogs5.cpp`, `viewer3.cpp`. ~~The drop-target code for shortcuts~~ - **done, feature
+  Drive detection under a profile with non-ASCII letters)~~ (done, feature 188); ~~`GetOpenFileName` A in `execute.cpp`,
+  `dialogs5.cpp`, `viewer3.cpp`~~ (done, features 170 and 172). ~~The drop-target code for shortcuts~~ - **done, feature
   194** (`shellsup.cpp`; `shellib.cpp`'s folder-shortcut code gets only a Browse result of
   `MAX_PATH` bytes - left).
 - `tools/check_encoding.py` does not scan `plugins/` (found by 124).

@@ -149,6 +149,55 @@ struct CDirChainScope107
     ~CDirChainScope107() { CurrentDirChain107 = Prev; }
 };
 
+// feature 195: does the folder holding 'path' tell names apart by case (fsutil
+// setCaseSensitiveInfo, a WSL folder)? FALSE when it does not or when it cannot be told (a
+// network share, another file system) - the name rule stays then.
+static BOOL ParentIsCaseSensitive(const char* path)
+{
+    CSalPathBuf dir;
+    if (!dir.Set(path) || !dir.CutLastComponent())
+        return FALSE;
+    HANDLE h = SalCreateFile(dir.Get(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                             NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (h == INVALID_HANDLE_VALUE)
+        return FALSE;
+    // FILE_CASE_SENSITIVE_INFO / FileCaseSensitiveInfo (23) / FILE_CS_FLAG_CASE_SENSITIVE_DIR (1):
+    // the SDK declares them only for Windows 10 1903 and later (_WIN32_WINNT is 0x0601 here)
+    struct
+    {
+        ULONG Flags;
+    } info = {0};
+    BOOL ok = GetFileInformationByHandleEx(h, (FILE_INFO_BY_HANDLE_CLASS)23, &info, sizeof(info));
+    HANDLES(CloseHandle(h));
+    return ok && (info.Flags & 0x00000001) != 0;
+}
+
+// feature 195: a copy whose target is the source's name in another case ("a.txt" -> "A.txt",
+// SalNameEqualOrdinalCI) goes to ANOTHER name in a folder that tells names apart by case: TRUE
+// when the target does not exist (a case-insensitive folder finds the source under it; the
+// worker creates the target with CREATE_NEW and decides by identity if it exists after all), or,
+// in a folder that says it is case-sensitive, when the file system's identity read through links
+// (as the copy reads) proves it another file. Anything else - a target that is the source (a
+// hard link, a link to it), one that cannot be told apart, an existing target in a folder that
+// does not say so (review: some mounts derive file ids from the path, so two spellings of one
+// file differ by id) - gives FALSE: the copy is refused "to itself" as before.
+static BOOL CopyTargetIsAnotherName(const char* source, const char* target)
+{
+    if (strcmp(source, target) == 0)
+        return FALSE; // the very name
+    if (SalGetFileAttributes(target) == INVALID_FILE_ATTRIBUTES)
+    {
+        DWORD err = GetLastError();
+        return err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND;
+    }
+    if (!ParentIsCaseSensitive(target))
+        return FALSE;
+    CSalFileIdentity srcId, tgtId;
+    if (!SalGetFileIdentity(source, FALSE, &srcId) || !SalGetFileIdentity(target, FALSE, &tgtId))
+        return FALSE;
+    return SalFileIdMatch(srcId, tgtId) == simDifferent;
+}
+
 // 'sourceDir' (the folder being copied/moved), 'targetDir' (T, the folder it goes into),
 // 'targetFull' (T\name). Returns the message to refuse with, or 0 to go on.
 static int DirTargetIsSource107(CActionType type, const char* sourceDir, DWORD sourceDirAttr,
@@ -1967,8 +2016,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
     }
     //--- feature 155: a folder copied onto itself by name is refused as a folder - it descended and
     //    BuildScriptFile refused its first file ("Cannot copy a file to itself."; an empty folder not
-    //    at all); the move's same-name branch follows
-    if (type == atCopy && targetPath != NULL && SalNameEqualOrdinalCI(sourcePath, -1, targetPath, -1))
+    //    at all); the move's same-name branch follows (feature 195: not another name in a
+    //    case-sensitive folder)
+    if (type == atCopy && targetPath != NULL && SalNameEqualOrdinalCI(sourcePath, -1, targetPath, -1) &&
+        !CopyTargetIsAnotherName(sourcePath, targetPath))
     {
         *sourceEnd = 0; // restoring sourcePath
         *targetEnd = 0; // restoring targetPath
@@ -2894,8 +2945,11 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         }
         // feature 092: a copy onto the same file is recognised by the file system's rule; the
         // move keeps strcmp (the same name in another case is a rename)
+        // feature 195: in a case-sensitive folder the name in another case is another name - the
+        // copy is refused only when the target is the source (or cannot be told apart from it)
         if (type == atMove && strcmp(op.SourceName, op.TargetName) == 0 ||
-            type == atCopy && SalNameEqualOrdinalCI(op.SourceName, -1, op.TargetName, -1))
+            type == atCopy && SalNameEqualOrdinalCI(op.SourceName, -1, op.TargetName, -1) &&
+                !CopyTargetIsAnotherName(op.SourceName, op.TargetName))
         {
             free(op.SourceName);
             free(op.TargetName);

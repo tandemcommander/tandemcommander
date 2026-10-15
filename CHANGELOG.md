@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Copying within a case-sensitive folder** (feature 195). In a folder that
+  tells names apart by case, copying "a.txt" as "A.txt" (or a folder "d" as
+  "D") was refused as a copy onto itself; it is copied now, and an existing
+  "A.txt" that is another file is offered for overwriting.
+
 - **Dropping files onto a shortcut works for long paths** (feature 194).
   A shortcut in a very deep folder, or one pointing to a folder with a long
   path, was not followed when files were dragged onto it.

@@ -2604,3 +2604,8 @@ a few early ones are out of sequence).
 - 194-drop-shortcut-target: the drop target (`shellsup.cpp` `GetCurrentDir`) reads a shortcut with
   `SalShellLinkLoadNameAlloc` / `SalShellLinkGetPathU8` into a heap buffer (was `MAX_PATH` both
   ways; a long UTF-8 name went to a cut code-page fallback). Not driven (OLE drag = real mouse).
+- 195-case-sensitive-copy: F5 Copy `a.txt` -> `A.txt` (or a folder) within a case-sensitive folder is
+  a copy to another name (`fileswn6.cpp` `CopyTargetIsAnotherName`): a target that does not exist,
+  or - in a folder whose `FileCaseSensitiveInfo` says so - one the identity read THROUGH links
+  proves another file. Different ids alone prove nothing (path-derived ids on some mounts).
+  Probe `cs_copy_probe.ps1` 7 / 3 -> 12 / 0.
