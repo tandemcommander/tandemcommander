@@ -287,9 +287,11 @@ Functional, no loss:
     Renamer refuses "already exists"~~ (**done, feature 196**). Left by 196's review: ~~the core's Quick
     Rename (158) takes "different ids" as proof of another file~~ (**done, feature 198**, also the
     worker's move and names equal by NFC / NFD; left by its review: PictView's rename, `render1.cpp`
-    ~2991, gates its overwrite with the code-page `StrICmp` and has no temporary-name route); the Renamer has no step that moves
-    an 8.3 short-name clash aside (renaming to `LONGFI~1.TXT` deletes `longfilename.txt` after the
-    question - measure first). Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
+    ~2991, gates its overwrite with the code-page `StrICmp` and has no temporary-name route); ~~the Renamer has no step that moves
+    an 8.3 short-name clash aside~~ (**done, feature 199** - measured: `longfilename.txt` deleted;
+    left by its review: **the core's Quick Rename has the same fallback** - when its move aside of an
+    8.3 clash fails (the other file held open), it goes on to `COverwriteDlg` and Yes replaces the
+    other file, `fileswn5.cpp` ~2340-2392 - and the worker's move ~6012 likely too; measure first). Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
 12. ~~An archive whose name has 260+ bytes: drop/paste into it~~ - **done, feature 160** (the name

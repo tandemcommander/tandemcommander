@@ -6,6 +6,103 @@
 #include "../../common/salsamefile.h" // feature 103: is an existing target the source itself?
 #include "../../common/salnameorder.h" // feature 196: "the same name" by the file system's rule
 
+// feature 199: does 'targetName' exist only as the SHORT (8.3) name of ANOTHER entry
+// ("LONGFI~1.TXT" of "longfilename.txt")? Its long name in 'longName' (the 092 name rule).
+BOOL TargetIsOnlyShortNameOfOther(const char* targetName, char* longName, int longNameSize)
+{
+    WCHAR* wTgt = SplU8ToWExtAlloc(targetName);
+    if (wTgt == NULL)
+        return FALSE;
+    WIN32_FIND_DATAW fd;
+    HANDLE find = FindFirstFileW(wTgt, &fd);
+    free(wTgt);
+    if (find == INVALID_HANDLE_VALUE)
+        return FALSE;
+    FindClose(find);
+    if (SplWToU8(fd.cFileName, longName, longNameSize) == 0)
+        return FALSE;
+    // second review: fail closed - the entry found under the target name has ANOTHER long name, whether
+    // or not a short name is reported (a server that resolves short names without listing them)
+    const char* tgtPart = SG->SalPathFindFileName(targetName);
+    return !SalNameOrderEqualCI(tgtPart, -1, longName, -1);
+}
+
+enum CShortClashResult
+{
+    scrDone,     // the source has the new name, the other entry its long name (a new short name)
+    scrFailed,   // nothing renamed, the other entry has its name; *err holds the reason
+    scrLeftAside // the other entry could not get its name back: it is at 'leftAt' (report it)
+};
+
+// feature 199: the other entry ('longName' in the target's folder) is renamed aside to a temporary
+// 8.3 name, the source to 'targetName', the entry back to its long name. The core's Quick Rename
+// does the same. Never deletes anything.
+static CShortClashResult MoveAsideShortNameClash(const char* sourceName, const char* targetName,
+                                                 const char* longName, DWORD* err, char** leftAt, BOOL* renamed)
+{
+    *err = ERROR_NOT_ENOUGH_MEMORY;
+    *renamed = FALSE;
+    *leftAt = NULL; // malloc'd: where the other entry stays (scrLeftAside)
+    const char* tgtPart = SG->SalPathFindFileName(targetName);
+    size_t dirLen = tgtPart - targetName;
+    char* entry = (char*)malloc(dirLen + strlen(longName) + 1);
+    char* tmp = (char*)malloc(dirLen + 16);
+    CShortClashResult res = scrFailed;
+    if (entry != NULL && tmp != NULL)
+    {
+        memcpy(entry, targetName, dirLen);
+        strcpy(entry + dirLen, longName);
+        memcpy(tmp, targetName, dirLen);
+        DWORD num = (GetTickCount() / 10) % 0xFFF;
+        BOOL aside = FALSE;
+        *err = ERROR_ALREADY_EXISTS;
+        for (int i = 0; i < 0x1000 && !aside; i++)
+        {
+            sprintf(tmp + dirLen, "sal%03X", (unsigned)(num++ & 0xFFF));
+            DWORD e = 0;
+            if (SG->SalMoveFile(entry, tmp, &e))
+                aside = TRUE;
+            else
+            {
+                *err = e;
+                if (e != ERROR_FILE_EXISTS && e != ERROR_ALREADY_EXISTS)
+                    break;
+            }
+        }
+        if (aside)
+        {
+            DWORD e = 0;
+            BOOL done = SG->SalMoveFile(sourceName, targetName, &e);
+            if (!done)
+                *err = e;
+            DWORD backErr = 0;
+            if (!SG->SalMoveFile(tmp, entry, &backErr)) // its long name back (a new short name)
+            {
+                // Windows may have made the new name the entry's long name: undo the rename and retry
+                if (done && SG->SalMoveFile(targetName, sourceName, &e))
+                {
+                    done = FALSE;
+                    *err = backErr; // second review: the reason the rename was undone
+                }
+                if (!SG->SalMoveFile(tmp, entry, &backErr))
+                {
+                    TRACE_E("MoveAsideShortNameClash(): the entry stays under the temporary name " << tmp);
+                    *leftAt = tmp;
+                    tmp = NULL; // the caller frees it
+                    *err = backErr;
+                    res = scrLeftAside;
+                }
+            }
+            *renamed = done;
+            if (res != scrLeftAside)
+                res = done ? scrDone : scrFailed;
+        }
+    }
+    free(entry);
+    free(tmp);
+    return res;
+}
+
 BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
                               BOOL overwrite, BOOL isDir, BOOL& skip)
 {
@@ -118,6 +215,42 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
 
             // feature 196: the name rule of the file system (092; the code-page StrICmp folded no
             // letter outside the code page), and a proven other file in a case-sensitive folder
+            // feature 199: the new name is only another file's short (8.3) name - that file is moved aside
+            // for the rename (it was offered for overwriting and deleted: "longfilename.txt" lost). Such
+            // a name NEVER reaches the delete below (review: a failed move aside fell into it)
+            char clashLong[3 * MAX_PATH];
+            if ((err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS) &&
+                !SalNameOrderEqualCI(sourceName, -1, targetName, -1) &&
+                TargetIsOnlyShortNameOfOther(targetName, clashLong, sizeof(clashLong)))
+            {
+                DWORD clashErr = 0;
+                BOOL renamed = FALSE;
+                char* leftAt = NULL;
+                CShortClashResult r = MoveAsideShortNameClash(sourceName, targetName, clashLong, &clashErr,
+                                                              &leftAt, &renamed);
+                if (r == scrDone)
+                    return TRUE;       // success
+                if (r == scrLeftAside) // the other file is under the temporary name: always say where
+                {
+                    const char* errText = SG->GetErrorText(clashErr);
+                    size_t msgSize = strlen(errText) + strlen(leftAt) + 4;
+                    char* msg = (char*)malloc(msgSize);
+                    if (msg != NULL)
+                        sprintf_s(msg, msgSize, "%s\n\n%s", errText, leftAt);
+                    SG->SalMessageBox(HWindow, msg != NULL ? msg : leftAt, LoadStr(IDS_ERROR), MB_OK | MB_ICONEXCLAMATION);
+                    free(msg);
+                    free(leftAt);
+                    if (renamed)
+                        return TRUE;
+                    skip = TRUE;
+                    return FALSE;
+                }
+                SetLastError(clashErr); // the reason (the other file was not touched)
+                if (!FileError(HWindow, sourceName, IDS_MOVEERROR, TRUE, &skip, &SkipAllMove, IDS_ERROR))
+                    return FALSE;
+                continue; // retry
+            }
+
             if ((err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS) &&
                 (!SalNameOrderEqualCI(sourceName, -1, targetName, -1) || provenOther))
             {
@@ -281,6 +414,16 @@ BOOL CRenamerDialog::CopyFile(char* sourceName, char* targetName, BOOL overwrite
 {
     CALL_STACK_MESSAGE3("CRenamerDialog::CopyFile(, , %d, %d)", overwrite, skip);
     char buffer[OPERATION_BUFFER];
+
+    // feature 199 (review): the target name is only another file's short (8.3) name - the copy
+    // would open that file (OPEN_ALWAYS) and write the source into it: refused, nothing touched
+    char clashLong[3 * MAX_PATH];
+    while (TargetIsOnlyShortNameOfOther(targetName, clashLong, sizeof(clashLong)))
+    {
+        SetLastError(ERROR_FILE_EXISTS);
+        if (!FileError(HWindow, targetName, IDS_MOVEERROR, TRUE, &skip, &SkipAllMove, IDS_ERROR))
+            return FALSE;
+    }
 
     CQuadWord operationDone;
 
@@ -469,6 +612,17 @@ COPY_AGAIN:
                             SetLastError(NO_ERROR);
                             if (FileError(HWindow, targetName, IDS_MOVETOITSELF,
                                           TRUE, &skip, &SkipAllSameFile, IDS_ERROR))
+                                goto COPY_AGAIN; // retry
+                            return FALSE;
+                        }
+
+                        // feature 199 (second review): the target became another file's short name meanwhile -
+                        // never written into (the check at the top runs only once)
+                        if (TargetIsOnlyShortNameOfOther(targetName, clashLong, sizeof(clashLong)))
+                        {
+                            CloseHandle(in);
+                            SetLastError(ERROR_FILE_EXISTS);
+                            if (FileError(HWindow, targetName, IDS_MOVEERROR, TRUE, &skip, &SkipAllMove, IDS_ERROR))
                                 goto COPY_AGAIN; // retry
                             return FALSE;
                         }

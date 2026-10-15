@@ -2622,3 +2622,7 @@ a few early ones are out of sequence).
 - 198-rename-proof-temp-name: Quick Rename and the worker's move prove an existing target "another
   file" for two spellings of one name ONLY by the temporary-name route (158 took different ids -
   no proof on path-derived-id mounts). Not driven (no such mount); 158's probe 10 / 0, 103's 46 / 0.
+- 199-renamer-short-name: **data loss** - the Renamer renaming to another file's short (8.3) name
+  ("LONGFI~1.TXT") asked "overwrite?" and deleted "longfilename.txt"; now the clash is moved aside
+  for the rename and back (`TargetIsOnlyShortNameOfOther`, as the core's Quick Rename). Probe
+  `ren_83_probe.ps1` 3 / 1 -> 4 / 0.

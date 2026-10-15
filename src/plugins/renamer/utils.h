@@ -73,6 +73,10 @@ int GetEditLineU8(HWND edit, int line, char* buf, int bufSize);
 // such, anything else as code-page text
 void ReplaceEditSelBytes(HWND edit, const char* bytes, BOOL canUndo);
 
+// feature 199: does 'targetName' exist only as the SHORT (8.3) name of another entry (its long name
+// in 'longName')? (rendlg3.cpp)
+BOOL TargetIsOnlyShortNameOfOther(const char* targetName, char* longName, int longNameSize);
+
 BOOL FileOverwrite(HWND parent, const char* fileName1, const char* fileData1,
                    const char* fileName2, const char* fileData2, DWORD attr,
                    int shquestion, int shtitle, BOOL* skip, DWORD* silent);

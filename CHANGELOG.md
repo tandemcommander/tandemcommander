@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Renamer no longer deletes a file whose short name is the new name**
+  (feature 199). Renaming a file to "LONGFI~1.TXT" - the short (8.3) name of
+  another file - offered to overwrite it and then deleted that other file;
+  it is now kept (with a new short name), as in the main window's rename.
+
 - **Deleting a link in a very deep folder no longer deletes its target's
   files** (feature 197). With the Recycle Bin off, deleting a junction (or a
   folder containing one) whose path was longer than about 780 characters

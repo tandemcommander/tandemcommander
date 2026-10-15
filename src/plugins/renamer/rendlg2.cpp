@@ -323,6 +323,11 @@ BOOL CRenamerDialog::BuildScript(CRenameScriptEntry*& script, int& count,
             }
             // verify that target names do not exist and request overwrite confirmation
             DWORD attr = SG->SalGetFileAttributes(tmpScript[i].NewName);
+            // feature 199: a name that is only another file's short (8.3) name does not exist for the
+            // rename (MoveFile moves that file aside); it was offered for overwriting - and deleted
+            char clashLongName[3 * MAX_PATH];
+            if (attr != 0xFFFFFFFF && TargetIsOnlyShortNameOfOther(tmpScript[i].NewName, clashLongName, sizeof(clashLongName)))
+                attr = 0xFFFFFFFF;
             if (attr != 0xFFFFFFFF)
             {
                 if ((attr & FILE_ATTRIBUTE_DIRECTORY) ||

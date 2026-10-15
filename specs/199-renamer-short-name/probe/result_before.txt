@@ -1,0 +1,11 @@
+ren_83_probe (feature 199), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 04:32; ACP 1250; registry key existed True
+
+ren-83     RUN    FAIL        preview rows 1; boxes as expected: False; on disk: longfilename.txt=MOVED-1 | others: ; boxes: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 10, 15.10.2026, 4:32:39 | [Static id=1151] With file: | [Static id=184] 7, 15.10.2026, 4:32:39 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ ''] 
+ren-83     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-83-ctl RUN    PASS        preview rows 1; boxes as expected: True; on disk: longfilename.txt=PRECIOUS-2; y.txt=MOVED-2; boxes: no box
+ren-83-ctl END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 3, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
