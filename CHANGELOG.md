@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Packing a folder that contains a folder with a very long name**
+  (feature 241). Copying or moving it into an archive "succeeded" without
+  packing anything and without a message. It now says the name is too
+  long, and nothing is packed or moved.
+
 - **Dragging a folder with a very long name into an archive** (feature 240)
   ended without a word; it now says the name is too long.
 

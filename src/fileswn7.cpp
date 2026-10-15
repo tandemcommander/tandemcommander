@@ -950,6 +950,18 @@ static BOOL ReportReadDirTreeTooLong(HWND parent, const char* path, const char* 
     return TRUE; // user wants to continue
 }
 
+// feature 241: a folder whose name the archive / FS list cannot take (CSalamanderDirectory::AddDir -
+// over MAX_PATH - 5 bytes, 222): "too long name" and the operation is cancelled - it ended silently
+// with SALENUM_ERROR, and the ZIP plug-in "succeeded" packing nothing. Always a cancel (no "skip"
+// as the neighbouring length checks offer): a Move must not go on without the folder it cannot list.
+static void ReportTreeNameTooLong(HWND parent, int* errorOccured)
+{
+    if (parent != NULL)
+        SalMessageBox(parent, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+    if (errorOccured != NULL)
+        *errorOccured = SALENUM_CANCEL;
+}
+
 // feature 098: 'path' is a buffer of 'pathSize' bytes (SAL_MAX_PATH_UTF8 + 4 from ReadDirectoryTree;
 // it was char[MAX_PATH]); 'depth' = nesting level of 'name' (1 = a selected folder)
 // feature 101: 'relBase' = the bytes of the work path in 'path' (its trailing backslash included)
@@ -1143,6 +1155,8 @@ BOOL _ReadDirectoryTree(HWND parent, char* path, int pathSize, char* name, CSala
                         salDir = dir->GetSalamanderDir(newF.Name, FALSE); // allocate a sal-dir for the record
                     else
                     {
+                        if (newF.NameLen > MAX_PATH - 5) // feature 241: refused for its length
+                            ReportTreeNameTooLong(parent, errorOccured);
                         free(newF.Name);
                         if (newF.DosName != NULL)
                             free(newF.DosName);
@@ -1329,6 +1343,8 @@ CSalamanderDirectory* ReadDirectoryTree(HWND parent, CPanelTmpEnumData* data, in
                     newF.DosName = NULL;
                     salDir = dir->GetSalamanderDir(f->Name, FALSE); // allocate a sal-dir for the record
                 }
+                else if (newF.NameLen > MAX_PATH - 5) // feature 241: refused for its length
+                    ReportTreeNameTooLong(parent, errorOccured);
                 if (salDir == NULL)
                     goto RETURN_ERROR;
             }

@@ -8,6 +8,7 @@
 #include "plugins.h"
 #include "zip.h"
 #include "pack.h"
+#include "fileswnd.h" // feature 241: the panel's window for the custom packer
 #include "salarcmig.h" // feature 084
 
 // custom packers / unpackers
@@ -864,7 +865,9 @@ BOOL CPackerConfig::ExecutePacker(CFilesWindow* panel, const char* zipFile, BOOL
                 }
                 sprintf(command, "%s %s", data->CmdExecCopy, data->CmdArgsCopy);
             }
-            BOOL ret = PackUniversalCompress(NULL, command, NULL, sourcePath, FALSE,
+            // feature 241 (review): the panel as the parent - the enumeration's boxes ("too long name")
+            // were silent with NULL (PackErrorHandler takes NULL as the main window anyway)
+            BOOL ret = PackUniversalCompress(panel != NULL ? panel->HWindow : NULL, command, NULL, sourcePath, FALSE,
                                              data->SupportLongNames, zipFile, sourcePath, NULL,
                                              next, param, data->NeedANSIListFile);
             free(command);

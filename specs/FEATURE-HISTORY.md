@@ -2834,3 +2834,7 @@ a few early ones are out of sequence).
   (never fails; third-party code skipped): 78 findings (424 draft), the list in the feature folder.
 - 240-dragdrop-long-folder-name: a dragged / pasted folder of 255+ bytes (AddDir's limit, 222) ended
   `DragDropToArcOrFS` silently; now "too long name". By reading. Nested / F5: 241.
+- 241-pack-long-nested-folder: `ReadDirectoryTree` ended with `SALENUM_ERROR` and no message when
+  `AddDir` refused a 255+ byte folder name - F5 / F6 into a ZIP "succeeded" packing nothing. Now
+  "too long name" + `SALENUM_CANCEL` (nested and selected); the custom packer gets a parent window.
+  Probe `pack241_probe.ps1` 2 FAIL -> 8 / 0.
