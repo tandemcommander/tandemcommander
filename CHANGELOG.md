@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Rename and Move to another file's short name never overwrite it**
+  (feature 201). Renaming or moving a file to "LONGFI~1.TXT" - the short
+  (8.3) name of another file - while that file was open in another program
+  asked to overwrite the other file; it now reports the error instead.
+
 - **PictView's Rename in a case-sensitive folder** (feature 200). Renaming
   the shown "a.png" to "A.png" while "A.png" is another file failed with
   "already exists"; PictView asks to overwrite it now.

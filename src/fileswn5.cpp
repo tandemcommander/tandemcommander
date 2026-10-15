@@ -2334,6 +2334,10 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                 // (with the byte fold "Č.txt" -> "č.txt" was taken for two files; on a file system that
                 // answers "already exists" to such a rename, the overwrite branch below deletes the target,
                 // which is the source - NTFS renames it without complaint)
+                // feature 201: TRUE when the new name is only another entry's DOS (8.3) name - that entry is
+                // never offered for overwriting below (when moving it aside failed - it is held open - the
+                // question named the other file by its short name and Yes replaced it)
+                BOOL shortNameClash = FALSE;
                 if (!keepTarget && (!SalNameEqualOrdinalCI(path, -1, tgtPath, -1) || provenOther) && // if it isn't just change-case (158: or a proven other file - its DOS-name clash is moved aside, not deleted)
                     (err == ERROR_FILE_EXISTS ||                                                     // check whether it's only rewriting the DOS name of the file
                      err == ERROR_ALREADY_EXISTS))
@@ -2351,6 +2355,7 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                         if (SalNameEqualOrdinalCI(tgtName, -1, dosNameU8, -1) && // match only for DOS name
                             !SalNameEqualOrdinalCI(tgtName, -1, nameU8, -1))     // (full name differs)
                         {
+                            shortNameClash = TRUE; // feature 201
                             // rename ("clean up") the file/directory with the conflicting DOS name to a temporary 8.3 name (no extra DOS name needed)
                             char tmpName[SAL_MAX_PATH_UTF8 + 20]; // long-path capable (feature 011)
                             lstrcpyn(tmpName, tgtPath, SAL_MAX_PATH_UTF8);
@@ -2370,6 +2375,7 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                                     DWORD e = GetLastError();
                                     if (e != ERROR_FILE_EXISTS && e != ERROR_ALREADY_EXISTS)
                                     {
+                                        err = e; // feature 201: the reason, reported below
                                         tmpName[0] = 0;
                                         break;
                                     }
@@ -2377,6 +2383,8 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                                 if (tmpName[0] != 0) // if we successfully "cleaned" the conflicting file, try moving
                                 {                    // the file again, then return the temporary file its original name
                                     BOOL moveDone = SalMoveFile(path, tgtPath);
+                                    if (!moveDone)
+                                        err = GetLastError(); // feature 201
                                     if (!SalMoveFile(tmpName, origFullName))
                                     { // this can apparently happen: Windows creates a file named origFullName instead of 'tgtPath' (DOS name)
                                         TRACE_I("CFilesWindow::RenameFileInternal(): Unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
@@ -2398,7 +2406,8 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                         }
                     }
                 }
-                if (!keepTarget && // feature 103
+                if (!keepTarget &&     // feature 103
+                    !shortNameClash && // feature 201: never the entry of the DOS-name clash
                     (err == ERROR_ALREADY_EXISTS ||
                      err == ERROR_FILE_EXISTS) &&
                     (!SalNameEqualOrdinalCI(path, -1, tgtPath, -1) || // overwrite the file? (feature 092: never for a change of case,

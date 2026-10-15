@@ -2630,3 +2630,7 @@ a few early ones are out of sequence).
 - 200-pictview-rename-case: PictView's Rename of the shown image - the 092 name rule instead of the
   code-page `StrICmp`, and for two spellings of one name an overwrite only when the temporary-name
   route proves another file (as 196 / 198). Probe `pv_cs_probe.ps1` 4 / 1 -> 5 / 0.
+- 201-short-name-clash-held: Quick Rename and F6 to another entry's short (8.3) name - when moving
+  that entry aside fails (held open), never the overwrite question for it (Yes replaced the other
+  file; F6's Retry after the other program let go would have); the move's error instead.
+  Probe `short_clash_probe.ps1`.

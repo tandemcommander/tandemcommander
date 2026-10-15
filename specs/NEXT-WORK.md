@@ -291,9 +291,13 @@ Functional, no loss:
     Renamer - the shown `x.png` renamed to `LONGFI~1.PNG` asks to overwrite and Yes replaces
     `longfilename.png` (`render1.cpp` ~2995-3052; measure first)); ~~the Renamer has no step that moves
     an 8.3 short-name clash aside~~ (**done, feature 199** - measured: `longfilename.txt` deleted;
-    left by its review: **the core's Quick Rename has the same fallback** - when its move aside of an
-    8.3 clash fails (the other file held open), it goes on to `COverwriteDlg` and Yes replaces the
-    other file, `fileswn5.cpp` ~2340-2392 - and the worker's move ~6012 likely too; measure first).
+    left by its review: ~~the core's Quick Rename has the same fallback~~ - **done, feature 201**
+    (also the worker's move); left by 201's review: **the create paths likely have the same defect**
+    - `SalCreateFileEx` (worker.cpp ~3035: an F5 copy of a file named `LONGFI~1.TXT` into a folder
+    where `longfilename.txt` is held open: the overwrite question, Yes truncates it), `SafeCreateFile`
+    (safefile.cpp ~178: plug-ins unpacking such a member), `SalCreateDirectoryEx` (~6640) - measure
+    first; and the other entry can be left under `salNNN` with only a trace when both restores fail
+    (Quick Rename, the worker's move)).
     Also left by 199's second review: the Renamer's `CheckAndCreateDirectory` (`rendlg3.cpp`, the
     "adjust the case" step) renames a folder whose SHORT name is a folder part of the new name
     (`LONGDI~1\x.txt`) to that short name - the folder loses its long name without a question

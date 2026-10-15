@@ -6009,6 +6009,11 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                 // byte fold (with the byte fold "Č.txt" -> "č.txt" was taken for two files; on a file
                 // system that answers "already exists" to such a rename, the overwrite branch below
                 // deletes the target, which is the source - NTFS renames it without complaint)
+                // feature 201: TRUE when the target name is only another entry's DOS (8.3) name - that entry is
+                // never offered for overwriting below (when moving it aside failed - it is held open - the
+                // question named the other file by its short name and Yes replaced it)
+                BOOL shortNameClash; // (assigned below: a goto above jumps past this declaration)
+                shortNameClash = FALSE;
                 if ((!SalNameEqualOrdinalCI(op->SourceName, -1, op->TargetName, -1) || provenOther) && // provided this is not just a change of case (158: or a proven other file)
                     (err == ERROR_FILE_EXISTS ||                                                       // verify whether this is only overwriting the DOS name of the file/directory
                      err == ERROR_ALREADY_EXISTS) &&
@@ -6028,6 +6033,7 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                         if (SalNameEqualOrdinalCI(tgtName, -1, fndDosNameU8, -1) && // match only on the DOS name
                             !SalNameEqualOrdinalCI(tgtName, -1, fndNameU8, -1))     // (the full name is different)
                         {
+                            shortNameClash = TRUE; // feature 201
                             // rename ("tidy up") the file/directory with the conflicting DOS name to a temporary 8.3 name (does not need an extra DOS name)
                             // heap copies - the path may be far longer than MAX_PATH
                             struct CAutoFree // frees the buffers on every return path
@@ -6061,6 +6067,7 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                                     DWORD e = GetLastError();
                                     if (e != ERROR_FILE_EXISTS && e != ERROR_ALREADY_EXISTS)
                                     {
+                                        err = e; // feature 201: the reason, reported below
                                         tmpName[0] = 0;
                                         break;
                                     }
@@ -6068,6 +6075,8 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                                 if (tmpName[0] != 0) // if we managed to "tidy up" the conflicting file/directory, try moving it again
                                 {                    // then restore the original name of the "tidied" file/directory
                                     BOOL moveDone = SalMoveFile(sourceNameMvDir, op->TargetName);
+                                    if (!moveDone)
+                                        err = GetLastError();                                          // feature 201
                                     if (script->CopyAttrs && (op->Attr & FILE_ATTRIBUTE_ARCHIVE) == 0) // the Archive attribute was not set; MoveFile turned it on, clear it again
                                         SalSetFileAttributes(op->TargetName, op->Attr);                // leave without handling or retry, not important (it normally toggles chaotically)
                                     if (!SalMoveFile(tmpName, origFullName))
@@ -6099,6 +6108,7 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
 
                 if ((err == ERROR_ALREADY_EXISTS || // theoretically can happen for directories; prevent that (overwrite prompt is only for files)
                      err == ERROR_FILE_EXISTS) &&
+                    !shortNameClash &&                                                                         // feature 201: never the entry of the DOS-name clash
                     !dir && (!SalNameEqualOrdinalCI(op->SourceName, -1, op->TargetName, -1) || provenOther) && // feature 092: never for a change of case (158: unless proven another file)
                     sourceNameMvDir == op->SourceName && targetNameMvDir == op->TargetName)                    // no invalid names allowed here (files only, and their names are validated)
                 {
