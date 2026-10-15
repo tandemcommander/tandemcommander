@@ -153,8 +153,23 @@ public:
     static void PrintBugReport(EXCEPTION_POINTERS* Exception, DWORD ThreadID, DWORD ShellExtCrashID,
                                FPrintLine PrintLine, void* param);
 
+    // feature 218: takes the entry of the SUSPENDED thread 'threadID' (whose stack holds
+    // 'stackAddr') out of CallStacks - its slot set to NULL, nothing allocated while the thread may
+    // hold a lock; also the entries in memory no longer committed (threads ended elsewhere, e.g. a
+    // plug-in's). Entries are matched by the memory they lie in, never read; see
+    // CallStk_TerminateThread
+    static void ForgetThread(DWORD threadID, const void* stackAddr);
+
 #endif // CALLSTK_DISABLE
 };
+
+// feature 218: ends 'thread' by TerminateThread. Its call-stack object lives on the thread's own
+// stack, which the termination frees - its entry in CallStacks pointed into freed memory and a bug
+// report written afterwards walked it. The thread is suspended, its entry taken out, then it is
+// terminated; when the call-stack section cannot be had at once (the thread may hold it), the entry
+// stays (as before). Returns TerminateThread's result. Threads a plug-in ends (plugins/shared
+// auxtools.cpp) are not covered: their entries are swept only when the core terminates a thread.
+BOOL CallStk_TerminateThread(HANDLE thread, DWORD exitCode);
 
 // stores the message on the call stack and removes it upon leaving the block; parameters are the same as print functions
 

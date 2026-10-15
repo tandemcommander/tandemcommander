@@ -552,7 +552,7 @@ void TerminateThread()
         SetEvent(SafeFindCloseStart);
         if (WaitForSingleObject(SafeFindCloseThread, 1000) == WAIT_TIMEOUT) // wait for it to exit
         {
-            TerminateThread(SafeFindCloseThread, 666);          // failed, kill it forcefully
+            CallStk_TerminateThread(SafeFindCloseThread, 666);  // failed, kill it forcefully
             WaitForSingleObject(SafeFindCloseThread, INFINITE); // wait until the thread actually ends; this can take quite a while
         }
         HANDLES(CloseHandle(SafeFindCloseThread));

@@ -908,7 +908,7 @@ void CCacheHandles::Destroy()
         SetEvent(Terminate);                                   // "you should end now"
         if (WaitForSingleObject(Thread, 1000) == WAIT_TIMEOUT) // let's give it 1 second
         {
-            TerminateThread(Thread, 666);          // if it does not want to terminate, kill it
+            CallStk_TerminateThread(Thread, 666);  // if it does not want to terminate, kill it
             WaitForSingleObject(Thread, INFINITE); // we will wait until the thread really ends, sometimes it takes a while
         }
         HANDLES(CloseHandle(Thread));

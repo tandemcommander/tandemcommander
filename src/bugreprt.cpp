@@ -646,7 +646,7 @@ void CCallStack::PrintBugReport(EXCEPTION_POINTERS* Exception, DWORD ThreadID, D
             for (i = 0; i < CCallStack::CallStacks.Count; i++)
             {
                 CCallStack* stack = CCallStack::CallStacks[i];
-                if (ThreadID == stack->ThreadID)
+                if (stack != NULL && ThreadID == stack->ThreadID) // feature 218: NULL = a terminated thread
                 {
                     sprintf(buf, "Thread with Exception (ID: 0x%X)", stack->ThreadID);
                     char* term = buf + strlen(buf);
@@ -695,9 +695,9 @@ void CCallStack::PrintBugReport(EXCEPTION_POINTERS* Exception, DWORD ThreadID, D
         int i;
         for (i = 0; i < CCallStack::CallStacks.Count; i++)
         {
-            if (i != excepThreadIndex)
+            CCallStack* stack = CCallStack::CallStacks[i]; // feature 218: read once (NULL = a terminated thread)
+            if (i != excepThreadIndex && stack != NULL)
             {
-                CCallStack* stack = CCallStack::CallStacks[i];
                 sprintf(buf, "Thread ID: 0x%X", stack->ThreadID);
                 PrintLine(param, buf, TRUE);
                 stack->Reset();

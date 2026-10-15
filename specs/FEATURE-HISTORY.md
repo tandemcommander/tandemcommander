@@ -2726,3 +2726,8 @@ a few early ones are out of sequence).
   the exchange failed before NEWKEYS. Reproduced by a proxy flipping a byte of the server's signed
   reply (`probe/fakessh.py` FLIPSIG); local libssh2 patches (trim, dtor, CNG handles). Probe
   `sftp217_probe.ps1` 18 / 0; the teardown's 1 ms deadline (`Disconnect`) is NEXT-WORK.
+- 218-callstack-terminated-threads: a thread ended by `TerminateThread` left its `CCallStack` (on its
+  freed stack) in `CallStacks`; `CallStk_TerminateThread` suspends it, `ForgetThread` NULLs the
+  slots by memory region (`VirtualQuery`; never reading an entry - the first version read other
+  entries and was rejected: plug-in threads' are freed too), then terminates; the report skips NULL.
+  Five core sites; by reading; smoke 8 / 0, 22 / 0. Plug-in kills (`auxtools.cpp`) are NEXT-WORK.

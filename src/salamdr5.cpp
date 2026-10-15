@@ -103,7 +103,7 @@ void ReleaseCheckThreads()
             DWORD code;
             if (GetExitCodeThread(ThreadCheckPath[i], &code) && code == STILL_ACTIVE)
             { // it has nothing left to run, terminate it
-                TerminateThread(ThreadCheckPath[i], 666);
+                CallStk_TerminateThread(ThreadCheckPath[i], 666);  // feature 218
                 WaitForSingleObject(ThreadCheckPath[i], INFINITE); // wait until the thread actually finishes; sometimes it takes quite a while
             }
             ThreadCheckState[i] = ctsNotRunning;

@@ -720,7 +720,7 @@ void AuxThreadBody(BOOL add, HANDLE thread, BOOL testIfFinished)
                 DWORD code;
                 if (GetExitCodeThread(t, &code) && code == STILL_ACTIVE)
                 { // the thread is still running, we terminate it
-                    TerminateThread(t, 666);
+                    CallStk_TerminateThread(t, 666);  // feature 218
                     WaitForSingleObject(t, INFINITE); // wait until the thread actually terminates, it sometimes takes a while
                 }
                 HANDLES(CloseHandle(t));

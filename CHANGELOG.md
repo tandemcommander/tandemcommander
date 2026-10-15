@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A crash report stays complete after a stuck background task was
+  stopped** (feature 218). When the program had to stop an unresponsive
+  background thread (an icon reader or a path check), a crash report
+  written later could lose its call stacks; the stopped thread is now
+  removed from the report's list first.
+
 - **SFTP: no more occasional "Unable to exchange encryption keys"**
   (feature 217). About one connection in 256 failed its key exchange
   with a valid server (a leading zero in the shared secret was encoded

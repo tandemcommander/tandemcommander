@@ -1,0 +1,30 @@
+unpack_dir_probe (feature 204) regress218
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 17:28; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - not used by this probe
+
+zip-dir    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...\AppData\Local\Temp\tc204_ud\zip-dir\tgt', set '...AppData\Local\Temp\tc204_ud\zip-dir\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: True; asked: nothing
+zip-dir    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-entry  RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...ppData\Local\Temp\tc204_ud\zip-entry\tgt', set '...pData\Local\Temp\tc204_ud\zip-entry\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: True; asked: nothing
+zip-entry  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-deep   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...AppData\Local\Temp\tc204_ud\zip-deep\tgt', set '...ppData\Local\Temp\tc204_ud\zip-deep\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with sub\a.txt: True; asked: nothing
+zip-deep   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-same   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...AppData\Local\Temp\tc204_ud\zip-same\tgt', set '...ppData\Local\Temp\tc204_ud\zip-same\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with keep.txt: True; asked: nothing
+zip-same   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-held   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...AppData\Local\Temp\tc204_ud\zip-held\tgt', set '...ppData\Local\Temp\tc204_ud\zip-held\tgt\'; on disk: longdirname/; longdirname holds: keep.txt; asked: [#32770 'Error'] Name: | Error: | Cannot create directory. Unable to create the directory "C:\Users\pavel\AppData\Local\Temp\tc204_ud\zip-held\tgt\LONGDI~1\". | || [#32770 'Error Creating Directory'] Name: | Error: | (5) P\u0159\u00EDstup byl odep\u0159en.  |
+zip-held   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7z-dir     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...l\AppData\Local\Temp\tc204_ud\7z-dir\tgt', set '...\AppData\Local\Temp\tc204_ud\7z-dir\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: True; asked: nothing
+7z-dir     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7z-held    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...\AppData\Local\Temp\tc204_ud\7z-held\tgt', set '...AppData\Local\Temp\tc204_ud\7z-held\tgt\'; on disk: longdirname/; longdirname holds: keep.txt; asked: [#32770 'Error Creating Directory'] Name: | Error: | (5) P\u0159\u00EDstup byl odep\u0159en.  | || [#32770 'Error Creating Directory'] Name: | Error: | (5) P\u0159\u00EDstup byl odep\u0159en.  |
+7z-held    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+f9-zip     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '', set '...\AppData\Local\Temp\tc204_ud\f9-zip\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: True; asked: nothing
+f9-zip     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+root       RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...vel\AppData\Local\Temp\tc204_ud\root\tgt', set 'Y:\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: True; asked: nothing
+root       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+tar-dir    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...\AppData\Local\Temp\tc204_ud\tar-dir\tgt', set '...AppData\Local\Temp\tc204_ud\tar-dir\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: True; asked: nothing
+tar-dir    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+typed      RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc204_ud\typed\tgt', set '...\Local\Temp\tc204_ud\typed\tgt\LONGDI~1\'; on disk: longdirname/; longdirname holds: keep.txt,x.txt; asked: nothing
+typed      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 22, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

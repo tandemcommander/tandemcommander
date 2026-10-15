@@ -1654,7 +1654,7 @@ CFilesWindow::~CFilesWindow()
         if (WaitForSingleObject(IconCacheThread, 1000) == WAIT_TIMEOUT)
         { // it has one second to exit gracefully, then a kill is necessary (the window is being deallocated)
             TRACE_E("Terminating Icon Thread");
-            TerminateThread(IconCacheThread, 666);
+            CallStk_TerminateThread(IconCacheThread, 666);
             WaitForSingleObject(IconCacheThread, INFINITE); // wait until the thread really ends; sometimes it takes quite a while
         }
         HANDLES(CloseHandle(IconCacheThread));

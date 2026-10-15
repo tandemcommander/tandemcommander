@@ -11,6 +11,30 @@
 #include "dialogs.h"
 #include "tasklist.h"
 
+BOOL CallStk_TerminateThread(HANDLE thread, DWORD exitCode)
+{
+#ifndef CALLSTK_DISABLE
+    DWORD id = GetThreadId(thread);
+    if (id != 0 && id != GetCurrentThreadId() && SuspendThread(thread) != (DWORD)-1)
+    {
+        // GetThreadContext waits until the suspension took effect; its stack pointer names the
+        // thread's stack (the entries are matched by the memory they lie in)
+        CONTEXT ctx;
+        memset(&ctx, 0, sizeof(ctx));
+        ctx.ContextFlags = CONTEXT_CONTROL;
+        if (GetThreadContext(thread, &ctx))
+        {
+#ifdef _WIN64
+            CCallStack::ForgetThread(id, (const void*)ctx.Rsp);
+#else
+            CCallStack::ForgetThread(id, (const void*)(DWORD_PTR)ctx.Esp);
+#endif
+        }
+    }
+#endif // CALLSTK_DISABLE
+    return TerminateThread(thread, exitCode);
+}
+
 #ifndef CALLSTK_DISABLE
 
 // The order here is important.
@@ -48,6 +72,39 @@ __declspec(allocate(".i_cst$z")) const _PVFV i_callstk_end = (_PVFV)1; // place 
 #define CALLSTK_QUEUE_FREE(p) free(p)
 #endif // _DEBUG
 #endif // (defined(_DEBUG) || defined(CALLSTK_MEASURETIMES)) && !defined(CALLSTK_DISABLEMEASURETIMES)
+
+void CCallStack::ForgetThread(DWORD threadID, const void* stackAddr)
+{
+    if (!SectionOK || threadID == 0 || stackAddr == NULL)
+        return;
+    MEMORY_BASIC_INFORMATION stackMbi;
+    if (VirtualQuery(stackAddr, &stackMbi, sizeof(stackMbi)) != sizeof(stackMbi))
+        return;
+    // the suspended thread holds the section: it is never released - give up (as before)
+    if ((DWORD)(DWORD_PTR)Section.OwningThread == threadID)
+        return;
+    BOOL entered = FALSE;
+    for (int attempt = 0; attempt < 200 && !entered; attempt++) // another thread may hold it briefly
+    {
+        entered = TryEnterCriticalSection(&Section);
+        if (!entered)
+            Sleep(1);
+    }
+    if (!entered)
+        return;
+    for (int i = 0; i < CallStacks.Count; i++)
+    {
+        // an entry is never read here: one left by a thread ended elsewhere points into freed memory
+        MEMORY_BASIC_INFORMATION mbi;
+        if (CallStacks[i] != NULL &&
+            (VirtualQuery(CallStacks[i], &mbi, sizeof(mbi)) != sizeof(mbi) || mbi.State != MEM_COMMIT ||
+             mbi.AllocationBase == stackMbi.AllocationBase))
+        {
+            CallStacks[i] = NULL; // no Delete: it may reallocate (the suspended thread may hold the heap)
+        }
+    }
+    LeaveCriticalSection(&Section);
+}
 
 void Initialize__CallStk()
 {
@@ -168,6 +225,11 @@ CCallStack::CCallStack(BOOL dontSuspend)
     PluginDLLNameUses = 0;
 
     HANDLES(EnterCriticalSection(&Section));
+    for (int i = CallStacks.Count - 1; i >= 0; i--) // feature 218: the slots of terminated threads
+    {
+        if (CallStacks[i] == NULL)
+            CallStacks.Detach(i);
+    }
     CallStacks.Add(this);
     HANDLES(LeaveCriticalSection(&Section));
 
