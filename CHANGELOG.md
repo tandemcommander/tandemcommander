@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Renamer: long names and folders no longer crash it or reach other
+  files** (feature 207). Undo, or "Remove source path", of a file whose
+  full path has 260 or more bytes (for example a name of 90 Chinese
+  letters) crashed the Renamer; in a folder with such a path it worked on
+  names in the root of the drive instead. Both work or are refused now.
+
 - **Renamer: a new name's folder is never another folder by its short name**
   (feature 206). With relative paths, a new name "LONGDI~1\x.txt" next to a
   folder "longdirname" (whose short 8.3 name is LONGDI~1) went into

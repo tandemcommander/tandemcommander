@@ -28,6 +28,16 @@ BOOL CPluginInterfaceForMenuExt::ExecuteMenuItem(CSalamanderForOperationsAbstrac
     case MID_RENAME:
     {
         SG->GetConfigParameter(SALCFG_ALWAYSONTOP, &AlwaysOnTop, sizeof(AlwaysOnTop), NULL);
+        // feature 207: the Renamer works below the panel's folder held in Root[MAX_PATH]; a folder
+        // whose path does not fit (260+ bytes of UTF-8 - 90 CJK letters) left Root empty and every
+        // item became "\name" - a file of that name in the root of the current drive
+        char root[MAX_PATH];
+        if (!SG->GetPanelPath(PANEL_SOURCE, root, MAX_PATH, NULL, NULL))
+        {
+            SetLastError(NO_ERROR); // the box adds a system reason when one is set - here there is none
+            Error(IDS_TOOLONGPATH);
+            break;
+        }
         if (SG->GetPanelSelection(PANEL_SOURCE, NULL, NULL))
         {
             CRenamerDialogThread* t = new CRenamerDialogThread();

@@ -1,0 +1,9 @@
+ren_long_probe (feature 207), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 09:01; ACP 1250; registry key existed True
+
+long-root  RUN    FAIL        preview rows 1; boxes as expected: False; on disk: in the folder: tc207uniq.txt; C:\tc207uniq.txt False, C:\tc207uniq-b.txt False; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to open file: (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=2477] Some files have not been renamed successfully. These files will be listed now to enable you to correct errors and try to rename files again. To see successfully renamed files use options in `View' menu. | [Button id=1] OK || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No
+long-root  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

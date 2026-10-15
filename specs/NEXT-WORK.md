@@ -305,11 +305,17 @@ Functional, no loss:
     Also left by 199's second review: ~~the Renamer's `CheckAndCreateDirectory` renames a folder
     whose SHORT name is a folder part of the new name~~ - **done, feature 206** (not reproducible on
     NTFS; found and fixed there: a stack overrun and the overwrite of a file in the other folder);
-    left by its review: **feature 207 (CRITICAL)** - the Renamer's `MoveFile` copies the target into
-    `char dir[MAX_PATH]` (`rendlg3.cpp` ~141): an Undo of a selected item whose path has 260+
-    bytes of UTF-8 (90 CJK letters - an ordinary 98-unit path) overruns the stack, and
-    `rendlg2.cpp` ~567 the same with "Remove source path"; `LoadSelection` does not refuse such items
-    as `LoadSubdir` does; NITs in 206's fix-log. Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
+    left by its review: ~~feature 207 (CRITICAL) - the Renamer's `MoveFile` / "Remove source path"
+    `dir[MAX_PATH]`~~ - **done, feature 207** (also: a panel folder of 260+ bytes made the items
+    `\name` in the drive's root - refused now). Left by 207's reviews: **208** - the Renamer's
+    `ChangeCase` (`crenamer.cpp` ~701-760) applies code-page byte tables to UTF-8 names (1250 / 1252:
+    lead byte C3 -> E3, invalid UTF-8) and "strip diacritics" converts through `CP_ACP` - a rename
+    of a name with diacritics to lower / upper case may produce another name (measure first);
+    **209** - `ReloadSourceFiles` (`rendlg.cpp` ~1214-1239) expands a renamed folder as `Root +
+    Name`: after a full-path run (`Root` emptied) a relative `name\*.*` against the current folder,
+    after a relative-path rename `a` -> `sub\a` another folder `Root\a` - its files offered for
+    renaming with "Include subdirectories"; also recorded: a new name is capped at 259 bytes (a
+    refusal), an item from a subdirectory is refused at 260 bytes while a selected one is not. Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
 12. ~~An archive whose name has 260+ bytes: drop/paste into it~~ - **done, feature 160** (the name

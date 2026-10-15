@@ -2667,3 +2667,9 @@ a few early ones are out of sequence).
   own name (`SalNameOrderEqualCI`), `old` on the heap; a folder proven another's short name is
   created of its own (`SalCreateDirectoryEx`; `BuildScript` does not take the target for existing)
   - relative-path mode only (a full path is the user's own). Probe `ren_dir83_probe.ps1` -> 10 / 0.
+- 207-renamer-long-source-path: the Renamer copied a path into `char dir[MAX_PATH]` on Undo
+  (`MoveFile`, the source's original name) and with "Remove source path" - a selected item of 90 CJK
+  letters (274 bytes, an ordinary path) failed "Buffer is too small"; heap copies now. Its review
+  found worse: in a panel folder of 260+ bytes `GetPanelPath` failed unchecked, `Root` stayed empty
+  and the items became `\name` in the root of the current drive - Batch Rename is refused there
+  before its dialog. Probe `ren_long_probe.ps1` -> 8 / 0.

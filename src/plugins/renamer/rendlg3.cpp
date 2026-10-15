@@ -145,11 +145,19 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
 {
     CALL_STACK_MESSAGE4("CRenamerDialog::MoveFile(, , , %d, %d, %d)", overwrite,
                         isDir, skip);
-    // create the path
-    char dir[MAX_PATH];
-    strcpy(dir, targetName);
+    // create the path - feature 207: on the heap; an Undo passes the source's original full name,
+    // which may have 260+ bytes of UTF-8 (90 CJK letters) - it overran char dir[MAX_PATH]
+    char* dir = SG->DupStr(targetName);
+    if (dir == NULL)
+    {
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        FileError(HWindow, sourceName, IDS_MOVEERROR, FALSE, &skip, &SkipAllMove, IDS_ERROR);
+        return FALSE;
+    }
     SG->CutDirectory(dir);
-    if (!CheckAndCreateDirectory(dir, dir + (newPart - targetName), skip))
+    BOOL pathMade = CheckAndCreateDirectory(dir, dir + (newPart - targetName), skip);
+    free(dir);
+    if (!pathMade)
         return FALSE;
 
     // perform the move

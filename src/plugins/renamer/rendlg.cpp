@@ -1144,7 +1144,14 @@ void CRenamerDialog::LoadSelection()
     int files = 0, dirs = 0;
     SG->GetPanelSelection(PANEL_SOURCE, &files, &dirs);
 
-    SG->GetPanelPath(PANEL_SOURCE, Root, MAX_PATH, NULL, NULL);
+    // feature 207: a panel folder that does not fit Root is refused before the dialog opens
+    // (menu.cpp, on this same thread just before); defensive - nothing is loaded, never "\name"
+    if (!SG->GetPanelPath(PANEL_SOURCE, Root, MAX_PATH, NULL, NULL))
+    {
+        Root[0] = 0;
+        RootLen = 0;
+        return;
+    }
     RootLen = (int)strlen(Root);
 
     // load the selection from the panel

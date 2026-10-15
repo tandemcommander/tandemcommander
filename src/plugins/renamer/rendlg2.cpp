@@ -569,13 +569,18 @@ void CRenamerDialog::ExecuteScript(CRenameScriptEntry* script, int count)
         {
             if (RemoveSourcePath)
             {
-                char dir[MAX_PATH];
-                strcpy(dir, script[i].Source->FullName);
-                do
+                // feature 207: on the heap - the source's full name may have 260+ bytes of UTF-8 (it
+                // overran char dir[MAX_PATH]); without memory the empty folders simply stay
+                char* dir = SG->DupStr(script[i].Source->FullName);
+                if (dir != NULL)
                 {
-                    SG->CutDirectory(dir);
-                    SG->ClearReadOnlyAttr(dir); // so it can be deleted
-                } while (RemoveDirectoryU8(dir)); // the paths are UTF-8 -> W API
+                    do
+                    {
+                        SG->CutDirectory(dir);
+                        SG->ClearReadOnlyAttr(dir);   // so it can be deleted
+                    } while (RemoveDirectoryU8(dir)); // the paths are UTF-8 -> W API
+                    free(dir);
+                }
             }
             script[i].Source->State = 1;
             CSourceFile* f = new CSourceFile(script[i].Source, script[i].NewName);
