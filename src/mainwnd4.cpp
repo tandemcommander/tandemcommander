@@ -958,6 +958,15 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             char arguments[USRMNUARGS_MAXLEN];
             char initDir[MAX_PATH];
             char initDirBat[2 * MAX_PATH]; // feature 229: initDir for the batch file's "cd" line ('%' escaped)
+            // feature 234: the folder of the first item - the batch file's current folder when the item
+            // has no Initial Directory (the Find window set none: the command ran in the program's
+            // resting folder or in a panel's folder another thread had just set)
+            char firstItemDir[MAX_PATH];
+            firstItemDir[0] = 0;
+            char lastCdDir[MAX_PATH]; // the folder the batch file is in (an item's "cd" line)
+            lastCdDir[0] = 0;
+            char prevItemDir[MAX_PATH]; // the previous item's folder (feature 234: another folder runs the command again)
+            prevItemDir[0] = 0;
             initDirBat[0] = 0;
             char prevInitDir[MAX_PATH];
             initDir[0] = 0;
@@ -971,6 +980,11 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             while (getNextFile(index, path, name, data))
             {
                 strcpy(prevInitDir, initDir);
+                if (firstRound)
+                {
+                    strcpy(firstItemDir, path); // feature 234 (both MAX_PATH)
+                    strcpy(lastCdDir, path);    // the batch file starts there
+                }
                 BOOL expandOK = ExpandCommand2(parent,
                                                cmdLine, USRMNUCMDLINE_MAXLEN,
                                                arguments, USRMNUARGS_MAXLEN, buildBat, // if we are running via a batch file, allow
@@ -986,7 +1000,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                     skipErrorMessage = TRUE;
                     break;
                 }
-                if (expandOK && (firstRound || fileNameUsed || strcmp(initDir, prevInitDir) != 0)) // block running the same command for all items (a user mistake that happens often)
+                if (expandOK && (firstRound || fileNameUsed || strcmp(initDir, prevInitDir) != 0 || // block running the same command for all items (a user mistake that happens often)
+                                 initDir[0] == 0 && strcmp(path, prevItemDir) != 0))                // feature 234: but it runs in each item's folder
                 {
                     if (buildBat) // building a .bat file
                     {
@@ -996,7 +1011,33 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         // "@cd /d "C:\\path" || exit /b 1": a folder that is not there (renamed, a drive
                         // that is gone) ends the batch file - "@C:" + "@cd" went on and the command ran
                         // in the panel's folder (second review of 226)
-                        if ((initDir[0] != 0 && initDir[1] == ':' && // initDir[1] read only when there is one
+                        // feature 234 (review): without an Initial Directory each item's command runs in
+                        // the item's folder - the batch file starts in the first item's; a later item
+                        // from another folder (the Find window) gets its own "cd" (a relative name of
+                        // the second item resolved in the first item's folder - another file)
+                        char itemDirEsc[2 * MAX_PATH];
+                        BOOL itemCd = FALSE;
+                        if (initDir[0] == 0 && path[0] != 0 && strcmp(path, lastCdDir) != 0)
+                        {
+                            int pl = (int)strlen(path);
+                            int el = SalBatchEscapedLen(path, pl, 2); // no "call" on this line: '%' once
+                            // a folder without a drive letter (UNC: cmd cannot enter it) - refused: the
+                            // command would run in the previous item's folder (second review of 234)
+                            if (path[1] != ':' || el >= (int)sizeof(itemDirEsc))
+                            {
+                                ShowUserMenuBatchRefusal(parent, path);
+                                error = TRUE;
+                                skipErrorMessage = TRUE;
+                                break;
+                            }
+                            SalBatchCopyEscaped(itemDirEsc, path, pl, 2);
+                            itemDirEsc[el] = 0;
+                            itemCd = TRUE;
+                            strcpy(lastCdDir, path);
+                        }
+                        if ((itemCd && (!bat.Append("@cd /d \"") || !bat.Append(itemDirEsc) ||
+                                        !bat.Append("\" || exit /b 1\r\n"))) ||
+                            (initDir[0] != 0 && initDir[1] == ':' && // initDir[1] read only when there is one
                              (!bat.Append("@cd /d \"") ||
                               !bat.Append(initDirBat) || // feature 229: its inserted '%' kept
                               !bat.Append("\" || exit /b 1\r\n"))) ||
@@ -1037,7 +1078,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         sei.hwnd = shellExecuteWnd.Create(parent, "SEW: CMainWindow::UserMenu"); // handle to any message boxes that the system might produce while executing
                         sei.lpFile = cmdLine;
                         sei.lpParameters = arguments;
-                        sei.lpDirectory = (initDir[0] != 0) ? initDir : NULL;
+                        sei.lpDirectory = (initDir[0] != 0) ? initDir : (path[0] != 0 ? path : NULL); // feature 234: else the item's folder
                         sei.nShow = SW_SHOWNORMAL;
 
                         if (!SalShellExecuteEx(&sei)) // W launch: names may be outside the ACP (feature 004)
@@ -1053,6 +1094,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         }
                     }
                 }
+                strcpy(prevItemDir, path); // feature 234 (both MAX_PATH)
                 index++;
                 firstRound = FALSE;
                 if (userMenuValidationData.MustHandleItemsAsGroup)
@@ -1112,7 +1154,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 
                         if (!SalCreateProcess(NULL, cmdLine, NULL, NULL, FALSE,
                                               CREATE_DEFAULT_ERROR_MODE | NORMAL_PRIORITY_CLASS,
-                                              NULL, NULL, &si, &pi))
+                                              // feature 234: the first item's folder (an Initial Directory is
+                                              // entered by the batch file's own "cd" line - cmd expands a %VAR%
+                                              // typed there, which a current folder given here could not hold)
+                                              NULL, initDir[0] == 0 && firstItemDir[0] != 0 ? firstItemDir : NULL, &si, &pi))
                         {
                             DWORD err = GetLastError();
                             char buff[4 * MAX_PATH];

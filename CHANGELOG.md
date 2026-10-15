@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **User Menu from the Find window runs in each file's folder** (feature
+  234). A User Menu command with a relative file name, started from Find
+  results, ran in an unrelated folder (or, for files from several
+  folders, all in the first one) - it could act on another file of the
+  same name. Each command now runs in its file's folder.
+
 - **Compare Directories: names that differ only in case are the same file
   again** (feature 232). "Readme.txt" on one side and "README.txt" on the
   other were both marked as different (since 0.1.0). A selection also

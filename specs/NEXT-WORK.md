@@ -714,9 +714,11 @@ Code work an agent can do:
          `salamdr1.cpp:3568`) or typed (`PostProcessPathFromUser`) - it expands to another folder;
          use the literal path when it exists**; the refusal message names the command, not the
          file); a UNC panel folder or Initial Directory - cmd refuses a UNC current folder and
-         runs in C:\Windows, a UNC Initial Directory writes no `cd`; the Find window's User Menu
-         route sets no current folder and races the main thread's `SetCurrentDirectory` (pass
-         `lpCurrentDirectory` instead); a panel folder that cannot be set falls back to System32
+         runs in C:\Windows, a UNC Initial Directory writes no `cd` (`pushd` / `popd` or refuse);
+         ~~the Find window's User Menu route sets no current folder~~ (done, feature 234; left:
+         `$(ListOfSelectedNames)` from several Find folders runs once in the first one - refuse;
+         a missing item folder's message names the command, not the folder; a `.lnk` command's
+         own "Start in" vs `lpDirectory`; the Find route driven by a person); a panel folder that cannot be set falls back to System32
          - refuse a relative command instead; a failed chcp / `cd` ends a hidden batch silently;
          a kept shell ends at the OEM code page; `editwnd.cpp:355/482` read COMSPEC with the A
          call; the other A `SetCurrentDirectory` calls on UTF-8 paths are speed hints only);

@@ -2810,3 +2810,8 @@ a few early ones are out of sequence).
   ~260+ bytes is refused by the core, the queue refuses sub-paths over 300 bytes (`FTPPathAppend`);
   only a PWD reply over 300 bytes is cut (an ancestor under its own name). Probe `ftp233_probe.ps1`.
   Found: a tree download with a refused leaf left nothing on disk - NEXT-WORK.
+- 234-user-menu-item-folder: a User Menu command without an Initial Directory used the process-wide
+  current folder - the Find route set none (System32, or a panel's folder set by another thread).
+  Now the item's folder: `lpDirectory` (direct), cmd's start folder + a `cd /d` line per item folder
+  change (batch), a differing UNC item folder refused. Find route NOT DRIVEN (a popup menu); panel
+  route + 226 / 229 probes green. Two reviews (MUSTs: several folders, UNC).

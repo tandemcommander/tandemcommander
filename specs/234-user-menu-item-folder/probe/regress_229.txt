@@ -1,0 +1,42 @@
+um229_probe (feature 229) regression-234
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-16 00:17; registry key existed True; ACP 1250; OEM CP 852; NoDefaultCurrentDirectoryInExePath was '1' (removed for the run)
+
+PCT        RUN    PASS        folder plain, file 50%off.txt: copy 'content of PCT'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\PCT\plain
+PCT        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PCTVAR     RUN    PASS        folder plain, file a%OS%b.txt: copy 'content of PCTVAR'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\PCTVAR\plain
+PCTVAR     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PCTCALL    RUN    PASS        folder plain, file a%%OS%%b.txt: copy 'content of PCTCALL'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\PCTCALL\plain
+PCTCALL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CARET      RUN    PASS        folder plain, file a^b.txt: copy missing; windows: [#32770 'Error'] [Static id=2477] Cannot execute external command 'copy'. (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=1] OK; panel at C:\Users\pavel\AppData\Local\Temp\tc229\CARET\plain
+CARET      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BANG       RUN    PASS        folder plain, file a!b.txt: copy 'content of BANG'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\BANG\plain
+BANG       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+AMP        RUN    PASS        folder plain, file a&b.txt: copy 'content of AMP'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\AMP\plain
+AMP        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PCTU       RUN    PASS        folder plain, file 50%off\u4E2D\u6587.txt: copy 'content of PCTU'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\PCTU\plain
+PCTU       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PCTDIR     RUN    PASS        folder p%OS%q, file a.txt: copy 'content of PCTDIR'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\PCTDIR\p%OS%q
+PCTDIR     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+AMPU       RUN    PASS        folder plain, file a&b.txt: copy missing; windows: [#32770 'Error'] [Static id=2477] Cannot execute external command 'copy'. (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=1] OK; panel at C:\Users\pavel\AppData\Local\Temp\tc229\AMPU\plain
+AMPU       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LIST       RUN    PASS        folder plain, file 50%off.txt: copy 'content of LIST'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\LIST\plain
+LIST       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+WIDTH      RUN    PASS        folder plain, file 50%off.txt: copy 'content of WIDTH'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\WIDTH\plain
+WIDTH      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENV        RUN    PASS        folder plain, file a%OS%b.txt: copy 'content of ENV'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\ENV\plain
+ENV        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MULTI      RUN    PASS        folder plain, file a^b.txt: copy missing; windows: [#32770 'Error'] [Static id=2477] Cannot execute external command 'copy'. (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=1] OK; panel at C:\Users\pavel\AppData\Local\Temp\tc229\MULTI\plain
+MULTI      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DelayedExpansion restored: value existed False; key existed False, exists False
+DELAYED    RUN    PASS        folder plain, file a!b.txt: copy 'content of DELAYED'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\DELAYED\plain
+DELAYED    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LISTQ      RUN    PASS        folder plain, file a b&c.txt: copy missing; windows: [#32770 'Error'] [Static id=2477] Cannot execute external command 'copy'. (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=1] OK; panel at C:\Users\pavel\AppData\Local\Temp\tc229\LISTQ\plain
+LISTQ      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COMMA      RUN    PASS        folder plain, file Smith,John.txt: copy 'content of COMMA'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\COMMA\plain
+COMMA      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+INITVAR    RUN    PASS        folder plain, file a.txt: copy 'content of INITVAR'; windows: none; panel at C:\Users\pavel\AppData\Local\Temp\tc229\INITVAR\plain
+INITVAR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 34, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

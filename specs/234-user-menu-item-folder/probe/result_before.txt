@@ -1,0 +1,15 @@
+um234_probe (feature 234) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 23:45; registry key existed True; ACP 1250; NoDefaultCurrentDirectoryInExePath was '1' (removed for the run)
+
+FINDABS    RUN    FAIL        copy missing
+FINDABS    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FINDREL    RUN    FAIL        copy missing
+FINDREL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FINDDIRECT RUN    FAIL        copy missing
+FINDDIRECT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PANELREL   RUN    PASS        copy 'DECOY'
+PANELREL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 5, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

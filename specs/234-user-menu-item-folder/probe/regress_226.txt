@@ -1,0 +1,36 @@
+um226_probe (feature 226) regression-234
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-16 00:15; registry key existed True; ACP 1250; OEM CP 852; NoDefaultCurrentDirectoryInExePath was '1' (removed for the run)
+
+ASCII      RUN    PASS        folder plain, file a.txt: copy 'content of ASCII'; windows: none
+ASCII      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ACC        RUN    PASS        folder p\u0159\u00EDli\u0161, file \u017Elu\u0165ou\u010Dk\u00FD.txt: copy 'content of ACC'; windows: none
+ACC        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ACCDIR     RUN    PASS        folder p\u0159\u00EDli\u0161, file \u017Elu\u0165ou\u010Dk\u00FD.txt: copy 'content of ACCDIR'; windows: none
+ACCDIR     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CJK        RUN    PASS        folder \u6F22\u5B57, file \u4E2D\u6587.txt: copy 'content of CJK'; windows: none
+CJK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CJKDIR     RUN    PASS        folder \u6F22\u5B57, file \u4E2D\u6587.txt: copy 'content of CJKDIR'; windows: none
+CJKDIR     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ACCKEEP    RUN    PASS        folder p\u0159\u00EDli\u0161, file \u017Elu\u0165ou\u010Dk\u00FD.txt: copy 'content of ACCKEEP'; windows: none; batch file (197 bytes, read as OEM 852): '@"C:\WINDOWS\system32\chcp.com" 852>nul || exit /b 1\u000D\u000Acall copy /y "C:\Users\pavel\AppData\Local\Temp\tc226\ACCKEEP\p\u0159\u00EDli\u0161\\u017Elu\u0165ou\u010Dk\u00FD.txt" "C:\Users\pavel\AppData\Local\Temp\tc226\out\ACCKEEP.txt"\u000D\u000A'; shells ended: 1
+ACCKEEP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CJKKEEP    RUN    PASS        folder \u6F22\u5B57, file \u4E2D\u6587.txt: copy 'content of CJKKEEP'; windows: none; batch file (237 bytes, read as UTF-8): '@"C:\WINDOWS\system32\chcp.com" 65001>nul || exit /b 1\u000D\u000Acall copy /y "C:\Users\pavel\AppData\Local\Temp\tc226\CJKKEEP\\u6F22\u5B57\\u4E2D\u6587.txt" "C:\Users\pavel\AppData\Local\Temp\tc226\out\CJKKEEP.txt"\u000D\u000A@"C:\WINDOWS\system32\chcp.com" 852>nul\u000D\u000A'; shells ended: 1
+CJKKEEP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MANY       RUN    PASS        folder \u6F22\u5B57, file : 40 of 40 copied (batch about 9072 bytes); windows: none
+MANY       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MANYCZ     RUN    PASS        folder p\u0159\u00EDli\u0161, file : 40 of 40 copied (batch about 9400 bytes); windows: none
+MANYCZ     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLANT      RUN    PASS        folder \u6F22\u5B57, file \u4E2D\u6587.txt: copy 'content of PLANT'; windows: none; planted chcp.bat ran: False
+PLANT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLANTA     RUN    PASS        folder plantdir, file \u4E2D\u6587.txt: copy 'content of PLANTA'; windows: none; planted chcp.bat ran: False
+PLANTA     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CWDREL     RUN    PASS        folder p\u0159\u00EDli\u0161, file a.txt: copy 'content of CWDREL'; windows: none
+CWDREL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CDFAIL     RUN    PASS        folder plain, file a.txt: copy missing; windows: none
+CDFAIL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+AutoRun restored: value existed False, now ''; key existed False, exists False
+AUTORUN    RUN    PASS        folder p\u0159\u00EDli\u0161, file \u017Elu\u0165ou\u010Dk\u00FD.txt: copy 'content of AUTORUN'; windows: none; AutoRun ran: True
+AUTORUN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 28, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
