@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Change Attributes, Change Case and Convert stay inside the selection**
+  (feature 213). With "Include subdirectories", a junction or folder
+  symbolic link inside the selected folder was followed: the files of
+  the folder it points to got the new attributes, had their names'
+  case changed, or were converted. Now only the link itself is changed.
+
 - **The Copy, Move and Unpack dialogs never shorten what you typed**
   (feature 214). A target that did not fit was silently cut - with
   letters such as Chinese or Japanese ones a typed folder could be cut to

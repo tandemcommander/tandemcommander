@@ -1,0 +1,15 @@
+attrs_case_link_probe (feature 213) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 15:51; registry key existed True; ACP 1250
+
+ATTR       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ATTR       RUN    FAIL        OWN.TXT hidden True; target T.TXT hidden True; the folder tgt hidden False; target holds T.TXT; boxes set 2 of 2; dialog: ...e &subdirectories | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+CONV       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CONV       RUN    FAIL        OWN.TXT own\u000Aline\u000A; target T.TXT target\u000Aline\u000A; boxes set 1 of 1; dialog: ...e &subdirectories | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+SELJ       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SELJ       RUN    FAIL        the junction hidden True; target T.TXT hidden True; the folder tgt hidden False; boxes set 2 of 2; dialog: ...e &subdirectories | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+CASE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CASE       RUN    FAIL        sel holds j,own.txt; target holds t.txt; boxes set 3 of 3; dialog: ...e &subdirectories | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 4, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -707,8 +707,12 @@ Code work an agent can do:
      `strlen < MAX_PATH` guard before `GetReparsePointDestination`) - **done, feature 197**, which found the same function deciding the
      delete: **a junction in a folder of 780+ characters was emptied like a folder - its target's
      files deleted** (fixed; in every release, also 0.1.9 and the prepared 0.1.10 - the maintainer
-     decides whether 197 joins 0.1.10; left by its review: Change Attributes / Change Case with
-     subfolders descend into every junction - the target's files change, nothing is lost;
+     decides whether 197 joins 0.1.10; left by its review: ~~Change Attributes / Change Case with
+     subfolders descend into every junction~~ - **done, feature 213** (also recursive Convert,
+     which rewrote the target's files; left: the link's own Change Attributes op reaches the
+     target FOLDER for compression - `worker.cpp` 1645 / 1683 open without
+     `FILE_FLAG_OPEN_REPARSE_POINT` - for the times, `DoChangeAttrs` ~8125, and probably
+     encryption);
      ~~`_RemoveTemporaryDir` has no reparse check~~ - **done, feature 212** (by reading; driving
      it owed; left: the ZIP self-extractor's own `_RemoveTemporaryDir` in `selfextr.cpp:157` - the
      same defect, `A` calls; the external unpacker's walk `pack1.cpp:632-692` moves the extracted

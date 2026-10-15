@@ -2703,3 +2703,9 @@ a few early ones are out of sequence).
   F5 out of a ZIP to `tgt\A\sub\` (CJK, 263 bytes) unpacked into `tgt\A` (measured). A `Validate`
   measures the whole text and refuses (`IDS_TOOLONGPATH`). Probe `cm_text_probe.ps1` 4 / 0; 204
   22 / 0. The same cut elsewhere (Make File List, user menu, viewers / editors) is in NEXT-WORK.
+- 213-attrs-case-links: `BuildScriptDir` walked into a junction for Change Attributes, Change Case
+  and recursive Convert with subdirectories - the target's files (outside the selection) got the
+  attributes, were renamed, were rewritten (measured, also a selected junction). A directory link
+  (`DeleteAsDirLink`, fail closed) is not walked for these; its own entry still changes. Probe
+  `attrs_case_link_probe.ps1` 4 FAIL -> 8 / 0. Left: the link's own op reaches the target folder
+  for compression / times.

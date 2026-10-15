@@ -2420,7 +2420,12 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
     BOOL delDirectory = TRUE;       // delete a non-empty directory?
     BOOL delDirectoryReturn = TRUE; // return value when a non-empty directory isn't removed
     BOOL canDelDirAfterMove = TRUE; // Move only: FALSE if not everything is moved (filter skipped something), source directory can't be removed (won't be empty)
-    if (!copyMoveDirIsLink || !copyMoveSkipLinkContent)
+    // feature 213: Change Attributes / Change Case / Convert with subdirectories change the link's
+    // entry (its attributes, its name), never the content of its TARGET (outside the selection) - a
+    // junction / directory symbolic link (DeleteAsDirLink, fail closed, as Delete) is not walked
+    BOOL keepLinkContent = (type == atChangeAttrs || type == atChangeCase || type == atRecursiveConvert) &&
+                           (sourceDirAttr & FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(sourcePath);
+    if ((!copyMoveDirIsLink || !copyMoveSkipLinkContent) && !keepLinkContent)
     {
         WIN32_FIND_DATAW fW;
         strcpy(st, "\\*");
