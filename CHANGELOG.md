@@ -11,6 +11,16 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **User Menu: names with %, ^, ! or & reach commands run through the
+  command shell unchanged** (feature 229). A file named "50%off.txt",
+  "a%OS%b.txt" or "a^b.txt" reached such a command under another name - it
+  could act on another file; a name like "x&calc" inserted without quotes
+  ran another command; a list of names split "Smith,John.txt" in two. The
+  names now pass unchanged; a name that cannot (holding ^, or & | < >
+  outside quotes) is refused with a message and nothing runs. The list
+  variables now put names with , ; = & | < > ( ) ^ in quotes, and the
+  command shell starts with delayed expansion off.
+
 - **Dragging or pasting files into an archive from a deep folder**
   (feature 228). From a folder whose path is longer than about 260
   characters the program looked at a shortened path - an error, or another

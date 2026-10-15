@@ -155,7 +155,7 @@ BOOL ValidateUserMenuArguments(HWND msgParent, const char* varText, int& errorPo
 BOOL ExpandUserMenuArguments(HWND msgParent, const char* name, const char* dosName, const char* varText,
                              char* buffer, int bufferLen, BOOL* fileNameUsed,
                              CUserMenuAdvancedData* userMenuAdvancedData,
-                             BOOL ignoreEnvVarNotFoundOrTooLong);
+                             BOOL ignoreEnvVarNotFoundOrTooLong, int batchPercentRepeat = 0, BOOL* batchRefused = NULL);
 
 // validates varText containing variables from the Command array
 // msgParent - parent of the message box for errors; if NULL, errors are not shown
@@ -209,13 +209,17 @@ BOOL ValidateInitDir(HWND msgParent, const char* varText, int& errorPos1, int& e
 
 // expands varText containing variables from the InitDirExecutes array and stores the result in buffer
 // msgParent - parent of the message box for errors; if NULL, errors are not shown
+// feature 229: 'batchPercentRepeat' - the values go into the User Menu batch file's "cd" line
 BOOL ExpandInitDir(HWND msgParent, const char* name, const char* dosName, const char* varText,
-                   char* buffer, int bufferLen, BOOL ignoreEnvVarNotFoundOrTooLong);
+                   char* buffer, int bufferLen, BOOL ignoreEnvVarNotFoundOrTooLong,
+                   int batchPercentRepeat = 0);
 
 // Expands varText containing environment variables and stores the result in buffer
 // msgParent - parent of the message box for errors; if NULL, errors are not shown
+// feature 229: 'batchPercentRepeat' / 'batchRefused' - the values go into the User Menu's batch file
+// (ExpandVarString)
 BOOL ExpandCommand(HWND msgParent, const char* varText, char* buffer, int bufferLen,
-                   BOOL ignoreEnvVarNotFoundOrTooLong);
+                   BOOL ignoreEnvVarNotFoundOrTooLong, int batchPercentRepeat = 0, BOOL* batchRefused = NULL);
 
 // Expands varText containing environment variables and stores the result in buffer
 // msgParent - parent of the message box for errors; if NULL, errors are not shown

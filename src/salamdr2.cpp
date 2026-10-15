@@ -8,6 +8,7 @@
 #include "salsafereplace.h" // feature 174
 #include "salfmtinserts.h"  // feature 180
 #include "salreparse.h"     // feature 197
+#include "salbatchtext.h"   // feature 229
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -746,7 +747,7 @@ BOOL DoExpandVarString(HWND msgParent, const char* varText, BOOL validateOnly, i
                        int& errorPos2, char* buffer, int bufferLen, const CSalamanderVarStrEntry* variables,
                        void* param, DWORD* varPlacements, int* varPlacementsCount,
                        BOOL detectMaxVarWidths, int* maxVarWidths, int maxVarWidthsCount,
-                       BOOL ignoreEnvVarNotFoundOrTooLong)
+                       BOOL ignoreEnvVarNotFoundOrTooLong, int batchPercentRepeat = 0, BOOL* batchRefused = NULL)
 {
     char buf[MAX_PATH];
     const char* s = varText;
@@ -1072,7 +1073,15 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         }
                         // varPlacements stays in BYTES - its consumers (info line
                         // sub-texts) index this byte buffer directly
-                        int totalLen = copyBytes + padSpaces;
+                        // feature 229: a value inserted into the User Menu's batch file - '%' escaped,
+                        // a value it cannot hold unchanged reported (salbatchtext.h)
+                        int valueBytes = batchPercentRepeat > 1 ? SalBatchEscapedLen(value, copyBytes, batchPercentRepeat) : copyBytes;
+                        if (batchRefused != NULL &&
+                            SalBatchValueRefused(value, copyBytes, SalBatchInsideQuotes(buffer, (int)(out - buffer))))
+                        {
+                            *batchRefused = TRUE;
+                        }
+                        int totalLen = valueBytes + padSpaces;
                         if (out + totalLen + 1 <= outEnd) // it must still be possible to null-terminate it
                         {
                             if (varPlacementIndex < varPlacementIndexCount)
@@ -1085,9 +1094,12 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                 if (varPlacements != NULL)
                                     TRACE_E("Buffer varPlacements is small");
                             }
-                            memcpy(out, value, copyBytes);
+                            if (batchPercentRepeat > 1)
+                                SalBatchCopyEscaped(out, value, copyBytes, batchPercentRepeat);
+                            else
+                                memcpy(out, value, copyBytes);
                             if (padSpaces > 0)
-                                memset(out + copyBytes, ' ', padSpaces);
+                                memset(out + valueBytes, ' ', padSpaces);
                             out += totalLen;
                         }
                         else
@@ -1181,14 +1193,14 @@ BOOL ExpandVarString(HWND msgParent, const char* varText, char* buffer, int buff
                      const CSalamanderVarStrEntry* variables, void* param,
                      BOOL ignoreEnvVarNotFoundOrTooLong, DWORD* varPlacements,
                      int* varPlacementsCount, BOOL detectMaxVarWidths, int* maxVarWidths,
-                     int maxVarWidthsCount)
+                     int maxVarWidthsCount, int batchPercentRepeat, BOOL* batchRefused)
 {
     int errorPos1, errorPos2;
     return DoExpandVarString(msgParent, varText, FALSE, errorPos1, errorPos2, buffer,
                              bufferLen, variables, param,
                              varPlacements, varPlacementsCount,
                              detectMaxVarWidths, maxVarWidths, maxVarWidthsCount,
-                             ignoreEnvVarNotFoundOrTooLong);
+                             ignoreEnvVarNotFoundOrTooLong, batchPercentRepeat, batchRefused);
 }
 
 // ****************************************************************************

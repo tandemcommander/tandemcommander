@@ -4,6 +4,7 @@
 
 #include "precomp.h"
 #include <Sddl.h>
+#include "salbatchtext.h" // feature 229
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -1637,7 +1638,7 @@ BOOL IsSambaDrivePath(const char* path)
 
 BOOL AddToListOfNames(char** list, char* listEnd, const char* name, int nameLen)
 {
-    if (strchr(name, ' ') != NULL) // if it contains a space, wrap it in quotation marks
+    if (SalListNameNeedsQuotes(name, nameLen)) // a space or (feature 229) a cmd delimiter / operator: in quotation marks
     {
         if (*list + nameLen + 2 /* for the quotation marks */ <= listEnd)
         {

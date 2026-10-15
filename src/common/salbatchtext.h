@@ -201,3 +201,106 @@ inline CSalBatchEncoding SalBatchChooseEncoding(const char* u8, int u8Len, UINT 
     free(w);
     return res;
 }
+
+//*****************************************************************************
+//
+// Inserted values in a batch line (feature 229)
+//
+// The names, paths and environment values the User Menu inserts into its batch
+// file must reach the command as they are. cmd expands '%' in a batch line, and
+// "call" (every command line of the User Menu's batch file starts with it)
+// expands it a second time and doubles every '^' inside quotes: "50%off.txt"
+// lost its '%', "a%OS%b.txt" became "aWindows_NTb.txt", "a^b.txt" became
+// "a^^b.txt" - each another file that may exist. Only the inserted values are
+// escaped - what the user typed (%VAR%, ^&, >) keeps its batch meaning:
+//   '%' -> 'percentRepeat' times '%' (4 on a "call" line: the line's expansion
+//          and the call's each halve it; 2 on the "cd" line, which has no call)
+//   '^' -> no escape survives "call" inside quotes: the caller refuses
+//          (SalBatchValueRefused)
+//   '&', '|', '<', '>' outside quotes (a $(Name) the user did not quote, the
+//          names of a $(ListOfSelectedNames) - quoted only when they hold a
+//          space): the name "x&calc" ran "calc" - refused (review of 229)
+// '!' is safe: cmd is started with /V:OFF (no delayed expansion).
+
+// the bytes 'value' / 'len' takes escaped
+inline int SalBatchEscapedLen(const char* value, int len, int percentRepeat)
+{
+    int n = len;
+    for (int i = 0; i < len; i++)
+    {
+        if (value[i] == '%')
+            n += percentRepeat - 1;
+    }
+    return n;
+}
+
+// writes the escaped value (SalBatchEscapedLen bytes, no terminator) to 'out'
+inline void SalBatchCopyEscaped(char* out, const char* value, int len, int percentRepeat)
+{
+    for (int i = 0; i < len; i++)
+    {
+        if (value[i] == '%')
+        {
+            for (int k = 0; k < percentRepeat; k++)
+                *out++ = '%';
+        }
+        else
+            *out++ = value[i];
+    }
+}
+
+// TRUE when the line text before the value ('line' up to 'lineLen' bytes) leaves an open quote
+inline BOOL SalBatchInsideQuotes(const char* line, int lineLen)
+{
+    BOOL inside = FALSE;
+    for (int i = 0; i < lineLen; i++)
+    {
+        if (line[i] == '"')
+            inside = !inside;
+    }
+    return inside;
+}
+
+// TRUE when the value cannot go into the batch line unchanged: a '^' anywhere ("call" doubles it
+// inside quotes), '&', '|', '<' or '>' outside quotes (another command, a redirection)
+// (a '"' inside the value - the quotes of a $(ListOfSelectedNames) - switches the state as it does
+// for cmd: "$(ListOfSelectedFullNames)" with a name holding a space gave ""C:\a b&calc"" - the
+// '&' outside quotes; second review of 229)
+inline BOOL SalBatchValueRefused(const char* value, int len, BOOL insideQuotes)
+{
+    for (int i = 0; i < len; i++)
+    {
+        char c = value[i];
+        if (c == '"')
+            insideQuotes = !insideQuotes;
+        else if (c == '^' || !insideQuotes && (c == '&' || c == '|' || c == '<' || c == '>'))
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// TRUE when a name in a $(ListOfSelectedNames) list goes in quotes: a space - and (feature 229) a
+// character cmd splits arguments at or treats as an operator: "del Smith,John.txt" deleted Smith and
+// John.txt, not the selected file; "x&calc" ran calc
+inline BOOL SalListNameNeedsQuotes(const char* name, int len)
+{
+    for (int i = 0; i < len; i++)
+    {
+        switch (name[i])
+        {
+        case ' ':
+        case ',':
+        case ';':
+        case '=':
+        case '&':
+        case '|':
+        case '<':
+        case '>':
+        case '(':
+        case ')':
+        case '^':
+            return TRUE;
+        }
+    }
+    return FALSE;
+}

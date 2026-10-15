@@ -1779,7 +1779,7 @@ BOOL ValidateUserMenuArguments(HWND msgParent, const char* varText, int& errorPo
 BOOL ExpandUserMenuArguments(HWND msgParent, const char* name, const char* dosName, const char* varText,
                              char* buffer, int bufferLen, BOOL* fileNameUsed,
                              CUserMenuAdvancedData* userMenuAdvancedData,
-                             BOOL ignoreEnvVarNotFoundOrTooLong)
+                             BOOL ignoreEnvVarNotFoundOrTooLong, int batchPercentRepeat, BOOL* batchRefused)
 {
     CALL_STACK_MESSAGE4("ExpandUserMenuArguments(, %s, %s, %s, , ,)", name, dosName,
                         strlen(varText) > 300 ? "(too long)" : varText);
@@ -1790,7 +1790,8 @@ BOOL ExpandUserMenuArguments(HWND msgParent, const char* name, const char* dosNa
     data.FileNameUsed = fileNameUsed;
     data.UserMenuAdvancedData = userMenuAdvancedData;
     return ExpandVarString(msgParent, varText, buffer, bufferLen, UserMenuArgsExpArray,
-                           &data, ignoreEnvVarNotFoundOrTooLong);
+                           &data, ignoreEnvVarNotFoundOrTooLong, NULL, NULL, FALSE, NULL, 0,
+                           batchPercentRepeat, batchRefused);
 }
 
 BOOL ValidateCommandFile(HWND msgParent, const char* varText, int& errorPos1, int& errorPos2)
@@ -1922,7 +1923,8 @@ BOOL RemoveDoubleBackslahesFromPath(char* text)
 }
 
 BOOL ExpandInitDir(HWND msgParent, const char* name, const char* dosName, const char* varText,
-                   char* buffer, int bufferLen, BOOL ignoreEnvVarNotFoundOrTooLong)
+                   char* buffer, int bufferLen, BOOL ignoreEnvVarNotFoundOrTooLong,
+                   int batchPercentRepeat)
 {
     CALL_STACK_MESSAGE4("ExpandInitDir(, %s, %s, %s, ,)", name, dosName, varText);
     CExecuteExpData data;
@@ -1930,7 +1932,8 @@ BOOL ExpandInitDir(HWND msgParent, const char* name, const char* dosName, const 
     data.DosName = dosName;
     data.FileNameUsed = NULL;
     if (ExpandVarString(msgParent, varText, buffer, bufferLen, InitDirExpArray,
-                        &data, ignoreEnvVarNotFoundOrTooLong))
+                        &data, ignoreEnvVarNotFoundOrTooLong, NULL, NULL, FALSE, NULL, 0,
+                        batchPercentRepeat, NULL))
     {
         // variables $() from Initial Directory normally do not end with a backslash,
         // but if they point to the root they do; then path "$(SalDir)\\Editor" becomes
@@ -1943,7 +1946,7 @@ BOOL ExpandInitDir(HWND msgParent, const char* name, const char* dosName, const 
 }
 
 BOOL ExpandCommand(HWND msgParent, const char* varText, char* buffer, int bufferLen,
-                   BOOL ignoreEnvVarNotFoundOrTooLong)
+                   BOOL ignoreEnvVarNotFoundOrTooLong, int batchPercentRepeat, BOOL* batchRefused)
 {
     CALL_STACK_MESSAGE2("ExpandCommand(, %s, , ,)", varText);
     CExecuteExpData data;
@@ -1952,7 +1955,8 @@ BOOL ExpandCommand(HWND msgParent, const char* varText, char* buffer, int buffer
     data.FileNameUsed = NULL;
     data.UserMenuAdvancedData = NULL;
     if (ExpandVarString(msgParent, varText, buffer, bufferLen, CommandExpArray, &data,
-                        ignoreEnvVarNotFoundOrTooLong))
+                        ignoreEnvVarNotFoundOrTooLong, NULL, NULL, FALSE, NULL, 0,
+                        batchPercentRepeat, batchRefused))
     {
         // the EXECUTE_WINDIR, EXECUTE_SYSDIR and EXECUTE_SALDIR variables end with a backslash
         // the user adds another one, so the path contains two of them

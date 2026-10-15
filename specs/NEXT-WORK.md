@@ -706,9 +706,12 @@ Code work an agent can do:
          tar's gzip name cut at 259 bytes and extracted under it; ~~the User Menu
          `mainwnd4.cpp:411-433`~~ (done, feature 225 - only the up-dir / empty-panel path was acted
          on; left: ~~the User Menu's .bat converts its UTF-8 text with `CharToOem`~~ (done, feature
-         226; left from its reviews: **`%` and `^` in a name change it in the batch file** -
-         a lone `%` is dropped, `call` doubles `^` - the command can act on another file, to
-         measure; a UNC panel folder or Initial Directory - cmd refuses a UNC current folder and
+         226; left from its reviews: ~~`%` and `^` in a name change it in the batch file~~
+         (done, feature 229; left from it: **a folder literally named with %VAR% cannot be given
+         on the command line (`-l`/`-r`/`-a`, `GetCommandLineParamExpandEnvVars`
+         `salamdr1.cpp:3568`) or typed (`PostProcessPathFromUser`) - it expands to another folder;
+         use the literal path when it exists**; the refusal message names the command, not the
+         file); a UNC panel folder or Initial Directory - cmd refuses a UNC current folder and
          runs in C:\Windows, a UNC Initial Directory writes no `cd`; the Find window's User Menu
          route sets no current folder and races the main thread's `SetCurrentDirectory` (pass
          `lpCurrentDirectory` instead); a panel folder that cannot be set falls back to System32

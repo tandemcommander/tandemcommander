@@ -744,7 +744,8 @@ BOOL ExpandVarString(HWND msgParent, const char* varText, char* buffer, int buff
                      BOOL ignoreEnvVarNotFoundOrTooLong = FALSE,
                      DWORD* varPlacements = NULL, int* varPlacementsCount = NULL,
                      BOOL detectMaxVarWidths = FALSE, int* maxVarWidths = NULL,
-                     int maxVarWidthsCount = 0);
+                     int maxVarWidthsCount = 0,
+                     int batchPercentRepeat = 0, BOOL* batchRefused = NULL); // feature 229: values for a batch line (salbatchtext.h)
 
 // ulozi na clipboard Unicode verzi textu str o delce len znaku
 // vraci ERROR_SUCCESS nebo GetLastError

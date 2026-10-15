@@ -12143,6 +12143,62 @@ static void TestBatchText226()
     CHECK(t.Len == 100005);
 }
 
+// feature 229: the values the User Menu inserts into its batch file keep '%' (escaped) and report '^'
+static std::string Esc229(const char* v, int rep)
+{
+    int len = (int)strlen(v);
+    int n = SalBatchEscapedLen(v, len, rep);
+    std::string out((size_t)n, '?');
+    if (n > 0)
+        SalBatchCopyEscaped(&out[0], v, len, rep);
+    return out;
+}
+
+static void TestBatchEscape229()
+{
+    CHECK(Esc229("50%off.txt", 4) == "50%%%%off.txt"); // a "call" line: two expansions
+    CHECK(Esc229("a%OS%b.txt", 4) == "a%%%%OS%%%%b.txt");
+    CHECK(Esc229("p%OS%q", 2) == "p%%OS%%q"); // the "cd" line: one expansion
+    CHECK(Esc229("plain \xC5\xBE.txt", 4) == "plain \xC5\xBE.txt");
+    CHECK(Esc229("", 4).empty());
+    CHECK(Esc229("%", 4) == "%%%%");
+    CHECK(SalBatchEscapedLen("a%b%", 4, 4) == 10);
+    CHECK(SalBatchEscapedLen("a%b%", 4, 1) == 4); // a repeat of 1: unchanged
+    // refused: '^' anywhere; '&', '|', '<', '>' outside quotes only
+    CHECK(SalBatchValueRefused("a^b.txt", 7, TRUE));
+    CHECK(SalBatchValueRefused("a^b.txt", 7, FALSE));
+    CHECK(!SalBatchValueRefused("a&b|c<d>e.txt", 13, TRUE));
+    CHECK(SalBatchValueRefused("x&calc", 6, FALSE)); // unquoted: another command
+    CHECK(SalBatchValueRefused("a|b", 3, FALSE));
+    CHECK(SalBatchValueRefused("a>b", 3, FALSE));
+    CHECK(SalBatchValueRefused("a<b", 3, FALSE));
+    CHECK(!SalBatchValueRefused("a!b(c)d,e;f=g%h.txt", 19, FALSE));
+    CHECK(!SalBatchValueRefused("a^b", 1, FALSE)); // only the given bytes
+    CHECK(!SalBatchValueRefused("", 0, FALSE));
+    // a '"' inside the value (a list's quotes) switches the state as for cmd
+    CHECK(SalBatchValueRefused("\"C:\\a b&calc\"", 13, TRUE));   // ""C:\a b&calc"": the '&' outside
+    CHECK(!SalBatchValueRefused("\"C:\\a b&calc\"", 13, FALSE)); // "C:\a b&calc": inside
+    CHECK(SalBatchValueRefused("\"a b\" x&y", 9, FALSE));
+    // a list name goes in quotes for a space and for cmd's delimiters and operators
+    CHECK(SalListNameNeedsQuotes("a b.txt", 7));
+    CHECK(SalListNameNeedsQuotes("Smith,John.txt", 14));
+    CHECK(SalListNameNeedsQuotes("a;b", 3));
+    CHECK(SalListNameNeedsQuotes("a=b", 3));
+    CHECK(SalListNameNeedsQuotes("x&calc", 6));
+    CHECK(SalListNameNeedsQuotes("a(1).txt", 8));
+    CHECK(SalListNameNeedsQuotes("a^b", 3));
+    CHECK(!SalListNameNeedsQuotes("50%off.txt", 10));
+    CHECK(!SalListNameNeedsQuotes("a!b.txt", 7));
+    CHECK(!SalListNameNeedsQuotes("\xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD.txt", 17));
+    CHECK(!SalListNameNeedsQuotes("a b", 1)); // only the given bytes
+    // the quote state of the line before a value
+    CHECK(!SalBatchInsideQuotes("copy /y ", 8));
+    CHECK(SalBatchInsideQuotes("copy /y \"", 9));
+    CHECK(!SalBatchInsideQuotes("copy /y \"a\" ", 12));
+    CHECK(SalBatchInsideQuotes("\"x\" \"", 5));
+    CHECK(!SalBatchInsideQuotes("\"", 0));
+}
+
 static void TestMultiSzToLine189()
 {
     struct Case
@@ -12303,6 +12359,7 @@ int main(int argc, char** argv)
     TestNameIsOnlyShortNameOf204();
     TestU8Fold210();
     TestBatchText226();
+    TestBatchEscape229();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

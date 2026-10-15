@@ -559,6 +559,16 @@ BOOL CheckIfCanBeExecuted(BOOL buildBat, int commandLen, int argumentsLen)
 //
 // returns success of the operation
 
+// feature 229: a value the User Menu's batch line cannot hold unchanged (salbatchtext.h) - the
+// command is not run
+static void ShowUserMenuBatchRefusal(HWND parent, const char* command)
+{
+    CSalHeapString message;
+    message.Printf(LoadStrU8(IDS_EXECERROR), command, GetErrorText(ERROR_INVALID_NAME));
+    SalMessageBox(parent, message.Size() > 0 ? message.Get() : command, LoadStr(IDS_ERRORTITLE),
+                  MB_OK | MB_ICONEXCLAMATION);
+}
+
 BOOL ExpandCommand2(HWND parent,
                     char* cmd, int cmdSize,
                     char* args, int argsSize, BOOL buildBat,
@@ -568,15 +578,25 @@ BOOL ExpandCommand2(HWND parent,
                     const char* longName,
                     BOOL* fileNameUsed,
                     CUserMenuAdvancedData* userMenuAdvancedData,
-                    BOOL ignoreEnvVarNotFoundOrTooLong)
+                    BOOL ignoreEnvVarNotFoundOrTooLong,
+                    char* initDirBat = NULL, int initDirBatSize = 0) // feature 229: the folder for the batch file's "cd" line
 {
     CALL_STACK_MESSAGE5("ExpandCommand2(, , %d, , %d, , %s, %s, )",
                         cmdSize, initDirSize, path, longName);
 
     *fileNameUsed = FALSE;
     char command[MAX_PATH];
-    if (ExpandCommand(parent, item->UMCommand, command, MAX_PATH, ignoreEnvVarNotFoundOrTooLong))
+    // feature 229: in the batch file ("call <command> <arguments>") the inserted values keep their
+    // '%' (escaped); a value the line cannot hold unchanged is refused below (salbatchtext.h)
+    int batchPercent = buildBat ? 4 : 0;
+    BOOL batchRefused = FALSE;
+    if (ExpandCommand(parent, item->UMCommand, command, MAX_PATH, ignoreEnvVarNotFoundOrTooLong,
+                      batchPercent, buildBat ? &batchRefused : NULL))
     {
+        // the arguments' quote state starts closed: a command that leaves a quote open would put
+        // them on the other side - refused (second review of 229)
+        if (buildBat && SalBatchInsideQuotes(command, (int)strlen(command)))
+            batchRefused = TRUE;
         char fileName[MAX_PATH];
         if (path[0] != 0)
         {
@@ -633,12 +653,23 @@ BOOL ExpandCommand2(HWND parent,
             char expArguments[USRMNUARGS_MAXLEN];
             if (ExpandUserMenuArguments(parent, fileName, dosName, item->Arguments, expArguments,
                                         USRMNUARGS_MAXLEN, fileNameUsed, userMenuAdvancedData,
-                                        ignoreEnvVarNotFoundOrTooLong) &&
+                                        ignoreEnvVarNotFoundOrTooLong, batchPercent,
+                                        buildBat ? &batchRefused : NULL) &&
                 ExpandInitDir(parent, fileName, dosName, item->InitDir, initDir, initDirSize,
-                              ignoreEnvVarNotFoundOrTooLong))
+                              ignoreEnvVarNotFoundOrTooLong) &&
+                // feature 229: the "cd" line gets the folder with its inserted values' '%' escaped (no
+                // "call" there: once); what the user typed (%VAR%) keeps its batch meaning
+                (initDirBat == NULL ||
+                 ExpandInitDir(parent, fileName, dosName, item->InitDir, initDirBat, initDirBatSize,
+                               TRUE, 2)))
             {
                 int len = (int)strlen(command);
                 int lArgs = (int)strlen(expArguments);
+                if (batchRefused) // feature 229: the command would get another name (or run another command)
+                {
+                    ShowUserMenuBatchRefusal(parent, command);
+                    goto EXIT;
+                }
                 if (CheckIfCanBeExecuted(buildBat, len, lArgs))
                 {
                     if (!buildBat) // launching via ShellExecuteEx: pass arguments separately
@@ -668,6 +699,11 @@ BOOL ExpandCommand2(HWND parent,
         }
         else
         {
+            if (batchRefused) // feature 229 (as above)
+            {
+                ShowUserMenuBatchRefusal(parent, command);
+                goto EXIT;
+            }
             int len = (int)strlen(command);
             if (len + 1 < cmdSize)
             {
@@ -921,6 +957,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             char cmdLine[USRMNUCMDLINE_MAXLEN];
             char arguments[USRMNUARGS_MAXLEN];
             char initDir[MAX_PATH];
+            char initDirBat[2 * MAX_PATH]; // feature 229: initDir for the batch file's "cd" line ('%' escaped)
+            initDirBat[0] = 0;
             char prevInitDir[MAX_PATH];
             initDir[0] = 0;
             arguments[0] = 0;
@@ -940,7 +978,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                                UserMenuItems->At(itemIndex),
                                                path, name, &fileNameUsed,
                                                userMenuAdvancedData,
-                                               !firstRound);
+                                               !firstRound,
+                                               buildBat ? initDirBat : NULL, 2 * MAX_PATH);
                 if (!expandOK)
                 {
                     error = TRUE;
@@ -959,7 +998,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         // in the panel's folder (second review of 226)
                         if ((initDir[0] != 0 && initDir[1] == ':' && // initDir[1] read only when there is one
                              (!bat.Append("@cd /d \"") ||
-                              !bat.Append(initDir) ||
+                              !bat.Append(initDirBat) || // feature 229: its inserted '%' kept
                               !bat.Append("\" || exit /b 1\r\n"))) ||
                             !bat.Append("call ") ||
                             !bat.Append(cmdLine) ||
@@ -1061,9 +1100,9 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                             cmdLine[0] = 0;
                         AddDoubleQuotesIfNeeded(cmdLine, USRMNUCMDLINE_MAXLEN - 10); // CreateProcess requires the name with spaces in quotes (otherwise it tries various options, see help)
                         if (!UserMenuItems->At(itemIndex)->UseWindow || UserMenuItems->At(itemIndex)->CloseShell)
-                            strcat(cmdLine, " /C "); // run command and close immediately after it finishes
+                            strcat(cmdLine, " /V:OFF /C "); // run command and close immediately after it finishes (feature 229: /V:OFF - a '!' in a name stays)
                         else
-                            strcat(cmdLine, " /K "); // run command and keep the shell open after it finishes
+                            strcat(cmdLine, " /V:OFF /K "); // run command and keep the shell open after it finishes
 
                         char* s = cmdLine + strlen(cmdLine);
                         if ((s - cmdLine) + strlen(batName) < USRMNUCMDLINE_MAXLEN - 2)

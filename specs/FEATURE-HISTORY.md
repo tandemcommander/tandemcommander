@@ -2784,3 +2784,10 @@ a few early ones are out of sequence).
   the same start whose items' flags were taken (the 099 link check could pass a junction on a Move).
   Whole path now (`CSalMaxPathBuffer`, heap messages). By reading (needs drag & drop or the
   clipboard). Review found the case-sensitive duplicate overrun: NEXT-WORK.
+- 229-user-menu-batch-special-chars: values the User Menu inserted into its batch file (`call`
+  lines) went raw - '%' expanded twice ("a%OS%b.txt" -> another existing file), quoted '^' doubled,
+  unquoted '&' ran another command, lists split at ','. Batch mode in `DoExpandVarString`
+  (`salbatchtext.h`, saltests): inserted values only - '%' x4 (x2 on the `cd` line, a second
+  `ExpandInitDir`), '^' / unquoted `&|<>` refused (quote state incl. quotes inside the value),
+  `AddToListOfNames` quotes delimiters, cmd `/V:OFF`. Probe `um229_probe.ps1` (decoys) 14 FAIL -> 34 /
+  0. Trap: a command-line path has %VAR% expanded - probes enter such folders from the parent.
