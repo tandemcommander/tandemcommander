@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **PictView's Rename in a case-sensitive folder** (feature 200). Renaming
+  the shown "a.png" to "A.png" while "A.png" is another file failed with
+  "already exists"; PictView asks to overwrite it now.
+
 - **Renamer no longer deletes a file whose short name is the new name**
   (feature 199). Renaming a file to "LONGFI~1.TXT" - the short (8.3) name of
   another file - offered to overwrite it and then deleted that other file;

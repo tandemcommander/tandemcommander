@@ -2624,5 +2624,6 @@ a few early ones are out of sequence).
   no proof on path-derived-id mounts). Not driven (no such mount); 158's probe 10 / 0, 103's 46 / 0.
 - 199-renamer-short-name: **data loss** - the Renamer renaming to another file's short (8.3) name
   ("LONGFI~1.TXT") asked "overwrite?" and deleted "longfilename.txt"; now the clash is moved aside
-  for the rename and back (`TargetIsOnlyShortNameOfOther`, as the core's Quick Rename). Probe
-  `ren_83_probe.ps1` 3 / 1 -> 4 / 0.
+  for the rename and back (`TargetIsOnlyShortNameOfOther`, as the core's Quick Rename); such a name
+  never reaches the delete branch (a failed move aside - the file held open - is a rename error).
+  Probe `ren_83_probe.ps1` 3 / 1 -> 6 / 0.

@@ -291,7 +291,11 @@ Functional, no loss:
     an 8.3 short-name clash aside~~ (**done, feature 199** - measured: `longfilename.txt` deleted;
     left by its review: **the core's Quick Rename has the same fallback** - when its move aside of an
     8.3 clash fails (the other file held open), it goes on to `COverwriteDlg` and Yes replaces the
-    other file, `fileswn5.cpp` ~2340-2392 - and the worker's move ~6012 likely too; measure first). Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
+    other file, `fileswn5.cpp` ~2340-2392 - and the worker's move ~6012 likely too; measure first).
+    Also left by 199's second review: the Renamer's `CheckAndCreateDirectory` (`rendlg3.cpp`, the
+    "adjust the case" step) renames a folder whose SHORT name is a folder part of the new name
+    (`LONGDI~1\x.txt`) to that short name - the folder loses its long name without a question
+    (nothing deleted). Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
 12. ~~An archive whose name has 260+ bytes: drop/paste into it~~ - **done, feature 160** (the name

@@ -5,6 +5,7 @@
 #include <zmouse.h>
 #include <shlobj.h>
 #include "../../common/salsamefile.h" // feature 103: is an existing target the viewed file itself?
+#include "../../common/salnameorder.h" // feature 200: "the same name" by the file system's rule
 
 #include "lib/pvw32dll.h"
 #include "renderer.h"
@@ -2924,6 +2925,10 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
                 // a temporary name, which also tells the two apart (a target that outlives the file's
                 // name is another file and the overwrite below follows unchanged)
                 BOOL keepTarget = FALSE;
+                // feature 200: TRUE when the temporary name proves the existing target ANOTHER file - in a
+                // case-sensitive folder "a.png" -> existing "A.png" is then an ordinary overwrite (it was
+                // refused "already exists"; the core: 158 / 198, the Renamer: 196)
+                BOOL provenOther = FALSE;
                 if (err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS)
                 {
                     CSalFileIdentity srcId, tgtId;
@@ -2942,7 +2947,8 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
                     free(wTgt);
                     if (SalLinkPointsAtTarget(srcId, srcThrough, tgtId))
                         keepTarget = TRUE; // 'err' (already exists) is reported below
-                    else if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName)
+                    else if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName ||
+                             SalNameOrderEqualCI(path, -1, tgtPath, -1)) // feature 200: always for two spellings of one name
                     {
                         int tmpSize = (int)strlen(path) + 16;
                         char* tmp = (char*)malloc(tmpSize);
@@ -2982,13 +2988,22 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
                         }
                         if (res != svtTargetIsOther)
                             keepTarget = TRUE;
+                        else
+                            provenOther = TRUE; // the target outlived the file's name
+                        // feature 200 (review): the file went to the temporary name and (except svtDone,
+                        // posted above) back or not - once more, so that a panel without its own watcher
+                        // does not keep the temporary name
+                        if (res != svtDone && changedPath != NULL)
+                            SalamanderGeneral->PostChangeOnPathNotification(changedPath, FALSE);
                         free(tmp);
                     }
                 }
+                // feature 200: the name rule of the file system (092; the code-page StrICmp folded no letter
+                // outside the code page), and a proven other file in a case-sensitive folder
                 if (!keepTarget && // feature 103
                     (err == ERROR_ALREADY_EXISTS ||
                      err == ERROR_FILE_EXISTS) &&
-                    SalamanderGeneral->StrICmp(path, tgtPath) != 0) // overwrite the file?
+                    (!SalNameOrderEqualCI(path, -1, tgtPath, -1) || provenOther)) // overwrite the file?
                 {
                     DWORD inAttr = SalamanderGeneral->SalGetFileAttributes(path);
                     DWORD outAttr = SalamanderGeneral->SalGetFileAttributes(tgtPath);
