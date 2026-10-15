@@ -1,0 +1,47 @@
+sftp217_probe (feature 217) real-after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 17:10; desktop 'tc_probe_10188'; ACP 1250; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+REAL#1     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#2     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#2     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#3     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#3     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#4     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#4     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#5     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#5     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#6     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#6     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#7     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#7     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#8     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#8     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#9     ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#9     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#10    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#10    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#11    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#11    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#12    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#12    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#13    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#13    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#14    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#14    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#15    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#15    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#16    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#16    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#17    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#17    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#18    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#18    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#19    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#19    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REAL#20    ROW    PASS        dialogs: typed into [SFTP Client]
+REAL#20    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 40, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

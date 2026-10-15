@@ -2720,3 +2720,9 @@ a few early ones are out of sequence).
   1.0.1c needs 256) and made its log lines unbounded into 256 bytes with `LoadStr` (a near miss,
   not server-reachable; letters lost outside the system code page). `name[256]`, `buffer[1024]`,
   `_snprintf_s`, `LoadStrU8` (also the certificate lines of `ctrlcon1.cpp`). By reading; 215 12 / 0.
+- 217-sftp-failed-handshake: the intermittent "Unable to exchange encryption keys" + Debug leak box
+  (which also held the exit): libssh2's WinCNG backend hashed a raw (EC)DH secret with a leading
+  zero as a non-minimal mpint (~1/256), and `session_free` kept the server's host-key object when
+  the exchange failed before NEWKEYS. Reproduced by a proxy flipping a byte of the server's signed
+  reply (`probe/fakessh.py` FLIPSIG); local libssh2 patches (trim, dtor, CNG handles). Probe
+  `sftp217_probe.ps1` 18 / 0; the teardown's 1 ms deadline (`Disconnect`) is NEXT-WORK.

@@ -1,0 +1,84 @@
+sftp217_probe (feature 217) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 17:14; desktop 'tc_probe_31852'; ACP 1250; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+CTL        ROW    PASS        dialogs: none
+CTL        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CLOSE      ROW    PASS        dialogs: [#32770 'SFTP Client'] [Static id=631] Enter password for tctest: | [Button id=1] OK | [Button id=2] Cancel || [#32770 'SFTP Error'] [Static id=2477] SSH handshake failed: Failed getting banner | [Button id=1] OK || Change Directory dialog
+CLOSE      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BANNER     ROW    PASS        dialogs: [#32770 'SFTP Client'] [Static id=631] Enter password for tctest: | [Button id=1] OK | [Button id=2] Cancel || [#32770 'SFTP Error'] [Static id=2477] SSH handshake failed: Unable to exchange encryption keys | [Button id=1] OK || Change Directory dialog
+BANNER     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GARBAGE    ROW    PASS        dialogs: [#32770 'SFTP Client'] [Static id=631] Enter password for tctest: | [Button id=1] OK | [Button id=2] Cancel || [#32770 'SFTP Error'] [Static id=2477] SSH handshake failed: Unable to exchange encryption keys | [Button id=1] OK || Change Directory dialog
+GARBAGE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+KEXDROP    ROW    PASS        dialogs: [#32770 'SFTP Client'] [Static id=631] Enter password for tctest: | [Button id=1] OK | [Button id=2] Cancel || [#32770 'SFTP Error'] [Static id=2477] SSH handshake failed: Unable to exchange encryption keys | [Button id=1] OK || Change Directory dialog
+KEXDROP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FLIPSIG    ROW    PASS        dialogs: typed into [SFTP Client] || [#32770 'SFTP Error'] [Static id=2477] SSH handshake failed: Unable to exchange encryption keys | [Button id=1] OK || Change Directory dialog
+FLIPSIG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CUT-KEX    ROW    PASS        dialogs: typed into [SFTP Client] || [#32770 'SFTP Error'] [Static id=2477] SSH handshake failed: Unable to exchange encryption keys | [Button id=1] OK || Change Directory dialog
+CUT-KEX    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CUT-AUTH   ROW    PASS        dialogs: typed into [SFTP Client] || [#32770 'Unknown Server - Verify Host Key'] [Static id=640] The authenticity of host 127.0.0.1:2223 cannot be established. The server's ecdsa-sha2-nistp256 key fingerprint is: SHA256:4/XVUxb2pmOiuKmxPQ4AblVehWGdkdvhqH6kDQX9Gtw Do you want to trust this server and continue connecting? | [Button id=643] &Trust and Store | [Button id=644] Connect &Once | [Button id=2] &Abort || [#32770 'Unknown Server - Verify Host Key'] [Static id=640] The authenticity of host 127.0.0.1:2223 cannot be established. The server's ecdsa-sha2-nistp256 key fingerprint is: SHA256:4/XVUxb2pmOiuKmxPQ4AblVehWGdkdvhqH6kDQX9Gtw Do you want to trust this server and continue connecting? | [Button id=643] &Trust and Store | [Button id=644] Connect &Once | [Button id=2] &Abort || [#32770 'SFTP Error'] [Static id=2477] The connection to the server was lost. (Error waiting for status message) | [Button id=1] OK || Change Directory dialog
+CUT-AUTH   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CUT-LATE   ROW    PASS        dialogs: typed into [SFTP Client] || [#32770 'Unknown Server - Verify Host Key'] [Static id=640] The authenticity of host 127.0.0.1:2223 cannot be established. The server's ecdsa-sha2-nistp256 key fingerprint is: SHA256:4/XVUxb2pmOiuKmxPQ4AblVehWGdkdvhqH6kDQX9Gtw Do you want to trust this server and continue connecting? | [Button id=643] &Trust and Store | [Button id=644] Connect &Once | [Button id=2] &Abort
+CUT-LATE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Server log:
+  1792077287.385 start close
+  1792077287.652 connect close
+  1792077287.652 closed
+  1792077292.253 connect close
+  1792077292.254 closed
+  1792077302.480 start banner
+  1792077302.743 connect banner
+  1792077302.743 closed
+  1792077307.232 connect banner
+  1792077307.232 client banner b'SSH-2.0-libssh2_1.11.1_DEV\r\n'
+  1792077307.233 closed
+  1792077317.428 start garbage
+  1792077317.688 connect garbage
+  1792077317.689 closed
+  1792077322.102 connect garbage
+  1792077322.102 client banner b'SSH-2.0-libssh2_1.11.1_DEV\r\n'
+  1792077322.102 closed
+  1792077332.325 start kexdrop
+  1792077332.586 connect kexdrop
+  1792077332.587 closed
+  1792077337.210 connect kexdrop
+  1792077337.232 client banner b'SSH-2.0-libssh2_1.11.1_DEV\r\n'
+  1792077337.232 client sent 568 bytes
+  1792077337.233 closed
+  1792077347.429 start flipsig
+  1792077347.692 connect flipsig
+  1792077347.723 closed (server sent 0)
+  1792077352.099 connect flipsig
+  1792077352.126 flipped a byte of the KEX_ECDH_REPLY signature
+  1792077352.128 closed (server sent 0)
+  1792077362.346 start cut1200
+  1792077362.596 connect cut1200
+  1792077362.627 closed (server sent 43)
+  1792077366.996 connect cut1200
+  1792077367.022 cut after 1200 server bytes
+  1792077367.023 closed (server sent 1200)
+  1792077377.249 start cut3000
+  1792077377.508 connect cut3000
+  1792077377.538 closed (server sent 43)
+  1792077382.107 connect cut3000
+  1792077382.186 closed (server sent 1803)
+  1792077383.615 connect cut3000
+  1792077383.796 cut after 3000 server bytes
+  1792077383.797 closed (server sent 3000)
+  1792077383.797 connect cut3000
+  1792077383.940 closed (server sent 1803)
+  1792077385.049 connect cut3000
+  1792077385.228 cut after 3000 server bytes
+  1792077385.229 closed (server sent 3000)
+  1792077395.289 start cut6000
+  1792077395.552 connect cut6000
+  1792077395.568 closed (server sent 43)
+  1792077400.054 connect cut6000
+  1792077400.130 closed (server sent 1803)
+  1792077401.542 connect cut6000
+  1792077401.744 cut after 6000 server bytes
+  1792077401.744 closed (server sent 6000)
+
+Rows: PASS 18, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

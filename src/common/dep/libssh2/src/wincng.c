@@ -603,6 +603,28 @@ _libssh2_wincng_safe_free(void *buf, size_t len)
     free(buf);
 }
 
+/* Tandem Commander local patch (feature 217): drop the leading zero bytes of
+   a big-endian bignum in place. A raw (EC)DH secret from BCryptDeriveKey has
+   the fixed length of the group; when its top byte is 0 (about one key
+   exchange in 256) the shared secret K was hashed as a non-minimal mpint, the
+   exchange hash differed from the server's and the server's signature did
+   not verify ("Unable to exchange encryption keys"). */
+static void
+_libssh2_wincng_bignum_trim(_libssh2_bn *bn)
+{
+    ULONG offset = 0;
+
+    if(!bn || !bn->bignum || bn->length < 2)
+        return;
+    while(offset + 1 < bn->length && !bn->bignum[offset])
+        offset++;
+    if(offset) {
+        memmove(bn->bignum, bn->bignum + offset, bn->length - offset);
+        _libssh2_explicit_zero(bn->bignum + bn->length - offset, offset);
+        bn->length -= offset;
+    }
+}
+
 /* Copy a big endian set of bits from src to dest.
  * if the size of src is smaller than dest then pad the "left" (MSB)
  * end with zeroes and copy the bits into the "right" (LSB) end. */
@@ -2571,7 +2593,7 @@ _libssh2_wincng_ecdh_gen_k(OUT _libssh2_bn **secret,
     int result = LIBSSH2_ERROR_NONE;
     NTSTATUS status;
 
-    BCRYPT_KEY_HANDLE publickey_handle;
+    BCRYPT_KEY_HANDLE publickey_handle = NULL; /* feature 217: destroyed in cleanup */
     BCRYPT_SECRET_HANDLE agreed_secret_handle = NULL;
     ULONG secret_len;
     _libssh2_ecdsa_point server_publickey;
@@ -2670,6 +2692,7 @@ _libssh2_wincng_ecdh_gen_k(OUT _libssh2_bn **secret,
      */
 
     _libssh_wincng_reverse_bytes((*secret)->bignum, secret_len);
+    _libssh2_wincng_bignum_trim(*secret); /* feature 217: a minimal mpint */
 
     result = LIBSSH2_ERROR_NONE;
 
@@ -2683,8 +2706,14 @@ cleanup:
         *secret = NULL;
     }
 
-    if(result != LIBSSH2_ERROR_NONE && agreed_secret_handle) {
+    /* Tandem Commander local patch (feature 217): both CNG objects are
+       released on every path (the server's public key was never destroyed,
+       the agreed secret only on a failure - two objects per connection) */
+    if(agreed_secret_handle) {
         BCryptDestroySecret(agreed_secret_handle);
+    }
+    if(publickey_handle) {
+        BCryptDestroyKey(publickey_handle);
     }
 
     return result;
@@ -4352,6 +4381,9 @@ _libssh2_dh_key_pair(_libssh2_dh_ctx *dhctx, _libssh2_bn *public,
                                sizeof(*dh_key_blob) +
                                2 * dh_key_blob->cbKey,
                dh_key_blob->cbKey);
+        /* feature 217: e is hashed as sent - a minimal mpint, as the server
+           re-encodes it */
+        _libssh2_wincng_bignum_trim(public);
 
         if(dh_key_blob->dwMagic == BCRYPT_DH_PRIVATE_MAGIC) {
             /* BCRYPT_DH_PRIVATE_BLOB additionally contains the Private data */
@@ -4397,6 +4429,7 @@ _libssh2_dh_key_pair(_libssh2_dh_ctx *dhctx, _libssh2_bn *public,
         return -1;
     if(_libssh2_wincng_bignum_mod_exp(public, g, dhctx->dh_privbn, p))
         return -1;
+    _libssh2_wincng_bignum_trim(public); /* feature 217: a minimal mpint */
 
     return 0;
 }
@@ -4507,6 +4540,7 @@ _libssh2_dh_secret(_libssh2_dh_ctx *dhctx, _libssh2_bn *secret,
             start++;
             end--;
         }
+        _libssh2_wincng_bignum_trim(secret); /* feature 217: a minimal mpint */
 
         status = 0;
         _libssh2_wincng.hasAlgDHwithKDF = 1;
@@ -4530,7 +4564,10 @@ out:
 
 fb:
     /* Compute the shared secret */
-    return _libssh2_wincng_bignum_mod_exp(secret, f, dhctx->dh_privbn, p);
+    if(_libssh2_wincng_bignum_mod_exp(secret, f, dhctx->dh_privbn, p))
+        return -1;
+    _libssh2_wincng_bignum_trim(secret); /* feature 217: a minimal mpint */
+    return 0;
 }
 
 /* _libssh2_supported_key_sign_algorithms

@@ -690,9 +690,13 @@ Code work an agent can do:
          Earlier text of this item: 137 (also the in-place rename
          line, which fell back to a code-page name). Left: ~~`ssl.cpp:666` `name[200]` for a call
          that may write 256 bytes~~ - **done, feature 216** (also the SSL log lines' encoding); the core's `SalMakeValidFileNameComponent` cuts at byte 256;
-         **SFTP: a memory leak after a failed SSH handshake** (debug build: "Detected memory
-         leaks!" at exit, seen once when the handshake failed - find the allocation that the
-         failed-connect path does not free). **Seen a second time on 2026-10-13, on the 0.1.9
+         ~~SFTP: a memory leak after a failed SSH handshake~~ - **done, feature 217** (reproduced
+         by a proxy flipping the server's signature; also the 1-in-256 key exchange failure;
+         left: **`src/plugins/sftp/session.cpp` `Disconnect` ~1188-1203 tears down with a 1 ms
+         deadline on a dead or cancelled connection - `sftp_shutdown` / `session_free` time out
+         and the whole session leaks** (the same leak box at exit); a server's
+         SSH_MSG_DISCONNECT while SFTP is up leaks the SFTP structure (upstream `channel.c`);
+         ~1,500 connections to show the 1-in-256 failure gone - owed). **Seen a second time on 2026-10-13, on the 0.1.9
          build**: "SSH handshake failed: Unable to exchange encryption keys" on the ninth
          connection of a probe run (the server logged a disconnect before authentication),
          then the leak boxes and the program did not end within 30 s. Two defects to

@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **SFTP: no more occasional "Unable to exchange encryption keys"**
+  (feature 217). About one connection in 256 failed its key exchange
+  with a valid server (a leading zero in the shared secret was encoded
+  wrongly by the bundled SSH library), and a failed key exchange left
+  memory behind. Both are fixed.
+
 - **FTP: the encrypted connection's log lines are readable** (feature 216).
   The FTPS lines of the FTP log (the certificate, its issuer, the cipher,
   errors) lost their letters when the program's language differs from

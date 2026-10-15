@@ -949,6 +949,15 @@ session_free(LIBSSH2_SESSION *session)
                               &session->startup_key_state.key_state_low);
     }
 
+    /* Tandem Commander local patch (feature 217): the server's host key object
+       is made before its signature is checked; a key exchange that failed
+       between the two (before NEWKEYS) left it allocated - the Debug build's
+       leak report at exit. */
+    if(!(session->state & LIBSSH2_STATE_NEWKEYS) && session->hostkey &&
+       session->hostkey->dtor && session->server_hostkey_abstract) {
+        session->hostkey->dtor(session, &session->server_hostkey_abstract);
+    }
+
     if(session->state & LIBSSH2_STATE_NEWKEYS) {
         /* hostkey */
         if(session->hostkey && session->hostkey->dtor) {
