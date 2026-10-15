@@ -157,6 +157,13 @@ SRC = REPO / "src"
 EXCLUDED = ("plugins/", "saltests/", "tserver/", "shellext/", "setup/",
             "salopen/", "translator/", "reglib/", "common/dep/")
 
+# feature 239: `--plugins` scans the plug-ins instead - a report only (never exit 1, never used by
+# build.cmd): plug-ins keep their own text handling (042), the list is a work list. Third-party code
+# inside them is skipped.
+PLUGINS_SKIP = ("plugins/7zip/7za/", "plugins/checksum/tomcrypt/", "plugins/codeview/test/",
+                "plugins/automation/help/")
+SCAN_PLUGINS = False
+
 SUPPRESS = re.compile(r'//\s*encoding-check:\s*allow\s+([a-z0-9-]+)\s*-\s*(\S.*)')
 
 PRINTF = re.compile(r'\b(?:sprintf|sprintf_s|_snprintf|_snprintf_s|wsprintf)\s*\(')
@@ -333,7 +340,10 @@ class Finding:
 def sources():
     for p in sorted(SRC.rglob("*.cpp")):
         rel = p.relative_to(SRC).as_posix()
-        if rel.startswith(EXCLUDED):
+        if SCAN_PLUGINS:
+            if not rel.startswith("plugins/") or rel.startswith(PLUGINS_SKIP):
+                continue
+        elif rel.startswith(EXCLUDED):
             continue
         yield p, rel
 
@@ -582,10 +592,15 @@ def main():
                     help="exit 1 when anything is found (used by build.cmd)")
     ap.add_argument("--rule", choices=RULES + DRAFT_RULES, help="scan a single rule")
     ap.add_argument("--format", choices=("report", "list"), default="report")
+    ap.add_argument("--plugins", action="store_true",
+                    help="scan src/plugins instead of the core - a report only (feature 239): "
+                         "never exits 1, never used by build.cmd")
     ap.add_argument("--draft", action="store_true",
                     help="run the report-only draft rules (feature 068); "
                          "never exits 1, never used by build.cmd")
     args = ap.parse_args()
+    global SCAN_PLUGINS
+    SCAN_PLUGINS = args.plugins
     if args.rule in DRAFT_RULES:
         args.draft = True
 
@@ -619,12 +634,12 @@ def main():
             for f in hits:
                 print(f"  {f}")
         print(f"\nTOTAL: {len(findings)} finding(s)")
-        if findings and args.strict and not args.draft:
+        if findings and args.strict and not args.draft and not args.plugins:
             print("\nA file name would be destroyed on its way to the screen.")
             print("Fix the site, or suppress it with a reason:")
             print("    // encoding-check: allow <rule-id> - <reason>")
 
-    return 1 if (findings and args.strict and not args.draft) else 0
+    return 1 if (findings and args.strict and not args.draft and not args.plugins) else 0
 
 
 if __name__ == "__main__":

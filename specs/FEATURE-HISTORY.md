@@ -2830,3 +2830,5 @@ a few early ones are out of sequence).
   "pWindows_NTq". Now the part up to the last '%' component existing as written wins (`salpctpath.h`,
   saltests); not checked: network paths (stall), a relative path starting with a defined variable
   (stray "%APPDATA%" folders). Probe `pct238_probe.ps1` 4 FAIL -> 14 / 0. Two reviews.
+- 239-check-encoding-plugins: `check_encoding.py --plugins` - a report-only scan of `src/plugins`
+  (never fails; third-party code skipped): 78 findings (424 draft), the list in the feature folder.

@@ -546,7 +546,10 @@ Code work an agent can do:
   `dialogs5.cpp`, `viewer3.cpp`~~ (done, features 170 and 172). ~~The drop-target code for shortcuts~~ - **done, feature
   194** (`shellsup.cpp`; `shellib.cpp`'s folder-shortcut code gets only a Browse result of
   `MAX_PATH` bytes - left).
-- `tools/check_encoding.py` does not scan `plugins/` (found by 124).
+- ~~`tools/check_encoding.py` does not scan `plugins/` (found by 124)~~ - **done, feature 239**
+  (`--plugins`, a report only). Left: **its 78 findings** (`specs/239-check-encoding-plugins/
+  plugins_findings.txt`: `lossy-lenient-at-intake` 38, `utf8-to-legacy-sink` 18 - ZIP 11 -,
+  `strict-probe-rejects-wtf8` 12, `mixed-composition` 6, others 4) - to read one by one.
 - **Mixed templates, the rest** (127): (1) `CSalamanderGeneral::GetCommonFSOperSourceDescr`
   (`zip.cpp`) and the `salamdr3.cpp` texts `IDS_NAMEUSEDFORFILE` / `IDS_CREATEDIRFAILED` hand a
   code-page template with a UTF-8 name to plug-ins (FTP, Undelete, ZIP) that wrap it in their own
