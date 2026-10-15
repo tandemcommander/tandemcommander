@@ -286,8 +286,10 @@ Functional, no loss:
     the same case-sensitive folder is refused "to itself" by name~~ (**done, feature 195**); ~~the
     Renamer refuses "already exists"~~ (**done, feature 196**). Left by 196's review: ~~the core's Quick
     Rename (158) takes "different ids" as proof of another file~~ (**done, feature 198**, also the
-    worker's move and names equal by NFC / NFD; left by its review: PictView's rename, `render1.cpp`
-    ~2991, gates its overwrite with the code-page `StrICmp` and has no temporary-name route); ~~the Renamer has no step that moves
+    worker's move and names equal by NFC / NFD; left by its review: ~~PictView's rename~~ - **done,
+    feature 200**; left by 200's review: PictView's rename has the 8.3 short-name trap 199 fixed in the
+    Renamer - the shown `x.png` renamed to `LONGFI~1.PNG` asks to overwrite and Yes replaces
+    `longfilename.png` (`render1.cpp` ~2995-3052; measure first)); ~~the Renamer has no step that moves
     an 8.3 short-name clash aside~~ (**done, feature 199** - measured: `longfilename.txt` deleted;
     left by its review: **the core's Quick Rename has the same fallback** - when its move aside of an
     8.3 clash fails (the other file held open), it goes on to `COverwriteDlg` and Yes replaces the

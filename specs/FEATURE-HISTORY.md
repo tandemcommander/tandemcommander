@@ -2627,3 +2627,6 @@ a few early ones are out of sequence).
   for the rename and back (`TargetIsOnlyShortNameOfOther`, as the core's Quick Rename); such a name
   never reaches the delete branch (a failed move aside - the file held open - is a rename error).
   Probe `ren_83_probe.ps1` 3 / 1 -> 6 / 0.
+- 200-pictview-rename-case: PictView's Rename of the shown image - the 092 name rule instead of the
+  code-page `StrICmp`, and for two spellings of one name an overwrite only when the temporary-name
+  route proves another file (as 196 / 198). Probe `pv_cs_probe.ps1` 4 / 1 -> 5 / 0.
