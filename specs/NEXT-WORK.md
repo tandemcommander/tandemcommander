@@ -744,8 +744,9 @@ Code work an agent can do:
          viewer's next / previous file (`fileswnb.cpp:1211/1217`), the User Menu's compare names
          (`mainwnd3.cpp:2829`) and Ctrl+X greying in the other panel (`shellsup.cpp:1934/1949`)
          take the first case-insensitive twin; a timed listing on an SMB share owed); paste from a 7-Zip / TAR archive holding a.txt and A.txt may extract
-         the other one (`salshlib.cpp:791-818`, only ZIP / FTP set SALDIRFLAG_CASESENSITIVE)); a
-         folder name over 255 bytes ends the operation silently (`AddDir`, 222); the FTP upload's
+         the other one (`salshlib.cpp:791-818`, only ZIP / FTP set SALDIRFLAG_CASESENSITIVE)); ~~a
+         folder name over 255 bytes ends the operation silently~~ (done for a dragged folder,
+         feature 240; nested or F5: 241); the FTP upload's
          link size from a cut path (`fs5.cpp:1149`); `IsSimpleSelection`'s too-long message and
          CP_ACP fallback (`shellib.cpp` ~497-510));
          ~~SFTP: a memory leak after a failed SSH handshake~~ - **done, feature 217** (reproduced

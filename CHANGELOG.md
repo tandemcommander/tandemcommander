@@ -11,6 +11,9 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Dragging a folder with a very long name into an archive** (feature 240)
+  ended without a word; it now says the name is too long.
+
 - **A folder whose name contains %...% opens as it is** (feature 238). A
   folder named, for example, "p%OS%q", given on the command line or typed
   into Change Directory, opened "pWindows_NTq" instead (the text between

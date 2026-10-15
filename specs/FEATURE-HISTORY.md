@@ -2832,3 +2832,5 @@ a few early ones are out of sequence).
   (stray "%APPDATA%" folders). Probe `pct238_probe.ps1` 4 FAIL -> 14 / 0. Two reviews.
 - 239-check-encoding-plugins: `check_encoding.py --plugins` - a report-only scan of `src/plugins`
   (never fails; third-party code skipped): 78 findings (424 draft), the list in the feature folder.
+- 240-dragdrop-long-folder-name: a dragged / pasted folder of 255+ bytes (AddDir's limit, 222) ended
+  `DragDropToArcOrFS` silently; now "too long name". By reading. Nested / F5: 241.

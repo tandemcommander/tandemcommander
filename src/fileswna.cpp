@@ -357,8 +357,10 @@ static BOOL ArchiveNameFitsPacker160(HWND parent, const char* archive)
 }
 
 // feature 230: adds the listed item 'file' to 'baseDir' - the data DragDropToArcOrFS works with;
-// FALSE on low memory or when the item cannot be added
-static BOOL AddDragDropItem(CSalamanderDirectory* baseDir, const WIN32_FIND_DATAW* file)
+// FALSE on low memory or when the item cannot be added (feature 240: '*nameTooLong' TRUE when it is a
+// folder whose name is longer than the archive's list takes - 255 bytes, 222; files are never refused
+// for their length here)
+static BOOL AddDragDropItem(CSalamanderDirectory* baseDir, const WIN32_FIND_DATAW* file, BOOL* nameTooLong)
 {
     char nameU8[SAL_FIND_NAME_U8];       // UTF-8 of cFileName
     char dosNameU8[SAL_FIND_DOSNAME_U8]; // UTF-8 of cAlternateFileName
@@ -426,6 +428,9 @@ static BOOL AddDragDropItem(CSalamanderDirectory* baseDir, const WIN32_FIND_DATA
     if ((newF.Attr & FILE_ATTRIBUTE_DIRECTORY) && !baseDir->AddDir("", newF, NULL) ||     // directory, certainly a disk
         (newF.Attr & FILE_ATTRIBUTE_DIRECTORY) == 0 && !baseDir->AddFile("", newF, NULL)) // file
     {
+        // only a folder is refused for its length (AddDir: MAX_PATH - 5 bytes); a disk file's name always
+        // fits AddFile (at most 765 bytes) - its failure is low memory
+        *nameTooLong = (newF.Attr & FILE_ATTRIBUTE_DIRECTORY) != 0 && newF.NameLen > MAX_PATH - 5;
         free(newF.Name);
         if (newF.DosName != NULL)
             free(newF.DosName);
@@ -516,6 +521,7 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
     {
         BOOL ok = TRUE;
         BOOL testFindNextErr = TRUE;
+        BOOL nameTooLong = FALSE;            // feature 240: an item the list refuses for its name's length
         char nameU8[SAL_FIND_NAME_U8];       // UTF-8 of cFileName
         char dosNameU8[SAL_FIND_DOSNAME_U8]; // UTF-8 of cAlternateFileName
         // feature 230 (salnamerun.h): a dragged name is taken by the listed item byte-equal to it; an
@@ -566,7 +572,7 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
             if (nameFound[exact] != FALSE)
                 continue; // already taken
             nameFound[exact] = TRUE;
-            if (!AddDragDropItem(baseDir, &file))
+            if (!AddDragDropItem(baseDir, &file, &nameTooLong))
             {
                 ok = FALSE;
                 testFindNextErr = FALSE;
@@ -583,7 +589,7 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
                 if (SalNameCIFallbackTakes(nameFound[k] != FALSE, ciOnly[k], dirCaseSensitive))
                 {
                     nameFound[k] = TRUE;
-                    if (!AddDragDropItem(baseDir, &ciOnlyData[k]))
+                    if (!AddDragDropItem(baseDir, &ciOnlyData[k], &nameTooLong))
                     {
                         ok = FALSE;
                         break;
@@ -606,6 +612,11 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
 
         if (!ok)
         {
+            if (nameTooLong) // feature 240: the drop ended without a word (a folder of 86+ CJK letters)
+            {
+                SalMessageBox(HWindow, LoadStr(IDS_TOOLONGNAME),
+                              data->Copy ? LoadStr(IDS_ERRORCOPY) : LoadStr(IDS_ERRORMOVE), MB_OK | MB_ICONEXCLAMATION);
+            }
             if (nameFound != NULL)
                 free(nameFound);
             delete baseDir;
