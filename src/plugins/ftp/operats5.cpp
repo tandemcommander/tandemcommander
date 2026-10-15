@@ -4,6 +4,9 @@
 
 #include "precomp.h"
 
+#include "../../common/salnameorder.h" // feature 205: the file system's name rule
+#include "splshortname.h"              // feature 205: a local name that is only another entry's short name
+
 //
 // ****************************************************************************
 // CFTPWorkersList
@@ -1056,6 +1059,10 @@ void DoCreateDir(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL& 
             if (!SalamanderGeneral->SalCreateDirectoryEx(fullName, &e))
             {
                 winErr = e;
+                // feature 205: "the directory exists" only under its own name - LONGDI~1 found as the short
+                // name of "longdirname" (which could not be moved aside) is not the target: never joined
+                // into it (the name still counts as taken, so the automatic rename numbers it)
+                BOOL ownName = !SplPathIsOnlyShortNameOfOther(fullName);
                 if (winErr != ERROR_ALREADY_EXISTS && winErr != ERROR_FILE_EXISTS)
                 { // check whether the error was caused by an existing file/directory, and continue searching for a name via autorename if needed
                     DWORD attr = SalamanderGeneral->SalGetFileAttributes(fullName);
@@ -1069,7 +1076,7 @@ void DoCreateDir(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL& 
                         winErr = GetLastError();
                     else
                     {
-                        if (attr & FILE_ATTRIBUTE_DIRECTORY)
+                        if ((attr & FILE_ATTRIBUTE_DIRECTORY) && ownName)
                             alreadyExists = TRUE;
                     }
                 }
@@ -1321,6 +1328,10 @@ void DoCreateFile(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL&
             if (file == INVALID_HANDLE_VALUE) // cannot create a new file
             {
                 winErr = GetLastError();
+                // feature 205: "the file exists" only under its own name - LONGFI~1.TXT found as the short
+                // name of "longfilename.txt" (held open) is not the target: never overwritten or resumed
+                // (the name still counts as taken, so the automatic rename numbers it)
+                BOOL ownName = !SplPathIsOnlyShortNameOfOther(fullName);
                 if (winErr != ERROR_ALREADY_EXISTS && winErr != ERROR_FILE_EXISTS)
                 { // check whether the error was caused by an existing file/directory, and continue searching for a name via autorename if needed
                     DWORD attr = SalamanderGeneral->SalGetFileAttributes(fullName);
@@ -1334,7 +1345,7 @@ void DoCreateFile(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL&
                         winErr = GetLastError();
                     else
                     {
-                        if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)
+                        if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0 && ownName)
                             alreadyExists = TRUE;
                     }
                 }

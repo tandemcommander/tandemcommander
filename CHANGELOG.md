@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **FTP and SFTP downloads never write into another file by its short
+  name** (feature 205). Downloading "LONGFI~1.TXT" over SFTP next to
+  "longfilename.txt" (whose short 8.3 name it is) asked to overwrite and
+  replaced that other file; a folder "LONGDI~1" went into "longdirname".
+  The download is a file or folder of its own now, or - when the other one
+  is open in another program - an error with the reason. The same for FTP.
+
 - **An archive's folder is never unpacked into another folder by its short
   name** (feature 204). A member "LONGDI~1/a.txt" unpacked next to a folder
   "longdirname" (whose short 8.3 name is LONGDI~1) went into longdirname,

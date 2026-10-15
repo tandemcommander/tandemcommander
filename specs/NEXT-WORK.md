@@ -298,11 +298,10 @@ Functional, no loss:
     `LONGDI~1/a.txt` unpacked next to a folder `longdirname` goes INTO `longdirname`~~ - **done,
     feature 204** (left by its review, latent: the unpack root is process-wide; an external
     archiver's unpack not driven); left
-    by 203's review: **the FTP and SFTP downloads have the same trap** (205) - FTP turns the create's
-    error back into "exists" by its own attribute re-check (`operats5.cpp` ~1056-1074, ~1317-1338:
-    a downloaded folder `LONGDI~1` joined into `longdirname` by default, the other file offered for
-    overwrite / resume); SFTP (on by default) never moves the clash aside (`operats.cpp` ~532-560,
-    ~840-848: the overwrite question shows and replaces `longfilename.txt`, nothing held).
+    by 203's review: ~~the FTP and SFTP downloads have the same trap~~ - **done, feature 205**
+    (SFTP measured 4 / 4 -> 14 / 0; owed to a person: the FTP rows with an FTP server - a file
+    `LONGFI~1.TXT` and a folder `LONGDI~1` downloaded next to `longfilename.txt` / `longdirname`,
+    once with the other entry held open).
     Also left by 199's second review: the Renamer's `CheckAndCreateDirectory` (`rendlg3.cpp`, the
     "adjust the case" step) renames a folder whose SHORT name is a folder part of the new name
     (`LONGDI~1\x.txt`) to that short name - the folder loses its long name without a question

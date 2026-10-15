@@ -13,6 +13,8 @@
 #include "../../common/salrandom.h"      // feature 139: SalGenRandom (the temporary name of an upload)
 #include "../../common/salsamefile.h"    // feature 139: the identity of the files a download wrote
 #include "../../common/salsafereplace.h" // feature 139: a local file is replaced only by a complete one
+#include "../../common/salnameorder.h"   // feature 205: the file system's name rule
+#include "splshortname.h"                // feature 205: a local name that is only another entry's short name
 
 #define XFER_BUFSIZE (256 * 1024)
 
@@ -528,9 +530,15 @@ static CXferResult DownloadOneFileImpl(COperationCtx* ctx, const char* remotePat
     unsigned __int64 startOffset = 0;
     BOOL append = FALSE;
     BOOL existed = FALSE; // a local file of that name exists (and the user agreed to what follows)
+    // feature 205: the local name is only another entry's short (8.3) name ("LONGFI~1.TXT" for
+    // "longfilename.txt") - that file is not the target: the new file is made by the core, which
+    // moves the other entry aside and back (or reports why it cannot); never offered, never replaced
+    BOOL shortNameOfOther = FALSE;
     WIN32_FILE_ATTRIBUTE_DATA fad;
-    if (GetFileAttributesExW(wlocal, GetFileExInfoStandard, &fad) &&
-        !(fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+    if (GetFileAttributesExW(wlocal, GetFileExInfoStandard, &fad) && SplPathIsOnlyShortNameOfOther(localPath))
+        shortNameOfOther = TRUE;
+    else if (GetFileAttributesExW(wlocal, GetFileExInfoStandard, &fad) &&
+             !(fad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
     {
         existed = TRUE;
         // feature 138: the local file is one this operation has just written - another remote
@@ -597,7 +605,16 @@ static CXferResult DownloadOneFileImpl(COperationCtx* ctx, const char* remotePat
                            localPath, (unsigned)tempErr);
         }
     }
-    if (tempPath == NULL)
+    DWORD shortNameErr = ERROR_SUCCESS; // feature 205: why that file could not be made
+    if (shortNameOfOther)               // feature 205: a new file of its own (append and tempPath are not set)
+    {
+        lf = SalamanderGeneral->SalCreateFileEx(localPath, GENERIC_WRITE, 0, FILE_ATTRIBUTE_NORMAL, &shortNameErr);
+        if (lf == INVALID_HANDLE_VALUE)
+            Logs.AppendFmt(ctx->Session->GetLogUID(),
+                           "%s is the short name of another local entry; the file of its own was not made (error %u).",
+                           localPath, (unsigned)shortNameErr);
+    }
+    else if (tempPath == NULL)
     {
         lf = CreateFileW(wlocal, GENERIC_WRITE, 0, NULL,
                          append ? OPEN_EXISTING : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -605,7 +622,16 @@ static CXferResult DownloadOneFileImpl(COperationCtx* ctx, const char* remotePat
     if (lf == INVALID_HANDLE_VALUE)
     {
         ctx->Session->CloseHandle(h);
-        SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localPath, NULL);
+        if (shortNameOfOther) // feature 205: the reason of the core's create (the other entry held open, ...)
+        {
+            CSFTPMsgText err(SalamanderGeneral->GetErrorText(shortNameErr));
+            char why[600]; // no path in it: a path is never cut
+            _snprintf_s(why, _TRUNCATE, "the local name is the short name of another entry, which could not be moved aside: %s",
+                        err.Get());
+            SFTPShowPathError(ctx->Parent, IDS_ERR_DOWNLOAD, remotePath, why, ctx->Session->GetLogUID());
+        }
+        else
+            SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localPath, NULL);
         return xrFailed;
     }
     if (append)
@@ -837,14 +863,30 @@ static CXferResult DownloadDirLevel(COperationCtx* ctx, const char* remoteDir, c
         return xrFailed;
     wchar_t* wdir = lv->WDir;
     MakeLocalWidePath(localDir, wdir, 4096);
-    CreateDirectoryW(wdir, NULL); // "already exists" is fine - what counts is checked next
+    // feature 205: made by the core - a name that is only another entry's short (8.3) name
+    // ("LONGDI~1" for "longdirname") gets a folder of its own (the other entry moved aside and
+    // back); the download never goes into the other folder. "Already exists" is fine for the
+    // folder's own name - what counts is checked next
+    DWORD crErr = ERROR_SUCCESS;
+    BOOL crDone = SalamanderGeneral->SalCreateDirectoryEx(localDir, &crErr);
+    BOOL notOwn = !crDone && SplPathIsOnlyShortNameOfOther(localDir); // the other folder kept that name
+
     // feature 138: the local directory must be there. Its creation was not checked: with a file
     // of that name in the way (or no right to create it) an empty remote directory counted as
     // "transferred", and a move removed it from the server with nothing local.
     DWORD dirAttr = GetFileAttributesW(wdir);
-    if (dirAttr == INVALID_FILE_ATTRIBUTES || !(dirAttr & FILE_ATTRIBUTE_DIRECTORY))
+    if (notOwn || dirAttr == INVALID_FILE_ATTRIBUTES || !(dirAttr & FILE_ATTRIBUTE_DIRECTORY))
     {
-        SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localDir, NULL);
+        if (notOwn) // feature 205: the reason of the core's create (a file in the other folder held open, ...)
+        {
+            CSFTPMsgText err(SalamanderGeneral->GetErrorText(crErr));
+            char why[600]; // no path in it: a path is never cut
+            _snprintf_s(why, _TRUNCATE, "the name is the short name of another local entry, which could not be moved aside: %s",
+                        err.Get());
+            SFTPShowPathError(ctx->Parent, IDS_ERR_MKDIR, localDir, why, ctx->Session->GetLogUID());
+        }
+        else
+            SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localDir, NULL);
         return xrFailed;
     }
 

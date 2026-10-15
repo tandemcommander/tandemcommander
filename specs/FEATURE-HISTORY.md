@@ -2652,3 +2652,10 @@ a few early ones are out of sequence).
   `SafeFileCreate`) makes such a component a folder of its own (203's move aside); components that
   cannot be 8.3 are never looked up; the typed target keeps resolving. Probe
   `unpack_dir_probe.ps1` 6 / 4 -> 22 / 0 (ZIP, TAR, 7-Zip, Alt+F9, a drive root).
+- 205-download-short-name-clash: FTP / SFTP downloads to a local name that is only another
+  entry's short (8.3) name - SFTP replaced the other file and downloaded into the other folder,
+  FTP's re-check turned the core's error back into "exists" (join / overwrite / resume). Now
+  `SplPathIsOnlyShortNameOfOther` (`splshortname.h`, proven only); SFTP creates through the core's
+  `SalCreateFileEx` / `SalCreateDirectoryEx` (203's move aside), FTP never sets `alreadyExists`
+  for such a name (its automatic rename still numbers it). Probe `sftp205_probe.ps1` 4 / 4 ->
+  14 / 0; FTP not driven.
