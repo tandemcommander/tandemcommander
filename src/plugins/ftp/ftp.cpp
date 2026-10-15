@@ -424,6 +424,7 @@ BOOL CPluginInterface::Release(HWND parent, BOOL force)
 
         ReleaseSockets();
         FreeSSL();
+        FTPFreeCodePageNames(); // feature 224
         Config.ReleaseDataFromSalamanderGeneral();
     }
     return ret;

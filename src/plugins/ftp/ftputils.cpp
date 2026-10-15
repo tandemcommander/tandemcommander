@@ -3509,6 +3509,108 @@ HANDLE FTPFindFirstFileU8(const char* pathName, WIN32_FIND_DATAW* data)
     return find;
 }
 
+// feature 224: the texts a listing gave in the ANSI code page (a legacy server, its bytes not
+// UTF-8) - only they go back to a server in the code page (FTPU8NameToServer); every other
+// non-ASCII name goes in UTF-8. A hash set of UTF-8 strings, process-wide, under an SRW lock.
+struct CFTPCodePageName
+{
+    CFTPCodePageName* Next;
+    int Len;
+    char Name[1];
+};
+static CFTPCodePageName* FTPCodePageNames[1024];
+static int FTPCodePageNamesCount = 0;
+static SRWLOCK FTPCodePageNamesLock = SRWLOCK_INIT;
+
+static DWORD FTPCodePageNameHash(const char* s, int len)
+{
+    DWORD h = 2166136261u; // FNV-1a
+    for (int i = 0; i < len; i++)
+        h = (h ^ (unsigned char)s[i]) * 16777619u;
+    return h & (_countof(FTPCodePageNames) - 1);
+}
+
+static BOOL FTPIsCodePageNameN(const char* s, int len)
+{
+    BOOL found = FALSE;
+    AcquireSRWLockShared(&FTPCodePageNamesLock);
+    for (CFTPCodePageName* n = FTPCodePageNames[FTPCodePageNameHash(s, len)]; n != NULL; n = n->Next)
+    {
+        if (n->Len == len && memcmp(n->Name, s, len) == 0)
+        {
+            found = TRUE;
+            break;
+        }
+    }
+    ReleaseSRWLockShared(&FTPCodePageNamesLock);
+    return found;
+}
+
+static void FTPAddCodePageName(const char* u8)
+{
+    int len = (int)strlen(u8);
+    if (len == 0 || FTPIsCodePageNameN(u8, len))
+        return;
+    AcquireSRWLockExclusive(&FTPCodePageNamesLock);
+    if (FTPCodePageNamesCount < 200000) // a bound: a session never lists that many such names
+    {
+        CFTPCodePageName* n = (CFTPCodePageName*)malloc(sizeof(CFTPCodePageName) + len);
+        if (n != NULL)
+        {
+            n->Len = len;
+            memcpy(n->Name, u8, len + 1);
+            DWORD h = FTPCodePageNameHash(u8, len);
+            n->Next = FTPCodePageNames[h];
+            FTPCodePageNames[h] = n;
+            FTPCodePageNamesCount++;
+        }
+    }
+    else
+        TRACE_I("FTPAddCodePageName(): the bound of remembered code-page names reached");
+    ReleaseSRWLockExclusive(&FTPCodePageNamesLock);
+}
+
+void FTPFreeCodePageNames()
+{
+    AcquireSRWLockExclusive(&FTPCodePageNamesLock);
+    for (int i = 0; i < _countof(FTPCodePageNames); i++)
+    {
+        while (FTPCodePageNames[i] != NULL)
+        {
+            CFTPCodePageName* n = FTPCodePageNames[i];
+            FTPCodePageNames[i] = n->Next;
+            free(n);
+        }
+    }
+    FTPCodePageNamesCount = 0;
+    ReleaseSRWLockExclusive(&FTPCodePageNamesLock);
+}
+
+// TRUE when 'u8' (a name or a path) is, or has a component or a leading part that is, a text a
+// listing or a reply (a PWD path) gave in the code page - "/home/jiri" from a PWD makes
+// "/home/jiri/x" go in the code page too (review)
+static BOOL FTPHasCodePageName(const char* u8)
+{
+    int len = (int)strlen(u8);
+    if (FTPIsCodePageNameN(u8, len))
+        return TRUE;
+    const char* beg = u8;
+    for (const char* s = u8;; s++)
+    {
+        if (*s == '/' || *s == '\\' || *s == 0)
+        {
+            if (s > beg && (s - beg) < len && FTPIsCodePageNameN(beg, (int)(s - beg)))
+                return TRUE;
+            if (s > u8 && (s - u8) < len && FTPIsCodePageNameN(u8, (int)(s - u8))) // the leading part
+                return TRUE;
+            if (*s == 0)
+                break;
+            beg = s + 1;
+        }
+    }
+    return FALSE;
+}
+
 char* FTPListingFieldToU8(const char* beg, int len)
 {
     if (len < 0)
@@ -3548,6 +3650,7 @@ char* FTPListingFieldToU8(const char* beg, int len)
                 {
                     WideCharToMultiByte(CP_UTF8, 0, w, wLen, str, u8Len, NULL, NULL);
                     str[u8Len] = 0;
+                    FTPAddCodePageName(str); // feature 224: this server speaks the code page
                 }
                 free(w);
                 return str;
@@ -3569,6 +3672,11 @@ const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize)
 {
     if (u8 == NULL || SplIsASCII(u8))
         return u8; // ASCII is identical in every code page
+    // feature 224: the code page only for a name (or a path with a name) a listing gave in it - a
+    // name of a UTF-8 server that the code page can hold ("cafe" with an accent) went out in the code
+    // page: another name (delete, rename, download failed or reached another file)
+    if (!FTPHasCodePageName(u8))
+        return u8;
     WCHAR* w = SplU8ToWAlloc(u8);
     if (w == NULL)
         return u8; // not valid UTF-8 (should not happen) -> send as-is

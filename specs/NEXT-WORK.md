@@ -680,8 +680,12 @@ Code work an agent can do:
          ChangePath, the upload target `fs5.cpp:744/856/923-1002`, `WorkingPath`
          `operats4.cpp:616` / `operatsb.cpp:701`, `operats7.cpp:502`, `operatsa.cpp:121/641`,
          `operatsb.cpp:323`, PWD decoding `ftputils.cpp:1709/1735-1750`, `operats9.cpp:481/564-598`;
-         **`FTPU8NameToServer` (`ftputils.cpp:3563`) sends a name the ANSI code page can hold in
-         that code page even to a UTF-8 server - another name**; VMS / AS/400 / OS/2 helpers that
+         ~~`FTPU8NameToServer` sends a name the ANSI code page can hold in that code page even to a
+         UTF-8 server~~ - **done, feature 224** (left: **a per-server encoding flag** - unknown /
+         UTF-8 / legacy by host, port, user; evidence FEAT UTF8 or a listing - instead of one
+         process-wide set; until then new names (MKD, RNTO, STOR, typed paths, bookmarks) go in
+         UTF-8 also to a legacy code-page server, and a name seen in the code page on one server
+         goes in the code page to another); VMS / AS/400 / OS/2 helpers that
          cut; the lock's `StrICmp`; `fs1.cpp:741` `FTPAddHexEscapeSequences` result ignored; the
          local side's 259-byte paths; the core's `SalIsValidFileNameComponent` takes a name of
          more than 256 bytes for invalid - with 222); Paste "- Copy" naming says "cannot copy to itself" for names

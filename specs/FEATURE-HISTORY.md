@@ -2757,3 +2757,8 @@ a few early ones are out of sequence).
   continuation area (CE) are followed - a 200-letter name was extracted as 146 letters (measured with
   a `genisoimage -R` image); never a cut name. Probe `iso223_probe.ps1` 4 / 0. HFS+ B-tree loader:
   NEXT-WORK.
+- 224-ftp-utf8-server-names: `FTPU8NameToServer` sent any non-ASCII name the code page could hold in
+  the code page - on a UTF-8 server `DELE caf\xE9.txt` (550; every Czech name out of reach). Now the
+  code page only for texts a listing / PWD gave in it (a process-wide set; whole names, components,
+  leading parts); else UTF-8 - a policy: new names go in UTF-8 to legacy servers too. Probe
+  `ftp224_probe.ps1` (ftpmini in utf-8 / cp1250) 3 FAIL -> 16 / 0. Per-server flag: NEXT-WORK.

@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **FTP: files with accented names work on UTF-8 servers** (feature 224).
+  Deleting, renaming or downloading a file such as "café.txt" on a server
+  that uses UTF-8 failed ("No such file"): the name was sent in the
+  Windows code page. Names now go in UTF-8 unless the server itself listed
+  them in its old code page.
+
 - **ISO images: long Rock Ridge names are kept, damaged images are safer**
   (feature 223). A file with a long Rock Ridge name (about 150 letters or
   more) was listed and extracted under a shortened name; it is now read

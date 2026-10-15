@@ -476,3 +476,5 @@ char* FTPListingFieldToU8(const char* beg, int len);
 // servers). 'buf' (size 'bufSize') receives the result; returns 'buf', or the
 // original 'u8' when no conversion is needed or on failure.
 const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize);
+// feature 224: frees the remembered names of code-page listings (at the plug-in's release)
+void FTPFreeCodePageNames();

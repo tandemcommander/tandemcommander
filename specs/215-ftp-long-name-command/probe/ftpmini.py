@@ -4,7 +4,11 @@ Serves ROOT on 127.0.0.1:PORT (loopback only), any user / password; names on the
 (FEAT announces UTF8). Every control line received is logged to LOG as one JSON object per line
 ({"t": seconds, "cmd": the raw line as text}); replies too ({"reply": ...}). A path never leaves ROOT.
 
-    python -I ftpmini.py ROOT PORT LOG
+    python -I ftpmini.py ROOT PORT LOG [ENC [HOME]]
+
+ENC (feature 224): the encoding of names on the wire - utf-8 (default; FEAT announces UTF8) or a
+legacy code page such as cp1250 (FEAT announces nothing - an old server). HOME (feature 224):
+the folder a session starts in (default "/").
 """
 import json
 import os
@@ -17,6 +21,8 @@ import time
 ROOT = os.path.realpath(sys.argv[1])
 PORT = int(sys.argv[2])
 LOG = sys.argv[3]
+ENC = sys.argv[4] if len(sys.argv) > 4 else 'utf-8'
+HOME = sys.argv[5] if len(sys.argv) > 5 else '/'
 _log_lock = threading.Lock()
 T0 = time.time()
 
@@ -35,7 +41,7 @@ def month(ts):
 class Session(socketserver.StreamRequestHandler):
     def setup(self):
         super().setup()
-        self.cwd = '/'
+        self.cwd = HOME
         self.pasv = None
         self.port_addr = None
         self.rnfr = None
@@ -43,7 +49,7 @@ class Session(socketserver.StreamRequestHandler):
 
     def reply(self, text):
         log({'reply': text})
-        self.wfile.write((text + '\r\n').encode('utf-8', 'surrogateescape'))
+        self.wfile.write((text + '\r\n').encode(ENC, 'surrogateescape'))
         self.wfile.flush()
 
     # the virtual path of 'arg' (relative to cwd) and its real path inside ROOT, or None
@@ -86,7 +92,7 @@ class Session(socketserver.StreamRequestHandler):
             if not raw:
                 log({'event': 'closed'})
                 return
-            line = raw.decode('utf-8', 'surrogateescape').rstrip('\r\n')
+            line = raw.decode(ENC, 'surrogateescape').rstrip('\r\n')
             log({'cmd': line})
             if line == '':
                 self.reply('500 Empty command')
@@ -108,7 +114,8 @@ class Session(socketserver.StreamRequestHandler):
         elif verb == 'SYST':
             self.reply('215 UNIX Type: L8')
         elif verb == 'FEAT':
-            self.wfile.write(b'211-Features:\r\n UTF8\r\n SIZE\r\n MDTM\r\n REST STREAM\r\n211 End\r\n')
+            utf8 = b' UTF8\r\n' if ENC.lower().replace('-', '') == 'utf8' else b''
+            self.wfile.write(b'211-Features:\r\n' + utf8 + b' SIZE\r\n MDTM\r\n REST STREAM\r\n211 End\r\n')
             self.wfile.flush()
             log({'reply': '211 features'})
         elif verb in ('OPTS', 'MODE', 'STRU', 'TYPE', 'ALLO', 'SITE', 'NOOP', 'CLNT'):
@@ -160,7 +167,7 @@ class Session(socketserver.StreamRequestHandler):
                     out.append('drwxr-xr-x 1 owner group %d %s %s' % (0, month(st.st_mtime), name))
                 else:
                     out.append('-rw-r--r-- 1 owner group %d %s %s' % (st.st_size, month(st.st_mtime), name))
-            c.sendall(''.join(x + '\r\n' for x in out).encode('utf-8', 'surrogateescape'))
+            c.sendall(''.join(x + '\r\n' for x in out).encode(ENC, 'surrogateescape'))
             c.close()
             self.reply('226 Listing sent')
         elif verb == 'RETR':
