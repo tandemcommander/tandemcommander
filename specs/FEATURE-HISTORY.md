@@ -2678,3 +2678,7 @@ a few early ones are out of sequence).
   one were refused "(123)", upper changed only ASCII. Now on UTF-16 (`CharLowerBuffW`,
   `CharUpperBuffW`, `NormalizeString`), returning the new UTF-8 length (callers updated); the
   script's comparators by `SalNameOrderCompareCI`. Probe `ren_case_probe.ps1` 5 / 5 -> 12 / 0.
+- 209-renamer-subdir-reload: the Renamer's `ReloadSourceFiles` expanded a folder item as `Root +
+  Name` - a renamed folder lies elsewhere: after a full-path run (`Root` emptied) "name\*.*" was
+  read relative to the current folder, after `x` -> `sub\x` the folder `Root\x`. Now from the
+  parent of the item's full name. Probe `ren_subdir_probe.ps1` -> 8 / 0.

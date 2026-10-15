@@ -1,0 +1,9 @@
+ren_subdir_probe (feature 209), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 11:18; ACP 1250; registry key existed True
+
+rel-sub    RUN    FAIL        preview rows 1; boxes as expected: True; on disk: renamed: True; preview rows after ticking subdirectories 1 (expected 2: f.txt, g.txt); boxes: no box || subdirs: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to read directory. (3) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uvedenou cestu.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; preview rows 1; checkbox 0->1
+rel-sub    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

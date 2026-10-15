@@ -1236,7 +1236,29 @@ void CRenamerDialog::ReloadSourceFiles()
             ProcessRenamed && i < RenamedFiles.Count ? RenamedFiles[i++] : NotRenamedFiles[j++];
         if (subdirs && item->IsDir)
         {
-            success = LoadSubdir(pathBuf, item->Name);
+            // feature 209: the folder where the item IS (its FullName), not Root + its name - a renamed
+            // folder may lie elsewhere (a full-path run empties Root: "name\*.*" was read relative to
+            // the current folder; a relative-path rename "a" -> "sub\a" listed another folder "Root\a")
+            int dirLen = (int)(item->Name - item->FullName);
+            if (dirLen > 0 && item->FullName[dirLen - 1] == '\\')
+                dirLen--;
+            if (dirLen > 0 && dirLen < MAX_PATH)
+            {
+                memcpy(pathBuf, item->FullName, dirLen);
+                pathBuf[dirLen] = 0;
+                if (dirLen == 2 && pathBuf[1] == ':') // "C:" -> "C:\" (the root)
+                {
+                    pathBuf[2] = '\\';
+                    pathBuf[3] = 0;
+                }
+                success = LoadSubdir(pathBuf, item->Name);
+            }
+            else // its folder does not fit the buffer: refused as LoadSubdir refuses a long path
+            {
+                BOOL skip;
+                FileError(HWindow, item->FullName, IDS_TOOLONGPATH, FALSE, &skip, &SkipAllLongNames, IDS_ERROR);
+                success = skip;
+            }
             if (!success)
                 break;
         }

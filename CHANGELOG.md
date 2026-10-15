@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Renamer: "Include subdirectories" after a rename shows the renamed
+  folder's files** (feature 209). After renaming a folder to a full path
+  or into a subfolder, ticking "Include subdirectories" failed with
+  "Unable to read directory" - it looked for the folder in the wrong
+  place, where another folder of that name could have been listed.
+
 - **Renamer: changing the case of names with accents works** (feature 208).
   Lower, upper and mixed case and "remove diacritics" failed with "The file
   name is incorrect" (or changed only the plain letters) for names with

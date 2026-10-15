@@ -314,10 +314,8 @@ Functional, no loss:
     reported done without moving), case-insensitive search folding UTF-8 bytes (`common/moore.cpp`
     ~146, `regexp.cpp` `Caseles` - with "Match case" off a search can replace another letter: a
     wrong name written), whole words on single bytes, cut arguments counting bytes - measure first);
-    **209** - `ReloadSourceFiles` (`rendlg.cpp` ~1214-1239) expands a renamed folder as `Root +
-    Name`: after a full-path run (`Root` emptied) a relative `name\*.*` against the current folder,
-    after a relative-path rename `a` -> `sub\a` another folder `Root\a` - its files offered for
-    renaming with "Include subdirectories"; also recorded: a new name is capped at 259 bytes (a
+    ~~209 - `ReloadSourceFiles` expands a renamed folder as `Root + Name`~~ - **done, feature
+    209**; also recorded: a new name is capped at 259 bytes (a
     refusal), an item from a subdirectory is refused at 260 bytes while a selected one is not. Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
