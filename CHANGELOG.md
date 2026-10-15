@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **The Copy, Move and Unpack dialogs never shorten what you typed**
+  (feature 214). A target that did not fit was silently cut - with
+  letters such as Chinese or Japanese ones a typed folder could be cut to
+  its parent, and the files went there. Such a target is now refused with
+  "The path specified is too long."
+
 - **Cleaning up a temporary folder never deletes through a link** (feature
   212). When a temporary folder of the program (an archive unpacked for
   viewing, an external archiver's work folder, a plug-in's temporary

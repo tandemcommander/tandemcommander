@@ -50,6 +50,7 @@ public:
                     char* history[], int historyCount, BOOL directoryHelper);
 
     void SetSelectionEnd(int selectionEnd);
+    virtual void Validate(CTransferInfo& ti); // feature 214
     virtual void Transfer(CTransferInfo& ti);
 
 protected:

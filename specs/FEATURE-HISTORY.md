@@ -2698,3 +2698,8 @@ a few early ones are out of sequence).
   files deleted. A directory link (`DeleteAsDirLink`, 197's fail-closed decision) is now removed as
   a link and never walked, also the folder passed in. By reading only; driving it (the start-up
   `SAL*.tmp` sweep with a junction inside) is owed.
+- 214-copy-dialog-text-fits: `CCopyMoveDialog` / `CCopyMoveMoreDialog` limit the field in UTF-16
+  units but read UTF-8 into the caller's buffer, cutting what does not fit (also a history entry):
+  F5 out of a ZIP to `tgt\A\sub\` (CJK, 263 bytes) unpacked into `tgt\A` (measured). A `Validate`
+  measures the whole text and refuses (`IDS_TOOLONGPATH`). Probe `cm_text_probe.ps1` 4 / 0; 204
+  22 / 0. The same cut elsewhere (Make File List, user menu, viewers / editors) is in NEXT-WORK.

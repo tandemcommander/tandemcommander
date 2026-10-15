@@ -1,0 +1,12 @@
+cm_text_probe (feature 214) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 15:45; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - not used by this probe
+
+long       RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...vel\AppData\Local\Temp\tc214_cm\long\tgt', set '...\u4E24\u4E25\u4E26\u4E27\u4E28\u4E29\u4E2A\u4E2B\u4E2C\u4E2D\u4E2E\u4E2F\u4E30\u4E31\u4E32\u4E33\u4E34\u4E35\u4E36\u4E37\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43\u4E44aa\sub\'; on disk: typed 263 bytes; tgt: (empty); asked: [#32770 'Error'] The path specified is too long. | || Copy dialog re-opened (cancelled)
+long       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl        RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...avel\AppData\Local\Temp\tc214_cm\ctl\tgt', set '...pData\Local\Temp\tc214_cm\ctl\tgt\short\'; on disk: tgt: short/; short\x.txt=COPIED-ctl; asked: [#32770 'Copy'] Target path "C:\Users\pavel\AppData\Local\Temp\tc214_cm\ctl\tgt\short" doesn't exist. Do you want to create it? |
+ctl        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

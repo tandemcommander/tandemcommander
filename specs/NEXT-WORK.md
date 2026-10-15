@@ -662,9 +662,16 @@ Code work an agent can do:
          route and FTP download; 141: the core's mask routine cut every long name - Copy,
          Move, Quick Rename, the in-place line, a typed mask, Edit New File - and the FTP
          upload autorename, which 137 had not repaired although this list said so). Left by
-         141: **`CCopyMoveDialog::Transfer` cuts typed text that does not fit the caller's
-         buffer** (Create Directory on a plug-in file system: 174 CJK letters typed, the
-         plug-in gets 173; by reading); **FTP: a file name of about 494 bytes or more makes
+         141: ~~`CCopyMoveDialog::Transfer` cuts typed text that does not fit the caller's
+         buffer~~ - **done, feature 214** (measured: F5 out of a ZIP unpacked into the typed
+         folder's parent; left by its review - the same cut, to fix one by one: **Make File
+         List's output file** `dialogs.cpp` 1270 / 1950 and its line 1914 / 1931 (a cut name
+         is written or appended to), the drive's "go to" path `dialogs5.cpp:1884`, **the user
+         menu** `dialogs4.cpp:2215-2217` and **viewers / editors** `dialogs5.cpp` 2125-2127,
+         2507-2509 (a cut command runs another program), the hot path editor's
+         `GetDlgItemText` fallback `dialogs4.cpp:2924-2926` (code page); low risk: Edit New's
+         default `dialogs3.cpp:600`, the browse-from-field cuts `salamdr3.cpp:4349`,
+         `dialogs5.cpp:1923`, `dialogs2.cpp:1287`); **FTP: a file name of about 494 bytes or more makes
          `PrepareFTPCommand` fail in its 501-byte buffer and the callers send an empty
          command** (by reading); Paste "- Copy" naming says "cannot copy to itself" for names
          of about 250 bytes; FTP download target name in `fs4.cpp` cut at a byte (cosmetic);
