@@ -1,0 +1,13 @@
+find_number_probe (feature 190), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 01:59; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; hot keys: regedt.spl id 1: 1
+
+NUM        FOUND  PASS        '255' (hex 0, regexp 0): found [probe190be, probe190dw], expected [probe190be, probe190dw]
+NUM-MID    FOUND  PASS        '32768' (hex 0, regexp 0): found [probe190bemid], expected [probe190bemid]
+NUM-TOP    FOUND  PASS        '2147483648' (hex 0, regexp 0): found [probe190betop], expected [probe190betop]
+RX         FOUND  PASS        'beta' (hex 0, regexp 1): found [probe190mszone, probe190msztwo], expected [probe190mszone, probe190msztwo]
+HEX        FOUND  PASS        '62 00 65 00 74 00 61 00' (hex 1, regexp 0): found [probe190mszone, probe190msztwo], expected [probe190mszone, probe190msztwo]
+FIND       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 6, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; probe key removed: True; registry restored+identical: True

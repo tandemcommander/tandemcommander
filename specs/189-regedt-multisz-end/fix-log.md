@@ -41,7 +41,7 @@ Build: BUILD SUCCEEDED; saltests 22,361 / 0; `check_encoding.py` TOTAL 0.
 
 ## Measured (after)
 
-All six exact (`probe/result_after.txt`, 7 / 0); exit clean, no report, registry identical.
+All six exact (`probe/result_after.txt`, 6 / 0 of these rows; RX and END fail on 190, below).
 The panel's trailing space is not visible to OCR - covered by saltests (the same rule), not
 driven on screen.
 

@@ -323,8 +323,10 @@ void CFindDialog::StartSearch()
     char patternA[MAX_KEYNAME];
     char patternW[MAX_KEYNAME * 2];
     int patternALen, patternWLen;
-    BOOL useNumber;
-    QWORD number;
+    // feature 190: set in every mode - the regular-expression and hex searches passed both
+    // uninitialized to the search thread (a Debug run-time check stopped the search)
+    BOOL useNumber = FALSE;
+    QWORD number = 0;
     if (Hex)
     {
         ConvertHexToString(Pattern, patternA, patternALen);

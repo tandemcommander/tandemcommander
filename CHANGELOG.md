@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Registry Editor finds with regular expressions and in hex again**
+  (feature 190). Such a search used an unset value; a test build stopped it
+  with an error box.
+
 - **Registry Editor shows text values to their end, and only to it**
   (feature 189). A multi-string value stored with one closing character showed
   a trailing space; in the Find window such a value, or a text with an odd

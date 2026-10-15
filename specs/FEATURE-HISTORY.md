@@ -2579,3 +2579,7 @@ a few early ones are out of sequence).
   terminated (it read past it: debug-heap fence bytes in the Data cell); its regexp search trims
   the NULs at the end, not a fixed 2 / 4 bytes. Windows adds a NUL when it reads back a text stored
   without one. Probe `multisz_probe.ps1` 3 / 4 -> 6 / 0 (+ RX, blocked by 190).
+- 190-regedt-find-number: Registry Editor Find - `useNumber` / `number` set in regexp and hex mode
+  (passed uninitialized to the search thread: a Debug run-time check box stopped the search).
+  Refuted: a sign extension in the big-endian compare (plug-ins build with `/J`). Probe
+  `find_number_probe.ps1` 3 / 3 -> 6 / 0; the 189 probe 8 / 0; negative control of 189's trim.

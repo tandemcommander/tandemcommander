@@ -525,6 +525,23 @@ Code work an agent can do:
   messages (`fs5.cpp`, `ErrorHelper`) are consistently code page but lose letters outside it.
 - ~~Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124)~~ -
   **done, feature 189** (also the Find window read past its copy of such a value).
+- **Registry Editor Find, found by the review of 190** (older than it), most serious first:
+  1. The time fields: `ti.EditLine(IDC_MINTIME / IDC_MAXTIME, buffer, MAX_KEYNAME)` into
+     `char buffer[20]` (`finddlg2.cpp` ~584-594, ~657-671), the edits have no limit - 30+
+     characters typed or pasted overrun the stack.
+  2. A quoted hex pattern: `ConvertHexToString` (`utils.cpp:346`) writes 2 bytes per character
+     inside `"..."` with no bound into `patternA[512]` (and the thread's `PatternA[512]`).
+  3. A plain pattern that does not fit 512 bytes in the code page (`WStrToStr`, `CP_ACP`, e.g.
+     170+ CJK letters under a UTF-8 or DBCS code page): `patternALen = -1` reaches a `memcpy`;
+     in regexp mode 0 - everything matches.
+  4. "0x" before a hexadecimal number (the help promises it) is rejected by `HexStringToNumber`
+     (`utils.cpp:700`); its overflow test divides by 10 - a 17-digit hex number loses its top
+     digit.
+  5. A DWORD / QWORD value stored shorter than 4 / 8 bytes is compared with stale bytes of the
+     buffer (`finddlg.cpp` ~1206 / ~1212); `malloc(0)` when the key's largest value is empty.
+  6. Regexp with Whole words tests `text[pos - 1]` / `text[pos + matchLen]` with `pos` counted
+     from the line, not the buffer - wrong on the second and later lines of a list (NIT); an
+     empty regexp goes to `Set("")` instead of "everything" (NIT).
 - **Found by the second verification of 124-128 (2026-10-13)**, most visible first:
   1. ~~Registry Editor, `%ls` messages~~ - **done, feature 129** (also the disk cache name of
      a viewed value, which the same cause made the same for different keys). Left from it:
