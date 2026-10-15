@@ -329,12 +329,28 @@ void CFindDialog::StartSearch()
     QWORD number = 0;
     if (Hex)
     {
-        ConvertHexToString(Pattern, patternA, patternALen);
+        ConvertHexToString(Pattern, patternA, MAX_KEYNAME, patternALen);
+        if (patternALen < 0) // feature 191: does not fit (Validate refuses it first; a backstop)
+        {
+            SetLastError(ERROR_SUCCESS); // Error() adds the text of the last error
+            Error(IDS_LONGDATA);
+            return;
+        }
         memcpy(patternW, patternA, patternALen);
         patternWLen = patternALen;
     }
     else
     {
+        // feature 191: a pattern whose code-page form does not fit MAX_KEYNAME bytes (WStrToStr
+        // gives 0) is refused - it went on as length -1 to a memcpy (0 in regexp mode: everything);
+        // Validate refuses it first, this is a backstop
+        DWORD need = WStrToStr(NULL, 0, Pattern);
+        if (need == 0 || need > MAX_KEYNAME)
+        {
+            SetLastError(ERROR_SUCCESS); // Error() adds the text of the last error
+            Error(IDS_LONGDATA);
+            return;
+        }
         if (RegExp)
         {
             patternALen = WStrToStr(patternA, MAX_KEYNAME, Pattern);
@@ -417,8 +433,9 @@ BOOL ValidateTimeString(char* time)
     CALL_STACK_MESSAGE1("ValidateTimeString()");
     char* s = time + strlen(time);
 
-    // trim spaces from the end
-    while (isspace(s[-1]))
+    // trim spaces from the end (feature 191: not before the start - a field of spaces read the
+    // bytes in front of the buffer)
+    while (s > time && isspace(s[-1]))
         s--;
     *s = 0;
 
@@ -569,20 +586,43 @@ void CFindDialog::Validate(CTransferInfoEx& ti)
 
     BOOL b;
     ti.CheckBox(IDC_HEX, b);
+    if (!b)
+    {
+        // feature 191: the code-page form of the pattern is what the search keeps (MAX_KEYNAME
+        // bytes); a longer one (a UTF-8 or DBCS code page) is refused here, the field focused
+        WCHAR buffer[MAX_KEYNAME];
+        ti.EditLineW(IDC_PATTERN, buffer, MAX_KEYNAME);
+        DWORD need = WStrToStr(NULL, 0, buffer);
+        if (need == 0 || need > MAX_KEYNAME)
+        {
+            SG->SalMessageBox(GetParent(), LoadStr(IDS_LONGDATA), LoadStr(IDS_ERROR), MB_OK);
+            ti.ErrorOn(IDC_PATTERN);
+            return;
+        }
+    }
     if (b)
     {
         WCHAR buffer[MAX_KEYNAME];
         ti.EditLineW(IDC_PATTERN, buffer, MAX_KEYNAME);
-        if (!ValidateHexString(buffer))
+        int hexLen;
+        if (!ValidateHexString(buffer, &hexLen))
         {
             SG->SalMessageBox(GetParent(), LoadStr(IDS_BADHEXSTRING), LoadStr(IDS_ERROR), MB_OK);
+            ti.ErrorOn(IDC_PATTERN);
+            return;
+        }
+        if (hexLen > MAX_KEYNAME) // feature 191: the bytes the search keeps (a quoted letter makes 2)
+        {
+            SG->SalMessageBox(GetParent(), LoadStr(IDS_LONGDATA), LoadStr(IDS_ERROR), MB_OK);
             ti.ErrorOn(IDC_PATTERN);
             return;
         }
     }
 
     // validujeme casy
-    char buffer[20];
+    // feature 191: the buffer has the size given to EditLine - it was char[20] read with MAX_KEYNAME
+    // (a longer text in a time field overran the stack); a wrong one is refused as a bad format
+    char buffer[MAX_KEYNAME];
     ti.EditLine(IDC_MINTIME, buffer, MAX_KEYNAME);
     if (strlen(buffer) && !ValidateTimeString(buffer))
     {
@@ -618,6 +658,10 @@ void CFindDialog::Transfer(CTransferInfoEx& ti)
     ti.CheckBox(IDC_REGEXP, RegExp);
     if (ti.Type == ttDataToWindow)
     {
+        // feature 191: a time is short - a longer text gets the "bad format" box, not the
+        // system's "file name too long" one of EditLine
+        SendDlgItemMessage(HWindow, IDC_MINTIME, EM_LIMITTEXT, 100, 0);
+        SendDlgItemMessage(HWindow, IDC_MAXTIME, EM_LIMITTEXT, 100, 0);
         //SendDlgItemMessage(HWindow, IDC_PATH, CB_SETCURSEL, 0, 0);
         wcscpy(lookIn, LookInInit);
         if (DuplicateChar(L';', lookIn, 1024))
@@ -655,7 +699,7 @@ void CFindDialog::Transfer(CTransferInfoEx& ti)
 
         // read the times
         UseMinTime = UseMaxTime = FALSE; // default values
-        char buffer[20];
+        char buffer[MAX_KEYNAME];        // feature 191: was char[20] (see Validate)
         ti.EditLine(IDC_MINTIME, buffer, MAX_KEYNAME);
         if (strlen(buffer))
         {

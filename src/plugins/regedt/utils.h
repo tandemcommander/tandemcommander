@@ -92,8 +92,10 @@ LPWSTR UnDuplicateChar(WCHAR dup, LPWSTR buffer);
 
 BOOL ParseFullPath(WCHAR* path, WCHAR*& keyName, int& keyRoot);
 
-void ConvertHexToString(LPWSTR text, char* hex, int& len);
-BOOL ValidateHexString(LPWSTR text);
+// feature 191: 'hexSize' is the size of 'hex'; a pattern that does not fit gives len -1 (never cut)
+void ConvertHexToString(LPWSTR text, char* hex, int hexSize, int& len);
+// feature 191: 'len' (when not NULL) receives the number of bytes the pattern makes
+BOOL ValidateHexString(LPWSTR text, int* len = NULL);
 
 // ****************************************************************************
 

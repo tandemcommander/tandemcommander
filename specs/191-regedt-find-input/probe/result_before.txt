@@ -1,0 +1,11 @@
+find_input_probe (feature 191), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 02:08; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A; hot keys: regedt.spl id 1: 1
+
+HEX-OK     RESULT PASS        found [probe191list] (expected [probe191list]); windows: none
+TIME-BAD   RESULT PASS        found [probe191list] (expected [not looked at]); windows: [#32770 'Error'] [Static id=2477] Invalid date/time format. Please enter date in format dd.mm.yyyy or date and time in format hh:mm:ss dd.mm.yyyy. | [Button id=1] OK
+TIME-LONG  RESULT FAIL        found [] (expected [not looked at]); windows: ...Library'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Debug Error! Program: ...der\build\tandemcommander\Debug_x64\plugins\regedt\regedt.spl Module: ...der\build\tandemcommander\Debug_x64\plugins\regedt\regedt.spl File: Run-Time Check Failure #2 - Stack around the variable 'buffer' was corrupted. (Press Retry to debug the application) ; FATAL: ...Static id=65535] Debug Error! Program: ...der\build\tandemcommander\Debug_x64\plugins\regedt\regedt.spl Module: ...der\build\tandemcommander\Debug_x64\plugins\regedt\regedt.spl File: Run-Time Check Failure #2 - Stack around the variable 'buffer' was corrupted. (Press Retry to debug the application) 
+FIND       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 3, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; probe key removed: True; registry restored+identical: True

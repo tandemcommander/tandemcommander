@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **No crash in the Registry Editor's Find with long input** (feature 191).
+  A long text in a time field, or a long quoted hex pattern, overran the
+  stack; they are refused with a message now.
+
 - **Registry Editor finds with regular expressions and in hex again**
   (feature 190). Such a search used an unset value; a test build stopped it
   with an error box.

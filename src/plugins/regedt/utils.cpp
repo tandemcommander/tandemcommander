@@ -343,7 +343,7 @@ inline BOOL IsXdigit(WCHAR c)
     return c >= L'0' && c <= L'9' || towlower(c) >= L'a' && towlower(c) <= L'f';
 }
 
-void ConvertHexToString(LPWSTR text, char* hex, int& len)
+void ConvertHexToString(LPWSTR text, char* hex, int hexSize, int& len)
 {
     CALL_STACK_MESSAGE_NONE
     //  CALL_STACK_MESSAGE2("ConvertHexToString(, , %d)", len);
@@ -372,6 +372,11 @@ void ConvertHexToString(LPWSTR text, char* hex, int& len)
                 break;
             else
             {
+                if (len + 2 > hexSize) // feature 191: 2 bytes a letter overran the caller's buffer
+                {
+                    len = -1;
+                    return;
+                }
                 *(LPWSTR)(hex + len) = *s++;
                 len += 2;
             }
@@ -384,12 +389,22 @@ void ConvertHexToString(LPWSTR text, char* hex, int& len)
                     break;
                 else
                 {
+                    if (len + 1 > hexSize)
+                    {
+                        len = -1;
+                        return;
+                    }
                     WStrToStr(hex + len, 1, s++, 1);
                     len += 1;
                 }
             }
             else
             {
+                if (IsXdigit(*s) && len + 1 > hexSize)
+                {
+                    len = -1;
+                    return;
+                }
                 if (IsXdigit(*s))
                 {
                     if (*s >= L'0' && *s <= L'9')
@@ -420,11 +435,13 @@ void ConvertHexToString(LPWSTR text, char* hex, int& len)
     }
 }
 
-BOOL ValidateHexString(LPWSTR text)
+BOOL ValidateHexString(LPWSTR text, int* outLen)
 {
     CALL_STACK_MESSAGE_NONE
     //  CALL_STACK_MESSAGE1("ValidateHexString()");
     int len = 0;
+    if (outLen != NULL)
+        *outLen = 0;
     LPWSTR s = text; //, st = text;
     BYTE value = 0;
     BOOL openedQuotesASCII = FALSE;
@@ -470,6 +487,7 @@ BOOL ValidateHexString(LPWSTR text)
                     if (IsXdigit(*s)) // second digit (required)
                     {
                         s++;
+                        len += 1; // feature 191: the byte counts as well
                     }
                     else
                         return FALSE;
@@ -488,6 +506,8 @@ BOOL ValidateHexString(LPWSTR text)
             }
         }
     }
+    if (outLen != NULL)
+        *outLen = len;
     return TRUE;
 }
 

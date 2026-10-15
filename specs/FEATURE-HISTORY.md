@@ -2583,3 +2583,9 @@ a few early ones are out of sequence).
   (passed uninitialized to the search thread: a Debug run-time check box stopped the search).
   Refuted: a sign extension in the big-endian compare (plug-ins build with `/J`). Probe
   `find_number_probe.ps1` 3 / 3 -> 6 / 0; the 189 probe 8 / 0; negative control of 189's trim.
+- 191-regedt-find-input: Registry Editor Find - the time fields' `char[20]` read with `MAX_KEYNAME`
+  (stack overrun), a quoted hex pattern unbounded into `patternA[512]` (fatal memcpy overlap), a
+  code-page pattern over 512 bytes (length -1 to memcpy) - all refused in `Validate` with a message
+  (`IDS_LONGDATA` / the bad time format), `ConvertHexToString` takes its buffer size. `Error()`
+  appends `GetLastError()`'s text - clear it first. Probe `find_input_probe.ps1` 3 / 1 (+ 0 / 2)
+  -> 5 / 0.
