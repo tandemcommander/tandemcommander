@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **SFTP: viewing a file you may not read says so** (feature 220). F3 on
+  a server file without read permission showed nothing at all; it now
+  says "Permission denied". A connection whose server stopped answering
+  is also released completely when it is closed.
+
 - **Go to Shortcut Target works for a folder link stored with a "\\?\"
   target** (feature 219). A symbolic link whose target was written in the
   long form (`\\?\C:\...`) could not be followed ("The path specified is

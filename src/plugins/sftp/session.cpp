@@ -1179,6 +1179,15 @@ BOOL CSFTPSession::Reconnect(HWND parent, CSFTPHostKeyList* trustStore, CSFTPCon
     return Connect(parent, &Params, trustStore, result);
 }
 
+// feature 220: see Disconnect
+void CSFTPSession::ShutDownSocketForTeardown()
+{
+    EnterCriticalSection(&SocketLock);
+    if (Socket != INVALID_SOCKET)
+        shutdown(Socket, SD_BOTH);
+    LeaveCriticalSection(&SocketLock);
+}
+
 void CSFTPSession::Disconnect()
 {
     // feature 051 (U5): tearing a session down talks to the server three times
@@ -1191,15 +1200,36 @@ void CSFTPSession::Disconnect()
         long teardownMs = (Connected && !IsCancelRequested()) ? 2000L : 1L;
         libssh2_session_set_timeout(Ssh, teardownMs);
     }
+    // feature 220: a step that ran out of its deadline (the server did not answer the channel's
+    // close) freed nothing - the SFTP structure, the channel and the whole session stayed allocated
+    // (the Debug build's leak report at exit). Then the socket is shut down - its handle stays
+    // valid, so libssh2 never reaches another connection that might reuse a closed handle - and
+    // the step is repeated: a read then fails at once and the channel and the SFTP structure are
+    // freed. Not covered (libssh2): a partly sent packet of an earlier request (a new packet is
+    // refused), SFTP handles left open on a dead session, a server's SSH_MSG_DISCONNECT.
+    BOOL socketShut = FALSE;
     if (Sftp != NULL)
     {
-        libssh2_sftp_shutdown(Sftp);
+        if (libssh2_sftp_shutdown(Sftp) != 0)
+        {
+            ShutDownSocketForTeardown();
+            socketShut = TRUE;
+            if (libssh2_sftp_shutdown(Sftp) != 0)
+                Log("SFTP teardown: the SFTP subsystem could not be released.");
+        }
         Sftp = NULL;
     }
     if (Ssh != NULL)
     {
-        libssh2_session_disconnect(Ssh, "Bye");
-        libssh2_session_free(Ssh);
+        if (!socketShut)
+            libssh2_session_disconnect(Ssh, "Bye");
+        if (libssh2_session_free(Ssh) != 0)
+        {
+            if (!socketShut)
+                ShutDownSocketForTeardown();
+            if (libssh2_session_free(Ssh) != 0)
+                Log("SFTP teardown: the SSH session could not be released.");
+        }
         Ssh = NULL;
     }
     EnterCriticalSection(&SocketLock);

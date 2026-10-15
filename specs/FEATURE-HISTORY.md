@@ -2737,3 +2737,8 @@ a few early ones are out of sequence).
   as `\\?\C:\...` could not be followed (Go to Shortcut Target "path invalid") -
   `SalReparseNameAsPath` (salreparse.h, saltests) makes the long / NT form a path (not a name with a
   trailing dot / space component). Probe `deeplink219_probe.ps1` 17 / 1 -> 20 / 0.
+- 220-sftp-leftovers: SFTP F3 on a file of mode 000 showed nothing - `ViewFile` says every failure
+  (as the download); `Disconnect` gave a dead session 1 ms and the channel's close timed out - the
+  whole session leaked (a stalled server through `probe/fakessh.py` `stallT`): a failed teardown step
+  is repeated after `shutdown(SD_BOTH)`. Probes 6 / 0, 4 / 0. Left (libssh2): a partly sent packet,
+  open handles of a dead session, a server's DISCONNECT.

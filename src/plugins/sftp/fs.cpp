@@ -1219,10 +1219,21 @@ void WINAPI CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
         // fails and FreeFileNameInCache below still runs (the 'return' here skipped it).
         SplU8ToW(cacheName, wpath, 4096);
         HANDLE lf = CreateFileW(wpath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-        if (lf != INVALID_HANDLE_VALUE)
+        // feature 220: every failure is said (F3 on a file the server does not let us read showed
+        // nothing at all); a cancel by the user is not a failure
+        BOOL cancelled = FALSE;
+        DWORD writeErr = NO_ERROR;
+        if (lf == INVALID_HANDLE_VALUE)
+        {
+            DWORD err = GetLastError();
+            SFTPShowPathError(parent, IDS_ERR_DOWNLOAD, file.Name, CSFTPMsgText(SalamanderGeneral->GetErrorText(err)).Get());
+        }
+        else
         {
             LIBSSH2_SFTP_HANDLE* h = Session.OpenRead(remote);
-            if (h != NULL)
+            if (h == NULL)
+                SFTPShowPathError(parent, IDS_ERR_DOWNLOAD, file.Name, Session.GetLastErrorText());
+            else
             {
                 char buf[64 * 1024]; // CF-23: call-local; a static I/O buffer is a re-entrancy hazard
                 __int64 total = 0;
@@ -1241,6 +1252,7 @@ void WINAPI CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
                     if (SalamanderGeneral->GetSafeWaitWindowClosePressed())
                     {
                         ok = FALSE; // '!newFileOK' below removes the partial cache entry
+                        cancelled = TRUE;
                         break;
                     }
                     __int64 n = Session.Read(h, buf, sizeof(buf));
@@ -1252,14 +1264,28 @@ void WINAPI CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
                     if (n == 0)
                         break;
                     DWORD w = 0;
-                    if (!WriteFile(lf, buf, (DWORD)n, &w, NULL) || w != (DWORD)n)
+                    BOOL written = WriteFile(lf, buf, (DWORD)n, &w, NULL);
+                    if (!written || w != (DWORD)n)
                     {
+                        writeErr = written ? ERROR_DISK_FULL : GetLastError(); // a short write sets no error
+                        if (writeErr == NO_ERROR)
+                            writeErr = ERROR_DISK_FULL;
                         ok = FALSE; // disk full - do not register a truncated cache copy as valid
                         break;
                     }
                     total += n;
                 }
                 SalamanderGeneral->DestroySafeWaitWindow();
+                if (!ok && !cancelled) // a read or a write failed - before the handle is closed (its error)
+                {
+                    if (writeErr != NO_ERROR)
+                        SFTPShowPathError(parent, IDS_ERR_DOWNLOAD, file.Name, CSFTPMsgText(SalamanderGeneral->GetErrorText(writeErr)).Get());
+                    else if (!Session.IsConnected()) // the session's reason (as the download, operats.cpp)
+                        SFTPShowPathError(parent, IDS_ERR_DOWNLOAD, file.Name, Session.GetLastErrorText());
+                    else // a live session keeps no reason of a read
+                        SalamanderGeneral->SalMessageBox(parent, LoadStr(IDS_ERR_READREMOTE),
+                                                         LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                }
                 Session.CloseHandle(h);
                 newFileOK = ok;
                 newFileSize.SetUI64((unsigned __int64)total);

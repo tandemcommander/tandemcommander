@@ -286,6 +286,7 @@ protected:
     void ProbeTimedOut();
 #endif
     void Log(const char* text);
+    void ShutDownSocketForTeardown(); // feature 220: shutdown(SD_BOTH), the handle kept
     void LogFmt(const char* fmt, ...);
 
     friend unsigned __stdcall SFTPConnectThreadProc(void* param);

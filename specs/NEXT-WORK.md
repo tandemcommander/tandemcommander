@@ -641,8 +641,8 @@ Code work an agent can do:
              Ctrl+R on a connection that died while idle (the panel must stay on the server
              after the reconnect), a refused Change Attributes on a file of another owner; a
              reply shorter than the protocol allows leaves a request half-done until the next
-             timeout (no wrong answer, a wait); F3 on a file that cannot be opened shows
-             nothing; one unclosed handle per lost connection stays allocated until exit;
+             timeout (no wrong answer, a wait); ~~F3 on a file that cannot be opened shows
+             nothing~~ (done, feature 220); one unclosed handle per lost connection stays allocated until exit;
            - a replaced server file with other hard links is split from them (SFTP v3 does not
              report the link count); ACLs and extended attributes are not carried; a
              write-only "drop" directory fails the size confirmation; orphaned `.tcpart-*`
@@ -692,9 +692,10 @@ Code work an agent can do:
          that may write 256 bytes~~ - **done, feature 216** (also the SSL log lines' encoding); the core's `SalMakeValidFileNameComponent` cuts at byte 256;
          ~~SFTP: a memory leak after a failed SSH handshake~~ - **done, feature 217** (reproduced
          by a proxy flipping the server's signature; also the 1-in-256 key exchange failure;
-         left: **`src/plugins/sftp/session.cpp` `Disconnect` ~1188-1203 tears down with a 1 ms
-         deadline on a dead or cancelled connection - `sftp_shutdown` / `session_free` time out
-         and the whole session leaks** (the same leak box at exit); a server's
+         left: ~~`Disconnect` tears down with a 1 ms deadline - the whole session leaks~~ - **done,
+         feature 220** (left, in libssh2: a partly sent packet of an earlier request makes the
+         repeated step refuse - the session still leaks; SFTP handles open on a dead session are
+         not freed); a server's
          SSH_MSG_DISCONNECT while SFTP is up leaks the SFTP structure (upstream `channel.c`);
          ~1,500 connections to show the 1-in-256 failure gone - owed). **Seen a second time on 2026-10-13, on the 0.1.9
          build**: "SSH handshake failed: Unable to exchange encryption keys" on the ninth

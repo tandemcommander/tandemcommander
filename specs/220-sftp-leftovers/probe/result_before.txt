@@ -1,0 +1,14 @@
+sftp220_probe (feature 220), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 17:45; desktop 'tc_probe_22368'; ACP 1250; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+Server  : prepared: /home/tctest/tc220
+
+VIEW-DENIED ROW    FAIL        F3 on secret.txt (mode 000): an error shown False; viewer windows 0; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc220/v1'; dialogs: none
+VIEW-DENIED END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VIEW-OK    ROW    PASS        F3 on open.txt: an error shown False; viewer windows 1; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc220/v2'; dialogs: none
+VIEW-OK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+DL-DENIED  ROW    FAIL        F5 of secret.txt: an error shown True; local files 1; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc220/v1'; dialogs: [#32770 'Copy'] [Static id=209] Copy file "secret.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'SFTP Error'] [Static id=2477] Cannot download "/home/tctest/tc220/v1/secret.txt": Permission denied. | [Button id=1] OK
+DL-DENIED  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 4, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

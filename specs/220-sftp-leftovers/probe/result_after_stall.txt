@@ -1,0 +1,31 @@
+sftp220_stall_probe (feature 220) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 18:06; desktop 'tc_probe_21360'; ACP 1250; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+CTL        ROW    PASS        connected at 'sftp:tctest@127.0.0.1:2223/home/tctest'; dialogs: typed into [SFTP Client] || [#32770 'Unknown Server - Verify Host Key'] [Static id=640] The authenticity of host 127.0.0.1:2223 cannot be established. The server's ecdsa-sha2-nistp256 key fingerprint is: SHA256:4/XVUxb2pmOiuKmxPQ4AblVehWGdkdvhqH6kDQX9Gtw Do you want to trust this server and continue connecting? | [Button id=643] &Trust and Store | [Button id=644] Connect &Once | [Button id=2] &Abort
+CTL        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+STALL      ROW    PASS        connected at 'sftp:tctest@127.0.0.1:2223/home/tctest'; dialogs: typed into [SFTP Client] || [#32770 'Unknown Server - Verify Host Key'] [Static id=640] The authenticity of host 127.0.0.1:2223 cannot be established. The server's ecdsa-sha2-nistp256 key fingerprint is: SHA256:4/XVUxb2pmOiuKmxPQ4AblVehWGdkdvhqH6kDQX9Gtw Do you want to trust this server and continue connecting? | [Button id=643] &Trust and Store | [Button id=644] Connect &Once | [Button id=2] &Abort || [#32770 'Unknown Server - Verify Host Key'] [Static id=640] The authenticity of host 127.0.0.1:2223 cannot be established. The server's ecdsa-sha2-nistp256 key fingerprint is: SHA256:4/XVUxb2pmOiuKmxPQ4AblVehWGdkdvhqH6kDQX9Gtw Do you want to trust this server and continue connecting? | [Button id=643] &Trust and Store | [Button id=644] Connect &Once | [Button id=2] &Abort
+STALL      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Server log:
+  1792080364.180 start stall9999
+  1792080364.441 connect stall9999
+  1792080364.458 closed (server sent 43)
+  1792080369.149 connect stall9999
+  1792080369.212 closed (server sent 1803)
+  1792080370.643 connect stall9999
+  1792080391.955 closed (server sent 17111)
+  1792080394.046 start stall6
+  1792080394.294 connect stall6
+  1792080394.324 closed (server sent 43)
+  1792080398.884 connect stall6
+  1792080398.965 closed (server sent 1803)
+  1792080400.380 connect stall6
+  1792080413.893 stalled after 6.0 s (6619 server bytes passed)
+  1792080443.915 connect stall6
+  1792080443.979 closed (server sent 1803)
+  1792080444.495 connect stall6
+  1792080450.707 stalled after 6.0 s (13379 server bytes passed)
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
