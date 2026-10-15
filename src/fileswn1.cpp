@@ -1483,6 +1483,7 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
     ColumnsTemplateIsForDisk = FALSE; // just initialization; set later in BuildColumnsTemplate()
     StopThumbnailLoading = FALSE;
     UserWorkedOnThisPath = FALSE;
+    DiskDirCaseSensitive = FALSE;
 
     UnpackedAssocFiles.SetPanel(this);
     QuickRenameWindow.SetPanel(this);
@@ -2174,9 +2175,12 @@ void CFilesWindow::RestoreGlobalSelection()
             if (clipboard)
             {
                 clipboardSelection.LoadFromClipboard(HWindow);
-                clipboardSelection.Sort();
-                selection = &clipboardSelection;
+                selection = &clipboardSelection; // sorted below (feature 231)
             }
+            // feature 231: names compared as this panel's folder compares them - in a case-sensitive
+            // folder "a.txt" does not select "A.txt"
+            selection->SetCaseSensitive(IsCaseSensitive());
+            selection->Sort();
 
             int count = Files->Count + Dirs->Count;
             int i;

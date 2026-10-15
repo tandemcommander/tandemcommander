@@ -1,0 +1,15 @@
+resel231_probe (feature 231) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 22:59; registry key existed True; ACP 1250
+
+CONTROL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CONTROL    RUN    PASS        files a.txt,z.txt; hidden: a.txt; steps: attr: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help / hidden: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+RESEL      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RESEL      RUN    PASS        files A.txt,a.txt,z.txt; hidden: a.txt; steps: attr: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help / hidden: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GLOBAL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GLOBAL     RUN    PASS        files A.txt,a.txt,z.txt; hidden: a.txt; steps: store: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help / restore: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help / hidden: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+HIDE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+HIDE       RUN    PASS        files A.txt,a.txt,z.txt; hidden: A.txt,z.txt; steps: hidden: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

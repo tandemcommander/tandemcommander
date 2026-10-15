@@ -722,11 +722,17 @@ Code work an agent can do:
          names at MAX_PATH and act on them~~ (measured, feature 227: not reachable - refused "too
          long name"; the Find window's `CompareName1/2` end empty); ~~`fileswna.cpp:396` cuts `SrcPath`~~ (done, feature 228; left from its review: ~~in
          `DragDropToArcOrFS` a duplicate case-insensitive match ... packs (with Move: deletes)
-         A.txt too~~ (done, feature 230; left from its review: **a disk panel's name-based
-         selection (Restore Selection, panel tabs, Load Selection, hidden names -
-         `CFilesWindow::IsCaseSensitive()` FALSE for disks, `fileswn0.cpp:2332`) treats a.txt and
-         A.txt of a case-sensitive folder as one - an extra item selected, possibly out of view
-         before F8 / F6**; paste from a 7-Zip / TAR archive holding a.txt and A.txt may extract
+         A.txt too~~ (done, feature 230; left from its review: ~~a disk panel's name-based
+         selection treats a.txt and A.txt of a case-sensitive folder as one~~ (done, feature 231;
+         left from its review: **feature 004's tie-break in `CmpNameExtIgnCase` (`sort.cpp:262`)
+         makes "Readme.txt" and "README.txt" unequal - Compare Directories (`mainwnd5.cpp:1300`,
+         1514, 879, 954) marks such a pair different in ordinary folders, a regression against
+         upstream**; the refresh merge (`fileswn0.cpp` ~2919-3075) walks twins in another order
+         than `LessNameExt` sorts them - a selected A.txt beside a.txt is lost on refresh;
+         remembered folder sizes case-insensitive (`salamdr6.cpp:1148/1196`, `stricmp`); the
+         viewer's next / previous file (`fileswnb.cpp:1211/1217`), the User Menu's compare names
+         (`mainwnd3.cpp:2829`) and Ctrl+X greying in the other panel (`shellsup.cpp:1934/1949`)
+         take the first case-insensitive twin; a timed listing on an SMB share owed); paste from a 7-Zip / TAR archive holding a.txt and A.txt may extract
          the other one (`salshlib.cpp:791-818`, only ZIP / FTP set SALDIRFLAG_CASESENSITIVE)); a
          folder name over 255 bytes ends the operation silently (`AddDir`, 222); the FTP upload's
          link size from a cut path (`fs5.cpp:1149`); `IsSimpleSelection`'s too-long message and

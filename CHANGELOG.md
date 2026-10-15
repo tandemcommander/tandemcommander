@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Restoring a selection in a case-sensitive folder** (feature 231). In a
+  folder that tells "a.txt" and "A.txt" apart (a WSL folder), Reselect,
+  Restore Selection and Hide Selected Names also took the other file of
+  the pair - the next command could act on a file nobody selected.
+
 - **Dragging or pasting into an archive takes only the selected files**
   (feature 230). In a folder that tells "a.txt" and "A.txt" apart (a WSL
   folder), dragging or pasting "a.txt" into an archive also packed

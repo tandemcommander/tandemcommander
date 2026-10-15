@@ -992,6 +992,7 @@ public:
     BOOL PerformingDragDrop; // a drag&drop operation is in progress right now
 
     BOOL UserWorkedOnThisPath; // TRUE only if the user performed an action on the current path (F3, F4, F5, ...)
+    BOOL DiskDirCaseSensitive; // feature 231: the disk folder listed tells names apart by case (ReadDirectory)
     BOOL StopThumbnailLoading; // if it is TRUE, icon-cache data about "thumbnail loaders" cannot be used (plugin unload/remove in progress)
 
     int EnumFileNamesSourceUID; // source UID for enumerating names in viewers
@@ -1025,8 +1026,9 @@ public:
                            IconCache != NULL && PathHistory != NULL && ContextSubmenuNew != NULL &&
                            ExecuteAssocEvent != NULL; }
 
-    // returns FALSE for ptDisk, TRUE for ptZIPArchive and ptPluginFS
-    // when their CSalamanderDirectory has the SALDIRFLAG_CASESENSITIVE flag set
+    // returns TRUE for ptZIPArchive and ptPluginFS when their CSalamanderDirectory has the
+    // SALDIRFLAG_CASESENSITIVE flag set; for ptDisk (feature 231) when the listed folder tells names
+    // apart by case (fsutil setCaseSensitiveInfo, a WSL folder - DiskDirCaseSensitive)
     BOOL IsCaseSensitive();
 
     // clears all stored histories

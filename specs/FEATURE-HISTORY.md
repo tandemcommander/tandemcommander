@@ -2796,3 +2796,8 @@ a few early ones are out of sequence).
   `nameFound` overrun. Byte-equal first (`salnamerun.h`, saltests); a case-insensitive-only item only
   as the unique fallback in a folder that is not case-sensitive (`SalDirIsCaseSensitive`, from 195) -
   review: sources may give another case. By reading (drag & drop / clipboard).
+- 231-case-sensitive-reselect: `IsCaseSensitive()` was FALSE for disk panels - Reselect, Restore
+  Selection, tabs, Hide Selected Names took a.txt and A.txt of a case-sensitive folder for one. Now
+  `DiskDirCaseSensitive` (set per disk listing, `SalDirIsCaseSensitive`); Restore Selection compares
+  by the panel's rule. Probe `resel231_probe.ps1` 3 FAIL -> 8 / 0. Review found 004's
+  `CmpNameExtIgnCase` tie-break (Compare Directories): NEXT-WORK.

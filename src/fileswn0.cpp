@@ -2329,7 +2329,9 @@ BOOL CFilesWindow::IsCaseSensitive()
         return (GetArchiveDir()->GetFlags() & SALDIRFLAG_CASESENSITIVE) != 0;
     else if (Is(ptPluginFS))
         return (GetPluginFSDir()->GetFlags() & SALDIRFLAG_CASESENSITIVE) != 0;
-    return FALSE; // ptDisk
+    // feature 231: a case-sensitive disk folder - "a.txt" and "A.txt" are two files there (Reselect,
+    // Restore Selection, panel tabs and hidden names took both for one: the other one was selected)
+    return DiskDirCaseSensitive;
 }
 
 BOOL AreTheSameDirs(DWORD validFileData, CPluginDataInterfaceEncapsulation* pluginData1,

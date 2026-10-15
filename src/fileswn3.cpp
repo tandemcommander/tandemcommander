@@ -127,6 +127,7 @@ BOOL CFilesWindow::ReadDirectory(HWND parent, BOOL isRefresh)
         UseThumbnails = readThumbnails;
 
         SetCurrentDirectory(GetPath()); // so that it works better
+        DiskDirCaseSensitive = SalDirIsCaseSensitive(GetPath()); // feature 231 (IsCaseSensitive)
 
 #ifndef _WIN64
         BOOL isWindows64BitDir = Windows64Bit && WindowsDirectory[0] != 0 && IsTheSamePath(GetPath(), WindowsDirectory);
