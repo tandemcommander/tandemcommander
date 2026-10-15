@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Dragging or pasting files into an archive from a deep folder**
+  (feature 228). From a folder whose path is longer than about 260
+  characters the program looked at a shortened path - an error, or another
+  folder whose name starts the same, whose items' details were used for the
+  dragged ones. It now reads the whole path.
+
 - **User Menu: commands run through the command shell work with accented
   names** (feature 226). An item set to run through the command shell got
   file and folder names with letters outside English garbled, so it did

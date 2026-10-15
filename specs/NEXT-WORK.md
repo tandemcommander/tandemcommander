@@ -717,7 +717,13 @@ Code work an agent can do:
          call; the other A `SetCurrentDirectory` calls on UTF-8 paths are speed hints only);
          long paths in the User Menu) and ~~Compare Directories `mainwnd5.cpp:1560/1584` cut disk
          names at MAX_PATH and act on them~~ (measured, feature 227: not reachable - refused "too
-         long name"; the Find window's `CompareName1/2` end empty); `fileswna.cpp:396` cuts `SrcPath`);
+         long name"; the Find window's `CompareName1/2` end empty); ~~`fileswna.cpp:396` cuts `SrcPath`~~ (done, feature 228; left from its review: **in
+         `DragDropToArcOrFS` a duplicate case-insensitive match - a case-sensitive folder (WSL,
+         setCaseSensitiveInfo) holding a.txt and A.txt, only a.txt dragged or pasted - overruns
+         `nameFound` and packs (with Move: deletes) A.txt too** (`fileswna.cpp` ~465 / 585); a
+         folder name over 255 bytes ends the operation silently (`AddDir`, 222); the FTP upload's
+         link size from a cut path (`fs5.cpp:1149`); `IsSimpleSelection`'s too-long message and
+         CP_ACP fallback (`shellib.cpp` ~497-510));
          ~~SFTP: a memory leak after a failed SSH handshake~~ - **done, feature 217** (reproduced
          by a proxy flipping the server's signature; also the 1-in-256 key exchange failure;
          left: ~~`Disconnect` tears down with a 1 ms deadline - the whole session leaks~~ - **done,

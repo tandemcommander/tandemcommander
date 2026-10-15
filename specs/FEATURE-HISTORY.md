@@ -2779,3 +2779,8 @@ a few early ones are out of sequence).
 - 227-compare-dirs-long-names: measured, no defect - Compare Directories cuts a 260+ byte subfolder
   name, but the panel path + the cut name never fits its MAX_PATH paths: refused "too long name"
   (probe `cmp227_probe.ps1`). The Find window's `CompareName1/2` likewise end empty. No code change.
+- 228-dragdrop-archive-long-source: `DragDropToArcOrFS` (drag & drop / paste into an archive or a
+  plug-in FS) listed the source folder cut at 259 bytes - an error, or an ancestor / a sibling with
+  the same start whose items' flags were taken (the 099 link check could pass a junction on a Move).
+  Whole path now (`CSalMaxPathBuffer`, heap messages). By reading (needs drag & drop or the
+  clipboard). Review found the case-sensitive duplicate overrun: NEXT-WORK.

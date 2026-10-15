@@ -14,6 +14,7 @@
 #include "zip.h"
 #include "shellib.h"
 #include "pack.h"
+#include "salheapstr.h" // feature 228
 
 void CFilesWindow::PluginFSFilesAction(CPluginFSActionType type)
 {
@@ -393,11 +394,29 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
     }
 
     // load complete data about files and directories, their names are in data->Data
-    char path[MAX_PATH + 10];
-    lstrcpyn(path, data->Data->SrcPath, MAX_PATH);
+    // feature 228: the whole source path - it was cut at 259 bytes, so a deeper source folder was
+    // listed under its cut path: another folder (an ancestor, or a sibling whose name starts the
+    // same - its items' attributes, the link flag the 099 check reads included, taken for the
+    // dragged ones) or none ("cannot read")
+    CSalMaxPathBuffer path;
+    if (path.Get() == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        free(nameFound);
+        delete baseDir;
+        return;
+    }
+    strcpy(path, data->Data->SrcPath); // SrcPath is SAL_MAX_PATH_UTF8 bytes, as 'path'
     char* end = path + strlen(path);
-    SalPathAppend(path, "*", MAX_PATH + 10);
-    char text[2 * MAX_PATH + 100];
+    if (!SalPathAppend(path, "*", path.Size()))
+    {
+        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH),
+                      data->Copy ? LoadStr(IDS_ERRORCOPY) : LoadStr(IDS_ERRORMOVE), MB_OK | MB_ICONEXCLAMATION);
+        free(nameFound);
+        delete baseDir;
+        return;
+    }
+    CSalHeapString text; // the messages name the whole path
     WIN32_FIND_DATAW file;
     HANDLE find = SalFindFirstFile(path, &file);
     *end = 0; // fix the path
@@ -406,8 +425,8 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
         DWORD err = GetLastError();
         if (err != ERROR_FILE_NOT_FOUND && err != ERROR_NO_MORE_FILES)
         {
-            sprintf(text, LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
-            SalMessageBox(HWindow, text, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            text.Printf(LoadStrU8(IDS_CANNOTREADDIR), path.Get(), GetErrorText(err));
+            SalMessageBox(HWindow, text.Size() > 0 ? text.Get() : path.Get(), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             if (nameFound != NULL)
                 free(nameFound);
             delete baseDir;
@@ -519,8 +538,8 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
 
         if (testFindNextErr && err != ERROR_NO_MORE_FILES)
         {
-            sprintf(text, LoadStrU8(IDS_CANNOTREADDIR), path, GetErrorText(err));
-            SalMessageBox(HWindow, text, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            text.Printf(LoadStrU8(IDS_CANNOTREADDIR), path.Get(), GetErrorText(err));
+            SalMessageBox(HWindow, text.Size() > 0 ? text.Get() : path.Get(), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
             if (nameFound != NULL)
                 free(nameFound);
             delete baseDir;
