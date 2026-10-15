@@ -1,0 +1,19 @@
+ren_search_probe (feature 210), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 11:33; ACP 1250; registry key existed True
+
+bm-wrong   RUN    FAIL        preview rows 1; boxes as expected: True; on disk: before C48A782E747874 got 45782E747874 want C48A782E747874; boxes: no box
+bm-wrong   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+bm-cz      RUN    FAIL        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got C5BE6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: [#32770 'Renamer'] [Static id=2477] Nothing to do. | [Button id=1] OK
+bm-cz      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+re-cz      RUN    FAIL        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got C5BE6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: [#32770 'Renamer'] [Static id=2477] Nothing to do. | [Button id=1] OK
+re-cz      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+bm-cs      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 5A6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: no box
+bm-cs      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ww         RUN    FAIL        preview rows 1; boxes as expected: True; on disk: before C5BE6C7574C3BD206BC5AFC5882E747874 got C5BE6C7574C3BD206BC5AFC5882E747874 want C5BE6C7574C3BD207065732E747874; boxes: [#32770 'Renamer'] [Static id=2477] Nothing to do. | [Button id=1] OK
+ww         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cut        RUN    FAIL        preview rows 1; boxes as expected: True; on disk: before C5BD6C75C5A52E747874 got C5BD6C75C5A52E747874 want C5BD5F2E747874; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to rename file: (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Renamer'] [Static id=2477] Some files have not been renamed successfully. These files will be listed now to enable you to correct errors and try to rename files again. To see successfully renamed files use options in `View' menu. | [Button id=1] OK || [#32770 'Renamer'] [Static id=2477] Some files have not been renamed successfully. These files will be listed now to enable you to correct errors and try to rename files again. To see successfully renamed files use options in `View' menu. | [Button id=1] OK || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No
+cut        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 7, FAIL 5, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

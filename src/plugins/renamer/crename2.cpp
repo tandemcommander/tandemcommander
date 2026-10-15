@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
+#include "../../common/salu8fold.h" // feature 210: cut by characters
 
 const char* VarOriginalName = "OriginalName";
 const char* VarDrive = "Drive";
@@ -117,11 +118,13 @@ public:
     virtual int DoExpand(char*& string, char* end,
                          const char* srcStart, const char* srcEnd)
     {
+        // feature 210: the positions count characters - a byte position cut a UTF-8 letter in two
+        // ("(123) the name is incorrect")
         const char *s, *e;
-        s = CountStartFrom > 0 ? srcStart + CutStart : srcEnd - CutStart;
+        s = CountStartFrom > 0 ? SalU8Advance(srcStart, srcEnd, CutStart) : SalU8Back(srcEnd, srcStart, CutStart);
         if (s < srcStart)
             s = srcStart;
-        e = CountEndFrom > 0 ? srcStart + CutEnd : srcEnd - CutEnd;
+        e = CountEndFrom > 0 ? SalU8Advance(srcStart, srcEnd, CutEnd) : SalU8Back(srcEnd, srcStart, CutEnd);
         if (e > srcEnd)
             e = srcEnd;
         int l = (int)(e - s);

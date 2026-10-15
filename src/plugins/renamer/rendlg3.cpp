@@ -166,10 +166,11 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
         while (1)
         {
             DWORD err = 0;
-            if (SG->StrICmp(sourceName, targetName) == 0 &&
-                    strcmp(
-                        SG->SalPathFindFileName(sourceName),
-                        SG->SalPathFindFileName(targetName)) == 0 ||
+            // feature 210: only the very same bytes are "nothing to do" - a case-only difference of a
+            // folder is left to the move (Windows does nothing for one file; in a case-sensitive
+            // folder "zh" and "ZH" are two folders, and the code-page StrICmp also took two
+            // different letters for one): the move was reported done without moving
+            if (strcmp(sourceName, targetName) == 0 ||
                 SG->SalMoveFile(sourceName, targetName, &err))
                 return TRUE; // success
 

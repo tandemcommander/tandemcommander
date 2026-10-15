@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
+#include "../../common/salu8fold.h" // feature 210: the search folds characters, not bytes
 
 // ****************************************************************************
 //
@@ -216,6 +217,9 @@ CRenamer::CRenamer(char (&root)[MAX_PATH], int& rootLen)
     CALL_STACK_MESSAGE2("CRenamer::CRenamer(, %d)", rootLen);
     BMSearch = SG->AllocSalamanderBMSearchData();
     RegExp = CreateRegExp();
+    FoldSearch = FALSE;
+    FoldRegex = FALSE;
+    ExecSource = ExecFolded = NULL;
 }
 
 CRenamer::~CRenamer()
@@ -248,13 +252,24 @@ BOOL CRenamer::SetOptions(CRenamerOptions* options)
         Global = options->Global;
         ExcludeExt = options->ExcludeExt;
 
+        FoldSearch = FoldRegex = FALSE;
         if ((UseRegExp = options->RegExp) != 0)
         {
             unsigned opts = RE_SINGLELINE;
             if (!options->CaseSensitive)
                 opts |= RE_CASELES;
 
-            if (!RegExp->RegComp(options->SearchFor, opts))
+            // feature 210: the engine folds only ASCII now (regexp.cpp); the pattern's other
+            // characters are folded here - the syntax is ASCII, so nothing of it changes - and the
+            // name's in RESubst
+            char pattern[2 * MAX_PATH];
+            strncpy_s(pattern, options->SearchFor, _TRUNCATE); // the same size as SearchFor: nothing cut
+            if (!options->CaseSensitive)
+            {
+                FoldRegex = TRUE;
+                SalU8FoldSameLength(pattern, (int)strlen(pattern), pattern, TRUE);
+            }
+            if (!RegExp->RegComp(pattern, opts))
             {
                 Error = GetRegExpErrorID(RegExp->GetState());
                 ErrorPos1 = 0;
@@ -268,11 +283,18 @@ BOOL CRenamer::SetOptions(CRenamerOptions* options)
         }
         else
         {
-            WORD flags = SASF_FORWARD;
-            if (options->CaseSensitive)
-                flags |= SASF_CASESENSITIVE;
+            // feature 210: always case-sensitive - a case-insensitive search folds the pattern here and
+            // the name in BMSubst by characters (the core's fold of the bytes: "C-dot" = "E-caron")
+            WORD flags = SASF_FORWARD | SASF_CASESENSITIVE;
+            char pattern[2 * MAX_PATH];
+            strncpy_s(pattern, options->SearchFor, _TRUNCATE); // the same size as SearchFor: nothing cut
+            if (!options->CaseSensitive)
+            {
+                FoldSearch = TRUE;
+                SalU8FoldSameLength(pattern, (int)strlen(pattern), pattern, FALSE);
+            }
 
-            BMSearch->Set(options->SearchFor, flags);
+            BMSearch->Set(pattern, flags);
             if (!BMSearch->IsGood())
             {
                 Error = IDS_LOWMEM;
@@ -430,12 +452,13 @@ int CRenamer::BMSearchForward(const char* string, int length, int offset)
 
         if (WholeWords)
         {
-            // check for a word break
-            int prev = ret > 0 && IsAlnum(string[ret - 1]) > 0;
-            int start = IsAlnum(string[ret]) > 0;
-            int end = IsAlnum(string[ret + BMSearch->GetLength() - 1]) > 0;
-            int next = ret + BMSearch->GetLength() < length &&
-                       IsAlnum(string[ret + BMSearch->GetLength()]) > 0;
+            // check for a word break - feature 210: by characters (a byte of a UTF-8 letter was
+            // judged through the code page)
+            int matchEnd = ret + BMSearch->GetLength();
+            int prev = SalU8IsAlnumBefore(string, length, ret);
+            int start = SalU8IsAlnumAt(string, length, ret);
+            int end = SalU8IsAlnumBefore(string, length, matchEnd);
+            int next = SalU8IsAlnumAt(string, length, matchEnd);
             if (prev != start && end != next)
                 return ret;
             offset++;
@@ -475,7 +498,24 @@ int CRenamer::BMSubst(const char* source, int len, char* dest, int max)
     int pos = 0;
     int offset = 0;
 
-    while ((start = BMSearchForward(source, len, offset)) >= 0)
+    // feature 210: a case-insensitive search runs over a folded copy - its offsets are the name's
+    char* folded = NULL;
+    const char* searched = source;
+    if (FoldSearch)
+    {
+        folded = (char*)malloc(len + 1);
+        if (folded == NULL)
+            return -1;
+        SalU8FoldSameLength(source, len + 1, folded, FALSE);
+        searched = folded;
+    }
+    struct CFreeFolded
+    {
+        char* P;
+        ~CFreeFolded() { free(P); }
+    } freeFolded = {folded};
+
+    while ((start = BMSearchForward(searched, len, offset)) >= 0)
     {
         // copy the part before the found pattern
         if (!SafeCopy(dest, max, pos, source + offset, start - offset))
@@ -665,8 +705,9 @@ BOOL CRenamer::SafeSubst(char* dest, int max, int& pos)
                         }
                     }
                 }
-                if (i < RegExp->SubExpCount &&
-                    !SafeCopy(dest, max, pos, RegExp->Startp[i],
+                // feature 210: the subexpression is copied from the name, not from its folded copy
+                if (i < RegExp->SubExpCount && RegExp->Startp[i] != NULL && // a group that took part
+                    !SafeCopy(dest, max, pos, ExecSource + (RegExp->Startp[i] - ExecFolded),
                               (int)(RegExp->Endp[i] - RegExp->Startp[i]), changeCase))
                     return FALSE;
             }
@@ -686,11 +727,31 @@ int CRenamer::RESubst(const char* source, int len, char* dest, int max)
     int offset = 0;
     int skipChar = 0;
 
-    while (RegExp->RegExec((char*)source, len, offset + skipChar))
+    // feature 210: a case-insensitive expression runs over a copy whose non-ASCII characters are
+    // folded (the same length - its offsets are the name's); everything is copied from the name
+    char* folded = NULL;
+    const char* subject = source;
+    if (FoldRegex)
+    {
+        folded = (char*)malloc(len + 1);
+        if (folded == NULL)
+            return -1;
+        SalU8FoldSameLength(source, len + 1, folded, TRUE);
+        subject = folded;
+    }
+    struct CFreeFolded
+    {
+        char* P;
+        ~CFreeFolded() { free(P); }
+    } freeFolded = {folded};
+    ExecSource = source;
+    ExecFolded = subject;
+
+    while (RegExp->RegExec((char*)subject, len, offset + skipChar))
     {
         // copy the part before the found pattern
         if (!SafeCopy(dest, max, pos, source + offset,
-                      (int)(RegExp->Startp[0] - source - offset)))
+                      (int)(RegExp->Startp[0] - subject - offset)))
             return -1;
 
         // replace the found pattern with the requested substitution
@@ -698,7 +759,7 @@ int CRenamer::RESubst(const char* source, int len, char* dest, int max)
             return -1;
 
         // move the offset forward
-        offset = (int)(RegExp->Endp[0] - source);
+        offset = (int)(RegExp->Endp[0] - subject);
         skipChar = RegExp->Endp[0] - RegExp->Startp[0] == 0 ? 1 : 0;
         if (!Global)
             break;

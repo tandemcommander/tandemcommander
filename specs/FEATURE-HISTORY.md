@@ -2682,3 +2682,9 @@ a few early ones are out of sequence).
   Name` - a renamed folder lies elsewhere: after a full-path run (`Root` emptied) "name\*.*" was
   read relative to the current folder, after `x` -> `sub\x` the folder `Root\x`. Now from the
   parent of the item's full name. Probe `ren_subdir_probe.ps1` -> 8 / 0.
+- 210-renamer-utf8-search: the Renamer's case-insensitive search folded UTF-8 BYTES through the
+  code page (cp1250: 8A / 9A - "E-caron" replaced in "C-dot x.txt": a wrong name written, both the
+  core's Boyer-Moore and the plug-in's regex); now a same-length fold by characters
+  (`salu8fold.h`) over a copy, the engines case-sensitive / ASCII-only; whole words and the cut
+  arguments by characters; the "nothing to do" shortcut only for identical bytes. Probe
+  `ren_search_probe.ps1` 7 / 5 -> 16 / 0.

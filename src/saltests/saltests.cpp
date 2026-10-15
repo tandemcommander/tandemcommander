@@ -62,6 +62,7 @@
 #include "salmultisz.h"      // feature 189
 #include "salreparse.h"      // feature 197
 #include "salshortname.h"    // feature 203
+#include "salu8fold.h"       // feature 210
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11943,6 +11944,65 @@ static void TestNameIsOnlyShortNameOf204()
     CHECK(!SalNameCanBeShortName("", -1));
 }
 
+// feature 210: the Renamer's case-insensitive search folds characters, not bytes - the code-page
+// fold made C-dot (C4 8A) and E-caron (C4 9A) one letter and replaced the wrong one
+static std::string Fold210(const char* s, BOOL onlyNonAscii)
+{
+    std::string r(s);
+    SalU8FoldSameLength(s, (int)r.size(), &r[0], onlyNonAscii);
+    return r;
+}
+static void TestU8Fold210()
+{
+    CHECK(Fold210("\xC5\xBD"
+                  "lu\xC5\xA5",
+                  FALSE) == "\xC5\xBE"
+                            "lu\xC5\xA5");                           // Z-caron -> z-caron
+    CHECK(Fold210("\xC4\x8A", FALSE) != Fold210("\xC4\x9A", FALSE)); // C-dot is not E-caron
+    CHECK(Fold210("\xC4\x8A", FALSE) == "\xC4\x8B");                 // C-dot -> c-dot
+    CHECK(Fold210("ABC", FALSE) == "abc");
+    CHECK(Fold210("ABC\xC5\xBD", TRUE) == "ABC\xC5\xBE"); // ASCII left to the engine
+    CHECK(Fold210("\xE4\xB8\xAD"
+                  "A",
+                  FALSE) == "\xE4\xB8\xAD"
+                            "a");                            // CJK untouched
+    CHECK(Fold210("\xC4\xB0", FALSE) == "\xC4\xB0");         // I-dot: its lower is 1 byte - kept
+    CHECK(Fold210("\xC5\xBD\xC5", FALSE) == "\xC5\xBE\xC5"); // a torn tail copied
+    CHECK(Fold210("\xED\xA0\x80"
+                  "A",
+                  FALSE) == "\xED\xA0\x80"
+                            "a");                                    // a WTF-8 surrogate copied
+    CHECK(Fold210("\xF0\x90\x90\x80", FALSE) == "\xF0\x90\x90\xA8"); // Deseret capital -> small (4 bytes)
+    std::string big = "\xC4\x8C"
+                      "ERN\xC3\x81"; // C-caron E R N A-acute
+    CHECK(Fold210(big.c_str(), FALSE) == "\xC4\x8D"
+                                         "ern\xC3\xA1");
+    CHECK(Fold210(big.c_str(), FALSE).size() == big.size());
+
+    // whole words by characters
+    const char* t = "\xC5\xBElut\xC3\xBD k\xC5\xAF\xC5\x88.txt"; // z-caron lut y-acute k u-ring n-caron .txt
+    int len = (int)strlen(t);
+    CHECK(SalU8IsAlnumAt(t, len, 0));      // z-caron
+    CHECK(SalU8IsAlnumBefore(t, len, 7));  // y-acute ends at 7
+    CHECK(!SalU8IsAlnumAt(t, len, 7));     // the space
+    CHECK(SalU8IsAlnumBefore(t, len, 13)); // n-caron ends at 13
+    CHECK(!SalU8IsAlnumAt(t, len, 13));    // '.'
+    CHECK(!SalU8IsAlnumBefore(t, len, 0));
+    CHECK(!SalU8IsAlnumAt(t, len, len));
+
+    // cut by characters
+    const char* z = "\xC5\xBD"
+                    "lu\xC5\xA5"; // Z-caron l u t-caron
+    const char* ze = z + strlen(z);
+    CHECK(SalU8Advance(z, ze, 1) == z + 2);
+    CHECK(SalU8Advance(z, ze, 3) == z + 4);
+    CHECK(SalU8Advance(z, ze, 9) == ze);
+    CHECK(SalU8Back(ze, z, 1) == ze - 2);
+    CHECK(SalU8Back(ze, z, 4) == z);
+    CHECK(SalU8Back(ze, z, 9) == z);
+    CHECK(SalU8Advance(z, ze, 0) == z);
+}
+
 static void TestMultiSzToLine189()
 {
     struct Case
@@ -12099,6 +12159,7 @@ int main(int argc, char** argv)
     TestDeleteAsDirLink197();
     TestShortNameClashError203();
     TestNameIsOnlyShortNameOf204();
+    TestU8Fold210();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

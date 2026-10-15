@@ -32,6 +32,32 @@
 
 #include "regexp.h"
 
+// feature 210: a case-insensitive match folds ASCII only - the code page's table also folded the
+// bytes of UTF-8 letters (cp1250: 8A / 9A), matching another letter or a piece of one; the
+// renamer folds the other characters of the pattern and the name by characters (salu8fold.h)
+#define REG_LOWER(c) (((unsigned char)(c)) < 0x80 ? LowerCase[(unsigned char)(c)] : (char)(c))
+#define REG_INVERT(c) (((unsigned char)(c)) < 0x80 ? (char)InvertCase((unsigned char)(c)) : (char)(c))
+
+// the same for the engine's memory searches (MemChrI / MemCmpI fold every byte by the code page)
+static char* RegMemChrI(char* s, char c, int n)
+{
+    for (; n > 0; n--, s++)
+        if (REG_LOWER(*s) == c)
+            return s;
+    return NULL;
+}
+
+static int RegMemCmpI(const char* s1, const char* s2, int n)
+{
+    for (; n > 0; n--, s1++, s2++)
+    {
+        char a = REG_LOWER(*s1), b = REG_LOWER(*s2);
+        if (a != b)
+            return (unsigned char)a < (unsigned char)b ? -1 : 1;
+    }
+    return 0;
+}
+
 //    - option to define your own messages; otherwise just copy it into the code
 
 const char* RegExpErrorText(CRegExpErrors err)
@@ -757,7 +783,7 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
                         {
                             RegClass(_class, RegCode);
                             if (Caseles)
-                                RegClass(InvertCase(_class), RegCode);
+                                RegClass(REG_INVERT(_class), RegCode);
                         }
                         RegParse++;
                         lastchar = -1;
@@ -815,7 +841,7 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
                         {
                             RegClass((char)lastchar, RegCode);
                             if (Caseles)
-                                RegClass(InvertCase((char)lastchar), RegCode);
+                                RegClass(REG_INVERT((char)lastchar), RegCode);
                         }
                         RegParse++;
                     }
@@ -917,7 +943,7 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
                 FAIL(State);
         }
         ret = RegNode(EXACTLY);
-        RegC(Caseles ? LowerCase[c] : c);
+        RegC(Caseles ? REG_LOWER(c) : c);
         RegC('\0');
     LENDSLASH:
         RegParse++;
@@ -943,7 +969,7 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
         ret = RegNode(EXACTLY);
         while (len > 0)
         {
-            RegC(Caseles ? LowerCase[*RegParse] : *RegParse);
+            RegC(Caseles ? REG_LOWER(*RegParse) : *RegParse);
             RegParse++;
             len--;
         }
@@ -1134,7 +1160,7 @@ int CRegExp::RegPosixClass(const char* scan)
         {
             RegClass((char)c, tmpclass);
             if (Caseles)
-                RegClass(InvertCase(c), tmpclass);
+                RegClass(REG_INVERT(c), tmpclass);
         }
 
     switch (cls->ID)
@@ -1282,9 +1308,9 @@ BOOL CRegExp::RegExec(char* string, int length, int offset, BOOL separateThread)
         {
             s = string + offset;
             while (s + RegMLen <= RegEol &&
-                   (s = (Caseles ? MemChrI(s, RegMust[0], (int)(RegEol - s)) : (char*)memchr(s, RegMust[0], RegEol - s))) != NULL)
+                   (s = (Caseles ? RegMemChrI(s, RegMust[0], (int)(RegEol - s)) : (char*)memchr(s, RegMust[0], RegEol - s))) != NULL)
             {
-                if ((Caseles ? MemCmpI(s, RegMust, RegMLen) : memcmp(s, RegMust, RegMLen)) == 0)
+                if ((Caseles ? RegMemCmpI(s, RegMust, RegMLen) : memcmp(s, RegMust, RegMLen)) == 0)
                     break; /* Found it. */
                 s++;
             }
@@ -1304,7 +1330,7 @@ BOOL CRegExp::RegExec(char* string, int length, int offset, BOOL separateThread)
         s = string + offset;
         if (RegStart != '\0')
             /* We know what char it must start with. */
-            while ((s = (Caseles ? MemChrI(s, RegStart, (int)(RegEol - s)) : (char*)memchr(s, RegStart, (int)(RegEol - s)))) != NULL)
+            while ((s = (Caseles ? RegMemChrI(s, RegStart, (int)(RegEol - s)) : (char*)memchr(s, RegStart, (int)(RegEol - s)))) != NULL)
             {
                 if (RegTry(s))
                 {
@@ -1475,11 +1501,11 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
 
             opnd = OPERAND(scan);
             /* Inline the first character, for speed. */
-            if (RegInput == RegEol || *opnd != (Caseles ? LowerCase[*RegInput] : *RegInput))
+            if (RegInput == RegEol || *opnd != (Caseles ? REG_LOWER(*RegInput) : *RegInput))
                 return (0);
             len = (int)strlen(opnd);
             if (len > RegEol - RegInput || len > 1 &&
-                                               (Caseles ? MemCmpI(RegInput, opnd, len) : memcmp(RegInput, opnd, len)) != 0)
+                                               (Caseles ? RegMemCmpI(RegInput, opnd, len) : memcmp(RegInput, opnd, len)) != 0)
                 return (0);
             RegInput += len;
         }
@@ -1591,7 +1617,7 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
             {
                 /* If it could work, try it. */
                 if (nextch == -1 ||
-                    (Caseles ? LowerCase[*RegInput] : *RegInput) == (char)nextch)
+                    (Caseles ? REG_LOWER(*RegInput) : *RegInput) == (char)nextch)
                     if (RegMatch(next))
                         return (1);
                 /* Couldn't or didn't -- back up. */
@@ -1627,7 +1653,7 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
                 save = RegInput;
                 /* If it could work, try it. */
                 if (nextch == -1 ||
-                    (Caseles ? LowerCase[*RegInput] : *RegInput) == (char)nextch)
+                    (Caseles ? REG_LOWER(*RegInput) : *RegInput) == (char)nextch)
                     if (RegMatch(next))
                         return 1;
                 RegInput = save;
@@ -1728,7 +1754,7 @@ int CRegExp::RegRepeat(char* p)
         break;
     case EXACTLY:
         if (Caseles)
-            while (scan < RegEol && *opnd == LowerCase[*scan])
+            while (scan < RegEol && *opnd == REG_LOWER(*scan))
             {
                 scan++;
             }
@@ -1770,7 +1796,7 @@ int CRegExp::RegMatchSimple(char op, char* opnd)
     case ANYDOT:
         return 1;
     case EXACTLY:
-        return *opnd == (Caseles ? LowerCase[*RegInput] : *RegInput);
+        return *opnd == (Caseles ? REG_LOWER(*RegInput) : *RegInput);
     case ANYOF:
         return INCLASS(opnd, *RegInput);
     }

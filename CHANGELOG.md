@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Renamer: search and replace never changes another letter** (feature
+  210). With "Case sensitive" off, searching for "Ě" also replaced "Ċ" (and
+  similar pairs of other letters) - the file got a wrong name; "Ž" did not
+  find "ž"; "Whole words" missed words ending in a letter with an accent,
+  and a cut such as $(OriginalName:0,1) split such a letter. They work on
+  letters now.
+
 - **Renamer: "Include subdirectories" after a rename shows the renamed
   folder's files** (feature 209). After renaming a folder to a full path
   or into a subfolder, ticking "Include subdirectories" failed with

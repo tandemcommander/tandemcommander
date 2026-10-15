@@ -309,11 +309,10 @@ Functional, no loss:
     `dir[MAX_PATH]`~~ - **done, feature 207** (also: a panel folder of 260+ bytes made the items
     `\name` in the drive's root - refused now). Left by 207's reviews: **208** - the Renamer's
     ~~`ChangeCase` applies code-page byte tables to UTF-8 names~~ - **done, feature 208** (left by
-    its review: **210** - the Renamer's other code-page residue: the `StrICmp` "nothing to do"
-    shortcut in `MoveFile` (`rendlg3.cpp` ~169; two different folders compare equal - a move
-    reported done without moving), case-insensitive search folding UTF-8 bytes (`common/moore.cpp`
-    ~146, `regexp.cpp` `Caseles` - with "Match case" off a search can replace another letter: a
-    wrong name written), whole words on single bytes, cut arguments counting bytes - measure first);
+    its review: ~~210 - the Renamer's other code-page residue~~ - **done, feature 210** (left by its
+    review: the regex engine still judges `\b`, `\w`, classes, '.' and quantifiers by single
+    bytes - a split letter is refused "(123)"; the history dedupe and the preview's sort use the
+    code-page `StrICmp`);
     ~~209 - `ReloadSourceFiles` expands a renamed folder as `Root + Name`~~ - **done, feature
     209**; also recorded: a new name is capped at 259 bytes (a
     refusal), an item from a subdirectory is refused at 260 bytes while a selected one is not. Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is

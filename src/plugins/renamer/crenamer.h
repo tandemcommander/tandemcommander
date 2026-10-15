@@ -127,6 +127,12 @@ protected:
     BOOL WholeWords;
     BOOL Global;
     BOOL ExcludeExt;
+    // feature 210: a case-insensitive search runs case-sensitively over a copy of the name folded by
+    // characters (salu8fold.h) - the code-page fold of the bytes matched another letter
+    BOOL FoldSearch;        // Boyer-Moore: the pattern and the name folded
+    BOOL FoldRegex;         // regular expression: their non-ASCII characters folded
+    const char* ExecSource; // RESubst: the name whose folded copy the expression runs over,
+    const char* ExecFolded; // and that copy (the subexpressions are copied from the name)
 
 public:
     CRenamer(char (&root)[MAX_PATH], int& rootLen);

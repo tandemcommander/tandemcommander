@@ -1,0 +1,13 @@
+ren_83_probe (feature 199), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 11:58; ACP 1250; registry key existed True
+
+ren-83     RUN    PASS        preview rows 1; boxes as expected: True; on disk: LONGFI~1.TXT=MOVED-1; longfilename.txt=PRECIOUS-1 | others: LONGFI~1.TXT=MOVED-1; boxes: no box
+ren-83     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-83-held RUN    PASS        preview rows 1; boxes as expected: True; on disk: longfilename.txt=PRECIOUS-3; x.txt=MOVED-3; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to rename file: (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=2477] Some files have not been renamed successfully. These files will be listed now to enable you to correct errors and try to rename files again. To see successfully renamed files use options in `View' menu. | [Button id=1] OK || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No
+ren-83-held END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-83-ctl RUN    PASS        preview rows 1; boxes as expected: True; on disk: longfilename.txt=PRECIOUS-2; y.txt=MOVED-2; boxes: no box
+ren-83-ctl END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 6, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
