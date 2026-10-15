@@ -19,6 +19,7 @@ extern "C"
 }
 #include "salshlib.h"
 #include "tasklist.h"
+#include "salshelllink.h" // feature 194
 //#include "drivelst.h"
 
 //
@@ -533,9 +534,16 @@ const char* GetCurrentDir(POINTL& pt, void* param, DWORD* effect, BOOL rButton, 
             // if it is a shortcut, we need to analyze it
             BOOL linkIsDir = FALSE;  // TRUE -> shortcut to a directory -> ChangePathToDisk
             BOOL linkIsFile = FALSE; // TRUE -> shortcut to a file -> test archive
-            char linkTgt[MAX_PATH];
-            linkTgt[0] = 0;
-            if (StrICmp(file->Ext, "lnk") == 0) // is it not a directory shortcut?
+            // feature 194: a target of any length (DropPath has this size); on the heap - about 96 KB,
+            // 'fullName' is on the stack already - and only for a shortcut
+            struct CLinkTgt
+            {
+                char* P;
+                ~CLinkTgt() { free(P); }
+            } linkTgtBuf = {NULL};
+            char* linkTgt = NULL;
+            if (StrICmp(file->Ext, "lnk") == 0 && // is it not a directory shortcut?
+                (linkTgt = linkTgtBuf.P = (char*)malloc(SAL_MAX_PATH_UTF8)) != NULL)
             {
                 IShellLinkW* link; // feature 069 (F-P1-25): the wide interface
                 // feature 069 (F-P1-25): the wide shell-link interface.  Two
@@ -554,16 +562,13 @@ const char* GetCurrentDir(POINTL& pt, void* param, DWORD* effect, BOOL rButton, 
                     IPersistFile* fileInt;
                     if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&fileInt) == S_OK)
                     {
-                        OLECHAR oleName[MAX_PATH];
-                        if (SalU8ToW(fullName, -1, oleName, MAX_PATH) == 0)
-                        { // not valid UTF-8 (transitional): keep the legacy path
-                            MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, fullName, -1, oleName, MAX_PATH);
-                            oleName[MAX_PATH - 1] = 0;
-                        }
-                        WCHAR linkTgtW[MAX_PATH];
-                        if (fileInt->Load(oleName, STGM_READ) == S_OK &&
-                            link->GetPath(linkTgtW, MAX_PATH, NULL, SLGP_UNCPRIORITY) == NOERROR &&
-                            SalWToU8(linkTgtW, -1, linkTgt, MAX_PATH) != 0)
+                        // feature 194: the shortcut's own name whole (\\?\ from MAX_PATH characters on -
+                        // a UTF-8 name that did not fit MAX_PATH units went to the code-page fallback and
+                        // was tried cut) and its target whole or refused (a target of MAX_PATH bytes or
+                        // more was not followed)
+                        WCHAR* oleName = SalShellLinkLoadNameAlloc(fullName);
+                        if (oleName != NULL && fileInt->Load(oleName, STGM_READ) == S_OK &&
+                            SalShellLinkGetPathU8(link, linkTgt, SAL_MAX_PATH_UTF8, SLGP_UNCPRIORITY) == NOERROR)
                         {
                             DWORD attr = SalGetFileAttributes(linkTgt);
                             if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
@@ -571,6 +576,7 @@ const char* GetCurrentDir(POINTL& pt, void* param, DWORD* effect, BOOL rButton, 
                             else
                                 linkIsFile = TRUE;
                         }
+                        free(oleName);
                         fileInt->Release();
                     }
                     link->Release();

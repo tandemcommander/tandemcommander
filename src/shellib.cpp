@@ -13,6 +13,7 @@ extern "C"
 #include "shexreg.h"
 }
 #include "salshlib.h"
+#include "salshelllink.h" // feature 194
 
 // original location in fileswnd.h (kept here only because of MakeCopyOfName in CImpDropTarget::ProcessClipboardData)
 extern BOOL OurClipDataObject; // TRUE when "paste" is done with our IDataObject
@@ -2666,10 +2667,10 @@ void ResolveNetHoodPath(char* path)
                         oleName[MAX_PATH - 1] = 0;
                         if (fileInt->Load(oleName, STGM_READ) == S_OK)
                         {
-                            WCHAR tgtW[MAX_PATH];
+                            // feature 194: the target whole or not at all - GetPath into MAX_PATH units
+                            // could hand back a cut target, another folder (salshelllink.h)
                             char tgt[3 * MAX_PATH]; // UTF-8 needs up to 3 bytes per WCHAR
-                            if (link->GetPath(tgtW, MAX_PATH, &dataW, SLGP_UNCPRIORITY) == NOERROR &&
-                                SalWToU8(tgtW, -1, tgt, 3 * MAX_PATH) != 0 &&
+                            if (SalShellLinkGetPathU8(link, tgt, sizeof(tgt), SLGP_UNCPRIORITY) == NOERROR &&
                                 (int)strlen(tgt) < MAX_PATH) // callers provide only MAX_PATH for 'path'
                             {                                // do not call Resolve here; it is not that critical and would slow things down
                                 strcpy(path, tgt);           // bingo, we finally know where the link points

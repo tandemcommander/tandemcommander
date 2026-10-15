@@ -2601,3 +2601,6 @@ a few early ones are out of sequence).
   cache handles, plug-in threads) leaves a `CallStacks` entry into freed memory: never read through
   that list's entries. Debug seam `TC_PROBE_UNC_CANCEL`; leak dumps read with `dbwin_lib.ps1`.
   Probe `unc_abandon_probe.ps1` 1 / 1 -> 2 / 0.
+- 194-drop-shortcut-target: the drop target (`shellsup.cpp` `GetCurrentDir`) reads a shortcut with
+  `SalShellLinkLoadNameAlloc` / `SalShellLinkGetPathU8` into a heap buffer (was `MAX_PATH` both
+  ways; a long UTF-8 name went to a cut code-page fallback). Not driven (OLE drag = real mouse).

@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Dropping files onto a shortcut works for long paths** (feature 194).
+  A shortcut in a very deep folder, or one pointing to a folder with a long
+  path, was not followed when files were dragged onto it.
+
 - **Leaving the program while a server's share list is still being read
   frees what it held** (feature 193). After giving up waiting for a server
   that does not answer, the program left that request's memory behind at exit

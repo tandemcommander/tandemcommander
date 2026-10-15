@@ -509,9 +509,9 @@ Code work an agent can do:
   `CP_ACP` into UTF-8 code (used by the server-link branch of shortcuts, reachable only with a
   Network plug-in); ~~`SHGetFolderPath` A in `drivelst.cpp` / `shiconov.cpp` (Dropbox and Google
   Drive detection under a profile with non-ASCII letters)~~ (done, feature 188); `GetOpenFileName` A in `execute.cpp`,
-  `dialogs5.cpp`, `viewer3.cpp`. The drop-target code for shortcuts (`shellsup.cpp`,
-  `shellib.cpp`) still limits a target to `MAX_PATH` bytes (refused, not cut) - it could use
-  `SalShellLinkGetPathU8`.
+  `dialogs5.cpp`, `viewer3.cpp`. ~~The drop-target code for shortcuts~~ - **done, feature
+  194** (`shellsup.cpp`; `shellib.cpp`'s folder-shortcut code gets only a Browse result of
+  `MAX_PATH` bytes - left).
 - `tools/check_encoding.py` does not scan `plugins/` (found by 124).
 - **Mixed templates, the rest** (127): (1) `CSalamanderGeneral::GetCommonFSOperSourceDescr`
   (`zip.cpp`) and the `salamdr3.cpp` texts `IDS_NAMEUSEDFORFILE` / `IDS_CREATEDIRFAILED` hand a
