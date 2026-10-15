@@ -716,7 +716,8 @@ Code work an agent can do:
          file); a UNC panel folder or Initial Directory - cmd refuses a UNC current folder and
          runs in C:\Windows, a UNC Initial Directory writes no `cd` (`pushd` / `popd` or refuse);
          ~~the Find window's User Menu route sets no current folder~~ (done, feature 234; left:
-         `$(ListOfSelectedNames)` from several Find folders runs once in the first one - refuse;
+         ~~`$(ListOfSelectedNames)` from several Find folders runs once in the first one~~ (done,
+         feature 235 - full names);
          a missing item folder's message names the command, not the folder; a `.lnk` command's
          own "Start in" vs `lpDirectory`; the Find route driven by a person); a panel folder that cannot be set falls back to System32
          - refuse a relative command instead; a failed chcp / `cd` ends a hidden batch silently;

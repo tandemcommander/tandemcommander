@@ -60,7 +60,7 @@ the compare/merge utility directly in panels:</p>
 
 <p>The list of selected files and directories can be used in command arguments in the
 User Menu. In this case only one User Menu command is executed for all selected files and directories.
-See $(ListOfSelectedNames) and $(ListOfSelectedNames) variables in the List of Variables below.</p>
+See $(ListOfSelectedNames) and $(ListOfSelectedFullNames) variables in the List of Variables below.</p>
 
 <h4>List of Variables</h4>
 
@@ -255,16 +255,20 @@ User Menu command is executed for all selected files and directories.</p>
 <tr>
  <td>$(ListOfSelectedNames)</td>
  <td>The list of selected files and directories from the active (source) panel. Names are
-     separated by space character. Names containing spaces are surrounded by double quotes
+     separated by space character. Names containing spaces or one of the characters
+     , ; = &amp; | &lt; &gt; ( ) ^ are surrounded by double quotes
      (e.g. dir1 file.txt "my first document.html"). The order of names in the list is the same
-     as in the panel or Find window. The maximum length of the list is 32771 characters (see
+     as in the panel or Find window. In the Find window, when the selected files and directories
+     come from more than one directory, the list holds their full names (the command runs once,
+     in the directory of the first one, where names of other directories would not be found).
+     The maximum length of the list is 32771 characters (see
      <i>Command Line Length Limits</i> later on this page for limits overview).</td>
 </tr>
 <tr>
  <td>$(ListOfSelectedFullNames)</td>
  <td>The list of full names of selected files and directories from the active (source) panel.
-     Full names are separated by space character. Full names containing spaces are surrounded
-     by double quotes (e.g. C:\test\dir1 C:\test\file.txt "C:\test\my first document.html").
+     Full names are separated by space character. Full names containing spaces or one of the
+     characters , ; = &amp; | &lt; &gt; ( ) ^ are surrounded by double quotes (e.g. C:\test\dir1 C:\test\file.txt "C:\test\my first document.html").
      The order of names in the list is the same as in the panel or Find window. The maximum
      length of the list is 32771 characters (see <i>Command Line Length Limits</i> later on
      this page for limits overview).</td>

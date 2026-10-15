@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Find window: the list of selected names from several folders**
+  (feature 235). A User Menu command using the list of selected names, run
+  on Find results from several folders, got bare names that pointed into
+  the first folder. Such a list now holds full names.
+
 - **User Menu from the Find window runs in each file's folder** (feature
   234). A User Menu command with a relative file name, started from Find
   results, ran in an unrelated folder (or, for files from several

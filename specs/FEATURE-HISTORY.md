@@ -2815,3 +2815,6 @@ a few early ones are out of sequence).
   Now the item's folder: `lpDirectory` (direct), cmd's start folder + a `cd /d` line per item folder
   change (batch), a differing UNC item folder refused. Find route NOT DRIVEN (a popup menu); panel
   route + 226 / 229 probes green. Two reviews (MUSTs: several folders, UNC).
+- 235-find-list-of-names-folders: `$(ListOfSelectedNames)` from Find results in several folders ran
+  once in the first folder with bare names - other files there. Now the full names (no fitting
+  message for a refusal; decision in the fix-log); help updated. By reading.

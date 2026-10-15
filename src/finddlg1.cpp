@@ -2739,6 +2739,26 @@ void CFindDialog::OnUserMenu()
             *listFull = 0;
         userMenuAdvancedData.ListOfSelFullNamesIsEmpty = FALSE; // not a concern for Find (otherwise the User Menu would not open)
 
+        // feature 235: a command with $(ListOfSelectedNames) runs once, in the first item's
+        // folder - names from other folders would name other files there: when the selection spans
+        // folders the list holds the full names
+        const char* firstDir = NULL;
+        BOOL spansFolders = FALSE;
+        findItem = -1;
+        for (i = 0; i < selectedCount && !spansFolders; i++)
+        {
+            findItem = ListView_GetNextItem(FoundFilesListView->HWindow, findItem, LVNI_SELECTED);
+            if (findItem == -1)
+                break;
+            const char* dir = FoundFilesListView->At(findItem)->Path;
+            if (firstDir == NULL)
+                firstDir = dir;
+            else if (strcmp(firstDir, dir) != 0)
+                spansFolders = TRUE;
+        }
+        if (spansFolders)
+            strcpy(userMenuAdvancedData.ListOfSelNames, userMenuAdvancedData.ListOfSelFullNames); // both USRMNUARGS_MAXLEN
+
         userMenuAdvancedData.FullPathLeft[0] = 0;
         userMenuAdvancedData.FullPathRight[0] = 0;
         userMenuAdvancedData.FullPathInactive = userMenuAdvancedData.FullPathLeft;
