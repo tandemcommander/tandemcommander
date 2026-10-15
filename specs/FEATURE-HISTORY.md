@@ -2619,3 +2619,6 @@ a few early ones are out of sequence).
   `WCHAR[3 * MAX_PATH]`. Now any length, and `DeleteAsDirLink` fails closed (tag unreadable or a
   name surrogate = a link). **Rule: a destructive recursion never descends into a reparse
   directory it could not prove a plain one.** Probe `deepjunc_probe.ps1` 9 / 3 -> 12 / 0.
+- 198-rename-proof-temp-name: Quick Rename and the worker's move prove an existing target "another
+  file" for two spellings of one name ONLY by the temporary-name route (158 took different ids -
+  no proof on path-derived-id mounts). Not driven (no such mount); 158's probe 10 / 0, 103's 46 / 0.

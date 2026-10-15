@@ -1,0 +1,18 @@
+cs_overwrite_probe (feature 158) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 04:34; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - the WebClient service is not running
+
+cs-yes     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=PRECIOUS-1; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 7, 15.10.2026, 4:34:15, A | With file: | 10, 15.10.2026, 4:34:15, A |
+cs-yes     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-no      RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=other-2; a.txt=PRECIOUS-2; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 7, 15.10.2026, 4:34:27, A | With file: | 10, 15.10.2026, 4:34:27, A | || Quick Rename dialog re-opened (cancelled)
+cs-no      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-hl      RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=PRECIOUS-3; asked: nothing
+cs-hl      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-f6      RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc158_cs\start\*.*', set '...pData\Local\Temp\tc158_cs\cs-f6\cs\A.txt'; on disk: A.txt=PRECIOUS-5; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 7, 15.10.2026, 4:34:50, A | With file: | 10, 15.10.2026, 4:34:50, A |
+cs-f6      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ci-case    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=PRECIOUS-4; asked: nothing
+ci-case    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

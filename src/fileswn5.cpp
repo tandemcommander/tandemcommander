@@ -2275,7 +2275,9 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                     CSalFileIdentity srcId, tgtId, srcThrough;
                     SalGetFileIdentity(path, TRUE, &srcId);
                     SalGetFileIdentity(tgtPath, TRUE, &tgtId);
-                    provenOther = SalFileIdMatch(srcId, tgtId) == simDifferent;
+                    // feature 198: only the temporary name below proves another file (provenOther) - for two
+                    // spellings of one name different ids were taken as proof before the overwrite deleted
+                    // the target (ids derived from the path, a file written between the two reads)
                     // a symbolic link / junction renamed onto the file (folder) it points at: the old
                     // overwrite below deleted that file and left a link to itself (second review of 103)
                     SalFileIdentityClear(&srcThrough);
@@ -2288,7 +2290,8 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                         SalMessageBox(HWindow, LoadStrU8((srcId.Attr & FILE_ATTRIBUTE_DIRECTORY) ? IDS_CANNOTMOVEDIRTOITSELF : IDS_CANNOTMOVEFILETOITSELF),
                                       LoadStr(IDS_ERRORRENAMINGFILE), MB_OK | MB_ICONEXCLAMATION);
                     }
-                    else if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName)
+                    else if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName ||
+                             SalNamesLooselyEqualU8(path, tgtPath)) // feature 198: always for one name (also NFC / NFD)
                     {
                         int tmpSize = (int)strlen(path) + 16;
                         char* tmp = (char*)malloc(tmpSize);
@@ -2322,6 +2325,8 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                             }
                         }
                         free(tmp); // (svtTargetIsOther: another file - the old handling below)
+                        if (res == svtTargetIsOther)
+                            provenOther = TRUE; // the target outlived the source's name (feature 198)
                     }
                 }
 

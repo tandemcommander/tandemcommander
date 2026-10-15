@@ -5887,7 +5887,9 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                     CSalFileIdentity srcId, tgtId;
                     SalGetFileIdentity(op->SourceName, TRUE, &srcId);
                     SalGetFileIdentity(op->TargetName, TRUE, &tgtId);
-                    provenOther = SalFileIdMatch(srcId, tgtId) == simDifferent;
+                    // feature 198: only the temporary name below proves another file (provenOther) - for two
+                    // spellings of one name different ids were taken as proof before the overwrite deleted
+                    // the target (ids derived from the path, a file written between the two reads)
                     // a symbolic link / junction moved onto the file (folder) it points at: the old
                     // overwrite below deleted that file and left a link to itself (second review of 103)
                     CSalFileIdentity srcThrough;
@@ -5923,7 +5925,8 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                         }
                         return FALSE; // cancel
                     }
-                    if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName)
+                    if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName ||
+                        SalNamesLooselyEqualU8(op->SourceName, op->TargetName)) // feature 198: always for one name (also NFC / NFD)
                     {
                         int tmpSize = (int)strlen(op->SourceName) + 16;
                         char* tmp = (char*)malloc(tmpSize);
@@ -5998,6 +6001,7 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                             goto NORMAL_ERROR;
                         }
                         free(tmp); // another file: the old handling below
+                        provenOther = TRUE; // the target outlived the source's name (feature 198)
                     }
                 }
 

@@ -1,0 +1,62 @@
+samefile_probe (feature 103) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 04:35; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - the WebClient service is not running
+
+dav-qren   RUN    NOT DRIVEN  the WebClient service is not running
+dav-mov    RUN    NOT DRIVEN  the WebClient service is not running
+dav-msil   RUN    NOT DRIVEN  the WebClient service is not running
+dav-xmov   RUN    NOT DRIVEN  the WebClient service is not running
+dav-xcpy   RUN    NOT DRIVEN  the WebClient service is not running
+dav-norm   RUN    NOT DRIVEN  the WebClient service is not running
+dav-twin   RUN    NOT DRIVEN  the WebClient service is not running
+dav-twcp   RUN    NOT DRIVEN  the WebClient service is not running
+junc-mov   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...ta\Local\Temp\tc103_sf\junc-mov\junc\*.*', set '...pData\Local\Temp\tc103_sf\junc-mov\junc\'; on disk: a.txt=PRECIOUS-9; asked: nothing
+junc-mov   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+junc-cpy   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...ta\Local\Temp\tc103_sf\junc-cpy\junc\*.*', set '...pData\Local\Temp\tc103_sf\junc-cpy\junc\'; on disk: a.txt=PRECIOUS-10; asked: [#32770 'Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+junc-cpy   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+subst-mov  RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'T:\*.*', set 'T:\'; on disk: a.txt=PRECIOUS-11; asked: [#32770 'Move Error'] Name: | Error: | Cannot move a file to itself. |
+subst-mov  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+subst-cpy  RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'T:\*.*', set 'T:\'; on disk: a.txt=PRECIOUS-12; asked: [#32770 'Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+subst-cpy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+unc-mov    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...\AppData\Local\Temp\tc103_sf\unc-mov\*.*', set '...vel\AppData\Local\Temp\tc103_sf\unc-mov\'; on disk: a.txt=PRECIOUS-13; asked: [#32770 'Move Error'] Name: | Error: | Cannot move a file to itself. |
+unc-mov    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+unc-cpy    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...\AppData\Local\Temp\tc103_sf\unc-cpy\*.*', set '...vel\AppData\Local\Temp\tc103_sf\unc-cpy\'; on disk: a.txt=PRECIOUS-14; asked: [#32770 'Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+unc-cpy    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-qren    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'b.txt'; on disk: b.txt=PRECIOUS-HL; asked: nothing
+hl-qren    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-mov     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc103_sf\start\*.*', set '...AppData\Local\Temp\tc103_sf\hl-mov\b.txt'; on disk: b.txt=PRECIOUS-HL; asked: nothing
+hl-mov     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hl-cpy     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc103_sf\start\*.*', set '...AppData\Local\Temp\tc103_sf\hl-cpy\b.txt'; on disk: a.txt=PRECIOUS-HL; b.txt=PRECIOUS-HL; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 11, 15.10.2026, 4:36:39, A | With file: | 11, 15.10.2026, 4:36:39, A |
+hl-cpy     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cs-qren    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=PRECIOUS-15; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 8, 15.10.2026, 4:36:50, A | With file: | 11, 15.10.2026, 4:36:50, A |
+cs-qren    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+8dot3-qren RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'longfilename.txt', set 'LONGFI~1.TXT'; on disk: longfilename.txt=PRECIOUS-16; asked: nothing
+8dot3-qren END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sl-qren    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'lnk.txt', set 'a.txt'; on disk: a.txt=PRECIOUS-SL; lnk.txt (link)=PRECIOUS-SL; asked: [#32770 'Error Renaming File'] Cannot move a file to itself. | || Quick Rename dialog re-opened (cancelled)
+sl-qren    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sl-mov     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc103_sf\start\*.*', set '...AppData\Local\Temp\tc103_sf\sl-mov\a.txt'; on disk: a.txt=PRECIOUS-SL; lnk.txt (link)=PRECIOUS-SL; asked: [#32770 'Move Error'] Name: | Error: | Cannot move a file to itself. |
+sl-mov     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+slt-qren   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'lnk.txt'; on disk: lnk.txt=PRECIOUS-SL; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 11, 15.10.2026, 4:37:35, A | With file: | 11, 15.10.2026, 4:37:35, A |
+slt-qren   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+slt-mov    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc103_sf\start\*.*', set '...Data\Local\Temp\tc103_sf\slt-mov\lnk.txt'; on disk: lnk.txt=PRECIOUS-SL; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 11, 15.10.2026, 4:37:47, A | With file: | 11, 15.10.2026, 4:37:47, A |
+slt-mov    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sl-cpy     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc103_sf\start\*.*', set '...AppData\Local\Temp\tc103_sf\sl-cpy\a.txt'; on disk: a.txt=PRECIOUS-SL; lnk.txt (link)=PRECIOUS-SL; asked: [#32770 'Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+sl-cpy     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+slt-cpy    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc103_sf\start\*.*', set '...Data\Local\Temp\tc103_sf\slt-cpy\lnk.txt'; on disk: a.txt=PRECIOUS-SL; lnk.txt (link)=PRECIOUS-SL; asked: [#32770 'Copy Error'] Name: | Error: | Cannot copy a file to itself. |
+slt-cpy    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+jn-qren    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'J', set 'F'; on disk: F/; J/ (link) | F: f.txt=PRECIOUS-JN; asked: [#32770 'Error Renaming File'] Cannot move a directory to itself. | || Quick Rename dialog re-opened (cancelled)
+jn-qren    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+jn-mov     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc103_sf\start\*.*', set '...vel\AppData\Local\Temp\tc103_sf\jn-mov\F'; on disk: F/ | F: f.txt=PRECIOUS-JN; J/ (link); asked: nothing
+jn-mov     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+case-qren  RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'A.txt'; on disk: A.txt=PRECIOUS-17; asked: nothing
+case-qren  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-qren  RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'a.txt', set 'b.txt'; on disk: b.txt=PRECIOUS-18; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 8, 15.10.2026, 4:38:53, A | With file: | 11, 15.10.2026, 4:38:53, A |
+norm-qren  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-mov   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc103_sf\start\*.*', set '...pData\Local\Temp\tc103_sf\norm-mov\b.txt'; on disk: b.txt=PRECIOUS-19; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 8, 15.10.2026, 4:39:04, A | With file: | 11, 15.10.2026, 4:39:04, A |
+norm-mov   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norm-cpy   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...pData\Local\Temp\tc103_sf\norm-cpy\t\*.*', set '...\AppData\Local\Temp\tc103_sf\norm-cpy\t\'; on disk: a.txt=PRECIOUS-20 | a.txt=PRECIOUS-20; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 8, 15.10.2026, 4:39:15, A | With file: | 11, 15.10.2026, 4:39:15, A |
+norm-cpy   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 46, FAIL 0, NOT DRIVEN 8. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True
