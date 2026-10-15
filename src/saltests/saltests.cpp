@@ -61,6 +61,7 @@
 #include "salfmtinserts.h"   // feature 180
 #include "salmultisz.h"      // feature 189
 #include "salreparse.h"      // feature 197
+#include "salshortname.h"    // feature 203
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11897,6 +11898,19 @@ static void TestDeleteAsDirLink197()
 
 // feature 189: a REG_MULTI_SZ list as one line (salmultisz.h) - the NULs at the end are the end
 // whatever their number (one NUL showed a trailing space), the ones inside are separators
+// feature 203: a create whose 8.3 clash could not be moved aside never reports "it exists" (the
+// callers took that for the target: the other file offered for overwriting, a folder merged)
+static void TestShortNameClashError203()
+{
+    CHECK(SalShortNameClashError(ERROR_SHARING_VIOLATION) == ERROR_SHARING_VIOLATION); // held open
+    CHECK(SalShortNameClashError(ERROR_ACCESS_DENIED) == ERROR_ACCESS_DENIED);
+    CHECK(SalShortNameClashError(ERROR_NOT_ENOUGH_MEMORY) == ERROR_NOT_ENOUGH_MEMORY);
+    CHECK(SalShortNameClashError(ERROR_FILENAME_EXCED_RANGE) == ERROR_FILENAME_EXCED_RANGE);
+    CHECK(SalShortNameClashError(ERROR_FILE_EXISTS) == ERROR_ACCESS_DENIED); // never "exists"
+    CHECK(SalShortNameClashError(ERROR_ALREADY_EXISTS) == ERROR_ACCESS_DENIED);
+    CHECK(SalShortNameClashError(ERROR_SUCCESS) == ERROR_ACCESS_DENIED); // never success
+}
+
 static void TestMultiSzToLine189()
 {
     struct Case
@@ -12051,6 +12065,7 @@ int main(int argc, char** argv)
     TestShellLinkLoadName181();
     TestMultiSzToLine189();
     TestDeleteAsDirLink197();
+    TestShortNameClashError203();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

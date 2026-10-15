@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Copying or unpacking to another file's short name never overwrites it**
+  (feature 203). Copying "LONGFI~1.TXT" - the short (8.3) name of another
+  file - into a folder where that file was open in another program asked
+  to overwrite it, and unpacking such a member from an archive then
+  replaced the other file's content; a copied folder "LONGDI~1" was merged
+  into the other folder "longdirname". The error is reported now.
+
 - **PictView's Rename to another file's short name never replaces it**
   (feature 202). Renaming the shown image to "LONGFI~1.PNG" - the short
   (8.3) name of another image - offered to overwrite that image and Yes

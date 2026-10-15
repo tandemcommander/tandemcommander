@@ -1,0 +1,16 @@
+create_clash_probe (feature 203) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 05:50; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - not used by this probe
+
+cp-free    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...Data\Local\Temp\tc203_cc\cp-free\tgt\*.*', set '...AppData\Local\Temp\tc203_cc\cp-free\tgt\'; on disk: LONGFI~1.TXT=COPIED-cp-free; longfilename.txt=PRECIOUS-1; the copy there: True; asked: nothing
+cp-free    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cp-held    RUN    FAIL        lost=False; windows as 103 expects: False; focus held True; field was '...Data\Local\Temp\tc203_cc\cp-held\tgt\*.*', set '...AppData\Local\Temp\tc203_cc\cp-held\tgt\'; on disk: longfilename.txt=PRECIOUS-2; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 10, 15.10.2026, 5:50:25, A | With file: | 14, 15.10.2026, 5:50:25, A | || [#32770 'Error Deleting File'] Name: | Error: | (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  |
+cp-held    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dir-free   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...ata\Local\Temp\tc203_cc\dir-free\tgt\*.*', set '...ppData\Local\Temp\tc203_cc\dir-free\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; folders: longdirname,LONGDI~1; the copy there: True; asked: nothing
+dir-free   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dir-held   RUN    FAIL        lost=True; windows as 103 expects: True; focus held True; field was '...ata\Local\Temp\tc203_cc\dir-held\tgt\*.*', set '...ppData\Local\Temp\tc203_cc\dir-held\tgt\'; on disk: longdirname/; longdirname holds: a.txt,keep.txt; asked: nothing
+dir-held   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 6, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

@@ -12,6 +12,7 @@
 #include "cfgdlg.h"
 #include "zip.h"
 #include "spl_file.h"
+#include "salshortname.h" // feature 203
 
 CSalamanderSafeFile SalSafeFile;
 
@@ -136,8 +137,9 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
             break;
 
         // it already exists; we’ll check whether it’s just a collision with a DOS-style name (the full name of the existing file/directory is different)
-        // (DOS 8.3 names do not exist on long paths, so the legacy MAX_PATH-bound buffers below are fine)
-        if (!isDir && fileNameLen < MAX_PATH)
+        // (feature 203: at any length - heap buffers; the old MAX_PATH guard sent a long path's clash to
+        // the overwrite question for the OTHER file)
+        if (!isDir)
         {
             WIN32_FIND_DATAW dataW;
             char foundName[3 * MAX_PATH]; // UTF-8 of the existing entry's names
@@ -157,14 +159,27 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                 if (SalNameEqualOrdinalCI(tgtName, -1, foundDosName, -1) && // match only for the DOS name
                     !SalNameEqualOrdinalCI(tgtName, -1, foundName, -1))     // (the full name is different)
                 {
+                    // feature 203: the existing entry is ANOTHER file - never offered for overwriting
+                    // (Yes truncated it with the member's data when it could not be moved aside)
+                    DWORD clashErr = foundName[0] == 0 ? ERROR_FILENAME_EXCED_RANGE : ERROR_NOT_ENOUGH_MEMORY;
                     // rename ("clean up") the file/directory with the conflicting DOS name to a temporary 8.3 name (which doesn’t require an extra DOS name)
-                    char tmpName[MAX_PATH + 20];
-                    char origFullName[MAX_PATH];
-                    lstrcpyn(tmpName, fileName, MAX_PATH);
-                    CutDirectory(tmpName);
-                    SalPathAddBackslash(tmpName, MAX_PATH + 20);
-                    char* tmpNamePart = tmpName + strlen(tmpName);
-                    if (SalPathAppend(tmpName, foundName, MAX_PATH))
+                    struct CAutoFree // frees the buffers on every path out of this block
+                    {
+                        char* P = NULL;
+                        ~CAutoFree() { free(P); }
+                    } tmpNameGuard, origFullNameGuard;
+                    int tmpNameSize = fileNameLen + (int)strlen(foundName) + 30;
+                    char* tmpName = tmpNameGuard.P = (char*)malloc(tmpNameSize);
+                    char* origFullName = origFullNameGuard.P = (char*)malloc(tmpNameSize);
+                    char* tmpNamePart = NULL;
+                    if (tmpName != NULL && origFullName != NULL && foundName[0] != 0)
+                    {
+                        strcpy(tmpName, fileName);
+                        CutDirectory(tmpName);
+                        SalPathAddBackslash(tmpName, tmpNameSize);
+                        tmpNamePart = tmpName + strlen(tmpName);
+                    }
+                    if (tmpNamePart != NULL && SalPathAppend(tmpName, foundName, tmpNameSize))
                     {
                         strcpy(origFullName, tmpName);
                         DWORD num = (GetTickCount() / 10) % 0xFFF;
@@ -176,42 +191,61 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                             DWORD e = GetLastError();
                             if (e != ERROR_FILE_EXISTS && e != ERROR_ALREADY_EXISTS)
                             {
+                                clashErr = e; // e.g. the other file held open
                                 tmpName[0] = 0;
                                 break;
                             }
                         }
                         if (tmpName[0] != 0) // if we managed to "clean up" the conflicting file/directory, try creating the target
                         {                    // file/directory and then restore the original name to the "cleaned" file/directory
-                            hFile = INVALID_HANDLE_VALUE;
-                            //              if (!isDir)   // file
-                            //              {       // add the handle to HANDLES at the end only if the SAFE_FILE structure is being filled
+                            // add the handle to HANDLES at the end only if the SAFE_FILE structure is being filled
                             hFile = SalCreateFileNH(fileName, dwDesiredAccess, dwShareMode, NULL,
                                                     CREATE_NEW, dwFlagsAndAttributes, NULL);
-                            //              }
-                            //              else   // directory
-                            //              {
-                            //                if (CreateDirectory(fileName, NULL)) out = (void *)1;  // on success we must return something other than INVALID_HANDLE_VALUE
-                            //              }
+                            if (hFile == INVALID_HANDLE_VALUE)
+                                clashErr = GetLastError();
                             if (!::SalMoveFile(tmpName, origFullName))
                             { // this can apparently happen; inexplicably, Windows creates a file named origFullName instead of 'fileName' (the DOS name)
                                 TRACE_I("Unexpected situation in CSalamanderGeneral::SafeCreateFile(): unable to rename file from tmp-name to original long file name! " << origFullName);
+                                clashErr = GetLastError();
 
                                 if (hFile != INVALID_HANDLE_VALUE)
                                 {
-                                    //                  if (!isDir)
                                     CloseHandle(hFile);
                                     hFile = INVALID_HANDLE_VALUE;
-                                    //                  if (!isDir)
                                     SalDeleteFile(fileName);
-                                    //                  else RemoveDirectory(fileName);
-                                    if (!::SalMoveFile(tmpName, origFullName))
-                                        TRACE_E("Fatal unexpected situation in CSalamanderGeneral::SafeCreateFile(): unable to rename file from tmp-name to original long file name! " << origFullName);
                                 }
+                                if (!::SalMoveFile(tmpName, origFullName)) // feature 203: also when the create failed
+                                    TRACE_E("Fatal unexpected situation in CSalamanderGeneral::SafeCreateFile(): unable to rename file from tmp-name to original long file name! " << origFullName);
                             }
                             if (hFile != INVALID_HANDLE_VALUE)
-                                goto SUCCESS; // return only on success; errors are handled later (ignore the DOS-name conflict)
+                                goto SUCCESS; // return only on success
                         }
                     }
+                    clashErr = SalShortNameClashError(clashErr); // never "it exists" for the other file
+                    int ret;
+                    if (silentMask != NULL && (*silentMask & SILENT_SKIP_FILE_CREATE) && allowSkip)
+                        ret = DIALOG_SKIP;
+                    else
+                    {
+                        // ERROR: filename+error, buttons retry/skip/skip all/cancel
+                        ret = DialogError(hParent, allowSkip ? BUTTONS_RETRYSKIPCANCEL : BUTTONS_RETRYCANCEL, fileName,
+                                          ::GetErrorText(clashErr), LoadStr(IDS_ERRORCREATINGFILE));
+                    }
+                    switch (ret)
+                    {
+                    case DIALOG_SKIPALL:
+                        if (silentMask != NULL)
+                            *silentMask |= SILENT_SKIP_FILE_CREATE;
+                        // no break here
+                    case DIALOG_SKIP:
+                        if (skipped != NULL)
+                            *skipped = TRUE;
+                        return INVALID_HANDLE_VALUE;
+                    case DIALOG_CANCEL:
+                    case DIALOG_FAIL:
+                        return INVALID_HANDLE_VALUE;
+                    }
+                    continue; // retry: the whole check again
                 }
             }
         }

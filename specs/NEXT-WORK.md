@@ -291,12 +291,20 @@ Functional, no loss:
     feature 202**); ~~the Renamer has no step that moves
     an 8.3 short-name clash aside~~ (**done, feature 199** - measured: `longfilename.txt` deleted;
     left by its review: ~~the core's Quick Rename has the same fallback~~ - **done, feature 201**
-    (also the worker's move); left by 201's review: **the create paths likely have the same defect**
-    - `SalCreateFileEx` (worker.cpp ~3035: an F5 copy of a file named `LONGFI~1.TXT` into a folder
-    where `longfilename.txt` is held open: the overwrite question, Yes truncates it), `SafeCreateFile`
-    (safefile.cpp ~178: plug-ins unpacking such a member), `SalCreateDirectoryEx` (~6640) - measure
-    first; and the other entry can be left under `salNNN` with only a trace when both restores fail
-    (Quick Rename, the worker's move)).
+    (also the worker's move); left by 201's review: ~~the create paths have the same defect~~ -
+    **done, feature 203** (`SalCreateFileEx`, `SalCreateDirectoryEx`, `SafeFileCreate`); left: the
+    other entry can be left under `salNNN` with only a trace when both restores fail (Quick Rename,
+    the worker's move, the create paths); found by 203's measuring: **an archive member
+    `LONGDI~1/a.txt` unpacked next to a folder `longdirname` goes INTO `longdirname`** (ZIP, nothing
+    held: the path's folder part resolves through the short name - the core's
+    `CheckAndCreateDirectory` and `SafeFileCreate`'s parent-path check never move a clash aside; a
+    same-named file there is offered for overwriting under the member's path). A user's typed
+    `PROGRA~1` must keep resolving - only the member's part of the path may not; next, 204); left
+    by 203's review: **the FTP and SFTP downloads have the same trap** (205) - FTP turns the create's
+    error back into "exists" by its own attribute re-check (`operats5.cpp` ~1056-1074, ~1317-1338:
+    a downloaded folder `LONGDI~1` joined into `longdirname` by default, the other file offered for
+    overwrite / resume); SFTP (on by default) never moves the clash aside (`operats.cpp` ~532-560,
+    ~840-848: the overwrite question shows and replaces `longfilename.txt`, nothing held).
     Also left by 199's second review: the Renamer's `CheckAndCreateDirectory` (`rendlg3.cpp`, the
     "adjust the case" step) renames a folder whose SHORT name is a folder part of the new name
     (`LONGDI~1\x.txt`) to that short name - the folder loses its long name without a question

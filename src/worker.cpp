@@ -4,6 +4,7 @@
 
 #include "precomp.h"
 #include "salsafereplace.h" // feature 175
+#include "salshortname.h"   // feature 203
 
 #include "cfgdlg.h"
 #include "worker.h"
@@ -2971,6 +2972,8 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
     if (out == INVALID_HANDLE_VALUE)
     {
         DWORD err = GetLastError();
+        BOOL shortNameClash = FALSE;                 // feature 203: the name is only another entry's DOS name
+        DWORD clashErr = ERROR_FILENAME_EXCED_RANGE; // why the work-around did not help
         if (encryptionNotSupported != NULL && (flagsAndAttributes & FILE_ATTRIBUTE_ENCRYPTED))
         { // when the target disk cannot create an Encrypted file (observed on NTFS network disk (tested on share from XP) while logged in under a different username than we have in the system (on the current console) - the remote machine has a same-named user without a password, so it cannot be used over the network)
             out = SalCreateFileNH(fileName, desiredAccess, shareMode, NULL,
@@ -3005,6 +3008,7 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                     if (SalNameEqualOrdinalCI(tgtName, -1, fndDosNameU8, -1) && // match only for DOS name
                         !SalNameEqualOrdinalCI(tgtName, -1, fndNameU8, -1))     // (full name differs)
                     {
+                        shortNameClash = TRUE;
                         // rename ("tidy up") the file/directory with the conflicting DOS name to a temporary 8.3 name (no extra DOS name needed)
                         // heap copies - the path may be far longer than MAX_PATH
                         struct CAutoFree // frees the buffers on every return path
@@ -3024,7 +3028,10 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                             tmpNamePart = tmpName + strlen(tmpName);
                         }
                         else
+                        {
                             TRACE_E(LOW_MEMORY);
+                            clashErr = ERROR_NOT_ENOUGH_MEMORY;
+                        }
                         if (tmpNamePart != NULL && SalPathAppend(tmpName, fndNameU8, tmpNameSize))
                         {
                             strcpy(origFullName, tmpName);
@@ -3038,6 +3045,7 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                                 DWORD e = GetLastError();
                                 if (e != ERROR_FILE_EXISTS && e != ERROR_ALREADY_EXISTS)
                                 {
+                                    clashErr = e; // e.g. the other file held open
                                     tmpName[0] = 0;
                                     break;
                                 }
@@ -3046,6 +3054,8 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                             {                    // the target file again, then restore the original name
                                 out = SalCreateFileNH(fileName, desiredAccess, shareMode, NULL,
                                                       CREATE_NEW, flagsAndAttributes, NULL);
+                                if (out == INVALID_HANDLE_VALUE)
+                                    clashErr = GetLastError();
                                 if (out == INVALID_HANDLE_VALUE && encryptionNotSupported != NULL &&
                                     (flagsAndAttributes & FILE_ATTRIBUTE_ENCRYPTED))
                                 { // when the target disk cannot create an Encrypted file (observed on NTFS network disk (tested on share from XP) while logged in under a different username than we have in the system (on the current console) - the remote machine has a same-named user without a password, so it cannot be used over the network)
@@ -3063,15 +3073,16 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                                 if (!SalMoveFile(tmpName, origFullName))
                                 { // this apparently can happen; inexplicably, Windows creates a file named origFullName instead of fileName (the DOS name)
                                     TRACE_I("Unexpected situation in SalCreateFileEx(): unable to rename file from tmp-name to original long file name! " << origFullName);
+                                    clashErr = GetLastError();
 
                                     if (out != INVALID_HANDLE_VALUE)
                                     {
                                         NOHANDLES(CloseHandle(out));
                                         out = INVALID_HANDLE_VALUE;
                                         SalDeleteFile(fileName);
-                                        if (!SalMoveFile(tmpName, origFullName))
-                                            TRACE_E("Fatal unexpected situation in SalCreateFileEx(): unable to rename file from tmp-name to original long file name! " << origFullName);
                                     }
+                                    if (!SalMoveFile(tmpName, origFullName)) // feature 203: also when the create failed
+                                        TRACE_E("Fatal unexpected situation in SalCreateFileEx(): unable to rename file from tmp-name to original long file name! " << origFullName);
                                 }
                                 else
                                 {
@@ -3090,7 +3101,7 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
             }
         }
         if (out == INVALID_HANDLE_VALUE)
-            SetLastError(err);
+            SetLastError(shortNameClash ? SalShortNameClashError(clashErr) : err); // feature 203 (salshortname.h)
     }
     return out;
 }
@@ -6631,6 +6642,9 @@ BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
                 if (SalNameEqualOrdinalCI(tgtName, -1, fndDosNameU8, -1) && // match only for the DOS name
                     !SalNameEqualOrdinalCI(tgtName, -1, fndNameU8, -1))     // (the full name differs)
                 {
+                    // feature 203: "it exists" is never reported for it - the copy of a folder took that for
+                    // the target folder and merged into the OTHER folder (its files overwritten by name)
+                    DWORD clashErr = ERROR_FILENAME_EXCED_RANGE;
                     // rename ("tidy up") the file/directory whose DOS name conflicts to a temporary 8.3 name (no extra DOS name needed)
                     // heap copies - the path may be far longer than MAX_PATH
                     struct CAutoFree // frees the buffers on every return path
@@ -6650,7 +6664,10 @@ BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
                         tmpNamePart = tmpName + strlen(tmpName);
                     }
                     else
+                    {
                         TRACE_E(LOW_MEMORY);
+                        clashErr = ERROR_NOT_ENOUGH_MEMORY;
+                    }
                     if (tmpNamePart != NULL && SalPathAppend(tmpName, fndNameU8, tmpNameSize))
                     {
                         strcpy(origFullName, tmpName);
@@ -6664,6 +6681,7 @@ BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
                             DWORD e = GetLastError();
                             if (e != ERROR_FILE_EXISTS && e != ERROR_ALREADY_EXISTS)
                             {
+                                clashErr = e; // e.g. a file inside the other folder held open
                                 tmpName[0] = 0;
                                 break;
                             }
@@ -6671,16 +6689,16 @@ BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
                         if (tmpName[0] != 0) // if we managed to "tidy up" the conflicting file, retry the move
                         {                    // and then restore the original name of the "tidied" file
                             BOOL createDirDone = SalCreateDirectory(name, NULL);
+                            if (!createDirDone)
+                                clashErr = GetLastError();
                             if (!SalMoveFile(tmpName, origFullName))
                             { // this can apparently happen: inexplicably Windows creates a file named origFullName instead of name (the DOS name)
                                 TRACE_I("Unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
-                                if (createDirDone)
-                                {
-                                    if (SalRemoveDirectory(name))
-                                        createDirDone = FALSE;
-                                    if (!SalMoveFile(tmpName, origFullName))
-                                        TRACE_E("Fatal unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
-                                }
+                                clashErr = GetLastError();
+                                if (createDirDone && SalRemoveDirectory(name))
+                                    createDirDone = FALSE;
+                                if (!SalMoveFile(tmpName, origFullName)) // feature 203: also when the create failed
+                                    TRACE_E("Fatal unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
                             }
                             else
                             {
@@ -6694,6 +6712,7 @@ BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
                     }
                     else
                         TRACE_E("Original full file name is too long, unable to bypass only-dos-name-overwrite problem!");
+                    errLoc = SalShortNameClashError(clashErr); // feature 203 (salshortname.h)
                 }
             }
         }

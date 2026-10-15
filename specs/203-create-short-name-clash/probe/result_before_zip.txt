@@ -1,0 +1,14 @@
+create_clash_probe (feature 203) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 06:00; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - not used by this probe
+
+zip-free   RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...AppData\Local\Temp\tc203_cc\zip-free\tgt', set '...ppData\Local\Temp\tc203_cc\zip-free\tgt\'; on disk: LONGFI~1.TXT=COPIED-zip-free; longfilename.txt=PRECIOUS-3; the copy there: True; asked: nothing
+zip-free   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-held   RUN    FAIL        lost=True; windows as 103 expects: False; focus held True; field was '...AppData\Local\Temp\tc203_cc\zip-held\tgt', set '...ppData\Local\Temp\tc203_cc\zip-held\tgt\'; on disk: longfilename.txt=COPIED-zip-held; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 10, 15.10.2026, 6:00:22, A | With file: | 15, 15.10.2026, 6:00:22 |
+zip-held   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-dir    RUN    FAIL        lost=True; windows as 103 expects: True; focus held True; field was '...\AppData\Local\Temp\tc203_cc\zip-dir\tgt', set '...AppData\Local\Temp\tc203_cc\zip-dir\tgt\'; on disk: longdirname/; longdirname holds: a.txt,keep.txt; folders: longdirname; asked: nothing
+zip-dir    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 4, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

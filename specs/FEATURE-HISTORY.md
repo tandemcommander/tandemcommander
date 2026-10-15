@@ -2639,3 +2639,9 @@ a few early ones are out of sequence).
   (`PvTargetIsOnlyShortNameOfOther` / `PvMoveAsideShortNameClash`, as the Renamer, 199); a failed
   move aside, or a folder where it cannot be told whose name it is, is the rename's error.
   Probe `pv_83_probe.ps1` 6 / 3 -> 9 / 0.
+- 203-create-short-name-clash: the create paths' 8.3 clash - when moving the other entry aside
+  fails (held open), `SalCreateFileEx` / `SalCreateDirectoryEx` report that error, never "it
+  exists" (F5 asked to overwrite the other file; a copied folder was merged into the other folder),
+  and `SafeFileCreate` (archive plug-ins) shows the create error instead of the overwrite question
+  (Yes replaced the other file's content), at any path length (`salshortname.h`). FTP / SFTP
+  downloads are not covered (205). Probe `create_clash_probe.ps1`.
