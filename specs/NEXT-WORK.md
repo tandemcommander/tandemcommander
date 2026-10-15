@@ -282,8 +282,14 @@ Functional, no loss:
     fix with a plural pattern per language (cs, de, fr, hu, ro, sk, nl, es).
 11. ~~A case-sensitive folder refuses `a.txt` → existing `A.txt`~~ - **done, feature 158** (Quick
     Rename and F6 offer the overwrite on identity proof; a decision recorded). Left: ~~F5 copy within
-    the same case-sensitive folder is refused "to itself" by name~~ (**done, feature 195**); the
-    Renamer refuses "already exists". Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
+    the same case-sensitive folder is refused "to itself" by name~~ (**done, feature 195**); ~~the
+    Renamer refuses "already exists"~~ (**done, feature 196**). Left by 196's review: the core's Quick
+    Rename (158, `fileswn5.cpp` ~2278) takes "different ids" as proof of another file before the
+    overwrite deletes the target - on a mount with path-derived ids answering "already exists" to a
+    change of case of the same file, with metadata changing between the two reads, it would delete
+    the source (196 lets only the temporary-name route prove it); the Renamer has no step that moves
+    an 8.3 short-name clash aside (renaming to `LONGFI~1.TXT` deletes `longfilename.txt` after the
+    question - measure first). Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
 12. ~~An archive whose name has 260+ bytes: drop/paste into it~~ - **done, feature 160** (the name

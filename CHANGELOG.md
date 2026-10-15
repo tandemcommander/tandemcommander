@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Renamer in a case-sensitive folder** (feature 196). Renaming "a.txt" to
+  "A.txt" while "A.txt" is another file failed with "already exists"; the
+  Renamer asks to overwrite it now.
+
 - **Copying within a case-sensitive folder** (feature 195). In a folder that
   tells names apart by case, copying "a.txt" as "A.txt" (or a folder "d" as
   "D") was refused as a copy onto itself; it is copied now, and an existing

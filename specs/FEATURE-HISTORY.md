@@ -2609,3 +2609,7 @@ a few early ones are out of sequence).
   or - in a folder whose `FileCaseSensitiveInfo` says so - one the identity read THROUGH links
   proves another file. Different ids alone prove nothing (path-derived ids on some mounts).
   Probe `cs_copy_probe.ps1` 7 / 3 -> 12 / 0.
+- 196-renamer-case-sensitive: the Renamer overwrites an existing `A.txt` when renaming `a.txt` in a
+  case-sensitive folder, proven another file ONLY by the temporary-name route (different ids and
+  metadata are no proof before a delete: path-derived ids); the name rule `SalNameOrderEqualCI`
+  instead of the code-page `StrICmp`. Probe `ren_cs_probe.ps1` 6 / 2 -> 8 / 0.

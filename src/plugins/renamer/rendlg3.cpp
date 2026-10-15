@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "../../common/salsamefile.h" // feature 103: is an existing target the source itself?
+#include "../../common/salnameorder.h" // feature 196: "the same name" by the file system's rule
 
 BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
                               BOOL overwrite, BOOL isDir, BOOL& skip)
@@ -35,6 +36,10 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
             // system's identity can. Such a target is never deleted: the rename goes through a
             // temporary name, which also tells the two apart (a target that outlives the source's
             // name is another file and the overwrite below follows unchanged)
+            // feature 196: TRUE when that proves the existing target ANOTHER file - in a case-sensitive
+            // folder "a.txt" -> existing "A.txt" is then an ordinary overwrite (it was refused
+            // "already exists" as a change of case; the core's rename: feature 158)
+            BOOL provenOther = FALSE;
             if (err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS)
             {
                 CSalFileIdentity srcId, tgtId;
@@ -59,7 +64,14 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
                         continue; // retry
                     return FALSE;
                 }
-                if (SalDecideExistingTarget(FALSE, err, srcId, tgtId) == setaViaTempName)
+                CSalExistingTargetAction act = SalDecideExistingTarget(FALSE, err, srcId, tgtId);
+                // feature 196 (review): two spellings of one name - only the temporary name proves
+                // another file (the target outlives the source's name); different ids and metadata
+                // do not (ids derived from the path, a file written between the two reads), and the
+                // branch below deletes the target
+                if (act == setaLegacy && SalNameOrderEqualCI(sourceName, -1, targetName, -1))
+                    act = setaViaTempName;
+                if (act == setaViaTempName)
                 {
                     int tmpSize = (int)strlen(sourceName) + 16;
                     char* tmp = (char*)malloc(tmpSize);
@@ -100,11 +112,14 @@ BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
                         continue;
                     }
                     free(tmp); // another file: the old handling below
+                    provenOther = TRUE;
                 }
             }
 
+            // feature 196: the name rule of the file system (092; the code-page StrICmp folded no
+            // letter outside the code page), and a proven other file in a case-sensitive folder
             if ((err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS) &&
-                SG->StrICmp(sourceName, targetName) != 0)
+                (!SalNameOrderEqualCI(sourceName, -1, targetName, -1) || provenOther))
             {
                 DWORD attr = SG->SalGetFileAttributes(targetName);
                 if (attr != 0xFFFFFFFF && attr & FILE_ATTRIBUTE_DIRECTORY) // cannot overwrite a directory
