@@ -234,7 +234,7 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                                                     CREATE_NEW, dwFlagsAndAttributes, NULL);
                             if (hFile == INVALID_HANDLE_VALUE)
                                 clashErr = GetLastError();
-                            if (!::SalMoveFile(tmpName, origFullName))
+                            if (!::SalMoveFileBack(tmpName, origFullName))
                             { // this can apparently happen; inexplicably, Windows creates a file named origFullName instead of 'fileName' (the DOS name)
                                 TRACE_I("Unexpected situation in CSalamanderGeneral::SafeCreateFile(): unable to rename file from tmp-name to original long file name! " << origFullName);
                                 clashErr = GetLastError();
@@ -245,7 +245,7 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                                     hFile = INVALID_HANDLE_VALUE;
                                     SalDeleteFile(fileName);
                                 }
-                                if (!::SalMoveFile(tmpName, origFullName)) // feature 203: also when the create failed
+                                if (!::SalMoveFileBack(tmpName, origFullName)) // feature 203: also when the create failed
                                     TRACE_E("Fatal unexpected situation in CSalamanderGeneral::SafeCreateFile(): unable to rename file from tmp-name to original long file name! " << origFullName);
                             }
                             if (hFile != INVALID_HANDLE_VALUE)

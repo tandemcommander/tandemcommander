@@ -345,6 +345,23 @@ BOOL SalMoveFile(const char* u8from, const char* u8to)
     return TRUE;
 }
 
+BOOL SalMoveFileBack(const char* u8from, const char* u8to)
+{
+    for (int attempt = 0;; attempt++)
+    {
+        if (SalMoveFile(u8from, u8to))
+            return TRUE;
+        DWORD err = GetLastError();
+        if (attempt >= 10 ||
+            (err != ERROR_SHARING_VIOLATION && err != ERROR_ACCESS_DENIED && err != ERROR_LOCK_VIOLATION))
+        {
+            SetLastError(err);
+            return FALSE;
+        }
+        Sleep(100);
+    }
+}
+
 BOOL SalMoveFileEx(const char* u8from, const char* u8to, DWORD flags)
 {
     WCHAR* wf = SalPathToWExtAlloc(u8from);

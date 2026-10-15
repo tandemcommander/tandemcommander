@@ -3070,7 +3070,7 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                                             TRACE_E("Unable to delete testing target file: " << fileName);
                                     }
                                 }
-                                if (!SalMoveFile(tmpName, origFullName))
+                                if (!SalMoveFileBack(tmpName, origFullName))
                                 { // this apparently can happen; inexplicably, Windows creates a file named origFullName instead of fileName (the DOS name)
                                     TRACE_I("Unexpected situation in SalCreateFileEx(): unable to rename file from tmp-name to original long file name! " << origFullName);
                                     clashErr = GetLastError();
@@ -3081,7 +3081,7 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                                         out = INVALID_HANDLE_VALUE;
                                         SalDeleteFile(fileName);
                                     }
-                                    if (!SalMoveFile(tmpName, origFullName)) // feature 203: also when the create failed
+                                    if (!SalMoveFileBack(tmpName, origFullName)) // feature 203: also when the create failed
                                         TRACE_E("Fatal unexpected situation in SalCreateFileEx(): unable to rename file from tmp-name to original long file name! " << origFullName);
                                 }
                                 else
@@ -6090,15 +6090,33 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                                         err = GetLastError();                                          // feature 201
                                     if (script->CopyAttrs && (op->Attr & FILE_ATTRIBUTE_ARCHIVE) == 0) // the Archive attribute was not set; MoveFile turned it on, clear it again
                                         SalSetFileAttributes(op->TargetName, op->Attr);                // leave without handling or retry, not important (it normally toggles chaotically)
-                                    if (!SalMoveFile(tmpName, origFullName))
+                                    if (!SalMoveFileBack(tmpName, origFullName))
                                     { // this apparently can happen; inexplicably, Windows creates a file named origFullName instead of op->TargetName (the DOS name)
+                                        DWORD backErr = GetLastError();
                                         TRACE_I("DoMoveFile(): Unexpected situation: unable to rename file/dir from tmp-name to original long file name! " << origFullName);
+                                        BOOL back = FALSE;
                                         if (moveDone)
                                         {
                                             if (SalMoveFile(op->TargetName, sourceNameMvDir))
+                                            {
                                                 moveDone = FALSE;
-                                            if (!SalMoveFile(tmpName, origFullName))
+                                                err = backErr; // feature 221: the reason of the undo (it said "already exists")
+                                            }
+                                            if (SalMoveFileBack(tmpName, origFullName))
+                                                back = TRUE;
+                                            else
+                                            {
+                                                backErr = GetLastError();
                                                 TRACE_E("DoMoveFile(): Fatal unexpected situation: unable to rename file/dir from tmp-name to original long file name! " << origFullName);
+                                            }
+                                        }
+                                        if (!back)
+                                        { // feature 221: the other entry stays under the temporary name - said (it was a trace)
+                                            char* data[3];
+                                            data[0] = LoadStr(IDS_ERRORRENAMINGFILE);
+                                            data[1] = tmpName;
+                                            data[2] = GetErrorText(backErr);
+                                            SendMessage(hProgressDlg, WM_USER_DIALOG, 5, (LPARAM)data);
                                         }
                                     }
                                     else
@@ -6691,13 +6709,13 @@ BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
                             BOOL createDirDone = SalCreateDirectory(name, NULL);
                             if (!createDirDone)
                                 clashErr = GetLastError();
-                            if (!SalMoveFile(tmpName, origFullName))
+                            if (!SalMoveFileBack(tmpName, origFullName))
                             { // this can apparently happen: inexplicably Windows creates a file named origFullName instead of name (the DOS name)
                                 TRACE_I("Unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
                                 clashErr = GetLastError();
                                 if (createDirDone && SalRemoveDirectory(name))
                                     createDirDone = FALSE;
-                                if (!SalMoveFile(tmpName, origFullName)) // feature 203: also when the create failed
+                                if (!SalMoveFileBack(tmpName, origFullName)) // feature 203: also when the create failed
                                     TRACE_E("Fatal unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
                             }
                             else

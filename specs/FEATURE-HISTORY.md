@@ -2742,3 +2742,7 @@ a few early ones are out of sequence).
   whole session leaked (a stalled server through `probe/fakessh.py` `stallT`): a failed teardown step
   is repeated after `shutdown(SD_BOTH)`. Probes 6 / 0, 4 / 0. Left (libssh2): a partly sent packet,
   open handles of a dead session, a server's DISCONNECT.
+- 221-moved-aside-restore: an entry moved aside to `salNNN` for an 8.3 clash stayed there with only a
+  trace when the move back failed. `SalMoveFileBack` (retried ~1 s) on every move-back; Quick Rename
+  and the worker's move say where it stays (existing strings). By reading; 201 6 / 0, 203 14 / 0.
+  The create paths (no window) still only trace - NEXT-WORK.

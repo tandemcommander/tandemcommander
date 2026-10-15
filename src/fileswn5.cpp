@@ -2385,15 +2385,31 @@ void CFilesWindow::RenameFileInternal(CFileData* f, const char* formatedFileName
                                     BOOL moveDone = SalMoveFile(path, tgtPath);
                                     if (!moveDone)
                                         err = GetLastError(); // feature 201
-                                    if (!SalMoveFile(tmpName, origFullName))
+                                    if (!SalMoveFileBack(tmpName, origFullName)) // feature 221: tried for a second
                                     { // this can apparently happen: Windows creates a file named origFullName instead of 'tgtPath' (DOS name)
+                                        DWORD backErr = GetLastError();
                                         TRACE_I("CFilesWindow::RenameFileInternal(): Unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
+                                        BOOL back = FALSE;
                                         if (moveDone)
                                         {
                                             if (SalMoveFile(tgtPath, path))
+                                            {
                                                 moveDone = FALSE;
-                                            if (!SalMoveFile(tmpName, origFullName))
+                                                err = backErr; // the reason of the undo (it said "already exists")
+                                            }
+                                            if (SalMoveFileBack(tmpName, origFullName))
+                                                back = TRUE;
+                                            else
+                                            {
+                                                backErr = GetLastError();
                                                 TRACE_E("CFilesWindow::RenameFileInternal(): Fatal unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
+                                            }
+                                        }
+                                        if (!back)
+                                        {                            // feature 221: the other entry stays under the temporary name - said (it was a trace)
+                                            CSalHeapString backText; // the path may be long - never cut
+                                            if (backText.Printf(LoadStrU8(IDS_PATHERRORFORMAT), tmpName, GetErrorText(backErr)))
+                                                SalMessageBox(HWindow, backText.Get(), LoadStr(IDS_ERRORRENAMINGFILE), MB_OK | MB_ICONEXCLAMATION);
                                         }
                                     }
 

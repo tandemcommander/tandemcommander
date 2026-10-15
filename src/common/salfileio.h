@@ -89,6 +89,9 @@ BOOL SalDeleteFile(const char* u8path);
 BOOL SalRemoveDirectory(const char* u8path);
 BOOL SalCreateDirectory(const char* u8path, LPSECURITY_ATTRIBUTES securityAttributes);
 BOOL SalMoveFile(const char* u8from, const char* u8to);
+// feature 221: returns an entry moved aside under a temporary name (an 8.3 name clash) to its own
+// name; a scanner or an indexer may hold it for a moment - tried for about a second
+BOOL SalMoveFileBack(const char* u8from, const char* u8to);
 BOOL SalMoveFileEx(const char* u8from, const char* u8to, DWORD flags);
 BOOL SalCopyFile(const char* u8from, const char* u8to, BOOL failIfExists);
 

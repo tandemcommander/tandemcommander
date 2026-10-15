@@ -292,9 +292,11 @@ Functional, no loss:
     an 8.3 short-name clash aside~~ (**done, feature 199** - measured: `longfilename.txt` deleted;
     left by its review: ~~the core's Quick Rename has the same fallback~~ - **done, feature 201**
     (also the worker's move); left by 201's review: ~~the create paths have the same defect~~ -
-    **done, feature 203** (`SalCreateFileEx`, `SalCreateDirectoryEx`, `SafeFileCreate`); left: the
-    other entry can be left under `salNNN` with only a trace when both restores fail (Quick Rename,
-    the worker's move, the create paths); found by 203's measuring: ~~an archive member
+    **done, feature 203** (`SalCreateFileEx`, `SalCreateDirectoryEx`, `SafeFileCreate`); left: ~~the
+    other entry can be left under `salNNN` with only a trace when both restores fail~~ - **done,
+    feature 221** (the move back retried; Quick Rename and the worker's move say it; left: the
+    create paths `SalCreateFileEx` / `SalCreateDirectoryEx` / `SafeFileCreate` have no window - a
+    trace only; PictView's and the Renamer's move-back have no retry); found by 203's measuring: ~~an archive member
     `LONGDI~1/a.txt` unpacked next to a folder `longdirname` goes INTO `longdirname`~~ - **done,
     feature 204** (left by its review, latent: the unpack root is process-wide; an external
     archiver's unpack not driven); left

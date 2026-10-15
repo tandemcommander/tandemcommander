@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A file briefly renamed to "salXXX" is renamed back reliably**
+  (feature 221). When a rename or move collided with another file's short
+  (8.3) name, that file was moved aside and back; if another program held
+  it at that moment it silently stayed named "salXXX". The move back is
+  now retried, and if it still fails you are told where the file is.
+
 - **SFTP: viewing a file you may not read says so** (feature 220). F3 on
   a server file without read permission showed nothing at all; it now
   says "Permission denied". A connection whose server stopped answering
