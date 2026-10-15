@@ -877,8 +877,10 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                     char validTmpName[MAX_PATH];
                     validTmpName[0] = 0;
                     if (!SalIsValidFileNameComponent(f->Name))
-                    {
-                        lstrcpyn(validTmpName, f->Name, MAX_PATH);
+                    { // feature 222: at a whole character (lstrcpyn cut a letter in two)
+                        int keep = SalNamePrefixBytesU8(f->Name, SAL_NAME_MAX_UTF16_UNITS, MAX_PATH - 1);
+                        memcpy(validTmpName, f->Name, keep);
+                        validTmpName[keep] = 0;
                         SalMakeValidFileNameComponent(validTmpName);
                     }
                     name = (char*)DiskCache.GetName(dcFileName,

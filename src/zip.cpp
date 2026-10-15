@@ -36,6 +36,7 @@ extern "C"
 #include "crypt\sha1.h"
 #include "pwdmngr.h"
 #include "themes.h"
+#include "salmaskname.h" // feature 222: SalNameTooLongForFileSystemU8
 
 CPackerConfig PackerConfig;
 CUnpackerConfig UnpackerConfig;
@@ -6084,7 +6085,11 @@ BOOL CSalamanderDirectory::AddFile(const char* path, CFileData& file, CPluginDat
     CALL_STACK_MESSAGE_NONE // time-critical method
 
         int pathLen = 0;
-    if (path != NULL && ((pathLen = (int)strlen(path)) > MAX_PATH - 5 || file.NameLen > MAX_PATH - 5))
+    // feature 222: a name up to 255 UTF-16 units (interface 104 - it was 255 BYTES: an archive with a
+    // member of 86+ CJK letters could not be opened at all); the path part keeps its MAX_PATH - 5
+    if (path != NULL && ((pathLen = (int)strlen(path)) > MAX_PATH - 5 ||
+                         (file.NameLen > MAX_PATH - 5 &&
+                          (file.NameLen >= SAL_FIND_NAME_U8 || SalNameTooLongForFileSystemU8(file.Name)))))
     {
         TRACE_E("Too long path or file name!");
         return FALSE;
@@ -6182,6 +6187,9 @@ BOOL CSalamanderDirectory::AddDir(const char* path, CFileData& dir, CPluginDataI
 {
     CALL_STACK_MESSAGE_NONE // time-critical method
 
+        // feature 222: a FOLDER keeps the 255-byte name - its contents' path part is limited to
+        // MAX_PATH - 5 bytes, a longer folder could be listed but never filled (a partial listing;
+        // a delete of members never shown)
         if (path != NULL && (strlen(path) > MAX_PATH - 5 || dir.NameLen > MAX_PATH - 5))
     {
         TRACE_E("Too long path or file name!");

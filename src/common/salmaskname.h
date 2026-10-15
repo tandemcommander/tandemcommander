@@ -246,3 +246,24 @@ inline BOOL SalNameTooLongForFileSystemU8(const char* name)
 {
     return SalNameUtf16UnitsU8(name) > SAL_NAME_MAX_UTF16_UNITS;
 }
+
+// feature 222: the bytes of the longest prefix of 'name' that ends at a whole character and has
+// at most 'maxUnits' UTF-16 units and at most 'maxBytes' bytes
+inline int SalNamePrefixBytesU8(const char* name, int maxUnits, int maxBytes)
+{
+    int units = 0;
+    int bytes = 0;
+    if (name != NULL)
+    {
+        while (name[bytes] != 0)
+        {
+            int len = SalMaskNameDetail::CharLen(name + bytes);
+            int u = len == 4 ? 2 : 1;
+            if (units + u > maxUnits || bytes + len > maxBytes)
+                break;
+            units += u;
+            bytes += len;
+        }
+    }
+    return bytes;
+}

@@ -2746,3 +2746,9 @@ a few early ones are out of sequence).
   trace when the move back failed. `SalMoveFileBack` (retried ~1 s) on every move-back; Quick Rename
   and the worker's move say where it stays (existing strings). By reading; 201 6 / 0, 203 14 / 0.
   The create paths (no window) still only trace - NEXT-WORK.
+- 222-name-length-units: a ZIP with a member of 274 bytes (90 CJK letters - a valid name) could not
+  be opened: `CSalamanderDirectory::AddFile` and `SalIsValidFileNameComponent` limited a name to 255
+  BYTES. Now 255 UTF-16 units for files (folders keep 255 bytes - their contents' path part is
+  limited; the review's MUST: else partial listings), `SalNamePrefixBytesU8`, whole-character cuts,
+  the ZIP listing skips a too-long item, uniso's path buffers widened. Contract note. Probe
+  `editname222_probe.ps1` 5 / 3 -> 10 / 0.

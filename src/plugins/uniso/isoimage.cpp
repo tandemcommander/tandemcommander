@@ -1373,7 +1373,9 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
 {
     CALL_STACK_MESSAGE1("CISOImage::ListImage(, )");
 
-    char path[2 * MAX_PATH + 1];
+    // feature 222: a path part of up to MAX_PATH - 5 bytes + '\\' + a name of up to 3 * MAX_PATH
+    // bytes (the core takes names of 255 UTF-16 units now) - the file systems append to it in place
+    char path[4 * MAX_PATH + 2];
     ZeroMemory(&path, sizeof(path));
 
     if (Options.SessionAsDirectory && Session.Count > 1)

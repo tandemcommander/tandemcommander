@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Archives with long file names open** (feature 222). A ZIP (or another
+  archive) containing a file whose name has more than 255 bytes - for
+  example about 86 Chinese or 128 Cyrillic letters, still a valid
+  Windows name - could not be opened at all ("Cannot add file to the
+  list."). Such files are now listed and can be extracted; an item that
+  really is too long is skipped and the rest of the archive is shown.
+
 - **A file briefly renamed to "salXXX" is renamed back reliably**
   (feature 221). When a rename or move collided with another file's short
   (8.3) name, that file was moved aside and back; if another program held

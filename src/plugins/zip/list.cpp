@@ -180,7 +180,10 @@ START_LIST:
                     delete (CZIPFileData*)file.PluginData;
                     TRACE_E("Error adding directory " << path << "\\" << file.Name << " in the list");
                     SalamanderGeneral->Free(file.Name);
-                    if (_tcslen(path) >= _MAX_PATH)
+                    // feature 222: refused for its length (the path part or the folder's name over
+                    // MAX_PATH - 5 bytes) - skipped, the listing goes on (a path of 256-259 bytes
+                    // ended the whole listing)
+                    if (_tcslen(path) > MAX_PATH - 5 || file.NameLen > MAX_PATH - 5)
                     {
                         errorID = IDS_ERRADDDIR_TOOLONG;
                         // NOTE: no break! We continue parsing the archive
@@ -195,12 +198,21 @@ START_LIST:
             else
             {
                 file.IsLink = SalamanderGeneral->IsFileLink(file.Ext);
+                int fileNameUnits = 0; // feature 222: UTF-16 units of the name (read before it is freed below)
+                for (const unsigned char* u = (const unsigned char*)file.Name; *u != 0; u++)
+                {
+                    if ((*u & 0xC0) != 0x80)
+                        fileNameUnits += (*u >= 0xF0) ? 2 : 1;
+                }
                 if (!dir->AddFile(path, file, NULL))
                 {
                     delete (CZIPFileData*)file.PluginData;
                     TRACE_E("Error adding file " << path << "\\" << file.Name << " to the list");
                     SalamanderGeneral->Free(file.Name);
-                    if (_tcslen(path) >= _MAX_PATH)
+                    // feature 222: skipped, as above - the path part over MAX_PATH - 5 bytes, or a name
+                    // a Windows file system cannot take (the core's own test; a low memory still ends)
+                    if (_tcslen(path) > MAX_PATH - 5 || file.NameLen >= 3 * MAX_PATH ||
+                        (file.NameLen > MAX_PATH - 5 && fileNameUnits > 255))
                     {
                         errorID = IDS_ERRADDFILE_TOOLONG;
                         // NOTE: no break! We continue parsing the archive

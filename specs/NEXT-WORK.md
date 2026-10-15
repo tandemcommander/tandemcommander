@@ -691,7 +691,14 @@ Code work an agent can do:
          as one letter when they look like UTF-8.
          Earlier text of this item: 137 (also the in-place rename
          line, which fell back to a code-page name). Left: ~~`ssl.cpp:666` `name[200]` for a call
-         that may write 256 bytes~~ - **done, feature 216** (also the SSL log lines' encoding); the core's `SalMakeValidFileNameComponent` cuts at byte 256;
+         that may write 256 bytes~~ - **done, feature 216** (also the SSL log lines' encoding); ~~the core's `SalMakeValidFileNameComponent` cuts at byte 256~~ - **done, feature 222**
+         (measured worse: a ZIP with a member of 86+ CJK letters could not be opened; left by its
+         review: F3 / F4 of such names refused by the disk cache's folder limit; folders over 255
+         bytes in archives are skipped; uniso `hfs.cpp:263-310` stack overflow from a crafted
+         image, `iso9660.cpp:197` `strncat` with a Rock Ridge length under 5, Joliet names cut;
+         tar's gzip name cut at 259 bytes and extracted under it; the User Menu
+         `mainwnd4.cpp:411-433` and Compare Directories `mainwnd5.cpp:1560/1584` cut disk names at
+         MAX_PATH and act on them; `fileswna.cpp:396` cuts `SrcPath`);
          ~~SFTP: a memory leak after a failed SSH handshake~~ - **done, feature 217** (reproduced
          by a proxy flipping the server's signature; also the 1-in-256 key exchange failure;
          left: ~~`Disconnect` tears down with a 1 ms deadline - the whole session leaks~~ - **done,

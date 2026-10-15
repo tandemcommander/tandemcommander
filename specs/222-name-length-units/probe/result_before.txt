@@ -1,0 +1,15 @@
+editname222_probe (feature 222) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 18:29; registry key existed True
+
+LONG       RUN    FAIL        member 274 bytes / 94 units; refused True; editor processes 0; windows: [#32770 'ZIP'] [Static id=2477] Cannot add file to the list. | [Button id=1] OK
+LONG       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CTL        RUN    PASS        member 9 bytes / 9 units; refused False; editor processes 1; windows: no window
+CTL        END    FAIL        exit 0x00000000; alive True; WM_NULL True; stray 1 (at exit: [#32770 'Information'] [Static id=2477] Archive "C:\Users\pavel\AppData\Local\Temp\tc222\CTL\a.zip" is about to close. If you are still editing some files from this archive, please save changes and close these files in editors now. Archive update will be offered in case of changes in edited files. | [Button id=1] OK | [Button id=2478] &Don't show this message again); new reports 0
+F5LONG     RUN    FAIL        extracted under the whole name False; windows: [#32770 'ZIP'] [Static id=2477] Cannot add file to the list. | [Button id=1] OK
+F5LONG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BAD        RUN    PASS        member 8 bytes / 8 units; refused True; editor processes 0; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is invalid on Windows file systems (such files can be opened only in viewers). | [Button id=1] OK
+BAD        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 5, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

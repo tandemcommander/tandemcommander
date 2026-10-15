@@ -2680,15 +2680,16 @@ public:
     virtual void WINAPI AddStrToStr(char* dstStr, int dstBufSize, const char* srcStr) = 0;
 
     // zjisti jestli je mozne retezec 'fileNameComponent' pouzit jako komponentu
-    // jmena na Windows filesystemu (resi retezce delsi nez MAX_PATH-4 (4 = "C:\"
-    // + null-terminator), prazdny retezec, retezce znaku '.', retezce white-spaces,
+    // jmena na Windows filesystemu (feature 222: a name over 255 UTF-16 units - it was MAX_PATH-4
+    // BYTES; a valid name may have up to 765 bytes of UTF-8, prazdny retezec, retezce znaku '.', retezce white-spaces,
     // znaky "*?\\/<>|\":" a jednoducha jmena typu "prn" a "prn  .txt")
     // mozne volat z libovolneho threadu
     virtual BOOL WINAPI SalIsValidFileNameComponent(const char* fileNameComponent) = 0;
 
     // pretvori retezec 'fileNameComponent' tak, aby mohl byt pouzity jako komponenta
-    // jmena na Windows filesystemu (resi retezce delsi nez MAX_PATH-4 (4 = "C:\"
-    // + null-terminator), resi prazdny retezec, retezce znaku '.', retezce
+    // jmena na Windows filesystemu (feature 222: shortens at a whole character to 255 UTF-16 units
+    // and MAX_PATH-4 bytes - the buffer contract below is kept, so a valid name of more than
+    // MAX_PATH-4 bytes is shortened; resi prazdny retezec, retezce znaku '.', retezce
     // white-spaces, znaky "*?\\/<>|\":" nahradi '_' + jednoducha jmena typu "prn"
     // a "prn  .txt" doplni o '_' na konci nazvu); 'fileNameComponent' musi jit
     // rozsirit alespon o jeden znak (maximalne se vsak z 'fileNameComponent'

@@ -11897,6 +11897,25 @@ static void TestDeleteAsDirLink197()
     CHECK(!SalDeleteAsDirLinkDecision(FALSE, TRUE, 0));          // no reparse point (any more)
 }
 
+// feature 222: a name's whole-character prefix within UTF-16 units and bytes
+static void TestNamePrefixBytes222()
+{
+    CHECK(SalNamePrefixBytesU8("abc", 255, 256) == 3);
+    CHECK(SalNamePrefixBytesU8("abc", 2, 256) == 2);                                  // units
+    CHECK(SalNamePrefixBytesU8("abc", 255, 1) == 1);                                  // bytes
+    CHECK(SalNamePrefixBytesU8("\xC5\xA1\xC5\xA1", 255, 3) == 2);               // never half a letter
+    CHECK(SalNamePrefixBytesU8("\xE4\xB8\x80\xE4\xB8\x80", 1, 256) == 3);     // CJK: 1 unit
+    CHECK(SalNamePrefixBytesU8("\xF0\x9F\x98\x80x", 1, 256) == 0);              // an emoji: 2 units
+    CHECK(SalNamePrefixBytesU8("\xF0\x9F\x98\x80x", 3, 256) == 5);
+    CHECK(SalNamePrefixBytesU8("", 255, 256) == 0);
+    std::string cjk;
+    for (int i = 0; i < 90; i++)
+        cjk += "\xE4\xB8\x80"; // 90 letters, 270 bytes, 90 units
+    CHECK(SalNamePrefixBytesU8(cjk.c_str(), 255, 256) == 255);  // the byte bound: 85 letters
+    CHECK(SalNamePrefixBytesU8(cjk.c_str(), 255, 780) == 270);  // within 255 units: whole
+    CHECK(!SalNameTooLongForFileSystemU8(cjk.c_str()));          // a valid name (it was "invalid")
+}
+
 // feature 219: a link's stored name in the long / NT form is the path it names
 static void TestReparseNameAsPath219()
 {
@@ -12190,6 +12209,7 @@ int main(int argc, char** argv)
     TestMultiSzToLine189();
     TestDeleteAsDirLink197();
     TestReparseNameAsPath219();
+    TestNamePrefixBytes222();
     TestShortNameClashError203();
     TestNameIsOnlyShortNameOf204();
     TestU8Fold210();

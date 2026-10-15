@@ -10,6 +10,7 @@
 #include "mainwnd.h"
 #include "pack.h"
 #include "codetbl.h"
+#include "salmaskname.h" // feature 222
 #include "dialogs.h"
 
 CSystemPolicies SystemPolicies;
@@ -1663,9 +1664,10 @@ BOOL SalIsValidFileNameComponent(const char* fileNameComponent)
     // test white-spaces at the beginning (Petr: commented out because spaces at the beginning of file and directory names are simply allowed)
     // if (*start != 0 && *start <= ' ') return FALSE;
 
-    // test for the maximum length MAX_PATH-4
+    // feature 222: the length a Windows file system takes - 255 UTF-16 units (it was 256 BYTES: a
+    // name of 86 CJK letters or 128 Cyrillic ones was "invalid")
     const char* s = fileNameComponent + strlen(fileNameComponent);
-    if (s - fileNameComponent > MAX_PATH - 4)
+    if (SalNameTooLongForFileSystemU8(fileNameComponent))
         return FALSE;
     // test white-spaces and '.' at the end of the name (the file system would trim them)
     s--;
@@ -1740,11 +1742,14 @@ void SalMakeValidFileNameComponent(char* fileNameComponent)
     start = fileNameComponent;
   }
 */
-    // trim to the maximum length MAX_PATH-4
+    // trim to 255 UTF-16 units and to MAX_PATH-4 bytes (the callers' buffers - the plug-in
+    // contract says at most MAX_PATH bytes are used; a reserved name grows by one byte below);
+    // feature 222: at a whole character (it cut a letter in two)
+    int keep = SalNamePrefixBytesU8(fileNameComponent, SAL_NAME_MAX_UTF16_UNITS, MAX_PATH - 4);
     char* s = fileNameComponent + strlen(fileNameComponent);
-    if (s - fileNameComponent > MAX_PATH - 4)
+    if (fileNameComponent + keep < s)
     {
-        s = fileNameComponent + (MAX_PATH - 4);
+        s = fileNameComponent + keep;
         *s = 0;
     }
     // trim white-spaces and '.' at the end of the name (the file system would do it anyway, so it will be clear immediately)

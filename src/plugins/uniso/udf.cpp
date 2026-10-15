@@ -959,8 +959,8 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
 
                 if (fileChar & UDF_DIRECTORY)
                 {
-                    char newPath[2 * MAX_PATH];
-                    ZeroMemory(newPath, 2 * MAX_PATH);
+                    char newPath[4 * MAX_PATH + 2]; // feature 222: path + a name of up to 3 * MAX_PATH bytes
+                    ZeroMemory(newPath, sizeof(newPath));
                     strcpy(newPath, path);
                     strcat(newPath, "\\");
                     strcat(newPath, fileName);
