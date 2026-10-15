@@ -5,6 +5,7 @@
 
 #include "../../common/salsamefile.h" // feature 103: is an existing target the source itself?
 #include "../../common/salnameorder.h" // feature 196: "the same name" by the file system's rule
+#include "splshortname.h"              // feature 206: a folder that is only another entry's short name
 
 // feature 199: does 'targetName' exist only as the SHORT (8.3) name of ANOTHER entry
 // ("LONGFI~1.TXT" of "longfilename.txt")? Its long name in 'longName' (the 092 name rule).
@@ -101,6 +102,42 @@ static CShortClashResult MoveAsideShortNameClash(const char* sourceName, const c
     free(entry);
     free(tmp);
     return res;
+}
+
+const char* PathBelowRoot(const char* path, const char* root, int rootLen)
+{
+    while (rootLen > 0 && root[rootLen - 1] == '\\')
+        rootLen--;
+    // second review: 'path' may be shorter than the root - never read past its end
+    if (rootLen == 0 || memchr(path, 0, rootLen + 1) != NULL ||
+        !SalNameOrderEqualCI(path, rootLen, root, rootLen) || path[rootLen] != '\\')
+    {
+        return NULL;
+    }
+    return path + rootLen + 1;
+}
+
+BOOL FolderPartIsShortNameOfOther(const char* path, const char* root, int rootLen)
+{
+    const char* below = PathBelowRoot(path, root, rootLen);
+    const char* last = strrchr(path, '\\');
+    if (below == NULL || last == NULL || last < below)
+        return FALSE;
+    size_t len = last - path;
+    char* prefix = (char*)malloc(len + 1);
+    if (prefix == NULL)
+        return FALSE;
+    BOOL found = FALSE;
+    for (const char* s = below; s <= last && !found; s++)
+    {
+        if (*s != '\\' || s == below)
+            continue;
+        memcpy(prefix, path, s - path);
+        prefix[s - path] = 0;
+        found = SplPathIsOnlyShortNameOfOther(prefix);
+    }
+    free(prefix);
+    return found;
 }
 
 BOOL CRenamerDialog::MoveFile(char* sourceName, char* targetName, char* newPart,
@@ -337,6 +374,13 @@ BOOL CRenamerDialog::CheckAndCreateDirectory(char* directory, char* newPart, BOO
         start += 3;
 
     start = max(start, newPart);
+    // feature 206: below the Renamer's folder (not while undoing - its paths are the sources' old
+    // ones), a folder found only as another entry's short (8.3) name is not this name's: it is made
+    // as a folder of its own (as the leaf, 199; as an archive's folder, 204) - "LONGDI~1\x.txt" went
+    // into "longdirname" and was offered for overwriting a file there under the typed path
+    // Only in the relative-path mode: there the folders below the Renamer's folder come from the
+    // pattern; a full path is the user's own (a typed short name keeps resolving, as 204's target)
+    const char* ownFrom = Undoing || RenamerOptions.Spec != rsRelativePath ? NULL : PathBelowRoot(directory, Root, RootLen);
 
     // existing part
     while (start < directoryEnd)
@@ -353,12 +397,25 @@ BOOL CRenamerDialog::CheckAndCreateDirectory(char* directory, char* newPart, BOO
         else
         {
             FindClose(f);
+            if (ownFrom != NULL && start >= ownFrom && SplPathIsOnlyShortNameOfOther(directory))
+                goto CREATE_PATH; // another folder's short name: this folder is created (moved aside and back)
             if (SplWToU8(fd.cFileName, fdFileName, _countof(fdFileName)) == 0)
                 fdFileName[0] = 0;
-            // adjust the case of the name
-            if (strcmp(start, fdFileName))
+            // adjust the case of the name - feature 206: only of the folder's own name spelled
+            // otherwise; a folder found only under its short (8.3) name ("LONGDI~1" for
+            // "longdirname") is another name: kept, the typed path goes into it as Windows resolves
+            // it. The old name is on the heap: a long name was copied into a MAX_PATH buffer
+            // (230 letters overran it)
+            char* old = NULL;
+            if (strcmp(start, fdFileName) != 0 && SalNameOrderEqualCI(start, -1, fdFileName, -1))
             {
-                char old[MAX_PATH];
+                size_t oldSize = (start - directory) + strlen(fdFileName) + 1;
+                old = (char*)malloc(oldSize);
+                if (old == NULL)
+                    TRACE_E("CheckAndCreateDirectory(): low memory, the case of the folder stays as it is");
+            }
+            if (old != NULL)
+            {
                 memcpy(old, directory, start - directory);
                 strcpy(old + (start - directory), fdFileName);
                 while (1)
@@ -374,10 +431,14 @@ BOOL CRenamerDialog::CheckAndCreateDirectory(char* directory, char* newPart, BOO
                                    TRUE, &skip, &SkipAllDirChangeCase, IDS_ERROR))
                     {
                         if (!skip)
+                        {
+                            free(old);
                             return FALSE;
+                        }
                         break;
                     }
                 }
+                free(old);
             }
         }
         *end = '\\';
@@ -392,12 +453,16 @@ BOOL CRenamerDialog::CheckAndCreateDirectory(char* directory, char* newPart, BOO
 
         while (1)
         {
-            if (CreateDirectoryU8(directory))
+            // feature 206: through the core - a name that is only another entry's short (8.3) name gets
+            // a folder of its own (feature 203); never "it exists" for that other entry
+            DWORD crErr = ERROR_SUCCESS;
+            if (SG->SalCreateDirectoryEx(directory, &crErr))
             {
                 if (!Undoing)
                     UndoStack.Add(new CUndoStackEntry(directory, NULL, NULL, FALSE, FALSE));
                 break;
             }
+            SetLastError(crErr);
 
             if (!FileError(HWindow, directory, IDS_CREATEDIR,
                            TRUE, &skip, &SkipAllCreateDir, IDS_ERROR))

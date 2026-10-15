@@ -328,6 +328,11 @@ BOOL CRenamerDialog::BuildScript(CRenameScriptEntry*& script, int& count,
             char clashLongName[3 * MAX_PATH];
             if (attr != 0xFFFFFFFF && TargetIsOnlyShortNameOfOther(tmpScript[i].NewName, clashLongName, sizeof(clashLongName)))
                 attr = 0xFFFFFFFF;
+            // feature 206: nor does a name whose folder is only another folder's short name (the rename
+            // makes that folder of its own) - "LONGDI~1\x.txt" offered "longdirname\x.txt" for overwriting
+            if (attr != 0xFFFFFFFF && RenamerOptions.Spec == rsRelativePath && // as CheckAndCreateDirectory
+                FolderPartIsShortNameOfOther(tmpScript[i].NewName, Root, RootLen))
+                attr = 0xFFFFFFFF;
             if (attr != 0xFFFFFFFF)
             {
                 if ((attr & FILE_ATTRIBUTE_DIRECTORY) ||

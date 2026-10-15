@@ -1,0 +1,11 @@
+ren_dir83_probe (feature 206), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 08:33; ACP 1250; registry key existed True
+
+ren-dir83-same RUN    FAIL        preview rows 1; boxes as expected: False; on disk: longdirname/(keep.txt,x.txt); longdirname\x.txt=MOVED-2; LONGDI~1\x.txt=MOVED-2; boxes: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 10, 15.10.2026, 8:33:33 | [Static id=1151] With file: | [Static id=184] 7, 15.10.2026, 8:33:33 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ ''] 
+ren-dir83-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-dir83-held RUN    FAIL        preview rows 1; boxes as expected: True; on disk: longdirname/(keep.txt,x.txt); x.txt where it was: False; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to modify case of the directory name: (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ ''] 
+ren-dir83-held END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

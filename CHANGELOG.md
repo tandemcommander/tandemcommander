@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Renamer: a new name's folder is never another folder by its short name**
+  (feature 206). With relative paths, a new name "LONGDI~1\x.txt" next to a
+  folder "longdirname" (whose short 8.3 name is LONGDI~1) went into
+  longdirname and offered to overwrite a file there - Yes replaced it; a
+  folder with a very long name typed by its short name crashed the
+  Renamer. The new name gets a folder of its own now.
+
 - **FTP and SFTP downloads never write into another file by its short
   name** (feature 205). Downloading "LONGFI~1.TXT" over SFTP next to
   "longfilename.txt" (whose short 8.3 name it is) asked to overwrite and

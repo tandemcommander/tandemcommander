@@ -77,6 +77,15 @@ void ReplaceEditSelBytes(HWND edit, const char* bytes, BOOL canUndo);
 // in 'longName')? (rendlg3.cpp)
 BOOL TargetIsOnlyShortNameOfOther(const char* targetName, char* longName, int longNameSize);
 
+// feature 206: the first byte of 'path' below the folder 'root' ('rootLen' bytes, the panel's path the
+// Renamer works in), or NULL when 'path' does not lie below it (rendlg3.cpp)
+const char* PathBelowRoot(const char* path, const char* root, int rootLen);
+
+// feature 206: is one of the folders of 'path' below 'root' (its last component excluded) only the
+// short (8.3) name of ANOTHER entry ("LONGDI~1" of "longdirname")? Such a folder does not exist for
+// the new name - the rename makes a folder of its own (rendlg3.cpp)
+BOOL FolderPartIsShortNameOfOther(const char* path, const char* root, int rootLen);
+
 BOOL FileOverwrite(HWND parent, const char* fileName1, const char* fileData1,
                    const char* fileName2, const char* fileData2, DWORD attr,
                    int shquestion, int shtitle, BOOL* skip, DWORD* silent);

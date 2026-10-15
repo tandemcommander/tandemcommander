@@ -302,10 +302,14 @@ Functional, no loss:
     (SFTP measured 4 / 4 -> 14 / 0; owed to a person: the FTP rows with an FTP server - a file
     `LONGFI~1.TXT` and a folder `LONGDI~1` downloaded next to `longfilename.txt` / `longdirname`,
     once with the other entry held open).
-    Also left by 199's second review: the Renamer's `CheckAndCreateDirectory` (`rendlg3.cpp`, the
-    "adjust the case" step) renames a folder whose SHORT name is a folder part of the new name
-    (`LONGDI~1\x.txt`) to that short name - the folder loses its long name without a question
-    (nothing deleted). Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
+    Also left by 199's second review: ~~the Renamer's `CheckAndCreateDirectory` renames a folder
+    whose SHORT name is a folder part of the new name~~ - **done, feature 206** (not reproducible on
+    NTFS; found and fixed there: a stack overrun and the overwrite of a file in the other folder);
+    left by its review: **feature 207 (CRITICAL)** - the Renamer's `MoveFile` copies the target into
+    `char dir[MAX_PATH]` (`rendlg3.cpp` ~141): an Undo of a selected item whose path has 260+
+    bytes of UTF-8 (90 CJK letters - an ordinary 98-unit path) overruns the stack, and
+    `rendlg2.cpp` ~567 the same with "Remove source path"; `LoadSelection` does not refuse such items
+    as `LoadSubdir` does; NITs in 206's fix-log. Was: A case-sensitive folder refuses `a.txt` → existing `A.txt` although it is
     provably another file (could offer the overwrite). Item 5, first entry
     (106, 119).
 12. ~~An archive whose name has 260+ bytes: drop/paste into it~~ - **done, feature 160** (the name

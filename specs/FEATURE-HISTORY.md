@@ -2659,3 +2659,11 @@ a few early ones are out of sequence).
   `SalCreateFileEx` / `SalCreateDirectoryEx` (203's move aside), FTP never sets `alreadyExists`
   for such a name (its automatic rename still numbers it). Probe `sftp205_probe.ps1` 4 / 4 ->
   14 / 0; FTP not driven.
+- 206-renamer-short-name-folder: the Renamer's folder step (`CheckAndCreateDirectory`) - the
+  backlog's "renames the other folder to its short name" is a no-op on NTFS (measured), but the
+  step copied the found long name into `char old[MAX_PATH]` (a 230-letter folder: a stack
+  overrun) and, in the relative-path mode, `LONGDI~1\x.txt` went into `longdirname` and offered
+  `longdirname\x.txt` for overwriting (Yes replaced it). The case is adjusted only for the folder's
+  own name (`SalNameOrderEqualCI`), `old` on the heap; a folder proven another's short name is
+  created of its own (`SalCreateDirectoryEx`; `BuildScript` does not take the target for existing)
+  - relative-path mode only (a full path is the user's own). Probe `ren_dir83_probe.ps1` -> 10 / 0.
