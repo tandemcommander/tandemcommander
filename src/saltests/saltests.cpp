@@ -12285,6 +12285,36 @@ static void TestMenuHotKey236()
     CHECK(SalMenuHotKeyOf("tail&") == 0);
     CHECK(SalMenuHotKeyOf("") == 0);
     CHECK(SalMenuHotKeyOf("&&&a") == 'a');
+
+    // feature 237: a typed character against a popup item, as characters
+    CHECK(SalMenuKeyMatch("&Copy", L'c') == 2);
+    CHECK(SalMenuKeyMatch("&Copy", L'C') == 2);
+    CHECK(SalMenuKeyMatch("&Copy", L'o') == 0); // another mnemonic: not the first letter either
+    CHECK(SalMenuKeyMatch("&\xC4\x8C"
+                          "esky",
+                          0x010C) == 2); // C-caron (UTF-8)
+    CHECK(SalMenuKeyMatch("&\xC4\x8C"
+                          "esky",
+                          0x010D) == 2); // c-caron: case ignored
+    CHECK(SalMenuKeyMatch("&\xC4\x8C"
+                          "esky",
+                          0x00C4) == 0); // A-umlaut (the old byte C4) no more
+    CHECK(SalMenuKeyMatch("Zip", L'z') == 1);
+    CHECK(SalMenuKeyMatch("Zip", L'i') == 0);
+    CHECK(SalMenuKeyMatch("\xC5\xBElu", 0x017D) == 1); // Z-caron: the first character, case ignored
+    CHECK(SalMenuKeyMatch("R&&D", L'r') == 1);
+    CHECK(SalMenuKeyMatch("R&&D", L'd') == 0);
+    CHECK(SalMenuKeyMatch("", L'a') == 0);
+    CHECK(SalMenuKeyMatch("a", 0) == 0);
+    CHECK(SalMenuKeyMatch("R&&D", L'&') == 0); // "&&" is a literal '&', not a mnemonic
+    CHECK(SalMenuKeyMatch("Foo&", L'f') == 1); // a trailing '&': no mnemonic
+    CHECK(SalMenuKeyMatch("Ab&&c", L'a') == 1);
+    CHECK(SalMenuKeyMatch("\xF0\x9F\x98\x80x", L'x') == 0); // an emoji first: outside the BMP, never
+    if (GetACP() == 1250)                                   // a legacy code-page item (C-caron = 0xC8)
+    {
+        CHECK(SalMenuKeyMatch("&\xC8ten\xED", 0x010C) == 2);
+        CHECK(SalMenuKeyMatch("\xC8ten\xED", 0x010D) == 1);
+    }
 }
 
 static void TestMultiSzToLine189()

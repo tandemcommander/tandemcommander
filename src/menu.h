@@ -426,7 +426,7 @@ protected:
     void OnKeyRight(BOOL* leaveMenu);
     void OnKeyReturn(BOOL* leaveMenu, DWORD* retValue);
     void OnChar(char key, BOOL* leaveMenu, DWORD* retValue);
-    int FindNextItemIndex(int firstIndex, char key);
+    int FindNextItemIndex(int firstIndex, WCHAR key); // feature 237: a character (was an ANSI byte)
 
     // pro navigaci pomoci PgDn/PgUp, hleda index prvni polozky
     // za separatorem; pokud je 'down' TRUE, hleda smerem dolu

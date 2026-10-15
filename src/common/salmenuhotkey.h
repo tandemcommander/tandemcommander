@@ -7,8 +7,10 @@
 //
 // salmenuhotkey.h
 //
-// Where a menu item without a hot key gets its '&' (feature 236). Header-only,
-// no globals; saltests checks it.
+// Where a menu item without a hot key gets its '&' (feature 236), and which item
+// a typed key selects (feature 237). Core only - SalMenuKeyMatch calls
+// salunicode.cpp (plug-ins do not include this header); no globals; saltests
+// checks it.
 //
 // The core's popup menus (CMenuPopup::AssignHotKeys) give items without a hot
 // key one: the first letter not used by another item. The texts are UTF-8 (the
@@ -25,6 +27,9 @@
 // when no ASCII letter of theirs is free.)
 //
 //*****************************************************************************
+
+#include <windows.h>
+#include "salunicode.h"
 
 // the byte index of 'text' before which '&' goes, or -1 when the text has no ASCII letter that is
 // not in 'assigned' (256 entries, indexed by the upper-case byte); 'upper' maps a byte to upper case
@@ -56,4 +61,31 @@ inline unsigned char SalMenuHotKeyOf(const char* text)
         }
     }
     return 0;
+}
+
+// feature 237: how a typed character 'key' (UTF-16; a code-page WM_CHAR byte through SalACPCharToW)
+// selects a popup item 'text' (UTF-8, or legacy code-page text): 2 - it is the item's mnemonic; 1 -
+// the item has no mnemonic and starts with it; 0 - neither. Before, the typed ANSI byte was compared
+// with the byte after '&': a UTF-8 item's accented mnemonic never matched, and a byte could match
+// another letter (cp1250: "&\xC4\x8C" - C-caron - matched the key a-umlaut, 0xC4). Core only (it
+// calls SalMnemonicMatchW of salunicode.cpp).
+inline int SalMenuKeyMatch(const char* text, WCHAR key)
+{
+    if (text == NULL || *text == 0 || key == 0)
+        return 0;
+    if (SalMnemonicMatchW(text, key))
+        return 2;
+    if (SalMenuHotKeyOf(text) != 0)
+        return 0; // another mnemonic
+    // the first character: "&" + up to 4 bytes of the text, read as a mnemonic
+    char first[6];
+    first[0] = '&';
+    int n = 0;
+    while (n < 4 && text[n] != 0 && text[n] != '&')
+    {
+        first[1 + n] = text[n];
+        n++;
+    }
+    first[1 + n] = 0;
+    return n > 0 && SalMnemonicMatchW(first, key) ? 1 : 0;
 }

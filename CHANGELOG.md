@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Menus: accented shortcut letters work in drop-down menus** (feature
+  237). In menus such as the plug-in menus, a shortcut letter outside
+  English (Č, Ř, ...) could not be typed, and a typed letter could select
+  an item with another shortcut.
+
 - **Menus: item names with letters outside English stay readable**
   (feature 236). An automatically added keyboard shortcut could be put
   inside such a letter in some menus (plug-ins, histories), which garbled

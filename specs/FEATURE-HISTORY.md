@@ -2822,3 +2822,7 @@ a few early ones are out of sequence).
 - 236-menu-hotkeys-utf8: `AssignHotKeys` could put '&' inside a UTF-8 letter (a code-page "letter"
   byte); now ASCII letters only (`salmenuhotkey.h`, saltests); "&&" is a literal '&'. Note: the core
   builds with /J - `UpperCase[char]` never indexes negatively.
+- 237-popup-menu-mnemonics: popups compared the typed ANSI byte with the byte after '&' (UTF-8 items'
+  accented mnemonics never matched; C4 of "&Č" matched "ä"). Now characters: `SalMenuKeyMatch`
+  (`SalMnemonicMatchW`, as the menu bar since 093). Limits: a DBCS / 65001 key byte matches nothing
+  (a wide popup loop owed); `WM_MENUCHAR` passes no character (upstream) - NEXT-WORK.

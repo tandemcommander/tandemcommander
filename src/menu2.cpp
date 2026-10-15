@@ -1496,10 +1496,9 @@ void CMenuPopup::OnKeyReturn(BOOL* leaveMenu, DWORD* retValue)
         SharedRes->MenuBar->ExitMenuLoop = TRUE; // so we exit it
 }
 
-int CMenuPopup::FindNextItemIndex(int firstIndex, char key)
+int CMenuPopup::FindNextItemIndex(int firstIndex, WCHAR key)
 {
     CALL_STACK_MESSAGE3("CMenuPopup::FindNextItemIndex(%d, %u)", firstIndex, key);
-    key = UpperCase[key];
     if (firstIndex == -1)
         firstIndex = 0;
     else
@@ -1519,38 +1518,11 @@ int CMenuPopup::FindNextItemIndex(int firstIndex, char key)
             continue;
         if (item->Type & MENU_TYPE_STRING && !(item->State & MENU_STATE_GRAYED) && !(item->Type & MENU_TYPE_OWNERDRAW))
         {
-            const char* p = item->String;
-            BOOL firstCharFound = FALSE;
-            BOOL prefixFound = FALSE;
-            BOOL anotherPrefixFound = FALSE;
-            if (*p != NULL)
-            {
-                while (*p != 0)
-                {
-                    if (*p == '&')
-                    {
-                        if (*(p + 1) != 0 && UpperCase[*(p + 1)] == key)
-                        {
-                            prefixFound = TRUE;
-                            break;
-                        }
-                        else if (*(p + 1) != 0 && *(p + 1) != '&')
-                        {
-                            anotherPrefixFound = TRUE;
-                            break;
-                        }
-                        p++;
-                    }
-                    p++;
-                }
-                // if we did not find the correct prefix or any prefix, try the first letter
-                if (!prefixFound && !anotherPrefixFound)
-                {
-                    p = item->String;
-                    if (UpperCase[*p] == key)
-                        firstCharFound = TRUE;
-                }
-            }
+            // feature 237: characters, not bytes (salmenuhotkey.h) - the mnemonic first; without
+            // one, the first character
+            int match = SalMenuKeyMatch(item->String, key);
+            BOOL prefixFound = match == 2;
+            BOOL firstCharFound = match == 1;
             if (prefixFound)
             {
                 if (prefixIndexFirst == -1)
@@ -1589,7 +1561,8 @@ int CMenuPopup::FindNextItemIndex(int firstIndex, char key)
 void CMenuPopup::OnChar(char key, BOOL* leaveMenu, DWORD* retValue)
 {
     CALL_STACK_MESSAGE2("CMenuPopup::OnChar(%u, , )", key);
-    int firstIndex = FindNextItemIndex(SelectedItemIndex, key);
+    WCHAR keyW = SalACPCharToW(key); // feature 237: the popup's loop is a code-page one (PeekMessageA)
+    int firstIndex = FindNextItemIndex(SelectedItemIndex, keyW);
     if (firstIndex == -1)
     {
         // no matching item found
@@ -1605,7 +1578,7 @@ void CMenuPopup::OnChar(char key, BOOL* leaveMenu, DWORD* retValue)
             SelectNewItemIndex(LOWORD(ret), FALSE);
         return;
     }
-    int nextIndex = FindNextItemIndex(firstIndex, key); // is there another one?
+    int nextIndex = FindNextItemIndex(firstIndex, keyW); // is there another one?
     if (nextIndex != firstIndex)
     {
         // select

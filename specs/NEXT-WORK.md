@@ -555,10 +555,12 @@ Code work an agent can do:
   SFTP 17, ZIP 15) - FTP has its own rules for server texts; (3) the guard has no reverse rule
   (a `LoadStr(` piece inside a `LoadStrU8` template, an A-API sink) and its sink patterns depend
   on the variable names `params` / `log`; (4) ~~`menu2.cpp` `AssignHotKeys` is byte-wise with
-  code-page tables and can put `&` inside a UTF-8 sequence~~ (done, feature 236; left: **a popup's
-  key matching `FindNextItemIndex(int, char)` compares the typed ANSI byte with the byte after '&' -
-  a UTF-8 item (plug-in menus) with a non-ASCII hot key can never be chosen by key, and a byte may
-  match another letter; use `SalMnemonicMatchW` as the menu bar does since 093**); (5) the Registry Editor's `%ls`
+  code-page tables and can put `&` inside a UTF-8 sequence~~ (done, feature 236; ~~a popup's key matching compares the
+  typed ANSI byte with the byte after '&'~~ - done, feature 237; left: the popup's loop is ANSI - a
+  DBCS / code-page-65001 key byte matches nothing (a wide loop like 093's); `OnChar` sends
+  `WM_MENUCHAR` with `wParam = MF_POPUP` and no character - the owner-draw (TortoiseSVN) fallback can
+  never match (upstream); `GetControlHotKey` (`finddlg1.cpp:2956`) compares a dialog control's text
+  with a key byte-wise); (5) the Registry Editor's `%ls`
   messages (`fs5.cpp`, `ErrorHelper`) are consistently code page but lose letters outside it.
 - ~~Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124)~~ -
   **done, feature 189** (also the Find window read past its copy of such a value).
