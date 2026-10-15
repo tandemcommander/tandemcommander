@@ -408,6 +408,16 @@ BOOL GetNextFileFromPanel(int index, char* path, char* name, void* param)
         {
             index = data->Window->GetCaretIndex();
             data->Index = NULL;
+            // feature 225: a panel path that does not fit is refused - for the up-dir item or an
+            // empty panel (no name) the command ran in the cut path, another folder (with a name
+            // ExpandCommand2 already refuses the path + name; the same message)
+            if (strlen(data->Window->GetPath()) >= MAX_PATH)
+            {
+                SalMessageBox(data->Window->HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE),
+                              MB_OK | MB_ICONEXCLAMATION);
+                data->Count = 0;
+                return FALSE;
+            }
             lstrcpyn(path, data->Window->GetPath(), MAX_PATH); // User Menu path buffer is MAX_PATH (feature 027)
             if (index < 0 || index >= data->Window->Dirs->Count + data->Window->Files->Count ||
                 index == 0 && upDir)

@@ -2762,3 +2762,8 @@ a few early ones are out of sequence).
   code page only for texts a listing / PWD gave in it (a process-wide set; whole names, components,
   leading parts); else UTF-8 - a policy: new names go in UTF-8 to legacy servers too. Probe
   `ftp224_probe.ps1` (ftpmini in utf-8 / cp1250) 3 FAIL -> 16 / 0. Per-server flag: NEXT-WORK.
+- 225-user-menu-long-names: the User Menu's enumeration cut a panel path of 260+ bytes; for the
+  up-dir item / an empty panel (no name - `ExpandCommand2` refuses only path + name) the command ran
+  in the cut folder. Refused now ("name too long"). A first, wider version was rejected by the review
+  (it changed nothing else and ran a partial .bat). By reading. The .bat's `CharToOem` of UTF-8 text:
+  NEXT-WORK.

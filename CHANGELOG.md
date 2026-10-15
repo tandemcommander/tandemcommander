@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **User Menu: a command is not run in a shortened folder** (feature 225).
+  A User Menu command on the ".." item or in an empty panel whose folder
+  path is very long ran in a shortened path - another folder. It is now
+  refused with "name too long", as for other items.
+
 - **FTP: files with accented names work on UTF-8 servers** (feature 224).
   Deleting, renaming or downloading a file such as "café.txt" on a server
   that uses UTF-8 failed ("No such file"): the name was sent in the

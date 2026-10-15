@@ -703,9 +703,12 @@ Code work an agent can do:
          ~676-715 / 454 trusts the image's node numbers, links and record offsets; a fuzzing pass);
          Joliet names cut at their UCS-2 byte length (`iso9660.cpp` `lstrcpyn(fileName, src,
          LengthOfFileIdentifier + 1)`);
-         tar's gzip name cut at 259 bytes and extracted under it; the User Menu
-         `mainwnd4.cpp:411-433` and Compare Directories `mainwnd5.cpp:1560/1584` cut disk names at
-         MAX_PATH and act on them; `fileswna.cpp:396` cuts `SrcPath`);
+         tar's gzip name cut at 259 bytes and extracted under it; ~~the User Menu
+         `mainwnd4.cpp:411-433`~~ (done, feature 225 - only the up-dir / empty-panel path was acted
+         on; left: **the User Menu's .bat ("Through shell") converts its UTF-8 command line and
+         folder with `CharToOem` (`mainwnd4.cpp` ~918) - an accented path becomes other letters**;
+         long paths in the User Menu) and Compare Directories `mainwnd5.cpp:1560/1584` cut disk
+         names at MAX_PATH and act on them; `fileswna.cpp:396` cuts `SrcPath`);
          ~~SFTP: a memory leak after a failed SSH handshake~~ - **done, feature 217** (reproduced
          by a proxy flipping the server's signature; also the 1-in-256 key exchange failure;
          left: ~~`Disconnect` tears down with a 1 ms deadline - the whole session leaks~~ - **done,
