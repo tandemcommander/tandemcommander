@@ -2589,3 +2589,8 @@ a few early ones are out of sequence).
   (`IDS_LONGDATA` / the bad time format), `ConvertHexToString` takes its buffer size. `Error()`
   appends `GetLastError()`'s text - clear it first. Probe `find_input_probe.ps1` 3 / 1 (+ 0 / 2)
   -> 5 / 0.
+- 192-regedt-find-numbers: Registry Editor Find - "0x" before a hex number (the help promised it),
+  `HexStringToNumber` refuses a 17th digit (`ret >> 60`; the /10 test dropped the top digit),
+  numbers compared only at their exact size; the Find item and the panel listing read a DWORD /
+  QWORD only from a value that has its bytes (a `malloc(0)` buffer when all values are empty).
+  Probe `find_numbers_probe.ps1` 2 / 3 -> 5 / 0.

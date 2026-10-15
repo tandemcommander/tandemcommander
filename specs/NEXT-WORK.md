@@ -535,10 +535,11 @@ Code work an agent can do:
   3. ~~A plain pattern that does not fit 512 bytes in the code page~~ (`WStrToStr`, `CP_ACP`, e.g.
      170+ CJK letters under a UTF-8 or DBCS code page): `patternALen = -1` reaches a `memcpy`;
      in regexp mode 0 - everything matches.
-  4. "0x" before a hexadecimal number (the help promises it) is rejected by `HexStringToNumber`
+  4. ~~"0x" before a hexadecimal number~~ - **done, feature 192** (4 and 5). Was: (the help promises it) is rejected by `HexStringToNumber`
      (`utils.cpp:700`); its overflow test divides by 10 - a 17-digit hex number loses its top
      digit.
-  5. A DWORD / QWORD value stored shorter than 4 / 8 bytes is compared with stale bytes of the
+  5. ~~A DWORD / QWORD value stored shorter than 4 / 8 bytes~~ (also the Find item and the panel
+     listing read it past the buffer) is compared with stale bytes of the
      buffer (`finddlg.cpp` ~1206 / ~1212); `malloc(0)` when the key's largest value is empty.
   6. Regexp with Whole words tests `text[pos - 1]` / `text[pos + matchLen]` with `pos` counted
      from the line, not the buffer - wrong on the second and later lines of a list (NIT); an

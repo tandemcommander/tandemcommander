@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Registry Editor's Find takes "0x" numbers** (feature 192). "0xff" now
+  finds the value 255, as the help says; a hexadecimal number too big for 64
+  bits no longer finds a smaller one, and an empty number value is no longer
+  found by chance.
+
 - **No crash in the Registry Editor's Find with long input** (feature 191).
   A long text in a time field, or a long quoted hex pattern, overran the
   stack; they are refused with a message now.

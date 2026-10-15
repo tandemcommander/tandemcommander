@@ -732,9 +732,10 @@ BOOL HexStringToNumber(char* string, QWORD& qw)
 
     while (isxdigit(*string))
     {
-        if (ret >
-            (((QWORD)-1) - (isdigit(*string) ? *string - '0' : tolower(*string) - 'a' + 10)) / 10)
-            return FALSE; // overflow
+        // feature 192: one more digit does not fit 64 bits (the test divided by 10: a 17th digit
+        // was taken and the top one fell off)
+        if ((ret >> 60) != 0)
+            return FALSE;
         ret = (ret << 4) + (isdigit(*string) ? *string - '0' : tolower(*string) - 'a' + 10);
         string++;
     }

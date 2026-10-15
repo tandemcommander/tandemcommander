@@ -610,20 +610,24 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                             break;
                         }
 
+                        // feature 192: a number is read only from a value that has its bytes - a
+                        // shorter one was read past its data (malloc(maxValueLen)); shown only for
+                        // the exact size anyway (fs4.cpp)
                         case REG_DWORD:
-                            pd->Data = *(DWORD*)data;
+                            pd->Data = size >= 4 ? *(DWORD*)data : 0;
                             break;
 
                         case REG_DWORD_BIG_ENDIAN:
-                            pd->Data = (DWORD)data[3] | (data[2] << 8) | (data[1] << 16) | (data[0] << 24);
+                            pd->Data = size >= 4 ? (DWORD)data[3] | (data[2] << 8) | (data[1] << 16) | (data[0] << 24) : 0;
                             break;
 
                         case REG_QWORD:
-                            if (size > 0)
+                            if (size >= 8)
                             {
                                 pd->Allocated = 1;
                                 pd->Data = (DWORD_PTR)malloc(8);
-                                memcpy((void*)pd->Data, data, 8);
+                                if (pd->Data != 0)
+                                    memcpy((void*)pd->Data, data, 8);
                             }
                             break;
 

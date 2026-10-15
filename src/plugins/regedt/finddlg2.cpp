@@ -361,8 +361,16 @@ void CFindDialog::StartSearch()
             patternALen = WStrToStr(patternA, MAX_KEYNAME, Pattern) - 1;
             wcscpy((LPWSTR)patternW, Pattern);
             patternWLen = (int)wcslen(Pattern) * 2;
+            // feature 192: "0x" before a hexadecimal number, as the help says (it was rejected)
+            char* hexDigits = patternA;
+            while (isspace(*hexDigits))
+                hexDigits++;
+            if (hexDigits[0] == '0' && (hexDigits[1] == 'x' || hexDigits[1] == 'X') && isxdigit(hexDigits[2]))
+                hexDigits += 2; // (a digit right after it: "0x 1f" is not a number)
+            else
+                hexDigits = patternA;
             useNumber = DecStringToNumber(patternA, number) ||
-                        HexStringToNumber(patternA, number);
+                        HexStringToNumber(hexDigits, number);
         }
     }
 

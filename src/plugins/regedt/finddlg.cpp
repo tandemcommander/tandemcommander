@@ -314,21 +314,25 @@ CFoundFilesData::CFoundFilesData(LPWSTR name, int root, LPWSTR key, DWORD type,
             break;
         }
 
+        // feature 192: a number is read only from a value that has its bytes - a shorter one was
+        // read past its data (the 0-byte buffer of a key whose values are empty); shown only for
+        // the exact size anyway (GetText)
         case REG_QWORD:
-            if (size > 0)
+            if (size >= 8)
             {
                 Allocated = 1;
                 Data = (DWORD_PTR)malloc(8);
-                memcpy((void*)Data, data, 8);
+                if (Data != 0)
+                    memcpy((void*)Data, data, 8);
             }
             break;
 
         case REG_DWORD:
-            Data = *(LPDWORD)data;
+            Data = size >= 4 ? *(LPDWORD)data : 0;
             break;
 
         case REG_DWORD_BIG_ENDIAN:
-            Data = (DWORD)data[3] | (data[2] << 8) | (data[1] << 16) | (data[0] << 24);
+            Data = size >= 4 ? (DWORD)data[3] | (data[2] << 8) | (data[1] << 16) | (data[0] << 24) : 0;
             break;
 
         default:
@@ -1195,20 +1199,21 @@ BOOL CFindThread::Test(char* text, int len, BOOL name, DWORD type)
             }
 
             case REG_DWORD_BIG_ENDIAN:
-                // compare numbers with their numeric value
-                if (UseNumber)
+                // compare numbers with their numeric value (feature 192: a value shorter than the
+                // number was compared with the bytes after it - an empty one with the heap's)
+                if (UseNumber && len == 4) // (only the exact size: a longer one is shown as invalid)
                     return (DWORD)(text[3] | (text[2] << 8) | (text[1] << 16) | (text[0] << 24)) == Number;
                 break;
 
             case REG_DWORD:
                 // compare numbers with their numeric value
-                if (UseNumber)
+                if (UseNumber && len == 4)
                     return *(LPDWORD)text == Number;
                 break;
 
             case REG_QWORD:
                 // compare numbers with their numeric value
-                if (UseNumber)
+                if (UseNumber && len == 8)
                     return *(LPQWORD)text == Number;
                 break;
 
