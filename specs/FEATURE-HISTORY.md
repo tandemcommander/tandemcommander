@@ -2634,3 +2634,8 @@ a few early ones are out of sequence).
   that entry aside fails (held open), never the overwrite question for it (Yes replaced the other
   file; F6's Retry after the other program let go would have); the move's error instead.
   Probe `short_clash_probe.ps1`.
+- 202-pictview-short-name: PictView's Rename of the shown image to another file's short (8.3) name
+  asked "overwrite?" and Yes replaced that file; now it is moved aside for the rename and back
+  (`PvTargetIsOnlyShortNameOfOther` / `PvMoveAsideShortNameClash`, as the Renamer, 199); a failed
+  move aside, or a folder where it cannot be told whose name it is, is the rename's error.
+  Probe `pv_83_probe.ps1` 6 / 3 -> 9 / 0.

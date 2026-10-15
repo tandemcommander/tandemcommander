@@ -2836,6 +2836,104 @@ void MakeValidFileName(TCHAR* path)
     *n = 0;
 }
 
+// feature 202: does 'target' exist only under ANOTHER entry's name - the short (8.3) name of
+// "longfilename.png" for "LONGFI~1.PNG"? (fail closed: the entry found under the target name has
+// another long name, whether or not a short name is reported; the 092 name rule - as the Renamer, 199)
+// pvscNo = the entry has the target's own name (or none was found); pvscClash = 'longName' is the
+// other entry's long name; pvscUnknown = it cannot be told (a folder that cannot be listed), *why
+// says why - the caller refuses rather than offering the entry for overwriting
+enum CPvShortNameClash
+{
+    pvscNo,
+    pvscClash,
+    pvscUnknown
+};
+
+static CPvShortNameClash PvTargetIsOnlyShortNameOfOther(const char* target, char* longName, int longNameSize,
+                                                        DWORD* why)
+{
+    *why = ERROR_NOT_ENOUGH_MEMORY;
+    WCHAR* w = SplU8ToWExtAlloc(target);
+    if (w == NULL)
+        return pvscUnknown;
+    WIN32_FIND_DATAW fd;
+    HANDLE find = FindFirstFileW(w, &fd);
+    *why = GetLastError();
+    free(w);
+    if (find == INVALID_HANDLE_VALUE)
+        return *why == ERROR_FILE_NOT_FOUND || *why == ERROR_PATH_NOT_FOUND ? pvscNo : pvscUnknown;
+    FindClose(find);
+    *why = ERROR_FILENAME_EXCED_RANGE;
+    if (SplWToU8(fd.cFileName, longName, longNameSize) == 0)
+        return pvscUnknown;
+    return SalNameOrderEqualCI(SalamanderGeneral->SalPathFindFileName(target), -1, longName, -1) ? pvscNo : pvscClash;
+}
+
+// feature 202: that entry is renamed aside to a temporary 8.3 name, 'source' to 'target', the entry
+// back to its long name (a new short name). Never deletes anything. TRUE = renamed; FALSE: *err
+// says why, and *leftAt (malloc'd) names the temporary name when the entry could not get its name
+// back (the caller reports it and frees it).
+static BOOL PvMoveAsideShortNameClash(const char* source, const char* target, const char* longName,
+                                      DWORD* err, char** leftAt)
+{
+    *err = ERROR_NOT_ENOUGH_MEMORY;
+    *leftAt = NULL;
+    const char* tgtPart = SalamanderGeneral->SalPathFindFileName(target);
+    size_t dirLen = tgtPart - target;
+    char* entry = (char*)malloc(dirLen + strlen(longName) + 1);
+    char* tmp = (char*)malloc(dirLen + 16);
+    BOOL done = FALSE;
+    if (entry != NULL && tmp != NULL)
+    {
+        memcpy(entry, target, dirLen);
+        strcpy(entry + dirLen, longName);
+        memcpy(tmp, target, dirLen);
+        DWORD num = (GetTickCount() / 10) % 0xFFF;
+        BOOL aside = FALSE;
+        *err = ERROR_ALREADY_EXISTS;
+        for (int i = 0; i < 0x1000 && !aside; i++)
+        {
+            sprintf(tmp + dirLen, "sal%03X", (unsigned)(num++ & 0xFFF));
+            DWORD e = 0;
+            if (SalamanderGeneral->SalMoveFile(entry, tmp, &e))
+                aside = TRUE;
+            else
+            {
+                *err = e;
+                if (e != ERROR_FILE_EXISTS && e != ERROR_ALREADY_EXISTS)
+                    break;
+            }
+        }
+        if (aside)
+        {
+            DWORD e = 0;
+            done = SalamanderGeneral->SalMoveFile(source, target, &e);
+            if (!done)
+                *err = e;
+            DWORD backErr = 0;
+            if (!SalamanderGeneral->SalMoveFile(tmp, entry, &backErr)) // its long name back
+            {
+                // Windows may have made the new name the entry's long name: undo the rename and retry
+                if (done && SalamanderGeneral->SalMoveFile(target, source, &e))
+                {
+                    done = FALSE;
+                    *err = backErr;
+                }
+                if (!SalamanderGeneral->SalMoveFile(tmp, entry, &backErr))
+                {
+                    TRACE_E("PvMoveAsideShortNameClash(): the entry stays under the temporary name " << tmp);
+                    *leftAt = tmp;
+                    tmp = NULL;
+                    *err = backErr;
+                }
+            }
+        }
+    }
+    free(entry);
+    free(tmp);
+    return done;
+}
+
 BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR (&newName)[3 * MAX_PATH], BOOL* tryAgain)
 {
     BOOL renamed = FALSE;
@@ -2997,6 +3095,51 @@ BOOL CRendererWindow::RenameFileInternal(LPCTSTR oldPath, LPCTSTR oldName, TCHAR
                             SalamanderGeneral->PostChangeOnPathNotification(changedPath, FALSE);
                         free(tmp);
                     }
+                }
+                // feature 202: the new name is only another file's short (8.3) name - that file is moved
+                // aside for the rename, never offered for overwriting (Yes replaced "longfilename.png")
+                char clashLong[3 * MAX_PATH];
+                DWORD clashWhy = ERROR_SUCCESS;
+                CPvShortNameClash clash = pvscNo;
+                if (!keepTarget && (err == ERROR_ALREADY_EXISTS || err == ERROR_FILE_EXISTS) &&
+                    !SalNameOrderEqualCI(path, -1, tgtPath, -1))
+                {
+                    clash = PvTargetIsOnlyShortNameOfOther(tgtPath, clashLong, sizeof(clashLong), &clashWhy);
+                }
+                if (clash == pvscUnknown) // whose name it is cannot be told: refused, reported below
+                {
+                    keepTarget = TRUE;
+                    err = clashWhy;
+                }
+                if (clash == pvscClash)
+                {
+                    keepTarget = TRUE; // the branch below never runs for it
+                    char* leftAt = NULL;
+                    DWORD clashErr = ERROR_SUCCESS;
+                    if (PvMoveAsideShortNameClash(path, tgtPath, clashLong, &clashErr, &leftAt))
+                    {
+                        renamed = TRUE;
+                        ret = TRUE;
+                        err = ERROR_SUCCESS;
+                    }
+                    else
+                        err = clashErr; // reported below
+                    if (leftAt != NULL) // the other file is under the temporary name: say where
+                    {
+                        const char* errText = SalamanderGeneral->GetErrorText(clashErr);
+                        size_t msgSize = strlen(errText) + strlen(leftAt) + 4;
+                        char* msg = (char*)malloc(msgSize);
+                        if (msg != NULL)
+                            sprintf_s(msg, msgSize, "%s\n\n%s", errText, leftAt);
+                        SalamanderGeneral->SalMessageBox(HWindow, msg != NULL ? msg : leftAt, LoadStr(IDS_ERRORRENAMINGFILE),
+                                                         MB_OK | MB_ICONEXCLAMATION);
+                        free(msg);
+                        free(leftAt);
+                        err = ERROR_SUCCESS; // reported
+                        ret = TRUE;
+                    }
+                    if (changedPath != NULL)
+                        SalamanderGeneral->PostChangeOnPathNotification(changedPath, FALSE);
                 }
                 // feature 200: the name rule of the file system (092; the code-page StrICmp folded no letter
                 // outside the code page), and a proven other file in a case-sensitive folder

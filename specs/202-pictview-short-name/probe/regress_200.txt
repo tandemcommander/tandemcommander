@@ -1,0 +1,12 @@
+pv_cs_probe (feature 200)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 05:45; ACP 1250; registry key existed True; backup SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+pv-cs-other RENAME PASS        a.png -> A.png: source CDC7336F5C4B2312 -> <missing>, target 1C55D9B826E8DFA9 -> CDC7336F5C4B2312 (expect replaced); viewer holds A.png: err 32 (32 = held); title '...cs-other\a.png (40 x 30 x 16777216 colors - 125%) - PictView' -> '...cs-other\A.png (40 x 30 x 16777216 colors - 125%) - PictView' ok True; zoom 125 -> 125; Save As of the shown image: 40x30 2ba729cd7a29c2d2 ok True; boxes: [#32770 'Confirm File Overwrite'] [Static id=3000] Overwrite file: | [Static id=2181] C:\Users\pavel\AppData\Local\Temp\tc111\p\pv-cs-other\A.png | [Static id=2182] 5, 15.10.2026, 5:45:26 | [Static id=3001] With file: | [Static id=2183] C:\Users\pavel\AppData\Local\Temp\tc111\p\pv-cs-other\a.png | [Static id=2184] 122, 15.10.2026, 5:45:13 | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel
+pv-cs-other END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pv-cs-new  RENAME PASS        a.png -> A.png: source CDC7336F5C4B2312 -> <missing>, target <missing> -> CDC7336F5C4B2312 (expect renamed); viewer holds A.png: err 32 (32 = held); title '...v-cs-new\a.png (40 x 30 x 16777216 colors - 125%) - PictView' -> '...v-cs-new\A.png (40 x 30 x 16777216 colors - 125%) - PictView' ok True; zoom 125 -> 125; Save As of the shown image: 40x30 2ba729cd7a29c2d2 ok True; boxes: no box
+pv-cs-new  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+wp-real    REAL   PASS        HKCU\Control Panel\Desktop wallpaper values and SPI_GETDESKWALLPAPER unchanged by the run: True
+
+Rows: PASS 5, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

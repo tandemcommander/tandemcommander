@@ -1,0 +1,16 @@
+pv_83_probe (feature 202)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 05:44; ACP 1250; registry key existed True; backup SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+pv-83      RENAME PASS        x.png -> LONGFI~1.PNG: source CDC7336F5C4B2312 -> <missing>, target 1C55D9B826E8DFA9 -> CDC7336F5C4B2312 (expect renamed); viewer holds LONGFI~1.PNG: err 32 (32 = held); title '...\p\pv-83\x.png (40 x 30 x 16777216 colors - 125%) - PictView' -> '...3\LONGFI~1.PNG (40 x 30 x 16777216 colors - 125%) - PictView' ok True; zoom 125 -> 125; Save As of the shown image: 40x30 2ba729cd7a29c2d2 ok True; boxes: no box
+pv-83      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pv-83      OTHER  PASS        longfilename.png holds 'OTHER' (expected its own content 'OTHER')
+pv-83      BOXES  PASS        an overwrite question for the other file: False; boxes: no box
+pv-83-held RENAME PASS        x.png -> LONGFI~1.PNG: source CDC7336F5C4B2312 -> CDC7336F5C4B2312, target 1C55D9B826E8DFA9 -> 1C55D9B826E8DFA9 (expect kept); viewer holds x.png: err 32 (32 = held); title '...-83-held\x.png (40 x 30 x 16777216 colors - 125%) - PictView' -> '...-83-held\x.png (40 x 30 x 16777216 colors - 125%) - PictView' ok True; zoom 125 -> 125; Save As of the shown image: 40x30 2ba729cd7a29c2d2 ok True; boxes: [#32770 'Error Renaming File'] [Static id=2477] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=1] OK || [#32770 'Rename File'] [Static id=2171] Rename file "LONGFI~1.PNG" to | [Button id=1] OK | [Button id=2] Cancel
+pv-83-held END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pv-83-held OTHER  PASS        longfilename.png holds 'OTHER' (expected its own content 'OTHER')
+pv-83-held BOXES  PASS        an overwrite question for the other file: False; boxes: ...70 'Error Renaming File'] [Static id=2477] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=1] OK || [#32770 'Rename File'] [Static id=2171] Rename file "LONGFI~1.PNG" to | [Button id=1] OK | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+wp-real    REAL   PASS        HKCU\Control Panel\Desktop wallpaper values and SPI_GETDESKWALLPAPER unchanged by the run: True
+
+Rows: PASS 9, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

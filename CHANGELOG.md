@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **PictView's Rename to another file's short name never replaces it**
+  (feature 202). Renaming the shown image to "LONGFI~1.PNG" - the short
+  (8.3) name of another image - offered to overwrite that image and Yes
+  replaced it; the shown image is renamed now and the other one kept.
+
 - **Rename and Move to another file's short name never overwrite it**
   (feature 201). Renaming or moving a file to "LONGFI~1.TXT" - the short
   (8.3) name of another file - while that file was open in another program

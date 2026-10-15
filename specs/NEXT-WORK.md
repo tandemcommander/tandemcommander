@@ -287,9 +287,8 @@ Functional, no loss:
     Renamer refuses "already exists"~~ (**done, feature 196**). Left by 196's review: ~~the core's Quick
     Rename (158) takes "different ids" as proof of another file~~ (**done, feature 198**, also the
     worker's move and names equal by NFC / NFD; left by its review: ~~PictView's rename~~ - **done,
-    feature 200**; left by 200's review: PictView's rename has the 8.3 short-name trap 199 fixed in the
-    Renamer - the shown `x.png` renamed to `LONGFI~1.PNG` asks to overwrite and Yes replaces
-    `longfilename.png` (`render1.cpp` ~2995-3052; measure first)); ~~the Renamer has no step that moves
+    feature 200**; left by 200's review: ~~PictView's rename has the 8.3 short-name trap~~ - **done,
+    feature 202**); ~~the Renamer has no step that moves
     an 8.3 short-name clash aside~~ (**done, feature 199** - measured: `longfilename.txt` deleted;
     left by its review: ~~the core's Quick Rename has the same fallback~~ - **done, feature 201**
     (also the worker's move); left by 201's review: **the create paths likely have the same defect**
