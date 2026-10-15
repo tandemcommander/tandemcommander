@@ -1846,14 +1846,14 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                                                 {
                                                                 case IDOK: // accept once
                                                                 {
-                                                                    Logs.LogMessage(logUID, LoadStr(IDS_SSL_LOG_CERTACCEPTED), -1, TRUE);
+                                                                    Logs.LogMessage(logUID, LoadStrU8(IDS_SSL_LOG_CERTACCEPTED), -1, TRUE);
                                                                     SetCertificate(unverifiedCert);
                                                                     break;
                                                                 }
 
                                                                 case IDCANCEL:
                                                                 {
-                                                                    Logs.LogMessage(logUID, LoadStr(IDS_SSL_LOG_CERTREJECTED), -1, TRUE);
+                                                                    Logs.LogMessage(logUID, LoadStrU8(IDS_SSL_LOG_CERTREJECTED), -1, TRUE);
                                                                     allBytesWritten = TRUE; // no longer important, the socket will be closed
                                                                     state = sccsDone;
                                                                     break;

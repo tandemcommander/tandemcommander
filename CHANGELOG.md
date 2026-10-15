@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **FTP: the encrypted connection's log lines are readable** (feature 216).
+  The FTPS lines of the FTP log (the certificate, its issuer, the cipher,
+  errors) lost their letters when the program's language differs from
+  Windows' language; an OpenSSL error text also had a buffer smaller
+  than OpenSSL requires.
+
 - **FTP: long file names are no longer shortened** (feature 215). A name
   longer than 255 bytes (for example about 86 Chinese or 128 Cyrillic
   letters) was cut in the FTP panel: deleting or renaming it sent the

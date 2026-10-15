@@ -2716,3 +2716,7 @@ a few early ones are out of sequence).
   works on a cut name (`TooLong` / `NameCut`); VMS folder names, Solve Error, the lock. Probe
   `ftp215_probe.ps1` 3 FAIL -> 12 / 0. Server paths over 300 bytes and the local long-path side are
   NEXT-WORK.
+- 216-ftp-ssl-error-text: `ssl.cpp` `EncryptSocket` gave `ERR_error_string` 200 bytes (OpenSSL
+  1.0.1c needs 256) and made its log lines unbounded into 256 bytes with `LoadStr` (a near miss,
+  not server-reachable; letters lost outside the system code page). `name[256]`, `buffer[1024]`,
+  `_snprintf_s`, `LoadStrU8` (also the certificate lines of `ctrlcon1.cpp`). By reading; 215 12 / 0.

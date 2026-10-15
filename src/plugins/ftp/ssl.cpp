@@ -432,7 +432,7 @@ void WriteSSLErrorStackToLog(int logUID, const char* errSrc)
 {
     // log OpenSSL error stack
     int err2;
-    char buffer[256]; // documentation says: at least 120 bytes
+    char buffer[256]; // feature 216: OpenSSL 1.0.x writes up to 256 bytes (ERR_error_string_n(e, buf, 256))
     while ((err2 = SSLLib.ERR_get_error()) != 0)
     {
         SSLLib.ERR_error_string(err2, buffer);
@@ -449,7 +449,9 @@ BOOL CSocket::EncryptSocket(int logUID, int* sslErrorOccured, CCertificate** unv
 {
     int err;
     SSL* Conn;
-    char buffer[256], name[200];
+    // feature 216: ERR_error_string writes up to 256 bytes ('name' had 200); 'buffer' holds a log
+    // line with such a text (sprintf / wsprintf wrote it unbounded into 256 bytes)
+    char buffer[1024], name[256];
 
     CALL_STACK_MESSAGE3("CSocket::EncryptSocket(%d, , , , , , 0x%p)", logUID, conForReuse);
     if (errorID != NULL)
@@ -549,7 +551,7 @@ BOOL CSocket::EncryptSocket(int logUID, int* sslErrorOccured, CCertificate** unv
             int DERCertLen, PKCS7CertLen;
             int verRes = SSLLib.SSL_get_verify_result(Conn);
 
-            wsprintf(buffer, LoadStr(IDS_SSL_LOG_OSSL_CERT_VERIFY), verRes);
+            _snprintf_s(buffer, _TRUNCATE, LoadStrU8(IDS_SSL_LOG_OSSL_CERT_VERIFY), verRes);
             Logs.LogMessage(logUID, buffer, -1);
 #ifdef _DEBUG
             const char* str = SSLLib.X509_verify_cert_error_string(verRes);
@@ -557,10 +559,10 @@ BOOL CSocket::EncryptSocket(int logUID, int* sslErrorOccured, CCertificate** unv
 
             peerCert = SSLLib.SSL_get_peer_certificate(Conn);
             SSLLib.X509_NAME_oneline(peerCert->cert_info->subject, name, sizeof(name));
-            wsprintf(buffer, LoadStr(IDS_SSL_LOG_SUBJECT), name);
+            _snprintf_s(buffer, _TRUNCATE, LoadStrU8(IDS_SSL_LOG_SUBJECT), name);
             Logs.LogMessage(logUID, buffer, -1);
             SSLLib.X509_NAME_oneline(peerCert->cert_info->issuer, name, sizeof(name));
-            wsprintf(buffer, LoadStr(IDS_SSL_LOG_ISSUER), name);
+            _snprintf_s(buffer, _TRUNCATE, LoadStrU8(IDS_SSL_LOG_ISSUER), name);
             Logs.LogMessage(logUID, buffer, -1);
 
             // Obtain entire certificate chain upto root certificate
@@ -597,7 +599,7 @@ BOOL CSocket::EncryptSocket(int logUID, int* sslErrorOccured, CCertificate** unv
             ssl_cipher = SSLLib.SSL_get_current_cipher(Conn);
             SSLLib.SSL_CIPHER_get_bits(ssl_cipher, &ssl_bits);
             cipher_name = SSLLib.SSL_CIPHER_get_name(ssl_cipher);
-            wsprintf(buffer, LoadStr(IDS_SSL_LOG_ALGO), ssl_version, cipher_name, ssl_bits);
+            _snprintf_s(buffer, _TRUNCATE, LoadStrU8(IDS_SSL_LOG_ALGO), ssl_version, cipher_name, ssl_bits);
             Logs.LogMessage(logUID, buffer, -1);
 
             BOOL certAcceptedOrVerified = FALSE;
@@ -605,12 +607,12 @@ BOOL CSocket::EncryptSocket(int logUID, int* sslErrorOccured, CCertificate** unv
             {
                 if (pCertificate->IsSame(DERCert, DERCertLen, PKCS7Cert, PKCS7CertLen))
                 {
-                    Logs.LogMessage(logUID, LoadStr(pCertificate->IsVerified() ? IDS_SSL_LOG_CERTVERIFIED : IDS_SSL_LOG_CERTACCEPTED), -1, TRUE);
+                    Logs.LogMessage(logUID, LoadStrU8(pCertificate->IsVerified() ? IDS_SSL_LOG_CERTVERIFIED : IDS_SSL_LOG_CERTACCEPTED), -1, TRUE);
                     certAcceptedOrVerified = TRUE;
                 }
                 else // The certificate has changed.
                 {
-                    Logs.LogMessage(logUID, LoadStr(IDS_SSL_LOG_CERTCHANGED), -1, TRUE);
+                    Logs.LogMessage(logUID, LoadStrU8(IDS_SSL_LOG_CERTCHANGED), -1, TRUE);
                     pCertificate->Release();
                     pCertificate = NULL;
                 }
@@ -619,12 +621,12 @@ BOOL CSocket::EncryptSocket(int logUID, int* sslErrorOccured, CCertificate** unv
             {
                 if (CheckCertificate(DERCert, DERCertLen, errorBuf, errorBufLen, HostAddress, NULL))
                 {
-                    Logs.LogMessage(logUID, LoadStr(IDS_SSL_LOG_CERTVERIFIED), -1, TRUE);
+                    Logs.LogMessage(logUID, LoadStrU8(IDS_SSL_LOG_CERTVERIFIED), -1, TRUE);
                     pCertificate = new CCertificate(DERCert, DERCertLen, PKCS7Cert, PKCS7CertLen, true, HostAddress);
                     certAcceptedOrVerified = TRUE; // Passed
                 }
                 else
-                    Logs.LogMessage(logUID, LoadStr(IDS_SSL_LOG_CERTNOTVERIFIED), -1, TRUE);
+                    Logs.LogMessage(logUID, LoadStrU8(IDS_SSL_LOG_CERTNOTVERIFIED), -1, TRUE);
             }
             if (!certAcceptedOrVerified)
             {
@@ -665,14 +667,14 @@ BOOL CSocket::EncryptSocket(int logUID, int* sslErrorOccured, CCertificate** unv
             //      err = SSLLib.ERR_get_error();
             //      err = GetLastError();
 
-            sprintf(buffer, LoadStr(IDS_SSL_ERR_CONNECT_LOG), err, SSLLib.ERR_error_string(err, name));
+            _snprintf_s(buffer, _TRUNCATE, LoadStrU8(IDS_SSL_ERR_CONNECT_LOG), err, SSLLib.ERR_error_string(err, name));
             Logs.LogMessage(logUID, buffer, -1, TRUE);
             WriteSSLErrorStackToLog(logUID, "SSL_connect");
 
             if (errorID != NULL)
                 *errorID = IDS_SSL_ERR_CONNECT;
             if (errorBufLen > 0)
-                _snprintf_s(errorBuf, errorBufLen, _TRUNCATE, LoadStr(IDS_SSL_ERR_CONNECT_ERR), err, name);
+                _snprintf_s(errorBuf, errorBufLen, _TRUNCATE, LoadStrU8(IDS_SSL_ERR_CONNECT_ERR), err, name);
             SSLLib.SSL_free(Conn);
             if (sslErrorOccured != NULL)
                 *sslErrorOccured = SSLCONERR_CANRETRY;
@@ -680,7 +682,7 @@ BOOL CSocket::EncryptSocket(int logUID, int* sslErrorOccured, CCertificate** unv
     }
     else
     {
-        Logs.LogMessage(logUID, LoadStr(IDS_SSL_ERR_NEW_LOG), -1, TRUE);
+        Logs.LogMessage(logUID, LoadStrU8(IDS_SSL_ERR_NEW_LOG), -1, TRUE);
         if (errorID != NULL)
             *errorID = IDS_SSL_ERR_NEW;
         WriteSSLErrorStackToLog(logUID, "SSL_new");
@@ -850,7 +852,7 @@ bool InitSSL(int logUID, int* errorID)
     memset(&SSLLib, 0, sizeof(SSLLib)); // clean up, everything is freed
     if (errorID != NULL)
         *errorID = IDS_SSL_ERR_OPENSSLNOTFOUND;
-    Logs.LogMessage(logUID, LoadStr(IDS_SSL_ERR_OPENSSLNOTFOUND), -1);
+    Logs.LogMessage(logUID, LoadStrU8(IDS_SSL_ERR_OPENSSLNOTFOUND), -1);
     Logs.LogMessage(logUID, "\r\n", -1);
     return false;
 } /* InitSSL */

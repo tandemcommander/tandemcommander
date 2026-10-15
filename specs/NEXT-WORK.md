@@ -688,8 +688,8 @@ Code work an agent can do:
          whole-letter rule of `?` also counts two code-page bytes of a non-UTF-8 FTP server
          as one letter when they look like UTF-8.
          Earlier text of this item: 137 (also the in-place rename
-         line, which fell back to a code-page name). Left: `ssl.cpp:666` `name[200]` for a call
-         that may write 256 bytes; the core's `SalMakeValidFileNameComponent` cuts at byte 256;
+         line, which fell back to a code-page name). Left: ~~`ssl.cpp:666` `name[200]` for a call
+         that may write 256 bytes~~ - **done, feature 216** (also the SSL log lines' encoding); the core's `SalMakeValidFileNameComponent` cuts at byte 256;
          **SFTP: a memory leak after a failed SSH handshake** (debug build: "Detected memory
          leaks!" at exit, seen once when the handshake failed - find the allocation that the
          failed-connect path does not free). **Seen a second time on 2026-10-13, on the 0.1.9
