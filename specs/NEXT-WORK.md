@@ -308,9 +308,12 @@ Functional, no loss:
     left by its review: ~~feature 207 (CRITICAL) - the Renamer's `MoveFile` / "Remove source path"
     `dir[MAX_PATH]`~~ - **done, feature 207** (also: a panel folder of 260+ bytes made the items
     `\name` in the drive's root - refused now). Left by 207's reviews: **208** - the Renamer's
-    `ChangeCase` (`crenamer.cpp` ~701-760) applies code-page byte tables to UTF-8 names (1250 / 1252:
-    lead byte C3 -> E3, invalid UTF-8) and "strip diacritics" converts through `CP_ACP` - a rename
-    of a name with diacritics to lower / upper case may produce another name (measure first);
+    ~~`ChangeCase` applies code-page byte tables to UTF-8 names~~ - **done, feature 208** (left by
+    its review: **210** - the Renamer's other code-page residue: the `StrICmp` "nothing to do"
+    shortcut in `MoveFile` (`rendlg3.cpp` ~169; two different folders compare equal - a move
+    reported done without moving), case-insensitive search folding UTF-8 bytes (`common/moore.cpp`
+    ~146, `regexp.cpp` `Caseles` - with "Match case" off a search can replace another letter: a
+    wrong name written), whole words on single bytes, cut arguments counting bytes - measure first);
     **209** - `ReloadSourceFiles` (`rendlg.cpp` ~1214-1239) expands a renamed folder as `Root +
     Name`: after a full-path run (`Root` emptied) a relative `name\*.*` against the current folder,
     after a relative-path rename `a` -> `sub\a` another folder `Root\a` - its files offered for

@@ -390,13 +390,30 @@ int CRenamer::Rename(CSourceFile* file, int counter, char* newName, char** newPa
         if (file->IsDir || ext == NULL)
             ext = newName + l; // extensions are searched only for files
 
-        if (FileCase != ccDontChange)
+        // feature 208: the UTF-8 length may change - built anew: the part before, the name, the extension
+        char* s = FileCase != ccDontChange && IncludePath ? newName : filePart;
+        int cap = MAX_PATH - pathLen; // what 'newName' holds (as given to Execute)
+        char* built = (char*)malloc(cap);
+        if (built == NULL)
+            return -1;
+        int pos = (int)(s - newName);
+        memcpy(built, newName, pos);
+        int n = ChangeCase(FileCase, built + pos, cap - 1 - pos, s, s, ext);
+        if (n >= 0)
         {
-            char* s = IncludePath ? newName : filePart;
-            ChangeCase(FileCase, s, s, s, ext);
+            pos += n;
+            n = ChangeCase(ExtCase, built + pos, cap - 1 - pos, ext, ext, newName + l);
         }
-        if (ExtCase != ccDontChange)
-            ChangeCase(ExtCase, ext, ext, ext, newName + l);
+        if (n < 0)
+        {
+            free(built);
+            return -1; // does not fit: the name is refused as too long
+        }
+        pos += n;
+        memcpy(newName, built, pos);
+        newName[pos] = 0;
+        free(built);
+        l = pos;
     }
 
     return l;
@@ -443,13 +460,11 @@ BOOL SafeCopy(char* dest, int max, int& pos, const char* source, int count,
               CChangeCase changeCase)
 {
     CALL_STACK_MESSAGE_NONE
-    if (count + pos > max)
+    // feature 208: the case changed on letters - the length may change
+    int n = ChangeCase(changeCase, dest + pos, max - pos, source, source, source + count);
+    if (n < 0)
         return FALSE;
-    if (changeCase == ccDontChange)
-        memcpy(dest + pos, source, count);
-    else
-        ChangeCase(changeCase, dest + pos, source, source, source + count);
-    pos += count;
+    pos += n;
     return TRUE;
 }
 
@@ -698,76 +713,122 @@ int CRenamer::RESubst(const char* source, int len, char* dest, int max)
 
 // ****************************************************************************
 
-void ChangeCase(CChangeCase change, char* dst, const char* src,
-                const char* start, const char* end)
+// feature 208: the names are UTF-8 (interface 104); the case is changed on their letters - the
+// code-page byte tables (CharLowerA) turned UTF-8 into invalid bytes ("(123) the name is
+// incorrect") and "strip diacritics" read the bytes through CP_ACP. The UTF-8 length may change
+// (c-caron 2 bytes -> c 1 byte, dotless i 2 -> I 1): the bytes written to 'dst' are returned, -1
+// when they do not fit 'dstSize'. Text that is not valid UTF-8 (WTF-8 with a lone surrogate, a
+// legacy name) is copied unchanged. 'dst' may be the same memory as 'start'.
+int ChangeCase(CChangeCase change, char* dst, int dstSize, const char* src,
+               const char* start, const char* end)
 {
     CALL_STACK_MESSAGE_NONE
+    int len = (int)(end - start);
+    if (len <= 0)
+        return 0;
+    int wl = change == ccDontChange ? 0 : MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, start, len, NULL, 0);
+    if (wl <= 0) // no change, or not UTF-8: unchanged
+    {
+        if (len > dstSize)
+            return -1;
+        memmove(dst, start, len);
+        return len;
+    }
+    WCHAR* w = (WCHAR*)malloc(wl * sizeof(WCHAR));
+    if (w == NULL)
+        return -1;
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, start, len, w, wl);
+    WCHAR* out = w; // the result in UTF-16
+    int outLen = wl;
+    WCHAR* stripped = NULL;
     switch (change)
     {
     case ccLower:
-        while (start < end)
-            *dst++ = LowerCase[*start++];
-        return;
+        CharLowerBuffW(w, wl);
+        break;
 
     case ccUpper:
-        while (start < end)
-            *dst++ = UpperCase[*start++];
-        return;
+        CharUpperBuffW(w, wl);
+        break;
 
     case ccMixed:
     {
-        char prev = start > src ? start[-1] : ' ';
-        while (start < end)
+        // the letter before 'start' (in 'src'): a capital follows a non-alphanumeric character
+        BOOL prevAlnum = FALSE;
+        if (start > src)
         {
-            //if (IsCType(prev, C1_SPACE | C1_PUNCT))
-            if (!IsAlnum(prev))
-            {
-                prev = *start;
-                *dst++ = UpperCase[*start++];
-            }
-            else
-            {
-                prev = *start;
-                *dst++ = LowerCase[*start++];
-            }
+            const char* p = start - 1;
+            while (p > src && (*p & 0xC0) == 0x80)
+                p--;
+            WCHAR pw[2];
+            int pl = MultiByteToWideChar(CP_UTF8, 0, p, (int)(start - p), pw, 2);
+            prevAlnum = pl > 0 && IsCharAlphaNumericW(pw[pl - 1]);
         }
-        return;
+        for (int i = 0; i < wl; i++)
+        {
+            BOOL alnum = IsCharAlphaNumericW(w[i]);
+            if (!prevAlnum)
+                CharUpperBuffW(w + i, 1);
+            else
+                CharLowerBuffW(w + i, 1);
+            prevAlnum = alnum;
+        }
+        break;
     }
 
     case ccStripDia:
     {
-        int l = MultiByteToWideChar(CP_ACP, MB_COMPOSITE, start, (int)(end - start), NULL, 0);
-        if (l >= 0)
+        // decomposed, without the combining marks (U+0300-U+036F), composed again
+        int dl = NormalizeString(NormalizationD, w, wl, NULL, 0);
+        if (dl > 0)
         {
-            LPWSTR wstr = (LPWSTR)malloc(l * sizeof(WCHAR));
-            if (wstr)
+            WCHAR* dw = (WCHAR*)malloc(dl * sizeof(WCHAR));
+            if (dw != NULL)
             {
-                LPWSTR s, d;
-                // Convert to composite form
-                MultiByteToWideChar(CP_ACP, MB_COMPOSITE, start, (int)(end - start), wstr, l);
-                s = d = wstr;
-                // Remove combining diacritics marks
-                int i;
-                for (i = 0; i < l; i++)
+                dl = NormalizeString(NormalizationD, w, wl, dw, dl);
+                if (dl > 0) // review: a failed decomposition leaves the part unchanged (it emptied it)
                 {
-                    if (!((*s >= 0x300) && (*s <= 0x36f)))
-                        *d++ = *s;
-                    s++;
+                    int kept = 0;
+                    for (int i = 0; i < dl; i++)
+                    {
+                        if (!(dw[i] >= 0x300 && dw[i] <= 0x36F))
+                            dw[kept++] = dw[i];
+                    }
+                    int cl = kept > 0 ? NormalizeString(NormalizationC, dw, kept, NULL, 0) : 0;
+                    if (cl > 0)
+                    {
+                        stripped = (WCHAR*)malloc(cl * sizeof(WCHAR));
+                        if (stripped != NULL)
+                        {
+                            cl = NormalizeString(NormalizationC, dw, kept, stripped, cl);
+                            if (cl > 0)
+                            {
+                                out = stripped;
+                                outLen = cl;
+                            }
+                        }
+                    }
+                    else if (kept == 0)
+                        outLen = 0; // only marks
                 }
-                // Convert back to MBCS, check for orther composite characters
-                WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, wstr, (int)(d - wstr), dst, (int)(end - start), NULL, NULL);
-                free(wstr);
-            }
-            else
-            { // Out of memory???
-                memcpy(dst, start, end - start);
+                free(dw);
             }
         }
-        else
-        { // Empty string? Or what's wrong??
-            memcpy(dst, start, end - start);
-        }
-        return;
+        break;
     }
+
+    default:
+        break;
     }
+    int n = outLen > 0 ? WideCharToMultiByte(CP_UTF8, 0, out, outLen, NULL, 0, NULL, NULL) : 0;
+    int ret = -1;
+    if (n <= dstSize)
+    {
+        if (n > 0)
+            WideCharToMultiByte(CP_UTF8, 0, out, outLen, dst, n, NULL, NULL);
+        ret = n;
+    }
+    free(stripped);
+    free(w);
+    return ret;
 }

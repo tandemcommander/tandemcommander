@@ -1,0 +1,19 @@
+ren_case_probe (feature 208), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 09:28; ACP 1250; registry key existed True
+
+low        RUN    PASS        preview rows 1; boxes as expected: True; on disk: got C5BE6C75C5A56F75C48D6BC3BD206BC5AFC5882E747874 want C5BE6C75C5A56F75C48D6BC3BD206BC5AFC5882E747874; boxes: no box
+low        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+up         RUN    PASS        preview rows 1; boxes as expected: True; on disk: got C5BD4C55C5A44F55C48C4BC39D204BC5AEC5872E545854 want C5BD4C55C5A44F55C48C4BC39D204BC5AEC5872E545854; boxes: no box
+up         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mix        RUN    PASS        preview rows 1; boxes as expected: True; on disk: got C5BD6C75C5A56F75C48D6BC3BD204BC5AFC5882E547874 want C5BD6C75C5A56F75C48D6BC3BD204BC5AFC5882E547874; boxes: no box
+mix        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dia        RUN    PASS        preview rows 1; boxes as expected: True; on disk: got 5A6C75746F75636B79206B756E2E747874 want 5A6C75746F75636B79206B756E2E747874; boxes: no box
+dia        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cjk-up     RUN    PASS        preview rows 1; boxes as expected: True; on disk: got E4B8ADE69687412E545854 want E4B8ADE69687412E545854; boxes: no box
+cjk-up     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+opt        RUN    PASS        preview rows 1; boxes as expected: True; on disk: got C5BE6C75C5A56F75C48D6BC3BD206BC5AFC5882E545854 want C5BE6C75C5A56F75C48D6BC3BD206BC5AFC5882E545854; boxes: no box
+opt        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 12, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

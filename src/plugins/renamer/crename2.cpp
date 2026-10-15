@@ -127,14 +127,12 @@ public:
         int l = (int)(e - s);
         if (l > 0)
         {
-            if (end - string < l)
+            // feature 208: the case changed on letters - the UTF-8 length may change
+            int n = ChangeCase(Case, string, (int)(end - string), srcStart, s, e);
+            if (n < 0)
                 return -1;
-            if (Case == ccDontChange)
-                memcpy(string, s, l);
-            else
-                ChangeCase(Case, string, srcStart, s, e);
-            string += l;
-            return l;
+            string += n;
+            return n;
         }
         return 0;
     }

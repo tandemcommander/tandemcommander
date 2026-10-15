@@ -2673,3 +2673,8 @@ a few early ones are out of sequence).
   found worse: in a panel folder of 260+ bytes `GetPanelPath` failed unchecked, `Root` stayed empty
   and the items became `\name` in the root of the current drive - Batch Rename is refused there
   before its dialog. Probe `ren_long_probe.ps1` -> 8 / 0.
+- 208-renamer-case-utf8: the Renamer's `ChangeCase` applied code-page byte tables to UTF-8 names and
+  stripped diacritics through `CP_ACP` - lower / mixed / stripdia of a Czech name and upper of a CJK
+  one were refused "(123)", upper changed only ASCII. Now on UTF-16 (`CharLowerBuffW`,
+  `CharUpperBuffW`, `NormalizeString`), returning the new UTF-8 length (callers updated); the
+  script's comparators by `SalNameOrderCompareCI`. Probe `ren_case_probe.ps1` 5 / 5 -> 12 / 0.

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
+#include "../../common/salnameorder.h" // feature 208: "the same name" by the file system's rule
 
 // ****************************************************************************
 //
@@ -37,23 +38,24 @@ struct CRenameScriptEntry
         if (NewName)
             free(NewName);
     }
+    // feature 208: by the file system's rule (092) - the code-page StrICmp folded no letter of a
+    // UTF-8 name: a case change "Zluty" -> "zluty" (Z-caron) was not found among the renamed files
+    // and the file itself was offered for overwriting; two spellings of one name were no duplicate
     static int __cdecl CompareOldNames(const void* elem1, const void* elem2)
     {
-        return SG->StrICmp(
-            ((CRenameScriptEntry*)elem1)->Source->FullName,
-            ((CRenameScriptEntry*)elem2)->Source->FullName);
+        return SalNameOrderCompareCI(((CRenameScriptEntry*)elem1)->Source->FullName, -1,
+                                     ((CRenameScriptEntry*)elem2)->Source->FullName, -1);
     }
     static int __cdecl CompareOldName(const void* key, const void* elem2)
     {
-        return SG->StrICmp((const char*)key, ((CRenameScriptEntry*)elem2)->Source->FullName);
+        return SalNameOrderCompareCI((const char*)key, -1, ((CRenameScriptEntry*)elem2)->Source->FullName, -1);
     }
     static int __cdecl CompareNewNames(const void* elem1, const void* elem2)
     {
         if (((CRenameScriptEntry*)elem1)->NewName && ((CRenameScriptEntry*)elem2)->NewName)
         {
-            return SG->StrICmp(
-                ((CRenameScriptEntry*)elem1)->NewName,
-                ((CRenameScriptEntry*)elem2)->NewName);
+            return SalNameOrderCompareCI(((CRenameScriptEntry*)elem1)->NewName, -1,
+                                         ((CRenameScriptEntry*)elem2)->NewName, -1);
         }
         else
         {
@@ -288,7 +290,7 @@ BOOL CRenamerDialog::BuildScript(CRenameScriptEntry*& script, int& count,
     qsort(tmpScript, SourceFiles.Count, sizeof(*tmpScript), CRenameScriptEntry::CompareNewNames);
     for (i = 1; i < SourceFiles.Count; i++)
         if (!tmpScript[i - 1].Skip && !tmpScript[i].Skip &&
-            SG->StrICmp(tmpScript[i - 1].NewName, tmpScript[i].NewName) == 0)
+            SalNameOrderCompareCI(tmpScript[i - 1].NewName, -1, tmpScript[i].NewName, -1) == 0)
         {
             FileError(HWindow, tmpScript[i].NewName, IDS_DUPLICATENAME,
                       FALSE, &skip, &skipAllDuplicateNames, IDS_ERROR);
@@ -298,7 +300,7 @@ BOOL CRenamerDialog::BuildScript(CRenameScriptEntry*& script, int& count,
             do
                 tmpScript[i].Skip = 1;
             while (++i < SourceFiles.Count &&
-                   SG->StrICmp(tmpScript[i - 1].NewName, tmpScript[i].NewName) == 0);
+                   SalNameOrderCompareCI(tmpScript[i - 1].NewName, -1, tmpScript[i].NewName, -1) == 0);
             continue;
         }
 

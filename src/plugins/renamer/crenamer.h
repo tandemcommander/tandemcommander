@@ -155,5 +155,5 @@ protected:
     int RESubst(const char* source, int len, char* dest, int max);
 };
 
-void ChangeCase(CChangeCase change, char* dst, const char* src,
-                const char* start, const char* end);
+int ChangeCase(CChangeCase change, char* dst, int dstSize, const char* src,
+               const char* start, const char* end);

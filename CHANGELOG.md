@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Renamer: changing the case of names with accents works** (feature 208).
+  Lower, upper and mixed case and "remove diacritics" failed with "The file
+  name is incorrect" (or changed only the plain letters) for names with
+  letters such as "Č" or Chinese ones, and changing only the case of such a
+  name asked to overwrite the file itself.
+
 - **Renamer: long names and folders no longer crash it or reach other
   files** (feature 207). Undo, or "Remove source path", of a file whose
   full path has 260 or more bytes (for example a name of 90 Chinese
