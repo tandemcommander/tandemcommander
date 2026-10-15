@@ -730,8 +730,10 @@ Code work an agent can do:
      it owed; left: the ZIP self-extractor's own `_RemoveTemporaryDir` in `selfextr.cpp:157` - the
      same defect, `A` calls; the external unpacker's walk `pack1.cpp:632-692` moves the extracted
      folder's content out - a junction extracted from the archive would have its target's content
-     moved, rule 099, to be measured); not driven: a deep directory symbolic link, the
-     delete by Recycle Bin masks, a cloud placeholder past 780 characters); `GetSHObjectName(..., MAX_PATH)`
+     moved, rule 099, to be measured); ~~not driven: a deep directory symbolic link, the
+     delete by Recycle Bin masks~~ - **driven, feature 219** (safe; it found a link with a
+     `\\?\` target that could not be followed - fixed); left: a cloud placeholder past 780
+     characters - owed to a person with OneDrive); `GetSHObjectName(..., MAX_PATH)`
      cuts and widens through the code page (server links - Network plug-in only). Was: `Execute` (`fileswn2.cpp`) appends the name with a limit of
      `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";
      `FocusShortcutTarget` (`fileswn0.cpp`) falls back to a `CP_ACP` conversion that cuts a

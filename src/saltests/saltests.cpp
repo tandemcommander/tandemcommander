@@ -11897,6 +11897,38 @@ static void TestDeleteAsDirLink197()
     CHECK(!SalDeleteAsDirLinkDecision(FALSE, TRUE, 0));          // no reparse point (any more)
 }
 
+// feature 219: a link's stored name in the long / NT form is the path it names
+static void TestReparseNameAsPath219()
+{
+    struct
+    {
+        const WCHAR* in;
+        const WCHAR* out;
+    } cases[] = {
+        {L"\\\\?\\C:\\x\\y", L"C:\\x\\y"},
+        {L"\\??\\C:\\x", L"C:\\x"},
+        {L"\\\\?\\UNC\\srv\\share\\d", L"\\\\srv\\share\\d"},
+        {L"\\??\\UNC\\srv\\share", L"\\\\srv\\share"},
+        {L"\\\\?\\unc\\srv\\s", L"\\\\srv\\s"},
+        {L"C:\\x", L"C:\\x"},                                                                                               // plain: as is
+        {L"..\\rel", L"..\\rel"},                                                                                           // relative: as is
+        {L"\\??\\Volume{12345678-0000-0000-0000-000000000000}\\", L"\\??\\Volume{12345678-0000-0000-0000-000000000000}\\"}, // a volume
+        {L"\\\\?\\GLOBALROOT\\Device\\X", L"\\\\?\\GLOBALROOT\\Device\\X"},
+        {L"\\\\?\\C:", L"\\\\?\\C:"},               // no root: as is
+        {L"\\\\?\\C:\\dir.", L"\\\\?\\C:\\dir."},   // a trailing dot: kept long
+        {L"\\\\?\\C:\\a \\b", L"\\\\?\\C:\\a \\b"}, // a component ending with a space
+        {L"\\\\?\\C:\\a.b\\c", L"C:\\a.b\\c"},      // a dot inside: plain
+        {L"\\\\?\\UNC\\", L"\\\\?\\UNC\\"},         // no server
+        {L"", L""},
+    };
+    for (int i = 0; i < (int)_countof(cases); i++)
+    {
+        WCHAR buf[200];
+        wcscpy_s(buf, cases[i].in);
+        CHECK(wcscmp(SalReparseNameAsPath(buf), cases[i].out) == 0);
+    }
+}
+
 // feature 189: a REG_MULTI_SZ list as one line (salmultisz.h) - the NULs at the end are the end
 // whatever their number (one NUL showed a trailing space), the ones inside are separators
 // feature 203: a create whose 8.3 clash could not be moved aside never reports "it exists" (the
@@ -12157,6 +12189,7 @@ int main(int argc, char** argv)
     TestShellLinkLoadName181();
     TestMultiSzToLine189();
     TestDeleteAsDirLink197();
+    TestReparseNameAsPath219();
     TestShortNameClashError203();
     TestNameIsOnlyShortNameOf204();
     TestU8Fold210();

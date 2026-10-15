@@ -1,0 +1,19 @@
+deepjunc_probe (feature 197), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 17:41; registry key existed True
+
+SHALLOW    RUN    PASS        folder 41 chars; J attributes Directory, ReparsePoint; recycle bin 0; target's file kept True; deleted item gone True; location 'C:\Users\pavel\AppData\Local\Temp\tc197\s\J'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+SHALLOW    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DEEP       RUN    PASS        folder 283 chars; J attributes Directory, ReparsePoint; recycle bin 0; target's file kept True; deleted item gone True; location '...yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\J'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+DEEP       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DEEP2      RUN    PASS        folder 874 chars; J attributes Directory, ReparsePoint; recycle bin 0; target's file kept True; deleted item gone True; location '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\J'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+DEEP2      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DEEPTREE   RUN    PASS        folder 874 chars; J attributes Directory, ReparsePoint; recycle bin 0; target's file kept True; deleted item gone True; location '...wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete directory "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww..."? | [Button id=6] &Yes | [Button id=7] &No
+DEEPTREE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DEEP2-RB   RUN    PASS        folder 874 chars; J attributes Directory, ReparsePoint; recycle bin 1; target's file kept True; deleted item gone False; location '...vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\J'; windows: [#32770 'Error'] [Static id=2477] Cannot finish operation because of too long name. | [Button id=1] OK
+DEEP2-RB   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FOCUS      RUN    PASS        folder 874 chars; the panel went to 'C:\Users\pavel\AppData\Local\Temp\tc197\t6' (expected the target 'C:\Users\pavel\AppData\Local\Temp\tc197\t6'); windows: no window
+FOCUS      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 12, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

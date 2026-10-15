@@ -2731,3 +2731,9 @@ a few early ones are out of sequence).
   slots by memory region (`VirtualQuery`; never reading an entry - the first version read other
   entries and was rejected: plug-in threads' are freed too), then terminates; the report skips NULL.
   Five core sites; by reading; smoke 8 / 0, 22 / 0. Plug-in kills (`auxtools.cpp`) are NEXT-WORK.
+- 219-deep-link-delete-rows: 197's rows not driven, driven: directory symbolic links in folders of
+  41-874 characters and F8 on the deep folder holding one, and the Recycle Bin by masks with
+  junctions - only the link removed (PASS on the build before). Found: a link whose target is stored
+  as `\\?\C:\...` could not be followed (Go to Shortcut Target "path invalid") -
+  `SalReparseNameAsPath` (salreparse.h, saltests) makes the long / NT form a path (not a name with a
+  trailing dot / space component). Probe `deeplink219_probe.ps1` 17 / 1 -> 20 / 0.

@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Go to Shortcut Target works for a folder link stored with a "\\?\"
+  target** (feature 219). A symbolic link whose target was written in the
+  long form (`\\?\C:\...`) could not be followed ("The path specified is
+  invalid"). Deleting deep folder links and deleting by Recycle Bin masks
+  were checked and remove only the link.
+
 - **A crash report stays complete after a stuck background task was
   stopped** (feature 218). When the program had to stop an unresponsive
   background thread (an icon reader or a path check), a crash report

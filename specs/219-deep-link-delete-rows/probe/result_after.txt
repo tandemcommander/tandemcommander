@@ -1,0 +1,27 @@
+deepjunc219_probe (feature 219), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 17:39; registry key existed True
+
+SYM-SHALLOW RUN    PASS        folder 41 chars; J attributes Directory, ReparsePoint; recycle bin 0; target's file kept True; deleted item gone True; location 'C:\Users\pavel\AppData\Local\Temp\tc219\s\D'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete symbolic link "D"? | [Button id=6] &Yes | [Button id=7] &No
+SYM-SHALLOW END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SYM-DEEP   RUN    PASS        folder 283 chars; J attributes Directory, ReparsePoint; recycle bin 0; target's file kept True; deleted item gone True; location '...yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\D'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete symbolic link "D"? | [Button id=6] &Yes | [Button id=7] &No
+SYM-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SYM-DEEP2  RUN    PASS        folder 874 chars; J attributes Directory, ReparsePoint; recycle bin 0; target's file kept True; deleted item gone True; location '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\D'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete symbolic link "D"? | [Button id=6] &Yes | [Button id=7] &No
+SYM-DEEP2  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SYM-TREE   RUN    PASS        folder 874 chars; J attributes Directory, ReparsePoint; recycle bin 0; target's file kept True; deleted item gone True; location '...wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete directory "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww..."? | [Button id=6] &Yes | [Button id=7] &No
+SYM-TREE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SYM-FOCUS  RUN    PASS        folder 874 chars; the panel went to 'C:\Users\pavel\AppData\Local\Temp\tc219\t6' (expected the target 'C:\Users\pavel\AppData\Local\Temp\tc219\t6'); windows: no window
+SYM-FOCUS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SYM-FOCUS-UNC RUN    PASS        folder 41 chars; the panel went to '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc219\t11' (expected the target '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc219\t11'); windows: no window
+SYM-FOCUS-UNC END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SYM-FOCUS-PLAIN RUN    PASS        folder 874 chars; the panel went to 'C:\Users\pavel\AppData\Local\Temp\tc219\t10' (expected the target 'C:\Users\pavel\AppData\Local\Temp\tc219\t10'); windows: no window
+SYM-FOCUS-PLAIN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MASK-SHALLOW RUN    PASS        folder 41 chars; J attributes Directory, ReparsePoint; recycle bin 2; target's file kept True; deleted item gone True; location 'C:\Users\pavel\AppData\Local\Temp\tc219\m\J'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+MASK-SHALLOW END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MASK-TREE  RUN    PASS        folder 43 chars; J attributes Directory, ReparsePoint; recycle bin 2; target's file kept True; deleted item gone True; location 'C:\Users\pavel\AppData\Local\Temp\tc219\n\o'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete directory "o"? All files matching recycle masks will be sent to the Recycle Bin. | [Button id=6] &Yes | [Button id=7] &No
+MASK-TREE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MASK-DEEPTREE RUN    PASS        folder 874 chars; J attributes Directory, ReparsePoint; recycle bin 2; target's file kept True; deleted item gone True; location '...qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete directory "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq..."? All files matching recycle masks will be sent to the Recycle Bin. | [Button id=6] &Yes | [Button id=7] &No
+MASK-DEEPTREE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -1703,12 +1703,16 @@ BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, D
         *repPointType = myType;
     if (repPointDstBuf != NULL)
     {
-        WCHAR* s = printName;
+        // feature 219: a name in the Win32 long form ("\\?\C:\x", "\\?\UNC\srv\share") or the NT
+        // form ("\??\C:\x", "\??\UNC\...") is the path it names (salreparse.h) - the panel refused
+        // "\\?\C:\x" (a symbolic link made with such a target: Go to Shortcut Target said "The path
+        // specified is invalid")
+        WCHAR* s = SalReparseNameAsPath(printName);
         if (*s == 0)
         {
-            s = substName;
-            if (_wcsnicmp(s, L"\\??\\", 4) == 0)
-                s = substName + 4; // skip "\\??\\" in substName
+            s = SalReparseNameAsPath(substName);
+            if (s == substName && _wcsnicmp(s, L"\\??\\", 4) == 0)
+                s = substName + 4; // skip "\\??\\" in substName (another form - as before)
         }
         if (myType == 2 /* JUNCTION POINT */ && (*s == 0 || *(s + 1) != L':' || *(s + 2) != L'\\'))
         {

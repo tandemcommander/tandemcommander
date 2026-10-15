@@ -30,3 +30,41 @@ inline BOOL SalDeleteAsDirLinkDecision(BOOL destinationRead, BOOL tagRead, DWORD
         return TRUE; // cannot tell: never emptied through what may be a link
     return tag != 0 && (tag & 0x20000000) != 0; // IsReparseTagNameSurrogate
 }
+
+// feature 219: a link's stored name in the Win32 long form ("\\?\C:\x", "\\?\UNC\srv\share") or the
+// NT form ("\??\C:\x", "\??\UNC\srv\share") as the path it names - the panel refused "\\?\C:\x".
+// Returns a pointer into 's' (for UNC one character of 's' is overwritten: "\\srv\share"), or 's'
+// itself when the name is another form (a volume, "\\?\GLOBALROOT", a relative name) or when a
+// component ends with '.' or ' ' - the long form keeps such a name, the plain path would name
+// another folder (Win32 trims them).
+inline WCHAR* SalReparseNameAsPath(WCHAR* s)
+{
+    if (s == NULL)
+        return s;
+    BOOL longForm = s[0] == L'\\' && (s[1] == L'\\' || s[1] == L'?') && s[2] == L'?' && s[3] == L'\\';
+    if (!longForm)
+        return s;
+    WCHAR* rest = NULL;
+    BOOL unc = FALSE;
+    if ((s[4] == L'U' || s[4] == L'u') && (s[5] == L'N' || s[5] == L'n') && (s[6] == L'C' || s[6] == L'c') &&
+        s[7] == L'\\' && s[8] != 0)
+    {
+        rest = s + 8;
+        unc = TRUE;
+    }
+    else if (s[4] != 0 && s[5] == L':' && s[6] == L'\\')
+        rest = s + 4;
+    if (rest == NULL)
+        return s;
+    for (const WCHAR* p = rest; *p != 0; p++) // a component ending with '.' or ' ': kept long
+    {
+        if ((*p == L'.' || *p == L' ') && (p[1] == 0 || p[1] == L'\\'))
+            return s;
+    }
+    if (unc)
+    {
+        s[6] = L'\\'; // "\\?\UNC\srv" -> "\\srv" (s[7] is the second backslash)
+        return s + 6;
+    }
+    return rest;
+}
