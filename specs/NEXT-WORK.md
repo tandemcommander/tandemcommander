@@ -676,10 +676,12 @@ Code work an agent can do:
          `dialogs5.cpp:1923`, `dialogs2.cpp:1287`); ~~FTP: a file name of about 494 bytes or more makes
          `PrepareFTPCommand` fail~~ - **done, feature 215** (measured worse: the listing cut every
          name over 255 bytes and DELE / RNFR went to the cut name; left by its audit, to fix one
-         by one: **server paths over 300 bytes cut and acted on** - `fs2.cpp:723/730`
-         ChangePath, the upload target `fs5.cpp:744/856/923-1002`, `WorkingPath`
-         `operats4.cpp:616` / `operatsb.cpp:701`, `operats7.cpp:502`, `operatsa.cpp:121/641`,
-         `operatsb.cpp:323`, PWD decoding `ftputils.cpp:1709/1735-1750`, `operats9.cpp:481/564-598`;
+         by one: ~~server paths over 300 bytes cut and acted on~~ (measured, feature 233: refused
+         - the core refuses typed / entered paths of ~260+ bytes, the queue refuses longer
+         sub-paths; left: a PWD reply over 300 bytes is cut (an ancestor under its own name); **a
+         tree download whose deepest folder was refused left nothing on disk, not even files
+         that fit and were received** - to investigate; deep FTP paths are limited to ~260 bytes
+         by the core);
          ~~`FTPU8NameToServer` sends a name the ANSI code page can hold in that code page even to a
          UTF-8 server~~ - **done, feature 224** (left: **a per-server encoding flag** - unknown /
          UTF-8 / legacy by host, port, user; evidence FEAT UTF8 or a listing - instead of one

@@ -1,0 +1,11 @@
+ftp233_probe (feature 233), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 23:39; desktop 'tc_probe_26344'; ACP 1250; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+Server  : ftpmini.py on 127.0.0.1:2133 - up; the long name has 514 bytes of UTF-8
+
+Path: /<row>/c1..c5 = 299 bytes for a 3-letter row name; + /leaf
+DLT        ROW    FAIL        local c5\x.txt '<missing>', leaf\x.txt '<missing>'; local files: ; 10,3 s; connected: True [box: [#32770 'Welcome Message'] [Button id=1] Close] at '...dddddddddddddddddddddddddddddddddddddddddddddddddd'; server got: USER u / PASS p / SYST / PWD / CWD <181 bytes> / PWD / PORT 127,0,0,1,219,127 / TYPE A / LIST / CWD <240 bytes> / PWD / PORT 127,0,0,1,219,130 / LIST / CWD <299 bytes> / PWD / PORT 127,0,0,1,219,132 / LIST / PORT 127,0,0,1,219,134 / RETR x.txt / NOOP; dialogs: [#32770 'Copy'] [Static id=780] Copy directory "c4<long names>/" from FTP server to | [Button id=782] &Only add to Queue (do not process in active connection) | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 '...<long names>/" from 127.0.0.1'] [Static id=751] Source path: | [Static id=753] Target path: | [Static id=3000] Time left: | [Static id=3001] Elapsed time: | [Static id=3002] Status: | [Static id=3003] Progress: | [Button id=758] &Details >> | [Button id=759] &Errors >> | [Button id=761] &Pause | [Button id=2] Close | [Button id=9] Help | [Button id=778] Close this dialo&g when operation finishes || [#32770 '...<long names>/" from 127.0.0.1'] [Static id=2477] Some parts of operation were not finished successfully. Do you really want to close unfinished operation? | [Button id=6] &Yes | [Button id=7] &No
+DLT        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -2806,3 +2806,7 @@ a few early ones are out of sequence).
   lost the selection after a case-only rename. Tie-break now `SalNameCompareOrdinalCI` (equality =
   the same name; NFC/NFD stay apart), result -1/0/1; the refresh merge moves flags to another case
   only without an exact old twin. Probe `cmp232_probe.ps1` 4 FAIL -> 16 / 0.
+- 233-ftp-long-server-paths: measured, no defect of the audit's kind - a typed / entered FTP path of
+  ~260+ bytes is refused by the core, the queue refuses sub-paths over 300 bytes (`FTPPathAppend`);
+  only a PWD reply over 300 bytes is cut (an ancestor under its own name). Probe `ftp233_probe.ps1`.
+  Found: a tree download with a refused leaf left nothing on disk - NEXT-WORK.
