@@ -715,8 +715,9 @@ Code work an agent can do:
          - refuse a relative command instead; a failed chcp / `cd` ends a hidden batch silently;
          a kept shell ends at the OEM code page; `editwnd.cpp:355/482` read COMSPEC with the A
          call; the other A `SetCurrentDirectory` calls on UTF-8 paths are speed hints only);
-         long paths in the User Menu) and Compare Directories `mainwnd5.cpp:1560/1584` cut disk
-         names at MAX_PATH and act on them; `fileswna.cpp:396` cuts `SrcPath`);
+         long paths in the User Menu) and ~~Compare Directories `mainwnd5.cpp:1560/1584` cut disk
+         names at MAX_PATH and act on them~~ (measured, feature 227: not reachable - refused "too
+         long name"; the Find window's `CompareName1/2` end empty); `fileswna.cpp:396` cuts `SrcPath`);
          ~~SFTP: a memory leak after a failed SSH handshake~~ - **done, feature 217** (reproduced
          by a proxy flipping the server's signature; also the 1-in-256 key exchange failure;
          left: ~~`Disconnect` tears down with a 1 ms deadline - the whole session leaks~~ - **done,

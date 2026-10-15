@@ -2776,3 +2776,6 @@ a few early ones are out of sequence).
   ... || exit /b 1` (a missing Initial Directory ran the command in the panel's folder);
   `SalSetCurrentDirectoryU8`. Probe `um226_probe.ps1` 11 FAIL -> 28 / 0. Trap: a shell with
   `NoDefaultCurrentDirectoryInExePath` set hides the planted-file case - the probe removes it.
+- 227-compare-dirs-long-names: measured, no defect - Compare Directories cuts a 260+ byte subfolder
+  name, but the panel path + the cut name never fits its MAX_PATH paths: refused "too long name"
+  (probe `cmp227_probe.ps1`). The Find window's `CompareName1/2` likewise end empty. No code change.
