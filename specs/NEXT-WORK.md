@@ -671,9 +671,18 @@ Code work an agent can do:
          2507-2509 (a cut command runs another program), the hot path editor's
          `GetDlgItemText` fallback `dialogs4.cpp:2924-2926` (code page); low risk: Edit New's
          default `dialogs3.cpp:600`, the browse-from-field cuts `salamdr3.cpp:4349`,
-         `dialogs5.cpp:1923`, `dialogs2.cpp:1287`); **FTP: a file name of about 494 bytes or more makes
-         `PrepareFTPCommand` fail in its 501-byte buffer and the callers send an empty
-         command** (by reading); Paste "- Copy" naming says "cannot copy to itself" for names
+         `dialogs5.cpp:1923`, `dialogs2.cpp:1287`); ~~FTP: a file name of about 494 bytes or more makes
+         `PrepareFTPCommand` fail~~ - **done, feature 215** (measured worse: the listing cut every
+         name over 255 bytes and DELE / RNFR went to the cut name; left by its audit, to fix one
+         by one: **server paths over 300 bytes cut and acted on** - `fs2.cpp:723/730`
+         ChangePath, the upload target `fs5.cpp:744/856/923-1002`, `WorkingPath`
+         `operats4.cpp:616` / `operatsb.cpp:701`, `operats7.cpp:502`, `operatsa.cpp:121/641`,
+         `operatsb.cpp:323`, PWD decoding `ftputils.cpp:1709/1735-1750`, `operats9.cpp:481/564-598`;
+         **`FTPU8NameToServer` (`ftputils.cpp:3563`) sends a name the ANSI code page can hold in
+         that code page even to a UTF-8 server - another name**; VMS / AS/400 / OS/2 helpers that
+         cut; the lock's `StrICmp`; `fs1.cpp:741` `FTPAddHexEscapeSequences` result ignored; the
+         local side's 259-byte paths; the core's `SalIsValidFileNameComponent` takes a name of
+         more than 256 bytes for invalid - with 222); Paste "- Copy" naming says "cannot copy to itself" for names
          of about 250 bytes; FTP download target name in `fs4.cpp` cut at a byte (cosmetic);
          Edit New File is limited to paths under 260 bytes (refused now, was cut); the
          whole-letter rule of `?` also counts two code-page bytes of a non-UTF-8 FTP server

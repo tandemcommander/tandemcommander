@@ -126,7 +126,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
                     FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
-                PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                   ftpcmdChangeWorkingPath, &cmdLen, ftpPath); // cannot report an error
                 sendCmd = TRUE;
                 SubState = fwssWorkUploadResLnkWaitForCWDRes;
@@ -185,7 +185,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
 
         case fwssWorkUploadCreateDir: // upload copy/move file: create the target directory on the server - start by setting the target path
         {
-            PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+            PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                               ftpcmdChangeWorkingPath, &cmdLen, curItem->TgtPath); // cannot report an error
             sendCmd = TRUE;
             SubState = fwssWorkUploadCrDirWaitForCWDRes;
@@ -211,7 +211,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
                             FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                         Logs.LogMessage(LogUID, errText, -1, TRUE);
 
-                        PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                           ftpcmdCreateDir, &cmdLen, curItem->TgtName); // cannot report an error
                         sendCmd = TRUE;
                         SubState = fwssWorkUploadCrDirWaitForMKDRes;
@@ -441,7 +441,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
 
         case fwssWorkUploadAutorenameDir: // upload copy/move file: handle the target directory creation error - autorename - start by setting the target path
         {
-            PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+            PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                               ftpcmdChangeWorkingPath, &cmdLen, curItem->TgtPath); // cannot report an error
             sendCmd = TRUE;
             SubState = fwssWorkUploadAutorenDirWaitForCWDRes;
@@ -537,7 +537,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
                                     FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
-                                PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                   ftpcmdCreateDir, &cmdLen, UploadAutorenameNewName); // cannot report an error
                                 sendCmd = TRUE;
                                 SubState = fwssWorkUploadAutorenDirWaitForMKDRes;
@@ -642,7 +642,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
             CFTPServerPathType type = Oper->GetFTPServerPathType(ftpPath);
             if (FTPPathAppend(type, ftpPath, FTP_MAX_PATH, curItem->TgtName, TRUE))
             { // we have the path; send CWD to the server for the directory being explored
-                PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                   ftpcmdChangeWorkingPath, &cmdLen, ftpPath); // cannot report an error
                 sendCmd = TRUE;
                 SubState = fwssWorkUploadGetTgtPathWaitForCWDRes;
@@ -708,7 +708,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
 
         case fwssWorkUploadGetTgtPathSendPWD: // upload copy/move file: send "PWD" (determine the path to the target directory)
         {
-            PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+            PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                               ftpcmdPrintWorkingPath, &cmdLen); // cannot report an error
             sendCmd = TRUE;
             SubState = fwssWorkUploadGetTgtPathWaitForPWDRes;

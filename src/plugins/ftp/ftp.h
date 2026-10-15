@@ -20,7 +20,12 @@
 // is cut to 100 bytes by an older version.
 #define PASSWORD_MAX_SIZE SAL_FTP_SECRET_BUF // password (if changed, beware of USERPASSACCT_MAX_SIZE)
 #define ACCOUNT_MAX_SIZE SAL_FTP_SECRET_BUF  // account info (see FTP command "ACCT") (if changed, beware of USERPASSACCT_MAX_SIZE)
-#define FTP_MAX_PATH 301                     // path on the FTP server (NOTE: this is not the limit for CFileData::Name - that is up to MAX_PATH-5 characters - Salamander limit)
+#define FTP_MAX_PATH 301                     // path on the FTP server (NOTE: this is not the limit for CFileData::Name - up to FTP_MAX_NAME_U8 bytes, feature 215)
+// feature 215: a name of the listing (UTF-8) has at most 3 * 255 bytes (interface 104; a longer one
+// is not listed) and a command carrying it ("SITE CHMOD 777 <name>", "RETR <name>", ... + CRLF)
+// fits FTP_CMDBUF_SIZE - the worker's buffer of 'HandleEvent' and the panel's command buffers
+#define FTP_MAX_NAME_U8 (3 * 255)
+#define FTP_CMDBUF_SIZE (700 + FTP_MAX_PATH)
 #define FTP_USERPART_SIZE 610                // limit for the size of the user-part path (format: "ftp:" + "//user@host:port/path")
 #define BOOKMSRVTYPE_MAX_SIZE 101            // maximum of BOOKMARKNAME_MAX_SIZE and SERVERTYPE_MAX_SIZE
 #define BOOKMARKNAME_MAX_SIZE 101            // bookmark name on the FTP server (e.g. in the Connect dialog) (if changed, beware of BOOKMSRVTYPE_MAX_SIZE)

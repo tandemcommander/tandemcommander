@@ -190,6 +190,8 @@ BOOL PrepareFTPCommand(char* buf, int bufSize, char* logBuf, int logBufSize,
     {
         TRACE_E("PrepareFTPCommand(): Insufficient buffer size: " << bufSize);
         len = 0;
+        if (bufSize > 0)
+            buf[0] = 0; // feature 215: never a cut command (a sender by strlen sent it without CRLF)
         ret = FALSE;
     }
     else
@@ -205,7 +207,12 @@ BOOL PrepareFTPCommand(char* buf, int bufSize, char* logBuf, int logBufSize,
     if (logBufSize > 0 && logBuf[0] == 0)
     {
         if (len >= logBufSize)
+        { // feature 215: at a whole character (UTF-8; the bytes of a code page are never stepped over)
             len = logBufSize - 1;
+            int whole = SplU8WholePrefixLen(buf, len);
+            if (len - whole <= 3)
+                len = whole;
+        }
         memmove(logBuf, buf, len);
         logBuf[len] = 0;
     }

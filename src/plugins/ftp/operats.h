@@ -798,6 +798,12 @@ struct CFTPDiskWork
 
     char Path[MAX_PATH]; // target path (e.g. fdwtCheckOrWriteFile and fdwtCreateAndWriteFile do not use it = "")
     char Name[MAX_PATH]; // IN/OUT target name (the name may change during autorename) (e.g. fdwtCheckOrWriteFile does not use it = "") (for fdwtCreateAndWriteFile this holds the tgt-full-file-name)
+    // feature 215: TRUE when the path or the name given did not fit 'Path' / 'Name' - the work is
+    // refused ("file name is too long"); they were cut and the work done on another local file
+    BOOL TooLong;
+    // feature 215: TRUE when 'Name' is a whole-character prefix of a longer name (a file or folder to
+    // create: its first attempt is "too long" - the user's "cannot create" action applies)
+    BOOL NameCut;
 
     CFTPQueueItemAction ForceAction; // action forced by the user (for example an autorename entered from the Solve Error dialog)
 
@@ -3405,7 +3411,7 @@ protected:
     unsigned short Port;         // port on which the FTP server runs
     char Path[FTP_MAX_PATH];     // path to the opened file (local on the server)
     CFTPServerPathType PathType; // type of the cached path
-    char Name[MAX_PATH];         // name of the opened file
+    char Name[FTP_MAX_NAME_U8 + 1]; // name of the opened file (feature 215: whole - a cut one never matched)
 
 public:
     CFTPOpenedFile(int myUID, const char* user, const char* host, unsigned short port,

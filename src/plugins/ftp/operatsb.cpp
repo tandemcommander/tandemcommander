@@ -328,7 +328,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                         FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                     Logs.LogMessage(LogUID, errText, -1, TRUE);
 
-                    PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdChangeWorkingPath, &cmdLen, ftpPath); // cannot report an error
                     sendCmd = TRUE;
                     SubState = fwssWorkUploadResLnkWaitForCWDRes;
@@ -671,7 +671,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                 { // the working path must be changed (assumption: the server returns the same path string - it
                     // got into the item during explore-dir or from the panel; in both cases it was the path returned
                     // by the server in response to PWD)
-                    PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdChangeWorkingPath, &cmdLen, curItem->TgtPath); // cannot report an error
                     sendCmd = TRUE;
                     SubState = fwssWorkUploadFileSetTgtPathWaitForCWDRes;
@@ -736,7 +736,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                 {
                     if (CurrentTransferMode != (curItem->AsciiTransferMode ? ctrmASCII : ctrmBinary)) // if it is not already set, configure the desired mode
                     {
-                        PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                           ftpcmdSetTransferMode, &cmdLen, curItem->AsciiTransferMode); // cannot report an error
                         sendCmd = TRUE;
                         SubState = fwssWorkUploadWaitForTYPERes;
@@ -815,7 +815,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
             {
                 if (Oper->GetSizeCmdIsSupported())
                 {
-                    PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdGetSize, &cmdLen, curItem->TgtName); // cannot report an error
                     sendCmd = TRUE;
                     SubState = fwssWorkUploadWaitForSIZERes;
@@ -1276,7 +1276,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
             {
                 if (UseDeleteForOverwrite && UploadType == utOverwriteFile)
                 { // the file is already locked for writing; deletion is just an intermediate step, no need to call FTPOpenedFiles.OpenFile()
-                    PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdDeleteFile, &cmdLen, curItem->TgtName); // cannot report an error
                     sendCmd = TRUE;
                     SubState = fwssWorkUploadDelForOverWaitForDELERes;
@@ -1380,7 +1380,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
 
                     if (Oper->GetUsePassiveMode()) // passive mode (PASV)
                     {
-                        PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                           ftpcmdPassive, &cmdLen); // cannot report an error
                         sendCmd = TRUE;
                         SubState = fwssWorkUploadWaitForPASVRes;
@@ -1641,7 +1641,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
 
                             if (ok)
                             {
-                                PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                   ftpcmdSetPort, &cmdLen, listenOnIP, listenOnPort); // cannot report an error
                                 sendCmd = TRUE;
                                 SubState = fwssWorkUploadWaitForPORTRes;
@@ -1810,7 +1810,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                     }
 
                     CommandTransfersData = TRUE;
-                    PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                       ResumingFileOnServer ? ftpcmdAppendFile : ftpcmdStoreFile, &cmdLen,
                                       UploadType == utAutorename ? curItem->RenamedName : curItem->TgtName); // cannot report an error
                     sendCmd = TRUE;
@@ -1921,7 +1921,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                     if (!ShouldStop && PrepareDataError == pderASCIIForBinaryFile)
                     { // when a binary file is detected in ASCII mode, delete the target file
                         // the file is already locked for writing; deletion is only an intermediate step, so FTPOpenedFiles.OpenFile() need not be called
-                        PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                           ftpcmdDeleteFile, &cmdLen,
                                           UploadType == utAutorename ? curItem->RenamedName : curItem->TgtName); // cannot report an error
                         sendCmd = TRUE;

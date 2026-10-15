@@ -364,7 +364,7 @@ BOOL CFTPListingPluginDataInterface::GetInfoLineContent(int panel, const CFileDa
                 int fileNameFormat;
                 SalamanderGeneral->GetConfigParameter(SALCFG_FILENAMEFORMAT, &fileNameFormat,
                                                       sizeof(fileNameFormat), NULL);
-                char formatedFileName[MAX_PATH]; // CFileData::Name is limited to MAX_PATH-5 characters
+                char formatedFileName[3 * MAX_PATH]; // feature 215: CFileData::Name has up to FTP_MAX_NAME_U8 bytes (AlterFileName keeps the length)
                 SalamanderGeneral->AlterFileName(formatedFileName, file->Name, fileNameFormat, 0, isDir);
 
                 beg = s;
@@ -831,7 +831,7 @@ CFTPQueueItem* CreateItemForCopyOrMoveOperation(const CFileData* f, BOOL isDir, 
 
     char *name, *ext;               // helper variables for auto-detect transfer mode
     BOOL asciiTransferMode = FALSE; // helper variable for auto-detect transfer mode
-    char buffer[MAX_PATH];          // helper variable for auto-detect transfer mode
+    char buffer[3 * MAX_PATH];      // helper variable for auto-detect transfer mode (feature 215: a whole name)
     BOOL isLink = rightsCol != -1 && IsUNIXLink(dataIface->GetStringFromColumn(*f, rightsCol));
     if (isLink || !isDir) // when 'asciiTransferMode' is used, calculate it
     {
@@ -1112,22 +1112,32 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                                 if (f != NULL)
                                 {
                                     // create the target name according to the operation mask
-                                    char targetName[2 * MAX_PATH];
+                                    // feature 215: a name of up to FTP_MAX_NAME_U8 bytes (it was cut at
+                                    // 519 bytes: another local file); the service does not tell a cut, so a
+                                    // buffer filled to its last byte is taken for one (as the upload, 141)
+                                    char targetName[3 * MAX_PATH];
                                     if (!is_AS_400_QSYS_LIB_Path)
                                     {
                                         if (donotUseOpMask)
-                                            lstrcpyn(targetName, f->Name, 2 * MAX_PATH); // masks trim trailing '.' characters from names, which is not always OK (e.g. directories "a.b" and "a.b." would merge) - this is probably rare, so for now we handle it only provisionally like this
+                                            lstrcpyn(targetName, f->Name, sizeof(targetName)); // masks trim trailing '.' characters from names, which is not always OK (e.g. directories "a.b" and "a.b." would merge) - this is probably rare, so for now we handle it only provisionally like this
                                         else
-                                            SalamanderGeneral->MaskName(targetName, 2 * MAX_PATH, f->Name, opMask);
+                                            SalamanderGeneral->MaskName(targetName, sizeof(targetName), f->Name, opMask);
                                     }
                                     else
                                     {
                                         char mbrName[MAX_PATH];
                                         FTPAS400CutFileNamePart(mbrName, f->Name);
                                         if (donotUseOpMask)
-                                            lstrcpyn(targetName, mbrName, 2 * MAX_PATH); // masks trim '.' from the ends of names, which is not always OK (e.g. directories "a.b" and "a.b." would merge) - this is probably rare, so for now we handle it provisionally like this
+                                            lstrcpyn(targetName, mbrName, sizeof(targetName)); // masks trim '.' from the ends of names, which is not always OK (e.g. directories "a.b" and "a.b." would merge) - this is probably rare, so for now we handle it provisionally like this
                                         else
-                                            SalamanderGeneral->MaskName(targetName, 2 * MAX_PATH, mbrName, opMask);
+                                            SalamanderGeneral->MaskName(targetName, sizeof(targetName), mbrName, opMask);
+                                    }
+                                    if (strlen(targetName) >= sizeof(targetName) - 1)
+                                    {
+                                        SalamanderGeneral->SalMessageBox(SalamanderGeneral->GetMsgBoxParent(), LoadStr(IDS_TOOLONGPATH),
+                                                                         LoadStr(IDS_FTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                                        ok = FALSE;
+                                        break;
                                     }
 
                                     CFTPQueueItemType type;

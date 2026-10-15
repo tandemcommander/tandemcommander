@@ -315,10 +315,27 @@ void CFTPWorker::InitDiskWork(DWORD msgID, CFTPDiskWorkType type, const char* pa
         lstrcpyn(DiskWork.Path, path, MAX_PATH);
     else
         DiskWork.Path[0] = 0;
+    BOOL nameTooLong = FALSE;
     if (name != NULL)
-        lstrcpyn(DiskWork.Name, name, MAX_PATH);
+    {
+        // feature 215: at a whole character - a split letter made an invalid name (error 123)
+        int len = (int)strlen(name);
+        nameTooLong = len >= MAX_PATH;
+        if (nameTooLong)
+            len = SplU8WholePrefixLen(name, MAX_PATH - 1);
+        memcpy(DiskWork.Name, name, len);
+        DiskWork.Name[len] = 0;
+    }
     else
         DiskWork.Name[0] = 0;
+    // feature 215: a path or name that does not fit is never worked on cut; a file or folder to
+    // create gets its name's whole-character prefix - with the path it never fits, so the create
+    // step says "too long" and the user's "cannot create" action applies (autorename shortens on
+    // purpose); every other work is refused
+    BOOL createsName = type == fdwtCreateFile || type == fdwtRetryCreatedFile ||
+                       type == fdwtRetryResumedFile || type == fdwtCreateDir;
+    DiskWork.TooLong = (path != NULL && strlen(path) >= MAX_PATH) || (nameTooLong && !createsName);
+    DiskWork.NameCut = nameTooLong;
     DiskWork.ForceAction = forceAction;
     DiskWork.AlreadyRenamedName = alreadyRenamedName;
     Oper->GetDiskOperDefaults(&DiskWork);

@@ -209,6 +209,7 @@ protected:
     CQuadWord DataTotalSize; // total size of the transferred data in bytes: -1 = unknown
 
     char TgtDiskFileName[MAX_PATH];           // if not "", this is the full name of the disk file to which data should be flushed (the file is overwritten; no resumes are performed here)
+    BOOL TgtDiskFileNameTooLong;              // feature 215: the name given did not fit TgtDiskFileName - the disk work is refused
     HANDLE TgtDiskFile;                       // target disk file for flushing data (NULL = we have not opened it yet)
     BOOL TgtDiskFileCreated;                  // TRUE if the target disk file for flushing data was created
     DWORD TgtFileLastError;                   // code of the last error reported by the disk thread when writing to the TgtDiskFileName file

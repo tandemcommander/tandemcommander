@@ -844,6 +844,8 @@ void CFTPDiskWork::CopyFrom(CFTPDiskWork* work)
 
     lstrcpyn(Path, work->Path, MAX_PATH);
     lstrcpyn(Name, work->Name, MAX_PATH);
+    TooLong = work->TooLong; // feature 215
+    NameCut = work->NameCut;
 
     ForceAction = work->ForceAction;
     AlreadyRenamedName = work->AlreadyRenamedName;
@@ -1048,7 +1050,7 @@ void DoCreateDir(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL& 
     if (isValid)
     {
         strcpy(fullName, localWork.Path);
-        if (!SalamanderGeneral->SalPathAppend(fullName, localWork.Name, PATH_MAX_PATH))
+        if (localWork.NameCut || !SalamanderGeneral->SalPathAppend(fullName, localWork.Name, PATH_MAX_PATH)) // feature 215: a cut name is never created
         {
             winErr = ERROR_FILENAME_EXCED_RANGE; // "file name is too long"
             tooLongName = TRUE;
@@ -1313,7 +1315,7 @@ void DoCreateFile(CFTPDiskWork& localWork, char* fullName, BOOL& workDone, BOOL&
     if (isValid)
     {
         strcpy(fullName, localWork.Path);
-        if (!SalamanderGeneral->SalPathAppend(fullName, localWork.Name, MAX_PATH))
+        if (localWork.NameCut || !SalamanderGeneral->SalPathAppend(fullName, localWork.Name, MAX_PATH)) // feature 215: a cut name is never created
         {
             winErr = ERROR_FILENAME_EXCED_RANGE; // "file name is too long"
             tooLongName = TRUE;
@@ -2529,7 +2531,34 @@ CFTPDiskThread::Body()
             // perform the requested work
             BOOL needCopyBack = FALSE;
             BOOL workDone = FALSE;
-            if (work != NULL) // ATTENTION: the 'work' object must not be accessed; it may no longer exist (only the pointer value may be tested, not the memory it points to)
+            if (work != NULL && localWork.TooLong) // feature 215: a path or name that did not fit - refused, never a cut one
+            {
+                localWork.State = sqisFailed;
+                localWork.WinError = ERROR_FILENAME_EXCED_RANGE; // "file name is too long"
+                switch (localWork.Type)
+                {
+                case fdwtCreateDir:
+                    localWork.ProblemID = ITEMPR_CANNOTCREATETGTDIR;
+                    break;
+                case fdwtListDir:
+                    localWork.ProblemID = ITEMPR_INVALIDPATHTODIR;
+                    break;
+                case fdwtDeleteDir:
+                    localWork.ProblemID = ITEMPR_INVALIDPATHTODIR;
+                    break;
+                case fdwtOpenFileForReading:
+                    localWork.ProblemID = ITEMPR_UPLOADCANNOTOPENSRCFILE;
+                    break;
+                case fdwtDeleteFile:
+                    localWork.ProblemID = ITEMPR_UNABLETODELETEDISKFILE;
+                    break;
+                default: // the files created (also fdwtCreateAndWriteFile: 'Name' is the full name)
+                    localWork.ProblemID = ITEMPR_CANNOTCREATETGTFILE;
+                    break;
+                }
+                needCopyBack = TRUE; // return the error
+            }
+            else if (work != NULL) // ATTENTION: the 'work' object must not be accessed; it may no longer exist (only the pointer value may be tested, not the memory it points to)
             {
                 switch (localWork.Type)
                 {

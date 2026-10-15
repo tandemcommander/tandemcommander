@@ -653,13 +653,14 @@ BOOL AssignStringToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, cons
             if (file->Name != NULL)
                 SalamanderGeneral->Free(file->Name);
             file->Name = str;
-            if ((int)strlen(file->Name) > MAX_PATH - 5)
+            // feature 215: a name is never cut - it was cut at 255 bytes (the former limit of the
+            // interface) and every command went to the cut name: another file of the server, or
+            // two long names shown as one. Up to FTP_MAX_NAME_U8 bytes are kept (interface 104);
+            // a longer one (no Windows or UNIX file system has it) does not match this rule
+            if ((int)strlen(file->Name) > FTP_MAX_NAME_U8)
             {
-                int cut = MAX_PATH - 5; // Salamander limitation on file->Name length (in bytes)
-                while (cut > 0 && ((unsigned char)file->Name[cut] & 0xC0) == 0x80)
-                    cut--; // do not split a UTF-8 multibyte sequence
-                file->Name[cut] = 0;
-                TRACE_E("Too long file or directory name, cutting to MAX_PATH-5 characters! Using name: " << file->Name);
+                TRACE_E("Too long file or directory name (over FTP_MAX_NAME_U8 bytes), not listed by this rule: " << file->Name);
+                return FALSE;
             }
             break;
         }

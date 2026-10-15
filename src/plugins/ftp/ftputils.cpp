@@ -1901,8 +1901,13 @@ void FTPMakeVMSDirName(char* vmsDirNameBuf, int vmsDirNameBufSize, const char* d
     {
         dirNameLen--; // ignore the period at the end of the name
     }
-    if (dirNameLen >= vmsDirNameBufSize)
-        dirNameLen = vmsDirNameBufSize - 1;
+    if (dirNameLen + 6 /* ".DIR;1" */ >= vmsDirNameBufSize)
+    { // feature 215: never a cut name (RMD / RNFR of another item) - the callers' buffers hold
+        // FTP_MAX_NAME_U8 + 10 bytes, so this does not happen for a listed name
+        TRACE_E("FTPMakeVMSDirName(): too long name: " << dirName);
+        vmsDirNameBuf[0] = 0;
+        return;
+    }
     memcpy(vmsDirNameBuf, dirName, dirNameLen);
     lstrcpyn(vmsDirNameBuf + dirNameLen, ".DIR;1", vmsDirNameBufSize - dirNameLen);
 }

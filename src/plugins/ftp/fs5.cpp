@@ -383,7 +383,13 @@ void CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
     BOOL fileExists;
     const char* tmpFileName;
     char nameInCache[MAX_PATH];
-    lstrcpyn(nameInCache, file.Name, MAX_PATH);
+    { // feature 215: at a whole character (a split letter was an invalid name)
+        int len = (int)strlen(file.Name);
+        if (len >= MAX_PATH)
+            len = SplU8WholePrefixLen(file.Name, MAX_PATH - 1);
+        memcpy(nameInCache, file.Name, len);
+        nameInCache[len] = 0;
+    }
     if (GetFTPServerPathType(Path) == ftpsptOpenVMS)
         FTPVMSCutFileVersion(nameInCache, -1);
     SalamanderGeneral->SalMakeValidFileNameComponent(nameInCache);
@@ -424,7 +430,7 @@ void CPluginFSInterface::ViewFile(const char* fsName, HWND parent,
 
         BOOL asciiMode = FALSE;
         char *name, *ext;      // helper variables for auto-detect-transfer-mode
-        char buffer[MAX_PATH]; // helper variable for auto-detect-transfer-mode
+        char buffer[3 * MAX_PATH]; // helper variable for auto-detect-transfer-mode (feature 215: a whole name)
         if (TransferMode == trmAutodetect)
         {
             if (dataIface != NULL) // on VMS we must have the name trimmed to the base (the version number would break mask comparison)

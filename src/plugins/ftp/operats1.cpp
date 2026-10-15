@@ -1563,6 +1563,17 @@ int CFTPQueue::RetryItem(int UID, CFTPOperation* oper)
     return ret;
 }
 
+// feature 215: copies 'src' into 'dst' of 'size' bytes; text that does not fit is cut at a whole
+// UTF-8 character (shown in the Solve Error dialog - a split letter read back as other text)
+static void FTPCopyWholeChars(char* dst, const char* src, int size)
+{
+    int len = (int)strlen(src);
+    if (len >= size)
+        len = SplU8WholePrefixLen(src, size - 1);
+    memcpy(dst, src, len);
+    dst[len] = 0;
+}
+
 int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
 {
     CALL_STACK_MESSAGE1("CFTPQueue::SolveErrorOnItem()");
@@ -1599,21 +1610,21 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
             if (found->Type == fqitUploadCopyExploreDir || found->Type == fqitUploadMoveExploreDir)
             {
                 isUploadItem = TRUE;
-                lstrcpyn(ftpPath, ((CFTPQueueItemCopyMoveUploadExplore*)found)->TgtPath, FTP_MAX_PATH);
-                lstrcpyn(ftpName, ((CFTPQueueItemCopyMoveUploadExplore*)found)->TgtName, FTP_MAX_PATH);
+                FTPCopyWholeChars(ftpPath, ((CFTPQueueItemCopyMoveUploadExplore*)found)->TgtPath, FTP_MAX_PATH);
+                FTPCopyWholeChars(ftpName, ((CFTPQueueItemCopyMoveUploadExplore*)found)->TgtName, FTP_MAX_PATH);
             }
             else
             {
                 if (found->Type == fqitUploadCopyFile || found->Type == fqitUploadMoveFile)
                 {
                     isUploadItem = TRUE;
-                    lstrcpyn(ftpPath, ((CFTPQueueItemCopyOrMoveUpload*)found)->TgtPath, FTP_MAX_PATH);
-                    lstrcpyn(ftpName, ((CFTPQueueItemCopyOrMoveUpload*)found)->TgtName, FTP_MAX_PATH);
+                    FTPCopyWholeChars(ftpPath, ((CFTPQueueItemCopyOrMoveUpload*)found)->TgtPath, FTP_MAX_PATH);
+                    FTPCopyWholeChars(ftpName, ((CFTPQueueItemCopyOrMoveUpload*)found)->TgtName, FTP_MAX_PATH);
                 }
                 else
                 {
-                    lstrcpyn(ftpPath, found->Path, FTP_MAX_PATH);
-                    lstrcpyn(ftpName, found->Name, FTP_MAX_PATH);
+                    FTPCopyWholeChars(ftpPath, found->Path, FTP_MAX_PATH);
+                    FTPCopyWholeChars(ftpName, found->Name, FTP_MAX_PATH);
                 }
             }
             switch (found->ProblemID)
@@ -1622,8 +1633,8 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
             {
                 if (isUploadItem)
                 {
-                    lstrcpyn(diskPath, found->Path, MAX_PATH);
-                    lstrcpyn(diskName, found->Name, MAX_PATH);
+                    FTPCopyWholeChars(diskPath, found->Path, MAX_PATH);
+                    FTPCopyWholeChars(diskName, found->Name, MAX_PATH);
                 }
                 openDlgWithID = 1;
                 break;
@@ -1656,8 +1667,8 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
                 {
                     ftpPath[0] = 0;
                     ftpName[0] = 0;
-                    lstrcpyn(diskPath, found->Path, MAX_PATH);
-                    lstrcpyn(diskName, found->Name, MAX_PATH);
+                    FTPCopyWholeChars(diskPath, found->Path, MAX_PATH);
+                    FTPCopyWholeChars(diskName, found->Name, MAX_PATH);
                 }
                 openDlgWithID = found->ProblemID == ITEMPR_UNABLETOPWD ? 13 : found->ProblemID == ITEMPR_UNABLETOCWD || found->ProblemID == ITEMPR_UNABLETOCWDONLYPATH ? 12
                                                                           : found->ProblemID == ITEMPR_UNABLETORESOLVELNK                                              ? 17
@@ -1708,8 +1719,8 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
                     found->Type == fqitUploadCopyExploreDir || found->Type == fqitUploadMoveExploreDir)
                 {
                     openDlgWithID = 49;
-                    lstrcpyn(diskPath, found->Path, MAX_PATH);
-                    lstrcpyn(diskName, found->Name, MAX_PATH);
+                    FTPCopyWholeChars(diskPath, found->Path, MAX_PATH);
+                    FTPCopyWholeChars(diskName, found->Name, MAX_PATH);
                 }
                 else
                     openDlgWithID = 15;
@@ -1735,13 +1746,13 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
             {
                 if (found->Type == fqitCopyFileOrFileLink || found->Type == fqitMoveFileOrFileLink)
                 {
-                    lstrcpyn(diskPath, ((CFTPQueueItemCopyOrMove*)found)->TgtPath, MAX_PATH);
-                    lstrcpyn(diskName, ((CFTPQueueItemCopyOrMove*)found)->TgtName, MAX_PATH);
+                    FTPCopyWholeChars(diskPath, ((CFTPQueueItemCopyOrMove*)found)->TgtPath, MAX_PATH);
+                    FTPCopyWholeChars(diskName, ((CFTPQueueItemCopyOrMove*)found)->TgtName, MAX_PATH);
                 }
                 if (found->Type == fqitUploadCopyFile || found->Type == fqitUploadMoveFile)
                 {
-                    lstrcpyn(diskPath, found->Path, MAX_PATH);
-                    lstrcpyn(diskName, found->Name, MAX_PATH);
+                    FTPCopyWholeChars(diskPath, found->Path, MAX_PATH);
+                    FTPCopyWholeChars(diskName, found->Name, MAX_PATH);
                 }
                 lstrcpyn(errDescrBuf, LoadStr(found->ProblemID == ITEMPR_UNABLETORESUME ? IDS_SSCD2_UNABLETORESUME : IDS_SSCD2_RESUMETESTFAILED), 500);
                 openDlgWithID = found->ProblemID == ITEMPR_UNABLETORESUME ? (found->Type == fqitUploadCopyFile ||
@@ -1757,8 +1768,8 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
             {
                 if (found->Type == fqitCopyFileOrFileLink || found->Type == fqitMoveFileOrFileLink)
                 {
-                    lstrcpyn(diskPath, ((CFTPQueueItemCopyOrMove*)found)->TgtPath, MAX_PATH);
-                    lstrcpyn(diskName, ((CFTPQueueItemCopyOrMove*)found)->TgtName, MAX_PATH);
+                    FTPCopyWholeChars(diskPath, ((CFTPQueueItemCopyOrMove*)found)->TgtPath, MAX_PATH);
+                    FTPCopyWholeChars(diskName, ((CFTPQueueItemCopyOrMove*)found)->TgtName, MAX_PATH);
                 }
                 if (found->WinError != NO_ERROR)
                     FTPGetErrorText(found->WinError, errDescrBuf, 500);
@@ -1778,13 +1789,13 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
             {
                 if (found->Type == fqitCopyFileOrFileLink || found->Type == fqitMoveFileOrFileLink)
                 {
-                    lstrcpyn(diskPath, ((CFTPQueueItemCopyOrMove*)found)->TgtPath, MAX_PATH);
-                    lstrcpyn(diskName, ((CFTPQueueItemCopyOrMove*)found)->TgtName, MAX_PATH);
+                    FTPCopyWholeChars(diskPath, ((CFTPQueueItemCopyOrMove*)found)->TgtPath, MAX_PATH);
+                    FTPCopyWholeChars(diskName, ((CFTPQueueItemCopyOrMove*)found)->TgtName, MAX_PATH);
                 }
                 if (found->Type == fqitUploadCopyFile || found->Type == fqitUploadMoveFile)
                 {
-                    lstrcpyn(diskPath, found->Path, MAX_PATH);
-                    lstrcpyn(diskName, found->Name, MAX_PATH);
+                    FTPCopyWholeChars(diskPath, found->Path, MAX_PATH);
+                    FTPCopyWholeChars(diskName, found->Name, MAX_PATH);
                 }
                 switch (found->ProblemID)
                 {
@@ -1889,8 +1900,8 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
                 {
                     if (((CFTPQueueItemCopyMoveExplore*)found)->TgtDirState == TGTDIRSTATE_UNKNOWN)
                     {
-                        lstrcpyn(diskPath, ((CFTPQueueItemCopyMoveExplore*)found)->TgtPath, MAX_PATH);
-                        lstrcpyn(diskName, ((CFTPQueueItemCopyMoveExplore*)found)->TgtName, MAX_PATH);
+                        FTPCopyWholeChars(diskPath, ((CFTPQueueItemCopyMoveExplore*)found)->TgtPath, MAX_PATH);
+                        FTPCopyWholeChars(diskName, ((CFTPQueueItemCopyMoveExplore*)found)->TgtName, MAX_PATH);
                         winError = found->WinError;
 
                         switch (found->ProblemID)
@@ -1911,8 +1922,8 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
                 {
                     if (((CFTPQueueItemCopyMoveUploadExplore*)found)->TgtDirState == UPLOADTGTDIRSTATE_UNKNOWN)
                     {
-                        lstrcpyn(diskPath, found->Path, MAX_PATH);
-                        lstrcpyn(diskName, found->Name, MAX_PATH);
+                        FTPCopyWholeChars(diskPath, found->Path, MAX_PATH);
+                        FTPCopyWholeChars(diskName, found->Name, MAX_PATH);
 
                         switch (found->ProblemID)
                         {
@@ -1952,8 +1963,8 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
                 {
                     if (((CFTPQueueItemCopyOrMove*)found)->TgtFileState != TGTFILESTATE_TRANSFERRED)
                     {
-                        lstrcpyn(diskPath, ((CFTPQueueItemCopyOrMove*)found)->TgtPath, MAX_PATH);
-                        lstrcpyn(diskName, ((CFTPQueueItemCopyOrMove*)found)->TgtName, MAX_PATH);
+                        FTPCopyWholeChars(diskPath, ((CFTPQueueItemCopyOrMove*)found)->TgtPath, MAX_PATH);
+                        FTPCopyWholeChars(diskName, ((CFTPQueueItemCopyOrMove*)found)->TgtName, MAX_PATH);
                         winError = found->WinError;
 
                         switch (found->ProblemID)
@@ -1983,8 +1994,8 @@ int CFTPQueue::SolveErrorOnItem(HWND parent, int UID, CFTPOperation* oper)
                 {
                     if (((CFTPQueueItemCopyOrMoveUpload*)found)->TgtFileState != UPLOADTGTFILESTATE_TRANSFERRED)
                     {
-                        lstrcpyn(diskPath, found->Path, MAX_PATH);
-                        lstrcpyn(diskName, found->Name, MAX_PATH);
+                        FTPCopyWholeChars(diskPath, found->Path, MAX_PATH);
+                        FTPCopyWholeChars(diskName, found->Name, MAX_PATH);
 
                         switch (found->ProblemID)
                         {

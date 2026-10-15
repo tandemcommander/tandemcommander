@@ -11,6 +11,14 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **FTP: long file names are no longer shortened** (feature 215). A name
+  longer than 255 bytes (for example about 86 Chinese or 128 Cyrillic
+  letters) was cut in the FTP panel: deleting or renaming it sent the
+  shortened name to the server - another file, or none - and two long
+  names starting alike looked like one. Such names are now kept whole;
+  a download or upload of a name too long for the local side is refused
+  with an error instead of being written under a shortened name.
+
 - **Change Attributes, Change Case and Convert stay inside the selection**
   (feature 213). With "Include subdirectories", a junction or folder
   symbolic link inside the selected folder was followed: the files of

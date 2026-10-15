@@ -2709,3 +2709,10 @@ a few early ones are out of sequence).
   (`DeleteAsDirLink`, fail closed) is not walked for these; its own entry still changes. Probe
   `attrs_case_link_probe.ps1` 4 FAIL -> 8 / 0. Left: the link's own op reaches the target folder
   for compression / times.
+- 215-ftp-long-name-command: the FTP listing cut names over 255 bytes (the limit before interface
+  104) and every command went to the cut name (`DELE` / `RNFR <255 bytes>`, measured with a local
+  test server `probe/ftpmini.py`). Names up to 765 bytes kept; command buffers `FTP_CMDBUF_SIZE`
+  everywhere (the worker passed 501 for 1,001); no cut or empty command; the local disk work never
+  works on a cut name (`TooLong` / `NameCut`); VMS folder names, Solve Error, the lock. Probe
+  `ftp215_probe.ps1` 3 FAIL -> 12 / 0. Server paths over 300 bytes and the local long-path side are
+  NEXT-WORK.

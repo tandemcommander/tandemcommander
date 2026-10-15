@@ -366,7 +366,7 @@ void CFTPWorker::HandleEventInWorkingState3(CFTPWorkerEvent event, BOOL& sendQui
 
                                 if (Oper->GetUsePassiveMode()) // passive mode (PASV)
                                 {
-                                    PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                                    PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                       ftpcmdPassive, &cmdLen); // cannot report an error
                                     sendCmd = TRUE;
                                     SubState = fwssWorkCopyWaitForPASVRes;
@@ -475,7 +475,7 @@ void CFTPWorker::HandleEventInWorkingState3(CFTPWorkerEvent event, BOOL& sendQui
 
                                 OpenedFileResumedAtOffset = OpenedFileCurOffset;
 
-                                PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                   ftpcmdRestartTransfer, &cmdLen, num); // cannot report an error
                                 sendCmd = TRUE;
                                 SubState = fwssWorkCopyWaitForResumeRes;
@@ -619,7 +619,7 @@ void CFTPWorker::HandleEventInWorkingState3(CFTPWorkerEvent event, BOOL& sendQui
                     }
 
                     CommandTransfersData = TRUE;
-                    PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdRetrieveFile, &cmdLen, curItem->Name); // cannot report an error
                     sendCmd = TRUE;
 
@@ -1063,7 +1063,7 @@ void CFTPWorker::HandleEventInWorkingState3(CFTPWorkerEvent event, BOOL& sendQui
                                                 Oper->GetFTPServerPathType(curItem->Path),
                                                 curItem->Name, &LockedFileUID, ffatDelete))
                     { // the file on the server is not open yet, we can try to delete it
-                        PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH,
+                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                           ftpcmdDeleteFile, &cmdLen, CurItem->Name); // cannot report an error
                         sendCmd = TRUE;
                         SubState = fwssWorkCopyMoveWaitForDELERes;

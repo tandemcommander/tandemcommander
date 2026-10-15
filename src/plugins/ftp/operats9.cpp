@@ -1846,7 +1846,7 @@ void CFTPOpenedFile::Set(int myUID, const char* user, const char* host, unsigned
     Port = port;
     lstrcpyn(Path, path, FTP_MAX_PATH);
     PathType = pathType;
-    lstrcpyn(Name, name, MAX_PATH);
+    lstrcpyn(Name, name, _countof(Name));
 }
 
 BOOL CFTPOpenedFile::IsSameFile(const char* user, const char* host, unsigned short port,

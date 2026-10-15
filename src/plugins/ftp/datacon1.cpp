@@ -424,6 +424,7 @@ CDataConnectionSocket::CDataConnectionSocket(BOOL flushData, CFTPProxyForDataCon
     DataTotalSize.Set(-1, -1);
 
     TgtDiskFileName[0] = 0;
+    TgtDiskFileNameTooLong = FALSE;
     TgtDiskFile = NULL;
     TgtDiskFileCreated = FALSE;
     TgtFileLastError = NO_ERROR;
@@ -699,6 +700,7 @@ void CDataConnectionSocket::DirectFlushData()
                     DiskWork.MsgID = DATACON_DISKWORKWRITEFINISHED;
                     DiskWork.Type = fdwtCreateAndWriteFile;
                     lstrcpyn(DiskWork.Name, TgtDiskFileName, MAX_PATH);
+                    DiskWork.TooLong = TgtDiskFileNameTooLong; // feature 215
                     DiskWork.WinError = NO_ERROR;
                     DiskWork.State = sqisNone;
                     if (DiskWork.OpenedFile != NULL)
@@ -1358,6 +1360,7 @@ void CDataConnectionSocket::SetDirectFlushParams(const char* tgtFileName, CCurre
 
     HANDLES(EnterCriticalSection(&SocketCritSect));
     lstrcpyn(TgtDiskFileName, tgtFileName, MAX_PATH);
+    TgtDiskFileNameTooLong = strlen(tgtFileName) >= MAX_PATH; // feature 215
     CurrentTransferMode = currentTransferMode;
     HANDLES(LeaveCriticalSection(&SocketCritSect));
 }

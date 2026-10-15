@@ -1328,7 +1328,7 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
 
             case fwssConSendSyst: // determine the server system (send the "SYST" command)
             {
-                PrepareFTPCommand(buf, 200 + FTP_MAX_PATH, errBuf, 50 + FTP_MAX_PATH, ftpcmdSystem, &cmdLen); // cannot report an error
+                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH, ftpcmdSystem, &cmdLen); // cannot report an error
                 sendCmd = TRUE;
                 SubState = fwssConWaitForSystRes;
                 // run = TRUE; // no point yet (no event has occurred yet)
