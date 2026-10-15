@@ -33,6 +33,22 @@ __declspec(allocate(".i_cst$a")) const _PVFV i_callstk = (_PVFV)1; // place i_ca
 #pragma section(".i_cst$z", read)
 __declspec(allocate(".i_cst$z")) const _PVFV i_callstk_end = (_PVFV)1; // place i_callstk_end variable at the end of the .i_cst section
 
+// feature 193: the queue of monitored call-stack macros is the call-stack's own instrumentation
+// (Debug builds and CALLSTK_MEASURETIMES), not the program's data: in a Debug build it is a CRT
+// block, which the leak report at exit leaves out. A thread ended by TerminateThread (an aux thread
+// at the exit) never runs its call-stack's destructor - its queue was reported as a leak of the
+// program (and it cannot be freed from outside: TerminateThread frees the stack the call-stack
+// object lives on)
+#if (defined(_DEBUG) || defined(CALLSTK_MEASURETIMES)) && !defined(CALLSTK_DISABLEMEASURETIMES)
+#if defined(_DEBUG)
+#define CALLSTK_QUEUE_ALLOC(size) _malloc_dbg((size), _CRT_BLOCK, __FILE__, __LINE__)
+#define CALLSTK_QUEUE_FREE(p) _free_dbg((p), _CRT_BLOCK)
+#else // _DEBUG
+#define CALLSTK_QUEUE_ALLOC(size) malloc(size)
+#define CALLSTK_QUEUE_FREE(p) free(p)
+#endif // _DEBUG
+#endif // (defined(_DEBUG) || defined(CALLSTK_MEASURETIMES)) && !defined(CALLSTK_DISABLEMEASURETIMES)
+
 void Initialize__CallStk()
 {
     const _PVFV* x = &i_callstk;
@@ -293,7 +309,8 @@ CCallStack::~CCallStack()
                     OldestItemIndex = 0;
             }
         }
-        free(MonitoredItems);
+        CALLSTK_QUEUE_FREE(MonitoredItems);
+        MonitoredItems = NULL;
         MonitoredItemsSize = 0;
     }
 #endif // (defined(_DEBUG) || defined(CALLSTK_MEASURETIMES)) && !defined(CALLSTK_DISABLEMEASURETIMES)
@@ -377,7 +394,8 @@ void CCallStack::ReleaseBeforeExitThreadBody()
                     OldestItemIndex = 0;
             }
         }
-        free(MonitoredItems);
+        CALLSTK_QUEUE_FREE(MonitoredItems);
+        MonitoredItems = NULL;
         MonitoredItemsSize = 0;
     }
 #endif // (defined(_DEBUG) || defined(CALLSTK_MEASURETIMES)) && !defined(CALLSTK_DISABLEMEASURETIMES)
@@ -987,7 +1005,7 @@ void CCallStack::CheckCallFrequency(DWORD_PTR callerAddress, LARGE_INTEGER* push
     }
     if (MonitoredItemsSize == 0) // the queue is not allocated yet; allocate it now
     {
-        MonitoredItems = (CCallStackMonitoredItem*)malloc(CALLSTACK_MONITOREDITEMS_BASE * sizeof(CCallStackMonitoredItem));
+        MonitoredItems = (CCallStackMonitoredItem*)CALLSTK_QUEUE_ALLOC(CALLSTACK_MONITOREDITEMS_BASE * sizeof(CCallStackMonitoredItem));
         if (MonitoredItems == NULL)
         {
             TRACE_E(LOW_MEMORY);
@@ -999,9 +1017,9 @@ void CCallStack::CheckCallFrequency(DWORD_PTR callerAddress, LARGE_INTEGER* push
         (NewestItemIndex < MonitoredItemsSize - 1 && NewestItemIndex + 1 == OldestItemIndex ||
          NewestItemIndex == MonitoredItemsSize - 1 && OldestItemIndex == 0))
     { // the queue is full; it needs to be enlarged
-        CCallStackMonitoredItem* newMonitoredItems = (CCallStackMonitoredItem*)malloc((MonitoredItemsSize +
-                                                                                       CALLSTACK_MONITOREDITEMS_DELTA) *
-                                                                                      sizeof(CCallStackMonitoredItem));
+        CCallStackMonitoredItem* newMonitoredItems = (CCallStackMonitoredItem*)CALLSTK_QUEUE_ALLOC((MonitoredItemsSize +
+                                                                                                    CALLSTACK_MONITOREDITEMS_DELTA) *
+                                                                                                   sizeof(CCallStackMonitoredItem));
         if (newMonitoredItems == NULL)
         {
             TRACE_E(LOW_MEMORY);
@@ -1015,7 +1033,7 @@ void CCallStack::CheckCallFrequency(DWORD_PTR callerAddress, LARGE_INTEGER* push
                    MonitoredItems + OldestItemIndex, (MonitoredItemsSize - OldestItemIndex) * sizeof(CCallStackMonitoredItem));
             OldestItemIndex += CALLSTACK_MONITOREDITEMS_DELTA;
         }
-        free(MonitoredItems);
+        CALLSTK_QUEUE_FREE(MonitoredItems);
         MonitoredItems = newMonitoredItems;
         MonitoredItemsSize += CALLSTACK_MONITOREDITEMS_DELTA;
     }

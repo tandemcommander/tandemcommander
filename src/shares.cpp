@@ -379,6 +379,11 @@ BOOL CShares::GetItem(int index, const char** localPath, const char** remoteName
 #include <winnetwk.h>
 #include "saluncserver.h"
 
+// every job that exists, so that the exit can free the ones whose worker it ended (feature 193);
+// an SRW lock needs neither construction nor destruction (a worker may release its job late)
+static SRWLOCK UncSharesJobsLock = SRWLOCK_INIT;
+static CUncSharesJob* UncSharesJobs = NULL;
+
 CUncSharesJob::CUncSharesJob()
 {
     ServerW = NULL;
@@ -388,10 +393,31 @@ CUncSharesJob::CUncSharesJob()
     Done = NULL;
     Refs = 1;
     Allocated = 0;
+    Changing = FALSE;
+    AcquireSRWLockExclusive(&UncSharesJobsLock);
+    PrevJob = NULL;
+    NextJob = UncSharesJobs;
+    if (NextJob != NULL)
+        NextJob->PrevJob = this;
+    UncSharesJobs = this;
+    Linked = TRUE;
+    ReleaseSRWLockExclusive(&UncSharesJobsLock);
 }
 
 CUncSharesJob::~CUncSharesJob()
 {
+    AcquireSRWLockExclusive(&UncSharesJobsLock);
+    if (Linked)
+    {
+        if (PrevJob != NULL)
+            PrevJob->NextJob = NextJob;
+        else
+            UncSharesJobs = NextJob;
+        if (NextJob != NULL)
+            NextJob->PrevJob = PrevJob;
+        Linked = FALSE;
+    }
+    ReleaseSRWLockExclusive(&UncSharesJobsLock);
     for (int i = 0; i < Count; i++)
         free(Shares[i].Name);
     free(Shares);
@@ -404,6 +430,28 @@ void CUncSharesJob::Release()
 {
     if (InterlockedDecrement(&Refs) == 0)
         delete this;
+}
+
+void CUncSharesJob::FreeAbandoned()
+{
+    // TerminateAuxThreads has ended every worker and the main thread holds no job here (a job is
+    // held only inside PickServerShare), so what is left belongs to an ended worker. A worker ended
+    // while it held the lock (inside its job's destructor) leaves the jobs as they were - the exit
+    // must not wait for a thread that no longer exists
+    if (!TryAcquireSRWLockExclusive(&UncSharesJobsLock))
+        return;
+    CUncSharesJob* list = UncSharesJobs;
+    UncSharesJobs = NULL;
+    for (CUncSharesJob* j = list; j != NULL; j = j->NextJob)
+        j->Linked = FALSE;
+    ReleaseSRWLockExclusive(&UncSharesJobsLock);
+    while (list != NULL)
+    {
+        CUncSharesJob* next = list->NextJob;
+        if (!list->Changing) // ended inside realloc / qsort: Shares may be inconsistent - left as it was
+            delete list;
+        list = next;
+    }
 }
 
 // adds a share when it is a folder share; FALSE = out of memory
@@ -422,14 +470,17 @@ BOOL CUncSharesJob::Add(const WCHAR* nameW, DWORD type)
     if (Count == Allocated)
     {
         int newAlloc = Allocated == 0 ? 32 : 2 * Allocated;
+        Changing = TRUE; // feature 193: realloc frees the old block before Shares is updated
         CUncShare* n = (CUncShare*)realloc(Shares, newAlloc * sizeof(CUncShare));
         if (n == NULL)
         {
+            Changing = FALSE;
             free(name);
             return FALSE;
         }
         Shares = n;
         Allocated = newAlloc;
+        Changing = FALSE;
     }
     Shares[Count].Name = name;
     Shares[Count].Hidden = SalUncShareHidden(name, type);
@@ -484,7 +535,9 @@ void CUncSharesJob::Read()
                 }
                 s = next;
             }
+            Changing = TRUE; // feature 193: qsort swaps the entries in place
             qsort(Shares, Count, sizeof(CUncShare), UncSharesCompare);
+            Changing = FALSE;
             return;
         }
     }
@@ -578,7 +631,11 @@ void CUncSharesJob::Read()
     else if (firstErr == ERROR_MORE_DATA)
         Error = firstErr; // a list without an end (see the loop): not shown as if it were whole
     if (Count > 1)
+    {
+        Changing = TRUE; // feature 193: qsort swaps the entries in place
         qsort(Shares, Count, sizeof(CUncShare), UncSharesCompare);
+        Changing = FALSE;
+    }
 }
 
 static unsigned UncSharesThreadFBody(void* param)

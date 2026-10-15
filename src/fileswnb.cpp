@@ -1418,6 +1418,15 @@ int CFilesWindow::PickServerShare(const char* serverPath, char* sharePath, int s
         _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CHECKINGPATHESC), serverPath);
         SalU8TrimIncompleteTail(buf);
         CreateSafeWaitWindow(buf, NULL, 600, TRUE, NULL);
+#ifdef _DEBUG
+        // probe seam, Debug builds only (specs/125-unc-server-shares/contracts/probe-seam.md,
+        // feature 193): the user gives up waiting - ESC or Close cannot be driven on the hidden desktop
+        WCHAR seamCancel[16];
+        DWORD seamLen = GetEnvironmentVariableW(L"TC_PROBE_UNC_CANCEL", seamCancel, _countof(seamCancel));
+        BOOL seamCancelSet = seamLen > 0 && seamLen < _countof(seamCancel);
+        DWORD seamMs = seamCancelSet ? (DWORD)max(0, _wtoi(seamCancel)) : 0;
+        DWORD seamStart = GetTickCount();
+#endif // _DEBUG
         while (WaitForSingleObject(job->Done, 100) == WAIT_TIMEOUT)
         {
             if (UserWantsToCancelSafeWaitWindow())
@@ -1425,6 +1434,13 @@ int CFilesWindow::PickServerShare(const char* serverPath, char* sharePath, int s
                 cancelled = TRUE;
                 break;
             }
+#ifdef _DEBUG
+            if (seamCancelSet && GetTickCount() - seamStart >= seamMs)
+            {
+                cancelled = TRUE;
+                break;
+            }
+#endif // _DEBUG
         }
         DestroySafeWaitWindow();
         if (cancelled)

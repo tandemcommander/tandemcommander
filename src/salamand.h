@@ -586,8 +586,16 @@ public:
     void Read(); // the worker's body
     volatile LONG Refs;
 
+    // at the program's exit, after TerminateAuxThreads: frees the jobs whose worker was still in
+    // its network call and was ended there (feature 193: a Debug build reported them as leaks)
+    static void FreeAbandoned();
+
 protected:
     int Allocated;
+    CUncSharesJob* PrevJob; // the list of the jobs that exist (feature 193)
+    CUncSharesJob* NextJob;
+    BOOL Linked;            // in that list
+    volatile BOOL Changing; // Shares is being changed (realloc, qsort): a worker ended then leaves its job alone
     CUncSharesJob();
     ~CUncSharesJob();
     BOOL Add(const WCHAR* nameW, DWORD type);

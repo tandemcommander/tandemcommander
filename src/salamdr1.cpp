@@ -5065,7 +5065,8 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
     Sleep(1000);                 // nechame vsem threadum viewru cas, aby se ukoncili
     NBWNetAC3Thread.Close(TRUE); // bezici thread nechame zabit (presun do AuxThreads), dalsi akce zablokujeme
     TerminateAuxThreads();       // zbytek nasilne terminujeme
-                                 //---
+    CUncSharesJob::FreeAbandoned(); // feature 193: the jobs of the share-list workers ended just now
+                                    //---
     TerminateThread();
     ReleaseFileNamesEnumForViewers();
     ReleaseShellIconOverlays();

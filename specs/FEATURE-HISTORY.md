@@ -2594,3 +2594,10 @@ a few early ones are out of sequence).
   numbers compared only at their exact size; the Find item and the panel listing read a DWORD /
   QWORD only from a value that has its bytes (a `malloc(0)` buffer when all values are empty).
   Probe `find_numbers_probe.ps1` 2 / 3 -> 5 / 0.
+- 193-unc-job-exit: the share list's job of a worker ended at exit (`TerminateAuxThreads`) is freed
+  (`CUncSharesJob::FreeAbandoned`, a list under an `SRWLOCK`; not a job ended inside `realloc`); the
+  Debug call-stack monitor queue is a `_CRT_BLOCK`. **Trap:** since Vista `TerminateThread` frees
+  the thread's stack - its `CCallStack` lives there; every thread ended so (icon reader, CheckPath,
+  cache handles, plug-in threads) leaves a `CallStacks` entry into freed memory: never read through
+  that list's entries. Debug seam `TC_PROBE_UNC_CANCEL`; leak dumps read with `dbwin_lib.ps1`.
+  Probe `unc_abandon_probe.ps1` 1 / 1 -> 2 / 0.
