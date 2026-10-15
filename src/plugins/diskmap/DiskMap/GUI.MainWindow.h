@@ -193,11 +193,14 @@ protected:
 #ifdef SALAMANDER
             if (this->_callback != NULL)
             {
-                TCHAR buff[2 * MAX_PATH + 1];
-                if (this->_diskMap->GetSelectedFileName(buff, ARRAYSIZE(buff)) <= MAX_PATH)
-                {
+                // feature 211: the buffer of the file menu's names; a name that does not fit is no
+                // name (it was a part-skipped path) - a beep, no focus (the BOOL result was compared
+                // with MAX_PATH: always true)
+                TCHAR buff[3 * MAX_PATH + 1];
+                if (this->_diskMap->GetSelectedFileName(buff, ARRAYSIZE(buff)))
                     this->_callback->FocusFile(buff);
-                }
+                else
+                    MessageBeep(MB_ICONEXCLAMATION);
             }
 #endif
             return TRUE;

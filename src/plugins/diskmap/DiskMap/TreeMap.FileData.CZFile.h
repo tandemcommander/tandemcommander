@@ -33,6 +33,9 @@ protected:
     FILETIME _createtime;
     FILETIME _modifytime;
 
+    // feature 211: the full or relative name, *ok FALSE when a part does not fit (the callers give 0)
+    size_t GetNameAux(CZDirectory* root, TCHAR* buff, size_t size, BOOL* ok);
+
 public:
     CZFile(CZDirectory* parent, TCHAR const* name, INT64 datasize, INT64 realsize, INT64 disksize, FILETIME* createtime, FILETIME* modifytime)
     {

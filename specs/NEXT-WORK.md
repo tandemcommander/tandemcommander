@@ -681,9 +681,9 @@ Code work an agent can do:
          connection of a probe run (the server logged a disconnect before authentication),
          then the leak boxes and the program did not end within 30 s. Two defects to
          separate: why the key exchange fails now and then, and what the failed path leaves.
-       - DiskMap: `CZFile::GetFullName` / `GetRelativeName` skip a path part that does not fit
-         and append the next - another file's path, handed to the shell menu (needs a full
-         name over 780 bytes; not measured).
+       - ~~DiskMap: `CZFile::GetFullName` / `GetRelativeName` skip a path part that does not fit~~
+         - **done, feature 211** (measured worse: a file's menu offered its FOLDER for permanent
+         deletion).
        - PE Viewer: letters outside the code page are `?` in the dump - the dump as UTF-8
          with a BOM is about 50 lines (`items/peviewer.md`); a decision.
        - ZIP: a code-page `.set` whose bytes happen to be valid UTF-8 is misread on import;

@@ -125,6 +125,8 @@ public:
         {
             TCHAR path[3 * MAX_PATH + 1]; // UTF-8 path (up to 3 bytes per character)
             size_t pos = this->GetFullName(path, ARRAYSIZE(path) - 2);
+            if (pos == 0) // feature 211: a root that does not fit - no cluster size
+                return filesize;
             if (path[pos - 1] != TEXT('\\'))
                 path[pos++] = TEXT('\\');
             path[pos++] = TEXT('\0');

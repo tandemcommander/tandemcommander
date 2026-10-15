@@ -170,7 +170,9 @@ public:
 
     explicit CZString(CZFile* file)
     {
-        TCHAR buff[2 * MAX_PATH + 1];
+        // feature 211: the scan's size - every item of the tree fits, also a folder the scan
+        // refused as too long (the log names exactly those; a part-skipped name is never made)
+        TCHAR buff[6 * MAX_PATH + 3];
         this->_l = file->GetFullName(buff, ARRAYSIZE(buff));
         this->_s = (TCHAR*)malloc((this->_l + 1) * sizeof TCHAR);
         _tcscpy(this->_s, buff);

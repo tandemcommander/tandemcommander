@@ -300,10 +300,10 @@ public:
         WCHAR* wFileName = filename;
 #else
         // 'filename' is UTF-8 since plugin interface 104 -> convert via CP_UTF8 for the W shell API
+        // feature 211: WTF-8 (a lone surrogate) too, and never through the code page - CP_ACP read
+        // such a name as other letters, the path of ANOTHER file (rule 104)
         WCHAR wFileName[3 * MAX_PATH + 2];
-        int wl = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, wFileName, ARRAYSIZE(wFileName));
-        if (wl == 0)
-            wl = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, filename, -1, wFileName, ARRAYSIZE(wFileName));
+        int wl = SplU8ToW(filename, wFileName, ARRAYSIZE(wFileName));
         if (wl == 0)
             return FALSE;
 #endif
@@ -362,10 +362,10 @@ public:
         WCHAR* wFileName = filename;
 #else
         // 'filename' is UTF-8 since plugin interface 104 -> convert via CP_UTF8 for the W shell API
+        // feature 211: WTF-8 (a lone surrogate) too, and never through the code page - CP_ACP read
+        // such a name as other letters, the path of ANOTHER file (rule 104)
         WCHAR wFileName[3 * MAX_PATH + 2];
-        int wl = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, wFileName, ARRAYSIZE(wFileName));
-        if (wl == 0)
-            wl = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, filename, -1, wFileName, ARRAYSIZE(wFileName));
+        int wl = SplU8ToW(filename, wFileName, ARRAYSIZE(wFileName));
         if (wl == 0)
             return FALSE;
 #endif
@@ -511,10 +511,10 @@ MENU_TEMPLATE_ITEM FileMenu[] =
         WCHAR* wFileName = filename;
 #else
         // 'filename' is UTF-8 since plugin interface 104 -> convert via CP_UTF8 for the W shell API
+        // feature 211: WTF-8 (a lone surrogate) too, and never through the code page - CP_ACP read
+        // such a name as other letters, the path of ANOTHER file (rule 104)
         WCHAR wFileName[3 * MAX_PATH + 2];
-        int wl = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename, -1, wFileName, ARRAYSIZE(wFileName));
-        if (wl == 0)
-            wl = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, filename, -1, wFileName, ARRAYSIZE(wFileName));
+        int wl = SplU8ToW(filename, wFileName, ARRAYSIZE(wFileName));
         if (wl == 0)
             return FALSE;
 #endif

@@ -199,7 +199,11 @@ protected:
             if (f != NULL)
             {
                 TCHAR buff[3 * MAX_PATH + 1]; // UTF-8 path (up to 3 bytes per character)
-                f->GetFullName(buff, ARRAYSIZE(buff));
+                if (f->GetFullName(buff, ARRAYSIZE(buff)) == 0)
+                {
+                    MessageBeep(MB_ICONEXCLAMATION); // feature 211: no menu for a name that does not fit
+                    return;
+                }
                 int icmd = 0;
 #ifdef SALAMANDER
                 if (this->_connector->GetSalamander() != NULL)
@@ -567,7 +571,11 @@ public:
                 if (f != NULL)
                 {
                     TCHAR buff[3 * MAX_PATH + 1]; // UTF-8 path (up to 3 bytes per character)
-                    f->GetFullName(buff, ARRAYSIZE(buff));
+                    if (f->GetFullName(buff, ARRAYSIZE(buff)) == 0)
+                    {
+                        MessageBeep(MB_ICONEXCLAMATION); // feature 211: never another item's command
+                        return FALSE;
+                    }
                     return this->_shellmenu->InvokeDefaultCommand(buff);
                 }
             }

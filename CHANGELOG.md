@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Disk Map: the menu of a file never acts on its folder** (feature 211).
+  For a file with a long name deep in the folder tree (its full path over
+  about 780 characters), the map's context menu worked on the FOLDER the
+  file is in - "Delete" offered to delete that whole folder permanently.
+  Such an item has no menu now.
+
 - **Renamer: search and replace never changes another letter** (feature
   210). With "Case sensitive" off, searching for "Ě" also replaced "Ċ" (and
   similar pairs of other letters) - the file got a wrong name; "Ž" did not

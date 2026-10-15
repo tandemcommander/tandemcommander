@@ -1,0 +1,13 @@
+diskmap_long_probe (feature 211), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 12:20; desktop 'tc_probe_19788'; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+Fixture : deep folder 687 bytes, the file's full name 802 bytes; ctl\big.bin
+Hot keys: renamer.spl id 1: 1; checksum.spl id 1: 1; checksum.spl id 2: 1; diskmap.spl id 1: 1; filecomp.spl id 1: 1
+
+ctl        RUN    PASS        a short folder: the Delete confirmation is about a folder False, about a file True; the file still there False; Delete (item 26) chosen, no confirmation came; files left 0
+ctl        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+deep       RUN    PASS        a file whose full name has ~804 bytes: no file menu (no menu after a right press at 779,504 of the map view); the file still there True
+deep       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

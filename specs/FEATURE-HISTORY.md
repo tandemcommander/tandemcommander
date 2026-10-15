@@ -2688,3 +2688,8 @@ a few early ones are out of sequence).
   (`salu8fold.h`) over a copy, the engines case-sensitive / ASCII-only; whole words and the cut
   arguments by characters; the "nothing to do" shortcut only for identical bytes. Probe
   `ren_search_probe.ps1` 7 / 5 -> 16 / 0.
+- 211-diskmap-long-name: Disk Map built an item's full name into 781 bytes and SKIPPED a part that
+  did not fit - a file of a long name in a deep folder got its folder's path, and the shell menu's
+  Delete offered the FOLDER for permanent deletion (measured). Now no name at all when a part does
+  not fit (`GetNameAux`); the menu, the default command and Focus refuse (a beep); the shell gets
+  `SplU8ToW` (WTF-8), never `CP_ACP`. Probe `diskmap_long_probe.ps1`; 143 34 / 0.
