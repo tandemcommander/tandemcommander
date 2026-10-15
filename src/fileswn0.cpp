@@ -2417,6 +2417,24 @@ BOOL AreTheSameFiles(DWORD validFileData, CPluginDataInterfaceEncapsulation* plu
     return FALSE;
 }
 
+// feature 232: in the refresh merge, does the old listing's group of names equal to 'oldList[j]'
+// case-insensitively also hold 'newItem's name byte for byte? Then 'newItem' is a twin that was
+// there before (an undeclared case-sensitive source: SFTP, an archive), not a case-only rename of
+// 'oldList[j]' - its flags (selection!) must not move to it.
+static BOOL OldGroupHasExactName(CFilesArray* oldList, int j, const CFileData* newItem)
+{
+    int k = j;
+    while (k > 0 && CmpNameExtIgnCase(oldList->At(k - 1), oldList->At(j)) == 0)
+        k--;
+    for (; k < oldList->Count && CmpNameExtIgnCase(oldList->At(k), oldList->At(j)) == 0; k++)
+    {
+        const CFileData* o = &oldList->At(k);
+        if (o->NameLen == newItem->NameLen && memcmp(o->Name, newItem->Name, o->NameLen) == 0)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloadThumbnails, BOOL isInactiveRefresh)
 {
     CALL_STACK_MESSAGE1("CFilesWindow::RefreshDirectory()");
@@ -2959,7 +2977,7 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
                             ii++;
                         }
 
-                        if (!caseSensitive || exactMatch)
+                        if (exactMatch || !caseSensitive && !OldGroupHasExactName(oldDirs, j, newData)) // feature 232
                         {
                             // we transfer values from the old item to the new one
                             if (oldData->Selected)
@@ -3043,7 +3061,7 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
                             ii++;
                         }
 
-                        if (!caseSensitive || exactMatch)
+                        if (exactMatch || !caseSensitive && !OldGroupHasExactName(oldFiles, j, newData)) // feature 232
                         {
                             // we transfer values from the old item to the new one
                             if (oldData->Selected)

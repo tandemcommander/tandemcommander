@@ -1,0 +1,23 @@
+cmp232_probe (feature 232) before-(negative-control)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 23:16; registry key existed True; ACP 1250
+
+CONTROL    RUN    PASS        left Readme.txt marked True (want True); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+CONTROL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FILECS     RUN    PASS        left Readme.txt marked False (want False); boxes set 8 of 8; no dialog (nothing selected); compare: [#32770 'Compare Directories'] [Static id=2477] The files in two directories appear to be identical. | [Button id=1] OK; attributes: no window
+FILECS     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FILE       RUN    FAIL        left Readme.txt marked True (want False); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+FILE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DIR        RUN    FAIL        left Sub marked True (want False); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+DIR        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+NFD        RUN    PASS        left ?.txt marked True (want True); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+NFD        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RENSEL     RUN    FAIL        files README.txt,z.txt; hidden: z.txt; Hidden set True; windows: no window
+RENSEL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CSKEEP1    RUN    PASS        files A.txt,a.txt,z.txt; hidden: a.txt; Hidden set True; windows: no window
+CSKEEP1    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CSKEEP2    RUN    FAIL        files A.txt,a.txt,z.txt; hidden: z.txt; Hidden set True; windows: no window
+CSKEEP2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 12, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

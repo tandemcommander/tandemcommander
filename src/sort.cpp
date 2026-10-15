@@ -259,9 +259,18 @@ int CmpNameExtIgnCase(const CFileData& f1, const CFileData& f2)
 */
     //--- compare the whole Name (including Ext), same as Explorer
     int res = RegSetStrICmpEx(f1.Name, f1.NameLen, f2.Name, f2.NameLen, NULL);
-    if (res == 0 && f1.Name != f2.Name) // canonically equivalent but byte-different
-        res = StrCmpEx(f1.Name, f1.NameLen, f2.Name, f2.NameLen); // (NFC vs NFD): deterministic order, FR-009
-    return res;
+    // canonically equivalent but another name (NFC vs NFD): deterministic order, FR-009 - feature 232:
+    // not for names that differ only in case ("Readme.txt" / "README.txt" are the same name for the
+    // file system's rule): the tie-break made them unequal and Compare Directories marked such a pair
+    // different in every ordinary folder (the callers use this as an equality test)
+    // (review: the file system's ordinal ignore-case order - a total order whose equality is exactly
+    // "the same name", so the comparison stays a strict weak order also for mixed case + NFC/NFD groups)
+    if (res == 0 && f1.Name != f2.Name)
+        res = SalNameCompareOrdinalCI(f1.Name, (int)f1.NameLen, f2.Name, (int)f2.NameLen);
+    // -1 / 0 / 1: Compare Directories tests "== -1" / "== 1" and took anything else for "equal" (a
+    // comparison that returned another value - e.g. a raw memcmp for names that are not UTF-8 - paired
+    // two different names)
+    return (res > 0) - (res < 0);
 }
 
 int CmpNameExt(const CFileData& f1, const CFileData& f2)

@@ -2801,3 +2801,8 @@ a few early ones are out of sequence).
   `DiskDirCaseSensitive` (set per disk listing, `SalDirIsCaseSensitive`); Restore Selection compares
   by the panel's rule. Probe `resel231_probe.ps1` 3 FAIL -> 8 / 0. Review found 004's
   `CmpNameExtIgnCase` tie-break (Compare Directories): NEXT-WORK.
+- 232-compare-dirs-case-only-names: 004's NFC/NFD tie-break in `CmpNameExtIgnCase` made case-only
+  pairs unequal - Compare Directories marked Readme.txt / README.txt different everywhere, a refresh
+  lost the selection after a case-only rename. Tie-break now `SalNameCompareOrdinalCI` (equality =
+  the same name; NFC/NFD stay apart), result -1/0/1; the refresh merge moves flags to another case
+  only without an exact old twin. Probe `cmp232_probe.ps1` 4 FAIL -> 16 / 0.

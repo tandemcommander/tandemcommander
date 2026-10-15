@@ -724,11 +724,12 @@ Code work an agent can do:
          `DragDropToArcOrFS` a duplicate case-insensitive match ... packs (with Move: deletes)
          A.txt too~~ (done, feature 230; left from its review: ~~a disk panel's name-based
          selection treats a.txt and A.txt of a case-sensitive folder as one~~ (done, feature 231;
-         left from its review: **feature 004's tie-break in `CmpNameExtIgnCase` (`sort.cpp:262`)
-         makes "Readme.txt" and "README.txt" unequal - Compare Directories (`mainwnd5.cpp:1300`,
-         1514, 879, 954) marks such a pair different in ordinary folders, a regression against
-         upstream**; the refresh merge (`fileswn0.cpp` ~2919-3075) walks twins in another order
-         than `LessNameExt` sorts them - a selected A.txt beside a.txt is lost on refresh;
+         left from its review: ~~feature 004's tie-break in `CmpNameExtIgnCase` makes "Readme.txt"
+         and "README.txt" unequal; the refresh merge loses a selected twin~~ (done, feature 232;
+         left from it: in Turkish / Azeri locales "index.html" / "INDEX.HTML" never compare equal
+         (upstream); Compare Directories may pair the wrong twin in case-sensitive folders -
+         compare with `CmpNameExt` when both panels are case-sensitive; SFTP should declare its
+         case sensitivity (`SALDIRFLAG_CASESENSITIVE`, `sftp/fs.cpp:778`));
          remembered folder sizes case-insensitive (`salamdr6.cpp:1148/1196`, `stricmp`); the
          viewer's next / previous file (`fileswnb.cpp:1211/1217`), the User Menu's compare names
          (`mainwnd3.cpp:2829`) and Ctrl+X greying in the other panel (`shellsup.cpp:1934/1949`)

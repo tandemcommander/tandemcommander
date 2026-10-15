@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Compare Directories: names that differ only in case are the same file
+  again** (feature 232). "Readme.txt" on one side and "README.txt" on the
+  other were both marked as different (since 0.1.0). A selection also
+  survives again when another program changes only the case of a selected
+  file's name.
+
 - **Restoring a selection in a case-sensitive folder** (feature 231). In a
   folder that tells "a.txt" and "A.txt" apart (a WSL folder), Reselect,
   Restore Selection and Hide Selected Names also took the other file of
