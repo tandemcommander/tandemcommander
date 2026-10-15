@@ -132,6 +132,37 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
     int fileNameLen = (int)strlen(fileName);
     while (1)
     {
+        // feature 204: an archive member's folder that exists only as another entry's short (8.3)
+        // name is made a folder of its own - never unpacked INTO the other folder
+        DWORD ownErr;
+        if (!MakeUnpackFoldersOwn(fileName, isDir, &ownErr))
+        {
+            int ret;
+            if (silentMask != NULL && (*silentMask & SILENT_SKIP_DIR_CREATE) && allowSkip)
+                ret = DIALOG_SKIP;
+            else
+            {
+                // ERROR: filename+error, buttons retry/skip/skip all/cancel
+                ret = DialogError(hParent, allowSkip ? BUTTONS_RETRYSKIPCANCEL : BUTTONS_RETRYCANCEL, fileName,
+                                  ::GetErrorText(ownErr), LoadStr(IDS_ERRORCREATINGDIR));
+            }
+            switch (ret)
+            {
+            case DIALOG_SKIPALL:
+                if (silentMask != NULL)
+                    *silentMask |= SILENT_SKIP_DIR_CREATE;
+                // no break here
+            case DIALOG_SKIP:
+                if (skipped != NULL)
+                    *skipped = TRUE;
+                return INVALID_HANDLE_VALUE;
+            case DIALOG_CANCEL:
+            case DIALOG_FAIL:
+                return INVALID_HANDLE_VALUE;
+            }
+            continue; // retry
+        }
+
         attrs = SalGetFileAttributes(fileName);
         if (attrs == 0xFFFFFFFF)
             break;

@@ -16,6 +16,7 @@
 #include "shellib.h"
 #include "menu.h"
 #include "salarcedit.h" // feature 108
+#include "salshortname.h" // feature 204
 
 CUserMenuIconBkgndReader UserMenuIconBkgndReader;
 
@@ -1133,6 +1134,102 @@ static void CopyDirErrText(char* errBuf, int errBufSize, const char* text)
         SalU8TrimIncompleteTail(errBuf);
 }
 
+// feature 204: the unpack's target folder (a heap copy), read by plug-ins' worker threads as well
+static SRWLOCK UnpackRootLock = SRWLOCK_INIT;
+static char* UnpackRoot = NULL;
+
+CUnpackRootScope::CUnpackRootScope(const char* targetDir)
+{
+    char* copy = targetDir != NULL ? DupStr(targetDir) : NULL;
+    AcquireSRWLockExclusive(&UnpackRootLock);
+    Prev = UnpackRoot;
+    UnpackRoot = copy;
+    ReleaseSRWLockExclusive(&UnpackRootLock);
+}
+
+CUnpackRootScope::~CUnpackRootScope()
+{
+    AcquireSRWLockExclusive(&UnpackRootLock);
+    char* mine = UnpackRoot;
+    UnpackRoot = Prev;
+    ReleaseSRWLockExclusive(&UnpackRootLock);
+    free(mine);
+}
+
+BOOL MakeUnpackFoldersOwn(const char* path, BOOL lastIsFolder, DWORD* err)
+{
+    *err = ERROR_SUCCESS;
+    AcquireSRWLockShared(&UnpackRootLock);
+    char* root = UnpackRoot != NULL ? DupStr(UnpackRoot) : NULL;
+    ReleaseSRWLockShared(&UnpackRootLock);
+    if (root == NULL)
+        return TRUE; // no unpack in progress
+    int rootBytes = 0;
+    BOOL below = SalPathIsWithinOrdinalCI(path, root, &rootBytes);
+    free(root);
+    if (!below)
+        return TRUE;
+    // the temporary folder's own components are never the members': an unpack to "C:\" while a
+    // plug-in writes to a %TEMP% given in short form ("C:\Users\PAVEL~1.STU\...") would move the
+    // profile folder aside - the walk starts below the temporary folder then
+    WCHAR tempW[MAX_PATH + 1];
+    char tempU8[3 * MAX_PATH + 4];
+    int tempBytes = 0;
+    DWORD tempLen = GetTempPathW(_countof(tempW), tempW);
+    if (tempLen > 0 && tempLen < _countof(tempW) && SalWToU8(tempW, -1, tempU8, sizeof(tempU8)) > 0 &&
+        SalPathIsWithinOrdinalCI(path, tempU8, &tempBytes) && tempBytes > rootBytes)
+    {
+        rootBytes = tempBytes;
+    }
+    int len = (int)strlen(path);
+    char* prefix = (char*)malloc(len + 1);
+    if (prefix == NULL)
+    {
+        *err = ERROR_NOT_ENOUGH_MEMORY;
+        return FALSE;
+    }
+    BOOL ok = TRUE;
+    int i = rootBytes;
+    while (i < len)
+    {
+        if (path[i] == '\\')
+        {
+            i++;
+            continue;
+        }
+        int start = i;
+        while (i < len && path[i] != '\\')
+            i++;
+        if (i == len && !lastIsFolder)
+            break; // a file's own name: its create handles that clash (feature 203)
+        if (!SalNameCanBeShortName(path + start, i - start))
+            continue; // never another entry's short name: not looked up
+        memcpy(prefix, path, i);
+        prefix[i] = 0;
+        WIN32_FIND_DATAW dataW;
+        HANDLE find = SalFindFirstFile(prefix, &dataW); // registers with HANDLES itself
+        if (find == INVALID_HANDLE_VALUE)
+            break; // the rest does not exist yet: it is created under the members' own names
+        HANDLES(FindClose(find));
+        char longU8[SAL_FIND_NAME_U8];
+        char shortU8[SAL_FIND_DOSNAME_U8];
+        SalConvertFindDataW(&dataW, NULL, longU8, sizeof(longU8), shortU8, sizeof(shortU8));
+        if (SalNameIsOnlyShortNameOf(path + start, i - start, longU8, shortU8))
+        {
+            DWORD e = ERROR_SUCCESS;
+            if (!SalCreateDirectoryEx(prefix, &e)) // the other entry moved aside and back (feature 203)
+            {
+                TRACE_I("MakeUnpackFoldersOwn(): unable to make the member's own folder " << prefix);
+                *err = SalShortNameClashError(e);
+                ok = FALSE;
+                break;
+            }
+        }
+    }
+    free(prefix);
+    return ok;
+}
+
 BOOL CheckAndCreateDirectory(const char* dir, HWND parent, BOOL quiet, char* errBuf,
                              int errBufSize, char* newDir, BOOL noRetryButton,
                              BOOL manualCrDir)
@@ -1152,8 +1249,24 @@ AGAIN:
             SalMessageBox(parent, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return FALSE;
     }
+    char buf[MAX_PATH + 200]; // error texts (paths truncated into messages)
+    DWORD ownErr;
+    if (!MakeUnpackFoldersOwn(dir, TRUE, &ownErr)) // feature 204: never into another folder by its short name
+    {
+        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CREATEDIRFAILED), dir);
+        SalU8TrimIncompleteTail(buf);
+        if (errBuf != NULL)
+            CopyDirErrText(errBuf, errBufSize, buf);
+        else
+        {
+            CFileErrorDlg dlg(parent, LoadStr(IDS_ERRORCREATINGDIR), dir, GetErrorText(ownErr), !noRetryButton,
+                              noRetryButton ? IDD_ERROR3 : 0);
+            if (dlg.Execute() == IDRETRY)
+                goto AGAIN;
+        }
+        return FALSE;
+    }
     DWORD attrs = SalGetFileAttributes(dir);
-    char buf[MAX_PATH + 200];     // error texts (paths truncated into messages)
     char name[SAL_MAX_PATH_UTF8]; // working path - long-path capable (feature 004)
     if (attrs == 0xFFFFFFFF)      // probably does not exist, we allow it to be created
     {

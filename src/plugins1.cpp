@@ -3727,6 +3727,7 @@ BOOL CPluginData::UnpackArchive(CFilesWindow* panel, const char* archiveFileName
         if (!PackArchiveNameFitsHandler(NULL, archiveFileName, BuiltForVersion))
             return FALSE; // feature 097: a plug-in built for an older interface gets no long archive name
         CSalamanderForOperations sc(panel);
+        CUnpackRootScope unpackRoot(targetDir); // feature 204: below it the members' own folders
         ret = PluginIfaceForArchiver.UnpackArchive(&sc, archiveFileName, pluginData, targetDir,
                                                    archiveRoot, nextName, param);
     }
@@ -3799,6 +3800,7 @@ BOOL CPluginData::UnpackWholeArchive(CFilesWindow* panel, const char* archiveFil
         if (!PackArchiveNameFitsHandler(NULL, archiveFileName, BuiltForVersion))
             return FALSE; // feature 097: a plug-in built for an older interface gets no long archive name
         CSalamanderForOperations sc(panel);
+        CUnpackRootScope unpackRoot(targetDir); // feature 204: below it the members' own folders
         ret = PluginIfaceForArchiver.UnpackWholeArchive(&sc, archiveFileName, mask, targetDir,
                                                         delArchiveWhenDone, archiveVolumes);
     }

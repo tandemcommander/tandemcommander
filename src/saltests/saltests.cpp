@@ -11911,6 +11911,38 @@ static void TestShortNameClashError203()
     CHECK(SalShortNameClashError(ERROR_SUCCESS) == ERROR_ACCESS_DENIED); // never success
 }
 
+// feature 204: a path component found only as ANOTHER entry's short name is not that entry's own
+static void TestNameIsOnlyShortNameOf204()
+{
+    CHECK(SalNameIsOnlyShortNameOf("LONGDI~1", -1, "longdirname", "LONGDI~1"));
+    CHECK(SalNameIsOnlyShortNameOf("longdi~1", -1, "longdirname", "LONGDI~1"));       // the 092 rule
+    CHECK(SalNameIsOnlyShortNameOf("LONGDI~1\\a.txt", 8, "longdirname", "LONGDI~1")); // a component
+    CHECK(!SalNameIsOnlyShortNameOf("LONGDI~1", -1, "LONGDI~1", ""));                 // the entry's own name
+    CHECK(!SalNameIsOnlyShortNameOf("LONGDI~1", -1, "longdi~1", "LONGDI~1"));         // own, other case
+    CHECK(!SalNameIsOnlyShortNameOf("Ab.txt", -1, "Ab.txt", "AB.TXT"));               // FAT: short differs by case
+    CHECK(!SalNameIsOnlyShortNameOf("longdirname", -1, "longdirname", "LONGDI~1"));
+    CHECK(!SalNameIsOnlyShortNameOf("LONGDI~1", -1, "longdirname", "")); // no short name reported
+    CHECK(!SalNameIsOnlyShortNameOf("LONGDI~1", -1, "longdirname", NULL));
+    CHECK(!SalNameIsOnlyShortNameOf("LONGDI~2", -1, "longdirname", "LONGDI~1"));
+
+    // the components that are never looked up (no false "cannot be a short name")
+    CHECK(SalNameCanBeShortName("LONGDI~1", -1));
+    CHECK(SalNameCanBeShortName("LONGFI~1.TXT", -1));
+    CHECK(SalNameCanBeShortName("A", -1));
+    CHECK(SalNameCanBeShortName("ABCDEFGH.XYZ", -1));
+    CHECK(SalNameCanBeShortName("\xC4\x8C\xC5\xA0~1.T\xC3\x9D", -1)); // OEM letters: counted as characters
+    CHECK(SalNameCanBeShortName("LONGDI~1\\x", 8));                   // a component of a path
+    CHECK(SalNameCanBeShortName("AB.", -1));                          // an empty extension
+    CHECK(!SalNameCanBeShortName("ABCDEFGHI", -1));                   // a base of 9
+    CHECK(!SalNameCanBeShortName("A.XYZW", -1));                      // an extension of 4
+    CHECK(!SalNameCanBeShortName("A.B.C", -1));                       // two dots
+    CHECK(!SalNameCanBeShortName("longdirname", -1));
+    CHECK(!SalNameCanBeShortName(".git", -1));
+    CHECK(!SalNameCanBeShortName(".", -1));
+    CHECK(!SalNameCanBeShortName("..", -1));
+    CHECK(!SalNameCanBeShortName("", -1));
+}
+
 static void TestMultiSzToLine189()
 {
     struct Case
@@ -12066,6 +12098,7 @@ int main(int argc, char** argv)
     TestMultiSzToLine189();
     TestDeleteAsDirLink197();
     TestShortNameClashError203();
+    TestNameIsOnlyShortNameOf204();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

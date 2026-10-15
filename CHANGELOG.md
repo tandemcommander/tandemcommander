@@ -11,6 +11,15 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **An archive's folder is never unpacked into another folder by its short
+  name** (feature 204). A member "LONGDI~1/a.txt" unpacked next to a folder
+  "longdirname" (whose short 8.3 name is LONGDI~1) went into longdirname,
+  and a member of the same name as a file there replaced it after one
+  question. It gets a folder of its own now (ZIP, TAR, 7-Zip and the other
+  archive plug-ins). An old archive that stored such short names unpacks
+  beside the original folder instead of into it; a target typed with a
+  short name still goes where it points.
+
 - **Copying or unpacking to another file's short name never overwrites it**
   (feature 203). Copying "LONGFI~1.TXT" - the short (8.3) name of another
   file - into a folder where that file was open in another program asked

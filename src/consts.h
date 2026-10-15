@@ -650,6 +650,27 @@ BOOL CheckAndCreateDirectory(const char* dir, HWND parent = NULL, BOOL quiet = F
                              int errBufSize = 0, char* newDir = NULL, BOOL noRetryButton = FALSE,
                              BOOL manualCrDir = FALSE);
 
+// feature 204: while it exists, 'targetDir' is the target folder of an archive unpack (a plug-in's
+// UnpackArchive / UnpackWholeArchive): below it a path's folders are the members' own
+class CUnpackRootScope
+{
+public:
+    CUnpackRootScope(const char* targetDir);
+    ~CUnpackRootScope();
+    CUnpackRootScope(const CUnpackRootScope&) = delete; // the copy would free the root twice
+    CUnpackRootScope& operator=(const CUnpackRootScope&) = delete;
+
+private:
+    char* Prev;
+};
+
+// feature 204: below the unpack's target folder, every folder of 'path' that exists only as ANOTHER
+// entry's short (8.3) name ("LONGDI~1" for "longdirname") is created as a folder of its own (the
+// other entry moved aside and back, SalCreateDirectoryEx); 'lastIsFolder' = the last component too
+// (else it is a file's name). FALSE: *err why such a folder could not be made (never "it exists").
+// Outside an unpack, or above its target, nothing is done (a typed PROGRA~1 keeps resolving).
+BOOL MakeUnpackFoldersOwn(const char* path, BOOL lastIsFolder, DWORD* err);
+
 // smaze z disku prazdne podadresare v 'dir' a je-li 'dir' po vymazu podadresaru prazdny,
 // je smazan take
 void RemoveEmptyDirs(const char* dir);

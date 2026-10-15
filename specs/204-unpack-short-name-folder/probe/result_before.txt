@@ -1,0 +1,31 @@
+unpack_dir_probe (feature 204) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 06:06; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - not used by this probe
+
+zip-dir    RUN    FAIL        lost=True; windows as 103 expects: True; focus held True; field was '...\AppData\Local\Temp\tc204_ud\zip-dir\tgt', set '...AppData\Local\Temp\tc204_ud\zip-dir\tgt\'; on disk: longdirname/; longdirname holds: a.txt,keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: False; asked: nothing
+zip-dir    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-entry  RUN    FAIL        lost=True; windows as 103 expects: True; focus held True; field was '...ppData\Local\Temp\tc204_ud\zip-entry\tgt', set '...pData\Local\Temp\tc204_ud\zip-entry\tgt\'; on disk: longdirname/; longdirname holds: a.txt,keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: False; asked: nothing
+zip-entry  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-deep   RUN    FAIL        lost=True; windows as 103 expects: True; focus held True; field was '...AppData\Local\Temp\tc204_ud\zip-deep\tgt', set '...ppData\Local\Temp\tc204_ud\zip-deep\tgt\'; on disk: longdirname/; longdirname holds: sub,keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with sub\a.txt: False; asked: nothing
+zip-deep   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+zip-same   RUN    FAIL        lost=True; windows as 103 expects: False; focus held True; field was '...AppData\Local\Temp\tc204_ud\zip-same\tgt', set '...ppData\Local\Temp\tc204_ud\zip-same\tgt\'; on disk: longdirname/; longdirname holds: keep.txt; keep.txt: COPIED-zip-same; own LONGDI~1 with keep.txt: False; asked: [#32770 'Confirm File Overwrite'] Overwrite file: | 10, 15.10.2026, 6:06:51, A | With file: | 15, 15.10.2026, 6:06:50 |
+zip-same   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+tar-dir    RUN    NOT DRIVEN  tar.exe made no archive: tar: Cannot connect to C: resolve failed
+typed      RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...el\AppData\Local\Temp\tc204_ud\typed\tgt', set '...\Local\Temp\tc204_ud\typed\tgt\LONGDI~1\'; on disk: longdirname/; longdirname holds: keep.txt,x.txt; asked: nothing
+typed      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 6, FAIL 4, NOT DRIVEN 1. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True
+
+# the tar row, re-run after the fixture fix (bsdtar took "C:..." for a remote host):
+unpack_dir_probe (feature 204) 
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-15 06:07; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - not used by this probe
+
+tar-dir    RUN    FAIL        lost=True; windows as 103 expects: True; focus held True; field was '...\AppData\Local\Temp\tc204_ud\tar-dir\tgt', set '...AppData\Local\Temp\tc204_ud\tar-dir\tgt\'; on disk: longdirname/; longdirname holds: a.txt,keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: False; asked: nothing
+tar-dir    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

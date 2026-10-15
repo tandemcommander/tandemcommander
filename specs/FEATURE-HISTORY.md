@@ -2645,3 +2645,10 @@ a few early ones are out of sequence).
   and `SafeFileCreate` (archive plug-ins) shows the create error instead of the overwrite question
   (Yes replaced the other file's content), at any path length (`salshortname.h`). FTP / SFTP
   downloads are not covered (205). Probe `create_clash_probe.ps1`.
+- 204-unpack-short-name-folder: an archive member's folder that is only another folder's short
+  (8.3) name went INTO that folder (and a same-named file there was replaced after a question
+  under the member's path). During a plug-in's unpack the core knows its target
+  (`CUnpackRootScope`); below it `MakeUnpackFoldersOwn` (from `CheckAndCreateDirectory` and
+  `SafeFileCreate`) makes such a component a folder of its own (203's move aside); components that
+  cannot be 8.3 are never looked up; the typed target keeps resolving. Probe
+  `unpack_dir_probe.ps1` 6 / 4 -> 22 / 0 (ZIP, TAR, 7-Zip, Alt+F9, a drive root).

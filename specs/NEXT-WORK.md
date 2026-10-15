@@ -294,12 +294,10 @@ Functional, no loss:
     (also the worker's move); left by 201's review: ~~the create paths have the same defect~~ -
     **done, feature 203** (`SalCreateFileEx`, `SalCreateDirectoryEx`, `SafeFileCreate`); left: the
     other entry can be left under `salNNN` with only a trace when both restores fail (Quick Rename,
-    the worker's move, the create paths); found by 203's measuring: **an archive member
-    `LONGDI~1/a.txt` unpacked next to a folder `longdirname` goes INTO `longdirname`** (ZIP, nothing
-    held: the path's folder part resolves through the short name - the core's
-    `CheckAndCreateDirectory` and `SafeFileCreate`'s parent-path check never move a clash aside; a
-    same-named file there is offered for overwriting under the member's path). A user's typed
-    `PROGRA~1` must keep resolving - only the member's part of the path may not; next, 204); left
+    the worker's move, the create paths); found by 203's measuring: ~~an archive member
+    `LONGDI~1/a.txt` unpacked next to a folder `longdirname` goes INTO `longdirname`~~ - **done,
+    feature 204** (left by its review, latent: the unpack root is process-wide; an external
+    archiver's unpack not driven); left
     by 203's review: **the FTP and SFTP downloads have the same trap** (205) - FTP turns the create's
     error back into "exists" by its own attribute re-check (`operats5.cpp` ~1056-1074, ~1317-1338:
     a downloaded folder `LONGDI~1` joined into `longdirname` by default, the other file offered for
