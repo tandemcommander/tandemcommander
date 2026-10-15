@@ -2791,3 +2791,8 @@ a few early ones are out of sequence).
   `ExpandInitDir`), '^' / unquoted `&|<>` refused (quote state incl. quotes inside the value),
   `AddToListOfNames` quotes delimiters, cmd `/V:OFF`. Probe `um229_probe.ps1` (decoys) 14 FAIL -> 34 /
   0. Trap: a command-line path has %VAR% expanded - probes enter such folders from the parent.
+- 230-dragdrop-case-sensitive-names: `DragDropToArcOrFS` added a second case-insensitive match as a
+  "duplicate" - in a case-sensitive folder an unselected A.txt packed (Move: deleted) beside a.txt,
+  `nameFound` overrun. Byte-equal first (`salnamerun.h`, saltests); a case-insensitive-only item only
+  as the unique fallback in a folder that is not case-sensitive (`SalDirIsCaseSensitive`, from 195) -
+  review: sources may give another case. By reading (drag & drop / clipboard).

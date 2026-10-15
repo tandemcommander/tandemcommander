@@ -64,6 +64,7 @@
 #include "salshortname.h"    // feature 203
 #include "salu8fold.h"       // feature 210
 #include "salbatchtext.h"    // feature 226
+#include "salnamerun.h"      // feature 230
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -12199,6 +12200,53 @@ static void TestBatchEscape229()
     CHECK(!SalBatchInsideQuotes("\"", 0));
 }
 
+// feature 230: a listed name counts only as the byte-equal dragged name (a case-sensitive folder)
+static void TestNameExactInCIRun230()
+{
+    char* names[] = {(char*)"A.txt", (char*)"a.txt", (char*)"b.txt", (char*)"B.TXT", (char*)"c"};
+    int n = 5; // sorted case-insensitively: {A.txt, a.txt} {b.txt, B.TXT} {c}
+    CHECK(SalNameExactInCIRun(names, n, 0, "a.txt") == 1);
+    CHECK(SalNameExactInCIRun(names, n, 1, "a.txt") == 1);
+    CHECK(SalNameExactInCIRun(names, n, 1, "A.txt") == 0);
+    CHECK(SalNameExactInCIRun(names, n, 0, "A.TXT") == -1); // in the run, not byte-equal: another file
+    CHECK(SalNameExactInCIRun(names, n, 2, "B.TXT") == 3);
+    CHECK(SalNameExactInCIRun(names, n, 3, "b.txt") == 2);
+    CHECK(SalNameExactInCIRun(names, n, 4, "c") == 4);
+    CHECK(SalNameExactInCIRun(names, n, 4, "C") == -1);
+    CHECK(SalNameExactInCIRun(names, n, -1, "c") == -1);
+    CHECK(SalNameExactInCIRun(names, n, 5, "c") == -1);
+    char* one[] = {(char*)"\xC5\xBElu\xC5\xA5"}; // z-caron l u t-caron
+    CHECK(SalNameExactInCIRun(one, 1, 0, "\xC5\xBElu\xC5\xA5") == 0);
+    CHECK(SalNameExactInCIRun(one, 1, 0, "\xC5\xBDlu\xC5\xA5") == -1); // Z-caron: another file
+    for (int i = 0; i + 1 < n; i++)
+        CHECK(SalNameCompareOrdinalCI(names[i], -1, names[i + 1], -1) <= 0); // the fixture is sorted
+    // a run of three, the byte-equal entry last, the search index first
+    char* three[] = {(char*)"AB", (char*)"Ab", (char*)"ab"};
+    CHECK(SalNameExactInCIRun(three, 3, 0, "ab") == 2);
+    CHECK(SalNameExactInCIRun(three, 3, 2, "AB") == 0);
+    // the same name twice: the lowest index
+    char* twice[] = {(char*)"x", (char*)"x"};
+    CHECK(SalNameExactInCIRun(twice, 2, 1, "x") == 0);
+    // a WTF-8 lone surrogate is a byte string like any other
+    char* lone[] = {(char*)"a\xED\xA0\x80"};
+    CHECK(SalNameExactInCIRun(lone, 1, 0, "a\xED\xA0\x80") == 0);
+    CHECK(SalNameExactInCIRun(lone, 1, 0, "A\xED\xA0\x80") == -1);
+    // the case-insensitive fallback only for a name alone in its run
+    CHECK(SalNameCIRunSingle(names, n, 4) == 4);  // "c"
+    CHECK(SalNameCIRunSingle(names, n, 0) == -1); // A.txt / a.txt
+    CHECK(SalNameCIRunSingle(names, n, 1) == -1);
+    CHECK(SalNameCIRunSingle(names, n, 3) == -1); // b.txt / B.TXT
+    CHECK(SalNameCIRunSingle(one, 1, 0) == 0);
+    CHECK(SalNameCIRunSingle(one, 1, 1) == -1);
+    CHECK(SalNameCIRunSingle(one, 1, -1) == -1);
+    // the fallback after the listing
+    CHECK(SalNameCIFallbackTakes(FALSE, 1, FALSE));
+    CHECK(!SalNameCIFallbackTakes(TRUE, 1, FALSE));  // a byte-equal item took the name
+    CHECK(!SalNameCIFallbackTakes(FALSE, 2, FALSE)); // two items in other cases: which one?
+    CHECK(!SalNameCIFallbackTakes(FALSE, 0, FALSE));
+    CHECK(!SalNameCIFallbackTakes(FALSE, 1, TRUE)); // a case-sensitive folder: another file
+}
+
 static void TestMultiSzToLine189()
 {
     struct Case
@@ -12360,6 +12408,7 @@ int main(int argc, char** argv)
     TestU8Fold210();
     TestBatchText226();
     TestBatchEscape229();
+    TestNameExactInCIRun230();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

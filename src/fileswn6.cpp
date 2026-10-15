@@ -157,7 +157,13 @@ static BOOL ParentIsCaseSensitive(const char* path)
     CSalPathBuf dir;
     if (!dir.Set(path) || !dir.CutLastComponent())
         return FALSE;
-    HANDLE h = SalCreateFile(dir.Get(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+    return SalDirIsCaseSensitive(dir.Get());
+}
+
+// feature 230 (from 195's ParentIsCaseSensitive): does the folder 'dir' tell names apart by case?
+BOOL SalDirIsCaseSensitive(const char* dir)
+{
+    HANDLE h = SalCreateFile(dir, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                              NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (h == INVALID_HANDLE_VALUE)
         return FALSE;

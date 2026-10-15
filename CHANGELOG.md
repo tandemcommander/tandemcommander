@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Dragging or pasting into an archive takes only the selected files**
+  (feature 230). In a folder that tells "a.txt" and "A.txt" apart (a WSL
+  folder), dragging or pasting "a.txt" into an archive also packed
+  "A.txt" - with Move it was deleted - and could crash the program.
+
 - **User Menu: names with %, ^, ! or & reach commands run through the
   command shell unchanged** (feature 229). A file named "50%off.txt",
   "a%OS%b.txt" or "a^b.txt" reached such a command under another name - it

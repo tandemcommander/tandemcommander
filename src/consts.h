@@ -962,6 +962,11 @@ void SetCurrentDirectoryToSystem();
 // was); FALSE when it cannot be set
 BOOL SalSetCurrentDirectoryU8(const char* path);
 
+// feature 230: does the folder 'dir' (UTF-8) tell names apart by case (fsutil setCaseSensitiveInfo,
+// a WSL folder)? FALSE when it does not or when it cannot be told (a network share, another file
+// system)
+BOOL SalDirIsCaseSensitive(const char* dir);
+
 // nahradi substy v ceste 'resPath' jejich cilovymi cestami (prevod na cestu bez SUBST drive-letters);
 // vraci FALSE pri chybe
 BOOL ResolveSubsts(char* resPath);

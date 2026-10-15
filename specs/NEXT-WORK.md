@@ -720,10 +720,14 @@ Code work an agent can do:
          call; the other A `SetCurrentDirectory` calls on UTF-8 paths are speed hints only);
          long paths in the User Menu) and ~~Compare Directories `mainwnd5.cpp:1560/1584` cut disk
          names at MAX_PATH and act on them~~ (measured, feature 227: not reachable - refused "too
-         long name"; the Find window's `CompareName1/2` end empty); ~~`fileswna.cpp:396` cuts `SrcPath`~~ (done, feature 228; left from its review: **in
-         `DragDropToArcOrFS` a duplicate case-insensitive match - a case-sensitive folder (WSL,
-         setCaseSensitiveInfo) holding a.txt and A.txt, only a.txt dragged or pasted - overruns
-         `nameFound` and packs (with Move: deletes) A.txt too** (`fileswna.cpp` ~465 / 585); a
+         long name"; the Find window's `CompareName1/2` end empty); ~~`fileswna.cpp:396` cuts `SrcPath`~~ (done, feature 228; left from its review: ~~in
+         `DragDropToArcOrFS` a duplicate case-insensitive match ... packs (with Move: deletes)
+         A.txt too~~ (done, feature 230; left from its review: **a disk panel's name-based
+         selection (Restore Selection, panel tabs, Load Selection, hidden names -
+         `CFilesWindow::IsCaseSensitive()` FALSE for disks, `fileswn0.cpp:2332`) treats a.txt and
+         A.txt of a case-sensitive folder as one - an extra item selected, possibly out of view
+         before F8 / F6**; paste from a 7-Zip / TAR archive holding a.txt and A.txt may extract
+         the other one (`salshlib.cpp:791-818`, only ZIP / FTP set SALDIRFLAG_CASESENSITIVE)); a
          folder name over 255 bytes ends the operation silently (`AddDir`, 222); the FTP upload's
          link size from a cut path (`fs5.cpp:1149`); `IsSimpleSelection`'s too-long message and
          CP_ACP fallback (`shellib.cpp` ~497-510));

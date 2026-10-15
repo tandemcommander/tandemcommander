@@ -15,6 +15,7 @@
 #include "shellib.h"
 #include "pack.h"
 #include "salheapstr.h" // feature 228
+#include "salnamerun.h" // feature 230
 
 void CFilesWindow::PluginFSFilesAction(CPluginFSActionType type)
 {
@@ -355,6 +356,84 @@ static BOOL ArchiveNameFitsPacker160(HWND parent, const char* archive)
     return PackArchiveNameFitsHandler(parent, archive, plugin->BuiltForVersion);
 }
 
+// feature 230: adds the listed item 'file' to 'baseDir' - the data DragDropToArcOrFS works with;
+// FALSE on low memory or when the item cannot be added
+static BOOL AddDragDropItem(CSalamanderDirectory* baseDir, const WIN32_FIND_DATAW* file)
+{
+    char nameU8[SAL_FIND_NAME_U8];       // UTF-8 of cFileName
+    char dosNameU8[SAL_FIND_DOSNAME_U8]; // UTF-8 of cAlternateFileName
+    SalConvertFindDataW(file, NULL, nameU8, sizeof(nameU8), dosNameU8, sizeof(dosNameU8));
+    CFileData newF;       // we no longer work with these items
+    newF.PluginData = -1; // -1 is arbitrary, the value will be ignored
+    newF.Association = 0;
+    newF.Selected = 0;
+    newF.Shared = 0;
+    newF.Archive = 0;
+    newF.SizeValid = 0;
+    newF.Dirty = 0; // unnecessary, just for formality
+    newF.CutToClip = 0;
+    newF.IconOverlayIndex = ICONOVERLAYINDEX_NOTUSED;
+    newF.IconOverlayDone = 0;
+    newF.Name = DupStr(nameU8);
+    newF.DosName = NULL;
+    if (newF.Name == NULL)
+    {
+        return FALSE;
+    }
+    newF.NameLen = (unsigned)strlen(newF.Name);
+    if (!Configuration.SortDirsByExt && (file->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) // directory, certainly a disk
+    {
+        newF.Ext = newF.Name + newF.NameLen; // directories have no extensions
+    }
+    else
+    {
+        newF.Ext = strrchr(newF.Name, '.');
+        if (newF.Ext == NULL)
+            newF.Ext = newF.Name + newF.NameLen; // ".cvspass" in Windows is an extension ...
+                                                 //      if (newF.Ext == NULL || newF.Ext == newF.Name) newF.Ext = newF.Name + newF.NameLen;
+        else
+            newF.Ext++;
+    }
+
+    if (dosNameU8[0] != 0)
+    {
+        newF.DosName = DupStr(dosNameU8);
+        if (newF.DosName == NULL)
+        {
+            free(newF.Name);
+            return FALSE;
+        }
+    }
+
+    newF.Size = CQuadWord(file->nFileSizeLow, file->nFileSizeHigh);
+    newF.Attr = file->dwFileAttributes;
+    newF.LastWrite = file->ftLastWriteTime;
+    newF.Hidden = newF.Attr & FILE_ATTRIBUTE_HIDDEN ? 1 : 0;
+    newF.IsOffline = newF.Attr & FILE_ATTRIBUTE_OFFLINE ? 1 : 0;
+
+    if (newF.Attr & FILE_ATTRIBUTE_DIRECTORY) // directory, certainly a disk
+    {
+        newF.IsLink = (newF.Attr & FILE_ATTRIBUTE_REPARSE_POINT) ? 1 : 0; // volume mount point or junction point = display directory with link overlay
+    }
+    else
+    {
+        if (newF.Attr & FILE_ATTRIBUTE_REPARSE_POINT)
+            newF.IsLink = 1; // if the file is a reparse point (might not be even possible) = display it with a link overlay
+        else
+            newF.IsLink = IsFileLink(newF.Ext);
+    }
+
+    if ((newF.Attr & FILE_ATTRIBUTE_DIRECTORY) && !baseDir->AddDir("", newF, NULL) ||     // directory, certainly a disk
+        (newF.Attr & FILE_ATTRIBUTE_DIRECTORY) == 0 && !baseDir->AddFile("", newF, NULL)) // file
+    {
+        free(newF.Name);
+        if (newF.DosName != NULL)
+            free(newF.DosName);
+        return FALSE;
+    }
+    return TRUE;
+}
+
 void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
 {
     CALL_STACK_MESSAGE1("CFilesWindow::DragDropToArcOrFS()");
@@ -436,20 +515,20 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
     else
     {
         BOOL ok = TRUE;
-        CFileData newF;       // we no longer work with these items
-        newF.PluginData = -1; // -1 is arbitrary, thevalue will be ignored
-        newF.Association = 0;
-        newF.Selected = 0;
-        newF.Shared = 0;
-        newF.Archive = 0;
-        newF.SizeValid = 0;
-        newF.Dirty = 0; // unnecessary, just for formality
-        newF.CutToClip = 0;
-        newF.IconOverlayIndex = ICONOVERLAYINDEX_NOTUSED;
-        newF.IconOverlayDone = 0;
         BOOL testFindNextErr = TRUE;
         char nameU8[SAL_FIND_NAME_U8];       // UTF-8 of cFileName
         char dosNameU8[SAL_FIND_DOSNAME_U8]; // UTF-8 of cAlternateFileName
+        // feature 230 (salnamerun.h): a dragged name is taken by the listed item byte-equal to it; an
+        // item equal to it only case-insensitively (the drag source may give another case) only after
+        // the listing, when no byte-equal item took the name, it is the only such item, the name is
+        // alone in its case-insensitive run and the folder is not case-sensitive. Before, a second
+        // case-insensitive match ("A.txt" beside a dragged "a.txt" in a case-sensitive folder) was
+        // added as a "duplicate": a file nobody selected was packed (with Move: deleted) and
+        // 'nameFound' was overrun below.
+        char* const* names = (char* const*)data->Data->Names.GetData();
+        int namesCount = data->Data->Names.Count;
+        int* ciOnly = NULL;                  // per name: how many items equal it only case-insensitively
+        WIN32_FIND_DATAW* ciOnlyData = NULL; // per name: the first of them
 
         do
         {
@@ -459,75 +538,36 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
                 continue; // "." and ".."
 
             int foundIndex;
-            if (ContainsString(&data->Data->Names, nameU8, &foundIndex))
-            {
-                if (nameFound[foundIndex] == FALSE)
-                    nameFound[foundIndex] = TRUE;
-                else // duplicate = all names are processed (some may not have been selected); if it causes issues, handle it with case-sensitive comparison first
-                    TRACE_E("CFilesWindow::DragDropToArcOrFS(): duplicate names found! (names are compared case-insensitive)");
-            }
-            else
+            if (!ContainsString(&data->Data->Names, nameU8, &foundIndex))
                 continue; // user is not interested in this file/directory (name wasn't in the data object)
-
-            newF.Name = DupStr(nameU8);
-            newF.DosName = NULL;
-            if (newF.Name == NULL)
+            int exact = SalNameExactInCIRun(names, namesCount, foundIndex, nameU8);
+            if (exact < 0)
             {
-                ok = FALSE;
-                testFindNextErr = FALSE;
-                break;
-            }
-            newF.NameLen = (unsigned)strlen(newF.Name);
-            if (!Configuration.SortDirsByExt && (file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) // directory, certainly a disk
-            {
-                newF.Ext = newF.Name + newF.NameLen; // directories have no extensions
-            }
-            else
-            {
-                newF.Ext = strrchr(newF.Name, '.');
-                if (newF.Ext == NULL)
-                    newF.Ext = newF.Name + newF.NameLen; // ".cvspass" in Windows is an extension ...
-                                                         //      if (newF.Ext == NULL || newF.Ext == newF.Name) newF.Ext = newF.Name + newF.NameLen;
-                else
-                    newF.Ext++;
-            }
-
-            if (dosNameU8[0] != 0)
-            {
-                newF.DosName = DupStr(dosNameU8);
-                if (newF.DosName == NULL)
+                int single = SalNameCIRunSingle(names, namesCount, foundIndex);
+                if (single >= 0)
                 {
-                    free(newF.Name);
-                    ok = FALSE;
-                    testFindNextErr = FALSE;
-                    break;
+                    if (ciOnly == NULL)
+                    {
+                        ciOnly = (int*)calloc((size_t)namesCount, sizeof(int));
+                        ciOnlyData = (WIN32_FIND_DATAW*)malloc((size_t)namesCount * sizeof(WIN32_FIND_DATAW));
+                        if (ciOnly == NULL || ciOnlyData == NULL)
+                        {
+                            TRACE_E(LOW_MEMORY);
+                            ok = FALSE;
+                            testFindNextErr = FALSE;
+                            break;
+                        }
+                    }
+                    if (ciOnly[single]++ == 0)
+                        ciOnlyData[single] = file;
                 }
+                continue;
             }
-
-            newF.Size = CQuadWord(file.nFileSizeLow, file.nFileSizeHigh);
-            newF.Attr = file.dwFileAttributes;
-            newF.LastWrite = file.ftLastWriteTime;
-            newF.Hidden = newF.Attr & FILE_ATTRIBUTE_HIDDEN ? 1 : 0;
-            newF.IsOffline = newF.Attr & FILE_ATTRIBUTE_OFFLINE ? 1 : 0;
-
-            if (newF.Attr & FILE_ATTRIBUTE_DIRECTORY) // directory, certainly a disk
+            if (nameFound[exact] != FALSE)
+                continue; // already taken
+            nameFound[exact] = TRUE;
+            if (!AddDragDropItem(baseDir, &file))
             {
-                newF.IsLink = (newF.Attr & FILE_ATTRIBUTE_REPARSE_POINT) ? 1 : 0; // volume mount point or junction point = display directory with link overlay
-            }
-            else
-            {
-                if (newF.Attr & FILE_ATTRIBUTE_REPARSE_POINT)
-                    newF.IsLink = 1; // if the file is a reparse point (might not be even possible) = display it with a link overlay
-                else
-                    newF.IsLink = IsFileLink(newF.Ext);
-            }
-
-            if ((newF.Attr & FILE_ATTRIBUTE_DIRECTORY) && !baseDir->AddDir("", newF, NULL) ||     // directory, certainly a disk
-                (newF.Attr & FILE_ATTRIBUTE_DIRECTORY) == 0 && !baseDir->AddFile("", newF, NULL)) // file
-            {
-                free(newF.Name);
-                if (newF.DosName != NULL)
-                    free(newF.DosName);
                 ok = FALSE;
                 testFindNextErr = FALSE;
                 break;
@@ -535,6 +575,24 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
         } while (SalFindNextFile(find, &file));
         DWORD err = GetLastError();
         HANDLES(FindClose(find));
+        if (ok && !(testFindNextErr && err != ERROR_NO_MORE_FILES) && ciOnly != NULL)
+        {
+            BOOL dirCaseSensitive = SalDirIsCaseSensitive(data->Data->SrcPath);
+            for (int k = 0; k < namesCount; k++)
+            {
+                if (SalNameCIFallbackTakes(nameFound[k] != FALSE, ciOnly[k], dirCaseSensitive))
+                {
+                    nameFound[k] = TRUE;
+                    if (!AddDragDropItem(baseDir, &ciOnlyData[k]))
+                    {
+                        ok = FALSE;
+                        break;
+                    }
+                }
+            }
+        }
+        free(ciOnly);
+        free(ciOnlyData);
 
         if (testFindNextErr && err != ERROR_NO_MORE_FILES)
         {
@@ -583,6 +641,11 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
         dataEnum.Dirs = baseDir->GetDirs("");
         dataEnum.Files = baseDir->GetFiles("");
         dataEnum.IndexesCount = dataEnum.Dirs->Count + dataEnum.Files->Count;
+        if (dataEnum.IndexesCount > data->Data->Names.Count) // feature 230: 'nameFound' holds one per name - never more items
+        {
+            TRACE_E("CFilesWindow::DragDropToArcOrFS(): more items than names - nothing done");
+            dataEnum.IndexesCount = 0;
+        }
         for (i = 0; i < dataEnum.IndexesCount; i++)
             nameFound[i] = i;
         dataEnum.Indexes = nameFound;
