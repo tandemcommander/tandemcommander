@@ -2809,7 +2809,8 @@ a few early ones are out of sequence).
 - 233-ftp-long-server-paths: measured, no defect of the audit's kind - a typed / entered FTP path of
   ~260+ bytes is refused by the core, the queue refuses sub-paths over 300 bytes (`FTPPathAppend`);
   only a PWD reply over 300 bytes is cut (an ancestor under its own name). Probe `ftp233_probe.ps1`.
-  Found: a tree download with a refused leaf left nothing on disk - NEXT-WORK.
+  ("A tree download left nothing on disk" was withdrawn: the probe's control row shows the same -
+  a probe defect.)
 - 234-user-menu-item-folder: a User Menu command without an Initial Directory used the process-wide
   current folder - the Find route set none (System32, or a panel's folder set by another thread).
   Now the item's folder: `lpDirectory` (direct), cmd's start folder + a `cd /d` line per item folder

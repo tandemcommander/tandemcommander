@@ -678,9 +678,8 @@ Code work an agent can do:
          name over 255 bytes and DELE / RNFR went to the cut name; left by its audit, to fix one
          by one: ~~server paths over 300 bytes cut and acted on~~ (measured, feature 233: refused
          - the core refuses typed / entered paths of ~260+ bytes, the queue refuses longer
-         sub-paths; left: a PWD reply over 300 bytes is cut (an ancestor under its own name); **a
-         tree download whose deepest folder was refused left nothing on disk, not even files
-         that fit and were received** - to investigate; deep FTP paths are limited to ~260 bytes
+         sub-paths; left: a PWD reply over 300 bytes is cut (an ancestor under its own name); (a "tree download left nothing on disk" note
+         was a probe defect - withdrawn, 235; a person's check owed); deep FTP paths are limited to ~260 bytes
          by the core);
          ~~`FTPU8NameToServer` sends a name the ANSI code page can hold in that code page even to a
          UTF-8 server~~ - **done, feature 224** (left: **a per-server encoding flag** - unknown /

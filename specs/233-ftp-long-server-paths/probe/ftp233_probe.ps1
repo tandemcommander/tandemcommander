@@ -245,6 +245,16 @@ try {
         $lp =$l + '\' + $C[3] + '\' + $C[4]
         $gotLeaf = Read ($lp + '\leaf\x.txt'); $gotPar = Read ($lp + '\x.txt')
         @{ Ok = ($gotPar -ceq 'PARENT') -and (($gotLeaf -ceq 'LEAF') -or ($gotLeaf -eq '<missing>' -and (Has $t 'too long|not finished'))); Facts = ("local c5\x.txt '{0}', leaf\x.txt '{1}'; local files: {2}" -f $gotPar, $gotLeaf, ((LocalFiles $l | ForEach-Object { Shorten $_ }) -join ', ')) } } -Deep
+    # the control: the same tree at a shallow depth (every path fits) - the download itself works
+    Row-Ftp 'DLC' 1 727 {
+        param($s, $l)
+        Tree $s 'PARENT' 'LEAF'
+    } {
+        param($t, $cm, $s, $l, $conn)
+        $lp = $l + '\' + $C[3] + '\' + $C[4]
+        $gotLeaf = Read ($lp + '\leaf\x.txt'); $gotPar = Read ($lp + '\x.txt')
+        $all = @(LocalFiles $Root | Where-Object { $_ -like '*x.txt' } | ForEach-Object { Shorten $_ })
+        @{ Ok = ($gotPar -ceq 'PARENT') -and ($gotLeaf -ceq 'LEAF'); Facts = ("local c5\x.txt '{0}', leaf\x.txt '{1}'; all local files: {2}" -f $gotPar, $gotLeaf, ($all -join ', ')) } }
     Row-Ftp 'UPT' 1 727 {
         param($s, $l)
         $b = $s; foreach ($cc in $C[0..2]) { $b = $b + '\' + $cc; NewDir $b }

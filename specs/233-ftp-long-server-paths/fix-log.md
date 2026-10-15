@@ -22,6 +22,11 @@ recorded during the probe's development):
   (`FTPDecodeServerReplyPathInPlace` and the PWD parsing) - the panel then shows and works in that
   cut path under its own (cut) name: an ancestor, but not one disguised as another folder.
 
-No code change. Found on the way (NEXT-WORK): **the tree download whose leaf was refused left
-nothing on disk - not even c5\x.txt, which the server sent (RETR) and which fits** (DLT, "local
-files: none").
+No code change.
+
+Correction (during 235): "the tree download whose leaf was refused left nothing on disk" was a
+probe defect, not the program's - the control row DLC (the same tree at a shallow depth, every path
+fits; `probe/result_dlc_control.txt`) also finds no downloaded file under the probe's folders,
+although the server sent both files (RETR). Where the probe's dialog answers sent the download is
+not established; the DLT / UPT rows judge the server side (UPT) and the commands the server got.
+Withdrawn from NEXT-WORK; a person's check of an FTP tree download into a deep folder is owed.

@@ -1,0 +1,11 @@
+ftp233_probe (feature 233), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-16 00:25; desktop 'tc_probe_8908'; ACP 1250; registry key existed True; export SHA-256 B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+Server  : ftpmini.py on 127.0.0.1:2133 - up; the long name has 514 bytes of UTF-8
+
+Path: /<row>/c1..c5 = 299 bytes for a 3-letter row name; + /leaf
+DLC        ROW    FAIL        local c5\x.txt '<missing>', leaf\x.txt '<missing>'; all local files: ; 7,4 s; connected: True [box: [#32770 'Welcome Message'] [Button id=1] Close] at 'ftp://u@127.0.0.1:2133/DLC'; server got: USER u / PASS p / SYST / PWD / CWD /DLC / PWD / PORT 127,0,0,1,198,202 / TYPE A / LIST / CWD <63 bytes> / PWD / PORT 127,0,0,1,198,206 / LIST / CWD <122 bytes> / PWD / PORT 127,0,0,1,198,208 / LIST / CWD <127 bytes> / PWD / PORT 127,0,0,1,198,210 / LIST / PORT 127,0,0,1,198,212 / RETR x.txt / CWD <122 bytes> / PORT 127,0,0,1,198,214 / RETR x.txt / NOOP; dialogs: [#32770 'Copy'] [Static id=780] Copy directory "c4<long names>/" from FTP server to | [Button id=782] &Only add to Queue (do not process in active connection) | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+DLC        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A / after B9F961F80D09CF45842E9DFCB76CE697F60F9FD3AE03EE02C272C0E5154E538A
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
