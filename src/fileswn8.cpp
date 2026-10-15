@@ -435,11 +435,18 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                 expanded[0] = 0;
                 if (type == atDelete && recycle != 1 && (f->Attr & FILE_ATTRIBUTE_REPARSE_POINT))
                 { // it's a link (junction, symlink or volume mount point)
-                    lstrcpyn(formatedFileName, GetPath(), MAX_PATH + 200);
-                    ResolveSubsts(formatedFileName);
+                    // feature 197: the link's whole path (a folder over MAX_PATH + 200 bytes was cut here
+                    // and the question named the junction a directory)
+                    CSalMaxPathBuffer linkPath;
                     int repPointType;
-                    if (SalPathAppend(formatedFileName, f->Name, MAX_PATH + 200) &&
-                        GetReparsePointDestination(formatedFileName, NULL, 0, &repPointType, TRUE))
+                    BOOL linkPathOk = FALSE;
+                    if (linkPath.Get() != NULL && (int)strlen(GetPath()) < linkPath.Size())
+                    {
+                        strcpy(linkPath.Get(), GetPath());
+                        ResolveSubsts(linkPath.Get()); // (a path over MAX_PATH stays as it is)
+                        linkPathOk = SalPathAppend(linkPath.Get(), f->Name, linkPath.Size());
+                    }
+                    if (linkPathOk && GetReparsePointDestination(linkPath.Get(), NULL, 0, &repPointType, TRUE))
                     {
                         lstrcpy(expanded, LoadStrU8(repPointType == 1 /* MOUNT POINT */ ? IDS_QUESTION_VOLMOUNTPOINT : repPointType == 2 /* JUNCTION POINT */ ? IDS_QUESTION_JUNCTION
                                                                                                                                                               : IDS_QUESTION_SYMLINK));

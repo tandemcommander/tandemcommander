@@ -2613,3 +2613,9 @@ a few early ones are out of sequence).
   case-sensitive folder, proven another file ONLY by the temporary-name route (different ids and
   metadata are no proof before a delete: path-derived ids); the name rule `SalNameOrderEqualCI`
   instead of the code-page `StrICmp`. Probe `ren_cs_probe.ps1` 6 / 2 -> 8 / 0.
+- 197-deep-junction-delete: **data loss** - F8 (no Recycle Bin) of a junction in a folder of 780+
+  characters, or of a folder holding one, deleted the TARGET's files: the delete script took a
+  reparse directory for a link only when `GetReparsePointDestination` succeeded, and it failed past
+  `WCHAR[3 * MAX_PATH]`. Now any length, and `DeleteAsDirLink` fails closed (tag unreadable or a
+  name surrogate = a link). **Rule: a destructive recursion never descends into a reparse
+  directory it could not prove a plain one.** Probe `deepjunc_probe.ps1` 9 / 3 -> 12 / 0.

@@ -7,6 +7,7 @@
 #include "salheapstr.h"   // feature 172
 #include "salsafereplace.h" // feature 174
 #include "salfmtinserts.h"  // feature 180
+#include "salreparse.h"     // feature 197
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -1604,13 +1605,32 @@ BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, D
     // feature 062 (contract C1): the path is UTF-8 (feature 004) - convert once and
     // call the wide APIs; the ANSI variants reinterpreted non-ASCII paths through the
     // code page, so reparse points on such paths were never detected
-    WCHAR repPointDirW[3 * MAX_PATH];
-    if (SalU8ToW(repPointDirCrFile, -1, repPointDirW, _countof(repPointDirW)) == 0 &&
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, repPointDirCrFile, -1, repPointDirW, _countof(repPointDirW)) == 0)
+    // feature 197: any length - a path past the former 3 * MAX_PATH units failed here, and the
+    // delete took the link for a plain directory (the files of its target were deleted); from
+    // MAX_PATH units on in the \\?\ form (which keeps a trailing space or dot)
+    WCHAR* repPointDirW = SalU8ToWAlloc(repPointDirCrFile, -1);
+    if (repPointDirW != NULL && wcslen(repPointDirW) >= MAX_PATH)
     {
-        return FALSE;
+        free(repPointDirW);
+        repPointDirW = SalPathToWExtAlloc(repPointDir);
     }
-    repPointDirW[_countof(repPointDirW) - 1] = 0;
+    if (repPointDirW == NULL) // not valid UTF-8 (transitional) and short: the code-page form
+    {
+        int need = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, repPointDirCrFile, -1, NULL, 0);
+        if (need > 0 && need < MAX_PATH && (repPointDirW = (WCHAR*)malloc(need * sizeof(WCHAR))) != NULL &&
+            MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, repPointDirCrFile, -1, repPointDirW, need) == 0)
+        {
+            free(repPointDirW);
+            repPointDirW = NULL;
+        }
+    }
+    if (repPointDirW == NULL)
+        return FALSE;
+    struct CFreeW
+    {
+        WCHAR* P;
+        ~CFreeW() { free(P); }
+    } repPointDirWFree = {repPointDirW};
 
     DWORD attrs = GetFileAttributesW(repPointDirW);
     if (attrs == 0xffffffff || (attrs & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
@@ -1641,15 +1661,26 @@ BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, D
     }
     HANDLES(CloseHandle(file));
 
-    WCHAR substName[1000];
-    WCHAR printName[1000];
+    // feature 197 (review): the names whole - they were cut at 999 units (a link to a deeper target
+    // opened a cut path); the reparse data holds at most MAXIMUM_REPARSE_DATA_BUFFER_SIZE bytes
+    const int nameUnits = MAXIMUM_REPARSE_DATA_BUFFER_SIZE / sizeof(WCHAR) + 1;
+    WCHAR* names = (WCHAR*)malloc(3 * nameUnits * sizeof(WCHAR));
+    if (names == NULL)
+        return FALSE;
+    struct CFreeNames
+    {
+        WCHAR* P;
+        ~CFreeNames() { free(P); }
+    } namesFree = {names};
+    WCHAR* substName = names;
+    WCHAR* printName = names + nameUnits;
     int myType = 0;
     if (juncData->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
     {
         lstrcpynW(substName, (WCHAR*)((char*)juncData->PathBuffer + juncData->SubstituteNameOffset),
-                  min(juncData->SubstituteNameLength / sizeof(WCHAR) + 1, 1000));
+                  min(juncData->SubstituteNameLength / sizeof(WCHAR) + 1, nameUnits));
         lstrcpynW(printName, (WCHAR*)((char*)juncData->PathBuffer + juncData->PrintNameOffset),
-                  min(juncData->PrintNameLength / sizeof(WCHAR) + 1, 1000));
+                  min(juncData->PrintNameLength / sizeof(WCHAR) + 1, nameUnits));
         myType = _wcsnicmp(substName, L"\\??\\Volume", 10) == 0 ? 1 /* MOUNT POINT */ : 2 /* JUNCTION POINT */;
     }
     else
@@ -1657,9 +1688,9 @@ BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, D
         if (juncData->ReparseTag == IO_REPARSE_TAG_SYMLINK)
         {
             lstrcpynW(substName, (WCHAR*)((char*)juncData->PathBuffer + 4 /* ULONG Flags */ + juncData->SubstituteNameOffset),
-                      min(juncData->SubstituteNameLength / sizeof(WCHAR) + 1, 1000));
+                      min(juncData->SubstituteNameLength / sizeof(WCHAR) + 1, nameUnits));
             lstrcpynW(printName, (WCHAR*)((char*)juncData->PathBuffer + 4 /* ULONG Flags */ + juncData->PrintNameOffset),
-                      min(juncData->PrintNameLength / sizeof(WCHAR) + 1, 1000));
+                      min(juncData->PrintNameLength / sizeof(WCHAR) + 1, nameUnits));
             myType = 3 /* SYMBOLIC LINK */;
         }
         else
@@ -1684,7 +1715,7 @@ BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, D
             TRACE_E("GetReparsePointDestination(): Unexpected format of junction point (relative path): " << repPointDir);
             return FALSE;
         }
-        WCHAR symlinkAbsPath[1000];
+        WCHAR* symlinkAbsPath = names + 2 * nameUnits; // feature 197: whole, as the names (was WCHAR[1000])
         if (makeRelPathAbs && myType == 3 /* SYMBOLIC LINK */ &&
             !(*s != 0 && *(s + 1) == L':' && *(s + 2) == L'\\' || *s == L'\\' && *(s + 1) == L'\\'))
         { // the symlink is relative; try converting it to an absolute path
@@ -1696,18 +1727,18 @@ BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, D
             symlinkAbsPath[0] = (WCHAR)(unsigned char)repPointDir[0]; // a bit of a hack (we rely on a fact that 'a-zA-Z' convert to Unicode 1:1)
             symlinkAbsPath[1] = L':';
             if (*s == L'\\')
-                lstrcpynW(symlinkAbsPath + 2, s, 1000 - 2);
+                lstrcpynW(symlinkAbsPath + 2, s, nameUnits - 2);
             else
             {
                 // feature 062 (contract C1): the base path is UTF-8, CP_ACP fallback per the house pattern
-                if (SalU8ToW(repPointDir + 2, -1, symlinkAbsPath + 2, 1000 - 2) == 0 &&
-                    MultiByteToWideChar(CP_ACP, 0, repPointDir + 2, -1, symlinkAbsPath + 2, 1000 - 2) == 0)
+                if (SalU8ToW(repPointDir + 2, -1, symlinkAbsPath + 2, nameUnits - 2) == 0 &&
+                    MultiByteToWideChar(CP_ACP, 0, repPointDir + 2, -1, symlinkAbsPath + 2, nameUnits - 2) == 0)
                 {
                     DWORD err = GetLastError();
                     TRACE_E("GetReparsePointDestination(): MultiByteToWideChar error: " << err);
                     return FALSE;
                 }
-                symlinkAbsPath[1000 - 1] = 0;
+                symlinkAbsPath[nameUnits - 1] = 0;
                 int len = lstrlenW(symlinkAbsPath);
                 if (symlinkAbsPath[len - 1] == L'\\')
                     symlinkAbsPath[len - 1] = 0;
@@ -1717,7 +1748,7 @@ BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, D
                     TRACE_E("GetReparsePointDestination(): Unexpected format of symbolic link name (it does not contain backslash): " << repPointDir);
                     return FALSE;
                 }
-                lstrcpynW(lastComp + 1, s, (int)(1000 - ((lastComp + 1) - symlinkAbsPath)));
+                lstrcpynW(lastComp + 1, s, (int)(nameUnits - ((lastComp + 1) - symlinkAbsPath)));
             }
             s = symlinkAbsPath;
         }
@@ -1726,17 +1757,54 @@ BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, D
         // feature 062 (contract C1): the destination continues into UTF-8 consumers
         // (panel paths, path comparisons) - the former CP_ACP conversion produced
         // bytes those consumers could never match
-        if (SalWToU8(s, -1, repPointDstBuf, repPointDstBufSize) == 0 &&
-            WideCharToMultiByte(CP_ACP, 0, s, -1, repPointDstBuf, repPointDstBufSize, NULL, NULL) == 0)
+        // feature 197 (review): the UTF-8 form or nothing - the code-page fallback for a destination
+        // that did not fit handed code-page bytes to UTF-8 consumers (WTF-8 converts any string)
+        if (SalWToU8(s, -1, repPointDstBuf, repPointDstBufSize) == 0)
         {
-            DWORD err = GetLastError();
-            TRACE_I("WideCharToMultiByte error: " << err);
+            TRACE_I("GetReparsePointDestination(): the destination does not fit the buffer: " << repPointDir);
+            if (repPointDstBufSize > 0)
+                repPointDstBuf[0] = 0;
             return FALSE;
         }
         if (repPointDstBufSize > 0)
             repPointDstBuf[repPointDstBufSize - 1] = 0;
     }
     return TRUE;
+}
+
+BOOL GetReparsePointTag(const char* path, DWORD* tag)
+{
+    if (tag != NULL)
+        *tag = 0;
+    WCHAR* w = SalPathToWExtAlloc(path); // any length; the \\?\ form keeps a trailing space or dot
+    if (w == NULL)
+        return FALSE;
+    size_t len = wcslen(w);
+    while (len > 7 && w[len - 1] == L'\\') // "\\?\C:\" stays; "x\" would open what the link points at
+        w[--len] = 0;
+    HANDLE h = HANDLES_Q(CreateFileW(w, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                     NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL));
+    free(w);
+    if (h == INVALID_HANDLE_VALUE)
+        return FALSE;
+    FILE_ATTRIBUTE_TAG_INFO info;
+    BOOL ok = GetFileInformationByHandleEx(h, FileAttributeTagInfo, &info, sizeof(info));
+    HANDLES(CloseHandle(h));
+    if (!ok)
+        return FALSE;
+    if (tag != NULL)
+        *tag = (info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ? info.ReparseTag : 0;
+    return TRUE;
+}
+
+BOOL DeleteAsDirLink(const char* path)
+{
+    int repPointType;
+    if (GetReparsePointDestination(path, NULL, 0, &repPointType, TRUE))
+        return TRUE; // a volume mount point, a junction, a symbolic link
+    DWORD tag = 0;
+    BOOL tagRead = GetReparsePointTag(path, &tag);
+    return SalDeleteAsDirLinkDecision(FALSE, tagRead, tag); // salreparse.h: fail closed
 }
 
 BOOL GetCurrentLocalReparsePoint(const char* path, char* currentReparsePoint, BOOL* error)

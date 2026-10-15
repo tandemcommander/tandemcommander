@@ -973,8 +973,17 @@ BOOL MyGetVolumeInformation(const char* path, char* rootOrCurReparsePoint, char*
 // symbolicky link, prevede cilovou cestu linku na absolutni;
 // vraci TRUE pri uspechu + v 'repPointType' (neni-li NULL) vraci typ reparse pointu:
 // 1 (MOUNT POINT), 2 (JUNCTION POINT), 3 (SYMBOLIC LINK)
+// feature 197: 'repPointDir' of any length; FALSE when the destination does not fit (never cut)
 BOOL GetReparsePointDestination(const char* repPointDir, char* repPointDstBuf, DWORD repPointDstBufSize,
                                 int* repPointType, BOOL makeRelPathAbs);
+
+// feature 197: the reparse tag of 'path' (UTF-8, any length; 0 = not a reparse point); FALSE when
+// it cannot be read
+BOOL GetReparsePointTag(const char* path, DWORD* tag);
+
+// feature 197: is the directory 'path' (with FILE_ATTRIBUTE_REPARSE_POINT) deleted as a link - only
+// the link removed? SalDeleteAsDirLinkDecision (salreparse.h): fail closed
+BOOL DeleteAsDirLink(const char* path);
 
 // v 'currentReparsePoint' (aspon MAX_PATH znaku) vraci aktualni (posledni) lokalni
 // reparse point, pri neuspechu vraci klasicky root; pri neuspechu vraci FALSE; neni-li

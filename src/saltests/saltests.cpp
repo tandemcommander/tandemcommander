@@ -60,6 +60,7 @@
 #include "salaltername.h"    // feature 169
 #include "salfmtinserts.h"   // feature 180
 #include "salmultisz.h"      // feature 189
+#include "salreparse.h"      // feature 197
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11878,6 +11879,22 @@ static void TestShellLinkLoadName181()
     CHECK(SalShellLinkLoadNameAlloc(NULL) == NULL);
 }
 
+// feature 197: a reparse directory is deleted as a LINK unless it is proven a plain one - the delete
+// emptied a junction whose destination could not be read (a path of 780+ characters): the files
+// of its target were deleted
+static void TestDeleteAsDirLink197()
+{
+    CHECK(SalDeleteAsDirLinkDecision(TRUE, FALSE, 0));                          // destination read
+    CHECK(SalDeleteAsDirLinkDecision(TRUE, TRUE, 0x9000001A));                  // read wins over any tag
+    CHECK(SalDeleteAsDirLinkDecision(FALSE, FALSE, 0));                         // nothing known: a link
+    CHECK(SalDeleteAsDirLinkDecision(FALSE, TRUE, IO_REPARSE_TAG_MOUNT_POINT)); // a junction not parsed
+    CHECK(SalDeleteAsDirLinkDecision(FALSE, TRUE, IO_REPARSE_TAG_SYMLINK));
+    CHECK(SalDeleteAsDirLinkDecision(FALSE, TRUE, 0xA000001D));  // LX_SYMLINK: a surrogate
+    CHECK(!SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x9000001A)); // CLOUD: a plain directory (062 C3)
+    CHECK(!SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x80000021)); // ONEDRIVE
+    CHECK(!SalDeleteAsDirLinkDecision(FALSE, TRUE, 0));          // no reparse point (any more)
+}
+
 // feature 189: a REG_MULTI_SZ list as one line (salmultisz.h) - the NULs at the end are the end
 // whatever their number (one NUL showed a trailing space), the ones inside are separators
 static void TestMultiSzToLine189()
@@ -12033,6 +12050,7 @@ int main(int argc, char** argv)
     TestFormatMessageInserts180();
     TestShellLinkLoadName181();
     TestMultiSzToLine189();
+    TestDeleteAsDirLink197();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

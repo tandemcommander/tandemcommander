@@ -1947,9 +1947,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
     // directories (cloud placeholders, e.g. OneDrive) are plain directories - the
     // worker's link executor refuses their tag with ERROR_REPARSE_TAG_MISMATCH, so
     // they used to be undeletable on this route
-    int repPointType;
-    if (type == atDelete && (sourceDirAttr & FILE_ATTRIBUTE_REPARSE_POINT) &&
-        GetReparsePointDestination(sourcePath, NULL, 0, &repPointType, TRUE))
+    // feature 197: decided by DeleteAsDirLink - GetReparsePointDestination failed for a path past
+    // its buffer (about 780 characters) and such a junction was emptied like a folder: the files of
+    // its TARGET were deleted; now a link is never descended into when it cannot be told apart
+    if (type == atDelete && (sourceDirAttr & FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(sourcePath))
     { // deleting links (volume mount points + junction points + symlinks)
         op.Opcode = ocDeleteDirLink;
         op.OpFlags = 0;

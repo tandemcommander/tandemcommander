@@ -256,7 +256,8 @@ Functional, no loss:
    - the viewer's Exif dialog and auto-rotation are dead for the same reason the command was
      (the built-in engine never reports `PVFF_EXIF`); switching them on is a feature of its own.
    - a refused file gets "Unable to create a file with the new thumbnail. Disk full? ..." - a
-     sentence of its own needs a new string; the message has no "skip all".
+     sentence of its own needs a new string (the "skip all" is there since feature 142 -
+     `ThumbWriteFailed`; corrected 2026-10-15).
 8. ~~A per-member warning when an archive member changed in the archive since
    its F4~~ - **done, feature 153** (the Archive Update dialog marks the line; owed to a person:
    the dialog with a marked line on screen). Left, recorded in its fix-log: a member rewritten
@@ -671,7 +672,13 @@ Code work an agent can do:
      folder of 321 bytes / 301 characters). Left (found by its review): `FocusShortcutTarget`'s
      `errBuf[MAX_PATH + 300]` + `sprintf` of a name of up to 765 bytes - a stack overrun (done,
      feature 182 - measured: a crash); a junction / symlink in a folder of 260+ bytes is not recognised there (the
-     `strlen < MAX_PATH` guard before `GetReparsePointDestination`); `GetSHObjectName(..., MAX_PATH)`
+     `strlen < MAX_PATH` guard before `GetReparsePointDestination`) - **done, feature 197**, which found the same function deciding the
+     delete: **a junction in a folder of 780+ characters was emptied like a folder - its target's
+     files deleted** (fixed; in every release, also 0.1.9 and the prepared 0.1.10 - the maintainer
+     decides whether 197 joins 0.1.10; left by its review: Change Attributes / Change Case with
+     subfolders descend into every junction - the target's files change, nothing is lost;
+     `_RemoveTemporaryDir` has no reparse check; not driven: a deep directory symbolic link, the
+     delete by Recycle Bin masks, a cloud placeholder past 780 characters); `GetSHObjectName(..., MAX_PATH)`
      cuts and widens through the code page (server links - Network plug-in only). Was: `Execute` (`fileswn2.cpp`) appends the name with a limit of
      `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";
      `FocusShortcutTarget` (`fileswn0.cpp`) falls back to a `CP_ACP` conversion that cuts a

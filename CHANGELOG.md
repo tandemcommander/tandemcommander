@@ -11,6 +11,12 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Deleting a link in a very deep folder no longer deletes its target's
+  files** (feature 197). With the Recycle Bin off, deleting a junction (or a
+  folder containing one) whose path was longer than about 780 characters
+  emptied the folder the junction points to. Only the link is removed now;
+  *Go to Shortcut Target* also works for such links.
+
 - **Renamer in a case-sensitive folder** (feature 196). Renaming "a.txt" to
   "A.txt" while "A.txt" is another file failed with "already exists"; the
   Renamer asks to overwrite it now.
