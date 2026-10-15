@@ -554,8 +554,11 @@ Code work an agent can do:
   `specs/127-mixed-template-texts/probe/scan_mixed.py --plugins` lists 137 candidates (FTP 86,
   SFTP 17, ZIP 15) - FTP has its own rules for server texts; (3) the guard has no reverse rule
   (a `LoadStr(` piece inside a `LoadStrU8` template, an A-API sink) and its sink patterns depend
-  on the variable names `params` / `log`; (4) `menu2.cpp` `AssignHotKeys` is byte-wise with
-  code-page tables and can put `&` inside a UTF-8 sequence; (5) the Registry Editor's `%ls`
+  on the variable names `params` / `log`; (4) ~~`menu2.cpp` `AssignHotKeys` is byte-wise with
+  code-page tables and can put `&` inside a UTF-8 sequence~~ (done, feature 236; left: **a popup's
+  key matching `FindNextItemIndex(int, char)` compares the typed ANSI byte with the byte after '&' -
+  a UTF-8 item (plug-in menus) with a non-ASCII hot key can never be chosen by key, and a byte may
+  match another letter; use `SalMnemonicMatchW` as the menu bar does since 093**); (5) the Registry Editor's `%ls`
   messages (`fs5.cpp`, `ErrorHelper`) are consistently code page but lose letters outside it.
 - ~~Registry Editor: a malformed `REG_MULTI_SZ` with one terminator shows a trailing space (124)~~ -
   **done, feature 189** (also the Find window read past its copy of such a value).

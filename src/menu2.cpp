@@ -5,6 +5,7 @@
 #include "precomp.h"
 
 #include "menu.h"
+#include "salmenuhotkey.h" // feature 236
 
 #define UPDOWN_TIMER_ID 1  // timer id
 #define UPDOWN_TIMER_TO 50 // time out [ms]
@@ -133,22 +134,15 @@ void CMenuPopup::AssignHotKeys()
         if (*p == NULL)
             continue;
 
-        BOOL hasHotKey = FALSE;
-        while (*p != 0)
-        {
-            if (*p == '&' && *(p + 1) != '&' && *(p + 1) != 0)
-            {
-                assigned[UpperCase[*(p + 1)]] = TRUE;
-                hasHotKey = TRUE;
-                break;
-            }
-            p++;
-        }
-        if (!hasHotKey)
+        BYTE hotKey = SalMenuHotKeyOf(p); // feature 236 (review): "&&" is a literal '&' ("R&&D" took 'D')
+        if (hotKey != 0)
+            assigned[UpperCase[hotKey]] = TRUE;
+        else
             item->Temp = TRUE;
     }
 
-    // for items without a hotkey, we try to assign one
+    // for items without a hotkey, we try to assign one: the first free ASCII letter (feature 236,
+    // salmenuhotkey.h - a byte >= 0x80 was taken too: '&' inside a UTF-8 letter, broken text)
     char buff[1000];
     for (i = 0; i < Items.Count; i++)
     {
@@ -156,49 +150,17 @@ void CMenuPopup::AssignHotKeys()
         if (!item->Temp || (item->Flags & MENU_FLAG_NOHOTKEY) != 0)
             continue;
 
-        BOOL keyAssigned = FALSE;
-        int i2;
-        for (i2 = 0; !keyAssigned && i2 < 2; i2++)
+        int pos = SalMenuHotKeyPos(item->String, assigned, UpperCase);
+        int len = (int)strlen(item->String);
+        if (pos >= 0 && len < 1000 - 1) // we must fit into the buffer
         {
-            const char* p = item->String;
-            if (*p == NULL)
-                continue;
-            while (*p != 0)
-            {
-                // During the first round, we try to avoid characters with diacritics so the user
-                // does not have to switch from an English keyboard
-                // see https://forum.altap.cz/viewtopic.php?f=23&t=4025
-                WCHAR buffw[10];
-                buffw[1] = 0; // so that we pass in the second round
-
-                if (i2 == 0)
-                {
-                    char buffa[2];
-                    buffa[0] = *p;
-                    buffa[1] = 0;
-                    MultiByteToWideChar(CP_ACP, MB_COMPOSITE, buffa, -1, buffw, 10); // "á" -> "a´"
-                }
-
-                char upper = UpperCase[*p];
-                if (buffw[1] == 0 && !assigned[upper])
-                {
-                    int len = (int)strlen(item->String);
-                    if (len < 1000 - 1) // we must fit into the buffer
-                    {
-                        int pos = (int)(p - item->String);
-                        if (pos > 0)
-                            memcpy(buff, item->String, len);
-                        buff[pos] = '&';
-                        memcpy(buff + pos + 1, item->String + pos, len - pos);
-                        // if the hot key was successfully inserted, we mark the assigned array
-                        if (item->SetText(buff, len + 1))
-                            assigned[upper] = TRUE;
-                    }
-                    keyAssigned = TRUE;
-                    break;
-                }
-                p++;
-            }
+            BYTE upper = UpperCase[(BYTE)item->String[pos]];
+            memcpy(buff, item->String, pos);
+            buff[pos] = '&';
+            memcpy(buff + pos + 1, item->String + pos, len - pos);
+            // if the hot key was successfully inserted, we mark the assigned array
+            if (item->SetText(buff, len + 1))
+                assigned[upper] = TRUE;
         }
     }
 }

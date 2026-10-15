@@ -65,6 +65,7 @@
 #include "salu8fold.h"       // feature 210
 #include "salbatchtext.h"    // feature 226
 #include "salnamerun.h"      // feature 230
+#include "salmenuhotkey.h"   // feature 236
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -12247,6 +12248,45 @@ static void TestNameExactInCIRun230()
     CHECK(!SalNameCIFallbackTakes(FALSE, 1, TRUE)); // a case-sensitive folder: another file
 }
 
+// feature 236: a menu item's hot key goes before a free ASCII letter only - never inside a UTF-8 letter
+static void TestMenuHotKey236()
+{
+    unsigned char up[256];
+    for (int i = 0; i < 256; i++)
+        up[i] = (unsigned char)(i >= 'a' && i <= 'z' ? i - 32 : i);
+    int assigned[256] = {0};
+    CHECK(SalMenuHotKeyPos("Copy", assigned, up) == 0);
+    assigned['C'] = 1;
+    CHECK(SalMenuHotKeyPos("Copy", assigned, up) == 1);
+    CHECK(SalMenuHotKeyPos("1. copy", assigned, up) == 4); // 'c' taken (as 'C'): 'o'
+    // z-caron l u t-caron: 'l' (never a byte of the UTF-8 letters)
+    CHECK(SalMenuHotKeyPos("\xC5\xBElu\xC5\xA5", assigned, up) == 2);
+    // CJK only: no hot key (the old search put '&' before a byte the code page calls a letter)
+    CHECK(SalMenuHotKeyPos("\xE4\xB8\xAD\xE6\x96\x87", assigned, up) == -1);
+    // z-caron alone: no ASCII letter
+    CHECK(SalMenuHotKeyPos("\xC5\xBE", assigned, up) == -1);
+    // every ASCII letter of the text taken: none
+    assigned['L'] = 1;
+    assigned['U'] = 1;
+    CHECK(SalMenuHotKeyPos("\xC5\xBElu\xC5\xA5", assigned, up) == -1);
+    CHECK(SalMenuHotKeyPos("", assigned, up) == -1);
+    CHECK(SalMenuHotKeyPos("123 ()", assigned, up) == -1);
+    // 2-byte UTF-8 letters whose bytes a code page calls letters: never
+    CHECK(SalMenuHotKeyPos("\xC3\x9F", assigned, up) == -1);
+    CHECK(SalMenuHotKeyPos("\xC2\xAA", assigned, up) == -1);
+    CHECK(SalMenuHotKeyPos("\xC3\x9F"
+                           "Z",
+                           assigned, up) == 2);
+    // the existing hot key; "&&" is a literal '&'
+    CHECK(SalMenuHotKeyOf("&Copy") == 'C');
+    CHECK(SalMenuHotKeyOf("Co&py") == 'p');
+    CHECK(SalMenuHotKeyOf("R&&D") == 0);
+    CHECK(SalMenuHotKeyOf("R&&D &x") == 'x');
+    CHECK(SalMenuHotKeyOf("tail&") == 0);
+    CHECK(SalMenuHotKeyOf("") == 0);
+    CHECK(SalMenuHotKeyOf("&&&a") == 'a');
+}
+
 static void TestMultiSzToLine189()
 {
     struct Case
@@ -12409,6 +12449,7 @@ int main(int argc, char** argv)
     TestBatchText226();
     TestBatchEscape229();
     TestNameExactInCIRun230();
+    TestMenuHotKey236();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

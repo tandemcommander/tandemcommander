@@ -2819,3 +2819,6 @@ a few early ones are out of sequence).
 - 235-find-list-of-names-folders: `$(ListOfSelectedNames)` from Find results in several folders ran
   once in the first folder with bare names - other files there. Now the full names (no fitting
   message for a refusal; decision in the fix-log); help updated. By reading.
+- 236-menu-hotkeys-utf8: `AssignHotKeys` could put '&' inside a UTF-8 letter (a code-page "letter"
+  byte); now ASCII letters only (`salmenuhotkey.h`, saltests); "&&" is a literal '&'. Note: the core
+  builds with /J - `UpperCase[char]` never indexes negatively.

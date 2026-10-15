@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Menus: item names with letters outside English stay readable**
+  (feature 236). An automatically added keyboard shortcut could be put
+  inside such a letter in some menus (plug-ins, histories), which garbled
+  the name. A name such as "R&D" no longer loses its shortcut.
+
 - **Find window: the list of selected names from several folders**
   (feature 235). A User Menu command using the list of selected names, run
   on Find results from several folders, got bare names that pointed into
