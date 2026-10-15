@@ -11,6 +11,13 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Cleaning up a temporary folder never deletes through a link** (feature
+  212). When a temporary folder of the program (an archive unpacked for
+  viewing, an external archiver's work folder, a plug-in's temporary
+  folder) contained a junction or a folder symbolic link, the cleanup
+  went through it and deleted the files of the folder it points to. Now
+  only the link itself is removed.
+
 - **Disk Map: the menu of a file never acts on its folder** (feature 211).
   For a file with a long name deep in the folder tree (its full path over
   about 780 characters), the map's context menu worked on the FOLDER the

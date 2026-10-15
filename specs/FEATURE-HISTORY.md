@@ -2693,3 +2693,8 @@ a few early ones are out of sequence).
   Delete offered the FOLDER for permanent deletion (measured). Now no name at all when a part does
   not fit (`GetNameAux`); the menu, the default command and Focus refuse (a beep); the shell gets
   `SplU8ToW` (WTF-8), never `CP_ACP`. Probe `diskmap_long_probe.ps1`; 143 34 / 0.
+- 212-temp-dir-links: `RemoveTemporaryDir` / `RemoveEmptyDirs` (`salamdr3.cpp`) walked into every
+  subdirectory - a junction or directory symbolic link inside a temporary folder had its TARGET's
+  files deleted. A directory link (`DeleteAsDirLink`, 197's fail-closed decision) is now removed as
+  a link and never walked, also the folder passed in. By reading only; driving it (the start-up
+  `SAL*.tmp` sweep with a junction inside) is owed.

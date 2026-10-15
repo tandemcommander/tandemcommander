@@ -1010,6 +1010,33 @@ void SetCurrentDirectoryToSystem()
 
 // ****************************************************************************
 
+// feature 212: is the directory 'dir' (UTF-8) a link that is never walked? Asked without a
+// trailing backslash ("x\" would ask what the link points at); fails closed: attributes that
+// cannot be read count as a link, except for a folder that is not there
+static BOOL IsDirLinkToKeepClosed(const char* dir)
+{
+    char* name = _strdup(dir);
+    if (name == NULL)
+        return TRUE; // cannot tell: never walked
+    size_t len = strlen(name);
+    while (len > 3 && name[len - 1] == '\\') // "C:\" stays
+        name[--len] = 0;
+    DWORD attr = SalGetFileAttributes(name);
+    BOOL link;
+    if (attr == INVALID_FILE_ATTRIBUTES)
+    {
+        DWORD err = GetLastError();
+        link = err != ERROR_FILE_NOT_FOUND && err != ERROR_PATH_NOT_FOUND;
+    }
+    else
+    {
+        link = (attr & FILE_ATTRIBUTE_DIRECTORY) && (attr & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               DeleteAsDirLink(name);
+    }
+    free(name);
+    return link;
+}
+
 void _RemoveTemporaryDir(const char* dir)
 {
     // feature 068 (F-P1-04): 'dir' is UTF-8 (SalGetTempFileName / plugin
@@ -1037,7 +1064,15 @@ void _RemoveTemporaryDir(const char* dir)
                 strcpy(end, nameU8);
                 ClearReadOnlyAttr(path, fileW.dwFileAttributes);
                 if (fileW.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                    _RemoveTemporaryDir(path);
+                {
+                    // feature 212: a junction / directory symbolic link (DeleteAsDirLink, fail
+                    // closed) is removed as a link - the walk went through it and deleted the
+                    // files of its TARGET
+                    if ((fileW.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(path))
+                        SalRemoveDirectory(path);
+                    else
+                        _RemoveTemporaryDir(path);
+                }
                 else
                     SalDeleteFile(path);
             }
@@ -1051,6 +1086,13 @@ void _RemoveTemporaryDir(const char* dir)
 void RemoveTemporaryDir(const char* dir)
 {
     CALL_STACK_MESSAGE2("RemoveTemporaryDir(%s)", dir);
+    // feature 212: 'dir' itself a link (a plugin's service call) - only the link is removed
+    if (IsDirLinkToKeepClosed(dir))
+    {
+        ClearReadOnlyAttr(dir);
+        SalRemoveDirectory(dir);
+        return;
+    }
     // feature 068 (F-P1-04): 'dir' is UTF-8 - convert for the wide call and keep
     // the ANSI call as the transitional fallback (house pattern)
     WCHAR wDir[MAX_PATH];
@@ -1093,7 +1135,12 @@ void _RemoveEmptyDirs(const char* dir)
                 {
                     strcpy(end, nameU8);
                     ClearReadOnlyAttr(path, fileW.dwFileAttributes);
-                    _RemoveEmptyDirs(path);
+                    // feature 212: a link is removed as a link, never walked (the empty folders
+                    // of its TARGET were removed)
+                    if ((fileW.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(path))
+                        SalRemoveDirectory(path);
+                    else
+                        _RemoveEmptyDirs(path);
                 }
             }
         } while (SalFindNextFile(find, &fileW));
@@ -1106,6 +1153,12 @@ void _RemoveEmptyDirs(const char* dir)
 void RemoveEmptyDirs(const char* dir)
 {
     CALL_STACK_MESSAGE2("RemoveEmptyDirs(%s)", dir);
+    if (IsDirLinkToKeepClosed(dir)) // feature 212: only the link is removed (see _RemoveEmptyDirs)
+    {
+        ClearReadOnlyAttr(dir);
+        SalRemoveDirectory(dir);
+        return;
+    }
     // feature 068 (F-P1-04): 'dir' is UTF-8 - see RemoveTemporaryDir
     WCHAR wDir[MAX_PATH];
     if (SalU8ToW(dir, -1, wDir, _countof(wDir)) != 0)

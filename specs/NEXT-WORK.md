@@ -702,7 +702,11 @@ Code work an agent can do:
      files deleted** (fixed; in every release, also 0.1.9 and the prepared 0.1.10 - the maintainer
      decides whether 197 joins 0.1.10; left by its review: Change Attributes / Change Case with
      subfolders descend into every junction - the target's files change, nothing is lost;
-     `_RemoveTemporaryDir` has no reparse check; not driven: a deep directory symbolic link, the
+     ~~`_RemoveTemporaryDir` has no reparse check~~ - **done, feature 212** (by reading; driving
+     it owed; left: the ZIP self-extractor's own `_RemoveTemporaryDir` in `selfextr.cpp:157` - the
+     same defect, `A` calls; the external unpacker's walk `pack1.cpp:632-692` moves the extracted
+     folder's content out - a junction extracted from the archive would have its target's content
+     moved, rule 099, to be measured); not driven: a deep directory symbolic link, the
      delete by Recycle Bin masks, a cloud placeholder past 780 characters); `GetSHObjectName(..., MAX_PATH)`
      cuts and widens through the code page (server links - Network plug-in only). Was: `Execute` (`fileswn2.cpp`) appends the name with a limit of
      `MAX_PATH` bytes, so a `.lnk` under a folder of more than 260 UTF-8 bytes is "too long";
