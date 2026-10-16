@@ -690,7 +690,9 @@ Code work an agent can do:
          was a probe defect - withdrawn, 235; a person's check owed); deep FTP paths are limited to ~260 bytes
          by the core);
          ~~`FTPU8NameToServer` sends a name the ANSI code page can hold in that code page even to a
-         UTF-8 server~~ - **done, feature 224** (left: **a per-server encoding flag** - unknown /
+         UTF-8 server~~ - **done, feature 224** (left: **a per-server encoding flag** - **the maintainer, 2026-10-16: stays in the backlog**
+         (severity about 3/10: only legacy code-page servers, new names garbled or typed paths not
+         found, no data lost) - unknown /
          UTF-8 / legacy by host, port, user; evidence FEAT UTF8 or a listing - instead of one
          process-wide set; until then new names (MKD, RNTO, STOR, typed paths, bookmarks) go in
          UTF-8 also to a legacy code-page server, and a name seen in the code page on one server
@@ -719,7 +721,10 @@ Code work an agent can do:
          (done, feature 229; left from it: ~~a folder literally named with %VAR% cannot be given
          on the command line or typed~~ - done, feature 238; the refusal message names the command, not the
          file); a UNC panel folder or Initial Directory - cmd refuses a UNC current folder and
-         runs in C:\Windows, a UNC Initial Directory writes no `cd` (`pushd` / `popd` or refuse);
+         runs in C:\Windows, a UNC Initial Directory writes no `cd` (`pushd` / `popd` or refuse) -
+         **the maintainer, 2026-10-16: stays in the backlog** (severity about 2-3/10: a "through
+         shell" item, no Initial Directory, a relative name, a UNC panel; a safe fix would be
+         `pushd` at the start, `popd` at the end, early ends by `goto` to it);
          ~~the Find window's User Menu route sets no current folder~~ (done, feature 234; left:
          ~~`$(ListOfSelectedNames)` from several Find folders runs once in the first one~~ (done,
          feature 235 - full names);
