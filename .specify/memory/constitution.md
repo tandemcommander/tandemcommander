@@ -1,6 +1,24 @@
 <!--
 Sync Impact Report
 ===================
+Version change: 3.1.0 → 3.2.0 (existing guidance materially changed, no principle redefined)
+Modified sections:
+  - Development Workflow ▸ Release Documentation (feature 243) — the Added /
+    Changed / Fixed / Removed groups are optional (entries citing their
+    feature are accepted, the form used since 0.1.10); every version's
+    section opens with the lead "**Build N.** <Kind> release." (the winget
+    summary: ≤ 900 characters, no "#"); the list of what a release bumps
+    moved to backlog/RELEASE.md "Release records" (one list instead of three
+    disagreeing ones) and the preparation is /tandem-release.
+  Rationale: the maintainer's decision in the clarify session of feature 243
+  (2026-10-17): regrouping the entries adds nothing for users, the missing
+  lead would have put a bullet into the public winget manifest, and the
+  record lists in this file, CLAUDE.md and RELEASE.md had drifted apart.
+Templates requiring updates: none (generic Constitution Check gate)
+Follow-up TODOs: none
+
+Prior report (3.0.0 → 3.1.0)
+===================
 Version change: 3.0.0 → 3.1.0 (new guidance added, no principle redefined)
 Added sections:
   - Development Workflow ▸ Release Documentation — CHANGELOG.md in the repository
@@ -181,7 +199,13 @@ style while the rest of the app stayed classic.
 changed between released versions, and it MUST be kept current:
 
 - Every user-visible change MUST appear in `CHANGELOG.md` under the
-  version that ships it, grouped as Added / Changed / Fixed / Removed.
+  version that ships it. Entries MAY be grouped as Added / Changed /
+  Fixed / Removed; a list of entries each citing its feature (and the
+  GitHub issue it answers) is equally accepted.
+- Each version's section MUST open with a lead paragraph
+  `**Build N.** <Kind> release. …` that summarizes the release for users:
+  it becomes the public winget release summary, so it MUST stay within
+  900 characters and contain no `#`.
   Changes with no user-visible effect (refactoring, test scaffolding,
   internal tooling) are recorded only when they change what a user or a
   plugin author can rely on.
@@ -192,10 +216,13 @@ changed between released versions, and it MUST be kept current:
   limitation that remains, or a defect that predates the release is
   stated as such. A changelog that oversells is worse than none.
 - **Releasing a version MUST bump the version and the build number in
-  the same change** as the changelog entry: `VERSINFO_SALAMANDER_*` and
-  `VERSINFO_BUILDNUMBER` in `src/plugins/shared/spl_vers.h` (the build
-  number carries a comment naming its version), `MyAppVersion` in
-  `setup/tandemcommander.iss`, and the version stated in `CLAUDE.md`.
+  the same change** as the changelog entry, together with every other
+  release record: the one list is *Release records* in
+  `backlog/RELEASE.md` (among them `VERSINFO_SALAMANDER_*` and
+  `VERSINFO_BUILDNUMBER` in `src/plugins/shared/spl_vers.h`, whose build
+  number carries a comment naming its version, and `MyAppVersion` in
+  `setup/tandemcommander.iss`). The preparation is `/tandem-release
+  <x.y.z>`, which sets and checks them all.
   The plugin interface version (`LAST_VERSION_OF_SALAMANDER`) changes
   only when the plugin API changes — never merely because the product
   version did.
@@ -229,4 +256,4 @@ versioning rules below.
 changes align with this constitution's principles. Violations
 MUST be flagged and resolved before merge.
 
-**Version**: 3.1.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-08-05
+**Version**: 3.2.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-10-17

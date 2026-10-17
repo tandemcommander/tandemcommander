@@ -20,7 +20,8 @@ add *Recent Changes* / *Active Technologies* sections.
 | Full record of a feature | `specs/NNN-*/` — `fix-log.md`, `closing-report.md`, `research.md`, `contracts/`, `probe/` |
 | Identity, build policies, key facts in full | `architecture/12-project-reference.md` |
 | Architecture (build pipeline, dependencies, plugin API, plugin catalog, code standards) | `architecture/README.md` → `01`–`12`; `06` = plugin API, `11` = WebView2 **binding contract** |
-| Principles | `.specify/memory/constitution.md` (v3.0.0): build reproducibility, backward compatibility (baseline 0.1.0), incremental modernization, Windows commitment, plugin architecture preservation, UI consistency |
+| Preparing a release | `/tandem-release <x.y.z>` on the release day (243); `backlog/RELEASE.md` — *Release records*, the maintainer's steps; tool `tools/release/release.py` |
+| Principles | `.specify/memory/constitution.md` (v3.2.0): build reproducibility, backward compatibility (baseline 0.1.0), incremental modernization, Windows commitment, plugin architecture preservation, UI consistency |
 | Released versions | `CHANGELOG.md`; public privacy claim `PRIVACY.md` |
 
 ## Product identity
@@ -29,11 +30,10 @@ add *Recent Changes* / *Active Technologies* sections.
   carries features 124–142; previous: 0.1.9 / build 193 / tag
   `v0.1.9`). Plugin interface version (`LAST_VERSION_OF_SALAMANDER`) **107** —
   independent, changes only with the plugin API.
-- **A release** bumps, in the same change as the `CHANGELOG.md` entry:
-  `VERSINFO_SALAMANDER_*` + `VERSINFO_BUILDNUMBER` in
-  `src/plugins/shared/spl_vers.h`, `MyAppVersion` in
-  `setup/tandemcommander.iss`, the line above, and the validity line of
-  `PRIVACY.md`. The installer keeps the name
+- **A release** sets the eight *Release records* of `backlog/RELEASE.md`
+  (version and build in `spl_vers.h`, `MyAppVersion`, the changelog section,
+  `PRIVACY.md`, the line above, …) in one change — prepared by
+  `/tandem-release <x.y.z>` (243). The installer keeps the name
   `tandemcommander-<ver>-x64-setup.exe` and the GitHub release is published
   with it attached (the new-version check builds that address, 123). A bumped
   tree is not a published release — check the git tag.
@@ -181,7 +181,10 @@ Each is one line of a longer story; the number is the feature whose entry in
   `leftover:NNN`) and fixed one by one, not inside the current feature.
   Agents only add to *Inbox*; the maintainer triages and orders (242).
 - Do not push or publish from an implementation session; build, tag, GitHub
-  release and winget submission are the maintainer's steps.
+  release and winget submission are the maintainer's steps. Version, build,
+  release dates and the dated changelog heading are set only by
+  `/tandem-release` on the release day (features add entries under an
+  `unreleased` heading); a release on a later day runs it again (243).
 - Write scripts with the editor tools — Bash here-documents collapse doubled
   backslashes (123).
 

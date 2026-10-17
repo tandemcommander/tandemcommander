@@ -1,0 +1,2 @@
+// Miniature of src/versinfo.rh2 for tools/release/test_release.py
+#define VERSINFO_COPYRIGHT   "Copyright © 1997-2026 Open Salamander Authors, © 2026 " VERSINFO_HOLDER_TANDEM

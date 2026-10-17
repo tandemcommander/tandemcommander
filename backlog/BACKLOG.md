@@ -147,6 +147,8 @@ Last triaged: 2026-10-17
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Unshipped resources still carry 2023 Open Salamander-only copyright notices](items/unshipped-resources-still-carry-2023-open-salamander-only/desc.md) | tech-debt | 1 | build-release | review:243 | 2026-10-17 |
+| [winget README names a publish.ps1 check that does not exist](items/winget-readme-names-a-publish-ps1-check-that-does-not-exist/desc.md) | tech-debt | 1 | build-release | review:243 | 2026-10-17 |
 
 ## Parked
 
