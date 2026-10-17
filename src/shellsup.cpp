@@ -1325,7 +1325,7 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                  BOOL posByMouse, BOOL onlyPanelMenu)
 {
     CALL_STACK_MESSAGE5("ShellAction(, %d, %d, %d, %d)", action, useSelection, posByMouse, onlyPanelMenu);
-    if (panel->QuickSearchMode)
+    if (panel->QuickSearchMode && !panel->QFMode) // feature 244: the new mode acts on the matches shown
         panel->EndQuickSearch();
     if (panel->Dirs->Count + panel->Files->Count == 0 && useSelection)
     { // without files and directories -> nothing to do

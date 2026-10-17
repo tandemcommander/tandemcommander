@@ -297,6 +297,7 @@ const char* CONFIG_IFPATHISINACCESSIBLEGOTO_REG = "If Path Is Inaccessible Go To
 const char* CONFIG_HOTPATH_AUTOCONFIG = "Auto Configurate Hot Paths";
 const char* CONFIG_LASTUSEDSPEEDLIM_REG = "Speed Limit";
 const char* CONFIG_QUICKSEARCHENTER_REG = "Quick Search Enter Alt";
+const char* CONFIG_QUICKSEARCHFILTER_REG = "Quick Search Filter"; // feature 244
 const char* CONFIG_CHD_SHOWMYDOC = "Change Drive Show My Documents";
 const char* CONFIG_CHD_SHOWANOTHER = "Change Drive Show Another";
 const char* CONFIG_CHD_SHOWCLOUDSTOR = "Change Drive Show Cloud Storages";
@@ -1694,6 +1695,8 @@ void CMainWindow::SaveConfig(HWND parent)
                          &Configuration.LastUsedSpeedLimit, sizeof(DWORD));
                 SetValue(actKey, CONFIG_QUICKSEARCHENTER_REG, REG_DWORD,
                          &Configuration.QuickSearchEnterAlt, sizeof(DWORD));
+                SetValue(actKey, CONFIG_QUICKSEARCHFILTER_REG, REG_DWORD,
+                         &Configuration.QuickSearchFilter, sizeof(DWORD));
                 SetValue(actKey, CONFIG_CHD_SHOWMYDOC, REG_DWORD,
                          &Configuration.ChangeDriveShowMyDoc, sizeof(DWORD));
                 SetValue(actKey, CONFIG_CHD_SHOWCLOUDSTOR, REG_DWORD,
@@ -3307,6 +3310,9 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                      &Configuration.LastUsedSpeedLimit, sizeof(DWORD));
             GetValue(actKey, CONFIG_QUICKSEARCHENTER_REG, REG_DWORD,
                      &Configuration.QuickSearchEnterAlt, sizeof(DWORD));
+            // feature 244: an absent value keeps the default (on)
+            GetValue(actKey, CONFIG_QUICKSEARCHFILTER_REG, REG_DWORD,
+                     &Configuration.QuickSearchFilter, sizeof(DWORD));
             GetValue(actKey, CONFIG_CHD_SHOWMYDOC, REG_DWORD,
                      &Configuration.ChangeDriveShowMyDoc, sizeof(DWORD));
             GetValue(actKey, CONFIG_CHD_SHOWCLOUDSTOR, REG_DWORD,

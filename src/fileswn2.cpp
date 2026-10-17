@@ -585,6 +585,8 @@ void CFilesWindow::ChangeSortType(CSortType newType, BOOL reverse, BOOL force)
     }
 
     MainWindow->CancelPanelsUI(); // cancel QuickSearch and QuickEdit
+    // feature 244: the full listing is sorted (the visible arrays are a view of it), then filtered again
+    BOOL qfResort = QFSuspend();
 
     //---  storing the focused item and sorting of old items by name
     int focusIndex = GetCaretIndex();
@@ -680,6 +682,14 @@ void CFilesWindow::ChangeSortType(CSortType newType, BOOL reverse, BOOL force)
     }
     if (focusIndex >= count)
         focusIndex = count - 1;
+    if (qfResort && QuickSearchMode && QFMode) // feature 244
+    {
+        FocusedIndex = focusIndex < 0 ? 0 : focusIndex;
+        ListBox->PaintHeaderLine();
+        if (QFApply(QuickSearchMask, TRUE))
+            return;
+        EndQuickSearch(); // (only without memory)
+    }
     //---  using the acquired data for the final listbox setup
     SetCaretIndex(focusIndex, FALSE); // focus
     IdleRefreshStates = TRUE;         // force state-variables check on next Idle
@@ -1222,6 +1232,7 @@ void CFilesWindow::ItemFocused(int index)
                 StatusLine->SetSubTexts(varPlacements, varPlacementsCount);
         }
     }
+    QFStatusFallback();       // feature 244: with the directory line hidden, the search shows here
     IdleRefreshStates = TRUE; // we force state-variables check on next Idle
 }
 
@@ -1768,6 +1779,8 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
         suggestedFocusName = backup2;
     }
 
+    if (!isRefresh)
+        QFEndAtPathChange(); // feature 244: the history records the full listing's position
     // restore panel state info (top-index + focused-name) before potentially closing this path
     RefreshPathHistoryData();
 
@@ -2240,6 +2253,8 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
         }
     }
 
+    if (!isRefresh)
+        QFEndAtPathChange(); // feature 244: the history records the full listing's position
     // restore panel state info (top-index + focused-name) before potentially closing this path
     RefreshPathHistoryData();
 
@@ -3011,6 +3026,8 @@ BOOL CFilesWindow::ChangePathToPluginFS(const char* fsName, const char* fsUserPa
         suggestedFocusName = backup3;
     }
 
+    if (!isRefresh)
+        QFEndAtPathChange(); // feature 244: the history records the full listing's position
     // restore panel state info (top-index + focused-name) before potentially closing this path
     RefreshPathHistoryData();
 
@@ -3511,6 +3528,7 @@ BOOL CFilesWindow::ChangePathToDetachedFS(int fsIndex, int suggestedTopIndex,
         newFSName = backup3;
     }
 
+    QFEndAtPathChange(); // feature 244: the history records the full listing's position
     // restore panel state info (top-index + focused-name) before potentially closing this path
     RefreshPathHistoryData();
 

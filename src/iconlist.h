@@ -158,6 +158,10 @@ public:
 
     virtual BOOL WINAPI Draw(int index, HDC hDC, int x, int y, COLORREF blendClr, DWORD flags);
 
+    // feature 244: as Draw(), the transparent pixels taking 'bkColor' instead of the list's own
+    // background (a searching panel's tint); not virtual - the plug-in interface is unchanged
+    BOOL DrawOnBk(int index, HDC hDC, int x, int y, COLORREF bkColor, COLORREF blendClr, DWORD flags);
+
     virtual BOOL WINAPI SetBkColor(COLORREF bkColor);
     virtual COLORREF WINAPI GetBkColor();
 

@@ -1353,6 +1353,9 @@ void CMainWindow::ChangePanel(BOOL force)
     CALL_STACK_MESSAGE1("CMainWindow::ChangePanel()");
 
     MainWindow->CancelPanelsUI(); // cancel QuickSearch and QuickEdit
+    // feature 244: activating the other panel ends a search
+    LeftPanel->QFEndAtPathChange();
+    RightPanel->QFEndAtPathChange();
     if (IsIconic(HWindow))
         return;
 
@@ -1420,6 +1423,11 @@ void CMainWindow::FocusPanel(CFilesWindow* focus, BOOL testIfMainWndActive)
 {
     CALL_STACK_MESSAGE2("CMainWindow::FocusPanel(, %d)", testIfMainWndActive);
     MainWindow->CancelPanelsUI(); // cancel QuickSearch and QuickEdit
+    // feature 244: focusing the other panel ends a search; focusing the searching one keeps it
+    if (focus != LeftPanel)
+        LeftPanel->QFEndAtPathChange();
+    if (focus != RightPanel)
+        RightPanel->QFEndAtPathChange();
 
     if (!IsIconic(HWindow) && !focus->CanBeFocused())
         focus = ((focus == LeftPanel) ? RightPanel : LeftPanel);

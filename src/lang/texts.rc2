@@ -1830,6 +1830,7 @@ STRINGTABLE
  IDS_SPEED_GB_per_s, "GB/s"
  
  IDS_INVALID_DATEORTIME, "[invalid]"
+ IDS_QUICKSEARCH_STATUS, "Search: %s (%d of %d)"
  
  IDS_AS_ADMIN_TITLE, "Administrator"
 

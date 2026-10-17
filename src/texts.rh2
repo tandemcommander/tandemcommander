@@ -2544,6 +2544,10 @@
 // date or time is invalid
 #define IDS_INVALID_DATEORTIME          14000
 
+// feature 244: the running quick search in the directory line: the typed text, the number of
+// matching items and of all items ("Search: chat (3 of 120)")
+#define IDS_QUICKSEARCH_STATUS          14001
+
 // when Salamander runs "As Admin", display in main window title: Administrator
 #define IDS_AS_ADMIN_TITLE              14005
 

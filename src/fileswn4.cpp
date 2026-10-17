@@ -118,7 +118,7 @@ void CFilesWindow::SetFontAndColors(HDC hDC, CHighlightMasksItem* highlightMasks
         else
             bkColor = &CurrentColors[ITEM_BK_FOCUSED];
     }
-    SetBkColor(hDC, GetCOLORREF(*bkColor));
+    SetBkColor(hDC, QFPanelBk(GetCOLORREF(*bkColor))); // feature 244: tinted while a search shows
 }
 
 //****************************************************************************
@@ -361,7 +361,8 @@ void CFilesWindow::DrawIcon(HDC hDC, CFileData* f, BOOL isDir, BOOL isItemUpDir,
 
                 StateImageList_Draw(iconList, iconListIndex, hDC, x, y, iconState, iconSize,
                                     f->IconOverlayIndex, overlayRect, (drawFlags & DRAWFLAG_OVERLAY_ONLY) != 0,
-                                    iconOverlayFromPlugin, pluginIconOverlaysCount, pluginIconOverlays);
+                                    iconOverlayFromPlugin, pluginIconOverlaysCount, pluginIconOverlays,
+                                    QFTintBrush != NULL ? QFTintBk : CLR_NONE);
 
                 if (leaveSection)
                 {
@@ -379,7 +380,8 @@ void CFilesWindow::DrawIcon(HDC hDC, CFileData* f, BOOL isDir, BOOL isItemUpDir,
     { // simple symbols
         StateImageList_Draw(SimpleIconLists[iconSize], symbolIndex, hDC, x, y, iconState, iconSize,
                             f->IconOverlayIndex, overlayRect, (drawFlags & DRAWFLAG_OVERLAY_ONLY) != 0,
-                            iconOverlayFromPlugin, pluginIconOverlaysCount, pluginIconOverlays);
+                            iconOverlayFromPlugin, pluginIconOverlaysCount, pluginIconOverlays,
+                            QFTintBrush != NULL ? QFTintBk : CLR_NONE);
     }
 
     // I don't understand why, but the current bitmap drawing doesn't flicker.
@@ -398,35 +400,37 @@ void CFilesWindow::DrawIcon(HDC hDC, CFileData* f, BOOL isDir, BOOL isItemUpDir,
 // oRect (outer) and iRect (inner) rectangles
 //
 
-void FillIntersectionRegion(HDC hDC, const RECT* oRect, const RECT* iRect)
+void FillIntersectionRegion(HDC hDC, const RECT* oRect, const RECT* iRect, HBRUSH brush = NULL)
 {
+    if (brush == NULL)
+        brush = HNormalBkBrush;
     RECT r;
 
     // area to the left of innerRect
     r = *oRect;
     r.right = iRect->left;
     if (r.left < r.right && r.top < r.bottom)
-        FillRect(hDC, &r, HNormalBkBrush);
+        FillRect(hDC, &r, brush);
 
     // area to the right of iRect
     r = *oRect;
     r.left = iRect->right;
     if (r.left < r.right && r.top < r.bottom)
-        FillRect(hDC, &r, HNormalBkBrush);
+        FillRect(hDC, &r, brush);
 
     // area above iRect
     r = *iRect;
     r.top = oRect->top;
     r.bottom = iRect->top;
     if (r.left < r.right && r.top < r.bottom)
-        FillRect(hDC, &r, HNormalBkBrush);
+        FillRect(hDC, &r, brush);
 
     // area below iRect
     r = *iRect;
     r.top = iRect->bottom;
     r.bottom = oRect->bottom;
     if (r.left < r.right && r.top < r.bottom)
-        FillRect(hDC, &r, HNormalBkBrush);
+        FillRect(hDC, &r, brush);
 }
 
 //****************************************************************************
@@ -583,7 +587,7 @@ void CFilesWindow::DrawBriefDetailedItem(HDC hTgtDC, int itemIndex, RECT* itemRe
 
         // clear the area around the icon
         if ((drawFlags & DRAWFLAG_MASK) == 0) // when drawing the mask (b&w), the background color must not be painted
-            FillIntersectionRegion(hDC, &iconRect, &innerRect);
+            FillIntersectionRegion(hDC, &iconRect, &innerRect, QFPanelBrush());
 
         /*
     SHFILEINFO shi;
@@ -820,7 +824,7 @@ void CFilesWindow::DrawBriefDetailedItem(HDC hTgtDC, int itemIndex, RECT* itemRe
                     SALCOLOR* bkColor = (highlightMasksItem == NULL) ? &CurrentColors[ITEM_BK_NORMAL] : &highlightMasksItem->NormalBk;
                     if (fullRowHighlight && isItemFocusedOrEditMode)
                         bkColor = (highlightMasksItem == NULL) ? &CurrentColors[ITEM_BK_HIGHLIGHT] : &highlightMasksItem->HighlightBk;
-                    SetBkColor(hDC, GetCOLORREF(*bkColor));
+                    SetBkColor(hDC, QFPanelBk(GetCOLORREF(*bkColor)));
                     if (drawFlags & DRAWFLAG_MASK) // mask is b&w; we must not paint a colored background into it
                         SetBkColor(hDC, RGB(255, 255, 255));
                     ExtTextOutW(hDC, 0, 0, ETO_OPAQUE, &r, L"", 0, NULL);
@@ -854,7 +858,7 @@ void CFilesWindow::DrawBriefDetailedItem(HDC hTgtDC, int itemIndex, RECT* itemRe
                     bkColor = (highlightMasksItem == NULL) ? &CurrentColors[ITEM_BK_HIGHLIGHT] : &highlightMasksItem->HighlightBk;
                 }
                 SetTextColor(hDC, GetCOLORREF(*fgColor));
-                SetBkColor(hDC, GetCOLORREF(*bkColor));
+                SetBkColor(hDC, QFPanelBk(GetCOLORREF(*bkColor)));
                 if (drawFlags & DRAWFLAG_MASK) // mask is b&w; we must not paint a colored background into it
                     SetBkColor(hDC, RGB(255, 255, 255));
             }
@@ -1016,7 +1020,7 @@ void CFilesWindow::DrawBriefDetailedItem(HDC hTgtDC, int itemIndex, RECT* itemRe
                 // clear the background
                 adjR.left = r.left = r.right;
                 adjR.right = r.right = rect.right;
-                SetBkColor(hDC, GetCOLORREF(CurrentColors[ITEM_BK_NORMAL]));
+                SetBkColor(hDC, QFPanelBk(GetCOLORREF(CurrentColors[ITEM_BK_NORMAL])));
                 if (drawFlags & DRAWFLAG_MASK) // mask is b&w; we must not paint a colored background into it
                     SetBkColor(hDC, RGB(255, 255, 255));
                 ExtTextOutW(hDC, r.left, r.top, ETO_OPAQUE, &adjR, L"", 0, NULL);
@@ -1453,7 +1457,7 @@ void CFilesWindow::DrawIconThumbnailItem(HDC hTgtDC, int itemIndex, RECT* itemRe
 
         // clear the background around the icon or frame (for Thumbnails)
         if ((drawFlags & DRAWFLAG_MASK) == 0) // when drawing the mask (b&w), the background color must not be painted
-            FillIntersectionRegion(hDC, &outerRect, &innerRect);
+            FillIntersectionRegion(hDC, &outerRect, &innerRect, QFPanelBrush());
 
         RECT overlayRect;
         overlayRect = innerRect;
@@ -1481,7 +1485,7 @@ void CFilesWindow::DrawIconThumbnailItem(HDC hTgtDC, int itemIndex, RECT* itemRe
                 iiRect.right = iiRect.left + iconW;
                 iiRect.bottom = iiRect.top + iconH;
                 if ((drawFlags & DRAWFLAG_MASK) == 0) // when drawing the mask (b&w), the background color must not be painted
-                    FillIntersectionRegion(hDC, &innerRect, &iiRect);
+                    FillIntersectionRegion(hDC, &innerRect, &iiRect, QFPanelBrush());
             }
         }
 
@@ -1615,7 +1619,7 @@ void CFilesWindow::DrawIconThumbnailItem(HDC hTgtDC, int itemIndex, RECT* itemRe
 
         // clear the background around the text
         if ((drawFlags & DRAWFLAG_MASK) == 0) // when drawing the mask (b&w), the background color must not be painted
-            FillIntersectionRegion(hDC, &outerRect, &r);
+            FillIntersectionRegion(hDC, &outerRect, &r, QFPanelBrush());
 
         if (drawFocusFrame) // if there won't be a frame displayed, reduce the area by it
             InflateRect(&r, -1, -1);
@@ -1928,7 +1932,7 @@ void CFilesWindow::DrawTileItem(HDC hTgtDC, int itemIndex, RECT* itemRect, DWORD
 
         // clear the background around the icon or frame (for Thumbnails)
         if ((drawFlags & DRAWFLAG_MASK) == 0) // when drawing the mask (b&w), the background color must not be painted
-            FillIntersectionRegion(hDC, &outerRect, &innerRect);
+            FillIntersectionRegion(hDC, &outerRect, &innerRect, QFPanelBrush());
         // no thumbnail available -> draw the icon
         DrawIcon(hDC, f, isDir, isItemUpDir, isItemFocusedOrEditMode,
                  iconX, iconY, iconSize, NULL, drawFlags);
@@ -2028,7 +2032,7 @@ void CFilesWindow::DrawTileItem(HDC hTgtDC, int itemIndex, RECT* itemRect, DWORD
 
         // clear the background around the text
         if ((drawFlags & DRAWFLAG_MASK) == 0) // when drawing the mask (b&w), the background color must not be painted
-            FillIntersectionRegion(hDC, &outerRect, &r);
+            FillIntersectionRegion(hDC, &outerRect, &r, QFPanelBrush());
 
         //    if (drawFocusFrame) // if there won't be a frame displayed, reduce the area by it
         //      InflateRect(&r, -1, -1);
@@ -2102,7 +2106,7 @@ void CFilesWindow::DrawTileItem(HDC hTgtDC, int itemIndex, RECT* itemRect, DWORD
 BOOL StateImageList_Draw(CIconList* iconList, int imageIndex, HDC hDC, int xDst, int yDst,
                          DWORD state, CIconSizeEnum iconSize, DWORD iconOverlayIndex,
                          const RECT* overlayRect, BOOL overlayOnly, BOOL iconOverlayFromPlugin,
-                         int pluginIconOverlaysCount, HICON* pluginIconOverlays)
+                         int pluginIconOverlaysCount, HICON* pluginIconOverlays, COLORREF panelBk)
 {
     COLORREF rgbFg = CLR_DEFAULT;
     BOOL blend = FALSE;
@@ -2197,7 +2201,12 @@ BOOL StateImageList_Draw(CIconList* iconList, int imageIndex, HDC hDC, int xDst,
     else
     {
         if (!overlayOnly)
-            iconList->Draw(imageIndex, hDC, xDst, yDst, rgbFg, blend ? IL_DRAW_BLEND : 0);
+        {
+            if (panelBk != CLR_NONE) // feature 244: over the searching panel's tint
+                iconList->DrawOnBk(imageIndex, hDC, xDst, yDst, panelBk, rgbFg, blend ? IL_DRAW_BLEND : 0);
+            else
+                iconList->Draw(imageIndex, hDC, xDst, yDst, rgbFg, blend ? IL_DRAW_BLEND : 0);
+        }
         if (iconOverlayIndex != ICONOVERLAYINDEX_NOTUSED) // if this overlay is loaded it has higher priority than the overlays below
         {
             if (iconOverlayFromPlugin)

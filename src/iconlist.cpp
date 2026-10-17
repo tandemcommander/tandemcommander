@@ -708,6 +708,23 @@ BOOL CIconList::Draw(int index, HDC hDC, int x, int y, COLORREF blendClr, DWORD 
     return TRUE;
 }
 
+BOOL CIconList::DrawOnBk(int index, HDC hDC, int x, int y, COLORREF bkColor, COLORREF blendClr, DWORD flags)
+{
+    if (index < 0 || index >= ImageCount)
+    {
+        TRACE_E("CIconList::DrawOnBk() Index is out of range! index=" << index << " ImageCount=" << ImageCount);
+        return FALSE;
+    }
+    if (flags & (IL_DRAW_MASK | IL_DRAW_ASALPHA | IL_DRAW_TRANSPARENT)) // these do not use the background colour
+        return Draw(index, hDC, x, y, blendClr, flags);
+    if (flags & IL_DRAW_BLEND)
+        return AlphaBlend(hDC, x, y, index, bkColor, blendClr);
+    if (ImageFlags[index] == IL_TYPE_XOR)
+        return DrawXOR(hDC, x, y, index, bkColor);
+    // IL_TYPE_ALPHA, and IL_TYPE_NORMAL whose transparent pixels keep alpha 0 (SetBkColor)
+    return DrawALPHA(hDC, x, y, index, bkColor);
+}
+
 BOOL CIconList::DrawMask(HDC hDC, int x, int y, int index, COLORREF fgColor, COLORREF bkColor)
 {
     HANDLES(EnterCriticalSection(&CriticalSection));

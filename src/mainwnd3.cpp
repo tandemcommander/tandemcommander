@@ -2276,6 +2276,11 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
         if (res == IDOK) // values changed -> refresh everything possible
         {
+            if (!Configuration.QuickSearchFilter) // feature 244: the new mode switched off ends its search
+            {
+                LeftPanel->QFEndAtPathChange();
+                RightPanel->QFEndAtPathChange();
+            }
             if (dlg.PageView.IsDirty())
             {
                 // user changed something in the view configuration - rebuild the columns
@@ -7226,6 +7231,9 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         // ask the panels whether we can exit
         if (LeftPanel != NULL && RightPanel != NULL)
         {
+            // feature 244: a running quick search ends before the panels close their paths
+            LeftPanel->QFEndAtPathChange();
+            RightPanel->QFEndAtPathChange();
             BOOL canClose = FALSE;
             BOOL detachFS1, detachFS2;
             if (LeftPanel->PrepareCloseCurrentPath(shutdown ? analysing.HWindow : LeftPanel->HWindow, TRUE, FALSE, detachFS1, FSTRYCLOSE_UNLOADCLOSEFS /* unnecessary - plugins (including FS) already unloaded */))

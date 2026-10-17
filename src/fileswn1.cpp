@@ -97,6 +97,13 @@ void CFilesWindowAncestor::ReleaseListing()
         ((CFilesWindow*)this)
             ->VisibleItemsArray.InvalidateArr();
     ((CFilesWindow*)this)->VisibleItemsArraySurround.InvalidateArr();
+    // feature 244: the listing released is the full one (a search in the new mode ends at every
+    // path change before this; this is the safety net)
+    if (((CFilesWindow*)this)->QFActive)
+    {
+        TRACE_E("CFilesWindowAncestor::ReleaseListing(): unexpected filtered view, the quick search ends");
+        ((CFilesWindow*)this)->EndQuickSearch();
+    }
     if (OnlyDetachFSListing)
     {
         // disconnect the listing from the panel including icons
@@ -1594,6 +1601,16 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
 
     QuickSearchMode = FALSE;
     CaretHeight = 1; // dummy
+    QFMode = FALSE;  // feature 244
+    QFActive = FALSE;
+    QFFullDirs = NULL;
+    QFFullFiles = NULL;
+    QFDirMap = NULL;
+    QFFileMap = NULL;
+    QFTotalCount = 0;
+    QFMatchStart = QFMatchEnd = 0;
+    QFTintBk = 0;
+    QFTintBrush = NULL;
     QuickSearch[0] = 0;
     QuickSearchMask[0] = 0;
     SearchIndex = INT_MAX;
@@ -1641,6 +1658,20 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
 CFilesWindow::~CFilesWindow()
 {
     CALL_STACK_MESSAGE1("CFilesWindow::~CFilesWindow()");
+
+    if (QFActive) // feature 244: WM_DESTROY ended the view; this only keeps the full listing for the ancestor to free
+    {
+        TRACE_E("CFilesWindow::~CFilesWindow(): unexpected filtered view");
+        delete Dirs; // the visible arrays own nothing
+        delete Files;
+        delete QFDirMap;
+        delete QFFileMap;
+        Dirs = QFFullDirs;
+        Files = QFFullFiles;
+        QFActive = FALSE;
+    }
+    if (QFTintBrush != NULL)
+        HANDLES(DeleteObject(QFTintBrush));
 
     if (DeviceNotification != NULL)
         TRACE_E("CFilesWindow::~CFilesWindow(): unexpected situation: DeviceNotification != NULL");
@@ -1929,11 +1960,11 @@ void CFilesWindow::DirectoryLineSetText()
                 lstrcpyn(buf + l, Filter.GetMasksString(), MAX_PATH);
             }
         }
-        DirectoryLine->SetText(buf, pathLen);
+        QFSetDirLineText(buf, pathLen); // feature 244: the running search after the path
     }
     else
     {
-        DirectoryLine->SetText(path);
+        QFSetDirLineText(path, -1);
     }
 
     // feature 078: the active tab shows what the panel shows (its title follows)

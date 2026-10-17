@@ -239,6 +239,7 @@ BOOL CFilesWindow::SwitchToTab(int target)
 
     Tabs.SwitchInProgress = TRUE;
     CancelUI();               // quick search / quick rename, as any path change does
+    QFEndAtPathChange();      // feature 244: the tab keeps the full listing's selection and cursor
     RefreshPathHistoryData(); // the leaving cursor into the leaving tab's history
     CaptureActiveTab();
 

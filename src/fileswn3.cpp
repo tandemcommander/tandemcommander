@@ -68,6 +68,11 @@ BOOL CFilesWindow::ReadDirectory(HWND parent, BOOL isRefresh)
     CutToClipChanged = FALSE; // forget cut-to-clip flags by this operation
 
     FocusFirstNewItem = FALSE;
+    if (QFActive) // feature 244: never read into the visible arrays (RefreshDirectory suspends the filter first)
+    {
+        TRACE_E("CFilesWindow::ReadDirectory(): unexpected filtered view, the quick search ends");
+        EndQuickSearch();
+    }
     UseSystemIcons = FALSE;
     UseThumbnails = FALSE;
     Files->DestroyMembers();
@@ -1989,6 +1994,7 @@ BOOL CFilesWindow::ChangeDir(const char* newDir, int suggestedTopIndex, const ch
     }
 
     MainWindow->CancelPanelsUI();                  // cancel QuickSearch and QuickEdit
+    QFEndAtPathChange();                           // feature 244
     char absFSPath[MAX_PATH];                      // plugin FS paths keep the legacy convention
     char uncSharePath[4 * MAX_PATH];               // "\\server\share" picked from the server's shares (feature 125)
     char* path = (char*)malloc(SAL_MAX_PATH_UTF8); // long-path capable (feature 004)

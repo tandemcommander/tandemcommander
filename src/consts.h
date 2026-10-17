@@ -1766,10 +1766,12 @@ int SalMessageBoxEx(const MSGBOXEX_PARAMS* params);
 #define IMAGE_STATE_SHORTCUT 0x00000200
 #define IMAGE_STATE_MASK 0x00000400
 #define IMAGE_STATE_OFFLINE 0x00000800
+// 'panelBk' (feature 244): the background the icon is drawn over when it is not the icon list's own
+// (a searching panel's tint); CLR_NONE = the icon list's background
 BOOL StateImageList_Draw(CIconList* iconList, int imageIndex, HDC hDC, int xDst, int yDst,
                          DWORD state, CIconSizeEnum iconSize, DWORD iconOverlayIndex,
                          const RECT* overlayRect, BOOL overlayOnly, BOOL iconOverlayFromPlugin,
-                         int pluginIconOverlaysCount, HICON* pluginIconOverlays);
+                         int pluginIconOverlaysCount, HICON* pluginIconOverlays, COLORREF panelBk = CLR_NONE);
 DWORD GetImageListColorFlags(); // vrati ILC_COLOR??? podle verzi Windows - odladene pro pouziti imagelistu v listviewech
 
 // API GetOpenFileName/GetSaveFileName v pripade ze cesta k souboru (OPENFILENAME::lpstrFile)

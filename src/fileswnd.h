@@ -955,6 +955,22 @@ public:
     WCHAR QuickSearchPendingSurrogate = 0; // high surrogate from WM_CHAR waiting for its low surrogate (0 = none)
     int SearchIndex;                       // position of the cursor during Quick Search
 
+    // feature 244: quick search that matches anywhere in a name and shows only the matches
+    // (specs/244-quick-search-substring-filter/data-model.md). While QFActive, Dirs/Files are
+    // the VISIBLE arrays: non-owning copies of the matching items of the full listing, which
+    // is kept in QFFullDirs/QFFullFiles; every command and plug-in therefore sees only what
+    // the panel shows. QFDirMap/QFFileMap map a visible index to its full index.
+    BOOL QFMode;             // the running quick search is in the new mode (Configuration.QuickSearchFilter at its start)
+    BOOL QFActive;           // the visible arrays are installed as Dirs/Files
+    CFilesArray* QFFullDirs; // the full listing while QFActive (ownership as ReadDirectory set it)
+    CFilesArray* QFFullFiles;
+    TDirectArray<int>* QFDirMap; // visible index -> full index, ascending
+    TDirectArray<int>* QFFileMap;
+    int QFTotalCount;             // items of the full listing without ".."
+    int QFMatchStart, QFMatchEnd; // the match in the focused name (byte offsets)
+    COLORREF QFTintBk;            // background of the searching panel
+    HBRUSH QFTintBrush;           // brush of QFTintBk; NULL = the panel is not tinted
+
     int FocusedIndex;  // current caret position
     BOOL FocusVisible; // is focus displayed?
 
@@ -1588,6 +1604,51 @@ public:
 
     void EndQuickSearch(); // ends Quick Search mode
 
+    // feature 244 (quick search in the new mode, see QFMode)
+    // (re)builds the filtered view for the typed text 'typedMask' (UTF-8); FALSE = no item
+    // matches and nothing was changed; 'keepFocus' keeps the focused item when it matches
+    // (else the nearest match), otherwise the focus goes by SalQFChooseFocus (a name that
+    // starts with the text wins); 'xOffset'/'topIndex' as for RefreshListBox (-1 = compute)
+    BOOL QFApply(const char* typedMask, BOOL keepFocus, int xOffset = -1, int topIndex = -1);
+    // writes the visible items back and puts the full listing back as Dirs/Files (the focus
+    // maps to its full index); no repaint
+    void QFRestoreArrays();
+    // ends the filtered view of a search that is being ended (EndQuickSearch); 'repaint'
+    // FALSE when the panel is being destroyed
+    void QFEndView(BOOL repaint);
+    // RefreshDirectory: the full listing back for the refresh (TRUE = it was filtered), and
+    // the filter applied again to the refreshed listing ('focusFromName': an operation asked
+    // to focus that item - when it does not match, the search ends so that it is shown)
+    BOOL QFSuspend();
+    void QFResume(int focusIndex, int xOffset, int topIndex, BOOL focusFromName);
+    // the panel's tint and the search text in the directory line follow the current state
+    // (also after a change of colours)
+    void QFUpdateIndication();
+    // creates, changes or drops the tint brush for the current state; TRUE = it changed
+    BOOL QFUpdateTint();
+    // is the search text shown in this panel now (a search in the new mode with its filtered view)
+    BOOL QFShowsIndication() { return QuickSearchMode && QFMode && QFActive; }
+    // "Search: <text> (<n> of <total>)" in UTF-8 (malloc'ed, the caller frees it); NULL = none
+    char* QFFormatStatus();
+    // the directory line's text with the search appended while a search shows ('pathLen' as for
+    // CStatusWindow::SetText)
+    void QFSetDirLineText(const char* text, int pathLen);
+    // with the directory line hidden, the information line shows the search instead
+    void QFStatusFallback();
+    // the background of the panel's items: the tint replaces the normal background while searching
+    COLORREF QFPanelBk(COLORREF bk)
+    {
+        return (QFTintBrush != NULL && bk == GetCOLORREF(CurrentColors[ITEM_BK_NORMAL])) ? QFTintBk : bk;
+    }
+    HBRUSH QFPanelBrush() { return QFTintBrush != NULL ? QFTintBrush : HNormalBkBrush; }
+    // ends a running quick search when it is in the new mode (the explicit end points:
+    // path change, tab switch, the other panel, ...); the 0.1.10 mode ends there anyway
+    void QFEndAtPathChange()
+    {
+        if (QuickSearchMode && QFMode)
+            EndQuickSearch();
+    }
+
     // QuickRenameWindow
     void AdjustQuickRenameRect(const char* text, RECT* r); // adjusts 'r' so it doesn't exceed the panel and is large enough at the same time
     void AdjustQuickRenameWindow();
@@ -1610,6 +1671,9 @@ public:
     // if wholeString == TRUE, the entire item must match, not just its start
     // returns TRUE when a directory/file is found and also sets the index
     BOOL QSFindNext(int currentIndex, BOOL next, BOOL skip, BOOL wholeString, const char* newChars, int& index);
+    // does 'name' match the prepared quick search 'mask' (feature 244: anywhere in the name in the
+    // new mode); on a match QuickSearch holds the matched part, QFMatchStart/QFMatchEnd its bytes
+    BOOL QSMatch(const char* name, BOOL hasExtension, const char* mask, BOOL wholeString);
 
     // Searches for the next/previous selected item. If skip = TRUE, the current item is skipped
     BOOL SelectFindNext(int currentIndex, BOOL next, BOOL skip, int& index);

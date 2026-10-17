@@ -374,6 +374,7 @@ CConfiguration::CConfiguration()
     LastUsedSpeedLimit = 1024 * 1024; // default 1 MB/s
 
     QuickSearchEnterAlt = FALSE;
+    QuickSearchFilter = TRUE;
 
     // for displaying items in the panel
     FullRowSelect = FALSE;

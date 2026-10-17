@@ -1038,6 +1038,7 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             int index = GetCaretIndex();
             ItemFocused(index); // pri odznaceni
         }
+        QFStatusFallback();       // feature 244
         IdleRefreshStates = TRUE; // pri pristim Idle vynutime kontrolu stavovych promennych
         return 0;
     }
@@ -1123,6 +1124,12 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         //---  zruseni tohoto panelu z pole zdroju pro enumeraci souboru ve viewerech
         EnumFileNamesRemoveSourceUID(HWindow);
 
+        if (QuickSearchMode && QFMode) // feature 244: the full listing back, no repaint of a closing panel
+        {
+            QuickSearchMode = FALSE;
+            QFMode = FALSE;
+            QFEndView(FALSE);
+        }
         CancelUI(); // cancel QuickSearch and QuickEdit
         LastRefreshTime = INT_MAX;
         BeginStopRefresh();

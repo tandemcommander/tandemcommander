@@ -3227,6 +3227,11 @@ void ColorsChanged(BOOL refresh, BOOL colorsOnly, BOOL reloadUMIcons)
     if (MainWindow != NULL)
     {
         MainWindow->OnColorsChanged(reloadUMIcons);
+        // feature 244: a searching panel's tint follows the new colours
+        if (MainWindow->LeftPanel != NULL)
+            MainWindow->LeftPanel->QFUpdateIndication();
+        if (MainWindow->RightPanel != NULL)
+            MainWindow->RightPanel->QFUpdateIndication();
     }
 
     // dame vedet findum o zmene barev

@@ -1951,34 +1951,36 @@ BEGIN
     COMBOBOX        IDC_NAMEMANGLE,50,31,243,72,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Sho&w sizes:",IDC_STATIC_5,1,49,42,8
     COMBOBOX        IDC_SIZEFORMAT,50,47,243,49,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Keyboard",IDC_STATIC_2,1,67,34,8
-    CONTROL         "",IDC_STATIC_7,"Static",SS_ETCHEDHORZ | WS_GROUP,37,71,260,1
+    LTEXT           "Keyboard",IDC_STATIC_2,1,63,34,8
+    CONTROL         "",IDC_STATIC_7,"Static",SS_ETCHEDHORZ | WS_GROUP,37,67,260,1
     CONTROL         "Redirect t&yping from panel to Command line (hold ALT for Quick Search)",IDC_QUICKSEARCH_ALT,
-                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,78,256,12
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,74,256,12
+    CONTROL         "Quick search finds text &anywhere in names and shows only the matches",IDC_QUICKSEARCH_FILTER,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,86,256,12
     CONTROL         "&Use Shift+number for go to Hot Path (it conflicts with national keyboard layouts)",IDC_SHIFTFORHOTPATHS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,90,282,12
-    LTEXT           "Mouse",IDC_STATIC_3,1,105,24,8
-    CONTROL         "",IDC_STATIC_8,"Static",SS_ETCHEDHORZ | WS_GROUP,27,109,270,1
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,98,282,12
+    LTEXT           "Mouse",IDC_STATIC_3,1,113,24,8
+    CONTROL         "",IDC_STATIC_8,"Static",SS_ETCHEDHORZ | WS_GROUP,27,117,270,1
     CONTROL         "&Right-click to open shortcut menu (hold CTRL to select/unselect)",IDE_PRIMARYCTXMENU,
-                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,116,228,12
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,124,228,12
     CONTROL         "R&ename by slowly clicking the name twice",IDC_CLICKTORENAME,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,128,153,12
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,136,153,12
     CONTROL         "Cancel &drag-and-drop operations shorter than:",IDC_DISABLEDANDD,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,140,170,12
-    EDITTEXT        IDE_DRAGDROPDELAY,181,140,28,12,ES_AUTOHSCROLL
-    LTEXT           "ms",IDC_STATIC_4,213,142,13,8,NOT WS_GROUP
-    LTEXT           "Sorting",IDC_STATIC_6,1,156,26,8
-    CONTROL         "",IDC_STATIC_9,"Static",SS_ETCHEDHORZ | WS_GROUP,29,160,268,1
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,148,170,12
+    EDITTEXT        IDE_DRAGDROPDELAY,181,148,28,12,ES_AUTOHSCROLL
+    LTEXT           "ms",IDC_STATIC_4,213,150,13,8,NOT WS_GROUP
+    LTEXT           "Sorting",IDC_STATIC_6,1,161,26,8
+    CONTROL         "",IDC_STATIC_9,"Static",SS_ETCHEDHORZ | WS_GROUP,29,165,268,1
     CONTROL         "S&ort strings with respect to Regional Settings",IDC_SORTUSESLOCALE,
-                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,166,163,12
+                    "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,10,170,163,12
     CONTROL         "Use nu&merical sort for numbers contained in strings",IDC_SORTDETECTNUMBERS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,178,186,12
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,182,186,12
     CONTROL         "Sor&t by Time order: newer items on top",IDC_SORTNEWERONTOP,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,190,146,12
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,194,146,12
     CONTROL         "Sort by T&ime: sort directories by name",IDC_SORTDIRSBYNAME,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,202,141,12
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,206,141,12
     CONTROL         "Treat dire&ctories as if have extensions (also show extensions in Ext column)",IDC_SORTDIRSBYEXT,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,214,265,12
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,218,265,12
 END
 
 IDD_CANNOTSETATTRSINFO DIALOGEX 15, 33, 353, 89

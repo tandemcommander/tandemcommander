@@ -15,8 +15,9 @@
 #include "zip.h"
 #include "shellib.h"
 #include "toolbar.h"
-#include "salshelllink.h" // feature 128
-#include "salheapstr.h"   // feature 182
+#include "salshelllink.h"   // feature 128
+#include "salheapstr.h"     // feature 182
+#include "salquickfilter.h" // feature 244
 
 //*****************************************************************************
 //
@@ -27,13 +28,460 @@
 void CFilesWindow::EndQuickSearch()
 {
     CALL_STACK_MESSAGE_NONE
+    BOOL qf = QFMode;
+    // feature 244: a search in the new mode can end while another window of this thread has the
+    // focus (a path changed from a dialog, the other panel activated) - the caret is then that
+    // window's, the panel destroyed its own when it lost the focus
+    BOOL ownCaret = !qf || GetFocus() == ListBox->HWindow;
     QuickSearchMode = FALSE;
+    QFMode = FALSE;
     QuickSearch[0] = 0;
     QuickSearchMask[0] = 0;
     QuickSearchPendingSurrogate = 0;
     SearchIndex = INT_MAX;
-    HideCaret(ListBox->HWindow);
-    DestroyCaret();
+    QFMatchStart = QFMatchEnd = 0;
+    if (ownCaret)
+    {
+        HideCaret(ListBox->HWindow);
+        DestroyCaret();
+    }
+    if (qf)
+        QFEndView(TRUE);
+}
+
+//*****************************************************************************
+//
+// Feature 244: quick search in the new mode - the panel shows only the items whose names
+// contain the typed text (specs/244-quick-search-substring-filter, research R1-R4).
+//
+
+// the item's "has an extension" as quick search has always computed it (a directory has one
+// when its name holds a dot - its extension might not be set)
+static BOOL QFHasExtension(const CFileData* f, BOOL isDir)
+{
+    return isDir ? strchr(f->Name, '.') != NULL : *f->Ext != 0;
+}
+
+// the full-listing index (directories first) of the visible item 'index'
+static int QFFullIndexOf(int index, CFilesArray* dirs, TDirectArray<int>* dirMap, TDirectArray<int>* fileMap,
+                         int fullDirCount)
+{
+    if (index >= 0 && index < dirMap->Count)
+        return dirMap->At(index);
+    if (index >= dirMap->Count && index - dirMap->Count < fileMap->Count)
+        return fullDirCount + fileMap->At(index - dirMap->Count);
+    return 0;
+}
+
+static void QFWriteBack(CFilesArray* dirs, CFilesArray* files, CFilesArray* fullDirs, CFilesArray* fullFiles,
+                        TDirectArray<int>* dirMap, TDirectArray<int>* fileMap)
+{
+    // every per-copy state (selection, size from Space, cut-to-clipboard, icon overlay, ...)
+    // goes back whole: the pointers inside are shared, so the copy is shallow
+    int i;
+    for (i = 0; i < dirs->Count && i < dirMap->Count; i++)
+        fullDirs->At(dirMap->At(i)) = dirs->At(i);
+    for (i = 0; i < files->Count && i < fileMap->Count; i++)
+        fullFiles->At(fileMap->At(i)) = files->At(i);
+}
+
+static BOOL QFSameMap(TDirectArray<int>* a, TDirectArray<int>* b)
+{
+    if (a->Count != b->Count)
+        return FALSE;
+    return a->Count == 0 || memcmp(&a->At(0), &b->At(0), a->Count * sizeof(int)) == 0;
+}
+
+static int QFCountSelected(CFilesArray* dirs, CFilesArray* files)
+{
+    int count = 0;
+    int i;
+    for (i = 0; i < dirs->Count; i++)
+        if (dirs->At(i).Selected)
+            count++;
+    for (i = 0; i < files->Count; i++)
+        if (files->At(i).Selected)
+            count++;
+    return count;
+}
+
+BOOL CFilesWindow::QFApply(const char* typedMask, BOOL keepFocus, int xOffset, int topIndex)
+{
+    CALL_STACK_MESSAGE3("CFilesWindow::QFApply(%s, %d)", typedMask, keepFocus);
+    // the icon reader works with Dirs/Files, they are going to change; it is woken again only when
+    // it was running (a caller that put it to sleep - closing the path - keeps it asleep)
+    BOOL sleepReader = UseSystemIcons || UseThumbnails;
+    BOOL wakeReader = sleepReader && !ICStopWork;
+    if (sleepReader)
+        SleepIconCacheThread();
+    if (QFActive)
+        QFWriteBack(Dirs, Files, QFFullDirs, QFFullFiles, QFDirMap, QFFileMap);
+    CFilesArray* fullDirs = QFActive ? QFFullDirs : Dirs;
+    CFilesArray* fullFiles = QFActive ? QFFullFiles : Files;
+    int fullDirCount = fullDirs->Count;
+    int focusFull = QFActive ? QFFullIndexOf(FocusedIndex, Dirs, QFDirMap, QFFileMap, fullDirCount) : FocusedIndex;
+
+    char mask[3 * MAX_PATH];
+    PrepareQSMask(mask, typedMask);
+
+    TDirectArray<int>* dirMap = new TDirectArray<int>(64, 1024);
+    TDirectArray<int>* fileMap = new TDirectArray<int>(64, 1024);
+    TDirectArray<BYTE> kinds(64, 1024);
+    BOOL ok = dirMap != NULL && fileMap != NULL;
+    BOOL hasUpDir = fullDirCount > 0 && strcmp(fullDirs->At(0).Name, "..") == 0;
+    CSalQFMatch r;
+    int i;
+    for (i = hasUpDir ? 1 : 0; ok && i < fullDirCount; i++)
+    {
+        CFileData* f = &fullDirs->At(i);
+        if (SalQFMatchName(f->Name, QFHasExtension(f, TRUE), mask, TRUE, r))
+        {
+            dirMap->Add(i);
+            kinds.Add((BYTE)r.Kind);
+        }
+    }
+    for (i = 0; ok && i < fullFiles->Count; i++)
+    {
+        CFileData* f = &fullFiles->At(i);
+        if (SalQFMatchName(f->Name, QFHasExtension(f, FALSE), mask, TRUE, r))
+        {
+            fileMap->Add(i);
+            kinds.Add((BYTE)r.Kind);
+        }
+    }
+    int count = ok ? dirMap->Count + fileMap->Count : 0;
+    CFilesArray* newDirs = NULL;
+    CFilesArray* newFiles = NULL;
+    if (ok && (!dirMap->IsGood() || !fileMap->IsGood() || !kinds.IsGood()))
+    {
+        TRACE_E(LOW_MEMORY);
+        ok = FALSE;
+    }
+    if (ok && count > 0 && QFActive && QFSameMap(dirMap, QFDirMap) && QFSameMap(fileMap, QFFileMap))
+    {
+        // the same items match: the view stays (typing on through a word costs no rebuild and no
+        // repaint of a large listing); only the focus may move to a name that starts with the text
+        delete dirMap;
+        delete fileMap;
+        if (wakeReader)
+            WakeupIconCacheThread();
+        int focus = FocusedIndex < 0 ? 0 : (FocusedIndex >= count ? count - 1 : FocusedIndex);
+        if (!keepFocus)
+        {
+            int f = SalQFChooseFocus(&kinds.At(0), count, focus);
+            if (f >= 0)
+                focus = f;
+        }
+        BOOL caret = QuickSearchMode && GetFocus() == ListBox->HWindow;
+        if (caret)
+            HideCaret(ListBox->HWindow);
+        if (focus != FocusedIndex)
+            SetCaretIndex(focus, FALSE);
+        QFUpdateIndication();
+        if (caret)
+        {
+            SetQuickSearchCaretPos();
+            ShowCaret(ListBox->HWindow);
+        }
+        return TRUE;
+    }
+    if (ok && count > 0)
+    {
+        newDirs = new CFilesArray(dirMap->Count + 16, 1024);
+        newFiles = new CFilesArray(fileMap->Count + 16, 1024);
+        if (newDirs != NULL && newFiles != NULL)
+        {
+            newDirs->SetDeleteData(FALSE); // copies of the full listing's items, it owns them
+            newFiles->SetDeleteData(FALSE);
+            for (i = 0; i < dirMap->Count; i++)
+                newDirs->Add(fullDirs->At(dirMap->At(i)));
+            for (i = 0; i < fileMap->Count; i++)
+                newFiles->Add(fullFiles->At(fileMap->At(i)));
+            if (!newDirs->IsGood() || !newFiles->IsGood())
+            {
+                TRACE_E(LOW_MEMORY);
+                ok = FALSE;
+            }
+        }
+        else
+        {
+            TRACE_E(LOW_MEMORY);
+            ok = FALSE;
+        }
+    }
+    if (!ok || count == 0) // nothing matches (or no memory): nothing changes
+    {
+        if (newDirs != NULL)
+            delete newDirs;
+        if (newFiles != NULL)
+            delete newFiles;
+        if (dirMap != NULL)
+            delete dirMap;
+        if (fileMap != NULL)
+            delete fileMap;
+        if (wakeReader)
+            WakeupIconCacheThread();
+        return FALSE;
+    }
+
+    // the focus: the old one when it matches and is to be kept, else by the rule of SalQFChooseFocus
+    int current = count - 1;
+    BOOL focusMatches = FALSE;
+    for (i = 0; i < count; i++)
+    {
+        int full = i < dirMap->Count ? dirMap->At(i) : fullDirCount + fileMap->At(i - dirMap->Count);
+        if (full >= focusFull)
+        {
+            current = i;
+            focusMatches = full == focusFull;
+            break;
+        }
+    }
+    int focus = current;
+    if (!keepFocus || !focusMatches)
+    {
+        if (!keepFocus)
+            focus = SalQFChooseFocus(&kinds.At(0), count, current);
+        if (focus < 0)
+            focus = current;
+    }
+
+    // install the visible arrays
+    if (QFActive)
+    {
+        delete Dirs; // the old visible arrays own nothing
+        delete Files;
+        delete QFDirMap;
+        delete QFFileMap;
+    }
+    else
+    {
+        QFFullDirs = Dirs;
+        QFFullFiles = Files;
+    }
+    Dirs = newDirs;
+    Files = newFiles;
+    QFDirMap = dirMap;
+    QFFileMap = fileMap;
+    QFActive = TRUE;
+    QFTotalCount = fullDirCount - (hasUpDir ? 1 : 0) + fullFiles->Count;
+    SelectedCount = QFCountSelected(Dirs, Files);
+    VisibleItemsArray.InvalidateArr();
+    VisibleItemsArraySurround.InvalidateArr();
+    DropTargetIndex = -1;
+    SingleClickIndex = -1;
+    SingleClickAnchorIndex = -1;
+    EnumFileNamesChangeSourceUID(HWindow, &EnumFileNamesSourceUID); // viewers enumerate the panel again
+    if (wakeReader)
+        WakeupIconCacheThread();
+
+    BOOL caret = QuickSearchMode && GetFocus() == ListBox->HWindow;
+    if (caret)
+        HideCaret(ListBox->HWindow);
+    QFUpdateTint(); // before the repaint: the items are drawn on the tint at once
+    RefreshListBox(xOffset, topIndex, focus, TRUE, FALSE);
+    QFUpdateIndication();
+    if (caret)
+    {
+        SetQuickSearchCaretPos();
+        ShowCaret(ListBox->HWindow);
+    }
+    return TRUE;
+}
+
+void CFilesWindow::QFRestoreArrays()
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::QFRestoreArrays()");
+    if (!QFActive)
+        return;
+    BOOL sleepReader = UseSystemIcons || UseThumbnails;
+    BOOL wakeReader = sleepReader && !ICStopWork; // see QFApply
+    if (sleepReader)
+        SleepIconCacheThread();
+    QFWriteBack(Dirs, Files, QFFullDirs, QFFullFiles, QFDirMap, QFFileMap);
+    int focusFull = QFFullIndexOf(FocusedIndex, Dirs, QFDirMap, QFFileMap, QFFullDirs->Count);
+    delete Dirs; // own nothing
+    delete Files;
+    delete QFDirMap;
+    delete QFFileMap;
+    Dirs = QFFullDirs;
+    Files = QFFullFiles;
+    QFFullDirs = NULL;
+    QFFullFiles = NULL;
+    QFDirMap = NULL;
+    QFFileMap = NULL;
+    QFActive = FALSE;
+    FocusedIndex = focusFull;
+    SelectedCount = QFCountSelected(Dirs, Files);
+    VisibleItemsArray.InvalidateArr();
+    VisibleItemsArraySurround.InvalidateArr();
+    DropTargetIndex = -1;
+    SingleClickIndex = -1;
+    SingleClickAnchorIndex = -1;
+    EnumFileNamesChangeSourceUID(HWindow, &EnumFileNamesSourceUID);
+    if (wakeReader)
+        WakeupIconCacheThread();
+}
+
+void CFilesWindow::QFEndView(BOOL repaint)
+{
+    CALL_STACK_MESSAGE2("CFilesWindow::QFEndView(%d)", repaint);
+    BOOL wasFiltered = QFActive;
+    QFRestoreArrays();
+    if (QFTintBrush != NULL)
+    {
+        HANDLES(DeleteObject(QFTintBrush));
+        QFTintBrush = NULL;
+    }
+    if (repaint)
+    {
+        if (wasFiltered)
+            RefreshListBox(-1, -1, FocusedIndex, TRUE, FALSE);
+        else
+            InvalidateRect(ListBox->HWindow, NULL, FALSE);
+        QFUpdateIndication();
+    }
+}
+
+BOOL CFilesWindow::QFSuspend()
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::QFSuspend()");
+    if (!QFActive)
+        return FALSE;
+    QFRestoreArrays();
+    ListBox->SetItemsCount2(Dirs->Count + Files->Count); // the count must match the arrays while they are drawn
+    return TRUE;
+}
+
+void CFilesWindow::QFResume(int focusIndex, int xOffset, int topIndex, BOOL focusFromName)
+{
+    CALL_STACK_MESSAGE5("CFilesWindow::QFResume(%d, %d, %d, %d)", focusIndex, xOffset, topIndex, focusFromName);
+    int count = Dirs->Count + Files->Count;
+    FocusedIndex = focusIndex < 0 ? 0 : (focusIndex >= count ? max(0, count - 1) : focusIndex);
+    BOOL keep = QuickSearchMode && QFMode;
+    if (keep && focusFromName && FocusedIndex < count)
+    {
+        // an operation asked to focus this item (a new directory, a renamed file): when it does not
+        // match, the search ends so that the item is shown
+        char mask[3 * MAX_PATH];
+        PrepareQSMask(mask, QuickSearchMask);
+        BOOL isDir = FocusedIndex < Dirs->Count;
+        CFileData* f = isDir ? &Dirs->At(FocusedIndex) : &Files->At(FocusedIndex - Dirs->Count);
+        CSalQFMatch r;
+        if ((isDir && FocusedIndex == 0 && strcmp(f->Name, "..") == 0) ||
+            !SalQFMatchName(f->Name, QFHasExtension(f, isDir), mask, TRUE, r))
+        {
+            keep = FALSE;
+        }
+    }
+    if (keep && QFApply(QuickSearchMask, TRUE, xOffset, topIndex))
+        return;
+    if (QuickSearchMode)
+        EndQuickSearch(); // nothing matches any more (or the focused item does not): the full listing
+    RefreshListBox(xOffset, -1, FocusedIndex, TRUE, FALSE);
+}
+
+void CFilesWindow::QFUpdateIndication()
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::QFUpdateIndication()");
+    if (QFUpdateTint() && ListBox != NULL && ListBox->HWindow != NULL)
+        InvalidateRect(ListBox->HWindow, NULL, FALSE);
+    // the text: in the directory line, or in the information line when that one is hidden
+    if (DirectoryLine != NULL && DirectoryLine->HWindow != NULL)
+        DirectoryLineSetText();
+    QFStatusFallback();
+}
+
+BOOL CFilesWindow::QFUpdateTint()
+{
+    // the tint: the scheme's normal background with a share of the panel caption colour that
+    // keeps it apart from the focused, selected and full-row backgrounds (salquickfilter.h);
+    // QuickSearchMode is not set yet when the first character builds the view
+    BOOL repaint = FALSE;
+    if (QFMode && QFActive)
+    {
+        COLORREF avoid[4] = {GetCOLORREF(CurrentColors[ITEM_BK_SELECTED]), GetCOLORREF(CurrentColors[ITEM_BK_FOCUSED]),
+                             GetCOLORREF(CurrentColors[ITEM_BK_FOCSEL]), GetCOLORREF(CurrentColors[ITEM_BK_HIGHLIGHT])};
+        COLORREF tint = SalQFTint(GetCOLORREF(CurrentColors[ITEM_BK_NORMAL]), GetCOLORREF(CurrentColors[ACTIVE_CAPTION_BK]),
+                                  GetCOLORREF(CurrentColors[ITEM_FG_NORMAL]), avoid, 4);
+        if (QFTintBrush == NULL || tint != QFTintBk)
+        {
+            HBRUSH brush = HANDLES(CreateSolidBrush(tint));
+            if (brush != NULL)
+            {
+                if (QFTintBrush != NULL)
+                    HANDLES(DeleteObject(QFTintBrush));
+                QFTintBrush = brush;
+                QFTintBk = tint;
+                repaint = TRUE;
+            }
+        }
+    }
+    else if (QFTintBrush != NULL)
+    {
+        HANDLES(DeleteObject(QFTintBrush));
+        QFTintBrush = NULL;
+        repaint = TRUE;
+    }
+    return repaint;
+}
+
+char* CFilesWindow::QFFormatStatus()
+{
+    if (!QFShowsIndication())
+        return NULL;
+    const char* format = LoadStrU8(IDS_QUICKSEARCH_STATUS);
+    // the whole text, never cut: room for the format, the typed text and two numbers
+    size_t size = strlen(format) + strlen(QuickSearchMask) + 2 * 12 + 1;
+    char* text = (char*)malloc(size);
+    if (text == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        return NULL;
+    }
+    if (_snprintf_s(text, size, _TRUNCATE, format, QuickSearchMask, Dirs->Count + Files->Count, QFTotalCount) < 0)
+        SalU8TrimIncompleteTail(text); // (cannot happen: the buffer holds the whole text)
+    return text;
+}
+
+void CFilesWindow::QFSetDirLineText(const char* text, int pathLen)
+{
+    char* status = QFFormatStatus();
+    if (status == NULL)
+    {
+        DirectoryLine->SetText(text, pathLen);
+        return;
+    }
+    int textLen = (int)strlen(text);
+    size_t size = textLen + 3 + strlen(status) + 1;
+    char* full = (char*)malloc(size);
+    if (full == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        DirectoryLine->SetText(text, pathLen);
+    }
+    else
+    {
+        // the path (and the filter after it) keeps its hot-tracking; the search follows it
+        _snprintf_s(full, size, _TRUNCATE, "%s   %s", text, status);
+        DirectoryLine->SetText(full, pathLen == -1 ? textLen : pathLen);
+        free(full);
+    }
+    free(status);
+}
+
+void CFilesWindow::QFStatusFallback()
+{
+    if (DirectoryLine != NULL && DirectoryLine->HWindow != NULL)
+        return; // the directory line shows the search
+    if (StatusLine == NULL || StatusLine->HWindow == NULL)
+        return;
+    char* status = QFFormatStatus();
+    if (status != NULL)
+    {
+        StatusLine->SetText(status);
+        free(status);
+    }
 }
 
 // Unicode variant of AgreeQSMaskAux (see masks.cpp): literal mask segments between
@@ -113,6 +561,31 @@ static BOOL AgreeQSMaskU8(const char* filename, BOOL hasExtension, const char* m
     return AgreeQSMaskU8Aux(filename, hasExtension, filename, mask, wholeString, offset);
 }
 
+// Does the name match the quick search mask; sets QuickSearch to the matched part of the name and
+// QFMatchStart/QFMatchEnd. Feature 244: the rule of salquickfilter.h (anywhere in the name in the
+// new mode, only at its start otherwise - the 0.1.10 rule, saltests compares the two); the old
+// matcher stays for the whole-string search.
+BOOL CFilesWindow::QSMatch(const char* name, BOOL hasExtension, const char* mask, BOOL wholeString)
+{
+    if (wholeString)
+    {
+        int offset = 0;
+        if (!AgreeQSMaskU8(name, hasExtension, mask, TRUE, offset))
+            return FALSE;
+        lstrcpyn(QuickSearch, name, offset + 1);
+        QFMatchStart = 0;
+        QFMatchEnd = offset;
+        return TRUE;
+    }
+    CSalQFMatch r;
+    if (!SalQFMatchName(name, hasExtension, mask, QFMode, r))
+        return FALSE;
+    lstrcpyn(QuickSearch, name + r.MatchStart, r.MatchEnd - r.MatchStart + 1);
+    QFMatchStart = r.MatchStart;
+    QFMatchEnd = r.MatchEnd;
+    return TRUE;
+}
+
 // Finds the next/previous item. If skip = TRUE, it skips the current item.
 BOOL CFilesWindow::QSFindNext(int currentIndex, BOOL next, BOOL skip, BOOL wholeString, const char* newChars, int& index)
 {
@@ -130,7 +603,6 @@ BOOL CFilesWindow::QSFindNext(int currentIndex, BOOL next, BOOL skip, BOOL whole
 
     int delta = skip ? 1 : 0;
 
-    int offset = 0;
     char mask[3 * MAX_PATH];
     PrepareQSMask(mask, QuickSearchMask);
 
@@ -155,9 +627,8 @@ BOOL CFilesWindow::QSFindNext(int currentIndex, BOOL next, BOOL skip, BOOL whole
             }
             else
             {
-                if (AgreeQSMaskU8(name, hasExtension, mask, wholeString, offset))
+                if (QSMatch(name, hasExtension, mask, wholeString))
                 {
-                    lstrcpyn(QuickSearch, name, offset + 1);
                     index = i;
                     return TRUE;
                 }
@@ -183,9 +654,8 @@ BOOL CFilesWindow::QSFindNext(int currentIndex, BOOL next, BOOL skip, BOOL whole
             }
             else
             {
-                if (AgreeQSMaskU8(name, hasExtension, mask, wholeString, offset))
+                if (QSMatch(name, hasExtension, mask, wholeString))
                 {
-                    lstrcpyn(QuickSearch, name, offset + 1);
                     index = i;
                     return TRUE;
                 }
@@ -469,6 +939,8 @@ void CFilesWindow::SetCaretIndex(int index, int scroll, BOOL forcePaint)
     else if (forcePaint)
         ListBox->EnsureItemVisible(FocusedIndex, TRUE, scroll, TRUE);
     ItemFocused(index);
+    if (QuickSearchMode && QFMode && GetFocus() == ListBox->HWindow)
+        SetQuickSearchCaretPos(); // feature 244: the caret follows a focus moved by the mouse (the search lives on)
 
     if (TrackingSingleClick)
     {
@@ -1028,6 +1500,48 @@ BOOL CFilesWindow::OnChar(WPARAM wParam, LPARAM lParam, LRESULT* lResult)
         if (SalWToU8(wbuf, wlen, u8, sizeof(u8)) == 0)
             return FALSE; // conversion failed, ignore the character
 
+        // feature 244: the mode is decided when a search starts; in the new mode a character is
+        // accepted when some item contains the longer text, and the panel then shows only those
+        if (!QuickSearchMode)
+            QFMode = Configuration.QuickSearchFilter;
+        if (QFMode)
+        {
+            int len = (int)strlen(QuickSearchMask);
+            int addedLen = (int)strlen(u8);
+            if (len + addedLen >= 3 * MAX_PATH) // the text never grows by a cut character
+            {
+                if (!QuickSearchMode)
+                    QFMode = FALSE;
+                return FALSE;
+            }
+            char newMask[3 * MAX_PATH];
+            memcpy(newMask, QuickSearchMask, len);
+            memcpy(newMask + len, u8, addedLen + 1);
+            BOOL starting = !QuickSearchMode;
+            if (!QFApply(newMask, FALSE, starting && GetViewMode() == vmDetailed ? 0 : -1, -1))
+            {
+                if (starting)
+                    QFMode = FALSE; // nothing matches: the character is ignored, as in 0.1.10
+                return FALSE;
+            }
+            strcpy(QuickSearchMask, newMask);
+            if (starting)
+            {
+                QuickSearchMode = TRUE;
+                CreateCaret(ListBox->HWindow, NULL, CARET_WIDTH, CaretHeight);
+                SetQuickSearchCaretPos();
+                ShowCaret(ListBox->HWindow);
+            }
+            else
+            {
+                HideCaret(ListBox->HWindow);
+                SetQuickSearchCaretPos();
+                ShowCaret(ListBox->HWindow);
+            }
+            QFUpdateIndication();
+            return FALSE;
+        }
+
         int index = FocusedIndex;
         // On a German keyboard, the slash is on Shift+7, so it conflicts with HotPaths
         // therefore, for * in QS, we will use backslash in addition to slash and sacrifice this
@@ -1524,12 +2038,40 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
 
         case VK_INSERT: // select / deselect listbox item + move to the next one
         {
+            if (QFMode) // feature 244: selecting among the matches keeps the search
+            {
+                if (!shiftPressed && !controlPressed && !altPressed)
+                {
+                    HideCaret(ListBox->HWindow);
+                    SelectFocusedIndex();
+                    SetQuickSearchCaretPos();
+                    ShowCaret(ListBox->HWindow);
+                }
+                IdleRefreshStates = TRUE;
+                return TRUE;
+            }
             EndQuickSearch();
             goto INSERT_KEY;
         }
 
         case VK_BACK: // backspace - we delete a character in the quicksearch mask
         {
+            if (QFMode) // feature 244
+            {
+                if (QuickSearchMask[0] != 0)
+                {
+                    int len = (int)strlen(QuickSearchMask);
+                    while (len > 1 && (QuickSearchMask[len - 1] & 0xC0) == 0x80)
+                        len--; // the whole trailing UTF-8 sequence
+                    len--;
+                    QuickSearchMask[len] = 0;
+                }
+                if (QuickSearchMask[0] == 0 || !QFApply(QuickSearchMask, TRUE))
+                    EndQuickSearch(); // the text is empty: every item again
+                else
+                    QFUpdateIndication();
+                return TRUE;
+            }
             if (QuickSearchMask[0] != 0)
             {
                 // we remove a character = the whole trailing UTF-8 sequence
@@ -1548,6 +2090,31 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
 
         case VK_LEFT: // left arrow - we convert the mask to a string and remove a character
         {
+            if (QFMode) // feature 244
+            {
+                SetQuickSearchCaretPos(); // QuickSearch = the matched part of the focused name
+                char text[3 * MAX_PATH];
+                lstrcpyn(text, QuickSearch, _countof(text));
+                int len = (int)strlen(text);
+                if (len > 0)
+                {
+                    while (len > 1 && (text[len - 1] & 0xC0) == 0x80)
+                        len--;
+                    len--;
+                    text[len] = 0;
+                    if (text[0] == 0)
+                        EndQuickSearch();
+                    else if (QFApply(text, TRUE))
+                    {
+                        strcpy(QuickSearchMask, text);
+                        HideCaret(ListBox->HWindow);
+                        SetQuickSearchCaretPos();
+                        ShowCaret(ListBox->HWindow);
+                        QFUpdateIndication();
+                    }
+                }
+                return TRUE;
+            }
             if (QuickSearch[0] != 0)
             {
                 // we remove a character = the whole trailing UTF-8 sequence
@@ -1577,6 +2144,38 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
 
         case VK_RIGHT:
         {
+            if (QFMode) // feature 244
+            {
+                if (FocusedIndex >= 0 && FocusedIndex < Dirs->Count + Files->Count)
+                {
+                    SetQuickSearchCaretPos(); // QFMatchEnd = where the match ends in the focused name
+                    char* name = (FocusedIndex < Dirs->Count) ? Dirs->At(FocusedIndex).Name : Files->At(FocusedIndex - Dirs->Count).Name;
+                    int end = QFMatchEnd;
+                    if (end >= 0 && end < (int)strlen(name) && name[end] != 0)
+                    {
+                        int chLen = 1;
+                        while ((name[end + chLen] & 0xC0) == 0x80)
+                            chLen++;
+                        int len = (int)strlen(QuickSearchMask);
+                        if (len + chLen < 3 * MAX_PATH)
+                        {
+                            char text[3 * MAX_PATH];
+                            memcpy(text, QuickSearchMask, len);
+                            memcpy(text + len, name + end, chLen);
+                            text[len + chLen] = 0;
+                            if (QFApply(text, TRUE))
+                            {
+                                strcpy(QuickSearchMask, text);
+                                HideCaret(ListBox->HWindow);
+                                SetQuickSearchCaretPos();
+                                ShowCaret(ListBox->HWindow);
+                                QFUpdateIndication();
+                            }
+                        }
+                    }
+                }
+                return TRUE;
+            }
             if (FocusedIndex >= 0 && FocusedIndex < Dirs->Count + Files->Count)
             {
                 char* name = (FocusedIndex < Dirs->Count) ? Dirs->At(FocusedIndex).Name : Files->At(FocusedIndex - Dirs->Count).Name;
@@ -2232,6 +2831,12 @@ void CFilesWindow::OnSetFocus(BOOL focusVisible)
         // the command line was displayed only temporarily - we will turn it off
         Parent->HideCommandLine(TRUE, FALSE); // we will save the content and disable focusing the panel
     }
+    if (QuickSearchMode && QFMode) // feature 244: the search survived the focus loss, the caret comes back
+    {
+        CreateCaret(ListBox->HWindow, NULL, CARET_WIDTH, CaretHeight);
+        SetQuickSearchCaretPos();
+        ShowCaret(ListBox->HWindow);
+    }
 }
 
 void CFilesWindow::OnKillFocus(HWND hwndGetFocus)
@@ -2240,7 +2845,15 @@ void CFilesWindow::OnKillFocus(HWND hwndGetFocus)
     if (Parent->EditWindowKnowHWND(hwndGetFocus))
         Parent->EditMode = TRUE;
     if (QuickSearchMode)
-        EndQuickSearch();
+    {
+        if (QFMode) // feature 244: the search lives on (a dialog, a viewer, a menu); only the caret goes
+        {
+            HideCaret(ListBox->HWindow);
+            DestroyCaret();
+        }
+        else
+            EndQuickSearch();
+    }
     FocusVisible = FALSE;
     // change: instead of immediate redrawing, we only invalidate the area;
     // the focus will not be so aggressive when switching to Salamander and will wait
@@ -2439,6 +3052,11 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
 {
     CALL_STACK_MESSAGE1("CFilesWindow::RefreshDirectory()");
     //  if (QuickSearchMode) EndQuickSearch();   // We will try to make the quick search mode survive a refresh.
+
+    // feature 244: the refresh works on the full listing (its merge keeps the selection of the items
+    // the search hides); the filter is applied to the refreshed listing at the end (QFResume)
+    BOOL qfSuspended = QFSuspend();
+    BOOL qfFocusFromName = FALSE;
 
 #ifdef _DEBUG
     char t_path[2 * MAX_PATH];
@@ -2662,7 +3280,9 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
         if (UseSystemIcons || UseThumbnails)
             WakeupIconCacheThread(); // wake-up after SortDirectory()
 
-        if (refreshDir) // restore the panel (after jumping to _LABEL_1)
+        if (qfSuspended && QuickSearchMode && QFMode) // feature 244: the filter for the listing the panel keeps
+            QFResume(focusIndex, xOffset, topIndex, FALSE);
+        else if (refreshDir) // restore the panel (after jumping to _LABEL_1)
         {
             RefreshListBox(xOffset, topIndex, focusIndex, FALSE, FALSE);
         }
@@ -2807,7 +3427,10 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
         else // we release the old listing, we perform cleanup (sort-dir, etc.)
         {
             MainWindow->CancelPanelsUI(); // cancel QuickSearch and QuickEdit
-            TopIndexMem.Clear();          // long jump
+            if (QuickSearchMode && QFMode)
+                EndQuickSearch(); // feature 244: the refresh failed, the listing is gone
+            qfSuspended = FALSE;
+            TopIndexMem.Clear(); // long jump
 
             EnumFileNamesChangeSourceUID(HWindow, &EnumFileNamesSourceUID);
 
@@ -3167,6 +3790,7 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
         if (i == count && found != -1)
             focusIndex = found; // found: ignore-case
         NextFocusName[0] = 0;
+        qfFocusFromName = foundFocus; // feature 244
     }
 
     // first, we search for the old focus in the new listing (according to the case-sensitivity of the current listing)
@@ -3278,18 +3902,26 @@ void CFilesWindow::RefreshDirectory(BOOL probablyUselessRefresh, BOOL forceReloa
     ReleaseListingBody(oldPanelType, oldArchiveDir, oldPluginFSDir, oldPluginData,
                        oldFiles, oldDirs, TRUE);
 
-    // hide the cursor in quick-search mode before drawing
-    if (QuickSearchMode)
-        HideCaret(ListBox->HWindow);
-
-    // panel recovery
-    RefreshListBox(xOffset, topIndex, focusIndex, ensureFocusIndexVisible, wholeItemVisible);
-
-    // restore the cursor position and show the cursor in quick-search mode after drawing
-    if (QuickSearchMode)
+    if (qfSuspended && QuickSearchMode && QFMode)
     {
-        SetQuickSearchCaretPos();
-        ShowCaret(ListBox->HWindow);
+        // feature 244: the filter applied to the refreshed listing (QFApply hides and shows the caret)
+        QFResume(focusIndex, xOffset, topIndex, qfFocusFromName);
+    }
+    else
+    {
+        // hide the cursor in quick-search mode before drawing
+        if (QuickSearchMode)
+            HideCaret(ListBox->HWindow);
+
+        // panel recovery
+        RefreshListBox(xOffset, topIndex, focusIndex, ensureFocusIndexVisible, wholeItemVisible);
+
+        // restore the cursor position and show the cursor in quick-search mode after drawing
+        if (QuickSearchMode)
+        {
+            SetQuickSearchCaretPos();
+            ShowCaret(ListBox->HWindow);
+        }
     }
 
     EndStopRefresh();
@@ -3337,6 +3969,24 @@ void CFilesWindow::SetQuickSearchCaretPos()
                   FocusedIndex < Dirs->Count);
 
     int qsLen = (int)strlen(QuickSearch);
+    if (QFMode) // feature 244: the match of the focused name, wherever it is in the name
+    {
+        char mask[3 * MAX_PATH];
+        PrepareQSMask(mask, QuickSearchMask);
+        CSalQFMatch r;
+        if (isDir != 2 && SalQFMatchName(file->Name, QFHasExtension(file, isDir != 0), mask, TRUE, r))
+        {
+            QFMatchStart = r.MatchStart;
+            QFMatchEnd = r.MatchEnd;
+            lstrcpyn(QuickSearch, file->Name + r.MatchStart, r.MatchEnd - r.MatchStart + 1);
+        }
+        else
+        {
+            QFMatchStart = QFMatchEnd = 0;
+            QuickSearch[0] = 0;
+        }
+        qsLen = QFMatchEnd;
+    }
     int preLen = isDir && !Configuration.SortDirsByExt ? file->NameLen : (int)(file->Ext - file->Name);
     char* ss;
     BOOL ext = FALSE;
@@ -3473,7 +4123,12 @@ void CFilesWindow::SetQuickSearchCaretPos()
         SetCaretPos(x, y);
     }
     else
-        TRACE_E("Caret is outside of FilesRect");
+    {
+        if (QFMode)
+            SetCaretPos(-1000, -1000); // feature 244: the focused item scrolled out of view
+        else
+            TRACE_E("Caret is outside of FilesRect");
+    }
     SelectObject(hDC, hOldFont);
 }
 

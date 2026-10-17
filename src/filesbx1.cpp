@@ -249,7 +249,7 @@ void CFilesBox::PaintAllItems(HRGN hUpdateRgn, DWORD drawFlags)
             // erase the bottom area
             r.top = y;
             r.bottom = yMax;
-            FillRect(HPrivateDC, &r, HNormalBkBrush);
+            FillRect(HPrivateDC, &r, Parent->QFPanelBrush()); // feature 244: tinted while searching
         }
         break;
     }
@@ -302,7 +302,7 @@ void CFilesBox::PaintAllItems(HRGN hUpdateRgn, DWORD drawFlags)
                     // erase the bottom below a full column
                     r.top = y;
                     r.bottom = yMax;
-                    FillRect(HPrivateDC, &r, HNormalBkBrush);
+                    FillRect(HPrivateDC, &r, Parent->QFPanelBrush()); // feature 244: tinted while searching
                 }
                 y = FilesRect.top;
                 r.left += ItemWidth;
@@ -316,7 +316,7 @@ void CFilesBox::PaintAllItems(HRGN hUpdateRgn, DWORD drawFlags)
             // erase the area below an incomplete last column
             r.top = y;
             r.bottom = FilesRect.bottom;
-            FillRect(HPrivateDC, &r, HNormalBkBrush);
+            FillRect(HPrivateDC, &r, Parent->QFPanelBrush()); // feature 244: tinted while searching
             r.left += ItemWidth;
         }
         if (!(drawFlags & DRAWFLAG_DIRTY_ONLY) && r.left <= FilesRect.right)
@@ -325,7 +325,7 @@ void CFilesBox::PaintAllItems(HRGN hUpdateRgn, DWORD drawFlags)
             r.top = FilesRect.top;
             r.right = FilesRect.right;
             r.bottom = FilesRect.bottom;
-            FillRect(HPrivateDC, &r, HNormalBkBrush);
+            FillRect(HPrivateDC, &r, Parent->QFPanelBrush()); // feature 244: tinted while searching
         }
         break;
     }
@@ -385,7 +385,7 @@ void CFilesBox::PaintAllItems(HRGN hUpdateRgn, DWORD drawFlags)
                 {
                     r.left = x;
                     r.right = xMax;
-                    FillRect(HPrivateDC, &r, HNormalBkBrush);
+                    FillRect(HPrivateDC, &r, Parent->QFPanelBrush()); // feature 244: tinted while searching
                 }
                 x = FilesRect.left;
                 y += ItemHeight;
@@ -400,7 +400,7 @@ void CFilesBox::PaintAllItems(HRGN hUpdateRgn, DWORD drawFlags)
             r.right = FilesRect.right;
             r.top = y;
             r.bottom = FilesRect.bottom;
-            FillRect(HPrivateDC, &r, HNormalBkBrush);
+            FillRect(HPrivateDC, &r, Parent->QFPanelBrush()); // feature 244: tinted while searching
         }
         break;
     }

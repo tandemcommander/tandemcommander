@@ -3378,6 +3378,7 @@ void CCfgPagePanels::Transfer(CTransferInfo& ti)
     ti.CheckBox(IDC_DISABLEDANDD, Configuration.UseDragDropMinTime);
     ti.EditLine(IDE_DRAGDROPDELAY, Configuration.DragDropMinTime);
     ti.CheckBox(IDC_QUICKSEARCH_ALT, Configuration.QuickSearchEnterAlt);
+    ti.CheckBox(IDC_QUICKSEARCH_FILTER, Configuration.QuickSearchFilter);
     ti.CheckBox(IDE_PRIMARYCTXMENU, Configuration.PrimaryContextMenu);
     ti.CheckBox(IDC_SHIFTFORHOTPATHS, Configuration.ShiftForHotPaths);
     ti.CheckBox(IDC_CLICKTORENAME, Configuration.ClickQuickRename);

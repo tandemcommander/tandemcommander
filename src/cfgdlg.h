@@ -288,6 +288,7 @@ struct CConfiguration
     DWORD LastUsedSpeedLimit; // remembers the last used speed limit (users often repeat one number)
 
     BOOL QuickSearchEnterAlt; // if it is TRUE, Quick Search is activated via Alt+letter
+    BOOL QuickSearchFilter;   // feature 244: Quick Search matches text anywhere in a name and shows only the matches
 
     // for displaying the items in the panel
     int FullRowSelect;    // in detailed/brief view clicking anywhere selects the item

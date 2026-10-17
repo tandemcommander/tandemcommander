@@ -2752,7 +2752,10 @@ void CFilesWindow::RenameFile(int specialIndex)
 
 void CFilesWindow::CancelUI()
 {
-    if (QuickSearchMode)
+    // feature 244: a search in the new mode is not cancelled by commands, menus, dialogs, scrolling
+    // or clicks - commands act on the items it shows; it ends at its own end points
+    // (EndQuickSearch from Esc, the empty text, a path change, a tab switch, the other panel)
+    if (QuickSearchMode && !QFMode)
         EndQuickSearch();
     QuickRenameEnd();
 }

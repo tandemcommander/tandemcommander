@@ -67,6 +67,7 @@
 #include "salnamerun.h"      // feature 230
 #include "salmenuhotkey.h"   // feature 236
 #include "salpctpath.h"      // feature 238
+#include "salquickfilter.h"   // feature 244
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -12401,6 +12402,455 @@ static void TestFormatMessageInserts180()
     }
 }
 
+// feature 244: quick search that matches anywhere in a name (salquickfilter.h)
+// The 0.1.10 matcher, copied as the reference: masks.cpp PrepareQSMask / AgreeQSMaskAux (its
+// LowerCase table folds ASCII bytes as below) and fileswn0.cpp AgreeQSMaskU8Aux / AgreeQSMaskU8.
+namespace Legacy244
+{
+    static BOOL IsWild(char ch) { return ch == '/' || ch == '\\' || ch == '<'; }
+    static void Prepare(char* mask, const char* src)
+    {
+        char* begMask = mask;
+        char lastChar = 0;
+        while (*src != 0)
+        {
+            if (IsWild(*src))
+            {
+                if (lastChar == '/')
+                    src++;
+                else
+                {
+                    src++;
+                    *mask++ = (lastChar = '/');
+                }
+            }
+            else
+                *mask++ = (lastChar = *src++);
+        }
+        if (mask > begMask && *(mask - 1) == '/')
+            mask--;
+        *mask = 0;
+    }
+    static char Low(char c) { return (c >= 'A' && c <= 'Z') ? (char)(c + 32) : c; }
+    static BOOL AsciiAux(const char* filename, BOOL hasExtension, const char* filenameBase, const char* mask, BOOL wholeString, int& offset)
+    {
+        while (*filename != 0)
+        {
+            if (!wholeString && *mask == 0)
+            {
+                offset = (int)(filename - filenameBase);
+                return TRUE;
+            }
+            if (Low(*filename) == Low(*mask))
+            {
+                filename++;
+                mask++;
+            }
+            else if (*mask == '/')
+            {
+                mask++;
+                while (*filename != 0)
+                {
+                    if (AsciiAux(filename, hasExtension, filenameBase, mask, wholeString, offset))
+                        return TRUE;
+                    filename++;
+                }
+                break;
+            }
+            else
+                return FALSE;
+        }
+        if (*mask == 0 || !hasExtension && *mask == '.' && *(mask + 1) == 0)
+        {
+            offset = (int)(filename - filenameBase);
+            return TRUE;
+        }
+        return FALSE;
+    }
+    static BOOL U8Aux(const char* filename, BOOL hasExtension, const char* filenameBase, const char* mask, BOOL wholeString, int& offset)
+    {
+        while (*mask != 0)
+        {
+            if (*mask == '/')
+            {
+                mask++;
+                const char* iter = filename;
+                while (1)
+                {
+                    if (U8Aux(iter, hasExtension, filenameBase, mask, wholeString, offset))
+                        return TRUE;
+                    if (*iter == 0)
+                        return FALSE;
+                    iter = SalU8Next(iter);
+                }
+            }
+            const char* segEnd = mask;
+            while (*segEnd != 0 && *segEnd != '/')
+                segEnd++;
+            int segLen = (int)(segEnd - mask);
+            int segChars = SalU8CharCount(mask, segLen);
+            const char* p = filename;
+            const char* matchEnd = NULL;
+            int chars = 0;
+            while (*p != 0 && chars < 3 * segChars + 3)
+            {
+                p = SalU8Next(p);
+                chars++;
+                if (SalNameEqualCI(mask, segLen, filename, (int)(p - filename)))
+                {
+                    matchEnd = p;
+                    break;
+                }
+            }
+            if (matchEnd == NULL)
+            {
+                if (*segEnd == 0 && !hasExtension && segLen > 0 && mask[segLen - 1] == '.')
+                {
+                    int rest = (int)strlen(filename);
+                    if (segLen == 1 && rest == 0 ||
+                        segLen > 1 && SalNameEqualCI(mask, segLen - 1, filename, rest))
+                    {
+                        offset = (int)(filename - filenameBase) + rest;
+                        return TRUE;
+                    }
+                }
+                return FALSE;
+            }
+            filename = matchEnd;
+            mask = segEnd;
+        }
+        if (wholeString && *filename != 0)
+            return FALSE;
+        offset = (int)(filename - filenameBase);
+        return TRUE;
+    }
+    static BOOL Agree(const char* filename, BOOL hasExtension, const char* mask, int& offset)
+    {
+        offset = 0;
+        if (SalIsASCII(mask) && SalIsASCII(filename))
+            return AsciiAux(filename, hasExtension, filename, mask, FALSE, offset);
+        return U8Aux(filename, hasExtension, filename, mask, FALSE, offset);
+    }
+} // namespace Legacy244
+
+static void TestQuickFilter244()
+{
+    // names (hasExtension as the panel computes it: a directory has one when its name holds a dot)
+    static const struct
+    {
+        const char* Name;
+        BOOL HasExt;
+    } names[] = {
+        {"2024_chatbot", FALSE},
+        {"chat.txt", TRUE},
+        {"xchatter.log", TRUE},
+        {"Report.PDF", TRUE},
+        {"readme", FALSE},
+        {"x_readme", FALSE},
+        {"a.b.c", TRUE},
+        {"aXbXc", FALSE},
+        {"\xC3\x9A\xC4\x8D"
+         "etnictv\xC3\xAD 2024.xlsx",
+         TRUE}, // NFC U-acute c-caron ...
+        {"U\xCC\x81"
+         "c\xCC\x8C"
+         "etnictvi\xCC\x81 2024 d.xlsx",
+         TRUE},                                     // the same in NFD
+        {"notes \xF0\x9F\x98\x80.txt", TRUE},       // emoji
+        {"\xE4\xB8\xAD\xE6\x96\x87 chat.md", TRUE}, // CJK + ASCII
+        {"Stra\xC3\x9F"
+         "e.doc",
+         TRUE}, // sharp s
+        {"\x80\x80"
+         "abc",
+         FALSE},           // stray continuation bytes
+        {"ab\xC4", FALSE}, // truncated sequence
+        {".hidden", TRUE},
+        {"UPPER lower", FALSE},
+    };
+    // typed texts (before PrepareQSMask)
+    static const char* typed[] = {
+        "",
+        "c",
+        "ch",
+        "chat",
+        "chatb",
+        "CHAT",
+        "pdf",
+        ".pdf",
+        "port",
+        "readme",
+        "readme.",
+        "me.",
+        "b/c",
+        "a/c",
+        "/chat",
+        "\\chat",
+        "<chat",
+        "x",
+        "2024",
+        "4_c",
+        "t.",
+        "txt",
+        "a.b",
+        ".b",
+        "b.c",
+        "q",
+        "zz",
+        "\xC3\xBA\xC4\x8D",
+        "\xC4\x8D"
+        "et",
+        "u",
+        "U\xCC\x81",
+        "etnictv\xC3\xAD",
+        "2024 d",
+        "\xF0\x9F\x98\x80",
+        "s \xF0\x9F",
+        "\xE6\x96\x87",
+        "\xE6\x96\x87 c",
+        "stra\xC3\x9F",
+        "strasse",
+        "abc",
+        "bc",
+        "b",
+        "\xC4",
+        "hid",
+        "per l",
+        "lower",
+        "r l",
+        "c/t",
+        "t/t",
+        "/",
+        "//",
+        "a//c",
+        "/x",
+    };
+    int m1 = 0, m1Diff = 0, m3 = 0, m3Diff = 0;
+    for (int n = 0; n < (int)(sizeof(names) / sizeof(names[0])); n++)
+    {
+        for (int t = 0; t < (int)(sizeof(typed) / sizeof(typed[0])); t++)
+        {
+            char mask[3 * MAX_PATH];
+            Legacy244::Prepare(mask, typed[t]);
+            int offset = -1;
+            BOOL legacy = Legacy244::Agree(names[n].Name, names[n].HasExt, mask, offset);
+            CSalQFMatch r;
+            // M1: substring FALSE = the 0.1.10 matcher exactly
+            BOOL got = SalQFMatchName(names[n].Name, names[n].HasExt, mask, FALSE, r);
+            m1++;
+            BOOL same = (got == legacy) && (!got || r.Kind == SALQF_PREFIX && r.MatchStart == 0 && r.MatchEnd == offset) &&
+                        (got || r.Kind == SALQF_NONE);
+            if (!same)
+            {
+                m1Diff++;
+                printf("FAIL M1 name #%d typed #%d: legacy %d/%d, got %d/%d/%d..%d\n", n, t, legacy, offset, got, r.Kind, r.MatchStart, r.MatchEnd);
+            }
+            // M2/M3: substring TRUE - a prefix match stays PREFIX; else the leftmost boundary
+            got = SalQFMatchName(names[n].Name, names[n].HasExt, mask, TRUE, r);
+            int expKind = SALQF_NONE, expStart = 0, expEnd = 0;
+            if (legacy)
+            {
+                expKind = SALQF_PREFIX;
+                expEnd = offset;
+            }
+            else
+            {
+                BOOL ascii = SalIsASCII(mask) && SalIsASCII(names[n].Name);
+                const char* p = names[n].Name;
+                while (*p != 0)
+                {
+                    p = ascii ? p + 1 : SalU8Next(p);
+                    if (*p == 0)
+                        break;
+                    int o = 0;
+                    // the prefix rule at p without the dot tolerance: a mask ending with '.' needs the dot
+                    BOOL ok = ascii ? Legacy244::AsciiAux(p, TRUE, names[n].Name, mask, FALSE, o)
+                                    : Legacy244::U8Aux(p, TRUE, names[n].Name, mask, FALSE, o);
+                    if (ok)
+                    {
+                        expKind = SALQF_SUBSTRING;
+                        expStart = (int)(p - names[n].Name);
+                        expEnd = o;
+                        break;
+                    }
+                }
+            }
+            m3++;
+            if (r.Kind != expKind || got != (expKind != SALQF_NONE) || expKind != SALQF_NONE && (r.MatchStart != expStart || r.MatchEnd != expEnd))
+            {
+                m3Diff++;
+                printf("FAIL M3 name #%d typed #%d: expected %d/%d..%d, got %d/%d..%d\n", n, t, expKind, expStart, expEnd, r.Kind, r.MatchStart, r.MatchEnd);
+            }
+            // M6: the match lies inside the name, at character boundaries
+            if (got)
+            {
+                int len = (int)strlen(names[n].Name);
+                CHECK(r.MatchStart >= 0 && r.MatchStart <= r.MatchEnd && r.MatchEnd <= len);
+            }
+        }
+    }
+    CHECK(m1Diff == 0);
+    CHECK(m3Diff == 0);
+    printf("TestQuickFilter244: %d prefix cases against the 0.1.10 matcher, %d differ; %d substring cases, %d differ\n", m1, m1Diff, m3, m3Diff);
+
+    // M3/M4/M5 by example
+    struct Ex
+    {
+        const char* Name;
+        BOOL HasExt;
+        const char* Typed;
+        int Kind, Start, End;
+    };
+    static const Ex ex[] = {
+        {"2024_chatbot", FALSE, "chat", SALQF_SUBSTRING, 5, 9},
+        {"chat.txt", TRUE, "chat", SALQF_PREFIX, 0, 4},
+        {"aXbXc", FALSE, "b/c", SALQF_SUBSTRING, 2, 5},
+        {"Report.PDF", TRUE, "pdf", SALQF_SUBSTRING, 7, 10},
+        {"readme", FALSE, "readme.", SALQF_PREFIX, 0, 6},
+        {"x_readme", FALSE, "readme.", SALQF_NONE, 0, 0},
+        {"x_readme", FALSE, "readme", SALQF_SUBSTRING, 2, 8},
+        {"2024_chatbot", FALSE, "/chat", SALQF_PREFIX, 0, 9},
+        {"abcabc", FALSE, "bc", SALQF_SUBSTRING, 1, 3}, // leftmost
+        {"U\xCC\x81"
+         "c\xCC\x8C"
+         "etnictvi\xCC\x81 2024 d.xlsx",
+         TRUE, "\xC3\xBA\xC4\x8D", SALQF_PREFIX, 0, 6},
+        {"x \xC3\x9A\xC4\x8D"
+         "et",
+         FALSE, "\xC3\xBA\xC4\x8D", SALQF_SUBSTRING, 2, 6},
+        {"\x80\x80"
+         "abc",
+         FALSE, "abc", SALQF_SUBSTRING, 2, 5},
+        {"chat.txt", TRUE, "q", SALQF_NONE, 0, 0},
+    };
+    for (int i = 0; i < (int)(sizeof(ex) / sizeof(ex[0])); i++)
+    {
+        char mask[3 * MAX_PATH];
+        Legacy244::Prepare(mask, ex[i].Typed);
+        CSalQFMatch r;
+        BOOL got = SalQFMatchName(ex[i].Name, ex[i].HasExt, mask, TRUE, r);
+        CHECK(got == (ex[i].Kind != SALQF_NONE));
+        CHECK(r.Kind == ex[i].Kind);
+        if (ex[i].Kind != SALQF_NONE)
+        {
+            CHECK(r.MatchStart == ex[i].Start);
+            CHECK(r.MatchEnd == ex[i].End);
+        }
+    }
+    {
+        CSalQFMatch r;
+        CHECK(!SalQFMatchName(NULL, FALSE, "a", TRUE, r) && r.Kind == SALQF_NONE);
+        CHECK(!SalQFMatchName("a", FALSE, NULL, TRUE, r) && r.Kind == SALQF_NONE);
+        // a mask of the longest accepted length against a long name: no read past the end
+        static char longMask[3 * MAX_PATH];
+        memset(longMask, 'a', sizeof(longMask) - 1);
+        longMask[sizeof(longMask) - 1] = 0;
+        CHECK(!SalQFMatchName("aaaa", FALSE, longMask, TRUE, r));
+        static char longName[3 * MAX_PATH];
+        memset(longName, 'b', sizeof(longName) - 1);
+        longName[sizeof(longName) - 2] = 'a';
+        longName[sizeof(longName) - 1] = 0;
+        CHECK(SalQFMatchName(longName, FALSE, "a", TRUE, r) && r.Kind == SALQF_SUBSTRING && r.MatchStart == (int)sizeof(longName) - 2);
+    }
+
+    // M7 (ASCII names and masks): appending a character only narrows
+    {
+        static const char* asciiNames[] = {"2024_chatbot", "chat.txt", "xchatter.log", "Report.PDF", "readme", "a.b.c", "aXbXc"};
+        static const char* asciiTyped[] = {"", "c", "ch", "a", "b/", "x", "r", ".", "t", "2"};
+        static const char appended[] = {'a', 'b', 'c', 'h', 't', '.', '/', 'x', 'e', 'd'};
+        int bad = 0;
+        for (int n = 0; n < (int)(sizeof(asciiNames) / sizeof(asciiNames[0])); n++)
+            for (int t = 0; t < (int)(sizeof(asciiTyped) / sizeof(asciiTyped[0])); t++)
+                for (int a = 0; a < (int)sizeof(appended); a++)
+                {
+                    char shorter[64], longer[64], ms[64], ml[64];
+                    strcpy(shorter, asciiTyped[t]);
+                    sprintf(longer, "%s%c", asciiTyped[t], appended[a]);
+                    Legacy244::Prepare(ms, shorter);
+                    Legacy244::Prepare(ml, longer);
+                    CSalQFMatch rs, rl;
+                    BOOL hasExt = strchr(asciiNames[n], '.') != NULL;
+                    BOOL gl = SalQFMatchName(asciiNames[n], hasExt, ml, TRUE, rl);
+                    BOOL gs = SalQFMatchName(asciiNames[n], hasExt, ms, TRUE, rs);
+                    if (gl && !gs)
+                        bad++;
+                }
+        CHECK(bad == 0);
+    }
+
+    // F1-F4: the focus
+    {
+        const BYTE N = SALQF_NONE, S = SALQF_SUBSTRING, P = SALQF_PREFIX;
+        BYTE k1[] = {N, S, P, S, P};
+        CHECK(SalQFChooseFocus(k1, 5, 2) == 2); // F1 the current prefix match stays
+        CHECK(SalQFChooseFocus(k1, 5, 1) == 2); // F2 the first prefix match below
+        CHECK(SalQFChooseFocus(k1, 5, 3) == 4);
+        BYTE k2[] = {P, S, S, N};
+        CHECK(SalQFChooseFocus(k2, 4, 2) == 0); // F2 nearest above when none below
+        BYTE k3[] = {N, S, N, S};
+        CHECK(SalQFChooseFocus(k3, 4, 3) == 3); // F3 the current substring match
+        CHECK(SalQFChooseFocus(k3, 4, 2) == 3); // first substring below
+        CHECK(SalQFChooseFocus(k3, 4, 0) == 1);
+        BYTE k4[] = {S, N, N};
+        CHECK(SalQFChooseFocus(k4, 3, 2) == 0); // nearest substring above
+        BYTE k5[] = {N, N};
+        CHECK(SalQFChooseFocus(k5, 2, 0) == -1); // nothing matches
+        BYTE k6[] = {S};
+        CHECK(SalQFChooseFocus(k6, 1, 0) == 0); // F4
+        CHECK(SalQFChooseFocus(k6, 1, 7) == 0); // clamped
+        CHECK(SalQFChooseFocus(k6, 1, -3) == 0);
+        CHECK(SalQFChooseFocus(NULL, 1, 0) == -1);
+        BYTE k7[] = {P, N, N, P};
+        CHECK(SalQFChooseFocus(k7, 4, 1) == 3); // below wins over above
+    }
+
+    // T1-T4: the tint, for the built-in schemes (salamdr1.cpp:519-729; a "default" colour taken as
+    // Windows 11 shows it: window white, window text black, active caption 153,180,209 - and as the
+    // scheme's own value 0,0,128) and Dark (themes_palette.h)
+    {
+        struct Scheme
+        {
+            const char* Name;
+            COLORREF Fg, Bk, Selected, Focused, FocSel, Caption;
+        };
+        COLORREF panel[DP_COUNT];
+#define TP_FILL244(name, r, g, b) panel[DP_##name] = RGB(r, g, b);
+        THEME_DARK_PANEL_COLORS(TP_FILL244)
+#undef TP_FILL244
+        const Scheme schemes[] = {
+            {"Salamander/caption sys", RGB(0, 0, 0), RGB(255, 255, 255), RGB(255, 255, 255), RGB(232, 232, 232), RGB(232, 232, 232), RGB(153, 180, 209)},
+            {"Salamander/caption 0,0,128", RGB(0, 0, 0), RGB(255, 255, 255), RGB(255, 255, 255), RGB(232, 232, 232), RGB(232, 232, 232), RGB(0, 0, 128)},
+            {"Explorer/caption sys", RGB(0, 0, 0), RGB(255, 255, 255), RGB(0, 0, 128), RGB(232, 232, 232), RGB(0, 0, 128), RGB(153, 180, 209)},
+            {"Explorer/caption 0,0,128", RGB(0, 0, 0), RGB(255, 255, 255), RGB(0, 0, 128), RGB(232, 232, 232), RGB(0, 0, 128), RGB(0, 0, 128)},
+            {"Norton/caption sys", RGB(0, 255, 255), RGB(0, 0, 128), RGB(0, 0, 128), RGB(0, 128, 128), RGB(0, 128, 128), RGB(153, 180, 209)},
+            {"Norton/caption 0,0,128", RGB(0, 255, 255), RGB(0, 0, 128), RGB(0, 0, 128), RGB(0, 128, 128), RGB(0, 128, 128), RGB(0, 0, 128)},
+            {"Navigator/caption sys", RGB(255, 255, 255), RGB(80, 80, 80), RGB(80, 80, 80), RGB(0, 128, 128), RGB(0, 128, 128), RGB(153, 180, 209)},
+            {"Navigator/caption 0,0,128", RGB(255, 255, 255), RGB(80, 80, 80), RGB(80, 80, 80), RGB(0, 128, 128), RGB(0, 128, 128), RGB(0, 0, 128)},
+            {"Dark", panel[DP_ITEM_FG_NORMAL], panel[DP_ITEM_BK_NORMAL], panel[DP_ITEM_BK_SELECTED], panel[DP_ITEM_BK_FOCUSED], panel[DP_ITEM_BK_FOCSEL], panel[DP_ACTIVE_CAPTION_BK]},
+            {"custom: caption = background", RGB(0, 0, 0), RGB(240, 240, 240), RGB(240, 240, 240), RGB(200, 200, 200), RGB(200, 200, 200), RGB(240, 240, 240)},
+            {"custom: black", RGB(255, 255, 255), RGB(0, 0, 0), RGB(0, 0, 0), RGB(60, 60, 60), RGB(60, 60, 60), RGB(0, 0, 0)},
+        };
+        for (int i = 0; i < (int)(sizeof(schemes) / sizeof(schemes[0])); i++)
+        {
+            const Scheme& s = schemes[i];
+            COLORREF avoid[3] = {s.Selected, s.Focused, s.FocSel};
+            COLORREF t = SalQFTint(s.Bk, s.Caption, s.Fg, avoid, 3);
+            CHECK(t == SalQFTint(s.Bk, s.Caption, s.Fg, avoid, 3)); // T4
+            double own = SalQFContrast(s.Fg, s.Bk);
+            BOOL contrastOk = SalQFContrast(s.Fg, t) >= (own < 4.5 ? own : 4.5) - 0.25; // T2
+            BOOL distOk = SalQFDistance(t, s.Bk) >= SALQF_TINT_MIN_DISTANCE;            // T3
+            for (int a = 0; a < 3; a++)
+                if (avoid[a] != s.Bk && SalQFDistance(t, avoid[a]) < SALQF_TINT_MIN_DISTANCE)
+                    distOk = FALSE;
+            CHECK(contrastOk);
+            CHECK(distOk);
+            printf("TestQuickFilter244: tint %-30s background %3d,%3d,%3d -> %3d,%3d,%3d (distance %.0f, text contrast %.1f -> %.1f)\n", s.Name,
+                   GetRValue(s.Bk), GetGValue(s.Bk), GetBValue(s.Bk), GetRValue(t), GetGValue(t), GetBValue(t), SalQFDistance(t, s.Bk), own,
+                   SalQFContrast(s.Fg, t));
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -12504,6 +12954,7 @@ int main(int argc, char** argv)
     TestNameExactInCIRun230();
     TestMenuHotKey236();
     TestPercentPath238();
+    TestQuickFilter244();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
