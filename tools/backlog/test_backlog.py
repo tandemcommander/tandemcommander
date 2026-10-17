@@ -620,5 +620,160 @@ class ImportGithubTests(Base):
         self.assertEqual(sorted(p.name for p in (self.root / "backlog" / "items").iterdir()), before)
 
 
+def _issue(num, title, labels, comments=0, **extra):
+    return {"number": num, "title": title, "body": f"Body of {num}.", "html_url": f"https://github.com/x/{num}",
+            "user": {"login": "rep"}, "created_at": "2026-10-10T08:00:00Z", "comments": comments,
+            "labels": [{"name": n} for n in labels], **extra}
+
+
+class ImportLabelledTests(Base):
+    LIST = [
+        _issue(25, "Paste fails in a folder with an exclamation mark", ["bug", "ai backlog"]),
+        _issue(5, "Already in the backlog", ["bug", "ai backlog"]),
+        _issue(20, "A pull request", ["ai backlog"], pull_request={}),
+        _issue(21, "Fixed already", ["bug", "ai backlog", "fixed"]),
+        _issue(22, "Paste fails in a folder with an exclamation mark", ["bug", "ai backlog"], comments=1),
+        _issue(23, "Compare folders by content", ["enhancement", "ai backlog"]),
+        _issue(24, "Explain the plug-in list", ["documentation", "ai backlog"]),
+    ]
+
+    def setUp(self):
+        super().setUp()
+        self.calls = []
+        self.saved = backlog.fetch_json
+
+        def fake(url):
+            self.calls.append(url)
+            if "/issues?" in url:
+                return list(self.LIST) if url.endswith("page=1") else []
+            if "/issues/22/comments" in url:
+                return [{"user": {"login": "a"}, "created_at": "2026-10-11T00:00:00Z", "body": "me too"}]
+            if url.endswith("/issues/23"):
+                return self.LIST[5]
+            raise backlog.urllib.error.URLError("offline")
+
+        backlog.fetch_json = fake
+
+    def tearDown(self):
+        backlog.fetch_json = self.saved
+        super().tearDown()
+
+    def items(self):
+        return sorted(p.name for p in (self.root / "backlog" / "items").iterdir())
+
+    def test_list_request_is_open_issues_with_the_label(self):
+        self.run_tool("import-github", "--label", "ai backlog", "--dry-run")
+        self.assertIn("/issues?state=open&labels=ai%20backlog&per_page=100&page=1", self.calls[0])
+
+    def test_dry_run_writes_nothing(self):
+        before = self.items()
+        code, out = self.run_tool("import-github", "--label", "ai backlog", "--dry-run")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.items(), before)
+        self.assertIn("would import #23 [enhancement, ai backlog] as feature, panels-ui", out)
+        self.assertIn("would import #24 [documentation, ai backlog] as improvement, help-docs", out)
+        self.assertIn("skipped #5: already imported as 'ship-network-plugin'", out)
+        self.assertTrue(out.rstrip().endswith("would import 4, skipped 3, failed 0"))
+
+    def test_import_skips_and_types_from_labels(self):
+        code, out = self.run_tool("import-github", "--label", "ai backlog")
+        self.assertEqual(code, 1, out)  # #25 has the title of #22: its slug exists
+        self.assertIn("skipped #20: a pull request", out)
+        self.assertIn("skipped #21: labelled fixed", out)
+        self.assertIn("failed #25: item 'paste-fails-in-a-folder-with-an-exclamation-mark' already exists", out)
+        self.assertIn("imported 3, skipped 3, failed 1", out)
+        got = {ln.split()[1]: ln.split()[2] for ln in out.split("\n") if ln.startswith("imported #")}
+        self.assertEqual(sorted(got), ["#22", "#23", "#24"])
+        h = {n: self.header(s) for n, s in got.items()}
+        self.assertEqual((h["#22"]["type"], h["#22"]["area"], h["#22"]["source"], h["#22"]["status"]),
+                         ("bug", "panels-ui", "github#22", "new"))
+        self.assertEqual((h["#23"]["type"], h["#24"]["type"], h["#24"]["area"]), ("feature", "improvement", "help-docs"))
+        issue = (self.root / "backlog" / "items" / got["#22"] / "issue.md").read_text(encoding="utf-8")
+        self.assertIn("\nlabels: bug, ai backlog\n", issue)
+        self.assertIn("me too", issue)
+        self.assertEqual(self.findings(), [])
+        code, out = self.run_tool("import-github", "--label", "ai backlog", "--dry-run")
+        self.assertIn("skipped #22: already imported as", out)
+
+    def test_issue_removed_earlier_is_not_imported_again(self):
+        if not shutil.which("git"):
+            self.skipTest("git not installed")
+        import subprocess
+
+        def g(*a):
+            subprocess.run(["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t", *a],
+                           check=True, capture_output=True)
+        g("init", "-q")
+        g("add", "-A")
+        g("commit", "-q", "-m", "fixture")
+        code, out = self.run_tool("import-github", "23", "--area", "panels-ui")
+        self.assertEqual(code, 0, out)
+        slug = out.split("\n")[0]
+        g("add", "-A")
+        g("commit", "-q", "-m", "import")
+        code, out = self.run_tool("remove", slug, "--reason", "fixed by feature 244; maintainer 2026-10-17")
+        self.assertEqual(code, 0, out)
+        g("add", "-A")
+        g("commit", "-q", "-m", "closed")
+        code, out = self.run_tool("import-github", "--label", "ai backlog", "--dry-run")
+        self.assertRegex(out, r"skipped #23: imported before; its item left the backlog \(commit [0-9a-f]{7,}\)")
+
+    def test_repository_without_commits_has_no_history(self):
+        if not shutil.which("git"):
+            self.skipTest("git not installed")
+        import subprocess
+        subprocess.run(["git", "-C", str(self.root), "init", "-q"], check=True, capture_output=True)
+        code, out = self.run_tool("import-github", "--label", "ai backlog", "--dry-run")
+        self.assertEqual(code, 0, out)
+        self.assertIn("would import #23", out)
+
+    def test_broken_read_of_one_issue_fails_only_that_issue(self):
+        fake = backlog.fetch_json
+
+        def broken(url):
+            if "/issues/22/comments" in url:
+                raise backlog.http.client.IncompleteRead(b"")
+            return fake(url)
+
+        backlog.fetch_json = broken
+        code, out = self.run_tool("import-github", "--label", "ai backlog")
+        self.assertEqual(code, 1, out)
+        self.assertIn("failed #22: cannot read the comments of issue #22", out)
+        self.assertIn("imported #23 ", out)
+        self.assertIn("imported 3, skipped 3, failed 1", out)  # #25 takes the slug #22 did not
+        self.assertEqual(self.findings(), [])
+
+    def test_invalid_values_refused_before_github_is_asked(self):
+        for args in (["--area", "bogus"], ["--severity", "42"]):
+            code, out = self.run_tool("import-github", "--label", "ai backlog", "--dry-run", *args)
+            self.assertEqual(code, 1, args)
+            self.assertTrue(out.startswith("refused: invalid values"), out)
+        self.assertEqual(self.calls, [])
+
+    def test_single_number_takes_type_from_labels(self):
+        code, out = self.run_tool("import-github", "23", "--area", "panels-ui")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.header(out.split("\n")[0])["type"], "feature")
+
+    def test_argument_combinations_refused(self):
+        for args in (["import-github", "--area", "panels-ui"],
+                     ["import-github", "23", "--label", "ai backlog"],
+                     ["import-github", "23"],
+                     ["import-github", "23", "--area", "panels-ui", "--dry-run"],
+                     ["import-github", "--label", "ai backlog", "--slug", "x"]):
+            code, out = self.run_tool(*args)
+            self.assertEqual(code, 1, args)
+            self.assertTrue(out.startswith("refused:"), out)
+        self.assertEqual(self.calls, [])
+
+    def test_list_error_writes_nothing(self):
+        backlog.fetch_json = lambda url: (_ for _ in ()).throw(backlog.urllib.error.URLError("offline"))
+        before = self.items()
+        code, out = self.run_tool("import-github", "--label", "ai backlog")
+        self.assertEqual(code, 1)
+        self.assertIn("cannot list the issues labelled 'ai backlog'", out)
+        self.assertEqual(self.items(), before)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -188,6 +188,25 @@ cannot do a common task without it; 1–3 = nice to have). For
 the lower value, and the reason in *Notes*. When the source states a
 severity ("about 3/10"), use it.
 
+### GitHub labels (imported issues, SKILL.md §2.2 C)
+
+The labels say what kind of report it is; the band always comes from the
+consequence the issue describes (the questions above). Reach within the
+band: one reporter, rare setup → the lower end; several people confirming,
+default settings → the upper end.
+
+| Labels | type | severity |
+|---|---|---|
+| `bug` | `bug` | the band of the described consequence: crash or data loss 7–10, a function that does not work 4–6, cosmetic 1–3 |
+| `enhancement` | `feature` (a new capability) or `improvement` (an existing one made better) | importance: 9–10 only when users cannot do a common task without it; a usual request 2–5; nice to have 1–2 |
+| `bug` + `enhancement` | by the text: the program does something wrong → `bug` (and the bug band); it works as designed but the user wants more → `feature` / `improvement` | as for that type |
+| `documentation` | `improvement` (user-facing manual / help) or `tech-debt` (project documents); area `help-docs` | 1–3, higher only when missing text makes a function unusable |
+| `question` | `decision` when only the maintainer can answer it (policy, direction); a question showing a defect → `bug` | as for that type |
+| `help wanted`, `good first issue` | no effect | no effect |
+| `in progress` | no effect; *Notes*: "in progress on GitHub" and the feature or branch, if one is found | no effect |
+| `fixed`, `duplicate`, `invalid`, `wontfix` | not imported by `--label` (skipped); imported by number only on request | — |
+| `ai backlog` | the opt-in for the import; no effect | no effect |
+
 ### who
 
 | The work … | who |

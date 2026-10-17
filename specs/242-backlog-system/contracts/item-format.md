@@ -87,8 +87,9 @@ least one `- [ ] …` / `- [x] …` line.
 ## Optional files
 
 - `issue.md` — required iff `source: github#N`: header lines
-  `number: N`, `url: …`, `author: …`, `created: YYYY-MM-DD`, then the title,
-  body and comments verbatim.
+  `number: N`, `url: …`, `author: …`, `created: YYYY-MM-DD`,
+  `labels: a, b` (the GitHub labels at import, `-` for none; imports before
+  2026-10-17 lack this line), then the title, body and comments verbatim.
 - `reply.md` — first line `state: not-sent` or `state: sent YYYY-MM-DD`,
   then the draft reply.
 - `evidence/` — any files.

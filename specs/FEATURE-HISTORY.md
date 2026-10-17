@@ -2857,6 +2857,13 @@ a few early ones are out of sequence).
   item text on a command line runs as shell code (backticks) - never on a command line; the Bash tool
   collapses a doubled backslash even in single quotes; `sync` dropped hand-written rows (fixed). Tests 58, mutation
   check `probe/mutate.py` 31 / 32 (the survivor equivalent); three refute-first reviews.
+  - Extended 2026-10-17: `import-github --label 'ai backlog' [--dry-run]` imports every open issue
+    with the maintainer's label not held yet; skips pull requests, `fixed` / `duplicate` / `invalid` /
+    `wontfix`, and an issue whose `source: github#N` is in the git history of `backlog/items` (its
+    item was removed - a removed item leaves no other record). Type from labels, `labels:` line in
+    `issue.md`; the skill judges severity from the text (reference.md §3 *GitHub labels*). Tests 68;
+    a refute-first review: `http.client` errors escaped as a traceback, `--dry-run` did not validate
+    the area, a title with no ASCII slug had no recovery, history matched `issue.md` text (fixed).
 - 243-tandem-release-skill: `/tandem-release <x.y.z>` prepares the tree so that the version is released
   the same day; `tools/release/release.py` (stdlib) owns the mechanics - `status` (state derived from
   local + remote tags, the source and the changelog; refusals: released tag, lower version, MAJOR.MINORA

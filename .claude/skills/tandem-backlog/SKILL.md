@@ -132,7 +132,7 @@ Take the first word of the input; Czech synonyms in brackets.
 | Operation | Words | Section |
 |---|---|---|
 | `add` | add, new, record (přidej, zapiš, nový, založ) — also any input that just describes a problem / idea / finding | §2.1 |
-| `import-github` | import, issue, `#N`, a github.com/…/issues/N link | §2.2 |
+| `import-github` | import, issue, `#N`, a github.com/…/issues/N link, "ai backlog", import all / new issues (naimportuj, nové issues) | §2.2 |
 | `list` | list, what next (seznam, vypiš, co dál, co je v backlogu) | §2.3 |
 | `show` | show (ukaž, detail) + a slug or a title | §2.4 |
 | `triage` | triage (roztřiď, projdi inbox, třídění) | §2.5 |
@@ -228,30 +228,80 @@ BL check                                                 → TOTAL: 0
 **Report** (one line per item):
 `Added <slug> to Inbox — <title> (<type>, severity <n>, <area>, source <source>).`
 
-### 2.2 `import-github <N>`
+### 2.2 `import-github <N>` / `import-github` (every new labelled issue)
+
+With a number: one issue (A). Without a number — or "all", "new",
+"všechny", "nové", "ai backlog" — every open issue labelled **`ai backlog`**
+that the backlog has not held yet (B). The label is the maintainer's
+opt-in on GitHub; the tool never changes labels, comments or issues there.
+
+**A. One issue `<N>`**
 
 1. `BL import-github <N> --area <area>` — `<area>`: the one the maintainer
    named, else `panels-ui` (corrected in step 3). Optional `--type`,
-   `--severity` (defaults `bug`, `5`).
+   `--severity` (defaults: type from the issue's labels, severity `5`).
    `refused: issue #<N> is already imported as '<slug>'` → report that
    slug; stop. Other refusals (network, comment count) → report them; stop.
 2. Read `backlog/items/<slug>/issue.md` (the verbatim issue and comments).
-3. Rewrite *Problem* / *Evidence* / *Expected* with the Edit tool in the
-   backlog's own words (the original stays in `issue.md`); *Evidence*
-   starts with the issue link and the reported version; *Expected* must
-   not stay `(to be written)`. Then set the fields — title shortened by
-   reference.md §2 (the import copies the issue title, often > 80
-   characters):
-
-   ```text
-   BL set <slug> type=<t> severity=<n> area=<a> 'title=<English, ≤ 80 chars>' --log 'fields set from the issue text'
-   ```
-
+3. Judge the issue and set its fields: **C** below.
 4. `reply.md` stays `state: not-sent` with its placeholder unless the
    maintainer asks for a draft. Never post it.
 5. `grep -n '(to be written)' backlog/items/<slug>/desc.md` → no output.
 
 **Report:** `Imported #<N> as <slug> — <title> (<type>, severity <n>, <area>), in Inbox.`
+
+**B. Every new issue labelled `ai backlog`**
+
+1. `BL check` (§0.5 step 1).
+2. `BL import-github --label 'ai backlog' --dry-run` — lists
+   `would import #N [labels] as <type>, <area>: <title>` and
+   `skipped #N: <why>` (a pull request; already an item; labelled `fixed` /
+   `duplicate` / `invalid` / `wontfix`; imported before and since removed
+   from the backlog — the git history says so). Nothing to import → report
+   `No new issues labelled 'ai backlog'.` and the skipped lines; stop.
+3. `BL import-github --label 'ai backlog'` — **one** command for all of
+   them (never per issue in parallel). Output per issue
+   `imported #N <slug>` / `skipped #N: …` / `failed #N: …`, last line
+   `imported n, skipped n, failed n`. A `failed` issue whose title gives
+   an existing slug or no slug (a title without ASCII letters, e.g.
+   Cyrillic) → import it alone (A) with `--slug <English-slug>`; any other
+   failure → report it. `check after the change found problems:` →
+   §0.2 (never repeat the command).
+4. For each `imported #N <slug>`: read its `issue.md`, then **C**, then
+   A steps 4–5.
+5. `BL check` → `TOTAL: 0`.
+
+**Report:** a table `| Issue | Labels | → Item | Type | Sev | Area | Severity because |`
+(one row per imported issue; *Item* is `<title> (<slug>)`), then the
+`skipped` / `failed` lines verbatim, then
+`<n> imported to Inbox, <n> skipped, <n> failed.`
+
+**C. Judging an imported issue** (A step 3, B step 4)
+
+1. From `issue.md` take the `labels:` line, the body and all comments:
+   what the reporter sees, in which version, how often, and the reach
+   (other people confirming it, "+1" comments, the issue's age).
+2. Search for earlier work on it: `grep -n '#<N>\b' specs/FEATURE-HISTORY.md`
+   and the symptom's words. A feature that already handled it does not
+   close the item here: say so in *Notes* ("possibly fixed by NNN —
+   verify"); `verify` (§2.8) decides.
+3. Decide `type`, `severity`, `area` by reference.md §3, using the
+   **GitHub labels** table there: the labels give the type and the scale,
+   the **described consequence** gives the band (a label alone never moves
+   an issue into a band).
+4. Rewrite *Problem* / *Evidence* / *Expected* with the Edit tool in the
+   backlog's own words, in English also when the issue is not (the
+   original stays in `issue.md`); *Evidence* starts with the issue link
+   and the reported version; *Expected* must not stay `(to be written)`.
+   Add `## Notes` with the line
+   `Severity <n>: <the band question that answered yes> - <reach>; GitHub labels: <labels>.`
+   plus anything from step 2.
+5. Set the fields — the title in English, shortened by reference.md §2
+   (the import copies the issue title, often > 80 characters):
+
+   ```text
+   BL set <slug> type=<t> severity=<n> area=<a> 'title=<English, ≤ 80 chars>' --log 'fields set from the issue text and labels'
+   ```
 
 ### 2.3 `list [filters]` (changes nothing)
 

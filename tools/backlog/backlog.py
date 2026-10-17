@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import http.client
 import json
 import os
 import re
@@ -42,6 +43,7 @@ import sys
 import tempfile
 import unicodedata
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -119,6 +121,10 @@ LAST_TRIAGED_RE = re.compile(r"^Last triaged: (\d{4}-\d{2}-\d{2})\s*$")
 STALE_HOURS = 24
 LOCK_NAME = "tandem-backlog-run.lock"
 GITHUB_REPO = "tandemcommander/tandemcommander"
+# labels that say an issue needs no work; 'import-github --label' skips such issues
+GITHUB_SKIP_LABELS = ("fixed", "duplicate", "invalid", "wontfix")
+# what reading GitHub can raise: a refusal or a 'failed' line, never a traceback
+NET_ERRORS = (urllib.error.URLError, http.client.HTTPException, OSError, ValueError)
 EMDASH = "\u2014"
 
 
@@ -1170,8 +1176,9 @@ def fetch_json(url: str):
 def fetch_all(url: str) -> list:
     """GET every page of a GitHub list resource (100 per page)."""
     out, page = [], 1
+    sep = "&" if "?" in url else "?"
     while True:
-        batch = fetch_json(f"{url}?per_page=100&page={page}")
+        batch = fetch_json(f"{url}{sep}per_page=100&page={page}")
         out += batch
         if len(batch) < 100:
             return out
@@ -1234,6 +1241,14 @@ def new_item_text(header: dict, problem: str, evidence: str, expected: str) -> s
     return "\n".join(head + body) + "\n"
 
 
+def refuse_invalid_header(bl: Backlog, header: dict, slug: str) -> None:
+    probe = Item(slug=slug, folder=bl.items_dir / slug, header=dict(header), ok=True)
+    probe.header_lines = {k: 1 for k in HEADER_KEYS}
+    errs = validate_item(bl, probe)
+    if errs:
+        raise Refused("invalid values: " + "; ".join(errs))
+
+
 def create_item(bl: Backlog, header: dict, slug: str | None, problem="", evidence="", expected="") -> Item:
     ov = bl.require_overview()
     slug = slug or derive_slug(header["title"])
@@ -1246,11 +1261,7 @@ def create_item(bl: Backlog, header: dict, slug: str | None, problem="", evidenc
         other = bl.items.get(slug)
         title = other.header.get("title", "?") if other else "?"
         raise Refused(f"item '{slug}' already exists ({title}); choose another title or pass --slug")
-    probe = Item(slug=slug, folder=folder, header=dict(header), ok=True)
-    probe.header_lines = {k: 1 for k in HEADER_KEYS}
-    errs = validate_item(bl, probe)
-    if errs:
-        raise Refused("invalid values: " + "; ".join(errs))
+    refuse_invalid_header(bl, header, slug)
     folder.mkdir(parents=True)
     write_text(folder / "desc.md", new_item_text(header, problem, evidence, expected))
     bl.items[slug] = parse_item(folder)
@@ -1697,34 +1708,77 @@ def problem_paragraph(body_text: str) -> str:
     return ""
 
 
-def cmd_import_github(bl: Backlog, args) -> int:
-    num = str(args.number)
+def issue_labels(issue: dict) -> list:
+    return [lb.get("name", "") for lb in issue.get("labels") or [] if isinstance(lb, dict) and lb.get("name")]
+
+
+def type_from_labels(labels: list) -> str:
+    """The starting type of an imported issue; the skill corrects it from the text."""
+    names = {lb.lower() for lb in labels}
+    if "bug" in names:
+        return "bug"
+    if "enhancement" in names:
+        return "feature"
+    if "documentation" in names:
+        return "improvement"
+    return "bug"
+
+
+def imported_item(bl: Backlog, num: int) -> str | None:
+    """The slug of the item that holds issue NUM now, if any."""
     for it in bl.items.values():
         if it.ok and it.header.get("source") == f"github#{num}":
-            raise Refused(f"issue #{num} is already imported as '{it.slug}'")
+            return it.slug
+    return None
+
+
+def removed_import(root: Path, num: int) -> str | None:
+    """The newest commit whose change of backlog/items touched 'source: github#NUM'
+    (an item imported before and since removed or re-sourced), or None.
+    Outside a git repository, or before its first commit, there is no history: None."""
+    if not (root / ".git").exists():
+        return None
+    # desc.md only: issue.md holds issue text verbatim, which may contain such a line
+    args = ["log", "--format=%h", "-G", f"^source: github#{num}$", "--", ":(glob)backlog/items/*/desc.md"]
+    try:
+        head = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "-q", "HEAD"],
+                              capture_output=True, text=True, encoding="utf-8")
+        if head.returncode != 0:
+            return None  # no commit yet (the message is localized; the exit code is not)
+        res = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, encoding="utf-8")
+    except OSError as e:
+        raise Refused(f"cannot run git to read the history of backlog/items: {e}")
+    if res.returncode != 0:
+        raise Refused(f"git {' '.join(args)} failed: {res.stderr.strip()}")
+    out = res.stdout.strip()
+    return out.split("\n")[0] if out else None
+
+
+def import_issue(bl: Backlog, issue: dict, area: str, type_: str, severity: int, slug: str | None) -> Item:
+    """Create the item of one GitHub issue (fetched with the issue list or alone);
+    reads all its comments first, writes nothing when that fails."""
+    num = issue.get("number")
     base = f"https://api.github.com/repos/{GITHUB_REPO}/issues/{num}"
     try:
-        issue = fetch_json(base)
         comments = fetch_all(base + "/comments") if issue.get("comments") else []
-    except (urllib.error.URLError, OSError, ValueError) as e:
-        raise Refused(f"cannot read issue #{num}: {e}")
-    if "pull_request" in issue:
-        raise Refused(f"#{num} is a pull request, not an issue")
+    except NET_ERRORS as e:
+        raise Refused(f"cannot read the comments of issue #{num}: {e}")
     if len(comments) != int(issue.get("comments") or 0):
         raise Refused(f"issue #{num} has {issue.get('comments')} comments but {len(comments)} were read; nothing written")
     title = (issue.get("title") or "").strip()
     body_text = (issue.get("body") or "").replace("\r\n", "\n").strip()
     url = issue.get("html_url", f"https://github.com/{GITHUB_REPO}/issues/{num}")
-    header = base_header(args, f"github#{num}", title)
+    labels = issue_labels(issue)
+    header = base_header(argparse.Namespace(type=type_, severity=severity, area=area), f"github#{num}", title)
     header["who"] = "agent"
-    it = create_item(bl, header, args.slug,
+    it = create_item(bl, header, slug,
                      problem=problem_paragraph(body_text) or "(see issue.md)",
                      evidence=f"GitHub issue #{num}: {url} - original text in `issue.md`.",
                      expected="(to be written)")
     created = (issue.get("created_at") or "")[:10]
     lines = [f"number: {num}", f"url: {url}",
              f"author: {(issue.get('user') or {}).get('login', '?')}",
-             f"created: {created}", "", f"# {title}", "", body_text or "(empty)"]
+             f"created: {created}", f"labels: {', '.join(labels) or '-'}", "", f"# {title}", "", body_text or "(empty)"]
     if comments:
         lines += ["", "## Comments"]
         for c in comments:
@@ -1732,8 +1786,90 @@ def cmd_import_github(bl: Backlog, args) -> int:
                       (c.get("body") or "").replace("\r\n", "\n").strip()]
     write_text(it.folder / "issue.md", "\n".join(lines) + "\n")
     write_text(it.folder / "reply.md", "state: not-sent\n\n(draft of the reply to the issue thread)\n")
+    return it
+
+
+def cmd_import_github(bl: Backlog, args) -> int:
+    if (args.number is None) == (args.label is None):
+        raise Refused("give an issue number or --label NAME (exactly one)")
+    if args.label is not None:
+        return import_labelled(bl, args)
+    if not args.area:
+        raise Refused("an issue number needs --area")
+    if args.dry_run:
+        raise Refused("--dry-run belongs to --label")
+    num = args.number
+    slug = imported_item(bl, num)
+    if slug:
+        raise Refused(f"issue #{num} is already imported as '{slug}'")
+    try:
+        issue = fetch_json(f"https://api.github.com/repos/{GITHUB_REPO}/issues/{num}")
+    except NET_ERRORS as e:
+        raise Refused(f"cannot read issue #{num}: {e}")
+    if "pull_request" in issue:
+        raise Refused(f"#{num} is a pull request, not an issue")
+    it = import_issue(bl, issue, args.area, args.type or type_from_labels(issue_labels(issue)), args.severity, args.slug)
     print(it.slug)
     return finish(bl)
+
+
+def import_labelled(bl: Backlog, args) -> int:
+    """Import every open issue labelled LABEL that the backlog has not held yet."""
+    label = one_line(args.label, "--label")
+    if args.slug or args.type:
+        raise Refused("--label imports several issues; --slug and --type belong to a single issue number")
+    # the values every issue will get, checked before GitHub is asked (also for --dry-run)
+    sample = argparse.Namespace(type="bug", severity=args.severity, area=args.area or "panels-ui")
+    refuse_invalid_header(bl, base_header(sample, "github#1", "sample"), "sample")
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/issues?state=open&labels={urllib.parse.quote(label, safe='')}"
+    try:
+        issues = fetch_all(url)
+    except NET_ERRORS as e:
+        raise Refused(f"cannot list the issues labelled '{label}': {e}")
+    # decide every issue before writing anything: a refusal here leaves the backlog untouched
+    plan = []
+    for issue in sorted(issues, key=lambda i: int(i.get("number") or 0)):
+        num = int(issue.get("number") or 0)
+        stop = [lb for lb in issue_labels(issue) if lb.lower() in GITHUB_SKIP_LABELS]
+        why = None
+        if "pull_request" in issue:
+            why = "a pull request"
+        elif imported_item(bl, num):
+            why = f"already imported as '{imported_item(bl, num)}'"
+        elif stop:
+            why = f"labelled {', '.join(stop)}"
+        else:
+            commit = removed_import(bl.root, num)
+            if commit:
+                why = f"imported before; its item left the backlog (commit {commit})"
+        plan.append((num, issue, why))
+    done = skipped = failed = 0
+    for num, issue, why in plan:
+        if why:
+            print(f"skipped #{num}: {why}")
+            skipped += 1
+            continue
+        labels = issue_labels(issue)
+        type_ = type_from_labels(labels)
+        area = args.area or ("help-docs" if type_ == "improvement" else "panels-ui")
+        if args.dry_run:
+            print(f"would import #{num} [{', '.join(labels)}] as {type_}, {area}: {issue.get('title', '').strip()}")
+            done += 1
+            continue
+        try:
+            it = import_issue(bl, issue, area, type_, args.severity, None)
+        except Refused as e:
+            print(f"failed #{num}: {e}")
+            failed += 1
+            continue
+        print(f"imported #{num} {it.slug}")
+        done += 1
+    verb = "would import" if args.dry_run else "imported"
+    print(f"{verb} {done}, skipped {skipped}, failed {failed}")
+    if args.dry_run:
+        return 0
+    code = finish(bl)
+    return 1 if failed else code
 
 
 # ---------------------------------------------------------------------------
@@ -1779,10 +1915,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--evidence")
     s.add_argument("--expected")
 
-    s = sub.add_parser("import-github", help="create an item from a GitHub issue")
-    s.add_argument("number", type=int)
-    s.add_argument("--area", required=True)
-    s.add_argument("--type", default="bug")
+    s = sub.add_parser("import-github", help="create an item from a GitHub issue, or from every new issue with a label")
+    s.add_argument("number", type=int, nargs="?")
+    s.add_argument("--label", help="import every open issue with this label not yet in the backlog")
+    s.add_argument("--dry-run", action="store_true", help="with --label: list what would be imported, write nothing")
+    s.add_argument("--area", help="required with a number; with --label the default is panels-ui (help-docs for documentation)")
+    s.add_argument("--type", help="default: from the issue's labels (bug -> bug, enhancement -> feature, documentation -> improvement), else bug")
     s.add_argument("--severity", type=int, default=5)
     s.add_argument("--slug")
 
