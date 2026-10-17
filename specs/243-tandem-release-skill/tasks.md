@@ -96,7 +96,7 @@ needs and its tests.
 - [X] T034 Add the two *Inbox* items through `python tools/backlog/backlog.py new` (source `review:243`): old copyright notices without the Tandem holder; stale `PrivilegesRequiredOverridesAllowed` claim in `tools/winget/README.md:204` (related `winget-records-stale-claims-from-072-audit`); fill their bodies; `backlog.py check` 0 findings
 - [X] T035 Run quickstart V4 and V5 on a throw-away worktree of `main` in the scratch directory (dry run of the skill procedure end to end with `stamp`, wording, `check`, `check_encoding`, commit there), remove the worktree; record in `specs/243-tandem-release-skill/fix-log.md`
 - [X] T036 Independent refute-first review (agent) of `tools/release/`, the skill and the record changes; fix confirmed findings; record in `specs/243-tandem-release-skill/fix-log.md`
-- [ ] T037 Add entry `243-tandem-release-skill` to `specs/FEATURE-HISTORY.md` and write `specs/243-tandem-release-skill/closing-report.md`; final run of `python -m unittest tools/release/test_release.py`, `python tools/backlog/backlog.py check`, `python tools/check_encoding.py --strict`
+- [X] T037 Add entry `243-tandem-release-skill` to `specs/FEATURE-HISTORY.md` and write `specs/243-tandem-release-skill/closing-report.md`; final run of `python -m unittest tools/release/test_release.py`, `python tools/backlog/backlog.py check`, `python tools/check_encoding.py --strict`
 
 ## Dependencies & Execution Order
 

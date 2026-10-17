@@ -25,8 +25,8 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242 |
-| Releases and pre-release reviews | 056, 068 |
+| Backlog and project tooling | 242, 243 |
+| Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121 |
@@ -2857,3 +2857,19 @@ a few early ones are out of sequence).
   item text on a command line runs as shell code (backticks) - never on a command line; the Bash tool
   collapses a doubled backslash even in single quotes; `sync` dropped hand-written rows (fixed). Tests 58, mutation
   check `probe/mutate.py` 31 / 32 (the survivor equivalent); three refute-first reviews.
+- 243-tandem-release-skill: `/tandem-release <x.y.z>` prepares the tree so that the version is released
+  the same day; `tools/release/release.py` (stdlib) owns the mechanics - `status` (state derived from
+  local + remote tags, the source and the changelog; refusals: released tag, lower version, MAJOR.MINORA
+  change, dirty tree, backlog lock, detached HEAD, passed copyright year), `stamp` (the eight *Release
+  records* of `backlog/RELEASE.md`: version/build = previous tag's build + 1, changelog fold of every
+  unreleased section into `## [x.y.z] - date`, PRIVACY chain shift, product lines, release notes skeleton;
+  BOM/EOL kept, idempotent), `check` (24 rules) and `summary` (exact replica of `publish.ps1`'s winget
+  summary, matches the recorded 0.1.9 manifest). The skill asks when not on `main`, for open gating person
+  steps and an open release decision, reviews the delta, writes the lead `**Build N.** <Kind> release.`,
+  the privacy sentence, the notes, *Status* / *Current release*, and commits once; never builds, tests,
+  tags or publishes. Constitution 3.2.0 (changelog groups optional, lead required, one record list).
+  Traps: a first paragraph is a lead only when it starts with `**Build ` - prose entries (0.1.9's form)
+  were dropped by the first fold (review); the release notes, *Status* and *Current release* must be
+  rewritten on every run (a re-run on another day folds new work in; `check` catches stale dates and
+  ranges, not stale content); a newer tag only on the remote must be seen (build numbers would repeat);
+  the question tool offers at most four options. Tests 44; refute-first review: 9 findings, all fixed.
