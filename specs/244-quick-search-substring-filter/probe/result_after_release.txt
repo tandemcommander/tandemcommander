@@ -1,4 +1,4 @@
-Feature 244 probe release; exe C:\Users\pavel\AppData\Local\Temp\tc244rel\tandemcommander\Release_x64\tandemcommander.exe; expect new; registry backup C:\Users\pavel\AppData\Local\Temp\tc244_backup.reg (existed True)
+Feature 244 probe release-final; exe C:\Users\pavel\AppData\Local\Temp\tc244rel\tandemcommander\Release_x64\tandemcommander.exe; expect new; registry backup C:\Users\pavel\AppData\Local\Temp\tc244_backup.reg (existed True)
 export SHA-256 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF
 hidden files shown: False (registry: HKEY_CURRENT_USER\Software\Tandem Commander\0.1\Configuration Hide Hidden and System Files and Directories REG_DWORD 0x1)
 C01        FOCUS  PASS        got {chat.txt} expected {chat.txt} typed 'c'
@@ -46,9 +46,13 @@ C20        VISIBLE PASS        got {2024_chatbot, chat.txt} expected {2024_chatb
 C20        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 C21        VISIBLE PASS        got {2024_chatbot, chat.txt, secret_chat.txt} expected {2024_chatbot, chat.txt, secret_chat.txt} inside arc.zip, typed 'chat', select all, F5
 C21        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-P10000     TIME   PASS        ms per character 8,4,4,3,4,3; Backspace 4,4,4,4,5; all items match 15,2,3,3; limit 100
+P10000     TIME   PASS        ms per character 7,3,3,3,3,3; Backspace 4,3,3,3,3; all items match 7,2,2,2; limit 100
 P10000     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-P100000    TIME   PASS        ms per character 20,11,11,11,11,11; Backspace 13,11,11,11,11; all items match 40,5,5,5; limit 300
+P100000    TIME   PASS        ms per character 15,9,10,10,9,9; Backspace 12,10,10,10,10; all items match 24,4,5,5; limit 300
 P100000    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P10000cz   TIME   PASS        ms per character 42,9,6,5,3,4; Backspace 5,5,5,4,37; all items match 40,3,3,3,3; limit 100
+P10000cz   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P100000cz  TIME   FAIL        ms per character 313,31,23,21,20,19; Backspace 22,21,23,20,263; all items match 311,19,19,18,17; limit 300
+P100000cz  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF / after 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF
-ROWS 49; FAIL 0
+ROWS 53; FAIL 1

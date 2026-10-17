@@ -223,6 +223,8 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH, tgtPath, NULL);
         }
         free(tgtPath);
+        if (MainWindow->GetActivePanel() != this) // feature 244: the drop activated the other panel
+            QFEndAtPathChange();
         return 0;
     }
 
@@ -317,6 +319,8 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
         }
         free(tgtPath);
+        if (MainWindow->GetActivePanel() != this) // feature 244: the drop activated the other panel
+            QFEndAtPathChange();
         return 0;
     }
 
@@ -877,6 +881,7 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             ShowWindow(MainWindow->HWindow, SW_RESTORE);
         }
+        QFEndAtPathChange(); // feature 244: the file asked for is shown even when the search hides it
         if (Is(ptDisk) && SalPathEqualOrdinalCI(GetPath(), (char*)lParam) ||
             ChangeDir((char*)lParam))
         {
@@ -1122,14 +1127,13 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
     {
         //---  zruseni tohoto panelu z pole zdroju pro enumeraci souboru ve viewerech
-        EnumFileNamesRemoveSourceUID(HWindow);
-
         if (QuickSearchMode && QFMode) // feature 244: the full listing back, no repaint of a closing panel
         {
             QuickSearchMode = FALSE;
             QFMode = FALSE;
             QFEndView(FALSE);
         }
+        EnumFileNamesRemoveSourceUID(HWindow);
         CancelUI(); // cancel QuickSearch and QuickEdit
         LastRefreshTime = INT_MAX;
         BeginStopRefresh();

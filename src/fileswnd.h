@@ -970,6 +970,9 @@ public:
     int QFMatchStart, QFMatchEnd; // the match in the focused name (byte offsets)
     COLORREF QFTintBk;            // background of the searching panel
     HBRUSH QFTintBrush;           // brush of QFTintBk; NULL = the panel is not tinted
+    BOOL QFDirLineShown;          // the directory line holds the search text (it must be removed when it ends)
+    void* QFKeys;                 // CSalQFKey per full-listing item (salquickfilter.h), built on demand; NULL = none
+    int QFKeysCount;              // items of QFKeys (dirs then files of the full listing)
 
     int FocusedIndex;  // current caret position
     BOOL FocusVisible; // is focus displayed?
@@ -1626,6 +1629,15 @@ public:
     void QFUpdateIndication();
     // creates, changes or drops the tint brush for the current state; TRUE = it changed
     BOOL QFUpdateTint();
+    // releases QFKeys (the keys belong to the full listing as it is while the view is installed)
+    void QFFreeKeys();
+    // a searching panel that has the focus puts its caret where the focused item is now (after a
+    // scroll or a re-layout; out of sight when the item is)
+    void QFCaretFollows()
+    {
+        if (QuickSearchMode && QFMode && GetFocus() == GetListBoxHWND())
+            SetQuickSearchCaretPos();
+    }
     // is the search text shown in this panel now (a search in the new mode with its filtered view)
     BOOL QFShowsIndication() { return QuickSearchMode && QFMode && QFActive; }
     // "Search: <text> (<n> of <total>)" in UTF-8 (malloc'ed, the caller frees it); NULL = none

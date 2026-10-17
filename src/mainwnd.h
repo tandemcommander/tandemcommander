@@ -548,7 +548,9 @@ public:
     // these functions have no effect if CFilesWindow::CanBeFocused is not satisfied
     void ChangePanel(BOOL force = FALSE);                                   // respects EditMode; activates the inactive panel; (ignores ZOOM if force is TRUE)
     void HandleTabCommand(int cmd);                                         // feature 078: CM_ACTIVE/LEFT/RIGHT_*TAB* (paneltabs.cpp)
-    void FocusPanel(CFilesWindow* focus, BOOL testIfMainWndActive = FALSE); // clears EditMode because focus is put into the panel
+    // clears EditMode because focus is put into the panel; 'keepOtherSearch' (feature 244): the other
+    // panel's quick search lives on (a drop: the source panel still has to act on what it showed)
+    void FocusPanel(CFilesWindow* focus, BOOL testIfMainWndActive = FALSE, BOOL keepOtherSearch = FALSE);
     void FocusLeftPanel();                                                  // calls FocusPanel for the left panel
 
     // compares directories in the left and right panels

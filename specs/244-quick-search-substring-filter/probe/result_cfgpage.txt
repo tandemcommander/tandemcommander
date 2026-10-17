@@ -1,0 +1,21 @@
+Feature 244 Configuration page probe; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; backup C:\Users\pavel\AppData\Local\Temp\tc244cfg_backup.reg (existed True)
+english    PAGE   PASS        checked 1; text 'Quick search finds text &anywhere in names and shows only the matches'; 384x20 px
+english    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+czech      PAGE   PASS        checked 1; text 'Rychl\u00E9 vyhled\u00E1v\u00E1n\u00ED najde &text kdekoli v n\u00E1zvech a zobraz\u00ED pouze shody'; 428x20 px
+czech      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+german     PAGE   PASS        checked 1; text 'Schnellsuche: Text \u00FCberall im Namen &finden, nur Treffer anzeigen'; 410x20 px
+german     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+french     PAGE   PASS        checked 1; text 'Recherche rapide : texte &partout dans le nom, seuls les r\u00E9sultats affich\u00E9s'; 428x20 px
+french     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dutch      PAGE   PASS        checked 1; text 'Snel &zoeken vindt tekst overal in namen en toont alleen de overeenkomsten'; 428x20 px
+dutch      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hungarian  PAGE   PASS        checked 1; text 'Gyorskeres\u00E9s: sz\u00F6veg a n\u00E9v &b\u00E1rmely r\u00E9sz\u00E9n, csak az egyez\u00E9sek l\u00E1tszanak'; 428x20 px
+hungarian  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+romanian   PAGE   PASS        checked 1; text 'C\u0103utare rapid\u0103: text oriunde \u00EEn n&ume, afi\u0219eaz\u0103 doar potrivirile'; 404x20 px
+romanian   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+slovak     PAGE   PASS        checked 1; text 'R\u00FDchle h\u013Eadanie: &text kdeko\u013Evek v n\u00E1zve, zobrazi\u0165 len zhody'; 384x20 px
+slovak     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+spanish    PAGE   PASS        checked 1; text 'B\u00FAsqueda r\u00E1pida: texto en cualquier &parte del nombre, solo coincidencias'; 428x20 px
+spanish    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF / after 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF
+ROWS 18; FAIL 0

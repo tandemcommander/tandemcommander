@@ -71,6 +71,7 @@ BOOL CFilesWindow::ReadDirectory(HWND parent, BOOL isRefresh)
     if (QFActive) // feature 244: never read into the visible arrays (RefreshDirectory suspends the filter first)
     {
         TRACE_E("CFilesWindow::ReadDirectory(): unexpected filtered view, the quick search ends");
+        QFMode = TRUE; // EndQuickSearch puts the full listing back only in the new mode
         EndQuickSearch();
     }
     UseSystemIcons = FALSE;

@@ -1,0 +1,33 @@
+Feature 244 capture probe; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; registry backup C:\Users\pavel\AppData\Local\Temp\tc244cap_backup.reg (existed True)
+salamander brief  CAPTURED    1730x1166; pixels differing (every 2nd) 197098
+salamander detailed CAPTURED    1730x1166; pixels differing (every 2nd) 188647
+salamander icons  CAPTURED    1730x1166; pixels differing (every 2nd) 196217
+salamander thumbnails CAPTURED    1730x1166; pixels differing (every 2nd) 195713
+salamander tiles  CAPTURED    1730x1166; pixels differing (every 2nd) 196174
+salamander END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+explorer   brief  CAPTURED    1730x1166; pixels differing (every 2nd) 197098
+explorer   detailed CAPTURED    1730x1166; pixels differing (every 2nd) 188647
+explorer   icons  CAPTURED    1730x1166; pixels differing (every 2nd) 196217
+explorer   thumbnails CAPTURED    1730x1166; pixels differing (every 2nd) 195713
+explorer   tiles  CAPTURED    1730x1166; pixels differing (every 2nd) 196174
+explorer   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+norton     brief  CAPTURED    1730x1166; pixels differing (every 2nd) 197099
+norton     detailed CAPTURED    1730x1166; pixels differing (every 2nd) 188642
+norton     icons  CAPTURED    1730x1166; pixels differing (every 2nd) 196226
+norton     thumbnails CAPTURED    1730x1166; pixels differing (every 2nd) 195712
+norton     tiles  CAPTURED    1730x1166; pixels differing (every 2nd) 196209
+norton     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+navigator  brief  CAPTURED    1730x1166; pixels differing (every 2nd) 197099
+navigator  detailed CAPTURED    1730x1166; pixels differing (every 2nd) 188652
+navigator  icons  CAPTURED    1730x1166; pixels differing (every 2nd) 196225
+navigator  thumbnails CAPTURED    1730x1166; pixels differing (every 2nd) 195712
+navigator  tiles  CAPTURED    1730x1166; pixels differing (every 2nd) 196209
+navigator  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dark       brief  CAPTURED    1730x1166; pixels differing (every 2nd) 198714
+dark       detailed CAPTURED    1730x1166; pixels differing (every 2nd) 190322
+dark       icons  CAPTURED    1730x1166; pixels differing (every 2nd) 197897
+dark       thumbnails CAPTURED    1730x1166; pixels differing (every 2nd) 197383
+dark       tiles  CAPTURED    1730x1166; pixels differing (every 2nd) 197867
+dark       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF / after 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF
+ROWS 30; FAIL 0

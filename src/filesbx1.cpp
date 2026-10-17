@@ -1112,6 +1112,7 @@ void CFilesBox::OnHScroll(int scrollCode, int pos)
         }
         if (scrollCode != SB_THUMBTRACK)
             SetupScrollBars(UPDATE_HORZ_SCROLL);
+        Parent->QFCaretFollows(); // feature 244
     }
 }
 
@@ -1265,6 +1266,7 @@ void CFilesBox::OnVScroll(int scrollCode, int pos)
         }
         if (scrollCode != SB_THUMBTRACK)
             SetupScrollBars(UPDATE_VERT_SCROLL);
+        Parent->QFCaretFollows(); // feature 244
     }
 }
 
@@ -2629,6 +2631,7 @@ void CFilesBox::LayoutChilds(BOOL updateAndCheck)
     // retargets the new viewport immediately (idle refresh stays as safety net)
     Parent->VisibleItemsArray.RefreshArr(Parent);
     Parent->VisibleItemsArraySurround.RefreshArr(Parent);
+    Parent->QFCaretFollows(); // feature 244: the layout moved the items
 }
 
 void CFilesBox::PaintHeaderLine()

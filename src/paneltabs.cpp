@@ -187,6 +187,10 @@ void CFilesWindow::CaptureActiveTab()
     tab->TopIndex = -1;
     tab->XOffset = 0;
     tab->Selection.Clear();
+    // feature 244: while a quick search filters the panel, the record is taken from the full listing
+    // (its selection includes the items the search hides; the top index of the view means nothing)
+    int qfTopIndex = ListBox != NULL && ListBox->HWindow != NULL ? ListBox->GetTopIndex() : -1;
+    BOOL qfSuspended = QFSuspend();
     if (ListBox != NULL && ListBox->HWindow != NULL && Files != NULL && Dirs != NULL)
     {
         int total = Files->Count + Dirs->Count;
@@ -212,6 +216,12 @@ void CFilesWindow::CaptureActiveTab()
             }
             tab->Selection.Sort();
         }
+    }
+    if (qfSuspended)
+    {
+        tab->TopIndex = -1; // the full listing has no top index of its own now
+        if (QuickSearchMode && QFMode && !QFApply(QuickSearchMask, TRUE, -1, qfTopIndex))
+            EndQuickSearch();
     }
     tab->TopIndexMem = TopIndexMem;
     tab->UserWorkedOnThisPath = UserWorkedOnThisPath;

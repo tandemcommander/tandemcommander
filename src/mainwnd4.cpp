@@ -1419,14 +1419,14 @@ void CMainWindow::ChangePanel(BOOL force)
     }
 }
 
-void CMainWindow::FocusPanel(CFilesWindow* focus, BOOL testIfMainWndActive)
+void CMainWindow::FocusPanel(CFilesWindow* focus, BOOL testIfMainWndActive, BOOL keepOtherSearch)
 {
     CALL_STACK_MESSAGE2("CMainWindow::FocusPanel(, %d)", testIfMainWndActive);
     MainWindow->CancelPanelsUI(); // cancel QuickSearch and QuickEdit
     // feature 244: focusing the other panel ends a search; focusing the searching one keeps it
-    if (focus != LeftPanel)
+    if (focus != LeftPanel && !keepOtherSearch)
         LeftPanel->QFEndAtPathChange();
-    if (focus != RightPanel)
+    if (focus != RightPanel && !keepOtherSearch)
         RightPanel->QFEndAtPathChange();
 
     if (!IsIconic(HWindow) && !focus->CanBeFocused())

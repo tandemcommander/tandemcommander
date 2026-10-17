@@ -677,8 +677,8 @@ void DropEnd(BOOL drop, BOOL shortcuts, void* param, BOOL ownRutine, BOOL isFake
     CFilesWindow* panel = (CFilesWindow*)param;
     if (drop && GetActiveWindow() == NULL)
         SetForegroundWindow(MainWindow->HWindow);
-    if (drop)
-        MainWindow->FocusPanel(panel);
+    if (drop) // feature 244: a dragging panel's quick search lives until its posted operation has run
+        MainWindow->FocusPanel(panel, FALSE, TRUE);
 
     panel->SetDropTarget(-1); // hide the marker
     if (tgtType == idtttWindows &&

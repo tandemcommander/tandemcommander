@@ -59,6 +59,16 @@ void CFilesWindow::Execute(int index)
     MainWindow->CancelPanelsUI(); // cancel QuickSearch and QuickEdit
     if (index < 0 || index >= Dirs->Count + Files->Count)
         return;
+    if (QuickSearchMode && QFMode && QFActive && index < Dirs->Count)
+    {
+        // feature 244: a directory opens: the full listing is back before its position (top index,
+        // the cursor for an access-denied directory) is remembered; the index follows
+        int fullIndex = QFDirMap->At(index);
+        EndQuickSearch();
+        index = fullIndex;
+        if (index < 0 || index >= Dirs->Count + Files->Count)
+            return;
+    }
 
     // feature 010: navigation composes paths beyond MAX_PATH (long paths,
     // feature 004); the buffers are heap-backed - SAL_MAX_PATH_UTF8 arrays are
@@ -978,6 +988,12 @@ void CFilesWindow::ToggleDirectoryLine()
     {
         UpdateDriveIcon(TRUE);
         ShowWindow(DirectoryLine->HWindow, SW_SHOW);
+    }
+    if (QuickSearchMode && QFMode) // feature 244: the search text moves between the directory and information lines
+    {
+        QFUpdateIndication();
+        LastFocus = INT_MAX; // the information line gets its own content back (or the search text)
+        ItemFocused(GetCaretIndex());
     }
     // if the middle toolbar is displayed, give it a chance to position itself
     if (MainWindow->MiddleToolBar != NULL && MainWindow->MiddleToolBar->HWindow != NULL)

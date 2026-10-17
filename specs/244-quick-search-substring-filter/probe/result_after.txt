@@ -1,0 +1,50 @@
+Feature 244 probe final; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; expect new; registry backup C:\Users\pavel\AppData\Local\Temp\tc244_backup.reg (existed True)
+export SHA-256 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF
+hidden files shown: False (registry: HKEY_CURRENT_USER\Software\Tandem Commander\0.1\Configuration Hide Hidden and System Files and Directories REG_DWORD 0x1)
+C01        FOCUS  PASS        got {chat.txt} expected {chat.txt} typed 'c'
+C01        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C02        FOCUS  PASS        got {chat.txt} expected {chat.txt} typed 'chat'
+C02        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C03        FOCUS  PASS        got {2024_chatbot} expected {2024_chatbot} typed 'chat', no name starts with c
+C03        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C04        FOCUS  PASS        got {2024_chatbot} expected {2024_chatbot} typed '/chat'
+C04        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C05        FOCUS  PASS        got {Report.PDF} expected {Report.PDF} typed 'pdf'
+C05        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C06        FOCUS  PASS        got {} expected {} typed 'q'
+C06        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C07        FOCUS  INFO        got {U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx} typed U+00FA U+010D
+C07        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C08        VISIBLE PASS        got {2024_chatbot, chat.txt} expected {2024_chatbot, chat.txt} typed 'chat', select all, F5
+C08        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C09        COPY1  PASS        got {Report.PDF} expected {Report.PDF} old.log selected, typed 'rep', F5
+C09        COPY2  PASS        got {old.log} expected {old.log} after Esc, F5 again (new: old.log still selected)
+C09        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C10        MOVED  PASS        got {Report.PDF} expected {Report.PDF} F6 with old.log hidden-selected
+C10        KEPT   PASS        got {old.log} expected {old.log} old.log still in the source folder
+C10        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C11        VISIBLE PASS        got {2024_chatbot, alpha, beta.md, chat.txt, notes \uD83D\uDE00.txt, old.log, Report.PDF, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx} expected {2024_chatbot, alpha, beta.md, chat.txt, notes \uD83D\uDE00.txt, old.log, Report.PDF, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx} typed 'chat', Esc
+C11        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C12        VISIBLE PASS        got {2024_chatbot, chat.txt, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx} expected {2024_chatbot, chat.txt, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx} typed 'ch', Backspace
+C12        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C13        VISIBLE PASS        got {2024_chatbot, alpha, beta.md, chat.txt, notes \uD83D\uDE00.txt, old.log, Report.PDF, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx} expected {2024_chatbot, alpha, beta.md, chat.txt, notes \uD83D\uDE00.txt, old.log, Report.PDF, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx} typed 'c', Backspace
+C13        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C14        VISIBLE PASS        got {2024_chatbot, chat.txt} expected {2024_chatbot, chat.txt} typed 'chat', F5 cancelled
+C14        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C15        VISIBLE PASS        got {2024_chatbot, chat.txt, chat2.txt} expected {2024_chatbot, chat.txt, chat2.txt} typed 'chat', chat2.txt created, refresh
+C15        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C16        VISIBLE PASS        got {inner.txt, x.md} expected {inner.txt, x.md} typed '2024', Enter
+C16        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C17        VISIBLE PASS        got {2024_chatbot, alpha, beta.md, chat.txt, notes \uD83D\uDE00.txt, old.log, Report.PDF, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx} expected {2024_chatbot, alpha, beta.md, chat.txt, notes \uD83D\uDE00.txt, old.log, Report.PDF, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx} typed 'chat', Tab, Tab
+C17        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C18        VISIBLE PASS        got {2024_chatbot} expected {2024_chatbot} typed 'chat', Right
+C18        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C19        FOCUS  PASS        got {zzz} expected {zzz} typed 'chat', F7 zzz
+C19        VISIBLE PASS        got {2024_chatbot, alpha, beta.md, chat.txt, notes \uD83D\uDE00.txt, old.log, Report.PDF, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx, zzz} expected {2024_chatbot, alpha, beta.md, chat.txt, notes \uD83D\uDE00.txt, old.log, Report.PDF, U\u0301c\u030Cetnictvi\u0301 2024 d.xlsx, \u00DA\u010Detnictv\u00ED 2024.xlsx, zzz} the search ended: everything visible
+C19        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C20        VISIBLE PASS        got {2024_chatbot, chat.txt} expected {2024_chatbot, chat.txt} typed 'chat', sort by extension
+C20        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C21        VISIBLE PASS        got {2024_chatbot, chat.txt, secret_chat.txt} expected {2024_chatbot, chat.txt, secret_chat.txt} inside arc.zip, typed 'chat', select all, F5
+C21        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF / after 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF
+ROWS 45; FAIL 0

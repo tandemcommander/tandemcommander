@@ -102,6 +102,7 @@ void CFilesWindowAncestor::ReleaseListing()
     if (((CFilesWindow*)this)->QFActive)
     {
         TRACE_E("CFilesWindowAncestor::ReleaseListing(): unexpected filtered view, the quick search ends");
+        ((CFilesWindow*)this)->QFMode = TRUE; // EndQuickSearch puts the full listing back only in the new mode
         ((CFilesWindow*)this)->EndQuickSearch();
     }
     if (OnlyDetachFSListing)
@@ -1611,6 +1612,9 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
     QFMatchStart = QFMatchEnd = 0;
     QFTintBk = 0;
     QFTintBrush = NULL;
+    QFKeys = NULL;
+    QFKeysCount = 0;
+    QFDirLineShown = FALSE;
     QuickSearch[0] = 0;
     QuickSearchMask[0] = 0;
     SearchIndex = INT_MAX;
@@ -1672,6 +1676,7 @@ CFilesWindow::~CFilesWindow()
     }
     if (QFTintBrush != NULL)
         HANDLES(DeleteObject(QFTintBrush));
+    QFFreeKeys();
 
     if (DeviceNotification != NULL)
         TRACE_E("CFilesWindow::~CFilesWindow(): unexpected situation: DeviceNotification != NULL");

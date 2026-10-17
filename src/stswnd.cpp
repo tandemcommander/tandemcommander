@@ -260,7 +260,18 @@ void CStatusWindow::BuildHotTrackItems()
                 else
                 {
                     char rootPath[MAX_PATH];
-                    GetRootPath(rootPath, Text);
+                    // feature 244: the text after the path (a filter mask, the quick search) is not a
+                    // part of a share root such as \\server\share
+                    char* pathOnly = (pathLen >= 0 && pathLen < (int)strlen(Text)) ? (char*)malloc(pathLen + 1) : NULL;
+                    if (pathOnly != NULL)
+                    {
+                        memcpy(pathOnly, Text, pathLen);
+                        pathOnly[pathLen] = 0;
+                        GetRootPath(rootPath, pathOnly);
+                        free(pathOnly);
+                    }
+                    else
+                        GetRootPath(rootPath, Text);
                     chars = (int)strlen(rootPath);
 
                     // For UNC paths remove the trailing backslash

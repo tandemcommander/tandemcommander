@@ -261,14 +261,18 @@ try {
     }
 
     if ($Perf) {
-        foreach ($n in @(10000, 100000)) {
-            $case = 'P' + $n
+        # Czech names (review 244: non-ASCII names went through the slow comparison per position)
+        $cz = [string][char]0x00FA + [char]0x010D + 'etn' + [char]0x00ED + '_doklad_{0:D6}_' + [char]0x0159 + [char]0x00E1 + 'dek_' + [char]0x017E + 'lu' + [char]0x0165 + 'ou' + [char]0x010D + 'k' + [char]0x00FD + '_{1}.txt'
+        foreach ($variant in @(@{ N = 10000; Cz = $false }, @{ N = 100000; Cz = $false }, @{ N = 10000; Cz = $true }, @{ N = 100000; Cz = $true })) {
+            $n = $variant.N
+            $case = 'P' + $n + $(if ($variant.Cz) { 'cz' } else { '' })
             if (-not (Want $case)) { continue }
             $d = $Root + '\' + $case; Assert-In $d
             if (-not (Test-Path -LiteralPath ($d + '\left'))) {
                 NewDir ($d + '\left'); NewDir ($d + '\right')
                 for ($i = 0; $i -lt $n; $i++) {
-                    $name = if ($i % 100 -eq 7) { 'file_{0:D6}_needle.txt' -f $i } else { 'file_{0:D6}_hay.txt' -f $i }
+                    $tag = if ($i % 100 -eq 7) { 'needle' } else { 'hay' }
+                    $name = if ($variant.Cz) { $cz -f $i, $tag } else { 'file_{0:D6}_{1}.txt' -f $i, $tag }
                     [IO.File]::WriteAllBytes($LP + $d + '\left\' + $name, [byte[]]@())
                 }
             }
@@ -293,9 +297,10 @@ try {
                     $bs += [math]::Round($sw.Elapsed.TotalMilliseconds)
                 }
                 Key $id 0x1B
-                # the worst case: every item matches every character ("file" is in every name)
+                # the worst case: every item matches every character ("file" / the Czech word in every name)
+                $allText = if ($variant.Cz) { [string][char]0x0159 + [char]0x00E1 + 'dek' } else { 'file' }
                 $all = @()
-                foreach ($c in 'file'.ToCharArray()) {
+                foreach ($c in $allText.ToCharArray()) {
                     $sw = [Diagnostics.Stopwatch]::StartNew()
                     [void][Drv098f]::Send($l, 0x0102, [int]$c, 1, 60000)
                     [void][Drv098f]::Send($l, 0x000F, 0, 0, 60000)

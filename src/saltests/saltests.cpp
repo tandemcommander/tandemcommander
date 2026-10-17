@@ -12676,6 +12676,13 @@ static void TestQuickFilter244()
                 }
             }
             m3++;
+            // the one documented difference: the 0.1.10 comparison's linguistic "ss" = "sharp s"
+            // belongs to the old rule; the new mode compares canonical decomposition + case only
+            if (strstr(names[n].Name, "\xC3\x9F") != NULL && strcmp(typed[t], "strasse") == 0)
+            {
+                CHECK(expKind == SALQF_PREFIX && r.Kind == SALQF_NONE);
+                continue;
+            }
             if (r.Kind != expKind || got != (expKind != SALQF_NONE) || expKind != SALQF_NONE && (r.MatchStart != expStart || r.MatchEnd != expEnd))
             {
                 m3Diff++;
@@ -12751,6 +12758,71 @@ static void TestQuickFilter244()
         longName[sizeof(longName) - 2] = 'a';
         longName[sizeof(longName) - 1] = 0;
         CHECK(SalQFMatchName(longName, FALSE, "a", TRUE, r) && r.Kind == SALQF_SUBSTRING && r.MatchStart == (int)sizeof(longName) - 2);
+    }
+
+    // keys (review 244): character boundaries, decomposition, case, an invalid byte, many names
+    {
+        CSalQFMatch r;
+        // a base letter of a decomposed character matches only a whole character
+        CHECK(!SalQFMatchName("x\xC3\xBA", FALSE, "u", TRUE, r));                                           // x + NFC u-acute
+        CHECK(SalQFMatchName("xu\xCC\x81", FALSE, "u", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 2);    // NFD: u is a character there
+        CHECK(SalQFMatchName("xu\xCC\x81y", FALSE, "\xC3\xBAy", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 5); // NFC mask, NFD name
+        CHECK(SalQFMatchName("x\xC3\x9Ay", FALSE, "\xC3\xBA", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 3); // U-acute = u-acute
+        CHECK(!SalQFMatchName("ab\x80" "cd", FALSE, "\xC3\xA1" "c", TRUE, r));                              // invalid byte: no crash, no match
+        CHECK(SalQFMatchName("\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82", FALSE, "\xD1\x80\xD0\xB8", TRUE, r) &&
+              r.MatchStart == 2 && r.MatchEnd == 6); // Cyrillic
+        CHECK(SalQFMatchName("x \xF0\x9F\x98\x80 y", FALSE, "\xF0\x9F\x98\x80", TRUE, r) && r.MatchStart == 2 && r.MatchEnd == 6); // emoji
+        CHECK(SalQFMatchName("abc\xC3\xA1" "def", FALSE, "c/e", TRUE, r) && r.MatchStart == 2 && r.MatchEnd == 7); // wildcard, non-ASCII name
+        CHECK(!SalQFMatchName("abc\xC3\xA1" "def", FALSE, "e/c", TRUE, r));
+        // the new mode's prefix on keys: the dot tolerance, a leading wildcard, the old rule untouched
+        CHECK(SalQFMatchName("\xC3\x9A\xC4\x8D" "et", FALSE, "\xC3\xBA\xC4\x8D" "et.", TRUE, r) && r.Kind == SALQF_PREFIX && r.MatchEnd == 6);
+        CHECK(!SalQFMatchName("\xC3\x9A\xC4\x8D" "et.x", TRUE, "\xC3\xBA\xC4\x8D" "et.", TRUE, r) || r.Kind == SALQF_PREFIX && r.MatchEnd == 7);
+        CHECK(SalQFMatchName("x\xC3\x9A\xC4\x8D" "et", FALSE, "/\xC4\x8D" "e", TRUE, r) && r.Kind == SALQF_PREFIX && r.MatchStart == 0 && r.MatchEnd == 6);
+        {
+            int legacyOffset = 0; // option off: the 0.1.10 rule, linguistic extras included
+            BOOL legacy = Legacy244::Agree("Stra\xC3\x9F" "e.doc", TRUE, "strasse", legacyOffset);
+            CHECK(SalQFMatchName("Stra\xC3\x9F" "e.doc", TRUE, "strasse", FALSE, r) == legacy && (!legacy || r.MatchEnd == legacyOffset));
+        }
+        // SalQFKeyFind with kept keys gives the same as building them per call
+        const char* czech = "Z\xC3\xA1lohy \xC3\xBA\xC4\x8Dt\xC5\xAF 2024.xlsx";
+        CSalQFKey key;
+        CHECK(SalQFBuildKey(czech, -1, key));
+        static CSalQFMaskKeys mk;
+        CHECK(SalQFBuildMaskKeys("\xC3\xBA\xC4\x8D", mk));
+        CSalQFMatch r1, r2;
+        BOOL f1 = SalQFKeyFind(key, mk, 1, r1);
+        BOOL f2 = SalQFMatchName(czech, TRUE, "\xC3\xBA\xC4\x8D", TRUE, r2);
+        CHECK(f1 && f2 && r1.MatchStart == r2.MatchStart && r1.MatchEnd == r2.MatchEnd && r1.MatchStart == 8);
+        SalQFFreeMaskKeys(mk);
+        SalQFFreeKey(key);
+        // timing: 10,000 Czech names of about 40 characters, keys built once, a mask matching none
+        const int N = 10000;
+        static char names[N][96];
+        static CSalQFKey keys[N];
+        for (int i = 0; i < N; i++)
+            sprintf(names[i], "\xC3\xBA\xC4\x8D" "etn\xC3\xAD doklad %05d \xC5\x99\xC3\xA1" "dek \xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD k\xC5\xAF\xC5\x88.txt", i);
+        DWORD t0 = GetTickCount();
+        for (int i = 0; i < N; i++)
+            SalQFBuildKey(names[i], -1, keys[i]);
+        DWORD t1 = GetTickCount();
+        CHECK(SalQFBuildMaskKeys("xy\xC4\x8D", mk));
+        int hits = 0;
+        for (int i = 0; i < N; i++)
+            if (SalQFKeyFind(keys[i], mk, 1, r))
+                hits++;
+        DWORD t2 = GetTickCount();
+        CHECK(hits == 0);
+        SalQFFreeMaskKeys(mk);
+        CHECK(SalQFBuildMaskKeys("\xC5\x99\xC3\xA1" "d", mk)); // in every name
+        hits = 0;
+        for (int i = 0; i < N; i++)
+            if (SalQFKeyFind(keys[i], mk, 1, r))
+                hits++;
+        CHECK(hits == N);
+        SalQFFreeMaskKeys(mk);
+        for (int i = 0; i < N; i++)
+            SalQFFreeKey(keys[i]);
+        printf("TestQuickFilter244: 10,000 Czech names: keys built in %u ms, a keystroke scans them in %u ms\n", t1 - t0, t2 - t1);
     }
 
     // M7 (ASCII names and masks): appending a character only narrows
@@ -12830,6 +12902,14 @@ static void TestQuickFilter244()
             {"custom: caption = background", RGB(0, 0, 0), RGB(240, 240, 240), RGB(240, 240, 240), RGB(200, 200, 200), RGB(200, 200, 200), RGB(240, 240, 240)},
             {"custom: black", RGB(255, 255, 255), RGB(0, 0, 0), RGB(0, 0, 0), RGB(60, 60, 60), RGB(60, 60, 60), RGB(0, 0, 0)},
         };
+        // the last resort (review 244): text that barely contrasts with its background - the tint must
+        // still be visible
+        {
+            COLORREF avoid[1] = {RGB(60, 60, 60)};
+            COLORREF t = SalQFTint(RGB(0, 0, 0), RGB(0, 0, 0), RGB(100, 100, 100), avoid, 1);
+            CHECK(SalQFDistance(t, RGB(0, 0, 0)) >= SALQF_TINT_MIN_DISTANCE);
+            CHECK(SalQFTint(RGB(0, 0, 0), RGB(0, 0, 0), RGB(100, 100, 100), NULL, 0) != RGB(0, 0, 0));
+        }
         for (int i = 0; i < (int)(sizeof(schemes) / sizeof(schemes[0])); i++)
         {
             const Scheme& s = schemes[i];
