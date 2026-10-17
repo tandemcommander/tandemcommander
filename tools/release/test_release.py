@@ -335,6 +335,11 @@ class Refusals(Base):
 
     def test_tag_exists(self):
         self.assert_refused("tag-exists", "0.1.1")
+        code, out = run(self.root, "status", "0.1.1")
+        self.assertIn("state: released", out)
+        self.assertNotIn("inconsistent", out)
+        code, out = run(self.root, "status", "0.2.0", "--date", D1)
+        self.assertNotIn("inconsistent", out)
 
     def test_not_higher(self):
         git(self.root, "tag", "-a", "v0.1.5", "-m", "")

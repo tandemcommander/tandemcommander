@@ -58,6 +58,7 @@ inconsistent: any combination not listed below → refusal, no stamp
 | prepared-today | source = target and build; changelog heading of target dated `date`; no `unreleased` section above prev; every record already at target/build/date (`check` passes) |
 | prepared-earlier | source = target and build, and not prepared-today |
 | inconsistent | source = neither; or a dated section of another version above prev; or source build ≠ build for the target |
+| refused | the version is lower than the last release or changes MAJOR.MINORA (`not-higher`, `line-change`); the records are not examined |
 
 ## Changelog section
 

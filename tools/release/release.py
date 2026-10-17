@@ -624,6 +624,13 @@ def evaluate(ctx: Context) -> None:
         ctx.warnings.append(f"date-range: the release date {ctx.date} is far ahead")
     for b in ctx.release_branches:
         ctx.warnings.append(f"release-branch-ahead: {b}")
+    # A released version, a lower one or another line: nothing more to say about the records
+    if ctx.tag_local or ctx.tag_remote == "yes":
+        ctx.state = "released"
+        return
+    if any(r.startswith(("not-higher", "line-change")) for r in ctx.refusals):
+        ctx.state = "refused"
+        return
     # State and plan
     at_prev = ctx.source == ctx.prev and ctx.source_build == ctx.prev_build
     at_target = ctx.source == t and ctx.source_build == ctx.build
@@ -638,9 +645,7 @@ def evaluate(ctx: Context) -> None:
         ctx.refusals.append(f"inconsistent: {e}")
         ctx.state = "inconsistent"
         return
-    if ctx.tag_local or ctx.tag_remote == "yes":
-        ctx.state = "released"
-    elif at_prev:
+    if at_prev:
         ctx.state = "not-prepared"
     elif any(r.changed for r in ctx.records.values()):
         ctx.state = "prepared-earlier"
