@@ -9,7 +9,18 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
-## [0.1.11] — unreleased
+## [0.1.10] — 2026-10-17
+
+**Build 194.** Fixes for the problems reported on GitHub after 0.1.9, and
+for what checking those fixes found. Several ways of losing files are
+closed: deleting a link in a very deep folder emptied the folder it points
+to, a name that is another file's short name could overwrite that file, and
+an archive opened through a drive letter that was pointed elsewhere could
+be changed in place of another. Shortcuts open their targets, a server name
+lists its shared folders, the program starts again on older Windows, and
+messages, menus and the plug-ins show names in any language readably. Long
+names are kept whole or refused, never cut; SFTP no longer fails about one
+connection in 256.
 
 - **Packing a folder that contains a folder with a very long name**
   (feature 241). Copying or moving it into an archive "succeeded" without
@@ -254,6 +265,14 @@ plugin.
   another file - offered to overwrite it and then deleted that other file;
   it is now kept (with a new short name), as in the main window's rename.
 
+- **Changing only the case of a name never deletes the file on drives of
+  other file systems** (feature 198). On a drive provided by a file system
+  driver such as WinFsp or Dokan, which can give "a.txt" and "A.txt" of the
+  same file two different file numbers, Quick Rename or Move from "a.txt" to
+  "A.txt" could take the file for another one and delete it as the
+  overwritten target. Another file is now recognised only when it is still
+  there after the renamed file was moved aside under a temporary name.
+
 - **Deleting a link in a very deep folder no longer deletes its target's
   files** (feature 197). With the Recycle Bin off, deleting a junction (or a
   folder containing one) whose path was longer than about 780 characters
@@ -301,6 +320,32 @@ plugin.
   (feature 188). With an account name containing accented letters, the folder
   icons of Dropbox and Google Drive were not shown.
 
+- **A too long server or share name says "too long"** (feature 187).
+  Change Directory to a network path whose server or share name is longer
+  than Windows allows said "A share name is missing" (or "A server name is
+  missing") and offered the share list; it now says "The path specified is
+  too long."
+
+- **External archivers: messages show the whole command line and the
+  right letters** (feature 186). "Command line too long" cut the command
+  line, and from two routes overran a buffer; "Path to file too long"
+  showed the path with wrong letters.
+
+- **Messages cut to fit end at a whole letter** (feature 185). Nine
+  messages (the Find log, a drive label, file associations, a temporary
+  file) could end in a broken character when their text was too long. A
+  link in a plug-in's message box is copied to the clipboard whole, and a
+  User Menu environment variable with a name of 260 letters or more is no
+  longer looked up under a shortened name - another variable.
+
+- **External archivers never get another file's name** (feature 184). When
+  unpacking or deleting through an external archiver, a file name longer
+  than about 260 bytes was cut in the list of files handed to the archiver,
+  which then worked on another file; the conversion for archivers that
+  expect DOS letters could overrun a buffer. Such a name is now refused
+  with "Path to file too long", and so is a drag & drop unpack target that
+  does not fit.
+
 - **No crash with very long paths in several messages** (feature 183). Copying
   from an archive into a very deep folder, and a few error messages that name
   a long path, could overrun a buffer.
@@ -321,6 +366,10 @@ plugin.
 - **PictView prints what its print preview shows** (feature 179). With *Scale
   to fit* a picture could be printed mirrored after a negative size had been
   typed, and a large print scale of a big picture printed a wrong size.
+
+- **FTP: uploading a file with a long name shows its name whole** (feature
+  178). The operation window's caption cut a local name of about 130
+  accented letters or more, possibly inside a letter.
 
 - **Packing over an existing archive keeps it when the packing fails**
   (feature 176). Choosing *Overwrite* deleted the existing archive before
@@ -505,12 +554,6 @@ plugin.
   closed the program for an update while the menu was open. A map closes now
   when its menu or box has ended; the confirmation of a shell command is left
   for you to answer, and the map closes after it.
-
-## [0.1.10] — 2026-10-14
-
-Fixes for the problems reported on GitHub after 0.1.9, and what the reviews
-of those fixes found in the FTP and SFTP clients, in PictView and in the
-handling of long names.
 
 - **FTP client: messages, the operation window and the log show names
   readably in every language** (feature 134; the last part of GitHub #7).

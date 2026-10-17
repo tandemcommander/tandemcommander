@@ -390,4 +390,4 @@ FTP login is `name@someserver.com`; a crash that happens while the ZIP
 plugin is using a password can write that password into the crash report; and
 PictView's wallpaper commands wrote no picture file (*Restore Previous* and
 *None* did write the three `Prev...` values).
-Last updated 2026-10-14.
+Last updated 2026-10-17.

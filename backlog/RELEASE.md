@@ -11,30 +11,21 @@ repeated per release are items in `BACKLOG.md` (*Person steps*).
 
 ## Current release: 0.1.10 (build 194) — prepared, not published
 
-- The state to release is the local branch **`release-0.1.10-final`** on top
-  of `142-pictview-thumb-unicode` (features 124–142). The branch
-  **`release-0.1.10`** — also on `origin` — is an earlier state (features
-  up to 133, without 134–142) and **must not be tagged**: it holds feature
-  132 without 135, whose *Update Thumbnail* damages the maker notes of real
-  camera files. **135 must ship with 132.**
-- Features after 142 (143–242) are in `CHANGELOG.md` under the next
-  version. Which of them join 0.1.10 — 197 (a junction in a deep folder was
-  emptied: its target's files deleted, in every release) and 217 (an exit
-  that did not end after a failed SSH handshake) above all — is the
-  maintainer's decision before the merge:
-  `post-142-fixes-joining-0-1-10-decision` (*Decisions for the maintainer*).
-  If fixes are picked, run the closing pass (below) again on the result.
-- Gating person steps: rows 1–4 of *Person steps* in `BACKLOG.md`; the
-  first is the one that matters; the other person steps do not gate this
-  release.
-  - `pictview-own-photos-pipette-histogram-print` — Update Thumbnail on a
-    few own camera photos (135), with the pipette, histogram and print rows;
-  - `sftp-test-container-rows-133` — upload into a read-only directory,
-    the stale-reason row, Quick Rename to a long name;
-  - `plugin-batch-131-rows-needing-volume-or-file` — the rows of 131 that
-    need a volume or a special file;
-  - `real-keyboard-ime-pass-093-124-130` — the rows 124–130 recorded as NOT
-    DRIVEN (real keyboard).
+- The state to release is `main` at the commit "Version 0.1.10: the tree
+  prepared for the release (2026-10-17)" (prepared by `/tandem-release`). It
+  carries features 124–241 (everything since `v0.1.9`): the maintainer
+  decided on 2026-10-17 to release from `main` instead of
+  `release-0.1.10-final` (`post-142-fixes-joining-0-1-10-decision`, option
+  C), so the fixes after 142 - 197 and 217 among them - ship in 0.1.10.
+- Branches that must not be tagged: `release-0.1.10` (also on `origin`) —
+  feature 132 without 135, whose *Update Thumbnail* damages the maker notes
+  of real camera files; `release-0.1.10-final` (also on `origin`) — the
+  earlier choice, features 124–142 only, superseded by the decision above.
+- Gating person steps:
+  - (none)
+- Verified by the skill: `release.py check` 0 findings,
+  `check_encoding.py --strict` TOTAL 0. The code was built and tested before
+  the run; the maintainer builds the signed program.
 
 ## Release records
 

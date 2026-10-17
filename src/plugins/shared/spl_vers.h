@@ -153,14 +153,32 @@
 // 194 - Tandem Commander 0.1.10 (the problems reported on GitHub after 0.1.9:
 //       texts and names outside the code page in the Registry Editor, in
 //       messages of the core and of the plugins - features 124, 127, 129,
-//       130; shares of a server listed for \\server - feature 125; a
-//       shortcut opens its target - feature 128; a batch of plugin defects -
-//       feature 131; PictView's Update Thumbnail works and cannot damage a
-//       picture - features 132, 135, 142; SFTP: a directory not read whole is
+//       130; shares of a server listed for \\server - features 125, 187,
+//       193; the start on Windows 7 / 8.0 - feature 126; a shortcut opens
+//       its target - features 128, 181, 182, 194, 219; a batch of plugin
+//       defects - feature 131; PictView's Update Thumbnail works and cannot
+//       damage a picture - features 132, 135, 142; PictView print and rename
+//       - features 152, 179, 200, 202; SFTP: a directory not read whole is
 //       an error, a move moves directories, nothing is replaced without a
-//       question, a lost connection stops the operation - features 133,
-//       138-140; FTP texts and the log - features 134, 136; names are never
-//       cut - features 137, 141; see CHANGELOG.md)
+//       question, a lost connection stops the operation, the key exchange
+//       and a refused view - features 133, 138-140, 217, 220; FTP texts,
+//       the log and UTF-8 servers - features 134, 136, 157, 216, 224; names
+//       are never cut - features 137, 141, 149-151, 160, 163, 178, 183, 184,
+//       214, 215, 222, 223, 225, 228, 240, 241; data loss: archives through
+//       a re-pointed drive letter - features 144-146, a file replaced in one
+//       step - features 173, 175, 176, links followed by a delete or a
+//       change - features 197, 211-213, another file's short name - features
+//       199, 201-206, 221, case-sensitive folders - features 158, 195, 196,
+//       198, 230-232; closing windows - features 143, 147; Undelete names -
+//       feature 148; Archive Update warning, clearer refusals - features
+//       153, 155; texts in every language, menus, typed text - features 154,
+//       156, 159, 161, 166, 169, 172, 174, 180, 185, 186, 188, 236, 237; the
+//       start from a folder of another script - features 170, 171; ZIP count
+//       and delete speed - features 164, 165; Control Flow Guard - feature
+//       167; Registry Editor's Find - features 189-192; Renamer - features
+//       207-210; crash report - feature 218; User Menu and Find - features
+//       226, 229, 234, 235; %...% in a folder name - feature 238;
+//       see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
