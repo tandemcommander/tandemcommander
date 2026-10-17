@@ -7,7 +7,7 @@ area: translations
 source: measure:166
 who: both
 created: 2026-10-14
-updated: 2026-10-17
+updated: 2026-10-18
 verified: -
 effort: L
 feature: -
@@ -41,3 +41,4 @@ who both: an agent changes and measures, a person or pictures confirm the look.
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-18 — measure:244 - the Configuration > Panels page in French clips two existing checkbox texts (Rediriger le clavier du panneau..., Maj+chiffre...); the new quick-search checkbox of 244 was pinned to fit (specs/244-quick-search-substring-filter/fix-log.md, Translations)

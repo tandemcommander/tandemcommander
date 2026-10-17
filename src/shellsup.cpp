@@ -677,8 +677,10 @@ void DropEnd(BOOL drop, BOOL shortcuts, void* param, BOOL ownRutine, BOOL isFake
     CFilesWindow* panel = (CFilesWindow*)param;
     if (drop && GetActiveWindow() == NULL)
         SetForegroundWindow(MainWindow->HWindow);
-    if (drop) // feature 244: a dragging panel's quick search lives until its posted operation has run
-        MainWindow->FocusPanel(panel, FALSE, TRUE);
+    // feature 244: a drag from an archive or a plug-in FS (a fake data object) posts its operation to
+    // the source panel, which must still show what was dragged - its quick search ends after it
+    if (drop)
+        MainWindow->FocusPanel(panel, FALSE, isFakeDataObject);
 
     panel->SetDropTarget(-1); // hide the marker
     if (tgtType == idtttWindows &&
@@ -1460,6 +1462,8 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                 if (p != NULL)
                     PostMessage(panel->HWindow, WM_USER_DROPUNPACK, (WPARAM)p, operation);
             }
+            else if (MainWindow->GetActivePanel() != panel)
+                panel->QFEndAtPathChange(); // feature 244: dropped elsewhere, nothing to post
 
             return;
         }
@@ -1760,6 +1764,8 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                         if (p != NULL)
                             PostMessage(panel->HWindow, WM_USER_DROPFROMFS, (WPARAM)p, operation);
                     }
+                    else if (MainWindow->GetActivePanel() != panel)
+                        panel->QFEndAtPathChange(); // feature 244: dropped elsewhere, nothing to post
                 }
             }
         }

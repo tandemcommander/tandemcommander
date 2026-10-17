@@ -247,6 +247,7 @@ focus lands where it lands today.
 ## Assumptions
 
 - Matching uses the whole displayed name including the extension; there is no option to match only the base name.
+- "The same equality rules" (FR-002) means case and canonical equivalence. The 0.1.10 comparison's linguistic extras (for example "ss" matching "ß") remain only with the option off (decided during implementation, contract M4): they made every keystroke cost seconds in large folders of non-ASCII names.
 - The visible matches keep the panel's sort order; prefix matches are **not** moved to the top — the preference for prefix matches decides only where the focus lands.
 - Today's silent refusal of a character that matches nothing is kept (no sound, no message); the count shown by FR-026 makes the state visible.
 - Because commands no longer end the search, the search lives until Esc, emptying the text, a change of directory, a tab switch or activating the other panel (FR-016–FR-018); this is a deliberate change from 0.1.10, where nearly every command ended it.

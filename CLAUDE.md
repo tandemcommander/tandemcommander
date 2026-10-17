@@ -116,6 +116,9 @@ Each is one line of a longer story; the number is the feature whose entry in
 - A "safe to delete?" check fails closed: not everything checked = unsafe
   (098). Every *Move* route into an archive or file system calls
   `ScanMoveSelectionForDirLinks` first (099).
+- While quick search filters a panel (`QFActive`, 244), `Dirs`/`Files` are non-owning views of
+  the full listing: code that replaces, sorts or releases them calls `QFSuspend` / `EndQuickSearch`
+  first, and a new path change ends the search before `RefreshPathHistoryData`.
 - Same-file decisions go by identity, not by name: `src/common/salsamefile.h`
   (103, 106, 107, 119).
 - Replacing a user's file: temporary file + `SalReplaceWithTempW`

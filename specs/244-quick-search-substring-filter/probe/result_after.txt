@@ -46,5 +46,13 @@ C20        VISIBLE PASS        got {2024_chatbot, chat.txt} expected {2024_chatb
 C20        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 C21        VISIBLE PASS        got {2024_chatbot, chat.txt, secret_chat.txt} expected {2024_chatbot, chat.txt, secret_chat.txt} inside arc.zip, typed 'chat', select all, F5
 C21        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P10000     TIME   PASS        ms per character 11,5,5,6,6,5; Backspace 6,6,6,6,6; all items match 11,4,4,4; limit 100
+P10000     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P100000    TIME   PASS        ms per character 43,37,34,33,34,34; Backspace 35,38,36,34,36; all items match 49,19,20,22; limit 300
+P100000    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P10000cz   TIME   PASS        ms per character 55,12,11,8,7,7; Backspace 9,8,8,7,37; all items match 55,6,6,7,6; limit 100
+P10000cz   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P100000cz  TIME   FAIL        ms per character 555,70,57,53,49,47; Backspace 63,50,50,50,352; all items match 555,46,41,39,41; limit 300
+P100000cz  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF / after 3A9442CFF4D70AF7C75FCD1CF79493DF01AAE5F288BF360CFF1E102A36E939FF
-ROWS 45; FAIL 0
+ROWS 53; FAIL 1

@@ -97,6 +97,8 @@ namespace SalQFDetail
     // returns the count, 0 when it does not fit
     inline int CharKey(const WCHAR* w, int wlen, WCHAR* out, int cap)
     {
+        if (cap <= 0) // no room left: the caller grows its buffer
+            return 0;
         if (wlen == 1 && w[0] < 0x80)
         {
             out[0] = (w[0] >= 'A' && w[0] <= 'Z') ? (WCHAR)(w[0] + ('a' - 'A')) : w[0];
@@ -519,7 +521,7 @@ namespace SalQFDetail
             if (noDot && k == mk.Count - 1)
             {
                 int q = name.Count - seg.Count; // it ends the name
-                if (q < pos || seg.Count > 0 && !KeySegAt(name, q, seg) || seg.Count == 0 && q != pos && !name.Starts[q])
+                if (q < pos || seg.Count > 0 && !KeySegAt(name, q, seg))
                     return -1;
                 return name.Count;
             }

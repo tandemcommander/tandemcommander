@@ -12783,6 +12783,43 @@ static void TestQuickFilter244()
             BOOL legacy = Legacy244::Agree("Stra\xC3\x9F" "e.doc", TRUE, "strasse", legacyOffset);
             CHECK(SalQFMatchName("Stra\xC3\x9F" "e.doc", TRUE, "strasse", FALSE, r) == legacy && (!legacy || r.MatchEnd == legacyOffset));
         }
+        // review 244 (round 2): a key longer than the 2048-unit scratch area grows on the heap, an ASCII
+        // character at the boundary included; offsets stay byte offsets of characters
+        {
+            static char longText[6004];
+            int pos = 0;
+            for (int i = 0; i < 1500; i++)
+            {
+                memcpy(longText + pos, "ab\xC3\xA1", 4); // a b a-acute: 3 characters, 4 units
+                pos += 4;
+            }
+            longText[pos] = 0;
+            CSalQFKey lk;
+            CHECK(SalQFBuildKey(longText, -1, lk));
+            CHECK(lk.Count == 1500 * 4 && lk.Offsets[lk.Count] == pos && lk.Offsets[3] == 2 && lk.Starts[3] == 0 && lk.Starts[4] == 1);
+            SalQFFreeKey(lk);
+            static char asciiText[5000];
+            memset(asciiText, 'x', 4999);
+            asciiText[4999] = 0;
+            CHECK(SalQFBuildKey(asciiText, -1, lk) && lk.Count == 4999 && lk.Offsets[4999] == 4999);
+            SalQFFreeKey(lk);
+        }
+        // review 244 (round 2): a wildcard before the final dot ("a/.") against a non-ASCII name
+        // without an extension - the dot tolerance as in 0.1.10, no uninitialised read
+        {
+            static const char* dotNames[] = {"a\xC3\xA9", "a\xC3\xA9.x", "\xC3\xA9" "a", "a"};
+            for (int i = 0; i < 4; i++)
+            {
+                BOOL hasExt = strchr(dotNames[i], '.') != NULL;
+                char m[16];
+                Legacy244::Prepare(m, "a\\.");
+                int off = 0;
+                BOOL legacy = Legacy244::Agree(dotNames[i], hasExt, m, off);
+                CSalQFMatch dr;
+                BOOL got = SalQFMatchName(dotNames[i], hasExt, m, TRUE, dr);
+                CHECK(legacy ? got && dr.Kind == SALQF_PREFIX && dr.MatchEnd == off : !got || dr.Kind != SALQF_PREFIX);
+            }
+        }
         // SalQFKeyFind with kept keys gives the same as building them per call
         const char* czech = "Z\xC3\xA1lohy \xC3\xBA\xC4\x8Dt\xC5\xAF 2024.xlsx";
         CSalQFKey key;

@@ -279,7 +279,8 @@ void CFilesWindow::Execute(int index)
             {
                 // backup data for TopIndexMem
                 strcpy(path, GetPath());
-                int topIndex = ListBox->GetTopIndex();
+                // feature 244: a quick search's filtered view has no top index of the full listing
+                int topIndex = (QuickSearchMode && QFMode) ? -1 : ListBox->GetTopIndex();
 
                 if (!linkIsFile)
                 {

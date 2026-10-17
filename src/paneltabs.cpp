@@ -187,10 +187,16 @@ void CFilesWindow::CaptureActiveTab()
     tab->TopIndex = -1;
     tab->XOffset = 0;
     tab->Selection.Clear();
-    // feature 244: while a quick search filters the panel, the record is taken from the full listing
-    // (its selection includes the items the search hides; the top index of the view means nothing)
-    int qfTopIndex = ListBox != NULL && ListBox->HWindow != NULL ? ListBox->GetTopIndex() : -1;
-    BOOL qfSuspended = QFSuspend();
+    // feature 244: while a quick search filters the panel, the selection is taken from the full listing
+    // (it includes the items the search hides); the top index of the filtered view means nothing
+    CFilesArray* selDirs = Dirs;
+    CFilesArray* selFiles = Files;
+    if (QFActive)
+    {
+        QFWriteBackNow();
+        selDirs = QFFullDirs;
+        selFiles = QFFullFiles;
+    }
     if (ListBox != NULL && ListBox->HWindow != NULL && Files != NULL && Dirs != NULL)
     {
         int total = Files->Count + Dirs->Count;
@@ -200,28 +206,26 @@ void CFilesWindow::CaptureActiveTab()
             CFileData* f = (index < Dirs->Count) ? &Dirs->At(index) : &Files->At(index - Dirs->Count);
             lstrcpyn(tab->FocusName, f->Name, SAL_FIND_NAME_U8);
         }
-        tab->TopIndex = ListBox->GetTopIndex();
+        tab->TopIndex = QFActive ? -1 : ListBox->GetTopIndex();
         if (GetViewMode() == vmDetailed)
             tab->XOffset = ListBox->GetXOffset();
-        if (GetSelCount() > 0)
+        int selTotal = selFiles->Count + selDirs->Count;
+        BOOL anySelected = GetSelCount() > 0;
+        for (int i = 0; !anySelected && QFActive && i < selTotal; i++) // a hidden item may be the only one
+            anySelected = (i < selDirs->Count ? selDirs->At(i) : selFiles->At(i - selDirs->Count)).Selected;
+        if (anySelected)
         {
             tab->Selection.SetCaseSensitive(IsCaseSensitive());
             int i;
-            for (i = 0; i < total; i++)
+            for (i = 0; i < selTotal; i++)
             {
-                BOOL isDir = i < Dirs->Count;
-                CFileData* f = isDir ? &Dirs->At(i) : &Files->At(i - Dirs->Count);
+                BOOL isDir = i < selDirs->Count;
+                CFileData* f = isDir ? &selDirs->At(i) : &selFiles->At(i - selDirs->Count);
                 if (f->Selected && !tab->Selection.Add(isDir, f->Name))
                     break; // low memory
             }
             tab->Selection.Sort();
         }
-    }
-    if (qfSuspended)
-    {
-        tab->TopIndex = -1; // the full listing has no top index of its own now
-        if (QuickSearchMode && QFMode && !QFApply(QuickSearchMask, TRUE, -1, qfTopIndex))
-            EndQuickSearch();
     }
     tab->TopIndexMem = TopIndexMem;
     tab->UserWorkedOnThisPath = UserWorkedOnThisPath;

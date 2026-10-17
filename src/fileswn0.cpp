@@ -363,6 +363,19 @@ void CFilesWindow::QFRestoreArrays()
         WakeupIconCacheThread();
 }
 
+void CFilesWindow::QFWriteBackNow()
+{
+    if (!QFActive)
+        return;
+    BOOL sleepReader = UseSystemIcons || UseThumbnails;
+    BOOL wakeReader = sleepReader && !ICStopWork && !IconCacheValid; // see QFApply
+    if (sleepReader)
+        SleepIconCacheThread(); // it writes icon overlays into the visible items
+    QFWriteBack(Dirs, Files, QFFullDirs, QFFullFiles, QFDirMap, QFFileMap);
+    if (wakeReader)
+        WakeupIconCacheThread();
+}
+
 void CFilesWindow::QFFreeKeys()
 {
     CSalQFKey* keys = (CSalQFKey*)QFKeys;

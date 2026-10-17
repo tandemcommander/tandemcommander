@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check) | 071, 078, 123 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter) | 071, 078, 123, 244 |
 
 ## Feature notes
 
@@ -2880,3 +2880,34 @@ a few early ones are out of sequence).
   rewritten on every run (a re-run on another day folds new work in; `check` catches stale dates and
   ranges, not stale content); a newer tag only on the remote must be seen (build numbers would repeat);
   the question tool offers at most four options. Tests 44; refute-first review: 9 findings, all fixed.
+- 244-quick-search-substring-filter: **quick search finds text anywhere in a name and shows only the
+  matches** (option *Configuration > Panels*, on by default - a documented exception to Constitution
+  II; cleared = the 0.1.10 quick search, probe-identical). While a search runs, `Dirs`/`Files` are
+  non-owning *visible arrays* (whole-struct copies of the matches); the full listing waits in
+  `QFFullDirs`/`QFFullFiles` with visible->full maps, and every per-copy state is written back
+  whole. So commands, selection commands and plug-ins act only on what is shown, and hidden items
+  keep their selection. Lifetime inverted: `CancelUI`, focus loss, menus, dialogs, scrolling and
+  clicks keep the search; it ends at Esc, empty text, a path change (before `RefreshPathHistoryData`),
+  a tab switch, the other panel, a refresh that leaves no match or focuses a non-matching item, the
+  option switched off, and close. `RefreshDirectory` suspends and resumes; `ChangeSortType` sorts the
+  full listing. Pure rules in `src/common/salquickfilter.h`: prefix as 0.1.10 (901 saltests cases),
+  substring and the new mode's prefix on **keys** (NFD + invariant lower case, byte offsets per
+  unit, built once per search). The searching panel is tinted (`SalQFTint`: a share of the caption
+  colour kept apart from the cursor, selection and full-row backgrounds; per-panel brush; icons
+  through the non-virtual `CIconList::DrawOnBk`); the directory line shows `Search: <text> (<n> of
+  <total>)`. Traps:
+  - `FillIntersectionRegion` took the brush argument but still filled with `HNormalBkBrush`
+    (untinted icon cells, found by the capture probe).
+  - Waking the icon reader that the caller had put to sleep crashed the close path (freed names);
+    wake only if it ran.
+  - A per-position `SalNameEqualCI` cost seconds per keystroke on non-ASCII names (review).
+  - A drop from an archive/FS ended the source search before the posted unpack/copy read the
+    selection (hidden selected items would be extracted - review).
+  - A colour change at start added the system root to the Back history.
+  - Sorting the visible arrays would break the maps.
+  - Bash here-documents collapsed `\x` escapes in a saltests edit.
+  - New mode drops the old comparison's linguistic extras (`ss` = sharp s).
+  Tests: saltests 22,737 -> 23,037; probes `specs/244-*/probe/` (functional 45 rows, option off
+  identical, captures 5 views x 5 schemes, Configuration page in 9 languages, Release perf 100k:
+  <= 32 ms typing, 335 ms first keystroke over 100k non-ASCII names = the list layout, filed); two
+  review rounds (four agents).

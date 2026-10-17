@@ -176,14 +176,14 @@ description: "Task list for feature 244 — quick search that finds text anywher
 - [X] T034 [P] Add the CHANGELOG.md entry under the unreleased heading in the user's terms, including how to return to the previous behaviour and the remaining limitations (feature 244).
 - [X] T035 Run the two-stage translation refresh for the new strings (`translate.merge` with `--templates`, per CLAUDE.md and memory). Pin de/fr/nl/es register in translations/ui-overrides.json if DeepL is informal, then run `build.cmd full` green.
 - [X] T036 Run `python tools/check_encoding.py` (strict, `TOTAL: 0`) and clang-format on the changed sources; rerun saltests and record the new check count.
-- [ ] T037 Run independent refute-first reviews (separate agents):
+- [X] T037 Run independent refute-first reviews (separate agents):
   - (a) data safety: hidden items untouched, write-back complete, every R2 end point incl. history/tab-capture order;
   - (b) the option-off path equals 0.1.10;
   - (c) painting/encoding: tint contrast, no cut character, wide sinks.
   
   Fix confirmed findings and record them in fix-log.md.
-- [ ] T038 Add serious defects found on the way to the backlog *Inbox* with `/tandem-backlog add` (source `measure:244` / `review:244`), e.g. the ANSI byte measuring in `SplitText`/`TruncateSringToFitWidth`, if confirmed on the build.
-- [ ] T039 Write specs/244-quick-search-substring-filter/closing-report.md:
+- [X] T038 Add serious defects found on the way to the backlog *Inbox* with `/tandem-backlog add` (source `measure:244` / `review:244`), e.g. the ANSI byte measuring in `SplitText`/`TruncateSringToFitWidth`, if confirmed on the build.
+- [X] T039 Write specs/244-quick-search-substring-filter/closing-report.md:
   - results V1–V10 and SC-001…SC-008;
   - limitations;
   - owed person steps (colours per scheme; SFTP if not driven).

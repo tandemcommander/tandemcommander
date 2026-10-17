@@ -1631,6 +1631,9 @@ public:
     BOOL QFUpdateTint();
     // releases QFKeys (the keys belong to the full listing as it is while the view is installed)
     void QFFreeKeys();
+    // the visible items' state (selection, sizes, ...) written back to the full listing now, so that
+    // it can be read there (a tab record) while the view stays installed
+    void QFWriteBackNow();
     // a searching panel that has the focus puts its caret where the focused item is now (after a
     // scroll or a re-layout; out of sight when the item is)
     void QFCaretFollows()
