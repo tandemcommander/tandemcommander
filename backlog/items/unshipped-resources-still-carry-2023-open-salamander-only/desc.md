@@ -1,7 +1,7 @@
 ---
 title: Unshipped resources still carry 2023 Open Salamander-only copyright notices
 type: tech-debt
-status: new
+status: open
 severity: 1
 area: build-release
 source: review:243
@@ -37,3 +37,4 @@ Whether these projects are still built at all was not checked; if not, removing 
 ## Log
 
 - 2026-10-17 — created (source review:243)
+- 2026-10-17 — moved to Next position 62

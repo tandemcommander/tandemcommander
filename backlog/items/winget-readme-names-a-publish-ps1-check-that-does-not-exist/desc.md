@@ -1,7 +1,7 @@
 ---
 title: winget README names a publish.ps1 check that does not exist
 type: tech-debt
-status: new
+status: open
 severity: 1
 area: build-release
 source: review:243
@@ -33,3 +33,4 @@ Either `publish.ps1` checks the directive and fails with that message (`CLAUDE.m
 ## Log
 
 - 2026-10-17 — created (source review:243)
+- 2026-10-17 — moved to Next position 64
