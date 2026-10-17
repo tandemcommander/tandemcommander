@@ -11,7 +11,7 @@ updated: 2026-10-17
 verified: -
 effort: M
 feature: -
-related: [pictview-own-photos-pipette-histogram-print]
+related: []
 depends-on: []
 reason: -
 ---
@@ -45,3 +45,4 @@ Also here (NEXT-WORK §A item 7): a refused Update Thumbnail says "Disk full?". 
 - 2026-10-15 — NEXT-WORK corrected: the "skip all" is there since feature 142 (ThumbWriteFailed)
 - 2026-10-17 — migrated from specs/NEXT-WORK.md header and §B (person steps) (feature 242)
 - 2026-10-17 — migration review N3: cross-references to final slugs, merge remark reworded
+- 2026-10-17 — related item pictview-own-photos-pipette-histogram-print closed: done: steps carried out by hand by the maintainer before the 0.1.10 release; maintainer 2026-10-17

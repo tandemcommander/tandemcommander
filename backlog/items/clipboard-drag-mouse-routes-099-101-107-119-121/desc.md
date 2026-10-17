@@ -11,7 +11,7 @@ updated: 2026-10-17
 verified: -
 effort: M
 feature: -
-related: [real-keyboard-ime-pass-093-124-130, drag-drop-paste-routes-194-228-230-240-by-hand]
+related: [drag-drop-paste-routes-194-228-230-240-by-hand]
 depends-on: []
 reason: -
 ---
@@ -47,3 +47,4 @@ Clipboard rows of 124 and 127 (Copy Name in the Registry Editor, Ctrl+C in an er
 - 2026-10-17 — migrated from specs/NEXT-WORK.md header and §B (person steps) (feature 242)
 - 2026-10-17 — related: the drag & drop / paste routes of 194-240
 - 2026-10-17 — migration review N3: cross-references to final slugs
+- 2026-10-17 — related item real-keyboard-ime-pass-093-124-130 closed: done: steps carried out by hand by the maintainer before the 0.1.10 release; maintainer 2026-10-17

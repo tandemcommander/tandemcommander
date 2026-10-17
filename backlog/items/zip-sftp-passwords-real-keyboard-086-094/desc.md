@@ -11,7 +11,7 @@ updated: 2026-10-17
 verified: -
 effort: M
 feature: -
-related: [sftp-test-container-rows-133, real-keyboard-ime-pass-093-124-130]
+related: []
 depends-on: []
 reason: -
 ---
@@ -48,3 +48,5 @@ The SFTP test container (localhost:2222) can serve the accented-password row if 
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md header and §B (person steps) (feature 242)
+- 2026-10-17 — related item sftp-test-container-rows-133 closed: done: steps carried out by hand by the maintainer before the 0.1.10 release; maintainer 2026-10-17
+- 2026-10-17 — related item real-keyboard-ime-pass-093-124-130 closed: done: steps carried out by hand by the maintainer before the 0.1.10 release; maintainer 2026-10-17

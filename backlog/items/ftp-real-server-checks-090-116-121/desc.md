@@ -11,7 +11,7 @@ updated: 2026-10-17
 verified: -
 effort: M
 feature: -
-related: [real-keyboard-ime-pass-093-124-130, update-close-real-installer-signout-080-088-118]
+related: [update-close-real-installer-signout-080-088-118]
 depends-on: []
 reason: -
 ---
@@ -60,3 +60,4 @@ And: rows of features 134 / 136 not driven (feature 136 drove the bookmark dialo
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md header and §B (person steps) (feature 242)
 - 2026-10-17 — migration review S1/N3: row of 178 (upload caption with a long name) added; merge remarks reworded
+- 2026-10-17 — related item real-keyboard-ime-pass-093-124-130 closed: done: steps carried out by hand by the maintainer before the 0.1.10 release; maintainer 2026-10-17

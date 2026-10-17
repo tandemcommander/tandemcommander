@@ -11,7 +11,7 @@ updated: 2026-10-17
 verified: -
 effort: S
 feature: -
-related: [plugin-batch-131-rows-needing-volume-or-file]
+related: []
 depends-on: []
 reason: -
 ---
@@ -46,3 +46,4 @@ Migrated from specs/NEXT-WORK.md §B 'Environment or hardware' ('volume mount po
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md header and §B (person steps) (feature 242)
+- 2026-10-17 — related item plugin-batch-131-rows-needing-volume-or-file closed: done: steps carried out by hand by the maintainer before the 0.1.10 release; maintainer 2026-10-17
