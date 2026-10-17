@@ -202,7 +202,7 @@ changed between released versions, and it MUST be kept current:
   version that ships it. Entries MAY be grouped as Added / Changed /
   Fixed / Removed; a list of entries each citing its feature (and the
   GitHub issue it answers) is equally accepted.
-- Each version's section MUST open with a lead paragraph
+- Each released version's section MUST open with a lead paragraph
   `**Build N.** <Kind> release. …` that summarizes the release for users:
   it becomes the public winget release summary, so it MUST stay within
   900 characters and contain no `#`.

@@ -76,10 +76,10 @@ def make_repo(tmp: Path) -> Path:
     return root
 
 
-def run(root: Path, *argv: str) -> tuple[int, str]:
+def run(root: Path, *argv: str, online: bool = False) -> tuple[int, str]:
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        code = release.main([argv[0], *argv[1:], "--root", str(root), "--offline"])
+        code = release.main([argv[0], *argv[1:], "--root", str(root)] + ([] if online else ["--offline"]))
     return code, out.getvalue()
 
 
@@ -96,7 +96,9 @@ def fill_texts(root: Path, ver: str, build: int, date: str, issues: str = "(#4)"
     write(root, release.PATH_CLAUDE, re.sub(r"prepared for the\s+\S+\s+release", f"prepared for the {ver} release", cm))
     rl = read(root, release.PATH_RELEASE)
     if "Gating person steps:" not in rl:
-        rl = re.sub(r"(## Current release: .*\n)", r"\1\n- Gating person steps:\n  - `person-one` - Check 013\n", rl)
+        body = (f"\n- Prepared: the tree prepared for the release ({date}), features 012–013.\n"
+                "- Gating person steps:\n  - `person-one` - Check 013\n")
+        rl = re.sub(r"(## Current release: .*\n)", lambda m: m[1] + body, rl)
         write(root, release.PATH_RELEASE, rl)
     d = dt.date.fromisoformat(date)
     notes = (f"# Tandem Commander {ver}\n\n**Released {release.long_date(d)} · build {build} · Windows 11 or "
@@ -291,12 +293,13 @@ class PreparedEarlier(Base):
 
     def test_fold_and_move_dates(self):
         self.prepare()
-        self.add_next(lead="A later lead paragraph.")
+        self.add_next(lead="**Build 187.** A later lead paragraph.")
         code, out = run(self.root, "status", "0.1.2", "--date", D2)
         self.assertIn("state: prepared-earlier", out)
         code, out = run(self.root, "stamp", "0.1.2", "--date", D2)
         self.assertEqual(code, 0, out)
-        self.assertIn("dropped-lead: [0.1.3] (line 7): A later lead paragraph.", out)
+        self.assertIn("dropped-lead: [0.1.3] (line 7): **Build 187.** A later lead paragraph.", out)
+        self.assertNotIn("A later lead paragraph", read(self.root, release.PATH_CHANGELOG))
         cl = read(self.root, release.PATH_CHANGELOG)
         self.assertEqual(cl.count("## [0.1.2]"), 1)
         self.assertNotIn("0.1.3", cl)
@@ -312,6 +315,31 @@ class PreparedEarlier(Base):
         self.assertIn("notes-issues: GitHub #9", out)
         self.assertNotIn("changelog-heading", out)
         self.assertNotIn("privacy", out)
+
+    def test_prose_entry_stays_in_body(self):
+        """Review finding 1: a prose entry opening an unreleased section is not a lead."""
+        self.prepare()
+        cl = read(self.root, release.PATH_CHANGELOG)
+        sec = ("## [0.1.3] — unreleased\n\nNew check (feature 014). A paragraph entry.\n\n"
+               "Its second paragraph.\n\n- **A bullet** (feature 015).\n\n")
+        write(self.root, release.PATH_CHANGELOG, cl.replace("## [0.1.2]", sec + "## [0.1.2]", 1))
+        commit(self.root, "prose")
+        code, out = run(self.root, "stamp", "0.1.2", "--date", D2)
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("dropped-lead", out)
+        cl = read(self.root, release.PATH_CHANGELOG)
+        self.assertIn("## [0.1.2] — 2026-11-05\n\n**Build 186.** Bug-fix release. Two fixes.\n\n"
+                      "New check (feature 014). A paragraph entry.\n\nIts second paragraph.\n\n- **A bullet**", cl)
+        self.assertEqual(cl.count("A paragraph entry."), 1)
+
+    def test_prose_unreleased_gets_placeholder(self):
+        replace(self.root, release.PATH_CHANGELOG, "## [Unreleased]\n\n",
+                "## [Unreleased]\n\nNew check (feature 014). A paragraph entry.\n\n")
+        commit(self.root, "prose")
+        run(self.root, "stamp", "0.1.2", "--date", D1)
+        cl = read(self.root, release.PATH_CHANGELOG)
+        self.assertIn("## [0.1.2] — 2026-11-02\n\n**Build 186.** TODO-KIND release. TODO-SUMMARY\n\n"
+                      "New check (feature 014).", cl)
 
     def test_groups_refused(self):
         self.prepare()
@@ -332,6 +360,25 @@ class Refusals(Base):
 
     def test_version_form(self):
         self.assert_refused("version-form", "0.1.02")
+
+    def test_detached_head(self):
+        git(self.root, "checkout", "-q", "--detach")
+        self.assert_refused("detached-head", "0.1.2", "--date", D1)
+
+    def test_tags_only_on_the_remote(self):
+        remote = self.root.parent / "remote.git"
+        git(self.root.parent, "init", "-q", "--bare", str(remote))
+        git(self.root, "remote", "add", "origin", str(remote))
+        git(self.root, "push", "-q", "origin", "main", "--tags")
+        self.prepare()
+        git(self.root, "tag", "-a", "v0.1.2", "-m", "")
+        git(self.root, "push", "-q", "origin", "v0.1.2")
+        git(self.root, "tag", "-d", "v0.1.2")
+        code, out = run(self.root, "stamp", "0.1.2", "--date", D1, online=True)
+        self.assertIn("refused: tag-exists: 0.1.2 is already released (tag v0.1.2, remote)", out)
+        code, out = run(self.root, "stamp", "0.1.3", "--date", D1, online=True)
+        self.assertIn("refused: no-previous-tag: the previous release tag v0.1.2 exists only on the remote", out)
+        self.assertEqual(git(self.root, "status", "--porcelain"), "")
 
     def test_tag_exists(self):
         self.assert_refused("tag-exists", "0.1.1")
@@ -433,9 +480,14 @@ SEEDED = [
     ("privacy-previous", release.PATH_PRIVACY, "In 0.1.1, the version", "In 0.1.0, the version"),
     ("privacy-date", release.PATH_PRIVACY, "Last updated 2026-11-02.", "Last updated 2026-11-01."),
     ("claude-product", release.PATH_CLAUDE, "release dated 2026-11-02;", "release dated 2026-11-01;"),
+    ("claude-product", release.PATH_CLAUDE, "features 012–013;", "features 012–014;"),
     ("claude-status", release.PATH_CLAUDE, "prepared for the 0.1.2 release", "prepared for the next release"),
+    ("claude-status", release.PATH_CLAUDE, "prepared for the 0.1.2 release.",
+     "prepared for the 0.1.2 release, the tree prepared for the release (2026-11-01)."),
     ("reference-product", release.PATH_REFERENCE, "build 185 / tag", "build 184 / tag"),
     ("release-current", release.PATH_RELEASE, "Gating person steps:", "Person steps:"),
+    ("release-current", release.PATH_RELEASE, "release (2026-11-02)", "release (2026-11-01)"),
+    ("release-current", release.PATH_RELEASE, "features 012–013.", "features 012–012."),
     ("notes-header", "release_notes/release_notes_v0.1.2.md", "build 186", "build 185"),
     ("notes-sections", "release_notes/release_notes_v0.1.2.md", "## Fixed", "## Fixes"),
     ("notes-footer", "release_notes/release_notes_v0.1.2.md", "full detail in `CHANGELOG.md`", "details"),
@@ -471,6 +523,29 @@ class Check(Base):
         self.prepare()
         replace(self.root, release.PATH_SPL, "first shipped in version 0.1.2.", "first shipped in version 0.1.0.")
         self.assertIn(": interface-text:", run(self.root, "check", "0.1.2", "--date", D1)[1])
+
+    def test_next_version_privacy_chain(self):
+        """0.1.3 after a published 0.1.2: the empty "nothing differed" clause is dropped."""
+        self.prepare()
+        git(self.root, "tag", "-a", "v0.1.2", "-m", "")
+        cl = read(self.root, release.PATH_CHANGELOG)
+        write(self.root, release.PATH_CHANGELOG,
+              cl.replace("## [0.1.2]", "## [Unreleased]\n\n- **Later** (feature 016).\n\n## [0.1.2]", 1))
+        commit(self.root, "0.1.3 work")
+        code, out = run(self.root, "stamp", "0.1.3", "--date", D2)
+        self.assertEqual(code, 0, out)
+        pv = read(self.root, release.PATH_PRIVACY)
+        self.assertIn("describes Tandem Commander 0.1.3 (`CHANGELOG.md`). In 0.1.2, the version before it, "
+                      "TODO-PRIVACY. In 0.1.0: the SFTP log kept", pv)
+        self.assertNotIn("nothing described here differed", pv)
+        self.assertIn("carries features 016; previous: 0.1.2 / build 186", read(self.root, release.PATH_CLAUDE))
+        self.assertIn("#define VERSINFO_BUILDNUMBER 187", read(self.root, release.PATH_SPL))
+
+    def test_single_feature_range(self):
+        ns = type("C", (), {"features": {244}})()
+        self.assertEqual(release.feature_range(ns, "x"), "244")
+        ns.features = {12, 13}
+        self.assertEqual(release.feature_range(ns, "x"), "012–013")
 
     def test_published_notes_of_0_1_9_pass(self):
         notes = REAL_ROOT / "release_notes/release_notes_v0.1.9.md"

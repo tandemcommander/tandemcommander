@@ -58,8 +58,10 @@ then the rest by weight; name limits honestly.>
 - Wrap at about 78 columns like the rest of the file.
 - The lead is the winget *ReleaseNotes* text and the GitHub reader's first
   paragraph: no feature numbers, no file names.
-- A text printed as `dropped-lead:` by `stamp` was the lead of a folded
-  section: merge what it says into the new lead; do not keep it in the body.
+- A text printed as `dropped-lead:` by `stamp` was the `**Build N.**` lead
+  of a folded section: merge what it says into the new lead. A first
+  paragraph that is not such a lead is a prose entry (the form of 0.1.9's
+  "New version check (feature 123). …") and stays in the body untouched.
 
 Example (0.1.9): "**Build 193.** Feature release. The program now tells you
 when a newer version has been published: on by default, one request to
@@ -224,16 +226,16 @@ registry values, temporary files or the installer.
 
 ## 6. The maintainer's steps (for the final report)
 
-1. `build.cmd full release sign setup` (signed tree and installer; the
+1. Releasing on another day than `<D>`? First run `/tandem-release <ver>`
+   again that day (it moves every date) — before building and tagging.
+2. `build.cmd full release sign setup` (signed tree and installer; the
    installer packs `build\tandemcommander\Release_x64`).
-2. Merge / push the branch; tag `v<ver>` on the prepared commit; push the tag.
-3. While `microsoft/winget-pkgs#426090` is not settled: switch the
+3. Merge / push the branch; tag `v<ver>` on the prepared commit; push the tag.
+4. While `microsoft/winget-pkgs#426090` is not settled: switch the
    **Publish to winget** workflow **off** in the Actions tab and check that
    it is off.
-4. GitHub release `v<ver>`: body = `release_notes/release_notes_v<ver>.md`;
+5. GitHub release `v<ver>`: body = `release_notes/release_notes_v<ver>.md`;
    asset `tandemcommander-<ver>-x64-setup.exe` (exact name, uploaded); not a
    draft, not a pre-release.
-5. *After publishing* in `backlog/RELEASE.md` (the "newer version" check
+6. *After publishing* in `backlog/RELEASE.md` (the "newer version" check
    from the previous build, an antivirus scan, winget when unblocked).
-6. Released on another day than `<D>`? Run `/tandem-release <ver>` again
-   that day and commit before tagging.

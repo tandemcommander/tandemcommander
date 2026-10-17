@@ -86,7 +86,7 @@ needs and its tests.
 - [X] T027 [US6] Implement `stamp --dry-run` (same output, no write) and the final `changed: N file(s)` / `unchanged` line in `tools/release/release.py`; test in `tools/release/test_release.py`
 - [X] T028 [US6] Write `.claude/skills/tandem-release/reference.md`: the eight records and their formats (contracts/records.md), the wording rules (lead, build comment, privacy sentence, release notes style with examples from 0.1.9/0.1.10, *Status*, *Current release*), the privacy triggers, the traps of research F1–F13, the maintainer's steps
 - [X] T029 [US6] Write `.claude/skills/tandem-release/SKILL.md`: front matter of contracts/skill.md, arguments, contract (never-list, tools, quoting rules), steps 1–10 with the exact questions, content review, wording, verification, backlog, commit template, final report
-- [ ] T030 [US6] Run quickstart V2 and V3 on the real tree; record outputs and any fix in `specs/243-tandem-release-skill/fix-log.md`
+- [X] T030 [US6] Run quickstart V2 and V3 on the real tree; record outputs and any fix in `specs/243-tandem-release-skill/fix-log.md`
 
 ## Phase 9: Polish & cross-cutting
 
@@ -94,8 +94,8 @@ needs and its tests.
 - [X] T032 [P] Amend `.specify/memory/constitution.md` to 3.2.0 (*Release Documentation*: groups optional, bullets citing feature/issue accepted, lead `**Build N.** <Kind> release.` required, record list → `backlog/RELEASE.md` *Release records* and `/tandem-release`; Sync Impact Report; Last Amended 2026-10-17)
 - [X] T033 [P] Update `CLAUDE.md`: *Where things are* row for releasing (`/tandem-release`, `tools/release/`), *Product identity* "A release bumps …" → pointer to *Release records* and the skill, constitution v3.2.0, one standing-rule line (243)
 - [X] T034 Add the two *Inbox* items through `python tools/backlog/backlog.py new` (source `review:243`): old copyright notices without the Tandem holder; stale `PrivilegesRequiredOverridesAllowed` claim in `tools/winget/README.md:204` (related `winget-records-stale-claims-from-072-audit`); fill their bodies; `backlog.py check` 0 findings
-- [ ] T035 Run quickstart V4 and V5 on a throw-away worktree of `main` in the scratch directory (dry run of the skill procedure end to end with `stamp`, wording, `check`, `check_encoding`, commit there), remove the worktree; record in `specs/243-tandem-release-skill/fix-log.md`
-- [ ] T036 Independent refute-first review (agent) of `tools/release/`, the skill and the record changes; fix confirmed findings; record in `specs/243-tandem-release-skill/fix-log.md`
+- [X] T035 Run quickstart V4 and V5 on a throw-away worktree of `main` in the scratch directory (dry run of the skill procedure end to end with `stamp`, wording, `check`, `check_encoding`, commit there), remove the worktree; record in `specs/243-tandem-release-skill/fix-log.md`
+- [X] T036 Independent refute-first review (agent) of `tools/release/`, the skill and the record changes; fix confirmed findings; record in `specs/243-tandem-release-skill/fix-log.md`
 - [ ] T037 Add entry `243-tandem-release-skill` to `specs/FEATURE-HISTORY.md` and write `specs/243-tandem-release-skill/closing-report.md`; final run of `python -m unittest tools/release/test_release.py`, `python tools/backlog/backlog.py check`, `python tools/check_encoding.py --strict`
 
 ## Dependencies & Execution Order

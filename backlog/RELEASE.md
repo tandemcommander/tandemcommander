@@ -57,10 +57,15 @@ the one list; `CLAUDE.md` and the constitution point here, and
 
 ## Preparing the tree
 
-Before: the state to release is built and tested (the closing pass below)
-— the skill does not build or test.
-
-1. On `main`, the day of the release: **`/tandem-release <x.y.z>`**. It
+1. Closing pass on the state to release, **before** the skill (it does not
+   build or test; as done for 0.1.10 on 2026-10-14, recorded in commit
+   `8e5d6c8a`): `build.cmd full` Debug and `build.cmd full release`
+   succeed; `saltests` 0 failed; `tools/check_encoding.py` TOTAL 0; the
+   probes of the release's features and the regressions they name, on the
+   hidden desktop (`tools/run_on_hidden_desktop.ps1`), 0 FAIL. Record every
+   FAIL or NOT DRIVEN row with its reason (a known intermittent failure, a
+   service not running); a row owed to a person becomes a person step.
+2. On `main`, the day of the release: **`/tandem-release <x.y.z>`**. It
    refuses a released version, a dirty tree, a MAJOR/MINORA change and a
    copyright year that has passed; asks when not on `main`, when gating
    person steps are open, and when an open decision concerns the release's
@@ -69,14 +74,6 @@ Before: the state to release is built and tested (the closing pass below)
    records; checks them (`python tools/release/release.py check <x.y.z>`,
    `tools/check_encoding.py --strict`); commits once, locally.
    `--dry-run` shows what it would change.
-2. Closing pass on the state to release (as done for 0.1.10 on 2026-10-14,
-   recorded in commit `8e5d6c8a`): `build.cmd full` Debug and
-   `build.cmd full release` succeed; `saltests` 0 failed;
-   `tools/check_encoding.py` TOTAL 0; the probes of the release's features
-   and the regressions they name, on the hidden desktop
-   (`tools/run_on_hidden_desktop.ps1`), 0 FAIL. Record every FAIL or NOT
-   DRIVEN row with its reason (a known intermittent failure, a service not
-   running); a row owed to a person becomes a person step.
 
 ## Releasing (the maintainer)
 

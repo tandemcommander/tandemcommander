@@ -32,12 +32,21 @@ refused: <reason>                    (zero or more; exit 1 if any)
 
 Refusal reasons (one line each, all that apply):
 `version-form`, `tag-exists`, `not-higher`, `line-change` (MAJOR.MINORA
-differ), `dirty-tree`, `lock-held`, `copyright-year`, `inconsistent: <why>`,
-`no-previous-tag`.
+differ), `dirty-tree`, `lock-held`, `copyright-year`, `detached-head`,
+`inconsistent: <why>`, `no-previous-tag` (also when the previous tag exists
+only on the remote). Remote tags are read with one `ls-remote` of `v*` and
+merged with the local ones.
 
 Warnings: `branch-not-main`, `minorb-skip`, `remote-unknown`,
+`remote-tags-not-fetched`, `date-past`, `date-range`,
 `build-dir` (`OPENSAL_BUILD_DIR` set and not the folder the `.iss` packs from),
 `certificate` (expiry within 60 days), `release-branch-ahead`.
+
+Features of the release are the numbers cited in parentheses —
+`(feature 134; GitHub #7)`, `(features 138-140)` — in the changelog region
+above the previous release; a first paragraph is a lead only when it starts
+with `**Build ` (or is the lead of the target's own dated section); any other
+first paragraph is a prose entry and stays in the body.
 
 ## `stamp <version> [--dry-run]`
 
@@ -79,10 +88,10 @@ Rules:
 | `privacy-version` | no `This statement describes Tandem Commander <target>` |
 | `privacy-previous` | no `In <prev>, the version before it,` or `TODO-PRIVACY` remains |
 | `privacy-date` | `Last updated <date>.` missing |
-| `claude-product` | product line of `CLAUDE.md` ≠ target / build / date / prev / prev build / tag |
-| `claude-status` | `## Status (<date>)` missing, or the paragraph does not name `<target>` |
-| `reference-product` | product line of the project reference differs |
-| `release-current` | `## Current release: <target> (build N) — prepared, not published` missing, or no `Gating person steps:` list in the section |
+| `claude-product` | product line of `CLAUDE.md` ≠ target / build / date / prev / prev build / tag, or its feature range ≠ the cited features |
+| `claude-status` | `## Status (<date>)` missing, the paragraph does not say `prepared for the <target> release`, or names "the tree prepared for the release (<other date>)" |
+| `reference-product` | product line of the project reference differs (same fields) |
+| `release-current` | `## Current release: <target> (build N) — prepared, not published` missing, no `Gating person steps:` list, "the tree prepared for the release (<other date>)", or the feature range missing from the section |
 | `notes-missing` | `release_notes/release_notes_v<target>.md` missing |
 | `notes-header` | title or `**Released <d Month yyyy> · build N · Windows 11 or newer, 64-bit · <kind>**` wrong |
 | `notes-sections` | a section other than New / Changed / Fixed / Removed, an empty one, or a wrong order |

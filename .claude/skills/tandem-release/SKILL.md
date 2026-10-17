@@ -38,12 +38,15 @@ written into the repository is English.
    (AskUserQuestion), **one at a time**, only those of §3.
 4. **No repository text on a command line.** Texts with backticks, `$` or
    backslashes go into files with the editor; command lines carry only
-   versions, dates, slugs and paths, in single quotes.
+   versions, dates, slugs, paths and short sentences you write yourself, in
+   single quotes, without backticks, `$` or backslashes (step 8).
 5. **Read [reference.md](reference.md)** §1 and §5 before step 5; §2–§4
    when a step points there.
 6. **Every path ends** with the final report (§10). A stop before step 5
    leaves the tree unchanged; a stop after it leaves the edits uncommitted
-   in the work tree and says so (never reset them).
+   in the work tree and says so (never reset them) — and says that a new run
+   is refused (`dirty-tree`) until the maintainer commits or discards them
+   (`git diff`, then `git checkout -- <the listed records>` or a commit).
 
 Values to remember once known: `VER`, `D`, `DL`, `P`, `PN`, `N`, `BRANCH`,
 `STATE`, `FEATURES` (first–last, count), `ISSUES`, `GATING` (open slugs),
@@ -69,7 +72,9 @@ RT status <VER> <DATE_OPT>
   backlog run is active; `copyright-year` → decide the copyright years
   first; `line-change` → a MAJOR/MINORA change needs a configuration
   migration decision; `inconsistent: …` → name the record and line;
-  `version-form`, `not-higher`, `no-previous-tag` → explain.
+  `detached-head` → check out the branch to release; `no-previous-tag` →
+  when the tag is only on the remote, `git fetch --tags` first;
+  `version-form`, `not-higher` → explain.
 - Remember the values; `STATE` is `not-prepared` or `prepared-earlier` (go
   on) or `prepared-today` (go on: step 5 will print `unchanged`, the run
   ends at step 9 with no commit if nothing else is to be done).
@@ -84,15 +89,22 @@ Ask only what applies, in this order; a "no" or no answer → **stop**
    <VER> on `<BRANCH>` anyway?"
 2. **`minorb-skip`**: "<P> → <VER> skips a version. Go on?"
 3. **`remote-unknown`**: "The remote tags could not be read; is `v<VER>`
-   surely not published yet?"
+   surely not published yet?" — **`remote-tags-not-fetched`**: "The remote
+   has release tags this clone lacks (<tags>). Stop and fetch them first?"
+   (*Stop* is the recommended option.) — **`date-past`**: "The release date
+   <D> has passed. Prepare with that date anyway?"
 4. **Open gating person steps** (`gating: open …` lines; with
    `prepared-earlier` from the last *Current release*): list each (slug,
-   title, `backlog/items/<slug>/desc.md`) and the `gating-candidate:` lines
-   separately as "possibly also relevant", then ask: "<n> person steps that
-   gate the release are open. Prepare <VER> anyway?" With no listed
-   gating steps but candidates, ask instead which candidates gate this
-   release (multi-select, "none" allowed) — the answer becomes the
-   `Gating person steps:` list of §6.
+   title, `backlog/items/<slug>/desc.md`) in the message, and the
+   `gating-candidate:` lines separately as "possibly also relevant", then
+   ask: "<n> person steps that gate the release are open. Prepare <VER>
+   anyway?" (options: *Yes, prepare* / *No, stop*). With no listed gating
+   steps but candidates, list the candidates numbered in the message and
+   ask which of them gate this release — options *None of them* / *All of
+   them* / *Stop*; the maintainer names a subset through the free-text
+   answer ("Other": numbers or slugs). The answer becomes the
+   `Gating person steps:` list of §6. (The question tool offers at most four
+   options — never one option per candidate.)
 5. **An open backlog decision about this release's content**:
    `grep -l -E '^type: decision' backlog/items/*/desc.md | xargs grep -l -F '<VER>'`
    → for each open one whose question is what ships in `<VER>` (today:
@@ -108,8 +120,9 @@ and the answers above, **end** (§10 dry-run form).
 
 1. `git log --oneline v<P>..HEAD` and the features of `RT status`.
 2. User-visible features without a changelog entry, changelog drafts left
-   in fix-logs → list them; ask the maintainer whether to add each (one
-   question with a multi-select). Agreed entries are written in step 6.
+   in fix-logs → list them numbered in the message; ask once — options
+   *Add all* / *Add none* / free text naming the numbers to add. Agreed
+   entries are written in step 6, before the verification.
 3. Privacy triggers (`reference.md` §4): a trigger that applies while
    `PRIVACY.md`'s body does not describe it → ask the maintainer; "no" or
    unclear → **stop** (the statement must be updated in its own change).
@@ -127,7 +140,11 @@ RT stamp <VER> <DATE_OPT>
 
 ## 6. Wording (`reference.md` §2, §3) — with the editor
 
-Replace every placeholder and write the texts:
+Replace every placeholder and write the texts. **On every run — also
+`prepared-earlier` with no placeholder left — re-read and rewrite items 2,
+4, 5 and 6 so that they cover the whole content of the section** (features
+<FEATURES>) and name today's date; a re-run on a later day folds new work
+in, and these texts are what the check cannot judge.
 
 1. `CHANGELOG.md`: the lead (§2.1); agreed missing entries from step 4
    (newest feature first, in the section's style).
@@ -153,8 +170,12 @@ python tools/check_encoding.py --strict
 
 ## 8. Backlog
 
-- `DECISION` set → `/tandem-backlog decide <DECISION> 'released as <VER> from <BRANCH> on <D>: features <FEATURES>'`
-  (the maintainer confirmed it in step 3).
+- `DECISION` set (confirmed in step 3) → the "answered" path of
+  `/tandem-backlog` §2.9, without its questions:
+  1. `BL list --needs <DECISION>` → note the dependents;
+  2. `BL log <DECISION> 'maintainer decision <D>: released as <VER> from <BRANCH>, features <FEATURES>'`;
+  3. `BL remove <DECISION> --reason 'decided <D>: released as <VER> from <BRANCH>; maintainer'`.
+  Report the dependents; the maintainer decides about them later.
 - Defects found on the way that are not part of this release → *Inbox*
   through `/tandem-backlog add` (source `review:243`). Nothing else.
 
@@ -195,8 +216,8 @@ Verified: release.py check 0 findings; check_encoding TOTAL 0; winget summary <n
 Gating person steps: <open ones, or none> (confirmed by the maintainer).
 Decision recorded: <DECISION or none>.   Inbox: <added items or none>.
 Warnings: <WARN or none>.
-Maintainer's steps: reference.md §6, numbered, with <VER> filled in.
-Released on another day than <D>? Run /tandem-release <VER> again that day.
+Maintainer's steps: reference.md §6, numbered, with <VER> and <D> filled in
+(step 1: another day = run /tandem-release <VER> again first).
 ```
 
 Dry run: `Dry run of <VER> (<D>): state <STATE>; would change: <list>;

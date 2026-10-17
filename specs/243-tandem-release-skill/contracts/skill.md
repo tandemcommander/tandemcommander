@@ -31,7 +31,7 @@ repository text is English.
 | 5 | `release.py stamp <ver>` | exit 1 → report, stop (tree unchanged) |
 | 6 | Wording: changelog lead (+ dropped leads merged), build-history summary, privacy sentence, release notes, `CLAUDE.md` *Status*, `RELEASE.md` *Current release* | — |
 | 7 | `release.py check <ver>`, `release.py summary <ver>`, `python tools/check_encoding.py --strict` | findings the skill cannot fix by repeating step 6 → report and stop without a commit; the edits stay in the work tree for the maintainer (never a destructive reset) |
-| 8 | Backlog: record the confirmed decision (`/tandem-backlog decide`), new findings to *Inbox* | — |
+| 8 | Backlog: record the confirmed decision (the "answered" path of `/tandem-backlog` §2.9 through `backlog.py log` + `remove`, without its questions), new findings to *Inbox* | — |
 | 9 | One commit `Version <ver>: the tree prepared for the release (<D>)`, body from a file | commit fails → report |
 | 10 | Final report (FR-022) | — |
 

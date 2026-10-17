@@ -96,11 +96,11 @@ SLUG_RE = re.compile(r"`([a-z0-9][a-z0-9-]*)`")
 
 CLAUDE_PRODUCT_RE = re.compile(
     r"\*\*Tandem Commander (?P<ver>[^*\s]+)\*\* \(internal build (?P<build>\d+),\s+"
-    r"release dated (?P<date>\S+?);\s+carries features (?P<range>\d+[" + EN + r"-]\d+);\s+"
+    r"release dated (?P<date>\S+?);\s+carries features (?P<range>\d+(?:[" + EN + r"-]\d+)?);\s+"
     r"previous:\s+(?P<prev>\S+)\s+/\s+build\s+(?P<pbuild>\d+)\s+/\s+tag\s+`v(?P<ptag>[^`]+)`\)")
 REFERENCE_PRODUCT_RE = re.compile(
     r"version \*\*(?P<ver>[^*\s]+)\*\* \(internal build (?P<build>\d+),\s+"
-    r"release dated (?P<date>\S+) " + EM + r" it carries features (?P<range>\d+[" + EN + r"-]\d+),\s+"
+    r"release dated (?P<date>\S+) " + EM + r" it carries features (?P<range>\d+(?:[" + EN + r"-]\d+)?),\s+"
     r"everything made since (?P<prev>\S+) / build (?P<pbuild>\d+) / tag `v(?P<ptag>[^`]+)`\)")
 PRIVACY_DESCRIBES_RE = re.compile(r"This statement describes Tandem Commander (?P<ver>\S+) \(`CHANGELOG\.md`\)\.")
 PRIVACY_CHAIN_RE = re.compile(
@@ -329,6 +329,23 @@ def section_body(lines: list[str], s: Section) -> list[str]:
     return body
 
 
+def is_release_lead(s: Section, target: Version) -> bool:
+    """The first paragraph is a release lead only when it is one: "**Build N.** ..." or the
+    lead of the target's own dated section (prepared earlier). Any other first paragraph is a
+    prose entry (the form of 0.1.9) and stays in the body."""
+    if not s.lead:
+        return False
+    return s.lead[0].lstrip().startswith("**Build ") or (s.dated and Version.parse(s.label) == target)
+
+
+def cited_features(text: str) -> set[int]:
+    """Feature numbers cited in parentheses - "(feature 134; GitHub #7)", "(features 138-140)"."""
+    out: set[int] = set()
+    for m in re.finditer(r"\(([^()]*)\)", text):
+        out |= feature_numbers(m[1])
+    return out
+
+
 def feature_numbers(text: str) -> set[int]:
     out: set[int] = set()
     for m in FEATURES_RE.finditer(text):
@@ -436,6 +453,7 @@ class Context:
     lock: str = "free"
     tag_local: bool = False
     tag_remote: str = "unknown"
+    remote_only: list[Version] = field(default_factory=list)
     source: Version | None = None
     source_build: int | None = None
     interface: int | None = None
@@ -472,14 +490,32 @@ class Context:
 
 def load_context(root: Path, target: Version, date: dt.date, offline: bool) -> Context:
     ctx = Context(root=root, target=target, date=date, offline=offline)
+    local: set[Version] = set()
     for t in git_out(root, "tag", "--list", "v*").split():
         v = Version.parse(t[1:])
         if v and v.tag == t:
-            ctx.tags.append(v)
-    ctx.tags.sort()
+            local.add(v)
+    remote: set[Version] | None = None
+    if not offline:
+        # All remote release tags: a release published from another clone must not be missed
+        try:
+            r = git(root, "ls-remote", "--tags", "origin", "refs/tags/v*", timeout=30)
+            if r.returncode == 0:
+                remote = set()
+                for line in r.stdout.splitlines():
+                    ref = line.split("\t")[-1].removeprefix("refs/tags/").removesuffix("^{}")
+                    v = Version.parse(ref[1:])
+                    if v and v.tag == ref:
+                        remote.add(v)
+        except (subprocess.TimeoutExpired, OSError):
+            remote = None
+    ctx.tags = sorted(local | (remote or set()))
+    ctx.tag_local = target in local
+    ctx.tag_remote = "unknown" if remote is None else ("yes" if target in remote else "no")
+    ctx.remote_only = sorted((remote or set()) - local)
     lower = [t for t in ctx.tags if t < target]
     ctx.prev = lower[-1] if lower else None
-    if ctx.prev:
+    if ctx.prev and ctx.prev in local:
         old = spl_macros(git_out(root, "show", f"{ctx.prev.tag}:{PATH_SPL}"))
         ctx.prev_build = old.get("VERSINFO_BUILDNUMBER")
         ctx.prev_interface = old.get("LAST_VERSION_OF_SALAMANDER")
@@ -488,15 +524,6 @@ def load_context(root: Path, target: Version, date: dt.date, offline: bool) -> C
     ctx.branch = git_out(root, "branch", "--show-current").strip()
     ctx.head = git_out(root, "rev-parse", "--short", "HEAD").strip()
     ctx.clean = git_out(root, "status", "--porcelain").strip() == ""
-    ctx.tag_local = target in ctx.tags
-    if offline:
-        ctx.tag_remote = "unknown"
-    else:
-        try:
-            r = git(root, "ls-remote", "--tags", "origin", f"refs/tags/{target.tag}", timeout=30)
-            ctx.tag_remote = ("yes" if r.stdout.strip() else "no") if r.returncode == 0 else "unknown"
-        except (subprocess.TimeoutExpired, OSError):
-            ctx.tag_remote = "unknown"
     tool = root / BACKLOG_TOOL
     if tool.is_file():
         r = subprocess.run([sys.executable, str(tool), "lock", "status"], cwd=str(root),
@@ -516,7 +543,7 @@ def load_context(root: Path, target: Version, date: dt.date, offline: bool) -> C
     secs = changelog_sections(lines)
     ip = next((k for k, s in enumerate(secs) if ctx.prev and s.label == ctx.prev.text), len(secs))
     region = "\n".join(lines[secs[0].start:secs[ip].start if ip < len(secs) else len(lines)]) if secs else ""
-    ctx.features = feature_numbers(region)
+    ctx.features = cited_features(region)
     ctx.issues = issue_numbers(region)
     refs = git_out(root, "for-each-ref", "--format=%(refname:short)",
                    f"refs/heads/release-{target.text}*", f"refs/remotes/origin/release-{target.text}*")
@@ -585,6 +612,10 @@ def load_gating(ctx: Context) -> None:
 def evaluate(ctx: Context) -> None:
     """Fill refusals, warnings, state and the stamp plan (records edited in memory)."""
     t = ctx.target
+    if ctx.prev is not None and ctx.prev in ctx.remote_only:
+        ctx.refusals.append(f"no-previous-tag: the previous release tag {ctx.prev.tag} exists only on the remote - "
+                            "run 'git fetch --tags' first")
+        return
     if ctx.prev is None or ctx.prev_build is None:
         ctx.refusals.append(f"no-previous-tag: no release tag below {t.tag} with a readable {PATH_SPL}")
         return
@@ -605,8 +636,10 @@ def evaluate(ctx: Context) -> None:
     if ctx.copyright_year is not None and ctx.date.year > ctx.copyright_year:
         ctx.refusals.append(f"copyright-year: the release year {ctx.date.year} is after the copyright year "
                             f"{ctx.copyright_year} of {PATH_VERSINFO} - decide the notices first")
-    if ctx.branch != "main":
-        ctx.warnings.append(f"branch-not-main: the current branch is '{ctx.branch or '(detached)'}', not main")
+    if not ctx.branch:
+        ctx.refusals.append("detached-head: HEAD is not on a branch - check out the branch to release (main)")
+    elif ctx.branch != "main":
+        ctx.warnings.append(f"branch-not-main: the current branch is '{ctx.branch}', not main")
     if t.same_line(ctx.prev) and t.minorb != ctx.prev.minorb + 1:
         ctx.warnings.append(f"minorb-skip: {ctx.prev} -> {t} skips a version")
     if ctx.tag_remote == "unknown":
@@ -622,6 +655,11 @@ def evaluate(ctx: Context) -> None:
             ctx.warnings.append(f"certificate: the code-signing certificate expires {expiry}")
     if ctx.date > dt.date.today() + dt.timedelta(days=DATE_AHEAD_DAYS):
         ctx.warnings.append(f"date-range: the release date {ctx.date} is far ahead")
+    if ctx.date < dt.date.today():
+        ctx.warnings.append(f"date-past: the release date {ctx.date} is before today - a record would state a "
+                            "release day that has passed")
+    if ctx.remote_only:
+        ctx.warnings.append("remote-tags-not-fetched: " + " ".join(v.tag for v in ctx.remote_only))
     for b in ctx.release_branches:
         ctx.warnings.append(f"release-branch-ahead: {b}")
     # A released version, a lower one or another line: nothing more to say about the records
@@ -697,11 +735,14 @@ def plan_spl(ctx: Context) -> None:
         rec.text = "\n".join(lines)
         ctx.plan_messages.append(f"{rec.rel}:{k + 1}: build history entry {ctx.build} added (TODO-SUMMARY)")
     if ctx.interface_changed:
-        m = re.search(r"^(#define REQUIRE_LAST_VERSION_OF_SALAMANDER .*?first shipped )(after|in)( version )"
-                      r"([0-9.]+?)(\.\")", rec.text, re.M)
-        if m and (m[2] != "in" or m[4] != t.text):
-            note(ctx, rec, m.start(), f"REQUIRE_LAST_VERSION_OF_SALAMANDER -> first shipped in version {t}")
-            rec.text = rec.text[:m.start(2)] + "in" + m[3] + t.text + rec.text[m.end(4):]
+        m = re.search(r"^#define REQUIRE_LAST_VERSION_OF_SALAMANDER .*?plugin interface (?P<iface>\d+), "
+                      r"first shipped (?P<how>after|in) version (?P<ver>[0-9.]+?)\.\"", rec.text, re.M)
+        want = {"iface": str(ctx.interface), "how": "in", "ver": t.text}
+        diff = {k: v for k, v in want.items() if m and m[k] != v}
+        if diff:
+            note(ctx, rec, m.start(), f"REQUIRE_LAST_VERSION_OF_SALAMANDER -> plugin interface {ctx.interface}, "
+                                      f"first shipped in version {t}")
+            rec.text = sub_group(rec.text, m, diff)
 
 
 def plan_iss(ctx: Context) -> None:
@@ -736,6 +777,9 @@ def plan_changelog(ctx: Context) -> None:
             raise Refused(f"{PATH_CHANGELOG}:{s.start + 1}: heading [{s.label}] is neither dated nor unreleased")
         if v <= ctx.prev:
             raise Refused(f"{PATH_CHANGELOG}:{s.start + 1}: [{s.label}] is not above [{ctx.prev}]")
+    for s in region:
+        if not is_release_lead(s, t):  # a prose entry, not a lead: it stays in the body
+            s.lead, s.lead_start = [], -1
     heading = f"## [{t}] {EM} {ctx.date.isoformat()}"
     placeholder = [f"**Build {ctx.build}.** TODO-KIND release. TODO-SUMMARY"]
     if len(region) == 1:
@@ -780,6 +824,8 @@ def plan_privacy(ctx: Context) -> None:
                 f"before it, TODO-PRIVACY. In {c['pold']}: ")
         note(ctx, rec, c.start(), f"describes {m['ver']} -> {t}; In {ctx.prev}, the version before it (TODO-PRIVACY)")
         rec.text = rec.text[:c.start()] + repl + rec.text[c.end():]
+        # "In <pold>: nothing described here differed." says nothing once shifted - drop it
+        rec.text = re.sub(r" In " + re.escape(c["pold"]) + r":\s+nothing described here differed\.", "", rec.text, count=1)
     d = PRIVACY_DATE_RE.search(rec.text)
     if not d:
         raise Refused(f"{PATH_PRIVACY} has no 'Last updated YYYY-MM-DD.' line")
@@ -791,7 +837,8 @@ def plan_privacy(ctx: Context) -> None:
 def feature_range(ctx: Context, current: str) -> str:
     if not ctx.features:
         return current
-    return f"{min(ctx.features):03d}{EN}{max(ctx.features):03d}"
+    lo, hi = min(ctx.features), max(ctx.features)
+    return f"{lo:03d}" if lo == hi else f"{lo:03d}{EN}{hi:03d}"
 
 
 def plan_product(ctx: Context, rel: str, regex: re.Pattern) -> None:
@@ -936,6 +983,12 @@ def check_notes(text: str | None, rel: str, ver: str, build: int, date: dt.date,
     return f
 
 
+def stale_commit_dates(text: str, date: dt.date) -> list[str]:
+    """Dates of "the tree prepared for the release (YYYY-MM-DD)" that are not the release date."""
+    found = re.findall(r"prepared\s+for\s+the\s+release\s+\((\d{4}-\d{2}-\d{2})\)", text)
+    return [d for d in found if d != date.isoformat()]
+
+
 def run_check(ctx: Context) -> list[Finding]:
     f: list[Finding] = []
     t, build, date = ctx.target, ctx.build, ctx.date
@@ -951,9 +1004,10 @@ def run_check(ctx: Context) -> list[Finding]:
         f.append(Finding(rec.rel, 1, "build-history", f"expected one entry '// {build} - Tandem Commander {t} ('"))
     elif PLACEHOLDER in entries[0][1]:
         f.append(Finding(rec.rel, rec.line_of(rec.text.find(entries[0][1])), "build-history", "TODO-SUMMARY remains"))
-    if ctx.interface_changed and f"first shipped in version {t}." not in rec.text:
+    want_req = f"plugin interface {ctx.interface}, first shipped in version {t}."
+    if ctx.interface_changed and want_req not in rec.text:
         f.append(Finding(rec.rel, 1, "interface-text", f"the plugin interface changed since {ctx.prev.tag} but "
-                                                      f"REQUIRE_LAST_VERSION_OF_SALAMANDER does not say 'first shipped in version {t}.'"))
+                                                      f"REQUIRE_LAST_VERSION_OF_SALAMANDER does not say '{want_req}'"))
     # installer
     rec = ctx.rec(PATH_ISS)
     m = re.search(r'^#define MyAppVersion "([^"]*)"', rec.text, re.M)
@@ -1022,6 +1076,9 @@ def run_check(ctx: Context) -> list[Finding]:
         want = {"ver": t.text, "build": str(build), "date": date.isoformat(), "prev": ctx.prev.text,
                 "pbuild": str(ctx.prev_build), "ptag": ctx.prev.text}
         bad = [f"{k} {m[k]} (expected {v})" for k, v in want.items() if m[k] != v]
+        want_range = feature_range(ctx, ranges[rel])
+        if ranges[rel] != want_range:
+            bad.append(f"features {ranges[rel]} (the changelog section cites {want_range})")
         if bad:
             f.append(Finding(rel, rec.line_of(m.start()), rule, "; ".join(bad)))
     if len(set(ranges.values())) > 1:
@@ -1037,13 +1094,26 @@ def run_check(ctx: Context) -> list[Finding]:
         if not re.search(r"prepared for the\s+" + re.escape(t.text) + r"\s+release", para):
             f.append(Finding(rec.rel, rec.line_of(m.start()), "claude-status",
                              f"the Status paragraph does not say 'prepared for the {t} release'"))
+        for d in stale_commit_dates(para, date):
+            f.append(Finding(rec.rel, rec.line_of(m.start()), "claude-status",
+                             f"the Status paragraph names the preparation of {d}, not {date}"))
     # RELEASE.md
     rec = ctx.rec(PATH_RELEASE)
     m = CURRENT_RE.search(rec.text)
     if not m or m[0] != current_heading(ctx):
         f.append(Finding(rec.rel, rec.line_of(m.start()) if m else 1, "release-current", f"expected '{current_heading(ctx)}'"))
-    elif gating_slugs(rec.text) is None:
-        f.append(Finding(rec.rel, rec.line_of(m.start()), "release-current", "no 'Gating person steps:' list"))
+    else:
+        span = current_release_section(rec.text)
+        body = rec.text[span[0]:span[1]]
+        if gating_slugs(rec.text) is None:
+            f.append(Finding(rec.rel, rec.line_of(m.start()), "release-current", "no 'Gating person steps:' list"))
+        for d in stale_commit_dates(body, date):
+            f.append(Finding(rec.rel, rec.line_of(m.start()), "release-current",
+                             f"*Current release* names the preparation of {d}, not {date}"))
+        rng = feature_range(ctx, "")
+        if rng and rng not in body and rng.replace(EN, "-") not in body:
+            f.append(Finding(rec.rel, rec.line_of(m.start()), "release-current",
+                             f"*Current release* does not name the features {rng} of the changelog section"))
     # notes
     notes = ctx.rec(ctx.notes_rel)
     f += check_notes(notes.text if notes.exists else None, notes.rel, t.text, build, date, ctx.issues)
