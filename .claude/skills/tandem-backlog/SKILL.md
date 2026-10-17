@@ -264,9 +264,11 @@ BL check                                                 → TOTAL: 0
 | "important" / "severe" | `--min-severity 7` (or the number given) |
 
 **Report:** a Markdown table in backlog order
-`| # | Section | Sev | Type | Area | Status | Item |` where *#* is the
-position in an ordered section (`-` in *Inbox*, *Parked*, *Rejected*) and
-*Item* is `<title> (<slug>)`; then the line `<n> items`.
+`| # | Section | Sev | Type | Area | Status | Source | Item |` where *#* is
+the position in an ordered section (`-` in *Inbox*, *Parked*, *Rejected*),
+*Source* is the item's `source` field as stored (`github#5`, `review:212`,
+`leftover:125`, ...) and *Item* is `<title> (<slug>)`; then the line
+`<n> items`.
 
 ### 2.4 `show <slug or title>` (changes nothing)
 
