@@ -9,6 +9,18 @@ not restate Open Salamander's own history. Versions follow
 also carries an internal build number shared by the application and every
 plugin.
 
+## [0.1.11] — unreleased
+
+- **Quick search finds text anywhere in a name and shows only the matches**
+  (feature 244).
+  - **Finding:** typing in a panel found only names that start with the typed text. A folder such as "2024_chatbot" could not be found by typing "chat", unless one knew to type a leading "/". Now a name that contains the text anywhere matches. A name that starts with it still gets the cursor first, as before.
+  - **Hiding:** while you type, the panel shows only the matching items. The arrows move among them, Enter opens one, and Esc (or deleting the whole text) shows everything again with the cursor where it was.
+  - **Indication:** the searching panel is lightly tinted in its colour scheme (also in the Dark theme), and its directory line shows the text and the number of matches, for example "Search: chat (3 of 120)".
+  - **Commands:** copy, move, delete, pack, select all and the other commands work only on the items that are shown. An item hidden by the search is never touched, and if it was selected it stays selected.
+  - **When it ends:** the search now lasts until Esc, until the folder, tab or active panel changes, or until an operation creates or renames an item that does not match. Before, almost any command ended it.
+  - **Previous behaviour:** to get it back, clear *Options → Configuration → Panels → Quick search finds text anywhere in names and shows only the matches*.
+  - **Limitation:** where the match starts is not highlighted in the name; the cursor stands after its end.
+
 ## [0.1.10] — 2026-10-17
 
 **Build 194.** Fixes for the problems reported on GitHub after 0.1.9, and

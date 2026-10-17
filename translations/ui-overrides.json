@@ -298,7 +298,8 @@
       "IDS_UPDATE_RELEASED": "Vydané %s",
       "IDS_UPDATE_ABOUT_LATEST": "Toto je najnovšia verzia (skontrolované %s).",
       "IDS_UPDATE_CHECKNOWLINK": "Skontrolovať teraz",
-      "IDS_UPDATE_ERR_START": "Novú verziu sa nepodarilo skontrolovať: kontrolu sa nepodarilo spustiť. Skúste to znova."
+      "IDS_UPDATE_ERR_START": "Novú verziu sa nepodarilo skontrolovať: kontrolu sa nepodarilo spustiť. Skúste to znova.",
+      "IDC_QUICKSEARCH_FILTER": "Rýchle hľadanie: &text kdekoľvek v názve, zobraziť len zhody"
     },
     "german": {
       "IDS_VIEWERCOPYKEPTTEMP": "Die Datei „%s“ wurde entfernt, aber der neue Inhalt konnte nicht an ihre Stelle gesetzt werden.\\nFehler: %s\\n\\nDer neue Inhalt befindet sich in der Datei „%s“. Benennen Sie diese Datei um, um sie wiederherzustellen.",
@@ -340,7 +341,8 @@
       "IDS_UPDATE_CHECKNOWLINK": "Jetzt suchen",
       "IDS_UPDATE_ERR_BROWSER": "Die Adresse konnte in Ihrem Webbrowser nicht geöffnet werden:\\n\\n%s\\n\\nMöchten Sie die Adresse in die Zwischenablage kopieren?",
       "IDS_UPDATE_ERR_START": "Es konnte nicht nach einer neuen Version gesucht werden: Die Suche konnte nicht gestartet werden. Versuchen Sie es erneut.",
-      "IDS_PACKINTOITSELF": "Ein Archiv kann nicht in sich selbst gepackt werden. Lassen Sie das Archiv (oder das Verzeichnis, in dem es sich befindet) bei der Auswahl weg."
+      "IDS_PACKINTOITSELF": "Ein Archiv kann nicht in sich selbst gepackt werden. Lassen Sie das Archiv (oder das Verzeichnis, in dem es sich befindet) bei der Auswahl weg.",
+      "IDC_QUICKSEARCH_FILTER": "Schnellsuche: Text überall im Namen &finden, nur Treffer anzeigen"
     },
     "french": {
       "IDS_VIEWERCOPYKEPTTEMP": "Le fichier « %s » a été supprimé, mais le nouveau contenu n'a pas pu être mis à sa place.\\nErreur : %s\\n\\nLe nouveau contenu se trouve dans le fichier « %s ». Renommez ce fichier pour le restaurer.",
@@ -373,7 +375,8 @@
       "IDS_UPDATE_NOTESLINK": "Notes de version",
       "IDS_UPDATE_ERR_BROWSER": "L'adresse n'a pas pu être ouverte dans votre navigateur web :\\n\\n%s\\n\\nVoulez-vous copier l'adresse dans le presse-papiers ?",
       "IDS_UPDATE_ERR_START": "Impossible de rechercher une nouvelle version : la recherche n'a pas pu être lancée. Réessayez.",
-      "IDS_PACKINTOITSELF": "Impossible de compresser une archive dans elle-même. N'incluez pas l'archive (ou le répertoire qui la contient) dans la sélection."
+      "IDS_PACKINTOITSELF": "Impossible de compresser une archive dans elle-même. N'incluez pas l'archive (ou le répertoire qui la contient) dans la sélection.",
+      "IDC_QUICKSEARCH_FILTER": "Recherche rapide : texte &partout dans le nom, seuls les résultats affichés"
     },
     "dutch": {
       "#Command Shell": "Opdracht Shell",
@@ -422,7 +425,9 @@
       "IDS_UPDATE_CHECKNOWLINK": "Ellenőrzés most",
       "IDS_CANNOTCOPYDIRTOITSELF": "Egy mappát nem lehet önmagába másolni.",
       "IDS_CANNOTMOVEDIRINTOITSELF": "Egy mappát nem lehet önmagába vagy valamelyik almappájába áthelyezni.",
-      "IDS_PACKINTOITSELF": "Egy archívumot nem lehet önmagába csomagolni. Hagyja ki az archívumot (vagy az azt tartalmazó mappát) a kiválasztásból."
+      "IDS_PACKINTOITSELF": "Egy archívumot nem lehet önmagába csomagolni. Hagyja ki az archívumot (vagy az azt tartalmazó mappát) a kiválasztásból.",
+      "IDC_QUICKSEARCH_FILTER": "Gyorskeresés: szöveg a név &bármely részén, csak az egyezések látszanak",
+      "IDS_QUICKSEARCH_STATUS": "Keresés: %s (%d / %d)"
     },
     "romanian": {
       "#Command Shell": "Comanda Shell",
@@ -438,7 +443,8 @@
       "#Remind Me &Later": "&Reamintiți-mi mai târziu",
       "IDC_UPDN_SKIP": "&Omiteți această versiune",
       "IDS_MENU_HELP_CHECKVERSION": "Verificați dacă există o versiu&ne nouă",
-      "#Check for New Version": "Verificare versiune nouă"
+      "#Check for New Version": "Verificare versiune nouă",
+      "IDC_QUICKSEARCH_FILTER": "Căutare rapidă: text oriunde în n&ume, afișează doar potrivirile"
     },
     "spanish": {
       "IDS_VIEWERCOPYKEPTTEMP": "El archivo «%s» se ha eliminado, pero no se ha podido colocar el nuevo contenido en su lugar.\\nError: %s\\n\\nEl nuevo contenido está en el archivo «%s». Cambie el nombre de ese archivo para restaurarlo.",
@@ -467,7 +473,8 @@
       "IDS_UPDATE_ERR_BROWSER": "No se ha podido abrir la dirección en su navegador web:\\n\\n%s\\n\\n¿Desea copiar la dirección al portapapeles?",
       "IDS_UPDATE_ERR_START": "No se ha podido comprobar si hay una nueva versión: no se ha podido iniciar la comprobación. Inténtelo de nuevo.",
       "IDS_PACKINTOITSELF": "No se puede comprimir un archivo en sí mismo. Deje el archivo (o el directorio que lo contiene) fuera de la selección.",
-      "IDS_CANNOTMOVEDIRINTOITSELF": "No se puede trasladar un directorio a sí mismo ni a uno de sus subdirectorios."
+      "IDS_CANNOTMOVEDIRINTOITSELF": "No se puede trasladar un directorio a sí mismo ni a uno de sus subdirectorios.",
+      "IDC_QUICKSEARCH_FILTER": "Búsqueda rápida: texto en cualquier &parte del nombre, solo coincidencias"
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -511,6 +518,13 @@
       "(found by both independent reviews) - shortened. Romanian: one register (formal) in the window",
       "and one caption for the command's wait dialog and answers. Accelerators on the General page",
       "moved off letters already used there (cs n, sk m, ro l, es d)."
+    ],
+    "_feature_244": [
+      "Quick search option (feature 244). The checkbox on Configuration > Panels is one line of 285",
+      "dialog units (about 86 characters); the engine's German, French, Hungarian, Romanian, Slovak and",
+      "Spanish texts were longer and would be clipped, so they are pinned shorter, each with an",
+      "accelerator that is free on that page in that language. Hungarian 'Keresés: %s (%d a %d-ből)'",
+      "attached the case ending to the wrong number; '(%d / %d)' reads naturally."
     ]
   },
   "zip": {

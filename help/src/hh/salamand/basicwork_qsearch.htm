@@ -14,11 +14,27 @@
 <h1>Quick Searching File or Directory Name</h1>
 
 <p>You can quickly find any desired name in the list of directories and files.
-Just start typing a name, and the first name with the typed prefix will be
-focused. You can extend this prefix with Right arrow key, and on the contrary
-you can clip this prefix with Left arrow key or Backspace key. To focus the next
-or previous name with the same prefix, use Down or Up arrow key. To leave quick
-search mode, use Escape key.</p>
+Just start typing: every name that contains the typed text, at its start or
+anywhere inside it, matches. A name that starts with the text is focused
+first; when no name starts with it, a name that contains it is focused - typing
+"chat" finds "2024_chatbot". A character that no name contains is ignored.</p>
+
+<p>While you type, the panel shows only the matching names, lightly tinted in
+the colours of your colour scheme, and its directory line shows the typed text
+and the number of matches, for example "Search: chat (3 of 120)". Use the arrow
+keys to move among the matches and Enter to open one. You can extend the text
+with Right arrow key (by the next character of the focused name), and on the
+contrary you can clip it with Left arrow key or Backspace key; the names that
+match again reappear. Escape key, or deleting the whole text, ends quick search
+and shows all names again with the cursor on the name it was on.</p>
+
+<p>Commands (copy, move, delete, pack, select all, ...) work only on the names
+that are shown while searching: the selected ones among them, or the focused one.
+A name hidden by the search is never touched, and when it was selected, it is
+selected again when the search ends. The search ends when the panel goes to
+another directory, another tab or the other panel becomes active, and when a
+command creates or renames a name that does not match (it is then shown and
+focused); otherwise it lasts across commands, dialogs and refreshes.</p>
 
 <p>While Open Salamander is in quick search mode, following keys are used
 for walking through files and directories which matches quick search mask: Up, 
@@ -52,6 +68,11 @@ quick search mode.
 <p>When check box <i>Redirect typing from panel to Command line</i> in 
    <a href="configuration_panels.htm">Configuration/Panels</a> is checked,
    use Alt+letter to enter to quick search mode.</p>
+<p>When check box <i>Quick search finds text anywhere in names and shows only the
+   matches</i> in <a href="configuration_panels.htm">Configuration/Panels</a> is
+   cleared, quick search works as in earlier versions: only names that start
+   with the typed text are found, all names stay visible, and the search ends
+   with almost any command.</p>
 
 </div>
 <div class="footer">&#169; 2023 Open Salamander Authors</div>
