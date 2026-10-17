@@ -1,5 +1,7 @@
 # Remaining Work — Feature 070 (Code Viewer)
 
+> **Open items moved to `backlog/` on 2026-10-17 (feature 242); this file is a historical record.** Their destinations: `specs/242-backlog-system/migration-ledger.md`.
+
 **As of 2026-08-26.** `build.cmd` is green (`codeview.spl` 12.9 MB, mdview
 unchanged and still building); `python src/plugins/codeview/test/check_data.py`
 passes all 21 data checks. 42 of 59 tasks are code-complete.

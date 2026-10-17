@@ -77,6 +77,10 @@ src/                   All source code (~2,224 files)
   shellext/            Shell extension (x86 + x64)
   setup/               Installer/uninstaller
 architecture/          Architecture documentation (see below)
+backlog/               All planned work (feature 242): BACKLOG.md (ordered
+                       overview), items/<slug>/desc.md, RUNS.md, RELEASE.md;
+                       managed with /tandem-backlog and tools/backlog/backlog.py
+specs/                 One folder per feature being or having been implemented
 convert/               Character conversion tables
 doc/                   License files, third-party notices
 help/                  User manual source (HTML Help)
@@ -160,7 +164,7 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
   (including a new URL the program opens); a plugin enabled in the default
   build (`plugins.cfg`) or a disabled one shipped; a change to what is
   stored, where, or how credentials are protected (fixing any of the
-  NEXT-WORK item 7 defects F1–F9 counts); a change to crash reporting; a
+  privacy defects F1–F9 found by feature 083 counts); a change to crash reporting; a
   change to what the installer or uninstaller writes or removes. Update its
   validity line ("describes Tandem Commander <version>. Last updated …")
   with it, and on every release. Evidence for each claim:

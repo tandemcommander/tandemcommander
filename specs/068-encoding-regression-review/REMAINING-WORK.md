@@ -1,5 +1,7 @@
 # Feature 068 — Remaining Work (handoff)
 
+> **Open items moved to `backlog/` on 2026-10-17 (feature 242); this file is a historical record.** Their destinations: `specs/242-backlog-system/migration-ledger.md`.
+
 **Written**: 2026-08-24 · **Branch**: `068-encoding-regression-review` · **Last commit at time of writing**: see `git log -1`
 
 This file is self-contained: it is enough to resume without re-reading the 20k-line review record. Full evidence lives in `specs/068-encoding-regression-review/` — `review-report.md` (findings, verdicts, fixes, gates), `findings/P*.md` (raw perspective reports), `findings/verdicts-V*.md` (independent verdicts), `findings/regression-X*.md` (fix reviews).

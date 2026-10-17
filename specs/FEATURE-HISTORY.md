@@ -15,14 +15,17 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
   `CLAUDE.md`. Only a rule that must change how *future* work is done gets one
   line in `CLAUDE.md` § *Standing rules*.
 - Entries describe the state when the feature closed. Later features may have
-  changed it (noted where known); open items are tracked in
-  `specs/NEXT-WORK.md`, user-visible changes per version in `CHANGELOG.md`.
+  changed it (noted where known); open items are tracked in the backlog
+  `backlog/BACKLOG.md` (since 242; entries before it cite the retired
+  `specs/NEXT-WORK.md`, kept in git), user-visible changes per version in
+  `CHANGELOG.md`.
 
 **Index by area** (feature numbers)
 
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
+| Backlog and project tooling | 242 |
 | Releases and pre-release reviews | 056, 068 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -2838,3 +2841,19 @@ a few early ones are out of sequence).
   `AddDir` refused a 255+ byte folder name - F5 / F6 into a ZIP "succeeded" packing nothing. Now
   "too long name" + `SALENUM_CANCEL` (nested and selected); the custom packer gets a parent window.
   Probe `pack241_probe.ps1` 2 FAIL -> 8 / 0.
+
+- 242-backlog-system: planned work moved out of `specs/` into `backlog/` - `BACKLOG.md` (row order =
+  priority; sections In progress / Next / Decisions / Person steps / Inbox / Parked / Rejected; a
+  legend that is the vocabulary), one folder per item `items/<slug>/desc.md` (15-key header + fixed
+  sections), `RUNS.md`, `RELEASE.md`. `tools/backlog/backlog.py` (stdlib only) owns every change and
+  the check (18 rules); skills `/tandem-backlog` (management; agents only add to Inbox) and
+  `/tandem-backlog-implement` (one item through the whole Spec Kit flow; lock in `.git`, measure
+  first, stop rules, fast-forward of local `main`, never pushes). `specs/NEXT-WORK.md` deleted, the
+  five REMAINING-WORK files kept with a note; 128 items migrated by 7 agents with a 696-row ledger
+  (`specs/242-backlog-system/migration-ledger.md`). Traps: a circular `see` between two migration
+  parts lost the 072 audit (found at consolidation); the release gate of 0.1.10 and 10 Code Viewer
+  person rows were lost until the review; after a stopped run the branch number (counts branches) and
+  specify's folder number (counts `specs/` only) differ - the run passes `SPECIFY_FEATURE_DIRECTORY`;
+  item text on a command line runs as shell code (backticks) - never on a command line; the Bash tool
+  collapses a doubled backslash even in single quotes; `sync` dropped hand-written rows (fixed). Tests 58, mutation
+  check `probe/mutate.py` 31 / 32 (the survivor equivalent); three refute-first reviews.

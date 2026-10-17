@@ -1,5 +1,7 @@
 # Remaining Work — Feature 080 (upgrading over a running instance)
 
+> **Open items moved to `backlog/` on 2026-10-17 (feature 242); this file is a historical record.** Their destinations: `specs/242-backlog-system/migration-ledger.md`.
+
 **As of 2026-09-20.** The feature is implemented, reviewed and verified as far
 as an autonomous session can go; nothing below blocks it. Ordered by what it
 costs users.

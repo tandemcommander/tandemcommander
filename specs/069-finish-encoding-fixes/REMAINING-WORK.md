@@ -1,5 +1,7 @@
 # Feature 069 — Remaining Work (handoff)
 
+> **Open items moved to `backlog/` on 2026-10-17 (feature 242); this file is a historical record.** Their destinations: `specs/242-backlog-system/migration-ledger.md`.
+
 **Written**: 2026-08-24 · **Branch**: `069-finish-encoding-fixes` ·
 **Predecessor handoff**: `specs/068-encoding-regression-review/REMAINING-WORK.md`
 

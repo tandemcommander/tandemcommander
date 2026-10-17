@@ -15,7 +15,7 @@ add *Recent Changes* / *Active Technologies* sections.
 
 | Need | Read |
 |------|------|
-| What to work on next | `specs/NEXT-WORK.md` — single entry point, section *Open items at a glance*; per-feature `REMAINING-WORK.md` files hold the detail |
+| What to work on next | `backlog/BACKLOG.md` — the ordered backlog (*Next*, *Decisions for the maintainer*, *Person steps*, *Inbox*); one folder per item in `backlog/items/`; manage it with `/tandem-backlog`, run one item autonomously with `/tandem-backlog-implement` (242). `specs/` holds only features being or having been implemented |
 | What a feature did, its traps and evidence | `specs/FEATURE-HISTORY.md` — search `^- NNN-` or use its index by area; **read the entries of the area before changing it** |
 | Full record of a feature | `specs/NNN-*/` — `fix-log.md`, `closing-report.md`, `research.md`, `contracts/`, `probe/` |
 | Identity, build policies, key facts in full | `architecture/12-project-reference.md` |
@@ -80,7 +80,8 @@ build.cmd full release sign [setup]   :: signed tree (+ signed installer)
 `src/` (core; `common/` shared code and `dep/`; `plugins/` 31 plugins +
 `shared/`; `vcxproj/`; `lang/`; `shellext/`) · `setup/` installer ·
 `translations/` · `help/` · `tools/` (brand, codesign, winget, checks,
-`run_on_hidden_desktop.ps1`) · `architecture/` · `specs/` · `doc/` licences.
+`run_on_hidden_desktop.ps1`, `backlog/` tool) · `architecture/` · `specs/` ·
+`backlog/` planned work and `RELEASE.md` · `doc/` licences.
 
 ## Standing rules
 
@@ -175,8 +176,10 @@ Each is one line of a longer story; the number is the feature whose entry in
 - Have an independent agent review a finished fix (refute-first); reviews
   rejected fixes that built and tested green in 075, 085, 087, 093, 098, 109,
   111, 117.
-- Serious defects found on the way go to `specs/NEXT-WORK.md` and are fixed
-  one by one, not inside the current feature.
+- Serious defects found on the way are added to the backlog's *Inbox*
+  (`/tandem-backlog add`, source `review:NNN` / `measure:NNN` /
+  `leftover:NNN`) and fixed one by one, not inside the current feature.
+  Agents only add to *Inbox*; the maintainer triages and orders (242).
 - Do not push or publish from an implementation session; build, tag, GitHub
   release and winget submission are the maintainer's steps.
 - Write scripts with the editor tools — Bash here-documents collapse doubled
@@ -189,6 +192,9 @@ the GitHub reports after 0.1.9; 134–142 are what verifying and reviewing
 them found). The tree is **prepared for the 0.1.10
 release** (local branches, nothing pushed): build, tag, GitHub release with
 the installer attached and the winget submission are the maintainer's steps,
-after the person steps listed in `specs/NEXT-WORK.md` (*Before 0.1.10*).
+after the decision which post-142 fixes join 0.1.10
+(`post-142-fixes-joining-0-1-10-decision`) and the four person steps listed
+in `backlog/RELEASE.md` *Current release: 0.1.10* (rows 1–4 of *Person
+steps*; the PictView one matters most), then the procedure in that file.
 **0.1.9** is tagged (`v0.1.9`); its winget submission waits until
 `microsoft/winget-pkgs#426090` is settled.

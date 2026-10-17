@@ -1,5 +1,7 @@
 # Remaining Work — Feature 072 (winget distribution)
 
+> **Open items moved to `backlog/` on 2026-10-17 (feature 242); this file is a historical record.** Their destinations: `specs/242-backlog-system/migration-ledger.md`.
+
 **As of 2026-08-29; section P0 added 2026-09-30.** The feature itself is done and shipped: Tandem Commander
 0.1.7 is submitted to the catalogue as `PavelStupka.TandemCommander`
 ([microsoft/winget-pkgs#426090](https://github.com/microsoft/winget-pkgs/pull/426090)),
