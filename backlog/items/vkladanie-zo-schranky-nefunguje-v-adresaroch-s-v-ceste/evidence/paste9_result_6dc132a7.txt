@@ -1,0 +1,18 @@
+Clipboard: cannot read (Exception calling "GetDataObject" with "0" argument(s): "Po?adovan? operace se schr?nkou se nezda?ila.") - the paste rows are not driven
+paste9_probe (GitHub #9) head
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-18 12:58; registry key existed True; ACP 1250
+
+F5-BANG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F5-BANG    RUN    PASS        copy named x - K(o-acute)pia.txt exists: True; windows: no window
+F5-CTL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F5-CTL     RUN    PASS        copy named x - K(o-acute)pia.txt exists: True; windows: no window
+TC-CTL     RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop)
+TC-TGT     RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop)
+TC-SRC     RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop)
+EX-CTL     RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop)
+EX-TGT     RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop)
+EX-SRC     RUN    NOT DRIVEN  the clipboard cannot be opened from this session (hidden desktop)
+Registry: restored; identical=True; SHA-256 before 340984732A9DE9E29AD0C8852FC7907DE052B5745975BE2D227C92BD0964C089 / after 340984732A9DE9E29AD0C8852FC7907DE052B5745975BE2D227C92BD0964C089
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 6. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -28,7 +28,7 @@ Last triaged: 2026-10-17
 | 4 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | open |
 | 5 | [7-Zip, TAR and SFTP do not declare case-sensitive listings](items/archive-plugins-declare-case-sensitivity/desc.md) | bug | 5 | archives | agent | M | open |
 | 6 | [Change Attributes on a junction compresses / re-times the target folder](items/change-attrs-on-link-reaches-target/desc.md) | bug | 5 | data-safety | agent | M | open |
-| 7 | [Paste fails in a folder whose path contains an exclamation mark](items/vkladanie-zo-schranky-nefunguje-v-adresaroch-s-v-ceste/desc.md) | bug | 5 | file-ops | agent | - | open |
+| 7 | [Paste fails in a folder whose path contains an exclamation mark](items/vkladanie-zo-schranky-nefunguje-v-adresaroch-s-v-ceste/desc.md) | bug | 5 | file-ops | agent | - | blocked |
 | 8 | [Renamer: regular expressions judge \\b, \\w, classes and '.' by single bytes](items/renamer-regex-single-byte-classes/desc.md) | bug | 4 | other-plugins | agent | L | open |
 | 9 | [Archive listings show names in one encoding only as a whole (F-P1-05)](items/archive-listing-display-encoding/desc.md) | tech-debt | 4 | encoding | agent | L | open |
 | 10 | [Read the 78 findings of check_encoding.py --plugins one by one](items/check-encoding-plugin-findings/desc.md) | tech-debt | 4 | encoding | agent | L | open |
