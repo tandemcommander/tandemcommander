@@ -1,0 +1,454 @@
+### stock
+SIID_DRIVENET         hr=0x00000000 sysIndex=9 loc='C:\WINDOWS\system32\imageres.dll',-33
+SIID_DRIVENETDISABLED hr=0x00000000 sysIndex=10 loc='C:\WINDOWS\system32\imageres.dll',-31
+SIID_DRIVEFIXED       hr=0x00000000 sysIndex=8 loc='C:\WINDOWS\system32\imageres.dll',-32
+### map W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 0
+WNetAddConnection2W                    [    10.0 ms] flags=0x0 ret=0
+### info W:
+---- info W: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0040007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.1 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' remaining='\'
+WNetGetResourceInformationW            [     2.2 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+GetVolumeInformationW                  [     0.5 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.5 ms] 0x10
+SHGetFileInfoW DISPLAYNAME             [     3.1 ms] ret=1 name='share (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (W:)'
+SHGetFileInfoW TYPENAME                [     1.1 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.9 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [   108.4 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.2 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    20.7 ms] create hr=0x00000000 | NORMALDISPLAY='share (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (W:)' | PARENTRELATIVEEDITING='share (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure)' | PARENTRELATIVE='share (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (W:)' | PARENTRELATIVEPARSING='W:' | DESKTOPABSOLUTEEDITING='W:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.5 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### enum
+enum CONNECTED: local='W:' remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' provider='Microsoft Windows Network' comment='' scope=1 displayType=3 usage=0x0
+enum CONNECTED: 1 entries, last ret=259 [5.1 ms]
+enum REMEMBERED: 0 entries, last ret=259 [0.0 ms]
+### rename W: Archiv Test ž
+SetNameOf                              [    32.8 ms] SetNameOf('Archiv Test ž') hr=0x00000000
+### info W:
+---- info W: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0040007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.3 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+WNetGetUniversalNameW UNIVERSAL        [     0.4 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' remaining='\'
+WNetGetResourceInformationW            [     1.9 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+GetVolumeInformationW                  [     0.5 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.6 ms] 0x10
+SHGetFileInfoW DISPLAYNAME             [     3.2 ms] ret=1 name='Archiv Test ž (W:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.7 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [   102.7 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.3 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    24.9 ms] create hr=0x00000000 | NORMALDISPLAY='Archiv Test ž (W:)' | PARENTRELATIVEEDITING='Archiv Test ž' | PARENTRELATIVE='Archiv Test ž (W:)' | PARENTRELATIVEPARSING='W:' | DESKTOPABSOLUTEEDITING='W:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.3 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap W: 0 1
+WNetCancelConnection2W                 [     4.8 ms] flags=0x0 force=1 ret=0
+### map V: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 0
+WNetAddConnection2W                    [     6.6 ms] flags=0x0 ret=0
+### info V:
+---- info V: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0020007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.1 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+WNetGetUniversalNameW UNIVERSAL        [     0.4 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\'
+WNetGetUniversalNameW REMOTE           [     0.4 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' remaining='\'
+WNetGetResourceInformationW            [     1.9 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+GetVolumeInformationW                  [     0.6 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.5 ms] 0x10
+SHGetFileInfoW DISPLAYNAME             [     3.1 ms] ret=1 name='Archiv Test ž (V:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.6 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [    97.3 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.3 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    21.0 ms] create hr=0x00000000 | NORMALDISPLAY='Archiv Test ž (V:)' | PARENTRELATIVEEDITING='Archiv Test ž' | PARENTRELATIVE='Archiv Test ž (V:)' | PARENTRELATIVEPARSING='V:' | DESKTOPABSOLUTEEDITING='V:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.3 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap V: 0 1
+WNetCancelConnection2W                 [     4.8 ms] flags=0x0 force=1 ret=0
+### map V: \\LocalHost\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE 0
+WNetAddConnection2W                    [     6.1 ms] flags=0x0 ret=0
+### info V:
+---- info V: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0020007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.0 ms] ret=0 remote='\\LocalHost\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE'
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\LocalHost\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\LocalHost\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE\' connection='\\LocalHost\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE' remaining='\'
+WNetGetResourceInformationW            [     1.9 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\LocalHost\C$' system='\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE'
+GetVolumeInformationW                  [     0.5 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.5 ms] 0x10
+SHGetFileInfoW DISPLAYNAME             [     2.8 ms] ret=1 name='Archiv Test ž (V:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.8 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [    96.7 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.1 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    20.4 ms] create hr=0x00000000 | NORMALDISPLAY='Archiv Test ž (V:)' | PARENTRELATIVEEDITING='Archiv Test ž' | PARENTRELATIVE='Archiv Test ž (V:)' | PARENTRELATIVEPARSING='V:' | DESKTOPABSOLUTEEDITING='V:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.5 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap V: 0 1
+WNetCancelConnection2W                 [     4.5 ms] flags=0x0 force=1 ret=0
+### map V: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar 0
+WNetAddConnection2W                    [     6.8 ms] flags=0x0 ret=0
+### info V:
+---- info V: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0020007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.2 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar'
+WNetGetUniversalNameW UNIVERSAL        [     0.4 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar\'
+WNetGetUniversalNameW REMOTE           [     0.4 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar' remaining='\'
+WNetGetResourceInformationW            [     2.0 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar'
+GetVolumeInformationW                  [     0.6 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.6 ms] 0x10
+SHGetFileInfoW DISPLAYNAME             [     3.5 ms] ret=1 name='sh#ž ar (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (V:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.6 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [   101.2 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.3 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    23.7 ms] create hr=0x00000000 | NORMALDISPLAY='sh#ž ar (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (V:)' | PARENTRELATIVEEDITING='sh#ž ar (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure)' | PARENTRELATIVE='sh#ž ar (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (V:)' | PARENTRELATIVEPARSING='V:' | DESKTOPABSOLUTEEDITING='V:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.2 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### rename V: Hash Label
+SetNameOf                              [    31.6 ms] SetNameOf('Hash Label') hr=0x00000000
+### info V:
+---- info V: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0020007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.0 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar'
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar' remaining='\'
+WNetGetResourceInformationW            [     2.0 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar'
+GetVolumeInformationW                  [     0.6 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.6 ms] 0x10
+SHGetFileInfoW DISPLAYNAME             [     3.3 ms] ret=1 name='Hash Label (V:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.4 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [   105.4 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.3 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    21.0 ms] create hr=0x00000000 | NORMALDISPLAY='Hash Label (V:)' | PARENTRELATIVEEDITING='Hash Label' | PARENTRELATIVE='Hash Label (V:)' | PARENTRELATIVEPARSING='V:' | DESKTOPABSOLUTEEDITING='V:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.2 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap V: 0 1
+WNetCancelConnection2W                 [     4.6 ms] flags=0x0 force=1 ret=0
+### map W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 1
+WNetAddConnection2W                    [     7.8 ms] flags=0x1 ret=0
+### unmap W: 0 1
+WNetCancelConnection2W                 [     4.5 ms] flags=0x0 force=1 ret=0
+### info W: 30000
+---- info W: ----
+GetLogicalDrives bit                   [     0.1 ms] 0 (mask 0x0000007C)
+GetDriveTypeW                          [     0.1 ms] 1
+WNetGetConnectionW                     [     2.8 ms] ret=1201 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+WNetGetUniversalNameW UNIVERSAL        [     0.1 ms] ret=2250
+WNetGetUniversalNameW REMOTE           [     0.2 ms] ret=1201
+WNetGetResourceInformationW            [     3.0 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+GetVolumeInformationW                  [     0.1 ms] FAILED err=3
+GetFileAttributesW(root)               [     0.1 ms] INVALID err=3
+SHGetFileInfoW DISPLAYNAME             [     3.7 ms] ret=1 name='Archiv Test ž (W:)'
+SHGetFileInfoW TYPENAME                [     0.8 ms] ret=1 type='Síťová jednotka je odpojena.'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.3 ms] ret=1 iIcon=10
+SHGetFileInfoW ICONLOCATION            [     0.4 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-31
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [   107.7 ms] ret=1 iIcon=0x0000000A (index 10 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     0.5 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    21.5 ms] create hr=0x00000000 | NORMALDISPLAY='Archiv Test ž (W:)' | PARENTRELATIVEEDITING='Archiv Test ž' | PARENTRELATIVE='Archiv Test ž (W:)' | PARENTRELATIVEPARSING='W:' | DESKTOPABSOLUTEEDITING='W:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     1.9 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-31 flags=0x4 | overlay hr=0x80004005 index=-1
+### enum
+enum CONNECTED: 0 entries, last ret=259 [4.9 ms]
+enum REMEMBERED: local='W:' remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' provider='Microsoft Windows Network' comment='' scope=3 displayType=3 usage=0x0
+enum REMEMBERED: 1 entries, last ret=259 [0.1 ms]
+### unmap W: 1 1
+WNetCancelConnection2W                 [     1.4 ms] flags=0x1 force=1 ret=0
+### enum
+enum CONNECTED: 0 entries, last ret=259 [5.5 ms]
+enum REMEMBERED: 0 entries, last ret=259 [0.0 ms]
+### map W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 400
+WNetAddConnection2W                    [     0.2 ms] flags=0x400 ret=87
+### enum
+enum CONNECTED: 0 entries, last ret=259 [4.9 ms]
+enum REMEMBERED: 0 entries, last ret=259 [0.0 ms]
+### info W: 30000
+---- info W: ----
+GetLogicalDrives bit                   [     0.2 ms] 0 (mask 0x0000007C)
+GetDriveTypeW                          [     0.1 ms] 1
+WNetGetConnectionW                     [     0.2 ms] ret=2250 remote=''
+WNetGetUniversalNameW UNIVERSAL        [     0.1 ms] ret=2250
+WNetGetUniversalNameW REMOTE           [     0.2 ms] ret=2250
+GetVolumeInformationW                  [     0.1 ms] FAILED err=3
+GetFileAttributesW(root)               [     0.1 ms] INVALID err=3
+SHGetFileInfoW DISPLAYNAME             [     6.2 ms] ret=0 name=''
+SHGetFileInfoW TYPENAME                [     0.2 ms] ret=0 type=''
+SHGetFileInfoW SYSICONINDEX|SMALL      [     0.2 ms] ret=0 iIcon=0
+SHGetFileInfoW ICONLOCATION            [     0.2 ms] ret=0 loc='',0
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [     0.2 ms] ret=0 iIcon=0x00000000 (index 0 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     0.2 ms] ret=0 attrs=0xFFFFFFFF ghosted=1
+IShellItem display names               [     0.3 ms] create hr=0x8007000F
+IExtractIconW GetIconLocation          [     0.2 ms] parse hr=0x8007000F
+### map W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 404
+WNetAddConnection2W                    [     0.3 ms] flags=0x404 ret=87
+### enum
+enum CONNECTED: 0 entries, last ret=259 [5.0 ms]
+enum REMEMBERED: 0 entries, last ret=259 [0.0 ms]
+### map W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 401
+WNetAddConnection2W                    [     0.1 ms] flags=0x401 ret=87
+### enum
+enum CONNECTED: 0 entries, last ret=259 [4.6 ms]
+enum REMEMBERED: 0 entries, last ret=259 [0.1 ms]
+### map W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share C00
+WNetAddConnection2W                    [     0.2 ms] flags=0xC00 ret=87
+### enum
+enum CONNECTED: 0 entries, last ret=259 [4.6 ms]
+enum REMEMBERED: 0 entries, last ret=259 [0.0 ms]
+### map W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 1
+WNetAddConnection2W                    [    10.9 ms] flags=0x1 ret=0
+### unmap W: 0 1
+WNetCancelConnection2W                 [     4.9 ms] flags=0x0 force=1 ret=0
+### restore1 W:
+WNetRestoreSingleConnectionW(noUI)     [     5.8 ms] ret=0
+### info W: 30000
+---- info W: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0040007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.5 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' remaining='\'
+WNetGetResourceInformationW            [     2.1 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+GetVolumeInformationW                  [     0.5 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.5 ms] 0x10
+SHGetFileInfoW DISPLAYNAME             [     2.9 ms] ret=1 name='Archiv Test ž (W:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.8 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.7 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [   102.6 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.2 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    21.0 ms] create hr=0x00000000 | NORMALDISPLAY='Archiv Test ž (W:)' | PARENTRELATIVEEDITING='Archiv Test ž' | PARENTRELATIVE='Archiv Test ž (W:)' | PARENTRELATIVEPARSING='W:' | DESKTOPABSOLUTEEDITING='W:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.2 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### light W:
+light W:: bit=1 WNetGetConnection=0 [4.4 ms]
+### map V: \\192.0.2.1\x 0
+WNetAddConnection2W                    [ 42114.9 ms] flags=0x0 ret=67
+### enum
+enum CONNECTED: local='W:' remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' provider='Microsoft Windows Network' comment='' scope=1 displayType=3 usage=0x0
+enum CONNECTED: 1 entries, last ret=259 [5.2 ms]
+enum REMEMBERED: local='W:' remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' provider='Microsoft Windows Network' comment='' scope=3 displayType=3 usage=0x0
+enum REMEMBERED: 1 entries, last ret=259 [0.1 ms]
+### info V: 90000
+---- info V: ----
+GetLogicalDrives bit                   [     0.2 ms] 0 (mask 0x0040007C)
+GetDriveTypeW                          [     0.1 ms] 1
+WNetGetConnectionW                     [     2.7 ms] ret=1201 remote='\\192.0.2.1\x'
+WNetGetUniversalNameW UNIVERSAL        [     0.2 ms] ret=2250
+WNetGetUniversalNameW REMOTE           [     0.2 ms] ret=1201
+WNetGetResourceInformationW            [ 21047.2 ms] ret=67
+GetVolumeInformationW                  [     0.2 ms] FAILED err=3
+GetFileAttributesW(root)               [     0.2 ms] INVALID err=3
+SHGetFileInfoW DISPLAYNAME             [     4.8 ms] ret=1 name='x (\\192.0.2.1) (V:)'
+SHGetFileInfoW TYPENAME                [     1.0 ms] ret=1 type='Síťová jednotka je odpojena.'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     7.6 ms] ret=1 iIcon=10
+SHGetFileInfoW ICONLOCATION            [     0.5 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-31
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [   107.0 ms] ret=1 iIcon=0x0000000A (index 10 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     0.3 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    23.5 ms] create hr=0x00000000 | NORMALDISPLAY='x (\\192.0.2.1) (V:)' | PARENTRELATIVEEDITING='x (\\192.0.2.1)' | PARENTRELATIVE='x (\\192.0.2.1) (V:)' | PARENTRELATIVEPARSING='V:' | DESKTOPABSOLUTEEDITING='V:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.3 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-31 flags=0x4 | overlay hr=0x80004005 index=-1
+### enum
+enum CONNECTED: local='W:' remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' provider='Microsoft Windows Network' comment='' scope=1 displayType=3 usage=0x0
+enum CONNECTED: 1 entries, last ret=259 [5.3 ms]
+enum REMEMBERED: local='V:' remote='\\192.0.2.1\x' provider='Microsoft Windows Network' comment='' scope=3 displayType=3 usage=0x0
+enum REMEMBERED: local='W:' remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' provider='Microsoft Windows Network' comment='' scope=3 displayType=3 usage=0x0
+enum REMEMBERED: 2 entries, last ret=259 [0.2 ms]
+### restore1 V:
+WNetRestoreSingleConnectionW(noUI)     [     5.1 ms] ret=53
+### light V:
+light V:: bit=0 WNetGetConnection=1201 [2.4 ms]
+### enum
+enum CONNECTED: local='W:' remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' provider='Microsoft Windows Network' comment='' scope=1 displayType=3 usage=0x0
+enum CONNECTED: 1 entries, last ret=259 [4.7 ms]
+enum REMEMBERED: local='V:' remote='\\192.0.2.1\x' provider='Microsoft Windows Network' comment='' scope=3 displayType=3 usage=0x0
+enum REMEMBERED: local='W:' remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' provider='Microsoft Windows Network' comment='' scope=3 displayType=3 usage=0x0
+enum REMEMBERED: 2 entries, last ret=259 [0.1 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 [4.2 ms]
+### light V:
+light V:: bit=0 WNetGetConnection=1201 [2.4 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 [3.8 ms]
+### light V:
+light V:: bit=0 WNetGetConnection=1201 [2.5 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 [3.8 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 [4.4 ms]
+### light V:
+light V:: bit=0 WNetGetConnection=1201 WNetGetConnection3=2/state=4294967295 IsNetDrive=2 [2.8 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.4 ms]
+### map U: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone 0
+WNetAddConnection2W                    [     5.3 ms] flags=0x0 ret=0
+### light U:
+light U:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.6 ms]
+### info U: 30000
+---- info U: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0050007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.0 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone'
+WNetGetConnection3W DISCONNECTED       [     0.2 ms] ret=0 state=0 (0=connected 1=disconnected)
+shell32 IsNetDrive                     [     0.6 ms] 1 (0=no 1=connected 2=disconnected)
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone' remaining='\'
+WNetGetResourceInformationW            [     3.1 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone'
+GetVolumeInformationW                  [     0.3 ms] FAILED err=2
+GetFileAttributesW(root)               [     0.3 ms] INVALID err=2
+SHGetFileInfoW DISPLAYNAME             [     3.2 ms] ret=1 name='gone (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (U:)'
+SHGetFileInfoW TYPENAME                [     1.3 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.5 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [    97.1 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     0.6 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    20.2 ms] create hr=0x00000000 | NORMALDISPLAY='gone (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (U:)' | PARENTRELATIVEEDITING='gone (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure)' | PARENTRELATIVE='gone (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (U:)' | PARENTRELATIVEPARSING='U:' | DESKTOPABSOLUTEEDITING='U:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.2 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap U: 0 1
+WNetCancelConnection2W                 [     4.3 ms] flags=0x0 force=1 ret=0
+### light W:
+light W:: bit=1 WNetGetConnection=0 [4.2 ms]
+### map T: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini 0
+WNetAddConnection2W                    [     5.3 ms] flags=0x0 ret=0
+### info T: 30000
+---- info T: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0048007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.0 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini'
+WNetGetConnection3W DISCONNECTED       [     0.2 ms] ret=0 state=0 (0=connected 1=disconnected)
+shell32 IsNetDrive                     [     0.6 ms] 1 (0=no 1=connected 2=disconnected)
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini' remaining='\'
+WNetGetResourceInformationW            [     2.0 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini'
+GetVolumeInformationW                  [     0.5 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.4 ms] 0x11
+SHGetFileInfoW DISPLAYNAME             [     3.0 ms] ret=1 name='dini (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (T:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.6 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [    95.0 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.1 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    20.0 ms] create hr=0x00000000 | NORMALDISPLAY='dini (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (T:)' | PARENTRELATIVEEDITING='dini (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure)' | PARENTRELATIVE='dini (\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure) (T:)' | PARENTRELATIVEPARSING='T:' | DESKTOPABSOLUTEEDITING='T:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.5 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap T: 0 1
+WNetCancelConnection2W                 [     4.3 ms] flags=0x0 force=1 ret=0
+### light W:
+light W:: bit=1 WNetGetConnection=0 [4.1 ms]
+### map T: \\localhost\C$ 0
+WNetAddConnection2W                    [     5.0 ms] flags=0x0 ret=0
+### info T: 30000
+---- info T: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0048007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.1 ms] ret=0 remote='\\localhost\C$'
+WNetGetConnection3W DISCONNECTED       [     0.3 ms] ret=0 state=0 (0=connected 1=disconnected)
+shell32 IsNetDrive                     [     0.6 ms] 1 (0=no 1=connected 2=disconnected)
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\localhost\C$\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\C$\' connection='\\localhost\C$' remaining='\'
+WNetGetResourceInformationW            [     2.0 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='(null)'
+GetVolumeInformationW                  [     0.4 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.4 ms] 0x16
+SHGetFileInfoW DISPLAYNAME             [     3.1 ms] ret=1 name='C$ (\\localhost) (T:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.6 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.7 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [    95.5 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.1 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    20.0 ms] create hr=0x00000000 | NORMALDISPLAY='C$ (\\localhost) (T:)' | PARENTRELATIVEEDITING='C$ (\\localhost)' | PARENTRELATIVE='C$ (\\localhost) (T:)' | PARENTRELATIVEPARSING='T:' | DESKTOPABSOLUTEEDITING='T:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.2 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap T: 0 1
+WNetCancelConnection2W                 [     4.2 ms] flags=0x0 force=1 ret=0
+### map T: \\localhost\E$ 0
+WNetAddConnection2W                    [     5.6 ms] flags=0x0 ret=0
+### info T: 30000
+---- info T: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0048007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.3 ms] ret=0 remote='\\localhost\E$'
+WNetGetConnection3W DISCONNECTED       [     0.2 ms] ret=0 state=0 (0=connected 1=disconnected)
+shell32 IsNetDrive                     [     0.6 ms] 1 (0=no 1=connected 2=disconnected)
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\localhost\E$\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\E$\' connection='\\localhost\E$' remaining='\'
+WNetGetResourceInformationW            [     2.1 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\E$' system='(null)'
+GetVolumeInformationW                  [     0.4 ms] ok label='DATA' serial=92C7F194 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.4 ms] 0x16
+SHGetFileInfoW DISPLAYNAME             [     3.1 ms] ret=1 name='E$ (\\localhost) (T:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.5 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.6 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [    96.1 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.1 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    20.3 ms] create hr=0x00000000 | NORMALDISPLAY='E$ (\\localhost) (T:)' | PARENTRELATIVEEDITING='E$ (\\localhost)' | PARENTRELATIVE='E$ (\\localhost) (T:)' | PARENTRELATIVEPARSING='T:' | DESKTOPABSOLUTEEDITING='T:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.2 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap T: 0 1
+WNetCancelConnection2W                 [     4.3 ms] flags=0x0 force=1 ret=0
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.7 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.6 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.7 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.9 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.6 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.6 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.6 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.5 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.7 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.7 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.7 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.6 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.6 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.6 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.8 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.7 ms]
+### light W:
+light W:: bit=1 WNetGetConnection=0 WNetGetConnection3=0/state=0 IsNetDrive=1 [4.7 ms]
+### info W: 30000
+---- info W: ----
+GetLogicalDrives bit                   [     0.2 ms] 1 (mask 0x0040007C)
+GetDriveTypeW                          [     0.1 ms] 4
+WNetGetConnectionW                     [     4.2 ms] ret=0 remote='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+WNetGetConnection3W DISCONNECTED       [     0.3 ms] ret=0 state=0 (0=connected 1=disconnected)
+shell32 IsNetDrive                     [     0.6 ms] 1 (0=no 1=connected 2=disconnected)
+WNetGetUniversalNameW UNIVERSAL        [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\'
+WNetGetUniversalNameW REMOTE           [     0.3 ms] ret=0 universal='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share\' connection='\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share' remaining='\'
+WNetGetResourceInformationW            [     2.5 ms] ret=0 scope=0 type=0 displayType=3 usage=0x5 provider='Microsoft Windows Network' remote='\\localhost\C$' system='\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'
+GetVolumeInformationW                  [     0.6 ms] ok label='' serial=BA867909 fs='NTFS' flags=0xC700FE
+GetFileAttributesW(root)               [     0.5 ms] 0x10
+SHGetFileInfoW DISPLAYNAME             [     3.0 ms] ret=1 name='Archiv Test ž (W:)'
+SHGetFileInfoW TYPENAME                [     1.2 ms] ret=1 type='Síťová jednotka'
+SHGetFileInfoW SYSICONINDEX|SMALL      [     6.8 ms] ret=1 iIcon=9
+SHGetFileInfoW ICONLOCATION            [     0.7 ms] ret=1 loc='C:\WINDOWS\system32\imageres.dll',-33
+SHGetFileInfoW ICON|OVERLAYINDEX|SMALL [   101.6 ms] ret=1 iIcon=0x00000009 (index 9 overlay 0)
+SHGetFileInfoW ATTRIBUTES              [     1.2 ms] ret=1 attrs=0xF080015D ghosted=0
+IShellItem display names               [    20.0 ms] create hr=0x00000000 | NORMALDISPLAY='Archiv Test ž (W:)' | PARENTRELATIVEEDITING='Archiv Test ž' | PARENTRELATIVE='Archiv Test ž (W:)' | PARENTRELATIVEPARSING='W:' | DESKTOPABSOLUTEEDITING='W:\' | attrs=0xF080015D
+IExtractIconW GetIconLocation          [     2.4 ms] hr=0x00000000 loc='C:\WINDOWS\system32\imageres.dll',-33 flags=0x4 | overlay hr=0x80004005 index=-1
+### unmap W: 1 1
+WNetCancelConnection2W                 [     5.4 ms] flags=0x1 force=1 ret=0
+### unmap V: 1 1
+WNetCancelConnection2W                 [     1.2 ms] flags=0x1 force=1 ret=0
+### unmap U: 1 1
+WNetCancelConnection2W                 [     0.3 ms] flags=0x1 force=1 ret=2250
+### unmap T: 1 1
+WNetCancelConnection2W                 [     0.3 ms] flags=0x1 force=1 ret=2250
+### enum
+enum CONNECTED: 0 entries, last ret=259 [4.8 ms]
+enum REMEMBERED: 0 entries, last ret=259 [0.0 ms]

@@ -1,0 +1,201 @@
+﻿=== snapshot baseline 2026-10-18T16:07:23.5517940+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network exists, subkeys=0
+SmbMapping: none [720 ms]
+net use [54 ms]:
+=== snapshot mappedW 2026-10-18T16:07:25.1932973+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network exists, subkeys=0
+SmbMapping W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share Status=OK [349 ms]
+Win32_NetworkConnection W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share ConnectionState=Connected Status=OK Persistent=False [62 ms]
+net use [49 ms]:
+  OK           W:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 
+=== snapshot renamedW 2026-10-18T16:07:31.6732106+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network exists, subkeys=0
+SmbMapping W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share Status=OK [324 ms]
+Win32_NetworkConnection W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share ConnectionState=Connected Status=OK Persistent=False [57 ms]
+net use [61 ms]:
+  OK           W:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 
+=== snapshot uppercaseV 2026-10-18T16:07:42.8921718+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network exists, subkeys=0
+SmbMapping V: \\LocalHost\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE Status=OK [318 ms]
+Win32_NetworkConnection V: \\LocalHost\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE ConnectionState=Connected Status=OK Persistent=False [53 ms]
+net use [46 ms]:
+  OK           V:        \\LocalHost\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\CLAUDE\E--PROJECTS-TANDEMCOMMANDER\041CFBB9-A7D3-4632-A84D-0614AC426897\SCRATCHPAD\246-MEASURE\SHARE 
+=== snapshot hashV 2026-10-18T16:07:52.7292046+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network exists, subkeys=0
+SmbMapping V: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar Status=OK [326 ms]
+Win32_NetworkConnection V: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar ConnectionState=Connected Status=OK Persistent=False [56 ms]
+net use [48 ms]:
+  OK           V:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#� ar 
+=== snapshot hashVrenamed 2026-10-18T16:07:53.5469967+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network exists, subkeys=0
+SmbMapping V: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar Status=OK [319 ms]
+Win32_NetworkConnection V: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#ž ar ConnectionState=Connected Status=OK Persistent=False [53 ms]
+net use [50 ms]:
+  OK           V:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\sh#� ar 
+=== snapshot persistW 2026-10-18T16:08:06.4163248+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network\W: RemotePath=[String]'\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'; UserName=[String]''; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network exists, subkeys=1
+SmbMapping W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share Status=OK [346 ms]
+Win32_NetworkConnection W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share ConnectionState=Connected Status=OK Persistent=True [54 ms]
+net use [47 ms]:
+  OK           W:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 
+=== snapshot rememberedW 2026-10-18T16:08:07.4126492+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network\W: RemotePath=[String]'\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'; UserName=[String]''; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network exists, subkeys=1
+SmbMapping W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share Status=Unavailable [313 ms]
+Win32_NetworkConnection W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share ConnectionState=Disconnected Status=Unavailable Persistent=True [53 ms]
+net use [47 ms]:
+  Nedostupn�   W:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 
+=== snapshot deferredLocal 2026-10-18T16:08:17.7490791+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network exists, subkeys=0
+SmbMapping: none [332 ms]
+net use [46 ms]:
+=== snapshot deferredLocalAfterInfo 2026-10-18T16:08:18.5369781+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network exists, subkeys=0
+SmbMapping: none [338 ms]
+net use [49 ms]:
+=== snapshot restored1 2026-10-18T16:09:04.9391732+02:00
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network\W: RemotePath=[String]'\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'; UserName=[DWord]'0'; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network exists, subkeys=1
+SmbMapping W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share Status=OK [327 ms]
+Win32_NetworkConnection W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share ConnectionState=Connected Status=OK Persistent=True [64 ms]
+net use [48 ms]:
+  OK           W:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 
+=== snapshot rememberedV_unreach 2026-10-18T16:11:02.0337751+02:00
+MP2 key '##192.0.2.1#x' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network\V: RemotePath=[String]'\\192.0.2.1\x'; UserName=[DWord]'0'; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network\W: RemotePath=[String]'\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'; UserName=[DWord]'0'; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network exists, subkeys=2
+SmbMapping W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share Status=OK [373 ms]
+SmbMapping V: \\192.0.2.1\x Status=Unavailable [373 ms]
+Win32_NetworkConnection V: \\192.0.2.1\x ConnectionState=Disconnected Status=Unavailable Persistent=True [21 123 ms]
+Win32_NetworkConnection W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share ConnectionState=Connected Status=OK Persistent=True [21 123 ms]
+net use [47 ms]:
+  Nedostupn�   V:        \\192.0.2.1\x             Microsoft Windows Network
+  OK           W:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 
+=== snapshot goneU 2026-10-18T16:13:22.4107871+02:00
+MP2 key '##192.0.2.1#x' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#gone' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network\V: RemotePath=[String]'\\192.0.2.1\x'; UserName=[DWord]'0'; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network\W: RemotePath=[String]'\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'; UserName=[DWord]'0'; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network exists, subkeys=2
+SmbMapping W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share Status=OK [331 ms]
+SmbMapping U: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone Status=OK [331 ms]
+SmbMapping V: \\192.0.2.1\x Status=Unavailable [331 ms]
+Win32_NetworkConnection V: \\192.0.2.1\x ConnectionState=Disconnected Status=Unavailable Persistent=True [21 098 ms]
+Win32_NetworkConnection W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share ConnectionState=Connected Status=OK Persistent=True [21 098 ms]
+Win32_NetworkConnection U: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone ConnectionState=Connected Status=OK Persistent=False [21 098 ms]
+net use [57 ms]:
+  OK           U:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\gone 
+  Nedostupn�   V:        \\192.0.2.1\x             Microsoft Windows Network
+  OK           W:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 
+=== snapshot diniT 2026-10-18T16:14:17.0282454+02:00
+MP2 key '##192.0.2.1#x' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Data' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##192.168.0.50#Obchod' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#dini' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#gone' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#sh#ž ar' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Hash Label' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#claude#E--Projects-tandemcommander#041cfbb9-a7d3-4632-a84d-0614ac426897#scratchpad#246-measure#share' values: _LabelFromDesktopINI=[String]''; _LabelFromReg=[String]'Archiv Test ž' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A' values: _LabelFromDesktopINI=[String]'' subkeys: 
+MP2 key '##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net' values: _LabelFromDesktopINI=[String]'' subkeys: 
+HKCU\Network\V: RemotePath=[String]'\\192.0.2.1\x'; UserName=[DWord]'0'; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network\W: RemotePath=[String]'\\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share'; UserName=[DWord]'0'; ProviderName=[String]'Microsoft Windows Network'; ProviderType=[DWord]'131072'; ConnectionType=[DWord]'1'; ConnectFlags=[DWord]'0'; DeferFlags=[DWord]'4'; UseOptions=[Binary]'68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0'
+HKCU\Network exists, subkeys=2
+SmbMapping W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share Status=OK [313 ms]
+SmbMapping T: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini Status=OK [313 ms]
+SmbMapping V: \\192.0.2.1\x Status=Unavailable [313 ms]
+Win32_NetworkConnection V: \\192.0.2.1\x ConnectionState=Disconnected Status=Unavailable Persistent=True [21 119 ms]
+Win32_NetworkConnection W: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share ConnectionState=Connected Status=OK Persistent=True [21 119 ms]
+Win32_NetworkConnection T: \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini ConnectionState=Connected Status=OK Persistent=False [21 119 ms]
+net use [47 ms]:
+  OK           T:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\dini 
+  Nedostupn�   V:        \\192.0.2.1\x             Microsoft Windows Network
+  OK           W:        \\localhost\C$\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\041cfbb9-a7d3-4632-a84d-0614ac426897\scratchpad\246-measure\share 
