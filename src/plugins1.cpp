@@ -1954,6 +1954,12 @@ CSalamanderPluginEntry::LoadLanguageModule(HWND parent, const char* pluginName)
     return lang;
 }
 
+void CSalamanderPluginEntry::SetPluginSettingsImport(CPluginSettingsImportAbstract* handler)
+{
+    CALL_STACK_MESSAGE1("CSalamanderPluginEntry::SetPluginSettingsImport()");
+    Plugin->SettingsImport = handler; // feature 245; valid while the plugin is loaded
+}
+
 void CSalamanderPluginEntry::SetPluginHomePageURL(const char* url)
 {
     CALL_STACK_MESSAGE2("CSalamanderPluginEntry::SetPluginHomePageURL(%s)", url);
@@ -2095,6 +2101,7 @@ CPluginData::CPluginData(const char* name, const char* dllName, BOOL supportPane
     BugReportEMail = NULL;
     SubMenu = NULL;
     DLL = NULL;
+    SettingsImport = NULL; // feature 245
     BuiltForVersion = 0;
     Name = DupStr(name);
     DLLName = DupStr(dllName);
@@ -2318,6 +2325,7 @@ BOOL CPluginData::InitDLL(HWND parent, BOOL quiet, BOOL waitCursor, BOOL release
                 BOOL supportCustomUnpack = SupportCustomUnpack;
                 BOOL supportViewer = SupportViewer;
 
+                SettingsImport = NULL; // feature 245: registered again by every entry call
                 CSalamanderPluginEntry salamander(parent, (CPluginData*)this);
                 // build the flag returned via CSalamanderPluginEntry::GetLoadInformation()
                 salamander.AddLoadInfo(Plugins.LoadInfoBase); // base (none/auto-install/new-plugins.ver)

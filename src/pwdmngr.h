@@ -156,6 +156,15 @@ public:
     // verifies that 'password' matches the password stored in MasterPasswordVerifier; returns TRUE on success, otherwise FALSE
     BOOL VerifyMasterPassword(const char* password);
 
+    // feature 245 (settings import): the same algorithms applied to an OLD program's data, without
+    // changing any state of this manager: checks 'password' against a stored verifier record
+    // ('verifierSize' must be sizeof(CMasterPasswordVerifier)), and decrypts a password blob
+    // stored by the old program - scrambled ones need no master password, AES ones need its
+    // master password 'masterPassword'; '*plainPassword' is freed with free() after wiping
+    BOOL VerifyForeignMasterPassword(const BYTE* verifier, int verifierSize, const char* password);
+    BOOL DecryptWithMasterPassword(const BYTE* encryptedPassword, int encryptedPasswordSize,
+                                   const char* masterPassword, char** plainPassword);
+
 protected:
     // allocates and computes MasterPasswordVerifier, which is stored into the registry for subsequent verification
     void CreateMasterPasswordVerifier(const char* password);

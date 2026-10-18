@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2026 Pavel Stupka
+﻿// SPDX-FileCopyrightText: 2026 Pavel Stupka
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 // Unit tests for the 004-long-paths-unicode foundation helpers
@@ -68,6 +68,7 @@
 #include "salmenuhotkey.h"   // feature 236
 #include "salpctpath.h"      // feature 238
 #include "salquickfilter.h"   // feature 244
+#include "salcfgimport.h"     // feature 245
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -12968,6 +12969,404 @@ static void TestQuickFilter244()
     }
 }
 
+// feature 245: settings import from Altap Salamander / Open Salamander (salcfgimport.h)
+static BOOL Cfg245ExistsIn(void* ctx, const char* name)
+{
+    const char* const* list = (const char* const*)ctx;
+    for (int i = 0; list[i] != NULL; i++)
+        if (strcmp(list[i], name) == 0)
+            return TRUE;
+    return FALSE;
+}
+
+static CSalCfgKey* Cfg245HotPathKey(CSalCfgKey* root, const char* slot, const char* name, const char* path, DWORD visible)
+{
+    CSalCfgKey* hp = (CSalCfgKey*)SalCfgKeyFind(root, "Hot Paths");
+    if (hp == NULL)
+        hp = SalCfgKeyAddKey(root, "Hot Paths");
+    CSalCfgKey* k = SalCfgKeyAddKey(hp, slot);
+    if (name != NULL)
+        SalCfgKeyAddString(k, "Name", name);
+    if (path != NULL)
+        SalCfgKeyAddString(k, "Path", path);
+    SalCfgKeyAddDword(k, "Visible", visible);
+    return k;
+}
+
+static CSalCfgKey* Cfg245MenuItem(CSalCfgKey* menu, int index, const char* name, const char* cmd, DWORD type)
+{
+    char buf[16];
+    sprintf(buf, "%d", index);
+    CSalCfgKey* k = SalCfgKeyAddKey(menu, buf);
+    SalCfgKeyAddString(k, "Item Name", name);
+    SalCfgKeyAddString(k, "Command", cmd);
+    SalCfgKeyAddDword(k, "Execute Through Shell", 0);
+    SalCfgKeyAddDword(k, "Close Shell Window", 1);
+    SalCfgKeyAddDword(k, "Type", type);
+    return k;
+}
+
+static void TestCfgImport245()
+{
+    // ---- tree
+    CSalCfgKey* root = SalCfgKeyNew("root");
+    CHECK(root != NULL);
+    CSalCfgKey* cfg = SalCfgKeyAddKey(root, "Configuration");
+    CSalCfgKey* conf = SalCfgKeyAddKey(cfg, "Confirmation");
+    CHECK(SalCfgKeyAddDword(cfg, "Single Click", 1));
+    CHECK(SalCfgKeyAddString(cfg, "Info", "a" U8_C_CARON_NFC));
+    BYTE bin[3] = {1, 0, 2};
+    CHECK(SalCfgKeyAddValue(conf, "Blob", REG_BINARY, bin, 3));
+    CHECK(SalCfgKeyAddValue(conf, "Odd", REG_SZ, "abc", 3)); // no terminator in the data
+    CHECK(SalCfgKeyFind(root, "configuration\\CONFIRMATION") == conf); // ASCII case-insensitive
+    CHECK(SalCfgKeyFind(root, "Configuration\\Missing") == NULL);
+    CHECK(SalCfgKeyFind(root, "") == root);
+    CHECK(SalCfgKeyFindChild(root, "Configuratio") == NULL); // no prefix match
+    CHECK(SalCfgKeyFind(root, "Configuratio") == NULL);
+    DWORD dw = 0;
+    CHECK(SalCfgGetDword(cfg, "single click", &dw) && dw == 1);
+    CHECK(!SalCfgGetDword(cfg, "Info", &dw)); // wrong type
+    CHECK(SalCfgGetString(cfg, "Info") != NULL && strcmp(SalCfgGetString(cfg, "Info"), "a" U8_C_CARON_NFC) == 0);
+    CHECK(SalCfgGetString(cfg, "Single Click") == NULL); // wrong type
+    CHECK(SalCfgGetString(conf, "Odd") != NULL && strcmp(SalCfgGetString(conf, "Odd"), "abc") == 0); // terminated by the tree
+    DWORD sz = 0;
+    const BYTE* b = SalCfgGetBinary(conf, "Blob", REG_BINARY, &sz);
+    CHECK(b != NULL && sz == 3 && b[0] == 1 && b[1] == 0 && b[2] == 2);
+    CHECK(SalCfgGetBinary(conf, "Blob", REG_DWORD, &sz) == NULL);
+    CHECK(SalCfgValueFind(conf, "Missing") == NULL);
+    // many keys and values (growth)
+    for (int i = 0; i < 100; i++)
+    {
+        char n[16];
+        sprintf(n, "k%d", i);
+        CHECK(SalCfgKeyAddKey(conf, n) != NULL);
+        CHECK(SalCfgKeyAddDword(conf, n, (DWORD)i));
+    }
+    CHECK(SalCfgKeyFind(conf, "k99") != NULL && SalCfgGetDword(conf, "K57", &dw) && dw == 57);
+    SalCfgKeyFree(root);
+
+    // ---- sources
+    CHECK(SalCfgImpRootCount() == 83);
+    CHECK(strcmp(SalCfgImpRoot(0), "Software\\Open Salamander\\5.0") == 0);
+    CHECK(strcmp(SalCfgImpRoot(1), "Software\\Altap\\Altap Salamander 4.0") == 0);
+    CHECK(strcmp(SalCfgImpRoot(82), "Software\\Salamander") == 0);
+    CHECK(SalCfgImpRoot(83) == NULL && SalCfgImpRoot(-1) == NULL);
+    int allowedRoots = 0;
+    for (int i = 0; i < SalCfgImpRootCount(); i++)
+    {
+        if (SalCfgImpIsForeignRootAllowed(SalCfgImpRoot(i)))
+            allowedRoots++;
+        CHECK(strstr(SalCfgImpRoot(i), "Tandem") == NULL && strstr(SalCfgImpRoot(i), "Newt") == NULL);
+    }
+    CHECK(allowedRoots == 83);
+    CHECK(!SalCfgImpIsForeignRootAllowed("Software\\Tandem Commander\\0.1"));
+    CHECK(!SalCfgImpIsForeignRootAllowed("software\\newt commander\\0.1"));
+    CHECK(!SalCfgImpIsForeignRootAllowed("Software\\Tandem Commander"));
+    CHECK(SalCfgImpIsForeignRootAllowed("Software\\Tandem Commander Test 245\\src1")); // fixtures live beside it
+    CHECK(!SalCfgImpIsForeignRootAllowed(""));
+    CHECK(!SalCfgImpIsForeignRootAllowed(NULL));
+    CHECK(SalCfgImpClassify(38, 106) == SALCFGIMP_TOO_OLD);
+    CHECK(SalCfgImpClassify(39, 106) == SALCFGIMP_SUPPORTED);
+    CHECK(SalCfgImpClassify(103, 106) == SALCFGIMP_SUPPORTED);
+    CHECK(SalCfgImpClassify(106, 106) == SALCFGIMP_SUPPORTED);
+    CHECK(SalCfgImpClassify(107, 106) == SALCFGIMP_TOO_NEW);
+    CHECK(SalCfgImpClassify(1, 106) == SALCFGIMP_TOO_OLD);
+    char pn[64];
+    CHECK(SalCfgImpProductName("Software\\Altap\\Altap Salamander 4.0", pn, sizeof(pn)) && strcmp(pn, "Altap Salamander 4.0") == 0);
+    CHECK(SalCfgImpProductName("Software\\Open Salamander\\5.0", pn, sizeof(pn)) && strcmp(pn, "Open Salamander 5.0") == 0);
+    CHECK(SalCfgImpProductName("Software\\Salamander", pn, sizeof(pn)) && strcmp(pn, "Salamander") == 0);
+    CHECK(!SalCfgImpProductName("Software\\Open Salamander\\5.0", pn, 10) && pn[0] == 0); // never cut
+    CHECK(SalCfgImpCompareSources(104, 0, 103, 1) < 0);
+    CHECK(SalCfgImpCompareSources(103, 1, 104, 0) > 0);
+    CHECK(SalCfgImpCompareSources(103, 2, 103, 5) < 0);
+
+    // ---- conversions
+    char out[64];
+    CHECK(SalCfgImpDuplicateDollars("$(SalDir)\\a$b", out, sizeof(out)) && strcmp(out, "$$(SalDir)\\a$$b") == 0);
+    CHECK(SalCfgImpDuplicateDollars("", out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalCfgImpDuplicateDollars("$$$$", out, 8) && out[0] == 0); // needs 9 bytes: refused, not cut
+    CHECK(SalCfgImpDuplicateDollars("$$$", out, 7) && strcmp(out, "$$$$$$") == 0); // exact fit
+    CHECK(SalCfgImpUnescapeDollars("$$(SalDir)\\a$$b$", out, sizeof(out)) && strcmp(out, "$(SalDir)\\a$b$") == 0);
+    CHECK(SalCfgImpLowerAscii("*.TXT;Read" U8_CAP_C_CARON_NFC ".DOC", out, sizeof(out)) &&
+          strcmp(out, "*.txt;read" U8_CAP_C_CARON_NFC ".doc") == 0); // non-ASCII untouched
+    CHECK(!SalCfgImpLowerAscii("ABCDEF", out, 6) && out[0] == 0);
+
+    // ---- identities
+    char key[128];
+    CHECK(SalCfgImpMasksKey("*.TXT; *.doc;*.txt;;  ", key, sizeof(key)) && strcmp(key, "*.doc;*.txt") == 0);
+    char key2[128];
+    CHECK(SalCfgImpMasksKey("*.doc;*.Txt", key2, sizeof(key2)) && strcmp(key, key2) == 0);
+    CHECK(SalCfgImpMasksKey("", key, sizeof(key)) && key[0] == 0);
+    CHECK(SalCfgImpMasksKey("*.a;*.b", key, sizeof(key)) && strcmp(key, "*.a;*.b") == 0);
+    CHECK(SalCfgImpMasksKey("*.b;*.a", key2, sizeof(key2)) && strcmp(key, key2) == 0);
+    CHECK(!SalCfgImpMasksKey("*.aaaa;*.bbbb", key, 8) && key[0] == 0);
+    CHECK(SalCfgImpMasksKey("*." U8_C_CARON_NFC, key, sizeof(key)) && strcmp(key, "*." U8_C_CARON_NFC) == 0);
+
+    CHECK(SalCfgImpTrimTrailingSlash("C:\\Data\\", out, sizeof(out)) && strcmp(out, "C:\\Data") == 0);
+    CHECK(SalCfgImpTrimTrailingSlash("C:\\Data\\\\", out, sizeof(out)) && strcmp(out, "C:\\Data") == 0);
+    CHECK(SalCfgImpTrimTrailingSlash("C:\\", out, sizeof(out)) && strcmp(out, "C:\\") == 0);
+    CHECK(SalCfgImpTrimTrailingSlash("\\", out, sizeof(out)) && strcmp(out, "\\") == 0);
+    CHECK(SalCfgImpTrimTrailingSlash("\\\\", out, sizeof(out)) && strcmp(out, "\\\\") == 0);
+    CHECK(SalCfgImpTrimTrailingSlash("\\\\srv\\share\\", out, sizeof(out)) && strcmp(out, "\\\\srv\\share") == 0);
+    CHECK(SalCfgImpTrimTrailingSlash("ftp://host/", out, sizeof(out)) && strcmp(out, "ftp://host/") == 0);
+    CHECK(!SalCfgImpTrimTrailingSlash("C:\\very\\long", out, 5));
+
+    const char* names[] = {"Server", "Server (imported)", "Server (imported 2)", NULL};
+    char un[64];
+    CHECK(SalCfgImpUniqueName("Other", "(imported)", "(imported %d)", Cfg245ExistsIn, (void*)names, un, sizeof(un)) &&
+          strcmp(un, "Other") == 0);
+    CHECK(SalCfgImpUniqueName("Server", "(imported)", "(imported %d)", Cfg245ExistsIn, (void*)names, un, sizeof(un)) &&
+          strcmp(un, "Server (imported 3)") == 0);
+    // a hostile translated format falls back to "(%d)"
+    CHECK(SalCfgImpUniqueName("Server", "(imported)", "%s %n", Cfg245ExistsIn, (void*)names, un, sizeof(un)) &&
+          strcmp(un, "Server (2)") == 0);
+    CHECK(SalCfgImpUniqueName("Server", "(imported)", "(%d%%)", Cfg245ExistsIn, (void*)names, un, sizeof(un)) &&
+          strcmp(un, "Server (2)") == 0);
+    // shortened at a character boundary to fit
+    const char* none[] = {"x", NULL};
+    const char* longBase = "Abc" U8_C_CARON_NFC U8_C_CARON_NFC "def"; // 3 + 2 + 2 + 3 bytes
+    CHECK(SalCfgImpUniqueName(longBase, "(i)", "(i %d)", Cfg245ExistsIn, (void*)none, un, 6) && strcmp(un, "Abc" U8_C_CARON_NFC) == 0);
+    CHECK(SalCfgImpUniqueName(longBase, "(i)", "(i %d)", Cfg245ExistsIn, (void*)none, un, 5) && strcmp(un, "Abc") == 0); // never half a character
+    const char* taken[] = {"Abc" U8_C_CARON_NFC, NULL};
+    CHECK(SalCfgImpUniqueName(longBase, "(i)", "(i %d)", Cfg245ExistsIn, (void*)taken, un, 6) && strcmp(un, "A (i)") == 0);
+    CHECK(!SalCfgImpUniqueName("Server", "(imported)", "(imported %d)", Cfg245ExistsIn, (void*)names, un, 1));
+
+    // ---- placement and merge
+    BOOL occ[30] = {0};
+    occ[0] = occ[1] = TRUE;
+    CHECK(SalCfgImpPlaceHotPath(occ, 30, 4) == 4);
+    CHECK(SalCfgImpPlaceHotPath(occ, 30, 1) == 2);
+    CHECK(SalCfgImpPlaceHotPath(occ, 30, -1) == 2);
+    CHECK(SalCfgImpPlaceHotPath(occ, 30, 99) == 2);
+    for (int i = 0; i < 30; i++)
+        occ[i] = TRUE;
+    CHECK(SalCfgImpPlaceHotPath(occ, 30, 3) == -1);
+    occ[29] = FALSE;
+    CHECK(SalCfgImpPlaceHotPath(occ, 30, 3) == 29);
+    CHECK(SalCfgImpPlaceHotPath(NULL, 30, 3) == -1);
+
+    const char* cur[] = {"a", "b", NULL};
+    const char* imp[] = {"b", "c", "", "c", "d"};
+    const char* merged[8];
+    int mn = SalCfgImpMergeHistory(cur, 2, imp, 5, merged, 8);
+    CHECK(mn == 4 && strcmp(merged[0], "a") == 0 && strcmp(merged[1], "b") == 0 && strcmp(merged[2], "c") == 0 &&
+          strcmp(merged[3], "d") == 0);
+    mn = SalCfgImpMergeHistory(cur, 2, imp, 5, merged, 3);
+    CHECK(mn == 3 && strcmp(merged[2], "c") == 0); // capacity: current entries never pushed out
+    mn = SalCfgImpMergeHistory(cur, 2, imp, 5, merged, 1);
+    CHECK(mn == 1 && strcmp(merged[0], "a") == 0);
+    mn = SalCfgImpMergeHistory(NULL, 0, imp, 5, merged, 8);
+    CHECK(mn == 3);
+
+    CHECK(SalCfgImpDefaultDirValid("C", "C:\\Data", MAX_PATH));
+    CHECK(SalCfgImpDefaultDirValid("c", "C:\\", MAX_PATH));
+    CHECK(!SalCfgImpDefaultDirValid("C", "D:\\Data", MAX_PATH));
+    CHECK(!SalCfgImpDefaultDirValid("CC", "C:\\Data", MAX_PATH));
+    CHECK(!SalCfgImpDefaultDirValid("1", "1:\\Data", MAX_PATH));
+    CHECK(!SalCfgImpDefaultDirValid("C", "C:", MAX_PATH));
+    CHECK(!SalCfgImpDefaultDirValid("C", "C:Data", MAX_PATH));
+    CHECK(!SalCfgImpDefaultDirValid("C", "C:\\Data", 7)); // too long for the program's buffer
+    CHECK(SalCfgImpDefaultDirValid("C", "C:\\Dat", 7));
+
+    // ---- forbidden options
+    CHECK(SalCfgImpIsForbiddenOption("Configuration", "Theme Mode"));
+    CHECK(SalCfgImpIsForbiddenOption("configuration", "panel tabs"));
+    CHECK(SalCfgImpIsForbiddenOption("Configuration", "Quick Search Filter"));
+    CHECK(SalCfgImpIsForbiddenOption("Configuration", "Command Shell Program"));
+    CHECK(SalCfgImpIsForbiddenOption("Configuration", "Language"));
+    CHECK(SalCfgImpIsForbiddenOption("Configuration", "Plugins.ver Version (x64)"));
+    CHECK(SalCfgImpIsForbiddenOption("Configuration", "Top ToolBar"));
+    CHECK(SalCfgImpIsForbiddenOption("Configuration", "Save Configuration On Exit"));
+    CHECK(SalCfgImpIsForbiddenOption("Viewer", "Left"));
+    CHECK(SalCfgImpIsForbiddenOption("Viewer", "Find Text"));
+    CHECK(!SalCfgImpIsForbiddenOption("Configuration", "Single Click"));
+    CHECK(!SalCfgImpIsForbiddenOption("Viewer", "Wrap Text"));
+    CHECK(!SalCfgImpIsForbiddenOption("Configuration\\Confirmation", "Left")); // only in the Viewer key
+    CHECK(SalCfgImpIsForbiddenOption(NULL, "x"));
+
+    // ---- DLL matching
+    CHECK(SalCfgImpSameDll("ftp\\ftp.spl", "ftp\\ftp.spl"));
+    CHECK(SalCfgImpSameDll("FTP\\FTP.SPL", "ftp\\ftp.spl"));
+    CHECK(SalCfgImpSameDll("ftp/ftp.spl", "ftp\\ftp.spl"));
+    CHECK(SalCfgImpSameDll("C:\\Program Files\\Altap Salamander\\plugins\\ftp\\ftp.spl", "ftp\\ftp.spl"));
+    CHECK(SalCfgImpSameDll("\\\\srv\\sal\\plugins\\ftp\\ftp.spl", "ftp\\ftp.spl"));
+    CHECK(!SalCfgImpSameDll("ftp\\ftp.spl", "sftp\\sftp.spl"));
+    CHECK(!SalCfgImpSameDll("C:\\x\\ieviewer\\ieviewer.spl", "ftp\\ftp.spl"));
+    CHECK(!SalCfgImpSameDll("other\\ftp.spl", "ftp\\ftp.spl"));
+    CHECK(!SalCfgImpSameDll("", "ftp\\ftp.spl"));
+    CHECK(!SalCfgImpSameDll("ftp\\ftp.spl", NULL));
+
+    // ---- hot paths parser
+    root = SalCfgKeyNew("src");
+    Cfg245HotPathKey(root, "1", "Projects", "C:\\Projects", 1);
+    Cfg245HotPathKey(root, "2", "D:\\Data", "D:\\Data", 0);              // name = path text: unnamed (047)
+    Cfg245HotPathKey(root, "3", "Sal", "$(SalDir)\\x", 1);               // old version: '$' doubled
+    Cfg245HotPathKey(root, "0", "Ten (old)", "C:\\Ten0", 1);             // key 0 = slot 10 ...
+    Cfg245HotPathKey(root, "10", "  Ten  ", "C:\\Ten", 1);               // ... key 10 wins (read later), name trimmed
+    Cfg245HotPathKey(root, "11", "NoPath", NULL, 1);                      // no path: unused
+    Cfg245HotPathKey(root, "12", U8_C_CARON_NFC "es", "E:\\" U8_C_CARON_NFC, 1); // non-ASCII
+    Cfg245HotPathKey(root, "31", "Out of range", "C:\\X", 1);              // slot 32 does not exist
+    CSalCfgImpHotPath hps[SALCFGIMP_HOTPATHS];
+    memset(hps, 0, sizeof(hps));
+    int used = SalCfgImpParseHotPaths(SalCfgKeyFind(root, "Hot Paths"), 46, MAX_PATH, 4 * MAX_PATH, hps);
+    CHECK(used == 5);
+    CHECK(hps[0].Used && strcmp(hps[0].Name, "Projects") == 0 && strcmp(hps[0].Path, "C:\\Projects") == 0 && hps[0].Visible);
+    CHECK(hps[1].Used && hps[1].Name[0] == 0 && !hps[1].Visible);
+    CHECK(hps[2].Used && strcmp(hps[2].Path, "$$(SalDir)\\x") == 0);
+    CHECK(hps[9].Used && strcmp(hps[9].Name, "Ten") == 0 && strcmp(hps[9].Path, "C:\\Ten") == 0);
+    CHECK(!hps[10].Used);
+    CHECK(hps[11].Used && strcmp(hps[11].Name, U8_C_CARON_NFC "es") == 0 && strcmp(hps[11].Path, "E:\\" U8_C_CARON_NFC) == 0);
+    SalCfgImpFreeHotPaths(hps, SALCFGIMP_HOTPATHS);
+    memset(hps, 0, sizeof(hps));
+    used = SalCfgImpParseHotPaths(SalCfgKeyFind(root, "Hot Paths"), 103, MAX_PATH, 4 * MAX_PATH, hps);
+    CHECK(used == 5 && strcmp(hps[2].Path, "$(SalDir)\\x") == 0); // 103: stored as is
+    SalCfgImpFreeHotPaths(hps, SALCFGIMP_HOTPATHS);
+    // a path longer than the program's limit: the slot is reported, not cut
+    memset(hps, 0, sizeof(hps));
+    used = SalCfgImpParseHotPaths(SalCfgKeyFind(root, "Hot Paths"), 103, MAX_PATH, 8, hps);
+    CHECK(!hps[0].Used && hps[0].TooLong); // "C:\Projects" does not fit 8 bytes
+    CHECK(hps[9].Used && !hps[9].TooLong); // "C:\Ten" fits
+    SalCfgImpFreeHotPaths(hps, SALCFGIMP_HOTPATHS);
+    CHECK(SalCfgImpParseHotPaths(NULL, 103, MAX_PATH, 4 * MAX_PATH, hps) == 0);
+    SalCfgKeyFree(root);
+
+    // ---- user menu parser + Add plan
+    root = SalCfgKeyNew("src");
+    CSalCfgKey* um = SalCfgKeyAddKey(root, "User Menu");
+    Cfg245MenuItem(um, 1, "Notepad", "notepad.exe", SALCFGIMP_UM_ITEM);
+    Cfg245MenuItem(um, 2, "-", "", SALCFGIMP_UM_SEPARATOR);
+    Cfg245MenuItem(um, 3, "Tools", "", SALCFGIMP_UM_SUBMENUBEGIN);
+    Cfg245MenuItem(um, 4, "Calc", "calc.exe", SALCFGIMP_UM_ITEM);
+    Cfg245MenuItem(um, 5, "", "", SALCFGIMP_UM_SUBMENUEND);
+    CSalCfgKey* noType = Cfg245MenuItem(um, 6, "Old", "old.exe", 0);
+    // an item without "Type" but with "Separator" (older layout)
+    CSalCfgKey* um7 = SalCfgKeyAddKey(um, "7");
+    SalCfgKeyAddString(um7, "Item Name", "sep");
+    SalCfgKeyAddString(um7, "Command", "");
+    SalCfgKeyAddDword(um7, "Execute Through Shell", 0);
+    SalCfgKeyAddDword(um7, "Close Shell Window", 0);
+    SalCfgKeyAddDword(um7, "Separator", 1);
+    // item 8 is invalid (no Command) -> reading stops, item 9 is never read
+    CSalCfgKey* um8 = SalCfgKeyAddKey(um, "8");
+    SalCfgKeyAddString(um8, "Item Name", "broken");
+    Cfg245MenuItem(um, 9, "After", "after.exe", SALCFGIMP_UM_ITEM);
+    (void)noType;
+    CSalCfgImpMenuItem* src = NULL;
+    int stop = -1;
+    int srcCount = SalCfgImpParseUserMenu(SalCfgKeyFind(root, "User Menu"), MAX_PATH, 32 * 1024, &src, &stop);
+    CHECK(srcCount == 7 && stop == 1);
+    CHECK(srcCount == 7 && src[0].Type == SALCFGIMP_UM_ITEM && strcmp(src[0].InitDir, "$(Drive)$(Path)") == 0 &&
+          src[0].UseWindow == TRUE && src[0].ShowInToolbar == TRUE && src[0].Arguments[0] == 0);
+    CHECK(srcCount == 7 && src[6].Type == SALCFGIMP_UM_SEPARATOR);
+    CHECK(SalCfgImpMenuBlockEnd(src, srcCount, 2) == 5);
+    CHECK(SalCfgImpMenuBlockEnd(src, srcCount, 0) == 1);
+    // current menu: "Notepad" and the same "Tools" submenu exist
+    CSalCfgImpMenuItem curMenu[4];
+    memset(curMenu, 0, sizeof(curMenu));
+    for (int i = 0; i < 4; i++)
+    {
+        curMenu[i] = src[i == 0 ? 0 : i + 1]; // shallow: Notepad, Tools, Calc, end
+    }
+    int decision[16];
+    SalCfgImpPlanUserMenuAdd(curMenu, 4, src, srcCount, decision);
+    CHECK(decision[0] == SALCFGIMP_UMD_PRESENT); // Notepad
+    CHECK(decision[1] == SALCFGIMP_UMD_DROPSEP); // separator before nothing appended yet
+    CHECK(decision[2] == SALCFGIMP_UMD_PRESENT && decision[3] == SALCFGIMP_UMD_INBLOCK && decision[4] == SALCFGIMP_UMD_INBLOCK);
+    CHECK(decision[5] == SALCFGIMP_UMD_APPEND); // Old
+    CHECK(decision[6] == SALCFGIMP_UMD_DROPSEP); // trailing separator
+    // empty current menu: everything appended, the separator between appended blocks kept
+    SalCfgImpPlanUserMenuAdd(NULL, 0, src, srcCount, decision);
+    CHECK(decision[0] == SALCFGIMP_UMD_APPEND && decision[1] == SALCFGIMP_UMD_APPEND && decision[2] == SALCFGIMP_UMD_APPEND &&
+          decision[5] == SALCFGIMP_UMD_APPEND && decision[6] == SALCFGIMP_UMD_DROPSEP);
+    // a submenu with different content is appended whole
+    char calc2[] = "calc2.exe";
+    curMenu[2].Command = calc2;
+    SalCfgImpPlanUserMenuAdd(curMenu, 4, src, srcCount, decision);
+    CHECK(decision[2] == SALCFGIMP_UMD_APPEND && decision[1] == SALCFGIMP_UMD_DROPSEP);
+    // separators never count as equal items
+    CHECK(!SalCfgImpMenuItemEqual(&src[1], &src[1]));
+    CHECK(SalCfgImpMenuItemEqual(&src[0], &src[0]));
+    SalCfgImpFreeMenu(src, srcCount);
+    // a too long value stops reading (never cut)
+    srcCount = SalCfgImpParseUserMenu(SalCfgKeyFind(root, "User Menu"), 8, 32 * 1024, &src, &stop);
+    CHECK(srcCount == 0 && stop == 2); // "notepad.exe" does not fit 8 bytes: reading stops at item 1
+    SalCfgImpFreeMenu(src, srcCount);
+    SalCfgKeyFree(root);
+
+    // ---- viewers parser
+    root = SalCfgKeyNew("src");
+    CSalCfgKey* vw = SalCfgKeyAddKey(root, "Viewers");
+    CSalCfgKey* v1 = SalCfgKeyAddKey(vw, "1");
+    SalCfgKeyAddString(v1, "Masks", "*.TXT");
+    SalCfgKeyAddDword(v1, "Type", 1);
+    CSalCfgKey* v2 = SalCfgKeyAddKey(vw, "2");
+    SalCfgKeyAddString(v2, "Masks", "*.jpg;*.png");
+    SalCfgKeyAddDword(v2, "Type", (DWORD)-3);
+    SalCfgKeyAddString(v2, "Command", "x.exe");
+    CSalCfgKey* v3 = SalCfgKeyAddKey(vw, "3");
+    SalCfgKeyAddString(v3, "Masks", "*.a|*.b");
+    SalCfgKeyAddDword(v3, "Type", 0);
+    CSalCfgKey* v4 = SalCfgKeyAddKey(vw, "4");
+    SalCfgKeyAddString(v4, "Masks", "*.after");
+    SalCfgKeyAddDword(v4, "Type", 0);
+    CSalCfgImpViewer* vs = NULL;
+    int vstop = -1;
+    int vc = SalCfgImpParseViewers(SalCfgKeyFind(root, "Viewers"), FALSE, 43, MAX_PATH, &vs, &vstop);
+    CHECK(vc == 2 && vstop == SALCFGIMP_VSTOP_PIPE);
+    CHECK(vc == 2 && strcmp(vs[0].Masks, "*.txt") == 0 && vs[0].Type == 1); // < 44: lower case
+    CHECK(vc == 2 && vs[1].Type == -3 && strcmp(vs[1].Command, "x.exe") == 0 && vs[1].Arguments[0] == 0);
+    SalCfgImpFreeViewers(vs, vc);
+    vc = SalCfgImpParseViewers(SalCfgKeyFind(root, "Viewers"), FALSE, 103, MAX_PATH, &vs, &vstop);
+    CHECK(vc == 2 && strcmp(vs[0].Masks, "*.TXT") == 0);
+    SalCfgImpFreeViewers(vs, vc);
+    // editors need no Type and accept '|' as the program's editor loader does
+    vc = SalCfgImpParseViewers(SalCfgKeyFind(root, "Viewers"), TRUE, 103, MAX_PATH, &vs, &vstop);
+    CHECK(vc == 4 && vstop == SALCFGIMP_VSTOP_NONE && vs[1].Type == 0);
+    SalCfgImpFreeViewers(vs, vc);
+    SalCfgKeyFree(root);
+
+    // ---- plug-ins parser
+    root = SalCfgKeyNew("src");
+    CSalCfgKey* pl = SalCfgKeyAddKey(root, "Plugins");
+    CSalCfgKey* p1 = SalCfgKeyAddKey(pl, "1");
+    SalCfgKeyAddString(p1, "DLL", "ieviewer\\ieviewer.spl");
+    SalCfgKeyAddString(p1, "Name", "IE Viewer");
+    CSalCfgKey* p2 = SalCfgKeyAddKey(pl, "2");
+    SalCfgKeyAddString(p2, "DLL", "ftp\\ftp.spl");
+    SalCfgKeyAddString(p2, "Configuration Key", "FTP");
+    CSalCfgKey* m = SalCfgKeyAddKey(p2, "Menu");
+    CSalCfgKey* m1 = SalCfgKeyAddKey(m, "1");
+    SalCfgKeyAddDword(m1, "ID", 7);
+    SalCfgKeyAddDword(m1, "HotKey", 0x10000 | 0x0646);
+    SalCfgKeyAddString(m1, "Name", "Connect");
+    CSalCfgKey* m2 = SalCfgKeyAddKey(m, "2");
+    SalCfgKeyAddDword(m2, "ID", 8); // no hot key: not listed
+    CSalCfgKey* m3 = SalCfgKeyAddKey(m, "3");
+    SalCfgKeyAddDword(m3, "ID", 9);
+    SalCfgKeyAddDword(m3, "HotKey", 0x0647); // predefined (not dirty) - listed, the core filters
+    CSalCfgImpPlugin* ps = NULL;
+    int pc = SalCfgImpParsePlugins(SalCfgKeyFind(root, "Plugins"), &ps);
+    CHECK(pc == 2 && ps[0].Index == 0 && ps[1].Index == 1);
+    CHECK(pc == 2 && strcmp(ps[1].DLL, "ftp\\ftp.spl") == 0 && strcmp(ps[1].ConfigKey, "FTP") == 0 && ps[0].ConfigKey[0] == 0);
+    CHECK(pc == 2 && ps[1].KeyCount == 2 && ps[1].Keys[0].ID == 7 && (ps[1].Keys[0].HotKey & SALCFGIMP_HOTKEY_DIRTY) &&
+          strcmp(ps[1].Keys[0].Name, "Connect") == 0 && ps[1].Keys[1].ID == 9);
+    SalCfgImpFreePlugins(ps, pc);
+    SalCfgKeyFree(root);
+
+    // ---- history parser
+    root = SalCfgKeyNew("h");
+    SalCfgKeyAddString(root, "1", "C:\\a");
+    SalCfgKeyAddString(root, "2", "");
+    SalCfgKeyAddValue(root, "3", REG_SZ, "\xC3\x28", 3); // invalid UTF-8
+    SalCfgKeyAddDword(root, "4", 5);                     // wrong type
+    SalCfgKeyAddString(root, "6", "C:\\b");              // a gap does not stop reading
+    SalCfgKeyAddString(root, "9", "C:\\over cap");
+    const char* hist[8];
+    int hn = SalCfgImpParseHistory(root, hist, 8);
+    CHECK(hn == 2 && strcmp(hist[0], "C:\\a") == 0 && strcmp(hist[1], "C:\\b") == 0);
+    SalCfgKeyFree(root);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -13072,6 +13471,7 @@ int main(int argc, char** argv)
     TestMenuHotKey236();
     TestPercentPath238();
     TestQuickFilter244();
+    TestCfgImport245();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

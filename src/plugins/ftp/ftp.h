@@ -1013,6 +1013,13 @@ public:
     // if a master password is used and has not been entered, asks the user for it (the window is shown with 'hParent' as the parent);
     // if the user does not enter the correct master password or the password cannot be decrypted with it, returns FALSE
     BOOL EnsurePasswordCanBeDecrypted(HWND hParent, int proxyServerUID);
+
+    // feature 245 (settings import, ftpimport.cpp): read access for the main thread, adding an
+    // imported proxy server under a new UID and name (returns the UID, -1 on failure), emptying
+    int GetCount() { return Count; }
+    CFTPProxyServer* GetAt(int index) { return At(index); }
+    int AddImportedCopy(const CFTPProxyServer* src, const char* name);
+    void ImportClear();
 };
 
 //
@@ -1189,6 +1196,9 @@ public:
 };
 
 extern CConfiguration Config; // global configuration of the FTP client
+
+// feature 245: the import handler registered in SalamanderPluginEntry (interface 108)
+CPluginSettingsImportAbstract* GetFTPSettingsImport();
 
 //
 // ****************************************************************************

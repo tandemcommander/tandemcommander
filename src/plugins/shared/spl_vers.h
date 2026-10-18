@@ -301,8 +301,17 @@
 //         104-106 keep loading and running unchanged; for them the two viewer
 //         file-name services deliver only names that fit MAX_PATH. See
 //         specs/088-plugin-interface-107/contracts/plugin-api-v107.md
+//   108 - 0.1.11 (feature 245): settings import from an older program (Altap
+//         Salamander 2.5-4.0, Open Salamander 5.0) - SetPluginSettingsImport
+//         appended at the end of CSalamanderPluginEntryAbstract, the classes
+//         CPluginSettingsImportAbstract (implemented by a plugin) and
+//         CSalamanderSettingsImportAbstract (implemented by the program) and the
+//         SALIMPORT_* constants added. Pure vtable append - plugins built for
+//         104-107 keep loading and running unchanged (the wizard offers their
+//         settings only as a whole). See
+//         specs/245-settings-import-salamander/contracts/plugin-api-v108.md
 
-#define LAST_VERSION_OF_SALAMANDER 107
-#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 107, first shipped in version 0.1.9."
+#define LAST_VERSION_OF_SALAMANDER 108
+#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 108, first shipped in version 0.1.11."
 
 #endif // __SPL_VERS_H

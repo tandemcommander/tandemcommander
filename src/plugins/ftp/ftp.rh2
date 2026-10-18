@@ -2013,4 +2013,15 @@
 // The password is: 
 #define IDS_PASSWORDIS                  11401
 
+// feature 245: importing connections from an older program (settings import wizard)
+#define IDS_IMPORT_BOOKMARK              11402
+#define IDS_IMPORT_PROXY                 11403
+#define IDS_IMPORT_SRVTYPE               11404
+#define IDS_IMPORT_RENAMED               11405
+#define IDS_IMPORT_NOPASSWORD            11406
+#define IDS_IMPORT_NOPROXY               11407
+#define IDS_IMPORT_INCOMPLETE            10001
+#define IDS_IMPORT_SUFFIX                10002
+#define IDS_IMPORT_SUFFIXN               10003
+
 #endif // __FTP_RH2

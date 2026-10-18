@@ -2498,6 +2498,10 @@ public:
     BOOL PluginIsNethood;           // TRUE = the plugin replaces the Network item from the Change Drive menu (added for Nethood plugin)
     BOOL PluginUsesPasswordManager; // TRUE = the plugin uses the Password Manager
 
+    // feature 245 (interface 108): the plugin's settings-import handler, registered in its entry;
+    // read it through GetSettingsImport (valid only while the plugin is loaded)
+    CPluginSettingsImportAbstract* SettingsImport;
+
     int IconOverlaysCount; // number of icon-overlay triples in the IconOverlays array
     HICON* IconOverlays;   // allocated array of icon overlays, number of elements = 3 * IconOverlaysCount (sizes: 16 + 32 + 48)
 
@@ -2566,6 +2570,9 @@ public:
                  BOOL releaseDynMenuIcons = TRUE);
 
     BOOL GetLoaded() { return DLL != NULL; }
+
+    // feature 245: the settings-import handler of a loaded plugin, NULL when none
+    CPluginSettingsImportAbstract* GetSettingsImport() { return DLL != NULL ? SettingsImport : NULL; }
 
     HINSTANCE GetPluginDLL() { return DLL; }
 
@@ -3325,6 +3332,8 @@ public:
     virtual void WINAPI SetPluginHomePageURL(const char* url);
 
     virtual BOOL WINAPI AddFSName(const char* fsName, int* newFSNameIndex);
+
+    virtual void WINAPI SetPluginSettingsImport(CPluginSettingsImportAbstract* handler); // feature 245
 };
 
 //

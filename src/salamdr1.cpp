@@ -14,6 +14,7 @@
 #include "fileswnd.h"
 #include "mainwnd.h"
 #include "updcheck.h" // feature 123
+#include "cfgimport.h" // feature 245
 #include "shellib.h"
 #include "worker.h"
 #include "snooper.h"
@@ -4578,6 +4579,7 @@ FIND_NEW_SLG_FILE:
 
                 CALL_STACK_MESSAGE1("WinMainBody::load_config");
                 BOOL setActivePanelAndPanelPaths = FALSE; // aktivni panel + cesty v panelech se nastavuji v MainWindow->LoadConfig()
+                CfgImpFreshConfigAtStart = CfgImpIsFreshConfiguration(); // feature 245: no configuration of ours yet
                 if (!MainWindow->LoadConfig(currentCfgDoesNotExist, !importCfgFromFileWasSkipped ? &cmdLineParams : NULL))
                 {
                     setActivePanelAndPanelPaths = TRUE;
@@ -4754,6 +4756,19 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 
                     if (IsSLGIncomplete[0] != 0 && Configuration.ShowSLGIncomplete)
                         PostMessage(MainWindow->HWindow, WM_USER_SLGINCOMPLETE, 0, 0);
+
+                    // feature 245: settings of Altap / Open Salamander are offered once at the first
+                    // start of a fresh configuration (the automation seam of Debug builds replaces it)
+#ifdef _DEBUG
+                    if (CfgImpAutorunRequested())
+                    {
+                        CfgImpFreshConfigAtStart = FALSE;
+                        PostMessage(MainWindow->HWindow, WM_USER_CFGIMPORT_AUTORUN, 0, 0);
+                    }
+                    else
+#endif
+                        if (CfgImpFreshConfigAtStart && CfgImpAnySupportedSourceExists())
+                        PostMessage(MainWindow->HWindow, WM_USER_CFGIMPORT_OFFER, 0, 0);
 
                     //--- aplikacni smycka
                     CALL_STACK_MESSAGE1("WinMainBody::message_loop");

@@ -175,6 +175,8 @@
     </ClCompile>
     <ClCompile Include="..\ftp2.cpp">
     </ClCompile>
+    <ClCompile Include="..\ftpimport.cpp">
+    </ClCompile>
     <ClCompile Include="..\ftp3.cpp">
     </ClCompile>
     <ClCompile Include="..\ftp4.cpp">

@@ -922,4 +922,13 @@ STRINGTABLE
  IDS_CLEARPASSWORD_CONFIRMATION, "Are you sure you wish to clear this password?"
  IDS_SHOWPASSWORD_CONFIRMATION, "Are you sure you wish to show this password?"
  IDS_PASSWORDIS, "The password is: %s\n\nDo you want to copy the password to clipboard?"
+ IDS_IMPORT_BOOKMARK, "Bookmark %s (%s)"
+ IDS_IMPORT_PROXY, "Proxy server %s"
+ IDS_IMPORT_SRVTYPE, "Server type %s"
+ IDS_IMPORT_RENAMED, "%s - added as %s (the name was already used)"
+ IDS_IMPORT_NOPASSWORD, "%s - imported without its saved password"
+ IDS_IMPORT_NOPROXY, "%s - its proxy server is missing in the old settings; the default proxy server is used"
+ IDS_IMPORT_INCOMPLETE, "Entry %s of %s is incomplete in the old settings and was not imported"
+ IDS_IMPORT_SUFFIX, "(imported)"
+ IDS_IMPORT_SUFFIXN, "(imported %d)"
 }

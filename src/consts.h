@@ -1297,6 +1297,11 @@ struct COpenViewerData
 // result with UpdateCheck_TakeResult() (updcheck.h)
 #define WM_USER_UPDATECHECK_DONE WM_APP + 417 // [0, 0]
 
+// feature 245: the one-time offer to import settings from Altap / Open Salamander at the
+// first start of a fresh configuration; the Debug-only automation seam of the import
+#define WM_USER_CFGIMPORT_OFFER WM_APP + 418   // [0, 0]
+#define WM_USER_CFGIMPORT_AUTORUN WM_APP + 419 // [0, 0]
+
 // states for Shift+F1 help mode
 #define HELP_INACTIVE 0 // not in Shift+F1 help mode (must be 0)
 #define HELP_ACTIVE 1   // in Shift+F1 help mode (non-zero)

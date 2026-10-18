@@ -717,6 +717,34 @@
 // sends WM_COMMAND with its own id on every click)
 #define IDC_UPDN_NOTESCMD               6256
 #define IDC_ABOUT_UPDATECMD             6257
+// feature 245: the settings import wizard
+#define IDD_CFGIMPORT_SOURCE            6258
+#define IDD_CFGIMPORT_GROUPS            6259
+#define IDD_CFGIMPORT_PASSWORD          6260
+#define IDD_CFGIMPORT_PREVIEW           6261
+#define IDD_CFGIMPORT_RESULT            6262
+#define IDC_CFGIMP_INTRO                6263
+#define IDC_CFGIMP_SOURCES              6264
+#define IDC_CFGIMP_SRCNOTE              6265
+#define IDC_CFGIMP_BACK                 6266
+#define IDC_CFGIMP_GROUPS               6267
+#define IDC_CFGIMP_ROWDESC              6268
+#define IDC_CFGIMP_MODE_ADD             6269
+#define IDC_CFGIMP_MODE_REPLACE         6270
+#define IDC_CFGIMP_NOTES                6271
+#define IDC_CFGIMP_PWDCOUNTS            6272
+#define IDE_CFGIMP_PWD                  6273
+#define IDC_CFGIMP_PWD_IMPORT           6274
+#define IDC_CFGIMP_PWD_SKIP             6275
+#define IDC_CFGIMP_PWD_WEAK             6276
+#define IDC_CFGIMP_PWD_NOTE             6277
+#define IDE_CFGIMP_TEXT                 6278
+#define IDC_CFGIMP_CONSENT              6279
+#define IDC_CFGIMP_COPY                 6280
+#define IDC_CFGIMP_SAVE                 6281
+#define IDC_CFGIMP_PWDLABEL             6282
+#define IDC_CFGIMP_SRCLABEL             6283
+#define IDC_CFGIMP_GRPLABEL             6284
 
 // Next default values for new objects
 // 
@@ -724,7 +752,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        8200
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         6258
+#define _APS_NEXT_CONTROL_VALUE         6285
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

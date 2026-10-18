@@ -81,6 +81,9 @@
     <ClCompile Include="..\ftp2.cpp">
       <Filter>cpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\ftpimport.cpp">
+      <Filter>cpp</Filter>
+    </ClCompile>
     <ClCompile Include="..\ftp3.cpp">
       <Filter>cpp</Filter>
     </ClCompile>

@@ -509,6 +509,7 @@
 #define CM_HIDE_SELECTED_NAMES     2945  // schova z panelu oznacena jmena
 #define CM_HIDE_UNSELECTED_NAMES   2946  // schova z panelu neoznacena jmena
 #define CM_SHOW_ALL_NAME           2947  // zobrazi v panelu vsechna jmena
+#define CM_IMPORTFROMSALAMANDER    2948  // feature 245: Options > Import Settings from Salamander
 
 #define CM_TOGGLEPLUGINSBAR      2950
 

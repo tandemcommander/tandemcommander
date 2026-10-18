@@ -2657,6 +2657,100 @@
 #define IDS_TABS_TT_LIST                14222
 #define IDS_TABS_CLOSECONFIRM           14223
 
+// feature 245: settings import from Altap Salamander / Open Salamander (free slots of existing bundles)
+#define IDS_CFGIMP_GRP_HOTPATHS          10200
+#define IDS_CFGIMP_GRP_USERMENU          10201
+#define IDS_CFGIMP_GRP_FTP               10202
+#define IDS_CFGIMP_GRP_PLUGINKEYS        10203
+#define IDS_CFGIMP_GRP_VIEWERS           10204
+#define IDS_CFGIMP_GRP_FINDSETS          10205
+#define IDS_CFGIMP_GRP_HISTORIES         10206
+#define IDS_CFGIMP_GRP_CONFIRMATIONS     10207
+#define IDS_CFGIMP_GRP_PANELOPTS         10208
+#define IDS_CFGIMP_GRP_GENERAL           10209
+#define IDS_CFGIMP_GRP_VIEWEROPTS        10210
+#define IDS_CFGIMP_GRP_COLORS            10211
+#define IDS_CFGIMP_GRP_TEMPLATES         10212
+#define IDS_CFGIMP_GRP_DEFAULTDIRS       10213
+#define IDS_CFGIMP_GRP_PLUGIN            10214
+#define IDS_CFGIMP_MODE_ADD              10215
+#define IDS_CFGIMP_MODE_REPLACE          10216
+#define IDS_CFGIMP_MODE_TAKEOVER         10217
+#define IDS_CFGIMP_AVAIL_EMPTY           10218
+#define IDS_CFGIMP_AVAIL_NOPLUGIN        10219
+#define IDS_CFGIMP_SRC_ITEM              10240
+#define IDS_CFGIMP_SRC_TOOOLD            10241
+#define IDS_CFGIMP_SRC_TOONEW            10242
+#define IDS_CFGIMP_SRC_NONE              10243
+#define IDS_CFGIMP_SRC_RUNNING           10244
+#define IDS_CFGIMP_SRC_SAVEINPROGRESS    10245
+#define IDS_CFGIMP_OTHERINSTANCE         10246
+#define IDS_CFGIMP_TITLE                 10247
+#define IDS_CFGIMP_READERR               10248
+#define IDS_CFGIMP_TRUNCATED             10249
+#define IDS_CFGIMP_BACKUPERR             10250
+#define IDS_CFGIMP_HDR_APPLIED           10251
+#define IDS_CFGIMP_HDR_FAILED            10252
+#define IDS_CFGIMP_BACKUPNOTE            10253
+#define IDS_CFGIMP_BACKUPDONE            10320
+#define IDS_CFGIMP_RESTORE               10321
+#define IDS_CFGIMP_LN_SLOTMOVED          10322
+#define IDS_CFGIMP_LN_NOSLOT             10323
+#define IDS_CFGIMP_LN_TOOLONG            10324
+#define IDS_CFGIMP_LN_SALDIR             10325
+#define IDS_CFGIMP_LN_OLDFOLDER          10326
+#define IDS_CFGIMP_LN_NOPROGRAM          10327
+#define IDS_CFGIMP_LN_STOPPED            10328
+#define IDS_CFGIMP_LN_NOPLUGIN           10329
+#define IDS_CFGIMP_LN_COVERED            10330
+#define IDS_CFGIMP_LN_KEYTC              10331
+#define IDS_CFGIMP_LN_KEYUSED            10332
+#define IDS_CFGIMP_LN_KEYHAS             10333
+#define IDS_CFGIMP_LN_VALUE              10409
+#define IDS_CFGIMP_LN_BADVALUE           10410
+#define IDS_CFGIMP_NOTHING               10411
+#define IDS_CFGIMP_LN_PLUGINUNLOAD       10412
+#define IDS_CFGIMP_LN_PWDSKIPPED         10413
+#define IDS_CFGIMP_PWDWRONG              10414
+#define IDS_CFGIMP_NOTE_FIXEDKEYS        10415
+#define IDS_CFGIMP_NOTE_NEVER            10416
+#define IDS_CFGIMP_CONSENT               10417
+#define IDS_CFGIMP_OFFER                 10418
+#define IDS_CFGIMP_IMPORTED_SUFFIX       10419
+#define IDS_CFGIMP_IMPORTED_NTH          10682
+#define IDS_CFGIMP_DESC_ADD              10683
+#define IDS_CFGIMP_DESC_REPLACE          10684
+#define IDS_CFGIMP_DESC_TAKEOVER         10685
+#define IDS_CFGIMP_DESC_UNAVAIL          10686
+#define IDS_CFGIMP_PWD_COUNTS            10687
+#define IDS_CFGIMP_PWD_TCHAS             10688
+#define IDS_CFGIMP_PWD_TCNONE            10689
+#define IDS_CFGIMP_PLUGINNEXTUSE         10690
+#define IDS_CFGIMP_NOTSHIPPED            10691
+#define IDS_CFGIMP_ARCHIVERS             10692
+#define IDS_CFGIMP_HISTPWD               10693
+#define IDS_MENU_OPT_IMPORTFROMSAL       12272
+#define IDS_CFGIMP_RESULT_SAVED          12273
+#define IDS_CFGIMP_WEAKCONSENT           12274
+#define IDS_CFGIMP_NOSELECTION           12275
+#define IDS_CFGIMP_FAILEDGROUP           12276
+#define IDS_CFGIMP_LN_INCOMPLETE         12277
+#define IDS_CFGIMP_TCMPWDNEEDED          12278
+#define IDS_CFGIMP_PREVIEW_HDR           12279
+#define IDS_CFGIMP_RESULT_HDR            12280
+#define IDS_CFGIMP_LEGEND                12281
+#define IDS_CFGIMP_SAVEFAILED            12282
+#define IDS_CFGIMP_RESULT_PARTIAL        12283
+#define IDS_CFGIMP_PWDNOTVERIFIED        12284
+
+// feature 245: settings import from Altap Salamander / Open Salamander (free slots of existing bundles)
+#define IDS_CFGIMP_LN_NOCOMMAND          10283
+#define IDS_CFGIMP_LN_HISTFULL           10284
+#define IDS_CFGIMP_NOHANDLER             10285
+
+// feature 245: settings import from Altap Salamander / Open Salamander (free slots of existing bundles)
+#define IDS_CFGIMP_INTRO                 10286
+
 //#define CM_TEXTS_MAX                  18000    // maximal texts id
 
 #endif // __TEXTS_RH2

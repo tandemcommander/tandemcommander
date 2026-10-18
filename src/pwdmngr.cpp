@@ -824,6 +824,70 @@ BOOL CPasswordManager::VerifyMasterPassword(const char* password)
     return (memcmp(mpv.MAC, MasterPasswordVerifier->MAC, sizeof(mpv.MAC)) == 0);
 }
 
+BOOL CPasswordManager::VerifyForeignMasterPassword(const BYTE* verifier, int verifierSize, const char* password)
+{
+    if (verifier == NULL || verifierSize != (int)sizeof(CMasterPasswordVerifier) || password == NULL)
+        return FALSE;
+    CMasterPasswordVerifier mpv;
+    memcpy(&mpv, verifier, sizeof(CMasterPasswordVerifier));
+    CSalAES aes;
+    WORD dummy; // unnecessary weakness; ignore it
+    int ret = SalamanderCrypt->AESInit(&aes, PASSWORD_MANAGER_AES_MODE, password, strlen(password), mpv.Salt, &dummy);
+    if (ret != SAL_AES_ERR_GOOD_RETURN)
+        TRACE_E("CPasswordManager::VerifyForeignMasterPassword(): unexpected state, ret=" << ret);
+    SalamanderCrypt->AESDecrypt(&aes, mpv.Dummy, 16);
+    SalamanderCrypt->AESEnd(&aes, mpv.MAC, NULL);
+    BOOL ok = memcmp(mpv.MAC, ((const CMasterPasswordVerifier*)verifier)->MAC, sizeof(mpv.MAC)) == 0;
+    SecureZeroMemory(&mpv, sizeof(mpv));
+    return ok;
+}
+
+BOOL CPasswordManager::DecryptWithMasterPassword(const BYTE* encryptedPassword, int encryptedPasswordSize,
+                                                 const char* masterPassword, char** plainPassword)
+{
+    if (plainPassword != NULL)
+        *plainPassword = NULL;
+    if (encryptedPassword == NULL || encryptedPasswordSize < 2)
+        return FALSE;
+    BOOL encrypted = IsPasswordEncrypted(encryptedPassword, encryptedPasswordSize);
+    if (!encrypted && *encryptedPassword != PWDMNGR_SIGNATURE_SCRAMBLED)
+        return FALSE; // unknown signature
+    if (encrypted && (masterPassword == NULL || *masterPassword == 0 || encryptedPasswordSize < 1 + 16 + 1 + 10))
+        return FALSE;
+    BYTE* tmpBuff = (BYTE*)malloc(encryptedPasswordSize + 1);
+    if (tmpBuff == NULL)
+        return FALSE;
+    memcpy(tmpBuff, encryptedPassword, encryptedPasswordSize);
+    tmpBuff[encryptedPasswordSize] = 0;
+    int pwdOffset = 1; // signature
+    BOOL ok = TRUE;
+    if (encrypted)
+    {
+        CSalAES aes;
+        WORD dummy; // unnecessary weakness; ignore it
+        int ret = SalamanderCrypt->AESInit(&aes, PASSWORD_MANAGER_AES_MODE, masterPassword, strlen(masterPassword), tmpBuff + 1, &dummy);
+        if (ret != SAL_AES_ERR_GOOD_RETURN)
+            TRACE_E("CPasswordManager::DecryptWithMasterPassword(): unexpected state, ret=" << ret);
+        SalamanderCrypt->AESDecrypt(&aes, tmpBuff + 1 + 16, encryptedPasswordSize - 1 - 16 - 10);
+        BYTE mac[10];
+        SalamanderCrypt->AESEnd(&aes, mac, NULL);
+        if (memcmp(mac, &tmpBuff[encryptedPasswordSize - 10], 10) != 0)
+            ok = FALSE; // wrong master password
+        pwdOffset += 16;
+        tmpBuff[encryptedPasswordSize - 10] = 0;
+    }
+    if (ok)
+        ok = UnscramblePassword((char*)tmpBuff + pwdOffset);
+    if (ok && plainPassword != NULL)
+    {
+        *plainPassword = DupStr((char*)tmpBuff + pwdOffset);
+        ok = *plainPassword != NULL;
+    }
+    SecureZeroMemory(tmpBuff, encryptedPasswordSize + 1);
+    free(tmpBuff);
+    return ok;
+}
+
 void CPasswordManager::NotifyAboutMasterPasswordChange(HWND hParent)
 {
     BOOL set = IsUsingMasterPassword();

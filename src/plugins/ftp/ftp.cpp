@@ -352,6 +352,9 @@ CPluginInterfaceAbstract* WINAPI SalamanderPluginEntry(CSalamanderPluginEntryAbs
 
     salamander->SetPluginHomePageURL("www.tandemcommander.org");
 
+    // feature 245: connections can be imported from an older program (plugin interface 108)
+    salamander->SetPluginSettingsImport(GetFTPSettingsImport());
+
     // we want to receive messages about creation/change/removal of the master password
     SalamanderGeneral->SetPluginUsesPasswordManager();
 

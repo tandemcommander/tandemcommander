@@ -748,6 +748,79 @@ public:
                                          // vsech)
 #define LOADINFO_LOADONSTART 0x0008      // load probehl, protoze byl nalezen flag "load on start"
 
+//
+// ****************************************************************************
+// Settings import from an older program (interface 108, feature 245)
+//
+// See specs/245-settings-import-salamander/contracts/plugin-api-v108.md.
+
+#define SALIMPORT_MODE_ADD 1     // keep everything current, add what is new
+#define SALIMPORT_MODE_REPLACE 2 // the plugin's imported part becomes the source's
+
+#define SALIMPORT_REPORT_ADDED 1    // added
+#define SALIMPORT_REPORT_PRESENT 2  // already present, not added
+#define SALIMPORT_REPORT_REPLACED 3 // a current item was replaced
+#define SALIMPORT_REPORT_REMOVED 4  // a current item was removed (Replace)
+#define SALIMPORT_REPORT_SKIPPED 5  // not imported; the text says why
+#define SALIMPORT_REPORT_FLAGGED 6  // imported; the user should check it
+#define SALIMPORT_REPORT_NOTE 7     // information
+
+#define SALIMPORT_PWD_NONE 0           // import no saved passwords
+#define SALIMPORT_PWD_SCRAMBLED_ONLY 1 // only passwords stored without a master password in the source
+#define SALIMPORT_PWD_ALL 2            // also master-password-protected ones (the user typed the source's master password)
+
+// implemented by the program, handed to CPluginSettingsImportAbstract::ImportSettings
+class CSalamanderSettingsImportAbstract
+{
+public:
+    // SALIMPORT_MODE_ADD or SALIMPORT_MODE_REPLACE
+    virtual int WINAPI GetMode() = 0;
+
+    // the old program, UTF-8 (e.g. "Altap Salamander 4.0")
+    virtual const char* WINAPI GetSourceName() = 0;
+
+    // the old program's core configuration version (Altap Salamander 4.0 = 103)
+    virtual DWORD WINAPI GetSourceConfigVersion() = 0;
+
+    // the plugin's own key "Plugins Configuration\<its key>" of the old program as a READ-ONLY
+    // view of the program's in-memory copy (the old registry is not touched again); read it
+    // only through 'registry' (OpenKey, GetValue, GetSize and CloseKey work; every writing
+    // method returns FALSE; a wrongly typed or too long value makes GetValue return FALSE
+    // quietly); the handles are valid until ImportSettings returns; FALSE when the old program
+    // has no settings of this plugin
+    virtual BOOL WINAPI GetSourceKey(HKEY* key, CSalamanderRegistryAbstract** registry) = 0;
+
+    // reports one item (UTF-8 line); 'kind' is SALIMPORT_REPORT_*
+    virtual void WINAPI Report(int kind, const char* text) = 0;
+
+    // SALIMPORT_PWD_*: which saved passwords the user wants to import
+    virtual int WINAPI GetPasswordPolicy() = 0;
+
+    // decrypts a password blob as stored by the old program (scrambled, or AES under its master
+    // password typed by the user); FALSE when it cannot be decrypted or the policy excludes it;
+    // '*plain' is freed by CSalamanderGeneralAbstract::Free after the plugin wiped it
+    virtual BOOL WINAPI DecryptSourcePassword(const BYTE* blob, int blobSize, char** plain) = 0;
+
+    // encrypts a plain password the way this program stores passwords now (AES under its master
+    // password when it uses one - asked for once per import if needed - otherwise scrambled);
+    // '*blob' is freed by CSalamanderGeneralAbstract::Free; FALSE when it cannot be done (the
+    // plugin then imports the item without its password and reports it)
+    virtual BOOL WINAPI EncryptForStorage(const char* plain, BYTE** blob, int* blobSize) = 0;
+};
+
+// implemented by a plugin that imports its own settings (CSalamanderPluginEntryAbstract::SetPluginSettingsImport)
+class CPluginSettingsImportAbstract
+{
+public:
+    // called on the main thread while the plugin is loaded; 'parent' is the wizard's window;
+    // 'dryRun' TRUE (preview): read the source, decide and report every item exactly as an apply
+    // would, change nothing; 'dryRun' FALSE (apply): the same decisions, then change the plugin's
+    // settings in memory - all or nothing (on failure nothing is changed); the program saves the
+    // configuration afterwards; returns TRUE when planned/applied completely, FALSE when nothing
+    // was changed
+    virtual BOOL WINAPI ImportSettings(HWND parent, CSalamanderSettingsImportAbstract* import, BOOL dryRun) = 0;
+};
+
 class CSalamanderPluginEntryAbstract
 {
 public:
@@ -834,6 +907,15 @@ public:
     // vraci FALSE pri fatalni chybe - v tomto pripade se 'newFSNameIndex' ignoruje
     // omezeni: nesmi se volat pred metodou SetBasicPluginData
     virtual BOOL WINAPI AddFSName(const char* fsName, int* newFSNameIndex) = 0;
+
+    // interface 108 (feature 245, specs/245-settings-import-salamander/contracts/plugin-api-v108.md):
+    // the plugin can import its own settings from an older program (Altap Salamander 2.5-4.0,
+    // Open Salamander 5.0) through the program's settings import wizard; call it in every
+    // SalamanderPluginEntry; 'handler' must stay valid until the plugin is unloaded (a static
+    // object of the plugin), NULL withdraws it; a plugin that never calls it is offered by the
+    // wizard only as "take over its settings as a whole" (its registry key is replaced while it
+    // is unloaded)
+    virtual void WINAPI SetPluginSettingsImport(CPluginSettingsImportAbstract* handler) = 0;
 };
 
 //

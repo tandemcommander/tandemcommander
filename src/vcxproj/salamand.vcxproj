@@ -389,6 +389,10 @@
     </ClCompile>
     <ClCompile Include="..\updcheck.cpp">
     </ClCompile>
+    <ClCompile Include="..\cfgimport.cpp">
+    </ClCompile>
+    <ClCompile Include="..\cfgimpdlg.cpp">
+    </ClCompile>
     <ClCompile Include="..\upddlg.cpp">
     </ClCompile>
     <ClCompile Include="..\edtlbwnd.cpp">
@@ -896,6 +900,10 @@
     <ClInclude Include="..\paneltabs.h">
     </ClInclude>
     <ClInclude Include="..\updcheck.h">
+    </ClInclude>
+    <ClInclude Include="..\cfgimport.h">
+    </ClInclude>
+    <ClInclude Include="..\common\salcfgimport.h">
     </ClInclude>
     <ClInclude Include="..\upddlg.h">
     </ClInclude>

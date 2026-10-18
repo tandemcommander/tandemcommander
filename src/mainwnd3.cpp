@@ -30,6 +30,7 @@
 #include <uxtheme.h>
 #include "zip.h"
 #include "upddlg.h" // feature 123: checking for a new version
+#include "cfgimport.h" // feature 245: settings import
 #include "tasklist.h"
 #include "jumplist.h"
 extern "C"
@@ -2243,6 +2244,20 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         return 0;
     }
 
+    case WM_USER_CFGIMPORT_OFFER: // feature 245: the one-time offer at the first start
+    {
+        CfgImpShowFirstStartOffer(HWindow);
+        return 0;
+    }
+
+#ifdef _DEBUG
+    case WM_USER_CFGIMPORT_AUTORUN: // feature 245: the automation seam (research R18)
+    {
+        CfgImpRunAutomation(HWindow);
+        return 0;
+    }
+#endif
+
     case WM_USER_CONFIGURATION:
     {
         if (!SalamanderBusy)
@@ -2253,17 +2268,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
         BeginStopRefresh(); // snooper takes a break
 
-        BOOL oldStatusArea = Configuration.StatusArea;
-        BOOL oldPanelCaption = Configuration.ShowPanelCaption;
-        BOOL oldPanelZoom = Configuration.ShowPanelZoom;
-        BOOL oldPanelTabs = Configuration.PanelTabs; // feature 078
+        CCfgRefreshState oldState; // feature 245: shared with the settings import
+        oldState.Capture();
 
         UserMenuIconBkgndReader.ResetSysColorsChanged(); // now, we start watching system color changes (icon reload required)
         BOOL readingUMIcons = UserMenuIconBkgndReader.IsReadingIcons();
         if (readingUMIcons) // new icons are on their way to the user menu; show them after configuration is done (on OK reload icons again so newly added ones are read as well)
             UserMenuIconBkgndReader.BeginUserMenuIconsInUse();
-        BOOL oldUseCustomPanelFont = UseCustomPanelFont;
-        LOGFONT oldLogFont = LogFont;
         CConfigurationDlg dlg(HWindow, UserMenuItems, (int)wParam, (int)lParam);
         int res = dlg.Execute(LoadStr(IDS_BUTTON_OK), LoadStr(IDS_BUTTON_CANCEL),
                               LoadStr(IDS_BUTTON_HELP));
@@ -2275,97 +2286,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         IdleCheckClipboard = TRUE; // also check the clipboard
 
         if (res == IDOK) // values changed -> refresh everything possible
-        {
-            if (!Configuration.QuickSearchFilter) // feature 244: the new mode switched off ends its search
-            {
-                LeftPanel->QFEndAtPathChange();
-                RightPanel->QFEndAtPathChange();
-            }
-            if (dlg.PageView.IsDirty())
-            {
-                // user changed something in the view configuration - rebuild the columns
-                LeftPanel->SelectViewTemplate(LeftPanel->GetViewTemplateIndex(), TRUE, FALSE);
-                RightPanel->SelectViewTemplate(RightPanel->GetViewTemplateIndex(), TRUE, FALSE);
-            }
-            if (memcmp(&oldLogFont, &LogFont, sizeof(LogFont)) != 0 ||
-                oldUseCustomPanelFont != UseCustomPanelFont)
-            {
-                SetFont();
-                // if the header line is shown, we must set its correct size
-                LeftPanel->LayoutListBoxChilds();
-                RightPanel->LayoutListBoxChilds();
-            }
-
-            if (Configuration.ThumbnailSize != LeftPanel->GetThumbnailSize() ||
-                Configuration.ThumbnailSize != RightPanel->GetThumbnailSize())
-            {
-                // if the thumbnail size changed, it must be propagated to the panels
-                LeftPanel->SetThumbnailSize(Configuration.ThumbnailSize);
-                RightPanel->SetThumbnailSize(Configuration.ThumbnailSize);
-            }
-
-            if (oldStatusArea != Configuration.StatusArea)
-            {
-                if (Configuration.StatusArea)
-                    AddTrayIcon();
-                else
-                    RemoveTrayIcon();
-            }
-
-            if (UMToolBar != NULL && UMToolBar->HWindow != NULL)
-                UMToolBar->CreateButtons();
-
-            if (HPToolBar != NULL && HPToolBar->HWindow != NULL)
-                HPToolBar->CreateButtons();
-
-            if (Windows7AndLater)
-                CreateJumpList();
-
-            // the user could have enabled/disabled Documents
-            CDriveBar* copyDrivesListFrom = NULL;
-            if (DriveBar != NULL && DriveBar->HWindow != NULL)
-            {
-                DriveBar->RebuildDrives(DriveBar); // we don't need slow drive enumeration
-                copyDrivesListFrom = DriveBar;
-            }
-            if (DriveBar2 != NULL && DriveBar2->HWindow != NULL)
-                DriveBar2->RebuildDrives(copyDrivesListFrom);
-
-            if (oldPanelCaption != Configuration.ShowPanelCaption || oldPanelZoom != Configuration.ShowPanelZoom)
-            {
-                if (LeftPanel->DirectoryLine != NULL && LeftPanel->DirectoryLine->HWindow != NULL)
-                    LeftPanel->DirectoryLine->Repaint();
-                if (RightPanel->DirectoryLine != NULL && RightPanel->DirectoryLine->HWindow != NULL)
-                    RightPanel->DirectoryLine->Repaint();
-            }
-
-            if (oldPanelTabs != Configuration.PanelTabs) // feature 078: strips on/off, no restart
-            {
-                LockWindowUpdate(HWindow);
-                LeftPanel->SetTabsEnabled(Configuration.PanelTabs);
-                RightPanel->SetTabsEnabled(Configuration.PanelTabs);
-                LayoutWindows();
-                LockWindowUpdate(NULL);
-            }
-
-            // main window icon
-            SetWindowIcon();
-            // icon in progress windows
-            ProgressDlgArray.PostIconChange();
-
-            // tell both panels they need to refresh
-            LeftPanel->RefreshForConfig();
-            RightPanel->RefreshForConfig();
-
-            // clear stored data in SalShExtPastedData (the archiver may have changed)
-            SalShExtPastedData.ReleaseStoredArchiveData();
-
-            // Internal Viewer and Find: refresh all windows (font already changed)
-            BroadcastConfigChanged();
-
-            // distribute this news among plugins as well
-            Plugins.Event(PLUGINEVENT_CONFIGURATIONCHANGED, 0);
-        }
+            RefreshAfterConfiguration(oldState, dlg.PageView.IsDirty());
 
         EndStopRefresh(); // snooper starts again now
         return 0;
@@ -3335,6 +3256,12 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         {
             SalMessageBox(HWindow, LoadStr(IDS_CONFIGHOWTOIMPORT), LoadStr(IDS_INFOTITLE),
                           MB_OK | MB_ICONINFORMATION);
+            return 0;
+        }
+
+        case CM_IMPORTFROMSALAMANDER: // feature 245
+        {
+            CfgImpRunWizard(HWindow, FALSE);
             return 0;
         }
 
@@ -7715,4 +7642,113 @@ MENU_TEMPLATE_ITEM TaskBarIconMenu[] =
     }
     }
     return CWindow::WindowProc(uMsg, wParam, lParam);
+}
+
+//
+// ****************************************************************************
+// feature 245: the refresh after the configuration changed in memory - what the
+// Configuration dialog did after OK, shared with the settings import
+//
+
+void CCfgRefreshState::Capture()
+{
+    StatusArea = Configuration.StatusArea;
+    PanelCaption = Configuration.ShowPanelCaption;
+    PanelZoom = Configuration.ShowPanelZoom;
+    PanelTabs = Configuration.PanelTabs; // feature 078
+    UseCustomPanelFont = ::UseCustomPanelFont;
+    LogFont = ::LogFont;
+}
+
+void CMainWindow::RefreshAfterConfiguration(const CCfgRefreshState& old, BOOL viewTemplatesDirty)
+{
+    if (!Configuration.QuickSearchFilter) // feature 244: the new mode switched off ends its search
+    {
+        LeftPanel->QFEndAtPathChange();
+        RightPanel->QFEndAtPathChange();
+    }
+    if (viewTemplatesDirty)
+    {
+        // user changed something in the view configuration - rebuild the columns
+        LeftPanel->SelectViewTemplate(LeftPanel->GetViewTemplateIndex(), TRUE, FALSE);
+        RightPanel->SelectViewTemplate(RightPanel->GetViewTemplateIndex(), TRUE, FALSE);
+    }
+    if (memcmp(&old.LogFont, &LogFont, sizeof(LogFont)) != 0 ||
+        old.UseCustomPanelFont != UseCustomPanelFont)
+    {
+        SetFont();
+        // if the header line is shown, we must set its correct size
+        LeftPanel->LayoutListBoxChilds();
+        RightPanel->LayoutListBoxChilds();
+    }
+
+    if (Configuration.ThumbnailSize != LeftPanel->GetThumbnailSize() ||
+        Configuration.ThumbnailSize != RightPanel->GetThumbnailSize())
+    {
+        // if the thumbnail size changed, it must be propagated to the panels
+        LeftPanel->SetThumbnailSize(Configuration.ThumbnailSize);
+        RightPanel->SetThumbnailSize(Configuration.ThumbnailSize);
+    }
+
+    if (old.StatusArea != Configuration.StatusArea)
+    {
+        if (Configuration.StatusArea)
+            AddTrayIcon();
+        else
+            RemoveTrayIcon();
+    }
+
+    if (UMToolBar != NULL && UMToolBar->HWindow != NULL)
+        UMToolBar->CreateButtons();
+
+    if (HPToolBar != NULL && HPToolBar->HWindow != NULL)
+        HPToolBar->CreateButtons();
+
+    if (Windows7AndLater)
+        CreateJumpList();
+
+    // the user could have enabled/disabled Documents
+    CDriveBar* copyDrivesListFrom = NULL;
+    if (DriveBar != NULL && DriveBar->HWindow != NULL)
+    {
+        DriveBar->RebuildDrives(DriveBar); // we don't need slow drive enumeration
+        copyDrivesListFrom = DriveBar;
+    }
+    if (DriveBar2 != NULL && DriveBar2->HWindow != NULL)
+        DriveBar2->RebuildDrives(copyDrivesListFrom);
+
+    if (old.PanelCaption != Configuration.ShowPanelCaption || old.PanelZoom != Configuration.ShowPanelZoom)
+    {
+        if (LeftPanel->DirectoryLine != NULL && LeftPanel->DirectoryLine->HWindow != NULL)
+            LeftPanel->DirectoryLine->Repaint();
+        if (RightPanel->DirectoryLine != NULL && RightPanel->DirectoryLine->HWindow != NULL)
+            RightPanel->DirectoryLine->Repaint();
+    }
+
+    if (old.PanelTabs != Configuration.PanelTabs) // feature 078: strips on/off, no restart
+    {
+        LockWindowUpdate(HWindow);
+        LeftPanel->SetTabsEnabled(Configuration.PanelTabs);
+        RightPanel->SetTabsEnabled(Configuration.PanelTabs);
+        LayoutWindows();
+        LockWindowUpdate(NULL);
+    }
+
+    // main window icon
+    SetWindowIcon();
+    // icon in progress windows
+    ProgressDlgArray.PostIconChange();
+
+    // tell both panels they need to refresh
+    LeftPanel->RefreshForConfig();
+    RightPanel->RefreshForConfig();
+
+    // clear stored data in SalShExtPastedData (the archiver may have changed)
+    SalShExtPastedData.ReleaseStoredArchiveData();
+
+    // Internal Viewer and Find: refresh all windows (font already changed)
+    BroadcastConfigChanged();
+
+    // distribute this news among plugins as well
+    Plugins.Event(PLUGINEVENT_CONFIGURATIONCHANGED, 0);
 }

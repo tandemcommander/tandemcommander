@@ -131,6 +131,19 @@ struct CHotPathItem
 // CHotPathItems
 //
 
+// feature 245: the state the post-configuration refresh compares with (CMainWindow::RefreshAfterConfiguration)
+struct CCfgRefreshState
+{
+    BOOL StatusArea;
+    BOOL PanelCaption;
+    BOOL PanelZoom;
+    BOOL PanelTabs;
+    BOOL UseCustomPanelFont;
+    LOGFONT LogFont;
+
+    void Capture();
+};
+
 class CHotPathItems
 {
 protected:
@@ -587,6 +600,10 @@ public:
     void ClearPluginFSFromHistory(CPluginFSInterfaceAbstract* fs);
 
     void SaveConfig(HWND parent = NULL); // parent: NULL = MainWindow->HWindow
+
+    // feature 245: what the Configuration dialog refreshes after OK (shared with the settings
+    // import); 'old' was captured before the in-memory configuration changed
+    void RefreshAfterConfiguration(const CCfgRefreshState& old, BOOL viewTemplatesDirty);
     BOOL LoadConfig(BOOL importingOldConfig, const CCommandLineParams* cmdLineParams);
     void SavePanelConfig(CFilesWindow* panel, HKEY hSalamander, const char* reg);
     void LoadPanelConfig(char* panelPath, CFilesWindow* panel, HKEY hSalamander, const char* reg);
