@@ -1946,7 +1946,7 @@ STRINGTABLE
  IDS_CFGIMP_LN_COVERED, "%s: Tandem Commander already has an entry for these files"
  IDS_CFGIMP_LN_KEYTC, "%s: the shortcut belongs to a command of Tandem Commander"
  IDS_CFGIMP_LN_KEYUSED, "%s: the shortcut is already used by %s"
- IDS_CFGIMP_LN_KEYHAS, "%s: you already assigned a shortcut to this command"
+ IDS_CFGIMP_LN_KEYHAS, "%s: the command already has a shortcut"
  IDS_CFGIMP_LN_VALUE, "%s: %s -> %s"
  IDS_CFGIMP_LN_BADVALUE, "%s: unexpected value in the old settings"
  IDS_CFGIMP_NOTHING, "Nothing to change."

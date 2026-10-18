@@ -888,6 +888,50 @@ BOOL CPasswordManager::DecryptWithMasterPassword(const BYTE* encryptedPassword, 
     return ok;
 }
 
+#ifdef _DEBUG
+BOOL CPasswordManager::DebugEncryptWithMasterPassword(const char* plain, const char* masterPassword, BYTE** blob, int* size)
+{
+    *blob = NULL;
+    *size = 0;
+    char* scrambled = (char*)malloc(lstrlen(plain) + SCRAMBLE_LENGTH_EXTENSION);
+    if (scrambled == NULL)
+        return FALSE;
+    lstrcpy(scrambled, plain);
+    ScramblePassword(scrambled);
+    int len = (int)strlen(scrambled);
+    *blob = (BYTE*)malloc(1 + 16 + len + 10);
+    if (*blob == NULL)
+    {
+        free(scrambled);
+        return FALSE;
+    }
+    **blob = PWDMNGR_SIGNATURE_ENCRYPTED;
+    FillBufferWithRandomData(*blob + 1, 16);
+    memcpy(*blob + 1 + 16, scrambled, len);
+    CSalAES aes;
+    WORD dummy;
+    SalamanderCrypt->AESInit(&aes, PASSWORD_MANAGER_AES_MODE, masterPassword, strlen(masterPassword), *blob + 1, &dummy);
+    SalamanderCrypt->AESEncrypt(&aes, *blob + 1 + 16, len);
+    SalamanderCrypt->AESEnd(&aes, *blob + 1 + 16 + len, NULL);
+    *size = 1 + 16 + len + 10;
+    free(scrambled);
+    return TRUE;
+}
+
+void CPasswordManager::DebugCreateVerifier(const char* masterPassword, BYTE* verifier)
+{
+    CMasterPasswordVerifier mpv;
+    FillBufferWithRandomData(mpv.Salt, 16);
+    FillBufferWithRandomData(mpv.Dummy, 16);
+    CSalAES aes;
+    WORD dummy;
+    SalamanderCrypt->AESInit(&aes, PASSWORD_MANAGER_AES_MODE, masterPassword, strlen(masterPassword), mpv.Salt, &dummy);
+    SalamanderCrypt->AESEncrypt(&aes, mpv.Dummy, 16);
+    SalamanderCrypt->AESEnd(&aes, mpv.MAC, NULL);
+    memcpy(verifier, &mpv, sizeof(mpv));
+}
+#endif // _DEBUG
+
 void CPasswordManager::NotifyAboutMasterPasswordChange(HWND hParent)
 {
     BOOL set = IsUsingMasterPassword();

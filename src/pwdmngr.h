@@ -165,6 +165,13 @@ public:
     BOOL DecryptWithMasterPassword(const BYTE* encryptedPassword, int encryptedPasswordSize,
                                    const char* masterPassword, char** plainPassword);
 
+#ifdef _DEBUG
+    // feature 245, Debug builds only (probe fixtures): a blob protected by 'masterPassword' and the
+    // verifier record of 'masterPassword', as an old program would have stored them
+    BOOL DebugEncryptWithMasterPassword(const char* plain, const char* masterPassword, BYTE** blob, int* size);
+    void DebugCreateVerifier(const char* masterPassword, BYTE* verifier /* sizeof(CMasterPasswordVerifier) */);
+#endif
+
 protected:
     // allocates and computes MasterPasswordVerifier, which is stored into the registry for subsequent verification
     void CreateMasterPasswordVerifier(const char* password);

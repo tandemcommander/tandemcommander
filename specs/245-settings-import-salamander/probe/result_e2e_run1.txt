@@ -1,0 +1,69 @@
+﻿PASS | S0 noise baseline | values changed by a start/exit cycle: Plugins Order\4|DLL, Plugins Order\11|DLL, Plugins Order\18|DLL, Plugins Order\15|DLL, Plugins Order\3|DLL, Plugins Order\6|DLL, Plugins Order\10|DLL, Plugins Order\8|DLL, Plugins Order\16|DLL, Plugins Order\9|DLL, Plugins Order\20|DLL, Plugins Order\19|DLL, Plugins Order\14|DLL, Plugins Order\2|DLL, Plugins Order\7|DLL, Plugins Order\12|DLL, Plugins Order\13|DLL, Plugins Order\5|DLL, Plugins Order\17|DLL, Plugins Order\1|DLL
+PASS | S1 exits normally | exit=0 windows=
+PASS | S1 applied | Import from Altap Salamander 4.0 finished. + added   = already present   ~ replaced   - removed   ! check this   x not imported 
+PASS | S1 no consent needed by defaults | no ~ or - line in the preview
+PASS | S1 SC-010 no existing value changed | changed: 
+PASS | S1 current hot paths keep their slots | before=
+PASS | S1 hot paths added | D:\Žluťoučk ; $(SalDir)\plugins ; C:\Windows ; C:\Projects
+PASS | S11 non-ASCII hot path name and path exact | česky|D:\Žluťoučk|1 codepoints=269,101,115,107,121,124,68,58,92,381,108,117,357,111,117,269,107,124,49
+PASS | S1 user menu: current items first, unchanged | before=0 after=2
+PASS | S1 user menu: two items appended | Arguments="$(FullName)";Close Shell Window=1;Command=notepad.exe;Execute Through Shell=0;Icon=;Initial Directory=$(Drive)$(Path);Item Name=&Notepad;Open Shell Window=1;Show In Toolbar=1;Type=0 Arguments=;Close Shell Window=1;Command=C:\Program Files\Altap Salamander\tool.exe;Execute Through Shell=0;Icon=;Initial Directory=$(Drive)$(Path);Item Name=Old tool;Open Shell Window=1;Show In Toolbar=1;Type=0
+PASS | S1 viewers: every current row kept | missing: 
+PASS | S1 viewers: plugin row re-mapped by DLL (PictView) | pictview=Plugins\11 rows=Masks=*.jpg;Type=-11
+PASS | S1 viewers: unknown plugin row not imported | IE viewer row
+PASS | S1 viewers: external row added | Command=notepad.exe;Masks=*.log;Type=0
+PASS | S1 editors: row added, current kept | before=1 after=2
+PASS | S1 FTP bookmarks added | Altap, Work
+PASS | S1 FTP proxy added | Office proxy
+PASS | S1 FTP bookmark refers to the imported proxy (UID re-mapped) | bookmark=1 proxy=1
+PASS | S1 FTP scrambled password usable | len=18
+PASS | S1 plugin registration unchanged | 7zip\7zip.spl,checksum\checksum.spl,codeview\codeview.spl,dbviewer\dbviewer.spl,diskmap\diskmap.spl,filecomp\filecomp.spl,folders\folders.spl,ftp\ftp.spl,mdview\mdview.spl,peviewer\peviewer.spl,pictview\pictview.spl,portables\portables.spl,regedt\regedt.spl,renamer\renamer.spl,sftp\sftp.spl,tar\tar.spl,uncab\uncab.spl,undelete\undelete.spl,uniso\uniso.spl,zip\zip.spl
+PASS | S1 SC-002 source unchanged | fixture dump equal
+PASS | S1 TC-owned values unchanged | Theme Mode=0 Quick Search Filter=1 Command Shell Preset=0 Language=english.slg Panel Tabs=1
+PASS | S1 backup file exists | C:\Users\pavel\AppData\Roaming\Tandem Commander\Settings backups\before-import-20261018-111746.reg
+PASS | S3 second run: no + line | preview has no added item
+PASS | S3 second run: lists did not grow | um=2 vw=68 hp=4
+PASS | S3 second run: FTP bookmarks not duplicated | bookmarks=2
+PASS | S10 -C backup restores the pre-import configuration | windows= changed= extra=
+PASS | S2 applied | Import from Altap Salamander 4.0 finished. / + added   = already present   ~ replaced   - removed   ! check this   x not imported
+PASS | S2 hot paths = the source's slots | 1=Projects|C:\Projects|1 ; 2=C:\Windows|C:\Windows|1 ; 3=Salamander|$(SalDir)\plugins|0 ; 12=česky|D:\Žluťoučk|1
+PASS | S2 user menu = the source's | Arguments="$(FullName)";Close Shell Window=1;Command=notepad.exe;Execute Through Shell=0;Icon=;Initial Directory=$(Drive)$(Path);Item Name=&Notepad;Open Shell Window=1;Show In Toolbar=1;Type=0 || Arguments=;Close Shell Window=1;Command=C:\Program Files\Altap Salamander\tool.exe;Execute Through Shell=0;Icon=;Initial Directory=$(Drive)$(Path);Item Name=Old tool;Open Shell Window=1;Show In Toolbar=1;Type=0
+PASS | S2 FTP bookmarks = the source's | Altap,Work
+PASS | S2 confirmations taken over | File Overwrite=0 Close Find=0
+PASS | S2 panel options taken over | Single Click=1 Sort Dirs By Ext=1
+PASS | S2 out-of-range value not taken (Thumbnail Size 5000) | Thumbnail Size=94
+PASS | S2 general option taken over (Use Recycle Bin 2) | 2
+PASS | S2 TC-owned values unchanged (theme, tabs, language, quick search, shell) | Theme Mode=0 Quick Search Filter=1 Command Shell Preset=0 Language=english.slg Panel Tabs=1
+PASS | S2 history imported, password removed | C:\Old\History ; ftp://joe@host/dir
+PASS | S2 plugin settings taken over (Renamer) | Last Used Options=x
+PASS | S2 plugin registration unchanged | 
+PASS | S2 TC-only plugin association kept (Markdown viewer) | md rows before=1 after=1
+PASS | S2 SC-002 source unchanged | 
+PASS | S5 replace without consent: not applied | NOT APPLIED: consent needed
+
+PASS | S5 nothing changed | changed= extra=
+PASS | S6 version 38 refused | source not opened (4 sources):  / Future Salamander|107|2 / Altap Salamander 2.52|46|0 / Altap Salamander 2.51|43|0 / Servant Salamander 2.0|38|1 / 
+PASS | S6 version 107 listed as too new | 
+PASS | S6 < 47: $ doubled in hot paths | D:\Žluťoučk ; $$(SalDir)\plugins ; C:\Windows ; C:\Projects
+PASS | S6 < 44: masks lower-cased | 
+PASS | S7 s7a password expected=S | diag=using=0 set=0
+ exit=0 timeout=False windows= bookmark=True E=False S=True result=  + Bookmark Work (ftp.work.example)
+PASS | S7 s7a SC-009 TC master password unchanged | 
+PASS | S7 s7b password expected=none | diag=using=0 set=0
+ exit=0 timeout=False windows= bookmark=True E=False S=False result=  ! Bookmark Work (ftp.work.example) - imported without its saved password
+PASS | S7 s7b SC-009 TC master password unchanged | 
+PASS | S7 s7c password expected=none | diag=using=0 set=0
+ exit=0 timeout=False windows= bookmark=True E=False S=False result=  ! Bookmark Work (ftp.work.example) - imported without its saved password
+PASS | S7 s7c SC-009 TC master password unchanged | 
+PASS | S7 s7d password expected=E | diag=using=1 set=1
+ exit=0 timeout=False windows= bookmark=True E=True S=False result=  + Bookmark Work (ftp.work.example)
+PASS | S7 s7d SC-009 TC master password unchanged | 
+PASS | S7 s7e password expected=none | diag=using=0 set=0
+ exit=0 timeout=False windows= bookmark=True E=False S=False result=  ! Bookmark Work (ftp.work.example) - imported without its saved password
+PASS | S7 s7e SC-009 TC master password unchanged | 
+PASS | S8 free shortcut assigned (user-assigned bit) | id7=10642
+PASS | S8 TC command shortcut refused | id5=
+PASS | S8 Add keeps the current default shortcut | id1=346
+PASS | S9 refused while another instance runs | NOT APPLIED: Close the other Tandem Commander windows first. They would overwrite the imported settings when they close.
+
+PASS | registry restored | 

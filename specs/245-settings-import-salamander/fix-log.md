@@ -26,3 +26,27 @@
 - Q2 → A: the 057 script and its tests are retired — FR-032.
 - Q3 → A: append-only plugin import call, interface 108, FTP merges its own
   connections — FR-021a, FR-021b, Assumptions.
+
+## 2026-10-18 — implement (phase 1-3, first e2e)
+
+- Baseline before any change: Debug build green, `saltests` 23 037 checks / 0 failed.
+- `src/common/salcfgimport.h` + `TestCfgImport245` (436 checks): all green after four
+  wrong expectations in the test itself were corrected (character-boundary fit, the
+  default-dir length limit, a hot path that does fit).
+- Engine `src/cfgimport.cpp`, wizard `src/cfgimpdlg.cpp`, interface 108 (`spl_base.h`,
+  `spl_vers.h`, entry object in `plugins.h`/`plugins1.cpp`), FTP handler
+  `src/plugins/ftp/ftpimport.cpp`; the `WM_USER_CONFIGURATION` refresh factored into
+  `CMainWindow::RefreshAfterConfiguration` (behaviour unchanged).
+- Found while building: the FTP loader validates a bookmark's proxy UID against the CURRENT
+  proxy list and `LoadPassword` reads the registry directly (not through the registry
+  object) - the handler therefore reads the raw proxy UID and the password blobs itself.
+- e2e matrix (`probe/ci245_e2e.ps1`, Debug seam) - defects it found and that were fixed:
+  1. Add mode replaced a plug-in command's DEFAULT shortcut (it only kept user-assigned
+     ones) -> a default import needed consent, against FR-010c. Add now never changes a
+     current shortcut.
+  2. `CPasswordManager::AskForMasterPassword` always shows its dialog, even when the master
+     password is entered: the import asked again. It now asks only when not entered.
+  3. Probe library: `reg import` writes its success text to stderr (PS 5.1 then throws) -
+     both reg calls go through `cmd /c`. The registry had been restored correctly anyway
+     (export compared byte for byte).
+- Run 1 of the full matrix: 61 checks, 0 failed (`probe/result_e2e_run1.txt`).

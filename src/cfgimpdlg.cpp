@@ -743,6 +743,86 @@ void CfgImpRunAutomation(HWND parent)
     SetEnvironmentVariableW(L"TC_CFGIMPORT_AUTORUN", NULL); // once
     WCHAR out[MAX_PATH + 32];
     char buf[4096];
+    BOOL closeAfter = GetPrivateProfileIntW(L"import", L"close", 1, script) != 0;
+    {
+        // probe check: decrypts a stored blob (hex) - scrambled, or AES under 'decodemaster'
+        WCHAR w[4096];
+        GetPrivateProfileStringW(L"fixture", L"decode", L"", w, 4096, script);
+        if (w[0] != 0)
+        {
+            char hexText[4096], master[300];
+            WideCharToMultiByte(CP_ACP, 0, w, -1, hexText, sizeof(hexText), NULL, NULL);
+            GetPrivateProfileStringW(L"fixture", L"decodemaster", L"", w, 300, script);
+            WideCharToMultiByte(CP_ACP, 0, w, -1, master, 300, NULL, NULL);
+            BYTE blob[2048];
+            int size = 0;
+            const char* h = hexText;
+            while (h[0] != 0 && h[1] != 0 && size < (int)sizeof(blob))
+            {
+                char two[3] = {h[0], h[1], 0};
+                blob[size++] = (BYTE)strtoul(two, NULL, 16);
+                h += 2;
+            }
+            char* plain = NULL;
+            char text[600];
+            if (PasswordManager.DecryptWithMasterPassword(blob, size, master, &plain) && plain != NULL)
+                _snprintf_s(text, _TRUNCATE, "P %s\r\n", plain);
+            else
+                strcpy_s(text, "X\r\n");
+            free(plain);
+            swprintf_s(out, L"%s.fixture.txt", script);
+            CfgImpWriteFileW(out, text);
+            if (closeAfter)
+                PostMessage(parent, WM_CLOSE, 0, 0);
+            return;
+        }
+    }
+    if (GetPrivateProfileIntW(L"fixture", L"gen", 0, script) != 0)
+    { // probe fixtures: password blobs as an old program stored them (hex lines S, E, V)
+        char plain[300], master[300];
+        WCHAR w[300];
+        GetPrivateProfileStringW(L"fixture", L"plain", L"", w, 300, script);
+        WideCharToMultiByte(CP_ACP, 0, w, -1, plain, 300, NULL, NULL);
+        GetPrivateProfileStringW(L"fixture", L"master", L"", w, 300, script);
+        WideCharToMultiByte(CP_ACP, 0, w, -1, master, 300, NULL, NULL);
+        static char text[8192];
+        text[0] = 0;
+        BYTE* blob;
+        int size;
+        const char* hex = "0123456789abcdef";
+        int kind;
+        for (kind = 0; kind < 3; kind++)
+        {
+            BYTE ver[42];
+            blob = NULL;
+            size = 0;
+            if (kind == 0)
+                PasswordManager.EncryptPassword(plain, &blob, &size, FALSE);
+            else if (kind == 1)
+                PasswordManager.DebugEncryptWithMasterPassword(plain, master, &blob, &size);
+            else
+            {
+                PasswordManager.DebugCreateVerifier(master, ver);
+                blob = ver;
+                size = 42;
+            }
+            strcat_s(text, kind == 0 ? "S " : kind == 1 ? "E " : "V ");
+            int k;
+            for (k = 0; k < size && blob != NULL; k++)
+            {
+                char h[3] = {hex[blob[k] >> 4], hex[blob[k] & 15], 0};
+                strcat_s(text, h);
+            }
+            strcat_s(text, "\r\n");
+            if (kind < 2)
+                free(blob);
+        }
+        swprintf_s(out, L"%s.fixture.txt", script);
+        CfgImpWriteFileW(out, text);
+        if (closeAfter)
+            PostMessage(parent, WM_CLOSE, 0, 0);
+        return;
+    }
     CCfgImpRun run;
     run.Automation = TRUE;
     run.FindSources();
@@ -759,7 +839,6 @@ void CfgImpRunAutomation(HWND parent)
     if (src < 0 && buf[0] >= '0' && buf[0] <= '9')
         src = atoi(buf);
     char err[500] = "";
-    BOOL closeAfter = GetPrivateProfileIntW(L"import", L"close", 1, script) != 0;
     if (src < 0 || !run.OpenSource(src, err, (int)sizeof(err)))
     {
         swprintf_s(out, L"%s.error.txt", script);
@@ -824,6 +903,16 @@ void CfgImpRunAutomation(HWND parent)
             }
             tok = strtok_s(NULL, ",", &ctx);
         }
+    }
+    CfgImpIniString(script, L"tcmasterpassword", buf, sizeof(buf));
+    if (buf[0] != 0 && PasswordManager.IsUsingMasterPassword())
+        PasswordManager.EnterMasterPassword(buf); // the program's own master password (no dialog in automation)
+    {
+        char diag[200];
+        _snprintf_s(diag, _TRUNCATE, "using=%d set=%d\r\n", PasswordManager.IsUsingMasterPassword(),
+                    PasswordManager.IsMasterPasswordSet());
+        swprintf_s(out, L"%s.diag.txt", script);
+        CfgImpWriteFileW(out, diag);
     }
     run.Passwords.Policy = GetPrivateProfileIntW(L"import", L"pwdpolicy", SALIMPORT_PWD_SCRAMBLED_ONLY, script);
     run.Passwords.AllowWeakerStorage = GetPrivateProfileIntW(L"import", L"weakconsent", 0, script) != 0;

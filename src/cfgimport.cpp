@@ -169,6 +169,24 @@ static void CfgImpHotKeyText(WORD hotKey, char* buf, int size)
         buf[0] = 0;
 }
 
+// a menu text without its '&' markers ("&&" stays one '&')
+static void CfgImpStripAmp(const char* in, char* out, int size)
+{
+    int o = 0;
+    const char* s;
+    for (s = in != NULL ? in : ""; *s != 0 && o < size - 1; s++)
+    {
+        if (*s == '&')
+        {
+            if (s[1] != '&')
+                continue;
+            s++;
+        }
+        out[o++] = *s;
+    }
+    out[o] = 0;
+}
+
 // the label of a hot path for reports: "Name (path text)" or "path text"
 static char* CfgImpHotPathLabel(const char* name, const char* storedPath)
 {
@@ -1288,16 +1306,18 @@ public:
         *blob = NULL;
         *blobSize = 0;
         BOOL encrypt = PasswordManager.IsUsingMasterPassword();
-        if (encrypt)
+        if (encrypt && !PasswordManager.IsMasterPasswordSet())
         {
-            if (Run->Automation && !PasswordManager.IsMasterPasswordSet())
+            // AskForMasterPassword always shows its dialog, so it is called only when the program's
+            // master password was not entered in this session yet - and once per import at most
+            if (Run->Automation)
                 return FALSE; // nobody to ask
             if (!Run->Passwords.AskedTCMasterPassword)
             {
                 Run->Passwords.AskedTCMasterPassword = TRUE;
                 Run->Passwords.TCMasterPasswordGiven = PasswordManager.AskForMasterPassword(Parent);
             }
-            if (!Run->Passwords.TCMasterPasswordGiven)
+            if (!Run->Passwords.TCMasterPasswordGiven || !PasswordManager.IsMasterPasswordSet())
                 return FALSE;
         }
         return PasswordManager.EncryptPassword(plain, blob, blobSize, encrypt);
@@ -1969,7 +1989,8 @@ static int CfgImpFlagCommand(const char* command, char* prog, int progSize)
 // adds the report line of one menu block (its first entry) with a possible flag
 static void CfgImpMenuLine(CCfgImpGroup* g, int kind, const CSalCfgImpMenuItem* items, int start, int end)
 {
-    const char* name = items[start].Name;
+    char name[MAX_PATH];
+    CfgImpStripAmp(items[start].Name, name, MAX_PATH);
     if (kind == CFGIMP_LINE_ADDED)
     {
         int i;
@@ -2031,7 +2052,11 @@ static BOOL CfgImpPlanUserMenu(CCfgImpRun* run, CCfgImpGroup* g)
                     s = se;
                 }
                 if (!inSrc)
-                    g->AddLine(CFGIMP_LINE_REMOVED, cur[c].Name);
+                {
+                    char name[MAX_PATH];
+                    CfgImpStripAmp(cur[c].Name, name, MAX_PATH);
+                    g->AddLine(CFGIMP_LINE_REMOVED, name);
+                }
             }
             c = ce;
         }
@@ -2090,7 +2115,11 @@ static BOOL CfgImpPlanUserMenu(CCfgImpRun* run, CCfgImpGroup* g)
                     if (d == SALCFGIMP_UMD_APPEND)
                         CfgImpMenuLine(g, CFGIMP_LINE_ADDED, src, i, SalCfgImpMenuBlockEnd(src, srcCount, i));
                     else if (d == SALCFGIMP_UMD_PRESENT)
-                        g->AddLine(CFGIMP_LINE_PRESENT, src[i].Name);
+                    {
+                        char name[MAX_PATH];
+                        CfgImpStripAmp(src[i].Name, name, MAX_PATH);
+                        g->AddLine(CFGIMP_LINE_PRESENT, name);
+                    }
                 }
             }
             free(decision);
@@ -2421,7 +2450,9 @@ static BOOL CfgImpPlanPluginKeys(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlu
             char keyText[100];
             CfgImpHotKeyText(hk, keyText, sizeof(keyText));
             char label[MAX_PATH + 200];
-            _snprintf_s(label, _TRUNCATE, "%s / %s (%s)", sp1->Name[0] != 0 ? sp1->Name : sp1->DLL, key->Name, keyText);
+            char itemName[MAX_PATH];
+            CfgImpStripAmp(key->Name, itemName, MAX_PATH);
+            _snprintf_s(label, _TRUNCATE, "%s / %s (%s)", sp1->Name[0] != 0 ? sp1->Name : sp1->DLL, itemName, keyText);
             int tc = CfgImpFindTCPlugin(sp1->DLL);
             CPluginData* p = tc >= 0 ? Plugins.Get(tc) : NULL;
             if (p == NULL)
@@ -2435,7 +2466,8 @@ static BOOL CfgImpPlanPluginKeys(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlu
                 CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_NOCOMMAND, label);
                 continue;
             }
-            _snprintf_s(label, _TRUNCATE, "%s / %s (%s)", p->Name, p->MenuItems[item]->Name, keyText);
+            CfgImpStripAmp(p->MenuItems[item]->Name, itemName, MAX_PATH);
+            _snprintf_s(label, _TRUNCATE, "%s / %s (%s)", p->Name, itemName, keyText);
             if (IsSalHotKey(hk))
             {
                 CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_KEYTC, label);
@@ -2447,8 +2479,8 @@ static BOOL CfgImpPlanPluginKeys(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlu
                 g->AddLine(CFGIMP_LINE_PRESENT, label);
                 continue;
             }
-            if (HOTKEY_GETDIRTY(curKey) && HOTKEY_GET(curKey) != 0 && g->Mode != CFGIMP_MODE_REPLACE)
-            {
+            if (HOTKEY_GET(curKey) != 0 && g->Mode != CFGIMP_MODE_REPLACE)
+            { // Add never changes a current shortcut, the plug-in's own default included (FR-010c)
                 CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_KEYHAS, label);
                 continue;
             }
@@ -2483,8 +2515,10 @@ static BOOL CfgImpPlanPluginKeys(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlu
             {
                 CPluginData* op = Plugins.Get(otherPlugin);
                 char otherName[MAX_PATH + 100];
-                _snprintf_s(otherName, _TRUNCATE, "%s / %s", op != NULL ? op->Name : "?",
-                            (op != NULL && otherItem >= 0 && otherItem < op->MenuItems.Count && op->MenuItems[otherItem]->Name != NULL) ? op->MenuItems[otherItem]->Name : "?");
+                char otherItemName[MAX_PATH];
+                CfgImpStripAmp((op != NULL && otherItem >= 0 && otherItem < op->MenuItems.Count && op->MenuItems[otherItem]->Name != NULL) ? op->MenuItems[otherItem]->Name : "?",
+                               otherItemName, MAX_PATH);
+                _snprintf_s(otherName, _TRUNCATE, "%s / %s", op != NULL ? op->Name : "?", otherItemName);
                 if (g->Mode != CFGIMP_MODE_REPLACE)
                 {
                     CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_KEYUSED, label, otherName);
