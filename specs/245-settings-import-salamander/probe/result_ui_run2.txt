@@ -1,0 +1,32 @@
+﻿PASS | U1 main window | 
+PASS | U1 page 1 opens from the menu command | 
+PASS | U1 page 1 lists the fixture, newest selected | count=1 sel=0
+PASS | U1 page 1 Back disabled, Next enabled | 
+PASS | U1 page 2 lists the groups | rows=15
+PASS | U1 Back from page 2 shows page 1 | 
+PASS | U1 page 3 (saved passwords) shown for FTP with passwords | 
+PASS | U1 page 3 import passwords preselected | 
+PASS | U1 page 4 preview | 
+PASS | U1 preview text | Preview of the import from Altap Salamander 4.0. Nothing has been changed yet.
++ added   = already present   ~ replaced
+PASS | U1 defaults: no consent box, Import enabled | 
+PASS | U1 page 5 result | 
+PASS | U1 result text: finished, backup named | Import from Altap Salamander 4.0 finished.
++ added   = already present   ~ replaced   - removed   ! check this   x not 
+PASS | U1 result has Copy and no Back | 
+PASS | U1 imported hot paths stored after exit | C:\Projects ; D:\Žluťoučk ; C:\Windows ; $(SalDir)\plugins
+PASS | U1 imported FTP bookmark stored after exit | 
+PASS | U2 cancel on page 1 | 
+PASS | U2 cancel on page 2 | 
+PASS | U2 cancel on page 3 | 
+PASS | U2 cancel on page 4 | 
+PASS | U2 cancel changed nothing | changed= extra=
+PASS | U3 dark theme pages captured | NOT DRIVEN: the colours are judged by a person
+PASS | U4 offer shown at the first start (no) | 
+PASS | U4 configuration saved after the answer (no) | 
+PASS | U4 no offer at the next start (no) | 
+PASS | U4 offer shown at the first start (yes) | 
+PASS | U5 Import now opens the wizard | 
+PASS | U4 configuration saved after the answer (yes) | 
+PASS | U4 no offer at the next start (yes) | 
+PASS | registry restored | 

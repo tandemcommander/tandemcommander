@@ -17,9 +17,10 @@ they close." The wizard does not open (or returns to the preview).
 - Intro text: what the wizard does, that the old program's settings are only
   read and never changed, that nothing changes before the final *Import*.
 - List of found configurations: "Altap Salamander 4.0 — configuration
-  version 103"; unsupported ones are shown greyed with "(not supported:
-  older than Altap Salamander 2.5)" / "(not supported: newer than this
-  program)" and cannot be chosen. The newest supported one is selected.
+  version 103"; unsupported ones are marked "(not supported: older than Altap
+  Salamander 2.5)" / "(not supported: newer than this program)" and cannot be
+  chosen (*Next* stays disabled; a standard list box has no greyed rows). The
+  newest supported one is selected.
 - Notes under the list for the selected source: "The program seems to be
   running; settings it has not saved yet are not imported." / "The last save
   of these settings may have been interrupted; they may be incomplete."

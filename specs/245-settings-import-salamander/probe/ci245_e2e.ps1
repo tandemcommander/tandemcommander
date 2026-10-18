@@ -17,6 +17,9 @@
     S9  another instance running: refused
     S10 backup: -C <backup> restores the pre-import configuration (SC-008)
     S11 non-ASCII names unchanged (FR-007)
+    S1v viewers (unticked by default): rows before the catch-all need consent, then added
+    S13 FTP Replace/Add against a current FTP configuration: a current identical proxy keeps
+        its UID, a removed default proxy is reset, overwritten items are reported (review 1)
     MUST run through tools\run_on_hidden_desktop.ps1. The product key is exported first and
     restored + verified at the end; the fixtures are removed.
 #>
@@ -158,16 +161,7 @@ try {
         Check 'S1 user menu: current items first, unchanged' $umOk "before=$($um0.Count) after=$($um1.Count)"
         Check 'S1 user menu: two items appended' ($um1.Count -eq $um0.Count + 2 -and ($um1[-2] -match 'Item Name=&Notepad') -and ($um1[-1] -match 'Item Name=Old tool')) ($um1 | Select-Object -Last 2) -join ' || '
         $vw1 = Get-Items "$script:TCRoot\Viewers"
-        $missing = @($vw0 | Where-Object { $vw1 -notcontains $_ })
-        Check 'S1 viewers: every current row kept' ($missing.Count -eq 0) ("missing: " + ($missing -join ' || '))
-        $pv = TCPluginNumber 'pictview\pictview.spl'
-        $jpg = @($vw1 | Where-Object { $_ -match '(^|;)Masks=\*\.jpg(;|$)' -and $_ -match "Type=-$pv(;|$)" })
-        Check 'S1 viewers: plugin row re-mapped by DLL (PictView)' ($jpg.Count -ge 1 -and $pv -gt 0) "pictview=Plugins\$pv rows=$($jpg -join ' || ')"
-        Check 'S1 viewers: unknown plugin row not imported' (@($vw1 | Where-Object { $_ -match 'Masks=\*\.htm;\*\.html' }).Count -eq @($vw0 | Where-Object { $_ -match 'Masks=\*\.htm;\*\.html' }).Count) 'IE viewer row'
-        $log = @($vw1 | Where-Object { $_ -match 'Masks=\*\.log' -and $_ -match 'Command=notepad\.exe' })
-        Check 'S1 viewers: external row added' ($log.Count -ge 1) ($log -join ' || ')
-        $ed1 = Get-Items "$script:TCRoot\Editors"
-        Check 'S1 editors: row added, current kept' (@($ed0 | Where-Object { $ed1 -notcontains $_ }).Count -eq 0 -and @($ed1 | Where-Object { $_ -match 'Masks=\*\.ini' }).Count -ge 1) "before=$($ed0.Count) after=$($ed1.Count)"
+        Check 'S1 viewers unticked by default: unchanged' (($vw1 -join "`n") -eq ($vw0 -join "`n")) "before=$($vw0.Count) after=$($vw1.Count)"
         $altap = Find-Bookmark 'Altap'
         $work = Find-Bookmark 'Work'
         $proxy = Find-Proxy 'Office proxy'
@@ -196,6 +190,28 @@ try {
         Check 'S3 second run: lists did not grow' ((Get-Items "$script:TCRoot\User Menu").Count -eq $um1c -and (Get-Items "$script:TCRoot\Viewers").Count -eq $vw1c -and (Get-Slots).Count -eq $slots1c) "um=$((Get-Items "$script:TCRoot\User Menu").Count) vw=$((Get-Items "$script:TCRoot\Viewers").Count) hp=$((Get-Slots).Count)"
         $bm = @(Get-ChildItem "$script:TCRoot\Plugins Configuration\FTP\Bookmarks")
         Check 'S3 second run: FTP bookmarks not duplicated' (@($bm | Where-Object { (Get-ItemProperty $_.PSPath).Address -eq 'ftp.work.example' }).Count -eq 1) "bookmarks=$($bm.Count)"
+
+        # ------------------------------------------------------------ S1v viewers (ticked, consent)
+        $r = Invoke-TC $Exe "[import]`r`ngroups=viewers`r`n" $OutDir 's1v0'
+        Check 'S1v rows before the catch-all need consent' ($r.Result -match 'NOT APPLIED: consent needed' -and $r.Preview -match '(?m)^  ~ .*\*\.log.*\*\.\*') (($r.Preview -split "`r`n" | Where-Object { $_ -match '^  ~ ' } | Select-Object -First 2) -join ' || ')
+        Check 'S1v without consent: viewers unchanged' (((Get-Items "$script:TCRoot\Viewers") -join "`n") -eq ($vw1 -join "`n")) ''
+        $r = Invoke-TC $Exe "[import]`r`ngroups=viewers`r`nconsent=1`r`n" $OutDir 's1v'
+        $r.Preview | Set-Content -LiteralPath (Join-Path $OutDir 's1v_preview.txt') -Encoding UTF8
+        Check 'S1v applied with consent' ($r.Result -notmatch 'NOT APPLIED') (($r.Result -split "`r`n" | Select-Object -First 2) -join ' / ')
+        $vw2 = Get-Items "$script:TCRoot\Viewers"
+        $missing = @($vw0 | Where-Object { $vw2 -notcontains $_ })
+        Check 'S1v viewers: every current row kept' ($missing.Count -eq 0) ("missing: " + ($missing -join ' || '))
+        $pv = TCPluginNumber 'pictview\pictview.spl'
+        $jpg = @($vw2 | Where-Object { $_ -match '(^|;)Masks=\*\.jpg(;|$)' -and $_ -match "Type=-$pv(;|$)" })
+        Check 'S1v viewers: plugin row re-mapped by DLL (PictView)' ($jpg.Count -ge 1 -and $pv -gt 0) "pictview=Plugins\$pv rows=$($jpg -join ' || ')"
+        Check 'S1v viewers: unknown plugin row not imported' (@($vw2 | Where-Object { $_ -match 'Masks=\*\.htm;\*\.html' }).Count -eq @($vw0 | Where-Object { $_ -match 'Masks=\*\.htm;\*\.html' }).Count) 'IE viewer row'
+        $log = @($vw2 | Where-Object { $_ -match 'Masks=\*\.log' -and $_ -match 'Command=notepad\.exe' })
+        Check 'S1v viewers: external row added' ($log.Count -ge 1) ($log -join ' || ')
+        $catchIdx = -1; $logIdx = -1
+        for ($i = 0; $i -lt $vw2.Count; $i++) { if ($vw2[$i] -match '(^|;)Masks=\*\.\*(;|$)' -and $catchIdx -lt 0) { $catchIdx = $i }; if ($vw2[$i] -match 'Masks=\*\.log') { $logIdx = $i } }
+        Check 'S1v viewers: new row before the catch-all' ($catchIdx -lt 0 -or ($logIdx -ge 0 -and $logIdx -lt $catchIdx)) "log=$logIdx catchall=$catchIdx"
+        $ed2 = Get-Items "$script:TCRoot\Editors"
+        Check 'S1v editors: row added, current kept' (@($ed0 | Where-Object { $ed2 -notcontains $_ }).Count -eq 0 -and @($ed2 | Where-Object { $_ -match 'Masks=\*\.ini' }).Count -ge 1) "before=$($ed0.Count) after=$($ed2.Count)"
 
         # ------------------------------------------------------------ S10 backup restores
         if ($script:S1Backup -and (Test-Path -LiteralPath $script:S1Backup)) {
@@ -239,7 +255,9 @@ try {
         Check 'S2 confirmations taken over' ((Get-Val 'Configuration\Confirmation' 'File Overwrite') -eq 0 -and (Get-Val 'Configuration\Confirmation' 'Close Find') -eq 0) 'File Overwrite=0 Close Find=0'
         Check 'S2 panel options taken over' ((Get-Val 'Configuration' 'Single Click') -eq 1 -and (Get-Val 'Configuration' 'Sort Dirs By Ext') -eq 1) 'Single Click=1 Sort Dirs By Ext=1'
         Check 'S2 out-of-range value not taken (Thumbnail Size 5000)' ((Get-Val 'Configuration' 'Thumbnail Size') -ne 5000) "Thumbnail Size=$(Get-Val 'Configuration' 'Thumbnail Size')"
-        Check 'S2 general option taken over (Use Recycle Bin 2)' ((Get-Val 'Configuration' 'Use Recycle Bin') -eq 2) "$(Get-Val 'Configuration' 'Use Recycle Bin')"
+        Check 'S2 general option taken over with its masks (Use Recycle Bin 2 + masks)' ((Get-Val 'Configuration' 'Use Recycle Bin') -eq 2 -and (Get-Val 'Configuration' 'Use Recycle Bin For') -eq '*.doc;*.tmp') "$(Get-Val 'Configuration' 'Use Recycle Bin') / $(Get-Val 'Configuration' 'Use Recycle Bin For')"
+        Check 'S2 option without its companion not taken (Compare Ignore Files)' ((Get-Val 'Configuration' 'Compare Ignore Files') -ne 1 -and $r.Preview -match 'Compare Ignore Files Masks') "Compare Ignore Files=$(Get-Val 'Configuration' 'Compare Ignore Files')"
+        Check 'S2 Keep Plugins Sorted not on the list' ($r.Preview -notmatch 'Keep Plugins Sorted') ''
         $own = $true; foreach ($n in $ownBefore.Keys) { if ((Get-Val 'Configuration' $n) -ne $ownBefore[$n]) { $own = $false } }
         Check 'S2 TC-owned values unchanged (theme, tabs, language, quick search, shell)' $own (($ownBefore.Keys | ForEach-Object { "$_=$(Get-Val 'Configuration' $_)" }) -join ' ')
         $hist = Get-Item "$script:TCRoot\Configuration\ChangeDir History" -ErrorAction SilentlyContinue
@@ -279,13 +297,54 @@ try {
         $r = Invoke-TC $Exe "[import]`r`nsource=Servant Salamander 2.0`r`ngroups=defaults`r`n" $OutDir 's6old'
         Check 'S6 version 38 refused' ($null -ne $r.Error -and $r.Error -match 'Servant Salamander 2\.0\|38\|1') (($r.Error -split "`r`n") -join ' / ')
         Check 'S6 version 107 listed as too new' ($null -ne $r.Error -and $r.Error -match 'Future Salamander\|107\|2') ''
-        $r = Invoke-TC $Exe "[import]`r`nsource=Altap Salamander 2.52`r`ngroups=hotpaths,viewers`r`n" $OutDir 's6'
+        $r = Invoke-TC $Exe "[import]`r`nsource=Altap Salamander 2.52`r`ngroups=hotpaths,viewers`r`nconsent=1`r`n" $OutDir 's6'
         $paths = @((Get-Slots).Values | ForEach-Object { $_.Split('|')[1] })
         Check 'S6 < 47: $ doubled in hot paths' ($paths -contains '$$(SalDir)\plugins') ($paths -join ' ; ')
         New-TCConfig $Exe $OutDir | Out-Null
-        $r = Invoke-TC $Exe "[import]`r`nsource=Altap Salamander 2.51`r`ngroups=viewers`r`n" $OutDir 's6b'
+        $r = Invoke-TC $Exe "[import]`r`nsource=Altap Salamander 2.51`r`ngroups=viewers`r`nconsent=1`r`n" $OutDir 's6b'
         $vw = Get-Items "$script:TCRoot\Viewers"
         Check 'S6 < 44: masks lower-cased' (@($vw | Where-Object { $_ -match 'Masks=\*\.log;' -or $_ -match 'Masks=\*\.log$' }).Count -ge 1 -and @($vw | Where-Object { $_ -cmatch 'Masks=\*\.LOG' }).Count -eq 0) ''
+    }
+
+    # ---------------------------------------------------------------- S13 FTP against a current FTP configuration
+    if (Want 'S13') {
+        foreach ($mode in 'replace', 'add') {
+            New-TCConfig $Exe $OutDir | Out-Null
+            $ftp = "$script:TCRoot\Plugins Configuration\FTP"
+            if (Test-Path $ftp) { Remove-Item -LiteralPath $ftp -Recurse -Force }
+            # current: "Office proxy" identical to the source's (UID 3), "Old proxy" (UID 4) is the default
+            Set-RegTree $script:TCRoot @{
+                'Plugins Configuration\FTP'                 = @{ 'Version' = 37; 'Default Proxy UID' = 4 }
+                'Plugins Configuration\FTP\Proxy Servers\1' = @{ 'Unique ID' = 3; 'Name' = 'Office proxy'; 'Type' = 3; 'Host' = 'proxy.example'; 'Port' = 8080; 'User' = '' }
+                'Plugins Configuration\FTP\Proxy Servers\2' = @{ 'Unique ID' = 4; 'Name' = 'Old proxy'; 'Type' = 3; 'Host' = 'old.example'; 'Port' = 3128; 'User' = '' }
+                'Plugins Configuration\FTP\Bookmarks\1'     = @{ 'Name' = 'Mine'; 'Address' = 'ftp.mine.example'; 'User' = 'me'; 'Anonymous' = 0; 'Proxy Server UID' = 4; 'Port' = 21 }
+            }
+            Remove-Fixtures
+            New-AltapFixture | Out-Null
+            $r = Invoke-TC $Exe "[import]`r`ngroups=ftp:$mode`r`nconsent=1`r`n" $OutDir "s13$mode"
+            $r.Preview | Set-Content -LiteralPath (Join-Path $OutDir "s13$($mode)_preview.txt") -Encoding UTF8
+            Check "S13 $mode applied" ($r.Result -notmatch 'NOT APPLIED' -and $r.Exit -eq 0) (($r.Result -split "`r`n" | Select-Object -First 2) -join ' / ')
+            $office = Find-Proxy 'Office proxy'
+            $old = Find-Proxy 'Old proxy'
+            $work = Find-Bookmark 'Work'
+            $mine = Find-Bookmark 'Mine'
+            $def = (Get-ItemProperty $ftp -ErrorAction SilentlyContinue).'Default Proxy UID'
+            if ($null -ne $def) { $def = [int64]$def; if ($def -gt 2147483647) { $def -= 4294967296 } } # REG_DWORD as signed
+            $ouid = if ($office) { (Get-ItemProperty $office.PSPath).'Unique ID' } else { $null }
+            $wuid = if ($work) { (Get-ItemProperty $work.PSPath).'Proxy Server UID' } else { $null }
+            $proxies = @(Get-ChildItem "$ftp\Proxy Servers" -ErrorAction SilentlyContinue)
+            Check "S13 $mode identical proxy keeps its UID, the bookmark refers to it" ($ouid -eq 3 -and $wuid -eq 3 -and @($proxies | Where-Object { (Get-ItemProperty $_.PSPath).Name -eq 'Office proxy' }).Count -eq 1) "office=$ouid work=$wuid proxies=$($proxies.Count)"
+            if ($mode -eq 'replace') {
+                Check 'S13 replace: the current proxy not in the source is removed' ($null -eq $old) ''
+                Check 'S13 replace: the removed default proxy is reset to "not used"' ($def -eq -1) "Default Proxy UID=$def"
+                Check 'S13 replace: the current bookmark not in the source is removed' ($null -eq $mine) ''
+                Check 'S13 replace: preview reports replaced and removed items' ($r.Preview -match '(?m)^  ~ Proxy server Office proxy' -and $r.Preview -match '(?m)^  - Proxy server Old proxy' -and $r.Preview -match '(?m)^  - .*Old proxy.*default' -and $r.Preview -match '(?m)^  - Bookmark Mine') (($r.Preview -split "`r`n" | Where-Object { $_ -match '^  [~-] ' }) -join ' || ')
+            }
+            else {
+                Check 'S13 add: current proxy, default and bookmark kept' ($null -ne $old -and $def -eq 4 -and $null -ne $mine) "default=$def"
+                Check 'S13 add: identical proxy reported as present, no consent needed' ($r.Preview -match '(?m)^  = Proxy server Office proxy' -and $r.Preview -notmatch '(?m)^  [~-] ') ''
+            }
+        }
     }
 
     # ---------------------------------------------------------------- S7 passwords

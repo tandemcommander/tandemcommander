@@ -20,6 +20,7 @@ distributed. Roughly 10% of the raw volume is repeats -- "OK", "Cancel",
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import re
 import sys
@@ -137,6 +138,25 @@ def load_origin(
 
 
 OVERRIDES_FILE = "ui-overrides.json"
+BRAND_EXEMPT_FILE = "brand-exempt.json"
+
+
+def load_brand_exempt(module: Module) -> list[str]:
+    """Resource-symbol patterns (fnmatch) whose text legitimately names a
+    predecessor product and must not be rebranded.
+
+    Lives in ``translations/brand-exempt.json`` as ``{module: [pattern, ...]}``.
+    Feature 245 (the settings import) must say "Altap Salamander" and "Open
+    Salamander": those are the programs it imports from, not this product.
+    """
+    path = TRANSLATIONS_DIR / BRAND_EXEMPT_FILE
+    if not path.is_file():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as e:
+        raise ConfigError(f"{path}: {e}") from e
+    return [p for p in data.get(module.name, []) if isinstance(p, str)]
 
 
 def load_overrides(language: Language, module: Module) -> dict[str, str]:
@@ -186,6 +206,7 @@ def build_slt(
     cov.total, cov.skip, cov.discarded = stats.total, stats.untranslatable, stats.discarded
 
     symbols: dict[int, str] = load_symbols(module) if module is not None else {}
+    brand_exempt = load_brand_exempt(module) if module is not None else []
     # control classes for the widening pass (feature 063): radio/checkbox glyph
     # allowance + dropdowns no longer wall off the free-space scan
     classes = (load_control_classes(module.rh_path.with_name("lang.rc"), module.rh_path)
@@ -293,7 +314,9 @@ def build_slt(
                     numbers[-1] = 1
                     cov.human += 1
 
-            rebranded = rebrand(text)
+            row_symbol = symbols.get(tpl_row.entry_id) if tpl_row.entry_id is not None else None
+            exempt = row_symbol is not None and any(fnmatch.fnmatchcase(row_symbol, p) for p in brand_exempt)
+            rebranded = text if exempt else rebrand(text)
             if rebranded != text:
                 cov.rebranded += 1
                 text = rebranded
@@ -376,6 +399,7 @@ def run(
     redo_accelerators: bool = False,
     retranslate: bool = False,
     redo_machine: bool = False,
+    formality: str = "prefer_less",
 ) -> int:
     missing = [m.name for m in modules if not (templates_dir / f"{m.name}.slt").is_file()]
     if missing:
@@ -401,7 +425,7 @@ def run(
     def translation_client():
         nonlocal client
         if client is None:
-            client = Client(key=load_key(key_file))
+            client = Client(key=load_key(key_file), formality=formality)
             usage = client.usage()
             print(f"DeepL quota: {usage.remaining:,} of {usage.limit:,} characters remaining")
         return client
@@ -544,6 +568,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--key-file", type=Path, default=None)
     ap.add_argument("--budget", type=int, default=None, help="stop before exceeding N characters")
     ap.add_argument(
+        "--formality",
+        choices=["prefer_less", "prefer_more"],
+        default="prefer_less",
+        help="DeepL formality for languages that have one; the committed corpus is "
+             "formal, so new strings are best translated with prefer_more (245)",
+    )
+    ap.add_argument(
         "--retranslate",
         action="store_true",
         help="ignore existing translations and translate the selected modules "
@@ -625,7 +656,7 @@ def main(argv: list[str] | None = None) -> int:
     return run(
         languages, modules, templates_dir, args.dry_run, args.key_file,
         args.budget, args.redo_accelerators, args.retranslate,
-        args.redo_machine,
+        args.redo_machine, args.formality,
     )
 
 

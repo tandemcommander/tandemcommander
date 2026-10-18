@@ -409,6 +409,7 @@
       "IDS_CANNOTMOVEDIRINTOITSELF": "Een map kan niet naar zichzelf of naar een van de submappen worden verplaatst."
     },
     "hungarian": {
+      "IDS_CFGIMP_OFFER": "A számítógépen a(z) %s beállításai találhatók.\\n\\nSzeretné most importálni a gyorselérési útvonalakat, az FTP-kapcsolatokat, a felhasználói menüt és a többi beállítást? Amíg nem hagyja jóvá az előnézetet, semmi sem változik.\\n\\nKésőbb is megteheti: Beállítások > Beállítások importálása a Salamanderből.",
       "IDS_CMDSHELL_ERRNOTFOUND": "A kiválasztott parancssori program (%s) nem található ezen a számítógépen.\\n\\nVálasszon másik programot a Konfiguráció / Parancssor menüpontban.",
       "IDS_CMDSHELL_ERREXEC": "Nem lehet elindítani a parancssor programot:\\n%s\\n\\n%s\\n\\nA programot a Konfiguráció / Parancssor menüpontban módosíthatja.",
       "IDS_TABS_CLOSECONFIRM": "%d lap bezárul a lapok kikapcsolásakor. Folytatja?",

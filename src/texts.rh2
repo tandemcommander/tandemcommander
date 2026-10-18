@@ -2745,6 +2745,22 @@
 
 // feature 245: settings import from Altap Salamander / Open Salamander (free slots of existing bundles)
 #define IDS_CFGIMP_INTRO                 10286
+// feature 245, review round 1 (free slots of existing bundles)
+#define IDS_CFGIMP_COL_GROUP             10391
+#define IDS_CFGIMP_COL_ITEMS             10392
+#define IDS_CFGIMP_COL_MODE              10393
+#define IDS_CFGIMP_OFFER_YES             10394
+#define IDS_CFGIMP_OFFER_NO              10395
+#define IDS_CFGIMP_REPORTFILTER          10396
+#define IDS_CFGIMP_REPORTNAME            10397
+#define IDS_CFGIMP_WINDOWSOPEN           10398
+#define IDS_CFGIMP_PLUGININUSE           10399
+#define IDS_CFGIMP_LN_TRUNCSUBTREE       10521
+#define IDS_CFGIMP_LN_NEWVALUE           10522
+#define IDS_CFGIMP_LN_MOREVALUES         10523
+#define IDS_CFGIMP_LN_BEFORECATCHALL     10524
+#define IDS_CFGIMP_LN_KEYREMOVED         10525
+#define IDS_CFGIMP_LN_SKIPLONG           10526
 
 //#define CM_TEXTS_MAX                  18000    // maximal texts id
 

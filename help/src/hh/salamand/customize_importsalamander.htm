@@ -47,11 +47,16 @@ a shortcut already in use) leaves yours as it is and is added in another form
 <li><i>Replace my current settings</i> makes the group what the old program had;
 your current items in it are removed.</li>
 </ul>
-Viewers and editors are always added after the ones you have, so yours keep
-precedence. Groups that are sets of options (confirmations, panel and keyboard
-behaviour, general options, internal viewer settings, colours and highlighting,
-view templates, default directories, the settings of a plugin) take over the
-old program's values and are therefore unticked until you tick them.</dd>
+Viewers and editors are added after your rows for particular file types, so
+yours keep precedence; they come before your row for all files (<code>*.*</code>),
+so they take over the files that row opens today &mdash; the preview shows that as
+a change, and the group is unticked until you tick it. Groups that are sets of
+options (confirmations, panel and keyboard behaviour, general options, internal
+viewer settings, colours and highlighting, view templates, default directories,
+the settings of a plugin) take over the old program's values and are therefore
+unticked until you tick them. An option that works with masks or a text (for
+example <i>Use Recycle Bin</i> with its masks) is taken over together with them
+or not at all.</dd>
 
 <dt><i>Saved passwords</i></dt>
 <dd>Shown when FTP connections with saved passwords are imported. Passwords the
@@ -92,8 +97,10 @@ To go back, close Tandem Commander and start it with the parameter
 
 <h4>Remarks</h4>
 <p>Close other Tandem Commander windows before importing: they would overwrite the
-imported settings when they close. The import works on the same computer and
-Windows user as the old program.</p>
+imported settings when they close. Close also the Find windows and the viewer
+windows: they use settings the import changes. A plugin whose archive or file
+system is open in a panel cannot take over its old settings until you close it.
+The import works on the same computer and Windows user as the old program.</p>
 
 <p>See also:<br />
 <a href="customize_configuration.htm">Configuring Tandem Commander</a><br />

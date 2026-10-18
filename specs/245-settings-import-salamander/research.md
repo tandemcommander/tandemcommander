@@ -102,15 +102,23 @@ Toolbar layouts are **not** offered (R14).
 - **Viewer / alternative viewer / editor**: identity = the masks string
   normalised (split at `;`, trim, lower-case ASCII, empty parts dropped,
   sorted, joined). An imported row whose normalised masks equal an existing
-  row's is "already covered". New rows are appended **after** the current ones
-  (current rows keep precedence). A row whose masks contain `|` is skipped
-  (TC's own loader refuses it). Plugin rows (type < 0) are re-mapped (R7).
+  row's is "already covered". New rows go after the current specific rows but
+  **before the current catch-all row** (`*` / `*.*`), else at the end — after
+  the catch-all they would never be reached. A row placed before the catch-all
+  takes files over from it: that changes what opens them today, so it is
+  reported as *replaced* ("… takes these files over from *.*") and needs the
+  consent of FR-010c (review round 1). A row whose masks contain `|` is
+  skipped (TC's own loader refuses it). Plugin rows (type < 0) are re-mapped
+  (R7). A row with a value longer than TC accepts is left out alone (counted
+  in one line); the rows after it are read.
 - **Plugin command shortcut**: identity = (plugin DLL, menu item ID). Only
   user-assigned keys (`HOTKEY_DIRTY`) are imported. Add: assign only when the
   TC item has no user-assigned key and the key is used neither by a TC command
-  (`IsSalHotKey`) nor by another plugin item. Replace: the imported key wins
+  (`IsSalHotKey`) nor by another plugin item; a command whose shortcut the
+  user removed (dirty, no key) keeps it removed. Replace: the imported key wins
   over a current *plugin* assignment (that assignment is removed, reported),
-  never over a TC command.
+  never over a TC command; current keys of commands the source does not
+  mention stay (FR-011 note).
 - **History entry**: identity = exact text; current entries first, then
   imported ones not present, up to the history's capacity; passwords are
   stripped with `SalStripUrlPasswords` / `SalStripCommandLinePasswords` before
@@ -159,7 +167,17 @@ which first saves its current settings), then replaces TC's
 the plugin's own `Version` value, which drives the plugin's internal
 upgrade, e.g. 7zip 3 → 5). The plugin loads the new settings the next time it
 is used. A plugin that cannot be unloaded (open windows, busy) fails that
-group with "close the plugin's windows and try again". Nothing is written for
+group with "close the plugin's windows and try again"; a plugin whose archive
+or file system is open in a panel or detached fails the group *before*
+unloading (no question, nothing closed). The preview lists the values that
+change against TC's stored key (up to 60 lines, then a count) and needs
+consent. The copy is all or nothing: written to `<key>.tc-import-new`, then
+swapped in by renaming (`RegRenameKey`); the current key is kept until then
+and restored on failure. A source subtree the snapshot did not read completely
+(a value over 64 KiB, too deep, the 32 MiB budget) is not imported (also for
+the FTP group). SFTP is not offered: its settings carry passwords protected by
+the program's master password, which a copy would bring over encrypted under
+the old program's (review round 1). Nothing is written for
 plugins that are not shipped; TC-only plugins are never touched. The
 `Plugins` / `Plugins Order` registration and the `plugins.ver` counters are
 never written.
@@ -254,6 +272,14 @@ seam or when another instance runs.
 **Note**: reading `Version\Configuration` is the minimum needed to say
 "supported" (an unsupported old root would make the offer lead nowhere); it is
 classification, not settings, and is stated so in the constitution note.
+
+**As implemented** (review round 1): the start-up uses the start-up's own
+"the configuration root was not found" (`currentCfgDoesNotExist`, before the
+first save `SALAMANDER_ROOT_REG` is NULL); `CfgImpIsFreshConfiguration` ("no
+`Configuration` subkey") is used only by the import to save once before the
+backup, so that the backup has something to restore. The offer box waits
+(1 s timer) while the main window is disabled or in a menu, so it never runs
+inside another start-up box.
 
 ## R14. Toolbar layouts are not offered
 

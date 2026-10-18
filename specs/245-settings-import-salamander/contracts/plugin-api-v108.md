@@ -32,9 +32,13 @@ public:
 ```
 
 - Called on the main thread, while the plug-in is loaded, with the wizard's
-  window as `parent`. Never shows a window unless the core's password
-  services do (A3: `EncryptForStorage` may ask for the program's master
-  password).
+  window as `parent`, between `EnterPlugin` and `LeavePlugin` like every other
+  plug-in entry point. Never shows a window: the core asks for the program's
+  master password before the preview (A3), not during a call.
+- A crash in the handler is not caught: the plug-in's state would be unknown
+  and the configuration save that follows the import would store it. The
+  program's own crash handling applies; the backup of the settings is already
+  written at that point.
 - `dryRun` TRUE (preview): read the source, decide, **report** every item
   through `import->Report` exactly as an apply would, change nothing.
 - `dryRun` FALSE (apply): the same decisions, then change the plug-in's
@@ -93,10 +97,14 @@ public:
   cannot be decrypted or the policy does not allow it. `*plain` is freed with
   `CSalamanderGeneralAbstract::Free` after the plug-in wiped it.
 - `EncryptForStorage`: encrypts a plain password the way the program stores
-  passwords now (AES under the program's master password when it uses one —
-  the core asks for it once per run if needed — otherwise scrambled). FALSE
-  when the program's master password was not given; the plug-in then imports
-  the item without its password and reports it.
+  passwords now (AES under the program's master password when it uses one,
+  otherwise scrambled). It never asks: when passwords would be imported and the
+  program uses a master password that is not entered, the core asks for it
+  once, **before the preview**. If it is still not entered,
+  `DecryptSourcePassword` answers FALSE in the preview and in the import alike,
+  so both report the same items "without their password".
+- A source master password longer than 127 bytes is used with its first 127
+  bytes, as the old program read it (`GetDlgItemText(..., 128)`).
 - The policy is chosen by the user on the wizard's password page; a password
   the policy excludes is not imported (the item comes without it, reported as
   SKIPPED-password or FLAGGED).
@@ -108,7 +116,14 @@ public:
    already protects; never store a password with weaker protection than
    `EncryptForStorage` gives.
 3. Report every source item exactly once (ADDED / PRESENT / REPLACED /
-   SKIPPED / FLAGGED); report every current item a REPLACE removes (REMOVED).
+   SKIPPED / FLAGGED); report every current item a REPLACE removes (REMOVED)
+   and every current item a REPLACE overwrites (REPLACED) — REPLACED and
+   REMOVED lines are what the wizard asks consent for. One line per item: when
+   several reasons apply (renamed, no password, no proxy server), the line
+   names them all.
+6. All or nothing: build the complete new state first, then exchange it with
+   the current one in steps that cannot fail; a dry run builds and reports the
+   same and discards it.
 4. Keep references inside the plug-in's settings consistent (e.g. FTP
    bookmarks → proxy servers).
 5. Wipe plain passwords after use.
@@ -118,6 +133,20 @@ public:
 Imports the lists *Bookmarks*, *Proxy Servers*, *Server Types* (user-defined
 types). Add / Replace per research R9; passwords per R10. Its other options
 are not part of this group.
+
+- The three new lists are complete copies before anything changes; the
+  commit swaps them in (`ImportSwap`, no allocation).
+- A bookmark's proxy server is part of its identity (re-mapped to the new
+  list first). The first source proxy server of a UID wins; UIDs below 1 are
+  never mapped.
+- Replace keeps the UID of a current proxy server that the source has
+  identically, and new UIDs continue after the current ones, so a reference to
+  a removed proxy server never points to another one; a removed default proxy
+  server resets the default to "not used" (reported as removed).
+- Server types: a source user type whose name (without `*`) the current list
+  has: PRESENT when the definitions are equal; Add keeps the current one
+  (SKIPPED with the reason); Replace replaces it in place (REPLACED). An entry
+  of the source list that does not load is reported by its number.
 
 ## Version record
 

@@ -2023,5 +2023,7 @@
 #define IDS_IMPORT_INCOMPLETE            10001
 #define IDS_IMPORT_SUFFIX                10002
 #define IDS_IMPORT_SUFFIXN               10003
+#define IDS_IMPORT_TYPEKEPT              10004
+#define IDS_IMPORT_DEFPROXY              10006
 
 #endif // __FTP_RH2

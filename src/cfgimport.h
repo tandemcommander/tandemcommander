@@ -87,6 +87,7 @@ struct CCfgImpGroup
     char Reason[300];     // UTF-8, for CFGIMP_AVAIL_EMPTY/NO
     TDirectArray<CCfgImpLine> Lines;
     BOOL NeedsConsent;    // the plan overwrites or removes something
+    BOOL PlanFailed;      // the plan could not be built: the group is not applied (ApplyError says why)
     BOOL Applied;         // after apply
     char ApplyError[300]; // UTF-8, when apply failed
     CCfgImpGroupData* Data;
@@ -108,8 +109,7 @@ struct CCfgImpPasswords
     BOOL AllowWeakerStorage;    // consent: protected passwords stored without a master password
     int ScrambledCount;         // blobs stored without a master password
     int ProtectedCount;         // blobs stored under the source's master password
-    BOOL AskedTCMasterPassword; // the program's master password was asked for in this run
-    BOOL TCMasterPasswordGiven;
+    BOOL AskedTCMasterPassword; // the program's master password was asked for (before the preview)
 };
 
 class CCfgImpRun
@@ -148,6 +148,11 @@ public:
     // plan support for the password page
     void CountFTPPasswords();
     BOOL CheckSourceMasterPassword(const char* password);
+    // passwords would be imported but the program's master password is in use and not entered
+    BOOL TCMasterPasswordMissing();
+    // asks for the program's master password once, BEFORE the preview, so that the preview and
+    // the import decide every password the same way (contracts/plugin-api-v108.md)
+    void PrepareTCMasterPassword(HWND parent);
     BOOL IsGroupSelected(CCfgImpGroupId id);
     CCfgImpGroup* FindGroup(CCfgImpGroupId id, int pluginIndex = -1);
 };

@@ -42,9 +42,16 @@ Show My Documents · Change Drive Show Another · Change Drive Show Cloud
 Storages · Change Drive Network · Compare By Time · Compare By Size · Compare
 By Content · Compare By Attr · Compare By Subdirs · Compare By Subdirs Attr ·
 Compare One Panel Dirs · Compare More Options · Compare Ignore Files · Compare
-Ignore Dirs · Use Time Resolution · Ignore DST Shifts · Keep Plugins Sorted
+Ignore Dirs · Use Time Resolution · Ignore DST Shifts
 `R`: Use Recycle Bin (0..2) · Title bar mode (the dialog's values) · Time
 Resolution (the dialog's range)
+*Units* (review round 1): an option and the value it depends on are taken over
+together or not at all — Use Recycle Bin + Use Recycle Bin For (masks), Compare
+Ignore Files + Compare Ignore Files Masks, Compare Ignore Dirs + Compare
+Ignore Dirs Masks, Title bar prefix + Title bar prefix text. A companion that
+is absent, too long (never cut) or invalid masks leaves the whole unit out
+(reported). *Keep Plugins Sorted* is not on the list: taking it over would
+re-order the plug-ins the next time the Plugins dialog opens (FR-013).
 `M`: Visible Drives · Separated Drives
 `Drive Special Settings`, all `B`: Floppy/Removable/Fixed/Remote/CDROM
 Automatic Refresh · …Simple Icons · Remote Do Not Refresh on Activation
@@ -53,7 +60,8 @@ Automatic Refresh · …Simple Icons · Remote Do Not Refresh on Activation
 
 `B`: EOL CRLF · EOL CR · EOL LF · EOL NULL · Wrap Text · Auto-Select ·
 Auto-Copy Selection · Go to Offset Is Hex
-`R`: Tabelator Size (the viewer's range) · Default Mode (the viewer's values)
+`R`: Tabelator Size (the viewer's range) · Default Mode (the viewer's values),
+as a unit with Text Masks; Hex Masks on its own (masks, validated)
 
 ## `defaultdirs` — key `Default Directories`
 

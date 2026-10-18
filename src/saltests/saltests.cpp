@@ -13287,11 +13287,32 @@ static void TestCfgImport245()
     CHECK(!SalCfgImpMenuItemEqual(&src[1], &src[1]));
     CHECK(SalCfgImpMenuItemEqual(&src[0], &src[0]));
     SalCfgImpFreeMenu(src, srcCount);
-    // a too long value stops reading (never cut)
-    srcCount = SalCfgImpParseUserMenu(SalCfgKeyFind(root, "User Menu"), 8, 32 * 1024, &src, &stop);
-    CHECK(srcCount == 0 && stop == 2); // "notepad.exe" does not fit 8 bytes: reading stops at item 1
+    // a too long value leaves out that entry only (never cut); a submenu goes with all its entries
+    int tooLong = -1;
+    srcCount = SalCfgImpParseUserMenu(SalCfgKeyFind(root, "User Menu"), 8, 32 * 1024, &src, &stop, &tooLong);
+    // every entry has the default initial directory "$(Drive)$(Path)" (15 bytes): 1, 2, 3 (with 4
+    // and 5 inside it), 6 and 7 are left out, item 8 still stops reading
+    CHECK(srcCount == 0 && stop == 1 && tooLong == 5);
     SalCfgImpFreeMenu(src, srcCount);
     SalCfgKeyFree(root);
+    {
+        CSalCfgKey* r2 = SalCfgKeyNew("src");
+        CSalCfgKey* m2 = SalCfgKeyAddKey(r2, "User Menu");
+        Cfg245MenuItem(m2, 1, "A", "a.exe", SALCFGIMP_UM_ITEM);
+        Cfg245MenuItem(m2, 2, "A submenu whose name is longer than the limit of this test", "", SALCFGIMP_UM_SUBMENUBEGIN);
+        Cfg245MenuItem(m2, 3, "Inner", "in.exe", SALCFGIMP_UM_ITEM);
+        Cfg245MenuItem(m2, 4, "Deeper", "", SALCFGIMP_UM_SUBMENUBEGIN);
+        Cfg245MenuItem(m2, 5, "", "", SALCFGIMP_UM_SUBMENUEND);
+        Cfg245MenuItem(m2, 6, "", "", SALCFGIMP_UM_SUBMENUEND);
+        Cfg245MenuItem(m2, 7, "B", "b.exe", SALCFGIMP_UM_ITEM);
+        CSalCfgImpMenuItem* m2items = NULL;
+        int m2stop = -1, m2long = -1;
+        int m2count = SalCfgImpParseUserMenu(SalCfgKeyFind(r2, "User Menu"), 40, 32 * 1024, &m2items, &m2stop, &m2long);
+        CHECK(m2count == 2 && m2stop == 0 && m2long == 1); // the submenu (2-6) is left out whole
+        CHECK(m2count == 2 && strcmp(m2items[0].Name, "A") == 0 && strcmp(m2items[1].Name, "B") == 0);
+        SalCfgImpFreeMenu(m2items, m2count);
+        SalCfgKeyFree(r2);
+    }
 
     // ---- viewers parser
     root = SalCfgKeyNew("src");
@@ -13323,7 +13344,52 @@ static void TestCfgImport245()
     vc = SalCfgImpParseViewers(SalCfgKeyFind(root, "Viewers"), TRUE, 103, MAX_PATH, &vs, &vstop);
     CHECK(vc == 4 && vstop == SALCFGIMP_VSTOP_NONE && vs[1].Type == 0);
     SalCfgImpFreeViewers(vs, vc);
+    // a too long row is left out, the rows after it are read (never cut)
+    int vlong = -1;
+    vc = SalCfgImpParseViewers(SalCfgKeyFind(root, "Viewers"), TRUE, 103, 8, &vs, &vstop, &vlong);
+    CHECK(vc == 3 && vlong == 1 && vstop == SALCFGIMP_VSTOP_NONE); // "*.jpg;*.png" (11 bytes) is left out
+    CHECK(vc == 3 && strcmp(vs[2].Masks, "*.after") == 0);
+    SalCfgImpFreeViewers(vs, vc);
     SalCfgKeyFree(root);
+
+    // ---- report text: cut only after a whole UTF-8 character
+    {
+        char t[8];
+        SalCfgImpCopyText(t, 7, "abc\xC4\x8D\xC5\xA1x"); // "abcčšx" = 9 bytes, 6 fit
+        CHECK(strcmp(t, "abc\xC4\x8D") == 0); // "š" does not fit whole: cut before it
+        SalCfgImpCopyText(t, 8, "abc");
+        CHECK(strcmp(t, "abc") == 0);
+        SalCfgImpFormatText(t, 8, "%s-%s", "\xE2\x82\xAC\xE2\x82\xAC", "x"); // "€€-x" = 8 bytes, 7 fit
+        CHECK(strcmp(t, "\xE2\x82\xAC\xE2\x82\xAC-") == 0);
+        SalCfgImpFormatText(t, 6, "%s%s", "x", "\xE2\x82\xAC\xE2\x82\xAC"); // "x€€": 5 bytes fit, the 2nd € not
+        CHECK(strcmp(t, "x\xE2\x82\xAC") == 0);
+        SalCfgImpFormatText(t, 8, "%s", NULL == NULL ? "ok" : "");
+        CHECK(strcmp(t, "ok") == 0);
+        char big[5000];
+        memset(big, 'a', sizeof(big) - 3);
+        big[sizeof(big) - 3] = '\xC4'; // a two-byte character beyond the formatting buffer
+        big[sizeof(big) - 2] = '\x8D';
+        big[sizeof(big) - 1] = 0;
+        char out[4200];
+        SalCfgImpFormatText(out, (int)sizeof(out), "%s", big);
+        CHECK((int)strlen(out) == 4095 && out[4094] == 'a'); // _TRUNCATE at 4095 bytes: a whole ASCII text stays
+        big[4094] = '\xC4'; // now the cut splits a character at byte 4095
+        big[4095] = '\x8D';
+        SalCfgImpFormatText(out, (int)sizeof(out), "%s", big);
+        CHECK((int)strlen(out) == 4094 && out[4093] == 'a'); // the split character is dropped
+    }
+
+    // ---- truncated subtrees are seen through every level
+    {
+        CSalCfgKey* r3 = SalCfgKeyNew("");
+        CSalCfgKey* a3 = SalCfgKeyAddKey(r3, "a");
+        CSalCfgKey* b3 = SalCfgKeyAddKey(a3, "b");
+        CHECK(!SalCfgKeySubtreeTruncated(r3) && !SalCfgKeySubtreeTruncated(NULL));
+        b3->Truncated = TRUE;
+        CHECK(SalCfgKeySubtreeTruncated(r3) && SalCfgKeySubtreeTruncated(a3) && SalCfgKeySubtreeTruncated(b3));
+        CHECK(!SalCfgKeySubtreeTruncated(SalCfgKeyAddKey(r3, "c")));
+        SalCfgKeyFree(r3);
+    }
 
     // ---- plug-ins parser
     root = SalCfgKeyNew("src");
@@ -13366,7 +13432,8 @@ static void TestCfgImport245()
     CHECK(hn == 2 && strcmp(hist[0], "C:\\a") == 0 && strcmp(hist[1], "C:\\b") == 0);
     SalCfgKeyFree(root);
 
-    // the options allow-list of cfgimport.cpp (mirrored; contracts/options-table.md): no value
+    // the options allow-list of cfgimport.cpp with the companion values (mirrored;
+    // contracts/options-table.md): no value
     // Tandem Commander owns is ever on it (FR-016)
     static const char* const optionTable[][2] = {
         {"Configuration\\Confirmation", "Files or Dirs Del"},
@@ -13434,6 +13501,7 @@ static void TestCfgImport245()
         {"Configuration", "Title bar show path"},
         {"Configuration", "Title bar mode"},
         {"Configuration", "Title bar prefix"},
+        {"Configuration", "Title bar prefix text"},
         {"Configuration", "Change Drive Show My Documents"},
         {"Configuration", "Change Drive Show Another"},
         {"Configuration", "Change Drive Show Cloud Storages"},
@@ -13449,12 +13517,14 @@ static void TestCfgImport245()
         {"Configuration", "Compare One Panel Dirs"},
         {"Configuration", "Compare More Options"},
         {"Configuration", "Compare Ignore Files"},
+        {"Configuration", "Compare Ignore Files Masks"},
         {"Configuration", "Compare Ignore Dirs"},
+        {"Configuration", "Compare Ignore Dirs Masks"},
         {"Configuration", "Use Time Resolution"},
         {"Configuration", "Time Resolution"},
         {"Configuration", "Ignore DST Shifts"},
-        {"Configuration", "Keep Plugins Sorted"},
         {"Configuration", "Use Recycle Bin"},
+        {"Configuration", "Use Recycle Bin For"},
         {"Configuration\\Drive Special Settings", "Floppy Automatic Refresh"},
         {"Configuration\\Drive Special Settings", "Floppy Simple Icons"},
         {"Configuration\\Drive Special Settings", "Removable Automatic Refresh"},
@@ -13476,6 +13546,8 @@ static void TestCfgImport245()
         {"Viewer", "Go to Offset Is Hex"},
         {"Viewer", "Tabelator Size"},
         {"Viewer", "Default Mode"},
+        {"Viewer", "Text Masks"},
+        {"Viewer", "Hex Masks"},
     };
     int forbiddenOnTable = 0;
     for (int i = 0; i < (int)(sizeof(optionTable) / sizeof(optionTable[0])); i++)
@@ -13486,7 +13558,7 @@ static void TestCfgImport245()
             forbiddenOnTable++;
     }
     CHECK(forbiddenOnTable == 0);
-    CHECK((int)(sizeof(optionTable) / sizeof(optionTable[0])) == 107);
+    CHECK((int)(sizeof(optionTable) / sizeof(optionTable[0])) == 112);
 }
 
 int main(int argc, char** argv)

@@ -12,6 +12,10 @@
 // it; passwords and the proxy references of bookmarks are read raw here, because the
 // loaders validate them against the CURRENT configuration (and LoadPassword reads the
 // registry directly, which the view does not support).
+//
+// All or nothing: the three new lists (proxy servers, bookmarks, server types) are built
+// completely as copies first; only then are they exchanged with the current ones by
+// ImportSwap, which cannot fail. A dry run builds and reports the same, then discards it.
 
 #include "precomp.h"
 #include "../../common/salcfgimport.h"
@@ -56,7 +60,8 @@ static void ImportFreeBlob(BYTE* blob, int size)
 
 // converts a source password blob to the program's current storage; '*newBlob' NULL = no
 // password to store; FALSE = the item has a password that cannot be imported (policy, wrong
-// master password, the program's master password not given)
+// master password, the program's master password not given). A dry run decides the same way
+// (the core answers DecryptSourcePassword identically in both runs) but stores nothing.
 static BOOL ImportConvertPassword(CSalamanderSettingsImportAbstract* imp, const BYTE* blob, int size, BOOL dryRun,
                                   BYTE** newBlob, int* newSize)
 {
@@ -75,30 +80,46 @@ static BOOL ImportConvertPassword(CSalamanderSettingsImportAbstract* imp, const 
     return ok;
 }
 
-static void ImportReport(CSalamanderSettingsImportAbstract* imp, int kind, int fmtId, const char* a, const char* b = NULL)
+// 'text' = the string 'fmtId' formatted with 'a' (and 'b'); each format has only %s arguments
+static void ImportFormat(char* text, int size, int fmtId, const char* a, const char* b = NULL)
 {
     char fmt[500];
-    lstrcpyn(fmt, LoadStrU8(fmtId), (int)sizeof(fmt));
-    char text[2000];
+    SalCfgImpCopyText(fmt, (int)sizeof(fmt), LoadStrU8(fmtId));
     if (b != NULL)
-        _snprintf_s(text, _TRUNCATE, fmt, a, b);
+        SalCfgImpFormatText(text, size, fmt, a, b);
     else
-        _snprintf_s(text, _TRUNCATE, fmt, a);
+        SalCfgImpFormatText(text, size, fmt, a);
+}
+
+static void ImportReport(CSalamanderSettingsImportAbstract* imp, int kind, int fmtId, const char* a, const char* b = NULL)
+{
+    char text[2000];
+    ImportFormat(text, (int)sizeof(text), fmtId, a, b);
     imp->Report(kind, text);
 }
 
 static void BookmarkLabel(const CFTPServer* s, char* buf, int size)
 {
-    char fmt[200];
-    lstrcpyn(fmt, LoadStrU8(IDS_IMPORT_BOOKMARK), (int)sizeof(fmt));
-    _snprintf_s(buf, size, _TRUNCATE, fmt, HandleNULLStr(s->ItemName), HandleNULLStr(s->Address));
+    ImportFormat(buf, size, IDS_IMPORT_BOOKMARK, HandleNULLStr(s->ItemName), HandleNULLStr(s->Address));
 }
 
 static void ProxyLabel(const CFTPProxyServer* p, char* buf, int size)
 {
-    char fmt[200];
-    lstrcpyn(fmt, LoadStrU8(IDS_IMPORT_PROXY), (int)sizeof(fmt));
-    _snprintf_s(buf, size, _TRUNCATE, fmt, HandleNULLStr(p->ProxyName));
+    ImportFormat(buf, size, IDS_IMPORT_PROXY, HandleNULLStr(p->ProxyName));
+}
+
+static void TypeLabel(const CServerType* t, char* buf, int size)
+{
+    const char* n = HandleNULLStr(t->TypeName);
+    ImportFormat(buf, size, IDS_IMPORT_SRVTYPE, *n == '*' ? n + 1 : n);
+}
+
+// appends one reason (a string with one %s = the text so far) to 'text'
+static void ImportAddReason(char* text, int size, int fmtId, const char* b = NULL)
+{
+    char was[2000];
+    SalCfgImpCopyText(was, (int)sizeof(was), text);
+    ImportFormat(text, size, fmtId, was, b);
 }
 
 static const char* NonNull(const char* s) { return s != NULL ? s : ""; }
@@ -110,18 +131,43 @@ static BOOL StrEqCI(const char* a, const char* b)
 
 static BOOL StrEq(const char* a, const char* b) { return strcmp(NonNull(a), NonNull(b)) == 0; }
 
-// the same connection (the name is a label: not part of the identity)
-static BOOL SameBookmark(const CFTPServer* a, const CFTPServer* b)
+// the same connection (the name is a label: not part of the identity); 'aProxy'/'bProxy' are
+// the proxy server UIDs in the same numbering (the source's are re-mapped first)
+static BOOL SameBookmark(const CFTPServer* a, int aProxy, const CFTPServer* b, int bProxy)
 {
     return StrEqCI(a->Address, b->Address) && a->Port == b->Port && a->AnonymousConnection == b->AnonymousConnection &&
            (a->AnonymousConnection || StrEq(a->UserName, b->UserName)) && StrEq(a->InitialPath, b->InitialPath) &&
-           StrEqCI(a->ServerType, b->ServerType);
+           StrEqCI(a->ServerType, b->ServerType) && aProxy == bProxy;
 }
 
 static BOOL SameProxy(const CFTPProxyServer* a, const CFTPProxyServer* b)
 {
     return StrEqCI(a->ProxyName, b->ProxyName) && a->ProxyType == b->ProxyType && StrEqCI(a->ProxyHost, b->ProxyHost) &&
            a->ProxyPort == b->ProxyPort && StrEq(a->ProxyUser, b->ProxyUser) && StrEq(a->ProxyScript, b->ProxyScript);
+}
+
+// the same definition of a server type (the name compared as the program compares it)
+static BOOL SameServerType(CServerType* a, CServerType* b)
+{
+    const char* an = NonNull(a->TypeName);
+    const char* bn = NonNull(b->TypeName);
+    if (SalamanderGeneral->StrICmp(*an == '*' ? an + 1 : an, *bn == '*' ? bn + 1 : bn) != 0 ||
+        !StrEq(a->AutodetectCond, b->AutodetectCond) || !StrEq(a->RulesForParsing, b->RulesForParsing) ||
+        a->Columns.Count != b->Columns.Count)
+    {
+        return FALSE;
+    }
+    int i;
+    for (i = 0; i < a->Columns.Count; i++)
+    {
+        char ca[STC_MAXCOLUMNSTR], cb[STC_MAXCOLUMNSTR];
+        if (!a->Columns[i]->SaveToStr(ca, (int)sizeof(ca), TRUE) || !b->Columns[i]->SaveToStr(cb, (int)sizeof(cb), TRUE) ||
+            strcmp(ca, cb) != 0)
+        {
+            return FALSE;
+        }
+    }
+    return TRUE;
 }
 
 struct CImportNameCtx
@@ -154,23 +200,36 @@ static BOOL ProxyNameExists(void* ctx, const char* name)
     return FALSE;
 }
 
+#define IMPORT_SWAP(type, a, b) \
+    { \
+        type t_ = a; \
+        a = b; \
+        b = t_; \
+    }
+
 //
 // ****************************************************************************
-// CFTPProxyServerList: what the import needs
+// the lists: what the import needs
 //
 
-int CFTPProxyServerList::AddImportedCopy(const CFTPProxyServer* src, const char* name)
+int CFTPProxyServerList::AddImportedCopy(const CFTPProxyServer* src, const char* name, int uid)
 {
     HANDLES(EnterCriticalSection(&ProxyServerListCS));
-    int uid = -1;
+    int ret = -1;
+    if (uid < 0)
+        uid = NextFreeProxyUID;
     CFTPProxyServer* n = new CFTPProxyServer(0);
-    if (n != NULL && n->Set(NextFreeProxyUID, name, src->ProxyType, src->ProxyHost, src->ProxyPort, src->ProxyUser,
+    if (n != NULL && n->Set(uid, name, src->ProxyType, src->ProxyHost, src->ProxyPort, src->ProxyUser,
                             src->ProxyEncryptedPassword, src->ProxyEncryptedPasswordSize, src->SaveProxyPassword,
                             src->ProxyScript))
     {
         Add(n);
         if (IsGood())
-            uid = NextFreeProxyUID++;
+        {
+            ret = uid;
+            if (NextFreeProxyUID <= uid)
+                NextFreeProxyUID = uid + 1;
+        }
         else
         {
             ResetState();
@@ -180,15 +239,48 @@ int CFTPProxyServerList::AddImportedCopy(const CFTPProxyServer* src, const char*
     else if (n != NULL)
         delete n;
     HANDLES(LeaveCriticalSection(&ProxyServerListCS));
-    return uid;
+    return ret;
 }
 
-void CFTPProxyServerList::ImportClear()
+void CFTPProxyServerList::ImportStartAfter(CFTPProxyServerList& cur)
 {
     HANDLES(EnterCriticalSection(&ProxyServerListCS));
     DestroyMembers();
-    NextFreeProxyUID = 1;
+    NextFreeProxyUID = cur.NextFreeProxyUID; // read in the main thread (the only writer)
     HANDLES(LeaveCriticalSection(&ProxyServerListCS));
+}
+
+void CFTPProxyServerList::ImportSwap(CFTPProxyServerList& other)
+{
+    HANDLES(EnterCriticalSection(&ProxyServerListCS));
+    IMPORT_SWAP(void**, Data, other.Data);
+    IMPORT_SWAP(int, Count, other.Count);
+    IMPORT_SWAP(int, Available, other.Available);
+    IMPORT_SWAP(int, Base, other.Base);
+    IMPORT_SWAP(int, Delta, other.Delta);
+    IMPORT_SWAP(CErrorType, State, other.State);
+    IMPORT_SWAP(int, NextFreeProxyUID, other.NextFreeProxyUID);
+    HANDLES(LeaveCriticalSection(&ProxyServerListCS));
+}
+
+void CFTPServerList::ImportSwap(CFTPServerList& other)
+{
+    IMPORT_SWAP(void**, Data, other.Data);
+    IMPORT_SWAP(int, Count, other.Count);
+    IMPORT_SWAP(int, Available, other.Available);
+    IMPORT_SWAP(int, Base, other.Base);
+    IMPORT_SWAP(int, Delta, other.Delta);
+    IMPORT_SWAP(CErrorType, State, other.State);
+}
+
+void CServerTypeList::ImportSwap(CServerTypeList& other)
+{
+    IMPORT_SWAP(void**, Data, other.Data);
+    IMPORT_SWAP(int, Count, other.Count);
+    IMPORT_SWAP(int, Available, other.Available);
+    IMPORT_SWAP(int, Base, other.Base);
+    IMPORT_SWAP(int, Delta, other.Delta);
+    IMPORT_SWAP(CErrorType, State, other.State);
 }
 
 //
@@ -208,6 +300,8 @@ struct CImportBookmark
 {
     CFTPServer* Item;
     int SourceProxyUID; // as stored in the source (-1 not used, -2 default)
+    int MappedProxyUID; // in the new list's numbering
+    BOOL ProxyLost;     // the source's proxy server is missing in the source
     BYTE* Blob;
     int BlobSize;
 };
@@ -234,15 +328,24 @@ static void FreeImportBookmarks(TDirectArray<CImportBookmark>& list)
     list.DestroyMembers();
 }
 
-static void ReadSourceProxies(HWND parent, CSalamanderSettingsImportAbstract* imp, CSalamanderRegistryAbstract* reg,
+static void ReportIncomplete(CSalamanderSettingsImportAbstract* imp, int index, const char* list)
+{
+    char what[100];
+    _snprintf_s(what, _TRUNCATE, "%d", index);
+    ImportReport(imp, SALIMPORT_REPORT_SKIPPED, IDS_IMPORT_INCOMPLETE, what, list);
+}
+
+// FALSE = out of memory (nothing may be imported then)
+static BOOL ReadSourceProxies(HWND parent, CSalamanderSettingsImportAbstract* imp, CSalamanderRegistryAbstract* reg,
                               HKEY root, TDirectArray<CImportProxy>& out)
 {
     HKEY listKey;
     if (!reg->OpenKey(root, CONFIG_FTPPROXYLIST, listKey))
-        return;
+        return TRUE;
+    BOOL ok = TRUE;
     char buf[30];
     int i;
-    for (i = 1;; i++)
+    for (i = 1; ok; i++)
     {
         HKEY sub;
         if (!reg->OpenKey(listKey, _itoa(i, buf, 10), sub))
@@ -252,7 +355,9 @@ static void ReadSourceProxies(HWND parent, CSalamanderSettingsImportAbstract* im
         p.Blob = NULL;
         p.BlobSize = 0;
         p.SourceUID = -1;
-        if (p.Item != NULL && p.Item->Load(parent, sub, reg))
+        if (p.Item == NULL)
+            ok = FALSE;
+        else if (p.Item->Load(parent, sub, reg))
         {
             p.SourceUID = p.Item->ProxyUID;
             p.Blob = ImportReadBlob(reg, sub, &p.BlobSize);
@@ -271,29 +376,30 @@ static void ReadSourceProxies(HWND parent, CSalamanderSettingsImportAbstract* im
                 out.ResetState();
                 delete p.Item;
                 ImportFreeBlob(p.Blob, p.BlobSize);
+                ok = FALSE;
             }
         }
         else
         {
             delete p.Item;
-            char what[100];
-            _snprintf_s(what, _TRUNCATE, "%d", i);
-            ImportReport(imp, SALIMPORT_REPORT_SKIPPED, IDS_IMPORT_INCOMPLETE, what, CONFIG_FTPPROXYLIST);
+            ReportIncomplete(imp, i, CONFIG_FTPPROXYLIST);
         }
         reg->CloseKey(sub);
     }
     reg->CloseKey(listKey);
+    return ok;
 }
 
-static void ReadSourceBookmarks(HWND parent, CSalamanderSettingsImportAbstract* imp, CSalamanderRegistryAbstract* reg,
+static BOOL ReadSourceBookmarks(HWND parent, CSalamanderSettingsImportAbstract* imp, CSalamanderRegistryAbstract* reg,
                                 HKEY root, TDirectArray<CImportBookmark>& out)
 {
     HKEY listKey;
     if (!reg->OpenKey(root, CONFIG_FTPSERVERLIST, listKey))
-        return;
+        return TRUE;
+    BOOL ok = TRUE;
     char buf[30];
     int i;
-    for (i = 1;; i++)
+    for (i = 1; ok; i++)
     {
         HKEY sub;
         if (!reg->OpenKey(listKey, _itoa(i, buf, 10), sub))
@@ -303,7 +409,11 @@ static void ReadSourceBookmarks(HWND parent, CSalamanderSettingsImportAbstract* 
         b.Blob = NULL;
         b.BlobSize = 0;
         b.SourceProxyUID = -2;
-        if (b.Item != NULL && b.Item->Load(parent, sub, reg))
+        b.MappedProxyUID = -2;
+        b.ProxyLost = FALSE;
+        if (b.Item == NULL)
+            ok = FALSE;
+        else if (b.Item->Load(parent, sub, reg))
         {
             DWORD uid;
             if (reg->GetValue(sub, "Proxy Server UID", REG_DWORD, &uid, sizeof(DWORD)))
@@ -324,18 +434,57 @@ static void ReadSourceBookmarks(HWND parent, CSalamanderSettingsImportAbstract* 
                 out.ResetState();
                 delete b.Item;
                 ImportFreeBlob(b.Blob, b.BlobSize);
+                ok = FALSE;
             }
         }
         else
         {
             delete b.Item;
-            char what[100];
-            _snprintf_s(what, _TRUNCATE, "%d", i);
-            ImportReport(imp, SALIMPORT_REPORT_SKIPPED, IDS_IMPORT_INCOMPLETE, what, CONFIG_FTPSERVERLIST);
+            ReportIncomplete(imp, i, CONFIG_FTPSERVERLIST);
         }
         reg->CloseKey(sub);
     }
     reg->CloseKey(listKey);
+    return ok;
+}
+
+// the source's server types (like CServerTypeList::Load, but an invalid entry is reported)
+static BOOL ReadSourceTypes(HWND parent, CSalamanderSettingsImportAbstract* imp, CSalamanderRegistryAbstract* reg,
+                            HKEY root, CServerTypeList& out)
+{
+    HKEY listKey;
+    if (!reg->OpenKey(root, CONFIG_SERVERTYPES, listKey))
+        return TRUE;
+    BOOL ok = TRUE;
+    char buf[30];
+    int i;
+    for (i = 1; ok; i++)
+    {
+        HKEY sub;
+        if (!reg->OpenKey(listKey, _itoa(i, buf, 10), sub))
+            break;
+        CServerType* item = new CServerType;
+        if (item == NULL)
+            ok = FALSE;
+        else if (item->Load(parent, sub, reg))
+        {
+            out.Add(item);
+            if (!out.IsGood())
+            {
+                out.ResetState();
+                delete item;
+                ok = FALSE;
+            }
+        }
+        else
+        {
+            delete item;
+            ReportIncomplete(imp, i, CONFIG_SERVERTYPES);
+        }
+        reg->CloseKey(sub);
+    }
+    reg->CloseKey(listKey);
+    return ok;
 }
 
 //
@@ -353,6 +502,28 @@ static CFTPSettingsImport FTPSettingsImport;
 
 CPluginSettingsImportAbstract* GetFTPSettingsImport() { return &FTPSettingsImport; }
 
+static int FindProxy(CFTPProxyServerList& list, const CFTPProxyServer* p)
+{
+    int j;
+    for (j = 0; j < list.GetCount(); j++)
+    {
+        if (SameProxy(list.GetAt(j), p))
+            return j;
+    }
+    return -1;
+}
+
+static int FindBookmark(CFTPServerList& list, const CFTPServer* b, int proxy)
+{
+    int j;
+    for (j = 0; j < list.Count; j++)
+    {
+        if (SameBookmark(list.At(j), list.At(j)->ProxyServerUID, b, proxy))
+            return j;
+    }
+    return -1;
+}
+
 BOOL WINAPI CFTPSettingsImport::ImportSettings(HWND parent, CSalamanderSettingsImportAbstract* imp, BOOL dryRun)
 {
     CALL_STACK_MESSAGE2("CFTPSettingsImport::ImportSettings(, , %d)", dryRun);
@@ -362,32 +533,45 @@ BOOL WINAPI CFTPSettingsImport::ImportSettings(HWND parent, CSalamanderSettingsI
         return TRUE; // the old program has no FTP settings: nothing to do
     BOOL replace = imp->GetMode() == SALIMPORT_MODE_REPLACE;
     char suffix1[100], suffixN[100];
-    lstrcpyn(suffix1, LoadStrU8(IDS_IMPORT_SUFFIX), (int)sizeof(suffix1));
-    lstrcpyn(suffixN, LoadStrU8(IDS_IMPORT_SUFFIXN), (int)sizeof(suffixN));
+    SalCfgImpCopyText(suffix1, (int)sizeof(suffix1), LoadStrU8(IDS_IMPORT_SUFFIX));
+    SalCfgImpCopyText(suffixN, (int)sizeof(suffixN), LoadStrU8(IDS_IMPORT_SUFFIXN));
 
     TDirectArray<CImportProxy> srcProxies(8, 8);
     TDirectArray<CImportBookmark> srcBookmarks(16, 16);
-    ReadSourceProxies(parent, imp, reg, root, srcProxies);
-    ReadSourceBookmarks(parent, imp, reg, root, srcBookmarks);
     CServerTypeList srcTypes;
-    srcTypes.Load(parent, root, reg);
+    BOOL ok = ReadSourceProxies(parent, imp, reg, root, srcProxies) &&
+              ReadSourceBookmarks(parent, imp, reg, root, srcBookmarks) &&
+              ReadSourceTypes(parent, imp, reg, root, srcTypes);
 
-    // the new lists, complete before anything is changed (all or nothing)
+    // the new lists, complete before anything is changed (all or nothing); Add starts from
+    // copies of the current lists, Replace from empty ones whose new proxy UIDs continue after
+    // the current ones (a reference to a removed proxy server never points to another one)
     CFTPProxyServerList newProxies;
     CFTPServerList newBookmarks;
-    BOOL ok = TRUE;
-    if (replace)
-        newProxies.ImportClear();
-    else
-        ok = Config.FTPProxyServerList.CopyMembersToList(newProxies) && Config.FTPServerList.CopyMembersToList(newBookmarks);
+    CServerTypeList newTypes;
+    if (ok)
+    {
+        if (replace)
+            newProxies.ImportStartAfter(Config.FTPProxyServerList);
+        else
+            ok = Config.FTPProxyServerList.CopyMembersToList(newProxies) && Config.FTPServerList.CopyMembersToList(newBookmarks);
+    }
+    if (ok)
+    {
+        CServerTypeList* cur = Config.LockServerTypeList();
+        ok = newTypes.CopyItemsFrom(cur);
+        Config.UnlockServerTypeList();
+    }
     CImportNameCtx names;
     names.Bookmarks = &newBookmarks;
     names.Proxies = &newProxies;
     char label[1000];
-
-    // proxy servers: identical ones are reused, others added under a new UID (and a free name)
-    TDirectArray<int> uidMap(8, 8); // pairs: source UID, new UID
+    char text[2000];
     int i, j;
+
+    // proxy servers: identical ones are reused (Replace keeps the UID of a current identical
+    // one), others are added under a new UID and a free name
+    TDirectArray<int> uidMap(8, 8); // pairs: source UID, new UID; the first source entry of a UID wins
     if (replace && ok)
     {
         for (i = 0; i < Config.FTPProxyServerList.GetCount(); i++)
@@ -408,17 +592,15 @@ BOOL WINAPI CFTPSettingsImport::ImportSettings(HWND parent, CSalamanderSettingsI
         CFTPProxyServer* sp = srcProxies[i].Item;
         ProxyLabel(sp, label, (int)sizeof(label));
         int newUID = -1;
-        for (j = 0; j < newProxies.GetCount() && newUID < 0; j++)
+        int found = FindProxy(newProxies, sp);
+        if (found >= 0) // Add: already present; Replace: the same proxy twice in the source
         {
-            if (SameProxy(newProxies.GetAt(j), sp))
-                newUID = newProxies.GetAt(j)->ProxyUID;
-        }
-        if (newUID >= 0)
-        {
-            imp->Report(replace ? SALIMPORT_REPORT_ADDED : SALIMPORT_REPORT_PRESENT, label);
+            newUID = newProxies.GetAt(found)->ProxyUID;
+            imp->Report(SALIMPORT_REPORT_PRESENT, label);
         }
         else
         {
+            int curIndex = replace ? FindProxy(Config.FTPProxyServerList, sp) : -1;
             char name[PROXYSRVNAME_MAX_SIZE];
             if (!SalCfgImpUniqueName(HandleNULLStr(sp->ProxyName), suffix1, suffixN, ProxyNameExists, &names, name,
                                      PROXYSRVNAME_MAX_SIZE))
@@ -435,24 +617,73 @@ BOOL WINAPI CFTPSettingsImport::ImportSettings(HWND parent, CSalamanderSettingsI
             sp->ProxyEncryptedPassword = pwd;
             sp->ProxyEncryptedPasswordSize = pwdSize;
             sp->SaveProxyPassword = pwd != NULL;
-            newUID = newProxies.AddImportedCopy(sp, name);
+            newUID = newProxies.AddImportedCopy(sp, name, curIndex >= 0 ? Config.FTPProxyServerList.GetAt(curIndex)->ProxyUID : -1);
             if (newUID < 0)
             {
                 ok = FALSE;
                 break;
             }
-            if (strcmp(name, HandleNULLStr(sp->ProxyName)) != 0)
-                ImportReport(imp, SALIMPORT_REPORT_FLAGGED, IDS_IMPORT_RENAMED, label, name);
-            else if (!pwdOk)
-                ImportReport(imp, SALIMPORT_REPORT_FLAGGED, IDS_IMPORT_NOPASSWORD, label);
-            else
-                imp->Report(SALIMPORT_REPORT_ADDED, label);
+            BOOL renamed = strcmp(name, HandleNULLStr(sp->ProxyName)) != 0;
+            SalCfgImpCopyText(text, (int)sizeof(text), label);
+            if (renamed)
+                ImportFormat(text, (int)sizeof(text), IDS_IMPORT_RENAMED, label, name);
+            if (!pwdOk)
+                ImportAddReason(text, (int)sizeof(text), IDS_IMPORT_NOPASSWORD);
+            imp->Report(curIndex >= 0 ? SALIMPORT_REPORT_REPLACED : (renamed || !pwdOk) ? SALIMPORT_REPORT_FLAGGED : SALIMPORT_REPORT_ADDED,
+                        text);
         }
-        uidMap.Add(srcProxies[i].SourceUID);
-        uidMap.Add(newUID);
+        int src = srcProxies[i].SourceUID;
+        BOOL mapped = src <= 0; // UIDs start at 1; an invalid one is never mapped
+        int k;
+        for (k = 0; k + 1 < uidMap.Count && !mapped; k += 2)
+            mapped = uidMap[k] == src;
+        if (!mapped)
+        {
+            uidMap.Add(src);
+            uidMap.Add(newUID);
+            if (!uidMap.IsGood())
+            {
+                uidMap.ResetState();
+                ok = FALSE;
+            }
+        }
+    }
+    // Replace: the default proxy server is reset when it is removed
+    BOOL resetDefaultProxy = FALSE;
+    if (ok && replace && Config.DefaultProxySrvUID != -1 && !newProxies.IsValidUID(Config.DefaultProxySrvUID))
+    {
+        resetDefaultProxy = TRUE;
+        for (i = 0; i < Config.FTPProxyServerList.GetCount(); i++)
+        {
+            CFTPProxyServer* cur = Config.FTPProxyServerList.GetAt(i);
+            if (cur->ProxyUID == Config.DefaultProxySrvUID)
+                ImportReport(imp, SALIMPORT_REPORT_REMOVED, IDS_IMPORT_DEFPROXY, HandleNULLStr(cur->ProxyName));
+        }
     }
 
-    // bookmarks
+    // bookmarks: the proxy reference of each is re-mapped to the new list first (it is part of
+    // the identity of a connection)
+    for (i = 0; i < srcBookmarks.Count && ok; i++)
+    {
+        int src = srcBookmarks[i].SourceProxyUID;
+        int mapped = src;
+        if (src != -1 && src != -2)
+        {
+            mapped = -2;
+            srcBookmarks[i].ProxyLost = TRUE;
+            int k;
+            for (k = 0; k + 1 < uidMap.Count; k += 2)
+            {
+                if (uidMap[k] == src)
+                {
+                    mapped = uidMap[k + 1];
+                    srcBookmarks[i].ProxyLost = FALSE;
+                    break;
+                }
+            }
+        }
+        srcBookmarks[i].MappedProxyUID = mapped;
+    }
     if (replace && ok)
     {
         for (i = 0; i < Config.FTPServerList.Count; i++)
@@ -460,7 +691,7 @@ BOOL WINAPI CFTPSettingsImport::ImportSettings(HWND parent, CSalamanderSettingsI
             CFTPServer* cur = Config.FTPServerList.At(i);
             BOOL inSrc = FALSE;
             for (j = 0; j < srcBookmarks.Count && !inSrc; j++)
-                inSrc = SameBookmark(cur, srcBookmarks[j].Item);
+                inSrc = SameBookmark(cur, cur->ProxyServerUID, srcBookmarks[j].Item, srcBookmarks[j].MappedProxyUID);
             if (!inSrc)
             {
                 BookmarkLabel(cur, label, (int)sizeof(label));
@@ -471,33 +702,14 @@ BOOL WINAPI CFTPSettingsImport::ImportSettings(HWND parent, CSalamanderSettingsI
     for (i = 0; i < srcBookmarks.Count && ok; i++)
     {
         CFTPServer* sb = srcBookmarks[i].Item;
+        int mapped = srcBookmarks[i].MappedProxyUID;
         BookmarkLabel(sb, label, (int)sizeof(label));
-        BOOL present = FALSE;
-        for (j = 0; j < newBookmarks.Count && !present; j++)
-            present = SameBookmark(newBookmarks.At(j), sb);
-        if (present)
+        if (FindBookmark(newBookmarks, sb, mapped) >= 0) // Add: already present; Replace: twice in the source
         {
             imp->Report(SALIMPORT_REPORT_PRESENT, label);
             continue;
         }
-        // the proxy reference, re-mapped to the new list
-        int src = srcBookmarks[i].SourceProxyUID;
-        int mapped = src;
-        BOOL proxyLost = FALSE;
-        if (src != -1 && src != -2)
-        {
-            mapped = -2;
-            proxyLost = TRUE;
-            int k;
-            for (k = 0; k + 1 < uidMap.Count; k += 2)
-            {
-                if (uidMap[k] == src)
-                {
-                    mapped = uidMap[k + 1];
-                    proxyLost = FALSE;
-                }
-            }
-        }
+        BOOL replacesCurrent = replace && FindBookmark(Config.FTPServerList, sb, mapped) >= 0;
         sb->ProxyServerUID = mapped;
         char name[BOOKMARKNAME_MAX_SIZE];
         if (!SalCfgImpUniqueName(HandleNULLStr(sb->ItemName), suffix1, suffixN, BookmarkNameExists, &names, name,
@@ -518,12 +730,13 @@ BOOL WINAPI CFTPSettingsImport::ImportSettings(HWND parent, CSalamanderSettingsI
             SalamanderGeneral->Free(sb->ItemName);
             sb->ItemName = n;
         }
-        BYTE* pwd;
-        int pwdSize;
+        BYTE* pwd = NULL;
+        int pwdSize = 0;
         BOOL pwdOk = sb->AnonymousConnection ||
                      ImportConvertPassword(imp, srcBookmarks[i].Blob, srcBookmarks[i].BlobSize, dryRun, &pwd, &pwdSize);
-        if (sb->AnonymousConnection)
+        if (sb->AnonymousConnection && pwd != NULL)
         {
+            ImportFreeBlob(pwd, pwdSize);
             pwd = NULL;
             pwdSize = 0;
         }
@@ -540,70 +753,94 @@ BOOL WINAPI CFTPSettingsImport::ImportSettings(HWND parent, CSalamanderSettingsI
             break;
         }
         srcBookmarks[i].Item = NULL; // owned by newBookmarks now
+        SalCfgImpCopyText(text, (int)sizeof(text), label);
         if (renamed)
-            ImportReport(imp, SALIMPORT_REPORT_FLAGGED, IDS_IMPORT_RENAMED, label, name);
-        else if (proxyLost)
-            ImportReport(imp, SALIMPORT_REPORT_FLAGGED, IDS_IMPORT_NOPROXY, label);
-        else if (!pwdOk)
-            ImportReport(imp, SALIMPORT_REPORT_FLAGGED, IDS_IMPORT_NOPASSWORD, label);
-        else
-            imp->Report(SALIMPORT_REPORT_ADDED, label);
+            ImportFormat(text, (int)sizeof(text), IDS_IMPORT_RENAMED, label, name);
+        if (srcBookmarks[i].ProxyLost)
+            ImportAddReason(text, (int)sizeof(text), IDS_IMPORT_NOPROXY);
+        if (!pwdOk)
+            ImportAddReason(text, (int)sizeof(text), IDS_IMPORT_NOPASSWORD);
+        BOOL flagged = renamed || srcBookmarks[i].ProxyLost || !pwdOk;
+        imp->Report(replacesCurrent ? SALIMPORT_REPORT_REPLACED : flagged ? SALIMPORT_REPORT_FLAGGED : SALIMPORT_REPORT_ADDED,
+                    text);
     }
 
-    // user-defined server types ('*' in front of the name); built-in ones are the program's
-    TIndirectArray<CServerType> addTypes(4, 4, dtNoDelete);
-    TDirectArray<int> removeTypes(4, 4);
-    CServerTypeList* curTypes = Config.LockServerTypeList();
+    // user-defined server types ('*' in front of the name); the program compares type names
+    // without the '*', so a user type may meet a built-in one of the same name
+    if (replace && ok)
+    {
+        for (i = newTypes.Count - 1; i >= 0; i--)
+        {
+            CServerType* cur = newTypes[i];
+            if (cur->TypeName == NULL || cur->TypeName[0] != '*')
+                continue;
+            int index;
+            if (!srcTypes.ContainsTypeName(cur->TypeName, NULL, &index) || srcTypes[index]->TypeName == NULL ||
+                srcTypes[index]->TypeName[0] != '*') // a user type the source does not have: removed
+            {
+                TypeLabel(cur, label, (int)sizeof(label));
+                imp->Report(SALIMPORT_REPORT_REMOVED, label);
+                newTypes.Delete(i);
+            }
+        }
+    }
     for (i = 0; i < srcTypes.Count && ok; i++)
     {
         CServerType* st = srcTypes[i];
         if (st->TypeName == NULL || st->TypeName[0] != '*')
-            continue;
-        char fmt[200];
-        lstrcpyn(fmt, LoadStrU8(IDS_IMPORT_SRVTYPE), (int)sizeof(fmt));
-        _snprintf_s(label, _TRUNCATE, fmt, st->TypeName + 1);
+            continue; // built-in types are the program's
+        TypeLabel(st, label, (int)sizeof(label));
         int index;
-        if (curTypes->ContainsTypeName(st->TypeName, NULL, &index))
-            imp->Report(SALIMPORT_REPORT_PRESENT, label);
+        if (newTypes.ContainsTypeName(st->TypeName, NULL, &index))
+        {
+            if (SameServerType(newTypes[index], st))
+                imp->Report(SALIMPORT_REPORT_PRESENT, label);
+            else if (!replace)
+                ImportReport(imp, SALIMPORT_REPORT_SKIPPED, IDS_IMPORT_TYPEKEPT, label);
+            else
+            {
+                CServerType* copy = st->MakeCopy();
+                if (copy == NULL)
+                {
+                    ok = FALSE;
+                    break;
+                }
+                newTypes.Delete(index);
+                newTypes.Insert(index, copy);
+                if (!newTypes.IsGood())
+                {
+                    newTypes.ResetState();
+                    delete copy;
+                    ok = FALSE;
+                    break;
+                }
+                imp->Report(SALIMPORT_REPORT_REPLACED, label);
+            }
+        }
         else
         {
-            addTypes.Add(st);
+            if (!newTypes.AddServerType(st->TypeName, st))
+            {
+                ok = FALSE;
+                break;
+            }
             imp->Report(SALIMPORT_REPORT_ADDED, label);
         }
     }
-    if (replace && ok)
-    {
-        for (i = 0; i < curTypes->Count; i++)
-        {
-            CServerType* cur = curTypes->At(i);
-            if (cur->TypeName == NULL || cur->TypeName[0] != '*')
-                continue;
-            if (!srcTypes.ContainsTypeName(cur->TypeName, NULL, NULL))
-            {
-                char fmt[200];
-                lstrcpyn(fmt, LoadStrU8(IDS_IMPORT_SRVTYPE), (int)sizeof(fmt));
-                _snprintf_s(label, _TRUNCATE, fmt, cur->TypeName + 1);
-                imp->Report(SALIMPORT_REPORT_REMOVED, label);
-                removeTypes.Add(i);
-            }
-        }
-    }
-    Config.UnlockServerTypeList();
 
     if (ok && !dryRun)
     {
-        // commit: the lists are swapped in as complete copies
-        ok = newProxies.CopyMembersToList(Config.FTPProxyServerList) && newBookmarks.CopyMembersToList(Config.FTPServerList);
-        if (ok)
-        {
-            CServerTypeList* types = Config.LockServerTypeList();
-            for (i = removeTypes.Count - 1; i >= 0; i--)
-                types->Delete(removeTypes[i]);
-            for (i = 0; i < addTypes.Count; i++)
-                types->AddServerType(addTypes[i]->TypeName, addTypes[i]);
-            Config.UnlockServerTypeList();
-            Config.FTPServerList.CheckProxyServersUID(Config.FTPProxyServerList);
-        }
+        // commit: the complete new lists are exchanged with the current ones (cannot fail);
+        // the old contents are released with the local lists
+        Config.FTPProxyServerList.ImportSwap(newProxies);
+        Config.FTPServerList.ImportSwap(newBookmarks);
+        CServerTypeList* types = Config.LockServerTypeList();
+        types->ImportSwap(newTypes);
+        newTypes.DestroyMembers(); // the old types, released while the list is locked
+        Config.UnlockServerTypeList();
+        if (resetDefaultProxy)
+            Config.DefaultProxySrvUID = -1;
+        Config.FTPServerList.CheckProxyServersUID(Config.FTPProxyServerList);
     }
     FreeImportProxies(srcProxies);
     FreeImportBookmarks(srcBookmarks);

@@ -832,9 +832,18 @@ BOOL CPasswordManager::VerifyForeignMasterPassword(const BYTE* verifier, int ver
     memcpy(&mpv, verifier, sizeof(CMasterPasswordVerifier));
     CSalAES aes;
     WORD dummy; // unnecessary weakness; ignore it
-    int ret = SalamanderCrypt->AESInit(&aes, PASSWORD_MANAGER_AES_MODE, password, strlen(password), mpv.Salt, &dummy);
+    // the old program read its master password with GetDlgItemText(..., SAL_AES_MAX_PWD_LENGTH):
+    // at most 127 bytes were ever used
+    int len = (int)strlen(password);
+    if (len > SAL_AES_MAX_PWD_LENGTH - 1)
+        len = SAL_AES_MAX_PWD_LENGTH - 1;
+    int ret = SalamanderCrypt->AESInit(&aes, PASSWORD_MANAGER_AES_MODE, password, len, mpv.Salt, &dummy);
     if (ret != SAL_AES_ERR_GOOD_RETURN)
+    {
         TRACE_E("CPasswordManager::VerifyForeignMasterPassword(): unexpected state, ret=" << ret);
+        SecureZeroMemory(&mpv, sizeof(mpv));
+        return FALSE;
+    }
     SalamanderCrypt->AESDecrypt(&aes, mpv.Dummy, 16);
     SalamanderCrypt->AESEnd(&aes, mpv.MAC, NULL);
     BOOL ok = memcmp(mpv.MAC, ((const CMasterPasswordVerifier*)verifier)->MAC, sizeof(mpv.MAC)) == 0;
@@ -865,14 +874,23 @@ BOOL CPasswordManager::DecryptWithMasterPassword(const BYTE* encryptedPassword, 
     {
         CSalAES aes;
         WORD dummy; // unnecessary weakness; ignore it
-        int ret = SalamanderCrypt->AESInit(&aes, PASSWORD_MANAGER_AES_MODE, masterPassword, strlen(masterPassword), tmpBuff + 1, &dummy);
+        int len = (int)strlen(masterPassword); // at most 127 bytes, as in VerifyForeignMasterPassword
+        if (len > SAL_AES_MAX_PWD_LENGTH - 1)
+            len = SAL_AES_MAX_PWD_LENGTH - 1;
+        int ret = SalamanderCrypt->AESInit(&aes, PASSWORD_MANAGER_AES_MODE, masterPassword, len, tmpBuff + 1, &dummy);
         if (ret != SAL_AES_ERR_GOOD_RETURN)
+        {
             TRACE_E("CPasswordManager::DecryptWithMasterPassword(): unexpected state, ret=" << ret);
-        SalamanderCrypt->AESDecrypt(&aes, tmpBuff + 1 + 16, encryptedPasswordSize - 1 - 16 - 10);
-        BYTE mac[10];
-        SalamanderCrypt->AESEnd(&aes, mac, NULL);
-        if (memcmp(mac, &tmpBuff[encryptedPasswordSize - 10], 10) != 0)
-            ok = FALSE; // wrong master password
+            ok = FALSE;
+        }
+        else
+        {
+            SalamanderCrypt->AESDecrypt(&aes, tmpBuff + 1 + 16, encryptedPasswordSize - 1 - 16 - 10);
+            BYTE mac[10];
+            SalamanderCrypt->AESEnd(&aes, mac, NULL);
+            if (memcmp(mac, &tmpBuff[encryptedPasswordSize - 10], 10) != 0)
+                ok = FALSE; // wrong master password
+        }
         pwdOffset += 16;
         tmpBuff[encryptedPasswordSize - 10] = 0;
     }

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 //
 // ****************************************************************************
@@ -47,6 +48,7 @@ struct CSalCfgKey
     CSalCfgKey** Keys;
     int KeyCount;
     int KeyCap;
+    BOOL Truncated; // the reader left out something of THIS key (a value or a subkey)
 };
 
 namespace SalCfgImpDetail
@@ -116,6 +118,47 @@ namespace SalCfgImpDetail
         return n;
     }
 } // namespace SalCfgImpDetail
+
+// copies UTF-8 text 'src' to 'dst' (size 'size'); text that does not fit is cut after its last
+// whole character (rules 097/098) - for report text and labels only, never for names or paths
+inline void SalCfgImpCopyText(char* dst, int size, const char* src)
+{
+    if (dst == NULL || size < 1)
+        return;
+    if (src == NULL)
+        src = "";
+    int n = SalCfgImpDetail::Utf8Fit(src, size - 1);
+    memmove(dst, src, n);
+    dst[n] = 0;
+}
+
+// formats UTF-8 report text like _snprintf_s; text that does not fit is cut after its last
+// whole character
+inline void SalCfgImpFormatText(char* dst, int size, const char* fmt, ...)
+{
+    if (dst == NULL || size < 1)
+        return;
+    char big[4096];
+    va_list args;
+    va_start(args, fmt);
+    int r = _vsnprintf_s(big, _TRUNCATE, fmt != NULL ? fmt : "", args);
+    va_end(args);
+    if (r < 0) // cut by _TRUNCATE: drop a split last character
+    {
+        int len = (int)strlen(big);
+        int start = len - 1;
+        while (start > 0 && (((unsigned char)big[start]) & 0xC0) == 0x80)
+            start--;
+        unsigned char lead = start >= 0 ? (unsigned char)big[start] : 0;
+        int need = lead < 0x80 ? 1 : (lead & 0xE0) == 0xC0 ? 2
+                                 : (lead & 0xF0) == 0xE0   ? 3
+                                 : (lead & 0xF8) == 0xF0   ? 4
+                                                           : 0;
+        if (start >= 0 && len - start != need)
+            big[start] = 0; // incomplete (or invalid) last sequence
+    }
+    SalCfgImpCopyText(dst, size, big);
+}
 
 inline CSalCfgKey* SalCfgKeyNew(const char* name)
 {
@@ -252,6 +295,22 @@ inline const CSalCfgKey* SalCfgKeyFind(const CSalCfgKey* key, const char* path)
             s++;
     }
     return key;
+}
+
+// TRUE when the reader left out something of 'key' or of any key below it
+inline BOOL SalCfgKeySubtreeTruncated(const CSalCfgKey* key)
+{
+    if (key == NULL)
+        return FALSE;
+    if (key->Truncated)
+        return TRUE;
+    int i;
+    for (i = 0; i < key->KeyCount; i++)
+    {
+        if (SalCfgKeySubtreeTruncated(key->Keys[i]))
+            return TRUE;
+    }
+    return FALSE;
 }
 
 inline const CSalCfgValue* SalCfgValueFind(const CSalCfgKey* key, const char* name)
@@ -1053,11 +1112,14 @@ inline void SalCfgImpFreeMenu(CSalCfgImpMenuItem* items, int count)
 // '*out' gets an array (free with SalCfgImpFreeMenu); '*stopReason' (if not NULL): 0 = all read,
 // 1 = stopped at an item missing a required value, 2 = stopped at a too long value
 inline int SalCfgImpParseUserMenu(const CSalCfgKey* menu, int maxPath, int maxArgs, CSalCfgImpMenuItem** out,
-                                  int* stopReason)
+                                  int* stopReason, int* skippedTooLong = NULL)
 {
     *out = NULL;
     if (stopReason != NULL)
         *stopReason = 0;
+    if (skippedTooLong != NULL)
+        *skippedTooLong = 0;
+    int skipDepth = 0; // > 0: inside a submenu whose beginning was skipped (too long)
     if (menu == NULL)
         return 0;
     int cap = menu->KeyCount + 1;
@@ -1092,13 +1154,6 @@ inline int SalCfgImpParseUserMenu(const CSalCfgKey* menu, int maxPath, int maxAr
             initDir = "$(Drive)$(Path)";
         if (icon == NULL)
             icon = "";
-        if ((int)strlen(name) >= maxPath || (int)strlen(command) >= maxPath || (int)strlen(arguments) >= maxArgs ||
-            (int)strlen(initDir) >= maxPath || (int)strlen(icon) >= maxPath)
-        {
-            if (stopReason != NULL)
-                *stopReason = 2;
-            break;
-        }
         DWORD useWindow = TRUE, separator = FALSE, type, showInToolbar = TRUE;
         SalCfgGetDword(k, "Open Shell Window", &useWindow);
         SalCfgGetDword(k, "Separator", &separator);
@@ -1107,6 +1162,24 @@ inline int SalCfgImpParseUserMenu(const CSalCfgKey* menu, int maxPath, int maxAr
         if (type > SALCFGIMP_UM_SEPARATOR)
             type = SALCFGIMP_UM_ITEM;
         SalCfgGetDword(k, "Show In Toolbar", &showInToolbar);
+        if (skipDepth > 0) // the rest of a skipped submenu (its structure stays balanced)
+        {
+            if (type == SALCFGIMP_UM_SUBMENUBEGIN)
+                skipDepth++;
+            else if (type == SALCFGIMP_UM_SUBMENUEND)
+                skipDepth--;
+            continue;
+        }
+        if ((int)strlen(name) >= maxPath || (int)strlen(command) >= maxPath || (int)strlen(arguments) >= maxArgs ||
+            (int)strlen(initDir) >= maxPath || (int)strlen(icon) >= maxPath)
+        {
+            // never cut: this entry (a submenu with all its entries) is left out, the rest is read
+            if (skippedTooLong != NULL)
+                (*skippedTooLong)++;
+            if (type == SALCFGIMP_UM_SUBMENUBEGIN)
+                skipDepth = 1;
+            continue;
+        }
         CSalCfgImpMenuItem* it = &items[count];
         it->Name = SalCfgImpDetail::Dup(name);
         it->Command = SalCfgImpDetail::Dup(command);
@@ -1267,11 +1340,13 @@ inline void SalCfgImpFreeViewers(CSalCfgImpViewer* items, int count)
 #define SALCFGIMP_VSTOP_TOOLONG 3 // a value longer than the program's buffer
 
 inline int SalCfgImpParseViewers(const CSalCfgKey* key, BOOL editors, DWORD srcVer, int maxPath,
-                                 CSalCfgImpViewer** out, int* stopReason)
+                                 CSalCfgImpViewer** out, int* stopReason, int* skippedTooLong = NULL)
 {
     *out = NULL;
     if (stopReason != NULL)
         *stopReason = SALCFGIMP_VSTOP_NONE;
+    if (skippedTooLong != NULL)
+        *skippedTooLong = 0;
     if (key == NULL)
         return 0;
     int cap = key->KeyCount + 1;
@@ -1313,9 +1388,10 @@ inline int SalCfgImpParseViewers(const CSalCfgKey* key, BOOL editors, DWORD srcV
         if ((int)strlen(masks) >= maxPath || (int)strlen(command) >= maxPath || (int)strlen(arguments) >= maxPath ||
             (int)strlen(initDir) >= maxPath)
         {
-            if (stopReason != NULL)
-                *stopReason = SALCFGIMP_VSTOP_TOOLONG;
-            break;
+            // never cut: this row is left out, the rest is read
+            if (skippedTooLong != NULL)
+                (*skippedTooLong)++;
+            continue;
         }
         CSalCfgImpViewer* it = &items[count];
         it->Masks = (char*)malloc(strlen(masks) + 1);

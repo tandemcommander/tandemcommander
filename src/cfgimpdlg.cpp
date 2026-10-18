@@ -11,7 +11,9 @@
 #include "mainwnd.h"
 #include "plugins.h"
 #include "pwdmngr.h"
+#include "themes.h"
 #include "cfgimport.h"
+#include "common/salsafereplace.h"
 
 #define CFGIMP_HELPID IDD_CFGIMPORT_SOURCE // one help page for the whole wizard
 
@@ -36,31 +38,63 @@ static void CfgImpMessage(HWND parent, const char* text, UINT flags)
     SalMessageBox(parent, text, title, flags);
 }
 
-// writes a UTF-8 text (with BOM) to a file chosen by the user
+#define CFGIMP_REPORT_PATH_CHARS 32768 // a long path is never cut (rules 097/098)
+
+// writes a UTF-8 text (with BOM) to a file chosen by the user; an existing file is replaced only
+// by a complete new one (a temporary file + SalReplaceWithTempW, rule 105)
 static void CfgImpSaveReport(HWND parent, const char* text)
 {
-    WCHAR file[MAX_PATH] = L"import-report.txt";
+    WCHAR* file = (WCHAR*)calloc(CFGIMP_REPORT_PATH_CHARS, sizeof(WCHAR));
+    WCHAR filter[300];
+    if (file == NULL)
+        return;
+    lstrcpynW(file, LoadStrW(IDS_CFGIMP_REPORTNAME), CFGIMP_REPORT_PATH_CHARS);
+    lstrcpynW(filter, LoadStrW(IDS_CFGIMP_REPORTFILTER), _countof(filter) - 1);
+    filter[_countof(filter) - 1] = 0;
+    WCHAR* s;
+    for (s = filter; *s != 0; s++) // "a|b|c|d|" -> "a\0b\0c\0d\0\0"
+    {
+        if (*s == L'|')
+            *s = 0;
+    }
+    s[1] = 0;
     OPENFILENAMEW ofn;
     memset(&ofn, 0, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = parent;
-    ofn.lpstrFilter = L"*.txt\0*.txt\0*.*\0*.*\0";
+    ofn.lpstrFilter = filter;
     ofn.lpstrFile = file;
-    ofn.nMaxFile = MAX_PATH;
+    ofn.nMaxFile = CFGIMP_REPORT_PATH_CHARS;
     ofn.lpstrDefExt = L"txt";
     ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
     if (!SafeGetSaveFileNameW(&ofn))
+    {
+        free(file);
         return;
-    HANDLE h = CreateFileW(file, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    BOOL ok = h != INVALID_HANDLE_VALUE;
+    }
+    BOOL existed = !SalPathIsGoneW(file);
+    WCHAR* tmp = NULL;
+    HANDLE h;
+    DWORD err = 0;
+    BOOL ok = SalCreateTempNextToW(file, L"tci", &tmp, &h, &err);
     if (ok)
     {
         DWORD written;
         ok = WriteFile(h, "\xEF\xBB\xBF", 3, &written, NULL) && written == 3;
         DWORD l = (DWORD)strlen(text);
         ok = ok && WriteFile(h, text, l, &written, NULL) && written == l;
+        ok = FlushFileBuffers(h) && ok;
         CloseHandle(h);
+        CSalReplaceResult r = ok ? SalReplaceWithTempW(file, tmp, existed, FALSE, &err) : srrFailedKept;
+        if (r != srrDone)
+        {
+            ok = FALSE;
+            if (r == srrFailedKept)
+                DeleteFileW(tmp); // the chosen file stays as it was
+        }
+        free(tmp);
     }
+    free(file);
     if (!ok)
         CfgImpMessage(parent, LoadStrU8(IDS_CFGIMP_SAVEFAILED), MB_OK | MB_ICONEXCLAMATION);
 }
@@ -100,12 +134,13 @@ protected:
         else
         {
             if (ok && Run->Sources[index].SaveInProgress)
-                lstrcpyn(note, LoadStrU8(IDS_CFGIMP_SRC_SAVEINPROGRESS), (int)sizeof(note));
+                SalCfgImpCopyText(note, (int)sizeof(note), LoadStrU8(IDS_CFGIMP_SRC_SAVEINPROGRESS));
             if (Run->SourceProgramRuns)
             {
-                if (note[0] != 0)
-                    strcat_s(note, "\n");
-                strncat_s(note, LoadStrU8(IDS_CFGIMP_SRC_RUNNING), _TRUNCATE);
+                char was[1000];
+                SalCfgImpCopyText(was, (int)sizeof(was), note);
+                SalCfgImpFormatText(note, (int)sizeof(note), was[0] != 0 ? "%s\n%s" : "%s%s", was,
+                                    LoadStrU8(IDS_CFGIMP_SRC_RUNNING));
             }
         }
         SalSetDlgItemTextU8(HWindow, IDC_CFGIMP_SRCNOTE, note);
@@ -138,21 +173,26 @@ protected:
                 int fmt = s->Support == SALCFGIMP_SUPPORTED ? IDS_CFGIMP_SRC_ITEM : s->Support == SALCFGIMP_TOO_OLD ? IDS_CFGIMP_SRC_TOOOLD
                                                                                                                   : IDS_CFGIMP_SRC_TOONEW;
                 if (fmt == IDS_CFGIMP_SRC_ITEM)
-                    _snprintf_s(text, _TRUNCATE, LoadStrU8(fmt), s->ProductName, (unsigned)s->ConfigVersion);
+                {
+                    char ver[16]; // only %s in translated formats (a translation may reorder them)
+                    _snprintf_s(ver, _TRUNCATE, "%u", (unsigned)s->ConfigVersion);
+                    SalCfgImpFormatText(text, (int)sizeof(text), LoadStrU8(fmt), s->ProductName, ver);
+                }
                 else
-                    _snprintf_s(text, _TRUNCATE, LoadStrU8(fmt), s->ProductName);
+                    SalCfgImpFormatText(text, (int)sizeof(text), LoadStrU8(fmt), s->ProductName);
                 int row = (int)SalListBoxAddStringU8(list, text);
+                if (row < 0) // LB_ERR / LB_ERRSPACE: the source is not offered
+                    continue;
                 SendMessageW(list, LB_SETITEMDATA, row, i);
                 if (s->Support == SALCFGIMP_SUPPORTED && (i == Selected || (selRow < 0 && Selected < 0)))
                     selRow = row;
             }
-            if (selRow < 0 && Run->Sources.Count > 0)
+            int rows = (int)SendMessageW(list, LB_GETCOUNT, 0, 0);
+            for (i = 0; i < rows && selRow < 0; i++)
             {
-                for (i = 0; i < Run->Sources.Count && selRow < 0; i++)
-                {
-                    if (Run->Sources[(int)SendMessageW(list, LB_GETITEMDATA, i, 0)].Support == SALCFGIMP_SUPPORTED)
-                        selRow = i;
-                }
+                int index = (int)SendMessageW(list, LB_GETITEMDATA, i, 0);
+                if (index >= 0 && index < Run->Sources.Count && Run->Sources[index].Support == SALCFGIMP_SUPPORTED)
+                    selRow = i;
             }
             if (selRow >= 0)
                 SendMessageW(list, LB_SETCURSEL, selRow, 0);
@@ -198,11 +238,10 @@ protected:
     void ModeText(CCfgImpGroup* g, char* buf, int size)
     {
         if (g->Availability != CFGIMP_AVAIL_YES)
-            lstrcpyn(buf, g->Reason, size);
+            SalCfgImpCopyText(buf, size, g->Reason);
         else
-            lstrcpyn(buf, LoadStrU8(g->Mode == CFGIMP_MODE_REPLACE ? IDS_CFGIMP_MODE_REPLACE : g->Mode == CFGIMP_MODE_TAKEOVER ? IDS_CFGIMP_MODE_TAKEOVER
-                                                                                                                              : IDS_CFGIMP_MODE_ADD),
-                     size);
+            SalCfgImpCopyText(buf, size, LoadStrU8(g->Mode == CFGIMP_MODE_REPLACE ? IDS_CFGIMP_MODE_REPLACE : g->Mode == CFGIMP_MODE_TAKEOVER ? IDS_CFGIMP_MODE_TAKEOVER
+                                                                                                                                             : IDS_CFGIMP_MODE_ADD));
     }
 
     void UpdateRow(int i)
@@ -229,11 +268,10 @@ protected:
         if (g != NULL)
         {
             if (g->Availability != CFGIMP_AVAIL_YES)
-                _snprintf_s(desc, _TRUNCATE, LoadStrU8(IDS_CFGIMP_DESC_UNAVAIL), g->Reason);
+                SalCfgImpFormatText(desc, (int)sizeof(desc), LoadStrU8(IDS_CFGIMP_DESC_UNAVAIL), g->Reason);
             else
-                lstrcpyn(desc, LoadStrU8(g->Mode == CFGIMP_MODE_REPLACE ? IDS_CFGIMP_DESC_REPLACE : g->Mode == CFGIMP_MODE_TAKEOVER ? IDS_CFGIMP_DESC_TAKEOVER
-                                                                                                                                   : IDS_CFGIMP_DESC_ADD),
-                         (int)sizeof(desc));
+                SalCfgImpCopyText(desc, (int)sizeof(desc), LoadStrU8(g->Mode == CFGIMP_MODE_REPLACE ? IDS_CFGIMP_DESC_REPLACE : g->Mode == CFGIMP_MODE_TAKEOVER ? IDS_CFGIMP_DESC_TAKEOVER
+                                                                                                                                                                : IDS_CFGIMP_DESC_ADD));
         }
         SalSetDlgItemTextU8(HWindow, IDC_CFGIMP_ROWDESC, desc);
         BOOL any = FALSE;
@@ -261,16 +299,18 @@ protected:
             memset(&col, 0, sizeof(col));
             col.mask = LVCF_WIDTH | LVCF_TEXT;
             const WCHAR* empty = L"";
-            col.pszText = (LPWSTR)empty;
-            col.cx = w * 60 / 100;
+            // named columns (contracts/wizard-flow.md): Settings | Items | Mode
+            WCHAR colText[100];
+            lstrcpynW(colText, LoadStrW(IDS_CFGIMP_COL_GROUP), _countof(colText));
+            col.pszText = colText;
+            col.cx = w * 58 / 100;
             SendMessageW(lv, LVM_INSERTCOLUMNW, 0, (LPARAM)&col);
-            col.cx = w * 10 / 100;
+            lstrcpynW(colText, LoadStrW(IDS_CFGIMP_COL_ITEMS), _countof(colText));
+            col.cx = w * 12 / 100;
             SendMessageW(lv, LVM_INSERTCOLUMNW, 1, (LPARAM)&col);
+            lstrcpynW(colText, LoadStrW(IDS_CFGIMP_COL_MODE), _countof(colText));
             col.cx = w - w * 70 / 100;
             SendMessageW(lv, LVM_INSERTCOLUMNW, 2, (LPARAM)&col);
-            HWND hdr = ListView_GetHeader(lv);
-            if (hdr != NULL)
-                ShowWindow(hdr, SW_HIDE); // the label above names the columns
             Filling = TRUE;
             int i;
             for (i = 0; i < Run->Groups.Count; i++)
@@ -292,7 +332,9 @@ protected:
             Filling = FALSE;
             ListView_SetItemState(lv, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
             char notes[1500];
-            _snprintf_s(notes, _TRUNCATE, "%s\n%s", LoadStrU8(IDS_CFGIMP_NOTE_FIXEDKEYS), LoadStrU8(IDS_CFGIMP_NOTE_NEVER));
+            char fixedKeys[700];
+            SalCfgImpCopyText(fixedKeys, (int)sizeof(fixedKeys), LoadStrU8(IDS_CFGIMP_NOTE_FIXEDKEYS));
+            SalCfgImpFormatText(notes, (int)sizeof(notes), "%s\n%s", fixedKeys, LoadStrU8(IDS_CFGIMP_NOTE_NEVER));
             SalSetDlgItemTextU8(HWindow, IDC_CFGIMP_NOTES, notes);
             UpdateControls();
             break;
@@ -301,6 +343,21 @@ protected:
         case WM_NOTIFY:
         {
             NMHDR* nm = (NMHDR*)lParam;
+            if (nm->idFrom == IDC_CFGIMP_GROUPS && nm->code == NM_CUSTOMDRAW)
+            { // a group that cannot be imported is shown grey (its check box refuses a tick)
+                NMLVCUSTOMDRAW* cd = (NMLVCUSTOMDRAW*)lParam;
+                LRESULT res = CDRF_DODEFAULT;
+                if (cd->nmcd.dwDrawStage == CDDS_PREPAINT)
+                    res = CDRF_NOTIFYITEMDRAW;
+                else if (cd->nmcd.dwDrawStage == CDDS_ITEMPREPAINT)
+                {
+                    int row = (int)cd->nmcd.dwItemSpec;
+                    if (row >= 0 && row < Run->Groups.Count && Run->Groups[row]->Availability != CFGIMP_AVAIL_YES)
+                        cd->clrText = ThemeSysColor(COLOR_GRAYTEXT);
+                }
+                SetWindowLongPtr(HWindow, DWLP_MSGRESULT, res);
+                return TRUE;
+            }
             if (nm->idFrom == IDC_CFGIMP_GROUPS && !Filling)
             {
                 if (nm->code == LVN_ITEMCHANGING)
@@ -382,7 +439,8 @@ protected:
     }
 
     // the old program's master password as it used it: code-page bytes of the edit's text
-    // (GetDlgItemTextA in both programs; a deliberate exception to the UTF-8 rule, research R10)
+    // (GetDlgItemTextA(..., SAL_AES_MAX_PWD_LENGTH) in both programs: at most 127 bytes; a
+    // deliberate exception to the UTF-8 rule, research R10)
     void GetPassword(char* buf, int size)
     {
         WCHAR w[300];
@@ -391,8 +449,28 @@ protected:
         {
             if (WideCharToMultiByte(CP_ACP, 0, w, -1, buf, size, NULL, NULL) == 0) // the old program's bytes
                 buf[0] = 0;
+            if ((int)strlen(buf) > SAL_AES_MAX_PWD_LENGTH - 1)
+                buf[SAL_AES_MAX_PWD_LENGTH - 1] = 0;
         }
         SecureZeroMemory(w, sizeof(w));
+    }
+
+    // the choices of the page, also kept on "< Back"; an emptied field forgets the stored
+    // master password (the label says: empty = only the passwords stored without it)
+    void StoreChoices()
+    {
+        BOOL import = IsDlgButtonChecked(HWindow, IDC_CFGIMP_PWD_IMPORT) == BST_CHECKED;
+        if (GetWindowTextLengthW(GetDlgItem(HWindow, IDE_CFGIMP_PWD)) == 0 && Run->Passwords.SourceMasterPassword != NULL)
+        {
+            SecureZeroMemory(Run->Passwords.SourceMasterPassword, strlen(Run->Passwords.SourceMasterPassword));
+            free(Run->Passwords.SourceMasterPassword);
+            Run->Passwords.SourceMasterPassword = NULL;
+        }
+        if (!import)
+            Run->Passwords.Policy = SALIMPORT_PWD_NONE;
+        else
+            Run->Passwords.Policy = Run->Passwords.SourceMasterPassword != NULL ? SALIMPORT_PWD_ALL : SALIMPORT_PWD_SCRAMBLED_ONLY;
+        Run->Passwords.AllowWeakerStorage = IsDlgButtonChecked(HWindow, IDC_CFGIMP_PWD_WEAK) == BST_CHECKED;
     }
 
     virtual void Validate(CTransferInfo& ti)
@@ -424,12 +502,7 @@ protected:
     {
         if (ti.Type != ttDataFromWindow)
             return;
-        BOOL import = IsDlgButtonChecked(HWindow, IDC_CFGIMP_PWD_IMPORT) == BST_CHECKED;
-        if (!import)
-            Run->Passwords.Policy = SALIMPORT_PWD_NONE;
-        else
-            Run->Passwords.Policy = Run->Passwords.SourceMasterPassword != NULL ? SALIMPORT_PWD_ALL : SALIMPORT_PWD_SCRAMBLED_ONLY;
-        Run->Passwords.AllowWeakerStorage = IsDlgButtonChecked(HWindow, IDC_CFGIMP_PWD_WEAK) == BST_CHECKED;
+        StoreChoices();
     }
 
     virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -440,19 +513,30 @@ protected:
         {
             const char* product = Run->Sources[Run->Chosen].ProductName;
             char text[800];
-            _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_CFGIMP_PWD_COUNTS), Run->Passwords.ScrambledCount,
-                        Run->Passwords.ProtectedCount, product);
+            char scrambled[16], protectedOnes[16]; // only %s in translated formats
+            _snprintf_s(scrambled, _TRUNCATE, "%d", Run->Passwords.ScrambledCount);
+            _snprintf_s(protectedOnes, _TRUNCATE, "%d", Run->Passwords.ProtectedCount);
+            SalCfgImpFormatText(text, (int)sizeof(text), LoadStrU8(IDS_CFGIMP_PWD_COUNTS), scrambled, protectedOnes, product);
             SalSetDlgItemTextU8(HWindow, IDC_CFGIMP_PWDCOUNTS, text);
             BOOL tcUses = PasswordManager.IsUsingMasterPassword();
-            SalSetDlgItemTextU8(HWindow, IDC_CFGIMP_PWD_NOTE, LoadStrU8(tcUses ? IDS_CFGIMP_PWD_TCHAS : IDS_CFGIMP_PWD_TCNONE));
-            _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_CFGIMP_WEAKCONSENT), product);
+            // the hint to set a master password concerns only the protected passwords
+            SalSetDlgItemTextU8(HWindow, IDC_CFGIMP_PWD_NOTE, tcUses ? LoadStrU8(IDS_CFGIMP_PWD_TCHAS) : Run->Passwords.ProtectedCount > 0 ? LoadStrU8(IDS_CFGIMP_PWD_TCNONE)
+                                                                                                                                           : "");
+            SalCfgImpFormatText(text, (int)sizeof(text), LoadStrU8(IDS_CFGIMP_WEAKCONSENT), product);
             SalSetDlgItemTextU8(HWindow, IDC_CFGIMP_PWD_WEAK, text);
             ShowWindow(GetDlgItem(HWindow, IDC_CFGIMP_PWD_WEAK), !tcUses && Run->Passwords.ProtectedCount > 0 ? SW_SHOW : SW_HIDE);
             if (!tcUses && Run->Passwords.AllowWeakerStorage)
                 CheckDlgButton(HWindow, IDC_CFGIMP_PWD_WEAK, BST_CHECKED);
             CheckRadioButton(HWindow, IDC_CFGIMP_PWD_IMPORT, IDC_CFGIMP_PWD_SKIP,
                              Run->Passwords.Policy == SALIMPORT_PWD_NONE ? IDC_CFGIMP_PWD_SKIP : IDC_CFGIMP_PWD_IMPORT);
-            SendDlgItemMessageW(HWindow, IDE_CFGIMP_PWD, EM_LIMITTEXT, 255, 0);
+            SendDlgItemMessageW(HWindow, IDE_CFGIMP_PWD, EM_LIMITTEXT, SAL_AES_MAX_PWD_LENGTH - 1, 0);
+            if (Run->Passwords.SourceMasterPassword != NULL) // back on the page: the verified password stays
+            {
+                WCHAR w[300];
+                if (MultiByteToWideChar(CP_ACP, 0, Run->Passwords.SourceMasterPassword, -1, w, 300) > 0)
+                    SetDlgItemTextW(HWindow, IDE_CFGIMP_PWD, w);
+                SecureZeroMemory(w, sizeof(w));
+            }
             EnableControls();
             break;
         }
@@ -464,6 +548,7 @@ protected:
                 EnableControls();
             if (id == IDC_CFGIMP_BACK)
             {
+                StoreChoices(); // a typed (not yet verified) password is checked on "Next >"
                 EndDialog(HWindow, CFGIMP_RES_BACK);
                 return TRUE;
             }
@@ -622,8 +707,11 @@ void CfgImpRunWizard(HWND parent, BOOL fromOffer)
         }
         else if (page == 3)
         {
+            // the program's own master password, when passwords would be stored under it: asked
+            // now, so that the preview and the import decide every password the same way
+            run.PrepareTCMasterPassword(parent);
             HCURSOR old = SetCursor(LoadCursor(NULL, IDC_WAIT));
-            run.Plan(parent);
+            run.Plan(parent); // a group that cannot be planned shows its reason in the preview
             char* text = run.BuildText(FALSE);
             SetCursor(old);
             CCfgImpTextPage dlg(parent, &run, text, FALSE);
@@ -683,10 +771,21 @@ void CfgImpShowFirstStartOffer(HWND parent)
     if (product == NULL)
         return;
     char text[2000];
-    _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_CFGIMP_OFFER), product);
+    SalCfgImpFormatText(text, (int)sizeof(text), LoadStrU8(IDS_CFGIMP_OFFER), product);
     char title[200];
-    lstrcpyn(title, LoadStrU8(IDS_CFGIMP_TITLE), (int)sizeof(title));
-    int res = SalMessageBox(parent, text, title, MB_YESNO | MB_ICONQUESTION);
+    SalCfgImpCopyText(title, (int)sizeof(title), LoadStrU8(IDS_CFGIMP_TITLE));
+    char yes[100], no[100], aliases[300];
+    SalCfgImpCopyText(yes, (int)sizeof(yes), LoadStrU8(IDS_CFGIMP_OFFER_YES));
+    SalCfgImpCopyText(no, (int)sizeof(no), LoadStrU8(IDS_CFGIMP_OFFER_NO));
+    _snprintf_s(aliases, _TRUNCATE, "%d\t%s\t%d\t%s", DIALOG_YES, yes, DIALOG_NO, no);
+    MSGBOXEX_PARAMS params;
+    memset(&params, 0, sizeof(params));
+    params.HParent = parent;
+    params.Text = text;
+    params.Caption = title;
+    params.Flags = MB_YESNO | MB_ICONQUESTION | MSGBOXEX_ESCAPEENABLED; // Esc and the close box = "Not now"
+    params.AliasBtnNames = aliases;
+    int res = SalMessageBoxEx(&params);
     // the configuration exists from now on, so the offer never comes back (FR-002)
     MainWindow->SaveConfig(parent);
     if (res == IDYES)
@@ -724,6 +823,17 @@ static void CfgImpIniString(const WCHAR* file, const WCHAR* key, char* buf, int 
     GetPrivateProfileStringW(L"import", key, L"", w, 2048, file);
     if (SalWToU8(w, -1, buf, size) == 0)
         buf[0] = 0;
+}
+
+// a master password as the dialogs read it: code-page bytes (the wizard's GetPassword and the
+// program's own master password dialog), so that the seam meets non-ASCII passwords as they do
+static void CfgImpIniPassword(const WCHAR* file, const WCHAR* key, char* buf, int size)
+{
+    WCHAR w[300];
+    GetPrivateProfileStringW(L"import", key, L"", w, 300, file);
+    if (WideCharToMultiByte(CP_ACP, 0, w, -1, buf, size, NULL, NULL) == 0)
+        buf[0] = 0;
+    SecureZeroMemory(w, sizeof(w));
 }
 
 // script (INI, section [import]):
@@ -904,7 +1014,7 @@ void CfgImpRunAutomation(HWND parent)
             tok = strtok_s(NULL, ",", &ctx);
         }
     }
-    CfgImpIniString(script, L"tcmasterpassword", buf, sizeof(buf));
+    CfgImpIniPassword(script, L"tcmasterpassword", buf, sizeof(buf));
     if (buf[0] != 0 && PasswordManager.IsUsingMasterPassword())
         PasswordManager.EnterMasterPassword(buf); // the program's own master password (no dialog in automation)
     {
@@ -916,7 +1026,7 @@ void CfgImpRunAutomation(HWND parent)
     }
     run.Passwords.Policy = GetPrivateProfileIntW(L"import", L"pwdpolicy", SALIMPORT_PWD_SCRAMBLED_ONLY, script);
     run.Passwords.AllowWeakerStorage = GetPrivateProfileIntW(L"import", L"weakconsent", 0, script) != 0;
-    CfgImpIniString(script, L"masterpassword", buf, sizeof(buf));
+    CfgImpIniPassword(script, L"masterpassword", buf, sizeof(buf));
     if (buf[0] != 0 && !run.CheckSourceMasterPassword(buf))
         run.Passwords.Policy = min(run.Passwords.Policy, SALIMPORT_PWD_SCRAMBLED_ONLY);
     if (run.Passwords.Policy == SALIMPORT_PWD_ALL && run.Passwords.SourceMasterPassword == NULL)

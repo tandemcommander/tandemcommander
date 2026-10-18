@@ -2246,6 +2246,19 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
     case WM_USER_CFGIMPORT_OFFER: // feature 245: the one-time offer at the first start
     {
+        // never inside another box or menu of the start-up (e.g. the incomplete-language
+        // notice): the offer waits until the main window is free
+        GUITHREADINFO gti;
+        gti.cbSize = sizeof(gti);
+        BOOL busy = !IsWindowEnabled(HWindow) || GetCapture() != NULL ||
+                    (MenuBar != NULL && MenuBar->IsInMenuLoop()) ||
+                    (GetGUIThreadInfo(GetCurrentThreadId(), &gti) &&
+                     (gti.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE | GUI_INMOVESIZE)) != 0);
+        if (busy)
+        {
+            SetTimer(HWindow, IDT_CFGIMPORT_OFFER, 1000, NULL);
+            return 0;
+        }
         CfgImpShowFirstStartOffer(HWindow);
         return 0;
     }
@@ -6284,6 +6297,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         case IDT_ADDNEWMODULES:
         {
             AddNewlyLoadedModulesToGlobalModulesStore();
+            break;
+        }
+
+        case IDT_CFGIMPORT_OFFER: // feature 245: the offer waited for a free main window
+        {
+            KillTimer(HWindow, IDT_CFGIMPORT_OFFER);
+            PostMessage(HWindow, WM_USER_CFGIMPORT_OFFER, 0, 0);
             break;
         }
 

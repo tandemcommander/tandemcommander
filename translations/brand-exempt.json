@@ -1,0 +1,20 @@
+{
+  "_readme": [
+    "Resource symbols (fnmatch patterns) whose text legitimately names a",
+    "predecessor product and therefore is NOT rebranded by tools/translate",
+    "(merge.py load_brand_exempt). Shape: { module: [pattern, ...] }.",
+    "Feature 245: the settings import names the programs it imports from",
+    "(Altap Salamander, Open Salamander); rebranding them to Tandem Commander",
+    "would make the wizard say it imports from itself."
+  ],
+  "salamand": [
+    "IDS_CFGIMP_*",
+    "IDD_CFGIMPORT_*",
+    "IDC_CFGIMP_*",
+    "IDE_CFGIMP_*",
+    "IDS_MENU_OPT_IMPORTFROMSAL"
+  ],
+  "ftp": [
+    "IDS_IMPORT_*"
+  ]
+}

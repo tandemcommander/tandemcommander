@@ -1905,6 +1905,7 @@ DWORD CfgSkillLevelToMenu(BYTE cfgSkillLevel);
 #define IDT_DELAYEDTHROBBER 950
 #define IDT_UPDATETASKLIST 951
 #define IDT_UPDATENOTICE 952 // feature 123: retry showing the new-version notification (main window)
+#define IDT_CFGIMPORT_OFFER 953 // feature 245: retry showing the settings import offer (main window)
 
 // POZOR: skoro vsechny funkce v teto sekci pri chybe zobrazuji hlaseni o LOAD / SAVE
 //        konfigurace, coz z nich dela nevhodne pro bezny pristup do Registry,

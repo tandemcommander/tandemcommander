@@ -23,7 +23,7 @@ function New-AltapFixture([string]$Name = 'Altap Salamander 4.0', [int]$Version 
     if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
     $spec = @{
         'Version'                                           = @{ 'Configuration' = $Version }
-        'Configuration'                                     = @{ 'Single Click' = 1; 'Sort Dirs By Ext' = 1; 'Theme Mode' = 1; 'Panel Tabs' = 0; 'Language' = 'czech.slg'; 'Thumbnail Size' = 5000; 'Use Recycle Bin' = 2 }
+        'Configuration'                                     = @{ 'Single Click' = 1; 'Sort Dirs By Ext' = 1; 'Theme Mode' = 1; 'Panel Tabs' = 0; 'Language' = 'czech.slg'; 'Thumbnail Size' = 5000; 'Use Recycle Bin' = 2; 'Use Recycle Bin For' = '*.doc;*.tmp'; 'Compare Ignore Files' = 1 }
         'Configuration\Confirmation'                        = @{ 'File Overwrite' = 0; 'Close Find' = 0 }
         'Configuration\ChangeDir History'                   = @{ '1' = 'C:\Old\History'; '2' = 'ftp://joe:secret@host/dir' }
         'Hot Paths\1'                                       = @{ 'Name' = 'Projects'; 'Path' = 'C:\Projects'; 'Visible' = 1 }

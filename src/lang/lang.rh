@@ -745,6 +745,7 @@
 #define IDC_CFGIMP_PWDLABEL             6282
 #define IDC_CFGIMP_SRCLABEL             6283
 #define IDC_CFGIMP_GRPLABEL             6284
+#define IDC_CFGIMP_TEXTLABEL            6285
 
 // Next default values for new objects
 // 
@@ -752,7 +753,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        8200
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         6285
+#define _APS_NEXT_CONTROL_VALUE         6286
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

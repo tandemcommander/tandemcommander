@@ -137,6 +137,10 @@ class Client:
     #: Characters actually sent this run (what DeepL bills).
     sent_chars: int = 0
     sent_texts: int = 0
+    #: DeepL's formality for the languages that have one (de, fr, nl, es, ...).
+    #: The default keeps the behaviour of every earlier run; feature 245 runs
+    #: with "prefer_more" because the committed corpus is formal (Sie/vous/u/usted).
+    formality: str = "prefer_less"
     _host: str = field(default="", init=False)
 
     def __post_init__(self) -> None:
@@ -225,9 +229,10 @@ class Client:
             "tag_handling": "xml",
             "ignore_tags": ["x"],
             "preserve_formatting": True,
-            # UI labels are instructions to the user, not prose; the informal
-            # register reads correctly for languages that distinguish it.
-            "formality": "prefer_less",
+            # UI labels are instructions to the user, not prose; "prefer_less"
+            # was the original choice, "prefer_more" matches the formal corpus
+            # (merge.py --formality).
+            "formality": self.formality,
         }
         if context:
             # The request is parsed with tag_handling=xml, so the context has to

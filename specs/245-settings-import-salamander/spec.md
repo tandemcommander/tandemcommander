@@ -250,7 +250,10 @@ and not assigned, and every Tandem Commander shortcut still works.
 2. **Given** imported viewer or editor associations in *Add* mode, **When**
    a file type already has an association in Tandem Commander, **Then** the
    current association keeps precedence and the imported one is reported as
-   "already covered".
+   "already covered"; an imported association that would take files over
+   from the current catch-all row (`*.*`) is shown as a change of the current
+   settings and needs the consent of FR-010c (the group is unticked by
+   default).
 3. **Given** imported general options, **When** the import ends, **Then**
    the Tandem Commander settings listed as its own (FR-016) are unchanged.
 4. **Given** imported commands (user menu, viewers, editors) that point to
@@ -402,7 +405,10 @@ state.
   groups in *Add* mode); option groups whose source values equal the current
   values report "nothing to change".
 - **FR-011**: *Replace* MUST make the group equal to the source's content and
-  MUST name, in the preview, the current items that will be removed.
+  MUST name, in the preview, the current items that will be removed. For
+  shortcuts of plugin commands *Replace* means "the imported key wins a
+  conflict" (research R5): a shortcut the user gave a command the source does
+  not mention stays, because the source cannot say it should go.
 - **FR-012**: Re-running the wizard with the same choices MUST NOT create
   duplicates.
 
@@ -529,7 +535,8 @@ state.
   100 % of runs (finished, cancelled, failed).
 - **SC-003**: After any import, 100 % of plugins installed before still load,
   and 100 % of file types keep opening with the viewer they opened with
-  before, unless the user explicitly replaced that group.
+  before, unless the user explicitly replaced that group or allowed the
+  viewers group's changes (FR-010c).
 - **SC-004**: 0 settings outside the selected groups change; 0 current items
   change or disappear in *Add* mode.
 - **SC-005**: 0 duplicates after running the same import twice.
@@ -560,8 +567,10 @@ state.
   worth importing and conflicts with Tandem Commander's tabs; it is excluded.
 - *Add* is the default mode for every list group, because it cannot lose
   anything; on a conflict the current Tandem Commander item wins.
-- Imported viewer and editor associations are placed after the current ones
-  (current associations keep precedence).
+- Imported viewer and editor associations are placed after the current
+  specific ones and before the current catch-all row (`*.*`); taking files
+  over from the catch-all is a change that needs consent, so the group is
+  unticked by default (review round 1).
 - Merging FTP connections uses a new, append-only plugin-interface call
   (interface 108, FR-021a); the core does not learn any plugin's private
   storage layout.

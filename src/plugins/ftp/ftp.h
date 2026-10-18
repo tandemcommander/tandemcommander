@@ -517,6 +517,9 @@ public:
     // the item being renamed is not found); the index of the found item is returned in 'index'
     // (if not NULL), or -1 if the item is not found
     BOOL ContainsTypeName(const char* typeName, CServerType* exclude, int* index = NULL);
+
+    // feature 245 (settings import, ftpimport.cpp): exchanges the contents with 'other' (cannot fail)
+    void ImportSwap(CServerTypeList& other);
 };
 
 //
@@ -653,6 +656,9 @@ public:
     // copies (allocates) all list items into 'dstList' (clears it completely first)
     // WARNING: clears user name, password, and save-passwd when anonymous connection is enabled
     BOOL CopyMembersToList(CFTPServerList& dstList);
+
+    // feature 245 (settings import, ftpimport.cpp): exchanges the contents with 'other' (cannot fail)
+    void ImportSwap(CFTPServerList& other);
 
     // adds a bookmark to the FTP server list
     BOOL AddServer(const char* itemName,
@@ -1014,12 +1020,15 @@ public:
     // if the user does not enter the correct master password or the password cannot be decrypted with it, returns FALSE
     BOOL EnsurePasswordCanBeDecrypted(HWND hParent, int proxyServerUID);
 
-    // feature 245 (settings import, ftpimport.cpp): read access for the main thread, adding an
-    // imported proxy server under a new UID and name (returns the UID, -1 on failure), emptying
+    // feature 245 (settings import, ftpimport.cpp): read access for the main thread; adding an
+    // imported proxy server under 'uid' (-1 = a new UID) and 'name' (returns the UID, -1 on
+    // failure); an empty list whose new UIDs continue after those of 'cur' (no UID is reused);
+    // exchanging the contents with 'other' (cannot fail)
     int GetCount() { return Count; }
     CFTPProxyServer* GetAt(int index) { return At(index); }
-    int AddImportedCopy(const CFTPProxyServer* src, const char* name);
-    void ImportClear();
+    int AddImportedCopy(const CFTPProxyServer* src, const char* name, int uid);
+    void ImportStartAfter(CFTPProxyServerList& cur);
+    void ImportSwap(CFTPProxyServerList& other);
 };
 
 //

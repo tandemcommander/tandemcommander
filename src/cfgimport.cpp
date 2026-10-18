@@ -225,6 +225,7 @@ CCfgImpGroup::CCfgImpGroup() : Lines(16, 64)
     Availability = CFGIMP_AVAIL_YES;
     Reason[0] = 0;
     NeedsConsent = FALSE;
+    PlanFailed = FALSE;
     Applied = FALSE;
     ApplyError[0] = 0;
     Data = NULL;
@@ -247,6 +248,9 @@ void CCfgImpGroup::ClearLines()
 
 void CCfgImpGroup::AddLine(int kind, const char* text)
 {
+    // a change that overwrites or removes needs consent even when its line cannot be stored
+    if (kind == CFGIMP_LINE_REPLACED || kind == CFGIMP_LINE_REMOVED)
+        NeedsConsent = TRUE;
     CCfgImpLine l;
     l.Kind = kind;
     l.Text = DupStr(text != NULL ? text : "");
@@ -259,8 +263,6 @@ void CCfgImpGroup::AddLine(int kind, const char* text)
         free(l.Text);
         return;
     }
-    if (kind == CFGIMP_LINE_REPLACED || kind == CFGIMP_LINE_REMOVED)
-        NeedsConsent = TRUE;
 }
 
 // adds a line made of a translated format and arguments
@@ -423,7 +425,10 @@ BOOL CfgImpOtherInstanceRuns()
 {
     CProcessListItem items[MAX_TL_ITEMS];
     DWORD uid;
-    int c = TaskList.GetItems(items, &uid);
+    BOOL timeout = FALSE;
+    int c = TaskList.GetItems(items, &uid, &timeout);
+    if (timeout)
+        return TRUE; // the list is busy: assume another instance (FR-024 fails closed)
     DWORD self = GetCurrentProcessId();
     int i;
     for (i = 0; i < c; i++)
@@ -493,27 +498,28 @@ static BOOL CfgImpReadTree(HKEY key, CSalCfgKey* node, int depth, CCfgImpReadBud
         LONG res = RegEnumValueW(key, i, name, &nl, NULL, &type, data, &dl);
         if (res == ERROR_MORE_DATA)
         {
-            budget->Truncated = TRUE; // too large for the snapshot: left out (the group reports it)
+            budget->Truncated = node->Truncated = TRUE; // too large for the snapshot: left out (the group reports it)
             continue;
         }
         if (res == ERROR_NO_MORE_ITEMS)
             break;
         if (res != ERROR_SUCCESS)
         {
-            budget->Truncated = TRUE;
+            budget->Truncated = node->Truncated = TRUE;
             continue;
         }
         budget->Total += dl + nl * 2;
         if (budget->Total > CFGIMP_MAX_TOTAL_BYTES)
         {
-            budget->Truncated = TRUE;
+            budget->Truncated = node->Truncated = TRUE;
             ok = FALSE;
             break;
         }
-        char* u8Name = SalWToU8Alloc(name, (int)nl);
+        // the default (unnamed) value has an empty name (SalWToU8Alloc refuses a length of 0)
+        char* u8Name = nl > 0 ? SalWToU8Alloc(name, (int)nl) : DupStr("");
         if (u8Name == NULL)
         {
-            budget->Truncated = TRUE;
+            budget->Truncated = node->Truncated = TRUE;
             continue;
         }
         BOOL added;
@@ -526,7 +532,7 @@ static BOOL CfgImpReadTree(HKEY key, CSalCfgKey* node, int depth, CCfgImpReadBud
             char* u8 = chars > 0 ? SalWToU8Alloc(w, chars) : DupStr("");
             if (u8 == NULL)
             {
-                budget->Truncated = TRUE;
+                budget->Truncated = node->Truncated = TRUE;
                 added = TRUE;
             }
             else
@@ -549,18 +555,18 @@ static BOOL CfgImpReadTree(HKEY key, CSalCfgKey* node, int depth, CCfgImpReadBud
             break;
         if (res != ERROR_SUCCESS)
         {
-            budget->Truncated = TRUE;
+            budget->Truncated = node->Truncated = TRUE;
             continue;
         }
         char* u8Name = SalWToU8Alloc(name, (int)nl);
         if (u8Name == NULL)
         {
-            budget->Truncated = TRUE;
+            budget->Truncated = node->Truncated = TRUE;
             continue;
         }
         if (depth >= CFGIMP_MAX_DEPTH)
         {
-            budget->Truncated = TRUE;
+            budget->Truncated = node->Truncated = TRUE;
             free(u8Name);
             continue;
         }
@@ -575,9 +581,11 @@ static BOOL CfgImpReadTree(HKEY key, CSalCfgKey* node, int depth, CCfgImpReadBud
             RegCloseKey(sub);
         }
         else
-            budget->Truncated = TRUE;
+            budget->Truncated = node->Truncated = TRUE;
         free(u8Name);
     }
+    if (!ok)
+        node->Truncated = TRUE; // the rest of this key was not read
     free(name);
     free(data);
     return ok;
@@ -877,6 +885,10 @@ static BOOL CfgImpPluginSettingsCandidate(int tcIndex)
         return FALSE;
     if (CfgImpIsFTPDll(p->DLLName) || SalCfgImpSameDll(p->DLLName, "tar\\tar.spl"))
         return FALSE;
+    // its settings hold passwords protected by the program's master password: a copy would carry
+    // blobs encrypted under the OLD program's master password (R10 applies only through a handler)
+    if (SalCfgImpSameDll(p->DLLName, "sftp\\sftp.spl"))
+        return FALSE;
     return TRUE;
 }
 
@@ -902,7 +914,8 @@ BOOL CCfgImpRun::OpenSource(int index, char* err, int errSize)
         {cigUserMenu, IDS_CFGIMP_GRP_USERMENU, TRUE, TRUE, TRUE},
         {cigFTP, IDS_CFGIMP_GRP_FTP, TRUE, TRUE, TRUE},
         {cigPluginKeys, IDS_CFGIMP_GRP_PLUGINKEYS, TRUE, TRUE, TRUE},
-        {cigViewers, IDS_CFGIMP_GRP_VIEWERS, TRUE, FALSE, TRUE},
+        // unticked: a new row goes before the catch-all and changes what opens files today
+        {cigViewers, IDS_CFGIMP_GRP_VIEWERS, TRUE, FALSE, FALSE},
         {cigFindSets, IDS_CFGIMP_GRP_FINDSETS, TRUE, FALSE, TRUE},
         {cigHistories, IDS_CFGIMP_GRP_HISTORIES, TRUE, FALSE, FALSE},
         {cigConfirmations, IDS_CFGIMP_GRP_CONFIRMATIONS, FALSE, FALSE, FALSE},
@@ -983,11 +996,20 @@ BOOL CCfgImpRun::Plan(HWND parent)
         delete g->Data;
         g->Data = NULL;
         g->Applied = FALSE;
+        g->PlanFailed = FALSE;
+        g->NeedsConsent = FALSE;
         g->ApplyError[0] = 0;
         if (!g->Selected || g->Availability != CFGIMP_AVAIL_YES)
             continue;
         if (!CfgImpPlanGroup(this, g, &sp, parent))
+        {
+            // a group whose plan failed is never applied: a partial plan must not replace anything
             ok = FALSE;
+            g->PlanFailed = TRUE;
+            g->NeedsConsent = FALSE;
+            if (g->ApplyError[0] == 0)
+                CfgImpLoad(IDS_CFGIMP_FAILEDGROUP, g->ApplyError, (int)sizeof(g->ApplyError));
+        }
     }
     return ok;
 }
@@ -997,8 +1019,11 @@ BOOL CCfgImpRun::NeedsConsent()
     int i;
     for (i = 0; i < Groups.Count; i++)
     {
-        if (Groups[i]->Selected && Groups[i]->Availability == CFGIMP_AVAIL_YES && Groups[i]->NeedsConsent)
+        if (Groups[i]->Selected && Groups[i]->Availability == CFGIMP_AVAIL_YES && !Groups[i]->PlanFailed &&
+            Groups[i]->NeedsConsent)
+        {
             return TRUE;
+        }
     }
     return FALSE;
 }
@@ -1010,8 +1035,12 @@ static BOOL CfgImpMakeBackupName(char* buf, int size)
     if (FAILED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appData)) || appData == NULL)
         return FALSE;
     WCHAR dir[2 * MAX_PATH];
-    swprintf_s(dir, L"%s\\Tandem Commander", appData);
+    // a path that does not fit is refused, never cut (and never passed to a _s function that
+    // would end the program on overflow)
+    int dl = _snwprintf_s(dir, _TRUNCATE, L"%s\\Tandem Commander", appData);
     CoTaskMemFree(appData);
+    if (dl < 0 || dl + 80 >= _countof(dir))
+        return FALSE;
     CreateDirectoryW(dir, NULL);
     wcscat_s(dir, L"\\Settings backups");
     CreateDirectoryW(dir, NULL);
@@ -1044,6 +1073,13 @@ BOOL CCfgImpRun::Apply(HWND parent, char* err, int errSize)
         lstrcpyn(err, LoadStrU8(IDS_CFGIMP_OTHERINSTANCE), errSize);
         return FALSE;
     }
+    // Find windows and viewer windows run in their own threads and read settings the import
+    // replaces (histories, saved searches, viewer options): they are closed first
+    if (!FindDialogQueue.Empty() || !ViewerWindowQueue.Empty())
+    {
+        lstrcpyn(err, LoadStrU8(IDS_CFGIMP_WINDOWSOPEN), errSize);
+        return FALSE;
+    }
     // the backup reflects the stored configuration (what a restore brings back); a configuration
     // that was never saved is saved first, so the backup exists
     if (CfgImpIsFreshConfiguration())
@@ -1066,6 +1102,11 @@ BOOL CCfgImpRun::Apply(HWND parent, char* err, int errSize)
         CCfgImpGroup* g = Groups[i];
         if (!g->Selected || g->Availability != CFGIMP_AVAIL_YES)
             continue;
+        if (g->PlanFailed) // never applied (Plan explains why in ApplyError)
+        {
+            g->Applied = FALSE;
+            continue;
+        }
         g->Applied = CfgImpApplyGroup(this, g, parent, &templatesChanged);
         if (!g->Applied && g->ApplyError[0] == 0)
             CfgImpLoad(IDS_CFGIMP_FAILEDGROUP, g->ApplyError, (int)sizeof(g->ApplyError));
@@ -1122,6 +1163,12 @@ char* CCfgImpRun::BuildText(BOOL result)
         }
         else
             t.AppendLine(title);
+        if (!result && g->PlanFailed)
+        {
+            t.Append("  x ");
+            t.AppendLine(g->ApplyError);
+            continue;
+        }
         if (g->Lines.Count == 0)
         {
             t.Append("    ");
@@ -1210,19 +1257,47 @@ void CCfgImpRun::CountFTPPasswords()
         int i;
         for (i = 0; i < list->KeyCount; i++)
         {
-            int v;
-            for (v = 0; v < list->Keys[i]->ValueCount; v++)
+            // one password per item, the one FTP's loader takes: "PasswordE", else "PasswordS"
+            DWORD size = 0;
+            const BYTE* blob = SalCfgGetBinary(list->Keys[i], "PasswordE", REG_BINARY, &size);
+            if (blob == NULL || size < 2)
+                blob = SalCfgGetBinary(list->Keys[i], "PasswordS", REG_BINARY, &size);
+            if (blob == NULL || size < 2)
+                continue;
+            if (blob[0] == 2)
+                Passwords.ProtectedCount++;
+            else if (blob[0] == 1)
             {
-                const CSalCfgValue* val = &list->Keys[i]->Values[v];
-                if (val->Type != REG_BINARY || val->Size < 2 || _strnicmp(val->Name, "Password", 8) != 0)
-                    continue;
-                if (val->Data[0] == 2)
-                    Passwords.ProtectedCount++;
-                else if (val->Data[0] == 1)
+                char* plain = NULL; // an empty scrambled password is no password
+                if (PasswordManager.DecryptWithMasterPassword(blob, (int)size, NULL, &plain) && plain != NULL &&
+                    plain[0] != 0)
+                {
                     Passwords.ScrambledCount++;
+                }
+                if (plain != NULL)
+                {
+                    SecureZeroMemory(plain, strlen(plain));
+                    free(plain);
+                }
             }
         }
     }
+}
+
+BOOL CCfgImpRun::TCMasterPasswordMissing()
+{
+    return IsGroupSelected(cigFTP) && Passwords.Policy != SALIMPORT_PWD_NONE &&
+           Passwords.ScrambledCount + Passwords.ProtectedCount > 0 && PasswordManager.IsUsingMasterPassword() &&
+           !PasswordManager.IsMasterPasswordSet();
+}
+
+void CCfgImpRun::PrepareTCMasterPassword(HWND parent)
+{
+    // AskForMasterPassword always shows its dialog: asked only when not entered, once per run
+    if (Automation || Passwords.AskedTCMasterPassword || !TCMasterPasswordMissing())
+        return;
+    Passwords.AskedTCMasterPassword = TRUE;
+    PasswordManager.AskForMasterPassword(parent);
 }
 
 BOOL CCfgImpRun::CheckSourceMasterPassword(const char* password)
@@ -1295,6 +1370,10 @@ public:
         int policy = GetPasswordPolicy();
         if (policy == SALIMPORT_PWD_NONE)
             return FALSE;
+        // the program's master password is in use but not entered: nothing can be stored (the
+        // preview and the import answer the same; it was asked for before the preview)
+        if (PasswordManager.IsUsingMasterPassword() && !PasswordManager.IsMasterPasswordSet())
+            return FALSE;
         BOOL aes = blob[0] == 2;
         if (aes && policy != SALIMPORT_PWD_ALL)
             return FALSE;
@@ -1309,19 +1388,7 @@ public:
         *blobSize = 0;
         BOOL encrypt = PasswordManager.IsUsingMasterPassword();
         if (encrypt && !PasswordManager.IsMasterPasswordSet())
-        {
-            // AskForMasterPassword always shows its dialog, so it is called only when the program's
-            // master password was not entered in this session yet - and once per import at most
-            if (Run->Automation)
-                return FALSE; // nobody to ask
-            if (!Run->Passwords.AskedTCMasterPassword)
-            {
-                Run->Passwords.AskedTCMasterPassword = TRUE;
-                Run->Passwords.TCMasterPasswordGiven = PasswordManager.AskForMasterPassword(Parent);
-            }
-            if (!Run->Passwords.TCMasterPasswordGiven || !PasswordManager.IsMasterPasswordSet())
-                return FALSE;
-        }
+            return FALSE; // never asked here: PrepareTCMasterPassword asked before the preview
         return PasswordManager.EncryptPassword(plain, blob, blobSize, encrypt);
     }
 };
@@ -1337,6 +1404,7 @@ enum CCfgImpOptKind
     cokRange, // REG_DWORD in <Min, Max>
     cokMask,  // REG_DWORD taken as is
     cokNameFormat, // File Name Format: 2..7, 1 = 7 (LoadConfig's conversion)
+    cokCompanionOnly, // no value of its own, only the companion (the viewer's hex masks)
 };
 
 struct CCfgImpOption
@@ -1348,6 +1416,13 @@ struct CCfgImpOption
     int Min;
     int Max;
     int* Field;
+    // a companion value the option depends on (masks or a text in the same key): the two are
+    // taken over as one unit or not at all (a mode without its masks could, e.g., delete files
+    // permanently that the user's masks send to the Recycle Bin)
+    const char* CompName;  // REG_SZ value name, NULL = none
+    CMaskGroup* CompMasks; // the masks it sets, or
+    char* CompText;        // the text it sets (CompTextSize bytes)
+    int CompTextSize;
 };
 
 #define CIO_C "Configuration"
@@ -1423,7 +1498,7 @@ static CCfgImpOption CfgImpOptions[] = {
     {cigGeneral, CIO_C, "Reload Environment Variables", cokBool, 0, 1, &Configuration.ReloadEnvVariables},
     {cigGeneral, CIO_C, "Title bar show path", cokBool, 0, 1, &Configuration.TitleBarShowPath},
     {cigGeneral, CIO_C, "Title bar mode", cokRange, TITLE_BAR_MODE_DIRECTORY, TITLE_BAR_MODE_FULLPATH, &Configuration.TitleBarMode},
-    {cigGeneral, CIO_C, "Title bar prefix", cokBool, 0, 1, &Configuration.UseTitleBarPrefix},
+    {cigGeneral, CIO_C, "Title bar prefix", cokBool, 0, 1, &Configuration.UseTitleBarPrefix, "Title bar prefix text", NULL, Configuration.TitleBarPrefix, TITLE_PREFIX_MAX},
     {cigGeneral, CIO_C, "Change Drive Show My Documents", cokBool, 0, 1, &Configuration.ChangeDriveShowMyDoc},
     {cigGeneral, CIO_C, "Change Drive Show Another", cokBool, 0, 1, &Configuration.ChangeDriveShowAnother},
     {cigGeneral, CIO_C, "Change Drive Show Cloud Storages", cokBool, 0, 1, &Configuration.ChangeDriveCloudStorage},
@@ -1438,13 +1513,12 @@ static CCfgImpOption CfgImpOptions[] = {
     {cigGeneral, CIO_C, "Compare By Subdirs Attr", cokBool, 0, 1, &Configuration.CompareSubdirsAttr},
     {cigGeneral, CIO_C, "Compare One Panel Dirs", cokBool, 0, 1, &Configuration.CompareOnePanelDirs},
     {cigGeneral, CIO_C, "Compare More Options", cokBool, 0, 1, &Configuration.CompareMoreOptions},
-    {cigGeneral, CIO_C, "Compare Ignore Files", cokBool, 0, 1, &Configuration.CompareIgnoreFiles},
-    {cigGeneral, CIO_C, "Compare Ignore Dirs", cokBool, 0, 1, &Configuration.CompareIgnoreDirs},
+    {cigGeneral, CIO_C, "Compare Ignore Files", cokBool, 0, 1, &Configuration.CompareIgnoreFiles, "Compare Ignore Files Masks", &Configuration.CompareIgnoreFilesMasks},
+    {cigGeneral, CIO_C, "Compare Ignore Dirs", cokBool, 0, 1, &Configuration.CompareIgnoreDirs, "Compare Ignore Dirs Masks", &Configuration.CompareIgnoreDirsMasks},
     {cigGeneral, CIO_C, "Use Time Resolution", cokBool, 0, 1, &Configuration.UseTimeResolution},
     {cigGeneral, CIO_C, "Time Resolution", cokRange, 0, 3600, &Configuration.TimeResolution},
     {cigGeneral, CIO_C, "Ignore DST Shifts", cokBool, 0, 1, &Configuration.IgnoreDSTShifts},
-    {cigGeneral, CIO_C, "Keep Plugins Sorted", cokBool, 0, 1, &Configuration.KeepPluginsSorted},
-    {cigGeneral, CIO_C, "Use Recycle Bin", cokRange, 0, 2, &Configuration.UseRecycleBin},
+    {cigGeneral, CIO_C, "Use Recycle Bin", cokRange, 0, 2, &Configuration.UseRecycleBin, "Use Recycle Bin For", &Configuration.RecycleMasks},
     {cigGeneral, CIO_DRV, "Floppy Automatic Refresh", cokBool, 0, 1, &Configuration.DrvSpecFloppyMon},
     {cigGeneral, CIO_DRV, "Floppy Simple Icons", cokBool, 0, 1, &Configuration.DrvSpecFloppySimple},
     {cigGeneral, CIO_DRV, "Removable Automatic Refresh", cokBool, 0, 1, &Configuration.DrvSpecRemovableMon},
@@ -1466,7 +1540,8 @@ static CCfgImpOption CfgImpOptions[] = {
     {cigViewerOpts, CIO_V, "Auto-Copy Selection", cokBool, 0, 1, &Configuration.AutoCopySelection},
     {cigViewerOpts, CIO_V, "Go to Offset Is Hex", cokBool, 0, 1, &Configuration.GoToOffsetIsHex},
     {cigViewerOpts, CIO_V, "Tabelator Size", cokRange, 1, 30, &Configuration.TabSize},
-    {cigViewerOpts, CIO_V, "Default Mode", cokRange, 0, 2, &Configuration.DefViewMode},
+    {cigViewerOpts, CIO_V, "Default Mode", cokRange, 0, 2, &Configuration.DefViewMode, "Text Masks", &Configuration.TextModeMasks},
+    {cigViewerOpts, CIO_V, "Hex Masks", cokCompanionOnly, 0, 0, NULL, "Hex Masks", &Configuration.HexModeMasks},
 };
 
 // the table's own consistency (also mirrored by saltests): no TC-owned value is ever on it
@@ -1476,9 +1551,10 @@ static BOOL CfgImpOptionTableIsClean()
     for (i = 0; i < (int)(sizeof(CfgImpOptions) / sizeof(CfgImpOptions[0])); i++)
     {
         const char* sub = CfgImpOptions[i].SubKey;
-        if (SalCfgImpIsForbiddenOption(strcmp(sub, CIO_V) == 0 ? "Viewer" : strcmp(sub, CIO_C) == 0 ? "Configuration"
-                                                                                                    : sub,
-                                       CfgImpOptions[i].Name))
+        const char* top = strcmp(sub, CIO_V) == 0 ? "Viewer" : strcmp(sub, CIO_C) == 0 ? "Configuration"
+                                                                                       : sub;
+        if (SalCfgImpIsForbiddenOption(top, CfgImpOptions[i].Name) ||
+            (CfgImpOptions[i].CompName != NULL && SalCfgImpIsForbiddenOption(top, CfgImpOptions[i].CompName)))
         {
             TRACE_E("CfgImpOptionTableIsClean(): forbidden option on the table: " << CfgImpOptions[i].Name);
             return FALSE;
@@ -1491,6 +1567,12 @@ static BOOL CfgImpOptionTableIsClean()
 // '*present' FALSE when the source has no such value (then no line at all)
 static BOOL CfgImpOptionValue(const CSalCfgKey* snapshot, const CCfgImpOption* o, DWORD* value, BOOL* present)
 {
+    if (o->Kind == cokCompanionOnly)
+    {
+        *value = 0;
+        *present = SalCfgValueFind(SalCfgKeyFind(snapshot, o->SubKey), o->CompName) != NULL;
+        return *present;
+    }
     const CSalCfgKey* k = SalCfgKeyFind(snapshot, o->SubKey);
     const CSalCfgValue* v = SalCfgValueFind(k, o->Name);
     *present = v != NULL;
@@ -1527,6 +1609,7 @@ struct CCfgImpOptAssign
 {
     int Row;
     DWORD Value;
+    char* Comp; // the companion's new masks/text (allocated), NULL = the companion is not changed
 };
 
 class CCfgImpOptionsData : public CCfgImpGroupData
@@ -1534,7 +1617,34 @@ class CCfgImpOptionsData : public CCfgImpGroupData
 public:
     TDirectArray<CCfgImpOptAssign> Assign;
     CCfgImpOptionsData() : Assign(16, 32) {}
+    ~CCfgImpOptionsData()
+    {
+        int i;
+        for (i = 0; i < Assign.Count; i++)
+            free(Assign[i].Comp);
+    }
 };
+
+// the companion's value in the source: FALSE = absent, not text, too long (never cut) or
+// invalid masks - then the option is not taken over either
+static BOOL CfgImpOptionCompanion(const CSalCfgKey* snapshot, const CCfgImpOption* o, const char** value)
+{
+    *value = SalCfgGetString(SalCfgKeyFind(snapshot, o->SubKey), o->CompName);
+    if (*value == NULL)
+        return FALSE;
+    int limit = o->CompMasks != NULL ? MAX_PATH : o->CompTextSize;
+    if ((int)strlen(*value) >= limit)
+        return FALSE;
+    if (o->CompMasks != NULL)
+    {
+        CMaskGroup test;
+        test.SetMasksString(*value);
+        int errPos;
+        if (!test.PrepareMasks(errPos))
+            return FALSE;
+    }
+    return TRUE;
+}
 
 static int CfgImpCountOptions(CCfgImpRun* run, CCfgImpGroup* g)
 {
@@ -1575,22 +1685,39 @@ static BOOL CfgImpPlanOptions(CCfgImpRun* run, CCfgImpGroup* g)
                 CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_BADVALUE, o->Name);
             continue;
         }
-        DWORD cur = (DWORD)*o->Field;
+        const char* comp = NULL;
+        if (o->CompName != NULL && !CfgImpOptionCompanion(run->Snapshot, o, &comp))
+        {
+            CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_BADVALUE, o->CompName);
+            continue; // the unit is taken over completely or not at all
+        }
+        DWORD cur = o->Field != NULL ? (DWORD)*o->Field : 0;
         if (o->Kind == cokBool)
             cur = cur != 0 ? 1 : 0;
-        if (cur == v)
+        const char* curComp = o->CompMasks != NULL ? o->CompMasks->GetMasksString() : o->CompText;
+        BOOL compChanged = comp != NULL && curComp != NULL && strcmp(curComp, comp) != 0;
+        if (cur == v && !compChanged)
             continue; // the same value: nothing to change
-        char a[32], b[32];
-        _snprintf_s(a, _TRUNCATE, "%u", cur);
-        _snprintf_s(b, _TRUNCATE, "%u", v);
-        CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_VALUE, o->Name, a, b);
+        if (cur != v)
+        {
+            char a[32], b[32];
+            _snprintf_s(a, _TRUNCATE, "%u", cur);
+            _snprintf_s(b, _TRUNCATE, "%u", v);
+            CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_VALUE, o->Name, a, b);
+        }
+        if (compChanged)
+            CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_VALUE, o->CompName, curComp, comp);
         CCfgImpOptAssign as;
         as.Row = i;
         as.Value = v;
+        as.Comp = NULL;
+        if (compChanged && (as.Comp = DupStr(comp)) == NULL)
+            return FALSE;
         data->Assign.Add(as);
         if (!data->Assign.IsGood())
         {
             data->Assign.ResetState();
+            free(as.Comp);
             return FALSE;
         }
     }
@@ -1604,7 +1731,22 @@ static BOOL CfgImpApplyOptions(CCfgImpRun* run, CCfgImpGroup* g)
         return FALSE;
     int i;
     for (i = 0; i < data->Assign.Count; i++)
-        *CfgImpOptions[data->Assign[i].Row].Field = (int)data->Assign[i].Value;
+    {
+        const CCfgImpOption* o = &CfgImpOptions[data->Assign[i].Row];
+        if (o->Field != NULL)
+            *o->Field = (int)data->Assign[i].Value;
+        const char* comp = data->Assign[i].Comp;
+        if (comp == NULL)
+            continue;
+        if (o->CompMasks != NULL)
+        {
+            o->CompMasks->SetMasksString(comp);
+            int errPos;
+            o->CompMasks->PrepareMasks(errPos); // valid: checked by the plan
+        }
+        else if (o->CompText != NULL)
+            lstrcpyn(o->CompText, comp, o->CompTextSize); // fits: checked by the plan
+    }
     return TRUE;
 }
 
@@ -1848,7 +1990,10 @@ static BOOL CfgImpPlanHotPaths(CCfgImpRun* run, CCfgImpGroup* g)
         {
             char fmt[300];
             CfgImpLoad(IDS_CFGIMP_LN_SLOTMOVED, fmt, sizeof(fmt));
-            text = CfgImpFormat(fmt, label != NULL ? label : "", slot + 1, i + 1);
+            char to[16], from[16]; // only %s in translated formats (a translation may reorder them)
+            _snprintf_s(to, _TRUNCATE, "%d", slot + 1);
+            _snprintf_s(from, _TRUNCATE, "%d", i + 1);
+            text = CfgImpFormat(fmt, label != NULL ? label : "", to, from);
         }
         int flag = CfgImpFlagPath(src[i].Path);
         if (flag != 0)
@@ -1892,6 +2037,16 @@ public:
     CCfgImpUserMenuData() : NewMenu(NULL), NewCount(0) {}
     ~CCfgImpUserMenuData() { SalCfgImpFreeMenu(NewMenu, NewCount); }
 };
+
+// entries left out because a value is longer than the program accepts (never cut)
+static void CfgImpReportTooLong(CCfgImpGroup* g, int count)
+{
+    if (count <= 0)
+        return;
+    char num[32];
+    _snprintf_s(num, _TRUNCATE, "%d", count);
+    CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_SKIPLONG, num);
+}
 
 static int CfgImpCountUserMenu(CCfgImpRun* run)
 {
@@ -1949,7 +2104,15 @@ static BOOL CfgImpCopyMenuItem(CSalCfgImpMenuItem* dst, const CSalCfgImpMenuItem
     dst->Arguments = DupStr(src->Arguments);
     dst->InitDir = DupStr(src->InitDir);
     dst->Icon = DupStr(src->Icon);
-    return dst->Name != NULL && dst->Command != NULL && dst->Arguments != NULL && dst->InitDir != NULL && dst->Icon != NULL;
+    if (dst->Name != NULL && dst->Command != NULL && dst->Arguments != NULL && dst->InitDir != NULL && dst->Icon != NULL)
+        return TRUE;
+    free(dst->Name); // a partial copy is released and never counted
+    free(dst->Command);
+    free(dst->Arguments);
+    free(dst->InitDir);
+    free(dst->Icon);
+    memset(dst, 0, sizeof(*dst));
+    return FALSE;
 }
 
 // the reason a menu item's command should be checked (0 = none); 'prog' gets the program
@@ -1977,8 +2140,15 @@ static int CfgImpFlagCommand(const char* command, char* prog, int progSize)
         lstrcpyn(path, s, MAX_PATH);
     if (strchr(path, '$') != NULL || strchr(path, '%') != NULL)
         return 0;
-    BOOL absolute = (path[0] != 0 && path[1] == ':' && path[2] == '\\') || (path[0] == '\\' && path[1] == '\\');
-    if (!absolute)
+    // only a program on a local fixed drive is checked: a network path (UNC or a mapped drive)
+    // could reach the network (FR-030) and a removable one may just be absent
+    BOOL local = path[0] != 0 && path[1] == ':' && path[2] == '\\';
+    if (!local)
+        return 0;
+    if ((path[0] | 0x20) < 'a' || (path[0] | 0x20) > 'z')
+        return 0;
+    WCHAR root[4] = {(WCHAR)path[0], L':', L'\\', 0};
+    if (GetDriveTypeW(root) != DRIVE_FIXED)
         return 0;
     if (SalGetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
     {
@@ -2023,8 +2193,9 @@ static BOOL CfgImpPlanUserMenu(CCfgImpRun* run, CCfgImpGroup* g)
     g->Data = data;
     CSalCfgImpMenuItem* src = NULL;
     int stop = 0;
+    int tooLong = 0;
     int srcCount = SalCfgImpParseUserMenu(SalCfgKeyFind(run->Snapshot, "User Menu"), MAX_PATH, USRMNUARGS_MAXLEN, &src,
-                                          &stop);
+                                          &stop, &tooLong);
     CSalCfgImpMenuItem* cur = NULL;
     int curCount = CfgImpCurrentUserMenu(&cur);
     if (curCount < 0)
@@ -2083,7 +2254,9 @@ static BOOL CfgImpPlanUserMenu(CCfgImpRun* run, CCfgImpGroup* g)
         int i;
         for (i = 0; i < srcCount && ok; i++)
         {
-            if (!CfgImpCopyMenuItem(&data->NewMenu[data->NewCount++], &src[i]))
+            if (CfgImpCopyMenuItem(&data->NewMenu[data->NewCount], &src[i]))
+                data->NewCount++; // only complete copies count (Apply would use the rest)
+            else
                 ok = FALSE;
         }
     }
@@ -2098,7 +2271,9 @@ static BOOL CfgImpPlanUserMenu(CCfgImpRun* run, CCfgImpGroup* g)
             int i;
             for (i = 0; i < curCount && ok; i++)
             {
-                if (!CfgImpCopyMenuItem(&data->NewMenu[data->NewCount++], &cur[i]))
+                if (CfgImpCopyMenuItem(&data->NewMenu[data->NewCount], &cur[i]))
+                    data->NewCount++;
+                else
                     ok = FALSE;
             }
             BOOL appendingBlock = FALSE;
@@ -2109,7 +2284,9 @@ static BOOL CfgImpPlanUserMenu(CCfgImpRun* run, CCfgImpGroup* g)
                     appendingBlock = d == SALCFGIMP_UMD_APPEND;
                 if (d == SALCFGIMP_UMD_APPEND || (d == SALCFGIMP_UMD_INBLOCK && appendingBlock))
                 {
-                    if (!CfgImpCopyMenuItem(&data->NewMenu[data->NewCount++], &src[i]))
+                    if (CfgImpCopyMenuItem(&data->NewMenu[data->NewCount], &src[i]))
+                        data->NewCount++;
+                    else
                         ok = FALSE;
                 }
                 if (src[i].Type == SALCFGIMP_UM_ITEM || src[i].Type == SALCFGIMP_UM_SUBMENUBEGIN)
@@ -2129,6 +2306,7 @@ static BOOL CfgImpPlanUserMenu(CCfgImpRun* run, CCfgImpGroup* g)
     }
     if (stop != 0)
         g->AddLine(CFGIMP_LINE_SKIPPED, LoadStrU8(IDS_CFGIMP_LN_STOPPED));
+    CfgImpReportTooLong(g, tooLong);
     SalCfgImpFreeMenu(src, srcCount);
     SalCfgImpFreeMenu(cur, curCount);
     return ok;
@@ -2252,11 +2430,17 @@ static BOOL CfgImpPlanViewers(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlugin
     {
         CSalCfgImpViewer* rows = NULL;
         int stop = 0;
+        int tooLong = 0;
         int c = SalCfgImpParseViewers(SalCfgKeyFind(run->Snapshot, CfgImpViewerLists[l].Key), CfgImpViewerLists[l].Editors,
-                                      run->Sources[run->Chosen].ConfigVersion, MAX_PATH, &rows, &stop);
-        // insertion point: before the current catch-all row ("*.*"), else at the end
+                                      run->Sources[run->Chosen].ConfigVersion, MAX_PATH, &rows, &stop, &tooLong);
+        CfgImpReportTooLong(g, tooLong);
+        // insertion point: before the current catch-all row ("*.*"), else at the end; a row put
+        // before the catch-all takes files over from it - a change of what opens them today,
+        // reported as "replaced" (FR-010c: only with consent)
         int count = l < 2 ? data->Viewers[l]->Count : data->Editors->Count;
         int insertAt = count;
+        char catchAll[2 * MAX_PATH];
+        catchAll[0] = 0;
         int i;
         for (i = 0; i < count; i++)
         {
@@ -2264,6 +2448,13 @@ static BOOL CfgImpPlanViewers(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlugin
             if (CfgImpIsCatchAll(m))
             {
                 insertAt = i;
+                const char* cmd = l < 2 ? data->Viewers[l]->At(i)->Command : data->Editors->At(i)->Command;
+                if (l < 2 && data->Viewers[l]->At(i)->ViewerType != VIEWER_EXTERNAL)
+                    cmd = NULL; // the internal viewer or a plug-in: the masks name the row
+                if (cmd != NULL && *cmd != 0)
+                    SalCfgImpFormatText(catchAll, (int)sizeof(catchAll), "%s: %s", m, cmd);
+                else
+                    SalCfgImpCopyText(catchAll, (int)sizeof(catchAll), m);
                 break;
             }
         }
@@ -2353,11 +2544,13 @@ static BOOL CfgImpPlanViewers(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlugin
             insertAt++;
             char prog[MAX_PATH];
             int flag = r->Type == VIEWER_EXTERNAL || l == 2 ? CfgImpFlagCommand(r->Command, prog, MAX_PATH) : 0;
+            if (catchAll[0] != 0)
+                CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_BEFORECATCHALL, label, catchAll);
             if (flag == IDS_CFGIMP_LN_NOPROGRAM)
                 CfgImpAddLineF(g, CFGIMP_LINE_FLAGGED, flag, label, prog);
             else if (flag != 0)
                 CfgImpAddLineF(g, CFGIMP_LINE_FLAGGED, flag, label);
-            else
+            else if (catchAll[0] == 0)
                 g->AddLine(CFGIMP_LINE_ADDED, label);
         }
         if (stop != 0)
@@ -2486,6 +2679,11 @@ static BOOL CfgImpPlanPluginKeys(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlu
                 CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_KEYHAS, label);
                 continue;
             }
+            if (HOTKEY_GET(curKey) == 0 && (curKey & HOTKEY_DIRTY) != 0 && g->Mode != CFGIMP_MODE_REPLACE)
+            { // the user removed this command's shortcut: a choice Add keeps
+                CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_KEYREMOVED, label);
+                continue;
+            }
             // the key used by another command (current, or assigned earlier in this plan)?
             int otherPlugin = -1, otherItem = -1;
             int a;
@@ -2549,10 +2747,13 @@ static BOOL CfgImpPlanPluginKeys(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlu
                 data->Assign.ResetState();
                 return FALSE;
             }
-            if (HOTKEY_GET(curKey) != 0)
+            if (HOTKEY_GET(curKey) != 0 || (curKey & HOTKEY_DIRTY) != 0)
             {
                 char old[100];
-                CfgImpHotKeyText(HOTKEY_GET(curKey), old, sizeof(old));
+                if (HOTKEY_GET(curKey) != 0)
+                    CfgImpHotKeyText(HOTKEY_GET(curKey), old, sizeof(old));
+                else
+                    lstrcpyn(old, "-", (int)sizeof(old)); // removed by the user
                 char* t = CfgImpFormat("%s: %s -> %s", label, old, keyText);
                 g->AddLine(CFGIMP_LINE_REPLACED, t);
                 free(t);
@@ -2759,14 +2960,116 @@ static int CfgImpCountPluginSettings(CCfgImpRun* run, CCfgImpGroup* g)
     return k != NULL ? max(1, k->ValueCount + k->KeyCount) : 0;
 }
 
+// the value as report text: strings as they are, DWORDs as numbers, other data by its size
+static void CfgImpValueText(const CSalCfgValue* v, char* buf, int size)
+{
+    if (v == NULL)
+        buf[0] = 0;
+    else if (v->Type == REG_SZ || v->Type == REG_EXPAND_SZ)
+        SalCfgImpCopyText(buf, size, (const char*)v->Data);
+    else if (v->Type == REG_DWORD && v->Size == 4)
+        _snprintf_s(buf, size, _TRUNCATE, "%u", *(const DWORD*)v->Data);
+    else
+        _snprintf_s(buf, size, _TRUNCATE, "(%u B)", (unsigned)v->Size);
+}
+
+static BOOL CfgImpSameValue(const CSalCfgValue* a, const CSalCfgValue* b)
+{
+    return a->Type == b->Type && a->Size == b->Size && memcmp(a->Data, b->Data, a->Size) == 0;
+}
+
+// FR-010c: the values of the plug-in's current settings that the import replaces or removes,
+// and the ones it adds ('path' = the key path for the text); at most 'budget' lines
+static void CfgImpDiffTree(CCfgImpGroup* g, const CSalCfgKey* cur, const CSalCfgKey* src, const char* path, int* budget,
+                           int* more)
+{
+    int i;
+    for (i = 0; src != NULL && i < src->ValueCount; i++)
+    {
+        const CSalCfgValue* sv = &src->Values[i];
+        const CSalCfgValue* cv = SalCfgValueFind(cur, sv->Name);
+        if (cv != NULL && CfgImpSameValue(cv, sv))
+            continue;
+        if (*budget <= 0)
+        {
+            (*more)++;
+            continue;
+        }
+        (*budget)--;
+        char name[600], a[300], b[300];
+        SalCfgImpFormatText(name, (int)sizeof(name), "%s%s", path, sv->Name[0] != 0 ? sv->Name : "(default)");
+        CfgImpValueText(sv, b, (int)sizeof(b));
+        if (cv != NULL)
+        {
+            CfgImpValueText(cv, a, (int)sizeof(a));
+            CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_VALUE, name, a, b);
+        }
+        else
+            CfgImpAddLineF(g, CFGIMP_LINE_ADDED, IDS_CFGIMP_LN_NEWVALUE, name, b);
+    }
+    for (i = 0; cur != NULL && i < cur->ValueCount; i++)
+    {
+        if (SalCfgValueFind(src, cur->Values[i].Name) != NULL)
+            continue;
+        if (*budget <= 0)
+        {
+            (*more)++;
+            continue;
+        }
+        (*budget)--;
+        char name[600];
+        SalCfgImpFormatText(name, (int)sizeof(name), "%s%s", path, cur->Values[i].Name[0] != 0 ? cur->Values[i].Name : "(default)");
+        g->AddLine(CFGIMP_LINE_REMOVED, name);
+    }
+    for (i = 0; src != NULL && i < src->KeyCount; i++)
+    {
+        char sub[600];
+        SalCfgImpFormatText(sub, (int)sizeof(sub), "%s%s\\", path, src->Keys[i]->Name);
+        CfgImpDiffTree(g, SalCfgKeyFindChild(cur, src->Keys[i]->Name), src->Keys[i], sub, budget, more);
+    }
+    for (i = 0; cur != NULL && i < cur->KeyCount; i++)
+    {
+        if (SalCfgKeyFindChild(src, cur->Keys[i]->Name) != NULL)
+            continue;
+        char sub[600];
+        SalCfgImpFormatText(sub, (int)sizeof(sub), "%s%s\\", path, cur->Keys[i]->Name);
+        CfgImpDiffTree(g, cur->Keys[i], NULL, sub, budget, more);
+    }
+}
+
 static BOOL CfgImpPlanPluginSettings(CCfgImpRun* run, CCfgImpGroup* g)
 {
     CPluginData* p = Plugins.Get(g->PluginIndex);
-    if (p == NULL)
+    if (p == NULL || p->RegKeyName == NULL || *p->RegKeyName == 0 || SALAMANDER_ROOT_REG == NULL)
         return FALSE;
-    char* t = CfgImpFormat("%s", g->Title);
-    g->AddLine(CFGIMP_LINE_REPLACED, t);
-    free(t);
+    char path[200];
+    _snprintf_s(path, _TRUNCATE, "Plugins Configuration\\%s", g->PluginKey);
+    const CSalCfgKey* src = SalCfgKeyFind(run->Snapshot, path);
+    if (src == NULL)
+        return FALSE;
+    if (SalCfgKeySubtreeTruncated(src)) // a partial copy would replace complete settings
+    {
+        CfgImpLoad(IDS_CFGIMP_LN_TRUNCSUBTREE, g->ApplyError, (int)sizeof(g->ApplyError));
+        return FALSE;
+    }
+    // what changes: the plug-in's current stored settings against the old program's
+    char curPath[2 * MAX_PATH];
+    _snprintf_s(curPath, _TRUNCATE, "%s\\Plugins Configuration\\%s", SALAMANDER_ROOT_REG, p->RegKeyName);
+    BOOL curTruncated = FALSE;
+    CSalCfgKey* cur = CfgImpReadSnapshot(curPath, &curTruncated, NULL, 0); // NULL: nothing stored yet
+    int budget = 60, more = 0;
+    CfgImpDiffTree(g, cur, src, "", &budget, &more);
+    if (cur != NULL)
+        SalCfgKeyFree(cur);
+    if (more > 0)
+    {
+        char num[32];
+        _snprintf_s(num, _TRUNCATE, "%d", more);
+        CfgImpAddLineF(g, CFGIMP_LINE_NOTE, IDS_CFGIMP_LN_MOREVALUES, num);
+    }
+    if (g->Lines.Count == 0)
+        return TRUE; // the same settings: nothing to do
+    g->NeedsConsent = TRUE; // the plug-in's settings are replaced as a whole
     g->AddLine(CFGIMP_LINE_NOTE, LoadStrU8(IDS_CFGIMP_PLUGINNEXTUSE));
     return TRUE;
 }
@@ -2817,6 +3120,38 @@ static BOOL CfgImpWriteTree(HKEY key, const CSalCfgKey* node)
     return TRUE;
 }
 
+// the plug-in's archive or file system is open in a panel or detached (what CanUnloadPlugin
+// would close, asking the user) - checked without any question
+static BOOL CfgImpPluginInUse(int index)
+{
+    CPluginData* p = Plugins.Get(index);
+    if (p == NULL || !p->GetLoaded() || MainWindow == NULL)
+        return FALSE;
+    CPluginInterfaceAbstract* iface = p->GetPluginInterface()->GetInterface();
+    CFilesWindow* panels[2] = {MainWindow->LeftPanel, MainWindow->RightPanel};
+    int i;
+    for (i = 0; i < 2; i++)
+    {
+        CFilesWindow* f = panels[i];
+        if (f == NULL || f->Is(ptDisk))
+            continue;
+        if ((f->Is(ptZIPArchive) || f->Is(ptPluginFS)) && f->PluginData.NotEmpty() &&
+            f->PluginData.GetPluginInterface() == iface)
+            return TRUE;
+        if (f->Is(ptPluginFS) && f->GetPluginFS()->NotEmpty() && f->GetPluginFS()->GetPluginInterface() == iface)
+            return TRUE;
+    }
+    if (MainWindow->DetachedFSList != NULL)
+    {
+        for (i = 0; i < MainWindow->DetachedFSList->Count; i++)
+        {
+            if (MainWindow->DetachedFSList->At(i)->GetPluginInterface() == iface)
+                return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 static BOOL CfgImpApplyPluginSettings(CCfgImpRun* run, CCfgImpGroup* g, HWND parent)
 {
     CPluginData* p = Plugins.Get(g->PluginIndex);
@@ -2827,6 +3162,13 @@ static BOOL CfgImpApplyPluginSettings(CCfgImpRun* run, CCfgImpGroup* g, HWND par
     const CSalCfgKey* src = SalCfgKeyFind(run->Snapshot, path);
     if (src == NULL)
         return FALSE;
+    // a plug-in in use (its archive or file system in a panel, its windows) is not unloaded: the
+    // user closes it first (research R8) - Unload would close panels or ask about a forced unload
+    if (p->GetLoaded() && CfgImpPluginInUse(g->PluginIndex))
+    {
+        CfgImpLoad(IDS_CFGIMP_PLUGININUSE, g->ApplyError, (int)sizeof(g->ApplyError));
+        return FALSE;
+    }
     if (p->GetLoaded() && !p->Unload(parent, FALSE)) // saves its current settings first (when saving on exit is on)
     {
         CfgImpLoad(IDS_CFGIMP_LN_PLUGINUNLOAD, g->ApplyError, (int)sizeof(g->ApplyError));
@@ -2849,15 +3191,39 @@ static BOOL CfgImpApplyPluginSettings(CCfgImpRun* run, CCfgImpGroup* g, HWND par
         HKEY parentKey;
         if (RegCreateKeyExW(HKEY_CURRENT_USER, wKeyPath, 0, NULL, 0, KEY_READ | KEY_WRITE, NULL, &parentKey, NULL) == ERROR_SUCCESS)
         {
-            LONG res = RegDeleteTreeW(parentKey, wName);
-            if (res == ERROR_SUCCESS || res == ERROR_FILE_NOT_FOUND)
+            // all or nothing: the new settings are written to a side key first; only a complete
+            // copy is swapped in by renaming (the current key is kept until then)
+            WCHAR wNew[300], wOld[300];
+            if (_snwprintf_s(wNew, _TRUNCATE, L"%s.tc-import-new", wName) > 0 &&
+                _snwprintf_s(wOld, _TRUNCATE, L"%s.tc-import-old", wName) > 0)
             {
+                RegDeleteTreeW(parentKey, wNew); // leftovers of an interrupted import
+                RegDeleteTreeW(parentKey, wOld);
                 HKEY k;
-                if (RegCreateKeyExW(parentKey, wName, 0, NULL, 0, KEY_READ | KEY_WRITE, NULL, &k, NULL) == ERROR_SUCCESS)
+                if (RegCreateKeyExW(parentKey, wNew, 0, NULL, 0, KEY_READ | KEY_WRITE, NULL, &k, NULL) == ERROR_SUCCESS)
                 {
                     ok = CfgImpWriteTree(k, src);
                     RegCloseKey(k);
                 }
+                if (ok)
+                {
+                    HKEY cur;
+                    BOOL hadCurrent = RegOpenKeyExW(parentKey, wName, 0, KEY_READ, &cur) == ERROR_SUCCESS;
+                    if (hadCurrent)
+                        RegCloseKey(cur);
+                    if (hadCurrent && RegRenameKey(parentKey, wName, wOld) != ERROR_SUCCESS)
+                        ok = FALSE;
+                    else if (RegRenameKey(parentKey, wNew, wName) != ERROR_SUCCESS)
+                    {
+                        ok = FALSE;
+                        if (hadCurrent)
+                            RegRenameKey(parentKey, wOld, wName); // the current settings back
+                    }
+                    else if (hadCurrent)
+                        RegDeleteTreeW(parentKey, wOld);
+                }
+                if (!ok)
+                    RegDeleteTreeW(parentKey, wNew);
             }
             RegCloseKey(parentKey);
         }
@@ -2906,19 +3272,16 @@ static int CfgImpCountFTP(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlugins* s
     return (bm != NULL ? bm->KeyCount : 0) + (px != NULL ? px->KeyCount : 0);
 }
 
-// a plug-in's handler behind an exception guard (no C++ objects in this frame)
+// a plug-in's handler, called like every other plug-in entry point (EnterPlugin/LeavePlugin);
+// a crash in it is not swallowed: the plug-in's state would be unknown and SaveConfig would
+// store it (the program's crash handling applies, the backup is already written)
 static BOOL CfgImpCallHandler(CPluginSettingsImportAbstract* handler, HWND parent, CSalamanderSettingsImportAbstract* ctx,
                               BOOL dryRun)
 {
-    __try
-    {
-        return handler->ImportSettings(parent, ctx, dryRun);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        TRACE_E("CfgImpCallHandler(): the plugin's import handler crashed");
-        return FALSE;
-    }
+    EnterPlugin();
+    BOOL ret = handler->ImportSettings(parent, ctx, dryRun);
+    LeavePlugin();
+    return ret;
 }
 
 static BOOL CfgImpRunFTP(CCfgImpRun* run, CCfgImpGroup* g, HWND parent, BOOL dryRun)
@@ -2942,13 +3305,18 @@ static BOOL CfgImpRunFTP(CCfgImpRun* run, CCfgImpGroup* g, HWND parent, BOOL dry
     char path[200];
     _snprintf_s(path, _TRUNCATE, "Plugins Configuration\\%s", g->PluginKey);
     CSalCfgKey* src = (CSalCfgKey*)SalCfgKeyFind(run->Snapshot, path);
+    if (SalCfgKeySubtreeTruncated(src)) // incomplete connections: Replace would remove what was not read
+    {
+        CfgImpLoad(IDS_CFGIMP_LN_TRUNCSUBTREE, g->ApplyError, (int)sizeof(g->ApplyError));
+        return FALSE;
+    }
     CCfgImpPluginContext ctx(run, g, parent, src);
     if (!dryRun)
         g->ClearLines(); // the result shows what really happened
     BOOL ret = CfgImpCallHandler(handler, parent, &ctx, dryRun);
     if (!dryRun && !ret && g->ApplyError[0] == 0)
         CfgImpLoad(IDS_CFGIMP_FAILEDGROUP, g->ApplyError, (int)sizeof(g->ApplyError));
-    if (!dryRun && ret && run->Passwords.AskedTCMasterPassword && !run->Passwords.TCMasterPasswordGiven)
+    if (ret && run->TCMasterPasswordMissing())
         g->AddLine(CFGIMP_LINE_NOTE, LoadStrU8(IDS_CFGIMP_TCMPWDNEEDED));
     return ret;
 }
@@ -3030,6 +3398,17 @@ static BOOL CfgImpGetColor(const CSalCfgKey* key, const char* name, SALCOLOR* co
     }
     *color = withFlags ? RGBF(c[0], c[1], c[2], c[3]) : RGB(c[0], c[1], c[2]);
     return TRUE;
+}
+
+static int CfgImpColorIndex(const char* name)
+{
+    int i;
+    for (i = 0; i < CFGIMP_COLORS; i++)
+    {
+        if (strcmp(CfgImpColors[i].Name, name) == 0)
+            return i;
+    }
+    return -1;
 }
 
 struct CCfgImpHlt
@@ -3128,10 +3507,29 @@ static BOOL CfgImpPlanColors(CCfgImpRun* run, CCfgImpGroup* g)
             continue;
         data->Colors[i] = c;
         data->ColorSet[i] = TRUE;
-        if (c != *CfgImpColors[i].Target)
+    }
+    // the program's own loader: an older configuration without the inactive focus backgrounds
+    // uses the normal item background for both (mainwnd2.cpp, LoadConfig)
+    {
+        int bkNormal = CfgImpColorIndex("Item Bk Normal");
+        const char* inactive[2] = {"Focus Bk Inactive Normal", "Focus Bk Inactive Selected"};
+        int k;
+        for (k = 0; k < 2 && ck != NULL; k++)
+        {
+            int ix = CfgImpColorIndex(inactive[k]);
+            if (ix >= 0 && bkNormal >= 0 && !data->ColorSet[ix] && data->ColorSet[bkNormal])
+            {
+                data->Colors[ix] = data->Colors[bkNormal];
+                data->ColorSet[ix] = TRUE;
+            }
+        }
+    }
+    for (i = 0; i < CFGIMP_COLORS; i++)
+    {
+        if (data->ColorSet[i] && data->Colors[i] != *CfgImpColors[i].Target)
         {
             _snprintf_s(a, _TRUNCATE, "#%08X", (unsigned)*CfgImpColors[i].Target);
-            _snprintf_s(b, _TRUNCATE, "#%08X", (unsigned)c);
+            _snprintf_s(b, _TRUNCATE, "#%08X", (unsigned)data->Colors[i]);
             CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_VALUE, CfgImpColors[i].Name, a, b);
         }
     }
@@ -3178,7 +3576,10 @@ static BOOL CfgImpPlanColors(CCfgImpRun* run, CCfgImpGroup* g)
             SalCfgGetDword(item, "Valid Attributes", &h.ValidAttr);
             int k;
             for (k = 0; k < 10; k++)
+            {
+                h.C[k] = RGBF(0, 0, 0, SCF_DEFAULT); // a colour the source lacks: the default (CHighlightMasksItem)
                 CfgImpGetColor(item, CfgImpHltNames[k], &h.C[k], TRUE);
+            }
             data->Hlt.Add(h);
             if (!data->Hlt.IsGood())
             {
@@ -3333,6 +3734,8 @@ static BOOL CfgImpPlanTemplates(CCfgImpRun* run, CCfgImpGroup* g)
         char nm[VIEW_NAME_MAX];
         lstrcpyn(nm, name, VIEW_NAME_MAX);
         data->New.CleanName(nm);
+        if (i >= 7 && nm[0] == 0)
+            continue; // an unused template in the old program: nothing to import (a blank one would empty a panel's view)
         if (i < 7)
             lstrcpyn(nm, LoadStrU8(builtIn[i]), VIEW_NAME_MAX); // built-in names are the program's (as Load does)
         data->New.LoadColumns(data->New.Items[i].Columns, buff);

@@ -931,4 +931,6 @@ STRINGTABLE
  IDS_IMPORT_INCOMPLETE, "Entry %s of %s is incomplete in the old settings and was not imported"
  IDS_IMPORT_SUFFIX, "(imported)"
  IDS_IMPORT_SUFFIXN, "(imported %d)"
+ IDS_IMPORT_TYPEKEPT, "%s - a server type with this name already exists; yours is kept"
+ IDS_IMPORT_DEFPROXY, "The default proxy server %s is removed; connections that use the default proxy server will connect without one"
 }
