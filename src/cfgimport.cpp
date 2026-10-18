@@ -14,6 +14,7 @@
 #include "mainwnd.h"
 #include "usermenu.h"
 #include "plugins.h"
+#include "pack.h"
 #include "fileswnd.h"
 #include "find.h"
 #include "viewer.h"
@@ -439,23 +440,6 @@ BOOL CfgImpOtherInstanceRuns()
     return FALSE;
 }
 
-BOOL CfgImpIsFreshConfiguration()
-{
-    char path[MAX_PATH + 50]; // SALAMANDER_ROOT_REG is NULL before the first save of a fresh configuration
-    _snprintf_s(path, _TRUNCATE, "%s\\Configuration", SalamanderConfigurationRoots[0]);
-    WCHAR* w = SalU8ToWAlloc(path);
-    if (w == NULL)
-        return FALSE;
-    HKEY k;
-    LONG res = RegOpenKeyExW(HKEY_CURRENT_USER, w, 0, KEY_READ, &k);
-    free(w);
-    if (res == ERROR_SUCCESS)
-    {
-        RegCloseKey(k);
-        return FALSE;
-    }
-    return res == ERROR_FILE_NOT_FOUND;
-}
 
 //
 // ****************************************************************************
@@ -1001,6 +985,18 @@ BOOL CCfgImpRun::Plan(HWND parent)
         g->ApplyError[0] = 0;
         if (!g->Selected || g->Availability != CFGIMP_AVAIL_YES)
             continue;
+        // Replace removes what the source lacks: never from a source list that was not read whole
+        const char* replaceList = g->Mode != CFGIMP_MODE_REPLACE ? NULL : g->Id == cigHotPaths ? "Hot Paths"
+                                                                      : g->Id == cigUserMenu   ? "User Menu"
+                                                                      : g->Id == cigPluginKeys ? "Plugins"
+                                                                                               : NULL;
+        if (replaceList != NULL && SalCfgKeySubtreeTruncated(SalCfgKeyFind(Snapshot, replaceList)))
+        {
+            ok = FALSE;
+            g->PlanFailed = TRUE;
+            CfgImpLoad(IDS_CFGIMP_LN_TRUNCSUBTREE, g->ApplyError, (int)sizeof(g->ApplyError));
+            continue;
+        }
         if (!CfgImpPlanGroup(this, g, &sp, parent))
         {
             // a group whose plan failed is never applied: a partial plan must not replace anything
@@ -1080,10 +1076,9 @@ BOOL CCfgImpRun::Apply(HWND parent, char* err, int errSize)
         lstrcpyn(err, LoadStrU8(IDS_CFGIMP_WINDOWSOPEN), errSize);
         return FALSE;
     }
-    // the backup reflects the stored configuration (what a restore brings back); a configuration
-    // that was never saved is saved first, so the backup exists
-    if (CfgImpIsFreshConfiguration())
-        MainWindow->SaveConfig(parent);
+    // the backup is the configuration as it is now: saved first (the import saves everything at
+    // its end anyway), so that a restore brings back also what this session changed
+    MainWindow->SaveConfig(parent);
     if (!CfgImpMakeBackupName(BackupFile, (int)sizeof(BackupFile)) ||
         !ExportConfiguration(parent, BackupFile, TRUE))
     {
@@ -1263,7 +1258,14 @@ void CCfgImpRun::CountFTPPasswords()
             if (blob == NULL || size < 2)
                 blob = SalCfgGetBinary(list->Keys[i], "PasswordS", REG_BINARY, &size);
             if (blob == NULL || size < 2)
+            {
+                // the oldest format ("Password", text scrambled by FTP itself): FTP's loader
+                // converts it to a scrambled blob, so it counts as stored without a master password
+                const char* old = SalCfgGetString(list->Keys[i], "Password");
+                if (old != NULL && *old != 0)
+                    Passwords.ScrambledCount++;
                 continue;
+            }
             if (blob[0] == 2)
                 Passwords.ProtectedCount++;
             else if (blob[0] == 1)
@@ -3140,6 +3142,23 @@ static BOOL CfgImpPluginInUse(int index)
             return TRUE;
         if (f->Is(ptPluginFS) && f->GetPluginFS()->NotEmpty() && f->GetPluginFS()->GetPluginInterface() == iface)
             return TRUE;
+        if (f->Is(ptZIPArchive)) // an archive the plug-in handles through the archive associations
+        {
+            int format = PackerFormatConfig.PackIsArchive(f->GetZIPArchive());
+            if (format != 0)
+            {
+                format--;
+                int index = PackerFormatConfig.GetUnpackerIndex(format);
+                if (index < 0 && Plugins.Get(-index - 1) == p)
+                    return TRUE;
+                if (PackerFormatConfig.GetUsePacker(format))
+                {
+                    index = PackerFormatConfig.GetPackerIndex(format);
+                    if (index < 0 && Plugins.Get(-index - 1) == p)
+                        return TRUE;
+                }
+            }
+        }
     }
     if (MainWindow->DetachedFSList != NULL)
     {
@@ -3197,8 +3216,20 @@ static BOOL CfgImpApplyPluginSettings(CCfgImpRun* run, CCfgImpGroup* g, HWND par
             if (_snwprintf_s(wNew, _TRUNCATE, L"%s.tc-import-new", wName) > 0 &&
                 _snwprintf_s(wOld, _TRUNCATE, L"%s.tc-import-old", wName) > 0)
             {
-                RegDeleteTreeW(parentKey, wNew); // leftovers of an interrupted import
-                RegDeleteTreeW(parentKey, wOld);
+                // leftovers of an interrupted import: a side copy alone is the user's settings
+                // (the swap stopped between the two renames) and goes back, never deleted
+                HKEY probe;
+                BOOL oldThere = RegOpenKeyExW(parentKey, wOld, 0, KEY_READ, &probe) == ERROR_SUCCESS;
+                if (oldThere)
+                    RegCloseKey(probe);
+                BOOL nameThere = RegOpenKeyExW(parentKey, wName, 0, KEY_READ, &probe) == ERROR_SUCCESS;
+                if (nameThere)
+                    RegCloseKey(probe);
+                if (oldThere && !nameThere)
+                    RegRenameKey(parentKey, wOld, wName);
+                else if (oldThere)
+                    RegDeleteTreeW(parentKey, wOld); // the swap had finished; only the clean-up was left
+                RegDeleteTreeW(parentKey, wNew);
                 HKEY k;
                 if (RegCreateKeyExW(parentKey, wNew, 0, NULL, 0, KEY_READ | KEY_WRITE, NULL, &k, NULL) == ERROR_SUCCESS)
                 {
@@ -3314,6 +3345,8 @@ static BOOL CfgImpRunFTP(CCfgImpRun* run, CCfgImpGroup* g, HWND parent, BOOL dry
     if (!dryRun)
         g->ClearLines(); // the result shows what really happened
     BOOL ret = CfgImpCallHandler(handler, parent, &ctx, dryRun);
+    if (!dryRun && !ret)
+        g->ClearLines(); // nothing was swapped in: the lines of the failed run did not happen
     if (!dryRun && !ret && g->ApplyError[0] == 0)
         CfgImpLoad(IDS_CFGIMP_FAILEDGROUP, g->ApplyError, (int)sizeof(g->ApplyError));
     if (ret && run->TCMasterPasswordMissing())
@@ -4088,6 +4121,8 @@ static BOOL CfgImpApplyGroup(CCfgImpRun* run, CCfgImpGroup* g, HWND parent, BOOL
     case cigFindSets:
         return CfgImpApplyFind(run, g);
     case cigPluginSettings:
+        if (g->Lines.Count == 0)
+            return TRUE; // the same settings: the plug-in is neither unloaded nor rewritten
         return CfgImpApplyPluginSettings(run, g, parent);
     default:
         return FALSE;

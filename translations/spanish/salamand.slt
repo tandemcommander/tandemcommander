@@ -1614,7 +1614,7 @@ SLGINCOMPLETE,""
 2,75,32,50,14,1,"Cancelar"
 
 [DIALOG 6258]
-380,270,1,"Importar configuración desde Tandem Commander"
+380,270,1,"Importar configuración desde Salamander"
 6263,7,7,366,64,1,""
 6283,7,76,366,8,1,"&Configuración encontrada:"
 6264,7,87,366,90,1,""
@@ -1626,7 +1626,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Ayuda"
 
 [DIALOG 6259]
-380,270,1,"Importar ajustes desde Tandem Commander"
+380,270,1,"Importar ajustes desde Salamander"
 6284,7,7,366,8,1,"Elija qué importar (el número de elementos en&contrados) y cómo:"
 6267,7,18,366,118,1,""
 6269,7,141,180,10,1,"Añadir a &mi configuración actual"
@@ -1640,7 +1640,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Ayuda"
 
 [DIALOG 6260]
-380,270,1,"Importar configuración desde Tandem Commander — Contraseñas guardadas"
+380,270,1,"Importar configuración desde Salamander — Contraseñas guardadas"
 6272,7,7,366,26,1,""
 6274,7,38,366,10,1,"&Importar contraseñas guardadas"
 6275,7,51,366,10,1,"No importar contraseñas guar&dadas"
@@ -1655,7 +1655,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Ayuda"
 
 [DIALOG 6261]
-380,270,1,"Importar configuración desde Tandem Commander - Vista previa"
+380,270,1,"Importar configuración desde Salamander - Vista previa"
 6285,7,7,366,8,1,"&Cambios:"
 6278,7,18,366,196,1,""
 6279,7,218,366,20,1,"Acepto &los cambios en mi configuración actual marcados con ~ y - más arriba"
@@ -1666,7 +1666,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Ayuda"
 
 [DIALOG 6262]
-380,270,1,"Importar configuración desde Tandem Commander - Resultado"
+380,270,1,"Importar configuración desde Salamander - Resultado"
 6285,7,7,366,8,1,"Info&rme:"
 6278,7,18,366,218,1,""
 1150,7,242,366,1,1,""
@@ -2023,7 +2023,7 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 20]
 10320,1,"Copia de seguridad de su configuración anterior: %s"
-10321,1,"Para volver a ellos, cierre Tandem Commander e inícielo con el parámetro -C «%s», o haga doble clic en el archivo."
+10321,1,"Para volver a ellos, cierre Tandem Commander e inícielo con el parámetro -C «%s», o haga doble clic en el archivo mientras Tandem Commander está cerrado."
 10322,1,"%s (ranura %s en lugar de %s)"
 10323,1,"%s: las 30 ranuras de rutas rápidas están ocupadas"
 10324,1,"%s: demasiado largo para Tandem Commander"
@@ -2233,12 +2233,13 @@ SLGINCOMPLETE,""
 10518,1,"Mostrar nombres ocultos"
 10519,1,"Abrir documentos"
 10520,1,"Modo de columna simple\tCtrl+N"
-10521,1,"No se han podido leer por completo los ajustes anteriores de este complemento, por lo que no se han importado."
+10521,1,"No se han podido leer por completo estos ajustes antiguos, por lo que no se han importado."
 10522,0,"%s: %s"
 10523,1,"... y %s cambios más"
 10524,1,"%s: toma estos archivos de %s"
 10525,1,"%s: ha eliminado este acceso directo en Tandem Commander; permanecerá eliminado"
-10526,1,"Las entradas de %s superan la longitud que admite Tandem Commander y no se han importado"
+10526,1,"Entradas no importadas porque un valor supera la longitud máxima permitida por Tandem Commander: %s"
+10527,1,"Reemplazar: un atajo importado prevalece sobre el atajo actual de un comando de complemento; los atajos que el programa antiguo no menciona permanecen tal y como están."
 
 [STRINGTABLE 33]
 10530,1,"La variable debe terminar con ')'."

@@ -1614,7 +1614,7 @@ SLGINCOMPLETE,""
 2,75,32,50,14,1,"Annuleren"
 
 [DIALOG 6258]
-380,270,1,"Instellingen importeren uit Tandem Commander"
+380,270,1,"Instellingen importeren uit Salamander"
 6263,7,7,366,64,1,""
 6283,7,76,366,8,1,"In&stellingen gevonden:"
 6264,7,87,366,90,1,""
@@ -1626,7 +1626,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Help"
 
 [DIALOG 6259]
-380,270,1,"Instellingen importeren uit Tandem Commander"
+380,270,1,"Instellingen importeren uit Salamander"
 6284,7,7,366,8,1,"&Kies wat u wilt importeren (het aantal gevonden items) en hoe:"
 6267,7,18,366,118,1,""
 6269,7,141,180,10,1,"Toevoegen &aan mijn huidige instellingen"
@@ -1640,7 +1640,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Help"
 
 [DIALOG 6260]
-380,270,1,"Instellingen importeren uit Tandem Commander – Opgeslagen wachtwoorden"
+380,270,1,"Instellingen importeren uit Salamander – Opgeslagen wachtwoorden"
 6272,7,7,366,26,1,""
 6274,7,38,366,10,1,"Opgeslagen wachtwoorden &importeren"
 6275,7,51,366,10,1,"Geen opgeslagen wachtwoor&den importeren"
@@ -1655,7 +1655,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Help"
 
 [DIALOG 6261]
-380,270,1,"Instellingen importeren uit Tandem Commander – Voorbeeld"
+380,270,1,"Instellingen importeren uit Salamander – Voorbeeld"
 6285,7,7,366,8,1,"&Wijzigingen:"
 6278,7,18,366,196,1,""
 6279,7,218,369,20,1,"Ik st&a de wijzigingen toe van mijn huidige instellingen die hierboven met ~ en - zijn gemarkeerd"
@@ -1666,7 +1666,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Help"
 
 [DIALOG 6262]
-380,270,1,"Instellingen importeren uit Tandem Commander – Resultaat"
+380,270,1,"Instellingen importeren uit Salamander – Resultaat"
 6285,7,7,366,8,1,"&Rapport:"
 6278,7,18,366,218,1,""
 1150,7,242,366,1,1,""
@@ -2023,7 +2023,7 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 20]
 10320,1,"Back-up van uw eerdere instellingen: %s"
-10321,1,"Om hiernaar terug te keren, sluit u Tandem Commander af en start u het programma opnieuw met de parameter -C „%s“, of dubbelklikt u op het bestand."
+10321,1,"Om hiernaar terug te keren, sluit u Tandem Commander af en start u het programma opnieuw met de parameter -C „%s“, of dubbelklikt u op het bestand terwijl Tandem Commander is afgesloten."
 10322,1,"%s (slot %s in plaats van %s)"
 10323,1,"%s: alle 30 snelkoppelingsplaatsen zijn in gebruik"
 10324,1,"%s: te lang voor Tandem Commander"
@@ -2233,12 +2233,13 @@ SLGINCOMPLETE,""
 10518,1,"Verborgen namen weergeven"
 10519,1,"Open Documenten"
 10520,1,"Intelligente kolom modus\tCtrl+N"
-10521,1,"De oude instellingen van deze plug-in konden niet volledig worden gelezen en zijn daarom niet geïmporteerd."
+10521,1,"Deze oude instellingen konden niet volledig worden gelezen en zijn daarom niet geïmporteerd."
 10522,0,"%s: %s"
 10523,1,"... en nog %s andere wijzigingen"
 10524,1,"%s - neemt deze bestanden over van %s"
 10525,1,"%s: u hebt deze snelkoppeling in Tandem Commander verwijderd; deze blijft verwijderd"
-10526,1,"%s-vermeldingen zijn langer dan wat Tandem Commander toestaat en zijn niet geïmporteerd"
+10526,1,"Vermeldingen zijn niet geïmporteerd omdat een waarde langer is dan wat Tandem Commander toestaat: %s"
+10527,1,"Vervangen: een geïmporteerde sneltoets heeft voorrang op de huidige sneltoets van een plug-inopdracht; sneltoetsen die het oude programma niet vermeldt, blijven ongewijzigd."
 
 [STRINGTABLE 33]
 10530,1,"Variabele naam moet met een ')' afgesloten worden."

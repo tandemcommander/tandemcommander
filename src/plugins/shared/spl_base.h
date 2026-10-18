@@ -802,7 +802,8 @@ public:
     virtual BOOL WINAPI DecryptSourcePassword(const BYTE* blob, int blobSize, char** plain) = 0;
 
     // encrypts a plain password the way this program stores passwords now (AES under its master
-    // password when it uses one - asked for once per import if needed - otherwise scrambled);
+    // password when it uses one - the core asks for it once, before the preview, never during
+    // ImportSettings - otherwise scrambled);
     // '*blob' is freed by CSalamanderGeneralAbstract::Free; FALSE when it cannot be done (the
     // plugin then imports the item without its password and reports it)
     virtual BOOL WINAPI EncryptForStorage(const char* plain, BYTE** blob, int* blobSize) = 0;

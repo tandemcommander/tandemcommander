@@ -35,7 +35,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
-| Plug-in interface 107, closing for an update (Restart Manager) | 080, 088, 118, 121 |
+| Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085 |
 | Privacy and security | 083, 085, 086, 090, 123 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121 |
@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter) | 071, 078, 123, 244 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import) | 071, 078, 123, 244, 245 |
 
 ## Feature notes
 
@@ -2911,3 +2911,46 @@ a few early ones are out of sequence).
   identical, captures 5 views x 5 schemes, Configuration page in 9 languages, Release perf 100k:
   <= 32 ms typing, 335 ms first keystroke over 100k non-ASCII names = the list layout, filed); two
   review rounds (four agents).
+- 245-settings-import-salamander: **Options > Import Settings from Salamander** - a five-page wizard
+  (source, what/how, saved passwords, preview, result) that brings settings of Altap Salamander
+  2.5-4.0 / Open Salamander 5.0 into TC; offered once at the first start of a fresh configuration
+  (existence check only). Constitution 4.0.0 (principle II: the old keys are never written, read only
+  in a user-started import). The source root is read ONCE (`KEY_READ`, wide API, limits 8 levels /
+  64 KiB per value / 32 MiB, truncation tracked per key) into a snapshot tree (`CSalCfgKey`); pure
+  rules in header-only `src/common/salcfgimport.h` (saltests). Engine `src/cfgimport.cpp`: per group
+  plan (lines `+ = ~ - ! x`) -> preview -> consent when anything current is replaced or removed
+  (FR-010c) -> guard (other instance, Find/viewer windows) -> backup (`ExportConfiguration` into
+  `%APPDATA%\Tandem Commander\Settings backups\before-import-*.reg`, restore with `-C`) -> groups
+  all-or-nothing -> `RefreshAfterConfiguration` (factored out of `WM_USER_CONFIGURATION`) ->
+  `SaveConfig`. Defaults never change a current setting: list groups *Add*; viewers (rows go before
+  the current `*.*` row = a change), option groups, colours, templates and whole-plugin settings are
+  unticked. Options come from an allow-list table (mirrored in saltests against the forbidden list);
+  an option and its masks/text are one unit. Interface **108**: `SetPluginSettingsImport` +
+  `CSalamanderSettingsImportAbstract` (read-only source view, report sink, password services); FTP
+  (`ftpimport.cpp`) merges bookmarks, proxies and server types, builds complete copies and swaps them
+  in. Passwords: source master password verified by its verifier (code-page bytes, <= 127 bytes);
+  never stored weaker without consent; TC's own master password asked before the preview. The 057
+  script `utils/migrate-altap-settings.cmd` is retired. Debug-only seam `TC_CFGIMPORT_AUTORUN` /
+  `TC_CFGIMPORT_TEST_ROOT` (fixtures under `HKCU\Software\Tandem Commander Test 245`). Traps:
+  - Add mode replaced a plug-in command's DEFAULT shortcut (it kept only user-assigned ones).
+  - `AskForMasterPassword` always shows its dialog: ask only when not entered.
+  - The FTP loaders validate a bookmark's proxy UID against the CURRENT list and `LoadPassword`
+    reads the registry directly: the handler reads raw UIDs and password blobs itself.
+  - `SALAMANDER_ROOT_REG` is NULL before the first save of a fresh configuration (the offer never
+    showed); a fresh start picks the system language, so the offer needs translated strings.
+  - Review: Replace re-numbered proxy UIDs (the default proxy pointed at another server); a commit
+    that cleared lists before copying; a `__try` that swallowed plug-in crashes and then saved the
+    half state; the preview and the import deciding passwords differently; "Use Recycle Bin" without
+    its masks (permanent deletes); a program check reaching UNC paths; a failed plan still applied;
+    viewer rows before `*.*` silently changing what opens files.
+  - `SalWToU8Alloc(name, 0)` returns NULL: the default (unnamed) value needs its own case.
+  - Translated formats that mix `%s` with `%d` crash when a translation reorders them: numbers are
+    formatted to text first.
+  - Bash here-documents collapse backslashes (`L'\\'` became `L'\'`): edits go through files.
+  - DeepL ran with `formality=prefer_less` (informal) against a formal corpus: new strings are
+    translated with `merge.py --formality prefer_more`. The rebrand step renamed "Altap
+    Salamander" in our own texts (dialog captions too - they have no id of their own):
+    `translations/brand-exempt.json`. `merge.py` keeps an id's machine text when its English
+    changes: remove the row from the `.slt` to get it translated again.
+  Tests: saltests 23,037 -> 23,491; e2e matrix `probe/ci245_e2e.ps1` (S0-S14, 94 checks), UI
+  probe `probe/ci245_ui.ps1` (U1-U5, 29 checks; Release 5); two review rounds (five agents).

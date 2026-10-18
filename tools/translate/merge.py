@@ -315,6 +315,8 @@ def build_slt(
                     cov.human += 1
 
             row_symbol = symbols.get(tpl_row.entry_id) if tpl_row.entry_id is not None else None
+            if tpl_row.entry_id is None and tpl_section.kind == "DIALOG":
+                row_symbol = symbols.get(tpl_section.number)  # a caption belongs to its dialog (IDD_*)
             exempt = row_symbol is not None and any(fnmatch.fnmatchcase(row_symbol, p) for p in brand_exempt)
             rebranded = text if exempt else rebrand(text)
             if rebranded != text:

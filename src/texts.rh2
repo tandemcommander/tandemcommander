@@ -2761,6 +2761,7 @@
 #define IDS_CFGIMP_LN_BEFORECATCHALL     10524
 #define IDS_CFGIMP_LN_KEYREMOVED         10525
 #define IDS_CFGIMP_LN_SKIPLONG           10526
+#define IDS_CFGIMP_DESC_REPLACEKEYS      10527
 
 //#define CM_TEXTS_MAX                  18000    // maximal texts id
 

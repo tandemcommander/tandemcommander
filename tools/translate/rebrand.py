@@ -148,8 +148,12 @@ def main(argv: list[str] | None = None) -> int:
     import sys
     from collections import Counter
 
+    import fnmatch
+
     from .config import load_enabled_modules, load_languages
+    from .merge import load_brand_exempt
     from .slt import load
+    from .uicontext import load_symbols
 
     ap = argparse.ArgumentParser(prog="translate-rebrand")
     ap.add_argument("--samples", type=int, default=12)
@@ -178,8 +182,15 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             slt = load(path)
             dirty = False
-            for _, row in slt.iter_entries():
+            # texts that name a predecessor on purpose (translations/brand-exempt.json, 245)
+            exempt = load_brand_exempt(module)
+            symbols = load_symbols(module) if exempt else {}
+            for section, row in slt.iter_entries():
                 scanned += 1
+                rid = row.entry_id if row.entry_id is not None else (section.number if section.kind == "DIALOG" else None)
+                sym = symbols.get(rid) if rid is not None else None
+                if sym is not None and any(fnmatch.fnmatchcase(sym, p) for p in exempt):
+                    continue
                 new = rebrand(row.text)
                 if new != row.text:
                     changed += 1

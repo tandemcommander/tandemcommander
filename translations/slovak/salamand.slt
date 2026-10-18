@@ -1614,7 +1614,7 @@ SLGINCOMPLETE,""
 2,75,32,50,14,1,"Zrušiť"
 
 [DIALOG 6258]
-380,270,1,"Importovať nastavenia zo Tandem Commanderu"
+380,270,1,"Importovať nastavenia zo Salamanderu"
 6263,7,7,366,64,1,""
 6283,7,76,366,8,1,"&Nájdené nastavenia:"
 6264,7,87,366,90,1,""
@@ -1626,7 +1626,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Pomoc"
 
 [DIALOG 6259]
-380,270,1,"Importovať nastavenia z programu Tandem Commander"
+380,270,1,"Importovať nastavenia z programu Salamander"
 6284,7,7,366,8,1,"Vyberte, čo &chcete importovať (počet nájdených položiek) a ako:"
 6267,7,18,366,118,1,""
 6269,7,141,180,10,1,"Prid&ať k mojim aktuálnym nastaveniam"
@@ -1640,7 +1640,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Pomoc"
 
 [DIALOG 6260]
-380,270,1,"Import nastavení z programu Tandem Commander – Uložené heslá"
+380,270,1,"Import nastavení z programu Salamander – Uložené heslá"
 6272,7,7,366,26,1,""
 6274,7,38,366,10,1,"&Importovať uložené heslá"
 6275,7,51,366,10,1,"&Neimportovať uložené heslá"
@@ -1655,7 +1655,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Pomoc"
 
 [DIALOG 6261]
-380,270,1,"Import nastavení z programu Tandem Commander – Náhľad"
+380,270,1,"Import nastavení z programu Salamander – Náhľad"
 6285,7,7,366,8,1,"&Zmeny:"
 6278,7,18,366,196,1,""
 6279,7,218,366,20,1,"Súhl&asím so zmenami mojich aktuálnych nastavení označených vyššie znakmi ~ a -"
@@ -1666,7 +1666,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Pomoc"
 
 [DIALOG 6262]
-380,270,1,"Importovať nastavenia zo Tandem Commanderu – Výsledok"
+380,270,1,"Importovať nastavenia zo Salamanderu – Výsledok"
 6285,7,7,366,8,1,"Sp&ráva:"
 6278,7,18,366,218,1,""
 1150,7,242,366,1,1,""
@@ -2023,7 +2023,7 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 20]
 10320,1,"Záloha vašich predchádzajúcich nastavení: %s"
-10321,1,"Ak sa k nim chcete vrátiť, zatvorte program Tandem Commander a spustite ho s parametrom -C „%s“ alebo dvojitým kliknutím na súbor."
+10321,1,"Ak sa k nim chcete vrátiť, zatvorte program Tandem Commander a spustite ho s parametrom -C „%s“ alebo dvakrát kliknite na súbor, keď je program Tandem Commander zatvorený."
 10322,1,"%s (slot %s namiesto %s)"
 10323,1,"%s: všetkých 30 miest pre rýchle cesty je obsadených"
 10324,1,"%s: príliš dlhé pre Tandem Commander"
@@ -2233,12 +2233,13 @@ SLGINCOMPLETE,""
 10518,1,"Zobraziť skryté názvy"
 10519,1,"Otvoriť dokumenty"
 10520,1,"Inteligentný režim stĺpcov\tCtrl+N"
-10521,1,"Staré nastavenia tohto doplnku sa nepodarilo úplne načítať, preto neboli importované."
+10521,1,"Tieto staré nastavenia sa nepodarilo úplne prečítať, preto sa neimportujú."
 10522,0,"%s: %s"
 10523,1,"... a ďalších %s zmien"
 10524,1,"%s – preberá tieto súbory z %s"
 10525,1,"%s: túto skratku ste odstránili v programe Tandem Commander; zostane odstránená"
-10526,1,"Záznamy %s sú dlhšie, než aké Tandem Commander akceptuje, a neboli importované"
+10526,1,"Položky neboli importované, pretože hodnota je dlhšia, než akú Tandem Commander akceptuje: %s"
+10527,1,"Nahradiť: importovaná skratka má prednosť pred aktuálnou skratkou príkazu doplnku; skratky, ktoré starý program neuvádza, zostávajú bez zmeny."
 
 [STRINGTABLE 33]
 10530,1,"Názov premennej musí byť ukončený znakom ')'."

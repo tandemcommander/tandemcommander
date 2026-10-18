@@ -1614,7 +1614,7 @@ SLGINCOMPLETE,""
 2,75,32,50,14,1,"Abbrechen"
 
 [DIALOG 6258]
-380,270,1,"Einstellungen aus Tandem Commander importieren"
+380,270,1,"Einstellungen aus Salamander importieren"
 6263,7,7,366,64,1,""
 6283,7,76,366,8,1,"Ein&stellungen gefunden:"
 6264,7,87,366,90,1,""
@@ -1626,7 +1626,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Hilfe"
 
 [DIALOG 6259]
-380,270,1,"Einstellungen aus Tandem Commander importieren"
+380,270,1,"Einstellungen aus Salamander importieren"
 6284,7,7,366,8,1,"Wählen &Sie aus, was importiert werden soll (die Anzahl der gefundenen Elemente) und wie:"
 6267,7,18,366,118,1,""
 6269,7,141,181,10,1,"Zu meinen &aktuellen Einstellungen hinzufügen"
@@ -1640,7 +1640,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Hilfe"
 
 [DIALOG 6260]
-380,270,1,"Einstellungen aus Tandem Commander importieren – Gespeicherte Passwörter"
+380,270,1,"Einstellungen aus Salamander importieren – Gespeicherte Passwörter"
 6272,7,7,366,26,1,""
 6274,7,38,366,10,1,"Gespe&icherte Passwörter importieren"
 6275,7,51,366,10,1,"&Gespeicherte Passwörter nicht importieren"
@@ -1655,7 +1655,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Hilfe"
 
 [DIALOG 6261]
-380,270,1,"Einstellungen aus Tandem Commander importieren – Vorschau"
+380,270,1,"Einstellungen aus Salamander importieren – Vorschau"
 6285,7,7,366,8,1,"&Änderungen:"
 6278,7,18,366,196,1,""
 6279,7,218,369,20,1,"Ich stimme den Änderungen meiner &aktuellen Einstellungen zu, die oben mit ~ und - gekennzeichnet sind"
@@ -1666,7 +1666,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Hilfe"
 
 [DIALOG 6262]
-380,270,1,"Einstellungen aus Tandem Commander importieren – Ergebnis"
+380,270,1,"Einstellungen aus Salamander importieren – Ergebnis"
 6285,7,7,366,8,1,"Be&richt:"
 6278,7,18,366,218,1,""
 1150,7,242,366,1,1,""
@@ -2023,7 +2023,7 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 20]
 10320,1,"Sicherung Ihrer bisherigen Einstellungen: %s"
-10321,1,"Um zu diesen Einstellungen zurückzukehren, schließen Sie Tandem Commander und starten Sie das Programm mit dem Parameter -C „%s“ oder doppelklicken Sie auf die Datei."
+10321,1,"Um zu diesen Einstellungen zurückzukehren, schließen Sie Tandem Commander und starten Sie das Programm mit dem Parameter -C „%s“ oder doppelklicken Sie auf die Datei, während Tandem Commander geschlossen ist."
 10322,1,"%s (Slot %s anstelle von %s)"
 10323,1,"%s: Alle 30 Hot-Path-Slots sind belegt"
 10324,1,"%s: zu lang für Tandem Commander"
@@ -2233,12 +2233,13 @@ SLGINCOMPLETE,""
 10518,1,"Ausgeblendete Namen anzeigen"
 10519,1,"'Eigene Dateien' öffnen"
 10520,1,"Intelligenter Spaltenmodus\tStrg+N"
-10521,1,"Die alten Einstellungen dieses Plugins konnten nicht vollständig gelesen werden, daher werden sie nicht importiert."
+10521,1,"Diese alten Einstellungen konnten nicht vollständig gelesen werden und werden daher nicht importiert."
 10522,0,"%s: %s"
 10523,1,"... und %s weitere Änderungen"
 10524,1,"%s – übernimmt diese Dateien aus %s"
 10525,1,"%s: Sie haben diese Verknüpfung in Tandem Commander entfernt; sie bleibt entfernt"
-10526,1,"%s-Einträge sind länger, als Tandem Commander zulässt, und wurden nicht importiert"
+10526,1,"Einträge wurden nicht importiert, da ein Wert länger ist, als Tandem Commander zulässt: %s"
+10527,1,"Ersetzen: Ein importierter Tastenbefehl hat Vorrang vor dem aktuellen Tastenbefehl eines Plugin-Befehls; Tastenbefehle, die im alten Programm nicht erwähnt werden, bleiben unverändert."
 
 [STRINGTABLE 33]
 10530,1,"Der Variablenname muss mit ')' abgeschlossen werden."

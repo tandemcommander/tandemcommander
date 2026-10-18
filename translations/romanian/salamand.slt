@@ -1614,7 +1614,7 @@ SLGINCOMPLETE,""
 2,75,32,50,14,1,"Anulare"
 
 [DIALOG 6258]
-380,270,1,"Importați setările din Tandem Commander"
+380,270,1,"Importați setările din Salamander"
 6263,7,7,366,64,1,""
 6283,7,76,366,8,1,"&Setări găsite:"
 6264,7,87,366,90,1,""
@@ -1626,7 +1626,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Ajutor"
 
 [DIALOG 6259]
-380,270,1,"Importați setările din Tandem Commander"
+380,270,1,"Importați setările din Salamander"
 6284,7,7,366,8,1,"Alegeți &ce doriți să importați (numărul de elemente găsite) și cum:"
 6267,7,18,366,118,1,""
 6269,7,141,180,10,1,"&Adăugare la setările mele curente"
@@ -1640,7 +1640,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Ajutor"
 
 [DIALOG 6260]
-380,270,1,"Importați setările din Tandem Commander – Parole salvate"
+380,270,1,"Importați setările din Salamander – Parole salvate"
 6272,7,7,366,26,1,""
 6274,7,38,366,10,1,"&Importați parolele salvate"
 6275,7,51,366,10,1,"&Nu importa parolele salvate"
@@ -1655,7 +1655,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Ajutor"
 
 [DIALOG 6261]
-380,270,1,"Importare setări din Tandem Commander – Previzualizare"
+380,270,1,"Importare setări din Salamander – Previzualizare"
 6285,7,7,366,8,1,"&Modificări:"
 6278,7,18,366,196,1,""
 6279,7,218,366,20,1,"Sunt de &acord cu modificările setărilor mele curente marcate cu ~ și - mai sus"
@@ -1666,7 +1666,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Ajutor"
 
 [DIALOG 6262]
-380,270,1,"Importați setările din Tandem Commander – Rezultat"
+380,270,1,"Importați setările din Salamander – Rezultat"
 6285,7,7,366,8,1,"&Raport:"
 6278,7,18,366,218,1,""
 1150,7,242,366,1,1,""
@@ -2023,7 +2023,7 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 20]
 10320,1,"Copie de rezervă a setărilor anterioare: %s"
-10321,1,"Pentru a reveni la ele, închideți Tandem Commander și porniți-l cu parametrul -C „%s” sau faceți dublu clic pe fișier."
+10321,1,"Pentru a reveni la acestea, închideți Tandem Commander și porniți-l cu parametrul -C „%s” sau faceți dublu clic pe fișier în timp ce Tandem Commander este închis."
 10322,1,"%s (slotul %s în locul lui %s)"
 10323,1,"%s: toate cele 30 de sloturi pentru căi rapide sunt ocupate"
 10324,1,"%s: prea lung pentru Tandem Commander"
@@ -2233,12 +2233,13 @@ SLGINCOMPLETE,""
 10518,1,"Arata Numele Ascunse"
 10519,1,"Deschide Documentele"
 10520,1,"Mod Coloana Smart\tCtrl+N"
-10521,1,"Setările vechi ale acestui plugin nu au putut fi citite în întregime, așa că nu sunt importate."
+10521,1,"Aceste setări vechi nu au putut fi citite în întregime, așa că nu sunt importate."
 10522,0,"%s: %s"
 10523,1,"... și încă %s de modificări"
 10524,1,"%s - preia aceste fișiere din %s"
 10525,1,"%s: ați șters această comandă rapidă în Tandem Commander; aceasta rămâne ștersă"
-10526,1,"Intrările %s sunt mai lungi decât acceptă Tandem Commander și nu au fost importate"
+10526,1,"Intrări neimportate deoarece o valoare este mai lungă decât acceptă Tandem Commander: %s"
+10527,1,"Înlocuire: o comandă rapidă importată are prioritate față de comanda rapidă curentă a unei comenzi de plugin; comenzile rapide pe care programul vechi nu le menționează rămân neschimbate."
 
 [STRINGTABLE 33]
 10530,1,"Numele variabilei trebuie sa fie terminat prin ')'."

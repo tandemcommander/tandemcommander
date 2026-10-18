@@ -270,7 +270,7 @@ protected:
             if (g->Availability != CFGIMP_AVAIL_YES)
                 SalCfgImpFormatText(desc, (int)sizeof(desc), LoadStrU8(IDS_CFGIMP_DESC_UNAVAIL), g->Reason);
             else
-                SalCfgImpCopyText(desc, (int)sizeof(desc), LoadStrU8(g->Mode == CFGIMP_MODE_REPLACE ? IDS_CFGIMP_DESC_REPLACE : g->Mode == CFGIMP_MODE_TAKEOVER ? IDS_CFGIMP_DESC_TAKEOVER
+                SalCfgImpCopyText(desc, (int)sizeof(desc), LoadStrU8(g->Mode == CFGIMP_MODE_REPLACE ? (g->Id == cigPluginKeys ? IDS_CFGIMP_DESC_REPLACEKEYS : IDS_CFGIMP_DESC_REPLACE) : g->Mode == CFGIMP_MODE_TAKEOVER ? IDS_CFGIMP_DESC_TAKEOVER
                                                                                                                                                                 : IDS_CFGIMP_DESC_ADD));
         }
         SalSetDlgItemTextU8(HWindow, IDC_CFGIMP_ROWDESC, desc);
@@ -353,7 +353,10 @@ protected:
                 {
                     int row = (int)cd->nmcd.dwItemSpec;
                     if (row >= 0 && row < Run->Groups.Count && Run->Groups[row]->Availability != CFGIMP_AVAIL_YES)
+                    {
                         cd->clrText = ThemeSysColor(COLOR_GRAYTEXT);
+                        res = CDRF_NEWFONT; // the documented answer to a changed colour
+                    }
                 }
                 SetWindowLongPtr(HWindow, DWLP_MSGRESULT, res);
                 return TRUE;
@@ -645,6 +648,7 @@ static BOOL CfgImpNeedsPasswordPage(CCfgImpRun* run)
 void CfgImpRunWizard(HWND parent, BOOL fromOffer)
 {
     CALL_STACK_MESSAGE2("CfgImpRunWizard(%d)", fromOffer);
+    CfgImpFreshConfigAtStart = FALSE; // the wizard was opened: a deferred first-start offer is not shown any more
     if (CfgImpOtherInstanceRuns())
     {
         CfgImpMessage(parent, LoadStrU8(IDS_CFGIMP_OTHERINSTANCE), MB_OK | MB_ICONINFORMATION);

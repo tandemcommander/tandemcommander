@@ -8,7 +8,8 @@ Modified principles:
     one narrow, explicit read: the settings import the user starts (Options →
     Import Settings from Salamander, or the one-time offer at the first start
     of a fresh configuration, which only checks whether such a configuration
-    exists). The import reads the old key read-only, changes nothing before
+    exists, its version and whether its last save finished). The import reads
+    the old key read-only, changes nothing before
     the user confirms the preview, and never overwrites a current setting
     without explicit consent; no old identity is reintroduced.
   Rationale: the maintainer's request of 2026-10-18 (feature 245): users

@@ -1,0 +1,5 @@
+﻿PASS | U1 main window | 
+PASS | U1 page 1 opens from the menu command | 
+PASS | U2 cancel on page 1 | 
+PASS | U2 cancel changed nothing | changed= extra=
+PASS | registry restored | 

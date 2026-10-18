@@ -104,12 +104,12 @@ each code task group; never write the real `HKCU\Software\Altap` /
 
 - [X] T045 Retire the 057 script: remove `utils/migrate-altap-settings.cmd`, `utils/test/`, update/remove `utils/README.md`; repoint mentions (README, docs) to the wizard
 - [X] T046 Amend the constitution (Principle II exception, 3.2.0 → 4.0.0, Sync Impact Report) in `.specify/memory/constitution.md`; update `CLAUDE.md` product identity, `architecture/12-project-reference.md`, `architecture/06-*.md` (interface 108)
-- [ ] T047 Update `PRIVACY.md` (*Settings and history*, *Saved passwords*: on request, read-only reading of the named roots; first-start existence check; passwords re-protected), `README.md`, `CHANGELOG.md` (unreleased section), help page in `help/src/hh/salamand/` (+ menu reference), `specs/FEATURE-HISTORY.md` entry
-- [ ] T048 Translations: two-stage `.slt` refresh (`translate.merge --templates …`), pin formal register in `translations/ui-overrides.json` if needed; `build.cmd full` green
-- [ ] T049 Release build `build.cmd full release`; UI probe on Release (V4)
-- [ ] T050 Independent refute-first reviews (separate agents: core engine, wizard UI, interface 108 + FTP, documents/privacy) → fix confirmed findings → re-test (full e2e + saltests)
+- [X] T047 Update `PRIVACY.md` (*Settings and history*, *Saved passwords*: on request, read-only reading of the named roots; first-start existence check; passwords re-protected), `README.md`, `CHANGELOG.md` (unreleased section), help page in `help/src/hh/salamand/` (+ menu reference), `specs/FEATURE-HISTORY.md` entry
+- [X] T048 Translations: two-stage `.slt` refresh (`translate.merge --templates …`), pin formal register in `translations/ui-overrides.json` if needed; `build.cmd full` green
+- [X] T049 Release build `build.cmd full release`; UI probe on Release (V4)
+- [X] T050 Independent refute-first reviews (separate agents: core engine, wizard UI, interface 108 + FTP, documents/privacy) → fix confirmed findings → re-test (full e2e + saltests)
 - [X] T051 Add the observations of `analysis.md` § A11 to the backlog *Inbox* (`/tandem-backlog add`, source `measure:245`)
-- [ ] T052 Closing report `specs/245-settings-import-salamander/closing-report.md` (what was built, test evidence, NOT DRIVEN rows owed to a person, deviations)
+- [X] T052 Closing report `specs/245-settings-import-salamander/closing-report.md` (what was built, test evidence, NOT DRIVEN rows owed to a person, deviations)
 
 ## Dependencies & Execution Order
 

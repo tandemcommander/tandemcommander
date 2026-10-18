@@ -13312,6 +13312,19 @@ static void TestCfgImport245()
         CHECK(m2count == 2 && strcmp(m2items[0].Name, "A") == 0 && strcmp(m2items[1].Name, "B") == 0);
         SalCfgImpFreeMenu(m2items, m2count);
         SalCfgKeyFree(r2);
+        // the texts of a submenu end are not used: a long one never unbalances the menu
+        CSalCfgKey* r4 = SalCfgKeyNew("src");
+        CSalCfgKey* m4 = SalCfgKeyAddKey(r4, "User Menu");
+        Cfg245MenuItem(m4, 1, "S", "", SALCFGIMP_UM_SUBMENUBEGIN);
+        Cfg245MenuItem(m4, 2, "I", "i.exe", SALCFGIMP_UM_ITEM);
+        Cfg245MenuItem(m4, 3, "an end entry with a text longer than the limit of this test", "", SALCFGIMP_UM_SUBMENUEND);
+        CSalCfgImpMenuItem* m4items = NULL;
+        int m4stop = -1, m4long = -1;
+        int m4count = SalCfgImpParseUserMenu(SalCfgKeyFind(r4, "User Menu"), 40, 32 * 1024, &m4items, &m4stop, &m4long);
+        CHECK(m4count == 3 && m4long == 0 && m4items[2].Type == SALCFGIMP_UM_SUBMENUEND && m4items[2].Name[0] == 0);
+        CHECK(SalCfgImpMenuBlockEnd(m4items, m4count, 0) == 3);
+        SalCfgImpFreeMenu(m4items, m4count);
+        SalCfgKeyFree(r4);
     }
 
     // ---- viewers parser

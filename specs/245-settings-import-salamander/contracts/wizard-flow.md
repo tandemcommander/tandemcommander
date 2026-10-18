@@ -12,6 +12,13 @@ Another Tandem Commander instance runs ⇒ a box: "Close the other Tandem
 Commander windows first; they would overwrite the imported settings when
 they close." The wizard does not open (or returns to the preview).
 
+Before applying also: a Find window or a viewer window of this instance is
+open ⇒ "Close the Find windows and the viewer windows … first" (they read
+settings the import replaces, in their own threads); the wizard stays on the
+preview. A plugin whose archive or file system is open in a panel or detached
+⇒ its whole-settings group fails with "The plugin is in use …" (nothing is
+closed, nothing asked); the other groups are applied.
+
 ## Page 1 — Source
 
 - Intro text: what the wizard does, that the old program's settings are only
@@ -56,8 +63,8 @@ they close." The wizard does not open (or returns to the preview).
   A hint: set a master password in *Configuration → Security* first to keep
   them protected.
 - When Tandem Commander uses a master password: "Imported passwords will be
-  protected by your Tandem Commander master password." (it is asked for when
-  importing if not entered in this session).
+  protected by your Tandem Commander master password." (it is asked for once,
+  after this page and before the preview, if not entered in this session).
 
 ## Page 4 — Preview
 
@@ -67,8 +74,9 @@ they close." The wizard does not open (or returns to the preview).
 - If anything will be overwritten or removed: a check box "I allow the
   changes of my current settings marked ~ and - above"; *Import* is disabled
   until it is ticked. Otherwise no check box.
-- *Import* runs: guard → backup → apply → save. A wait cursor; no further
-  questions except the program's master password when needed (R10).
+- *Import* runs: guard → save → backup → apply → save. A wait cursor; no
+  further questions (the program's master password was asked before the
+  preview, R10).
 
 ## Page 5 — Result
 

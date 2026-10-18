@@ -28,8 +28,9 @@ add *Recent Changes* / *Active Technologies* sections.
 
 - **Tandem Commander 0.1.10** (internal build 194, release dated 2026-10-17;
   carries features 124–241; previous: 0.1.9 / build 193 / tag
-  `v0.1.9`). Plugin interface version (`LAST_VERSION_OF_SALAMANDER`) **107** —
-  independent, changes only with the plugin API.
+  `v0.1.9`). Plugin interface version (`LAST_VERSION_OF_SALAMANDER`) **107**
+  in 0.1.10, **108** in the tree (245) — independent, changes only with the
+  plugin API.
 - **A release** sets the eight *Release records* of `backlog/RELEASE.md`
   (version and build in `spl_vers.h`, `MyAppVersion`, the changelog section,
   `PRIVACY.md`, the line above, …) in one change — prepared by
@@ -40,7 +41,8 @@ add *Recent Changes* / *Active Technologies* sections.
 - Binary `tandemcommander.exe`; registry root
   `HKCU\Software\Tandem Commander\0.1` (never writes Open Salamander /
   Altap / Newt Commander keys; reads Altap / Open Salamander ones only in the
-  user-started settings import, read-only, 245); https://tandemcommander.org,
+  user-started settings import and, existence and version only, at the first
+  start of a fresh configuration — read-only, 245); https://tandemcommander.org,
   github.com/tandemcommander/tandemcommander.
 - **Upstream names stay**: source files, classes, `salamand.sln`,
   `salamand.vcxproj`, `SALAMANDER_*` — rename only user/OS-visible identity.

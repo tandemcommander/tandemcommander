@@ -131,3 +131,32 @@ as they are fixed (F = FTP/API, E = engine, U = UI).
 - U18 fixed: a failed `LB_ADDSTRING` is skipped.  U19 fixed with E14.  U20: `fromOffer`
   is used in the call-stack text; kept.
 - Build green; saltests 23 489 checks, 0 failed; encoding guard TOTAL 0.
+- After round 1: e2e run 2 found the default import needing consent (viewer rows before
+  `*.*` are changes) -> the viewers group is unticked by default (S1v added); S2 fixture got
+  the Recycle Bin masks; S13 (FTP Replace/Add against a current FTP configuration) added;
+  run 4: 90/90. UI probe 29/29 (U4/U5 with translations), Release UI probe 5/5.
+- Translations: DeepL ran with `formality=prefer_less` (informal du/tu/je/tú against a formal
+  corpus) -> `merge.py --formality prefer_more`; the rebrand step turned "Altap Salamander"
+  into "Tandem Commander" in our texts -> `translations/brand-exempt.json` (+ the rebrand
+  sweep honours it). Hungarian offer pinned (DeepL dropped `\n`).
+
+## 2026-10-18 — refute-first reviews, round 2 (two agents: fixes, documents)
+
+- Dialog captions (no own id) were still rebranded in 8 languages -> merge maps a caption to
+  its dialog's IDD; the 40 rows restored.
+- Plugin-in-use check now also covers an archive the plugin handles by association.
+- An interrupted key swap: a lone `<key>.tc-import-old` is renamed back, never deleted.
+- A whole-plugin group with nothing to change is not applied (no unload).
+- A failed FTP apply clears its lines (the result does not list removals that did not happen).
+- Opening the wizard cancels a deferred first-start offer.
+- The oldest FTP password format ("Password" text) is counted.
+- Replace of hot paths / user menu / plugin shortcuts refused for a list not read whole (S14).
+- A long submenu-end text never unbalances the menu (saltests); grey rows answer
+  `CDRF_NEWFONT`; "%s entries" string reworded (DeepL read %s as a name).
+- Documents: the backup is now taken after saving (it includes this session's changes);
+  PRIVACY names the older `Software\Salamander` key, the backups folder and *Import now*;
+  help/contracts/research/quickstart/spec/CLAUDE.md/constitution aligned (password timing,
+  viewers default, refusals, Replace for shortcuts, the 60-line plugin diff, interface 108).
+- Trap: `merge.py` keeps an id's machine translation when its English changes - the three
+  changed rows were removed from the `.slt` files so they were translated again.
+- saltests 23 491 / 0.

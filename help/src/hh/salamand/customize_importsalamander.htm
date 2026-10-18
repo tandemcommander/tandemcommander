@@ -17,7 +17,7 @@
 before, the <i>Import Settings from Salamander</i> wizard brings your settings
 to Tandem Commander. Start it from the <b>Options</b> menu. When Tandem Commander
 starts for the first time and finds such settings, it offers the wizard once;
-answer <i>No</i> and it does not ask again &mdash; the command stays in the
+answer <i>Not now</i> and it does not ask again &mdash; the command stays in the
 Options menu.</p>
 
 <p>The old program's settings are only read; they are never changed. Nothing in
@@ -45,7 +45,9 @@ would collide with yours (the same hot path slot, the same FTP connection name,
 a shortcut already in use) leaves yours as it is and is added in another form
 (the next free slot, a name with <i>(imported)</i>) or not at all.</li>
 <li><i>Replace my current settings</i> makes the group what the old program had;
-your current items in it are removed.</li>
+your current items in it are removed. For shortcuts of plugin commands it
+means that an imported shortcut wins over a plugin command's current one;
+shortcuts the old program does not mention stay as they are.</li>
 </ul>
 Viewers and editors are added after your rows for particular file types, so
 yours keep precedence; they come before your row for all files (<code>*.*</code>),
@@ -60,7 +62,8 @@ or not at all.</dd>
 
 <dt><i>Saved passwords</i></dt>
 <dd>Shown when FTP connections with saved passwords are imported. Passwords the
-old program stored without a Master Password come over as they are. Passwords it
+old program stored without a Master Password come over (protected by your Tandem
+Commander Master Password if you use one). Passwords it
 protected with its Master Password come over only if you type that Master
 Password here; Tandem Commander then protects them like its own &mdash; under
 your Tandem Commander Master Password if you use one. If you do not, tick
@@ -93,7 +96,9 @@ only the shortcuts you gave to plugin commands are imported.</p>
 <p>Before the first change the wizard saves all your current settings to
 <code>%APPDATA%\Tandem Commander\Settings backups\before-import-&lt;date&gt;.reg</code>.
 To go back, close Tandem Commander and start it with the parameter
-<code>-C "&lt;that file&gt;"</code>, or double-click the file.</p>
+<code>-C "&lt;that file&gt;"</code>, or double-click the file while Tandem Commander
+is closed (a running Tandem Commander would save its settings over the restored
+ones when it closes).</p>
 
 <h4>Remarks</h4>
 <p>Close other Tandem Commander windows before importing: they would overwrite the

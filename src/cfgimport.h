@@ -169,8 +169,6 @@ void CfgImpRunWizard(HWND parent, BOOL fromOffer);
 // the first-start offer (FR-002): asks once, then saves the configuration
 void CfgImpShowFirstStartOffer(HWND parent);
 
-// TRUE when the program's configuration root has no "Configuration" subkey (fresh start)
-BOOL CfgImpIsFreshConfiguration();
 
 #ifdef _DEBUG
 // research R18: TC_CFGIMPORT_AUTORUN=<script> runs the import without UI and closes the program

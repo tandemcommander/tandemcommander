@@ -288,6 +288,14 @@ state.
 
 ### Edge Cases
 
+- **Find or viewer windows open**: they read settings the import replaces in
+  their own threads; the import is refused until they are closed.
+- **A plugin in use** (its archive or file system open in a panel or
+  detached): its whole-settings group is not applied ("close it and run the
+  import again"); nothing is closed and nothing asked.
+- **An old list not read completely** (a value over the snapshot limit): a
+  *Replace* of hot paths, user menu, plugin shortcuts or FTP connections and a
+  whole plugin's settings are refused; *Add* adds what was read.
 - **No old configuration found**: the wizard says so, names the program
   versions it looked for, and changes nothing.
 - **Several old configurations** (e.g. Altap Salamander 3.08 and 4.0, or 4.0
@@ -401,7 +409,8 @@ state.
   values over), whole-plugin settings — MUST be off by default and MUST
   require its own explicit consent in the wizard (a deliberate tick plus the
   preview's listing of every current value or item that will change, with its
-  current and new value). With the defaults the wizard only adds (list
+  current and new value; for a whole plugin's settings the first 60 changed
+  values and the count of the rest). With the defaults the wizard only adds (list
   groups in *Add* mode); option groups whose source values equal the current
   values report "nothing to change".
 - **FR-011**: *Replace* MUST make the group equal to the source's content and

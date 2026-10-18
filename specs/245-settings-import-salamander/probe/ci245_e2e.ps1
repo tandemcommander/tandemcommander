@@ -268,6 +268,26 @@ try {
         $mdv2 = @(Get-Items "$script:TCRoot\Viewers" | Where-Object { $_ -match 'Masks=\*\.md' })
         Check 'S2 TC-only plugin association kept (Markdown viewer)' ($mdv.Count -eq $mdv2.Count -and $mdv.Count -ge 1) "md rows before=$($mdv.Count) after=$($mdv2.Count)"
         Check 'S2 SC-002 source unchanged' ((Source-Dump) -eq $src0) ''
+        $side = @(Get-ChildItem "$script:TCRoot\Plugins Configuration" -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -like '*.tc-import-*' })
+        Check 'S2 whole-plugin swap leaves no side keys' ($side.Count -eq 0) (($side | ForEach-Object { $_.PSChildName }) -join ', ')
+    }
+
+    # ---------------------------------------------------------------- S14 a source list not read whole
+    if (Want 'S14') {
+        New-TCConfig $Exe $OutDir | Out-Null
+        Remove-Fixtures
+        $root = New-AltapFixture
+        # a value over the snapshot's 64 KiB limit makes the hot path list incomplete
+        Set-RegTree $root @{ 'Hot Paths\4' = @{ 'Name' = 'Big'; 'Path' = 'C:\Big'; 'Visible' = 1; 'Blob' = [byte[]](New-Object byte[] 70000) } }
+        $m0 = Get-RegMap $script:TCRoot
+        $r = Invoke-TC $Exe "[import]`r`ngroups=hotpaths:replace`r`nconsent=1`r`n" $OutDir 's14r'
+        $r.Preview | Set-Content -LiteralPath (Join-Path $OutDir 's14r_preview.txt') -Encoding UTF8
+        Check 'S14 Replace refused for a list not read whole' ($r.Preview -match '(?m)^  x .*could not be read completely') (($r.Preview -split "`r`n" | Where-Object { $_ -match '^  x ' }) -join ' || ')
+        $slots = Get-Slots
+        Check 'S14 Replace refused: hot paths unchanged' (@($slots.Values | Where-Object { $_ -match 'C:\\Projects' }).Count -eq 0) (($slots.Values) -join ' ; ')
+        $r = Invoke-TC $Exe "[import]`r`ngroups=hotpaths`r`n" $OutDir 's14a'
+        $paths = @((Get-Slots).Values | ForEach-Object { $_.Split('|')[1] })
+        Check 'S14 Add still adds what was read' ($paths -contains 'C:\Projects') ($paths -join ' ; ')
     }
 
     # ---------------------------------------------------------------- S5 no consent

@@ -56,16 +56,19 @@ saved passwords in their stored form, see below — is written to a file at the
 location you choose.
 
 **Importing settings from Altap Salamander or Open Salamander.** Only when
-you start **Options → Import Settings from Salamander** (or answer *Yes* to
-the offer the program shows once, at the first start of a new configuration)
-the program reads the settings an older Altap Salamander (2.5 to 4.0) or Open
-Salamander 5.0 left under `HKEY_CURRENT_USER\Software\Altap` or
-`HKEY_CURRENT_USER\Software\Open Salamander` — read-only: it never changes or
-deletes them. That first start checks only *whether* such settings exist and
-which version wrote them; it reads nothing else. What you choose to import is
-copied into Tandem Commander's own settings described above. Before the first
-change the import saves a complete copy of your current settings — including
-saved passwords in their stored form — to a file in
+you start **Options → Import Settings from Salamander** (or answer *Import
+now* to the offer the program shows once, at the first start of a new
+configuration) the program reads the settings an older Altap Salamander (2.5
+to 4.0) or Open Salamander 5.0 left under `HKEY_CURRENT_USER\Software\Altap`
+or `HKEY_CURRENT_USER\Software\Open Salamander` — read-only: it never changes
+or deletes them. To find them it also looks, read-only, at the older
+`HKEY_CURRENT_USER\Software\Salamander` key. That first start checks only
+*whether* such settings exist, which version wrote them and whether their last
+save finished; it reads nothing else. What you choose to import is copied into
+Tandem Commander's own settings described above. Before the first change the
+import saves your settings as they are at that moment and then writes a
+complete copy of them — including saved passwords in their stored form — to
+a file in
 `%APPDATA%\Tandem Commander\Settings backups` (`before-import-<date>.reg`);
 the import tells you where it is and how to restore it. Nothing is sent
 anywhere.
@@ -358,7 +361,9 @@ place:
 - the three `Prev...` values PictView writes in
   `HKEY_CURRENT_USER\Control Panel\Desktop` (see *Desktop wallpaper*);
 - the folder `%APPDATA%\Tandem Commander`, which the program uses as the
-  default place for exported configurations;
+  default place for exported configurations, and its `Settings backups`
+  folder with the backups the settings import made (they contain saved
+  passwords in their stored form);
 - any temporary files left behind by a crash.
 
 ## Removing your data

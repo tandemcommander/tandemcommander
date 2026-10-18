@@ -22,7 +22,8 @@ the TC key and the source key, compares:
 
 | Scenario | Expectation |
 |---|---|
-| S1 defaults (hot paths, user menu, FTP, plugin keys, viewers, find sets — Add) | items added as in US1; **0 existing TC values changed** (SC-010): every TC value present before is byte-identical after, except the lists that grew |
+| S1 defaults (hot paths, user menu, FTP, plugin keys, find sets — Add; viewers unticked) | items added as in US1; **0 existing TC values changed** (SC-010): every TC value present before is byte-identical after, except the lists that grew |
+| S1v viewers ticked | without consent not applied (rows before `*.*` are changes); with consent added before the catch-all |
 | S2 every group, Replace / take over, consent | groups equal the source's; TC-owned values (FR-016) unchanged; plugin registration unchanged |
 | S3 run S1 twice | second run adds nothing (SC-005) |
 | S4 source byte-identity | the source key's export before = after, every scenario (SC-002) |

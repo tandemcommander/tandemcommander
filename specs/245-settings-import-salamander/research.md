@@ -67,7 +67,7 @@ version stays 106 (no start-up upgrade is triggered, analysis § A1).
 | `usermenu` | User menu | list | Add / Replace | ticked, Add |
 | `ftp` | FTP connections (bookmarks, proxy servers, server types) | list via plugin | Add / Replace | ticked, Add |
 | `pluginkeys` | Plugin command shortcuts | list | Add / Replace | ticked, Add |
-| `viewers` | Viewers, alternative viewers, editors | list | Add | ticked, Add |
+| `viewers` | Viewers, alternative viewers, editors | list | Add | unticked (rows before the current `*.*` are a change, R5) |
 | `findsets` | Saved search criteria and the search ignore list | list | Add | ticked, Add |
 | `histories` | Histories (paths, commands, masks) | list | Add | unticked |
 | `confirmations` | Confirmations | options | take over | unticked |
@@ -196,7 +196,8 @@ copy; the copy is what the plugin would read anyway).
 **Decision**: interface 108 appends to `CSalamanderPluginEntryAbstract`
 `SetPluginSettingsImport(CPluginSettingsImportAbstract*)` (a plugin registers
 an import handler during entry) and defines two new classes:
-`CPluginSettingsImportAbstract` (implemented by the plugin: `Plan`, `Apply`)
+`CPluginSettingsImportAbstract` (implemented by the plugin: one
+`ImportSettings(parent, import, dryRun)` — `dryRun` TRUE for the preview)
 and `CSalamanderSettingsImportAbstract` (implemented by the core, handed to
 the handler: mode, source description, the plugin's source key **read-only**
 as a registry handle into an in-memory copy, report sink, password
@@ -211,7 +212,8 @@ services). Contract: `contracts/plugin-api-v108.md`. The FTP plugin:
   proxy UIDs of imported bookmarks are re-mapped;
 - **Replace**: the three lists become the source's (proxy UIDs re-mapped to
   the new list, bookmarks referring to missing proxies fall back to default);
-- passwords: R10. `Plan` computes the same result without changing anything.
+- passwords: R10. The dry run computes the same result without changing
+  anything.
 
 **Rationale**: the clarification (Q3) chose an append-only call; registering
 through the core-implemented entry object is a pure vtable append (as 105–107
@@ -223,9 +225,11 @@ were), so plugins built for 104–107 keep loading.
 - *Scrambled* blobs (signature 1) are decrypted with the normal
   `DecryptPassword` (needs no master password) and re-stored as TC stores
   passwords: AES under TC's master password if TC uses one (the user is asked
-  for it once, via `AskForMasterPassword`, before apply), else scrambled.
-- *AES* blobs (signature 2) need the source master password: the wizard's
-  password page appears only when the selected FTP import contains such
+  for it once, via `AskForMasterPassword`, before the preview — review round
+  1), else scrambled.
+- *AES* blobs (signature 2) need the source master password. The wizard's
+  password page appears when the selected FTP import contains any saved
+  password; the master-password field is enabled when it contains such
   blobs. The typed password (code-page bytes, like the old program's dialog)
   is checked against the source's `Password Manager\Master Password
   Verifier` (same algorithm as `VerifyMasterPassword`, new static helper);
@@ -275,9 +279,9 @@ classification, not settings, and is stated so in the constitution note.
 
 **As implemented** (review round 1): the start-up uses the start-up's own
 "the configuration root was not found" (`currentCfgDoesNotExist`, before the
-first save `SALAMANDER_ROOT_REG` is NULL); `CfgImpIsFreshConfiguration` ("no
-`Configuration` subkey") is used only by the import to save once before the
-backup, so that the backup has something to restore. The offer box waits
+first save `SALAMANDER_ROOT_REG` is NULL). The import always saves the
+configuration before the backup (review round 2: the backup is the state as it
+is, including this session's unsaved changes). The offer box waits
 (1 s timer) while the main window is disabled or in a menu, so it never runs
 inside another start-up box.
 

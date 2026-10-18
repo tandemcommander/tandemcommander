@@ -1614,7 +1614,7 @@ SLGINCOMPLETE,""
 2,75,32,50,14,1,"Mégse"
 
 [DIALOG 6258]
-380,270,1,"Beállítások importálása a Tandem Commanderből"
+380,270,1,"Beállítások importálása a Salamanderből"
 6263,7,7,366,64,1,""
 6283,7,76,366,8,1,"Talált beállítá&sok:"
 6264,7,87,366,90,1,""
@@ -1626,7 +1626,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Súgó"
 
 [DIALOG 6259]
-380,270,1,"Beállítások importálása a Tandem Commanderből"
+380,270,1,"Beállítások importálása a Salamanderből"
 6284,7,7,366,8,1,"Válassza &ki, mit szeretne importálni (a talált elemek száma) és hogyan:"
 6267,7,18,366,118,1,""
 6269,7,141,180,10,1,"Hozzá&adás a jelenlegi beállításaimhoz"
@@ -1640,7 +1640,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Súgó"
 
 [DIALOG 6260]
-380,270,1,"Beállítások importálása a Tandem Commanderből – Mentett jelszavak"
+380,270,1,"Beállítások importálása a Salamanderből – Mentett jelszavak"
 6272,7,7,366,26,1,""
 6274,7,38,366,10,1,"Mentett jelszavak &importálása"
 6275,7,51,366,10,1,"&Ne importálja a mentett jelszavakat"
@@ -1655,7 +1655,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Súgó"
 
 [DIALOG 6261]
-380,270,1,"Beállítások importálása a Tandem Commanderből – Előnézet"
+380,270,1,"Beállítások importálása a Salamanderből – Előnézet"
 6285,7,7,366,8,1,"Vá&ltozások:"
 6278,7,18,366,196,1,""
 6279,7,218,366,20,1,"Engedélyezem &a fenti ~ és - jelöléssel megjelölt jelenlegi beállításaim módosítását"
@@ -1666,7 +1666,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Súgó"
 
 [DIALOG 6262]
-380,270,1,"Beállítások importálása a Tandem Commanderből – Eredmény"
+380,270,1,"Beállítások importálása a Salamanderből – Eredmény"
 6285,7,7,366,8,1,"&Jelentés:"
 6278,7,18,366,218,1,""
 1150,7,242,366,1,1,""
@@ -2023,7 +2023,7 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 20]
 10320,1,"A korábbi beállítások biztonsági másolata: %s"
-10321,1,"Ahhoz, hogy visszatérj hozzájuk, zárd be a Tandem Commandert, majd indítsd el a -C „%s” paraméterrel, vagy kattints duplán a fájlra."
+10321,1,"Ahhoz, hogy visszatérjen hozzájuk, zárja be a Tandem Commandert, majd indítsa el a -C „%s” paraméterrel, vagy kattintson duplán a fájlra, miközben a Tandem Commander zárva van."
 10322,1,"%s (%s helyett a %s helyre)"
 10323,1,"%s: mind a 30 gyorsbillentyű-hely foglalt"
 10324,1,"%s: túl hosszú a Tandem Commanderhez"
@@ -2233,12 +2233,13 @@ SLGINCOMPLETE,""
 10518,1,"Rejtett nevek mutatása"
 10519,1,"Dokumentumok megnyitása"
 10520,1,"Okos oszlop mód\tCtrl+N"
-10521,1,"A bővítmény régi beállításait nem sikerült teljes egészében beolvasni, ezért azok nem kerültek importálásra."
+10521,1,"Ezeket a régi beállításokat nem sikerült teljes egészében beolvasni, ezért nem kerültek importálásra."
 10522,0,"%s: %s"
 10523,1,"... és további %s változás"
 10524,1,"%s – ezeket a fájlokat veszi át a %s-ből"
 10525,1,"%s: ezt a parancsikont eltávolította a Tandem Commander programban; eltávolítva marad"
-10526,1,"%s bejegyzés hosszabb, mint amit a Tandem Commander elfogad, ezért nem került importálásra"
+10526,1,"A bejegyzések nem lettek importálva, mert az érték hosszabb, mint amit a Tandem Commander elfogad: %s"
+10527,1,"Cserélés: az importált gyorsbillentyű elsőbbséget élvez a bővítményparancs jelenlegi gyorsbillentyűjével szemben; azok a gyorsbillentyűk, amelyeket a régi program nem említ, változatlanok maradnak."
 
 [STRINGTABLE 33]
 10530,1,"A változó nevet ')'-el kell lezárni."

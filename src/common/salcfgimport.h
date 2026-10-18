@@ -1170,6 +1170,8 @@ inline int SalCfgImpParseUserMenu(const CSalCfgKey* menu, int maxPath, int maxAr
                 skipDepth--;
             continue;
         }
+        if (type == SALCFGIMP_UM_SUBMENUEND) // its texts are not used: the structure stays balanced
+            name = command = arguments = icon = "", initDir = "";
         if ((int)strlen(name) >= maxPath || (int)strlen(command) >= maxPath || (int)strlen(arguments) >= maxArgs ||
             (int)strlen(initDir) >= maxPath || (int)strlen(icon) >= maxPath)
         {

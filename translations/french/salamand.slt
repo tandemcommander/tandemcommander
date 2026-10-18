@@ -1614,7 +1614,7 @@ SLGINCOMPLETE,""
 2,75,32,50,14,1,"Annuler"
 
 [DIALOG 6258]
-380,270,1,"Importer les paramètres depuis Tandem Commander"
+380,270,1,"Importer les paramètres depuis Salamander"
 6263,7,7,366,64,1,""
 6283,7,76,366,8,1,"Paramètre&s trouvés :"
 6264,7,87,366,90,1,""
@@ -1626,7 +1626,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Aide"
 
 [DIALOG 6259]
-380,270,1,"Importer les paramètres depuis Tandem Commander"
+380,270,1,"Importer les paramètres depuis Salamander"
 6284,7,7,366,8,1,"&Choisissez ce que vous souhaitez importer (le nombre d’éléments trouvés) et comment :"
 6267,7,18,366,118,1,""
 6269,7,141,180,10,1,"&Ajouter à mes paramètres actuels"
@@ -1640,7 +1640,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Aide"
 
 [DIALOG 6260]
-380,270,1,"Importer les paramètres depuis Tandem Commander - Mots de passe enregistrés"
+380,270,1,"Importer les paramètres depuis Salamander - Mots de passe enregistrés"
 6272,7,7,366,26,1,""
 6274,7,38,366,10,1,"&Importer les mots de passe enregistrés"
 6275,7,51,366,10,1,"Ne pas importer les mots &de passe enregistrés"
@@ -1655,7 +1655,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Aide"
 
 [DIALOG 6261]
-380,270,1,"Importer les paramètres depuis Tandem Commander - Aperçu"
+380,270,1,"Importer les paramètres depuis Salamander - Aperçu"
 6285,7,7,366,8,1,"&Modifications :"
 6278,7,18,366,196,1,""
 6279,7,218,369,20,1,"J’&autorise les modifications de mes paramètres actuels marqués d’un ~ et d’un - ci-dessus"
@@ -1666,7 +1666,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Aide"
 
 [DIALOG 6262]
-380,270,1,"Importer les paramètres depuis Tandem Commander - Résultat"
+380,270,1,"Importer les paramètres depuis Salamander - Résultat"
 6285,7,7,366,8,1,"&Rapport :"
 6278,7,18,366,218,1,""
 1150,7,242,366,1,1,""
@@ -2023,7 +2023,7 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 20]
 10320,1,"Sauvegarde de vos paramètres précédents : %s"
-10321,1,"Pour y revenir, fermez Tandem Commander et relancez-le avec le paramètre -C « %s », ou double-cliquez sur le fichier."
+10321,1,"Pour y revenir, fermez Tandem Commander et relancez-le avec le paramètre -C « %s », ou double-cliquez sur le fichier alors que Tandem Commander est fermé."
 10322,1,"%s (emplacement %s au lieu de %s)"
 10323,1,"« %s : les 30 emplacements de raccourcis sont tous utilisés »"
 10324,1,"« %s : trop long pour Tandem Commander »"
@@ -2233,12 +2233,13 @@ SLGINCOMPLETE,""
 10518,1,"Afficher les fichiers cachés"
 10519,1,"Ouvrir le répertoire Mes documents"
 10520,1,"Mode Colonnes intelligentes\tCtrl+N"
-10521,1,"Les anciens paramètres de ce plugin n’ont pas pu être lus dans leur intégralité ; ils ne sont donc pas importés."
+10521,1,"Ces anciens paramètres n’ont pas pu être lus dans leur intégralité ; ils ne sont donc pas importés."
 10522,0,"%s: %s"
 10523,1,"… et %s autres modifications"
 10524,1,"%s - reprend ces fichiers depuis %s"
 10525,1,"« %s : vous avez supprimé ce raccourci dans Tandem Commander ; il reste supprimé »"
-10526,1,"Les entrées %s sont plus longues que ce que Tandem Commander accepte et n’ont pas été importées"
+10526,1,"Entrées non importées car une valeur est plus longue que ce que Tandem Commander accepte : %s"
+10527,1,"Remplacement : un raccourci importé remplace le raccourci actuel d’une commande de plugin ; les raccourcis non mentionnés par l’ancien programme restent inchangés."
 
 [STRINGTABLE 33]
 10530,1,"Le nom de variable doit être terminé par ')'."

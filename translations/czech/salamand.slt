@@ -1614,7 +1614,7 @@ SLGINCOMPLETE,""
 2,75,32,50,14,1,"Zrušit"
 
 [DIALOG 6258]
-380,270,1,"Importovat nastavení ze Tandem Commanderu"
+380,270,1,"Importovat nastavení ze Salamanderu"
 6263,7,7,366,64,1,""
 6283,7,76,366,8,1,"Nalezena na&stavení:"
 6264,7,87,366,90,1,""
@@ -1626,7 +1626,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Nápověda"
 
 [DIALOG 6259]
-380,270,1,"Importovat nastavení z Tandem Commanderu"
+380,270,1,"Importovat nastavení z Salamanderu"
 6284,7,7,366,8,1,"Vyberte, &co chcete importovat (počet nalezených položek) a jak:"
 6267,7,18,366,118,1,""
 6269,7,141,180,10,1,"Přid&at k mým aktuálním nastavením"
@@ -1640,7 +1640,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Nápověda"
 
 [DIALOG 6260]
-380,270,1,"Import nastavení z programu Tandem Commander – uložená hesla"
+380,270,1,"Import nastavení z programu Salamander – uložená hesla"
 6272,7,7,366,26,1,""
 6274,7,38,366,10,1,"&Import uložených hesel"
 6275,7,51,366,10,1,"&Neimportovat uložená hesla"
@@ -1655,7 +1655,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Nápověda"
 
 [DIALOG 6261]
-380,270,1,"Import nastavení ze Tandem Commanderu – Náhled"
+380,270,1,"Import nastavení ze Salamanderu – Náhled"
 6285,7,7,366,8,1,"Z&měny:"
 6278,7,18,366,196,1,""
 6279,7,218,366,20,1,"Souhl&asím se změnami mých aktuálních nastavení označených výše znaky ~ a -"
@@ -1666,7 +1666,7 @@ SLGINCOMPLETE,""
 9,323,249,50,14,1,"Nápověda"
 
 [DIALOG 6262]
-380,270,1,"Import nastavení ze Tandem Commanderu – Výsledek"
+380,270,1,"Import nastavení ze Salamanderu – Výsledek"
 6285,7,7,366,8,1,"Zp&ráva:"
 6278,7,18,366,218,1,""
 1150,7,242,366,1,1,""
@@ -2023,7 +2023,7 @@ SLGINCOMPLETE,""
 
 [STRINGTABLE 20]
 10320,1,"Záloha vašich předchozích nastavení: %s"
-10321,1,"Chcete-li se k nim vrátit, zavřete Tandem Commander a spusťte jej s parametrem -C „%s“ nebo dvakrát klikněte na soubor."
+10321,1,"Chcete-li se k nim vrátit, zavřete Tandem Commander a spusťte jej s parametrem -C „%s“ nebo dvakrát klikněte na soubor, zatímco je Tandem Commander zavřený."
 10322,1,"%s (slot %s místo %s)"
 10323,1,"%s: všech 30 slotů pro klávesové zkratky je obsazeno"
 10324,1,"%s: příliš dlouhé pro Tandem Commander"
@@ -2233,12 +2233,13 @@ SLGINCOMPLETE,""
 10518,1,"Zobrazit skryté názvy"
 10519,1,"Otevřít dokumenty"
 10520,1,"Chytrých režim sloupců\tCtrl+N"
-10521,1,"Původní nastavení tohoto pluginu nebylo možné načíst úplně, proto nebylo importováno."
+10521,1,"Tato stará nastavení nebylo možné načíst úplně, proto nebyla importována."
 10522,0,"%s: %s"
 10523,1,"... a %s dalších změn"
 10524,1,"%s – převezme tyto soubory z %s"
 10525,1,"%s: tuto zkratku jste odstranili v programu Tandem Commander; zůstane odstraněna"
-10526,1,"Záznamy %s jsou delší, než Tandem Commander připouští, a nebyly importovány"
+10526,1,"Položky nebyly importovány, protože hodnota je delší, než Tandem Commander připouští: %s"
+10527,1,"Nahradit: importovaná klávesová zkratka má přednost před aktuální klávesovou zkratkou příkazu pluginu; klávesové zkratky, které starý program nezmiňuje, zůstanou beze změny."
 
 [STRINGTABLE 33]
 10530,1,"Název proměnné musí být ukončen znakem ')'."

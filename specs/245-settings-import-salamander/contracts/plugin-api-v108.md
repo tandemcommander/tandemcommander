@@ -121,12 +121,12 @@ public:
    REMOVED lines are what the wizard asks consent for. One line per item: when
    several reasons apply (renamed, no password, no proxy server), the line
    names them all.
-6. All or nothing: build the complete new state first, then exchange it with
-   the current one in steps that cannot fail; a dry run builds and reports the
-   same and discards it.
 4. Keep references inside the plug-in's settings consistent (e.g. FTP
    bookmarks → proxy servers).
 5. Wipe plain passwords after use.
+6. All or nothing: build the complete new state first, then exchange it with
+   the current one in steps that cannot fail; a dry run builds and reports the
+   same and discards it.
 
 ## FTP client (the first implementation)
 
