@@ -1309,26 +1309,40 @@ BOOL CMainWindow::OnAssociationsChangedNotification(BOOL showWaitWnd)
     return TRUE;
 }
 
-void CMainWindow::RebuildDriveBarsIfNeeded(BOOL useDrivesMask, DWORD drivesMask, BOOL checkCloudStorages,
-                                           DWORD cloudStoragesMask)
+void CMainWindow::RebuildDriveBarsIfNeeded(BOOL useDrivesMask, DWORD drivesMask, DWORD netDisconnectedMask,
+                                           BOOL checkCloudStorages, DWORD cloudStoragesMask, BOOL quiet)
 {
     if ((DriveBar != NULL && DriveBar->HWindow != NULL) || (DriveBar2 != NULL && DriveBar2->HWindow != NULL))
     {
         if (!useDrivesMask)
         {
             DWORD netDrives; // bit array of network drives
-            GetNetworkDrives(netDrives, NULL);
-            drivesMask = GetLogicalDrives() | netDrives;
+            GetNetworkDrives(netDrives, NULL, !quiet);
+            DWORD logicalDrives = GetLogicalDrives();
+            drivesMask = logicalDrives | netDrives;
+            netDisconnectedMask = GetNetDisconnectedMask(logicalDrives, netDrives); // feature 246
         }
+#ifdef _DEBUG
+        // probe seam (feature 246)
+        ProbeDrivesDump("CHECK quiet=%d drives=%08X netdisc=%08X", quiet ? 1 : 0, drivesMask, netDisconnectedMask);
+        // the tooltips of the bar as it is (before any rebuild)
+        if (DriveBar != NULL && DriveBar->HWindow != NULL)
+            DriveBar->ProbeDumpToolTips();
+#endif // _DEBUG
 
         CDriveBar* copyDrivesListFrom = NULL;
         if (DriveBar != NULL && DriveBar->HWindow != NULL)
         {
             if (DriveBar->GetCachedDrivesMask() != drivesMask ||
+                DriveBar->GetCachedNetDisconnectedMask() != netDisconnectedMask ||
                 checkCloudStorages && DriveBar->GetCachedCloudStoragesMask() != cloudStoragesMask)
             {
                 // notifications about drive changes or cloud storage availability do not work; rebuild the drive bar manually
                 TRACE_I("Forced drives rebuild for DriveBar!");
+#ifdef _DEBUG
+                // probe seam (feature 246)
+                ProbeDrivesDump("REBUILD bar1");
+#endif // _DEBUG
                 DriveBar->RebuildDrives();
                 copyDrivesListFrom = DriveBar;
             }
@@ -1336,10 +1350,15 @@ void CMainWindow::RebuildDriveBarsIfNeeded(BOOL useDrivesMask, DWORD drivesMask,
         if (DriveBar2 != NULL && DriveBar2->HWindow != NULL)
         {
             if (DriveBar2->GetCachedDrivesMask() != drivesMask ||
+                DriveBar2->GetCachedNetDisconnectedMask() != netDisconnectedMask ||
                 checkCloudStorages && DriveBar2->GetCachedCloudStoragesMask() != cloudStoragesMask)
             {
                 // notifications about drive changes or cloud storage availability do not work; rebuild the drive bar manually
                 TRACE_I("Forced drives rebuild for DriveBar2!");
+#ifdef _DEBUG
+                // probe seam (feature 246)
+                ProbeDrivesDump("REBUILD bar2");
+#endif // _DEBUG
                 DriveBar2->RebuildDrives(copyDrivesListFrom);
             }
         }
@@ -3584,7 +3603,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             int t1 = MyTimeCounter++;
             HANDLES(LeaveCriticalSection(&TimeCounterSection));
             SendMessage(LeftPanel->HWindow, WM_USER_REFRESH_DIR, 0, t1);
-            RebuildDriveBarsIfNeeded(FALSE, 0, FALSE, 0); // maybe the user refreshed to update the drives list?
+            RebuildDriveBarsIfNeeded(FALSE, 0, 0, FALSE, 0); // maybe the user refreshed to update the drives list?
             return 0;
         }
 
@@ -3601,7 +3620,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             int t1 = MyTimeCounter++;
             HANDLES(LeaveCriticalSection(&TimeCounterSection));
             SendMessage(RightPanel->HWindow, WM_USER_REFRESH_DIR, 0, t1);
-            RebuildDriveBarsIfNeeded(FALSE, 0, FALSE, 0); // maybe the user refreshed to update the drives list?
+            RebuildDriveBarsIfNeeded(FALSE, 0, 0, FALSE, 0); // maybe the user refreshed to update the drives list?
             return 0;
         }
 
@@ -3618,7 +3637,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             int t1 = MyTimeCounter++;
             HANDLES(LeaveCriticalSection(&TimeCounterSection));
             SendMessage(activePanel->HWindow, WM_USER_REFRESH_DIR, 0, t1);
-            RebuildDriveBarsIfNeeded(FALSE, 0, FALSE, 0); // maybe the user refreshed to update the drives list?
+            RebuildDriveBarsIfNeeded(FALSE, 0, 0, FALSE, 0); // maybe the user refreshed to update the drives list?
             return 0;
         }
 
@@ -6270,6 +6289,14 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             oneDriveBusinessStoragesCount != OneDriveBusinessStorages.Count)
         {
             PostMessage(HWindow, WM_USER_DRIVES_CHANGE, 0, 0);
+        }
+        else
+        {
+            // feature 246: Windows sends no notification when a network drive's server stops
+            // answering or a remembered drive changes between connected and unavailable; the
+            // user looks at the drive bars again now - rebuild them if a drive or its state
+            // changed (local queries only, no message box)
+            RebuildDriveBarsIfNeeded(FALSE, 0, 0, FALSE, 0, TRUE);
         }
 
         SetCursor(oldCur);

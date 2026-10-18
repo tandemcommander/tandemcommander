@@ -69,6 +69,7 @@
 #include "salpctpath.h"      // feature 238
 #include "salquickfilter.h"   // feature 244
 #include "salcfgimport.h"     // feature 245
+#include "salnetdrive.h"      // feature 246
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -13574,6 +13575,142 @@ static void TestCfgImport245()
     CHECK((int)(sizeof(optionTable) / sizeof(optionTable[0])) == 112);
 }
 
+// feature 246: a mapped network drive's Windows name and its disconnected state (salnetdrive.h)
+static BOOL NetKey246(const WCHAR* remote, const WCHAR* expected)
+{
+    WCHAR key[300];
+    key[0] = L'X';
+    BOOL ok = SalNetDriveNameKey(remote, key, _countof(key));
+    if (expected == NULL)
+        return !ok && key[0] == 0;
+    return ok && wcscmp(key, expected) == 0;
+}
+
+static BOOL NetClean246(const WCHAR* raw, const WCHAR* expected)
+{
+    WCHAR buf[100];
+    wcscpy_s(buf, raw);
+    int len = SalNetDriveCleanName(buf);
+    return len == (int)wcslen(expected) && wcscmp(buf, expected) == 0;
+}
+
+static BOOL NetText246(const WCHAR* name, const WCHAR* remote, BOOL amp, const WCHAR* expected)
+{
+    WCHAR buf[300];
+    int needed = SalNetDriveText(name, remote, amp, buf, _countof(buf));
+    return needed == (int)wcslen(expected) + 1 && wcscmp(buf, expected) == 0;
+}
+
+static void TestNetDrive246()
+{
+    // the key Explorer keeps a drive's name under (measured: analysis.md G1)
+    CHECK(NetKey246(L"\\\\localhost\\C$\\Users\\pavel\\share", L"##localhost#C$#Users#pavel#share"));
+    CHECK(NetKey246(L"\\\\SHARE_SAMBA\\Share\\Storage", L"##SHARE_SAMBA#Share#Storage"));
+    CHECK(NetKey246(L"\\\\srv\\share", L"##srv#share"));
+    CHECK(NetKey246(L"\\\\srv\\share\\", L"##srv#share"));     // trailing backslash ignored
+    CHECK(NetKey246(L"\\\\srv\\share\\\\\\", L"##srv#share")); // several of them
+    CHECK(NetKey246(L"\\\\192.168.0.50\\Data", L"##192.168.0.50#Data"));
+    CHECK(NetKey246(L"\\\\srv\\sh#\x017E ar", L"##srv#sh#\x017E ar")); // '#', non-ASCII and space copied
+    CHECK(NetKey246(L"\\\\srv\\R&D", L"##srv#R&D"));
+    CHECK(NetKey246(L"\\\\srv@SSL\\DavWWWRoot\\x", L"##srv@SSL#DavWWWRoot#x")); // WebDAV mapping
+    CHECK(NetKey246(L"\\\\\x4E2D\x6587\\\x0416", L"##\x4E2D\x6587#\x0416"));
+    CHECK(NetKey246(NULL, NULL));
+    CHECK(NetKey246(L"", NULL));
+    CHECK(NetKey246(L"\\\\", NULL));
+    CHECK(NetKey246(L"\\\\\\x", NULL));             // no server
+    CHECK(NetKey246(L"\\\\srv", NULL));             // no share
+    CHECK(NetKey246(L"\\\\srv\\", NULL));           // no share (trailing backslash only)
+    CHECK(NetKey246(L"\\\\srv\\\\share", NULL));    // empty component
+    CHECK(NetKey246(L"\\\\srv\\a\\\\b", NULL));     // empty component deeper
+    CHECK(NetKey246(L"\\\\?\\UNC\\srv\\share", NULL)); // device prefixes
+    CHECK(NetKey246(L"\\\\.\\pipe\\x", NULL));
+    CHECK(NetKey246(L"C:\\x", NULL));
+    CHECK(NetKey246(L"\\x\\y", NULL));
+    CHECK(NetKey246(L"//srv/share", NULL)); // forward slashes are not what WNet returns
+    CHECK(NetKey246(L"\\\\.srv\\share", L"##.srv#share")); // a server name starting with '.' is a name
+    {
+        // exact fit and one unit short: refused, never cut
+        WCHAR key[12]; // "##srv#share" = 11 units + terminator
+        CHECK(SalNetDriveNameKey(L"\\\\srv\\share", key, 12) && wcscmp(key, L"##srv#share") == 0);
+        key[0] = L'X';
+        CHECK(!SalNetDriveNameKey(L"\\\\srv\\share", key, 11) && key[0] == 0);
+        CHECK(!SalNetDriveNameKey(L"\\\\srv\\share", NULL, 12));
+        CHECK(!SalNetDriveNameKey(L"\\\\srv\\share", key, 0));
+    }
+
+    // cleaning a name read from the registry
+    CHECK(NetClean246(L"Archiv", L"Archiv"));
+    CHECK(NetClean246(L"  Archiv  ", L"Archiv"));
+    CHECK(NetClean246(L"Ar\tchiv", L"Ar chiv"));     // a tab would split the menu's columns
+    CHECK(NetClean246(L"Ar\r\nchiv", L"Ar  chiv"));
+    CHECK(NetClean246(L"A\x007F" L"B", L"A B"));
+    CHECK(NetClean246(L"\x0001\x001F", L""));
+    CHECK(NetClean246(L"   ", L""));
+    CHECK(NetClean246(L"", L""));
+    CHECK(NetClean246(L"\tArchiv Test \x017E\t", L"Archiv Test \x017E"));
+    CHECK(NetClean246(L"A  B", L"A  B")); // inner spaces kept
+    CHECK(NetClean246(L"\x00A0X\x00A0", L"\x00A0X\x00A0")); // no-break space is not a control character
+    CHECK(SalNetDriveCleanName(NULL) == 0);
+
+    // the shown text
+    CHECK(NetText246(NULL, L"\\\\srv\\share", TRUE, L"\\\\srv\\share"));
+    CHECK(NetText246(L"", L"\\\\srv\\share", TRUE, L"\\\\srv\\share"));
+    CHECK(NetText246(L"Archiv", L"\\\\SHARE_SAMBA\\Share\\Storage", TRUE, L"Archiv (\\\\SHARE_SAMBA\\Share\\Storage)"));
+    CHECK(NetText246(L"Archiv", L"\\\\SHARE_SAMBA\\Share\\Storage", FALSE, L"Archiv (\\\\SHARE_SAMBA\\Share\\Storage)"));
+    CHECK(NetText246(L"\\\\SRV\\Share", L"\\\\srv\\share", TRUE, L"\\\\srv\\share")); // the name is the path
+    CHECK(NetText246(L"R&D", L"\\\\srv\\R&D x", TRUE, L"R&&D (\\\\srv\\R&&D x)"));
+    CHECK(NetText246(L"R&D", L"\\\\srv\\R&D x", FALSE, L"R&D (\\\\srv\\R&D x)"));
+    CHECK(NetText246(NULL, L"\\\\srv\\a&&b", TRUE, L"\\\\srv\\a&&&&b"));
+    CHECK(NetText246(L"Archiv", NULL, TRUE, L"Archiv"));
+    CHECK(NetText246(L"Archiv", L"", TRUE, L"Archiv"));
+    CHECK(NetText246(NULL, NULL, TRUE, L""));
+    CHECK(NetText246(L"\x0416\x0443\x043A", L"\\\\srv\\x", TRUE, L"\x0416\x0443\x043A (\\\\srv\\x)"));
+    CHECK(NetText246(L"\x00C9t\x00E9", L"\\\\srv\\\x00E9T\x00C9", TRUE, L"\x00C9t\x00E9 (\\\\srv\\\x00E9T\x00C9)"));
+    CHECK(NetText246(L"\x00E9", L"\x00C9", TRUE, L"\x00C9")); // equal case-insensitively beyond ASCII
+    {
+        // the size query and exact / short buffers: written whole or not at all
+        int needed = SalNetDriveText(L"A&B", L"\\\\s\\h", TRUE, NULL, 0);
+        CHECK(needed == (int)wcslen(L"A&&B (\\\\s\\h)") + 1);
+        WCHAR buf[64];
+        buf[0] = L'X';
+        CHECK(SalNetDriveText(L"A&B", L"\\\\s\\h", TRUE, buf, needed - 1) == needed && buf[0] == 0);
+        CHECK(SalNetDriveText(L"A&B", L"\\\\s\\h", TRUE, buf, needed) == needed && wcscmp(buf, L"A&&B (\\\\s\\h)") == 0);
+        CHECK(SalNetDriveText(L"A", L"\\\\s\\h", FALSE, buf, 0) == (int)wcslen(L"A (\\\\s\\h)") + 1);
+        // a long name with a long path is never cut
+        std::wstring longName(400, L'n');
+        std::wstring longRemote = L"\\\\srv\\" + std::wstring(500, L'p');
+        int n = SalNetDriveText(longName.c_str(), longRemote.c_str(), FALSE, NULL, 0);
+        CHECK(n == 400 + 2 + (int)longRemote.size() + 1 + 1);
+        std::vector<WCHAR> big(n);
+        CHECK(SalNetDriveText(longName.c_str(), longRemote.c_str(), FALSE, big.data(), n) == n);
+        CHECK(std::wstring(big.data()) == longName + L" (" + longRemote + L")");
+    }
+
+    // the state: the full truth table of the answers that matter
+    const DWORD conns[] = {0, SALNETDRV_ERROR_CONNECTION_UNAVAIL, 2250 /*ERROR_NOT_CONNECTED*/, 234 /*ERROR_MORE_DATA*/, 1222 /*ERROR_NO_NETWORK*/};
+    const DWORD conn3s[] = {0, 2, 50};
+    const DWORD states[] = {0, SALNETDRV_WNGC_DISCONNECTED, 2};
+    int combos = 0;
+    for (int listed = 0; listed < 2; listed++)
+        for (DWORD c : conns)
+            for (DWORD c3 : conn3s)
+                for (DWORD st : states)
+                {
+                    BOOL expected = !listed || c == SALNETDRV_ERROR_CONNECTION_UNAVAIL ||
+                                    (c == 0 && c3 == 0 && st == SALNETDRV_WNGC_DISCONNECTED);
+                    CHECK(SalNetDriveIsDisconnected(listed, c, c3, st) == expected);
+                    combos++;
+                }
+    CHECK(combos == 2 * 5 * 3 * 3);
+    // the measured states (analysis.md G2) spelled out
+    CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 0, 0));                                  // connected
+    CHECK(SalNetDriveIsDisconnected(FALSE, SALNETDRV_ERROR_CONNECTION_UNAVAIL, 2, 0)); // remembered, not connected
+    CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 0, 0));                                  // mapped folder deleted on the server
+    CHECK(SalNetDriveIsDisconnected(TRUE, SALNETDRV_ERROR_CONNECTION_UNAVAIL, 0, 0));  // letter listed, unavailable
+    CHECK(SalNetDriveIsDisconnected(TRUE, 0, 0, SALNETDRV_WNGC_DISCONNECTED));         // letter listed, disconnected
+    CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 2, SALNETDRV_WNGC_DISCONNECTED));        // the level unanswered: state ignored
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -13679,6 +13816,7 @@ int main(int argc, char** argv)
     TestPercentPath238();
     TestQuickFilter244();
     TestCfgImport245();
+    TestNetDrive246();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

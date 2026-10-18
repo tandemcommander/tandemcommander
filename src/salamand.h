@@ -1185,8 +1185,17 @@ DWORD OnKeyDownHandleSelectAll(DWORD keyCode, HWND hDialog, int editID);
 // returns TRUE if the hot key belongs to Salamander
 BOOL IsSalHotKey(WORD hotKey);
 
-void GetNetworkDrives(DWORD& netDrives, char (*netRemotePath)[MAX_PATH]);
-void GetNetworkDrivesBody(DWORD& netDrives, char (*netRemotePath)[MAX_PATH], char* buffer); // or internal use in bug reports only
+// 'showErrors' FALSE: an enumeration error is not reported in a message box (feature 246: the
+// check on main window activation must never show one)
+void GetNetworkDrives(DWORD& netDrives, char (*netRemotePath)[MAX_PATH], BOOL showErrors = TRUE);
+void GetNetworkDrivesBody(DWORD& netDrives, char (*netRemotePath)[MAX_PATH], char* buffer, // or internal use in bug reports only
+                          BOOL showErrors = TRUE);
+
+// feature 246: bit per drive letter ('A' = bit 0) of the network drives Windows reports as
+// disconnected - a remembered connection that is not restored ('netDrives' without a bit in
+// 'logicalMask'), or a listed drive whose connection is unavailable or disconnected; answered
+// locally, without contacting a server; all letters, regardless of the hidden-drives settings
+DWORD GetNetDisconnectedMask(DWORD logicalMask, DWORD netDrives);
 
 // returns the SID (as a string) for our process
 // the returned SID must be freed using a call to LocalFree

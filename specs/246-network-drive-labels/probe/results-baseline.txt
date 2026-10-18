@@ -1,0 +1,23 @@
+246 probe, mode baseline, exe C:\Users\pavel\AppData\Local\Temp\tc246base\tree\tandemcommander.exe
+snapshot before: drives 0000007C; HKCU\Network []; MountPoints2 ##* count 5
+  fixture N1: Z: -> ...alhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\plain; name <none>
+  fixture N2: Y: -> ...alhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\named; name 'Archiv'
+  fixture N3: X: -> ...alhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\czech; name 'Archiv Test \u017E'
+  fixture N4: W: -> ...alhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\cyril; name '\u0410\u0440\u0445\u0438\u0432'
+  fixture N5: V: -> ...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\cjk; name '\u6863\u6848'
+  fixture N6: U: -> ...alhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\R&D x; name 'R&D'
+  fixture N7: T: -> ...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\a#b; name 'Hash'
+  fixture N8: S: -> ...eeeeeeeeeeeeeeeeeee\ffffffffffffffffffffffffffffffffffffffff; name 'Long name nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'
+  fixture N9: R: -> ...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\tab; name '  Tab\u0009Name  '
+  fixture N10: Q: -> ...lhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\eqpath; name '\\LOCALHOST\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\TC246PROBE\FX\EQPATH'
+  fixture N11: P: -> ...alhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\blank; name '   '
+  fixture D: O: -> ...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\dyn; name 'Dyn'
+  drive bars: 0x230650, 0x2204DE
+B-N        MENU   INFO        menu screenshot: C:\Users\pavel\AppData\Local\Temp\tc246probe\shots_baseline\menu_names.png
+  O: cancelled (profile kept): 0; listed False; WNetGetConnection 1201
+B-S1       STATE  INFO        bar 1 image changed after unavailable + activation: False; bar 2: False (fixed build: both change)
+B-S5       STATE  INFO        bar 1 image changed after the Change Drive menu open/close: False
+M1         CLEAN  PASS        windows: no window; fatal: ; exit 0x00000000; reports 0
+Registry: restored; identical=True; SHA-256 before 4AB89FE1CFFCC10042E13C602CDB7AC7DB1F4AE76222431D418BEFCEF8A707F8 / after 4AB89FE1CFFCC10042E13C602CDB7AC7DB1F4AE76222431D418BEFCEF8A707F8
+cleanup verified: True (drives 0000007C->0000007C; HKCU\Network []->[]; MountPoints2 equal True); registry restored: True
+RESULT: 0 FAIL row(s)

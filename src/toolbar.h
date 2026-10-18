@@ -459,6 +459,15 @@ public:
     // lze pouzit pro rychlou detekci, zda nedoslo k nejake zmene dostupnosti cloud storages
     DWORD GetCachedCloudStoragesMask();
 
+    // returns the bitmask of network drives judged disconnected at the last List->BuildData()
+    // (feature 246); 0 before the first BuildData()
+    DWORD GetCachedNetDisconnectedMask();
+
+#ifdef _DEBUG
+    // probe seam (feature 246): asks the drive list for the tooltip of every network drive
+    void ProbeDumpToolTips();
+#endif // _DEBUG
+
 protected:
     virtual LRESULT WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

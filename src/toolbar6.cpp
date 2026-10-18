@@ -64,6 +64,7 @@ BOOL CDriveBar::CreateDriveButtons(CDriveBar* copyDrivesListFrom)
     TDirectArray<CDriveData>* copyDrives = NULL;
     BOOL destroyCopyDrives = FALSE;
     DWORD copyCachedDrivesMask = 0;
+    DWORD copyCachedNetDisconnectedMask = 0; // feature 246
 
     DriveType = drvtUnknow;
     DriveTypeParam = 0;
@@ -79,6 +80,7 @@ BOOL CDriveBar::CreateDriveButtons(CDriveBar* copyDrivesListFrom)
             copyDrives = List->AllocNewDrivesAndGetCurrentDrives();
             destroyCopyDrives = TRUE;
             copyCachedDrivesMask = List->GetCachedDrivesMask();
+            copyCachedNetDisconnectedMask = List->GetCachedNetDisconnectedMask();
         }
         List->DestroyData();
     }
@@ -87,8 +89,9 @@ BOOL CDriveBar::CreateDriveButtons(CDriveBar* copyDrivesListFrom)
     {
         copyDrives = copyDrivesListFrom->List->GetDrives();
         copyCachedDrivesMask = copyDrivesListFrom->List->GetCachedDrivesMask();
+        copyCachedNetDisconnectedMask = copyDrivesListFrom->List->GetCachedNetDisconnectedMask();
     }
-    List->BuildData(FALSE, copyDrives, copyCachedDrivesMask, TRUE, TRUE);
+    List->BuildData(FALSE, copyDrives, copyCachedDrivesMask, TRUE, TRUE, copyCachedNetDisconnectedMask);
     if (destroyCopyDrives)
     {
         List->DestroyDrives(copyDrives);
@@ -347,3 +350,19 @@ CDriveBar::GetCachedCloudStoragesMask()
         return 0;
     return List->GetCachedCloudStoragesMask();
 }
+
+DWORD
+CDriveBar::GetCachedNetDisconnectedMask()
+{
+    if (List == NULL)
+        return 0;
+    return List->GetCachedNetDisconnectedMask();
+}
+
+#ifdef _DEBUG
+void CDriveBar::ProbeDumpToolTips()
+{
+    if (List != NULL)
+        List->ProbeDumpToolTips();
+}
+#endif // _DEBUG

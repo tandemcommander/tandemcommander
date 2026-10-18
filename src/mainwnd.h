@@ -770,9 +770,12 @@ public:
     void UpdateDriveBars();
 
     // if the drive bar has a different disk bitmask than 'drivesMask' or if 'checkCloudStorages' is TRUE
-    // and the drive bar has a different cloud bitmask than 'cloudStoragesMask', it will be regenerated
-    void RebuildDriveBarsIfNeeded(BOOL useDrivesMask, DWORD drivesMask, BOOL checkCloudStorages,
-                                  DWORD cloudStoragesMask);
+    // and the drive bar has a different cloud bitmask than 'cloudStoragesMask', it will be regenerated;
+    // feature 246: also when its mask of disconnected network drives differs from 'netDisconnectedMask';
+    // if 'useDrivesMask' is FALSE, both drive masks are read from the system ('quiet': without a message
+    // box on a network enumeration error - the check on window activation)
+    void RebuildDriveBarsIfNeeded(BOOL useDrivesMask, DWORD drivesMask, DWORD netDisconnectedMask,
+                                  BOOL checkCloudStorages, DWORD cloudStoragesMask, BOOL quiet = FALSE);
 
     // it sets DoNotLoadAnyPlugins and when it is FALSE, it sends refreshes to panels loading thumbnails
     void SetDoNotLoadAnyPlugins(BOOL doNotLoad);

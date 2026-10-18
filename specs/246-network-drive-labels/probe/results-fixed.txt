@@ -1,0 +1,56 @@
+246 probe, mode fixed, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+snapshot before: drives 0000007C; HKCU\Network []; MountPoints2 ##* count 5
+  fixture N1: Z: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\plain; name <none>
+  fixture N2: Y: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\named; name 'Archiv'
+  fixture N3: X: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\czech; name 'Archiv Test \u017E'
+  fixture N4: W: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cyril; name '\u0410\u0440\u0445\u0438\u0432'
+  fixture N5: V: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cjk; name '\u6863\u6848'
+  fixture N6: U: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\R&D x; name 'R&D'
+  fixture N7: T: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\a#b; name 'Hash'
+  fixture N8: S: -> ...eeeeeeeeeeeeeeeeeee\ffffffffffffffffffffffffffffffffffffffff; name 'Long name nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'
+  fixture N9: R: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\tab; name '  Tab\u0009Name  '
+  fixture N10: Q: -> ...\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\eqpath; name '\\LOCALHOST\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\TC246\FX\EQPATH'
+  fixture N11: P: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\blank; name '   '
+  fixture D: O: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\dyn; name 'Dyn'
+  drive bars: 0x1F0390, 0x1607A8
+N0         MENU   PASS        menu opened True; build BUILD bar=0 copy=0 drives=03FFC07C netdisc=00000000
+N1         TEXT   PASS        Z: menu '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\plain' acc=1; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\plain'; bar1 True bar2 True
+N2         TEXT   PASS        Y: menu 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\named)' acc=1; expected 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\named)'; bar1 True bar2 True
+N3         TEXT   PASS        X: menu 'Archiv Test \u017E (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\czech)' acc=1; expected 'Archiv Test \u017E (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\czech)'; bar1 True bar2 True
+N4         TEXT   PASS        W: menu '\u0410\u0440\u0445\u0438\u0432 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cyril)' acc=1; expected '\u0410\u0440\u0445\u0438\u0432 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cyril)'; bar1 True bar2 True
+N5         TEXT   PASS        V: menu '\u6863\u6848 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cjk)' acc=1; expected '\u6863\u6848 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cjk)'; bar1 True bar2 True
+N6         TEXT   PASS        U: menu 'R&&D (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\R&&D x)' acc=1; expected 'R&&D (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\R&&D x)'; bar1 True bar2 True
+N7         TEXT   PASS        T: menu 'Hash (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\a#b)' acc=1; expected 'Hash (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\a#b)'; bar1 True bar2 True
+N8         TEXT   PASS        S: menu '...eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\ffffffffffffffffffffffffffffffffffffffff)' acc=1; expected '...eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\ffffffffffffffffffffffffffffffffffffffff)'; bar1 True bar2 True
+N9         TEXT   PASS        R: menu 'Tab Name (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\tab)' acc=1; expected 'Tab Name (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\tab)'; bar1 True bar2 True
+N10        TEXT   PASS        Q: menu '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\eqpath' acc=1; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\eqpath'; bar1 True bar2 True
+N11        TEXT   PASS        P: menu '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\blank' acc=1; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\blank'; bar1 True bar2 True
+N12        LOCAL  PASS        C: type 3 text 'Local Drive\u000961,9 GB'
+T1         HOVER  NOT DRIVEN  hovering a drive bar button needs the real cursor (step owed to a person)
+T1-N1      TIP    PASS        Z: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\plain'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\plain'
+T1-N2      TIP    PASS        Y: tip 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\named)'; expected 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\named)'
+T1-N3      TIP    PASS        X: tip 'Archiv Test \u017E (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\czech)'; expected 'Archiv Test \u017E (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\czech)'
+T1-N4      TIP    PASS        W: tip '\u0410\u0440\u0445\u0438\u0432 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cyril)'; expected '\u0410\u0440\u0445\u0438\u0432 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cyril)'
+T1-N5      TIP    PASS        V: tip '\u6863\u6848 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cjk)'; expected '\u6863\u6848 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\cjk)'
+T1-N6      TIP    PASS        U: tip 'R&D (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\R&D x)'; expected 'R&D (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\R&D x)'
+T1-N7      TIP    PASS        T: tip 'Hash (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\a#b)'; expected 'Hash (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\a#b)'
+T1-N8      TIP    PASS        S: tip '...eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\ffffffffffffffffffffffffffffffffffffffff)'; expected '...eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\ffffffffffffffffffffffffffffffffffffffff)'
+T1-N9      TIP    PASS        R: tip 'Tab Name (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\tab)'; expected 'Tab Name (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\tab)'
+T1-N10     TIP    PASS        Q: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\eqpath'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\eqpath'
+T1-N11     TIP    PASS        P: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\blank'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\blank'
+R1         MENU   PASS        Y: 'Archiv 2 \u017E (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\named)'
+R1         TIP    PASS        Y: tip 'Archiv 2 \u017E (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\named)'; bar rebuilt: False
+  O: cancelled (profile kept): 0; listed False; WNetGetConnection 1201
+S1         STATE  PASS        CHECK quiet=1 drives=03FFC07C netdisc=00004000; REBUILD bar1 x1 bar2 x1; acc bar1 0 bar2 0; bar images changed True/True
+S1         MENU   PASS        O: acc 0; text 'Dyn (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\dyn)' (the name stays while unavailable)
+S2         NOCHANGE PASS        lines: CHECK quiet=1 drives=03FFC07C netdisc=00004000 / TIP O Dyn (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\dyn) / TIP P \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\blank / TIP Q \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\eqpath
+S3         STATE  PASS        map 0; acc bar1 1; CHECK quiet=1 drives=03FFC07C netdisc=00000000 / REBUILD bar1 / REBUILD bar2
+S3         IMAGE  PASS        drive bar 1 looks as before the disconnection
+S4         REFRESH PASS        CHECK quiet=0 drives=03FFC07C netdisc=00004000 / REBUILD bar1 / REBUILD bar2
+S5         MENU   PASS        CHECK quiet=0 drives=03FFC07C netdisc=00000000 / REBUILD bar1 / REBUILD bar2 / CHECK quiet=0 drives=03FFC07C netdisc=00000000
+P1         PICK   PASS        O: acc before 0; RESTORE O \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\dyn; listed after True; panel 'O:\'; windows: no window
+P2         PICK   PASS        U: acc before 0; RESTORE U \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246\fx\R&D x; listed after True; panel 'U:\'; windows: no window
+M1         CLEAN  PASS        windows: no window; fatal: ; exit 0x00000000; reports 0
+Registry: restored; identical=True; SHA-256 before 4AB89FE1CFFCC10042E13C602CDB7AC7DB1F4AE76222431D418BEFCEF8A707F8 / after 4AB89FE1CFFCC10042E13C602CDB7AC7DB1F4AE76222431D418BEFCEF8A707F8
+cleanup verified: True (drives 0000007C->0000007C; HKCU\Network []->[]; MountPoints2 equal True); registry restored: True
+RESULT: 0 FAIL row(s)

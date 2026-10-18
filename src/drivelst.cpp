@@ -14,16 +14,18 @@
 #include "shellib.h"
 #include "toolbar.h"
 #include "shiconov.h"
+#include "gui.h"         // CopyToolTipAnswer (feature 246)
+#include "salnetdrive.h" // feature 246
 
 CNBWNetAC3Thread NBWNetAC3Thread;
 
-void GetNetworkDrives(DWORD& netDrives, char (*netRemotePath)[MAX_PATH])
+void GetNetworkDrives(DWORD& netDrives, char (*netRemotePath)[MAX_PATH], BOOL showErrors)
 {
     char buffer[10000];
-    GetNetworkDrivesBody(netDrives, netRemotePath, buffer);
+    GetNetworkDrivesBody(netDrives, netRemotePath, buffer, showErrors);
 }
 
-void GetNetworkDrivesBody(DWORD& netDrives, char (*netRemotePath)[MAX_PATH], char* buffer)
+void GetNetworkDrivesBody(DWORD& netDrives, char (*netRemotePath)[MAX_PATH], char* buffer, BOOL showErrors)
 {
     CALL_STACK_MESSAGE1("GetNetworkDrives(,)");
     netDrives = 0; // bit array of network drives
@@ -79,7 +81,7 @@ void GetNetworkDrivesBody(DWORD& netDrives, char (*netRemotePath)[MAX_PATH], cha
     }
     else
     {
-        if (err != ERROR_NO_NETWORK)
+        if (err != ERROR_NO_NETWORK && showErrors)
             SalMessageBox(MainWindow->HWindow, GetErrorText(err), LoadStr(IDS_NETWORKERROR),
                           MB_OK | MB_ICONEXCLAMATION);
     }
@@ -1072,6 +1074,7 @@ CDrivesList::CDrivesList(CFilesWindow* filesWindow, const char* currentPath,
     FromContextMenu = fromContextMenu;
     CachedDrivesMask = 0;
     CachedCloudStoragesMask = 0;
+    CachedNetDisconnectedMask = 0;
 
     // standardne nejde o post-cmd, proto nulujeme
     *PostCmd = 0;
@@ -1366,6 +1369,211 @@ static BOOL GetVolumeInformationU8Menu(const char* u8Root, char* volName, DWORD 
     return GetVolumeInformation(u8Root, volName, volNameSize, NULL, &dummy, fsFlags, NULL, 0);
 }
 
+// feature 246: a mapped network drive's Windows name and its connection state
+// (specs/246-network-drive-labels; the measurements behind every call: analysis.md G).
+// Nothing here contacts a server: WNetGetConnectionW / WNetGetConnection3W answer from
+// the redirector's state, the name is read from the registry.
+
+static_assert(SALNETDRV_ERROR_CONNECTION_UNAVAIL == ERROR_CONNECTION_UNAVAIL, "salnetdrive.h");
+
+// the remote path of the network drive 'letter' as Windows records it; also returned for a
+// remembered connection that is not connected (ERROR_CONNECTION_UNAVAIL); '*connResult'
+// receives WNetGetConnectionW's answer; returns a malloc'd path, or NULL when there is none
+static WCHAR* GetNetDriveRemoteW(char letter, DWORD* connResult)
+{
+    WCHAR device[3] = {(WCHAR)(BYTE)letter, L':', 0};
+    WCHAR stackBuf[MAX_PATH + 1];
+    DWORD len = _countof(stackBuf);
+    WCHAR* heapBuf = NULL;
+    DWORD res = WNetGetConnectionW(device, stackBuf, &len);
+    if (res == ERROR_MORE_DATA && len > _countof(stackBuf) && len < 0x10000) // a path is never cut
+    {
+        heapBuf = (WCHAR*)malloc((len + 1) * sizeof(WCHAR));
+        if (heapBuf != NULL)
+        {
+            DWORD heapLen = len + 1;
+            res = WNetGetConnectionW(device, heapBuf, &heapLen);
+        }
+    }
+    if (connResult != NULL)
+        *connResult = res;
+    const WCHAR* remote = heapBuf != NULL ? heapBuf : stackBuf;
+    WCHAR* ret = NULL;
+    if ((res == NO_ERROR || res == ERROR_CONNECTION_UNAVAIL) && remote[0] != 0)
+        ret = heapBuf != NULL ? heapBuf : _wcsdup(stackBuf);
+    if (ret != heapBuf)
+        free(heapBuf);
+    return ret;
+}
+
+// the drive's name as Explorer keeps it - value _LabelFromReg of
+// HKCU\...\Explorer\MountPoints2\##server#share#path, written by a rename in Explorer or by a
+// Group Policy drive map; returns a malloc'd, cleaned name, or NULL when the drive has none
+static WCHAR* ReadNetDriveNameW(const WCHAR* remote)
+{
+    static const WCHAR prefix[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2\\";
+    const int prefixLen = _countof(prefix) - 1;
+    int keySize = (int)wcslen(remote) + 1; // the key is never longer than the path
+    WCHAR* keyPath = (WCHAR*)malloc((prefixLen + keySize) * sizeof(WCHAR));
+    if (keyPath == NULL)
+        return NULL;
+    memcpy(keyPath, prefix, prefixLen * sizeof(WCHAR));
+    WCHAR* name = NULL;
+    HKEY key;
+    if (SalNetDriveNameKey(remote, keyPath + prefixLen, keySize) &&
+        RegOpenKeyExW(HKEY_CURRENT_USER, keyPath, 0, KEY_QUERY_VALUE, &key) == ERROR_SUCCESS)
+    {
+        DWORD type;
+        DWORD size = 0;
+        if (RegQueryValueExW(key, L"_LabelFromReg", NULL, &type, NULL, &size) == ERROR_SUCCESS &&
+            (type == REG_SZ || type == REG_EXPAND_SZ) && size >= sizeof(WCHAR) && size < 0x10000)
+        {
+            name = (WCHAR*)malloc(size + 2 * sizeof(WCHAR)); // room for a missing terminator
+            DWORD got = size;
+            if (name != NULL &&
+                (RegQueryValueExW(key, L"_LabelFromReg", NULL, &type, (BYTE*)name, &got) != ERROR_SUCCESS ||
+                 (type != REG_SZ && type != REG_EXPAND_SZ) || got > size))
+            {
+                free(name);
+                name = NULL;
+            }
+            if (name != NULL)
+            {
+                name[got / sizeof(WCHAR)] = 0; // REG_EXPAND_SZ is shown literally, as Explorer does
+                if (SalNetDriveCleanName(name) == 0)
+                {
+                    free(name);
+                    name = NULL;
+                }
+            }
+        }
+        RegCloseKey(key);
+    }
+    free(keyPath);
+    return name;
+}
+
+// the text shown for the network drive 'letter': "Name (\\server\share\path)", or the path
+// alone (salnetdrive.h); '&' doubled when 'doubleAmpersands' (the menu); a malloc'd UTF-8
+// text, or NULL when Windows records no remote path for the letter (the caller keeps its
+// earlier text then)
+static char* BuildNetDriveTextU8(char letter, BOOL doubleAmpersands)
+{
+    WCHAR* remote = GetNetDriveRemoteW(letter, NULL);
+    if (remote == NULL)
+        return NULL;
+    WCHAR* name = ReadNetDriveNameW(remote);
+    char* ret = NULL;
+    int needed = SalNetDriveText(name, remote, doubleAmpersands, NULL, 0);
+    WCHAR* text = (WCHAR*)malloc(needed * sizeof(WCHAR));
+    if (text != NULL && SalNetDriveText(name, remote, doubleAmpersands, text, needed) == needed)
+        ret = SalWToU8Alloc(text);
+    free(text);
+    free(name);
+    free(remote);
+    return ret;
+}
+
+// WNetGetConnection3W is exported by mpr.dll (documented with winnetwk.h) but declared in no
+// header of the current SDK; WNGC_INFOLEVEL_DISCONNECTED asks whether a connection is
+// currently disconnected
+#define TC_WNGC_INFOLEVEL_DISCONNECTED 1
+struct CTcWngcConnectionState
+{
+    DWORD dwState; // WNGC_CONNECTED 0, WNGC_DISCONNECTED 1
+};
+typedef DWORD(APIENTRY* FTcWNetGetConnection3W)(LPCWSTR localName, LPCWSTR providerName, DWORD infoLevel,
+                                                LPVOID buffer, LPDWORD bufferSize);
+
+// is the network drive 'letter' disconnected? 'listed' = its bit is in GetLogicalDrives()
+static BOOL IsNetDriveDisconnected(char letter, BOOL listed)
+{
+    DWORD connResult;
+    WCHAR* remote = GetNetDriveRemoteW(letter, &connResult);
+    free(remote);
+    DWORD conn3Result = ERROR_NOT_SUPPORTED;
+    DWORD state = 0;
+    if (listed && connResult == NO_ERROR)
+    {
+        static FTcWNetGetConnection3W getConnection3 = NULL;
+        static BOOL getConnection3Resolved = FALSE;
+        if (!getConnection3Resolved) // mpr.dll is loaded: the core links WNet calls
+        {
+            HMODULE mpr = GetModuleHandleW(L"mpr.dll");
+            if (mpr != NULL)
+                getConnection3 = (FTcWNetGetConnection3W)GetProcAddress(mpr, "WNetGetConnection3W");
+            getConnection3Resolved = TRUE;
+        }
+        if (getConnection3 != NULL)
+        {
+            WCHAR device[3] = {(WCHAR)(BYTE)letter, L':', 0};
+            CTcWngcConnectionState cs;
+            cs.dwState = 0;
+            DWORD size = sizeof(cs);
+            conn3Result = getConnection3(device, NULL, TC_WNGC_INFOLEVEL_DISCONNECTED, &cs, &size);
+            state = cs.dwState;
+        }
+    }
+    return SalNetDriveIsDisconnected(listed, connResult, conn3Result, state);
+}
+
+DWORD GetNetDisconnectedMask(DWORD logicalMask, DWORD netDrives)
+{
+    CALL_STACK_MESSAGE3("GetNetDisconnectedMask(0x%X, 0x%X)", logicalMask, netDrives);
+    DWORD ret = 0;
+    char root[4] = " :\\";
+    for (int i = 0; i < 26; i++)
+    {
+        DWORD bit = 1u << i;
+        if (((logicalMask | netDrives) & bit) == 0)
+            continue;
+        root[0] = (char)('A' + i);
+        BOOL listed = (logicalMask & bit) != 0;
+        // the same classification as CDrivesList::BuildData: a listed letter is a network
+        // drive when Windows says so, a remembered letter that is not listed is one always
+        if (listed && GetDriveType(root) != DRIVE_REMOTE)
+            continue;
+        if (IsNetDriveDisconnected(root[0], listed))
+            ret |= bit;
+    }
+    return ret;
+}
+
+#ifdef _DEBUG
+// probe seam, Debug builds only (specs/246-network-drive-labels/contracts/probe-seam.md):
+// with TC_PROBE_DRIVES_DUMP=<file> the drive list appends what it built and showed, one
+// UTF-8 line per event, so that the GUI probe reads exact texts instead of recognising them
+void ProbeDrivesDump(const char* format, ...)
+{
+    WCHAR file[MAX_PATH];
+    DWORD len = GetEnvironmentVariableW(L"TC_PROBE_DRIVES_DUMP", file, _countof(file));
+    if (len == 0 || len >= _countof(file))
+        return;
+    va_list args;
+    va_start(args, format);
+    int size = _vscprintf(format, args);
+    va_end(args);
+    if (size < 0)
+        return;
+    char* line = (char*)malloc(size + 3);
+    if (line == NULL)
+        return;
+    va_start(args, format);
+    vsprintf_s(line, size + 1, format, args);
+    va_end(args);
+    strcpy_s(line + size, 3, "\r\n");
+    HANDLE h = CreateFileW(file, FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                           FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h != INVALID_HANDLE_VALUE)
+    {
+        DWORD written;
+        WriteFile(h, line, (DWORD)(size + 2), &written, NULL);
+        CloseHandle(h);
+    }
+    free(line);
+}
+#endif // _DEBUG
+
 void InitDropboxPath()
 {
     static BOOL alreadyCalled = FALSE;
@@ -1640,7 +1848,8 @@ void CDrivesList::AddToDrives(CDriveData& drv, int textResId, char hotkey, CDriv
 }
 
 BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives,
-                            DWORD copyCachedDrivesMask, BOOL getGrayIcons, BOOL forDriveBar)
+                            DWORD copyCachedDrivesMask, BOOL getGrayIcons, BOOL forDriveBar,
+                            DWORD copyCachedNetDisconnectedMask)
 {
     CALL_STACK_MESSAGE4("CDrivesList::BuildData(%d, , , %d, %d)", noTimeout, getGrayIcons, forDriveBar);
 
@@ -1669,6 +1878,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
     if (copyDrives != NULL) // optimization: the data is simply copied (e.g. this is the second Drives Bar, so we copy it from the first Drives Bar; we retrieved that data from the system a few ms ago)
     {
         CachedDrivesMask = copyCachedDrivesMask;
+        CachedNetDisconnectedMask = copyCachedNetDisconnectedMask; // feature 246: goes with the copied 'Accessible'
 
         // Add drives A..Z
         int lastDiskDrv = -1;
@@ -1719,6 +1929,9 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
         GetNetworkDrives(netDrives, netRemotePath);
 
         CachedDrivesMask = mask | netDrives; // a cache for a simple test of whether a disk has been added / disappeared
+        // feature 246: a remembered drive changing between connected and unavailable leaves
+        // 'mask | netDrives' as it was - the drive bars compare this mask too
+        CachedNetDisconnectedMask = GetNetDisconnectedMask(mask, netDrives);
 
         // driver which should not be displayed to users
         DWORD noDrivesPolicy = SystemPolicies.GetNoDrives();
@@ -1752,6 +1965,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                 drv.Shared = FALSE;
                 drv.Accessible = (mask & i) != 0;
                 char volumeName[MAX_PATH + 50];
+                char* netText = NULL; // feature 246: the whole text of a network drive (heap, never cut)
                 freeSpace = CQuadWord(-1, -1);
                 switch (drv.DriveType)
                 {
@@ -1815,6 +2029,18 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
 
                 case drvtRemote:
                 {
+                    // feature 246: disconnected also when Windows reports the listed drive's
+                    // connection unavailable or disconnected (was: only a letter missing from
+                    // GetLogicalDrives()) - the icon follows
+                    drv.Accessible = (CachedNetDisconnectedMask & i) == 0;
+                    // feature 246: "Name (\\server\share\path)" when the drive has a Windows
+                    // name, else the path; Unicode-exact from WNetGetConnectionW, built on the
+                    // heap; the remembered path below stays the fallback
+                    netText = BuildNetDriveTextU8(drive, TRUE);
+                    volumeName[0] = 0;
+                    if (netText != NULL)
+                        break;
+
                     DWORD size = MAX_PATH;
                     char device[3] = " :";
                     device[0] = drive;
@@ -1825,7 +2051,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                         memmove(volumeName, netRemotePath[drive - 'A'], l);
                         volumeName[l] = 0;
                     }
-                    else if (!drv.Accessible ||
+                    else if ((mask & i) == 0 ||
                              !GetMappedDriveNameU8(device, volumeName, &size))
                     {
                         if (!GetSubstInformation(drive - 'A', volumeName, MAX_PATH))
@@ -1879,7 +2105,22 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                     *p++ = '\t';
                     PrintDiskSize(p, freeSpace, 0);
                 }
-                if (volumeName[0] != 0)
+                if (netText != NULL)
+                { // feature 246: 'z' + '\t' + text + 0
+                    drv.DriveText = (char*)malloc(2 + strlen(netText) + 1);
+                    if (drv.DriveText == NULL)
+                    {
+                        free(netText);
+                        TRACE_E(LOW_MEMORY);
+                        return FALSE;
+                    }
+                    drv.DriveText[0] = drive;
+                    drv.DriveText[1] = '\t';
+                    strcpy(drv.DriveText + 2, netText);
+                    free(netText);
+                    netText = NULL;
+                }
+                else if (volumeName[0] != 0)
                 { // 'c: ' + volume + 0
                     drv.DriveText = (char*)malloc(2 + strlen(volumeName) + 1);
                     if (drv.DriveText == NULL)
@@ -1926,6 +2167,21 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
             i <<= 1;
         }
     }
+
+#ifdef _DEBUG
+    // probe seam (feature 246): the drive items just built
+    ProbeDrivesDump("BUILD bar=%d copy=%d drives=%08X netdisc=%08X", forDriveBar ? 1 : 0, copyDrives != NULL ? 1 : 0,
+                    CachedDrivesMask, CachedNetDisconnectedMask);
+    for (int probeIndex = 0; probeIndex < Drives->Count; probeIndex++)
+    {
+        const CDriveData* probeItem = &Drives->At(probeIndex);
+        if (probeItem->DriveType != drvtSeparator)
+            ProbeDrivesDump("ITEM %c idx=%d type=%d acc=%d text=%s", probeItem->DriveText[0], probeIndex,
+                            (int)probeItem->DriveType, probeItem->Accessible ? 1 : 0, probeItem->DriveText);
+    }
+    if (forDriveBar)
+        ProbeDumpToolTips();
+#endif // _DEBUG
 
     // we will add disconnected and active FS
     drv.Accessible = FALSE;
@@ -2450,13 +2706,38 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
         // try to revive
         if (!item->Accessible)
         {
+            // feature 246: the remote name comes from Windows, never from the shown text (a
+            // Windows name, a doubled '&', a cut path or a text without a path reached the
+            // reconnection before); a letter Windows still lists is not reconnected here -
+            // the path change reconnects it on access (CheckAndRestoreNetworkConnection)
             char name[3] = " :";
-            char remoteName[MAX_PATH];
-            strcpy(remoteName, item->DriveText + 2);
             name[0] = item->DriveText[0];
-
-            if (!RestoreNetworkConnection(FilesWindow->HWindow, name, remoteName))
-                ret = FALSE;
+            int letterIndex = LowerCase[(BYTE)name[0]] - 'a';
+            if (letterIndex >= 0 && letterIndex < 26 && (GetLogicalDrives() & (1u << letterIndex)) == 0)
+            {
+                DWORD netDrives;
+                char netRemotePath['z' - 'a' + 1][MAX_PATH];
+                GetNetworkDrives(netDrives, netRemotePath);
+                if ((netDrives & (1u << letterIndex)) != 0 && netRemotePath[letterIndex][0] != 0)
+                {
+#ifdef _DEBUG
+                    // probe seam (feature 246)
+                    ProbeDrivesDump("RESTORE %c %s", name[0], netRemotePath[letterIndex]);
+#endif // _DEBUG
+                    if (!RestoreNetworkConnection(FilesWindow->HWindow, name, netRemotePath[letterIndex]))
+                        ret = FALSE;
+                }
+#ifdef _DEBUG
+                else
+                    // probe seam (feature 246)
+                    ProbeDrivesDump("NORESTORE %c not-remembered", name[0]);
+#endif // _DEBUG
+            }
+#ifdef _DEBUG
+            else
+                // probe seam (feature 246)
+                ProbeDrivesDump("NORESTORE %c listed", name[0]);
+#endif // _DEBUG
         }
 
         break;
@@ -2505,7 +2786,7 @@ BOOL CDrivesList::Track()
     }
 
     // synchronize drive bars, if needed
-    MainWindow->RebuildDriveBarsIfNeeded(TRUE, GetCachedDrivesMask(), // to speed up, we will use our cached masks
+    MainWindow->RebuildDriveBarsIfNeeded(TRUE, GetCachedDrivesMask(), GetCachedNetDisconnectedMask(), // to speed up, we will use our cached masks
                                          TRUE, GetCachedCloudStoragesMask());
 
     if (!LoadMenuFromData())
@@ -2534,7 +2815,7 @@ BOOL CDrivesList::Track()
     MenuPopup = NULL;
 
     // synchronize drive bars once more (it could have changed during the menu)
-    MainWindow->RebuildDriveBarsIfNeeded(TRUE, GetCachedDrivesMask(), // to speed up, we will use our cached masks
+    MainWindow->RebuildDriveBarsIfNeeded(TRUE, GetCachedDrivesMask(), GetCachedNetDisconnectedMask(), // to speed up, we will use our cached masks
                                          TRUE, GetCachedCloudStoragesMask());
 
     return cmd != 0;
@@ -2723,11 +3004,22 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
 
     case drvtRemote:
     {
-        if (strlen(item->DriveText) > 2)
+        // feature 246: read now, so that a rename in Explorer shows without a rebuild of the bar
+        char* netText = BuildNetDriveTextU8(item->DriveText[0], FALSE);
+        if (netText != NULL)
+        {
+            CopyToolTipAnswer(netText, text);
+            free(netText);
+        }
+        else if (strlen(item->DriveText) > 2)
         {
             strcpy(text, item->DriveText + 2);
             RemoveAmpersands(text);
         }
+#ifdef _DEBUG
+        // probe seam (feature 246)
+        ProbeDrivesDump("TIP %c %s", item->DriveText[0], text);
+#endif // _DEBUG
         break;
     }
 
@@ -3180,6 +3472,21 @@ BOOL CDrivesList::RebuildMenu()
     }
     return TRUE;
 }
+
+#ifdef _DEBUG
+void CDrivesList::ProbeDumpToolTips()
+{
+    char* text = (char*)malloc(TOOLTIP_TEXT_MAX);
+    if (text == NULL)
+        return;
+    for (int i = 0; i < Drives->Count; i++)
+    {
+        if (Drives->At(i).DriveType == drvtRemote)
+            GetDriveBarToolTip(i, text); // records "TIP <letter> <text>"
+    }
+    free(text);
+}
+#endif // _DEBUG
 
 BOOL CDrivesList::FindPanelPathIndex(CFilesWindow* panel, DWORD* index)
 {

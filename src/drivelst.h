@@ -114,6 +114,10 @@ protected:
 
     DWORD CachedDrivesMask;        // bitmask of drives obtained during the last BuildData()
     DWORD CachedCloudStoragesMask; // bitmask of cloud storages obtained during the last BuildData()
+    // feature 246: bitmask of network drives judged disconnected during the last BuildData()
+    // (GetNetDisconnectedMask); a remembered drive changing between connected and unavailable
+    // does not change CachedDrivesMask, so the drive bars compare this one too
+    DWORD CachedNetDisconnectedMask;
 
 public:
     // input:
@@ -162,8 +166,11 @@ public:
     // if 'copyDrives' is not NULL, data are copied from it (instead of getting data from the system)
     // if 'getGrayIcons' is TRUE, black and white version of the icon is obtained for selected items
     // and the 'HGrayIcon' variable is set, otherwise it will be NULL
+    // if 'copyDrives' is not NULL, 'copyCachedDrivesMask' and 'copyCachedNetDisconnectedMask'
+    // are the masks the copied data were built with (feature 246)
     BOOL BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives = NULL,
-                   DWORD copyCachedDrivesMask = 0, BOOL getGrayIcons = FALSE, BOOL forDriveBar = FALSE);
+                   DWORD copyCachedDrivesMask = 0, BOOL getGrayIcons = FALSE, BOOL forDriveBar = FALSE,
+                   DWORD copyCachedNetDisconnectedMask = 0);
     void DestroyData();
     void DestroyDrives(TDirectArray<CDriveData>* drives);
 
@@ -178,6 +185,12 @@ public:
     // insert tooltip corresponding to the drive determined by the variable index to text buffer
     BOOL GetDriveBarToolTip(int index, char* text);
 
+#ifdef _DEBUG
+    // probe seam (feature 246): calls GetDriveBarToolTip for every network drive item (each
+    // call records a "TIP" line) - the hover itself cannot be driven on a hidden desktop
+    void ProbeDumpToolTips();
+#endif // _DEBUG
+
     // for Drive bars only: searches data and if it finds an item with path from 'panel' panel, it sets
     // 'index' to its index and returns TRUE, otherwise it returns FALSE
     BOOL FindPanelPathIndex(CFilesWindow* panel, DWORD* index);
@@ -191,6 +204,10 @@ public:
     // if BuildData() has not been called yet, returns 0
     // can be used to quickly detect changes in cloud storage availability
     DWORD GetCachedCloudStoragesMask();
+
+    // returns the bitmask of network drives judged disconnected during the last BuildData()
+    // (feature 246); if BuildData() has not been called yet, returns 0
+    DWORD GetCachedNetDisconnectedMask() { return CachedNetDisconnectedMask; }
 
     TDirectArray<CDriveData>* GetDrives() { return Drives; }
 
@@ -235,3 +252,8 @@ struct CNBWNetAC3Thread
 };
 
 extern CNBWNetAC3Thread NBWNetAC3Thread;
+
+#ifdef _DEBUG
+// probe seam, Debug builds only (feature 246, specs/246-network-drive-labels/contracts/probe-seam.md)
+void ProbeDrivesDump(const char* format, ...);
+#endif // _DEBUG
