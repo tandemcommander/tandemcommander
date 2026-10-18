@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import) | 071, 078, 123, 244, 245 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names) | 071, 078, 123, 244, 245, 246 |
 
 ## Feature notes
 
@@ -2954,3 +2954,41 @@ a few early ones are out of sequence).
     changes: remove the row from the `.slt` to get it translated again.
   Tests: saltests 23,037 -> 23,491; e2e matrix `probe/ci245_e2e.ps1` (S0-S14, 94 checks), UI
   probe `probe/ci245_ui.ps1` (U1-U5, 29 checks; Release 5); two review rounds (five agents).
+- 246-network-drive-labels: **mapped network drives show their Windows name** ("Archiv
+  (\\server\share\path)") in the Change Drive menu and the drive bar tooltip, and the **drive
+  bars' disconnected icon follows Windows** (a user report; same in Altap Salamander). Measured
+  first (three agents, `analysis.md` G): Explorer's name is `_LabelFromReg` under
+  `HKCU\...\Explorer\MountPoints2\##server#share#path` (rename or GPP drive map; keyed by path,
+  case-insensitive; `\` -> `#`, `#` kept); the server volume label is NOT what Explorer shows.
+  Every red-X state producible here has the letter ABSENT from `GetLogicalDrives` (the menu already
+  showed icon 31); the stale icon was the drive bars' change detection, which compared only
+  `GetLogicalDrives() | remembered` - a remembered drive's state change leaves it equal (baseline
+  negative control: bar image unchanged after activation and after Alt+F1 open/close). Fix: pure
+  rules in header-only `src/common/salnetdrive.h` (key name, name cleaning, "Name (path)" text with
+  '&' doubling, `SalNetDriveFitU8`, state rule) with saltests; `drivelst.cpp`: remote path from
+  `WNetGetConnectionW` (also returned, with 1201, for a remembered unavailable drive), name from the
+  registry (wide; REG_EXPAND_SZ expanded as Explorer does), text on the heap (never cut; unnamed
+  drives unchanged); disconnected = letter missing OR `ERROR_CONNECTION_UNAVAIL` OR
+  `WNetGetConnection3W(WNGC_INFOLEVEL_DISCONNECTED)` (exported by mpr.dll, absent from the 10.0.26100
+  SDK headers: resolved at run time); `CachedNetDisconnectedMask` compared by
+  `RebuildDriveBarsIfNeeded`, also on main window activation (`WM_USER_END_SUSPMODE`, quiet - no
+  message box, also in the rebuild it triggers); the tooltip reads the name at hover time and
+  shortens only the NAME (whole character + U+2026) to fit the 5000-byte tooltip buffer;
+  reconnection (`ExecuteItem`) takes the remembered path from Windows, never the shown text (fixed
+  doubled '&'). Debug-only seam `TC_PROBE_DRIVES_DUMP` (`contracts/probe-seam.md`). Traps:
+  - `DriveText + 2` was also the remote name for reconnection - a label in the text would have
+    broken it; the doubled '&' and a cut path already reached it.
+  - The tooltip fallback `strcpy` into the 5000-byte buffer overflowed once the stored text was no
+    longer capped (review); a huge policy name cut the tooltip's path away (independent test).
+  - The quiet activation check rebuilt the bars through a non-quiet `BuildData` (review).
+  - The probe's own folder was emptied at start and deleted the baseline copy kept in it.
+  - The tooltip hover cannot be driven on the hidden desktop (`GetCursorPos` / `WindowFromPoint`):
+    the seam calls the tooltip function at each bar check instead.
+  - Bash here-documents collapsed `\\` in a saltests edit again (CLAUDE.md rule 123).
+  Left: the reconnection chain stays code page / MAX_PATH (backlog
+  `remembered-network-drive-with-a-non-code-page-or-long-path`, pre-existing); "letter listed,
+  server off", the hover and third-party network providers are a person step
+  (`check-network-drive-names-and-disconnected-icons-with-a-real`).
+  Tests: saltests 23,491 -> 23,731; probe `probe/run246.ps1` (fixed 0 FAIL, baseline negative
+  control); independent black-box suite `test-independent/` (performance: menu +3.2 ms, activation
+  no extra cost); two review rounds.

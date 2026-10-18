@@ -13720,6 +13720,57 @@ static void TestNetDrive246()
         }
     }
 
+    // is the name shown at all
+    CHECK(SalNetDriveNameShown(L"Archiv", L"\\\\srv\\share"));
+    CHECK(!SalNetDriveNameShown(NULL, L"\\\\srv\\share"));
+    CHECK(!SalNetDriveNameShown(L"", L"\\\\srv\\share"));
+    CHECK(!SalNetDriveNameShown(L"\\\\SRV\\Share", L"\\\\srv\\share"));
+    CHECK(SalNetDriveNameShown(L"Archiv", NULL));
+    CHECK(SalNetDriveNameShown(L"Archiv", L""));
+
+    // UTF-8 length, counted like SalNetDriveFitU8
+    CHECK(SalNetDriveU8Len(NULL) == 0);
+    CHECK(SalNetDriveU8Len(L"") == 0);
+    CHECK(SalNetDriveU8Len(L"ab") == 2);
+    CHECK(SalNetDriveU8Len(L"\x017E\x6863\xD83D\xDCC1") == 2 + 3 + 4);
+    CHECK(SalNetDriveU8Len(L"\xD83D" L"a") == 3 + 1); // lone surrogate: WTF-8, three bytes
+
+    // the tooltip's limit: shorten the NAME, keep the path whole
+    CHECK(SalNetDriveNameUnitsForLimit(L"Archiv", L"\\\\s\\h", 100) == -1);   // fits
+    CHECK(SalNetDriveNameUnitsForLimit(NULL, L"\\\\s\\h", 3) == -1);          // no name: nothing to shorten
+    CHECK(SalNetDriveNameUnitsForLimit(L"\\\\S\\H", L"\\\\s\\h", 3) == -1);  // the name is the path (review round 2)
+    // "Archiv (\\s\h)" = 6 + 2 + 5 + 1 = 14 bytes
+    CHECK(SalNetDriveNameUnitsForLimit(L"Archiv", L"\\\\s\\h", 14) == -1);
+    CHECK(SalNetDriveNameUnitsForLimit(L"Archiv", L"\\\\s\\h", 13) == 13 - 8 - 3); // 2 units + ellipsis
+    CHECK(SalNetDriveNameUnitsForLimit(L"Archiv", L"\\\\s\\h", 11) == 0);  // only the ellipsis fits
+    CHECK(SalNetDriveNameUnitsForLimit(L"Archiv", L"\\\\s\\h", 10) == -2); // not even that
+    CHECK(SalNetDriveNameUnitsForLimit(L"Archiv", NULL, 4) == 1);          // no path: the name alone, "A" + ellipsis
+    {
+        // for every limit the shortened text keeps the whole path and fits
+        std::wstring name = L"\x6863\xD83D\xDCC1" L"Name \x017E" + std::wstring(40, L'\x6863');
+        std::wstring remote = L"\\\\srv\\share \x0416";
+        int full = SalNetDriveU8Len(name.c_str()) + 2 + SalNetDriveU8Len(remote.c_str()) + 1;
+        for (int limit = 0; limit <= full + 2; limit++)
+        {
+            int units = SalNetDriveNameUnitsForLimit(name.c_str(), remote.c_str(), limit);
+            if (limit >= full)
+                CHECK(units == -1);
+            else if (limit < 2 + SalNetDriveU8Len(remote.c_str()) + 1 + 3)
+                CHECK(units == -2);
+            else
+            {
+                CHECK(units >= 0 && units < (int)name.size());
+                std::wstring shortName = name.substr(0, units) + L"\x2026";
+                WCHAR buf[400];
+                int needed = SalNetDriveText(shortName.c_str(), remote.c_str(), FALSE, buf, _countof(buf));
+                CHECK(needed > 0 && SalNetDriveU8Len(buf) <= limit);
+                std::wstring text(buf);
+                CHECK(text.size() > remote.size() + 1 && text.compare(text.size() - remote.size() - 1, remote.size() + 1, remote + L")") == 0);
+                CHECK(units == 0 || !(name[units - 1] >= 0xD800 && name[units - 1] <= 0xDBFF));
+            }
+        }
+    }
+
     // the state: the full truth table of the answers that matter
     const DWORD conns[] = {0, SALNETDRV_ERROR_CONNECTION_UNAVAIL, 2250 /*ERROR_NOT_CONNECTED*/, 234 /*ERROR_MORE_DATA*/, 1222 /*ERROR_NO_NETWORK*/};
     const DWORD conn3s[] = {0, 2, 50};

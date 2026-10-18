@@ -12,7 +12,7 @@ snapshot before: drives 0000007C; HKCU\Network []; MountPoints2 ##* count 5
   fixture N10: Q: -> ...lhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\eqpath; name '\\LOCALHOST\C$\USERS\PAVEL\APPDATA\LOCAL\TEMP\TC246PROBE\FX\EQPATH'
   fixture N11: P: -> ...alhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\blank; name '   '
   fixture D: O: -> ...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\dyn; name 'Dyn'
-  drive bars: 0x3403DE, 0x110810
+  drive bars: 0x5A083E, 0x5E03F6
 N0         MENU   PASS        menu opened True; build BUILD bar=0 copy=0 drives=03FFC07C netdisc=00000000
 N1         TEXT   PASS        Z: menu '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\plain' acc=1; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\plain'; bar1 True bar2 True
 N2         TEXT   PASS        Y: menu 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\named)' acc=1; expected 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246probe\fx\named)'; bar1 True bar2 True

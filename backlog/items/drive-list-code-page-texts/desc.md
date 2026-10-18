@@ -7,7 +7,7 @@ area: encoding
 source: next-work
 who: both
 created: 2026-10-13
-updated: 2026-10-17
+updated: 2026-10-18
 verified: -
 effort: M
 feature: -
@@ -38,3 +38,4 @@ Not reproducible on this machine (Czech display language in code page 1250); nee
 
 - 2026-10-15 — read: the panel draws these texts as UTF-8 with a code-page fallback, so a code-page text is right where the display language is in the program's code page - not reproducible on this machine (Czech, 1250)
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-18 — 246 made the network drive texts of the Change Drive menu and the drive bar tooltip Unicode-exact (WNetGetConnectionW); the remembered-path enumeration and the reconnection chain remain code page (item remembered-network-drive-with-a-non-code-page-or-long-path)

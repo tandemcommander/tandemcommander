@@ -1490,33 +1490,22 @@ static char* BuildNetDriveTextU8(char letter, BOOL doubleAmpersands, int maxByte
         return NULL;
     WCHAR* name = ReadNetDriveNameW(remote);
     char* ret = ComposeNetDriveTextU8(name, remote, doubleAmpersands);
-    if (ret != NULL && maxBytes > 0 && (int)strlen(ret) > maxBytes && name != NULL && !doubleAmpersands)
+    int units = ret != NULL && maxBytes > 0 && !doubleAmpersands ? SalNetDriveNameUnitsForLimit(name, remote, maxBytes) : -1;
+    if (units >= 0)
     {
-        char* nameU8 = SalWToU8Alloc(name);
-        if (nameU8 != NULL)
+        WCHAR* shortName = (WCHAR*)malloc((units + 2) * sizeof(WCHAR));
+        if (shortName != NULL)
         {
-            // the text is name + " (" + path + ")": what is left for the name and the ellipsis
-            int pathPartBytes = (int)strlen(ret) - (int)strlen(nameU8);
-            int forName = maxBytes - pathPartBytes - 3; // U+2026 is three bytes in UTF-8
-            if (forName > 0)
+            memcpy(shortName, name, units * sizeof(WCHAR));
+            shortName[units] = 0x2026; // the ellipsis
+            shortName[units + 1] = 0;
+            char* shorter = ComposeNetDriveTextU8(shortName, remote, FALSE);
+            if (shorter != NULL)
             {
-                int units = SalNetDriveFitU8(name, forName);
-                WCHAR* shortName = (WCHAR*)malloc((units + 2) * sizeof(WCHAR));
-                if (shortName != NULL)
-                {
-                    memcpy(shortName, name, units * sizeof(WCHAR));
-                    shortName[units] = 0x2026;
-                    shortName[units + 1] = 0;
-                    char* shorter = ComposeNetDriveTextU8(shortName, remote, FALSE);
-                    if (shorter != NULL)
-                    {
-                        free(ret);
-                        ret = shorter;
-                    }
-                    free(shortName);
-                }
+                free(ret);
+                ret = shorter;
             }
-            free(nameU8);
+            free(shortName);
         }
     }
     free(name);

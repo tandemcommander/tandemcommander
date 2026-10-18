@@ -146,7 +146,8 @@ try {
             $facts = ("{0}: idx {1}; seam: '{2}'; listed after {3}; panel '{4}'; {5:N1} s; windows: {6}" -f $e.Letter, $idx, (Esc ($rest -join ' / ')), $listed, (Esc $loc), $el, (Msgs $r))
             if ($build -eq 'fixed') {
                 $exact = $rest.Count -ge 1 -and $rest[0] -ceq ('RESTORE ' + $e.Letter + ' ' + $e.Remote)
-                RowV ('PK-' + $e.Case) 'FIXED' ($exact -and $listed -and $okLoc -and $r.Messages.Count -eq 0) $facts
+                # round 2: accepted as out of scope (pre-existing, baseline identical; FR-009 reworded) -> INFO
+                Row ('PK-' + $e.Case) 'FIXED' 'INFO' (('reconnected exactly: {0}; ' -f ($exact -and $listed -and $okLoc -and $r.Messages.Count -eq 0)) + $facts)
             }
             else { Row ('PK-' + $e.Case) 'BASE' 'INFO' $facts }
         }

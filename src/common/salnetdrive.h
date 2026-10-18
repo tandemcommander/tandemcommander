@@ -102,24 +102,30 @@ inline int SalNetDriveCleanName(WCHAR* name)
     return len;
 }
 
+// Is 'name' shown next to 'remote'? Not when there is no name, or when the name is
+// the path (case ignored, as the file system compares) - it says nothing the path
+// does not.
+inline BOOL SalNetDriveNameShown(const WCHAR* name, const WCHAR* remote)
+{
+    if (name == NULL || name[0] == 0)
+        return FALSE;
+    if (remote == NULL || remote[0] == 0)
+        return TRUE;
+    return CompareStringOrdinal(name, -1, remote, -1, TRUE) != CSTR_EQUAL;
+}
+
 // The text shown for a mapped drive: "Name (\\server\share\path)", or the path
-// alone when there is no name or the name is the path (case ignored, as the
-// file system compares). With 'doubleAmpersands' every '&' is written as "&&"
-// (the menu draws the column with prefix processing; the tooltip does not).
-// Returns the number of units needed INCLUDING the terminator; the text is
-// written only when 'out' has room for all of it, otherwise 'out' is left
-// empty (when it has room for anything) - never cut.
+// alone when the name is not shown (SalNetDriveNameShown). With
+// 'doubleAmpersands' every '&' is written as "&&" (the menu draws the column with
+// prefix processing; the tooltip does not). Returns the number of units needed
+// INCLUDING the terminator; the text is written only when 'out' has room for all
+// of it, otherwise 'out' is left empty (when it has room for anything) - never cut.
 inline int SalNetDriveText(const WCHAR* name, const WCHAR* remote, BOOL doubleAmpersands,
                            WCHAR* out, int outSize)
 {
     if (remote == NULL)
         remote = L"";
-    BOOL useName = name != NULL && name[0] != 0;
-    if (useName && remote[0] != 0 &&
-        CompareStringOrdinal(name, -1, remote, -1, TRUE) == CSTR_EQUAL)
-    {
-        useName = FALSE; // the name says nothing the path does not
-    }
+    BOOL useName = SalNetDriveNameShown(name, remote);
     const WCHAR* parts[4];
     int count = 0;
     if (useName)
@@ -189,6 +195,49 @@ inline int SalNetDriveFitU8(const WCHAR* name, int maxBytes)
         units += w;
     }
     return units;
+}
+
+// The UTF-8 (WTF-8) length in bytes of 'text', counted as SalNetDriveFitU8 counts.
+inline int SalNetDriveU8Len(const WCHAR* text)
+{
+    int bytes = 0;
+    for (int i = 0; text != NULL && text[i] != 0; i++)
+    {
+        WCHAR c = text[i];
+        if (c < 0x80)
+            bytes += 1;
+        else if (c < 0x800)
+            bytes += 2;
+        else if (c >= 0xD800 && c <= 0xDBFF && text[i + 1] >= 0xDC00 && text[i + 1] <= 0xDFFF)
+        {
+            bytes += 4;
+            i++;
+        }
+        else
+            bytes += 3;
+    }
+    return bytes;
+}
+
+// The tooltip has a hard byte limit; its text (SalNetDriveText without '&'
+// doubling) must keep the path whole, so only the NAME is shortened - to a
+// whole-character prefix followed by an ellipsis (U+2026, three bytes). Returns
+//   -1  the text fits 'maxBytes' as it is, or the name is not shown (nothing to
+//       shorten: a path alone that does not fit is cut by the caller's copy)
+//   -2  even an empty name with the ellipsis does not leave room for the path
+//   >=0 the number of leading units of 'name' to keep before the ellipsis
+inline int SalNetDriveNameUnitsForLimit(const WCHAR* name, const WCHAR* remote, int maxBytes)
+{
+    if (!SalNetDriveNameShown(name, remote))
+        return -1;
+    int remoteBytes = remote == NULL ? 0 : SalNetDriveU8Len(remote);
+    int pathPart = remoteBytes == 0 ? 0 : 2 + remoteBytes + 1; // " (" + path + ")"
+    if (SalNetDriveU8Len(name) + pathPart <= maxBytes)
+        return -1;
+    int forName = maxBytes - pathPart - 3;
+    if (forName < 0)
+        return -2;
+    return SalNetDriveFitU8(name, forName);
 }
 
 // Is a network drive disconnected, by Windows' local answers (none of them

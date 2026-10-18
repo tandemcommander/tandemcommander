@@ -171,6 +171,36 @@ function Exp-Text($Name, [string]$Remote, [bool]$Menu) {
     if ($Menu) { $t = $t.Replace('&', '&&') }
     return $t
 }
+# round 2 tooltip rule: the whole text when it fits 4999 UTF-8 bytes; otherwise the NAME is shortened
+# to a whole-character prefix + U+2026 and ' (<exact path>)' stays whole, total <= 4999 bytes.
+# Returns Ok, Mode (exact/shortened), Facts. A U+FFFD in the text = a torn character (invalid UTF-8).
+$TipLimit = 4999
+function Check-Tip($Tip, $Name, [string]$Remote) {
+    $full = Exp-Text $Name $Remote $false
+    $r = @{ Ok = $false; Mode = ''; Facts = '' }
+    if ($null -eq $Tip) { $r.Facts = 'no TIP line'; return $r }
+    $tb = $Utf8.GetByteCount($Tip)
+    $torn = $Tip.Contains([string][char]0xFFFD)
+    if ($Utf8.GetByteCount($full) -le $TipLimit) {
+        $r.Mode = 'exact'; $r.Ok = ($Tip -ceq $full) -and -not $torn
+        $r.Facts = ('exact expected ({0} bytes); tip {1} bytes; equal {2}; U+FFFD {3}' -f $Utf8.GetByteCount($full), $tb, ($Tip -ceq $full), $torn)
+        return $r
+    }
+    $r.Mode = 'shortened'
+    $n = Clean-Name $Name
+    $suffix = ' (' + $Remote + ')'
+    $endsOk = $Tip.EndsWith($suffix, [StringComparison]::Ordinal)
+    $head = if ($endsOk) { $Tip.Substring(0, $Tip.Length - $suffix.Length) } else { '' }
+    $ell = $head.Length -gt 0 -and $head[$head.Length - 1] -eq [char]0x2026
+    $pre = if ($ell) { $head.Substring(0, $head.Length - 1) } else { '' }
+    $isPrefix = $ell -and $pre.Length -lt $n.Length -and $n.StartsWith($pre, [StringComparison]::Ordinal)
+    $whole = $isPrefix -and -not ($pre.Length -gt 0 -and [char]::IsHighSurrogate($pre[$pre.Length - 1]))
+    $nextLen = 1; if ($isPrefix -and [char]::IsHighSurrogate($n[$pre.Length])) { $nextLen = 2 }
+    $maximal = $isPrefix -and ($tb + $Utf8.GetByteCount($n.Substring($pre.Length, [Math]::Min($nextLen, $n.Length - $pre.Length))) -gt $TipLimit)
+    $r.Ok = $endsOk -and ($tb -le $TipLimit) -and $ell -and $isPrefix -and $whole -and -not $torn
+    $r.Facts = ('full text {0} bytes > {1}; tip {2} bytes; ends with exact path {3}; ellipsis {4}; name prefix {5} of {6} units, whole-character {7}; maximal {8}; U+FFFD {9}; head ends ...{10}' -f $Utf8.GetByteCount($full), $TipLimit, $tb, $endsOk, $ell, $pre.Length, $n.Length, $whole, $maximal, $torn, (Esc $(if ($head.Length -gt 6) { $head.Substring($head.Length - 6) } else { $head })))
+    return $r
+}
 function Short([string]$s, [int]$n = 110) { if ($null -eq $s) { return '<null>' }; if ($s.Length -le $n) { return (Esc $s) }; return ((Esc $s.Substring(0, 40)) + ('...[{0} chars]...' -f $s.Length) + (Esc $s.Substring($s.Length - 50))) }
 function Snap {
     $s = [ordered]@{}
@@ -373,7 +403,9 @@ function Add-Drive($e, [bool]$Remember) {
         if (-not $e.KeyRemote) { $e.KeyRemote = $e.Remote }
     }
     if ($e.Kind -ne 'none') { Set-Label $e } elseif ($e.KeyRemote) { [void](Mp2Key $e.KeyRemote $false) }
-    if ($e.Kind -eq 'sz' -or $e.Kind -eq 'expand' -or $e.Kind -eq 'nonul') { $e.ShownName = $e.Raw } else { $e.ShownName = $null }
+    if ($e.Kind -eq 'sz' -or $e.Kind -eq 'nonul') { $e.ShownName = $e.Raw }
+    elseif ($e.Kind -eq 'expand') { $e.ShownName = [Environment]::ExpandEnvironmentVariables($e.Raw) }   # round 2: expanded, as Explorer shows it
+    else { $e.ShownName = $null }
     Out ("  fixture {0}: {1}: -> {2}; label kind {3} '{4}'" -f $e.Case, $e.Letter, (Short $e.Remote 90), $e.Kind, (Short $e.Raw 60))
 }
 
@@ -604,7 +636,8 @@ try {
     Row 'T-HOVER' 'TIP' 'NOT DRIVEN' 'the drive bar tooltip follows the real cursor (GetCursorPos) - hover is a step owed to a person; TIP rows below are the seam calling the same tooltip function'
     foreach ($e in $All) {
         $got = if ($tips.ContainsKey($e.Letter)) { $tips[$e.Letter] } else { $null }
-        RowV ('T-' + $e.Case) 'TIP' ($got -ceq $e.ExpTip) ("{0}: tip '{1}'; expected '{2}'" -f $e.Letter, (Short $got), (Short $e.ExpTip))
+        $ct = Check-Tip $got $e.ShownName $e.Remote
+        RowV ('T-' + $e.Case) 'TIP' $ct.Ok ("{0}: [{1}] tip '{2}'; expected '{3}'; {4}" -f $e.Letter, $ct.Mode, (Short $got), (Short $e.ExpTip), $ct.Facts)
     }
     $nd = [regex]::Match((($dl | Where-Object { $_ -like 'CHECK*' }) -join ''), 'netdisc=([0-9A-F]{8})').Groups[1].Value
     $expMask = 0; foreach ($e in @($P3, $P4, $P5, $X2)) { $expMask = $expMask -bor (1 -shl ([int][char]$e.Letter - 65)) }
@@ -638,6 +671,46 @@ try {
     for ($i = 0; $i -lt 20; $i++) { $s = Activate $id; if ($s.Count) { $strayAll += $s } }
     $dl = Dump-Since $mark
     RowV 'C4' 'QUIET20' ((Count-Like $dl 'CHECK quiet=1 *') -eq 20 -and (Count-Like $dl 'REBUILD*') -eq 0 -and (Count-Like $dl 'BUILD bar=1*') -eq 0 -and $strayAll.Count -eq 0) ("CHECK quiet=1 x{0}; REBUILD x{1}; BUILD bar=1 x{2}; windows {3}; masks seen: {4}" -f (Count-Like $dl 'CHECK quiet=1 *'), (Count-Like $dl 'REBUILD*'), (Count-Like $dl 'BUILD bar=1*'), $strayAll.Count, ((@($dl | Where-Object { $_ -like 'CHECK*' } | ForEach-Object { $_.Substring(14) }) | Sort-Object -Unique) -join ' | '))
+
+    # C9 (round 2): tooltip limit boundaries on drive E6, renamed while running: fits exactly / one
+    # byte over (ASCII, 4-byte last character, '&'), CJK and emoji names with every residue of the cut
+    # position, a mixed 1-2-3-4-byte name; the menu keeps the whole text every time
+    $E6 = $EdgeOk | Where-Object { $_.Case -eq 'E6' }
+    if ($E6) {
+        $k6 = $MP2 + '\' + (KeyOf $E6.KeyRemote)
+        $suf = $Utf8.GetByteCount(' (' + $E6.Remote + ')')
+        $Em = [char]::ConvertFromUtf32(0x1F4C1); $CJ = [string][char]0x6863
+        $mixUnit = 'ab' + $Em + [string][char]0x00E9 + $CJ
+        $B = @(
+            @('B0', 'ASCII, whole text exactly 4999 bytes', ('F' * ($TipLimit - $suf))),
+            @('B1', 'ASCII, whole text 5000 bytes (one over)', ('F' * ($TipLimit + 1 - $suf))),
+            @('B2', 'ends with an emoji, exactly 4999 bytes', (('F' * ($TipLimit - $suf - 4)) + $Em)),
+            @('B3', 'ends with an emoji, 5000 bytes (the emoji must go whole)', (('F' * ($TipLimit + 1 - $suf - 4)) + $Em)),
+            @('B4', 'CJK x1700, offset 0', ($CJ * 1700)),
+            @('B5', 'CJK x1700, offset 1', ('a' + ($CJ * 1700))),
+            @('B6', 'CJK x1700, offset 2', ('aa' + ($CJ * 1700))),
+            @('B7', 'emoji x1300, offset 0', ($Em * 1300)),
+            @('B8', 'emoji x1300, offset 1', ('b' + ($Em * 1300))),
+            @('B9', 'emoji x1300, offset 2', ('bb' + ($Em * 1300))),
+            @('B10', 'emoji x1300, offset 3', ('bbb' + ($Em * 1300))),
+            @('B11', 'mixed 1/2/3/4-byte characters x500', ($mixUnit * 500)),
+            @('B12', "'&' only, single-& text exactly 4999 bytes (the menu's doubled text is longer)", ('&' * ($TipLimit - $suf))),
+            @('B13', "'&' only, single-& text 5000 bytes", ('&' * ($TipLimit + 1 - $suf))),
+            @('B14', "'x&' x2600 (doubled '&&' in the stored text at the cut)", ('x&' * 2600))
+        )
+        foreach ($v in $B) {
+            Set-ItemProperty -LiteralPath $k6 -Name '_LabelFromReg' -Value $v[2] -Type String
+            $mark = Dump-Mark; [void](Open-Menu $id ''); $s = Activate $id; $dl = Dump-Since $mark
+            $m = Last-Build $dl 0 0
+            $mt = if ($m -and $m.Items.ContainsKey($E6.Letter)) { $m.Items[$E6.Letter].Text } else { $null }
+            $expM = Exp-Text $v[2] $E6.Remote $true
+            $tip = (Tips $dl)[$E6.Letter]
+            $ct = Check-Tip $tip $v[2] $E6.Remote
+            $menuOk = ($mt -ceq $expM)
+            RowV ('C9-' + $v[0]) 'TIP' ($ct.Ok -and $menuOk -and $s.Count -eq 0) ("{0}: name {1} units / {2} bytes; [{3}] {4}; menu whole text {5} ({6} units); windows {7}" -f $v[1], $v[2].Length, $Utf8.GetByteCount($v[2]), $ct.Mode, $ct.Facts, $menuOk, $(if ($mt) { $mt.Length } else { -1 }), $s.Count)
+        }
+    }
+    else { Row 'C9' 'TIP' 'NOT RUN' 'drive E6 missing' }
 
     # C5: single drive bar mode and hidden bars
     $t1 = Toggle $id 756   # two bars off
