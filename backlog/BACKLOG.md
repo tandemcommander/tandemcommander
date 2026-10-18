@@ -145,10 +145,15 @@ Last triaged: 2026-10-17
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [A damaged highlighting entry hangs the program at start-up](items/a-damaged-highlighting-entry-hangs-the-program-at-start-up/desc.md) | bug | 7 | panels-ui | measure:245 | 2026-10-18 |
+| [A history entry with invalid text hides the entries saved after it](items/a-history-entry-with-invalid-text-hides-the-entries-saved/desc.md) | bug | 2 | encoding | measure:245 | 2026-10-18 |
 | [Drag from a ZIP or SFTP panel during a quick search acts only on the dragged item](items/drag-from-a-zip-or-sftp-panel-during-a-quick-search-acts/desc.md) | person-step | 7 | data-safety | review:244 | 2026-10-18 |
+| [Importing a configuration file writes every key of a foreign .reg file](items/importing-a-configuration-file-writes-every-key-of-a-foreign/desc.md) | bug | 4 | data-safety | measure:245 | 2026-10-18 |
 | [Judge the quick-search tint on a real screen and try Shift and Alt keys](items/judge-the-quick-search-tint-on-a-real-screen-and-try-shift/desc.md) | person-step | 4 | panels-ui | leftover:244 | 2026-10-18 |
 | [Quick search: first keystroke over 100,000 non-ASCII names takes about 335 ms](items/quick-search-first-keystroke-over-100-000-non-ascii-names/desc.md) | improvement | 3 | panels-ui | measure:244 | 2026-10-18 |
 | [Quick search keys skip canonical reordering of combining marks](items/quick-search-keys-skip-canonical-reordering-of-combining/desc.md) | bug | 2 | encoding | leftover:244 | 2026-10-18 |
+| [Remove the dormant start-up import of older Open Salamander configurations](items/remove-the-dormant-start-up-import-of-older-open-salamander/desc.md) | tech-debt | 2 | data-safety | measure:245 | 2026-10-18 |
+| [The stored main window icon index is checked against the count, not the last index](items/the-stored-main-window-icon-index-is-checked-against-the/desc.md) | bug | 1 | panels-ui | measure:245 | 2026-10-18 |
 
 ## Parked
 
