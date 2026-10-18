@@ -4579,7 +4579,8 @@ FIND_NEW_SLG_FILE:
 
                 CALL_STACK_MESSAGE1("WinMainBody::load_config");
                 BOOL setActivePanelAndPanelPaths = FALSE; // aktivni panel + cesty v panelech se nastavuji v MainWindow->LoadConfig()
-                CfgImpFreshConfigAtStart = CfgImpIsFreshConfiguration(); // feature 245: no configuration of ours yet
+                // feature 245: no configuration of ours yet (SALAMANDER_ROOT_REG is still NULL then)
+                CfgImpFreshConfigAtStart = currentCfgDoesNotExist && !autoImportConfig;
                 if (!MainWindow->LoadConfig(currentCfgDoesNotExist, !importCfgFromFileWasSkipped ? &cmdLineParams : NULL))
                 {
                     setActivePanelAndPanelPaths = TRUE;

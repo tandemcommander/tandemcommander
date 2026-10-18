@@ -436,10 +436,8 @@ BOOL CfgImpOtherInstanceRuns()
 
 BOOL CfgImpIsFreshConfiguration()
 {
-    if (SALAMANDER_ROOT_REG == NULL)
-        return FALSE;
-    char path[MAX_PATH + 50];
-    _snprintf_s(path, _TRUNCATE, "%s\\Configuration", SALAMANDER_ROOT_REG);
+    char path[MAX_PATH + 50]; // SALAMANDER_ROOT_REG is NULL before the first save of a fresh configuration
+    _snprintf_s(path, _TRUNCATE, "%s\\Configuration", SalamanderConfigurationRoots[0]);
     WCHAR* w = SalU8ToWAlloc(path);
     if (w == NULL)
         return FALSE;
