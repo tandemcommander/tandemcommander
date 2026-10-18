@@ -55,3 +55,4 @@ First step of the fix: reproduce on the build with a source and a target folder 
 - 2026-10-18 — analysis: the reporter (0.1.9, Slovak UI) pasted a file into its own folder, so the program made the name "<name> - Kopia.zip"; IDS_NEWNAME_COPY came through LoadStr (code page) into a UTF-8 path and the file layer refused it with error 123; fixed by feature 127 (fileswn6.cpp BuildScriptMain2, LoadStrU8); a paste with a real clipboard in a Slovak UI is still owed to a person
 - 2026-10-18 — blocked: not reproduced at 6dc132a7: fixed by feature 127 (0.1.10) - the copy-name word was a code-page string inside a UTF-8 name; issue #9 needs an answer; a real-clipboard paste in Slovak is owed to a person
 - 2026-10-18 — reply.md: draft answer written (Slovak + English), not sent
+- 2026-10-18 — reply.md: draft answer rewritten in English only, not sent
