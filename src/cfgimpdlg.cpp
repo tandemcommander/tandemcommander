@@ -863,7 +863,7 @@ void CfgImpRunAutomation(HWND parent)
         {
             const char* Name;
             CCfgImpGroupId Id;
-        } names[] = {{"hotpaths", cigHotPaths}, {"usermenu", cigUserMenu}, {"ftp", cigFTP}, {"pluginkeys", cigPluginKeys}, {"viewers", cigViewers}, {"histories", cigHistories}, {"confirmations", cigConfirmations}, {"panelopts", cigPanelOpts}, {"general", cigGeneral}, {"viewer", cigViewerOpts}, {"defaultdirs", cigDefaultDirs}};
+        } names[] = {{"hotpaths", cigHotPaths}, {"usermenu", cigUserMenu}, {"ftp", cigFTP}, {"pluginkeys", cigPluginKeys}, {"viewers", cigViewers}, {"histories", cigHistories}, {"confirmations", cigConfirmations}, {"panelopts", cigPanelOpts}, {"general", cigGeneral}, {"viewer", cigViewerOpts}, {"defaultdirs", cigDefaultDirs}, {"colors", cigColors}, {"templates", cigTemplates}, {"findsets", cigFindSets}};
         for (i = 0; i < run.Groups.Count; i++)
             run.Groups[i]->Selected = FALSE;
         char* ctx = NULL;

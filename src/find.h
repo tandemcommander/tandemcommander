@@ -318,6 +318,7 @@ protected:
     BOOL Move(int srcIndex, int dstIndex);
 
     friend class CFindIgnoreDialog;
+    friend class CCfgImpFindAccess; // feature 245: the settings import adds ignored paths
 };
 
 //*********************************************************************************

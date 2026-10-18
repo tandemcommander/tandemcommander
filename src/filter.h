@@ -108,6 +108,7 @@ public:
     BOOL LoadOld(HKEY hKey); // loads data from configuration version 13 and older
 
     friend class CFilterCriteriaDialog;
+    friend class CCfgImpFindAccess; // feature 245: the settings import reads saved criteria
 };
 
 //*********************************************************************************

@@ -343,6 +343,41 @@ try {
         Check 'S8 Add keeps the current default shortcut' ($keys[1] -eq 0x0346 -and $r.Preview -match 'already has a shortcut') ("id1=" + ('{0:x}' -f $keys[1]))
     }
 
+    # ---------------------------------------------------------------- S12 colours, templates, searches, default dirs
+    if (Want 'S12') {
+        New-TCConfig $Exe $OutDir | Out-Null
+        Remove-Fixtures
+        $root = New-AltapFixture
+        Set-RegTree $root @{
+            'Colors'                              = @{ 'Color Scheme' = 2; 'Item Fg Normal' = 0x00112233; 'Viewer Bk Normal' = '10,20,30,0' }
+            'Colors\Panel Items Hilighting\1'     = @{ 'Masks' = '*.bak'; 'Attributes' = 0; 'Valid Attributes' = 0; 'Item Fg Normal' = 0x000000FF }
+            'Custom Colors'                       = @{ '1' = 0x00ABCDEF }
+            'View Templates\8'                    = @{ 'Name' = 'My view'; 'Flags' = 3; 'Columns' = ''; 'Left Smart Mode' = 0; 'Right Smart Mode' = 1 }
+            'Configuration\Find Options\1'        = @{ 'ItemName' = 'Logs last week'; 'Named' = '*.log'; 'LookIn' = 'C:\Logs'; 'SubDirectories' = 1; 'UseMinSize' = 1; 'MinSizeLo' = 4096 }
+            'Configuration\Find Ignore\1'         = @{ 'Path' = 'C:\Old\Ignore' }
+            'Configuration\Find Ignore\2'         = @{ 'Path' = '\System Volume Information' }
+            'Default Directories'                 = @{ 'C' = 'C:\Work'; 'Q' = 'X:\Wrong'; 'DD' = 'D:\Bad' }
+        }
+        $src0 = Source-Dump
+        $r = Invoke-TC $Exe "[import]`r`ngroups=colors,templates,findsets,defaultdirs`r`nconsent=1`r`n" $OutDir 's12'
+        $r.Preview | Set-Content -LiteralPath (Join-Path $OutDir 's12_preview.txt') -Encoding UTF8
+        Check 'S12 applied' ($r.Exit -eq 0 -and $null -ne $r.Result -and $r.Result -notmatch 'NOT APPLIED') "exit=$($r.Exit) timeout=$($r.Timeout) windows=$($r.Windows -join ';')"
+        Check 'S12 colour scheme taken over' ((Get-Val 'Colors' 'Color Scheme') -eq 2) "$(Get-Val 'Colors' 'Color Scheme')"
+        Check 'S12 colour taken over (DWORD)' ((Get-Val 'Colors' 'Item Fg Normal') -eq 0x00112233) ('{0:x}' -f (Get-Val 'Colors' 'Item Fg Normal'))
+        Check 'S12 colour taken over (old text form)' ((Get-Val 'Colors' 'Viewer Bk Normal') -eq (10 + 20 * 256 + 30 * 65536)) ('{0:x}' -f (Get-Val 'Colors' 'Viewer Bk Normal'))
+        Check 'S12 custom colour taken over' ((Get-Val 'Custom Colors' '1') -eq 0x00ABCDEF) ('{0:x}' -f (Get-Val 'Custom Colors' '1'))
+        $h = @(Get-Items "$script:TCRoot\Colors\Panel Items Hilighting") # @(): one item must stay an array
+        Check 'S12 highlighting = the source''s list' ($h.Count -eq 1 -and $h[0] -match 'Masks=\*\.bak') ($h -join ' || ')
+        Check 'S12 view template taken over' ((Get-Val 'View Templates\8' 'Name') -eq 'My view' -and (Get-Val 'View Templates\8' 'Flags') -eq 3) "$(Get-Val 'View Templates\8' 'Name')"
+        $fo = Get-Items "$script:TCRoot\Configuration\Find Options"
+        Check 'S12 saved search added' (@($fo | Where-Object { $_ -match 'ItemName=Logs last week' -and $_ -match 'MinSizeLo=4096' }).Count -eq 1) ($fo -join ' || ')
+        $fi = Get-Items "$script:TCRoot\Configuration\Find Ignore"
+        Check 'S12 ignore path added once, existing not doubled' (@($fi | Where-Object { $_ -match 'Path=C:\\Old\\Ignore' }).Count -eq 1 -and @($fi | Where-Object { $_ -match 'System Volume Information' }).Count -eq 1) ($fi -join ' || ')
+        Check 'S12 default directory taken over, invalid ones skipped' ((Get-Val 'Default Directories' 'C') -eq 'C:\Work' -and $null -eq (Get-Val 'Default Directories' 'Q') -and $r.Preview -match 'unexpected value') "C=$(Get-Val 'Default Directories' 'C') Q=$(Get-Val 'Default Directories' 'Q')"
+        Check 'S12 theme mode unchanged' ((Get-Val 'Configuration' 'Theme Mode') -eq $ownBefore['Theme Mode']) ''
+        Check 'S12 SC-002 source unchanged' ((Source-Dump) -eq $src0) ''
+    }
+
     # ---------------------------------------------------------------- S9 another instance
     if (Want 'S9') {
         New-TCConfig $Exe $OutDir | Out-Null

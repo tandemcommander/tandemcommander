@@ -20,6 +20,7 @@
 #include "pwdmngr.h"
 #include "tasklist.h"
 #include "salurlpwd.h"
+#include "themes.h"
 #include "cfgimport.h"
 
 BOOL CfgImpFreshConfigAtStart = FALSE;
@@ -904,11 +905,14 @@ BOOL CCfgImpRun::OpenSource(int index, char* err, int errSize)
         {cigFTP, IDS_CFGIMP_GRP_FTP, TRUE, TRUE, TRUE},
         {cigPluginKeys, IDS_CFGIMP_GRP_PLUGINKEYS, TRUE, TRUE, TRUE},
         {cigViewers, IDS_CFGIMP_GRP_VIEWERS, TRUE, FALSE, TRUE},
+        {cigFindSets, IDS_CFGIMP_GRP_FINDSETS, TRUE, FALSE, TRUE},
         {cigHistories, IDS_CFGIMP_GRP_HISTORIES, TRUE, FALSE, FALSE},
         {cigConfirmations, IDS_CFGIMP_GRP_CONFIRMATIONS, FALSE, FALSE, FALSE},
         {cigPanelOpts, IDS_CFGIMP_GRP_PANELOPTS, FALSE, FALSE, FALSE},
         {cigGeneral, IDS_CFGIMP_GRP_GENERAL, FALSE, FALSE, FALSE},
         {cigViewerOpts, IDS_CFGIMP_GRP_VIEWEROPTS, FALSE, FALSE, FALSE},
+        {cigColors, IDS_CFGIMP_GRP_COLORS, FALSE, FALSE, FALSE},
+        {cigTemplates, IDS_CFGIMP_GRP_TEMPLATES, FALSE, FALSE, FALSE},
         {cigDefaultDirs, IDS_CFGIMP_GRP_DEFAULTDIRS, FALSE, FALSE, FALSE},
     };
     CCfgImpSrcPlugins sp;
@@ -2953,6 +2957,631 @@ static BOOL CfgImpRunFTP(CCfgImpRun* run, CCfgImpGroup* g, HWND parent, BOOL dry
 
 //
 // ****************************************************************************
+// colours and panel item highlighting (take over, research R16)
+//
+
+struct CCfgImpColor
+{
+    const char* Name;
+    SALCOLOR* Target; // UserColors[...] or ViewerColors[...]
+};
+
+static CCfgImpColor CfgImpColors[] = {
+    {"Focus Active Normal", &UserColors[FOCUS_ACTIVE_NORMAL]},
+    {"Focus Active Selected", &UserColors[FOCUS_ACTIVE_SELECTED]},
+    {"Focus Inactive Normal", &UserColors[FOCUS_FG_INACTIVE_NORMAL]},
+    {"Focus Inactive Selected", &UserColors[FOCUS_FG_INACTIVE_SELECTED]},
+    {"Focus Bk Inactive Normal", &UserColors[FOCUS_BK_INACTIVE_NORMAL]},
+    {"Focus Bk Inactive Selected", &UserColors[FOCUS_BK_INACTIVE_SELECTED]},
+    {"Item Fg Normal", &UserColors[ITEM_FG_NORMAL]},
+    {"Item Fg Selected", &UserColors[ITEM_FG_SELECTED]},
+    {"Item Fg Focused", &UserColors[ITEM_FG_FOCUSED]},
+    {"Item Fg Focused and Selected", &UserColors[ITEM_FG_FOCSEL]},
+    {"Item Fg Highlight", &UserColors[ITEM_FG_HIGHLIGHT]},
+    {"Item Bk Normal", &UserColors[ITEM_BK_NORMAL]},
+    {"Item Bk Selected", &UserColors[ITEM_BK_SELECTED]},
+    {"Item Bk Focused", &UserColors[ITEM_BK_FOCUSED]},
+    {"Item Bk Focused and Selected", &UserColors[ITEM_BK_FOCSEL]},
+    {"Item Bk Highlight", &UserColors[ITEM_BK_HIGHLIGHT]},
+    {"Icon Blend Selected", &UserColors[ICON_BLEND_SELECTED]},
+    {"Icon Blend Focused", &UserColors[ICON_BLEND_FOCUSED]},
+    {"Icon Blend Focused and Selected", &UserColors[ICON_BLEND_FOCSEL]},
+    {"Progress Fg Normal", &UserColors[PROGRESS_FG_NORMAL]},
+    {"Progress Fg Selected", &UserColors[PROGRESS_FG_SELECTED]},
+    {"Progress Bk Normal", &UserColors[PROGRESS_BK_NORMAL]},
+    {"Progress Bk Selected", &UserColors[PROGRESS_BK_SELECTED]},
+    {"Hot Panel", &UserColors[HOT_PANEL]},
+    {"Hot Active", &UserColors[HOT_ACTIVE]},
+    {"Hot Inactive", &UserColors[HOT_INACTIVE]},
+    {"Active Caption Fg", &UserColors[ACTIVE_CAPTION_FG]},
+    {"Active Caption Bk", &UserColors[ACTIVE_CAPTION_BK]},
+    {"Inactive Caption Fg", &UserColors[INACTIVE_CAPTION_FG]},
+    {"Inactive Caption Bk", &UserColors[INACTIVE_CAPTION_BK]},
+    {"Thumbnail Frame Normal", &UserColors[THUMBNAIL_FRAME_NORMAL]},
+    {"Thumbnail Frame Selected", &UserColors[THUMBNAIL_FRAME_SELECTED]},
+    {"Thumbnail Frame Focused", &UserColors[THUMBNAIL_FRAME_FOCUSED]},
+    {"Thumbnail Frame Focused and Selected", &UserColors[THUMBNAIL_FRAME_FOCSEL]},
+    {"Viewer Fg Normal", &ViewerColors[VIEWER_FG_NORMAL]},
+    {"Viewer Bk Normal", &ViewerColors[VIEWER_BK_NORMAL]},
+    {"Viewer Fg Selected", &ViewerColors[VIEWER_FG_SELECTED]},
+    {"Viewer Bk Selected", &ViewerColors[VIEWER_BK_SELECTED]},
+};
+#define CFGIMP_COLORS ((int)(sizeof(CfgImpColors) / sizeof(CfgImpColors[0])))
+
+// a colour as LoadRGBF reads it: REG_DWORD, or the oldest "r,g,b[,f]" text; FALSE when absent/invalid
+static BOOL CfgImpGetColor(const CSalCfgKey* key, const char* name, SALCOLOR* color, BOOL withFlags)
+{
+    DWORD d;
+    if (SalCfgGetDword(key, name, &d))
+    {
+        *color = withFlags ? d : (d & 0x00ffffff);
+        return TRUE;
+    }
+    const char* s = SalCfgGetString(key, name);
+    if (s == NULL)
+        return FALSE;
+    BYTE c[4] = {0, 0, 0, 0};
+    int i;
+    for (i = 0; i < 4 && *s != 0; i++)
+    {
+        c[i] = (BYTE)atoi(s);
+        while (*s != 0 && *s != ',')
+            s++;
+        if (*s == ',')
+            s++;
+    }
+    *color = withFlags ? RGBF(c[0], c[1], c[2], c[3]) : RGB(c[0], c[1], c[2]);
+    return TRUE;
+}
+
+struct CCfgImpHlt
+{
+    char Masks[MAX_PATH];
+    DWORD Attr, ValidAttr;
+    SALCOLOR C[10]; // NormalFg, SelectedFg, FocusedFg, FocSelFg, HighlightFg, NormalBk, SelectedBk, FocusedBk, FocSelBk, HighlightBk
+};
+
+static const char* const CfgImpHltNames[10] = {
+    "Item Fg Normal", "Item Fg Selected", "Item Fg Focused", "Item Fg Focused and Selected", "Item Fg Highlight",
+    "Item Bk Normal", "Item Bk Selected", "Item Bk Focused", "Item Bk Focused and Selected", "Item Bk Highlight"};
+
+static void CfgImpHltFromItem(CHighlightMasksItem* it, CCfgImpHlt* h)
+{
+    lstrcpyn(h->Masks, it->Masks->GetMasksString(), MAX_PATH);
+    h->Attr = it->Attr;
+    h->ValidAttr = it->ValidAttr;
+    SALCOLOR* c[10] = {&it->NormalFg, &it->SelectedFg, &it->FocusedFg, &it->FocSelFg, &it->HighlightFg,
+                       &it->NormalBk, &it->SelectedBk, &it->FocusedBk, &it->FocSelBk, &it->HighlightBk};
+    int i;
+    for (i = 0; i < 10; i++)
+        h->C[i] = *c[i];
+}
+
+class CCfgImpColorsData : public CCfgImpGroupData
+{
+public:
+    int Scheme; // 0..3 built-in, 4 = custom (UserColors)
+    BOOL SchemeChange;
+    SALCOLOR Colors[CFGIMP_COLORS];
+    BOOL ColorSet[CFGIMP_COLORS];
+    COLORREF Custom[NUMBER_OF_CUSTOMCOLORS];
+    BOOL CustomSet[NUMBER_OF_CUSTOMCOLORS];
+    TDirectArray<CCfgImpHlt> Hlt; // the complete new highlighting list
+    BOOL HltChange;
+    CCfgImpColorsData() : Hlt(8, 8)
+    {
+        Scheme = -1;
+        SchemeChange = HltChange = FALSE;
+        memset(ColorSet, 0, sizeof(ColorSet));
+        memset(CustomSet, 0, sizeof(CustomSet));
+    }
+};
+
+static int CfgImpCountColors(CCfgImpRun* run)
+{
+    const CSalCfgKey* c = SalCfgKeyFind(run->Snapshot, "Colors");
+    const CSalCfgKey* cc = SalCfgKeyFind(run->Snapshot, "Custom Colors");
+    return (c != NULL ? c->ValueCount + c->KeyCount : 0) + (cc != NULL ? cc->ValueCount : 0);
+}
+
+static int CfgImpCurrentScheme()
+{
+    if (SchemeColors == SalamanderColors)
+        return 0;
+    if (SchemeColors == ExplorerColors)
+        return 1;
+    if (SchemeColors == NortonColors)
+        return 2;
+    if (SchemeColors == NavigatorColors)
+        return 3;
+    return 4;
+}
+
+static BOOL CfgImpPlanColors(CCfgImpRun* run, CCfgImpGroup* g)
+{
+    CCfgImpColorsData* data = new CCfgImpColorsData;
+    if (data == NULL)
+        return FALSE;
+    g->Data = data;
+    const CSalCfgKey* ck = SalCfgKeyFind(run->Snapshot, "Colors");
+    char a[32], b[32];
+    DWORD scheme;
+    if (ck != NULL && SalCfgGetDword(ck, "Color Scheme", &scheme))
+    {
+        if (scheme > 4)
+            CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_BADVALUE, "Color Scheme");
+        else
+        {
+            data->Scheme = (int)scheme;
+            if ((int)scheme != CfgImpCurrentScheme())
+            {
+                data->SchemeChange = TRUE;
+                _snprintf_s(a, _TRUNCATE, "%d", CfgImpCurrentScheme());
+                _snprintf_s(b, _TRUNCATE, "%u", scheme);
+                CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_VALUE, "Color Scheme", a, b);
+            }
+        }
+    }
+    int i;
+    for (i = 0; i < CFGIMP_COLORS && ck != NULL; i++)
+    {
+        SALCOLOR c;
+        if (!CfgImpGetColor(ck, CfgImpColors[i].Name, &c, TRUE))
+            continue;
+        data->Colors[i] = c;
+        data->ColorSet[i] = TRUE;
+        if (c != *CfgImpColors[i].Target)
+        {
+            _snprintf_s(a, _TRUNCATE, "#%08X", (unsigned)*CfgImpColors[i].Target);
+            _snprintf_s(b, _TRUNCATE, "#%08X", (unsigned)c);
+            CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_VALUE, CfgImpColors[i].Name, a, b);
+        }
+    }
+    const CSalCfgKey* cc = SalCfgKeyFind(run->Snapshot, "Custom Colors");
+    for (i = 0; i < NUMBER_OF_CUSTOMCOLORS && cc != NULL; i++)
+    {
+        char name[16];
+        _snprintf_s(name, _TRUNCATE, "%d", i + 1);
+        SALCOLOR c;
+        if (!CfgImpGetColor(cc, name, &c, FALSE))
+            continue;
+        data->Custom[i] = (COLORREF)c;
+        data->CustomSet[i] = TRUE;
+        if ((COLORREF)c != CustomColors[i])
+        {
+            char what[64];
+            _snprintf_s(what, _TRUNCATE, "Custom Colors %d", i + 1);
+            _snprintf_s(a, _TRUNCATE, "#%06X", (unsigned)CustomColors[i]);
+            _snprintf_s(b, _TRUNCATE, "#%06X", (unsigned)c);
+            CfgImpAddLineF(g, CFGIMP_LINE_REPLACED, IDS_CFGIMP_LN_VALUE, what, a, b);
+        }
+    }
+    // the highlighting list: the source's list replaces the current one (when the source has one)
+    const CSalCfgKey* hk = SalCfgKeyFindChild(ck, "Panel Items Hilighting");
+    if (hk != NULL)
+    {
+        for (i = 1;; i++)
+        {
+            char name[16];
+            _snprintf_s(name, _TRUNCATE, "%d", i);
+            const CSalCfgKey* item = SalCfgKeyFindChild(hk, name);
+            if (item == NULL)
+                break;
+            const char* masks = SalCfgGetString(item, "Masks");
+            if (masks == NULL || (int)strlen(masks) >= MAX_PATH)
+            {
+                CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_INCOMPLETE, name);
+                break; // the program's own loader would not go further either
+            }
+            CCfgImpHlt h;
+            memset(&h, 0, sizeof(h));
+            lstrcpyn(h.Masks, masks, MAX_PATH);
+            SalCfgGetDword(item, "Attributes", &h.Attr);
+            SalCfgGetDword(item, "Valid Attributes", &h.ValidAttr);
+            int k;
+            for (k = 0; k < 10; k++)
+                CfgImpGetColor(item, CfgImpHltNames[k], &h.C[k], TRUE);
+            data->Hlt.Add(h);
+            if (!data->Hlt.IsGood())
+            {
+                data->Hlt.ResetState();
+                return FALSE;
+            }
+        }
+        // report the list difference by masks + attributes + colours
+        CHighlightMasks* cur = MainWindow->HighlightMasks;
+        BOOL same = cur->Count == data->Hlt.Count;
+        for (i = 0; i < cur->Count && same; i++)
+        {
+            CCfgImpHlt h;
+            CfgImpHltFromItem(cur->At(i), &h);
+            same = memcmp(&h, &data->Hlt[i], sizeof(h)) == 0 ||
+                   (strcmp(h.Masks, data->Hlt[i].Masks) == 0 && h.Attr == data->Hlt[i].Attr &&
+                    h.ValidAttr == data->Hlt[i].ValidAttr && memcmp(h.C, data->Hlt[i].C, sizeof(h.C)) == 0);
+        }
+        if (!same)
+        {
+            data->HltChange = TRUE;
+            for (i = 0; i < cur->Count; i++)
+                g->AddLine(CFGIMP_LINE_REMOVED, cur->At(i)->Masks->GetMasksString());
+            for (i = 0; i < data->Hlt.Count; i++)
+                g->AddLine(CFGIMP_LINE_ADDED, data->Hlt[i].Masks);
+        }
+    }
+    return TRUE;
+}
+
+static BOOL CfgImpApplyColors(CCfgImpRun* run, CCfgImpGroup* g)
+{
+    CCfgImpColorsData* data = (CCfgImpColorsData*)g->Data;
+    if (data == NULL)
+        return FALSE;
+    // the new highlighting list first (the only part that allocates)
+    CHighlightMasks* tmp = NULL;
+    if (data->HltChange)
+    {
+        tmp = new CHighlightMasks(10, 5);
+        if (tmp == NULL)
+            return FALSE;
+        int i;
+        for (i = 0; i < data->Hlt.Count; i++)
+        {
+            CCfgImpHlt* h = &data->Hlt[i];
+            CHighlightMasksItem* it = new CHighlightMasksItem();
+            if (it == NULL || !it->Set(h->Masks))
+            {
+                delete it;
+                delete tmp;
+                return FALSE;
+            }
+            int errPos;
+            it->Masks->PrepareMasks(errPos);
+            it->Attr = h->Attr;
+            it->ValidAttr = h->ValidAttr;
+            SALCOLOR* c[10] = {&it->NormalFg, &it->SelectedFg, &it->FocusedFg, &it->FocSelFg, &it->HighlightFg,
+                               &it->NormalBk, &it->SelectedBk, &it->FocusedBk, &it->FocSelBk, &it->HighlightBk};
+            int k;
+            for (k = 0; k < 10; k++)
+                *c[k] = h->C[k];
+            tmp->Add(it);
+            if (!tmp->IsGood())
+            {
+                tmp->ResetState();
+                delete it;
+                delete tmp;
+                return FALSE;
+            }
+        }
+    }
+    int i;
+    for (i = 0; i < CFGIMP_COLORS; i++)
+    {
+        if (data->ColorSet[i])
+            *CfgImpColors[i].Target = data->Colors[i];
+    }
+    for (i = 0; i < NUMBER_OF_CUSTOMCOLORS; i++)
+    {
+        if (data->CustomSet[i])
+            CustomColors[i] = data->Custom[i];
+    }
+    if (data->Scheme >= 0)
+    {
+        SALCOLOR* schemes[5] = {SalamanderColors, ExplorerColors, NortonColors, NavigatorColors, UserColors};
+        SchemeColors = schemes[data->Scheme];
+    }
+    BOOL ok = TRUE;
+    if (tmp != NULL)
+    {
+        ok = MainWindow->HighlightMasks->Load(*tmp);
+        delete tmp;
+    }
+    UpdateCurrentColorsForTheme(); // feature 028: the dark theme keeps its palette
+    ColorsChanged(TRUE, TRUE, FALSE);
+    return ok;
+}
+
+//
+// ****************************************************************************
+// view templates (take over)
+//
+
+class CCfgImpTemplatesData : public CCfgImpGroupData
+{
+public:
+    CViewTemplates New;
+    BOOL Changed;
+    CCfgImpTemplatesData() { Changed = FALSE; }
+};
+
+static int CfgImpCountTemplates(CCfgImpRun* run)
+{
+    const CSalCfgKey* k = SalCfgKeyFind(run->Snapshot, "View Templates");
+    return k != NULL ? k->KeyCount : 0;
+}
+
+static BOOL CfgImpPlanTemplates(CCfgImpRun* run, CCfgImpGroup* g)
+{
+    CCfgImpTemplatesData* data = new CCfgImpTemplatesData;
+    if (data == NULL)
+        return FALSE;
+    g->Data = data;
+    data->New.Load(MainWindow->ViewTemplates);
+    const CSalCfgKey* vt = SalCfgKeyFind(run->Snapshot, "View Templates");
+    if (vt == NULL)
+        return TRUE;
+    static const int builtIn[7] = {IDS_TREE_VIEW, IDS_BRIEF_VIEW, IDS_DETAILED_VIEW, IDS_ICONS_VIEW, IDS_THUMBNAILS_VIEW,
+                                   IDS_TILES_VIEW, IDS_TYPES_VIEW};
+    int i;
+    for (i = 0; i < VIEW_TEMPLATES_COUNT; i++)
+    {
+        char keyName[8];
+        _snprintf_s(keyName, _TRUNCATE, "%d", i < VIEW_TEMPLATES_COUNT - 1 ? i + 1 : 0);
+        const CSalCfgKey* k = SalCfgKeyFindChild(vt, keyName);
+        if (k == NULL)
+            continue;
+        const char* name = SalCfgGetString(k, "Name");
+        const char* columns = SalCfgGetString(k, "Columns");
+        DWORD flags, leftSM = TRUE, rightSM = TRUE;
+        if (name == NULL || columns == NULL || !SalCfgGetDword(k, "Flags", &flags) || strlen(name) >= VIEW_NAME_MAX ||
+            strlen(columns) >= 512)
+        {
+            CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_INCOMPLETE, keyName);
+            continue;
+        }
+        SalCfgGetDword(k, "Left Smart Mode", &leftSM);
+        SalCfgGetDword(k, "Right Smart Mode", &rightSM);
+        char buff[512];
+        lstrcpyn(buff, columns, 512);
+        char nm[VIEW_NAME_MAX];
+        lstrcpyn(nm, name, VIEW_NAME_MAX);
+        data->New.CleanName(nm);
+        if (i < 7)
+            lstrcpyn(nm, LoadStrU8(builtIn[i]), VIEW_NAME_MAX); // built-in names are the program's (as Load does)
+        data->New.LoadColumns(data->New.Items[i].Columns, buff);
+        data->New.Set(i, nm, flags, leftSM, rightSM);
+        if (memcmp(&data->New.Items[i], &MainWindow->ViewTemplates.Items[i], sizeof(CViewTemplate)) != 0)
+        {
+            data->Changed = TRUE;
+            char cur[VIEW_NAME_MAX + 10];
+            _snprintf_s(cur, _TRUNCATE, "%d: %s", i + 1, MainWindow->ViewTemplates.Items[i].Name);
+            char* t = CfgImpFormat("%s -> %s", cur, nm);
+            g->AddLine(CFGIMP_LINE_REPLACED, t);
+            free(t);
+        }
+    }
+    return TRUE;
+}
+
+static BOOL CfgImpApplyTemplates(CCfgImpRun* run, CCfgImpGroup* g, BOOL* templatesChanged)
+{
+    CCfgImpTemplatesData* data = (CCfgImpTemplatesData*)g->Data;
+    if (data == NULL)
+        return FALSE;
+    if (data->Changed)
+    {
+        MainWindow->ViewTemplates.Load(data->New);
+        *templatesChanged = TRUE;
+    }
+    return TRUE;
+}
+
+//
+// ****************************************************************************
+// saved search criteria and the search ignore list (Add)
+//
+
+// reads the protected parts of the find classes (friend of CFilterCriteria and CFindIgnore)
+class CCfgImpFindAccess
+{
+public:
+    static void LoadCriteria(CFilterCriteria* c, const CSalCfgKey* k)
+    {
+        DWORD d;
+        if (SalCfgGetDword(k, "Attributes Mask", &d))
+            c->AttributesMask = d;
+        if (SalCfgGetDword(k, "Attributes Value", &d))
+            c->AttributesValue = d;
+        if (SalCfgGetDword(k, "UseMinSize", &d))
+            c->UseMinSize = (int)d;
+        if (SalCfgGetDword(k, "MinSizeLo", &d))
+            c->MinSize.LoDWord = d;
+        if (SalCfgGetDword(k, "MinSizeHi", &d))
+            c->MinSize.HiDWord = d;
+        if (SalCfgGetDword(k, "MinSizeUnits", &d))
+            c->MinSizeUnits = (CFilterCriteriaSizeUnitsEnum)d;
+        if (SalCfgGetDword(k, "UseMaxSize", &d))
+            c->UseMaxSize = (int)d;
+        if (SalCfgGetDword(k, "MaxSizeLo", &d))
+            c->MaxSize.LoDWord = d;
+        if (SalCfgGetDword(k, "MaxSizeHi", &d))
+            c->MaxSize.HiDWord = d;
+        if (SalCfgGetDword(k, "MaxSizeUnits", &d))
+            c->MaxSizeUnits = (CFilterCriteriaSizeUnitsEnum)d;
+        if (SalCfgGetDword(k, "TimeMode", &d))
+            c->TimeMode = (CFilterCriteriaTimeModeEnum)d;
+        if (SalCfgGetDword(k, "DuringTimeLo", &d))
+            c->DuringTime.LoDWord = d;
+        if (SalCfgGetDword(k, "DuringTimeHi", &d))
+            c->DuringTime.HiDWord = d;
+        if (SalCfgGetDword(k, "DuringUnits", &d))
+            c->DuringTimeUnits = (CFilterCriteriaTimeUnitsEnum)d;
+        if (SalCfgGetDword(k, "UseFromDate", &d))
+            c->UseFromDate = (int)d;
+        if (SalCfgGetDword(k, "UseFromTime", &d))
+            c->UseFromTime = (int)d;
+        if (SalCfgGetDword(k, "FromLo", &d))
+            ((FILETIME*)&c->From)->dwLowDateTime = d;
+        if (SalCfgGetDword(k, "FromHi", &d))
+            ((FILETIME*)&c->From)->dwHighDateTime = d;
+        if (SalCfgGetDword(k, "UseToDate", &d))
+            c->UseToDate = (int)d;
+        if (SalCfgGetDword(k, "UseToTime", &d))
+            c->UseToTime = (int)d;
+        if (SalCfgGetDword(k, "ToLo", &d))
+            ((FILETIME*)&c->To)->dwLowDateTime = d;
+        if (SalCfgGetDword(k, "ToHi", &d))
+            ((FILETIME*)&c->To)->dwHighDateTime = d;
+        c->NeedPrepare = TRUE;
+    }
+    static int IgnoreCount(CFindIgnore* f) { return f->GetCount(); }
+    static const char* IgnorePath(CFindIgnore* f, int i) { return f->At(i)->Path; }
+};
+
+struct CCfgImpIgnore
+{
+    char Path[MAX_PATH];
+    BOOL Enabled;
+};
+
+class CCfgImpFindData : public CCfgImpGroupData
+{
+public:
+    TIndirectArray<CFindOptionsItem> Items; // saved searches to add
+    TDirectArray<CCfgImpIgnore> Ignore;     // ignore-list paths to add
+    CCfgImpFindData() : Items(4, 4), Ignore(4, 4) {}
+};
+
+static int CfgImpCountFind(CCfgImpRun* run)
+{
+    const CSalCfgKey* fo = SalCfgKeyFind(run->Snapshot, "Configuration\\Find Options");
+    const CSalCfgKey* fi = SalCfgKeyFind(run->Snapshot, "Configuration\\Find Ignore");
+    return (fo != NULL ? fo->KeyCount : 0) + (fi != NULL ? fi->KeyCount : 0);
+}
+
+static BOOL CfgImpPlanFind(CCfgImpRun* run, CCfgImpGroup* g)
+{
+    CCfgImpFindData* data = new CCfgImpFindData;
+    if (data == NULL)
+        return FALSE;
+    g->Data = data;
+    const CSalCfgKey* fo = SalCfgKeyFind(run->Snapshot, "Configuration\\Find Options");
+    int i;
+    for (i = 1; fo != NULL; i++)
+    {
+        char name[16];
+        _snprintf_s(name, _TRUNCATE, "%d", i);
+        const CSalCfgKey* k = SalCfgKeyFindChild(fo, name);
+        if (k == NULL)
+            break;
+        CFindOptionsItem* item = new CFindOptionsItem();
+        if (item == NULL)
+            return FALSE;
+        const char* s;
+        DWORD d;
+        BOOL tooLong = FALSE;
+        if ((s = SalCfgGetString(k, "ItemName")) != NULL)
+            tooLong |= !SalCfgImpDetail::Copy(item->ItemName, ITEMNAME_TEXT_LEN, s);
+        if ((s = SalCfgGetString(k, "Named")) != NULL)
+            tooLong |= !SalCfgImpDetail::Copy(item->NamedText, NAMED_TEXT_LEN, s);
+        if ((s = SalCfgGetString(k, "LookIn")) != NULL)
+            tooLong |= !SalCfgImpDetail::Copy(item->LookInText, LOOKIN_TEXT_LEN, s);
+        if ((s = SalCfgGetString(k, "Grep")) != NULL)
+            tooLong |= !SalCfgImpDetail::Copy(item->GrepText, GREP_TEXT_LEN, s);
+        if (SalCfgGetDword(k, "SubDirectories", &d))
+            item->SubDirectories = (int)d;
+        if (SalCfgGetDword(k, "WholeWords", &d))
+            item->WholeWords = (int)d;
+        if (SalCfgGetDword(k, "CaseSensitive", &d))
+            item->CaseSensitive = (int)d;
+        if (SalCfgGetDword(k, "HexMode", &d))
+            item->HexMode = (int)d;
+        if (SalCfgGetDword(k, "RegularExpresions", &d))
+            item->RegularExpresions = (int)d;
+        if (SalCfgGetDword(k, "AutoLoad", &d))
+            item->AutoLoad = d != 0;
+        CCfgImpFindAccess::LoadCriteria(&item->Criteria, k);
+        if (tooLong)
+        {
+            CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_TOOLONG, item->ItemName);
+            delete item;
+            continue;
+        }
+        BOOL present = FALSE;
+        int j;
+        for (j = 0; j < FindOptions.GetCount() && !present; j++)
+            present = strcmp(FindOptions.At(j)->ItemName, item->ItemName) == 0;
+        for (j = 0; j < data->Items.Count && !present; j++)
+            present = strcmp(data->Items[j]->ItemName, item->ItemName) == 0;
+        if (present)
+        {
+            g->AddLine(CFGIMP_LINE_PRESENT, item->ItemName);
+            delete item;
+            continue;
+        }
+        g->AddLine(CFGIMP_LINE_ADDED, item->ItemName);
+        data->Items.Add(item);
+        if (!data->Items.IsGood())
+        {
+            data->Items.ResetState();
+            delete item;
+            return FALSE;
+        }
+    }
+    const CSalCfgKey* fi = SalCfgKeyFind(run->Snapshot, "Configuration\\Find Ignore");
+    for (i = 1; fi != NULL; i++)
+    {
+        char name[16];
+        _snprintf_s(name, _TRUNCATE, "%d", i);
+        const CSalCfgKey* k = SalCfgKeyFindChild(fi, name);
+        if (k == NULL)
+            break;
+        const char* path = SalCfgGetString(k, "Path");
+        if (path == NULL || path[0] == 0 || (int)strlen(path) >= MAX_PATH)
+        {
+            CfgImpAddLineF(g, CFGIMP_LINE_SKIPPED, IDS_CFGIMP_LN_INCOMPLETE, name);
+            continue;
+        }
+        DWORD enabled = TRUE;
+        SalCfgGetDword(k, "Enabled", &enabled);
+        BOOL present = FALSE;
+        int j;
+        for (j = 0; j < CCfgImpFindAccess::IgnoreCount(&FindIgnore) && !present; j++)
+            present = SalPathEqualOrdinalCI(CCfgImpFindAccess::IgnorePath(&FindIgnore, j), path);
+        for (j = 0; j < data->Ignore.Count && !present; j++)
+            present = SalPathEqualOrdinalCI(data->Ignore[j].Path, path);
+        if (present)
+        {
+            g->AddLine(CFGIMP_LINE_PRESENT, path);
+            continue;
+        }
+        CCfgImpIgnore ig;
+        lstrcpyn(ig.Path, path, MAX_PATH);
+        ig.Enabled = enabled != 0;
+        data->Ignore.Add(ig);
+        if (!data->Ignore.IsGood())
+        {
+            data->Ignore.ResetState();
+            return FALSE;
+        }
+        g->AddLine(CFGIMP_LINE_ADDED, path);
+    }
+    return TRUE;
+}
+
+static BOOL CfgImpApplyFind(CCfgImpRun* run, CCfgImpGroup* g)
+{
+    CCfgImpFindData* data = (CCfgImpFindData*)g->Data;
+    if (data == NULL)
+        return FALSE;
+    BOOL ok = TRUE;
+    while (data->Items.Count > 0 && ok)
+    {
+        CFindOptionsItem* item = data->Items[0];
+        data->Items.Detach(0); // ownership moves to FindOptions
+        if (!FindOptions.Add(item))
+        {
+            delete item;
+            ok = FALSE;
+        }
+    }
+    int i;
+    for (i = 0; i < data->Ignore.Count && ok; i++)
+        ok = FindIgnore.AddUnique(data->Ignore[i].Enabled, data->Ignore[i].Path);
+    return ok;
+}
+
+//
+// ****************************************************************************
 // dispatch
 //
 
@@ -2979,6 +3608,12 @@ static int CfgImpCountGroup(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlugins*
         return CfgImpCountOptions(run, g);
     case cigDefaultDirs:
         return CfgImpCountDefaultDirs(run);
+    case cigColors:
+        return CfgImpCountColors(run);
+    case cigTemplates:
+        return CfgImpCountTemplates(run);
+    case cigFindSets:
+        return CfgImpCountFind(run);
     case cigPluginSettings:
         return CfgImpCountPluginSettings(run, g);
     default:
@@ -3009,6 +3644,12 @@ static BOOL CfgImpPlanGroup(CCfgImpRun* run, CCfgImpGroup* g, CCfgImpSrcPlugins*
         return CfgImpPlanOptions(run, g);
     case cigDefaultDirs:
         return CfgImpPlanDefaultDirs(run, g);
+    case cigColors:
+        return CfgImpPlanColors(run, g);
+    case cigTemplates:
+        return CfgImpPlanTemplates(run, g);
+    case cigFindSets:
+        return CfgImpPlanFind(run, g);
     case cigPluginSettings:
         return CfgImpPlanPluginSettings(run, g);
     default:
@@ -3039,6 +3680,12 @@ static BOOL CfgImpApplyGroup(CCfgImpRun* run, CCfgImpGroup* g, HWND parent, BOOL
         return CfgImpApplyOptions(run, g);
     case cigDefaultDirs:
         return CfgImpApplyDefaultDirs(run, g);
+    case cigColors:
+        return CfgImpApplyColors(run, g);
+    case cigTemplates:
+        return CfgImpApplyTemplates(run, g, templatesChanged);
+    case cigFindSets:
+        return CfgImpApplyFind(run, g);
     case cigPluginSettings:
         return CfgImpApplyPluginSettings(run, g, parent);
     default:
