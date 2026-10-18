@@ -71,6 +71,12 @@ for the maintainer's review.
   corrects a defect (a wrong icon, a missing name that Windows shows everywhere else)
   without removing information: the path stays visible and unnamed drives look exactly as
   before. Recorded as the justification under Principle II.
+- Q: Should the drive bar tooltip read the drive's Windows name when it is shown, or use
+  the name captured when the bar was last built? → A: **When it is shown** — a cheap local
+  read, so a rename in Explorer appears in the tooltip without waiting for a bar rebuild.
+- Q: Should a disconnected network drive also be marked in the menu text (e.g.
+  "(disconnected)") or only by its icon? → A: **Icon only**, as in Explorer — no new UI
+  text, and the item text of a drive does not depend on its connection state.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -101,7 +107,8 @@ and hover the drive bar button — the name and the path are shown.
 5. **Given** a name with characters outside the system code page (e.g. `ž`, `Ж`, `中`) or
    with `&`, **When** the menu opens, **Then** the name is shown exactly as in Explorer.
 6. **Given** the user renames the drive in Explorer while Tandem Commander runs, **When**
-   the menu is opened again, **Then** the new name is shown.
+   the menu is opened again or the drive bar tooltip appears again, **Then** the new name
+   is shown.
 
 ---
 
@@ -184,7 +191,8 @@ unavailable, pick it in the menu — it reconnects and the panel shows its conte
 - **FR-001**: For a mapped network drive that has a user- or policy-given name in Windows,
   the Change Drive menu MUST show the name followed by the network path in parentheses in
   the item's name column.
-- **FR-002**: The drive bar tooltip of such a drive MUST show the same text.
+- **FR-002**: The drive bar tooltip of such a drive MUST show the same text, with the name
+  as it is at the moment the tooltip appears.
 - **FR-003**: A drive without such a name MUST be shown exactly as before the change.
 - **FR-004**: The name MUST be read without contacting the server, also for a drive whose
   connection is unavailable; obtaining it MUST NOT add a noticeable delay to opening the
@@ -194,7 +202,8 @@ unavailable, pick it in the menu — it reconnects and the panel shows its conte
   an empty or blank name counts as none; a name equal to the path is not repeated.
 - **FR-006**: A network drive MUST be shown with the disconnected icon when its letter is
   missing from the drives Windows lists (as today) or when Windows reports its connection
-  as unavailable or disconnected; otherwise with the connected icon.
+  as unavailable or disconnected; otherwise with the connected icon. The connection state
+  changes only the icon, never the item's text.
 - **FR-007**: The drive bars MUST be rebuilt when the set of disconnected network drives
   changes, detected when the Change Drive menu opens or closes, on refresh, and when
   Tandem Commander's main window is activated; both drive bars MUST agree.
