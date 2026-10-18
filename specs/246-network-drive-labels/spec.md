@@ -211,7 +211,9 @@ unavailable, pick it in the menu — it reconnects and the panel shows its conte
   rebuild the bars when nothing changed.
 - **FR-009**: Reconnecting a disconnected drive picked in the menu or bar MUST use the
   drive's real network path as Windows records it — not the displayed text — so that
-  names, `&` in paths and long paths reconnect correctly.
+  names and `&` in paths reconnect correctly. (The reconnection chain itself keeps its
+  0.1.10 form for paths longer than 259 characters or with characters outside the system
+  code page — backlog `drive-list-code-page-texts`; review finding 3.)
 - **FR-010**: Picking a drive whose letter Windows still lists but which is reported
   disconnected MUST open it through the existing reconnection on access, without an error.
 - **FR-011**: Local, removable, optical and RAM drives, cloud storages, plug-in items and
@@ -233,8 +235,11 @@ unavailable, pick it in the menu — it reconnects and the panel shows its conte
 - **SC-001**: For 100% of named mapped drives in the test matrix (ASCII, Czech diacritics,
   Cyrillic, CJK, `&`, `#`, long path, renamed while running), the menu and the tooltip show
   the name and the path exactly as specified.
-- **SC-002**: 100% of unnamed mapped drives and of all other drive kinds show the same text
-  as the 0.1.10 build (byte-identical menu text).
+- **SC-002**: 100% of unnamed mapped drives with a path in the system code page and under
+  260 characters, and of all other drive kinds, show the same text as the 0.1.10 build
+  (byte-identical menu text). An unnamed drive whose path has characters outside the code
+  page or is longer is now shown exactly (it was shown with `?` or cut) — an intended
+  difference (review finding 4).
 - **SC-003**: After a remembered drive changes between connected and unavailable, the drive
   bar shows the right icon at the next window activation in 100% of the test runs (today:
   0%, negative control).

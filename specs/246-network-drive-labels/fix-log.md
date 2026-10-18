@@ -64,3 +64,30 @@ Running log (newest at the bottom). Evidence lives in `analysis.md` and `probe/`
 - Probe trap found and fixed: the probe's own folder was `%TEMP%\tc246` and it is emptied
   at start — it deleted the first baseline copy; now `%TEMP%\tc246probe`, baseline in
   `%TEMP%\tc246base`.
+
+## 2026-10-18 — review round 1 (independent refute-first agent, code only)
+
+No critical defect; memory paths, mask consistency, encoding and callers checked correct.
+Findings and what was done:
+
+1. **Major — tooltip fallback overflow**: the stored text of a network drive is no longer
+   capped at ~MAX_PATH; the fallback `strcpy(text, DriveText + 2)` into the 5000-byte
+   tooltip buffer could overflow when the name is huge (policy / registry) and the live
+   query fails at hover time (drive deleted before the bar rebuilt). → bounded copy
+   (`DupStr` + `RemoveAmpersands` + `CopyToolTipAnswer`, whole characters).
+2. **Minor — message box still reachable on activation**: the quiet check's rebuild ran a
+   non-quiet `BuildData` → `GetNetworkDrives(showErrors)`. → `quiet` passed through
+   `RebuildDrives` → `CreateDriveButtons` → `BuildData`.
+3. **Minor — FR-009 overstated**: reconnection now takes the remembered path from Windows,
+   but that path is still the code-page, `MAX_PATH`-cut form of 0.1.10 (A enumeration,
+   A `RestoreNetworkConnection`) — not a regression. → FR-009 and the code comment
+   corrected; the chain stays with backlog `drive-list-code-page-texts` (note added).
+4. **Minor — SC-002 literally false** for non-ASCII / long unnamed remembered paths (now
+   exact instead of `?` / cut). → SC-002 reworded as an intended difference.
+- Risks taken: `stackBuf[0] = 0` before `WNetGetConnectionW`; the Debug seam's tooltip
+  calls gated on the variable; third-party network providers answering
+  `WNetGetConnectionW` slowly on activation — not measurable here (person step / limitation);
+  the `#` key collision is Explorer's own scheme; bidi controls in names are cosmetic.
+- saltests: the state truth-table loop was tautological → replaced by hand-counted totals
+  (90 / 55 / 10) and the unlisted rule; duplicate row removed; deeper trailing-backslash key
+  case added.

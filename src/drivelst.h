@@ -167,10 +167,11 @@ public:
     // if 'getGrayIcons' is TRUE, black and white version of the icon is obtained for selected items
     // and the 'HGrayIcon' variable is set, otherwise it will be NULL
     // if 'copyDrives' is not NULL, 'copyCachedDrivesMask' and 'copyCachedNetDisconnectedMask'
-    // are the masks the copied data were built with (feature 246)
+    // are the masks the copied data were built with (feature 246); 'quiet': no message box on
+    // a network enumeration error (the drive bars' rebuild on window activation, feature 246)
     BOOL BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives = NULL,
                    DWORD copyCachedDrivesMask = 0, BOOL getGrayIcons = FALSE, BOOL forDriveBar = FALSE,
-                   DWORD copyCachedNetDisconnectedMask = 0);
+                   DWORD copyCachedNetDisconnectedMask = 0, BOOL quiet = FALSE);
     void DestroyData();
     void DestroyDrives(TDirectArray<CDriveData>* drives);
 

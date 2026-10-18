@@ -1,0 +1,177 @@
+246 independent test; fixed E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; baseline C:\Users\pavel\AppData\Local\Temp\tc246base\tree\tandemcommander.exe
+snapshot before: drives 0000007C; HKCU\Network []; MountPoints2 ##*: ##192.168.0.50#Data|##192.168.0.50#Obchod|##localhost#C$|##localhost#C$#Users#pavel#AppData#Local#Temp#tc109#dc#renet#A|##localhost#C$#Users#pavel#AppData#Local#Temp#tc112#dc#own-F3_net; net use entries: []
+free letters: ZYXWVUTSRQPONMLKJIH
+  fixture P1: Z: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\plain; label kind none ''
+  fixture P2: Y: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\named; label kind sz 'Archiv'
+  fixture P3: X: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem; label kind sz 'RemName'
+  fixture X1: W: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\cyr_\u0410\u0440\u0445\u0438\u0432_\u0436; label kind none ''
+  fixture X2: V: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432_\u0436; label kind none ''
+  P3: X: connection cancelled (profile kept): 0; listed False; WNetGetConnection 1201 '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem'
+  X2: V: connection cancelled (profile kept): 0; listed False; WNetGetConnection 1201 '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432_\u0436'
+  HKCU\Network\X values: RemotePath=\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem; UserName=; ProviderName=Microsoft Windows Network; ProviderType=131072; ConnectionType=1; ConnectFlags=0; DeferFlags=4; UseOptions=68 101 102 67 124 0 0 0 4 0 116 0 0 0 2 0 3 0 1 0 1 0 0 0 49 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0
+  fixture P4: U: -> \\192.0.2.1\x; label kind sz 'Unreach'
+  fixture P5: T: -> \\192.0.2.1\y; label kind none ''
+  net use now: [Nedostupné T: \\192.0.2.1\y Microsoft Windows Network ; Nedostupné U: \\192.0.2.1\x Microsoft Windows Network ; Nedostupné V: \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_???_?????_? ; OK W: \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\cyr_?????_? ; Nedostupné X: \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem ; OK Y: \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\named ; OK Z: \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\plain]; drives 0340007C
+  [baseline round 1] pid 33444; two drive bars: 2 new rebar children (count 4)
+  [baseline round 1] closed: exit 0x00000000
+  [fixed round 1] pid 33468; two drive bars: 2 new rebar children (count 4)
+  [fixed round 1] closed: exit 0x00000000
+  [baseline round 2] pid 7340; two drive bars: 2 new rebar children (count 4)
+  [baseline round 2] closed: exit 0x00000000
+  [fixed round 2] pid 14560; two drive bars: 2 new rebar children (count 4)
+  [fixed round 2] closed: exit 0x00000000
+PERF-baseline MENU   INFO        Change Drive menu open (707 -> PopupMenuClass): n=12 median=9,2 ms max=9,7 ms min=8,7 ms; all: 9 9 9 10 10 9 9 9 10 10 9 9
+PERF-baseline WARM   INFO        first opening after start: n=2 median=9,3 ms max=9,5 ms min=9,0 ms; all: 9 10
+PERF-baseline ACTSYN INFO        WM_ACTIVATEAPP 0/1 + WM_NULL round trip: n=12 median=0,2 ms max=0,4 ms min=0,2 ms; all: 0 0 0 0 0 0 0 0 0 0 0 0
+PERF-baseline ACTMNU INFO        activation + menu (FIFO): n=12 median=175,5 ms max=177,1 ms min=169,3 ms; all: 169 176 176 177 175 175 173 176 175 176 176 175
+PERF-fixed MENU   INFO        Change Drive menu open (707 -> PopupMenuClass): n=12 median=12,4 ms max=12,7 ms min=12,1 ms; all: 13 12 12 13 12 12 12 13 12 12 12 12
+PERF-fixed WARM   INFO        first opening after start: n=2 median=12,8 ms max=12,9 ms min=12,6 ms; all: 13 13
+PERF-fixed ACTSYN INFO        WM_ACTIVATEAPP 0/1 + WM_NULL round trip: n=12 median=0,2 ms max=0,3 ms min=0,2 ms; all: 0 0 0 0 0 0 0 0 0 0 0 0
+PERF-fixed ACTMNU INFO        activation + menu (FIFO): n=12 median=176,2 ms max=177,6 ms min=172,5 ms; all: 175 173 178 177 173 177 172 177 175 177 177 176
+SC-004     MENU   PASS        median fixed 12,4 vs baseline 9,2 ms (delta 3,2); max fixed 12,7 vs baseline 9,7 ms (delta 2,9); limit +50 ms
+ACT-T      TIME   PASS        activation cost (act+menu median - menu median): fixed 163,8 vs baseline 166,3 ms; sync round trip median fixed 0,2 vs baseline 0,2 ms
+PERF       WINDOWS PASS        stray windows / unclean exits during the timing runs: none
+  OCR baseline menu (481x522): C / 28 V / Local Drive / DATA / DATA / DATA / Google Drive / 61,8 GB / 74GB / 158GB / 51,9 GB / 58,8 GB / \\localhost\CS\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_??? ????? ? / W \\localhost\CS\Users\pavel\AppData\Local\Temp\tc246test\fx\cyr_????? ? / 28 X / \u00F4 / \\localhost\CS\Users\pavel\AppData\Local\Temp\tc246test\fx\remem / \\localhost\CS\Users\pavel\AppData\Local\Temp\tc246test\fx\named / \\localhost\CS\Users\pavel\AppData\Local\Temp\tc246test\fx\plain / Documents / OneDrive / Network / FTP Client / Desktop / Portable Devices / Windows Registry / SFTP Client / Undelete / As Other Panel / D:\Downloads / sftp:tctest@127.O.0.1:2222/home
+  OCR fixed menu (514x522): C / 28 U / 28 V / 28 X / \u00F4 / Local Drive / DATA / DATA / DATA / Google Drive / Unreach / 61,8 GB / 74GB / 158GB / 51,9 GB / 58,8 GB / RemName C\\localhost\CS\Users\pavel\AppData\Local\Temp\tc246test\fx\remem) / Archiv C\\localhost\CS\Users\pavel\AppData\Local\Temp\tc246test\fx\named) / \\localhost\CS\Users\pavel\AppData\Local\Temp\tc246test\fx\plain / Documents / OneDrive / Network / FTP Client / Desktop / Portable Devices / Windows Registry / SFTP Client / Undelete / As Other Panel / D:\Downloads / sftp:tctest@127.O.0.1:2222/home
+  fixture E1: S: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\expand; label kind expand '%USERNAME% share'
+  fixture E2: R: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ctrl; label kind sz '\u0001\u0002\u001F\u007F\u0009'
+  fixture E3: Q: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\spaces; label kind sz '  Lead\u0009In\u000D\u000Aner  Trail  '
+  fixture E4: P: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\emoji; label kind sz 'Box \uD83D\uDCC1 end'
+  fixture E5: O: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ampamp; label kind sz 'A && B'
+  fixture E6: N: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\longascii; label kind sz 'LongA_abcdefghijabcdefghijabcdefghijabcd...[2000 chars]...efghijabcdefghijabcdefghijabcdefghijabcdefghijabcd'
+  fixture E7: M: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete; label kind sz 'TempName'
+  fixture E8: L: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\inionly; label kind ini 'IniName'
+  fixture E9: K: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\longcjk; label kind sz '\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863...[2000 chars]...\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863'
+  fixture E10: J: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\nonul; label kind nonul 'NoNul'
+  fixture E11: I: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\dword; label kind dword '<DWORD 1234>'
+  fixture E12: H: -> \\LOCALHOST\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\trail; label kind sz 'Trail'
+D-P5       BASE   INFO        baseline picks T: (predicted idx 17) first: done after 24,1 s; UI blocked up to 21,0 s; responsive True; panel 'C:\Users\pavel\AppData\Local\Temp\tc246test\start'; windows: 3,4s [SalamanderSaveBits 'Tandem Commander']  || 21,0s [#32770 'Network Error'] [Static id=2477] (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK || 21,9s answered button 1
+D-P5       CLEAN  INFO        baseline: exit 0x00000000; reports 0
+  functional run pid 13216; two drive bars: 2 new rebar children
+C1         MENU   PASS        menu opened in 56 ms; BUILD bar=0 copy=0 drives=03FFFFFC netdisc=00B80000
+P1         MENU   PASS        Z: acc=1 (exp 1) text '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\plain'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\plain'; bar1 True bar2 True
+P2         MENU   PASS        Y: acc=1 (exp 1) text 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\named)'; expected 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\named)'; bar1 True bar2 True
+P3         MENU   PASS        X: acc=0 (exp 0) text 'RemName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem)'; expected 'RemName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem)'; bar1 True bar2 True
+P4         MENU   PASS        U: acc=0 (exp 0) text 'Unreach (\\192.0.2.1\x)'; expected 'Unreach (\\192.0.2.1\x)'; bar1 True bar2 True
+P5         MENU   PASS        T: acc=0 (exp 0) text '\\192.0.2.1\y'; expected '\\192.0.2.1\y'; bar1 True bar2 True
+X1         MENU   PASS        W: acc=1 (exp 1) text '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\cyr_\u0410\u0440\u0445\u0438\u0432_\u0436'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\cyr_\u0410\u0440\u0445\u0438\u0432_\u0436'; bar1 True bar2 True
+X2         MENU   PASS        V: acc=0 (exp 0) text '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432_\u0436'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432_\u0436'; bar1 True bar2 True
+E1         MENU   PASS        S: acc=1 (exp 1) text '%USERNAME% share (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\expand)'; expected '%USERNAME% share (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\expand)'; bar1 True bar2 True
+E2         MENU   PASS        R: acc=1 (exp 1) text '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ctrl'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ctrl'; bar1 True bar2 True
+E3         MENU   PASS        Q: acc=1 (exp 1) text 'Lead In  ner  Trail (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\spaces)'; expected 'Lead In  ner  Trail (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\spaces)'; bar1 True bar2 True
+E4         MENU   PASS        P: acc=1 (exp 1) text 'Box \uD83D\uDCC1 end (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\emoji)'; expected 'Box \uD83D\uDCC1 end (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\emoji)'; bar1 True bar2 True
+E5         MENU   PASS        O: acc=1 (exp 1) text 'A &&&& B (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ampamp)'; expected 'A &&&& B (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ampamp)'; bar1 True bar2 True
+E6         MENU   PASS        N: acc=1 (exp 1) text 'LongA_abcdefghijabcdefghijabcdefghijabcd...[2071 chars]...s\pavel\AppData\Local\Temp\tc246test\fx\longascii)'; expected 'LongA_abcdefghijabcdefghijabcdefghijabcd...[2071 chars]...s\pavel\AppData\Local\Temp\tc246test\fx\longascii)'; bar1 True bar2 True
+E7         MENU   PASS        M: acc=1 (exp 1) text 'TempName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete)'; expected 'TempName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete)'; bar1 True bar2 True
+E8         MENU   PASS        L: acc=1 (exp 1) text '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\inionly'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\inionly'; bar1 True bar2 True
+E9         MENU   PASS        K: acc=1 (exp 1) text '\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863...[2069 chars]...ers\pavel\AppData\Local\Temp\tc246test\fx\longcjk)'; expected '\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863...[2069 chars]...ers\pavel\AppData\Local\Temp\tc246test\fx\longcjk)'; bar1 True bar2 True
+E10        MENU   PASS        J: acc=1 (exp 1) text 'NoNul (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\nonul)'; expected 'NoNul (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\nonul)'; bar1 True bar2 True
+E11        MENU   PASS        I: acc=1 (exp 1) text '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\dword'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\dword'; bar1 True bar2 True
+E12        MENU   PASS        H: acc=1 (exp 1) text 'Trail (\\LOCALHOST\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\trail)'; expected 'Trail (\\LOCALHOST\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\trail)'; bar1 True bar2 True
+D-IDX      CHECK  PASS        predicted bar index of T: 17; seam 17 (the baseline pick in phase D used the predicted one)
+P1         SHELL  INFO        Explorer shows Z: 'plain (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx) (Z:) | S\u00ED\u0165ov\u00E1 jednotka'
+P2         SHELL  INFO        Explorer shows Y: 'Archiv (Y:) | S\u00ED\u0165ov\u00E1 jednotka'
+P3         SHELL  INFO        Explorer shows X: 'RemName (X:) | S\u00ED\u0165ov\u00E1 jednotka je odpojena.'
+P4         SHELL  INFO        Explorer shows U: 'Unreach (U:) | S\u00ED\u0165ov\u00E1 jednotka je odpojena.'
+P5         SHELL  INFO        Explorer shows T: 'y (\\192.0.2.1) (T:) | S\u00ED\u0165ov\u00E1 jednotka je odpojena.'
+X1         SHELL  INFO        Explorer shows W: 'cyr_\u0410\u0440\u0445\u0438\u0432_\u0436 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx) (W:) | S\u00ED\u0165ov\u00E1 jednotka'
+X2         SHELL  INFO        Explorer shows V: 'rem_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432_\u0436 (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx) (V:) | S\u00ED\u0165ov\u00E1 jednotka je odpojena.'
+E1         SHELL  INFO        Explorer shows S: 'pavel share (S:) | S\u00ED\u0165ov\u00E1 jednotka'
+E2         SHELL  INFO        Explorer shows R: '\u0001\u0002\u001F\u007F\u0009 (R:) | S\u00ED\u0165ov\u00E1 jednotka'
+E3         SHELL  INFO        Explorer shows Q: '  Lead\u0009In\u000D\u000Aner  Trail   (Q:) | S\u00ED\u0165ov\u00E1 jednotka'
+E4         SHELL  INFO        Explorer shows P: 'Box \uD83D\uDCC1 end (P:) | S\u00ED\u0165ov\u00E1 jednotka'
+E5         SHELL  INFO        Explorer shows O: 'A && B (O:) | S\u00ED\u0165ov\u00E1 jednotka'
+E6         SHELL  INFO        Explorer shows N: 'longascii (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx) (N:) | S\u00ED\u0165ov\u00E1 jednotka'
+E7         SHELL  INFO        Explorer shows M: 'TempName (M:) | S\u00ED\u0165ov\u00E1 jednotka'
+E8         SHELL  INFO        Explorer shows L: 'inionly (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx) (L:) | S\u00ED\u0165ov\u00E1 jednotka'
+E9         SHELL  INFO        Explorer shows K: 'longcjk (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx) (K:) | S\u00ED\u0165ov\u00E1 jednotka'
+E10        SHELL  INFO        Explorer shows J: 'NoNul (J:) | S\u00ED\u0165ov\u00E1 jednotka'
+E11        SHELL  INFO        Explorer shows I: '\u04D2 (I:) | S\u00ED\u0165ov\u00E1 jednotka'
+E12        SHELL  INFO        Explorer shows H: 'Trail (H:) | S\u00ED\u0165ov\u00E1 jednotka'
+5-X1       EXACT  PASS        W: '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\cyr_\u0410\u0440\u0445\u0438\u0432_\u0436' contains '?': False; UTF-8 bytes of the folder part: 6379725FD090D180D185D0B8D0B25FD0B6
+5-X2       EXACT  PASS        V: '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432_\u0436' contains '?': False; UTF-8 bytes of the folder part: 72656D5FE4B8ADE69687E6A1A35FD090D180D185D0B8D0B25FD0B6
+8-C        LOCAL  FAIL        seam type=3 acc=1 text 'C\u0009Local Drive\u000961,9 GB'; in baseline menu OCR: exact,no; in fixed menu OCR: exact,no
+8-D        LOCAL  PASS        seam type=3 acc=1 text 'D\u0009DATA\u000974 GB'; in baseline menu OCR: exact,exact; in fixed menu OCR: exact,exact
+8-E        LOCAL  PASS        seam type=3 acc=1 text 'E\u0009DATA\u0009158 GB'; in baseline menu OCR: exact,exact; in fixed menu OCR: exact,exact
+8-F        LOCAL  PASS        seam type=3 acc=1 text 'F\u0009DATA\u000951,9 GB'; in baseline menu OCR: exact,exact; in fixed menu OCR: exact,exact
+8-G        LOCAL  PASS        seam type=3 acc=1 text 'G\u0009Google Drive\u000958,8 GB'; in baseline menu OCR: exact,exact; in fixed menu OCR: exact,exact
+C2         ACT    PASS        windows: none; CHECK quiet=1 drives=03FFFFFC netdisc=00B80000
+T-HOVER    TIP    NOT DRIVEN  the drive bar tooltip follows the real cursor (GetCursorPos) - hover is a step owed to a person; TIP rows below are the seam calling the same tooltip function
+T-P1       TIP    PASS        Z: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\plain'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\plain'
+T-P2       TIP    PASS        Y: tip 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\named)'; expected 'Archiv (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\named)'
+T-P3       TIP    PASS        X: tip 'RemName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem)'; expected 'RemName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem)'
+T-P4       TIP    PASS        U: tip 'Unreach (\\192.0.2.1\x)'; expected 'Unreach (\\192.0.2.1\x)'
+T-P5       TIP    PASS        T: tip '\\192.0.2.1\y'; expected '\\192.0.2.1\y'
+T-X1       TIP    PASS        W: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\cyr_\u0410\u0440\u0445\u0438\u0432_\u0436'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\cyr_\u0410\u0440\u0445\u0438\u0432_\u0436'
+T-X2       TIP    PASS        V: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432_\u0436'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\rem_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432_\u0436'
+T-E1       TIP    PASS        S: tip '%USERNAME% share (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\expand)'; expected '%USERNAME% share (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\expand)'
+T-E2       TIP    PASS        R: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ctrl'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ctrl'
+T-E3       TIP    PASS        Q: tip 'Lead In  ner  Trail (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\spaces)'; expected 'Lead In  ner  Trail (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\spaces)'
+T-E4       TIP    PASS        P: tip 'Box \uD83D\uDCC1 end (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\emoji)'; expected 'Box \uD83D\uDCC1 end (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\emoji)'
+T-E5       TIP    PASS        O: tip 'A && B (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ampamp)'; expected 'A && B (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\ampamp)'
+T-E6       TIP    PASS        N: tip 'LongA_abcdefghijabcdefghijabcdefghijabcd...[2071 chars]...s\pavel\AppData\Local\Temp\tc246test\fx\longascii)'; expected 'LongA_abcdefghijabcdefghijabcdefghijabcd...[2071 chars]...s\pavel\AppData\Local\Temp\tc246test\fx\longascii)'
+T-E7       TIP    PASS        M: tip 'TempName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete)'; expected 'TempName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete)'
+T-E8       TIP    PASS        L: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\inionly'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\inionly'
+T-E9       TIP    FAIL        K: tip '\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863...[1666 chars]...\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863'; expected '\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863\u6863...[2069 chars]...ers\pavel\AppData\Local\Temp\tc246test\fx\longcjk)'
+T-E10      TIP    PASS        J: tip 'NoNul (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\nonul)'; expected 'NoNul (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\nonul)'
+T-E11      TIP    PASS        I: tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\dword'; expected '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\dword'
+T-E12      TIP    PASS        H: tip 'Trail (\\LOCALHOST\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\trail)'; expected 'Trail (\\LOCALHOST\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\trail)'
+C2         MASK   PASS        netdisc 00B80000; expected 00B80000 (P3,P4,P5,X2)
+E7         DELVAL PASS        value removed: menu '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete'; tip at the menu's bar check '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete'
+E7         DELKEY PASS        key removed: menu '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete'; tip '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete'; windows 0
+E7         READD  PASS        key and name re-created: menu 'Back (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\delete)'
+C4         QUIET20 PASS        CHECK quiet=1 x20; REBUILD x0; BUILD bar=1 x0; windows 0; masks seen: drives=03FFFFFC netdisc=00B80000
+  bars: 756 -> new 0 gone 2 count 2; 755 -> new 1 gone 0 count 3
+C5         ONEBAR PASS        P1 Z: cancelled 0; CHECK quiet=1 drives=03FFFFFC netdisc=02B80000 / REBUILD bar1 / BUILD bar=1 copy=0 drives=03FFFFFC netdisc=02B80000; bar1 acc 0; windows none
+C5         NOBARS PASS        bars hidden (gone 1, count 2); P1 reconnected 0; alive True; windows none; dump: <nothing>
+C5         SHOWN  PASS        two bars shown again (new 2); P1 acc in the fresh bar 1
+C5         NOSTALE PASS        activation after re-show: CHECK quiet=1 drives=03FFFFFC netdisc=00B80000
+6-P3       PICK   PASS        X: idx 21 acc 0; RESTORE X \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem; listed after True; panel 'X:\'; windows: no window; 1,8 s
+6-P3       AFTER  PASS        after reconnect + activation: bar1 acc 1 text 'RemName (\\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\remem)'; CHECK quiet=1 drives=03FFFFFC netdisc=00380000
+6-P4       PICK   PASS        U: idx 18 acc 0; RESTORE U \\192.0.2.1\x; done after 24,1 s; UI blocked up to 21,0 s; responsive True; windows: 3,4s [SalamanderSaveBits 'Tandem Commander']  || 21,0s [#32770 'Network Error'] [Static id=2477] (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK || 21,9s answered button 1
+6-P4       AFTER  PASS        panel after 'X:\'; menu P4 acc 0 text 'Unreach (\\192.0.2.1\x)'; HKCU\Network\U RemotePath '\\192.0.2.1\x'
+C8         INMENU PASS        P1 cancelled 0; popup open during activation False; after: responsive True; bar1 P1 acc 0; fatal ; seam: BUILD bar=0 copy=0 drives=03FFFFFC netdisc=02380000 / CHECK quiet=0 drives=03FFFFFC netdisc=02380000 / REBUILD bar1 / BUILD bar=1 copy=0 drives=03FFFFFC netdisc=02380000 / REBUILD bar2 / BUILD bar=1 copy=1 drives=03FFFFFC netdisc=02380000 / CHECK quiet=0 drives=03FFFFFC netdisc=02380000 / CHECK quiet=1 drives=03FFFFFC netdisc=02380000
+C8         INDLG  PASS        P1 reconnected 0; dialog ; other windows none; bar1 P1 acc 1; seam: CHECK quiet=1 drives=03FFFFFC netdisc=00380000 / REBUILD bar1 / BUILD bar=1 copy=0 drives=03FFFFFC netdisc=00380000 / REBUILD bar2 / BUILD bar=1 copy=1 drives=03FFFFFC netdisc=00380000
+C7         CLEAN  PASS        windows 0; fatal ; exit 0x00000000; new crash reports 0 
+  dump: 1465 lines; message-box-free activations counted above
+E-P4       BASE   INFO        baseline picks U: (idx 18) right after the fixed build did: done after 3,1 s; UI blocked up to 0,2 s; responsive True; panel 'C:\Users\pavel\AppData\Local\Temp\tc246test\start'; windows: 0,0s [#32770 'Network Error'] [Static id=2477] (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK || 0,8s answered button 1
+E-P4       CLEAN  INFO        baseline: exit 0x00000000; reports 0
+Registry: restored; identical=True; SHA-256 before 4AB89FE1CFFCC10042E13C602CDB7AC7DB1F4AE76222431D418BEFCEF8A707F8 / after 4AB89FE1CFFCC10042E13C602CDB7AC7DB1F4AE76222431D418BEFCEF8A707F8
+cleanup verified: True (drives 0000007C->0000007C; HKCU\Network []->[]; MountPoints2 equal True; net use entries []->[]; fixture folder exists False); registry restored: True
+RESULT: 2 FAIL row(s)
+
+==== Reviewer notes (independent tester, after reading the rows above) ====
+Final verdicts after review:
+  T-E9   FAIL (confirmed). Tooltip of a drive named with 2000 x U+6863 (6000 UTF-8 bytes): the TIP text is
+         1666 characters / 4998 bytes, all U+6863 - the name is shortened at a whole character, the closing
+         " (\\localhost\C$\...\longcjk)" is lost entirely. The menu item (E9 MENU) holds all 2102 characters.
+         Limit: TOOLTIP_TEXT_MAX = 5000 bytes (spl_gui.h:53). Breaks FR-005 "never cut" / FR-002 "same text"
+         for the tooltip. Unreachable through Explorer's own rename (Explorer ignores a name this long and
+         shows its default form, see E9 SHELL); reachable by a registry/policy-written name. Low severity.
+  8-C    PASS on review (test artifact). The screenshots of both builds were taken in phase B, when C: had
+         61,8 GB free (OCR of both: '61,8 GB'); the seam line was written minutes later, at 61,9 GB. The name
+         column 'Local Drive' matched exactly in both builds; D:, E:, F:, G: matched in both columns.
+Rows that pass but need a note:
+  E1     TC shows the REG_EXPAND_SZ name literally ('%USERNAME% share (...)', as the test brief required);
+         Explorer EXPANDS it ('pavel share (S:)', E1 SHELL). Divergence from US1-5 "shown exactly as in
+         Explorer" - a maintainer decision, not a defect against the brief.
+  E2/E3  Explorer shows control characters raw; TC replaces them with spaces / treats a blank name as none
+         (contract). E11: Explorer shows a REG_DWORD label as garbage text (U+04D2 = bytes of 1234); TC
+         ignores it (path only). E6/E9: Explorer ignores 2000-character names; TC shows them whole (the menu
+         becomes 24450 px wide, evidence/fixed_func_menu_left900.png).
+  C8     INMENU: WM_ACTIVATEAPP(0) closes the Change Drive menu, so the bars were rebuilt at the menu's close
+         (CHECK quiet=0 + REBUILD), not inside the menu loop; the scenario "rebuild while the menu is open"
+         cannot be reached by activation. INDLG: the window found after command 862 had an empty title (its
+         identity as the Change Directory dialog is not confirmed); the activation rebuilt both bars, no
+         other window, no crash.
+  6-P4   Picking the unreachable \\192.0.2.1\x blocks the UI thread ~21 s, then 'Network Error (53)'.
+         Pre-existing: the baseline, picking \\192.0.2.1\y first and fresh (D-P5), blocks 21,0 s too. E-P4:
+         the baseline picking U: right after the fixed build fails in 0,0 s - Windows' SMB client answers from
+         its cache of the server it just failed to reach (the reason for ordering D before C).
+  Case 5 The baseline shows '?' for the Cyrillic/CJK characters of BOTH the remembered V: AND the connected
+         W: (evidence/baseline_perf_menu.png); the fixed build shows them exactly (fixed_perf_menu.png and
+         5-X1 / 5-X2 UTF-8 bytes). So unnamed drives are not byte-identical to the baseline (SC-002) where the
+         baseline text was wrong - an intended improvement.
+  E4     The emoji is drawn as one replacement box in the owner-drawn menu (GDI glyph; the text is exact).
+  T-*    Seam TIP lines come from the seam calling the drive bar's tooltip function at each CHECK
+         (drivelst.cpp ProbeDumpToolTips) - not from a real hover (NOT DRIVEN).

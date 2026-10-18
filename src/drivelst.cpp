@@ -1383,6 +1383,7 @@ static WCHAR* GetNetDriveRemoteW(char letter, DWORD* connResult)
 {
     WCHAR device[3] = {(WCHAR)(BYTE)letter, L':', 0};
     WCHAR stackBuf[MAX_PATH + 1];
+    stackBuf[0] = 0; // a provider might answer without filling it
     DWORD len = _countof(stackBuf);
     WCHAR* heapBuf = NULL;
     DWORD res = WNetGetConnectionW(device, stackBuf, &len);
@@ -1439,7 +1440,19 @@ static WCHAR* ReadNetDriveNameW(const WCHAR* remote)
             }
             if (name != NULL)
             {
-                name[got / sizeof(WCHAR)] = 0; // REG_EXPAND_SZ is shown literally, as Explorer does
+                name[got / sizeof(WCHAR)] = 0;
+                if (type == REG_EXPAND_SZ) // Explorer shows such a name expanded (measured by the 246 test)
+                {
+                    DWORD expandedLen = ExpandEnvironmentStringsW(name, NULL, 0);
+                    WCHAR* expanded = expandedLen > 0 && expandedLen < 0x10000 ? (WCHAR*)malloc(expandedLen * sizeof(WCHAR)) : NULL;
+                    if (expanded != NULL && ExpandEnvironmentStringsW(name, expanded, expandedLen) == expandedLen)
+                    {
+                        free(name);
+                        name = expanded;
+                    }
+                    else
+                        free(expanded); // not expandable: shown as stored
+                }
                 if (SalNetDriveCleanName(name) == 0)
                 {
                     free(name);
@@ -1453,22 +1466,59 @@ static WCHAR* ReadNetDriveNameW(const WCHAR* remote)
     return name;
 }
 
-// the text shown for the network drive 'letter': "Name (\\server\share\path)", or the path
-// alone (salnetdrive.h); '&' doubled when 'doubleAmpersands' (the menu); a malloc'd UTF-8
-// text, or NULL when Windows records no remote path for the letter (the caller keeps its
-// earlier text then)
-static char* BuildNetDriveTextU8(char letter, BOOL doubleAmpersands)
+// "Name (\\server\share\path)" or the path alone (salnetdrive.h) as a malloc'd UTF-8 text
+static char* ComposeNetDriveTextU8(const WCHAR* name, const WCHAR* remote, BOOL doubleAmpersands)
 {
-    WCHAR* remote = GetNetDriveRemoteW(letter, NULL);
-    if (remote == NULL)
-        return NULL;
-    WCHAR* name = ReadNetDriveNameW(remote);
     char* ret = NULL;
     int needed = SalNetDriveText(name, remote, doubleAmpersands, NULL, 0);
     WCHAR* text = (WCHAR*)malloc(needed * sizeof(WCHAR));
     if (text != NULL && SalNetDriveText(name, remote, doubleAmpersands, text, needed) == needed)
         ret = SalWToU8Alloc(text);
     free(text);
+    return ret;
+}
+
+// the text shown for the network drive 'letter': "Name (\\server\share\path)", or the path
+// alone (salnetdrive.h); '&' doubled when 'doubleAmpersands' (the menu); a malloc'd UTF-8
+// text, or NULL when Windows records no remote path for the letter (the caller keeps its
+// earlier text then); 'maxBytes' > 0 (the tooltip buffer): a longer text gets its NAME
+// shortened on a whole character with an ellipsis - the path is never shortened
+static char* BuildNetDriveTextU8(char letter, BOOL doubleAmpersands, int maxBytes = 0)
+{
+    WCHAR* remote = GetNetDriveRemoteW(letter, NULL);
+    if (remote == NULL)
+        return NULL;
+    WCHAR* name = ReadNetDriveNameW(remote);
+    char* ret = ComposeNetDriveTextU8(name, remote, doubleAmpersands);
+    if (ret != NULL && maxBytes > 0 && (int)strlen(ret) > maxBytes && name != NULL && !doubleAmpersands)
+    {
+        char* nameU8 = SalWToU8Alloc(name);
+        if (nameU8 != NULL)
+        {
+            // the text is name + " (" + path + ")": what is left for the name and the ellipsis
+            int pathPartBytes = (int)strlen(ret) - (int)strlen(nameU8);
+            int forName = maxBytes - pathPartBytes - 3; // U+2026 is three bytes in UTF-8
+            if (forName > 0)
+            {
+                int units = SalNetDriveFitU8(name, forName);
+                WCHAR* shortName = (WCHAR*)malloc((units + 2) * sizeof(WCHAR));
+                if (shortName != NULL)
+                {
+                    memcpy(shortName, name, units * sizeof(WCHAR));
+                    shortName[units] = 0x2026;
+                    shortName[units + 1] = 0;
+                    char* shorter = ComposeNetDriveTextU8(shortName, remote, FALSE);
+                    if (shorter != NULL)
+                    {
+                        free(ret);
+                        ret = shorter;
+                    }
+                    free(shortName);
+                }
+            }
+            free(nameU8);
+        }
+    }
     free(name);
     free(remote);
     return ret;
@@ -1849,7 +1899,7 @@ void CDrivesList::AddToDrives(CDriveData& drv, int textResId, char hotkey, CDriv
 
 BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives,
                             DWORD copyCachedDrivesMask, BOOL getGrayIcons, BOOL forDriveBar,
-                            DWORD copyCachedNetDisconnectedMask)
+                            DWORD copyCachedNetDisconnectedMask, BOOL quiet)
 {
     CALL_STACK_MESSAGE4("CDrivesList::BuildData(%d, , , %d, %d)", noTimeout, getGrayIcons, forDriveBar);
 
@@ -1926,7 +1976,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
         // remembered and not refreshed network drives will not be returned from GetLogicalDrives()
         DWORD netDrives; // bitove pole network disku
         char netRemotePath['z' - 'a' + 1][MAX_PATH];
-        GetNetworkDrives(netDrives, netRemotePath);
+        GetNetworkDrives(netDrives, netRemotePath, !quiet);
 
         CachedDrivesMask = mask | netDrives; // a cache for a simple test of whether a disk has been added / disappeared
         // feature 246: a remembered drive changing between connected and unavailable leaves
@@ -2706,10 +2756,12 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
         // try to revive
         if (!item->Accessible)
         {
-            // feature 246: the remote name comes from Windows, never from the shown text (a
-            // Windows name, a doubled '&', a cut path or a text without a path reached the
-            // reconnection before); a letter Windows still lists is not reconnected here -
-            // the path change reconnects it on access (CheckAndRestoreNetworkConnection)
+            // feature 246: the remote name comes from Windows' remembered connections, never from
+            // the shown text (a Windows name, a doubled '&' or a text without a path would reach
+            // the reconnection); it is still the code-page form of 0.1.10, which the whole
+            // reconnection chain uses (backlog: drive-list-code-page-texts); a letter Windows still
+            // lists is not reconnected here - the path change reconnects it on access
+            // (CheckAndRestoreNetworkConnection)
             char name[3] = " :";
             name[0] = item->DriveText[0];
             int letterIndex = LowerCase[(BYTE)name[0]] - 'a';
@@ -3005,7 +3057,7 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
     case drvtRemote:
     {
         // feature 246: read now, so that a rename in Explorer shows without a rebuild of the bar
-        char* netText = BuildNetDriveTextU8(item->DriveText[0], FALSE);
+        char* netText = BuildNetDriveTextU8(item->DriveText[0], FALSE, TOOLTIP_TEXT_MAX - 1);
         if (netText != NULL)
         {
             CopyToolTipAnswer(netText, text);
@@ -3013,8 +3065,15 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
         }
         else if (strlen(item->DriveText) > 2)
         {
-            strcpy(text, item->DriveText + 2);
-            RemoveAmpersands(text);
+            // the stored text may be longer than the tooltip buffer since feature 246 (never cut
+            // in the menu): copied on a character boundary
+            char* stored = DupStr(item->DriveText + 2);
+            if (stored != NULL)
+            {
+                RemoveAmpersands(stored);
+                CopyToolTipAnswer(stored, text);
+                free(stored);
+            }
         }
 #ifdef _DEBUG
         // probe seam (feature 246)
@@ -3476,6 +3535,8 @@ BOOL CDrivesList::RebuildMenu()
 #ifdef _DEBUG
 void CDrivesList::ProbeDumpToolTips()
 {
+    if (GetEnvironmentVariableW(L"TC_PROBE_DRIVES_DUMP", NULL, 0) == 0)
+        return; // the seam is off: no tooltip work
     char* text = (char*)malloc(TOOLTIP_TEXT_MAX);
     if (text == NULL)
         return;

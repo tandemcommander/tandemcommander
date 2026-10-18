@@ -1343,7 +1343,7 @@ void CMainWindow::RebuildDriveBarsIfNeeded(BOOL useDrivesMask, DWORD drivesMask,
                 // probe seam (feature 246)
                 ProbeDrivesDump("REBUILD bar1");
 #endif // _DEBUG
-                DriveBar->RebuildDrives();
+                DriveBar->RebuildDrives(NULL, quiet);
                 copyDrivesListFrom = DriveBar;
             }
         }
@@ -1359,7 +1359,7 @@ void CMainWindow::RebuildDriveBarsIfNeeded(BOOL useDrivesMask, DWORD drivesMask,
                 // probe seam (feature 246)
                 ProbeDrivesDump("REBUILD bar2");
 #endif // _DEBUG
-                DriveBar2->RebuildDrives(copyDrivesListFrom);
+                DriveBar2->RebuildDrives(copyDrivesListFrom, quiet);
             }
         }
     }

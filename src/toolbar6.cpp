@@ -49,7 +49,7 @@ void CDriveBar::DestroyImageLists()
     }
 }
 
-BOOL CDriveBar::CreateDriveButtons(CDriveBar* copyDrivesListFrom)
+BOOL CDriveBar::CreateDriveButtons(CDriveBar* copyDrivesListFrom, BOOL quiet)
 {
     CALL_STACK_MESSAGE1("CDriveBar::CreateButtons()");
     if (HWindow == NULL)
@@ -91,7 +91,7 @@ BOOL CDriveBar::CreateDriveButtons(CDriveBar* copyDrivesListFrom)
         copyCachedDrivesMask = copyDrivesListFrom->List->GetCachedDrivesMask();
         copyCachedNetDisconnectedMask = copyDrivesListFrom->List->GetCachedNetDisconnectedMask();
     }
-    List->BuildData(FALSE, copyDrives, copyCachedDrivesMask, TRUE, TRUE, copyCachedNetDisconnectedMask);
+    List->BuildData(FALSE, copyDrives, copyCachedDrivesMask, TRUE, TRUE, copyCachedNetDisconnectedMask, quiet);
     if (destroyCopyDrives)
     {
         List->DestroyDrives(copyDrives);
@@ -256,9 +256,9 @@ void CDriveBar::OnGetToolTip(LPARAM lParam)
     }
 }
 
-void CDriveBar::RebuildDrives(CDriveBar* copyDrivesListFrom)
+void CDriveBar::RebuildDrives(CDriveBar* copyDrivesListFrom, BOOL quiet)
 {
-    CreateDriveButtons(copyDrivesListFrom);
+    CreateDriveButtons(copyDrivesListFrom, quiet);
 }
 
 BOOL CDriveBar::OnContextMenu()

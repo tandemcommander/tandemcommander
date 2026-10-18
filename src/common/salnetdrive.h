@@ -161,6 +161,36 @@ inline int SalNetDriveText(const WCHAR* name, const WCHAR* remote, BOOL doubleAm
     return needed;
 }
 
+// The number of leading units of 'name' whose UTF-8 (WTF-8) form fits into 'maxBytes' bytes,
+// ending on a whole character - a surrogate pair is never split (a lone surrogate counts as
+// the three bytes WTF-8 gives it). Used where a text has a hard byte limit (the tooltip
+// buffer): the NAME is shortened there, the path never is.
+inline int SalNetDriveFitU8(const WCHAR* name, int maxBytes)
+{
+    int units = 0;
+    int bytes = 0;
+    while (name != NULL && name[units] != 0)
+    {
+        WCHAR c = name[units];
+        int n = 3;
+        int w = 1;
+        if (c < 0x80)
+            n = 1;
+        else if (c < 0x800)
+            n = 2;
+        else if (c >= 0xD800 && c <= 0xDBFF && name[units + 1] >= 0xDC00 && name[units + 1] <= 0xDFFF)
+        {
+            n = 4;
+            w = 2;
+        }
+        if (bytes + n > maxBytes)
+            break;
+        bytes += n;
+        units += w;
+    }
+    return units;
+}
+
 // Is a network drive disconnected, by Windows' local answers (none of them
 // contacts the server; measured, analysis.md G2)?
 //   'listed'      its letter is in GetLogicalDrives()

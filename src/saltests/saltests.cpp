@@ -13609,6 +13609,7 @@ static void TestNetDrive246()
     CHECK(NetKey246(L"\\\\srv\\share", L"##srv#share"));
     CHECK(NetKey246(L"\\\\srv\\share\\", L"##srv#share"));     // trailing backslash ignored
     CHECK(NetKey246(L"\\\\srv\\share\\\\\\", L"##srv#share")); // several of them
+    CHECK(NetKey246(L"\\\\srv\\share\\sub\\", L"##srv#share#sub")); // deeper, trailing backslash
     CHECK(NetKey246(L"\\\\192.168.0.50\\Data", L"##192.168.0.50#Data"));
     CHECK(NetKey246(L"\\\\srv\\sh#\x017E ar", L"##srv#sh#\x017E ar")); // '#', non-ASCII and space copied
     CHECK(NetKey246(L"\\\\srv\\R&D", L"##srv#R&D"));
@@ -13686,26 +13687,68 @@ static void TestNetDrive246()
         CHECK(std::wstring(big.data()) == longName + L" (" + longRemote + L")");
     }
 
+    // fitting a name into a byte limit on whole characters (the tooltip shortens the name, never the path)
+    CHECK(SalNetDriveFitU8(L"abc", 10) == 3);
+    CHECK(SalNetDriveFitU8(L"abc", 2) == 2);
+    CHECK(SalNetDriveFitU8(L"abc", 0) == 0);
+    CHECK(SalNetDriveFitU8(NULL, 10) == 0);
+    CHECK(SalNetDriveFitU8(L"\x017E\x017E", 3) == 1);        // 2 bytes each: the second does not fit
+    CHECK(SalNetDriveFitU8(L"\x017E\x017E", 4) == 2);
+    CHECK(SalNetDriveFitU8(L"\x6863\x6863\x6863", 8) == 2);  // 3 bytes each
+    CHECK(SalNetDriveFitU8(L"\x6863\x6863\x6863", 9) == 3);
+    CHECK(SalNetDriveFitU8(L"a\xD83D\xDCC1" L"b", 4) == 1);  // the emoji (4 bytes) is not split
+    CHECK(SalNetDriveFitU8(L"a\xD83D\xDCC1" L"b", 5) == 3);  // ... and counts as two units
+    CHECK(SalNetDriveFitU8(L"a\xD83D\xDCC1" L"b", 6) == 4);
+    CHECK(SalNetDriveFitU8(L"\xD83D" L"a", 3) == 1);         // a lone surrogate: three bytes (WTF-8)
+    CHECK(SalNetDriveFitU8(L"\xDCC1\xD83D", 5) == 1);        // reversed pair: two lone surrogates
+    {
+        // the result is always a valid, whole-character prefix whose UTF-8 form fits
+        std::wstring mixed = L"A\x017E\x6863\xD83D\xDCC1" L"B\x00E9\xD83D\xDE00\x0416";
+        for (int limit = 0; limit <= 30; limit++)
+        {
+            int units = SalNetDriveFitU8(mixed.c_str(), limit);
+            CHECK(units >= 0 && units <= (int)mixed.size());
+            CHECK(units == 0 || !(mixed[units - 1] >= 0xD800 && mixed[units - 1] <= 0xDBFF)); // never ends inside a pair
+            int bytes = units == 0 ? 0 : WideCharToMultiByte(CP_UTF8, 0, mixed.c_str(), units, NULL, 0, NULL, NULL);
+            CHECK(bytes <= limit);
+            if (units < (int)mixed.size()) // the next character would not have fitted
+            {
+                int nextUnits = (mixed[units] >= 0xD800 && mixed[units] <= 0xDBFF) ? 2 : 1;
+                int nextBytes = WideCharToMultiByte(CP_UTF8, 0, mixed.c_str(), units + nextUnits, NULL, 0, NULL, NULL);
+                CHECK(nextBytes > limit);
+            }
+        }
+    }
+
     // the state: the full truth table of the answers that matter
     const DWORD conns[] = {0, SALNETDRV_ERROR_CONNECTION_UNAVAIL, 2250 /*ERROR_NOT_CONNECTED*/, 234 /*ERROR_MORE_DATA*/, 1222 /*ERROR_NO_NETWORK*/};
     const DWORD conn3s[] = {0, 2, 50};
     const DWORD states[] = {0, SALNETDRV_WNGC_DISCONNECTED, 2};
-    int combos = 0;
+    // counted by hand, not by the rule: of the 90 combinations, all 45 unlisted ones are
+    // disconnected, of the listed ones the 9 with ERROR_CONNECTION_UNAVAIL and the one
+    // connected-but-WNGC_DISCONNECTED combination - 55 in all
+    int combos = 0, disconnected = 0, listedDisconnected = 0;
     for (int listed = 0; listed < 2; listed++)
         for (DWORD c : conns)
             for (DWORD c3 : conn3s)
                 for (DWORD st : states)
                 {
-                    BOOL expected = !listed || c == SALNETDRV_ERROR_CONNECTION_UNAVAIL ||
-                                    (c == 0 && c3 == 0 && st == SALNETDRV_WNGC_DISCONNECTED);
-                    CHECK(SalNetDriveIsDisconnected(listed, c, c3, st) == expected);
                     combos++;
+                    if (SalNetDriveIsDisconnected(listed, c, c3, st))
+                    {
+                        disconnected++;
+                        if (listed)
+                            listedDisconnected++;
+                    }
+                    if (!listed)
+                        CHECK(SalNetDriveIsDisconnected(listed, c, c3, st));
                 }
-    CHECK(combos == 2 * 5 * 3 * 3);
+    CHECK(combos == 90);
+    CHECK(disconnected == 55);
+    CHECK(listedDisconnected == 10);
     // the measured states (analysis.md G2) spelled out
-    CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 0, 0));                                  // connected
+    CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 0, 0));                                  // connected (also: mapped folder deleted on the server)
     CHECK(SalNetDriveIsDisconnected(FALSE, SALNETDRV_ERROR_CONNECTION_UNAVAIL, 2, 0)); // remembered, not connected
-    CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 0, 0));                                  // mapped folder deleted on the server
     CHECK(SalNetDriveIsDisconnected(TRUE, SALNETDRV_ERROR_CONNECTION_UNAVAIL, 0, 0));  // letter listed, unavailable
     CHECK(SalNetDriveIsDisconnected(TRUE, 0, 0, SALNETDRV_WNGC_DISCONNECTED));         // letter listed, disconnected
     CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 2, SALNETDRV_WNGC_DISCONNECTED));        // the level unanswered: state ignored

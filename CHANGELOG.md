@@ -29,6 +29,11 @@ plugin.
   - **Keyboard shortcuts:** shortcuts of Tandem Commander's own commands cannot be changed, so only the shortcuts you gave to plugin commands are imported.
   - **Removed:** the standalone script `utils/migrate-altap-settings.cmd` (0.1.3), which the wizard replaces; it replaced whole groups and could overwrite settings you had already made in Tandem Commander.
   - **For plugin authors:** plugin interface 108 adds `SetPluginSettingsImport`, through which a plugin merges its own settings from the old program; plugins built for 104–107 keep working.
+- **Network drives show their Windows names, and their icon shows when they are disconnected** (feature 246; the same in Altap Salamander).
+  - **Names:** a mapped network drive that you (or your administrator's policy) named in Explorer, e.g. "Archiv", was shown only by its path in the Change Drive menu (Alt+F1 / Alt+F2) and the drive bar tooltip. Both now show the name with the path: "Archiv (\\server\share\Storage)". A drive without a name looks exactly as before. Names and paths in any script are shown exactly, and a long one is no longer cut.
+  - **Disconnected icon:** the drive bars kept the icon they had when they were built, so a remembered network drive that Windows could not reconnect (a red cross in Explorer) still looked connected there, and a reconnected one still looked disconnected. The drive bars now catch up when you return to the window, open the Change Drive menu or refresh; a drive whose connection Windows reports as unavailable or disconnected gets the disconnected icon also while its letter is still listed.
+  - **Reconnecting:** picking a disconnected drive reconnects it with its path as Windows records it. A share whose name contains "&" could not be reconnected that way before.
+  - **Limitation:** Windows does not report when a server stops answering, so a drive that loses its server while you keep working in Tandem Commander shows the change at the next of those moments; a state where Windows still lists the drive as connected while its server is off is shown as Windows reports it.
 
 ## [0.1.10] — 2026-10-17
 

@@ -427,7 +427,8 @@ public:
     // vyhaze existujici a naleje nova tlacitka;
     // neni-li 'copyDrivesListFrom' NULL, maji se data o discich kopirovat misto znovu ziskavat
     // 'copyDrivesListFrom' muze odkazovat i na volany objekt
-    BOOL CreateDriveButtons(CDriveBar* copyDrivesListFrom);
+    // 'quiet' (feature 246): no message box on a network enumeration error (window activation)
+    BOOL CreateDriveButtons(CDriveBar* copyDrivesListFrom, BOOL quiet = FALSE);
 
     virtual int WINAPI GetNeededHeight();
 
@@ -443,7 +444,7 @@ public:
     // pokud prijde notifikace o pridani/odstraneni disku, je treba znovu naplnit seznam;
     // neni-li 'copyDrivesListFrom' NULL, maji se data o discich kopirovat misto znovu ziskavat
     // 'copyDrivesListFrom' muze odkazovat i na volany objekt
-    void RebuildDrives(CDriveBar* copyDrivesListFrom = NULL);
+    void RebuildDrives(CDriveBar* copyDrivesListFrom = NULL, BOOL quiet = FALSE);
 
     // je treba vybalit context menu; poozka se urci z GetMessagePos; vrati TRUE,
     // pokud bylo trefeno tlacitko a vybalilo se menu; jinak vrati FALSE

@@ -1,0 +1,18 @@
+246 pick (code page) test; fixed E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; baseline C:\Users\pavel\AppData\Local\Temp\tc246base\tree\tandemcommander.exe
+snapshot before: drives 0000007C; HKCU\Network []; net use []
+  fixture Q1: Z: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\unnamed_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432; name 
+  fixture Q2: Y: -> \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\named_\u0410\u0440\u0445\u0438\u0432; name Named CP
+  [fixed] Z: listed False; WNetGetConnection 1201
+  [fixed] Y: listed False; WNetGetConnection 1201
+PK-Q1      FIXED  FAIL        Z: idx 6; seam: 'RESTORE Z \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\unnamed_???_?????'; listed after False; panel 'C:\Users\pavel\AppData\Local\Temp\tc246test\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "Z:\" is invalid. | [Button id=1] OK
+PK-Q2      FIXED  FAIL        Y: idx 5; seam: 'RESTORE Y \\localhost\C$\Users\pavel\AppData\Local\Temp\tc246test\fx\named_?????'; listed after False; panel 'C:\Users\pavel\AppData\Local\Temp\tc246test\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "Y:\" is invalid. | [Button id=1] OK
+PK-fixed   END    PASS        fatal ; exit 0x00000000
+  [baseline] Z: listed False; WNetGetConnection 1201
+  [baseline] Y: listed False; WNetGetConnection 1201
+PK-Q1      BASE   INFO        Z: idx 6; seam: ''; listed after False; panel 'C:\Users\pavel\AppData\Local\Temp\tc246test\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "Z:\" is invalid. | [Button id=1] OK
+PK-Q2      BASE   INFO        Y: idx 5; seam: ''; listed after False; panel 'C:\Users\pavel\AppData\Local\Temp\tc246test\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "Y:\" is invalid. | [Button id=1] OK
+PK-baseline END    PASS        fatal ; exit 0x00000000
+PK         REPORTS PASS        new crash reports: 0
+Registry: restored; identical=True; SHA-256 before 4AB89FE1CFFCC10042E13C602CDB7AC7DB1F4AE76222431D418BEFCEF8A707F8 / after 4AB89FE1CFFCC10042E13C602CDB7AC7DB1F4AE76222431D418BEFCEF8A707F8
+cleanup verified: True (drives 0000007C->0000007C; HKCU\Network []->[]; MountPoints2 equal True; net use []->[]); registry restored: True
+RESULT: 2 FAIL row(s)

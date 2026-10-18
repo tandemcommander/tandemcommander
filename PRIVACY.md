@@ -80,6 +80,11 @@ plugin panel sets the key at which the Windows Registry Editor opens.
 To show the folders of OneDrive, Dropbox and Google Drive, the program reads
 the settings those programs keep on your computer. Nothing is sent anywhere.
 
+To show the names you (or your administrator) gave mapped network drives in
+File Explorer, the program reads them where Explorer keeps them in your part
+of the registry, and asks Windows — without contacting the server — whether
+each network drive is connected. It stores and sends nothing of this.
+
 ### New version check
 
 For the check for a new version (see *Checking for a new version*) the
