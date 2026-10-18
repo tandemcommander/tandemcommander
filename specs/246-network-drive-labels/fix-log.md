@@ -91,3 +91,38 @@ Findings and what was done:
 - saltests: the state truth-table loop was tautological → replaced by hand-counted totals
   (90 / 55 / 10) and the unlisted rule; duplicate row removed; deeper trailing-backslash key
   case added.
+
+## 2026-10-18 — independent black-box test, round 1 (`test-independent/`)
+
+65 PASS on 23248aa9; findings:
+- **T-E9**: a 2,000-character CJK name (policy/registry) cut the tooltip at the 5000-byte
+  buffer and lost the path. → the tooltip shortens only the NAME (whole character +
+  U+2026); the menu keeps the whole text.
+- **PK-Q1/Q2**: a remembered drive whose path has characters outside the code page does not
+  reconnect (`RESTORE Z ...\unnamed_???_?????`); baseline identical → out of scope, backlog
+  `remembered-network-drive-with-a-non-code-page-or-long-path` (Inbox).
+- REG_EXPAND_SZ: Explorer shows the name expanded → now expanded.
+- Correction to the analysis: the baseline shows `?` for non-code-page paths also for a
+  *connected* drive, not only a remembered one.
+- Performance (7 network drives, 12 samples, baseline/fixed alternating): menu opening
+  9.2 → 12.4 ms median (+3.2, SC-004 limit +50); activation work 166.3 → 163.8 ms (no cost).
+
+## 2026-10-18 — review round 2 and test round 2
+
+- Review round 2: the five round-1 fixes verified correct; one cosmetic edge (a name equal to
+  a > 4999-byte path would get a stray ellipsis) → the shortening moved into the header
+  (`SalNetDriveNameShown`, `SalNetDriveU8Len`, `SalNetDriveNameUnitsForLimit`) with saltests
+  (property loop over every limit). Risks recorded: a bar rebuilt by the activation check in
+  a nested message loop of a reconnection (not reachable today: no message loop after a
+  successful connection); a listed letter whose `GetDriveType` is NO_ROOT_DIR stays "fixed"
+  (pre-existing, consistent).
+- Test round 2 (82b32159): 0 FAIL — 80 PASS, 1 NOT DRIVEN (hover); C9 tooltip boundaries
+  (exact fit / one over, ASCII, emoji, `&`, CJK at every byte offset, mixed) all PASS;
+  menu +2.6 ms; cleanup verified.
+- saltests 24,297 / 0 failed; probe 0 FAIL on 7880090a.
+
+## 2026-10-18 — test round 3 and builds
+
+- Independent test round 3 on 7880090a (tooltip limits incl. name = path, expansion, 19 menu texts): 62/62 PASS, cleanup verified.
+- `build.cmd full` (Debug, language modules): BUILD SUCCEEDED (no UI string changed).
+- `build.cmd release`: BUILD SUCCEEDED; the Release exe contains no `TC_PROBE_DRIVES_DUMP` (seam is Debug-only) and does contain the feature (`_LabelFromReg`).

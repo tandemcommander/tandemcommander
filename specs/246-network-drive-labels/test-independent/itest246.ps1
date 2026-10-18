@@ -32,7 +32,8 @@ param(
     [Parameter(Mandatory = $true)][string]$OutFile,
     [int]$Rounds = 2,
     [int]$PerRound = 6,
-    [switch]$SkipBaselinePick
+    [switch]$SkipBaselinePick,
+    [switch]$Quick   # round 3: fixture, menu texts, tooltips, C9 boundaries, clean exit only
 )
 $ErrorActionPreference = 'Stop'
 $Fixed = (Resolve-Path -LiteralPath $Fixed).Path
@@ -465,6 +466,7 @@ try {
     Out ("  net use now: [{0}]; drives {1}" -f $snapFx.NetUseEntries, $snapFx.Drives)
     $PerfSet = @($P1, $P2, $P3, $P4, $P5, $X1, $X2)
 
+    if (-not $Quick) {   # round 3: skipped by -Quick
     # ---- Phase B: performance, both builds, seam off -------------------------------------
     foreach ($bn in @('baseline', 'fixed')) { $script:Perf[$bn] = @{ Menu = @(); Warm = @(); ActSync = @(); ActMenu = @(); Strays = @() } }
     for ($round = 1; $round -le $Rounds; $round++) {
@@ -526,6 +528,7 @@ try {
         }
     }
 
+    }
     # ---- Phase C: functional, fixed build with the seam -------------------------------------
     $L2000 = ('LongA_' + ('abcdefghij' * 200)).Substring(0, 2000)
     $C2000 = [string]::new([char]0x6863, 2000)
@@ -612,6 +615,7 @@ try {
         $hasQ = ($raw -and $raw.Contains('?'))
         RowV ('5-' + $e.Case) 'EXACT' (($raw -ceq $e.Remote) -and -not $hasQ) ("{0}: '{1}' contains '?': {2}; UTF-8 bytes of the folder part: {3}" -f $e.Letter, (Esc $raw), $hasQ, $(if ($raw) { (($Utf8.GetBytes($raw.Substring($raw.LastIndexOf('\') + 1)) | ForEach-Object { '{0:X2}' -f $_ }) -join '') } else { '-' }))
     }
+    if (-not $Quick) {   # round 3: skipped by -Quick
     # case 8: local drives (seam) vs the baseline OCR
     $locals = @(); if ($menu) { $locals = @($menu.Items.Keys | Where-Object { @(1, 2, 3, 5, 6) -contains $menu.Items[$_].Type } | Sort-Object) }
     foreach ($lt in $locals) {
@@ -627,6 +631,7 @@ try {
         Row ('8-' + $lt) 'LOCAL' $v ("seam type={0} acc={1} text '{2}'; in baseline menu OCR: {3}; in fixed menu OCR: {4}" -f $it.Type, $it.Acc, (Esc $it.Raw), $hb, $hf)
     }
 
+    }
     # C2: tooltips (seam TIP lines at an activation check) + order of CHECK
     $mark = Dump-Mark
     $s = Activate $id
@@ -643,6 +648,7 @@ try {
     $expMask = 0; foreach ($e in @($P3, $P4, $P5, $X2)) { $expMask = $expMask -bor (1 -shl ([int][char]$e.Letter - 65)) }
     RowV 'C2' 'MASK' ($nd -eq ('{0:X8}' -f $expMask)) ("netdisc {0}; expected {1:X8} (P3,P4,P5,X2)" -f $nd, $expMask)
 
+    if (-not $Quick) {   # round 3: skipped by -Quick
     # C3: deletion of the name while running
     $E7 = $EdgeOk | Where-Object { $_.Case -eq 'E7' }
     if ($E7) {
@@ -672,6 +678,7 @@ try {
     $dl = Dump-Since $mark
     RowV 'C4' 'QUIET20' ((Count-Like $dl 'CHECK quiet=1 *') -eq 20 -and (Count-Like $dl 'REBUILD*') -eq 0 -and (Count-Like $dl 'BUILD bar=1*') -eq 0 -and $strayAll.Count -eq 0) ("CHECK quiet=1 x{0}; REBUILD x{1}; BUILD bar=1 x{2}; windows {3}; masks seen: {4}" -f (Count-Like $dl 'CHECK quiet=1 *'), (Count-Like $dl 'REBUILD*'), (Count-Like $dl 'BUILD bar=1*'), $strayAll.Count, ((@($dl | Where-Object { $_ -like 'CHECK*' } | ForEach-Object { $_.Substring(14) }) | Sort-Object -Unique) -join ' | '))
 
+    }
     # C9 (round 2): tooltip limit boundaries on drive E6, renamed while running: fits exactly / one
     # byte over (ASCII, 4-byte last character, '&'), CJK and emoji names with every residue of the cut
     # position, a mixed 1-2-3-4-byte name; the menu keeps the whole text every time
@@ -696,7 +703,9 @@ try {
             @('B11', 'mixed 1/2/3/4-byte characters x500', ($mixUnit * 500)),
             @('B12', "'&' only, single-& text exactly 4999 bytes (the menu's doubled text is longer)", ('&' * ($TipLimit - $suf))),
             @('B13', "'&' only, single-& text 5000 bytes", ('&' * ($TipLimit + 1 - $suf))),
-            @('B14', "'x&' x2600 (doubled '&&' in the stored text at the cut)", ('x&' * 2600))
+            @('B14', "'x&' x2600 (doubled '&&' in the stored text at the cut)", ('x&' * 2600)),
+            @('B15', 'name equal to the path in upper case (round 3: never shortened, the path alone)', $E6.Remote.ToUpper()),
+            @('B16', 'name equal to the path in lower case', $E6.Remote.ToLower())
         )
         foreach ($v in $B) {
             Set-ItemProperty -LiteralPath $k6 -Name '_LabelFromReg' -Value $v[2] -Type String
@@ -712,6 +721,7 @@ try {
     }
     else { Row 'C9' 'TIP' 'NOT RUN' 'drive E6 missing' }
 
+    if (-not $Quick) {   # round 3: skipped by -Quick
     # C5: single drive bar mode and hidden bars
     $t1 = Toggle $id 756   # two bars off
     $t2 = Toggle $id 755   # one bar on
@@ -820,6 +830,7 @@ try {
     $acc = if ($b1 -and $b1.Items.ContainsKey($P1.Letter)) { $b1.Items[$P1.Letter].Acc } else { -1 }
     RowV 'C8' 'INDLG' ((Test-Alive $id) -and $dlg -ne [IntPtr]::Zero -and $null -eq $fatal -and $others.Count -eq 0 -and $acc -eq 1) ("P1 reconnected {0}; dialog {1}; other windows {2}; bar1 P1 acc {3}; seam: {4}" -f $mr, $(if ($dlg -ne [IntPtr]::Zero) { [Drv098f]::Txt($dlg) } else { '<none>' }), $(if ($others.Count) { $others -join ' || ' } else { 'none' }), $acc, (($dl | Where-Object { $_ -like 'CHECK*' -or $_ -like 'REBUILD*' -or $_ -like 'BUILD*' }) -join ' / '))
 
+    }
     # C7: end
     $s = @(Strays $id)
     $fatal = Fatal-Win $id

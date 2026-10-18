@@ -56,12 +56,12 @@ on the baseline build, and independent test/review agents.
 
 - [X] T020 `build.cmd` (Debug) and `saltests`; `python tools/check_encoding.py` strict `TOTAL: 0`; clang-format on the touched files
 - [X] T021 Run the full probe on the new build (all rows) and on the baseline (negative control); results in `probe/results.md`; verify cleanup
-- [ ] T022 Performance: time the Change Drive menu build with four network drives (connected, unavailable, unreachable remembered `\\192.0.2.1\x`, named) on baseline vs new (SC-004); record
-- [ ] T023 Independent test agent(s): black-box test of the build against `spec.md` / contracts with their own fixtures (no access to the implementer's reasoning); findings to `fix-log.md`
-- [ ] T024 Independent refute-first code review agent(s) of the diff; fix confirmed findings; re-test; second round if anything changed
-- [ ] T025 `build.cmd full` (language modules) to confirm no UI string changed; Release build sanity if time permits
-- [ ] T026 Documentation: `CHANGELOG.md` entry under the unreleased heading; `specs/FEATURE-HISTORY.md` entry `246-`; PRIVACY.md checked (no change expected — record why); backlog: note in `drive-list-code-page-texts` what 246 converted; person steps (real SMB server off/on; real keyboard) recorded; `closing-report.md`
-- [ ] T027 Commit on the branch (no push)
+- [X] T022 Performance: time the Change Drive menu build with four network drives (connected, unavailable, unreachable remembered `\\192.0.2.1\x`, named) on baseline vs new (SC-004); record
+- [X] T023 Independent test agent(s): black-box test of the build against `spec.md` / contracts with their own fixtures (no access to the implementer's reasoning); findings to `fix-log.md`
+- [X] T024 Independent refute-first code review agent(s) of the diff; fix confirmed findings; re-test; second round if anything changed
+- [X] T025 `build.cmd full` (language modules) to confirm no UI string changed; Release build sanity if time permits
+- [X] T026 Documentation: `CHANGELOG.md` entry under the unreleased heading; `specs/FEATURE-HISTORY.md` entry `246-`; PRIVACY.md checked (no change expected — record why); backlog: note in `drive-list-code-page-texts` what 246 converted; person steps (real SMB server off/on; real keyboard) recorded; `closing-report.md`
+- [X] T027 Commit on the branch (no push)
 
 ## Dependencies
 
