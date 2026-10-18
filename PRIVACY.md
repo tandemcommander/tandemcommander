@@ -55,6 +55,21 @@ If you use **Options → Export Configuration**, everything above — including
 saved passwords in their stored form, see below — is written to a file at the
 location you choose.
 
+**Importing settings from Altap Salamander or Open Salamander.** Only when
+you start **Options → Import Settings from Salamander** (or answer *Yes* to
+the offer the program shows once, at the first start of a new configuration)
+the program reads the settings an older Altap Salamander (2.5 to 4.0) or Open
+Salamander 5.0 left under `HKEY_CURRENT_USER\Software\Altap` or
+`HKEY_CURRENT_USER\Software\Open Salamander` — read-only: it never changes or
+deletes them. That first start checks only *whether* such settings exist and
+which version wrote them; it reads nothing else. What you choose to import is
+copied into Tandem Commander's own settings described above. Before the first
+change the import saves a complete copy of your current settings — including
+saved passwords in their stored form — to a file in
+`%APPDATA%\Tandem Commander\Settings backups` (`before-import-<date>.reg`);
+the import tells you where it is and how to restore it. Nothing is sent
+anywhere.
+
 Windows keeps your hot paths in the program's taskbar jump list. Using
 **Commands → Open Folder → Active Folder** (Shift+F3) in a Registry Editor
 plugin panel sets the key at which the Windows Registry Editor opens.
@@ -188,6 +203,16 @@ with *Clear History*. A password that contains `/` — or, on the command line,
 a space, a quote, `<` or `>`, unless the address is enclosed in quotes — is
 not recognised as part of the address and stays in the entry; use the
 password field instead.
+
+Passwords the import from Altap Salamander or Open Salamander brings over
+(saved FTP and FTP proxy passwords) are stored the way Tandem Commander stores
+its own: encrypted under your Master Password if you use one (the import asks
+for it once if you have not entered it yet), otherwise scrambled. Passwords
+the old program protected with its own Master Password are imported only if
+you type that Master Password in the import; it is used for this import only
+and not stored. If Tandem Commander has no Master Password, such passwords
+are imported only if you explicitly agree to store them without one. The
+import never changes your Tandem Commander Master Password.
 
 If you cancel the Master Password prompt while saving a new FTP, FTP proxy or
 SFTP password or an SFTP key passphrase, it is not saved at all (*Save

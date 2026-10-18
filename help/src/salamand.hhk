@@ -615,6 +615,10 @@
 		<param name="Local" value="hh\salamand\customize_arccfg.htm">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Importing Settings from Salamander">
+		<param name="Local" value="hh\salamand\customize_importsalamander.htm">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Configuring Open Salamander">
 		<param name="Local" value="hh\salamand\customize_configuration.htm">
 		</OBJECT>

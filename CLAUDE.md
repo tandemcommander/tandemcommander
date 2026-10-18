@@ -21,7 +21,7 @@ add *Recent Changes* / *Active Technologies* sections.
 | Identity, build policies, key facts in full | `architecture/12-project-reference.md` |
 | Architecture (build pipeline, dependencies, plugin API, plugin catalog, code standards) | `architecture/README.md` → `01`–`12`; `06` = plugin API, `11` = WebView2 **binding contract** |
 | Preparing a release | `/tandem-release <x.y.z>` on the release day (243); `backlog/RELEASE.md` — *Release records*, the maintainer's steps; tool `tools/release/release.py` |
-| Principles | `.specify/memory/constitution.md` (v3.2.0): build reproducibility, backward compatibility (baseline 0.1.0), incremental modernization, Windows commitment, plugin architecture preservation, UI consistency |
+| Principles | `.specify/memory/constitution.md` (v4.0.0): build reproducibility, backward compatibility (baseline 0.1.0), incremental modernization, Windows commitment, plugin architecture preservation, UI consistency |
 | Released versions | `CHANGELOG.md`; public privacy claim `PRIVACY.md` |
 
 ## Product identity
@@ -38,8 +38,9 @@ add *Recent Changes* / *Active Technologies* sections.
   with it attached (the new-version check builds that address, 123). A bumped
   tree is not a published release — check the git tag.
 - Binary `tandemcommander.exe`; registry root
-  `HKCU\Software\Tandem Commander\0.1` (never reads or writes Open
-  Salamander / Altap / Newt Commander keys); https://tandemcommander.org,
+  `HKCU\Software\Tandem Commander\0.1` (never writes Open Salamander /
+  Altap / Newt Commander keys; reads Altap / Open Salamander ones only in the
+  user-started settings import, read-only, 245); https://tandemcommander.org,
   github.com/tandemcommander/tandemcommander.
 - **Upstream names stay**: source files, classes, `salamand.sln`,
   `salamand.vcxproj`, `SALAMANDER_*` — rename only user/OS-visible identity.

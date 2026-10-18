@@ -1,6 +1,26 @@
 <!--
 Sync Impact Report
 ===================
+Version change: 3.2.0 → 4.0.0 (principle II redefined)
+Modified principles:
+  - II. Backward Compatibility (feature 245) — "never reads or writes Open
+    Salamander or Newt Commander configuration" becomes "never writes" plus
+    one narrow, explicit read: the settings import the user starts (Options →
+    Import Settings from Salamander, or the one-time offer at the first start
+    of a fresh configuration, which only checks whether such a configuration
+    exists). The import reads the old key read-only, changes nothing before
+    the user confirms the preview, and never overwrites a current setting
+    without explicit consent; no old identity is reintroduced.
+  Rationale: the maintainer's request of 2026-10-18 (feature 245): users
+  coming from Altap / Open Salamander need their hot paths, FTP connections
+  and other settings; the standalone script of feature 057 was hard to find,
+  untranslated, replace-only and overwrote current settings. MAJOR because a
+  principle's prohibition is redefined.
+Templates requiring updates: none (generic Constitution Check gate)
+Follow-up TODOs: none
+
+Prior report (3.1.0 → 3.2.0)
+===================
 Version change: 3.1.0 → 3.2.0 (existing guidance materially changed, no principle redefined)
 Modified sections:
   - Development Workflow ▸ Release Documentation (feature 243) — the Added /
@@ -91,8 +111,17 @@ Tandem Commander is deliberately NOT compatible with its
 predecessors' product identities: it uses its own binary name
 (`tandemcommander.exe`), registry root (`HKCU\Software\Tandem
 Commander`), inter-process object names, and shell-extension
-identity, and it never reads or writes Open Salamander or Newt
-Commander configuration. Identity changes are wholesale, one-time,
+identity, and it never writes Open Salamander, Altap Salamander or
+Newt Commander configuration. It reads such configuration only in
+one narrow, explicit case (feature 245): the settings import that
+the user starts (*Options → Import Settings from Salamander*, or the
+offer at the first start of a fresh configuration, which itself only
+checks *whether* an Altap or Open Salamander configuration exists).
+That import reads the old program's key read-only, changes nothing in
+Tandem Commander before the user confirms its preview, and never
+overwrites a current setting unless the user explicitly allows it.
+It does not reintroduce any old identity; the old roots are never
+loaded as Tandem Commander's own configuration. Identity changes are wholesale, one-time,
 documented decisions and MUST NOT be reintroduced piecemeal: the
 break with Open Salamander 5.0 was made in feature 032
 (`specs/032-newt-commander-rebrand/`), and the Newt Commander →
@@ -256,4 +285,4 @@ versioning rules below.
 changes align with this constitution's principles. Violations
 MUST be flagged and resolved before merge.
 
-**Version**: 3.2.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-10-17
+**Version**: 4.0.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-10-18

@@ -274,10 +274,11 @@ would corrupt memory; the migration path is a rebuild against the 104
 SDK - see `doc/plugin-vnext-migration.md` and
 `specs/004-long-paths-unicode/contracts/plugin-interface-vnext.md`.
 
-## Plugin Interfaces 105-107 (additions only)
+## Plugin Interfaces 105-108 (additions only)
 
-Every version after 104 is a pure append at the end of
-`CSalamanderGeneralAbstract` plus constants and comments, so a plugin built
+Every version after 104 is a pure append at the end of a core-implemented
+class (`CSalamanderGeneralAbstract`; 108: `CSalamanderPluginEntryAbstract`)
+plus new classes, constants and comments, so a plugin built
 for 104 or later loads into any later core unchanged. In-tree plugins are
 built against the current version and require a core that has it. The
 version history is the comment block above `LAST_VERSION_OF_SALAMANDER` in
@@ -288,6 +289,22 @@ version history is the comment block above `LAST_VERSION_OF_SALAMANDER` in
 | 105 | 036 | theme services for plugin UI (6 methods) | `specs/036-plugin-dark-theme/contracts/plugin-theme-api.md` |
 | 106 | 049 | `ThemeSubclassPropSheetFrame` | `specs/049-dark-mode-stabilization/contracts/plugin-theme-api-v106.md` |
 | 107 | 088 | unattended close: `IsUnattendedClose`, `SetWindowClosesUnattended`; `SAL_MAX_PATH_UTF8` and `CSalMaxPathBuffer` in `spl_base.h`; corrected buffer sizes in the comments | `specs/088-plugin-interface-107/contracts/plugin-api-v107.md` |
+| 108 | 245 | settings import from Altap Salamander / Open Salamander: `CSalamanderPluginEntryAbstract::SetPluginSettingsImport`, `CPluginSettingsImportAbstract` (plugin), `CSalamanderSettingsImportAbstract` (core), `SALIMPORT_*` | `specs/245-settings-import-salamander/contracts/plugin-api-v108.md` |
+
+**Settings import (108).** A plugin that can merge its own settings from an
+older program registers a handler in every `SalamanderPluginEntry`
+(`SetPluginSettingsImport`, a static object). The wizard calls
+`ImportSettings(parent, import, dryRun)` twice: a dry run for the preview
+(report every item, change nothing) and the apply (the same decisions, all or
+nothing, in memory; the core saves). The plugin reads the old program's key
+only through `GetSourceKey` - a read-only view of the core's in-memory copy
+(writes return FALSE; `SalRegQueryValueEx` and other direct registry calls do
+not work on its handles) - and stores passwords only through
+`DecryptSourcePassword` / `EncryptForStorage`, never with weaker protection
+than the program's own. In-tree: the FTP client (bookmarks, proxy servers,
+user-defined server types). A plugin without a handler is offered only as
+"take over its settings as a whole": the core unloads it and replaces its
+`Plugins Configuration` subtree.
 
 **Unattended close (107).** When an installer closes the program through
 the Restart Manager (feature 080) nobody sits at the machine. A plugin's

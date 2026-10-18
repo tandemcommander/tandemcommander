@@ -493,6 +493,10 @@
 				<param name="Local" value="hh\salamand\customize_configuration.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Importing Settings from Salamander">
+				<param name="Local" value="hh\salamand\customize_importsalamander.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Setting User's Skill Level">
 				<param name="Local" value="hh\salamand\customize_menuskilllevel.htm">
 				</OBJECT>

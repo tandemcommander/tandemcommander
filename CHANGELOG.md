@@ -20,6 +20,15 @@ plugin.
   - **When it ends:** the search now lasts until Esc, until the folder, tab or active panel changes, or until an operation creates or renames an item that does not match. Before, almost any command ended it.
   - **Previous behaviour:** to get it back, clear *Options → Configuration → Panels → Quick search finds text anywhere in names and shows only the matches*.
   - **Limitation:** where the match starts is not highlighted in the name; the cursor stands after its end.
+- **Import settings from Altap Salamander and Open Salamander** (feature 245).
+  - **Where:** *Options → Import Settings from Salamander*. At the first start of a new Tandem Commander configuration the program also offers it once, if it finds settings of Altap Salamander 2.5–4.0 or Open Salamander 5.0.
+  - **What:** hot paths, FTP connections (bookmarks, proxy servers, server types, saved passwords), the user menu, shortcuts you gave to plugin commands, viewer and editor associations, saved searches and the search ignore list, histories, confirmations, panel, keyboard and general options, internal viewer settings, colours and highlighting, view templates, default directories of drives and the settings of the plugins Tandem Commander ships.
+  - **Safe by default:** the old program's settings are only read, never changed. The wizard shows a preview before anything changes; with its defaults it only adds what is new and changes nothing you already have. Replacing a group or taking over options is off until you tick it, and every value it would change is listed and must be allowed. A backup of your current settings is saved first, and the result says how to restore it.
+  - **Never imported:** archiver settings (use *Archivers Autoconfiguration*), the plugin installation, the language, the theme, panel tabs, toolbar layouts and window positions — Tandem Commander's own plugins (SFTP, Markdown and code viewers) and file associations stay as they are. Plugins Tandem Commander does not include are named in the result.
+  - **Passwords:** passwords the old program protected with a Master Password come over only if you type that Master Password; they are then protected like Tandem Commander's own, never with weaker protection unless you agree.
+  - **Keyboard shortcuts:** shortcuts of Tandem Commander's own commands cannot be changed, so only the shortcuts you gave to plugin commands are imported.
+  - **Removed:** the standalone script `utils/migrate-altap-settings.cmd` (0.1.3), which the wizard replaces; it replaced whole groups and could overwrite settings you had already made in Tandem Commander.
+  - **For plugin authors:** plugin interface 108 adds `SetPluginSettingsImport`, through which a plugin merges its own settings from the old program; plugins built for 104–107 keep working.
 
 ## [0.1.10] — 2026-10-17
 

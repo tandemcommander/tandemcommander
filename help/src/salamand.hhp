@@ -177,6 +177,8 @@ CM_ALWAYSONTOP=hh\salamand\environment_alwaystop.htm
 CM_SAVECONFIG=hh\salamand\customize_configuration.htm
 CM_EXPORTCONFIG=hh\salamand\customize_configuration.htm
 CM_IMPORTCONFIG=hh\salamand\customize_configuration.htm
+CM_IMPORTFROMSALAMANDER=hh\salamand\customize_importsalamander.htm
+IDD_CFGIMPORT_SOURCE=hh\salamand\customize_importsalamander.htm
 CM_PLUGINCFG_MIN=hh\salamand\plugins_config.htm
 CM_SKILLLEVEL=hh\salamand\customize_menuskilllevel.htm
 ;

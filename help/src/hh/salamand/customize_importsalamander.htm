@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Importing Settings from Salamander</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="../salamander_help.css" />
+<link rel="stylesheet" type="text/css" href="../salamander_help_shared.css" />
+</head>
+
+<body>
+<div id="help_page">
+<div class="header">Tandem Commander: Customizing</div>
+<div class="page">
+<h1>Importing Settings from Salamander</h1>
+
+<p>If you used Altap Salamander (versions 2.5 to 4.0) or Open Salamander 5.0
+before, the <i>Import Settings from Salamander</i> wizard brings your settings
+to Tandem Commander. Start it from the <b>Options</b> menu. When Tandem Commander
+starts for the first time and finds such settings, it offers the wizard once;
+answer <i>No</i> and it does not ask again &mdash; the command stays in the
+Options menu.</p>
+
+<p>The old program's settings are only read; they are never changed. Nothing in
+Tandem Commander changes until you confirm the preview, and with the wizard's
+defaults nothing you already have in Tandem Commander is changed &mdash; only
+new items are added.</p>
+
+<h4>The Steps</h4>
+<dl>
+<dt><i>Settings found</i></dt>
+<dd>Lists the settings of Altap Salamander and Open Salamander found for your
+Windows user, newest first. Versions older than Altap Salamander 2.5, or written
+by a newer program, cannot be imported. A note tells you when the old program
+seems to be running (settings it has not saved yet are not seen) or when its
+last save may have been interrupted.</dd>
+
+<dt><i>What to import</i></dt>
+<dd>Each group shows the number of items found. Tick the groups you want. For
+hot paths, the user menu, FTP connections and shortcuts of plugin commands you
+choose the mode:
+<ul>
+<li><i>Add to my current settings</i> (the default) keeps everything you have
+and adds what is new. An item you already have is not added twice; an item that
+would collide with yours (the same hot path slot, the same FTP connection name,
+a shortcut already in use) leaves yours as it is and is added in another form
+(the next free slot, a name with <i>(imported)</i>) or not at all.</li>
+<li><i>Replace my current settings</i> makes the group what the old program had;
+your current items in it are removed.</li>
+</ul>
+Viewers and editors are always added after the ones you have, so yours keep
+precedence. Groups that are sets of options (confirmations, panel and keyboard
+behaviour, general options, internal viewer settings, colours and highlighting,
+view templates, default directories, the settings of a plugin) take over the
+old program's values and are therefore unticked until you tick them.</dd>
+
+<dt><i>Saved passwords</i></dt>
+<dd>Shown when FTP connections with saved passwords are imported. Passwords the
+old program stored without a Master Password come over as they are. Passwords it
+protected with its Master Password come over only if you type that Master
+Password here; Tandem Commander then protects them like its own &mdash; under
+your Tandem Commander Master Password if you use one. If you do not, tick
+<i>Store them without a Master Password</i> to import them anyway, or set a
+Master Password first (<b>Options &gt; Configuration &gt; Security</b>) and run
+the import again.</dd>
+
+<dt><i>Preview</i></dt>
+<dd>Lists every change per group: <b>+</b> added, <b>=</b> already present,
+<b>~</b> replaced (current value &rarr; new value), <b>-</b> removed, <b>!</b>
+imported but worth checking (for example a command that points into the old
+program's folder or to a program that no longer exists), <b>x</b> not imported
+and why. When anything of yours would be replaced or removed, <i>Import</i> is
+enabled only after you allow those changes.</dd>
+
+<dt><i>Result</i></dt>
+<dd>What really happened, the backup file of your previous settings and how to
+return to them. <i>Copy</i> and <i>Save</i> keep the report.</dd>
+</dl>
+
+<h4>What is never imported</h4>
+<p>Archiver settings (use <b>Options &gt; Archivers Autoconfiguration</b>), the
+installation of plugins, the language, the theme, panel tabs, toolbar layouts and
+window positions. Tandem Commander's own plugins and the file types they open stay
+as they are. Settings of plugins that Tandem Commander does not include are named
+in the result. Shortcuts of Tandem Commander's own commands cannot be changed, so
+only the shortcuts you gave to plugin commands are imported.</p>
+
+<h4>Returning to the previous settings</h4>
+<p>Before the first change the wizard saves all your current settings to
+<code>%APPDATA%\Tandem Commander\Settings backups\before-import-&lt;date&gt;.reg</code>.
+To go back, close Tandem Commander and start it with the parameter
+<code>-C "&lt;that file&gt;"</code>, or double-click the file.</p>
+
+<h4>Remarks</h4>
+<p>Close other Tandem Commander windows before importing: they would overwrite the
+imported settings when they close. The import works on the same computer and
+Windows user as the old program.</p>
+
+<p>See also:<br />
+<a href="customize_configuration.htm">Configuring Tandem Commander</a><br />
+<a href="configuration_security.htm">Security configuration</a>
+</p>
+
+</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
+</div>
+</body>
+</html>
