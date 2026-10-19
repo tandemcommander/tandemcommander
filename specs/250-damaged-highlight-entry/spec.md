@@ -5,6 +5,13 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item a-damaged-highlighting-entry-hangs-the-program-at-start-up - implement exactly what it describes." From backlog item a-damaged-highlighting-entry-hangs-the-program-at-start-up.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: Should the existing "Error Loading Configuration" message for an entry of the wrong type or a read error be silenced? → A: No - it stays, shown at most once per damaged entry; only the endless repetition goes (autonomous run: conservative)
+- Q: Should a skipped damaged entry be kept in the registry when the configuration is saved on exit? → A: No - the existing save rewrites the list from the loaded entries; the save is not changed (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The program starts with a damaged highlighting entry (Priority: P1)
