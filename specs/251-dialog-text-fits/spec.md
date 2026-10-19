@@ -22,6 +22,14 @@ bytes) were stored as `?` characters (a code-page fallback); the drives page's "
 stored as 258 bytes; its browse button started from a cut path; Edit New's "Save as default" stored
 a cut default name.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: When do the configuration pages that store a field on every keystroke refuse text that does not fit - at the keystroke, or when the page is validated? → A: when the page is validated (OK or leaving the page), with the item selected and the field marked; the item keeps the whole text until then (autonomous run: conservative - refusing a keystroke is not possible, cutting is what the item forbids)
+- Q: Which buffer sizes are the limits? → A: the sizes the program loads and runs the values with: 260 bytes for names, commands, initial directories and viewer / editor arguments (`GetValue(..., MAX_PATH)` in `salamdr2.cpp` / `mainwnd2.cpp`), 32,772 for user menu arguments, 1,040 for a hot path path (autonomous run: rule - never cut a path, refuse)
+- Q: Is Make File List's file name refused when the destination is the clipboard or the viewer? → A: no - the field is not used then; a value that does not fit is simply not stored and the previous one stays (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Make File List never writes to a shortened name (Priority: P1)
