@@ -1,19 +1,19 @@
 ---
 title: FTP: PWD reply cut at 300 bytes and other long-name leftovers of 215
 type: bug
-status: open
+status: blocked
 severity: 5
 area: ftp
 source: review:215
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 4c6fd132
 effort: M
 feature: -
 related: [ftp-per-server-encoding-flag]
 depends-on: []
-reason: -
+reason: split: larger than one feature (an interface decision, long local paths, a part depending on ftp-per-server-encoding-flag); agent 2026-10-20
 ---
 
 # FTP: PWD reply cut at 300 bytes and other long-name leftovers of 215
@@ -37,3 +37,6 @@ Deep FTP paths are limited to ~260 bytes by the core (a limit, recorded in 233).
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at 4c6fd132: by reading at 4c6fd132: PWD cut only in the AIX form and the UTF-8 decode (RFC form refused); helpers, lock compare, link size still cut; split into four parts
+- 2026-10-20 — blocked: split: larger than one feature (an interface decision, long local paths, a part depending on ftp-per-server-encoding-flag); agent 2026-10-20
+- 2026-10-20 — split into: ftp-pwd-and-created-path-cut, ftp-escaped-path-does-not-fit-decision, ftp-local-long-paths, ftp-mask-letters-by-server-encoding
