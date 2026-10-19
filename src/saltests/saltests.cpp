@@ -70,6 +70,7 @@
 #include "salquickfilter.h"   // feature 244
 #include "salcfgimport.h"     // feature 245
 #include "salnetdrive.h"      // feature 246
+#include "salcpfit.h"         // feature 248
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -13601,6 +13602,53 @@ static BOOL NetText246(const WCHAR* name, const WCHAR* remote, BOOL amp, const W
     return needed == (int)wcslen(expected) + 1 && wcscmp(buf, expected) == 0;
 }
 
+// feature 248: wide text -> code page, no best-fit, cut at a whole character
+static bool CpFit248(const wchar_t* w, int bufSize, UINT cp, int expN, const char* expBytes)
+{
+    char buf[64];
+    memset(buf, 'Z', sizeof(buf));
+    int n = SalWToCodePageWhole(w, buf, bufSize, cp);
+    if (n != expN)
+        return false;
+    if (n < 0)
+        return true;
+    return strcmp(buf, expBytes) == 0 && buf[bufSize] == 'Z'; // terminated, nothing written past the size
+}
+
+static void TestCpFit248()
+{
+    // the names of issue #13 in code page 1250 (z with caron 0x9E, e with caron 0xEC)
+    CHECK(CpFit248(L"Typ polo\x017Eky", 30, 1250, 11, "Typ polo\x9Eky"));
+    CHECK(CpFit248(L"Datum zm\x011Bny", 30, 1250, 11, "Datum zm\xECny"));
+    // no best-fit: a with macron and a CJK character are outside 1250 -> '?', never "a"
+    CHECK(CpFit248(L"a\x0101\x4E2D", 30, 1250, 3, "a??"));
+    CHECK(CpFit248(L"zm\x011Bny", 30, 1252, 5, "zm?ny")); // e with caron outside 1252: not "zmeny"
+    // too long: cut at a whole character, never empty
+    CHECK(CpFit248(L"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 30, 1250, 29, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"));
+    CHECK(CpFit248(L"\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D\x4E2D",
+                   30, 932, 28, "\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86\x92\x86"));
+    CHECK(CpFit248(L"a\x4E2D", 3, 932, 1, "a"));          // 3 bytes needed + NUL: the double-byte character goes whole
+    CHECK(CpFit248(L"\x4E2D", 2, 932, 0, ""));            // not even one character fits
+    // surrogate pairs: a pair torn by an earlier cut is dropped; a cut never splits a pair
+    CHECK(CpFit248(L"ab\xD83D", 30, 1250, 2, "ab"));
+    CHECK(CpFit248(L"ab\xD83D\xDE00", 3, 1250, 2, "ab"));
+    CHECK(CpFit248(L"ab\xD83D\xDE00", 3, CP_UTF8, 2, "ab"));
+    CHECK(CpFit248(L"ab\xD83D\xDE00", 7, CP_UTF8, 6, "ab\xF0\x9F\x98\x80"));
+    // the UTF-8 system code page: the flag is not allowed there, the text still converts
+    CHECK(CpFit248(L"polo\x017Eky", 30, CP_UTF8, 8, "polo\xC5\xBEky"));
+    // edges
+    CHECK(CpFit248(L"", 30, 1250, 0, ""));
+    CHECK(CpFit248(NULL, 30, 1250, 0, ""));
+    CHECK(CpFit248(L"abc", 1, 1250, 0, ""));
+    char one[1] = {'Z'};
+    CHECK(SalWToCodePageWhole(L"abc", one, 0, 1250) == -1 && one[0] == 'Z');
+    CHECK(SalWToCodePageWhole(L"abc", NULL, 30, 1250) == -1);
+    // CP_ACP is the system's code page: the same bytes as asking for it by number
+    char a1[32], a2[32];
+    CHECK(SalWToCodePageWhole(L"Typ polo\x017Eky", a1, 30) == SalWToCodePageWhole(L"Typ polo\x017Eky", a2, 30, GetACP()) &&
+          strcmp(a1, a2) == 0);
+}
+
 static void TestNetDrive246()
 {
     // the key Explorer keeps a drive's name under (measured: analysis.md G1)
@@ -13911,6 +13959,7 @@ int main(int argc, char** argv)
     TestQuickFilter244();
     TestCfgImport245();
     TestNetDrive246();
+    TestCpFit248();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

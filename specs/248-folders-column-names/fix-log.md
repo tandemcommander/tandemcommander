@@ -80,3 +80,52 @@ The maintainer's instance had closed by then, so the probe ran on the hidden des
 - `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)` (it does not scan `plugins/`).
 - `git diff --stat` over `src`: only `src/plugins/folders/fs1.cpp` and `folders.h` (SC-003).
 - `saltests`: not run - no change in the core or `src/common/`.
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+No MUST. It rebuilt the branch and re-ran the probe (PASS 6), built `main`'s `fs1.cpp` as a
+negative control (COL2 / COL3 FAIL, NAME / CELLS / END PASS), restored and re-ran (PASS 6);
+enumerated the readers of `CColumn::Name` itself (all code page; tooltip uses `Description`).
+
+- SHOULD 1 - columns duplicate after a view-mode switch (`fld:`, Detailed → Brief → Detailed:
+  "... | Datum změny | Název | Velikos..."): `GetShellColumns` appends to `ShellColumns` /
+  `VisibleColumns` without clearing them and `SetupView` runs again on the same data interface.
+  Older than 248, same on `main`: **not fixed here** - Inbox item (source `review:248`).
+- SHOULD 2 - a name that does not fit became an empty header, but `CColumn::Name` "must not
+  contain an empty string" (`spl_com.h`) and CLAUDE.md says to cut a text at a whole character.
+  **Fixed**: the rule `SalWToCodePageWhole` (`src/common/salcpfit.h`) cuts at a whole character;
+  spec FR-005 / Clarifications revised (rule beats the earlier conservative answer).
+- SHOULD 3 - `StrRetToBufW` into 30 units can tear a surrogate pair. **Fixed** in the same rule
+  (a torn high surrogate at the end is dropped).
+- NOTE 4 - UTF-8 system code page: `WC_NO_BEST_FIT_CHARS` is documented as not allowed for
+  `CP_UTF8`. Measured working on this build of Windows; **handled anyway**: no flag for
+  UTF-8 / UTF-7, and a retry without the flag on `ERROR_INVALID_FLAGS` (pattern of `salzippwd.h`).
+- NOTE 5 - the GUI probe cannot prove FR-004 / FR-005 (everything fits cp1250): now proved by
+  `TestCpFit248` (saltests) with code pages 1250, 1252, 932 and UTF-8.
+- NOTE 6 - closing records (FEATURE-HISTORY, CHANGELOG): written at closing.
+- NOTE 7 - the encoding of `CColumn::Name` is not documented for plug-in authors (`spl_com.h`,
+  `architecture/06`): the interface files are the maintainer's - Inbox item.
+
+### After review 1
+
+- New `src/common/salcpfit.h` (header-only, UTF-8 BOM, CRLF, clang-format clean);
+  `fs1.cpp` calls `SalWToCodePageWhole(colNameW, col.Name, sizeof(col.Name))`.
+- `saltests` `TestCpFit248` (22 checks): issue #13 names in 1250 (bytes `9E`, `EC`); no best-fit
+  (1250 "a" U+0101 U+4E2D → `a??`; 1252 "změny" → `zm?ny`); cuts (30 × "x" into 30 → 29;
+  15 CJK into 30 in 932 → 14 whole = 28 bytes; "a" + CJK into 3 → "a"; CJK into 2 → empty);
+  surrogates (torn tail dropped; a pair never split in 1250 and UTF-8; whole pair in UTF-8 → 4
+  bytes); UTF-8 system code page; empty / NULL / tiny buffers; nothing written past the size;
+  `CP_ACP` = `GetACP()`.
+- A sizing trap avoided: `WideCharToMultiByte` with an output size of 0 returns the needed size
+  instead of failing - a buffer of fewer than 2 bytes returns empty before the call.
+- Build `BUILD SUCCEEDED`; `saltests: 24316 checks, 0 failed` (exit 0).
+- Negative control 1 (sabotage: also `len -= 1` instead of the pair-aware cut): the build failed on
+  the sabotage line itself (unused expression treated as error) - not a valid control, redone.
+- Negative control 2 (sabotage: best-fit allowed, flag 0): `saltests: 24316 checks, 2 failed` -
+  exactly the two no-best-fit checks (lines with `a??` and `zm?ny`). Header restored from the copy,
+  rebuilt: `0 failed`.
+- `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`.
+- Probe on the final build, `probe/result_after.txt`: PATH, NAME, COL2, COL3, CELLS, END PASS,
+  COL1 INFO - PASS 6, FAIL 0; registry restored, SHA-256 identical.

@@ -30,6 +30,13 @@
 - [X] T007 Run `python tools/check_encoding.py --strict` (expect `TOTAL: 0 finding(s)`) and record in specs/248-folders-column-names/fix-log.md
 - [X] T008 Confirm the diff touches no file outside src/plugins/folders/ and the feature's records (SC-003): `git diff --stat main...248-folders-column-names -- src`
 
+## Phase 5: Review round 1 (SHOULD 2, 3 - a name that does not fit)
+
+- [X] T009 Write the header-only rule `SalWToCodePageWhole` (no best-fit, cut at a whole character, torn surrogate dropped, UTF-8 system code page) in src/common/salcpfit.h
+- [X] T010 Use it in `GetShellColumns` in src/plugins/folders/fs1.cpp
+- [X] T011 Add `TestCpFit248` to src/saltests/saltests.cpp; build; saltests 0 failed; negative control (best-fit allowed) must fail; record in specs/248-folders-column-names/fix-log.md
+- [X] T012 Re-run the probe (`-Expect fixed`) on the final build, result to specs/248-folders-column-names/probe/result_after.txt
+
 ## Dependencies & Execution Order
 
 T001 → T002 → T003 → T004 → T005 → T006 → T007 → T008. T003 and T004 touch different files but

@@ -17,28 +17,36 @@
 
 ## R2. How to convert
 
-- **Decision**: `WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, colNameW, -1, col.Name,
-  sizeof(col.Name), NULL, NULL)`; a result `<= 0` leaves the name empty.
+- **Decision** (revised after the first review): the header-only rule `SalWToCodePageWhole`
+  (`src/common/salcpfit.h`, saltests `TestCpFit248`): `WideCharToMultiByte(CP_ACP,
+  WC_NO_BEST_FIT_CHARS)` with an explicit length, one whole character less while the result does
+  not fit (`ERROR_INSUFFICIENT_BUFFER`); no flag on the UTF-8 / UTF-7 system code page, and a retry
+  without it on `ERROR_INVALID_FLAGS`; a torn high surrogate at the end is dropped; a buffer of
+  fewer than 2 bytes gives an empty result (a size of 0 would make the call return the needed size
+  instead of failing). First version: a direct call with `-1`, empty on failure.
 - **Rationale**: the plug-in runs in the core's process, so `CP_ACP` is the code page the header
   draws in. `WC_NO_BEST_FIT_CHARS` maps a character outside the code page to the default
-  character (`?`) instead of a lookalike letter (spec FR-004, Clarifications). With `-1` the
-  terminator is converted too; when the result does not fit, the function fails with
-  `ERROR_INSUFFICIENT_BUFFER` and returns 0 - it never leaves a half double-byte character as a
-  result the code would use (FR-005); the name is then emptied as the current code does.
+  character (`?`) instead of a lookalike letter (spec FR-004, Clarifications). The rule converts an
+  explicit length into `bufSize - 1` bytes and writes the terminator itself; when the result does
+  not fit, the function fails with
+  `ERROR_INSUFFICIENT_BUFFER` and returns 0, so the rule retries one whole character shorter -
+  never a half double-byte character (FR-005).
 - **Alternatives considered**: `StrRetToBufA` (upstream) - best-fit and a byte cut that can split a
   double-byte character; best-fit flag `0` - would show e.g. "e" for "ě" on a 1252 system (a
   different word, against the project's stance on best-fit, 104).
 
 ## R3. Length
 
-- **Decision**: unchanged. `StrRetToBufW` into `WCHAR[COLUMN_NAME_MAX]` keeps at most 29 UTF-16
-  units (documented: the string is truncated to the buffer). In a single-byte code page 29
-  characters always fit 30 bytes; in a double-byte code page a long name may not fit and is left
-  empty, as a long non-ASCII name was left empty with UTF-8 before.
-- **Rationale**: conservative (spec Clarifications); the item does not ask to change it.
+- **Decision**: `StrRetToBufW` into `WCHAR[COLUMN_NAME_MAX]` keeps at most 29 UTF-16 units
+  (unchanged; it may tear a surrogate pair - the rule drops the torn half). A code-page form longer
+  than 29 bytes (double-byte code pages) is cut at a whole character.
+- **Rationale**: `CColumn::Name` must not be empty (`spl_com.h`); CLAUDE.md: a text that must be
+  shortened is cut at a whole character. The first version left such a name empty (review SHOULD 2).
 
 ## R4. A pure-decision header with `saltests`?
 
-- **Decision**: none. The change is one system call with its flags; there is no rule of the
-  program's own to test without the GUI (stop-rules §2.5 applies to pure decisions). The proof
-  is the GUI probe plus a byte check recorded in the fix log.
+- **Decision**: yes, after the first review: once the conversion had to shorten at a whole
+  character it became a rule of its own - `src/common/salcpfit.h`, header-only (plug-ins cannot
+  compile a `.cpp` of `src/common`), checked by `TestCpFit248` in `src/saltests/saltests.cpp`
+  (the names of issue #13, no best-fit in 1250 / 1252, cuts in 1250 and 932, surrogate pairs,
+  UTF-8, edges). The first decision, "none" (one system call), is replaced.

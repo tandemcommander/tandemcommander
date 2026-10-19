@@ -10,7 +10,7 @@
 ### Session 2026-10-19
 
 - Q: How is a character of a shell column name that the Windows code page cannot represent shown - as a lookalike letter (best-fit) or as the replacement mark? → A: the replacement mark, no best-fit (autonomous run: item - "a character outside the code page is not shown" - and conservative)
-- Q: What happens to a shell column name that does not fit the column-name field? → A: as today - the shell's text is limited to the field's length when it is read, and a name whose code-page form still does not fit leaves the header empty; never cut inside a character of the code page (autonomous run: conservative)
+- Q: What happens to a shell column name that does not fit the column-name field? → A: it is shortened at a whole character (never half a surrogate pair, never half a double-byte character), never left empty - revised after the first review: `CColumn::Name` "must not contain an empty string" (`spl_com.h`) and CLAUDE.md says a text that must be shortened is cut at a whole character (autonomous run: rule; the first answer, "empty as today", was conservative and is replaced)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -41,9 +41,9 @@ line: every column name equals the shell's name for that column.
 - A shell column name holds a character the Windows code page cannot represent: that character
   is not shown faithfully in the header (it becomes the code page's replacement mark), as for
   any other column name; the rest of the name is right.
-- A shell column name too long for the column-name field: handled as before this feature - the
-  shell's text is limited to the field's length when it is read; a name whose code-page form
-  still does not fit (possible only in double-byte code pages) leaves the header empty.
+- A shell column name too long for the column-name field: shortened at a whole character, never
+  empty (before this feature such a name - e.g. 10+ CJK characters as UTF-8 - left the header
+  empty); a surrogate pair torn by the 29-unit read is dropped whole.
 - Sorting by a plug-in column, the header's context menu and column widths are not affected:
   they do not use the column's name text, only its measurement for the width (which then
   measures the right text).
@@ -61,9 +61,8 @@ line: every column name equals the shell's name for that column.
   core MUST NOT change.
 - **FR-004**: A character outside the code page MUST NOT be replaced by a different-looking
   letter of the code page (no best-fit lookalike); it shows as the code page's replacement mark.
-- **FR-005**: A name too long for the column-name field MUST keep today's behaviour (limited to
-  the field's length when read; empty when its code-page form does not fit), never a name cut
-  inside a character of the code page.
+- **FR-005**: A name too long for the column-name field MUST be shortened at a whole character
+  (never half a surrogate pair or a double-byte character) and MUST NOT become empty.
 
 ### Key Entities
 
@@ -78,8 +77,9 @@ line: every column name equals the shell's name for that column.
   (2 of the 4 default columns) read correctly in the header line (probe: before FAIL, after PASS).
 - **SC-002**: The headers and cells that were right before stay right (probe rows NAME and
   CELLS pass before and after), and the program ends cleanly (exit code 0, no report).
-- **SC-003**: No change outside the Folders plug-in's source (the diff touches only
-  `src/plugins/folders/` plus records).
+- **SC-003**: No behaviour change outside the Folders plug-in (the diff touches
+  `src/plugins/folders/`, the plug-in-usable rule `src/common/salcpfit.h` and its checks in
+  `saltests`, plus records).
 
 ## Assumptions
 
@@ -90,7 +90,7 @@ line: every column name equals the shell's name for that column.
 - Assumption (autonomous run): "a character outside the code page is not shown" (item *Approach*)
   is implemented without best-fit mapping - a lookalike letter would show a different word
   (conservative; the project's stance on best-fit, CLAUDE.md, 104).
-- Assumption (autonomous run): a too-long name keeps today's handling (conservative: the item does
-  not name that case).
+- Assumption (autonomous run): a too-long name is cut at a whole character (rule: CLAUDE.md 097 /
+  098 / 101 and the interface's "must not be empty"; see Clarifications).
 - The GUI check needs the program not to run elsewhere on the machine (shared settings); when the
   maintainer's instance runs, the probe is owed to a person.

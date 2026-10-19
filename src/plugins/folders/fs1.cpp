@@ -12,6 +12,8 @@
 #include "folders.rh2"
 #include "lang\lang.rh"
 
+#include "../../common/salcpfit.h" // feature 248: column names in the code page, cut at a whole character
+
 // FS name assigned by Salamander after the plugin is loaded
 char AssignedFSName[MAX_PATH] = "";
 
@@ -455,11 +457,9 @@ BOOL CPluginDataInterface::GetShellColumns()
         WCHAR colNameW[COLUMN_NAME_MAX];
         StrRetToBufW(&di.str, NULL, colNameW, SAL_ARRAYSIZE(colNameW));
         // column names cross the interface in the code page (the core draws the header with the
-        // A functions); only the cell texts are UTF-8 (interface 104). No best-fit: a character
-        // outside the code page becomes the default character, never a different-looking letter.
-        if (WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, colNameW, -1, col.Name,
-                                sizeof(col.Name), NULL, NULL) <= 0)
-            col.Name[0] = 0; // does not fit in the code page or invalid: leave empty
+        // A functions); only the cell texts are UTF-8 (interface 104). No best-fit; a name that
+        // does not fit is shortened at a whole character (CColumn::Name must not be empty).
+        SalWToCodePageWhole(colNameW, col.Name, sizeof(col.Name));
         col.Fmt = di.fmt;
         col.Char = di.cxChar;
         col.Flags = SHCOLSTATE_ONBYDEFAULT; // columns shown by default

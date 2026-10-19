@@ -9,8 +9,9 @@ The Folders plug-in reads each shell column name as UTF-16 (`StrRetToBufW`) and 
 UTF-8 (`SplWToU8`) in `CShellColumn::Name`; `SetupView` copies that into `CColumn::Name`, which the
 core (an MBCS build) draws and measures with the `A` GDI functions - UTF-8 bytes shown as code page
 1250 give "Typ poloĹľky". Per the maintainer's decision the fix stays in the plug-in:
-`GetShellColumns` converts the UTF-16 name to the Windows code page (`WideCharToMultiByte(CP_ACP,
-WC_NO_BEST_FIT_CHARS)`) into the same field. Cell texts (UTF-8, interface 104), the plug-in
+`GetShellColumns` converts the UTF-16 name to the Windows code page without best-fit, cut at a
+whole character when it does not fit (header-only rule `SalWToCodePageWhole`,
+`src/common/salcpfit.h`, added after the first review) into the same field. Cell texts (UTF-8, interface 104), the plug-in
 interface and the core do not change.
 
 ## Technical Context
@@ -18,7 +19,7 @@ interface and the core do not change.
 **Language/Version**: C++20 (`/std:c++latest`), MSVC v143
 **Primary Dependencies**: WinAPI (shell `IShellFolder2` / `IShellDetails`, `StrRetToBufW`, `WideCharToMultiByte`)
 **Storage**: N/A
-**Testing**: build (`build.cmd`), encoding guard, GUI probe `probe/folders248_probe.ps1` (OCR of the header line on the hidden desktop); `saltests` not affected (no core / `src/common` change)
+**Testing**: build (`build.cmd`), encoding guard, `saltests` (`TestCpFit248`), GUI probe `probe/folders248_probe.ps1` (OCR of the header line on the hidden desktop)
 **Target Platform**: Windows 11 x64
 **Project Type**: desktop application, plug-in DLL (`folders.spl`)
 **Performance Goals**: N/A (one conversion per column per listing set-up)
@@ -63,9 +64,13 @@ scope by the maintainer's decision).
 src/plugins/folders/
 ├── fs1.cpp      # CPluginDataInterface::GetShellColumns - the conversion (the only code change)
 └── folders.h    # CShellColumn::Name - comment: code page
+src/common/salcpfit.h       # SalWToCodePageWhole - the pure rule (header-only, usable by plug-ins)
+src/saltests/saltests.cpp   # TestCpFit248
 ```
 
-**Structure Decision**: the change is confined to the Folders plug-in.
+**Structure Decision**: the behaviour change is confined to the Folders plug-in; the rule it uses
+lives in a header under `src/common/` with `saltests` checks (stop-rules §2.5). The core's
+behaviour does not change (nothing in the core includes the header).
 
 ## Complexity Tracking
 
