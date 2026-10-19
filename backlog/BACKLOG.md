@@ -157,6 +157,7 @@ Last triaged: 2026-10-17
 | [Remove the dormant start-up import of older Open Salamander configurations](items/remove-the-dormant-start-up-import-of-older-open-salamander/desc.md) | tech-debt | 2 | data-safety | measure:245 | 2026-10-18 |
 | [The stored main window icon index is checked against the count, not the last index](items/the-stored-main-window-icon-index-is-checked-against-the/desc.md) | bug | 1 | panels-ui | measure:245 | 2026-10-18 |
 | [translate.merge keeps a stale machine translation when the English text changes](items/translate-merge-keeps-a-stale-machine-translation-when-the/desc.md) | bug | 3 | translations | measure:245 | 2026-10-18 |
+| [Desktop view (Folders plug-in) column headers show mojibake for accented names](items/drobna-chyba-textu-v-hlavicce-pro-zobrazeni-plochy-v-cestine/desc.md) | bug | 3 | plugin-api | github#13 | 2026-10-19 |
 
 ## Parked
 
