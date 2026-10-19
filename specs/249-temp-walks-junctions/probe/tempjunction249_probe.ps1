@@ -17,7 +17,11 @@
                t.arj\top, select all, F5 to <fixture>\out, OK.
                PASS = victimU\keep.txt kept, out holds no keep.txt and no PACK*.tmp folder is left.
                (Before the fix the walk entered "top" and moved victimU's files into out.)
+      DEEP     as UNPACK one level deeper: the archive holds a\top\a.txt, the panel shows t.arj\a\top, the
+               fake "x" creates a real folder a and the junction a\top -> victimU.
+               PASS of UNPACK and DEEP also needs the error "System error: <...top>: ..." (the refusal).
       PLAIN    the control of UNPACK: the fake "x" creates a real folder top\a.txt - unpacked as before
+               (and no "System error" message)
                (out\a.txt, no PACK*.tmp left).
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
@@ -29,9 +33,10 @@ param(
     [string]$OutFile,
     [string[]]$Only,
     [string]$SevenZip = 'C:\Program Files\7-Zip\7z.exe',
-    [string]$Lib = (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
+    [string]$Lib
 )
 $ErrorActionPreference = 'Stop'
+if (-not $Lib) { $Lib = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1' }
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
 if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 function Want([string]$n) { return (-not $Only) -or (@($Only | Where-Object { $n -like ($_ + '*') }).Count -gt 0) }
@@ -64,7 +69,10 @@ public static class Fake7z
             string outDir = null;
             foreach (string a in args) if (a.StartsWith("-o")) outDir = a.Substring(2).Trim('"');
             if (outDir == null) return 2;
-            string top = Path.Combine(outDir, "top");
+            // line 4: the folders above "top" in the archive ("" or "a")
+            string parent = cfg.Length > 3 && cfg[3].Length > 0 ? Path.Combine(outDir, cfg[3]) : outDir;
+            Directory.CreateDirectory(parent);
+            string top = Path.Combine(parent, "top");
             if (cfg[1] == "junction")
             {
                 var p = Process.Start(new ProcessStartInfo("cmd.exe", "/c mklink /J \"" + top + "\" \"" + cfg[2] + "\"") { UseShellExecute = false, CreateNoWindow = true });
@@ -166,20 +174,21 @@ function Run-Sweep {
     finally { if ($id) { End-Row 'SWEEP' $id $null $before } }
 }
 
-function Run-Unpack([string]$Case, [string]$Mode) {
+function Run-Unpack([string]$Case, [string]$Mode, [string]$Above = '') {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case; $victim = $d + '\victimU'; $out = $d + '\out'; $arcSrc = $d + '\arcsrc'
-    NewDir $victim; NewDir $out; NewDir ($arcSrc + '\top')
+    $first = 'top'; $inner = 'top'; if ($Above) { $first = $Above; $inner = $Above + '\top' }   # the folder the panel shows inside the archive
+    NewDir $victim; NewDir $out; NewDir ($arcSrc + '\' + $inner)
     WriteFile ($victim + '\keep.txt') 'KEEP'
-    WriteFile ($arcSrc + '\top\a.txt') 'A'
+    WriteFile ($arcSrc + '\' + $inner + '\a.txt') 'A'
     $arc = $d + '\t.arj'
     Push-Location -LiteralPath $arcSrc
-    try { & $SevenZip a -t7z ($d + '\t.7z') 'top' | Out-Null } finally { Pop-Location }
+    try { & $SevenZip a -t7z ($d + '\t.7z') $first | Out-Null } finally { Pop-Location }
     Move-Item -LiteralPath ($d + '\t.7z') -Destination $arc
-    [IO.File]::WriteAllLines($FakeCfg, [string[]]@($SevenZip, $Mode, $victim))
+    [IO.File]::WriteAllLines($FakeCfg, [string[]]@($SevenZip, $Mode, $victim, $Above))
     $id = 0; $before = Reports
     try {
-        $id = Start-Mine @('-t', 'T249', '-l', ('"{0}"' -f ($arc + '\top')), '-r', ('"{0}"' -f $out), '-p', '1')
+        $id = Start-Mine @('-t', 'T249', '-l', ('"{0}"' -f ($arc + '\' + $inner)), '-r', ('"{0}"' -f $out), '-p', '1')
         Start-Sleep -Milliseconds 2500
         [void](Serve $id 10)
         Post-Cmd (Get-Main $id) 842   # CM_ACTIVESELECTALL
@@ -193,9 +202,10 @@ function Run-Unpack([string]$Case, [string]$Mode) {
         $left = @([IO.Directory]::GetDirectories($LP + $out, 'PACK*.tmp')).Count
         $outNames = (@([IO.Directory]::GetFileSystemEntries($LP + $out) | ForEach-Object { [IO.Path]::GetFileName($_) }) -join ',')
         $log = ''; if (Test-Path -LiteralPath ($Root + '\fake\fake7z.log')) { $log = ((Get-Content -LiteralPath ($Root + '\fake\fake7z.log') | ForEach-Object { ($_ -split ' \| ')[0] }) -join ',') }
-        if ($Mode -eq 'junction') { $ok = $kept -and -not $moved -and $left -eq 0 }
-        else { $ok = [IO.File]::Exists($LP + $out + '\a.txt') -and $left -eq 0 -and $kept }
-        Row $Case 'RUN' (V $ok) ("victim keep.txt kept {0}; moved into out {1}; out [{2}]; PACK*.tmp left {3}; fake 7z calls [{4}]; windows: {5}" -f $kept, $moved, $outNames, $left, $log, $msgs)
+        $refused = $msgs -match 'System error: [^|]*top'
+        if ($Mode -eq 'junction') { $ok = $kept -and -not $moved -and $left -eq 0 -and $refused }
+        else { $ok = [IO.File]::Exists($LP + $out + '\a.txt') -and $left -eq 0 -and $kept -and -not ($msgs -match 'System error') }
+        Row $Case 'RUN' (V $ok) ("victim keep.txt kept {0}; moved into out {1}; out [{2}]; PACK*.tmp left {3}; refused with a message {4}; fake 7z calls [{5}]; windows: {6}" -f $kept, $moved, $outNames, $left, $refused, $log, $msgs)
         Remove-Item -LiteralPath ($Root + '\fake\fake7z.log') -ErrorAction SilentlyContinue
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -225,7 +235,7 @@ try {
     Out ("Config  : 7-Zip executable set to the fake {0}; arj unpacker index {1} (0 = the 7-Zip archiver)" -f $set, $arj)
     Out ''
     Run-Sweep
-    if ($set -and $arj -eq 0) { Run-Unpack 'PLAIN' 'plain'; Run-Unpack 'UNPACK' 'junction' }
+    if ($set -and $arj -eq 0) { Run-Unpack 'PLAIN' 'plain'; Run-Unpack 'UNPACK' 'junction'; Run-Unpack 'DEEP' 'junction' 'a' }
     else { Row 'UNPACK' 'SETUP' 'NOT DRIVEN' 'the archiver configuration has no 7-Zip archiver for arj' }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

@@ -1,0 +1,16 @@
+tempjunction249_probe (feature 249) control-unfixed-pack1
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-19 23:36; registry key existed True; 7-Zip C:\Program Files\7-Zip\7z.exe
+Config  : 7-Zip executable set to the fake True; arj unpacker index 0 (0 = the 7-Zip archiver)
+
+SWEEP      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SWEEP      RUN    PASS        asked True; SAL249A.tmp removed True; victim keep.txt kept True; windows: [#32770 'Question'] [Static id=2477] Do you want to delete 1 temporary directory used by previous instances of Tandem Commander? | [Button id=3] &Yes | [Button id=4] &No | [Button id=5] &Focus || no window
+PLAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLAIN      RUN    PASS        victim keep.txt kept True; moved into out False; out [a.txt]; PACK*.tmp left 0; refused with a message False; fake 7z calls [l,x]; windows: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+UNPACK     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNPACK     RUN    FAIL        victim keep.txt kept False; moved into out True; out [keep.txt]; PACK*.tmp left 0; refused with a message False; fake 7z calls [l,x]; windows: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+DEEP       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DEEP       RUN    FAIL        victim keep.txt kept False; moved into out True; out [keep.txt]; PACK*.tmp left 0; refused with a message False; fake 7z calls [l,x]; windows: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+
+Rows: PASS 6, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

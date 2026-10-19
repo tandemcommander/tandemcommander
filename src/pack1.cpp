@@ -682,6 +682,16 @@ BOOL PackUniversalUncompress(HWND parent, const char* command, TPackErrorTable* 
                     return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_PATH, srcDir);
                 }
                 strcat(srcDir, foundNameU8);
+                // feature 249: a junction / directory symbolic link restored by the unpacker
+                // (DeleteAsDirLink, fail closed, as 212 / 213) is never entered - MoveFiles below
+                // moved the files of its TARGET into the target folder; the unpack is refused
+                if ((foundFile.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(srcDir))
+                {
+                    CSalHeapString text; // the path at any length (feature 098), never cut
+                    text.Printf("%s: %s", srcDir, GetErrorText(ERROR_REPARSE_POINT_ENCOUNTERED));
+                    RemoveTemporaryDir(tmpDirNameBuf); // the link removed as a link (feature 212)
+                    return (*PackErrorHandlerPtr)(parent, IDS_PACKERR_GENERAL, text.Text());
+                }
             }
             else
             {

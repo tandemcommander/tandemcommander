@@ -76,3 +76,61 @@ installer is Inno Setup). Unreachable - recorded here, no Inbox item.
 not driven) fixed: probe row DEEP added to T002. Accepted: U1 (LOW) - an unreadable reparse tag and
 a cloud placeholder cannot be driven on the hidden desktop; the decision is 197's
 `SalDeleteAsDirLinkDecision`, checked by `saltests`. I1 (LOW) - FR numbering order, cosmetic.
+
+## Work
+
+- `src/pack1.cpp` `PackUniversalUncompress`, the archive-path walk: after a found directory is
+  appended to `srcDir`, a directory with `FILE_ATTRIBUTE_REPARSE_POINT` that `DeleteAsDirLink` takes
+  for a link (feature 197, fail closed; a cloud placeholder is a folder) refuses the unpack before
+  anything is moved: `IDS_PACKERR_GENERAL` ("System error: %1") with `<path>: GetErrorText(
+  ERROR_REPARSE_POINT_ENCOUNTERED)` composed on the heap (`CSalHeapString::Printf`, never cut),
+  `RemoveTemporaryDir(tmpDirNameBuf)` (212 removes the link as a link), the handler's `FALSE`
+  returned. No new UI string. The message names the temporary path (`...\PACK8F.tmp\top`) - the
+  archive path is its tail.
+- `src/plugins/zip/selfextr/selfextr.cpp` `_RemoveTemporaryDir`: a directory with
+  `FILE_ATTRIBUTE_REPARSE_POINT` is removed with `RemoveDirectory` (the entry only) and never walked
+  (no 197 helper there: every reparse directory counts as a link, fail closed).
+- Probe: rows UNPACK / DEEP also require the refusal message; PLAIN requires none; row DEEP added
+  (`t.arj\a\top`, the fake makes a real `a` and the junction `a\top`); `-Lib` resolved in the body
+  (PowerShell 5.1 leaves `$PSScriptRoot` empty in a param default).
+
+### Callers of the `FALSE` (T004)
+
+- `CFilesWindow::UnpackZIPArchive` (`src/fileswn7.cpp`, F5 / drag & drop to a panel): on `FALSE` only
+  `RemoveEmptyDirs(newDirs)` (the target folders it created for this unpack - empty, nothing moved)
+  and no selection change. The core has no Move out of an archive through `PackUncompress`: the only
+  `PackDelFromArc` of `fileswn7.cpp` is Delete (F8). FR-007 holds by construction.
+- `salshlib.cpp` (drag & drop to another application): the result is ignored; it only posts change
+  notifications. Nothing deleted.
+- `CUnpackerConfig::ExecuteUnpacker` (custom unpackers) passes `archiveRoot = NULL` - the walk does
+  not run there.
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `.\build.cmd` | `BUILD SUCCEEDED` |
+| unit rules | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 24319 checks, 0 failed` |
+| self-extractor | `cl /nologo /Zs /TP /DWIN32 /D_WINDOWS /DENGLISH_VERSION /I. /I.. /I..\..\shared /I..\..\..\common selfextr.cpp` (vcvarsall x86, in `src\plugins\zip\selfextr`) | no diagnostics (x86, the self-extractor's target). x64: two old errors at `DialogBoxParam` (lines 681 / 706, a `BOOL` dialog procedure) - unrelated, not this change |
+
+### Probe after (`probe/result_after.txt`)
+
+`powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\249-temp-walks-junctions\probe\result_after.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\249-temp-walks-junctions\probe\tempjunction249_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Label after"`
+
+| Row | Before | After |
+|---|---|---|
+| SWEEP | PASS | PASS |
+| PLAIN | PASS | PASS (no message) |
+| UNPACK | FAIL (keep.txt moved into out) | PASS - "System error: ...\PACK8F.tmp\top: (4395) ..." (the system text, Czech on this machine), keep.txt kept, nothing in out, no PACK*.tmp |
+| DEEP | (new row) | PASS - "...\PACKBE5.tmp\a\top: (4395) ...", keep.txt kept |
+
+Rows: PASS 8 (4 RUN + 4 END), FAIL 0, NOT DRIVEN 0; registry restored and identical (SHA-256
+98A53651...24D4 before and after).
+
+### Negative control (T009) - `probe/result_control_unfixed.txt`
+
+The revised probe on a build with `src/pack1.cpp` as at HEAD (the change copied aside, the file
+restored from git, built, the change copied back and rebuilt): UNPACK FAIL and DEEP FAIL (keep.txt
+moved into out, no message), SWEEP / PLAIN PASS - the rows detect the defect at both levels. After
+the rebuild with the fix, the probe was run again: 8 / 0 as above.

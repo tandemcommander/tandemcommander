@@ -178,7 +178,15 @@ void _RemoveTemporaryDir(const char* dir)
                 if (file.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
                     SetFileAttributes(path, file.dwFileAttributes & ~FILE_ATTRIBUTE_READONLY);
                 if (file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                    _RemoveTemporaryDir(path);
+                {
+                    // feature 249 (as the core's 212): a junction / directory symbolic link - any
+                    // directory with a reparse point, fail closed - is removed as an entry and never
+                    // walked; the walk deleted the files of its TARGET (this file is not built today)
+                    if (file.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+                        RemoveDirectory(path);
+                    else
+                        _RemoveTemporaryDir(path);
+                }
                 else
                     DeleteFile(path);
             }
