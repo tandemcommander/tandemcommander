@@ -72,7 +72,8 @@ and adds the item runs only for a non-`NULL` item; `itoa(++i, buf, 10)` and `Clo
 ## After
 
 - `.\build.cmd` - BUILD SUCCEEDED (exit 0).
-- Probe (`probe/result_after.txt`): **PASS 21, FAIL 0**, registry restored identical. Every row starts
+- Probe (`probe/result_after.txt`, re-run 00:16 after the review added the KEYS rows): **PASS 28, FAIL 0**
+  (first run 00:03: PASS 21 without KEYS rows), registry restored identical. Every row starts
   in 3.5-4.0 s with 0.5-0.6 s CPU; WRONGTYPE and LONG show the existing box exactly once; saved lists:
   CONTROL a,b,c; NOMASKS b,c; MIDDLE a,c; EMPTYKEY b; MULTI b; WRONGTYPE b; LONG b. No END row carries
   the Debug build's "monitored handles remained opened" note (FR-002: no key handle left open).
@@ -83,3 +84,23 @@ and adds the item runs only for a non-`NULL` item; `itoa(++i, buf, 10)` and `Clo
 
 - `settings-import-ends-the-highlighting-list-at-a-damaged` (measure:250) - the settings import of
   feature 245 still ends its list at a damaged source entry; the loader now skips it.
+
+## Review
+
+One independent refute-first review (general-purpose agent): **no MUST**.
+
+- Re-measured: PASS 21 / FAIL 0 on the fixed Debug build. Own negative control: the probe against the
+  unfixed `Release_x64` build of 2026-10-18 - PASS 3, FAIL 6 (NOMASKS, MIDDLE, EMPTYKEY, MULTI: no main
+  window in 30 s at ~30 s CPU; WRONGTYPE, LONG: 10 boxes in 3 s) - this also measured MULTI before the fix.
+- Negative control of the handle evidence: a User Menu entry without Item Name (its loader `break`s and
+  leaves one key open) makes the Debug build report "monitored handles" - the evidence is real.
+- SHOULD 1 (other loaders - viewers, editors, User Menu - end their list at a damaged entry and the save
+  erases the later entries): outside the item -> Inbox `a-damaged-viewer-editor-or-user-menu-entry-erases-the`
+  (review:250).
+- SHOULD 2 (the probe could not fail on a leaked key - the shared library only notes it): fixed - a KEYS
+  row per case fails on the note; re-run PASS 28 / FAIL 0.
+- NOTE 3 (skipped entries are erased by the next save): intended (Clarification 2, FR-006).
+- NOTE 4 (colours / attributes not compared by the probe): the body for a readable entry is unchanged
+  in the diff; accepted.
+- NOTE 5 (T005 wording "carry the note"): fixed with the KEYS rows.
+- NOTE 6 (low-memory path not drivable): accepted, by reading.

@@ -1,28 +1,35 @@
 hlt250_probe (feature 250) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 00:03; registry key existed True
+Date    : 2026-10-20 00:16; registry key existed True
 
 CONTROL    START  PASS        main window after 3,6 s; CPU 0,6 s; boxes 0
 CONTROL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CONTROL    KEYS   PASS        no handle left open
 CONTROL    SAVED  PASS        saved list: *.tc250a, *.tc250b, *.tc250c; expected: *.tc250a, *.tc250b, *.tc250c
-NOMASKS    START  PASS        main window after 3,6 s; CPU 0,5 s; boxes 0
+NOMASKS    START  PASS        main window after 3,6 s; CPU 0,6 s; boxes 0
 NOMASKS    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+NOMASKS    KEYS   PASS        no handle left open
 NOMASKS    SAVED  PASS        saved list: *.tc250b, *.tc250c; expected: *.tc250b, *.tc250c
 MIDDLE     START  PASS        main window after 3,5 s; CPU 0,5 s; boxes 0
 MIDDLE     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MIDDLE     KEYS   PASS        no handle left open
 MIDDLE     SAVED  PASS        saved list: *.tc250a, *.tc250c; expected: *.tc250a, *.tc250c
-EMPTYKEY   START  PASS        main window after 3,5 s; CPU 0,6 s; boxes 0
+EMPTYKEY   START  PASS        main window after 3,6 s; CPU 0,5 s; boxes 0
 EMPTYKEY   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+EMPTYKEY   KEYS   PASS        no handle left open
 EMPTYKEY   SAVED  PASS        saved list: *.tc250b; expected: *.tc250b
-MULTI      START  PASS        main window after 3,5 s; CPU 0,5 s; boxes 0
+MULTI      START  PASS        main window after 3,6 s; CPU 0,6 s; boxes 0
 MULTI      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MULTI      KEYS   PASS        no handle left open
 MULTI      SAVED  PASS        saved list: *.tc250b; expected: *.tc250b
-WRONGTYPE  START  PASS        main window after 4,0 s; CPU 0,6 s; boxes 1 ([#32770 'Error Loading Configuration'] [Static id=2477] Unexpected value type. | [Button id=1] OK)
+WRONGTYPE  START  PASS        main window after 3,9 s; CPU 0,6 s; boxes 1 ([#32770 'Error Loading Configuration'] [Static id=2477] Unexpected value type. | [Button id=1] OK)
 WRONGTYPE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+WRONGTYPE  KEYS   PASS        no handle left open
 WRONGTYPE  SAVED  PASS        saved list: *.tc250b; expected: *.tc250b
 LONG       START  PASS        main window after 4,0 s; CPU 0,6 s; boxes 1 ([#32770 'Error Loading Configuration'] [Static id=2477] (234) Jsou k dispozici dal\u0161\u00ED data.  | [Button id=1] OK)
 LONG       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LONG       KEYS   PASS        no handle left open
 LONG       SAVED  PASS        saved list: *.tc250b; expected: *.tc250b
 Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
 
-Rows: PASS 21, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 28, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

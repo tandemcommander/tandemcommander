@@ -7,7 +7,8 @@
     Per row the probe writes its own highlighting list (entries with the masks *.tc250a, *.tc250b,
     *.tc250c), damages one entry, starts the program, waits up to 30 s for the main window (answering
     and counting message boxes on the way), closes it with WM_CLOSE (the configuration is saved on
-    exit) and reads back the list the program saved.
+    exit) and reads back the list the program saved. Every started row also gets a KEYS row: FAIL when
+    the Debug build reports a handle left open at exit.
       CONTROL    a, b, c intact                         PASS = starts, no box, saved a,b,c
       NOMASKS    entry 1 without Masks, then b, c       PASS = starts, no box, saved b,c
       MIDDLE     a, entry 2 without Masks, c            PASS = starts, no box, saved a,c (skipped, not the end)
@@ -116,6 +117,10 @@ function Run-Case([string]$Case, [string[]]$Entries, [string[]]$Expect, [int]$Ma
         foreach ($m in $r.Messages) { [void]$boxes.Add($m) }
         Row $Case 'START' (V ($boxes.Count -le $MaxBoxes)) ("main window after {0:N1} s; CPU {1} s; boxes {2}{3}" -f $sw.Elapsed.TotalSeconds, $cpu, $boxes.Count, $(if ($boxes.Count) { ' (' + ($boxes -join ' || ') + ')' } else { '' }))
         End-Row $Case $id $null $before; $id = 0
+        # FR-002: the Debug build reports a registry key left open at exit ("monitored handles remained
+        # opened"); End-Row only notes it - here it fails the row (review of feature 250)
+        $endLine = [string]$script:Lines[$script:Lines.Count - 1]
+        Row $Case 'KEYS' (V ($endLine -notmatch 'monitored handles')) $(if ($endLine -match 'monitored handles') { 'a handle was left open (Debug handle monitor)' } else { 'no handle left open' })
         $saved = @(Read-List)
         $want = @($Expect | ForEach-Object { '*.tc250' + $_ })
         Row $Case 'SAVED' (V (($saved -join ',') -eq ($want -join ','))) ("saved list: {0}; expected: {1}" -f (($saved | ForEach-Object { Tail $_ 20 }) -join ', '), ($want -join ', '))
