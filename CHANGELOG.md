@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Copying out of an archive could move your files from behind a link** (feature 249).
+  - **Before:** when an archive was browsed through an external archiver (*Archive associations* → 7-Zip) and the archiver unpacked a folder of the archive as a junction or a directory symbolic link pointing elsewhere, copying files out of that folder (F5, drag & drop) silently moved the files of the folder the link pointed to into the target. The 7-Zip version tested (22.01) does not create such links itself, so it needed an archiver that does.
+  - **Now:** the copy stops with an error before anything is moved, and the temporary folder is removed (the link itself only). Archives without such a link unpack as before.
+  - **Limitation:** the error shows the system message ("System error: …: The object manager encountered a reparse point…") and the temporary path, not the folder in the archive.
 - **The Desktop view's column headers were garbled on a non-English Windows** (feature 248, GitHub issue #13).
   - **Before:** in the Desktop view (the Folders plugin), the column names that come from Windows showed their accented letters as mojibake, e.g. "Typ poloĹľky" and "Datum zmÄ›ny" on a Czech Windows. The program's own headers and the texts in the rows were right.
   - **Now:** the headers read as Windows names them ("Typ položky", "Datum změny").

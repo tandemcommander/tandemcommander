@@ -62,9 +62,13 @@ Callers: `PackUncompress` (F5 / F6 / drag out of an archive browsed by the exter
 ### The self-extractor
 
 `src/plugins/zip/selfextr/selfextr.cpp` `_RemoveTemporaryDir` walks every subdirectory (ANSI
-calls, a junction included). No project compiles the file (`zip.vcxproj` includes only
-`selfextr\comdefs.h` and the icon; no `selfextr` project in `salamand.sln`); no `.sfx` package is
-in the build output or the installer. Unreachable in the product.
+calls, a junction included). Only a standalone Win32 project compiles it -
+`src/plugins/zip/vcxproj/selfextr/selfextr.vcxproj` (with `selfextr.sln`, `makeall.bat`,
+`sfxmake.bat`; corrected after review 1, which found it) - outside `salamand.sln` and `build.cmd`
+(`zip.vcxproj` includes only `selfextr\comdefs.h` and the icon). Review 1 measured that this project
+does not build on this machine at all (MSBuild Debug|Win32: "cl : command line error D8003: missing
+source filename", before any source is compiled). No `.sfx` package is in the build output or the
+installer. Unreachable in the product.
 
 `src/sfx7zip/install.c` has the same walk (not named by the item): `sfx7zip.vcxproj` is built only
 in the solution's "Utils (Release)" configuration, not by `build.cmd`, and nothing ships it (the
@@ -134,3 +138,27 @@ The revised probe on a build with `src/pack1.cpp` as at HEAD (the change copied 
 restored from git, built, the change copied back and rebuilt): UNPACK FAIL and DEEP FAIL (keep.txt
 moved into out, no message), SWEEP / PLAIN PASS - the rows detect the defect at both levels. After
 the rebuild with the fix, the probe was run again: 8 / 0 as above.
+
+## Review
+
+Review 1 (independent agent, refute-first): no MUST. It re-ran the probe on the branch build (8 / 0,
+registry identical), read the unfixed control (UNPACK / DEEP FAIL), and tried to refute with its own
+variant row MERGE: the panel at the archive root (the new check does not run), the fake restoring
+`top` as a junction and the target already holding a folder `top` - the move asked "Confirm Link
+Target Copy", Yes copied the content and removed only the link (`ocDeleteDirLink`), the target's
+`keep.txt` kept. It enumerated every caller (`fileswn7.cpp:708`, `salshlib.cpp:854`,
+`packers.cpp:1483`; the only member delete is F8) and `PackUnpackOneFile` (first entry too, but
+`SalMoveFile` moves a junction as a link - no loss). `cl /Zs` x86 of `selfextr.cpp` with that project's
+defines: clean.
+- SHOULD 1 (the fix-log said no project compiles `selfextr.cpp`; `selfextr.vcxproj` exists and does
+  not build here, D8003): taken - the section above corrected.
+- SHOULD 2 (closing records missing): done at closing (closing report, FEATURE-HISTORY, CHANGELOG).
+- NOTEs, accepted: the message names the gone temporary path and the system text of 4395 rather than
+  the archive folder - an existing string was chosen to avoid the `.slt` refresh; fail closed also
+  refuses an unreadable reparse folder and 7-Zip's re-targeted WIM junction (spec Q2); SWEEP has no
+  build-without-212 control (it proves the sweep ran); `selfextr.cpp` keeps that legacy file's `A`
+  calls; a link restored where the target has no such folder is renamed into the target as a link
+  (as 7-Zip itself would leave it) - no loss.
+
+No second review: review 1 had no MUST findings (the second review is required only after MUST
+findings were fixed).

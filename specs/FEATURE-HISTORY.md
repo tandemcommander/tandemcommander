@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248 |
 | Long paths, buffers | 088, 095, 097, 098, 121 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3040,3 +3040,28 @@ a few early ones are out of sequence).
   controls caught); two refute-first reviews (no MUST; empty name -> whole-character cut, checks
   that pin the pair cut and the flag retry). Inbox: duplicate shell columns after a view-mode
   switch; the interface does not document column names as code page.
+- 249-temp-walks-junctions: copying files out of a folder inside an archive browsed through an
+  external archiver (Archive associations -> 7-Zip, F5 / drag & drop) moved the files of a junction's
+  TARGET into the target folder, without a question, when the unpacker restored that archive folder
+  as a junction: `PackUniversalUncompress` (`pack1.cpp`) finds the extracted subfolder by taking the
+  first directory at every level of its `PACK*.tmp` folder, and `MoveFiles` then moved that
+  folder's content (the link was the root of the move, so the link question never came). Now a
+  directory on the archive path that `DeleteAsDirLink` takes for a link (197, fail closed, cloud
+  placeholders are folders) refuses the unpack before anything moves: `IDS_PACKERR_GENERAL` with the
+  path and the system text of `ERROR_REPARSE_POINT_ENCOUNTERED` (no new string), the temporary
+  folder removed by 212 (the link as a link), `FALSE` to the caller. 212's start-up `SAL*.tmp` sweep
+  is now driven (a junction inside, its target kept). The ZIP self-extractor's own
+  `_RemoveTemporaryDir` (`selfextr.cpp`) removes a reparse directory as an entry - source only: its
+  standalone `selfextr.vcxproj` does not build here (D8003) and no `.sfx` ships; `sfx7zip/install.c`
+  has the same walk, unreachable (Utils configuration only). Reach: 7-Zip 22.01's own `x` refuses
+  "dangerous" links and re-targets a WIM junction inside its output, so it needs an unpacker that
+  restores a junction (another executable set as the 7-Zip executable). Traps: "Reload Environment
+  Variables" (on by default) rebuilds TMP from the registry at start - a probe that points TMP at a
+  fixture must turn it off; the start-up question comes seconds after the main window; a probe
+  answers Yes only to "delete 1 temporary directory". Limits: the message names the removed
+  temporary path (Inbox); a link restored outside the archive path is moved as a link or asked
+  about (existing Move). From backlog item `temp-dir-walks-follow-junctions`. Probe
+  `tempjunction249_probe.ps1` (fake `7z.exe`: `l` -> real 7-Zip, `x` -> a junction) UNPACK FAIL ->
+  PASS, DEEP (second level) FAIL -> PASS on a control build, SWEEP / PLAIN PASS; 8 / 0; one
+  refute-first review (no MUST; its variant MERGE row confirmed the link question; the fix-log's
+  claim about the self-extractor's project corrected).

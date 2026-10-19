@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [SFX temp cleanup and the external unpacker's walk follow junctions](items/temp-dir-walks-follow-junctions/desc.md) | bug | 7 | data-safety | 249 |
 
 ## Next
 
@@ -161,6 +160,7 @@ Last triaged: 2026-10-19
 |---|---|---|---|---|---|
 | [Desktop view (Folders plug-in) repeats its shell columns after a view-mode switch](items/desktop-view-folders-plug-in-repeats-its-shell-columns-after/desc.md) | bug | 3 | other-plugins | review:248 | 2026-10-19 |
 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | review:248 | 2026-10-19 |
+| [Unpack refused at a link names a temporary folder, not the archive folder](items/unpack-refused-at-a-link-names-a-temporary-folder-not-the/desc.md) | improvement | 2 | archives | leftover:249 | 2026-10-19 |
 
 ## Parked
 
