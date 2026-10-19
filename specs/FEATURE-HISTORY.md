@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243 |
+| Backlog and project tooling | 242, 243, 247 |
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -2992,3 +2992,30 @@ a few early ones are out of sequence).
   Tests: saltests 23,491 -> 23,731; probe `probe/run246.ps1` (fixed 0 FAIL, baseline negative
   control); independent black-box suite `test-independent/` (performance: menu +3.2 ms, activation
   no extra cost); two review rounds.
+- 247-backlog-run-loop: `/tandem-backlog-implement` item after item without a person -
+  `tools/backlog/loop-start.sh` (+ `loop-pause.sh` / `loop-resume.sh` / `loop-stop.sh` /
+  `loop-status.sh`, one-line wrappers of `tools/backlog/loop.py`, stdlib). One fresh
+  `claude -p '/tandem-backlog-implement <slug>'` per item, session id chosen by the loop, stream-json
+  log per item in `.git/tandem-backlog-loop/logs/`, claude's unattended retry mode
+  (`CLAUDE_CODE_RETRY_WATCHDOG=1`) waits usage limits out in-process. The outcome comes only from
+  `RUNS.md` (a row of the item) and the run lock; an interrupted run (limit, error, stall, Ctrl+C,
+  a killed loop, a reboot) is continued in the same session (`--resume`) with bounds, and only while
+  it holds its own lock (item + taken after the run started + the same `started` once seen). The loop
+  prechecks lock / `main` / clean tree / `check` / an eligible item and waits instead of starting a
+  refused run; nothing eligible = wait (no `nothing-to-do` runs); 3 `blocked` in a row stop it.
+  pause = finish the item then wait; stop = finish then end; Ctrl+C = hard stop (kills claude's
+  tree, the next start continues). Skills: *Continued run* (§0.11), `/tandem-backlog` refuses
+  changes while a run holds the lock or a loop runs unpaused. Traps:
+  - the lock file has no session id: a manual run of the same item taking the lock first made the
+    loop's refused run look stalled and be continued into the other run's tree (review MUST); the
+    fix then dropped a refusing *continuation* and waited for ever on its own lock (review 2).
+  - Git Bash kills loop and claude together without the signal handler - the next start must
+    say what happened (registry of a cut GUI probe) and continue; process groups do not help there.
+  - a `rejected` rate event before a successful end only means claude waited; `Context limit
+    reached` is not a usage limit; each attempt is judged by its own part of the log.
+  - Git Bash collapses `\\` of a JSON argument to a native program (rule 123 again).
+  - `test_backlog.py` fails at `main` (fixture folder not in git) - Inbox item
+    `backlog-fixture-empty-specs-folder-missing`.
+  Tests 57 (fake claude; Ctrl+Break, pause/stop, orphan claude as processes), mutants 38/39 caught
+  (1 near-equivalent), e2e with the real claude 5/5 three times; two refute-first reviews. Person
+  step `backlog-loop-person-checks` (typed Ctrl+C in mintty, the first real usage limit).

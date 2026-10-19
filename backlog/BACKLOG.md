@@ -158,6 +158,8 @@ Last triaged: 2026-10-19
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Backlog tool tests fail on a fresh checkout: the fixture folder specs/243-example is not in git](items/backlog-fixture-empty-specs-folder-missing/desc.md) | bug | 4 | tooling | measure:247 | 2026-10-19 |
+| [Backlog loop: Ctrl+C in Git Bash and the first real usage limit](items/backlog-loop-person-checks/desc.md) | person-step | 4 | tooling | leftover:247 | 2026-10-19 |
 
 ## Parked
 

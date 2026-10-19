@@ -66,6 +66,20 @@ BL = python tools/backlog/backlog.py
 - **One changing command at a time.** The tool has no lock of its own; two
   changing commands at once can lose rows. Never run changing `BL` commands
   in parallel tool calls or in parallel agents.
+- **Not during a run** (maintainer mode). Before the first changing
+  operation run `BL lock status` and `python tools/backlog/loop.py status`.
+  A lock other than `free` means an autonomous run
+  (`/tandem-backlog-implement`) owns the working tree — it is on the run's
+  feature branch, and a change made now would land in the feature's commit
+  or break its fast-forward of `main`. A loop that is running and not
+  `paused` (`loop: running`, `state:` other than `paused`) can start a run
+  between two commits of this operation (feature 247). In either case
+  change nothing; tell the maintainer to run `tools/backlog/loop-pause.sh`
+  and wait until `tools/backlog/loop-status.sh` shows `state: paused` and
+  `lock: free` (or to let a manual run finish), then continue; resuming the
+  loop (`loop-resume.sh`) is the maintainer's step. Read-only operations
+  (`list`, `show`, `check`) are fine. Agent mode inside a run is
+  unaffected.
 - Commands of this skill: `check`, `sync`, `list`, `new`, `import-github`,
   `set`, `log`, `verify`, `move`, `block`, `unblock`, `remove --reason`.
   `next`, `start`, `remove --feature`, `run-log` and `lock` belong to

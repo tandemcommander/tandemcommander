@@ -64,6 +64,18 @@ is English.
 10. **Commits**: every commit of the run is
     `git commit -m '<subject>' -m '<body, optional>' -m '<the attribution lines the session's instructions give for commits>'`.
     The templates below give the subject only. English.
+11. **Continued run** (feature 247). The loop (`tools/backlog/loop-start.sh`)
+    starts a run with the slug as the argument. When a run is interrupted
+    (usage limit, error, Ctrl+C) the loop continues **the same session** with
+    a prompt saying so. Then never start over and never take another item:
+    find where you were — `git rev-parse --abbrev-ref HEAD`,
+    `git status --short`, `BL lock status` (it still names this item),
+    `specs/<BRANCH>/fix-log.md`, and the last steps above — an interrupted
+    GUI probe first gets its registry restored (stop-rules §2.8); a command
+    that was cut off is checked and repeated only if its result is missing.
+    Continue with the first unfinished step; the run still ends with §11.
+    A lock older than 24 h shows `STALE` after a long wait for a usage
+    limit; it is still this run's lock — never release it with `--force`.
 
 Values to remember once known: `SLUG`, `TITLE`, `HEAD0` (short commit of
 `main` at the start), `SHORT` (2–4 words of the slug, hyphenated), `NNN`,

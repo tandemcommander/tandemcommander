@@ -1109,6 +1109,24 @@ def eligibility(bl: Backlog, item: Item) -> str | None:
     return None
 
 
+def next_eligible(bl: Backlog, ov: Overview) -> tuple:
+    """(the first eligible slug of Next or None, the rows skipped above it with their reasons)."""
+    skipped = []
+    for row in ov.sections[SEC_NEXT].rows:
+        if not row.slug:
+            continue
+        it = bl.items.get(row.slug)
+        if not it or not it.ok:
+            skipped.append({"slug": row.slug, "reason": "unreadable item"})
+            continue
+        reason = eligibility(bl, it)
+        if reason:
+            skipped.append({"slug": row.slug, "reason": reason})
+            continue
+        return row.slug, skipped
+    return None, skipped
+
+
 # ---------------------------------------------------------------------------
 # Git and lock
 
@@ -1387,20 +1405,7 @@ def cmd_next(bl: Backlog, args) -> int:
             return 1
         chosen = args.slug
     else:
-        chosen = None
-        for row in ov.sections[SEC_NEXT].rows:
-            if not row.slug:
-                continue
-            it = bl.items.get(row.slug)
-            if not it or not it.ok:
-                skipped.append({"slug": row.slug, "reason": "unreadable item"})
-                continue
-            reason = eligibility(bl, it)
-            if reason:
-                skipped.append({"slug": row.slug, "reason": reason})
-                continue
-            chosen = row.slug
-            break
+        chosen, skipped = next_eligible(bl, ov)
     if args.json:
         print(json.dumps({"slug": chosen, "skipped": skipped}, ensure_ascii=False))
     else:
