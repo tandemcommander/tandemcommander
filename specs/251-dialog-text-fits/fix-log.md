@@ -114,3 +114,43 @@ exactly, 259 / 1,039 bytes + NUL - accepted, nothing asked, stored whole), then 
   is too long.", the dialog stayed open; Make File List's `out\` empty; Edit New's default still
   `new.txt`; the drives browse showed the refusal and no "Select Path"; registry restored identical.
 - `probe/regress_214.txt`: 214's `cm_text_probe.ps1` PASS 4, FAIL 0.
+
+## Review
+
+### Review 1 (refute-first agent) - 1 MUST, 2 SHOULD, 5 NOTE
+
+It re-ran the build, `saltests`, the encoding guard, the probe (32 / 0) and, as a negative control,
+rows on the build before (the measured failures reproduced).
+- **MUST 1** - hot paths: `CCfgPageHotPath::LoadControls` still read the slot into fixed buffers
+  (`GetName(..., MAX_PATH)`, `GetPath(..., HOTPATHITEM_MAXPATH)`, cut by bytes). When the refused
+  slot was not the selected one, `Validate` selected it, `LoadControls` reloaded it cut - inside a
+  letter, the wide conversion failed and the code-page fallback showed mojibake (1,039 units);
+  a mixed path (1,000 `a` + 20 CJK) was shown cut at a whole letter, and one more edit stored the
+  cut path without a word. **Fixed**: `CHotPathItems::PeekName` / `PeekPath` (`src/mainwnd.h`,
+  the whole stored text) and `LoadControls` shows them whole.
+- SHOULD 2 - no row refused a slot other than the selected one: **added** `hp-other`,
+  `hp-other-mixed`, `hp-other-name` (Down in the list after typing; the row checks the selection
+  moved, and every refusal row now also checks the field holds the typed text at the refusal).
+  Negative control: the old `LoadControls` restored temporarily - the three rows FAIL (1,039 units
+  / 2,175 bytes of mojibake; 1,015 units / 1,039 bytes cut; 259 units / 548 bytes), `hp-path`
+  still PASS; the fix back, rebuilt.
+- SHOULD 3 - two claims without a row: **added** `mfl-keep` (destination Viewer: the next Make
+  File List shows the previous name; before: a 258-byte cut name) and `mfl-browse` (refused; before:
+  "Save As" opened). Still read-only checked: the directory menu's browse (`InvokeDirectoryMenuCommand`,
+  a popup menu) and `CCompareArgsDlg`'s - the same `DlgItemTextFitsU8(..., NULL, MAX_PATH)` call as
+  the driven `drv-browse` / `mfl-browse`.
+- NOTE 4 - the hot path list label cut inside a letter while a long name is typed: **fixed**
+  (`SalU8TrimIncompleteTail` in `RefreshItemLabel`).
+- NOTE 5 - 172's `BrowseDirCommand` (the hot path page's own browse) opens without a starting
+  folder for a long text, the new browse buttons refuse: kept (the item's *Expected* says refuse;
+  172's behaviour is not part of this item).
+- NOTE 6 - the same class of cut outside the item's list (Select / Unselect and Convert masks,
+  the filter, the volume label, the hot path label edit): **recorded** as an Inbox item
+  (`leftover:251`).
+- NOTE 7 - without memory, `StoreControls` leaves the item's previous value: accepted (no cut, the
+  previous value is the user's own).
+- NOTE 8 - closing records: done at closing.
+
+Checks after the fixes: `BUILD SUCCEEDED`; `saltests` 24352 / 0; encoding guard `TOTAL: 0`;
+probe `result_after.txt` **PASS 42, FAIL 0**, registry restored identical; `result_before.txt`
+(Debug_x64_pre251) PASS 26, FAIL 16 - exactly the 16 refusal rows, every control and END row PASS.

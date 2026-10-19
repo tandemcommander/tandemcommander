@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Feature 251 probe: text typed into a field whose UTF-8 form does not fit the caller's buffer
     is refused ("The path specified is too long."), never cut and acted upon.
@@ -22,6 +22,12 @@
       drv-browse the same field, then its browse button: the browse started from a cut path.
                  PASS = refused, no browse window
       en-default Edit New (744), its menu "Save as default" with a name of > 260 bytes
+      hp-other, hp-other-mixed, hp-other-name  as hp-path / hp-name, then Down in the list (another
+                 slot selected): the refusal selects the slot again - its field shown whole as typed
+                 (a CJK path, 1,000 'a' + 20 CJK letters, a CJK name)
+      mfl-keep   Make File List, destination Viewer, a file name of > 260 bytes: not stored cut -
+                 the next Make File List shows the previous name
+      mfl-browse Make File List's file browse from such a name: refused, no Save As window
       um-ctl, vw-ctl, hp-ctl, drv-ctl  controls: CJK text that fits the buffer exactly (259 / 1,039
                  bytes + NUL) - PASS = accepted, nothing asked, the field opened again holds it whole
     Config rows: PASS = refused and the dialog stays open (the probe cancels it); FAIL = the
@@ -134,7 +140,7 @@ function Short([string]$s) {
 }
 function Shown($r) { $m = (@($r.Messages | ForEach-Object { Short $_ }) -join ' || '); if ($m) { return $m } else { return 'nothing' } }
 # OK on $Dlg, serves what follows; returns @{ Shown; Stayed; Fatal; TimedOut } and cancels a dialog that stayed
-function Ok-AndServe([int]$Id, [IntPtr]$Dlg) {
+function Ok-AndServe([int]$Id, [IntPtr]$Dlg, [scriptblock]$OnStayed) {
     # the Configuration dialog (winlib's tree property dialog) has its OK button as id 5; a posted
     # IDOK would reach the page and end the page alone
     $tpdOk = Buttons $Dlg | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 5 -and [Drv098f]::GetParent($_) -eq $Dlg } | Select-Object -First 1
@@ -142,8 +148,10 @@ function Ok-AndServe([int]$Id, [IntPtr]$Dlg) {
     Start-Sleep -Milliseconds 700
     $r = Serve251 $Id @($Dlg) 'ok'
     $stayed = [Drv098f]::IsWindow($Dlg) -and [Drv098f]::IsWindowVisible($Dlg)
+    $extra = $null
+    if ($stayed -and -not $r.Fatal -and $OnStayed) { $extra = & $OnStayed }   # e.g. the field as the refusal left it
     if ($stayed -and -not $r.Fatal) { Close-Win $Dlg; Start-Sleep -Milliseconds 500; $r2 = Serve251 $Id @() 'cancel' 15; foreach ($m in $r2.Messages) { [void]$r.Messages.Add('after cancel: ' + $m) }; if ($r2.Fatal) { $r.Fatal = $r2.Fatal } }
-    return [pscustomobject]@{ Shown = (Shown $r); Stayed = $stayed; Fatal = $r.Fatal; TimedOut = $r.TimedOut }
+    return [pscustomobject]@{ Shown = (Shown $r); Stayed = $stayed; Fatal = $r.Fatal; TimedOut = $r.TimedOut; Extra = $extra }
 }
 function Files([string]$Dir) {
     if (-not [IO.Directory]::Exists($LP + $Dir)) { return @() }
@@ -184,7 +192,9 @@ function Mfl-Row([string]$Case, [string]$Name, $Line, [scriptblock]$Check) {
 
 # a Configuration page: $Prep (before the start), mode / param, $Fill sets the fields; PASS = refused
 # and the dialog stayed; otherwise the field is read again in a re-opened dialog
-function Cfg-Row([string]$Case, [scriptblock]$Prep, [int]$Mode, [long]$Param, [int]$Field, [string]$Text, [scriptblock]$Select, [switch]$Fits) {
+# $Away (optional) runs after the text is set - e.g. selects another slot, so the refusal has to
+# select the refused one again and reload its fields; a refusal must leave the field as typed
+function Cfg-Row([string]$Case, [scriptblock]$Prep, [int]$Mode, [long]$Param, [int]$Field, [string]$Text, [scriptblock]$Select, [switch]$Fits, [scriptblock]$Away) {
     Run-Row $Case {
         if ($Prep) { & $Prep }
         $id = Start-Tc $StartDir; $script:RowId = $id
@@ -193,9 +203,11 @@ function Cfg-Row([string]$Case, [scriptblock]$Prep, [int]$Mode, [long]$Param, [i
         if ($Select) { & $Select $dlg }
         $was = Get-Field $dlg $Field
         Set-Field $dlg $Field $Text
-        $o = Ok-AndServe $id $dlg
+        if ($Away) { & $Away $dlg; Start-Sleep -Milliseconds 400 }
+        $o = Ok-AndServe $id $dlg { Get-Field $dlg $Field }
         $script:RowFatal = $o.Fatal; if (-not $script:RowFatal) { $script:RowFatal = Fatal-Win $id }
-        $after = '(not read: refused)'
+        $atRefusal = $o.Extra
+        $after = $(if ($null -ne $atRefusal) { "(refused) the field at the refusal: {0} units / {1} bytes, same as typed: {2}" -f $atRefusal.Length, (U8 $atRefusal), ($atRefusal -ceq $Text) } else { '(not read)' })
         $keptText = $true
         if (-not $o.Stayed -and -not $script:RowFatal) {
             $dlg2 = Open-Config $id $Mode $Param
@@ -207,7 +219,7 @@ function Cfg-Row([string]$Case, [scriptblock]$Prep, [int]$Mode, [long]$Param, [i
             Close-Win $dlg2; Start-Sleep -Milliseconds 400
             [void](Serve251 $id @() 'cancel' 10)
         }
-        $refused = $o.Stayed -and ($o.Shown -match $TooLong)
+        $refused = $o.Stayed -and ($o.Shown -match $TooLong) -and ($atRefusal -ceq $Text)
         # a control row (-Fits): the text fits - accepted and stored whole, nothing asked
         if ($Fits) { $verdictOk = (-not $o.Stayed) -and $keptText -and ($o.Shown -eq 'nothing') } else { $verdictOk = $refused }
         $ok = (-not $script:RowFatal) -and (-not $o.TimedOut) -and $verdictOk
@@ -256,6 +268,75 @@ $Cases['um-ctl'] = { Cfg-Row 'um-ctl' { Seed-UserMenu } 2 0 352 ('C:\' + (Cjk 84
 $Cases['vw-ctl'] = { Cfg-Row 'vw-ctl' { Reg-Set 'Configuration' 'Last Focused Page' 19 DWord } 0 0 352 ('C:\' + (Cjk 84) + '.exe') { param($g) Select-First $g 584 } -Fits }
 $Cases['hp-ctl'] = { Cfg-Row 'hp-ctl' $null 1 -1 373 ('C:\' + (Cjk 345) + 'a') $null -Fits }
 $Cases['drv-ctl'] = { Cfg-Row 'drv-ctl' $null 6 0 488 ('C:\' + (Cjk 85) + 'a') $null -Fits }
+# the refused slot is not the selected one (Down in the list after typing): Validate selects it and
+# reloads its fields - shown whole, never cut (review 251, MUST 1)
+function Hp-Down([IntPtr]$g) {
+    $lv = @([Drv098f]::Kids($g) | Where-Object { [Drv098f]::Cls($_) -eq 'SysListView32' -and [Drv098f]::IsWindowVisible($_) }) | Select-Object -First 1
+    if (-not $lv) { throw 'the hot path list was not found' }
+    $res = [IntPtr]::Zero
+    [void][Drv098f]::SendMessageTimeoutW($lv, 0x100C, [IntPtr](-1), [IntPtr]2, 0, 5000, [ref]$res)   # LVM_GETNEXTITEM, LVNI_SELECTED
+    $sel0 = $res.ToInt64()
+    [void][Drv098f]::Send($lv, 0x0100, 0x28, 0x01500001, 5000); [void][Drv098f]::Send($lv, 0x0101, 0x28, 0xC1500001, 5000)
+    [void][Drv098f]::SendMessageTimeoutW($lv, 0x100C, [IntPtr](-1), [IntPtr]2, 0, 5000, [ref]$res)
+    if ($res.ToInt64() -eq $sel0) { throw "Down did not select another slot (still $sel0)" }
+}
+$Cases['hp-other'] = { Cfg-Row 'hp-other' $null 1 -1 373 ('C:\' + (Cjk 400)) $null -Away { param($g) Hp-Down $g } }
+$Cases['hp-other-mixed'] = { Cfg-Row 'hp-other-mixed' $null 1 -1 373 ('C:\' + ('a' * 1000) + (Cjk 20)) $null -Away { param($g) Hp-Down $g } }
+$Cases['hp-other-name'] = { Cfg-Row 'hp-other-name' { Reg-Set 'Hot Paths\1' 'Name' 'C:\' String; Reg-Set 'Hot Paths\1' 'Path' 'C:\' String; Reg-Set 'Hot Paths\1' 'Visible' 1 DWord } 1 -1 376 (Cjk 100) $null -Away { param($g) Hp-Down $g } }
+# Make File List with the destination Viewer: the unused name that does not fit is not stored cut -
+# the next Make File List shows the previous name
+$Cases['mfl-keep'] = {
+    Run-Row 'mfl-keep' {
+        $d = $Root + '\mfl-keep'; NewDir "$d\src"; NewDir "$d\out"
+        WriteFile "$d\src\a.txt" 'A'
+        $id = Start-Tc "$d\src"; $script:RowId = $id
+        [void](Do-ChangeDir $id "$d\src\a.txt")
+        Start-Sleep -Milliseconds 400
+        $dlg = Open-ByCmd $id 811 15
+        if ($dlg -eq [IntPtr]::Zero) { throw 'Make File List (811) opened no window' }
+        $was = Get-Field $dlg 2384
+        $radio = Find-Btn $dlg 2389
+        if (-not $radio) { throw 'the Viewer destination (2389) was not found' }
+        Click $radio; Start-Sleep -Milliseconds 400
+        $name = "$d\out\" + (Cjk 90) + '.txt'
+        Set-Field $dlg 2384 $name
+        Click-Ok $dlg; Start-Sleep -Milliseconds 1500
+        $r = Serve251 $id @() 'cancel'   # closes the viewer
+        $script:RowFatal = $r.Fatal; if (-not $script:RowFatal) { $script:RowFatal = Fatal-Win $id }
+        $dlg2 = Open-ByCmd $id 811 15
+        if ($dlg2 -eq [IntPtr]::Zero) { throw 'Make File List did not open again' }
+        $now = Get-Field $dlg2 2384
+        Close-Win $dlg2; Start-Sleep -Milliseconds 400; [void](Serve251 $id @() 'cancel' 10)
+        $f = @(Files "$d\out")
+        $ok = (-not $script:RowFatal) -and ($now -ceq $was) -and ($f.Count -eq 0)
+        Row 'mfl-keep' 'RUN' (V $ok) ("typed {0} bytes (destination Viewer); name before '{1}'; the next Make File List shows {2} units / {3} bytes, tail '{4}'; out: {5}; windows: {6}" -f (U8 $name), (Tail $was 30), $now.Length, (U8 $now), (Tail $now 12), $(if ($f.Count) { $f -join '; ' } else { '(empty)' }), (Shown $r))
+    }
+}
+# Make File List's file browse from a name that does not fit
+$Cases['mfl-browse'] = {
+    Run-Row 'mfl-browse' {
+        $d = $Root + '\mfl-browse'; NewDir "$d\src"; NewDir "$d\out"
+        WriteFile "$d\src\a.txt" 'A'
+        $id = Start-Tc "$d\src"; $script:RowId = $id
+        [void](Do-ChangeDir $id "$d\src\a.txt")
+        Start-Sleep -Milliseconds 400
+        $dlg = Open-ByCmd $id 811 15
+        if ($dlg -eq [IntPtr]::Zero) { throw 'Make File List (811) opened no window' }
+        $radio = Find-Btn $dlg 2390
+        Click $radio; Start-Sleep -Milliseconds 400
+        $name = "$d\out\" + (Cjk 90) + '.txt'
+        Set-Field $dlg 2384 $name
+        $b = Find-Btn $dlg 2383
+        if (-not $b) { throw 'the browse button (2383) was not found' }
+        Click $b; Start-Sleep -Milliseconds 1500
+        $r = Serve251 $id @($dlg) 'cancel'
+        $script:RowFatal = $r.Fatal; if (-not $script:RowFatal) { $script:RowFatal = Fatal-Win $id }
+        $s2 = Shown $r
+        Close-Win $dlg; Start-Sleep -Milliseconds 400; [void](Serve251 $id @() 'cancel' 10)
+        $ok = (-not $script:RowFatal) -and ($s2 -match $TooLong) -and (@($r.Messages).Count -eq 1)
+        Row 'mfl-browse' 'RUN' (V $ok) ("typed {0} bytes; windows after the browse button: {1}" -f (U8 $name), $s2)
+    }
+}
 $Cases['drv-browse'] = {
     Run-Row 'drv-browse' {
         $id = Start-Tc $StartDir; $script:RowId = $id

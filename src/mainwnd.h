@@ -247,6 +247,21 @@ public:
         }
     }
 
+    // feature 251: the whole stored text, never cut ("" when unset); valid until the slot changes
+    const char* PeekName(int index)
+    {
+        if (index < 0 || index >= HOT_PATHS_COUNT || Items[index].Name == NULL)
+            return "";
+        return Items[index].Name;
+    }
+
+    const char* PeekPath(int index)
+    {
+        if (index < 0 || index >= HOT_PATHS_COUNT || Items[index].Path == NULL)
+            return "";
+        return Items[index].Path;
+    }
+
     int GetNameLen(int index)
     {
         if (index >= 0 && index < HOT_PATHS_COUNT && Items[index].Name != NULL)

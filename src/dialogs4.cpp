@@ -2884,15 +2884,16 @@ void CCfgPageHotPath::Transfer(CTransferInfo& ti)
 void CCfgPageHotPath::LoadControls()
 {
     int index = ListView_GetNextItem(HListView, -1, LVNI_SELECTED);
-    char name[MAX_PATH];
-    char path[HOTPATHITEM_MAXPATH];
-    name[0] = 0;
-    path[0] = 0;
+    // feature 251: the whole stored texts - a slot refused by Validate (a path or name that does
+    // not fit) is shown as typed, never cut into a buffer (a cut inside a letter also fell back to
+    // the code-page read below)
+    const char* name = "";
+    const char* path = "";
     BOOL visible = FALSE;
     if (index != -1)
     {
-        Config->GetName(index, name, MAX_PATH); // feature 047: only the custom name; empty = unnamed
-        Config->GetPath(index, path, HOTPATHITEM_MAXPATH);
+        name = Config->PeekName(index); // feature 047: only the custom name; empty = unnamed
+        path = Config->PeekPath(index);
         visible = Config->GetVisible(index);
     }
 
@@ -2930,6 +2931,7 @@ void CCfgPageHotPath::RefreshItemLabel(int index)
         return;
     char label[MAX_PATH];
     Config->GetDisplayName(index, label, MAX_PATH);
+    SalU8TrimIncompleteTail(label); // feature 251: a label longer than the buffer (being edited, refused at OK) ends at a whole letter
     SalListViewSetItemTextU8(HListView, index, 0, label);
 }
 
