@@ -85,7 +85,7 @@ program on the hidden desktop, see the main window appear, close it and read bac
   masks in the middle, empty key, wrong type, too long), the main window appears within 30 seconds
   (before the change: never; measured 0 of 5).
 - **SC-002**: At most one message box per damaged entry (before: an endless series - 10 in 3 seconds).
-- **SC-003**: The list saved on exit equals the good entries in their order in 6 of 6 probe rows (the
+- **SC-003**: The list saved on exit equals the good entries in their order in 7 of 7 probe rows (the
   control row included).
 - **SC-004**: The control row with an intact list behaves exactly as before the change (start, no box,
   same list saved).

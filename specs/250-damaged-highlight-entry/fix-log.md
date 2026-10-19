@@ -54,3 +54,10 @@ Registry restored, identical (SHA-256 98A53651...).
   and skipped (the dialog cannot produce one).
 - No pure rule worth a `src/common/` header: the change is the loop's control flow around registry
   calls; the probe drives it end to end.
+
+## Analyze
+
+`speckit-analyze`: 0 CRITICAL, 0 HIGH. Fixed: C1 (MEDIUM, FR-002 handle closure had no evidence - T005
+now records the Debug handle monitor note of the END rows), C2 (LOW, several damaged entries in a row -
+probe row MULTI added after the before run; its kinds were each measured before). C3 (LOW, the
+low-memory path cannot be driven) accepted - checked by reading.

@@ -12,6 +12,7 @@
       NOMASKS    entry 1 without Masks, then b, c       PASS = starts, no box, saved b,c
       MIDDLE     a, entry 2 without Masks, c            PASS = starts, no box, saved a,c (skipped, not the end)
       EMPTYKEY   entry 1 a key without values, then b   PASS = starts, no box, saved b
+      MULTI      two damaged entries in a row, then b   PASS = starts, no box, saved b
       WRONGTYPE  entry 1 Masks as REG_DWORD, then b     PASS = starts, at most one box, saved b
       LONG       entry 1 Masks of 400 letters, then b   PASS = starts, at most one box, saved b
     Before the fix every damaged row hangs: no main window (NOMASKS / MIDDLE / EMPTYKEY spin silently,
@@ -139,6 +140,7 @@ try {
     Run-Case 'NOMASKS' @('nomasks', 'b', 'c') @('b', 'c') 0
     Run-Case 'MIDDLE' @('a', 'nomasks', 'c') @('a', 'c') 0
     Run-Case 'EMPTYKEY' @('empty', 'b') @('b') 0
+    Run-Case 'MULTI' @('nomasks', 'empty', 'b') @('b') 0
     Run-Case 'WRONGTYPE' @('dword', 'b') @('b') 1
     Run-Case 'LONG' @('long', 'b') @('b') 1
 }
