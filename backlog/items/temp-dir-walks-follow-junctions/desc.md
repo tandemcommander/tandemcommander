@@ -1,7 +1,7 @@
 ---
 title: SFX temp cleanup and the external unpacker's walk follow junctions
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: data-safety
 source: review:212
@@ -10,7 +10,7 @@ created: 2026-10-15
 updated: 2026-10-19
 verified: 2026-10-19 1c8140a0
 effort: M
-feature: -
+feature: 249
 related: []
 depends-on: []
 reason: -
@@ -43,3 +43,4 @@ Severity 7 (data loss, narrow) if the unpacker walk is reachable - not measured.
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-17 — migration review N7: re-rank after the measurement (Notes)
 - 2026-10-19 — verified at 1c8140a0: probe at 1c8140a0: a junction restored by an external unpacker (fake 7z) made the subfolder walk move the target files into the panel target; 212 sweep driven, target kept; selfextr not built
+- 2026-10-19 — run started, feature 249
