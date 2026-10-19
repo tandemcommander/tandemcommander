@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A damaged highlighting entry hangs the program at start-up](items/a-damaged-highlighting-entry-hangs-the-program-at-start-up/desc.md) | bug | 7 | panels-ui | 250 |
 
 ## Next
 

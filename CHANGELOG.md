@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A damaged entry in the file highlighting list stopped the program from starting** (feature 250).
+  - **Before:** if an entry of the panel item highlighting list (*Options → Configuration → Panels → Colors*) had no readable masks in the configuration (an edited registry, an imported `.reg` file), the start-up never ended: the program ran at full processor load without showing its window, or showed the same "Error Loading Configuration" message again and again.
+  - **Now:** the damaged entry is left out and the program starts; the entries before and after it keep working. For a value of the wrong type or one too long, the message is shown once.
+  - **Limitation:** the left-out entry is not kept: it is gone from the configuration after the program is closed.
 - **Copying out of an archive could move your files from behind a link** (feature 249).
   - **Before:** when an archive was browsed through an external archiver (*Archive associations* → 7-Zip) and the archiver unpacked a folder of the archive as a junction or a directory symbolic link pointing elsewhere, copying files out of that folder (F5, drag & drop) silently moved the files of the folder the link pointed to into the target. The 7-Zip version tested (22.01) does not create such links itself, so it needed an archiver that does.
   - **Now:** the copy stops with an error before anything is moved, and the temporary folder is removed (the link itself only). Archives without such a link unpack as before.

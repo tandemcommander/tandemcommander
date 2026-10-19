@@ -3065,3 +3065,16 @@ a few early ones are out of sequence).
   PASS, DEEP (second level) FAIL -> PASS on a control build, SWEEP / PLAIN PASS; 8 / 0; one
   refute-first review (no MUST; its variant MERGE row confirmed the link question; the fix-log's
   claim about the self-extractor's project corrected).
+- 250-damaged-highlight-entry: a damaged entry of the panel item highlighting list (no readable
+  `Masks`: missing, empty key, wrong type, over `MAX_PATH` bytes) hung the start-up - `LoadConfig`
+  advanced and closed the entry key only after a readable `Masks`, so it re-opened the same key forever
+  (silent 100 % CPU, or the same "Error Loading Configuration" box again and again); the low-memory
+  `continue` did the same - now every round advances and closes its key and the damaged entry is skipped
+  (the existing box at most once). Traps: the splash is a button-less `#32770` - a probe must not count
+  it as a box; the shared probe library only *notes* the Debug handle monitor ("monitored handles"), a
+  probe that claims no leaked key must fail on it itself. Limits: a skipped entry is not written back
+  on exit; the settings import still ends its list at a damaged source entry, and the viewers, editors
+  and User Menu loaders end theirs and the save erases the later entries (both Inbox). From backlog item
+  `a-damaged-highlighting-entry-hangs-the-program-at-start-up`. Probe `hlt250_probe.ps1` 3 / 5 FAIL
+  (no main window) -> 28 / 0; one refute-first review (no MUST; its negative control on an unfixed
+  build and on a leaked User Menu key confirmed the probe; KEYS rows added).
