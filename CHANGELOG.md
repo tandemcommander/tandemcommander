@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **The Desktop view's column headers were garbled on a non-English Windows** (feature 248, GitHub issue #13).
+  - **Before:** in the Desktop view (the Folders plugin), the column names that come from Windows showed their accented letters as mojibake, e.g. "Typ poloĹľky" and "Datum zmÄ›ny" on a Czech Windows. The program's own headers and the texts in the rows were right.
+  - **Now:** the headers read as Windows names them ("Typ položky", "Datum změny").
+  - **Limitation:** column headers can show only the characters of the Windows code page. A letter it does not have (e.g. a Czech display language with a Western code page) shows as "?", not as a different letter; a name too long for the header is shortened at a whole character.
 - **Quick search finds text anywhere in a name and shows only the matches**
   (feature 244).
   - **Finding:** typing in a panel found only names that start with the typed text. A folder such as "2024_chatbot" could not be found by typing "chat", unless one knew to type a leading "/". Now a name that contains the text anywhere matches. A name that starts with it still gets the cursor first, as before.

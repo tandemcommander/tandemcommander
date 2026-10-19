@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248 |
 | Long paths, buffers | 088, 095, 097, 098, 121 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144 |
@@ -3019,3 +3019,24 @@ a few early ones are out of sequence).
   Tests 57 (fake claude; Ctrl+Break, pause/stop, orphan claude as processes), mutants 38/39 caught
   (1 near-equivalent), e2e with the real claude 5/5 three times; two refute-first reviews. Person
   step `backlog-loop-person-checks` (typed Ctrl+C in mintty, the first real usage limit).
+- 248-folders-column-names: **the Desktop view's column headers were mojibake** on a non-English
+  Windows (GitHub issue #13): the Folders plug-in (`fld:`) handed the shell's column names to the
+  core as UTF-8 (feature 004), the core draws column names in the code page (MBCS build, `TextOutA`)
+  - "Typ položky" showed as "Typ poloĹľky". Now the plug-in converts them to the code page with
+  `SalWToCodePageWhole` (new header-only rule `src/common/salcpfit.h`, usable by plug-ins): no
+  best-fit (a character outside the code page shows as "?", never a lookalike letter), a name that
+  does not fit is cut at a whole character (never half a surrogate pair or a double-byte
+  character, never empty - `CColumn::Name` must not be empty), no flag on the UTF-8 system code
+  page and a retry without it on `ERROR_INVALID_FLAGS`. Maintainer's decision: fixed in the plug-in
+  only, plug-in interface unchanged; cell texts stay UTF-8 (104). Every core reader of
+  `CColumn::Name` is code page (header paint and width in `filesbx2.cpp`; menu, sorting, view
+  configuration use the ID). Traps: `WideCharToMultiByte` with an output size of 0 returns the
+  needed size instead of failing; the header line is the top of the panel's list window (a crop
+  above it reads the directory line); a probe that OCRs the list must not log what it read (the
+  user's file names). Limits: code points, not graphemes; Czech UI on a 1252 system shows "?".
+  From backlog item `drobna-chyba-textu-v-hlavicce-pro-zobrazeni-plochy-v-cestine`. Probe
+  `folders248_probe.ps1` COL2 / COL3 FAIL -> PASS 6 / FAIL 0 (OCR of the header on the hidden
+  desktop, cs-CZ, ACP 1250); saltests `TestCpFit248` (22 checks, 24,297 -> 24,319, negative
+  controls caught); two refute-first reviews (no MUST; empty name -> whole-character cut, checks
+  that pin the pair cut and the flag retry). Inbox: duplicate shell columns after a view-mode
+  switch; the interface does not document column names as code page.

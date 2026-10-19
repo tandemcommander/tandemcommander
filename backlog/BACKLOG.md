@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Desktop view (Folders plug-in) column headers show mojibake for accented names](items/drobna-chyba-textu-v-hlavicce-pro-zobrazeni-plochy-v-cestine/desc.md) | bug | 3 | plugin-api | 248 |
 
 ## Next
 
@@ -160,6 +159,8 @@ Last triaged: 2026-10-19
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Desktop view (Folders plug-in) repeats its shell columns after a view-mode switch](items/desktop-view-folders-plug-in-repeats-its-shell-columns-after/desc.md) | bug | 3 | other-plugins | review:248 | 2026-10-19 |
+| [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | review:248 | 2026-10-19 |
 
 ## Parked
 
