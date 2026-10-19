@@ -8,7 +8,7 @@ source: github#13
 who: agent
 created: 2026-10-19
 updated: 2026-10-19
-verified: -
+verified: 2026-10-19 7f37ec00
 effort: -
 feature: -
 related: []
@@ -79,3 +79,4 @@ No earlier feature found for #13 in `specs/FEATURE-HISTORY.md`.
 - 2026-10-19 — fields set from the issue text and labels
 - 2026-10-19 — maintainer decision 2026-10-19: fix in the Folders plug-in only - column names passed as code-page text, plug-in interface unchanged
 - 2026-10-19 — moved to Next position 1
+- 2026-10-19 — verified at 7f37ec00: present at 7f37ec00: GetShellColumns stores UTF-8 (SplWToU8), header draws with TextOutA (MBCS core); UTF-8 of the cs-CZ shell names read as cp1250 = the reported text; GUI probe not run (installed instance running)
