@@ -289,6 +289,7 @@ $Cases['mfl-keep'] = {
     Run-Row 'mfl-keep' {
         $d = $Root + '\mfl-keep'; NewDir "$d\src"; NewDir "$d\out"
         WriteFile "$d\src\a.txt" 'A'
+        Reg-Set 'Configuration' 'Make File List Name' "$d\out\keep251.txt" String   # a previous name that must stay
         $id = Start-Tc "$d\src"; $script:RowId = $id
         [void](Do-ChangeDir $id "$d\src\a.txt")
         Start-Sleep -Milliseconds 400
@@ -308,7 +309,7 @@ $Cases['mfl-keep'] = {
         $now = Get-Field $dlg2 2384
         Close-Win $dlg2; Start-Sleep -Milliseconds 400; [void](Serve251 $id @() 'cancel' 10)
         $f = @(Files "$d\out")
-        $ok = (-not $script:RowFatal) -and ($now -ceq $was) -and ($f.Count -eq 0)
+        $ok = (-not $script:RowFatal) -and ($now -ceq $was) -and ($was -like '*keep251.txt') -and ($f.Count -eq 0)
         Row 'mfl-keep' 'RUN' (V $ok) ("typed {0} bytes (destination Viewer); name before '{1}'; the next Make File List shows {2} units / {3} bytes, tail '{4}'; out: {5}; windows: {6}" -f (U8 $name), (Tail $was 30), $now.Length, (U8 $now), (Tail $now 12), $(if ($f.Count) { $f -join '; ' } else { '(empty)' }), (Shown $r))
     }
 }

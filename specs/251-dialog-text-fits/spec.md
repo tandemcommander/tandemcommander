@@ -166,7 +166,9 @@ does not fit instead of starting the browse from a cut path.
   possible and cutting is what the item forbids.
 - Assumption (autonomous run): the hot path name is fixed with its path (the same code-page fallback
   side by side, the item names the hot path editor); the in-place label edit of the hot path list
-  (a display label cut at a whole character) stays out of scope.
+  (F2 on a row: the edit is read into a 260-byte buffer and **stored as the slot's name** cut at a
+  whole character - measured by review 2: 100 CJK letters stored as 86) is not in the item's list
+  and goes to the Inbox (`leftover:251`) with the other cuts of this class.
 - Assumption (autonomous run): Make File List's own file browse button is treated as the other
   browse-from-field buttons (FR-006).
 - Assumption (autonomous run): a browse button refuses rather than starting without a folder - the

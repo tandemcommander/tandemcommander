@@ -47,7 +47,7 @@ Independent test: probe row `drv-browse`.
 
 - [X] T016 `python tools/check_encoding.py --strict` TOTAL 0; `.\build.cmd` BUILD SUCCEEDED; `saltests` 0 failed
 - [X] T017 Probe after into `specs/251-dialog-text-fits/probe/result_after.txt` (every row PASS); before once more from the final probe file; 214's `cm_text_probe.ps1` into `specs/251-dialog-text-fits/probe/regress_214.txt`
-- [ ] T018 `specs/251-dialog-text-fits/fix-log.md`: work, measurements after, review
+- [X] T018 `specs/251-dialog-text-fits/fix-log.md`: work, measurements after, review
 
 ## Dependencies
 

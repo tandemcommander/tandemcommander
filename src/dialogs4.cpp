@@ -2931,7 +2931,6 @@ void CCfgPageHotPath::RefreshItemLabel(int index)
         return;
     char label[MAX_PATH];
     Config->GetDisplayName(index, label, MAX_PATH);
-    SalU8TrimIncompleteTail(label); // feature 251: a label longer than the buffer (being edited, refused at OK) ends at a whole letter
     SalListViewSetItemTextU8(HListView, index, 0, label);
 }
 

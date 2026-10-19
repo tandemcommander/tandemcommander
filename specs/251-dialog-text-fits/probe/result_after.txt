@@ -1,6 +1,6 @@
 dlg251_probe (feature 251) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 01:15; ACP 1250; registry key existed True
+Date    : 2026-10-20 01:38; ACP 1250; registry key existed True
 
 mfl-name   RUN    PASS        out: (empty); name 274 bytes / 132 units; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |
 mfl-name   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -36,7 +36,7 @@ hp-other-mixed RUN    PASS        typed 1023 units / 1063 bytes (field was 12 un
 hp-other-mixed END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 hp-other-name RUN    PASS        typed 100 units / 300 bytes (field was 0 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (refused) the field at the refusal: 100 units / 300 bytes, same as typed: True
 hp-other-name END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-mfl-keep   RUN    PASS        typed 331 bytes (destination Viewer); name before ''; the next Make File List shows 0 units / 0 bytes, tail ''; out: (empty); windows: [Salamander's Viewer Window 'Make File List Output']
+mfl-keep   RUN    PASS        typed 331 bytes (destination Viewer); name before '...1_dlg\mfl-keep\out\keep251.txt'; the next Make File List shows 68 units / 68 bytes, tail '...\keep251.txt'; out: (empty); windows: [Salamander's Viewer Window 'Make File List Output']
 mfl-keep   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 mfl-browse RUN    PASS        typed 333 bytes; windows after the browse button: [#32770 'Error'] The path specified is too long. |
 mfl-browse END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

@@ -161,6 +161,7 @@ Last triaged: 2026-10-19
 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | review:248 | 2026-10-19 |
 | [Unpack refused at a link names a temporary folder, not the archive folder](items/unpack-refused-at-a-link-names-a-temporary-folder-not-the/desc.md) | improvement | 2 | archives | leftover:249 | 2026-10-19 |
 | [A damaged viewer, editor or User Menu entry erases the entries after it](items/a-damaged-viewer-editor-or-user-menu-entry-erases-the/desc.md) | bug | 7 | panels-ui | review:250 | 2026-10-20 |
+| [More typed fields cut to their buffer: masks, filter, volume label, hot path label edit](items/more-typed-fields-cut-to-their-buffer-masks-filter-volume/desc.md) | bug | 6 | long-paths | leftover:251 | 2026-10-20 |
 | [Settings import ends the highlighting list at a damaged entry](items/settings-import-ends-the-highlighting-list-at-a-damaged/desc.md) | bug | 3 | panels-ui | measure:250 | 2026-10-20 |
 
 ## Parked

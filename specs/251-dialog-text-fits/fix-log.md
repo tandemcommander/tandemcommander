@@ -154,3 +154,34 @@ rows on the build before (the measured failures reproduced).
 Checks after the fixes: `BUILD SUCCEEDED`; `saltests` 24352 / 0; encoding guard `TOTAL: 0`;
 probe `result_after.txt` **PASS 42, FAIL 0**, registry restored identical; `result_before.txt`
 (Debug_x64_pre251) PASS 26, FAIL 16 - exactly the 16 refusal rows, every control and END row PASS.
+
+### Review 2 (fresh refute-first agent, with review 1's findings) - no MUST, 2 SHOULD, 5 NOTE
+
+It re-ran build / `saltests` / guard, the probe on the branch (42 / 0), six rows on the build
+before (the five refusal rows failed as measured, the control passed) and 214's probe (4 / 0); it
+confirmed the review 1 fixes, that no page reloads a whole-text item through a fixed buffer, that a
+page is left only through validation, and that the loaders' sizes match the checks.
+- SHOULD 1 - the Inbox item for review 1's NOTE 6 did not exist yet: **added**
+  `more-typed-fields-cut-to-their-buffer-masks-filter-volume` (`leftover:251`).
+- SHOULD 2 - the spec called the hot path label edit "a display label cut"; it **stores** the cut
+  text as the slot's name (F2, 100 CJK letters stored as 86): **spec corrected**, the case is in
+  the new Inbox item (not in this item's list).
+- NOTE 3 - the directory menu's browse refuses a text over 260 bytes that Change Directory or a
+  plug-in file system target (520) would accept on OK: kept - the browse reads `MAX_PATH` and the
+  item's *Expected* asks for a refusal, not a browse from a cut path.
+- NOTE 4 - user menu: after a cancelled browse (or Change Icon) with a Command over 259 bytes,
+  `GetIconHandle` -> `ExpandCommand(..., MAX_PATH)` shows "Expanded string is too large.": kept -
+  a message about the same too-long text, refused at OK anyway; nothing is stored.
+- NOTE 5 - viewers: a long Command typed while External, the type then Internal: the refusal marks
+  a disabled field: kept - the configuration stores the Command of every type (its loader reads it),
+  so it must be refused; switching the type back makes it editable.
+- NOTE 6 - the hot path list labels of `Transfer` / `OnMove` could still be torn inside a letter:
+  **fixed** at the source - `CHotPathItems::GetDisplayName` ends the label at a whole letter
+  (`SalU8TrimIncompleteTail`, `src/mainwnd1.cpp`; also the menus, bars and jump list that use it);
+  the trim in `RefreshItemLabel` removed as redundant.
+- NOTE 7 - `mfl-keep` proved "stays empty" only: **strengthened** - a previous name is seeded
+  (`keep251.txt`); after: shown unchanged; before: a 258-byte cut name.
+
+Checks after review 2's changes: `BUILD SUCCEEDED`; `saltests` 24352 / 0; encoding guard
+`TOTAL: 0`; `result_after.txt` PASS 42 / FAIL 0; `result_before.txt` PASS 26 / FAIL 16 (the 16
+refusal rows); registry restored identical in every run.

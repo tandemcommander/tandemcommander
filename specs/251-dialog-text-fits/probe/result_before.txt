@@ -1,6 +1,6 @@
 dlg251_probe (feature 251) before
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64_pre251\tandemcommander.exe
-Date    : 2026-10-20 01:20; ACP 1250; registry key existed True
+Date    : 2026-10-20 01:43; ACP 1250; registry key existed True
 
 mfl-name   RUN    FAIL        out: \u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C\u4E0D\u4E0E\u4E0F\u4E10\u4E11\u4E12\u4E13\u4E14\u4E15\u4E16\u4E17\u4E18\u4E19\u4E1A\u4E1B\u4E1C\u4E1D\u4E1E\u4E1F\u4E20\u4E21\u4E22\u4E23\u4E24\u4E25\u4E26\u4E27\u4E28\u4E29\u4E2A\u4E2B\u4E2C\u4E2D\u4E2E\u4E2F\u4E30\u4E31\u4E32\u4E33\u4E34\u4E35\u4E36\u4E37\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43 (67 units); name 274 bytes / 132 units; dialog stayed: False; asked: nothing
 mfl-name   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -36,7 +36,7 @@ hp-other-mixed RUN    FAIL        typed 1023 units / 1063 bytes (field was 12 un
 hp-other-mixed END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 hp-other-name RUN    FAIL        typed 100 units / 300 bytes (field was 0 units); dialog stayed: False; asked: nothing; field after OK: 100 units / 100 bytes, same as typed: False, tail '...????????????'
 hp-other-name END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-mfl-keep   RUN    FAIL        typed 331 bytes (destination Viewer); name before ''; the next Make File List shows 124 units / 258 bytes, tail '...\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43'; out: (empty); windows: [Salamander's Viewer Window 'Make File List Output']
+mfl-keep   RUN    FAIL        typed 331 bytes (destination Viewer); name before '...1_dlg\mfl-keep\out\keep251.txt'; the next Make File List shows 124 units / 258 bytes, tail '...\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43'; out: (empty); windows: [Salamander's Viewer Window 'Make File List Output']
 mfl-keep   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 mfl-browse RUN    FAIL        typed 333 bytes; windows after the browse button: [#32770 'Ulo\u017Eit jako'] [NamespaceTreeControl id=0] Ovl\u00E1dac\u00ED prvek Strom oboru n\u00E1zv\u016F | [SysTreeView32 id=100] Naviga\u010Dn\u00ED podokno | [SHELLDLL_DefView id=1121] ShellView...
 mfl-browse END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

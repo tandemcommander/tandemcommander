@@ -88,6 +88,9 @@ void CHotPathItems::GetDisplayName(int index, char* buffer, int bufferSize)
         lstrcpyn(buffer, Items[index].Name, bufferSize);
     else if (Items[index].Path != NULL)
         UnescapeHotPathDollars(Items[index].Path, buffer, bufferSize);
+    // feature 251: a label longer than the buffer (a long path, or a text being edited and
+    // refused at OK) ends at a whole letter - a torn one fell back to the code page (mojibake)
+    SalU8TrimIncompleteTail(buffer);
 }
 
 BOOL CHotPathItems::SwapItems(int index1, int index2)
