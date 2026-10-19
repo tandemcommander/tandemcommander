@@ -112,7 +112,7 @@ enumerated the readers of `CColumn::Name` itself (all code page; tooltip uses `D
 
 - New `src/common/salcpfit.h` (header-only, UTF-8 BOM, CRLF, clang-format clean);
   `fs1.cpp` calls `SalWToCodePageWhole(colNameW, col.Name, sizeof(col.Name))`.
-- `saltests` `TestCpFit248` (22 checks): issue #13 names in 1250 (bytes `9E`, `EC`); no best-fit
+- `saltests` `TestCpFit248` (19 checks): issue #13 names in 1250 (bytes `9E`, `EC`); no best-fit
   (1250 "a" U+0101 U+4E2D → `a??`; 1252 "změny" → `zm?ny`); cuts (30 × "x" into 30 → 29;
   15 CJK into 30 in 932 → 14 whole = 28 bytes; "a" + CJK into 3 → "a"; CJK into 2 → empty);
   surrogates (torn tail dropped; a pair never split in 1250 and UTF-8; whole pair in UTF-8 → 4
