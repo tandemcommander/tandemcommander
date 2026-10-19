@@ -61,3 +61,25 @@ Registry restored, identical (SHA-256 98A53651...).
 now records the Debug handle monitor note of the END rows), C2 (LOW, several damaged entries in a row -
 probe row MULTI added after the before run; its kinds were each measured before). C3 (LOW, the
 low-memory path cannot be driven) accepted - checked by reading.
+
+## Fix
+
+`src/mainwnd2.cpp`, `CMainWindow::LoadConfig`, highlighting loop: the item pointer starts `NULL`; a
+readable `Masks` creates it (a failed `new` / `Set` deletes it and leaves `NULL`); the body that fills
+and adds the item runs only for a non-`NULL` item; `itoa(++i, buf, 10)` and `CloseKey(hSubKey)` now end
+**every** round. The body for a readable entry is unchanged. clang-format: no change on the edited lines.
+
+## After
+
+- `.\build.cmd` - BUILD SUCCEEDED (exit 0).
+- Probe (`probe/result_after.txt`): **PASS 21, FAIL 0**, registry restored identical. Every row starts
+  in 3.5-4.0 s with 0.5-0.6 s CPU; WRONGTYPE and LONG show the existing box exactly once; saved lists:
+  CONTROL a,b,c; NOMASKS b,c; MIDDLE a,c; EMPTYKEY b; MULTI b; WRONGTYPE b; LONG b. No END row carries
+  the Debug build's "monitored handles remained opened" note (FR-002: no key handle left open).
+- `python tools/check_encoding.py --strict` - TOTAL: 0 finding(s).
+- `saltests.exe` - saltests: 24319 checks, 0 failed.
+
+## Inbox
+
+- `settings-import-ends-the-highlighting-list-at-a-damaged` (measure:250) - the settings import of
+  feature 245 still ends its list at a damaged source entry; the loader now skips it.

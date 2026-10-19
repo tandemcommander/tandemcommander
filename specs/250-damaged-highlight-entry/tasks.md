@@ -23,14 +23,14 @@ skipped once (FR-001 - FR-006).
 **Independent test**: the probe - the six damaged rows start, show at most one box, save the good
 entries in order; CONTROL unchanged.
 
-- [ ] T003 [US1] In src/mainwnd2.cpp, CMainWindow::LoadConfig, the "load colors for file highlighting" loop: move `itoa(++i, buf, 10)` and `CloseKey(hSubKey)` to the end of every round; replace the low-memory `continue` so that path also reaches them; keep the body for a readable Masks value unchanged; a short English comment naming feature 250
-- [ ] T004 [US1] Build Debug x64 with `.\build.cmd` (PowerShell) - BUILD SUCCEEDED
-- [ ] T005 [US1] Run the probe on the new build, record specs/250-damaged-highlight-entry/probe/result_after.txt (expected PASS 21, FAIL 0; the END rows carry the Debug build's handle-monitor note, evidence for FR-002) and the result in specs/250-damaged-highlight-entry/fix-log.md
+- [X] T003 [US1] In src/mainwnd2.cpp, CMainWindow::LoadConfig, the "load colors for file highlighting" loop: move `itoa(++i, buf, 10)` and `CloseKey(hSubKey)` to the end of every round; replace the low-memory `continue` so that path also reaches them; keep the body for a readable Masks value unchanged; a short English comment naming feature 250
+- [X] T004 [US1] Build Debug x64 with `.\build.cmd` (PowerShell) - BUILD SUCCEEDED
+- [X] T005 [US1] Run the probe on the new build, record specs/250-damaged-highlight-entry/probe/result_after.txt (expected PASS 21, FAIL 0; the END rows carry the Debug build's handle-monitor note, evidence for FR-002) and the result in specs/250-damaged-highlight-entry/fix-log.md
 
 ## Phase 4: Polish & cross-cutting
 
-- [ ] T006 Run `python tools/check_encoding.py --strict` (TOTAL: 0 finding(s)) and saltests (`build\tandemcommander\Debug_x64\saltests\saltests.exe`, 0 failed)
-- [ ] T007 Record the settings-import mismatch (feature 245's import ends its highlighting list at a damaged entry; the loader now skips it) as an Inbox item via `BL new` (source measure:250)
+- [X] T006 Run `python tools/check_encoding.py --strict` (TOTAL: 0 finding(s)) and saltests (`build\tandemcommander\Debug_x64\saltests\saltests.exe`, 0 failed)
+- [X] T007 Record the settings-import mismatch (feature 245's import ends its highlighting list at a damaged entry; the loader now skips it) as an Inbox item via `BL new` (source measure:250)
 
 ## Dependencies
 

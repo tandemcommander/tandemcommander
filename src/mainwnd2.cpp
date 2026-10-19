@@ -2595,17 +2595,24 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                 HighlightMasks->DestroyMembers();
                 while (OpenKey(hHltKey, buf, hSubKey))
                 {
+                    // feature 250: every round moves to the next entry and closes this one - an entry
+                    // without readable masks (or one that cannot be created) is skipped; it used to be
+                    // re-opened forever and the start-up never ended
                     char masks[MAX_PATH];
+                    CHighlightMasksItem* item = NULL;
                     if (GetValue(hSubKey, SALAMANDER_HLT_ITEM_MASKS, REG_SZ, masks, MAX_PATH))
                     {
-                        CHighlightMasksItem* item = new CHighlightMasksItem();
+                        item = new CHighlightMasksItem();
                         if (item == NULL || !item->Set(masks))
                         {
                             TRACE_E(LOW_MEMORY);
                             if (item != NULL)
                                 delete item;
-                            continue;
+                            item = NULL;
                         }
+                    }
+                    if (item != NULL)
+                    {
                         int errPos;
                         item->Masks->PrepareMasks(errPos);
 
@@ -2629,9 +2636,9 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                             HighlightMasks->ResetState();
                             delete item;
                         }
-                        itoa(++i, buf, 10);
-                        CloseKey(hSubKey);
                     }
+                    itoa(++i, buf, 10);
+                    CloseKey(hSubKey);
                 }
                 if (Configuration.ConfigVersion < 16) // add highlighting for encrypted files/directories
                 {
