@@ -94,6 +94,7 @@ public:
 // column retrieved from the current folder; it may not actually be shown
 struct CShellColumn
 {
+    // in the code page, like CColumn::Name (the core draws it with the A functions)
     char Name[COLUMN_NAME_MAX];
     int Fmt;           // Alignment of the column heading and the subitem text in the column. (DETAILSINFO::fmt)
     int Char;          // Number of average-sized characters in the heading. (DETAILSINFO::cxChar)

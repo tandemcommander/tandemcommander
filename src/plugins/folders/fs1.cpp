@@ -454,8 +454,12 @@ BOOL CPluginDataInterface::GetShellColumns()
         CShellColumn col;
         WCHAR colNameW[COLUMN_NAME_MAX];
         StrRetToBufW(&di.str, NULL, colNameW, SAL_ARRAYSIZE(colNameW));
-        if (SplWToU8(colNameW, col.Name, sizeof(col.Name)) <= 0)
-            col.Name[0] = 0; // does not fit as UTF-8 or invalid: leave empty
+        // column names cross the interface in the code page (the core draws the header with the
+        // A functions); only the cell texts are UTF-8 (interface 104). No best-fit: a character
+        // outside the code page becomes the default character, never a different-looking letter.
+        if (WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, colNameW, -1, col.Name,
+                                sizeof(col.Name), NULL, NULL) <= 0)
+            col.Name[0] = 0; // does not fit in the code page or invalid: leave empty
         col.Fmt = di.fmt;
         col.Char = di.cxChar;
         col.Flags = SHCOLSTATE_ONBYDEFAULT; // columns shown by default

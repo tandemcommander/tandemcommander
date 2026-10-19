@@ -76,8 +76,8 @@ line: every column name equals the shell's name for that column.
 
 - **SC-001**: On this cs-CZ machine, all shell column headers of `fld:` with accented letters
   (2 of the 4 default columns) read correctly in the header line (probe: before FAIL, after PASS).
-- **SC-002**: The headers and cells that were right before stay right (probe rows NAME and the
-  cell check unchanged), and the program ends cleanly (exit code 0, no report).
+- **SC-002**: The headers and cells that were right before stay right (probe rows NAME and
+  CELLS pass before and after), and the program ends cleanly (exit code 0, no report).
 - **SC-003**: No change outside the Folders plug-in's source (the diff touches only
   `src/plugins/folders/` plus records).
 

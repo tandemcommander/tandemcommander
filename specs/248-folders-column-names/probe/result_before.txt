@@ -1,0 +1,15 @@
+folders248_probe (feature 248, issue #13), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-19 22:53; desktop 'tc_probe_23776'; ACP 1250; UI culture cs-CZ; recognizer languages: cs; registry key existed True; export SHA-256 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+Shell   : Desktop columns 0-3: 'N\u00E1zev', 'Velikost', 'Typ polo\u017Eky', 'Datum zm\u011Bny'; crops: C:\Users\pavel\AppData\Local\Temp\tc248\shots
+
+czech      PATH   PASS        Change Directory field held 'fld:': True; panel location 'fld:'
+czech      NAME   PASS        core column 'N\u00E1zev': exact; recognized: N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zm\u00C4\u00BBny | N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zm\u00C4\u00BBny | N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zmAny
+czech      COL1   INFO        ASCII name 'Velikost' (cannot show the defect): exact
+czech      COL2   FAIL        shell column 'Typ polo\u017Eky': no; recognized: N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zm\u00C4\u00BBny | N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zm\u00C4\u00BBny | N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zmAny
+czech      COL3   FAIL        shell column 'Datum zm\u011Bny': no; recognized: N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zm\u00C4\u00BBny | N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zm\u00C4\u00BBny | N\u00E1zev | P\u0159\u00EDpona | Velikost | Typ polo\u0139lky | Datum zmAny
+czech      CELLS  PASS        6 non-ASCII type texts on the Desktop, found in the list: 'Komprimovan\u00E1 slo\u017Eka (metoda ZIP)', 'Obr\u00E1zek paint.net', 'Z\u00E1stupce', 'Z\u00E1stupce internetov\u00E9 adresy'
+czech      END    PASS        exit 0x00000000; new reports 0
+Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+
+Rows: PASS 4, FAIL 2, INFO 1. Left running: 0; registry restored+identical: True

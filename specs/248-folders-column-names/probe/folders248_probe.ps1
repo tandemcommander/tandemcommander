@@ -18,6 +18,9 @@
               holds it exactly or with the diacritics folded (garbled text has a wrong LETTER for
               every accented one - "polo" + U+0139 U+013E + "ky" folds to POLOLKY, not POLOZKY)
       ASCII   a column name of pure ASCII is reported as INFO (it cannot show the defect)
+      CELLS   the list holds the type text (shell column 2) of at least one
+              Desktop item whose type has non-ASCII letters (cells are UTF-8 - right before and
+              after; a regression control)
       END     the program ended by WM_CLOSE with exit code 0, no stray window, no new report
 
     The crop is saved to -ShotDir for a look. -Expect before only changes the header; verdicts
@@ -70,6 +73,12 @@ function Shell-Columns {
     $f = $sh.Namespace(0)
     return @(0..3 | ForEach-Object { '' + $f.GetDetailsOf($null, $_) })
 }
+# the distinct type texts (column 2) of the Desktop's items
+function Shell-Types {
+    $sh = New-Object -ComObject Shell.Application
+    $f = $sh.Namespace(0)
+    return @($f.Items() | ForEach-Object { '' + $f.GetDetailsOf($_, 2) } | Where-Object { $_ } | Sort-Object -Unique)
+}
 
 function Run-Case {
     $before = Reports; $id = 0
@@ -86,7 +95,7 @@ function Run-Case {
         Row $Lang 'PATH' (V ($loc -like 'fld:*')) ("Change Directory field held 'fld:': {0}; panel location '{1}'" -f $held, (Esc $loc))
 
         $list = Get-LeftList $id
-        $rc = [Shot124]::RelRect($main, $list); $rc[1] -= 24; $rc[3] = 26      # the header line above the list
+        $rc = [Shot124]::RelRect($main, $list); $rc[3] = 22                    # the header line: the top of the list window
         $hdr = Shot-Read $main $list (Join-Path $ShotDir ("{0}_{1}_header.png" -f $Expect, $Lang)) 3 $rc
         $rec = Esc ($hdr.Lines -join ' | ')
         $cols = Shell-Columns
@@ -98,6 +107,18 @@ function Run-Case {
             $h = Ocr-Has $hdr.Lines $n
             if (-not (Has-NonAscii $n)) { Row $Lang ('COL' + $i) 'INFO' ("ASCII name '{0}' (cannot show the defect): {1}" -f (Esc $n), $h); continue }
             Row $Lang ('COL' + $i) (V ($h -ne 'no')) ("shell column '{0}': {1}; recognized: {2}" -f (Esc $n), $h, $rec)
+        }
+
+        # the cells (UTF-8, interface 104) were right before and must stay right: the list holds the type text of at least one Desktop item whose type has non-ASCII letters
+        $types = @(Shell-Types | Where-Object { Has-NonAscii $_ })
+        if (-not $types.Count) { Row $Lang 'CELLS' 'INFO' 'no Desktop item has a type text with non-ASCII letters' }
+        else {
+            $rc2 = [Shot124]::RelRect($main, $list)                                    # the whole list (the first rows are
+            # virtual folders with an empty type cell; the files below them have one)
+            $cl = Shot-Read $main $list (Join-Path $ShotDir ("{0}_{1}_cells.png" -f $Expect, $Lang)) 3 $rc2
+            $hit = @($types | Where-Object { (Ocr-Has $cl.Lines $_) -ne 'no' })
+            # only the type texts are reported - the recognized list holds the user's own file names
+            Row $Lang 'CELLS' (V ($hit.Count -gt 0)) ("{0} non-ASCII type texts on the Desktop, found in the list: {1}" -f $types.Count, (($hit | ForEach-Object { "'" + (Esc $_) + "'" }) -join ', '))
         }
     }
     catch { Row $Lang 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
