@@ -1,7 +1,7 @@
 ---
 title: Backlog tool tests fail on a fresh checkout: the fixture folder specs/243-example is not in git
 type: bug
-status: new
+status: open
 severity: 4
 area: tooling
 source: measure:247
@@ -49,3 +49,4 @@ why it exists), `test_backlog.py` passes on a fresh checkout, and the
 ## Log
 
 - 2026-10-19 — created (source measure:247)
+- 2026-10-19 — moved to Next position 24

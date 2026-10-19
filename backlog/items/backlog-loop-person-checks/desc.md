@@ -1,7 +1,7 @@
 ---
 title: Backlog loop: Ctrl+C in Git Bash and the first real usage limit
 type: person-step
-status: new
+status: open
 severity: 4
 area: tooling
 source: leftover:247
@@ -64,3 +64,4 @@ limit finishes after the limit resets without a person.
 ## Log
 
 - 2026-10-19 — created (source leftover:247)
+- 2026-10-19 — moved to Person steps position 5
