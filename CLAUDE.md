@@ -107,7 +107,8 @@ Each is one line of a longer story; the number is the feature whose entry in
   `SalSetWindowTitleW` / `SplSetWindowTitleW`; controls keep `SetWindowTextW`
   (100).
 - **A path or name is never cut** — refuse (`IDS_TOOLONGPATH`) or use a heap
-  buffer; if text must be shortened, cut at a whole character (097, 098, 101).
+  buffer; if text must be shortened, cut at a whole character (097, 098, 101). A dialog field
+  is measured whole before a fixed buffer reads it: `DlgItemTextFitsU8` (214, 251).
   Buffers the core fills are `SAL_MAX_PATH_UTF8` / `CSalMaxPathBuffer` (088).
 - `A` shell/dialog APIs use best-fit mapping (`voilà` → `voila` = another
   file). Plugins ask for a file or folder with `SplGetFileNameU8` /

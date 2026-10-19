@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Typed text cut to the caller's buffer: Make File List, user menu, viewers](items/dialog-typed-text-cut-to-caller-buffer/desc.md) | bug | 6 | long-paths | 251 |
 
 ## Next
 

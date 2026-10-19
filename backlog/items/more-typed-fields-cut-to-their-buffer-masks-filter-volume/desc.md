@@ -11,7 +11,7 @@ updated: 2026-10-20
 verified: -
 effort: M
 feature: -
-related: [dialog-typed-text-cut-to-caller-buffer]
+related: []
 depends-on: []
 reason: -
 ---
@@ -65,3 +65,4 @@ system is far below 260 bytes) - check first.
 ## Log
 
 - 2026-10-20 — created (source leftover:251)
+- 2026-10-20 — related item dialog-typed-text-cut-to-caller-buffer done in feature 251

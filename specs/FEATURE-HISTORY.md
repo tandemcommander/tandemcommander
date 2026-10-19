@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248 |
-| Long paths, buffers | 088, 095, 097, 098, 121 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
@@ -3078,3 +3078,24 @@ a few early ones are out of sequence).
   `a-damaged-highlighting-entry-hangs-the-program-at-start-up`. Probe `hlt250_probe.ps1` 3 / 5 FAIL
   (no main window) -> 28 / 0; one refute-first review (no MUST; its negative control on an unfixed
   build and on a leaked User Menu key confirmed the probe; KEYS rows added).
+- 251-dialog-text-fits: text typed into a field that fits the field (UTF-16 units) but not the
+  program's buffer (UTF-8 bytes, CJK three each) was cut at a whole character and used - Make File
+  List wrote its list into another file (a 274-byte name cut to 67 letters, no `.txt`) and lost a
+  long line format's tail; the user menu / viewers / editors stored a shorter Command, Arguments or
+  Initial directory (another program would run); hot paths stored path and name as `?` (a code-page
+  fallback); the drives page's "go to" path and Edit New's "Save as default" were stored cut; the
+  browse buttons started from a cut path - now each refuses with "The path specified is too long."
+  (no new string), the dialog open, the item selected, the field marked. One rule `SalWTextFitsU8` /
+  `SalU8TextFits` (`salunicode`, saltests), `SalWindowTextFitsU8` / `SalGetWindowTextU8Alloc`
+  (winlib), `DlgItemTextFitsU8` (214's check generalised). Pages that store on every keystroke keep
+  the whole text in their (heap) items and refuse in `Validate`, which runs on OK and on leaving the
+  page; their loaders' sizes are the limits (`MAX_PATH`, `USRMNUARGS_MAXLEN`, `HOTPATHITEM_MAXPATH`).
+  Traps: the Configuration dialog's OK button is id 5 - a posted IDOK reaches the page only; a page
+  that keeps whole text must also *reload* it whole (`CHotPathItems::PeekName` / `PeekPath`; the
+  fixed-buffer reload showed mojibake and let one more edit store a cut path - review 1); hot path
+  labels now end at a whole letter (`GetDisplayName`). Limits: the masks, the filter, the volume
+  label and the hot path in-place label edit (stores a cut name) still cut (Inbox, `leftover:251`);
+  the directory menu's and `CCompareArgsDlg`'s browse checked by reading. From backlog item
+  `dialog-typed-text-cut-to-caller-buffer`. Probe `dlg251_probe.ps1` 26 / 16 FAIL -> 42 / 0 (4
+  exact-fit controls and a short one); 214's probe 4 / 0; two refute-first reviews (one MUST fixed, rows added; the
+  second without MUST).

@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A long name or command typed into a dialog could be shortened without a word, and the shorter one used** (feature 251).
+  - **Before:** text that fitted the field but was too long for the program in UTF-8 (for example Chinese or Japanese letters, which take three bytes each) was cut at a whole letter. *Make File List* wrote its list into another file (the name cut, the extension lost) and dropped the end of a long line format. A command, its arguments or its initial folder in the *User Menu*, *Viewers* or *Editors* configuration was stored shorter, so another program or folder would be used. A hot path's path or name was stored as "?" characters, the *Drives* page's "If path is inaccessible go to" path was stored shorter, *Edit New*'s "Save as default" kept a shorter name, and the browse buttons beside these fields started from a shortened path.
+  - **Now:** such text is refused with "The path specified is too long." The dialog stays open with the item and the field shown, and nothing is written, stored or browsed. Text that fits works as before, also when it fits exactly.
+  - **Limitation:** the Select / Unselect and Convert masks, the filter, the volume label and the in-place rename of a hot path in its list still shorten such text (recorded for a later fix).
 - **A damaged entry in the file highlighting list stopped the program from starting** (feature 250).
   - **Before:** if an entry of the panel item highlighting list (*Options → Configuration → Panels → Colors*) had no readable masks in the configuration (an edited registry, an imported `.reg` file), the start-up never ended: the program ran at full processor load without showing its window, or showed the same "Error Loading Configuration" message again and again.
   - **Now:** the damaged entry is left out and the program starts; the entries before and after it keep working. For a value of the wrong type or one too long, the message is shown once.
