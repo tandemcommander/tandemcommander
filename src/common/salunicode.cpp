@@ -655,6 +655,25 @@ int SalWToU8Truncate(const WCHAR* src, char* buf, int bufSize)
     return (int)strlen(buf) + 1;
 }
 
+// feature 251: see salunicode.h
+BOOL SalWTextFitsU8(const WCHAR* src, int bufSize)
+{
+    if (bufSize <= 0)
+        return FALSE;
+    if (src == NULL || src[0] == 0)
+        return TRUE;
+    int need = SalWToU8(src, -1, NULL, 0); // bytes with the terminator, WTF-8 for a lone surrogate
+    return need > 0 && need <= bufSize;
+}
+
+// feature 251: see salunicode.h
+BOOL SalU8TextFits(const char* src, int bufSize)
+{
+    if (bufSize <= 0)
+        return FALSE;
+    return src == NULL || strlen(src) < (size_t)bufSize;
+}
+
 // feature 101: see salunicode.h
 BOOL SalU8EllipsizeMiddle(const char* src, char* buf, int bufSize)
 {

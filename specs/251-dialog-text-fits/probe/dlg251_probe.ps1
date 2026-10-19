@@ -22,6 +22,8 @@
       drv-browse the same field, then its browse button: the browse started from a cut path.
                  PASS = refused, no browse window
       en-default Edit New (744), its menu "Save as default" with a name of > 260 bytes
+      um-ctl, vw-ctl, hp-ctl, drv-ctl  controls: CJK text that fits the buffer exactly (259 / 1,039
+                 bytes + NUL) - PASS = accepted, nothing asked, the field opened again holds it whole
     Config rows: PASS = refused and the dialog stays open (the probe cancels it); FAIL = the
     dialog closed and the field, opened again, holds another text than typed.
     Driver of 214's probe (098's library). MUST run through tools\run_on_hidden_desktop.ps1.
@@ -182,7 +184,7 @@ function Mfl-Row([string]$Case, [string]$Name, $Line, [scriptblock]$Check) {
 
 # a Configuration page: $Prep (before the start), mode / param, $Fill sets the fields; PASS = refused
 # and the dialog stayed; otherwise the field is read again in a re-opened dialog
-function Cfg-Row([string]$Case, [scriptblock]$Prep, [int]$Mode, [long]$Param, [int]$Field, [string]$Text, [scriptblock]$Select) {
+function Cfg-Row([string]$Case, [scriptblock]$Prep, [int]$Mode, [long]$Param, [int]$Field, [string]$Text, [scriptblock]$Select, [switch]$Fits) {
     Run-Row $Case {
         if ($Prep) { & $Prep }
         $id = Start-Tc $StartDir; $script:RowId = $id
@@ -206,7 +208,9 @@ function Cfg-Row([string]$Case, [scriptblock]$Prep, [int]$Mode, [long]$Param, [i
             [void](Serve251 $id @() 'cancel' 10)
         }
         $refused = $o.Stayed -and ($o.Shown -match $TooLong)
-        $ok = (-not $script:RowFatal) -and (-not $o.TimedOut) -and $refused
+        # a control row (-Fits): the text fits - accepted and stored whole, nothing asked
+        if ($Fits) { $verdictOk = (-not $o.Stayed) -and $keptText -and ($o.Shown -eq 'nothing') } else { $verdictOk = $refused }
+        $ok = (-not $script:RowFatal) -and (-not $o.TimedOut) -and $verdictOk
         Row $Case 'RUN' (V $ok) ("typed {0} units / {1} bytes (field was {2} units); dialog stayed: {3}; asked: {4}; field after OK: {5}{6}" -f $Text.Length, (U8 $Text), $was.Length, $o.Stayed, $o.Shown, $after, $(if ($o.TimedOut) { '; TIMED OUT' } else { '' }))
     }
 }
@@ -247,6 +251,11 @@ $Cases['ed-cmd'] = { Cfg-Row 'ed-cmd' { Reg-Set 'Configuration' 'Last Focused Pa
 $Cases['hp-path'] = { Cfg-Row 'hp-path' $null 1 -1 373 ('C:\' + (Cjk 400)) $null }
 $Cases['hp-name'] = { Cfg-Row 'hp-name' { Reg-Set 'Hot Paths\1' 'Name' 'C:\' String; Reg-Set 'Hot Paths\1' 'Path' 'C:\' String; Reg-Set 'Hot Paths\1' 'Visible' 1 DWord } 1 -1 376 (Cjk 100) $null }
 $Cases['drv-goto'] = { Cfg-Row 'drv-goto' $null 6 0 488 ('C:\' + (Cjk 90)) $null }
+# controls: CJK text that fits the buffer exactly (259 bytes + NUL) is still accepted and stored whole
+$Cases['um-ctl'] = { Cfg-Row 'um-ctl' { Seed-UserMenu } 2 0 352 ('C:\' + (Cjk 84) + '.exe') { param($g) Select-First $g 351 } -Fits }
+$Cases['vw-ctl'] = { Cfg-Row 'vw-ctl' { Reg-Set 'Configuration' 'Last Focused Page' 19 DWord } 0 0 352 ('C:\' + (Cjk 84) + '.exe') { param($g) Select-First $g 584 } -Fits }
+$Cases['hp-ctl'] = { Cfg-Row 'hp-ctl' $null 1 -1 373 ('C:\' + (Cjk 345) + 'a') $null -Fits }
+$Cases['drv-ctl'] = { Cfg-Row 'drv-ctl' $null 6 0 488 ('C:\' + (Cjk 85) + 'a') $null -Fits }
 $Cases['drv-browse'] = {
     Run-Row 'drv-browse' {
         $id = Start-Tc $StartDir; $script:RowId = $id

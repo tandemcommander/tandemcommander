@@ -56,6 +56,61 @@ initial directory): every refusal row FAIL, the control PASS:
 - Pages that store on every keystroke keep the **whole** text in the item (a heap read,
   `SalGetWindowTextU8Alloc`) and refuse in `Validate` by length - before the existing checks.
 
+## Analyze
+
+`speckit-analyze`: no CRITICAL / HIGH. Accepted: C1 (MEDIUM) - of the four browse-from-field
+buttons only the drives page's is driven by the probe (`drv-browse`); the directory menu
+(`InvokeDirectoryMenuCommand`, a popup menu), `CCompareArgsDlg` and Make File List's file browse
+use the same helper and are checked by reading and review. C2 / F1 (LOW): no change needed.
+
 ## Work
 
-(in progress)
+- `src/common/salunicode.h/.cpp`: `SalWTextFitsU8` (wide text vs a UTF-8 buffer, WTF-8, fail
+  closed) and `SalU8TextFits` (a value already in UTF-8, kept whole by a page).
+- `src/common/winlib.h/.cpp`: `SalWindowTextFitsU8`, `SalGetWindowTextU8Alloc` (beside
+  `SalGetWindowTextU8`).
+- `src/dialogs.h`, `src/dialogs3.cpp`: `DlgItemTextFitsU8(dlg, ctrlID, ti, bufSize)` - 214's
+  `CopyMoveTargetTextFits` generalised (both 214 calls use it); without `ti` the field is focused
+  with its text selected. Edit New's "Save as default" calls it - the default unchanged.
+- `src/dialogs.cpp` Make File List: `Validate` refuses the line (before `ValidateMakeFileList`)
+  and, with the destination File, the name (before `SalGetFullName`); `Transfer` stores the name
+  only when it fits (another destination: the previous name stays); the file browse refuses.
+- `src/dialogs4.cpp` user menu: `StoreControls` keeps the whole texts; `Validate` checks every item
+  (every type) before the existing checks - Command / Initial directory `MAX_PATH`, Arguments
+  `USRMNUARGS_MAXLEN`: the item selected, the message, the field marked.
+- `src/dialogs5.cpp` viewers / editors: the same (`ViewEditTooLongField` /
+  `ViewEditRefuseTooLong`, `MAX_PATH` for all three - their loader's size, `salamdr2.cpp`).
+- `src/dialogs4.cpp` hot paths: `StoreControls` / `StoreName` read whole, the code-page fallback
+  is gone; `Validate` refuses a path >= `HOTPATHITEM_MAXPATH` or a name >= `MAX_PATH` bytes.
+- `src/cfgdlg.h`, `src/dialogs5.cpp` drives: new `CCfgPageDrives::Validate` (an edited "go to"
+  path must fit `MAX_PATH`); the browse button refuses.
+- `src/salamdr3.cpp` (`InvokeDirectoryMenuCommand`, browse) and `src/dialogs2.cpp`
+  (`CCompareArgsDlg`, folder browse): refuse instead of browsing from a cut path.
+- `src/saltests/saltests.cpp`: `TestTextFits251` (ASCII / CJK exact fit and one over, the
+  measured 90 CJK letters, surrogate pair 4 bytes, lone surrogates 3, empty / NULL, zero and
+  negative buffers, agreement with `SalWToU8`; `SalU8TextFits` likewise).
+
+Not changed (out of the item's scope, noted): the hot path list's in-place label edit
+(`LVN_ENDLABELEDIT`, a display label cut at a whole character into `MAX_PATH`); the hot path
+label shown while a too-long path is being edited (`GetDisplayName` into `MAX_PATH`, display only,
+refused at OK).
+
+## Checks
+
+- `python tools/check_encoding.py --strict`: `TOTAL: 0 finding(s)`.
+- `.\build.cmd`: `BUILD SUCCEEDED` (warnings only in untouched `salamdr2.cpp` / `zip.cpp`).
+- `saltests`: `24352 checks, 0 failed` (24,342 before the `SalU8TextFits` checks).
+- Negative control: `SalWTextFitsU8` loosened by one byte (`need <= bufSize + 1`) - `saltests`
+  `8 failed`; reverted, rebuilt, `0 failed`.
+- No UI string added or removed (`IDS_TOOLONGPATH` exists) - no `.slt` refresh needed.
+
+## Measured (after)
+
+The probe got four control rows (`um-ctl`, `vw-ctl`, `hp-ctl`, `drv-ctl`: CJK text that fits
+exactly, 259 / 1,039 bytes + NUL - accepted, nothing asked, stored whole), then ran on both builds:
+- `probe/result_before.txt` (Debug_x64_pre251, c7f07bc6): PASS 21, FAIL 11 - exactly the 11
+  refusal rows; every control and END row PASS; registry restored identical.
+- `probe/result_after.txt` (this branch): PASS 32, FAIL 0 - every refusal row "The path specified
+  is too long.", the dialog stayed open; Make File List's `out\` empty; Edit New's default still
+  `new.txt`; the drives browse showed the refusal and no "Select Path"; registry restored identical.
+- `probe/regress_214.txt`: 214's `cm_text_probe.ps1` PASS 4, FAIL 0.

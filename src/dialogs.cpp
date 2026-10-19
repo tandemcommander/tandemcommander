@@ -1892,7 +1892,10 @@ void CFileListDialog::Transfer(CTransferInfo& ti)
     ti.RadioButton(IDC_FL_CLIPBOARD, 0, Configuration.FileListDestination);
     ti.RadioButton(IDC_FL_VIEWER, 1, Configuration.FileListDestination);
     ti.RadioButton(IDC_FL_FILE, 2, Configuration.FileListDestination);
-    ti.EditLine(IDC_FL_FILENAME, Configuration.FileListName, MAX_PATH);
+    // feature 251: a name that does not fit is never stored cut (with the destination File,
+    // Validate refused it; otherwise the field is unused and the stored name stays)
+    if (ti.Type == ttDataToWindow || SalWindowTextFitsU8(GetDlgItem(HWindow, IDC_FL_FILENAME), MAX_PATH))
+        ti.EditLine(IDC_FL_FILENAME, Configuration.FileListName, MAX_PATH);
     ti.CheckBox(IDC_FL_APPEND, Configuration.FileListAppend);
 
     char** history = Configuration.FileListHistory;
@@ -1927,6 +1930,8 @@ void CFileListDialog::Validate(CTransferInfo& ti)
 
     if (ti.GetControl(hWnd, IDC_FL_LINE))
     {
+        if (!DlgItemTextFitsU8(HWindow, IDC_FL_LINE, &ti, MAX_PATH)) // feature 251: never a cut line
+            return;
         char buff[MAX_PATH];
         SalGetWindowTextU8(hWnd, buff, MAX_PATH); // feature 005
         int errorPos1, errorPos2;
@@ -1946,6 +1951,8 @@ void CFileListDialog::Validate(CTransferInfo& ti)
             // DefaultDir restoration
             MainWindow->UpdateDefaultDir(TRUE);
 
+            if (!DlgItemTextFitsU8(HWindow, IDC_FL_FILENAME, &ti, MAX_PATH)) // feature 251: never write to a cut name
+                return;
             char buffFile[MAX_PATH];
             SalGetWindowTextU8(hWnd, buffFile, MAX_PATH); // feature 005
             int errTextID;
@@ -2029,6 +2036,8 @@ CFileListDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
         case IDC_FL_FNBROWSE:
         {
+            if (!DlgItemTextFitsU8(HWindow, IDC_FL_FILENAME, NULL, MAX_PATH)) // feature 251: never browse from a cut name
+                return 0;
             char buffFile[MAX_PATH];
             // DefaultDir restoration
             MainWindow->UpdateDefaultDir(TRUE);

@@ -13655,6 +13655,71 @@ static void TestCpFit248()
           strcmp(a1, a2) == 0);
 }
 
+// feature 251: SalWTextFitsU8 - does the whole typed text fit a UTF-8 buffer (a cut is refused)
+static void TestTextFits251()
+{
+    WCHAR w[400];
+    // ASCII: 259 characters + NUL fit 260, 260 do not
+    for (int i = 0; i < 260; i++)
+        w[i] = L'a';
+    w[259] = 0;
+    CHECK(SalWTextFitsU8(w, 260));
+    w[259] = L'a';
+    w[260] = 0;
+    CHECK(!SalWTextFitsU8(w, 260));
+    CHECK(SalWTextFitsU8(w, 261));
+    // CJK: three bytes each - 86 letters (258 + 1) fit 259, 87 (261 + 1) do not fit 261
+    for (int i = 0; i < 87; i++)
+        w[i] = (WCHAR)(0x4E00 + i);
+    w[86] = 0;
+    CHECK(SalWTextFitsU8(w, 259));
+    CHECK(!SalWTextFitsU8(w, 258));
+    w[86] = 0x4E56;
+    w[87] = 0;
+    CHECK(!SalWTextFitsU8(w, 261));
+    CHECK(SalWTextFitsU8(w, 262));
+    // the 214 / 251 measurement: 90 CJK letters fit the field's 259 units, not 260 bytes
+    for (int i = 0; i < 90; i++)
+        w[i] = (WCHAR)(0x4E01 + i);
+    w[90] = 0;
+    CHECK(!SalWTextFitsU8(w, 260));
+    // a surrogate pair is 4 bytes, a lone surrogate 3 (WTF-8)
+    CHECK(SalWTextFitsU8(L"ab\xD83D\xDE00", 7));
+    CHECK(!SalWTextFitsU8(L"ab\xD83D\xDE00", 6));
+    CHECK(SalWTextFitsU8(L"ab\xD83D", 6));
+    CHECK(!SalWTextFitsU8(L"ab\xD83D", 5));
+    CHECK(SalWTextFitsU8(L"\xDE00x", 5));
+    CHECK(!SalWTextFitsU8(L"\xDE00x", 4));
+    // edges: the empty text and NULL need the terminator only; no buffer is never enough
+    CHECK(SalWTextFitsU8(L"", 1));
+    CHECK(SalWTextFitsU8(NULL, 1));
+    CHECK(!SalWTextFitsU8(L"", 0));
+    CHECK(!SalWTextFitsU8(NULL, 0));
+    CHECK(!SalWTextFitsU8(L"a", -5));
+    CHECK(!SalWTextFitsU8(L"a", 1));
+    CHECK(SalWTextFitsU8(L"a", 2));
+    // agrees with the converter: whatever fits converts whole, without a cut
+    char buf[16];
+    CHECK(SalWTextFitsU8(L"\x017E\x011B", 5) && SalWToU8(L"\x017E\x011B", -1, buf, 5) == 5);
+    CHECK(!SalWTextFitsU8(L"\x017E\x011B", 4) && SalWToU8(L"\x017E\x011B", -1, buf, 4) == 0);
+    // SalU8TextFits: a value already in UTF-8 (a configuration item kept whole)
+    CHECK(SalU8TextFits("abc", 4));
+    CHECK(!SalU8TextFits("abc", 3));
+    CHECK(SalU8TextFits("\xE4\xB8\x80", 4));  // one CJK letter: 3 bytes + NUL
+    CHECK(!SalU8TextFits("\xE4\xB8\x80", 3)); // never "fits" by counting letters
+    CHECK(SalU8TextFits("", 1));
+    CHECK(SalU8TextFits(NULL, 1));
+    CHECK(!SalU8TextFits("", 0));
+    CHECK(!SalU8TextFits(NULL, -1));
+    char big[300];
+    memset(big, 'x', 260);
+    big[259] = 0;
+    CHECK(SalU8TextFits(big, MAX_PATH));
+    big[259] = 'x';
+    big[260] = 0;
+    CHECK(!SalU8TextFits(big, MAX_PATH));
+}
+
 static void TestNetDrive246()
 {
     // the key Explorer keeps a drive's name under (measured: analysis.md G1)
@@ -13966,6 +14031,7 @@ int main(int argc, char** argv)
     TestCfgImport245();
     TestNetDrive246();
     TestCpFit248();
+    TestTextFits251();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

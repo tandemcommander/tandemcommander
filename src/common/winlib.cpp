@@ -1183,6 +1183,41 @@ int SalGetWindowTextU8(HWND hWnd, char* u8Buf, int u8BufSize)
     return GetWindowText(hWnd, u8Buf, u8BufSize); // no memory for the wide copy: legacy A read
 }
 
+// the window's whole text as a malloc'd wide string; NULL without memory
+static WCHAR* SalGetWindowTextWAlloc(HWND hWnd)
+{
+    int wchars = GetWindowTextLengthW(hWnd) + 1;
+    WCHAR* w = (WCHAR*)malloc(wchars * sizeof(WCHAR));
+    if (w != NULL)
+    {
+        w[0] = 0;
+        GetWindowTextW(hWnd, w, wchars);
+    }
+    return w;
+}
+
+// feature 251: see winlib.h
+BOOL SalWindowTextFitsU8(HWND hWnd, int u8BufSize)
+{
+    WCHAR* w = SalGetWindowTextWAlloc(hWnd);
+    if (w == NULL)
+        return FALSE;
+    BOOL fits = SalWTextFitsU8(w, u8BufSize);
+    free(w);
+    return fits;
+}
+
+// feature 251: see winlib.h
+char* SalGetWindowTextU8Alloc(HWND hWnd)
+{
+    WCHAR* w = SalGetWindowTextWAlloc(hWnd);
+    if (w == NULL)
+        return NULL;
+    char* u8 = SalWToU8Alloc(w); // WTF-8 for a lone surrogate
+    free(w);
+    return u8;
+}
+
 BOOL SalSetDlgItemTextU8(HWND hDlg, int ctrlID, const char* u8Text)
 {
     HWND ctrl = GetDlgItem(hDlg, ctrlID);

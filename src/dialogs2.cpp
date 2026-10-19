@@ -1281,7 +1281,7 @@ CCompareArgsDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             int editID = LOWORD(wParam) == IDB_UMC_BROWSENAME1 ? IDE_UMC_NAME1 : IDE_UMC_NAME2;
             if (ComparingFiles)
                 BrowseCommand(HWindow, editID, IDS_ALLFILTER);
-            else
+            else if (DlgItemTextFitsU8(HWindow, editID, NULL, MAX_PATH)) // feature 251: never browse from a cut path
             {
                 char path[MAX_PATH];
                 SalGetDlgItemTextU8(HWindow, editID, path, MAX_PATH); // path is UTF-8 (feature 005)

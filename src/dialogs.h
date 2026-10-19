@@ -26,6 +26,14 @@ protected:
     char* Mask;
 };
 
+// features 214, 251: does the WHOLE text of 'dlg's control 'ctrlID' fit 'bufSize' bytes of UTF-8
+// (with the terminator)? A control limit counts UTF-16 units, the buffer UTF-8 bytes (up to three
+// per unit) - a reading into the buffer would cut the text at a whole character: another path,
+// name or command. When it does not fit (or cannot be measured): "The path specified is too
+// long.", then ti->ErrorOn(ctrlID), or without 'ti' the focus on the control with its text
+// selected; returns FALSE. A missing control passes.
+BOOL DlgItemTextFitsU8(HWND dlg, int ctrlID, CTransferInfo* ti, int bufSize);
+
 //
 // ****************************************************************************
 

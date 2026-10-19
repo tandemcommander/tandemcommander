@@ -420,40 +420,28 @@ void CCopyMoveDialog::SetSelectionEnd(int selectionEnd)
     SelectionEnd = selectionEnd;
 }
 
-// feature 214: does the text of 'dlg's IDE_PATH fit 'bufSize' bytes of UTF-8? When not (or
-// it cannot be measured), says so, marks the control and returns FALSE - the text was cut at a
-// whole character: another path or name. Also a history entry or a set text longer than the
-// field's limit.
-static BOOL CopyMoveTargetTextFits(HWND dlg, CTransferInfo& ti, int bufSize)
+// features 214, 251: see dialogs.h
+BOOL DlgItemTextFitsU8(HWND dlg, int ctrlID, CTransferInfo* ti, int bufSize)
 {
-    HWND ctrl = GetDlgItem(dlg, IDE_PATH);
+    HWND ctrl = GetDlgItem(dlg, ctrlID);
     if (ctrl == NULL)
         return TRUE;
     // the limit of the control counts UTF-16 units, the caller's buffer UTF-8 bytes (up to three
     // per unit): typed text could fit the control and not the buffer
-    BOOL fits = FALSE;
-    int wl = GetWindowTextLengthW(ctrl);
-    WCHAR* w = (WCHAR*)malloc((wl + 1) * sizeof(WCHAR));
-    if (w != NULL)
-    {
-        w[0] = 0;
-        GetWindowTextW(ctrl, w, wl + 1);
-        int need = SalWToU8(w, -1, NULL, 0); // bytes with the terminator
-        fits = need > 0 && need <= bufSize;
-        free(w);
-    }
-    if (!fits)
-    {
-        SalMessageBox(dlg, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
-        ti.ErrorOn(IDE_PATH);
-    }
-    return fits;
+    if (SalWindowTextFitsU8(ctrl, bufSize))
+        return TRUE;
+    SalMessageBox(dlg, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+    if (ti != NULL)
+        ti->ErrorOn(ctrlID);
+    else
+        SendMessage(dlg, WM_NEXTDLGCTL, (WPARAM)ctrl, TRUE); // the field with its text selected
+    return FALSE;
 }
 
 void CCopyMoveDialog::Validate(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CCopyMoveDialog::Validate()");
-    CopyMoveTargetTextFits(HWindow, ti, PathBufSize); // feature 214: never cut (Unpack: 260 bytes, a plug-in file system: 520)
+    DlgItemTextFitsU8(HWindow, IDE_PATH, &ti, PathBufSize); // feature 214: never cut (Unpack: 260 bytes, a plug-in file system: 520)
 }
 
 void CCopyMoveDialog::Transfer(CTransferInfo& ti)
@@ -598,7 +586,7 @@ MENU_TEMPLATE_ITEM EditNewFileDialogMenu[] =
             GetWindowRect((HWND)lParam, &tpmPar.rcExclude);
             DWORD cmd = TrackPopupMenuEx(hMenu, TPM_RETURNCMD | TPM_LEFTALIGN | TPM_RIGHTBUTTON, tpmPar.rcExclude.right, tpmPar.rcExclude.top,
                                          HWindow, &tpmPar);
-            if (cmd == 1)
+            if (cmd == 1 && DlgItemTextFitsU8(HWindow, IDE_PATH, NULL, MAX_PATH)) // feature 251: never a cut default
             {
                 Configuration.UseEditNewFileDefault = TRUE;
                 SalGetDlgItemTextU8(HWindow, IDE_PATH, Configuration.EditNewFileDefault, MAX_PATH); // name is UTF-8 (feature 005)
@@ -832,7 +820,7 @@ void CCopyMoveMoreDialog::Validate(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CCopyMoveMoreDialog::Validate()");
 
-    if (!CopyMoveTargetTextFits(HWindow, ti, PathBufSize)) // feature 214: never cut
+    if (!DlgItemTextFitsU8(HWindow, IDE_PATH, &ti, PathBufSize)) // feature 214: never cut
         return;
 
     BOOL useSpeedLimit;

@@ -1,0 +1,39 @@
+dlg251_probe (feature 251) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 00:52; ACP 1250; registry key existed True
+
+mfl-name   RUN    PASS        out: (empty); name 274 bytes / 132 units; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |
+mfl-name   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mfl-line   RUN    PASS        line 291 bytes; out: (empty); list.txt ends with END+CRLF: False; name 65 bytes / 65 units; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |
+mfl-line   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mfl-ctl    RUN    PASS        out: list.txt; content 'a.txt'; name 64 bytes / 64 units; dialog stayed: False; asked: nothing
+mfl-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+um-cmd     RUN    PASS        typed 97 units / 277 bytes (field was 11 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (not read: refused)
+um-cmd     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+um-args    RUN    PASS        typed 11000 units / 33000 bytes (field was 0 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (not read: refused)
+um-args    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vw-cmd     RUN    PASS        typed 97 units / 277 bytes (field was 0 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (not read: refused)
+vw-cmd     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ed-cmd     RUN    PASS        typed 97 units / 277 bytes (field was 40 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (not read: refused)
+ed-cmd     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hp-path    RUN    PASS        typed 403 units / 1203 bytes (field was 12 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (not read: refused)
+hp-path    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hp-name    RUN    PASS        typed 100 units / 300 bytes (field was 0 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (not read: refused)
+hp-name    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+drv-goto   RUN    PASS        typed 93 units / 273 bytes (field was 24 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (not read: refused)
+drv-goto   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+um-ctl     RUN    PASS        typed 91 units / 259 bytes (field was 11 units); dialog stayed: False; asked: nothing; field after OK: 91 units / 259 bytes, same as typed: True, tail '...\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54.exe'
+um-ctl     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vw-ctl     RUN    PASS        typed 91 units / 259 bytes (field was 0 units); dialog stayed: False; asked: nothing; field after OK: 91 units / 259 bytes, same as typed: True, tail '...\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54.exe'
+vw-ctl     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hp-ctl     RUN    PASS        typed 349 units / 1039 bytes (field was 12 units); dialog stayed: False; asked: nothing; field after OK: 349 units / 1039 bytes, same as typed: True, tail '...\u4F4F\u4F50\u4F51\u4F52\u4F53\u4F54\u4F55\u4F56\u4F57\u4F58\u4F59a'
+hp-ctl     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+drv-ctl    RUN    PASS        typed 89 units / 259 bytes (field was 24 units); dialog stayed: False; asked: nothing; field after OK: 89 units / 259 bytes, same as typed: True, tail '...\u4E4B\u4E4C\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54\u4E55a'
+drv-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+drv-browse RUN    PASS        typed 273 bytes; windows after the browse button: [#32770 'Error'] The path specified is too long. |
+drv-browse END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+en-default RUN    PASS        typed 94 units / 274 bytes; default before 'new.txt'; asked: [#32770 'Error'] The path specified is too long. |; the field of a new Edit New: 7 units / 7 bytes, tail 'new.txt'
+en-default END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+
+Rows: PASS 32, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

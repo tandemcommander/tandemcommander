@@ -211,6 +211,24 @@ int SalWToU8Truncate(const WCHAR* src, char* buf, int bufSize);
 
 //
 // ****************************************************************************
+// SalWTextFitsU8 (feature 251)
+//
+// TRUE when the UTF-8 (WTF-8: a lone surrogate takes 3 bytes) form of the
+// null-terminated text 'src', with its terminator, fits 'bufSize' bytes - the
+// check that comes before a buffer would cut typed text at a whole character
+// (SalWToU8Truncate).  NULL is the empty text.  FALSE for bufSize <= 0 and when
+// the size cannot be computed: the caller refuses the text (fail closed).
+
+BOOL SalWTextFitsU8(const WCHAR* src, int bufSize);
+
+// The same for text already in UTF-8 (a value kept whole, checked before it is stored
+// into or loaded back from a buffer of 'bufSize' bytes): strlen + 1 <= bufSize.  NULL is
+// the empty text; FALSE for bufSize <= 0.
+
+BOOL SalU8TextFits(const char* src, int bufSize);
+
+//
+// ****************************************************************************
 // SalU8ToWTruncate (feature 101)
 //
 // The other direction, for a fixed UTF-16 field such as NOTIFYICONDATAW::szTip

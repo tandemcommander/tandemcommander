@@ -1856,6 +1856,13 @@ CCfgPageDrives::CCfgPageDrives(BOOL focusIfPathIsInaccessibleGoTo)
     FocusIfPathIsInaccessibleGoTo = focusIfPathIsInaccessibleGoTo;
 }
 
+void CCfgPageDrives::Validate(CTransferInfo& ti)
+{
+    // feature 251: an edited path that does not fit is refused, never stored cut
+    if (IfPathIsInaccessibleGoToChanged)
+        DlgItemTextFitsU8(HWindow, IDE_DRVSPEC_ONERRGOTO, &ti, MAX_PATH);
+}
+
 void CCfgPageDrives::Transfer(CTransferInfo& ti)
 {
     ti.CheckBox(IDC_DRVSPEC_FLOPPYMON, Configuration.DrvSpecFloppyMon);
@@ -1919,6 +1926,8 @@ CCfgPageDrives::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         if (LOWORD(wParam) == IDB_BROWSECOMMAND)
         {
+            if (!DlgItemTextFitsU8(HWindow, IDE_DRVSPEC_ONERRGOTO, NULL, MAX_PATH)) // feature 251: never browse from a cut path
+                return 0;
             char path[MAX_PATH];
             SalGetDlgItemTextU8(HWindow, IDE_DRVSPEC_ONERRGOTO, path, MAX_PATH); // path is UTF-8 (feature 010)
             if (GetTargetDirectory(HWindow, HWindow, LoadStr(IDS_BROWSEONERRGOTOTITLE),
@@ -2005,6 +2014,28 @@ void CCfgPageViewers::Transfer(CTransferInfo& ti)
     }
 }
 
+// feature 251: the first of a viewer's / editor's Command, Arguments and Initial directory that
+// does not fit the buffer they are loaded and run with (MAX_PATH; the item holds the whole typed
+// text), 0 when all fit
+static int ViewEditTooLongField(const char* command, const char* arguments, const char* initDir)
+{
+    return !SalU8TextFits(command, MAX_PATH)     ? IDE_COMMAND
+           : !SalU8TextFits(arguments, MAX_PATH) ? IDE_ARGUMENTS
+           : !SalU8TextFits(initDir, MAX_PATH)   ? IDE_INITDIR
+                                                 : 0;
+}
+
+// refuses such an item: the item selected, the message, the field marked
+static BOOL ViewEditRefuseTooLong(HWND page, CEditListBox* editLB, int index, CTransferInfo& ti, int tooLongID)
+{
+    if (tooLongID == 0)
+        return FALSE;
+    editLB->SetCurSel(index);
+    SalMessageBox(page, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+    ti.ErrorOn(tooLongID);
+    return TRUE;
+}
+
 void CCfgPageViewers::Validate(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CCfgPageViewers::Validate()");
@@ -2013,6 +2044,8 @@ void CCfgPageViewers::Validate(CTransferInfo& ti)
         int i;
         for (i = 0; i < ViewerMasks.Count; i++)
         {
+            if (ViewEditRefuseTooLong(HWindow, EditLB, i, ti, ViewEditTooLongField(ViewerMasks[i]->Command, ViewerMasks[i]->Arguments, ViewerMasks[i]->InitDir)))
+                return; // feature 251
             CMaskGroup masks(ViewerMasks[i]->Masks->GetMasksString());
             int errorPos1, errorPos2;
             const char* forbiddenChar = strchr(masks.GetMasksString(), '|');
@@ -2118,14 +2151,18 @@ void CCfgPageViewers::StoreControls()
         Dirty = TRUE;
         CViewerMasksItem* item = ViewerMasks[index];
 
-        char command[MAX_PATH];
-        char arguments[MAX_PATH];
-        char initdir[MAX_PATH];
-        // feature 005: read UTF-8 paths back from the Unicode controls
-        SalGetDlgItemTextU8(HWindow, IDE_COMMAND, command, MAX_PATH);
-        SalGetDlgItemTextU8(HWindow, IDE_ARGUMENTS, arguments, MAX_PATH);
-        SalGetDlgItemTextU8(HWindow, IDE_INITDIR, initdir, MAX_PATH);
-        item->Set(item->Masks->GetMasksString(), command, arguments, initdir);
+        // feature 005: read UTF-8 paths back from the Unicode controls; feature 251: whole - a
+        // text that does not fit is refused by Validate, never stored cut
+        char* command = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_COMMAND));
+        char* arguments = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_ARGUMENTS));
+        char* initdir = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_INITDIR));
+        if (command != NULL && arguments != NULL && initdir != NULL)
+            item->Set(item->Masks->GetMasksString(), command, arguments, initdir);
+        else
+            TRACE_E(LOW_MEMORY);
+        free(command);
+        free(arguments);
+        free(initdir);
 
         int cmbSel = (int)SendDlgItemMessage(HWindow, IDC_VIEW_TYPE, CB_GETCURSEL, 0, 0);
         int type;
@@ -2425,6 +2462,8 @@ void CCfgPageEditors::Validate(CTransferInfo& ti)
         int i;
         for (i = 0; i < EditorMasks.Count; i++)
         {
+            if (ViewEditRefuseTooLong(HWindow, EditLB, i, ti, ViewEditTooLongField(EditorMasks[i]->Command, EditorMasks[i]->Arguments, EditorMasks[i]->InitDir)))
+                return; // feature 251
             CMaskGroup masks(EditorMasks[i]->Masks->GetMasksString());
             int errorPos1, errorPos2;
             if (!masks.PrepareMasks(errorPos1))
@@ -2500,14 +2539,18 @@ void CCfgPageEditors::StoreControls()
         Dirty = TRUE;
         CEditorMasksItem* item = EditorMasks[index];
 
-        char command[MAX_PATH];
-        char arguments[MAX_PATH];
-        char initdir[MAX_PATH];
-        // feature 005: read UTF-8 paths back from the Unicode controls
-        SalGetDlgItemTextU8(HWindow, IDE_COMMAND, command, MAX_PATH);
-        SalGetDlgItemTextU8(HWindow, IDE_ARGUMENTS, arguments, MAX_PATH);
-        SalGetDlgItemTextU8(HWindow, IDE_INITDIR, initdir, MAX_PATH);
-        item->Set(item->Masks->GetMasksString(), command, arguments, initdir);
+        // feature 005: read UTF-8 paths back from the Unicode controls; feature 251: whole - a
+        // text that does not fit is refused by Validate, never stored cut
+        char* command = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_COMMAND));
+        char* arguments = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_ARGUMENTS));
+        char* initdir = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_INITDIR));
+        if (command != NULL && arguments != NULL && initdir != NULL)
+            item->Set(item->Masks->GetMasksString(), command, arguments, initdir);
+        else
+            TRACE_E(LOW_MEMORY);
+        free(command);
+        free(arguments);
+        free(initdir);
     }
 }
 

@@ -352,6 +352,12 @@ BOOL SalSetWindowTitleW(HWND hWnd, const WCHAR* text);
 int SalGetWindowTextU8(HWND hWnd, char* u8Buf, int u8BufSize);
 BOOL SalSetDlgItemTextU8(HWND hDlg, int ctrlID, const char* u8Text);
 int SalGetDlgItemTextU8(HWND hDlg, int ctrlID, char* u8Buf, int u8BufSize);
+// feature 251: does the window's WHOLE text fit 'u8BufSize' bytes of UTF-8 (WTF-8) with
+// its terminator (SalWTextFitsU8)? FALSE also without memory to measure (refuse, never cut)
+BOOL SalWindowTextFitsU8(HWND hWnd, int u8BufSize);
+// feature 251: the window's whole text as UTF-8 (WTF-8), never cut; malloc'd, the caller
+// frees it; NULL without memory
+char* SalGetWindowTextU8Alloc(HWND hWnd);
 LRESULT SalComboAddStringU8(HWND combo, const char* u8Text);     // CB_ADDSTRING result
 LRESULT SalListBoxAddStringU8(HWND listbox, const char* u8Text); // LB_ADDSTRING result
 // inserts an MFT_STRING menu item whose text is UTF-8 via InsertMenuItemW

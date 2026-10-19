@@ -2042,6 +2042,19 @@ void CCfgPageUserMenu::Validate(CTransferInfo& ti)
     {
         int errorPos1, errorPos2;
         CUserMenuItem* item = UserMenuItems->At(i);
+        // feature 251: the item holds the whole typed text; what does not fit the buffers it is
+        // loaded and run with is refused (every type: the configuration stores the fields of all)
+        int tooLongID = !SalU8TextFits(item->UMCommand, MAX_PATH)              ? IDE_COMMAND
+                        : !SalU8TextFits(item->Arguments, USRMNUARGS_MAXLEN) ? IDE_ARGUMENTS
+                        : !SalU8TextFits(item->InitDir, MAX_PATH)            ? IDE_INITDIR
+                                                                             : 0;
+        if (tooLongID != 0)
+        {
+            EditLB->SetCurSel(i);
+            SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+            ti.ErrorOn(tooLongID);
+            return;
+        }
         if (item->Type == umitItem)
         {
             if (!ValidateCommandFile(HWindow, item->UMCommand, errorPos1, errorPos2))
@@ -2209,15 +2222,19 @@ void CCfgPageUserMenu::StoreControls()
     {
         CUserMenuItem* item = UserMenuItems->At(index);
 
-        char command[MAX_PATH];
-        char arguments[USRMNUARGS_MAXLEN];
-        char initdir[MAX_PATH];
-        // feature 005: read UTF-8 paths back from the Unicode controls
-        SalGetDlgItemTextU8(HWindow, IDE_COMMAND, command, MAX_PATH);
-        SalGetDlgItemTextU8(HWindow, IDE_ARGUMENTS, arguments, USRMNUARGS_MAXLEN);
-        SalGetDlgItemTextU8(HWindow, IDE_INITDIR, initdir, MAX_PATH);
-
-        item->Set(item->ItemName, command, arguments, initdir, item->Icon);
+        // feature 005: read UTF-8 paths back from the Unicode controls; feature 251: whole - a
+        // text that does not fit the buffers the item is loaded and run with is refused by
+        // Validate, never stored cut
+        char* command = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_COMMAND));
+        char* arguments = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_ARGUMENTS));
+        char* initdir = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDE_INITDIR));
+        if (command != NULL && arguments != NULL && initdir != NULL)
+            item->Set(item->ItemName, command, arguments, initdir, item->Icon);
+        else
+            TRACE_E(LOW_MEMORY);
+        free(command);
+        free(arguments);
+        free(initdir);
 
         BOOL submenu = (IsDlgButtonChecked(HWindow, IDC_UM_SUBMENU) == BST_CHECKED);
         BOOL separator = (IsDlgButtonChecked(HWindow, IDC_UM_SEPARATOR) == BST_CHECKED);
@@ -2753,6 +2770,20 @@ void CCfgPageHotPath::Validate(CTransferInfo& ti)
         for (i = 0; i < HOT_PATHS_COUNT; i++)
         {
             int errorPos1, errorPos2;
+            // feature 251: the slot holds the whole typed text; a path or name that does not fit
+            // the buffers it is loaded and used with is refused, never stored cut
+            int tooLongID = Config->GetPathLen(i) >= HOTPATHITEM_MAXPATH ? IDC_HOTPATH_PATH
+                            : Config->GetNameLen(i) >= MAX_PATH          ? IDC_HOTPATH_NAME
+                                                                         : 0;
+            if (tooLongID != 0)
+            {
+                SetCursor(hOldCur);
+                ListView_SetItemState(HListView, i, LVIS_SELECTED, LVIS_SELECTED);
+                ListView_EnsureVisible(HListView, i, FALSE);
+                SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                ti.ErrorOn(tooLongID);
+                return;
+            }
             if (Config->GetPathLen(i) > 0) // feature 047: the path defines the slot
             {
                 char path[HOTPATHITEM_MAXPATH];
@@ -2919,13 +2950,16 @@ void CCfgPageHotPath::StoreControls()
     int index = ListView_GetNextItem(HListView, -1, LVNI_SELECTED);
     if (index != -1)
     {
-        char buff[HOTPATHITEM_MAXPATH];
-        WCHAR buffW[HOTPATHITEM_MAXPATH]; // the path is UTF-8 (feature 004): read as wide text
-        buffW[0] = 0;
-        GetDlgItemTextW(HWindow, IDC_HOTPATH_PATH, buffW, _countof(buffW));
-        if (SalWToU8(buffW, -1, buff, HOTPATHITEM_MAXPATH) == 0) // UTF-8 does not fit: keep the legacy A call
-            GetDlgItemText(HWindow, IDC_HOTPATH_PATH, buff, HOTPATHITEM_MAXPATH);
-        Config->SetPath(index, buff);
+        // the path is UTF-8 (feature 004); feature 251: read whole - a path that does not fit
+        // HOTPATHITEM_MAXPATH is refused by Validate (it used to be re-read through the code page: '?')
+        char* path = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDC_HOTPATH_PATH));
+        if (path == NULL)
+        {
+            TRACE_E(LOW_MEMORY);
+            return;
+        }
+        Config->SetPath(index, path);
+        free(path);
         RefreshItemLabel(index); // unnamed rows display the path
     }
 }
@@ -2935,14 +2969,17 @@ void CCfgPageHotPath::StoreName()
     int index = ListView_GetNextItem(HListView, -1, LVNI_SELECTED);
     if (index != -1)
     {
-        char buff[MAX_PATH];
-        WCHAR buffW[MAX_PATH]; // the name is UTF-8 (feature 005): read as wide text
-        buffW[0] = 0;
-        GetDlgItemTextW(HWindow, IDC_HOTPATH_NAME, buffW, _countof(buffW));
-        if (SalWToU8(buffW, -1, buff, MAX_PATH) == 0) // UTF-8 does not fit: keep the legacy A call
-            GetDlgItemText(HWindow, IDC_HOTPATH_NAME, buff, MAX_PATH);
-        Config->CleanName(buff); // trims spaces; an empty result means unnamed
-        Config->SetName(index, buff);
+        // the name is UTF-8 (feature 005); feature 251: read whole - a name that does not fit
+        // MAX_PATH is refused by Validate (it used to be re-read through the code page: '?')
+        char* name = SalGetWindowTextU8Alloc(GetDlgItem(HWindow, IDC_HOTPATH_NAME));
+        if (name == NULL)
+        {
+            TRACE_E(LOW_MEMORY);
+            return;
+        }
+        Config->CleanName(name); // trims spaces; an empty result means unnamed
+        Config->SetName(index, name);
+        free(name);
         RefreshItemLabel(index);
     }
 }

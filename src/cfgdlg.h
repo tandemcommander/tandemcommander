@@ -864,6 +864,7 @@ protected:
 public:
     CCfgPageDrives(BOOL focusIfPathIsInaccessibleGoTo);
 
+    virtual void Validate(CTransferInfo& ti); // feature 251
     virtual void Transfer(CTransferInfo& ti);
 
 protected:

@@ -4420,6 +4420,8 @@ void InvokeDirectoryMenuCommand(DWORD cmd, HWND hDialog, int editID, int editBuf
     case DIRECTORY_COMMAND_BROWSE:
     {
         // browse
+        if (!DlgItemTextFitsU8(hDialog, editID, NULL, MAX_PATH)) // feature 251: never browse from a cut path
+            return;
         SalGetDlgItemTextU8(hDialog, editID, path, MAX_PATH); // paths are UTF-8 (feature 010)
         char caption[100];
         SalGetWindowTextU8(hDialog, caption, 100); // use the same caption as the dialog
