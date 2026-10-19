@@ -69,3 +69,10 @@ in the build output or the installer. Unreachable in the product.
 `src/sfx7zip/install.c` has the same walk (not named by the item): `sfx7zip.vcxproj` is built only
 in the solution's "Utils (Release)" configuration, not by `build.cmd`, and nothing ships it (the
 installer is Inno Setup). Unreachable - recorded here, no Inbox item.
+
+## Analyze
+
+`speckit-analyze`: 0 CRITICAL, 0 HIGH. C1 (MEDIUM, a link at a deeper level of the archive path
+not driven) fixed: probe row DEEP added to T002. Accepted: U1 (LOW) - an unreadable reparse tag and
+a cloud placeholder cannot be driven on the hidden desktop; the decision is 197's
+`SalDeleteAsDirLinkDecision`, checked by `saltests`. I1 (LOW) - FR numbering order, cosmetic.

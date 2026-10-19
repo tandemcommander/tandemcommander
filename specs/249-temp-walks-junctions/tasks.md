@@ -9,7 +9,7 @@
 
 ## Phase 2: Foundational
 
-- [ ] T002 Make the UNPACK row of specs/249-temp-walks-junctions/probe/tempjunction249_probe.ps1 also require the error message ("System error" naming `top`) and keep the PLAIN row requiring no message; the SWEEP row unchanged
+- [ ] T002 Make the UNPACK row of specs/249-temp-walks-junctions/probe/tempjunction249_probe.ps1 also require the error message ("System error" naming `top`) and keep the PLAIN row requiring no message; add a DEEP row (archive `a\top\a.txt`, panel `t.arj\a\top`, the fake creates a real `a` and the junction `a\top`) for a link at the second level; the SWEEP row unchanged
 
 ## Phase 3: User Story 1 - unpacking from inside an archive never moves files from behind a link (P1) MVP
 
