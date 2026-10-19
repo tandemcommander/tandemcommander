@@ -1,13 +1,13 @@
 ---
 title: Quick search: first keystroke over 100,000 non-ASCII names takes about 335 ms
 type: improvement
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: measure:244
 who: agent
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: M
 feature: -
@@ -44,3 +44,4 @@ Not a defect of the matching; the layout cost exists for any refresh of such a f
 ## Log
 
 - 2026-10-18 — created (source measure:244)
+- 2026-10-19 — moved to Next position 42

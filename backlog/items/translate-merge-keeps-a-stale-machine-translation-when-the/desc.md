@@ -1,13 +1,13 @@
 ---
 title: translate.merge keeps a stale machine translation when the English text changes
 type: bug
-status: new
+status: open
 severity: 3
 area: translations
 source: measure:245
 who: agent
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: S
 feature: -
@@ -33,3 +33,4 @@ A machine row whose English changed since it was translated is treated as a gap 
 ## Log
 
 - 2026-10-18 — created (source measure:245)
+- 2026-10-19 — moved to Next position 44

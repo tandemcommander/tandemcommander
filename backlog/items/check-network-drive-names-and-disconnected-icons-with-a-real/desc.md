@@ -1,13 +1,13 @@
 ---
 title: Check network drive names and disconnected icons with a real SMB server
 type: person-step
-status: new
+status: open
 severity: 4
 area: panels-ui
 source: leftover:246
 who: person
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: S
 feature: -
@@ -54,3 +54,4 @@ describes with a real SMB server.
 ## Log
 
 - 2026-10-18 — created (source leftover:246)
+- 2026-10-19 — moved to Person steps position 2

@@ -1,13 +1,13 @@
 ---
 title: A history entry with invalid text hides the entries saved after it
 type: bug
-status: new
+status: open
 severity: 2
 area: encoding
 source: measure:245
 who: agent
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: S
 feature: -
@@ -33,3 +33,4 @@ Valid entries after an invalid one are moved up (no gap), so they stay offered.
 ## Log
 
 - 2026-10-18 — created (source measure:245)
+- 2026-10-19 — moved to Next position 59

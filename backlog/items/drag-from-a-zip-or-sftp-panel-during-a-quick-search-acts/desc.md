@@ -1,13 +1,13 @@
 ---
 title: Drag from a ZIP or SFTP panel during a quick search acts only on the dragged item
 type: person-step
-status: new
+status: open
 severity: 7
 area: data-safety
 source: review:244
 who: person
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: S
 feature: -
@@ -41,3 +41,4 @@ Only the dragged item is extracted, copied or moved; the item hidden by the sear
 ## Log
 
 - 2026-10-18 — created (source review:244)
+- 2026-10-19 — moved to Person steps position 1

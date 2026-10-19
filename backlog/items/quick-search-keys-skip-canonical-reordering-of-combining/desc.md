@@ -1,13 +1,13 @@
 ---
 title: Quick search keys skip canonical reordering of combining marks
 type: bug
-status: new
+status: open
 severity: 2
 area: encoding
 source: leftover:244
 who: agent
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: S
 feature: -
@@ -37,3 +37,4 @@ Rare (stacked diacritics typed in a different order than stored); case and the c
 ## Log
 
 - 2026-10-18 — created (source leftover:244)
+- 2026-10-19 — moved to Next position 62

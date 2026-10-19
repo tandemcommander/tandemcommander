@@ -1,13 +1,13 @@
 ---
 title: A damaged highlighting entry hangs the program at start-up
 type: bug
-status: new
+status: open
 severity: 7
 area: panels-ui
 source: measure:245
 who: agent
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: S
 feature: -
@@ -33,3 +33,4 @@ An entry without masks is skipped (the loop advances and closes the key) or ends
 ## Log
 
 - 2026-10-18 — created (source measure:245)
+- 2026-10-19 — moved to Next position 2

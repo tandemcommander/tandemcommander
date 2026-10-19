@@ -1,13 +1,13 @@
 ---
 title: Importing a configuration file writes every key of a foreign .reg file
 type: bug
-status: new
+status: open
 severity: 4
 area: data-safety
 source: measure:245
 who: agent
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: S
 feature: -
@@ -33,3 +33,4 @@ Only keys under the program own root are imported (others skipped and named), or
 ## Log
 
 - 2026-10-18 — created (source measure:245)
+- 2026-10-19 — moved to Next position 21

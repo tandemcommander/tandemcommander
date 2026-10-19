@@ -1,13 +1,13 @@
 ---
 title: Remembered network drive with a non-code-page or long path cannot be reconnected
 type: bug
-status: new
+status: open
 severity: 4
 area: encoding
 source: probe:246
 who: agent
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: M
 feature: -
@@ -69,3 +69,4 @@ of feature 246 (probe), recorded by the implementing agent.
 ## Log
 
 - 2026-10-18 — created (source probe:246)
+- 2026-10-19 — moved to Next position 22

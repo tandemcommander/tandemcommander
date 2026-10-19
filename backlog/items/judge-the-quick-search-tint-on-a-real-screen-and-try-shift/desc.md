@@ -1,13 +1,13 @@
 ---
 title: Judge the quick-search tint on a real screen and try Shift and Alt keys
 type: person-step
-status: new
+status: open
 severity: 4
 area: panels-ui
 source: leftover:244
 who: person
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 verified: -
 effort: S
 feature: -
@@ -43,3 +43,4 @@ The maintainer confirms or corrects the colours (the rule is `SalQFTint` in `src
 ## Log
 
 - 2026-10-18 — created (source leftover:244)
+- 2026-10-19 — moved to Person steps position 4

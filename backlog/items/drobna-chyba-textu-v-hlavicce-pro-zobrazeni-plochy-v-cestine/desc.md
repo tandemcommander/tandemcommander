@@ -1,7 +1,7 @@
 ---
 title: Desktop view (Folders plug-in) column headers show mojibake for accented names
 type: bug
-status: new
+status: open
 severity: 3
 area: plugin-api
 source: github#13
@@ -57,12 +57,14 @@ measurement).
 
 ## Approach
 
-Decide the encoding of `CColumn::Name` first and record it in the plug-in
-API contract: either the core treats plug-in column names as UTF-8 and draws
-them with the wide API (check every other plug-in that inserts columns -
-their names come from `LoadStr`, code page), or the Folders plug-in passes
-code-page text. Find every core reader of `CColumn::Name` (header line,
-column menu, view configuration) before choosing.
+Maintainer decision 2026-10-19: fix it in the Folders plug-in only. The
+plug-in passes the shell column name to `CColumn::Name` as code-page text,
+as upstream and every other plug-in that inserts columns do; the plug-in
+interface (`spl_com.h`, `LAST_VERSION_OF_SALAMANDER`) does not change. A
+character outside the code page is not shown in the header, as with any
+other column name. Cell texts stay UTF-8 (interface 104). Before changing,
+enumerate every core reader of `CColumn::Name` (header line, column menu,
+view configuration) and confirm each one treats it as code page.
 
 ## Notes
 
@@ -75,3 +77,5 @@ No earlier feature found for #13 in `specs/FEATURE-HISTORY.md`.
 
 - 2026-10-19 — created (source github#13)
 - 2026-10-19 — fields set from the issue text and labels
+- 2026-10-19 — maintainer decision 2026-10-19: fix in the Folders plug-in only - column names passed as code-page text, plug-in interface unchanged
+- 2026-10-19 — moved to Next position 1
