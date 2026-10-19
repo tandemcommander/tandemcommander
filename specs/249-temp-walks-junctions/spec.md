@@ -25,6 +25,14 @@
   every subdirectory, also a junction (ANSI calls) - but no project of the solution compiles it and
   no SFX package is shipped: unreachable in the product.
 
+## Clarifications
+
+### Session 2026-10-19
+
+- Q: When the folder on the archive path is a link, should the unpack skip that folder and go on, unpack through the link, or stop the whole operation? → A: stop the whole operation with an error before anything is moved (autonomous run: rule - "refuse rather than guess", rule 099)
+- Q: Should a link whose target lies inside the temporary folder itself (7-Zip re-targets a WIM junction into its output folder) be followed, since it cannot reach the user's files? → A: no - every directory link on the archive path is refused alike; telling "inside" from "outside" safely would need resolving the target, and refusing changes nothing for archives without links (autonomous run: conservative)
+- Q: When the unpack is the first half of a Move out of the archive (F6) and it is refused, may the archive's members still be deleted? → A: no - the refusal reports failure, so the members stay in the archive (autonomous run: rule - "Never lose the user's data")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Unpacking from inside an archive never moves files from behind a link (Priority: P1)
@@ -91,6 +99,8 @@ self-extractor is built again.
 
 - A junction at a deeper level of the archive path (`a\b\` with `b` a link): refused the same way at
   every level.
+- A link whose target lies inside the temporary folder (7-Zip's re-targeted WIM junction): refused
+  as well.
 - A reparse directory that is not a link (a cloud placeholder of a synced folder used as the
   target): still entered, as before (feature 197's decision: only name surrogates and unreadable
   tags count as links).
@@ -116,6 +126,8 @@ self-extractor is built again.
 - **FR-005**: The ZIP self-extractor's `_RemoveTemporaryDir` source MUST remove a directory carrying
   a reparse point as a directory entry (never list its content); the change MUST compile as C/C++
   (syntax check) even though no project builds it.
+- **FR-007**: A refused unpack MUST report failure to its caller, so a Move out of the archive
+  (F6) deletes no archive member after it.
 - **FR-006**: No data loss: no path where a file behind a link is moved, deleted or overwritten by
   these routes.
 
