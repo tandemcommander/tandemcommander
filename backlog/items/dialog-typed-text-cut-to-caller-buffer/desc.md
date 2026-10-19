@@ -1,7 +1,7 @@
 ---
 title: Typed text cut to the caller's buffer: Make File List, user menu, viewers
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: long-paths
 source: review:214
@@ -10,7 +10,7 @@ created: 2026-10-15
 updated: 2026-10-20
 verified: 2026-10-20 c7f07bc6
 effort: M
-feature: -
+feature: 251
 related: []
 depends-on: []
 reason: -
@@ -38,3 +38,4 @@ Severity 6: a cut Make File List name writes or appends to another file, and a c
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-20 — verified at c7f07bc6: reproduced at c7f07bc6 by a hidden-desktop probe: Make File List wrote a cut file name and line, user menu / viewers / editors / drives stored cut text, hot path stored ?, Edit New default cut, drives browse started from a cut path
+- 2026-10-20 — run started, feature 251
