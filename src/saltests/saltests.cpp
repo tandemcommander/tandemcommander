@@ -13634,6 +13634,12 @@ static void TestCpFit248()
     CHECK(CpFit248(L"ab\xD83D\xDE00", 3, 1250, 2, "ab"));
     CHECK(CpFit248(L"ab\xD83D\xDE00", 3, CP_UTF8, 2, "ab"));
     CHECK(CpFit248(L"ab\xD83D\xDE00", 7, CP_UTF8, 6, "ab\xF0\x9F\x98\x80"));
+    // ... sizes where a one-unit cut would fit: the lone high surrogate would become "?" (1250,
+    // 1 byte) or U+FFFD (UTF-8, 3 bytes) - the pair must still go as a whole
+    CHECK(CpFit248(L"ab\xD83D\xDE00", 4, 1250, 2, "ab"));
+    CHECK(CpFit248(L"ab\xD83D\xDE00", 6, CP_UTF8, 2, "ab"));
+    // a code page that rejects the no-best-fit flag (50220, ERROR_INVALID_FLAGS): converted without it
+    CHECK(CpFit248(L"abc", 30, 50220, 3, "abc"));
     // the UTF-8 system code page: the flag is not allowed there, the text still converts
     CHECK(CpFit248(L"polo\x017Eky", 30, CP_UTF8, 8, "polo\xC5\xBEky"));
     // edges

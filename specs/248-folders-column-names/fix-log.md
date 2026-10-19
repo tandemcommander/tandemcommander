@@ -51,7 +51,7 @@ The maintainer's instance had closed by then, so the probe ran on the hidden des
   END PASS (exit 0, no report). Registry restored, SHA-256 identical. The negative control fails
   as it must.
 
-## Fix (T003, T004)
+## Fix (T003, T004) - first version, superseded by "After review 1" below
 
 - `src/plugins/folders/fs1.cpp` `GetShellColumns`: `SplWToU8` replaced by
   `WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, colNameW, -1, col.Name, sizeof(col.Name),
@@ -129,3 +129,26 @@ enumerated the readers of `CColumn::Name` itself (all code page; tooltip uses `D
 - `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`.
 - Probe on the final build, `probe/result_after.txt`: PATH, NAME, COL2, COL3, CELLS, END PASS,
   COL1 INFO - PASS 6, FAIL 0; registry restored, SHA-256 identical.
+
+### Review 2 (fresh independent agent, refute-first, with the findings of review 1)
+
+No MUST. It rebuilt, ran saltests (24316 / 0) and the probe (PASS 6, registry identical; it
+deleted its crops - the cells crop shows the user's file names); enumerated the readers of
+`CColumn::Name` again (the "Ext" read after the name is only for the core's column 0); measured the
+flag on 1250, 874, 932, 936, 65001 (accepted) and 50220, 42, 54936, 65000 (rejected, 1004).
+
+- SHOULD 1 - two branches of the rule were not pinned: the pair-aware cut (sabotage `len -= 1`
+  → still 0 failed) and the `ERROR_INVALID_FLAGS` retry (deleted → still 0 failed); negative
+  control 1 of round 1 had not been redone. **Fixed**: three checks added to `TestCpFit248`
+  (pair at sizes 4 / 1250 and 6 / UTF-8 where a one-unit cut would fit; "abc" in 50220).
+  - Negative control A (`len -= 1`): `saltests: 24319 checks, 2 failed` - the two pair checks.
+  - Negative control B (retry disabled): `saltests: 24319 checks, 1 failed` - the 50220 check.
+  - Restored from the copy, rebuilt: `saltests: 24319 checks, 0 failed`; encoding guard 0.
+- NOTE 1 - "whole character" is a whole code point, not a grapheme (a combining mark can be cut
+  off its letter). Shell column names are precomposed; accepted, recorded as a limit.
+- NOTE 2 - Czech UI on a 1252 system: "Typ polo?ky" instead of mojibake - the intended no-best-fit
+  result and the code-page core's limit (spec edge case).
+- NOTE 3 - an empty shell column name still gives an empty `CColumn::Name` - older than 248, not
+  known to be reachable; recorded, not changed.
+- NOTE 4 - the "Fix (T003, T004)" section described the superseded version: marked as such.
+- NOTE 5 - review 1's SHOULD 1 (duplicate columns) still needs its Inbox item: added at closing.

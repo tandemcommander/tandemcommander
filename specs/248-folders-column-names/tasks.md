@@ -37,6 +37,10 @@
 - [X] T011 Add `TestCpFit248` to src/saltests/saltests.cpp; build; saltests 0 failed; negative control (best-fit allowed) must fail; record in specs/248-folders-column-names/fix-log.md
 - [X] T012 Re-run the probe (`-Expect fixed`) on the final build, result to specs/248-folders-column-names/probe/result_after.txt
 
+## Phase 6: Review round 2 (SHOULD 1 - checks that pin the rule)
+
+- [X] T013 Add the pair-cut and ERROR_INVALID_FLAGS checks to `TestCpFit248` in src/saltests/saltests.cpp; negative controls (one-unit cut, no retry) must fail; record in specs/248-folders-column-names/fix-log.md
+
 ## Dependencies & Execution Order
 
 T001 → T002 → T003 → T004 → T005 → T006 → T007 → T008. T003 and T004 touch different files but
