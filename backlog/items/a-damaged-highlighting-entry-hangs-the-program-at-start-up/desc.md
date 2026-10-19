@@ -1,16 +1,16 @@
 ---
 title: A damaged highlighting entry hangs the program at start-up
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: panels-ui
 source: measure:245
 who: agent
 created: 2026-10-18
-updated: 2026-10-19
-verified: -
+updated: 2026-10-20
+verified: 2026-10-19 36d1b3d9
 effort: S
-feature: -
+feature: 250
 related: []
 depends-on: []
 reason: -
@@ -34,3 +34,5 @@ An entry without masks is skipped (the loop advances and closes the key) or ends
 
 - 2026-10-18 — created (source measure:245)
 - 2026-10-19 — moved to Next position 2
+- 2026-10-19 — verified at 36d1b3d9: reproduced at 36d1b3d9: hidden-desktop probe hlt250 - entry without Masks: no main window in 30 s, 100% CPU; wrong type or long Masks: endless message boxes
+- 2026-10-20 — run started, feature 250

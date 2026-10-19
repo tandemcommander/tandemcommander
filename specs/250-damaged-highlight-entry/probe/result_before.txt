@@ -1,0 +1,15 @@
+hlt250_probe (feature 250) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-19 23:56; registry key existed True
+
+CONTROL    START  PASS        main window after 3,5 s; CPU 0,6 s; boxes 0
+CONTROL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CONTROL    SAVED  PASS        saved list: *.tc250a, *.tc250b, *.tc250c; expected: *.tc250a, *.tc250b, *.tc250c
+NOMASKS    START  FAIL        no main window after 30 s; alive True; CPU 30,2 s; boxes 0 (first: none)
+MIDDLE     START  FAIL        no main window after 30 s; alive True; CPU 30,1 s; boxes 0 (first: none)
+EMPTYKEY   START  FAIL        no main window after 30 s; alive True; CPU 30,2 s; boxes 0 (first: none)
+WRONGTYPE  START  FAIL        no main window after 3 s; alive True; CPU 0,6 s; boxes 10 (first: [#32770 'Error Loading Configuration'] [Static id=2477] Unexpected value type. | [Button id=1] OK)
+LONG       START  FAIL        no main window after 3 s; alive True; CPU 0,6 s; boxes 10 (first: [#32770 'Error Loading Configuration'] [Static id=2477] (234) Jsou k dispozici dal\u0161\u00ED data.  | [Button id=1] OK)
+Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+
+Rows: PASS 3, FAIL 5, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
