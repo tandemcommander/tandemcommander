@@ -3,7 +3,7 @@
 **Feature Branch**: `248-folders-column-names`
 **Created**: 2026-10-19
 **Status**: Draft
-**Input**: Backlog item `drobna-chyba-textu-v-hlavicce-pro-zobrazeni-plochy-v-cestine` (GitHub issue #13): "Desktop view (Folders plug-in) column headers show mojibake for accented names".
+**Input**: Backlog item `drobna-chyba-textu-v-hlavicce-pro-zobrazeni-plochy-v-cestine` (GitHub issue #13): "Desktop view (Folders plug-in) column headers show mojibake for accented names". From backlog item drobna-chyba-textu-v-hlavicce-pro-zobrazeni-plochy-v-cestine.
 
 ## User Scenarios & Testing *(mandatory)*
 
