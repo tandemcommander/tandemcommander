@@ -77,6 +77,7 @@
 #include "salcopyname.h"      // feature 259
 #include "salcachename.h"     // feature 260
 #include "salcodetable.h"     // feature 262
+#include "salregroot.h"       // feature 263
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -14846,6 +14847,36 @@ static void TestNetDrive246()
     CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 2, SALNETDRV_WNGC_DISCONNECTED));        // the level unanswered: state ignored
 }
 
+// feature 263: the start-up import of config.reg writes or deletes only keys inside the program's own root
+static void TestRegImportRoot263()
+{
+    const char* root = "Software\\Tandem Commander\\0.1";
+    CHECK(SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1", root));                      // the root itself (our export's delete line)
+    CHECK(SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1\\Configuration", root));       // below
+    CHECK(SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1\\Plugins\\FTP Client", root)); // deeper
+    CHECK(SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1\\", root));                    // a trailing backslash
+    CHECK(SalRegKeyIsInsideRoot("SOFTWARE\\tandem commander\\0.1\\Window", root));              // letter case
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.10", root));                    // a sibling with a longer name
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1x\\Configuration", root));
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander", root)); // the parent
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\", root));
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.", root)); // a prefix of the root
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Open Salamander\\5.0", root)); // another product
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Microsoft\\Windows\\CurrentVersion\\Run", root));
+    CHECK(!SalRegKeyIsInsideRoot("\\Software\\Tandem Commander\\0.1", root)); // "[HKEY_CURRENT_USER\\Software...]"
+    CHECK(!SalRegKeyIsInsideRoot("Software\\\\Tandem Commander\\0.1", root)); // a doubled backslash inside
+    CHECK(!SalRegKeyIsInsideRoot("", root));                                  // "[HKEY_CURRENT_USER]"
+    CHECK(!SalRegKeyIsInsideRoot(NULL, root));
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1", ""));
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1", NULL));
+    CHECK(!SalRegKeyIsInsideRoot("\xC5\xBF"
+                                 "oftware\\Tandem Commander\\0.1",
+                                 root)); // U+017F (long s) - never folded onto the root: outside
+    CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0\xC2\xB7"
+                                 "1",
+                                 root)); // a non-ASCII byte where the root has '.'
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -14963,6 +14994,7 @@ int main(int argc, char** argv)
     TestCopyName259();
     TestCacheTmpPath260();
     TestCodeTable262();
+    TestRegImportRoot263();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

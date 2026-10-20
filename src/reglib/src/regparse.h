@@ -23,6 +23,7 @@ typedef enum eRPE_ERROR
     RPE_VALUE_STRING,
     RPE_VALUE_HEX,
     RPE_INVALID_MBCS,
+    RPE_KEY_OUTSIDE_ROOT, // feature 263: a key or delete line outside the allowed root (see Parse)
 } eRPE_ERROR;
 
 #ifdef UNICODE
@@ -68,7 +69,12 @@ public: // Methods added by Jan Patera
 CSalamanderRegistryExAbstract* REG_SysRegistryFactory();
 CSalamanderRegistryExAbstract* REG_MemRegistryFactory();
 
-eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNotDeleteHiddenKeysAndValues);
+// 'onlyUnderHKCU' (feature 263): NULL = every key of the file; otherwise every key line and delete
+// line must name HKEY_CURRENT_USER + this root or a key below it (SalRegKeyIsInsideRoot), else Parse
+// stops before acting on that line and returns RPE_KEY_OUTSIDE_ROOT - lines before it may already be
+// applied, so the caller parses into a memory registry first
+eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNotDeleteHiddenKeysAndValues,
+                 LPCTSTR onlyUnderHKCU = NULL);
 eRPE_ERROR CopyBranch(LPCTSTR branch, CSalamanderRegistryExAbstract* pInRegistry, CSalamanderRegistryExAbstract* pOutRegistry);
 
 DWORD ConvertIfNeeded(LPTSTR* pBuf, DWORD size);

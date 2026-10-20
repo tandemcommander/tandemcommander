@@ -3020,7 +3020,9 @@ BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExi
         CSalamanderRegistryExAbstract* memReg = REG_MemRegistryFactory();
         LPTSTR bufMem = _tcsdup(buf); // the Parse call changes the buffer, so we must keep the original for the next Parse
         TRACE_I("ImportConfiguration(): Parse to memory: begin");
-        eRPE_ERROR regerr = bufMem != NULL ? Parse(bufMem, memReg, TRUE) : RPE_OUT_OF_MEMORY; // dirty hack: when deleting the configuration key, we do not remove .hidden keys and values (because of the trial version + checkver)
+        // feature 263: only keys (and delete lines) inside our own root - a key of another program,
+        // HKEY_CLASSES_ROOT etc. refuses the whole file before anything reaches the registry
+        eRPE_ERROR regerr = bufMem != NULL ? Parse(bufMem, memReg, TRUE, SalamanderConfigurationRoots[0]) : RPE_OUT_OF_MEMORY; // dirty hack: when deleting the configuration key, we do not remove .hidden keys and values (because of the trial version + checkver)
         TRACE_I("ImportConfiguration(): Parse to memory: end");
         free(bufMem);
         BOOL verIsOK = RPE_OK == regerr; // verify whether the file even contains our configuration version
@@ -3031,15 +3033,14 @@ BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExi
                 memReg->CloseKey(key);
             else
             {
-                char text[MAX_PATH + 300];
-                _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_IMPORTCFG_NOTOURVER), fileName);
-                if (SalMessageBox(hParent, text, LoadStr(IDS_QUESTION),
-                                  MB_YESNO | MSGBOXEX_ESCAPEENABLED | MB_ICONQUESTION | MB_DEFBUTTON2) != IDYES)
-                {
-                    verIsOK = FALSE;
-                }
+                // feature 263: no key of our configuration - refused without the old question
+                // (IDS_IMPORTCFG_NOTOURVER); "import it anyway" could only write keys of others
+                verIsOK = FALSE;
+                regerr = RPE_NOT_REG_FILE;
             }
         }
+        if (RPE_KEY_OUTSIDE_ROOT == regerr || RPE_NOT_REG_FILE == regerr)
+            TRACE_E("ImportConfiguration(): refused, not our configuration only: " << fileName);
         memReg->Release();
         if (verIsOK && RPE_OK == regerr) // both the config version and the file itself look OK; import it into the registry
         {
@@ -3047,7 +3048,7 @@ BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExi
 
             LoadSaveToRegistryMutex.Enter();
             TRACE_I("ImportConfiguration(): Parse to registry: begin");
-            regerr = Parse(buf, sysReg, TRUE); // dirty hack: when deleting the configuration key, we do not remove .hidden keys and values (because of the trial version + checkver)
+            regerr = Parse(buf, sysReg, TRUE, SalamanderConfigurationRoots[0]); // dirty hack: when deleting the configuration key, we do not remove .hidden keys and values (because of the trial version + checkver)
             TRACE_I("ImportConfiguration(): Parse to registry: end");
             if (RPE_OK == regerr)
                 ret = TRUE; // success
@@ -3062,8 +3063,9 @@ BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExi
             switch (regerr)
             {
             case RPE_NOT_REG_FILE:
+            case RPE_KEY_OUTSIDE_ROOT: // feature 263
                 errTextID = IDS_IMPORTCFG_NOTREG;
-                break; // not a reg4 or reg5 file
+                break; // not a reg4 or reg5 file, or not only our configuration
 
             case RPE_ROOT_INVALID_KEY:
             case RPE_INVALID_KEY:

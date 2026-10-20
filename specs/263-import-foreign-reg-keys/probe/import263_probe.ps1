@@ -16,6 +16,8 @@
       NOROOT  only the foreign key - PASS = the foreign key NOT written (whatever is answered)
       DELETE  our key + [-HKCU\Software\TC263ProbeVictim] (the victim made by the probe) - PASS = the
               victim still exists
+      HKCR    our key + [HKEY_CLASSES_ROOT\TC263ProbeClass] - PASS = a message, the class key exists
+              neither in HKCU\Software\Classes nor in HKLM\Software\Classes, our key not imported
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified; the probe's
     own foreign keys are removed. Exit code = number of FAIL rows.
 #>
@@ -40,9 +42,10 @@ $Ours = 'HKEY_CURRENT_USER\Software\Tandem Commander\0.1'
 $PsOurs = 'HKCU:\Software\Tandem Commander\0.1'
 $Foreign = 'TC263ProbeForeign'
 $Victim = 'TC263ProbeVictim'
+$Class = 'TC263ProbeClass'
 
 function Clear-ProbeKeys {
-    foreach ($k in @("HKCU:\Software\$Foreign", "HKCU:\Software\$Victim", "$PsOurs\Probe263", "$PsOurs\Probe263Old")) {
+    foreach ($k in @("HKCU:\Software\$Foreign", "HKCU:\Software\$Victim", "HKCU:\Software\Classes\$Class", "$PsOurs\Probe263", "$PsOurs\Probe263Old")) {
         if (Test-Path -LiteralPath $k) { Remove-Item -LiteralPath $k -Recurse -Force }
     }
 }
@@ -102,9 +105,10 @@ function Run-Case([string]$Case, [string[]]$Body, [scriptblock]$Prepare, [script
             Victim = Has "HKCU:\Software\$Victim"
             Old = Has "$PsOurs\Probe263Old"
             Value = OurValue
+            Class = (Has "HKCU:\Software\Classes\$Class") -or (Has "HKLM:\Software\Classes\$Class")
         }
         $ok = & $Judge $facts
-        Row $Case 'RUN' (V $ok) ("foreign key {0}; victim {1}; Probe263Old {2}; Probe263 v={3}; windows: {4}" -f $facts.Foreign, $facts.Victim, $facts.Old, $(if ($null -eq $facts.Value) { '<none>' } else { $facts.Value }), $facts.Msgs)
+        Row $Case 'RUN' (V $ok) ("foreign key {0}; victim {1}; class key {2}; Probe263Old {3}; Probe263 v={4}; windows: {5}" -f $facts.Foreign, $facts.Victim, $facts.Class, $facts.Old, $(if ($null -eq $facts.Value) { '<none>' } else { $facts.Value }), $facts.Msgs)
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before }; Clear-ProbeKeys }
@@ -128,6 +132,7 @@ try {
     Run-Case 'MIXED' ($ourKey + $foreignKey) $null { param($f) -not $f.Foreign -and $null -eq $f.Value -and $f.Msgs -match 'not a configuration file' }
     Run-Case 'NOROOT' $foreignKey $null { param($f) -not $f.Foreign }
     Run-Case 'DELETE' ($ourKey + @("[-HKEY_CURRENT_USER\Software\$Victim]", '')) { $k = New-Item -Path "HKCU:\Software\$Victim" -Force; [void](New-ItemProperty -LiteralPath "HKCU:\Software\$Victim" -Name 'keep' -Value 'me' -Force) } { param($f) $f.Victim -and $null -eq $f.Value }
+    Run-Case 'HKCR' ($ourKey + @("[HKEY_CLASSES_ROOT\$Class]", '"x"="1"', '')) $null { param($f) -not $f.Class -and $null -eq $f.Value -and $f.Msgs -match 'not a configuration file' }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
@@ -141,7 +146,7 @@ finally {
     $nf = @($script:Rows | Where-Object { $_.Verdict -eq 'FAIL' }).Count
     $nn = @($script:Rows | Where-Object { $_.Verdict -eq 'NOT DRIVEN' }).Count
     Out ''
-    Out ("Rows: PASS {0}, FAIL {1}, NOT DRIVEN {2}. Left running: {3}; fixture removed: {4}; probe keys left: {5}; registry restored+identical: {6}" -f $np, $nf, $nn, @($Started | Where-Object { Test-Alive $_ }).Count, (-not [IO.Directory]::Exists($LP + $Root)), ((Has "HKCU:\Software\$Foreign") -or (Has "HKCU:\Software\$Victim")), $restored)
+    Out ("Rows: PASS {0}, FAIL {1}, NOT DRIVEN {2}. Left running: {3}; fixture removed: {4}; probe keys left: {5}; registry restored+identical: {6}" -f $np, $nf, $nn, @($Started | Where-Object { Test-Alive $_ }).Count, (-not [IO.Directory]::Exists($LP + $Root)), ((Has "HKCU:\Software\$Foreign") -or (Has "HKCU:\Software\$Victim") -or (Has "HKCU:\Software\Classes\$Class")), $restored)
     if ($OutFile) { [IO.File]::WriteAllLines($OutFile, [string[]]$script:Lines, (New-Object Text.ASCIIEncoding)) }
 }
 exit $nf

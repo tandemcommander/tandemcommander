@@ -6,6 +6,9 @@
 #include <tchar.h>
 
 #include "regparse.h"
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+#include "../../common/salregroot.h" // feature 263
+#endif
 
 #define SkipWS(s) \
     while ((*s == ' ') || (*s == 9)) \
@@ -66,7 +69,8 @@ static LPTSTR SeparateStr(LPTSTR s, BOOL mbcs)
     return s;
 }
 
-eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNotDeleteHiddenKeysAndValues)
+eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNotDeleteHiddenKeysAndValues,
+                 LPCTSTR onlyUnderHKCU)
 {
     LPTSTR line;
     HKEY hKey = NULL;
@@ -202,6 +206,18 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                 return RPE_INVALID_KEY;
             }
             s[-1] = 0;
+            if (onlyUnderHKCU != NULL)
+            { // feature 263: never create, open or delete a key outside the allowed root
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+                if (hParentKey != HKEY_CURRENT_USER || !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU))
+                {
+                    TRACE_E("Parse(): key outside the allowed root: " << (bDelete ? "[-" : "[") << line << "]");
+                    return RPE_KEY_OUTSIDE_ROOT;
+                }
+#else
+                return RPE_KEY_OUTSIDE_ROOT; // the rule is char-only; no such caller outside the core
+#endif
+            }
             if (keyName[0] != 0) // root key cannot be created nor deleted this way (e.g. line with [HKEY_CURRENT_USER] or [-HKEY_CURRENT_USER])
             {
                 if (!bDelete)
