@@ -7,11 +7,11 @@ area: long-paths
 source: review:207
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
+updated: 2026-10-20
 verified: -
 effort: M
 feature: -
-related: [renamer-regex-single-byte-classes]
+related: []
 depends-on: []
 reason: -
 ---
@@ -33,3 +33,4 @@ A new name of any length the file system accepts is built on the heap (never cut
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-20 — related item renamer-regex-single-byte-classes done in feature 254

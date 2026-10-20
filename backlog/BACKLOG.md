@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Renamer: regular expressions judge \\b, \\w, classes and '.' by single bytes](items/renamer-regex-single-byte-classes/desc.md) | bug | 4 | other-plugins | 254 |
 
 ## Next
 

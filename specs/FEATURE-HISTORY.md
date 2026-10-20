@@ -41,7 +41,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121 |
 | PictView | 105, 111, 120 |
 | Undelete | 114, 115, 148 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names) | 071, 078, 123, 244, 245, 246 |
@@ -3126,3 +3126,22 @@ a few early ones are out of sequence).
   driven (person step); file symbolic links still reach their target (Inbox). From backlog item
   `change-attrs-on-link-reaches-target`. Probe `attrs_link253_probe.ps1` 4 FAIL -> 10 / 0 (1 NOT
   DRIVEN), 213's probe 8 / 0; one refute-first review (no MUST).
+- 254-renamer-regex-letters: the Renamer's regular expressions stepped and classified BYTES of
+  UTF-8 names - `.`, `[ž]`, `[^l]`, `\w`, POSIX classes, a global empty match took a piece of a
+  letter (the new name refused "(123)"), `а\b` replaced the FIRST Cyrillic а ("ЖAба" - a wrong name
+  written), `ž+` / look-behind / case-insensitive `\xC5\xBD` / "Σ" vs "ς" missed; plain Whole words
+  took a combining accent for a word end ("Cafe" -> "Tea" made "Teá"). Now units (`salu8letter.h`:
+  a valid character, a WTF-8 surrogate, else one byte; stepping back = stepping forward), the class
+  a variable-length operand (ASCII / lone-byte bitmap, explicit byte members, NEG, type tests,
+  code-point ranges), letters classified by `GetStringTypeW` and, outside the BMP and for marks,
+  `icu.dll` (System32, optional); `\x` escapes forming one letter and `\ž` are one folded letter;
+  `SalU8FoldCodePoint` folds the final sigma; history by `SalNameOrderEqualCI`; the preview sort was
+  already by letters (004). Traps: ASCII ranges keep the old byte loop exactly (an escaped end is
+  exclusive, reversed wraps) - checked 330,000 ASCII cases identical; byte ranges like
+  `[\x80-\xFF]` cover a letter all of whose bytes they hold (review 2); Windows calls a precomposed
+  "é" C3_NONSPACING and gives no type to Mc marks or non-BMP letters; Python edits of C sources
+  turn `\x..` in replacement strings into bytes - use chr(92). Limits: case-insensitive ranges
+  compare folded letters; `(?<=ab|ž)` now refused. From backlog item
+  `renamer-regex-single-byte-classes`. Probe `ren_regex_probe.ps1` 17 / 19 FAIL -> 25 / 0 (50 / 0
+  with END rows); 210 16 / 0, 196 / 199 / 206-209 pass; two refute-first reviews (M1 escaped
+  letter taken as its lead byte - fixed; S1, S2, review-2 S1 fixed).
