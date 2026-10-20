@@ -1,7 +1,7 @@
 ---
 title: SFTP upload replace: links split, ACLs lost, drop folders fail, .tcpart left
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: sftp
 source: review:139
@@ -10,7 +10,7 @@ created: 2026-10-14
 updated: 2026-10-20
 verified: 2026-10-20 2807bbc4
 effort: M
-feature: -
+feature: 258
 related: []
 depends-on: []
 reason: -
@@ -38,3 +38,4 @@ All older than the 0.1.10 cycle per the source. The write-only drop directory is
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-20 — verified at 2807bbc4: GUI probe on a stat-refusing test server: drop upload fails (Permission denied at the first lstat), no limits in the question, .tcpart left after a cut; OpenSSH 0733 drop works; hard link split by replay
+- 2026-10-20 — run started, feature 258
