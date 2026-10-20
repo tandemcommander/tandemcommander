@@ -1,0 +1,23 @@
+zip271_probe (feature 271) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 23:21; registry key existed True; ACP 1250
+
+ZIP-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-CONTROL RUN    PASS        panel at: ...\Users\pavel\AppData\Local\Temp\tc271\ZIP-CONTROL\t.zip\DOCS; host 0 in 2 central headers
+ZIP-HIDE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-HIDE   RUN    FAIL        tgt: z.txt; steps: host 0 in 3 central headers; windows: [#32770 'Copy'] [Static id=209] Copy file "z.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ZIP-GLOBAL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-GLOBAL RUN    FAIL        tgt: a.txt,A.txt; steps: host 0 in 3 central headers / store: ...Button id=2] Cancel | [Button id=9] Help / restore: ...Button id=2] Cancel | [Button id=9] Help / content: a.txt=lower,A.txt=UPPER; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ZIP-TREE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-TREE   RUN    PASS        tgt: D/x.txt,d/y.txt; steps: host 0 in 2 central headers; windows: [#32770 'Copy'] [Static id=209] Copy directory "D" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ZIP-ONE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-ONE    RUN    FAIL        tgt: D/x.txt,d/y.txt; steps: host 0 in 2 central headers; windows: [#32770 'Copy'] [Static id=209] Copy directory "D" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ZIP-DEL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-DEL    RUN    FAIL        archive keeps: nothing; steps: host 0 in 2 central headers; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete directory "D" from archive? | [Button id=6] &Yes | [Button id=7] &No
+UNIX-ONE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNIX-ONE   RUN    FAIL        tgt: D/x.txt,d/y.txt; steps: host 3 in 2 central headers; windows: [#32770 'Copy'] [Static id=209] Copy directory "d" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+UNIX-DEL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNIX-DEL   RUN    FAIL        archive keeps: nothing; steps: host 3 in 2 central headers; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete directory "d" from archive? | [Button id=6] &Yes | [Button id=7] &No
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 10, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
