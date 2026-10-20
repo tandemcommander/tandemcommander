@@ -26,6 +26,14 @@
   keys (the comparison works); Russian and Ukrainian (not shipped) have Cyrillic ones, which never
   match.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: Should the popup carry out an owner's "execute item n" answer (select and choose), not only "select"? → A: Yes - select it and choose it as Enter would; the fallback must work for a single match, which extensions answer with "execute" (autonomous run: item)
+- Q: In the Find window, should the character check replace the virtual-key check of ASCII hot keys? → A: No - keep the virtual-key check for ASCII letters and digits and add a character check; nothing that works today changes (autonomous run: conservative)
+- Q: Should code-page owner windows (main window, Find window) convert the character back to UTF-16 before passing it to the shell extension? → A: No - they forward what they receive, as today; recorded as a limit (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A popup item is chosen by the character typed (Priority: P1)
