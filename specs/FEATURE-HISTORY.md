@@ -33,7 +33,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
-| ZIP plug-in | 086, 094, 106, 110, 113, 119 |
+| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
@@ -3442,3 +3442,22 @@ a few early ones are out of sequence).
   `more-typed-fields-cut-to-their-buffer-masks-filter-volume`. Probe `mask270_probe.ps1` 7 FAIL ->
   24 / 0 (12 rows; negative controls: Select check off, no seeding); 251's probe 42 / 0; two
   refute-first reviews (no MUST; NOTE 3 fixed, 2 SHOULD to the Inbox).
+- 271-zip-case-twins: a ZIP made on Windows (WSL, a case-sensitive folder, .NET `ZipArchive`)
+  that holds a.txt and A.txt, or folders D and d, was listed case-insensitively - Hide Selected
+  Names hid both twins, Store / Restore Selection restored both, D and d were one folder whose Copy
+  or Delete took both; and in a Unix-made ZIP (already listed apart) copying or **deleting only
+  folder "d" also took D/x.txt** (measured) - the plug-in's operations took case sensitivity from
+  the selected items, and a folder without an entry of its own carries none. Now the ZIP listing is
+  built case-sensitively and keeps `SALDIRFLAG_CASESENSITIVE` for a Unix entry or 252's twins
+  (`SalDirTreeHasCaseTwins`), else clears it; the decision travels in the listing's own
+  `CPluginDataInterface` and Unpack / UnpackOneFile / Delete start `CZipCommon::Unix` from it.
+  Traps: the listing hook alone turns the Unix delete loss on for every Windows twin ZIP (negative
+  control 4 FAIL, ZIP-DEL "archive keeps: nothing"); copied files alone do not show a merge (the
+  extraction writes the archive's names) - the TREE row counts the Copy dialog's folders. Limits:
+  adding INTO a twin ZIP still matches case-insensitively and replaces the other twin after its
+  overwrite question (measured by the review; Inbox
+  `adding-a-file-into-a-zip-that-holds-names-differing-only-in`); Paste by the clipboard is a
+  person's (log line on `paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand`). From
+  backlog item `a-zip-made-on-windows-that-holds-names-differing-only-in`. Probe `zip271_probe.ps1`
+  6 FAIL / 16 -> 16 / 0; 110's probe 42 / 0, 164's 6 / 0; one refute-first review (no MUST; NOTE 1
+  fixed, SHOULD 1 to the Inbox item).

@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A ZIP made on Windows that holds names differing only in case is not case-sensitive](items/a-zip-made-on-windows-that-holds-names-differing-only-in/desc.md) | bug | 5 | archives | 271 |
 
 ## Next
 

@@ -20,7 +20,8 @@
                    All (844), Restore Selection (867, OK), Copy. PASS = tgt holds exactly one twin,
                    with its own content
       ZIP-TREE     D/x.txt and d/y.txt (no folder entries). Select All, Copy.
-                   PASS = tgt\D holds only x.txt and tgt\d only y.txt
+                   PASS = the Copy dialog counts 2 directories, tgt\D holds only x.txt and tgt\d
+                   only y.txt
       ZIP-ONE      the same archive; Home, Down, Insert selects the first folder, Copy.
                    PASS = tgt holds exactly one file: D/x.txt or d/y.txt
       ZIP-DEL      the same archive; Home, Down, Insert, Delete (729, Yes).
@@ -176,7 +177,9 @@ function Run-Case([string]$Kind, [string]$Case) {
         if ($Case -eq 'HIDE') { $ok = ($files.Count -eq 2) -and ($files -ccontains 'z.txt') -and ($twins.Count -eq 1) -and $own }
         elseif ($Case -eq 'GLOBAL') { $ok = ($files.Count -eq 1) -and ($twins.Count -eq 1) -and $own }
         elseif ($Case -eq 'ONE') { $ok = ($files.Count -eq 1) -and (($files -ccontains 'D/x.txt') -or ($files -ccontains 'd/y.txt')) }
-        else { $ok = ($files.Count -eq 2) -and ($files -ccontains 'D/x.txt') -and ($files -ccontains 'd/y.txt') }
+        # review 271: the Copy dialog must count two folders - the copied files alone pass also for one
+        # merged folder (the extraction writes the archive's own names)
+        else { $ok = ($files.Count -eq 2) -and ($files -ccontains 'D/x.txt') -and ($files -ccontains 'd/y.txt') -and ($msgs -match 'Copy 2 directories') }
         Row $name 'RUN' (V $ok) ("tgt: {0}; steps: {1}; windows: {2}" -f $(if ($files.Count) { $files -join ',' } else { 'empty' }), ($steps -join ' / '), (Tail $msgs 160))
     }
     catch { Row $name 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

@@ -100,8 +100,9 @@ Probe `probe/result_after.txt`: **16 PASS, 0 FAIL, 0 NOT DRIVEN** (before 6 FAIL
 ## Out of scope, recorded
 
 - T012: adding INTO a twin ZIP (`add.cpp` `CZipPack::MatchFiles`, case-insensitive unless a Unix
-  entry; the first match is overwritten) - by reading, not measured -> Inbox
-  `adding-a-file-into-a-zip-that-holds-names-differing-only-in` (measure:271).
+  entry) - by reading -> Inbox `adding-a-file-into-a-zip-that-holds-names-differing-only-in`
+  (measure:271); measured and corrected by review 1 (every case-insensitive match is asked and
+  replaced, not only the first - see *Review*).
 
 ## Owed to a person (NOT DRIVEN)
 
@@ -109,3 +110,45 @@ Probe `probe/result_after.txt`: **16 PASS, 0 FAIL, 0 NOT DRIVEN** (before 6 FAIL
   added as a log line to the existing person step
   `paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand` (T013). The mechanism (the panel's
   case sensitivity) is the one rows HIDE / GLOBAL prove.
+
+## Review
+
+Review 1 (independent agent, refute-first, build of 24925c60): **no MUST**. It re-ran the probe
+(16 / 0, registry identical), enumerated the core callers itself (`fileswn5.cpp`, `fileswn6.cpp`,
+`fileswn7.cpp`, clipboard Paste `salshlib.cpp` - all hand back the listing's own plug-in data,
+Paste re-lists first), confirmed by reading that a ZIP without twins builds the same tree (252's
+rule includes the legacy fold `SalDirStrCmp` merges by) and that the central directory is not read
+again. Its own rows under %TEMP% (not in the repository): SUB-DEL (delete `s` inside `t.zip\d` of
+D/s/x.txt + d/s/y.txt keeps D/s/x.txt) and SUB-ONE PASS; its negative control (`pack.Unix` not set
+in `DeleteFromArchive`) fails SUB-DEL (D/s/x.txt deleted too) - the switch also covers a non-empty
+archive root and `CountFilesInRoot`; restored with git, rebuilt.
+- SHOULD 1 - adding INTO a twin ZIP still matches case-insensitively and 271 hides where the
+  replaced file is. Measured by the reviewer: ADD-DIR (copy x.txt into `t.zip\d`, which since 271
+  lists only y.txt; Yes to the question naming `t.zip\D\x.txt`) -> D/x.txt replaced by d/x.txt;
+  ADD-FILE (add a.txt to A.txt + a.txt, two questions, Yes to both) -> A.txt lost (also before
+  271). Not in the item (it names Paste, Reselect, Store / Restore, Hide Selected Names and the
+  folder merge; spec Assumptions put adding out of scope; the overwrite question names the path,
+  unlike the silent Delete of 271's UNIX-DEL) -> stays the Inbox item
+  `adding-a-file-into-a-zip-that-holds-names-differing-only-in`, its Problem / Evidence rewritten
+  with these measurements and the reviewer's recommendation to take it right after 271.
+- NOTE 1 - ZIP-TREE passed before and after (the copied files alone do not show the merge). Fixed:
+  the row also requires the Copy dialog to count "2 directories" (before: `Copy directory "D"` in
+  `result_before.txt` -> would FAIL; the before-run is not repeated, its dialog text is recorded).
+  Re-run `probe/result_after.txt` with the tightened row (below).
+- NOTE 2 - T007 (`extract.cpp` OR instead of overwrite) has no observable effect: `FindFile`
+  matches by item number and compares only names that already agree. Kept - otherwise the line
+  would silently discard the switch `UnpackOneFile` sets in `main.cpp`; harmless.
+- NOTE 3 - `ListingIsCaseSensitive` casts the plug-in data the core hands back to the ZIP class; a
+  user who sets the 7-Zip plug-in to view .zip and ZIP to edit it would mix them. The same
+  assumption exists since the start in `EnumFiles` (`common.cpp`, casting `fileData->PluginData`).
+  Pre-existing; not changed.
+- NOTE 4 - entries spelling one folder in two cases now show two folders: the known change of the
+  spec's edge cases (as 252).
+- NOTE 5 - Move from an archive panel (F6) did nothing in the reviewer's row: the program does not
+  move out of a ZIP from this panel setup; FR-004's "moving out" is the Unpack + Delete pair both
+  covered. Not a defect of 271.
+- NOTE 6 - CHANGELOG / FEATURE-HISTORY / closing report: written at closing (step 8).
+
+No MUST -> no second review (SKILL step 7).
+
+Re-run after review 1 (`probe/result_after.txt`, label after-review, tightened ZIP-TREE row): **16 PASS, 0 FAIL, 0 NOT DRIVEN**; ZIP-TREE `Copy 2 directories`; registry identical.
