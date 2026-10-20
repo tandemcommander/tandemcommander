@@ -87,7 +87,38 @@ declaration in a header.
 ## Owed to a person
 
 - **ENC** (NOT DRIVEN): on a machine with an EFS certificate (or one where creating it is fine):
-  Change Attributes -> Encrypted on a junction -> "Error encrypting" for the junction ("The request
+  Change Attributes -> Encrypted on a junction -> "Error Changing Encryption" for the junction ("The request
   is not supported."), Skip; the target folder stays unencrypted; a plain folder selected with it is
   encrypted. And Decrypt on an encrypted junction (e.g. made inside an encrypted folder) -> the same
   refusal, the target stays encrypted.
+
+## Review
+
+Refute-first review (one agent): **no MUST**. It re-ran build (BUILD SUCCEEDED), saltests (24391 /
+0), the encoding guard (TOTAL: 0), this probe on the hidden desktop (PASS 10 / FAIL 0 / NOT DRIVEN
+1, registry identical) and 213's probe (8 / 0); negative control `result_before.txt` was made on
+d5f67ace = the merge-base (FAIL 4). Callers enumerated: `CompressFile` / `UncompressFile` at the
+Copy / Move sites keep the default (same flags as before); `MyEncryptFile` / `MyDecryptFile`
+unchanged; `DoChangeAttrs` only from `ocChangeAttrs`. No new write except compression and times of
+the link's own entry.
+
+- SHOULD 1 - file symbolic links still change their target (compression with the old flags, times
+  with flags 0); reachable with Include subdirectories. Outside the item (it names junctions /
+  directory symbolic links) -> new Inbox item `leftover:253`.
+- SHOULD 2 - the encryption refusal never ran (ENC NOT DRIVEN); read as correct (not the
+  `ERROR_INVALID_FUNCTION` branch; no refusal when the state matches - COMP / SUBC go through that
+  path). -> person-step item at closing.
+- NOTE - a junction named with a trailing '.': the reviewer made one with `CreateDirectoryW` +
+  `FSCTL_SET_REPARSE_POINT`; opening it with the appended '\' and `FILE_FLAG_OPEN_REPARSE_POINT`
+  compressed the link itself (OS side fine; the program not driven with such a name).
+- NOTE - directory symbolic links and SMB paths: measured outside the program, the link's own entry
+  is reached; the probe drives junctions only.
+- NOTE - Skip all on the refusal also skips later Change Attributes errors of the operation
+  (existing behaviour of `SkipAllChangeAttrs`).
+- NOTE - "decided when it runs" was only half true (the reparse bit comes from the listing):
+  the spec's clarification corrected.
+- NOTE - SUBC sets "Include subdirectories" by `BM_SETCHECK` (no `BN_CLICKED`), so the dialog does
+  not grey the untouched boxes; the compression assertions hold. The unit checks prove the rule,
+  the probe the wiring.
+- NOTE - volume mount points are now changed on their own entry too (as Delete); a mount point to
+  a FAT volume no longer switches compression off for the rest of the operation.

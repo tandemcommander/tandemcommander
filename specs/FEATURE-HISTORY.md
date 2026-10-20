@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3113,3 +3113,16 @@ a few early ones are out of sequence).
   Inbox). From backlog item `archive-plugins-declare-case-sensitivity`. Probe `arc252_probe.ps1`
   6 FAIL / 10 -> 16 / 0 (negative control: TAR always case-sensitive fails TAR-CONTROL); one
   refute-first review (no MUST; rationale corrected, content check added).
+- 253-attrs-link-own-entry: Change Attributes on a junction / directory symbolic link compressed,
+  uncompressed and re-timed the folder the link points to (213 had stopped only the walk into it) -
+  now `DoChangeAttrs` takes a directory link (`DeleteAsDirLink`, fail closed, asked only for an
+  entry listed with the directory and reparse bits) and opens it with `FILE_FLAG_OPEN_REPARSE_POINT`
+  for compression and times (the link's own state, measured on NTFS); an encryption change of such
+  a link is refused (`ERROR_NOT_SUPPORTED` under "Error Changing Encryption" - EncryptFile / DecryptFile
+  follow a link; not `ERROR_INVALID_FUNCTION`, which switches encryption off for the rest of the
+  operation). Decisions in `salreparse.h` (saltests). Traps: `$PSScriptRoot` is empty in a probe's
+  parameter default (PS 5.1); a cross-process `DTM_SETSYSTEMTIME` needs the SYSTEMTIME in the
+  target process; no EFS certificate may be created on the build machine. Limits: encryption not
+  driven (person step); file symbolic links still reach their target (Inbox). From backlog item
+  `change-attrs-on-link-reaches-target`. Probe `attrs_link253_probe.ps1` 4 FAIL -> 10 / 0 (1 NOT
+  DRIVEN), 213's probe 8 / 0; one refute-first review (no MUST).

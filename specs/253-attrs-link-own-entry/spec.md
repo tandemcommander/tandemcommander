@@ -165,9 +165,11 @@ a file-encryption certificate.
   for every junction met in the tree? → A: yes, one error per link whose state differs; Skip all
   answers them all at once. Nothing is encrypted through a link. (autonomous run: item - "refuses
   what a link cannot take")
-- Q: Is the link decided when the operation is listed or when it runs? → A: when it runs, by the
-  existing fail-closed rule of Delete / 213 on the entry's current state; an entry that is no
-  longer a reparse point is handled as a plain folder. (autonomous run: conservative)
+- Q: Is the link decided when the operation is listed or when it runs? → A: an entry listed as a
+  reparse-point folder is checked when it runs, by the existing fail-closed rule of Delete / 213 on
+  its current state (one that is no longer a reparse point is handled as a plain folder); a folder
+  listed as plain and replaced by a link afterwards is not re-checked (a narrow race, as in 213's
+  walk). (autonomous run: conservative)
 
 ## Assumptions
 

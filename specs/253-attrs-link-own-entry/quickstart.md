@@ -13,4 +13,4 @@
    registry restored + identical.
 4. Regression: 213's `specs\213-attrs-case-links\probe\attrs_case_link_probe.ps1` -> 8 / 0.
 5. Person (a machine with an EFS certificate): Change Attributes -> Encrypted on a junction shows
-   "Error encrypting" for the junction; the target folder stays unencrypted.
+   "Error Changing Encryption" for the junction; the target folder stays unencrypted.

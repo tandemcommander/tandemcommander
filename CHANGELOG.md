@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Changing the attributes of a junction compressed or re-dated the folder it points to** (feature 253).
+  - **Before:** *Change Attributes* on a junction or a directory symbolic link (also through a selected folder with "Include subdirectories", and the Compress / Uncompress commands) set the compression and the dates of the folder the link points to, not of the link. The link kept its own state. Encrypt / Decrypt would have encrypted or decrypted that folder too.
+  - **Now:** compression and dates change on the link itself; the folder it points to keeps its own. Encrypting or decrypting a link is refused with "Error Changing Encryption" (Skip goes on with the other items), because a link cannot be encrypted on its own. Plain folders and files work as before.
+  - **Limitation:** a file symbolic link still passes compression and dates to its target file (recorded for a later fix). The refusal of encryption has not yet been tried on a real machine with file encryption set up.
 - **In a 7z, RAR or TAR archive holding names that differ only in case, the other file could be copied** (feature 252).
   - **Before:** such archives (made on Linux, or from a case-sensitive Windows folder) were treated as if "a.txt" and "A.txt" were one name. Pasting a.txt could extract A.txt. Store / Restore Selection and Reselect selected both, and Hide Selected Names hid both. Folders "D" and "d" were shown as one folder, and copying it out of a TAR archive extracted only one of them, silently leaving the other's files behind. SFTP folders were treated the same way.
   - **Now:** an archive that holds such names tells them apart. Each twin is selected, hidden, copied and pasted on its own, and folders "D" and "d" are two folders whose files are all extracted. SFTP folders always tell them apart, as FTP folders do. Archives without such names work as before, including a path typed in another case.
