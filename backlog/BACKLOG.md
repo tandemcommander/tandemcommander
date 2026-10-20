@@ -23,7 +23,7 @@ Last triaged: 2026-10-19
 | # | Item | Type | Sev | Area | Who | Effort | Status |
 |---|---|---|---|---|---|---|---|
 | 1 | [FTP: PWD reply cut at 300 bytes and other long-name leftovers of 215](items/ftp-long-name-and-path-leftovers/desc.md) | bug | 5 | ftp | agent | M | blocked |
-| 2 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | open |
+| 2 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | blocked |
 | 3 | [7-Zip, TAR and SFTP do not declare case-sensitive listings](items/archive-plugins-declare-case-sensitivity/desc.md) | bug | 5 | archives | agent | M | open |
 | 4 | [Change Attributes on a junction compresses / re-times the target folder](items/change-attrs-on-link-reaches-target/desc.md) | bug | 5 | data-safety | agent | M | open |
 | 5 | [Paste fails in a folder whose path contains an exclamation mark](items/vkladanie-zo-schranky-nefunguje-v-adresaroch-s-v-ceste/desc.md) | bug | 5 | file-ops | agent | - | blocked |
