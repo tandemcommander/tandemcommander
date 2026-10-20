@@ -28,7 +28,8 @@
       hp-label   Configuration > Hot Paths (a seeded slot 1), F2 on the row (LVM_EDITLABEL), 100 CJK
                  letters (300 bytes), Enter: stored cut as the slot's name. PASS = OK refused, the
                  name field shows the whole name
-      hp-label-again the same 100 letters, Enter, then F2 on the row once more, End, 'x', Enter: the
+      hp-label-again the same 100 letters, Enter, then F2 on the row once more, 'x' appended to the
+                 edit's text (WM_SETTEXT - stands for End, 'x'; typing is not driven), Enter: the
                  row shows the name cut (a display buffer) - the edit must start from the whole
                  name (cut, 86 letters + 'x' = 259 bytes were stored and OK passed). PASS = OK
                  refused, the name field shows the 100 letters + 'x'

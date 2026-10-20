@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
@@ -3424,3 +3424,21 @@ a few early ones are out of sequence).
   DL / UP-ASK FAIL -> 14 / 0 (DL-ASK, DIR-DL added after review 1; main's `ftputils.cpp` put back
   fails DL, UP-ASK, DIR-DL); 224 probe 16 / 0; saltests 24,816 / 0 (exhaustive vs `Wtf8ToW`,
   168,420 strings); one refute-first review (no MUST; 2 SHOULD fixed).
+- 270-mask-filter-label-fits: Select / Unselect and Convert masks, the panel filter, the volume
+  label and the hot path list's in-place name edit (F2) read typed text into 260 bytes, cut at a
+  whole character - a CJK Select mask of 88 units selected other files, Convert **converted a file
+  the typed mask does not match** (measured), the filter was stored cut also with "Don't use
+  filter", Drive Information called `SetVolumeLabel` with a cut label, F2 stored 86 of 100 letters.
+  Now each dialog's `Validate` refuses first (`DlgItemTextFitsU8`, 251's helper; `Transfer` runs
+  only after a good `Validate`); the label edit stores the whole name (`SalGetWindowTextU8Alloc`)
+  and 251's page check refuses it at OK. Trap (review 1): the hot path row shows its label cut to
+  `MAX_PATH`, so a second F2 started from the cut text - `LVN_BEGINLABELEDIT` seeds the edit with
+  the whole display text; comctl32 treats Enter without a change as a cancel (the probe appends a
+  letter). A cut volume label (>= 86 units) exceeds every Windows label limit, so it was never
+  applied - refused anyway before the write. Limits: Recycle Bin / Find / viewer / compare masks
+  still cut (Inbox `masks-cut-recycle-bin-find-viewer-compare`); the label goes to `SetVolumeLabelA`
+  as UTF-8, the checker misses that API (Inbox `volume-label-written-through-ansi-api`); Convert's
+  syntax check still reads the code page. From backlog item
+  `more-typed-fields-cut-to-their-buffer-masks-filter-volume`. Probe `mask270_probe.ps1` 7 FAIL ->
+  24 / 0 (12 rows; negative controls: Select check off, no seeding); 251's probe 42 / 0; two
+  refute-first reviews (no MUST; NOTE 3 fixed, 2 SHOULD to the Inbox).

@@ -3258,9 +3258,9 @@ CCfgPageHotPath::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 LabelEdit = TRUE;
                 EnableHeader();
-                // feature 270: the row shows its label cut to MAX_PATH (a name or path waiting for
-                // the refusal at OK); the edit starts from the whole text, else Enter would store
-                // the cut row text as the name
+                // feature 270: the row shows its label cut to MAX_PATH (a long path, or a name
+                // waiting for the refusal at OK); the edit starts from the whole text, else an
+                // edit would store the cut row text as the name
                 HWND hLabelEdit = ListView_GetEditControl(HListView);
                 int labelIndex = ((NMLVDISPINFO*)nmh)->item.iItem;
                 if (hLabelEdit != NULL && labelIndex >= 0 && labelIndex < HOT_PATHS_COUNT)

@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [More typed fields cut to their buffer: masks, filter, volume label, hot path label edit](items/more-typed-fields-cut-to-their-buffer-masks-filter-volume/desc.md) | bug | 6 | long-paths | 270 |
 
 ## Next
 
@@ -197,8 +196,10 @@ Last triaged: 2026-10-20
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Typed masks still cut to their buffer: Recycle Bin, Find, viewer, compare](items/masks-cut-recycle-bin-find-viewer-compare/desc.md) | bug | 7 | long-paths | review:270 | 2026-10-20 |
 | [Settings import ends the viewers, editors and User Menu lists at a damaged entry](items/settings-import-ends-the-viewers-editors-and-user-menu-lists/desc.md) | bug | 3 | panels-ui | measure:268 | 2026-10-20 |
 | [The User Menu page names a new submenu end in the code page, not UTF-8](items/the-user-menu-page-names-a-new-submenu-end-in-the-code-page/desc.md) | bug | 2 | encoding | review:268 | 2026-10-20 |
+| [Drive Information writes the volume label through an ANSI API](items/volume-label-written-through-ansi-api/desc.md) | bug | 5 | encoding | review:270 | 2026-10-20 |
 
 ## Parked
 
