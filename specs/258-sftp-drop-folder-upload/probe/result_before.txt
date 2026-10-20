@@ -1,0 +1,109 @@
+sftp257_probe (feature 257), run: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 07:41; desktop 'tc_probe_35040'; ACP 1250; registry key existed True; export SHA-256 CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+Server  : dropsftp.py pid 27244 on 127.0.0.1:2257, root C:\Users\pavel\AppData\Local\Temp\tc257\srv
+
+DROPNEW    ROW    FAIL        drop\up.txt holds '(none)'; .tcpart-* in drop: 0; an error box True; connected: True [password, host key] at 'sftp:tctest@localhost:2257/pub'; dialogs: typed into [Copy] || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/drop/up.txt": Permission denied. | [Button id=1] OK || [Copy] came back - cancelled
+DROPNEW    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPEXIST  ROW    PASS        drop\up.txt holds 'OLD-DROP'; .tcpart-* in drop: 0; the error box True; connected: True [password, host key] at 'sftp:tctest@localhost:2257/pub'; dialogs: typed into [Copy] || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/drop/up.txt": Permission denied. | [Button id=1] OK || [Copy] came back - cancelled
+DROPEXIST  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPMOVE   ROW    FAIL        drop\mv.txt holds '(none)'; the local source still there True; connected: True [password, host key] at 'sftp:tctest@localhost:2257/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/drop/mv.txt": Permission denied. | [Button id=1] OK || [Move/Rename] came back - cancelled
+DROPMOVE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPDIR    ROW    FAIL        drop\pack\a.txt '(none)', b.txt '(none)'; an error box True; connected: True [password, host key] at 'sftp:tctest@localhost:2257/pub'; dialogs: typed into [Copy] || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/drop/pack/a.txt": Permission denied. | [Button id=1] OK || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/drop/pack/b.txt": Permission denied. | [Button id=1] OK || [Copy] came back - cancelled
+DROPDIR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REPL       ROW    FAIL        pub\r.txt holds 'REPL-NEW'; the question names hard links and the ACL: False; connected: True [password, host key] at 'sftp:tctest@localhost:2257/pub'; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "r.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help || [#32770 'SFTP Error'] [Static id=2477] The file already exists on the server: /pub/r.txt Overwrite it? (Yes = this file, No = skip; Cancel = skip the rest) | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel
+REPL       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CUT        ROW    FAIL        cut\c.txt holds '(none)'; .tcpart-* left in cut: 1 (.tcpart-0a1c25be); a dialog named the temporary file True; connected: True [password, host key] at 'sftp:tctest@localhost:2257/cut'; dialogs: --- run 1 || [#32770 'Copy'] [Static id=209] &Copy file "c.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/cut/c.txt": The connection to the server was lost. (close: Error waiting for status message) (the temporary file .tcpart-0a1c25be could not be removed) | [Button id=1] OK || [Copy] came back - cancelled || host key || --- run 2
+CUT        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8 / after CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+
+Server log:
+  1792474917.666 start 2257 C:\Users\pavel\AppData\Local\Temp\tc257\srv
+  1792474917.767 connect
+  1792474917.791 session error SSHException('Error reading SSH protocol banner[WinError 10054] St\u00E1vaj\u00EDc\u00ED p\u0159ipojen\u00ED bylo vynucen\u011B ukon\u010Deno vzd\u00E1len\u00FDm hostitelem')
+  1792474917.792 disconnected
+  1792474922.677 connect
+  1792474923.180 disconnected
+  1792474923.650 connect
+  1792474923.654 realpath /pub -> /pub
+  1792474923.654 stat /pub ok
+  1792474923.655 opendir /pub ok (0)
+  1792474929.629 lstat /drop/up.txt DENIED
+  1792474932.761 realpath /pub -> /pub
+  1792474932.762 stat /pub ok
+  1792474932.763 opendir /pub ok (0)
+  1792474939.161 disconnected
+  1792474945.210 connect
+  1792474945.713 disconnected
+  1792474946.188 connect
+  1792474946.192 realpath /pub -> /pub
+  1792474946.193 stat /pub ok
+  1792474946.193 opendir /pub ok (0)
+  1792474952.113 lstat /drop/up.txt DENIED
+  1792474955.249 realpath /pub -> /pub
+  1792474955.250 stat /pub ok
+  1792474955.250 opendir /pub ok (0)
+  1792474961.698 disconnected
+  1792474967.782 connect
+  1792474968.285 disconnected
+  1792474968.755 connect
+  1792474968.774 realpath /pub -> /pub
+  1792474968.775 stat /pub ok
+  1792474968.775 opendir /pub ok (0)
+  1792474974.666 lstat /drop/mv.txt DENIED
+  1792474977.794 realpath /pub -> /pub
+  1792474977.794 stat /pub ok
+  1792474977.795 opendir /pub ok (0)
+  1792474984.281 disconnected
+  1792474990.253 connect
+  1792474990.771 disconnected
+  1792474991.229 connect
+  1792474991.233 realpath /pub -> /pub
+  1792474991.233 stat /pub ok
+  1792474991.234 opendir /pub ok (0)
+  1792474997.346 mkdir /drop/pack ok
+  1792474997.347 lstat /drop/pack/a.txt DENIED
+  1792474998.829 lstat /drop/pack/b.txt DENIED
+  1792475001.893 realpath /pub -> /pub
+  1792475001.893 stat /pub ok
+  1792475001.894 opendir /pub ok (0)
+  1792475008.239 disconnected
+  1792475014.297 connect
+  1792475014.800 disconnected
+  1792475015.288 connect
+  1792475015.292 realpath /pub -> /pub
+  1792475015.292 stat /pub ok
+  1792475015.293 opendir /pub ok (1)
+  1792475021.402 lstat /pub/r.txt ok
+  1792475022.822 open /pub/.tcpart-fc81a8a6 flags=0x501 exists=False
+  1792475022.823 lstat /pub/.tcpart-fc81a8a6 ok
+  1792475022.824 close /pub/.tcpart-fc81a8a6
+  1792475022.825 stat /pub/.tcpart-fc81a8a6 ok
+  1792475022.825 rename /pub/.tcpart-fc81a8a6 /pub/r.txt exists
+  1792475022.826 lstat /pub/.tcpart-fc81a8a6 ok
+  1792475022.827 remove /pub/r.txt ok
+  1792475022.828 rename /pub/.tcpart-fc81a8a6 /pub/r.txt ok
+  1792475022.829 realpath /pub -> /pub
+  1792475022.829 stat /pub ok
+  1792475022.830 opendir /pub ok (1)
+  1792475029.299 disconnected
+  1792475035.441 connect
+  1792475035.944 disconnected
+  1792475036.414 connect
+  1792475036.418 realpath /cut -> /cut
+  1792475036.419 stat /cut ok
+  1792475036.420 opendir /cut ok (1)
+  1792475042.297 lstat /cut/c.txt FileNotFoundError(2, 'Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor')
+  1792475042.298 open /cut/.tcpart-0a1c25be flags=0x501 exists=False
+  1792475042.299 close /cut/.tcpart-0a1c25be
+  1792475042.300 cut: the connection is dropped at the close of /cut/.tcpart-0a1c25be
+  1792475042.419 disconnected
+  1792475045.625 connect
+  1792475046.128 disconnected
+  1792475046.899 connect
+  1792475046.903 realpath /cut -> /cut
+  1792475046.903 stat /cut ok
+  1792475046.904 opendir /cut ok (1)
+  1792475059.908 disconnected
+
+Rows: PASS 7, FAIL 5, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
