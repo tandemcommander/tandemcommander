@@ -1,0 +1,30 @@
+mask270_probe (feature 270) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 22:23; ACP 1250; registry key existed True
+M = 86 CJK letters (258 bytes)
+
+sel-mask   RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+sel-mask   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+unsel-mask RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+unsel-mask END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sel-ctl    RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+sel-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+conv-mask  RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's history: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'; M.txt CRLF line ends: 2 (0 = unchanged)
+conv-mask  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+conv-ctl   RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's history: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'; M.txt CRLF line ends: 2 (2 = converted)
+conv-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+flt        RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+flt        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+flt-unused RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's history: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+flt-unused END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+flt-ctl    RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+flt-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vol        RUN    FAIL        typed 140 units / 280 bytes; dialog stayed: True; asked: [#32770 'Error'] Unable to change drive label. Error: (5) P\u0159\u00EDstup byl odep\u0159en.  |; (refused) the field at the refusal: 140 units, same as typed: True; label of C:\: before '', after ''
+vol        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hp-label   RUN    NOT DRIVEN  LVM_EDITLABEL opened no edit
+hp-label   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hp-label-ctl RUN    NOT DRIVEN  LVM_EDITLABEL opened no edit
+hp-label-ctl END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 14, FAIL 6, NOT DRIVEN 2. Left running: 0; fixture removed: True; registry restored+identical: True
