@@ -41,7 +41,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258 |
 | PictView | 105, 111, 120 |
 | Undelete | 114, 115, 148 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names) | 071, 078, 123, 244, 245, 246 |
@@ -3346,3 +3346,21 @@ a few early ones are out of sequence).
   `backlog-fixture-empty-specs-folder-missing`. Fresh clone: fixture `check` TOTAL 1 -> 0,
   `test_backlog.py` 28 F / 2 E -> 68 OK, `test_loop.py` 57 OK; negative control (folder deleted)
   brings the failures back; two refute-first reviews (review 1 MUST fixed; review 2 no MUST).
+- 266-close-stray-box: closing the File Comparator while a binary comparison still ran could show
+  a stray Retry / Cancel file-error box (and after Cancel a "close the comparison?" question) over
+  the closing window - its `WM_DESTROY` waits for the worker with a pump that dispatched a hex view's
+  pending `WM_USER_HANDLEFILEERROR` (147 review LOW-2) - now both views get `BeginClose()` first in
+  `WM_DESTROY` and the hex view's handler returns at once once the mark is set; `CFileMapping::
+  Destroy` resets `FileSize` (also removes a second "handle is invalid" box of a recompare whose
+  file cannot be opened). Part (1) of the item - a forced Disk Map unload terminating the map's
+  thread inside a shell command (143 row E5) - kept as the core's force semantics: the core calls
+  `FreeLibrary` after a forced `Release` whatever it returns, an unbounded wait freezes the main
+  window, and cancelling the shell's window reverses 143 FR-004; documented at `KillAll`, decision
+  item `forced-disk-map-unload-in-a-shell-command-cancel-the-shell`. Trap (review): Disk Map's
+  `InvokeCommand` runs without `CMIC_MASK_ASYNCOK`, so a confirmed shell operation in progress is
+  cut off by the force too - "file kept" holds only for a waiting confirmation. Limits: the stray
+  box timing is NOT DRIVEN (needs a seam); a hex recompare can still paint against the released
+  sibling mapping (`Paint` uses its own stored `SiblinkSize`; Inbox
+  `file-comparator-hex-recompare-error-box-from-the-released`). From backlog item
+  `plugin-close-forced-unload-and-stray-box`. 143 probe E4-E6 PASS 7 / 0 (as before), 147 probe K1
+  PASS 2 / 0; one refute-first review (no MUST; SHOULD-1 fixed in texts, SHOULD-2 to the Inbox).

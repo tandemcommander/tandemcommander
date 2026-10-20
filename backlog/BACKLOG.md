@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Plug-in closing: forced Disk Map unload in a shell command, stray comparator box](items/plugin-close-forced-unload-and-stray-box/desc.md) | bug | 3 | other-plugins | 266 |
 
 ## Next
 

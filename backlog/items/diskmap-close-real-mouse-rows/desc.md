@@ -7,11 +7,11 @@ area: other-plugins
 source: leftover:143
 who: person
 created: 2026-10-14
-updated: 2026-10-17
+updated: 2026-10-20
 verified: -
 effort: S
 feature: -
-related: [plugin-close-forced-unload-and-stray-box]
+related: []
 depends-on: []
 reason: -
 ---
@@ -38,3 +38,4 @@ No crash in either route; the program exits; with the confirmation answered the 
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-20 — related item plugin-close-forced-unload-and-stray-box done in feature 266
