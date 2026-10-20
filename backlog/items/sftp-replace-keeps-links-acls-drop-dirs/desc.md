@@ -7,8 +7,8 @@ area: sftp
 source: review:139
 who: agent
 created: 2026-10-14
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 2807bbc4
 effort: M
 feature: -
 related: []
@@ -37,3 +37,4 @@ All older than the 0.1.10 cycle per the source. The write-only drop directory is
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at 2807bbc4: GUI probe on a stat-refusing test server: drop upload fails (Permission denied at the first lstat), no limits in the question, .tcpart left after a cut; OpenSSH 0733 drop works; hard link split by replay
