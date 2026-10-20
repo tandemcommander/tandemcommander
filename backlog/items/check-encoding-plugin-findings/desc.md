@@ -1,16 +1,16 @@
 ---
 title: Read the 78 findings of check_encoding.py --plugins one by one
 type: tech-debt
-status: open
+status: in-progress
 severity: 4
 area: encoding
 source: leftover:239
 who: agent
 created: 2026-10-16
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 e849e68c
 effort: L
-feature: -
+feature: 255
 related: []
 depends-on: []
 reason: -
@@ -41,3 +41,5 @@ Severity is the migrating agent's estimate for the class (mojibake in plug-ins =
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at e849e68c: check_encoding.py --plugins at e849e68c: TOTAL 78, the same sites as plugins_findings.txt, none annotated
+- 2026-10-20 — run started, feature 255
