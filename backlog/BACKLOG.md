@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Change Attributes on a file symbolic link compresses / re-times the target file](items/change-attributes-on-a-file-symbolic-link-compresses-re/desc.md) | bug | 5 | data-safety | 272 |
 
 ## Next
 
@@ -200,6 +199,7 @@ Last triaged: 2026-10-20
 | [Settings import ends the viewers, editors and User Menu lists at a damaged entry](items/settings-import-ends-the-viewers-editors-and-user-menu-lists/desc.md) | bug | 3 | panels-ui | measure:268 | 2026-10-20 |
 | [The User Menu page names a new submenu end in the code page, not UTF-8](items/the-user-menu-page-names-a-new-submenu-end-in-the-code-page/desc.md) | bug | 2 | encoding | review:268 | 2026-10-20 |
 | [Drive Information writes the volume label through an ANSI API](items/volume-label-written-through-ansi-api/desc.md) | bug | 5 | encoding | review:270 | 2026-10-20 |
+| [Check that Change Attributes refuses to encrypt or decrypt a file symbolic link (272)](items/check-change-attributes-refuses-encrypting-a-file-link/desc.md) | person-step | 4 | data-safety | leftover:272 | 2026-10-21 |
 
 ## Parked
 

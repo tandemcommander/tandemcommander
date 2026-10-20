@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3461,3 +3461,20 @@ a few early ones are out of sequence).
   backlog item `a-zip-made-on-windows-that-holds-names-differing-only-in`. Probe `zip271_probe.ps1`
   6 FAIL / 16 -> 16 / 0; 110's probe 42 / 0, 164's 6 / 0; one refute-first review (no MUST; NOTE 1
   fixed, SHOULD 1 to the Inbox item).
+- 272-attrs-file-link: Change Attributes on a file symbolic link (focused, or met with Include
+  subdirectories in a selected folder) compressed, uncompressed and re-dated the file the link
+  points to - also outside the selection - and Encrypt / Decrypt would have changed it too (253
+  fixed directory links only) - now `DoChangeAttrs` takes any entry listed with the reparse bit
+  that `DeleteAsDirLink` (fail closed) calls a link for a link (`SalAttrsEntryIsLink`, the directory
+  bit no longer required) and opens a file link with `FILE_FLAG_OPEN_REPARSE_POINT` for compression
+  and times (measured to reach the link itself); its encryption change is refused as 253's. A
+  readable tag that is not a name surrogate (cloud placeholder, dedup, WOF, third-party) keeps the
+  old way - probe row NONLINK (tag 0x123: the old "Error Changing Compression" 1920). The rule is
+  asked only when compression, encryption or times change (review). Traps: a text-mode Python
+  rewrite of `worker.cpp` wrote LF endings (restored to CRLF); the probe first matched the wrong box
+  title ("Error Changing Compression", not "Error Compressing"). Limits: encryption not driven
+  (person step `check-change-attributes-refuses-encrypting-a-file-link`); Convert on a file link
+  fails with 1464 and changes nothing (measured outside the program, recorded in the fix-log). From
+  backlog item `change-attributes-on-a-file-symbolic-link-compresses-re`. Probe
+  `attrs_flink272_probe.ps1` 4 FAIL -> 12 / 0 (1 NOT DRIVEN); 253's probe 10 / 0, 213's 8 / 0; one
+  refute-first review (no MUST / SHOULD; NOTE 1 and 2 done).
