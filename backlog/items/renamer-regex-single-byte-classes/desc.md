@@ -7,8 +7,8 @@ area: other-plugins
 source: review:210
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 3ea24ab5
 effort: L
 feature: -
 related: [renamer-long-new-name-limits]
@@ -37,3 +37,4 @@ Pure matching rules into a header with saltests checks (CLAUDE.md working method
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-20 — verified at 3ea24ab5: probe at 3ea24ab5 (ACP 1250): 16/18 regex rows fail - 9 refused (123), a wrong letter replaced by a\b, quant/lookb/esc/sigma miss; preview sort already UTF-8 (RegSetStrICmp, 004); history StrICmp by reading
