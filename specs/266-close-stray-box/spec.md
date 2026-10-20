@@ -22,6 +22,9 @@
   (its destruction handler runs, which may still wait for a running comparison and handle
   messages meanwhile). Earlier states (a close request that still closes open boxes first) keep
   their behaviour. (autonomous run: conservative)
+- Q: Should the mapping's hand-over routine (it forgets the handles without closing them) also
+  reset the size? → A: No - only the destroy routine the item names; the hand-over routine has no
+  caller in the tree and keeps its behaviour. (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -104,7 +107,8 @@ the file is kept; the map's thread is ended by force as in every release (the fo
 - **FR-002**: A hex-view read error handled while the window is not closing MUST behave as
   before.
 - **FR-003**: Destroying a hex view's file mapping MUST reset the mapped file's size to zero
-  together with the released handles.
+  together with the released handles (the hand-over routine that forgets the handles without
+  closing them is unchanged).
 - **FR-004**: The forced unload of Disk Map MUST keep its behaviour (end the map's threads by
   force after the short wait); the reason MUST be documented at the site.
 - **FR-005**: No new UI text, no plug-in interface change, no registry change.
