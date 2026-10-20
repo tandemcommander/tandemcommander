@@ -1,7 +1,7 @@
 ---
 title: Create Directory refuses a relative name in a folder whose path is 260+ bytes
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: long-paths
 source: measure:259
@@ -10,7 +10,7 @@ created: 2026-10-20
 updated: 2026-10-21
 verified: 2026-10-21 449f35fc
 effort: S
-feature: -
+feature: 274
 related: []
 depends-on: []
 reason: -
@@ -39,3 +39,4 @@ Also check the other callers of `SalGetFullName` without `nameBufSize` that take
 - 2026-10-20 — created (source measure:259)
 - 2026-10-20 — moved to Next position 8
 - 2026-10-21 — verified at 449f35fc: probe createdir274 at 449f35fc: F7 refuses nd in a 288-byte folder and 100/255 CJK letters (also in a short folder) with path too long; 256 letters get the same text
+- 2026-10-21 — run started, feature 274
