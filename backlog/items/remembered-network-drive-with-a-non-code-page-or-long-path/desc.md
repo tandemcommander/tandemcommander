@@ -7,8 +7,8 @@ area: encoding
 source: probe:246
 who: agent
 created: 2026-10-18
-updated: 2026-10-19
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 7bd36b89
 effort: M
 feature: -
 related: [drive-list-code-page-texts]
@@ -70,3 +70,4 @@ of feature 246 (probe), recorded by the implementing agent.
 
 - 2026-10-18 — created (source probe:246)
 - 2026-10-19 — moved to Next position 22
+- 2026-10-20 — verified at 7bd36b89: reproduced at 7bd36b89: 246 pickcp probe on hidden desktop, RESTORE seam shows code-page path, drive stays disconnected, invalid-path message
