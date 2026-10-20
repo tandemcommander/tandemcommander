@@ -29,3 +29,16 @@ Backlog item `remembered-network-drive-with-a-non-code-page-or-long-path`.
   (fallback text only when `WNetGetConnectionW` gives nothing - drive texts, related item
   `drive-list-code-page-texts`), `mainwnd3.cpp` (mask only), `bugreprt.cpp` (mask only).
 - `NonBlockingWNetAddConnection3`: `RestoreNetworkConnection` and `CheckAndConnectUNCNetworkPath`.
+
+## 2026-10-20 - plan, measurements for it, analyze
+
+- `probe/measure_longpath.ps1 -Scan` (no GUI, cleanup verified): `WNetAddConnection2W` accepts a
+  remembered remote path of up to 259 UTF-16 units, refuses 260+ with 67; a 250-character path
+  with a Cyrillic tail: wide enumeration exact, ANSI enumeration `...?????`, `WNetAddConnection3W`
+  with the exact path reconnects (0). -> research R1; spec US2 / SC-003 reworded to 259.
+- Baseline tree for negative controls: `%TEMP%\tc264base\tree` (copy of the HEAD0 Debug build,
+  exe SHA-256 A911B648...7B106, equal to the build at 7bd36b89).
+- speckit-analyze: 0 CRITICAL, 0 HIGH. Fixed: U1 (listed recovery recorded NOT DRIVEN in T013),
+  I1 (US2 test wording). Accepted: U2 - unpaired surrogates / out of memory have no probe row
+  (not producible through SMB / not drivable), code review only; A1 - SC-004 timing compared by
+  the U1 row's elapsed seconds, fixed vs baseline.

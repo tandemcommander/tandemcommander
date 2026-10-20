@@ -62,9 +62,8 @@ A user has a remembered drive mapped to a deep folder whose network path is long
 
 **Why this priority**: The same defect: the path was cut, Windows got another path.
 
-**Independent Test**: As story 1, with a remembered path longer than 259 characters, if
-Windows accepts such a remembered connection at all (measured in the plan); the
-reconnection uses the whole path.
+**Independent Test**: As story 1, with a remembered path of 259 characters (the longest
+Windows accepts, research R1) ending in Cyrillic; the reconnection uses the whole path.
 
 **Acceptance Scenarios**:
 

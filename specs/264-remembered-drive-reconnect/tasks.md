@@ -49,7 +49,7 @@ probe with a negative control; both are included.
 **Goal**: saved user name, credential dialog and Esc wait window unchanged.
 **Independent test**: code review against the old flow; person step (no keyboard / password-protected share on the hidden desktop).
 
-- [ ] T013 [US4] Compare `RestoreNetworkDriveW` branch by branch with the Windows 7+ path of `RestoreNetworkConnection` (`name != NULL`) and record the mapping in specs/264-remembered-drive-reconnect/fix-log.md; record the credential dialog / Esc rows as NOT DRIVEN
+- [ ] T013 [US4] Compare `RestoreNetworkDriveW` branch by branch with the Windows 7+ path of `RestoreNetworkConnection` (`name != NULL`) and record the mapping in specs/264-remembered-drive-reconnect/fix-log.md; record the credential dialog / Esc rows and the "listed but not answering" recovery of US3 scenario 2 (not producible here) as NOT DRIVEN, verified by reading
 
 ## Phase 7: Polish & verification
 
