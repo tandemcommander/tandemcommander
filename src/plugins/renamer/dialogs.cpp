@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
+#include "../../common/salnameorder.h" // feature 254: a history entry by the name rule
 
 TDirectArray<DWORD_PTR> DialogStack(4, 4);
 CCS DialogStackCS;
@@ -250,13 +251,15 @@ void HistoryComboBox(CTransferInfo& ti, int id, char* text, int textMax,
 
         int toMove = historySize - 1;
 
-        // check whether the same item is already in the history
+        // check whether the same item is already in the history - feature 254: by whole letters
+        // (the 092 rule); the code-page StrICmp folded bytes of UTF-8 letters (cp1250 8A / 9A: the
+        // entries "C-dot" and "E-caron" were one and the older was dropped)
         int j;
         for (j = 0; j < historySize; j++)
         {
             if (history[j] == NULL)
                 break;
-            if (SG->StrICmp(history[j], text) == 0)
+            if (SalNameOrderEqualCI(history[j], -1, text, -1))
             {
                 toMove = j;
                 break;

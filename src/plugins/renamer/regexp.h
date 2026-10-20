@@ -34,6 +34,8 @@ public:
         State = reeNoError, Program = NULL;
         Startp = NULL;
         Compiled = 0;
+        ClassTests = ClassRanges = NULL;
+        ClassNTests = ClassNRanges = ClassCap = 0;
     }
     ~CRegExp()
     {
@@ -65,14 +67,28 @@ private:
     void RegInsert(char op, char* opnd);
     void RegTail(char* p, char* val);
     void RegOpTail(char* p, char* val);
-    void RegClass(char c, char* cls) //insert character in the class
-    {
-        if (RegCode != &RegDummy)
-            cls[c >> 3] |= 1 << (c & 0x07);
-    }
     int IsPosixClass(char* scan);
-    int RegPosixClass(const char* scan);
     char GetEscapedChar();
+
+    // feature 254: a class is built here (both passes) and emitted as a variable-length operand:
+    // the bitmap of ASCII (bits 0-127) and of bytes that start no UTF-8 letter (bits 128-255),
+    // the flags (NEG = the bracket's '^' for the other letters), type tests and code-point ranges
+    unsigned char ClassMap[32];
+    unsigned* ClassTests;  // pairs: type mask (salu8letter.h), negated
+    unsigned* ClassRanges; // pairs: the lowest and the highest code point
+    int ClassNTests;
+    int ClassNRanges;
+    int ClassCap; // pairs each array holds (the pattern's length bounds them)
+
+    void ClassBegin();
+    void ClassSetByte(unsigned b) { ClassMap[(b & 0xFF) >> 3] |= (unsigned char)(1 << (b & 0x07)); }
+    void ClassAddValue(unsigned value);
+    void ClassAddRange(unsigned lo, unsigned hi);
+    void ClassAddRangeOf(unsigned first, unsigned last, BOOL lastEscaped);
+    int ClassAddPosix(const char* scan);
+    void ClassEmit(int comp);
+    unsigned ParseLiteralUnit();
+    unsigned GetEscapedUnit();
 
     // Global work variables for regexec().
     char* RegInput;   /* String-input pointer. */
@@ -87,6 +103,14 @@ private:
     int RegMatch(char* prog);
     int RegRepeat(char* p);
     int RegMatchSimple(char op, char* opnd);
+
+    // feature 254: the engine steps by whole UTF-8 letters (units, salu8letter.h)
+    int UnitAt(const char* p); // the length of the unit at 'p' (0 at RegEol)
+    int ClassMatch(const char* opnd, const char* p); // the unit's length when it is in the class, else 0
+    int ExactlyAt(const char* opnd, const char* p);  // the length of a one-unit literal matched at 'p', else 0
+    int IsWordUnitAt(const char* p);
+    int IsWordUnitBefore(const char* p);
+    char* UnitsBack(char* q, int count); // 'count' units back from 'q', NULL when the text has fewer
     int RegMatchEol(char* scan)
     {
         if (scan == RegEol)

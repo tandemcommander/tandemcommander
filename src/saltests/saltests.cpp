@@ -63,6 +63,7 @@
 #include "salreparse.h"      // feature 197
 #include "salshortname.h"    // feature 203
 #include "salu8fold.h"       // feature 210
+#include "salu8letter.h"     // feature 254
 #include "salbatchtext.h"    // feature 226
 #include "salnamerun.h"      // feature 230
 #include "salmenuhotkey.h"   // feature 236
@@ -12091,6 +12092,114 @@ static void TestU8Fold210()
     CHECK(SalU8Advance(z, ze, 0) == z);
 }
 
+// feature 254: the letters ("units") of a regular expression over UTF-8 names - the Renamer's
+// engine stepped and classified single bytes (a split letter refused "(123)", a wrong letter
+// replaced by '\b')
+static std::vector<int> Units254(const char* s, int len) // the forward boundaries
+{
+    std::vector<int> b;
+    int i = 0;
+    while (i < len)
+    {
+        b.push_back(i);
+        unsigned v;
+        i += SalU8UnitLen(s + i, s + len, &v);
+    }
+    b.push_back(len);
+    return b;
+}
+static BOOL BackMatches254(const char* s, int len) // stepping back gives the forward units
+{
+    std::vector<int> f = Units254(s, len);
+    std::vector<int> b;
+    const char* q = s + len;
+    b.push_back(len);
+    while (q > s)
+    {
+        q = SalU8UnitBack(s, q);
+        b.push_back((int)(q - s));
+    }
+    std::reverse(b.begin(), b.end());
+    if (b != f)
+        return FALSE;
+    for (int i = 0; i <= len; i++) // a boundary is exactly a forward position
+        if ((SalU8IsUnitBoundary(s, s + len, s + i) != FALSE) != (std::find(f.begin(), f.end(), i) != f.end()))
+            return FALSE;
+    return TRUE;
+}
+static void TestU8Letter254()
+{
+    unsigned v = 0;
+    CHECK(SalU8UnitLen("a", "a" + 1, &v) == 1 && v == 'a');
+    const char* zc = "\xC5\xBE"; // z-caron
+    CHECK(SalU8UnitLen(zc, zc + 2, &v) == 2 && v == 0x17E);
+    const char* zh = "\xE4\xB8\xAD"; // CJK
+    CHECK(SalU8UnitLen(zh, zh + 3, &v) == 3 && v == 0x4E2D);
+    const char* ext = "\xF0\xA0\x80\x80"; // U+20000
+    CHECK(SalU8UnitLen(ext, ext + 4, &v) == 4 && v == 0x20000);
+    const char* sur = "\xED\xA0\x80"; // a WTF-8 lone surrogate: one unit
+    CHECK(SalU8UnitLen(sur, sur + 3, &v) == 3 && v == 0xD800);
+    CHECK(SalU8UnitLen(zc, zc + 1, &v) == 1 && v == SALU8_INVALID_BASE + 0xC5); // a torn letter
+    const char* cont = "\xBE";
+    CHECK(SalU8UnitLen(cont, cont + 1, &v) == 1 && v == SALU8_INVALID_BASE + 0xBE);
+    const char* overlong = "\xC0\x80";
+    CHECK(SalU8UnitLen(overlong, overlong + 2, &v) == 1 && v == SALU8_INVALID_BASE + 0xC0);
+    CHECK(SalU8UnitLen(zh, zh + 2, &v) == 1); // truncated
+    CHECK(SalU8UnitLen(zc, zc, &v) == 0);
+
+    // back == forward, boundaries
+    const char* mixed = "a\xC5\xBE\xF0\xA0\x80\x80\xED\xA0\x80\xBEz\xC5\xBE\xBE\xE4\xB8\xC5\xC0\x80\xF5\xD0\x96";
+    CHECK(BackMatches254(mixed, (int)strlen(mixed)));
+    const char* torn = "\xC5\xBE\xBE";
+    CHECK(BackMatches254(torn, 3));
+    CHECK(SalU8UnitBack(torn, torn + 3) == torn + 2);
+    CHECK(SalU8UnitBack(torn, torn + 2) == torn);
+    CHECK(SalU8UnitBack(torn + 1, torn + 2) == torn + 1); // never before 'start'
+    CHECK(!SalU8IsUnitBoundary(zc, zc + 2, zc + 1));
+    CHECK(!SalU8IsUnitBoundary(ext, ext + 4, ext + 3));
+    CHECK(SalU8IsUnitBoundary(zh, zh + 2, zh + 1)); // a truncated sequence is bytes
+    const char* cyr = "\xD0\x96\xD0\xB0\xD0\xB1\xD0\xB0.txt"; // Zh a b a .txt
+    CHECK(BackMatches254(cyr, (int)strlen(cyr)));
+
+    // classification
+    CHECK(SalU8IcuCharType() != NULL); // icu.dll of Windows 10 1903+ / 11
+    CHECK((SalU8LetterTypes(0x416) & (C1_ALPHA | C1_UPPER)) == (C1_ALPHA | C1_UPPER));
+    CHECK((SalU8LetterTypes(0x430) & (C1_ALPHA | C1_LOWER)) == (C1_ALPHA | C1_LOWER));
+    CHECK((SalU8LetterTypes(0x660) & C1_DIGIT) != 0);
+    CHECK((SalU8LetterTypes(0x301) & SALU8_TYPE_MARK) != 0 && (SalU8LetterTypes(0x301) & C1_ALPHA) == 0);
+    CHECK((SalU8LetterTypes(0x93E) & SALU8_TYPE_MARK) != 0); // a spacing mark (Windows types: none)
+    CHECK((SalU8LetterTypes(0x20DD) & SALU8_TYPE_MARK) != 0); // an enclosing mark
+    CHECK((SalU8LetterTypes(0xE9) & SALU8_TYPE_MARK) == 0);   // e-acute is a letter, not a mark
+    CHECK((SalU8LetterTypes(0x20000) & C1_ALPHA) != 0);       // CJK outside the BMP
+    CHECK((SalU8LetterTypes(0x1D400) & (C1_ALPHA | C1_UPPER)) == (C1_ALPHA | C1_UPPER));
+    CHECK((SalU8LetterTypes(0x10428) & (C1_ALPHA | C1_LOWER)) == (C1_ALPHA | C1_LOWER)); // Deseret small
+    CHECK((SalU8LetterTypes(0x1D7CE) & C1_DIGIT) != 0);
+    CHECK((SalU8LetterTypes(0x1F4C1) & (C1_ALPHA | C1_DIGIT | SALU8_TYPE_MARK)) == 0); // an emoji
+    CHECK((SalU8LetterTypes(0x3000) & C1_SPACE) != 0);
+    CHECK(SalU8LetterTypes(SALU8_INVALID_BASE + 0xC5) == 0);
+    CHECK(SalU8LetterTypes(0xD800) == 0);
+    CHECK(SalU8IsWordValue('_') && !SalU8IsAlnumValue('_'));
+    CHECK(SalU8IsWordValue('a') && SalU8IsWordValue('7') && !SalU8IsWordValue('-') && !SalU8IsWordValue('.'));
+    CHECK(SalU8IsWordValue(0x301) && SalU8IsWordValue(0x20000) && SalU8IsWordValue(0x430));
+    CHECK(!SalU8IsWordValue(0x1F4C1) && !SalU8IsWordValue(0xD800) && !SalU8IsWordValue(SALU8_INVALID_BASE + 0xB0));
+
+    // plain whole words: a combining mark and a letter outside the BMP belong to the word
+    const char* cafe = "Cafe\xCC\x81 x"; // C a f e U+0301 ' ' x
+    int cl = (int)strlen(cafe);
+    CHECK(SalU8IsAlnumAt(cafe, cl, 4));
+    CHECK(SalU8IsAlnumBefore(cafe, cl, 6));
+    CHECK(!SalU8IsAlnumAt(cafe, cl, 6));
+    CHECK(SalU8IsAlnumAt(ext, 4, 0) && SalU8IsAlnumBefore(ext, 4, 4));
+    CHECK(!SalU8IsAlnumBefore(zc, 2, 1)); // inside a letter: no unit ends there
+
+    // the final sigma folds with sigma (plain and regex search)
+    CHECK(SalU8FoldCodePoint(0x3C2) == 0x3C3 && SalU8FoldCodePoint(0x3A3) == 0x3C3 && SalU8FoldCodePoint(0x3C3) == 0x3C3);
+    CHECK(SalU8FoldCodePoint(0x130) == 0x130); // I-dot: its lower case is 1 byte - kept (210)
+    CHECK(Fold210("\xCF\x82", FALSE) == "\xCF\x83");
+    CHECK(Fold210("\xCE\xBB\xCF\x8C\xCE\xB3\xCE\xBF\xCF\x82", TRUE) ==
+          Fold210("\xCE\x9B\xCE\x8C\xCE\x93\xCE\x9F\xCE\xA3", TRUE)); // logos / LOGOS
+}
+
 // feature 226: the encoding of the User Menu's batch file
 static std::string Batch226(const char* u8, UINT cp, CSalBatchEncoding* enc)
 {
@@ -14159,6 +14268,7 @@ int main(int argc, char** argv)
     TestShortNameClashError203();
     TestNameIsOnlyShortNameOf204();
     TestU8Fold210();
+    TestU8Letter254();
     TestBatchText226();
     TestBatchEscape229();
     TestNameExactInCIRun230();

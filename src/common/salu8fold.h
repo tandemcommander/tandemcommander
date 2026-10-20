@@ -18,8 +18,9 @@
 // when they are one letter in two cases (a pair of different UTF-8 lengths stays case-sensitive).
 // Bytes that are not valid UTF-8 (a legacy name, a WTF-8 surrogate) are copied unchanged.
 //
-// Header-only (plug-ins use it); checked by saltests. Regular expressions still judge \b, \w,
-// classes and '.' by single bytes (a byte engine) - recorded in NEXT-WORK.
+// Header-only (plug-ins use it); checked by saltests. Feature 254: the final sigma folds with
+// sigma (SalU8FoldCodePoint); the letters of a regular expression and the whole-word tests are in
+// salu8letter.h.
 //
 //*****************************************************************************
 
@@ -113,6 +114,20 @@ inline unsigned SalU8LowerCodePoint(unsigned cp)
     return cp;
 }
 
+// the folded form of the code point 'cp': its lower case when that has the same UTF-8 length
+// (feature 210), and the final sigma as sigma (feature 254: one letter for a case-insensitive
+// search - Unicode case folding; both are 2 bytes, CF 82 / CF 83)
+inline unsigned SalU8FoldCodePoint(unsigned cp)
+{
+    if (cp == 0x3C2)
+        return 0x3C3;
+    unsigned lower = SalU8LowerCodePoint(cp);
+    unsigned char a[4], b[4];
+    if (lower != cp && SalU8EncodeChar(lower, a) == SalU8EncodeChar(cp, b))
+        return lower;
+    return cp;
+}
+
 // 'len' bytes of 'in' folded into 'out' (the same 'len' bytes; it may be 'in' itself);
 // 'onlyNonAscii': ASCII is left as it is (for an engine that folds ASCII itself)
 inline void SalU8FoldSameLength(const char* in, int len, char* out, BOOL onlyNonAscii)
@@ -138,44 +153,13 @@ inline void SalU8FoldSameLength(const char* in, int len, char* out, BOOL onlyNon
             continue;
         }
         unsigned char enc[4];
-        unsigned lower = SalU8LowerCodePoint(cp);
-        if (lower != cp && SalU8EncodeChar(lower, enc) == n)
+        unsigned folded = SalU8FoldCodePoint(cp); // the same UTF-8 length
+        if (folded != cp && SalU8EncodeChar(folded, enc) == n)
             memcpy(d + i, enc, n);
         else
             memmove(d + i, s + i, n);
         i += n;
     }
-}
-
-// is the character starting at byte 'pos' of 'text' ('len' bytes) a letter or a digit? (whole words)
-inline BOOL SalU8IsAlnumAt(const char* text, int len, int pos)
-{
-    if (pos < 0 || pos >= len)
-        return FALSE;
-    unsigned cp;
-    int n = SalU8DecodeChar((const unsigned char*)text + pos, len - pos, &cp);
-    if (n == 0)
-        return FALSE;
-    if (cp >= 0x10000)
-        return FALSE; // outside the BMP: IsCharAlphaNumericW sees one unit only
-    return IsCharAlphaNumericW((WCHAR)cp) ? TRUE : FALSE;
-}
-
-// is the character ENDING just before byte 'pos' of 'text' a letter or a digit?
-inline BOOL SalU8IsAlnumBefore(const char* text, int len, int pos)
-{
-    if (pos <= 0 || pos > len)
-        return FALSE;
-    int start = pos - 1;
-    while (start > 0 && pos - start < 4 && (((unsigned char)text[start]) & 0xC0) == 0x80)
-        start--;
-    unsigned cp;
-    int n = SalU8DecodeChar((const unsigned char*)text + start, len - start, &cp);
-    if (n == 0 || start + n != pos)
-        return FALSE;
-    if (cp >= 0x10000)
-        return FALSE;
-    return IsCharAlphaNumericW((WCHAR)cp) ? TRUE : FALSE;
 }
 
 // 'count' characters forward from 'from' (not past 'end'); a byte that is not valid UTF-8 counts

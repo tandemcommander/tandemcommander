@@ -31,6 +31,14 @@
 #include <process.h>
 
 #include "regexp.h"
+#include "../../common/salu8letter.h"
+
+// feature 254: the engine steps, backs off, classifies and starts matches by whole UTF-8 letters
+// ("units", salu8letter.h) - it judged single bytes: '.' or a class took the lead byte of a letter
+// (the new name was refused "(123)"), '\b' found a boundary inside a Cyrillic word (a wrong letter
+// replaced), a quantifier after a letter repeated its last byte, a look-behind stepped one byte.
+// ASCII is judged as before (the CType table); a class holds code-point ranges and type tests for
+// the other letters; '\x' escapes forming one character are one letter.
 
 // feature 210: a case-insensitive match folds ASCII only - the code page's table also folded the
 // bytes of UTF-8 letters (cp1250: 8A / 9A), matching another letter or a piece of one; the
@@ -245,7 +253,14 @@ const char* RegExpErrorText(CRegExpErrors err)
 #define ISMULT(c) ((c) == '*' || (c) == '+' || (c) == '?')
 #define META "^$.[()|?+*\\"
 
-#define INCLASS(b, c) (b[c >> 3] & (1 << (c & 0x07)))
+#define INCLASS(b, c) (((const unsigned char*)(b))[(c) >> 3] & (1 << ((c) & 0x07)))
+
+// feature 254: the class operand after its ANYOF node (data-model.md)
+#define CLASS_FLAGS 32  // 1 byte: CLASS_NEG
+#define CLASS_NTESTS 33 // 2 bytes (unaligned)
+#define CLASS_NRANGES 35
+#define CLASS_ITEMS 37 // tests (4 bytes mask + 1 byte negated), then ranges (4 + 4 bytes)
+#define CLASS_NEG 0x01
 
 /*
  * Flags to be passed up and down.
@@ -293,6 +308,28 @@ BOOL CRegExp::RegComp(char* exp, unsigned options)
 
     Options = options;
     Caseles = Options & RE_CASELES;
+
+    // feature 254: the class builder's arrays - every test or range takes at least one byte of
+    // the pattern, so its length bounds them
+    struct CFreeClassArrays
+    {
+        CRegExp* R;
+        ~CFreeClassArrays()
+        {
+            free(R->ClassTests);
+            free(R->ClassRanges);
+            R->ClassTests = R->ClassRanges = NULL;
+            R->ClassCap = 0;
+        }
+    } freeClassArrays = {this};
+    ClassCap = (int)strlen(exp) + 2;
+    ClassTests = (unsigned*)malloc(sizeof(unsigned) * 2 * ClassCap);
+    ClassRanges = (unsigned*)malloc(sizeof(unsigned) * 2 * ClassCap);
+    if (ClassTests == NULL || ClassRanges == NULL)
+    {
+        State = reeLowMemory;
+        return FALSE;
+    }
 
     /* First pass: determine size, legality. */
     RegParse = exp;
@@ -730,12 +767,14 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
         break;
     case '[':
     {
-        char _class;
-        char classend;
+        // feature 254: the members are whole letters - a literal or '\x' letter is a code point,
+        // a range with a non-ASCII bound a code-point range (ClassAddRangeOf), '\w' and the POSIX
+        // classes type tests for the letters outside ASCII
+        const unsigned NOCHAR = 0xFFFFFFFF;
         int comp;
-        int lastchar;
+        unsigned lastchar;
 
-        lastchar = -1;
+        lastchar = NOCHAR;
         comp = 0;
         if (*RegParse == '^')
         { /* Complement of range. */
@@ -743,11 +782,10 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
             RegParse++;
         }
         ret = RegNode(ANYOF);
-        if (RegCode != &RegDummy)
-            memset(RegCode, 0, 32);
+        ClassBegin();
         if (*RegParse == ':' && IsPosixClass(RegParse + 1))
         {
-            if (!RegPosixClass(RegParse + 1))
+            if (!ClassAddPosix(RegParse + 1))
                 return NULL;
             RegParse = strchr(RegParse, ']') + 1;
         }
@@ -755,48 +793,46 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
         {
             if (*RegParse == ']' || *RegParse == '-')
             {
-                lastchar = *RegParse;
-                RegClass(*RegParse++, RegCode);
+                lastchar = (unsigned char)*RegParse;
+                ClassSetByte(lastchar);
+                RegParse++;
             }
             while (*RegParse != '\0' && *RegParse != ']')
             {
                 if (*RegParse == '-')
                 {
                     RegParse++;
-                    if (*RegParse == ']' || *RegParse == '\0' || lastchar == -1)
-                        RegClass('-', RegCode);
+                    if (*RegParse == ']' || *RegParse == '\0' || lastchar == NOCHAR)
+                        ClassSetByte('-');
                     else
                     {
-                        if (*RegParse == '\0')
-                            FAIL(reeUnmatchedBracket);
-                        _class = lastchar + 1;
+                        unsigned classend;
+                        BOOL escaped = FALSE;
                         if (*RegParse == '\\')
                         {
                             RegParse++;
-                            classend = GetEscapedChar();
+                            if (*RegParse == '\0')
+                                FAIL(reeUnmatchedBracket);
+                            classend = GetEscapedUnit();
                             if (!IsGood())
                                 FAIL(State);
+                            escaped = TRUE;
                         }
                         else
-                            classend = *RegParse + 1;
-                        for (; _class != classend; _class++)
-                        {
-                            RegClass(_class, RegCode);
-                            if (Caseles)
-                                RegClass(REG_INVERT(_class), RegCode);
-                        }
+                            classend = ParseLiteralUnit();
+                        ClassAddRangeOf(lastchar, classend, escaped);
                         RegParse++;
-                        lastchar = -1;
+                        lastchar = NOCHAR;
                     }
                 }
                 else
                 {
                     if (*RegParse == '[' && RegParse[1] == ':' && IsPosixClass(RegParse + 2))
                     {
-                        if (!RegPosixClass(RegParse + 2))
+                        if (!ClassAddPosix(RegParse + 2))
                             return FALSE;
                         RegParse = strchr(RegParse, ']') + 1;
-                        lastchar = -1;
+                        lastchar = NOCHAR;
                     }
                     else
                     {
@@ -825,24 +861,22 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
                             {
                                 classname = NonDigit;
                             LCLASS2:
-                                RegPosixClass(classname);
-                                lastchar = -1;
+                                ClassAddPosix(classname);
+                                lastchar = NOCHAR;
                                 break;
                             }
+                            case '\0': // a trailing backslash: the bracket is not closed
+                                FAIL(reeUnmatchedBracket);
                             default:
-                                lastchar = GetEscapedChar();
+                                lastchar = GetEscapedUnit();
                                 if (!IsGood())
                                     FAIL(State);
                             }
                         }
                         else
-                            lastchar = *RegParse;
-                        if (lastchar != -1)
-                        {
-                            RegClass((char)lastchar, RegCode);
-                            if (Caseles)
-                                RegClass(REG_INVERT((char)lastchar), RegCode);
-                        }
+                            lastchar = ParseLiteralUnit();
+                        if (lastchar != NOCHAR)
+                            ClassAddValue(lastchar);
                         RegParse++;
                     }
                 }
@@ -851,18 +885,7 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
                 FAIL(reeUnmatchedBracket);
             RegParse++;
         }
-        if (RegCode != &RegDummy)
-        {
-            if (comp)
-            {
-                int i;
-                for (i = 31; i >= 0; i--)
-                    RegCode[i] = ~RegCode[i];
-            }
-            RegCode += 32;
-        }
-        else
-            RegSize += 32;
+        ClassEmit(comp);
         *flagp |= HASWIDTH | SIMPLE;
         *fixedw = 1;
     }
@@ -907,13 +930,9 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
             classname = NonDigit;
         LCLASS:
             ret = RegNode(ANYOF);
-            if (RegCode != &RegDummy)
-                memset(RegCode, 0, 32);
-            RegPosixClass(classname);
-            if (RegCode != &RegDummy)
-                RegCode += 32;
-            else
-                RegSize += 32;
+            ClassBegin();
+            ClassAddPosix(classname);
+            ClassEmit(0);
             goto LENDSLASH;
         }
 
@@ -938,13 +957,28 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
         }
 
         default:
-            c = GetEscapedChar();
+        {
+            // feature 254: '\x' escapes that form one character are one letter (two nodes
+            // "\xC5" "\xBD" never matched a folded name); case-insensitive it is folded like a
+            // typed letter. Bytes forming no character stay single bytes (they match only the
+            // same byte standing alone - EXACTLY ends on a letter boundary)
+            unsigned value = GetEscapedUnit();
             if (!IsGood())
                 FAIL(State);
+            unsigned char enc[4];
+            int n;
+            if (value >= SALU8_INVALID_BASE)
+                enc[0] = (unsigned char)(value - SALU8_INVALID_BASE), n = 1;
+            else if (value < 0x80)
+                enc[0] = (unsigned char)(Caseles ? REG_LOWER((char)value) : (char)value), n = 1;
+            else
+                n = SalU8EncodeChar(Caseles ? SalU8FoldCodePoint(value) : value, enc);
+            ret = RegNode(EXACTLY);
+            for (int i = 0; i < n; i++)
+                RegC((char)enc[i]);
+            RegC('\0');
         }
-        ret = RegNode(EXACTLY);
-        RegC(Caseles ? REG_LOWER(c) : c);
-        RegC('\0');
+        }
     LENDSLASH:
         RegParse++;
         *flagp |= HASWIDTH | SIMPLE;
@@ -960,12 +994,23 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
         if (len <= 0)
             FAIL(reeInternalDisaster);
         ender = *(RegParse + len);
-        if (len > 1 && ISMULT(ender))
-            len--; /* Back off clear of ?+* operand. */
+        // feature 254: the run is counted and backed off by letters - one byte off "z-caron+"
+        // left the quantifier on the letter's last byte
+        int units = 0;
+        for (const char* u = RegParse; u < RegParse + len; units++)
+        {
+            unsigned unitValue;
+            u += SalU8UnitLen(u, RegParse + len, &unitValue);
+        }
+        if (units > 1 && ISMULT(ender))
+        {
+            len = (int)(SalU8UnitBack(RegParse, RegParse + len) - RegParse); /* Back off clear of ?+* operand. */
+            units--;
+        }
         *flagp |= HASWIDTH;
-        if (len == 1)
-            *flagp |= SIMPLE;
-        *fixedw = len;
+        if (units == 1)
+            *flagp |= SIMPLE; // one letter (of any length): STAR / PLUS repeat it (ExactlyAt)
+        *fixedw = units;
         ret = RegNode(EXACTLY);
         while (len > 0)
         {
@@ -1132,10 +1177,14 @@ CPosixClass PosixClasses[] =
         {"xdigit:]", C1_XDIGIT, 0},
         {NULL, C1_XDIGIT, 0}};
 
-int CRegExp::RegPosixClass(const char* scan)
+// feature 254: a POSIX class (also '\w', '\s', '\d' and their negations) - ASCII by the CType
+// table into the bitmap as before (bytes >= 0x80 are no longer the code page's letters: they are
+// bytes that start no UTF-8 letter and belong to no class but the negated ones), the other letters
+// by a type test (salu8letter.h)
+int CRegExp::ClassAddPosix(const char* scan)
 {
     CALL_STACK_MESSAGE_NONE
-    char tmpclass[32];
+    unsigned char tmpclass[32];
     int comp = 0;
 
     if (*scan == '^')
@@ -1155,14 +1204,18 @@ int CRegExp::RegPosixClass(const char* scan)
 
     memset(tmpclass, 0, 32);
     int c;
-    for (c = 0; c < 256; c++)
+    for (c = 0; c < 0x80; c++)
         if (CType[c] & cls->Type)
         {
-            RegClass((char)c, tmpclass);
+            tmpclass[c >> 3] |= (unsigned char)(1 << (c & 0x07));
             if (Caseles)
-                RegClass(REG_INVERT(c), tmpclass);
+            {
+                unsigned char inv = (unsigned char)REG_INVERT(c);
+                tmpclass[inv >> 3] |= (unsigned char)(1 << (inv & 0x07));
+            }
         }
 
+    unsigned mask = cls->Type;
     switch (cls->ID)
     {
     case PC_ASCII:
@@ -1170,29 +1223,143 @@ int CRegExp::RegPosixClass(const char* scan)
         int i;
         for (i = 0; i < 16; i++)
             tmpclass[i] = 0xFF;
+        mask = 0; // no letter outside ASCII
         break;
     }
     case PC_WORD:
     {
-        RegClass('_', tmpclass);
+        tmpclass['_' >> 3] |= (unsigned char)(1 << ('_' & 0x07));
+        mask |= SALU8_TYPE_MARK; // a combining mark belongs to the word
         break;
     }
     }
+    if (Caseles && (mask & (C1_UPPER | C1_LOWER)) != 0)
+        mask |= C1_UPPER | C1_LOWER; // the name is folded: both cases
 
     if (comp)
     {
         int i;
         for (i = 31; i >= 0; i--)
-            tmpclass[i] = ~tmpclass[i];
+            tmpclass[i] = (unsigned char)~tmpclass[i];
     }
 
-    if (RegCode != &RegDummy)
+    int i;
+    for (i = 31; i >= 0; i--)
+        ClassMap[i] |= tmpclass[i];
+    if (ClassNTests < ClassCap)
+    {
+        ClassTests[2 * ClassNTests] = mask;
+        ClassTests[2 * ClassNTests + 1] = comp;
+        ClassNTests++;
+    }
+    return 1;
+}
+
+void CRegExp::ClassBegin()
+{
+    CALL_STACK_MESSAGE_NONE
+    memset(ClassMap, 0, sizeof(ClassMap));
+    ClassNTests = ClassNRanges = 0;
+}
+
+// one member: ASCII and a byte that starts no letter into the bitmap, a letter as a range of one
+void CRegExp::ClassAddValue(unsigned value)
+{
+    CALL_STACK_MESSAGE_NONE
+    if (value < 0x80)
+    {
+        ClassSetByte(value);
+        if (Caseles)
+            ClassSetByte((unsigned char)REG_INVERT((char)value));
+    }
+    else if (value >= SALU8_INVALID_BASE)
+        ClassSetByte(value - SALU8_INVALID_BASE);
+    else
+        ClassAddRange(value, value);
+}
+
+// the code points 'lo'..'hi' (reversed: nothing); the ASCII part into the bitmap
+void CRegExp::ClassAddRange(unsigned lo, unsigned hi)
+{
+    CALL_STACK_MESSAGE_NONE
+    if (lo > hi)
+        return;
+    if (lo < 0x80)
+    {
+        unsigned c;
+        for (c = lo; c <= hi && c < 0x80; c++)
+            ClassAddValue(c);
+        lo = 0x80;
+        if (lo > hi)
+            return;
+    }
+    if (ClassNRanges < ClassCap)
+    {
+        ClassRanges[2 * ClassNRanges] = lo;
+        ClassRanges[2 * ClassNRanges + 1] = hi;
+        ClassNRanges++;
+    }
+}
+
+// the range 'first'-'last' of a bracket ('first' is already a member); two ASCII bounds or bytes
+// that form no letter keep the byte loop of before, exactly (an escaped end was exclusive, a
+// reversed range wrapped around); a non-ASCII letter as a bound makes a code-point range
+void CRegExp::ClassAddRangeOf(unsigned first, unsigned last, BOOL lastEscaped)
+{
+    CALL_STACK_MESSAGE_NONE
+    BOOL firstByte = first < 0x80 || first >= SALU8_INVALID_BASE;
+    BOOL lastByte = last < 0x80 || last >= SALU8_INVALID_BASE;
+    unsigned fb = first >= SALU8_INVALID_BASE ? first - SALU8_INVALID_BASE : first;
+    unsigned lb = last >= SALU8_INVALID_BASE ? last - SALU8_INVALID_BASE : last;
+    if (firstByte && lastByte)
+    {
+        unsigned char c = (unsigned char)(fb + 1);
+        unsigned char classend = lastEscaped ? (unsigned char)lb : (unsigned char)(lb + 1);
+        for (; c != classend; c++)
+        {
+            ClassSetByte(c);
+            if (Caseles)
+                ClassSetByte((unsigned char)REG_INVERT((char)c));
+        }
+    }
+    else
+        ClassAddRange(fb, lb);
+}
+
+// the class into the program: its ANYOF operand (data-model.md)
+void CRegExp::ClassEmit(int comp)
+{
+    CALL_STACK_MESSAGE_NONE
+    if (comp)
     {
         int i;
         for (i = 31; i >= 0; i--)
-            RegCode[i] |= tmpclass[i];
+            ClassMap[i] = (unsigned char)~ClassMap[i];
     }
-    return 1;
+    long size = CLASS_ITEMS + 5L * ClassNTests + 8L * ClassNRanges;
+    if (RegCode == &RegDummy)
+    {
+        RegSize += size;
+        return;
+    }
+    memcpy(RegCode, ClassMap, 32);
+    RegCode[CLASS_FLAGS] = (char)(comp ? CLASS_NEG : 0);
+    unsigned short nt = (unsigned short)ClassNTests, nr = (unsigned short)ClassNRanges;
+    memcpy(RegCode + CLASS_NTESTS, &nt, 2);
+    memcpy(RegCode + CLASS_NRANGES, &nr, 2);
+    char* p = RegCode + CLASS_ITEMS;
+    int i;
+    for (i = 0; i < ClassNTests; i++, p += 5)
+    {
+        memcpy(p, &ClassTests[2 * i], 4);
+        p[4] = (char)(ClassTests[2 * i + 1] ? 1 : 0);
+    }
+    for (i = 0; i < ClassNRanges; i++, p += 8)
+    {
+        memcpy(p, &ClassRanges[2 * i], 4);
+        memcpy(p + 4, &ClassRanges[2 * i + 1], 4);
+    }
+    RegCode = p;
 }
 
 inline int
@@ -1235,6 +1402,58 @@ char CRegExp::GetEscapedChar()
     }
     }
     return *RegParse;
+}
+
+// feature 254: the escape at RegParse (just after the backslash) as a unit value - consecutive
+// "\xHH" escapes that form one UTF-8 character (or a WTF-8 surrogate) are taken together; bytes
+// forming no character one by one (SALU8_INVALID_BASE + the byte); RegParse is left on the last
+// character of the escapes taken, as GetEscapedChar does
+unsigned CRegExp::GetEscapedUnit()
+{
+    CALL_STACK_MESSAGE_NONE
+    if (*RegParse != 'x')
+        return (unsigned char)GetEscapedChar();
+    unsigned char bytes[4];
+    char* lastDigit[4];
+    int count = 0;
+    char* p = RegParse; // on 'x'
+    while (count < 4)
+    {
+        if (!IsXdigit(p[1]) || !IsXdigit(p[2]))
+        {
+            if (count == 0)
+            {
+                State = reeExpectingXDigit;
+                return 0;
+            }
+            break;
+        }
+        bytes[count] = (unsigned char)((HexToNumber(p[1]) << 4) + HexToNumber(p[2]));
+        lastDigit[count] = p + 2;
+        count++;
+        if (count == 1 && bytes[0] < 0xC2)
+            break; // ASCII or a byte that starts no letter: one escape
+        if (p[3] != '\\' || p[4] != 'x')
+            break;
+        p += 4; // on the next 'x'
+    }
+    unsigned value;
+    int n = SalU8UnitLen((const char*)bytes, (const char*)bytes + count, &value);
+    RegParse = lastDigit[n - 1];
+    return value;
+}
+
+// feature 254: the letter at RegParse as a unit value; RegParse is left on its last byte
+unsigned CRegExp::ParseLiteralUnit()
+{
+    CALL_STACK_MESSAGE_NONE
+    const char* end = RegParse;
+    while (end - RegParse < 4 && *end != '\0')
+        end++;
+    unsigned value;
+    int n = SalU8UnitLen(RegParse, end, &value);
+    RegParse += n - 1;
+    return value;
 }
 
 /*
@@ -1332,7 +1551,8 @@ BOOL CRegExp::RegExec(char* string, int length, int offset, BOOL separateThread)
             /* We know what char it must start with. */
             while ((s = (Caseles ? RegMemChrI(s, RegStart, (int)(RegEol - s)) : (char*)memchr(s, RegStart, (int)(RegEol - s)))) != NULL)
             {
-                if (RegTry(s))
+                // feature 254: a match starts only where a letter starts
+                if (SalU8IsUnitBoundary(string, RegEol, s) && RegTry(s))
                 {
                     return TRUE;
                 }
@@ -1346,7 +1566,8 @@ BOOL CRegExp::RegExec(char* string, int length, int offset, BOOL separateThread)
                 {
                     return TRUE;
                 }
-            } while (++s < RegEol);
+                s += UnitAt(s); // feature 254: the next letter, not the next byte
+            } while (s < RegEol);
 
         /* Failure. */
         return FALSE;
@@ -1468,18 +1689,18 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
             if (RegInput != RegEol)
                 return (0);
             break;
-        case WORDB:
+        case WORDB: // feature 254: the letters before and after, not two bytes
         {
-            int prev = RegInput > RegBol && IsWord(RegInput[-1]) > 0;
-            int cur = RegInput < RegEol && IsWord(*RegInput) > 0;
+            int prev = RegInput > RegBol && IsWordUnitBefore(RegInput);
+            int cur = RegInput < RegEol && IsWordUnitAt(RegInput);
             if (prev == cur)
                 return 0;
             break;
         }
         case NOTWORDB:
         {
-            int prev = RegInput > RegBol && IsWord(RegInput[-1]) > 0;
-            int cur = RegInput < RegEol && IsWord(*RegInput) > 0;
+            int prev = RegInput > RegBol && IsWordUnitBefore(RegInput);
+            int cur = RegInput < RegEol && IsWordUnitAt(RegInput);
             if (prev != cur)
                 return 0;
             break;
@@ -1487,12 +1708,12 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
         case ANY:
             if (RegMatchEol(RegInput))
                 return (0);
-            RegInput++;
+            RegInput += UnitAt(RegInput); // feature 254: a whole letter
             break;
         case ANYDOT:
             if (RegInput == RegEol)
                 return (0);
-            RegInput++;
+            RegInput += UnitAt(RegInput);
             break;
         case EXACTLY:
         {
@@ -1507,14 +1728,20 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
             if (len > RegEol - RegInput || len > 1 &&
                                                (Caseles ? RegMemCmpI(RegInput, opnd, len) : memcmp(RegInput, opnd, len)) != 0)
                 return (0);
+            // feature 254: never a piece of a letter (a lone "\xC5" against "z-caron")
+            if (!SalU8IsUnitBoundary(RegBol, RegEol, RegInput + len))
+                return (0);
             RegInput += len;
         }
         break;
         case ANYOF:
-            if (RegInput == RegEol || !INCLASS(OPERAND(scan), *RegInput))
+        {
+            int n;
+            if (RegInput == RegEol || (n = ClassMatch(OPERAND(scan), RegInput)) == 0)
                 return (0);
-            RegInput++;
-            break;
+            RegInput += n; // feature 254: a whole letter
+        }
+        break;
         case NOTHING:
             break;
         case BACK:
@@ -1612,9 +1839,11 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
                 nextch = *OPERAND(next);
             min = (OP(scan) == STAR) ? 0 : 1;
             save = RegInput;
-            no = RegRepeat(OPERAND(scan));
+            no = RegRepeat(OPERAND(scan)); // feature 254: letters, not bytes
+            char* pos = RegInput;
             while (no >= min)
             {
+                RegInput = pos;
                 /* If it could work, try it. */
                 if (nextch == -1 ||
                     (Caseles ? REG_LOWER(*RegInput) : *RegInput) == (char)nextch)
@@ -1622,7 +1851,9 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
                         return (1);
                 /* Couldn't or didn't -- back up. */
                 no--;
-                RegInput = save + no;
+                if (no < min)
+                    break;
+                pos = (char*)SalU8UnitBack(save, pos); // one letter back
             }
             return (0);
         }
@@ -1641,10 +1872,11 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
             opnd = OPERAND(OPERAND(scan));
             op = OP(OPERAND(scan));
 
+            int n;
             if (OP(scan) == UGPLUS)
             {
-                if (RegMatchSimple(op, opnd))
-                    RegInput++;
+                if ((n = RegMatchSimple(op, opnd)) > 0)
+                    RegInput += n; // feature 254: a whole letter
                 else
                     return 0;
             }
@@ -1657,8 +1889,8 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
                     if (RegMatch(next))
                         return 1;
                 RegInput = save;
-                if (RegMatchSimple(op, opnd))
-                    RegInput++; // eat one character more
+                if ((n = RegMatchSimple(op, opnd)) > 0)
+                    RegInput += n; // eat one letter more
                 else
                     break;
             } while (1);
@@ -1688,14 +1920,17 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
         }
         break;
 
-        case PLOOKB:
+        case PLOOKB: // feature 254: the width counts letters
         {
             char* save;
 
             save = RegInput;
-            RegInput -= *(unsigned short*)(OPERAND(scan));
-            if (RegInput < RegBol || !RegMatch(OPERAND(scan) + 2))
+            RegInput = UnitsBack(RegInput, *(unsigned short*)(OPERAND(scan)));
+            if (RegInput == NULL || !RegMatch(OPERAND(scan) + 2))
+            {
+                RegInput = save;
                 return (0);
+            }
             RegInput = save;
         }
         break;
@@ -1705,9 +1940,12 @@ int CRegExp::RegMatch(char* prog) /* 0 failure, 1 success */
             char* save;
 
             save = RegInput;
-            RegInput -= *(unsigned short*)(OPERAND(scan));
-            if (RegInput >= RegBol && RegMatch(OPERAND(scan) + 2))
+            RegInput = UnitsBack(RegInput, *(unsigned short*)(OPERAND(scan)));
+            if (RegInput != NULL && RegMatch(OPERAND(scan) + 2))
+            {
+                RegInput = save;
                 return (0);
+            }
             RegInput = save;
         }
         break;
@@ -1739,6 +1977,8 @@ int CRegExp::RegRepeat(char* p)
     char* scan;
     char* opnd;
 
+    // feature 254: counts LETTERS (the caller backs off letter by letter)
+    int n;
     scan = RegInput;
     opnd = OPERAND(p);
     switch (OP(p))
@@ -1746,28 +1986,29 @@ int CRegExp::RegRepeat(char* p)
     case ANY:
         while (!RegMatchEol(scan))
         {
-            scan++;
+            scan += UnitAt(scan);
+            count++;
         }
         break;
     case ANYDOT:
-        scan = RegEol;
+        while (scan < RegEol)
+        {
+            scan += UnitAt(scan);
+            count++;
+        }
         break;
     case EXACTLY:
-        if (Caseles)
-            while (scan < RegEol && *opnd == REG_LOWER(*scan))
-            {
-                scan++;
-            }
-        else
-            while (scan < RegEol && *opnd == *scan)
-            {
-                scan++;
-            }
+        while (scan < RegEol && (n = ExactlyAt(opnd, scan)) > 0)
+        {
+            scan += n;
+            count++;
+        }
         break;
     case ANYOF:
-        while (scan < RegEol && INCLASS(opnd, *scan))
+        while (scan < RegEol && (n = ClassMatch(opnd, scan)) > 0)
         {
-            scan++;
+            scan += n;
+            count++;
         }
         break;
     default:       /* Oh dear.  Called inappropriately. */
@@ -1775,14 +2016,13 @@ int CRegExp::RegRepeat(char* p)
         count = 0; /* Best compromise. */
         break;
     }
-    count = (int)(scan - RegInput);
     RegInput = scan;
 
     return (count);
 }
 
 /*
- - RegMatchSimple - match something simple
+ - RegMatchSimple - match something simple; feature 254: returns the length of the letter matched
  */
 int CRegExp::RegMatchSimple(char op, char* opnd)
 {
@@ -1792,16 +2032,110 @@ int CRegExp::RegMatchSimple(char op, char* opnd)
     switch (op)
     {
     case ANY:
-        return !RegMatchEol(RegInput);
+        return RegMatchEol(RegInput) ? 0 : UnitAt(RegInput);
     case ANYDOT:
-        return 1;
+        return UnitAt(RegInput);
     case EXACTLY:
-        return *opnd == (Caseles ? REG_LOWER(*RegInput) : *RegInput);
+        return ExactlyAt(opnd, RegInput);
     case ANYOF:
-        return INCLASS(opnd, *RegInput);
+        return ClassMatch(opnd, RegInput);
     }
     // Oh dear.  Called inappropriately.
     return 0; // Best Compromise
+}
+
+//*****************************************************************************
+// feature 254: whole letters (salu8letter.h)
+
+int CRegExp::UnitAt(const char* p)
+{
+    unsigned value;
+    return SalU8UnitLen(p, RegEol, &value);
+}
+
+// the class operand 'opnd' (after its ANYOF node) against the letter at 'p' (< RegEol)
+int CRegExp::ClassMatch(const char* opnd, const char* p)
+{
+    unsigned value;
+    int n = SalU8UnitLen(p, RegEol, &value);
+    if (value < 0x80)
+        return INCLASS(opnd, value) ? n : 0;
+    if (value >= SALU8_INVALID_BASE) // a byte that starts no letter: the bitmap's upper half
+        return INCLASS(opnd, value - SALU8_INVALID_BASE) ? n : 0;
+    const unsigned char* op = (const unsigned char*)opnd;
+    unsigned short nt, nr;
+    memcpy(&nt, op + CLASS_NTESTS, 2);
+    memcpy(&nr, op + CLASS_NRANGES, 2);
+    const unsigned char* tests = op + CLASS_ITEMS;
+    const unsigned char* ranges = tests + 5 * nt;
+    BOOL in = FALSE;
+    int i;
+    for (i = 0; i < nr && !in; i++)
+    {
+        unsigned lo, hi;
+        memcpy(&lo, ranges + 8 * i, 4);
+        memcpy(&hi, ranges + 8 * i + 4, 4);
+        in = value >= lo && value <= hi;
+    }
+    if (!in && nt > 0)
+    {
+        unsigned types = SalU8LetterTypes(value);
+        for (i = 0; i < nt && !in; i++)
+        {
+            unsigned mask;
+            memcpy(&mask, tests + 5 * i, 4);
+            in = tests[5 * i + 4] ? (types & mask) == 0 : (types & mask) != 0;
+        }
+    }
+    if (op[CLASS_FLAGS] & CLASS_NEG)
+        in = !in;
+    return in ? n : 0;
+}
+
+// a one-letter literal (a SIMPLE EXACTLY) at 'p': its length, ending on a letter boundary, or 0
+int CRegExp::ExactlyAt(const char* opnd, const char* p)
+{
+    int len = (int)strlen(opnd);
+    if (len == 0 || len > RegEol - p)
+        return 0;
+    if (len == 1)
+    {
+        if (*opnd != (Caseles ? REG_LOWER(*p) : *p))
+            return 0;
+    }
+    else if ((Caseles ? RegMemCmpI(p, opnd, len) : memcmp(p, opnd, len)) != 0)
+        return 0;
+    return SalU8IsUnitBoundary(RegBol, RegEol, p + len) ? len : 0;
+}
+
+int CRegExp::IsWordUnitAt(const char* p)
+{
+    unsigned value;
+    SalU8UnitLen(p, RegEol, &value);
+    if (value < 0x80)
+        return IsWord((char)value) ? 1 : 0; // ASCII as before (the CType table)
+    return SalU8IsWordValue(value) ? 1 : 0;
+}
+
+int CRegExp::IsWordUnitBefore(const char* p)
+{
+    const char* start = SalU8UnitBack(RegBol, p);
+    unsigned value;
+    SalU8UnitLen(start, p, &value);
+    if (value < 0x80)
+        return IsWord((char)value) ? 1 : 0;
+    return SalU8IsWordValue(value) ? 1 : 0;
+}
+
+char* CRegExp::UnitsBack(char* q, int count)
+{
+    while (count-- > 0)
+    {
+        if (q <= RegBol)
+            return NULL;
+        q = (char*)SalU8UnitBack(RegBol, q);
+    }
+    return q;
 }
 
 /*

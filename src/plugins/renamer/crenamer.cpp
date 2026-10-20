@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
-#include "../../common/salu8fold.h" // feature 210: the search folds characters, not bytes
+#include "../../common/salu8letter.h" // features 210 / 254: the search folds characters, judges letters
 
 // ****************************************************************************
 //
@@ -453,7 +453,8 @@ int CRenamer::BMSearchForward(const char* string, int length, int offset)
         if (WholeWords)
         {
             // check for a word break - feature 210: by characters (a byte of a UTF-8 letter was
-            // judged through the code page)
+            // judged through the code page); feature 254: a combining mark and a letter outside the
+            // BMP belong to the word (salu8letter.h)
             int matchEnd = ret + BMSearch->GetLength();
             int prev = SalU8IsAlnumBefore(string, length, ret);
             int start = SalU8IsAlnumAt(string, length, ret);
@@ -760,7 +761,16 @@ int CRenamer::RESubst(const char* source, int len, char* dest, int max)
 
         // move the offset forward
         offset = (int)(RegExp->Endp[0] - subject);
-        skipChar = RegExp->Endp[0] - RegExp->Startp[0] == 0 ? 1 : 0;
+        // feature 254: after an empty match the next attempt starts past a whole letter - one byte
+        // put the replacement inside a UTF-8 letter ("(123) the name is incorrect")
+        skipChar = 0;
+        if (RegExp->Endp[0] == RegExp->Startp[0] && offset < len)
+        {
+            unsigned unitValue;
+            skipChar = SalU8UnitLen(subject + offset, subject + len, &unitValue);
+        }
+        else if (RegExp->Endp[0] == RegExp->Startp[0])
+            skipChar = 1; // at the end: RegExec refuses an offset past the text
         if (!Global)
             break;
     }
