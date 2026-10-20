@@ -29,7 +29,7 @@
 
 ### Session 2026-10-20
 
-- Q: Which message does Edit New File show for a name no file system takes (over 255 UTF-16 units) once long paths are accepted? → A: The file system's own error from the failed creation ("The filename or extension is too long."), as Create Directory does; no new check and no new string (autonomous run: conservative)
+- Q: Which message does Edit New File show for a name no file system takes (over 255 UTF-16 units) once long paths are accepted? → A: The existing "Cannot finish operation because of too long name." (IDS_TOOLONGNAME) from a check of the new name against 255 UTF-16 units; the dialog comes back (autonomous run: conservative). Measured while implementing: without the check Windows answers error 123 "invalid name", not "too long" - the first answer (the file system's own error) was revised
 - Q: Does a too-long copy name end the whole Paste or only skip that item? → A: The existing "name is too long" question decides per item - Skip / Skip all go on with the other items, Focus / Cancel end the operation before anything is copied (autonomous run: rule - feature 141's handling of a mask result that no file system takes)
 - Q: What happens when the legacy ANSI drop list cannot be converted to UTF-8? → A: The selection is refused (no operation), as on low memory - the raw code-page bytes are never used as a UTF-8 name (autonomous run: conservative - refuse rather than guess)
 
@@ -54,8 +54,8 @@ otherwise supports such paths (copy, move, create directory, edit an existing fi
 3. **Given** a panel in a short folder, **When** the user types a name of 100 CJK letters +
    ".txt", **Then** the file is created under exactly that name.
 4. **Given** a name longer than any file system takes (256 letters), **When** the user confirms
-   it, **Then** nothing is created and a message says the name is too long (the file system's
-   "The filename or extension is too long."); the dialog comes back with the text.
+   it, **Then** nothing is created and a message says the name is too long ("Cannot finish
+   operation because of too long name."); the dialog comes back with the text.
 5. **Given** a short folder and a short name, **When** the user confirms, **Then** the file is
    created as before (control).
 
@@ -116,6 +116,8 @@ ordinary names is unchanged).
 - Names with a 4-byte UTF-8 letter (emoji) count two units.
 - Edit New File with a relative name in a long folder and with "..\" parts; a typed path whose
   folder does not exist is refused by the existing path check, as before.
+- A malformed drop list with an empty name component (only a crafted list) keeps the old
+  behaviour: the name "" (it matches no file).
 - The legacy ANSI drop list keeps converting from the ANSI code page (that is what it holds);
   only its "keep the raw bytes" and cutting fallbacks are removed.
 
@@ -125,9 +127,9 @@ ordinary names is unchanged).
 
 - **FR-001**: Edit New File MUST accept a typed name or path whose full path is up to the
   program's long-path limit, relative or absolute, and create the file under exactly that path.
-- **FR-002**: Edit New File MUST refuse a name no file system takes (the file system's "The
-  filename or extension is too long.") or a path over the program's limit ("The path specified
-  is too long."), and MUST never create a cut name.
+- **FR-002**: Edit New File MUST refuse a name no file system takes ("Cannot finish operation
+  because of too long name.") or a path over the program's limit ("The path specified is too
+  long."), and MUST never create a cut name.
 - **FR-003**: Paste into the item's own folder MUST build the copy name whole (no byte limit
   smaller than what a file system takes) and create it when it has at most 255 UTF-16 units.
 - **FR-004**: When the copy name would exceed 255 UTF-16 units (or its full path the program's

@@ -486,7 +486,6 @@ BOOL IsSimpleSelection(IDataObject* pDataObject, CDragDropOperData* namesList)
                             void* prefixHeap = NULL; // heap block when the common prefix does not fit prefixBuf
                             if (data->fWide)
                             {
-                                char mulbyteName[3 * MAX_PATH]; // UTF-8 needs up to 3 bytes per WCHAR (feature 004)
                                 wchar_t* prefix = prefixBuf;
                                 const wchar_t* fileW = (wchar_t*)(((char*)data) + data->pFiles);
                                 while (1) // double null terminated, assumes no empty strings (start)
@@ -495,27 +494,25 @@ BOOL IsSimpleSelection(IDataObject* pDataObject, CDragDropOperData* namesList)
                                     {
                                         if (namesList != NULL) // add the common path of all names to namesList
                                         {
-                                            // the path is stored as UTF-8 (feature 004); CP_ACP fallback for invalid
-                                            // UTF-16; heap conversion so prefixes beyond MAX_PATH survive (feature 027)
+                                            // the path is stored as UTF-8 (feature 004); heap conversion so prefixes
+                                            // beyond MAX_PATH survive (feature 027). Feature 259: no code-page
+                                            // fallback (it gave another path, cut at 259 bytes) - a failed conversion
+                                            // (low memory; WTF-8 takes every UTF-16 text) refuses the selection
                                             char* prefixU8 = SalWToU8Alloc(prefix);
-                                            if (prefixU8 != NULL)
+                                            if (prefixU8 == NULL)
                                             {
-                                                if (strlen(prefixU8) < SAL_MAX_PATH_UTF8) // SrcPath is SAL-sized (feature 013)
-                                                    strcpy(namesList->SrcPath, prefixU8);
-                                                else
-                                                    namesList->SrcPath[0] = 0;
-                                                free(prefixU8);
+                                                TRACE_E("IsSimpleSelection(): cannot convert the source path to UTF-8");
+                                                ret = FALSE;
+                                                break;
                                             }
+                                            if (strlen(prefixU8) < SAL_MAX_PATH_UTF8) // SrcPath is SAL-sized (feature 013)
+                                                strcpy(namesList->SrcPath, prefixU8);
                                             else
                                             {
-                                                if (WideCharToMultiByte(CP_ACP, 0, prefix, prefixLen + 1, mulbyteName, MAX_PATH, NULL, NULL) == 0)
-                                                {
-                                                    DWORD err = GetLastError();
-                                                    TRACE_E("IsSimpleSelection(): WideCharToMultiByte: " << GetErrorText(err));
-                                                    mulbyteName[0] = 0;
-                                                }
-                                                lstrcpyn(namesList->SrcPath, mulbyteName, SAL_MAX_PATH_UTF8);
+                                                namesList->SrcPath[0] = 0;
+                                                namesList->SrcPathTooLong = TRUE; // feature 259: said as "too long", not as a Unicode problem
                                             }
+                                            free(prefixU8);
                                             if (prefixLen < 3)
                                                 SalPathAddBackslash(namesList->SrcPath, SAL_MAX_PATH_UTF8);
                                         }
@@ -572,23 +569,12 @@ BOOL IsSimpleSelection(IDataObject* pDataObject, CDragDropOperData* namesList)
                                         {
                                             if (s > fileW && *(s - 1) == L'\\')
                                                 s--; // optional trimming of the trailing backslash
-                                            // names are stored as UTF-8 (feature 004); CP_ACP fallback for invalid UTF-16
-                                            if (SalWToU8(lastBackslash + 1, (int)(s - (lastBackslash + 1)),
-                                                         mulbyteName, 3 * MAX_PATH) == 0)
-                                            {
-                                                int len;
-                                                if ((len = WideCharToMultiByte(CP_ACP, 0, lastBackslash + 1,
-                                                                               (int)(s - (lastBackslash + 1)), mulbyteName,
-                                                                               MAX_PATH, NULL, NULL)) == 0)
-                                                {
-                                                    DWORD err = GetLastError();
-                                                    TRACE_E("IsSimpleSelection(): WideCharToMultiByte: " << GetErrorText(err));
-                                                    mulbyteName[0] = 0;
-                                                }
-                                                else
-                                                    mulbyteName[min(MAX_PATH - 1, len)] = 0;
-                                            }
-                                            char* add = DupStr(mulbyteName);
+                                            // names are stored as UTF-8 (feature 004), whole (feature 259: the code-page
+                                            // fallback cut a name over 780 bytes at 259 bytes of another name); a failed
+                                            // conversion (low memory) refuses the selection; an empty name of a malformed
+                                            // list stays "" as before (the converter refuses an empty text)
+                                            char* add = s > lastBackslash + 1 ? SalWToU8Alloc(lastBackslash + 1, (int)(s - (lastBackslash + 1)))
+                                                                              : DupStr("");
                                             if (add != NULL)
                                             {
                                                 namesList->Names.Add(add);
@@ -626,14 +612,24 @@ BOOL IsSimpleSelection(IDataObject* pDataObject, CDragDropOperData* namesList)
                                     {
                                         if (namesList != NULL) // add the common path of all names to namesList
                                         {
-                                            // legacy ANSI list: the path is stored as UTF-8 (feature 004)
+                                            // legacy ANSI list: the path is stored as UTF-8 (feature 004). Feature 259:
+                                            // a failed conversion refuses the selection (the code-page bytes were kept
+                                            // as if they were UTF-8 - another path); a too long one is said as such
                                             char* prefixU8 = LegacyAToU8Alloc(prefix, prefixLen == -1 ? 0 : prefixLen);
-                                            if (prefixU8 != NULL && strlen(prefixU8) < SAL_MAX_PATH_UTF8)
+                                            if (prefixU8 == NULL)
+                                            {
+                                                TRACE_E("IsSimpleSelection(): cannot convert the source path to UTF-8");
+                                                ret = FALSE;
+                                                break;
+                                            }
+                                            if (strlen(prefixU8) < SAL_MAX_PATH_UTF8)
                                                 strcpy(namesList->SrcPath, prefixU8);
                                             else
-                                                lstrcpyn(namesList->SrcPath, prefix, SAL_MAX_PATH_UTF8); // conversion failed: keep the original bytes
-                                            if (prefixU8 != NULL)
-                                                free(prefixU8);
+                                            {
+                                                namesList->SrcPath[0] = 0;
+                                                namesList->SrcPathTooLong = TRUE;
+                                            }
+                                            free(prefixU8);
                                             if (prefixLen < 3)
                                                 SalPathAddBackslash(namesList->SrcPath, SAL_MAX_PATH_UTF8);
                                         }
@@ -689,17 +685,9 @@ BOOL IsSimpleSelection(IDataObject* pDataObject, CDragDropOperData* namesList)
                                         {
                                             if (s > fileA && *(s - 1) == '\\')
                                                 s--; // optional trimming of the trailing backslash
-                                            // legacy ANSI list: names are stored as UTF-8 (feature 004)
+                                            // legacy ANSI list: names are stored as UTF-8 (feature 004); feature 259: a
+                                            // failed conversion refuses the selection (no code-page bytes as a UTF-8 name)
                                             char* add = LegacyAToU8Alloc(lastBackslash + 1, (int)(s - (lastBackslash + 1)));
-                                            if (add == NULL) // conversion failed: keep the original bytes
-                                            {
-                                                add = (char*)malloc(s - (lastBackslash + 1) + 1);
-                                                if (add != NULL)
-                                                {
-                                                    memcpy(add, lastBackslash + 1, s - (lastBackslash + 1));
-                                                    add[s - (lastBackslash + 1)] = 0;
-                                                }
-                                            }
                                             if (add != NULL)
                                             {
                                                 namesList->Names.Add(add);

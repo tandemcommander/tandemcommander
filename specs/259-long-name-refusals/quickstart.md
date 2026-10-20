@@ -14,4 +14,4 @@
 4. Encoding guard: `python tools/check_encoding.py --strict` - `TOTAL: 0 finding(s)`.
 5. Owed to a person (clipboard): in a folder holding "84 CJK letters.txt" Ctrl+C, Ctrl+V - a
    "- Copy" file appears; with "250 ASCII letters.txt" - the "too long" question, no file, never
-   "to itself".
+   "to itself"; both files selected together, Skip - the short one is copied, the long one not.

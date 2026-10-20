@@ -15,6 +15,7 @@
 #include "cache.h"
 #include "salheapstr.h" // feature 095
 #include "salmaskname.h" // feature 141
+#include "salcopyname.h" // feature 259
 #include "pack.h"
 #include "shellib.h"
 #include "filesbox.h"
@@ -919,6 +920,7 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
                 {
                     strcpy(targetName, s + 1); // copy the proposed full target name into targetPath
                     BOOL isKnown;
+                    BOOL copyNameTooLong = FALSE; // feature 259: no copy name fits a file system - "too long", never "to itself"
                     // mapName must be NULL here, otherwise data->MakeCopyOfName could not be TRUE
                     if ((isKnown = ContainsString(usedNames, targetName)) != 0 ||
                         SalGetFileAttributes(targetPath) != 0xFFFFFFFF)
@@ -939,96 +941,36 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
                         int val = 0;
                         if (WindowsVistaAndLater)
                         {
-                            int len = (int)strlen(targetName);
-                            char* ext = (attrs & FILE_ATTRIBUTE_DIRECTORY) ? NULL : strrchr(s + 1, '.'); // directories have no extensions (copied Vista behavior)
-                            if (ext != NULL && strchr(ext, ' ') != NULL)
-                                ext = NULL; // extension with a space isn't an extension (copied Vista behavior)
-                            char* numBeg = s + 1;
-                            char* numEnd = NULL;
+                            // feature 259: "name - Copy.ext" and "name - Copy (++val).ext" are built whole by
+                            // the rule of salcopyname.h; the candidate was assembled in a 260-byte window and
+                            // dropped at 260 bytes - the copy then went to its source ("to itself")
+                            char copyName[SAL_FIND_NAME_U8 + 200]; // any name a file system takes, with room to judge a longer one
                             while (1)
                             {
-                                while (*numBeg != 0 && *numBeg != '(')
-                                    numBeg++;
-                                if (*numBeg == '(')
+                                if (SalMakeCopyNameU8(s + 1, (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0, hyphenCopy, ++val,
+                                                      copyName, sizeof(copyName)) != SAL_COPYNAME_OK ||
+                                    (targetName - targetPath) + strlen(copyName) >= SAL_MAX_PATH_UTF8)
                                 {
-                                    numEnd = numBeg + 1;
-                                    while (*numEnd >= '0' && *numEnd <= '9')
-                                        numEnd++;
-                                    if (*numEnd != ')')
-                                        numBeg = numEnd;
-                                    else
-                                    {
-                                        numEnd++;
-                                        break; // "(number)" found
-                                    }
+                                    copyNameTooLong = TRUE; // a higher attempt is never shorter
+                                    break;
                                 }
-                                else
-                                {
-                                    numBeg = NULL;
-                                    break; // "(number)" not present
-                                }
-                            }
-
-                        _VISTA_NEXT_1: // "name - Copy.ext" and "name - Copy (++val).ext"
-
-                            if (++val > 1 && numBeg != NULL)
-                            {
-                                sprintf(number, "(%d)", val);
-                                if (ext != NULL)
-                                {
-                                    if (numBeg < ext)
-                                    {
-                                        lstrcpyn(targetName + (numBeg - (s + 1)), number, (int)(1 + MAX_PATH - (numBeg - (s + 1))));                                 // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                        lstrcpyn(targetName + strlen(targetName), numEnd, (int)min((DWORD)((ext - numEnd) + 1), 1 + MAX_PATH - strlen(targetName))); // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                        lstrcpyn(targetName + strlen(targetName), hyphenCopy, (int)(1 + MAX_PATH - strlen(targetName)));                             // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                        lstrcpyn(targetName + strlen(targetName), ext, (int)(1 + MAX_PATH - strlen(targetName)));                                    // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                    }
-                                    else
-                                    {
-                                        lstrcpyn(targetName + (ext - (s + 1)), hyphenCopy, (int)(1 + MAX_PATH - (ext - (s + 1))));                                // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                        lstrcpyn(targetName + strlen(targetName), ext, (int)min((DWORD)((numBeg - ext) + 1), 1 + MAX_PATH - strlen(targetName))); // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                        lstrcpyn(targetName + strlen(targetName), number, (int)(1 + MAX_PATH - strlen(targetName)));                              // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                        lstrcpyn(targetName + strlen(targetName), numEnd, (int)(1 + MAX_PATH - strlen(targetName)));                              // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                    }
-                                }
-                                else
-                                {
-                                    lstrcpyn(targetName + (numBeg - (s + 1)), number, (int)(1 + MAX_PATH - (numBeg - (s + 1))));     // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                    lstrcpyn(targetName + strlen(targetName), numEnd, (int)(1 + MAX_PATH - strlen(targetName)));     // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                    lstrcpyn(targetName + strlen(targetName), hyphenCopy, (int)(1 + MAX_PATH - strlen(targetName))); // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                }
-                            }
-                            else
-                            {
-                                if (ext == NULL)
-                                    lstrcpyn(targetName + len, hyphenCopy, 1 + MAX_PATH - len); // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                else
-                                    lstrcpyn(targetName + (ext - (s + 1)), hyphenCopy, (int)(1 + MAX_PATH - (ext - (s + 1)))); // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                if (val > 1)
-                                {
-                                    sprintf(number, " (%d)", val);
-                                    lstrcpyn(targetName + strlen(targetName), number, (int)(1 + MAX_PATH - strlen(targetName))); // "1 +" ensures that overly long names result in exactly MAX_PATH
-                                }
-                                if (ext != NULL)
-                                    lstrcpyn(targetName + strlen(targetName), ext, (int)(1 + MAX_PATH - strlen(targetName))); // "1 +" ensures that overly long names result in exactly MAX_PATH
-                            }
-
-                            if (strlen(targetName) < MAX_PATH) // name assembly succeeded, otherwise we ignore the result
-                            {
+                                strcpy(targetName, copyName);
                                 if ((isKnown = ContainsString(usedNames, targetName)) != 0 ||
                                     SalGetFileAttributes(targetPath) != 0xFFFFFFFF)
                                 {
                                     if (!isKnown)
                                         AddStringToNames(usedNames, targetName);
-                                    goto _VISTA_NEXT_1;
                                 }
                                 else
                                 {
                                     strcpy(mapNameBuf, targetName);
                                     mapName = mapNameBuf;
+                                    break;
                                 }
                             }
                         }
+                        else if ((targetName - targetPath) + MAX_PATH + 1 > SAL_MAX_PATH_UTF8 || strlen(s + 1) >= MAX_PATH)
+                            copyNameTooLong = TRUE; // feature 259: the patterns below write up to MAX_PATH + 1 bytes at targetName
                         else
                         {
                             if (strncmp(s + 1, copyOpenPar, strlen(copyOpenPar)) == 0)
@@ -1061,6 +1003,8 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
                                             mapName = mapNameBuf;
                                         }
                                     }
+                                    else
+                                        copyNameTooLong = TRUE; // feature 259 (was: the copy went to its source)
                                 }
                                 else
                                 {
@@ -1116,6 +1060,8 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
                                             mapName = mapNameBuf;
                                         }
                                     }
+                                    else
+                                        copyNameTooLong = TRUE; // feature 259 (was: the copy went to its source)
                                 }
                             }
                             else
@@ -1150,10 +1096,26 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
                                         mapName = mapNameBuf;
                                     }
                                 }
+                                else
+                                    copyNameTooLong = TRUE; // feature 259 (was: the copy went to its source)
                             }
                         }
                     }
                     *targetName = 0; // restore targetPath
+
+                    if (copyNameTooLong) // feature 259: the "name is too long" question (Skip / Skip all / Focus), as for a mask's result (141)
+                    {
+                        BOOL skip;
+                        BuildName(targetPath, s + 1, NULL, &skip, &ErrTooLongTgtNameSkipAll, sourcePath, TRUE);
+                        if (!skip) // Focus / Cancel: nothing is copied
+                        {
+                            SetCurrentDirectoryToSystem();
+                            if (usedNames != NULL)
+                                delete usedNames;
+                            return FALSE;
+                        }
+                        continue; // Skip: the next item
+                    }
 
                     // store all names of newly created files
                     if (usedNames != NULL)

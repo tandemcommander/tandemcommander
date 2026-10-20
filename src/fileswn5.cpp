@@ -1527,8 +1527,8 @@ void CFilesWindow::EditNewFile()
 
     // feature 141: the dialog's buffer was MAX_PATH, so a typed name over 259 bytes of UTF-8
     // (87 CJK letters) was cut there without a word and the file was created under the cut
-    // name. The buffer takes the typed text whole; this routine still works with paths up to
-    // MAX_PATH - 1 bytes, so a longer text is refused below
+    // name. The buffer takes the typed text whole. Feature 259: the routine works with paths up
+    // to SAL_MAX_PATH_UTF8 (as Create Directory, 027) - a path of 260+ bytes was refused
     char path[SAL_MAX_PATH_UTF8];
     if (Configuration.UseEditNewFileDefault)
         lstrcpyn(path, Configuration.EditNewFileDefault, MAX_PATH);
@@ -1569,13 +1569,6 @@ void CFilesWindow::EditNewFile()
         {
             UpdateWindow(MainWindow->HWindow);
 
-            if (strlen(path) >= MAX_PATH) // feature 141: refused, not cut; the dialog comes back with the text
-            {
-                SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE),
-                              MB_OK | MB_ICONEXCLAMATION);
-                continue;
-            }
-
             // clean the name from undesirable characters at the beginning and end
             // we do this only for the last component; the previous ones already exist and it doesn't matter
             // (the system handles it) or they are checked during creation and an error is shown
@@ -1587,9 +1580,12 @@ void CFilesWindow::EditNewFile()
             int errTextID;
             //      if (SalGetFullName(path, &errTextID, MainWindow->GetActivePanel()->Is(ptDisk) ?
             //                         MainWindow->GetActivePanel()->GetPath() : NULL, NextFocusName))
-            if (SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, NextFocusName)) // for consistency with ChangePathToDisk()
+            // feature 259: a relative name joined with a long panel path fits the whole buffer (the
+            // default MAX_PATH refused it); what does not fit is "The path specified is too long."
+            if (SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, NextFocusName, NULL,
+                               SAL_MAX_PATH_UTF8)) // for consistency with ChangePathToDisk()
             {
-                char checkPath[MAX_PATH];
+                char checkPath[SAL_MAX_PATH_UTF8]; // long-path capable (feature 259)
                 strcpy(checkPath, path);
                 CutDirectory(checkPath);
                 if (CheckPath(TRUE, checkPath) != ERROR_SUCCESS)
@@ -1599,9 +1595,15 @@ void CFilesWindow::EditNewFile()
                 }
 
                 BOOL invalidName = FileNameInvalidForManualCreate(path);
+                // feature 259: a name no file system takes (over 255 UTF-16 units) is said to be too long
+                // (Windows answers "invalid name" for it)
+                const char* newName = strrchr(path, '\\');
+                BOOL nameTooLong = SalNameTooLongForFileSystemU8(newName != NULL ? newName + 1 : path);
                 HANDLE hFile = INVALID_HANDLE_VALUE;
                 if (invalidName)
                     SetLastError(ERROR_INVALID_NAME);
+                else if (nameTooLong)
+                    SetLastError(ERROR_FILENAME_EXCED_RANGE);
                 else
                 {
                     hFile = SalCreateFileEx(path, GENERIC_READ | GENERIC_WRITE, 0, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -1631,7 +1633,7 @@ void CFilesWindow::EditNewFile()
                     break;
                 }
                 else
-                    errText = GetErrorText(GetLastError());
+                    errText = !invalidName && nameTooLong ? LoadStr(IDS_TOOLONGNAME) : GetErrorText(GetLastError());
             }
             else
                 errText = LoadStr(errTextID);

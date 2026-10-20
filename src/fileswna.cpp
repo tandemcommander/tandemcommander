@@ -450,6 +450,12 @@ void CFilesWindow::DragDropToArcOrFS(CTmpDragDropOperData* data)
                       data->Copy ? LoadStr(IDS_ERRORCOPY) : LoadStr(IDS_ERRORMOVE), MB_OK | MB_ICONEXCLAMATION);
         return;
     }
+    if (data->Data->SrcPathTooLong) // feature 259: it was told as a Unicode problem
+    {
+        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH),
+                      data->Copy ? LoadStr(IDS_ERRORCOPY) : LoadStr(IDS_ERRORMOVE), MB_OK | MB_ICONEXCLAMATION);
+        return;
+    }
     if (data->Data->SrcPath[0] == 0)
     {
         SalMessageBox(HWindow, LoadStr(IDS_SRCPATHUNICODEONLY),

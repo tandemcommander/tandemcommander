@@ -24,14 +24,17 @@
   `SAL_MAX_PATH_UTF8`), as Create Directory (027). Every consumer was checked: `CheckPath`,
   `FileNameInvalidForManualCreate`, `SalCreateFileEx` (W API, long-path) and `EditFile` (012) take
   long paths; `NextFocusName` (780 bytes) is filled by `SalGetFullName` only for names under 260
-  bytes - a longer new name is not focused (a limit, no data issue).
+  bytes - a longer new name is not focused (a limit, no data issue). A name over 255 UTF-16 units
+  is checked before the creation and refused with `IDS_TOOLONGNAME` (measured: Windows itself
+  answers error 123 "invalid name" for it).
 - **Rationale**: the program supports such paths everywhere else; refusal loses the user's work.
 - **Alternatives**: keep the refusal and only state it (the item's second option - weaker).
 
 ## R4 - IsSimpleSelection without code page
 
 - **Decision**: wide names: `SalWToU8Alloc` (WTF-8, never fails on a real name) - NULL (low
-  memory, or an empty component of a malformed list) refuses the selection (`ret = FALSE`); the
+  memory) refuses the selection (`ret = FALSE`; an empty component of a malformed list stays ""
+  as before); the
   common folder too long for `SrcPath` -> `SrcPathTooLong`. ANSI list: the CP_ACP decoding stays
   (that is the list's encoding); its raw-bytes fallbacks and the `lstrcpyn` cut are replaced by
   the same refusal / flag.

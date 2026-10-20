@@ -42,6 +42,7 @@ $StartDir = $Root + '\start'
 $Cjk = [string][char]0x4E2D
 $Seg = 'd' * 60
 $Deep = $Root + '\deep\' + $Seg + '\' + $Seg + '\' + $Seg + '\' + $Seg
+$Deep2 = $Root + '\deep2\' + $Seg + '\' + $Seg + '\' + $Seg + '\' + $Seg   # ABS: its own folder (REL leaves n.txt in $Deep)
 
 function Start-P([string]$Left) {
     $a = @('-t', 'T259', '-l', ('"{0}"' -f $Left), '-r', ('"{0}"' -f $StartDir), '-p', '1')
@@ -117,7 +118,7 @@ function Row-Do([string]$Case, [string]$Panel, [string]$Type, [string]$Dir, [str
             $facts = ("typed {0} bytes ({1}); the folder ({2} bytes) holds {3}" -f (U8Len $Type), (Short $Type), (U8Len $Dir), (Describe $names $Want))
         }
         else {
-            $said = [bool](@($texts | Where-Object { $_ -match 'too long|Too long|invalid|cannot|Cannot|incorrect' }).Count)
+            $said = [bool](@($texts | Where-Object { $_ -match 'too long|Too long' }).Count)   # the refusal must say why
             $ok = ($names.Count -eq 0 -and $said)
             $facts = ("typed {0} bytes; the folder holds {1}; a refusal shown {2}" -f (U8Len $Type), (Describe $names ''), $said)
         }
@@ -156,7 +157,7 @@ try {
         $cjk256 = ($Cjk * 256) + '.txt'
         Row-Do 'SHORT' ($Root + '\short') 'n.txt' ($Root + '\short') 'n.txt'
         Row-Do 'REL' $Deep 'n.txt' $Deep 'n.txt'
-        Row-Do 'ABS' ($Root + '\abs') ($Deep + '\a.txt') $Deep 'a.txt'
+        Row-Do 'ABS' ($Root + '\abs') ($Deep2 + '\a.txt') $Deep2 'a.txt'
         Row-Do 'CJK' ($Root + '\cjk') $cjk100 ($Root + '\cjk') $cjk100
         Row-Do 'OVER' ($Root + '\over') $cjk256 ($Root + '\over') $null
     }

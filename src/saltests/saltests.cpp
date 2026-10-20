@@ -74,6 +74,7 @@
 #include "salnetdrive.h"      // feature 246
 #include "salcpfit.h"         // feature 248
 #include "salcasetwins.h"     // feature 252
+#include "salcopyname.h"      // feature 259
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -14036,6 +14037,72 @@ static BOOL Twins252(std::initializer_list<const char*> list)
     return SalNamesHaveCaseTwins(v.data(), (int)v.size());
 }
 
+// feature 259: the Paste copy name - built whole, judged by 255 UTF-16 units (it was dropped at
+// 260 bytes and the copy went to its source: "Cannot copy a file to itself.")
+static std::string CopyName259(const char* name, BOOL isDir, int attempt, int* res, int outSize = 1000)
+{
+    std::vector<char> out(outSize > 0 ? outSize : 1, 'x');
+    *res = SalMakeCopyNameU8(name, isDir, " - Copy", attempt, out.data(), outSize);
+    return std::string(out.data());
+}
+
+static void TestCopyName259()
+{
+    int r;
+    // the Explorer patterns (unchanged)
+    CHECK(CopyName259("a.txt", FALSE, 1, &r) == "a - Copy.txt" && r == SAL_COPYNAME_OK);
+    CHECK(CopyName259("a.txt", FALSE, 2, &r) == "a - Copy (2).txt" && r == SAL_COPYNAME_OK);
+    CHECK(CopyName259("a.txt", FALSE, 10, &r) == "a - Copy (10).txt");
+    CHECK(CopyName259("a.txt", TRUE, 1, &r) == "a.txt - Copy"); // folders have no extension
+    CHECK(CopyName259("a.txt", TRUE, 3, &r) == "a.txt - Copy (3)");
+    CHECK(CopyName259("noext", FALSE, 1, &r) == "noext - Copy");
+    CHECK(CopyName259("a.my file", FALSE, 1, &r) == "a.my file - Copy"); // an extension with a space is none
+    CHECK(CopyName259("x (1).txt", FALSE, 1, &r) == "x (1) - Copy.txt");
+    CHECK(CopyName259("x (1).txt", FALSE, 2, &r) == "x (2) - Copy.txt"); // the number is replaced
+    CHECK(CopyName259("x (1)", TRUE, 2, &r) == "x (2) - Copy");
+    CHECK(CopyName259("x.(7)", FALSE, 2, &r) == "x - Copy.(2)");             // the number inside the extension
+    CHECK(CopyName259("x (a).txt", FALSE, 2, &r) == "x (a) - Copy (2).txt"); // "(a)" is no number
+    CHECK(CopyName259("x ().txt", FALSE, 2, &r) == "x (2) - Copy.txt");      // "()" counts (as before)
+    CHECK(CopyName259(".cvspass", FALSE, 1, &r) == " - Copy.cvspass");       // as before
+
+    // long names: 84 CJK letters + ".txt" = 256 bytes, the copy 95 units - created (was "to itself")
+    std::string cjk84;
+    for (int i = 0; i < 84; i++)
+        cjk84 += "\xE4\xB8\xAD";
+    std::string c = CopyName259((cjk84 + ".txt").c_str(), FALSE, 1, &r);
+    CHECK(r == SAL_COPYNAME_OK && c == cjk84 + " - Copy.txt" && c.size() == 263);
+    CHECK(CopyName259((cjk84 + ".txt").c_str(), FALSE, 2, &r) == cjk84 + " - Copy (2).txt" && r == SAL_COPYNAME_OK);
+    // 250 ASCII letters + ".txt": the copy would have 261 units - too long, never cut
+    std::string a250(250, 'a');
+    c = CopyName259((a250 + ".txt").c_str(), FALSE, 1, &r);
+    CHECK(r == SAL_COPYNAME_TOOLONG && c.empty());
+    // exactly 255 units is a name; 256 is not
+    std::string a244(244, 'a'); // 244 + " - Copy" (7) + ".txt" (4) = 255
+    c = CopyName259((a244 + ".txt").c_str(), FALSE, 1, &r);
+    CHECK(r == SAL_COPYNAME_OK && c.size() == 255);
+    std::string a245(245, 'a');
+    CHECK(CopyName259((a245 + ".txt").c_str(), FALSE, 1, &r).empty() && r == SAL_COPYNAME_TOOLONG);
+    CHECK(CopyName259((a244 + ".txt").c_str(), FALSE, 2, &r).empty() && r == SAL_COPYNAME_TOOLONG); // " (2)" more
+    // an emoji counts two units: 122 emoji (244 units) + ".txt" -> 255 units OK
+    std::string emo;
+    for (int i = 0; i < 122; i++)
+        emo += "\xF0\x9F\x98\x80";
+    c = CopyName259((emo + ".txt").c_str(), FALSE, 1, &r);
+    CHECK(r == SAL_COPYNAME_OK && c == emo + " - Copy.txt");
+    CHECK(CopyName259((emo + "x.txt").c_str(), FALSE, 1, &r).empty() && r == SAL_COPYNAME_TOOLONG);
+    // the buffer: what does not fit is TOOLONG, never a cut name
+    CHECK(CopyName259("a.txt", FALSE, 1, &r, 12).empty() && r == SAL_COPYNAME_TOOLONG); // needs 13
+    CHECK(CopyName259("a.txt", FALSE, 1, &r, 13) == "a - Copy.txt" && r == SAL_COPYNAME_OK);
+    CHECK(CopyName259("x (1).txt", FALSE, 2, &r, 5).empty() && r == SAL_COPYNAME_TOOLONG);
+    char one[1] = {'x'};
+    CHECK(SalMakeCopyNameU8("a", FALSE, " - Copy", 1, one, 1) == SAL_COPYNAME_TOOLONG && one[0] == 0);
+    CHECK(SalMakeCopyNameU8("a", FALSE, " - Copy", 0, one, 1) == SAL_COPYNAME_TOOLONG);
+    // a localized word counts in units too (Czech "Kopie" - ASCII; German "Kopie"; a 2-byte word)
+    char outW[300];
+    CHECK(SalMakeCopyNameU8("a.txt", FALSE, " - Kop\xC3\xADrovat", 1, outW, sizeof(outW)) == SAL_COPYNAME_OK &&
+          strcmp(outW, "a - Kop\xC3\xADrovat.txt") == 0);
+}
+
 static void TestCaseTwins252()
 {
     // the item's case: a.txt and A.txt
@@ -14429,6 +14496,7 @@ int main(int argc, char** argv)
     TestCpFit248();
     TestTextFits251();
     TestCaseTwins252();
+    TestCopyName259();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
