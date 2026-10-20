@@ -12461,10 +12461,27 @@ static int Twin261Key(const char* a, const char* b)
     return SalNameCompareOrdinalCI(x, -1, y, -1);
 }
 
-static int Twin261Exact(const char* a, const char* b) // the sort order (CmpNameExt): the key, then the bytes
+// the sort order (CmpNameExt): the key, then the locale order with case (lower case first, as
+// CompareString; the soft hyphen still ignored), then the bytes
+static int Twin261Exact(const char* a, const char* b)
 {
     int r = Twin261Key(a, b);
-    return r != 0 ? r : strcmp(a, b);
+    if (r != 0)
+        return r;
+    char x[256], y[256];
+    Twin261Strip(a, x, sizeof(x));
+    Twin261Strip(b, y, sizeof(y));
+    for (int i = 0; x[i] != 0 && y[i] != 0; i++)
+    {
+        if (x[i] != y[i])
+        {
+            BOOL xl = x[i] >= 'a' && x[i] <= 'z', yl = y[i] >= 'a' && y[i] <= 'z';
+            if (xl != yl && (x[i] | 0x20) == (y[i] | 0x20))
+                return xl ? -1 : 1;
+            break;
+        }
+    }
+    return strcmp(a, b);
 }
 
 static int Twin261Loose(const char* a, const char* b) // CmpNameExtIgnCase: the key, then the ordinal rule
@@ -12665,11 +12682,17 @@ static void TestNameRules261()
     CHECK(Twin261MergeIs({{"A.txt", "a.txt"}, 2}, {{"a.txt"}, 1}, "a.txt=a.txt;A.txt-;")); // CMPTWIN2
     CHECK(Twin261MergeIs({{"A.txt"}, 1}, {{"a.txt", "A.txt"}, 2}, "A.txt=A.txt;-a.txt;")); // CMPTWINR
     CHECK(Twin261MergeIs({{"Readme.txt", "z"}, 2}, {{"README.txt", "z"}, 2}, "Readme.txt=README.txt;z=z;")); // CMPSINGLE (232)
-    CHECK(Twin261MergeIs({{"aB.txt", "Ab.txt"}, 2}, {{"ab.txt", "AB.txt"}, 2}, "Ab.txt-;aB.txt-;-AB.txt;-ab.txt;")); // CMPSUB
+    CHECK(Twin261MergeIs({{"aB.txt", "Ab.txt"}, 2}, {{"ab.txt", "AB.txt"}, 2}, "aB.txt-;Ab.txt-;-ab.txt;-AB.txt;")); // CMPSUB
     // twins against a third case: nothing paired, both ways
-    CHECK(Twin261MergeIs({{"a.txt", "A.txt"}, 2}, {{"A.TXT"}, 1}, "A.txt-;a.txt-;-A.TXT;"));
-    CHECK(Twin261MergeIs({{"A.TXT"}, 1}, {{"a.txt", "A.txt"}, 2}, "A.TXT-;-A.txt;-a.txt;"));
-    CHECK(Twin261MergeIs({{"A.txt", "a.txt", "b"}, 3}, {{"A.txt", "a.txt", "b"}, 3}, "A.txt=A.txt;a.txt=a.txt;b=b;"));
+    CHECK(Twin261MergeIs({{"a.txt", "A.txt"}, 2}, {{"A.TXT"}, 1}, "a.txt-;A.txt-;-A.TXT;"));
+    CHECK(Twin261MergeIs({{"A.TXT"}, 1}, {{"a.txt", "A.txt"}, 2}, "A.TXT-;-a.txt;-A.txt;"));
+    CHECK(Twin261MergeIs({{"A.txt", "a.txt", "b"}, 3}, {{"A.txt", "a.txt", "b"}, 3}, "a.txt=a.txt;A.txt=A.txt;b=b;"));
+    // the model sorts as the panel: "a.txt" before "A.txt", the soft hyphen ignored before the bytes
+    CHECK(Twin261Exact("a.txt", "A.txt") < 0 && Twin261Exact("Ab", "aB") > 0);
+    CHECK(Twin261Exact("AB", "A\xC2\xAD"
+                             "B") < 0);
+    CHECK(Twin261Exact("ab", "A\xC2\xAD"
+                             "B") < 0);
     // several runs: the twin run as a set, the next run as feature 232
     CHECK(Twin261MergeIs({{"a", "A", "b", "c"}, 4}, {{"A", "B", "c", "d"}, 4}, "A=A;a-;b=B;c=c;-d;"));
     // review of 261: a case-only pair beside twins of one locale run (a soft hyphen the locale key
@@ -12682,7 +12705,7 @@ static void TestNameRules261()
                           3},
                          "a\xC2\xAD"
                          "b.txt=A\xC2\xAD"
-                         "B.txt;-AB.txt;-ab.txt;"));
+                         "B.txt;-ab.txt;-AB.txt;"));
     CHECK(Twin261MergeIs({{"a\xC2\xAD"
                            "b.txt"},
                           1},
@@ -12700,7 +12723,7 @@ static void TestNameRules261()
                           1},
                          "A\xC2\xAD"
                          "B.txt=a\xC2\xAD"
-                         "b.txt;AB.txt-;ab.txt-;")); // mirrored
+                         "b.txt;ab.txt-;AB.txt-;")); // mirrored
 }
 
 // feature 236: a menu item's hot key goes before a free ASCII letter only - never inside a UTF-8 letter

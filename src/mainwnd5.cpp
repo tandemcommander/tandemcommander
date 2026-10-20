@@ -818,10 +818,11 @@ struct CCmpDirsRun
     int Pairs;
     BOOL Twins;
     BOOL LeftMoved, RightMoved; // items were rearranged within a run (the caller sorts the list again)
+    BOOL JustMoved;             // the last CmpDirsNames rearranged items: other names stand at l / r now
 
     CCmpDirsRun()
     {
-        LeftMoved = RightMoved = FALSE;
+        LeftMoved = RightMoved = JustMoved = FALSE;
         Reset();
     }
     void Reset()
@@ -903,9 +904,9 @@ static void CmpDirsAlignRun(CCmpDirsRun& run)
     // the left part first: on low memory there nothing has moved yet and the run stays without pairs
     BOOL ok = TRUE;
     if (CmpDirsApplyOrder(left, run.L, orderL, nL, &ok))
-        run.LeftMoved = TRUE;
+        run.LeftMoved = run.JustMoved = TRUE;
     if (ok && CmpDirsApplyOrder(right, run.R, orderR, nR, &ok))
-        run.RightMoved = TRUE;
+        run.RightMoved = run.JustMoved = TRUE;
     // the right part could not follow (low memory): the run keeps Pairs 0 - every name reported alone
     // rather than names paired by position
     if (ok)
@@ -1470,6 +1471,11 @@ void CMainWindow::CompareDirectories(DWORD flags)
                 if (r < right->Count) // both panels contain files
                 {
                     compRes = CmpDirsNames(cmpRun, *left, l, *right, r); // feature 261: case twins
+                    if (cmpRun.JustMoved) // other names stand at l / r now: skip the ignored ones again
+                    {
+                        cmpRun.JustMoved = FALSE;
+                        continue;
+                    }
                     if (compRes == -1) // left < right
                     {
                         if (!getTotal)
@@ -1684,6 +1690,11 @@ void CMainWindow::CompareDirectories(DWORD flags)
                     if (r < right->Count) // both panels contain directories
                     {
                         compRes = CmpDirsNames(cmpRun, *left, l, *right, r); // feature 261: case twins
+                        if (cmpRun.JustMoved) // other names stand at l / r now: skip the ignored ones again
+                        {
+                            cmpRun.JustMoved = FALSE;
+                            continue;
+                        }
                         if (compRes == -1) // left < right
                         {
                             leftDir->Selected = 1;

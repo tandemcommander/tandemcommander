@@ -156,15 +156,19 @@ Last triaged: 2026-10-19
 | [A ZIP made on Windows that holds names differing only in case is not case-sensitive](items/a-zip-made-on-windows-that-holds-names-differing-only-in/desc.md) | bug | 5 | archives | leftover:252 | 2026-10-20 |
 | [Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration](items/automation-script-folder-list-code-page/desc.md) | bug | 2 | other-plugins | measure:255 | 2026-10-20 |
 | [Change Attributes on a file symbolic link compresses / re-times the target file](items/change-attributes-on-a-file-symbolic-link-compresses-re/desc.md) | bug | 5 | data-safety | leftover:253 | 2026-10-20 |
+| [Check Ctrl+X ghosting and User Menu compare names with case twins](items/check-ctrl-x-ghosting-and-user-menu-compare-names-with-case/desc.md) | person-step | 3 | panels-ui | leftover:261 | 2026-10-20 |
 | [The encoding guard does not read header files; plug-in headers convert names leniently](items/check-encoding-skips-header-files/desc.md) | tech-debt | 2 | tooling | review:255 | 2026-10-20 |
 | [Check that Change Attributes refuses to encrypt or decrypt a junction (253)](items/check-that-change-attributes-refuses-to-encrypt-or-decrypt-a/desc.md) | person-step | 4 | data-safety | leftover:253 | 2026-10-20 |
 | [CheckVer: the log shows a script path with non-ASCII letters garbled](items/checkver-log-script-path-garbled/desc.md) | bug | 1 | other-plugins | review:255 | 2026-10-20 |
 | [Command line: a COMSPEC path outside ASCII is read through the code page](items/command-line-comspec-read-wide/desc.md) | bug | 2 | encoding | manual | 2026-10-20 |
+| [Compare Directories misses a case-only pair beside a soft-hyphen or NFD name](items/compare-directories-misses-a-case-only-pair-beside-a-soft/desc.md) | bug | 3 | panels-ui | review:261 | 2026-10-20 |
 | [Copying from a TAR folder opened in another case extracts nothing](items/copying-from-a-tar-folder-opened-in-another-case-extracts/desc.md) | bug | 5 | archives | review:252 | 2026-10-20 |
 | [Create Directory refuses a relative name in a folder whose path is 260+ bytes](items/create-directory-refuses-a-relative-name-in-a-folder-whose/desc.md) | bug | 5 | long-paths | measure:259 | 2026-10-20 |
+| [Ctrl+X ghosts a name in the other panel that shows a case twin folder](items/ctrl-x-ghosts-a-name-in-the-other-panel-that-shows-a-case/desc.md) | bug | 2 | panels-ui | review:261 | 2026-10-20 |
 | [DB Viewer: a field length of 1000 or more shows a broken thousands separator](items/dbviewer-field-length-separator/desc.md) | bug | 2 | other-plugins | measure:255 | 2026-10-20 |
 | [Editing long-named archive members: the rows the feature-260 probe could not drive](items/editing-long-named-archive-members-the-rows-the-feature-260/desc.md) | person-step | 6 | archives | leftover:260 | 2026-10-20 |
 | [F3 / F4 refuse archive members whose path inside the archive has 520 bytes or more](items/f3-f4-refuse-archive-members-whose-path-inside-the-archive/desc.md) | improvement | 4 | archives | leftover:260 | 2026-10-20 |
+| [Find window: the viewer next / previous file takes the first case-insensitive twin](items/find-window-the-viewer-next-previous-file-takes-the-first/desc.md) | bug | 3 | panels-ui | measure:261 | 2026-10-20 |
 | [Focusing an archive member with a very long name shows "Expanded string is too large." twice](items/focusing-an-archive-member-with-a-very-long-name-shows/desc.md) | bug | 4 | panels-ui | measure:260 | 2026-10-20 |
 | [FTP: a path whose escaped form does not fit MAX_PATH is left half-escaped](items/ftp-escaped-path-does-not-fit-decision/desc.md) | decision | 2 | ftp | manual | 2026-10-20 |
 | [FTP: download and upload refuse local paths and names over 259 bytes](items/ftp-local-long-paths/desc.md) | improvement | 3 | ftp | manual | 2026-10-20 |
@@ -188,6 +192,7 @@ Last triaged: 2026-10-19
 | [SFTP: a Copy posted right after a failed upload and its reconnect may open nothing](items/sftp-a-copy-posted-right-after-a-failed-upload-and-its/desc.md) | bug | 3 | sftp | measure:258 | 2026-10-20 |
 | [SFTP: a folder uploaded again into an upload-only folder fails with Cannot create directory](items/sftp-a-folder-uploaded-again-into-an-upload-only-folder/desc.md) | bug | 4 | sftp | leftover:258 | 2026-10-20 |
 | [SFTP drop folder on a real upload-only service and an ACL on a replaced file (258)](items/sftp-drop-folder-on-a-real-upload-only-service-and-an-acl-on/desc.md) | person-step | 4 | sftp | leftover:258 | 2026-10-20 |
+| [Turkish / Azeri locale: index.html and INDEX.HTML never compare as one name](items/turkish-azeri-locale-index-html-and-index-html-never-compare/desc.md) | bug | 2 | panels-ui | leftover:261 | 2026-10-20 |
 | [ISO plug-in: HFS+ names with an unpaired surrogate are changed to U+FFFD](items/uniso-hfs-names-lossy-surrogates/desc.md) | bug | 2 | archives | measure:255 | 2026-10-20 |
 | [ISO plug-in: a Joliet file name with an unpaired surrogate is garbled, other letters too](items/uniso-joliet-file-names-wtf8-garbled/desc.md) | bug | 3 | archives | review:255 | 2026-10-20 |
 | [UnMIME: the extraction progress title shows a non-ASCII mail file name as mojibake](items/unmime-progress-title-name-mojibake/desc.md) | bug | 1 | other-plugins | measure:255 | 2026-10-20 |

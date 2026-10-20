@@ -1,6 +1,6 @@
-twin261_probe (feature 261) after-review
+twin261_probe (feature 261) after-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 13:03; registry key existed True; ACP 1250
+Date    : 2026-10-20 13:29; registry key existed True; ACP 1250
 
 CMPTWIN1   RUN    PASS        a.txt marked True (want True), A.txt marked False (want False); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
 CMPTWIN1   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

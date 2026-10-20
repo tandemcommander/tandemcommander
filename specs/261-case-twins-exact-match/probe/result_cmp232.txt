@@ -1,6 +1,6 @@
-cmp232_probe (feature 232) at-261-review
+cmp232_probe (feature 232) at-261-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 13:05; registry key existed True; ACP 1250
+Date    : 2026-10-20 13:31; registry key existed True; ACP 1250
 
 CONTROL    RUN    PASS        left Readme.txt marked True (want True); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
 CONTROL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

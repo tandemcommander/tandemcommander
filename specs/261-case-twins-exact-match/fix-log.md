@@ -73,7 +73,7 @@ are case-sensitive" replaced by set pairing of runs with twins (research R1).
 
 - `python tools/check_encoding.py --strict`: TOTAL: 0 finding(s).
 - `build.cmd` (Debug x64): BUILD SUCCEEDED.
-- `saltests`: 24,600 checks, 0 failed.
+- `saltests`: 24,603 checks, 0 failed (final build).
 - Negative control 1 (first version): `SalTwinAwarePairCmp` always the 232 comparison and
   `SalNamePickIndex` taking the first case-insensitive match: 7 failed. Restored.
 - Negative control 2 (final version): `SalTwinRunPairs` without its case-only step: **5 failed**
@@ -92,7 +92,7 @@ Regression: `cmp232_probe.ps1` on the final build (`probe/result_cmp232.txt`): P
 ## NOT DRIVEN (owed to a person)
 
 - Ctrl+X ghosting: the hidden desktop shares the maintainer's clipboard - not driven.
-- User Menu compare names: needs a configured User Menu item with `$(CompareName2)` - not driven.
+- User Menu compare names: needs a configured User Menu item with `$(FileToCompareInactive)` - not driven.
 Both use the rule checked by `saltests`; person-step item at closing.
 
 ## Review
@@ -112,3 +112,27 @@ on the installed 0.1.10 - the rows do fail without the fix) and `cmp232_probe` 1
 - N3 (closing): the promised Inbox items (Find window, Turkish / Azeri) are filed at closing.
 - N4 (accepted): a pair of one first key costs a few more locale comparisons (run ends, twin
   neighbours); only on the first comparison of a run pair.
+
+Review 2 (fresh refute-first agent, with review 1's findings): **no MUST**. Re-ran the probe 16 / 0
+and saltests; an extended probe copy (marks checked in both panels; the left panel in every sort
+mode - name, reverse, extension, time, reverse time, size, attributes; by-content with two passes;
+twin folders `d` / `D` with sub-folders and by-content - `dirSubTotal`): all PASS on the fix,
+S_NAME / S_NAMEREV FAIL on 0.1.10. Confirmed: the copies are independent arrays (rearranging never
+reaches the panel), the second pass finds the same order, `..` is outside every run, low memory
+reports names alone.
+- S1 (Inbox, `review:261`): the review-1 defect also exists in runs **without** twins in ordinary
+  folders (soft hyphen, NFC / NFD - `CmpNameExtIgnCase`'s tie-break against the sort order);
+  measured failing identically on 0.1.10 - pre-existing, outside the item (spec: no twins = as
+  before). Item `compare-directories-misses-a-case-only-pair-beside-a-soft`.
+- S2 (taken): the test model's sort now has the panel's tie-break (lower case first, soft hyphen
+  ignored, then bytes); expected merges updated; 24,603 checks.
+- NOTE 1 (taken): an ignore mask was checked before a rearrangement put another name at l / r - the
+  merge now skips ignored names again after a rearrangement (`CCmpDirsRun::JustMoved`). The
+  sub-folder lists are filtered when read (`ReadDirsAndFilesAux`), not affected.
+- NOTE 2 (accepted): byte-identical duplicate names (possible in a ZIP listing) in a run with twins:
+  the forced re-sort in name mode is not stable for duplicates, a mark could land on the other
+  duplicate. Needs duplicates and twins in one run; the other sort modes already re-sorted before.
+- NOTE 3 (pre-existing): extension-sort ties of NFC / NFD names. NOTE 4: cost, accepted (review 1 N4).
+
+Final checks after review 2: encoding TOTAL 0; BUILD SUCCEEDED; saltests 24,603 / 0;
+`probe/result_after.txt` PASS 16 / FAIL 0; `probe/result_cmp232.txt` PASS 16 / FAIL 0.
