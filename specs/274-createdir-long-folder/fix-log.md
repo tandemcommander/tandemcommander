@@ -84,6 +84,34 @@ pre-creation message box (`IDS_ERRORCREATINGDIR`), `goto CREATE_AGAIN`, before `
   feed into the probe (the trap of feature 123); repaired with a script file written by the
   editor; the probe is checked pure ASCII (0 bytes outside printable ASCII / tab / CR / LF).
 
+## Review
+
+One independent refute-first review (general-purpose agent): **no MUST**. It re-ran the probe
+(12 / 0), four own rows in a scratch probe (MULTI `a\` + 256 CJK refused "too long name" with no
+`a` left behind; SUB `a\` + 100 CJK in the 288-byte folder asks the create question and creates;
+DOTS `zz\..\` + 90 CJK creates the 270-byte name; TRAIL 256 CJK + `\` refused "too long name" -
+8 / 0) and a negative control of its own (only the `NULL, SAL_MAX_PATH_UTF8` arguments removed:
+7 PASS / 5 FAIL, all long rows back to "The path specified is too long."; reverted and rebuilt).
+Callers: `CreateDir` has one caller (F7, mainwnd3.cpp); every step after the join was already
+long-path capable; the other `SalGetFullName` callers' list is right.
+
+- SHOULD (in scope, fixed): the shipped probe did not prove "no missing parent is created" -
+  row MULTI added; probe re-run `probe/result_after.txt` (label after-review): **14 PASS / 0 FAIL**,
+  registry restored and identical, fixture removed.
+- NOTE 1 (fixed in spec): FR-004 said typed absolute paths behave as before, but the name check
+  applies to them too (a typed absolute path ending in 256 units now says "too long name" instead
+  of Windows' "invalid name") - FR-004 now says so.
+- NOTE 2 (pre-existing, harmless, not changed): `nextFocus` is not cleared between attempts of
+  the dialog loop - after a refused 256-letter name, a later successful absolute path gets the
+  stale focus name (nothing focused).
+- NOTE 3 (pre-existing, now reachable by relative names): the "create the missing folder?"
+  question cuts a long path inside a letter (`CheckAndCreateDirectory`, no
+  `SalU8TrimIncompleteTail`) -> Inbox
+  `the-question-whether-to-create-a-missing-folder-cuts-a-long` (review:274).
+- NOTE 4: a path between 32,767 UTF-16 units and `SAL_MAX_PATH_UTF8` bytes passes the join;
+  unchanged from typed absolute paths (spec Assumptions) - recorded under *Limits left*.
+- NOTE 5: the refusal uses code-page `LoadStr` in `SalMessageBox` - the existing line, same as 259.
+
 ## Limits left
 
 - A created folder whose name is 260+ bytes (CJK row) is not focused after the refresh (the

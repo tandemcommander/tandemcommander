@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Create Directory (F7) refused a new folder's name in a deep folder with "The path specified is too long."** (feature 274).
+  - **Before:** a name typed without a path was refused whenever the folder's path and the name together reached 260 bytes - in a deep folder, or for a long name in letters that take three bytes each (for example a Chinese name of 87 or more letters, even in a short folder). Typing the full path worked. A name longer than any file system takes got the same message, which blamed the path.
+  - **Now:** the folder is created from a typed name up to the program's path limit (as Edit New File, feature 259); a name longer than 255 characters is refused with "Cannot finish operation because of too long name." before anything is created, and a path over the program's limit with "The path specified is too long."; the dialog comes back with the text.
+  - **Limitation:** a new folder whose name is 260 bytes or longer is created but not selected afterwards.
+
 - **Copying from a TAR folder opened by a path typed in another case copied nothing** (feature 273).
   - **Before:** a folder inside an archive can be opened by typing its path - on the command line, in Change Directory (Shift+F7) or from a hot path - also in another case than the archive spells it, for example `archive.tar\DOCS` for the folder "Docs". The panel listed the folder but kept the typed spelling, and in a TAR archive (also .tgz, .tbz and the other formats of the TAR plug-in) Copy (F5) of its files then extracted nothing: the target stayed empty and no error was shown. 7z archives copied the files.
   - **Now:** the panel enters the folder under the archive's own spelling (the directory line shows `archive.tar\Docs`), and copying its files extracts them in every archive format. Archives that hold names differing only in case, and folders entered by Enter, behave as before.

@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
@@ -3494,3 +3494,20 @@ a few early ones are out of sequence).
   `copying-from-a-tar-folder-opened-in-another-case-extracts`. Probe `arccase273_probe.ps1` 8 / 4 ->
   12 / 0 (negative control: the block disabled -> 8 / 4); 252's probe 16 / 0; `TestArcPathRespell273`
   (negative control 7 FAIL); one refute-first review (no MUST / SHOULD).
+- 274-createdir-long-folder: F7 (Create Directory) refused a typed relative name with "The path
+  specified is too long." whenever the joined path reached 260 bytes - "nd" in a 288-byte folder,
+  100 CJK letters there, and even a valid 255-letter CJK name in a short folder; a name over 255
+  UTF-16 units got the same wrong reason - now `CreateDir` joins with `nameBufSize =
+  SAL_MAX_PATH_UTF8` (its buffer and the rest of the routine took long paths since 027; Edit New
+  File was fixed the same way in 259) and judges the new folder's own name with
+  `SalNameTooLongForFileSystemU8` before anything is created (also no missing parent of
+  `a\<256 letters>`): "Cannot finish operation because of too long name." (Windows alone answers
+  123 "invalid name" - negative control). Pack, Unpack and Make File List keep the default limit:
+  their buffers are 259 bytes (not this defect). Traps: `$PSScriptRoot` is empty in a `param()`
+  default (PS 5.1); a Bash here-document collapsed `\\` and put a NUL into the probe (123's trap).
+  Limits: a created name of 260+ bytes is not focused; an intermediate component over 255 units and
+  a path between 32,767 units and `SAL_MAX_PATH_UTF8` keep the system's answer; Inbox
+  `the-question-whether-to-create-a-missing-folder-cuts-a-long`. From backlog item
+  `create-directory-refuses-a-relative-name-in-a-folder-whose`. Probe `createdir274_probe.ps1`
+  8 / 4 -> 14 / 0 (negative control: the name check disabled -> U256 FAIL); one refute-first review
+  (no MUST; SHOULD row MULTI added).

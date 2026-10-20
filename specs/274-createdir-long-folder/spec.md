@@ -94,7 +94,9 @@ the program take such paths.
 - **FR-003**: A new folder name over 255 UTF-16 units MUST be refused before any creation attempt
   with "Cannot finish operation because of too long name."; the dialog comes back.
 - **FR-004**: Every other case (short names, absolute paths, invalid names, existing folders,
-  plug-in file systems, archives) MUST behave as before.
+  plug-in file systems, archives) MUST behave as before - except that FR-003 applies to every
+  typed form (a typed absolute path ending in a name over 255 units now says "too long name"
+  where Windows answered "invalid name").
 - **FR-005**: No new UI string; a path or name is never cut.
 
 ## Success Criteria *(mandatory)*

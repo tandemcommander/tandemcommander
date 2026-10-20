@@ -15,6 +15,8 @@
       LIMIT   the panel in the 288-byte folder, a relative path of 98,244 bytes typed (the joined
               path is longer than the program's limit, SAL_MAX_PATH_UTF8): nothing created,
               "The path specified is too long." shown
+      MULTI   the panel in a short folder, "a\" + 256 CJK letters typed: nothing created (also no
+              missing parent "a"), "too long name" shown
 
     MUST run through tools\run_on_hidden_desktop.ps1; refuses while tandemcommander.exe runs;
     the product's registry key is exported, restored and SHA-256-verified. Exit code = FAIL rows.
@@ -156,6 +158,7 @@ try {
     Row-Do 'U255' ($Root + '\u255') ($Cjk * 255) ($Cjk * 255)
     Row-Do 'U256' ($Root + '\u256') ($Cjk * 256) $null $tooLongName
     Row-Do 'LIMIT' (Deep 'limx') $limit $null $tooLongPath
+    Row-Do 'MULTI' ($Root + '\multi') ('a\' + ($Cjk * 256)) $null $tooLongName   # review: no missing parent "a" is made either
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
