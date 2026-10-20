@@ -1,7 +1,7 @@
 ---
 title: Backlog tool tests fail on a fresh checkout: the fixture folder specs/243-example is not in git
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: tooling
 source: measure:247
@@ -10,7 +10,7 @@ created: 2026-10-19
 updated: 2026-10-20
 verified: 2026-10-20 6085500d
 effort: S
-feature: -
+feature: 265
 related: []
 depends-on: []
 reason: -
@@ -51,3 +51,4 @@ why it exists), `test_backlog.py` passes on a fresh checkout, and the
 - 2026-10-19 — created (source measure:247)
 - 2026-10-19 — moved to Next position 24
 - 2026-10-20 — verified at 6085500d: at 6085500d: fixture check TOTAL 1 feature-missing; unittest test_backlog 68 tests, 28 failures 2 errors
+- 2026-10-20 — run started, feature 265
