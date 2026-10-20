@@ -69,8 +69,10 @@ tools/backlog/fixtures/
             └── README.md                  # new: why the folder exists
 ```
 
-**Structure Decision**: fixture files only; `tools/backlog/backlog.py`,
-`tools/backlog/test_backlog.py` and `tools/backlog/test_loop.py` stay unchanged.
+**Structure Decision**: fixture files, plus the removal of the now redundant workaround in
+`tools/backlog/test_loop.py` and `specs/247-backlog-run-loop/probe/e2e_real_claude.py`
+(after review 1, FR-007); `tools/backlog/backlog.py` and `tools/backlog/test_backlog.py`
+stay unchanged.
 
 ## Complexity Tracking
 

@@ -20,9 +20,13 @@
 ## R3 - Other consumers of the fixture
 
 - `tools/backlog/test_backlog.py` copies `fixtures/valid` (`shutil.copytree`) per test.
-- `tools/backlog/test_loop.py` copies it into a temporary git repository and then creates
-  `specs/243-example/README.md` itself (`mkdir(exist_ok=True)`, `write_text`): with the folder
-  present it just overwrites the copy's README - harmless; kept (spec Clarifications).
+- `tools/backlog/test_loop.py` copies it into a temporary git repository and then created
+  `specs/243-example/README.md` itself (`mkdir(exist_ok=True)`, `write_text`) - harmless, but
+  its comment would become false; removed (spec Clarifications).
+- `specs/247-backlog-run-loop/probe/e2e_real_claude.py` `make_repo()` did the same with
+  `mkdir(parents=True)` and no `exist_ok` - with the folder in the fixture it raises
+  `FileExistsError` (found by review 1, missed in the first enumeration, which searched only
+  `tools/`); removed.
 - `specs/242-backlog-system/probe/mutate.py` copies the tool folder for mutation testing;
   the fixture gains one file, which it copies along.
 - No test lists the files of `specs/`; the `iterdir` calls in the tests read

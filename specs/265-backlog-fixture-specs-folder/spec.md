@@ -28,7 +28,7 @@ Measured at `6085500d` on the maintainer's machine:
 
 ### Session 2026-10-20
 
-- Q: Should the workaround in `tools/backlog/test_loop.py` (it creates `specs/243-example/README.md` in its temporary copy) be removed now that the folder is committed? → A: No - it stays; it is harmless with the folder present, and the item does not ask for it (autonomous run: conservative)
+- Q: Should the workaround in `tools/backlog/test_loop.py` (it creates `specs/243-example/README.md` in its temporary copy) be removed now that the folder is committed? → A: Yes - revised after review 1: the same workaround in the 247 end-to-end probe (`specs/247-backlog-run-loop/probe/e2e_real_claude.py`, `mkdir` without `exist_ok`) crashes with `FileExistsError` once the folder is in the fixture, and the comment in `test_loop.py` would become false; both workarounds are removed so every consumer takes the folder from the fixture (autonomous run: conservative - first answer "keep it" withdrawn because it broke a caller)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -60,8 +60,9 @@ test suite.
   (the check accepts any content inside a `specs/NNN-*` folder).
 - The seeded `feature-missing` defect must still remove the whole folder, file included, so
   the negative case keeps failing the check.
-- The loop tool's tests (feature 247), which already create the folder with a file in their
-  own temporary copy, must keep passing.
+- The loop tool's tests and its end-to-end probe (feature 247), which created the folder
+  with a file in their own temporary copy, must keep working once the folder comes from the
+  fixture.
 
 ## Requirements *(mandatory)*
 
@@ -80,6 +81,9 @@ test suite.
   folder is kept in git.
 - **FR-006**: The backlog tool itself (`tools/backlog/backlog.py`) and the product MUST NOT
   change.
+- **FR-007**: The consumers that created the folder themselves (`tools/backlog/test_loop.py`
+  and `specs/247-backlog-run-loop/probe/e2e_real_claude.py`) MUST take it from the fixture
+  instead; the probe's repository set-up MUST no longer fail.
 
 ## Success Criteria *(mandatory)*
 

@@ -60,10 +60,6 @@ class Base(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp(prefix="loop247-"))
         self.root = self.tmp / "repo"
         shutil.copytree(VALID, self.root)
-        # the fixture's empty folder is not in git (backlog item
-        # backlog-fixture-empty-specs-folder-missing); a file keeps it here
-        (self.root / "specs" / "243-example").mkdir(parents=True, exist_ok=True)
-        (self.root / "specs" / "243-example" / "README.md").write_text("fixture\n", encoding="utf-8")
         git(self.root, "init", "-q", "-b", "main")
         git(self.root, "config", "user.email", "t@example.invalid")
         git(self.root, "config", "user.name", "t")

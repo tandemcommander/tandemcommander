@@ -31,6 +31,11 @@ None - no blocking prerequisites.
 - [X] T006 Commit the fixture files, then in a fresh clone of the branch (`git clone` into `%TEMP%`) run quickstart steps 1-2 (SC-001, SC-002) and the negative control of step 4 (delete the folder -> failures return, SC-003); record in `specs/265-backlog-fixture-specs-folder/fix-log.md`, delete the clone
 - [X] T007 Run `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`; confirm `git diff main...HEAD --stat` touches no file of `tools/backlog/*.py` or the product (FR-006); record in `specs/265-backlog-fixture-specs-folder/fix-log.md`
 
+## Phase 5: Review 1 findings
+
+- [X] T008 Remove the workaround that creates `specs/243-example/README.md` from `tools/backlog/test_loop.py` (`setUp`) and from `specs/247-backlog-run-loop/probe/e2e_real_claude.py` (`make_repo`, which crashed with `FileExistsError`) (FR-007)
+- [X] T009 Re-run `test_backlog.py`, `test_loop.py` (working tree and fresh clone), the probe's `make_repo()` in a fresh clone of the branch and of `main` (control), and the encoding guard; record in `specs/265-backlog-fixture-specs-folder/fix-log.md`
+
 ## Dependencies & Execution Order
 
 - T001 -> T002 -> T003 -> T004 -> T005 -> T006 -> T007 (T002 and T003 touch different files and could run in parallel, but both are tiny).

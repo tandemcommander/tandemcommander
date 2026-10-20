@@ -86,8 +86,6 @@ def git(root, *args):
 def make_repo(base: Path) -> Path:
     root = base / "repo"
     shutil.copytree(TOOLS / "fixtures" / "valid", root)
-    (root / "specs" / "243-example").mkdir(parents=True)
-    (root / "specs" / "243-example" / "README.md").write_text("fixture\n", encoding="utf-8")
     (root / "tools" / "backlog").mkdir(parents=True)
     shutil.copy2(TOOLS / "backlog.py", root / "tools" / "backlog" / "backlog.py")
     (root / "tools" / "e2e_work.py").write_text(WORK, encoding="utf-8")
