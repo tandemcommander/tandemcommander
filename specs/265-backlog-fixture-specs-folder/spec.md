@@ -24,6 +24,12 @@ Measured at `6085500d` on the maintainer's machine:
 - `tools/backlog/test_loop.py` (feature 247) creates `specs/243-example/README.md` itself in
   its temporary repository as a workaround.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: Should the workaround in `tools/backlog/test_loop.py` (it creates `specs/243-example/README.md` in its temporary copy) be removed now that the folder is committed? → A: No - it stays; it is harmless with the folder present, and the item does not ask for it (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The backlog tool's tests pass on a fresh checkout (Priority: P1)
@@ -88,7 +94,6 @@ test suite.
 ## Assumptions
 
 - Assumption (autonomous run): the folder is kept by a `README.md` (the item's own example)
-  rather than a `.gitkeep`, so it explains itself; `test_loop.py`'s workaround may stay, as it
-  is harmless with the folder present, and removing it is not asked for by the item.
+  rather than a `.gitkeep`, so it explains itself.
 - Assumption (autonomous run): no product code, build or UI string changes; the change is
   user-invisible, so no `CHANGELOG.md` entry.
