@@ -173,3 +173,37 @@ at a damaged source entry - outside the item, task T009 records it in the Inbox.
 - The registry hash of these runs (383EAEA4...) differs from the first runs (260702C3...): the
   configuration changed between the runs (the reviewer's probes ran in between); every run restored
   its own backup identically, and `reg query ... /f tc268` and `/f T268` find nothing in the real key.
+
+### Review 2 (fresh independent refute-first review, with the findings of review 1) - no MUST
+
+- Re-ran the probe with 9 more User Menu rows of its own (nested damaged beginning, a beginning without
+  an end, a damaged stray end, a damaged end without Item Name, a damaged beginning whose Type is
+  REG_SZ, two damaged beginnings in a row, a damaged pair, a stray end followed by a damaged
+  beginning, an intact nested list with a separator): PASS 100 / FAIL 0; on the unfixed
+  `Debug_x64_pre251` 18 rows fail (every damaged case); the intact controls save the same list on both.
+  Confirmed: intact entries load as before; the synthesized end never uses the damaged entry's buffers;
+  icons are matched by file and index (`GiveIconForUMI`), so a skipped entry cannot shift them; the
+  quiet direct `GetValueAux` is safe; every low-memory path closes the key.
+- **SHOULD 1** (fixed): the synthesized end's name was `LoadStr(IDS_ENDUSERSUBMENU)` - a code-page string
+  in the UTF-8 `ItemName` (standing rule "UTF-8 sinks take `LoadStrU8`"). Now `LoadStrU8`. The
+  configuration page it was copied from (`src/dialogs4.cpp`) has the same pre-existing use -> Inbox
+  `the-user-menu-page-names-a-new-submenu-end-in-the-code-page` (review:268).
+- NOTE 1 (a damaged beginning whose Type cannot be read is skipped like an item, its intact end stays
+  stray - the rest is kept and the end can be moved down in the configuration page): accepted; the
+  type is unknown, the rule does not guess (spec edge cases).
+- NOTE 2 (the header comment "nothing dropped there" beyond 256 levels was wrong - the damaged
+  beginning itself is dropped there, its end stays): comment fixed in `salumbalance.h` and in the
+  saltests check.
+- NOTE 3 (the flaky V-NOTYPE END row): judged not caused by the change - the loaders run in
+  `LoadConfig` before the main window exists, the hang came about 15 s later, and the row's list
+  differs from V-CONTROL only in content nothing reads while idle; passed again in its run.
+- NOTE 4 (a damaged end's own stored name becomes "(Submenu End)"): cosmetic; an end's texts are
+  never used.
+- NOTE 5 (CHANGELOG / FEATURE-HISTORY): written at the close step.
+
+### After review 2
+
+- `.\build.cmd` - BUILD SUCCEEDED; `saltests.exe` - 24778 checks, 0 failed;
+  `python tools/check_encoding.py --strict` - TOTAL: 0 finding(s); clang-format: no change on the
+  edited lines.
+- Probe (`probe/result_after.txt`, 21:29): **PASS 64, FAIL 0**, registry restored identical.

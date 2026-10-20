@@ -3147,10 +3147,10 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                                                  throughShell, closeShell, useWindow,
                                                  showInToolbar, type, bkgndReaderData);
                     }
-                    else // SALUM_LOAD_AS_END: a plain end, as the configuration page creates it
+                    else // SALUM_LOAD_AS_END: a plain end, as the configuration page creates it (the name UTF-8)
                     {
                         static char emptyBuffer[] = "";
-                        item = new CUserMenuItem(LoadStr(IDS_ENDUSERSUBMENU), emptyBuffer, emptyBuffer, emptyBuffer,
+                        item = new CUserMenuItem(LoadStrU8(IDS_ENDUSERSUBMENU), emptyBuffer, emptyBuffer, emptyBuffer,
                                                  emptyBuffer, FALSE, FALSE, FALSE, FALSE, umitSubmenuEnd, NULL);
                     }
                     if (item != NULL && item->IsGood())

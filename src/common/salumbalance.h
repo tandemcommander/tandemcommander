@@ -51,7 +51,7 @@ class CSalUMSubmenuBalance
 public:
     enum
     {
-        MAX_TRACKED = 256 // deeper levels are treated as intact (nothing dropped there)
+        MAX_TRACKED = 256 // deeper levels are not tracked: a damaged beginning there is skipped, its end stays
     };
 
 protected:

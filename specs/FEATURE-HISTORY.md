@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3386,3 +3386,26 @@ a few early ones are out of sequence).
   PASS 32 / FAIL 33 -> 80 / 0 (reopen rows 12 / 3 -> 15 / 0, negative control with the old table
   o4 / o5 / o7 FAIL); 132 Update Thumbnail 16 / 0, 120 20 / 0; saltests 24,757 / 0; two
   refute-first reviews (1 interrupted without a report; 2 no MUST, SHOULD S1 fixed).
+- 268-damaged-list-entries: a damaged entry of the viewers, alternative viewers, editors or User Menu
+  list (a required value missing or of the wrong type, masks too long or with `|` - a hand edit, an
+  imported `.reg`) ended the list at start-up (`else break;` before the advance and the close) and
+  left its key open; the save on exit clears the key and rewrites it from what was loaded, so every
+  later entry was erased without a word (a damaged first entry: the whole list) - now the damaged
+  entry is closed and skipped and the rest loads and is saved; the low-memory `break`s still end the
+  list but close the key. Pure rule `src/common/salumbalance.h` (`CSalUMSubmenuBalance`): a skipped
+  damaged User Menu submenu beginning takes its matching end along (the items inside move one level
+  up), a damaged end loads as a plain end (named `LoadStrU8(IDS_ENDUSERSUBMENU)`, as the configuration
+  page makes one); intact lists load as read, also the user's own stray end. Traps: "a cut list was
+  unbalanced the same way" was wrong - a cut list only lacks an end, a skipped beginning leaves a
+  stray end that stops `FillUserMenu2`, takes the toolbar to level -1 and cannot be deleted in the
+  configuration page (review 1); the damaged entry's Type is read quietly (`GetValueAux`, quiet) so
+  no extra box; the configuration page itself names a new end with code-page `LoadStr` (Inbox
+  `the-user-menu-page-names-a-new-submenu-end-in-the-code-page`). Limits: the damaged entry itself
+  is not written back; N wrong-type values show N "Error Loading Configuration" boxes (as each read
+  always did); a numbering gap or an unopenable entry key still ends the list; a damaged beginning
+  whose Type is unreadable leaves its end stray; the settings import still ends these lists at a
+  damaged source entry (Inbox `settings-import-ends-the-viewers-editors-and-user-menu-lists`). One
+  flaky probe row (WM_NULL unanswered once, about 15 s after start, not reproduced). From backlog item
+  `a-damaged-viewer-editor-or-user-menu-entry-erases-the`. Probe `dmg268_probe.ps1` PASS 30 / FAIL 18
+  -> 64 / 0 (4 cases added after review 1; negative control on an unfixed build fails every damaged
+  row); saltests 24,778 / 0; two refute-first reviews (no MUST; SHOULDs fixed).

@@ -15103,8 +15103,8 @@ static void TestUserMenuBalance268()
     // the negative control: without the rule, skipping the damaged beginning alone keeps its end
     // (a stray end that hides the rest of the menu) - the rule must differ from "skip only the entry"
     CHECK(Balance268({DB, I, E, I}) != "SLLL");
-    // deeper than the tracked levels: treated as intact (nothing dropped there), the shallower
-    // levels still balance
+    // deeper than the tracked levels: a damaged beginning there is skipped but its end stays (not
+    // tracked), the shallower levels still balance
     std::vector<CSalUMEntryKind> deep;
     deep.push_back(DB);
     for (int k = 0; k < CSalUMSubmenuBalance::MAX_TRACKED + 5; k++)
