@@ -8,7 +8,7 @@ source: leftover:251
 who: agent
 created: 2026-10-20
 updated: 2026-10-20
-verified: -
+verified: 2026-10-20 11e20a84
 effort: M
 feature: -
 related: []
@@ -67,3 +67,4 @@ system is far below 260 bytes) - check first.
 - 2026-10-20 — created (source leftover:251)
 - 2026-10-20 — related item dialog-typed-text-cut-to-caller-buffer done in feature 251
 - 2026-10-20 — moved to Next position 3
+- 2026-10-20 — verified at 11e20a84: reproduced at 11e20a84 by a hidden-desktop probe: Select/Unselect/Filter cut to 259 bytes, Convert converted a file the typed mask missed, the volume label written cut, F2 label stored as 86 of 100 letters
