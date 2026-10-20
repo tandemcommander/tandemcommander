@@ -36,6 +36,8 @@ configuration writes and deletes foreign keys silently.
 - Q: Which keys count as "ours"? → A: `HKEY_CURRENT_USER` + exactly the current configuration root `Software\Tandem Commander\0.1` or a key below it (the root followed by `\`); compared case-insensitively as the registry does; the parent `Software\Tandem Commander`, a sibling such as `Software\Tandem Commander\0.10`, any other root key (`HKEY_CLASSES_ROOT`, `HKEY_LOCAL_MACHINE`, ...) and a bare root line (`[HKEY_CURRENT_USER]`) are outside (autonomous run: conservative)
 - Q: Do delete lines (`[-key]`) follow the same rule? → A: Yes - a delete line outside our root refuses the file like a key line; delete lines inside our root (the program's own export starts with `[-HKEY_CURRENT_USER\Software\Tandem Commander\0.1]`) keep working (autonomous run: conservative)
 - Q: Does the now unused question text `IDS_IMPORTCFG_NOTOURVER` get removed? → A: No - removing a UI string also needs the translation refresh; it stays in the resources unused (autonomous run: rule 084)
+- Q: A refused file stays where it is - is it refused again (with the message) at every start? → A: Yes, like a file with a format error today; the program never deletes, renames or rewrites the user's file (autonomous run: conservative)
+- Q: Is the key that caused the refusal recorded anywhere? → A: In the program's trace log only (the first key outside the root, with the file name); the message box stays the existing text (autonomous run: conservative + rule 084)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -123,6 +125,7 @@ import exactly as today, without a message.
   refuse the file (unchanged).
 - A UTF-16 (`Windows Registry Editor Version 5.00`) and a `REGEDIT4` file follow the same rule.
 - The installer's upgrade path (`autoImportConfig`) skips the file import as today (unchanged).
+- A refused file is left untouched and is refused again at the next start (FR-007).
 
 ## Requirements *(mandatory)*
 
@@ -145,6 +148,8 @@ import exactly as today, without a message.
 - **FR-006**: The decision "is this key inside the root" MUST be a pure rule under `src/common/`
   with `saltests` checks (equal, below, sibling with a longer name, parent, other root keys, letter
   case, empty name, doubled backslash).
+- **FR-007**: The program MUST NOT delete, rename or change a refused file; the trace log MUST name
+  the first key outside the root and the file.
 
 ### Key Entities
 
