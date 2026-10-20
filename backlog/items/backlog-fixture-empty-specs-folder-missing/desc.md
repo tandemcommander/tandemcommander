@@ -7,8 +7,8 @@ area: tooling
 source: measure:247
 who: agent
 created: 2026-10-19
-updated: 2026-10-19
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 6085500d
 effort: S
 feature: -
 related: []
@@ -50,3 +50,4 @@ why it exists), `test_backlog.py` passes on a fresh checkout, and the
 
 - 2026-10-19 — created (source measure:247)
 - 2026-10-19 — moved to Next position 24
+- 2026-10-20 — verified at 6085500d: at 6085500d: fixture check TOTAL 1 feature-missing; unittest test_backlog 68 tests, 28 failures 2 errors
