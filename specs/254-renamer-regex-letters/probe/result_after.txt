@@ -1,6 +1,6 @@
 ren_regex_probe (feature 254), expect: fixed
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 03:57; ACP 1250; registry key existed True
+Date    : 2026-10-20 04:30; ACP 1250; registry key existed True
 
 dot        RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 586C75C5A52E747874 want 586C75C5A52E747874; boxes: no box
 dot        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -36,10 +36,18 @@ empty      RUN    PASS        preview rows 1; boxes as expected: True; on disk: 
 empty      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ww-mark    RUN    PASS        preview rows 1; boxes as expected: True; on disk: before 43616665CC8120782E747874 got 43616665CC8120782E747874 want 43616665CC8120782E747874; boxes: [#32770 'Renamer'] [Static id=2477] Nothing to do. | [Button id=1] OK
 ww-mark    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+bs-lit     RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 5A6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: no box
+bs-lit     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+bs-class   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C3856C75C5A52E747874 got C3856C75C5A52E747874 want C3856C75C5A52E747874; boxes: [#32770 'Renamer'] [Static id=2477] Nothing to do. | [Button id=1] OK
+bs-class   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+esc-ci-cls RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BD6C75C5A52E747874 got 5A6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: no box
+esc-ci-cls END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ungreedy   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 5875C5A52E747874 want 5875C5A52E747874; boxes: no box
+ungreedy   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 asc-wb     RUN    PASS        preview rows 1; boxes as expected: True; on disk: before 616263206465662E747874 got 586263205865662E587874 want 586263205865662E587874; boxes: no box
 asc-wb     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 asc-dot    RUN    PASS        preview rows 1; boxes as expected: True; on disk: before 6162632E747874 got 59632E747874 want 59632E747874; boxes: no box
 asc-dot    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
 
-Rows: PASS 38, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 46, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

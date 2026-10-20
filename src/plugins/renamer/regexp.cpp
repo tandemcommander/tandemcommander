@@ -972,7 +972,7 @@ char* CRegExp::RegAtom(int* flagp, int* fixedw)
             else if (value < 0x80)
                 enc[0] = (unsigned char)(Caseles ? REG_LOWER((char)value) : (char)value), n = 1;
             else
-                n = SalU8EncodeChar(Caseles ? SalU8FoldCodePoint(value) : value, enc);
+                n = SalU8EncodeChar(value, enc); // (folded by GetEscapedUnit when case-insensitive)
             ret = RegNode(EXACTLY);
             for (int i = 0; i < n; i++)
                 RegC((char)enc[i]);
@@ -1322,8 +1322,10 @@ void CRegExp::ClassAddRangeOf(unsigned first, unsigned last, BOOL lastEscaped)
                 ClassSetByte((unsigned char)REG_INVERT((char)c));
         }
     }
-    else
+    else if (first < SALU8_INVALID_BASE && last < SALU8_INVALID_BASE)
         ClassAddRange(fb, lb);
+    else // a byte that starts no letter against a letter: no range, both bounds are members
+        ClassAddValue(last);
 }
 
 // the class into the program: its ANYOF operand (data-model.md)
@@ -1411,8 +1413,24 @@ char CRegExp::GetEscapedChar()
 unsigned CRegExp::GetEscapedUnit()
 {
     CALL_STACK_MESSAGE_NONE
-    if (*RegParse != 'x')
+    unsigned value;
+    if ((unsigned char)*RegParse >= 0x80) // "\z-caron": the whole letter, never its lead byte alone
+        value = ParseLiteralUnit();
+    else if (*RegParse != 'x')
         return (unsigned char)GetEscapedChar();
+    else
+        value = GetHexEscapedUnit();
+    // case-insensitive: a letter given by escapes is folded like a typed one (the pattern's
+    // typed letters and the name are folded by the renamer)
+    if (Caseles && value >= 0x80 && value < SALU8_INVALID_BASE && IsGood())
+        value = SalU8FoldCodePoint(value);
+    return value;
+}
+
+// consecutive "\xHH" escapes at RegParse (on the 'x') as one unit
+unsigned CRegExp::GetHexEscapedUnit()
+{
+    CALL_STACK_MESSAGE_NONE
     unsigned char bytes[4];
     char* lastDigit[4];
     int count = 0;
@@ -2058,6 +2076,8 @@ int CRegExp::ClassMatch(const char* opnd, const char* p)
 {
     unsigned value;
     int n = SalU8UnitLen(p, RegEol, &value);
+    if (n == 0)
+        return 0; // at the end of the text
     if (value < 0x80)
         return INCLASS(opnd, value) ? n : 0;
     if (value >= SALU8_INVALID_BASE) // a byte that starts no letter: the bitmap's upper half

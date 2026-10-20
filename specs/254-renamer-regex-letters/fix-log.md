@@ -108,3 +108,36 @@ letter whose two cases differ in UTF-8 length stays case-sensitive (210); no can
 but different letter counts (e.g. `(?<=ab|z-caron)`) is now refused as "not fixed width" - it is
 fixed in letters only when the counts agree (the reverse, `(?<=a|z-caron)`, was refused before and is
 accepted now); without icu.dll a letter outside the BMP is in no class (still one whole letter).
+
+## Review
+
+### Review 1 (refute-first, independent agent)
+
+Sound: the fix-log measurement re-run in a standalone build of the engine (main reproduces, the
+branch fixes); 79,616 non-ASCII cases - main 21,659 invalid-UTF-8 results, the branch 0; ASCII
+4,928 pattern / name / option cases byte-identical to main (results and error codes); the
+variable-length class sized alike in both passes, RegInsert / RegNext safe; back-off consistent;
+RESubst skip; no data-loss path besides M1.
+
+- **MUST M1** - a backslash before a non-ASCII letter (`\ž`, `[\ž]`, `[a-\ž]`): `GetEscapedUnit`
+  returned the lead byte as a code point (U+00C5) - `[\ž]` renamed "Åluť.txt" to "Zluť.txt" (a
+  wrong file name; reproduced on the hidden desktop), `\ž` no longer matched "žluť" (main did, byte
+  by byte). **Fixed**: an escape of a byte >= 0x80 takes the whole letter (`ParseLiteralUnit`).
+- **SHOULD S1** - a case-insensitive `\x` letter inside a bracket was not folded (`[\xC5\xBD]` missed
+  "Žluť"). **Fixed**: `GetEscapedUnit` folds every escaped letter when case-insensitive (outside
+  and inside brackets, range bounds too).
+- **SHOULD S2** - the engine has no unit tests (it lives in the plug-in with its CType / LowerCase
+  tables). Taken as probe rows instead: bs-lit, bs-class, esc-ci-cls, ungreedy (the probe now has
+  23 rows).
+- NOTE N1 - `(?<=ab|ž)` now refused "not fixed width" (fixed in letters only when the counts agree):
+  kept, recorded under *Limits*. N2 - a range between a byte that starts no letter and a letter
+  (`[\xC5-ž]`) made U+00C5..U+017E: **now no range** (both bounds members); an escaped ASCII end
+  stays exclusive (the old byte loop, FR-012) while a letter end is inclusive - recorded. N3 - a
+  latent uninitialised read in `ClassMatch` at the end of the text (unreachable): guarded. N4 - the
+  history now treats "Ž" / "ž" as one entry (FR-011, as ASCII did): as designed.
+
+Rebuilt: `BUILD SUCCEEDED`; saltests 24439 / 0.
+
+After the fixes: `probe/result_after.txt` 46 / 0 (23 RUN + 23 END), registry restored identical -
+bs-lit "Zluť", bs-class nothing renamed ("Åluť" stays), esc-ci-cls "Zluť", ungreedy "Xuť", the 19
+earlier rows as before.

@@ -27,6 +27,10 @@
                 after a letter skips the whole letter)
       ww-mark   "Cafe + U+0301 x.txt", plain search "Cafe" -> "Tea" with Whole words: nothing renamed
                 (the combining mark belongs to the word)
+      bs-lit    "z lut'.txt", "\" + z-caron -> "Z": "Zlut'.txt" (review M1: the escaped letter whole)
+      bs-class  "A-ring lut'.txt", "[\" + z-caron + "]" -> "Z": nothing renamed (M1: not U+00C5)
+      esc-ci-cls "Z lut'.txt", "[\xC5\xBD]" case-insensitive -> "Z": "Zlut'.txt" (review S1)
+      ungreedy  "z lut'.txt", "^.+?l" -> "X": "Xut'.txt"
       asc-wb    control "abc def.txt", "\b\w" Global -> "X": "Xbc Xef.Xxt"
       asc-dot   control "abc.txt", "^.." -> "Y": "Yc.txt"
     Driver of 210's probe. MUST run through tools\\run_on_hidden_desktop.ps1. Registry exported,
@@ -313,6 +317,11 @@ function Run-RenCases {
     S-Row 'ci-class' ($capZl + '.txt') $nm ('z' + $tail) ('^[' + (S 0x17E) + ']') 'z' (Ck $false)
     S-Row 'empty' ((S 0x17E) + 'l.txt') $nm ('-' + (S 0x17E) + '-.txt') 'l*' '-' (Ck $true $true $true $true)
     S-Row 'ww-mark' ('Cafe' + (S 0x301) + ' x.txt') $nm ('Cafe' + (S 0x301) + ' x.txt') 'Cafe' 'Tea' @{ 112 = $true; 113 = $true; 114 = $true; 115 = $false; 123 = $false }
+    # review findings (M1, S1, S2): a backslash before a letter, a case-insensitive escape in a class, ungreedy
+    S-Row 'bs-lit' ($zl + '.txt') $nm ('Z' + $tail) ('\' + (S 0x17E)) 'Z' (Ck)
+    S-Row 'bs-class' ((S 0xC5) + $tail) $nm ((S 0xC5) + $tail) ('[\' + (S 0x17E) + ']') 'Z' (Ck)
+    S-Row 'esc-ci-cls' ($capZl + '.txt') $nm ('Z' + $tail) '[\xC5\xBD]' 'Z' (Ck $false)
+    S-Row 'ungreedy' ($zl + '.txt') $nm ('X' + 'u' + (S 0x165) + '.txt') '^.+?l' 'X' (Ck)
     S-Row 'asc-wb' 'abc def.txt' $nm 'Xbc Xef.Xxt' '\b\w' 'X' (Ck $true $true $true)
     S-Row 'asc-dot' 'abc.txt' $nm 'Yc.txt' '^..' 'Y' (Ck)
 }

@@ -89,6 +89,7 @@ private:
     void ClassEmit(int comp);
     unsigned ParseLiteralUnit();
     unsigned GetEscapedUnit();
+    unsigned GetHexEscapedUnit();
 
     // Global work variables for regexec().
     char* RegInput;   /* String-input pointer. */

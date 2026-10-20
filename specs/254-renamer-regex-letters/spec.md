@@ -180,7 +180,7 @@ saltests.
 
 ### Measurable Outcomes
 
-- **SC-001**: All 19 probe rows pass (before: 17 fail), including the 2 ASCII controls.
+- **SC-001**: All 23 probe rows pass (before: 17 of the first 19 fail; the 4 rows added after the review cover its findings), including the 2 ASCII controls.
 - **SC-002**: None of the probe's expressions is refused "(123)" for a non-ASCII name.
 - **SC-003**: The regression probes of the Renamer (210's 16 rows, 199, 196, 206, 207, 208, 209)
   still pass.
