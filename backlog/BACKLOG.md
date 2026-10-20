@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Archives: long member names refused by the cache, long folders skipped](items/archive-long-names-cache-folders-tar/desc.md) | bug | 4 | archives | 260 |
 
 ## Next
 

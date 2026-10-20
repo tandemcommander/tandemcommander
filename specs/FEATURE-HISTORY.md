@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -3222,3 +3222,25 @@ a few early ones are out of sequence).
   `create-directory-refuses-a-relative-name-in-a-folder-whose`. From backlog item
   `core-long-name-wrong-refusals`. Probe `editnew259_probe.ps1` 7 / 3 -> 14 / 0; `TestCopyName259`
   (negative control: the old 260-byte limit fails 5); one refute-first review (no MUST).
+- 260-archive-cache-long-names: F3 / F4 of an archive member with a long valid name (90 CJK letters
+  = 274 bytes) said "resulting filename is too long" - the disk cache limited its temporary copy to
+  259 BYTES; a .gz file's stored name was cut at 259 bytes and extracted under the cut (or, cut
+  inside a letter, garbled) name - now the core's F3 / F4 ask the cache's long mode
+  (`salcachename.h` `SalCacheTmpPathFitsU8`: at most 259 UTF-16 units; the plug-in services and the
+  User Menu keep the byte rule - plug-ins may copy the path into 260 bytes), the edit's way back
+  holds the copy's path whole (`CheckAndPackAndClear` cut at 620 bytes with `_TRUNCATE`;
+  `CopyFilesTo`), the start-up cleanup walks long names (bounded at 128 levels, review 2), and the
+  gzip name is read whole (64 KiB bound) and refused over 255 units with the system's "(206)"
+  text. Long folders in archives: measured already reported by every route - no change. Traps:
+  feature 095's 520-byte limit of the name handed to the archiver still refuses longer members
+  (review 1 MUST - kept, claims corrected; Inbox
+  `f3-f4-refuse-archive-members-whose-path-inside-the-archive`); the program regenerates its
+  environment from the registry, so a probe cannot give it another TEMP; Bash here-documents and
+  MSYS `//` arguments garbled a test insertion. Limits: the long-%TEMP% edit-back, "Copy selected
+  to..." and the crash cleanup are a person's
+  (`editing-long-named-archive-members-the-rows-the-feature-260`); Inbox
+  `unrar-plug-in-a-member-name-over-259-bytes-overflows-a-stack`,
+  `focusing-an-archive-member-with-a-very-long-name-shows`, decision
+  `a-gz-file-whose-stored-name-is-too-long-for-windows-refuse`. From backlog item
+  `archive-long-names-cache-folders-tar`. Probe `cache260_probe.ps1` 10 / 4 -> 16 / 0; 222's probe
+  10 / 0; `TestCacheTmpPath260`; two refute-first reviews (review 1 one MUST, fixed; review 2 none).
