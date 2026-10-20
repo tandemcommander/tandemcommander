@@ -1,0 +1,15 @@
+ren_long_probe (feature 207), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 04:10; ACP 1250; registry key existed True
+
+undo-long  RUN    PASS        preview rows 1; boxes as expected: True; on disk: ??????????????????????????????????????????????????????????????????????????????????????????.txt; boxes: no box || undo: [#32770 'Question'] [Static id=2477] Undo rename operation? | [Button id=6] &Yes | [Button id=7] &No
+undo-long  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rmsrc-long RUN    PASS        preview rows 1; boxes as expected: True; on disk: a.txt,keep.txt; boxes: no box
+rmsrc-long END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long-root  RUN    PASS        refused before the dialog; boxes as expected: True; on disk: in the folder: tc207uniq.txt; C:\tc207uniq.txt False, C:\tc207uniq-b.txt False; boxes: [#32770 'Renamer - Error'] [Static id=2477] Unable to read directory because of too long path name | [Button id=1] OK
+long-root  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+short-ctl  RUN    PASS        preview rows 1; boxes as expected: True; on disk: x.txt; boxes: no box || undo: [#32770 'Question'] [Static id=2477] Undo rename operation? | [Button id=6] &Yes | [Button id=7] &No
+short-ctl  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -42,3 +42,69 @@ gives only C1_DEFINED (U+20000, U+1D400, U+10400); U+0301 is C3_NONSPACING; `icu
 `speckit-analyze`: 0 CRITICAL, 0 HIGH. MEDIUM I1 (the spec's assumption named only nonspacing marks,
 research R2 all marks) fixed. LOW C1 (no task for the CHANGELOG entry - written at closing) and A1
 (SC-003 names no row counts - recorded per probe here) accepted. Second run: nothing above LOW.
+
+Added row `ww-mark` (the plain "Whole words" search, FR-014) and measured it on the same build
+(`probe/result_before_wwmark.txt`): "Cafe" -> "Tea" with Whole words on "Cafe" + U+0301 renamed
+the file to "Tea" + U+0301 - the combining mark was judged no letter, so "Cafe" was a whole word and
+the accent landed on another word. Before total: 17 of 19 RUN rows FAIL.
+
+## Work
+
+- `src/common/salu8letter.h` (new, header-only): units - `SalU8UnitLen` (a valid character, a
+  WTF-8 lone surrogate, else one byte = `SALU8_INVALID_BASE + byte`), `SalU8UnitBack`,
+  `SalU8IsUnitBoundary`; `SalU8LetterTypes` (C1 types of `GetStringTypeW` for the BMP;
+  `icu.dll` `u_charType` - loaded from System32 at the first use - outside the BMP and for marks;
+  without ICU a BMP mark by C3_NONSPACING / C3_VOWELMARK when the letter is not alphabetic - Windows
+  calls a precomposed "e-acute" nonspacing too); `SalU8IsWordValue` (letter, digit, mark, `_`);
+  the plain whole-word tests `SalU8IsAlnumAt` / `SalU8IsAlnumBefore` moved here from salu8fold.h
+  (now letters, digits and marks, also outside the BMP).
+- `src/common/salu8fold.h`: `SalU8FoldCodePoint` (210's same-length lower case + the final sigma
+  as sigma), used by `SalU8FoldSameLength` - the plain and the regex search agree.
+- `regexp.cpp` / `regexp.h` (the engine): `.` / classes consume a unit; a class is a
+  variable-length operand (the bitmap of ASCII and of bytes that start no letter, NEG, type tests,
+  code-point ranges); POSIX classes / `\w` no longer set bitmap bits >= 0x80 (the code page's
+  meaning) - they test the letter's types; ranges of two ASCII (or byte) bounds keep the old byte
+  loop exactly (also its quirks: an escaped end is exclusive, a reversed range wraps), a non-ASCII
+  bound makes a code-point range; a literal run backs off its last unit before `*+?`, a one-unit
+  literal is SIMPLE and repeated whole; EXACTLY ends only on a unit boundary; `\x` escapes that form
+  one character are one unit (case-insensitive: folded); STAR / PLUS back off one unit at a time,
+  UG* advance by the unit; `\b` / `\B` judge the unit before and at the position (ASCII by the
+  engine's `IsWord` as before); look-behind widths count units; `RegExec` starts only at unit
+  boundaries.
+- `crenamer.cpp`: `RESubst` skips a whole unit after an empty match; whole words via salu8letter.h.
+- `dialogs.cpp`: `HistoryComboBox` dedupes by `SalNameOrderEqualCI` (092) instead of the code-page
+  `StrICmp`.
+- `saltests.cpp`: `TestU8Letter254` (units over mixed text incl. torn, overlong, truncated, F5 and
+  surrogate bytes - stepping back equals stepping forward and boundaries are exactly the forward
+  positions; types of Cyrillic, Arabic digit, marks Mn / Mc / Me, e-acute, CJK / Deseret /
+  mathematical letters and digits outside the BMP, an emoji; word values; whole words with a mark;
+  the sigma fold).
+
+Not changed (decided): the preview's sort (already by letters, see above).
+
+## Checks
+
+- Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- Build: `.\build.cmd` -> first attempt `error C2440` (const char* from `SalU8UnitBack` into the
+  STAR back-off pointer) - cast added; second -> `BUILD SUCCEEDED`.
+- saltests: `saltests: 24439 checks, 0 failed`.
+
+## Measured (after)
+
+`probe/result_after.txt`: RUN 19 / 19 PASS, END 19 / 19 PASS (38 / 0), registry restored identical:
+dot "Xluť", w-cyr "W", class "zluť", negclass "Nluť", range "Rluť", quant "Zluť", **wordb "ЖабA"**
+(the last а), lookb "žLuť", esc "Zluť", sigma / bm-sigma "λόγοs", mark "W x", nonbmp "W x", posix
+"P", ci-class "zluť", empty "-ž-", ww-mark nothing renamed, the ASCII controls as before.
+
+Regressions (`probe/regress_*.txt`, hidden desktop, each registry restored identical): 210
+`ren_search_probe` 16 / 0, 196 `ren_cs_probe` 8 / 0, 199 `ren_83_probe` 6 / 0, 206
+`ren_dir83_probe` 10 / 0, 207 `ren_long_probe` 8 / 0, 208 `ren_case_probe` 12 / 0, 209
+`ren_subdir_probe` 8 / 0. The before run of this probe is the negative control: 17 of 19 RUN rows
+failed on the build without the fix.
+
+Limits left: a case-insensitive class or range compares the folded (lower-case) letters, and a
+letter whose two cases differ in UTF-8 length stays case-sensitive (210); no canonical equivalence
+(precomposed "e-acute" is not "e" + U+0301); a look-behind of alternatives with the same byte width
+but different letter counts (e.g. `(?<=ab|z-caron)`) is now refused as "not fixed width" - it is
+fixed in letters only when the counts agree (the reverse, `(?<=a|z-caron)`, was refused before and is
+accepted now); without icu.dll a letter outside the BMP is in no class (still one whole letter).
