@@ -145,6 +145,8 @@
     </ClInclude>
     <ClInclude Include="..\..\common\salnameorder.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salcasetwins.h">
+    </ClInclude>
     <ClInclude Include="..\..\common\salftpsecret.h">
     </ClInclude>
     <ClInclude Include="..\..\common\salpackvol.h">

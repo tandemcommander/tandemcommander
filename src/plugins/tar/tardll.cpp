@@ -9,6 +9,7 @@
 #include "gzip/gzip.h"
 #include "rpm/rpm.h"
 #include "splloadstru8.h" // feature 130
+#include "../../common/salcasetwins.h" // feature 252: names that differ only in case
 
 #include "tar.rh"
 #include "tar.rh2"
@@ -359,7 +360,14 @@ BOOL CPluginInterfaceForArchiver::ListArchive(CSalamanderForOperationsAbstract* 
     // and list it
     if (archive)
     {
+        // feature 252: built case-sensitively - folders "D" and "d" stay two folders (merged, the
+        // byte-exact extraction of the merged folder left the other one's files behind); the flag
+        // is kept only when some folder holds names that differ only in case, otherwise the
+        // listing is exactly the case-insensitive one it always was. One read of the archive.
+        dir->SetFlags(SALDIRFLAG_CASESENSITIVE);
         BOOL ret = archive->ListArchive(NULL, dir);
+        if (!SalDirTreeHasCaseTwins(dir))
+            dir->SetFlags(0);
         delete archive;
         return ret;
     }

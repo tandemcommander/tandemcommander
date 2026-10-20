@@ -1,0 +1,23 @@
+arc252_probe (feature 252) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 02:17; registry key existed True; ACP 1250
+
+TAR-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-CONTROL RUN    PASS        panel at: ...\Users\pavel\AppData\Local\Temp\tc252\TAR-CONTROL\t.tar\DOCS
+TAR-HIDE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-HIDE   RUN    FAIL        tgt: z.txt; steps: ; windows: [#32770 'Copy'] [Static id=209] Copy file "z.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+TAR-GLOBAL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-GLOBAL RUN    FAIL        tgt: a.txt,A.txt; steps: store: ...Button id=2] Cancel | [Button id=9] Help / restore: ...Button id=2] Cancel | [Button id=9] Help; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+TAR-TREE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-TREE   RUN    FAIL        tgt: d/y.txt; steps: ; windows: [#32770 'Copy'] [Static id=209] Copy directory "d" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-CONTROL RUN    PASS        panel at: C:\Users\pavel\AppData\Local\Temp\tc252\7Z-CONTROL\t.7z\DOCS
+7Z-HIDE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-HIDE    RUN    FAIL        tgt: z.txt; steps: ; windows: [#32770 'Copy'] [Static id=209] Copy file "z.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-GLOBAL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-GLOBAL  RUN    FAIL        tgt: a.txt,A.txt; steps: store: ...Button id=2] Cancel | [Button id=9] Help / restore: ...Button id=2] Cancel | [Button id=9] Help; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-TREE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-TREE    RUN    FAIL        tgt: d/x.txt,d/y.txt; steps: ; windows: [#32770 'Copy'] [Static id=209] Copy directory "d" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+
+Rows: PASS 10, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

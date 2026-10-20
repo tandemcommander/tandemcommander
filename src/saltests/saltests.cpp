@@ -71,6 +71,7 @@
 #include "salcfgimport.h"     // feature 245
 #include "salnetdrive.h"      // feature 246
 #include "salcpfit.h"         // feature 248
+#include "salcasetwins.h"     // feature 252
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -13720,6 +13721,113 @@ static void TestTextFits251()
     CHECK(!SalU8TextFits(big, MAX_PATH));
 }
 
+// feature 252: case twins of an archive listing (salcasetwins.h)
+struct FakeItem252
+{
+    const char* Name;
+    unsigned NameLen;
+};
+struct FakeDir252
+{
+    std::vector<FakeItem252> Dirs, Files;
+    std::vector<const FakeDir252*> Subs; // one per Dirs entry, NULL allowed
+    void AddFile(const char* n) { Files.push_back({n, (unsigned)strlen(n)}); }
+    void AddDir(const char* n, const FakeDir252* sub)
+    {
+        Dirs.push_back({n, (unsigned)strlen(n)});
+        Subs.push_back(sub);
+    }
+    int GetFilesCount() const { return (int)Files.size(); }
+    int GetDirsCount() const { return (int)Dirs.size(); }
+    const FakeItem252* GetFile(int i) const { return &Files[i]; }
+    const FakeItem252* GetDir(int i) const { return &Dirs[i]; }
+    const FakeDir252* GetSalDir(int i) const { return Subs[i]; }
+};
+
+static BOOL Twins252(std::initializer_list<const char*> list)
+{
+    std::vector<SalCaseTwinName> v;
+    for (const char* n : list)
+        v.push_back({n, -1});
+    return SalNamesHaveCaseTwins(v.data(), (int)v.size());
+}
+
+static void TestCaseTwins252()
+{
+    // the item's case: a.txt and A.txt
+    CHECK(Twins252({"a.txt", "A.txt"}));
+    CHECK(Twins252({"z.txt", "A.txt", "b.txt", "a.txt"}));
+    CHECK(!Twins252({"a.txt", "b.txt", "z.txt"}));
+    // byte-identical duplicates (an appended TAR member) are no twins
+    CHECK(!Twins252({"a.txt", "a.txt", "b.txt"}));
+    CHECK(Twins252({"a.txt", "a.txt", "A.txt"}));
+    // edges
+    CHECK(!Twins252({}));
+    CHECK(!Twins252({"a"}));
+    CHECK(!SalNamesHaveCaseTwins(NULL, 5));
+    SalCaseTwinName nul[2] = {{NULL, 0}, {"", -1}};
+    CHECK(!SalNamesHaveCaseTwins(nul, 2)); // NULL is "": the same bytes
+    SalCaseTwinName lens[2] = {{"abcX", 3}, {"ABCY", 3}};
+    CHECK(SalNamesHaveCaseTwins(lens, 2)); // lengths are honoured
+    SalCaseTwinName lens2[2] = {{"abcX", 4}, {"abcY", 4}};
+    CHECK(!SalNamesHaveCaseTwins(lens2, 2));
+    // the file system's rule: C-caron / c-caron are one name (Unicode case), K / Kelvin sign are not
+    CHECK(Twins252({"\xC4\x8C.txt", "\xC4\x8D.txt"}));
+    CHECK(!Twins252({"K", "\xE2\x84\xAA"}));
+    // the legacy byte fold of the process code page: a pair of UTF-8 letters C3 xx / C3 yy whose
+    // second bytes fold together (cp1250: 8A / 9A = E-circumflex / U-acute) is a twin pair too -
+    // the core merges such folders while building the tree
+    const BYTE* lower = SalNameOrderDetail::LegacyLowerTable();
+    int found = 0;
+    for (int b1 = 0x80; b1 <= 0xBF && !found; b1++)
+        for (int b2 = 0x80; b2 <= 0xBF && !found; b2++)
+            if (b1 != b2 && lower[b1] == lower[b2])
+            {
+                char n1[4] = {(char)0xC3, (char)b1, 0};
+                char n2[4] = {(char)0xC3, (char)b2, 0};
+                if (!SalNameOrderEqualCI(n1, -1, n2, -1))
+                {
+                    CHECK(Twins252({n1, n2}));
+                    found = 1;
+                }
+            }
+    if (GetACP() == 1250)
+        CHECK(found); // the measured code page has such a pair
+    // a tree: twins only in a sub-folder
+    FakeDir252 root, sub, deep, empty;
+    root.AddFile("z.txt");
+    deep.AddFile("x.txt");
+    deep.AddFile("X.TXT");
+    sub.AddDir("deep", &deep);
+    root.AddDir("sub", &sub);
+    root.AddDir("e", &empty);
+    root.AddDir("n", NULL);
+    CHECK(SalDirTreeHasCaseTwins(&root));
+    deep.Files.pop_back();
+    CHECK(!SalDirTreeHasCaseTwins(&root));
+    // folders D and d; a file and a folder that differ only in case
+    FakeDir252 r2;
+    r2.AddDir("D", NULL);
+    r2.AddDir("d", NULL);
+    CHECK(SalDirTreeHasCaseTwins(&r2));
+    FakeDir252 r3;
+    r3.AddDir("Readme", NULL);
+    r3.AddFile("README");
+    CHECK(SalDirTreeHasCaseTwins(&r3));
+    CHECK(!SalDirTreeHasCaseTwins(&empty));
+    CHECK(!SalDirTreeHasCaseTwins((const FakeDir252*)NULL));
+    // deep and wide: no recursion limit, the heap stack grows
+    std::vector<FakeDir252> chain(3000);
+    for (int i = 0; i + 1 < (int)chain.size(); i++)
+        chain[i].AddDir("d", &chain[i + 1]);
+    for (int i = 0; i < 200; i++)
+        chain[0].AddDir("w", &empty);
+    chain.back().AddFile("q");
+    CHECK(!SalDirTreeHasCaseTwins(&chain[0]));
+    chain.back().AddFile("Q");
+    CHECK(SalDirTreeHasCaseTwins(&chain[0]));
+}
+
 static void TestNetDrive246()
 {
     // the key Explorer keeps a drive's name under (measured: analysis.md G1)
@@ -14032,6 +14140,7 @@ int main(int argc, char** argv)
     TestNetDrive246();
     TestCpFit248();
     TestTextFits251();
+    TestCaseTwins252();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

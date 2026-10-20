@@ -1,0 +1,9 @@
+arc252_probe (feature 252) negctl-tar-always-cs
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 02:24; registry key existed True; ACP 1250
+
+TAR-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-CONTROL RUN    FAIL        panel at: C:\Users\pavel\AppData\Local\Temp\tc252\TAR-CONTROL\t.tar
+Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

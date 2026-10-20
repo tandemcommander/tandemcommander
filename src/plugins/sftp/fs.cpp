@@ -775,7 +775,10 @@ BOOL WINAPI CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* di
 
     dir->SetValidData(VALID_DATA_SIZE | VALID_DATA_DATE | VALID_DATA_TIME |
                       VALID_DATA_ATTRIBUTES | VALID_DATA_HIDDEN | VALID_DATA_ISLINK | VALID_DATA_EXTENSION);
-    dir->SetFlags(SALDIRFLAG_IGNOREDUPDIRS);
+    // feature 252: an SFTP server tells "a.txt" and "A.txt" apart (as FTP's listings declare) -
+    // the panel's name lists (Reselect, Restore Selection, Hide Selected Names) never take one
+    // for the other
+    dir->SetFlags(SALDIRFLAG_CASESENSITIVE | SALDIRFLAG_IGNOREDUPDIRS);
 
     TIndirectArray<CSFTPDirEntry> entries(128, 128);
     volatile BOOL cancel = FALSE;

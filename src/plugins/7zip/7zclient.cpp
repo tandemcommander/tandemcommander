@@ -14,6 +14,7 @@
 #include "FStreams.h"
 #include "../../common/salarcname.h" // feature 087: safe item names, signatures
 #include "../../common/salarcpwd.h"  // feature 093: the two forms of a typed password
+#include "../../common/salcasetwins.h" // feature 252: names that differ only in case
 
 #include "7zip.rh"
 #include "7zip.rh2"
@@ -544,8 +545,15 @@ BOOL C7zClient::ListArchive(const char* fileName, CSalamanderDirectoryAbstract* 
         archiveName++;
     else
         archiveName = fileName;
+    // feature 252: built case-sensitively - folders "D" and "d" stay two folders; the flag is
+    // kept only when some folder holds names that differ only in case ("a.txt" / "A.txt"),
+    // otherwise the listing is exactly the case-insensitive one it always was
+    if (dir != NULL)
+        dir->SetFlags(SALDIRFLAG_CASESENSITIVE);
     for (i = 0; i < numItems; i++)
         AddFileDir(inArchive, i, dir, pluginData, &reportTooLongPathErr, archiveName);
+    if (dir != NULL && !SalDirTreeHasCaseTwins(dir))
+        dir->SetFlags(0);
 
     return TRUE;
 }
