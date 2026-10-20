@@ -21,6 +21,11 @@
       U-CONTROL    User Menu a, b, c                        PASS = saved a,b,c, no box
       U-NONAME     User Menu a, entry 2 without Item Name, c PASS = saved a,c, no box
       U-WRONGTYPE  User Menu a, entry 2 Close Shell Window as REG_SZ, c  PASS = saved a,c, at most one box
+    Added after the review of feature 268:
+      V-LONG       Viewers a, entry 2 Masks of 400 letters, c  PASS = saved a,c, at most one box
+      U-STRAYEND   User Menu a, an intact submenu end, c     PASS = saved a,END,c (the user's own, as read)
+      U-SUBBEG     User Menu a, damaged submenu beginning, b, end, c  PASS = saved a,b,c (its end goes too)
+      U-SUBEND     User Menu a, beginning s, b, damaged end, c        PASS = saved a,BEG:s,b,END,c
     Before the fix every damaged row ends its list at the damaged entry: the save keeps only the
     entries before it, and the damaged entry's key is left open.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -92,6 +97,13 @@ function Write-List([string]$List, [string[]]$Entries) {
                 'dword' { Set-Good $k $List 'x'; $k.SetValue('Masks', 5, $Dw) }
                 'noname' { Set-Good $k $List 'x'; $k.DeleteValue('Item Name') }
                 'closesz' { Set-Good $k $List 'x'; $k.SetValue('Close Shell Window', 'yes', $Str) }
+                'long' { Set-Good $k $List 'x'; $k.SetValue('Masks', ('*.' + ('x' * 398)), $Str) }
+                # User Menu submenus (review of feature 268): a good beginning 'tc268s', a good end, a
+                # damaged beginning (no Item Name), a damaged end (no Close Shell Window)
+                'sbeg' { Set-Good $k $List 's'; $k.SetValue('Type', 1, $Dw) }
+                'send' { Set-Good $k $List 'x'; $k.SetValue('Item Name', '', $Str); $k.SetValue('Command', '', $Str); $k.SetValue('Type', 2, $Dw) }
+                'dbeg' { Set-Good $k $List 'x'; $k.SetValue('Type', 1, $Dw); $k.DeleteValue('Item Name') }
+                'dend' { Set-Good $k $List 'x'; $k.SetValue('Item Name', '', $Str); $k.SetValue('Command', '', $Str); $k.SetValue('Type', 2, $Dw); $k.DeleteValue('Close Shell Window') }
                 'empty' { }
                 default { Set-Good $k $List $e }
             }
@@ -108,7 +120,14 @@ function Read-List([string]$List) {
         for ($i = 1; $i -lt 200; $i++) {
             $k = $h.OpenSubKey([string]$i)
             if ($null -eq $k) { break }
-            try { $m = $k.GetValue($Lists[$List].Id); if ($null -eq $m) { $out += '<none>' } else { $out += [string]$m } } finally { $k.Close() }
+            try {
+                $m = $k.GetValue($Lists[$List].Id)
+                if ($null -eq $m) { $m = '<none>' }
+                # User Menu: a submenu end reads 'END', a beginning 'BEG:<name>'
+                if ($List -eq 'U') { $t = $k.GetValue('Type'); if ($t -eq 2) { $m = 'END' } elseif ($t -eq 1) { $m = 'BEG:' + $m } }
+                $out += [string]$m
+            }
+            finally { $k.Close() }
         }
     }
     finally { $h.Close() }
@@ -156,7 +175,7 @@ function Run-Case([string]$Case, [string]$List, [string[]]$Entries, [string[]]$E
         Row $Case 'KEYS' (V ($endLine -notmatch 'monitored handles')) $(if ($endLine -match 'monitored handles') { 'a handle was left open (Debug handle monitor)' } else { 'no handle left open' })
         $saved = @(Read-List $List)
         $pre = if ($List -eq 'U') { 'tc268' } else { '*.tc268' }
-        $want = @($Expect | ForEach-Object { $pre + $_ })
+        $want = @($Expect | ForEach-Object { if ($_ -eq 'END') { 'END' } elseif ($_ -like 'BEG:*') { 'BEG:' + $pre + $_.Substring(4) } else { $pre + $_ } })
         Row $Case 'SAVED' (V (($saved -join ',') -eq ($want -join ','))) ("saved {0}: {1}; expected: {2}" -f $Lists[$List].Key, (($saved | ForEach-Object { Tail $_ 30 }) -join ', '), ($want -join ', '))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -187,6 +206,11 @@ try {
     Run-Case 'U-CONTROL' 'U' @('a', 'b', 'c') @('a', 'b', 'c') 0
     Run-Case 'U-NONAME' 'U' @('a', 'noname', 'c') @('a', 'c') 0
     Run-Case 'U-WRONGTYPE' 'U' @('a', 'closesz', 'c') @('a', 'c') 1
+    # added after the review of feature 268
+    Run-Case 'V-LONG' 'V' @('a', 'long', 'c') @('a', 'c') 1
+    Run-Case 'U-STRAYEND' 'U' @('a', 'send', 'c') @('a', 'END', 'c') 0
+    Run-Case 'U-SUBBEG' 'U' @('a', 'dbeg', 'b', 'send', 'c') @('a', 'b', 'c') 0
+    Run-Case 'U-SUBEND' 'U' @('a', 'sbeg', 'b', 'dend', 'c') @('a', 'BEG:s', 'b', 'END', 'c') 0
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

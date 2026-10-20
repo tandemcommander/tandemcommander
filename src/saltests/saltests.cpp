@@ -79,6 +79,7 @@
 #include "salcodetable.h"     // feature 262
 #include "salregroot.h"       // feature 263
 #include "salexiforient.h"    // feature 267
+#include "salumbalance.h"     // feature 268
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -15060,6 +15061,67 @@ static void TestExifOrient267()
     CHECK(Apply267(mirroredFirst, CSalExifTurn{1, false, false}) != Shown267(s, 5));
 }
 
+// feature 268: the actions of salumbalance.h for a list of entry kinds, as one string - L load,
+// E load as a plain end, S skip
+static std::string Balance268(const std::vector<CSalUMEntryKind>& kinds)
+{
+    CSalUMSubmenuBalance b;
+    std::string out;
+    for (CSalUMEntryKind k : kinds)
+    {
+        CSalUMEntryAction a = b.Next(k);
+        out += a == SALUM_LOAD ? 'L' : a == SALUM_LOAD_AS_END ? 'E'
+                                                              : 'S';
+    }
+    return out;
+}
+
+static void TestUserMenuBalance268()
+{
+    const CSalUMEntryKind I = SALUM_ITEM, B = SALUM_BEGIN, E = SALUM_END, D = SALUM_DAMAGED,
+                          DB = SALUM_DAMAGED_BEGIN, DE = SALUM_DAMAGED_END;
+    // intact lists load as read, also unbalanced ones the user made
+    CHECK(Balance268({I, B, I, E, I}) == "LLLLL");
+    CHECK(Balance268({I, E, I}) == "LLL"); // a stray end of the user's own: as read
+    CHECK(Balance268({B, I}) == "LL");     // a beginning without an end: as read
+    CHECK(Balance268({B, B, I, E, E}) == "LLLLL");
+    // a damaged item is skipped, the rest loads
+    CHECK(Balance268({I, D, I}) == "LSL");
+    CHECK(Balance268({D, D, I}) == "SSL");
+    CHECK(Balance268({B, D, E, I}) == "LSLL");
+    // a damaged beginning takes its matching end along - the items inside move one level up
+    CHECK(Balance268({I, DB, I, E, I}) == "LSLSL");
+    CHECK(Balance268({DB, B, I, E, E, I}) == "SLLLSL"); // the inner submenu keeps its own end
+    CHECK(Balance268({B, DB, I, E, E}) == "LSLSL");     // the outer submenu keeps its own end
+    CHECK(Balance268({DB, DB, I, E, E, I}) == "SSLSSL");
+    // a damaged end is loaded as a plain end - the submenu stays closed where it was
+    CHECK(Balance268({I, B, I, DE, I}) == "LLLEL");
+    CHECK(Balance268({B, B, I, DE, E}) == "LLLEL");
+    CHECK(Balance268({DE, I}) == "SL"); // damaged and stray: skipped
+    // a damaged beginning and a damaged end that match: both go
+    CHECK(Balance268({I, DB, I, DE, I}) == "LSLSL");
+    // the negative control: without the rule, skipping the damaged beginning alone keeps its end
+    // (a stray end that hides the rest of the menu) - the rule must differ from "skip only the entry"
+    CHECK(Balance268({DB, I, E, I}) != "SLLL");
+    // deeper than the tracked levels: treated as intact (nothing dropped there), the shallower
+    // levels still balance
+    std::vector<CSalUMEntryKind> deep;
+    deep.push_back(DB);
+    for (int k = 0; k < CSalUMSubmenuBalance::MAX_TRACKED + 5; k++)
+        deep.push_back(B);
+    deep.push_back(DB); // beyond the tracked levels
+    deep.push_back(E);  // closes it: loaded (not tracked)
+    for (int k = 0; k < CSalUMSubmenuBalance::MAX_TRACKED + 5; k++)
+        deep.push_back(E);
+    deep.push_back(E); // closes the first damaged beginning
+    std::string r = Balance268(deep);
+    CHECK(r.size() == deep.size());
+    CHECK(r[0] == 'S');
+    CHECK(r[CSalUMSubmenuBalance::MAX_TRACKED + 6] == 'S'); // the untracked damaged beginning itself
+    CHECK(r[CSalUMSubmenuBalance::MAX_TRACKED + 7] == 'L');
+    CHECK(r[r.size() - 1] == 'S');
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -15180,6 +15242,7 @@ int main(int argc, char** argv)
     TestRegImportRoot263();
     TestNetDriveSameRemote264();
     TestExifOrient267();
+    TestUserMenuBalance268();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

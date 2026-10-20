@@ -22,7 +22,8 @@
 #include "logo.h"
 #include "tasklist.h"
 #include "pwdmngr.h"
-#include "salurlpwd.h" // feature 085
+#include "salurlpwd.h"    // feature 085
+#include "salumbalance.h" // feature 268
 
 //
 // ConfigVersion - version number of the loaded configuration
@@ -3003,11 +3004,14 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
 
             CUserMenuIconDataArr* bkgndReaderData = new CUserMenuIconDataArr();
 
+            CSalUMSubmenuBalance umBalance; // feature 268
             while (OpenKey(actKey, buf, subKey))
             {
                 // feature 268: an item without a readable name, command, "through shell" or "close shell"
                 // value is skipped and the items after it are loaded - it used to end the menu, and the
-                // save on exit erased the rest; every path closes the item's key
+                // save on exit erased the rest; a skipped submenu beginning takes its end along, a damaged
+                // end is loaded as a plain end (salumbalance.h); every path closes the item's key
+                CSalUMEntryAction action;
                 if (GetValue(subKey, USERMENU_ITEMNAME_REG, REG_SZ, name, MAX_PATH) &&
                     GetValue(subKey, USERMENU_COMMAND_REG, REG_SZ, command, MAX_PATH) &&
                     GetValue(subKey, USERMENU_SHELL_REG, REG_DWORD,
@@ -3116,9 +3120,39 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                         showInToolbar = TRUE;
                     }
 
-                    CUserMenuItem* item = new CUserMenuItem(name, command, arguments, initDir, icon,
-                                                            throughShell, closeShell, useWindow,
-                                                            showInToolbar, type, bkgndReaderData);
+                    action = umBalance.Next(type == umitSubmenuBegin ? SALUM_BEGIN : type == umitSubmenuEnd ? SALUM_END
+                                                                                                            : SALUM_ITEM);
+                }
+                else
+                {
+                    // the damaged item's type (read quietly - its other values are damaged already) tells
+                    // whether a submenu beginning or end must be balanced (salumbalance.h)
+                    DWORD damagedType;
+                    CSalUMEntryKind kind = SALUM_DAMAGED;
+                    if (GetValueAux(NULL, subKey, USERMENU_TYPE_REG, REG_DWORD, &damagedType, sizeof(DWORD), TRUE))
+                    {
+                        if (damagedType == umitSubmenuBegin)
+                            kind = SALUM_DAMAGED_BEGIN;
+                        else if (damagedType == umitSubmenuEnd)
+                            kind = SALUM_DAMAGED_END;
+                    }
+                    action = umBalance.Next(kind);
+                }
+                if (action != SALUM_SKIP)
+                {
+                    CUserMenuItem* item;
+                    if (action == SALUM_LOAD)
+                    {
+                        item = new CUserMenuItem(name, command, arguments, initDir, icon,
+                                                 throughShell, closeShell, useWindow,
+                                                 showInToolbar, type, bkgndReaderData);
+                    }
+                    else // SALUM_LOAD_AS_END: a plain end, as the configuration page creates it
+                    {
+                        static char emptyBuffer[] = "";
+                        item = new CUserMenuItem(LoadStr(IDS_ENDUSERSUBMENU), emptyBuffer, emptyBuffer, emptyBuffer,
+                                                 emptyBuffer, FALSE, FALSE, FALSE, FALSE, umitSubmenuEnd, NULL);
+                    }
                     if (item != NULL && item->IsGood())
                     {
                         UserMenuItems->Add(item);

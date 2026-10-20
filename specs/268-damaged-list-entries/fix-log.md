@@ -108,3 +108,68 @@ at a damaged source entry - outside the item, task T009 records it in the Inbox.
 - `settings-import-ends-the-viewers-editors-and-user-menu-lists` (measure:268) - the settings import's
   parsers (`src/common/salcfgimport.h`) still end these lists at a damaged source entry; the loaders now
   skip it. Related to `settings-import-ends-the-highlighting-list-at-a-damaged`.
+
+## Review
+
+### Review 1 (independent refute-first, general-purpose agent) - no MUST
+
+- Re-measured: the 48 rows pass on the fixed Debug build, registry restored identical. Negative control
+  on the unfixed `build\tandemcommander\Debug_x64_pre251`: 28 rows fail (every damaged row SAVED and
+  KEYS). Extra rows of its own (scratch copy under `build\p268rev\`): over-long masks, five damaged in a
+  row, damaged submenu beginning / end - pass on the fixed build, fail on the unfixed one.
+- **SHOULD 1** (in scope - fixed): a skipped damaged submenu *beginning* leaves its end stray - a state
+  the old cut list never had (a cut list can only lack an end). `FillUserMenu2` stops the top level at
+  the stray end (`src/mainwnd1.cpp`, `case umitSubmenuEnd: goto ESCAPE`), so every later item is hidden
+  from the User Menu; the toolbar's level goes to -1 (`src/toolbar5.cpp`), so they are not on the User
+  Menu toolbar either; the configuration page cannot delete an end (`src/dialogs4.cpp`). The Decisions
+  paragraph above ("the consumers already tolerate that") was wrong. Fix: the pure rule
+  `src/common/salumbalance.h` (`CSalUMSubmenuBalance`) - a damaged beginning is skipped together with
+  its matching end (the items inside move one level up), a damaged end is loaded as a plain end (named
+  `IDS_ENDUSERSUBMENU`, empty texts - exactly as the configuration page creates one; an end's texts are
+  never used), intact entries load as read (also the user's own stray end). The damaged entry's type is
+  read quietly (`GetValueAux(NULL, subKey, USERMENU_TYPE_REG, REG_DWORD, ..., TRUE)`, as
+  `CheckShutdownParams` in the same file reads directly) - no extra box for an entry already damaged.
+  saltests `TestUserMenuBalance268`: 21 checks (intact lists as read, nested and repeated damaged
+  beginnings, damaged ends, a matching damaged pair, levels beyond the 256 tracked, and a negative
+  control that the rule differs from "skip the entry alone").
+  Alternatives rejected: skip the whole submenu, as the settings import does for a too-long beginning
+  (`SalCfgImpParseUserMenu`, `skipDepth`) - loses the items inside; skip a damaged end alone - the items
+  after it fall into the submenu and leave the toolbar.
+- **SHOULD 2** (fixed): probe rows for "too long" (FR-002) and the submenu cases - added V-LONG,
+  U-STRAYEND (control: the user's own stray end loads as read), U-SUBBEG, U-SUBEND.
+- NOTE 1 (N wrong-type entries now show N boxes before the main window, before one): the existing
+  message per damaged value read (FR-004, Clarification 1); accepted.
+- NOTE 2 (the damaged entry itself is still dropped on exit - a viewer lacking only Type could be
+  salvaged): the item's *Expected* and feature 250's precedent (Clarification 2); accepted, named in the
+  closing report.
+- NOTE 3 (a numbering gap, or an entry key that exists but cannot be opened, still ends the list -
+  both existed before): outside the item; the gap is in the spec's edge cases. The unopenable key
+  (access denied on one subkey) needs a hand-made ACL; not recorded as an item (pre-existing, no
+  report of it, same in every `while (OpenKey(...))` loop of the core).
+- NOTE 4 (stale comments in `src/common/salcfgimport.h`): the Inbox item
+  `settings-import-ends-the-viewers-editors-and-user-menu-lists` names them.
+- NOTE 5 (closing artefacts): written at the close step.
+
+### After the review fixes
+
+- `.\build.cmd` - BUILD SUCCEEDED (first attempt: C2665, string literals for the `char*` parameters of
+  `CUserMenuItem` - fixed with the configuration page's `static char emptyBuffer[]`).
+- clang-format applied to the new lines (`salumbalance.h`, the User Menu loop and its include, the
+  saltests function); no other line touched.
+- `saltests.exe` - saltests: 24778 checks, 0 failed (24757 + 21).
+- `python tools/check_encoding.py --strict` - TOTAL: 0 finding(s).
+- Probe (`probe/result_after.txt`, 21:16): **PASS 64, FAIL 0**, registry restored identical. The four new
+  cases: V-LONG a,c (the existing box "(234) More data is available" once); U-STRAYEND a,END,c;
+  U-SUBBEG a,b,c; U-SUBEND a,BEG:s,b,END,c.
+- Negative control of the four new cases on the unfixed `Debug_x64_pre251`
+  (`-Only V-LONG,U-STRAYEND,U-SUBBEG,U-SUBEND`): PASS 10, FAIL 6 - V-LONG saved a; U-SUBBEG saved a;
+  U-SUBEND saved a,BEG:s,b (each KEYS FAIL); U-STRAYEND (intact control) passes there too.
+- One flaky row, recorded: the full run at 21:14 on the final build had V-NOTYPE END FAIL - the
+  program started normally (main window 3.6 s), then did not answer `WM_NULL` within 10 s about 15 s
+  later, so the probe ended it before the save (SAVED shows the list as written). The same build passed
+  V-NOTYPE 3 of 3 alone (`-Only V-NOTYPE,V-CONTROL`) and the full probe right after (64 / 0). The hang
+  came after the loaders had finished; no cause found in the loaders; not reproduced. (Copy of that
+  run: `build\p268\result_after_flaky_2114.txt`, not tracked.)
+- The registry hash of these runs (383EAEA4...) differs from the first runs (260702C3...): the
+  configuration changed between the runs (the reviewer's probes ran in between); every run restored
+  its own backup identically, and `reg query ... /f tc268` and `/f T268` find nothing in the real key.

@@ -13,7 +13,10 @@ the advance (`itoa(++i, buf, 10)`) and the close (`CloseKey(subKey)`). The saves
 and rewrite it from what was loaded, so the entries after a damaged one are erased on exit. The fix
 drops the `else break;` (a damaged entry falls through to the advance and the close, so it is
 skipped) and adds `CloseKey(subKey)` before each low-memory `break`, which keeps ending the list.
-The body for a readable entry is unchanged.
+The body for a readable entry is unchanged. In the User Menu a pure rule (`src/common/salumbalance.h`,
+`CSalUMSubmenuBalance`, saltests checks) keeps the submenus balanced: a skipped damaged submenu
+beginning takes its matching end along, a damaged end is loaded as a plain end (added after the
+review, which found that a skipped beginning left a stray end).
 
 ## Technical Context
 
@@ -22,8 +25,8 @@ The body for a readable entry is unchanged.
 `src/regwork.cpp`)
 **Storage**: `HKCU\Software\Tandem Commander\0.1\Viewers`, `\Alternative Viewers`, `\Editors`,
 `\User Menu` - `<n>` subkeys; layout unchanged
-**Testing**: hidden-desktop probe `probe/dmg268_probe.ps1` (12 cases, 48 rows); `saltests` as a
-regression check (no `src/common/` change)
+**Testing**: hidden-desktop probe `probe/dmg268_probe.ps1` (16 cases, 64 rows); `saltests` checks of
+the balance rule (`TestUserMenuBalance268`)
 **Target Platform**: Windows 11 x64
 **Project Type**: desktop application (core `salamand.vcxproj`)
 **Performance Goals**: none (start-up time unchanged)
@@ -65,11 +68,14 @@ specs/268-damaged-list-entries/
 ```text
 src/salamdr2.cpp      LoadViewers, LoadEditors - the entry loops
 src/mainwnd2.cpp      CMainWindow::LoadConfig - the User Menu loop
+src/common/salumbalance.h   the User Menu submenu balance rule (header-only)
+src/saltests/saltests.cpp   TestUserMenuBalance268; src/vcxproj/saltests/saltests.vcxproj lists the header
 ```
 
 **Structure Decision**: edits in the core loaders only. No `contracts/` - nothing external changes
-(the registry layout and the plug-in interface stay as they are). No `src/common/` header: the change
-is the loop's control flow around registry calls, driven end to end by the probe (as in 250).
+(the registry layout and the plug-in interface stay as they are). The skip itself is the loops' control
+flow around registry calls, driven end to end by the probe (as in 250); the submenu balance is a pure
+decision and lives in `src/common/salumbalance.h` with saltests checks.
 
 ## Complexity Tracking
 

@@ -23,15 +23,23 @@
 - Alternatives considered: skip and continue (would change behaviour under memory pressure for no
   user gain).
 
-## R4 - User Menu submenu balance
+## R4 - User Menu submenu balance (revised after the review)
 
-- Decision: no repair.
-- Rationale: `FillUserMenu2` (`src/mainwnd1.cpp`) stops a level at an end item and bounds the walk by
-  the item count; the User Menu toolbar (`src/toolbar5.cpp`) counts levels; the configuration page
-  (`src/dialogs4.cpp`) handles `GetSubmenuEndIndex` = -1. A list cut at a damaged entry was already
-  unbalanced the same way before the fix. A stray end at the top level hides the later items from
-  the menu, but they are loaded and saved, and the configuration page shows them.
-- Alternatives considered: drop a stray end / add a missing end (a new behaviour outside the item).
+- First decision (implemented first, rejected by the review): no repair - on the belief that a list
+  cut at a damaged entry was unbalanced the same way. Wrong: a cut list can only lack an end; a
+  skipped damaged *beginning* leaves a stray *end*. `FillUserMenu2` (`src/mainwnd1.cpp`) stops the top
+  level at it (every later item is hidden from the menu), the User Menu toolbar (`src/toolbar5.cpp`)
+  goes to level -1 (the later items are not on it), and the configuration page (`src/dialogs4.cpp`)
+  cannot delete an end.
+- Decision: a pure rule, `CSalUMSubmenuBalance` (`src/common/salumbalance.h`): a damaged beginning is
+  skipped together with its matching end (the items inside move one level up - none is lost); a
+  damaged end is loaded as a plain end, created as the configuration page creates one (an end's texts
+  are never used); intact entries load as read, also the user's own stray end. The damaged entry's
+  type is read quietly (`GetValueAux(..., quiet TRUE)`, precedent `CheckShutdownParams` in the same
+  file) - no extra box for an entry that is damaged already.
+- Alternatives considered: skip the whole submenu of a damaged beginning, as the settings import does
+  for a too-long one (`SalCfgImpParseUserMenu`, `skipDepth`) - loses the items inside, against the
+  item's *Expected*; skip a damaged end alone - the items after it would fall into the submenu.
 
 ## R5 - Is the viewers `|` test a damage test?
 

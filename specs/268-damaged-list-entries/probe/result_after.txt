@@ -1,6 +1,6 @@
 dmg268_probe (feature 268) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 20:54; registry key existed True
+Date    : 2026-10-20 21:16; registry key existed True
 
 V-CONTROL  START  PASS        main window after 3,6 s; boxes 0
 V-CONTROL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -10,7 +10,7 @@ V-NOTYPE   START  PASS        main window after 3,5 s; boxes 0
 V-NOTYPE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 V-NOTYPE   KEYS   PASS        no handle left open
 V-NOTYPE   SAVED  PASS        saved Viewers: *.tc268a, *.tc268c; expected: *.tc268a, *.tc268c
-V-PIPE     START  PASS        main window after 3,5 s; boxes 0
+V-PIPE     START  PASS        main window after 3,6 s; boxes 0
 V-PIPE     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 V-PIPE     KEYS   PASS        no handle left open
 V-PIPE     SAVED  PASS        saved Viewers: *.tc268a, *.tc268c; expected: *.tc268a, *.tc268c
@@ -22,23 +22,23 @@ AV-NOTYPE  START  PASS        main window after 3,6 s; boxes 0
 AV-NOTYPE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 AV-NOTYPE  KEYS   PASS        no handle left open
 AV-NOTYPE  SAVED  PASS        saved Alternative Viewers: *.tc268a, *.tc268c; expected: *.tc268a, *.tc268c
-E-CONTROL  START  PASS        main window after 3,6 s; boxes 0
+E-CONTROL  START  PASS        main window after 3,5 s; boxes 0
 E-CONTROL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 E-CONTROL  KEYS   PASS        no handle left open
 E-CONTROL  SAVED  PASS        saved Editors: *.tc268a, *.tc268b, *.tc268c; expected: *.tc268a, *.tc268b, *.tc268c
-E-NOMASKS  START  PASS        main window after 3,6 s; boxes 0
+E-NOMASKS  START  PASS        main window after 3,5 s; boxes 0
 E-NOMASKS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 E-NOMASKS  KEYS   PASS        no handle left open
 E-NOMASKS  SAVED  PASS        saved Editors: *.tc268a, *.tc268c; expected: *.tc268a, *.tc268c
-E-WRONGTYPE START  PASS        main window after 3,7 s; boxes 1 ([#32770 'Error Loading Configuration'] [Static id=2477] Unexpected value type. | [Button id=1] OK)
+E-WRONGTYPE START  PASS        main window after 4,1 s; boxes 1 ([#32770 'Error Loading Configuration'] [Static id=2477] Unexpected value type. | [Button id=1] OK)
 E-WRONGTYPE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 E-WRONGTYPE KEYS   PASS        no handle left open
 E-WRONGTYPE SAVED  PASS        saved Editors: *.tc268a, *.tc268c; expected: *.tc268a, *.tc268c
-E-MULTI    START  PASS        main window after 3,6 s; boxes 0
+E-MULTI    START  PASS        main window after 3,5 s; boxes 0
 E-MULTI    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 E-MULTI    KEYS   PASS        no handle left open
 E-MULTI    SAVED  PASS        saved Editors: *.tc268c; expected: *.tc268c
-U-CONTROL  START  PASS        main window after 3,6 s; boxes 0
+U-CONTROL  START  PASS        main window after 3,5 s; boxes 0
 U-CONTROL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 U-CONTROL  KEYS   PASS        no handle left open
 U-CONTROL  SAVED  PASS        saved User Menu: tc268a, tc268b, tc268c; expected: tc268a, tc268b, tc268c
@@ -50,6 +50,22 @@ U-WRONGTYPE START  PASS        main window after 4,0 s; boxes 1 ([#32770 'Error 
 U-WRONGTYPE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 U-WRONGTYPE KEYS   PASS        no handle left open
 U-WRONGTYPE SAVED  PASS        saved User Menu: tc268a, tc268c; expected: tc268a, tc268c
-Registry: restored; identical=True; SHA-256 before 260702C31625EBEFB87B17C5A66D854BFAB398A34FB3D6F4EFECBC096393AAC5 / after 260702C31625EBEFB87B17C5A66D854BFAB398A34FB3D6F4EFECBC096393AAC5
+V-LONG     START  PASS        main window after 4,0 s; boxes 1 ([#32770 'Error Loading Configuration'] [Static id=2477] (234) Jsou k dispozici dal\u0161\u00ED data.  | [Button id=1] OK)
+V-LONG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+V-LONG     KEYS   PASS        no handle left open
+V-LONG     SAVED  PASS        saved Viewers: *.tc268a, *.tc268c; expected: *.tc268a, *.tc268c
+U-STRAYEND START  PASS        main window after 3,6 s; boxes 0
+U-STRAYEND END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-STRAYEND KEYS   PASS        no handle left open
+U-STRAYEND SAVED  PASS        saved User Menu: tc268a, END, tc268c; expected: tc268a, END, tc268c
+U-SUBBEG   START  PASS        main window after 3,5 s; boxes 0
+U-SUBBEG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-SUBBEG   KEYS   PASS        no handle left open
+U-SUBBEG   SAVED  PASS        saved User Menu: tc268a, tc268b, tc268c; expected: tc268a, tc268b, tc268c
+U-SUBEND   START  PASS        main window after 3,5 s; boxes 0
+U-SUBEND   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-SUBEND   KEYS   PASS        no handle left open
+U-SUBEND   SAVED  PASS        saved User Menu: tc268a, BEG:tc268s, tc268b, END, tc268c; expected: tc268a, BEG:tc268s, tc268b, END, tc268c
+Registry: restored; identical=True; SHA-256 before 383EAEA43D68FC9B3E21F499CE1F61F1DBED45AAF42982ADEF1DC795BD6CA8DD / after 383EAEA43D68FC9B3E21F499CE1F61F1DBED45AAF42982ADEF1DC795BD6CA8DD
 
-Rows: PASS 48, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 64, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

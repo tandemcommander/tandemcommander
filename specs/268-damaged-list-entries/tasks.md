@@ -35,9 +35,15 @@ a handle left open, the wrong-type rows show at most one box; the CONTROL rows u
 - [X] T008 Check clang-format on the edited lines of src/salamdr2.cpp and src/mainwnd2.cpp (no change expected)
 - [X] T009 Record the settings-import mismatch (SalCfgImpParseViewers / SalCfgImpParseUserMenu in src/common/salcfgimport.h still end the viewers, editors and User Menu lists at a damaged source entry; the loaders now skip it) as an Inbox item via `BL new` (source measure:268, related settings-import-ends-the-highlighting-list-at-a-damaged)
 
+## Phase 5: Review findings (first review of feature 268)
+
+- [X] T010 [US1] Write the balance rule src/common/salumbalance.h (`CSalUMSubmenuBalance`: a damaged submenu beginning is skipped with its matching end, a damaged end loads as a plain end, intact entries as read) and saltests checks `TestUserMenuBalance268` in src/saltests/saltests.cpp (header listed in src/vcxproj/saltests/saltests.vcxproj)
+- [X] T011 [US1] Use the rule in the User Menu loop of src/mainwnd2.cpp, CMainWindow::LoadConfig (the damaged entry's type read quietly with `GetValueAux`; a plain end created as the configuration page creates one)
+- [X] T012 Add the probe cases V-LONG, U-STRAYEND, U-SUBBEG, U-SUBEND to specs/268-damaged-list-entries/probe/dmg268_probe.ps1; re-run (PASS 64, FAIL 0) and a negative control of the new cases on the unfixed build
+
 ## Dependencies
 
-T001 -> T002 -> (T003, T004) -> T005 -> T006 -> T007; T008 after T003 / T004; T009 independent.
+T001 -> T002 -> (T003, T004) -> T005 -> T006 -> T007; T008 after T003 / T004; T009 independent; T010 -> T011 -> T012.
 
 ## Parallel opportunities
 

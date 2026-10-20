@@ -11,7 +11,7 @@
 
 - Q: Should the existing "Error Loading Configuration" message for a value of the wrong type be silenced now that the entry is skipped? → A: No - it stays as it is, once per damaged value read; only the loss of the later entries goes (autonomous run: conservative)
 - Q: Should a skipped damaged entry be written back when the configuration is saved on exit? → A: No - it is skipped, as the item's Expected says and as feature 250 does for highlighting; the save code is not changed (autonomous run: item)
-- Q: Should the loader repair a User Menu submenu left unbalanced by a skipped begin or end entry? → A: No - the consumers already tolerate an unbalanced list; all items are kept and the user can fix the structure in the dialog (autonomous run: conservative)
+- Q: What happens to the submenu structure when the skipped damaged User Menu entry began or ended a submenu? → A: A damaged beginning is skipped together with its matching end (the items inside move one level up); a damaged end is loaded as a plain end (an end's texts are never used). Revised after the review of feature 268: leaving the structure alone created a stray end that hid every later item from the menu and the toolbar and that the configuration page cannot delete - a state a list cut at a damaged entry never had (autonomous run: item - "nothing the user had after the damaged entry disappears")
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -51,6 +51,12 @@ the program on the hidden desktop, close it and read back the list it saved.
    wrong type shows the existing message once.
 7. **Given** intact lists, **When** the program starts and is closed, **Then** nothing changes: no
    message, the same entries saved in the same order.
+8. **Given** a User Menu `a`, a damaged submenu beginning, `b`, the submenu's end, `c`, **When** the
+   program starts and is closed, **Then** `a`, `b`, `c` are saved at the top level (no stray end).
+9. **Given** a User Menu `a`, submenu `s`, `b`, a damaged end, `c`, **When** the program starts and is
+   closed, **Then** `a`, `s`, `b`, an end, `c` are saved (the submenu stays closed after `b`).
+10. **Given** a viewers entry whose masks are longer than the program reads, **When** the program starts,
+    **Then** the existing message is shown once and the entries before and after it are saved.
 
 ### Edge Cases
 
@@ -60,10 +66,10 @@ the program on the hidden desktop, close it and read back the list it saved.
   exist in sequence are read.
 - An entry whose item cannot be created or added for lack of memory: the list ends there, as today
   (the loader stops), but the entry's key is closed.
-- A damaged User Menu entry that begins or ends a submenu: it is left out like any other damaged
-  entry; the remaining items may then describe an unbalanced submenu, which the menu, the toolbar and
-  the configuration page already tolerate (a list cut at a damaged entry was unbalanced the same way).
-  The structure is not repaired; all items are kept and saved, and the user can fix it in the dialog.
+- A damaged User Menu entry that begins a submenu: it is skipped together with its matching end; the
+  items between them move one level up. A damaged entry that ends a submenu: a plain end is loaded in
+  its place. A damaged entry whose type cannot be read is skipped like an item. An unbalanced
+  structure the user's own intact list has (a stray end, a beginning without an end) loads as read.
 - Configurations of old versions (lower-case conversion of masks, version-1 User Menu conversion) are
   read exactly as before for every readable entry.
 
@@ -83,25 +89,29 @@ the program on the hidden desktop, close it and read back the list it saved.
   values.
 - **FR-006**: The lists saved on exit MUST hold the loaded entries, numbered from 1 without gaps, as
   the existing saves do; the save code is not changed.
+- **FR-007**: Skipping a damaged User Menu entry MUST NOT unbalance the submenus: a skipped damaged
+  submenu beginning takes its matching end along, and a damaged submenu end is loaded as a plain end;
+  intact entries load as read.
 
 ### Key Entities
 
 - **List entry**: one numbered key of the viewers, alternative viewers, editors or User Menu list.
   Viewers need readable masks (without `|`) and a type; editors need readable masks; a User Menu item
   needs a readable item name, command, "execute through shell" and "close shell window" value. The
-  other values have defaults.
+  other values have defaults. A User Menu entry's type (item, submenu beginning, submenu end,
+  separator) decides the menu structure.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: In each of the nine damaged rows of the probe, the list saved on exit equals the good
-  entries in their order (before the change: 0 of 9).
-- **SC-002**: No row reports a registry key left open at exit (before: 9 of 9 damaged rows did).
+- **SC-001**: In each of the twelve damaged rows of the probe, the list saved on exit equals the good
+  entries in their order, with a balanced User Menu structure (before the change: 0 of 12).
+- **SC-002**: No row reports a registry key left open at exit (before: every damaged row did).
 - **SC-003**: At most one message box per damaged entry of the wrong type, none for a missing value
   (unchanged from before).
-- **SC-004**: The three control rows with intact lists behave exactly as before (start, no box, same
-  list saved).
+- **SC-004**: The four control rows with intact lists (one with the user's own stray submenu end)
+  behave exactly as before (start, no box, same list saved).
 
 ## Assumptions
 

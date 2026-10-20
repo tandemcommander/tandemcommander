@@ -12,4 +12,8 @@ Reading rule (after the fix): entries `1, 2, ...` are opened in sequence until a
 a damaged entry is closed and skipped; a usable entry is added; an entry whose item cannot be created
 or added (out of memory) is closed and ends the list.
 
+User Menu structure (feature 268, `src/common/salumbalance.h`): a damaged entry whose `Type` reads
+submenu beginning (1) is skipped with its matching end; one whose `Type` reads submenu end (2) is
+loaded as a plain end. A damaged entry without a readable `Type` is skipped like an item.
+
 Saving (unchanged): the list key is cleared and the loaded entries are written as `1..Count`.

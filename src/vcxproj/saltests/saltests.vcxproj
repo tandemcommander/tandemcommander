@@ -165,6 +165,8 @@
     </ClInclude>
     <ClInclude Include="..\..\common\salexiforient.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salumbalance.h">
+    </ClInclude>
     <ClInclude Include="..\..\common\salunicode.h">
     </ClInclude>
     <ClInclude Include="..\..\saltests\precomp.h">
