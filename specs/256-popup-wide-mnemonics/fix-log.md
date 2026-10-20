@@ -80,3 +80,36 @@ main's five source files on the branch, building, running, and checking the bran
   unchanged). Pure rules in saltests.
 - Real keyboard / IME: a DBCS system (Japanese, IME full-width hot key in a popup), a UTF-8 (beta)
   system, a Russian keyboard layout on a Czech Windows with a User Menu item "&Ж...".
+
+## Review
+
+### Review 1 (refute-first, independent agent)
+
+- **MUST M1, taken**: `CFilesBox::WindowProc` (`src/filesbx1.cpp`, `case WM_MENUCHAR`) returned an
+  uninitialized `LRESULT` from `HandleMenuMsg2` (the shell leaves it untouched: `S_OK` for a menu
+  that is not its own - the background menu and the New submenu are asked through the file's
+  `ContextMenu` - `E_FAIL` for none). With MNC_EXECUTE now carried out, Release stack garbage with a
+  high word 2 could run an item. Now: all three results there start at 0 and a failed
+  `HandleMenuMsg2` answers 0. In addition the popup carries out an answer only when it was built from
+  a Windows menu (`hMenu != NULL`; a template-less popup has no item an owner could name).
+- **SHOULD S1, taken**: `SendMessageW` to a code-page owner (the main window, the Find window) packs
+  the low and high byte of wParam as two code-page characters - measured
+  (`probe/menuchar_kinds.ps1`): `00100071` arrived as `00001071`, `0010010D` as `000010E8`,
+  `00100416` as `0000103F`; a send of the owner's own kind arrives verbatim. Now the popup sends with
+  `SendMessageW` to a Unicode owner and `SendMessageA` to a code-page one, so every owner forwards
+  `MAKEWPARAM(<UTF-16 unit>, MF_POPUP)` to `IContextMenu3::HandleMenuMsg2` (the research's limit for
+  code-page owners is gone). The comment that said otherwise is replaced.
+- **SHOULD S2, recorded** (owner-side, outside the item): the panel asks `ContextMenu` also for the
+  background / New menus, the Find window's `DialogProc` loses the answer (no `DWLP_MSGRESULT`) ->
+  Inbox `menuchar-owner-routing` (review:256).
+- **NOTE, taken**: `probe/menuchar_def.ps1` listed `0x00102000 + 0x20` (PowerShell: array + 0x20);
+  explicit values now (`00100020`, `00102020`, `00100416` added): `DefWindowProcW` / `A` answer 0 to all.
+- NOTE: the execute path and the Find window's `WM_SYSCHAR` route are not driven end to end (recorded
+  above as owed to a person).
+- Refuted by the reviewer: char / IME / DBCS messages through the wide loop, the re-posted delayed
+  message (mouse only), plug-in owners (only codeview / mdview handle WM_MENUCHAR, without core
+  popups), double expansion in Find, the `OnChar` signature (non-virtual, protected, one caller).
+
+After the fixes: BUILD SUCCEEDED (no warnings), saltests 24,474 / 0 failed, encoding TOTAL 0,
+clang-format clean on the changed lines, probe `result_after_review1.txt` PASS 6 / FAIL 0, registry
+identical.

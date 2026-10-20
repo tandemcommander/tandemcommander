@@ -1589,7 +1589,7 @@ CFilesBox::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (Parent->Is(ptPluginFS) && Parent->GetPluginFS()->NotEmpty() &&
             Parent->GetPluginFS()->IsServiceSupported(FS_SERVICE_CONTEXTMENU))
         {
-            LRESULT lResult;
+            LRESULT lResult = 0; // feature 256: never garbage (WM_MENUCHAR's MNC_EXECUTE runs an item)
             if (Parent->GetPluginFS()->HandleMenuMsg(uMsg, wParam, lParam, &lResult))
                 return lResult;
         }
@@ -1600,10 +1600,13 @@ CFilesBox::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 if (SUCCEEDED(Parent->ContextMenu->QueryInterface(IID_IContextMenu3, (void**)&contextMenu3)))
                 {
-                    LRESULT lResult;
-                    contextMenu3->HandleMenuMsg2(uMsg, wParam, lParam, &lResult);
+                    // feature 256: the popup now carries out MNC_EXECUTE - an answer the handler did not
+                    // give must not reach it: the shell leaves the result untouched (S_OK for a menu that
+                    // is not its own, E_FAIL for none), which was an uninitialized variable here
+                    LRESULT lResult = 0;
+                    HRESULT hr = contextMenu3->HandleMenuMsg2(uMsg, wParam, lParam, &lResult);
                     contextMenu3->Release();
-                    return lResult;
+                    return SUCCEEDED(hr) ? lResult : 0;
                 }
             }
             Parent->ContextMenu->HandleMenuMsg(uMsg, wParam, lParam);
@@ -1612,7 +1615,7 @@ CFilesBox::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (Parent->ContextSubmenuNew != NULL && Parent->ContextSubmenuNew->MenuIsAssigned())
         {
             CALL_STACK_MESSAGE1("CFilesBox::WindowProc::SafeHandleMenuNewMsg2");
-            LRESULT lResult;
+            LRESULT lResult = 0;
             Parent->SafeHandleMenuNewMsg2(uMsg, wParam, lParam, &lResult);
             return lResult;
         }

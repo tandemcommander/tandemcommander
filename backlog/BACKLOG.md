@@ -171,6 +171,7 @@ Last triaged: 2026-10-19
 | [FTP: a PWD reply or a created folder path that does not fit is cut and used](items/ftp-pwd-and-created-path-cut/desc.md) | bug | 4 | ftp | manual | 2026-10-20 |
 | [FTP: a file name with an unpaired surrogate comes back garbled from a UTF-8 server; re-upload may overwrite](items/ftp-wtf8-name-listing-round-trip/desc.md) | bug | 7 | ftp | review:255 | 2026-10-20 |
 | [Menu bar hot keys typed after F10 arrive as code-page bytes](items/menubar-loop-wide-mnemonics/desc.md) | bug | 3 | panels-ui | measure:256 | 2026-10-20 |
+| [Shell extensions in the panel background menu and the Find window never answer typed hot keys](items/menuchar-owner-routing/desc.md) | bug | 2 | panels-ui | review:256 | 2026-10-20 |
 | [Multimedia Viewer: the "cannot open" message shows a non-ASCII file name as mojibake](items/mmviewer-open-error-name-mojibake/desc.md) | bug | 1 | other-plugins | measure:255 | 2026-10-20 |
 | [More typed fields cut to their buffer: masks, filter, volume label, hot path label edit](items/more-typed-fields-cut-to-their-buffer-masks-filter-volume/desc.md) | bug | 6 | long-paths | leftover:251 | 2026-10-20 |
 | [Paste of a case twin from an archive and SFTP twins by hand (252)](items/paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand/desc.md) | person-step | 5 | archives | leftover:252 | 2026-10-20 |

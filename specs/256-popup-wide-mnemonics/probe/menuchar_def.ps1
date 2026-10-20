@@ -12,6 +12,6 @@ public static class Mc256
 '@
 $h = [Mc256]::CreateWindowExW(0, 'STATIC', '', 0, 0, 0, 0, 0, [IntPtr]::Zero, [IntPtr]::Zero, [IntPtr]::Zero, [IntPtr]::Zero)
 $m = [Mc256]::CreatePopupMenu(); [void][Mc256]::AppendMenuW($m, 0, [IntPtr]1, '&Alpha'); [void][Mc256]::AppendMenuW($m, 0, [IntPtr]2, '&Beta')
-foreach ($w in @(0x10, 0x00100061, 0x00100062, 0x00100071, 0x00102000 + 0x20)) {
+foreach ($w in @(0x10, 0x00100061, 0x00100062, 0x00100071, 0x00100020, 0x00102020, 0x00100416)) {
   'wParam {0:X8}: DefWindowProcW {1:X8}, DefWindowProcA {2:X8}' -f $w, [Mc256]::DefWindowProcW($h, 0x120, [IntPtr]$w, $m).ToInt64(), [Mc256]::DefWindowProcA($h, 0x120, [IntPtr]$w, $m).ToInt64()
 }

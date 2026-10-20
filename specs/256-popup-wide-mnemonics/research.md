@@ -24,7 +24,7 @@
   `DefWindowProcW` / `DefWindowProcA` answer 0 (MNC_IGNORE) to every form - an owner that does not
   handle the message cannot make the popup run an item. The old code trusted the index of
   `MNC_SELECT` without a bounds check; the rule checks it now.
-- Owners: the panel's list (`CFilesBox`, Unicode class since 004) gets the UTF-16 character; the main
+- Owners (superseded by review 1, S1 - the popup now sends in the owner's kind, wParam verbatim): the panel's list (`CFilesBox`, Unicode class since 004) gets the UTF-16 character; the main
   window and the Find window are code-page windows - Windows converts the character to their code page
   and they forward it to `IContextMenu3::HandleMenuMsg2` unchanged (a limit for non-ASCII hot keys of
   shell extensions in the drive menu, the New menu and the Find window's context menu; ASCII is exact).

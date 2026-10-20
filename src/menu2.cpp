@@ -1574,12 +1574,19 @@ void CMenuPopup::OnChar(WCHAR key, BOOL* leaveMenu, DWORD* retValue)
         // (it should return 0 because nothing in the menu starts with H)
         // in any case, we were getting RTCs, so we mask to the lower DWORD
         // feature 256: the character in the low word and MF_POPUP in the high one, as the message's
-        // contract says (before: wParam = MF_POPUP, no character - no owner could match); sent wide, so
-        // a Unicode owner (the panel's list) gets the UTF-16 unit, a code-page one Windows' conversion
-        DWORD ret = (DWORD)(SendMessageW(SharedRes->HParent, WM_MENUCHAR, MAKEWPARAM(key, MF_POPUP), (LPARAM)hMenu) & 0xffffffff);
+        // contract says (before: wParam = MF_POPUP, no character - no owner could match). Sent in the
+        // owner's own kind so that Windows converts nothing: a W send to a code-page window packs the
+        // low and high byte as two code-page characters (measured: 'q' arrived as 0x1071, HIWORD 0).
+        // The owners forward wParam to IContextMenu3::HandleMenuMsg2, which expects the UTF-16 unit.
+        WPARAM wParam = MAKEWPARAM(key, MF_POPUP);
+        DWORD ret = (DWORD)((IsWindowUnicode(SharedRes->HParent) ? SendMessageW(SharedRes->HParent, WM_MENUCHAR, wParam, (LPARAM)hMenu)
+                                                                 : SendMessageA(SharedRes->HParent, WM_MENUCHAR, wParam, (LPARAM)hMenu)) &
+                            0xffffffff);
         int index;
         int answer = SalMenuCharAnswer(ret, Items.Count, &index);
-        if (answer != 0 && !(Items[index]->Type & MENU_TYPE_SEPARATOR) &&
+        // the answer is about the Windows menu the popup was built from (item positions 1:1,
+        // LoadFromHandle); a popup without one has no item an owner could name
+        if (answer != 0 && hMenu != NULL && !(Items[index]->Type & MENU_TYPE_SEPARATOR) &&
             (SharedRes->SkillLevel & Items[index]->SkillLevel))
         {
             SelectNewItemIndex(index, FALSE);
