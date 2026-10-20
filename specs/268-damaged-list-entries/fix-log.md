@@ -67,3 +67,11 @@ defect is the silent loss of the later entries and the leaked key, as the item s
   unbalanced in the same way: `FillUserMenu2` stops a level at an end, the toolbar counts levels,
   `GetSubmenuEndIndex` returns -1 and the configuration page copes. No repair of the structure (not in
   the item; conservative). Entries are kept and saved; the user can fix the structure in the dialog.
+
+## Analyze
+
+`speckit-analyze`: 0 CRITICAL, 0 HIGH (no second run needed). C1 (LOW, the key closure on the
+low-memory paths cannot be driven) accepted - checked by reading. F1 (LOW, the spec pointed to the
+highlighting import item for the import of the other lists) fixed: the settings import parsers
+`SalCfgImpParseViewers` / `SalCfgImpParseUserMenu` (`src/common/salcfgimport.h`) also end their lists
+at a damaged source entry - outside the item, task T009 records it in the Inbox.

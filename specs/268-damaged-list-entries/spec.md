@@ -110,5 +110,7 @@ the program on the hidden desktop, close it and read back the list it saved.
 - Assumption (autonomous run): the low-memory paths keep ending the list (`break`), as the item's
   *Notes* allow, but close the entry key first (item).
 - Assumption (autonomous run): no change to the registry layout, the save code, the configuration
-  dialogs or any other loader; the settings import has its own item (conservative).
+  dialogs or any other loader (conservative). The settings import (feature 245) still ends its
+  viewers, editors and User Menu lists at a damaged source entry - outside the item, recorded as an
+  Inbox item.
 - The fix is in the start-up configuration loaders only; it needs no new UI string and no translation.

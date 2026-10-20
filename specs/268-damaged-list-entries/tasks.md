@@ -33,10 +33,11 @@ a handle left open, the wrong-type rows show at most one box; the CONTROL rows u
 
 - [ ] T007 Run `python tools/check_encoding.py --strict` (TOTAL: 0 finding(s)) and saltests (`build\tandemcommander\Debug_x64\saltests\saltests.exe`, 0 failed); record in specs/268-damaged-list-entries/fix-log.md
 - [ ] T008 Check clang-format on the edited lines of src/salamdr2.cpp and src/mainwnd2.cpp (no change expected)
+- [ ] T009 Record the settings-import mismatch (SalCfgImpParseViewers / SalCfgImpParseUserMenu in src/common/salcfgimport.h still end the viewers, editors and User Menu lists at a damaged source entry; the loaders now skip it) as an Inbox item via `BL new` (source measure:268, related settings-import-ends-the-highlighting-list-at-a-damaged)
 
 ## Dependencies
 
-T001 -> T002 -> (T003, T004) -> T005 -> T006 -> T007; T008 after T003 / T004.
+T001 -> T002 -> (T003, T004) -> T005 -> T006 -> T007; T008 after T003 / T004; T009 independent.
 
 ## Parallel opportunities
 
