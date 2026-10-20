@@ -27,7 +27,8 @@
   `mkdir(parents=True)` and no `exist_ok` - with the folder in the fixture it raises
   `FileExistsError` (found by review 1, missed in the first enumeration, which searched only
   `tools/`); removed.
-- `specs/242-backlog-system/probe/mutate.py` copies the tool folder for mutation testing;
-  the fixture gains one file, which it copies along.
+- `specs/242-backlog-system/probe/mutate.py` and `specs/247-backlog-run-loop/probe/mutate_loop.py`
+  copy the tool folder for mutation testing; the fixture gains one file, which they copy
+  along (`mutate_loop.py` added after review 2).
 - No test lists the files of `specs/`; the `iterdir` calls in the tests read
   `backlog/items/` only.

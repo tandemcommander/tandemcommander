@@ -14,8 +14,11 @@ Backlog item `backlog-fixture-empty-specs-folder-missing`.
 - Cause: the folder was created empty in feature 242 (T010); git stores no empty folders.
 - Consumers enumerated (research R3): `test_backlog.py` (copytree per test; the
   `feature-missing` seed `shutil.rmtree`s the folder), `test_loop.py` (copytree, then creates
-  `specs/243-example/README.md` itself - workaround of 247, kept), `specs/242-backlog-system/probe/mutate.py`
-  (copies the tool folder). Only the `feature-missing` rule of `backlog.py` reads `specs/`.
+  `specs/243-example/README.md` itself - workaround of 247; first kept, removed after review 1),
+  `specs/242-backlog-system/probe/mutate.py` (copies the tool folder). Only the
+  `feature-missing` rule of `backlog.py` reads `specs/`. (This first enumeration searched
+  `tools/` only; review 1 found `specs/247-backlog-run-loop/probe/e2e_real_claude.py`, review 2
+  `specs/247-backlog-run-loop/probe/mutate_loop.py` - see *Review*.)
 - Probe on a temporary copy with the folder plus a one-line README: `check` -> `TOTAL: 0`.
 
 ## Change
@@ -23,8 +26,10 @@ Backlog item `backlog-fixture-empty-specs-folder-missing`.
 - New `tools/backlog/fixtures/valid/specs/243-example/README.md` (why the folder exists; keeps
   it in git).
 - `tools/backlog/fixtures/README.md`: says the folder is kept by that README.
-- No change to `tools/backlog/*.py` or the product (`git diff main...HEAD --stat`: only
-  `backlog/`, `.specify/feature.json`, `specs/265-*`, the two fixture files).
+- No change to `tools/backlog/backlog.py` or the product (`git diff main...HEAD --stat`: only
+  `backlog/`, `.specify/feature.json`, `specs/265-*`, the two fixture files; after review 1
+  also the removal of the workaround in `tools/backlog/test_loop.py` and
+  `specs/247-backlog-run-loop/probe/e2e_real_claude.py`).
 
 ## After (branch `265-backlog-fixture-specs-folder`, 2026-10-20)
 
@@ -39,7 +44,10 @@ Backlog item `backlog-fixture-empty-specs-folder-missing`.
 - Negative control (in the first clone, folder deleted): `check` -> `TOTAL: 1`;
   `test_backlog.py` -> `FAILED (failures=29, errors=1)` - the failures return. (At `6085500d`
   the split was 28/2; the total of 30 failing tests is the same, the split between failure and
-  error differs - not investigated further, SC-003 asks only that the failures return.)
+  error differs. Explained by review 2: `test_backlog.py:339` makes `specs/244-ftp` without
+  `parents=True`; with `valid/specs/` missing entirely it raises an error, with only
+  `243-example` deleted the leftover `specs/` turns that error into a failure. Deleting
+  `valid/specs/` gives 28/2, exactly as at `6085500d`.)
 - Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
 - Build / saltests: not run - no file of the product, `src/` or the build changed.
 
@@ -69,3 +77,23 @@ After the fix (commit `[265] review 1: ...`):
 - Fresh clone of the branch: `test_backlog.py` -> 68 tests `OK`; `test_loop.py` -> 57 tests
   `OK`.
 - `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+
+### Review 2 (fresh independent agent, refute-first, with the findings of review 1)
+
+- No MUST, no SHOULD. Re-ran in a fresh clone at `42700908`: fixture `check` `TOTAL: 0`,
+  `test_backlog.py` 68 OK, `test_loop.py` 57 OK, the 247 probe's `make_repo()` OK (the folder
+  tracked from the fixture), `backlog.py check` on the repository `TOTAL: 0`, encoding guard
+  `TOTAL: 0 finding(s)`.
+- Negative control with `valid/specs/` deleted: `check` `TOTAL: 1`, `test_backlog.py` 28
+  failures / 2 errors; `test_loop.py` fails (`test_wrappers`, `test_nothing_eligible`,
+  `test_ready`) and its process tests stall - the suite now depends on the committed folder.
+- Consumers searched across the whole repository: `test_backlog.py`, `test_loop.py`,
+  `e2e_real_claude.py`, `mutate.py`, `mutate_loop.py` - no other.
+- NOTE 1 (stale "kept" in *Before*), NOTE 2 (the 29/1 vs 28/2 split explained), NOTE 3
+  (`mutate_loop.py` missing from research R3): fixed in this fix-log and `research.md`.
+- NOTE 4 (duplicated "at 6085500d" in the item's *Log*): cosmetic; the item is deleted at
+  closing.
+- NOTE 5: `tools/backlog/test_loop.py` `tearDown` (`shutil.rmtree(..., ignore_errors=True)`)
+  leaves every test's temporary git repository in `%TEMP%\loop247-*` (read-only git objects;
+  324 folders counted) - not caused by 265 → Inbox item
+  `loop-tool-tests-leave-a-temporary-git-folder-behind-on-every` (`measure:265`).

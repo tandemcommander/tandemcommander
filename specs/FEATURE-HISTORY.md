@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247 |
+| Backlog and project tooling | 242, 243, 247, 265 |
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -3332,3 +3332,17 @@ a few early ones are out of sequence).
   L1 / P1 fail -> fixed 7 rows PASS (incl. 259 characters, saved provider 1204, unreachable server
   53); 246 `itest246_pickcp` PK-Q1 / PK-Q2 reconnected exactly False -> True;
   `TestNetDriveSameRemote264`; one refute-first review (no MUST; SHOULDs done).
+- 265-backlog-fixture-specs-folder: the backlog tool's tests failed on every fresh checkout
+  (`test_backlog.py` 28 failures, 2 errors of 68) because the valid fixture's feature folder
+  `tools/backlog/fixtures/valid/specs/243-example/` (target of the `feature-missing` rule for its
+  in-progress item, 242 T010) was empty and git stores no empty folders - now a short `README.md`
+  inside it keeps it in git, and the fixtures README says so; the `feature-missing` seed still
+  deletes the whole folder. The redundant workaround that created the folder in 247's
+  `test_loop.py` `setUp` and its e2e probe `make_repo()` is gone - with the folder in the fixture
+  the probe's `mkdir` without `exist_ok` raised `FileExistsError` (missed by a consumer search of
+  `tools/` only; search `specs/*/probe` too when changing a shared fixture). Limit: `test_loop.py`
+  leaves each test's temporary git repository in `%TEMP%` (Inbox
+  `loop-tool-tests-leave-a-temporary-git-folder-behind-on-every`). From backlog item
+  `backlog-fixture-empty-specs-folder-missing`. Fresh clone: fixture `check` TOTAL 1 -> 0,
+  `test_backlog.py` 28 F / 2 E -> 68 OK, `test_loop.py` 57 OK; negative control (folder deleted)
+  brings the failures back; two refute-first reviews (review 1 MUST fixed; review 2 no MUST).
