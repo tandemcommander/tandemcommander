@@ -8,9 +8,10 @@
     Every typed text fits the field (UTF-16 units) but not the buffer (UTF-8 bytes; CJK letters take
     three bytes each). M = 86 CJK letters (258 bytes). Rows:
       sel-mask   Select (841), the mask M*Q (260 bytes): cut to M* (the panel holds M.txt and MxQ -
-                 the cut mask also selects M.txt). PASS = refused, the dialog stays, nothing selected
-      unsel-mask Unselect (843), the same mask after Select All: PASS = refused, both stay selected
-      sel-ctl    Select, the mask M* (259 bytes + NUL): accepted, both selected, the next Select
+                 the cut mask also matches M.txt). PASS = refused, the dialog stays open with the
+                 whole mask (the probe cancels it); FAIL = the next Select shows another mask
+      unsel-mask Unselect (843), the same mask: PASS / FAIL as sel-mask
+      sel-ctl    Select, the mask M* (259 bytes + NUL): accepted, nothing asked, the next Select
                  shows it whole
       conv-mask  Convert (814), the focused file M.txt (LF line ends), the mask M*Q, line ends CRLF:
                  cut, M* matches M.txt and converts it. PASS = refused, the file unchanged
@@ -27,7 +28,11 @@
       hp-label   Configuration > Hot Paths (a seeded slot 1), F2 on the row (LVM_EDITLABEL), 100 CJK
                  letters (300 bytes), Enter: stored cut as the slot's name. PASS = OK refused, the
                  name field shows the whole name
-      hp-label-ctl the same with 86 CJK letters (258 bytes): accepted, stored whole
+      hp-label-again the same 100 letters, Enter, then F2 on the row once more, End, 'x', Enter: the
+                 row shows the name cut (a display buffer) - the edit must start from the whole
+                 name (cut, 86 letters + 'x' = 259 bytes were stored and OK passed). PASS = OK
+                 refused, the name field shows the 100 letters + 'x'
+      hp-label-ctl M + 'a' (259 bytes + NUL): accepted, stored whole
     Driver of 251's probe (098's library). MUST run through tools\run_on_hidden_desktop.ps1.
     Registry exported, restored and verified.
 #>
@@ -203,7 +208,7 @@ function Seed-ConvDir([string]$Case) {
 }
 
 # ---- the hot path label edit row -----------------------------------------------------
-function Hp-Label-Row([string]$Case, [string]$Name, [switch]$Fits) {
+function Hp-Label-Row([string]$Case, [string]$Name, [switch]$Fits, [switch]$Again) {
     Run-Row $Case {
         Reg-Set 'Hot Paths\1' 'Name' 'C:\' String; Reg-Set 'Hot Paths\1' 'Path' 'C:\' String; Reg-Set 'Hot Paths\1' 'Visible' 1 DWord
         $id = Start-Tc $StartDir; $script:RowId = $id
@@ -224,6 +229,25 @@ function Hp-Label-Row([string]$Case, [string]$Name, [switch]$Fits) {
         [void][Drv098f]::Send($edit, 0x0100, 0x0D, 0x001C0001, 5000)   # WM_KEYDOWN VK_RETURN
         Start-Sleep -Milliseconds 500
         if ([Drv098f]::IsWindow($edit)) { throw 'the label edit did not end on Enter' }
+        $againFacts = ''
+        if ($Again) {
+            # F2 once more, Enter without typing: the edit must start from the whole name
+            [void][Drv098f]::Send([Drv098f]::GetParent($lv), 0x0028, $lv.ToInt64(), 1, 5000)
+            Start-Sleep -Milliseconds 300
+            [void][Drv098f]::SendMessageTimeoutW($lv, 0x1076, [IntPtr]::Zero, [IntPtr]::Zero, 0, 5000, [ref]$res)
+            $edit2 = $res
+            if ($edit2 -eq [IntPtr]::Zero) { throw 'the second LVM_EDITLABEL opened no edit' }
+            $start = [Drv098f]::GetText($edit2, 5000)
+            # End, 'x' (an unchanged text ends the edit as a cancel): what is stored is the edit's
+            # starting text + 'x'
+            $startWhole = ($start -ceq $Name)
+            [void][Drv098f]::SetText($edit2, $start + 'x', 5000)
+            $Name = $Name + 'x'
+            [void][Drv098f]::Send($edit2, 0x0100, 0x0D, 0x001C0001, 5000)
+            Start-Sleep -Milliseconds 500
+            if ([Drv098f]::IsWindow($edit2)) { throw 'the second label edit did not end on Enter' }
+            $againFacts = ("the second edit started with {0} units (whole: {1}), 'x' appended; " -f $start.Length, $startWhole)
+        }
         $inField = Get-Field $dlg 376
         $o = Ok-AndServe $id $dlg { Get-Field $dlg 376 }
         $script:RowFatal = $o.Fatal; if (-not $script:RowFatal) { $script:RowFatal = Fatal-Win $id }
@@ -242,7 +266,7 @@ function Hp-Label-Row([string]$Case, [string]$Name, [switch]$Fits) {
         $refused = $o.Stayed -and ($o.Shown -match $TooLong) -and ($atRefusal -ceq $Name)
         if ($Fits) { $verdictOk = (-not $o.Stayed) -and $kept -and ($o.Shown -eq 'nothing') } else { $verdictOk = $refused }
         $ok = (-not $script:RowFatal) -and (-not $o.TimedOut) -and $verdictOk
-        Row $Case 'RUN' (V $ok) ("typed {0} units / {1} bytes; the name field after Enter: {2} units; dialog stayed: {3}; asked: {4}; {5}{6}" -f $Name.Length, (U8 $Name), $inField.Length, $o.Stayed, $o.Shown, $after, $(if ($o.TimedOut) { '; TIMED OUT' } else { '' }))
+        Row $Case 'RUN' (V $ok) ("typed {0} units / {1} bytes; {2}the name field after Enter: {3} units; dialog stayed: {4}; asked: {5}; {6}{7}" -f $Name.Length, (U8 $Name), $againFacts, $inField.Length, $o.Stayed, $o.Shown, $after, $(if ($o.TimedOut) { '; TIMED OUT' } else { '' }))
     }
 }
 
@@ -270,7 +294,8 @@ $Cases['vol'] = {
     Mask-Row 'vol' $StartDir $null 752 552 $t $null 'field' -Check { $now = (New-Object IO.DriveInfo ($TempRoot.Substring(0, 1))).VolumeLabel; Res270 ($now -ceq $labelBefore) ("label of {0}: before '{1}', after '{2}'" -f $drive.Name, (Esc $labelBefore), (Esc $now)) }
 }
 $Cases['hp-label'] = { Hp-Label-Row 'hp-label' (Cjk 100) }
-$Cases['hp-label-ctl'] = { Hp-Label-Row 'hp-label-ctl' $M -Fits }
+$Cases['hp-label-again'] = { Hp-Label-Row 'hp-label-again' (Cjk 100) -Again }
+$Cases['hp-label-ctl'] = { Hp-Label-Row 'hp-label-ctl' ($M + 'a') -Fits }
 
 # ---- main --------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc270_backup.reg'

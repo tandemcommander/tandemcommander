@@ -1,6 +1,6 @@
 dlg251_probe (feature 251) regress-270
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 22:33; ACP 1250; registry key existed True
+Date    : 2026-10-20 22:57; ACP 1250; registry key existed True
 
 mfl-name   RUN    PASS        out: (empty); name 274 bytes / 132 units; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |
 mfl-name   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

@@ -3258,6 +3258,24 @@ CCfgPageHotPath::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 LabelEdit = TRUE;
                 EnableHeader();
+                // feature 270: the row shows its label cut to MAX_PATH (a name or path waiting for
+                // the refusal at OK); the edit starts from the whole text, else Enter would store
+                // the cut row text as the name
+                HWND hLabelEdit = ListView_GetEditControl(HListView);
+                int labelIndex = ((NMLVDISPINFO*)nmh)->item.iItem;
+                if (hLabelEdit != NULL && labelIndex >= 0 && labelIndex < HOT_PATHS_COUNT)
+                {
+                    int labelSize = max(Config->GetNameLen(labelIndex), Config->GetPathLen(labelIndex)) + 1;
+                    char* label = (char*)malloc(labelSize);
+                    if (label != NULL)
+                    {
+                        Config->GetDisplayName(labelIndex, label, labelSize);
+                        SalSetWindowTextU8(hLabelEdit, label);
+                        free(label);
+                    }
+                    else
+                        TRACE_E(LOW_MEMORY);
+                }
                 // the in-place label edit is created after the dialog's
                 // theming pass (feature 049, defect A4)
                 ThemeApplyToWindowTree(ListView_GetEditControl(HListView));
