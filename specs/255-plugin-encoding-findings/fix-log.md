@@ -36,12 +36,12 @@ Each site was read with its producer and its consumer (callers found with grep);
 | `mixed-composition` | 6 | 3 (Multimedia Viewer 1, UnMIME 2 - both off; Czech templates have non-ASCII letters) | CheckVer: the name is read from an ANSI list box; PictView: the path is converted to the code page just above; ZIP `add.cpp:3374` is inside a `/* */` block (the live copy in `add_del.cpp` uses `LoadStrU8`, 130) |
 | `ansi-template-number` | 2 | 0 | PictView prints with `%u` - ASCII, no grouping |
 | `dead-dispinfow` | 2 | 0 | FTP sets `ListView_SetUnicodeFormat(TRUE)` (010); Registry Editor's Find is a `CreateDialogParamW` dialog |
-| `strict-probe-rejects-wtf8` | 12 | 3 (Renamer preview; `shared/lukas` history combo - used by the Renamer only) | archive-name boundaries (TAR, UnCAB, UnISO, UnMIME), FTP listing bytes (224), encoding labels, CheckVer log texts, Renamer's `ChangeCase` copies a non-UTF-8 part unchanged (208) |
+| `strict-probe-rejects-wtf8` | 12 | 3 (Renamer preview; UnISO `EnsureU8Name` on Joliet file names; CheckVer log - the last two after review 1) | archive-name boundaries (TAR, UnCAB, UnMIME), FTP listing bytes (224), encoding labels, `shared/lukas/utildlg.cpp` is built by no project (review 1), Renamer's `ChangeCase` copies a non-UTF-8 part unchanged (208) |
 | `lossy-lenient-at-intake` | 38 | 2 (UnISO HFS+ names) | display-only texts (Automation dialogs, Code Viewer / Markdown Viewer document text, media tags, registry data preview, resource and system texts), input decoded from a code page just above (FTP, ZIP, Multimedia Viewer), a fallback after `SplWToU8` that fits by construction (Joliet, UDF, UDF volume id, OLE names), case-changed strict-decoded text (Renamer), the Portables device name (converted the same way everywhere) |
 
-Totals: **68 false positives, 10 real defects**. Real defects in shipped plug-ins: DB Viewer 1,
-Renamer 3 (with `shared/lukas`), UnISO 2; in plug-ins that are off: Automation 1, Multimedia
-Viewer 1, UnMIME 2.
+Totals (after review 1): **68 false positives, 10 real defects** in 8 items. Real defects in
+shipped plug-ins: DB Viewer 1, Renamer 1, UnISO 3; in plug-ins that are off: Automation 1,
+CheckVer 1, Multimedia Viewer 1, UnMIME 2.
 
 Noted, not a finding of the rules: the comments "lone surrogates and the like: fall back to a lossy
 but valid UTF-8 form" in `uniso/iso9660.cpp` / `udf.cpp` are stale since 089 (`SplWToU8` is total)
@@ -58,7 +58,7 @@ src`: 36 files, **68 insertions, 0 deletions**, every added line a marker commen
 ## Items (T009, T010)
 
 Six bugs (`measure:255`) and one follow-up (`leftover:255`) in *Inbox*:
-`automation-script-folder-list-code-page` (3), `dbviewer-field-length-separator` (2),
+`automation-script-folder-list-code-page` (3; 2 after review 1), `dbviewer-field-length-separator` (2),
 `mmviewer-open-error-name-mojibake` (1), `unmime-progress-title-name-mojibake` (1),
 `renamer-wtf8-names-shown-as-mojibake` (2), `uniso-hfs-names-lossy-surrogates` (2, related to
 `uniso-hfs-btree-trust-and-joliet-cut`), `plugin-encoding-scan-strict-in-build` (2, depends on the
@@ -77,3 +77,45 @@ three shipped-plug-in items). `BL check` → `TOTAL: 0`.
   incremental) → `BUILD SUCCEEDED`, exit 0 (the plug-ins that are off are not built; their changes
   are comments too). `saltests` not run: nothing in the core or `src/common/` changed.
 - T014: the source diff is comments only (above).
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+Reproduced: the scan's 10 = the 10 real rows; core `--strict` 0; source diff 68 added / 0 deleted,
+all markers, BOMs and line ends kept. Its negative control: `tools/` and `src/plugins` copied to a
+temporary folder with the markers stripped → `TOTAL: 78`, the same sites as the baseline - every
+marker sits on its line.
+
+- **MUST 1** - UnISO `uniso.cpp` `EnsureU8Name` (row 74) was marked "archive bytes", but for
+  Joliet **files** `iso9660.cpp` calls it on the WTF-8 output of `ConvJolietName`; the strict
+  probe rejects the surrogate form and re-reads the name in the code page (`a<U+D800>č.txt` →
+  `aí €Ä….txt`, cp1250). Confirmed by reading. **Fixed**: marker removed, verdict real defect, new
+  item `uniso-joliet-file-names-wtf8-garbled` (review:255).
+- **MUST 2** - CheckVer `logwnd.cpp` (row 35) was marked "not names", but the log shows the script
+  path (`data.cpp`, `IDS_FILE_OPENED` & co. composed with the UTF-8 path). Confirmed. **Fixed**:
+  marker removed, real defect, item `checkver-log-script-path-garbled` (review:255).
+- **MUST 3** - `shared/lukas/utildlg.cpp` (rows 65, 66, recorded as Renamer defects) is built by
+  no project; the Renamer links its own `HistoryComboBox` (`renamer/dialogs.cpp`, `SplU8ToWAlloc`).
+  Confirmed (`grep utildlg` over projects and sources: only a comment in `lcutils.h`). **Fixed**:
+  rows 65/66 → false positive "not compiled" (markers added); the Renamer item reduced to the
+  preview; its title corrected.
+- SHOULD 1 - File Comparator tooltip markers claimed the decimal separator is always ASCII; a
+  user-set decimal symbol is not. **Fixed**: the markers now say "latent, deferred like the core's
+  twin (067, ledger L06)".
+- SHOULD 2 - the Automation item claimed a broken round trip on cp1250; measured by the reviewer:
+  single-byte code pages round-trip, cp932 does not. **Fixed**: item text, severity 3 → 2.
+- SHOULD 3 - the HFS+ item named Joliet as the correct model. **Fixed**: text, linked to the new
+  Joliet item.
+- SHOULD 4 - the guard reads `*.cpp` only; plug-in headers hold lenient name converters
+  (`regedt/utils.h`, `portables/wpdhelpers.h`). Out of the item's scope (the 78 findings) →
+  item `check-encoding-skips-header-files` (review:255), linked from the strict-scan item.
+- NOTE - PictView markers said `%u`, the template has `%d`: **fixed** the text. Markdown Viewer
+  `UriDecode`: the verdict holds (canonical URI), a percent-encoded lone surrogate becomes U+FFFD in
+  a read-only open - recorded here only. ZIP `prevsfx.cpp`: `path` uninitialised if
+  `GetCurrentDirectoryA` fails (a preview, not encoding) - recorded here only.
+
+After the fixes: `check_encoding.py --plugins` → `TOTAL: 10`, the sites = the 10 real rows (sorted
+lists equal); every false-positive row's reason equals its marker text (68/68, checked by script);
+`--strict` → `TOTAL: 0`, exit 0; `git diff main -- src` 68 added / 0 deleted; `build.cmd` →
+`BUILD SUCCEEDED`, exit 0; `BL check` → `TOTAL: 0`.

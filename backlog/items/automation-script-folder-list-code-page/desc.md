@@ -1,8 +1,8 @@
 ---
-title: Automation: a script folder with non-ASCII letters is shown and stored through the code page
+title: Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration
 type: bug
 status: new
-severity: 3
+severity: 2
 area: other-plugins
 source: measure:255
 who: agent
@@ -16,19 +16,19 @@ depends-on: []
 reason: -
 ---
 
-# Automation: a script folder with non-ASCII letters is shown and stored through the code page
+# Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration
 
 ## Problem
 
 In the Automation plug-in's configuration (not shipped: `plugins.cfg` automation=off), the list of
 script folders is an ANSI list view. A folder picked with *Browse* comes from the core as UTF-8
 (`GetTargetDirectory`) and is put into the list with `ListView_SetItemText` (the A message), so a
-folder with non-ASCII letters is shown as mojibake. On OK the list is read back with
-`ListView_GetItem` (A) and stored; the bytes pass the code page twice, and bytes the code page does
-not define (cp1250: 0x81, 0x83, 0x88, 0x90, 0x98 - e.g. the second byte of "ň") do not come back,
-so the stored folder can differ from the chosen one and its scripts are not found. The folders
-loaded from the configuration go the same way (`ListView_InsertItem` with
-`GetScriptDirectoryRaw`).
+folder with non-ASCII letters is shown as mojibake. The folders loaded from the configuration go
+the same way (`ListView_InsertItem` with `GetScriptDirectoryRaw`). On OK the list is read back
+with `ListView_GetItem` (A) and stored; the bytes pass the code page twice. On the single-byte
+code pages (1250, 1251, 1252 measured by the review of 255) they come back unchanged - display
+only; on a double-byte code page (932 measured) UTF-8 bytes do not survive, so the stored folder
+differs from the chosen one and its scripts are not found.
 
 ## Evidence
 
@@ -53,8 +53,11 @@ Make the list view Unicode (`ListView_SetUnicodeFormat` or the W messages) and c
 ## Notes
 
 The plug-in is not shipped; severity is one lower for that. Not reproduced on a build (the
-plug-in is not built by default).
+plug-in is not built by default); the round trip was measured by the review of 255 with the
+Windows conversion functions only.
 
 ## Log
 
 - 2026-10-20 — created (source measure:255)
+- 2026-10-20 — set severity=2
+- 2026-10-20 — set title=Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration

@@ -4,7 +4,8 @@ Lines are those at e849e68c (`baseline_e849e68c.txt`, the scan's order). *Shippe
 `plugins.cfg` value (`shared` = shared code). A *false positive* carries the same reason in a
 `// encoding-check: allow <rule> - <reason>` marker above its line; a *real defect* is left
 unannotated and has a backlog item. Totals: 68 false positives, 10 real defects in
-6 items (+ the follow-up `plugin-encoding-scan-strict-in-build`).
+8 items (+ the follow-up `plugin-encoding-scan-strict-in-build`). Rows 35, 65,
+66 and 74 were changed by the independent review (fix-log, *Review*).
 
 | # | Site | Rule | Shipped | Verdict | Reason / item |
 |---|---|---|---|---|---|
@@ -13,13 +14,13 @@ unannotated and has a backlog item. Totals: 68 false positives, 10 real defects 
 | 3 | `plugins/checkver/dialogs.cpp:314` | mixed-composition | off | false positive | itemName is read from the ANSI list box (LB_GETTEXT) - code page like the LoadStr template (255) |
 | 4 | `plugins/dbviewer/dialogs.cpp:524` | utf8-to-legacy-sink | on | real defect | `dbviewer-field-length-separator` |
 | 5 | `plugins/dbviewer/dialogs.cpp:530` | utf8-to-legacy-sink | on | false positive | a number printed with %d - ASCII (255) |
-| 6 | `plugins/filecomp/controls.cpp:275` | utf8-to-legacy-sink | on | false positive | digits, '%' and the locale decimal separator (ASCII ',' or '.' in the Windows locales, 067), code page through the whole tooltip (255) |
-| 7 | `plugins/filecomp/controls.cpp:411` | utf8-to-legacy-sink | on | false positive | digits, '%' and the locale decimal separator (ASCII ',' or '.' in the Windows locales, 067), code page through the whole tooltip (255) |
+| 6 | `plugins/filecomp/controls.cpp:275` | utf8-to-legacy-sink | on | false positive | digits, '%' and the locale decimal separator, ASCII ',' or '.' unless the user sets another decimal symbol - latent, deferred like the core's twin (067, ledger L06) (255) |
+| 7 | `plugins/filecomp/controls.cpp:411` | utf8-to-legacy-sink | on | false positive | digits, '%' and the locale decimal separator, ASCII ',' or '.' unless the user sets another decimal symbol - latent, deferred like the core's twin (067, ledger L06) (255) |
 | 8 | `plugins/filecomp/mainwnd.cpp:806` | utf8-to-legacy-sink | on | false positive | SendMessageW with the UTF-16 text (SplU8ToWAlloc) - the wide message (255) |
 | 9 | `plugins/ftp/dialogs6.cpp:121` | dead-dispinfow | on | false positive | both list views get ListView_SetUnicodeFormat(TRUE) below, so the W handler runs (010, 255) |
 | 10 | `plugins/mmviewer/renmain.cpp:93` | mixed-composition | off | real defect | `mmviewer-open-error-name-mojibake` |
-| 11 | `plugins/pictview/dialogs.cpp:232` | ansi-template-number | on | false positive | the number is printed with %u (ASCII, not grouped); template and Static_SetText are code page (255) |
-| 12 | `plugins/pictview/dialogs.cpp:236` | ansi-template-number | on | false positive | the number is printed with %u (ASCII, not grouped); template and Static_SetText are code page (255) |
+| 11 | `plugins/pictview/dialogs.cpp:232` | ansi-template-number | on | false positive | the number is printed by the template's %d (ASCII, not grouped); template and Static_SetText are code page (255) |
+| 12 | `plugins/pictview/dialogs.cpp:236` | ansi-template-number | on | false positive | the number is printed by the template's %d (ASCII, not grouped); template and Static_SetText are code page (255) |
 | 13 | `plugins/pictview/pictview.cpp:1577` | mixed-composition | on | false positive | path is converted to the code page just above (CP_ACP), like the LoadStr template (255) |
 | 14 | `plugins/regedt/finddlg2.cpp:996` | dead-dispinfow | on | false positive | CFindDialog is a CDialogEx created by CreateDialogParamW - a Unicode dialog, so its list view sends W notifications (255) |
 | 15 | `plugins/unmime/unmime.cpp:408` | mixed-composition | off | real defect | `unmime-progress-title-name-mojibake` |
@@ -42,7 +43,7 @@ unannotated and has a backlog item. Totals: 68 false positives, 10 real defects 
 | 32 | `plugins/automation/strconv.cpp:48` | lossy-lenient-at-intake | off | false positive | OLE2A serves a question text and a trace only - shown, never a name for an operation (255) |
 | 33 | `plugins/automation/strconv.cpp:55` | lossy-lenient-at-intake | off | false positive | OLE2A serves a question text and a trace only - shown, never a name for an operation (255) |
 | 34 | `plugins/automation/strconv.cpp:59` | lossy-lenient-at-intake | off | false positive | OLE2A serves a question text and a trace only - shown, never a name for an operation (255) |
-| 35 | `plugins/checkver/logwnd.cpp:172` | strict-probe-rejects-wtf8 | off | false positive | log lines are resource strings and texts of the version file, not names - the WTF-8 form does not arise (255) |
+| 35 | `plugins/checkver/logwnd.cpp:172` | strict-probe-rejects-wtf8 | off | real defect | `checkver-log-script-path-garbled` |
 | 36 | `plugins/codeview/intake.cpp:163` | lossy-lenient-at-intake | on | false positive | decoded file contents for the viewer (shown), not a name (255) |
 | 37 | `plugins/codeview/intake.cpp:168` | lossy-lenient-at-intake | on | false positive | decoded file contents for the viewer (shown), not a name (255) |
 | 38 | `plugins/codeview/webglue.cpp:54` | lossy-lenient-at-intake | on | false positive | a virtual-host request path, compared with fixed ASCII asset names (255) |
@@ -72,8 +73,8 @@ unannotated and has a backlog item. Totals: 68 false positives, 10 real defects 
 | 62 | `plugins/renamer/crenamer.cpp:894` | lossy-lenient-at-intake | on | false positive | UTF-16 from a strict UTF-8 decode, case-changed or normalized - valid Unicode by construction (255) |
 | 63 | `plugins/renamer/crenamer.cpp:899` | lossy-lenient-at-intake | on | false positive | UTF-16 from a strict UTF-8 decode, case-changed or normalized - valid Unicode by construction (255) |
 | 64 | `plugins/renamer/preview.cpp:140` | strict-probe-rejects-wtf8 | on | real defect | `renamer-wtf8-names-shown-as-mojibake` |
-| 65 | `plugins/shared/lukas/utildlg.cpp:12` | strict-probe-rejects-wtf8 | shared | real defect | `renamer-wtf8-names-shown-as-mojibake` |
-| 66 | `plugins/shared/lukas/utildlg.cpp:17` | strict-probe-rejects-wtf8 | shared | real defect | `renamer-wtf8-names-shown-as-mojibake` |
+| 65 | `plugins/shared/lukas/utildlg.cpp:12` | strict-probe-rejects-wtf8 | shared | false positive | not compiled: no project builds shared/lukas/utildlg.cpp; the Renamer links its own HistoryComboBox (renamer/dialogs.cpp, SplU8ToWAlloc) (255) |
+| 66 | `plugins/shared/lukas/utildlg.cpp:17` | strict-probe-rejects-wtf8 | shared | false positive | not compiled: no project builds shared/lukas/utildlg.cpp; the Renamer links its own HistoryComboBox (renamer/dialogs.cpp, SplU8ToWAlloc) (255) |
 | 67 | `plugins/tar/tardll.cpp:149` | strict-probe-rejects-wtf8 | on | false positive | name bytes read from the archive (format boundary); the WTF-8 form of a core name does not arise there, the code-page reading is the documented fallback (255) |
 | 68 | `plugins/uncab/uncab.cpp:211` | strict-probe-rejects-wtf8 | on | false positive | name bytes read from the archive (format boundary); the WTF-8 form of a core name does not arise there, the code-page reading is the documented fallback (255) |
 | 69 | `plugins/uniso/hfs.cpp:276` | lossy-lenient-at-intake | on | real defect | `uniso-hfs-names-lossy-surrogates` |
@@ -81,7 +82,7 @@ unannotated and has a backlog item. Totals: 68 false positives, 10 real defects 
 | 71 | `plugins/uniso/iso9660.cpp:326` | lossy-lenient-at-intake | on | false positive | fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; a Joliet name (length byte <= 255, <= 127 units) always fits 'final' (255) |
 | 72 | `plugins/uniso/udf.cpp:159` | lossy-lenient-at-intake | on | false positive | fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; a UDF name (length byte <= 255) always fits 'final' (255) |
 | 73 | `plugins/uniso/udfiso.cpp:135` | lossy-lenient-at-intake | on | false positive | fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; 64 units always fit 'volId' (255) |
-| 74 | `plugins/uniso/uniso.cpp:144` | strict-probe-rejects-wtf8 | on | false positive | name bytes read from the archive (format boundary); the WTF-8 form of a core name does not arise there, the code-page reading is the documented fallback (255) |
+| 74 | `plugins/uniso/uniso.cpp:144` | strict-probe-rejects-wtf8 | on | real defect | `uniso-joliet-file-names-wtf8-garbled` |
 | 75 | `plugins/unmime/parser.cpp:659` | strict-probe-rejects-wtf8 | off | false positive | name bytes read from the archive (format boundary); the WTF-8 form of a core name does not arise there, the code-page reading is the documented fallback (255) |
 | 76 | `plugins/unole/unole2.cpp:213` | lossy-lenient-at-intake | off | false positive | fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; an OLE element name (<= 31 units) always fits 'name' (255) |
 | 77 | `plugins/zip/common.cpp:1703` | lossy-lenient-at-intake | on | false positive | the input was decoded from the code page just above - valid Unicode by construction (255) |

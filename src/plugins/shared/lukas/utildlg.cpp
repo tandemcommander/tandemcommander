@@ -9,11 +9,13 @@ static WCHAR* HistU8ToWAlloc(const char* u8)
 {
     if (u8 == NULL)
         return NULL;
+    // encoding-check: allow strict-probe-rejects-wtf8 - not compiled: no project builds shared/lukas/utildlg.cpp; the Renamer links its own HistoryComboBox (renamer/dialogs.cpp, SplU8ToWAlloc) (255)
     int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, u8, -1, NULL, 0);
     if (wlen <= 0)
         return NULL;
     WCHAR* w = (WCHAR*)malloc(wlen * sizeof(WCHAR));
     if (w != NULL)
+        // encoding-check: allow strict-probe-rejects-wtf8 - not compiled: no project builds shared/lukas/utildlg.cpp; the Renamer links its own HistoryComboBox (renamer/dialogs.cpp, SplU8ToWAlloc) (255)
         MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, u8, -1, w, wlen);
     return w;
 }

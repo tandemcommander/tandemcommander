@@ -11,7 +11,7 @@ updated: 2026-10-20
 verified: -
 effort: S
 feature: -
-related: [uniso-hfs-btree-trust-and-joliet-cut]
+related: [uniso-hfs-btree-trust-and-joliet-cut, uniso-joliet-file-names-wtf8-garbled]
 depends-on: []
 reason: -
 ---
@@ -24,9 +24,10 @@ The ISO plug-in (UnISO) converts HFS+ names (UTF-16) to UTF-8 with a lenient
 `WideCharToMultiByte(CP_UTF8, 0, ...)`, so an unpaired surrogate in a name becomes U+FFFD. The
 listing shows a different name than the image holds, the file is extracted under that name, and
 two names that differ only in their unpaired surrogates become one name (the second extraction
-asks to overwrite the first). The ISO 9660 / Joliet and UDF readers of the same plug-in already
-convert with the WTF-8 `SplWToU8` first (feature 089); HFS+ was left out. The root folder name
-(`GetRootName`) has the same conversion.
+asks to overwrite the first). The Joliet and UDF readers of the same plug-in convert with the
+WTF-8 `SplWToU8` first (feature 089); HFS+ was left out. (Joliet *file* names are then damaged by
+`EnsureU8Name` - item `uniso-joliet-file-names-wtf8-garbled`; HFS+ does not call it.) The root
+folder name (`GetRootName`) has the same conversion.
 
 ## Evidence
 
@@ -54,3 +55,4 @@ images; severity is low for that.
 ## Log
 
 - 2026-10-20 — created (source measure:255)
+- 2026-10-20 — set related=uniso-hfs-btree-trust-and-joliet-cut,uniso-joliet-file-names-wtf8-garbled
