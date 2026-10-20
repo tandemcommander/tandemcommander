@@ -18,10 +18,14 @@
   quarter turn plus a mirror, 6 a quarter turn clockwise, 8 a quarter turn counter-clockwise) -
   the result is what other viewers show for the same file. (autonomous run: item - "turned by
   its orientation tag")
-- Q: PictView's existing rule "the picture was changed after the camera wrote the block (the
+- Q: PictView's old rule "the picture was changed after the camera wrote the block (the
   pixel size recorded in the block differs from the picture's, or the recorded size is
-  portrait) - do not turn" - keep it? → A: Keep it unchanged; it is the program's recorded
-  behaviour and the item does not name it. (autonomous run: conservative)
+  portrait) - do not turn" - keep it? → A: No - the picture is turned by its tag alone, as the
+  item's *Expected* says and as the panel thumbnails already do (feature 064). Measured on the
+  real set: the rule would leave 7 of the 14 standard orientation samples (`landscape_5..8`,
+  `portrait_2..4`, recorded size portrait) shown wrong; it was a workaround for one camera
+  model (Konica Minolta DiMAGE Z3) and for tools that turned the pixels but kept the tag. The
+  rule was dead code since feature 006 - no present behaviour changes. (autonomous run: item)
 - Q: Update Thumbnail decides "has the file an Exif block?" by feature 132's own file check;
   should it now follow the new engine report instead? → A: No - its decision stays exactly as
   132 made it. (autonomous run: conservative)
@@ -86,9 +90,8 @@ the window opens and lists the tags (among them "Orientation") only for the file
 
 - A JPEG whose orientation tag holds a value outside 1..8, or whose Exif block cannot be read:
   shown as stored; the Exif command follows whether the block was found.
-- The picture was changed after the camera wrote the block (recorded pixel size differs from the
-  picture, or the recorded size is portrait): shown as stored (PictView's existing rule).
-- Orientation tag present, recorded pixel size absent: turned by the tag.
+- The recorded pixel size in the block differs from the picture's, is portrait, or is absent:
+  turned by the tag all the same (the size is not consulted).
 - The shown picture is turned and the person turns or mirrors it further, crops it, saves it:
   the commands work on what is shown, as for a picture turned by hand.
 - A picture opened from the clipboard or a scanner (no file): no automatic turn, no Exif command.
@@ -106,16 +109,14 @@ the window opens and lists the tags (among them "Orientation") only for the file
   shown picture is a JPEG with an Exif block (and the shown file was not deleted); the command
   MUST open the Exif window listing the file's tags.
 - **FR-003**: With auto-rotate on, a JPEG with an Exif orientation tag MUST be shown turned and
-  mirrored as the standard meaning of the tag says (values 2..8; 1 = as stored), unless
-  PictView's rule "changed after the camera" applies (FR-005).
-- **FR-004**: The orientation and the recorded pixel size MUST be read without passing the file
-  name through the system code page (any name, long paths).
-- **FR-005**: The rule "changed after the camera" MUST stay as it is: when the block records a
-  pixel width and height and they differ from the picture's, or the recorded width is smaller
-  than the recorded height, the picture is shown as stored.
-- **FR-006**: The decision "orientation value + recorded size + picture size -> which turn and
-  which mirror" MUST be a pure rule with automated checks for all eight values, the size rule
-  and invalid values.
+  mirrored as the standard meaning of the tag says (values 2..8; 1 = as stored).
+- **FR-004**: The orientation MUST be read without passing the file name through the system
+  code page (any name, long paths).
+- **FR-005**: The pixel size recorded in the block MUST NOT change the decision (PictView's old
+  "changed after the camera" exception is not applied - the panel thumbnails do not apply it
+  either).
+- **FR-006**: The decision "orientation value -> which turn and which mirror" MUST be a pure
+  rule with automated checks for all eight values and invalid values.
 - **FR-007**: With auto-rotate off, or for files without an Exif block, or for pictures not
   from a file, nothing MUST be turned (the present behaviour).
 - **FR-008**: Update Thumbnail's decision whether a file has an Exif block MUST stay feature
@@ -127,21 +128,20 @@ the window opens and lists the tags (among them "Orientation") only for the file
 
 ### Key Entities
 
-- **Exif block of a JPEG**: the APP1 "Exif" segment; holds the orientation (tag 274) and the
-  recorded pixel width and height (tags 40962 / 40963).
-- **Orientation decision**: orientation value, recorded size (if any), picture size -> a quarter
-  turn (none / clockwise / counter-clockwise) followed by mirrors (left-right, top-bottom).
+- **Exif block of a JPEG**: the APP1 "Exif" segment; holds the orientation (tag 274 of IFD0).
+- **Orientation decision**: orientation value -> a quarter turn (none / clockwise /
+  counter-clockwise) followed by mirrors (left-right, top-bottom).
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
 - **SC-001**: The hidden-desktop probe of the feature passes all its rows (before the change:
-  21 of 42 fail): orientations 1..8 shown as the standard says, the "changed after the camera"
-  and "no recorded size" rows, no Exif / XMP-only rows, a name outside the code page, auto-rotate
+  21 of 42 fail): orientations 1..8 shown as the standard says, the "recorded size differs"
+  and "no recorded size" rows turned, no Exif / XMP-only rows, a name outside the code page, auto-rotate
   off; the Exif window opens with the tags exactly for files with an Exif block.
-- **SC-002**: The automated checks of the orientation rule cover all eight values, invalid
-  values and the size rule, and pass.
+- **SC-002**: The automated checks of the orientation rule cover all eight values and invalid
+  values, and pass.
 - **SC-003**: On real camera files (feature 135's public set): every file with an orientation
   tag is classified (turn / as stored) and the files whose Exif block the system reader finds
   are the files that have one; recorded in the fix-log.

@@ -19,11 +19,15 @@
     Rows (names for -Only):
       o1 .. o8        Orientation 1..8 with PixelX/YDimension 64 x 48: turned as the tag says
       o6-nodims       Orientation 6 without PixelX/YDimension: turned
-      o6-moddims      Orientation 6, PixelX/YDimension 640 x 480 (changed after the camera):
-                      PictView's own rule - shown as stored
+      o6-moddims      Orientation 6, PixelX/YDimension 640 x 480 (the recorded size is not
+                      consulted - 267): turned
       noexif, xmp     no Exif block (none / XMP only): shown as stored, no Exif dialog
       uni             o6.jpg under a name with Czech and Japanese letters: turned, dialog with tags
       off             o6.jpg with the AutoRotate setting off: shown as stored, dialog with tags
+      real-*          with -RealRoot <folder of the public collection ianare/exif-samples>: real
+                      camera files copied into the fixture; the title size must be the size of
+                      the file turned by its tag (Pillow), the Exif dialog must open exactly for
+                      the files with an Exif block
 
     The setting AutoRotate is seeded (1; 0 for the row 'off') under HKCU\Software\Tandem
     Commander (exported before, restored and SHA-256-verified after). MUST run through
@@ -35,7 +39,8 @@ param(
     [Parameter(Mandatory = $true)][string]$Exe,
     [string]$OutFile,
     [string[]]$Only,
-    [string]$RepoRoot = (Join-Path $PSScriptRoot '..\..\..')
+    [string]$RepoRoot = (Join-Path $PSScriptRoot '..\..\..'),
+    [string]$RealRoot
 )
 $ErrorActionPreference = 'Stop'
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
@@ -326,6 +331,35 @@ function Run-Row([string]$Case, [string]$Fixture, [string]$As, [bool]$Turned, [b
     finally { if ($id) { End-P $Case $id $before } }
 }
 
+# a real camera file (-RealRoot): the title size against the file turned by its tag, the Exif dialog
+function Run-Real([string]$Case, [string]$Rel, [bool]$HasExif) {
+    if (-not (Want $Case)) { return }
+    if (-not $RealRoot) { Row $Case 'REAL' 'NOT DRIVEN' 'no -RealRoot given (the public collection ianare/exif-samples)'; return }
+    $from = Join-Path $RealRoot $Rel
+    if (-not (Test-Path -LiteralPath $from)) { Row $Case 'REAL' 'NOT DRIVEN' ('not in -RealRoot: ' + $Rel); return }
+    $d = $Root + '\' + $Case
+    NewDir $d
+    $src = $d + '\' + [IO.Path]::GetFileName($from)
+    [IO.File]::Copy($from, $LP + $src, $true)
+    $want = (Want-Quads 'want' $src) -split ' ' | Select-Object -First 1
+    Set-AutoRotate 1
+    $id = 0; $before = Reports
+    try {
+        $id = Start-P $d
+        Focus-File $id $src
+        $w = Open-Viewer $id
+        if ($w -eq [IntPtr]::Zero) { Row $Case 'OPEN' 'FAIL' 'no viewer'; return }
+        $t = Title $w
+        $texts = Exif-Dialog $id $w
+        Row $Case 'ROT' (V ((Dims $t) -eq $want)) ("{0}: title size {1} (want {2}, the file turned by its tag)" -f $Rel, (Dims $t), $want)
+        $okExif = if ($HasExif) { ($null -ne $texts) -and $texts.Count -gt 0 } else { $null -eq $texts }
+        Row $Case 'EXIF' (V $okExif) ("Exif command (the file {0} an Exif block): {1}" -f $(if ($HasExif) { 'has' } else { 'has no' }), $(if ($null -eq $texts) { 'no dialog' } else { 'dialog, {0} tags' -f $texts.Count }))
+        Close-Viewer $id $w
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-P $Case $id $before } }
+}
+
 # ---- main ------------------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc267_backup.reg'
 $existed = Backup-Reg $backup
@@ -341,11 +375,18 @@ try {
     Out ''
     for ($o = 1; $o -le 8; $o++) { Run-Row ('o' + $o) ('o' + $o + '.jpg') ('o' + $o + '.jpg') $true $true }
     Run-Row 'o6-nodims' 'o6-nodims.jpg' 'o6-nodims.jpg' $true $true
-    Run-Row 'o6-moddims' 'o6-moddims.jpg' 'o6-moddims.jpg' $false $true
+    Run-Row 'o6-moddims' 'o6-moddims.jpg' 'o6-moddims.jpg' $true $true
     Run-Row 'noexif' 'noexif.jpg' 'noexif.jpg' $false $false
     Run-Row 'xmp' 'xmp.jpg' 'xmp.jpg' $false $false
     Run-Row 'uni' 'o6.jpg' $UniName $true $true
     Run-Row 'off' 'o6.jpg' 'o6.jpg' $false $true 0
+    Run-Real 'real-land6' 'jpg\orientation\landscape_6.jpg' $true
+    Run-Real 'real-land5' 'jpg\orientation\landscape_5.jpg' $true
+    Run-Real 'real-port8' 'jpg\orientation\portrait_8.jpg' $true
+    Run-Real 'real-canon6' 'jpg\hdr\canon_hdr_YES.jpg' $true
+    Run-Real 'real-nokia6' 'jpg\mobile\HMD_Nokia_8.3_5G_hdr.jpg' $true
+    Run-Real 'real-kodak1' 'jpg\Kodak_CX7530.jpg' $true
+    Run-Real 'real-noexif' 'jpg\exif-org\olympus-d320l.jpg' $false
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
