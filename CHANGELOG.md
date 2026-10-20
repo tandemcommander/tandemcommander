@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Copying from a TAR folder opened by a path typed in another case copied nothing** (feature 273).
+  - **Before:** a folder inside an archive can be opened by typing its path - on the command line, in Change Directory (Shift+F7) or from a hot path - also in another case than the archive spells it, for example `archive.tar\DOCS` for the folder "Docs". The panel listed the folder but kept the typed spelling, and in a TAR archive (also .tgz, .tbz and the other formats of the TAR plug-in) Copy (F5) of its files then extracted nothing: the target stayed empty and no error was shown. 7z archives copied the files.
+  - **Now:** the panel enters the folder under the archive's own spelling (the directory line shows `archive.tar\Docs`), and copying its files extracts them in every archive format. Archives that hold names differing only in case, and folders entered by Enter, behave as before.
+  - **Limitation:** in an archive that holds names differing only in case in some other folder, a path typed in another case still opens the archive's root instead of the folder; copying files from disk into an archive by typing the target as `archive.7z\DOCS` may still create a second folder "DOCS" beside "Docs" (suspected, not yet measured). Both are recorded for a later fix.
+
 - **Changing the attributes of a file symbolic link compressed or re-dated the file it points to** (feature 272).
   - **Before:** *Change Attributes* on a file symbolic link (also through a selected folder with "Include subdirectories" holding such a link, and the Compress / Uncompress commands) set the compression and the dates of the file the link points to - also a file outside the selection - not of the link. The link kept its own state. Encrypt / Decrypt would have encrypted or decrypted that file too. Feature 253 had fixed this for junctions and directory links only.
   - **Now:** compression and dates change on the link itself; the file it points to keeps its own. Encrypting or decrypting a file link is refused with "Error Changing Encryption" (Skip goes on with the other items), as for a junction. Plain files, cloud placeholder files (OneDrive and similar) and other special files that are not links work as before.

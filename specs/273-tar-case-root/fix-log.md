@@ -78,3 +78,30 @@ fileswn2.cpp - reverted, only the new code formatted.
   negative control of T008): 8 / 4 (`probe/result_before.txt`). Registry restored, identical.
 - 252's probe `arc252_probe.ps1` on the new build: PASS 16, FAIL 0 (TAR-CONTROL / 7Z-CONTROL now
   report the panel at `...\Docs`).
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST, no SHOULD**. It rebuilt (BUILD SUCCEEDED),
+ran saltests (24859 / 0), the encoding guard (TOTAL 0), the committed probe (12 / 0) and 252's probe
+(16 / 0). Negative control of its own: the new block disabled (`if (FALSE && ...)`) -> the committed
+probe 8 / 4 (TAR-COPY / TAR-DEEP target empty, panel at `t.tar\DOCS`); restored, rebuilt, clean
+tree. Extra rows (a copy of the probe under %TEMP%), TAR and 7z: FOCUS (`\DOCS\F.TXT`), MISSING
+(`\DOCS\nothing\deeper` -> shortened to `\Docs`, FR-004), TRAIL (`\DOCS\`), ARCNAME (`T.TAR\DOCS`)
+PASS. By reading: `SetZIPPath` has the one setter; every route into an archive passes the new block;
+the rule uses the lookup's comparison and order; the re-spelled path is what Enter on the folders
+already produced, so no plug-in gets a root it could not get before; nothing is cut.
+- NOTE 1 - `probe/result_before.txt` was written by the scratch copy of the probe (named
+  `arccase_probe`, fixture `tcarccase`) before it was renamed to `arccase273_probe.ps1` / `tc273`;
+  the rows and checks are the same. The reviewer's negative control above re-measured it with the
+  committed script (8 / 4). Kept as recorded, labelled here.
+- NOTE 2 - an archive with case twins in another folder is case-sensitive as a whole (252), so
+  `<archive>\DOCS` opens the root silently (reviewer's MIXED row). Pre-existing, outside the item ->
+  Inbox `a-path-typed-in-another-case-into-an-archive-with-case-twins` (review:273).
+- NOTE 3 - F5 from disk with a typed target `x.7z\DOCS` passes the typed spelling to the packer
+  (`src/fileswn8.cpp` PackCompress, `secondPart`), by reading -> Inbox
+  `copying-into-an-archive-folder-typed-in-another-case-packs` (review:273).
+- NOTE 4 - the core accessor `GetPathSpelling` has no unit check (saltests cannot link zip.cpp);
+  covered by the probe and its negative control. Accepted.
+- NOTE 5 - FEATURE-HISTORY / CHANGELOG entries not yet written: done at closing.
+
+No MUST -> no second review (SKILL step 7).

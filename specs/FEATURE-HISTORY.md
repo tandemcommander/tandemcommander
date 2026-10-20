@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -3478,3 +3478,19 @@ a few early ones are out of sequence).
   backlog item `change-attributes-on-a-file-symbolic-link-compresses-re`. Probe
   `attrs_flink272_probe.ps1` 4 FAIL -> 12 / 0 (1 NOT DRIVEN); 253's probe 10 / 0, 213's 8 / 0; one
   refute-first review (no MUST / SHOULD; NOTE 1 and 2 done).
+- 273-tar-case-root: a folder inside an archive opened by a path typed in another case
+  (`t.tar\DOCS` for `Docs` - command line, Change Directory, hot path) was listed, but the panel kept
+  the typed spelling as its path inside the archive and gave it to the plug-ins as the root of the
+  selected names; TAR matches names byte for byte, so Copy (F5) extracted nothing, silently (7z
+  copied) - now `ChangePathToArchive` stores the path as the listing spells its folders after the
+  shortening loop (`SalArcPathRespell`, `src/common/salarcpathspell.h`, saltests; the first folder
+  the listing's own `SalDirStrCmpEx` finds, as `GetFiles`), so every archive plug-in, the directory
+  line and the history get the real names. Traps: `SAL_MAX_PATH_UTF8` is ~96 KB (heap buffer); a
+  saltests local named `small` is a Windows macro; clang-format of whole files reformats unrelated
+  lines. Limits: an archive with case twins in another folder is case-sensitive as a whole (252) and
+  a path in another case opens its root (Inbox `a-path-typed-in-another-case-into-an-archive-with-case-twins`);
+  a typed Copy target `x.7z\DOCS` from disk still packs with the typed spelling (by reading, Inbox
+  `copying-into-an-archive-folder-typed-in-another-case-packs`). From backlog item
+  `copying-from-a-tar-folder-opened-in-another-case-extracts`. Probe `arccase273_probe.ps1` 8 / 4 ->
+  12 / 0 (negative control: the block disabled -> 8 / 4); 252's probe 16 / 0; `TestArcPathRespell273`
+  (negative control 7 FAIL); one refute-first review (no MUST / SHOULD).
