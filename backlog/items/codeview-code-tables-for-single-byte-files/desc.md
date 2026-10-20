@@ -1,7 +1,7 @@
 ---
 title: Code Viewer reads single-byte files only in the system code page (no CP852 etc.)
 type: feature
-status: open
+status: in-progress
 severity: 4
 area: other-plugins
 source: review:070
@@ -10,7 +10,7 @@ created: 2026-08-27
 updated: 2026-10-20
 verified: 2026-10-20 bf05ffc9
 effort: L
-feature: -
+feature: 262
 related: []
 depends-on: []
 reason: -
@@ -44,3 +44,4 @@ Area: the Code Viewer is a plug-in (other-plugins); its core-side viewer machine
 - 2026-10-17 — migrated from specs/*/REMAINING-WORK.md (feature 242)
 - 2026-10-17 — migration review N3: cross-reference to the final slug
 - 2026-10-20 — verified at bf05ffc9: present at bf05ffc9: intake.cpp decodes ANSI only with CP_ACP, F8 menu fixed 5; corpus cp852.bat shows mojibake on CP1250
+- 2026-10-20 — run started, feature 262
