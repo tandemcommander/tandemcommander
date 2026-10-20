@@ -8,7 +8,7 @@ source: review:255
 who: agent
 created: 2026-10-20
 updated: 2026-10-20
-verified: -
+verified: 2026-10-20 b1feb7ab
 effort: M
 feature: -
 related: []
@@ -64,3 +64,4 @@ overwrite path does not reproduce. Needs an FTP server (an agent can run one in 
 - 2026-10-20 — created (source review:255)
 - 2026-10-20 — moved to Inbox
 - 2026-10-20 — moved to Next position 2
+- 2026-10-20 — verified at b1feb7ab: reproduced at b1feb7ab: hidden-desktop probe, ftpmini wtf-8 mode - download made a different name, re-upload overwrote without asking
