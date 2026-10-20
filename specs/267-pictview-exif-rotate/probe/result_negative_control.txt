@@ -1,0 +1,16 @@
+pv267_probe (feature 267)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 17:48; ACP 1250; desktop 'tc_probe_30744'; registry key existed True; backup SHA-256 A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+o4         ROT    FAIL        o4.jpg, AutoRotate 1: title size 64x48; shown 64x48 GRYB (want 64x48 BYRG, turned by the tag)
+o4         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o5         ROT    FAIL        o5.jpg, AutoRotate 1: title size 48x64; shown 48x64 GYRB (want 48x64 RBGY, turned by the tag)
+o5         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o5         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o7         ROT    FAIL        o7.jpg, AutoRotate 1: title size 48x64; shown 48x64 BRYG (want 48x64 YGBR, turned by the tag)
+o7         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o7         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 6, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

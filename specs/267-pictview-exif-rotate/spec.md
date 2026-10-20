@@ -122,9 +122,9 @@ the window opens and lists the tags (among them "Orientation") only for the file
 - **FR-008**: Update Thumbnail's decision whether a file has an Exif block MUST stay feature
   132's file check, unchanged by the new engine report.
 - **FR-009**: Files other than JPEG MUST keep their present behaviour.
-- **FR-010**: Detecting the Exif block MUST NOT read the file a second time: it uses the
-  metadata the image reader holds for the opened picture, once per opened picture, and only
-  for JPEG files (panel thumbnails pay no extra file access).
+- **FR-010**: Detecting the Exif block MUST NOT read the file a second time: it asks the image
+  reader of the opened picture for its metadata (the reader parses the header segments itself),
+  once per opened picture, and only for JPEG files - no own pass over the file.
 
 ### Key Entities
 

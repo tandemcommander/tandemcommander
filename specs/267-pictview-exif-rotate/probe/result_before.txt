@@ -1,6 +1,6 @@
 pv267_probe (feature 267)
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 17:08; ACP 1250; desktop 'tc_probe_30832'; registry key existed True; backup SHA-256 A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+Date    : 2026-10-20 17:23; ACP 1250; desktop 'tc_probe_4720'; registry key existed True; backup SHA-256 A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
 
 o1         ROT    PASS        o1.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, turned by the tag)
 o1         EXIF   FAIL        Exif command: no dialog opened
@@ -29,7 +29,7 @@ o8         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0
 o6-nodims  ROT    FAIL        o6-nodims.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 BRYG, turned by the tag)
 o6-nodims  EXIF   FAIL        Exif command: no dialog opened
 o6-nodims  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-o6-moddims ROT    PASS        o6-moddims.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
+o6-moddims ROT    FAIL        o6-moddims.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 BRYG, turned by the tag)
 o6-moddims EXIF   FAIL        Exif command: no dialog opened
 o6-moddims END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 noexif     ROT    PASS        noexif.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
@@ -44,6 +44,30 @@ uni        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0
 off        ROT    PASS        o6.jpg, AutoRotate 0: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
 off        EXIF   FAIL        Exif command: no dialog opened
 off        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+tif6       ROT    INFO        o6.tif, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 BRYG, as stored)
+tif6       EXIF   PASS        Exif command on a file without Exif: no dialog (right)
+tif6       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-land6 ROT    FAIL        jpg\orientation\landscape_6.jpg: title size 450x600 (want 600x450, the file turned by its tag)
+real-land6 EXIF   FAIL        Exif command (the file has an Exif block): no dialog
+real-land6 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-land5 ROT    FAIL        jpg\orientation\landscape_5.jpg: title size 450x600 (want 600x450, the file turned by its tag)
+real-land5 EXIF   FAIL        Exif command (the file has an Exif block): no dialog
+real-land5 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-port8 ROT    FAIL        jpg\orientation\portrait_8.jpg: title size 600x450 (want 450x600, the file turned by its tag)
+real-port8 EXIF   FAIL        Exif command (the file has an Exif block): no dialog
+real-port8 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-canon6 ROT    FAIL        jpg\hdr\canon_hdr_YES.jpg: title size 2048x1536 (want 1536x2048, the file turned by its tag)
+real-canon6 EXIF   FAIL        Exif command (the file has an Exif block): no dialog
+real-canon6 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-nokia6 ROT    FAIL        jpg\mobile\HMD_Nokia_8.3_5G_hdr.jpg: title size 4608x3456 (want 3456x4608, the file turned by its tag)
+real-nokia6 EXIF   FAIL        Exif command (the file has an Exif block): no dialog
+real-nokia6 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-kodak1 ROT    PASS        jpg\Kodak_CX7530.jpg: title size 100x78 (want 100x78, the file turned by its tag)
+real-kodak1 EXIF   FAIL        Exif command (the file has an Exif block): no dialog
+real-kodak1 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-noexif ROT    PASS        jpg\exif-org\olympus-d320l.jpg: title size 640x480 (want 640x480, the file turned by its tag)
+real-noexif EXIF   PASS        Exif command (the file has no an Exif block): no dialog
+real-noexif END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
 
-Rows: PASS 21, FAIL 21, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 32, FAIL 33, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

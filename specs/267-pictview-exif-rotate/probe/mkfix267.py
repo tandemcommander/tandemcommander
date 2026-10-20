@@ -11,6 +11,7 @@ told apart by the colours of its quadrants, independently of the decoder's round
                        the camera wrote the block - PictView's rule: not turned)
     noexif.jpg         no Exif block
     xmp.jpg            an XMP block (APP1, not Exif) only
+    o6.tif             a TIFF with Orientation 6 (not a JPEG)
 """
 import os
 import sys
@@ -51,6 +52,8 @@ save('noexif.jpg')
 xmp = (b'<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?><x:xmpmeta xmlns:x="adobe:ns:meta/">'
        b'<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/></x:xmpmeta><?xpacket end="w"?>')
 save('xmp.jpg', xmp=xmp)
+# not a JPEG: a TIFF with Orientation 6 in its own IFD (the feature leaves other formats alone)
+quad().save(os.path.join(d, 'o6.tif'), 'TIFF', tiffinfo={274: 6})
 
 # self-check: the blocks are what the rows rely on
 for o in range(1, 9):

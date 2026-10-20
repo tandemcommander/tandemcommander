@@ -1,0 +1,73 @@
+pv267_probe (feature 267)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 17:33; ACP 1250; desktop 'tc_probe_2848'; registry key existed True; backup SHA-256 A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+o1         ROT    PASS        o1.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, turned by the tag)
+o1         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o2         ROT    PASS        o2.jpg, AutoRotate 1: title size 64x48; shown 64x48 GRYB (want 64x48 GRYB, turned by the tag)
+o2         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o3         ROT    PASS        o3.jpg, AutoRotate 1: title size 64x48; shown 64x48 YBGR (want 64x48 YBGR, turned by the tag)
+o3         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o4         ROT    PASS        o4.jpg, AutoRotate 1: title size 64x48; shown 64x48 BYRG (want 64x48 BYRG, turned by the tag)
+o4         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o5         ROT    PASS        o5.jpg, AutoRotate 1: title size 48x64; shown 48x64 RBGY (want 48x64 RBGY, turned by the tag)
+o5         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o5         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o6         ROT    PASS        o6.jpg, AutoRotate 1: title size 48x64; shown 48x64 BRYG (want 48x64 BRYG, turned by the tag)
+o6         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o6         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o7         ROT    PASS        o7.jpg, AutoRotate 1: title size 48x64; shown 48x64 YGBR (want 48x64 YGBR, turned by the tag)
+o7         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o7         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o8         ROT    PASS        o8.jpg, AutoRotate 1: title size 48x64; shown 48x64 GYRB (want 48x64 GYRB, turned by the tag)
+o8         EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o8         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o6-nodims  ROT    PASS        o6-nodims.jpg, AutoRotate 1: title size 48x64; shown 48x64 BRYG (want 48x64 BRYG, turned by the tag)
+o6-nodims  EXIF   PASS        Exif command: dialog, 7 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Exif Version, FlashPixVersion, Color Space
+o6-nodims  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o6-moddims ROT    PASS        o6-moddims.jpg, AutoRotate 1: title size 48x64; shown 48x64 BRYG (want 48x64 BRYG, turned by the tag)
+o6-moddims EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+o6-moddims END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+noexif     ROT    PASS        noexif.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
+noexif     EXIF   PASS        Exif command on a file without Exif: no dialog (right)
+noexif     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+xmp        ROT    PASS        xmp.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
+xmp        EXIF   PASS        Exif command on a file without Exif: no dialog (right)
+xmp        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+uni        ROT    PASS        Kon\u00ED\u010Dek \u65E5\u672C o6.jpg, AutoRotate 1: title size 48x64; shown 48x64 BRYG (want 48x64 BRYG, turned by the tag)
+uni        EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+uni        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+off        ROT    PASS        o6.jpg, AutoRotate 0: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
+off        EXIF   PASS        Exif command: dialog, 9 tags: Orientation, X-Resolution, Y-Resolution, Resolution Unit, Pixel X Dimension, Pixel Y Dimension, Exif Version, FlashPixVersion
+off        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+tif6       ROT    INFO        o6.tif, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 BRYG, as stored)
+tif6       EXIF   PASS        Exif command on a file without Exif: no dialog (right)
+tif6       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-land6 ROT    PASS        jpg\orientation\landscape_6.jpg: title size 600x450 (want 600x450, the file turned by its tag)
+real-land6 EXIF   PASS        Exif command (the file has an Exif block): dialog, 9 tags
+real-land6 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-land5 ROT    PASS        jpg\orientation\landscape_5.jpg: title size 600x450 (want 600x450, the file turned by its tag)
+real-land5 EXIF   PASS        Exif command (the file has an Exif block): dialog, 9 tags
+real-land5 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-port8 ROT    PASS        jpg\orientation\portrait_8.jpg: title size 450x600 (want 450x600, the file turned by its tag)
+real-port8 EXIF   PASS        Exif command (the file has an Exif block): dialog, 9 tags
+real-port8 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-canon6 ROT    PASS        jpg\hdr\canon_hdr_YES.jpg: title size 1536x2048 (want 1536x2048, the file turned by its tag)
+real-canon6 EXIF   PASS        Exif command (the file has an Exif block): dialog, 89 tags
+real-canon6 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-nokia6 ROT    PASS        jpg\mobile\HMD_Nokia_8.3_5G_hdr.jpg: title size 3456x4608 (want 3456x4608, the file turned by its tag)
+real-nokia6 EXIF   PASS        Exif command (the file has an Exif block): dialog, 28 tags
+real-nokia6 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-kodak1 ROT    PASS        jpg\Kodak_CX7530.jpg: title size 100x78 (want 100x78, the file turned by its tag)
+real-kodak1 EXIF   PASS        Exif command (the file has an Exif block): dialog, 54 tags
+real-kodak1 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+real-noexif ROT    PASS        jpg\exif-org\olympus-d320l.jpg: title size 640x480 (want 640x480, the file turned by its tag)
+real-noexif EXIF   PASS        Exif command (the file has no Exif block): no dialog
+real-noexif END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 65, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

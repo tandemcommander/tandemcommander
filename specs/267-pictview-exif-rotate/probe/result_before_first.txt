@@ -1,0 +1,49 @@
+pv267_probe (feature 267)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 17:08; ACP 1250; desktop 'tc_probe_30832'; registry key existed True; backup SHA-256 A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+o1         ROT    PASS        o1.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, turned by the tag)
+o1         EXIF   FAIL        Exif command: no dialog opened
+o1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o2         ROT    FAIL        o2.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 GRYB, turned by the tag)
+o2         EXIF   FAIL        Exif command: no dialog opened
+o2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o3         ROT    FAIL        o3.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 YBGR, turned by the tag)
+o3         EXIF   FAIL        Exif command: no dialog opened
+o3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o4         ROT    FAIL        o4.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 BYRG, turned by the tag)
+o4         EXIF   FAIL        Exif command: no dialog opened
+o4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o5         ROT    FAIL        o5.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 RBGY, turned by the tag)
+o5         EXIF   FAIL        Exif command: no dialog opened
+o5         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o6         ROT    FAIL        o6.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 BRYG, turned by the tag)
+o6         EXIF   FAIL        Exif command: no dialog opened
+o6         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o7         ROT    FAIL        o7.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 YGBR, turned by the tag)
+o7         EXIF   FAIL        Exif command: no dialog opened
+o7         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o8         ROT    FAIL        o8.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 GYRB, turned by the tag)
+o8         EXIF   FAIL        Exif command: no dialog opened
+o8         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o6-nodims  ROT    FAIL        o6-nodims.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 BRYG, turned by the tag)
+o6-nodims  EXIF   FAIL        Exif command: no dialog opened
+o6-nodims  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+o6-moddims ROT    PASS        o6-moddims.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
+o6-moddims EXIF   FAIL        Exif command: no dialog opened
+o6-moddims END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+noexif     ROT    PASS        noexif.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
+noexif     EXIF   PASS        Exif command on a file without Exif: no dialog (right)
+noexif     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+xmp        ROT    PASS        xmp.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
+xmp        EXIF   PASS        Exif command on a file without Exif: no dialog (right)
+xmp        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+uni        ROT    FAIL        Kon\u00ED\u010Dek \u65E5\u672C o6.jpg, AutoRotate 1: title size 64x48; shown 64x48 RGBY (want 48x64 BRYG, turned by the tag)
+uni        EXIF   FAIL        Exif command: no dialog opened
+uni        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+off        ROT    PASS        o6.jpg, AutoRotate 0: title size 64x48; shown 64x48 RGBY (want 64x48 RGBY, as stored)
+off        EXIF   FAIL        Exif command: no dialog opened
+off        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 21, FAIL 21, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

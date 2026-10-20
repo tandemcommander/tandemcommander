@@ -26,6 +26,8 @@
 #include "PixelAccess.h"
 #include "wicengine.h"               // feature 111: let the shown file go and take it back
 #include "../../common/salpvpixel.h" // feature 120: the pipette reads the pixel under the cursor
+// feature 267: Exif auto-rotation
+#include "../../common/salexiforient.h"
 #include "splloadstru8.h"            // feature 130: SplLegacyToU8Alloc
 
 inline int sgn(int x)
@@ -1686,81 +1688,35 @@ LRESULT CRendererWindow::OnPaint()
                 drect.right = min(drect.right, XStart + XStretchedRange);
                 drect.bottom = min(drect.bottom, YStart + YStretchedRange);
 
-                // Note: Some raw formats have PVF_JPG but "TIFF" in Info2, some have PVF_TIFF
-                if (FileName != NULL && ((pvii.Format == PVF_JPG) || (pvii.Format == PVF_TIFF)) &&
-                    (pvii.Flags & PVFF_EXIF) && G.AutoRotate && InitEXIF(NULL, TRUE))
+                // feature 267: a JPEG with an Exif block (the engine reports PVFF_EXIF since 267; the
+                // old engine did too - the WIC engine of 006 did not, so this never ran). The
+                // orientation is read by the engine through WIC from the open file - EXIF.DLL's
+                // EXIFGetOrientationInfo took a code-page name (the viewer's name is UTF-8) and let
+                // the thumbnail's IFD win. Turned by the tag alone, as the panel thumbnails are (064):
+                // the old exception "the pixel size recorded in the block is portrait or differs -
+                // do not turn" showed half of the standard orientation samples wrong. Other formats
+                // (TIFF, camera raw files) are left as they were.
+                if (FileName != NULL && pvii.Format == PVF_JPG && (pvii.Flags & PVFF_EXIF) && G.AutoRotate)
                 {
-                    EXIFGETORIENTATIONINFO getInfo = (EXIFGETORIENTATIONINFO)GetProcAddress(EXIFLibrary, "EXIFGetOrientationInfo");
-
-                    if (getInfo)
+                    CSalExifTurn turn = SalExifOrientTurn(WicGetExifOrientation(PVHandle));
+                    if (turn.Quarter != 0 || turn.MirrorHor || turn.MirrorVert)
                     {
-                        SThumbExifInfo info;
-                        int cmd;
-
-                        getInfo(FileName, &info);
-                        if ((info.flags & (TEI_WIDTH | TEI_HEIGHT)) == (TEI_WIDTH | TEI_HEIGHT))
+                        Viewer->InitProgressBar();
+                        code = PVW32DLL.PVReadImage2(PVHandle, NULL, NULL, ProgressProcedure2 /*NULL*/, this, pvii.CurrentImage);
+                        Viewer->KillProgressBar();
+                        Viewer->SetStatusBarTexts(IDS_SB_AUTOROTATING);
+                        bAlreadyLoaded = TRUE;
+                        if (PVC_OK == code)
                         {
-                            if (((DWORD)info.Width != pvii.Width) || ((DWORD)info.Height != pvii.Height) || (info.Width < info.Height))
-                            {
-                                // the file has been modified (most likely rotated in something buggy
-                                // like UfonView or cropped)
-                                // Normal situation is info.Width > info.Height. Some cameras (namely Konica Minolta DiMAGE Z3
-                                // seem to store image data with normal orientatation but (Orient != 1) && (info.Width < info.Height)
-                                info.Orient = 1;
-                            }
-                        }
-                        else if ((pvii.Format == PVF_TIFF) || !strcmp(pvii.Info1, "TIFF"))
-                        {
-                            switch (pvii.Flags & (PVFF_BOTTOMTOTOP | PVFF_FLIP_HOR | PVFF_ROTATE90))
-                            {
-                            case PVFF_BOTTOMTOTOP | PVFF_FLIP_HOR | PVFF_ROTATE90:
-                                info.Orient = 8;
-                                break; // CMD_ROTATE_LEFT
-                            case PVFF_BOTTOMTOTOP | PVFF_FLIP_HOR:
-                                info.Orient = 3;
-                                break; // CMD_ROTATE180
-                            case PVFF_ROTATE90:
-                                info.Orient = 6;
-                                break; // CMD_ROTATE_RIGHT
-                            }
-                        }
-                        cmd = 0;
-                        switch (info.Orient)
-                        {
-                            //                  case 1/*normal case*/"
-                        case 2:
-                            cmd = CMD_MIRROR_HOR;
-                            break;
-                        case 3:
-                            cmd = CMD_ROTATE180;
-                            break;
-                        case 4:
-                            cmd = CMD_MIRROR_HOR;
-                            break;
-                        case 5:
-                            cmd = CMD_ROTATE_LEFT;
-                            break; // and mirror ?
-                        case 6:
-                            cmd = CMD_ROTATE_RIGHT;
-                            break; // tested
-                        case 7:
-                            cmd = CMD_ROTATE_RIGHT;
-                            break; // and mirror ?
-                        case 8:
-                            cmd = CMD_ROTATE_LEFT;
-                            break; // tested
-                        }
-                        if (cmd)
-                        {
-                            Viewer->InitProgressBar();
-                            code = PVW32DLL.PVReadImage2(PVHandle, NULL, NULL, ProgressProcedure2 /*NULL*/, this, pvii.CurrentImage);
-                            Viewer->KillProgressBar();
-                            Viewer->SetStatusBarTexts(IDS_SB_AUTOROTATING);
-                            bAlreadyLoaded = TRUE;
-                            if (PVC_OK == code)
-                            {
-                                PostMessage(HWindow, WM_COMMAND, cmd, 0);
-                            }
+                            // the turn first: CMD_ROTATE_* reverses its direction while a mirror is on
+                            if (turn.Quarter != 0)
+                                PostMessage(HWindow, WM_COMMAND, turn.Quarter > 0 ? CMD_ROTATE_RIGHT : CMD_ROTATE_LEFT, 0);
+                            if (turn.MirrorHor && turn.MirrorVert)
+                                PostMessage(HWindow, WM_COMMAND, CMD_ROTATE180, 0); // = both mirrors
+                            else if (turn.MirrorHor)
+                                PostMessage(HWindow, WM_COMMAND, CMD_MIRROR_HOR, 0);
+                            else if (turn.MirrorVert)
+                                PostMessage(HWindow, WM_COMMAND, CMD_MIRROR_VERT, 0);
                         }
                     }
                 }

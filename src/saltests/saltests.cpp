@@ -78,6 +78,7 @@
 #include "salcachename.h"     // feature 260
 #include "salcodetable.h"     // feature 262
 #include "salregroot.h"       // feature 263
+#include "salexiforient.h"    // feature 267
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -14930,6 +14931,135 @@ static void TestRegImportRoot263()
     CHECK(!SalRegKeyIsInsideRoot("Software", root) && !SalRegKeyIsInsideRoot("Software\\Tandem Commander", root)); // never both
 }
 
+// feature 267: PictView's Exif auto-rotation (salexiforient.h). A picture is a grid of cell
+// numbers; the viewer's operations are applied as the header says (turn first, then mirrors)
+// and the result is compared with the standard's own definition of each tag value.
+typedef std::vector<std::vector<int>> CGrid267; // [row][column]
+
+static CGrid267 Grid267(int w, int h)
+{
+    CGrid267 g(h, std::vector<int>(w));
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            g[y][x] = y * w + x;
+    return g;
+}
+
+static CGrid267 Apply267(const CGrid267& s, const CSalExifTurn& t)
+{
+    CGrid267 g = s;
+    if (t.Quarter != 0)
+    {
+        int h = (int)g.size(), w = (int)g[0].size();
+        CGrid267 r(w, std::vector<int>(h));
+        for (int y = 0; y < w; y++)
+            for (int x = 0; x < h; x++)
+                r[y][x] = t.Quarter > 0 ? g[h - 1 - x][y]  // clockwise: the bottom-left cell goes to the top-left
+                                        : g[x][w - 1 - y]; // counter-clockwise: the top-right cell goes there
+        g = r;
+    }
+    int h = (int)g.size(), w = (int)g[0].size();
+    CGrid267 m = g;
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            m[y][x] = g[t.MirrorVert ? h - 1 - y : y][t.MirrorHor ? w - 1 - x : x];
+    return m;
+}
+
+// the shown picture by the definition of the tag value (Exif 2.3, table "Orientation": where the
+// stored row 0 and column 0 are shown); D(x, y) = S(sx, sy)
+static CGrid267 Shown267(const CGrid267& s, int orient)
+{
+    int h = (int)s.size(), w = (int)s[0].size();
+    bool swap = orient >= 5 && orient <= 8;
+    int dw = swap ? h : w, dh = swap ? w : h;
+    CGrid267 d(dh, std::vector<int>(dw));
+    for (int y = 0; y < dh; y++)
+        for (int x = 0; x < dw; x++)
+        {
+            int sx = x, sy = y;
+            switch (orient)
+            {
+            case 2: // row 0 at the top, column 0 at the right
+                sx = w - 1 - x;
+                break;
+            case 3: // row 0 at the bottom, column 0 at the right
+                sx = w - 1 - x;
+                sy = h - 1 - y;
+                break;
+            case 4: // row 0 at the bottom, column 0 at the left
+                sy = h - 1 - y;
+                break;
+            case 5: // row 0 at the left, column 0 at the top
+                sx = y;
+                sy = x;
+                break;
+            case 6: // row 0 at the right, column 0 at the top
+                sx = y;
+                sy = h - 1 - x;
+                break;
+            case 7: // row 0 at the right, column 0 at the bottom
+                sx = w - 1 - y;
+                sy = h - 1 - x;
+                break;
+            case 8: // row 0 at the left, column 0 at the bottom
+                sx = w - 1 - y;
+                sy = x;
+                break;
+            }
+            d[y][x] = s[sy][sx];
+        }
+    return d;
+}
+
+static bool Turn267(int orient, int quarter, bool hor, bool vert)
+{
+    CSalExifTurn t = SalExifOrientTurn(orient);
+    return t.Quarter == quarter && t.MirrorHor == hor && t.MirrorVert == vert;
+}
+
+static void TestExifOrient267()
+{
+    // the table (research R4)
+    CHECK(Turn267(1, 0, false, false));
+    CHECK(Turn267(2, 0, true, false));
+    CHECK(Turn267(3, 0, true, true));
+    CHECK(Turn267(4, 0, false, true)); // the old table mirrored left-right
+    CHECK(Turn267(5, 1, true, false)); // the old table: a turn without the mirror
+    CHECK(Turn267(6, 1, false, false));
+    CHECK(Turn267(7, 1, false, true)); // the old table: a turn without the mirror
+    CHECK(Turn267(8, -1, false, false));
+    // absent or damaged: as stored
+    CHECK(Turn267(0, 0, false, false));
+    CHECK(Turn267(9, 0, false, false));
+    CHECK(Turn267(-1, 0, false, false));
+    CHECK(Turn267(255, 0, false, false));
+    CHECK(Turn267(65535, 0, false, false));
+
+    // every value, applied as the viewer applies it, gives the standard's picture - on a wide, a
+    // tall and a square grid (a square grid hides a turn that should have been a transpose only
+    // for 1x1; 3x3 does not)
+    const int sizes[3][2] = {{3, 2}, {2, 3}, {3, 3}};
+    for (int i = 0; i < 3; i++)
+    {
+        CGrid267 s = Grid267(sizes[i][0], sizes[i][1]);
+        for (int o = 1; o <= 8; o++)
+            CHECK(Apply267(s, SalExifOrientTurn(o)) == Shown267(s, o));
+    }
+    // the negative control of the comparison itself: the old table's 4, 5, 7 differ from the standard
+    CGrid267 s = Grid267(3, 2);
+    CSalExifTurn old4 = {0, true, false}, old5 = {-1, false, false}, old7 = {1, false, false};
+    CHECK(Apply267(s, old4) != Shown267(s, 4));
+    CHECK(Apply267(s, old5) != Shown267(s, 5));
+    CHECK(Apply267(s, old7) != Shown267(s, 7));
+    // and the order matters: mirrors first, then the turn, would be wrong for 5 and 7
+    CGrid267 mirroredFirst(s);
+    for (int y = 0; y < 2; y++)
+        for (int x = 0; x < 3; x++)
+            mirroredFirst[y][x] = s[y][2 - x];
+    CHECK(Apply267(mirroredFirst, CSalExifTurn{1, false, false}) != Shown267(s, 5));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -15049,6 +15179,7 @@ int main(int argc, char** argv)
     TestCodeTable262();
     TestRegImportRoot263();
     TestNetDriveSameRemote264();
+    TestExifOrient267();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

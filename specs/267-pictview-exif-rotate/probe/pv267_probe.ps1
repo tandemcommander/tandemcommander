@@ -24,6 +24,8 @@
       noexif, xmp     no Exif block (none / XMP only): shown as stored, no Exif dialog
       uni             o6.jpg under a name with Czech and Japanese letters: turned, dialog with tags
       off             o6.jpg with the AutoRotate setting off: shown as stored, dialog with tags
+      tif6            a TIFF with Orientation 6 (not a JPEG - 267 leaves it alone): no Exif
+                      dialog; the size shown is recorded (INFO) and compared between builds
       real-*          with -RealRoot <folder of the public collection ianare/exif-samples>: real
                       camera files copied into the fixture; the title size must be the size of
                       the file turned by its tag (Pillow), the Exif dialog must open exactly for
@@ -39,10 +41,11 @@ param(
     [Parameter(Mandatory = $true)][string]$Exe,
     [string]$OutFile,
     [string[]]$Only,
-    [string]$RepoRoot = (Join-Path $PSScriptRoot '..\..\..'),
+    [string]$RepoRoot,
     [string]$RealRoot
 )
 $ErrorActionPreference = 'Stop'
+if (-not $RepoRoot) { $RepoRoot = Join-Path $PSScriptRoot '..\..\..' }   # $PSScriptRoot is empty in a parameter default (5.1)
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
 if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 function Want([string]$n) { return (-not $Only) -or ($Only -contains $n) -or (@($Only | Where-Object { $n -like $_ }).Count -gt 0) }
@@ -316,7 +319,10 @@ function Run-Row([string]$Case, [string]$Fixture, [string]$As, [bool]$Turned, [b
         $texts = Exif-Dialog $id $w
         $shown = Shown-Quads $id $w ($Out + '\' + $Case + '.png')
         $okRot = ($shown -eq $want) -and ((Dims $t) -eq ($want -split ' ')[0])
-        Row $Case 'ROT' (V $okRot) ("{0}, AutoRotate {1}: title size {2}; shown {3} (want {4}{5})" -f (Esc $As), $AutoRotate, (Dims $t), $shown, $want, $(if ($Turned) { ', turned by the tag' } else { ', as stored' }))
+        # a non-JPEG: what the engine shows is its own business (Pillow turns a TIFF on load) - only
+        # recorded, to be compared between builds
+        $verdict = if ($Fixture -like '*.tif') { 'INFO' } else { V $okRot }
+        Row $Case 'ROT' $verdict ("{0}, AutoRotate {1}: title size {2}; shown {3} (want {4}{5})" -f (Esc $As), $AutoRotate, (Dims $t), $shown, $want, $(if ($Turned) { ', turned by the tag' } else { ', as stored' }))
         if ($HasExif) {
             $n = if ($null -eq $texts) { -1 } else { $texts.Count }
             $okExif = ($null -ne $texts) -and ($n -gt 0) -and (@($texts | Where-Object { $_ -match '^Orientation' }).Count -gt 0)
@@ -353,7 +359,7 @@ function Run-Real([string]$Case, [string]$Rel, [bool]$HasExif) {
         $texts = Exif-Dialog $id $w
         Row $Case 'ROT' (V ((Dims $t) -eq $want)) ("{0}: title size {1} (want {2}, the file turned by its tag)" -f $Rel, (Dims $t), $want)
         $okExif = if ($HasExif) { ($null -ne $texts) -and $texts.Count -gt 0 } else { $null -eq $texts }
-        Row $Case 'EXIF' (V $okExif) ("Exif command (the file {0} an Exif block): {1}" -f $(if ($HasExif) { 'has' } else { 'has no' }), $(if ($null -eq $texts) { 'no dialog' } else { 'dialog, {0} tags' -f $texts.Count }))
+        Row $Case 'EXIF' (V $okExif) ("Exif command (the file has {0}): {1}" -f $(if ($HasExif) { 'an Exif block' } else { 'no Exif block' }), $(if ($null -eq $texts) { 'no dialog' } else { 'dialog, {0} tags' -f $texts.Count }))
         Close-Viewer $id $w
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -380,6 +386,7 @@ try {
     Run-Row 'xmp' 'xmp.jpg' 'xmp.jpg' $false $false
     Run-Row 'uni' 'o6.jpg' $UniName $true $true
     Run-Row 'off' 'o6.jpg' 'o6.jpg' $false $true 0
+    Run-Row 'tif6' 'o6.tif' 'o6.tif' $false $false
     Run-Real 'real-land6' 'jpg\orientation\landscape_6.jpg' $true
     Run-Real 'real-land5' 'jpg\orientation\landscape_5.jpg' $true
     Run-Real 'real-port8' 'jpg\orientation\portrait_8.jpg' $true

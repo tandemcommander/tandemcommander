@@ -80,9 +80,9 @@ static unsigned char* ReadWholeFileU8(const char* u8Path, size_t* size)
     return data;
 }
 
-// feature 132: has the JPEG file an Exif block? The built-in engine never reports PVFF_EXIF,
-// so every file - also one with Exif, whose Exif thumbnail is then updated - was asked the
-// question "this file does not contain EXIF data, create a JFXX thumbnail instead?". The
+// feature 132: has the JPEG file an Exif block? The built-in engine did not report PVFF_EXIF
+// (until 267), so every file - also one with Exif, whose Exif thumbnail is then updated - was
+// asked the question "this file does not contain EXIF data, create a JFXX thumbnail instead?". The
 // blocks before the picture data are looked at (the first megabyte of the file is enough for
 // any real file; a block that starts later counts as absent and the question is asked).
 static BOOL ThumbFileHasExif(const char* u8Path)
@@ -507,7 +507,9 @@ void UpdateThumbnails(CSalamanderForOperationsAbstract* Salamander)
                 }
             }
         }
-        else if (!(pvii.Flags & PVFF_EXIF) && !ThumbFileHasExif(path))
+        // feature 267: the engine reports PVFF_EXIF now (from WIC's reading of the file) - this
+        // decision stays 132's own walk of the file's blocks, the one EXIF.DLL's writer follows
+        else if (!ThumbFileHasExif(path))
         {
             if (flags & FL_JFXX_SKIP_ALL)
             {
@@ -1257,7 +1259,7 @@ BOOL CPluginInterfaceForThumbLoader::LoadThumbnail(LPCTSTR filename, int thumbWi
         pictureFlags |= SSTHUMB_ONLY_PREVIEW;
     }
     // legacy engine-flag translations kept for completeness (the WIC engine
-    // reports pvii.Flags == 0 today)
+    // reports none of these flags - only PVFF_EXIF, since 267)
     if ((pvii.Flags & PVFF_BOTTOMTOTOP) == PVFF_BOTTOMTOTOP)
     {
         pictureFlags |= SSTHUMB_MIRROR_VERT;
