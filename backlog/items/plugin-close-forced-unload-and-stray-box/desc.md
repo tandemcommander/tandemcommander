@@ -1,7 +1,7 @@
 ---
 title: Plug-in closing: forced Disk Map unload in a shell command, stray comparator box
 type: bug
-status: open
+status: in-progress
 severity: 3
 area: other-plugins
 source: leftover:143
@@ -10,7 +10,7 @@ created: 2026-10-14
 updated: 2026-10-20
 verified: 2026-10-20 5eb288af
 effort: M
-feature: -
+feature: 266
 related: [diskmap-close-real-mouse-rows]
 depends-on: []
 reason: -
@@ -44,3 +44,4 @@ Low: part (1) needs the user to force the unload, part (2) a narrow timing. If t
 - 2026-10-14 — feature 147 done; its review recorded the hex view's stray box (LOW-2)
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
 - 2026-10-20 — verified at 5eb288af: at 5eb288af by code: Release(force) still KillAll(TRUE) (200 ms, TerminateThread); hex WM_USER_HANDLEFILEERROR unguarded in the WM_DESTROY pump; CFileMapping::Destroy keeps FileSize
+- 2026-10-20 — run started, feature 266
