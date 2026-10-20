@@ -18,3 +18,4 @@ One row per run of `/tandem-backlog-implement`, newest last, appended by
 | 2026-10-20 05:10 | renamer-regex-single-byte-classes | closed | 254 | 254-renamer-regex-letters | 0 | - | Renamer regular expressions and whole words work on whole UTF-8 letters; probe 17/19 FAIL -> 25/0 |
 | 2026-10-20 05:14 | archive-listing-display-encoding | not-reproduced | - | - | 0 | - | OEM listing parser gone since 084; 7-Zip -sccUTF-8 listing is one encoding end to end |
 | 2026-10-20 06:08 | check-encoding-plugin-findings | blocked | 255 | 255-plugin-encoding-findings | 11 | - | stop rule 3: review 2 MUST - FTP listing probe marker hides a re-upload overwrite; verdicts and markers kept on the branch |
+| 2026-10-20 06:10 | undelete-zip-core-texts-in-code-page-sentences | not-reproduced | - | - | 0 | - | already fixed: 130 ZIP extText, 131 salamdr3 templates, 134 core subject and Undelete label |

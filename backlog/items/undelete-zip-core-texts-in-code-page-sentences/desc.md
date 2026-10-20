@@ -1,19 +1,19 @@
 ---
 title: Undelete and ZIP wrap the core's UTF-8 texts in their own code-page sentences
 type: bug
-status: open
+status: blocked
 severity: 4
 area: encoding
 source: leftover:127
 who: agent
 created: 2026-10-13
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 86b7992b
 effort: M
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: not reproduced at 86b7992b: fixed by 130 (ZIP extText), 131 (salamdr3 templates LoadStrU8), 134 (GetCommonFSOperSourceDescr UTF-8, Undelete label wide)
 ---
 
 # Undelete and ZIP wrap the core's UTF-8 texts in their own code-page sentences
@@ -37,3 +37,5 @@ Partly done by 134 (FTP, and the core's `GetCommonFSOperSourceDescr` now gives U
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at 86b7992b: not reproduced: read at 86b7992b - core GetCommonFSOperSourceDescr UTF-8 and Undelete label read wide (134); salamdr3 IDS_NAMEUSEDFORFILE / IDS_CREATEDIRFAILED via LoadStrU8 + whole-letter copy (131); ZIP ProcessError takes extText as UTF-8 (130)
+- 2026-10-20 — blocked: not reproduced at 86b7992b: fixed by 130 (ZIP extText), 131 (salamdr3 templates LoadStrU8), 134 (GetCommonFSOperSourceDescr UTF-8, Undelete label wide)

@@ -27,7 +27,7 @@ Last triaged: 2026-10-19
 | 3 | [Paste fails in a folder whose path contains an exclamation mark](items/vkladanie-zo-schranky-nefunguje-v-adresaroch-s-v-ceste/desc.md) | bug | 5 | file-ops | agent | - | blocked |
 | 4 | [Archive listings show names in one encoding only as a whole (F-P1-05)](items/archive-listing-display-encoding/desc.md) | tech-debt | 4 | encoding | agent | L | blocked |
 | 5 | [Read the 78 findings of check_encoding.py --plugins one by one](items/check-encoding-plugin-findings/desc.md) | tech-debt | 4 | encoding | agent | L | blocked |
-| 6 | [Undelete and ZIP wrap the core's UTF-8 texts in their own code-page sentences](items/undelete-zip-core-texts-in-code-page-sentences/desc.md) | bug | 4 | encoding | agent | M | open |
+| 6 | [Undelete and ZIP wrap the core's UTF-8 texts in their own code-page sentences](items/undelete-zip-core-texts-in-code-page-sentences/desc.md) | bug | 4 | encoding | agent | M | blocked |
 | 7 | [Popup menu mnemonics fail on DBCS / UTF-8 code pages; dialog hot keys by byte](items/menu-popup-loop-wide-mnemonics/desc.md) | bug | 4 | panels-ui | agent | M | open |
 | 8 | [Registry Editor Find: whole-word regexp, empty regexp, letters in quoted hex](items/regedit-find-whole-words-and-quoted-hex-letters/desc.md) | bug | 4 | other-plugins | agent | S | open |
 | 9 | [SFTP upload replace: links split, ACLs lost, drop folders fail, .tcpart left](items/sftp-replace-keeps-links-acls-drop-dirs/desc.md) | bug | 4 | sftp | agent | M | open |
