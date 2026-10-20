@@ -1,6 +1,6 @@
 attrs_case_link_probe (feature 213) 
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 00:18; registry key existed True; ACP 1250
+Date    : 2026-10-21 00:30; registry key existed True; ACP 1250
 
 ATTR       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ATTR       RUN    PASS        OWN.TXT hidden True; target T.TXT hidden False; the folder tgt hidden False; target holds T.TXT; boxes set 2 of 2; dialog: ...e &subdirectories | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window

@@ -8075,8 +8075,12 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
     // the link (EncryptFile / DecryptFile follow it) - a change of it is refused
     // feature 272: a file symbolic link likewise (its target file was compressed and re-timed); the
     // same rule decides a file listed with the reparse bit - a readable tag that is not a name
-    // surrogate (a cloud placeholder, a deduplicated file) is not a link and keeps the old way
-    BOOL isLink = SalAttrsEntryIsLink(fileAttr, (fileAttr & FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(name));
+    // surrogate (a cloud placeholder, a deduplicated file) is not a link and keeps the old way; asked
+    // only when compression, encryption or times change (nothing else uses it)
+    BOOL useLinkRule = changeCompression || changeEncryption || timeModified != NULL || timeCreated != NULL ||
+                       timeAccessed != NULL;
+    BOOL isLink = SalAttrsEntryIsLink(fileAttr, useLinkRule && (fileAttr & FILE_ATTRIBUTE_REPARSE_POINT) &&
+                                                    DeleteAsDirLink(name));
 
     while (1)
     {

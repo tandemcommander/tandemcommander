@@ -71,7 +71,7 @@ requires) - fixed by T013. LOW F1 (naming consistent) - nothing to do.
   `FILE_FLAG_OPEN_REPARSE_POINT` for a link (a file link was 0); `SalAttrsLinkRefusesEncryption`
   parameter renamed. `src/saltests/saltests.cpp`: `TestAttrsLink253` - the two checks that pinned
   "a file link unchanged" removed (the rule changed), the rest kept; new `TestAttrsFileLink272`
-  (19 checks: file link, non-surrogate tags 0x123 / cloud / dedup, symlink tag, unreadable tag,
+  (21 checks: file link, non-surrogate tags 0x123 / cloud / dedup / WOF, symlink and WSL symlink tags, unreadable tag,
   open flags, encryption refusal).
 - `src/worker.cpp` `DoChangeAttrs`: `isLink = SalAttrsEntryIsLink(fileAttr, (fileAttr &
   FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(name))` replaces `isDirLink`; passed to
@@ -92,7 +92,7 @@ requires) - fixed by T013. LOW F1 (naming consistent) - nothing to do.
   the changed lines (pre-existing differences elsewhere in the files left alone).
 - `.\build.cmd` -> `BUILD SUCCEEDED` (warnings C4018 in `salamdr2.cpp` 1058 / 1066 are
   pre-existing).
-- `saltests.exe` -> `saltests: 24833 checks, 0 failed`.
+- `saltests.exe` -> `saltests: 24833 checks, 0 failed` (24835 after the review changes).
 - Probe `probe/result_after.txt`: PASS 12, FAIL 0, NOT DRIVEN 1 - COMP the link compressed, T.TXT
   not; UNCOMP the link uncompressed, T.TXT still compressed; TIME the link 2001, T.TXT 2010; SUBC
   sel, OWN.TXT and the link compressed, T.TXT not; PLAIN as before; NONLINK as before ((1920),
@@ -111,3 +111,33 @@ requires) - fixed by T013. LOW F1 (naming consistent) - nothing to do.
   supported."), Skip; the target file stays unencrypted; a plain file selected with it is
   encrypted. And Decrypt on an encrypted file link -> the same refusal, the target stays
   encrypted.
+
+## Review
+
+Refute-first review (one agent): **no MUST, no SHOULD**. It re-ran the build (BUILD SUCCEEDED),
+saltests (24833 / 0), the encoding guard (TOTAL: 0), this probe on the hidden desktop (PASS 12 /
+FAIL 0 / NOT DRIVEN 1, registry identical), 253's probe (10 / 0 / 1) and 213's (8 / 0); negative
+controls: `result_before.txt` (8b08f1da) FAIL 4, the NONLINK row fails a naive "reparse bit is
+enough" rule, the new unit checks fail on the old header. Outside the program it compressed,
+re-timed and uncompressed absolute, relative and dangling file links - the link still resolves,
+the target unchanged. Callers enumerated: Copy / Move keep `ownEntry = FALSE`; `SalAttrsOpenFlags`
+only in `worker.cpp`; `DoChangeAttrs` only from `ocChangeAttrs`; the four command routes
+(dialog, Compress, Uncompress, Encrypt / Decrypt) all through `BuildScriptMain(atChangeAttrs)`.
+
+- NOTE 1 - `DeleteAsDirLink` ran for every reparse file even when only Read-only / Hidden /
+  Archive change (extra opens and a `TRACE_E` per OneDrive placeholder with Include
+  subdirectories). **Done**: asked only when compression, encryption or times change
+  (`useLinkRule`); `isLink` is used for nothing else.
+- NOTE 2 - the test comment named 0x9000001A `IO_REPARSE_TAG_CLOUD_A` (it is `IO_REPARSE_TAG_CLOUD`);
+  suggested WOF 0x80000017 and the WSL symlink 0xA000001D. **Done** (2 checks added).
+- NOTE 3 - Convert through a file link (`worker.cpp` ~7850 `SalReplaceWithTempW` on the link's
+  name), outside the item. **Measured** outside the program: `ReplaceFileW(link, temp)` fails with
+  1464 (`ERROR_SYMLINK_NOT_SUPPORTED`), link and target intact; `SalReplaceFailureNext` maps 1464
+  to "keep the target" - Convert reports an error and loses nothing. Not a data-loss defect; not
+  added to the Inbox (Convert on a file link fails with an error - recorded here).
+- NOTE 4 - the encryption refusal is not driven (no EFS certificate) - owed to a person (below).
+
+After the changes for NOTE 1 / 2: encoding guard TOTAL: 0; `.\build.cmd` BUILD SUCCEEDED; saltests
+24835 / 0; probe `probe/result_after.txt` PASS 12 / FAIL 0 / NOT DRIVEN 1 (registry identical);
+`probe/regress_253.txt` 10 / 0 / 1; `probe/regress_213.txt` 8 / 0. The fix is a guard on a
+query whose result was otherwise unused, so a second review was not needed (no MUST).

@@ -11956,8 +11956,10 @@ static void TestAttrsFileLink272()
 
     // the rule asked for the file: a readable non-surrogate tag is not a link, an unreadable one is (fail closed)
     CHECK(!SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x00000123)));
-    CHECK(!SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x9000001A))); // IO_REPARSE_TAG_CLOUD_A
+    CHECK(!SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x9000001A))); // IO_REPARSE_TAG_CLOUD
     CHECK(!SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x80000013))); // IO_REPARSE_TAG_DEDUP
+    CHECK(!SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x80000017))); // IO_REPARSE_TAG_WOF
+    CHECK(SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0xA000001D)));  // IO_REPARSE_TAG_LX_SYMLINK (WSL)
     CHECK(SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0xA000000C)));  // IO_REPARSE_TAG_SYMLINK
     CHECK(SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(TRUE, TRUE, 0xA000000C)));   // destination read
     CHECK(SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, FALSE, 0)));          // tag unreadable

@@ -1,6 +1,6 @@
 attrs_link253_probe (feature 253) regress-272
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 00:18; registry key existed True; ACP 1250
+Date    : 2026-10-21 00:29; registry key existed True; ACP 1250
 
 COMP       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 COMP       RUN    PASS        the junction compressed True; target tgt compressed False; T.TXT compressed False; boxes set 1 of 1; date not set; dialog: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
