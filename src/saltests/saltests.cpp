@@ -14855,6 +14855,9 @@ static void TestRegImportRoot263()
     CHECK(SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1\\Configuration", root));       // below
     CHECK(SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1\\Plugins\\FTP Client", root)); // deeper
     CHECK(SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1\\", root));                    // a trailing backslash
+    CHECK(SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1\\\xC5\xBD"
+                                "lu\xC5\xA5 \xE6\x97\xA5\xE6\x9C\xAC",
+                                root)); // a UTF-8 name below the root (review 2)
     CHECK(SalRegKeyIsInsideRoot("SOFTWARE\\tandem commander\\0.1\\Window", root));              // letter case
     CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.10", root));                    // a sibling with a longer name
     CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0.1x\\Configuration", root));

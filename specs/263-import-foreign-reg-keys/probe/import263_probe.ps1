@@ -13,7 +13,9 @@
               Probe263 imported, no message
       MIXED   our key + the foreign key HKCU\Software\TC263ProbeForeign - PASS = a message ("not a
               configuration file"), the foreign key NOT written and our key NOT imported
-      NOROOT  only the foreign key - PASS = the foreign key NOT written (whatever is answered)
+      NOROOT  only the foreign key - PASS = the foreign key NOT written, the refusal shown, no question
+      DELROOTONLY  only [-HKCU\Software\Tandem Commander\0.1] - refused, no question, the configuration kept
+      EMPTY   a .reg file without any key - refused, no question (review 2)
       DELETE  our key + [-HKCU\Software\TC263ProbeVictim] (the victim made by the probe) - PASS = the
               victim still exists
       EXPORTSHAPE  the shape of the program's own export: [HKCU\Software], [HKCU\Software\Tandem Commander],
@@ -22,7 +24,8 @@
       PARENTDEL   [-HKCU\Software\Tandem Commander] + our key - refused, the configuration still there
       EXPORTCLEAR the clear-key export: [-root], the parents, the whole current configuration (reg export), our
               key - imported, no message
-      REALBACKUP  the newest settings backup of feature 245 (a file the program wrote) - imported, no message;
+      REALBACKUP  the newest settings backup of feature 245 (a file the program wrote) - imported (the marker
+              key Probe263Old made before the start is removed by its delete line of the root), no message;
               NOT DRIVEN when there is none
       HKCR    our key + [HKEY_CLASSES_ROOT\TC263ProbeClass] - PASS = a message, the class key exists
               neither in HKCU\Software\Classes nor in HKLM\Software\Classes, our key not imported
@@ -144,7 +147,10 @@ try {
     Run-Case 'OURS' $ourKey $null { param($f) $f.Value -eq '1' -and $f.Msgs -eq 'no window' }
     Run-Case 'OWNDEL' (@("[-$Ours\Probe263Old]", '') + $ourKey) { [void](New-Item -Path "$PsOurs\Probe263Old" -Force) } { param($f) $f.Value -eq '1' -and -not $f.Old -and $f.Msgs -eq 'no window' }
     Run-Case 'MIXED' ($ourKey + $foreignKey) $null { param($f) -not $f.Foreign -and $null -eq $f.Value -and $f.Msgs -match 'not a configuration file' }
-    Run-Case 'NOROOT' $foreignKey $null { param($f) -not $f.Foreign }
+    Run-Case 'NOROOT' $foreignKey $null { param($f) -not $f.Foreign -and $f.Msgs -match 'not a configuration file' -and $f.Msgs -notmatch 'anyway' }
+    # review 2: the files the old question let through without a foreign key - Yes wiped the configuration
+    Run-Case 'DELROOTONLY' @("[-$Ours]", '') $null { param($f) $f.Config -and $f.Msgs -match 'not a configuration file' -and $f.Msgs -notmatch 'anyway' }
+    Run-Case 'EMPTY' @() $null { param($f) $f.Config -and $f.Msgs -match 'not a configuration file' -and $f.Msgs -notmatch 'anyway' }
     Run-Case 'DELETE' ($ourKey + @("[-HKEY_CURRENT_USER\Software\$Victim]", '')) { $k = New-Item -Path "HKCU:\Software\$Victim" -Force; [void](New-ItemProperty -LiteralPath "HKCU:\Software\$Victim" -Name 'keep' -Value 'me' -Force) } { param($f) $f.Victim -and $null -eq $f.Value }
     Run-Case 'HKCR' ($ourKey + @("[HKEY_CLASSES_ROOT\$Class]", '"x"="1"', '')) $null { param($f) -not $f.Class -and $null -eq $f.Value -and $f.Msgs -match 'not a configuration file' }
     # review 1 (MUST): the program's own export writes the keys above the root as lines of their own
@@ -162,7 +168,8 @@ try {
     if (Want 'REALBACKUP') {
         # a file the program wrote: the newest settings backup of feature 245 (ExportConfiguration with the clear-key line)
         $bk = @(Get-ChildItem -LiteralPath (Join-Path $env:APPDATA 'Tandem Commander\Settings backups') -Filter '*.reg' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1)
-        if ($bk.Count) { Run-Case 'REALBACKUP' $null $null { param($f) $f.Config -and $f.Msgs -eq 'no window' } $bk[0].FullName; Out ('           (REALBACKUP = ' + $bk[0].Name + ')') }
+        # the marker key Probe263Old is not in the backup: its delete line of the root removes it - proof of the import
+        if ($bk.Count) { Run-Case 'REALBACKUP' $null { [void](New-Item -Path "$PsOurs\Probe263Old" -Force) } { param($f) $f.Config -and -not $f.Old -and $f.Msgs -eq 'no window' } $bk[0].FullName; Out ('           (REALBACKUP = ' + $bk[0].Name + ')') }
         else { Row 'REALBACKUP' 'RUN' 'NOT DRIVEN' 'no settings backup of feature 245 on this machine' }
     }
 }

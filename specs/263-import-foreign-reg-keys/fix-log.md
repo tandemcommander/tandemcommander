@@ -129,3 +129,32 @@ reviewer's EXPORTSHAPE row FAILED on the first fixed build (`35b787cd`).
 
 Process note: a Bash here-document turned `\0` of a probe line into a NUL byte (CLAUDE.md rule
 123); found by `grep` reporting a binary file, repaired before the run.
+
+### Review 2 (fresh agent, refute-first, with the findings of review 1) - no MUST, 2 SHOULD
+
+Re-ran build, saltests, encoding guard and the probe (PASS 22) and an own hidden-desktop probe (PASS
+22: non-ASCII and 255-character key names below the root imported; whole file in lower case;
+REGEDIT4 ours / mixed; a parent line then a foreign key refused; `HKEY_USERS\<SID>\...` refused -
+fail closed; delete-root-only refused; a value after a delete line refused in the memory pass; no
+question). The newest 245 backup scanned against the rule: 0 refusals. Negative controls of the pure
+rule outside the tree: parent boundary -> TRUE: 4 checks fail; inside boundary -> TRUE: 3 fail; no
+case folding: 9 fail. Callers re-enumerated (as in review 1); bypass shapes traced (hex continuation,
+brackets in names, DBCS, `HKEY_CURRENT_USER_...`, `\` after the hive, NUL, values without a key):
+none writes outside the root.
+
+- SHOULD 1: the data-loss case the removed question allowed (a file with only `[-root]`; Yes wiped
+  the configuration at `0e36adce`, reasoned) and spec US3 scenario 2 (no key at all) had no probe
+  row. **Done**: rows DELROOTONLY and EMPTY (refusal text, no "anyway", `Configuration` kept).
+- SHOULD 2: the NOROOT judge checked only the foreign key. **Done**: it also requires the refusal
+  text and no question (FR-003).
+- NOTE: REALBACKUP proved only "no box". **Done**: a marker key `Probe263Old` is made before the
+  start; the backup's delete line of the root must remove it.
+- NOTE: no saltests check for a UTF-8 name below the root. **Done** (1 check).
+- NOTE: the behaviour change deserves a changelog line and the help (`customize_configuration.htm`
+  invites administrators to edit `config.reg`) - CHANGELOG at closing; help and naming the key in
+  the message -> leftover Inbox item.
+- NOTE (cosmetic): for a value under a parent line the trace names the value line, not the key line.
+- NOTE (pre-existing, unaffected): `CKey::Dump` escapes `"` in key names, `Parse` does not undo it.
+
+After (`probe/result_after3.txt`): PASS 26, FAIL 0, NOT DRIVEN 0; registry restored identical
+(`A46438BF...`); `saltests: 24694 checks, 0 failed`; encoding guard `TOTAL: 0`; `BUILD SUCCEEDED`.
