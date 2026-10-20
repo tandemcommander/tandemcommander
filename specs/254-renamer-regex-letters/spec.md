@@ -33,6 +33,16 @@ one is dropped. This is shown by reading the code; nothing is renamed by it. The
 also named in the item, already compares non-ASCII names by whole letters (the core's
 `RegSetStrICmp` goes through its UTF-8 name comparison, feature 004). It is not changed here.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: How are characters outside the BMP classified for `\w`, `\d`, `\s` and the POSIX classes? → A: By the system's Unicode library (`icu.dll`, loaded from System32 at first use); when it cannot be loaded, such a character belongs to no class but is still one whole letter (autonomous run: recommended - CLAUDE.md "Windows 11+" commitment; the item names "letters outside the BMP break words").
+- Q: Does `\w` include combining marks? → A: Yes - letters, digits, combining marks (nonspacing, spacing and enclosing) and `_` (autonomous run: item - "combining marks break words").
+- Q: How does a case-insensitive bracket class or range with non-ASCII letters compare? → A: By the lower-case forms - the pattern and the name are folded by feature 210's same-length fold before matching, as today (autonomous run: conservative - keeps 210's design, nothing new can match another letter).
+- Q: What does a run of `\x` escapes that forms no whole UTF-8 character match? → A: Only the same bytes standing alone (as invalid bytes) in the name, never a piece of a letter (autonomous run: conservative - refuses a partial match instead of producing an invalid name; no new error message).
+- Q: When are two history entries "the same"? → A: By the shared case-insensitive name rule `SalNameOrderEqualCI` (autonomous run: rule - CLAUDE.md 092 "the same name" rule).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - An expression never splits a letter (Priority: P1)
@@ -132,7 +142,8 @@ saltests.
 - **FR-001**: `.` (with or without the single-line option) MUST match exactly one whole letter.
 - **FR-002**: Bracket classes, their negations, `\w \W \d \D \s \S` and the POSIX classes MUST
   match exactly one whole letter. A non-ASCII letter is judged by its Unicode properties: letters,
-  digits, spaces, punctuation, upper / lower case. `\w` also includes combining marks and `_`.
+  digits, spaces, punctuation, upper / lower case. `\w` also includes combining marks (nonspacing, spacing, enclosing)
+  and `_`.
 - **FR-003**: A non-ASCII literal letter followed by `*`, `+` or `?` MUST be repeated as a whole
   letter.
 - **FR-004**: `*`, `+`, `?` and their ungreedy forms after `.` or a class MUST give back whole
