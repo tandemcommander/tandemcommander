@@ -57,8 +57,8 @@ void GetNewOrBackgroundMenu(HWND hOwnerWindow, const char* dir, CMenuNew* menu,
 
 struct CDragDropOperData
 {
-    char SrcPath[SAL_MAX_PATH_UTF8]; // long-path capable (feature 013); source path shared by all files/directories ("" == conversion failed)
-    TIndirectArray<char> Names;      // Sorted, allocated names of files/directories (CF_HDROP does not distinguish whether it is a file or a directory) ("" == path conversion from Unicode failed)
+    char SrcPath[SAL_MAX_PATH_UTF8]; // long-path capable (feature 013); source path shared by all files/directories ("" == too long, see SrcPathTooLong; a failed conversion refuses the selection, feature 259)
+    TIndirectArray<char> Names;      // Sorted, allocated names (UTF-8) of files/directories (CF_HDROP does not distinguish whether it is a file or a directory)
     BOOL SrcPathTooLong;             // feature 259: the common path did not fit SrcPath (SrcPath is "") - "The path specified is too long."
 
     CDragDropOperData() : Names(200, 200)

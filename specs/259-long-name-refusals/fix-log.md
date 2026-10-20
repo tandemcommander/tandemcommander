@@ -83,12 +83,13 @@ From backlog item `core-long-name-wrong-refusals` (review:215 / 222 leftovers). 
      error) was wrong. Fix: the 255-unit check with IDS_TOOLONGNAME; the OVER row now accepts
      only "too long" (it caught the gap - a working negative control of that row).
 2. Second after-run: 10 PASS / 0 FAIL.
+3. After the review (OVER requires "too long name", rows U255 / U256 added): 14 PASS / 0 FAIL.
 
 ## Measured after
 
 - Probe `probe/result_after.txt`: SHORT, REL, ABS, CJK, OVER all PASS (10 / 0), registry
   restored identical (SHA-256 CBAC630F...), fixture removed, nothing left running.
-- `saltests`: 24,543 checks, 0 failed (`TestCopyName259`, 28 checks). Negative control: the
+- `saltests`: 24,543 checks, 0 failed (`TestCopyName259`, 28 checks; 29 after the review). Negative control: the
   rule's limit replaced by the old `strlen(out) >= MAX_PATH` -> 5 failed (84 CJK + attempt 2,
   245 + ".txt", 244 + ".txt" attempt 2, ...); restored, 0 failed.
 - `python tools/check_encoding.py --strict`: TOTAL 0. `build.cmd`: BUILD SUCCEEDED.
@@ -104,3 +105,30 @@ From backlog item `core-long-name-wrong-refusals` (review:215 / 222 leftovers). 
   or low memory reach it).
 - Create Directory takes a relative name in a 260+ byte panel path through `SalGetFullName`'s
   default MAX_PATH as well (`fileswn5.cpp` `CreateDir`) - seen while comparing, not measured.
+
+## Review
+
+Refute-first review 1 (independent agent, at 16c7b517): **no MUST**. It re-ran build, saltests
+(24,543 / 0), the encoding guard (0) and the probe (10 / 0, registry identical); its own negative
+control (the rule's limit 255 -> 256 units) failed 2 checks, restored -> 0.
+- SHOULD 1 - the Paste symptom has no runtime evidence (clipboard): recorded as a person-step item
+  with the exact steps (closing).
+- SHOULD 2 - `CCopyMoveRecord::AllocChars(const wchar_t*)` (shellib.cpp) keeps a CP_ACP fallback
+  on the Paste route itself (only on low memory): outside the item's site -> Inbox item
+  (review:259).
+- SHOULD 3 - the OVER row accepted the old wrong answer ("The path specified is too long."): it now
+  requires "too long name"; rows U255 (251 CJK + ".txt" = 255 units, created) and U256 (refused)
+  added. Probe 14 / 0.
+- NOTE - "a higher attempt is never shorter" is false for a number with leading zeros: header,
+  contract and comment reworded; a check pins it (`"x (001).txt"` attempt 2 -> `"x (2) - Copy.txt"`).
+  The only effect is a refusal (as the old code).
+- NOTE - stale `shellib.h` comments of `SrcPath` / `Names`: updated.
+- NOTE - the question names the source name, and a folder gets the file text / "Skip all" flag
+  (`IDS_NAMEISTOOLONG`, `ErrTooLongTgtNameSkipAll`) - accepted: feature 141's route, existing text.
+- NOTE - `IDS_SRCPATHUNICODEONLY` in `DragDropToArcOrFS` is no longer reachable - kept as a
+  defensive check.
+- NOTE - Edit New File's full-path limit is judged in bytes (SAL_MAX_PATH_UTF8), not 32,767 units -
+  only extreme ASCII paths get the system's text instead of "too long"; accepted (Create Directory
+  does the same).
+
+No MUST -> no second review needed (SKILL.md step 7).

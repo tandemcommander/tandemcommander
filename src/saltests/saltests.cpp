@@ -14064,6 +14064,7 @@ static void TestCopyName259()
     CHECK(CopyName259("x (a).txt", FALSE, 2, &r) == "x (a) - Copy (2).txt"); // "(a)" is no number
     CHECK(CopyName259("x ().txt", FALSE, 2, &r) == "x (2) - Copy.txt");      // "()" counts (as before)
     CHECK(CopyName259(".cvspass", FALSE, 1, &r) == " - Copy.cvspass");       // as before
+    CHECK(CopyName259("x (001).txt", FALSE, 2, &r) == "x (2) - Copy.txt");   // leading zeros: a later attempt is shorter (see the header)
 
     // long names: 84 CJK letters + ".txt" = 256 bytes, the copy 95 units - created (was "to itself")
     std::string cjk84;

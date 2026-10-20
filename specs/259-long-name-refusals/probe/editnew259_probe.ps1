@@ -11,7 +11,9 @@
       ABS     the panel in a short folder, the full 290+ byte path of a file in the deep folder typed
       CJK     the panel in a short folder, a name of 100 CJK letters + ".txt" typed (304 bytes)
       OVER    the panel in a short folder, 256 CJK letters + ".txt" typed (more than a file system
-              takes): nothing created, a refusal shown
+              takes): nothing created, "too long name" shown
+      U255    251 CJK letters + ".txt" (exactly 255 UTF-16 units) - created
+      U256    252 CJK letters + ".txt" (256 units) - nothing created, "too long name" shown
 
     The editor of the run is rundll32.exe without arguments (it ends at once, no window); the
     file is created before the editor starts, so the verdict reads the folder.
@@ -118,7 +120,7 @@ function Row-Do([string]$Case, [string]$Panel, [string]$Type, [string]$Dir, [str
             $facts = ("typed {0} bytes ({1}); the folder ({2} bytes) holds {3}" -f (U8Len $Type), (Short $Type), (U8Len $Dir), (Describe $names $Want))
         }
         else {
-            $said = [bool](@($texts | Where-Object { $_ -match 'too long|Too long' }).Count)   # the refusal must say why
+            $said = [bool](@($texts | Where-Object { $_ -match 'too long name' }).Count)   # the NAME is too long ("The path specified is too long." was the old, wrong answer)
             $ok = ($names.Count -eq 0 -and $said)
             $facts = ("typed {0} bytes; the folder holds {1}; a refusal shown {2}" -f (U8Len $Type), (Describe $names ''), $said)
         }
@@ -144,7 +146,7 @@ try {
     & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
     if ($LASTEXITCODE -ne 0) {
         # without a configuration the program would start its default editor (notepad.exe)
-        foreach ($c in @('SHORT', 'REL', 'ABS', 'CJK', 'OVER')) { if (Want $c) { Row $c 'ROW' 'NOT DRIVEN' 'no configuration in the registry - the editor of the run cannot be set' } }
+        foreach ($c in @('SHORT', 'REL', 'ABS', 'CJK', 'OVER', 'U255', 'U256')) { if (Want $c) { Row $c 'ROW' 'NOT DRIVEN' 'no configuration in the registry - the editor of the run cannot be set' } }
     }
     else {
         $ed = "$RegKey\0.1\Editors\1"
@@ -160,6 +162,8 @@ try {
         Row-Do 'ABS' ($Root + '\abs') ($Deep2 + '\a.txt') $Deep2 'a.txt'
         Row-Do 'CJK' ($Root + '\cjk') $cjk100 ($Root + '\cjk') $cjk100
         Row-Do 'OVER' ($Root + '\over') $cjk256 ($Root + '\over') $null
+        Row-Do 'U255' ($Root + '\u255') (($Cjk * 251) + '.txt') ($Root + '\u255') (($Cjk * 251) + '.txt')   # exactly 255 UTF-16 units: a name
+        Row-Do 'U256' ($Root + '\u256') (($Cjk * 252) + '.txt') ($Root + '\u256') $null                    # 256 units: too long
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

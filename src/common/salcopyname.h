@@ -28,7 +28,9 @@
 //   attempt >= 2 with num: num becomes "(attempt)"; hyphenCopy goes before ext
 //         (num before ext), after the part before ext (num inside ext), or at
 //         the end (no ext)
-// A higher attempt is never shorter, so the caller stops at the first TOOLONG.
+// The caller stops at the first TOOLONG: a later attempt is not shorter, except
+// when the name's own number has leading zeros ("x (001).txt" -> "x (2) - Copy.txt")
+// - such a name is then refused although a later attempt might fit (as before).
 //
 //*****************************************************************************
 

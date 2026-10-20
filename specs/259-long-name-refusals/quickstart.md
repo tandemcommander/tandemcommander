@@ -9,7 +9,7 @@
    powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\259-long-name-refusals\probe\result_after.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\259-long-name-refusals\probe\editnew259_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Label after"
    ```
 
-   Expected: SHORT, REL, ABS, CJK, OVER all PASS (before: REL, ABS, CJK FAIL); registry restored
+   Expected: SHORT, REL, ABS, CJK, OVER, U255, U256 all PASS (before: REL, ABS, CJK FAIL); registry restored
    identical.
 4. Encoding guard: `python tools/check_encoding.py --strict` - `TOTAL: 0 finding(s)`.
 5. Owed to a person (clipboard): in a folder holding "84 CJK letters.txt" Ctrl+C, Ctrl+V - a

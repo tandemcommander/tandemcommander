@@ -19,5 +19,6 @@ The candidate (Windows Explorer since Vista; a faithful port of the old fileswn6
   `num` is before `ext`) or after the name part before `ext` (when `num` is inside `ext`); without
   `ext` `hyphenCopy` goes at the end.
 
-A higher attempt is never shorter than a lower one at the same place in the name, so the caller
-stops at the first TOOLONG.
+The caller stops at the first TOOLONG. A later attempt is not shorter, except when the name's own
+number has leading zeros ("x (001).txt" -> "x (2) - Copy.txt"); such a name is then refused although
+a later attempt might fit - a refusal, never a wrong target (the old code behaved the same).

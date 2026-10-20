@@ -153,7 +153,7 @@ ordinary names is unchanged).
 
 ### Measurable Outcomes
 
-- **SC-001**: The Edit New File probe passes all five rows (before: 3 of 5 failed).
+- **SC-001**: The Edit New File probe passes all its rows (before: 3 of 5 failed; U255 / U256 added by the review).
 - **SC-002**: The unit checks of the copy-name rule pass, including a name at 255 units created
   and one at 256 refused; a negative control (the old 260-byte limit) fails them.
 - **SC-003**: No code path of the simple-selection conversion calls a code-page conversion of a

@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
@@ -3203,3 +3203,22 @@ a few early ones are out of sequence).
   From backlog item `sftp-replace-keeps-links-acls-drop-dirs`. Probe `sftp258_probe.ps1` (paramiko
   server `dropsftp.py`) 7 / 5 -> 20 / 0; negative controls CUT, DROPNOEXCL; 133's probe 76 / 0;
   three refute-first reviews (review 2 one MUST, fixed by the revert).
+- 259-long-name-refusals: Paste of a file or folder into its own folder said "Cannot copy a file
+  to itself." when its "- Copy" name reached 260 bytes - also for a valid name (84 CJK letters +
+  ".txt"); Edit New File refused every path of 260+ bytes (a relative name in a deep folder, a
+  typed long path, a 100-letter CJK name); `IsSimpleSelection` fell back to the ANSI code page
+  (cut at 259 bytes) and told a too long source folder as a Unicode problem - now the copy name
+  is built whole by `salcopyname.h` (`SalMakeCopyNameU8`, the Explorer rule ported) and judged
+  by 255 UTF-16 units, a too long one gets the "name is too long" question (Skip / Skip all /
+  Focus, 141's route) and never targets its source; Edit New File takes paths up to
+  `SAL_MAX_PATH_UTF8` and says "too long name" for a name over 255 units (Windows itself answers
+  "invalid name" - measured, the first answer was revised); a failed conversion refuses the
+  selection and `SrcPathTooLong` says "The path specified is too long.". Traps: the probe rows
+  shared a folder (ABS saw REL's file); the OVER row first accepted the old wrong "path too long"
+  (review). Limits: a name with a zero-padded "(001)" stops at the first too long attempt; a new
+  name of 260+ bytes is not focused; the Paste rows need the clipboard (person step
+  `paste-of-a-long-name-into-its-own-folder-check-the-copy-name`); Inbox
+  `paste-and-drop-of-our-own-files-keep-a-code-page-fallback`,
+  `create-directory-refuses-a-relative-name-in-a-folder-whose`. From backlog item
+  `core-long-name-wrong-refusals`. Probe `editnew259_probe.ps1` 7 / 3 -> 14 / 0; `TestCopyName259`
+  (negative control: the old 260-byte limit fails 5); one refute-first review (no MUST).

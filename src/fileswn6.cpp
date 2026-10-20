@@ -951,7 +951,7 @@ BOOL CFilesWindow::BuildScriptMain2(COperations* script, BOOL copy, char* target
                                                       copyName, sizeof(copyName)) != SAL_COPYNAME_OK ||
                                     (targetName - targetPath) + strlen(copyName) >= SAL_MAX_PATH_UTF8)
                                 {
-                                    copyNameTooLong = TRUE; // a higher attempt is never shorter
+                                    copyNameTooLong = TRUE; // a later attempt is not shorter (see salcopyname.h)
                                     break;
                                 }
                                 strcpy(targetName, copyName);

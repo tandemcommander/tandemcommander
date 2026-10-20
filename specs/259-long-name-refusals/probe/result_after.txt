@@ -1,6 +1,6 @@
-editnew259_probe (feature 259) after
+editnew259_probe (feature 259) after-review
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 10:37; desktop 'tc_probe_35820'; ACP 1250; registry key existed True; export SHA-256 CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8; deep folder 288 bytes
+Date    : 2026-10-20 10:50; desktop 'tc_probe_1332'; ACP 1250; registry key existed True; export SHA-256 CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8; deep folder 288 bytes
 
 SHORT      ROW    PASS        typed 5 bytes (n.txt); the folder (45 bytes) holds the expected name (5 bytes); dialogs: typed into [Edit New File]
 SHORT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -12,6 +12,10 @@ CJK        ROW    PASS        typed 304 bytes (<CJK letters>.txt); the folder (4
 CJK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 OVER       ROW    PASS        typed 772 bytes; the folder holds no file; a refusal shown True; dialogs: typed into [Edit New File] || [#32770 'Error'] [Static id=2477] Cannot finish operation because of too long name. | [Button id=1] OK || [Edit New File] came back - cancelled
 OVER       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U255       ROW    PASS        typed 757 bytes (<CJK letters>.txt); the folder (44 bytes) holds the expected name (757 bytes); dialogs: typed into [Edit New File]
+U255       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U256       ROW    PASS        typed 760 bytes; the folder holds no file; a refusal shown True; dialogs: typed into [Edit New File] || [#32770 'Error'] [Static id=2477] Cannot finish operation because of too long name. | [Button id=1] OK || [Edit New File] came back - cancelled
+U256       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8 / after CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
 
-Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
