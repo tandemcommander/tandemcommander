@@ -26,6 +26,10 @@
       off             o6.jpg with the AutoRotate setting off: shown as stored, dialog with tags
       tif6            a TIFF with Orientation 6 (not a JPEG - 267 leaves it alone): no Exif
                       dialog; the size shown is recorded (INFO) and compared between builds
+      keep-*          two windows: B shows z.jpg, A renames x.jpg onto it (Yes); B reopens z.jpg keeping
+                      the user's mirror and must show x's content turned by its own tag (review 1,
+                      S1): keep-ctl (z without Exif), keep-o6, keep-o2, keep-o5, keep-user6 (o6
+                      mirrored left-right by the user in B before the rename)
       real-*          with -RealRoot <folder of the public collection ianare/exif-samples>: real
                       camera files copied into the fixture; the title size must be the size of
                       the file turned by its tag (Pillow), the Exif dialog must open exactly for
@@ -366,6 +370,61 @@ function Run-Real([string]$Case, [string]$Rel, [bool]$HasExif) {
     finally { if ($id) { End-P $Case $id $before } }
 }
 
+# 120's Rename-Shown (pv120_probe.ps1), copied: CMD_IMG_RENAME in viewer $Wv, the field 2172 set to
+# $NewName, OK; the boxes after it answered with $WantIds
+function Rename-Shown([int]$Id, [IntPtr]$Wv, [string]$NewName, [int[]]$WantIds = @(6, 2, 1), $Ignore = @()) {
+    $known = Get-Tops $Id
+    Post-Cmd $Wv 185
+    $dlg = [IntPtr]::Zero; $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 10 -and $dlg -eq [IntPtr]::Zero) {
+        $dlg = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' -and (Kid $_ 2172 'Edit') }) | Select-Object -First 1
+        if (-not $dlg) { $dlg = [IntPtr]::Zero; Start-Sleep -Milliseconds 200 }
+    }
+    if ($dlg -eq [IntPtr]::Zero) { return 'no rename dialog' }
+    Start-Sleep -Milliseconds 500
+    [void][Drv098f]::SetText((Kid $dlg 2172 'Edit'), $NewName, 5000)
+    Click-Ok $dlg
+    Start-Sleep -Milliseconds 800
+    $ans = Answer $Id 15 $WantIds (@($Ignore) + @($Wv))
+    foreach ($x in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and (Kid $_ 2172 'Edit') })) { Post-Cmd $x 2; Start-Sleep -Milliseconds 500 }
+    return (Msgs2 $ans)
+}
+# "WxH ABCD" mirrored left-right: "WxH BADC"
+function Mirror-Quads([string]$q) { $p = $q -split ' '; if ($p.Count -lt 2 -or $p[1].Length -ne 4) { return $q }; $c = $p[1]; return ('{0} {1}{2}{3}{4}' -f $p[0], $c[1], $c[0], $c[3], $c[2]) }
+# review 1 of 267 (S1): window B shows z.jpg (turned by its tag; with -UserMirror the user mirrored it
+# left-right too), window A renames x.jpg onto z.jpg (Yes). B reopens z.jpg keeping the USER's mirror
+# (ReopenKeepingView(TRUE)) and must show x's content turned by its own tag (and mirrored by the user).
+# Before the fix the mirror the auto-rotation had set was kept as the user's and the new turn toggled
+# it off / turned the other way.
+function Run-Keep([string]$Case, [string]$XFix, [string]$ZFix, [switch]$UserMirror) {
+    if (-not (Want $Case)) { return }
+    $d = $Root + '\' + $Case
+    $x = Fx $XFix $d 'x.jpg'; $z = Fx $ZFix $d 'z.jpg'
+    if (-not $x.StartsWith($Root + '\') -or -not $z.StartsWith($Root + '\')) { throw "fixture outside the root" }
+    $wantX = Want-Quads 'want' $x
+    $wantZ = Want-Quads 'want' $z
+    if ($UserMirror) { $wantX = Mirror-Quads $wantX; $wantZ = Mirror-Quads $wantZ }
+    Set-AutoRotate 1
+    $id = 0; $before = Reports
+    try {
+        $id = Start-P $d
+        Focus-File $id $x; $a = Open-Viewer $id
+        Focus-File $id $z; $b = Open-Viewer $id
+        if ($a -eq [IntPtr]::Zero -or $b -eq [IntPtr]::Zero -or $a -eq $b) { Row $Case 'OPEN' 'FAIL' 'two viewer windows did not open'; return }
+        if ($UserMirror) { Post-Cmd $b 120; Start-Sleep -Milliseconds 800 }   # CMD_MIRROR_HOR by the user
+        $b0 = Shown-Quads $id $b ($Out + '\' + $Case + '-b0.png')
+        Row $Case 'B-BEFORE' (V ($b0 -eq $wantZ)) ("B shows z.jpg ({0}{1}) before: {2} (want {3})" -f $ZFix, $(if ($UserMirror) { ', mirrored by the user' } else { '' }), $b0, $wantZ)
+        $boxes = Rename-Shown $id $a 'z.jpg' @(6, 2, 1) @($b)
+        Start-Sleep -Milliseconds 4000
+        $tb = Title $b
+        $b1 = Shown-Quads $id $b ($Out + '\' + $Case + '-b1.png')
+        Row $Case 'B-AFTER' (V ($b1 -eq $wantX)) ("A renamed x.jpg ({0}) onto z.jpg; B title size {1}, shows {2} (want {3}); boxes: {4}; x exists {5}" -f $XFix, (Dims $tb), $b1, $wantX, $boxes, (Exists $x))
+        foreach ($w in @($b, $a)) { Close-Viewer $id $w }
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-P $Case $id $before } }
+}
+
 # ---- main ------------------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc267_backup.reg'
 $existed = Backup-Reg $backup
@@ -387,6 +446,11 @@ try {
     Run-Row 'uni' 'o6.jpg' $UniName $true $true
     Run-Row 'off' 'o6.jpg' 'o6.jpg' $false $true 0
     Run-Row 'tif6' 'o6.tif' 'o6.tif' $false $false
+    Run-Keep 'keep-ctl' 'o2.jpg' 'noexif.jpg'
+    Run-Keep 'keep-o6' 'o6.jpg' 'o6.jpg'
+    Run-Keep 'keep-o2' 'o2.jpg' 'o2.jpg'
+    Run-Keep 'keep-o5' 'o5.jpg' 'o5.jpg'
+    Run-Keep 'keep-user6' 'o6.jpg' 'o6.jpg' -UserMirror
     Run-Real 'real-land6' 'jpg\orientation\landscape_6.jpg' $true
     Run-Real 'real-land5' 'jpg\orientation\landscape_5.jpg' $true
     Run-Real 'real-port8' 'jpg\orientation\portrait_8.jpg' $true

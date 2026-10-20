@@ -167,6 +167,8 @@ protected:
     BOOL Loading;
     HDC LoadingDC;
     BOOL fMirrorHor, fMirrorVert;
+    // feature 267: the part of fMirrorHor / fMirrorVert the Exif auto-rotation set (not the user)
+    BOOL fAutoMirrorHor, fAutoMirrorVert;
     HWND PipWindow;
     TCHAR toolTipText[68];
     HBRUSH HAreaBrush;

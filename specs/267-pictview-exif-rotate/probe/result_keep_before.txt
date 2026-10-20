@@ -1,0 +1,22 @@
+pv267_probe (feature 267)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 19:46; ACP 1250; desktop 'tc_probe_18020'; registry key existed True; backup SHA-256 A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+keep-ctl   B-BEFORE PASS        B shows z.jpg (noexif.jpg) before: 64x48 RGBY (want 64x48 RGBY)
+keep-ctl   B-AFTER PASS        A renamed x.jpg (o2.jpg) onto z.jpg; B title size 64x48, shows 64x48 GRYB (want 64x48 GRYB); boxes: [#32770 'Confirm File Overwrite'] [Static id=3000] Overwrite file: | [Static id=2181] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-ctl\z.jpg | [Static id=2182] 783, 20.10.2026, 19:46:33 | [Static id=3001] With file: | [Static id=2183] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-ctl\x.jpg | [Static id=2184] 861, 20.10.2026, 19:46:33 | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel; x exists False
+keep-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+keep-o6    B-BEFORE PASS        B shows z.jpg (o6.jpg) before: 48x64 BRYG (want 48x64 BRYG)
+keep-o6    B-AFTER PASS        A renamed x.jpg (o6.jpg) onto z.jpg; B title size 48x64, shows 48x64 BRYG (want 48x64 BRYG); boxes: [#32770 'Confirm File Overwrite'] [Static id=3000] Overwrite file: | [Static id=2181] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-o6\z.jpg | [Static id=2182] 861, 20.10.2026, 19:46:33 | [Static id=3001] With file: | [Static id=2183] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-o6\x.jpg | [Static id=2184] 861, 20.10.2026, 19:46:33 | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel; x exists False
+keep-o6    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+keep-o2    B-BEFORE PASS        B shows z.jpg (o2.jpg) before: 64x48 GRYB (want 64x48 GRYB)
+keep-o2    B-AFTER FAIL        A renamed x.jpg (o2.jpg) onto z.jpg; B title size 64x48, shows 64x48 RGBY (want 64x48 GRYB); boxes: [#32770 'Confirm File Overwrite'] [Static id=3000] Overwrite file: | [Static id=2181] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-o2\z.jpg | [Static id=2182] 861, 20.10.2026, 19:46:33 | [Static id=3001] With file: | [Static id=2183] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-o2\x.jpg | [Static id=2184] 861, 20.10.2026, 19:46:33 | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel; x exists False
+keep-o2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+keep-o5    B-BEFORE PASS        B shows z.jpg (o5.jpg) before: 48x64 RBGY (want 48x64 RBGY)
+keep-o5    B-AFTER FAIL        A renamed x.jpg (o5.jpg) onto z.jpg; B title size 48x64, shows 48x64 GYRB (want 48x64 RBGY); boxes: [#32770 'Confirm File Overwrite'] [Static id=3000] Overwrite file: | [Static id=2181] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-o5\z.jpg | [Static id=2182] 861, 20.10.2026, 19:46:33 | [Static id=3001] With file: | [Static id=2183] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-o5\x.jpg | [Static id=2184] 861, 20.10.2026, 19:46:33 | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel; x exists False
+keep-o5    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+keep-user6 B-BEFORE PASS        B shows z.jpg (o6.jpg, mirrored by the user) before: 48x64 RBGY (want 48x64 RBGY)
+keep-user6 B-AFTER FAIL        A renamed x.jpg (o6.jpg) onto z.jpg; B title size 48x64, shows 48x64 YGBR (want 48x64 RBGY); boxes: [#32770 'Confirm File Overwrite'] [Static id=3000] Overwrite file: | [Static id=2181] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-user6\z.jpg | [Static id=2182] 861, 20.10.2026, 19:46:33 | [Static id=3001] With file: | [Static id=2183] C:\Users\pavel\AppData\Local\Temp\tc267\p\keep-user6\x.jpg | [Static id=2184] 861, 20.10.2026, 19:46:33 | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel; x exists False
+keep-user6 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 12, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

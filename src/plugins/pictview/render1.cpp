@@ -75,6 +75,7 @@ CRendererWindow::CRendererWindow(int enumFilesSourceUID, int enumFilesCurrentInd
     PVSequence = NULL;
     ImageLoaded = DoNotAttempToLoad = Loading = FALSE;
     fMirrorHor = fMirrorVert = FALSE;
+    fAutoMirrorHor = fAutoMirrorVert = FALSE; // feature 267
     pvii.Width = pvii.Height = (DWORD)CW_USEDEFAULT;
     Comment = NULL;
     XStart = YStart = 0;
@@ -305,6 +306,7 @@ BOOL CRendererWindow::OpenFile(LPCTSTR name, int showCmd, HBITMAP hBmp)
                        : G.ZoomType;
     }
     fMirrorHor = fMirrorVert = FALSE;
+    fAutoMirrorHor = fAutoMirrorVert = FALSE; // feature 267
     InvalidateCage(&SelectRect);
 
     memset(&oiei, 0, sizeof(oiei));
@@ -1708,9 +1710,14 @@ LRESULT CRendererWindow::OnPaint()
                         bAlreadyLoaded = TRUE;
                         if (PVC_OK == code)
                         {
-                            // the turn first: CMD_ROTATE_* reverses its direction while a mirror is on
+                            // the turn first: CMD_ROTATE_* turns the picture the other way while a
+                            // mirror is on - a mirror the user kept over a reopen (ReopenKeepingView)
+                            // is on here, so the command is chosen for the picture to turn as the tag
+                            // says; the mirrors of the tag are applied after it, on top of the user's
                             if (turn.Quarter != 0)
-                                PostMessage(HWindow, WM_COMMAND, turn.Quarter > 0 ? CMD_ROTATE_RIGHT : CMD_ROTATE_LEFT, 0);
+                                PostMessage(HWindow, WM_COMMAND, ((turn.Quarter > 0) != (!fMirrorHor != !fMirrorVert)) ? CMD_ROTATE_RIGHT : CMD_ROTATE_LEFT, 0);
+                            fAutoMirrorHor = turn.MirrorHor;
+                            fAutoMirrorVert = turn.MirrorVert;
                             if (turn.MirrorHor && turn.MirrorVert)
                                 PostMessage(HWindow, WM_COMMAND, CMD_ROTATE180, 0); // = both mirrors
                             else if (turn.MirrorHor)
@@ -3358,11 +3365,21 @@ BOOL CRendererWindow::ReopenKeepingView(BOOL keepMirror)
     eZoomType zoomType = ZoomType;
     __int64 zoomFactor = ZoomFactor;
     BOOL mirrorHor = fMirrorHor, mirrorVert = fMirrorVert;
+    BOOL autoHor = fAutoMirrorHor, autoVert = fAutoMirrorVert;
     BOOL opened = FileName != NULL && !Loading && OpenFile(FileName, -1, NULL);
-    if (!opened || keepMirror)
+    if (!opened)
     {
         fMirrorHor = mirrorHor; // OpenFile clears them before it knows whether it succeeds
         fMirrorVert = mirrorVert;
+        fAutoMirrorHor = autoHor;
+        fAutoMirrorVert = autoVert;
+    }
+    else if (keepMirror)
+    {
+        // feature 267: only the user's mirror is kept - the part the Exif auto-rotation set
+        // belongs to the old picture; the reopened one is turned by its own tag when it loads
+        fMirrorHor = mirrorHor ^ autoHor;
+        fMirrorVert = mirrorVert ^ autoVert;
     }
     if (opened)
     {
@@ -4658,6 +4675,7 @@ LRESULT CRendererWindow::OnCommand(WPARAM wParam, LPARAM lParam, BOOL* closingVi
             SalamanderGeneral->Free(FileName);
             FileName = SalamanderGeneral->DupStr(LoadStr(IDS_CLIPBOARD_TITLE));
             fMirrorHor = fMirrorVert = FALSE;
+            fAutoMirrorHor = fAutoMirrorVert = FALSE; // feature 267
             XStretchedRange = XRange = max(1, pvii.Width);
             YStretchedRange = YRange = pvii.Height;
             ZoomFactor = ZOOM_SCALE_FACTOR;

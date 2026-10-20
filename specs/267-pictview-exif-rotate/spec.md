@@ -66,8 +66,8 @@ standard meaning of the tag.
 
 ### User Story 2 - The Exif command shows the photo's tags (Priority: P2)
 
-A person viewing a JPEG with an Exif block uses File > Exif information (the command and its
-toolbar button). The command is available and its window lists the tags of the file (camera,
+A person viewing a JPEG with an Exif block uses File > Exif information (the File menu item, also in
+the context menu; the command has no toolbar button). The command is available and its window lists the tags of the file (camera,
 date, orientation, ...). For a picture without an Exif block the command stays unavailable.
 
 **Why this priority**: the window exists and works, it is only never offered.
@@ -95,6 +95,9 @@ the window opens and lists the tags (among them "Orientation") only for the file
 - The shown picture is turned and the person turns or mirrors it further, crops it, saves it:
   the commands work on what is shown, as for a picture turned by hand.
 - A picture opened from the clipboard or a scanner (no file): no automatic turn, no Exif command.
+- Another window renames or saves onto the file a window shows, and the window reopens it keeping
+  its view (feature 111): only the mirror the user set is kept; the reopened picture is turned by
+  its own tag (review 1 of 267 found the automatic mirror kept as the user's and turned again).
 - Update Thumbnail's question "this file has no Exif, create a JFXX thumbnail?" is asked for
   exactly the same files as before.
 - Panel thumbnails (already turned by their orientation since feature 064) do not change.
@@ -105,7 +108,7 @@ the window opens and lists the tags (among them "Orientation") only for the file
 
 - **FR-001**: The viewer MUST know, for every JPEG it opens from a file, whether the file has an
   Exif block, and keep knowing it after the picture is turned, mirrored or cropped.
-- **FR-002**: The Exif command (menu item and toolbar button) MUST be available exactly when the
+- **FR-002**: The Exif command (File menu and context menu item) MUST be available exactly when the
   shown picture is a JPEG with an Exif block (and the shown file was not deleted); the command
   MUST open the Exif window listing the file's tags.
 - **FR-003**: With auto-rotate on, a JPEG with an Exif orientation tag MUST be shown turned and
@@ -137,7 +140,8 @@ the window opens and lists the tags (among them "Orientation") only for the file
 ### Measurable Outcomes
 
 - **SC-001**: The hidden-desktop probe of the feature passes all its rows (before the change:
-  21 of 42 fail): orientations 1..8 shown as the standard says, the "recorded size differs"
+  33 of 65 fail; the reopen rows
+  added by review 1: 3 of 15): orientations 1..8 shown as the standard says, the "recorded size differs"
   and "no recorded size" rows turned, no Exif / XMP-only rows, a name outside the code page, auto-rotate
   off; the Exif window opens with the tags exactly for files with an Exif block.
 - **SC-002**: The automated checks of the orientation rule cover all eight values and invalid
@@ -151,11 +155,11 @@ the window opens and lists the tags (among them "Orientation") only for the file
 
 - Assumption (autonomous run): the built-in engine is the only engine of the viewer (WIC); the
   engine reports the Exif block - the way the old engine did - so every place that asks it
-  (menu, toolbar, command, auto-rotation) agrees.
+  (menu items, command, auto-rotation) agrees.
 - Assumption (autonomous run): the Exif window keeps reading the tags through the plug-in's
   Exif library as today; a block that the system reader finds and the library cannot read
   shows an empty list (a limit, not changed here).
-- Assumption (autonomous run): the visual state of the menu item and toolbar button (enabled /
+- Assumption (autonomous run): the visual state of the menu item (enabled /
   grayed) cannot be read on the hidden desktop; it follows the same condition as the command
   and is owed to a person to look at once.
 - Assumption (autonomous run): EXIF.DLL's code-page export for the orientation stays exported

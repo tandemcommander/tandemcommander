@@ -18,5 +18,5 @@ running. Optional: the public collection `ianare/exif-samples` cloned into its o
    agree on Exif presence and orientation.
 4. Regressions: `specs\120-pictview-leftovers\probe\pv120_probe.ps1` and
    `specs\132-pictview-thumbnail-verify\probe\thumb132_probe.ps1` - no new FAIL.
-5. By a person (not drivable on the hidden desktop): the File > Exif information menu item and
-   its toolbar button are enabled for a photo with Exif and grayed for one without.
+5. By a person (not drivable on the hidden desktop): the File > Exif information menu item (also in the
+   context menu; no toolbar button) is enabled for a photo with Exif and grayed for one without.

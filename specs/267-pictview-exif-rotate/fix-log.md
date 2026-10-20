@@ -11,9 +11,9 @@ auto-rotation never work with the built-in engine.
 - Three gates on `PVFF_EXIF`, all closed for every file:
   - `render1.cpp` WM_PAINT: auto-rotation `(pvii.Flags & PVFF_EXIF) && G.AutoRotate && InitEXIF(...)`;
   - `render1.cpp` `CMD_IMG_EXIF`: `ImageLoaded && (pvii.Flags & PVFF_EXIF) && InitEXIF(...)`;
-  - `pictview.cpp` enabler `vweImgExifAvailable` (menu item and toolbar button).
+  - `pictview.cpp` enabler `vweImgExifAvailable` (the File menu and context menu items; the command has no toolbar button).
 - Reachability: F3 on a JPEG -> PictView viewer (`CRendererWindow::OpenFile` ->
-  `PVW32DLL.PVOpenImageEx` = `WicOpenImageEx` -> `FillInfo`); WM_PAINT decodes; menu / toolbar
+  `PVW32DLL.PVOpenImageEx` = `WicOpenImageEx` -> `FillInfo`); WM_PAINT decodes; menu items
   post `CMD_IMG_EXIF`. Default configuration (`AutoRotate` defaults to TRUE).
 - The dead auto-rotation path also hands the viewer's UTF-8 `FileName` to EXIF.DLL's code-page
   export `EXIFGetOrientationInfo` (libexif `exif_data_new_from_file`, an `fopen` of a code-page
@@ -128,7 +128,8 @@ XMP only / TIFF: no dialog. Real files: Canon 89 tags, Nokia 28, Kodak 54. `tif6
   the same files as 132 recorded: T003 keeps the decision.
 - 120's probe (`specs/120-pictview-leftovers/probe/pv120_probe.ps1`):
   `probe/regress_pv120_267.txt` **PASS 20, FAIL 0, NOT DRIVEN 2** (the pipette rows - no cursor on
-  a hidden desktop; 120's own record: 17 / 0 / 5).
+  a hidden desktop; 120's own record: 17 / 0 / 5). Re-run after the S1 fix of review 2 (its rename-onto-a-shown-file rows go
+  through `ReopenKeepingView`): the same, PASS 20, FAIL 0, NOT DRIVEN 2.
 
 ### Negative control
 
@@ -141,8 +142,9 @@ GYRB, o7 BRYG). Header restored, rebuilt: `saltests ... 0 failed`, the same rows
 
 ### Not driven - owed to a person
 
-- The File > Exif information menu item and its toolbar button: enabled for a JPEG with Exif,
-  grayed for one without. The custom menu / toolbar state cannot be read on the hidden desktop;
+- The File > Exif information menu item (also in the context menu; no toolbar
+  button): enabled for a JPEG with Exif,
+  grayed for one without. The custom menu state cannot be read on the hidden desktop;
   the enabler (`pictview.cpp` `vweImgExifAvailable`) reads the same flag the command handler
   reads, and the command opened exactly for the Exif files.
 - A picture from the clipboard or a scanner: no turn, no Exif command - reviewed by code.
@@ -164,3 +166,34 @@ was running, before the agent reported. Found on resuming:
   run's rules); the step 9 fast-forward still applies. Reported to the maintainer in the run's
   final message.
 - No findings were delivered; a fresh review was started (diff against b6b60a51).
+
+### Review 2 (fresh agent, diff against b6b60a51) - no MUST, 1 SHOULD, 4 NOTE
+
+The reviewer rebuilt, re-ran `saltests` (24757 / 0), the encoding guard (0) and the whole probe
+in two foreground parts (24 / 0 and 41 / 0, registry identical), changed no file and left nothing
+running.
+
+- **S1 (fixed)**: the automatic turn was applied a second time when another window renames or
+  saves onto the file a window shows: that window reopens it keeping its mirror
+  (`ReopenKeepingView(TRUE)`, feature 111), the mirror the automatic turn had set was kept as the
+  user's, and the reopened picture's turn toggled it off (tags 2, 3, 4, 5, 7) or - with a mirror
+  on - turned the other way (`CMD_ROTATE_*` reverses its direction while a mirror is on).
+  Fix (`render1.cpp`, `renderer.h`): `fAutoMirrorHor / fAutoMirrorVert` remember the part of the
+  mirror the auto-rotation set (cleared by `OpenFile`, the constructor and the clipboard paste);
+  `ReopenKeepingView` keeps only the user's part (`mirror ^ auto`; on a failed reopen everything
+  is put back); the automatic quarter turn picks the command for the picture to turn as the tag
+  says whatever mirror is on (`(Quarter > 0) != (!fMirrorHor != !fMirrorVert)`).
+  New probe rows `keep-ctl`, `keep-o6`, `keep-o2`, `keep-o5`, `keep-user6` (the reviewer's
+  reproduction plus a mirror the user set on an orientation-6 picture):
+  before the fix (the build of 94cf9bf5) `probe/result_keep_before.txt` PASS 12, **FAIL 3**
+  (keep-o2 shown RGBY, keep-o5 GYRB, keep-user6 YGBR); after `probe/result_after.txt` (the whole
+  probe) **PASS 80, FAIL 0**, registry identical.
+- N1 (fixed in the documents): the Exif command has no toolbar button - only the File menu and
+  context menu items; spec, quickstart, tasks and this log corrected.
+- N2 (accepted, recorded): the real-file rows check the size shown and the Exif dialog, not the
+  mirror - mirrors are proven by the fixture rows o1..o8 and keep-*. SC-001's row count updated.
+- N3 (accepted): the mirrors of tags 5 / 7 are posted even if the quarter turn then fails (out of
+  memory on a huge picture) - the old code had the same pattern; the failure shows its own box.
+- N4 (closing): the TIFF / camera raw leftover and the related item's point (4) are handled at
+  closing; the Exif window hands a viewed JPEG to the bundled libexif only on the user's command
+  (EXIF.DLL unchanged by this feature, its reader hardened by 132 / 135).

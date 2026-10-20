@@ -35,7 +35,7 @@ them) exactly for files with an Exif block.
 - [X] T009 Probe after: `probe/pv267_probe.ps1` with `-RealRoot` on the hidden desktop -> specs/267-pictview-exif-rotate/probe/result_after.txt, every row PASS; the probe has a row `tif6` (a TIFF with Orientation 6: as stored, no Exif dialog - FR-009); the clipboard / scanner case is recorded as reviewed by code (no decoder, no file name)
 - [X] T010 Regressions: `specs/120-pictview-leftovers/probe/pv120_probe.ps1` and `specs/132-pictview-thumbnail-verify/probe/thumb132_probe.ps1` on the new build -> results in specs/267-pictview-exif-rotate/probe/, no new FAIL
 - [X] T011 Negative control: the probe's rows fail when the rule is broken on purpose (e.g. the old table for 4/5/7) - recorded in fix-log.md, the change reverted
-- [X] T012 Owed to a person (NOT DRIVEN): the menu item and toolbar button enabled / grayed - recorded in fix-log.md
+- [X] T012 Owed to a person (NOT DRIVEN): the menu items (File, context menu) enabled / grayed - recorded in fix-log.md
 
 ## Dependencies
 
