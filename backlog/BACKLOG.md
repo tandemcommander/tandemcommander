@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Importing a configuration file writes every key of a foreign .reg file](items/importing-a-configuration-file-writes-every-key-of-a-foreign/desc.md) | bug | 4 | data-safety | 263 |
 
 ## Next
 
@@ -151,6 +150,7 @@ Last triaged: 2026-10-19
 | [Unpack refused at a link names a temporary folder, not the archive folder](items/unpack-refused-at-a-link-names-a-temporary-folder-not-the/desc.md) | improvement | 2 | archives | leftover:249 | 2026-10-19 |
 | [A damaged viewer, editor or User Menu entry erases the entries after it](items/a-damaged-viewer-editor-or-user-menu-entry-erases-the/desc.md) | bug | 7 | panels-ui | review:250 | 2026-10-20 |
 | [A .gz file whose stored name is too long for Windows: refuse it or use the archive name](items/a-gz-file-whose-stored-name-is-too-long-for-windows-refuse/desc.md) | decision | 3 | archives | review:260 | 2026-10-20 |
+| [A refused configuration file does not say which key is outside the program root](items/a-refused-configuration-file-does-not-say-which-key-is/desc.md) | improvement | 3 | panels-ui | leftover:263 | 2026-10-20 |
 | [A ZIP made on Windows that holds names differing only in case is not case-sensitive](items/a-zip-made-on-windows-that-holds-names-differing-only-in/desc.md) | bug | 5 | archives | leftover:252 | 2026-10-20 |
 | [Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration](items/automation-script-folder-list-code-page/desc.md) | bug | 2 | other-plugins | measure:255 | 2026-10-20 |
 | [Change Attributes on a file symbolic link compresses / re-times the target file](items/change-attributes-on-a-file-symbolic-link-compresses-re/desc.md) | bug | 5 | data-safety | leftover:253 | 2026-10-20 |

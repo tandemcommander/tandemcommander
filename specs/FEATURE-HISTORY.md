@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3287,3 +3287,23 @@ a few early ones are out of sequence).
   `codeview-code-tables-for-single-byte-files`. Probe `cvtab262_probe.ps1` (menu 5 items, 3 FAIL)
   -> 16 / 0; `TestCodeTable262` (negative control fails 1); one refute-first review (no MUST; S1
   fixed).
+- 263-import-foreign-reg-keys: the start-up import of a configuration file (config.reg next to the
+  exe, in %APPDATA%\Tandem Commander, or -C) wrote and deleted every key the file named - another
+  program's key, HKEY_CLASSES_ROOT, a `[-HKCU\Software\<other>]` line deleting another program's
+  settings - silently when the file also held our root, after a question (default No) when it did
+  not - now every key and delete line must be `HKCU\Software\Tandem Commander\0.1` or below
+  (`SalRegKeyIsInsideRoot`, `src/common/salregroot.h`), checked by `Parse(..., onlyUnderHKCU)` in
+  both passes of `ImportConfiguration`; anything else, or a file without a key under the root,
+  refuses the whole file with the existing `IDS_IMPORTCFG_NOTREG` before anything is written (the
+  question `IDS_IMPORTCFG_NOTOURVER` is gone, its string stays unused). Trap: the program's own
+  dump (`CKey::Dump`) writes bare lines for the parent keys `[HKCU\Software]` and
+  `[HKCU\Software\Tandem Commander]` - the first version refused every real export and 245 backup
+  (review 1); parent key lines are now accepted and create nothing, a value under them or a delete
+  line of them refuses (`SalRegKeyIsParentOfRoot`). A probe file built with a Bash here-document got
+  a NUL byte for `\0` (rule 123). Limits: the message does not name the offending key and the help
+  does not state the rule (Inbox `a-refused-configuration-file-does-not-say-which-key-is`);
+  `HKEY_USERS\<SID>\...` of our own key is refused (fail closed). From backlog item
+  `importing-a-configuration-file-writes-every-key-of-a-foreign`. Probe `import263_probe.ps1` 3 FAIL
+  of 5 rows -> 26 / 0 (export shape, clear-key round trip, a real 245 backup); `TestRegImportRoot263`
+  (negative control fails 2); two refute-first reviews (review 1 MUST fixed; review 2 no MUST,
+  SHOULDs done).
