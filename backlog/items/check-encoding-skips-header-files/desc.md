@@ -1,7 +1,7 @@
 ---
 title: The encoding guard does not read header files; plug-in headers convert names leniently
 type: tech-debt
-status: new
+status: open
 severity: 2
 area: tooling
 source: review:255
@@ -60,3 +60,4 @@ Probably more than a few findings in the core's headers (inline helpers); effort
 
 - 2026-10-20 — created (source review:255)
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Next position 55

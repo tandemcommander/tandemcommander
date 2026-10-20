@@ -1,7 +1,7 @@
 ---
 title: Paste of a long name into its own folder: check the copy name and the too long question
 type: person-step
-status: new
+status: open
 severity: 5
 area: long-paths
 source: leftover:259
@@ -40,3 +40,4 @@ Every step below checked on a Debug or Release build of feature 259 or later; a 
 ## Log
 
 - 2026-10-20 — created (source leftover:259)
+- 2026-10-20 — moved to Person steps position 5

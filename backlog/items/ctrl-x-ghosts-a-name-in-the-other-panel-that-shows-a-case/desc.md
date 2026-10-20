@@ -1,7 +1,7 @@
 ---
 title: Ctrl+X ghosts a name in the other panel that shows a case twin folder
 type: bug
-status: new
+status: open
 severity: 2
 area: panels-ui
 source: review:261
@@ -42,3 +42,4 @@ or a seam.
 ## Log
 
 - 2026-10-20 — created (source review:261)
+- 2026-10-20 — moved to Next position 61

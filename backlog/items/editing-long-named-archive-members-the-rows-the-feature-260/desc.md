@@ -1,7 +1,7 @@
 ---
 title: Editing long-named archive members: the rows the feature-260 probe could not drive
 type: person-step
-status: new
+status: open
 severity: 6
 area: archives
 source: leftover:260
@@ -44,3 +44,4 @@ Changing TEMP / TMP in the user environment (System Properties - Environment Var
 ## Log
 
 - 2026-10-20 — created (source leftover:260)
+- 2026-10-20 — moved to Person steps position 3

@@ -1,7 +1,7 @@
 ---
 title: Multimedia Viewer: the "cannot open" message shows a non-ASCII file name as mojibake
 type: bug
-status: new
+status: parked
 severity: 1
 area: other-plugins
 source: measure:255
@@ -13,7 +13,7 @@ effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20
 ---
 
 # Multimedia Viewer: the "cannot open" message shows a non-ASCII file name as mojibake
@@ -52,3 +52,4 @@ The plug-in is not shipped and the effect needs a translation, hence severity 1.
 
 - 2026-10-20 — created (source measure:255)
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Parked: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20

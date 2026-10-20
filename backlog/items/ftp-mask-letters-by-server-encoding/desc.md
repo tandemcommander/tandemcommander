@@ -1,7 +1,7 @@
 ---
 title: FTP: a mask ? takes two code-page bytes of a legacy server as one letter
 type: bug
-status: new
+status: open
 severity: 2
 area: ftp
 source: manual
@@ -37,3 +37,4 @@ Needs the per-server encoding state of `ftp-per-server-encoding-flag` (depends-o
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Next position 68

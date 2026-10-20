@@ -1,7 +1,7 @@
 ---
 title: SFTP drop folder on a real upload-only service and an ACL on a replaced file (258)
 type: person-step
-status: new
+status: open
 severity: 4
 area: sftp
 source: leftover:258
@@ -41,3 +41,4 @@ Each step below gives the result written next to it; a different result is a new
 ## Log
 
 - 2026-10-20 — created (source leftover:258)
+- 2026-10-20 — moved to Person steps position 10

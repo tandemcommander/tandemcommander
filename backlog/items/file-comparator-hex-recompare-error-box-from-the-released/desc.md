@@ -1,7 +1,7 @@
 ---
 title: File Comparator hex recompare: error box from the released sibling view
 type: bug
-status: new
+status: open
 severity: 2
 area: other-plugins
 source: review:266
@@ -33,3 +33,4 @@ A recompare shows no error box for data it released itself: the views do not pai
 ## Log
 
 - 2026-10-20 — created (source review:266)
+- 2026-10-20 — moved to Next position 64

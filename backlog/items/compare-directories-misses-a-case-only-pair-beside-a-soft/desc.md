@@ -1,7 +1,7 @@
 ---
 title: Compare Directories misses a case-only pair beside a soft-hyphen or NFD name
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: review:261
@@ -54,3 +54,4 @@ side, not only runs with twins (the rearrangement and re-sort already exist).
 ## Log
 
 - 2026-10-20 — created (source review:261)
+- 2026-10-20 — moved to Next position 34

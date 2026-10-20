@@ -1,7 +1,7 @@
 ---
 title: Turkish / Azeri locale: index.html and INDEX.HTML never compare as one name
 type: bug
-status: new
+status: open
 severity: 2
 area: panels-ui
 source: leftover:261
@@ -50,3 +50,4 @@ to park it.
 ## Log
 
 - 2026-10-20 — created (source leftover:261)
+- 2026-10-20 — moved to Next position 84

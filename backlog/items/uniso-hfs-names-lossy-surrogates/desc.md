@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: HFS+ names with an unpaired surrogate are changed to U+FFFD
 type: bug
-status: new
+status: open
 severity: 2
 area: archives
 source: measure:255
@@ -60,3 +60,4 @@ images; severity is low for that.
 - 2026-10-20 — created (source measure:255)
 - 2026-10-20 — set related=uniso-hfs-btree-trust-and-joliet-cut,uniso-joliet-file-names-wtf8-garbled
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Next position 85

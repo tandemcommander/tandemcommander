@@ -1,7 +1,7 @@
 ---
 title: unrar plug-in: a member name over 259 bytes overflows a stack buffer on F3 / F4
 type: bug
-status: new
+status: parked
 severity: 7
 area: archives
 source: review:260
@@ -13,7 +13,7 @@ effort: S
 feature: -
 related: [f3-f4-refuse-archive-members-whose-path-inside-the-archive]
 depends-on: []
-reason: -
+reason: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20
 ---
 
 # unrar plug-in: a member name over 259 bytes overflows a stack buffer on F3 / F4
@@ -37,3 +37,4 @@ Review 1 of 260 also saw unchm (`src/plugins/unchm/unchm.cpp` ~456) and demoplug
 ## Log
 
 - 2026-10-20 — created (source review:260)
+- 2026-10-20 — moved to Parked: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20

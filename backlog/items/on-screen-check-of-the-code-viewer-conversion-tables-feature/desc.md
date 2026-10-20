@@ -1,7 +1,7 @@
 ---
 title: On-screen check of the Code Viewer conversion tables (feature 262)
 type: person-step
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: leftover:262
@@ -41,3 +41,4 @@ On a real desktop the letters read right after choosing the table, the keys cycl
 ## Log
 
 - 2026-10-20 — created (source leftover:262)
+- 2026-10-20 — moved to Person steps position 12

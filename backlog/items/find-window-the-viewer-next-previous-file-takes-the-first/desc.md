@@ -1,7 +1,7 @@
 ---
 title: Find window: the viewer next / previous file takes the first case-insensitive twin
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: measure:261
@@ -53,3 +53,4 @@ file, not this handler).
 
 - 2026-10-20 — created (source measure:261)
 - 2026-10-20 — related item case-sensitive-twins-first-match done in feature 261
+- 2026-10-20 — moved to Next position 38

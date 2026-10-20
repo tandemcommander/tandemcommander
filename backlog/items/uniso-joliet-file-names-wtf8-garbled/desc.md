@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a Joliet file name with an unpaired surrogate is garbled, other letters too
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:255
@@ -58,3 +58,4 @@ Only names with an unpaired surrogate are affected (narrow); the same function s
 
 - 2026-10-20 — created (source review:255)
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Next position 51

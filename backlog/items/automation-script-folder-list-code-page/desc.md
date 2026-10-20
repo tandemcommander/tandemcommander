@@ -1,7 +1,7 @@
 ---
 title: Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration
 type: bug
-status: new
+status: parked
 severity: 2
 area: other-plugins
 source: measure:255
@@ -13,7 +13,7 @@ effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20
 ---
 
 # Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration
@@ -62,3 +62,4 @@ Windows conversion functions only.
 - 2026-10-20 — set severity=2
 - 2026-10-20 — set title=Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Parked: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20

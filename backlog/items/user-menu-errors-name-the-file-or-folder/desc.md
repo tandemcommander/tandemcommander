@@ -1,7 +1,7 @@
 ---
 title: User Menu errors name the command, not the file or folder at fault
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: manual
@@ -53,3 +53,4 @@ Severity: wording plus a suspected wrong-folder case; the lower value taken unti
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Next position 52

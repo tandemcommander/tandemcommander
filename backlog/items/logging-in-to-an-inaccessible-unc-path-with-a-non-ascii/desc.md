@@ -1,7 +1,7 @@
 ---
 title: Logging in to an inaccessible UNC path with a non-ASCII share name uses code-page APIs
 type: bug
-status: new
+status: open
 severity: 3
 area: encoding
 source: measure:264
@@ -62,3 +62,4 @@ signature).
 
 - 2026-10-20 — created (source measure:264)
 - 2026-10-20 — related item remembered-network-drive-with-a-non-code-page-or-long-path done in feature 264
+- 2026-10-20 — moved to Next position 43

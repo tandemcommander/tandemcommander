@@ -1,7 +1,7 @@
 ---
 title: F3 / F4 refuse archive members whose path inside the archive has 520 bytes or more
 type: improvement
-status: new
+status: open
 severity: 4
 area: archives
 source: leftover:260
@@ -41,3 +41,4 @@ Raising the limit hands plug-ins - also third-party ones built against the inter
 ## Log
 
 - 2026-10-20 — created (source leftover:260)
+- 2026-10-20 — moved to Next position 13

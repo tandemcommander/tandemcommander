@@ -1,7 +1,7 @@
 ---
 title: Paste of a case twin from an archive and SFTP twins by hand (252)
 type: person-step
-status: new
+status: open
 severity: 5
 area: archives
 source: leftover:252
@@ -43,3 +43,4 @@ Fixtures: a case-sensitive folder (`fsutil file setCaseSensitiveInfo <folder> en
 ## Log
 
 - 2026-10-20 — created (source leftover:252)
+- 2026-10-20 — moved to Person steps position 4

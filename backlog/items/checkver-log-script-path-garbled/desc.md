@@ -1,7 +1,7 @@
 ---
 title: CheckVer: the log shows a script path with non-ASCII letters garbled
 type: bug
-status: new
+status: parked
 severity: 1
 area: other-plugins
 source: review:255
@@ -13,7 +13,7 @@ effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20
 ---
 
 # CheckVer: the log shows a script path with non-ASCII letters garbled
@@ -56,3 +56,4 @@ The plug-in is not shipped, hence severity 1.
 
 - 2026-10-20 — created (source review:255)
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Parked: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20

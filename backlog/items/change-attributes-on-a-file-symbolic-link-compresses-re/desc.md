@@ -1,7 +1,7 @@
 ---
 title: Change Attributes on a file symbolic link compresses / re-times the target file
 type: bug
-status: new
+status: open
 severity: 5
 area: data-safety
 source: leftover:253
@@ -54,3 +54,4 @@ the privilege or Developer Mode, so a probe may have to record NOT DRIVEN rows.
 ## Log
 
 - 2026-10-20 — created (source leftover:253)
+- 2026-10-20 — moved to Next position 6

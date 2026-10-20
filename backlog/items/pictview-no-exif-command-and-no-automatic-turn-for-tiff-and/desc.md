@@ -1,7 +1,7 @@
 ---
 title: PictView: no Exif command and no automatic turn for TIFF and camera raw files
 type: improvement
-status: new
+status: open
 severity: 2
 area: pictview
 source: leftover:267
@@ -60,3 +60,4 @@ Related to `pictview-update-thumbnail-142-leftovers` only as another PictView Ex
 ## Log
 
 - 2026-10-20 — created (source leftover:267)
+- 2026-10-20 — moved to Next position 76

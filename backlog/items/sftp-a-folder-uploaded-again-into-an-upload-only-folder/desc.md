@@ -1,7 +1,7 @@
 ---
 title: SFTP: a folder uploaded again into an upload-only folder fails with Cannot create directory
 type: bug
-status: new
+status: open
 severity: 4
 area: sftp
 source: leftover:258
@@ -41,3 +41,4 @@ Severity 4: a function that does not work, with a workaround (upload the files i
 ## Log
 
 - 2026-10-20 — created (source leftover:258)
+- 2026-10-20 — moved to Next position 19

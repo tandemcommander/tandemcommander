@@ -1,7 +1,7 @@
 ---
 title: Menu bar hot keys typed after F10 arrive as code-page bytes
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: measure:256
@@ -37,3 +37,4 @@ Not named by the item of feature 256 (`menu-popup-loop-wide-mnemonics`), so left
 ## Log
 
 - 2026-10-20 — created (source measure:256)
+- 2026-10-20 — moved to Next position 44

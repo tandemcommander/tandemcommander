@@ -1,7 +1,7 @@
 ---
 title: FTP: a PWD reply or a created folder path that does not fit is cut and used
 type: bug
-status: new
+status: open
 severity: 4
 area: ftp
 source: manual
@@ -53,3 +53,4 @@ Measured narrower than the original item said: the plain RFC 959 PWD reply over 
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Next position 15

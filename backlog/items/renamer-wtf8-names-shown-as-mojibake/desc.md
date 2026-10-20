@@ -1,7 +1,7 @@
 ---
 title: Renamer: the preview shows a name with an unpaired surrogate as mojibake
 type: bug
-status: new
+status: open
 severity: 2
 area: other-plugins
 source: measure:255
@@ -58,3 +58,4 @@ The history combo boxes are not affected: the Renamer links its own `HistoryComb
 - 2026-10-20 — set area=other-plugins
 - 2026-10-20 — set title=Renamer: the preview shows a name with an unpaired surrogate as mojibake
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Next position 80

@@ -1,7 +1,7 @@
 ---
 title: User Menu: a shortcut command may start in the item folder, not its own Start in
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: manual
@@ -37,3 +37,4 @@ If ShellExecuteEx keeps the shortcut's own folder, the item is closed as not rep
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Next position 55

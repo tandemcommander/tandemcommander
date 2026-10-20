@@ -1,13 +1,13 @@
 ---
 title: Unpack refused at a link names a temporary folder, not the archive folder
 type: improvement
-status: new
+status: open
 severity: 2
 area: archives
 source: leftover:249
 who: agent
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 verified: -
 effort: S
 feature: -
@@ -52,3 +52,4 @@ Cosmetic (the refusal itself is correct and safe). Adds a UI string: the two-sta
 
 - 2026-10-19 — created (source leftover:249)
 - 2026-10-19 — related item temp-dir-walks-follow-junctions done in feature 249
+- 2026-10-20 — moved to Next position 50

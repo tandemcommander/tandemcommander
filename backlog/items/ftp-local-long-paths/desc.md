@@ -1,7 +1,7 @@
 ---
 title: FTP: download and upload refuse local paths and names over 259 bytes
 type: improvement
-status: new
+status: open
 severity: 3
 area: ftp
 source: manual
@@ -41,3 +41,4 @@ Not a cut today - a refusal (215). Severity 3: deep local folders are rare and t
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Next position 40

@@ -1,7 +1,7 @@
 ---
 title: Forced Disk Map unload in a shell command: cancel the shell window or terminate
 type: decision
-status: new
+status: open
 severity: 2
 area: other-plugins
 source: measure:266
@@ -46,3 +46,4 @@ A, with the limit stated. The case needs the person to answer "force?" Yes while
 ## Log
 
 - 2026-10-20 — created (source measure:266)
+- 2026-10-20 — moved to Decisions for the maintainer position 9

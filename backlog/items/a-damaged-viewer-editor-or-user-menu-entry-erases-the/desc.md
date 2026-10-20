@@ -1,7 +1,7 @@
 ---
 title: A damaged viewer, editor or User Menu entry erases the entries after it
 type: bug
-status: new
+status: open
 severity: 7
 area: panels-ui
 source: review:250
@@ -37,3 +37,4 @@ Severity 7 by the band "lose data in a narrow scenario" (the configuration entri
 ## Log
 
 - 2026-10-20 — created (source review:250)
+- 2026-10-20 — moved to Next position 1

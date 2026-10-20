@@ -1,7 +1,7 @@
 ---
 title: Loop tool tests leave a temporary git folder behind on every test
 type: tech-debt
-status: new
+status: open
 severity: 1
 area: tooling
 source: measure:265
@@ -57,3 +57,4 @@ can be deleted by hand (not done by the run that found them).
 ## Log
 
 - 2026-10-20 — created (source measure:265)
+- 2026-10-20 — moved to Next

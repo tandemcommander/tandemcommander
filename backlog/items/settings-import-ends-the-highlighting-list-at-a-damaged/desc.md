@@ -1,7 +1,7 @@
 ---
 title: Settings import ends the highlighting list at a damaged entry
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: measure:250
@@ -37,3 +37,4 @@ Narrow: needs a damaged source configuration, and the preview shows the change b
 ## Log
 
 - 2026-10-20 — created (source measure:250)
+- 2026-10-20 — moved to Next position 48

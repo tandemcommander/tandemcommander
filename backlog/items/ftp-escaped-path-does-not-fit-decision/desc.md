@@ -1,7 +1,7 @@
 ---
 title: FTP: a path whose escaped form does not fit MAX_PATH is left half-escaped
 type: decision
-status: new
+status: open
 severity: 2
 area: ftp
 source: manual
@@ -47,3 +47,4 @@ B while interface 108 is unreleased (it removes the defect for every FS plug-in 
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Decisions for the maintainer position 10

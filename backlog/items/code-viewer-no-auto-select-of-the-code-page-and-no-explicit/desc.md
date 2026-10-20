@@ -1,7 +1,7 @@
 ---
 title: Code Viewer: no Auto-Select of the code page and no explicit Set as default
 type: improvement
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: leftover:262
@@ -37,3 +37,4 @@ Both need new UI strings (two menu items) - the two-stage `.slt` refresh (`trans
 ## Log
 
 - 2026-10-20 — created (source leftover:262)
+- 2026-10-20 — moved to Next position 33

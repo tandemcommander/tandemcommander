@@ -1,7 +1,7 @@
 ---
 title: A .gz file whose stored name is too long for Windows: refuse it or use the archive name
 type: decision
-status: new
+status: open
 severity: 3
 area: archives
 source: review:260
@@ -47,3 +47,4 @@ B: the fallback is a defined name, not a cut one, and gzip's own default; the re
 
 - 2026-10-20 — created (source review:260)
 - 2026-10-20 — related cleared (not related to the 520-byte item)
+- 2026-10-20 — moved to Decisions for the maintainer position 4

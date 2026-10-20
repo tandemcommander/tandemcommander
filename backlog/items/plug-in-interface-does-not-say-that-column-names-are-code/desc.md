@@ -1,13 +1,13 @@
 ---
 title: Plug-in interface does not say that column names are code-page text
 type: tech-debt
-status: new
+status: open
 severity: 1
 area: plugin-api
 source: review:248
 who: agent
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 verified: -
 effort: S
 feature: -
@@ -55,3 +55,4 @@ maintainer may do it or allow it.
 ## Log
 
 - 2026-10-19 — created (source review:248)
+- 2026-10-20 — moved to Next

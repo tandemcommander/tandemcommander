@@ -1,7 +1,7 @@
 ---
 title: Check that Change Attributes refuses to encrypt or decrypt a junction (253)
 type: person-step
-status: new
+status: open
 severity: 4
 area: data-safety
 source: leftover:253
@@ -51,3 +51,4 @@ throw-away folder, e.g. `C:\tc253` holding `tgt\T.TXT`, `plain\P.TXT` and a junc
 ## Log
 
 - 2026-10-20 — created (source leftover:253)
+- 2026-10-20 — moved to Person steps position 6

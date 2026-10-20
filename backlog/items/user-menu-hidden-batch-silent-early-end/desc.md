@@ -1,7 +1,7 @@
 ---
 title: A hidden User Menu batch that stops at its chcp or cd line tells nobody
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: manual
@@ -49,3 +49,4 @@ The pre-check of (a) covers most cases; an Initial Directory with a `%VAR%` type
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Next position 53

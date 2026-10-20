@@ -1,13 +1,13 @@
 ---
 title: Desktop view (Folders plug-in) repeats its shell columns after a view-mode switch
 type: bug
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: review:248
 who: agent
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 verified: -
 effort: S
 feature: -
@@ -54,3 +54,4 @@ mode round trip and a check that each column name appears once.
 ## Log
 
 - 2026-10-19 — created (source review:248)
+- 2026-10-20 — moved to Next position 28

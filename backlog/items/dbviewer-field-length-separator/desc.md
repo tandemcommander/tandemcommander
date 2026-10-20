@@ -1,7 +1,7 @@
 ---
 title: DB Viewer: a field length of 1000 or more shows a broken thousands separator
 type: bug
-status: new
+status: open
 severity: 2
 area: other-plugins
 source: measure:255
@@ -53,3 +53,4 @@ Field lengths of 1000 or more are rare in DBF files; more common in CSV columns.
 
 - 2026-10-20 — created (source measure:255)
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Next position 62

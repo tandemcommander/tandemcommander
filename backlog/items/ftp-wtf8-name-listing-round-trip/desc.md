@@ -1,7 +1,7 @@
 ---
 title: FTP: a file name with an unpaired surrogate comes back garbled from a UTF-8 server; re-upload may overwrite
 type: bug
-status: new
+status: open
 severity: 7
 area: ftp
 source: review:255
@@ -63,3 +63,4 @@ overwrite path does not reproduce. Needs an FTP server (an agent can run one in 
 
 - 2026-10-20 — created (source review:255)
 - 2026-10-20 — moved to Inbox
+- 2026-10-20 — moved to Next position 2

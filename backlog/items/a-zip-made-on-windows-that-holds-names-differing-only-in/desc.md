@@ -1,7 +1,7 @@
 ---
 title: A ZIP made on Windows that holds names differing only in case is not case-sensitive
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: leftover:252
@@ -39,3 +39,4 @@ The same hook as 252's: build with `SALDIRFLAG_CASESENSITIVE`, clear it after th
 - 2026-10-20 — created (source leftover:252)
 - 2026-10-20 — severity as the 7-Zip / TAR item it continues
 - 2026-10-20 — related item case-sensitive-twins-first-match done in feature 261
+- 2026-10-20 — moved to Next position 5

@@ -1,7 +1,7 @@
 ---
 title: A refused configuration file does not say which key is outside the program root
 type: improvement
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: leftover:263
@@ -56,3 +56,4 @@ needed (rule 084).
 ## Log
 
 - 2026-10-20 — created (source leftover:263)
+- 2026-10-20 — moved to Next position 30

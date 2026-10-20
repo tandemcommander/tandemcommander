@@ -1,7 +1,7 @@
 ---
 title: Create Directory refuses a relative name in a folder whose path is 260+ bytes
 type: bug
-status: new
+status: open
 severity: 5
 area: long-paths
 source: measure:259
@@ -37,3 +37,4 @@ Also check the other callers of `SalGetFullName` without `nameBufSize` that take
 ## Log
 
 - 2026-10-20 — created (source measure:259)
+- 2026-10-20 — moved to Next position 8

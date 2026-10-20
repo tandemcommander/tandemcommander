@@ -1,7 +1,7 @@
 ---
 title: Focusing an archive member with a very long name shows "Expanded string is too large." twice
 type: bug
-status: new
+status: open
 severity: 4
 area: panels-ui
 source: measure:260
@@ -33,3 +33,4 @@ Focusing an item with any name the panel lists shows no error box; the informati
 ## Log
 
 - 2026-10-20 — created (source measure:260)
+- 2026-10-20 — moved to Next position 14

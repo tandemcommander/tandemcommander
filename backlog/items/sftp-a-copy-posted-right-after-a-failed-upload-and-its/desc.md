@@ -1,7 +1,7 @@
 ---
 title: SFTP: a Copy posted right after a failed upload and its reconnect may open nothing
 type: bug
-status: new
+status: open
 severity: 3
 area: sftp
 source: measure:258
@@ -37,3 +37,4 @@ Not verified with a real keyboard. Severity 3: at worst the user presses F5 agai
 ## Log
 
 - 2026-10-20 — created (source measure:258)
+- 2026-10-20 — moved to Next position 49

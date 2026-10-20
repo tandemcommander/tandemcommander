@@ -1,7 +1,7 @@
 ---
 title: Registry Editor Find: regexp misses text past the code-page length of a value
 type: bug
-status: new
+status: open
 severity: 4
 area: other-plugins
 source: review:257
@@ -55,3 +55,4 @@ feature 257 did for the hex pattern (`src/common/salregfind.h`).
 
 - 2026-10-20 — created (source review:257)
 - 2026-10-20 — related item regedit-find-whole-words-and-quoted-hex-letters done in feature 257
+- 2026-10-20 — moved to Next position 18

@@ -1,7 +1,7 @@
 ---
 title: Command line: a COMSPEC path outside ASCII is read through the code page
 type: bug
-status: new
+status: open
 severity: 2
 area: encoding
 source: manual
@@ -42,3 +42,4 @@ The policy check `SystemPolicies.GetMyCanRun(cmd)` gets the same buffer - check 
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Next position 57

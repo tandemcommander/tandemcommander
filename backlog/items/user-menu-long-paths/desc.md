@@ -1,7 +1,7 @@
 ---
 title: User Menu on items in folders of 260 or more bytes: work, or refuse aloud
 type: bug
-status: new
+status: open
 severity: 4
 area: long-paths
 source: manual
@@ -43,3 +43,4 @@ The batch route's `cd /d` and cmd itself limit the folder (cmd's current folder 
 ## Log
 
 - 2026-10-20 — created (source manual)
+- 2026-10-20 — moved to Next position 20

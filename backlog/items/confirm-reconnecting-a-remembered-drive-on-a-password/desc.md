@@ -1,7 +1,7 @@
 ---
 title: Confirm reconnecting a remembered drive on a password-protected share (feature 264)
 type: person-step
-status: new
+status: open
 severity: 3
 area: encoding
 source: leftover:264
@@ -58,3 +58,4 @@ Every step below gives the stated result.
 ## Log
 
 - 2026-10-20 — created (source leftover:264)
+- 2026-10-20 — moved to Person steps position 10

@@ -1,7 +1,7 @@
 ---
 title: Registry Editor Find: confirm quoted hex letters with a UTF-8 code page
 type: person-step
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: leftover:257
@@ -58,3 +58,4 @@ Do it on a test machine or VM: the setting changes the whole system. Turn it bac
 ## Log
 
 - 2026-10-20 — created (source leftover:257)
+- 2026-10-20 — moved to Person steps position 16

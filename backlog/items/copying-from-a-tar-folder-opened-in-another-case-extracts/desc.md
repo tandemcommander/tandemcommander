@@ -1,7 +1,7 @@
 ---
 title: Copying from a TAR folder opened in another case extracts nothing
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:252
@@ -42,3 +42,4 @@ Severity 5: nothing is lost (the archive is untouched) but a copy silently does 
 
 - 2026-10-20 — created (source review:252)
 - 2026-10-20 — related item case-sensitive-twins-first-match done in feature 261
+- 2026-10-20 — moved to Next position 7

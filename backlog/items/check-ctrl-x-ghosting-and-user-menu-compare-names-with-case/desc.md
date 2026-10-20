@@ -1,7 +1,7 @@
 ---
 title: Check Ctrl+X ghosting and User Menu compare names with case twins
 type: person-step
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: leftover:261
@@ -48,3 +48,4 @@ Both steps below give the stated result on a build with feature 261.
 ## Log
 
 - 2026-10-20 — created (source leftover:261)
+- 2026-10-20 — moved to Person steps position 8

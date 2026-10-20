@@ -1,7 +1,7 @@
 ---
 title: Registry Editor Find: Whole words ignores punctuation that the help names
 type: bug
-status: new
+status: open
 severity: 2
 area: other-plugins
 source: measure:257
@@ -48,3 +48,4 @@ strings, but the help's own translations, if any, would follow.
 ## Log
 
 - 2026-10-20 — created (source measure:257)
+- 2026-10-20 — moved to Next position 79

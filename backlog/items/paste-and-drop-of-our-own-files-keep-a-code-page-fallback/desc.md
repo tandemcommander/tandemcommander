@@ -1,7 +1,7 @@
 ---
 title: Paste and drop of our own files keep a code-page fallback for a name on low memory
 type: bug
-status: new
+status: open
 severity: 3
 area: encoding
 source: review:259
@@ -37,3 +37,4 @@ Check the callers of `CCopyMoveRecord` (`ProcessClipboardData` wide / ANSI loops
 ## Log
 
 - 2026-10-20 — created (source review:259)
+- 2026-10-20 — moved to Next position 46

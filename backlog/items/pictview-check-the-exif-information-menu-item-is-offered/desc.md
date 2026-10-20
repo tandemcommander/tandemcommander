@@ -1,7 +1,7 @@
 ---
 title: PictView: check the Exif information menu item is offered only for photos with Exif
 type: person-step
-status: new
+status: open
 severity: 2
 area: pictview
 source: leftover:267
@@ -51,3 +51,4 @@ pass on a build that carries feature 267.
 ## Log
 
 - 2026-10-20 — created (source leftover:267)
+- 2026-10-20 — moved to Person steps

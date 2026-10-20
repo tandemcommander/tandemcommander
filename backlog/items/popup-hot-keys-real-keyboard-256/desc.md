@@ -1,7 +1,7 @@
 ---
 title: Popup menu hot keys by hand: Russian layout, DBCS and UTF-8 systems, TortoiseSVN
 type: person-step
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: leftover:256
@@ -43,3 +43,4 @@ Each step below behaves as written on a Release build of 0.1.11 or later.
 ## Log
 
 - 2026-10-20 — created (source leftover:256)
+- 2026-10-20 — moved to Person steps position 15
