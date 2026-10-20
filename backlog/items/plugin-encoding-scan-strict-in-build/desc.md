@@ -12,7 +12,7 @@ verified: -
 effort: S
 feature: -
 related: [check-encoding-skips-header-files]
-depends-on: [dbviewer-field-length-separator, renamer-wtf8-names-shown-as-mojibake, uniso-hfs-names-lossy-surrogates, uniso-joliet-file-names-wtf8-garbled, ftp-wtf8-name-listing-round-trip]
+depends-on: [dbviewer-field-length-separator, renamer-wtf8-names-shown-as-mojibake, uniso-hfs-names-lossy-surrogates, uniso-joliet-file-names-wtf8-garbled]
 reason: -
 ---
 
@@ -64,3 +64,4 @@ Items for the plug-ins that are off (`automation-script-folder-list-code-page`,
 - 2026-10-20 — set depends-on=dbviewer-field-length-separator,renamer-wtf8-names-shown-as-mojibake,uniso-hfs-names-lossy-surrogates,uniso-joliet-file-names-wtf8-garbled,ftp-wtf8-name-listing-round-trip
 - 2026-10-20 — moved to Inbox
 - 2026-10-20 — moved to Next position 77
+- 2026-10-20 — dependency ftp-wtf8-name-listing-round-trip done in feature 269

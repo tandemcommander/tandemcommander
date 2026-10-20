@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: a file name with an unpaired surrogate comes back garbled from a UTF-8 server; re-upload may overwrite](items/ftp-wtf8-name-listing-round-trip/desc.md) | bug | 7 | ftp | 269 |
 
 ## Next
 

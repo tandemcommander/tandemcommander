@@ -15,6 +15,10 @@
       UP-ASK    F5 of the local file into a server folder that holds the same name: PASS = the
                 "Target File Already Exists" question came (answered Skip) and the server's file
                 kept its content - the existence check missed it and STOR overwrote it
+      DL-ASK    F5 of the server's file into a local folder that holds the same name: PASS = the
+                question came (Skip) and the local file kept its content (review 1)
+      DIR-DL    F5 of a server folder "d" + U+D800 holding f.txt: PASS = the local folder of that
+                name with f.txt (CWD + PWD of the folder; review 1)
       DL-ACC    F5 of "cafe.txt" with e-acute from the same server: PASS = downloaded (the control:
                 valid UTF-8 kept as it was)
       LEG-DL    the same server in its cp1250 mode, F5 of "cafe.txt" with e-acute: PASS = downloaded
@@ -204,6 +208,17 @@ try {
         $got = @(Files $s); $kept = (Content ($s + '\' + $Sur)) -ceq 'SRV'; $asked = [bool](@($t | Where-Object { $_ -match 'Already Exists' }).Count)
         $stor = [bool](@($c | Where-Object { $_ -match '^(STOR|APPE) ' }).Count)
         @{ Ok = ($asked -and $kept -and -not $stor -and $got.Count -eq 1); Facts = ("asked 'already exists' {0}; the server's file kept its content {1}; STOR/APPE sent {2}; server folder: {3}" -f $asked, $kept, $stor, (Names $got)) } } -Up
+    # review 1: the download now finds a local file of the same name - it must ask, not overwrite
+    Row-Ftp 'DL-ASK' { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\' + $Sur, 'SRV'); [IO.File]::WriteAllText($LP + $l + '\' + $Sur, 'LOCAL') } {
+        param($t, $c, $s, $l)
+        $got = @(Files $l); $kept = (Content ($l + '\' + $Sur)) -ceq 'LOCAL'; $asked = [bool](@($t | Where-Object { $_ -match 'Already Exists' }).Count)
+        @{ Ok = ($asked -and $kept -and $got.Count -eq 1); Facts = ("asked 'already exists' {0}; the local file kept its content {1}; local folder: {2}" -f $asked, $kept, (Names $got)) } }
+    # review 1: a folder with the surrogate - CWD into it, its PWD path decoded by the same rule
+    $Dir = 'd' + [char]0xD800
+    Row-Ftp 'DIR-DL' { param($s, $l) NewDir ($s + '\' + $Dir); [IO.File]::WriteAllText($LP + $s + '\' + $Dir + '\f.txt', 'DIR') } {
+        param($t, $c, $s, $l)
+        $got = @([IO.Directory]::GetDirectories($LP + $l) | ForEach-Object { [IO.Path]::GetFileName($_) })
+        @{ Ok = ($got.Count -eq 1 -and $got[0] -ceq $Dir -and (Content ($l + '\' + $Dir + '\f.txt')) -ceq 'DIR'); Facts = ("local folders: {0}; f.txt in it {1}" -f (Names $got), (Content ($l + '\' + $Dir + '\f.txt'))) } }
     Row-Ftp 'DL-ACC' { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\' + $Acc, 'ACC') } {
         param($t, $c, $s, $l)
         $got = @(Files $l)

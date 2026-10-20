@@ -75,6 +75,14 @@ contents; upload (F5) from the local panel; record the dialogs and the server's 
   by a byte 0xA0..0xBF and a byte 0x80..0xBF, e.g. `í` + no-break space + `€`) is now read as WTF-8
   instead of the code page. The WTF-8 reading is the program's own name encoding and the same
   ambiguity every WTF-8 reader of the program has; such a sequence in a legacy name is not expected.
+  Its consequence (review 1, measured): on such a legacy server the name is shown and downloaded
+  as a surrogate name, and an upload of a local file of the code-page name no longer finds it -
+  no question, STOR in UTF-8 creates a second, differently named file; the existing file is not
+  overwritten. The closest real cases: cp1251 `н` + `і` + `ї`, cp932 IBM-extension kanji - only
+  when the whole name is otherwise valid WTF-8.
+- A name stored as a valid surrogate pair written as two 3-byte sequences (the CESU form) is kept
+  byte for byte; a local file of that name is sent in the 4-byte form, so an upload creates a
+  second file instead of asking (no overwrite; before, the name was misread altogether).
 - The surrogate bytes of a name that also holds bytes invalid in WTF-8 are read in the code page as
   a whole, as before.
 - A path from a server's PWD reply is decoded by the same rule, so a folder whose name holds an

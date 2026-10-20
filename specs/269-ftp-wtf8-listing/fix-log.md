@@ -66,3 +66,29 @@ comes back garbled from a UTF-8 server; re-upload may overwrite.
 - Regression: feature 224's probe -> `probe/regress_224.txt` 16 / 0 (UTF-8 and cp1250 servers,
   the PWD home folder in the code page).
 - T006: the upload's existence check needed no change - UP-ASK passes with the decode fix alone.
+
+## Review
+
+### Review 1 (independent, refute-first) - no MUST, 2 SHOULD, 5 NOTE
+
+- Re-ran build, saltests (24816 / 0), the guard, the probe (10 / 0); negative control: main's
+  `ftputils.cpp` put back temporarily, only `ftp.spl` rebuilt -> DL and UP-ASK FAIL, controls PASS
+  (reverted, rebuilt). Callers enumerated independently: the same two. The rule equals `Wtf8ToW`
+  apart from the length bound; a mutation dropping the end-of-field check is caught.
+- SHOULD 1 - the limit's upload consequence was not written down: on a cp1250 server a name with
+  bytes `78 ED A0 80 .txt` is now listed as `x<U+D800>.txt`; uploading a local file of the
+  code-page name no longer asks, STOR in UTF-8 creates a second file (no overwrite). **Done**: spec
+  Edge Cases record it (with the closest real cases, cp1251 `нії`, cp932 IBM kanji); the item's
+  approach chose WTF-8, so no code change.
+- SHOULD 2 - no probe row for a folder / PWD path, none for download over an existing file.
+  **Done**: rows DL-ASK and DIR-DL added to `probe/ftp269_probe.ps1` (from the reviewer's extra
+  probe) -> `probe/result_after_review1.txt` 14 / 0 (7 ROW + 7 END), registry identical. Old build:
+  DIR-DL FAIL (local folder `d<U+00ED><U+00A0><U+20AC>`) - `probe/result_review1_control_main.txt`
+  (the reviewer's run; its LEG-AMB rows show the old code page reading of the ambiguous name).
+  analyze C1 is now covered by DIR-DL.
+- NOTEs (no change): the CESU form does not round-trip on upload (recorded in Edge Cases); a NUL
+  byte inside a field cuts the name at the NUL (`str[len] = 0` after `memcpy` - older than this
+  feature, the C string cannot carry it); `FTPDecodeServerReplyPathInPlace` copies with
+  `lstrcpyn` (older, already the backlog item `ftp-pwd-and-created-path-cut`; this feature only makes WTF-8 paths shorter than the code-page reading did);
+  CHANGELOG / FEATURE-HISTORY entries are the closing step; one reviewer LEG-AMB-UP run did nothing
+  (probe-driver focus timing, not the product).

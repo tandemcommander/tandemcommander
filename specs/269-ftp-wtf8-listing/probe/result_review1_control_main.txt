@@ -1,0 +1,14 @@
+ftp269_probe (feature 269)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 22:04; desktop 'tc_probe_32328'; ACP 1250; registry key existed True; export SHA-256 383EAEA43D68FC9B3E21F499CE1F61F1DBED45AAF42982ADEF1DC795BD6CA8DD
+Server  : E:\Projects\tandemcommander\specs\215-ftp-long-name-command\probe\ftpmini.py wtf-8 on 127.0.0.1:2121 - up; the name: a\uD800.txt
+
+DIR-DL     ROW    FAIL        local dirs: d\u00ED\u00A0\u20AC; f.txt content DIR; 7,5 s; connected: True [box: [#32770 'Welcome Message'] [Button id=1] Close] at 'ftp://u@127.0.0.1:2121/DIR-DL'; server got: USER u / PASS p / SYST / PWD / CWD /DIR-DL / PWD / PORT 127,0,0,1,217,102 / TYPE A / LIST / CWD /DIR-DL/d\uFFFD / PWD / PORT 127,0,0,1,217,105 / LIST / PORT 127,0,0,1,217,107 / RETR f.txt / NOOP; dialogs: [#32770 'Copy'] [Static id=780] Copy directory "d\u00ED \u20AC" from FTP server to | [Button id=782] &Only add to Queue (do not process in active connection) | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+DIR-DL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LEG-AMB-DL ROW    PASS        local folder: x\u00ED\u00A0\u20AC.txt; 7,5 s; connected: True [box: [#32770 'Welcome Message'] [Button id=1] Close] at 'ftp://u@127.0.0.1:2121/LEG-AMB-DL'; server got: USER u / PASS p / SYST / PWD / CWD /LEG-AMB-DL / PWD / PORT 127,0,0,1,217,114 / TYPE A / LIST / PORT 127,0,0,1,217,117 / RETR x\u00ED\u00A0\u20AC.txt / NOOP; dialogs: [#32770 'Copy'] [Static id=780] Copy file "x\u00ED \u20AC.txt" from FTP server to | [Button id=782] &Only add to Queue (do not process in active connection) | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+LEG-AMB-DL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LEG-AMB-UP ROW    PASS        asked True; kept True; STOR False; server folder: x\u00ED\u00A0\u20AC.txt; 8,8 s; connected: True [box: [#32770 'Welcome Message'] [Button id=1] Close] at 'ftp://u@127.0.0.1:2121/LEG-AMB-UP'; server got: USER u / PASS p / SYST / PWD / CWD /LEG-AMB-UP / PWD / PORT 127,0,0,1,217,126 / TYPE A / LIST / NOOP; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "x\u00ED \u20AC.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help || [Target File Already Exists] C:\Users\pavel\AppData\Local\Temp\tc269\start\LEG-AMB-UP | x\u00ED\u00A0\u20AC.txt | /LEG-AMB-UP | x\u00ED\u00A0\u20AC.txt
+LEG-AMB-UP END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 383EAEA43D68FC9B3E21F499CE1F61F1DBED45AAF42982ADEF1DC795BD6CA8DD / after 383EAEA43D68FC9B3E21F499CE1F61F1DBED45AAF42982ADEF1DC795BD6CA8DD
+
+Rows: PASS 5, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

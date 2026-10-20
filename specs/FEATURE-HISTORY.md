@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266 |
@@ -3409,3 +3409,18 @@ a few early ones are out of sequence).
   `a-damaged-viewer-editor-or-user-menu-entry-erases-the`. Probe `dmg268_probe.ps1` PASS 30 / FAIL 18
   -> 64 / 0 (4 cases added after review 1; negative control on an unfixed build fails every damaged
   row); saltests 24,778 / 0; two refute-first reviews (no MUST; SHOULDs fixed).
+- 269-ftp-wtf8-listing: a name with an unpaired surrogate (NTFS allows it; WTF-8 `ED A0 80`) on a
+  byte-transparent UTF-8 FTP server came back from the listing read in the code page - the strict
+  `MB_ERR_INVALID_CHARS` test of `FTPListingFieldToU8` refused it: another name shown and downloaded
+  (`a<U+D800>.txt` -> `aí €.txt` in cp1250), and the upload's "target exists?" check
+  (`CUploadPathListing::FindItem`, the same decode) missed it - STOR **overwrote** the server's file
+  without the default question. Now a pure rule `SalFtpListingFieldIsU8` (`salftplisting.h`,
+  header-only; exactly `Wtf8ToW`'s set, length-bounded, NUL valid) keeps ASCII / WTF-8 bytes; the
+  code-page branch of 224 unchanged. Limits: a legacy code-page name whose bytes form a surrogate
+  sequence (cp1250 `í` + A0..BF + 80..BF) is now WTF-8 - an upload of its real name creates a second
+  file, no overwrite; the CESU form does not round-trip on upload; PWD `lstrcpyn` cut stays (Inbox
+  `ftp-pwd-and-created-path-cut`). Docker was not running: 215's `ftpmini.py` got ENC `wtf-8`
+  (`surrogatepass`). From backlog item `ftp-wtf8-name-listing-round-trip`. Probe `ftp269_probe.ps1`
+  DL / UP-ASK FAIL -> 14 / 0 (DL-ASK, DIR-DL added after review 1; main's `ftputils.cpp` put back
+  fails DL, UP-ASK, DIR-DL); 224 probe 16 / 0; saltests 24,816 / 0 (exhaustive vs `Wtf8ToW`,
+  168,420 strings); one refute-first review (no MUST; 2 SHOULD fixed).
