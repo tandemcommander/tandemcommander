@@ -147,7 +147,9 @@ key is a person's check.
 - Assumption (autonomous run): the owner windows forward the question's wParam to the shell
   extension unchanged, so the popup sends it in the owner's own kind (wide to a Unicode window, code
   page to a code-page one) and Windows converts nothing - every owner forwards the UTF-16 unit (review 1;
-  a wide send to a code-page window was measured to scramble it). Owner-side routing gaps (the panel's
+  a wide send to a code-page window was measured to scramble it). A code-page owner thus gets a UTF-16
+  unit where a native Windows menu would give it a code-page byte; no owner in the tree reads it
+  itself (review 2, N1) - a third-party plug-in owner that did would misread a non-ASCII key. Owner-side routing gaps (the panel's
   background / New menus, the Find window's dialog result) are outside the item: Inbox
   `menuchar-owner-routing`.
 - Assumption (autonomous run): the Find window keeps its virtual-key check on the key-down for

@@ -15,7 +15,8 @@
 
 ## R2 - WM_MENUCHAR
 
-- Decision: `SendMessageW(HParent, WM_MENUCHAR, MAKEWPARAM(key, MF_POPUP), (LPARAM)hMenu)`; answer
+- Decision: `SendMessageW` (review 1: `SendMessageW` to a Unicode owner, `SendMessageA` to a code-page one -
+  wParam verbatim) `(HParent, WM_MENUCHAR, MAKEWPARAM(key, MF_POPUP), (LPARAM)hMenu)`; answer
   `MNC_SELECT` -> select, `MNC_EXECUTE` -> select and `OnKeyReturn`, only for an index of an existing
   item that is not a separator and is visible at the skill level; anything else ignored.
 - Rationale: the message's contract (LOWORD character, HIWORD MF_POPUP / MF_SYSMENU; answers

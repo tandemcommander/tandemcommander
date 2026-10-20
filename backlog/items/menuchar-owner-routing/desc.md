@@ -32,7 +32,9 @@ The panel asks the handler whose menu the popup shows (the file's context menu o
 
 ## Notes
 
-Severity 2: only owner-drawn extension items with hot keys the program's own matching cannot see; the mouse works. Needs a person with TortoiseSVN (or another owner-drawn extension) to confirm. Feature 256 initialized the panel's results to 0 and ignores a failed `HandleMenuMsg2`, so a misrouted question answers "nothing".
+Severity 2: only owner-drawn extension items with hot keys the program's own matching cannot see; the mouse works. Needs a person with TortoiseSVN (or another owner-drawn extension) to confirm. Feature 256 initialized the panel's results to 0 and ignores a failed `HandleMenuMsg2`, so a misrouted question answers "nothing" when the asked handler leaves the result alone (measured
+with the shell's own handler only; an aggregated extension answering about a menu not its own is not
+excluded - review 2 of 256, N2).
 
 ## Log
 

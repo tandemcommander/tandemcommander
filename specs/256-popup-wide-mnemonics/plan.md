@@ -7,8 +7,8 @@
 
 (a) `CMenuPopup::TrackInternal` takes messages with `PeekMessageW` and `DoDispatchMessage` ends with
 `DispatchMessageW`; `WM_CHAR` / `WM_SYSCHAR` reach `OnChar(WCHAR)` whole (the `SalACPCharToW`
-conversion goes). (b) `OnChar` asks the owner with `SendMessageW(HParent, WM_MENUCHAR,
-MAKEWPARAM(key, MF_POPUP), hMenu)` and carries out `MNC_SELECT` / `MNC_EXECUTE` for a valid item
+conversion goes). (b) `OnChar` asks the owner with `WM_MENUCHAR`, `MAKEWPARAM(key, MF_POPUP)`, `hMenu` (review 1:
+`SendMessageW` / `SendMessageA` by the owner's kind, so wParam arrives verbatim) and carries out `MNC_SELECT` / `MNC_EXECUTE` for a valid item
 (pure rule `SalMenuCharAnswer` in `salmenuhotkey.h`). (c) `CFindDialog::ManageHiddenShortcuts`
 reads the watched controls' text as UTF-16 and matches the hot key by virtual key (ASCII letters /
 digits, as before) on `WM_SYSKEYDOWN` and by character on `WM_SYSCHAR` (pure rules

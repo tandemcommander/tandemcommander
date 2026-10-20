@@ -42,7 +42,8 @@ review; the closing documents are the run's step 8.
   `SalDlgHotKeyCharMatch` (characters, case ignored). saltests in `TestMenuHotKey236`.
 - `src/menu2.cpp`: `CMenuPopup::TrackInternal` `PeekMessageW`; `DoDispatchMessage` passes
   `(WCHAR)wParam` of `WM_CHAR` / `WM_SYSCHAR` to `OnChar(WCHAR)` and ends with `DispatchMessageW`.
-  `OnChar` sends `SendMessageW(HParent, WM_MENUCHAR, MAKEWPARAM(key, MF_POPUP), hMenu)` and carries out
+  `OnChar` sends `SendMessageW(HParent, WM_MENUCHAR, MAKEWPARAM(key, MF_POPUP), hMenu)` (review 1: in
+  the owner's kind, W or A) and carries out
   select / execute for a non-separator item visible at the skill level (execute = `OnKeyReturn`).
 - `src/menu.h`: `OnChar(WCHAR, ...)`.
 - `src/finddlg1.cpp`: `GetControlHotKey` (now static) reads `GetDlgItemTextW` -> `SalDlgHotKeyW`;
@@ -113,3 +114,14 @@ main's five source files on the branch, building, running, and checking the bran
 After the fixes: BUILD SUCCEEDED (no warnings), saltests 24,474 / 0 failed, encoding TOTAL 0,
 clang-format clean on the changed lines, probe `result_after_review1.txt` PASS 6 / FAIL 0, registry
 identical.
+
+### Review 2 (fresh, with review 1's findings)
+
+No MUST, no SHOULD. Verified review 1's fixes (every WM_MENUCHAR answerer starts its result at 0;
+plug-in FS handlers write 0 or return FALSE; the execute path cannot run a separator, a hidden or a
+grayed item); re-measured the scripts and saltests (24,474 / 0). NOTEs: N1 (a code-page owner now
+gets a UTF-16 unit - stated in the spec's assumption), N2 (the Inbox item's "answers nothing" was
+measured only with the shell's handler - softened there), N4 (stale "always SendMessageW" in
+research / plan / fix-log - corrected), taken; N3 (four call sites ignore the HRESULT of
+`HandleMenuMsg2`, safe as the result starts at 0) and N5 (the owner / execute path not driven end to
+end; closing documents) recorded - N5's documents are written at closing.
