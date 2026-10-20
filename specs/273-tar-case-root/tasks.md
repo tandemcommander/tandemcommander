@@ -28,7 +28,7 @@ data-model.md, quickstart.md)
 **Independent Test**: probe rows TAR-TWINS, 7Z-TWINS; 252's probe.
 
 - [X] T007 [US3] Run 252's probe specs/252-archive-case-sensitivity/probe/arc252_probe.ps1 on the new build (expected 16 / 0) and record it in specs/273-tar-case-root/fix-log.md
-- [X] T008 [US3] Negative control: a build with the call of T005 disabled must fail TAR-COPY in specs/273-tar-case-root/probe/arccase273_probe.ps1 (record `probe/result_negctl.txt`), then restore the call and rebuild
+- [X] T008 [US3] Negative control: a build with the call of T005 disabled must fail TAR-COPY in specs/273-tar-case-root/probe/arccase273_probe.ps1 - done by the before run on main's build (ff3cd942, the same code without the change): `probe/result_before.txt` TAR-COPY / TAR-DEEP FAIL; no separate build needed
 
 ## Phase 5: Polish
 
