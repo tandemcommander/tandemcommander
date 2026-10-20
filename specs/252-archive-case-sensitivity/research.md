@@ -3,9 +3,12 @@
 ## R1 - Always case-sensitive, or only with twins?
 
 - **Decision**: 7-Zip and TAR: case-sensitive only when the listing holds case twins. SFTP: always.
-- **Rationale**: the flag also makes typed archive paths case-exact and splits folders whose case
-  differs between entries of a Windows-made archive. An archive without twins gains nothing from the
-  flag; keeping it case-insensitive keeps today's behaviour (stop-rules §1 step 4, constitution II).
+- **Rationale**: the flag also makes typed archive paths case-exact. An archive without twins gains
+  nothing from the flag; keeping it case-insensitive keeps today's behaviour there - a path typed in
+  another case still works (stop-rules §1 step 4, constitution II). Corrected after review 252: an
+  archive whose entries spell one folder in two cases ("Docs\a.txt", "DOCS\b.txt") has twins by this
+  rule and is split into two folders just as "always" would split it - a known, visible change for
+  such (rare) archives; no data is lost (each folder holds its own entries and extracts them).
   SFTP servers are file systems on which twins can appear at any time; the item names the exact SFTP
   site and FTP already declares it always.
 - **Alternatives**: always case-sensitive (FTP style) for archives - rejected (changes every 7z/rar

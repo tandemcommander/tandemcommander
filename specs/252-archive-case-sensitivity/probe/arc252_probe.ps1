@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Feature 252 probe: a TAR or 7z archive holding names that differ only in case (A.txt / a.txt,
     folders D / d) is listed case-sensitively - the selected twin, and only it, is restored, hidden
@@ -11,10 +11,11 @@
     folder. The left panel shows the archive, the right panel tgt.
       TAR-HIDE / 7Z-HIDE      A.txt, a.txt, z.txt. Home, Down, Insert selects the first file; Hide
                               Selected Names (2945), Select All (842), Copy (727, dialogs OK).
-                              PASS = tgt holds z.txt and exactly one of the twins (the other one)
+                              PASS = tgt holds z.txt and exactly one of the twins (the other one), with
+                              its own content
       TAR-GLOBAL / 7Z-GLOBAL  the same archive; Insert on the first file, Store Selection (866, OK),
                               Unselect All (844), Restore Selection (867, OK), Copy.
-                              PASS = tgt holds exactly one file, a twin
+                              PASS = tgt holds exactly one file, a twin, with its own content
       TAR-TREE / 7Z-TREE      D\x.txt and d\y.txt. Select All, Copy.
                               PASS = tgt\D holds only x.txt and tgt\d only y.txt
       TAR-CONTROL / 7Z-CONTROL  no twins: Docs\f.txt and z.txt; the left panel is opened at
@@ -142,8 +143,14 @@ function Run-Case([string]$Kind, [string]$Case) {
         End-Row $name $id $null $before; $id = 0
         $files = @(Tgt-Files $tgt)
         $twins = @($files | Where-Object { $_ -ceq 'A.txt' -or $_ -ceq 'a.txt' })
-        if ($Case -eq 'HIDE') { $ok = ($files.Count -eq 2) -and ($files -ccontains 'z.txt') -and ($twins.Count -eq 1) }
-        elseif ($Case -eq 'GLOBAL') { $ok = ($files.Count -eq 1) -and ($twins.Count -eq 1) }
+        # review 252: the arrived twin must carry its own content (A.txt UPPER, a.txt lower) - the
+        # item's failure is the other twin's content under the expected name
+        $own = $true
+        foreach ($t in $twins) { $want = $(if ($t -ceq 'A.txt') { 'UPPER' } else { 'lower' }); if ([IO.File]::ReadAllText($LP + $tgt + '\' + $t) -cne $want) { $own = $false } }
+        if ($twins.Count) { $content = ($twins | ForEach-Object { $_ + '=' + [IO.File]::ReadAllText($LP + $tgt + '\' + $_) }) -join ',' } else { $content = '-' }
+        [void]$steps.Add('content: ' + $content)
+        if ($Case -eq 'HIDE') { $ok = ($files.Count -eq 2) -and ($files -ccontains 'z.txt') -and ($twins.Count -eq 1) -and $own }
+        elseif ($Case -eq 'GLOBAL') { $ok = ($files.Count -eq 1) -and ($twins.Count -eq 1) -and $own }
         else { $ok = ($files.Count -eq 2) -and ($files -ccontains 'D/x.txt') -and ($files -ccontains 'd/y.txt') }
         Row $name 'RUN' (V $ok) ("tgt: {0}; steps: {1}; windows: {2}" -f $(if ($files.Count) { $files -join ',' } else { 'empty' }), ($steps -join ' / '), (Tail $msgs 160))
     }

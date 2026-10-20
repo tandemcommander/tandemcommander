@@ -89,3 +89,37 @@ Probe `probe/result_after.txt`: **16 PASS, 0 FAIL, 0 NOT DRIVEN** (before 6 FAIL
 - SFTP: the test container `tandem-sftp` was not running (Docker Desktop down). On a server folder
   holding a.txt and A.txt: select a.txt, Hide Selected Names -> A.txt stays. One-line declaration as
   FTP's; by reading.
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST**. It re-ran build (up to date), saltests
+(24375 / 0), the encoding guard (TOTAL 0) and a copy of the probe with extra rows under %TEMP%
+(19 PASS, 1 FAIL - its TAR-CTLCOPY row, which fails on a pre-252 Release build too), and a pre-252
+build as negative control (TAR-HIDE fails there). It confirmed by reading `src/zip.cpp`
+(`CSalamanderDirectory` looks names up linearly, never sorts; `SetFlags` propagates; `PackList`
+clears the directory first) that without twins the tree and behaviour are unchanged, and that the
+legacy half of the rule equals `StrICmp` (`src/common/str.cpp`, `/J`).
+- SHOULD 1 - the stated reason of the design was wrong: an archive whose entries spell one folder in
+  two cases ("Docs\a.txt", "DOCS\b.txt") has twins by this rule and is split (as "always" would).
+  Fixed: spec.md *Clarifications* and research.md R1 now name it as a known, visible change (no data
+  lost - each folder extracts its own entries).
+- SHOULD 2 - a TAR folder opened by a path typed in another case (`t.tar\DOCS` for Docs) lists, but
+  Copy extracts nothing, silently (pre-existing: the typed path is the extraction root, TAR matches
+  bytes). Outside the item -> Inbox `copying-from-a-tar-folder-opened-in-another-case-extracts`
+  (review:252). The CONTROL row's description says it checks the folder opens only.
+- NOTE 1 - HIDE / GLOBAL did not check contents. Fixed: the twin that arrives must carry its own
+  content (A.txt `UPPER`, a.txt `lower`); re-run `probe/result_after.txt` 16 / 0 with
+  `content: A.txt=UPPER` (HIDE) and `content: a.txt=lower` (GLOBAL). (`result_before.txt` is the
+  run of the probe before this check was added; its failures do not depend on it.)
+- NOTE 3 - cost, measured by the reviewer (Release /O2 benchmark of the header): 1,000,000 ASCII
+  names in one folder 0.96 s, 1,000,000 non-ASCII names 4.46 s, 100,000 folders of 10 names 0.16 s
+  per listing - inside the existing listing wait window; acceptable for normal archives. The archive
+  is still read once (SC-004).
+- NOTE 4 - the Windows-made ZIP leftover named in the spec -> Inbox
+  `a-zip-made-on-windows-that-holds-names-differing-only-in` (leftover:252).
+- NOTE 5 - SFTP and the clipboard Paste route by reading only (agreed by the reviewer) -> person step
+  `paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand` (leftover:252).
+- NOTE 6 - the "no twins, same tree" guarantee has no automated test (saltests cannot link
+  `zip.cpp`); covered by the probe's CONTROL rows and the review's reading.
+
+No MUST -> no second review (SKILL step 7).

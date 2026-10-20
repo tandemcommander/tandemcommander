@@ -7,11 +7,11 @@ area: panels-ui
 source: leftover:232
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
+updated: 2026-10-20
 verified: -
 effort: M
 feature: -
-related: [archive-plugins-declare-case-sensitivity]
+related: []
 depends-on: []
 reason: -
 ---
@@ -37,3 +37,4 @@ The Turkish / Azeri comparison is upstream behaviour (rule 092 uses ordinal CI) 
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — related item archive-plugins-declare-case-sensitivity done in feature 252

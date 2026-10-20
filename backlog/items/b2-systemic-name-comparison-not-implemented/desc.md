@@ -7,7 +7,7 @@ area: encoding
 source: leftover:092
 who: agent
 created: 2026-10-04
-updated: 2026-10-17
+updated: 2026-10-20
 verified: -
 effort: L
 feature: -
@@ -39,3 +39,4 @@ The comparator's cost (NEXT-WORK item 5, *The comparator's cost*, still open, lo
 - 2026-10-04 — maintainer: the remaining B-2 systemic work (panel sort comparator, CSalamanderDirectory comparison, plug-in comparison services, guard rule) is not implemented
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §C and 'Recorded, deliberately not on the list' (feature 242)
 - 2026-10-17 — migration review N3: cross-reference to the final slug
+- 2026-10-20 — feature 252: a TAR folder merged from Dir and dir lost data (only one of them extracted, probe TAR-TREE before); 7-Zip and TAR listings with case twins are now case-sensitive

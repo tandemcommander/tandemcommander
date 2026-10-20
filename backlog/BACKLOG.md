@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [7-Zip, TAR and SFTP do not declare case-sensitive listings](items/archive-plugins-declare-case-sensitivity/desc.md) | bug | 5 | archives | 252 |
 
 ## Next
 
@@ -160,11 +159,14 @@ Last triaged: 2026-10-19
 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | review:248 | 2026-10-19 |
 | [Unpack refused at a link names a temporary folder, not the archive folder](items/unpack-refused-at-a-link-names-a-temporary-folder-not-the/desc.md) | improvement | 2 | archives | leftover:249 | 2026-10-19 |
 | [A damaged viewer, editor or User Menu entry erases the entries after it](items/a-damaged-viewer-editor-or-user-menu-entry-erases-the/desc.md) | bug | 7 | panels-ui | review:250 | 2026-10-20 |
+| [A ZIP made on Windows that holds names differing only in case is not case-sensitive](items/a-zip-made-on-windows-that-holds-names-differing-only-in/desc.md) | bug | 5 | archives | leftover:252 | 2026-10-20 |
+| [Copying from a TAR folder opened in another case extracts nothing](items/copying-from-a-tar-folder-opened-in-another-case-extracts/desc.md) | bug | 5 | archives | review:252 | 2026-10-20 |
 | [FTP: a path whose escaped form does not fit MAX_PATH is left half-escaped](items/ftp-escaped-path-does-not-fit-decision/desc.md) | decision | 2 | ftp | manual | 2026-10-20 |
 | [FTP: download and upload refuse local paths and names over 259 bytes](items/ftp-local-long-paths/desc.md) | improvement | 3 | ftp | manual | 2026-10-20 |
 | [FTP: a mask ? takes two code-page bytes of a legacy server as one letter](items/ftp-mask-letters-by-server-encoding/desc.md) | bug | 2 | ftp | manual | 2026-10-20 |
 | [FTP: a PWD reply or a created folder path that does not fit is cut and used](items/ftp-pwd-and-created-path-cut/desc.md) | bug | 4 | ftp | manual | 2026-10-20 |
 | [More typed fields cut to their buffer: masks, filter, volume label, hot path label edit](items/more-typed-fields-cut-to-their-buffer-masks-filter-volume/desc.md) | bug | 6 | long-paths | leftover:251 | 2026-10-20 |
+| [Paste of a case twin from an archive and SFTP twins by hand (252)](items/paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand/desc.md) | person-step | 5 | archives | leftover:252 | 2026-10-20 |
 | [Settings import ends the highlighting list at a damaged entry](items/settings-import-ends-the-highlighting-list-at-a-damaged/desc.md) | bug | 3 | panels-ui | measure:250 | 2026-10-20 |
 
 ## Parked

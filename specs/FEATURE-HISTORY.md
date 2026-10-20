@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -3099,3 +3099,17 @@ a few early ones are out of sequence).
   `dialog-typed-text-cut-to-caller-buffer`. Probe `dlg251_probe.ps1` 26 / 16 FAIL -> 42 / 0 (4
   exact-fit controls and a short one); 214's probe 4 / 0; two refute-first reviews (one MUST fixed, rows added; the
   second without MUST).
+- 252-archive-case-sensitivity: 7-Zip (7z, rar), TAR and SFTP listings never declared
+  `SALDIRFLAG_CASESENSITIVE` - in an archive holding a.txt and A.txt, Paste could extract the other
+  twin, Store / Restore Selection and Reselect took both, Hide Selected Names hid both; folders D and
+  d were merged and TAR (byte-exact extraction) extracted only one of them, silently. Now 7-Zip and
+  TAR build the listing case-sensitively and clear the flag afterwards unless a folder holds case
+  twins (`salcasetwins.h`, saltests: byte-different names equal by `SalNameOrderCompareCI` or by the
+  legacy fold `StrICmp` - both are used on archive names); SFTP always (as FTP). Traps: deciding
+  after a case-insensitive build is too late (the merge hides the twins), a second read of a TAR is
+  costly - so build CS, then clear; an archive spelling one folder in two cases is split now (known
+  change); 7-Zip needs `-ssc` to make twin fixtures. Limits: Paste and SFTP by reading (person step);
+  ZIP keeps its Unix-only rule; a TAR folder entered in another case extracts nothing (pre-existing,
+  Inbox). From backlog item `archive-plugins-declare-case-sensitivity`. Probe `arc252_probe.ps1`
+  6 FAIL / 10 -> 16 / 0 (negative control: TAR always case-sensitive fails TAR-CONTROL); one
+  refute-first review (no MUST; rationale corrected, content check added).

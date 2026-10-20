@@ -122,8 +122,10 @@ An SFTP listing is treated like an FTP listing: names that differ only in case a
 
 - Q: Should 7-Zip and TAR listings always be declared case-sensitive (as FTP), or only when they hold
   names that differ only in case? → A: only when the listing holds such twins; an archive without
-  twins keeps today's case-insensitive behaviour (typing a path in another case still works, Windows
-  archives with inconsistent folder case are not split). (autonomous run: conservative)
+  twins keeps today's case-insensitive behaviour (typing a path in another case still works there).
+  Known change (review 252): an archive whose entries spell one folder in two cases ("Docs\a.txt",
+  "DOCS\b.txt") holds twins by this rule - it now shows two folders, as its entries say, and its
+  paths must be typed in their exact case. (autonomous run: conservative)
 - Q: Should SFTP be declared case-sensitive always? → A: yes, always, as FTP is - the item names the
   exact site (`sftp/fs.cpp`). (autonomous run: item)
 - Q: May finding twins read the archive a second time? → A: no - the archive is read once as
