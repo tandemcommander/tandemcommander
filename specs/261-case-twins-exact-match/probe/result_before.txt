@@ -1,0 +1,21 @@
+twin261_probe (feature 261) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 12:25; registry key existed True; ACP 1250
+
+CMPTWIN1   RUN    FAIL        a.txt marked True (want True), A.txt marked True (want False); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+CMPTWIN1   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CMPTWIN2   RUN    PASS        a.txt marked False (want False), A.txt marked True (want True); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+CMPTWIN2   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CMPTWINR   RUN    FAIL        A.txt marked True (want False); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+CMPTWINR   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CMPSUB     RUN    FAIL        Sub marked False (want True); boxes set 8 of 8; no dialog (nothing selected); compare: [#32770 'Compare Directories'] [Static id=2477] The files in two directories appear to be identical. | [Button id=1] OK; attributes: no window
+CMPSUB     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CMPSINGLE  RUN    PASS        Readme.txt marked False (want False); boxes set 8 of 8; no dialog (nothing selected); compare: [#32770 'Compare Directories'] [Static id=2477] The files in two directories appear to be identical. | [Button id=1] OK; attributes: no window
+CMPSINGLE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VIEWNEXT   RUN    FAIL        viewer at first: '...a\Local\Temp\tc261\VIEWNEXT\A.txt [Plain Text] - Code Viewer'; after command 117: '...a\Local\Temp\tc261\VIEWNEXT\A.txt [Plain Text] - Code Viewer' (want z.txt)
+VIEWNEXT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VIEWPREV   RUN    FAIL        viewer at first: '...a\Local\Temp\tc261\VIEWPREV\A.txt [Plain Text] - Code Viewer'; after command 118: '...a\Local\Temp\tc261\VIEWPREV\0.txt [Plain Text] - Code Viewer' (want a.txt)
+VIEWPREV   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 9, FAIL 5, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

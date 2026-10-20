@@ -1,16 +1,16 @@
 ---
 title: Case-sensitive folders: several features take the first case-insensitive twin
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: panels-ui
 source: leftover:232
 who: agent
 created: 2026-10-15
 updated: 2026-10-20
-verified: -
+verified: 2026-10-20 61ceb283
 effort: M
-feature: -
+feature: 261
 related: []
 depends-on: []
 reason: -
@@ -38,3 +38,5 @@ The Turkish / Azeri comparison is upstream behaviour (rule 092 uses ordinal CI) 
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-20 — related item archive-plugins-declare-case-sensitivity done in feature 252
+- 2026-10-20 — verified at 61ceb283: probe twin261 at 61ceb283: 5 FAIL (Compare Directories pairs the wrong twin, viewer next/prev); folder sizes code unreachable
+- 2026-10-20 — run started, feature 261
