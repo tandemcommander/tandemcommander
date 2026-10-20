@@ -7,8 +7,8 @@ area: data-safety
 source: leftover:253
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 8b08f1da
 effort: S
 feature: -
 related: []
@@ -55,3 +55,4 @@ the privilege or Developer Mode, so a probe may have to record NOT DRIVEN rows.
 
 - 2026-10-20 — created (source leftover:253)
 - 2026-10-20 — moved to Next position 6
+- 2026-10-21 — verified at 8b08f1da: reproduced at 8b08f1da: hidden-desktop probe on a file symlink - COMP/UNCOMP/TIME/SUBC change the target file, not the link (4 FAIL)
