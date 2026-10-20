@@ -106,6 +106,9 @@ pass before and after; feature 253's probe stays 10 / 0.
 - A file link whose kind cannot be determined (its reparse tag cannot be read): treated as a link
   (fail closed, the rule of Delete / 213 / 253) - changes stay on the entry itself, encryption
   refused.
+- The refusal of a file link's encryption skips the whole entry when the user picks Skip / Skip
+  all (see Clarifications); Encrypt / Decrypt over a tree shows one refusal per file link that
+  would change.
 - A dangling file link (target missing): compression and times apply to the link itself (they
   failed with "file not found" before).
 - A read-only file link: the read-only bit is lifted and restored on the link itself, as for any
@@ -151,6 +154,24 @@ pass before and after; feature 253's probe stays 10 / 0.
 - **SC-003**: Feature 253's probe stays 10 / 0 (1 NOT DRIVEN) and 213's probe 8 / 0.
 - **SC-004**: No target file outside the selection changes its compression, times or encryption
   through a link in any probe row.
+
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: When the encryption of a file link is refused, are the link's other requested changes
+  (Hidden, times, ...) still applied? → A: no - as 253 decided for a directory link, the refusal is
+  an error of that entry like any other: Skip / Skip all skips the whole entry, Retry repeats it,
+  Cancel ends the operation; the other entries go on. A compression change made to the link itself
+  just before the refusal stays (it touched only the link). (autonomous run: conservative)
+- Q: Do the Encrypt / Decrypt commands over a tree refuse every file link met whose state differs?
+  → A: yes, one error per such link; Skip all answers them all at once; nothing is encrypted
+  through a link. (autonomous run: item - "refuses what a link cannot take")
+- Q: Is a file entry decided to be a link when the operation is listed or when it runs? → A: an
+  entry listed with the reparse-point bit is checked when it runs, by the existing fail-closed rule
+  on its current state; an entry listed without the bit is not checked (no extra file-system query
+  for ordinary files - the race of a file replaced by a link meanwhile is the same narrow one 253
+  accepted). (autonomous run: conservative)
 
 ## Assumptions
 
