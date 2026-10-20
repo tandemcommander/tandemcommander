@@ -259,7 +259,8 @@ const char* RegExpErrorText(CRegExpErrors err)
 #define CLASS_FLAGS 32  // 1 byte: CLASS_NEG
 #define CLASS_NTESTS 33 // 2 bytes (unaligned)
 #define CLASS_NRANGES 35
-#define CLASS_ITEMS 37 // tests (4 bytes mask + 1 byte negated), then ranges (4 + 4 bytes)
+#define CLASS_BYTES 37 // 16 bytes: the bytes >= 0x80 given as members (ClassBytes)
+#define CLASS_ITEMS 53 // tests (4 bytes mask + 1 byte negated), then ranges (4 + 4 bytes)
 #define CLASS_NEG 0x01
 
 /*
@@ -1259,6 +1260,7 @@ void CRegExp::ClassBegin()
 {
     CALL_STACK_MESSAGE_NONE
     memset(ClassMap, 0, sizeof(ClassMap));
+    memset(ClassBytes, 0, sizeof(ClassBytes));
     ClassNTests = ClassNRanges = 0;
 }
 
@@ -1345,6 +1347,7 @@ void CRegExp::ClassEmit(int comp)
         return;
     }
     memcpy(RegCode, ClassMap, 32);
+    memcpy(RegCode + CLASS_BYTES, ClassBytes, 16);
     RegCode[CLASS_FLAGS] = (char)(comp ? CLASS_NEG : 0);
     unsigned short nt = (unsigned short)ClassNTests, nr = (unsigned short)ClassNRanges;
     memcpy(RegCode + CLASS_NTESTS, &nt, 2);
@@ -2096,6 +2099,16 @@ int CRegExp::ClassMatch(const char* opnd, const char* p)
         memcpy(&lo, ranges + 8 * i, 4);
         memcpy(&hi, ranges + 8 * i + 4, 4);
         in = value >= lo && value <= hi;
+    }
+    if (!in) // a byte range like "[\x80-\xFF]" covered letters byte by byte before: still does
+    {
+        const unsigned char* bytes = op + CLASS_BYTES;
+        in = TRUE;
+        for (i = 0; i < n && in; i++)
+        {
+            unsigned b = (unsigned char)p[i] - 0x80; // every byte of a letter is >= 0x80
+            in = (bytes[b >> 3] & (1 << (b & 0x07))) != 0;
+        }
     }
     if (!in && nt > 0)
     {

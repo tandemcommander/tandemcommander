@@ -81,7 +81,15 @@ private:
     int ClassCap; // pairs each array holds (the pattern's length bounds them)
 
     void ClassBegin();
-    void ClassSetByte(unsigned b) { ClassMap[(b & 0xFF) >> 3] |= (unsigned char)(1 << (b & 0x07)); }
+    unsigned char ClassBytes[16]; // bytes >= 0x80 given as members ('\x' escapes, byte ranges): a
+                                  // letter all of whose bytes are such members is in the class
+    void ClassSetByte(unsigned b)
+    {
+        b &= 0xFF;
+        ClassMap[b >> 3] |= (unsigned char)(1 << (b & 0x07));
+        if (b >= 0x80)
+            ClassBytes[(b - 0x80) >> 3] |= (unsigned char)(1 << (b & 0x07));
+    }
     void ClassAddValue(unsigned value);
     void ClassAddRange(unsigned lo, unsigned hi);
     void ClassAddRangeOf(unsigned first, unsigned last, BOOL lastEscaped);

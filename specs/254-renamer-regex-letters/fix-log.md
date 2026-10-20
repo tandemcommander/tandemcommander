@@ -143,3 +143,33 @@ bs-lit "Zluť", bs-class nothing renamed ("Åluť" stays), esc-ci-cls "Zluť", u
 earlier rows as before.
 
 210 regression re-run after the review fixes: 16 / 0, registry identical.
+
+### Review 2 (fresh refute-first agent, with review 1's findings)
+
+No MUST. M1 and S1 verified fixed (`\ž`, `[\ž]`, `[\😀]`, `[a-\😀]`, case-insensitive `[\xC5\xBD]`,
+`[\xC5\xBD-\xC5\xBE]`). 220,000 random cases against Python's `re` (shared syntax) - only the
+documented case-insensitive range limit differs; 330,000 ASCII cases byte-identical to main
+(results and error codes); 90,000 crash-fuzz cases with the debug heap - no crash, no split letter;
+callers enumerated (CRegExp only from crenamer.cpp; the whole-word helpers only crenamer.cpp
+459-462; the sigma fold only crenamer.cpp; the history at dialogs.cpp 262).
+
+- **SHOULD 1** - byte ranges reaching 0x80+ no longer covered letters: `[\x80-\xFF]+` -> "_" on
+  "žluť" gave "_lu_" on main, "Nothing to do" on the branch; `[\x00-\xFF]+` -> "X" gave "X" on main,
+  "žXť" on the branch (another new name); `[\x80-\xFF]` and `[^\x00-\x7F]` no longer complementary.
+  **Fixed** (backward compatibility): the class keeps the bytes >= 0x80 given as members (`\x`
+  escapes, byte ranges - never the POSIX negations) in a 16-byte set (`ClassBytes`, operand offset
+  37); a letter all of whose bytes are members is in the class. Probe rows byte-cls, byte-all.
+  Still different from main (recorded): a lone `\xC5` or two classes for a lead and a continuation
+  byte (`[\xC0-\xFF][\x80-\xBF]`, `\xC5.`) never match a piece of a letter - that is the item's rule.
+- NOTE 1 - a case-insensitive range can match LESS than the same range case-sensitive (`[Ж-ж]` folds
+  to `[ж-ж]`): recorded under *Limits* (210's pre-folded pattern). NOTE 2 - a reversed range with a
+  letter as the first bound (`[ž-a]`) keeps only the first bound (the ASCII `[z-a]` keeps its old
+  wrap-around): recorded. NOTE 3 - the history change has no probe row (the rule is saltests'
+  `SalNameOrderEqualCI`): accepted, by reading.
+
+Rebuilt: `BUILD SUCCEEDED`; saltests 24439 / 0.
+
+After the review-2 fix: `probe/result_after.txt` 50 / 0 (25 RUN + 25 END) - byte-cls "_lu_.txt",
+byte-all "X.txt", every earlier row as before; registry restored identical (its hash differs from
+the earlier runs: the maintainer's installed program ran in between - the probe restores the state
+it found). 210 regression 16 / 0. Encoding guard TOTAL: 0.

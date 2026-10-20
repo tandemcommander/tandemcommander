@@ -31,6 +31,8 @@
       bs-class  "A-ring lut'.txt", "[\" + z-caron + "]" -> "Z": nothing renamed (M1: not U+00C5)
       esc-ci-cls "Z lut'.txt", "[\xC5\xBD]" case-insensitive -> "Z": "Zlut'.txt" (review S1)
       ungreedy  "z lut'.txt", "^.+?l" -> "X": "Xut'.txt"
+      byte-cls  "z lut'.txt", "[\x80-\xFF]+" -> "_", Global, Exclude extension: "_lu_.txt" (review 2)
+      byte-all  "z lut'.txt", "[\x00-\xFF]+" -> "X", Global, Exclude extension: "X.txt"
       asc-wb    control "abc def.txt", "\b\w" Global -> "X": "Xbc Xef.Xxt"
       asc-dot   control "abc.txt", "^.." -> "Y": "Yc.txt"
     Driver of 210's probe. MUST run through tools\\run_on_hidden_desktop.ps1. Registry exported,
@@ -322,6 +324,9 @@ function Run-RenCases {
     S-Row 'bs-class' ((S 0xC5) + $tail) $nm ((S 0xC5) + $tail) ('[\' + (S 0x17E) + ']') 'Z' (Ck)
     S-Row 'esc-ci-cls' ($capZl + '.txt') $nm ('Z' + $tail) '[\xC5\xBD]' 'Z' (Ck $false)
     S-Row 'ungreedy' ($zl + '.txt') $nm ('X' + 'u' + (S 0x165) + '.txt') '^.+?l' 'X' (Ck)
+    # review 2 (SHOULD 1): a byte range covers the letters all of whose bytes it holds, as before
+    S-Row 'byte-cls' ($zl + '.txt') $nm ('_lu_' + '.txt') '[\x80-\xFF]+' '_' (Ck $true $true $true $true)
+    S-Row 'byte-all' ($zl + '.txt') $nm 'X.txt' '[\x00-\xFF]+' 'X' (Ck $true $true $true $true)
     S-Row 'asc-wb' 'abc def.txt' $nm 'Xbc Xef.Xxt' '\b\w' 'X' (Ck $true $true $true)
     S-Row 'asc-dot' 'abc.txt' $nm 'Yc.txt' '^..' 'Y' (Ck)
 }

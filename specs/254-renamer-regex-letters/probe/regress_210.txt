@@ -1,6 +1,6 @@
 ren_search_probe (feature 210), expect: fixed
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 04:37; ACP 1250; registry key existed True
+Date    : 2026-10-20 05:07; ACP 1250; registry key existed True
 
 bm-wrong   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C48A782E747874 got C48A782E747874 want C48A782E747874; boxes: [#32770 'Renamer'] [Static id=2477] Nothing to do. | [Button id=1] OK
 bm-wrong   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -18,6 +18,6 @@ ww         RUN    PASS        preview rows 1; boxes as expected: True; on disk: 
 ww         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 cut        RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BD6C75C5A52E747874 got C5BD5F2E747874 want C5BD5F2E747874; boxes: no box
 cut        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+Registry: restored; identical=True; SHA-256 before F1EDE13D9BD7430281628100466E2F1B90A74E632342D274B5DC6EDA8D87C8B9 / after F1EDE13D9BD7430281628100466E2F1B90A74E632342D274B5DC6EDA8D87C8B9
 
 Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
