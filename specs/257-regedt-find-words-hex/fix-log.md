@@ -75,3 +75,25 @@ Registry restored identical.
   identical (SHA-256 CBAC630F...).
 - Not driven here: the GUI with a UTF-8 code page (system locale change needs a restart) - the
   probe's HEX rows show the 2-byte case there; owed to a person (person-step item).
+
+## Review
+
+Review 1 (independent agent, refute-first, at 3d2ffb53): **no MUST**. It rebuilt, re-ran saltests
+(24515 / 0), the encoding guard (0) and the probe on the hidden desktop (9 / 0, registry
+identical), and repeated the negative control (old per-unit conversion → 9 failed, all 65001 / 932
+checks; restored, 0 failed).
+
+- SHOULD 1 - outside the item: the regexp branch of `CFindThread::Test` converts a text into a
+  buffer sized by its UTF-16 units and scans that many bytes; with a multi-byte ANSI code page
+  the end of a non-ASCII text is never searched (by reading). → Inbox item
+  `regedit-find-regexp-multibyte-code-page-buffer` (review:257).
+- SHOULD 2 - the promised records: the person-step for the UTF-8 GUI check and the Inbox item
+  for the help's "punctuation" → created at closing (`regedit-find-hex-utf8-code-page-check-257`,
+  `regedit-find-whole-words-punctuation`).
+- NOTEs: the CHANGELOG task T015 is done at closing; the HEX GUI rows are controls at 1250 (said
+  above); a conversion failure in `ConvertHexToString` would show "too long" instead of "bad hex
+  string" - unreachable (`CP_ACP`, flags 0, `Validate` refuses first), accepted; the status-bar
+  hint `IDS_HEXHELP` says "' for ASCII strings" - a text change would need the `.slt` refresh,
+  left as is ("ASCII" read as the code page).
+
+One review was enough (no MUST).

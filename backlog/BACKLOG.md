@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor Find: whole-word regexp, empty regexp, letters in quoted hex](items/regedit-find-whole-words-and-quoted-hex-letters/desc.md) | bug | 4 | other-plugins | 257 |
 
 ## Next
 
@@ -176,6 +175,9 @@ Last triaged: 2026-10-19
 | [Paste of a case twin from an archive and SFTP twins by hand (252)](items/paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand/desc.md) | person-step | 5 | archives | leftover:252 | 2026-10-20 |
 | [The build runs the plug-in encoding scan strictly for the shipped plug-ins](items/plugin-encoding-scan-strict-in-build/desc.md) | tech-debt | 2 | tooling | leftover:255 | 2026-10-20 |
 | [Popup menu hot keys by hand: Russian layout, DBCS and UTF-8 systems, TortoiseSVN](items/popup-hot-keys-real-keyboard-256/desc.md) | person-step | 3 | panels-ui | leftover:256 | 2026-10-20 |
+| [Registry Editor Find: confirm quoted hex letters with a UTF-8 code page](items/regedit-find-hex-utf8-code-page-check-257/desc.md) | person-step | 3 | other-plugins | leftover:257 | 2026-10-20 |
+| [Registry Editor Find: regexp misses text past the code-page length of a value](items/regedit-find-regexp-multibyte-code-page-buffer/desc.md) | bug | 4 | other-plugins | review:257 | 2026-10-20 |
+| [Registry Editor Find: Whole words ignores punctuation that the help names](items/regedit-find-whole-words-punctuation/desc.md) | bug | 2 | other-plugins | measure:257 | 2026-10-20 |
 | [Renamer: the preview shows a name with an unpaired surrogate as mojibake](items/renamer-wtf8-names-shown-as-mojibake/desc.md) | bug | 2 | other-plugins | measure:255 | 2026-10-20 |
 | [Settings import ends the highlighting list at a damaged entry](items/settings-import-ends-the-highlighting-list-at-a-damaged/desc.md) | bug | 3 | panels-ui | measure:250 | 2026-10-20 |
 | [ISO plug-in: HFS+ names with an unpaired surrogate are changed to U+FFFD](items/uniso-hfs-names-lossy-surrogates/desc.md) | bug | 2 | archives | measure:255 | 2026-10-20 |

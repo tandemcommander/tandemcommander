@@ -41,7 +41,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121 |
 | PictView | 105, 111, 120 |
 | Undelete | 114, 115, 148 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names) | 071, 078, 123, 244, 245, 246 |
@@ -3162,3 +3162,19 @@ a few early ones are out of sequence).
   DBCS / UTF-8 systems and TortoiseSVN are a person's (`popup-hot-keys-real-keyboard-256`). From
   backlog item `menu-popup-loop-wide-mnemonics`. Probe `pm256_probe.ps1` 3 FAIL -> 6 / 0; two
   refute-first reviews (M1, S1 fixed; S2 recorded).
+- 257-regedt-find-words-hex: Registry Editor Find - a regexp with Whole words judged the characters
+  around a match from the start of the value, not of its line (on the 2nd+ line of a list a whole
+  word was missed and a fragment found); an empty regexp with Whole words found nothing; a letter
+  of 2+ code-page bytes inside `'...'` of a HEX pattern became one 0x00 byte (every non-ASCII
+  letter with a UTF-8 code page) and the length check counted one byte. Now the rule gets the line
+  (`SalRegFindWholeWordInLine`), an empty regexp is the empty pattern (everything), and
+  `SalHexPatternToBytes` (`src/common/salregfind.h`, saltests under 65001 / 932 / 1250) converts
+  each `'...'` at once with the plain pattern's `WideCharToMultiByte(CP_ACP, 0)` and counts the same
+  bytes (too long refused, never cut). Traps: a regexp's `patternALen` carries its NUL for
+  `Set(PatternA)` - only the empty one gets 0; a whole-file clang-format re-flows `saltests.cpp`
+  (format `--lines` only). Limits: the GUI with a UTF-8 code page is a person's
+  (`regedit-find-hex-utf8-code-page-check-257`); the regexp's text buffer is still sized by UTF-16
+  units on a multi-byte code page (Inbox `regedit-find-regexp-multibyte-code-page-buffer`); Whole
+  words ignores the punctuation the help names (Inbox `regedit-find-whole-words-punctuation`). From
+  backlog item `regedit-find-whole-words-and-quoted-hex-letters`. Probe `find_words_hex_probe.ps1`
+  7 / 2 -> 9 / 0; saltests negative control 9 failed; one refute-first review (no MUST).

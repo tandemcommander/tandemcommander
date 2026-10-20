@@ -47,7 +47,7 @@
 - [X] T012 Probe after on the hidden desktop → 9 PASS / 0 FAIL, result in specs/257-regedt-find-words-hex/probe/result_after.txt; negative control: the saltests hex checks fail against the old per-unit conversion (recorded in fix-log.md)
 - [X] T013 Update specs/257-regedt-find-words-hex/fix-log.md with the after measurement and the checks
 - [X] T014 Format the changed sources with clang-format (src/common/salregfind.h, src/plugins/regedt/finddlg.cpp, finddlg2.cpp, utils.cpp, src/saltests/saltests.cpp)
-- [ ] T015 Add the user-visible entry (symptom in bold, feature 257, limits) to CHANGELOG.md under the `— unreleased` heading (at closing, SKILL step 8.5)
+- [X] T015 Add the user-visible entry (symptom in bold, feature 257, limits) to CHANGELOG.md under the `— unreleased` heading (at closing, SKILL step 8.5)
 
 ## Dependencies
 
