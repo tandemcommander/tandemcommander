@@ -10,6 +10,13 @@ differ only in case - "case twins", e.g. `a.txt` and `A.txt`. Features 230-232 t
 Reselect, Restore Selection, Hide Selected Names and the refresh merge to tell twins apart. Four
 more places still take the first name that matches ignoring case.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: When a lookup by name (viewer, User Menu, Ctrl+X) finds no byte-identical item but exactly one item equal ignoring case, does it take that item - also in a case-sensitive folder? → A: Yes - that is today's behaviour and the item names only twins; with two or more such items none is taken (autonomous run: conservative)
+- Q: In Compare Directories, when one side holds twins (a.txt, A.txt) and the other side only a name differing in case from both (A.TXT), is it paired with one of them? → A: No - which twin is meant cannot be told; all three stay unpaired and are marked, so the user sees them (autonomous run: recommended)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Compare Directories pairs the exact twin (Priority: P1)
@@ -79,7 +86,9 @@ to drive them); the decision is the same rule as Story 2 and is checked by `salt
 - No twins anywhere: every feature behaves exactly as before (a name differing only in case from
   the only candidate is still found / paired).
 - Twins on one side only: a name differing only in case from a twin is not paired with it (which
-  twin is meant cannot be told); every byte-identical name is.
+  twin is meant cannot be told - left a.txt + A.txt vs right A.TXT: all three marked); every
+  byte-identical name is.
+- A lookup with no byte-identical item takes the one item equal ignoring case, never one of two.
 - Canonically equivalent names (NFC vs NFD) stay two names (feature 004, FR-009).
 - Folders that are not case-sensitive cannot hold twins: no change there.
 
