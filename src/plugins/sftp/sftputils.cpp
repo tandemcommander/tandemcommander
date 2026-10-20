@@ -356,6 +356,35 @@ BOOL SftpUploadConfirmed(BOOL remoteSizeKnown, unsigned __int64 remoteSize, unsi
     return remoteSizeKnown && remoteSize == bytesSent && bytesSent == localSize;
 }
 
+CSftpUploadConfirm SftpUploadConfirmation(BOOL remoteSizeKnown, unsigned __int64 remoteSize, BOOL sizeRefused,
+                                          unsigned __int64 bytesSent, unsigned __int64 localSize)
+{
+    if (remoteSizeKnown)
+        return SftpUploadConfirmed(TRUE, remoteSize, bytesSent, localSize) ? ucBySize : ucNo;
+    return sizeRefused && bytesSent == localSize ? ucByAcks : ucNo;
+}
+
+BOOL SftpTargetStatRefused(BOOL connected, unsigned long status)
+{
+    return connected && SftpStatusIsPermission(status);
+}
+
+BOOL SftpIsUploadTempPath(const char* path)
+{
+    if (path == NULL)
+        return FALSE;
+    const char* name = PosixBaseName(path);
+    if (strncmp(name, ".tcpart-", 8) != 0)
+        return FALSE;
+    for (int i = 8; i < 16; i++)
+    {
+        char c = name[i];
+        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
+            return FALSE;
+    }
+    return name[16] == 0;
+}
+
 BOOL SftpStatusIsNotFound(unsigned long status)
 {
     return status == 2 || status == 10; // SSH_FX_NO_SUCH_FILE, SSH_FX_NO_SUCH_PATH

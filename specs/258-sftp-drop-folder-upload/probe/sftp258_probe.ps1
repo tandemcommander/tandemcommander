@@ -19,6 +19,9 @@
                  box says why, no .tcpart-* in drop
       DROPMOVE   Move mv.txt to /drop: PASS = drop\mv.txt holds it, the local source is gone
       DROPDIR    Copy the folder pack (a.txt, b.txt) to /drop: PASS = drop\pack\a.txt, b.txt
+      DROPFAIL   Copy big.bin (300,000 bytes) to /drop, the write fails after 1,000 bytes (debug seam
+                 TC_SFTP_PROBE_XFER_FAIL): PASS = the box says a partial file may remain (the server
+                 refuses its removal), the local file stays
       REPL       Copy r.txt over /pub/r.txt (the question answered Yes): PASS = replaced, the
                  question names hard links and the ACL
       CUT        Copy c.txt to /cut, the connection is dropped at the close of its temporary file;
@@ -135,6 +138,7 @@ function Answer([int]$Id, [double]$Seconds = 90, [double]$Quiet = 5, [string]$Fi
     }
     return $texts
 }
+function BigText { return ('0123456789ABCDEF' * 18750) }      # 300,000 bytes
 function Has([string[]]$Texts, [string]$Rx) { return [bool](@($Texts | Where-Object { $_ -match $Rx }).Count) }
 function SrvText([string]$Rel) { $p = $Srv + '\' + $Rel; if ([IO.File]::Exists($LP + $p)) { return [IO.File]::ReadAllText($LP + $p) }; return '(none)' }
 function SrvParts([string]$Dir) { $p = $Srv + '\' + $Dir; if (-not [IO.Directory]::Exists($LP + $p)) { return @() }; return @([IO.Directory]::GetFileSystemEntries($LP + $p) | ForEach-Object { [IO.Path]::GetFileName($_) } | Where-Object { $_ -like '.tcpart-*' }) }
@@ -143,19 +147,24 @@ function SrvParts([string]$Dir) { $p = $Srv + '\' + $Dir; if (-not [IO.Directory
 # right panel connects to $Dir; the focus goes $Down times Down after Home; the core's command
 # $Vk (727 Copy, 728 Move) runs $Times times; $Typed = the target typed into the Copy / Move dialog.
 # $Judge { param($texts, $local, $conn) } returns @{ Ok; Facts }
-function Row-Up([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [scriptblock]$Setup, [scriptblock]$Judge, [string]$Typed = '', [int]$Times = 1) {
+function Row-Up([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [scriptblock]$Setup, [scriptblock]$Judge, [string]$Typed = '', [int]$Times = 1, [string]$Xfer = '') {
     if (-not (Want $Case)) { return }
     $before = Reports; $id = 0
     $local = $StartDir + '\' + $Case
     try {
         NewDir $local
         & $Setup $local | Out-Null
+        # 139's debug seam: the upload of a remote path ending with the suffix fails after N bytes
+        if ($Xfer) { $env:TC_SFTP_PROBE_XFER_FAIL = $Xfer } else { Remove-Item Env:\TC_SFTP_PROBE_XFER_FAIL -ErrorAction SilentlyContinue }
         $id = Start-P
         [void](Do-ChangeDir $id $local); Sync $id; Key $id 0x09
         $conn = Connect $id $Dir
         Key $id 0x09
         $texts = @()
         for ($n = 1; $n -le $Times; $n++) {
+            # a failed operation (and the reconnect of the refresh after it) can leave the server
+            # panel active: the command would then act on its '..' - the source is the local panel
+            if ($n -gt 1) { $act = Get-Loc $id; if ($act -like 'sftp:*') { Key $id 0x09; $texts += ('(the server panel was active: Tab; now ' + (Tail (Get-Loc $id) 40) + ')') } }
             Key $id 0x24
             for ($i = 0; $i -lt $Down; $i++) { Key $id 0x28 }
             if ($Times -gt 1) { $texts += ('--- run ' + $n) }
@@ -168,6 +177,7 @@ function Row-Up([string]$Case, [string]$Dir, [int]$Down, [int]$Vk, [scriptblock]
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally {
+        Remove-Item Env:\TC_SFTP_PROBE_XFER_FAIL -ErrorAction SilentlyContinue
         if ($id) { $fatal = Fatal-Win $id; End-Row $Case $id $fatal $before }
     }
 }
@@ -196,8 +206,9 @@ try {
     Row-Up 'DROPEXIST' '/pub' 1 727 { param($l) WriteFile ($l + '\up.txt') 'DROP-NEW'; NewDir ($Srv + '\drop'); WriteFile ($Srv + '\drop\up.txt') 'OLD-DROP' } { param($t, $l, $c) $v = SrvText 'drop\up.txt'; $tp = SrvParts 'drop'; @{ Ok = ($v -ceq 'OLD-DROP' -and $tp.Count -eq 0 -and (Has $t 'Cannot upload')); Facts = ("drop\up.txt holds '{0}'; .tcpart-* in drop: {1}; the error box {2}" -f $v, $tp.Count, (Has $t 'Cannot upload')) } } $Target
     Row-Up 'DROPMOVE' '/pub' 1 728 { param($l) WriteFile ($l + '\mv.txt') 'DROP-MOVE' } { param($t, $l, $c) $v = SrvText 'drop\mv.txt'; $src = [IO.File]::Exists($LP + $l + '\mv.txt'); @{ Ok = ($v -ceq 'DROP-MOVE' -and -not $src -and (SrvParts 'drop').Count -eq 0); Facts = ("drop\mv.txt holds '{0}'; the local source still there {1}" -f $v, $src) } } $Target
     Row-Up 'DROPDIR' '/pub' 1 727 { param($l) NewDir ($l + '\pack'); WriteFile ($l + '\pack\a.txt') 'PACK-A'; WriteFile ($l + '\pack\b.txt') 'PACK-B' } { param($t, $l, $c) $a = SrvText 'drop\pack\a.txt'; $b = SrvText 'drop\pack\b.txt'; @{ Ok = ($a -ceq 'PACK-A' -and $b -ceq 'PACK-B' -and (SrvParts 'drop\pack').Count -eq 0 -and -not (Has $t $Box)); Facts = ("drop\pack\a.txt '{0}', b.txt '{1}'; an error box {2}" -f $a, $b, (Has $t $Box)) } } $Target
+    Row-Up 'DROPFAIL' '/pub' 1 727 { param($l) WriteFile ($l + '\big.bin') (BigText) } { param($t, $l, $c) $p = $Srv + '\drop\big.bin'; $n = $(if ([IO.File]::Exists($LP + $p)) { (New-Object IO.FileInfo($LP + $p)).Length } else { -1 }); $said = Has $t 'Cannot upload.*partial file may remain'; @{ Ok = ($said -and $n -lt 300000 -and [IO.File]::Exists($LP + $l + '\big.bin')); Facts = ("the write fails after 1000 bytes (seam): drop\big.bin size {0} (the server refuses its removal); the box says a partial file may remain {1}" -f $n, $said) } } $Target 1 'big.bin;1000'
     Row-Up 'REPL' '/pub' 1 727 { param($l) WriteFile ($l + '\r.txt') 'REPL-NEW'; WriteFile ($Srv + '\pub\r.txt') 'REPL-OLD' } { param($t, $l, $c) $v = SrvText 'pub\r.txt'; $q = @($t | Where-Object { $_ -match 'already exists' }) -join ' '; $named = ($q -match 'hard link' -and $q -match 'ACL'); @{ Ok = ($v -ceq 'REPL-NEW' -and $named -and (SrvParts 'pub').Count -eq 0); Facts = ("pub\r.txt holds '{0}'; the question names hard links and the ACL: {1}" -f $v, $named) } }
-    Row-Up 'CUT' '/cut' 1 727 { param($l) WriteFile ($l + '\c.txt') 'CUT-NEW'; WriteFile ($Srv + '\cut\.armed') 'x' } { param($t, $l, $c) $v = SrvText 'cut\c.txt'; $tp = SrvParts 'cut'; $offer = Has $t 'tcpart'; @{ Ok = ($v -ceq 'CUT-NEW' -and $tp.Count -eq 0 -and $offer -and -not [IO.File]::Exists($LP + $Srv + '\cut\.armed')); Facts = ("cut\c.txt holds '{0}'; .tcpart-* left in cut: {1} ({2}); a dialog named the temporary file {3}" -f $v, $tp.Count, ($tp -join ','), $offer) } } '' 2
+    Row-Up 'CUT' '/cut' 1 727 { param($l) WriteFile ($l + '\c.txt') 'CUT-NEW'; WriteFile ($Srv + '\cut\.armed') 'x' } { param($t, $l, $c) $v = SrvText 'cut\c.txt'; $tp = SrvParts 'cut'; $offer = Has $t 'left on the server.*Delete them'; @{ Ok = ($v -ceq 'CUT-NEW' -and $tp.Count -eq 0 -and $offer -and -not [IO.File]::Exists($LP + $Srv + '\cut\.armed')); Facts = ("cut\c.txt holds '{0}'; .tcpart-* left in cut: {1} ({2}); a dialog named the temporary file {3}" -f $v, $tp.Count, ($tp -join ','), $offer) } } '' 2
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

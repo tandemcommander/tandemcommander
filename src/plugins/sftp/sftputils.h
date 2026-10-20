@@ -115,6 +115,31 @@ BOOL SftpTempPath(const char* targetPath, unsigned long random, char* buf, int b
 BOOL SftpUploadConfirmed(BOOL remoteSizeKnown, unsigned __int64 remoteSize, unsigned __int64 bytesSent,
                          unsigned __int64 localSize);
 
+// feature 258: how an upload is confirmed. 'remoteSizeKnown' / 'remoteSize' as above;
+// 'sizeRefused': the server answered the size request with a refusal for want of a right
+// (an upload-only folder) on a live session. Then the server's acknowledgments are the
+// confirmation: every write was answered with success ('bytesSent' counts acknowledged bytes)
+// and they cover the whole local file; the caller has seen the close confirmed.
+enum CSftpUploadConfirm
+{
+    ucNo,     // not confirmed: the old file is not replaced, a moved source is not removed
+    ucBySize, // the server reports the size and it is right (SftpUploadConfirmed)
+    ucByAcks, // the server will not report it; every byte was acknowledged
+};
+CSftpUploadConfirm SftpUploadConfirmation(BOOL remoteSizeKnown, unsigned __int64 remoteSize, BOOL sizeRefused,
+                                          unsigned __int64 bytesSent, unsigned __int64 localSize);
+
+// feature 258: the server refused to say what holds the target's name for want of a right, on a
+// live session - an upload-only ("drop") folder: the file may only be CREATED there, never
+// opened over something of that name. Any other failure (no status, another status, the
+// session dead) is no answer at all.
+BOOL SftpTargetStatRefused(BOOL connected, unsigned long status);
+
+// feature 258: is 'path' the path of an upload's temporary file, as SftpTempPath makes it - its
+// last component is exactly ".tcpart-" and 8 lower-case hex digits? (Checked before such a file
+// is offered for deletion.)
+BOOL SftpIsUploadTempPath(const char* path);
+
 // feature 139: the server's status (SSH_FX_*) says "nothing of that name" - the only answer
 // of an lstat after which a writer may take the name for free.
 BOOL SftpStatusIsNotFound(unsigned long status);

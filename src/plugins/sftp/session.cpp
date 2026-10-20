@@ -129,6 +129,7 @@ CSFTPSession::CSFTPSession()
     ServerOffersPassword = FALSE;
     CancelRequested = 0;
     InitializeCriticalSection(&SocketLock);
+    LeftTempCount = 0;
 }
 
 CSFTPSession::~CSFTPSession()
@@ -136,6 +137,34 @@ CSFTPSession::~CSFTPSession()
     Disconnect();
     Params.WipeSecrets();
     DeleteCriticalSection(&SocketLock);
+    for (int i = 0; i < LeftTempCount; i++)
+        free(LeftTemps[i]);
+}
+
+BOOL CSFTPSession::NoteLeftTemp(const char* path)
+{
+    static_assert(sizeof(LeftTemps) / sizeof(LeftTemps[0]) == MAX_LEFT_TEMPS, "LeftTemps");
+    if (path == NULL)
+        return FALSE;
+    for (int i = 0; i < LeftTempCount; i++)
+        if (strcmp(LeftTemps[i], path) == 0) // (byte for byte: a server path)
+            return TRUE;
+    if (LeftTempCount >= MAX_LEFT_TEMPS)
+        return FALSE;
+    char* copy = _strdup(path);
+    if (copy == NULL)
+        return FALSE;
+    LeftTemps[LeftTempCount++] = copy;
+    return TRUE;
+}
+
+int CSFTPSession::TakeLeftTemps(char** paths)
+{
+    int n = LeftTempCount;
+    for (int i = 0; i < n; i++)
+        paths[i] = LeftTemps[i];
+    LeftTempCount = 0;
+    return n;
 }
 
 void CSFTPSession::Log(const char* text)

@@ -1,0 +1,42 @@
+sftp258_probe (feature 258), run: negative-control-offer-disabled
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 08:15; desktop 'tc_probe_8808'; ACP 1250; registry key existed True; export SHA-256 CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+Server  : dropsftp.py pid 18296 on 127.0.0.1:2258, root C:\Users\pavel\AppData\Local\Temp\tc258\srv
+
+CUT        ROW    FAIL        cut\c.txt holds 'CUT-NEW'; .tcpart-* left in cut: 1 (.tcpart-1ac87a98); a dialog named the temporary file False; connected: True [password, host key] at 'sftp:tctest@localhost:2258/cut'; dialogs: --- run 1 || [#32770 'Copy'] [Static id=209] &Copy file "c.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/cut/c.txt": The connection to the server was lost. (close: Error waiting for status message) (the temporary file .tcpart-1ac87a98 could not be removed) | [Button id=1] OK || [Copy] came back - cancelled || host key || --- run 2 || [#32770 'Copy'] [Static id=209] &Copy file "c.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+CUT        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8 / after CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+
+Server log:
+  1792476957.863 start 2258 C:\Users\pavel\AppData\Local\Temp\tc258\srv
+  1792476957.952 connect
+  1792476957.957 session error SSHException('Error reading SSH protocol banner[WinError 10054] St\u00E1vaj\u00EDc\u00ED p\u0159ipojen\u00ED bylo vynucen\u011B ukon\u010Deno vzd\u00E1len\u00FDm hostitelem')
+  1792476957.958 disconnected
+  1792476962.835 connect
+  1792476963.339 disconnected
+  1792476963.810 connect
+  1792476963.814 realpath /cut -> /cut
+  1792476963.815 stat /cut ok
+  1792476963.816 opendir /cut ok (1)
+  1792476969.720 lstat /cut/c.txt FileNotFoundError(2, 'Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor')
+  1792476969.720 open /cut/.tcpart-1ac87a98 flags=0x501 exists=False
+  1792476969.721 close /cut/.tcpart-1ac87a98
+  1792476969.722 cut: the connection is dropped at the close of /cut/.tcpart-1ac87a98
+  1792476969.816 disconnected
+  1792476973.061 connect
+  1792476973.579 disconnected
+  1792476974.343 connect
+  1792476974.346 realpath /cut -> /cut
+  1792476974.347 stat /cut ok
+  1792476974.348 opendir /cut ok (1)
+  1792476982.485 lstat /cut/c.txt FileNotFoundError(2, 'Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor')
+  1792476982.485 open /cut/.tcpart-9a37bbfe flags=0x501 exists=False
+  1792476982.486 close /cut/.tcpart-9a37bbfe
+  1792476982.487 stat /cut/.tcpart-9a37bbfe ok
+  1792476982.488 rename /cut/.tcpart-9a37bbfe /cut/c.txt ok
+  1792476982.489 realpath /cut -> /cut
+  1792476982.490 stat /cut ok
+  1792476982.490 opendir /cut ok (2)
+  1792476988.853 disconnected
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

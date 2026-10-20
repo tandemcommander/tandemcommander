@@ -144,6 +144,12 @@ protected:
     // while the connect worker may be creating or closing it.
     CRITICAL_SECTION SocketLock;
 
+    // feature 258: temporary files of uploads (".tcpart-*", full server paths, malloc) that could
+    // not be removed because this session had lost its connection; offered for deletion at the
+    // next upload. Memory only; kept by Disconnect (a reconnect reuses this object).
+    char* LeftTemps[16]; // (MAX_LEFT_TEMPS)
+    int LeftTempCount;
+
 public:
     CSFTPSession();
     ~CSFTPSession();
@@ -168,6 +174,14 @@ public:
     BOOL Reconnect(HWND parent, CSFTPHostKeyList* trustStore, CSFTPConnectResult* result);
 
     void Disconnect();
+
+    enum { MAX_LEFT_TEMPS = 16 }; // feature 258: the size of LeftTemps
+    // feature 258: remembers 'path' (see LeftTemps); FALSE = not remembered (full, a copy cannot
+    // be made, or it is there already - TRUE then)
+    BOOL NoteLeftTemp(const char* path);
+    // feature 258: hands the remembered paths to the caller (each to be freed with free) and
+    // forgets them; returns their number (0..MAX_LEFT_TEMPS), 'paths' has MAX_LEFT_TEMPS slots
+    int TakeLeftTemps(char** paths);
 
     // Resolves the server's home / a relative path to an absolute one.
     BOOL RealPath(const char* path, char* absPath, int absPathSize);

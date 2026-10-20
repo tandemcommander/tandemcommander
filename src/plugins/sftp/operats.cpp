@@ -1083,8 +1083,13 @@ static BOOL ConfirmOverwriteRemote(COperationCtx* ctx, const char* remotePath)
     if (ctx->OverwriteMode == ovSkipAll)
         return FALSE;
     CSFTPMsgText text(remotePath); // the server's bytes are not always UTF-8
+    // feature 258: what a replacement cannot keep is said where the user decides - the file is
+    // normally replaced by a complete new copy (feature 139), and SFTP version 3 reports no link
+    // count and no ACL
     char* msg = SftpFormatMsgAlloc("The file already exists on the server:\n%s\n\nOverwrite it?\n"
-                                   "(Yes = this file, No = skip; Cancel = skip the rest)",
+                                   "(Yes = this file, No = skip; Cancel = skip the rest)\n\n"
+                                   "It is replaced by a new copy where the server allows it: other hard links to it "
+                                   "keep the old content, and its ACL and extended attributes are not carried over.",
                                    text.Get(), NULL);
     if (msg == NULL)
         return FALSE; // the question cannot be asked: the file is not replaced
@@ -1139,7 +1144,81 @@ static BOOL UploadDropTemp(COperationCtx* ctx, const char* temp)
         return TRUE;
     Logs.AppendFmt(ctx->Session->GetLogUID(), "The temporary file %s could not be removed: %s", CSFTPMsgText(temp).Get(),
                    ctx->Session->GetLastErrorText());
+    // feature 258: the removal could not even be asked - the connection is gone. The file is
+    // remembered and offered for deletion at the next upload (UploadOfferLeftTemps). A removal
+    // the server refused on a live session is not: asking again would not help.
+    if (!ctx->Session->IsConnected() && SftpIsUploadTempPath(temp) && !ctx->Session->NoteLeftTemp(temp))
+        Logs.AppendFmt(ctx->Session->GetLogUID(), "(too many left temporary files to remember %s)", CSFTPMsgText(temp).Get());
     return FALSE;
+}
+
+// feature 258: temporary files that earlier uploads of this session could not remove because the
+// connection was lost (UploadDropTemp) are offered for deletion - once; Yes deletes each that is
+// still a regular file, No forgets them. Called at the start of an upload, the session connected.
+static void UploadOfferLeftTemps(HWND parent, CSFTPSession* session)
+{
+    char* paths[CSFTPSession::MAX_LEFT_TEMPS];
+    int n = session->TakeLeftTemps(paths);
+    if (n == 0)
+        return;
+    // the list for the question: the full paths, one per line, on the heap (paths can be long)
+    size_t listSize = 1;
+    for (int i = 0; i < n; i++)
+        listSize += strlen(CSFTPMsgText(paths[i]).Get()) + 1;
+    char* list = (char*)malloc(listSize);
+    if (list != NULL)
+    {
+        list[0] = 0;
+        for (int i = 0; i < n; i++)
+        {
+            strcat_s(list, listSize, CSFTPMsgText(paths[i]).Get());
+            strcat_s(list, listSize, "\n");
+        }
+    }
+    char* msg = SftpFormatMsgAlloc("Earlier uploads lost the connection before they could remove their temporary "
+                                   "files; these are left on the server:\n%s\nDelete them now?\n"
+                                   "(They hold only copies: the files they were uploaded for were not changed by them.)",
+                                   list != NULL ? list : "", NULL);
+    free(list);
+    int answer = msg != NULL ? SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_PLUGINNAME), MB_YESNO | MB_ICONQUESTION)
+                             : IDNO;
+    free(msg);
+    int logUID = session->GetLogUID();
+    char* failed = NULL; // the first that could not be deleted (with its reason)
+    for (int i = 0; i < n; i++)
+    {
+        if (answer == IDYES)
+        {
+            LIBSSH2_SFTP_ATTRIBUTES a;
+            CSFTPStatResult st = session->StatEx(paths[i], FALSE, &a); // (the link itself, never followed)
+            BOOL regular = st == sxFound && (a.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) != 0 && SFTP_S_ISREG(a.permissions);
+            if (st == sxNotFound)
+                Logs.AppendFmt(logUID, "The temporary file %s is gone already.", CSFTPMsgText(paths[i]).Get());
+            else if (regular && session->Unlink(paths[i]))
+                Logs.AppendFmt(logUID, "The left temporary file %s was deleted.", CSFTPMsgText(paths[i]).Get());
+            else
+            {
+                const char* why = st == sxFound && !regular ? "the server does not show it as a regular file"
+                                                            : session->GetLastErrorText();
+                Logs.AppendFmt(logUID, "The left temporary file %s was not deleted: %s", CSFTPMsgText(paths[i]).Get(), why);
+                if (failed == NULL)
+                    failed = SftpFormatMsgAlloc("%s (%s)", CSFTPMsgText(paths[i]).Get(), why);
+                if (!session->IsConnected()) // the deletion could not be asked: offered again next time
+                    session->NoteLeftTemp(paths[i]);
+            }
+        }
+        else
+            Logs.AppendFmt(logUID, "The left temporary file %s was kept (the user's answer).", CSFTPMsgText(paths[i]).Get());
+        free(paths[i]);
+    }
+    if (failed != NULL)
+    {
+        char* box = SftpFormatMsgAlloc("Not every left temporary file could be deleted; the first one:\n%s", failed, NULL);
+        SalamanderGeneral->SalMessageBox(parent, box != NULL ? box : failed, LoadStr(IDS_SFTPERRORTITLE),
+                                         MB_OK | MB_ICONEXCLAMATION);
+        free(box);
+        free(failed);
+    }
 }
 
 // feature 140 (review): a temporary file that could not be removed where no error box of the
@@ -1261,13 +1340,23 @@ static CXferResult UploadSendAndConfirm(COperationCtx* ctx, HANDLE lf, LIBSSH2_S
     }
     if (res == xrOk)
     {
+        // feature 258: a server that will not show the file (an upload-only folder) refuses the
+        // size request; then its acknowledgments of every write and of the close confirm it
         LIBSSH2_SFTP_ATTRIBUTES newAttrs;
-        BOOL sizeKnown = session->Stat(writtenPath, TRUE, &newAttrs) && (newAttrs.flags & LIBSSH2_SFTP_ATTR_SIZE) != 0;
-        if (!SftpUploadConfirmed(sizeKnown, sizeKnown ? newAttrs.filesize : 0, sent, localSize))
+        CSFTPStatResult st = session->StatEx(writtenPath, TRUE, &newAttrs);
+        BOOL sizeKnown = st == sxFound && (newAttrs.flags & LIBSSH2_SFTP_ATTR_SIZE) != 0;
+        BOOL sizeRefused = st == sxError && SftpTargetStatRefused(session->IsConnected(), session->GetLastSftpStatus());
+        CSftpUploadConfirm conf =
+            SftpUploadConfirmation(sizeKnown, sizeKnown ? newAttrs.filesize : 0, sizeRefused, sent, localSize);
+        if (conf == ucNo)
         {
             res = xrFailed;
             SplU8CopyTrunc(why, whySize, "the file on the server could not be confirmed complete.");
         }
+        else if (conf == ucByAcks)
+            Logs.AppendFmt(session->GetLogUID(),
+                           "%s: the server does not show the size of the written file (%s); it acknowledged all %I64u bytes and the close.",
+                           CSFTPMsgText(writtenPath).Get(), session->GetLastErrorText(), sent);
     }
     return res;
 }
@@ -1450,6 +1539,69 @@ static CXferResult UploadSecondPass(COperationCtx* ctx, HANDLE lf, const char* t
     return xrFailed;
 }
 
+// feature 258: the upload into a folder whose files the server will not show ("drop" folder:
+// it refused the lstat of the target for want of a right). Whether a file of that name exists
+// cannot be learned, so the user cannot be asked: the file is only CREATED (exclusive create),
+// never opened over anything; a server without the exclusive create is not written to. No
+// temporary file: such a server lets nobody rename or remove there. 'lf' stays open.
+static CXferResult UploadDropRoute(COperationCtx* ctx, HANDLE lf, const char* remotePath, unsigned __int64 localSize)
+{
+    CSFTPSession* session = ctx->Session;
+    Logs.AppendFmt(session->GetLogUID(),
+                   "The server does not show %s (%s); it is created only if no file of that name is there.",
+                   CSFTPMsgText(remotePath).Get(), session->GetLastErrorText());
+    if (ctx->CheckCancel())
+        return xrFailed;
+    LIBSSH2_SFTP_HANDLE* h = session->OpenWriteNew(remotePath, 0644);
+    if (h == NULL)
+    {
+        char* reason = SftpFormatMsgAlloc("%s - the server does not show whether a file of that name is there; "
+                                          "nothing was replaced",
+                                          session->GetLastErrorText(), NULL);
+        ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, reason != NULL ? reason : session->GetLastErrorText());
+        free(reason);
+        return xrFailed;
+    }
+    char why[900];
+    if (UploadSendAndConfirm(ctx, lf, h, remotePath, remotePath, localSize, why, sizeof(why)) == xrOk)
+        return xrOk;
+    // failed or stopped: the file under the name was created by this upload a moment ago - it is
+    // removed (once); where the server refuses that, the box says that a part may stay
+    if (session->Unlink(remotePath))
+    {
+        if (why[0] != 0) // (stopped by the user: no box, nothing is left)
+            ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, why);
+        return xrFailed;
+    }
+    Logs.AppendFmt(session->GetLogUID(), "The partial file %s could not be removed: %s", CSFTPMsgText(remotePath).Get(),
+                   session->GetLastErrorText());
+    char* reason = SftpFormatMsgAlloc("%s - a partial file may remain on the server under this name (%s)",
+                                      why[0] != 0 ? why : "the upload was stopped", session->GetLastErrorText());
+    ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, reason != NULL ? reason : why);
+    free(reason);
+    return xrFailed;
+}
+
+// the end of an upload of one file ('lf' is closed): with 'move', the local source is removed
+// after a confirmed upload; xrOk = uploaded AND removed
+static CXferResult UploadFinishMove(COperationCtx* ctx, const wchar_t* wlocal, const char* localPath, CXferResult res,
+                                    BOOL move)
+{
+    // feature 140: nothing is removed once the connection is lost - also on this side (the
+    // upload is confirmed; a request after it, the removal of a spare temporary file, may be
+    // what ended the session). The source stays; UploadOneFile says why.
+    if (res == xrOk && move && ctx->SessionLost())
+        res = xrFailed;
+    if (res == xrOk && move && !DeleteFileW(wlocal))
+    {
+        // uploaded, but the source stays (and so does its folder); said once per operation
+        DWORD delErr = GetLastError();
+        ReportNotRemoved(ctx, IDS_ERR_DELETE, localPath, CSFTPMsgText(SalamanderGeneral->GetErrorText(delErr)).Get());
+        res = xrFailed;
+    }
+    return res;
+}
+
 static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, const char* remotePath, BOOL move)
 {
     CSFTPSession* session = ctx->Session;
@@ -1478,6 +1630,13 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
     // refusing an existing target is OpenSSH's behaviour, not every server's.
     LIBSSH2_SFTP_ATTRIBUTES oldAttrs;
     CSFTPStatResult old = session->StatEx(remotePath, FALSE, &oldAttrs);
+    if (old == sxError && SftpTargetStatRefused(session->IsConnected(), session->GetLastSftpStatus()))
+    {
+        // feature 258: an upload-only folder - created there, or not at all
+        CXferResult dr = UploadDropRoute(ctx, lf, remotePath, (unsigned __int64)localSize.QuadPart);
+        CloseHandle(lf);
+        return UploadFinishMove(ctx, wlocal, localPath, dr, move);
+    }
     if (old == sxError)
     {
         CloseHandle(lf);
@@ -1634,20 +1793,7 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
             ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, why);
     }
     CloseHandle(lf);
-
-    // feature 140: nothing is removed once the connection is lost - also on this side (the
-    // upload is confirmed; a request after it, the removal of a spare temporary file, may be
-    // what ended the session). The source stays; UploadOneFile says why.
-    if (res == xrOk && move && ctx->SessionLost())
-        res = xrFailed;
-    if (res == xrOk && move && !DeleteFileW(wlocal))
-    {
-        // uploaded, but the source stays (and so does its folder); said once per operation
-        DWORD delErr = GetLastError();
-        ReportNotRemoved(ctx, IDS_ERR_DELETE, localPath, CSFTPMsgText(SalamanderGeneral->GetErrorText(delErr)).Get());
-        res = xrFailed;
-    }
-    return res;
+    return UploadFinishMove(ctx, wlocal, localPath, res, move);
 }
 
 static CXferResult UploadOneFile(COperationCtx* ctx, const char* localPath, const char* remotePath, BOOL move)
@@ -1865,6 +2011,8 @@ BOOL SFTPUploadToFS(HWND parent, CSFTPSession* session, const char* sourcePath,
                     SalEnumSelection2 next, void* nextParam, const char* targetRemoteDir, BOOL move)
 {
     COperationCtx ctx(parent, session);
+    if (session->IsConnected()) // feature 258: before the wait window - a question may come
+        UploadOfferLeftTemps(parent, session);
     SalamanderGeneral->CreateSafeWaitWindow(LoadStr(IDS_PLUGINNAME), LoadStr(IDS_PLUGINNAME), 500, TRUE,
                                             SalamanderGeneral->GetMainWindowHWND());
     BOOL ok = TRUE;

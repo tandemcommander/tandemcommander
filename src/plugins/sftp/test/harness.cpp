@@ -189,6 +189,36 @@ static void TestPaths()
     CHECK(!SftpUploadConfirmed(TRUE, 0, 0x100000000ull, 0x100000000ull)); // no 32-bit comparison
     CHECK(SftpUploadConfirmed(TRUE, 0x1FFFFFFFFull, 0x1FFFFFFFFull, 0x1FFFFFFFFull));
     CHECK(!SftpUploadConfirmed(FALSE, 0, 0, 0));
+    // feature 258: the server's acknowledgments confirm an upload only when it refused to report
+    // the size; a reported size is always compared
+    CHECK(SftpUploadConfirmation(TRUE, 1234, FALSE, 1234, 1234) == ucBySize);
+    CHECK(SftpUploadConfirmation(TRUE, 1234, TRUE, 1234, 1234) == ucBySize); // (a size wins)
+    CHECK(SftpUploadConfirmation(TRUE, 1233, TRUE, 1234, 1234) == ucNo);     // a wrong size is never outvoted
+    CHECK(SftpUploadConfirmation(TRUE, 1234, FALSE, 1234, 1000) == ucNo);
+    CHECK(SftpUploadConfirmation(FALSE, 0, TRUE, 1234, 1234) == ucByAcks);
+    CHECK(SftpUploadConfirmation(FALSE, 0, TRUE, 0, 0) == ucByAcks);             // an empty file
+    CHECK(SftpUploadConfirmation(FALSE, 0, TRUE, 1000, 1234) == ucNo);           // not all acknowledged
+    CHECK(SftpUploadConfirmation(FALSE, 0, TRUE, 0x100000000ull, 0) == ucNo);    // no 32-bit comparison
+    CHECK(SftpUploadConfirmation(FALSE, 1234, FALSE, 1234, 1234) == ucNo);       // no size, not refused: unknown
+    CHECK(SftpUploadConfirmation(FALSE, 0, FALSE, 0, 0) == ucNo);
+    // feature 258: the drop route only on a refusal for want of a right, on a live session
+    CHECK(SftpTargetStatRefused(TRUE, 3) && SftpTargetStatRefused(TRUE, 12));
+    CHECK(!SftpTargetStatRefused(FALSE, 3) && !SftpTargetStatRefused(FALSE, 12));
+    CHECK(!SftpTargetStatRefused(TRUE, 0) && !SftpTargetStatRefused(TRUE, 2) && !SftpTargetStatRefused(TRUE, 4) &&
+          !SftpTargetStatRefused(TRUE, 7) && !SftpTargetStatRefused(TRUE, 8) && !SftpTargetStatRefused(TRUE, 10));
+    // feature 258: only names SftpTempPath makes are offered for deletion
+    {
+        char made[64];
+        CHECK(SftpTempPath("/up/x.txt", 0xDEADBEEFUL, made, sizeof(made)) && SftpIsUploadTempPath(made));
+        CHECK(SftpIsUploadTempPath("/a/.tcpart-0123abcd") && SftpIsUploadTempPath(".tcpart-00000000"));
+        CHECK(!SftpIsUploadTempPath("/a/.tcpart-0123ABCD"));  // upper case: not ours
+        CHECK(!SftpIsUploadTempPath("/a/.tcpart-0123abc"));   // 7 digits
+        CHECK(!SftpIsUploadTempPath("/a/.tcpart-0123abcde")); // 9
+        CHECK(!SftpIsUploadTempPath("/a/.tcpart-0123abcg"));
+        CHECK(!SftpIsUploadTempPath("/a/tcpart-0123abcd") && !SftpIsUploadTempPath("/a/x.tcpart-0123abcd"));
+        CHECK(!SftpIsUploadTempPath("/.tcpart-0123abcd/file")); // the folder's name does not count
+        CHECK(!SftpIsUploadTempPath("/a/.tcpart-0123abcd/") && !SftpIsUploadTempPath("") && !SftpIsUploadTempPath(NULL));
+    }
     // feature 139 (review): only "no such file / path" frees a name
     CHECK(SftpStatusIsNotFound(2) && SftpStatusIsNotFound(10));
     CHECK(!SftpStatusIsNotFound(0) && !SftpStatusIsNotFound(3) && !SftpStatusIsNotFound(4) && !SftpStatusIsNotFound(7) &&
