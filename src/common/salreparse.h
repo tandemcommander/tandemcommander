@@ -18,7 +18,8 @@
 // Only a readable tag that is not a name surrogate (a cloud placeholder, feature 062 C3) - or no
 // tag at all - is a plain directory.
 //
-// Feature 253: what Change Attributes does with a directory link's own entry (below).
+// Feature 253: what Change Attributes does with a directory link's own entry (below); feature 272:
+// a file symbolic link's own entry too.
 //
 // Header-only; needs <windows.h>; checked by saltests.
 //
@@ -35,29 +36,29 @@ inline BOOL SalDeleteAsDirLinkDecision(BOOL destinationRead, BOOL tagRead, DWORD
 
 // feature 253: Change Attributes on a directory link's own entry (213 stopped the walk into it)
 // opened the link without FILE_FLAG_OPEN_REPARSE_POINT - the TARGET folder was compressed,
-// uncompressed and re-timed. A folder listed with the reparse bit that the Delete rule above takes
-// for a link ('deleteAsDirLink', asked only when both bits are set) is a directory link:
-inline BOOL SalAttrsEntryIsDirLink(DWORD listedAttr, BOOL deleteAsDirLink)
+// uncompressed and re-timed. Feature 272: a file symbolic link did the same to its target FILE.
+// An entry (folder or file) listed with the reparse bit that the Delete rule above takes for a link
+// ('linkByRule', asked only when the reparse bit is set) is a link; a readable tag that is not a
+// name surrogate (a cloud placeholder, a deduplicated file) is not:
+inline BOOL SalAttrsEntryIsLink(DWORD listedAttr, BOOL linkByRule)
 {
-    return (listedAttr & FILE_ATTRIBUTE_DIRECTORY) != 0 && (listedAttr & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
-           deleteAsDirLink;
+    return (listedAttr & FILE_ATTRIBUTE_REPARSE_POINT) != 0 && linkByRule;
 }
 
 // the CreateFile flags that reach the entry itself: a folder needs FILE_FLAG_BACKUP_SEMANTICS, a
-// directory link also FILE_FLAG_OPEN_REPARSE_POINT (its compression and times are its own, measured)
-inline DWORD SalAttrsOpenFlags(BOOL isDir, BOOL isDirLink)
+// link FILE_FLAG_OPEN_REPARSE_POINT (its compression and times are its own, measured for a junction
+// and a file symbolic link); a plain file 0
+inline DWORD SalAttrsOpenFlags(BOOL isDir, BOOL isLink)
 {
-    if (!isDir)
-        return 0;
-    return FILE_FLAG_BACKUP_SEMANTICS | (isDirLink ? FILE_FLAG_OPEN_REPARSE_POINT : 0);
+    return (isDir ? FILE_FLAG_BACKUP_SEMANTICS : 0) | (isLink ? FILE_FLAG_OPEN_REPARSE_POINT : 0);
 }
 
-// EncryptFile / DecryptFile take a path and follow a link - a directory link's encryption is
-// refused when it would change ('wantedAttr' = the requested attributes); a link whose state
-// already matches the request has nothing to change
-inline BOOL SalAttrsLinkRefusesEncryption(BOOL isDirLink, BOOL changeEncryption, DWORD listedAttr, DWORD wantedAttr)
+// EncryptFile / DecryptFile take a path and follow a link - a link's encryption is refused when it
+// would change ('wantedAttr' = the requested attributes); a link whose state already matches the
+// request has nothing to change
+inline BOOL SalAttrsLinkRefusesEncryption(BOOL isLink, BOOL changeEncryption, DWORD listedAttr, DWORD wantedAttr)
 {
-    return isDirLink && changeEncryption && ((listedAttr ^ wantedAttr) & FILE_ATTRIBUTE_ENCRYPTED) != 0;
+    return isLink && changeEncryption && ((listedAttr ^ wantedAttr) & FILE_ATTRIBUTE_ENCRYPTED) != 0;
 }
 
 // feature 219: a link's stored name in the Win32 long form ("\\?\C:\x", "\\?\UNC\srv\share") or the

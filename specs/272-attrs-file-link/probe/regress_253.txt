@@ -1,0 +1,20 @@
+attrs_link253_probe (feature 253) regress-272
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 00:18; registry key existed True; ACP 1250
+
+COMP       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COMP       RUN    PASS        the junction compressed True; target tgt compressed False; T.TXT compressed False; boxes set 1 of 1; date not set; dialog: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+UNCOMP     fixture: tgt compressed err 0 (True); the junction compressed err 0 (True)
+UNCOMP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNCOMP     RUN    PASS        the junction compressed False; target tgt compressed True; boxes set 1 of 1; date not set; dialog: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+TIME       fixture: tgt modified in 2010; the junction modified in 2026
+TIME       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TIME       RUN    PASS        the junction modified in 2001; target tgt modified in 2010; boxes set 0 of 0; date 1; dialog: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+SUBC       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SUBC       RUN    PASS        sel compressed True; OWN.TXT True; the junction True; target tgt False; T.TXT False; boxes set 2 of 2; date not set; dialog: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+PLAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLAIN      RUN    PASS        the folder p compressed True; modified in 2001; boxes set 1 of 1; date 1; dialog: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: no window
+ENC        RUN    NOT DRIVEN  encrypting would create an EFS certificate in the user's store (none exists); the refusal is checked by saltests and code reading
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

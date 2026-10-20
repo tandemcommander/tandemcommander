@@ -11923,15 +11923,13 @@ static void TestAttrsLink253()
     const DWORD dir = FILE_ATTRIBUTE_DIRECTORY;
     const DWORD rp = FILE_ATTRIBUTE_REPARSE_POINT;
     const DWORD enc = FILE_ATTRIBUTE_ENCRYPTED;
-    CHECK(SalAttrsEntryIsDirLink(dir | rp, TRUE));                               // a junction
-    CHECK(SalAttrsEntryIsDirLink(dir | rp | FILE_ATTRIBUTE_HIDDEN | enc, TRUE)); // other bits do not matter
-    CHECK(!SalAttrsEntryIsDirLink(dir | rp, FALSE));                             // a cloud placeholder folder
-    CHECK(!SalAttrsEntryIsDirLink(dir, TRUE));                                   // a plain folder
-    CHECK(!SalAttrsEntryIsDirLink(rp | FILE_ATTRIBUTE_ARCHIVE, TRUE));           // a file symbolic link: unchanged
-    CHECK(!SalAttrsEntryIsDirLink(0, FALSE));
+    CHECK(SalAttrsEntryIsLink(dir | rp, TRUE));                               // a junction
+    CHECK(SalAttrsEntryIsLink(dir | rp | FILE_ATTRIBUTE_HIDDEN | enc, TRUE)); // other bits do not matter
+    CHECK(!SalAttrsEntryIsLink(dir | rp, FALSE));                             // a cloud placeholder folder
+    CHECK(!SalAttrsEntryIsLink(dir, TRUE));                                   // a plain folder
+    CHECK(!SalAttrsEntryIsLink(0, FALSE));
 
     CHECK(SalAttrsOpenFlags(FALSE, FALSE) == 0);                                                         // a file
-    CHECK(SalAttrsOpenFlags(FALSE, TRUE) == 0);                                                          // never for a file
     CHECK(SalAttrsOpenFlags(TRUE, FALSE) == FILE_FLAG_BACKUP_SEMANTICS);                                 // a plain folder: as before
     CHECK(SalAttrsOpenFlags(TRUE, TRUE) == (FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)); // the link itself
 
@@ -11941,6 +11939,38 @@ static void TestAttrsLink253()
     CHECK(!SalAttrsLinkRefusesEncryption(TRUE, TRUE, dir | rp, dir | rp | FILE_ATTRIBUTE_HIDDEN)); // stays unencrypted
     CHECK(!SalAttrsLinkRefusesEncryption(TRUE, FALSE, dir | rp, dir | rp | enc));                  // encryption not changed
     CHECK(!SalAttrsLinkRefusesEncryption(FALSE, TRUE, dir, dir | enc));                            // not a link: encrypted as before
+}
+
+// feature 272: a file symbolic link's own entry - its compression and times, never its target file's;
+// its encryption change refused; a reparse file that is not a link keeps the old way
+static void TestAttrsFileLink272()
+{
+    const DWORD rp = FILE_ATTRIBUTE_REPARSE_POINT;
+    const DWORD arc = FILE_ATTRIBUTE_ARCHIVE;
+    const DWORD enc = FILE_ATTRIBUTE_ENCRYPTED;
+    CHECK(SalAttrsEntryIsLink(rp | arc, TRUE));                           // a file symbolic link
+    CHECK(SalAttrsEntryIsLink(rp | arc | FILE_ATTRIBUTE_READONLY, TRUE)); // read-only: still the link
+    CHECK(!SalAttrsEntryIsLink(rp | arc, FALSE));                         // a cloud placeholder / dedup / third-party tag
+    CHECK(!SalAttrsEntryIsLink(arc, TRUE));                               // a plain (or hard-linked) file
+    CHECK(!SalAttrsEntryIsLink(arc, FALSE));
+
+    // the rule asked for the file: a readable non-surrogate tag is not a link, an unreadable one is (fail closed)
+    CHECK(!SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x00000123)));
+    CHECK(!SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x9000001A))); // IO_REPARSE_TAG_CLOUD_A
+    CHECK(!SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0x80000013))); // IO_REPARSE_TAG_DEDUP
+    CHECK(SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, TRUE, 0xA000000C)));  // IO_REPARSE_TAG_SYMLINK
+    CHECK(SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(TRUE, TRUE, 0xA000000C)));   // destination read
+    CHECK(SalAttrsEntryIsLink(rp, SalDeleteAsDirLinkDecision(FALSE, FALSE, 0)));          // tag unreadable
+
+    CHECK(SalAttrsOpenFlags(FALSE, TRUE) == FILE_FLAG_OPEN_REPARSE_POINT);                               // a file link's own times (was 0: the target's)
+    CHECK(SalAttrsOpenFlags(TRUE, TRUE) == (FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)); // the compression helpers
+    CHECK(SalAttrsOpenFlags(FALSE, FALSE) == 0);                                                         // a plain file: as before
+
+    CHECK(SalAttrsLinkRefusesEncryption(TRUE, TRUE, rp | arc, rp | arc | enc));   // encrypt a file link
+    CHECK(SalAttrsLinkRefusesEncryption(TRUE, TRUE, rp | arc | enc, rp | arc));   // decrypt a file link
+    CHECK(!SalAttrsLinkRefusesEncryption(TRUE, TRUE, rp | arc, rp | arc));        // nothing to change
+    CHECK(!SalAttrsLinkRefusesEncryption(FALSE, TRUE, rp | arc, rp | arc | enc)); // a non-link reparse file: as before
+    CHECK(!SalAttrsLinkRefusesEncryption(TRUE, FALSE, rp | arc, rp | arc | enc)); // encryption not changed
 }
 
 // feature 222: a name's whole-character prefix within UTF-16 units and bytes
@@ -15308,6 +15338,7 @@ int main(int argc, char** argv)
     TestHexPattern257();
     TestDeleteAsDirLink197();
     TestAttrsLink253();
+    TestAttrsFileLink272();
     TestReparseNameAsPath219();
     TestNamePrefixBytes222();
     TestShortNameClashError203();

@@ -1643,7 +1643,7 @@ BOOL DoCopySecurity(const char* sourceName, const char* targetName, DWORD* err, 
     return ret;
 }
 
-// ownEntry: a directory link - its own compression, never its target folder's (feature 253)
+// ownEntry: a link - its own compression, never its target folder's (feature 253) or file's (feature 272)
 DWORD CompressFile(char* fileName, DWORD attrs, BOOL ownEntry = FALSE)
 {
     DWORD ret = ERROR_SUCCESS;
@@ -1682,7 +1682,7 @@ DWORD CompressFile(char* fileName, DWORD attrs, BOOL ownEntry = FALSE)
     return ret;
 }
 
-// ownEntry: a directory link - its own compression, never its target folder's (feature 253)
+// ownEntry: a link - its own compression, never its target folder's (feature 253) or file's (feature 272)
 DWORD UncompressFile(char* fileName, DWORD attrs, BOOL ownEntry = FALSE)
 {
     DWORD ret = ERROR_SUCCESS;
@@ -8073,9 +8073,10 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
     // feature 253: a directory link (DeleteAsDirLink, fail closed, as Delete and 213's walk) gets its
     // own compression and times, never those of its TARGET folder; its encryption cannot stay on
     // the link (EncryptFile / DecryptFile follow it) - a change of it is refused
-    BOOL isDirLink = SalAttrsEntryIsDirLink(fileAttr, (fileAttr & FILE_ATTRIBUTE_DIRECTORY) &&
-                                                          (fileAttr & FILE_ATTRIBUTE_REPARSE_POINT) &&
-                                                          DeleteAsDirLink(name));
+    // feature 272: a file symbolic link likewise (its target file was compressed and re-timed); the
+    // same rule decides a file listed with the reparse bit - a readable tag that is not a name
+    // surrogate (a cloud placeholder, a deduplicated file) is not a link and keeps the old way
+    BOOL isLink = SalAttrsEntryIsLink(fileAttr, (fileAttr & FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(name));
 
     while (1)
     {
@@ -8085,7 +8086,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
         char* errTitle = NULL;
         if (changeCompression && (attrs & FILE_ATTRIBUTE_COMPRESSED) == 0)
         {
-            error = UncompressFile(name, fileAttr, isDirLink);
+            error = UncompressFile(name, fileAttr, isLink);
             if (error != ERROR_SUCCESS)
             {
                 errTitle = LoadStr(IDS_ERRORCOMPRESSING);
@@ -8095,7 +8096,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
         }
         if (error == ERROR_SUCCESS && changeEncryption && (attrs & FILE_ATTRIBUTE_ENCRYPTED) == 0)
         {
-            if (SalAttrsLinkRefusesEncryption(isDirLink, changeEncryption, fileAttr, attrs))
+            if (SalAttrsLinkRefusesEncryption(isLink, changeEncryption, fileAttr, attrs))
                 error = ERROR_NOT_SUPPORTED; // the ordinary error of this entry (not "not supported on the volume")
             else
                 error = MyDecryptFile(name, fileAttr, TRUE);
@@ -8108,7 +8109,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
         }
         if (error == ERROR_SUCCESS && changeCompression && (attrs & FILE_ATTRIBUTE_COMPRESSED))
         {
-            error = CompressFile(name, fileAttr, isDirLink);
+            error = CompressFile(name, fileAttr, isLink);
             if (error != ERROR_SUCCESS)
             {
                 errTitle = LoadStr(IDS_ERRORCOMPRESSING);
@@ -8119,7 +8120,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
         if (error == ERROR_SUCCESS && changeEncryption && (attrs & FILE_ATTRIBUTE_ENCRYPTED))
         {
             BOOL cancelOper = FALSE;
-            if (SalAttrsLinkRefusesEncryption(isDirLink, changeEncryption, fileAttr, attrs))
+            if (SalAttrsLinkRefusesEncryption(isLink, changeEncryption, fileAttr, attrs))
                 error = ERROR_NOT_SUPPORTED; // the ordinary error of this entry (not "not supported on the volume")
             else
                 error = MyEncryptFile(hProgressDlg, name, fileAttr, attrs, dlgData, cancelOper, TRUE);
@@ -8160,7 +8161,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
                     SalSetFileAttributes(nameSetAttrs, attrs & (~FILE_ATTRIBUTE_READONLY));
                 file = SalCreateFile(nameSetAttrs, GENERIC_READ | GENERIC_WRITE,
                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                     NULL, OPEN_EXISTING, SalAttrsOpenFlags(isDir, isDirLink), NULL);
+                                     NULL, OPEN_EXISTING, SalAttrsOpenFlags(isDir, isLink), NULL);
                 if (file != INVALID_HANDLE_VALUE)
                 {
                     FILETIME ftCreated, ftAccessed, ftModified;
