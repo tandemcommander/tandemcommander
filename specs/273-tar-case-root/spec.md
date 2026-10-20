@@ -121,6 +121,18 @@ copying extracts only `DOCS`'s file.
 - **SC-002**: The case-twin control rows (TAR and 7z) pass before and after.
 - **SC-003**: Feature 252's probe passes after (16 / 0), the build and the unit checks are green.
 
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: Are hot paths, history entries or other settings saved earlier with the typed spelling
+  rewritten? → A: No - nothing stored is changed; only the path the panel enters is spelled as the
+  archive spells it, and what is recorded from then on carries that spelling (autonomous run:
+  conservative).
+- Q: When the typed path is shortened because its tail does not exist, is the tail (the name the
+  panel tries to focus) re-spelled too? → A: No - the focus lookup already ignores case; only the
+  folders the panel enters are re-spelled (autonomous run: conservative, FR-004).
+
 ## Assumptions
 
 - Assumption (autonomous run): the item's Approach offers two directions; the core one (store the
