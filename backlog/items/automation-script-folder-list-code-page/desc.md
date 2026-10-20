@@ -36,7 +36,7 @@ By reading, at e849e68c: `src/plugins/automation/cfgdlg.cpp` - `OnBrowseBtnClick
 (`ListView_SetItemText(hwndList, iSel, 0, szPath)` after `GetTargetDirectory`), the transfer
 function above `OnInitDialog` (`ListView_InsertItem` / `ListView_GetItem` + `AddScriptDirectory`).
 Reported by `python tools/check_encoding.py --plugins` (`utf8-to-legacy-sink`); verdict in
-`specs/255-plugin-encoding-findings/verdicts.md`.
+`specs/255-plugin-encoding-findings/verdicts.md` (branch `255-plugin-encoding-findings`).
 
 ## Expected
 

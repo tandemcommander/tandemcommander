@@ -29,7 +29,7 @@ letters every non-ASCII path is garbled, and in any language a path with an unpa
 
 ## Evidence
 
-Found by the review of feature 255 (`specs/255-plugin-encoding-findings/fix-log.md`, *Review*),
+Found by the review of feature 255 (`specs/255-plugin-encoding-findings/fix-log.md`, *Review*, branch `255-plugin-encoding-findings`),
 by reading, at e849e68c: `src/plugins/checkver/dialogs.cpp` (the open dialog:
 `GetOpenFileNameW` + `SplWToU8`), `src/plugins/checkver/data.cpp` (the
 `sprintf(buff, LoadStr(IDS_FILE_OPENED / IDS_FILE_OPENERROR / IDS_FILE_READERROR), fileName)` +

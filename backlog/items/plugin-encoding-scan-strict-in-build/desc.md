@@ -12,7 +12,7 @@ verified: -
 effort: S
 feature: -
 related: [check-encoding-skips-header-files]
-depends-on: [dbviewer-field-length-separator, renamer-wtf8-names-shown-as-mojibake, uniso-hfs-names-lossy-surrogates, uniso-joliet-file-names-wtf8-garbled]
+depends-on: [dbviewer-field-length-separator, renamer-wtf8-names-shown-as-mojibake, uniso-hfs-names-lossy-surrogates, uniso-joliet-file-names-wtf8-garbled, ftp-wtf8-name-listing-round-trip]
 reason: -
 ---
 
@@ -21,14 +21,17 @@ reason: -
 ## Problem
 
 `tools/check_encoding.py --plugins` is a report only (feature 239): it never fails and the build
-does not run it, so a new encoding defect in a plug-in passes unnoticed. Feature 255 gave all its
-78 findings a verdict: 68 are annotated as harmless, 10 are real defects with their own items. Once
-the items of the **shipped** plug-ins are closed, the scan of the shipped plug-ins reports 0 and
-can guard the build like the core's scan does.
+does not run it, so a new encoding defect in a plug-in passes unnoticed. Feature 255 (stopped
+after its second review; the work is on branch `255-plugin-encoding-findings`, not on `main`) gave
+the 78 findings verdicts: 68 annotated as harmless on the branch, 10 real defects with their own
+items - and review 2 showed one more annotated site is real (FTP,
+`ftp-wtf8-name-listing-round-trip`). Once the branch is finished and the items of the **shipped**
+plug-ins are closed, the scan of the shipped plug-ins reports 0 and can guard the build like the
+core's scan does.
 
 ## Evidence
 
-`specs/255-plugin-encoding-findings/verdicts.md` (the 78 rows) and `fix-log.md`; at the end of
+`specs/255-plugin-encoding-findings/verdicts.md` (branch `255-plugin-encoding-findings`) (the 78 rows) and `fix-log.md`; at the end of
 feature 255 the scan reports 10 findings: 5 in shipped plug-ins (DB Viewer 1, Renamer 1, UnISO 3 -
 the items this one depends on) and 5 in plug-ins that are off (Automation 1, CheckVer 1,
 Multimedia Viewer 1, UnMIME 2). `build.cmd` runs only `check_encoding.py --strict` (the core).
@@ -58,3 +61,4 @@ Items for the plug-ins that are off (`automation-script-folder-list-code-page`,
 - 2026-10-20 — created (source leftover:255)
 - 2026-10-20 — set depends-on=dbviewer-field-length-separator,renamer-wtf8-names-shown-as-mojibake,uniso-hfs-names-lossy-surrogates,uniso-joliet-file-names-wtf8-garbled
 - 2026-10-20 — set related=check-encoding-skips-header-files
+- 2026-10-20 — set depends-on=dbviewer-field-length-separator,renamer-wtf8-names-shown-as-mojibake,uniso-hfs-names-lossy-surrogates,uniso-joliet-file-names-wtf8-garbled,ftp-wtf8-name-listing-round-trip

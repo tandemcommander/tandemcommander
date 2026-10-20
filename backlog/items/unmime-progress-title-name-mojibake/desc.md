@@ -33,7 +33,7 @@ By reading, at e849e68c: `src/plugins/unmime/unmime.cpp`, both `_snprintf_s(titl
 LoadStr(IDS_EXTRTITLE), SalamanderGeneral->SalPathFindFileName(fileName))` sites (unpack of
 selected files and unpack of the whole archive); the Czech template in
 `translations/czech/unmime.slt`. Reported by `python tools/check_encoding.py --plugins`
-(`mixed-composition`); verdict in `specs/255-plugin-encoding-findings/verdicts.md`.
+(`mixed-composition`); verdict in `specs/255-plugin-encoding-findings/verdicts.md` (branch `255-plugin-encoding-findings`).
 
 ## Expected
 

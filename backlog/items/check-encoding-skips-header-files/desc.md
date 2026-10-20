@@ -36,7 +36,7 @@ Headers of the core (`src/*.h`, `src/common/*.h`) are not scanned either.
 
 ## Evidence
 
-Found by the review of feature 255 (`specs/255-plugin-encoding-findings/fix-log.md`, *Review*), by
+Found by the review of feature 255 (`specs/255-plugin-encoding-findings/fix-log.md`, *Review*, branch `255-plugin-encoding-findings`), by
 reading, at e849e68c: `tools/check_encoding.py` `sources()` (`SRC.rglob("*.cpp")`);
 `src/plugins/regedt/utils.h`, `src/plugins/portables/wpdhelpers.h`.
 

@@ -32,7 +32,7 @@ itself uses the names, not the preview text.
 
 By reading, at e849e68c: `src/plugins/renamer/preview.cpp` (the `LVN_GETDISPINFOW` text branch:
 strict probe, then `CP_ACP`). Reported by `python tools/check_encoding.py --plugins`
-(`strict-probe-rejects-wtf8`); verdict in `specs/255-plugin-encoding-findings/verdicts.md`. The
+(`strict-probe-rejects-wtf8`); verdict in `specs/255-plugin-encoding-findings/verdicts.md` (branch `255-plugin-encoding-findings`). The
 rule's definition: `tools/check_encoding.py` (feature 066 invariant).
 
 ## Expected

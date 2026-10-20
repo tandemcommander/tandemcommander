@@ -25,17 +25,17 @@ The ISO plug-in (UnISO) converts a Joliet name (UCS-2) to UTF-8 with the WTF-8 `
 folders) the listing then also calls `EnsureU8Name`, whose raw strict UTF-8 probe rejects that
 form and re-reads the whole name in the system code page. The name in the listing - and the
 extracted file - is garbled, and so is every other non-ASCII letter of it: `a<U+D800>č.txt`
-becomes `aí €Ä….txt` with cp1250. Folders skip `EnsureU8Name` and keep their name.
+becomes `aí €ÄŤ.txt` with cp1250. Folders skip `EnsureU8Name` and keep their name.
 
 ## Evidence
 
-Found by the review of feature 255 (`specs/255-plugin-encoding-findings/fix-log.md`, *Review*),
+Found by the review of feature 255 (`specs/255-plugin-encoding-findings/fix-log.md`, *Review*, branch `255-plugin-encoding-findings`),
 by reading and a Python emulation of the same conversions, at e849e68c:
 `src/plugins/uniso/iso9660.cpp` (the file branch of the directory listing: `ConvJolietName`, then
 `EnsureU8Name` with the comment "A no-op for Joliet"), `src/plugins/uniso/uniso.cpp`
 `EnsureU8Name` (`MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, ...)`). Reported by
 `python tools/check_encoding.py --plugins` (`strict-probe-rejects-wtf8`, `uniso.cpp`); verdict
-in `specs/255-plugin-encoding-findings/verdicts.md`.
+in `specs/255-plugin-encoding-findings/verdicts.md` (branch `255-plugin-encoding-findings`).
 
 ## Expected
 

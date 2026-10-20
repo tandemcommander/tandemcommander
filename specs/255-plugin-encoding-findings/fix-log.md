@@ -90,7 +90,7 @@ marker sits on its line.
 - **MUST 1** - UnISO `uniso.cpp` `EnsureU8Name` (row 74) was marked "archive bytes", but for
   Joliet **files** `iso9660.cpp` calls it on the WTF-8 output of `ConvJolietName`; the strict
   probe rejects the surrogate form and re-reads the name in the code page (`a<U+D800>č.txt` →
-  `aí €Ä….txt`, cp1250). Confirmed by reading. **Fixed**: marker removed, verdict real defect, new
+  `aí €ÄŤ.txt`, cp1250). Confirmed by reading. **Fixed**: marker removed, verdict real defect, new
   item `uniso-joliet-file-names-wtf8-garbled` (review:255).
 - **MUST 2** - CheckVer `logwnd.cpp` (row 35) was marked "not names", but the log shows the script
   path (`data.cpp`, `IDS_FILE_OPENED` & co. composed with the UTF-8 path). Confirmed. **Fixed**:
@@ -119,3 +119,39 @@ After the fixes: `check_encoding.py --plugins` → `TOTAL: 10`, the sites = the 
 lists equal); every false-positive row's reason equals its marker text (68/68, checked by script);
 `--strict` → `TOTAL: 0`, exit 0; `git diff main -- src` 68 added / 0 deleted; `build.cmd` →
 `BUILD SUCCEEDED`, exit 0; `BL check` → `TOTAL: 0`.
+
+### Review 2 (fresh independent agent, with review 1's findings)
+
+Reproduced again: scan `TOTAL: 10` = the 10 real rows; core `--strict` 0; 68 added / 0 deleted;
+markers stripped in a copy → `TOTAL: 78` = baseline; 68/68 reasons equal their markers; all review-1
+fixes verified in place.
+
+- **MUST 1** - FTP `ftputils.cpp` `FTPListingFieldToU8` (row 41) was marked "a server does not send
+  the WTF-8 form", but the plug-in itself uploads WTF-8 bytes verbatim (`FTPU8NameToServer`), and
+  the next listing re-reads such a name whole in the code page; by reading, a second upload's
+  "target exists?" check then never matches and STOR overwrites the remote file without asking.
+  Confirmed by reading `FTPU8NameToServer`. **Not fixed - the run stops** (below); recorded as item
+  `ftp-wtf8-name-listing-round-trip` (review:255, severity 7, by reading) and added to the
+  dependencies of `plugin-encoding-scan-strict-in-build`.
+- SHOULD 1 - CheckVer `dialogs.cpp:314` (row 3): the filter names in the list box are module names
+  from the update script, possibly UTF-8 - the reason "code page like the template" holds only for
+  ASCII names. Open (the marker stays on the branch as written).
+- SHOULD 2 - the Joliet example: `aí €ÄŤ.txt` (0x8D is Ť in cp1250), not `aí €Ä….txt`. **Fixed** in
+  the item and above.
+- NOTE 1 - TAR / UnCAB / UnMIME (rows 67, 68, 75): "the WTF-8 form does not arise" is unproven for
+  third-party packers that might write a lone surrogate as 3 bytes. Open.
+- NOTE 2 - the HFS+ root name buffer (`udfiso.cpp` `rootName[128]`) is too small for long
+  non-ASCII names. **Added** to the HFS+ item.
+- NOTE 3-6 (lossy `?` displays in PictView / ZIP preview; `OLE2A` also feeds the InputBox prompt;
+  markers on top of an existing comment block; the file-wide `dead-dispinfow` marker in
+  `ftp/dialogs6.cpp` would silence a future dead handler) - recorded here, no change.
+
+## Stop
+
+Stop rule §3 #3: the independent review rejected the work twice (review 1: 3 MUST, fixed; review 2:
+1 MUST - an annotated "false positive" that is a real FTP defect). The work stays on this branch:
+68 markers (one of them - row 41 - must be removed, SHOULD 1 and NOTE 1 re-judged), `verdicts.md`,
+and the backlog items. To finish: remove the FTP marker (row 41 → real defect,
+`ftp-wtf8-name-listing-round-trip`), decide CheckVer row 3 and the archive rows 67/68/75, run a fresh
+review, then close the item as SKILL.md step 8 describes. The 11 items this run created are brought
+to `main` (SKILL.md step 10.2a).

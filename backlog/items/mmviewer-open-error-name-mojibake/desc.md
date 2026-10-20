@@ -32,7 +32,7 @@ By reading, at e849e68c: `src/plugins/mmviewer/renmain.cpp` `CRendererWindow::Op
 `sprintf(buff, LoadStr(IDS_ERROR_OPENING), name)` branch); `name` comes from `ViewFile`
 (`mmviewer.cpp`, UTF-8 by interface 104); the Czech template in
 `translations/czech/mmviewer.slt`. Reported by `python tools/check_encoding.py --plugins`
-(`mixed-composition`); verdict in `specs/255-plugin-encoding-findings/verdicts.md`.
+(`mixed-composition`); verdict in `specs/255-plugin-encoding-findings/verdicts.md` (branch `255-plugin-encoding-findings`).
 
 ## Expected
 

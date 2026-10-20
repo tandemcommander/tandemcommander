@@ -32,7 +32,7 @@ locales with ',' or '.', are not affected.
 By reading, at e849e68c: `src/plugins/dbviewer/dialogs.cpp` `CColumnsDialog::SetLVTexts` (the
 "len" column). `PrintDiskSize` encoding: `src/plugins/shared/spl_gen.h` (feature 067 note).
 Reported by `python tools/check_encoding.py --plugins` (`utf8-to-legacy-sink`); verdict in
-`specs/255-plugin-encoding-findings/verdicts.md`.
+`specs/255-plugin-encoding-findings/verdicts.md` (branch `255-plugin-encoding-findings`).
 
 ## Expected
 
