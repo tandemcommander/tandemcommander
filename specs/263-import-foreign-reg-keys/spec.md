@@ -37,6 +37,7 @@ configuration writes and deletes foreign keys silently.
 - Q: Do delete lines (`[-key]`) follow the same rule? → A: Yes - a delete line outside our root refuses the file like a key line; delete lines inside our root (the program's own export starts with `[-HKEY_CURRENT_USER\Software\Tandem Commander\0.1]`) keep working (autonomous run: conservative)
 - Q: Does the now unused question text `IDS_IMPORTCFG_NOTOURVER` get removed? → A: No - removing a UI string also needs the translation refresh; it stays in the resources unused (autonomous run: rule 084)
 - Q: A refused file stays where it is - is it refused again (with the message) at every start? → A: Yes, like a file with a format error today; the program never deletes, renames or rewrites the user's file (autonomous run: conservative)
+- Q: The program's own export (and every settings backup of feature 245) writes a line for each key above the root - `[HKEY_CURRENT_USER\Software]`, `[HKEY_CURRENT_USER\Software\Tandem Commander]` - without values. Are those lines outside the root? → A: No: a key line naming a strict parent of the root is accepted, nothing is created for it, and a value (or a value deletion) under it refuses the file; a delete line of a parent refuses the file (review 1, MUST: the first version refused every real export) (autonomous run: conservative + FR-005)
 - Q: Is the key that caused the refusal recorded anywhere? → A: In the program's trace log only (the first key outside the root, with the file name); the message box stays the existing text (autonomous run: conservative + rule 084)
 
 ## User Scenarios & Testing *(mandatory)*
@@ -118,7 +119,10 @@ import exactly as today, without a message.
 - A key named like our root with a different letter case (`software\tandem commander\0.1`) is ours.
 - A sibling root that starts with our root's text (`Software\Tandem Commander\0.10`,
   `Software\Tandem Commander\0.1x`) is not ours.
-- The parent key `Software\Tandem Commander` (with or without values) is not ours.
+- The parent keys `Software` and `Software\Tandem Commander` as bare key lines (our export writes
+  them) are accepted and create nothing; with a value, or as a delete line, they refuse the file.
+- A real file of the program (a feature 245 settings backup, the clear-key export) imports without a
+  message (probe rows EXPORTSHAPE, EXPORTCLEAR, REALBACKUP).
 - A key with a doubled backslash after the root key name (`HKEY_CURRENT_USER\\Software\...`) is not
   recognised as ours and refuses the file (fail closed).
 - Values before the first key line or after a delete line already fail the check run in memory and
@@ -137,7 +141,9 @@ import exactly as today, without a message.
 - **FR-001**: Before anything is written to the registry, the import MUST check every key line and
   every delete line of the file; if any of them names a key that is not the current configuration
   root `HKEY_CURRENT_USER\Software\Tandem Commander\0.1` or a key below it, the whole file MUST be
-  refused and nothing from it written or deleted.
+  refused and nothing from it written or deleted. Exception: a key line (not a delete line) naming a
+  strict parent of the root (`Software`, `Software\Tandem Commander` - written by the program's own
+  export) is accepted without creating anything; a value line under it refuses the file.
 - **FR-002**: A refused file MUST be reported with the existing message `IDS_IMPORTCFG_NOTREG`
   ("Unable to import the specified file. It is not a configuration file." with the file name); no
   new UI string is added.
@@ -172,9 +178,9 @@ import exactly as today, without a message.
 
 ## Assumptions
 
-- Assumption (autonomous run): the program's own export never contains a key outside its root
-  (`ExportConfiguration` copies only `HKCU\<SALAMANDER_ROOT_REG>`), so refusing such files cannot
-  refuse a file the program wrote.
+- Assumption (autonomous run): the program's own export holds keys and values only inside its root
+  (`ExportConfiguration` copies only `HKCU\<SALAMANDER_ROOT_REG>`); its dump writes bare lines for
+  the two parent keys (review 1 - the first version of this spec missed them), which FR-001 accepts.
 - Assumption (autonomous run): an old Salamander / Open Salamander `config.reg` imported "anyway"
   had no use in Tandem Commander (single root, no legacy chain since 032; feature 245 reads those
   roots read-only and never writes them); refusing it loses no supported workflow.

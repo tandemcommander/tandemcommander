@@ -45,4 +45,11 @@
 - `ExportConfiguration` (`src/salamdr2.cpp`) copies only `HKEY_CURRENT_USER\<SALAMANDER_ROOT_REG>`
   (`CopyBranch`) and, with *clear key before import*, writes the delete line of that root first -
   both inside the root. `SALAMANDER_ROOT_REG` = `SalamanderConfigurationRoots[0]` (single root
-  since 032). So the program's own files are never refused.
+  since 032).
+- **Correction (review 1, MUST)**: the dump (`CKey::Dump`, `src/reglib/src/reginmem.cpp`) writes a
+  line for every key of the memory tree except the HKEY roots, so a real export also holds
+  `[HKEY_CURRENT_USER\Software]` and `[HKEY_CURRENT_USER\Software\Tandem Commander]` without values
+  (a feature 245 backup starts with them). The first version refused every real export. Decision:
+  such parent key lines are accepted without creating anything (`SalRegKeyIsParentOfRoot`); a value
+  under them or a delete line of them refuses the file. The probe got rows built from the export's
+  shape and from a real 245 backup.

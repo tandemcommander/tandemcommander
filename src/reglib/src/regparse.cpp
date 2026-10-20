@@ -76,6 +76,7 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
     HKEY hKey = NULL;
     eRPE_ERROR ret = RPE_OK;
     BOOL bReg5File;
+    BOOL inParentOfRoot = FALSE; // feature 263: the last key line named a key above 'onlyUnderHKCU'
 
     line = _tcstok(buf, _T("\r\n"));
     if (!line)
@@ -206,9 +207,15 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                 return RPE_INVALID_KEY;
             }
             s[-1] = 0;
+            inParentOfRoot = FALSE;
             if (onlyUnderHKCU != NULL)
             { // feature 263: never create, open or delete a key outside the allowed root
 #if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+                if (hParentKey == HKEY_CURRENT_USER && !bDelete && SalRegKeyIsParentOfRoot(keyName, onlyUnderHKCU))
+                { // our own export writes the keys above the root too, without values: nothing to create
+                    inParentOfRoot = TRUE;
+                    continue;
+                }
                 if (hParentKey != HKEY_CURRENT_USER || !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU))
                 {
                     TRACE_E("Parse(): key outside the allowed root: " << (bDelete ? "[-" : "[") << line << "]");
@@ -250,6 +257,14 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
         if ((*line == '\"') || (*line == '@'))
         { // First char on the line -> MBCS-safe
             LPTSTR s;
+
+            if (inParentOfRoot) // feature 263: a value (or its deletion) in a key above the allowed root
+            {
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+                TRACE_E("Parse(): value in a key above the allowed root: " << line);
+#endif
+                return RPE_KEY_OUTSIDE_ROOT;
+            }
 
             if (*line != '@')
             {

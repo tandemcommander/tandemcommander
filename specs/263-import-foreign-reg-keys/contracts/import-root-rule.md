@@ -17,13 +17,22 @@ Internal to the core (not a plug-in interface).
 
 Non-ASCII bytes compare exactly (fail closed).
 
+## `SalRegKeyIsParentOfRoot(const char* name, const char* root)` - review 1
+
+TRUE when `root` starts with `name` (ASCII case-insensitive) followed by `\`: `Software`,
+`Software\Tandem Commander`. FALSE for the root itself, keys below it, `Software\` (trailing
+backslash), `Software\Tandem` (not at a backslash), siblings, empty / NULL. The two rules are never
+both TRUE.
+
 ## `Parse(buf, registry, doNotDeleteHiddenKeysAndValues, onlyUnderHKCU = NULL)` - reglib
 
 - `onlyUnderHKCU == NULL`: unchanged behaviour.
 - otherwise: at every line starting with `[` (key or delete line), after the root key and the name
-  are recognised and before anything is created, opened or deleted: when the root key is not
-  `HKEY_CURRENT_USER` or `SalRegKeyIsInsideRoot(name, onlyUnderHKCU)` is FALSE, `Parse` returns
-  `RPE_KEY_OUTSIDE_ROOT`. Lines before it may already have been applied - therefore the caller runs
+  are recognised and before anything is created, opened or deleted: a key line (not a delete line)
+  of `HKEY_CURRENT_USER` with `SalRegKeyIsParentOfRoot(name, onlyUnderHKCU)` creates nothing and
+  marks the following lines as "in a parent" - a value line (`"name"=`, `@=`, also `=-`) there
+  returns `RPE_KEY_OUTSIDE_ROOT`; otherwise when the root key is not `HKEY_CURRENT_USER` or
+  `SalRegKeyIsInsideRoot(name, onlyUnderHKCU)` is FALSE, `Parse` returns `RPE_KEY_OUTSIDE_ROOT`. Lines before it may already have been applied - therefore the caller runs
   a memory pass first.
 - Outside the core build (`INSIDE_SALAMANDER` with the code-page build not defined) a non-NULL
   restriction refuses every key line (fail closed); no such caller exists.

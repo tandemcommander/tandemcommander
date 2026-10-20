@@ -91,3 +91,41 @@ Negative controls:
   its PASS needs (reasoned, not run);
 - `salregroot.h` broken by hand (`return TRUE` instead of the `\` boundary test): `saltests: 24679
   checks, 2 failed` (the `0.10` / `0.1x` siblings); restored, `0 failed`.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - 1 MUST, 1 SHOULD
+
+- **MUST**: every file the program exports was refused. `CKey::Dump`
+  (`src/reglib/src/reginmem.cpp`) writes a line for every key except the HKEY roots, so a real
+  export / feature 245 settings backup holds `[HKEY_CURRENT_USER\Software]` and
+  `[HKEY_CURRENT_USER\Software\Tandem Commander]` (no values) before the root; the rule refused
+  them. Reproduced by the reviewer on the hidden desktop (copy of the probe with a row EXPORTSHAPE:
+  FAIL, the refusal box) and on the newest backup's first lines. T010 had been ticked from reading
+  `ExportConfiguration` only - the dump's parent lines were missed. Consequence: `config.reg` / `-C`
+  of an exported file, and 245's restore advice (`IDS_CFGIMP_RESTORE`, `-C "<backup>"`), broken; no
+  data lost (refused in the memory pass).
+- **SHOULD**: no probe row used real program output.
+- NOTES: the main defect fixed as described; rule boundary and fail-closed DBCS / non-ASCII
+  behaviour hold; callers: `Parse` - `ImportConfiguration` (both passes) + the stand-alone tester;
+  `ImportConfiguration` - `salamdr1.cpp`; `ExportConfiguration` - `mainwnd3.cpp`, `cfgimport.cpp`.
+
+Fix:
+- `salregroot.h`: `SalRegKeyIsParentOfRoot` (root starts with the name followed by `\`); shared
+  `SalRegRootStartsWithCI`.
+- `regparse.cpp`: a key line (not a delete line) of HKCU naming a parent of the root creates nothing
+  and sets `inParentOfRoot`; a value line (set or delete) while it is set returns
+  `RPE_KEY_OUTSIDE_ROOT`; a delete line of a parent stays refused.
+- saltests: 14 checks for the parent rule (`saltests: 24693 checks, 0 failed`).
+- probe: rows EXPORTSHAPE (the dump's shape), PARENTVAL (a value in the parent - refused, not
+  written), PARENTDEL (`[-HKCU\Software\Tandem Commander]` - refused), EXPORTCLEAR (clear-key line +
+  parents + the whole current configuration from `reg export` + our key), REALBACKUP (the newest
+  real 245 backup, `before-import-20261020-051339.reg`; NOT DRIVEN when none).
+- Spec FR-001, Clarifications, Edge Cases, Assumptions; contract; research R5 corrected.
+
+After (`probe/result_after2.txt`): PASS 22, FAIL 0, NOT DRIVEN 0; registry restored identical
+(SHA-256 `A46438BF...` before and after); no probe key left. Negative control of the new rows: the
+reviewer's EXPORTSHAPE row FAILED on the first fixed build (`35b787cd`).
+
+Process note: a Bash here-document turned `\0` of a probe line into a NUL byte (CLAUDE.md rule
+123); found by `grep` reporting a binary file, repaired before the run.

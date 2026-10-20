@@ -14875,6 +14875,22 @@ static void TestRegImportRoot263()
     CHECK(!SalRegKeyIsInsideRoot("Software\\Tandem Commander\\0\xC2\xB7"
                                  "1",
                                  root)); // a non-ASCII byte where the root has '.'
+
+    // review 1 (MUST): our own export writes the keys above the root as lines of their own
+    CHECK(SalRegKeyIsParentOfRoot("Software", root));                         // [HKEY_CURRENT_USER\Software]
+    CHECK(SalRegKeyIsParentOfRoot("Software\\Tandem Commander", root));       // [HKEY_CURRENT_USER\Software\Tandem Commander]
+    CHECK(SalRegKeyIsParentOfRoot("software\\TANDEM COMMANDER", root));       // letter case
+    CHECK(!SalRegKeyIsParentOfRoot("Software\\Tandem Commander\\0.1", root)); // the root itself is inside, not a parent
+    CHECK(!SalRegKeyIsParentOfRoot("Software\\Tandem Commander\\0.1\\X", root));
+    CHECK(!SalRegKeyIsParentOfRoot("Software\\Tandem", root)); // not at a backslash
+    CHECK(!SalRegKeyIsParentOfRoot("Soft", root));
+    CHECK(!SalRegKeyIsParentOfRoot("Software\\", root));          // a trailing backslash: not a key of the path
+    CHECK(!SalRegKeyIsParentOfRoot("Software\\Microsoft", root)); // a sibling branch
+    CHECK(!SalRegKeyIsParentOfRoot("", root));                    // [HKEY_CURRENT_USER]
+    CHECK(!SalRegKeyIsParentOfRoot(NULL, root));
+    CHECK(!SalRegKeyIsParentOfRoot("Software", ""));
+    CHECK(!SalRegKeyIsParentOfRoot("Software", NULL));
+    CHECK(!SalRegKeyIsInsideRoot("Software", root) && !SalRegKeyIsInsideRoot("Software\\Tandem Commander", root)); // never both
 }
 
 int main(int argc, char** argv)

@@ -16,6 +16,14 @@
       NOROOT  only the foreign key - PASS = the foreign key NOT written (whatever is answered)
       DELETE  our key + [-HKCU\Software\TC263ProbeVictim] (the victim made by the probe) - PASS = the
               victim still exists
+      EXPORTSHAPE  the shape of the program's own export: [HKCU\Software], [HKCU\Software\Tandem Commander],
+              the root, our key - imported, no message (review 1)
+      PARENTVAL   a value in [HKCU\Software\Tandem Commander] + our key - refused, the value not written
+      PARENTDEL   [-HKCU\Software\Tandem Commander] + our key - refused, the configuration still there
+      EXPORTCLEAR the clear-key export: [-root], the parents, the whole current configuration (reg export), our
+              key - imported, no message
+      REALBACKUP  the newest settings backup of feature 245 (a file the program wrote) - imported, no message;
+              NOT DRIVEN when there is none
       HKCR    our key + [HKEY_CLASSES_ROOT\TC263ProbeClass] - PASS = a message, the class key exists
               neither in HKCU\Software\Classes nor in HKLM\Software\Classes, our key not imported
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified; the probe's
@@ -48,6 +56,7 @@ function Clear-ProbeKeys {
     foreach ($k in @("HKCU:\Software\$Foreign", "HKCU:\Software\$Victim", "HKCU:\Software\Classes\$Class", "$PsOurs\Probe263", "$PsOurs\Probe263Old")) {
         if (Test-Path -LiteralPath $k) { Remove-Item -LiteralPath $k -Recurse -Force }
     }
+    Remove-ItemProperty -LiteralPath 'HKCU:\Software\Tandem Commander' -Name 'TC263ProbeParentValue' -ErrorAction SilentlyContinue
 }
 function Has([string]$k) { return [bool](Test-Path -LiteralPath $k) }
 function OurValue {
@@ -80,13 +89,16 @@ function Serve-Start([int]$Id, [double]$Seconds = 60) {
     return , $msgs
 }
 
-function Run-Case([string]$Case, [string[]]$Body, [scriptblock]$Prepare, [scriptblock]$Judge) {
+function Run-Case([string]$Case, [string[]]$Body, [scriptblock]$Prepare, [scriptblock]$Judge, [string]$CopyFrom) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     NewDir $d
     $file = $d + '\config.reg'
-    $text = "Windows Registry Editor Version 5.00`r`n`r`n" + (($Body | ForEach-Object { $_ }) -join "`r`n") + "`r`n"
-    [IO.File]::WriteAllText($LP + $file, $text, (New-Object Text.UnicodeEncoding($false, $true)))
+    if ($CopyFrom) { [IO.File]::Copy($CopyFrom, $LP + $file, $true) }
+    else {
+        $text = "Windows Registry Editor Version 5.00`r`n`r`n" + (($Body | ForEach-Object { $_ }) -join "`r`n") + "`r`n"
+        [IO.File]::WriteAllText($LP + $file, $text, (New-Object Text.UnicodeEncoding($false, $true)))
+    }
     Clear-ProbeKeys
     if ($Prepare) { & $Prepare }
     $id = 0; $before = Reports
@@ -106,9 +118,11 @@ function Run-Case([string]$Case, [string[]]$Body, [scriptblock]$Prepare, [script
             Old = Has "$PsOurs\Probe263Old"
             Value = OurValue
             Class = (Has "HKCU:\Software\Classes\$Class") -or (Has "HKLM:\Software\Classes\$Class")
+            ParentVal = $null -ne (Get-ItemProperty -LiteralPath 'HKCU:\Software\Tandem Commander' -Name 'TC263ProbeParentValue' -ErrorAction SilentlyContinue)
+            Config = Has "$PsOurs\Configuration"
         }
         $ok = & $Judge $facts
-        Row $Case 'RUN' (V $ok) ("foreign key {0}; victim {1}; class key {2}; Probe263Old {3}; Probe263 v={4}; windows: {5}" -f $facts.Foreign, $facts.Victim, $facts.Class, $facts.Old, $(if ($null -eq $facts.Value) { '<none>' } else { $facts.Value }), $facts.Msgs)
+        Row $Case 'RUN' (V $ok) ("foreign key {0}; victim {1}; class key {2}; parent value {3}; Probe263Old {4}; Probe263 v={5}; Configuration key {6}; windows: {7}" -f $facts.Foreign, $facts.Victim, $facts.Class, $facts.ParentVal, $facts.Old, $(if ($null -eq $facts.Value) { '<none>' } else { $facts.Value }), $facts.Config, $facts.Msgs)
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before }; Clear-ProbeKeys }
@@ -133,6 +147,24 @@ try {
     Run-Case 'NOROOT' $foreignKey $null { param($f) -not $f.Foreign }
     Run-Case 'DELETE' ($ourKey + @("[-HKEY_CURRENT_USER\Software\$Victim]", '')) { $k = New-Item -Path "HKCU:\Software\$Victim" -Force; [void](New-ItemProperty -LiteralPath "HKCU:\Software\$Victim" -Name 'keep' -Value 'me' -Force) } { param($f) $f.Victim -and $null -eq $f.Value }
     Run-Case 'HKCR' ($ourKey + @("[HKEY_CLASSES_ROOT\$Class]", '"x"="1"', '')) $null { param($f) -not $f.Class -and $null -eq $f.Value -and $f.Msgs -match 'not a configuration file' }
+    # review 1 (MUST): the program's own export writes the keys above the root as lines of their own
+    $parents = @('[HKEY_CURRENT_USER\Software]', '', '[HKEY_CURRENT_USER\Software\Tandem Commander]', '', "[$Ours]", '')
+    Run-Case 'EXPORTSHAPE' ($parents + $ourKey) $null { param($f) $f.Value -eq '1' -and $f.Msgs -eq 'no window' }
+    Run-Case 'PARENTVAL' (@('[HKEY_CURRENT_USER\Software\Tandem Commander]', '"TC263ProbeParentValue"="1"', '') + $ourKey) $null { param($f) -not $f.ParentVal -and $null -eq $f.Value -and $f.Msgs -match 'not a configuration file' }
+    Run-Case 'PARENTDEL' (@('[-HKEY_CURRENT_USER\Software\Tandem Commander]', '') + $ourKey) $null { param($f) $f.Config -and $null -eq $f.Value -and $f.Msgs -match 'not a configuration file' }
+    if (Want 'EXPORTCLEAR') {
+        # the export with "clear the key before import": the delete line of the root, the parents, the whole configuration
+        $tmp = $Root + '\current.reg'
+        & cmd.exe /c "reg export `"$RegKey\0.1`" `"$tmp`" /y >nul 2>&1"
+        $cur = @([IO.File]::ReadAllLines($LP + $tmp, [Text.Encoding]::Unicode) | Select-Object -Skip 1)
+        Run-Case 'EXPORTCLEAR' (@("[-$Ours]", '') + $parents + $cur + @('') + $ourKey) $null { param($f) $f.Value -eq '1' -and $f.Config -and $f.Msgs -eq 'no window' }
+    }
+    if (Want 'REALBACKUP') {
+        # a file the program wrote: the newest settings backup of feature 245 (ExportConfiguration with the clear-key line)
+        $bk = @(Get-ChildItem -LiteralPath (Join-Path $env:APPDATA 'Tandem Commander\Settings backups') -Filter '*.reg' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1)
+        if ($bk.Count) { Run-Case 'REALBACKUP' $null $null { param($f) $f.Config -and $f.Msgs -eq 'no window' } $bk[0].FullName; Out ('           (REALBACKUP = ' + $bk[0].Name + ')') }
+        else { Row 'REALBACKUP' 'RUN' 'NOT DRIVEN' 'no settings backup of feature 245 on this machine' }
+    }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
