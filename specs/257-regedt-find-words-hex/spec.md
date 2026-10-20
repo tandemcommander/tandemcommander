@@ -26,6 +26,15 @@ defects remain from the review of feature 190 (items 1-5 were fixed by 191 / 192
    looked for other bytes than typed. With code page 1250 (this machine) the probe's quoted
    C-caron is one byte and is found - a control.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: Is the text between single quotes of a hex pattern converted with the program's code page or as UTF-8? → A: the program's code page, the same conversion the plain-text search's byte pattern uses (autonomous run: item)
+- Q: What happens to a quoted letter the code page cannot represent? → A: unchanged - the code page's replacement character, as the plain-text pattern converts it (autonomous run: conservative)
+- Q: What happens when the conversion of a quoted text fails outright? → A: the pattern is refused with the existing "bad hexadecimal string" message, before the search starts (autonomous run: conservative)
+- Q: Should Whole words also accept punctuation as a boundary, as the help says? → A: no - not named by the item; the boundary stays a space character, the mismatch with the help is recorded as a separate Inbox item (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Whole-word regular expression on every line (Priority: P1)
@@ -93,6 +102,8 @@ byte.
 - A letter outside the Basic Multilingual Plane (a surrogate pair) inside `'...'`: converted as
   one character, not as two halves.
 - An unclosed `'` runs to the end of the pattern (unchanged).
+- A quoted text whose conversion fails outright: refused with the "bad hexadecimal string"
+  message before the search starts.
 - `"..."` text (UTF-16) and the hex digits are unchanged.
 - A whole-word match at the start or end of a later line: the line's start / end count as word
   boundaries, as on the first line.
