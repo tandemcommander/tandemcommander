@@ -7,8 +7,8 @@ area: other-plugins
 source: leftover:143
 who: agent
 created: 2026-10-14
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 5eb288af
 effort: M
 feature: -
 related: [diskmap-close-real-mouse-rows]
@@ -43,3 +43,4 @@ Low: part (1) needs the user to force the unload, part (2) a narrow timing. If t
 - 2026-10-14 — feature 143 done; the forced unload during a shell command recorded as left
 - 2026-10-14 — feature 147 done; its review recorded the hex view's stray box (LOW-2)
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-20 — verified at 5eb288af: at 5eb288af by code: Release(force) still KillAll(TRUE) (200 ms, TerminateThread); hex WM_USER_HANDLEFILEERROR unguarded in the WM_DESTROY pump; CFileMapping::Destroy keeps FileSize
