@@ -1,16 +1,16 @@
 ---
 title: Popup menu mnemonics fail on DBCS / UTF-8 code pages; dialog hot keys by byte
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: panels-ui
 source: leftover:237
 who: agent
 created: 2026-10-16
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 084744e0
 effort: M
-feature: -
+feature: 256
 related: []
 depends-on: []
 reason: -
@@ -37,3 +37,5 @@ Narrow: only DBCS or code-page-65001 systems and owner-draw shell extensions; se
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at 084744e0: at 084744e0: PeekMessageA (popup loop) turns posted U+0416 into 3F, U+010D into 63, PeekMessageW exact; WM_MENUCHAR wParam=MF_POPUP by reading; GetControlHotKey byte vs VK (ru/uk only)
+- 2026-10-20 — run started, feature 256
