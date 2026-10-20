@@ -11,7 +11,7 @@ updated: 2026-10-20
 verified: -
 effort: S
 feature: -
-related: [menu-popup-loop-wide-mnemonics]
+related: []
 depends-on: []
 reason: -
 ---
@@ -39,3 +39,4 @@ excluded - review 2 of 256, N2).
 ## Log
 
 - 2026-10-20 — created (source review:256)
+- 2026-10-20 — related item menu-popup-loop-wide-mnemonics done in feature 256

@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252 |
@@ -3145,3 +3145,20 @@ a few early ones are out of sequence).
   `renamer-regex-single-byte-classes`. Probe `ren_regex_probe.ps1` 17 / 19 FAIL -> 25 / 0 (50 / 0
   with END rows); 210 16 / 0, 196 / 199 / 206-209 pass; two refute-first reviews (M1 escaped
   letter taken as its lead byte - fixed; S1, S2, review-2 S1 fixed).
+- 256-popup-wide-mnemonics: a popup menu took the typed key through a code-page loop - a character
+  outside the keyboard layout's code page arrived as '?' (and ran an item whose hot key is '?'), a
+  posted U+010D as 'c', a DBCS one as bytes; the owner question (`WM_MENUCHAR`) carried no character,
+  so owner-drawn shell-extension items (TortoiseSVN) never answered; the Find window compared a
+  hidden control's code-page hot-key byte with a virtual key ("R&&D" gave 'D'). Now the popup loop is
+  wide (`PeekMessageW` / `DispatchMessageW`, `OnChar(WCHAR)`), the question is
+  `MAKEWPARAM(key, MF_POPUP)` sent in the owner's own kind (a W send to a code-page window scrambles
+  wParam - measured), select / execute answers are carried out for a valid item of a popup built from
+  a Windows menu (`SalMenuCharAnswer`), and Find matches by virtual key (ASCII, as before) and by
+  `WM_SYSCHAR` character (`SalDlgHotKeyW` and friends, `salmenuhotkey.h`, saltests). Traps: honouring
+  MNC_EXECUTE made an uninitialized `LRESULT` in `CFilesBox` dangerous (review 1 MUST - all answers
+  start at 0 now); `DefWindowProc` answers 0. Limits: the menu bar's own loop (F10, then a letter)
+  stays code-page (Inbox `menubar-loop-wide-mnemonics`); the panel's background / New menus and the
+  Find window lose the owner's answer (Inbox `menuchar-owner-routing`); real keyboards, IMEs,
+  DBCS / UTF-8 systems and TortoiseSVN are a person's (`popup-hot-keys-real-keyboard-256`). From
+  backlog item `menu-popup-loop-wide-mnemonics`. Probe `pm256_probe.ps1` 3 FAIL -> 6 / 0; two
+  refute-first reviews (M1, S1 fixed; S2 recorded).
