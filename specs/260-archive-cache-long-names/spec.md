@@ -89,7 +89,8 @@ user gets a file named differently than the one packed.
 - Two members with the same long name in different archives or panels: the temporary copies stay
   separate as before (the cache's identity rules are not changed).
 - A member name that is invalid on Windows (a trailing dot): F3 keeps its existing valid
-  temporary name; F4 keeps its existing refusal.
+  temporary name (feature 222: shortened at a whole letter to 255 units and 256 bytes - a view-only
+  copy, never packed back); F4 keeps its existing refusal.
 - A temporary folder on a long %TEMP% path: the limit is measured on the whole path, so a long
   %TEMP% only lowers the name length that fits; beyond it the existing refusal appears.
 - The edited copy cannot be packed back (the archive is read-only): the "copy the edited files

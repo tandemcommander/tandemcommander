@@ -153,6 +153,7 @@ Last triaged: 2026-10-19
 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | review:248 | 2026-10-19 |
 | [Unpack refused at a link names a temporary folder, not the archive folder](items/unpack-refused-at-a-link-names-a-temporary-folder-not-the/desc.md) | improvement | 2 | archives | leftover:249 | 2026-10-19 |
 | [A damaged viewer, editor or User Menu entry erases the entries after it](items/a-damaged-viewer-editor-or-user-menu-entry-erases-the/desc.md) | bug | 7 | panels-ui | review:250 | 2026-10-20 |
+| [A .gz file whose stored name is too long for Windows: refuse it or use the archive name](items/a-gz-file-whose-stored-name-is-too-long-for-windows-refuse/desc.md) | decision | 3 | archives | review:260 | 2026-10-20 |
 | [A ZIP made on Windows that holds names differing only in case is not case-sensitive](items/a-zip-made-on-windows-that-holds-names-differing-only-in/desc.md) | bug | 5 | archives | leftover:252 | 2026-10-20 |
 | [Automation: a script folder with non-ASCII letters is shown as mojibake in the configuration](items/automation-script-folder-list-code-page/desc.md) | bug | 2 | other-plugins | measure:255 | 2026-10-20 |
 | [Change Attributes on a file symbolic link compresses / re-times the target file](items/change-attributes-on-a-file-symbolic-link-compresses-re/desc.md) | bug | 5 | data-safety | leftover:253 | 2026-10-20 |
@@ -162,6 +163,9 @@ Last triaged: 2026-10-19
 | [Copying from a TAR folder opened in another case extracts nothing](items/copying-from-a-tar-folder-opened-in-another-case-extracts/desc.md) | bug | 5 | archives | review:252 | 2026-10-20 |
 | [Create Directory refuses a relative name in a folder whose path is 260+ bytes](items/create-directory-refuses-a-relative-name-in-a-folder-whose/desc.md) | bug | 5 | long-paths | measure:259 | 2026-10-20 |
 | [DB Viewer: a field length of 1000 or more shows a broken thousands separator](items/dbviewer-field-length-separator/desc.md) | bug | 2 | other-plugins | measure:255 | 2026-10-20 |
+| [Editing long-named archive members: the rows the feature-260 probe could not drive](items/editing-long-named-archive-members-the-rows-the-feature-260/desc.md) | person-step | 6 | archives | leftover:260 | 2026-10-20 |
+| [F3 / F4 refuse archive members whose path inside the archive has 520 bytes or more](items/f3-f4-refuse-archive-members-whose-path-inside-the-archive/desc.md) | improvement | 4 | archives | leftover:260 | 2026-10-20 |
+| [Focusing an archive member with a very long name shows "Expanded string is too large." twice](items/focusing-an-archive-member-with-a-very-long-name-shows/desc.md) | bug | 4 | panels-ui | measure:260 | 2026-10-20 |
 | [FTP: a path whose escaped form does not fit MAX_PATH is left half-escaped](items/ftp-escaped-path-does-not-fit-decision/desc.md) | decision | 2 | ftp | manual | 2026-10-20 |
 | [FTP: download and upload refuse local paths and names over 259 bytes](items/ftp-local-long-paths/desc.md) | improvement | 3 | ftp | manual | 2026-10-20 |
 | [FTP: a mask ? takes two code-page bytes of a legacy server as one letter](items/ftp-mask-letters-by-server-encoding/desc.md) | bug | 2 | ftp | manual | 2026-10-20 |
@@ -187,6 +191,7 @@ Last triaged: 2026-10-19
 | [ISO plug-in: HFS+ names with an unpaired surrogate are changed to U+FFFD](items/uniso-hfs-names-lossy-surrogates/desc.md) | bug | 2 | archives | measure:255 | 2026-10-20 |
 | [ISO plug-in: a Joliet file name with an unpaired surrogate is garbled, other letters too](items/uniso-joliet-file-names-wtf8-garbled/desc.md) | bug | 3 | archives | review:255 | 2026-10-20 |
 | [UnMIME: the extraction progress title shows a non-ASCII mail file name as mojibake](items/unmime-progress-title-name-mojibake/desc.md) | bug | 1 | other-plugins | measure:255 | 2026-10-20 |
+| [unrar plug-in: a member name over 259 bytes overflows a stack buffer on F3 / F4](items/unrar-plug-in-a-member-name-over-259-bytes-overflows-a-stack/desc.md) | bug | 7 | archives | review:260 | 2026-10-20 |
 
 ## Parked
 

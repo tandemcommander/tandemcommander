@@ -1111,7 +1111,7 @@ static BOOL IsDirLinkToKeepClosed(const char* dir)
     return link;
 }
 
-void _RemoveTemporaryDir(const char* dir)
+void _RemoveTemporaryDir(const char* dir, int depth = 0)
 {
     // feature 068 (F-P1-04): 'dir' is UTF-8 (SalGetTempFileName / plugin
     // service RemoveTemporaryDir), but the enumeration and the deletes were the
@@ -1120,9 +1120,12 @@ void _RemoveTemporaryDir(const char* dir)
     // The whole walk now goes through the facade.
     // feature 260: the path on the heap - the disk cache's copies may have more than MAX_PATH bytes
     // of UTF-8 now (a name of 90 CJK letters); the walk skipped them, so the start-up cleanup of a
-    // crashed session's SAL*.tmp folders left such a copy and its folder behind for good
+    // crashed session's SAL*.tmp folders left such a copy and its folder behind for good. The
+    // MAX_PATH test also bounded the recursion (about 130 levels); the depth bound keeps that (review
+    // of 260: thousands of nested folders would overflow the stack) - deeper content stays on disk
+    const int maxDepth = 128;
     size_t dirLen = strlen(dir);
-    if (dirLen + 2 + SAL_FIND_NAME_U8 > SAL_MAX_PATH_UTF8)
+    if (depth > maxDepth || dirLen + 2 + SAL_FIND_NAME_U8 > SAL_MAX_PATH_UTF8)
         return; // deeper than any path the program builds
     char* path = (char*)malloc(dirLen + 2 + SAL_FIND_NAME_U8);
     if (path == NULL)
@@ -1155,7 +1158,7 @@ void _RemoveTemporaryDir(const char* dir)
                     if ((fileW.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) && DeleteAsDirLink(path))
                         SalRemoveDirectory(path);
                     else
-                        _RemoveTemporaryDir(path);
+                        _RemoveTemporaryDir(path, depth + 1);
                 }
                 else
                     SalDeleteFile(path);

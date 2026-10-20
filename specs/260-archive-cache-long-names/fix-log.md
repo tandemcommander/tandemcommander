@@ -115,3 +115,27 @@ probe.
 After the fixes: BUILD SUCCEEDED; saltests 24559 / 0; encoding guard 0; probe
 `probe/result_after.txt` **16 PASS / 0 FAIL** (VIEWLONG, EDITLONG, ARCCAP, OVERLIMIT, CTL, GZLONG,
 GZOVER, GZCTL - RUN and END rows).
+
+### Review 2 (fresh agent, with review 1's findings) - no MUST, 2 SHOULD, 4 NOTE
+
+Re-ran the probe (16 / 0), the 222 regression (10 / 0), saltests (24559 / 0), the encoding guard
+(0); confirmed ARCCAP tests the 095 limit (its temporary path fits the new rule).
+- **S-A** the new `_RemoveTemporaryDir` walk had no real depth bound (the old MAX_PATH test stopped it
+  at about 130 levels; about 1,250 nested folders would overflow the 3 MB stack). Fixed: `depth`
+  argument, at most 128 levels below the folder given (deeper content stays on disk, as before).
+- **S-B** the leftover items named above were not filed yet - filed at the closing (below).
+- N-1 `CopyFilesTo` on low memory copies nothing without a message (the dialog keeps the items - no
+  loss); accepted. N-2 F3 of an invalid long name keeps 222's shortened view copy - one line added
+  to the spec's edge cases. N-3 `_RemoveEmptyDirs` still skips 260+ byte entries (removes only empty
+  folders - nothing breaks). N-4 N1's cause is `ExpandInfoLineItems` (IDS_EXP_SMALLBUFFER) - in the
+  Inbox item.
+
+After S-A: BUILD SUCCEEDED; saltests 24559 / 0; encoding guard 0; probe `probe/result_after.txt` 16 /
+0. The 222 regression (`probe/regress_222.txt`) was run on the first after-build and by review 2 on
+aec864cf (10 / 0); S-A changed only the cleanup walk, which neither probe reaches.
+
+## Owed to a person
+
+`editing-long-named-archive-members-the-rows-the-feature-260` (person-step): the edit-back with a
+long %TEMP% (copy path over 620 bytes), "Copy selected to..." with a long name, the start-up cleanup
+of a long-named copy after a crash.
