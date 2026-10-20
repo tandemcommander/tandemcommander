@@ -36,3 +36,9 @@ table; cp1250 and cp1252 fold 8A / 9A, so "Ċ" (C4 8A) and "Ě" (C4 9A) are one 
 Classification measured with PowerShell P/Invoke: `GetStringTypeW(CT_CTYPE1)` on a surrogate pair
 gives only C1_DEFINED (U+20000, U+1D400, U+10400); U+0301 is C3_NONSPACING; `icu.dll` (System32)
 `u_charType`: U+20000 = 5 (Lo), U+1D400 = 1 (Lu), U+1F4C1 = 27 (So), U+0301 = 6 (Mn).
+
+## Analyze
+
+`speckit-analyze`: 0 CRITICAL, 0 HIGH. MEDIUM I1 (the spec's assumption named only nonspacing marks,
+research R2 all marks) fixed. LOW C1 (no task for the CHANGELOG entry - written at closing) and A1
+(SC-003 names no row counts - recorded per probe here) accepted. Second run: nothing above LOW.

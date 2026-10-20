@@ -196,7 +196,8 @@ saltests.
   sent.
 - Assumption (autonomous run): BMP characters are classified by the Windows character types
   (`GetStringTypeW`) — the same C1 types the engine's POSIX classes are defined by. Combining marks
-  are the "nonspacing" type.
+  are those Windows types "nonspacing" or "vowel mark", or that the system's Unicode library calls
+  nonspacing, spacing or enclosing marks (research R2).
 - Assumption (autonomous run): the preview sort is not changed. It already compares by whole
   letters (measured by reading at 3ea24ab5).
 - Assumption (autonomous run): the final-sigma fold goes into feature 210's shared fold, so the
