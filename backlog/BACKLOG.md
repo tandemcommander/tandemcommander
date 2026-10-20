@@ -28,7 +28,7 @@ Last triaged: 2026-10-19
 | 4 | [Archive listings show names in one encoding only as a whole (F-P1-05)](items/archive-listing-display-encoding/desc.md) | tech-debt | 4 | encoding | agent | L | blocked |
 | 5 | [Read the 78 findings of check_encoding.py --plugins one by one](items/check-encoding-plugin-findings/desc.md) | tech-debt | 4 | encoding | agent | L | blocked |
 | 6 | [Undelete and ZIP wrap the core's UTF-8 texts in their own code-page sentences](items/undelete-zip-core-texts-in-code-page-sentences/desc.md) | bug | 4 | encoding | agent | M | blocked |
-| 7 | [User Menu: messages name the command, System32 fallback, silent batch ends](items/user-menu-messages-and-folder-leftovers/desc.md) | bug | 4 | panels-ui | agent | M | open |
+| 7 | [User Menu: messages name the command, System32 fallback, silent batch ends](items/user-menu-messages-and-folder-leftovers/desc.md) | bug | 4 | panels-ui | agent | M | blocked |
 | 8 | [Case-sensitive folders: several features take the first case-insensitive twin](items/case-sensitive-twins-first-match/desc.md) | bug | 4 | panels-ui | agent | M | open |
 | 9 | [Code Viewer reads single-byte files only in the system code page (no CP852 etc.)](items/codeview-code-tables-for-single-byte-files/desc.md) | feature | 4 | other-plugins | agent | L | open |
 | 10 | [Importing a configuration file writes every key of a foreign .reg file](items/importing-a-configuration-file-writes-every-key-of-a-foreign/desc.md) | bug | 4 | data-safety | agent | S | open |
@@ -159,6 +159,7 @@ Last triaged: 2026-10-19
 | [The encoding guard does not read header files; plug-in headers convert names leniently](items/check-encoding-skips-header-files/desc.md) | tech-debt | 2 | tooling | review:255 | 2026-10-20 |
 | [Check that Change Attributes refuses to encrypt or decrypt a junction (253)](items/check-that-change-attributes-refuses-to-encrypt-or-decrypt-a/desc.md) | person-step | 4 | data-safety | leftover:253 | 2026-10-20 |
 | [CheckVer: the log shows a script path with non-ASCII letters garbled](items/checkver-log-script-path-garbled/desc.md) | bug | 1 | other-plugins | review:255 | 2026-10-20 |
+| [Command line: a COMSPEC path outside ASCII is read through the code page](items/command-line-comspec-read-wide/desc.md) | bug | 2 | encoding | manual | 2026-10-20 |
 | [Copying from a TAR folder opened in another case extracts nothing](items/copying-from-a-tar-folder-opened-in-another-case-extracts/desc.md) | bug | 5 | archives | review:252 | 2026-10-20 |
 | [Create Directory refuses a relative name in a folder whose path is 260+ bytes](items/create-directory-refuses-a-relative-name-in-a-folder-whose/desc.md) | bug | 5 | long-paths | measure:259 | 2026-10-20 |
 | [DB Viewer: a field length of 1000 or more shows a broken thousands separator](items/dbviewer-field-length-separator/desc.md) | bug | 2 | other-plugins | measure:255 | 2026-10-20 |
@@ -191,6 +192,10 @@ Last triaged: 2026-10-19
 | [ISO plug-in: a Joliet file name with an unpaired surrogate is garbled, other letters too](items/uniso-joliet-file-names-wtf8-garbled/desc.md) | bug | 3 | archives | review:255 | 2026-10-20 |
 | [UnMIME: the extraction progress title shows a non-ASCII mail file name as mojibake](items/unmime-progress-title-name-mojibake/desc.md) | bug | 1 | other-plugins | measure:255 | 2026-10-20 |
 | [unrar plug-in: a member name over 259 bytes overflows a stack buffer on F3 / F4](items/unrar-plug-in-a-member-name-over-259-bytes-overflows-a-stack/desc.md) | bug | 7 | archives | review:260 | 2026-10-20 |
+| [User Menu errors name the command, not the file or folder at fault](items/user-menu-errors-name-the-file-or-folder/desc.md) | bug | 3 | panels-ui | manual | 2026-10-20 |
+| [A hidden User Menu batch that stops at its chcp or cd line tells nobody](items/user-menu-hidden-batch-silent-early-end/desc.md) | bug | 3 | panels-ui | manual | 2026-10-20 |
+| [User Menu on items in folders of 260 or more bytes: work, or refuse aloud](items/user-menu-long-paths/desc.md) | bug | 4 | long-paths | manual | 2026-10-20 |
+| [User Menu: a shortcut command may start in the item folder, not its own Start in](items/user-menu-shortcut-start-in-folder/desc.md) | bug | 3 | panels-ui | manual | 2026-10-20 |
 
 ## Parked
 

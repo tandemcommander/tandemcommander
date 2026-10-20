@@ -1,19 +1,19 @@
 ---
 title: User Menu: messages name the command, System32 fallback, silent batch ends
 type: bug
-status: open
+status: blocked
 severity: 4
 area: panels-ui
 source: review:226
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
+updated: 2026-10-20
 verified: -
 effort: M
 feature: -
 related: [user-menu-unc-folder-pushd]
 depends-on: []
-reason: -
+reason: larger than one feature: eight separate sub-defects across mainwnd4, mainwnd3, editwnd, finddlg1, several needing their own design - split into five items; agent 2026-10-20
 ---
 
 # User Menu: messages name the command, System32 fallback, silent batch ends
@@ -37,3 +37,5 @@ The other A `SetCurrentDirectory` calls on UTF-8 paths are speed hints only (not
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — blocked: larger than one feature: eight separate sub-defects across mainwnd4, mainwnd3, editwnd, finddlg1, several needing their own design - split into five items; agent 2026-10-20
+- 2026-10-20 — split into: user-menu-errors-name-the-file-or-folder, user-menu-hidden-batch-silent-early-end, user-menu-shortcut-start-in-folder, command-line-comspec-read-wide, user-menu-long-paths
