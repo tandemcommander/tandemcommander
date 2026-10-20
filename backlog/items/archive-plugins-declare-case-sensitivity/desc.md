@@ -1,16 +1,16 @@
 ---
 title: 7-Zip, TAR and SFTP do not declare case-sensitive listings
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:230
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 1cc16d0e
 effort: M
-feature: -
+feature: 252
 related: [case-sensitive-twins-first-match]
 depends-on: []
 reason: -
@@ -37,3 +37,5 @@ Severity 5: the wrong file's content arrives under the expected name; not measur
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at 1cc16d0e: present at 1cc16d0e: 7zclient/untar never call SetFlags, sftp fs.cpp sets only IGNOREDUPDIRS; IsCaseSensitive() FALSE for them
+- 2026-10-20 — run started, feature 252
