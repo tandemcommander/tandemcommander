@@ -21,7 +21,7 @@ working method (measure first, probe rows before / after).
 
 - [ ] T004 [US1] In `UploadSendAndConfirm` (`src/plugins/sftp/operats.cpp`) confirm by `StatEx` + `SftpUploadConfirmation`; `ucByAcks` logs one line ("the server does not show the size ... acknowledged N bytes")
 - [ ] T005 [US1] In `UploadOneFileImpl` (`src/plugins/sftp/operats.cpp`) take the drop route when `StatEx(target)` = sxError and `SftpTargetStatRefused`: log, `CheckCancel`, `OpenWriteNew(target)` (no fallback), refused -> box with the reason + "the server does not show whether a file of that name exists; nothing was replaced"; send + confirm; failure / stop -> `Unlink` once, the box names a partial file that stays (contract D1-D4)
-- [ ] T006 [US1] Rebuild (`build.cmd`) and run the probe rows DROP* on the hidden desktop
+- [ ] T006 [US1] Rebuild (`build.cmd`) and run the probe rows DROP* on the hidden desktop (DROPMOVE proves FR-004: the source goes only after the confirmed upload)
 
 ## Phase 4: User Story 2 - The limits of a replacement are stated (P2)
 
@@ -35,14 +35,14 @@ working method (measure first, probe rows before / after).
 
 - [ ] T008 [US3] Add the record to `CSFTPSession` (`LeftTemps[16]`, `LeftTempCount`, `NoteLeftTemp`, `TakeLeftTemps`; freed in the destructor, kept by `Disconnect`) in `src/plugins/sftp/session.h` and `src/plugins/sftp/session.cpp`
 - [ ] T009 [US3] Record in `UploadDropTemp` (`src/plugins/sftp/operats.cpp`) when the unlink failed and the session is no longer connected (never for kept temps - they do not pass through it)
-- [ ] T010 [US3] At the start of `SFTPUploadToFS` (`src/plugins/sftp/operats.cpp`), on a connected session, take the record and ask (Yes / No, English literal, list of base names with their folder); Yes: per file `StatEx` lstat -> regular file and `SftpIsUploadTempPath` -> `Unlink`; failures logged and named in one box
+- [ ] T010 [US3] At the start of `SFTPUploadToFS` (`src/plugins/sftp/operats.cpp`), on a connected session, take the record and ask (Yes / No, English literal, list of base names with their folder); Yes: per file `StatEx` lstat -> regular file and `SftpIsUploadTempPath` -> `Unlink`; failures logged and named in one box; a file not deleted because the session died meanwhile is recorded again
 - [ ] T011 [US3] Look at the CUT row's second Copy that showed no dialog before; adjust the probe if it is the probe's fault (`specs/258-sftp-drop-folder-upload/probe/sftp258_probe.ps1`)
 
 ## Phase 6: Polish
 
 - [ ] T012 `python tools/check_encoding.py --strict` -> TOTAL 0; `build.cmd` -> BUILD SUCCEEDED; harness green
 - [ ] T013 Probe after (`probe/result_after.txt`): all rows PASS; regression: 133's SFTP probe on the container (`probe/regress_133.txt`)
-- [ ] T014 Negative control: revert one fix in a scratch build or reason from `result_before.txt`, record in `fix-log.md`
+- [ ] T014 Negative control: the before run on the build of 2807bbc4 (`probe/result_before.txt`) fails DROPNEW, DROPMOVE, DROPDIR, REPL, CUT - each row detects its defect; the harness has negative cases per helper; record in `fix-log.md`
 - [ ] T015 Update `specs/258-sftp-drop-folder-upload/fix-log.md` (after measurements, decisions, limits)
 - [ ] T016 CHANGELOG entry under the `— unreleased` heading in `CHANGELOG.md`
 

@@ -42,3 +42,10 @@ See spec *Clarifications* / *Assumptions*: links and ACL stated in the question;
 remembered in memory per session and offered at the next upload; drop route only on a
 permission status; confirmation by acknowledgments only when the size request is refused with
 a permission status.
+
+## Analyze
+
+- Run 1: HIGH F1 (spec edge case "the rest stay recorded" vs data model "nothing is put back"),
+  MEDIUM F2 (SC-001 counted the guard row), MEDIUM U1 (negative control vague), LOW C1 (FR-004
+  without a task). All fixed in spec / data-model / tasks.
+- Run 2: no finding; coverage 100 % (10 requirements, 16 tasks).

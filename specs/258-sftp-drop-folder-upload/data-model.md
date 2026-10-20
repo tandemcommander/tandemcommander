@@ -11,8 +11,9 @@
   (the removal could not be asked), and the path is an upload temporary name
   (`SftpIsUploadTempPath`). A duplicate path is not added twice; a 17th is only logged.
 - Taken (all at once, record emptied) at the start of `SFTPUploadToFS` when the session is
-  connected; the user's answer decides; nothing is put back (No = never asked again; a failed
-  deletion is named in one box and logged).
+  connected; the user's answer decides (No = never asked again; a deletion the server refuses
+  is named in one box and logged). A file whose deletion could not be asked because the
+  session died meanwhile is recorded again (the same rule as above).
 - Freed in `~CSFTPSession`. `Disconnect` keeps it (the FS reconnects through
   `Disconnect` + `Connect` on the same object).
 

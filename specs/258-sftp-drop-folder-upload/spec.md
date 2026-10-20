@@ -108,7 +108,8 @@ needs (the old file and the local source are intact).
   says the size could not be checked.
 - A temporary file offered for deletion has meanwhile disappeared or is no longer a regular
   file: it is not deleted, nothing is shown for a vanished one.
-- The connection is lost again while deleting offered files: the rest stay recorded.
+- The connection is lost again while deleting offered files: the files not deleted are
+  recorded again for the next upload.
 
 ## Requirements *(mandatory)*
 
@@ -151,8 +152,8 @@ needs (the old file and the local source are intact).
 
 ### Measurable Outcomes
 
-- **SC-001**: Copy, Move and folder Copy into the test server's drop folder: 4 of 4 probe rows
-  arrive complete (before: 0 of 3 arrived, all "Permission denied").
+- **SC-001**: Copy, Move and folder Copy into the test server's drop folder: 3 of 3 probe rows
+  (DROPNEW, DROPMOVE, DROPDIR) arrive complete (before: 0 of 3, all "Permission denied").
 - **SC-002**: An existing file in the drop folder is never changed by an upload (row DROPEXIST).
 - **SC-003**: The overwrite question names hard links and the ACL (row REPL).
 - **SC-004**: After a lost connection, the next upload on that connection leaves no
