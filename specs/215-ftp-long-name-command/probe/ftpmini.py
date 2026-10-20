@@ -7,8 +7,10 @@ Serves ROOT on 127.0.0.1:PORT (loopback only), any user / password; names on the
     python -I ftpmini.py ROOT PORT LOG [ENC [HOME]]
 
 ENC (feature 224): the encoding of names on the wire - utf-8 (default; FEAT announces UTF8) or a
-legacy code page such as cp1250 (FEAT announces nothing - an old server). HOME (feature 224):
-the folder a session starts in (default "/").
+legacy code page such as cp1250 (FEAT announces nothing - an old server); wtf-8 (feature 269):
+UTF-8 that also carries an unpaired UTF-16 surrogate byte for byte (ED A0 80 ..; a name NTFS
+allows), as a byte-transparent UNIX server does. HOME (feature 224): the folder a session starts
+in (default "/").
 """
 import json
 import os
@@ -23,6 +25,7 @@ PORT = int(sys.argv[2])
 LOG = sys.argv[3]
 ENC = sys.argv[4] if len(sys.argv) > 4 else 'utf-8'
 HOME = sys.argv[5] if len(sys.argv) > 5 else '/'
+WIRE, ERRS = ('utf-8', 'surrogatepass') if ENC.lower() == 'wtf-8' else (ENC, 'surrogateescape')
 _log_lock = threading.Lock()
 T0 = time.time()
 
@@ -49,7 +52,7 @@ class Session(socketserver.StreamRequestHandler):
 
     def reply(self, text):
         log({'reply': text})
-        self.wfile.write((text + '\r\n').encode(ENC, 'surrogateescape'))
+        self.wfile.write((text + '\r\n').encode(WIRE, ERRS))
         self.wfile.flush()
 
     # the virtual path of 'arg' (relative to cwd) and its real path inside ROOT, or None
@@ -92,7 +95,7 @@ class Session(socketserver.StreamRequestHandler):
             if not raw:
                 log({'event': 'closed'})
                 return
-            line = raw.decode(ENC, 'surrogateescape').rstrip('\r\n')
+            line = raw.decode(WIRE, ERRS).rstrip('\r\n')
             log({'cmd': line})
             if line == '':
                 self.reply('500 Empty command')
@@ -114,7 +117,7 @@ class Session(socketserver.StreamRequestHandler):
         elif verb == 'SYST':
             self.reply('215 UNIX Type: L8')
         elif verb == 'FEAT':
-            utf8 = b' UTF8\r\n' if ENC.lower().replace('-', '') == 'utf8' else b''
+            utf8 = b' UTF8\r\n' if WIRE.lower().replace('-', '') == 'utf8' else b''
             self.wfile.write(b'211-Features:\r\n' + utf8 + b' SIZE\r\n MDTM\r\n REST STREAM\r\n211 End\r\n')
             self.wfile.flush()
             log({'reply': '211 features'})
@@ -167,7 +170,7 @@ class Session(socketserver.StreamRequestHandler):
                     out.append('drwxr-xr-x 1 owner group %d %s %s' % (0, month(st.st_mtime), name))
                 else:
                     out.append('-rw-r--r-- 1 owner group %d %s %s' % (st.st_size, month(st.st_mtime), name))
-            c.sendall(''.join(x + '\r\n' for x in out).encode(ENC, 'surrogateescape'))
+            c.sendall(''.join(x + '\r\n' for x in out).encode(WIRE, ERRS))
             c.close()
             self.reply('226 Listing sent')
         elif verb == 'RETR':

@@ -80,6 +80,7 @@
 #include "salregroot.h"       // feature 263
 #include "salexiforient.h"    // feature 267
 #include "salumbalance.h"     // feature 268
+#include "salftplisting.h"    // feature 269
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -15122,6 +15123,95 @@ static void TestUserMenuBalance268()
     CHECK(r[r.size() - 1] == 'S');
 }
 
+// feature 269: an FTP listing field is kept as the UTF-8 name when it is ASCII or WTF-8
+// (salftplisting.h) - the strict conversion read an unpaired surrogate in the code page
+static BOOL ListingField269(const char* bytes)
+{
+    return SalFtpListingFieldIsU8(bytes, (int)strlen(bytes));
+}
+
+static void TestFtpListingField269()
+{
+    CHECK(SalFtpListingFieldIsU8(NULL, 0));
+    CHECK(SalFtpListingFieldIsU8("", 0));
+    CHECK(SalFtpListingFieldIsU8("x", -1)); // no length: the empty field, as before
+    CHECK(ListingField269("readme.txt"));
+    CHECK(ListingField269("caf\xC3\xA9.txt"));          // UTF-8
+    CHECK(ListingField269("\xE4\xB8\x81\xE4\xB8\x82")); // CJK
+    CHECK(ListingField269("\xF0\x9F\x98\x80.txt"));     // a supplementary letter (4 bytes)
+    CHECK(ListingField269("\xF4\x8F\xBF\xBF"));         // U+10FFFF
+    // the case of the feature: an unpaired surrogate, high and low, at any place
+    CHECK(ListingField269("a\xED\xA0\x80.txt"));
+    CHECK(ListingField269("a\xED\xBF\xBF.txt"));
+    CHECK(ListingField269("\xED\xA0\x80"));
+    CHECK(ListingField269("x\xED\xB0\x80"));
+    CHECK(ListingField269("\xED\xA0\x80\xED\xB0\x80")); // a pair as two sequences: what SplU8ToW reads
+    // a NUL byte inside the field is a character (as the strict conversion with a length had it)
+    CHECK(SalFtpListingFieldIsU8("a\0b", 3));
+    CHECK(SalFtpListingFieldIsU8("a\xED\xA0\x80\0", 5));
+    // not UTF-8: read in the code page, as before
+    CHECK(!ListingField269("caf\xE9.txt"));  // cp1250 / cp1252 e-acute
+    CHECK(!ListingField269("\xC0\xAF"));     // overlong 2-byte
+    CHECK(!ListingField269("\xC1\xBF"));
+    CHECK(!ListingField269("\xE0\x80\xAF")); // overlong 3-byte
+    CHECK(!ListingField269("\xE0\x9F\xBF"));
+    CHECK(!ListingField269("\xF0\x80\x80\xAF")); // overlong 4-byte
+    CHECK(!ListingField269("\xF0\x8F\xBF\xBF"));
+    CHECK(!ListingField269("\xF4\x90\x80\x80")); // above U+10FFFF
+    CHECK(!ListingField269("\xF5\x80\x80\x80"));
+    CHECK(!ListingField269("\xFF"));
+    CHECK(!ListingField269("\x80"));          // a stray continuation byte
+    CHECK(!ListingField269("a\xED\xA0"));     // cut by the end of the field
+    CHECK(!ListingField269("\xF0\x9F\x98"));
+    CHECK(!ListingField269("\xC3"));
+    CHECK(!ListingField269("\xED\xA0\x41"));  // a continuation missing
+    CHECK(!SalFtpListingFieldIsU8("a\xED\xA0\x80", 3)); // the length bounds the field: cut there
+    CHECK(SalFtpListingFieldIsU8("a\xC3\xA9\xFF", 3));  // ... and nothing after it is read
+    // the negative control: the strict conversion the plug-in used refuses the surrogate form
+    // (the defect), and accepts the valid UTF-8 above
+    CHECK(MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, "a\xED\xA0\x80.txt", 8, NULL, 0) == 0);
+    CHECK(MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, "caf\xC3\xA9.txt", 9, NULL, 0) > 0);
+
+    // exhaustively: the rule equals the plug-ins' WTF-8 reader (SplUnicodeDetail::Wtf8ToW, what
+    // SplU8ToW falls back to), and every string the strict conversion accepts is accepted, for
+    // every byte string of 1..4 bytes over an alphabet with every byte class
+    static const unsigned char alphabet[] = {0x41, 0x7F, 0x80, 0x8F, 0x90, 0x9F, 0xA0, 0xBF, 0xC0, 0xC1,
+                                             0xC2, 0xDF, 0xE0, 0xE1, 0xED, 0xEF, 0xF0, 0xF4, 0xF5, 0xFF};
+    const int n = _countof(alphabet);
+    int strings = 0, differWtf8 = 0, strictRefused = 0, kept = 0;
+    char buf[5];
+    for (int len = 1; len <= 4; len++)
+    {
+        int total = 1;
+        for (int k = 0; k < len; k++)
+            total *= n;
+        for (int v = 0; v < total; v++)
+        {
+            int x = v;
+            for (int k = 0; k < len; k++)
+            {
+                buf[k] = (char)alphabet[x % n];
+                x /= n;
+            }
+            buf[len] = 0;
+            strings++;
+            BOOL rule = SalFtpListingFieldIsU8(buf, len);
+            BOOL wtf8 = SplUnicodeDetail::Wtf8ToW(buf, NULL, 0) > 0;
+            BOOL strict = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buf, len, NULL, 0) > 0;
+            if (rule != wtf8)
+                differWtf8++;
+            if (strict && !rule)
+                strictRefused++;
+            if (rule)
+                kept++;
+        }
+    }
+    CHECK(strings == 20 + 400 + 8000 + 160000);
+    CHECK(differWtf8 == 0);
+    CHECK(strictRefused == 0);
+    CHECK(kept > 0 && kept < strings);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -15243,6 +15333,7 @@ int main(int argc, char** argv)
     TestNetDriveSameRemote264();
     TestExifOrient267();
     TestUserMenuBalance268();
+    TestFtpListingField269();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

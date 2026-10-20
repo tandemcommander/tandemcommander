@@ -5,6 +5,7 @@
 #include "precomp.h"
 
 #include "../../common/salftpautoren.h" // feature 141: the shortening step of the automatic rename
+#include "../../common/salftplisting.h" // feature 269: a listing field kept as UTF-8 (WTF-8)
 
 #include "../../common/salurlpwd.h" // feature 085
 #include "../../common/salfmtinserts.h" // feature 180
@@ -3616,15 +3617,10 @@ char* FTPListingFieldToU8(const char* beg, int len)
     if (len < 0)
         len = 0;
     // fast path: pure ASCII, and valid UTF-8, are kept verbatim (covers ASCII
-    // and UTF-8 servers - the vast majority of names)
-    BOOL ascii = TRUE;
-    for (int i = 0; i < len; i++)
-        if ((unsigned char)beg[i] >= 0x80)
-        {
-            ascii = FALSE;
-            break;
-        }
-    if (ascii || (len > 0 && MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, beg, len, NULL, 0) > 0))
+    // and UTF-8 servers - the vast majority of names); feature 269: WTF-8 too - an
+    // unpaired surrogate (a name NTFS allows, sent so by FTPU8NameToServer) was read
+    // in the code page: another name, and the upload's "exists?" check missed it
+    if (SalFtpListingFieldIsU8(beg, len))
     {
         char* str = (char*)SalamanderGeneral->Alloc(len + 1);
         if (str != NULL)

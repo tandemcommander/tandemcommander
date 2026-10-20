@@ -31,10 +31,11 @@ param(
     [string[]]$Only,
     [string]$Python = 'python',
     [int]$Port = 2121,
-    [string]$Repo = (Join-Path $PSScriptRoot '..\..\..'),
+    [string]$Repo = $null,
     [string]$FtpMini = $null
 )
 $ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Join-Path $PSScriptRoot '..\..\..' }   # $PSScriptRoot is empty in a 5.1 param default
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
 $Repo = (Resolve-Path -LiteralPath $Repo).Path
 if (-not $FtpMini) { $FtpMini = Join-Path $Repo 'specs\215-ftp-long-name-command\probe\ftpmini.py' }
