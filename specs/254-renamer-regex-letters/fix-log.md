@@ -141,3 +141,5 @@ Rebuilt: `BUILD SUCCEEDED`; saltests 24439 / 0.
 After the fixes: `probe/result_after.txt` 46 / 0 (23 RUN + 23 END), registry restored identical -
 bs-lit "Zluť", bs-class nothing renamed ("Åluť" stays), esc-ci-cls "Zluť", ungreedy "Xuť", the 19
 earlier rows as before.
+
+210 regression re-run after the review fixes: 16 / 0, registry identical.
