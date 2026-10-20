@@ -29,6 +29,14 @@
   a message - no cut. The disabled RAR and CHM plug-ins overflow at 260+ bytes already today
   (outside this feature).
 
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: Do F3 / F4 keep any length limit of their own on the path inside the archive once the 520-byte test is gone? → A: No - the listing already bounds it (a folder part of at most 255 bytes + a name of at most 255 UTF-16 units, about 1,021 bytes); the disk cache's rule for the temporary copy is the only length refusal before extraction (autonomous run: item - *Expected*)
+- Q: Which message does the CAB plug-in show when the path inside the cabinet does not fit its buffer? → A: Its existing "too long name" message (the one it already shows for a too-long cabinet path); no new text (autonomous run: rule - no new UI string without the `.slt` refresh; conservative)
+- Q: Does feature 260's probe row ARCCAP keep expecting the refusal? → A: No - it now expects the viewer (the item: "Probe row ARCCAP turns into a PASS of the viewer / editor"); the row is changed in that probe and repeated in this feature's probe (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - View a member with a long path inside the archive (Priority: P1)
@@ -105,7 +113,7 @@ whole name.
 - **FR-002**: The member is extracted and viewed / edited under its whole name; an edit is packed
   back under the whole name (no cut anywhere on the route).
 - **FR-003**: The CAB plug-in MUST refuse a path inside the archive that does not fit its buffer
-  with a message, never cut it.
+  with its existing "too long name" message, never cut it.
 - **FR-004**: Every other case (short names, the cache's refusal, invalid names, case twins,
   external archivers, F5) MUST behave as before.
 - **FR-005**: No new UI string; the plug-in interface and its version are unchanged.
@@ -117,8 +125,8 @@ whole name.
 - **SC-001**: The new probe's rows VIEWCAP, VIEWDEEP, 7Z, TAR and EDITCAP refuse on the build
   before (the 520-byte message) and pass on the build after; the controls (CTL, OVERLIMIT) pass
   on both.
-- **SC-002**: Feature 260's probe (with ARCCAP now expecting the viewer) and feature 222's probe
-  pass on the build after.
+- **SC-002**: Feature 260's probe (with ARCCAP changed to expect the viewer) and feature 222's
+  probe pass on the build after; ARCCAP fails on the build before (negative control).
 
 ## Assumptions
 
