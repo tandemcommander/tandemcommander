@@ -1,0 +1,21 @@
+cache260_probe (feature 260) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 11:20; registry key existed True; TEMP C:\Users\pavel\AppData\Local\Temp (33 units)
+
+VIEWLONG   RUN    PASS        member 274 bytes / 94 units; viewer True; refused False; F3: C:\Users\pavel\AppData\Local\Temp\SAL3AD.tmp\\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C\u4E0D\u4E0E\u4E0F\u4E10\u4E11\u4E12\u4E13\u4E14\u4E15\u4E16\u4E17\u4E18\u4E19\u4E1A\u4E1B\u4E1C\u4E1D\u4E1E\u4E1F\u4E20\u4E21\u4E22\u4E23\u4E24\u4E25\u4E26\u4E27\u4E28\u4E29\u4E2A\u4E2B\u4E2C\u4E2D\u4E2E\u4E2F\u4E30\u4E31\u4E32\u4E33\u4E34\u4E35\u4E36\u4E37\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43\u4E44\u4E45\u4E46\u4E47\u4E48\u4E49\u4E4A\u4E4B\u4E4C\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54\u4E55\u4E56\u4E57\u4E58\u4E59\u4E5A.txt [Plain Text] - Code Viewer
+VIEWLONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+EDITLONG   RUN    PASS        editor processes 1; temporary copy found True; archive members 1: 274 bytes "EDITED-CONTENT"; F4: no window; leaving: ...[#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 7, 20.10.2026, 11:20:38 | [Static id=1151] With file: | [Static id=184] 14, 20.10.2026, 11:20:45 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+EDITLONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OVERLIMIT  RUN    PASS        member 254 bytes / 254 units; viewer False; refused True; F3: <message> [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK
+OVERLIMIT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CTL        RUN    PASS        member 9 bytes / 9 units; viewer True; refused False; F3: C:\Users\pavel\AppData\Local\Temp\SAL126.tmp\short.txt [Plain Text] - Code Viewer
+CTL        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+GZLONG     RUN    PASS        stored name 274 bytes / 94 units; extracted under the whole name True; target holds 1 (\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C\u4E0D\u4E0E\u4E0F\u4E10\u4E11\u4E12\u4E13\u4E14\u4E15\u4E16\u4E17\u4E18\u4E19\u4E1A\u4E1B\u4E1C\u4E1D\u4E1E\u4E1F\u4E20\u4E21\u4E22\u4E23\u4E24\u4E25\u4E26\u4E27\u4E28\u4E29\u4E2A\u4E2B\u4E2C\u4E2D\u4E2E\u4E2F\u4E30\u4E31\u4E32\u4E33\u4E34\u4E35\u4E36\u4E37\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43\u4E44\u4E45\u4E46\u4E47\u4E48\u4E49\u4E4A\u4E4B\u4E4C\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54\u4E55\u4E56\u4E57\u4E58\u4E59\u4E5A.txt); at the open: no window; F5: ...770 'Copy'] [Static id=209] Copy file "\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C\u4E0D..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GZLONG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GZOVER     RUN    PASS        stored name 304 bytes / 304 units; refused True; files in the target 0; at the open: [#32770 'GZip Error'] [Static id=2477] (206) N\u00E1zev nebo p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1.  | [Button id=1] OK
+GZOVER     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GZCTL      RUN    PASS        stored name 9 bytes / 9 units; extracted under the whole name True; target holds 1 (short.txt); at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "short.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GZCTL      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

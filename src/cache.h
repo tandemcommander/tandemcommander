@@ -195,8 +195,9 @@ public:
     // canContainThisName - must not be NULL; set to TRUE if it is possible to place
     //                      the tmp-file into this tmp-directory (it matches tmp-root and
     //                      contains no file with a DOS name equal to 'tmpName')
+    // longTmpPath - see CDiskCache::GetName() (feature 260)
     BOOL ContainTmpName(const char* tmpName, const char* rootTmpPath, int rootTmpPathLen,
-                        BOOL* canContainThisName);
+                        BOOL* canContainThisName, BOOL longTmpPath);
 
     // searches for 'name' in the tmp-directory; if it's found, returns TRUE and values 'name' and 'tmpPath',
     // so that they match expected values from CDiskCache::GetName(); if it's not found,
@@ -218,7 +219,7 @@ public:
 
     // for description see CDiskCache::GetName() - adding a new 'name'
     const char* GetName(const char* name, const char* tmpName, BOOL* exists, BOOL ownDelete,
-                        CPluginInterfaceAbstract* ownDeletePlugin, int* errorCode);
+                        CPluginInterfaceAbstract* ownDeletePlugin, int* errorCode, BOOL longTmpPath);
 
     // searches for 'name' in the tmp-directory; if found, returns TRUE and 'ret' is set to the return value of
     // CDiskCache::NamePrepared(name, size); if not found, returns FALSE
@@ -408,9 +409,14 @@ public:
     //                   tmp-file
     // errorCode - if not NULL and an error occurs, its code is returned in this variable (for
     //             codes see DCGNE_XXX)
+    // longTmpPath - feature 260: FALSE = the new tmp-file's full path must fit MAX_PATH BYTES (the
+    //               historical rule; the plug-in services keep it - a plug-in may copy the path into
+    //               a MAX_PATH buffer); TRUE = it must fit MAX_PATH - 1 UTF-16 units, its UTF-8 may be
+    //               longer (the core's F3 / F4 of archive members - salcachename.h)
     const char* GetName(const char* name, const char* tmpName, BOOL* exists, BOOL onlyAdd,
                         const char* rootTmpPath, BOOL ownDelete,
-                        CPluginInterfaceAbstract* ownDeletePlugin, int* errorCode);
+                        CPluginInterfaceAbstract* ownDeletePlugin, int* errorCode,
+                        BOOL longTmpPath = FALSE);
 
     // marks the tmp-file corresponding to 'name' as valid and makes it available to other threads;
     // can be called only after GetName() returns 'exists' == FALSE

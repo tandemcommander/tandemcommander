@@ -3580,9 +3580,12 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
     DWORD attr = -1;
     memset(&lastWrite, 0, sizeof(lastWrite));
     int errorCode;
+    // feature 260: the copy's path is limited by the Windows path (UTF-16 units), not by MAX_PATH
+    // bytes - F4 of a member of 90 CJK letters was "too long"; the copy keeps the member's whole name
+    // (it is packed back under it), so a path that does not fit is refused, never shortened
     char* name = (char*)DiskCache.GetName(dcFileName, f->Name, &exists, FALSE,
                                           arcCacheTmpPath[0] != 0 ? arcCacheTmpPath : NULL,
-                                          plugin != NULL, plugin, &errorCode);
+                                          plugin != NULL, plugin, &errorCode, TRUE);
     if (name == NULL)
     {
         if (errorCode == DCGNE_TOOLONGNAME)

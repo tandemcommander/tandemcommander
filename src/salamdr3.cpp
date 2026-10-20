@@ -3615,9 +3615,19 @@ void CFileTimeStamps::CopyFilesTo(HWND parent, int* indexes, int count, const ch
             if (index < List.Count && index >= 0) // just to be safe
             {
                 CFileTimeStampsItem* item = List[index];
-                char name[MAX_PATH];
-                strcpy(name, item->SourcePath);
-                tooLongName |= !SalPathAppend(name, item->FileName, MAX_PATH);
+                // feature 260: the names on the heap - the disk cache's copies may have more than
+                // MAX_PATH bytes of UTF-8 now (char[MAX_PATH] refused every such copy); "too long"
+                // is what the shell's call cannot take: a wide path over MAX_PATH - 1 units
+                CSalHeapString nameBuf;
+                if (!nameBuf.Copy(item->SourcePath, strlen(path) + strlen(item->ZIPRoot) + strlen(item->FileName) + 3))
+                {
+                    TRACE_E(LOW_MEMORY);
+                    ok = FALSE;
+                    continue;
+                }
+                char* name = nameBuf.Get();
+                tooLongName |= !SalPathAppend(name, item->FileName, nameBuf.Size());
+                tooLongName |= SalU8ToW(name, -1, NULL, 0) > MAX_PATH;
                 ok &= fromStr.Add(name, (int)strlen(name) + 1);
                 // feature 069 (F-P1-20): the names come from SalGetTempFileName
                 // and CFileData, i.e. UTF-8, and the ANSI SHFileOperation
@@ -3631,9 +3641,10 @@ void CFileTimeStamps::CopyFilesTo(HWND parent, int* indexes, int count, const ch
                 else
                     wideOk = FALSE;
 
-                strcpy(name, path);
-                tooLongName |= !SalPathAppend(name, item->ZIPRoot, MAX_PATH);
-                tooLongName |= !SalPathAppend(name, item->FileName, MAX_PATH);
+                strcpy(name, path); // the buffer holds path + root + name (Copy's reserve above)
+                tooLongName |= !SalPathAppend(name, item->ZIPRoot, nameBuf.Size());
+                tooLongName |= !SalPathAppend(name, item->FileName, nameBuf.Size());
+                tooLongName |= SalU8ToW(name, -1, NULL, 0) > MAX_PATH;
                 ok &= toStr.Add(name, (int)strlen(name) + 1);
                 if (SalU8ToW(name, -1, nameW, _countof(nameW)) != 0)
                     wideOk &= toStrW.Add((char*)nameW, (int)(wcslen(nameW) + 1) * (int)sizeof(WCHAR));
@@ -3844,13 +3855,28 @@ void CFileTimeStamps::CheckAndPackAndClear(HWND parent, BOOL* someFilesChanged, 
         *someFilesChanged = FALSE;
     if (archMaybeUpdated != NULL)
         *archMaybeUpdated = FALSE;
-    char buf[2 * MAX_PATH + 100];
     WIN32_FIND_DATAW data;
     int i;
     for (i = List.Count - 1; i >= 0; i--)
     {
         CFileTimeStampsItem* item = List[i];
-        _snprintf_s(buf, _TRUNCATE, "%s\\%s", item->SourcePath, item->FileName);
+        // feature 260: the copy's path whole - the disk cache takes paths of up to 259 UTF-16 units
+        // (up to 777 bytes) now; the 620-byte buffer cut them (_TRUNCATE), the look found "nothing
+        // there" and dropped the edit as unchanged
+        CSalHeapString bufStr;
+        if (!bufStr.Copy(item->SourcePath, 1 + strlen(item->FileName)))
+        {
+            TRACE_E(LOW_MEMORY);
+            if (item->Attr == 0xFFFFFFFF) // kept: offered for the update rather than forgotten
+            {
+                item->Attr = FILE_ATTRIBUTE_NORMAL;
+                item->FileSize = CQuadWord(0, 0);
+            }
+            continue;
+        }
+        char* buf = bufStr.Get();
+        strcat(buf, "\\");
+        strcat(buf, item->FileName);
         BOOL kill = TRUE;
         // feature 096: the path is UTF-8 - the code-page FindFirstFile did not find a file
         // with a non-ASCII name, the item was dropped as "unchanged", and the edit was lost

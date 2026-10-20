@@ -1073,32 +1073,59 @@ BOOL CGZip::Initialize(unsigned int& errorCode)
     // read the original file name when present
     if ((flags & ORIG_NAME) != 0)
     {
-        char buffer[MAX_PATH], *tmp;
-        unsigned char src;
-        tmp = buffer;
-        while (Ok && (src = FReadByte()) != '\0' && tmp - buffer < sizeof(buffer) - 1)
+        // feature 260: the name whole - it was read into char[MAX_PATH], the rest dropped, and the
+        // member was listed and extracted under the cut name (a cut UTF-8 name could also end inside
+        // a letter and was then decoded as code-page text); the field has no limit in the format, so
+        // it is collected up to GZ_NAME_MAX bytes - a longer one is "too long" (GetStreamHeader
+        // refuses it like any name over 255 UTF-16 units, which a name of 765+ bytes always is)
+        const size_t GZ_NAME_MAX = 65536;
+        char* buffer = (char*)malloc(256);
+        size_t size = 256, len = 0;
+        BOOL tooLong = FALSE;
+        unsigned char src = 0;
+        while (Ok && buffer != NULL && (src = FReadByte()) != '\0')
         {
-            if (src != '/')
-            {
-                // FIXME: Remove all invalid characters
-                *tmp++ = src == ':' ? '_' : src;
-            }
-            else
+            if (src == '/')
             {
                 // If path is given (e.g. /var/mailman/archives/private/grass5/2005-July.txt), take only file name
-                tmp = buffer;
+                len = 0;
+                tooLong = FALSE; // only the name after the last '/' counts
+                continue;
             }
+            if (len + 1 >= GZ_NAME_MAX)
+            {
+                tooLong = TRUE; // the rest of this part is skipped
+                continue;
+            }
+            if (len + 1 >= size)
+            {
+                char* bigger = (char*)realloc(buffer, size * 2);
+                if (bigger == NULL)
+                {
+                    free(buffer);
+                    buffer = NULL;
+                    break;
+                }
+                buffer = bigger;
+                size *= 2;
+            }
+            // FIXME: Remove all invalid characters
+            buffer[len++] = src == ':' ? '_' : (char)src;
         }
-        *tmp = '\0';
-        // read the remainder of an overly long name
-        while (Ok && src != '\0')
-            src = FReadByte();
+        if (buffer == NULL)
+        {
+            errorCode = IDS_ERR_MEMORY;
+            return FALSE;
+        }
+        buffer[len] = '\0';
         if (!Ok)
         {
+            free(buffer);
             errorCode = ErrorCode;
             return FALSE;
         }
-        SetOldName(buffer);
+        SetOldName(buffer, tooLong);
+        free(buffer);
     }
     // skip the comment when present
     if ((flags & COMMENT) != 0)

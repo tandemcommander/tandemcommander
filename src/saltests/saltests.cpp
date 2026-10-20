@@ -75,6 +75,7 @@
 #include "salcpfit.h"         // feature 248
 #include "salcasetwins.h"     // feature 252
 #include "salcopyname.h"      // feature 259
+#include "salcachename.h"     // feature 260
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11956,6 +11957,41 @@ static void TestNamePrefixBytes222()
     CHECK(!SalNameTooLongForFileSystemU8(cjk.c_str()));          // a valid name (it was "invalid")
 }
 
+// feature 260: the disk cache's temporary copy - the Windows path limit (UTF-16 units) in the long
+// mode, the historical 260 bytes otherwise
+static void TestCacheTmpPath260()
+{
+    const char* folder = "C:\\Users\\pavel\\AppData\\Local\\Temp\\SAL6D8.tmp\\";
+    const int f = (int)strlen(folder); // ASCII: units = bytes
+    std::string cjk;
+    for (int i = 0; i < 90; i++)
+        cjk += "\xE4\xB8\x80";
+    cjk += ".txt"; // 274 bytes, 94 units
+    CHECK(SalCacheTmpPathFitsU8(folder, "short.txt", FALSE));
+    CHECK(SalCacheTmpPathFitsU8(folder, "short.txt", TRUE));
+    CHECK(!SalCacheTmpPathFitsU8(folder, cjk.c_str(), FALSE)); // over 260 bytes: refused as before
+    CHECK(SalCacheTmpPathFitsU8(folder, cjk.c_str(), TRUE));   // about 140 units: fits
+    std::string fit(MAX_PATH - 1 - f, 'a'), over(MAX_PATH - f, 'a');
+    CHECK(SalCacheTmpPathFitsU8(folder, fit.c_str(), TRUE));    // 259 units
+    CHECK(!SalCacheTmpPathFitsU8(folder, over.c_str(), TRUE));  // 260 units
+    CHECK(SalCacheTmpPathFitsU8(folder, fit.c_str(), FALSE));   // 259 bytes + the terminator
+    CHECK(!SalCacheTmpPathFitsU8(folder, over.c_str(), FALSE)); // 260 bytes + the terminator
+    std::string emoji;
+    for (int i = 0; i < (MAX_PATH - 1 - f) / 2; i++)
+        emoji += "\xF0\x9F\x98\x80"; // 2 units, 4 bytes each
+    std::string rest((MAX_PATH - 1 - f) % 2, 'x');
+    CHECK(SalCacheTmpPathFitsU8(folder, (emoji + rest).c_str(), TRUE));        // 259 units
+    CHECK(!SalCacheTmpPathFitsU8(folder, (emoji + rest + "y").c_str(), TRUE)); // 260 units
+    std::string cjkFit;
+    for (int i = 0; i < MAX_PATH - 1 - f; i++)
+        cjkFit += "\xE4\xB8\x80"; // 1 unit, 3 bytes each: more than 600 bytes
+    CHECK(SalCacheTmpPathFitsU8(folder, cjkFit.c_str(), TRUE));
+    CHECK(!SalCacheTmpPathFitsU8(folder, (cjkFit + "\xE4\xB8\x80").c_str(), TRUE));
+    CHECK(!SalCacheTmpPathFitsU8(folder, cjkFit.c_str(), FALSE));
+    CHECK(!SalCacheTmpPathFitsU8(NULL, "x", TRUE));
+    CHECK(!SalCacheTmpPathFitsU8(folder, NULL, FALSE));
+}
+
 // feature 219: a link's stored name in the long / NT form is the path it names
 static void TestReparseNameAsPath219()
 {
@@ -14498,6 +14534,7 @@ int main(int argc, char** argv)
     TestTextFits251();
     TestCaseTwins252();
     TestCopyName259();
+    TestCacheTmpPath260();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

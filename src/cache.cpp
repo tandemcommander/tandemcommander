@@ -6,6 +6,7 @@
 
 #include "mainwnd.h"
 #include "cache.h"
+#include "salcachename.h" // feature 260
 #include "plugins.h"
 #include "dialogs.h"
 
@@ -387,7 +388,7 @@ CCacheDirData::~CCacheDirData()
 }
 
 BOOL CCacheDirData::ContainTmpName(const char* tmpName, const char* rootTmpPath,
-                                   int rootTmpPathLen, BOOL* canContainThisName)
+                                   int rootTmpPathLen, BOOL* canContainThisName, BOOL longTmpPath)
 {
     CALL_STACK_MESSAGE2("CCacheDirData::ContainTmpName(%s, , ,)", tmpName);
 
@@ -404,10 +405,13 @@ BOOL CCacheDirData::ContainTmpName(const char* tmpName, const char* rootTmpPath,
         {
             *canContainThisName = TRUE; // tmp-root matches, tmp-file can be placed here
 
-            char tmpFullName[MAX_PATH];
-            memcpy(tmpFullName, Path, PathLength);
-            if (PathLength + strlen(tmpName) + 1 <= MAX_PATH)
+            // feature 260: the full name on the heap - in the long mode it may have more than
+            // MAX_PATH bytes (char[MAX_PATH] refused a name of 90 CJK letters)
+            CSalHeapString tmpFullNameBuf;
+            if (SalCacheTmpPathFitsU8(Path, tmpName, longTmpPath) &&
+                tmpFullNameBuf.Copy(Path, strlen(tmpName)))
             {
+                char* tmpFullName = tmpFullNameBuf.Get();
                 strcpy(tmpFullName + PathLength, tmpName);
                 int i;
                 for (i = 0; i < Names.Count; i++)
@@ -543,15 +547,24 @@ BOOL CCacheDirData::GetName(CDiskCache* monitor, const char* name, BOOL* exists,
 
 const char*
 CCacheDirData::GetName(const char* name, const char* tmpName, BOOL* exists, BOOL ownDelete,
-                       CPluginInterfaceAbstract* ownDeletePlugin, int* errorCode)
+                       CPluginInterfaceAbstract* ownDeletePlugin, int* errorCode, BOOL longTmpPath)
 {
-    CALL_STACK_MESSAGE4("CCacheDirData::GetName(%s, %s, , %d, ,)", name, tmpName, ownDelete);
+    CALL_STACK_MESSAGE5("CCacheDirData::GetName(%s, %s, , %d, , , %d)", name, tmpName, ownDelete, longTmpPath);
     if (errorCode != NULL)
         *errorCode = DCGNE_SUCCESS;
-    char tmpFullName[MAX_PATH];
-    memcpy(tmpFullName, Path, PathLength);
-    if (PathLength + strlen(tmpName) + 1 <= MAX_PATH)
+    // feature 260: the full name on the heap, the limit by salcachename.h (see ContainTmpName)
+    if (SalCacheTmpPathFitsU8(Path, tmpName, longTmpPath))
     {
+        CSalHeapString tmpFullNameBuf;
+        if (!tmpFullNameBuf.Copy(Path, strlen(tmpName)))
+        {
+            TRACE_E(LOW_MEMORY);
+            *exists = TRUE; // fatal error
+            if (errorCode != NULL)
+                *errorCode = DCGNE_LOWMEMORY;
+            return NULL;
+        }
+        char* tmpFullName = tmpFullNameBuf.Get();
         strcpy(tmpFullName + PathLength, tmpName);
         CCacheData* newName = new CCacheData(name, tmpFullName, ownDelete, ownDeletePlugin);
         if (newName == NULL || !newName->IsGood())
@@ -1151,10 +1164,10 @@ void CDiskCache::RemoveEmptyTmpDirsOnlyFromDisk()
 const char*
 CDiskCache::GetName(const char* name, const char* tmpName, BOOL* exists, BOOL onlyAdd,
                     const char* rootTmpPath, BOOL ownDelete,
-                    CPluginInterfaceAbstract* ownDeletePlugin, int* errorCode)
+                    CPluginInterfaceAbstract* ownDeletePlugin, int* errorCode, BOOL longTmpPath)
 {
-    CALL_STACK_MESSAGE6("CDiskCache::GetName(%s, %s, , %d, %s, %d, ,)", name, tmpName, onlyAdd,
-                        rootTmpPath, ownDelete);
+    CALL_STACK_MESSAGE7("CDiskCache::GetName(%s, %s, , %d, %s, %d, , , %d)", name, tmpName, onlyAdd,
+                        rootTmpPath, ownDelete, longTmpPath);
     Enter();
     if (errorCode != NULL)
         *errorCode = DCGNE_SUCCESS;
@@ -1204,10 +1217,10 @@ CDiskCache::GetName(const char* name, const char* tmpName, BOOL* exists, BOOL on
     // we will find a suitable tmp-directory for the added tmp-file
     for (i = 0; i < Dirs.Count; i++)
     {
-        if (!Dirs[i]->ContainTmpName(tmpName, rootTmpPathExp, rootTmpPathExpLen, &canContainThisName) &&
+        if (!Dirs[i]->ContainTmpName(tmpName, rootTmpPathExp, rootTmpPathExpLen, &canContainThisName, longTmpPath) &&
             canContainThisName) // adding a new 'name'
         {
-            const char* ret = Dirs[i]->GetName(name, tmpName, exists, ownDelete, ownDeletePlugin, errorCode);
+            const char* ret = Dirs[i]->GetName(name, tmpName, exists, ownDelete, ownDeletePlugin, errorCode, longTmpPath);
             Leave();
             return ret;
         }
@@ -1253,7 +1266,7 @@ CDiskCache::GetName(const char* name, const char* tmpName, BOOL* exists, BOOL on
     }
 
     // we will add 'name' to our new tmp-directory (index==Dirs.Count - 1)
-    const char* ret = newDir->GetName(name, tmpName, exists, ownDelete, ownDeletePlugin, errorCode);
+    const char* ret = newDir->GetName(name, tmpName, exists, ownDelete, ownDeletePlugin, errorCode, longTmpPath);
     Leave();
     return ret;
 }

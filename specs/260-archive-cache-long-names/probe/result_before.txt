@@ -1,0 +1,21 @@
+cache260_probe (feature 260) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 11:12; registry key existed True; TEMP C:\Users\pavel\AppData\Local\Temp (33 units)
+
+VIEWLONG   RUN    FAIL        member 274 bytes / 94 units; viewer False; refused True; F3: <message> [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK
+VIEWLONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+EDITLONG   RUN    FAIL        editor processes 0; temporary copy found False; archive members 1: 274 bytes "CONTENT"; F4: [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK; leaving: no window / no window
+EDITLONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OVERLIMIT  RUN    PASS        member 254 bytes / 254 units; viewer False; refused True; F3: <message> [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK
+OVERLIMIT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CTL        RUN    PASS        member 9 bytes / 9 units; viewer True; refused False; F3: C:\Users\pavel\AppData\Local\Temp\SAL200.tmp\short.txt [Plain Text] - Code Viewer
+CTL        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+GZLONG     RUN    FAIL        stored name 274 bytes / 94 units; extracted under the whole name False; target holds 0 (); at the open: no window; F5: [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK
+GZLONG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GZOVER     RUN    FAIL        stored name 304 bytes / 304 units; refused False; files in the target 0; at the open: no window
+GZOVER     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GZCTL      RUN    PASS        stored name 9 bytes / 9 units; extracted under the whole name True; target holds 1 (short.txt); at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "short.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GZCTL      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8 / after CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+
+Rows: PASS 10, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

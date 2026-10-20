@@ -129,7 +129,7 @@ CDecompressFile::CreateInstance(LPCTSTR fileName, DWORD inputOffset, CQuadWord i
 
 // class constructor
 CDecompressFile::CDecompressFile(const char* filename, HANDLE file, unsigned char* buffer, unsigned long start, unsigned long read, CQuadWord inputSize) : FileName(filename), File(file), Buffer(buffer), DataStart(buffer), DataEnd(buffer + read),
-                                                                                                                                                           OldName(NULL), Ok(TRUE), StreamPos(start, 0), ErrorCode(0), LastError(0), FreeBufAndFile(TRUE)
+                                                                                                                                                           OldName(NULL), OldNameTooLong(FALSE), Ok(TRUE), StreamPos(start, 0), ErrorCode(0), LastError(0), FreeBufAndFile(TRUE)
 {
     CALL_STACK_MESSAGE3("CDecompressFile::CDecompressFile(%s, , %u)", filename, read);
 
@@ -160,11 +160,12 @@ CDecompressFile::~CDecompressFile()
         free(OldName);
 }
 
-void CDecompressFile::SetOldName(char* oldName)
+void CDecompressFile::SetOldName(const char* oldName, BOOL tooLong)
 {
     if (OldName != NULL)
         free(OldName);
     OldName = _strdup(oldName);
+    OldNameTooLong = tooLong;
     // format boundary (interface 104): the name stored in a stream header (the gzip
     // ORIG_NAME field, ...) carries no encoding tag - decode it like an archive name.
     // GetOldName() below builds the fallback name from the archive path, which the

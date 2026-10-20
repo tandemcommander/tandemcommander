@@ -7,6 +7,7 @@
 #include "fileio.h"
 #include "tar.h"
 #include "deb/deb.h"
+#include "../../common/salmaskname.h" // feature 260: SalNameTooLongForFileSystemU8
 
 #include "tar.rh"
 #include "tar.rh2"
@@ -1664,6 +1665,17 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
 BOOL CArchive::GetStreamHeader(SCommonHeader& header)
 {
     CALL_STACK_MESSAGE1("CArchive::GetStreamHeader( )");
+
+    if (Stream->GetOldName() == NULL) // low memory, already reported
+        return FALSE;
+    // feature 260: a stored name (gzip) no file system takes - over 255 UTF-16 units, or longer than
+    // the reader collects - refuses the stream: never listed or extracted under a cut name
+    if (Stream->IsOldNameTooLong() || SalNameTooLongForFileSystemU8(Stream->GetOldName()))
+    {
+        SalamanderGeneral->ShowMessageBox(SalamanderGeneral->GetErrorText(ERROR_FILENAME_EXCED_RANGE),
+                                          LoadStr(IDS_GZERR_TITLE), MSGBOX_ERROR);
+        return FALSE;
+    }
 
     // create a "fake" stream header
     header.FileInfo.NameLen = strlen(Stream->GetOldName());

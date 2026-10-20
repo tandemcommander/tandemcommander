@@ -31,6 +31,9 @@ public:
     CQuadWord GetStreamPos() { return StreamPos; }
     // returns the original file name stored in the archive (the tar name in gzip, etc.)
     const char* GetOldName();
+    // feature 260: TRUE when the stored name was longer than the reader collects (the name is then
+    // refused - GetStreamHeader)
+    BOOL IsOldNameTooLong() { return OldNameTooLong; }
     // returns the name of the file it works with (the archive name)
     const char* GetArchiveName() { return FileName; }
 
@@ -46,13 +49,14 @@ protected:
     // reads a byte from the file
     unsigned char FReadByte();
     // sets the original file name (if it was stored in the archive)
-    void SetOldName(char* oldName);
+    void SetOldName(const char* oldName, BOOL tooLong = FALSE);
 
     BOOL FreeBufAndFile;      // TRUE = we took over the file and buffer, release them in the destructor
     BOOL Ok;                  // state flag
     unsigned int ErrorCode;   // if an error occurred, it is specified here
     const char* FileName;     // archive name we are working with
     char* OldName;            // original file name before packing
+    BOOL OldNameTooLong;      // feature 260: the stored name was longer than collected (refused)
     CQuadWord InputSize;      // archive size
     CQuadWord StreamPos;      // position in the archive (for progress)
     HANDLE File;              // opened archive

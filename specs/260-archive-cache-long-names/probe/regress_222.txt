@@ -1,0 +1,17 @@
+editname222_probe (feature 222) regress-260
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 11:22; registry key existed True
+
+LONG       RUN    PASS        member 274 bytes / 94 units; refused False; editor processes 1; windows: no window
+LONG       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CTL        RUN    PASS        member 9 bytes / 9 units; refused False; editor processes 1; windows: no window
+CTL        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F5LONG     RUN    PASS        extracted under the whole name True; windows: [#32770 'Copy'] [Static id=209] Copy file "\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C\u4E0D..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+F5LONG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DIRLONG    RUN    PASS        the listing ended False; keep.txt extracted True; at the open: [#32770 'ZIP'] [Static id=2477] Cannot add 1 or more files to the list. The total path is too long. Some directories or files may be missing in the archive listing. | [Button id=1] OK; F5: [#32770 'Copy'] [Static id=209] Copy file "keep.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+DIRLONG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BAD        RUN    PASS        member 8 bytes / 8 units; refused True; editor processes 0; windows: [#32770 'Error'] [Static id=2477] Unable to edit or open file from archive. Name of this file is invalid on Windows file systems (such files can be opened only in viewers). | [Button id=1] OK
+BAD        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

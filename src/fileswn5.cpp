@@ -883,11 +883,13 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                         validTmpName[keep] = 0;
                         SalMakeValidFileNameComponent(validTmpName);
                     }
+                    // feature 260: the copy's path is limited by the Windows path (UTF-16 units),
+                    // not by MAX_PATH bytes - F3 of a member of 90 CJK letters was "too long"
                     name = (char*)DiskCache.GetName(dcFileName,
                                                     validTmpName[0] != 0 ? validTmpName : f->Name,
                                                     &exists, FALSE,
                                                     arcCacheTmpPath[0] != 0 ? arcCacheTmpPath : NULL,
-                                                    plugin != NULL, plugin, &errorCode);
+                                                    plugin != NULL, plugin, &errorCode, TRUE);
                     if (name == NULL)
                     {
                         if (errorCode == DCGNE_TOOLONGNAME)
