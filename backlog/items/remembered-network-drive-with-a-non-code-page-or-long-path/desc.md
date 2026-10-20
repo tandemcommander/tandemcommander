@@ -1,7 +1,7 @@
 ---
 title: Remembered network drive with a non-code-page or long path cannot be reconnected
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: encoding
 source: probe:246
@@ -10,7 +10,7 @@ created: 2026-10-18
 updated: 2026-10-20
 verified: 2026-10-20 7bd36b89
 effort: M
-feature: -
+feature: 264
 related: [drive-list-code-page-texts]
 depends-on: []
 reason: -
@@ -71,3 +71,4 @@ of feature 246 (probe), recorded by the implementing agent.
 - 2026-10-18 — created (source probe:246)
 - 2026-10-19 — moved to Next position 22
 - 2026-10-20 — verified at 7bd36b89: reproduced at 7bd36b89: 246 pickcp probe on hidden desktop, RESTORE seam shows code-page path, drive stays disconnected, invalid-path message
+- 2026-10-20 — run started, feature 264
