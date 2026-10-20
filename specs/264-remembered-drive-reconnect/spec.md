@@ -20,6 +20,14 @@ drives `Z:` -> `\\localhost\C$\...\unnamed_<Chinese>_<Cyrillic>` and
 bar handed Windows `...\unnamed_???_?????` / `...\named_?????`, the drive stayed
 disconnected and the message above appeared. The 0.1.10 build behaves the same.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: Should the reconnection switch to Windows' "restore this letter from the profile" call, or keep its current two-step shape (background attempt with the Esc wait window, then Windows' credential dialog) with the exact path? → A: Keep the current shape with the exact path; the restore-by-letter call is adopted only if the plan measures that it keeps the Esc wait window, the saved user name and the credential dialog (autonomous run: conservative)
+- Q: When the exact remembered path cannot be obtained, may the program fall back to the old code-page path? → A: No - the reconnection is reported as failed; never tried with a shortened or code-page path (autonomous run: rule - a path is never cut, refuse instead)
+- Q: Is the panel's recovery for a listed drive whose connection does not answer (it tries the network path itself) part of this feature? → A: Yes - it uses the same remembered path, which the item names (`CheckAndRestoreNetworkConnection`) (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pick a remembered drive whose path has characters outside the code page (Priority: P1)
@@ -173,10 +181,6 @@ share (the hidden desktop has no keyboard and no password-protected server).
 
 ## Assumptions
 
-- Assumption (autonomous run): the reconnection keeps its current shape (first attempt in
-  the background with the Esc wait window, then Windows' interactive credential dialog);
-  the item's alternative "restore by letter" call is evaluated in the plan and chosen only
-  if it keeps that shape.
 - Assumption (autonomous run): Windows 11 is the only target (constitution); the Windows
   XP / Vista credential branches of the old code are not carried to the new path.
 - Assumption (autonomous run): the password dialog with a real password-protected share
