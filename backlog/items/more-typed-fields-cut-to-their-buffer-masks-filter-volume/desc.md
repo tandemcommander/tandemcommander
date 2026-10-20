@@ -1,7 +1,7 @@
 ---
 title: More typed fields cut to their buffer: masks, filter, volume label, hot path label edit
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: long-paths
 source: leftover:251
@@ -10,7 +10,7 @@ created: 2026-10-20
 updated: 2026-10-20
 verified: 2026-10-20 11e20a84
 effort: M
-feature: -
+feature: 270
 related: []
 depends-on: []
 reason: -
@@ -68,3 +68,4 @@ system is far below 260 bytes) - check first.
 - 2026-10-20 — related item dialog-typed-text-cut-to-caller-buffer done in feature 251
 - 2026-10-20 — moved to Next position 3
 - 2026-10-20 — verified at 11e20a84: reproduced at 11e20a84 by a hidden-desktop probe: Select/Unselect/Filter cut to 259 bytes, Convert converted a file the typed mask missed, the volume label written cut, F2 label stored as 86 of 100 letters
+- 2026-10-20 — run started, feature 270

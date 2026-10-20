@@ -3,7 +3,7 @@
 **Feature Branch**: `270-mask-filter-label-fits`
 **Created**: 2026-10-20
 **Status**: Draft
-**Input**: Backlog item more-typed-fields-cut-to-their-buffer-masks-filter-volume (backlog/items/more-typed-fields-cut-to-their-buffer-masks-filter-volume/desc.md) - implement exactly what it describes.
+**Input**: Backlog item more-typed-fields-cut-to-their-buffer-masks-filter-volume (backlog/items/more-typed-fields-cut-to-their-buffer-masks-filter-volume/desc.md) - implement exactly what it describes. From backlog item more-typed-fields-cut-to-their-buffer-masks-filter-volume.
 
 ## Background
 
