@@ -45,6 +45,7 @@ CFileViewWindow::CFileViewWindow(CFileViewID id, CFileViewType type)
     ID = id;
     Type = type;
     DataValid = FALSE;
+    CloseBegun = FALSE;
     HFont = NULL;
     FontWidth = 0;
     LineNumDigits = 0;

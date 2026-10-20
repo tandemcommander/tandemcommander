@@ -1189,6 +1189,10 @@ CHexFileViewWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_USER_HANDLEFILEERROR:
     {
+        // feature 266: dispatched by the main window's WM_DESTROY wait - the window is closing,
+        // the error has no meaning any more: no box, no "close the comparison?" question
+        if (CloseBegun)
+            return 0;
         char buf[1024];
         strcpy(buf, LoadStr(IDS_ACCESFILE2));
         if (lParam != ERROR_SUCCESS)

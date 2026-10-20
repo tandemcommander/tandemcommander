@@ -2379,6 +2379,13 @@ CMainWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_DESTROY:
     {
+        // feature 266: the close began - the worker wait below dispatches the views' posted
+        // messages (a hex view's pending file error), which must not show a box any more
+        if (FileView[fviLeft])
+            FileView[fviLeft]->BeginClose();
+        if (FileView[fviRight])
+            FileView[fviRight]->BeginClose();
+
         DragAcceptFiles(HWindow, FALSE);
 
         // destroy the array before the window; if the array is large the window may close while the thread keeps running

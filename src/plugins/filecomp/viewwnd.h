@@ -62,6 +62,7 @@ protected:
     CFileViewID ID;
     CFileViewType Type;
     BOOL DataValid;
+    BOOL CloseBegun; // feature 266: the main window is being destroyed (BeginClose)
     int LineNumDigits;
     int LineNumWidth;
     HFONT HFont;
@@ -89,6 +90,9 @@ public:
 
     virtual void InvalidateData();
     virtual void DestroyData() { DataValid = FALSE; }
+    // feature 266: called first in the main window's WM_DESTROY - its wait for a running worker
+    // dispatches the views' posted messages, which must show no box any more
+    void BeginClose() { CloseBegun = TRUE; }
     virtual void SetSiblink(CFileViewWindow* wnd) = 0;
     virtual CFileViewWindow* GetSiblink() { return Siblink; }
     virtual void ReloadConfiguration(DWORD flags, BOOL updateWindow);

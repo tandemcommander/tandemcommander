@@ -1,0 +1,13 @@
+plugin_close_box_probe (feature 147), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 16:48; desktop 'tc_probe_29984'; registry key existed True; export SHA-256 A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+Fixture : C:\Users\pavel\AppData\Local\Temp\tc147\fc_same (two equal text files), C:\Users\pavel\AppData\Local\Temp\tc147\cs_lock\locked.bin (2 MB, the probe locks its first MB during the rows)
+Hot keys: renamer.spl id 1: 1; checksum.spl id 1: 1; checksum.spl id 2: 1; diskmap.spl id 1: 1; filecomp.spl id 1: 1
+
+--- K1: File Comparator, 'The files are identical' box open (expected: the program ends cleanly)
+K1         STATE  PASS        comparator box [#32770 'File Comparator'] [Static id=2477] The files are identical. Do you wish to close File Comparator? | [Button id=6] &Yes | [Button id=7] &No
+           shown: 0,2 s [SalamanderSaveBits 'Tandem Commander'] 
+K1         EXIT   PASS        0x00000000; after 1,5 s; crash reports 0; fatal window False; the core's force question not asked
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

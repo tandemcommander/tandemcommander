@@ -46,6 +46,9 @@ void CFileMapping::Destroy()
         CloseHandle(File);
         File = INVALID_HANDLE_VALUE;
     }
+    // feature 266: no file - no size (a paint after the release maps nothing instead of asking a
+    // closed mapping for a view and reporting "the handle is invalid")
+    FileSize = 0;
 }
 
 void CFileMapping::Release()
