@@ -1,0 +1,17 @@
+find_words_hex_probe (feature 257), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 07:08; registry key existed True; export SHA-256 CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8; hot keys: regedt.spl id 1: 1
+ACP     : 1250; the quoted text's bytes: E8 41 42
+
+RX-BAR     FOUND  PASS        'bar' (hex 0, regexp 1, whole words 0): found [probe257ww1, probe257ww2, probe257ww3], expected [probe257ww1, probe257ww2, probe257ww3]
+WW-LINE2   FOUND  FAIL        'bar' (hex 0, regexp 1, whole words 1): found [probe257ww1, probe257ww3], expected [probe257ww1, probe257ww2]
+EMPTY-TXT  FOUND  PASS        '' (hex 0, regexp 0, whole words 0): found [probe257empty, probe257hx1, probe257ww1, probe257ww2, probe257ww3], expected [probe257empty, probe257hx1, probe257ww1, probe257ww2, probe257ww3]
+EMPTY-TXT-WW FOUND  PASS        '' (hex 0, regexp 0, whole words 1): found [probe257empty, probe257hx1, probe257ww1, probe257ww2, probe257ww3], expected [probe257empty, probe257hx1, probe257ww1, probe257ww2, probe257ww3]
+EMPTY-RX   FOUND  PASS        '' (hex 0, regexp 1, whole words 0): found [probe257empty, probe257hx1, probe257ww1, probe257ww2, probe257ww3], expected [probe257empty, probe257hx1, probe257ww1, probe257ww2, probe257ww3]
+EMPTY-RX-WW FOUND  FAIL        '' (hex 0, regexp 1, whole words 1): found [], expected [probe257empty, probe257hx1, probe257ww1, probe257ww2, probe257ww3]
+HEX-CP     FOUND  PASS        ''<C-caron>AB'' (hex 1, regexp 0, whole words 0): found [probe257hx1], expected [probe257hx1]
+HEX-CP-BYTES FOUND  PASS        '01 '<C-caron>AB' 02' (hex 1, regexp 0, whole words 0): found [probe257hx1], expected [probe257hx1]
+FIND       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8 / after CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+
+Rows: PASS 7, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; probe key removed: True; registry restored+identical: True

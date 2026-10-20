@@ -7,8 +7,8 @@ area: other-plugins
 source: review:190
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 2437c4dd
 effort: S
 feature: -
 related: []
@@ -33,3 +33,4 @@ Whole-word regexp matches are judged by the buffer position on every line; an em
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at 2437c4dd: probe 257 at 2437c4dd: whole-word regexp on line 2 wrong both ways, empty regexp + whole words finds nothing; hex 2-byte letter by code reading (ACP 1250 here)
