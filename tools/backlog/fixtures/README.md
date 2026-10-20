@@ -4,7 +4,8 @@
   item in every section, every type, a `github#5` item with `issue.md` and
   `reply.md`, an `evidence/` folder, `related` and `depends-on` links, a
   title with `|` and brackets, one journal row, and `specs/243-example/` for
-  the in-progress item. It was generated with the tool itself
+  the in-progress item (kept in git by its `README.md` — git stores no empty
+  folders, feature 265). It was generated with the tool itself
   (`new`, `move`, `block`, `start`, `run-log` with
   `TANDEM_BACKLOG_NOW=2026-10-17T10:00:00`), so it is also a sample of the
   formats.

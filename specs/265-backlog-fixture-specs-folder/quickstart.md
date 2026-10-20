@@ -10,7 +10,6 @@ From the repository root (Git Bash).
    then in `<tmp>/c` repeat steps 1-2 -> same results (the folder comes from git, not from a
    working tree created by hand).
 4. Negative control: in that clone delete `tools/backlog/fixtures/valid/specs/243-example`
-   and run `test_backlog.py` -> failures return (28 failures, 2 errors as measured at
-   `6085500d`).
+   and run `test_backlog.py` -> failures return (at `6085500d`: 28 failures, 2 errors).
 5. Seed still bites: the test `feature-missing` of `SEEDED` passes (it expects exactly that
    finding after deleting the folder) - part of step 2.
