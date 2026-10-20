@@ -1,7 +1,7 @@
 ---
 title: F3 / F4 refuse archive members whose path inside the archive has 520 bytes or more
 type: improvement
-status: open
+status: in-progress
 severity: 4
 area: archives
 source: leftover:260
@@ -10,7 +10,7 @@ created: 2026-10-20
 updated: 2026-10-21
 verified: 2026-10-21 66245537
 effort: M
-feature: -
+feature: 275
 related: []
 depends-on: []
 reason: -
@@ -43,3 +43,4 @@ Raising the limit hands plug-ins - also third-party ones built against the inter
 - 2026-10-20 — created (source leftover:260)
 - 2026-10-20 — moved to Next position 13
 - 2026-10-21 — verified at 66245537: present at 66245537: probe cache260 row ARCCAP (604-byte ZIP member) F3 refused too long; 095 test in fileswn5/fileswn6
+- 2026-10-21 — run started, feature 275
