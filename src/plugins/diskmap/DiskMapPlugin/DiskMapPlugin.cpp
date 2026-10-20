@@ -719,11 +719,13 @@ BOOL WINAPI CPluginInterface::Release(HWND parent, BOOL force)
     }
 
     // Feature 266: with 'force' (the core's "force it to unload?" answered Yes) a map thread still
-    // inside a shell command (e.g. the shell's Delete confirmation) is terminated after the short
-    // wait - the core's force semantics: the core unloads the code right after this call whatever
-    // it returns, so the release can neither be declined nor wait for the person to answer the
-    // shell (the main window would freeze); answering the shell's window for the user is excluded
-    // by 143 (FR-004). Known cost: the Debug build's leak reports of the terminated thread.
+    // inside a shell command is terminated after the short wait - the core's force semantics: the
+    // core unloads the code right after this call whatever it returns, so the release can neither
+    // be declined nor wait for the person to answer the shell (the main window would freeze);
+    // answering the shell's window for the user is excluded by 143 (FR-004). Known cost: with a
+    // shell confirmation still waiting nothing was done yet (the file is kept; the Debug build
+    // shows the leak reports of the terminated thread), but InvokeCommand runs synchronously, so a
+    // confirmed operation (a Delete or a Paste in progress) is cut off where it is.
     if (!(unattended ? ThreadQueue.KillAll(FALSE, 5000) : ThreadQueue.KillAll(force)) && !force)
     {
         // feature 143 (review): a map still inside a shell command keeps its close pending; the close

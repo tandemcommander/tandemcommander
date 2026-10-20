@@ -58,5 +58,13 @@
   DestroyData` (destructor, `WN_BINARY_FILES_DIFFER` before new data, main window `WM_DESTROY`).
   Readers of `GetFileSize` after `DestroyData`: `Paint` (with size 0 it maps nothing; with
   `ViewOffset > 0` `clipLastRow` becomes 0 - nothing mapped), selection / navigation commands
-  (guarded by `DataValid`). `MapViewOfFile` already returns NULL for size 0.
+  (guarded by `DataValid`). `MapViewOfFile` already returns NULL for size 0. `CM_CLOSEFILES` ->
+  `InvalidateData` repaints with paint already disabled. A recompare whose `SetData` cannot open
+  the file repainted with the stale size and posted a second "handle is invalid" box - gone now
+  (review of 266, NOTE 5).
+- Limit (review of 266, SHOULD-2): `Paint` maps the SIBLING's data by the view's own stored
+  `SiblinkSize`, so in `WN_BINARY_FILES_DIFFER` (both views' data destroyed, then `SetData` of the
+  left view repaints it) the left view can still ask the released right mapping - a pre-existing
+  route of the recompare, not of the close; since 266 the box's reason is whatever
+  `GetLastError()` holds. Inbox item `file-comparator-hex-recompare-error-box-from-the-released`.
 - `CFileMapping::Release` (forgets handles) has no caller - unchanged (spec *Clarifications*).

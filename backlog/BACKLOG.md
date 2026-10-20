@@ -166,6 +166,7 @@ Last triaged: 2026-10-19
 | [DB Viewer: a field length of 1000 or more shows a broken thousands separator](items/dbviewer-field-length-separator/desc.md) | bug | 2 | other-plugins | measure:255 | 2026-10-20 |
 | [Editing long-named archive members: the rows the feature-260 probe could not drive](items/editing-long-named-archive-members-the-rows-the-feature-260/desc.md) | person-step | 6 | archives | leftover:260 | 2026-10-20 |
 | [F3 / F4 refuse archive members whose path inside the archive has 520 bytes or more](items/f3-f4-refuse-archive-members-whose-path-inside-the-archive/desc.md) | improvement | 4 | archives | leftover:260 | 2026-10-20 |
+| [File Comparator hex recompare: error box from the released sibling view](items/file-comparator-hex-recompare-error-box-from-the-released/desc.md) | bug | 2 | other-plugins | review:266 | 2026-10-20 |
 | [Find window: the viewer next / previous file takes the first case-insensitive twin](items/find-window-the-viewer-next-previous-file-takes-the-first/desc.md) | bug | 3 | panels-ui | measure:261 | 2026-10-20 |
 | [Focusing an archive member with a very long name shows "Expanded string is too large." twice](items/focusing-an-archive-member-with-a-very-long-name-shows/desc.md) | bug | 4 | panels-ui | measure:260 | 2026-10-20 |
 | [Forced Disk Map unload in a shell command: cancel the shell window or terminate](items/forced-disk-map-unload-in-a-shell-command-cancel-the-shell/desc.md) | decision | 2 | other-plugins | measure:266 | 2026-10-20 |

@@ -70,3 +70,36 @@ Backlog item `plugin-close-forced-unload-and-stray-box` (leftovers of 143 and 14
   **PASS 2, FAIL 0**; registry restored, identical.
 - Comparator stray box (US1): **NOT DRIVEN** (research R2) - proven by code reading and the
   independent review. Not owed to a person either: the timing cannot be produced by hand.
+
+## Review (refute-first agent, 2026-10-20)
+
+No MUST finding. Confirmed: the measurement; the pump is reached only after the first difference
+(the views are hex objects then, none is replaced between `BeginClose` and the dispatch); both
+views covered (the sibling's error is posted to the painting view); no other dispatch route after
+`WM_DESTROY` returns; the mark is never set on a window that stays open; every reader of
+`GetFileSize` after `FileSize = 0`; no data-loss path; part (1)'s decision justified (item
+*Approach* / *Notes*, 143 FR-004, `CPluginData::Remove` unloads whatever a forced `Release` returns).
+
+- SHOULD-1 (fixed): the comment at `KillAll` and the decision item understated what the forced
+  termination interrupts - `InvokeCommand` runs without `CMIC_MASK_ASYNCOK`, so a confirmed shell
+  operation in progress (Delete, Paste with Replace) runs on the map's thread and is cut off; "file
+  kept" holds only for a waiting confirmation (rows E4/E5). Comment and decision item now say so;
+  the recommendation names `CMIC_MASK_ASYNCOK` as the better fix if that case matters.
+- SHOULD-2 (outside the item -> Inbox `file-comparator-hex-recompare-error-box-from-the-released`,
+  source review:266): `Paint` maps the sibling by its own stored `SiblinkSize`; in a recompare
+  (`WN_BINARY_FILES_DIFFER`) the left view can repaint against the already released right mapping
+  and show a box (before 266 "The handle is invalid", now the reason `GetLastError()` holds). The
+  `filemap.cpp` comment and research R3 were reworded so they do not overclaim.
+- NOTE-3 (recorded): the mark lives on the view objects - a view created by a comparison started
+  from inside the closing wait (a pending drop / recompare / configuration change) lacks it;
+  pre-existing, very unlikely; SC-001 reworded accordingly.
+- NOTE-4 (recorded): no run proves US1 (K1 uses equal text files - a smoke test of the close);
+  a negative control would need a Debug-only seam that fails one `MapViewOfFile`. Not added: the
+  item asks for no seam; the claim rests on code reading and this review.
+- NOTE-5 (fixed in the texts): US2 also removes a narrow second "handle is invalid" box of a
+  recompare whose file cannot be opened; R3 completed (`CM_CLOSEFILES` -> `InvalidateData`).
+- NOTE-6 (fixed): the duplicate `probe/result_143_E4-E6_rows.txt` removed.
+
+After the review fixes (comments and texts only): `.\build.cmd` BUILD SUCCEEDED; `saltests: 24716
+checks, 0 failed`; `check_encoding.py --strict` TOTAL: 0 finding(s); clang-format clean on the
+changed files. No second review: no MUST finding.

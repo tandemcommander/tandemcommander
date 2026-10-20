@@ -59,8 +59,10 @@ After the hex view released a file (its data destroyed), the view's file size re
 any later paint finds nothing to show instead of trying to read a released file and reporting
 "the handle is invalid".
 
-**Why this priority**: no visible defect today (a trap for later work), but it closes the path
-by which a paint after the release would produce the stray box of story 1.
+**Why this priority**: mostly a trap for later work; it also removes a narrow second "handle
+is invalid" box (a recompare whose file cannot be opened repainted the view with the stale size -
+review of 266). A sibling view's paint still uses its own stored size of the other file (a
+pre-existing route of the recompare, an Inbox item).
 
 **Independent Test**: code review; the size is reset next to the handles it describes.
 
@@ -117,8 +119,10 @@ the file is kept; the map's thread is ended by force as in every release (the fo
 
 ### Measurable Outcomes
 
-- **SC-001**: In the comparator's closing path, zero code paths remain that show a box from a
-  pending hex-view read error (code review, confirmed by the independent review).
+- **SC-001**: In the comparator's closing path, no route remains that shows a box from a
+  hex-view read error pending at the start of the close (code review, confirmed by the
+  independent review; a view created anew by a comparison started from inside the closing wait
+  is outside - review NOTE 3).
 - **SC-002**: After a hex view's data are destroyed its reported file size is 0 (code review).
 - **SC-003**: 143's probe rows E4, E5, E6 pass on the build of this feature as they did before
   (no regression of Disk Map's close).
