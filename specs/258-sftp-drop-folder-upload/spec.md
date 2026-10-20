@@ -118,6 +118,9 @@ needs (the old file and the local source are intact).
 - **FR-001**: When the server refuses with a permission status to say whether the upload target
   exists (session alive), the upload MUST create the target only if no file of that name
   exists (exclusive create) and MUST NOT open, truncate or rename over an existing file.
+- **FR-001a**: A folder of an uploaded tree that the server refuses to create with a status that
+  can mean "it exists" (FAILURE, FILE_ALREADY_EXISTS) and refuses to show (permission) MUST be
+  taken as there; its files follow FR-001 and fail on their own if it is not (review 1).
 - **FR-002**: If the exclusive create is refused, the item MUST fail with a reason that says the
   server does not show whether a file of that name exists; nothing on the server is changed.
 - **FR-003**: When the server refuses with a permission status to report the size of an

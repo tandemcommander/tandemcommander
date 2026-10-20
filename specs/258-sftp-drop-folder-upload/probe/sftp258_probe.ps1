@@ -16,12 +16,15 @@
       DROPNEW    Copy up.txt to the typed target /drop: PASS = drop\up.txt holds the new content,
                  no .tcpart-* in drop, no error box
       DROPEXIST  the same with drop\up.txt there already: PASS = it keeps its content, an error
-                 box says why, no .tcpart-* in drop
+                 box says why, no .tcpart-* in drop (the server would let a truncating open
+                 overwrite it: only the product's exclusive create keeps it)
       DROPMOVE   Move mv.txt to /drop: PASS = drop\mv.txt holds it, the local source is gone
       DROPDIR    Copy the folder pack (a.txt, b.txt) to /drop: PASS = drop\pack\a.txt, b.txt
       DROPFAIL   Copy big.bin (300,000 bytes) to /drop, the write fails after 1,000 bytes (debug seam
                  TC_SFTP_PROBE_XFER_FAIL): PASS = the box says a partial file may remain (the server
                  refuses its removal), the local file stays
+      DROPDIR2   Copy the folder pack2 (c.txt) to /drop where drop\pack2 exists already: PASS =
+                 drop\pack2\c.txt arrives, no error box
       REPL       Copy r.txt over /pub/r.txt (the question answered Yes): PASS = replaced, the
                  question names hard links and the ACL
       CUT        Copy c.txt to /cut, the connection is dropped at the close of its temporary file;
@@ -207,6 +210,7 @@ try {
     Row-Up 'DROPMOVE' '/pub' 1 728 { param($l) WriteFile ($l + '\mv.txt') 'DROP-MOVE' } { param($t, $l, $c) $v = SrvText 'drop\mv.txt'; $src = [IO.File]::Exists($LP + $l + '\mv.txt'); @{ Ok = ($v -ceq 'DROP-MOVE' -and -not $src -and (SrvParts 'drop').Count -eq 0); Facts = ("drop\mv.txt holds '{0}'; the local source still there {1}" -f $v, $src) } } $Target
     Row-Up 'DROPDIR' '/pub' 1 727 { param($l) NewDir ($l + '\pack'); WriteFile ($l + '\pack\a.txt') 'PACK-A'; WriteFile ($l + '\pack\b.txt') 'PACK-B' } { param($t, $l, $c) $a = SrvText 'drop\pack\a.txt'; $b = SrvText 'drop\pack\b.txt'; @{ Ok = ($a -ceq 'PACK-A' -and $b -ceq 'PACK-B' -and (SrvParts 'drop\pack').Count -eq 0 -and -not (Has $t $Box)); Facts = ("drop\pack\a.txt '{0}', b.txt '{1}'; an error box {2}" -f $a, $b, (Has $t $Box)) } } $Target
     Row-Up 'DROPFAIL' '/pub' 1 727 { param($l) WriteFile ($l + '\big.bin') (BigText) } { param($t, $l, $c) $p = $Srv + '\drop\big.bin'; $n = $(if ([IO.File]::Exists($LP + $p)) { (New-Object IO.FileInfo($LP + $p)).Length } else { -1 }); $said = Has $t 'Cannot upload.*partial file may remain'; @{ Ok = ($said -and $n -lt 300000 -and [IO.File]::Exists($LP + $l + '\big.bin')); Facts = ("the write fails after 1000 bytes (seam): drop\big.bin size {0} (the server refuses its removal); the box says a partial file may remain {1}" -f $n, $said) } } $Target 1 'big.bin;1000'
+    Row-Up 'DROPDIR2' '/pub' 1 727 { param($l) NewDir ($l + '\pack2'); WriteFile ($l + '\pack2\c.txt') 'PACK2-C'; NewDir ($Srv + '\drop\pack2') } { param($t, $l, $c) $v = SrvText 'drop\pack2\c.txt'; @{ Ok = ($v -ceq 'PACK2-C' -and -not (Has $t $Box)); Facts = ("the folder drop\pack2 is there already (the server refuses to show it): drop\pack2\c.txt '{0}'; an error box {1}" -f $v, (Has $t $Box)) } } $Target
     Row-Up 'REPL' '/pub' 1 727 { param($l) WriteFile ($l + '\r.txt') 'REPL-NEW'; WriteFile ($Srv + '\pub\r.txt') 'REPL-OLD' } { param($t, $l, $c) $v = SrvText 'pub\r.txt'; $q = @($t | Where-Object { $_ -match 'already exists' }) -join ' '; $named = ($q -match 'hard link' -and $q -match 'ACL'); @{ Ok = ($v -ceq 'REPL-NEW' -and $named -and (SrvParts 'pub').Count -eq 0); Facts = ("pub\r.txt holds '{0}'; the question names hard links and the ACL: {1}" -f $v, $named) } }
     Row-Up 'CUT' '/cut' 1 727 { param($l) WriteFile ($l + '\c.txt') 'CUT-NEW'; WriteFile ($Srv + '\cut\.armed') 'x' } { param($t, $l, $c) $v = SrvText 'cut\c.txt'; $tp = SrvParts 'cut'; $offer = Has $t 'left on the server.*Delete them'; @{ Ok = ($v -ceq 'CUT-NEW' -and $tp.Count -eq 0 -and $offer -and -not [IO.File]::Exists($LP + $Srv + '\cut\.armed')); Facts = ("cut\c.txt holds '{0}'; .tcpart-* left in cut: {1} ({2}); a dialog named the temporary file {3}" -f $v, $tp.Count, ($tp -join ','), $offer) } } '' 2
 }

@@ -7,8 +7,9 @@ only, password login; every request logged (one line each).
 
 ROOT is a local folder shown as "/". In "/drop" (and below it) the server refuses, with
 SSH_FX_PERMISSION_DENIED: stat, lstat, fstat, opendir, rename, posix-rename, remove, setstat,
-and an open that would truncate or append to an existing file. Everything else is a plain
-file system. A file of "/drop" is created only with CREAT (EXCL honoured).
+and an open for reading. A write open is allowed, also over an existing file (an account with
+"upload" and "overwrite" but no "list"): only an exclusive create (EXCL, honoured) keeps an
+existing file. Everything else is a plain file system.
 "/cut": while ROOT/cut/.armed exists, the close of a file written under "/cut" removes .armed,
 closes the file and then drops the connection without an answer (the client's request is lost
 with its transport) - the model of a connection lost at the end of an upload.
@@ -142,9 +143,8 @@ class Iface(SFTPServerInterface):
         lp = local(path)
         exists = os.path.exists(lp)
         log('open %s flags=0x%x exists=%s' % (path, flags, exists))
-        if drop and exists and (flags & (os.O_TRUNC | os.O_APPEND) or not flags & os.O_CREAT or not flags & (os.O_WRONLY | os.O_RDWR)):
-            log('open %s DENIED (existing file in drop)' % path)
-            return SFTP_PERMISSION_DENIED
+        # (a write open of an existing file - also a truncating one - is allowed: only the
+        # client's exclusive create keeps an existing file; review 1 of 258, SHOULD-1)
         if drop and not flags & (os.O_WRONLY | os.O_RDWR):
             log('open %s DENIED (read in drop)' % path)
             return SFTP_PERMISSION_DENIED

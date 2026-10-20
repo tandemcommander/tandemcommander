@@ -369,6 +369,11 @@ BOOL SftpTargetStatRefused(BOOL connected, unsigned long status)
     return connected && SftpStatusIsPermission(status);
 }
 
+BOOL SftpMkdirMayExist(unsigned long status)
+{
+    return status == 4 || status == 11; // SSH_FX_FAILURE, SSH_FX_FILE_ALREADY_EXISTS
+}
+
 BOOL SftpIsUploadTempPath(const char* path)
 {
     if (path == NULL)

@@ -111,7 +111,9 @@ a permission status.
 - Regression: 133's SFTP probe on the container `tandem-sftp` (`probe/regress_133.txt`): **PASS
   76, FAIL 0** - the same count as 205's last run; the 139 rows UPASKNO, UPASKYES, UPFAIL,
   UPNEWFAIL, UPSYM, UPMV, UPMOVE, UPLINK pass.
-- Harness 239 / 0; encoding guard TOTAL 0; `build.cmd` BUILD SUCCEEDED.
+- Harness 239 / 0 (241 / 0 after review 1); encoding guard TOTAL 0; `build.cmd` BUILD SUCCEEDED.
+- 133 regression re-run after review 1 (UploadDirLevel changed): **PASS 76, FAIL 0** (UPMOVE, the
+  folder the server cannot create, still fails that folder with its reason).
 - saltests: not run - nothing in the core or `src/common/` changed.
 
 ## Not driven / owed
@@ -119,3 +121,37 @@ a permission status.
 - A real upload-only service (SFTPGo with only the "upload" permission, a hosted drop box):
   modelled by `dropsftp.py`; owed to a person with access to one.
 - An ACL / extended attributes on a replaced file: no tools in the container; by reading.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+It re-ran the harness (239 / 0), the probe (14 / 0), 133's probe (76 / 0), and a mutation of the
+drop route (`OpenWriteNew` -> `OpenWrite` with truncation), restored by `git checkout` and rebuilt.
+- **SHOULD-1** DROPEXIST tested the test server, not the product: `dropsftp.py` itself refused a
+  truncating open of an existing `/drop` file, so the mutated build passed the row. With a server
+  allowing the overwrite (an "upload + overwrite, no list" account) the mutated build FAILED
+  (`drop\up.txt` became 'DROP-NEW') and the real build passed. -> **Fixed**: `dropsftp.py` now
+  allows any write open in `/drop`; DROPEXIST passes only through the exclusive create (server
+  log: `open /drop/up.txt flags=0x501 exists=True` -> `FileExistsError`).
+- **SHOULD-2** "an existing file is never touched" holds only on a server that honours EXCL; one
+  that ignores it would be written over (and a failed upload would unlink it). No client-side
+  remedy -> **CHANGELOG limitation qualified**; the check on a real service is owed to a person.
+- NOTE-1 the offer's "they hold only copies" assumes an atomic rename (unlikely otherwise) - kept.
+- NOTE-2 drop-route branches "removal succeeded" / "stopped" not driven - recorded here.
+- NOTE-3 a temp is remembered only when `IsConnected()` is already false (older 139/140 limit).
+- **NOTE-4** a folder uploaded again into a drop folder failed at `Mkdir` ("SFTP error 4") ->
+  **fixed in scope** (the item: "succeeds (or says why)"): `SftpMkdirMayExist` (FAILURE /
+  FILE_ALREADY_EXISTS) + a `stat` refused for want of a right = the folder is taken as there,
+  its files take the drop route. A Mkdir refused for a right still fails with its reason (no
+  box per file). Harness 241 / 0 (2 new checks); new row DROPDIR2. Negative control: DROPDIR2 on
+  the build without the change (`probe/result_negative_dropdir2.txt`) FAILS ("Cannot create
+  directory"); DROPEXIST there PASSES against the permissive server (the exclusive create).
+- NOTE-5 a target in a folder the account cannot enter on plain OpenSSH now reads "Permission
+  denied. - the server does not show whether a file of that name is there; nothing was
+  replaced" - true, kept.
+- NOTE-6 contract drift (name form checked at recording; text position) -> contract corrected.
+- NOTE-7 the lost command after the reconnect -> Inbox item
+  `sftp-a-copy-posted-right-after-a-failed-upload-and-its` (measure:258).
+- After the fixes: build clean (no warning), harness 241 / 0, probe `probe/result_after.txt`
+  **16 / 0** (DROPDIR2 added), encoding guard TOTAL 0.

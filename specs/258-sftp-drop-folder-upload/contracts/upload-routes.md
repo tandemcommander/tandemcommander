@@ -25,6 +25,11 @@ local source only on a confirmed upload.
 
 The overwrite question is never asked on this route (nothing can be replaced).
 
+A folder of an uploaded tree inside a drop folder: a refused `Mkdir` whose status can mean
+"exists" (FAILURE, FILE_ALREADY_EXISTS - `SftpMkdirMayExist`) followed by a `stat` refused for
+want of a right = the folder is taken as there; its files take the drop route and fail on their
+own if it is not. Any other refusal fails the folder with the Mkdir's reason (139).
+
 ## Confirmation of a written file (every route)
 
 `stat(written)`: size known -> 139's comparison. Refused with a permission status on a live
@@ -35,10 +40,11 @@ line. Anything else -> not confirmed (139).
 
 Recorded: a temp whose `Unlink` failed on a dead session (UploadDropTemp). Not recorded: the
 temp kept as the only copy (139 rows 12, 14, 17, 18) and a temp whose removal the server
-refused on a live session. Offered once, at the next upload on the same session: Yes = `lstat`
-each (regular file, our name form) -> `Unlink`; No = forgotten.
+refused on a live session; only a path of our name form (`SftpIsUploadTempPath`) is recorded.
+Offered once, at the next upload on the same session: Yes = `lstat` each (not followed; a
+regular file) -> `Unlink`; No = forgotten. One the session could not ask about is recorded again.
 
 ## The overwrite question
 
-Adds: "If it is replaced through a new copy (as normally), other hard links to it keep the old
-content, and its ACL and extended attributes are not carried over."
+Adds, after the button legend: "It is replaced by a new copy where the server allows it: other
+hard links to it keep the old content, and its ACL and extended attributes are not carried over."

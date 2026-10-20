@@ -46,6 +46,11 @@ working method (measure first, probe rows before / after).
 - [X] T015 Update `specs/258-sftp-drop-folder-upload/fix-log.md` (after measurements, decisions, limits)
 - [X] T016 CHANGELOG entry under the `— unreleased` heading in `CHANGELOG.md`
 
+## Phase 7: Review 1 follow-up
+
+- [X] T017 [US1] Folder uploaded again into a drop folder (review 1, NOTE-4): `SftpMkdirMayExist` in `src/plugins/sftp/sftputils.h/.cpp` + harness, `UploadDirLevel` in `src/plugins/sftp/operats.cpp`; probe row DROPDIR2
+- [X] T018 Test server `probe/dropsftp.py` lets a write open overwrite an existing `/drop` file (review 1, SHOULD-1), so DROPEXIST proves the exclusive create; CHANGELOG limitation qualified (SHOULD-2)
+
 ## Dependencies
 
 T002-T003 before every story. US1 (T004-T006) first (MVP). US2 (T007) independent. US3 (T008-T011)

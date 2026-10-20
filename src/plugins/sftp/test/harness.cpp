@@ -206,6 +206,10 @@ static void TestPaths()
     CHECK(!SftpTargetStatRefused(FALSE, 3) && !SftpTargetStatRefused(FALSE, 12));
     CHECK(!SftpTargetStatRefused(TRUE, 0) && !SftpTargetStatRefused(TRUE, 2) && !SftpTargetStatRefused(TRUE, 4) &&
           !SftpTargetStatRefused(TRUE, 7) && !SftpTargetStatRefused(TRUE, 8) && !SftpTargetStatRefused(TRUE, 10));
+    // feature 258: a folder in a drop folder is gone on with only when the Mkdir may have met it
+    CHECK(SftpMkdirMayExist(4) && SftpMkdirMayExist(11));
+    CHECK(!SftpMkdirMayExist(0) && !SftpMkdirMayExist(2) && !SftpMkdirMayExist(3) && !SftpMkdirMayExist(7) &&
+          !SftpMkdirMayExist(8) && !SftpMkdirMayExist(12) && !SftpMkdirMayExist(14) && !SftpMkdirMayExist(15));
     // feature 258: only names SftpTempPath makes are offered for deletion
     {
         char made[64];
