@@ -1,7 +1,7 @@
 ---
 title: Importing a configuration file writes every key of a foreign .reg file
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: data-safety
 source: measure:245
@@ -10,7 +10,7 @@ created: 2026-10-18
 updated: 2026-10-20
 verified: 2026-10-20 0e36adce
 effort: S
-feature: -
+feature: 263
 related: []
 depends-on: []
 reason: -
@@ -35,3 +35,4 @@ Only keys under the program own root are imported (others skipped and named), or
 - 2026-10-18 — created (source measure:245)
 - 2026-10-19 — moved to Next position 21
 - 2026-10-20 — verified at 0e36adce: reproduced at 0e36adce: probe import263 -C file; foreign HKCU key written (mixed file, no question; foreign-only after Yes), foreign key deleted by a delete line
+- 2026-10-20 — run started, feature 263
