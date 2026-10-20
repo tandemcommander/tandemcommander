@@ -1,0 +1,9 @@
+ren_regex_probe (feature 254), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 03:45; ACP 1250; registry key existed True
+
+ww-mark    RUN    FAIL        preview rows 1; boxes as expected: True; on disk: before 43616665CC8120782E747874 got 546561CC8120782E747874 want 43616665CC8120782E747874; boxes: no box
+ww-mark    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4 / after 98A53651DC1ACEC5D1AC5D0D4851CAA4E385235CE88A59CF2073B416611124D4
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

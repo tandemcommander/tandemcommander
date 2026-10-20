@@ -25,6 +25,8 @@
       ci-class  "Z lut'.txt", "^[z-caron]", case-insensitive -> "z": "zlut'.txt"
       empty     "z l.txt", "l*" -> "-", Global + Exclude extension: "-z-.txt" (an empty match
                 after a letter skips the whole letter)
+      ww-mark   "Cafe + U+0301 x.txt", plain search "Cafe" -> "Tea" with Whole words: nothing renamed
+                (the combining mark belongs to the word)
       asc-wb    control "abc def.txt", "\b\w" Global -> "X": "Xbc Xef.Xxt"
       asc-dot   control "abc.txt", "^.." -> "Y": "Yc.txt"
     Driver of 210's probe. MUST run through tools\\run_on_hidden_desktop.ps1. Registry exported,
@@ -36,9 +38,10 @@ param(
     [ValidateSet('fixed', 'before')][string]$Expect = 'fixed',
     [string]$OutFile,
     [string[]]$Only,
-    [string]$Lib = (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
+    [string]$Lib   # default: 098's probe library
 )
 $ErrorActionPreference = 'Stop'
+if (-not $Lib) { $Lib = Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1' }
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
 if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 function Want([string]$n) { return (-not $Only) -or ($Only -contains $n) }
@@ -309,6 +312,7 @@ function Run-RenCases {
     S-Row 'posix' ($zhaba + '.txt') $nm 'P.txt' '^[[:alpha:]]+' 'P' (Ck)
     S-Row 'ci-class' ($capZl + '.txt') $nm ('z' + $tail) ('^[' + (S 0x17E) + ']') 'z' (Ck $false)
     S-Row 'empty' ((S 0x17E) + 'l.txt') $nm ('-' + (S 0x17E) + '-.txt') 'l*' '-' (Ck $true $true $true $true)
+    S-Row 'ww-mark' ('Cafe' + (S 0x301) + ' x.txt') $nm ('Cafe' + (S 0x301) + ' x.txt') 'Cafe' 'Tea' @{ 112 = $true; 113 = $true; 114 = $true; 115 = $false; 123 = $false }
     S-Row 'asc-wb' 'abc def.txt' $nm 'Xbc Xef.Xxt' '\b\w' 'X' (Ck $true $true $true)
     S-Row 'asc-dot' 'abc.txt' $nm 'Yc.txt' '^..' 'Y' (Ck)
 }

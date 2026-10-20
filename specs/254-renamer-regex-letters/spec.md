@@ -79,12 +79,14 @@ by a byte inside a letter.
 
 **Why this priority**: a wrong `\b` decision writes a wrong name without any warning.
 
-**Independent Test**: probe rows wordb, lookb.
+**Independent Test**: probe rows wordb, lookb, ww-mark.
 
 **Acceptance Scenarios**:
 
 1. **Given** "Жаба.txt", **When** `а\b` → "A", **Then** "ЖабA.txt" (the last а, before the dot).
 2. **Given** "žluť.txt", **When** `(?<=^.)l` → "L", **Then** "žLuť.txt".
+3. **Given** "Café x.txt" with a combining accent, **When** the plain search "Cafe" → "Tea" with
+   Whole words, **Then** nothing is renamed ("Cafe" is not a whole word there).
 
 ---
 
@@ -126,8 +128,9 @@ saltests.
   merged with their neighbours. A WTF-8 lone surrogate (three bytes) is one letter.
 - A `\x` escape sequence that does not form a whole character matches only the same invalid bytes
   in a name. It never matches part of a valid letter.
-- A bracket range with non-ASCII bounds is a range of code points. A range with a reversed order
-  (end before start) matches nothing, as before for ASCII.
+- A bracket range with a non-ASCII bound is a range of code points; reversed (end before start) it
+  matches nothing. A range of two ASCII bounds, or of two bytes written as `\x` escapes that form no
+  character, keeps exactly today's byte behaviour (including today's result for a reversed range).
 - A case-insensitive class or range compares the lower-case forms (feature 210's same-length fold
   of the name and the pattern). A letter whose two cases differ in UTF-8 length stays
   case-sensitive, as in 210.
@@ -164,6 +167,9 @@ saltests.
   before. This covers the error codes for invalid expressions and the meaning of every option.
 - **FR-013**: The rules that decide letter boundaries, stepping and classification MUST live in a
   shared header with saltests checks.
+- **FR-014**: The plain search's "Whole words" option (feature 210) MUST judge a combining mark and a
+  letter or digit outside the BMP as part of a word, by the same classification as FR-002 (letters,
+  digits, marks; `_` stays a non-word character there, as today).
 
 ### Key Entities
 
@@ -174,7 +180,7 @@ saltests.
 
 ### Measurable Outcomes
 
-- **SC-001**: All 18 probe rows pass (before: 16 fail), including the 2 ASCII controls.
+- **SC-001**: All 19 probe rows pass (before: 17 fail), including the 2 ASCII controls.
 - **SC-002**: None of the probe's expressions is refused "(123)" for a non-ASCII name.
 - **SC-003**: The regression probes of the Renamer (210's 16 rows, 199, 196, 206, 207, 208, 209)
   still pass.
