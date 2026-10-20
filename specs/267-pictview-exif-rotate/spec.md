@@ -25,6 +25,10 @@
 - Q: Update Thumbnail decides "has the file an Exif block?" by feature 132's own file check;
   should it now follow the new engine report instead? → A: No - its decision stays exactly as
   132 made it. (autonomous run: conservative)
+- Q: Must detecting the Exif block avoid reading the picture file a second time (it runs for
+  every JPEG the engine opens, panel thumbnails included)? → A: Yes - it uses only what the
+  system image reader already holds for the opened picture; no second pass over the file and
+  nothing for non-JPEG files. (autonomous run: recommended)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -117,6 +121,9 @@ the window opens and lists the tags (among them "Orientation") only for the file
 - **FR-008**: Update Thumbnail's decision whether a file has an Exif block MUST stay feature
   132's file check, unchanged by the new engine report.
 - **FR-009**: Files other than JPEG MUST keep their present behaviour.
+- **FR-010**: Detecting the Exif block MUST NOT read the file a second time: it uses the
+  metadata the image reader holds for the opened picture, once per opened picture, and only
+  for JPEG files (panel thumbnails pay no extra file access).
 
 ### Key Entities
 
