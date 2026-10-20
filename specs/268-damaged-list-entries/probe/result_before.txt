@@ -1,0 +1,55 @@
+dmg268_probe (feature 268) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 20:47; registry key existed True
+
+V-CONTROL  START  PASS        main window after 3,6 s; boxes 0
+V-CONTROL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+V-CONTROL  KEYS   PASS        no handle left open
+V-CONTROL  SAVED  PASS        saved Viewers: *.tc268a, *.tc268b, *.tc268c; expected: *.tc268a, *.tc268b, *.tc268c
+V-NOTYPE   START  PASS        main window after 3,5 s; boxes 0
+V-NOTYPE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+V-NOTYPE   KEYS   FAIL        a handle was left open (Debug handle monitor)
+V-NOTYPE   SAVED  FAIL        saved Viewers: *.tc268a; expected: *.tc268a, *.tc268c
+V-PIPE     START  PASS        main window after 3,6 s; boxes 0
+V-PIPE     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+V-PIPE     KEYS   FAIL        a handle was left open (Debug handle monitor)
+V-PIPE     SAVED  FAIL        saved Viewers: *.tc268a; expected: *.tc268a, *.tc268c
+V-NOMASKS  START  PASS        main window after 3,5 s; boxes 0
+V-NOMASKS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+V-NOMASKS  KEYS   FAIL        a handle was left open (Debug handle monitor)
+V-NOMASKS  SAVED  FAIL        saved Viewers: ; expected: *.tc268b, *.tc268c
+AV-NOTYPE  START  PASS        main window after 3,5 s; boxes 0
+AV-NOTYPE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+AV-NOTYPE  KEYS   FAIL        a handle was left open (Debug handle monitor)
+AV-NOTYPE  SAVED  FAIL        saved Alternative Viewers: *.tc268a; expected: *.tc268a, *.tc268c
+E-CONTROL  START  PASS        main window after 3,6 s; boxes 0
+E-CONTROL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+E-CONTROL  KEYS   PASS        no handle left open
+E-CONTROL  SAVED  PASS        saved Editors: *.tc268a, *.tc268b, *.tc268c; expected: *.tc268a, *.tc268b, *.tc268c
+E-NOMASKS  START  PASS        main window after 3,5 s; boxes 0
+E-NOMASKS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+E-NOMASKS  KEYS   FAIL        a handle was left open (Debug handle monitor)
+E-NOMASKS  SAVED  FAIL        saved Editors: *.tc268a; expected: *.tc268a, *.tc268c
+E-WRONGTYPE START  PASS        main window after 4,0 s; boxes 1 ([#32770 'Error Loading Configuration'] [Static id=2477] Unexpected value type. | [Button id=1] OK)
+E-WRONGTYPE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+E-WRONGTYPE KEYS   FAIL        a handle was left open (Debug handle monitor)
+E-WRONGTYPE SAVED  FAIL        saved Editors: *.tc268a; expected: *.tc268a, *.tc268c
+E-MULTI    START  PASS        main window after 3,6 s; boxes 0
+E-MULTI    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+E-MULTI    KEYS   FAIL        a handle was left open (Debug handle monitor)
+E-MULTI    SAVED  FAIL        saved Editors: ; expected: *.tc268c
+U-CONTROL  START  PASS        main window after 3,5 s; boxes 0
+U-CONTROL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-CONTROL  KEYS   PASS        no handle left open
+U-CONTROL  SAVED  PASS        saved User Menu: tc268a, tc268b, tc268c; expected: tc268a, tc268b, tc268c
+U-NONAME   START  PASS        main window after 3,5 s; boxes 0
+U-NONAME   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+U-NONAME   KEYS   FAIL        a handle was left open (Debug handle monitor)
+U-NONAME   SAVED  FAIL        saved User Menu: tc268a; expected: tc268a, tc268c
+U-WRONGTYPE START  PASS        main window after 4,2 s; boxes 1 ([#32770 'Error Loading Configuration'] [Static id=2477] Unexpected value type. | [Button id=1] OK)
+U-WRONGTYPE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+U-WRONGTYPE KEYS   FAIL        a handle was left open (Debug handle monitor)
+U-WRONGTYPE SAVED  FAIL        saved User Menu: tc268a; expected: tc268a, tc268c
+Registry: restored; identical=True; SHA-256 before 260702C31625EBEFB87B17C5A66D854BFAB398A34FB3D6F4EFECBC096393AAC5 / after 260702C31625EBEFB87B17C5A66D854BFAB398A34FB3D6F4EFECBC096393AAC5
+
+Rows: PASS 30, FAIL 18, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

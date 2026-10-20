@@ -5,6 +5,14 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item a-damaged-viewer-editor-or-user-menu-entry-erases-the - implement exactly what it describes." From backlog item a-damaged-viewer-editor-or-user-menu-entry-erases-the.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: Should the existing "Error Loading Configuration" message for a value of the wrong type be silenced now that the entry is skipped? → A: No - it stays as it is, once per damaged value read; only the loss of the later entries goes (autonomous run: conservative)
+- Q: Should a skipped damaged entry be written back when the configuration is saved on exit? → A: No - it is skipped, as the item's Expected says and as feature 250 does for highlighting; the save code is not changed (autonomous run: item)
+- Q: Should the loader repair a User Menu submenu left unbalanced by a skipped begin or end entry? → A: No - the consumers already tolerate an unbalanced list; all items are kept and the user can fix the structure in the dialog (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged entry costs only itself (Priority: P1)
@@ -52,8 +60,10 @@ the program on the hidden desktop, close it and read back the list it saved.
   exist in sequence are read.
 - An entry whose item cannot be created or added for lack of memory: the list ends there, as today
   (the loader stops), but the entry's key is closed.
-- A User Menu entry without the item name in the middle of a submenu: the item is left out like any
-  other damaged entry; the menu structure of the remaining items is what they describe.
+- A damaged User Menu entry that begins or ends a submenu: it is left out like any other damaged
+  entry; the remaining items may then describe an unbalanced submenu, which the menu, the toolbar and
+  the configuration page already tolerate (a list cut at a damaged entry was unbalanced the same way).
+  The structure is not repaired; all items are kept and saved, and the user can fix it in the dialog.
 - Configurations of old versions (lower-case conversion of masks, version-1 User Menu conversion) are
   read exactly as before for every readable entry.
 
