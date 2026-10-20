@@ -1,0 +1,9 @@
+attrs_flink272_probe (feature 272) before-nonlink
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 00:10; registry key existed True; ACP 1250
+
+NONLINK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+NONLINK    RUN    PASS        R.TXT (foreign tag) compressed False; 'Error Changing Compression' shown True; boxes set 1 of 1; date not set; dialog: ...[Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; windows: [#32770 'Error Changing Compression'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] (1920) Syst\u00E9m nem\u016F\u017Ee z\u00EDskat p\u0159\u00EDstup k souboru.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
