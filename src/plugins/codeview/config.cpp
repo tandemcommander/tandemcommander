@@ -59,11 +59,61 @@ static const char* CONFIG_WNDPLACEMENT = "WindowPlacement";
 static const char* CONFIG_KEEPREADY = "KeepReady";
 static const char* CONFIG_HINTSHOWN = "FirstRunHintShown";
 static const char* CONFIG_RESTORETYPES = "RestoreDefaultTypes";
+static const char* CONFIG_DEFAULTCONVERT = "DefaultConvert"; // feature 262
 
 static void ClampInt(int* v, int lo, int hi, int def)
 {
     if (*v < lo || *v > hi)
         *v = def;
+}
+
+// feature 262: a conversion table's name is code-page bytes (EnumConversionTables,
+// the B-5 invariant) but the registry facade stores UTF-8 strings, so the name
+// travels as code page <-> UTF-16 <-> UTF-8. A name that does not convert exactly
+// becomes "" (the system code page) - never a guessed or best-fit name.
+static BOOL CvCodePageNameToUtf8(const char* name, std::string& out)
+{
+    out.clear();
+    if (name == NULL || *name == 0)
+        return TRUE;
+    int wn = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, name, -1, NULL, 0);
+    if (wn <= 0)
+        return FALSE;
+    std::wstring w(wn, L'\0');
+    if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, name, -1, &w[0], wn) <= 0)
+        return FALSE;
+    int un = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, w.c_str(), -1, NULL, 0, NULL, NULL);
+    if (un <= 0)
+        return FALSE;
+    out.resize(un);
+    if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, w.c_str(), -1, &out[0], un, NULL, NULL) <= 0)
+        return FALSE;
+    out.resize(un - 1); // without the terminator
+    return TRUE;
+}
+
+static BOOL CvUtf8ToCodePageName(const char* utf8, char* name, int size)
+{
+    name[0] = 0;
+    if (utf8 == NULL || *utf8 == 0)
+        return TRUE;
+    int wn = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, NULL, 0);
+    if (wn <= 0)
+        return FALSE;
+    std::wstring w(wn, L'\0');
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, &w[0], wn) <= 0)
+        return FALSE;
+    BOOL usedDefault = FALSE;
+    int n = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, w.c_str(), -1, NULL, 0, NULL, &usedDefault);
+    if (n <= 0 || n > size || usedDefault) // a character outside the code page, or too long: refuse
+        return FALSE;
+    if (WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, w.c_str(), -1, name, size, NULL, &usedDefault) <= 0 ||
+        usedDefault)
+    {
+        name[0] = 0;
+        return FALSE;
+    }
+    return TRUE;
 }
 
 // Dialog-side clamp: keeps what the user typed by moving it to the nearest
@@ -114,6 +164,14 @@ void WINAPI CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalam
         registry->GetValue(regKey, CONFIG_KEEPREADY, REG_DWORD, &g_keepReady, sizeof(DWORD));
         registry->GetValue(regKey, CONFIG_HINTSHOWN, REG_DWORD, &g_hintShown, sizeof(DWORD));
         registry->GetValue(regKey, CONFIG_RESTORETYPES, REG_DWORD, &g_restoreTypes, sizeof(DWORD));
+        // feature 262: the remembered conversion table (UTF-8 in the registry)
+        char convertU8[CV_DEFAULTCONVERT_SIZE * 3] = "";
+        char convert[CV_DEFAULTCONVERT_SIZE] = "";
+        if (registry->GetValue(regKey, CONFIG_DEFAULTCONVERT, REG_SZ, convertU8, sizeof(convertU8)) &&
+            CvUtf8ToCodePageName(convertU8, convert, sizeof(convert)))
+            CvSetDefaultConvert(convert);
+        else
+            CvSetDefaultConvert("");
         // Version 1 shipped "Cascadia Mono" as the default. Only a stored
         // value that is still exactly that default is moved to the new one --
         // a family the user typed themselves is theirs to keep.
@@ -169,6 +227,13 @@ void WINAPI CPluginInterface::SaveConfiguration(HWND parent, HKEY regKey, CSalam
     registry->SetValue(regKey, CONFIG_KEEPREADY, REG_DWORD, &g_keepReady, sizeof(DWORD));
     registry->SetValue(regKey, CONFIG_HINTSHOWN, REG_DWORD, &g_hintShown, sizeof(DWORD));
     registry->SetValue(regKey, CONFIG_RESTORETYPES, REG_DWORD, &g_restoreTypes, sizeof(DWORD));
+    // feature 262: the remembered conversion table; one that cannot be stored exactly is stored as ""
+    char convert[CV_DEFAULTCONVERT_SIZE];
+    CvGetDefaultConvert(convert, sizeof(convert));
+    std::string convertU8;
+    if (!CvCodePageNameToUtf8(convert, convertU8))
+        convertU8.clear();
+    registry->SetValue(regKey, CONFIG_DEFAULTCONVERT, REG_SZ, convertU8.c_str(), -1);
 }
 
 static void SetDlgInt(HWND hDlg, int id, int v)

@@ -119,7 +119,7 @@ table chosen.
 
 - **FR-001**: The Encoding menu MUST list, after its five existing entries and a separator, every
   conversion table the built-in viewer's *Convert* menu lists, in the same order, with the same
-  separators and names.
+  separators and names (a separator directly after the menu's own separator is not doubled).
 - **FR-002**: Choosing a table MUST re-decode the open file: each byte replaced by the table's byte,
   the result read in the system code page; the menu MUST check the entry that decoded the open file
   (also when a remembered table was applied automatically) and the status bar MUST name the table

@@ -14,6 +14,7 @@
 #include "webglue.h"
 #include "viewer.h"
 #include "darkmenu.h"
+#include "../../common/salcodetable.h" // feature 262: the conversion tables
 
 #include <algorithm>
 #include <vector>
@@ -373,6 +374,9 @@ CViewerWindow::CViewerWindow(int enumFilesSourceUID, int enumFilesCurrentIndex)
     HSchemeMenu = NULL;
     HEncodingMenu = NULL;
     ForcedEncoding = -1;
+    TablesLoaded = FALSE;
+    ForcedTable = -1;
+    TableUsed = -1;
     DocVersion = 0;
     Zoom = g_zoom;
     FindText[0] = 0;
@@ -431,10 +435,17 @@ void CViewerWindow::OpenFile(const char* name, BOOL setLock)
         free(Name);
     Name = _strdup(name);
     ForcedEncoding = -1;
+    ForcedTable = -1;
     FindCurrent = FindTotal = 0;
     CaretLine = CaretCol = 1;
 
-    if (!CvLoadFile(Name, ForcedEncoding, -1, Intake))
+    // feature 262: a single-byte file is read with the remembered conversion
+    // table (none remembered = the system code page, as before)
+    LoadCodeTables();
+    int table = SalCodeTableToUse(ForcedEncoding, ForcedTable, RememberedTable());
+    BOOL loaded = CvLoadFile(Name, ForcedEncoding, TableAt(table), -1, Intake);
+    TableUsed = Intake.TableApplied ? table : -1;
+    if (!loaded)
     {
         // Between CanViewFile and here the file changed, vanished, or turned
         // out binary: say so in the window instead of rendering garbage, and
@@ -551,8 +562,28 @@ void CViewerWindow::BuildMenu()
 
     HEncodingMenu = CreatePopupMenu();
     static const char* encNames[] = {"UTF-8", "UTF-8 with BOM", "UTF-16 LE", "UTF-16 BE", "System code page"};
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < SAL_CODETABLE_FIXED; i++)
         AppendMenuA(HEncodingMenu, MF_STRING, CM_ENCODING_FIRST + i, encNames[i]);
+    // feature 262: then the built-in viewer's conversion tables, in its order and
+    // grouping; a separator is added only between two tables (none leading,
+    // doubled or trailing). The names are code-page bytes - an A menu takes them
+    // as they are.
+    LoadCodeTables();
+    BOOL separator = TRUE; // ours, before the first table
+    int table = 0;
+    for (size_t i = 0; i < TableMenuNames.size(); i++)
+    {
+        if (TableMenuNames[i] == NULL)
+        {
+            separator = TRUE;
+            continue;
+        }
+        if (separator)
+            AppendMenuA(HEncodingMenu, MF_SEPARATOR, 0, NULL);
+        separator = FALSE;
+        AppendMenuA(HEncodingMenu, MF_STRING, CM_ENCODING_FIRST + SAL_CODETABLE_FIXED + table, TableMenuNames[i]);
+        table++;
+    }
     AppendMenuA(view, MF_POPUP | MF_STRING, (UINT_PTR)HEncodingMenu, LoadStr(IDS_MENU_VIEW_ENCODING));
 
     AppendMenuA(view, MF_SEPARATOR, 0, NULL);
@@ -594,9 +625,51 @@ void CViewerWindow::RefreshChecks()
         CheckMenuItem(menu, CM_VIEW_WHITESPACE, MF_BYCOMMAND | (g_whitespace ? MF_CHECKED : MF_UNCHECKED));
     }
     if (HEncodingMenu != NULL)
-        for (int i = 0; i < 5; i++)
+    {
+        // one check: the table that decoded the shown text, else its encoding (feature 262)
+        int cur = SalCodeTableListPos((int)Intake.Encoding, TableUsed);
+        for (int i = 0; i < SAL_CODETABLE_FIXED + TableCount(); i++)
             CheckMenuItem(HEncodingMenu, CM_ENCODING_FIRST + i,
-                          MF_BYCOMMAND | ((int)Intake.Encoding == i ? MF_CHECKED : MF_UNCHECKED));
+                          MF_BYCOMMAND | (cur == i ? MF_CHECKED : MF_UNCHECKED));
+    }
+}
+
+// feature 262: the conversion tables of the active convert\<dir>\convert.cfg -
+// exactly the built-in viewer's Convert list. Read once per window (any thread
+// may call the service; the pointers stay valid for the program's life).
+void CViewerWindow::LoadCodeTables()
+{
+    if (TablesLoaded)
+        return;
+    TablesLoaded = TRUE;
+    int index = 0;
+    const char* name = NULL;
+    const char* table = NULL;
+    while (SalamanderGeneral->EnumConversionTables(HWindow, &index, &name, &table))
+    {
+        if (name == NULL || table == NULL) // a separator
+        {
+            TableMenuNames.push_back(NULL);
+            continue;
+        }
+        TableMenuNames.push_back(name);
+        TableNames.push_back(name);
+        TableBytes.push_back(table);
+    }
+}
+
+const char* CViewerWindow::TableAt(int table) const
+{
+    return table >= 0 && table < TableCount() ? TableBytes[table] : NULL;
+}
+
+// The remembered table's index in this window's list, or -1 (none remembered,
+// or a name the active conversion directory does not have - the system code page).
+int CViewerWindow::RememberedTable() const
+{
+    char name[CV_DEFAULTCONVERT_SIZE];
+    CvGetDefaultConvert(name, sizeof(name));
+    return TableNames.empty() ? -1 : SalCodeTableFindName(TableNames.data(), TableCount(), name);
 }
 
 void CViewerWindow::LayoutChildren()
@@ -675,10 +748,22 @@ void CViewerWindow::UpdateStatus()
                             ? CvAsciiToW(CvLanguages[Intake.Language].Display)
                             : std::wstring(SalamanderGeneral->LoadStrW(HLanguage, IDS_LANG_PLAIN));
 
+    // feature 262: a conversion table is named instead of "ANSI" (its name is
+    // code-page bytes, so the system code page widens it)
+    std::wstring enc = encNames[Intake.Encoding <= cvEncAnsi ? Intake.Encoding : 0];
+    if (TableUsed >= 0 && TableUsed < TableCount())
+    {
+        std::string disp = SalCodeTableDisplayName(TableNames[TableUsed]);
+        int wn = disp.empty() ? 0 : MultiByteToWideChar(CP_ACP, 0, disp.c_str(), (int)disp.size(), NULL, 0);
+        if (wn > 0)
+        {
+            enc.assign(wn, L'\0');
+            MultiByteToWideChar(CP_ACP, 0, disp.c_str(), (int)disp.size(), &enc[0], wn);
+        }
+    }
     wchar_t text[512];
     _snwprintf_s(text, _TRUNCATE, L" %s | %s | %s | %s | %s | %d%%",
-                 lines, lncol,
-                 encNames[Intake.Encoding <= cvEncAnsi ? Intake.Encoding : 0], eol,
+                 lines, lncol, enc.c_str(), eol,
                  lang.c_str(), Zoom);
     SetWindowTextW(HStatus, text);
 }
@@ -709,22 +794,29 @@ void CViewerWindow::CycleScheme(int dir)
     SelectScheme((cur + dir + CvSchemeCount) % CvSchemeCount);
 }
 
-void CViewerWindow::SelectEncoding(int encoding)
+void CViewerWindow::SelectEncoding(int encoding, int table)
 {
-    if (Name == NULL || encoding < 0 || encoding > cvEncAnsi)
+    if (Name == NULL || encoding < 0 || encoding > cvEncAnsi || table >= TableCount())
         return;
+    if (encoding != cvEncAnsi)
+        table = -1; // a table belongs to the single-byte reading only
+    int use = SalCodeTableToUse(encoding, table, -1);
     // CvLoadFile resets its output before doing anything, so a failed re-read
     // would leave the window with an EMPTY intake over content it is still
     // showing (blank status bar, find over nothing). Work on a copy and keep
-    // the live one until the new read has succeeded.
-    int prevEncoding = ForcedEncoding;
+    // the live one - and the forced encoding, table and remembered table -
+    // until the new read has succeeded.
     CvIntake next;
-    if (!CvLoadFile(Name, encoding, -1, next))
-    {
-        ForcedEncoding = prevEncoding;
+    if (!CvLoadFile(Name, encoding, TableAt(use), -1, next))
         return;
-    }
     ForcedEncoding = encoding;
+    ForcedTable = table;
+    TableUsed = next.TableApplied ? use : -1;
+    // feature 262: the single-byte choice is remembered for later files (as the
+    // built-in viewer's default conversion); the UTF-8 / UTF-16 choices leave it.
+    // Other open windows keep what they show.
+    if (encoding == cvEncAnsi)
+        CvSetDefaultConvert(table >= 0 ? TableNames[table] : "");
     Intake = std::move(next); // the decoded text can be megabytes
     DocVersion++;
     if (Web != NULL && Web->IsReady())
@@ -741,8 +833,12 @@ void CViewerWindow::SelectEncoding(int encoding)
 
 void CViewerWindow::CycleEncoding(int dir)
 {
-    int cur = (int)Intake.Encoding;
-    SelectEncoding(((cur + dir) % 5 + 5) % 5);
+    // the five encodings, then every conversion table (feature 262)
+    int cur = SalCodeTableListPos((int)Intake.Encoding, TableUsed);
+    int pos = SalCodeTableCycle(cur, dir, SAL_CODETABLE_FIXED + TableCount());
+    int encoding, table;
+    if (SalCodeTableFromPos(pos, TableCount(), &encoding, &table))
+        SelectEncoding(encoding, table);
 }
 
 void CViewerWindow::DoFind(BOOL prompt, int dir)
@@ -1114,9 +1210,11 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             SelectScheme(cmd - CM_SCHEME_FIRST);
             return 0;
         }
-        if (cmd >= CM_ENCODING_FIRST && cmd < CM_ENCODING_FIRST + 5)
+        int encoding, table;
+        if (cmd >= CM_ENCODING_FIRST &&
+            SalCodeTableFromPos(cmd - CM_ENCODING_FIRST, TableCount(), &encoding, &table))
         {
-            SelectEncoding(cmd - CM_ENCODING_FIRST);
+            SelectEncoding(encoding, table);
             return 0;
         }
         switch (cmd)

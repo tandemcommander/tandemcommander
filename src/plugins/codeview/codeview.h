@@ -40,6 +40,15 @@ extern BOOL g_keepReady;  // keep the WebView2 engine warm for the session
 extern BOOL g_hintShown;  // first-open hint already displayed (FR-012)
 extern BOOL g_restoreTypes; // pending "restore default file types" (applied by Connect)
 
+// feature 262: the remembered conversion table for single-byte files - the name
+// EnumConversionTables hands out (code-page bytes, the B-5 invariant), or empty
+// (= the system code page). Guarded: set on viewer threads, saved on the main one.
+#define CV_DEFAULTCONVERT_SIZE 210
+void CvGetDefaultConvert(char* buf, int size);
+// Stores 'name' ("" forgets it); a name that does not fit is not stored and the
+// remembered table is forgotten instead (never cut) - FALSE then.
+BOOL CvSetDefaultConvert(const char* name);
+
 // [0,0] broadcast to open viewer windows: configuration changed
 #define WM_USER_VIEWERCFGCHNG (WM_APP + 3410)
 

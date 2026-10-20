@@ -44,6 +44,7 @@ struct CvIntake
     int Language = -1;      // index into CvLanguages, or -1 = unidentified
     BOOL LanguageForced = FALSE;
     int InvalidBytes = 0;   // sequences replaced with U+FFFD (spec FR-024)
+    BOOL TableApplied = FALSE; // a conversion table was applied to single-byte bytes (feature 262)
     BOOL IoError = FALSE;   // could not be opened/read (vs. "declined: not text")
     __int64 FileSize = 0;
     int LineCount = 0;
@@ -58,8 +59,11 @@ struct CvIntake
 BOOL CvCanView(const char* nameUtf8);
 
 // Full intake: read, decode, classify, identify. 'forcedEncoding' < 0 means
-// detect; 'forcedLanguage' < 0 means identify.
-BOOL CvLoadFile(const char* nameUtf8, int forcedEncoding, int forcedLanguage, CvIntake& out);
+// detect; 'forcedLanguage' < 0 means identify. 'ansiTable' (256 bytes from
+// EnumConversionTables, or NULL) is applied to the bytes when the result is
+// cvEncAnsi - then read in the system code page, as the built-in viewer shows
+// them (feature 262); NULL keeps the system code page alone.
+BOOL CvLoadFile(const char* nameUtf8, int forcedEncoding, const char* ansiTable, int forcedLanguage, CvIntake& out);
 
 // Language identification from the name alone, then from content when the name
 // is silent or ambiguous (spec FR-005/006). 'head' may be empty.

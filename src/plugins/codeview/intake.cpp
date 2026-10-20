@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "intake.h"
 #include "langmap.h"
+#include "../../common/salcodetable.h" // feature 262: the conversion tables
 
 #include <algorithm>
 
@@ -577,7 +578,7 @@ int CvIdentifyLanguage(const char* nameUtf8, const char* head, size_t headLen)
 // full intake
 // ==========================================================================
 
-BOOL CvLoadFile(const char* nameUtf8, int forcedEncoding, int forcedLanguage, CvIntake& out)
+BOOL CvLoadFile(const char* nameUtf8, int forcedEncoding, const char* ansiTable, int forcedLanguage, CvIntake& out)
 {
     out = CvIntake();
     HANDLE h = CvOpenRead(nameUtf8);
@@ -624,11 +625,7 @@ BOOL CvLoadFile(const char* nameUtf8, int forcedEncoding, int forcedLanguage, Cv
     // --- encoding (spec FR-024) ---
     UINT codePage = CP_ACP;
     if (forcedEncoding >= 0)
-    {
         out.Encoding = (CvEncoding)forcedEncoding;
-        if (out.Encoding == cvEncAnsi)
-            codePage = CP_ACP;
-    }
     else if (n >= 3 && d[0] == 0xEF && d[1] == 0xBB && d[2] == 0xBF)
         out.Encoding = cvEncUtf8Bom;
     else if (n >= 2 && d[0] == 0xFF && d[1] == 0xFE)
@@ -644,6 +641,16 @@ BOOL CvLoadFile(const char* nameUtf8, int forcedEncoding, int forcedLanguage, Cv
             out.Encoding = cvEncUtf8;
         else
             out.Encoding = cvEncAnsi;
+    }
+
+    // feature 262: a conversion table turns the bytes into the system code page
+    // first (the built-in viewer's CodeTable), in place over the read buffer -
+    // the raw bytes are not needed after the decode
+    if (out.Encoding == cvEncAnsi && ansiTable != NULL)
+    {
+        if (!raw.empty())
+            SalCodeTableApply(&raw[0], raw.size(), ansiTable);
+        out.TableApplied = TRUE; // also for an empty file: the choice stands
     }
 
     CvDecode(d, n, out.Encoding, codePage, out);

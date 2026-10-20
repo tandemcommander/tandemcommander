@@ -1,0 +1,17 @@
+cvtab262_probe (feature 262) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 14:01; registry key existed True; ACP 1250
+
+MENU       RUN    FAIL        status ' 2 lines | Ln 1, Col 1 | ANSI | CRLF | Batchfile | 100%'; Encoding menu 5 items; 4004 'System code page', 4005 ''; 'CP852 - CP1250' = 0, next 0 ''; System code page checked True
+FIRST      ERROR  FAIL        no CP852 - CP1250 item @ at <ScriptBlock>, E:\Projects\tandemcommander\specs\262-codeview-code-tables\probe\cvtab262_probe.ps1: line 164
+FIRST      END    FAIL        exit 0x00000000; alive True; WM_NULL True; stray 2 ([CodeView - WinLib Universal Window2 '...l\AppData\Local\Temp\tc262\files\a_cp852.bat [Batchfile] - Code Viewer'] [Static id=0]  2 lines | Ln 1, Col 1 | ANSI | CRLF | Batchfile | 100% | [Chrome_WidgetWin_1 id=0] Code Viewer | [Chrome_RenderWidgetHostHWND id=1002] Chrome Legacy Window || at exit: [#32770 'Code Viewer'] [Static id=2477] Some Code Viewer windows are open. Do you want to close them? | [Button id=6] &Yes | [Button id=7] &No); new reports 0
+SAVED      RUN    FAIL        DefaultConvert = '<no value>'
+RESTART    RUN    FAIL        status ' 2 lines | Ln 1, Col 1 | ANSI | CRLF | Batchfile | 100%'
+FORGET     RUN    PASS        after System code page ' 2 lines | Ln 1, Col 1 | ANSI | CRLF | Batchfile | 100%'; reopened ' 2 lines | Ln 1, Col 1 | ANSI | CRLF | Batchfile | 100%'
+SECOND     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DefaultConvert after the second run: '<no value>'
+NONASCII   RUN    NOT DRIVEN  no table with a non-ASCII name in the menu
+THIRD      END    FAIL        exit 0x00000000; alive True; WM_NULL True; stray 2 ([CodeView - WinLib Universal Window2 '...l\AppData\Local\Temp\tc262\files\a_cp852.bat [Batchfile] - Code Viewer'] [Static id=0]  2 lines | Ln 1, Col 1 | ANSI | CRLF | Batchfile | 100% | [Chrome_WidgetWin_1 id=0] Code Viewer | [Chrome_RenderWidgetHostHWND id=1002] Chrome Legacy Window || at exit: [#32770 'Code Viewer'] [Static id=2477] Some Code Viewer windows are open. Do you want to close them? | [Button id=6] &Yes | [Button id=7] &No); new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 2, FAIL 6, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

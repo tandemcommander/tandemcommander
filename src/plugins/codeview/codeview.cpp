@@ -21,6 +21,11 @@ static CRITICAL_SECTION CvPendingCS;
 static BOOL CvPendingCSReady = FALSE;
 static std::vector<std::string> CvPendingBuiltin;
 
+// feature 262: the remembered conversion table (see codeview.h)
+static CRITICAL_SECTION CvDefaultConvertCS;
+static BOOL CvDefaultConvertCSReady = FALSE;
+static char CvDefaultConvert[CV_DEFAULTCONVERT_SIZE] = "";
+
 const char* PluginNameEN = "CodeView";
 
 HINSTANCE DLLInstance = NULL;
@@ -45,6 +50,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
         DLLInstance = hinstDLL;
         InitializeCriticalSection(&CvPendingCS);
         CvPendingCSReady = TRUE;
+        InitializeCriticalSection(&CvDefaultConvertCS);
+        CvDefaultConvertCSReady = TRUE;
         INITCOMMONCONTROLSEX ic;
         ic.dwSize = sizeof(ic);
         ic.dwICC = ICC_BAR_CLASSES; // no ICC_STANDARD_CLASSES (constitution VI)
@@ -54,8 +61,40 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     {
         CvPendingCSReady = FALSE;
         DeleteCriticalSection(&CvPendingCS);
+        if (CvDefaultConvertCSReady)
+        {
+            CvDefaultConvertCSReady = FALSE;
+            DeleteCriticalSection(&CvDefaultConvertCS);
+        }
     }
     return TRUE;
+}
+
+void CvGetDefaultConvert(char* buf, int size)
+{
+    if (buf == NULL || size <= 0)
+        return;
+    buf[0] = 0;
+    if (!CvDefaultConvertCSReady)
+        return;
+    EnterCriticalSection(&CvDefaultConvertCS);
+    if ((int)strlen(CvDefaultConvert) < size) // the whole name or nothing
+        strcpy_s(buf, size, CvDefaultConvert);
+    LeaveCriticalSection(&CvDefaultConvertCS);
+}
+
+BOOL CvSetDefaultConvert(const char* name)
+{
+    if (!CvDefaultConvertCSReady)
+        return FALSE;
+    BOOL fits = name != NULL && strlen(name) < sizeof(CvDefaultConvert);
+    EnterCriticalSection(&CvDefaultConvertCS);
+    if (fits)
+        strcpy_s(CvDefaultConvert, name);
+    else
+        CvDefaultConvert[0] = 0; // never a cut name - forget instead
+    LeaveCriticalSection(&CvDefaultConvertCS);
+    return fits;
 }
 
 BOOL CvRequestBuiltinViewer(const char* nameUtf8)

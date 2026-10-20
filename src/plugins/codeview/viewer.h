@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "intake.h"
 
 class CTcWebHost;
@@ -31,6 +32,17 @@ public:
     CvIntake Intake;
     const std::string* TextPtr; // stable address handed to the interceptor
     int ForcedEncoding; // -1 = detect
+
+    // feature 262: the product's conversion tables (EnumConversionTables), read
+    // once per window; the pointers stay valid for the program's life. The menu
+    // list keeps the separators (NULL name); TableNames / TableBytes hold the
+    // tables only - a "table index" is a position in them.
+    std::vector<const char*> TableMenuNames;
+    std::vector<const char*> TableNames;
+    std::vector<const char*> TableBytes;
+    BOOL TablesLoaded;
+    int ForcedTable; // a chosen table (with ForcedEncoding == cvEncAnsi), or -1
+    int TableUsed;   // the table the shown text was decoded with, or -1
     int DocVersion;     // bumped whenever the served text changes
 
     wchar_t FindText[256];
@@ -65,8 +77,12 @@ protected:
     void ApplyScheme(BOOL rebuildBrush);
     void SelectScheme(int idx);
     void CycleScheme(int dir);
-    void SelectEncoding(int encoding);
+    void SelectEncoding(int encoding, int table = -1);
     void CycleEncoding(int dir);
+    void LoadCodeTables();
+    int TableCount() const { return (int)TableNames.size(); }
+    const char* TableAt(int table) const;
+    int RememberedTable() const;
     void SendInit(BOOL swap);
     void DoFind(BOOL prompt, int dir);
     void DoGotoLine();

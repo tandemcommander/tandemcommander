@@ -76,6 +76,7 @@
 #include "salcasetwins.h"     // feature 252
 #include "salcopyname.h"      // feature 259
 #include "salcachename.h"     // feature 260
+#include "salcodetable.h"     // feature 262
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -11957,6 +11958,134 @@ static void TestNamePrefixBytes222()
     CHECK(!SalNameTooLongForFileSystemU8(cjk.c_str()));          // a valid name (it was "invalid")
 }
 
+// feature 262: the Code Viewer reads a single-byte file through the product's conversion tables;
+// the two tables are convert/centeuro/c8521250.tab and iso21250.tab byte for byte
+static const char g_tabC852To1250_262[] =
+    "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
+    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"
+    "\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2A\x2B\x2C\x2D\x2E\x2F"
+    "\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3A\x3B\x3C\x3D\x3E\x3F"
+    "\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F"
+    "\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5A\x5B\x5C\x5D\x5E\x5F"
+    "\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F"
+    "\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x7B\x7C\x7D\x7E\x7F"
+    "\xC7\xFC\xE9\xE2\xE4\xF9\xE6\xE7\xB3\xEB\xD5\xF5\xEE\x8F\xC4\xC6"
+    "\xC9\xC5\xE5\xF4\xF6\xBC\xBE\x8C\x9C\xD6\xDC\x8D\x9D\xA3\xD7\xE8"
+    "\xE1\xED\xF3\xFA\xA5\xB9\x8E\x9E\xCA\xEA\xAC\x9F\xC8\xBA\xAB\xBB"
+    "\x2D\x2D\x2D\x7C\x2B\xC1\xC2\xCC\xAA\x2B\x7C\x2B\x2B\xAF\xBF\x2B"
+    "\x2B\x2B\x2B\x2B\x2D\x2B\xC3\xE3\x2B\x2B\x2B\x2B\x2B\x2D\x2B\xA4"
+    "\xF0\xD0\xCF\xCB\xEF\xD2\xCD\xCE\xEC\x2B\x2B\x2D\x2D\xDE\xD9\x2D"
+    "\xD3\xDF\xD4\xD1\xF1\xF2\x8A\x9A\xC0\xDA\xE0\xDB\xFD\xDD\xFE\xB4"
+    "\xAD\xBD\xB2\xA1\xA2\xA7\xF7\xB8\xB0\xA8\xFF\xFB\xD8\xF8\x2D\xA0";
+static const char g_tabIso2To1250_262[] =
+    "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
+    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"
+    "\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2A\x2B\x2C\x2D\x2E\x2F"
+    "\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3A\x3B\x3C\x3D\x3E\x3F"
+    "\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F"
+    "\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5A\x5B\x5C\x5D\x5E\x5F"
+    "\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F"
+    "\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x7B\x7C\x7D\x7E\x7F"
+    "\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F"
+    "\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F\x3F"
+    "\xA0\xA5\xA2\xA3\xA4\xBC\x8C\xA7\xA8\x8A\xAA\x8D\x8F\xAD\x8E\xAF"
+    "\xB0\xB9\xB2\xB3\xB4\xBE\x9C\xA1\xB8\x9A\xBA\x9D\x9F\xBD\x9E\xBF"
+    "\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF"
+    "\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF"
+    "\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF"
+    "\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF";
+
+// the bytes through 'table' (NULL = none), read in code page 1250 - what the Code Viewer does
+// on a CP1250 machine
+static std::wstring CodeTableDecode262(const char* bytes, const char* table)
+{
+    std::string b(bytes);
+    SalCodeTableApply((unsigned char*)&b[0], b.size(), table);
+    int n = MultiByteToWideChar(1250, 0, b.data(), (int)b.size(), NULL, 0);
+    std::wstring w(n, L'\0');
+    MultiByteToWideChar(1250, 0, b.data(), (int)b.size(), &w[0], n);
+    return w;
+}
+
+static void TestCodeTable262()
+{
+    CHECK(sizeof(g_tabC852To1250_262) == 257 && sizeof(g_tabIso2To1250_262) == 257);
+    const wchar_t* want = L"Příliš žluťoučký kůň úpěl "
+                          L"ďábelské ódy";
+    // the first lines of the corpus files src/plugins/codeview/test/corpus/encodings/
+    const char* cp852 = "P\xFD\xA1li\xE7 \xA7lu\x9Cou\x9Fk\xEC k\x85\xE5 \xA3p\xD8l \xD4\xA0" "belsk\x82 \xA2" "dy";
+    const char* iso2 = "P\xF8\xEDli\xB9 \xBElu\xBBou\xE8k\xFD k\xF9\xF2 \xFAp\xECl \xEF\xE1" "belsk\xE9 \xF3" "dy";
+    CHECK(CodeTableDecode262(cp852, g_tabC852To1250_262) == want);
+    CHECK(CodeTableDecode262(iso2, g_tabIso2To1250_262) == want);
+    // negative controls: without the table (the system code page alone) the letters are wrong
+    CHECK(CodeTableDecode262(cp852, NULL) != want);
+    CHECK(CodeTableDecode262(iso2, NULL) != want);
+    // ASCII and the line ends pass unchanged
+    std::string ascii = "int main() {\r\n\treturn 0;\n}";
+    std::string a = ascii;
+    SalCodeTableApply((unsigned char*)&a[0], a.size(), g_tabC852To1250_262);
+    CHECK(a == ascii);
+    SalCodeTableApply(NULL, 5, g_tabC852To1250_262); // no crash
+    a = ascii;
+    SalCodeTableApply((unsigned char*)&a[0], a.size(), NULL); // no table = unchanged
+    CHECK(a == ascii);
+
+    // display name
+    CHECK(SalCodeTableDisplayName("CP852 - CP1250") == "CP852 - CP1250");
+    CHECK(SalCodeTableDisplayName("&KOI8-R - CP1251") == "KOI8-R - CP1251");
+    CHECK(SalCodeTableDisplayName("A && B") == "A & B");
+    CHECK(SalCodeTableDisplayName("Cork - CP1250 ") == "Cork - CP1250");
+    CHECK(SalCodeTableDisplayName("x&") == "x");
+    CHECK(SalCodeTableDisplayName(NULL).empty());
+    CHECK(SalCodeTableDisplayName("Kamenick\xFD") == "Kamenick\xFD"); // code-page bytes kept
+
+    // cycling over 5 fixed positions + 3 tables, and over the five alone (no tables)
+    CHECK(SalCodeTableCycle(0, 1, 8) == 1);
+    CHECK(SalCodeTableCycle(7, 1, 8) == 0);
+    CHECK(SalCodeTableCycle(0, -1, 8) == 7);
+    CHECK(SalCodeTableCycle(4, 1, 8) == 5);
+    CHECK(SalCodeTableCycle(4, 1, 5) == 0);
+    CHECK(SalCodeTableCycle(0, -1, 5) == 4);
+    CHECK(SalCodeTableCycle(99, 1, 5) == 1); // out of range counts as 0
+    CHECK(SalCodeTableCycle(3, 1, 0) == 0);
+
+    // positions <-> encoding / table
+    int enc = -2, tab = -2;
+    CHECK(SalCodeTableFromPos(0, 3, &enc, &tab) && enc == 0 && tab == -1);
+    CHECK(SalCodeTableFromPos(4, 3, &enc, &tab) && enc == SAL_CODETABLE_ANSI && tab == -1);
+    CHECK(SalCodeTableFromPos(5, 3, &enc, &tab) && enc == SAL_CODETABLE_ANSI && tab == 0);
+    CHECK(SalCodeTableFromPos(7, 3, &enc, &tab) && enc == SAL_CODETABLE_ANSI && tab == 2);
+    CHECK(!SalCodeTableFromPos(8, 3, &enc, &tab));
+    CHECK(!SalCodeTableFromPos(-1, 3, &enc, &tab));
+    CHECK(!SalCodeTableFromPos(5, 0, &enc, &tab)); // no tables: only the five
+    CHECK(SalCodeTableListPos(2, -1) == 2 && SalCodeTableListPos(4, -1) == 4);
+    CHECK(SalCodeTableListPos(4, 0) == 5 && SalCodeTableListPos(4, 2) == 7);
+    for (int p = 0; p < 8; p++)
+        CHECK(SalCodeTableFromPos(p, 3, &enc, &tab) && SalCodeTableListPos(enc, tab) == p);
+
+    // which table a single-byte file gets (data-model.md)
+    CHECK(SalCodeTableToUse(-1, -1, -1) == -1); // default: the system code page (as before)
+    CHECK(SalCodeTableToUse(-1, -1, 2) == 2);   // detect + remembered
+    CHECK(SalCodeTableToUse(-1, 5, -1) == -1);  // a stale forced table is ignored when detecting
+    CHECK(SalCodeTableToUse(4, -1, 2) == -1);   // "System code page" chosen
+    CHECK(SalCodeTableToUse(4, 1, 2) == 1);     // a table chosen
+    CHECK(SalCodeTableToUse(0, 1, 2) == -1);    // UTF-8 forced
+    CHECK(SalCodeTableToUse(3, -1, 2) == -1);   // UTF-16 BE forced
+
+    // the remembered name is found byte for byte; separators (NULL) are not counted
+    const char* names[] = {NULL, "ISO-8859-2 - CP1250", "CP852 - CP1250", NULL, "Cork - CP1250 ", "Kamenick\xFD"};
+    CHECK(SalCodeTableFindName(names, 6, "ISO-8859-2 - CP1250") == 0);
+    CHECK(SalCodeTableFindName(names, 6, "CP852 - CP1250") == 1);
+    CHECK(SalCodeTableFindName(names, 6, "Cork - CP1250 ") == 2);
+    CHECK(SalCodeTableFindName(names, 6, "Kamenick\xFD") == 3);
+    CHECK(SalCodeTableFindName(names, 6, "cp852 - cp1250") == -1); // no folding
+    CHECK(SalCodeTableFindName(names, 6, "CP852-CP1250") == -1);
+    CHECK(SalCodeTableFindName(names, 6, "Cork - CP1250") == -1);
+    CHECK(SalCodeTableFindName(names, 6, "") == -1);
+    CHECK(SalCodeTableFindName(names, 6, NULL) == -1);
+    CHECK(SalCodeTableFindName(names, 2, "CP852 - CP1250") == -1); // beyond 'count'
+}
+
 // feature 260: the disk cache's temporary copy - the Windows path limit (UTF-16 units) in the long
 // mode, the historical 260 bytes otherwise
 static void TestCacheTmpPath260()
@@ -14833,6 +14962,7 @@ int main(int argc, char** argv)
     TestCaseTwins252();
     TestCopyName259();
     TestCacheTmpPath260();
+    TestCodeTable262();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

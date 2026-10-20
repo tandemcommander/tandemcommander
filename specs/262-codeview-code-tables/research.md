@@ -31,7 +31,9 @@
 - Persisting: the registry facade (`SalRegSetValueExW8`) takes UTF-8, so `config.cpp` converts the
   code-page name -> wide -> UTF-8 on save and UTF-8 -> wide -> code page (no best fit, default-char
   check) on load; a value that does not convert back exactly is dropped (= system code page), never
-  guessed. All shipped names are ASCII, so the conversion is the identity for them.
+  guessed. Not all shipped names are ASCII: convert\centeuro holds eight Kamenicky / KOI-8 CS2
+  entries in CP1250 bytes ("Kameničtí - CP1250"; feature 069 F-P4-01 met the same names) - the
+  probe rows NONASCII / NASAVED / NARESTART exercise exactly that round trip.
 - Alternatives: storing the raw bytes as dbviewer does - would be read as UTF-8 by the facade and a
   non-ASCII name would not survive (dbviewer's latent defect; ASCII names hide it).
 
