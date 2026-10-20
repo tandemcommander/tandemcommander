@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Remembered network drive with a non-code-page or long path cannot be reconnected](items/remembered-network-drive-with-a-non-code-page-or-long-path/desc.md) | bug | 4 | encoding | 264 |
 
 ## Next
 
@@ -161,6 +160,7 @@ Last triaged: 2026-10-19
 | [Code Viewer: no Auto-Select of the code page and no explicit Set as default](items/code-viewer-no-auto-select-of-the-code-page-and-no-explicit/desc.md) | improvement | 3 | other-plugins | leftover:262 | 2026-10-20 |
 | [Command line: a COMSPEC path outside ASCII is read through the code page](items/command-line-comspec-read-wide/desc.md) | bug | 2 | encoding | manual | 2026-10-20 |
 | [Compare Directories misses a case-only pair beside a soft-hyphen or NFD name](items/compare-directories-misses-a-case-only-pair-beside-a-soft/desc.md) | bug | 3 | panels-ui | review:261 | 2026-10-20 |
+| [Confirm reconnecting a remembered drive on a password-protected share (feature 264)](items/confirm-reconnecting-a-remembered-drive-on-a-password/desc.md) | person-step | 3 | encoding | leftover:264 | 2026-10-20 |
 | [Copying from a TAR folder opened in another case extracts nothing](items/copying-from-a-tar-folder-opened-in-another-case-extracts/desc.md) | bug | 5 | archives | review:252 | 2026-10-20 |
 | [Create Directory refuses a relative name in a folder whose path is 260+ bytes](items/create-directory-refuses-a-relative-name-in-a-folder-whose/desc.md) | bug | 5 | long-paths | measure:259 | 2026-10-20 |
 | [Ctrl+X ghosts a name in the other panel that shows a case twin folder](items/ctrl-x-ghosts-a-name-in-the-other-panel-that-shows-a-case/desc.md) | bug | 2 | panels-ui | review:261 | 2026-10-20 |

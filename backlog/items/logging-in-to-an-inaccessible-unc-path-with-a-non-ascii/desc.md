@@ -11,7 +11,7 @@ updated: 2026-10-20
 verified: -
 effort: M
 feature: -
-related: [remembered-network-drive-with-a-non-code-page-or-long-path]
+related: []
 depends-on: []
 reason: -
 ---
@@ -61,3 +61,4 @@ signature).
 ## Log
 
 - 2026-10-20 — created (source measure:264)
+- 2026-10-20 — related item remembered-network-drive-with-a-non-code-page-or-long-path done in feature 264

@@ -1,4 +1,4 @@
-# Feature History — per-feature notes
+﻿# Feature History — per-feature notes
 
 What each feature changed, why, the traps it met and where its evidence
 lives. These notes were the *Recent Changes* section of `CLAUDE.md` until
@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
@@ -3307,3 +3307,28 @@ a few early ones are out of sequence).
   of 5 rows -> 26 / 0 (export shape, clear-key round trip, a real 245 backup); `TestRegImportRoot263`
   (negative control fails 2); two refute-first reviews (review 1 MUST fixed; review 2 no MUST,
   SHOULDs done).
+- 264-remembered-drive-reconnect: picking a remembered, disconnected network drive (drive bar /
+  Change Drive menu) or opening a path on it reconnected it with the remembered path from the ANSI
+  `WNetOpenEnum(RESOURCE_REMEMBERED)` enumeration - code page ('?' outside it) and cut at
+  `MAX_PATH - 1` bytes - through the ANSI `WNetAddConnection3`; the drive stayed disconnected with
+  "The path or file name "Z:\" is invalid." - now `GetRememberedNetDriveRemoteW` (wide enumeration,
+  heap) gives the exact path and `RestoreNetworkDriveW` (consts.h) reconnects it: the Windows 7+
+  mapped-letter flow of `RestoreNetworkConnection`, wide and unchanged (saved user name / provider
+  from `HKCU\Network\<L>` matched by `SalNetDriveSameRemote`, salnetdrive.h; background attempt
+  `NonBlockingWNetAddConnection3W` under the Esc wait window - it shares the thread, the wait and the
+  now file-static lock with the ANSI twin, its heap strings are freed only after the thread ended;
+  `CONNECT_INTERACTIVE` retry; the same messages). `CheckAndRestoreNetworkConnection`'s "listed but
+  not answering" branch gives `SalCheckPath` the UTF-8 path (it got code-page bytes, wrong even for
+  Czech letters). Measured: Windows refuses a remote name of 260+ UTF-16 units (67), so "long" means
+  more than 259 bytes in UTF-8 / a DBCS code page; `WNetRestoreSingleConnectionW` was rejected (its
+  UI variant must block the UI thread - the Esc wait window would go). Traps: a PowerShell function
+  returning one line unrolls it to a string (`$rest[0]` = its first character - every row judged
+  FAIL); Remove-Item of a > 255-character MountPoints2 key name throws inside `finally` and skipped
+  the registry restore (restored by hand; the probe now restores first and guards every cleanup).
+  Limits: `RestoreNetworkConnection` (UNC roots, Network plug-in via zip.cpp) stays ANSI - Inbox
+  `logging-in-to-an-inaccessible-unc-path-with-a-non-ascii`; the credential dialog and Esc are a
+  person's (`confirm-reconnecting-a-remembered-drive-on-a-password`). From backlog item
+  `remembered-network-drive-with-a-non-code-page-or-long-path`. Probe `run264.ps1` baseline Q1 / Q2 /
+  L1 / P1 fail -> fixed 7 rows PASS (incl. 259 characters, saved provider 1204, unreachable server
+  53); 246 `itest246_pickcp` PK-Q1 / PK-Q2 reconnected exactly False -> True;
+  `TestNetDriveSameRemote264`; one refute-first review (no MUST; SHOULDs done).
