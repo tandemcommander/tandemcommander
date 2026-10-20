@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Code Viewer reads single-byte files only in the system code page (no CP852 etc.)](items/codeview-code-tables-for-single-byte-files/desc.md) | feature | 4 | other-plugins | 262 |
 
 ## Next
 
@@ -159,6 +158,7 @@ Last triaged: 2026-10-19
 | [The encoding guard does not read header files; plug-in headers convert names leniently](items/check-encoding-skips-header-files/desc.md) | tech-debt | 2 | tooling | review:255 | 2026-10-20 |
 | [Check that Change Attributes refuses to encrypt or decrypt a junction (253)](items/check-that-change-attributes-refuses-to-encrypt-or-decrypt-a/desc.md) | person-step | 4 | data-safety | leftover:253 | 2026-10-20 |
 | [CheckVer: the log shows a script path with non-ASCII letters garbled](items/checkver-log-script-path-garbled/desc.md) | bug | 1 | other-plugins | review:255 | 2026-10-20 |
+| [Code Viewer: no Auto-Select of the code page and no explicit Set as default](items/code-viewer-no-auto-select-of-the-code-page-and-no-explicit/desc.md) | improvement | 3 | other-plugins | leftover:262 | 2026-10-20 |
 | [Command line: a COMSPEC path outside ASCII is read through the code page](items/command-line-comspec-read-wide/desc.md) | bug | 2 | encoding | manual | 2026-10-20 |
 | [Compare Directories misses a case-only pair beside a soft-hyphen or NFD name](items/compare-directories-misses-a-case-only-pair-beside-a-soft/desc.md) | bug | 3 | panels-ui | review:261 | 2026-10-20 |
 | [Copying from a TAR folder opened in another case extracts nothing](items/copying-from-a-tar-folder-opened-in-another-case-extracts/desc.md) | bug | 5 | archives | review:252 | 2026-10-20 |
@@ -178,6 +178,7 @@ Last triaged: 2026-10-19
 | [Shell extensions in the panel background menu and the Find window never answer typed hot keys](items/menuchar-owner-routing/desc.md) | bug | 2 | panels-ui | review:256 | 2026-10-20 |
 | [Multimedia Viewer: the "cannot open" message shows a non-ASCII file name as mojibake](items/mmviewer-open-error-name-mojibake/desc.md) | bug | 1 | other-plugins | measure:255 | 2026-10-20 |
 | [More typed fields cut to their buffer: masks, filter, volume label, hot path label edit](items/more-typed-fields-cut-to-their-buffer-masks-filter-volume/desc.md) | bug | 6 | long-paths | leftover:251 | 2026-10-20 |
+| [On-screen check of the Code Viewer conversion tables (feature 262)](items/on-screen-check-of-the-code-viewer-conversion-tables-feature/desc.md) | person-step | 3 | other-plugins | leftover:262 | 2026-10-20 |
 | [Paste and drop of our own files keep a code-page fallback for a name on low memory](items/paste-and-drop-of-our-own-files-keep-a-code-page-fallback/desc.md) | bug | 3 | encoding | review:259 | 2026-10-20 |
 | [Paste of a case twin from an archive and SFTP twins by hand (252)](items/paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand/desc.md) | person-step | 5 | archives | leftover:252 | 2026-10-20 |
 | [Paste of a long name into its own folder: check the copy name and the too long question](items/paste-of-a-long-name-into-its-own-folder-check-the-copy-name/desc.md) | person-step | 5 | long-paths | leftover:259 | 2026-10-20 |

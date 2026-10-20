@@ -1,12 +1,13 @@
 cvtab262_probe (feature 262) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 14:02; registry key existed True; ACP 1250
+Date    : 2026-10-20 14:12; registry key existed True; ACP 1250
 
 MENU       RUN    PASS        status ' 2 lines | Ln 1, Col 1 | ANSI | CRLF | Batchfile | 100%'; Encoding menu 39 items; 4004 'System code page', 4005 'ISO-8859-2 - CP1250'; 'CP852 - CP1250' = 4007, next 4008 'MAC CE - CP1250'; System code page checked True
 CHOOSE     RUN    PASS        status ' 2 lines | Ln 1, Col 1 | CP852 - CP1250 | CRLF | Batchfile | 100%'; 4007 checked True; 4004 checked False
 CYCLE      RUN    PASS        F8 -> ' 2 lines | Ln 1, Col 1 | MAC CE - CP1250 | CRLF | Batchfile | 100%'; Shift+F8 -> ' 2 lines | Ln 1, Col 1 | CP852 - CP1250 | CRLF | Batchfile | 100%'
 REMEMBER   RUN    PASS        status ' 2 lines | Ln 1, Col 1 | CP852 - CP1250 | CRLF | Batchfile | 100%'
 UTF8       RUN    PASS        status ' 2 lines | Ln 1, Col 1 | UTF-8 | CRLF | C++ | 100%'
+KEEP       RUN    PASS        Shift+F8 on b_utf8.cpp -> ' 2 lines | Ln 1, Col 1 | ANSI - OEM | CRLF | C++ | 100%'; a_cp852.bat reopened ' 2 lines | Ln 1, Col 1 | CP852 - CP1250 | CRLF | Batchfile | 100%'
 FIRST      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 SAVED      RUN    PASS        DefaultConvert = 'CP852 - CP1250'
 RESTART    RUN    PASS        status ' 2 lines | Ln 1, Col 1 | CP852 - CP1250 | CRLF | Batchfile | 100%'
@@ -20,4 +21,4 @@ NARESTART  RUN    PASS        status ' 2 lines | Ln 1, Col 1 | Kameni\u010Dt\u00
 FOURTH     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
 
-Rows: PASS 15, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -794,7 +794,7 @@ void CViewerWindow::CycleScheme(int dir)
     SelectScheme((cur + dir + CvSchemeCount) % CvSchemeCount);
 }
 
-void CViewerWindow::SelectEncoding(int encoding, int table)
+void CViewerWindow::SelectEncoding(int encoding, int table, BOOL remember)
 {
     if (Name == NULL || encoding < 0 || encoding > cvEncAnsi || table >= TableCount())
         return;
@@ -812,10 +812,12 @@ void CViewerWindow::SelectEncoding(int encoding, int table)
     ForcedEncoding = encoding;
     ForcedTable = table;
     TableUsed = next.TableApplied ? use : -1;
-    // feature 262: the single-byte choice is remembered for later files (as the
-    // built-in viewer's default conversion); the UTF-8 / UTF-16 choices leave it.
-    // Other open windows keep what they show.
-    if (encoding == cvEncAnsi)
+    // feature 262: a single-byte choice from the menu is remembered for later
+    // files (as the built-in viewer's default conversion); the UTF-8 / UTF-16
+    // choices leave it, and so does F8 / Shift+F8 - stepping through the list to
+    // look must not change how every later file opens (the built-in viewer never
+    // stores a default from cycling either). Other open windows keep what they show.
+    if (remember && encoding == cvEncAnsi)
         CvSetDefaultConvert(table >= 0 ? TableNames[table] : "");
     Intake = std::move(next); // the decoded text can be megabytes
     DocVersion++;
@@ -838,7 +840,7 @@ void CViewerWindow::CycleEncoding(int dir)
     int pos = SalCodeTableCycle(cur, dir, SAL_CODETABLE_FIXED + TableCount());
     int encoding, table;
     if (SalCodeTableFromPos(pos, TableCount(), &encoding, &table))
-        SelectEncoding(encoding, table);
+        SelectEncoding(encoding, table, FALSE);
 }
 
 void CViewerWindow::DoFind(BOOL prompt, int dir)
@@ -1214,7 +1216,7 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (cmd >= CM_ENCODING_FIRST &&
             SalCodeTableFromPos(cmd - CM_ENCODING_FIRST, TableCount(), &encoding, &table))
         {
-            SelectEncoding(encoding, table);
+            SelectEncoding(encoding, table, TRUE);
             return 0;
         }
         switch (cmd)

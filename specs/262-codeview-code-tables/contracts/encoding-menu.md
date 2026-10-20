@@ -15,7 +15,8 @@ Internal to the codeview plug-in; no plug-in interface, core or string change.
 
 ## Keys
 
-F8 / Shift+F8: next / previous position of `0 .. 4+T`, wrapping; separators are not positions.
+F8 / Shift+F8: next / previous position of `0 .. 4+T`, wrapping; separators are not positions. Cycling never changes the
+remembered table (only a menu choice does).
 
 ## Status bar
 
@@ -24,6 +25,7 @@ table's display name (no single `&`, `&&` -> `&`, trailing spaces trimmed).
 
 ## Settings
 
-`DefaultConvert` (REG_SZ, UTF-8) in the codeview key: the remembered table name or empty. Read at
+`DefaultConvert` (REG_SZ, UTF-8) in the codeview key: the remembered table name or empty - set by
+choosing a table from the menu, cleared by choosing *System code page* from the menu. Read at
 `LoadConfiguration`, written at `SaveConfiguration`. A value that does not match a handed-out name
 byte for byte (after the UTF-8 -> code page conversion) means "system code page".

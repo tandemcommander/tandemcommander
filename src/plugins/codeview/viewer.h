@@ -77,7 +77,7 @@ protected:
     void ApplyScheme(BOOL rebuildBrush);
     void SelectScheme(int idx);
     void CycleScheme(int dir);
-    void SelectEncoding(int encoding, int table = -1);
+    void SelectEncoding(int encoding, int table, BOOL remember);
     void CycleEncoding(int dir);
     void LoadCodeTables();
     int TableCount() const { return (int)TableNames.size(); }

@@ -68,6 +68,39 @@ See spec *Clarifications* (autonomous run). Persisting the name: the plug-in reg
   - a first after-run with ids assumed from the repository's convert.cfg failed 6 rows on the
     assumption (4006 is "Kameničtí - CP1250") - the probe now finds the items by name.
 
+## Review
+
+Review 1 (independent agent, refute-first, at 5875847e): no MUST. Re-ran the decode (tables =
+shipped files byte for byte), build, saltests 24659 / 0, guard 0, probe 15 / 0 / 0; callers of
+`CvLoadFile`: `OpenFile` and `SelectEncoding` only; no data-loss path (read-only viewer; in-place
+table pass over the read buffer; a failed re-read keeps view, encoding and remembered table).
+
+- S1 (SHOULD, fixed): F8 / Shift+F8 went through `SelectEncoding` and stored the remembered table on
+  every step - one Shift+F8 on a UTF-8 file wrapped to "ANSI - OEM" and every later CP1250 file opened
+  through it, also after a restart (the reviewer's scratch probe stored 'ANSI - OEM'); F8 past
+  *System code page* also forgot a remembered table. Fix: `SelectEncoding(encoding, table, remember)`;
+  only the menu command remembers, `CycleEncoding` passes FALSE (spec FR-003 / FR-004 and a
+  Clarification updated, contract updated). Probe row KEEP added: Shift+F8 on b_utf8.cpp -> "ANSI -
+  OEM", a_cp852.bat reopened -> still "CP852 - CP1250" - PASS; the pre-fix build is the reviewer's
+  reproduction (stored 'ANSI - OEM'). After the fix: build SUCCEEDED, probe PASS 16 / FAIL 0 /
+  NOT DRIVEN 0, guard TOTAL 0.
+- NOTE 1: the letters are proven by saltests on the pure table pass + reading `CvLoadFile`, not by a
+  test that runs `CvLoadFile` (the status bar is driven by `TableApplied`). Accepted; the person step
+  reads the letters.
+- NOTE 2: menu and status bar widen table names with the system code page (`AppendMenuA`); the
+  built-in viewer uses `SalInsertMenuItemU8` (UTF-8 when the name is valid UTF-8). The shipped
+  convert.cfg files give the same result; only a user-edited UTF-8 convert.cfg with non-ASCII names
+  would differ. Recorded as a limit.
+- NOTE 3: on a machine with the UTF-8 system code page (65001) the converted bytes decode to U+FFFD and
+  a non-ASCII name is not stored - the built-in viewer is limited the same way. Recorded as a limit.
+- NOTE 4: the tables are first loaded on the viewer thread at window creation (a broken convert.cfg
+  would show its error box there); no deadlock (own thread, own parent). Accepted.
+- NOTE 5: bookkeeping (leftover item, CHANGELOG, FEATURE-HISTORY) - done at closing.
+- NOTE 6: the *CP1250 - Cork* table maps the backtick to 0x00 - a NUL can appear in the decoded text;
+  the copy path is length-driven. Accepted.
+
+No MUST -> no second review required (SKILL.md step 7).
+
 ## NOT DRIVEN (owed to a person)
 
 - The decoded letters themselves: they are rendered in the WebView2 page, which no probe reads. The

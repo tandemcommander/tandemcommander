@@ -18,6 +18,8 @@
                 "CP852 - CP1250" again
       REMEMBER  close the viewer, F3 on a_cp852.bat again: PASS = status "CP852 - CP1250" at once
       UTF8      F3 on b_utf8.cpp: PASS = status "UTF-8" (a remembered table plays no role)
+      KEEP      there Shift+F8 (wraps to the last table), close, F3 on a_cp852.bat: PASS = the status
+                still names "CP852 - CP1250" - cycling does not change the remembered table (review 1)
       SAVED     the program ends (WM_CLOSE): PASS = HKCU\...\Plugins Configuration\CODEVIEW
                 DefaultConvert = "CP852 - CP1250"
       RESTART   start again, F3 on a_cp852.bat: PASS = status "CP852 - CP1250"
@@ -181,7 +183,17 @@ try {
 
             $w = Open-View $id 2
             if ($w -eq [IntPtr]::Zero) { Row 'UTF8' 'RUN' 'NOT DRIVEN' 'F3 opened no Code Viewer' }
-            else { $st = Status-Of $w; Row 'UTF8' 'RUN' (V ($st -like '* | UTF-8 | *')) ("status '{0}'" -f (Esc $st)); Close-View $w }
+            else {
+                $st = Status-Of $w; Row 'UTF8' 'RUN' (V ($st -like '* | UTF-8 | *')) ("status '{0}'" -f (Esc $st))
+                # review 1 (S1): Shift+F8 here wraps to the last table - it must not become the remembered one
+                Post-Cmd $w 3991
+                $s1 = Wait-Status $w '* | UTF-8 | *' 2
+                [void](Serve $id 3)
+                Close-View $w
+                $w = Open-View $id 1
+                $s2 = '<no viewer>'; if ($w -ne [IntPtr]::Zero) { $s2 = Status-Of $w; Close-View $w }
+                Row 'KEEP' 'RUN' (V (($s1 -notlike '* | UTF-8 | *') -and ($s2 -like $Cp852))) ("Shift+F8 on b_utf8.cpp -> '{0}'; a_cp852.bat reopened '{1}'" -f (Esc $s1), (Esc $s2))
+            }
         }
     }
     catch { Row 'FIRST' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

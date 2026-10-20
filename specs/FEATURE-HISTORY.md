@@ -36,7 +36,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | ZIP plug-in | 086, 094, 106, 110, 113, 119 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
-| WebView2 viewers (Markdown, Code) | 081, 085 |
+| WebView2 viewers (Markdown, Code) | 081, 085, 262 |
 | Privacy and security | 083, 085, 086, 090, 123 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258 |
 | PictView | 105, 111, 120 |
@@ -3266,3 +3266,24 @@ a few early ones are out of sequence).
   `case-sensitive-twins-first-match`. Probe `twin261_probe.ps1` 5 FAIL / 14 -> 16 / 0 (row CMPSHY
   from review 1); 232's probe 16 / 0; `TestNameRules261` (negative controls fail 7 and 5); two
   refute-first reviews (no MUST; review 1 S1 fixed by the set pairing).
+- 262-codeview-code-tables: the Code Viewer (the default F3 viewer for source and text files) read a
+  file without BOM that is not UTF-8 or UTF-16 only in the system code page, and its Encoding menu
+  (F8) was a fixed list of five - a DOS CP852 or ISO-8859-2 text on a CP1250 machine showed wrong
+  letters with no way to fix it there (070 FR-024, review F16) - now View > Encoding lists, after the
+  five entries, every conversion table of the built-in viewer's Convert menu (`EnumConversionTables`,
+  its order and grouping), a choice re-reads the open file through the 256-byte table and the
+  system code page (what the built-in viewer draws), the status bar names the table, F8 / Shift+F8
+  cycle the whole list, and a table chosen from the menu is remembered (`DefaultConvert` in the
+  plug-in's key) for later single-byte files; *System code page* forgets it; nothing remembered =
+  the old reading. Pure parts in `src/common/salcodetable.h`. Traps: table names are code-page
+  bytes (069 B-5) and not all ASCII (convert\centeuro "Kameničtí - CP1250"; `grep` hides those
+  lines), while the registry facade stores UTF-8 - the name travels code page <-> UTF-16 <-> UTF-8
+  with no best fit, a failure stores ""; cycling with F8 must not change the remembered table (review
+  1: one Shift+F8 on a UTF-8 file stored "ANSI - OEM" for every later file). Limits: no Auto-Select
+  and no explicit Set as default (new UI strings - Inbox
+  `code-viewer-no-auto-select-of-the-code-page-and-no-explicit`, which also records the UTF-8
+  convert.cfg and UTF-8 system code page limits); the letters in the page are a person's
+  (`on-screen-check-of-the-code-viewer-conversion-tables-feature`). From backlog item
+  `codeview-code-tables-for-single-byte-files`. Probe `cvtab262_probe.ps1` (menu 5 items, 3 FAIL)
+  -> 16 / 0; `TestCodeTable262` (negative control fails 1); one refute-first review (no MUST; S1
+  fixed).

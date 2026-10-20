@@ -26,6 +26,7 @@ Measured at `bf05ffc9` (machine code page 1250): the corpus file
 - Q: How is the choice remembered? → A: The chosen table's name is kept in the Code Viewer's own settings - the counterpart of the built-in viewer's remembered default conversion - and is applied to every later file the Code Viewer reads as single-byte; choosing *System code page* forgets it; without a remembered table (the default) the Code Viewer behaves exactly as today (autonomous run: item + conservative)
 - Q: Should the Code Viewer recognize the code page automatically (the built-in viewer's *Auto-Select*) or offer a separate *Set as default* command? → A: No - both need new UI strings (a translation refresh a run cannot do) and automatic recognition would change files that decode correctly today; recorded as a leftover backlog item (autonomous run: conservative)
 - Q: When a table is chosen in one Code Viewer window, do other open Code Viewer windows re-decode their files? → A: No - they keep what they show; the remembered table applies to files opened (or re-opened by next / previous file) afterwards (autonomous run: conservative)
+- Q: Does stepping through the list with F8 / Shift+F8 change the remembered table? → A: No - only a choice from the menu is remembered; cycling changes the open file only, as the built-in viewer stores its default only through an explicit command (review 1, S1: one Shift+F8 on a UTF-8 file stored *ANSI - OEM* for every later file) (autonomous run: conservative)
 - Q: Which Encoding menu entry is checked when a remembered table decoded the file without the user choosing it now? → A: The table's entry, and the status bar names it - the menu always shows how the open file was decoded (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
@@ -125,10 +126,10 @@ table chosen.
   (also when a remembered table was applied automatically) and the status bar MUST name the table
   (without `&`).
 - **FR-003**: F8 / Shift+F8 MUST cycle through the five entries and all tables (separators
-  skipped), wrapping around.
-- **FR-004**: The chosen table's name MUST be kept in the Code Viewer's settings and survive a
-  restart; choosing *System code page* MUST clear it; choosing UTF-8 / UTF-8 with BOM /
-  UTF-16 LE / UTF-16 BE MUST leave it unchanged.
+  skipped), wrapping around; cycling changes only the open file, never the remembered table.
+- **FR-004**: The name of a table chosen from the Encoding menu MUST be kept in the Code Viewer's
+  settings and survive a restart; choosing *System code page* from the menu MUST clear it; choosing
+  UTF-8 / UTF-8 with BOM / UTF-16 LE / UTF-16 BE MUST leave it unchanged.
 - **FR-005**: A file the Code Viewer detects as single-byte (no BOM, not UTF-16, not valid UTF-8)
   MUST be decoded with the remembered table when one is kept and found; otherwise with the system
   code page, as today.
