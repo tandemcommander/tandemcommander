@@ -113,6 +113,8 @@ An SFTP listing is treated like an FTP listing: names that differ only in case a
 - **SC-002**: The unit checks of the twin rule pass, including names equal only by one of the rules.
 - **SC-003**: No other behaviour of ordinary archives changes (control row, existing builds and
   tests green).
+- **SC-004**: The archive data are read once per listing, as before (no second pass over a
+  compressed TAR).
 
 ## Clarifications
 
@@ -124,6 +126,9 @@ An SFTP listing is treated like an FTP listing: names that differ only in case a
   archives with inconsistent folder case are not split). (autonomous run: conservative)
 - Q: Should SFTP be declared case-sensitive always? → A: yes, always, as FTP is - the item names the
   exact site (`sftp/fs.cpp`). (autonomous run: item)
+- Q: May finding twins read the archive a second time? → A: no - the archive is read once as
+  today; the check works on the names already listed, its cost grows with the number of names only
+  (sorting the names of each folder). (autonomous run: conservative)
 
 ## Assumptions
 
