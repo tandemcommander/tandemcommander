@@ -1,7 +1,7 @@
 ---
 title: Copying from a TAR folder opened in another case extracts nothing
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:252
@@ -10,7 +10,7 @@ created: 2026-10-20
 updated: 2026-10-21
 verified: 2026-10-21 ff3cd942
 effort: S
-feature: -
+feature: 273
 related: []
 depends-on: []
 reason: -
@@ -44,3 +44,4 @@ Severity 5: nothing is lost (the archive is untouched) but a copy silently does 
 - 2026-10-20 — related item case-sensitive-twins-first-match done in feature 261
 - 2026-10-20 — moved to Next position 7
 - 2026-10-21 — verified at ff3cd942: reproduced at ff3cd942 by a hidden-desktop probe: TAR folder opened at t.tar\DOCS, Select All, F5 - target stays empty; 7z extracts
+- 2026-10-21 — run started, feature 273

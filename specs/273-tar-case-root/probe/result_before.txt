@@ -1,0 +1,19 @@
+arccase_probe before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 00:37; registry key existed True; ACP 1250
+
+TAR-COPY   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-COPY   RUN    FAIL        typed: \DOCS; panel at: ...Local\Temp\tcarccase\TAR-COPY\t.tar\DOCS; tgt: empty; content: -; windows: [#32770 'Copy'] [Static id=209] Copy file "f.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+TAR-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-DEEP   RUN    FAIL        typed: \dOCS\SUB; panel at: ...l\Temp\tcarccase\TAR-DEEP\t.tar\dOCS\SUB; tgt: empty; content: -; windows: [#32770 'Copy'] [Static id=209] Copy file "g.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+TAR-TWINS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-TWINS  RUN    PASS        typed: \DOCS; panel at: ...ocal\Temp\tcarccase\TAR-TWINS\t.tar\DOCS; tgt: g.txt; content: G; windows: [#32770 'Copy'] [Static id=209] Copy file "g.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-COPY    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-COPY    RUN    FAIL        typed: \DOCS; panel at: ...a\Local\Temp\tcarccase\7Z-COPY\t.7z\DOCS; tgt: f.txt; content: F; windows: [#32770 'Copy'] [Static id=209] Copy file "f.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-DEEP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-DEEP    RUN    FAIL        typed: \dOCS\SUB; panel at: ...cal\Temp\tcarccase\7Z-DEEP\t.7z\dOCS\SUB; tgt: g.txt; content: G; windows: [#32770 'Copy'] [Static id=209] Copy file "g.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-TWINS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-TWINS   RUN    PASS        typed: \DOCS; panel at: ...\Local\Temp\tcarccase\7Z-TWINS\t.7z\DOCS; tgt: g.txt; content: G; windows: [#32770 'Copy'] [Static id=209] Copy file "g.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 8, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
