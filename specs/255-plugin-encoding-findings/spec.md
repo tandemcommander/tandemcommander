@@ -47,6 +47,17 @@ demoview, mmviewer, nethood, unchm, unmime, unole, unrar); findings there still 
   `// encoding-check: allow <rule> - <reason>` on the line or the line above, a reason a reader can
   check (autonomous run: rule - the guard's documented suppression mechanism, used throughout the
   core).
+- Q: When is a lenient UTF-16 to UTF-8 conversion (`lossy-lenient-at-intake`) a real defect? → A:
+  Only when the input can hold an unpaired surrogate (a file name from the file system, an archive
+  or a device) **and** the result is later used as a name - to open, find, compare or hand back to
+  the core; a converted text that is only shown, or whose input is valid Unicode by construction
+  (resource strings, ASCII, generated text), is a false positive (autonomous run: recommended - the
+  rule's own definition, "U+FFFD baked into a name destroys its identity", feature 066).
+- Q: When is a strict UTF-8 probe (`strict-probe-rejects-wtf8`) a real defect? → A: Only when the
+  probed bytes can be a WTF-8 name handed over by the core (a lone surrogate's 3-byte form) and the
+  probe's failure sends the name down a code-page path; bytes that come from an archive, a
+  protocol or a file's contents, where the WTF-8 form cannot arise, are a false positive
+  (autonomous run: recommended - the rule's definition, feature 066).
 
 ## User Scenarios & Testing *(mandatory)*
 
