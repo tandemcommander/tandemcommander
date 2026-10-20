@@ -11,6 +11,9 @@
                 temporary copy (%TEMP%\SAL*.tmp\<name>), leaves the archive and answers the update
                 question OK: PASS = the archive has ONE member, under the whole name, with the new
                 content
+      ARCCAP    a member of 200 CJK letters + '.txt' (604 bytes inside the archive): F3: PASS = the
+                "too long" message (feature 095's 519-byte limit of the name handed to the archiver
+                stays - review of 260, M1)
       OVERLIMIT a member of 250 letters + '.txt' (254 units - valid, but %TEMP%\SALxxxx.tmp\ + it is
                 over 259 units): F3: PASS = the "too long" message (the refusal kept)
       CTL       a member 'short.txt': F3 opens a viewer (control)
@@ -84,8 +87,8 @@ function Gz-One([string]$Gz, [string]$StoredName) {
 function Editors([datetime]$Since) {
     return @(Get-Process -ErrorAction SilentlyContinue | Where-Object { @('notepad', 'notepad++', 'wordpad', 'write') -contains $_.ProcessName -and $_.StartTime -ge $Since })
 }
-function Find-TmpCopy([string]$Name) {
-    foreach ($d in @([IO.Directory]::GetDirectories($LP + $TempRoot, 'SAL*.tmp'))) {
+function Find-TmpCopy([string]$Name, [string]$In) {
+    foreach ($d in @([IO.Directory]::GetDirectories($LP + $In, 'SAL*.tmp'))) {
         $p = $d + '\' + $Name
         if ([IO.File]::Exists($p)) { return $p }
     }
@@ -107,6 +110,44 @@ function View-Case([string]$Case, [string]$Member, [bool]$ExpectRefusal) {
         $ok = $(if ($ExpectRefusal) { $refused } else { $viewer -and -not $refused })
         Row $Case 'RUN' (V $ok) ("member {0} bytes / {1} units; viewer {2}; refused {3}; F3: {4}{5}" -f (U8Len $Member), $Member.Length, $viewer, $refused, (Tail $t 220), $(if ((Msgs $r) -ne 'no window') { '; after: ' + (Tail (Msgs $r) 200) } else { '' }))
         [void](Do-ChangeDir $id $StartDir); [void](Serve $id 8 @(1, 7, 2))
+        End-Row $Case $id $null $before; $id = 0
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $null $before } }
+}
+
+# F4, edit the copy, leave the archive, update
+function Edit-Case([string]$Case, [string]$Member) {
+    $d = $Root + '\' + $Case; NewDir $d
+    Zip-One "$d\a.zip" $Member
+    $id = 0; $before = Reports; $t0 = Get-Date
+    $in = $TempRoot
+    try {
+        $id = Start-Tc "$d\a.zip"
+        Key $id 0x24; Key $id 0x23; Start-Sleep -Milliseconds 500
+        Post-Cmd (Get-Main $id) 743
+        $r = Serve $id 15 @(1, 6)
+        $m = Msgs $r
+        Start-Sleep -Milliseconds 1500
+        $eds = @(Editors $t0)
+        $edArgs = @($eds | ForEach-Object { Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)" -ErrorAction SilentlyContinue } | ForEach-Object { $_.CommandLine })
+        foreach ($p in $eds) { try { Stop-Process -Id $p.Id -Force } catch { } }
+        Start-Sleep -Milliseconds 800
+        $copy = Find-TmpCopy $Member $in
+        $where = ''
+        if (-not $copy) {   # diagnostics: where did the program put it?
+            $sys = Find-TmpCopy $Member $TempRoot
+            $where = '; in the system TEMP: {0}; editor command line: {1}' -f $(if ($sys) { $sys.Substring($LP.Length) } else { '-' }), (Tail ($edArgs -join ' ') 400)
+        }
+        $wrote = $false
+        if ($copy) { [IO.File]::WriteAllText($copy, 'EDITED-CONTENT', (New-Object Text.ASCIIEncoding)); $wrote = $true }
+        $r2 = Serve $id 6 @(1, 6)
+        [void](Do-ChangeDir $id $StartDir)
+        $r3 = Serve $id 30 @(1, 6)
+        $ents = @(Zip-Entries "$d\a.zip")
+        $ok = ($m -notmatch 'too long') -and $wrote -and $ents.Count -eq 1 -and $ents[0].Name -ceq $Member -and $ents[0].Text -ceq 'EDITED-CONTENT'
+        $copyLen = $(if ($copy) { '{0} bytes / {1} units' -f (U8Len $copy.Substring($LP.Length)), $copy.Substring($LP.Length).Length } else { '-' })
+        Row $Case 'RUN' (V $ok) ("member {0} bytes; editor processes {1}; temporary copy found {2} ({3}); archive members {4}: {5}; F4: {6}; leaving: {7}" -f (U8Len $Member), $eds.Count, $wrote, $copyLen, $ents.Count, (Tail (($ents | ForEach-Object { '{0} bytes "{1}"' -f (U8Len $_.Name), $_.Text }) -join ' | ') 160), (Tail $m 200), ((Tail ((Msgs $r2) + ' / ' + (Msgs $r3)) 300) + $where))
         End-Row $Case $id $null $before; $id = 0
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -154,34 +195,14 @@ try {
     Out ''
     View-Case 'VIEWLONG' $Long $false
 
-    # F4, edit the copy, leave the archive, update
-    $d = $Root + '\EDITLONG'; NewDir $d
-    Zip-One "$d\a.zip" $Long
-    $id = 0; $before = Reports; $t0 = Get-Date
-    try {
-        $id = Start-Tc "$d\a.zip"
-        Key $id 0x24; Key $id 0x23; Start-Sleep -Milliseconds 500
-        Post-Cmd (Get-Main $id) 743
-        $r = Serve $id 15 @(1, 6)
-        $m = Msgs $r
-        Start-Sleep -Milliseconds 1500
-        $eds = @(Editors $t0)
-        foreach ($p in $eds) { try { Stop-Process -Id $p.Id -Force } catch { } }
-        Start-Sleep -Milliseconds 800
-        $copy = Find-TmpCopy $Long
-        $wrote = $false
-        if ($copy) { [IO.File]::WriteAllText($copy, 'EDITED-CONTENT', (New-Object Text.ASCIIEncoding)); $wrote = $true }
-        $r2 = Serve $id 6 @(1, 6)
-        [void](Do-ChangeDir $id $StartDir)
-        $r3 = Serve $id 30 @(1, 6)
-        $ents = @(Zip-Entries "$d\a.zip")
-        $ok = ($m -notmatch 'too long') -and $wrote -and $ents.Count -eq 1 -and $ents[0].Name -ceq $Long -and $ents[0].Text -ceq 'EDITED-CONTENT'
-        Row 'EDITLONG' 'RUN' (V $ok) ("editor processes {0}; temporary copy found {1}; archive members {2}: {3}; F4: {4}; leaving: {5}" -f $eds.Count, $wrote, $ents.Count, (Tail (($ents | ForEach-Object { '{0} bytes "{1}"' -f (U8Len $_.Name), $_.Text }) -join ' | ') 160), (Tail $m 200), (Tail ((Msgs $r2) + ' / ' + (Msgs $r3)) 300))
-        End-Row 'EDITLONG' $id $null $before; $id = 0
-    }
-    catch { Row 'EDITLONG' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
-    finally { if ($id) { End-Row 'EDITLONG' $id $null $before } }
-
+    Edit-Case 'EDITLONG' $Long
+    # review of 260 (S1): a copy path over 620 bytes (the edit's way back held it in 620 bytes,
+    # _TRUNCATE) needs a %TEMP% of about 88+ bytes - the name inside the archive stays under 520
+    # bytes; it is not driven: the program regenerates its environment from the user's registry
+    # (RegenerateUserEnvironment), a TEMP given to the started process is not used
+    # review of 260 (M1): the name inside the archive is still limited to 519 bytes (feature 095 - the
+    # longest name a plug-in has ever received): 200 CJK letters (604 bytes) keep the refusal
+    View-Case 'ARCCAP' ((-join (1..200 | ForEach-Object { [char](0x4E00 + $_) })) + '.txt') $true
     View-Case 'OVERLIMIT' (('a' * 250) + '.txt') $true
     View-Case 'CTL' 'short.txt' $false
     Gz-Case 'GZLONG' $Long $false

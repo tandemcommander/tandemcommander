@@ -1118,11 +1118,22 @@ void _RemoveTemporaryDir(const char* dir)
     // ANSI calls, so under a non-ASCII %TEMP% nothing was ever found or removed
     // - while ClearReadOnlyAttr on the same line already used the UTF-8 facade.
     // The whole walk now goes through the facade.
-    char path[MAX_PATH + 2];
+    // feature 260: the path on the heap - the disk cache's copies may have more than MAX_PATH bytes
+    // of UTF-8 now (a name of 90 CJK letters); the walk skipped them, so the start-up cleanup of a
+    // crashed session's SAL*.tmp folders left such a copy and its folder behind for good
+    size_t dirLen = strlen(dir);
+    if (dirLen + 2 + SAL_FIND_NAME_U8 > SAL_MAX_PATH_UTF8)
+        return; // deeper than any path the program builds
+    char* path = (char*)malloc(dirLen + 2 + SAL_FIND_NAME_U8);
+    if (path == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        return;
+    }
     WIN32_FIND_DATAW fileW;
     char nameU8[SAL_FIND_NAME_U8];
     strcpy(path, dir);
-    char* end = path + strlen(path);
+    char* end = path + dirLen;
     if (*(end - 1) != '\\')
         *end++ = '\\';
     strcpy(end, "*");
@@ -1132,8 +1143,7 @@ void _RemoveTemporaryDir(const char* dir)
         do
         {
             SalConvertFindDataW(&fileW, NULL, nameU8, sizeof(nameU8), NULL, 0);
-            if (nameU8[0] != 0 && strcmp(nameU8, "..") && strcmp(nameU8, ".") &&
-                (end - path) + strlen(nameU8) < MAX_PATH)
+            if (nameU8[0] != 0 && strcmp(nameU8, "..") && strcmp(nameU8, "."))
             {
                 strcpy(end, nameU8);
                 ClearReadOnlyAttr(path, fileW.dwFileAttributes);
@@ -1155,6 +1165,7 @@ void _RemoveTemporaryDir(const char* dir)
     }
     *(end - 1) = 0;
     SalRemoveDirectory(path);
+    free(path);
 }
 
 void RemoveTemporaryDir(const char* dir)

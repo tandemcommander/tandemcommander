@@ -76,3 +76,42 @@ Regression `specs/222-name-length-units/probe/editname222_probe.ps1` -> `probe/r
 Registry: each run restored identically; the snapshot differed between the 11:12 and 11:20 runs
 (CBAC... -> A464...) - written between the runs outside any probe (only the build ran), not by a
 probe.
+
+## Review
+
+### Review 1 (refute-first, independent agent) - 1 MUST, 3 SHOULD, 4 NOTE
+
+- **M1** FR-001 overclaimed: before the cache is asked, F3 / F4 refuse a member whose path inside the
+  archive has 520+ bytes (feature 095 - `fileswn5.cpp` / `fileswn6.cpp`, "the longest name a
+  plug-in has ever received"); a member of 200 CJK letters (604 bytes, a temporary path of 249
+  units) is still refused. Taken: the 095 limit stays (raising it hands archiver plug-ins names they
+  never got - an audit, a leftover item); FR-001, the contract, the CHANGELOG and this log state it;
+  probe row ARCCAP (604 bytes: refused) added.
+- **S1** the probe never reached the `CheckAndPackAndClear` fix (EDITLONG's path is 319 bytes; the
+  old buffer cut at 620). Tried: a row with a long CJK %TEMP% given to the started program - the
+  copy still went to the system %TEMP% (diagnostics in the row): the program regenerates its
+  environment from the user's registry (`RegenerateUserEnvironment`, `salamdr7.cpp`); changing the
+  maintainer's real user environment is off-limits. With the system %TEMP% (33 units) the copy path
+  is at most about 45 + 519 bytes < 620 - the old cut needs a %TEMP% of about 88+ bytes. The fix
+  stays, proven by reading; the row was removed; owed to a person (with `CopyFilesTo`, also not
+  driven - the folder browser).
+- **S2** longer target paths now reach archiver plug-ins' `UnpackOneFile` from F3 / F4. Taken into
+  the contract: the same kind of input F5 has given since 222; ZIP measured, 7-Zip / tar / uniso /
+  uncab by reading take it; the disabled unrar `lstrcpy(justName[MAX_PATH], nameInArchive)`
+  (reachable before through long folder paths) -> Inbox item; unchm / demoplug refuse silently.
+- **S3** the start-up cleanup (`_RemoveTemporaryDir`, `char path[MAX_PATH + 2]`) skipped entries of
+  260+ bytes - after a crash a long-name copy and its SAL*.tmp folder would stay for good and the
+  question would come back at every start. Fixed: the walk's path on the heap (dir + '\' + the
+  longest name), nothing skipped; bounded by SAL_MAX_PATH_UTF8. By reading (driving it would need a
+  fake SAL*.tmp folder in the real %TEMP%, where the question could also delete the maintainer's own
+  leftovers).
+- N1 "Expanded string is too large." twice when a 604-byte member is focused (also seen in ARCCAP;
+  probably the information line, `fileswn2.cpp` `char buff[1000]`) - pre-existing -> Inbox item.
+  The before-run's GZLONG message is probably the same box (not only F5).
+- N2 a .gz with a stored name over 255 units cannot be opened now (the item: refused); gzip itself
+  falls back to the archive's name -> a decision item for the maintainer.
+- N3 / N4 the gzip reader, the rule, the heap buffers and the low-memory paths hold.
+
+After the fixes: BUILD SUCCEEDED; saltests 24559 / 0; encoding guard 0; probe
+`probe/result_after.txt` **16 PASS / 0 FAIL** (VIEWLONG, EDITLONG, ARCCAP, OVERLIMIT, CTL, GZLONG,
+GZOVER, GZCTL - RUN and END rows).

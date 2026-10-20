@@ -105,7 +105,10 @@ user gets a file named differently than the one packed.
 
 - **FR-001**: F3 and F4 of an archive member MUST create the temporary copy under the member's
   whole name whenever the copy's full path fits the Windows path limit (259 UTF-16 units),
-  regardless of how many UTF-8 bytes the path has.
+  regardless of how many UTF-8 bytes the path has - within feature 095's limit of the name handed
+  to the archiver (the member's path inside the archive under 520 bytes), which stays (review of
+  260, M1: it is the longest name a plug-in has ever received; raising it needs an audit of the
+  archiver plug-ins - a leftover item).
 - **FR-002**: When the temporary copy's full path does not fit, F3 / F4 MUST refuse with the
   existing "resulting filename is too long" message; no shortened name may be used for a file that
   F4 packs back.
@@ -150,5 +153,6 @@ user gets a file named differently than the one packed.
   of a long name is not a new kind of input for them.
 - Assumption (autonomous run): packers already pack disk files with such names (F5 into an
   archive); the edit's way back is the same packing route.
-- Out of scope: names whose temporary path exceeds 259 UTF-16 units (they would need long-path
+- Out of scope: members whose path inside the archive has 520 bytes or more (feature 095's limit,
+  kept - review of 260, M1); names whose temporary path exceeds 259 UTF-16 units (they would need long-path
   support in every archiver plug-in, viewer and editor); the plug-in disk-cache services.

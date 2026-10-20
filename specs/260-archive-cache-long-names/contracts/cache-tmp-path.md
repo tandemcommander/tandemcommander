@@ -10,6 +10,15 @@ Core-internal (`src/cache.h`); the plug-in interface is unchanged (version 108 i
     `MAX_PATH - 1` UTF-16 units (`SalCacheTmpPathFitsU8`, `src/common/salcachename.h`); the UTF-8
     path may then have up to `3 * (MAX_PATH - 1)` bytes.
   - Not fitting: `NULL`, `*exists = TRUE`, `DCGNE_TOOLONGNAME` - as before.
+- In practice the UTF-8 path stays under about 260 + 520 bytes: before the cache is asked, F3 / F4
+  refuse a member whose path inside the archive has 520 bytes or more (feature 095, kept - the
+  longest name an archiver plug-in has ever received). Within that, an archiver plug-in's
+  `UnpackOneFile` now gets a target folder (the cache folder, < 260 bytes) + a member name whose
+  join may exceed MAX_PATH bytes - the same kind of input F5 (extract) has given it since names
+  over 255 bytes are listed (feature 222). Measured with ZIP (probe 260); by reading 7-Zip, tar,
+  uniso and uncab take it (heap or refusal); the disabled unrar copies `nameInArchive` into
+  `char[MAX_PATH]` (an Inbox item - reachable before through long folder paths), unchm / demoplug
+  refuse without a message (review of 260, S2).
 - An item already in the cache is found by its key as before; the mode matters only when a new
   temporary file is placed.
 
