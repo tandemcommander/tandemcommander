@@ -12458,6 +12458,51 @@ static void TestMenuHotKey236()
         CHECK(SalMenuKeyMatch("&\xC8ten\xED", 0x010C) == 2);
         CHECK(SalMenuKeyMatch("\xC8ten\xED", 0x010D) == 1);
     }
+
+    // feature 256: the owner's answer to WM_MENUCHAR
+    int idx = -1;
+    CHECK(SalMenuCharAnswer(MAKELONG(2, MNC_SELECT), 5, &idx) == MNC_SELECT && idx == 2);
+    idx = -1;
+    CHECK(SalMenuCharAnswer(MAKELONG(0, MNC_EXECUTE), 5, &idx) == MNC_EXECUTE && idx == 0);
+    idx = -1;
+    CHECK(SalMenuCharAnswer(MAKELONG(4, MNC_EXECUTE), 5, &idx) == MNC_EXECUTE && idx == 4);
+    idx = -1;
+    CHECK(SalMenuCharAnswer(MAKELONG(5, MNC_SELECT), 5, &idx) == 0 && idx == -1); // no such item
+    CHECK(SalMenuCharAnswer(MAKELONG(0xFFFF, MNC_EXECUTE), 5, &idx) == 0 && idx == -1);
+    CHECK(SalMenuCharAnswer(MAKELONG(0, MNC_SELECT), 0, &idx) == 0 && idx == -1); // an empty popup
+    CHECK(SalMenuCharAnswer(MAKELONG(1, MNC_IGNORE), 5, &idx) == 0 && idx == -1);
+    CHECK(SalMenuCharAnswer(MAKELONG(1, MNC_CLOSE), 5, &idx) == 0 && idx == -1);
+    CHECK(SalMenuCharAnswer(0, 5, &idx) == 0 && idx == -1);          // DefWindowProc's answer
+    CHECK(SalMenuCharAnswer(0xCCCCCCCC, 5, &idx) == 0 && idx == -1); // 7-Zip's garbage (menu2.cpp)
+    CHECK(SalMenuCharAnswer(MAKELONG(1, 4), 5, &idx) == 0 && idx == -1);
+
+    // feature 256: a dialog control's hot key, as a UTF-16 unit
+    CHECK(SalDlgHotKeyW(L"HE&X-mode") == L'X');
+    CHECK(SalDlgHotKeyW(L"Gan&ze W\x00F6rter") == L'z');
+    CHECK(SalDlgHotKeyW(L"&\x0422\x0435\x043A\x0441\x0442") == 0x0422); // Cyrillic Te
+    CHECK(SalDlgHotKeyW(L"\x0160&estn\x00E1\x0063tkov\x00FD") == L'e');
+    CHECK(SalDlgHotKeyW(L"&\x0160irok\x00FD") == 0x0160);
+    CHECK(SalDlgHotKeyW(L"R&&D") == 0); // before: 'D'
+    CHECK(SalDlgHotKeyW(L"R&&D &x") == L'x');
+    CHECK(SalDlgHotKeyW(L"&&&a") == L'a');
+    CHECK(SalDlgHotKeyW(L"tail&") == 0);
+    CHECK(SalDlgHotKeyW(L"none") == 0);
+    CHECK(SalDlgHotKeyW(L"") == 0);
+    CHECK(SalDlgHotKeyW(NULL) == 0);
+    CHECK(SalDlgHotKeyW(L"&\xD83D\xDE00") == 0); // an emoji: never a hot key
+    CHECK(SalDlgHotKeyW(L"\x6DFB\x52A0(&A)") == L'A');
+    // by virtual key: ASCII letters and digits only (as before for every shipped language)
+    CHECK(SalDlgHotKeyVkMatch(L'X', 'X') && SalDlgHotKeyVkMatch(L'x', 'X'));
+    CHECK(SalDlgHotKeyVkMatch(L'7', '7'));
+    CHECK(!SalDlgHotKeyVkMatch(L'x', 'Y') && !SalDlgHotKeyVkMatch(L'x', 'x'));
+    CHECK(!SalDlgHotKeyVkMatch(0x0422, 0x22) && !SalDlgHotKeyVkMatch(0x00C8, 0xC8)); // never a byte or a unit as a VK
+    CHECK(!SalDlgHotKeyVkMatch(L'?', 0x3F) && !SalDlgHotKeyVkMatch(0, 0));
+    // by character, case ignored
+    CHECK(SalDlgHotKeyCharMatch(0x0422, 0x0442) && SalDlgHotKeyCharMatch(0x0442, 0x0422)); // Te / te
+    CHECK(SalDlgHotKeyCharMatch(0x0160, 0x0161));                                          // S-caron
+    CHECK(SalDlgHotKeyCharMatch(L'X', L'x') && SalDlgHotKeyCharMatch(L'e', L'E'));
+    CHECK(!SalDlgHotKeyCharMatch(0x0422, L'?') && !SalDlgHotKeyCharMatch(0x010C, L'c'));
+    CHECK(!SalDlgHotKeyCharMatch(0, 0) && !SalDlgHotKeyCharMatch(L'a', 0) && !SalDlgHotKeyCharMatch(0, L'a'));
 }
 
 // feature 238: a path with %...% - the part checked as it is, how the path is anchored

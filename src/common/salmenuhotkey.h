@@ -89,3 +89,64 @@ inline int SalMenuKeyMatch(const char* text, WCHAR key)
     first[1 + n] = 0;
     return n > 0 && SalMnemonicMatchW(first, key) ? 1 : 0;
 }
+
+// feature 256: what a popup does with its owner's answer 'ret' to WM_MENUCHAR (the low DWORD of the
+// result) in a popup of 'count' items: MNC_SELECT or MNC_EXECUTE with '*index' the item, or 0 -
+// ignore it (MNC_IGNORE, MNC_CLOSE, an unknown kind, an item that does not exist). Before, only
+// MNC_SELECT was carried out, with an unchecked index - and the question carried no character, so no
+// owner could answer. The caller still refuses a separator or an item hidden at the skill level.
+inline int SalMenuCharAnswer(DWORD ret, int count, int* index)
+{
+    int kind = HIWORD(ret);
+    int i = LOWORD(ret);
+    if (kind != MNC_SELECT && kind != MNC_EXECUTE || i >= count)
+        return 0;
+    *index = i;
+    return kind;
+}
+
+// feature 256: the hot key of a dialog control's text 'text' (UTF-16) - the unit after a single '&'
+// ("&&" is a literal '&'), or 0 when there is none or it is half of a surrogate pair. Before, the
+// Find window read the text in the code page and took the byte after the first '&' not followed by
+// another one - "R&&D" gave 'D'.
+inline WCHAR SalDlgHotKeyW(const WCHAR* text)
+{
+    if (text == NULL)
+        return 0;
+    for (const WCHAR* p = text; *p != 0; p++)
+    {
+        if (*p == L'&')
+        {
+            if (*(p + 1) == L'&')
+            {
+                p++; // the pair is one literal '&'
+                continue;
+            }
+            WCHAR c = *(p + 1); // 0 for a trailing '&'
+            return IS_HIGH_SURROGATE(c) || IS_LOW_SURROGATE(c) ? 0 : c;
+        }
+    }
+    return 0;
+}
+
+// feature 256: an Alt+key press (WM_SYSKEYDOWN, virtual key 'vk') is the hot key 'hotKey' - only an
+// ASCII letter or digit, whose virtual key is its upper-case form (the old byte-to-virtual-key
+// comparison, kept for these); other hot keys are matched by character (SalDlgHotKeyCharMatch)
+inline BOOL SalDlgHotKeyVkMatch(WCHAR hotKey, WPARAM vk)
+{
+    if (hotKey >= L'a' && hotKey <= L'z')
+        hotKey = (WCHAR)(hotKey - L'a' + L'A');
+    if (!(hotKey >= L'A' && hotKey <= L'Z' || hotKey >= L'0' && hotKey <= L'9'))
+        return FALSE;
+    return vk == (WPARAM)hotKey;
+}
+
+// feature 256: a typed character 'typed' (WM_SYSCHAR of a wide loop, UTF-16) is the hot key 'hotKey',
+// case ignored
+inline BOOL SalDlgHotKeyCharMatch(WCHAR hotKey, WCHAR typed)
+{
+    if (hotKey == 0 || typed == 0)
+        return FALSE;
+    return (WCHAR)(ULONG_PTR)CharUpperW((LPWSTR)(ULONG_PTR)hotKey) ==
+           (WCHAR)(ULONG_PTR)CharUpperW((LPWSTR)(ULONG_PTR)typed);
+}

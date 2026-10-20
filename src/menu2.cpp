@@ -1558,11 +1558,11 @@ int CMenuPopup::FindNextItemIndex(int firstIndex, WCHAR key)
     return -1;
 }
 
-void CMenuPopup::OnChar(char key, BOOL* leaveMenu, DWORD* retValue)
+void CMenuPopup::OnChar(WCHAR key, BOOL* leaveMenu, DWORD* retValue)
 {
     CALL_STACK_MESSAGE2("CMenuPopup::OnChar(%u, , )", key);
-    WCHAR keyW = SalACPCharToW(key); // feature 237: the popup's loop is a code-page one (PeekMessageA)
-    int firstIndex = FindNextItemIndex(SelectedItemIndex, keyW);
+    // feature 256: 'key' is UTF-16 (the popup's loop is wide); feature 237 converted a code-page byte
+    int firstIndex = FindNextItemIndex(SelectedItemIndex, key);
     if (firstIndex == -1)
     {
         // no matching item found
@@ -1573,12 +1573,22 @@ void CMenuPopup::OnChar(char key, BOOL* leaveMenu, DWORD* retValue)
         // http://msdn.microsoft.com/en-us/library/windows/desktop/ms646349%28v=vs.85%29.aspx
         // (it should return 0 because nothing in the menu starts with H)
         // in any case, we were getting RTCs, so we mask to the lower DWORD
-        DWORD ret = (DWORD)(SendMessage(SharedRes->HParent, WM_MENUCHAR, MF_POPUP, (LPARAM)hMenu) & 0xffffffff);
-        if (HIWORD(ret) == MNC_SELECT)
-            SelectNewItemIndex(LOWORD(ret), FALSE);
+        // feature 256: the character in the low word and MF_POPUP in the high one, as the message's
+        // contract says (before: wParam = MF_POPUP, no character - no owner could match); sent wide, so
+        // a Unicode owner (the panel's list) gets the UTF-16 unit, a code-page one Windows' conversion
+        DWORD ret = (DWORD)(SendMessageW(SharedRes->HParent, WM_MENUCHAR, MAKEWPARAM(key, MF_POPUP), (LPARAM)hMenu) & 0xffffffff);
+        int index;
+        int answer = SalMenuCharAnswer(ret, Items.Count, &index);
+        if (answer != 0 && !(Items[index]->Type & MENU_TYPE_SEPARATOR) &&
+            (SharedRes->SkillLevel & Items[index]->SkillLevel))
+        {
+            SelectNewItemIndex(index, FALSE);
+            if (answer == MNC_EXECUTE) // the owner's single match: choose it, as our own single match is
+                OnKeyReturn(leaveMenu, retValue);
+        }
         return;
     }
-    int nextIndex = FindNextItemIndex(firstIndex, keyW); // is there another one?
+    int nextIndex = FindNextItemIndex(firstIndex, key); // is there another one?
     if (nextIndex != firstIndex)
     {
         // select
@@ -1980,7 +1990,7 @@ void CMenuPopup::DoDispatchMessage(MSG* msg, BOOL* leaveMenu, DWORD* retValue, B
     case WM_SYSCHAR: // j.r.: so that Alt+LETTER works inside the menu as well
     {
         CMenuPopup* popup = FindActivePopup();
-        popup->OnChar((char)msg->wParam, leaveMenu, retValue);
+        popup->OnChar((WCHAR)msg->wParam, leaveMenu, retValue); // UTF-16: the loop is wide (feature 256)
         return;
     }
 
@@ -2438,7 +2448,7 @@ void CMenuPopup::DoDispatchMessage(MSG* msg, BOOL* leaveMenu, DWORD* retValue, B
         //      return;
     }
     TranslateMessage(msg);
-    DispatchMessage(msg);
+    DispatchMessageW(msg); // the message was taken by PeekMessageW (feature 256)
 }
 
 BOOL CMenuPopup::CreatePopupWindow(CMenuPopup* firstPopup, int x, int y, int submenuItemPos, const RECT* exclude)
@@ -3022,7 +3032,9 @@ CMenuPopup::TrackInternal(DWORD trackFlags, int x, int y, HWND hwnd, const RECT*
             else
             {
                 //        TRACE_I("MENU: entering message queue");
-                if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) != 0)
+                // feature 256: a wide loop - typed characters reach OnChar whole (a code-page loop
+                // turned a character outside the keyboard layout's code page into '?', a DBCS one into bytes)
+                if (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE) != 0)
                 {
                     if (!leaveMenu)
                     {

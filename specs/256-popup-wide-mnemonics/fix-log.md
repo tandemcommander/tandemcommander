@@ -26,3 +26,10 @@ Backlog item `menu-popup-loop-wide-mnemonics` (leftover of 236 / 237).
 
 - The menu bar's own loop (`menubar.cpp`, F10 then a letter) is not named by the item: unchanged, a
   new Inbox item.
+
+## Analyze
+
+`speckit-analyze`: 0 CRITICAL, 0 HIGH. Accepted: E1 (MEDIUM) - SC-001 rests on a probe that refuses
+while another instance runs; NOT DRIVEN rows are recorded as such, the rules' saltests and the
+mechanism scripts carry the claim. E2 / E3 (LOW): other keys unchanged - checked by reading and the
+review; the closing documents are the run's step 8.

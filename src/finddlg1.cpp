@@ -16,7 +16,8 @@
 #include "usermenu.h"
 #include "execute.h"
 #include "tasklist.h"
-#include "salfindtext.h" // feature 121
+#include "salfindtext.h"   // feature 121
+#include "salmenuhotkey.h" // feature 256
 
 #include <Shlwapi.h>
 #include <uxtheme.h>
@@ -2952,25 +2953,23 @@ BOOL CFindDialog::DoYouWantToStopSearching()
 }
 
 // pull the text from the control and search for a hot key;
-// if found, return its character (uppercase), otherwise return 0
-char GetControlHotKey(HWND hWnd, int resID)
+// if found, return it (UTF-16, as written), otherwise return 0
+// feature 256: the text is read wide and "&&" is a literal '&' (before: code-page bytes compared
+// with a virtual key; "R&&D" gave 'D')
+static WCHAR GetControlHotKey(HWND hWnd, int resID)
 {
-    char buff[500];
-    if (!GetDlgItemText(hWnd, resID, buff, 500))
+    WCHAR buff[500];
+    if (!GetDlgItemTextW(hWnd, resID, buff, 500))
         return 0;
-    const char* p = buff;
-    while (*p != 0)
-    {
-        if (*p == '&' && *(p + 1) != '&')
-            return UpperCase[*(p + 1)];
-        p++;
-    }
-    return 0;
+    return SalDlgHotKeyW(buff);
 }
 
 BOOL CFindDialog::ManageHiddenShortcuts(const MSG* msg)
 {
-    if (msg->message == WM_SYSKEYDOWN)
+    // feature 256: WM_SYSKEYDOWN matches an ASCII letter or digit hot key by its virtual key (as
+    // before); WM_SYSCHAR (UTF-16 - the Find loop is wide) matches any hot key by character, the one
+    // the dialog manager then looks for - this runs before IsDialogMessageW, so the controls show first
+    if (msg->message == WM_SYSKEYDOWN || msg->message == WM_SYSCHAR)
     {
         BOOL controlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
         BOOL altPressed = (GetKeyState(VK_MENU) & 0x8000) != 0;
@@ -2986,8 +2985,9 @@ BOOL CFindDialog::ManageHiddenShortcuts(const MSG* msg)
                 int i;
                 for (i = 0; resID[i] != -1; i++)
                 {
-                    char key = GetControlHotKey(HWindow, resID[i]);
-                    if (key != 0 && (WPARAM)key == msg->wParam)
+                    WCHAR key = GetControlHotKey(HWindow, resID[i]);
+                    if (msg->message == WM_SYSKEYDOWN ? SalDlgHotKeyVkMatch(key, msg->wParam)
+                                                      : SalDlgHotKeyCharMatch(key, (WCHAR)msg->wParam))
                     {
                         // expand the Options section
                         CheckDlgButton(HWindow, IDC_FIND_GREP, BST_CHECKED);
