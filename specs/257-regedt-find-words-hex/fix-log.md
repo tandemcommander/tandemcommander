@@ -32,3 +32,10 @@ Registry restored identical.
 - `'...'` = the program's code page (item, clarification 1); a letter the code page lacks: its
   replacement, unchanged (clarification 2); a failed conversion: refused as a bad hex string.
 - Whole-word boundary stays `isspace`; the help says "punctuation" too - Inbox item (clarification 4).
+
+## Analyze
+
+- Run 1: CRITICAL D1 (no CHANGELOG task, constitution MUST) and MEDIUM D2 (no formatting task) -
+  fixed with T014 / T015. LOW C1: the CR LF edge case has no own check - the line splitter is
+  unchanged; accepted.
+- Run 2: 0 CRITICAL, 0 HIGH.

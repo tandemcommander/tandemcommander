@@ -46,10 +46,13 @@
 - [ ] T011 Build `.\build.cmd` → BUILD SUCCEEDED; saltests → 0 failed
 - [ ] T012 Probe after on the hidden desktop → 9 PASS / 0 FAIL, result in specs/257-regedt-find-words-hex/probe/result_after.txt; negative control: the saltests hex checks fail against the old per-unit conversion (recorded in fix-log.md)
 - [ ] T013 Update specs/257-regedt-find-words-hex/fix-log.md with the after measurement and the checks
+- [ ] T014 Format the changed sources with clang-format (src/common/salregfind.h, src/plugins/regedt/finddlg.cpp, finddlg2.cpp, utils.cpp, src/saltests/saltests.cpp)
+- [ ] T015 Add the user-visible entry (symptom in bold, feature 257, limits) to CHANGELOG.md under the `— unreleased` heading (at closing, SKILL step 8.5)
 
 ## Dependencies
 
 T001 → T002 → (US1: T003 → T004, T005) · (US2: T006) · (US3: T007 → T008, T009) → T010–T013.
+T014 before the final build; T015 at closing.
 US1, US2, US3 are independent of each other after T002.
 
 ## Parallel examples
