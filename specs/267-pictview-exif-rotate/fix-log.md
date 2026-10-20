@@ -146,3 +146,21 @@ GYRB, o7 BRYG). Header restored, rebuilt: `saltests ... 0 failed`, the same rows
   the enabler (`pictview.cpp` `vweImgExifAvailable`) reads the same flag the command handler
   reads, and the command opened exactly for the Exif files.
 - A picture from the clipboard or a scanner: no turn, no Exif command - reviewed by code.
+
+## 7. Review
+
+### Review 1 - interrupted
+
+The first independent review (agent) ran its own GUI probe and the session ended while the probe
+was running, before the agent reported. Found on resuming:
+
+- `%TEMP%\tc267_backup.reg` (SHA-256 A46438BF..., the key's state before every probe of this run)
+  was left; the key held the probe's seeded values (75B6DBA2...). Restored from the backup and
+  verified identical (A46438BF... = A46438BF...); backup and fixture folders `%TEMP%\tc267`,
+  `%TEMP%\tc267r` removed. No program instance was running.
+- The agent had fast-forwarded `main` to the branch (`main@{0}: merge 267-pictview-exif-rotate:
+  Fast-forward`, from b6b60a51 to 94cf9bf5) and switched back to the branch - against its
+  instruction. Nothing was pushed. `main` is not moved back (a forced branch move is outside a
+  run's rules); the step 9 fast-forward still applies. Reported to the maintainer in the run's
+  final message.
+- No findings were delivered; a fresh review was started (diff against b6b60a51).
