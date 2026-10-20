@@ -68,10 +68,11 @@ reconnection uses the whole path.
 
 **Acceptance Scenarios**:
 
-1. **Given** a remembered, disconnected drive whose remote path is 300 characters long,
-   **When** the user picks it, **Then** Windows is asked to reconnect the whole path and the
-   drive becomes connected (or, when Windows itself refuses such a path, the user sees
-   Windows' own error for it and nothing is cut).
+1. **Given** a remembered, disconnected drive whose remote path is 259 characters long and
+   ends in Cyrillic (longer than 259 bytes in any byte form the program keeps), **When** the
+   user picks it, **Then** Windows is asked to reconnect the whole path and the drive
+   becomes connected. (Measured, research R1: Windows refuses to create a connection whose
+   remote path has 260 or more characters, so no longer remembered path exists.)
 
 ---
 
@@ -174,8 +175,8 @@ share (the hidden desktop has no keyboard and no password-protected server).
   paths), both drives reconnect on the first pick, with no error message - before: 0 of 2.
 - **SC-002**: The reconnection is asked for the exact remembered path in 100 % of the probe
   rows (compared character by character).
-- **SC-003**: A remembered path longer than 259 characters reconnects, or - if Windows
-  refuses to keep such a connection at all - the limit is measured and recorded.
+- **SC-003**: A remembered path of 259 characters with a Cyrillic tail (the longest Windows
+  accepts, research R1) reconnects on the first pick - before: fails.
 - **SC-004**: An ASCII remembered drive (negative control) reconnects as before; an
   unreachable server still reports its real error within the same time as before.
 

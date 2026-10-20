@@ -1,0 +1,25 @@
+264 long-path measurement; snapshot before:  / 0000007C
+scan length 200: map 0; WNetGetConnectionW 0 exact True
+scan length 240: map 0; WNetGetConnectionW 0 exact True
+scan length 250: map 0; WNetGetConnectionW 0 exact True
+scan length 255: map 0; WNetGetConnectionW 0 exact True
+scan length 256: map 0; WNetGetConnectionW 0 exact True
+scan length 257: map 0; WNetGetConnectionW 0 exact True
+scan length 258: map 0; WNetGetConnectionW 0 exact True
+scan length 259: map 0; WNetGetConnectionW 0 exact True
+scan length 260: map 67; WNetGetConnectionW 0 exact False
+scan length 261: map 67; WNetGetConnectionW 0 exact False
+scan length 262: map 67; WNetGetConnectionW 0 exact False
+scan length 270: map 67; WNetGetConnectionW 0 exact False
+scan length 300: map 67; WNetGetConnectionW 0 exact False
+scan length 400: map 67; WNetGetConnectionW 0 exact False
+scan length 1000: map 67; WNetGetConnectionW 0 exact False
+remote length 250: \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264m\d\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\u0410\u0440\u0445\u0438\u0432
+map Z: remembered: 0
+connected: listed True; WNetGetConnectionW 0 len 250 exact True
+HKCU\Network\Z\RemotePath len 250 exact True
+cancel (keep remembered): 0; listed False; WNetGetConnectionW 1201 len 250 exact True
+wide enumeration: err 0; len 250; exact True
+ANSI enumeration: err 0; len 250; text \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264m\d\pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq?????
+WNetAddConnection3W(exact long path, CONNECT_UPDATE_PROFILE): 0; listed True
+snapshot after:  / 0000007C; equal True; fixture removed True
