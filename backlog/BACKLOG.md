@@ -25,7 +25,7 @@ Last triaged: 2026-10-19
 | 1 | [FTP: PWD reply cut at 300 bytes and other long-name leftovers of 215](items/ftp-long-name-and-path-leftovers/desc.md) | bug | 5 | ftp | agent | M | blocked |
 | 2 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | blocked |
 | 3 | [Paste fails in a folder whose path contains an exclamation mark](items/vkladanie-zo-schranky-nefunguje-v-adresaroch-s-v-ceste/desc.md) | bug | 5 | file-ops | agent | - | blocked |
-| 4 | [Archive listings show names in one encoding only as a whole (F-P1-05)](items/archive-listing-display-encoding/desc.md) | tech-debt | 4 | encoding | agent | L | open |
+| 4 | [Archive listings show names in one encoding only as a whole (F-P1-05)](items/archive-listing-display-encoding/desc.md) | tech-debt | 4 | encoding | agent | L | blocked |
 | 5 | [Read the 78 findings of check_encoding.py --plugins one by one](items/check-encoding-plugin-findings/desc.md) | tech-debt | 4 | encoding | agent | L | open |
 | 6 | [Undelete and ZIP wrap the core's UTF-8 texts in their own code-page sentences](items/undelete-zip-core-texts-in-code-page-sentences/desc.md) | bug | 4 | encoding | agent | M | open |
 | 7 | [Popup menu mnemonics fail on DBCS / UTF-8 code pages; dialog hot keys by byte](items/menu-popup-loop-wide-mnemonics/desc.md) | bug | 4 | panels-ui | agent | M | open |
