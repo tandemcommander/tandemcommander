@@ -5,6 +5,13 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item ftp-wtf8-name-listing-round-trip - implement exactly what it describes." From backlog item ftp-wtf8-name-listing-round-trip.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: Which byte sequences count as WTF-8 and are kept as the name - also a valid surrogate pair written as two 3-byte sequences (the CESU form)? → A: Exactly what the plug-ins' own WTF-8 reader (`SplU8ToW`) accepts: strict UTF-8 whose 3-byte sequences may also encode any surrogate, so the CESU form is kept byte for byte too; every other sequence still goes to the code page (autonomous run: item - "probe with `SplU8ToW` (WTF-8)")
+- Q: Should a legacy server's code-page name whose bytes happen to form a WTF-8 surrogate sequence keep being read in the code page? → A: No - WTF-8 wins, as the item's approach states; the case is recorded as a limit in Edge Cases (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The server's file is shown and downloaded under its own name (Priority: P1)
@@ -78,8 +85,8 @@ contents; upload (F5) from the local panel; record the dialogs and the server's 
 ### Functional Requirements
 
 - **FR-001**: A listing field (and a PWD path) whose bytes are valid WTF-8 - valid UTF-8 whose
-  3-byte sequences may also encode an unpaired surrogate - MUST be kept byte for byte as the name,
-  and MUST NOT be remembered as a code-page name.
+  3-byte sequences may also encode a surrogate, exactly the set the plug-ins' `SplU8ToW` accepts -
+  MUST be kept byte for byte as the name, and MUST NOT be remembered as a code-page name.
 - **FR-002**: A listing field whose bytes are not valid WTF-8 MUST be read as before: in the ANSI
   code page, remembered as a code-page name (feature 224); bytes undecodable either way are kept raw.
 - **FR-003**: The decision "kept as UTF-8 or read in the code page" MUST be a pure rule with unit
