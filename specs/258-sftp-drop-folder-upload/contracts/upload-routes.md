@@ -25,10 +25,9 @@ local source only on a confirmed upload.
 
 The overwrite question is never asked on this route (nothing can be replaced).
 
-A folder of an uploaded tree inside a drop folder: a refused `Mkdir` whose status can mean
-"exists" (FAILURE, FILE_ALREADY_EXISTS - `SftpMkdirMayExist`) followed by a `stat` refused for
-want of a right = the folder is taken as there; its files take the drop route and fail on their
-own if it is not. Any other refusal fails the folder with the Mkdir's reason (139).
+A folder of an uploaded tree inside a drop folder: created by `Mkdir`; a refused `Mkdir` fails the
+folder with its reason as in 139 (also when the folder exists from an earlier upload - the server
+does not show it; a recorded limit). A Move keeps the local folder.
 
 ## Confirmation of a written file (every route)
 

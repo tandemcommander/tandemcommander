@@ -48,7 +48,7 @@ working method (measure first, probe rows before / after).
 
 ## Phase 7: Review 1 follow-up
 
-- [X] T017 [US1] Folder uploaded again into a drop folder (review 1, NOTE-4): `SftpMkdirMayExist` in `src/plugins/sftp/sftputils.h/.cpp` + harness, `UploadDirLevel` in `src/plugins/sftp/operats.cpp`; probe row DROPDIR2
+- [X] T017 [US1] Folder uploaded again into a drop folder (review 1, NOTE-4): tried in `UploadDirLevel` (`src/plugins/sftp/operats.cpp`), rejected by review 2 (MUST-1) and reverted; probe rows DROPDIR2 and DROPHOLE guard the 139 behaviour; the case is an Inbox item
 - [X] T018 Test server `probe/dropsftp.py` lets a write open overwrite an existing `/drop` file (review 1, SHOULD-1), so DROPEXIST proves the exclusive create; CHANGELOG limitation qualified (SHOULD-2)
 
 ## Dependencies

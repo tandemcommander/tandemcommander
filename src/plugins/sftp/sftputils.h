@@ -135,11 +135,6 @@ CSftpUploadConfirm SftpUploadConfirmation(BOOL remoteSizeKnown, unsigned __int64
 // session dead) is no answer at all.
 BOOL SftpTargetStatRefused(BOOL connected, unsigned long status);
 
-// feature 258: a refused Mkdir whose status can mean "something of that name is there" (FAILURE -
-// what OpenSSH answers for an existing name - or FILE_ALREADY_EXISTS). A refusal for want of a
-// right, no space, no status at all, ... cannot.
-BOOL SftpMkdirMayExist(unsigned long status);
-
 // feature 258: is 'path' the path of an upload's temporary file, as SftpTempPath makes it - its
 // last component is exactly ".tcpart-" and 8 lower-case hex digits? (Checked before such a file
 // is offered for deletion.)

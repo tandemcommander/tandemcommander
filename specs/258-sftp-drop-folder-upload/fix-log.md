@@ -155,3 +155,26 @@ drop route (`OpenWriteNew` -> `OpenWrite` with truncation), restored by `git che
   `sftp-a-copy-posted-right-after-a-failed-upload-and-its` (measure:258).
 - After the fixes: build clean (no warning), harness 241 / 0, probe `probe/result_after.txt`
   **16 / 0** (DROPDIR2 added), encoding guard TOTAL 0.
+
+### Review 2 (independent agent, refute-first) - MUST-1 in the code added after review 1
+
+- **MUST-1** the folder "taken as there" (a5100148): a Move of an EMPTY local folder whose `Mkdir`
+  answered FAILURE and whose `stat` was refused deleted the local folder - nothing had reached
+  the server, no box; also on plain OpenSSH (an empty folder moved onto a symbolic link into a
+  root 0700 folder: `mkdir` -> 4, `stat` -> 3). Reproduced by the reviewer on the a5100148 build
+  (rows RVEMPTYMV, RVOSSH FAIL; RVEMPTYCTL in `/pub` PASS).
+- NOTE-1 the same branch gave one box per file (also on OpenSSH).
+- Verified sound: the drop route, the confirmation by acknowledgments, the left-file record and
+  offer (every `UploadDropTemp` caller walked), the callers, UTF-8 / path rules; probe 16 / 0,
+  harness 241 / 0 reproduced.
+- **Fix: the change of `UploadDirLevel` is reverted** (sources = 3ef7774a, the state review 1
+  checked; `SftpMkdirMayExist` and its 2 checks gone). A folder uploaded again into a drop folder
+  fails with "Cannot create directory" as in 139 - a recorded limit, Inbox item
+  `sftp-a-folder-uploaded-again-into-an-upload-only-folder` (leftover:258) with the reviewer's
+  cases and an approach. Rows: DROPDIR2 is now a Move that must fail with the folder named and
+  keep the local files; new row DROPHOLE = the reviewer's RVEMPTYMV (Move of an empty folder
+  onto a file in `/drop`: box, local folder kept, the server's file unchanged). Their negative
+  control is the reviewer's run on the a5100148 build (RVEMPTYMV FAIL).
+- After: harness **239 / 0**; build clean; probe `probe/result_after.txt` **PASS 18, FAIL 0**;
+  registry restored + identical.
+- 133 regression after the revert: **PASS 76, FAIL 0** (`probe/regress_133.txt`).

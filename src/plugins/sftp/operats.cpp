@@ -1931,21 +1931,9 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
     {
         char why[600];
         SplU8CopyTrunc(why, sizeof(why), session->GetLastErrorText());
-        unsigned long mkdirStatus = session->GetLastSftpStatus();
         LIBSSH2_SFTP_ATTRIBUTES dirAttrs;
-        CSFTPStatResult dirSt = session->StatEx(remoteDir, TRUE, &dirAttrs);
-        if (dirSt == sxError && SftpTargetStatRefused(session->IsConnected(), session->GetLastSftpStatus()) &&
-            SftpMkdirMayExist(mkdirStatus))
-        {
-            // feature 258: inside an upload-only folder the server shows nothing - the folder may
-            // be there from an earlier upload (the Mkdir's answer allows it). Its files go on:
-            // each is only created (the drop route of UploadOneFileImpl) and fails on its own if
-            // the folder is not there.
-            Logs.AppendFmt(logUID, "The folder %s could not be created (%s) and the server does not show whether it exists; its files are tried.",
-                           CSFTPMsgText(remoteDir).Get(), why);
-        }
-        else if (dirSt != sxFound || (dirAttrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) == 0 ||
-                 !SFTP_S_ISDIR(dirAttrs.permissions))
+        if (!session->Stat(remoteDir, TRUE, &dirAttrs) || (dirAttrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) == 0 ||
+            !SFTP_S_ISDIR(dirAttrs.permissions))
         {
             if (hFind != INVALID_HANDLE_VALUE)
                 FindClose(hFind);
