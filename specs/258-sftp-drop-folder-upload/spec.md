@@ -21,6 +21,14 @@
 - A connection lost at the end of an upload leaves the temporary file `.tcpart-XXXXXXXX` on the
   server; the box names it once and nothing ever offers to remove it.
 
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: When is the removal of left temporary files offered - only at the start of the next upload on the connection, or also when the panel reconnects or refreshes? → A: Only at the start of the next upload on that panel connection (no question inside a refresh or path change; the upload is the operation that left them) (autonomous run: conservative)
+- Q: When an upload into a drop folder fails after the file was created under its name, does the plug-in try to remove the partial file? → A: Yes, once - the plug-in created it exclusively, it is no one else's; if the server refuses, the box says a partial file may stay under that name (autonomous run: conservative - no torso left silently)
+- Q: Does the confirmation by the server's acknowledgments (size not reportable) apply only to the drop route or to every upload route? → A: To every route, only when the size request is refused with a permission status on a live session and every byte and the close were acknowledged; the route then goes on as before (a temporary file is still renamed) (autonomous run: item - "succeeds (or says why)")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Upload into a drop folder (Priority: P1)
@@ -90,8 +98,9 @@ needs (the old file and the local source are intact).
   any other status): the upload fails as before.
 - The server does not support an exclusive create: the drop route does not fall back to an
   open that could replace an existing file - the item fails with the reason.
-- The upload into the drop folder is stopped or fails after the file was created: the partial
-  file may stay under the target's name (the server lets nobody remove it); the box says so.
+- The upload into the drop folder is stopped or fails after the file was created: the plug-in
+  tries once to remove its partial file; if the server refuses, the box says a partial file may
+  stay under the target's name.
 - The server lets the account write but reports a different size after the upload: as before,
   the upload is not confirmed.
 - The server refuses to report the size of the uploaded file (permission): the upload is
@@ -113,13 +122,17 @@ needs (the old file and the local source are intact).
 - **FR-003**: When the server refuses with a permission status to report the size of an
   uploaded file, the upload MUST be taken as confirmed only when every byte of the local file
   was acknowledged by the server and the close was confirmed; the session log MUST say so.
+  This holds for every upload route; the route then continues as before.
+- **FR-003a**: A drop-route upload that fails or is stopped after its exclusive create MUST try
+  once to remove the partial file and, if it stays, MUST say in the box that a partial file may
+  remain under the target's name.
 - **FR-004**: A Move into a drop folder MUST remove the local source only after FR-003's
   confirmation (unchanged rule of 139).
 - **FR-005**: The overwrite question MUST state that a replacement is a new copy: other hard
   links keep the old content; the ACL and extended attributes are not carried over.
 - **FR-006**: A temporary file of an upload whose removal failed because the connection was lost
   MUST be remembered for that connection; at the start of the next upload on it (after the
-  reconnection) the user MUST be offered to delete all remembered files; the answer (Yes or No)
+  reconnection; not at a refresh or a change of path) the user MUST be offered to delete all remembered files; the answer (Yes or No)
   clears the record.
 - **FR-007**: A temporary file kept as the only complete copy of new content, and one whose
   removal the server refused while the connection was alive, MUST NOT be offered.
