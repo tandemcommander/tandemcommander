@@ -32,7 +32,7 @@
 
 - Q: Should the popup carry out an owner's "execute item n" answer (select and choose), not only "select"? → A: Yes - select it and choose it as Enter would; the fallback must work for a single match, which extensions answer with "execute" (autonomous run: item)
 - Q: In the Find window, should the character check replace the virtual-key check of ASCII hot keys? → A: No - keep the virtual-key check for ASCII letters and digits and add a character check; nothing that works today changes (autonomous run: conservative)
-- Q: Should code-page owner windows (main window, Find window) convert the character back to UTF-16 before passing it to the shell extension? → A: No - they forward what they receive, as today; recorded as a limit (autonomous run: conservative)
+- Q: Should code-page owner windows (main window, Find window) convert the character back to UTF-16 before passing it to the shell extension? → A: No - they forward what they receive, as today; the popup sends in their own kind so that what they receive is the UTF-16 unit (review 1) (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -144,10 +144,12 @@ key is a person's check.
 - Assumption (autonomous run): the menu bar's own loop (F10, then a letter, before any popup opens -
   `CMenuBar::EnterMenuInternal`) has the same code-page defect but is not named by the item; it stays
   unchanged and is recorded as a new Inbox item (stop-rules §2.11).
-- Assumption (autonomous run): the owner windows that are code-page windows (the main window, the
-  Find window) receive the character converted by Windows to their code page; they forward it to the
-  shell extension unchanged. Only the panel's context menu (a Unicode window) passes a non-ASCII
-  character exactly; ASCII arrives exactly everywhere. Recorded as a limit.
+- Assumption (autonomous run): the owner windows forward the question's wParam to the shell
+  extension unchanged, so the popup sends it in the owner's own kind (wide to a Unicode window, code
+  page to a code-page one) and Windows converts nothing - every owner forwards the UTF-16 unit (review 1;
+  a wide send to a code-page window was measured to scramble it). Owner-side routing gaps (the panel's
+  background / New menus, the Find window's dialog result) are outside the item: Inbox
+  `menuchar-owner-routing`.
 - Assumption (autonomous run): the Find window keeps its virtual-key check on the key-down for
   ASCII letter and digit hot keys (unchanged behaviour, also with a non-Latin keyboard layout), and
   adds a character check on the character message the dialog manager uses for mnemonics.
