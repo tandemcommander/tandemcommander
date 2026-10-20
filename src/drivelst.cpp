@@ -226,7 +226,7 @@ static void GetRememberedNetDriveLogonW(char letter, const WCHAR* remote, WCHAR*
     WCHAR keyName[] = L"Network\\?";
     keyName[_countof(keyName) - 2] = (WCHAR)(BYTE)letter;
     HKEY key;
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, keyName, 0, KEY_READ, &key) != ERROR_SUCCESS)
+    if (HANDLES_Q(RegOpenKeyExW(HKEY_CURRENT_USER, keyName, 0, KEY_READ, &key)) != ERROR_SUCCESS)
         return; // nothing to do ...
     WCHAR* savedRemote = ReadRegStringW(key, L"RemotePath");
     if (SalNetDriveSameRemote(savedRemote, remote))
@@ -245,7 +245,7 @@ static void GetRememberedNetDriveLogonW(char letter, const WCHAR* remote, WCHAR*
         }
     }
     free(savedRemote);
-    RegCloseKey(key);
+    HANDLES(RegCloseKey(key));
 }
 
 struct CNBWNetAC3ThreadFParams
@@ -3129,7 +3129,9 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
             int letterIndex = LowerCase[(BYTE)name[0]] - 'a';
             if (letterIndex >= 0 && letterIndex < 26 && (GetLogicalDrives() & (1u << letterIndex)) == 0)
             {
-                WCHAR* remote = GetRememberedNetDriveRemoteW(name[0]);
+                DWORD netDrives;
+                GetNetworkDrives(netDrives, NULL); // as before: reports a failure to list the remembered connections
+                WCHAR* remote = (netDrives & (1u << letterIndex)) != 0 ? GetRememberedNetDriveRemoteW(name[0]) : NULL;
                 if (remote != NULL)
                 {
 #ifdef _DEBUG

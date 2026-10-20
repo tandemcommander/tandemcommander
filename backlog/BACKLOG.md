@@ -174,6 +174,7 @@ Last triaged: 2026-10-19
 | [FTP: a mask ? takes two code-page bytes of a legacy server as one letter](items/ftp-mask-letters-by-server-encoding/desc.md) | bug | 2 | ftp | manual | 2026-10-20 |
 | [FTP: a PWD reply or a created folder path that does not fit is cut and used](items/ftp-pwd-and-created-path-cut/desc.md) | bug | 4 | ftp | manual | 2026-10-20 |
 | [FTP: a file name with an unpaired surrogate comes back garbled from a UTF-8 server; re-upload may overwrite](items/ftp-wtf8-name-listing-round-trip/desc.md) | bug | 7 | ftp | review:255 | 2026-10-20 |
+| [Logging in to an inaccessible UNC path with a non-ASCII share name uses code-page APIs](items/logging-in-to-an-inaccessible-unc-path-with-a-non-ascii/desc.md) | bug | 3 | encoding | measure:264 | 2026-10-20 |
 | [Menu bar hot keys typed after F10 arrive as code-page bytes](items/menubar-loop-wide-mnemonics/desc.md) | bug | 3 | panels-ui | measure:256 | 2026-10-20 |
 | [Shell extensions in the panel background menu and the Find window never answer typed hot keys](items/menuchar-owner-routing/desc.md) | bug | 2 | panels-ui | review:256 | 2026-10-20 |
 | [Multimedia Viewer: the "cannot open" message shows a non-ASCII file name as mojibake](items/mmviewer-open-error-name-mojibake/desc.md) | bug | 1 | other-plugins | measure:255 | 2026-10-20 |

@@ -17,6 +17,8 @@
       A1  ASCII                            both: reconnected (control: the fixture works, nothing regressed)
       U1  saved path on a missing server   fixed: the exact path is tried, the Windows error is shown, not listed
       P1  panel path change to a Q1-type disconnected drive   fixed: reconnected, panel there; baseline: not
+      N1  CJK + Cyrillic, saved ProviderName of a provider that does not exist
+                                           fixed: the exact path is tried with the saved provider (Windows: 1204)
 #>
 [CmdletBinding()]
 param(
@@ -60,6 +62,7 @@ $Dump = $Root + '\dump.txt'
 $MP2 = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2'
 $CfgKey = 'HKCU\Software\Tandem Commander\0.1\Configuration'
 $NoHost = '\\tc264-no-such-host\share'
+$NoProvider = 'TC264 No Such Network Provider'
 $Utf8 = New-Object Text.UTF8Encoding($false)
 $script:Fails = 0
 $script:Lines = New-Object System.Collections.ArrayList
@@ -121,6 +124,9 @@ function Make-Long([int]$Len, [string]$Tail) {
 function Disconnect-All($D) {
     foreach ($e in $D) { [void][Tst264]::Cancel(($e.Letter + ':'), $false) }
     foreach ($e in $D) { if ($e.Case -eq 'U1') { Set-ItemProperty -LiteralPath ('HKCU:\Network\' + $e.Letter) -Name 'RemotePath' -Value $NoHost -Type String } }
+    # N1: the provider saved with the connection is one that does not exist - Windows answers
+    # 1204 (ERROR_BAD_PROVIDER) only when the program read it (matched to the exact path) and passed it
+    foreach ($e in $D) { if ($e.Case -eq 'N1') { Set-ItemProperty -LiteralPath ('HKCU:\Network\' + $e.Letter) -Name 'ProviderName' -Value $NoProvider -Type String } }
     $rr = 0
     foreach ($e in $D) { $c = [Tst264]::Conn(($e.Letter + ':'), [ref]$rr); Out ("  {0} {1}: listed {2}; WNetGetConnectionW {3} '{4}'" -f $e.Case, $e.Letter, [Tst264]::Listed($e.Letter[0]), $rr, (Tail $c 60)) }
 }
@@ -147,14 +153,15 @@ try {
     $Cyr = [string]([char]0x0410) + [char]0x0440 + [char]0x0445 + [char]0x0438 + [char]0x0432
     $Cjk = [string]([char]0x4E2D) + [char]0x6587 + [char]0x6863
     $free = @(); foreach ($c in [char[]]'ZYXWVUTSRQPONMLKJIH') { if (-not [Tst264]::Listed($c) -and -not (Test-Path ('HKCU:\Network\' + $c))) { $free += [string]$c } }
-    if ($free.Count -lt 6) { throw 'not enough free drive letters' }
+    if ($free.Count -lt 7) { throw 'not enough free drive letters' }
     $D = @(
         @{ Case = 'Q1'; Dir = ($Fx + '\unnamed_' + $Cjk + '_' + $Cyr); Name = $null; Letter = $free[0] },
         @{ Case = 'Q2'; Dir = ($Fx + '\named_' + $Cyr); Name = 'Named 264'; Letter = $free[1] },
         @{ Case = 'L1'; Dir = (Make-Long 259 ('_' + $Cyr)); Name = $null; Letter = $free[2] },
         @{ Case = 'A1'; Dir = ($Fx + '\ascii_only'); Name = $null; Letter = $free[3] },
         @{ Case = 'U1'; Dir = ($Fx + '\unreachable_' + $Cyr); Name = $null; Letter = $free[4] },
-        @{ Case = 'P1'; Dir = ($Fx + '\panel_' + $Cjk + '_' + $Cyr); Name = $null; Letter = $free[5] }
+        @{ Case = 'P1'; Dir = ($Fx + '\panel_' + $Cjk + '_' + $Cyr); Name = $null; Letter = $free[5] },
+        @{ Case = 'N1'; Dir = ($Fx + '\provider_' + $Cjk + '_' + $Cyr); Name = $null; Letter = $free[6] }
     )
     foreach ($e in $D) {
         if (-not $e.Dir.StartsWith($Fx + '\')) { throw ('fixture outside the root: ' + $e.Dir) }
@@ -195,6 +202,11 @@ try {
                 $winErr = @($r.Messages | Where-Object { $_ -match '\(\d+\) ' }).Count -ge 1
                 if ($isFixed) { RowV $e.Case $tag ($exact -and -not $listed -and -not $okLoc -and $winErr -and $null -eq $r.Fatal) ("Windows error shown {0}; {1}" -f $winErr, $facts) }
                 else { Row $e.Case $tag 'INFO' ("Windows error shown {0}; {1}" -f $winErr, $facts) }
+            }
+            elseif ($e.Case -eq 'N1') {
+                $badProvider = @($r.Messages | Where-Object { $_ -match '\(1204\) ' }).Count -ge 1
+                if ($isFixed) { RowV $e.Case $tag ($exact -and -not $listed -and $badProvider -and $null -eq $r.Fatal) ("saved provider passed (1204 shown) {0}; {1}" -f $badProvider, $facts) }
+                else { Row $e.Case $tag 'INFO' ("saved provider passed (1204 shown) {0}; {1}" -f $badProvider, $facts) }
             }
             elseif ($e.Case -eq 'A1') { RowV $e.Case $tag ($reconnected -and ($exact -or -not $isFixed)) ("reconnected {0}; {1}" -f $reconnected, $facts) }
             elseif ($isFixed) { RowV $e.Case $tag ($reconnected -and $exact) ("reconnected {0}; {1}" -f $reconnected, $facts) }

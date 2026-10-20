@@ -6,17 +6,20 @@ snapshot before: drives 0000007C; HKCU\Network []; net use []
   fixture A1: W: -> (66 characters) \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only; name 
   fixture U1: V: -> (73 characters) \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\unreachable_\u0410\u0440\u0445\u0438\u0432; name 
   fixture P1: U: -> (71 characters) \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\panel_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432; name 
+  fixture N1: T: -> (74 characters) \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\provider_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432; name 
   Q1 Z: listed False; WNetGetConnectionW 1201 '...$\Users\pavel\AppData\Local\Temp\tc264p\fx\unnamed_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
   Q2 Y: listed False; WNetGetConnectionW 1201 '...host\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\named_\u0410\u0440\u0445\u0438\u0432'
   L1 X: listed False; WNetGetConnectionW 1201 '...qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq_\u0410\u0440\u0445\u0438\u0432'
   A1 W: listed False; WNetGetConnectionW 1201 '...lhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only'
   U1 V: listed False; WNetGetConnectionW 1201 '\\tc264-no-such-host\share'
   P1 U: listed False; WNetGetConnectionW 1201 '...\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\panel_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
-Q1         FIXED  PASS        reconnected True; Z: idx 10; seam exact True '...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\unnamed_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'; listed after True; panel 'Z:\'; 1,6 s; windows: no window
-Q2         FIXED  PASS        reconnected True; Y: idx 9; seam exact True '... Y \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\named_\u0410\u0440\u0445\u0438\u0432'; listed after True; panel 'Y:\'; 1,5 s; windows: no window
-L1         FIXED  PASS        reconnected True; X: idx 8; seam exact True '...qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq_\u0410\u0440\u0445\u0438\u0432'; listed after True; panel 'X:\'; 1,6 s; windows: no window
-A1         FIXED  PASS        reconnected True; W: idx 7; seam exact True '...E W \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only'; listed after True; panel 'W:\'; 1,6 s; windows: no window
-U1         FIXED  PASS        Windows error shown True; V: idx 6; seam exact True 'RESTORE V \\tc264-no-such-host\share'; listed after False; panel 'W:\'; 4,2 s; windows: [#32770 'Network Error'] [Static id=2477] (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK
+  N1 T: listed False; WNetGetConnectionW 1201 '...\Users\pavel\AppData\Local\Temp\tc264p\fx\provider_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
+Q1         FIXED  PASS        reconnected True; Z: idx 11; seam exact True '...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\unnamed_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'; listed after True; panel 'Z:\'; 1,6 s; windows: no window
+Q2         FIXED  PASS        reconnected True; Y: idx 10; seam exact True '... Y \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\named_\u0410\u0440\u0445\u0438\u0432'; listed after True; panel 'Y:\'; 1,6 s; windows: no window
+L1         FIXED  PASS        reconnected True; X: idx 9; seam exact True '...qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq_\u0410\u0440\u0445\u0438\u0432'; listed after True; panel 'X:\'; 1,6 s; windows: no window
+A1         FIXED  PASS        reconnected True; W: idx 8; seam exact True '...E W \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only'; listed after True; panel 'W:\'; 1,6 s; windows: no window
+U1         FIXED  PASS        Windows error shown True; V: idx 7; seam exact True 'RESTORE V \\tc264-no-such-host\share'; listed after False; panel 'W:\'; 4,2 s; windows: [#32770 'Network Error'] [Static id=2477] (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK
+N1         FIXED  PASS        saved provider passed (1204 shown) True; T: idx 5; seam exact True '...calhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\provider_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'; listed after False; panel 'W:\'; 3,0 s; windows: [#32770 'Network Error'] [Static id=2477] (1204) Neplatn\u00FD n\u00E1zev s\u00ED\u0165ov\u00E9ho zprost\u0159edkovatele.  | [Button id=1] OK
 PICK-fixed END    PASS        fatal ; exit 0x00000000
   Q1 Z: listed False; WNetGetConnectionW 1201 '...$\Users\pavel\AppData\Local\Temp\tc264p\fx\unnamed_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
   Q2 Y: listed False; WNetGetConnectionW 1201 '...host\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\named_\u0410\u0440\u0445\u0438\u0432'
@@ -24,6 +27,7 @@ PICK-fixed END    PASS        fatal ; exit 0x00000000
   A1 W: listed False; WNetGetConnectionW 1201 '...lhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only'
   U1 V: listed False; WNetGetConnectionW 1201 '\\tc264-no-such-host\share'
   P1 U: listed False; WNetGetConnectionW 1201 '...\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\panel_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
+  N1 T: listed False; WNetGetConnectionW 1201 '...\Users\pavel\AppData\Local\Temp\tc264p\fx\provider_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
 P1         FIXED  PASS        reconnected True; connected to the exact path True; U: typed True; listed after True; panel 'U:\'; 2,8 s; windows: no window
 PANEL-fixed END    PASS        fatal ; exit 0x00000000
   Q1 Z: listed False; WNetGetConnectionW 1201 '...$\Users\pavel\AppData\Local\Temp\tc264p\fx\unnamed_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
@@ -32,11 +36,13 @@ PANEL-fixed END    PASS        fatal ; exit 0x00000000
   A1 W: listed False; WNetGetConnectionW 1201 '...lhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only'
   U1 V: listed False; WNetGetConnectionW 1201 '\\tc264-no-such-host\share'
   P1 U: listed False; WNetGetConnectionW 1201 '...\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\panel_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
-Q1         BASE-NEG PASS        negative control (must not reconnect): reconnected False; Z: idx 10; seam exact False '...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\unnamed_???_?????'; listed after False; panel '...rs\pavel\AppData\Local\Temp\tc264p\start'; 2,9 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "Z:\" is invalid. | [Button id=1] OK
-Q2         BASE-NEG PASS        negative control (must not reconnect): reconnected False; Y: idx 9; seam exact False '... Y \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\named_?????'; listed after False; panel '...rs\pavel\AppData\Local\Temp\tc264p\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "Y:\" is invalid. | [Button id=1] OK
-L1         BASE-NEG PASS        negative control (must not reconnect): reconnected False; X: idx 8; seam exact False '...qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq_?????'; listed after False; panel '...rs\pavel\AppData\Local\Temp\tc264p\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "X:\" is invalid. | [Button id=1] OK
-A1         BASE   PASS        reconnected True; W: idx 7; seam exact True '...E W \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only'; listed after True; panel 'W:\'; 1,6 s; windows: no window
-U1         BASE   INFO        Windows error shown True; V: idx 6; seam exact True 'RESTORE V \\tc264-no-such-host\share'; listed after False; panel 'W:\'; 4,2 s; windows: [#32770 'Network Error'] [Static id=2477] (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK
+  N1 T: listed False; WNetGetConnectionW 1201 '...\Users\pavel\AppData\Local\Temp\tc264p\fx\provider_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
+Q1         BASE-NEG PASS        negative control (must not reconnect): reconnected False; Z: idx 11; seam exact False '...ocalhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\unnamed_???_?????'; listed after False; panel '...rs\pavel\AppData\Local\Temp\tc264p\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "Z:\" is invalid. | [Button id=1] OK
+Q2         BASE-NEG PASS        negative control (must not reconnect): reconnected False; Y: idx 10; seam exact False '... Y \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\named_?????'; listed after False; panel '...rs\pavel\AppData\Local\Temp\tc264p\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "Y:\" is invalid. | [Button id=1] OK
+L1         BASE-NEG PASS        negative control (must not reconnect): reconnected False; X: idx 9; seam exact False '...qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq_?????'; listed after False; panel '...rs\pavel\AppData\Local\Temp\tc264p\start'; 3,0 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "X:\" is invalid. | [Button id=1] OK
+A1         BASE   PASS        reconnected True; W: idx 8; seam exact True '...E W \\localhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only'; listed after True; panel 'W:\'; 1,6 s; windows: no window
+U1         BASE   INFO        Windows error shown True; V: idx 7; seam exact True 'RESTORE V \\tc264-no-such-host\share'; listed after False; panel 'W:\'; 4,2 s; windows: [#32770 'Network Error'] [Static id=2477] (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK
+N1         BASE   INFO        saved provider passed (1204 shown) True; T: idx 5; seam exact False '...calhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\provider_???_?????'; listed after False; panel 'W:\'; 3,0 s; windows: [#32770 'Network Error'] [Static id=2477] (1204) Neplatn\u00FD n\u00E1zev s\u00ED\u0165ov\u00E9ho zprost\u0159edkovatele.  | [Button id=1] OK
 PICK-baseline END    PASS        fatal ; exit 0x00000000
   Q1 Z: listed False; WNetGetConnectionW 1201 '...$\Users\pavel\AppData\Local\Temp\tc264p\fx\unnamed_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
   Q2 Y: listed False; WNetGetConnectionW 1201 '...host\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\named_\u0410\u0440\u0445\u0438\u0432'
@@ -44,6 +50,7 @@ PICK-baseline END    PASS        fatal ; exit 0x00000000
   A1 W: listed False; WNetGetConnectionW 1201 '...lhost\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\ascii_only'
   U1 V: listed False; WNetGetConnectionW 1201 '\\tc264-no-such-host\share'
   P1 U: listed False; WNetGetConnectionW 1201 '...\C$\Users\pavel\AppData\Local\Temp\tc264p\fx\panel_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
+  N1 T: listed False; WNetGetConnectionW 1201 '...\Users\pavel\AppData\Local\Temp\tc264p\fx\provider_\u4E2D\u6587\u6863_\u0410\u0440\u0445\u0438\u0432'
 P1         BASE-NEG PASS        negative control (must not reconnect): reconnected False; U: typed True; listed after False; panel '...rs\pavel\AppData\Local\Temp\tc264p\start'; 5,3 s; windows: [#32770 'Error'] [Static id=2477] The path or file name "U:\" is invalid. | [Button id=1] OK || Change Directory dialog opened
 PANEL-baseline END    PASS        fatal ; exit 0x00000000
 ALL        REPORTS PASS        new crash reports: 0

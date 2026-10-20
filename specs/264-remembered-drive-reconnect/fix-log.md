@@ -110,3 +110,45 @@ wrong for `SalCheckPath` even for Czech characters).
 - Step-3 measurement repeated (`itest246_pickcp.ps1`, `probe/result_pickcp246_after.txt`):
   PK-Q1 / PK-Q2 `reconnected exactly: True`, panel on the drive, no window (before: False, the
   "invalid" message); baseline unchanged; registry identical, cleanup verified.
+
+## Review
+
+### Review 1 (independent refute-first agent, 2026-10-20)
+
+No MUST. Re-ran build / saltests / encoding guard and `run264.ps1` (0 FAIL, baseline negative
+controls fail, registry identical); its own probe set a bogus `HKCU\Network\<L>\ProviderName`
+and saw Windows' `(1204)` from the fixed build for the CJK + Cyrillic path (drive bar and panel)
+- the saved values are matched to the exact path and passed.
+
+- SHOULD 1 - add a provider row to the probe (FR-002 rested on reading) -> **done**: row N1
+  (CJK + Cyrillic path, saved `ProviderName` 'TC264 No Such Network Provider'): fixed PASS
+  `(1204)` shown, seam exact, not listed; baseline INFO (also 1204 - the code-page path and
+  the code-page RemotePath compare equal there).
+- SHOULD 2 - `GetRememberedNetDriveLogonW` without the `HANDLES()` wrappers -> **done**
+  (`HANDLES_Q(RegOpenKeyExW(...))`, `HANDLES(RegCloseKey(...))`).
+- NOTE 1 - `ExecuteItem` no longer reported a failure to list the remembered connections (the
+  old `GetNetworkDrives(.., showErrors = TRUE)`) -> **done**, kept as before: `ExecuteItem` calls
+  `GetNetworkDrives(netDrives, NULL)` for the mask (shows the error) and takes the exact path
+  only for a remembered letter.
+- NOTE 2 - no path obtainable -> nothing attempted, the caller's general path error follows:
+  accepted (FR-006, no fallback; the case needs an enumeration that lists the letter in the
+  code page and not wide, or no memory).
+- NOTE 3 - the long-path half fails on the baseline here because of the '?' (code page 1250
+  is single-byte), the cut at `MAX_PATH - 1` bytes needs a DBCS code page: accepted, recorded
+  as reasoning (the path is heap and wide end to end; L1 proves 259 characters / ~270 UTF-8
+  bytes pass).
+- NOTE 4 - `RestoreNetworkConnection`'s `name != NULL` branch and `GetUserName` have no core
+  caller any more: kept deliberately (conservative; the function is reached from the Network
+  plug-in through `zip.cpp`).
+
+After the fixes: `build.cmd` BUILD SUCCEEDED; `saltests: 24716 checks, 0 failed`;
+`check_encoding.py --strict` TOTAL 0; `run264.ps1` (`probe/result_after.txt`) **RESULT 0 FAIL**
+- fixed Q1, Q2, L1, A1, U1, N1, P1 PASS; baseline Q1 / Q2 / L1 / P1 negative controls fail as
+expected, A1 reconnects; registry identical (SHA-256 A46438BF...1EA3), cleanup verified.
+No MUST finding -> no second review needed (SKILL step 7).
+
+## New Inbox items
+
+- `logging-in-to-an-inaccessible-unc-path-with-a-non-ascii` - `CheckAndConnectUNCNetworkPath`
+  hands the UTF-8 UNC root to `FindFirstFileA` / the ANSI `WNetAddConnection3` (found by reading,
+  not measured; source measure:264).
