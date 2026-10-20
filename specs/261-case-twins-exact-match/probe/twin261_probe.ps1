@@ -17,6 +17,9 @@
                 names, the same sizes by position: PASS = L Sub marked (before: "identical")
       CMPSINGLE L (CS) Readme.txt, R (CS) README.txt, the same: PASS = nothing marked (a case-only
                 pair without twins stays one name - feature 232's rule kept)
+      CMPSHY    L a<soft hyphen>b.txt "same", R (CS) ab.txt "x1" + AB.txt "x22" + A<soft hyphen>B.txt
+                "same": PASS = L not marked (review of 261: the locale key ignores the soft hyphen, so
+                all four share one sort run; the case-only pair beside the twins must still pair)
     Viewer (742 = F3) on A.txt of a CS folder a.txt, A.txt, z.txt; then another program creates
     0.txt, Refresh (740) - the viewer's remembered index now holds a.txt; then:
       VIEWNEXT  next file (6086; Code Viewer, the default for .txt: 117): PASS = the viewer shows z.txt (before: A.txt again)
@@ -185,6 +188,8 @@ try {
     Run-Cmp 'CMPTWINR' $false $true '' @(@('L', 'A.txt', 'UP12'), @('R', 'a.txt', 'x'), @('R', 'A.txt', 'UP12')) @(, @('A.txt', $false))
     Run-Cmp 'CMPSUB' $true $true 'Sub' @(@('L', 'aB.txt', '1'), @('L', 'Ab.txt', '22'), @('R', 'ab.txt', '1'), @('R', 'AB.txt', '22')) @(, @('Sub', $true))
     Run-Cmp 'CMPSINGLE' $true $true '' @(@('L', 'Readme.txt', 'same'), @('R', 'README.txt', 'same')) @(, @('Readme.txt', $false))
+    $shy = [string][char]0x00AD
+    Run-Cmp 'CMPSHY' $false $true '' @(@('L', ('a' + $shy + 'b.txt'), 'same'), @('R', 'ab.txt', 'x1'), @('R', 'AB.txt', 'x22'), @('R', ('A' + $shy + 'B.txt'), 'same')) @(, @(('a' + $shy + 'b.txt'), $false))
     Run-View 'VIEWNEXT' $true 'z.txt'
     Run-View 'VIEWPREV' $false 'a.txt'
 }

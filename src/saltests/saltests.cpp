@@ -12429,19 +12429,63 @@ static void TestNameExactInCIRun230()
     CHECK(!SalNameCIFallbackTakes(FALSE, 1, TRUE)); // a case-sensitive folder: another file
 }
 
-// feature 261: lookups and Compare Directories pairing in folders with case twins (salnamerun.h)
+// feature 261: lookups and Compare Directories pairing in folders with case twins (salnamerun.h).
+// The merge below models mainwnd5.cpp's CmpDirsNames: the first key ignores a soft hyphen (U+00AD) as
+// the product's locale key (RegSetStrICmpEx) does - coarser than the file system's ordinal rule.
 struct Twin261List
 {
-    const char* const* Names;
+    const char* Names[16];
     int Count;
 };
 
-static int Twin261Key(const char* a, const char* b) { return SalNameCompareOrdinalCI(a, -1, b, -1); }
+static void Twin261Strip(const char* s, char* out, size_t size) // without soft hyphens (C2 AD)
+{
+    size_t k = 0;
+    for (; *s != 0 && k + 1 < size; s++)
+    {
+        if ((unsigned char)s[0] == 0xC2 && (unsigned char)s[1] == 0xAD)
+        {
+            s++;
+            continue;
+        }
+        out[k++] = *s;
+    }
+    out[k] = 0;
+}
 
-static int Twin261Exact(const char* a, const char* b) // the sort order: the key, then the bytes
+static int Twin261Key(const char* a, const char* b)
+{
+    char x[256], y[256];
+    Twin261Strip(a, x, sizeof(x));
+    Twin261Strip(b, y, sizeof(y));
+    return SalNameCompareOrdinalCI(x, -1, y, -1);
+}
+
+static int Twin261Exact(const char* a, const char* b) // the sort order (CmpNameExt): the key, then the bytes
 {
     int r = Twin261Key(a, b);
     return r != 0 ? r : strcmp(a, b);
+}
+
+static int Twin261Loose(const char* a, const char* b) // CmpNameExtIgnCase: the key, then the ordinal rule
+{
+    int r = Twin261Key(a, b);
+    if (r == 0)
+        r = SalNameCompareOrdinalCI(a, -1, b, -1);
+    return (r > 0) - (r < 0);
+}
+
+static void Twin261Sort(Twin261List& l)
+{
+    for (int i = 1; i < l.Count; i++)
+    {
+        for (int k = i; k > 0 && Twin261Exact(l.Names[k - 1], l.Names[k]) > 0; k--)
+        {
+            const char* t = l.Names[k];
+            l.Names[k] = l.Names[k - 1];
+            l.Names[k - 1] = t;
+        }
+    }
 }
 
 static BOOL Twin261HasTwin(const Twin261List& l, int i)
@@ -12451,27 +12495,88 @@ static BOOL Twin261HasTwin(const Twin261List& l, int i)
         [&](int x, int k) { return SalNameEqualOrdinalCI(l.Names[x], -1, l.Names[k], -1) && strcmp(l.Names[x], l.Names[k]) != 0; });
 }
 
+struct Twin261Run
+{
+    Twin261List* Left;
+    Twin261List* Right;
+    int L, LEnd, R, REnd, Pairs;
+    BOOL Twins;
+};
+
+static void Twin261Align(Twin261Run& run)
+{
+    Twin261List& left = *run.Left;
+    Twin261List& right = *run.Right;
+    int nL = run.LEnd - run.L, nR = run.REnd - run.R;
+    int lp[16], rp[16], ol[16], orr[16];
+    BOOL lt[16], rt[16];
+    for (int i = 0; i < nL; i++)
+        lt[i] = Twin261HasTwin(left, run.L + i);
+    for (int j = 0; j < nR; j++)
+        rt[j] = Twin261HasTwin(right, run.R + j);
+    run.Pairs = SalTwinRunPairs(
+        nL, nR, [&](int i, int j) { return strcmp(left.Names[run.L + i], right.Names[run.R + j]) == 0; },
+        [&](int i, int j) { return SalNameEqualOrdinalCI(left.Names[run.L + i], -1, right.Names[run.R + j], -1); },
+        [&](int i) { return lt[i]; }, [&](int j) { return rt[j]; }, lp, rp);
+    SalTwinRunOrder(nL, lp, nR, rp, ol, orr);
+    const char* tmp[16];
+    for (int k = 0; k < nL; k++)
+        tmp[k] = left.Names[run.L + ol[k]];
+    for (int k = 0; k < nL; k++)
+        left.Names[run.L + k] = tmp[k];
+    for (int k = 0; k < nR; k++)
+        tmp[k] = right.Names[run.R + orr[k]];
+    for (int k = 0; k < nR; k++)
+        right.Names[run.R + k] = tmp[k];
+}
+
+static int Twin261Cmp(Twin261Run& run, Twin261List& left, int l, Twin261List& right, int r)
+{
+    if (!(run.Left == &left && run.Right == &right && l >= run.L && l < run.LEnd && r >= run.R && r < run.REnd))
+    {
+        if (Twin261Key(left.Names[l], right.Names[r]) != 0)
+            return Twin261Loose(left.Names[l], right.Names[r]);
+        run.Left = &left;
+        run.Right = &right;
+        run.L = l;
+        run.R = r;
+        run.Pairs = 0;
+        run.Twins = FALSE;
+        for (run.LEnd = l + 1; run.LEnd < left.Count && Twin261Key(left.Names[l], left.Names[run.LEnd]) == 0; run.LEnd++)
+            ;
+        for (run.REnd = r + 1; run.REnd < right.Count && Twin261Key(right.Names[r], right.Names[run.REnd]) == 0; run.REnd++)
+            ;
+        for (int i = run.L; i < run.LEnd && !run.Twins; i++)
+            run.Twins = Twin261HasTwin(left, i);
+        for (int j = run.R; j < run.REnd && !run.Twins; j++)
+            run.Twins = Twin261HasTwin(right, j);
+        if (run.Twins)
+            Twin261Align(run);
+    }
+    if (!run.Twins)
+        return Twin261Loose(left.Names[l], right.Names[r]);
+    return SalTwinRunSlotCmp(l - run.L, r - run.R, run.Pairs);
+}
+
 // a merge as Compare Directories runs it; 'out' gets "L=R" for a pair, "L-" / "-R" for an unpaired name
-static void Twin261Merge(const Twin261List& left, const Twin261List& right, char* out, size_t outSize)
+static void Twin261Merge(Twin261List& left, Twin261List& right, char* out, size_t outSize)
 {
     out[0] = 0;
+    Twin261Run run = {};
     int l = 0, r = 0;
     while (l < left.Count || r < right.Count)
     {
-        char item[64];
+        char item[96];
         if (l < left.Count && r < right.Count)
         {
-            const char* a = left.Names[l];
-            const char* b = right.Names[r];
-            int c = SalTwinAwarePairCmp(Twin261Key(a, b) == 0, Twin261HasTwin(left, l), Twin261HasTwin(right, r),
-                                        Twin261Exact(a, b), Twin261Key(a, b));
+            int c = Twin261Cmp(run, left, l, right, r);
             if (c < 0)
                 sprintf_s(item, "%s-;", left.Names[l++]);
             else if (c > 0)
                 sprintf_s(item, "-%s;", right.Names[r++]);
             else
             {
-                sprintf_s(item, "%s=%s;", a, b);
+                sprintf_s(item, "%s=%s;", left.Names[l], right.Names[r]);
                 l++;
                 r++;
             }
@@ -12482,6 +12587,21 @@ static void Twin261Merge(const Twin261List& left, const Twin261List& right, char
             sprintf_s(item, "-%s;", right.Names[r++]);
         strcat_s(out, outSize, item);
     }
+}
+
+// sorts both lists as the panels do, merges twice (Compare Directories' two passes) and compares
+static BOOL Twin261MergeIs(Twin261List left, Twin261List right, const char* want)
+{
+    Twin261Sort(left);
+    Twin261Sort(right);
+    char out[512], again[512];
+    Twin261Merge(left, right, out, sizeof(out));
+    Twin261Merge(left, right, again, sizeof(again)); // the second pass walks the arranged runs
+    if (strcmp(out, again) != 0)
+        printf("Twin261: second pass differs: %s / %s\n", out, again);
+    if (strcmp(out, want) != 0)
+        printf("Twin261: merge %s, want %s\n", out, want);
+    return strcmp(out, want) == 0 && strcmp(out, again) == 0;
 }
 
 static void TestNameRules261()
@@ -12510,56 +12630,77 @@ static void TestNameRules261()
     const char* nfd[] = {"e\xCC\x81.txt"};                       // e + combining acute
     CHECK(SalNamePickIndex(1, "\xC3\xA9.txt", -1, at(nfd)) == -1); // NFC is another name (004, FR-009)
     // twin detection in a sorted list
-    const char* run[] = {"A.txt", "a.txt", "b.txt", "C", "c", "c", "d"};
-    Twin261List lr = {run, 7};
+    Twin261List lr = {{"A.txt", "a.txt", "b.txt", "C", "c", "c", "d"}, 7};
     CHECK(Twin261HasTwin(lr, 0) && Twin261HasTwin(lr, 1));
     CHECK(!Twin261HasTwin(lr, 2));
     CHECK(Twin261HasTwin(lr, 3) && Twin261HasTwin(lr, 4) && Twin261HasTwin(lr, 5));
     CHECK(!Twin261HasTwin(lr, 6));
     CHECK(!Twin261HasTwin(lr, -1) && !Twin261HasTwin(lr, 7));
-    const char* same[] = {"x", "x"}; // byte-identical neighbours are no twins
-    Twin261List ls = {same, 2};
+    Twin261List ls = {{"x", "x"}, 2}; // byte-identical neighbours are no twins
     CHECK(!Twin261HasTwin(ls, 0) && !Twin261HasTwin(ls, 1));
-    // the pair comparison
-    CHECK(SalTwinAwarePairCmp(TRUE, TRUE, FALSE, -7, 0) == -1);
-    CHECK(SalTwinAwarePairCmp(TRUE, FALSE, TRUE, 9, 0) == 1);
-    CHECK(SalTwinAwarePairCmp(TRUE, FALSE, FALSE, 5, 0) == 0); // no twins: feature 232
-    CHECK(SalTwinAwarePairCmp(FALSE, TRUE, TRUE, 5, -3) == -1); // other first keys: the pair order
-    CHECK(SalTwinAwarePairCmp(TRUE, TRUE, TRUE, 0, 0) == 0);
-    // merges (the probe's rows)
-    char out[256];
-    const char* t1l[] = {"A.txt", "a.txt"};
-    const char* t1r[] = {"A.txt"};
-    Twin261Merge({t1l, 2}, {t1r, 1}, out, sizeof(out)); // CMPTWIN1
-    CHECK(strcmp(out, "A.txt=A.txt;a.txt-;") == 0);
-    const char* trl[] = {"A.txt"};
-    const char* trr[] = {"A.txt", "a.txt"};
-    Twin261Merge({trl, 1}, {trr, 2}, out, sizeof(out)); // CMPTWINR
-    CHECK(strcmp(out, "A.txt=A.txt;-a.txt;") == 0);
-    const char* t2r[] = {"a.txt"};
-    Twin261Merge({t1l, 2}, {t2r, 1}, out, sizeof(out)); // CMPTWIN2
-    CHECK(strcmp(out, "A.txt-;a.txt=a.txt;") == 0);
-    const char* sl[] = {"Readme.txt", "z"};
-    const char* sr[] = {"README.txt", "z"};
-    Twin261Merge({sl, 2}, {sr, 2}, out, sizeof(out)); // CMPSINGLE: one name (232)
-    CHECK(strcmp(out, "Readme.txt=README.txt;z=z;") == 0);
-    const char* subl[] = {"Ab.txt", "aB.txt"};
-    const char* subr[] = {"AB.txt", "ab.txt"};
-    Twin261Merge({subl, 2}, {subr, 2}, out, sizeof(out)); // CMPSUB: no pair at all
-    CHECK(strcmp(out, "-AB.txt;Ab.txt-;aB.txt-;-ab.txt;") == 0);
-    const char* thr[] = {"A.TXT"};
-    Twin261Merge({t1l, 2}, {thr, 1}, out, sizeof(out)); // twins against a third case: nothing paired
-    CHECK(strcmp(out, "-A.TXT;A.txt-;a.txt-;") == 0);
-    Twin261Merge({thr, 1}, {t1l, 2}, out, sizeof(out)); // and mirrored
-    CHECK(strcmp(out, "A.TXT-;-A.txt;-a.txt;") == 0);
-    const char* both[] = {"A.txt", "a.txt", "b"};
-    Twin261Merge({both, 3}, {both, 3}, out, sizeof(out)); // the same folder on both sides
-    CHECK(strcmp(out, "A.txt=A.txt;a.txt=a.txt;b=b;") == 0);
-    for (int i = 0; i + 1 < 2; i++) // the fixtures are sorted as the panels sort
+    // the run pairing: exact first, a case-only pair only between names without twins
     {
-        CHECK(Twin261Exact(t1l[i], t1l[i + 1]) < 0);
-        CHECK(Twin261Exact(subl[i], subl[i + 1]) < 0 && Twin261Exact(subr[i], subr[i + 1]) < 0);
+        const char* L[] = {"a", "A", "b"};
+        const char* R[] = {"A", "B"};
+        BOOL lt[] = {TRUE, TRUE, FALSE};
+        BOOL rt[] = {FALSE, FALSE};
+        int lp[3], rp[2], ol[3], orr[2];
+        int n = SalTwinRunPairs(
+            3, 2, [&](int i, int j) { return strcmp(L[i], R[j]) == 0; },
+            [&](int i, int j) { return SalNameEqualOrdinalCI(L[i], -1, R[j], -1); }, [&](int i) { return lt[i]; },
+            [&](int j) { return rt[j]; }, lp, rp);
+        CHECK(n == 2);
+        CHECK(lp[0] == -1 && lp[1] == 0 && lp[2] == 1 && rp[0] == 1 && rp[1] == 2);
+        SalTwinRunOrder(3, lp, 2, rp, ol, orr);
+        CHECK(ol[0] == 1 && ol[1] == 2 && ol[2] == 0 && orr[0] == 0 && orr[1] == 1);
     }
+    CHECK(SalTwinRunSlotCmp(0, 0, 1) == 0);
+    CHECK(SalTwinRunSlotCmp(1, 0, 2) == 1 && SalTwinRunSlotCmp(0, 1, 2) == -1);
+    CHECK(SalTwinRunSlotCmp(0, 2, 1) == -1); // a pair before an unpaired name
+    CHECK(SalTwinRunSlotCmp(2, 0, 1) == 1);
+    CHECK(SalTwinRunSlotCmp(1, 1, 1) == -1); // both unpaired: the left one first
+    CHECK(SalTwinRunSlotCmp(0, 0, 0) == -1);
+    // merges (the probe's rows)
+    CHECK(Twin261MergeIs({{"a.txt", "A.txt"}, 2}, {{"A.txt"}, 1}, "A.txt=A.txt;a.txt-;")); // CMPTWIN1
+    CHECK(Twin261MergeIs({{"A.txt", "a.txt"}, 2}, {{"a.txt"}, 1}, "a.txt=a.txt;A.txt-;")); // CMPTWIN2
+    CHECK(Twin261MergeIs({{"A.txt"}, 1}, {{"a.txt", "A.txt"}, 2}, "A.txt=A.txt;-a.txt;")); // CMPTWINR
+    CHECK(Twin261MergeIs({{"Readme.txt", "z"}, 2}, {{"README.txt", "z"}, 2}, "Readme.txt=README.txt;z=z;")); // CMPSINGLE (232)
+    CHECK(Twin261MergeIs({{"aB.txt", "Ab.txt"}, 2}, {{"ab.txt", "AB.txt"}, 2}, "Ab.txt-;aB.txt-;-AB.txt;-ab.txt;")); // CMPSUB
+    // twins against a third case: nothing paired, both ways
+    CHECK(Twin261MergeIs({{"a.txt", "A.txt"}, 2}, {{"A.TXT"}, 1}, "A.txt-;a.txt-;-A.TXT;"));
+    CHECK(Twin261MergeIs({{"A.TXT"}, 1}, {{"a.txt", "A.txt"}, 2}, "A.TXT-;-A.txt;-a.txt;"));
+    CHECK(Twin261MergeIs({{"A.txt", "a.txt", "b"}, 3}, {{"A.txt", "a.txt", "b"}, 3}, "A.txt=A.txt;a.txt=a.txt;b=b;"));
+    // several runs: the twin run as a set, the next run as feature 232
+    CHECK(Twin261MergeIs({{"a", "A", "b", "c"}, 4}, {{"A", "B", "c", "d"}, 4}, "A=A;a-;b=B;c=c;-d;"));
+    // review of 261: a case-only pair beside twins of one locale run (a soft hyphen the locale key
+    // ignores) - a comparison chosen pair by pair stepped past the partner
+    CHECK(Twin261MergeIs({{"a\xC2\xAD"
+                           "b.txt"},
+                          1},
+                         {{"ab.txt", "AB.txt", "A\xC2\xAD"
+                                               "B.txt"},
+                          3},
+                         "a\xC2\xAD"
+                         "b.txt=A\xC2\xAD"
+                         "B.txt;-AB.txt;-ab.txt;"));
+    CHECK(Twin261MergeIs({{"a\xC2\xAD"
+                           "b.txt"},
+                          1},
+                         {{"A\xC2\xAD"
+                           "B.txt"},
+                          1},
+                         "a\xC2\xAD"
+                         "b.txt=A\xC2\xAD"
+                         "B.txt;")); // control: no twins
+    CHECK(Twin261MergeIs({{"ab.txt", "AB.txt", "A\xC2\xAD"
+                                               "B.txt"},
+                          3},
+                         {{"a\xC2\xAD"
+                           "b.txt"},
+                          1},
+                         "A\xC2\xAD"
+                         "B.txt=a\xC2\xAD"
+                         "b.txt;AB.txt-;ab.txt-;")); // mirrored
 }
 
 // feature 236: a menu item's hot key goes before a free ASCII letter only - never inside a UTF-8 letter

@@ -2,20 +2,20 @@
 
 ## R1 - Compare Directories: which comparison in a case-sensitive folder
 
-- Decision: twin-aware - byte-exact (`CmpNameExt`) only for names whose first sort key is equal
-  and where either side has a twin; otherwise `CmpNameExtIgnCase` (232).
+- Decision: a run of one first sort key (`RegSetStrICmpEx`) on both sides is paired as a set when
+  either run holds a twin: byte-identical names first, then a name without a twin with the other
+  side's name without a twin that is the same ignoring case; the runs of the comparison's copies
+  are rearranged pairs first and the merge compares positions. Runs without twins keep
+  `CmpNameExtIgnCase` (232).
 - Rationale: fixes both directions (CMPTWIN1, CMPTWINR), also case-sensitive vs ordinary folder;
-  keeps 232's pairing of `Readme.txt` / `README.txt` where no twin exists. The merge stays
-  consistent: when one run holds twins, every comparison of a twin uses the strict order, which
-  is exactly the sort order of both lists; a run without twins on either side keeps the 232
-  comparison. (A run mixing twins with names equal only by the locale / numeric first key -
-  "a01" / "a1" - can mix both modes; the merge still advances on every step and pairs only names
-  the chosen comparison calls equal.)
+  keeps 232's pairing of `Readme.txt` / `README.txt` where no twin exists. The set pairing does not
+  depend on an order, so it is consistent with the lists' sort order whatever the locale key
+  treats as equal (a soft hyphen, NFC / NFD).
 - Alternatives: the item's hint "`CmpNameExt` when both panels are case-sensitive" - misses a
   case-sensitive folder against an ordinary one and unpairs case-only singletons of two
-  case-sensitive folders (a 232 behaviour change the item does not ask for). Pairing exact twins
-  first inside a run and then the remainder loosely - picks an arbitrary twin for the remainder
-  (spec Clarification 2: never).
+  case-sensitive folders. The first version of this feature switched pair by pair between
+  `CmpNameExt` and `CmpNameExtIgnCase` - the review (S1) measured a missed case-only pair beside
+  twins in one locale run (soft hyphen); rejected.
 
 ## R2 - Lookups by name (viewer, User Menu, Ctrl+X)
 

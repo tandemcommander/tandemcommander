@@ -82,10 +82,16 @@ inline BOOL SalNameCIFallbackTakes(BOOL nameTaken, int ciOnlyCount, BOOL dirCase
 //   - a lookup takes the byte-identical item, else the one item equal ignoring
 //     case when it is the only one (a name changed in case only is still found),
 //     never one of two (SalNamePickIndex);
-//   - Compare Directories compares two names of one case-insensitive sort run
-//     byte-exactly when either has a twin in its own list (SalHasCaseTwinInRun,
-//     SalTwinAwarePairCmp); without twins a case-only pair stays one name
-//     (feature 232).
+//   - Compare Directories pairs a run of names with one case-insensitive sort
+//     key on both sides as a set when either run holds twins
+//     (SalHasCaseTwinInRun): byte-identical names first, then a name without a
+//     twin with the one name of the other side equal to it ignoring case that
+//     has no twin either (feature 232: a case-only pair is one name); a twin is
+//     never paired with another case (SalTwinRunPairs). The run is then walked
+//     pairs first (SalTwinRunOrder, SalTwinRunSlotCmp) - a comparison switched
+//     pair by pair between the exact and the case-insensitive order is not
+//     consistent with the lists' sort order (the locale key ignores a soft
+//     hyphen, NFC / NFD) and stepped past a partner (review of 261).
 //
 //*****************************************************************************
 
@@ -143,11 +149,91 @@ BOOL SalHasCaseTwinInRun(int count, int index, TSameKey sameKey, TIsTwin isTwin)
     return FALSE;
 }
 
-// the comparison Compare Directories uses for one left / right pair: the byte-exact order
-// 'exactCmp' (the lists' sort order) when both names have the same first key and either has a twin
-// in its own list, else 'pairCmp' (feature 232: a case-only pair is one name); -1 / 0 / 1
-inline int SalTwinAwarePairCmp(BOOL sameKey, BOOL leftTwin, BOOL rightTwin, int exactCmp, int pairCmp)
+// pairs a run pair of Compare Directories (nL names on the left, nR on the right, one first sort
+// key): first byte-identical names (exact(i, j)), then a left name without a twin in its list
+// (!leftTwin(i)) with a right name without one (!rightTwin(j)) that is the same name ignoring case
+// (sameName(i, j)); a twin is never paired with another case - which one is meant cannot be told.
+// leftPartner[i] / rightPartner[j]: the partner's index in the other run, or -1. Returns the number
+// of pairs.
+template <class TExact, class TSameName, class TLeftTwin, class TRightTwin>
+int SalTwinRunPairs(int nL, int nR, TExact exact, TSameName sameName, TLeftTwin leftTwin, TRightTwin rightTwin,
+                    int* leftPartner, int* rightPartner)
 {
-    int res = (sameKey && (leftTwin || rightTwin)) ? exactCmp : pairCmp;
-    return (res > 0) - (res < 0);
+    for (int i = 0; i < nL; i++)
+        leftPartner[i] = -1;
+    for (int j = 0; j < nR; j++)
+        rightPartner[j] = -1;
+    int pairs = 0;
+    for (int i = 0; i < nL; i++)
+    {
+        for (int j = 0; j < nR; j++)
+        {
+            if (rightPartner[j] == -1 && exact(i, j))
+            {
+                leftPartner[i] = j;
+                rightPartner[j] = i;
+                pairs++;
+                break;
+            }
+        }
+    }
+    for (int i = 0; i < nL; i++)
+    {
+        if (leftPartner[i] != -1 || leftTwin(i))
+            continue;
+        for (int j = 0; j < nR; j++)
+        {
+            if (rightPartner[j] == -1 && !rightTwin(j) && sameName(i, j))
+            {
+                leftPartner[i] = j;
+                rightPartner[j] = i;
+                pairs++;
+                break;
+            }
+        }
+    }
+    return pairs;
+}
+
+// the order a run pair is walked in: the pairs first (in the left run's order, each right partner at
+// the position of its left name), then the unpaired names of each side in their own order.
+// orderL[k] / orderR[k]: the run index of the name that goes to position k.
+inline void SalTwinRunOrder(int nL, const int* leftPartner, int nR, const int* rightPartner, int* orderL, int* orderR)
+{
+    int k = 0;
+    for (int i = 0; i < nL; i++)
+    {
+        if (leftPartner[i] != -1)
+        {
+            orderL[k] = i;
+            orderR[k] = leftPartner[i];
+            k++;
+        }
+    }
+    int kl = k;
+    for (int i = 0; i < nL; i++)
+    {
+        if (leftPartner[i] == -1)
+            orderL[kl++] = i;
+    }
+    int kr = k;
+    for (int j = 0; j < nR; j++)
+    {
+        if (rightPartner[j] == -1)
+            orderR[kr++] = j;
+    }
+}
+
+// the merge comparison of position il of the left run and ir of the right run walked in
+// SalTwinRunOrder's order with 'pairs' pairs: 0 = a pair; an unpaired name on either side sorts after
+// the pairs, the left ones before the right ones (each is then reported alone); -1 / 0 / 1
+inline int SalTwinRunSlotCmp(int il, int ir, int pairs)
+{
+    if (il < pairs && ir < pairs)
+        return (il > ir) - (il < ir);
+    if (il < pairs)
+        return -1;
+    if (ir < pairs)
+        return 1;
+    return -1;
 }

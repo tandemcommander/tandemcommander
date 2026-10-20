@@ -13,12 +13,14 @@ twins (a.txt, A.txt). One pure rule set in `src/common/salnamerun.h` (feature 23
   `SalNameEqualOrdinalCI` when it is the only one; else none. Used by the viewer's next / previous
   file (`fileswnb.cpp`, WM_USER_ENUMFILENAMES), the User Menu's second compare name
   (`mainwnd3.cpp`) and Ctrl+X ghosting in the other panel (`shellsup.cpp`).
-- **Compare Directories pairing** (`SalHasCaseTwinInRun`, `SalTwinAwarePairCmp`): the lists are
-  sorted by `CmpNameExt` (first key `RegSetStrICmpEx`); for two names with the same first key the
-  merge uses the byte-exact order `CmpNameExt` when either name has a twin (a neighbour in its own
-  list with the same first key that is `SalNameEqualOrdinalCI`-equal but byte-different); otherwise
-  `CmpNameExtIgnCase` as today (feature 232). Used in the panel merge and in the sub-folder
-  check (`mainwnd5.cpp`).
+- **Compare Directories pairing** (`SalHasCaseTwinInRun`, `SalTwinRunPairs`, `SalTwinRunOrder`,
+  `SalTwinRunSlotCmp`): the lists are sorted by `CmpNameExt` (first key `RegSetStrICmpEx`). When
+  the merge meets a run pair (one first key on both sides) and either run holds a twin, the run
+  pair is paired as a set - byte-identical names, then case-only pairs between names without twins
+  - and both runs of the comparison's copies are rearranged pairs first; the merge then compares
+  positions. Without twins: `CmpNameExtIgnCase` as today (feature 232). The copies are sorted
+  back to the panel's order before the marks are transferred by index. Used in the panel merge
+  (`CmpDirsNames`, context `CCmpDirsRun`) and in the sub-folder check (`mainwnd5.cpp`).
 
 ## Technical Context
 

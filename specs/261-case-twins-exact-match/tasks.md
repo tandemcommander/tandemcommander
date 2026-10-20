@@ -39,6 +39,11 @@
 - [X] T011 Negative control: the probe or saltests against a deliberately broken rule fails; record in `fix-log.md`
 - [X] T012 Record after-measurements, checks and the person step (User Menu, Ctrl+X) in `specs/261-case-twins-exact-match/fix-log.md`
 
+## Phase 7: Review fixes
+
+- [X] T013 Review S1/S2: run pairing as a set (`SalTwinRunPairs`, `SalTwinRunOrder`, `SalTwinRunSlotCmp` in `src/common/salnamerun.h`; `CCmpDirsRun`, `CmpDirsAlignRun`, `CmpDirsNames` and the forced re-sort in `src/mainwnd5.cpp`); saltests model the locale key (soft hyphen) and both passes in `src/saltests/saltests.cpp`; probe row CMPSHY
+- [X] T014 Review N1/N5: User Menu looks up within the item's kind in `src/mainwnd3.cpp`; lambda parameter renamed in `src/shellsup.cpp`
+
 ## Dependencies
 
 T001 -> T002 -> T003; T002 -> T004..T008 (T004 -> T005; T006, T007, T008 independent); all -> T009 -> T010 -> T011 -> T012.

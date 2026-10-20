@@ -85,6 +85,8 @@ to drive them); the decision is the same rule as Story 2 and is checked by `salt
 
 - No twins anywhere: every feature behaves exactly as before (a name differing only in case from
   the only candidate is still found / paired).
+- A case-only pair without twins beside twins of one sort run (a soft hyphen the locale order
+  ignores: `a<SHY>b.txt` vs `ab.txt`, `AB.txt`, `A<SHY>B.txt`) is still paired (review of 261).
 - Twins on one side only: a name differing only in case from a twin is not paired with it (which
   twin is meant cannot be told - left a.txt + A.txt vs right A.TXT: all three marked); every
   byte-identical name is.
@@ -117,8 +119,8 @@ to drive them); the decision is the same rule as Story 2 and is checked by `salt
 
 ### Measurable Outcomes
 
-- **SC-001**: Probe `twin261_probe.ps1`: 5 FAIL of 14 rows before -> 0 FAIL after; the controls
-  CMPTWIN2 and CMPSINGLE pass before and after.
+- **SC-001**: Probe `twin261_probe.ps1`: 5 FAIL of 14 rows before -> 0 FAIL of 16 after (row
+  CMPSHY added by the review); the controls CMPTWIN2 and CMPSINGLE pass before and after.
 - **SC-002**: Feature 232's probe `cmp232_probe.ps1` still passes 16 / 0.
 - **SC-003**: `saltests` 0 failed, including the new checks of the lookup and pairing rules.
 

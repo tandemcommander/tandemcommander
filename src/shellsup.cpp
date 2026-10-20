@@ -1937,10 +1937,10 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                                 // match of "A.txt" was its twin "a.txt", ghosted instead)
                                 CFilesArray* list = (idx < panel->Dirs->Count) ? anotherPanel->Dirs : anotherPanel->Files;
                                 int k = SalNamePickIndex(list->Count, f->Name, (int)f->NameLen,
-                                                         [list](int i, const char** n, int* len)
+                                                         [list](int item, const char** n, int* len)
                                                          {
-                                                             *n = list->At(i).Name;
-                                                             *len = (int)list->At(i).NameLen;
+                                                             *n = list->At(item).Name;
+                                                             *len = (int)list->At(item).NameLen;
                                                          });
                                 if (k != -1)
                                 {

@@ -781,6 +781,17 @@ BOOL ReadDirsAndFilesAux(HWND hWindow, DWORD flags, CCmpDirProgressDialog* progr
     return TRUE;
 }
 
+// feature 261: do 'a' and 'b' have the same first key of the name order (CmpNameExt sorts by it first)?
+static BOOL CmpDirsSameKey(const CFileData& a, const CFileData& b)
+{
+    return RegSetStrICmpEx(a.Name, a.NameLen, b.Name, b.NameLen, NULL) == 0;
+}
+
+static BOOL CmpDirsSameBytes(const CFileData& a, const CFileData& b)
+{
+    return a.NameLen == b.NameLen && memcmp(a.Name, b.Name, a.NameLen) == 0;
+}
+
 // feature 261: does item 'index' of a list sorted by name (CmpNameExt) have a case twin - another
 // item of the same name ignoring case with other bytes ("a.txt" / "A.txt" of a case-sensitive
 // folder)? Twins share CmpNameExt's first key, so they are neighbours.
@@ -789,30 +800,152 @@ static BOOL CmpDirsHasCaseTwin(CFilesArray& list, int index)
     return SalHasCaseTwinInRun(
         list.Count, index,
         [&](int i, int k)
-        {
-            return RegSetStrICmpEx(list[i].Name, list[i].NameLen, list[k].Name, list[k].NameLen, NULL) == 0;
-        },
+        { return CmpDirsSameKey(list[i], list[k]); },
         [&](int i, int k)
         {
             return SalNameEqualOrdinalCI(list[i].Name, (int)list[i].NameLen, list[k].Name, (int)list[k].NameLen) &&
-                   (list[i].NameLen != list[k].NameLen || memcmp(list[i].Name, list[k].Name, list[i].NameLen) != 0);
+                   !CmpDirsSameBytes(list[i], list[k]);
         });
 }
 
-// feature 261: the name order Compare Directories pairs by (-1 / 0 / 1): as feature 232 a name that
-// differs only in case is the same name (CmpNameExtIgnCase) - but where either side holds case twins
-// only the byte-identical name is (CmpNameExt, the lists' sort order); before, the left "a.txt" was
-// paired with the right "A.txt" and the left "A.txt" was left without a pair
-static int CmpDirsNames(CFilesArray& left, int l, CFilesArray& right, int r)
+// feature 261: the run pair Compare Directories walks - the names of one first key on both sides,
+// from the merge's positions on (Pairs pairs first when either run holds case twins)
+struct CCmpDirsRun
 {
-    const CFileData& a = left[l];
-    const CFileData& b = right[r];
-    BOOL sameKey = RegSetStrICmpEx(a.Name, a.NameLen, b.Name, b.NameLen, NULL) == 0;
-    if (!sameKey)
-        return CmpNameExtIgnCase(a, b);
-    BOOL leftTwin = CmpDirsHasCaseTwin(left, l);
-    BOOL rightTwin = !leftTwin && CmpDirsHasCaseTwin(right, r);
-    return SalTwinAwarePairCmp(sameKey, leftTwin, rightTwin, CmpNameExt(a, b), CmpNameExtIgnCase(a, b));
+    CFilesArray* Left;
+    CFilesArray* Right;
+    int L, LEnd, R, REnd;
+    int Pairs;
+    BOOL Twins;
+    BOOL LeftMoved, RightMoved; // items were rearranged within a run (the caller sorts the list again)
+
+    CCmpDirsRun()
+    {
+        LeftMoved = RightMoved = FALSE;
+        Reset();
+    }
+    void Reset()
+    {
+        Left = Right = NULL;
+        L = LEnd = R = REnd = Pairs = 0;
+        Twins = FALSE;
+    }
+};
+
+// puts the items of 'list' from 'start' on in the order 'order' (n indexes relative to 'start');
+// TRUE when anything moved; low memory: nothing moves (FALSE, *ok = FALSE)
+static BOOL CmpDirsApplyOrder(CFilesArray& list, int start, const int* order, int n, BOOL* ok)
+{
+    BOOL moved = FALSE;
+    for (int k = 0; k < n; k++)
+    {
+        if (order[k] != k)
+            moved = TRUE;
+    }
+    if (!moved)
+        return FALSE;
+    CFileData* tmp = (CFileData*)malloc(sizeof(CFileData) * (size_t)n);
+    if (tmp == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        *ok = FALSE;
+        return FALSE;
+    }
+    for (int k = 0; k < n; k++)
+        tmp[k] = list[start + order[k]];
+    for (int k = 0; k < n; k++)
+        list[start + k] = tmp[k];
+    free(tmp);
+    return TRUE;
+}
+
+// feature 261: pairs the run pair of 'run' (salnamerun.h SalTwinRunPairs) and rearranges both parts
+// pairs first; low memory: no pair (every name of the run is reported alone - shown, never hidden)
+static void CmpDirsAlignRun(CCmpDirsRun& run)
+{
+    CFilesArray& left = *run.Left;
+    CFilesArray& right = *run.Right;
+    int nL = run.LEnd - run.L;
+    int nR = run.REnd - run.R;
+    run.Pairs = 0;
+    int* mem = (int*)malloc(sizeof(int) * (size_t)(3 * (nL + nR)));
+    BOOL* twin = (BOOL*)malloc(sizeof(BOOL) * (size_t)(nL + nR));
+    if (mem == NULL || twin == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        free(mem);
+        free(twin);
+        return;
+    }
+    int* leftPartner = mem;
+    int* rightPartner = mem + nL;
+    int* orderL = mem + nL + nR;
+    int* orderR = orderL + nL;
+    for (int i = 0; i < nL; i++)
+        twin[i] = CmpDirsHasCaseTwin(left, run.L + i);
+    for (int j = 0; j < nR; j++)
+        twin[nL + j] = CmpDirsHasCaseTwin(right, run.R + j);
+    int pairs = SalTwinRunPairs(
+        nL, nR,
+        [&](int i, int j)
+        { return CmpDirsSameBytes(left[run.L + i], right[run.R + j]); },
+        [&](int i, int j)
+        {
+            return SalNameEqualOrdinalCI(left[run.L + i].Name, (int)left[run.L + i].NameLen,
+                                         right[run.R + j].Name, (int)right[run.R + j].NameLen);
+        },
+        [&](int i)
+        { return twin[i]; },
+        [&](int j)
+        { return twin[nL + j]; },
+        leftPartner, rightPartner);
+    SalTwinRunOrder(nL, leftPartner, nR, rightPartner, orderL, orderR);
+    // the left part first: on low memory there nothing has moved yet and the run stays without pairs
+    BOOL ok = TRUE;
+    if (CmpDirsApplyOrder(left, run.L, orderL, nL, &ok))
+        run.LeftMoved = TRUE;
+    if (ok && CmpDirsApplyOrder(right, run.R, orderR, nR, &ok))
+        run.RightMoved = TRUE;
+    // the right part could not follow (low memory): the run keeps Pairs 0 - every name reported alone
+    // rather than names paired by position
+    if (ok)
+        run.Pairs = pairs;
+    free(mem);
+    free(twin);
+}
+
+// feature 261: the name order Compare Directories pairs by (-1 / 0 / 1). As feature 232 a name that
+// differs only in case is the same name (CmpNameExtIgnCase); where a run of one first key holds case
+// twins on either side, the run is paired as a set (CmpDirsAlignRun): before, the left "a.txt" was
+// paired with the right "A.txt" and the left "A.txt" was left without a pair. A comparison chosen
+// pair by pair (exact where a twin is involved) stepped past partners: the locale key ignores a soft
+// hyphen and folds NFC / NFD, the exact order does not (review of 261).
+static int CmpDirsNames(CCmpDirsRun& run, CFilesArray& left, int l, CFilesArray& right, int r)
+{
+    if (!(run.Left == &left && run.Right == &right && l >= run.L && l < run.LEnd && r >= run.R && r < run.REnd))
+    {
+        if (!CmpDirsSameKey(left[l], right[r]))
+            return CmpNameExtIgnCase(left[l], right[r]);
+        // a new run pair: its parts from the merge's positions on (the names before them are passed)
+        run.Reset();
+        run.Left = &left;
+        run.Right = &right;
+        run.L = l;
+        run.R = r;
+        for (run.LEnd = l + 1; run.LEnd < left.Count && CmpDirsSameKey(left[l], left[run.LEnd]); run.LEnd++)
+            ;
+        for (run.REnd = r + 1; run.REnd < right.Count && CmpDirsSameKey(right[r], right[run.REnd]); run.REnd++)
+            ;
+        for (int i = run.L; i < run.LEnd && !run.Twins; i++)
+            run.Twins = CmpDirsHasCaseTwin(left, i);
+        for (int j = run.R; j < run.REnd && !run.Twins; j++)
+            run.Twins = CmpDirsHasCaseTwin(right, j);
+        if (run.Twins)
+            CmpDirsAlignRun(run);
+    }
+    if (!run.Twins)
+        return CmpNameExtIgnCase(left[l], right[r]);
+    return SalTwinRunSlotCmp(l - run.L, r - run.R, run.Pairs);
 }
 
 // recursive function searching for differences between directories
@@ -903,6 +1036,7 @@ BOOL CompareDirsAux(HWND hWindow, CCmpDirProgressDialog* progressDlg,
         // postpone comparing by content because it's slow and if
         // we find a difference at this level, we save time
         BOOL timeDiffWithDSTShiftExists = FALSE;
+        CCmpDirsRun nameRun; // feature 261: runs of names with case twins are paired as sets
         CFileData *leftFile, *rightFile;
         int i;
         for (i = 0; i < leftFiles.Count; i++)
@@ -911,7 +1045,7 @@ BOOL CompareDirsAux(HWND hWindow, CCmpDirProgressDialog* progressDlg,
             rightFile = &rightFiles[i];
 
             // By Name (feature 261: byte-exact where a folder holds case twins)
-            if (CmpDirsNames(leftFiles, i, rightFiles, i) != 0)
+            if (CmpDirsNames(nameRun, leftFiles, i, rightFiles, i) != 0)
             {
                 *different = TRUE;
                 return TRUE;
@@ -986,7 +1120,7 @@ BOOL CompareDirsAux(HWND hWindow, CCmpDirProgressDialog* progressDlg,
             rightDir = &rightDirs[i];
 
             // By Name (feature 261: byte-exact where a folder holds case twins)
-            if (CmpDirsNames(leftDirs, i, rightDirs, i) != 0)
+            if (CmpDirsNames(nameRun, leftDirs, i, rightDirs, i) != 0)
             {
                 *different = TRUE;
                 return TRUE;
@@ -1313,7 +1447,10 @@ void CMainWindow::CompareDirectories(DWORD flags)
         TDirectArray<CQuadWord> dirSubTotal(max(1, min(leftDirs->Count, rightDirs->Count)), 1);
         int subTotalIndex; // index into the dirSubTotal array
 
+        CCmpDirsRun cmpRun; // feature 261: runs of names with case twins are paired as sets
+
     ONCE_MORE:
+        cmpRun.Reset();
         // first the files from the left and right directory
         CFilesArray *left = leftFiles, *right = rightFiles;
 
@@ -1332,7 +1469,7 @@ void CMainWindow::CompareDirectories(DWORD flags)
             {
                 if (r < right->Count) // both panels contain files
                 {
-                    compRes = CmpDirsNames(*left, l, *right, r); // feature 261: case twins
+                    compRes = CmpDirsNames(cmpRun, *left, l, *right, r); // feature 261: case twins
                     if (compRes == -1) // left < right
                     {
                         if (!getTotal)
@@ -1546,7 +1683,7 @@ void CMainWindow::CompareDirectories(DWORD flags)
                 {
                     if (r < right->Count) // both panels contain directories
                     {
-                        compRes = CmpDirsNames(*left, l, *right, r); // feature 261: case twins
+                        compRes = CmpDirsNames(cmpRun, *left, l, *right, r); // feature 261: case twins
                         if (compRes == -1) // left < right
                         {
                             leftDir->Selected = 1;
@@ -1734,9 +1871,10 @@ void CMainWindow::CompareDirectories(DWORD flags)
     ABORT_COMPARE:
 
         //--- sort according to settings
-        if (LeftPanel->SortType != stName || LeftPanel->ReverseSort)
+        // (feature 261: also when a run of names with case twins was rearranged, pairs first)
+        if (cmpRun.LeftMoved || LeftPanel->SortType != stName || LeftPanel->ReverseSort)
             SortFilesAndDirectories(leftFiles, leftDirs, LeftPanel->SortType, LeftPanel->ReverseSort, Configuration.SortDirsByName);
-        if (RightPanel->SortType != stName || RightPanel->ReverseSort)
+        if (cmpRun.RightMoved || RightPanel->SortType != stName || RightPanel->ReverseSort)
             SortFilesAndDirectories(rightFiles, rightDirs, RightPanel->SortType, RightPanel->ReverseSort, Configuration.SortDirsByName);
 
         //--- close the progress dialog
