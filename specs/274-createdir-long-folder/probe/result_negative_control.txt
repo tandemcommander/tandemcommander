@@ -1,0 +1,11 @@
+createdir274_probe (feature 274) negative-control
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 01:19; desktop 'tc_probe_26708'; ACP 1250; registry key existed True; export SHA-256 BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74; deep folder 288 bytes
+
+U255       ROW    PASS        typed 765 bytes (<CJK letters>); the panel folder (44 bytes) holds the expected name (765 bytes); dialogs: typed into [Create Directory]
+U255       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U256       ROW    FAIL        typed 768 bytes; the panel folder (44 bytes) holds no folder; 'too long name' shown False; dialogs: typed into [Create Directory] || [#32770 'Error Creating Directory'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=1] OK || [Create Directory] came back - cancelled
+U256       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 3, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

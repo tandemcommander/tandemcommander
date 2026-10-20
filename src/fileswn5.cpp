@@ -2046,11 +2046,22 @@ void CFilesWindow::CreateDir(CFilesWindow* target)
             MakeValidFileName(lastCompName != NULL ? lastCompName + 1 : path);
 
             int errTextID;
-            if (!SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus) ||
+            // feature 274: a relative name joined with a long panel path fits the whole buffer (the
+            // default MAX_PATH refused every joined path of 260+ bytes); what does not fit is "The
+            // path specified is too long."
+            BOOL fullNameOK = SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus,
+                                             NULL, SAL_MAX_PATH_UTF8);
+            // feature 274: a new folder name no file system takes (over 255 UTF-16 units) is said to
+            // be too long before anything is created (Windows answers "invalid name" for it, 259)
+            const char* newName = fullNameOK ? strrchr(path, '\\') : NULL;
+            BOOL nameTooLong = newName != NULL && SalNameTooLongForFileSystemU8(newName + 1);
+            if (!fullNameOK || nameTooLong ||
                 strlen(path) >= SAL_MAX_PATH_UTF8) // long-path capable (feature 027)
             {
                 if (strlen(path) >= SAL_MAX_PATH_UTF8)
                     errTextID = IDS_TOOLONGPATH;
+                else if (fullNameOK && nameTooLong)
+                    errTextID = IDS_TOOLONGNAME;
                 /* even if the string is empty we want an error message
         if (errTextID == IDS_EMPTYNAMENOTALLOWED)
         {
