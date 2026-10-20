@@ -103,6 +103,8 @@ a file-encryption certificate.
 
 ### Edge Cases
 
+- The refusal of a link's encryption skips the whole entry when the user picks Skip / Skip all
+  (see Clarifications); Encrypt / Decrypt over a tree shows one refusal per link that would change.
 - A link whose kind cannot be determined: treated as a link (fail closed, as Delete and 213 do) -
   the change stays on the entry itself, encryption refused.
 - A cloud placeholder folder (a reparse point that is not a link): behaves as before.
@@ -149,6 +151,23 @@ a file-encryption certificate.
 - **SC-003**: Feature 213's probe stays 8 / 0 (Change Attributes / Case / Convert on links).
 - **SC-004**: No target folder outside the selection changes its compression, times or encryption
   through a link in any probe row.
+
+## Clarifications
+
+### Session 2026-10-20
+
+- Q: When the encryption of a link is refused, are the link's other requested changes (Hidden,
+  times, ...) still applied? → A: no - the refusal is an error of that entry like any other: Skip /
+  Skip all skips the whole entry, Retry repeats it, Cancel ends the operation; the other entries go
+  on. A compression change made to the link itself just before the refusal stays (it touched only
+  the link). (autonomous run: conservative)
+- Q: Does the refusal also come from the Encrypt / Decrypt commands, which include subdirectories,
+  for every junction met in the tree? → A: yes, one error per link whose state differs; Skip all
+  answers them all at once. Nothing is encrypted through a link. (autonomous run: item - "refuses
+  what a link cannot take")
+- Q: Is the link decided when the operation is listed or when it runs? → A: when it runs, by the
+  existing fail-closed rule of Delete / 213 on the entry's current state; an entry that is no
+  longer a reparse point is handled as a plain folder. (autonomous run: conservative)
 
 ## Assumptions
 
