@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [SFTP upload replace: links split, ACLs lost, drop folders fail, .tcpart left](items/sftp-replace-keeps-links-acls-drop-dirs/desc.md) | bug | 4 | sftp | 258 |
 
 ## Next
 
@@ -182,6 +181,7 @@ Last triaged: 2026-10-19
 | [Settings import ends the highlighting list at a damaged entry](items/settings-import-ends-the-highlighting-list-at-a-damaged/desc.md) | bug | 3 | panels-ui | measure:250 | 2026-10-20 |
 | [SFTP: a Copy posted right after a failed upload and its reconnect may open nothing](items/sftp-a-copy-posted-right-after-a-failed-upload-and-its/desc.md) | bug | 3 | sftp | measure:258 | 2026-10-20 |
 | [SFTP: a folder uploaded again into an upload-only folder fails with Cannot create directory](items/sftp-a-folder-uploaded-again-into-an-upload-only-folder/desc.md) | bug | 4 | sftp | leftover:258 | 2026-10-20 |
+| [SFTP drop folder on a real upload-only service and an ACL on a replaced file (258)](items/sftp-drop-folder-on-a-real-upload-only-service-and-an-acl-on/desc.md) | person-step | 4 | sftp | leftover:258 | 2026-10-20 |
 | [ISO plug-in: HFS+ names with an unpaired surrogate are changed to U+FFFD](items/uniso-hfs-names-lossy-surrogates/desc.md) | bug | 2 | archives | measure:255 | 2026-10-20 |
 | [ISO plug-in: a Joliet file name with an unpaired surrogate is garbled, other letters too](items/uniso-joliet-file-names-wtf8-garbled/desc.md) | bug | 3 | archives | review:255 | 2026-10-20 |
 | [UnMIME: the extraction progress title shows a non-ASCII mail file name as mojibake](items/unmime-progress-title-name-mojibake/desc.md) | bug | 1 | other-plugins | measure:255 | 2026-10-20 |

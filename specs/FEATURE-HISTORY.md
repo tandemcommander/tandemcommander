@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258 |
 | PictView | 105, 111, 120 |
 | Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257 |
@@ -3178,3 +3178,28 @@ a few early ones are out of sequence).
   words ignores the punctuation the help names (Inbox `regedit-find-whole-words-punctuation`). From
   backlog item `regedit-find-whole-words-and-quoted-hex-letters`. Probe `find_words_hex_probe.ps1`
   7 / 2 -> 9 / 0; saltests negative control 9 failed; one refute-first review (no MUST).
+- 258-sftp-drop-folder-upload: an SFTP upload into an upload-only ("drop") folder - the server lets
+  an account create files there but refuses `stat` / `lstat` / listing / rename / remove (SFTPGo
+  "upload" without "list", hosted drop boxes) - failed for every file with "Permission denied" at
+  the first `lstat` (139 refuses when it cannot tell whether the target exists; a Unix 0733 folder
+  on OpenSSH already worked - measured). Now an `lstat` refused for want of a right on a live
+  session takes the drop route: WRITE|CREAT|EXCL|TRUNC under the name (never a temp, no fallback),
+  confirmed by size or - when the size request is refused the same way - by the acknowledged bytes
+  and the checked close (`SftpUploadConfirmation`, every route; libssh2's `sftp_write` returns
+  acked bytes); a failed one is unlinked once or named as a partial file. The overwrite question
+  states the limits of 139's replacement (hard links keep the old content; ACL and extended
+  attributes not carried - SFTP v3 cannot see them, the long name's link count must not be
+  parsed). A `.tcpart-*` that a lost connection kept from being removed is remembered on the
+  `CSFTPSession` (memory, 16) and offered (Yes / No) at the next upload of that session; only-copy
+  temps are never recorded. Traps: TRUNC with EXCL matters only on a server that ignores EXCL -
+  without it the new bytes landed over the old tail and were "confirmed" (review 3); taking a
+  refused-and-hidden folder as there let a Move delete an empty local folder that never arrived,
+  also on OpenSSH via a link into an unreadable folder (review 2 - reverted; Inbox
+  `sftp-a-folder-uploaded-again-into-an-upload-only-folder`); the probe's test server must allow
+  what the product must prevent (review 1: DROPEXIST passed by the server's own refusal); a Copy
+  posted right after the reconnect of a failed upload opened nothing (Inbox
+  `sftp-a-copy-posted-right-after-a-failed-upload-and-its`). Limits: earlier runs' temps are not
+  looked for; a real service is a person's (`sftp-drop-folder-on-a-real-upload-only-service-and-an-acl-on`).
+  From backlog item `sftp-replace-keeps-links-acls-drop-dirs`. Probe `sftp258_probe.ps1` (paramiko
+  server `dropsftp.py`) 7 / 5 -> 20 / 0; negative controls CUT, DROPNOEXCL; 133's probe 76 / 0;
+  three refute-first reviews (review 2 one MUST, fixed by the revert).

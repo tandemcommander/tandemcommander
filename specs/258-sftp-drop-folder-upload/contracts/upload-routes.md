@@ -19,7 +19,8 @@ local source only on a confirmed upload.
 | # | Step / outcome | Server | Result |
 |---|---|---|---|
 | D1 | stopped before the create | untouched | failed (no box: the user stopped) |
-| D2 | exclusive create refused (exists, permission, unsupported, no answer) | untouched | failed; box: reason + "the server does not show whether a file of that name exists; nothing was replaced" |
+| D2 | exclusive create refused (exists, permission, unsupported) | untouched | failed; box: reason + "the server does not show whether a file of that name exists; nothing was replaced" |
+| D2a | exclusive create without an answer (the connection lost) | an EMPTY file of ours may exist under the name (not shown, not removable there) | failed; the connection's box |
 | D3 | data / close fail, stopped, or not confirmed | partial file of ours under the name; one `Unlink` tried | failed; box (also after a stop) names it when it stays: "a partial file may remain" |
 | D4 | confirmed (by size, or by acknowledgments when the size is refused) | the new file | ok (Move: source removed) |
 
@@ -28,6 +29,10 @@ The overwrite question is never asked on this route (nothing can be replaced).
 A folder of an uploaded tree inside a drop folder: created by `Mkdir`; a refused `Mkdir` fails the
 folder with its reason as in 139 (also when the folder exists from an earlier upload - the server
 does not show it; a recorded limit). A Move keeps the local folder.
+
+The create is WRITE | CREAT | EXCL | TRUNC (review 3): on a server that keeps EXCL the TRUNC does
+nothing; on one that ignores EXCL the file then holds exactly the new content, so the
+confirmation (and a Move's removal of the source) is true - the old file is lost there.
 
 ## Confirmation of a written file (every route)
 

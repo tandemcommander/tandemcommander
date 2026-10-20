@@ -10,6 +10,8 @@ SSH_FX_PERMISSION_DENIED: stat, lstat, fstat, opendir, rename, posix-rename, rem
 and an open for reading. A write open is allowed, also over an existing file (an account with
 "upload" and "overwrite" but no "list"): only an exclusive create (EXCL, honoured) keeps an
 existing file. Everything else is a plain file system.
+"/dropnx": as "/drop", but the server ignores EXCL (opens an existing file as if it were absent)
+- the model of a non-conforming server (review 3 of 258, SHOULD-1).
 "/cut": while ROOT/cut/.armed exists, the close of a file written under "/cut" removes .armed,
 closes the file and then drops the connection without an answer (the client's request is lost
 with its transport) - the model of a connection lost at the end of an upload.
@@ -40,7 +42,7 @@ def log(text):
 
 def in_drop(path):
     p = '/' + path.strip('/')
-    return p == '/drop' or p.startswith('/drop/')
+    return any(p == r or p.startswith(r + '/') for r in ('/drop', '/dropnx'))
 
 
 def local(path):
@@ -143,6 +145,9 @@ class Iface(SFTPServerInterface):
         lp = local(path)
         exists = os.path.exists(lp)
         log('open %s flags=0x%x exists=%s' % (path, flags, exists))
+        if path.startswith('/dropnx/') and flags & os.O_EXCL:
+            flags &= ~os.O_EXCL  # the model of a server that ignores the exclusive create
+            log('open %s: EXCL ignored' % path)
         # (a write open of an existing file - also a truncating one - is allowed: only the
         # client's exclusive create keeps an existing file; review 1 of 258, SHOULD-1)
         if drop and not flags & (os.O_WRONLY | os.O_RDWR):
@@ -257,7 +262,7 @@ def serve(conn):
 
 
 if __name__ == '__main__':
-    for d in ('drop', 'cut', 'pub'):
+    for d in ('drop', 'dropnx', 'cut', 'pub'):
         os.makedirs(os.path.join(ROOT, d), exist_ok=True)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

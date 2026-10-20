@@ -1161,29 +1161,53 @@ static void UploadOfferLeftTemps(HWND parent, CSFTPSession* session)
     int n = session->TakeLeftTemps(paths);
     if (n == 0)
         return;
-    // the list for the question: the full paths, one per line, on the heap (paths can be long)
+    int logUID = session->GetLogUID();
+    // the list for the question: the full paths as text, one per line, on the heap (paths can be
+    // long). Each path is converted ONCE: the size and the copy use the same texts.
+    char* shown[CSFTPSession::MAX_LEFT_TEMPS];
     size_t listSize = 1;
+    BOOL lowMemory = FALSE;
     for (int i = 0; i < n; i++)
-        listSize += strlen(CSFTPMsgText(paths[i]).Get()) + 1;
-    char* list = (char*)malloc(listSize);
+    {
+        shown[i] = SplLegacyToU8Alloc(paths[i]);
+        if (shown[i] == NULL)
+            lowMemory = TRUE;
+        else
+            listSize += strlen(shown[i]) + 1;
+    }
+    char* list = lowMemory ? NULL : (char*)malloc(listSize);
     if (list != NULL)
     {
-        list[0] = 0;
+        char* p = list;
         for (int i = 0; i < n; i++)
         {
-            strcat_s(list, listSize, CSFTPMsgText(paths[i]).Get());
-            strcat_s(list, listSize, "\n");
+            size_t len = strlen(shown[i]);
+            memcpy(p, shown[i], len);
+            p += len;
+            *p++ = '\n';
         }
+        *p = 0;
     }
-    char* msg = SftpFormatMsgAlloc("Earlier uploads lost the connection before they could remove their temporary "
-                                   "files; these are left on the server:\n%s\nDelete them now?\n"
-                                   "(They hold only copies: the files they were uploaded for were not changed by them.)",
-                                   list != NULL ? list : "", NULL);
+    for (int i = 0; i < n; i++)
+        free(shown[i]);
+    char* msg = list == NULL ? NULL
+                             : SftpFormatMsgAlloc("Earlier uploads lost the connection before they could remove their temporary "
+                                                  "files; these are left on the server:\n%s\nDelete them now?\n"
+                                                  "(They hold only copies: the files they were uploaded for were not changed by them.)",
+                                                  list, NULL);
     free(list);
-    int answer = msg != NULL ? SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_PLUGINNAME), MB_YESNO | MB_ICONQUESTION)
-                             : IDNO;
+    if (msg == NULL) // the question cannot be shown: nothing is decided, the files are offered next time
+    {
+        for (int i = 0; i < n; i++)
+        {
+            session->NoteLeftTemp(paths[i]);
+            free(paths[i]);
+        }
+        Logs.AppendFmt(logUID, "The left temporary files could not be listed (low memory); they are offered at the next upload.");
+        return;
+    }
+    int answer = SalamanderGeneral->SalMessageBox(parent, msg, LoadStr(IDS_PLUGINNAME), MB_YESNO | MB_ICONQUESTION);
     free(msg);
-    int logUID = session->GetLogUID();
     char* failed = NULL; // the first that could not be deleted (with its reason)
     for (int i = 0; i < n; i++)
     {
@@ -1552,7 +1576,9 @@ static CXferResult UploadDropRoute(COperationCtx* ctx, HANDLE lf, const char* re
                    CSFTPMsgText(remotePath).Get(), session->GetLastErrorText());
     if (ctx->CheckCancel())
         return xrFailed;
-    LIBSSH2_SFTP_HANDLE* h = session->OpenWriteNew(remotePath, 0644);
+    // (TRUNC too: should a server ignore EXCL, the file holds the new content alone - never the
+    // new content over the old file's tail, confirmed as complete)
+    LIBSSH2_SFTP_HANDLE* h = session->OpenWriteNew(remotePath, 0644, TRUE);
     if (h == NULL)
     {
         char* reason = SftpFormatMsgAlloc("%s - the server does not show whether a file of that name is there; "

@@ -1,6 +1,6 @@
 sftp133_probe (feature 133), expect: fixed
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-20 09:20; desktop 'tc_probe_3192'; ACP 1250; registry key existed True; export SHA-256 CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+Date    : 2026-10-20 09:48; desktop 'tc_probe_29580'; ACP 1250; registry key existed True; export SHA-256 CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
 Server  : prepared: /home/tctest/tc133; p4 tree end is 4043 bytes, p5 file path 4043 bytes
 
 R1         ROW    PASS        delete in a read-only directory: reason shown True; file on the server 1; local target: 0 folders, 0 levels; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc133/ro1'; dialogs: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete file "f.txt"? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'SFTP Error'] [Static id=2477] Cannot delete "/home/tctest/tc133/ro1/f.txt": Permission denied. | [Button id=1] OK

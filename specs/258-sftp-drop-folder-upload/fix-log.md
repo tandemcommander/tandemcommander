@@ -178,3 +178,30 @@ drop route (`OpenWriteNew` -> `OpenWrite` with truncation), restored by `git che
 - After: harness **239 / 0**; build clean; probe `probe/result_after.txt` **PASS 18, FAIL 0**;
   registry restored + identical.
 - 133 regression after the revert: **PASS 76, FAIL 0** (`probe/regress_133.txt`).
+
+### Review 3 (independent agent, refute-first) - no MUST
+
+Re-ran: revert complete (`git diff 3ef7774a HEAD -- src` empty), harness 239 / 0, encoding guard
+0, probe 18 / 0 (registry identical), libssh2 acked-bytes semantics, every caller of the changed
+functions, session reuse across accounts (refused by `fs.cpp`), path / UTF-8 rules.
+- **SHOULD-1** on a server that ignores EXCL the drop route wrote the new bytes over the old file
+  without truncating: reproduced (`newOLDOLDOLD`, Move deleted the source, no box). **Fixed**:
+  the drop route's create adds TRUNC (`OpenWriteNew(path, mode, TRUE)`; the temp route keeps
+  `0x501`). New test-server folder `/dropnx` (ignores EXCL) and row DROPNOEXCL. Negative control
+  on the build without TRUNC (`probe/result_negative_noexcl.txt`): FAIL, `NEW-NXOLDOLDOLD`, the
+  source gone; with the fix PASS, `NEW-NX`. CHANGELOG limitation now says such a server lets the
+  upload replace the file (old content lost, the new file complete).
+- NOTE-1 a create without an answer may leave an empty file under the name -> contract row D2a.
+- NOTE-2 not driven: FR-007 (a kept only-copy temp never recorded - by reading: those paths never
+  pass through `UploadDropTemp`), FR-008 (a recorded path no longer a regular file), the "No"
+  answer, re-recording when the connection dies during the offer. Recorded here as not driven.
+- **NOTE-3** low memory in the offer: two conversions of one path (size, copy) could differ ->
+  `strcat_s` overflow; a failed message counted as "No". **Fixed**: each path converted once
+  (`SplLegacyToU8Alloc`), the list copied by `memcpy` with the measured lengths; when the list or
+  the message cannot be made, nothing is decided - the files are remembered again and offered at
+  the next upload (log line).
+- NOTE-4 the question's paragraph warns also when the route will be "in place" (a link, set-id
+  bits) - it errs toward warning; kept.
+- After: harness 239 / 0; build clean (no warning); probe `probe/result_after.txt` **PASS 20,
+  FAIL 0** (DROPNOEXCL added); registry restored + identical.
+- 133 regression after the review 3 fixes: **PASS 76, FAIL 0** (`probe/regress_133.txt`).

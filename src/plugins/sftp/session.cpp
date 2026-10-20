@@ -1770,15 +1770,16 @@ LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWrite(const char* path, long mode, BOOL a
     return h;
 }
 
-LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWriteNew(const char* path, long mode)
+LIBSSH2_SFTP_HANDLE* CSFTPSession::OpenWriteNew(const char* path, long mode, BOOL truncate)
 {
     if (NoRequest())
         return NULL;
     // feature 139: EXCL - the server creates the file or fails; an existing file is not
     // opened, a symbolic link of that name is not followed
-    LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path),
-                                                  LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_EXCL,
-                                                  mode, LIBSSH2_SFTP_OPENFILE);
+    // feature 258: 'truncate' adds TRUNC - nothing on a server that keeps EXCL; on one that
+    // ignores it, the file then holds exactly what is written (not the new data over an old tail)
+    unsigned long flags = LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_EXCL | (truncate ? LIBSSH2_FXF_TRUNC : 0);
+    LIBSSH2_SFTP_HANDLE* h = libssh2_sftp_open_ex(Sftp, path, (unsigned int)strlen(path), flags, mode, LIBSSH2_SFTP_OPENFILE);
     if (h == NULL)
         RequestFailed(FailedPointerCallCode(), NULL);
     return h;

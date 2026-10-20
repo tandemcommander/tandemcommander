@@ -1,0 +1,31 @@
+sftp258_probe (feature 258), run: negative-control-without-trunc
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 09:44; desktop 'tc_probe_17344'; ACP 1250; registry key existed True; export SHA-256 CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+Server  : dropsftp.py pid 23848 on 127.0.0.1:2258, root C:\Users\pavel\AppData\Local\Temp\tc258\srv
+
+DROPNOEXCL ROW    FAIL        Move onto an existing file of a server that ignores the exclusive create: dropnx\mv.txt holds 'NEW-NXOLDOLDOLD' (never the new content over the old tail); the local source still there False; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Move/Rename]
+DROPNOEXCL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8 / after CBAC630FC0114B758238AD35BE67E01790B70011FDC51BDBA545CA050A8C15E8
+
+Server log:
+  1792482243.634 start 2258 C:\Users\pavel\AppData\Local\Temp\tc258\srv
+  1792482243.736 connect
+  1792482243.741 session error SSHException('Error reading SSH protocol banner[WinError 10054] St\u00E1vaj\u00EDc\u00ED p\u0159ipojen\u00ED bylo vynucen\u011B ukon\u010Deno vzd\u00E1len\u00FDm hostitelem')
+  1792482243.741 disconnected
+  1792482248.580 connect
+  1792482249.084 disconnected
+  1792482249.566 connect
+  1792482249.570 realpath /pub -> /pub
+  1792482249.570 stat /pub ok
+  1792482249.571 opendir /pub ok (0)
+  1792482255.497 lstat /dropnx/mv.txt DENIED
+  1792482255.498 open /dropnx/mv.txt flags=0x501 exists=True
+  1792482255.498 open /dropnx/mv.txt: EXCL ignored
+  1792482255.499 close /dropnx/mv.txt
+  1792482255.500 stat /dropnx/mv.txt DENIED
+  1792482255.501 realpath /pub -> /pub
+  1792482255.502 stat /pub ok
+  1792482255.502 opendir /pub ok (0)
+  1792482262.074 disconnected
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

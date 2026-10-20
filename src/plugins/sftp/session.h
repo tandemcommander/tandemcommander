@@ -219,7 +219,8 @@ public:
     LIBSSH2_SFTP_HANDLE* OpenWrite(const char* path, long mode, BOOL append);
     // feature 139: creates a NEW file for writing (WRITE | CREAT | EXCL): fails when anything
     // of that name exists - nothing is followed, nothing is truncated
-    LIBSSH2_SFTP_HANDLE* OpenWriteNew(const char* path, long mode);
+    // feature 258: 'truncate' = also TRUNC (see session.cpp)
+    LIBSSH2_SFTP_HANDLE* OpenWriteNew(const char* path, long mode, BOOL truncate = FALSE);
     void SeekWrite(LIBSSH2_SFTP_HANDLE* h, unsigned __int64 offset);
     __int64 Read(LIBSSH2_SFTP_HANDLE* h, char* buf, int len);
     __int64 Write(LIBSSH2_SFTP_HANDLE* h, const char* buf, int len);
