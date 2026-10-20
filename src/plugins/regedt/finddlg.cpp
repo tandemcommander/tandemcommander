@@ -1132,9 +1132,9 @@ BOOL CFindThread::Test(char* text, int len, BOOL name, DWORD type)
                 int matchLen;
                 if ((pos = SalRegExp->SearchForward(pos, matchLen)) != -1)
                 {
-                    if (!WholeWords ||
-                        matchLen > 0 && (pos == 0 || isspace(text[pos - 1])) &&
-                            (pos + matchLen == end - start || isspace(text[pos + matchLen])))
+                    // feature 257: the characters around the match are the line's ('pos' counts
+                    // from the line; they were read from the start of the value)
+                    if (!WholeWords || SalRegFindWholeWordInLine(start, (int)(end - start), pos, matchLen))
                         return TRUE;
                     pos++; // try a little further; maybe it will work
                 }

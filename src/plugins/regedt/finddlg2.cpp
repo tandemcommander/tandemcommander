@@ -353,7 +353,9 @@ void CFindDialog::StartSearch()
         }
         if (RegExp)
         {
-            patternALen = WStrToStr(patternA, MAX_KEYNAME, Pattern);
+            patternALen = WStrToStr(patternA, MAX_KEYNAME, Pattern); // with its NUL (Set reads it)
+            if (patternA[0] == 0)
+                patternALen = 0; // feature 257: an empty regexp is the empty pattern - everything
             patternWLen = 0;
         }
         else

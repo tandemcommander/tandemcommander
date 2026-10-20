@@ -337,178 +337,27 @@ BOOL ParseFullPath(WCHAR* path, WCHAR*& keyName, int& keyRoot)
     return FALSE;
 }
 
-inline BOOL IsXdigit(WCHAR c)
-{
-    CALL_STACK_MESSAGE_NONE
-    return c >= L'0' && c <= L'9' || towlower(c) >= L'a' && towlower(c) <= L'f';
-}
-
+// feature 257: both go through SalHexPatternToBytes (salregfind.h) - a 'text' is converted as one
+// text into all its code-page bytes (a letter of 2+ bytes became one 0x00 byte), counted the same
 void ConvertHexToString(LPWSTR text, char* hex, int hexSize, int& len)
 {
     CALL_STACK_MESSAGE_NONE
     //  CALL_STACK_MESSAGE2("ConvertHexToString(, , %d)", len);
-    len = 0;
-    LPWSTR s = text; //, st = text;
-    BYTE value = 0;
-    BOOL openedQuotesASCII = FALSE;
-    BOOL openedQuotesUnicode = FALSE;
-    while (1)
-    {
-        if (*s == L'"' && !openedQuotesASCII)
-        {
-            s++;
-            openedQuotesUnicode = !openedQuotesUnicode;
-            continue;
-        }
-        if (*s == L'\'' && !openedQuotesUnicode)
-        {
-            s++;
-            openedQuotesASCII = !openedQuotesASCII;
-            continue;
-        }
-        if (openedQuotesUnicode)
-        {
-            if (*s == 0)
-                break;
-            else
-            {
-                if (len + 2 > hexSize) // feature 191: 2 bytes a letter overran the caller's buffer
-                {
-                    len = -1;
-                    return;
-                }
-                *(LPWSTR)(hex + len) = *s++;
-                len += 2;
-            }
-        }
-        else
-        {
-            if (openedQuotesASCII)
-            {
-                if (*s == 0)
-                    break;
-                else
-                {
-                    if (len + 1 > hexSize)
-                    {
-                        len = -1;
-                        return;
-                    }
-                    WStrToStr(hex + len, 1, s++, 1);
-                    len += 1;
-                }
-            }
-            else
-            {
-                if (IsXdigit(*s) && len + 1 > hexSize)
-                {
-                    len = -1;
-                    return;
-                }
-                if (IsXdigit(*s))
-                {
-                    if (*s >= L'0' && *s <= L'9')
-                        value = (BYTE)(*s - L'0'); // first digit
-                    else
-                        value = (BYTE)(10 + (towlower(*s) - L'a'));
-                    s++;
-                    if (IsXdigit(*s)) // second digit
-                    {
-                        value <<= 4;
-                        if (*s >= L'0' && *s <= L'9')
-                            value |= (BYTE)(*s - '0');
-                        else
-                            value |= (BYTE)(10 + (towlower(*s) - L'a'));
-                        s++;
-                    }
-                    hex[len++] = value;
-                }
-                else
-                {
-                    if (*s == L'\0')
-                        break; // end of string
-                    else
-                        s++; // skip the space
-                }
-            }
-        }
-    }
+    // feature 191: -1 when it does not fit the caller's buffer (257: or cannot be converted)
+    if (SalHexPatternToBytes(text, CP_ACP, FALSE, hex, hexSize, &len) != SALHEXPAT_OK)
+        len = -1;
 }
 
 BOOL ValidateHexString(LPWSTR text, int* outLen)
 {
     CALL_STACK_MESSAGE_NONE
     //  CALL_STACK_MESSAGE1("ValidateHexString()");
-    int len = 0;
+    // two digits a byte, only spaces between; *outLen = the bytes the search keeps (feature 191)
+    int len;
+    BOOL ok = SalHexPatternToBytes(text, CP_ACP, TRUE, NULL, 0, &len) == SALHEXPAT_OK;
     if (outLen != NULL)
-        *outLen = 0;
-    LPWSTR s = text; //, st = text;
-    BYTE value = 0;
-    BOOL openedQuotesASCII = FALSE;
-    BOOL openedQuotesUnicode = FALSE;
-    while (1)
-    {
-        if (*s == L'"' && !openedQuotesASCII)
-        {
-            s++;
-            openedQuotesUnicode = !openedQuotesUnicode;
-            continue;
-        }
-        if (*s == L'\'' && !openedQuotesUnicode)
-        {
-            s++;
-            openedQuotesASCII = !openedQuotesASCII;
-            continue;
-        }
-        if (openedQuotesUnicode)
-        {
-            if (*s == 0)
-                break;
-            s++;
-            len += 2;
-        }
-        else
-        {
-            if (openedQuotesASCII)
-            {
-                if (*s == 0)
-                    break;
-                else
-                {
-                    s++;
-                    len += 1;
-                }
-            }
-            else
-            {
-                if (IsXdigit(*s))
-                {
-                    s++;
-                    if (IsXdigit(*s)) // second digit (required)
-                    {
-                        s++;
-                        len += 1; // feature 191: the byte counts as well
-                    }
-                    else
-                        return FALSE;
-                }
-                else
-                {
-                    if (*s == L'\0')
-                        break; // end of string
-                    else
-                    {
-                        if (*s != L' ')
-                            return FALSE;
-                        s++; // skip the space
-                    }
-                }
-            }
-        }
-    }
-    if (outLen != NULL)
-        *outLen = len;
-    return TRUE;
+        *outLen = ok ? len : 0;
+    return ok;
 }
 
 // ****************************************************************************

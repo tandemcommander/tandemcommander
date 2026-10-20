@@ -44,6 +44,7 @@
 
 #include "../../common/salwideinserts.h" // feature 129
 #include "../../common/salmultisz.h"     // feature 189
+#include "../../common/salregfind.h"     // feature 257
 #include "utils.h"
 #include "regedt.h"
 #include "dialogs.h"

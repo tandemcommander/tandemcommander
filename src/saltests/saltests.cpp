@@ -60,6 +60,7 @@
 #include "salaltername.h"    // feature 169
 #include "salfmtinserts.h"   // feature 180
 #include "salmultisz.h"      // feature 189
+#include "salregfind.h"      // feature 257
 #include "salreparse.h"      // feature 197
 #include "salshortname.h"    // feature 203
 #include "salu8fold.h"       // feature 210
@@ -12559,6 +12560,107 @@ static void TestMultiSzToLine189()
     CHECK(SalMultiSzToLine(NULL, 4) == 0);
 }
 
+// feature 257: the Registry Editor's Find - a whole-word regexp match is judged by its own line
+// (the characters around it were read from the start of the value)
+static void TestRegFindWholeWord257()
+{
+    const char list1[] = "abcdefgh\0foo bar"; // "foo bar" on the second line
+    const char* line2 = list1 + 9;
+    CHECK(SalRegFindWholeWordInLine(line2, 7, 4, 3));       // "bar" at the line's end, a space before
+    CHECK(!SalRegFindWholeWordInLine(list1, 7, 4, 3));      // the old reading: 'd' before, 'h' after
+    const char list2[] = "a bcdef\0xxbar";                  // "xxbar" on the second line
+    CHECK(!SalRegFindWholeWordInLine(list2 + 8, 5, 2, 3));  // a fragment
+    CHECK(SalRegFindWholeWordInLine(list2, 5, 2, 3));       // the old reading took it for a word
+    CHECK(SalRegFindWholeWordInLine("bar baz", 7, 0, 3));   // the line's start
+    CHECK(SalRegFindWholeWordInLine("bar baz", 7, 4, 3));   // the line's end
+    CHECK(SalRegFindWholeWordInLine("x\tbar\ty", 7, 2, 3)); // tabs
+    CHECK(!SalRegFindWholeWordInLine("bar baz", 7, 4, 2));  // "ba" of "baz"
+    CHECK(!SalRegFindWholeWordInLine("x\xE8"
+                                     "bar",
+                                     5, 2, 3));        // a non-ASCII letter before: no space
+    CHECK(!SalRegFindWholeWordInLine("bar", 3, 0, 0)); // an empty match is no word
+    CHECK(!SalRegFindWholeWordInLine("bar", 3, 1, 3)); // past the line
+    CHECK(!SalRegFindWholeWordInLine(NULL, 3, 0, 3));
+}
+
+// feature 257: a HEX pattern's 'text' becomes all its code-page bytes (a letter of 2+ bytes was
+// one 0x00 byte), counted the same way before the search
+static bool Hex257(const WCHAR* text, UINT cp, BOOL strict, int outSize, int wantRet, const char* want, int wantLen)
+{
+    char out[64];
+    memset(out, 0x5A, sizeof(out));
+    int len = -7;
+    int ret = SalHexPatternToBytes(text, cp, strict, out, outSize, &len);
+    if (ret != wantRet)
+        return false;
+    for (int i = outSize; i < (int)sizeof(out); i++)
+        if (out[i] != 0x5A)
+            return false; // nothing written past 'outSize'
+    if (ret != SALHEXPAT_OK)
+        return true;
+    int countLen = -7; // count mode gives the same number
+    if (SalHexPatternToBytes(text, cp, strict, NULL, 0, &countLen) != SALHEXPAT_OK || countLen != len)
+        return false;
+    return len == wantLen && memcmp(out, want, wantLen) == 0;
+}
+
+static void TestHexPattern257()
+{
+    // UTF-8 code page: C-caron is C4 8D
+    CHECK(Hex257(L"'\x010D"
+                 L"AB'",
+                 65001, TRUE, 64, SALHEXPAT_OK, "\xC4\x8D\x41\x42", 4));
+    CHECK(Hex257(L"01 '\x010D"
+                 L"AB' 02",
+                 65001, TRUE, 64, SALHEXPAT_OK, "\x01\xC4\x8D\x41\x42\x02", 6));
+    CHECK(Hex257(L"'\xD83D\xDE00'", 65001, TRUE, 64, SALHEXPAT_OK, "\xF0\x9F\x98\x80", 4)); // a surrogate pair: one letter
+    CHECK(Hex257(L"'\x010D"
+                 L"AB'",
+                 65001, TRUE, 4, SALHEXPAT_OK, "\xC4\x8D\x41\x42", 4)); // exact fit
+    CHECK(Hex257(L"'\x010D"
+                 L"AB'",
+                 65001, TRUE, 3, SALHEXPAT_TOOLONG, "", 0)); // never cut
+    CHECK(Hex257(L"01 '\x010D'", 65001, TRUE, 2, SALHEXPAT_TOOLONG, "", 0));
+    // a DBCS code page: hiragana A is 82 A0
+    CHECK(Hex257(L"'\x3042'", 932, TRUE, 64, SALHEXPAT_OK, "\x82\xA0", 2));
+    // a single-byte code page: unchanged
+    CHECK(Hex257(L"01 '\x010D"
+                 L"AB' 02",
+                 1250, TRUE, 64, SALHEXPAT_OK, "\x01\xE8\x41\x42\x02", 5));
+    {
+        // a letter the code page lacks: what the plain-text pattern gets (its replacement)
+        char plain[8] = {0};
+        int n = WideCharToMultiByte(1250, 0, L"\x0436", 1, plain, sizeof(plain), NULL, NULL);
+        CHECK(n == 1 && Hex257(L"'\x0436'", 1250, TRUE, 64, SALHEXPAT_OK, plain, 1));
+    }
+    // the rest of the grammar is unchanged
+    CHECK(Hex257(L"\"ab\"", 1250, TRUE, 64, SALHEXPAT_OK, "a\0b\0", 4));
+    CHECK(Hex257(L"\"\x010D\"", 65001, TRUE, 64, SALHEXPAT_OK, "\x0D\x01", 2));
+    CHECK(Hex257(L"'ab", 65001, TRUE, 64, SALHEXPAT_OK, "ab", 2)); // an unclosed quote runs to the end
+    CHECK(Hex257(L"'a\"b'", 65001, TRUE, 64, SALHEXPAT_OK, "a\"b", 3));
+    CHECK(Hex257(L"\"a'b\"", 1250, TRUE, 64, SALHEXPAT_OK, "a\0'\0b\0", 6));
+    CHECK(Hex257(L"''", 65001, TRUE, 64, SALHEXPAT_OK, "", 0));
+    CHECK(Hex257(L"", 65001, TRUE, 64, SALHEXPAT_OK, "", 0));
+    CHECK(Hex257(L"Ff 0a", 65001, TRUE, 64, SALHEXPAT_OK, "\xFF\x0A", 2));
+    CHECK(Hex257(L"1", 65001, TRUE, 64, SALHEXPAT_BAD, "", 0));     // strict: two digits a byte
+    CHECK(Hex257(L"1", 65001, FALSE, 64, SALHEXPAT_OK, "\x01", 1)); // lenient: a lone digit
+    CHECK(Hex257(L"01,02", 65001, TRUE, 64, SALHEXPAT_BAD, "", 0)); // strict: only spaces
+    CHECK(Hex257(L"01,02", 65001, FALSE, 64, SALHEXPAT_OK, "\x01\x02", 2));
+    CHECK(Hex257(L"0g", 65001, TRUE, 64, SALHEXPAT_BAD, "", 0));
+    CHECK(Hex257(L"\xFF21"
+                 L"0",
+                 65001, TRUE, 64, SALHEXPAT_BAD, "", 0)); // a fullwidth A is no digit
+    CHECK(Hex257(L"01 02 03", 65001, TRUE, 2, SALHEXPAT_TOOLONG, "", 0));
+    CHECK(Hex257(L"\"ab\"", 65001, TRUE, 3, SALHEXPAT_TOOLONG, "", 0));
+    {
+        int len = -7;
+        CHECK(SalHexPatternToBytes(L"'\x010D'", 65001, TRUE, NULL, 0, &len) == SALHEXPAT_OK && len == 2);
+        CHECK(SalHexPatternToBytes(L"'\x010D'", 1250, TRUE, NULL, 0, &len) == SALHEXPAT_OK && len == 1);
+        CHECK(SalHexPatternToBytes(L"'x'", 12345, TRUE, NULL, 0, &len) == SALHEXPAT_BAD); // no such code page
+        CHECK(SalHexPatternToBytes(NULL, 65001, TRUE, NULL, 0, &len) == SALHEXPAT_BAD && len == 0);
+    }
+}
+
 // feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
 // formatted - before, FormatMessage without arguments failed (87) and the program showed "System
 // error N, text description is not available."; the inserts become "..." and no '%' is left
@@ -14306,6 +14408,8 @@ int main(int argc, char** argv)
     TestFormatMessageInserts180();
     TestShellLinkLoadName181();
     TestMultiSzToLine189();
+    TestRegFindWholeWord257();
+    TestHexPattern257();
     TestDeleteAsDirLink197();
     TestAttrsLink253();
     TestReparseNameAsPath219();
