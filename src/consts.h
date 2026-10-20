@@ -2551,6 +2551,13 @@ HICON LoadArchiveIcon(int cx, int cy, UINT flags);
 BOOL RestoreNetworkConnection(HWND parent, const char* name, const char* remoteName, DWORD* retErr = NULL,
                               LPNETRESOURCE lpNetResource = NULL);
 
+// feature 264: reconnects the remembered network drive 'drive' to exactly 'remote' (its path as
+// Windows lists it, wide - never converted to the code page, never cut), with the user name and
+// provider saved with it; the background attempt runs under the Esc wait window, refused
+// credentials get Windows' dialog; TRUE = connected (also when it already was), FALSE = cancelled
+// or failed (the user has been told, except after a cancel)
+BOOL RestoreNetworkDriveW(HWND parent, char drive, const WCHAR* remote);
+
 // sestavi text do sloupce Type v panelu pro neasociovany soubor (napr. "AAA File" nebo "File")
 void GetCommonFileTypeStr(char* buf, int* resLen, const char* ext);
 

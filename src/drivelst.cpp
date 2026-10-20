@@ -87,6 +87,59 @@ void GetNetworkDrivesBody(DWORD& netDrives, char (*netRemotePath)[MAX_PATH], cha
     }
 }
 
+// feature 264: the remote path of the remembered (persistent) disk connection of 'letter',
+// exactly as Windows keeps it - the wide enumeration GetNetworkDrives makes in the code page
+// (where it becomes '?' outside the code page and is cut at MAX_PATH - 1 bytes); a malloc'd
+// path, or NULL when the letter is not remembered, its path is empty, or the enumeration or
+// memory fails (never a shortened path)
+static WCHAR* GetRememberedNetDriveRemoteW(char letter)
+{
+    CALL_STACK_MESSAGE2("GetRememberedNetDriveRemoteW(%u)", letter);
+    WCHAR wanted = (WCHAR)(BYTE)UpperCase[(BYTE)letter];
+    if (wanted < L'A' || wanted > L'Z')
+        return NULL;
+    HANDLE hEnum;
+    if (WNetOpenEnumW(RESOURCE_REMEMBERED, RESOURCETYPE_DISK, RESOURCEUSAGE_CONNECTABLE, NULL, &hEnum) != NO_ERROR)
+        return NULL;
+    WCHAR* ret = NULL;
+    BOOL found = FALSE;
+    DWORD bufSize = 16384;
+    BYTE* buf = (BYTE*)malloc(bufSize);
+    while (buf != NULL && !found)
+    {
+        DWORD count = 0xFFFFFFFF; // as many as fit
+        DWORD size = bufSize;
+        DWORD err = WNetEnumResourceW(hEnum, &count, buf, &size);
+        if (err == ERROR_MORE_DATA && size > bufSize && size < 0x1000000) // one entry does not fit: a bigger buffer
+        {
+            BYTE* bigger = (BYTE*)realloc(buf, size);
+            if (bigger == NULL)
+                break;
+            buf = bigger;
+            bufSize = size;
+            continue;
+        }
+        if (err != NO_ERROR || count == 0)
+            break; // ERROR_NO_MORE_ITEMS or a failure
+        NETRESOURCEW* res = (NETRESOURCEW*)buf;
+        for (DWORD i = 0; i < count; i++)
+        {
+            const WCHAR* local = res[i].lpLocalName;
+            if (local != NULL && local[0] != 0 && local[1] == L':' &&
+                (local[0] == wanted || local[0] == wanted - L'A' + L'a'))
+            {
+                found = TRUE;
+                if (res[i].lpRemoteName != NULL && res[i].lpRemoteName[0] != 0)
+                    ret = _wcsdup(res[i].lpRemoteName);
+                break;
+            }
+        }
+    }
+    free(buf);
+    WNetCloseEnum(hEnum);
+    return ret;
+}
+
 BOOL GetUserName(const char* drive, const char* remoteName, char* userName, DWORD userBufSize,
                  char* providerBuf, DWORD providerBufSize)
 {
@@ -136,6 +189,65 @@ BOOL GetUserName(const char* drive, const char* remoteName, char* userName, DWOR
     return ret;
 }
 
+// feature 264: a REG_SZ value read whole; a malloc'd string, or NULL (missing, another type,
+// no memory)
+static WCHAR* ReadRegStringW(HKEY key, const WCHAR* valueName)
+{
+    DWORD type;
+    DWORD size = 0;
+    if (RegQueryValueExW(key, valueName, NULL, &type, NULL, &size) != ERROR_SUCCESS || type != REG_SZ ||
+        size >= 0x100000)
+    {
+        return NULL;
+    }
+    WCHAR* value = (WCHAR*)malloc(size + 2 * sizeof(WCHAR)); // room for a missing terminator
+    DWORD got = size;
+    if (value != NULL &&
+        (RegQueryValueExW(key, valueName, NULL, &type, (BYTE*)value, &got) != ERROR_SUCCESS || type != REG_SZ ||
+         got > size))
+    {
+        free(value);
+        value = NULL;
+    }
+    if (value != NULL)
+        value[got / sizeof(WCHAR)] = 0;
+    return value;
+}
+
+// feature 264: the wide twin of GetUserName for RestoreNetworkDriveW - the user name and the
+// network provider saved with the remembered connection of 'letter' (HKCU\Network\<letter>),
+// used only when its saved RemotePath is 'remote' (SalNetDriveSameRemote); '*userName' and
+// '*provider' receive malloc'd values, or NULL when none is saved (the current user is used /
+// Windows finds the provider) or the connection was saved for another path
+static void GetRememberedNetDriveLogonW(char letter, const WCHAR* remote, WCHAR** userName, WCHAR** provider)
+{
+    *userName = NULL;
+    *provider = NULL;
+    WCHAR keyName[] = L"Network\\?";
+    keyName[_countof(keyName) - 2] = (WCHAR)(BYTE)letter;
+    HKEY key;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, keyName, 0, KEY_READ, &key) != ERROR_SUCCESS)
+        return; // nothing to do ...
+    WCHAR* savedRemote = ReadRegStringW(key, L"RemotePath");
+    if (SalNetDriveSameRemote(savedRemote, remote))
+    {
+        *userName = ReadRegStringW(key, L"UserName");
+        if (*userName != NULL && (*userName)[0] == 0)
+        {
+            free(*userName);
+            *userName = NULL;
+        }
+        *provider = ReadRegStringW(key, L"ProviderName");
+        if (*provider != NULL && (*provider)[0] == 0)
+        {
+            free(*provider);
+            *provider = NULL;
+        }
+    }
+    free(savedRemote);
+    RegCloseKey(key);
+}
+
 struct CNBWNetAC3ThreadFParams
 {
     DWORD err;
@@ -152,14 +264,56 @@ struct CNBWNetAC3ThreadFParams
     DWORD errProviderCode;
     char errBuf[300];
     char errProviderName[200];
+
+    // feature 264: the wide attempt (NonBlockingWNetAddConnection3W); its strings are heap
+    // copies owned here and released (NBWNetAC3FreeWide) only after the thread has ended -
+    // after an Esc the thread still uses them, the next attempt frees them once it waited
+    BOOL Wide;
+    NETRESOURCEW netResourceW;
+    WCHAR* heapLocalNameW;
+    WCHAR* heapRemoteNameW;
+    WCHAR* heapUserNameW;
+    WCHAR* heapProviderW;
+    WCHAR errBufW[300];
+    WCHAR errProviderNameW[200];
 };
 
 CNBWNetAC3ThreadFParams NBWNetAC3ThreadFParams;
+
+// one attempt at a time, ANSI or wide (they share the thread and its parameters)
+static CCriticalSection NBWNetAC3CS;
+
+static void NBWNetAC3FreeWide()
+{
+    CNBWNetAC3ThreadFParams* data = &NBWNetAC3ThreadFParams;
+    free(data->heapLocalNameW);
+    free(data->heapRemoteNameW);
+    free(data->heapUserNameW);
+    free(data->heapProviderW);
+    data->heapLocalNameW = NULL;
+    data->heapRemoteNameW = NULL;
+    data->heapUserNameW = NULL;
+    data->heapProviderW = NULL;
+}
 
 DWORD WINAPI NBWNetAC3ThreadF(void* param)
 {
     CALL_STACK_MESSAGE_NONE
     CNBWNetAC3ThreadFParams* data = &NBWNetAC3ThreadFParams;
+    if (data->Wide) // feature 264
+    {
+        data->err = WNetAddConnection3W(NULL /* no CONNECT_INTERACTIVE in another thread */,
+                                        &data->netResourceW, NULL, data->heapUserNameW, data->dwFlags);
+        if (data->err == ERROR_EXTENDED_ERROR &&
+            WNetGetLastErrorW(&data->errProviderCode, data->errBufW, _countof(data->errBufW),
+                              data->errProviderNameW, _countof(data->errProviderNameW)) != NO_ERROR)
+        {
+            data->errProviderCode = 0;
+            data->errBufW[0] = 0;
+            data->errProviderNameW[0] = 0;
+        }
+        return 0;
+    }
     data->err = WNetAddConnection3(NULL /* we're not using CONNECT_INTERACTIVE, we're in another thread */,
                                    &data->netResource, data->lpPassword, data->lpUserName, data->dwFlags);
     memset(data->bufPassword, 0, sizeof(data->bufPassword));
@@ -173,25 +327,10 @@ DWORD WINAPI NBWNetAC3ThreadF(void* param)
     return 0;
 }
 
-BOOL NonBlockingWNetAddConnection3(DWORD& err, LPNETRESOURCE lpNetResource,
-                                   LPTSTR lpPassword, LPTSTR lpUserName, DWORD dwFlags,
-                                   DWORD* errProviderCode, char* errBuf, char* errProviderName)
+// waits for the thread of the previous attempt to finish (FALSE: Esc, or the application is
+// shutting down); then the thread parameters are free to be replaced
+static BOOL NBWNetAC3WaitForPrevious()
 {
-    CALL_STACK_MESSAGE3("NonBlockingWNetAddConnection3(0x%X, , , , 0x%X, , ,)", err, dwFlags);
-
-    // Prevent re-entrance
-    static CCriticalSection cs;
-    CEnterCriticalSection enterCS(cs);
-
-    err = 0; // for sure
-    if (errProviderCode != NULL)
-        *errProviderCode = 0;
-    if (errBuf != NULL)
-        errBuf[0] = 0;
-    if (errProviderName != NULL)
-        errProviderName[0] = 0;
-
-    // first all we will wait for the previous "calculation" to finish
     GetAsyncKeyState(VK_ESCAPE); // init GetAsyncKeyState - see help
     if (NBWNetAC3Thread.ShutdownArrived)
         return FALSE; // the application is already shutting down; no further action
@@ -211,8 +350,64 @@ BOOL NonBlockingWNetAddConnection3(DWORD& err, LPNETRESOURCE lpNetResource,
             return FALSE; // the application is already shutting down; no further action
         NBWNetAC3Thread.Close();
     }
+    NBWNetAC3FreeWide(); // feature 264: no thread runs - the previous wide attempt's strings are free
+    return TRUE;
+}
+
+// starts the attempt prepared in NBWNetAC3ThreadFParams and waits for it to finish (FALSE: Esc,
+// the application is shutting down, or the thread could not be started)
+static BOOL NBWNetAC3StartAndWait()
+{
+    DWORD ThreadID;
+    NBWNetAC3Thread.Set(HANDLES(CreateThread(NULL, 0, NBWNetAC3ThreadF, NULL, 0, &ThreadID)));
+    if (NBWNetAC3Thread.Thread == NULL)
+    {
+        memset(NBWNetAC3ThreadFParams.bufPassword, 0, sizeof(NBWNetAC3ThreadFParams.bufPassword));
+        NBWNetAC3FreeWide();
+        TRACE_E("Unable to start add-net-connection-3 thread.");
+        return FALSE; // error (ESC simulation)
+    }
+
+    // we will wait for the "calculation" to finish so that we can return the result
+    while (1)
+    {
+        DWORD res = WaitForSingleObject(NBWNetAC3Thread.Thread, 200);
+        if (res == WAIT_FAILED)
+            return FALSE; // invalid thread handle (closed externally during application shutdown)
+        if (res != WAIT_TIMEOUT)
+            break;
+        if (UserWantsToCancelSafeWaitWindow())
+            return FALSE;
+    }
+    if (NBWNetAC3Thread.ShutdownArrived)
+        return FALSE; // the application is already shutting down; no further action
+    NBWNetAC3Thread.Close();
+    return TRUE;
+}
+
+BOOL NonBlockingWNetAddConnection3(DWORD& err, LPNETRESOURCE lpNetResource,
+                                   LPTSTR lpPassword, LPTSTR lpUserName, DWORD dwFlags,
+                                   DWORD* errProviderCode, char* errBuf, char* errProviderName)
+{
+    CALL_STACK_MESSAGE3("NonBlockingWNetAddConnection3(0x%X, , , , 0x%X, , ,)", err, dwFlags);
+
+    // Prevent re-entrance
+    CEnterCriticalSection enterCS(NBWNetAC3CS);
+
+    err = 0; // for sure
+    if (errProviderCode != NULL)
+        *errProviderCode = 0;
+    if (errBuf != NULL)
+        errBuf[0] = 0;
+    if (errProviderName != NULL)
+        errProviderName[0] = 0;
+
+    // first all we will wait for the previous "calculation" to finish
+    if (!NBWNetAC3WaitForPrevious())
+        return FALSE;
 
     // then we will set the parameters and try to start a new thread
+    NBWNetAC3ThreadFParams.Wide = FALSE;
     if (lpUserName != NULL)
     {
         lstrcpyn(NBWNetAC3ThreadFParams.bufUserName, lpUserName, USERNAME_MAXLEN);
@@ -244,29 +439,8 @@ BOOL NonBlockingWNetAddConnection3(DWORD& err, LPNETRESOURCE lpNetResource,
     NBWNetAC3ThreadFParams.errBuf[0] = 0;
     NBWNetAC3ThreadFParams.errProviderName[0] = 0;
 
-    DWORD ThreadID;
-    NBWNetAC3Thread.Set(HANDLES(CreateThread(NULL, 0, NBWNetAC3ThreadF, NULL, 0, &ThreadID)));
-    if (NBWNetAC3Thread.Thread == NULL)
-    {
-        memset(NBWNetAC3ThreadFParams.bufPassword, 0, sizeof(NBWNetAC3ThreadFParams.bufPassword));
-        TRACE_E("Unable to start add-net-connection-3 thread.");
-        return FALSE; // error (ESC simulation)
-    }
-
-    // we will wait for the "calculation" to finish so that we can return the result
-    while (1)
-    {
-        DWORD res = WaitForSingleObject(NBWNetAC3Thread.Thread, 200);
-        if (res == WAIT_FAILED)
-            return FALSE; // invalid thread handle (closed externally during application shutdown)
-        if (res != WAIT_TIMEOUT)
-            break;
-        if (UserWantsToCancelSafeWaitWindow())
-            return FALSE;
-    }
-    if (NBWNetAC3Thread.ShutdownArrived)
-        return FALSE; // the application is already shutting down; no further action
-    NBWNetAC3Thread.Close();
+    if (!NBWNetAC3StartAndWait())
+        return FALSE;
 
     if (errProviderCode != NULL)
         *errProviderCode = NBWNetAC3ThreadFParams.errProviderCode;
@@ -275,6 +449,66 @@ BOOL NonBlockingWNetAddConnection3(DWORD& err, LPNETRESOURCE lpNetResource,
     if (errProviderName != NULL)
         lstrcpyn(errProviderName, NBWNetAC3ThreadFParams.errProviderName, 200);
     err = NBWNetAC3ThreadFParams.err;
+    return TRUE;
+}
+
+// feature 264: the wide twin of NonBlockingWNetAddConnection3 for reconnecting a remembered drive
+// (RestoreNetworkDriveW): the local name, the remote path, the user name and the provider are
+// passed to WNetAddConnection3W exactly and whole (heap copies - a path is never cut); no password
+// (the background attempt never has one, Windows' dialog asks for it on the UI thread).
+// FALSE = Esc, the application is shutting down, or the thread could not be started; TRUE = the
+// attempt ended, 'err' holds its result (ERROR_NOT_ENOUGH_MEMORY when the copies failed - never
+// an attempt with a missing user name). 'errBuf' / 'errProviderName' (300 / 200 units) receive
+// the provider's text of an ERROR_EXTENDED_ERROR.
+static BOOL NonBlockingWNetAddConnection3W(DWORD& err, const NETRESOURCEW* netResource, const WCHAR* userName,
+                                           DWORD dwFlags, DWORD* errProviderCode, WCHAR* errBuf, WCHAR* errProviderName)
+{
+    CALL_STACK_MESSAGE2("NonBlockingWNetAddConnection3W(, , , 0x%X, , ,)", dwFlags);
+
+    CEnterCriticalSection enterCS(NBWNetAC3CS);
+
+    err = 0;
+    *errProviderCode = 0;
+    errBuf[0] = 0;
+    errProviderName[0] = 0;
+
+    if (!NBWNetAC3WaitForPrevious())
+        return FALSE;
+
+    CNBWNetAC3ThreadFParams* data = &NBWNetAC3ThreadFParams;
+    data->heapLocalNameW = netResource->lpLocalName != NULL ? _wcsdup(netResource->lpLocalName) : NULL;
+    data->heapRemoteNameW = netResource->lpRemoteName != NULL ? _wcsdup(netResource->lpRemoteName) : NULL;
+    data->heapUserNameW = userName != NULL ? _wcsdup(userName) : NULL;
+    data->heapProviderW = netResource->lpProvider != NULL ? _wcsdup(netResource->lpProvider) : NULL;
+    if ((netResource->lpLocalName != NULL && data->heapLocalNameW == NULL) ||
+        (netResource->lpRemoteName != NULL && data->heapRemoteNameW == NULL) ||
+        (userName != NULL && data->heapUserNameW == NULL) ||
+        (netResource->lpProvider != NULL && data->heapProviderW == NULL))
+    {
+        NBWNetAC3FreeWide();
+        err = ERROR_NOT_ENOUGH_MEMORY;
+        return TRUE;
+    }
+    data->Wide = TRUE;
+    data->netResourceW = *netResource;
+    data->netResourceW.lpLocalName = data->heapLocalNameW;
+    data->netResourceW.lpRemoteName = data->heapRemoteNameW;
+    data->netResourceW.lpProvider = data->heapProviderW;
+    data->netResourceW.lpComment = NULL;
+    data->err = 0;
+    data->dwFlags = dwFlags;
+    data->errProviderCode = 0;
+    data->errBufW[0] = 0;
+    data->errProviderNameW[0] = 0;
+
+    if (!NBWNetAC3StartAndWait())
+        return FALSE; // after an Esc the thread keeps its strings; the next attempt frees them
+
+    NBWNetAC3FreeWide();
+    *errProviderCode = data->errProviderCode;
+    lstrcpynW(errBuf, data->errBufW, _countof(data->errBufW));
+    lstrcpynW(errProviderName, data->errProviderNameW, _countof(data->errProviderNameW));
+    err = data->err;
     return TRUE;
 }
 
@@ -818,18 +1052,153 @@ BOOL RestoreNetworkConnection(HWND parent, const char* name, const char* remoteN
     return ret;
 }
 
+// feature 264: shows the provider's text of an ERROR_EXTENDED_ERROR as RestoreNetworkConnection
+// does ("provider: (code) text"), in full Unicode
+static void ShowExtendedNetErrorW(HWND parent, const WCHAR* providerName, DWORD providerCode, const WCHAR* text)
+{
+    WCHAR buf[600];
+    _snwprintf_s(buf, _TRUNCATE, L"%s%s(%u) %s", providerName, (providerName[0] != 0 ? L": " : L""), providerCode, text);
+    char* bufU8 = SalWToU8Alloc(buf);
+    if (bufU8 != NULL)
+    {
+        SalMessageBox(parent, bufU8, LoadStr(IDS_NETWORKERROR), MB_OK | MB_ICONEXCLAMATION);
+        free(bufU8);
+    }
+    else
+        SalMessageBox(parent, GetErrorText(ERROR_EXTENDED_ERROR), LoadStr(IDS_NETWORKERROR), MB_OK | MB_ICONEXCLAMATION);
+}
+
+BOOL RestoreNetworkDriveW(HWND parent, char drive, const WCHAR* remote)
+{
+    CALL_STACK_MESSAGE2("RestoreNetworkDriveW(, %u, )", drive);
+
+    // the Windows 7+ flow of RestoreNetworkConnection for a mapped letter, wide: the remote path
+    // is handed to Windows exactly as Windows listed it (never converted, never cut)
+    WCHAR localName[3] = {(WCHAR)(BYTE)drive, L':', 0};
+    WCHAR* userName;
+    WCHAR* provider; // knowledge of the provider greatly speeds up the network response
+    GetRememberedNetDriveLogonW(drive, remote, &userName, &provider);
+
+    NETRESOURCEW ns;
+    memset(&ns, 0, sizeof(ns));
+    ns.dwType = RESOURCETYPE_DISK;
+    ns.lpLocalName = localName;
+    ns.lpRemoteName = (LPWSTR)remote;
+    ns.lpProvider = provider;
+
+    BOOL ret = TRUE;
+    BOOL connectInteractive = FALSE; // TRUE: WNetAddConnection3W shows Windows' dialog for user + password (blocking, the parent's thread)
+    DWORD err = 0;
+    while (ret)
+    {
+        err = 0;
+        DWORD errProviderCode = 0;
+        WCHAR errBuf[300];
+        errBuf[0] = 0;
+        WCHAR errProviderName[200];
+        errProviderName[0] = 0;
+
+        if (connectInteractive)
+        {
+            err = WNetAddConnection3W(parent, &ns, NULL, userName, CONNECT_INTERACTIVE | CONNECT_UPDATE_PROFILE);
+            if (err == ERROR_CANCELLED) // cancel
+            {
+                ret = FALSE;
+                break;
+            }
+            if (err == ERROR_EXTENDED_ERROR &&
+                WNetGetLastErrorW(&errProviderCode, errBuf, _countof(errBuf), errProviderName, _countof(errProviderName)) != NO_ERROR)
+            {
+                errProviderCode = 0;
+                errBuf[0] = 0;
+                errProviderName[0] = 0;
+            }
+        }
+        else
+        {
+            HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
+            CreateSafeWaitWindow(LoadStr(IDS_TRYINGRECONNECTESC), NULL, 3000, TRUE, NULL);
+            BOOL brk = !NonBlockingWNetAddConnection3W(err, &ns, userName, CONNECT_UPDATE_PROFILE, // we will remember the non-anonymous
+                                                       &errProviderCode, errBuf, errProviderName);
+            DestroySafeWaitWindow();
+            SetCursor(oldCur);
+            if (brk)
+            {
+                ret = FALSE; // ESC in NonBlockingWNetAddConnection3W()
+                err = ERROR_CANCELLED;
+                break;
+            }
+        }
+
+        if (err == ERROR_SESSION_CREDENTIAL_CONFLICT)
+        {
+            SalMessageBox(parent, LoadStr(IDS_CREDENTIALCONFLICT), LoadStr(IDS_NETWORKERROR),
+                          MB_OK | MB_ICONEXCLAMATION);
+            ret = FALSE;
+            break;
+        }
+
+        if (err == ERROR_ALREADY_ASSIGNED)
+        {
+            // probably a mistake - we are showing that the drive is not connected and yet it is connected -> let
+            // rebuild drive bar and change drive menu
+            if (MainWindow != NULL && MainWindow->HWindow != NULL)
+                PostMessage(MainWindow->HWindow, WM_USER_DRIVES_CHANGE, 0, 0);
+            break; // return TRUE
+        }
+
+        if (IsLogonFailureErr(err))
+        {
+            if (err == ERROR_EXTENDED_ERROR && errBuf[0] != 0)
+                ShowExtendedNetErrorW(parent, errProviderName, errProviderCode, errBuf);
+            else
+            {
+                if (!IsBadUserNameOrPasswdErr(err))
+                    SalMessageBox(parent, GetErrorText(err), LoadStr(IDS_NETWORKERROR), MB_OK | MB_ICONEXCLAMATION);
+            }
+            if (!connectInteractive) // try interactive mode only if it has not been used already (to prevent an infinite loop)
+            {
+                connectInteractive = TRUE;
+                continue;
+            }
+            ret = FALSE;
+            break;
+        }
+
+        if (err != ERROR_SUCCESS && err != ERROR_DEVICE_ALREADY_REMEMBERED)
+        {
+            SalMessageBox(parent, GetErrorText(err), LoadStr(IDS_NETWORKERROR), MB_OK | MB_ICONEXCLAMATION);
+            ret = FALSE;
+            break;
+        }
+
+        // connected: the drive bars and the Change Drive menu are rebuilt now (the notification
+        // can come late, see RestoreNetworkConnection)
+        if (MainWindow != NULL && MainWindow->HWindow != NULL)
+            PostMessage(MainWindow->HWindow, WM_USER_DRIVES_CHANGE, 0, 0);
+        break; // returning TRUE
+    }
+    free(userName);
+    free(provider);
+    return ret;
+}
+
 BOOL CheckAndRestoreNetworkConnection(HWND parent, const char drive, BOOL& pathInvalid)
 {
     CALL_STACK_MESSAGE2("CheckAndRestoreNetworkConnection(, %u,)", drive);
     pathInvalid = FALSE;
 
     DWORD netDrives; // bit array of network drives
-    char netRemotePath['z' - 'a' + 1][MAX_PATH];
-
-    GetNetworkDrives(netDrives, netRemotePath);
+    GetNetworkDrives(netDrives, NULL);
 
     if (netDrives & (1 << (LowerCase[drive] - 'a'))) // the drive existed, try to restore it
     {
+        // feature 264: the remembered path exactly as Windows keeps it (was the code-page form
+        // cut at MAX_PATH - 1 bytes); none -> nothing to restore it to, the caller reports the path
+        WCHAR* remote = GetRememberedNetDriveRemoteW(drive);
+        if (remote == NULL)
+            return FALSE;
+        BOOL ret = FALSE;
         char name[4] = " :";
         name[0] = drive;
         if (GetLogicalDrives() & (1 << (LowerCase[drive] - 'a'))) // theoretically there is nothing to do, it is accessible ... but on Vista after hibernation, the mapped disk can return the same error over and over again (e.g. "(31) device attached to system is not functioning"), we will discuss it only by accessing the UNC path, probably some MS error, but in Explorer it works, who knows what they are doing there
@@ -837,22 +1206,26 @@ BOOL CheckAndRestoreNetworkConnection(HWND parent, const char drive, BOOL& pathI
             name[2] = '\\';
             name[3] = 0;
             DWORD err = NO_ERROR;
-            char* netPath = netRemotePath[LowerCase[drive] - 'a'];
-            if (netPath[0] == '\\' && netPath[1] == '\\' && strchr(netPath + 2, '\\') != NULL &&                                   // at least a primitive test of a valid UNC path
+            char* netPath = SalWToU8Alloc(remote); // SalCheckPath takes UTF-8 (feature 264: it got code-page bytes)
+            if (netPath != NULL &&
+                netPath[0] == '\\' && netPath[1] == '\\' && strchr(netPath + 2, '\\') != NULL &&                                   // at least a primitive test of a valid UNC path
                 (err = SalCheckPath(FALSE, name, ERROR_SUCCESS, TRUE, parent)) != ERROR_SUCCESS && err != ERROR_USER_TERMINATED && // mapped disk is not accessible
                 (err = SalCheckPath(FALSE, netPath, ERROR_SUCCESS, TRUE, parent)) == ERROR_SUCCESS &&                              // UNC is accessible
                 (err = SalCheckPath(FALSE, name, ERROR_SUCCESS, TRUE, parent)) == ERROR_SUCCESS)                                   // now the mapped disk is accessible again
             {
-                return TRUE;
+                ret = TRUE;
             }
-            pathInvalid = err == ERROR_USER_TERMINATED;
-            return FALSE;
+            else
+                pathInvalid = err == ERROR_USER_TERMINATED;
+            free(netPath);
         }
         else
         {
-            pathInvalid = !RestoreNetworkConnection(parent, name, netRemotePath[LowerCase[drive] - 'a']);
-            return !pathInvalid;
+            pathInvalid = !RestoreNetworkDriveW(parent, drive, remote);
+            ret = !pathInvalid;
         }
+        free(remote);
+        return ret;
     }
     return FALSE;
 }
@@ -2747,8 +3120,8 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
         {
             // feature 246: the remote name comes from Windows' remembered connections, never from
             // the shown text (a Windows name, a doubled '&' or a text without a path would reach
-            // the reconnection); it is still the code-page form of 0.1.10, which the whole
-            // reconnection chain uses (backlog: drive-list-code-page-texts); a letter Windows still
+            // the reconnection); feature 264: exactly as Windows keeps it (wide, whole - it was the
+            // code-page form cut at MAX_PATH - 1 bytes) and reconnected wide; a letter Windows still
             // lists is not reconnected here - the path change reconnects it on access
             // (CheckAndRestoreNetworkConnection)
             char name[3] = " :";
@@ -2756,17 +3129,18 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
             int letterIndex = LowerCase[(BYTE)name[0]] - 'a';
             if (letterIndex >= 0 && letterIndex < 26 && (GetLogicalDrives() & (1u << letterIndex)) == 0)
             {
-                DWORD netDrives;
-                char netRemotePath['z' - 'a' + 1][MAX_PATH];
-                GetNetworkDrives(netDrives, netRemotePath);
-                if ((netDrives & (1u << letterIndex)) != 0 && netRemotePath[letterIndex][0] != 0)
+                WCHAR* remote = GetRememberedNetDriveRemoteW(name[0]);
+                if (remote != NULL)
                 {
 #ifdef _DEBUG
-                    // probe seam (feature 246)
-                    ProbeDrivesDump("RESTORE %c %s", name[0], netRemotePath[letterIndex]);
+                    // probe seam (feature 246; the exact path in UTF-8 since feature 264)
+                    char* remoteU8 = SalWToU8Alloc(remote);
+                    ProbeDrivesDump("RESTORE %c %s", name[0], remoteU8 != NULL ? remoteU8 : "<no memory>");
+                    free(remoteU8);
 #endif // _DEBUG
-                    if (!RestoreNetworkConnection(FilesWindow->HWindow, name, netRemotePath[letterIndex]))
+                    if (!RestoreNetworkDriveW(FilesWindow->HWindow, name[0], remote))
                         ret = FALSE;
+                    free(remote);
                 }
 #ifdef _DEBUG
                 else

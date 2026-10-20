@@ -14847,6 +14847,40 @@ static void TestNetDrive246()
     CHECK(!SalNetDriveIsDisconnected(TRUE, 0, 2, SALNETDRV_WNGC_DISCONNECTED));        // the level unanswered: state ignored
 }
 
+// feature 264: the saved path of a remembered drive matched to the path Windows lists for it
+static void TestNetDriveSameRemote264()
+{
+    CHECK(SalNetDriveSameRemote(L"\\\\srv\\share", L"\\\\srv\\share"));
+    CHECK(SalNetDriveSameRemote(L"\\\\SRV\\Share", L"\\\\srv\\share"));        // case ignored
+    CHECK(SalNetDriveSameRemote(L"\\\\srv\\share\\", L"\\\\srv\\share"));      // one trailing backslash, either side
+    CHECK(SalNetDriveSameRemote(L"\\\\srv\\share", L"\\\\srv\\share\\"));
+    CHECK(SalNetDriveSameRemote(L"\\\\srv\\share\\", L"\\\\srv\\share\\"));
+    CHECK(!SalNetDriveSameRemote(L"\\\\srv\\share\\\\", L"\\\\srv\\share"));  // only one is ignored
+    // outside ASCII and the code page: Cyrillic and Czech case pairs, CJK compared exactly
+    CHECK(SalNetDriveSameRemote(L"\\\\srv\\\x0410\x0440\x0445\x0438\x0432", L"\\\\SRV\\\x0430\x0440\x0445\x0438\x0432"));
+    CHECK(SalNetDriveSameRemote(L"\\\\srv\\\x017D\x0161", L"\\\\srv\\\x017E\x0160"));
+    CHECK(SalNetDriveSameRemote(L"\\\\srv\\\x4E2D\x6587", L"\\\\srv\\\x4E2D\x6587"));
+    CHECK(!SalNetDriveSameRemote(L"\\\\srv\\\x4E2D\x6587", L"\\\\srv\\\x4E2D\x6588"));
+    CHECK(!SalNetDriveSameRemote(L"\\\\srv\\a?", L"\\\\srv\\a\x0416")); // a code-page '?' is not the character
+    CHECK(!SalNetDriveSameRemote(L"\\\\srv\\share", L"\\\\srv\\shar"));  // a prefix is not the path
+    CHECK(!SalNetDriveSameRemote(L"\\\\srv\\share", L"\\\\srv\\share\\x"));
+    CHECK(!SalNetDriveSameRemote(L"\\\\srv\\share", L"\\\\srv2\\share"));
+    {
+        // whole paths of any length: a difference in the last character of a long path counts
+        std::wstring a = L"\\\\srv\\share\\" + std::wstring(600, L'\x0416');
+        std::wstring b = a;
+        CHECK(SalNetDriveSameRemote(a.c_str(), b.c_str()));
+        b[b.size() - 1] = L'\x0417';
+        CHECK(!SalNetDriveSameRemote(a.c_str(), b.c_str()));
+    }
+    CHECK(!SalNetDriveSameRemote(NULL, L"\\\\srv\\share"));
+    CHECK(!SalNetDriveSameRemote(L"\\\\srv\\share", NULL));
+    CHECK(!SalNetDriveSameRemote(NULL, NULL));
+    CHECK(SalNetDriveSameRemote(L"", L""));
+    CHECK(SalNetDriveSameRemote(L"\\", L""));
+    CHECK(!SalNetDriveSameRemote(L"", L"\\\\srv\\share"));
+}
+
 // feature 263: the start-up import of config.reg writes or deletes only keys inside the program's own root
 static void TestRegImportRoot263()
 {
@@ -15014,6 +15048,7 @@ int main(int argc, char** argv)
     TestCacheTmpPath260();
     TestCodeTable262();
     TestRegImportRoot263();
+    TestNetDriveSameRemote264();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -18,6 +18,8 @@
 //   SalNetDriveCleanName      a name read from that key, made safe for a menu
 //   SalNetDriveText           "Name (\\server\share\path)", or the path alone
 //   SalNetDriveIsDisconnected the drive's state from Windows' local answers
+//   SalNetDriveSameRemote     the saved path of a remembered drive is its path
+//                             (feature 264, reconnecting a remembered drive)
 //
 // Wide strings (the producers are WNetGetConnectionW and RegQueryValueExW; the
 // caller converts the result to UTF-8). Nothing is ever cut: a result that does
@@ -257,4 +259,24 @@ inline BOOL SalNetDriveIsDisconnected(BOOL listed, DWORD connResult, DWORD conn3
     if (connResult == SALNETDRV_ERROR_CONNECTION_UNAVAIL)
         return TRUE;
     return connResult == 0 && conn3Result == 0 && conn3State == SALNETDRV_WNGC_DISCONNECTED;
+}
+
+// feature 264: is the remote path saved with a remembered drive (HKCU\Network\<letter>\RemotePath)
+// the same path as the one Windows lists for the letter? Ordinal, case ignored (the file system's
+// rule; the code-page byte table of IsTheSamePath it replaces folded no letter outside ASCII and
+// the code page), one trailing backslash on either side ignored. FALSE for NULL. Nothing is cut:
+// both paths are compared whole.
+inline BOOL SalNetDriveSameRemote(const WCHAR* a, const WCHAR* b)
+{
+    if (a == NULL || b == NULL)
+        return FALSE;
+    int lenA = (int)wcslen(a);
+    int lenB = (int)wcslen(b);
+    if (lenA > 0 && a[lenA - 1] == L'\\')
+        lenA--;
+    if (lenB > 0 && b[lenB - 1] == L'\\')
+        lenB--;
+    if (lenA == 0 || lenB == 0)
+        return lenA == lenB;
+    return CompareStringOrdinal(a, lenA, b, lenB, TRUE) == CSTR_EQUAL;
 }
