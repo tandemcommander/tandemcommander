@@ -7,8 +7,8 @@ area: other-plugins
 source: review:070
 who: agent
 created: 2026-08-27
-updated: 2026-10-17
-verified: 2026-10-17 7993914c
+updated: 2026-10-20
+verified: 2026-10-20 bf05ffc9
 effort: L
 feature: -
 related: []
@@ -43,3 +43,4 @@ Area: the Code Viewer is a plug-in (other-plugins); its core-side viewer machine
 - 2026-08-27 — 070 stabilization review: F16 deferred - a feature, not a repair
 - 2026-10-17 — migrated from specs/*/REMAINING-WORK.md (feature 242)
 - 2026-10-17 — migration review N3: cross-reference to the final slug
+- 2026-10-20 — verified at bf05ffc9: present at bf05ffc9: intake.cpp decodes ANSI only with CP_ACP, F8 menu fixed 5; corpus cp852.bat shows mojibake on CP1250
