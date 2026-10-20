@@ -33,3 +33,50 @@ Backlog item `menu-popup-loop-wide-mnemonics` (leftover of 236 / 237).
 while another instance runs; NOT DRIVEN rows are recorded as such, the rules' saltests and the
 mechanism scripts carry the claim. E2 / E3 (LOW): other keys unchanged - checked by reading and the
 review; the closing documents are the run's step 8.
+
+## Work
+
+- `src/common/salmenuhotkey.h`: `SalMenuCharAnswer` (owner's answer -> MNC_SELECT / MNC_EXECUTE for an
+  existing index, else 0), `SalDlgHotKeyW` (UTF-16 hot key, "&&" literal, surrogates never),
+  `SalDlgHotKeyVkMatch` (ASCII letter / digit vs virtual key - the old comparison, for these only),
+  `SalDlgHotKeyCharMatch` (characters, case ignored). saltests in `TestMenuHotKey236`.
+- `src/menu2.cpp`: `CMenuPopup::TrackInternal` `PeekMessageW`; `DoDispatchMessage` passes
+  `(WCHAR)wParam` of `WM_CHAR` / `WM_SYSCHAR` to `OnChar(WCHAR)` and ends with `DispatchMessageW`.
+  `OnChar` sends `SendMessageW(HParent, WM_MENUCHAR, MAKEWPARAM(key, MF_POPUP), hMenu)` and carries out
+  select / execute for a non-separator item visible at the skill level (execute = `OnKeyReturn`).
+- `src/menu.h`: `OnChar(WCHAR, ...)`.
+- `src/finddlg1.cpp`: `GetControlHotKey` (now static) reads `GetDlgItemTextW` -> `SalDlgHotKeyW`;
+  `ManageHiddenShortcuts` handles `WM_SYSKEYDOWN` (by virtual key, as before) and `WM_SYSCHAR` (by
+  character; the Find loop is wide since 093 and runs this before `IsDialogMessageW`).
+- `probe/menuchar_def.ps1`: `DefWindowProcW` / `DefWindowProcA` answer 0 (MNC_IGNORE) to WM_MENUCHAR in
+  every form tried - an owner that does not handle it cannot make the popup execute an item.
+
+## Checks
+
+- `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s).
+- `.\build.cmd` -> BUILD SUCCEEDED, no warnings in the changed files (recompiled on purpose).
+- saltests: 24,474 checks, 0 failed (main: the 236 test without the 256 checks).
+- clang-format: the changed lines conform (pre-existing differences elsewhere in the files untouched).
+
+## Probe `pm256_probe.ps1` (hidden desktop)
+
+| Row | before (main 084744e0 sources, rebuilt) | after |
+|---|---|---|
+| ZH typed U+0416 | FAIL - ran the "&?" item (QM) | PASS - ran ZH |
+| CC typed U+010D | FAIL - no User Menu item ran; the popup took 'c' (the layout's code-page conversion) and opened the Configuration dialog (an item whose assigned hot key is C); END FAIL (that dialog stayed open) | PASS - ran CC |
+| AS typed 'q' | PASS | PASS |
+| registry | restored, identical | restored, identical |
+
+Before: PASS 3, FAIL 3 (`probe/result_before.txt`; one 70,869-character END line shortened for the
+record); after: PASS 6, FAIL 0 (`probe/result_after.txt`). The before run was made by checking out
+main's five source files on the branch, building, running, and checking the branch's files out again.
+
+## Not driven (owed to a person)
+
+- WM_MENUCHAR with a real owner-drawn shell extension (TortoiseSVN context menu: type a hot key of
+  one of its items) - no such extension on the hidden desktop.
+- The Find window's hidden hot keys: the check reads the real Alt state (`GetKeyState`), which posted
+  messages do not set; and every shipped language has ASCII hot keys there (the virtual-key route,
+  unchanged). Pure rules in saltests.
+- Real keyboard / IME: a DBCS system (Japanese, IME full-width hot key in a popup), a UTF-8 (beta)
+  system, a Russian keyboard layout on a Czech Windows with a User Menu item "&Ж...".

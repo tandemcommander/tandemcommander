@@ -1,0 +1,13 @@
+pm256_probe (feature 256) before-main-084744e0
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 06:30; registry key existed True; ACP 1250
+
+ZH         RUN    FAIL        typed U+0416; items run: QM; popup still open: False
+ZH         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CC         RUN    FAIL        typed U+010D; items run: none; popup still open: False
+CC         END    FAIL        exit did not exit in 30 s - ended by the probe; alive True; WM_NULL True; stray 139 ([#32770 'Configuration'] [#32770 id=0] User Menu | [Static id=361] M&enu Contents: | [Button id=366] Su&bmenu | [Button id=364] &Separator | [Button id=365] C&hange Icon... | [Static id=1150] &Command: | [Static id=1151] &Arguments: | [Static id=1152] &Initial directory: | [Button id= ...[line of 70869 characters shortened for the record: the Configuration dialog repeated at every exit poll]
+AS         RUN    PASS        typed U+0071; items run: AS; popup still open: False
+AS         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 42A66C5CB44348B026DBB5604B9FF8D037C0405FDFCE1A03EE434E3D2BD9CFF2 / after 42A66C5CB44348B026DBB5604B9FF8D037C0405FDFCE1A03EE434E3D2BD9CFF2
+
+Rows: PASS 3, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
