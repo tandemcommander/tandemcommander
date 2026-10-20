@@ -7,7 +7,7 @@ area: pictview
 source: leftover:142
 who: agent
 created: 2026-10-14
-updated: 2026-10-17
+updated: 2026-10-20
 verified: -
 effort: M
 feature: -
@@ -46,3 +46,4 @@ Also here (NEXT-WORK §A item 7): a refused Update Thumbnail says "Disk full?". 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md header and §B (person steps) (feature 242)
 - 2026-10-17 — migration review N3: cross-references to final slugs, merge remark reworded
 - 2026-10-17 — related item pictview-own-photos-pipette-histogram-print closed: done: steps carried out by hand by the maintainer before the 0.1.10 release; maintainer 2026-10-17
+- 2026-10-20 — feature 267: render1.cpp no longer calls EXIFGetOrientationInfo (auto-rotation reads the orientation through the WIC engine) - point (4) has no caller left; a wide twin is needed only if a new caller appears

@@ -39,7 +39,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
 | Privacy and security | 083, 085, 086, 090, 123 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258 |
-| PictView | 105, 111, 120 |
+| PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266 |
 | Crash reporting, antivirus findings | 077, 079 |
@@ -3364,3 +3364,25 @@ a few early ones are out of sequence).
   `file-comparator-hex-recompare-error-box-from-the-released`). From backlog item
   `plugin-close-forced-unload-and-stray-box`. 143 probe E4-E6 PASS 7 / 0 (as before), 147 probe K1
   PASS 2 / 0; one refute-first review (no MUST; SHOULD-1 fixed in texts, SHOULD-2 to the Inbox).
+- 267-pictview-exif-rotate: PictView's Exif information command never opened and photos with an
+  Exif orientation were never turned - the WIC engine of 006 never reported `PVFF_EXIF`, the gate of
+  the command, its menu enabler and the auto-rotation (the same cause 132 met for Update Thumbnail)
+  - now the engine reports it for a JPEG whose decoder holds an Exif block (`/app1/ifd`, asked of
+  the decoder's own metadata, no second read; 91 of 91 real files agree with an own walker), and
+  auto-rotation reads the orientation through WIC (`WicGetExifOrientation`, as the panel thumbnails
+  of 064) instead of EXIF.DLL's code-page `EXIFGetOrientationInfo` (a UTF-8 name would silently not
+  turn). Pure rule `src/common/salexiforient.h` (`SalExifOrientTurn`: the quarter turn first, then
+  the mirrors; the old table had 4 / 5 / 7 wrong). Traps: the old exception "recorded pixel size
+  portrait or different - do not turn" would show 7 of the 14 standard orientation samples of the
+  real set wrong (dropped; the item asks "turned by its tag"); the viewer's rotate command reverses
+  its direction while a mirror is on, and a window that reopens its file keeping the view (111) kept
+  the automatic mirror as the user's (review 2 S1: `fAutoMirror*`, only the user's part is kept,
+  the turn is chosen for the picture); Update Thumbnail keeps 132's own file check; Pillow turns a
+  TIFF on load (no oracle for "as stored"). Limits: JPEG only - TIFF / camera raw left (Inbox
+  `pictview-no-exif-command-and-no-automatic-turn-for-tiff-and`); the menu item's enabled / grayed
+  state is owed to a person (`pictview-check-the-exif-information-menu-item-is-offered`); the
+  first reviewer fast-forwarded `main` and was interrupted mid-probe (registry restored from its
+  backup). From backlog item `pictview-exif-dialog-and-auto-rotation`. Probe `pv267_probe.ps1`
+  PASS 32 / FAIL 33 -> 80 / 0 (reopen rows 12 / 3 -> 15 / 0, negative control with the old table
+  o4 / o5 / o7 FAIL); 132 Update Thumbnail 16 / 0, 120 20 / 0; saltests 24,757 / 0; two
+  refute-first reviews (1 interrupted without a report; 2 no MUST, SHOULD S1 fixed).

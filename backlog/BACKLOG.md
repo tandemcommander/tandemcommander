@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [PictView: the Exif dialog and auto-rotation never work with the built-in engine](items/pictview-exif-dialog-and-auto-rotation/desc.md) | feature | 3 | pictview | 267 |
 
 ## Next
 
@@ -184,6 +183,8 @@ Last triaged: 2026-10-19
 | [Paste and drop of our own files keep a code-page fallback for a name on low memory](items/paste-and-drop-of-our-own-files-keep-a-code-page-fallback/desc.md) | bug | 3 | encoding | review:259 | 2026-10-20 |
 | [Paste of a case twin from an archive and SFTP twins by hand (252)](items/paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand/desc.md) | person-step | 5 | archives | leftover:252 | 2026-10-20 |
 | [Paste of a long name into its own folder: check the copy name and the too long question](items/paste-of-a-long-name-into-its-own-folder-check-the-copy-name/desc.md) | person-step | 5 | long-paths | leftover:259 | 2026-10-20 |
+| [PictView: check the Exif information menu item is offered only for photos with Exif](items/pictview-check-the-exif-information-menu-item-is-offered/desc.md) | person-step | 2 | pictview | leftover:267 | 2026-10-20 |
+| [PictView: no Exif command and no automatic turn for TIFF and camera raw files](items/pictview-no-exif-command-and-no-automatic-turn-for-tiff-and/desc.md) | improvement | 2 | pictview | leftover:267 | 2026-10-20 |
 | [The build runs the plug-in encoding scan strictly for the shipped plug-ins](items/plugin-encoding-scan-strict-in-build/desc.md) | tech-debt | 2 | tooling | leftover:255 | 2026-10-20 |
 | [Popup menu hot keys by hand: Russian layout, DBCS and UTF-8 systems, TortoiseSVN](items/popup-hot-keys-real-keyboard-256/desc.md) | person-step | 3 | panels-ui | leftover:256 | 2026-10-20 |
 | [Registry Editor Find: confirm quoted hex letters with a UTF-8 code page](items/regedit-find-hex-utf8-code-page-check-257/desc.md) | person-step | 3 | other-plugins | leftover:257 | 2026-10-20 |

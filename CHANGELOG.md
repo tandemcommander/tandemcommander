@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **PictView never turned photos taken with the camera held upright, and its Exif information command never opened** (feature 267).
+  - **Before:** a phone or camera photo taken upright is stored sideways with an orientation tag in its Exif block. PictView showed every such photo lying on its side, although its setting "Autorotate EXIF JPEG images (digital camera pictures)" (on by default) promised to turn it. File > Exif information (also in the viewer's right-click menu) stayed unavailable for every picture. Both had been switched off by mistake since the viewer got its built-in image engine.
+  - **Now:** with that setting on, a JPEG photo is shown the way its orientation tag says - turned by a quarter or half, or mirrored, for all eight values of the tag, also when its name has letters outside the system's code page. File > Exif information is available for a JPEG with an Exif block and lists its tags (camera, date, exposure, orientation...); for a picture without Exif it stays unavailable. A photo is now turned by its tag even when the picture size recorded in the tag differs from the picture (PictView used to make an exception there, which showed many correctly tagged photos wrong). Update Thumbnail behaves as before.
+  - **Limitation:** only JPEG files: TIFF and camera raw files are still shown as stored and get no Exif command (recorded for a later change). Whether the menu item looks enabled or grayed has been checked through the command only; a person has not yet looked at the menu.
+
 - **Closing the File Comparator while it was still comparing two binary files could show a stray "cannot access the file" box** (feature 266).
   - **Before:** when the comparator's window was closed while a comparison in the hex view was still running, a file error the view had just reported (and not yet shown) could appear as an error box with Retry / Cancel over the closing window, and Cancel then asked whether to close the comparison - although the window was already going away. The timing was narrow.
   - **Now:** once the window has begun to close, such a pending error shows no box and the window closes. Errors reported while the window stays open show their box as before.
