@@ -3271,19 +3271,33 @@ CCfgPageHotPath::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 EnableHeader();
                 if (nmhd->item.pszText != NULL)
                 {
-                    char name[MAX_PATH];
+                    char nameBuf[MAX_PATH];
+                    char* nameAlloc = NULL;
+                    char* name = nameBuf;
                     // feature 010: the A notification delivers ACP-mangled text;
-                    // read the label-edit control wide and convert to UTF-8
+                    // read the label-edit control wide and convert to UTF-8;
+                    // feature 270: read whole - a name that does not fit MAX_PATH is
+                    // refused by Validate at OK (it used to be stored cut)
                     HWND hEdit = ListView_GetEditControl(HListView);
                     if (hEdit != NULL)
-                        SalGetWindowTextU8(hEdit, name, MAX_PATH);
+                    {
+                        nameAlloc = SalGetWindowTextU8Alloc(hEdit);
+                        if (nameAlloc == NULL)
+                        {
+                            TRACE_E(LOW_MEMORY);
+                            break;
+                        }
+                        name = nameAlloc;
+                    }
                     else
-                        lstrcpyn(name, nmhd->item.pszText, MAX_PATH);
+                        lstrcpyn(nameBuf, nmhd->item.pszText, MAX_PATH);
                     Config->CleanName(name);
                     int index = nmhd->item.iItem;
                     // feature 047: in-place edit changes only the custom name; an empty
                     // result is valid and means the row displays its path again
                     Config->SetName(index, name);
+                    if (nameAlloc != NULL)
+                        free(nameAlloc);
                     RefreshItemLabel(index);
                     LoadControls();
                     Dirty = TRUE;

@@ -146,8 +146,9 @@ selected and its name field shown whole.
 
 - **SC-001**: The probe's 6 refusal rows that fail at 11e20a84 (`sel-mask`, `unsel-mask`,
   `conv-mask`, `flt`, `flt-unused`, `hp-label`) pass, and `vol` passes (refused before any write).
-- **SC-002**: The 5 control rows (`sel-ctl`, `conv-ctl`, `flt-ctl`, `hp-label-ctl`, and every
-  dialog's text that fits) still pass.
+- **SC-002**: The 4 control rows (`sel-ctl`, `conv-ctl`, `flt-ctl`, `hp-label-ctl`: text that
+  fits) still pass; the volume label that fits is checked by reading (driving it would write the
+  label).
 - **SC-003**: No file outside the typed mask is converted (`M.txt` unchanged in `conv-mask`).
 - **SC-004**: Feature 251's probe still passes (42 / 0) - the hot path page's checks are unchanged.
 

@@ -1,0 +1,30 @@
+mask270_probe (feature 270) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 22:30; ACP 1250; registry key existed True
+M = 86 CJK letters (258 bytes)
+
+sel-mask   RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+sel-mask   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+unsel-mask RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+unsel-mask END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sel-ctl    RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+sel-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+conv-mask  RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True; M.txt CRLF line ends: 0 (0 = unchanged)
+conv-mask  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+conv-ctl   RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's history: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'; M.txt CRLF line ends: 2 (2 = converted)
+conv-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+flt        RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+flt        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+flt-unused RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+flt-unused END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+flt-ctl    RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+flt-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vol        RUN    PASS        typed 140 units / 280 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 140 units, same as typed: True; label of C:\: before '', after ''
+vol        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hp-label   RUN    PASS        typed 100 units / 300 bytes; the name field after Enter: 100 units; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the name field at the refusal: 100 units, same as typed: True
+hp-label   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hp-label-ctl RUN    PASS        typed 86 units / 258 bytes; the name field after Enter: 86 units; dialog stayed: False; asked: nothing; stored name: 86 units / 258 bytes, same as typed: True, tail '...\u4E51\u4E52\u4E53\u4E54\u4E55\u4E56'
+hp-label-ctl END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 22, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

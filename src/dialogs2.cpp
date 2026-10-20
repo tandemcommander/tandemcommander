@@ -571,6 +571,9 @@ void CSelectDialog::Validate(CTransferInfo& ti)
     {
         if (ti.Type == ttDataFromWindow)
         {
+            // feature 270: a mask whose UTF-8 form does not fit is refused - cut, it selected other files
+            if (!DlgItemTextFitsU8(HWindow, IDE_FILEMASK, &ti, MAX_PATH))
+                return;
             char buf[MAX_PATH];
             strcpy(buf, Mask);                        // backup
             SalGetWindowTextU8(hWnd, Mask, MAX_PATH); // mask matched against UTF-8 names (feature 005)

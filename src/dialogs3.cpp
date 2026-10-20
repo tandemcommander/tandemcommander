@@ -74,6 +74,9 @@ void CConvertFilesDlg::Validate(CTransferInfo& ti)
     {
         if (ti.Type == ttDataFromWindow)
         {
+            // feature 270: a mask whose UTF-8 form does not fit is refused - cut, it converted other files
+            if (!DlgItemTextFitsU8(HWindow, IDE_FILEMASK, &ti, MAX_PATH))
+                return;
             char buf[MAX_PATH];
             SendMessage(hWnd, WM_GETTEXT, MAX_PATH, (LPARAM)buf);
             CMaskGroup mask(buf);
@@ -270,6 +273,10 @@ CFilterDialog::CFilterDialog(HWND parent, CMaskGroup* filter, char** filterHisto
 void CFilterDialog::Validate(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CFilterDialog::Validate()");
+    // feature 270: Transfer stores the field (masks string, history) also when the filter is not
+    // used - a filter whose UTF-8 form does not fit is refused, never stored cut
+    if (!DlgItemTextFitsU8(HWindow, IDE_FILTER, &ti, MAX_PATH))
+        return;
     BOOL useFilter;
     ti.RadioButton(IDC_DONTUSEFILTER, FALSE, useFilter);
     ti.RadioButton(IDC_USEFILTER, TRUE, useFilter);
@@ -1310,6 +1317,10 @@ void CDriveInfo::Validate(CTransferInfo& ti)
     HWND edit;
     if (ti.GetControl(edit, IDE_VOLNAME) && ti.Type == ttDataFromWindow)
     {
+        // feature 270: a label whose UTF-8 form does not fit is refused before any write (the
+        // field has no limit; a cut label used to be passed to SetVolumeLabel)
+        if (!DlgItemTextFitsU8(HWindow, IDE_VOLNAME, &ti, MAX_PATH))
+            return;
         char newName[MAX_PATH];
         SalGetWindowTextU8(edit, newName, MAX_PATH); // volume label is UTF-8 (feature 005)
 
