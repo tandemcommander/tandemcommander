@@ -1,0 +1,19 @@
+createdir274_probe (feature 274) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 01:11; desktop 'tc_probe_7456'; ACP 1250; registry key existed True; export SHA-256 BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74; deep folder 288 bytes
+
+SHORT      ROW    PASS        typed 2 bytes (nd); the panel folder (45 bytes) holds the expected name (2 bytes); dialogs: typed into [Create Directory]
+SHORT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REL        ROW    FAIL        typed 2 bytes (nd); the panel folder (288 bytes) holds no folder; dialogs: typed into [Create Directory] || [#32770 'Error Creating Directory'] [Static id=2477] The path specified is too long. | [Button id=1] OK || [Create Directory] came back - cancelled
+REL        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CJK        ROW    FAIL        typed 300 bytes (<CJK letters>); the panel folder (288 bytes) holds no folder; dialogs: typed into [Create Directory] || [#32770 'Error Creating Directory'] [Static id=2477] The path specified is too long. | [Button id=1] OK || [Create Directory] came back - cancelled
+CJK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U255       ROW    FAIL        typed 765 bytes (<CJK letters>); the panel folder (44 bytes) holds no folder; dialogs: typed into [Create Directory] || [#32770 'Error Creating Directory'] [Static id=2477] The path specified is too long. | [Button id=1] OK || [Create Directory] came back - cancelled
+U255       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U256       ROW    FAIL        typed 768 bytes; the panel folder (44 bytes) holds no folder; 'too long name' shown False; dialogs: typed into [Create Directory] || [#32770 'Error Creating Directory'] [Static id=2477] The path specified is too long. | [Button id=1] OK || [Create Directory] came back - cancelled
+U256       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LIMIT      ROW    PASS        typed 98244 bytes; the panel folder (288 bytes) holds no folder; 'The path specified is too long.' shown True; dialogs: typed into [Create Directory] || [#32770 'Error Creating Directory'] [Static id=2477] The path specified is too long. | [Button id=1] OK || [Create Directory] came back - cancelled
+LIMIT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 8, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
