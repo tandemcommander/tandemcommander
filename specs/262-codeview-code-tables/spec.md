@@ -25,6 +25,8 @@ Measured at `bf05ffc9` (machine code page 1250): the corpus file
 - Q: How is a table applied? → A: Exactly as the built-in viewer shows it: every byte goes through the 256-byte table and the result is read in the system code page; the status bar names the table (autonomous run: item)
 - Q: How is the choice remembered? → A: The chosen table's name is kept in the Code Viewer's own settings - the counterpart of the built-in viewer's remembered default conversion - and is applied to every later file the Code Viewer reads as single-byte; choosing *System code page* forgets it; without a remembered table (the default) the Code Viewer behaves exactly as today (autonomous run: item + conservative)
 - Q: Should the Code Viewer recognize the code page automatically (the built-in viewer's *Auto-Select*) or offer a separate *Set as default* command? → A: No - both need new UI strings (a translation refresh a run cannot do) and automatic recognition would change files that decode correctly today; recorded as a leftover backlog item (autonomous run: conservative)
+- Q: When a table is chosen in one Code Viewer window, do other open Code Viewer windows re-decode their files? → A: No - they keep what they show; the remembered table applies to files opened (or re-opened by next / previous file) afterwards (autonomous run: conservative)
+- Q: Which Encoding menu entry is checked when a remembered table decoded the file without the user choosing it now? → A: The table's entry, and the status bar names it - the menu always shows how the open file was decoded (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -119,8 +121,9 @@ table chosen.
   conversion table the built-in viewer's *Convert* menu lists, in the same order, with the same
   separators and names.
 - **FR-002**: Choosing a table MUST re-decode the open file: each byte replaced by the table's byte,
-  the result read in the system code page; the menu MUST check the chosen entry and the status bar
-  MUST name the table (without `&`).
+  the result read in the system code page; the menu MUST check the entry that decoded the open file
+  (also when a remembered table was applied automatically) and the status bar MUST name the table
+  (without `&`).
 - **FR-003**: F8 / Shift+F8 MUST cycle through the five entries and all tables (separators
   skipped), wrapping around.
 - **FR-004**: The chosen table's name MUST be kept in the Code Viewer's settings and survive a
@@ -138,6 +141,8 @@ table chosen.
   the core stores.
 - **FR-009**: A failed re-read after a choice MUST keep the open view, its encoding and the
   remembered table as they were.
+- **FR-010**: Choosing a table in one window MUST NOT re-decode files open in other Code Viewer
+  windows; they pick up the remembered table only when they open (or move to) another file.
 
 ### Key Entities
 
