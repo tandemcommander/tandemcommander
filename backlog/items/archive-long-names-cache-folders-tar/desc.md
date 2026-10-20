@@ -1,16 +1,16 @@
 ---
 title: Archives: long member names refused by the cache, long folders skipped
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: archives
 source: review:222
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 b8d1f7d0
 effort: M
-feature: -
+feature: 260
 related: []
 depends-on: []
 reason: -
@@ -33,3 +33,5 @@ F3 / F4 of a member with a long valid name works (or the refusal names the limit
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at b8d1f7d0: at b8d1f7d0: 222 probe LONG - F4 of a 94-unit/274-byte ZIP member refused by the disk cache (byte MAX_PATH tmp path); gunzip.cpp ORIG_NAME read into char[MAX_PATH], rest dropped; long folders already reported by every archiver
+- 2026-10-20 — run started, feature 260
