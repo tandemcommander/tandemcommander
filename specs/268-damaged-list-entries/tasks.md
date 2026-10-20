@@ -24,16 +24,16 @@ paths (FR-001 - FR-006).
 **Independent test**: the probe - the nine damaged rows save the good entries in order, no row reports
 a handle left open, the wrong-type rows show at most one box; the CONTROL rows unchanged.
 
-- [ ] T003 [P] [US1] In src/salamdr2.cpp, LoadViewers and LoadEditors: remove the `else break;` after the required-value test so a damaged entry reaches `itoa(++i, buf, 10)` and `CloseKey(subKey)`; add `CloseKey(subKey)` before each low-memory `break` (item not created / not added); keep the body for a readable entry unchanged; a short English comment naming feature 268
-- [ ] T004 [P] [US1] In src/mainwnd2.cpp, CMainWindow::LoadConfig, the User Menu loop: the same change (remove `else break;`, close the key before the two low-memory `break`s, comment naming feature 268)
-- [ ] T005 [US1] Build Debug x64 with `.\build.cmd` (PowerShell) - BUILD SUCCEEDED
-- [ ] T006 [US1] Run the probe on the new build (quickstart.md), record specs/268-damaged-list-entries/probe/result_after.txt (expected PASS 48, FAIL 0, registry restored identical) and the result in specs/268-damaged-list-entries/fix-log.md
+- [X] T003 [P] [US1] In src/salamdr2.cpp, LoadViewers and LoadEditors: remove the `else break;` after the required-value test so a damaged entry reaches `itoa(++i, buf, 10)` and `CloseKey(subKey)`; add `CloseKey(subKey)` before each low-memory `break` (item not created / not added); keep the body for a readable entry unchanged; a short English comment naming feature 268
+- [X] T004 [P] [US1] In src/mainwnd2.cpp, CMainWindow::LoadConfig, the User Menu loop: the same change (remove `else break;`, close the key before the two low-memory `break`s, comment naming feature 268)
+- [X] T005 [US1] Build Debug x64 with `.\build.cmd` (PowerShell) - BUILD SUCCEEDED
+- [X] T006 [US1] Run the probe on the new build (quickstart.md), record specs/268-damaged-list-entries/probe/result_after.txt (expected PASS 48, FAIL 0, registry restored identical) and the result in specs/268-damaged-list-entries/fix-log.md
 
 ## Phase 4: Polish & cross-cutting
 
-- [ ] T007 Run `python tools/check_encoding.py --strict` (TOTAL: 0 finding(s)) and saltests (`build\tandemcommander\Debug_x64\saltests\saltests.exe`, 0 failed); record in specs/268-damaged-list-entries/fix-log.md
-- [ ] T008 Check clang-format on the edited lines of src/salamdr2.cpp and src/mainwnd2.cpp (no change expected)
-- [ ] T009 Record the settings-import mismatch (SalCfgImpParseViewers / SalCfgImpParseUserMenu in src/common/salcfgimport.h still end the viewers, editors and User Menu lists at a damaged source entry; the loaders now skip it) as an Inbox item via `BL new` (source measure:268, related settings-import-ends-the-highlighting-list-at-a-damaged)
+- [X] T007 Run `python tools/check_encoding.py --strict` (TOTAL: 0 finding(s)) and saltests (`build\tandemcommander\Debug_x64\saltests\saltests.exe`, 0 failed); record in specs/268-damaged-list-entries/fix-log.md
+- [X] T008 Check clang-format on the edited lines of src/salamdr2.cpp and src/mainwnd2.cpp (no change expected)
+- [X] T009 Record the settings-import mismatch (SalCfgImpParseViewers / SalCfgImpParseUserMenu in src/common/salcfgimport.h still end the viewers, editors and User Menu lists at a damaged source entry; the loaders now skip it) as an Inbox item via `BL new` (source measure:268, related settings-import-ends-the-highlighting-list-at-a-damaged)
 
 ## Dependencies
 

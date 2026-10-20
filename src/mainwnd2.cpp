@@ -3005,6 +3005,9 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
 
             while (OpenKey(actKey, buf, subKey))
             {
+                // feature 268: an item without a readable name, command, "through shell" or "close shell"
+                // value is skipped and the items after it are loaded - it used to end the menu, and the
+                // save on exit erased the rest; every path closes the item's key
                 if (GetValue(subKey, USERMENU_ITEMNAME_REG, REG_SZ, name, MAX_PATH) &&
                     GetValue(subKey, USERMENU_COMMAND_REG, REG_SZ, command, MAX_PATH) &&
                     GetValue(subKey, USERMENU_SHELL_REG, REG_DWORD,
@@ -3123,6 +3126,7 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                         {
                             delete item;
                             UserMenuItems->ResetState();
+                            CloseKey(subKey);
                             break;
                         }
                     }
@@ -3131,11 +3135,10 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                         if (item != NULL)
                             delete item;
                         TRACE_E(LOW_MEMORY);
+                        CloseKey(subKey);
                         break;
                     }
                 }
-                else
-                    break;
                 itoa(++i, buf, 10);
                 CloseKey(subKey);
             }

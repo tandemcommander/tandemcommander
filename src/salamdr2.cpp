@@ -2644,6 +2644,9 @@ BOOL LoadViewers(HKEY hKey, const char* name, CViewerMasks* viewerMasks)
 
         while (OpenKey(viewersKey, buf, subKey))
         {
+            // feature 268: an entry without readable masks (or with '|' in them) or type is skipped and
+            // the entries after it are loaded - it used to end the list, and the save on exit erased the
+            // rest; every path closes the entry's key
             if (GetValue(subKey, VIEWERS_MASKS_REG, REG_SZ, masks, MAX_PATH) &&
                 strchr(masks, '|') == NULL &&
                 GetValue(subKey, VIEWERS_TYPE_REG, REG_DWORD, &type, sizeof(DWORD)))
@@ -2670,6 +2673,7 @@ BOOL LoadViewers(HKEY hKey, const char* name, CViewerMasks* viewerMasks)
                     {
                         delete item;
                         viewerMasks->ResetState();
+                        CloseKey(subKey);
                         break;
                     }
                 }
@@ -2678,11 +2682,10 @@ BOOL LoadViewers(HKEY hKey, const char* name, CViewerMasks* viewerMasks)
                     if (item != NULL)
                         delete item;
                     TRACE_E(LOW_MEMORY);
+                    CloseKey(subKey);
                     break;
                 }
             }
-            else
-                break;
             itoa(++i, buf, 10);
             CloseKey(subKey);
         }
@@ -2745,6 +2748,8 @@ BOOL LoadEditors(HKEY hKey, const char* name, CEditorMasks* editorMasks)
 
         while (OpenKey(editorKey, buf, subKey))
         {
+            // feature 268: an entry without readable masks is skipped and the entries after it are loaded
+            // (it used to end the list); every path closes the entry's key
             if (GetValue(subKey, EDITORS_MASKS_REG, REG_SZ, masks, MAX_PATH))
             {
                 if (!GetValue(subKey, EDITORS_COMMAND_REG, REG_SZ, command, MAX_PATH))
@@ -2768,6 +2773,7 @@ BOOL LoadEditors(HKEY hKey, const char* name, CEditorMasks* editorMasks)
                     {
                         delete item;
                         editorMasks->ResetState();
+                        CloseKey(subKey);
                         break;
                     }
                 }
@@ -2776,11 +2782,10 @@ BOOL LoadEditors(HKEY hKey, const char* name, CEditorMasks* editorMasks)
                     if (item != NULL)
                         delete item;
                     TRACE_E(LOW_MEMORY);
+                    CloseKey(subKey);
                     break;
                 }
             }
-            else
-                break;
             itoa(++i, buf, 10);
             CloseKey(subKey);
         }

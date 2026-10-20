@@ -199,6 +199,7 @@ Last triaged: 2026-10-20
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Settings import ends the viewers, editors and User Menu lists at a damaged entry](items/settings-import-ends-the-viewers-editors-and-user-menu-lists/desc.md) | bug | 3 | panels-ui | measure:268 | 2026-10-20 |
 
 ## Parked
 

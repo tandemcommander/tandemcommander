@@ -75,3 +75,36 @@ low-memory paths cannot be driven) accepted - checked by reading. F1 (LOW, the s
 highlighting import item for the import of the other lists) fixed: the settings import parsers
 `SalCfgImpParseViewers` / `SalCfgImpParseUserMenu` (`src/common/salcfgimport.h`) also end their lists
 at a damaged source entry - outside the item, task T009 records it in the Inbox.
+
+## Fix
+
+- `src/salamdr2.cpp`, `LoadViewers` and `LoadEditors`: the `else break;` after the required-value test
+  is gone - a damaged entry falls through to `itoa(++i, buf, 10)` and `CloseKey(subKey)`, so it is
+  closed and skipped; the two low-memory `break`s (item not created / not added) now close the key
+  first and still end the list. The body for a readable entry is unchanged.
+- `src/mainwnd2.cpp`, `CMainWindow::LoadConfig`, User Menu loop: the same change.
+- clang-format (VS 2022 LLVM): no change on the edited lines (two pre-existing differences elsewhere in
+  `salamdr2.cpp`, not touched).
+
+## After
+
+- `.\build.cmd` - BUILD SUCCEEDED (exit 0).
+- Probe (`probe/result_after.txt`):
+
+  ```
+  powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\268-damaged-list-entries\probe\result_after.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\268-damaged-list-entries\probe\dmg268_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Label after"
+  ```
+
+  **PASS 48, FAIL 0** (before 30 / 18), registry restored identical (SHA-256 260702C3...). Saved lists:
+  V-NOTYPE a,c; V-PIPE a,c; V-NOMASKS b,c; AV-NOTYPE a,c; E-NOMASKS a,c; E-WRONGTYPE a,c; E-MULTI c;
+  U-NONAME a,c; U-WRONGTYPE a,c; the CONTROL rows a,b,c. No KEYS row reports a handle left open. The
+  wrong-type rows show the existing box once, as before.
+- The low-memory paths (key closed before the `break`) cannot be driven; checked by reading.
+- `python tools/check_encoding.py --strict` - TOTAL: 0 finding(s).
+- `saltests.exe` - saltests: 24757 checks, 0 failed.
+
+## Inbox
+
+- `settings-import-ends-the-viewers-editors-and-user-menu-lists` (measure:268) - the settings import's
+  parsers (`src/common/salcfgimport.h`) still end these lists at a damaged source entry; the loaders now
+  skip it. Related to `settings-import-ends-the-highlighting-list-at-a-damaged`.
