@@ -11906,6 +11906,34 @@ static void TestDeleteAsDirLink197()
     CHECK(!SalDeleteAsDirLinkDecision(FALSE, TRUE, 0));          // no reparse point (any more)
 }
 
+// feature 253: Change Attributes on a directory link changes the link's own compression and times
+// (opened with FILE_FLAG_OPEN_REPARSE_POINT) and refuses an encryption change - the target folder
+// was compressed, uncompressed and re-timed through the link
+static void TestAttrsLink253()
+{
+    const DWORD dir = FILE_ATTRIBUTE_DIRECTORY;
+    const DWORD rp = FILE_ATTRIBUTE_REPARSE_POINT;
+    const DWORD enc = FILE_ATTRIBUTE_ENCRYPTED;
+    CHECK(SalAttrsEntryIsDirLink(dir | rp, TRUE));                               // a junction
+    CHECK(SalAttrsEntryIsDirLink(dir | rp | FILE_ATTRIBUTE_HIDDEN | enc, TRUE)); // other bits do not matter
+    CHECK(!SalAttrsEntryIsDirLink(dir | rp, FALSE));                             // a cloud placeholder folder
+    CHECK(!SalAttrsEntryIsDirLink(dir, TRUE));                                   // a plain folder
+    CHECK(!SalAttrsEntryIsDirLink(rp | FILE_ATTRIBUTE_ARCHIVE, TRUE));           // a file symbolic link: unchanged
+    CHECK(!SalAttrsEntryIsDirLink(0, FALSE));
+
+    CHECK(SalAttrsOpenFlags(FALSE, FALSE) == 0);                                                         // a file
+    CHECK(SalAttrsOpenFlags(FALSE, TRUE) == 0);                                                          // never for a file
+    CHECK(SalAttrsOpenFlags(TRUE, FALSE) == FILE_FLAG_BACKUP_SEMANTICS);                                 // a plain folder: as before
+    CHECK(SalAttrsOpenFlags(TRUE, TRUE) == (FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)); // the link itself
+
+    CHECK(SalAttrsLinkRefusesEncryption(TRUE, TRUE, dir | rp, dir | rp | enc));                    // encrypt a link
+    CHECK(SalAttrsLinkRefusesEncryption(TRUE, TRUE, dir | rp | enc, dir | rp));                    // decrypt a link
+    CHECK(!SalAttrsLinkRefusesEncryption(TRUE, TRUE, dir | rp | enc, dir | rp | enc));             // already encrypted
+    CHECK(!SalAttrsLinkRefusesEncryption(TRUE, TRUE, dir | rp, dir | rp | FILE_ATTRIBUTE_HIDDEN)); // stays unencrypted
+    CHECK(!SalAttrsLinkRefusesEncryption(TRUE, FALSE, dir | rp, dir | rp | enc));                  // encryption not changed
+    CHECK(!SalAttrsLinkRefusesEncryption(FALSE, TRUE, dir, dir | enc));                            // not a link: encrypted as before
+}
+
 // feature 222: a name's whole-character prefix within UTF-16 units and bytes
 static void TestNamePrefixBytes222()
 {
@@ -14125,6 +14153,7 @@ int main(int argc, char** argv)
     TestShellLinkLoadName181();
     TestMultiSzToLine189();
     TestDeleteAsDirLink197();
+    TestAttrsLink253();
     TestReparseNameAsPath219();
     TestNamePrefixBytes222();
     TestShortNameClashError203();

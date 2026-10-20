@@ -18,6 +18,8 @@
 // Only a readable tag that is not a name surrogate (a cloud placeholder, feature 062 C3) - or no
 // tag at all - is a plain directory.
 //
+// Feature 253: what Change Attributes does with a directory link's own entry (below).
+//
 // Header-only; needs <windows.h>; checked by saltests.
 //
 //*****************************************************************************
@@ -29,6 +31,33 @@ inline BOOL SalDeleteAsDirLinkDecision(BOOL destinationRead, BOOL tagRead, DWORD
     if (!tagRead)
         return TRUE; // cannot tell: never emptied through what may be a link
     return tag != 0 && (tag & 0x20000000) != 0; // IsReparseTagNameSurrogate
+}
+
+// feature 253: Change Attributes on a directory link's own entry (213 stopped the walk into it)
+// opened the link without FILE_FLAG_OPEN_REPARSE_POINT - the TARGET folder was compressed,
+// uncompressed and re-timed. A folder listed with the reparse bit that the Delete rule above takes
+// for a link ('deleteAsDirLink', asked only when both bits are set) is a directory link:
+inline BOOL SalAttrsEntryIsDirLink(DWORD listedAttr, BOOL deleteAsDirLink)
+{
+    return (listedAttr & FILE_ATTRIBUTE_DIRECTORY) != 0 && (listedAttr & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+           deleteAsDirLink;
+}
+
+// the CreateFile flags that reach the entry itself: a folder needs FILE_FLAG_BACKUP_SEMANTICS, a
+// directory link also FILE_FLAG_OPEN_REPARSE_POINT (its compression and times are its own, measured)
+inline DWORD SalAttrsOpenFlags(BOOL isDir, BOOL isDirLink)
+{
+    if (!isDir)
+        return 0;
+    return FILE_FLAG_BACKUP_SEMANTICS | (isDirLink ? FILE_FLAG_OPEN_REPARSE_POINT : 0);
+}
+
+// EncryptFile / DecryptFile take a path and follow a link - a directory link's encryption is
+// refused when it would change ('wantedAttr' = the requested attributes); a link whose state
+// already matches the request has nothing to change
+inline BOOL SalAttrsLinkRefusesEncryption(BOOL isDirLink, BOOL changeEncryption, DWORD listedAttr, DWORD wantedAttr)
+{
+    return isDirLink && changeEncryption && ((listedAttr ^ wantedAttr) & FILE_ATTRIBUTE_ENCRYPTED) != 0;
 }
 
 // feature 219: a link's stored name in the Win32 long form ("\\?\C:\x", "\\?\UNC\srv\share") or the

@@ -5,6 +5,7 @@
 #include "precomp.h"
 #include "salsafereplace.h" // feature 175
 #include "salshortname.h"   // feature 203
+#include "salreparse.h"     // feature 253
 
 #include "cfgdlg.h"
 #include "worker.h"
@@ -1642,7 +1643,8 @@ BOOL DoCopySecurity(const char* sourceName, const char* targetName, DWORD* err, 
     return ret;
 }
 
-DWORD CompressFile(char* fileName, DWORD attrs)
+// ownEntry: a directory link - its own compression, never its target folder's (feature 253)
+DWORD CompressFile(char* fileName, DWORD attrs, BOOL ownEntry = FALSE)
 {
     DWORD ret = ERROR_SUCCESS;
     if (attrs & FILE_ATTRIBUTE_COMPRESSED)
@@ -1662,7 +1664,7 @@ DWORD CompressFile(char* fileName, DWORD attrs)
     }
     HANDLE file = SalCreateFile(fileNameCrFile, FILE_READ_DATA | FILE_WRITE_DATA,
                                 FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS,
+                                OPEN_EXISTING, SalAttrsOpenFlags(TRUE, ownEntry),
                                 NULL);
     if (file == INVALID_HANDLE_VALUE)
         ret = GetLastError();
@@ -1680,7 +1682,8 @@ DWORD CompressFile(char* fileName, DWORD attrs)
     return ret;
 }
 
-DWORD UncompressFile(char* fileName, DWORD attrs)
+// ownEntry: a directory link - its own compression, never its target folder's (feature 253)
+DWORD UncompressFile(char* fileName, DWORD attrs, BOOL ownEntry = FALSE)
 {
     DWORD ret = ERROR_SUCCESS;
     if ((attrs & FILE_ATTRIBUTE_COMPRESSED) == 0)
@@ -1701,7 +1704,7 @@ DWORD UncompressFile(char* fileName, DWORD attrs)
 
     HANDLE file = SalCreateFile(fileNameCrFile, FILE_READ_DATA | FILE_WRITE_DATA,
                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS,
+                                NULL, OPEN_EXISTING, SalAttrsOpenFlags(TRUE, ownEntry),
                                 NULL);
     if (file == INVALID_HANDLE_VALUE)
         ret = GetLastError();
@@ -8067,6 +8070,13 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
     char nameSetAttrsCopy[3 * MAX_PATH];
     MakeCopyWithBackslashIfNeeded(nameSetAttrs, nameSetAttrsCopy);
 
+    // feature 253: a directory link (DeleteAsDirLink, fail closed, as Delete and 213's walk) gets its
+    // own compression and times, never those of its TARGET folder; its encryption cannot stay on
+    // the link (EncryptFile / DecryptFile follow it) - a change of it is refused
+    BOOL isDirLink = SalAttrsEntryIsDirLink(fileAttr, (fileAttr & FILE_ATTRIBUTE_DIRECTORY) &&
+                                                          (fileAttr & FILE_ATTRIBUTE_REPARSE_POINT) &&
+                                                          DeleteAsDirLink(name));
+
     while (1)
     {
         DWORD error = ERROR_SUCCESS;
@@ -8075,7 +8085,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
         char* errTitle = NULL;
         if (changeCompression && (attrs & FILE_ATTRIBUTE_COMPRESSED) == 0)
         {
-            error = UncompressFile(name, fileAttr);
+            error = UncompressFile(name, fileAttr, isDirLink);
             if (error != ERROR_SUCCESS)
             {
                 errTitle = LoadStr(IDS_ERRORCOMPRESSING);
@@ -8085,7 +8095,10 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
         }
         if (error == ERROR_SUCCESS && changeEncryption && (attrs & FILE_ATTRIBUTE_ENCRYPTED) == 0)
         {
-            error = MyDecryptFile(name, fileAttr, TRUE);
+            if (SalAttrsLinkRefusesEncryption(isDirLink, changeEncryption, fileAttr, attrs))
+                error = ERROR_NOT_SUPPORTED; // the ordinary error of this entry (not "not supported on the volume")
+            else
+                error = MyDecryptFile(name, fileAttr, TRUE);
             if (error != ERROR_SUCCESS)
             {
                 errTitle = LoadStr(IDS_ERRORENCRYPTING);
@@ -8095,7 +8108,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
         }
         if (error == ERROR_SUCCESS && changeCompression && (attrs & FILE_ATTRIBUTE_COMPRESSED))
         {
-            error = CompressFile(name, fileAttr);
+            error = CompressFile(name, fileAttr, isDirLink);
             if (error != ERROR_SUCCESS)
             {
                 errTitle = LoadStr(IDS_ERRORCOMPRESSING);
@@ -8106,7 +8119,10 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
         if (error == ERROR_SUCCESS && changeEncryption && (attrs & FILE_ATTRIBUTE_ENCRYPTED))
         {
             BOOL cancelOper = FALSE;
-            error = MyEncryptFile(hProgressDlg, name, fileAttr, attrs, dlgData, cancelOper, TRUE);
+            if (SalAttrsLinkRefusesEncryption(isDirLink, changeEncryption, fileAttr, attrs))
+                error = ERROR_NOT_SUPPORTED; // the ordinary error of this entry (not "not supported on the volume")
+            else
+                error = MyEncryptFile(hProgressDlg, name, fileAttr, attrs, dlgData, cancelOper, TRUE);
             if (*dlgData.CancelWorker || cancelOper)
                 return FALSE;
             if (error != ERROR_SUCCESS)
@@ -8144,7 +8160,7 @@ BOOL DoChangeAttrs(HWND hProgressDlg, char* name, const CQuadWord& size, DWORD a
                     SalSetFileAttributes(nameSetAttrs, attrs & (~FILE_ATTRIBUTE_READONLY));
                 file = SalCreateFile(nameSetAttrs, GENERIC_READ | GENERIC_WRITE,
                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                     NULL, OPEN_EXISTING, isDir ? FILE_FLAG_BACKUP_SEMANTICS : 0, NULL);
+                                     NULL, OPEN_EXISTING, SalAttrsOpenFlags(isDir, isDirLink), NULL);
                 if (file != INVALID_HANDLE_VALUE)
                 {
                     FILETIME ftCreated, ftAccessed, ftModified;
