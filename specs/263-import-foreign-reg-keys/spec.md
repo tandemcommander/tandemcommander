@@ -125,6 +125,9 @@ import exactly as today, without a message.
   refuse the file (unchanged).
 - A UTF-16 (`Windows Registry Editor Version 5.00`) and a `REGEDIT4` file follow the same rule.
 - The installer's upgrade path (`autoImportConfig`) skips the file import as today (unchanged).
+- A file holding only the delete line of our root (`[-HKEY_CURRENT_USER\Software\Tandem
+  Commander\0.1]`) and no key leaves no key under our root and is refused (it would only wipe the
+  configuration; the old build asked).
 - A refused file is left untouched and is refused again at the next start (FR-007).
 
 ## Requirements *(mandatory)*
