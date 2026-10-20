@@ -1,7 +1,7 @@
 ---
 title: Change Attributes on a junction compresses / re-times the target folder
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: data-safety
 source: leftover:213
@@ -10,7 +10,7 @@ created: 2026-10-15
 updated: 2026-10-20
 verified: 2026-10-20 d5f67ace
 effort: M
-feature: -
+feature: 253
 related: []
 depends-on: []
 reason: -
@@ -38,3 +38,4 @@ Encryption is "probably" affected per the source - measure. The walk into the ta
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-20 — verified at d5f67ace: hidden-desktop probe at d5f67ace: COMP, UNCOMP, TIME, SUBC FAIL (target folder compressed / re-timed), plain control PASS
+- 2026-10-20 — run started, feature 253
