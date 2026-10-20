@@ -7,8 +7,8 @@ area: pictview
 source: leftover:132
 who: agent
 created: 2026-10-13
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 b6b60a51
 effort: L
 feature: -
 related: [pictview-update-thumbnail-142-leftovers]
@@ -37,3 +37,4 @@ Either make the engine report `PVFF_EXIF` or gate both on a file check like 132'
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-20 — verified at b6b60a51: reproduced at b6b60a51: hidden-desktop probe pv267, 21 FAIL - no Exif dialog for files with Exif, orientations 2-8 not turned; wicengine FillInfo sets Flags 0

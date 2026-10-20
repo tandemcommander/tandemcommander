@@ -1,0 +1,371 @@
+<#
+.SYNOPSIS
+    Feature 267 probe: PictView's Exif dialog and Exif auto-rotation with the built-in (WIC)
+    engine.
+
+.DESCRIPTION
+    Fixtures under %TEMP%\tc267\p (removed at the end, explicit root only), made by Pillow
+    (probe\mkfix267.py): JPEG files of four solid quadrants with an Exif Orientation 1..8 and
+    controls. Each row opens one file in PictView (F3 from the panel), then:
+
+      ROT   the viewer's title gives the size shown, and a Save As of the shown image (PNG, no
+            rotation in the dialog) is read back by probe\quad267.py: its quadrant colours must be
+            those of the file turned by its orientation (Pillow's exif_transpose), or the file as
+            stored where the row says so;
+      EXIF  CMD_IMG_EXIF (115) is posted to the viewer: for a file with an Exif block the Exif
+            dialog must open and its list (2121) must hold the tags, among them "Orientation";
+            for a file without Exif no dialog may open.
+
+    Rows (names for -Only):
+      o1 .. o8        Orientation 1..8 with PixelX/YDimension 64 x 48: turned as the tag says
+      o6-nodims       Orientation 6 without PixelX/YDimension: turned
+      o6-moddims      Orientation 6, PixelX/YDimension 640 x 480 (changed after the camera):
+                      PictView's own rule - shown as stored
+      noexif, xmp     no Exif block (none / XMP only): shown as stored, no Exif dialog
+      uni             o6.jpg under a name with Czech and Japanese letters: turned, dialog with tags
+      off             o6.jpg with the AutoRotate setting off: shown as stored, dialog with tags
+
+    The setting AutoRotate is seeded (1; 0 for the row 'off') under HKCU\Software\Tandem
+    Commander (exported before, restored and SHA-256-verified after). MUST run through
+    tools\run_on_hidden_desktop.ps1. Refuses while another tandemcommander.exe runs. Exit code =
+    number of FAIL rows.
+#>
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true)][string]$Exe,
+    [string]$OutFile,
+    [string[]]$Only,
+    [string]$RepoRoot = (Join-Path $PSScriptRoot '..\..\..')
+)
+$ErrorActionPreference = 'Stop'
+$Exe = (Resolve-Path -LiteralPath $Exe).Path
+if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
+function Want([string]$n) { return (-not $Only) -or ($Only -contains $n) -or (@($Only | Where-Object { $n -like $_ }).Count -gt 0) }
+$others = @(Get-Process tandemcommander -ErrorAction SilentlyContinue)
+if ($others.Count) { Write-Output ('REFUSED: tandemcommander.exe already runs: ' + (($others | ForEach-Object { '' + $_.Id + ' ' + $_.Path }) -join '; ')); exit 99 }
+
+. (Join-Path $RepoRoot 'specs\098-long-path-overruns\probe\fix_probe_lib.ps1')
+if (-not ('Drv267' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+public static class Drv267
+{
+    [DllImport("user32.dll", SetLastError = true)] static extern IntPtr SendMessageTimeoutW(IntPtr h, uint msg, IntPtr w, IntPtr l, uint flags, uint timeout, out IntPtr result);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr VirtualAllocEx(IntPtr p, IntPtr addr, UIntPtr size, uint type, uint protect);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern bool VirtualFreeEx(IntPtr p, IntPtr addr, UIntPtr size, uint type);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern bool ReadProcessMemory(IntPtr p, IntPtr addr, byte[] buf, UIntPtr size, out UIntPtr done);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern bool WriteProcessMemory(IntPtr p, IntPtr addr, byte[] buf, UIntPtr size, out UIntPtr done);
+    public static long SendR(IntPtr h, uint msg, long w, long l)
+    {
+        IntPtr r; if (SendMessageTimeoutW(h, msg, (IntPtr)w, (IntPtr)l, 0, 15000, out r) == IntPtr.Zero) return -999; return r.ToInt64();
+    }
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "SendMessageTimeoutW")] static extern IntPtr SendGetBuf(IntPtr h, uint msg, IntPtr w, [Out] char[] l, uint flags, uint timeout, out IntPtr result);
+    public static string LbText(IntPtr combo, int index)
+    {
+        long len = SendR(combo, 0x0149, index, 0);
+        if (len < 0) return null;
+        var buf = new char[len + 2]; IntPtr r;
+        SendGetBuf(combo, 0x0148, (IntPtr)index, buf, 0, 5000, out r);
+        long n = r.ToInt64(); if (n < 0) return null; if (n > len) n = len;
+        return new string(buf, 0, (int)n);
+    }
+    // the texts of column 'sub' of a list view of another (64-bit) process: LVM_GETITEMTEXTW with an
+    // LVITEMW in that process's memory
+    public static string[] LvTexts(IntPtr lv, int sub)
+    {
+        var res = new List<string>();
+        long n = SendR(lv, 0x1004 /*LVM_GETITEMCOUNT*/, 0, 0);
+        if (n <= 0) return res.ToArray();
+        uint pid; GetWindowThreadProcessId(lv, out pid);
+        IntPtr hp = OpenProcess(0x0008 | 0x0010 | 0x0020, false, pid);
+        if (hp == IntPtr.Zero) return null;
+        IntPtr mem = VirtualAllocEx(hp, IntPtr.Zero, (UIntPtr)4096, 0x3000, 0x04);
+        if (mem == IntPtr.Zero) { CloseHandle(hp); return null; }
+        try
+        {
+            for (int i = 0; i < n && i < 500; i++)
+            {
+                var item = new byte[88]; // LVITEMW, x64
+                BitConverter.GetBytes(0x0001 /*LVIF_TEXT*/).CopyTo(item, 0);
+                BitConverter.GetBytes(i).CopyTo(item, 4);
+                BitConverter.GetBytes(sub).CopyTo(item, 8);
+                BitConverter.GetBytes(mem.ToInt64() + 512).CopyTo(item, 24); // pszText
+                BitConverter.GetBytes(1000).CopyTo(item, 32);                // cchTextMax
+                UIntPtr done;
+                if (!WriteProcessMemory(hp, mem, item, (UIntPtr)item.Length, out done)) return null;
+                long len = SendR(lv, 0x1073 /*LVM_GETITEMTEXTW*/, i, mem.ToInt64());
+                if (len < 0) { res.Add("<timeout>"); continue; }
+                var b = new byte[2000];
+                if (!ReadProcessMemory(hp, (IntPtr)(mem.ToInt64() + 512), b, (UIntPtr)2000, out done)) return null;
+                var chars = new char[1000]; Buffer.BlockCopy(b, 0, chars, 0, 2000);
+                int z = Array.IndexOf(chars, '\0'); if (z < 0) z = chars.Length;
+                res.Add(new string(chars, 0, z));
+            }
+            return res.ToArray();
+        }
+        finally { VirtualFreeEx(hp, mem, UIntPtr.Zero, 0x8000); CloseHandle(hp); }
+    }
+}
+'@
+}
+
+$Root = $TempRoot + '\tc267\p'
+$StartDir = $Root + '\start'
+$Fix = $Root + '\fix'
+$Out = $Root + '\out'
+function S([int[]]$codes) { return -join ($codes | ForEach-Object { [char]::ConvertFromUtf32($_) }) }
+$UniName = 'Kon' + [char]0x00ED + [char]0x010D + 'ek ' + (S 0x65E5, 0x672C) + ' o6.jpg'
+$Py = 'python'
+$Quad = Join-Path $PSScriptRoot 'quad267.py'
+$PvKey = $RegKey + '\0.1\Plugins Configuration\PictView'
+
+function Exists([string]$p) { return [IO.File]::Exists($LP + $p) }
+function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }
+function Start-P([string]$Left) {
+    $a = @('-t', 'T267', '-l', ('"{0}"' -f $Left), '-r', ('"{0}"' -f $StartDir), '-p', '1')
+    $p = Start-Process -FilePath $Exe -ArgumentList $a -PassThru
+    [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 60 -and (Test-Alive $p.Id) -and (Get-Main $p.Id) -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 100 }
+    if ((Get-Main $p.Id) -eq [IntPtr]::Zero) { throw 'the program did not show its main window' }
+    try { [void]$p.WaitForInputIdle(30000) } catch { }
+    Sync $p.Id
+    Start-Sleep -Milliseconds 1500
+    return $p.Id
+}
+function Kid([IntPtr]$Dlg, [int]$CtlId, [string]$Cls) { return @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $CtlId -and ((-not $Cls) -or [Drv098f]::Cls($_) -eq $Cls) }) | Select-Object -First 1 }
+# 111's / 120's helpers (pv120_probe.ps1), copied
+function Answer([int]$Id, [double]$Seconds = 25, [int[]]$WantIds = @(6, 2, 1), $Ignore = @()) {
+    $r = [pscustomobject]@{ Messages = New-Object System.Collections.ArrayList; Fatal = $null }
+    $seen = @{}; $idleSince = $null
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
+        if (-not (Test-Alive $Id)) { break }
+        $boxes = @(Get-Tops $Id | Where-Object { @('#32770', 'OperationStatusWindow') -contains [Drv098f]::Cls($_) -and $Ignore -notcontains $_ -and [Drv098f]::IsWindowEnabled($_) })
+        if (-not $boxes.Count) {
+            if ($null -eq $idleSince) { $idleSince = $sw.Elapsed.TotalSeconds }
+            if ($sw.Elapsed.TotalSeconds - $idleSince -gt 2.0) { break }
+            Start-Sleep -Milliseconds 150; continue
+        }
+        $idleSince = $null
+        foreach ($b in $boxes) {
+            $key = $b.ToInt64()
+            if (-not $seen.ContainsKey($key)) { $seen[$key] = $sw.Elapsed.TotalSeconds; continue }
+            if ($sw.Elapsed.TotalSeconds - $seen[$key] -lt 0.7) { continue }
+            $seen.Remove($key)
+            $d = WinDesc $b
+            if ($d -match $FatalRx) { $r.Fatal = $d; return $r }
+            if ([Drv098f]::Cls($b) -eq 'OperationStatusWindow') {
+                [void]$r.Messages.Add('[shell operation window] ' + (Esc ([Drv098f]::Txt($b))))
+                [void][Drv098f]::PostMessageW($b, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+                Start-Sleep -Milliseconds 800; continue
+            }
+            [void]$r.Messages.Add($d)
+            $btn = $null
+            foreach ($w in $WantIds) { $btn = Buttons $b | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $w } | Select-Object -First 1; if ($btn) { break } }
+            if ($btn) { Click $btn } else { Close-Win $b }
+            Start-Sleep -Milliseconds 600
+        }
+    }
+    return $r
+}
+function Msgs2($r) { if ($r.Messages.Count) { return ($r.Messages -join ' || ') } else { return 'no box' } }
+function End-P([string]$Case, [int]$Id, $Before) {
+    foreach ($h in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -ne $MainClass })) { [void][Drv098f]::PostMessageW($h, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) }
+    Start-Sleep -Milliseconds 800
+    [void](Answer $Id 6 @(6, 1))
+    End-Row $Case $Id $null $Before
+}
+function Focus-File([int]$Id, [string]$Full) { [void](Do-ChangeDir $Id $Full); [void](Serve $Id 8); Sync $Id }
+function Open-Viewer([int]$Id, [double]$Seconds = 30) {
+    $known = Get-Tops $Id
+    Post-Cmd (Get-Main $Id) 742
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $Seconds) {
+        $w = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -ne '#32770' }) | Select-Object -First 1
+        if ($w) { Start-Sleep -Milliseconds 3000; return $w }   # 267: the time for an automatic turn
+        Start-Sleep -Milliseconds 200
+    }
+    return [IntPtr]::Zero
+}
+function Close-Viewer([int]$Id, [IntPtr]$Wv) {
+    if ($Wv -eq [IntPtr]::Zero -or -not [Drv098f]::IsWindow($Wv)) { return }
+    [void][Drv098f]::PostMessageW($Wv, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+    $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 8 -and [Drv098f]::IsWindow($Wv)) { Start-Sleep -Milliseconds 100 }
+    [void](Answer $Id 3 @(6, 1))
+}
+function Title([IntPtr]$Wv) { return [Drv098f]::Txt($Wv) }
+function Dims([string]$t) { if ($t -match '\((\d+) x (\d+) x ') { return ('{0}x{1}' -f $Matches[1], $Matches[2]) }; return '?' }
+function Combo-Items([IntPtr]$C) {
+    if (-not $C) { return @() }
+    $n = [Drv267]::SendR($C, 0x0146, 0, 0); $l = @()
+    for ($i = 0; $i -lt $n; $i++) { $l += [Drv267]::LbText($C, $i) }
+    return $l
+}
+function Pick([IntPtr]$C, [string]$Rx, [switch]$Notify) {
+    if (-not $C) { return $false }
+    $items = @(Combo-Items $C)
+    for ($i = 0; $i -lt $items.Count; $i++) {
+        if ($items[$i] -match $Rx) {
+            [void][Drv267]::SendR($C, 0x014E, $i, 0)
+            if ($Notify) {
+                $cid = [Drv098f]::GetDlgCtrlID($C); $par = [Drv098f]::GetParent($C)
+                foreach ($code in @(9, 1)) { [void][Drv267]::SendR($par, 0x0111, (($code -shl 16) -bor $cid), $C.ToInt64()) }
+            }
+            Start-Sleep -Milliseconds 300
+            return $true
+        }
+    }
+    return $false
+}
+function Save-As([int]$Id, [IntPtr]$Wv, [string]$Full, $O) {
+    $r = [pscustomobject]@{ Ok = $false; Note = ''; Pre = @() }
+    $known = Get-Tops $Id
+    Post-Cmd $Wv 124
+    $od = [IntPtr]::Zero
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 15 -and $od -eq [IntPtr]::Zero) {
+        $c = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' }) | Select-Object -First 1
+        if ($c) {
+            Start-Sleep -Milliseconds 1200
+            if ((Kid $c 1136 'ComboBox')) { $od = $c; break }
+            $r.Pre += (WinDesc $c)
+            $y = Buttons $c | Where-Object { @(6, 1) -contains [Drv098f]::GetDlgCtrlID($_) } | Select-Object -First 1
+            if ($y) { Click $y } else { Close-Win $c }
+            $known = @($known) + @($c); Start-Sleep -Milliseconds 800; continue
+        }
+        Start-Sleep -Milliseconds 200
+    }
+    if ($od -eq [IntPtr]::Zero) { $r.Note = 'no save dialog; before it: ' + ($r.Pre -join ' || '); return $r }
+    $types = Kid $od 1136 'ComboBox'
+    if ($O.Type -and -not (Pick $types $O.Type -Notify)) { $r.Note = "type '$($O.Type)' not offered"; Post-Cmd $od 2; return $r }
+    Start-Sleep -Milliseconds 300
+    if ($O.Rot) { [void](Pick (Kid $od 2304 'ComboBox') $O.Rot) }
+    $fn = @([Drv098f]::Kids($od) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) -and [Drv098f]::GetDlgCtrlID([Drv098f]::GetParent($_)) -eq 1148 }) | Select-Object -First 1
+    if (-not $fn) { $r.Note = 'no file name field'; Post-Cmd $od 2; return $r }
+    [void][Drv098f]::SetText($fn, $Full, 5000)
+    $ok = Buttons $od | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 1 } | Select-Object -First 1
+    if ($ok) { Click $ok } else { Post-Cmd $od 1 }
+    $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 10 -and [Drv098f]::IsWindow($od) -and [Drv098f]::IsWindowVisible($od)) { Start-Sleep -Milliseconds 100 }
+    $r.Ok = $true
+    return $r
+}
+function Cancel-Dialogs([int]$Id) { foreach ($x in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and (Kid $_ 1136 'ComboBox') })) { Post-Cmd $x 2; Start-Sleep -Milliseconds 600 } }
+# a Save As of what the viewer shows into a new PNG: "WxH <quadrants>" (quad267.py)
+function Shown-Quads([int]$Id, [IntPtr]$Wv, [string]$Full) {
+    $s = Save-As $Id $Wv $Full @{ Type = 'Portable Network'; Rot = 'None' }
+    $ans = Answer $Id 25 @(6, 2, 1) @($Wv)
+    Cancel-Dialogs $Id
+    if (-not (Exists $Full)) { return ('<no file; ' + $s.Note + '; ' + (Msgs2 $ans) + '>') }
+    return ((& $Py $Quad 'shown' ($LP + $Full) 2>&1) -join '')
+}
+function Want-Quads([string]$Mode, [string]$Full) { return ((& $Py $Quad $Mode ($LP + $Full) 2>&1) -join '') }
+# CMD_IMG_EXIF in viewer $Wv: the Exif dialog's list texts (column 0), or $null when no dialog opened
+function Exif-Dialog([int]$Id, [IntPtr]$Wv) {
+    $known = Get-Tops $Id
+    Post-Cmd $Wv 115
+    $dlg = [IntPtr]::Zero; $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 6 -and $dlg -eq [IntPtr]::Zero) {
+        $c = @(Get-Tops $Id | Where-Object { $known -notcontains $_ -and [Drv098f]::Cls($_) -eq '#32770' }) | Select-Object -First 1
+        if ($c) { $dlg = $c } else { Start-Sleep -Milliseconds 200 }
+    }
+    if ($dlg -eq [IntPtr]::Zero) { return $null }
+    Start-Sleep -Milliseconds 1000
+    $lv = Kid $dlg 2121 'SysListView32'
+    if (-not $lv) { $r = @('<a box, not the Exif dialog: ' + (WinDesc $dlg) + '>') }
+    else { $r = @([Drv267]::LvTexts($lv, 0)) }
+    Post-Cmd $dlg 2
+    $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 5 -and [Drv098f]::IsWindow($dlg)) { Start-Sleep -Milliseconds 100 }
+    return , $r
+}
+function Make-Fixtures {
+    NewDir $Fix
+    $o = & $Py (Join-Path $PSScriptRoot 'mkfix267.py') $Fix 2>&1
+    if ("$o" -notmatch 'ok') { throw ('fixtures: ' + "$o") }
+}
+function Fx([string]$name, [string]$dir, [string]$as) { if (-not $as) { $as = $name }; NewDir $dir; [IO.File]::Copy($LP + $Fix + '\' + $name, $LP + $dir + '\' + $as, $true); return ($dir + '\' + $as) }
+function Set-AutoRotate([int]$v) { & reg.exe add $PvKey /v 'AutoRotate' /t REG_DWORD /d $v /f | Out-Null }
+
+# $Case: row name; $Fixture: the file; $As: its name in the row's folder; $Turned: shown turned by
+# the tag ($true) or as stored; $HasExif: the Exif dialog must open with the tags; $AutoRotate: the setting
+function Run-Row([string]$Case, [string]$Fixture, [string]$As, [bool]$Turned, [bool]$HasExif, [int]$AutoRotate = 1) {
+    if (-not (Want $Case)) { return }
+    if ($Case -notmatch '^[a-z0-9-]+$') { throw "bad case name $Case" }
+    $d = $Root + '\' + $Case
+    $src = Fx $Fixture $d $As
+    if (-not $src.StartsWith($Root + '\')) { throw "fixture outside the root: $src" }
+    $want = Want-Quads $(if ($Turned) { 'want' } else { 'shown' }) $src
+    Set-AutoRotate $AutoRotate
+    $id = 0; $before = Reports
+    try {
+        $id = Start-P $d
+        Focus-File $id $src
+        $w = Open-Viewer $id
+        if ($w -eq [IntPtr]::Zero) { Row $Case 'OPEN' 'FAIL' 'no viewer'; return }
+        $t = Title $w
+        $texts = Exif-Dialog $id $w
+        $shown = Shown-Quads $id $w ($Out + '\' + $Case + '.png')
+        $okRot = ($shown -eq $want) -and ((Dims $t) -eq ($want -split ' ')[0])
+        Row $Case 'ROT' (V $okRot) ("{0}, AutoRotate {1}: title size {2}; shown {3} (want {4}{5})" -f (Esc $As), $AutoRotate, (Dims $t), $shown, $want, $(if ($Turned) { ', turned by the tag' } else { ', as stored' }))
+        if ($HasExif) {
+            $n = if ($null -eq $texts) { -1 } else { $texts.Count }
+            $okExif = ($null -ne $texts) -and ($n -gt 0) -and (@($texts | Where-Object { $_ -match '^Orientation' }).Count -gt 0)
+            Row $Case 'EXIF' (V $okExif) ("Exif command: {0}" -f $(if ($null -eq $texts) { 'no dialog opened' } else { "dialog, {0} tags: {1}" -f $n, (Esc ((@($texts) | Select-Object -First 8) -join ', ')) }))
+        }
+        else {
+            Row $Case 'EXIF' (V ($null -eq $texts)) ("Exif command on a file without Exif: {0}" -f $(if ($null -eq $texts) { 'no dialog (right)' } else { 'a dialog opened: ' + (Esc (@($texts) -join ', ')) }))
+        }
+        Close-Viewer $id $w
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-P $Case $id $before } }
+}
+
+# ---- main ------------------------------------------------------------------------------------
+$backup = Join-Path $env:TEMP 'tc267_backup.reg'
+$existed = Backup-Reg $backup
+$restored = $false; $nf = 0
+try {
+    if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
+    NewDir $StartDir; NewDir $Out
+    Make-Fixtures
+    Set-Config
+    Out ("pv267_probe (feature 267)")
+    Out ("Program : {0}" -f $Exe)
+    Out ("Date    : {0}; ACP {1}; desktop '{2}'; registry key existed {3}; backup SHA-256 {4}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [Drv098f]::GetACP(), [DeskLib098]::Name(), $existed, $(if ($existed) { (Get-FileHash -LiteralPath $backup).Hash } else { '-' }))
+    Out ''
+    for ($o = 1; $o -le 8; $o++) { Run-Row ('o' + $o) ('o' + $o + '.jpg') ('o' + $o + '.jpg') $true $true }
+    Run-Row 'o6-nodims' 'o6-nodims.jpg' 'o6-nodims.jpg' $true $true
+    Run-Row 'o6-moddims' 'o6-moddims.jpg' 'o6-moddims.jpg' $false $true
+    Run-Row 'noexif' 'noexif.jpg' 'noexif.jpg' $false $false
+    Run-Row 'xmp' 'xmp.jpg' 'xmp.jpg' $false $false
+    Run-Row 'uni' 'o6.jpg' $UniName $true $true
+    Run-Row 'off' 'o6.jpg' 'o6.jpg' $false $true 0
+}
+catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+finally {
+    foreach ($p in @($Started)) { if (Test-Alive $p) { Stop-Process -Id $p -Force } }
+    Start-Sleep -Milliseconds 600
+    $restored = Restore-Reg $backup $existed
+    if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }
+    try {
+        if ([IO.Directory]::Exists($LP + $Root)) {
+            foreach ($f in @([IO.Directory]::GetFiles($LP + $Root, '*', 'AllDirectories'))) { [IO.File]::SetAttributes($f, 'Normal') }
+            [IO.Directory]::Delete($LP + $Root, $true)
+        }
+    }
+    catch { Out ("Fixture: could not delete $Root : " + $_.Exception.Message) }
+    $leftover = @($Started | Where-Object { Test-Alive $_ })
+    $np = @($script:Rows | Where-Object { $_.Verdict -eq 'PASS' }).Count
+    $nf = @($script:Rows | Where-Object { $_.Verdict -eq 'FAIL' }).Count
+    $nn = @($script:Rows | Where-Object { $_.Verdict -eq 'NOT DRIVEN' }).Count
+    Out ''
+    Out ("Rows: PASS {0}, FAIL {1}, NOT DRIVEN {2}. Left running: {3}; fixture removed: {4}; registry restored+identical: {5}" -f $np, $nf, $nn, $leftover.Count, (-not [IO.Directory]::Exists($LP + $Root)), $restored)
+    if ($OutFile) { [IO.File]::WriteAllLines($OutFile, [string[]]$script:Lines, (New-Object Text.ASCIIEncoding)) }
+}
+exit $nf
