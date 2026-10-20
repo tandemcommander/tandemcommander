@@ -1,16 +1,16 @@
 ---
 title: Long names: Paste "- Copy" says "to itself"; IsSimpleSelection uses CP_ACP
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: long-paths
 source: review:215
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 7a13bdee
 effort: M
-feature: -
+feature: 259
 related: []
 depends-on: []
 reason: -
@@ -33,3 +33,5 @@ Paste of a ~250-byte name in its own folder either creates the "- Copy" name or 
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at 7a13bdee: at 7a13bdee: Edit New File probe 3 FAIL (288-byte folder, 294-byte path, 304-byte CJK name refused too long); Paste copy name and IsSimpleSelection CP_ACP fallback by reading
+- 2026-10-20 — run started, feature 259
