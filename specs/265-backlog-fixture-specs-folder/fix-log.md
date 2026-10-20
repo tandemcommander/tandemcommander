@@ -42,3 +42,30 @@ Backlog item `backlog-fixture-empty-specs-folder-missing`.
   error differs - not investigated further, SC-003 asks only that the failures return.)
 - Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
 - Build / saltests: not run - no file of the product, `src/` or the build changed.
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+- MUST 1: `specs/247-backlog-run-loop/probe/e2e_real_claude.py` `make_repo()` created
+  `specs/243-example` with `mkdir(parents=True)` (no `exist_ok`); with the folder now in the
+  fixture it raises `FileExistsError` and the probe aborts before E1-E4. Missed by the first
+  consumer enumeration (it searched `tools/` only). Fixed: the workaround is removed; the
+  folder comes from the fixture.
+- SHOULD 2: the comment in `tools/backlog/test_loop.py` `setUp` ("the fixture's empty folder is
+  not in git ...") becomes false. Fixed: the workaround and its comment are removed (spec
+  Clarification revised, FR-007).
+- NOTE 3: duplicated "at 6085500d" in the item's *Log* (wording of the `verify` note) -
+  cosmetic; the item is deleted at closing.
+- NOTE 4-6: create-new-feature.sh scans only top-level `specs/*`; `loop.py` never reads
+  `specs/`; the 242 mutation probe reports 31/32 caught (as recorded in 242) and is meaningful
+  on a fresh checkout again; no data-safety or standing-rule concern.
+
+After the fix (commit `[265] review 1: ...`):
+
+- Fresh clone of the branch: `make_repo()` of the 247 probe -> `make_repo OK`, the folder's
+  README present (from the fixture); control, fresh clone of `main`: `make_repo OK` (it still
+  creates the folder itself there).
+- Fresh clone of the branch: `test_backlog.py` -> 68 tests `OK`; `test_loop.py` -> 57 tests
+  `OK`.
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
