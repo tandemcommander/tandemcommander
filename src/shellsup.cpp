@@ -20,6 +20,7 @@ extern "C"
 #include "salshlib.h"
 #include "tasklist.h"
 #include "salshelllink.h" // feature 194
+#include "salnamerun.h" // feature 261
 //#include "drivelst.h"
 
 //
@@ -1930,35 +1931,22 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                             f->Dirty = 1;
                             if (samePaths) // select the file/directory in the other panel (quadratic complexity, not great ...)
                             {
-                                if (idx < panel->Dirs->Count) // search among directories
+                                // search among directories or among files; feature 092: the file system's identity
+                                // rule - feature 261 (salnamerun.h): the byte-identical item, else the only one of the
+                                // same name ignoring case (in a case-sensitive folder the first case-insensitive
+                                // match of "A.txt" was its twin "a.txt", ghosted instead)
+                                CFilesArray* list = (idx < panel->Dirs->Count) ? anotherPanel->Dirs : anotherPanel->Files;
+                                int k = SalNamePickIndex(list->Count, f->Name, (int)f->NameLen,
+                                                         [list](int i, const char** n, int* len)
+                                                         {
+                                                             *n = list->At(i).Name;
+                                                             *len = (int)list->At(i).NameLen;
+                                                         });
+                                if (k != -1)
                                 {
-                                    int total = anotherPanel->Dirs->Count;
-                                    int k;
-                                    for (k = 0; k < total; k++)
-                                    {
-                                        CFileData* f2 = &anotherPanel->Dirs->At(k);
-                                        if (SalNameEqualOrdinalCI(f->Name, f->NameLen, f2->Name, f2->NameLen)) // feature 092: the file system's identity rule
-                                        {
-                                            f2->CutToClip = 1;
-                                            f2->Dirty = 1;
-                                            break;
-                                        }
-                                    }
-                                }
-                                else // search among files
-                                {
-                                    int total = anotherPanel->Files->Count;
-                                    int k;
-                                    for (k = 0; k < total; k++)
-                                    {
-                                        CFileData* f2 = &anotherPanel->Files->At(k);
-                                        if (SalNameEqualOrdinalCI(f->Name, f->NameLen, f2->Name, f2->NameLen)) // feature 092: the file system's identity rule
-                                        {
-                                            f2->CutToClip = 1;
-                                            f2->Dirty = 1;
-                                            break;
-                                        }
-                                    }
+                                    CFileData* f2 = &list->At(k);
+                                    f2->CutToClip = 1;
+                                    f2->Dirty = 1;
                                 }
                             }
                         }

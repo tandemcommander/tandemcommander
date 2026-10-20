@@ -69,3 +69,85 @@ inline BOOL SalNameCIFallbackTakes(BOOL nameTaken, int ciOnlyCount, BOOL dirCase
 {
     return !nameTaken && ciOnlyCount == 1 && !dirCaseSensitive;
 }
+
+//*****************************************************************************
+//
+// Feature 261: lookups and Compare Directories in folders with case twins
+//
+// A case-sensitive folder can hold "a.txt" and "A.txt" (twins: byte-different,
+// the same name by SalNameEqualOrdinalCI). The viewer's next / previous file, the
+// User Menu's second compare name and Ctrl+X ghosting in the other panel took the
+// first name equal ignoring case; Compare Directories paired a.txt with the other
+// side's A.txt. Now:
+//   - a lookup takes the byte-identical item, else the one item equal ignoring
+//     case when it is the only one (a name changed in case only is still found),
+//     never one of two (SalNamePickIndex);
+//   - Compare Directories compares two names of one case-insensitive sort run
+//     byte-exactly when either has a twin in its own list (SalHasCaseTwinInRun,
+//     SalTwinAwarePairCmp); without twins a case-only pair stays one name
+//     (feature 232).
+//
+//*****************************************************************************
+
+// the index of the candidate a lookup of 'name' takes: the first byte-identical one, else the only
+// one equal by SalNameEqualOrdinalCI, else -1 (none, or two or more - which one is meant cannot be
+// told). nameAt(i, &n, &len) gives candidate i (len < 0 = up to the terminator); 'nameLen' < 0 = up
+// to the terminator.
+template <class TNameAt>
+int SalNamePickIndex(int count, const char* name, int nameLen, TNameAt nameAt)
+{
+    if (name == NULL)
+        return -1;
+    if (nameLen < 0)
+        nameLen = (int)strlen(name);
+    int ciIndex = -1;
+    int ciCount = 0;
+    for (int i = 0; i < count; i++)
+    {
+        const char* n = NULL;
+        int len = -1;
+        nameAt(i, &n, &len);
+        if (n == NULL)
+            continue;
+        if (len < 0)
+            len = (int)strlen(n);
+        if (len == nameLen && memcmp(n, name, (size_t)len) == 0)
+            return i;
+        if (SalNameEqualOrdinalCI(n, len, name, nameLen))
+        {
+            if (ciCount++ == 0)
+                ciIndex = i;
+        }
+    }
+    return ciCount == 1 ? ciIndex : -1;
+}
+
+// TRUE when item 'index' of a list sorted by a case-insensitive first key has a twin: a neighbour
+// with the same first key (sameKey(index, k)) that isTwin(index, k) - byte-different and the same
+// name ignoring case. Twins share the first key, so they sit in one run of neighbours.
+template <class TSameKey, class TIsTwin>
+BOOL SalHasCaseTwinInRun(int count, int index, TSameKey sameKey, TIsTwin isTwin)
+{
+    if (index < 0 || index >= count)
+        return FALSE;
+    for (int k = index - 1; k >= 0 && sameKey(index, k); k--)
+    {
+        if (isTwin(index, k))
+            return TRUE;
+    }
+    for (int k = index + 1; k < count && sameKey(index, k); k++)
+    {
+        if (isTwin(index, k))
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// the comparison Compare Directories uses for one left / right pair: the byte-exact order
+// 'exactCmp' (the lists' sort order) when both names have the same first key and either has a twin
+// in its own list, else 'pairCmp' (feature 232: a case-only pair is one name); -1 / 0 / 1
+inline int SalTwinAwarePairCmp(BOOL sameKey, BOOL leftTwin, BOOL rightTwin, int exactCmp, int pairCmp)
+{
+    int res = (sameKey && (leftTwin || rightTwin)) ? exactCmp : pairCmp;
+    return (res > 0) - (res < 0);
+}

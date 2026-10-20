@@ -18,6 +18,7 @@
 #include "toolbar.h"
 #include "mainwnd.h"
 #include "cfgdlg.h"
+#include "salnamerun.h" // feature 261
 #include "dialogs.h"
 #include "snooper.h"
 #include "shellib.h"
@@ -2778,21 +2779,23 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                         if (inactivePanel->Is(ptDisk))
                         {
                             int c = inactivePanel->Dirs->Count + inactivePanel->Files->Count;
-                            int i;
-                            for (i = 0; i < c; i++)
+                            // feature 092: the file system's identity rule; no byte-length guard
+                            // in front of it - equal names need not have equal UTF-8 lengths
+                            // feature 261 (salnamerun.h): the byte-identical item, else the only one of
+                            // the same name ignoring case - in a case-sensitive folder holding "a.txt" and
+                            // "A.txt" the first case-insensitive match was the other twin
+                            int i = SalNamePickIndex(c, f1->Name, (int)f1->NameLen,
+                                                     [inactivePanel](int k, const char** n, int* len)
+                                                     {
+                                                         CFileData* f = (k < inactivePanel->Dirs->Count) ? &inactivePanel->Dirs->At(k) : &inactivePanel->Files->At(k - inactivePanel->Dirs->Count);
+                                                         *n = f->Name;
+                                                         *len = (int)f->NameLen;
+                                                     });
+                            if (i != -1 &&
+                                (i < inactivePanel->Dirs->Count) == userMenuAdvancedData.CompareNamesAreDirs) // both items are files/directories
                             {
-                                CFileData* f = (i < inactivePanel->Dirs->Count) ? &inactivePanel->Dirs->At(i) : &inactivePanel->Files->At(i - inactivePanel->Dirs->Count);
-                                // feature 092: the file system's identity rule; no byte-length guard
-                                // in front of it - equal names need not have equal UTF-8 lengths
-                                if (SalNameEqualOrdinalCI(f->Name, f->NameLen, f1->Name, f1->NameLen))
-                                {
-                                    if ((i < inactivePanel->Dirs->Count) == userMenuAdvancedData.CompareNamesAreDirs) // both items are files/directories
-                                    {
-                                        f2 = f;
-                                        f2FromInactPanel = TRUE;
-                                    }
-                                    break;
-                                }
+                                f2 = (i < inactivePanel->Dirs->Count) ? &inactivePanel->Dirs->At(i) : &inactivePanel->Files->At(i - inactivePanel->Dirs->Count);
+                                f2FromInactPanel = TRUE;
                             }
                         }
                     }

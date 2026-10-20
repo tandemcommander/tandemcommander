@@ -9,6 +9,7 @@
 #include "mainwnd.h"
 #include "cfgdlg.h"
 #include "dialogs.h"
+#include "salnamerun.h" // feature 261
 
 void GetFileDateAndTimeFromPanel(DWORD validFileData, CPluginDataInterfaceEncapsulation* pluginData,
                                  const CFileData* f, BOOL isDir, SYSTEMTIME* st, BOOL* validDate,
@@ -780,6 +781,40 @@ BOOL ReadDirsAndFilesAux(HWND hWindow, DWORD flags, CCmpDirProgressDialog* progr
     return TRUE;
 }
 
+// feature 261: does item 'index' of a list sorted by name (CmpNameExt) have a case twin - another
+// item of the same name ignoring case with other bytes ("a.txt" / "A.txt" of a case-sensitive
+// folder)? Twins share CmpNameExt's first key, so they are neighbours.
+static BOOL CmpDirsHasCaseTwin(CFilesArray& list, int index)
+{
+    return SalHasCaseTwinInRun(
+        list.Count, index,
+        [&](int i, int k)
+        {
+            return RegSetStrICmpEx(list[i].Name, list[i].NameLen, list[k].Name, list[k].NameLen, NULL) == 0;
+        },
+        [&](int i, int k)
+        {
+            return SalNameEqualOrdinalCI(list[i].Name, (int)list[i].NameLen, list[k].Name, (int)list[k].NameLen) &&
+                   (list[i].NameLen != list[k].NameLen || memcmp(list[i].Name, list[k].Name, list[i].NameLen) != 0);
+        });
+}
+
+// feature 261: the name order Compare Directories pairs by (-1 / 0 / 1): as feature 232 a name that
+// differs only in case is the same name (CmpNameExtIgnCase) - but where either side holds case twins
+// only the byte-identical name is (CmpNameExt, the lists' sort order); before, the left "a.txt" was
+// paired with the right "A.txt" and the left "A.txt" was left without a pair
+static int CmpDirsNames(CFilesArray& left, int l, CFilesArray& right, int r)
+{
+    const CFileData& a = left[l];
+    const CFileData& b = right[r];
+    BOOL sameKey = RegSetStrICmpEx(a.Name, a.NameLen, b.Name, b.NameLen, NULL) == 0;
+    if (!sameKey)
+        return CmpNameExtIgnCase(a, b);
+    BOOL leftTwin = CmpDirsHasCaseTwin(left, l);
+    BOOL rightTwin = !leftTwin && CmpDirsHasCaseTwin(right, r);
+    return SalTwinAwarePairCmp(sameKey, leftTwin, rightTwin, CmpNameExt(a, b), CmpNameExtIgnCase(a, b));
+}
+
 // recursive function searching for differences between directories
 // directories are determined by the paths in the left and right panel
 // and the variables 'leftSubDir' and 'rightSubDir'
@@ -875,8 +910,8 @@ BOOL CompareDirsAux(HWND hWindow, CCmpDirProgressDialog* progressDlg,
             leftFile = &leftFiles[i];
             rightFile = &rightFiles[i];
 
-            // By Name
-            if (CmpNameExtIgnCase(*leftFile, *rightFile) != 0)
+            // By Name (feature 261: byte-exact where a folder holds case twins)
+            if (CmpDirsNames(leftFiles, i, rightFiles, i) != 0)
             {
                 *different = TRUE;
                 return TRUE;
@@ -950,8 +985,8 @@ BOOL CompareDirsAux(HWND hWindow, CCmpDirProgressDialog* progressDlg,
             leftDir = &leftDirs[i];
             rightDir = &rightDirs[i];
 
-            // By Name
-            if (CmpNameExtIgnCase(*leftDir, *rightDir) != 0)
+            // By Name (feature 261: byte-exact where a folder holds case twins)
+            if (CmpDirsNames(leftDirs, i, rightDirs, i) != 0)
             {
                 *different = TRUE;
                 return TRUE;
@@ -1297,7 +1332,7 @@ void CMainWindow::CompareDirectories(DWORD flags)
             {
                 if (r < right->Count) // both panels contain files
                 {
-                    compRes = CmpNameExtIgnCase(*leftFile, *rightFile);
+                    compRes = CmpDirsNames(*left, l, *right, r); // feature 261: case twins
                     if (compRes == -1) // left < right
                     {
                         if (!getTotal)
@@ -1511,7 +1546,7 @@ void CMainWindow::CompareDirectories(DWORD flags)
                 {
                     if (r < right->Count) // both panels contain directories
                     {
-                        compRes = CmpNameExtIgnCase(*leftDir, *rightDir);
+                        compRes = CmpDirsNames(*left, l, *right, r); // feature 261: case twins
                         if (compRes == -1) // left < right
                         {
                             leftDir->Selected = 1;

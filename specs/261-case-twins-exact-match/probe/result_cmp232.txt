@@ -1,0 +1,23 @@
+cmp232_probe (feature 232) at-261
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-20 12:37; registry key existed True; ACP 1250
+
+CONTROL    RUN    PASS        left Readme.txt marked True (want True); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+CONTROL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FILECS     RUN    PASS        left Readme.txt marked False (want False); boxes set 8 of 8; no dialog (nothing selected); compare: [#32770 'Compare Directories'] [Static id=2477] The files in two directories appear to be identical. | [Button id=1] OK; attributes: no window
+FILECS     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FILE       RUN    PASS        left Readme.txt marked False (want False); boxes set 8 of 8; no dialog (nothing selected); compare: [#32770 'Compare Directories'] [Static id=2477] The files in two directories appear to be identical. | [Button id=1] OK; attributes: no window
+FILE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DIR        RUN    PASS        left Sub marked False (want False); boxes set 8 of 8; no dialog (nothing selected); compare: [#32770 'Compare Directories'] [Static id=2477] The files in two directories appear to be identical. | [Button id=1] OK; attributes: no window
+DIR        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+NFD        RUN    PASS        left ‚.txt marked True (want True); boxes set 8 of 8; Hidden set True; compare: no window; attributes: no window
+NFD        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RENSEL     RUN    PASS        files README.txt,z.txt; hidden: README.txt; Hidden set True; windows: no window
+RENSEL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CSKEEP1    RUN    PASS        files A.txt,a.txt,z.txt; hidden: a.txt; Hidden set True; windows: no window
+CSKEEP1    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CSKEEP2    RUN    PASS        files A.txt,a.txt,z.txt; hidden: A.txt; Hidden set True; windows: no window
+CSKEEP2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3 / after A46438BF6784B0089FAE2493CEBFFA9170AD9FCB063420196F1A004A28041EA3
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

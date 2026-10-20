@@ -12429,6 +12429,139 @@ static void TestNameExactInCIRun230()
     CHECK(!SalNameCIFallbackTakes(FALSE, 1, TRUE)); // a case-sensitive folder: another file
 }
 
+// feature 261: lookups and Compare Directories pairing in folders with case twins (salnamerun.h)
+struct Twin261List
+{
+    const char* const* Names;
+    int Count;
+};
+
+static int Twin261Key(const char* a, const char* b) { return SalNameCompareOrdinalCI(a, -1, b, -1); }
+
+static int Twin261Exact(const char* a, const char* b) // the sort order: the key, then the bytes
+{
+    int r = Twin261Key(a, b);
+    return r != 0 ? r : strcmp(a, b);
+}
+
+static BOOL Twin261HasTwin(const Twin261List& l, int i)
+{
+    return SalHasCaseTwinInRun(
+        l.Count, i, [&](int x, int k) { return Twin261Key(l.Names[x], l.Names[k]) == 0; },
+        [&](int x, int k) { return SalNameEqualOrdinalCI(l.Names[x], -1, l.Names[k], -1) && strcmp(l.Names[x], l.Names[k]) != 0; });
+}
+
+// a merge as Compare Directories runs it; 'out' gets "L=R" for a pair, "L-" / "-R" for an unpaired name
+static void Twin261Merge(const Twin261List& left, const Twin261List& right, char* out, size_t outSize)
+{
+    out[0] = 0;
+    int l = 0, r = 0;
+    while (l < left.Count || r < right.Count)
+    {
+        char item[64];
+        if (l < left.Count && r < right.Count)
+        {
+            const char* a = left.Names[l];
+            const char* b = right.Names[r];
+            int c = SalTwinAwarePairCmp(Twin261Key(a, b) == 0, Twin261HasTwin(left, l), Twin261HasTwin(right, r),
+                                        Twin261Exact(a, b), Twin261Key(a, b));
+            if (c < 0)
+                sprintf_s(item, "%s-;", left.Names[l++]);
+            else if (c > 0)
+                sprintf_s(item, "-%s;", right.Names[r++]);
+            else
+            {
+                sprintf_s(item, "%s=%s;", a, b);
+                l++;
+                r++;
+            }
+        }
+        else if (l < left.Count)
+            sprintf_s(item, "%s-;", left.Names[l++]);
+        else
+            sprintf_s(item, "-%s;", right.Names[r++]);
+        strcat_s(out, outSize, item);
+    }
+}
+
+static void TestNameRules261()
+{
+    // the lookup: byte-identical first, else the only case-insensitive match, never one of two
+    const char* twins[] = {"A.txt", "a.txt", "z.txt"};
+    auto at = [&](const char* const* list) {
+        return [list](int i, const char** n, int* len) { *n = list[i]; *len = -1; };
+    };
+    CHECK(SalNamePickIndex(3, "a.txt", -1, at(twins)) == 1);
+    CHECK(SalNamePickIndex(3, "A.txt", -1, at(twins)) == 0);
+    CHECK(SalNamePickIndex(3, "A.TXT", -1, at(twins)) == -1); // two in another case: which one?
+    CHECK(SalNamePickIndex(3, "Z.TXT", -1, at(twins)) == 2);  // one in another case: today's fallback
+    CHECK(SalNamePickIndex(3, "z.txt", -1, at(twins)) == 2);
+    CHECK(SalNamePickIndex(3, "b.txt", -1, at(twins)) == -1);
+    CHECK(SalNamePickIndex(0, "a.txt", -1, at(twins)) == -1);
+    CHECK(SalNamePickIndex(3, NULL, -1, at(twins)) == -1);
+    CHECK(SalNamePickIndex(3, "a.txtX", 5, at(twins)) == 1); // the given bytes only
+    const char* lone[] = {"a\xED\xA0\x80", "A\xED\xA0\x80"}; // WTF-8 lone surrogates: bytes like any other
+    CHECK(SalNamePickIndex(2, "A\xED\xA0\x80", -1, at(lone)) == 1);
+    CHECK(SalNamePickIndex(2, "a\xED\xA0\x80", -1, at(lone)) == 0);
+    const char* caron[] = {"\xC5\xBElu\xC5\xA5"}; // z-caron l u t-caron
+    CHECK(SalNamePickIndex(1, "\xC5\xBDLU\xC5\xA4", -1, at(caron)) == 0); // Z-caron L U T-caron: the only one
+    const char* dup[] = {"x", "X", "x"};
+    CHECK(SalNamePickIndex(3, "x", -1, at(dup)) == 0); // the first byte-identical one
+    const char* nfd[] = {"e\xCC\x81.txt"};                       // e + combining acute
+    CHECK(SalNamePickIndex(1, "\xC3\xA9.txt", -1, at(nfd)) == -1); // NFC is another name (004, FR-009)
+    // twin detection in a sorted list
+    const char* run[] = {"A.txt", "a.txt", "b.txt", "C", "c", "c", "d"};
+    Twin261List lr = {run, 7};
+    CHECK(Twin261HasTwin(lr, 0) && Twin261HasTwin(lr, 1));
+    CHECK(!Twin261HasTwin(lr, 2));
+    CHECK(Twin261HasTwin(lr, 3) && Twin261HasTwin(lr, 4) && Twin261HasTwin(lr, 5));
+    CHECK(!Twin261HasTwin(lr, 6));
+    CHECK(!Twin261HasTwin(lr, -1) && !Twin261HasTwin(lr, 7));
+    const char* same[] = {"x", "x"}; // byte-identical neighbours are no twins
+    Twin261List ls = {same, 2};
+    CHECK(!Twin261HasTwin(ls, 0) && !Twin261HasTwin(ls, 1));
+    // the pair comparison
+    CHECK(SalTwinAwarePairCmp(TRUE, TRUE, FALSE, -7, 0) == -1);
+    CHECK(SalTwinAwarePairCmp(TRUE, FALSE, TRUE, 9, 0) == 1);
+    CHECK(SalTwinAwarePairCmp(TRUE, FALSE, FALSE, 5, 0) == 0); // no twins: feature 232
+    CHECK(SalTwinAwarePairCmp(FALSE, TRUE, TRUE, 5, -3) == -1); // other first keys: the pair order
+    CHECK(SalTwinAwarePairCmp(TRUE, TRUE, TRUE, 0, 0) == 0);
+    // merges (the probe's rows)
+    char out[256];
+    const char* t1l[] = {"A.txt", "a.txt"};
+    const char* t1r[] = {"A.txt"};
+    Twin261Merge({t1l, 2}, {t1r, 1}, out, sizeof(out)); // CMPTWIN1
+    CHECK(strcmp(out, "A.txt=A.txt;a.txt-;") == 0);
+    const char* trl[] = {"A.txt"};
+    const char* trr[] = {"A.txt", "a.txt"};
+    Twin261Merge({trl, 1}, {trr, 2}, out, sizeof(out)); // CMPTWINR
+    CHECK(strcmp(out, "A.txt=A.txt;-a.txt;") == 0);
+    const char* t2r[] = {"a.txt"};
+    Twin261Merge({t1l, 2}, {t2r, 1}, out, sizeof(out)); // CMPTWIN2
+    CHECK(strcmp(out, "A.txt-;a.txt=a.txt;") == 0);
+    const char* sl[] = {"Readme.txt", "z"};
+    const char* sr[] = {"README.txt", "z"};
+    Twin261Merge({sl, 2}, {sr, 2}, out, sizeof(out)); // CMPSINGLE: one name (232)
+    CHECK(strcmp(out, "Readme.txt=README.txt;z=z;") == 0);
+    const char* subl[] = {"Ab.txt", "aB.txt"};
+    const char* subr[] = {"AB.txt", "ab.txt"};
+    Twin261Merge({subl, 2}, {subr, 2}, out, sizeof(out)); // CMPSUB: no pair at all
+    CHECK(strcmp(out, "-AB.txt;Ab.txt-;aB.txt-;-ab.txt;") == 0);
+    const char* thr[] = {"A.TXT"};
+    Twin261Merge({t1l, 2}, {thr, 1}, out, sizeof(out)); // twins against a third case: nothing paired
+    CHECK(strcmp(out, "-A.TXT;A.txt-;a.txt-;") == 0);
+    Twin261Merge({thr, 1}, {t1l, 2}, out, sizeof(out)); // and mirrored
+    CHECK(strcmp(out, "A.TXT-;-A.txt;-a.txt;") == 0);
+    const char* both[] = {"A.txt", "a.txt", "b"};
+    Twin261Merge({both, 3}, {both, 3}, out, sizeof(out)); // the same folder on both sides
+    CHECK(strcmp(out, "A.txt=A.txt;a.txt=a.txt;b=b;") == 0);
+    for (int i = 0; i + 1 < 2; i++) // the fixtures are sorted as the panels sort
+    {
+        CHECK(Twin261Exact(t1l[i], t1l[i + 1]) < 0);
+        CHECK(Twin261Exact(subl[i], subl[i + 1]) < 0 && Twin261Exact(subr[i], subr[i + 1]) < 0);
+    }
+}
+
 // feature 236: a menu item's hot key goes before a free ASCII letter only - never inside a UTF-8 letter
 static void TestMenuHotKey236()
 {
@@ -14525,6 +14658,7 @@ int main(int argc, char** argv)
     TestBatchText226();
     TestBatchEscape229();
     TestNameExactInCIRun230();
+    TestNameRules261();
     TestMenuHotKey236();
     TestPercentPath238();
     TestQuickFilter244();

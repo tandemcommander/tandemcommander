@@ -9,6 +9,7 @@
 #include "plugins.h"
 #include "fileswnd.h"
 #include "tabwnd.h" // feature 078
+#include "salnamerun.h" // feature 261
 #include "filesbox.h"
 #include "stswnd.h"
 #include "snooper.h"
@@ -1219,15 +1220,24 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                                 name++;
 
                             CFileData* f = (index >= 0 && index < count) ? &Files->At(index) : NULL;
-                            BOOL nameIsSame = f != NULL && SalNameEqualOrdinalCI(name, -1, f->Name, -1); // feature 092: the file system's identity rule
+                            // feature 261: only the byte-identical name - in a case-sensitive folder the twin
+                            // "a.txt" of the viewed "A.txt" moved to its index when another program added a file
+                            // before it, and next / previous started from the wrong twin
+                            int nameLen = (int)strlen(name);
+                            BOOL nameIsSame = f != NULL && (int)f->NameLen == nameLen && memcmp(f->Name, name, nameLen) == 0;
                             if (nameIsSame)
                                 indexNotFound = FALSE;
                             if (f == NULL || !nameIsSame)
                             { // jmeno na indexu 'index' neni FileNamesEnumData.LastFileName, zkusime najit novy index tohoto jmena
-                                int i;
-                                for (i = 0; i < count && !SalNameEqualOrdinalCI(name, -1, Files->At(i).Name, -1); i++)
-                                    ;
-                                if (i != count) // novy index nalezen
+                                // feature 261 (salnamerun.h): the byte-identical file, else the only one of the same
+                                // name ignoring case (feature 092: the file system's identity rule), never one of two
+                                int i = SalNamePickIndex(count, name, nameLen,
+                                                         [this](int k, const char** n, int* len)
+                                                         {
+                                                             *n = Files->At(k).Name;
+                                                             *len = (int)Files->At(k).NameLen;
+                                                         });
+                                if (i != -1) // novy index nalezen
                                 {
                                     indexNotFound = FALSE;
                                     index = i;
