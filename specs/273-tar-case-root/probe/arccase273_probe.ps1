@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Backlog item copying-from-a-tar-folder-opened-in-another-case-extracts: a folder inside an
+    Feature 273 (backlog item copying-from-a-tar-folder-opened-in-another-case-extracts): a folder inside an
     archive opened by a path typed in another case than the archive spells it (<archive>\DOCS for
     Docs) is entered under the archive's own spelling, and Copy (F5) of its files extracts them.
 
@@ -40,7 +40,7 @@ if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; e
 
 if (-not $Lib) { $Lib = Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1' }
 . $Lib
-$Root = $TempRoot + '\tcarccase'
+$Root = $TempRoot + '\tc273'
 $StartDir = $Root + '\start'
 $TarExe = Join-Path $env:SystemRoot 'System32\tar.exe'
 $SevenZip = 'C:\Program Files\7-Zip\7z.exe'
@@ -65,7 +65,7 @@ function Make-Archive([string]$Kind, [string]$Src, [string]$Dir) {
     return $arc
 }
 function Start-Arc([string]$Left, [string]$Right) {
-    $p = Start-Process -FilePath $Exe -ArgumentList @('-t', 'TARCCASE', '-l', ('"{0}"' -f $Left), '-r', ('"{0}"' -f $Right), '-p', '1') -PassThru
+    $p = Start-Process -FilePath $Exe -ArgumentList @('-t', 'T273', '-l', ('"{0}"' -f $Left), '-r', ('"{0}"' -f $Right), '-p', '1') -PassThru
     [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p
     $sw = [Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 60 -and (Test-Alive $p.Id) -and (Get-Main $p.Id) -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 100 }
@@ -128,14 +128,14 @@ function Run-Case([string]$Kind, [string]$Case) {
     finally { if ($id) { End-Row $name $id $null $before } }
 }
 
-$backup = Join-Path $env:TEMP 'tcarccase_backup.reg'
+$backup = Join-Path $env:TEMP 'tc273_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
     Set-Config
-    Out ("arccase_probe {0}" -f $Label)
+    Out ("arccase273_probe (feature 273) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; ACP {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP())
     Out ''

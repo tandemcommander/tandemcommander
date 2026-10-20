@@ -215,6 +215,11 @@ public:
     CSalamanderDirectory* GetSalamanderDir(int i);
     // returns the index of the directory specified by name
     int GetIndex(const char* dir);
+    // feature 273: 'path' (relative to this Salamander directory) spelled as the listing spells
+    // its folders - each component replaced by the folder the lookup of GetFiles / GetDirs finds
+    // for it; written to 'out' (size 'outSize', without a leading / trailing backslash); FALSE =
+    // a component names no folder or the result does not fit ('out' is then not usable)
+    BOOL GetPathSpelling(const char* path, char* out, int outSize);
     // is there a directory at this index?
     BOOL IsDirectory(int i) { return i >= 0 && i < Dirs.Count; }
     // is there a file at this index?

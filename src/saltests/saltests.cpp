@@ -81,6 +81,7 @@
 #include "salexiforient.h"    // feature 267
 #include "salumbalance.h"     // feature 268
 #include "salftplisting.h"    // feature 269
+#include "salarcpathspell.h"  // feature 273
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -15244,6 +15245,94 @@ static void TestFtpListingField269()
     CHECK(kept > 0 && kept < strings);
 }
 
+// feature 273: the path inside an archive re-spelled as the listing spells it (salarcpathspell.h);
+// the fake listing reuses FakeDir252, the comparison is the listing's: the legacy byte fold
+// (= StrICmpEx) or exact bytes (= StrCmpEx, SALDIRFLAG_CASESENSITIVE)
+struct Access273
+{
+    bool CaseSensitive;
+    int Count(const FakeDir252* d) const { return d->GetDirsCount(); }
+    const char* Name(const FakeDir252* d, int i, int* len) const
+    {
+        *len = (int)d->GetDir(i)->NameLen;
+        return d->GetDir(i)->Name;
+    }
+    const FakeDir252* Sub(const FakeDir252* d, int i) const { return d->GetSalDir(i); }
+    bool Equal(const FakeDir252*, const char* name, int nameLen, const char* comp, int compLen) const
+    {
+        if (CaseSensitive)
+            return nameLen == compLen && memcmp(name, comp, nameLen) == 0;
+        return SalNameOrderDetail::LegacyCompareCI(name, nameLen, comp, compLen) == 0;
+    }
+};
+
+static std::string Respell273(const FakeDir252* root, const char* path, bool cs, int* res, int outSize = 1000)
+{
+    std::vector<char> out(outSize > 0 ? outSize : 1, 'x');
+    Access273 acc{cs};
+    *res = SalArcPathRespell(root, path, out.data(), outSize, acc);
+    return *res == SAL_ARCRESPELL_OK ? std::string(out.data()) : std::string("<") + std::to_string(*res) + ">";
+}
+
+static void TestArcPathRespell273()
+{
+    int r;
+    // the item's archive: Docs\f.txt, Docs\Sub\g.txt, z.txt
+    FakeDir252 sub, docs, root;
+    sub.AddFile("g.txt");
+    docs.AddFile("f.txt");
+    docs.AddDir("Sub", &sub);
+    root.AddFile("z.txt");
+    root.AddDir("Docs", &docs);
+    CHECK(Respell273(&root, "DOCS", false, &r) == "Docs" && r == SAL_ARCRESPELL_OK);
+    CHECK(Respell273(&root, "dOCS\\SUB", false, &r) == "Docs\\Sub");
+    CHECK(Respell273(&root, "Docs\\Sub", false, &r) == "Docs\\Sub"); // already as listed: unchanged
+    CHECK(Respell273(&root, "\\DOCS\\", false, &r) == "Docs");       // a leading and a trailing backslash
+    CHECK(Respell273(&root, "", false, &r) == "" && r == SAL_ARCRESPELL_OK);
+    CHECK(Respell273(&root, "\\", false, &r) == "" && r == SAL_ARCRESPELL_OK);
+    // a component that names no folder - also a file's name, an empty component, a folder below a missing one
+    CHECK(Respell273(&root, "Docs\\nothing", false, &r) == "<1>" && r == SAL_ARCRESPELL_NOTFOUND);
+    CHECK(Respell273(&root, "z.txt", false, &r) == "<1>");
+    CHECK(Respell273(&root, "Docs\\\\Sub", false, &r) == "<1>");
+    CHECK(Respell273(&root, "Doc", false, &r) == "<1>");   // a prefix is not the folder
+    CHECK(Respell273(&root, "Docsx", false, &r) == "<1>"); // nor a longer name
+    // an empty folder (no contents object): nothing below it
+    FakeDir252 e;
+    e.AddDir("Empty", NULL);
+    CHECK(Respell273(&e, "EMPTY", false, &r) == "Empty");
+    CHECK(Respell273(&e, "EMPTY\\x", false, &r) == "<1>");
+    // a case-sensitive listing (case twins Docs and DOCS): the exact folder only
+    FakeDir252 a, b, tw;
+    tw.AddDir("Docs", &a);
+    tw.AddDir("DOCS", &b);
+    CHECK(Respell273(&tw, "DOCS", true, &r) == "DOCS");
+    CHECK(Respell273(&tw, "Docs", true, &r) == "Docs");
+    CHECK(Respell273(&tw, "docs", true, &r) == "<1>");
+    // the listing's lookup takes the FIRST equal folder - so does the rule
+    CHECK(Respell273(&tw, "docs", false, &r) == "Docs");
+    // UTF-8: the legacy fold leaves bytes >= 0x80 to the code page table - the listing's rule, not
+    // the file system's; ASCII parts fold, the rest compares by that table
+    FakeDir252 u;
+    u.AddDir("\xC5\xBD"
+             "aba",
+             NULL); // "Žaba"
+    CHECK(Respell273(&u, "\xC5\xBD"
+                         "ABA",
+                     false, &r) == "\xC5\xBD"
+                                   "aba");
+    // the output size: exact fits, one byte less is refused (nothing cut)
+    CHECK(Respell273(&root, "dOCS\\SUB", false, &r, 9) == "Docs\\Sub" && r == SAL_ARCRESPELL_OK);
+    CHECK(Respell273(&root, "dOCS\\SUB", false, &r, 8) == "<2>" && r == SAL_ARCRESPELL_TOOLONG);
+    CHECK(Respell273(&root, "DOCS", false, &r, 4) == "<2>");
+    CHECK(Respell273(&root, "", false, &r, 1) == "" && r == SAL_ARCRESPELL_OK);
+    {
+        char tiny[4] = {'x', 'x', 'x', 'x'};
+        Access273 acc{false};
+        CHECK(SalArcPathRespell((const FakeDir252*)&root, "DOCS", tiny, 0, acc) == SAL_ARCRESPELL_TOOLONG && tiny[0] == 'x');
+        CHECK(SalArcPathRespell((const FakeDir252*)&root, "dOCS\\SUB", tiny, 4, acc) == SAL_ARCRESPELL_TOOLONG && tiny[0] == 0);
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -15367,6 +15456,7 @@ int main(int argc, char** argv)
     TestExifOrient267();
     TestUserMenuBalance268();
     TestFtpListingField269();
+    TestArcPathRespell273();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

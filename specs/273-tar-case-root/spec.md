@@ -97,8 +97,9 @@ copying extracts only `DOCS`'s file.
 - **FR-001**: After the panel enters a folder inside an archive whose listing compares names
   ignoring case, the panel's current path inside the archive MUST be spelled exactly as the
   archive's listing spells each folder of it.
-- **FR-002**: Copy (F5) / Move of files from a TAR folder entered by a path typed in another case
-  MUST extract them (the item's failure).
+- **FR-002**: Copy (F5) of files from a TAR folder entered by a path typed in another case MUST
+  extract them (the item's failure; other operations on the folder receive the same re-spelled
+  path).
 - **FR-003**: A path that already matches the listing's spelling, a case-sensitive listing and the
   archive root MUST behave exactly as before.
 - **FR-004**: The existing shortening of a path whose tail does not exist, the file to focus and the

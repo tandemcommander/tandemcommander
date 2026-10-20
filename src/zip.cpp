@@ -20,7 +20,8 @@
 #include "viewer.h"
 #include "codetbl.h"
 #include "shellib.h"
-#include "salurlpwd.h" // feature 085
+#include "salurlpwd.h"       // feature 085
+#include "salarcpathspell.h" // feature 273
 #include "gui.h"
 #include "tasklist.h"
 #include "olespy.h"
@@ -6777,6 +6778,33 @@ int CSalamanderDirectory::GetIndex(const char* dir)
         }
     }
     return -1; // not found
+}
+
+// feature 273: the accessor of SalArcPathRespell over the core's listing - the same comparison
+// (SalDirStrCmpEx, the folder's own flags) and order as GetFiles / GetDirs
+struct CSalDirRespellAccess
+{
+    int Count(CSalamanderDirectory* d) const { return d->GetDirsCount(); }
+    const char* Name(CSalamanderDirectory* d, int i, int* len) const
+    {
+        const CFileData* f = d->GetDirEx(i);
+        *len = (int)f->NameLen;
+        return f->Name;
+    }
+    CSalamanderDirectory* Sub(CSalamanderDirectory* d, int i) const { return d->GetSalamanderDir(i); }
+    bool Equal(CSalamanderDirectory* d, const char* name, int nameLen, const char* comp, int compLen) const
+    {
+        return d->SalDirStrCmpEx(name, nameLen, comp, compLen) == 0;
+    }
+};
+
+BOOL CSalamanderDirectory::GetPathSpelling(const char* path, char* out, int outSize)
+{
+    CALL_STACK_MESSAGE2("CSalamanderDirectory::GetPathSpelling(%s, , )", path);
+    if (path == NULL)
+        return FALSE;
+    CSalDirRespellAccess acc;
+    return SalArcPathRespell(this, path, out, outSize, acc) == SAL_ARCRESPELL_OK;
 }
 
 // ****************************************************************************

@@ -2672,6 +2672,22 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
         }
     }
 
+    // feature 273: the path as the archive spells its folders - a listing without case twins
+    // finds "DOCS" for the folder "Docs", but the archive plug-ins get this path as the root of
+    // the selected names and TAR extracts by exact names (nothing was extracted, silently); the
+    // re-spelled path names the same folder and has the same length; not re-spelled (also low
+    // memory) = the typed path is kept
+    if (GetZIPPath()[0] != 0)
+    {
+        CSalMaxPathBuffer spelled; // as ZIPPath
+        if (spelled.Get() != NULL &&
+            GetArchiveDir()->GetPathSpelling(GetZIPPath(), spelled, spelled.Size()) &&
+            strcmp(spelled, GetZIPPath()) != 0)
+        {
+            SetZIPPath(spelled);
+        }
+    }
+
     if (!useFileName && sameArch && GetArchiveDir()->SalDirStrCmp(currentPath, GetZIPPath()) == 0) // we're not focusing a file and the shortened path matches the current one
     {                                                                                              // occurs for example when attempting to enter an inaccessible directory (immediate return)
         EndStopRefresh();
