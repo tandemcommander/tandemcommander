@@ -8,7 +8,7 @@ source: review:250
 who: agent
 created: 2026-10-20
 updated: 2026-10-20
-verified: -
+verified: 2026-10-20 56a5f414
 effort: S
 feature: -
 related: []
@@ -38,3 +38,4 @@ Severity 7 by the band "lose data in a narrow scenario" (the configuration entri
 
 - 2026-10-20 — created (source review:250)
 - 2026-10-20 — moved to Next position 1
+- 2026-10-20 — verified at 56a5f414: reproduced at 56a5f414: probe dmg268 on the hidden desktop, 9 damaged rows of viewers/alt viewers/editors/User Menu keep only entries before the damaged one and leak its key; controls pass
