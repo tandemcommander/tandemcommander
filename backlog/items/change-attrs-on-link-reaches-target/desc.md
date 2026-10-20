@@ -7,8 +7,8 @@ area: data-safety
 source: leftover:213
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
-verified: -
+updated: 2026-10-20
+verified: 2026-10-20 d5f67ace
 effort: M
 feature: -
 related: []
@@ -37,3 +37,4 @@ Encryption is "probably" affected per the source - measure. The walk into the ta
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-20 — verified at d5f67ace: hidden-desktop probe at d5f67ace: COMP, UNCOMP, TIME, SUBC FAIL (target folder compressed / re-timed), plain control PASS
