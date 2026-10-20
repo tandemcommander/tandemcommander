@@ -17,7 +17,6 @@ Last triaged: 2026-10-19
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Case-sensitive folders: several features take the first case-insensitive twin](items/case-sensitive-twins-first-match/desc.md) | bug | 4 | panels-ui | 261 |
 
 ## Next
 

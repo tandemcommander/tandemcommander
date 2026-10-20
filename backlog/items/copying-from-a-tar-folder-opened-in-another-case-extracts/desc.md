@@ -11,7 +11,7 @@ updated: 2026-10-20
 verified: -
 effort: S
 feature: -
-related: [case-sensitive-twins-first-match]
+related: []
 depends-on: []
 reason: -
 ---
@@ -41,3 +41,4 @@ Severity 5: nothing is lost (the archive is untouched) but a copy silently does 
 ## Log
 
 - 2026-10-20 — created (source review:252)
+- 2026-10-20 — related item case-sensitive-twins-first-match done in feature 261

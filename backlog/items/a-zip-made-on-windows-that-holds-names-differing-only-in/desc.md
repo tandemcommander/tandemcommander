@@ -11,7 +11,7 @@ updated: 2026-10-20
 verified: -
 effort: S
 feature: -
-related: [case-sensitive-twins-first-match]
+related: []
 depends-on: []
 reason: -
 ---
@@ -38,3 +38,4 @@ The same hook as 252's: build with `SALDIRFLAG_CASESENSITIVE`, clear it after th
 
 - 2026-10-20 — created (source leftover:252)
 - 2026-10-20 — severity as the 7-Zip / TAR item it continues
+- 2026-10-20 — related item case-sensitive-twins-first-match done in feature 261

@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260 |
@@ -3244,3 +3244,25 @@ a few early ones are out of sequence).
   `a-gz-file-whose-stored-name-is-too-long-for-windows-refuse`. From backlog item
   `archive-long-names-cache-folders-tar`. Probe `cache260_probe.ps1` 10 / 4 -> 16 / 0; 222's probe
   10 / 0; `TestCacheTmpPath260`; two refute-first reviews (review 1 one MUST, fixed; review 2 none).
+- 261-case-twins-exact-match: in a case-sensitive folder holding a.txt and A.txt, Compare
+  Directories paired a.txt with the other side's A.txt (both left twins marked, a right twin's
+  partner marked different, sub-folders with other names "identical"), and the viewer's next /
+  previous file, the User Menu's second compare name and Ctrl+X ghosting in the other panel took
+  the first name equal ignoring case - now lookups take the byte-identical item, else the only one
+  equal ignoring case (`salnamerun.h` `SalNamePickIndex`), and Compare Directories pairs a run of
+  one sort key that holds twins as a set (exact names, then case-only pairs between names without
+  twins; `SalTwinRunPairs`), walking the comparison's copies pairs first and sorting them back
+  before the marks are transferred. Traps: a comparison chosen pair by pair (exact where a twin is
+  involved) is not consistent with the sort order - the locale key ignores a soft hyphen and folds
+  NFC / NFD - and stepped past a partner (review 1, measured); an ignore mask must be checked again
+  after a run is rearranged (review 2); the Code Viewer plug-in (the default for .txt) has its own
+  next / previous command ids. Limits: remembered folder sizes (`CDirectorySizesHolder`) are
+  unreachable - unchanged; runs without twins keep 232's comparison (soft hyphen / NFD pairs can
+  still be missed, pre-existing, Inbox `compare-directories-misses-a-case-only-pair-beside-a-soft`);
+  Inbox `find-window-the-viewer-next-previous-file-takes-the-first`,
+  `turkish-azeri-locale-index-html-and-index-html-never-compare`,
+  `ctrl-x-ghosts-a-name-in-the-other-panel-that-shows-a-case`; Ctrl+X and the User Menu are a
+  person's (`check-ctrl-x-ghosting-and-user-menu-compare-names-with-case`). From backlog item
+  `case-sensitive-twins-first-match`. Probe `twin261_probe.ps1` 5 FAIL / 14 -> 16 / 0 (row CMPSHY
+  from review 1); 232's probe 16 / 0; `TestNameRules261` (negative controls fail 7 and 5); two
+  refute-first reviews (no MUST; review 1 S1 fixed by the set pairing).
