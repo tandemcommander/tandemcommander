@@ -11,8 +11,12 @@
 class CPluginDataInterface : public CPluginDataInterfaceAbstract
 {
 public:
-    CPluginDataInterface() {}
+    CPluginDataInterface(BOOL caseSensitive = FALSE) : CaseSensitive(caseSensitive) {}
     virtual ~CPluginDataInterface() {}
+
+    // feature 271: the case sensitivity of the listing this object belongs to (CZipList::CaseSensitive);
+    // the core hands the object back with every operation on that listing
+    BOOL CaseSensitive;
 
     virtual BOOL WINAPI CallReleaseForFiles() { return TRUE; }
     virtual BOOL WINAPI CallReleaseForDirs() { return TRUE; }

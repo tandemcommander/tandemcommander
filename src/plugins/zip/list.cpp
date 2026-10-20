@@ -24,6 +24,7 @@
 #include "chicon.h"
 #include "common.h"
 #include "list.h"
+#include "../../common/salcasetwins.h" // feature 271: names that differ only in case
 
 int CZipList::ListArchive(CSalamanderDirectoryAbstract* dir, BOOL& haveFiles)
 {
@@ -76,6 +77,11 @@ START_LIST:
     // TRACE_I("zip listing started");
 
     haveFiles = FALSE;
+    // feature 271: built case-sensitively - folders "D" and "d" stay two folders; the flag is kept
+    // for a Unix-made archive (as always) or when some folder holds names that differ only in case
+    // ("a.txt" / "A.txt", a Windows-made ZIP of a case-sensitive folder), otherwise it is cleared
+    // below and the listing is exactly the case-insensitive one it always was (feature 252's rule)
+    dir->SetFlags(SALDIRFLAG_CASESENSITIVE);
     readOffset = CentrDirOffs + ExtraBytes;
     if (DiskNum != CentrDirStartDisk && MultiVol)
     {
@@ -235,6 +241,9 @@ START_LIST:
         }
         haveFiles = cnt > 0;
     }
+    CaseSensitive = Unix || SalDirTreeHasCaseTwins(dir);
+    if (!CaseSensitive)
+        dir->SetFlags(0);
     free(centralHeader);
     //free(fileInfo.Name); handled in the destructor
     //  free(pathBuf);

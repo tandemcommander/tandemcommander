@@ -126,7 +126,7 @@ int CZipUnpack::UnpackOneFile(const char* nameInZip, const CFileData* fileData, 
     char* sour;
     CZIPFileData* zipFileData = (CZIPFileData*)fileData->PluginData;
 
-    Unix = zipFileData->Unix;
+    Unix = Unix || zipFileData->Unix; // feature 271: Unix may already hold the listing's case sensitivity
 
     int ret = CreateCFile(&ZipFile, ZipName, GENERIC_READ, FILE_SHARE_READ,
                           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, PE_NOSKIP, NULL, true, false);

@@ -913,8 +913,16 @@ BOOL CPluginInterfaceForArchiver::ListArchive(CSalamanderForOperationsAbstract* 
         if (!haveFiles)
             return FALSE;
     }
-    pluginData = new CPluginDataInterface();
+    pluginData = new CPluginDataInterface(list.CaseSensitive); // feature 271: the listing's case sensitivity
     return TRUE;
+}
+
+// feature 271: the case sensitivity of the listing an operation was started from - a folder without
+// an entry of its own in the archive carries no plug-in data, so the selection alone cannot tell
+// (copying or deleting folder "d" of a listing that shows "D" and "d" reached "D" too)
+static BOOL ListingIsCaseSensitive(CPluginDataInterfaceAbstract* pluginData)
+{
+    return pluginData != NULL && ((CPluginDataInterface*)pluginData)->CaseSensitive;
 }
 
 BOOL CPluginInterfaceForArchiver::UnpackArchive(CSalamanderForOperationsAbstract* salamander, const char* fileName,
@@ -930,6 +938,8 @@ BOOL CPluginInterfaceForArchiver::UnpackArchive(CSalamanderForOperationsAbstract
         if (*arcRoot == '\\')
             arcRoot++;
         CZipUnpack unpack(fileName, arcRoot, salamander, NULL);
+        if (ListingIsCaseSensitive(pluginData))
+            unpack.Unix = TRUE; // feature 271
 
         if (unpack.ErrorID || unpack.UnpackArchive(targetDir, next, nextParam))
         {
@@ -968,6 +978,8 @@ BOOL CPluginInterfaceForArchiver::UnpackOneFile(CSalamanderForOperationsAbstract
     }*/
 
         CZipUnpack unpack(fileName, "", salamander, NULL);
+        if (ListingIsCaseSensitive(pluginData))
+            unpack.Unix = TRUE; // feature 271
 
         if (unpack.ErrorID || unpack.UnpackOneFile(nameInArchive, fileData, targetDir, newFileName))
         {
@@ -1039,6 +1051,8 @@ BOOL CPluginInterfaceForArchiver::DeleteFromArchive(CSalamanderForOperationsAbst
         if (*arcRoot == '\\')
             arcRoot++;
         CZipPack pack(fileName, arcRoot, salamander);
+        if (ListingIsCaseSensitive(pluginData))
+            pack.Unix = TRUE; // feature 271
 
         if (pack.ErrorID || pack.DeleteFromArchive(next, nextParam))
         {

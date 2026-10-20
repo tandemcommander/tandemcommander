@@ -196,6 +196,7 @@ Last triaged: 2026-10-20
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Adding a file into a ZIP that holds names differing only in case can replace the other twin](items/adding-a-file-into-a-zip-that-holds-names-differing-only-in/desc.md) | bug | 7 | archives | measure:271 | 2026-10-20 |
 | [Typed masks still cut to their buffer: Recycle Bin, Find, viewer, compare](items/masks-cut-recycle-bin-find-viewer-compare/desc.md) | bug | 7 | long-paths | review:270 | 2026-10-20 |
 | [Settings import ends the viewers, editors and User Menu lists at a damaged entry](items/settings-import-ends-the-viewers-editors-and-user-menu-lists/desc.md) | bug | 3 | panels-ui | measure:268 | 2026-10-20 |
 | [The User Menu page names a new submenu end in the code page, not UTF-8](items/the-user-menu-page-names-a-new-submenu-end-in-the-code-page/desc.md) | bug | 2 | encoding | review:268 | 2026-10-20 |

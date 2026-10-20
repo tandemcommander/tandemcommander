@@ -44,3 +44,4 @@ Fixtures: a case-sensitive folder (`fsutil file setCaseSensitiveInfo <folder> en
 
 - 2026-10-20 — created (source leftover:252)
 - 2026-10-20 — moved to Person steps position 4
+- 2026-10-20 — feature 271: the same Paste check is owed for a ZIP made on Windows holding a.txt (lower) and A.txt (UPPER) - fixture as in specs/271-zip-case-twins/probe/zip271_probe.ps1 (.NET ZipArchive)

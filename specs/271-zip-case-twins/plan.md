@@ -26,8 +26,8 @@ own is matched with the listing's case sensitivity too (research R2).
 **Performance Goals**: one twin check per listing (252's measured cost); the central directory is
 read once for archives without Unix entries, as before (SC-003)
 **Constraints**: no plug-in ABI change; no UI strings
-**Scale/Scope**: 3 source files of the ZIP plug-in (`list.cpp`, `main.cpp`, `zipdll.h`, plus
-`list.h` / `extract.cpp` for one member and one line)
+**Scale/Scope**: 5 files of the ZIP plug-in (`list.cpp`, `list.h`, `main.cpp`, `zipdll.h`,
+`extract.cpp`)
 
 ## Constitution Check
 
