@@ -7,8 +7,8 @@ area: archives
 source: leftover:260
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 66245537
 effort: M
 feature: -
 related: []
@@ -42,3 +42,4 @@ Raising the limit hands plug-ins - also third-party ones built against the inter
 
 - 2026-10-20 — created (source leftover:260)
 - 2026-10-20 — moved to Next position 13
+- 2026-10-21 — verified at 66245537: present at 66245537: probe cache260 row ARCCAP (604-byte ZIP member) F3 refused too long; 095 test in fileswn5/fileswn6
