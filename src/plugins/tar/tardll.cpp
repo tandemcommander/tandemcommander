@@ -146,6 +146,7 @@ BOOL ConvertNameToU8(char*& name)
 {
     if (name == NULL || SplIsASCII(name))
         return TRUE; // ASCII is already valid UTF-8, byte for byte
+    // encoding-check: allow strict-probe-rejects-wtf8 - name bytes read from the archive (format boundary); the WTF-8 form of a core name does not arise there, the code-page reading is the documented fallback (255)
     if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, NULL, 0) > 0)
         return TRUE; // valid UTF-8 (the POSIX/GNU convention) -> keep the bytes as they are
 

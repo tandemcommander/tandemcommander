@@ -128,6 +128,7 @@ INT_PTR WINAPI SfxPreviewDlgProc(HWND dlg, UINT uMsg, WPARAM wParam, LPARAM lPar
         SetWindowText(dlg, data->Settings->Title);
         char path[MAX_PATH];
         GetCurrentDirectory(MAX_PATH, path);
+        // encoding-check: allow utf8-to-legacy-sink - a code-page path (GetCurrentDirectoryA) shown in the ANSI preview of the self-extractor dialog - code page on both sides (255)
         SetDlgItemText(dlg, IDC_PATH, path);
         SetDlgItemText(dlg, IDOK, data->Settings->ExtractBtnText);
         SetDlgItemText(dlg, IDC_ABOUT, data->AboutButton1);

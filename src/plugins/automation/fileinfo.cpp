@@ -245,6 +245,7 @@ PTSTR CFileInfo::DupWideStr(PCWSTR s, int len)
         return EmptyStr();
     }
 
+    // encoding-check: allow lossy-lenient-at-intake - the text is only shown (DialogError / DialogOverwrite / DialogQuestion), never used to find a file (255)
     // the narrowed string is handed to Salamander's Dialog* APIs (Path/error text),
     // which expect UTF-8 since plugin interface 104
     cch = WideCharToMultiByte(CP_UTF8, 0, s, len, NULL, 0, NULL, NULL);
@@ -257,11 +258,13 @@ PTSTR CFileInfo::DupWideStr(PCWSTR s, int len)
     if (len < 0)
     {
         dup = new char[cch];
+        // encoding-check: allow lossy-lenient-at-intake - the text is only shown (DialogError / DialogOverwrite / DialogQuestion), never used to find a file (255)
         cch = WideCharToMultiByte(CP_UTF8, 0, s, len, dup, cch, NULL, NULL);
     }
     else
     {
         dup = new char[cch + 1];
+        // encoding-check: allow lossy-lenient-at-intake - the text is only shown (DialogError / DialogOverwrite / DialogQuestion), never used to find a file (255)
         cch = WideCharToMultiByte(CP_UTF8, 0, s, len, dup, cch + 1, NULL, NULL);
         if (cch > 0)
         {

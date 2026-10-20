@@ -322,6 +322,7 @@ void CISO9660::ConvJolietName(char* dest, const char* src, int nLen)
     ZeroMemory(&final, sizeof(final));
     if (SplWToU8(uname, final, sizeof(final)) == 0)
     {
+        // encoding-check: allow lossy-lenient-at-intake - fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; a Joliet name (length byte <= 255, <= 127 units) always fits 'final' (255)
         // lone surrogates and the like: fall back to a lossy but valid UTF-8 form
         WideCharToMultiByte(CP_UTF8, 0, uname, -1, final, sizeof(final) - 1, 0, 0);
     }

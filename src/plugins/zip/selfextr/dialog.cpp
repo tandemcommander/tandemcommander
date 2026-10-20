@@ -240,7 +240,9 @@ BOOL WINAPI LongMessageDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
         }
         SetWindowText(ok, okText);
         SetWindowText(cancel, cancelText);
+        // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; its texts are code-page bytes the ZIP plug-in wrote from ANSI edits, LoadStr or a .sfx package (255)
         SetDlgItemText(hDlg, IDE_MESSAGE, (char*)ArchiveStart + ArchiveStart->MBoxTextOffs);
+        // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; its texts are code-page bytes the ZIP plug-in wrote from ANSI edits, LoadStr or a .sfx package (255)
         SetWindowText(hDlg, (char*)ArchiveStart + ArchiveStart->MBoxTitleOffs);
         CenterDialog(hDlg);
         return FALSE;
@@ -675,6 +677,7 @@ int StartExtracting()
                     else
                     {
                         if (DlgWin)
+                            // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; TargetPath comes from ANSI APIs and its own ANSI edit - code page on both sides (255)
                             SetDlgItemText(DlgWin, IDC_PATH, TargetPath);
                         RemoveTemp = ArchiveStart->Flags & SE_TEMPDIR && ArchiveStart->Flags & SE_REMOVEAFTER;
                         /*if (RemoveTemp)
@@ -760,6 +763,7 @@ void OnBrowse()
     if (res != NULL)
     {
         SHGetPathFromIDList(res, TargetPath);
+        // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; TargetPath comes from ANSI APIs and its own ANSI edit - code page on both sides (255)
         SetDlgItemText(DlgWin, IDC_PATH, TargetPath);
     }
     // release the item ID list
@@ -783,15 +787,21 @@ BOOL SfxOnInit(WPARAM wParam, LPARAM lParam)
     SetDlgItemText(DlgWin, IDC_TARGETPATH,
                    StringTable[ArchiveStart->Flags & SE_TEMPDIR ? STR_TEMPDIR : STR_EXTRDIR]);
     SendDlgItemMessage(DlgWin, IDC_PATH, EM_SETLIMITTEXT, MAX_PATH - 1, 0);
+    // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; TargetPath comes from ANSI APIs and its own ANSI edit - code page on both sides (255)
     SetDlgItemText(DlgWin, IDC_PATH, TargetPath);
+    // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; its texts are code-page bytes the ZIP plug-in wrote from ANSI edits, LoadStr or a .sfx package (255)
     SetDlgItemText(DlgWin, IDOK, (char*)ArchiveStart + ArchiveStart->ExtractBtnTextOffs);
     SetDlgItemText(DlgWin, IDC_ABOUT, StringTable[STR_ABOUT1]);
+    // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; its texts are code-page bytes the ZIP plug-in wrote from ANSI edits, LoadStr or a .sfx package (255)
     SetDlgItemText(DlgWin, IDC_VENDOR, (char*)ArchiveStart + ArchiveStart->VendorOffs);
+    // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; its texts are code-page bytes the ZIP plug-in wrote from ANSI edits, LoadStr or a .sfx package (255)
     SetDlgItemText(DlgWin, IDC_WEBLINK, (char*)ArchiveStart + ArchiveStart->WWWOffs);
     ShowWindow(GetDlgItem(DlgWin, IDC_FILE), SW_HIDE);
     ShowWindow(GetDlgItem(DlgWin, IDC_PROGRESS), SW_HIDE);
     ShowWindow(GetDlgItem(DlgWin, IDC_FILENAME), SW_HIDE);
+    // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; its texts are code-page bytes the ZIP plug-in wrote from ANSI edits, LoadStr or a .sfx package (255)
     SetDlgItemText(DlgWin, IDC_TEXT, (char*)ArchiveStart + ArchiveStart->TextOffs);
+    // encoding-check: allow utf8-to-legacy-sink - the self-extractor is a stand-alone ANSI program; its texts are code-page bytes the ZIP plug-in wrote from ANSI edits, LoadStr or a .sfx package (255)
     //LONG style = GetWindowLong(WebLinkControl, GWL_STYLE);
     //if (style)
     //{

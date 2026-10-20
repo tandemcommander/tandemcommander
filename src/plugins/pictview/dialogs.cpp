@@ -229,10 +229,12 @@ CImgPropDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         Static_SetText(GetDlgItem(HWindow, IDC_IMGPROP_COLORS), s);
 
         CQuadWord q1(PVII->BytesPerLine * PVII->Height, 0);
+        // encoding-check: allow ansi-template-number - the number is printed with %u (ASCII, not grouped); template and Static_SetText are code page (255)
         SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), LoadStr(IDS_BYTES), 1, &q1);
         _stprintf(buffer, fmt, PVII->BytesPerLine * PVII->Height);
         Static_SetText(GetDlgItem(HWindow, IDC_IMGPROP_SIZE), buffer);
         CQuadWord qFS(PVII->FileSize, 0);
+        // encoding-check: allow ansi-template-number - the number is printed with %u (ASCII, not grouped); template and Static_SetText are code page (255)
         SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), LoadStr(IDS_BYTES), 1, &qFS);
         _stprintf(buffer, fmt, PVII->FileSize);
         Static_SetText(GetDlgItem(HWindow, IDC_IMGPROP_FSIZE), buffer);

@@ -272,6 +272,7 @@ CSplitBarWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         char buf[20];
         sprintf(buf, "%.1f %%", SplitProp * 100);
         SG->PointToLocalDecimalSeparator(buf, _countof(buf));
+        // encoding-check: allow utf8-to-legacy-sink - digits, '%' and the locale decimal separator (ASCII ',' or '.' in the Windows locales, 067), code page through the whole tooltip (255)
         SetWindowText(ToolTip->HWindow, buf);
 
         POINT p;
@@ -408,6 +409,7 @@ CSplitBarWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 char buf[20];
                 sprintf(buf, "%.1f %%", SplitProp * 100);
                 SG->PointToLocalDecimalSeparator(buf, _countof(buf));
+                // encoding-check: allow utf8-to-legacy-sink - digits, '%' and the locale decimal separator (ASCII ',' or '.' in the Windows locales, 067), code page through the whole tooltip (255)
                 SetWindowText(ToolTip->HWindow, buf);
             }
 

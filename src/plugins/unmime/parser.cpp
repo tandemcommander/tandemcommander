@@ -656,6 +656,7 @@ static void NameToU8(char* name, int bufSize)
 {
     if (name == NULL || SplIsASCII(name))
         return;
+    // encoding-check: allow strict-probe-rejects-wtf8 - name bytes read from the archive (format boundary); the WTF-8 form of a core name does not arise there, the code-page reading is the documented fallback (255)
     if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, NULL, 0) > 0)
         return; // already valid UTF-8 -> keep the bytes verbatim
     int wLen = MultiByteToWideChar(CP_ACP, 0, name, -1, NULL, 0);

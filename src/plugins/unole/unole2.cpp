@@ -210,6 +210,7 @@ BOOL ParseStorage(CSalamanderDirectoryAbstract* Dir, LPSTORAGE CF, LPMALLOC pIMa
         // OLE format boundary (interface 104): stream names are native UTF-16 ->
         // convert directly to UTF-8 (the encoding crossing the plugin interface)
         if (SplWToU8(element.pwcsName, name, sizeof(name)) == 0)
+            // encoding-check: allow lossy-lenient-at-intake - fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; an OLE element name (<= 31 units) always fits 'name' (255)
             WideCharToMultiByte(CP_UTF8, 0, element.pwcsName, -1, name, sizeof(name), NULL, NULL);
         name[sizeof(name) - 1] = 0;
         fileData.Name = SalamanderGeneral->DupStr(name);

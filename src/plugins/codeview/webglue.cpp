@@ -51,9 +51,11 @@ static std::string CvWideToUtf8(const std::wstring& w)
 {
     if (w.empty())
         return std::string();
+    // encoding-check: allow lossy-lenient-at-intake - a virtual-host request path, compared with fixed ASCII asset names (255)
     int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), NULL, 0, NULL, NULL);
     std::string s((size_t)(n > 0 ? n : 0), 0);
     if (n > 0)
+        // encoding-check: allow lossy-lenient-at-intake - a virtual-host request path, compared with fixed ASCII asset names (255)
         WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), &s[0], n, NULL, NULL);
     return s;
 }

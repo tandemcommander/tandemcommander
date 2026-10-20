@@ -3371,6 +3371,7 @@ BOOL CZipPack::LoadDefaults()
     if (!DefLanguage && LoadSfxFileData(file, &DefLanguage))
     {
       char err[512];
+      // encoding-check: allow mixed-composition - inside the commented-out old CZipPack::LoadDefaults - not compiled; the live copy in add_del.cpp uses LoadStrU8 (130, 255)
       sprintf(err, LoadStr(IDS_UNABLEREADSFX2), file);
       SalamanderGeneral->ShowMessageBox(err, LoadStr(IDS_ERROR), MSGBOX_ERROR);
       lstrcpy(Options.SfxSettings.Text, LoadStr(IDS_DEFAULTTEXT));

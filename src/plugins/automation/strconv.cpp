@@ -45,6 +45,7 @@ OLE2A::operator const char*()
         return m_pszDynamicBuffer;
     }
 
+    // encoding-check: allow lossy-lenient-at-intake - OLE2A serves a question text and a trace only - shown, never a name for an operation (255)
     int len = WideCharToMultiByte(CP_UTF8, 0, m_pstrOleString, -1,
                                   m_szStaticBuffer, sizeof(m_szStaticBuffer), NULL, NULL);
     if (len > 0)
@@ -52,10 +53,12 @@ OLE2A::operator const char*()
         return m_szStaticBuffer;
     }
 
+    // encoding-check: allow lossy-lenient-at-intake - OLE2A serves a question text and a trace only - shown, never a name for an operation (255)
     len = WideCharToMultiByte(CP_UTF8, 0, m_pstrOleString, -1,
                               NULL, 0, NULL, NULL);
 
     m_pszDynamicBuffer = new char[len];
+    // encoding-check: allow lossy-lenient-at-intake - OLE2A serves a question text and a trace only - shown, never a name for an operation (255)
     WideCharToMultiByte(CP_UTF8, 0, m_pstrOleString, -1,
                         m_pszDynamicBuffer, len, NULL, NULL);
 

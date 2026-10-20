@@ -160,11 +160,13 @@ static void CvAppendUtf8FromWide(const wchar_t* w, int wlen, std::string& out)
 {
     if (wlen <= 0)
         return;
+    // encoding-check: allow lossy-lenient-at-intake - decoded file contents for the viewer (shown), not a name (255)
     int n = WideCharToMultiByte(CP_UTF8, 0, w, wlen, NULL, 0, NULL, NULL);
     if (n <= 0)
         return;
     size_t at = out.size();
     out.resize(at + n);
+    // encoding-check: allow lossy-lenient-at-intake - decoded file contents for the viewer (shown), not a name (255)
     WideCharToMultiByte(CP_UTF8, 0, w, wlen, &out[at], n, NULL, NULL);
 }
 

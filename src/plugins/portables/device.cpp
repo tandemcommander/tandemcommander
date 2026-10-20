@@ -64,11 +64,13 @@ void WINAPI CWpdDevice::Update(IPortableDeviceManager* devMgr)
     hr = devMgr->GetDeviceFriendlyName(m_pwzPnpId, wz, &len);
     if (SUCCEEDED(hr))
     {
+        // encoding-check: allow lossy-lenient-at-intake - a device's friendly name from the WPD manager, converted the same way wherever it is used, so a look-up by it still matches; not a file name (255)
         // the device name is Unicode; the narrow CFxString carries it as UTF-8
         // so it reaches Salamander as UTF-8 (plugin interface 104)
         int cch = ::WideCharToMultiByte(CP_UTF8, 0, wz, -1, nullptr, 0, nullptr, nullptr);
         if (cch > 0)
         {
+            // encoding-check: allow lossy-lenient-at-intake - a device's friendly name from the WPD manager, converted the same way wherever it is used, so a look-up by it still matches; not a file name (255)
             ::WideCharToMultiByte(CP_UTF8, 0, wz, -1, m_strFriendlyName.GetBuffer(cch), cch, nullptr, nullptr);
             m_strFriendlyName.ReleaseBuffer();
         }

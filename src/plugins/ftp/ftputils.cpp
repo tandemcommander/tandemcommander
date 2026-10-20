@@ -3624,6 +3624,7 @@ char* FTPListingFieldToU8(const char* beg, int len)
             ascii = FALSE;
             break;
         }
+    // encoding-check: allow strict-probe-rejects-wtf8 - bytes of a server's listing (protocol); a server does not send the WTF-8 form, the code-page reading is the documented fallback (224, 255)
     if (ascii || (len > 0 && MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, beg, len, NULL, 0) > 0))
     {
         char* str = (char*)SalamanderGeneral->Alloc(len + 1);
@@ -3642,12 +3643,14 @@ char* FTPListingFieldToU8(const char* beg, int len)
         if (w != NULL)
         {
             MultiByteToWideChar(CP_ACP, 0, beg, len, w, wLen);
+            // encoding-check: allow lossy-lenient-at-intake - the input was decoded from the code page just above - valid Unicode by construction (255)
             int u8Len = WideCharToMultiByte(CP_UTF8, 0, w, wLen, NULL, 0, NULL, NULL);
             if (u8Len > 0)
             {
                 char* str = (char*)SalamanderGeneral->Alloc(u8Len + 1);
                 if (str != NULL)
                 {
+                    // encoding-check: allow lossy-lenient-at-intake - the input was decoded from the code page just above - valid Unicode by construction (255)
                     WideCharToMultiByte(CP_UTF8, 0, w, wLen, str, u8Len, NULL, NULL);
                     str[u8Len] = 0;
                     FTPAddCodePageName(str); // feature 224: this server speaks the code page

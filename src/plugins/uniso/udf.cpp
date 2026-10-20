@@ -155,6 +155,7 @@ void DecodeOSTACompressed(BYTE* id, int len, char* result)
 
     if (SplWToU8(uncompressed, final, sizeof(final)) == 0)
     {
+        // encoding-check: allow lossy-lenient-at-intake - fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; a UDF name (length byte <= 255) always fits 'final' (255)
         // lone surrogates and the like: fall back to a lossy but valid UTF-8 form
         WideCharToMultiByte(CP_UTF8, 0, uncompressed, -1, final, sizeof(final) - 1, 0, 0);
     }

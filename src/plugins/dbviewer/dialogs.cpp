@@ -527,6 +527,7 @@ void CColumnsDialog::SetLVTexts(int index)
     buff[0] = 0;
     if (column->Decimals != -1)
         sprintf(buff, "%d", column->Decimals);
+    // encoding-check: allow utf8-to-legacy-sink - a number printed with %d - ASCII (255)
     ListView_SetItemText(HListView, index, 3, buff);
 
     // visibility

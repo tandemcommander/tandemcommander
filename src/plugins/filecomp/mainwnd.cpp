@@ -803,6 +803,7 @@ void CMainWindow::ResetComboBox(BOOL* cancel)
 
             WCHAR* bufW = buf != NULL ? SplU8ToWAlloc(buf) : NULL;
             free(buf);
+            // encoding-check: allow utf8-to-legacy-sink - SendMessageW with the UTF-16 text (SplU8ToWAlloc) - the wide message (255)
             LRESULT ret = bufW != NULL ? SendMessageW(ComboBox->HWindow, CB_ADDSTRING, 0, (LPARAM)bufW) : CB_ERRSPACE;
             free(bufW);
             if (ret == CB_ERR || ret == CB_ERRSPACE)

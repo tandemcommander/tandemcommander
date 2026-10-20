@@ -87,6 +87,7 @@ BOOL LoadStrU8(int resID, char* buf, int bufSize)
 {
     if (buf == NULL || bufSize <= 0)
         return FALSE;
+    // encoding-check: allow lossy-lenient-at-intake - a resource string (LoadStrW) - valid Unicode by construction (255)
     if (WideCharToMultiByte(CP_UTF8, 0, LoadStrW(resID), -1, buf, bufSize, NULL, NULL) > 0)
         return TRUE;
     buf[0] = 0; // does not fit: no text rather than a cut one or code-page bytes in a UTF-8 text
@@ -99,10 +100,12 @@ static char* LoadStrU8Alloc(int resID)
     const WCHAR* textW = LoadStrW(resID);
     if (textW == NULL)
         return NULL;
+    // encoding-check: allow lossy-lenient-at-intake - a resource string (LoadStrW) - valid Unicode by construction (255)
     int size = WideCharToMultiByte(CP_UTF8, 0, textW, -1, NULL, 0, NULL, NULL); // with the terminator
     if (size <= 0)
         return NULL;
     char* text = (char*)malloc(size);
+    // encoding-check: allow lossy-lenient-at-intake - a resource string (LoadStrW) - valid Unicode by construction (255)
     if (text != NULL && WideCharToMultiByte(CP_UTF8, 0, textW, -1, text, size, NULL, NULL) <= 0)
     {
         free(text);
@@ -154,6 +157,7 @@ static BOOL ErrorHelperWide(HWND parent, const char* message, int lastError, va_
         reasonW[0] = 0;
         FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reasonW, _countof(reasonW), NULL);
+        // encoding-check: allow lossy-lenient-at-intake - the system's error text (FormatMessageW) - shown, not a name (255)
         if (WideCharToMultiByte(CP_UTF8, 0, reasonW, -1, reason, sizeof(reason), NULL, NULL) <= 0)
             reason[0] = 0;
     }

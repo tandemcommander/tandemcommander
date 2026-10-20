@@ -1,0 +1,78 @@
+plugins/7zip/dialogs.cpp:601: [utf8-to-legacy-sink] SetWindowText(GetDlgItem(HWindow, IDC_NA_ARCHIVE), Archive);
+plugins/automation/cfgdlg.cpp:747: [utf8-to-legacy-sink] ListView_SetItemText(hwndList, iSel, 0, szPath);
+plugins/checkver/dialogs.cpp:314: [mixed-composition] sprintf(buff, LoadStr(IDS_REMOVE_CNFRM), itemName);
+plugins/dbviewer/dialogs.cpp:524: [utf8-to-legacy-sink] ListView_SetItemText(HListView, index, 2, buff);
+plugins/dbviewer/dialogs.cpp:530: [utf8-to-legacy-sink] ListView_SetItemText(HListView, index, 3, buff);
+plugins/filecomp/controls.cpp:275: [utf8-to-legacy-sink] SetWindowText(ToolTip->HWindow, buf);
+plugins/filecomp/controls.cpp:411: [utf8-to-legacy-sink] SetWindowText(ToolTip->HWindow, buf);
+plugins/filecomp/mainwnd.cpp:806: [utf8-to-legacy-sink] LRESULT ret = bufW != NULL ? SendMessageW(ComboBox->HWindow, CB_ADDSTRING, 0, (LPARAM)bufW) : CB_ERRSPACE;
+plugins/ftp/dialogs6.cpp:121: [dead-dispinfow] LVN_GETDISPINFOW handler in a file that never sends NF_REQUERY - the handler cannot run
+plugins/mmviewer/renmain.cpp:93: [mixed-composition] sprintf(buff, LoadStr(IDS_ERROR_OPENING), name);
+plugins/pictview/dialogs.cpp:232: [ansi-template-number] SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), LoadStr(IDS_BYTES), 1, &q1);
+plugins/pictview/dialogs.cpp:236: [ansi-template-number] SalamanderGeneral->ExpandPluralString(fmt, sizeof(fmt), LoadStr(IDS_BYTES), 1, &qFS);
+plugins/pictview/pictview.cpp:1577: [mixed-composition] _snprintf_s(errText, _TRUNCATE, LoadStr(IDS_LOADEXIF), path); // bounded (feature 131)
+plugins/regedt/finddlg2.cpp:996: [dead-dispinfow] LVN_GETDISPINFOW handler in a file that never sends NF_REQUERY - the handler cannot run
+plugins/unmime/unmime.cpp:408: [mixed-composition] _snprintf_s(title, _TRUNCATE, LoadStr(IDS_EXTRTITLE), SalamanderGeneral->SalPathFindFileName(fileName));
+plugins/unmime/unmime.cpp:449: [mixed-composition] _snprintf_s(title, _TRUNCATE, LoadStr(IDS_EXTRTITLE), SalamanderGeneral->SalPathFindFileName(fileName));
+plugins/zip/add.cpp:3374: [mixed-composition] sprintf(err, LoadStr(IDS_UNABLEREADSFX2), file);
+plugins/zip/prevsfx.cpp:131: [utf8-to-legacy-sink] SetDlgItemText(dlg, IDC_PATH, path);
+plugins/zip/selfextr/dialog.cpp:243: [utf8-to-legacy-sink] SetDlgItemText(hDlg, IDE_MESSAGE, (char*)ArchiveStart + ArchiveStart->MBoxTextOffs);
+plugins/zip/selfextr/dialog.cpp:244: [utf8-to-legacy-sink] SetWindowText(hDlg, (char*)ArchiveStart + ArchiveStart->MBoxTitleOffs);
+plugins/zip/selfextr/dialog.cpp:678: [utf8-to-legacy-sink] SetDlgItemText(DlgWin, IDC_PATH, TargetPath);
+plugins/zip/selfextr/dialog.cpp:763: [utf8-to-legacy-sink] SetDlgItemText(DlgWin, IDC_PATH, TargetPath);
+plugins/zip/selfextr/dialog.cpp:786: [utf8-to-legacy-sink] SetDlgItemText(DlgWin, IDC_PATH, TargetPath);
+plugins/zip/selfextr/dialog.cpp:787: [utf8-to-legacy-sink] SetDlgItemText(DlgWin, IDOK, (char*)ArchiveStart + ArchiveStart->ExtractBtnTextOffs);
+plugins/zip/selfextr/dialog.cpp:789: [utf8-to-legacy-sink] SetDlgItemText(DlgWin, IDC_VENDOR, (char*)ArchiveStart + ArchiveStart->VendorOffs);
+plugins/zip/selfextr/dialog.cpp:790: [utf8-to-legacy-sink] SetDlgItemText(DlgWin, IDC_WEBLINK, (char*)ArchiveStart + ArchiveStart->WWWOffs);
+plugins/zip/selfextr/dialog.cpp:794: [utf8-to-legacy-sink] SetDlgItemText(DlgWin, IDC_TEXT, (char*)ArchiveStart + ArchiveStart->TextOffs);
+plugins/zip/selfextr/dialog.cpp:802: [utf8-to-legacy-sink] SetDlgItemText(DlgWin, IDC_ABOUTTEXT, (char*)ArchiveStart + ArchiveStart->AboutOffs);
+plugins/automation/fileinfo.cpp:250: [lossy-lenient-at-intake] cch = WideCharToMultiByte(CP_UTF8, 0, s, len, NULL, 0, NULL, NULL);
+plugins/automation/fileinfo.cpp:260: [lossy-lenient-at-intake] cch = WideCharToMultiByte(CP_UTF8, 0, s, len, dup, cch, NULL, NULL);
+plugins/automation/fileinfo.cpp:265: [lossy-lenient-at-intake] cch = WideCharToMultiByte(CP_UTF8, 0, s, len, dup, cch + 1, NULL, NULL);
+plugins/automation/strconv.cpp:48: [lossy-lenient-at-intake] int len = WideCharToMultiByte(CP_UTF8, 0, m_pstrOleString, -1,
+plugins/automation/strconv.cpp:55: [lossy-lenient-at-intake] len = WideCharToMultiByte(CP_UTF8, 0, m_pstrOleString, -1,
+plugins/automation/strconv.cpp:59: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, m_pstrOleString, -1,
+plugins/checkver/logwnd.cpp:172: [strict-probe-rejects-wtf8] int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text, len, w, len + 1);
+plugins/codeview/intake.cpp:163: [lossy-lenient-at-intake] int n = WideCharToMultiByte(CP_UTF8, 0, w, wlen, NULL, 0, NULL, NULL);
+plugins/codeview/intake.cpp:168: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, w, wlen, &out[at], n, NULL, NULL);
+plugins/codeview/webglue.cpp:54: [lossy-lenient-at-intake] int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), NULL, 0, NULL, NULL);
+plugins/codeview/webglue.cpp:57: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, w.c_str(), (int)w.size(), &s[0], n, NULL, NULL);
+plugins/filecomp/filecomp.cpp:173: [strict-probe-rejects-wtf8] if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, label, -1, NULL, 0) > 0) // already UTF-8 (ASCII too)
+plugins/ftp/ftputils.cpp:3627: [strict-probe-rejects-wtf8] if (ascii || (len > 0 && MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, beg, len, NULL, 0) > 0))
+plugins/ftp/ftputils.cpp:3645: [lossy-lenient-at-intake] int u8Len = WideCharToMultiByte(CP_UTF8, 0, w, wLen, NULL, 0, NULL, NULL);
+plugins/ftp/ftputils.cpp:3651: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, w, wLen, str, u8Len, NULL, NULL);
+plugins/mdview/htmlgen.cpp:38: [lossy-lenient-at-intake] int need = WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), NULL, 0, NULL, NULL);
+plugins/mdview/htmlgen.cpp:41: [lossy-lenient-at-intake] if (need > 0) WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), &s[0], need, NULL, NULL);
+plugins/mdview/viewer.cpp:30: [lossy-lenient-at-intake] int need = WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), NULL, 0, NULL, NULL);
+plugins/mdview/viewer.cpp:34: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), &s[0], need, NULL, NULL);
+plugins/mdview/viewer.cpp:70: [lossy-lenient-at-intake] int n = WideCharToMultiByte(CP_UTF8, 0, &c, 1, buf, sizeof(buf), NULL, NULL);
+plugins/mmviewer/mmviewer.cpp:1412: [lossy-lenient-at-intake] if (((wcl = WideCharToMultiByte(CP_UTF8, 0, wc, wcl, c, wcl * 3, 0, NULL)) == 0))
+plugins/mmviewer/mmviewer.cpp:1468: [lossy-lenient-at-intake] int outlen = WideCharToMultiByte(CP_UTF8, 0, chars, len, NULL, 0, 0, NULL);
+plugins/mmviewer/mmviewer.cpp:1473: [lossy-lenient-at-intake] c[WideCharToMultiByte(CP_UTF8, 0, chars, len, c, outlen, 0, NULL)] = 0;
+plugins/mmviewer/mp3/id3tagv2.cpp:258: [lossy-lenient-at-intake] ret = WideCharToMultiByte(CP_UTF8, 0, wstr, len, lpStr, new_len, NULL, NULL);
+plugins/portables/device.cpp:69: [lossy-lenient-at-intake] int cch = ::WideCharToMultiByte(CP_UTF8, 0, wz, -1, nullptr, 0, nullptr, nullptr);
+plugins/portables/device.cpp:72: [lossy-lenient-at-intake] ::WideCharToMultiByte(CP_UTF8, 0, wz, -1, m_strFriendlyName.GetBuffer(cch), cch, nullptr, nullptr);
+plugins/regedt/fs2.cpp:585: [lossy-lenient-at-intake] int len = units > 0 ? WideCharToMultiByte(CP_UTF8, 0, (WCHAR*)data, units, preview, 3 * MAX_DATASIZE, NULL, NU
+plugins/regedt/regedt.cpp:90: [lossy-lenient-at-intake] if (WideCharToMultiByte(CP_UTF8, 0, LoadStrW(resID), -1, buf, bufSize, NULL, NULL) > 0)
+plugins/regedt/regedt.cpp:102: [lossy-lenient-at-intake] int size = WideCharToMultiByte(CP_UTF8, 0, textW, -1, NULL, 0, NULL, NULL); // with the terminator
+plugins/regedt/regedt.cpp:106: [lossy-lenient-at-intake] if (text != NULL && WideCharToMultiByte(CP_UTF8, 0, textW, -1, text, size, NULL, NULL) <= 0)
+plugins/regedt/regedt.cpp:157: [lossy-lenient-at-intake] if (WideCharToMultiByte(CP_UTF8, 0, reasonW, -1, reason, sizeof(reason), NULL, NULL) <= 0)
+plugins/renamer/crenamer.cpp:800: [strict-probe-rejects-wtf8] int wl = change == ccDontChange ? 0 : MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, start, len, NULL, 0);
+plugins/renamer/crenamer.cpp:811: [strict-probe-rejects-wtf8] MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, start, len, w, wl);
+plugins/renamer/crenamer.cpp:894: [lossy-lenient-at-intake] int n = outLen > 0 ? WideCharToMultiByte(CP_UTF8, 0, out, outLen, NULL, 0, NULL, NULL) : 0;
+plugins/renamer/crenamer.cpp:899: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, out, outLen, dst, n, NULL, NULL);
+plugins/renamer/preview.cpp:140: [strict-probe-rejects-wtf8] if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text, -1, TextBufferW, _countof(TextBufferW)) == 0 &&
+plugins/shared/lukas/utildlg.cpp:12: [strict-probe-rejects-wtf8] int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, u8, -1, NULL, 0);
+plugins/shared/lukas/utildlg.cpp:17: [strict-probe-rejects-wtf8] MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, u8, -1, w, wlen);
+plugins/tar/tardll.cpp:149: [strict-probe-rejects-wtf8] if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, NULL, 0) > 0)
+plugins/uncab/uncab.cpp:211: [strict-probe-rejects-wtf8] BOOL validU8 = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, NULL, 0) > 0;
+plugins/uniso/hfs.cpp:276: [lossy-lenient-at-intake] if (WideCharToMultiByte(CP_UTF8, 0, fileNameW, nameLen + 1, rootName, maxlen, NULL, NULL) > 0)
+plugins/uniso/hfs.cpp:321: [lossy-lenient-at-intake] if ((WideCharToMultiByte(CP_UTF8, 0, fileNameW, nameLen + 1, fileName, sizeof(fileName), NULL, NULL) <= 0) || 
+plugins/uniso/iso9660.cpp:326: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, uname, -1, final, sizeof(final) - 1, 0, 0);
+plugins/uniso/udf.cpp:159: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, uncompressed, -1, final, sizeof(final) - 1, 0, 0);
+plugins/uniso/udfiso.cpp:135: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, w, -1, volId, sizeof(volId) - 1, 0, 0);
+plugins/uniso/uniso.cpp:144: [strict-probe-rejects-wtf8] if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, NULL, 0) > 0)
+plugins/unmime/parser.cpp:659: [strict-probe-rejects-wtf8] if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, NULL, 0) > 0)
+plugins/unole/unole2.cpp:213: [lossy-lenient-at-intake] WideCharToMultiByte(CP_UTF8, 0, element.pwcsName, -1, name, sizeof(name), NULL, NULL);
+plugins/zip/common.cpp:1703: [lossy-lenient-at-intake] int lenUTF8 = WideCharToMultiByte(CP_UTF8, 0, wsour, wlen, NULL, 0, NULL, NULL);
+plugins/zip/common.cpp:1709: [lossy-lenient-at-intake] len = WideCharToMultiByte(CP_UTF8, 0, wsour, wlen, sourUTF8, lenUTF8, NULL, NULL);

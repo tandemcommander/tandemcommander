@@ -797,6 +797,7 @@ int ChangeCase(CChangeCase change, char* dst, int dstSize, const char* src,
     int len = (int)(end - start);
     if (len <= 0)
         return 0;
+    // encoding-check: allow strict-probe-rejects-wtf8 - deliberate (208): a part that is not strict UTF-8 (WTF-8 too) is copied unchanged - the name keeps its bytes, only the case change is skipped (255)
     int wl = change == ccDontChange ? 0 : MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, start, len, NULL, 0);
     if (wl <= 0) // no change, or not UTF-8: unchanged
     {
@@ -808,6 +809,7 @@ int ChangeCase(CChangeCase change, char* dst, int dstSize, const char* src,
     WCHAR* w = (WCHAR*)malloc(wl * sizeof(WCHAR));
     if (w == NULL)
         return -1;
+    // encoding-check: allow strict-probe-rejects-wtf8 - the same text the strict probe above accepted (255)
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, start, len, w, wl);
     WCHAR* out = w; // the result in UTF-16
     int outLen = wl;
@@ -891,11 +893,13 @@ int ChangeCase(CChangeCase change, char* dst, int dstSize, const char* src,
     default:
         break;
     }
+    // encoding-check: allow lossy-lenient-at-intake - UTF-16 from a strict UTF-8 decode, case-changed or normalized - valid Unicode by construction (255)
     int n = outLen > 0 ? WideCharToMultiByte(CP_UTF8, 0, out, outLen, NULL, 0, NULL, NULL) : 0;
     int ret = -1;
     if (n <= dstSize)
     {
         if (n > 0)
+            // encoding-check: allow lossy-lenient-at-intake - UTF-16 from a strict UTF-8 decode, case-changed or normalized - valid Unicode by construction (255)
             WideCharToMultiByte(CP_UTF8, 0, out, outLen, dst, n, NULL, NULL);
         ret = n;
     }

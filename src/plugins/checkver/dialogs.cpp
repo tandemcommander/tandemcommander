@@ -311,6 +311,7 @@ INT_PTR CALLBACK CfgDlgProc(HWND hWindow, UINT uMsg, WPARAM wParam, LPARAM lPara
                 if (SendMessage(hListBox, LB_GETTEXT, index, (LPARAM)itemName) != LB_ERR)
                 {
                     char buff[1024];
+                    // encoding-check: allow mixed-composition - itemName is read from the ANSI list box (LB_GETTEXT) - code page like the LoadStr template (255)
                     sprintf(buff, LoadStr(IDS_REMOVE_CNFRM), itemName);
                     int ret = SalGeneral->SalMessageBox(hWindow, buff, LoadStr(IDS_PLUGINNAME),
                                                         MB_ICONQUESTION | MB_YESNO);

@@ -169,6 +169,7 @@ static void FlexTextOut(HDC hDC, int x, int y, const char* text, int len, SIZE* 
         if (w == NULL)
             return;
     }
+    // encoding-check: allow strict-probe-rejects-wtf8 - log lines are resource strings and texts of the version file, not names - the WTF-8 form does not arise (255)
     int wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text, len, w, len + 1);
     if (wlen == 0) // not valid UTF-8 (e.g. an ANSI resource string) -> fall back to ANSI
         wlen = MultiByteToWideChar(CP_ACP, 0, text, len, w, len + 1);

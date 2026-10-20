@@ -208,6 +208,7 @@ int GetDlgItemTextU8(HWND dlg, int id, char* buf, int bufSize)
 // decoded or does not fit into 'buf'.
 static BOOL CabNameToU8(const char* name, int attribs, char* buf, int bufSize)
 {
+    // encoding-check: allow strict-probe-rejects-wtf8 - name bytes read from the archive (format boundary); the WTF-8 form of a core name does not arise there, the code-page reading is the documented fallback (255)
     BOOL validU8 = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, NULL, 0) > 0;
     BOOL isUTF = attribs >= 0 ? (attribs & _A_NAME_IS_UTF) != 0 : validU8;
     if (isUTF)

@@ -1409,6 +1409,7 @@ char* AnsiToUTF8(const char* chars, int len)
 
     char* c = tmpbuf.Get();
 
+    // encoding-check: allow lossy-lenient-at-intake - the input was decoded from the code page just above - valid Unicode by construction (255)
     if (((wcl = WideCharToMultiByte(CP_UTF8, 0, wc, wcl, c, wcl * 3, 0, NULL)) == 0))
     {
         tmpbuf.Reserve(len + 1);
@@ -1465,11 +1466,13 @@ char* WideToAnsi(const wchar_t* chars, int len)
         return emptyBuff;
     }
 
+    // encoding-check: allow lossy-lenient-at-intake - a tag text of the media file (shown), not a name (255)
     int outlen = WideCharToMultiByte(CP_UTF8, 0, chars, len, NULL, 0, 0, NULL);
     tmpbuf.Reserve(outlen + 1);
 
     char* c = tmpbuf.Get();
 
+    // encoding-check: allow lossy-lenient-at-intake - a tag text of the media file (shown), not a name (255)
     c[WideCharToMultiByte(CP_UTF8, 0, chars, len, c, outlen, 0, NULL)] = 0;
 
     return c;

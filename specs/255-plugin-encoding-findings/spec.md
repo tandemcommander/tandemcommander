@@ -132,7 +132,7 @@ scan, see it reported; remove it.
 - **FR-005**: The core scan (`check_encoding.py --strict`) MUST stay `TOTAL: 0`, and `--plugins`
   MUST stay a report that never fails (feature 239).
 - **FR-006**: The verdict table MUST be kept in the feature folder, one row per finding (file,
-  line at e849e68c, rule, verdict, reason or item).
+  line at e849e68c, rule, whether the plug-in is shipped, verdict, reason or item).
 - **FR-007**: Making the plug-in scan strict (in the build, for the shipped plug-ins) MUST be
   recorded as a follow-up backlog item that depends on the real-defect items.
 

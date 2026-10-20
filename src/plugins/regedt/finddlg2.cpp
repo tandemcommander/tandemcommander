@@ -993,6 +993,7 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 break;
             }
 
+            // encoding-check: allow dead-dispinfow - CFindDialog is a CDialogEx created by CreateDialogParamW - a Unicode dialog, so its list view sends W notifications (255)
             case LVN_GETDISPINFOW:
             {
                 NMLVDISPINFOW* info = (NMLVDISPINFOW*)lParam;

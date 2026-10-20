@@ -27,10 +27,12 @@ static std::string WToUtf8Str(const std::wstring& w)
 {
     if (w.empty())
         return std::string();
+    // encoding-check: allow lossy-lenient-at-intake - document text for the page (shown), not a name (255)
     int need = WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), NULL, 0, NULL, NULL);
     std::string s;
     s.resize(need > 0 ? need : 0);
     if (need > 0)
+        // encoding-check: allow lossy-lenient-at-intake - document text for the page (shown), not a name (255)
         WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), &s[0], need, NULL, NULL);
     return s;
 }
@@ -67,6 +69,7 @@ static std::wstring UriDecode(const std::wstring& in)
         else
         {
             char buf[8];
+            // encoding-check: allow lossy-lenient-at-intake - a link URI from WebView2 navigation is percent-encoded ASCII; a lone surrogate cannot be written in a URL (255)
             int n = WideCharToMultiByte(CP_UTF8, 0, &c, 1, buf, sizeof(buf), NULL, NULL);
             bytes.append(buf, n > 0 ? n : 0);
         }

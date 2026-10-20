@@ -132,6 +132,7 @@ BOOL CUDFISO::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
             memcpy(w, UDF->LVD.LogicalVolumeIdentifier + 2, 64 * sizeof(WCHAR));
             w[64] = 0;
             if (SplWToU8(w, volId, sizeof(volId)) == 0)
+                // encoding-check: allow lossy-lenient-at-intake - fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; 64 units always fit 'volId' (255)
                 WideCharToMultiByte(CP_UTF8, 0, w, -1, volId, sizeof(volId) - 1, 0, 0);
             volId[sizeof(volId) - 1] = 0;
         }
