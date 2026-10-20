@@ -1,7 +1,7 @@
 ---
 title: A damaged viewer, editor or User Menu entry erases the entries after it
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: panels-ui
 source: review:250
@@ -10,7 +10,7 @@ created: 2026-10-20
 updated: 2026-10-20
 verified: 2026-10-20 56a5f414
 effort: S
-feature: -
+feature: 268
 related: []
 depends-on: []
 reason: -
@@ -39,3 +39,4 @@ Severity 7 by the band "lose data in a narrow scenario" (the configuration entri
 - 2026-10-20 — created (source review:250)
 - 2026-10-20 — moved to Next position 1
 - 2026-10-20 — verified at 56a5f414: reproduced at 56a5f414: probe dmg268 on the hidden desktop, 9 damaged rows of viewers/alt viewers/editors/User Menu keep only entries before the damaged one and leak its key; controls pass
+- 2026-10-20 — run started, feature 268

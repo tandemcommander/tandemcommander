@@ -3,7 +3,7 @@
 **Feature Branch**: `268-damaged-list-entries`  
 **Created**: 2026-10-20  
 **Status**: Draft  
-**Input**: User description: "Backlog item a-damaged-viewer-editor-or-user-menu-entry-erases-the - implement exactly what it describes."
+**Input**: User description: "Backlog item a-damaged-viewer-editor-or-user-menu-entry-erases-the - implement exactly what it describes." From backlog item a-damaged-viewer-editor-or-user-menu-entry-erases-the.
 
 ## User Scenarios & Testing *(mandatory)*
 
