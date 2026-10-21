@@ -1,16 +1,16 @@
 ---
 title: File masks fold accented letters through the code page
 type: bug
-status: open
+status: in-progress
 severity: 3
 area: encoding
 source: review:068
 who: agent
 created: 2026-08-24
-updated: 2026-10-17
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 cb0d80f5
 effort: M
-feature: -
+feature: 283
 related: [archive-listing-display-encoding]
 depends-on: []
 reason: -
@@ -41,3 +41,5 @@ Unsure how much is reachable: 068 marked `AgreeMask` correct; the item may shrin
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-21 — verified at cb0d80f5: probe mask283 at cb0d80f5 ACP 1250: *.ext fast path StrICmp misses A.CcaronTX, |*.ext excludes nothing, *.hcirc matches x.Lacute (converted); 6 FAIL, 4 controls PASS
+- 2026-10-21 — run started, feature 283
