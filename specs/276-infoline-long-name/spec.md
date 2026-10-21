@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item focusing-an-archive-member-with-a-very-long-name-shows - focusing an archive member with a very long name shows "Expanded string is too large." twice." From backlog item focusing-an-archive-member-with-a-very-long-name-shows.
 
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: Should the expansion shorten a long name to fit the old 1000-byte text, or grow its buffer so the whole text fits? → A: Grow the buffer (bounded at 65,535 bytes); nothing is shortened, because every reachable text fits and the line's drawing already clips a too-wide text (autonomous run: item - its *Expected* shortens only "if it does not fit"; rule - CLAUDE.md "a path or name is never cut")
+- Q: Should a plug-in that fills the information line itself get a larger buffer? → A: No - its 1000-byte buffer is the plug-in contract (spl_com.h); unchanged (autonomous run: rule - the plug-in ABI is append-only and maintainer-owned)
+- Q: What happens if a text still does not fit at the bound (unreachable for listed names) or the content is malformed? → A: The last attempt reports as before (the old box, once per focus); a low-memory failure only traces (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Moving the cursor onto a long-named archive member (Priority: P1)
@@ -83,6 +91,8 @@ DISK row (754-byte name) must stay box-free.
 - **FR-005**: The rule for how large the expansion's buffer may grow MUST be a pure decision in a
   header under `src/common/` with `saltests` checks (that the bound holds the largest reachable
   expansion, and that the growth ends).
+- **FR-006**: If the text does not fit even at the bound, or the content is malformed, the
+  information line MUST report as before (one box per focus, from the last attempt only).
 
 ## Success Criteria *(mandatory)*
 
