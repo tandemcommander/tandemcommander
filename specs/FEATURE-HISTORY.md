@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278 |
@@ -3582,3 +3582,25 @@ a few early ones are out of sequence).
   `regedit-find-regexp-multibyte-code-page-buffer`. `TestRegFindTextToCodePage278` (negative
   control: unit sizing fails 12); 257's probe 9 / 0 -> 9 / 0 (regression control on 1250); one
   refute-first review (no MUST; SHOULDs: the viewer -> Inbox, the call site's proof stated).
+- 279-sftp-drop-folder-again: a local folder uploaded again into an upload-only ("drop") SFTP
+  folder failed whole - "Cannot create directory ...: SFTP error 4: Failure", none of its files
+  sent (the server refuses the creation of the existing folder and will not show it) - now such a
+  folder is "unconfirmed" (`SftpUnconfirmedDir`: mkdir FAILURE / FILE_ALREADY_EXISTS + stat
+  refused for a right, both on a live session; `src/plugins/sftp/sftputils.h`): its items are
+  tried (files by 258's exclusive create) and counted through `CUploadItemNote` (`Arrived` = the
+  server confirmed the file, before a Move's local removal; a subfolder created / shown / with
+  something confirmed); zero confirmed = one `IDS_ERR_MKDIR` box naming the folder and the Move
+  keeps it; while nothing is confirmed, a creation refused with "no such file / path" ends the
+  folder with one "not there" box (`SftpEndsUnconfirmedDir`, the folder's count passed through -
+  review SHOULD-1). Traps: 258's first attempt (a5100148) took such a folder as there and a Move
+  deleted an EMPTY one that never arrived; the old `Stat` did not record the server's status
+  (`StatEx` does); the new buffers belong in the heap `CUploadLevel` (recursion). Limits: a
+  creation refused for a right stays the file's own box (SFTPGo's answer for an existing file);
+  with nothing confirmed the folder box follows the files' boxes (Inbox
+  `sftp-a-folder-uploaded-again-whose-files-are-all-there-ends`); no real upload-only service
+  (person step `sftp-a-folder-uploaded-again-into-a-real-upload-only-service`). 258's probe row
+  DROPDIR2 is superseded (it now fails by design). From backlog item
+  `sftp-a-folder-uploaded-again-into-an-upload-only-folder`. Probe `sftp279_probe` 12 / 8 -> 20 / 0
+  (drop server + OpenSSH symlink rows; negative control: zero confirmed taken as there deletes the
+  local folder in 3 rows); harness 239 -> 265 / 0; 133's probe 76 / 0; one refute-first review (no
+  MUST; SHOULD-1 fixed, FR-007 driven by the reviewer).

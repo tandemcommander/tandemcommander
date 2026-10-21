@@ -1,12 +1,12 @@
 # Data model: 279
 
-## CUploadItemNote (operats.cpp, on the stack of one folder level)
+## CUploadItemNote (operats.cpp, in the heap block CUploadLevel of one folder level)
 
 | Field | Direction | Meaning |
 |---|---|---|
-| `QuietNoFolder` | in | the item lies in an unconfirmed folder that has no confirmed item yet: a creation refused with "no such file / path" is not shown, only reported |
+| `FolderConfirmed` | in | the items of the unconfirmed folder confirmed so far; with none, a creation refused with "no such file / path" is not shown, only reported (`SftpEndsUnconfirmedDir`; review 1 SHOULD-1: the count reaches the rule) |
 | `Arrived` | out | the server confirmed the item (file: written whole; folder: created, shown as a folder, or unconfirmed with >= 1 confirmed item) |
-| `NoFolder` | out | (only with `QuietNoFolder`) the creation was refused with "no such file / path"; no box was shown |
+| `NoFolder` | out | (only with `FolderConfirmed` 0) the creation was refused with "no such file / path"; no box was shown |
 
 Passed only by an unconfirmed level to its items; every other call passes NULL (today's behaviour).
 

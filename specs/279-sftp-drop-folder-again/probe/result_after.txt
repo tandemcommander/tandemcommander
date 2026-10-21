@@ -1,7 +1,7 @@
-sftp279_probe (feature 279), run: after
+sftp279_probe (feature 279), run: after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 05:50; desktop 'tc_probe_14720'; ACP 1250; registry key existed True; export SHA-256 BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
-Server  : dropsftp.py pid 5472 on 127.0.0.1:2279, root C:\Users\pavel\AppData\Local\Temp\tc279\srv; OpenSSH container tandem-sftp at /home/tctest/tc279
+Date    : 2026-10-21 06:09; desktop 'tc_probe_5252'; ACP 1250; registry key existed True; export SHA-256 BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+Server  : dropsftp.py pid 7124 on 127.0.0.1:2279, root C:\Users\pavel\AppData\Local\Temp\tc279\srv; OpenSSH container tandem-sftp at /home/tctest/tc279
 
 DROPDIR    ROW    PASS        first upload: drop\pack\a.txt 'PACK-A', b.txt 'PACK-B'; an error box False; connected: True [password, host key] at 'sftp:tctest@localhost:2279/pub'; dialogs: typed into [Copy]
 DROPDIR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -26,120 +26,120 @@ OSSHLINK2  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0
 Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
 
 Server log:
-  1792554612.641 start 2279 C:\Users\pavel\AppData\Local\Temp\tc279\srv
-  1792554612.748 connect
-  1792554612.753 session error SSHException('Error reading SSH protocol banner[WinError 10054] St\u00E1vaj\u00EDc\u00ED p\u0159ipojen\u00ED bylo vynucen\u011B ukon\u010Deno vzd\u00E1len\u00FDm hostitelem')
-  1792554612.753 disconnected
-  1792554617.612 connect
-  1792554618.116 disconnected
-  1792554618.599 connect
-  1792554618.603 realpath /pub -> /pub
-  1792554618.604 stat /pub ok
-  1792554618.604 opendir /pub ok (0)
-  1792554624.527 mkdir /drop/pack ok
-  1792554624.528 lstat /drop/pack/a.txt DENIED
-  1792554624.529 open /drop/pack/a.txt flags=0x701 exists=False
-  1792554624.530 close /drop/pack/a.txt
-  1792554624.531 stat /drop/pack/a.txt DENIED
-  1792554624.532 lstat /drop/pack/b.txt DENIED
-  1792554624.532 open /drop/pack/b.txt flags=0x701 exists=False
-  1792554624.534 close /drop/pack/b.txt
-  1792554624.534 stat /drop/pack/b.txt DENIED
-  1792554624.535 realpath /pub -> /pub
-  1792554624.536 stat /pub ok
-  1792554624.536 opendir /pub ok (0)
-  1792554631.108 disconnected
-  1792554637.111 connect
-  1792554637.614 disconnected
-  1792554638.094 connect
-  1792554638.098 realpath /pub -> /pub
-  1792554638.099 stat /pub ok
-  1792554638.099 opendir /pub ok (0)
-  1792554644.236 mkdir /drop/pack2 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
-  1792554644.237 stat /drop/pack2 DENIED
-  1792554644.238 lstat /drop/pack2/c.txt DENIED
-  1792554644.239 open /drop/pack2/c.txt flags=0x701 exists=False
-  1792554644.240 close /drop/pack2/c.txt
-  1792554644.240 stat /drop/pack2/c.txt DENIED
-  1792554644.242 realpath /pub -> /pub
-  1792554644.242 stat /pub ok
-  1792554644.243 opendir /pub ok (0)
-  1792554650.604 disconnected
-  1792554656.818 connect
-  1792554657.321 disconnected
-  1792554657.792 connect
-  1792554657.796 realpath /pub -> /pub
-  1792554657.796 stat /pub ok
-  1792554657.797 opendir /pub ok (0)
-  1792554663.903 mkdir /drop/pack3 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
-  1792554663.904 stat /drop/pack3 DENIED
-  1792554663.905 lstat /drop/pack3/new.txt DENIED
-  1792554663.905 open /drop/pack3/new.txt flags=0x701 exists=False
-  1792554663.907 close /drop/pack3/new.txt
-  1792554663.907 stat /drop/pack3/new.txt DENIED
-  1792554663.908 lstat /drop/pack3/old.txt DENIED
-  1792554663.909 open /drop/pack3/old.txt flags=0x701 exists=True
-  1792554663.909 open /drop/pack3/old.txt FileExistsError(17, 'File exists')
-  1792554667.043 realpath /pub -> /pub
-  1792554667.044 stat /pub ok
-  1792554667.044 opendir /pub ok (0)
-  1792554673.302 disconnected
-  1792554679.522 connect
-  1792554680.025 disconnected
-  1792554680.494 connect
-  1792554680.498 realpath /pub -> /pub
-  1792554680.499 stat /pub ok
-  1792554680.499 opendir /pub ok (0)
-  1792554686.615 mkdir /drop/pack4 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
-  1792554686.615 stat /drop/pack4 DENIED
-  1792554686.616 mkdir /drop/pack4/sub FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
-  1792554686.617 stat /drop/pack4/sub DENIED
-  1792554686.618 lstat /drop/pack4/sub/d.txt DENIED
-  1792554686.618 open /drop/pack4/sub/d.txt flags=0x701 exists=False
-  1792554686.619 close /drop/pack4/sub/d.txt
-  1792554686.620 stat /drop/pack4/sub/d.txt DENIED
-  1792554686.622 realpath /pub -> /pub
-  1792554686.622 stat /pub ok
-  1792554686.623 opendir /pub ok (0)
-  1792554693.004 disconnected
-  1792554699.232 connect
-  1792554699.735 disconnected
-  1792554700.205 connect
-  1792554700.209 realpath /pub -> /pub
-  1792554700.209 stat /pub ok
-  1792554700.210 opendir /pub ok (0)
-  1792554706.340 mkdir /drop/hole FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
-  1792554706.341 stat /drop/hole DENIED
-  1792554709.459 realpath /pub -> /pub
-  1792554709.459 stat /pub ok
-  1792554709.460 opendir /pub ok (0)
-  1792554715.715 disconnected
-  1792554721.943 connect
-  1792554722.446 disconnected
-  1792554722.914 connect
-  1792554722.918 realpath /pub -> /pub
-  1792554722.918 stat /pub ok
-  1792554722.919 opendir /pub ok (0)
-  1792554728.796 mkdir /drop/empty FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
-  1792554728.797 stat /drop/empty DENIED
-  1792554731.916 realpath /pub -> /pub
-  1792554731.917 stat /pub ok
-  1792554731.918 opendir /pub ok (0)
-  1792554738.424 disconnected
-  1792554744.256 connect
-  1792554744.759 disconnected
-  1792554745.238 connect
-  1792554745.241 realpath /pub -> /pub
-  1792554745.242 stat /pub ok
-  1792554745.243 opendir /pub ok (0)
-  1792554751.317 mkdir /drop/hole2 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
-  1792554751.317 stat /drop/hole2 DENIED
-  1792554751.318 lstat /drop/hole2/a.txt DENIED
-  1792554751.318 open /drop/hole2/a.txt flags=0x701 exists=False
-  1792554751.319 open /drop/hole2/a.txt FileNotFoundError(2, 'No such file or directory')
-  1792554754.417 realpath /pub -> /pub
-  1792554754.417 stat /pub ok
-  1792554754.418 opendir /pub ok (0)
-  1792554760.751 disconnected
+  1792555792.820 start 2279 C:\Users\pavel\AppData\Local\Temp\tc279\srv
+  1792555792.938 connect
+  1792555792.943 session error SSHException('Error reading SSH protocol banner[WinError 10054] St\u00E1vaj\u00EDc\u00ED p\u0159ipojen\u00ED bylo vynucen\u011B ukon\u010Deno vzd\u00E1len\u00FDm hostitelem')
+  1792555792.943 disconnected
+  1792555797.801 connect
+  1792555798.305 disconnected
+  1792555798.776 connect
+  1792555798.779 realpath /pub -> /pub
+  1792555798.780 stat /pub ok
+  1792555798.781 opendir /pub ok (0)
+  1792555804.930 mkdir /drop/pack ok
+  1792555804.930 lstat /drop/pack/a.txt DENIED
+  1792555804.931 open /drop/pack/a.txt flags=0x701 exists=False
+  1792555804.933 close /drop/pack/a.txt
+  1792555804.933 stat /drop/pack/a.txt DENIED
+  1792555804.934 lstat /drop/pack/b.txt DENIED
+  1792555804.935 open /drop/pack/b.txt flags=0x701 exists=False
+  1792555804.936 close /drop/pack/b.txt
+  1792555804.936 stat /drop/pack/b.txt DENIED
+  1792555804.937 realpath /pub -> /pub
+  1792555804.938 stat /pub ok
+  1792555804.939 opendir /pub ok (0)
+  1792555811.284 disconnected
+  1792555817.693 connect
+  1792555818.197 disconnected
+  1792555818.669 connect
+  1792555818.673 realpath /pub -> /pub
+  1792555818.674 stat /pub ok
+  1792555818.674 opendir /pub ok (0)
+  1792555824.562 mkdir /drop/pack2 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792555824.563 stat /drop/pack2 DENIED
+  1792555824.563 lstat /drop/pack2/c.txt DENIED
+  1792555824.564 open /drop/pack2/c.txt flags=0x701 exists=False
+  1792555824.565 close /drop/pack2/c.txt
+  1792555824.566 stat /drop/pack2/c.txt DENIED
+  1792555824.567 realpath /pub -> /pub
+  1792555824.568 stat /pub ok
+  1792555824.568 opendir /pub ok (0)
+  1792555831.179 disconnected
+  1792555837.121 connect
+  1792555837.624 disconnected
+  1792555838.086 connect
+  1792555838.090 realpath /pub -> /pub
+  1792555838.091 stat /pub ok
+  1792555838.091 opendir /pub ok (0)
+  1792555844.205 mkdir /drop/pack3 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792555844.205 stat /drop/pack3 DENIED
+  1792555844.206 lstat /drop/pack3/new.txt DENIED
+  1792555844.207 open /drop/pack3/new.txt flags=0x701 exists=False
+  1792555844.208 close /drop/pack3/new.txt
+  1792555844.209 stat /drop/pack3/new.txt DENIED
+  1792555844.209 lstat /drop/pack3/old.txt DENIED
+  1792555844.210 open /drop/pack3/old.txt flags=0x701 exists=True
+  1792555844.210 open /drop/pack3/old.txt FileExistsError(17, 'File exists')
+  1792555847.317 realpath /pub -> /pub
+  1792555847.318 stat /pub ok
+  1792555847.319 opendir /pub ok (0)
+  1792555853.597 disconnected
+  1792555859.789 connect
+  1792555860.292 disconnected
+  1792555860.761 connect
+  1792555860.765 realpath /pub -> /pub
+  1792555860.765 stat /pub ok
+  1792555860.766 opendir /pub ok (0)
+  1792555866.657 mkdir /drop/pack4 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792555866.657 stat /drop/pack4 DENIED
+  1792555866.658 mkdir /drop/pack4/sub FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792555866.659 stat /drop/pack4/sub DENIED
+  1792555866.659 lstat /drop/pack4/sub/d.txt DENIED
+  1792555866.660 open /drop/pack4/sub/d.txt flags=0x701 exists=False
+  1792555866.661 close /drop/pack4/sub/d.txt
+  1792555866.662 stat /drop/pack4/sub/d.txt DENIED
+  1792555866.663 realpath /pub -> /pub
+  1792555866.664 stat /pub ok
+  1792555866.665 opendir /pub ok (0)
+  1792555873.270 disconnected
+  1792555879.141 connect
+  1792555879.659 disconnected
+  1792555880.119 connect
+  1792555880.123 realpath /pub -> /pub
+  1792555880.123 stat /pub ok
+  1792555880.124 opendir /pub ok (0)
+  1792555886.185 mkdir /drop/hole FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792555886.186 stat /drop/hole DENIED
+  1792555889.314 realpath /pub -> /pub
+  1792555889.315 stat /pub ok
+  1792555889.316 opendir /pub ok (0)
+  1792555895.630 disconnected
+  1792555901.822 connect
+  1792555902.324 disconnected
+  1792555902.800 connect
+  1792555902.804 realpath /pub -> /pub
+  1792555902.804 stat /pub ok
+  1792555902.805 opendir /pub ok (0)
+  1792555908.875 mkdir /drop/empty FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792555908.876 stat /drop/empty DENIED
+  1792555911.997 realpath /pub -> /pub
+  1792555911.998 stat /pub ok
+  1792555911.999 opendir /pub ok (0)
+  1792555918.312 disconnected
+  1792555924.355 connect
+  1792555924.858 disconnected
+  1792555925.329 connect
+  1792555925.333 realpath /pub -> /pub
+  1792555925.333 stat /pub ok
+  1792555925.334 opendir /pub ok (0)
+  1792555931.242 mkdir /drop/hole2 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792555931.243 stat /drop/hole2 DENIED
+  1792555931.244 lstat /drop/hole2/a.txt DENIED
+  1792555931.244 open /drop/hole2/a.txt flags=0x701 exists=False
+  1792555931.245 open /drop/hole2/a.txt FileNotFoundError(2, 'No such file or directory')
+  1792555934.379 realpath /pub -> /pub
+  1792555934.380 stat /pub ok
+  1792555934.380 opendir /pub ok (0)
+  1792555940.839 disconnected
 
 Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

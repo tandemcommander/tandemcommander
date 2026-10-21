@@ -1568,7 +1568,7 @@ static CXferResult UploadSecondPass(COperationCtx* ctx, HANDLE lf, const char* t
 // items; every other caller passes NULL - and the item behaves as before.
 struct CUploadItemNote
 {
-    BOOL QuietNoFolder;    // in: nothing of the folder is confirmed yet - a creation refused because the folder is not there is not shown, only reported
+    int FolderConfirmed;   // in: items of the folder the server confirmed so far (none: a creation refused because the folder is not there is not shown, only reported)
     BOOL Arrived;          // out: the server confirmed the item (a file written whole; a folder created, shown, or with something confirmed in it)
     BOOL NoFolder;         // out: the item could not be created - the folder is not there (SftpEndsUnconfirmedDir); no box was shown
     char NoFolderWhy[300]; // out: with NoFolder, the server's reason
@@ -1580,8 +1580,7 @@ struct CUploadItemNote
 static BOOL UploadNoteNoFolder(COperationCtx* ctx, CUploadItemNote* note, const char* remotePath)
 {
     CSFTPSession* session = ctx->Session;
-    if (note == NULL || !note->QuietNoFolder ||
-        !SftpEndsUnconfirmedDir(session->IsConnected(), session->GetLastSftpStatus(), 0))
+    if (note == NULL || !SftpEndsUnconfirmedDir(session->IsConnected(), session->GetLastSftpStatus(), note->FolderConfirmed))
         return FALSE;
     Logs.AppendFmt(session->GetLogUID(), "%s cannot be created (%s): its folder is not there.",
                    CSFTPMsgText(remotePath).Get(), session->GetLastErrorText());
@@ -2060,7 +2059,7 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
         {
             CXferResult r;
             memset(&lv->ItemNote, 0, sizeof(lv->ItemNote));
-            lv->ItemNote.QuietNoFolder = confirmed == 0;
+            lv->ItemNote.FolderConfirmed = confirmed;
             CUploadItemNote* itemNotePtr = unconfirmed ? &lv->ItemNote : NULL; // (any other folder: as before)
             if (!WideToUtf8(lv->Fd.cFileName, lv->Name, sizeof(lv->Name)) ||
                 !LocalPathAppend(localDir, lv->Name, lv->LPath, sizeof(lv->LPath)) ||

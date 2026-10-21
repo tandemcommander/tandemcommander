@@ -114,10 +114,15 @@ a subfolder counts when the server created / showed / confirmed something in it;
 ## Not driven / owed
 
 - A real upload-only service (SFTPGo "upload" without "list", a hosted drop box): modelled by
-  `dropsftp.py` -> a step added to the person-step item
-  `sftp-drop-folder-on-a-real-upload-only-service-and-an-acl-on` (258's).
-- FR-007 (a stop or a lost connection inside an unconfirmed folder: no folder box), a folder whose
-  items are all skipped, a file uploaded whose local removal fails in a Move: by reading.
+  `dropsftp.py` -> person-step item `sftp-a-folder-uploaded-again-into-a-real-upload-only-service`
+  (related to 258's `sftp-drop-folder-on-a-real-upload-only-service-and-an-acl-on`, which an agent
+  may not extend).
+- A folder whose items are all skipped, a file uploaded whose local removal fails in a Move: by
+  reading. FR-007 was driven by the reviewer (below).
+- The quiet "no such file" at the temporary-file create of the ordinary route
+  (`UploadOneFileImpl`) is reached only when, inside an unconfirmed folder, the server answers
+  "not found" for the item's lstat - no row drives it (in every row the lstat is refused and the
+  drop route is taken): by reading (review 1 SHOULD-2).
 
 ## Limits
 
@@ -125,3 +130,39 @@ a subfolder counts when the server created / showed / confirmed something in it;
   (OSSHLINK2: the file's box, then the folder box; everything kept) - research R3: SFTPGo answers
   so for a file that is already there, the main case of "uploaded again".
 - With nothing confirmed, the folder box comes also after the files' own boxes (the item's rule).
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Re-ran: build, harness 265 / 0, encoding guard 0, the feature probe 20 / 0 (registry identical;
+the server log matches the claimed sequences). Own rows (a copy of the probe under %TEMP%, drop
+server) 6 / 6 PASS, the local data kept in each: RVMIX (Move, one new and one existing file: the
+new one arrives and its local copy goes; the folder and `old.txt` stay; one box), RVSUBEMPTY,
+RVNEWSUB (an empty new subfolder inside an existing folder is created and its local folder
+removed - confirmed), RVHOLESUB (a subfolder's mkdir answers "no such file": one "not there"
+box, the rest not tried), RVNESTEMPTY, RVALLEXIST. **FR-007 driven** with the debug seam
+`TC_SFTP_PROBE_TIMEOUT_AT`: a connection lost at the first item or after one confirmed item - one
+connection box, no folder box, the local files stay (2 / 2). Negative control of its own: the
+`break` after `NoFolder` removed -> DROPHOLE2 and RVHOLESUB FAIL (2 creations / 1 instead of 1 /
+0); restored, rebuilt, PASS again; tree clean. Callers walked (`SFTPUploadToFS`,
+`UploadDirLevel`, `UploadDropRoute`, `UploadOneFileImpl`); `StatEx` answers like the old `Stat`
+for found / not found; reasons only are shortened, never a path; buffers in `CUploadLevel`.
+- **SHOULD-1** the "only while nothing is confirmed" rule did not reach the shipped code:
+  `UploadNoteNoFolder` called `SftpEndsUnconfirmedDir(..., 0)` with a literal 0 and the loop set a
+  BOOL `QuietNoFolder = confirmed == 0` - the harness check `!SftpEndsUnconfirmedDir(TRUE, 2, 1)`
+  proved nothing about the product. **Fixed**: the note carries `FolderConfirmed` (the folder's
+  count) and `UploadNoteNoFolder` passes it to the rule. Rebuilt (no warning), harness 265 / 0,
+  probe `probe/result_after.txt` **20 / 0**, registry identical. (No row can drive a confirmed
+  item followed by "no such file" - the folder would have to vanish during the upload; the rule
+  is the harness's.)
+- **SHOULD-2** the temporary-file site is not driven -> recorded above (by reading).
+- NOTE-1 nested empty folders already there give two boxes; NOTE-2 a folder uploaded again whose
+  files are all there ends with a misleading folder box (the exclusive create's "exists" shows the
+  folder is there) -> one Inbox item `sftp-a-folder-uploaded-again-whose-files-are-all-there-ends`
+  (review:279; the spec's Clarification Q1 chose the box - a UX point, no data at risk).
+- NOTE-3 FR-008 (the log line) is not checked by a row - kept (it is in the code, seen in the
+  server-side sequence only).
+- NOTE-4 a server answering "no such file" for another reason (a name it rejects so) would end
+  the folder with "the folder is not there" - the data is kept, only the message would be wrong;
+  kept as a limit.
