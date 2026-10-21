@@ -25,6 +25,15 @@ Measured with the real conversion call (python ctypes, `WideCharToMultiByte`): c
 the regexp `bar` finds nothing. Code pages 932 and 1250 give 8 bytes: `bar` is found. The
 measuring machine's code page is 1250, so the GUI symptom cannot be shown here.
 
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: Is the text converted with the program's ANSI code page or as UTF-8? → A: the ANSI code page (`CP_ACP`), as the regexp pattern is converted; only the size and the length change (autonomous run: item)
+- Q: What does the search do with a text whose conversion fails outright? → A: it is no match, without a message; the search goes on with the next item (autonomous run: conservative)
+- Q: Is anything besides the regexp branch's conversion changed (plain-text or hex search, the shared `WStrToStr`, the pattern conversion)? → A: no - only the regexp branch of the test; `WStrToStr` and its other callers stay (autonomous run: conservative)
+- Q: How is the GUI case on a multi-byte code page confirmed? → A: by a person on a machine with a UTF-8 ANSI code page, recorded as a `person-step` item; the run proves the rule in `saltests` (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A regexp finds text at the end of a non-ASCII value (Priority: P1)
