@@ -1,7 +1,7 @@
 ---
 title: A dialog status text and the panel size field crash when memory runs out
 type: bug
-status: new
+status: open
 severity: 7
 area: panels-ui
 source: measure:293
@@ -67,3 +67,4 @@ once by hand, is the fix to choose.
 ## Log
 
 - 2026-10-22 — created (source measure:293)
+- 2026-10-22 — moved to Next position 2
