@@ -15981,6 +15981,245 @@ static void TestMaskOptimize283()
     }
 }
 
+// feature 286: the target of a folder shortcut (desktop.ini naming the class + target.lnk) as the
+// Browse dialog's result (salshelllink.h) - whole, or "too long" for the caller's buffer; real
+// folder shortcuts written with the wide interface in the temporary folder
+static std::wstring LongForm286(const std::wstring& p) { return p.length() >= 200 ? L"\\\\?\\" + p : p; }
+
+static BOOL MakeFolderShortcut286(const std::wstring& folder, const WCHAR* target, const char* ini)
+{
+    BOOL ok = CreateDirectoryW(LongForm286(folder).c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS;
+    if (ok && ini != NULL)
+    {
+        HANDLE h = CreateFileW(LongForm286(folder + L"\\desktop.ini").c_str(), GENERIC_WRITE, 0, NULL,
+                               CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD written = 0;
+        ok = h != INVALID_HANDLE_VALUE && WriteFile(h, ini, (DWORD)strlen(ini), &written, NULL) && written == strlen(ini);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+    }
+    if (ok && target != NULL)
+    {
+        ok = FALSE;
+        IShellLinkW* link = NULL;
+        if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+        {
+            IPersistFile* file = NULL;
+            if (link->SetPath(target) == S_OK && link->QueryInterface(IID_IPersistFile, (LPVOID*)&file) == S_OK)
+            {
+                ok = file->Save(LongForm286(folder + L"\\target.lnk").c_str(), TRUE) == S_OK;
+                file->Release();
+            }
+            link->Release();
+        }
+    }
+    return ok;
+}
+
+static void RemoveFolderShortcut286(const std::wstring& folder)
+{
+    DeleteFileW(LongForm286(folder + L"\\desktop.ini").c_str());
+    DeleteFileW(LongForm286(folder + L"\\target.lnk").c_str());
+    RemoveDirectoryW(LongForm286(folder).c_str());
+}
+
+static std::string U8Of286(const std::wstring& w)
+{
+    char* s = SalWToU8Alloc(w.c_str());
+    std::string r = s != NULL ? s : "";
+    free(s);
+    return r;
+}
+
+static void TestFolderShortcut286()
+{
+    // the class id in a desktop.ini: whole, any letter case; a prefix or "{}" is not it
+    {
+        const char ini[] = "[.ShellClassInfo]\r\nCLSID2={0AFACED1-E828-11D1-9187-B532F1E9575D}\r\nFlags=2\r\n";
+        CHECK(SalIsFolderShortcutIni(ini, (int)strlen(ini)));
+        const char lower[] = "CLSID2={0afaced1-e828-11d1-9187-b532f1e9575d}";
+        CHECK(SalIsFolderShortcutIni(lower, (int)strlen(lower)));
+        const char empty[] = "CLSID2={}";
+        CHECK(!SalIsFolderShortcutIni(empty, (int)strlen(empty))); // the old prefix compare took it
+        const char prefix[] = "CLSID2={0AFACED1}";
+        CHECK(!SalIsFolderShortcutIni(prefix, (int)strlen(prefix)));
+        const char longer[] = "CLSID2={0AFACED1-E828-11D1-9187-B532F1E9575D0}";
+        CHECK(!SalIsFolderShortcutIni(longer, (int)strlen(longer)));
+        const char other[] = "CLSID={645FF040-5081-101B-9F08-00AA002F954E}"; // the Recycle Bin
+        CHECK(!SalIsFolderShortcutIni(other, (int)strlen(other)));
+        CHECK(!SalIsFolderShortcutIni(ini, 30)); // the id cut by 'len' (no closing brace)
+        CHECK(!SalIsFolderShortcutIni(NULL, 10));
+        CHECK(!SalIsFolderShortcutIni(ini, 0));
+    }
+
+    WCHAR tempW[MAX_PATH];
+    if (GetTempPathW(MAX_PATH, tempW) == 0)
+    {
+        CHECK(FALSE);
+        return;
+    }
+    HRESULT coInit = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    WCHAR tempLongW[1024]; // the shell answers with the long form of the path (feature 128)
+    DWORD longLen = GetLongPathNameW(tempW, tempLongW, _countof(tempLongW));
+    std::wstring dir = std::wstring(longLen > 0 && longLen < _countof(tempLongW) ? tempLongW : tempW) +
+                       L"saltests286_" + std::to_wstring(GetCurrentProcessId());
+    CreateDirectoryW(dir.c_str(), NULL);
+    std::string dirU8 = U8Of286(dir);
+    const char* iniShortcut = "[.ShellClassInfo]\r\nCLSID2={0AFACED1-E828-11D1-9187-B532F1E9575D}\r\nFlags=2\r\n";
+    const HRESULT tooLong = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
+    char* big = (char*)malloc(SAL_MAX_PATH_UTF8);
+    if (big == NULL)
+    {
+        CHECK(FALSE);
+        return;
+    }
+    char target[MAX_PATH];
+
+    // a target that fits: followed whole
+    std::wstring tShort = dir + L"\\t_short";
+    CreateDirectoryW(tShort.c_str(), NULL);
+    std::wstring fShort = dir + L"\\fsc_short";
+    CHECK(MakeFolderShortcut286(fShort, tShort.c_str(), iniShortcut));
+    memset(target, 'X', sizeof(target));
+    CHECK(SalFolderShortcutTargetU8(U8Of286(fShort).c_str(), target, MAX_PATH) == NOERROR);
+    CHECK(SalPathEqualOrdinalCI(target, U8Of286(tShort).c_str()));
+    // with a trailing backslash (a root-like result) the same
+    memset(target, 'X', sizeof(target));
+    CHECK(SalFolderShortcutTargetU8((U8Of286(fShort) + "\\").c_str(), target, MAX_PATH) == NOERROR);
+    CHECK(SalPathEqualOrdinalCI(target, U8Of286(tShort).c_str()));
+
+    // a target of 90 CJK letters (fewer than 260 units, more than 259 bytes): too long for MAX_PATH,
+    // whole for a large buffer
+    std::wstring cjk90;
+    for (int i = 1; i <= 90; i++)
+        cjk90 += (WCHAR)(0x4E00 + i);
+    std::wstring tLong = dir + L"\\" + cjk90;
+    CreateDirectoryW(tLong.c_str(), NULL);
+    std::string tLongU8 = U8Of286(tLong);
+    CHECK(tLong.length() < MAX_PATH && tLongU8.length() >= MAX_PATH);
+    std::wstring fLong = dir + L"\\fsc_long";
+    CHECK(MakeFolderShortcut286(fLong, tLong.c_str(), iniShortcut));
+    std::string fLongU8 = U8Of286(fLong);
+    memset(target, 'X', sizeof(target));
+    CHECK(SalFolderShortcutTargetU8(fLongU8.c_str(), target, MAX_PATH) == tooLong && target[0] == 0);
+    memset(big, 'X', SAL_MAX_PATH_UTF8);
+    CHECK(SalFolderShortcutTargetU8(fLongU8.c_str(), big, SAL_MAX_PATH_UTF8) == NOERROR);
+    CHECK(SalPathEqualOrdinalCI(big, tLongU8.c_str()));
+    // negative control - the rule before feature 286 (shellib.cpp ResolveNetHoodPath): the target in
+    // 3 * MAX_PATH bytes, followed only below MAX_PATH bytes; this one was neither followed nor
+    // refused - the Browse result stayed the shortcut folder itself, silently
+    {
+        BOOL oldFollowed = FALSE;
+        IShellLinkW* link = NULL;
+        if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+        {
+            IPersistFile* file = NULL;
+            if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&file) == S_OK)
+            {
+                if (file->Load((fLong + L"\\target.lnk").c_str(), STGM_READ) == S_OK)
+                {
+                    char tgt[3 * MAX_PATH];
+                    CHECK(SalShellLinkGetPathU8(link, tgt, sizeof(tgt), SLGP_UNCPRIORITY) == NOERROR); // read fine...
+                    oldFollowed = (int)strlen(tgt) < MAX_PATH;                                         // ...and dropped
+                }
+                else
+                    CHECK(FALSE);
+                file->Release();
+            }
+            link->Release();
+        }
+        CHECK(!oldFollowed);
+    }
+
+    // the exact limit: a target of 259 bytes fits MAX_PATH (with the terminator), 260 does not
+    for (int extra = 0; extra <= 1; extra++)
+    {
+        int n = MAX_PATH - 1 - (int)dirU8.length() - 1 + extra; // bytes of the target's name
+        int k = n / 3 - 2;                                     // CJK letters (3 bytes each), rest ASCII
+        std::wstring name;
+        for (int i = 1; i <= k; i++)
+            name += (WCHAR)(0x4E00 + i);
+        name += std::wstring(n - 3 * k, L'a');
+        std::wstring tEdge = dir + L"\\" + name;
+        CHECK((int)U8Of286(tEdge).length() == MAX_PATH - 1 + extra);
+        CreateDirectoryW(tEdge.c_str(), NULL);
+        std::wstring fEdge = dir + L"\\fsc_edge" + std::to_wstring(extra);
+        CHECK(MakeFolderShortcut286(fEdge, tEdge.c_str(), iniShortcut));
+        memset(target, 'X', sizeof(target));
+        HRESULT r = SalFolderShortcutTargetU8(U8Of286(fEdge).c_str(), target, MAX_PATH);
+        if (extra == 0)
+            CHECK(r == NOERROR && SalPathEqualOrdinalCI(target, U8Of286(tEdge).c_str()));
+        else
+            CHECK(r == tooLong && target[0] == 0);
+        RemoveFolderShortcut286(fEdge);
+        RemoveDirectoryW(tEdge.c_str());
+    }
+
+    // a shortcut folder whose own path fits MAX_PATH bytes, but not with "\target.lnk" added
+    // (the old MAX_PATH name buffers did not recognise it): recognised and followed
+    {
+        int n = MAX_PATH - 4 - (int)dirU8.length() - 1; // the folder's path: 256 bytes
+        int k = n / 3 - 2;
+        std::wstring name;
+        for (int i = 1; i <= k; i++)
+            name += (WCHAR)(0x5000 + i);
+        name += std::wstring(n - 3 * k, L'b');
+        std::wstring fDeep = dir + L"\\" + name;
+        std::string fDeepU8 = U8Of286(fDeep);
+        CHECK((int)fDeepU8.length() == MAX_PATH - 4);
+        CHECK(fDeepU8.length() + strlen("\\target.lnk") >= MAX_PATH);
+        CHECK(MakeFolderShortcut286(fDeep, tShort.c_str(), iniShortcut));
+        memset(target, 'X', sizeof(target));
+        CHECK(SalFolderShortcutTargetU8(fDeepU8.c_str(), target, MAX_PATH) == NOERROR);
+        CHECK(SalPathEqualOrdinalCI(target, U8Of286(tShort).c_str()));
+        RemoveFolderShortcut286(fDeep);
+    }
+
+    // not a folder shortcut: another class, "{}", no desktop.ini; a folder shortcut without
+    // target.lnk - the folder stays (S_FALSE, "")
+    {
+        struct
+        {
+            const WCHAR* Name;
+            const char* Ini;
+            BOOL Link;
+        } cases[] = {
+            {L"\\not_other", "[.ShellClassInfo]\r\nCLSID={645FF040-5081-101B-9F08-00AA002F954E}\r\n", TRUE},
+            {L"\\not_empty", "[.ShellClassInfo]\r\nCLSID2={}\r\n", TRUE},
+            {L"\\not_noini", NULL, TRUE},
+            {L"\\not_nolnk", iniShortcut, FALSE},
+        };
+        for (int i = 0; i < _countof(cases); i++)
+        {
+            std::wstring f = dir + cases[i].Name;
+            CHECK(MakeFolderShortcut286(f, cases[i].Link ? tShort.c_str() : NULL, cases[i].Ini));
+            memset(target, 'X', sizeof(target));
+            CHECK(SalFolderShortcutTargetU8(U8Of286(f).c_str(), target, MAX_PATH) == S_FALSE && target[0] == 0);
+            RemoveFolderShortcut286(f);
+        }
+        // a folder that does not exist
+        memset(target, 'X', sizeof(target));
+        CHECK(SalFolderShortcutTargetU8((dirU8 + "\\missing").c_str(), target, MAX_PATH) == S_FALSE && target[0] == 0);
+    }
+
+    // arguments
+    target[0] = 'X';
+    CHECK(SalFolderShortcutTargetU8(NULL, target, MAX_PATH) == E_INVALIDARG && target[0] == 0);
+    target[0] = 'X';
+    CHECK(SalFolderShortcutTargetU8("", target, MAX_PATH) == E_INVALIDARG && target[0] == 0);
+    CHECK(SalFolderShortcutTargetU8(fLongU8.c_str(), NULL, MAX_PATH) == E_INVALIDARG);
+    CHECK(SalFolderShortcutTargetU8(fLongU8.c_str(), target, 0) == E_INVALIDARG);
+
+    RemoveFolderShortcut286(fShort);
+    RemoveFolderShortcut286(fLong);
+    RemoveDirectoryW(tShort.c_str());
+    RemoveDirectoryW(tLong.c_str());
+    RemoveDirectoryW(dir.c_str());
+    free(big);
+    if (SUCCEEDED(coInit))
+        CoUninitialize();
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -16113,6 +16352,7 @@ int main(int argc, char** argv)
     TestUserMenuValue280();
     TestMoveBack281();
     TestMaskOptimize283();
+    TestFolderShortcut286();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

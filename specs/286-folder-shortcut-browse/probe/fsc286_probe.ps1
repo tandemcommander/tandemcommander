@@ -10,7 +10,10 @@
     (360) - GetTargetDirectory with the field as the initial folder. The probe selects a folder in
     the browse dialog's tree (the initial folder, or its single child: TVM_EXPAND + TVM_SELECTITEM,
     handle messages only), presses OK and reads the field back.
-    Rows:
+    Rows (fsc-* are INFO: measured at 7537240b, the Browse tree does not list a folder shortcut that lies
+    in an ordinary folder - it picks the plain sibling 'zz', or OK stays disabled; folder shortcuts reach
+    the routine as network locations in the user's profile, which the probe does not write; the rule is
+    proven by saltests TestFolderShortcut286 and the GUI row is owed to a person):
       fsc-long   a folder shortcut (desktop.ini with the folder-shortcut CLSID + target.lnk) whose
                  target is a folder of 90 CJK letters (> 260 bytes UTF-8, < 260 units), picked as
                  the child of its parent. PASS = refused with "too long", the field unchanged
@@ -194,7 +197,7 @@ function Run-Row([string]$Case, [scriptblock]$Body) {
 
 # the browse button of Configuration > Drives with $Init in the field; $Child = select the single
 # child of the initial folder; returns what was shown, the field after, the OK state
-function Browse-Row([string]$Case, [string]$Init, [switch]$Child, [string]$Expect, [switch]$Refuse) {
+function Browse-Row([string]$Case, [string]$Init, [switch]$Child, [string]$Expect, [switch]$Refuse, [switch]$Info) {
     Run-Row $Case {
         $id = Start-Tc $StartDir; $script:RowId = $id
         $dlg = Open-Config $id 6 0
@@ -222,7 +225,7 @@ function Browse-Row([string]$Case, [string]$Init, [switch]$Child, [string]$Expec
         }
         $okBtn = Buttons $bro | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 1 } | Select-Object -First 1
         $okOn = $okBtn -and [Drv098f]::IsWindowEnabled($okBtn)
-        if (-not $okOn) { Close-Win $bro; Start-Sleep -Milliseconds 400; Close-Win $dlg; [void](Serve286 $id @() 'cancel' 10); Row $Case 'RUN' 'FAIL' ("OK of the browse window is disabled for {0} - the folder cannot be picked at all" -f $how); return }
+        if (-not $okOn) { Close-Win $bro; Start-Sleep -Milliseconds 400; Close-Win $dlg; [void](Serve286 $id @() 'cancel' 10); Row $Case 'RUN' $(if ($Info) { 'INFO' } else { 'FAIL' }) ("OK of the browse window is disabled for {0} - the folder cannot be picked at all" -f $how); return }
         Click $okBtn
         $sw = [Diagnostics.Stopwatch]::StartNew()
         while ($sw.Elapsed.TotalSeconds -lt 5 -and [Drv098f]::IsWindow($bro)) { Start-Sleep -Milliseconds 100 }
@@ -234,16 +237,17 @@ function Browse-Row([string]$Case, [string]$Init, [switch]$Child, [string]$Expec
         if ($Refuse) { $verdict = ($s -match $TooLong) -and (@($r.Messages).Count -eq 1) -and ($now -ceq $Init) }
         else { $verdict = ($s -eq 'nothing') -and ($now -ceq $Expect) }
         $ok = (-not $script:RowFatal) -and (-not $r.TimedOut) -and $verdict
-        Row $Case 'RUN' (V $ok) ("picked {0}; asked: {1}; field after: {2} units / {3} bytes, same as the initial folder: {4}, same as expected: {5}, tail '{6}'{7}" -f $how, $s, $now.Length, (U8 $now), ($now -ceq $Init), ($now -ceq $Expect), (Tail $now 24), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }))
+        $v = V $ok; if ($Info -and -not $script:RowFatal) { $v = 'INFO' }
+        Row $Case 'RUN' $v ("picked {0}; asked: {1}; field after: {2} units / {3} bytes, same as the initial folder: {4}, same as expected: {5}, tail '{6}'{7}" -f $how, $s, $now.Length, (U8 $now), ($now -ceq $Init), ($now -ceq $Expect), (Tail $now 24), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }))
     }
 }
 
 $Cases = [ordered]@{}
 $TgtLong = $Root + '\tgt\' + (Cjk 90)
 $TgtShort = $Root + '\tgt\short'
-$Cases['fsc-long'] = { Browse-Row 'fsc-long' ($Root + '\fl') -Child -Refuse }
-$Cases['fsc-long-init'] = { Browse-Row 'fsc-long-init' ($Root + '\fl\fsc') -Refuse }
-$Cases['fsc-ctl'] = { Browse-Row 'fsc-ctl' ($Root + '\fc') -Child -Expect $TgtShort }
+$Cases['fsc-long'] = { Browse-Row 'fsc-long' ($Root + '\fl') -Child -Refuse -Info }
+$Cases['fsc-long-init'] = { Browse-Row 'fsc-long-init' ($Root + '\fl\fsc') -Refuse -Info }
+$Cases['fsc-ctl'] = { Browse-Row 'fsc-ctl' ($Root + '\fc') -Child -Expect $TgtShort -Info }
 $Cases['pick-long'] = { Browse-Row 'pick-long' ($Root + '\pl') -Child -Refuse }
 $Cases['pick-ctl'] = { Browse-Row 'pick-ctl' ($Root + '\pc') -Child -Expect ($Root + '\pc\' + (Cjk 20)) }
 

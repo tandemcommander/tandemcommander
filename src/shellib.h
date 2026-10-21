@@ -46,8 +46,9 @@ BOOL GetTargetDirectory(HWND parent, HWND hCenterWindow, const char* title, cons
 
 // Detects whether the path is not a NetHood path (a directory containing the target.lnk file),
 // optionally resolves target.lnk and writes the resolved path to 'path'; 'path' is an in/out buffer
-// (at least MAX_PATH characters)
-void ResolveNetHoodPath(char* path);
+// (at least MAX_PATH characters); returns FALSE when 'path' is a folder shortcut whose target does
+// not fit MAX_PATH bytes ('path' unchanged; the caller refuses it - feature 286)
+BOOL ResolveNetHoodPath(char* path);
 
 class CMenuNew;
 

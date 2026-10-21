@@ -102,7 +102,7 @@ no `target.lnk`); the GUI confirmation is owed to a person (network location in 
 - **FR-003**: A picked folder shortcut whose target path fits MUST be followed to its target, whole (as today).
 - **FR-004**: A picked folder shortcut whose target path does not fit the caller's buffer MUST be refused with the same message and reported as "nothing picked" - never handed back as the shortcut's own folder and never cut.
 - **FR-005**: Recognising a folder shortcut and reading its target MUST not depend on a `MAX_PATH` limit of the shortcut folder's own path plus the file names `desktop.ini` / `target.lnk`.
-- **FR-006**: Every case the item does not name (fitting folders, Cancel, unreadable shortcuts, non-file-system items' OK state) MUST keep its current behaviour, except that an item with no file-system path is "nothing picked".
+- **FR-006**: Every case the item does not name (fitting folders, Cancel, unreadable shortcuts, non-file-system items' OK state) MUST keep its current behaviour, except that an item with no file-system path is "nothing picked" and that the same helper's other user (finding the Documents / Desktop folder) also no longer takes a code-page path - a Documents path that does not fit falls to the Desktop as when Documents is unavailable.
 - **FR-007**: The plug-in interface (`GetTargetDirectory`, buffer of at least `MAX_PATH`) MUST stay unchanged.
 - **FR-008**: The decision "folder shortcut? its target whole or too long" MUST be checked by unit checks against real folder shortcuts.
 

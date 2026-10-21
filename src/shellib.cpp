@@ -2466,15 +2466,24 @@ struct CBrowseData
 // engine and to the panel - both strict UTF-8 consumers - so picking an accented
 // target directory in the Browse dialog produced a path they rejected at the
 // moment of use, long after the pick.  The wide twin gives the true path.
-static BOOL SalSHGetPathFromIDListU8(LPCITEMIDLIST pidl, char* u8Path, int u8PathSize)
+// Feature 286: the path whole or not at all - a folder whose UTF-8 path does not
+// fit 'u8PathSize' got the code-page form (best-fit letters or '?' = another
+// folder); now FALSE with '*tooLong' set. FALSE without it = no file-system path.
+static BOOL SalSHGetPathFromIDListU8(LPCITEMIDLIST pidl, char* u8Path, int u8PathSize, BOOL* tooLong = NULL)
 {
+    if (tooLong != NULL)
+        *tooLong = FALSE;
+    u8Path[0] = 0;
     WCHAR pathW[MAX_PATH];
     if (SHGetPathFromIDListW(pidl, pathW))
     {
         if (SalWToU8(pathW, -1, u8Path, u8PathSize) != 0)
             return TRUE;
+        u8Path[0] = 0;
+        if (tooLong != NULL)
+            *tooLong = TRUE;
     }
-    return SHGetPathFromIDList(pidl, u8Path); // legacy fallback
+    return FALSE;
 }
 
 int CALLBACK DirectoryBrowse(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
@@ -2505,17 +2514,23 @@ int CALLBACK DirectoryBrowse(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
         if ((ITEMIDLIST*)lParam != NULL)
         {
             char path[MAX_PATH];
-            BOOL ret = SalSHGetPathFromIDListU8((ITEMIDLIST*)lParam, path, MAX_PATH);
-            SendMessage(hwnd, BFFM_ENABLEOK, 0, ret);
+            BOOL tooLong;
+            BOOL ret = SalSHGetPathFromIDListU8((ITEMIDLIST*)lParam, path, MAX_PATH, &tooLong);
+            // feature 286: a file-system folder too long for the caller keeps OK enabled -
+            // OK then explains the refusal (GetTargetDirectory) instead of a dead button
+            SendMessage(hwnd, BFFM_ENABLEOK, 0, ret || tooLong);
         }
     }
     return 0;
 }
 
-BOOL GetTargetDirectoryAux(HWND parent, HWND hCenterWindow,
-                           const char* title, const char* comment,
-                           char* path, BOOL onlyNet, const char* initDir)
+// feature 286: '*tooLong' = the picked folder's UTF-8 path does not fit 'path' (MAX_PATH bytes);
+// 'path' is written only when TRUE is returned (callers pass it as 'initDir' too)
+static BOOL GetTargetDirectoryAux(HWND parent, HWND hCenterWindow,
+                                  const char* title, const char* comment,
+                                  char* path, BOOL onlyNet, const char* initDir, BOOL* tooLong)
 {
+    *tooLong = FALSE;
     __try
     {
         ITEMIDLIST* pidl; // select the root folder
@@ -2549,8 +2564,12 @@ BOOL GetTargetDirectoryAux(HWND parent, HWND hCenterWindow,
         BOOL ret = FALSE; // return value
         if (res != NULL)
         {
-            SalSHGetPathFromIDListU8(res, path, MAX_PATH);
-            ret = TRUE;
+            char picked[MAX_PATH];
+            if (SalSHGetPathFromIDListU8(res, picked, MAX_PATH, tooLong))
+            {
+                strcpy(path, picked);
+                ret = TRUE;
+            } // else: too long (refused by the caller) or no file-system path - nothing picked
         }
         // release the item ID list
         IMalloc* alloc;
@@ -2571,107 +2590,26 @@ BOOL GetTargetDirectoryAux(HWND parent, HWND hCenterWindow,
     }
 }
 
-void ResolveNetHoodPath(char* path)
+BOOL ResolveNetHoodPath(char* path)
 {
     if (path[0] == '\\')
-        return; // UNC path -> cannot be NetHood
+        return TRUE; // UNC path -> cannot be NetHood
 
-    char name[MAX_PATH];
-    GetRootPath(name, path);
-    if (GetDriveType(name) != DRIVE_FIXED)
-        return; // not a local fixed path -> cannot be NetHood
+    char root[MAX_PATH];
+    GetRootPath(root, path);
+    if (GetDriveType(root) != DRIVE_FIXED)
+        return TRUE; // not a local fixed path -> cannot be NetHood
 
-    BOOL tryTarget = FALSE; // if TRUE, it is worth trying to find the "target.lnk" file
-    lstrcpyn(name, path, MAX_PATH);
-    if (SalPathAppend(name, "desktop.ini", MAX_PATH))
-    {
-        // the path is UTF-8 (feature 004): open through the W file layer
-        HANDLE hFile = SalCreateFile(name, GENERIC_READ,
-                                     FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
-                                     OPEN_EXISTING,
-                                     FILE_FLAG_SEQUENTIAL_SCAN,
-                                     NULL);
-        if (hFile != INVALID_HANDLE_VALUE)
-        {
-            if (GetFileSize(hFile, NULL) <= 1000) // so far all had 92 bytes, so 1000 bytes should be more than enough
-            {
-                char buf[1000];
-                DWORD read;
-                if (ReadFile(hFile, buf, 1000, &read, NULL) && read != 0) // load the file into memory
-                {
-                    char* s = buf;
-                    char* end = buf + read;
-                    while (s < end) // search the file for the CLSID "folder shortcut"
-                    {
-                        if (*s == '{')
-                        {
-                            s++;
-                            char* beg = s;
-                            while (s < end && *s != '}')
-                                s++;
-                            if (s < end)
-                            {
-                                const char* folderShortcutCLSID = "0AFACED1-E828-11D1-9187-B532F1E9575D";
-                                if (StrNICmp(beg, folderShortcutCLSID, (int)(s - beg)) == 0)
-                                {
-                                    tryTarget = TRUE;
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                            s++;
-                    }
-                }
-            }
-            HANDLES(CloseHandle(hFile));
-        }
-    }
-
-    if (tryTarget)
-    {
-        lstrcpyn(name, path, MAX_PATH);
-        if (SalPathAppend(name, "target.lnk", MAX_PATH))
-        {
-            WIN32_FIND_DATAW dataW;
-            HANDLE find = SalFindFirstFile(name, &dataW); // the path is UTF-8 (feature 004)
-            if (find != INVALID_HANDLE_VALUE)             // the file exists and we have its 'dataW'
-            {
-                HANDLES(FindClose(find));
-
-                HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
-                IShellLinkW* link; // W interface: the link target may contain any Unicode (feature 004)
-                if (CoCreateInstance(CLSID_ShellLink, NULL,
-                                     CLSCTX_INPROC_SERVER, IID_IShellLinkW,
-                                     (LPVOID*)&link) == S_OK)
-                {
-                    IPersistFile* fileInt;
-                    if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&fileInt) == S_OK)
-                    {
-                        OLECHAR oleName[MAX_PATH];
-                        // the name is UTF-8 (feature 004); CP_ACP fallback for invalid UTF-8
-                        if (SalU8ToW(name, -1, oleName, MAX_PATH) == 0)
-                            MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, name, -1, oleName, MAX_PATH);
-                        oleName[MAX_PATH - 1] = 0;
-                        if (fileInt->Load(oleName, STGM_READ) == S_OK)
-                        {
-                            // feature 194: the target whole or not at all - GetPath into MAX_PATH units
-                            // could hand back a cut target, another folder (salshelllink.h)
-                            char tgt[3 * MAX_PATH]; // UTF-8 needs up to 3 bytes per WCHAR
-                            if (SalShellLinkGetPathU8(link, tgt, sizeof(tgt), SLGP_UNCPRIORITY) == NOERROR &&
-                                (int)strlen(tgt) < MAX_PATH) // callers provide only MAX_PATH for 'path'
-                            {                                // do not call Resolve here; it is not that critical and would slow things down
-                                strcpy(path, tgt);           // bingo, we finally know where the link points
-                            }
-                        }
-                        fileInt->Release();
-                    }
-                    link->Release();
-                }
-                SetCursor(oldCur);
-            }
-        }
-    }
+    // feature 286: the folder-shortcut rule (desktop.ini naming the class + target.lnk) reads the
+    // names and the target whole (salshelllink.h); the target replaces 'path' only when it fits
+    // MAX_PATH bytes - a longer one used to leave the shortcut folder itself, silently
+    HCURSOR oldCur = SetCursor(LoadCursor(NULL, IDC_WAIT));
+    char target[MAX_PATH];
+    HRESULT res = SalFolderShortcutTargetU8(path, target, MAX_PATH); // no Resolve: not that critical and slow
+    SetCursor(oldCur);
+    if (res == NOERROR)
+        strcpy(path, target); // bingo, we finally know where the link points
+    return res != HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
 }
 
 BOOL GetTargetDirectory(HWND parent, HWND hCenterWindow,
@@ -2679,9 +2617,17 @@ BOOL GetTargetDirectory(HWND parent, HWND hCenterWindow,
                         char* path, BOOL onlyNet, const char* initDir)
 {
     CALL_STACK_MESSAGE5("GetTargetDirectory(, , %s, %s, , %d, %s)", title, comment, onlyNet, initDir);
-    BOOL ret = GetTargetDirectoryAux(parent, hCenterWindow, title, comment, path, onlyNet, initDir);
-    if (ret)
-        ResolveNetHoodPath(path);
+    BOOL tooLong;
+    BOOL ret = GetTargetDirectoryAux(parent, hCenterWindow, title, comment, path, onlyNet, initDir, &tooLong);
+    if (ret && !ResolveNetHoodPath(path))
+    {
+        ret = FALSE; // a folder shortcut whose target does not fit 'path'
+        tooLong = TRUE;
+    }
+    // feature 286: a folder (or a folder shortcut's target) longer than 'path' is refused - never
+    // cut, never its code-page form, never silently the shortcut folder itself
+    if (tooLong)
+        SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
     return ret;
 }
 
