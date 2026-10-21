@@ -1,0 +1,20 @@
+ftp288_probe (feature 288)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 16:30; desktop 'tc_probe_19068'; ACP 1250; registry key existed True; export SHA-256 A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+Servers : ftpmini.py cp1250 on 127.0.0.1:2121 - up; utf-8 on 127.0.0.1:2122 - up
+
+LEG-MKD    ROW    FAIL        on the server: caf\u00E9.txt,nov\u0102\u02DD; 7,5 s; connected: True at 'ftp://u@127.0.0.1:2121/LEG-MKD'; server got: USER u / PASS p / SYST / PWD / CWD /LEG-MKD / PWD / PORT 127,0,0,1,197,60 / TYPE A / LIST / MKD nov\u0102\u02DD; dialogs: typed into [Create Directory]
+LEG-MKD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LEG-REN    ROW    FAIL        on the server: caf\u00E9.txt,\u00C4\u0164aj.txt; 7,5 s; connected: True at 'ftp://u@127.0.0.1:2121/LEG-REN'; server got: USER u / PASS p / SYST / PWD / CWD /LEG-REN / PWD / PORT 127,0,0,1,197,72 / TYPE A / LIST / RNFR a.txt / RNTO \u00C4\u0164aj.txt; dialogs: typed into [Quick Rename]
+LEG-REN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LEG-UP     ROW    FAIL        on the server: caf\u00E9.txt,\u00C4\u0164aj.txt; content False; 7,4 s; connected: True at 'ftp://u@127.0.0.1:2121/LEG-UP'; server got: USER u / PASS p / SYST / PWD / CWD /LEG-UP / PWD / PORT 127,0,0,1,197,83 / TYPE A / LIST / PORT 127,0,0,1,197,88 / STOR \u00C4\u0164aj.txt / NOOP / CWD /LEG-UP / PWD / PORT 127,0,0,1,197,90 / TYPE A / LIST; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "\u010Daj.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+LEG-UP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CROSS-DEL  ROW    FAIL        UTF-8 server: a-keep.txt,caf\u00E9.txt; legacy server: caf\u00E9.txt; at 'ftp://u@127.0.0.1:2121/CROSS' then 'ftp://u@127.0.0.1:2122/CROSS'; legacy got: USER u / PASS p / SYST / PWD / CWD /CROSS / PWD / PORT 127,0,0,1,197,95 / TYPE A / LIST / QUIT; UTF-8 got: USER u / PASS p / SYST / PWD / CWD /CROSS / PWD / PORT 127,0,0,1,197,102 / TYPE A / LIST / DELE caf\uFFFD.txt / NOOP; dialogs: [#32770 'Confirm Delete'] [Button id=1] &Yes | [Button id=2] &No | [Static id=786] Are you sure you want to delete file "caf\u00E9.txt" from FTP server? | [Button id=787] &Only add to Queue (do not process in active connection) || [Error Deleting File or Link] /CROSS | caf\u00E9.txt | 550 No such file\u000D\u000A
+CROSS-DEL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UTF-MKD    ROW    PASS        on the server: caf\u00E9.txt,nov\u00FD; 7,5 s; connected: True at 'ftp://u@127.0.0.1:2122/UTF-MKD'; server got: USER u / PASS p / SYST / PWD / CWD /UTF-MKD / PWD / PORT 127,0,0,1,197,109 / TYPE A / LIST / MKD nov\u00FD; dialogs: typed into [Create Directory]
+UTF-MKD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNK-MKD    ROW    PASS        on the server: a.txt,nov\u0102\u02DD (UTF-8 read as cp1250 = 'nov\u0102\u02DD'); 7,5 s; connected: True at 'ftp://u@127.0.0.1:2121/UNK-MKD'; server got: USER u / PASS p / SYST / PWD / CWD /UNK-MKD / PWD / PORT 127,0,0,1,212,30 / TYPE A / LIST / MKD nov\u0102\u02DD; dialogs: typed into [Create Directory]
+UNK-MKD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 8, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
