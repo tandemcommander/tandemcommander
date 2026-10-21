@@ -8,7 +8,7 @@ source: review:287
 who: agent
 created: 2026-10-21
 updated: 2026-10-21
-verified: -
+verified: 2026-10-21 9781daee
 effort: M
 feature: -
 related: []
@@ -65,3 +65,4 @@ itself (taken from the review's report).
 
 - 2026-10-21 — created (source review:287)
 - 2026-10-21 — moved to Next position 3
+- 2026-10-21 — verified at 9781daee: reproduced at 9781daee by probe alias292 (before): F6 via HKEY_USERS SID and via HKCR deletes key / value; into-itself nests copies
