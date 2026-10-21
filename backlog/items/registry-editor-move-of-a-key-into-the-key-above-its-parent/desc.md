@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: Move of a key into the key above its parent loses a same-name subkey
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: data-safety
 source: review:292
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-10-22
 verified: 2026-10-22 e752f9b9
 effort: M
-feature: -
+feature: 294
 related: []
 depends-on: []
 reason: -
@@ -68,3 +68,4 @@ report). Narrow scenario (a key containing a subkey of its own name), hence seve
 - 2026-10-22 — related item registry-editor-move-of-a-key-onto-itself-through-hkey-users done in feature 292
 - 2026-10-22 — moved to Next position 2
 - 2026-10-22 — verified at e752f9b9: reproduced at e752f9b9: hidden-desktop probe above294 -Expect before 14 PASS / 10 FAIL; Move into the key above the parent loses x=3 without a box (HKCU, HKEY_USERS alias, two-element chain), Copy writes into the source
+- 2026-10-22 — run started, feature 294
