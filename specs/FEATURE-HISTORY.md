@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
@@ -3647,3 +3647,20 @@ a few early ones are out of sequence).
   wrapper). From backlog item `moved-aside-restore-leftovers`. Probe `left281_probe` 8 / 6 -> 26 / 0
   (13 rows incl. a deep path, cancels, 221's routes), `ren281_probe` 4 / 0; 201 / 203 unchanged;
   two refute-first reviews (MUST 1 and two SHOULDs fixed).
+- 283-mask-code-page-fold: a file mask of the form `*.xxx` with an accented extension compared the
+  name's extension byte by byte through the code page (`CMaskGroup`'s extension shortcut and its
+  table for ten or more such masks): `*.čtx` missed `A.ČTX` and its decomposed spelling, `|*.čtx`
+  excluded nothing, and `*.ĥ` matched `x.Ĺ` on CP1250 - Convert rewrote a file the mask does not
+  match (Select, filter, Find, Copy / Move and Recycle Bin masks share the group). Now an extension
+  with any byte >= 0x80 is no shortcut mask: it goes through `AgreeMask` (whole letters, NFC +
+  `CharLowerW`) like every other accented mask; ASCII masks keep the shortcut byte for byte
+  (`src/common/salmaskopt.h` `SalMaskOptimizeKind`, saltests: the table, a 1.2 M-case differential
+  against the old classification, the old fold's defects under an emulated CP1250 table, no UTF-8
+  continuation byte folds to ASCII in any ANSI code page). The two other byte loops the item named
+  (`AgreeMaskA`, `AgreeQSMaskAux`) are reached only by ASCII pairs - left. Limits: an ASCII `*.k`
+  still does not match the Kelvin sign that `*k` matches (the matcher's own `CharLowerW` rule;
+  under the file system's rule they are different names); an accented `*.xxx` costs the general
+  matcher's conversions; archive associations (`PackIsArchive`) keep their 092-deferred byte fold.
+  From backlog item `mask-matcher-code-page-fold`. Probe `mask283_probe` 14 / 6 -> 20 / 0 (10
+  Convert cases; negative control with the rule disabled 14 / 6, saltests 11 failed); one
+  refute-first review (no MUST; one SHOULD fixed; Inbox `mask-group-prepare-unbounded-mask-copy`).

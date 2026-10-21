@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [File masks fold accented letters through the code page](items/mask-matcher-code-page-fold/desc.md) | bug | 3 | encoding | 283 |
 
 ## Next
 
@@ -202,6 +201,7 @@ Last triaged: 2026-10-20
 | [FTP: server folder names compared by the code-page case rule on UTF-8 bytes](items/ftp-server-path-compare-code-page-fold/desc.md) | bug | 4 | ftp | review:277 | 2026-10-21 |
 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | person-step | 2 | panels-ui | leftover:276 | 2026-10-21 |
 | [The left-aside message names only the salNNN entry, not the entry it was](items/left-aside-message-names-the-entry/desc.md) | improvement | 3 | file-ops | review:281 | 2026-10-21 |
+| [A single mask longer than 259 bytes overruns the mask group preparation buffers](items/mask-group-prepare-unbounded-mask-copy/desc.md) | bug | 6 | long-paths | review:283 | 2026-10-21 |
 | [Registry Editor Find: confirm a regexp finds the end of a non-ASCII text on UTF-8](items/registry-editor-find-confirm-a-regexp-finds-the-end-of-a-non/desc.md) | person-step | 3 | other-plugins | leftover:278 | 2026-10-21 |
 | [Registry Editor View of a text value: cut text and a stray byte on a UTF-8 code page](items/registry-editor-view-of-a-text-value-cut-text-and-a-stray/desc.md) | bug | 4 | other-plugins | review:278 | 2026-10-21 |
 | [A rename via a temporary name can leave the source there silently after a cancel](items/rename-via-temp-left-silently/desc.md) | bug | 3 | file-ops | review:281 | 2026-10-21 |

@@ -51,3 +51,4 @@ One row per run of `/tandem-backlog-implement`, newest last, appended by
 | 2026-10-21 11:56 | renamer-long-new-name-limits | blocked | 282 | 282-renamer-long-new-name | 2 | - | review 2 MUST: regex stack overflow on long names (crash); manual mode cuts a wrapped line |
 | 2026-10-21 11:58 | translations-clipped-labels | split | - | - | 8 | - | still 702 clipped labels in 8 languages at dcb6b30a; split into one item per enabled language |
 | 2026-10-21 12:14 | menubar-loop-swallows-typed-characters | not-reproduced | - | - | 0 | - | popup closed by activation, cancel-mode or by itself ends the menu bar loop; characters reach the field (probe in the item evidence) |
+| 2026-10-21 12:45 | mask-matcher-code-page-fold | closed | 283 | 283-mask-code-page-fold | 1 | - | accented *.ext masks no longer take the code-page byte shortcut; matched by whole letters like other masks |

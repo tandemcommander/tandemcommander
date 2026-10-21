@@ -15780,7 +15780,7 @@ static void TestMaskOptimize283()
         const int n = (int)sizeof(alphabet);
         long long cases = 0, asciiMismatch = 0, otherBad = 0, changed = 0;
         char buf[8];
-        for (int len = 0; len <= 5; len++)
+        for (int len = 0; len <= 6; len++)
         {
             long long total = 1;
             for (int k = 0; k < len; k++)
