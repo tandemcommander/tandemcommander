@@ -7,11 +7,11 @@ area: data-safety
 source: review:292
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 verified: -
 effort: M
 feature: -
-related: [registry-editor-move-of-a-key-onto-itself-through-hkey-users]
+related: []
 depends-on: []
 reason: -
 ---
@@ -65,3 +65,4 @@ report). Narrow scenario (a key containing a subkey of its own name), hence seve
 ## Log
 
 - 2026-10-21 — created (source review:292)
+- 2026-10-22 — related item registry-editor-move-of-a-key-onto-itself-through-hkey-users done in feature 292

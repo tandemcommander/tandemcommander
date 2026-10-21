@@ -137,3 +137,26 @@ saltests `25330 checks, 0 failed`; encoding guard `TOTAL: 0 finding(s)`; probe E
 **33 PASS / 0 FAIL / 0 NOT DRIVEN** (`result_after.txt`, on the build before the comment fix - the
 plug-in binary is the same) and Czech **33 / 0** (`result_after_czech.txt`, final build); registry
 restored identical both times.
+
+### Third review (independent agent, refute-first, on commit efc150da)
+
+No MUST, no SHOULD. Re-ran: build, saltests 25330 / 0, encoding guard 0, probe 33 / 0 (registry
+identical). Measured read-only: all 6,870 HKCR top-level keys exist in at least one half (no new
+failure of `GetRegKeyIds`); 251 keys held by both halves list values and subkeys of both; no
+machine class key refuses KEY_READ to a non-elevated user. Own scratch rows (fixture `TcReview292`,
+real `.3fr` read only, non-elevated) 22 / 0: a value from `HKCR\.3fr` into
+`\HKLM\Software\Classes\.3fr\` refused (1066); keys from it decided one by one (a user-only subkey
+let through to "access denied", a machine-only one refused with 1067); the reverse direction
+refused; HKCR root into `\HKEY_USERS\<SID>_Classes\` refused; controls work.
+
+| Finding | Done |
+|---|---|
+| NOTE 1 an unset (Default) value in a two-identity folder raised 1066 and ended the operation (it was skipped before) | fixed: the unset default is skipped before the refusal (`fs5.cpp`, item loop) |
+| NOTE 2 values of a two-identity folder refused even when the write would reach the other half; a value rename there too | accepted (spec FR-003, conservative; nothing lost) |
+| NOTE 3 where `RegCreateKeyEx` through HKCR creates a key that does not exist yet is assumed (the half of the deepest existing ancestor), not measured - needs elevation; a wrong assumption gives the runaway copy ending at the long-name box, no delete | owed to a person (person-step item) |
+| NOTE 4 closing documents pending | done at closing |
+
+Final checks (after the NOTE 1 change): build SUCCEEDED (no warning from the changed files);
+saltests `25330 checks, 0 failed`; encoding guard `TOTAL: 0 finding(s)`; probe English
+**33 PASS / 0 FAIL / 0 NOT DRIVEN** and Czech **33 / 0** on the final binary; registry restored
+identical (34FA77DB...125A) every time.

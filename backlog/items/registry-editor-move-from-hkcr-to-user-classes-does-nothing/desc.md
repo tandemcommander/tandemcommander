@@ -7,11 +7,11 @@ area: other-plugins
 source: review:292
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 verified: -
 effort: S
 feature: -
-related: [registry-editor-move-of-a-key-onto-itself-through-hkey-users]
+related: []
 depends-on: []
 reason: -
 ---
@@ -51,3 +51,4 @@ function that silently does not work, nothing lost.
 
 - 2026-10-21 — created (source review:292)
 - 2026-10-21 — severity: a function that silently does not work (band 4-6)
+- 2026-10-22 — related item registry-editor-move-of-a-key-onto-itself-through-hkey-users done in feature 292

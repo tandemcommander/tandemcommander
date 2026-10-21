@@ -17,7 +17,6 @@ Last triaged: 2026-10-21
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: Move of a key onto itself through HKEY_USERS deletes the key](items/registry-editor-move-of-a-key-onto-itself-through-hkey-users/desc.md) | bug | 7 | data-safety | 292 |
 
 ## Next
 
@@ -237,6 +236,7 @@ Last triaged: 2026-10-21
 |---|---|---|---|---|---|
 | [Registry Editor: Move from HKCR into the user's Classes key does nothing](items/registry-editor-move-from-hkcr-to-user-classes-does-nothing/desc.md) | bug | 4 | other-plugins | review:292 | 2026-10-21 |
 | [Registry Editor: Move of a key into the key above its parent loses a same-name subkey](items/registry-editor-move-of-a-key-into-the-key-above-its-parent/desc.md) | bug | 7 | data-safety | review:292 | 2026-10-21 |
+| [Registry Editor 292: elevated checks of Move through HKEY_CLASSES_ROOT](items/registry-editor-292-elevated-hkcr-checks/desc.md) | person-step | 6 | data-safety | leftover:292 | 2026-10-22 |
 
 ## Parked
 

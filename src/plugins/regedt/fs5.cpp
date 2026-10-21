@@ -1238,13 +1238,15 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                 }
                 else
                 {
-                    if (valuesMaybeOntoThemselves)
+                    // do not process the default value if it is not set
+                    if (pd->Name == NULL && pd->Type == REG_NONE)
+                        ;
+                    else if (valuesMaybeOntoThemselves)
                     {
                         Error(copy ? IDS_CANTCOPYTOITSELF : IDS_CANTMOVETOITSELF); // feature 292
                         success = FALSE;
                     }
-                    // do not process the default value if it is not set
-                    else if (pd->Name != NULL || pd->Type != REG_NONE)
+                    else
                     {
                         success = CopyOrMoveValue(sourceRoot, sourceKey, pd->Name,
                                                   root, key, useTargetName ? targetName : pd->Name, !copy,

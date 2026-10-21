@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3815,3 +3815,25 @@ a few early ones are out of sequence).
   `mask291_probe.ps1` 12 FAIL / 22 -> 34 / 0 (negative control: Add Current and option keep off,
   2 FAIL); 270's 24 / 0, 251's 42 / 0; saltests 25,281 / 0; one refute-first review (no MUST, no
   SHOULD; 3 NOTEs to the Inbox).
+- 292-regedt-alias-move-self: the Registry Editor's Copy / Move decided "onto itself" by the root
+  and the path text, so a key or value moved into the key that holds it under another root name
+  (`HKCU\...` into `\HKEY_USERS\<SID>\...`, `HKCU\Software\Classes\...` into `\HKEY_CLASSES_ROOT\...`)
+  was "moved" onto itself and deleted - the only copy; Copy asked to overwrite; a Move into its own
+  subkey nested copies - now both checks of `CopyOrMoveFromFS` also compare identities: the full
+  internal name the registry reports for the opened key (`NtQueryKey` KeyNameInformation via
+  `GetProcAddress`; links followed), pure rule `src/common/salregkeyid.h` (case ignored, whole
+  elements, a joined name refused when too long, never cut); no new string, the same-root messages.
+  Traps: a predefined root handle cannot be queried (`RegOpenKeyExW(root, L"")` returns it) - roots
+  get a fixed rule (HKLM / HKU constants, HKCU = `RegOpenCurrentUser`, HKCC = the opened
+  `Hardware Profiles\Current`); HKCR is a merged view: an opened HKCR key reports one half but lists
+  the subkeys and values of both and a Move deletes through it, so an HKCR path is each half that
+  holds it (opened separately) - giving every HKCR path both halves refused real copies (review 1),
+  the opened key alone let an elevated Move delete the machine half (review 2, MUST); a folder of
+  two identities against one of them decides keys one by one and refuses values; a test comment
+  ending in `\` swallowed the next line (C4010). Limits: values between HKCR and a half are refused
+  even when they would reach the other half; the elevated cases and where HKCR creates a new key are
+  owed to a person; Move into the key above the source's parent with a same-name subkey still loses
+  data (predates, Inbox). From backlog item
+  `registry-editor-move-of-a-key-onto-itself-through-hkey-users`. Probe `alias292_probe.ps1`
+  18 / 9 FAIL -> 33 / 0 (English and Czech; HKCRBOTH negative control on the second version: FAIL);
+  saltests 25,330 / 0 (negative control 1 failed); three refute-first reviews (one MUST, fixed).
