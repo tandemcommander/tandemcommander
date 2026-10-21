@@ -1,19 +1,19 @@
 ---
 title: Archive Update: a changed member can go unmarked or be marked needlessly
 type: bug
-status: open
+status: blocked
 severity: 3
 area: archives
 source: review:153
 who: agent
 created: 2026-10-14
-updated: 2026-10-17
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 ded1c8a7
 effort: M
 feature: -
 related: [archive-ops-repointed-name-recorded-gaps]
 depends-on: []
-reason: -
+reason: split: three limits of different kind, the member part needs a maintainer decision; agent 2026-10-21
 ---
 
 # Archive Update: a changed member can go unmarked or be marked needlessly
@@ -44,3 +44,6 @@ Trade-off recorded by feature 112's review (SF1; NEXT-WORK §5 queue 108, entry 
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
 - 2026-10-17 — migration review N4: 112 SF1 trade-off added to Notes
+- 2026-10-21 — verified at ded1c8a7: limit 1 reproduced at ded1c8a7: 153 probe row x-same-stamp plain (x-changed control marked); limits 2-3 by reading
+- 2026-10-21 — blocked: split: three limits of different kind, the member part needs a maintainer decision; agent 2026-10-21
+- 2026-10-21 — split into: archive-update-same-stamp-member-decision, archive-update-archive-same-stamp, archive-update-time-zone-change-mark, archive-refresh-lists-changed-archive-twice
