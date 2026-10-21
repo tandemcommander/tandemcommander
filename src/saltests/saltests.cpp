@@ -16249,6 +16249,29 @@ static void TestFtpServerEncoding288()
     { return isCodePageName; };
     CHECK(rule224(SALFTPENC_LEGACY, FALSE) != SalFtpNameGoesInCodePage(SALFTPENC_LEGACY, FALSE));
 
+    // the code-page form, exactly (review of 288): a best-fit look-alike is another name
+    {
+        char buf[64];
+        CHECK(SalFtpWToCodePageExact(1250, L"caf\x00E9.txt", buf, sizeof(buf)) && strcmp(buf, "caf\xE9.txt") == 0);
+        CHECK(SalFtpWToCodePageExact(1250, L"nov\x00FD", buf, sizeof(buf)) && strcmp(buf, "nov\xFD") == 0);
+        const WCHAR caj[] = {0x010D, L'a', L'j', L'.', L't', L'x', L't', 0};                          // c-caron: 0xE8 in cp1250
+        CHECK(SalFtpWToCodePageExact(1250, caj, buf, sizeof(buf)) && strcmp(buf, "\350aj.txt") == 0); // octal: 0xE8
+        CHECK(SalFtpWToCodePageExact(1250, L"a.txt", buf, sizeof(buf)) && strcmp(buf, "a.txt") == 0);
+        CHECK(!SalFtpWToCodePageExact(1250, L"se\x00F1or.txt", buf, sizeof(buf)) && buf[0] == 0);  // n-tilde: not "senor.txt"
+        CHECK(!SalFtpWToCodePageExact(1250, L"\x00F8re", buf, sizeof(buf)) && buf[0] == 0);        // o-stroke: not "ore"
+        CHECK(!SalFtpWToCodePageExact(1250, L"na\x00EFve", buf, sizeof(buf)) && buf[0] == 0);      // i-diaeresis: not "naive"
+        CHECK(!SalFtpWToCodePageExact(1250, L"\x4E01.txt", buf, sizeof(buf)) && buf[0] == 0);      // CJK: no form at all
+        CHECK(!SalFtpWToCodePageExact(1252, L"nov\x00FD\x0159", buf, sizeof(buf)) && buf[0] == 0); // r-caron is not in cp1252
+        CHECK(!SalFtpWToCodePageExact(1250, L"caf\x00E9.txt", buf, 8) && buf[0] == 0);             // does not fit: refused, never cut
+        CHECK(SalFtpWToCodePageExact(1250, L"caf\x00E9.txt", buf, 9));                             // exactly fits (with the NUL)
+        CHECK(!SalFtpWToCodePageExact(1250, NULL, buf, sizeof(buf)) && !SalFtpWToCodePageExact(1250, L"a", NULL, 4));
+        // negative control - the conversion of 224 (no WC_NO_BEST_FIT_CHARS): "senor.txt" and no
+        // default character reported, so it was taken as the name
+        BOOL usedDefault = FALSE;
+        int n = WideCharToMultiByte(1250, 0, L"se\x00F1or.txt", -1, buf, sizeof(buf), NULL, &usedDefault);
+        CHECK(n > 0 && !usedDefault && strcmp(buf, "senor.txt") == 0);
+    }
+
     // the user: NULL, "" and "anonymous" are one; otherwise exact (case kept)
     CHECK(SalFtpSameServerUser(NULL, NULL));
     CHECK(SalFtpSameServerUser(NULL, ""));

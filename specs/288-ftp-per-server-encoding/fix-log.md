@@ -100,6 +100,48 @@ findings.
   PORT, TYPE, LIST, MKD / RNFR / RNTO / STOR / DELE, NOOP, QUIT) - no FEAT / OPTS; the diff adds no
   registry or file write (in-memory state only).
 
+## Review
+
+### Review 1 (refute-first, independent agent) - rejected: 1 MUST, 1 SHOULD, 5 NOTE
+
+Confirmed by the review: build, saltests 25200 / 0, the before / after / control results, all 57
+`PrepareFTPCommand` sites (every name command gets its server), the same server key at every
+listing parse and 257 reply, the lock order against critsect.txt, the scope's nesting, NULL and
+memory bounds.
+
+- **MUST 1 (data loss, taken)**: `WideCharToMultiByte(CP_ACP, 0, ..)` best-fits without setting
+  the default-character flag - `señor.txt` -> `senor.txt`, `øre` -> `ore`, `naïve` -> `naive` in
+  cp1250. Under 224 only listed code-page texts took that path (they round-trip); 288 sends every
+  new name to a legacy server through it. Reproduced (`probe/review_bestfit_result.txt`): BF-UP -
+  the legacy server's `senor.txt` = OLD, F5 of the local `señor.txt` = NEW sent `STOR senor.txt`
+  and replaced it without the overwrite question (the upload's "exists?" check compares UTF-8
+  names); BF-MKD `MKD senor`. **Fix**: `SalFtpWToCodePageExact` (salftpsrvenc.h):
+  `WC_NO_BEST_FIT_CHARS` + the default-character flag + a round trip (the bytes read back are the
+  name); otherwise UTF-8. saltests: cp1250 café / nový / č / ASCII exact; señor, øre, naïve, CJK,
+  ř in cp1252 refused (buf = ""); a buffer one byte short refused, never cut; negative control:
+  the old call yields `senor.txt` with no default flag (documents the trap).
+- **SHOULD 1 (taken, inside the item)**: a listing echoes the UTF-8 bytes of a name the client
+  sent while the legacy server was unknown -> `SawUtf8` -> mixed -> new names in UTF-8 again.
+  Reproduced (`probe/review_echo_result.txt`, ECHO). **Fix**: every non-ASCII component the client
+  sends a server in UTF-8 is remembered for that server (`FTPNAME_SENTUTF8`, the same bounded
+  table); a listed name equal to one gives no UTF-8 evidence.
+- NOTE 1 (taken in part): evidence came from every string column (owner, group, ...) - now only
+  the name column changes a server's state (`FTPListingFieldToU8(.., nameField)`, parser2.cpp);
+  every field's code-page text is still remembered (224's link targets etc.). Fields of a parser
+  that autodetection tries and then rejects still count (recorded as a limit).
+- NOTE 2 (limit, recorded by 269): a cp1250 name whose bytes are valid UTF-8 reads as UTF-8 and
+  now also counts as UTF-8 evidence.
+- NOTE 3 (taken): integration covered by the probe rows BF-UP, BF-MKD, ECHO (added to
+  `ftp288_probe.ps1`) and the exact-conversion checks in saltests.
+- NOTE 4: the Inbox items (the ctrlcon5 host / user swap, the FEAT decision) are written at closing.
+- NOTE 5 (accepted): past 1,000 servers a legacy server's listed names go in UTF-8.
+
+After the fixes: `build.cmd` BUILD SUCCEEDED; saltests `25213 checks, 0 failed`; encoding guard
+TOTAL 0; probe `probe/result_after_review1.txt` **PASS 18, FAIL 0** (BF-UP: `STOR seĂ±or.txt` -
+the UTF-8 name, garbled on the legacy server, `senor.txt` still OLD; BF-MKD likewise; ECHO: `MKD
+čaj` in cp1250 after the echo); regressions 224 16 / 0, 269 14 / 0, 277 10 / 0. The rows BF-UP,
+BF-MKD, ECHO failed on the first version (the reviewer's runs) - their negative control.
+
 ## Limits
 
 - An unknown server (no non-ASCII listing field yet) gets UTF-8 for new names and typed paths

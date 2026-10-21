@@ -494,14 +494,16 @@ public:
 // (incl. ASCII) is kept verbatim (covers ASCII and UTF-8 servers); other bytes
 // are read in the system ANSI code page (legacy servers). Returns NULL on
 // allocation failure; free the result with SalamanderGeneral->Free.
-// Feature 288: the evidence goes to the server of CFTPListingServerScope.
-char* FTPListingFieldToU8(const char* beg, int len);
+// Feature 288: the evidence goes to the server of CFTPListingServerScope; only a name field
+// ('nameField') changes the server's state (every field's code-page text is remembered, 224).
+char* FTPListingFieldToU8(const char* beg, int len, BOOL nameField);
 
 // Encode a UTF-8 name/path into the bytes the FTP server 'srv' expects (inverse of
 // FTPListingFieldToU8). ASCII passes through; the code page when it can hold the name
 // and the name is one 'srv' gave in it (also a component or a leading part, 224) or
-// 'srv' speaks only the code page (288, SalFtpNameGoesInCodePage); else the UTF-8
-// bytes are sent verbatim. 'buf' (size 'bufSize') receives the result; returns 'buf',
+// 'srv' speaks only the code page (288, SalFtpNameGoesInCodePage) - exactly, never a
+// best-fit look-alike (SalFtpWToCodePageExact); else the UTF-8 bytes are sent verbatim
+// and remembered as sent to 'srv' (a listing echoing them is no UTF-8 evidence). 'buf' (size 'bufSize') receives the result; returns 'buf',
 // or the original 'u8' when no conversion is needed or on failure.
 const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize, CFTPServerEnc* srv);
 // feature 224 / 288: frees the servers' states and remembered names (at the plug-in's release)

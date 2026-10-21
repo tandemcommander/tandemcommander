@@ -637,7 +637,7 @@ BOOL AssignStringToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, cons
     {
         // interface 104: names/text crossing the Salamander interface are UTF-8;
         // decode the raw listing bytes (server encoding) here (see ftputils.cpp)
-        char* str = FTPListingFieldToU8(beg, (int)(end - beg));
+        char* str = FTPListingFieldToU8(beg, (int)(end - beg), columns->At(col)->Type == stctName); // feature 288: a name tells the server's encoding
         if (str == NULL)
         {
             TRACE_E(LOW_MEMORY);

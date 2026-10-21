@@ -1,0 +1,10 @@
+review of 288: best-fit and listing-echo rows
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 17:12; desktop 'tc_probe_8340'; ACP 1250; registry key existed True; export SHA-256 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861
+Servers : ftpmini.py cp1250 on 127.0.0.1:2121 - up; utf-8 on 127.0.0.1:2122 - up
+
+ECHO       ROW    FAIL        ECHO: a.txt,nov\u0102\u02DD,sub,\u00C4\u0164aj; ECHO/sub: caf\u00E9.txt; at 'ftp://u@127.0.0.1:2121/ECHO' then 'ftp://u@127.0.0.1:2121/ECHO'; legacy got: USER u / PASS p / SYST / PWD / CWD /ECHO / PWD / PORT 127,0,0,1,199,96 / TYPE A / LIST / MKD nov\u0102\u02DD / CWD /ECHO/sub / PWD / PORT 127,0,0,1,199,102 / LIST / CWD /ECHO / PWD / PORT 127,0,0,1,199,106 / LIST / MKD \u00C4\u0164aj; dialogs: typed into [Create Directory] || typed into [Create Directory]
+ECHO       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861 / after 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861
+
+Rows: PASS 1, FAIL 1. Left running: 0; fixture removed: True; registry restored+identical: True

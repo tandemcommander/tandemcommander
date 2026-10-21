@@ -24,6 +24,9 @@
 //     salftplisting.h). A "257" path is never UTF-8 evidence - it may echo the bytes
 //     the client sent;
 //   - code-page evidence: a listing field or a "257" path read in the code page.
+// Only name fields count (an owner or group text may be in another encoding than the names),
+// and a listed name the client itself sent in UTF-8 is no UTF-8 evidence - a legacy server
+// lists back the UTF-8 bytes of a folder made while it was unknown (review of 288).
 // The plug-in sends no FEAT, so a listing is the only evidence (FEAT UTF8 would be a
 // new command to the server - the maintainer's decision).
 //
@@ -51,6 +54,41 @@ inline int SalFtpServerEncState(BOOL sawUtf8, BOOL sawCodePage)
 inline BOOL SalFtpNameGoesInCodePage(int state, BOOL isCodePageNameOfServer)
 {
     return isCodePageNameOfServer || state == SALFTPENC_LEGACY;
+}
+
+// the code-page form of the name 'w' (NUL-terminated) in 'buf', exactly: TRUE only when every
+// letter has its own byte form and the bytes read back are 'w' again. A best-fit look-alike is
+// another name - "señor.txt" became "senor.txt" in cp1250 without the default character, and an
+// upload silently replaced the server's senor.txt (review of 288; CLAUDE.md: best-fit mapping).
+// FALSE (buf = "") when the code page cannot hold it, it does not fit 'bufSize', or low memory.
+inline BOOL SalFtpWToCodePageExact(UINT codePage, const WCHAR* w, char* buf, int bufSize)
+{
+    if (buf == NULL || bufSize <= 0)
+        return FALSE;
+    buf[0] = 0;
+    if (w == NULL)
+        return FALSE;
+    BOOL usedDefault = FALSE;
+    int n = WideCharToMultiByte(codePage, WC_NO_BEST_FIT_CHARS, w, -1, buf, bufSize, NULL, &usedDefault);
+    if (n <= 0 || usedDefault)
+    {
+        buf[0] = 0;
+        return FALSE;
+    }
+    int wLen = MultiByteToWideChar(codePage, 0, buf, -1, NULL, 0);
+    BOOL same = FALSE;
+    if (wLen > 0)
+    {
+        WCHAR* back = (WCHAR*)malloc(wLen * sizeof(WCHAR));
+        if (back != NULL)
+        {
+            same = MultiByteToWideChar(codePage, 0, buf, -1, back, wLen) == wLen && wcscmp(back, w) == 0;
+            free(back);
+        }
+    }
+    if (!same)
+        buf[0] = 0;
+    return same;
 }
 
 // the user of a server: NULL, "" and "anonymous" are one user (the operations store the

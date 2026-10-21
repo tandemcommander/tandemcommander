@@ -17,6 +17,13 @@
       CROSS-DEL one program: the legacy server's folder lists "cafe.txt" (cp1250), then the panel goes
                 to the UTF-8 server's folder with the same name and F8 deletes it: PASS = deleted
                 (DELE in UTF-8 - the name seen in the code page on the other server does not count)
+      BF-UP     (review) the legacy server holds senor.txt = OLD; F5 of the local "senor.txt" with
+                n-tilde (cp1250 has it only as the best-fit "n"): PASS = senor.txt still OLD, no
+                STOR senor.txt (it went in UTF-8 - garbled, but no other file replaced)
+      BF-MKD    (review) F7 "senor" with n-tilde: PASS = no MKD senor
+      ECHO      (review) the legacy server, unknown: F7 "novy" goes in UTF-8 and is listed back as
+                UTF-8 bytes; ECHO/sub lists "cafe.txt" in cp1250; back in ECHO, F7 "caj" with
+                c-caron: PASS = the server has "caj" (the echo did not make the server "mixed")
       UTF-MKD   the control: UTF-8 server, its folder lists "cafe.txt" in UTF-8; F7 "novy": PASS =
                 the folder by that name (MKD in UTF-8 - before and after)
       UNK-MKD   the limit: the legacy server, a folder of ASCII names only (no evidence yet); F7
@@ -143,6 +150,7 @@ function Answer([int]$Id, [double]$Seconds = 90, [double]$Quiet = 5, [string]$Fi
     }
     return $texts
 }
+function Has-Cmd($cmds, [string]$Rx) { return [bool](@($cmds | Where-Object { $_ -cmatch $Rx }).Count) }
 function Entries([string]$Dir) { return @([IO.Directory]::GetFileSystemEntries($LP + $Dir) | ForEach-Object { [IO.Path]::GetFileName($_) }) }
 function Show($names) { return (($names | ForEach-Object { Esc $_ }) -join ',') }
 
@@ -233,6 +241,50 @@ try {
         }
         catch { Row 'CROSS-DEL' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
         finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'CROSS-DEL' $id $fatal $before } }
+    }
+
+    # review of 288 (MUST 1): a name the code page holds only as a best-fit look-alike (n-tilde in
+    # cp1250 -> "n") is never sent so - it would be another file
+    $Senor = 'se' + [char]0xF1 + 'or'
+    Row-Ftp 'BF-UP' $SrvL -1 727 { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\' + $Acc, 'ACC'); [IO.File]::WriteAllText($LP + $s + '\senor.txt', 'OLD'); [IO.File]::WriteAllText($LP + $l + '\' + $Senor + '.txt', 'NEW') } {
+        param($t, $c, $s, $l, $conn)
+        $e = @(Entries $s); $got = ''; try { $got = [IO.File]::ReadAllText($LP + $s + '\senor.txt') } catch { }
+        @{ Ok = ($got -ceq 'OLD' -and -not (Has-Cmd $c '^STOR senor\.txt$')); Facts = ("on the server: {0}; senor.txt content '{1}'" -f (Show $e), $got) } } -Up
+    Row-Ftp 'BF-MKD' $SrvL 0 730 { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\' + $Acc, 'ACC') } {
+        param($t, $c, $s, $l, $conn)
+        $e = @(Entries $s)
+        @{ Ok = (-not ($e -ccontains 'senor') -and -not (Has-Cmd $c '^MKD senor$')); Facts = ("on the server: {0}" -f (Show $e)) } } -Type $Senor
+
+    # review of 288 (SHOULD 1): a folder made in UTF-8 while the legacy server was unknown is listed
+    # back as UTF-8 bytes - that echo must not make the server "mixed": after a code-page listing,
+    # a new name goes in the code page
+    if (Want 'ECHO') {
+        $before = Reports; $id = 0
+        $CajDir = [char]0x010D + 'aj'
+        try {
+            NewDir ($SrvL.Root + '\ECHO'); NewDir ($SrvL.Root + '\ECHO\sub')
+            [IO.File]::WriteAllText($LP + $SrvL.Root + '\ECHO\a.txt', 'A'); [IO.File]::WriteAllText($LP + $SrvL.Root + '\ECHO\sub\' + $Acc, 'ACC')
+            $fromL = Srv-Count $SrvL
+            $id = Start-P
+            $c1 = Connect $id $SrvL 'ECHO'
+            Start-Sleep -Milliseconds 1500; Sync $id
+            Key $id 0x24; Start-Sleep -Milliseconds 500; Sync $id
+            Post-Cmd (Get-Main $id) 730; Start-Sleep -Milliseconds 700
+            $t1 = @(Answer $id 60 6 $Novy)        # unknown server: UTF-8 (the limit), listed back
+            Start-Sleep -Milliseconds 1500; Sync $id
+            $c2 = Connect $id $SrvL 'ECHO/sub'    # cafe.txt in cp1250: legacy evidence
+            Start-Sleep -Milliseconds 1500; Sync $id
+            $c3 = Connect $id $SrvL 'ECHO'        # the echo listed again
+            Start-Sleep -Milliseconds 1500; Sync $id
+            Key $id 0x24; Start-Sleep -Milliseconds 500; Sync $id
+            Post-Cmd (Get-Main $id) 730; Start-Sleep -Milliseconds 700
+            $t2 = @(Answer $id 60 6 $CajDir)
+            $eE = @(Entries ($SrvL.Root + '\ECHO'))
+            $ok = ($c1.Ok -and $c2.Ok -and $c3.Ok -and ($eE -ccontains $CajDir))
+            Row 'ECHO' 'ROW' (V $ok) ("ECHO: {0}; at '{1}', '{2}', '{3}'; legacy got: {4}; dialogs: {5} || {6}" -f (Show $eE), (Tail $c1.Loc 40), (Tail $c2.Loc 40), (Tail $c3.Loc 40), ((Srv-Cmds $SrvL $fromL) -join ' / '), ($t1 -join ' | '), ($t2 -join ' | '))
+        }
+        catch { Row 'ECHO' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+        finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'ECHO' $id $fatal $before } }
     }
 
     Row-Ftp 'UTF-MKD' $SrvU 0 730 { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\' + $Acc, 'ACC') } {

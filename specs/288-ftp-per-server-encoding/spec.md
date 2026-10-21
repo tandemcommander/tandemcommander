@@ -132,15 +132,18 @@ probes as recorded.
 - **FR-001**: The plug-in MUST keep, for each FTP server identified by host (ASCII case
   ignored), port and user (anonymous = none), an encoding state: unknown, UTF-8, legacy (code
   page) or mixed, for the life of the plug-in.
-- **FR-002**: A listing field or a 257 reply path with bytes outside ASCII MUST count as evidence
-  for the server it came from: a listing field that is valid UTF-8 (WTF-8, feature 269) = UTF-8
-  evidence (a 257 reply path never is - it may echo what the client sent); a field or a 257 path
-  read in the code page = legacy evidence, and the text is remembered as one of that server's
-  code-page names.
+- **FR-002**: A listing name field or a 257 reply path with bytes outside ASCII MUST count as
+  evidence for the server it came from: a name field that is valid UTF-8 (WTF-8, feature 269) =
+  UTF-8 evidence - unless it is a name this client sent that server in UTF-8 (a legacy server
+  lists such bytes back; review of 288), and a 257 reply path never is (it may echo what the
+  client sent); a name field or a 257 path read in the code page = legacy evidence. Every field
+  read in the code page (also owner, group, ...) is remembered as one of that server's code-page
+  texts (224); fields other than the name do not change the state.
 - **FR-003**: A non-ASCII name or path sent to a server MUST go in the code page when it is, or
   contains as a component or leading part, a code-page name of **that** server (feature 224's
-  rule, now per server), or when the server's state is legacy - provided the code page can hold
-  it; otherwise in UTF-8.
+  rule, now per server), or when the server's state is legacy - provided the code page holds it
+  **exactly** (no best-fit look-alike: `señor` is never sent as `senor`, another file; review of
+  288); otherwise in UTF-8.
 - **FR-004**: The state of a server MUST NOT be influenced by listings or replies of any other
   server.
 - **FR-005**: Every command that carries a name or path (CWD, DELE, RMD, SITE CHMOD, RETR, STOR,

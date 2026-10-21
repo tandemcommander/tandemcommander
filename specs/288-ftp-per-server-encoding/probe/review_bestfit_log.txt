@@ -1,0 +1,14 @@
+review of 288: best-fit and listing-echo rows
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 17:10; desktop 'tc_probe_10092'; ACP 1250; registry key existed True; export SHA-256 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861
+Servers : ftpmini.py cp1250 on 127.0.0.1:2121 - up; utf-8 on 127.0.0.1:2122 - up
+
+BF-UP      ROW    FAIL        on the server: caf\u00E9.txt,senor.txt; senor.txt content 'NEW'; 7,5 s; connected: True at 'ftp://u@127.0.0.1:2121/BF-UP'; server got: USER u / PASS p / SYST / PWD / CWD /BF-UP / PWD / PORT 127,0,0,1,223,141 / TYPE A / LIST / PORT 127,0,0,1,223,146 / STOR senor.txt / NOOP / CWD /BF-UP / PWD / PORT 127,0,0,1,223,148 / TYPE A / LIST; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "se\u00F1or.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+BF-UP      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BF-MKD     ROW    FAIL        on the server: caf\u00E9.txt,senor; 7,5 s; connected: True at 'ftp://u@127.0.0.1:2121/BF-MKD'; server got: USER u / PASS p / SYST / PWD / CWD /BF-MKD / PWD / PORT 127,0,0,1,223,152 / TYPE A / LIST / MKD senor; dialogs: typed into [Create Directory]
+BF-MKD     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ECHO       ROW    PASS        ECHO: a.txt,nov\u0102\u02DD,sub; ECHO/sub: caf\u00E9.txt,\u010Daj; at 'ftp://u@127.0.0.1:2121/ECHO' then 'ftp://u@127.0.0.1:2121/ECHO/sub'; legacy got: USER u / PASS p / SYST / PWD / CWD /ECHO / PWD / PORT 127,0,0,1,223,159 / TYPE A / LIST / MKD nov\u0102\u02DD / CWD /ECHO/sub / PWD / PORT 127,0,0,1,223,136 / LIST / MKD \u010Daj; dialogs: typed into [Create Directory] || typed into [Create Directory]
+ECHO       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861 / after 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861
+
+Rows: PASS 4, FAIL 2. Left running: 0; fixture removed: True; registry restored+identical: True
