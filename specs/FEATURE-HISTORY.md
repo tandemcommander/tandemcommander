@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3627,3 +3627,23 @@ a few early ones are out of sequence).
   with the final probe 23 / 5; negative controls: the old copy / starts, review 1's bugs, a
   selection never cleared - each fails its rows); `TestUserMenuValue280`; 226 / 229 / 234 probes
   unchanged; two refute-first reviews (no MUST; three SHOULDs fixed).
+- 281-moved-aside-leftovers: a copy, a new folder (F5 / F7), Edit New File, an unpack or a plug-in's
+  create to another entry's short (8.3) name moved that entry aside to `salNNN` and back; when the
+  move back kept failing (another program holding it) the user's file stayed renamed with only a
+  trace. Now every create route says "Error Renaming File - Path: "...\salNNN" - Error: reason"
+  before its own error: an out record `CMovedAsideLeft` on `SalCreateFileEx` /
+  `SalCreateDirectoryEx` / `MakeUnpackFoldersOwn` (with none - the plug-in wrappers - the create
+  shows it itself, owner = a window of the calling thread); the worker through the new progress
+  request 13, also after the user's own cancel, never when the program is exiting (a cancel from
+  outside, `DoNotBeepOnClose`) nor in an unattended close (080). PictView and the Renamer retry
+  their move back (`src/common/salmoveback.h`, 221's rule shared, saltests; the Debug seam
+  `TC_PROBE_MOVE_BACK_FAIL` makes the race drivable, `contracts/probe-seam.md`). 221's worker-move
+  report got the same whole-path form. Traps: the error dialog's painted name field cut a long
+  path (review 1 - now `IDS_PATHERRORFORMAT` in a message box); a session end cancels workers
+  before `CriticalShutdown` (review 2); a `BM_CLICK` reaches a disabled dialog's button and
+  `$script:` in a `GetNewClosure()` block is another scope (probe traps). Limits: the message names
+  only `salNNN`, not the entry's own name (needs a string - Inbox
+  `left-aside-message-names-the-entry`); PictView and FTP / SFTP by reading (the Renamer drove the
+  wrapper). From backlog item `moved-aside-restore-leftovers`. Probe `left281_probe` 8 / 6 -> 26 / 0
+  (13 rows incl. a deep path, cancels, 221's routes), `ren281_probe` 4 / 0; 201 / 203 unchanged;
+  two refute-first reviews (MUST 1 and two SHOULDs fixed).

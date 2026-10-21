@@ -11,7 +11,7 @@ updated: 2026-10-21
 verified: -
 effort: S
 feature: -
-related: [moved-aside-restore-leftovers]
+related: []
 depends-on: []
 reason: -
 ---
@@ -58,3 +58,4 @@ refresh, which an autonomous run does not do - a run would stop on it.
 ## Log
 
 - 2026-10-21 — created (source review:281)
+- 2026-10-21 — related item moved-aside-restore-leftovers done in feature 281
