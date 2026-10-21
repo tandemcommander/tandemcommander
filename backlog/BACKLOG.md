@@ -198,6 +198,7 @@ Last triaged: 2026-10-20
 | [The User Menu page names a new submenu end in the code page, not UTF-8](items/the-user-menu-page-names-a-new-submenu-end-in-the-code-page/desc.md) | bug | 2 | encoding | review:268 | 2026-10-20 |
 | [Drive Information writes the volume label through an ANSI API](items/volume-label-written-through-ansi-api/desc.md) | bug | 5 | encoding | review:270 | 2026-10-20 |
 | [A path typed in another case into an archive with case twins elsewhere opens its root](items/a-path-typed-in-another-case-into-an-archive-with-case-twins/desc.md) | bug | 4 | archives | review:273 | 2026-10-21 |
+| [Archive Update: Copy Selected To refuses an edited member whose target path is over 259 units](items/archive-update-copy-selected-to-refuses-long-targets/desc.md) | improvement | 3 | long-paths | review:275 | 2026-10-21 |
 | [Check that Change Attributes refuses to encrypt or decrypt a file symbolic link (272)](items/check-change-attributes-refuses-encrypting-a-file-link/desc.md) | person-step | 4 | data-safety | leftover:272 | 2026-10-21 |
 | [Copying into an archive folder typed in another case packs into a new folder beside it](items/copying-into-an-archive-folder-typed-in-another-case-packs/desc.md) | bug | 4 | archives | review:273 | 2026-10-21 |
 | [tar plug-in ignores PAX extended headers: long or non-ASCII names listed under the ustar fallback name](items/tar-plug-in-ignores-pax-extended-headers/desc.md) | bug | 5 | archives | measure:275 | 2026-10-21 |

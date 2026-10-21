@@ -3521,12 +3521,18 @@ void CFileTimeStamps::AddFilesToListBox(HWND list)
     int i;
     for (i = 0; i < List.Count; i++)
     {
-        // feature 096: room for the longest path inside an archive plus the longest name
-        // (259 + 1 + 255 bytes) - in MAX_PATH the name of a file deep in the archive did not
-        // fit and the list showed only its folder
-        char buf[3 * MAX_PATH];
-        lstrcpyn(buf, List[i]->ZIPRoot, _countof(buf));
-        SalPathAppend(buf, List[i]->FileName, _countof(buf));
+        // feature 096: in MAX_PATH the name of a file deep in the archive did not fit and the list
+        // showed only its folder; feature 275: the line on the heap - F4 takes paths inside the archive
+        // of 520+ bytes now (a folder part of up to 255 bytes + a name of up to 765), and the
+        // 3 * MAX_PATH buffer dropped the name of such a member again (the append's result was
+        // ignored). On low memory the bare name keeps the line (the buttons use the list's indexes)
+        CSalHeapString line;
+        const char* buf = List[i]->FileName;
+        if (line.Copy(List[i]->ZIPRoot, strlen(List[i]->FileName) + 2) &&
+            SalPathAppend(line.Get(), List[i]->FileName, line.Size()))
+        {
+            buf = line.Text();
+        }
         // feature 153: a file whose member another program changed in the archive since the F4 says
         // so - "Update" replaces that change (the list keeps the order of List: the buttons use indexes)
         CSalHeapString marked;

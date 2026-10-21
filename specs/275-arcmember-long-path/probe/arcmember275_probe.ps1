@@ -12,6 +12,10 @@
       EDITCAP   the 604-byte member; F4 (743): an editor starts; the probe ends it, writes new
                 content into the temporary copy, leaves the archive and answers the update question:
                 PASS = the archive has ONE member, under the whole name, with the new content
+      EDITDEEP  a ZIP entry <84 CJK letters>/<200 CJK letters>.txt (857 bytes inside the archive);
+                F4, write the copy, leave the archive: PASS = one member under the whole path with
+                the new content; EDITDEEP-LIST: PASS = the Archive Update dialog's list shows the
+                whole path (review of 275, M1: a 3 * MAX_PATH buffer showed only the folder)
       7Z        a .7z made by 7z.exe holding the 604-byte member; F3: PASS = a viewer opens
                 (NOT DRIVEN when C:\Program Files\7-Zip\7z.exe is missing)
       TAR       a GNU tar built here (././@LongLink 'L' header + the regular header) holding the
@@ -118,8 +122,11 @@ function View-Case([string]$Case, [string]$InArchive, [scriptblock]$Make, [strin
         $r = Serve $id 8 @(1)
         $refused = $t -match 'too long'
         $viewer = ($t -notmatch '^<')
-        $ok = $(if ($ExpectRefusal) { $refused } else { $viewer -and -not $refused })
-        Row $Case 'RUN' (V $ok) ("path inside the archive {0} bytes / {1} units; viewer {2}; refused {3}; F3: {4}{5}" -f (U8Len $InArchive), $InArchive.Length, $viewer, $refused, (Tail $t 220), $(if ((Msgs $r) -ne 'no window') { '; after: ' + (Tail (Msgs $r) 200) } else { '' }))
+        # review of 275 (S2): the viewer's title must hold the copy's whole name, not just any window
+        $last = $InArchive.Substring($InArchive.LastIndexOf('\') + 1)
+        $named = $t.Contains('\' + $last + ' ')
+        $ok = $(if ($ExpectRefusal) { $refused } else { $viewer -and $named -and -not $refused })
+        Row $Case 'RUN' (V $ok) ("path inside the archive {0} bytes / {1} units; viewer {2}; whole name in the title {3}; refused {4}; F3: {5}{6}" -f (U8Len $InArchive), $InArchive.Length, $viewer, $named, $refused, (Tail $t 220), $(if ((Msgs $r) -ne 'no window') { '; after: ' + (Tail (Msgs $r) 200) } else { '' }))
         [void](Do-ChangeDir $id $StartDir); [void](Serve $id 8 @(1, 7, 2))
         End-Row $Case $id $null $before; $id = 0
     }
@@ -164,6 +171,81 @@ function Edit-Case([string]$Case, [string]$Member) {
     finally { if ($id) { End-Row $Case $id $null $before } }
 }
 
+function List-Items([IntPtr]$Dlg) {
+    $out = @()
+    foreach ($c in [Drv098f]::Kids($Dlg)) {
+        if ([Drv098f]::Cls($c) -notmatch 'ListBox') { continue }
+        $res = [IntPtr]::Zero
+        [void][Drv098f]::SendMessageTimeoutW($c, 0x018B, [IntPtr]::Zero, [IntPtr]::Zero, 0, 5000, [ref]$res)   # LB_GETCOUNT
+        $n = [int]$res.ToInt64()
+        for ($i = 0; $i -lt $n; $i++) {
+            $buf = New-Object char[] 5000
+            $r2 = [IntPtr]::Zero
+            [void][Drv098f]::SendGetText($c, 0x0189, [IntPtr]$i, $buf, 0, 5000, [ref]$r2)   # LB_GETTEXT
+            $len = [int]$r2.ToInt64(); if ($len -lt 0) { $len = 0 }
+            $out += (New-Object string($buf, 0, $len))
+        }
+    }
+    return , $out
+}
+
+# review of 275 (M1): F4 of a member in a folder (path inside the archive 857 bytes), edit, leave the
+# archive; the Archive Update dialog's list must show the whole path, the archive the new content
+function DeepEdit-Case([string]$Case, [string]$Dir, [string]$Name) {
+    $d = $Root + '\' + $Case; NewDir $d
+    Zip-One "$d\a.zip" ($Dir + '/' + $Name)
+    $id = 0; $before = Reports; $t0 = Get-Date
+    try {
+        $id = Start-Tc ("$d\a.zip\" + $Dir)
+        Key $id 0x24; Key $id 0x23; Start-Sleep -Milliseconds 500
+        $r0 = Serve $id 4 @(1)   # the information line's box, see Edit-Case
+        Post-Cmd (Get-Main $id) 743
+        $r = Serve $id 15 @(1, 6)
+        Start-Sleep -Milliseconds 1500
+        $eds = @(Editors $t0)
+        foreach ($p in $eds) { try { Stop-Process -Id $p.Id -Force } catch { } }
+        Start-Sleep -Milliseconds 800
+        $copy = Find-TmpCopy $Name $TempRoot
+        $wrote = $false
+        if ($copy) { [IO.File]::WriteAllText($copy, 'EDITED-CONTENT', (New-Object Text.ASCIIEncoding)); $wrote = $true }
+        [void](Serve $id 4 @(1, 6))
+        # leave the archive; catch the Archive Update dialog and read its list before OK
+        $dlg = Open-ByCmd $id 862
+        if ($dlg -eq [IntPtr]::Zero) { throw 'Change Directory (862) opened no window' }
+        $ctl = Find-Ctl $dlg 210
+        [void][Drv098f]::SetText($ctl, $StartDir, 5000)
+        Click-Ok $dlg
+        $items = @(); $upd = '<none>'; $pre = ''
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 15) {
+            $found = $false
+            foreach ($h in (Get-Tops $id)) {
+                if ([Drv098f]::Cls($h) -eq $MainClass) { continue }
+                $lists = @([Drv098f]::Kids($h) | Where-Object { [Drv098f]::Cls($_) -match 'ListBox' })
+                if ($lists.Count) { Start-Sleep -Milliseconds 800; $items = List-Items $h; $upd = WinDesc $h; Click-Ok $h; $found = $true; break }
+                # a box before the update dialog (the information line's, see Edit-Case): OK, noted
+                if ([Drv098f]::IsWindowEnabled($h) -and @(Buttons $h | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 1 }).Count) {
+                    $pre += (WinDesc $h) + ' || '; Start-Sleep -Milliseconds 700; Click-Ok $h; Start-Sleep -Milliseconds 500
+                }
+            }
+            if ($found) { break }
+            Start-Sleep -Milliseconds 150
+        }
+        $r3 = Serve $id 30 @(1, 6)
+        $ents = @(Zip-Entries "$d\a.zip")
+        $packed = $wrote -and $ents.Count -eq 1 -and $ents[0].Name -ceq ($Dir + '/' + $Name) -and $ents[0].Text -ceq 'EDITED-CONTENT'
+        Row $Case 'RUN' (V $packed) ("path inside the archive {0} bytes; editor processes {1}; copy written {2}; archive: {3}; F4: {4}; after: {5}" -f (U8Len ($Dir + '\' + $Name)), $eds.Count, $wrote, (Tail (($ents | ForEach-Object { '{0} bytes "{1}"' -f (U8Len $_.Name), $_.Text }) -join ' | ') 160), (Tail (Msgs $r) 150), (Tail (Msgs $r3) 300))
+        $full = $Dir + '\' + $Name
+        $listOk = ($items.Count -eq 1) -and ($items[0] -ceq $full)
+        $facts = "Archive Update list items {0}; item {1} bytes (the whole path {2} bytes); the folder only {3}; dialog: {4}" -f $items.Count, $(if ($items.Count) { U8Len $items[0] } else { '-' }), (U8Len $full), $(if ($items.Count) { $items[0] -ceq $Dir } else { '-' }), (Tail $upd 200)
+        if ($pre) { $facts += '; before it: ' + (Tail $pre 200) }
+        Row ($Case + '-LIST') 'RUN' (V $listOk) $facts
+        End-Row $Case $id $null $before; $id = 0
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $null $before } }
+}
+
 $backup = Join-Path $env:TEMP 'tc275_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
@@ -178,6 +260,7 @@ try {
     View-Case 'VIEWCAP' $Cap { param($d) Zip-One "$d\a.zip" $Cap; "$d\a.zip" } '' $false
     View-Case 'VIEWDEEP' ($DeepDir + '\' + $DeepName) { param($d) Zip-One "$d\a.zip" ($DeepDir + '/' + $DeepName); "$d\a.zip" } ('\' + $DeepDir) $false
     Edit-Case 'EDITCAP' $Cap
+    DeepEdit-Case 'EDITDEEP' $DeepDir $Cap
     if (Test-Path -LiteralPath $SevenZip) {
         View-Case '7Z' $Cap { param($d) SevenZip-One "$d\a.7z" "$d\src" $Cap; "$d\a.7z" } '' $false
     }

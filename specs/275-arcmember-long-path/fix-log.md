@@ -106,3 +106,34 @@ refusal) and CTL pass (controls).
 - `unchm-plug-in-a-member-path-over-259-bytes-overflows-a-stack` - the disabled CHM plug-in's
   `lstrcpy(srcPath[MAX_PATH], nameInArchive)` and its false success.
 - `tar-plug-in-ignores-pax-extended-headers` - PAX `x` / `g` headers ignored by the listing.
+
+## Review
+
+### Review 1 (refute-first, independent agent) - 1 MUST, 2 SHOULD, 4 NOTE
+
+Re-ran the probe (14 / 0) and a scratch probe of its own (`%TEMP%\tc275rev\deep_probe.ps1`).
+- **M1** the Archive Update dialog (`CFileTimeStamps::AddFilesToListBox`, `src/salamdr3.cpp`) built
+  each line in `char buf[3 * MAX_PATH]` with `SalPathAppend`'s result ignored: an edited member whose
+  path inside the archive has 780+ bytes (folder 84 CJK + name 200 CJK = 857 bytes) was listed as
+  its folder only - newly reachable through 275 (F4 refused 520+ before). Update All packed it
+  correctly. **Fixed**: the line on the heap (`CSalHeapString`); on low memory the bare name keeps
+  the line (the buttons use the list's indexes). Probe rows EDITDEEP / EDITDEEP-LIST added:
+  on the build without the M1 fix `probe/result_review1_before_fix.txt` 16 / 1 (EDITDEEP-LIST: the
+  item 252 bytes = the folder only; the first try of the row did not catch the dialog - a box before
+  it was not answered; the reviewer's loop branch taken over), with the fix
+  `probe/result_after.txt` **17 / 0** (the item 857 bytes, whole).
+- **S1** CHANGELOG still stated the 520-byte limit (the 260 entry) - **fixed**: the 260 entry's
+  *Now* / *Limitation* say the limit was lifted by 275; a 275 entry added.
+- **S2** the probe's view rows passed on any viewer window and no edit row reached 780 bytes -
+  **fixed**: view rows also require the copy's whole name in the viewer's title; EDITDEEP added.
+- N1 *Copy Selected To...* refuses deep long members ("too long name", the shell call's 259-unit
+  limit) - a refusal, not a cut -> Inbox `archive-update-copy-selected-to-refuses-long-targets`
+  (review:275).
+- N2 the ~1,021-byte bound holds for listings with a path; `AddFile` with a NULL path checks no
+  length - the cache's rule refuses such names first, except F3 of an invalid name (its prefix goes
+  to the cache); shipped: only tar's single-file streams (255 units, 260). Contract wording adjusted.
+- N3 the uncab change is correct by reading. N4 the external route refuses, never cuts; its
+  `onlyName` keeps the backslash (a doubled backslash in the move target - harmless, pre-existing).
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 24859 / 0; encoding guard 0; probe 17 / 0;
+`probe/regress_260.txt` 16 / 0; `probe/regress_222.txt` 10 / 0 (rerun on the final build).
