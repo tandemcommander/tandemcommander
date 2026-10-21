@@ -20,6 +20,13 @@
                 the facts say whether Windows gave it a short (8.3) name
       ARCSHORT  a ZIP with only short names: End focuses 'c_last.txt' (control: no box before
                 either)
+    Rows with another Information Line content (Configuration value 'Information Line Content',
+    set before the start; the registry is restored at the end):
+      WIDTH     '$(FileName:3000) $(FileDOSName:3000)' (about 6 KB): End on c_last.txt -> no box
+      BADSYNTAX '$(FileName' (unmatched parenthesis): End -> exactly one box, the syntax error
+                (FR-006: a malformed content still reports, once per focus)
+      OVERCAP   12 x '$(FileSize:9999)' (about 120 KB, over the 65,535-byte bound): End -> exactly
+                one "Expanded string is too large." (FR-006)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -146,6 +153,31 @@ function Focus-Case([string]$Case, [string]$Open, [string]$LongName) {
     finally { if ($id) { End-Row $Case $id $null $before } }
 }
 
+$CfgKey = $RegKey + '\0.1\Configuration'
+$DefaultContent = '$(FileName): $(FileSize), $(FileDate), $(FileTime), $(FileAttributes), $(FileDOSName)'
+function Set-Content-Reg([string]$Content) {
+    & reg.exe add $CfgKey /v 'Information Line Content' /t REG_SZ /d $Content /f | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'reg add of the Information Line Content failed' }
+}
+# another content; End focuses the last item; $Want boxes matching $Expect must appear
+function Content-Case([string]$Case, [string]$Content, [string]$Open, [int]$Want, [string]$Expect) {
+    $id = 0; $before = Reports
+    try {
+        Set-Content-Reg $Content
+        $id = Start-Tc $Open
+        $r0 = Serve $id 4 @(1)                             # the focus at the start (boxes answered)
+        Post-Key $id 0x23                                  # End
+        $r = Serve $id 8 @(1)
+        $n = $r.Messages.Count
+        $match = @($r.Messages | Where-Object { $_ -match $Expect }).Count
+        $ok = ($n -eq $Want) -and ($match -eq $Want) -and -not $r.Fatal
+        Row $Case 'FOCUS' (V $ok) ("content '{0}' ({1} characters); boxes {2} (want {3}): {4}; at the start: {5}" -f (Tail $Content 60), $Content.Length, $n, $Want, (Tail (Msgs $r) 200), (Tail (Msgs $r0) 120))
+        End-Row $Case $id $r.Fatal $before; $id = 0
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $null $before }; try { Set-Content-Reg $DefaultContent } catch { } }
+}
+
 function PixCtl-Case([string]$Case, [string]$Open) {
     $id = 0; $before = Reports
     try {
@@ -188,6 +220,9 @@ try {
     Focus-Case 'DISK' $d $DiskName
     $d = $Root + '\arcshort'; NewDir $d; Zip-Make "$d\a.zip" ($Shorts + 'c_last.txt')
     Focus-Case 'ARCSHORT' "$d\a.zip" 'c_last.txt'
+    Content-Case 'WIDTH' '$(FileName:3000) $(FileDOSName:3000)' "$d\a.zip" 0 'x'
+    Content-Case 'BADSYNTAX' '$(FileName' "$d\a.zip" 1 'must be terminated by'
+    Content-Case 'OVERCAP' ('$(FileSize:9999)' * 12) "$d\a.zip" 1 'Expanded string is too large'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

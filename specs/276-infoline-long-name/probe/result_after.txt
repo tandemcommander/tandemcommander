@@ -1,0 +1,31 @@
+infoline276_probe (feature 276) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 03:23; registry key existed True; TEMP C:\Users\pavel\AppData\Local\Temp
+
+PIXCTL     RUN    PASS        a_short.txt 907069337EF57ECC/41c; b_other.txt 4B90F5A44672B00C/39c
+PIXCTL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ARCCAP     FOCUS  PASS        long item 604 bytes / 204 units; boxes 0: no window
+ARCCAP     LINE   PASS        information line a_short.txt 6B169E29374F79EB/44c -> long item 186584C504B73411/63c (changed True)
+ARCCAP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ARCMAX     FOCUS  PASS        long item 757 bytes / 255 units; boxes 0: no window
+ARCMAX     LINE   PASS        information line a_short.txt 5F1E1923CACF4F9F/42c -> long item 4D807762EE956822/63c (changed True)
+ARCMAX     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ARCDEEP    FOCUS  PASS        long item 604 bytes / 204 units; boxes 0: no window
+ARCDEEP    LINE   PASS        information line a_short.txt EA25FF9566D8889F/43c -> long item 02A3CC3587F267BC/63c (changed True)
+ARCDEEP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DISK: the long file's short (8.3) name: '0771~1.TXT'
+DISK       FOCUS  PASS        long item 754 bytes / 254 units; boxes 0: no window
+DISK       LINE   PASS        information line a_short.txt 5EB2F9657E76FAF9/44c -> long item 158C5065438B2296/65c (changed True)
+DISK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ARCSHORT   FOCUS  PASS        long item 10 bytes / 10 units; boxes 0: no window
+ARCSHORT   LINE   PASS        information line a_short.txt 752B5D64C7D541C8/43c -> long item E17DD046CC40A6C2/43c (changed True)
+ARCSHORT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+WIDTH      FOCUS  PASS        content '$(FileName:3000) $(FileDOSName:3000)' (36 characters); boxes 0 (want 0): no window; at the start: no window
+WIDTH      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BADSYNTAX  FOCUS  PASS        content '$(FileName' (10 characters); boxes 1 (want 1): [#32770 'Error'] [Static id=2477] Variable name must be terminated by ')'. | [Button id=1] OK; at the start: ...')'. | [Button id=1] OK || [#32770 'Error'] [Static id=2477] Variable name must be terminated by ')'. | [Button id=1] OK
+BADSYNTAX  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OVERCAP    FOCUS  PASS        content '...leSize:9999)$(FileSize:9999)$(FileSize:9999)$(FileSize:9999)' (192 characters); boxes 1 (want 1): [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK; at the start: ...g is too large. | [Button id=1] OK || [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK
+OVERCAP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 23, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -76,6 +76,7 @@
 #include "salcasetwins.h"     // feature 252
 #include "salcopyname.h"      // feature 259
 #include "salcachename.h"     // feature 260
+#include "salinfolinebuf.h"   // feature 276
 #include "salcodetable.h"     // feature 262
 #include "salregroot.h"       // feature 263
 #include "salexiforient.h"    // feature 267
@@ -12158,6 +12159,48 @@ static void TestCacheTmpPath260()
     CHECK(!SalCacheTmpPathFitsU8(folder, NULL, FALSE));
 }
 
+// feature 276: the information line's buffer grows until the expansion fits
+static void TestInfoLineBuf276()
+{
+    // the sequence from the panel's stack buffer: 2000, 4000, ..., 64000, 65535, then no more
+    const int expect[] = {2000, 4000, 8000, 16000, 32000, 64000, SAL_INFOLINE_MAX_LEN, 0};
+    int len = SAL_INFOLINE_FIRST_LEN, steps = 0, largest = len;
+    for (int e : expect)
+    {
+        int next = SalInfoLineNextLen(len);
+        CHECK(next == e);
+        if (next == 0)
+            break;
+        CHECK(next > len && next <= SAL_INFOLINE_MAX_LEN); // grows, never past the bound
+        len = largest = next;
+        steps++;
+    }
+    CHECK(steps == 7); // 8 attempts with the first one
+    CHECK(SalInfoLineNextLen(SAL_INFOLINE_MAX_LEN) == 0);
+    CHECK(SalInfoLineNextLen(SAL_INFOLINE_MAX_LEN + 1) == 0);
+    CHECK(SalInfoLineNextLen(0) == SAL_INFOLINE_FIRST_LEN);
+    CHECK(SalInfoLineNextLen(-5) == SAL_INFOLINE_FIRST_LEN);
+    CHECK(SalInfoLineNextLen(40000) == SAL_INFOLINE_MAX_LEN);
+    CHECK(SalInfoLineNextLen(32767) == SAL_INFOLINE_MAX_LEN - 1);
+
+    // the default content (src/dialogs4.cpp) holds the name twice when there is no short name;
+    // its other values: size, date, time, attributes - generously 120 bytes together
+    const char* defaultContent = "$(FileName): $(FileSize), $(FileDate), $(FileTime), $(FileAttributes), $(FileDOSName)";
+    const int literals = (int)strlen(": , , , , ");
+    CHECK((int)strlen(defaultContent) < 200);
+    const int others = 120;
+    // the defect: two 604-byte names (200 CJK letters + ".txt") did not fit the first buffer
+    CHECK(literals + 2 * 604 + others + 1 > SAL_INFOLINE_FIRST_LEN);
+    // the longest listed name, 255 units of 3 bytes = 765 bytes, fits the bound twice
+    CHECK(literals + 2 * 765 + others + 1 <= largest);
+    // the most names a 199-character content holds ("$(FileName)" = 11 characters each)
+    const int maxNames = 199 / (int)strlen("$(FileName)");
+    CHECK(maxNames == 18);
+    CHECK(maxNames * 765 + 199 + 1 <= largest);
+    // hot-text placements are MAKELPARAM(position, length): WORDs hold every position in the bound
+    CHECK(largest - 1 <= 0xFFFF);
+}
+
 // feature 219: a link's stored name in the long / NT form is the path it names
 static void TestReparseNameAsPath219()
 {
@@ -15457,6 +15500,7 @@ int main(int argc, char** argv)
     TestUserMenuBalance268();
     TestFtpListingField269();
     TestArcPathRespell273();
+    TestInfoLineBuf276();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

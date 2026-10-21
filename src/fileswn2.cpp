@@ -18,6 +18,7 @@
 #include "pack.h"
 #include "cache.h"
 #include "salheapstr.h" // feature 095
+#include "salinfolinebuf.h" // feature 276
 #include "toolbar.h"
 extern "C"
 {
@@ -1221,7 +1222,7 @@ void CFilesWindow::ItemFocused(int index)
         LastFocus = index;
         CFileData* f = (index < Dirs->Count) ? &Dirs->At(index) : &Files->At(index - Dirs->Count);
 
-        char buff[1000];
+        char buff[SAL_INFOLINE_FIRST_LEN]; // a plug-in's GetInfoLineContent fills 1000 bytes (spl_com.h)
         DWORD varPlacements[100];
         int varPlacementsCount = 100;
         BOOL done = FALSE;
@@ -1240,14 +1241,45 @@ void CFilesWindow::ItemFocused(int index)
             }
         }
 
-        if (done ||
-            ExpandInfoLineItems(HWindow, Configuration.InfoLineContent, &PluginData, f,
-                                index < Dirs->Count, buff, 1000,
-                                varPlacements, &varPlacementsCount, ValidFileData, Is(ptDisk)))
+        // feature 276: the default content holds the name twice ($(FileDOSName) is the name itself
+        // without a short name - every archive member), so a long name did not fit 1000 bytes and
+        // every focus said "Expanded string is too large."; the expansion is repeated into a growing
+        // buffer (salinfolinebuf.h), quietly - only the last attempt (at the bound, or a malformed
+        // content failing each time) reports, as before
+        char* text = buff;
+        char* heapText = NULL;
+        int textLen = SAL_INFOLINE_FIRST_LEN;
+        while (!done)
         {
-            if (StatusLine->SetText(buff))
+            int nextLen = SalInfoLineNextLen(textLen);
+            varPlacementsCount = 100;
+            if (ExpandInfoLineItems(nextLen == 0 ? HWindow : NULL, Configuration.InfoLineContent, &PluginData, f,
+                                    index < Dirs->Count, text, textLen,
+                                    varPlacements, &varPlacementsCount, ValidFileData, Is(ptDisk)))
+            {
+                done = TRUE;
+            }
+            else
+            {
+                if (nextLen == 0)
+                    break;
+                char* newText = (char*)realloc(heapText, nextLen);
+                if (newText == NULL)
+                {
+                    TRACE_E(LOW_MEMORY);
+                    break;
+                }
+                heapText = text = newText;
+                textLen = nextLen;
+            }
+        }
+        if (done)
+        {
+            if (StatusLine->SetText(text))
                 StatusLine->SetSubTexts(varPlacements, varPlacementsCount);
         }
+        if (heapText != NULL)
+            free(heapText);
     }
     QFStatusFallback();       // feature 244: with the directory line hidden, the search shows here
     IdleRefreshStates = TRUE; // we force state-variables check on next Idle
