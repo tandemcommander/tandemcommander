@@ -1,8 +1,8 @@
 # tandem-backlog — reference
 
 Sections: §1 item templates · §2 writing rules · §3 decision tables for the
-fields · §4 triage guidance · §5 sections and statuses · §6 check findings
-and refusals → fix.
+fields · §4 triage guidance (§4.1 automatic placement, `triage auto`) ·
+§5 sections and statuses · §6 check findings and refusals → fix.
 
 ---
 
@@ -264,6 +264,50 @@ feature that handled it, or `manual`, and cites the issue in *Evidence*.
   would bring it back.
 - **Rejected** — decided not to do; the reason states the decision, who and
   when, so that re-opening needs a *new* reason.
+
+### §4.1 Automatic placement (`triage auto`, SKILL.md §2.5a)
+
+The rules, in order; the first that applies gives the target. They also
+give the recommendation of the interactive `triage` (§2.5).
+
+| Rule | The item … | Target |
+|---|---|---|
+| **A** | has its fault **only** in code the default build does not build or ship (checks below) | *Parked*, reason below |
+| **B** | cannot be placed with certainty: a `(to be written)` placeholder in the body; its *Notes* or *Log* say "possibly fixed by …", "may duplicate …", "not verified" about the defect itself; its type or `who` contradicts its own text (a `bug` / `agent` item whose fix needs a real server, a person, a decision) | stays in *Inbox*, log line `auto-triage: left in Inbox - <which of these>` |
+| **C** | is `type: decision` | *Decisions for the maintainer* |
+| **D** | is `type: person-step` or `who: person` | *Person steps* |
+| **E** | anything else (`who` agent / both) | *Next* |
+
+**Rule A — the checks.** Locate every code site the item names in
+*Evidence* (paths; a plug-in name in the title only when *Evidence* names
+no path). Rule A applies when **all** of them fall under one of:
+
+| Not shipped | Check at HEAD | Reason (`; auto-triage, maintainer YYYY-MM-DD` is appended) |
+|---|---|---|
+| an `off` plug-in | the path is under `src/plugins/<dir>/` and `plugins.cfg` has `<dir>=off`; the file is **not** compiled by the core or an `on` plug-in as well (`grep -rl '<file name>' src --include=*.vcxproj` lists only `off` plug-ins' projects) | `plug-in <dir> not built or shipped (plugins.cfg off); fix before enabling it` |
+| an `off` language | the item concerns only texts, labels or files of a language with `enabled = off` in `translations/languages.cfg` | `language <code> not built or shipped (languages.cfg off); fix before enabling it` |
+| a file no project compiles | `grep -rl '<file name>' src --include=*.vcxproj` finds nothing and no compiled file `#include`s it; or the code is inside `#if 0` / a macro no project defines | `not compiled by any project (<file>); fix if it is ever built` |
+| a function with no caller | its name occurs in `src` only in its own definition, declaration and comments — no call, no function-pointer, table, export or `.def` use | `unreachable at <commit>: <function> has no caller; fix if it gets one` |
+
+Rule A does **not** apply to: a `decision` on whether to enable or ship
+the module (→ C); a site in code a shipped part also builds (the core,
+`src/common/`, `src/plugins/shared/`, a file an `on` plug-in compiles too);
+an item with sites in shipped and not shipped code alike; work on the build
+policy itself (`plugins.cfg`, `languages.cfg`, area `build-release` /
+`tooling`). `plugins.cfg` and `languages.cfg` are the authority, read at
+every run; names in titles map to plug-in folders as: Automation
+`automation`, CheckVer `checkver`, Multimedia Viewer `mmviewer`, Network
+`nethood`, CHM `unchm`, UnMIME `unmime`, UnOLE `unole`, UnRAR `unrar`,
+the demo plug-ins `demomenu` / `demoplug` / `demoview`.
+
+**Position** (*Next*, *Decisions*, *Person steps*): `p` = the position of
+the first row of the target section (as it is after the previous moves)
+whose *Sev* is lower than the item's — `blocked` rows count too; no such
+row → the end (omit `--position`). Equal severity goes after the existing
+rows. If the item `depends-on` an item in the same section at a position
+`≥ p`, `p` = that position + 1. An item already in the section that
+depends on this one and stands above `p` is not moved — name it in the
+report.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: "tandem-backlog"
-description: "Manage the Tandem Commander backlog in backlog/ (feature 242): add an item (bug, idea, leftover, review finding, person step, decision), import a GitHub issue, list or show items, triage the Inbox, reorder, update fields or text, verify an item at HEAD, record a maintainer decision, park, reject, reopen, block, unblock, close an already fixed item, check consistency. Use whenever planned work is recorded, looked up or changed. Never write planned work into specs/."
-argument-hint: "<add|import-github|list|show|triage|move|update|verify|decide|park|reject|reopen|block|unblock|close|check> [arguments]"
+description: "Manage the Tandem Commander backlog in backlog/ (feature 242): add an item (bug, idea, leftover, review finding, person step, decision), import a GitHub issue, list or show items, triage the Inbox (interactively or automatically with triage auto), reorder, update fields or text, verify an item at HEAD, record a maintainer decision, park, reject, reopen, block, unblock, close an already fixed item, check consistency. Use whenever planned work is recorded, looked up or changed. Never write planned work into specs/."
+argument-hint: "<add|import-github|list|show|triage [auto [--dry-run]]|move|update|verify|decide|park|reject|reopen|block|unblock|close|check> [arguments]"
 compatibility: "Requires backlog/ and tools/backlog/backlog.py (feature 242)"
 user-invocable: true
 disable-model-invocation: false
@@ -95,7 +95,8 @@ BL = python tools/backlog/backlog.py
   one, or you are unsure. Allowed: `add`, `import-github`, `list`, `show`,
   `verify` (the `verified` stamp and a log line only), `log` (a log line on
   any item), `check`, and completing or correcting **the items you
-  yourself created in this session**. **Forbidden: `triage`, `move`,
+  yourself created in this session**. **Forbidden: `triage` (also
+  `triage auto`), `move`,
   `decide`, `park`, `reject`, `reopen`, `block`, `unblock`, `close`, and
   any change of the fields or the body of an item you did not create in
   this session** (FR-014). A finding that belongs to an existing item
@@ -149,6 +150,7 @@ Take the first word of the input; Czech synonyms in brackets.
 | `import-github` | import, issue, `#N`, a github.com/…/issues/N link, "ai backlog", import all / new issues (naimportuj, nové issues) | §2.2 |
 | `list` | list, what next (seznam, vypiš, co dál, co je v backlogu) | §2.3 |
 | `show` | show (ukaž, detail) + a slug or a title | §2.4 |
+| `triage auto` | triage auto, auto-triage, `triage --auto`, triage automatically (roztřiď automaticky, automatické třídění); `--dry-run` / "just show" (jen ukaž, nic neměň) = plan only | §2.5a |
 | `triage` | triage (roztřiď, projdi inbox, třídění) | §2.5 |
 | `move` | move, put, reorder, up, down (přesuň, dej na místo, nahoru, dolů) | §2.6 |
 | `update` | update, change, set (uprav, změň, nastav, doplň) | §2.7 |
@@ -357,7 +359,10 @@ Goal: every *Inbox* item gets a place, or explicitly stays in *Inbox*.
      `Next at position <p> (Recommended)` (p: just above the first row with
      a lower severity), the fitting one of `Decisions for the maintainer` /
      `Person steps`, `Parked`, `Rejected`. The automatic "Other" lets the
-     maintainer type a position, "leave in Inbox" or "stop".
+     maintainer type a position, "leave in Inbox" or "stop". The
+     recommendation is the place `triage auto` would choose (reference.md
+     §4.1); an item whose fault lies only in code that is not shipped
+     (rule A there) is recommended `Parked` with the rule's reason.
    - "Severity of `<slug>`?" — `<proposed> (Recommended)`, `<proposed+1>`,
      `<proposed-1>`.
 4. Apply, in this order:
@@ -379,6 +384,58 @@ Goal: every *Inbox* item gets a place, or explicitly stays in *Inbox*.
 
 **Report:** a table `| Item | → Section | Position | Severity |`, then
 `<n> items remain in Inbox.`
+
+### 2.5a `triage auto [--dry-run]` (maintainer mode only)
+
+Goal: every *Inbox* item gets the place the rules of reference.md §4.1
+give it, **without questions**; an item the rules cannot place with
+certainty stays in *Inbox* with a log line saying why, for the next
+interactive `triage`. An item whose fault lies only in code that is not
+built or shipped (an `off` plug-in, an `off` language, a file no project
+compiles) never enters a queue — it is **parked** with a reason that says
+what brings it back. `triage auto` never rejects, closes, decides, blocks
+or unblocks, and never edits an item's body.
+
+1. §0.2 (lock and loop status) and §0.5 step 1 (`BL check`).
+2. Read the inputs **now**, never from memory:
+   - `BL list --section inbox --json` (oldest first — the processing
+     order); *Inbox* empty → report `Inbox is empty.` and stop;
+   - `BL list --section next --json`, `--section decisions`,
+     `--section person`;
+   - `plugins.cfg` (the `off` plug-ins) and `translations/languages.cfg`
+     (the languages with `enabled = off`).
+3. **Plan.** For each *Inbox* item read `backlog/items/<slug>/desc.md`
+   (header, *Problem*, *Evidence*, *Notes*) and walk the rules of
+   reference.md §4.1 in order; the first rule that applies gives the
+   target. Rule A (not shipped) needs the check written there — every code
+   site of *Evidence* located, not a guess from the title alone. Then
+   check the severity by reference.md §3: keep the recorded value unless
+   the item's own text describes a consequence of another band (say which
+   band question answers yes); unsure → keep it. The plan row:
+   `slug, target, position rule, severity (old → new or =), why`.
+4. `--dry-run` → report the plan (the *Report* table below with the
+   position the rule would give now) and stop; nothing is written.
+5. **Apply**, item by item in the plan's order, **one command at a time**:
+   1. severity changed → `BL set <slug> severity=<n> --log 'auto-triage: severity <old> -> <n>: <band reason>'`;
+   2. target *Parked* →
+      `BL move <slug> --section parked --reason '<rule A reason>; auto-triage, maintainer YYYY-MM-DD'`;
+   3. target *Next* / *Decisions* / *Person steps* → read that section
+      again (`BL list --section <s> --json`; earlier moves have shifted
+      it), compute the position by reference.md §4.1 *Position*, then
+      `BL move <slug> --section next|decisions|person --position <p>`;
+   4. stays in *Inbox* → `BL log <slug> 'auto-triage: left in Inbox - <why>'`,
+      unless the item's last log line already says the same;
+   5. `BL check` → `TOTAL: 0`. A `refused:` → the item stays in *Inbox*;
+      put the refusal into the report and continue with the next item.
+      `check after the change found problems:` → §0.2 (never repeat),
+      fix by reference.md §6, then continue.
+6. `BL check` → `TOTAL: 0`.
+
+**Report:** a table `| Item | → Section | Position | Severity | Why |`
+(*Item* is `<title> (<slug>)`; *Severity* `n` or `old → n`; *Why* is the
+rule and, for *Parked* and *Inbox*, the reason), grouped: placed, parked,
+left in Inbox; then `<n> placed, <n> parked, <n> left in Inbox.` With
+`--dry-run` the table is headed `Plan (nothing changed):`.
 
 ### 2.6 `move <item> <section> [position]` (maintainer mode only)
 
