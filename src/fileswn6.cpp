@@ -3541,15 +3541,10 @@ void CFilesWindow::ExecuteFromArchive(int index, BOOL edit, HWND editWithMenuPar
     size_t dcKeyLen = strlen(dcFileName); // the name inside the archive follows it + '\'
     SalPathAppend(dcFileName, zipPath, dcFileNameBuf.Size());
     SalPathAppend(dcFileName, f->Name, dcFileNameBuf.Size());
-    // feature 095: the name handed to the archiver stays under 2 * MAX_PATH bytes, the limit of the
-    // view path (F3); this path used to drop the file name when the whole cache name passed 520 bytes
+    // the name handed to the archiver (feature 095: this path used to drop the file name when the
+    // whole cache name passed 520 bytes); feature 275: no own length limit any more - the listing
+    // bounds the path, the cache's rule below judges the copy (as F3)
     const char* nameInArchive = dcFileName + dcKeyLen + 1;
-    if (strlen(nameInArchive) >= 2 * MAX_PATH)
-    {
-        SalMessageBox(HWindow, LoadStr(IDS_UNPACKTOOLONGNAME),
-                      LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
-        return;
-    }
 
     // disk-cache settings for the plugin (default values change only for plugins)
     char arcCacheTmpPath[MAX_PATH];

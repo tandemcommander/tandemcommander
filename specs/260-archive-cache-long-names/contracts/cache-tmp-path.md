@@ -10,6 +10,9 @@ Core-internal (`src/cache.h`); the plug-in interface is unchanged (version 108 i
     `MAX_PATH - 1` UTF-16 units (`SalCacheTmpPathFitsU8`, `src/common/salcachename.h`); the UTF-8
     path may then have up to `3 * (MAX_PATH - 1)` bytes.
   - Not fitting: `NULL`, `*exists = TRUE`, `DCGNE_TOOLONGNAME` - as before.
+- Feature 275 lifted the 520-byte limit below: F3 / F4 hand the archiver the path inside the
+  archive whole (see `specs/275-arcmember-long-path/contracts/arc-member-path.md`); the text of this
+  item records the state at 260.
 - In practice the UTF-8 path stays under about 260 + 520 bytes: before the cache is asked, F3 / F4
   refuse a member whose path inside the archive has 520 bytes or more (feature 095, kept - the
   longest name an archiver plug-in has ever received). Within that, an archiver plug-in's

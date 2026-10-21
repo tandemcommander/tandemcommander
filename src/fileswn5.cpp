@@ -838,15 +838,12 @@ void CFilesWindow::ViewFile(char* name, BOOL altView, DWORD handlerID, int enumF
                         }
                     }
 
-                    // feature 095: the name handed to the archiver stays under 2 * MAX_PATH bytes (the old
-                    // buffer: the longest one a plug-in has ever received) - longer ones are refused
+                    // the name handed to the archiver, whole (the key below may get a ":0x<pointer>"
+                    // suffix); feature 275: no own length limit any more - feature 095 refused 520+
+                    // bytes (a member of 172+ CJK letters) although the temporary copy fits; the listing
+                    // bounds the path, the cache's rule below judges the copy, plug-ins built for
+                    // interface 104+ take long names (F5 hands them such names since feature 222)
                     CSalHeapString nameInArchiveBuf;
-                    if (strlen(dcFileName + dcKeyLen + 1) >= 2 * MAX_PATH)
-                    {
-                        SalMessageBox(HWindow, LoadStr(IDS_UNPACKTOOLONGNAME),
-                                      LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
-                        return;
-                    }
                     if (!nameInArchiveBuf.Copy(dcFileName + dcKeyLen + 1))
                     {
                         TRACE_E(LOW_MEMORY);

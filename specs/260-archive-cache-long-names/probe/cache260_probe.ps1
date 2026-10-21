@@ -11,9 +11,9 @@
                 temporary copy (%TEMP%\SAL*.tmp\<name>), leaves the archive and answers the update
                 question OK: PASS = the archive has ONE member, under the whole name, with the new
                 content
-      ARCCAP    a member of 200 CJK letters + '.txt' (604 bytes inside the archive): F3: PASS = the
-                "too long" message (feature 095's 519-byte limit of the name handed to the archiver
-                stays - review of 260, M1)
+      ARCCAP    a member of 200 CJK letters + '.txt' (604 bytes inside the archive): F3: PASS = a
+                viewer opens (feature 095's 519-byte limit of the name handed to the archiver, kept
+                by 260 - review M1 - was lifted in feature 275)
       OVERLIMIT a member of 250 letters + '.txt' (254 units - valid, but %TEMP%\SALxxxx.tmp\ + it is
                 over 259 units): F3: PASS = the "too long" message (the refusal kept)
       CTL       a member 'short.txt': F3 opens a viewer (control)
@@ -200,9 +200,9 @@ try {
     # _TRUNCATE) needs a %TEMP% of about 88+ bytes - the name inside the archive stays under 520
     # bytes; it is not driven: the program regenerates its environment from the user's registry
     # (RegenerateUserEnvironment), a TEMP given to the started process is not used
-    # review of 260 (M1): the name inside the archive is still limited to 519 bytes (feature 095 - the
-    # longest name a plug-in has ever received): 200 CJK letters (604 bytes) keep the refusal
-    View-Case 'ARCCAP' ((-join (1..200 | ForEach-Object { [char](0x4E00 + $_) })) + '.txt') $true
+    # review of 260 (M1): the name inside the archive was limited to 519 bytes (feature 095); feature
+    # 275 lifted it - 200 CJK letters (604 bytes, a temporary path of 249 units) open the viewer
+    View-Case 'ARCCAP' ((-join (1..200 | ForEach-Object { [char](0x4E00 + $_) })) + '.txt') $false
     View-Case 'OVERLIMIT' (('a' * 250) + '.txt') $true
     View-Case 'CTL' 'short.txt' $false
     Gz-Case 'GZLONG' $Long $false

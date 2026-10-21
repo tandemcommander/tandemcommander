@@ -46,3 +46,63 @@ Found on the way (not this item): the tar plug-in ignores PAX `x` / `g` headers 
 (`untar.cpp`) - a long PAX path is listed under the ustar fallback name -> to verify, Inbox item.
 The uniso listing builds paths in `char path[4 * MAX_PATH + 2]` with unbounded `strcat` - only
 reachable if the core's listing ever accepted folder parts over 255 bytes (noted in the contract).
+
+## Analyze
+
+`speckit-analyze` (one run): 0 CRITICAL, 0 HIGH, 0 MEDIUM, 3 LOW - accepted: C1 case-twin members
+(F3's `:0x<pointer>` key suffix) have no probe row - the heap copy of the path is kept, the code is
+unchanged; C2 Enter (open by association) goes through the same `ExecuteFromArchive` as F4, the
+probe drives F4 only; U1 the CAB refusal is verified by reading (no real cabinet holds such a path).
+
+## Probe before (T002)
+
+`probe/arcmember275_probe.ps1` on the build without the source change -> `probe/result_before.txt`:
+**9 PASS / 5 FAIL** - VIEWCAP, VIEWDEEP, EDITCAP, 7Z, TAR refused with "Unable to unpack file from
+archive to temporary directory because resulting filename is too long."; OVERLIMIT (the cache's
+refusal) and CTL pass (controls).
+- First run of EDITCAP (both builds): F4 never ran - focusing a member this long shows the
+  information line's "Expanded string is too large." (pre-existing, Inbox
+  `focusing-an-archive-member-with-a-very-long-name-shows`), and the F4 posted while that box was
+  open was lost (after: 13 / 1). The probe now answers that box first and reports it; the
+  before-run was repeated on a build of the unchanged sources (`git stash` of the three source
+  files, `.\build.cmd`, probe, `git stash pop`, `.\build.cmd`): EDITCAP now shows the real refusal.
+
+## Work
+
+- `src/fileswn5.cpp` `ViewFile` (F3) and `src/fileswn6.cpp` `ExecuteFromArchive` (F4 / Enter): the
+  095 test (`>= 2 * MAX_PATH` -> IDS_UNPACKTOOLONGNAME) removed; F3 keeps the heap copy of the path
+  (the key may get the `:0x<pointer>` case-twin suffix). The cache's refusal (feature 260) is the
+  only length refusal left before extraction.
+- `src/plugins/uncab/uncab.cpp` `UnpackOneFile`: a path inside the cabinet of `U8_MAX_CAB_NAME`
+  (769) bytes or more -> `Error(IDS_TOOLONGNAME)` ("Can't finish operation because of too long path
+  name.") before the copy; `strcpy` instead of the cutting `lstrcpyn`. Unreachable with a real
+  cabinet (at most 765 bytes) - by reading.
+- `specs/260-archive-cache-long-names/probe/cache260_probe.ps1` ARCCAP expects the viewer;
+  `specs/260-.../contracts/cache-tmp-path.md` points to `contracts/arc-member-path.md`.
+
+## Checks
+
+- `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s).
+- `.\build.cmd` -> BUILD SUCCEEDED (tandemcommander.exe, uncab.spl rebuilt).
+- saltests -> `saltests: 24859 checks, 0 failed` (no rule changed).
+
+## Probe after (T010, T011)
+
+- `probe/result_after.txt`: **14 PASS / 0 FAIL** - VIEWCAP (604 bytes), VIEWDEEP (557 bytes: a
+  folder of 84 CJK letters + 100 letters), 7Z (7z.exe archive), TAR (GNU long name) open the viewer
+  on `%TEMP%\SALxxx.tmp\<whole name>`; EDITCAP: Notepad started, the copy (649 bytes / 249 units)
+  rewritten, leaving the archive asked the ZIP plug-in's "Confirm File Overwrite" (Yes) - the archive
+  holds ONE member, 604 bytes of name, "EDITED-CONTENT". This also drives feature 260's
+  `CheckAndPackAndClear` fix for the first time (a copy path over the old 620-byte cut - review S1 of
+  260 said it needed a long %TEMP%; a long member name reaches it with the system %TEMP%).
+  OVERLIMIT refused as before; CTL passes.
+- Regressions: feature 260's probe -> `probe/regress_260.txt` **16 / 0** (ARCCAP: the viewer opens;
+  the same row failed at HEAD, `%TEMP%\tc275scratch\result_260_at_head.txt` with the old expectation
+  showing the refusal); feature 222's probe -> `probe/regress_222.txt` **10 / 0**.
+- Registry: every run restored, identical (SHA-256 BA9B23CF...).
+
+## New Inbox items (measure:275)
+
+- `unchm-plug-in-a-member-path-over-259-bytes-overflows-a-stack` - the disabled CHM plug-in's
+  `lstrcpy(srcPath[MAX_PATH], nameInArchive)` and its false success.
+- `tar-plug-in-ignores-pax-extended-headers` - PAX `x` / `g` headers ignored by the listing.

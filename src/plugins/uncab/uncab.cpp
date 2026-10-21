@@ -593,9 +593,12 @@ BOOL CPluginInterfaceForArchiver::UnpackOneFile(CSalamanderForOperationsAbstract
     HFDI hfdi;
     ERF err;
     Count = 0;
-    // 'nameInArchive' is a name inside the cabinet: UTF-8 since interface 104
+    // 'nameInArchive' is a name inside the cabinet: UTF-8 since interface 104; feature 275: one
+    // that does not fit is refused, never cut (lstrcpyn cut it - then "not found")
+    if (lstrlen(nameInArchive) >= U8_MAX_CAB_NAME)
+        return Error(IDS_TOOLONGNAME);
     char rootDir[U8_MAX_CAB_NAME];
-    lstrcpyn(rootDir, nameInArchive, U8_MAX_CAB_NAME);
+    strcpy(rootDir, nameInArchive);
     char* c = strrchr(rootDir, '\\');
     if (!c)
         c = rootDir;

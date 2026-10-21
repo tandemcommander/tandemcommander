@@ -1,0 +1,21 @@
+arcmember275_probe (feature 275) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 02:01; registry key existed True; TEMP C:\Users\pavel\AppData\Local\Temp (33 units)
+
+VIEWCAP    RUN    FAIL        path inside the archive 604 bytes / 204 units; viewer False; refused True; F3: <message> [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK; after: [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK || [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK
+VIEWCAP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VIEWDEEP   RUN    FAIL        path inside the archive 557 bytes / 189 units; viewer False; refused True; F3: <message> [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK
+VIEWDEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+EDITCAP    RUN    FAIL        member 604 bytes; editor processes 0; temporary copy found False (-); archive members 1: 604 bytes "CONTENT"; F4: ...ded string is too large. | [Button id=1] OK / F4: [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK; leaving: no window / no window
+EDITCAP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z         RUN    FAIL        path inside the archive 604 bytes / 204 units; viewer False; refused True; F3: <message> [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK; after: [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK || [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK
+7Z         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR        RUN    FAIL        path inside the archive 604 bytes / 204 units; viewer False; refused True; F3: <message> [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK; after: [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK || [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK
+TAR        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OVERLIMIT  RUN    PASS        path inside the archive 254 bytes / 254 units; viewer False; refused True; F3: <message> [#32770 'Error'] [Static id=2477] Unable to unpack file from archive to temporary directory because resulting filename is too long. | [Button id=1] OK
+OVERLIMIT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CTL        RUN    PASS        path inside the archive 9 bytes / 9 units; viewer True; refused False; F3: C:\Users\pavel\AppData\Local\Temp\SAL65.tmp\short.txt [Plain Text] - Code Viewer
+CTL        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 9, FAIL 5, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
