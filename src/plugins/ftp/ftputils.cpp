@@ -1708,7 +1708,8 @@ static BOOL FTPDecodeServerReplyPathInPlace(char* dirBuf, int dirBufSize)
     if (dirBufSize <= 0 || dirBuf[0] == 0 || SplIsASCII(dirBuf))
         return TRUE;
     char* u8 = FTPListingFieldToU8(dirBuf, (int)strlen(dirBuf));
-    BOOL ok = u8 != NULL && (int)strlen(u8) < dirBufSize;
+    // the raw bytes come back when the conversion could not be made (low memory): not UTF-8
+    BOOL ok = u8 != NULL && (int)strlen(u8) < dirBufSize && SalFtpListingFieldIsU8(u8, (int)strlen(u8));
     if (ok)
         strcpy(dirBuf, u8);
     else

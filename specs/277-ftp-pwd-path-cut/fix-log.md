@@ -98,3 +98,28 @@ Round 1: 0 CRITICAL, 0 HIGH; MEDIUM C1 (FR-010 had no check - added to T014), ME
 scenario 3 vs clarification Q3 - aligned); LOW U1 (the item asked for a long *home* folder option,
 the probe drives a linked folder - the home / panel route is masked by the core's ~260-byte limit,
 research R1) accepted. Round 2: nothing left above LOW.
+
+## Review
+
+Independent refute-first review (one agent, at 15eb57d2): **no MUST, no SHOULD**. It rebuilt,
+re-ran saltests (24926 / 0) and the probe (PASS 10 / FAIL 0), and made its own negative control
+(the old AIX cut in the header + the old `lstrcpyn` in the decode): saltests 3 failed, the probe
+PASS 8 / FAIL 2 (AIX "ANCESTOR", CP cut CWD) - each change proven by its own row; sources
+restored and rebuilt. Callers enumerated by the reviewer (also the keep-alive PWD of
+`ctrlcon4.cpp`, which ignores its reply). NOTEs and what was done:
+1. A NUL byte inside the path of a raw (worker) reply gave a cut path (the AIX form; the quoted
+   form had it before 277 too) - **fixed**: `salftppwd.h` refuses a NUL inside the path in both
+   forms; 3 saltests checks (24929 / 0).
+2. Low memory in `FTPListingFieldToU8` returns the raw code-page bytes, which the decode took -
+   **fixed**: the decode also requires the result to be UTF-8 (`SalFtpListingFieldIsU8`).
+3. The (unreachable) AS/400 refusal in the explore is reported as low memory - accepted: it is the
+   explore's existing error for an item it could not create (clarification Q3); the buffer holds
+   any listed name (FTP_MAX_NAME_U8 is enforced in parser2.cpp).
+4. The lock's *path* part and the upload listing cache's `FindPath` still compare folders by the
+   code-page fold - outside the item: Inbox `ftp-server-path-compare-code-page-fold` (review:277).
+5. `ReportCreateDirs` on low memory invalidates only the workPath listing - accepted (a stale
+   cache means a failed MKD / a re-list, not data loss).
+6. FEATURE-HISTORY / CHANGELOG entries - the close step.
+
+After the fixes: build `BUILD SUCCEEDED`, saltests 24929 / 0, encoding guard 0, probe
+`result_after.txt` PASS 10 / FAIL 0 (registry identical).

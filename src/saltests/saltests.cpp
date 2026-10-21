@@ -15319,6 +15319,10 @@ static void TestFtpPwdReply277()
     CHECK(SalFtpPathFromPwdReply("257 \"/abc\" ok", 9, buf, 301) == SALFTPPWD_SYNTAX);
     CHECK(SalFtpPathFromPwdReply("257 '/abc' ist '", 9, buf, 301) == SALFTPPWD_SYNTAX); // AIX: no closing ' within
     CHECK(SalFtpPathFromPwdReply("257 '/a' ist\0'\"", 12, buf, 301) == SALFTPPWD_OK && strcmp(buf, "/a") == 0);
+    // a NUL inside the path (a raw reply): refused - the path would end there, an ancestor (review)
+    CHECK(SalFtpPathFromPwdReply("257 '/a\0/b' ist das", 19, buf, 301) == SALFTPPWD_SYNTAX && buf[0] == 0);
+    CHECK(SalFtpPathFromPwdReply("257 \"/a\0/b\" is", 14, buf, 301) == SALFTPPWD_SYNTAX && buf[0] == 0);
+    CHECK(SalFtpPathFromPwdReply("257 '/a/b' ist\0", 15, buf, 301) == SALFTPPWD_OK && strcmp(buf, "/a/b") == 0); // after the path: no matter
 
     // the buffer's edge, each form: 299 / 300 bytes fit a 301-byte buffer, 301 does not
     for (int len = 298; len <= 302; len++)

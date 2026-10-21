@@ -25,7 +25,9 @@
 //                (a ' before any "; the path ends at the last ', with no " after
 //                it; otherwise the quoted form from the first " on)
 // Only the bytes [reply, reply + replySize) are read (the AIX form searched up to
-// the terminator before 277 - the same result for a reply that ends there).
+// the terminator before 277 - the same result for a reply that ends there). A NUL
+// byte inside the path is refused (a server's raw reply may hold one; the path
+// would end there - an ancestor).
 //
 //*****************************************************************************
 
@@ -71,6 +73,8 @@ inline int SalFtpPathFromPwdReply(const char* reply, int replySize, char* dirBuf
         if (lastQuote != NULL && !dquoteAfter)
         {
             int len = (int)(lastQuote - (s + 1));
+            if (memchr(s + 1, 0, len) != NULL)
+                return SALFTPPWD_SYNTAX; // a NUL inside: the path would end there (an ancestor)
             if (len >= dirBufSize)
                 return SALFTPPWD_TOOLONG;
             memcpy(dirBuf, s + 1, len);
@@ -85,6 +89,8 @@ inline int SalFtpPathFromPwdReply(const char* reply, int replySize, char* dirBuf
         int d = 0;
         while (++s < end)
         {
+            if (*s == 0) // a NUL inside: the path would end there (an ancestor)
+                break;
             if (*s == '"')
             {
                 if (s + 1 < end && *(s + 1) == '"')

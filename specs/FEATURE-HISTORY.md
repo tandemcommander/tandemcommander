@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266 |
@@ -3545,3 +3545,24 @@ a few early ones are out of sequence).
   `focusing-an-archive-member-with-a-very-long-name-shows`. Probe `infoline276_probe.ps1` 16 / 7 ->
   23 / 0; 260's probe 16 / 0, 275's 17 / 0 (its F4 rows no longer meet the box); `TestInfoLineBuf276`
   (negative control: a 1000-byte bound fails 6); one refute-first review (no MUST, no SHOULD).
+- 277-ftp-pwd-path-cut: an FTP folder whose PWD reply named a path over 300 bytes - in the German AIX
+  form (`257 '/path' ist ...`), or from a legacy (code-page) server whose path is longer in UTF-8 -
+  was taken cut to 300 bytes: an ancestor folder. Measured with 215's `ftpmini.py` (new PWDMAP
+  option: a folder "reached through a link" whose PWD names a long path, and a one-shot session
+  drop): F5 of the folder, the reconnect went to the cut path and downloaded the ancestor's x.txt
+  under the deep folder's name. Now the path of a "257" reply is read by `salftppwd.h`
+  (`SalFtpPathFromPwdReply`, saltests: three forms, `""` escapes, only within the reply's size, a NUL
+  inside refused) and refused when it - or its UTF-8 form, or a failed conversion - does not fit;
+  exactly 300 bytes is accepted (the RFC form was refused one byte early). Also: Create Directory's
+  report to the upload listing cache walks a long name whole and only invalidates;
+  `FTPCompleteAbsolutePath` and `FTPAS400CutFileNamePart` fail instead of cutting (callers refuse);
+  the opened-file lock compares names by `SalNameOrderEqualCI`; the upload's link size is skipped for
+  a source path over 259 bytes. Traps: without the session drop the worker never went back by the
+  cut path and the probe showed the right file; the first "refused" judge accepted the old code's
+  cp1250 row (a CWD to the cut path ended in another error); a test buffer named `small` (a Windows
+  macro). Limits: AS/400, OS/2 / VMS, the lock and the link size by reading (person step
+  `ftp-277-real-server-checks`); folder names still compared by the code-page fold (Inbox
+  `ftp-server-path-compare-code-page-fold`). From backlog item `ftp-pwd-and-created-path-cut`. Probe
+  `ftp277_probe.ps1` 7 / 3 on the old code -> 10 / 0; 215 12 / 0, 224 16 / 0, 233 as recorded;
+  `TestFtpPwdReply277` (negative control: the old cut 7 failed); one refute-first review (no MUST,
+  no SHOULD; two NOTEs fixed: a NUL inside the path, the raw bytes of a failed conversion).
