@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: fs3.cpp passes a third of the key-name buffer size
 type: bug
-status: open
+status: in-progress
 severity: 3
 area: other-plugins
 source: leftover:129
@@ -10,7 +10,7 @@ created: 2026-10-13
 updated: 2026-10-21
 verified: 2026-10-21 243174e4
 effort: S
-feature: -
+feature: 287
 related: []
 depends-on: []
 reason: -
@@ -34,3 +34,4 @@ Migrated from specs/NEXT-WORK.md §D "From the GitHub issues after 0.1.9" (at 79
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-21 — verified at 243174e4: partly: fs3 buffer size fixed by 131; class-name question unreachable (fs5 queries the source key twice); Move and the question not driven
+- 2026-10-21 — run started, feature 287
