@@ -24,6 +24,9 @@
       HKCRROOT    F6 of HKEY_CLASSES_ROOT\TcProbe292 (only in the user's half; focused by Backspace
                   from it) into \HKEY_CURRENT_USER\Software\Classes\, Cancel: the key is refused by its
                   own identity (1067 naming TcProbe292); unchanged
+      HKCRBOTH    F6 of a real extension key held by both halves (HKCU and HKLM Software\Classes; only
+                  read) at the HKCR root into \HKEY_LOCAL_MACHINE\Software\Classes\, Cancel: refused
+                  by its machine identity (1067); its user half unchanged. Not run elevated
       ALIASRENAME (control) F6 of <K> into <U>\...\Zdroj\<N> (no such key, no trailing backslash):
                   no box; Zdroj\<N> holds v and <P>\w; Zdroj\<K> is gone (a rename stays allowed)
       ALIASOTHER  (control) F6 of <K> into <U>\...\<Cil>\: no box; moved whole; the source is gone
@@ -209,9 +212,11 @@ function Row-Op([string]$Case, [int]$Cmd, [string]$From, [int[]]$Keys, [string]$
     try {
         Make-Fixture
         $snap0 = Snapshot
+        $extra0 = $(if ($script:ExtraSnap) { & $script:ExtraSnap } else { '' })
         $r = Run-Op $Cmd $From $Keys $Target $Answer
         $id = $r.Id
         $snap1 = Snapshot
+        $r.ExtraKept = (($(if ($script:ExtraSnap) { & $script:ExtraSnap } else { '' })) -ceq $extra0)
         $r.Unchanged = (($snap0 -join "`n") -ceq ($snap1 -join "`n"))
         $r.State = (($snap1 | ForEach-Object { Esc $_ }) -join ' , ')
         & $Judge $r
@@ -231,7 +236,8 @@ $CopySelf = Template 1053 "Can't copy key or value to itself."
 $MoveInto = (Template 1067 "Name:`t%ls`n`nError:`tCan't move a key to itself.").Replace('%ls', $K)
 $MoveIntoRoot = (Template 1067 "Name:`t%ls`n`nError:`tCan't move a key to itself.").Replace('%ls', $RegName)
 $script:GoUpFrom = $null
-$All = @(185, 6, 1)                                              # All, else Yes, else OK
+$script:ExtraSnap = $null
+$All =@(185, 6, 1)                                              # All, else Yes, else OK
 $FocusK = @(0x24, 0x28)                                            # "..", then <K> (the only key)
 $FocusV = @(0x23)                                                  # the last item: the value v
 
@@ -264,6 +270,27 @@ try {
     # the HKCR root lists both halves: TcProbe292 (only in the user's half) focused by going up from it
     $script:GoUpFrom = 'reg:\' + $ClsRoot
     Row-Op 'HKCRROOT' 728 'reg:\HKEY_CLASSES_ROOT' $null ('\HKEY_CURRENT_USER\Software\Classes\') @(2) { param($r); Refused-Row 'HKCRROOT' $MoveIntoRoot $r }
+    # a real HKCR key held by both halves (an extension of this machine), focused at the HKCR root,
+    # moved into \HKEY_LOCAL_MACHINE\Software\Classes\: refused by its machine identity (1067). Only
+    # read: without elevation the machine half cannot be written (an unfixed build gets "access
+    # denied" at its first write, answered Cancel), and the row refuses to run elevated
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $both = @(Get-ChildItem -LiteralPath 'HKCU:\Software\Classes' -ErrorAction SilentlyContinue | ForEach-Object { $_.PSChildName } |
+              Where-Object { $_ -cmatch '^\.[a-z0-9]{2,5}$' -and (Test-Path -LiteralPath ('HKLM:\Software\Classes\' + $_)) } | Select-Object -First 1)
+    if ($isAdmin) { if (Want 'HKCRBOTH') { Row 'HKCRBOTH' 'RUN' 'NOT DRIVEN' 'the probe runs elevated: the row would let an unfixed build write the machine half' } }
+    elseif (-not $both.Count) { if (Want 'HKCRBOTH') { Row 'HKCRBOTH' 'RUN' 'NOT DRIVEN' 'no extension key held by both halves on this machine' } }
+    else {
+        $BothName = $both[0]
+        $script:GoUpFrom = 'reg:\HKEY_CLASSES_ROOT\' + $BothName
+        $script:ExtraSnap = { (@(Get-ChildItem -LiteralPath ('HKCU:\Software\Classes\' + $BothName) -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.Name + '|' + (@($_.GetValueNames() | Sort-Object) -join ';') }) + @((Get-Item -LiteralPath ('HKCU:\Software\Classes\' + $BothName)).GetValueNames() | Sort-Object)) -join "`n" }
+        $MoveBoth = (Template 1067 "Name:`t%ls`n`nError:`tCan't move a key to itself.").Replace('%ls', $BothName)
+        Row-Op 'HKCRBOTH' 728 'reg:\HKEY_CLASSES_ROOT' $null ('\HKEY_LOCAL_MACHINE\Software\Classes\') @(2) {
+            param($r)
+            Row 'HKCRBOTH' 'TEXT' (V (First-Is $r $MoveBoth)) ("key '{0}' (in both halves); expected the first box '{1}'; {2}" -f $BothName, (Esc $MoveBoth), (Box-Facts $r))
+            Row 'HKCRBOTH' 'STATE' (V ($r.Unchanged -and $r.ExtraKept)) ("fixture unchanged: {0}; the user's half of '{1}' unchanged: {2}" -f $r.Unchanged, $BothName, $r.ExtraKept)
+        }
+        $script:ExtraSnap = $null
+    }
     $script:GoUpFrom = $null
     Row-Op 'ALIASRENAME' 728 ($RegFs + '\Zdroj') $FocusK ('\' + $RegUsers + '\Zdroj\' + $NewName) $null {
         param($r)

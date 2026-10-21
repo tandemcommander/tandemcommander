@@ -73,7 +73,8 @@ U1 (LOW, drag and drop not driven) - an assumption of the spec; the same functio
   source key); an identity error -> the `RegOperationError(IDS_OPEN)` box (Skip leaves the key,
   Cancel stops); too long -> `IDS_LONGNAME`, stop. (This is the design after the review, see
   *Review*; the first version joined the folder ids also for existing keys and gave every HKCR path
-  both halves.)
+  both halves; the second used the opened HKCR key alone. Final: an HKCR path = each half that
+  holds it, opened separately; a two-identity folder -> values refused, keys per key.)
 - `src/plugins/regedt/precomp.h` includes the header; `src/saltests/saltests.cpp`
   `TestRegKeyId292`.
 - No UI string added or removed; no `spl_*.h` change.
@@ -119,3 +120,20 @@ report one name and that a key only in HKCR's machine half reports `\REGISTRY\MA
 After the changes: build SUCCEEDED, saltests 25321 / 0, probe English 30 / 0 and Czech 30 / 0,
 registry restored identical. The HKCRROOT row was not run on a build without the fix (it would
 delete the fixture key there; the first version of this fix gave 1066 for it).
+
+### Second review (independent agent, refute-first, on commit 424d9438)
+
+| Finding | Done |
+|---|---|
+| MUST 1 a key under HKCR held by both halves reports only the user's half, but its subkeys and values are listed from both and a Move deletes through HKCR: a Move onto `HKLM\Software\Classes\` (elevated) copies the machine-only parts onto themselves and deletes them; also panel `HKCR\X` (X in both) against `HKLM\Software\Classes\X\`, the reverse direction and "into" (`HKCR\K` into `HKLM\Software\Classes\K\`) | fixed: `GetRegKeyIds` gives an HKCR path one identity per half that holds it (`HKLM` / `HKCU` `Software\Classes\<path>` opened separately); the folder check treats any two-identity folder like the HKCR root (values refused, keys per key). `TestRegKeyId292` models `{machine\K, user\K}` against `machine\K` and `machine\K\K` (and the machine-only `.123` copy staying allowed). New probe row HKCRBOTH: a real extension key held by both halves on this machine (`.3fr`), at the HKCR root, F6 into `\HKEY_LOCAL_MACHINE\Software\Classes\`, non-elevated (the row refuses to run elevated), only read. Negative control on the 424d9438 build (`probe/alias292_hkcrboth_424d9438.txt`): TEXT FAIL - "Unable to create a registry key. (5) Access denied" (it went on to write the machine half), nothing changed. Final build: 1067 naming `.3fr`, unchanged. The elevated deletion itself is a step owed to a person |
+| NOTE 2 an existing target key that is a registry link pointing outside the source: only its opened identity is used, a Move of S into S\Sub\ through another root name where `S\Sub\<name>` is such a link is not refused; a runaway copy that ends at the long-name box, no delete (also on main; exotic) | recorded, not changed |
+| NOTE 3 four identity sets (~61 KB) on the stack | accepted (1 MB stack, 3 MB reserve measured by the first review) |
+| NOTE 4 (main too) Move of a machine-only `HKCR\K` into `HKCU\Software\Classes\` copies it to the user's half and then deletes that copy through HKCR: the Move does nothing and reports success; nothing lost | Inbox item `registry-editor-move-from-hkcr-to-user-classes-does-nothing` (`review:292`) |
+| NOTE 5 the probe had no key held by both halves; HKCRROOT never run as a negative control | HKCRBOTH added with its negative control (above); HKCRROOT stays without one (it would delete the fixture key on main) |
+
+Checks after the fix of MUST 1: build SUCCEEDED (a C4010 of a new test comment ending in `\`
+swallowed the next line `a.Count = 0;` - fixed, rebuilt: no warning from the changed files);
+saltests `25330 checks, 0 failed`; encoding guard `TOTAL: 0 finding(s)`; probe English
+**33 PASS / 0 FAIL / 0 NOT DRIVEN** (`result_after.txt`, on the build before the comment fix - the
+plug-in binary is the same) and Czech **33 / 0** (`result_after_czech.txt`, final build); registry
+restored identical both times.

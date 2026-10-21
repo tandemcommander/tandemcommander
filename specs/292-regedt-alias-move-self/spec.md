@@ -34,7 +34,7 @@ Probe `probe/alias292_probe.ps1 -Expect before` on the Debug x64 build of `main`
 ### Session 2026-10-21
 
 - Q: Which root names count as "another name of the same key"? → A: all of them - the decision compares the identity the registry reports for the keys, so `HKEY_USERS\<SID>` / `HKEY_CURRENT_USER`, `HKEY_CURRENT_CONFIG` and any registry link (for example `CurrentControlSet`) are covered without a list of aliases (autonomous run: item - "by the key's identity, not by its name")
-- Q: `HKEY_CLASSES_ROOT` is a merged view of the user's and the machine's classes - which key is a path under it? → A: an existing key under it is the key it opens (the registry reports the half it reaches, measured); only the root `HKEY_CLASSES_ROOT` itself counts as both halves - a key that does not exist yet directly under it may become a key of either half (refused when either would be inside the source), and with the root and one of its halves as the two folders each key is decided by its own identity and values are refused (their half is not known) (autonomous run: conservative; revised after the review of 292, NOTE 2: the first rule - every HKCR path as both halves - refused real copies between the merged view and the other half)
+- Q: `HKEY_CLASSES_ROOT` is a merged view of the user's and the machine's classes - which key is a path under it? → A: each half that holds the path (`HKLM\Software\Classes\<path>` and `HKCU\Software\Classes\<path>`, opened separately) - the merged view lists the subkeys and values of both and a Move deletes through it; the root `HKEY_CLASSES_ROOT` is both halves; a key that does not exist yet is its parent's identities joined with its name. With a folder of two identities (the root, or a key held by both halves) against one of them, each key is decided by its own identities and values are refused (their half is not known) (autonomous run: conservative; revised twice after the reviews of 292: every HKCR path as both halves refused real copies (first review, NOTE 2); the opened key alone missed the half it does not report and let a Move delete the machine half (second review, MUST 1))
 - Q: What happens when the identity of a key cannot be established (the key cannot be opened)? → A: the operation does not go on for that key: the existing "Unable to open a registry key" error with Retry / Skip / Skip All / Cancel is shown, as the copy itself would show it (autonomous run: rule - a "safe to delete?" check fails closed, CLAUDE.md 098)
 - Q: Which messages are shown? → A: exactly the existing ones of the same-root case - "Can't move/copy key or value to itself." for a target folder that is the source folder, "Name: <key> Error: Can't move/copy a key to itself." for a target inside the key; no new UI text (autonomous run: item - "refused like the same path under the same root")
 - Q: With several keys or values selected and a target folder that is, by identity, the panel's own key, is the whole operation refused or only some items? → A: the whole operation, before anything is copied, exactly as under one root name today (back to the target dialog); a target inside one selected key refuses only that key (OK = skip it, Cancel = stop) (autonomous run: item - "refused like the same path under the same root")
@@ -120,6 +120,9 @@ written under another root name keep working, and every same-root operation beha
 - The panel shows the root `HKEY_CLASSES_ROOT` and the target is `HKCU\Software\Classes\` (or the
   other way round): a key that is in the user's half is refused as a move onto itself (with its
   name), a key only in the machine's half is copied or moved; a value is refused.
+- A key under `HKEY_CLASSES_ROOT` held by both halves moved into `HKLM\Software\Classes\` (or into
+  `HKCU\Software\Classes\`): refused as a move onto itself - otherwise the parts only in the other
+  half would be copied onto themselves and deleted (elevated sessions only for the machine half).
 - A key that cannot be opened while its identity is checked: the existing open error with Retry /
   Skip / Skip All / Cancel; nothing is copied or deleted for that key.
 - Quick Rename (F2) works inside one key under one root name and is not changed.
@@ -138,10 +141,10 @@ written under another root name keep working, and every same-root operation beha
   Registry Editor MUST refuse that key with the message the same-root case shows ("Name: <key>
   Error: Can't copy/move a key to itself.", OK = skip the key, Cancel = stop) and never delete it.
 - **FR-003**: Identity MUST come from what the registry reports for the opened key (its full
-  internal name), so that every root name and registry link of one key is the same key; the root
-  `HKEY_CLASSES_ROOT` itself MUST count as both the user's and the machine's class key (and a key
-  not yet existing directly under it as that name in either), and with it and one of its halves as
-  the two folders, values MUST be refused and keys decided one by one.
+  internal name), so that every root name and registry link of one key is the same key; a path
+  under `HKEY_CLASSES_ROOT` MUST count as each half that holds it (the root: both), a key not yet
+  existing as its parent's identities joined with its name, and with a folder of two identities
+  against one of them, values MUST be refused and keys decided one by one.
 - **FR-004**: The comparison of two identities MUST ignore letter case and treat a key as inside
   another only at a whole path element ("Key2" is not inside "Key").
 - **FR-005**: When the identity of a key needed for the decision cannot be established, the
@@ -157,8 +160,8 @@ written under another root name keep working, and every same-root operation beha
 ### Key Entities
 
 - **Key identity**: the full internal name the registry reports for an opened key (for example
-  `\REGISTRY\USER\<SID>\Software\X`); an existing key has exactly one; the root
-  `HKEY_CLASSES_ROOT` has two (both halves).
+  `\REGISTRY\USER\<SID>\Software\X`); an existing key has exactly one, except under
+  `HKEY_CLASSES_ROOT`: one per half that holds it (the root: two).
 
 ## Success Criteria *(mandatory)*
 

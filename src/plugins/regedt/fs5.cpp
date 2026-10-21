@@ -799,24 +799,37 @@ static int AddRegRootIds(HKEY root, CSalRegKeyIds& ids)
 
 // the identity set of 'root'\'key'; 'mayNotExist' = a key that does not exist adds nothing and is
 // no error (a target key); every other failure is returned and the caller does not go on. An
-// opened key reports exactly the key it is - also under HKCR, which reports the half it reaches
-// (measured) - so only a root has more than one identity (HKCR: both halves)
+// opened key reports exactly the key it is (links followed). HKCR is a merged view: an opened HKCR
+// key reports one half, but its subkeys and values are listed from both and a Move deletes through
+// it (measured in the review of 292), so an HKCR path is each half that holds it - opened separately
 static int GetRegKeyIds(int root, LPCWSTR key, CSalRegKeyIds& ids, BOOL mayNotExist)
 {
     ids.Count = 0;
     HKEY rootHKey = PredefinedHKeys[root].HKey;
     if (*key == 0)
         return AddRegRootIds(rootHKey, ids);
-    int err = AddRegKeyIdOf(rootHKey, key, ids);
+    int err;
+    if (rootHKey == HKEY_CLASSES_ROOT)
+    {
+        WCHAR path[MAX_KEYNAME + 32];
+        if (_snwprintf_s(path, _TRUNCATE, L"Software\\Classes\\%s", key) < 0)
+            return ERROR_FILENAME_EXCED_RANGE; // never a cut path
+        err = ERROR_FILE_NOT_FOUND;
+        HKEY halves[2] = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER};
+        for (int i = 0; i < 2; i++)
+        {
+            int e = AddRegKeyIdOf(halves[i], path, ids);
+            if (e == ERROR_SUCCESS)
+                err = ERROR_SUCCESS;
+            else if (e != ERROR_FILE_NOT_FOUND)
+                return e;
+        }
+    }
+    else
+        err = AddRegKeyIdOf(rootHKey, key, ids);
     if (err == ERROR_FILE_NOT_FOUND && mayNotExist)
         return ERROR_SUCCESS;
     return err;
-}
-
-// the HKCR root lists the keys of both halves, so its identity does not tell which key an item is
-static BOOL IsMergedRegRoot(int root, LPCWSTR key)
-{
-    return PredefinedHKeys[root].HKey == HKEY_CLASSES_ROOT && *key == 0;
 }
 
 // GetRegKeyIds with the existing open-error box (Retry / Skip / Skip All / Cancel); FALSE = do not
@@ -1055,9 +1068,10 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
         BOOL valuesMaybeOntoThemselves = FALSE;
         if (!sameFolder && SalRegKeyIdsAnySame(sourceFolderIds, targetFolderIds))
         {
-            // the HKCR root and one of its halves: each key is decided by its own identity below,
-            // a value (whose half is not known) is refused
-            if (IsMergedRegRoot(CurrentKeyRoot, CurrentKeyName) || IsMergedRegRoot(root, key))
+            // a folder of the merged HKCR view held by both halves (or the HKCR root) against one
+            // of them: each key is decided by its own identities below, a value (whose half is not
+            // known) is refused
+            if (sourceFolderIds.Count > 1 || targetFolderIds.Count > 1)
                 valuesMaybeOntoThemselves = TRUE;
             else
                 sameFolder = TRUE;
@@ -1174,9 +1188,9 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                         if (!into)
                         {
                             // feature 292: ... nor by identity under another root name - the source
-                            // is the opened key (a link is followed: what a Move deletes), the target
-                            // the opened target key, or, when it does not exist yet, the target
-                            // folder joined with the new name (the HKCR root: both halves)
+                            // is the opened key (a link is followed: what a Move deletes; under HKCR
+                            // each half holding it), the target the opened target key, or, when it
+                            // does not exist yet, the target folder joined with the new name
                             CSalRegKeyIds sourceIds, targetIds;
                             if (!SafeGetRegKeyIds(sourceRoot, sourceKey, sourceIds, FALSE, errorTitle, skip, skipAllErrors) ||
                                 !SafeGetRegKeyIds(root, key, targetIds, TRUE, errorTitle, skip, skipAllErrors))

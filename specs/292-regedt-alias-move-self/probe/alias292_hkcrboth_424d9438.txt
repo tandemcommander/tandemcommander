@@ -1,0 +1,12 @@
+alias292_probe (feature 292), expect: fixed, language: english
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 23:40; desktop 'tc_probe_35428'; ACP 1250; registry key existed True; export SHA-256 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+Alias   : \HKEY_USERS\S-1-5-21-2934764448-1324481543-3308592849-1001\Software\TcProbe292 = \HKEY_CURRENT_USER\Software\TcProbe292
+Fixture : C:Zdroj\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD\podkl\u00ED\u010D|w=BETA , C:Zdroj\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD|v=ALPHA , C:Zdroj| , S:C\u00EDl \u0159x| , S:Zdroj\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD\podkl\u00ED\u010D|w=BETA , S:Zdroj\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD|v=ALPHA , S:Zdroj|
+
+HKCRBOTH   TEXT   FAIL        key '.3fr' (in both halves); expected the first box 'Name:\u0009.3fr\u000A\u000AError:\u0009Can't move a key to itself.'; boxes: [#32770 'Error Moving Registry Key'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to create a registry key. (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; text 'Unable to create a registry key. (5) P\u0159\u00EDstup byl odep\u0159en.\u000A'
+HKCRBOTH   STATE  PASS        fixture unchanged: True; the user's half of '.3fr' unchanged: True
+HKCRBOTH   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 2, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture keys removed: True; registry restored+identical: True

@@ -31,15 +31,19 @@
 - **Finding**: `HKCR\.txt` opened gives `\REGISTRY\USER\<SID>_Classes\.txt` (the user's half);
   `HKCU\Software\Classes` gives `\REGISTRY\USER\<SID>_Classes`. Which half a path under HKCR reaches
   depends on which half holds it; new keys may be created in either.
-- **Decision (revised after the review, NOTE 2)**: an existing key under HKCR has the one
-  identity of the opened key - the review measured that a key only in the machine's half reports
-  `\REGISTRY\MACHINE\SOFTWARE\Classes\...`, one in the user's half the user's name. Only the root
-  `HKCR` itself has two identities (the names of `HKLM\Software\Classes` and
-  `HKCU\Software\Classes` opened); a target not yet existing directly under it is that name in
-  either half. With the HKCR root and one of its halves as the two folders, keys are decided one by
-  one by their own identity and values are refused (their half is unknown). The first rule (every
-  HKCR path as both halves + the opened key) refused real copies, e.g. F5 of a machine-only
-  `HKCR\.123` into `HKCU\Software\Classes\`.
+- **Decision (final, after two reviews)**: an HKCR path has one identity per half that holds it -
+  `HKLM\Software\Classes\<path>` and `HKCU\Software\Classes\<path>` opened separately (a half that
+  does not hold the parent does not hold the subtree, so each level decides itself). The root
+  `HKCR` has both. A key not existing yet = the parent's identities + its name. A folder with two
+  identities against one of them: keys decided one by one, values refused.
+  - First review, NOTE 2: the first rule (every HKCR path as both halves, existing or not) refused
+    real copies, e.g. F5 of a machine-only `HKCR\.123` into `HKCU\Software\Classes\`.
+  - Second review, MUST 1: the opened key alone is not enough - `HKCR\.3g2` reports the user's half
+    but lists the machine-only subkey `ShellEx` and machine-only values through the same handle
+    (measured by the review); a Move onto `HKLM\Software\Classes\` (elevated) would copy those onto
+    themselves and delete them through HKCR. Probe row HKCRBOTH (a real extension key held by both
+    halves, non-elevated, only read): the 424d9438 build went on to write the machine half (access
+    denied), the final build refuses with 1067.
 
 ## R4 - Where the checks sit (fs5.cpp `CPluginFSInterface::CopyOrMoveFromFS`)
 
@@ -58,7 +62,8 @@ Consumers enumerated (Grep `CopyOrMoveKey(`, `CopyOrMoveValue(`, `SafeDeleteKey`
 2. **Key check** (today "sourceKey is a prefix of targetKey" under one root): kept, and in addition
    the identity of the target key (the opened target key; when it does not exist, the target
    folder identities + the new name) is tested to be equal to / inside the identity of the opened
-   source key (a link is followed - what a Move deletes). Inside = the existing 1065 / 1067 box.
+   source key (a link is followed - what a Move deletes; under HKCR each half holding it). Inside =
+   the existing 1065 / 1067 box.
 - **Fail closed**: an identity that cannot be established (open error other than "not found" for
   the target key, a query error, a name too long for the buffer) stops: folder level = the existing
   `ErrorL(..., IDS_ACCESS, ...)` and back to the dialog (as the target-path checks above it do); key

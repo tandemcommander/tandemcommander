@@ -13489,6 +13489,23 @@ static void TestRegKeyId292()
     b.Count = 0;
     CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001\\Software\\TcProbe292\\Zdroj", NULL));
     CHECK(!SalRegKeyIdsAnySame(a, b) && !SalRegKeyIdsAnyWithin(a, b) && !SalRegKeyIdsAnyWithin(b, a));
+    // review of 292 (MUST 1): HKCR\K held by both halves is both keys - listed and deleted through
+    // the merged view - so a Move of it onto HKLM\Software\Classes\K, or into K\, is refused
+    a.Count = 0;
+    b.Count = 0;
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes\\K", NULL));
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes\\K", NULL));
+    CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes\\K", NULL));
+    CHECK(SalRegKeyIdsAnyWithin(b, a) && SalRegKeyIdsAnySame(a, b));
+    b.Count = 0;
+    CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes\\K", L"K"));
+    CHECK(SalRegKeyIdsAnyWithin(b, a));
+    // ... while HKCR\.123 held only by the machine's half copies into the user's Classes key
+    a.Count = 0;
+    b.Count = 0;
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes\\.123", NULL));
+    CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes", L".123"));
+    CHECK(!SalRegKeyIdsAnyWithin(b, a));
     // an empty set is never the same as or within anything
     b.Count = 0;
     CHECK(!SalRegKeyIdsAnySame(a, b) && !SalRegKeyIdsAnyWithin(a, b) && !SalRegKeyIdsAnyWithin(b, a));
