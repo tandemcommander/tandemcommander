@@ -722,6 +722,131 @@ int ExpandPluralFilesDirs(LPWSTR buffer, int bufferSize, int files, int dirs,
     return SalPrintfW(buffer, bufferSize, formatW, copyOrMove, files + dirs);
 }
 
+// feature 292: the identity of a registry key - the full internal name the registry reports for the
+// opened key (\REGISTRY\USER\<SID>\...), the same for every root name and link of one key; see
+// src/common/salregkeyid.h. Returns a Win32 error code.
+static int AddOpenedRegKeyId(HKEY hKey, CSalRegKeyIds& ids)
+{
+    typedef LONG(NTAPI * FNtQueryKey)(HANDLE, int, PVOID, ULONG, PULONG);
+    typedef ULONG(NTAPI * FRtlNtStatusToDosError)(LONG);
+    HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+    FNtQueryKey queryKey = ntdll != NULL ? (FNtQueryKey)GetProcAddress(ntdll, "NtQueryKey") : NULL;
+    if (queryKey == NULL)
+        return ERROR_PROC_NOT_FOUND;
+    // KEY_NAME_INFORMATION: ULONG NameLength (bytes), WCHAR Name[] (not terminated)
+    ULONG buf[(sizeof(ULONG) + SAL_REGKEYID_MAX * sizeof(WCHAR)) / sizeof(ULONG) + 1];
+    ULONG got = 0;
+    LONG status = queryKey(hKey, 3 /* KeyNameInformation */, buf, sizeof(buf), &got);
+    if (status < 0)
+    {
+        if (status == (LONG)0x80000005 /* STATUS_BUFFER_OVERFLOW */ || status == (LONG)0xC0000023 /* STATUS_BUFFER_TOO_SMALL */)
+            return ERROR_FILENAME_EXCED_RANGE; // never a cut identity
+        FRtlNtStatusToDosError toDos = (FRtlNtStatusToDosError)GetProcAddress(ntdll, "RtlNtStatusToDosError");
+        int err = toDos != NULL ? (int)toDos(status) : ERROR_INVALID_FUNCTION;
+        return err != ERROR_SUCCESS ? err : ERROR_INVALID_FUNCTION;
+    }
+    ULONG units = buf[0] / sizeof(WCHAR);
+    if (units == 0)
+        return ERROR_INVALID_DATA;
+    if (units >= SAL_REGKEYID_MAX)
+        return ERROR_FILENAME_EXCED_RANGE;
+    WCHAR name[SAL_REGKEYID_MAX];
+    memcpy(name, buf + 1, units * sizeof(WCHAR));
+    name[units] = 0;
+    return SalRegKeyIdsAdd(ids, name, NULL) ? ERROR_SUCCESS : ERROR_FILENAME_EXCED_RANGE;
+}
+
+static int AddRegKeyIdOf(HKEY root, LPCWSTR key, CSalRegKeyIds& ids)
+{
+    HKEY hKey;
+    int err = RegOpenKeyExW(root, key, 0, KEY_READ, &hKey);
+    if (err != ERROR_SUCCESS)
+        return err;
+    err = AddOpenedRegKeyId(hKey, ids);
+    RegCloseKey(hKey);
+    return err;
+}
+
+// the identities of a root itself (a predefined handle cannot be asked, research R2); HKCR is
+// a merged view: both halves (the user's classes and the machine's)
+static int AddRegRootIds(HKEY root, CSalRegKeyIds& ids)
+{
+    if (root == HKEY_LOCAL_MACHINE)
+        return SalRegKeyIdsAdd(ids, L"\\REGISTRY\\MACHINE", NULL) ? ERROR_SUCCESS : ERROR_FILENAME_EXCED_RANGE;
+    if (root == HKEY_USERS)
+        return SalRegKeyIdsAdd(ids, L"\\REGISTRY\\USER", NULL) ? ERROR_SUCCESS : ERROR_FILENAME_EXCED_RANGE;
+    if (root == HKEY_CURRENT_USER)
+    {
+        HKEY hKey;
+        int err = RegOpenCurrentUser(KEY_READ, &hKey);
+        if (err != ERROR_SUCCESS)
+            return err;
+        err = AddOpenedRegKeyId(hKey, ids);
+        RegCloseKey(hKey);
+        return err;
+    }
+    if (root == HKEY_CURRENT_CONFIG)
+        return AddRegKeyIdOf(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Hardware Profiles\\Current", ids);
+    if (root == HKEY_CLASSES_ROOT)
+    {
+        int err = AddRegKeyIdOf(HKEY_LOCAL_MACHINE, L"Software\\Classes", ids);
+        if (err == ERROR_SUCCESS)
+            err = AddRegKeyIdOf(HKEY_CURRENT_USER, L"Software\\Classes", ids);
+        return err;
+    }
+    return ERROR_INVALID_HANDLE; // HKEY_DYN_DATA and unknown roots: no identity, fails closed
+}
+
+// the identity set of 'root'\'key'; 'mayNotExist' = a key that does not exist adds nothing and is
+// no error (a target key); every other failure is returned and the caller does not go on
+static int GetRegKeyIds(int root, LPCWSTR key, CSalRegKeyIds& ids, BOOL mayNotExist)
+{
+    ids.Count = 0;
+    HKEY rootHKey = PredefinedHKeys[root].HKey;
+    if (*key == 0)
+        return AddRegRootIds(rootHKey, ids);
+    if (rootHKey == HKEY_CLASSES_ROOT)
+    {
+        // either half may be the key (or become it), and the opened key is the one it reaches now
+        CSalRegKeyIds halves;
+        halves.Count = 0;
+        int err = AddRegRootIds(HKEY_CLASSES_ROOT, halves);
+        if (err != ERROR_SUCCESS)
+            return err;
+        for (int i = 0; i < halves.Count; i++)
+            if (!SalRegKeyIdsAdd(ids, halves.Id[i], key))
+                return ERROR_FILENAME_EXCED_RANGE;
+    }
+    int err = AddRegKeyIdOf(rootHKey, key, ids);
+    if (err == ERROR_FILE_NOT_FOUND && mayNotExist)
+        return ERROR_SUCCESS;
+    return err;
+}
+
+// GetRegKeyIds with the existing open-error box (Retry / Skip / Skip All / Cancel); FALSE = do not
+// go on with this key ('skip' tells Skip from Cancel)
+static BOOL SafeGetRegKeyIds(int root, LPWSTR key, CSalRegKeyIds& ids, BOOL mayNotExist,
+                             int errorTitle, BOOL& skip, BOOL& skipAll)
+{
+    while (1)
+    {
+        int err = GetRegKeyIds(root, key, ids, mayNotExist);
+        if (err == ERROR_SUCCESS)
+            return TRUE;
+        if (!RegOperationError(err, IDS_OPEN, errorTitle, root, key, &skip, &skipAll))
+            return FALSE;
+    }
+}
+
+// 'parent' joined with 'name' for every identity of 'parent', added to 'ids'
+static BOOL AddRegKeyIdsJoined(CSalRegKeyIds& ids, const CSalRegKeyIds& parent, LPCWSTR name)
+{
+    for (int i = 0; i < parent.Count; i++)
+        if (!SalRegKeyIdsAdd(ids, parent.Id[i], name))
+            return FALSE;
+    return TRUE;
+}
+
 BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsName, HWND parent,
                                           int panel, int selectedFiles, int selectedDirs,
                                           char* targetPath, BOOL& operationMask,
@@ -911,11 +1036,27 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
         nextFocus[0] = 0;
         BOOL sourceEqualsTarget = FALSE;
 
+        // feature 292: the identities of the panel's key and of the target key (it exists now) -
+        // one key under another root name (HKEY_USERS\<SID> for HKCU, HKCR, HKCC, a registry link)
+        // is the same key; an identity that cannot be read stops the operation (fails closed)
+        CSalRegKeyIds sourceFolderIds, targetFolderIds;
+        if ((err = GetRegKeyIds(CurrentKeyRoot, CurrentKeyName, sourceFolderIds, FALSE)) != ERROR_SUCCESS)
+        {
+            ErrorL(err, IDS_ACCESS, PredefinedHKeys[CurrentKeyRoot].KeyName, CurrentKeyName);
+            continue;
+        }
+        if ((err = GetRegKeyIds(root, key, targetFolderIds, FALSE)) != ERROR_SUCCESS)
+        {
+            ErrorL(err, IDS_ACCESS, PredefinedHKeys[root].KeyName, key);
+            continue;
+        }
+
         // ensure we are not copying the file onto itself
         if (root == CurrentKeyRoot &&
-            CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
-                           key, -1,
-                           CurrentKeyName, -1) == CSTR_EQUAL)
+                CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
+                               key, -1,
+                               CurrentKeyName, -1) == CSTR_EQUAL ||
+            SalRegKeyIdsAnySame(sourceFolderIds, targetFolderIds))
         {
             // fetch data about the first processed file
             int index2 = 0;
@@ -1018,12 +1159,35 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
 
                         // also verify that sourceKey is not a prefix of targetKey
                         unsigned sourceLen2 = (int)wcslen(sourceKey);
-                        if (root == sourceRoot &&
-                            sourceLen2 <= wcslen(key) &&
-                            CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
-                                           sourceKey, sourceLen2,
-                                           key, sourceLen2) == CSTR_EQUAL &&
-                            (key[sourceLen2] == L'\0' || key[sourceLen2] == L'\\'))
+                        BOOL into = root == sourceRoot &&
+                                    sourceLen2 <= wcslen(key) &&
+                                    CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
+                                                   sourceKey, sourceLen2,
+                                                   key, sourceLen2) == CSTR_EQUAL &&
+                                    (key[sourceLen2] == L'\0' || key[sourceLen2] == L'\\');
+                        if (!into)
+                        {
+                            // feature 292: ... nor by identity under another root name - the source
+                            // is the opened key (a link is followed) and the panel's key joined with
+                            // its name, the target the target folder joined with the new name and,
+                            // when it exists, the opened target key
+                            CSalRegKeyIds sourceIds, targetIds;
+                            if (!SafeGetRegKeyIds(sourceRoot, sourceKey, sourceIds, FALSE, errorTitle, skip, skipAllErrors) ||
+                                !SafeGetRegKeyIds(root, key, targetIds, TRUE, errorTitle, skip, skipAllErrors))
+                            {
+                                if (!skip)
+                                    success = FALSE; // Cancel; Skip leaves the key alone
+                            }
+                            else if (!AddRegKeyIdsJoined(sourceIds, sourceFolderIds, pd->Name) ||
+                                     !AddRegKeyIdsJoined(targetIds, targetFolderIds, useTargetName ? targetName : pd->Name))
+                            {
+                                Error(IDS_LONGNAME); // never a cut identity
+                                success = FALSE;
+                            }
+                            else
+                                into = SalRegKeyIdsAnyWithin(targetIds, sourceIds);
+                        }
+                        if (success && !skip && into)
                         {
                             // feature 129: the message names the key (it was an empty box)
                             char* message = FormatWideU8(copy ? IDS_CANTCOPYTOITSELF2 : IDS_CANTMOVETOITSELF2, pd->Name);

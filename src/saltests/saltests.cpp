@@ -61,6 +61,7 @@
 #include "salfmtinserts.h"   // feature 180
 #include "salmultisz.h"      // feature 189
 #include "salregfind.h"      // feature 257
+#include "salregkeyid.h"     // feature 292
 #include "salreparse.h"      // feature 197
 #include "salshortname.h"    // feature 203
 #include "salmoveback.h"     // feature 281
@@ -13410,6 +13411,90 @@ static void TestRegFindTextToCodePage278()
     CHECK(SalRegFindTextToCodePage(L"x", 1, 12345, out, sizeof(out)) == -1);
 }
 
+// feature 292: the Registry Editor decides "onto / into itself" by the key's identity (the
+// internal name the registry reports), not by the root name and the path text
+static void TestRegKeyId292()
+{
+    const WCHAR* user = L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001";
+    // the same key, case ignored (also outside ASCII: the registry upper-cases each unit)
+    CHECK(SalRegKeyIdSame(L"\\REGISTRY\\USER\\S-1\\Software\\X", L"\\registry\\user\\s-1\\SOFTWARE\\x"));
+    CHECK(SalRegKeyIdSame(L"\\REGISTRY\\USER\\S-1\\Kl\x00ED\x010D", L"\\REGISTRY\\USER\\S-1\\KL\x00CD\x010C"));
+    CHECK(!SalRegKeyIdSame(L"\\REGISTRY\\USER\\S-1\\Key", L"\\REGISTRY\\USER\\S-1\\Key2"));
+    CHECK(!SalRegKeyIdSame(L"\\REGISTRY\\USER\\S-1\\Key2", L"\\REGISTRY\\USER\\S-1\\Key"));
+    CHECK(!SalRegKeyIdSame(L"\\REGISTRY\\MACHINE\\X", L"\\REGISTRY\\USER\\X"));
+    CHECK(!SalRegKeyIdSame(L"", L"")); // an unknown identity is never the same key
+    CHECK(!SalRegKeyIdSame(NULL, L"\\REGISTRY"));
+    // within: the key itself, below it at a whole element, never a longer name or above it
+    CHECK(SalRegKeyIdWithin(L"\\REGISTRY\\USER\\S-1\\Key", L"\\REGISTRY\\USER\\S-1\\Key"));
+    CHECK(SalRegKeyIdWithin(L"\\REGISTRY\\USER\\S-1\\Key\\Sub\\Key", L"\\registry\\user\\s-1\\KEY"));
+    CHECK(!SalRegKeyIdWithin(L"\\REGISTRY\\USER\\S-1\\Key2\\Sub", L"\\REGISTRY\\USER\\S-1\\Key"));
+    CHECK(!SalRegKeyIdWithin(L"\\REGISTRY\\USER\\S-1", L"\\REGISTRY\\USER\\S-1\\Key"));
+    CHECK(!SalRegKeyIdWithin(L"\\REGISTRY\\USER\\S-1\\Key", L""));
+    CHECK(!SalRegKeyIdWithin(L"", L"\\REGISTRY"));
+
+    static CSalRegKeyIds a, b;
+    // join: the parent alone, parent\name; refused (set unchanged) without a parent, when too long
+    // or full - never a cut identity
+    a.Count = 0;
+    CHECK(SalRegKeyIdsAdd(a, user, NULL) && a.Count == 1 && wcscmp(a.Id[0], user) == 0);
+    CHECK(SalRegKeyIdsAdd(a, user, L"") && a.Count == 2 && wcscmp(a.Id[1], user) == 0);
+    CHECK(SalRegKeyIdsAdd(a, user, L"Software") && a.Count == 3 && wcscmp(a.Id[2], L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001\\Software") == 0);
+    CHECK(!SalRegKeyIdsAdd(a, L"", L"Software") && !SalRegKeyIdsAdd(a, NULL, L"x") && a.Count == 3);
+    static WCHAR longName[SAL_REGKEYID_MAX];
+    int lu = (int)wcslen(user);
+    for (int i = 0; i < SAL_REGKEYID_MAX - 1; i++)
+        longName[i] = L'n';
+    longName[SAL_REGKEYID_MAX - 1 - lu - 1] = 0; // user + '\' + name = SAL_REGKEYID_MAX - 1 units: fits
+    CHECK(SalRegKeyIdsAdd(a, user, longName) && a.Count == 4 && (int)wcslen(a.Id[3]) == SAL_REGKEYID_MAX - 1);
+    longName[SAL_REGKEYID_MAX - 1 - lu - 1] = L'n'; // one unit more: refused
+    longName[SAL_REGKEYID_MAX - 1 - lu] = 0;
+    CHECK(!SalRegKeyIdsAdd(a, user, longName) && a.Count == 4);
+    CHECK(SalRegKeyIdsAdd(a, user, L"5") && SalRegKeyIdsAdd(a, user, L"6") && a.Count == SAL_REGKEYIDS_MAX);
+    CHECK(!SalRegKeyIdsAdd(a, user, L"7") && a.Count == SAL_REGKEYIDS_MAX);
+
+    // the measured defect: HKCU\Software\TcProbe292\Zdroj (the panel) and
+    // HKEY_USERS\<SID>\Software\TcProbe292\Zdroj (the target folder) report one name
+    a.Count = 0;
+    b.Count = 0;
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001\\Software\\TcProbe292\\Zdroj", NULL));
+    CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001\\Software\\tcprobe292\\ZDROJ", NULL));
+    CHECK(SalRegKeyIdsAnySame(a, b));
+    // into itself: target = folder <K>\<P> joined with <K>, source = folder joined with <K>
+    static CSalRegKeyIds src, dst;
+    src.Count = 0;
+    dst.Count = 0;
+    CHECK(SalRegKeyIdsAdd(src, a.Id[0], L"Kl\x00ED\x010D"));
+    CHECK(SalRegKeyIdsAdd(dst, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001\\Software\\TcProbe292\\Zdroj\\KL\x00CD\x010C\\podkl", L"Kl\x00ED\x010D"));
+    CHECK(SalRegKeyIdsAnyWithin(dst, src));
+    CHECK(!SalRegKeyIdsAnyWithin(src, dst));
+    // a rename in the same key (another name) is neither the same nor inside
+    dst.Count = 0;
+    CHECK(SalRegKeyIdsAdd(dst, b.Id[0], L"Nov\x00FD n\x00E1zev"));
+    CHECK(!SalRegKeyIdsAnyWithin(dst, src) && !SalRegKeyIdsAnySame(dst, src));
+    // the spec's edge case: HKEY_USERS\<SID> moved into HKEY_CURRENT_USER\ - the target
+    // HKCU root identity joined with the name "<SID>" lies inside the source \REGISTRY\USER\<SID>
+    src.Count = 0;
+    dst.Count = 0;
+    CHECK(SalRegKeyIdsAdd(src, L"\\REGISTRY\\USER", L"S-1-5-21-1-2-3-1001"));
+    CHECK(SalRegKeyIdsAdd(dst, user, L"S-1-5-21-1-2-3-1001"));
+    CHECK(SalRegKeyIdsAnyWithin(dst, src));
+    // HKEY_CLASSES_ROOT\TcProbe292\Zdroj as a set of three (machine half, user half, opened key)
+    // against HKCU\Software\Classes\TcProbe292\Zdroj
+    a.Count = 0;
+    b.Count = 0;
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes", L"TcProbe292\\Zdroj"));
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes", L"TcProbe292\\Zdroj"));
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes\\TcProbe292\\Zdroj", NULL));
+    CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes\\TcProbe292\\Zdroj", NULL));
+    CHECK(SalRegKeyIdsAnySame(a, b) && SalRegKeyIdsAnySame(b, a));
+    b.Count = 0;
+    CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001\\Software\\TcProbe292\\Zdroj", NULL));
+    CHECK(!SalRegKeyIdsAnySame(a, b) && !SalRegKeyIdsAnyWithin(a, b) && !SalRegKeyIdsAnyWithin(b, a));
+    // an empty set is never the same as or within anything
+    b.Count = 0;
+    CHECK(!SalRegKeyIdsAnySame(a, b) && !SalRegKeyIdsAnyWithin(a, b) && !SalRegKeyIdsAnyWithin(b, a));
+}
+
 // feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
 // formatted - before, FormatMessage without arguments failed (87) and the program showed "System
 // error N, text description is not available."; the inserts become "..." and no '%' is left
@@ -16633,6 +16718,7 @@ int main(int argc, char** argv)
     TestRegFindWholeWord257();
     TestHexPattern257();
     TestRegFindTextToCodePage278();
+    TestRegKeyId292();
     TestDeleteAsDirLink197();
     TestAttrsLink253();
     TestAttrsFileLink272();
