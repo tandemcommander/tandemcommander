@@ -35,3 +35,12 @@ Backlog item `user-menu-long-paths`. HEAD at the start: d7405c6a.
 - `src/finddlg1.cpp` `OnUserMenu`: `CompareName1/2` likewise; FullPath* empty (not defined).
 - Callers of `UM_GetNextFileName` / `CMainWindow::UserMenu`: only `mainwnd3.cpp` (panel) and
   `finddlg1.cpp` (Find) - the type is internal to the core (not in `src/plugins/shared`).
+
+## Analyze
+
+- Run 1: HIGH I1 - FR-003 (the route without a shell starts nothing after any refusal while
+  preparing) contradicted FR-007 (short values exactly as before) for a refusal of another kind
+  (Cancel at a missing environment variable on a later item: before, the earlier items ran).
+  Fixed: FR-007 names the intended exception, an edge case and Clarification Q2 say "any
+  refusal". LOW L1 (MVP text vs phase order) fixed in tasks.md.
+- Run 2: no CRITICAL / HIGH / MEDIUM / LOW findings; coverage 100 % (7 FR, 3 SC, 21 tasks).

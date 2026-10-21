@@ -68,5 +68,6 @@ whole. **Independent test**: probe rows CMPLONG, LISTFULL.
 
 ## Implementation strategy
 
-MVP: Phase 2 + US1 (the cut path that runs a command on the parent folder), then US2, US3;
+Phases in the order of the file (US2 first: it changes the contract US1 and US3 build on); the
+most serious defect is US1's (a command run on the parent folder);
 one build and one probe run at the end of each story when convenient.

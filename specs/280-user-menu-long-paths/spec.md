@@ -42,7 +42,8 @@ Debug build of d7405c6a, probe `um280_probe.ps1` on the hidden desktop. Fixture 
   MAX_PATH; conservative - the same refusal on both routes, no new behaviour of launched programs)
 - Q: An item run without a shell over several items, one of which is refused - may the items
   before it run? → A: No - the commands of all items are prepared first and run only when every
-  item was prepared, as the batch route already does; a refusal comes before anything runs
+  item was prepared, as the batch route already does; a refusal (of any kind while preparing)
+  comes before anything runs
   (autonomous run: item - Expected "refuses ... before anything runs")
 - Q: `$(FullPathLeft)` / `$(FullPathRight)` / `$(FullPathInactive)` when the panel's folder +
   backslash does not fit 259 bytes? → A: Refuse with "too long name" when the command uses the
@@ -130,6 +131,8 @@ list that fits.
 - A panel path of exactly 259 bytes: `$(FullPathLeft)` needs 260 with its backslash - refused.
 - Group commands (a list variable) use only the first item's folder and name; a long name of
   another selected item does not refuse them.
+- Without a shell, a later item refused for another reason (an expansion error, Cancel at a
+  missing environment variable): nothing runs (before: the earlier items ran) - FR-003.
 - A launch that fails after all items were prepared (without a shell): the error is shown, the
   later items are not started, the earlier ones stay started (as today).
 
@@ -155,7 +158,10 @@ list that fits.
 - **FR-006**: The panel route's `$(ListOfSelectedFullNames)` MUST hold whole full names (the
   list's own size limit and message stay).
 - **FR-007**: Every case with short folders and names MUST behave exactly as before (the
-  control rows, features 225, 226, 229, 234 probes).
+  control rows, features 225, 226, 229, 234 probes) - with one intended exception (FR-003): on
+  the route without a shell, a refusal while preparing a later item (also one for another reason,
+  e.g. Cancel on a missing environment variable) now leaves the earlier items unrun, as the batch
+  route always did.
 
 ### Key Entities
 
