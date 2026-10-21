@@ -18,6 +18,7 @@
 #include "tasklist.h"
 #include "salfindtext.h"   // feature 121
 #include "salmenuhotkey.h" // feature 256
+#include "salumvalue.h"    // feature 280
 
 #include <Shlwapi.h>
 #include <uxtheme.h>
@@ -811,7 +812,7 @@ struct CUMDataFromFind
 };
 
 // description -- see mainwnd.h
-BOOL GetNextItemFromFind(int index, char* path, char* name, void* param)
+int GetNextItemFromFind(int index, char* path, char* name, void* param)
 {
     CALL_STACK_MESSAGE2("GetNextItemFromFind(%d, , ,)", index);
     CUMDataFromFind* data = (CUMDataFromFind*)param;
@@ -820,7 +821,7 @@ BOOL GetNextItemFromFind(int index, char* path, char* name, void* param)
     if (listView == NULL)
     {
         TRACE_E("Unable to find object for ListView");
-        return FALSE;
+        return UMNEXT_END;
     }
 
     LV_ITEM item;
@@ -830,10 +831,10 @@ BOOL GetNextItemFromFind(int index, char* path, char* name, void* param)
     {
         data->Count = ListView_GetSelectedCount(data->HWindow);
         if (data->Count == 0)
-            return FALSE;
+            return UMNEXT_END;
         data->Index = new int[data->Count];
         if (data->Index == NULL)
-            return FALSE; // error
+            return UMNEXT_END; // error
         int i = 0;
         int findItem = -1;
         while (i < data->Count)
@@ -846,18 +847,21 @@ BOOL GetNextItemFromFind(int index, char* path, char* name, void* param)
     if (index >= 0 && index < data->Count)
     {
         CFoundFilesData* file = listView->At(data->Index[index]);
-        // the UM_GetNextFileName contract provides MAX_PATH buffers; longer
-        // UTF-8 paths/names are truncated here (User Menu is not long-path capable yet)
-        lstrcpyn(path, file->Path, MAX_PATH);
-        lstrcpyn(name, file->Name, MAX_PATH);
-        return TRUE;
+        // feature 280: whole or "too long" - never cut (the User Menu refuses what it cannot hold;
+        // the old copy cut both at 259 bytes)
+        if (!SalUMCopyWhole(file->Path, path, UM_ITEM_TEXT_SIZE) ||
+            !SalUMCopyWhole(file->Name, name, UM_ITEM_TEXT_SIZE))
+        {
+            return UMNEXT_TOOLONG;
+        }
+        return UMNEXT_ITEM;
     }
     if (data->Index != NULL)
     {
         delete[] (data->Index);
         data->Index = NULL;
     }
-    return FALSE;
+    return UMNEXT_END;
 }
 
 LRESULT
@@ -2784,15 +2788,20 @@ void CFindDialog::OnUserMenu()
             comp1 = -1;
             comp2 = -1;
         }
+        // feature 280: the full paths are not defined here (not "too long"); a name to compare is
+        // whole or empty with its "too long" flag (the User Menu refuses a command that uses it)
+        userMenuAdvancedData.FullPathLeftTooLong = FALSE;
+        userMenuAdvancedData.FullPathRightTooLong = FALSE;
+        userMenuAdvancedData.FullPathInactiveTooLong = FALSE;
+        userMenuAdvancedData.CompareName1TooLong = FALSE;
+        userMenuAdvancedData.CompareName2TooLong = FALSE;
         if (comp1 == -1)
             userMenuAdvancedData.CompareName1[0] = 0;
         else
         {
             CFoundFilesData* file = FoundFilesListView->At(comp1);
             userMenuAdvancedData.CompareNamesAreDirs = file->IsDir;
-            lstrcpyn(userMenuAdvancedData.CompareName1, file->Path, MAX_PATH);
-            if (!SalPathAppend(userMenuAdvancedData.CompareName1, file->Name, MAX_PATH))
-                userMenuAdvancedData.CompareName1[0] = 0;
+            userMenuAdvancedData.CompareName1TooLong = !SalUMJoinWhole(file->Path, file->Name, userMenuAdvancedData.CompareName1, MAX_PATH);
         }
         if (comp2 == -1)
             userMenuAdvancedData.CompareName2[0] = 0;
@@ -2800,9 +2809,7 @@ void CFindDialog::OnUserMenu()
         {
             CFoundFilesData* file = FoundFilesListView->At(comp2);
             userMenuAdvancedData.CompareNamesAreDirs = file->IsDir;
-            lstrcpyn(userMenuAdvancedData.CompareName2, file->Path, MAX_PATH);
-            if (!SalPathAppend(userMenuAdvancedData.CompareName2, file->Name, MAX_PATH))
-                userMenuAdvancedData.CompareName2[0] = 0;
+            userMenuAdvancedData.CompareName2TooLong = !SalUMJoinWhole(file->Path, file->Name, userMenuAdvancedData.CompareName2, MAX_PATH);
         }
 
         CUMDataFromFind data(FoundFilesListView->HWindow);

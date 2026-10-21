@@ -21,7 +21,7 @@ uses the value; the panel's `$(ListOfSelectedFullNames)` is built whole (`CSalPa
 **Language/Version**: C++20 (MSVC v143), pure WinAPI; the core (`src/`)  
 **Primary Dependencies**: none new  
 **Storage**: N/A  
-**Testing**: `saltests` (new `TestUserMenuValue280`, with negatives that reproduce the 259-byte cut ending at a backslash); GUI probe `probe/um280_probe.ps1` on the hidden desktop (20 rows); regression probes of 226, 229, 234  
+**Testing**: `saltests` (new `TestUserMenuValue280`, with negatives that reproduce the 259-byte cut ending at a backslash); GUI probe `probe/um280_probe.ps1` on the hidden desktop (24 rows); regression probes of 226, 229, 234  
 **Target Platform**: Windows 11 x64  
 **Project Type**: desktop application (core)  
 **Performance Goals**: none (one heap allocation of two 96 KB buffers per User Menu command; the direct route keeps the prepared commands in memory until started)  

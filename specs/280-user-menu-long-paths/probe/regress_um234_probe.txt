@@ -1,0 +1,15 @@
+um234_probe (feature 234) regress280
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 06:50; registry key existed True; ACP 1250; NoDefaultCurrentDirectoryInExePath was '1' (removed for the run)
+
+FINDABS    RUN    NOT DRIVEN  the Find window's User Menu (a popup menu) did not run the control item - copy missing
+FINDABS    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FINDREL    RUN    NOT DRIVEN  the Find window's User Menu (a popup menu) did not run the control item - copy missing
+FINDREL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FINDDIRECT RUN    NOT DRIVEN  the Find window's User Menu (a popup menu) did not run the control item - copy missing
+FINDDIRECT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PANELREL   RUN    PASS        copy 'DECOY'
+PANELREL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 5, FAIL 0, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True

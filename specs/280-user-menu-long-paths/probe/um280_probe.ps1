@@ -17,6 +17,9 @@
       CMPL       cmd.exe /u /c echo [$(FileToCompareLeft)][$(FileToCompareRight)]  direct
     Rows (PASS = the expected outcome after the fix; "too long" = a window with "too long name"):
       CONTROL    s, a.txt focused, FULLNAME: out holds [<root>\s\a.txt]
+      SHORTTWO   s2 (a.txt, b.txt), both selected, PERNAME (direct, one output file per item):
+                 both items ran (control of the prepared runs)
+      FPRSHORT   right panel s, FPR: out holds [<root>\s\] (control of the full path)
       LDIRFOCUS  pl\<L>, a.txt focused, FULLNAME: "too long", no out (feature 225)
       LDIRSEL    pl\<L>, a.txt selected, FULLNAME: "too long", no out
       LNAME      s, <L>.txt focused, FULLNAME: "too long", no out
@@ -50,7 +53,8 @@ if (-not (Test-Path -LiteralPath $lib)) { $lib = 'E:\Projects\tandemcommander\sp
 $Root = $TempRoot + '\tc280'
 $StartDir = $Root + '\s'
 $OutDir = $Root + '\out'
-$L = -join (1..90 | ForEach-Object { [char](0x4E00 + $_) })
+$S2 = $Root + '\s2'
+$L =-join (1..90 | ForEach-Object { [char](0x4E00 + $_) })
 $LDir = $Root + '\pl\' + $L
 $PcDir = $Root + '\pc'
 $pLen = 258 - (U8Len ($PcDir + '\'))
@@ -62,6 +66,7 @@ $Unicode = New-Object Text.UnicodeEncoding($false, $false)
 # item -> command, arguments, through a shell (index = position - 1)
 $Items = [ordered]@{
     'FULLNAME' = @('cmd.exe', '/u /c echo [$(FullName)]>>"{OUT}"', 0)
+    'PERNAME'  = @('cmd.exe', '/u /c echo [$(FullName)]>"{OUTDIR}\PERNAME-$(Name).txt"', 0)
     'FULLBAT'  = @('echo', '[$(FullName)]>>"{OUT}"', 1)
     'FPR'      = @('cmd.exe', '/u /c echo [$(FullPathRight)]>>"{OUT}"', 0)
     'LISTFULL' = @('cmd.exe', '/u /c echo [$(ListOfSelectedFullNames)]>>"{OUT}"', 0)
@@ -77,7 +82,7 @@ function Seed-UserMenu {
         $v = $Items[$c]
         $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($UmKey + '\' + $i)
         $k.SetValue('Item Name', ('tc280 ' + $c), 'String'); $k.SetValue('Command', $v[0], 'String')
-        $k.SetValue('Arguments', $v[1].Replace('{OUT}', $OutDir + '\' + $c + '.txt'), 'String'); $k.SetValue('Initial Directory', '', 'String')
+        $k.SetValue('Arguments', $v[1].Replace('{OUT}', $OutDir + '\' + $c + '.txt').Replace('{OUTDIR}', $OutDir), 'String'); $k.SetValue('Initial Directory', '', 'String')
         $k.SetValue('Execute Through Shell', $v[2], 'DWord'); $k.SetValue('Close Shell Window', 1, 'DWord'); $k.SetValue('Open Shell Window', 0, 'DWord')
         $k.SetValue('Icon', '', 'String'); $k.SetValue('Type', 0, 'DWord'); $k.SetValue('Show In Toolbar', 0, 'DWord')
         $k.Close()
@@ -121,7 +126,7 @@ function Start-Two([string]$Left, [string]$Right, [int]$Active) {
 }
 # enters the only sub-folder of the panel's folder (Home = "..", Down = the folder, Enter)
 function Enter-Only([IntPtr]$List) { KeyTo $List 0x24; KeyTo $List 0x28; KeyTo $List 0x0D; Start-Sleep -Milliseconds 800 }
-function Short([string]$s) { if ($null -eq $s) { return 'missing' }; return ("'" + (Tail $s 60) + "' (" + (U8Len $s) + ' bytes)') }
+function Short($s) { if ($null -eq $s) { return 'missing' }; return ("'" + (Tail $s 60) + "' (" + (U8Len $s) + ' bytes)') }
 
 # Setup: a function that prepares the panels of the started instance; Item: the User Menu item;
 # Expect: 'refuse' or a scriptblock that checks the output text
@@ -154,7 +159,8 @@ $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
-    NewDir $StartDir; NewDir $OutDir; NewDir $LDir; NewDir $CutDir
+    NewDir $StartDir; NewDir $OutDir; NewDir $LDir; NewDir $CutDir; NewDir $S2
+    WriteFile ($S2 + '\a.txt') 'A'; WriteFile ($S2 + '\b.txt') 'B'
     WriteFile ($StartDir + '\a.txt') 'A'; [IO.File]::WriteAllText($LP + $StartDir + '\' + $L + '.txt', 'L')
     WriteFile ($LDir + '\a.txt') 'A'; WriteFile ($CutDir + '\a.txt') 'A'
     Set-Config
@@ -177,6 +183,11 @@ try {
     $rightLong = { param($id, $lists) Enter-Only $lists[1]; $loc = Get-Loc $id; KeyTo $lists[1] 0x09; KeyTo $lists[0] 0x24; KeyTo $lists[0] 0x28; ('right ' + (U8Len $loc) + ' bytes, left active on a.txt') }
 
     Run-Row 'CONTROL' $StartDir $StartDir 1 $focusA 'FULLNAME' { param($g) $g -ceq ('[' + $sA + ']') }
+    # controls of the changed routes: two short items without a shell both run, in order; a short
+    # right panel gives its folder with a backslash
+    $selTwo = { param($id, $lists) KeyTo $lists[0] 0x24; KeyTo $lists[0] 0x28; KeyTo $lists[0] 0x2D; KeyTo $lists[0] 0x2D; 'left s2, a.txt + b.txt selected' }
+    Run-Row 'SHORTTWO' $S2 $StartDir 1 $selTwo 'PERNAME' { param($g) ((Read-Out 'PERNAME-a.txt') -ceq ('[' + $S2 + '\a.txt]')) -and ((Read-Out 'PERNAME-b.txt') -ceq ('[' + $S2 + '\b.txt]')) }
+    Run-Row 'FPRSHORT' $StartDir $StartDir 1 $focusA 'FPR' { param($g) $g -ceq ('[' + $StartDir + '\]') }
     Run-Row 'LDIRFOCUS' ($Root + '\pl') $StartDir 1 $ldirFocus 'FULLNAME' 'refuse'
     Run-Row 'LDIRSEL' ($Root + '\pl') $StartDir 1 $ldirSel 'FULLNAME' 'refuse'
     Run-Row 'LNAME' $StartDir $StartDir 1 $focusL 'FULLNAME' 'refuse'

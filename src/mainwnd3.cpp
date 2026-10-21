@@ -19,6 +19,7 @@
 #include "mainwnd.h"
 #include "cfgdlg.h"
 #include "salnamerun.h" // feature 261
+#include "salumvalue.h" // feature 280
 #include "dialogs.h"
 #include "snooper.h"
 #include "shellib.h"
@@ -2638,7 +2639,9 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 char* listFull = userMenuAdvancedData.ListOfSelFullNames;
                 char* listFullEnd = listFull + USRMNUARGS_MAXLEN - 1;
                 smallBuf = FALSE;
-                char fullName[MAX_PATH];
+                // feature 280: whole full names (the panel path was cut into MAX_PATH - a list that fits
+                // was refused as too long); as the Find window's list since 004
+                CSalPathBuf fullName;
                 if (activePanel->SelectedCount > 0)
                 {
                     int count = activePanel->Files->Count + activePanel->Dirs->Count;
@@ -2655,9 +2658,8 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                                 else
                                     break;
                             }
-                            lstrcpyn(fullName, activePanel->GetPath(), MAX_PATH);
-                            if (!SalPathAppend(fullName, file->Name, MAX_PATH) ||
-                                !AddToListOfNames(&listFull, listFullEnd, fullName, (int)strlen(fullName)))
+                            if (!fullName.Set(activePanel->GetPath()) || !fullName.AppendComponent(file->Name) ||
+                                !AddToListOfNames(&listFull, listFullEnd, fullName.Get(), fullName.Length()))
                                 break;
                         }
                     }
@@ -2676,9 +2678,8 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                         (index != 0 || !subDir))
                     {
                         CFileData* file = (index < activePanel->Dirs->Count) ? &activePanel->Dirs->At(index) : &activePanel->Files->At(index - activePanel->Dirs->Count);
-                        lstrcpyn(fullName, activePanel->GetPath(), MAX_PATH);
-                        if (!SalPathAppend(fullName, file->Name, MAX_PATH) ||
-                            !AddToListOfNames(&listFull, listFullEnd, fullName, (int)strlen(fullName)))
+                        if (!fullName.Set(activePanel->GetPath()) || !fullName.AppendComponent(file->Name) ||
+                            !AddToListOfNames(&listFull, listFullEnd, fullName.Get(), fullName.Length()))
                         {
                             smallBuf = TRUE;
                         }
@@ -2695,23 +2696,20 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                     userMenuAdvancedData.ListOfSelFullNamesIsEmpty = userMenuAdvancedData.ListOfSelFullNames[0] == 0;
                 }
 
+                // feature 280: whole or empty + "too long" (a panel path cut at 259 bytes right after a
+                // backslash was its parent folder - the command ran on another folder)
+                userMenuAdvancedData.FullPathLeftTooLong = FALSE;
+                userMenuAdvancedData.FullPathRightTooLong = FALSE;
                 if (LeftPanel->Is(ptDisk))
-                {
-                    lstrcpyn(userMenuAdvancedData.FullPathLeft, LeftPanel->GetPath(), MAX_PATH);
-                    if (!SalPathAddBackslash(userMenuAdvancedData.FullPathLeft, MAX_PATH))
-                        userMenuAdvancedData.FullPathLeft[0] = 0;
-                }
+                    userMenuAdvancedData.FullPathLeftTooLong = !SalUMPathWithBackslash(LeftPanel->GetPath(), userMenuAdvancedData.FullPathLeft, MAX_PATH);
                 else
                     userMenuAdvancedData.FullPathLeft[0] = 0;
                 if (RightPanel->Is(ptDisk))
-                {
-                    lstrcpyn(userMenuAdvancedData.FullPathRight, RightPanel->GetPath(), MAX_PATH);
-                    if (!SalPathAddBackslash(userMenuAdvancedData.FullPathRight, MAX_PATH))
-                        userMenuAdvancedData.FullPathRight[0] = 0;
-                }
+                    userMenuAdvancedData.FullPathRightTooLong = !SalUMPathWithBackslash(RightPanel->GetPath(), userMenuAdvancedData.FullPathRight, MAX_PATH);
                 else
                     userMenuAdvancedData.FullPathRight[0] = 0;
                 userMenuAdvancedData.FullPathInactive = (activePanel == LeftPanel) ? userMenuAdvancedData.FullPathRight : userMenuAdvancedData.FullPathLeft;
+                userMenuAdvancedData.FullPathInactiveTooLong = (activePanel == LeftPanel) ? userMenuAdvancedData.FullPathRightTooLong : userMenuAdvancedData.FullPathLeftTooLong;
 
                 userMenuAdvancedData.CompareName1[0] = 0;
                 userMenuAdvancedData.CompareName2[0] = 0;
@@ -2799,19 +2797,17 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                         }
                     }
                 }
+                // feature 280: a name to compare whole, or empty + "too long" (the User Menu refuses a
+                // command that uses it - the compare dialog opened empty without a reason)
+                userMenuAdvancedData.CompareName1TooLong = FALSE;
+                userMenuAdvancedData.CompareName2TooLong = FALSE;
                 if (f1 != NULL)
-                {
-                    lstrcpyn(userMenuAdvancedData.CompareName1, activePanel->GetPath(), MAX_PATH);
-                    if (!SalPathAppend(userMenuAdvancedData.CompareName1, f1->Name, MAX_PATH))
-                        userMenuAdvancedData.CompareName1[0] = 0;
-                }
+                    userMenuAdvancedData.CompareName1TooLong = !SalUMJoinWhole(activePanel->GetPath(), f1->Name, userMenuAdvancedData.CompareName1, MAX_PATH);
                 if (f2 != NULL)
                 {
-                    lstrcpyn(userMenuAdvancedData.CompareName2,
-                             (f2FromInactPanel ? inactivePanel : activePanel)->GetPath(), MAX_PATH);
-                    if (!SalPathAppend(userMenuAdvancedData.CompareName2, f2->Name, MAX_PATH))
-                        userMenuAdvancedData.CompareName2[0] = 0;
-                    else
+                    userMenuAdvancedData.CompareName2TooLong = !SalUMJoinWhole((f2FromInactPanel ? inactivePanel : activePanel)->GetPath(),
+                                                                                f2->Name, userMenuAdvancedData.CompareName2, MAX_PATH);
+                    if (!userMenuAdvancedData.CompareName2TooLong)
                     {
                         if (f2FromInactPanel && inactivePanel == LeftPanel)
                             userMenuAdvancedData.CompareNamesReversed = TRUE;

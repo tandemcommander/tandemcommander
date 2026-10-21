@@ -5,6 +5,7 @@
 #include "precomp.h"
 #include "salheapstr.h" // feature 183
 #include "salbatchtext.h" // feature 226
+#include "salumvalue.h"   // feature 280
 
 #include "stswnd.h"
 #include "editwnd.h"
@@ -442,7 +443,7 @@ static BOOL WriteUserMenuBat(HANDLE file, const CSalBatchText* bat)
 }
 
 // see description in mainwnd.h
-BOOL GetNextFileFromPanel(int index, char* path, char* name, void* param)
+int GetNextFileFromPanel(int index, char* path, char* name, void* param)
 {
     CALL_STACK_MESSAGE2("GetNextFileFromPanel(%d, , ,)", index);
     CUMDataFromPanel* data = (CUMDataFromPanel*)param;
@@ -465,9 +466,11 @@ BOOL GetNextFileFromPanel(int index, char* path, char* name, void* param)
                 SalMessageBox(data->Window->HWindow, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE),
                               MB_OK | MB_ICONEXCLAMATION);
                 data->Count = 0;
-                return FALSE;
+                return UMNEXT_END;
             }
-            lstrcpyn(path, data->Window->GetPath(), MAX_PATH); // User Menu path buffer is MAX_PATH (feature 027)
+            // feature 280: whole or "too long" - never cut (the User Menu refuses what it cannot hold)
+            if (!SalUMCopyWhole(data->Window->GetPath(), path, UM_ITEM_TEXT_SIZE))
+                return UMNEXT_TOOLONG;
             if (index < 0 || index >= data->Window->Dirs->Count + data->Window->Files->Count ||
                 index == 0 && upDir)
             {
@@ -476,21 +479,26 @@ BOOL GetNextFileFromPanel(int index, char* path, char* name, void* param)
             else // copy the name for others
             {
                 CFileData* f = &((index < data->Window->Dirs->Count) ? data->Window->Dirs->At(index) : data->Window->Files->At(index - data->Window->Dirs->Count));
-                lstrcpyn(name, f->Name, MAX_PATH); // User Menu name buffer is MAX_PATH (feature 027)
+                if (!SalUMCopyWhole(f->Name, name, UM_ITEM_TEXT_SIZE)) // feature 280
+                return UMNEXT_TOOLONG;
             }
-            return TRUE;
+            return UMNEXT_ITEM;
         }
         data->Index = new int[data->Count];
         if (data->Index == NULL)
-            return FALSE; // error
+            return UMNEXT_END; // error
         data->Window->GetSelItems(data->Count, data->Index);
     }
     if (index >= 0 && index < data->Count)
     {
         CFileData* f = &((data->Index[index] < data->Window->Dirs->Count) ? data->Window->Dirs->At(data->Index[index]) : data->Window->Files->At(data->Index[index] - data->Window->Dirs->Count));
-        lstrcpyn(path, data->Window->GetPath(), MAX_PATH); // User Menu path buffer is MAX_PATH (feature 027)
-        lstrcpyn(name, f->Name, MAX_PATH);                 // User Menu name buffer is MAX_PATH (feature 027)
-        return TRUE;
+        // feature 280: whole or "too long" (the selection route cut the panel path at 259 bytes)
+        if (!SalUMCopyWhole(data->Window->GetPath(), path, UM_ITEM_TEXT_SIZE) ||
+            !SalUMCopyWhole(f->Name, name, UM_ITEM_TEXT_SIZE))
+        {
+            return UMNEXT_TOOLONG;
+        }
+        return UMNEXT_ITEM;
     }
     else
     {
@@ -501,7 +509,7 @@ BOOL GetNextFileFromPanel(int index, char* path, char* name, void* param)
         }
         data->Window->SetSel(FALSE, -1, TRUE);                        // explicit redraw
         PostMessage(data->Window->HWindow, WM_USER_SELCHANGED, 0, 0); // sel-change notify
-        return FALSE;
+        return UMNEXT_END;
     }
 }
 
@@ -756,6 +764,42 @@ void RemoveRedundantBackslahes(char *text)
 }
 */
 
+// feature 280: a command of the route without a shell, prepared (expanded) for one item; the commands
+// are started only once every item was prepared - a refusal leaves all of them unrun, as the batch
+// file of the route through a shell
+struct CUserMenuPreparedRun
+{
+    char* Block; // Command, Arguments, InitDir, ItemDir - each with its terminator
+    const char* Command;
+    const char* Arguments;
+    const char* InitDir; // empty = no Initial Directory
+    const char* ItemDir; // the item's folder (feature 234: the current folder without an Initial Directory)
+
+    CUserMenuPreparedRun() { Block = NULL; }
+    ~CUserMenuPreparedRun() { free(Block); }
+
+    BOOL Set(const char* command, const char* arguments, const char* initDir, const char* itemDir)
+    {
+        size_t l1 = strlen(command) + 1, l2 = strlen(arguments) + 1, l3 = strlen(initDir) + 1, l4 = strlen(itemDir) + 1;
+        Block = (char*)malloc(l1 + l2 + l3 + l4);
+        if (Block == NULL)
+            return FALSE;
+        char* s = Block;
+        memcpy(s, command, l1);
+        Command = s;
+        s += l1;
+        memcpy(s, arguments, l2);
+        Arguments = s;
+        s += l2;
+        memcpy(s, initDir, l3);
+        InitDir = s;
+        s += l3;
+        memcpy(s, itemDir, l4);
+        ItemDir = s;
+        return TRUE;
+    }
+};
+
 void CMainWindow::UserMenu(HWND parent, int itemIndex, UM_GetNextFileName getNextFile, void* data,
                            CUserMenuAdvancedData* userMenuAdvancedData)
 {
@@ -782,28 +826,34 @@ void CMainWindow::UserMenu(HWND parent, int itemIndex, UM_GetNextFileName getNex
                               LoadStr(IDS_USERMENUERROR), MB_OK | MB_ICONEXCLAMATION);
                 ok = FALSE;
             }
+            // feature 280: a panel path that does not fit is "too long name", not "not defined" (it was
+            // cut at 259 bytes - after a backslash that was its parent folder)
             if (ok && userMenuValidationData.UsesFullPathLeft && userMenuAdvancedData->FullPathLeft[0] == 0)
             {
-                SalMessageBox(parent, LoadStr(IDS_NOTDEFFULLPATHLEFT),
+                SalMessageBox(parent, LoadStr(userMenuAdvancedData->FullPathLeftTooLong ? IDS_TOOLONGNAME : IDS_NOTDEFFULLPATHLEFT),
                               LoadStr(IDS_USERMENUERROR), MB_OK | MB_ICONEXCLAMATION);
                 ok = FALSE;
             }
             if (ok && userMenuValidationData.UsesFullPathRight && userMenuAdvancedData->FullPathRight[0] == 0)
             {
-                SalMessageBox(parent, LoadStr(IDS_NOTDEFFULLPATHRIGHT),
+                SalMessageBox(parent, LoadStr(userMenuAdvancedData->FullPathRightTooLong ? IDS_TOOLONGNAME : IDS_NOTDEFFULLPATHRIGHT),
                               LoadStr(IDS_USERMENUERROR), MB_OK | MB_ICONEXCLAMATION);
                 ok = FALSE;
             }
             if (ok && userMenuValidationData.UsesFullPathInactive && userMenuAdvancedData->FullPathInactive[0] == 0)
             {
-                SalMessageBox(parent, LoadStr(IDS_NOTDEFFULLPATHINACTIVE),
+                SalMessageBox(parent, LoadStr(userMenuAdvancedData->FullPathInactiveTooLong ? IDS_TOOLONGNAME : IDS_NOTDEFFULLPATHINACTIVE),
                               LoadStr(IDS_USERMENUERROR), MB_OK | MB_ICONEXCLAMATION);
                 ok = FALSE;
             }
             if (ok && userMenuValidationData.UsedCompareType != 0)
             {
+                // feature 280: a name that did not fit (empty, never cut) is not asked for again: the
+                // "files or folders" question below would be asked for two names that exist
+                BOOL compareTooLong = userMenuAdvancedData->CompareName1TooLong || userMenuAdvancedData->CompareName2TooLong;
                 if ((userMenuValidationData.UsedCompareType == 6 /* file-or-dir-left-right */ ||
                      userMenuValidationData.UsedCompareType == 7 /* file-or-dir-active-inactive */) &&
+                    !compareTooLong &&
                     userMenuAdvancedData->CompareName1[0] == 0 &&
                     userMenuAdvancedData->CompareName2[0] == 0)
                 { // we don't know if files or directories should be compared, ask the user (the name selection dialog differs for files/directories)
@@ -899,9 +949,17 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         lstrcpyn(userMenuAdvancedData->CompareName2, swap, MAX_PATH);
                     }
                 }
-                if (Configuration.CnfrmShowNamesToCompare ||
-                    userMenuAdvancedData->CompareName1[0] == 0 ||
-                    userMenuAdvancedData->CompareName2[0] == 0)
+                // feature 280: the command compares both names - one that did not fit is refused aloud
+                // (the dialog opened with an empty name and no reason); cleared names are asked for
+                if (!clearNames && compareTooLong)
+                {
+                    SalMessageBox(parent, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_USERMENUERROR),
+                                  MB_OK | MB_ICONEXCLAMATION);
+                    ok = FALSE;
+                }
+                else if (Configuration.CnfrmShowNamesToCompare ||
+                         userMenuAdvancedData->CompareName1[0] == 0 ||
+                         userMenuAdvancedData->CompareName2[0] == 0)
                 {
                     CCompareArgsDlg dlg(parent, comparingFiles, userMenuAdvancedData->CompareName1,
                                         userMenuAdvancedData->CompareName2, &Configuration.CnfrmShowNamesToCompare);
@@ -922,6 +980,15 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             DWORD lastErr;
             CSalBatchText bat;             // feature 226: the batch text (UTF-8), written once its encoding is known
             BOOL skipErrorMessage = FALSE; // feature 226: set before the goto ERROR_LABEL below (it was read uninitialized)
+            // feature 280: the items' folders and names whole (UM_ITEM_TEXT_SIZE); the route without a
+            // shell keeps its prepared commands and starts them only when every item was prepared
+            CSalMaxPathBuffer path, name;
+            if (path.Get() == NULL || name.Get() == NULL)
+            {
+                TRACE_E(LOW_MEMORY);
+                return;
+            }
+            TIndirectArray<CUserMenuPreparedRun> runs(10, 50);
 
         _TRY_AGAIN:
 
@@ -971,14 +1038,25 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             char prevInitDir[MAX_PATH];
             initDir[0] = 0;
             arguments[0] = 0;
-            char path[MAX_PATH], name[MAX_PATH];
             BOOL error;
             error = FALSE;
             BOOL fileNameUsed;
             BOOL firstRound;
             firstRound = TRUE;
-            while (getNextFile(index, path, name, data))
+            int next;
+            while ((next = getNextFile(index, path, name, data)) != UMNEXT_END)
             {
+                // feature 280: an item the User Menu cannot hold whole (its expansion and folders are
+                // MAX_PATH) is refused before its command is prepared - nothing runs (the batch file is
+                // not run, the route without a shell starts nothing); the callbacks no longer cut
+                if (next == UMNEXT_TOOLONG || strlen(path) >= MAX_PATH || strlen(name) >= MAX_PATH)
+                {
+                    SalMessageBox(parent, LoadStr(IDS_TOOLONGNAME), LoadStr(IDS_ERRORTITLE),
+                                  MB_OK | MB_ICONEXCLAMATION);
+                    error = TRUE;
+                    skipErrorMessage = TRUE;
+                    break;
+                }
                 strcpy(prevInitDir, initDir);
                 if (firstRound)
                 {
@@ -1052,15 +1130,6 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                     }
                     else // direct execution
                     {
-                        // the original launching via CreateProcess couldn't run screen savers (*.SCR)
-                        // or Control Panel items (*.cpl) and people kept complaining
-                        //
-                        // try executing it via ShellExecuteEx - it appears to work ;-)
-                        // additionally, launch restrictions will be handled
-
-                        // set correct default directories for individual drives
-                        MainWindow->SetDefaultDirectories((initDir[0] != 0) ? initDir : NULL);
-
                         // to work with old configurations, remove the " character from the start and end of cmdLine
                         int cmdLen = (int)strlen(cmdLine);
                         if (cmdLen > 1 && cmdLine[0] == '\"' && cmdLine[cmdLen - 1] == '\"')
@@ -1071,25 +1140,26 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         // better not swallow backslashes so that we don't destroy some OLE paths
                         //RemoveRedundantBackslahes(cmdLine); // ShellExecuteEx dislikes multiple backslashes, "$(SalDir)\salamand.exe"
 
-                        CShellExecuteWnd shellExecuteWnd;
-                        SHELLEXECUTEINFO sei;
-                        memset(&sei, 0, sizeof(SHELLEXECUTEINFO));
-                        sei.cbSize = sizeof(SHELLEXECUTEINFO);
-                        sei.hwnd = shellExecuteWnd.Create(parent, "SEW: CMainWindow::UserMenu"); // handle to any message boxes that the system might produce while executing
-                        sei.lpFile = cmdLine;
-                        sei.lpParameters = arguments;
-                        sei.lpDirectory = (initDir[0] != 0) ? initDir : (path[0] != 0 ? path : NULL); // feature 234: else the item's folder
-                        sei.nShow = SW_SHOWNORMAL;
-
-                        if (!SalShellExecuteEx(&sei)) // W launch: names may be outside the ACP (feature 004)
+                        // feature 280: started after the loop, once every item was prepared (a later
+                        // item refused - "too long name" - ran the command for the items before it)
+                        CUserMenuPreparedRun* run = new CUserMenuPreparedRun;
+                        if (run == NULL || !run->Set(cmdLine, arguments, initDir, path))
                         {
-                            DWORD err = GetLastError();
-                            char buff[4 * MAX_PATH];
-                            if (strlen(cmdLine) > 2 * MAX_PATH) // "always false" (arguments are in 'arguments'): shorten overly long command lines for error display
-                                strcpy(cmdLine + 2 * MAX_PATH - 4, "...");
-                            _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_EXECERROR), cmdLine, GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
-                            SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
-                            SalMessageBox(parent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                            if (run != NULL)
+                                delete run;
+                            SalMessageBox(parent, GetErrorText(ERROR_NOT_ENOUGH_MEMORY), LoadStr(IDS_ERRORTITLE),
+                                          MB_OK | MB_ICONEXCLAMATION);
+                            error = TRUE;
+                            break;
+                        }
+                        runs.Add(run);
+                        if (!runs.IsGood())
+                        {
+                            runs.ResetState();
+                            delete run;
+                            SalMessageBox(parent, GetErrorText(ERROR_NOT_ENOUGH_MEMORY), LoadStr(IDS_ERRORTITLE),
+                                          MB_OK | MB_ICONEXCLAMATION);
+                            error = TRUE;
                             break;
                         }
                     }
@@ -1099,6 +1169,46 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                 firstRound = FALSE;
                 if (userMenuValidationData.MustHandleItemsAsGroup)
                     break; // in this mode, only one command is executed for all selected items
+            }
+
+            if (!buildBat && !error) // feature 280: every item prepared - start them, in order
+            {
+                int r;
+                for (r = 0; r < runs.Count; r++)
+                {
+                    CUserMenuPreparedRun* run = runs[r];
+                    // the original launching via CreateProcess couldn't run screen savers (*.SCR)
+                    // or Control Panel items (*.cpl) and people kept complaining
+                    //
+                    // try executing it via ShellExecuteEx - it appears to work ;-)
+                    // additionally, launch restrictions will be handled
+
+                    // set correct default directories for individual drives
+                    MainWindow->SetDefaultDirectories((run->InitDir[0] != 0) ? run->InitDir : NULL);
+
+                    CShellExecuteWnd shellExecuteWnd;
+                    SHELLEXECUTEINFO sei;
+                    memset(&sei, 0, sizeof(SHELLEXECUTEINFO));
+                    sei.cbSize = sizeof(SHELLEXECUTEINFO);
+                    sei.hwnd = shellExecuteWnd.Create(parent, "SEW: CMainWindow::UserMenu"); // handle to any message boxes that the system might produce while executing
+                    sei.lpFile = run->Command;
+                    sei.lpParameters = run->Arguments;
+                    sei.lpDirectory = (run->InitDir[0] != 0) ? run->InitDir : (run->ItemDir[0] != 0 ? run->ItemDir : NULL); // feature 234: else the item's folder
+                    sei.nShow = SW_SHOWNORMAL;
+
+                    if (!SalShellExecuteEx(&sei)) // W launch: names may be outside the ACP (feature 004)
+                    {
+                        DWORD err = GetLastError();
+                        char buff[4 * MAX_PATH];
+                        strcpy_s(cmdLine, USRMNUCMDLINE_MAXLEN, run->Command); // both USRMNUCMDLINE_MAXLEN
+                        if (strlen(cmdLine) > 2 * MAX_PATH) // "always false" (arguments are in 'arguments'): shorten overly long command lines for error display
+                            strcpy(cmdLine + 2 * MAX_PATH - 4, "...");
+                        _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_EXECERROR), cmdLine, GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
+                        SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
+                        SalMessageBox(parent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                        break;
+                    }
+                }
             }
 
             if (buildBat)

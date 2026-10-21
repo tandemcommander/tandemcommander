@@ -84,6 +84,7 @@
 #include "salftplisting.h"    // feature 269
 #include "salarcpathspell.h"  // feature 273
 #include "salftppwd.h"        // feature 277
+#include "salumvalue.h"       // feature 280
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -15404,6 +15405,79 @@ static void TestFtpPwdReply277()
     CHECK(Pwd277("257 '/abc' ist", buf4, 4) == SALFTPPWD_TOOLONG && buf4[0] == 0);
 }
 
+// feature 280: User Menu values whole or not at all (salumvalue.h)
+static void TestUserMenuValue280()
+{
+    char buf[MAX_PATH];
+    // a folder of 'len' bytes: "C:\" + 'p' x (len - 3)
+    auto folder = [](int len) { return std::string("C:\\") + std::string(len - 3, 'p'); };
+
+    // SalUMCopyWhole: 259 bytes fit MAX_PATH, 260 do not; a refusal leaves the buffer empty
+    std::string f259 = folder(259), f260 = folder(260);
+    strcpy(buf, "old");
+    CHECK(SalUMCopyWhole(f259.c_str(), buf, MAX_PATH) && strcmp(buf, f259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUMCopyWhole(f260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    CHECK(SalUMCopyWhole("", buf, 1) && buf[0] == 0);
+    CHECK(!SalUMCopyWhole("a", buf, 1) && buf[0] == 0);
+    CHECK(!SalUMCopyWhole(NULL, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUMCopyWhole("a", NULL, MAX_PATH));
+    CHECK(!SalUMCopyWhole("a", buf, 0));
+
+    // SalUMPathWithBackslash: "C:\a" -> "C:\a\"; a root and an ending backslash stay; 258 + '\'
+    // fits, 259 + '\' does not
+    CHECK(SalUMPathWithBackslash("C:\\a", buf, MAX_PATH) && strcmp(buf, "C:\\a\\") == 0);
+    CHECK(SalUMPathWithBackslash("C:\\", buf, MAX_PATH) && strcmp(buf, "C:\\") == 0);
+    CHECK(SalUMPathWithBackslash("\\\\srv\\share\\", buf, MAX_PATH) && strcmp(buf, "\\\\srv\\share\\") == 0);
+    CHECK(SalUMPathWithBackslash("", buf, MAX_PATH) && buf[0] == 0);
+    std::string f258 = folder(258);
+    CHECK(SalUMPathWithBackslash(f258.c_str(), buf, MAX_PATH) && strlen(buf) == 259 && buf[258] == '\\');
+    strcpy(buf, "old");
+    CHECK(!SalUMPathWithBackslash(f259.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    // the measured defect: a 260-byte folder whose first 259 bytes end with a backslash - the old
+    // copy (lstrcpyn at MAX_PATH) kept its parent and "added" no backslash: refused now
+    std::string parent = folder(258) + "\\";
+    std::string cut260 = parent + "b";
+    CHECK(cut260.size() == 260);
+    char old[MAX_PATH];
+    lstrcpynA(old, cut260.c_str(), MAX_PATH); // the negative control: the old copy
+    CHECK(strcmp(old, parent.c_str()) == 0);   // ... is the parent folder
+    strcpy(buf, "old");
+    CHECK(!SalUMPathWithBackslash(cut260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    // a UTF-8 folder of 90 CJK letters (270 bytes) under "C:\": refused, never cut inside a letter
+    std::string cjk = "C:\\";
+    for (int i = 0; i < 90; i++)
+        cjk += "\xE4\xB8\x80";
+    CHECK(!SalUMPathWithBackslash(cjk.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    char big[400];
+    CHECK(SalUMPathWithBackslash(cjk.c_str(), big, (int)sizeof(big)) && strlen(big) == cjk.size() + 1);
+
+    // SalUMJoinWhole: SalPathAppend's separators; whole or refused
+    CHECK(SalUMJoinWhole("C:\\a", "b.txt", buf, MAX_PATH) && strcmp(buf, "C:\\a\\b.txt") == 0);
+    CHECK(SalUMJoinWhole("C:\\a\\", "b.txt", buf, MAX_PATH) && strcmp(buf, "C:\\a\\b.txt") == 0);
+    CHECK(SalUMJoinWhole("C:\\", "b.txt", buf, MAX_PATH) && strcmp(buf, "C:\\b.txt") == 0);
+    CHECK(SalUMJoinWhole("C:\\a", "\\b.txt", buf, MAX_PATH) && strcmp(buf, "C:\\a\\b.txt") == 0);
+    CHECK(SalUMJoinWhole("C:\\a", "", buf, MAX_PATH) && strcmp(buf, "C:\\a") == 0);
+    CHECK(SalUMJoinWhole("", "b.txt", buf, MAX_PATH) && strcmp(buf, "b.txt") == 0);
+    // exactly 259 bytes fit, 260 do not (folder 250 + '\' + 8 / 9 bytes)
+    std::string f250 = folder(250);
+    CHECK(SalUMJoinWhole(f250.c_str(), "12345678", buf, MAX_PATH) && strlen(buf) == 259);
+    strcpy(buf, "old");
+    CHECK(!SalUMJoinWhole(f250.c_str(), "123456789", buf, MAX_PATH) && buf[0] == 0);
+    // the 259-byte cut ending with a backslash + a name: refused (the old SalPathAppend refused it too)
+    CHECK(!SalUMJoinWhole(old, "a.txt", buf, MAX_PATH) && buf[0] == 0);
+    // a name of 90 CJK letters + ".txt" (274 bytes) in a short folder: refused; fits a big buffer
+    std::string longName;
+    for (int i = 0; i < 90; i++)
+        longName += "\xE4\xB8\x80";
+    longName += ".txt";
+    CHECK(!SalUMJoinWhole("C:\\s", longName.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    CHECK(SalUMJoinWhole("C:\\s", longName.c_str(), big, (int)sizeof(big)) && strlen(big) == 5 + longName.size());
+    CHECK(!SalUMJoinWhole(NULL, "a", buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUMJoinWhole("a", NULL, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUMJoinWhole("a", "b", NULL, MAX_PATH));
+}
+
 // feature 273: the path inside an archive re-spelled as the listing spells it (salarcpathspell.h);
 // the fake listing reuses FakeDir252, the comparison is the listing's: the legacy byte fold
 // (= StrICmpEx) or exact bytes (= StrCmpEx, SALDIRFLAG_CASESENSITIVE)
@@ -15619,6 +15693,7 @@ int main(int argc, char** argv)
     TestArcPathRespell273();
     TestInfoLineBuf276();
     TestFtpPwdReply277();
+    TestUserMenuValue280();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

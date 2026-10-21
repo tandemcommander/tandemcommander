@@ -311,13 +311,20 @@ public:
 // UM_GetNextFileName - function type that gradually returns file names for U.M.
 //
 // index - order of the next name (starting from zero and increasing by one)
-// path  - buffer for the path [MAX_PATH]
-// name  - buffer for the file name [MAX_PATH]
+// path  - buffer for the path [UM_ITEM_TEXT_SIZE]
+// name  - buffer for the file name [UM_ITEM_TEXT_SIZE]
 // param - helper pointer for user data
 //
-// returns success - continue retrieving more names? (returns FALSE - ends the enumeration)
+// returns UMNEXT_ITEM - 'path' and 'name' hold the next item, whole; UMNEXT_END - ends the
+// enumeration; UMNEXT_TOOLONG - the item's folder or name does not fit the buffers (feature 280:
+// a value is never cut - the User Menu refuses the command)
 
-typedef BOOL (*UM_GetNextFileName)(int index, char* path, char* name, void* param);
+#define UM_ITEM_TEXT_SIZE SAL_MAX_PATH_UTF8 // feature 280: any Windows path, whole (heap buffers)
+#define UMNEXT_END 0
+#define UMNEXT_ITEM 1
+#define UMNEXT_TOOLONG 2
+
+typedef int (*UM_GetNextFileName)(int index, char* path, char* name, void* param);
 
 struct CUMDataFromPanel
 {
@@ -338,7 +345,7 @@ struct CUMDataFromPanel
     }
 };
 
-BOOL GetNextFileFromPanel(int index, char* path, char* name, void* param);
+int GetNextFileFromPanel(int index, char* path, char* name, void* param);
 
 struct CUserMenuAdvancedData;
 struct IContextMenu2;

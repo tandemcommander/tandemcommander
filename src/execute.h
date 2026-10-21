@@ -119,6 +119,13 @@ struct CUserMenuAdvancedData // additional data used only for the User Menu: arr
     char CompareName2[MAX_PATH];                // second full name for compare (file or directory)
     BOOL CompareNamesAreDirs;                   // TRUE = CompareName1 and CompareName2 are directories (otherwise they're files)
     BOOL CompareNamesReversed;                  // TRUE = names for compare come from different panels + CompareName1 is from the right panel
+    // feature 280: TRUE = the value is empty because it does not fit MAX_PATH (never cut) - a command
+    // using it is refused with "too long name"
+    BOOL FullPathLeftTooLong = FALSE;
+    BOOL FullPathRightTooLong = FALSE;
+    BOOL FullPathInactiveTooLong = FALSE;
+    BOOL CompareName1TooLong = FALSE;
+    BOOL CompareName2TooLong = FALSE;
 };
 
 //******************************************************************************

@@ -172,7 +172,7 @@ list that fits.
 
 ### Measurable Outcomes
 
-- **SC-001**: Probe `um280_probe.ps1`: 20 / 0 (against 15 / 5 on the build of d7405c6a; the
+- **SC-001**: Probe `um280_probe.ps1`: 24 / 0 (20 measured rows + 2 controls added later; against 15 / 5 on the build of d7405c6a; the
   rows FPRCUT, FPRLONG, MIXDIRECT, LISTFULL, CMPLONG FAIL before).
 - **SC-002**: The probes of features 226, 229 and 234 keep their results after the change.
 - **SC-003**: No User Menu route copies an item's folder or name, a panel path or a compare name
