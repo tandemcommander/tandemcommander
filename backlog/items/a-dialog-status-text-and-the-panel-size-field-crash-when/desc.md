@@ -8,7 +8,7 @@ source: measure:293
 who: agent
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 9aa937a1
 effort: S
 feature: -
 related: []
@@ -68,3 +68,4 @@ once by hand, is the fix to choose.
 
 - 2026-10-22 — created (source measure:293)
 - 2026-10-22 — moved to Next position 2
+- 2026-10-22 — verified at 9aa937a1: confirmed by reading at 9aa937a1: SetText frees the stored realloc result on a later failure; SetSize writes Size[0] before the NULL check
