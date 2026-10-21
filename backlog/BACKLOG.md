@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [User Menu on items in folders of 260 or more bytes: work, or refuse aloud](items/user-menu-long-paths/desc.md) | bug | 4 | long-paths | 280 |
 
 ## Next
 
@@ -207,6 +206,8 @@ Last triaged: 2026-10-20
 | [The information line keeps using a freed text when memory runs out as it grows](items/the-information-line-keeps-using-a-freed-text-when-memory/desc.md) | bug | 7 | panels-ui | review:276 | 2026-10-21 |
 | [The question whether to create a missing folder cuts a long path inside a letter](items/the-question-whether-to-create-a-missing-folder-cuts-a-long/desc.md) | bug | 2 | long-paths | review:274 | 2026-10-21 |
 | [unchm plug-in: a member path over 259 bytes overflows a stack buffer on F3 / F4](items/unchm-plug-in-a-member-path-over-259-bytes-overflows-a-stack/desc.md) | bug | 7 | archives | measure:275 | 2026-10-21 |
+| [User Menu from Find results in folders of 260 or more bytes driven by a person](items/user-menu-from-find-results-in-folders-of-260-or-more-bytes/desc.md) | person-step | 4 | long-paths | leftover:280 | 2026-10-21 |
+| [User Menu list commands refused when the first selected item does not fit 259 bytes](items/user-menu-list-commands-refused-when-the-first-selected-item/desc.md) | improvement | 2 | long-paths | leftover:280 | 2026-10-21 |
 
 ## Parked
 

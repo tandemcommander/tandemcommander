@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
@@ -3604,3 +3604,26 @@ a few early ones are out of sequence).
   (drop server + OpenSSH symlink rows; negative control: zero confirmed taken as there deletes the
   local folder in 3 rows); harness 239 -> 265 / 0; 133's probe 76 / 0; one refute-first review (no
   MUST; SHOULD-1 fixed, FR-007 driven by the reviewer).
+- 280-user-menu-long-paths: the User Menu cut every value at 259 bytes - `$(FullPathLeft/Right/
+  Inactive)` of a panel showing a 260-byte folder whose first 259 bytes end with a backslash gave
+  the folder's PARENT (a command ran on another folder), a longer one said "not defined"; a
+  command run without a shell over a selection ran for the first items and then refused a long
+  name; `$(ListOfSelectedFullNames)` refused a list that fits; a too long name to compare opened
+  the compare dialog empty. Now every value is whole or refused with "too long name" before
+  anything runs (`salumvalue.h`, saltests): the enumeration (`UM_GetNextFileName`, now
+  `UMNEXT_ITEM / END / TOOLONG` in `UM_ITEM_TEXT_SIZE` heap buffers) never cuts, `UserMenu`
+  refuses an item of `MAX_PATH`+ bytes, the route without a shell prepares every command and
+  starts them only when all were prepared (any refusal - also Cancel at a missing environment
+  variable - now starts none, as the batch file), full paths and compare names carry "too long"
+  flags, the panel's full-name list is built whole (`CSalPathBuf`, as Find). Traps: the
+  enumeration's end cleared the selection - with the starts after it a failed start lost the
+  selection (review 1: the caller clears it, `EndReached` + `UserMenu`'s result); a second
+  compare name only guessed in the other panel must stay "no match" (review 1); a test passing
+  size 300 for a 260-byte buffer opened a run-time check dialog on the visible desktop. Limits:
+  a group command whose first item does not fit is refused although the list holds it (Inbox
+  `user-menu-list-commands-refused-when-the-first-selected-item`); the Find route is a person's
+  (`user-menu-from-find-results-in-folders-of-260-or-more-bytes`). From backlog item
+  `user-menu-long-paths`. Probe `um280_probe` 15 / 5 -> 30 / 0 rows (15 cases; before re-measured
+  with the final probe 23 / 5; negative controls: the old copy / starts, review 1's bugs, a
+  selection never cleared - each fails its rows); `TestUserMenuValue280`; 226 / 229 / 234 probes
+  unchanged; two refute-first reviews (no MUST; three SHOULDs fixed).
