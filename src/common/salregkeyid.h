@@ -28,6 +28,12 @@
 //                     set unchanged) when 'parent' is empty, the set is full or
 //                     the text does not fit SAL_REGKEYID_MAX - never cut.
 // SalRegKeyIdsAnySame / SalRegKeyIdsAnyWithin - some pair of the two sets.
+// SalRegKeyIdBelow  - the path of 'key' below 'outer' (the part after 'outer'
+//                     and its '\') when 'key' lies strictly inside 'outer';
+//                     NULL when it is 'outer' itself or not inside (feature
+//                     294: a Copy / Move into a key that holds the source
+//                     writes target\P for each subkey path P of the source -
+//                     into the source itself when P begins with this path).
 //
 // Header-only (the plug-ins cannot compile a .cpp from src\common); needs
 // <windows.h>; checked by saltests.
@@ -67,6 +73,16 @@ inline BOOL SalRegKeyIdWithin(const WCHAR* key, const WCHAR* outer)
     if (CompareStringOrdinal(key, lo, outer, lo, TRUE) != CSTR_EQUAL)
         return FALSE;
     return lk == lo || key[lo] == L'\\';
+}
+
+inline const WCHAR* SalRegKeyIdBelow(const WCHAR* key, const WCHAR* outer)
+{
+    int lk = SalRegKeyIdLen(key), lo = SalRegKeyIdLen(outer);
+    if (lk == 0 || lo == 0 || lk <= lo + 1)
+        return NULL;
+    if (key[lo] != L'\\' || CompareStringOrdinal(key, lo, outer, lo, TRUE) != CSTR_EQUAL)
+        return NULL;
+    return key + lo + 1;
 }
 
 inline BOOL SalRegKeyIdsAdd(CSalRegKeyIds& set, const WCHAR* parent, const WCHAR* name)

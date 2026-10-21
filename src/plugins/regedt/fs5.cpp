@@ -847,6 +847,48 @@ static BOOL SafeGetRegKeyIds(int root, LPWSTR key, CSalRegKeyIds& ids, BOOL mayN
     }
 }
 
+// feature 294: does 'root'\'key' hold the subkey path 'below' (opened by name, as the copy opens the
+// source's subkeys)? The path is joined at its full length (never cut). FALSE = do not go on with
+// this key: Cancel or Skip in the existing open-error box ('skip' tells them apart), or low memory
+static BOOL SafeRegKeyHoldsPath(int root, LPWSTR key, LPCWSTR below, BOOL& holds, int errorTitle,
+                                BOOL& skip, BOOL& skipAll)
+{
+    holds = FALSE;
+    size_t keyLen = wcslen(key), belowLen = wcslen(below);
+    LPWSTR path = (LPWSTR)malloc((keyLen + 1 + belowLen + 1) * sizeof(WCHAR));
+    if (path == NULL)
+    {
+        skip = FALSE;
+        return Error(IDS_LOWMEM);
+    }
+    memcpy(path, key, keyLen * sizeof(WCHAR));
+    path[keyLen] = L'\\';
+    memcpy(path + keyLen + 1, below, (belowLen + 1) * sizeof(WCHAR));
+    BOOL ret = TRUE;
+    while (1)
+    {
+        HKEY hKey;
+        int err = RegOpenKeyExW(PredefinedHKeys[root].HKey, path, 0, KEY_READ, &hKey);
+        if (err == ERROR_SUCCESS)
+        {
+            RegCloseKey(hKey);
+            holds = TRUE;
+            break;
+        }
+        if (err == ERROR_FILE_NOT_FOUND)
+            break;
+        // the box names the opened path when it fits the editor's key names, else the source key
+        // (the box's own buffer would shorten a longer one)
+        if (!RegOperationError(err, IDS_OPEN, errorTitle, root, wcslen(path) < MAX_KEYNAME ? path : key, &skip, &skipAll))
+        {
+            ret = FALSE;
+            break;
+        }
+    }
+    free(path);
+    return ret;
+}
+
 // 'parent' joined with 'name' for every identity of 'parent', added to 'ids'
 static BOOL AddRegKeyIdsJoined(CSalRegKeyIds& ids, const CSalRegKeyIds& parent, LPCWSTR name)
 {
@@ -1205,7 +1247,23 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                                 success = FALSE;
                             }
                             else
+                            {
                                 into = SalRegKeyIdsAnyWithin(targetIds, sourceIds);
+                                // feature 294: a target key that holds the source (the key above
+                                // its parent, ...) - the copy writes target\P for each subkey path
+                                // P of the source, into the source itself when the source holds
+                                // its own path below the target (Move then deleted it, data lost);
+                                // refused like "into itself", before anything is written
+                                for (int i = 0; !into && success && !skip && i < sourceIds.Count; i++)
+                                    for (int j = 0; !into && success && !skip && j < targetIds.Count; j++)
+                                    {
+                                        const WCHAR* below = SalRegKeyIdBelow(sourceIds.Id[i], targetIds.Id[j]);
+                                        if (below != NULL &&
+                                            !SafeRegKeyHoldsPath(sourceRoot, sourceKey, below, into, errorTitle, skip, skipAllErrors) &&
+                                            !skip)
+                                            success = FALSE; // Cancel or low memory; Skip leaves the key alone
+                                    }
+                            }
                         }
                         if (success && !skip && into)
                         {

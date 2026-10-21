@@ -13512,6 +13512,43 @@ static void TestRegKeyId292()
     CHECK(!SalRegKeyIdsAnySame(a, b) && !SalRegKeyIdsAnyWithin(a, b) && !SalRegKeyIdsAnyWithin(b, a));
 }
 
+// feature 294: the path of a source key below a target key that holds it - a Copy / Move of
+// Zdroj\K\K into Zdroj\ (target Zdroj\K) writes target\P for each subkey path P of the source, so
+// into the source itself when the source holds K (the remainder) below itself; Move then deleted it
+static void TestRegKeyIdBelow294()
+{
+    const WCHAR* zk = L"\\REGISTRY\\USER\\S-1\\Software\\TcProbe294\\Zdroj\\Kl\x00ED\x010D";
+    const WCHAR* zkk = L"\\REGISTRY\\USER\\S-1\\Software\\TcProbe294\\Zdroj\\Kl\x00ED\x010D\\Kl\x00ED\x010D";
+    const WCHAR* r = SalRegKeyIdBelow(zkk, zk);
+    CHECK(r != NULL && wcscmp(r, L"Kl\x00ED\x010D") == 0);
+    // case ignored (the target written under another root name reports the same name; letters
+    // outside ASCII too), the remainder keeps the source's own spelling
+    r = SalRegKeyIdBelow(zkk, L"\\registry\\user\\s-1\\SOFTWARE\\tcprobe294\\ZDROJ\\KL\x00CD\x010C");
+    CHECK(r != NULL && wcscmp(r, L"Kl\x00ED\x010D") == 0);
+    // two elements below (Hloub\K\M\K into Hloub\: target Hloub\K, remainder M\K)
+    r = SalRegKeyIdBelow(L"\\REGISTRY\\USER\\S-1\\Hloub\\K\\Mez\x00ED\\K", L"\\REGISTRY\\USER\\S-1\\Hloub\\K");
+    CHECK(r != NULL && wcscmp(r, L"Mez\x00ED\\K") == 0);
+    // not strictly inside: the key itself, above it, beside it, a longer name at the last element
+    CHECK(SalRegKeyIdBelow(zk, zk) == NULL);
+    CHECK(SalRegKeyIdBelow(zk, zkk) == NULL);
+    CHECK(SalRegKeyIdBelow(L"\\REGISTRY\\USER\\S-1\\Key2\\Sub", L"\\REGISTRY\\USER\\S-1\\Key") == NULL);
+    CHECK(SalRegKeyIdBelow(L"\\REGISTRY\\USER\\S-1\\Key", L"\\REGISTRY\\USER\\S-1\\Ke") == NULL);
+    CHECK(SalRegKeyIdBelow(L"\\REGISTRY\\MACHINE\\X\\Y", L"\\REGISTRY\\USER\\X") == NULL);
+    CHECK(SalRegKeyIdBelow(L"\\REGISTRY\\USER\\S-1\\Key\\", L"\\REGISTRY\\USER\\S-1\\Key") == NULL); // nothing after '\'
+    // empty or missing identities: never
+    CHECK(SalRegKeyIdBelow(L"", zk) == NULL && SalRegKeyIdBelow(zkk, L"") == NULL);
+    CHECK(SalRegKeyIdBelow(NULL, zk) == NULL && SalRegKeyIdBelow(zkk, NULL) == NULL);
+    // consistent with 292's rule: below => within and not the same
+    const WCHAR* pairs[][2] = {{zkk, zk}, {zk, zk}, {zk, zkk}, {L"\\A\\B2", L"\\A\\B"}, {L"\\a\\b\\c", L"\\A\\B"}};
+    for (auto& p : pairs)
+        CHECK(SalRegKeyIdBelow(p[0], p[1]) == NULL || (SalRegKeyIdWithin(p[0], p[1]) && !SalRegKeyIdSame(p[0], p[1])));
+    // a merge into the key above the parent (target holds the source) is "below" too - the caller
+    // refuses only when the source holds the remainder below itself; target inside the source is
+    // 292's case (SalRegKeyIdWithin), never "below"
+    CHECK(SalRegKeyIdBelow(L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K", L"\\REGISTRY\\USER\\S-1\\Plochy\\K") != NULL);
+    CHECK(SalRegKeyIdBelow(L"\\REGISTRY\\USER\\S-1\\Zdroj\\K\\K\\K", L"\\REGISTRY\\USER\\S-1\\Zdroj\\K\\K\\K\\K") == NULL);
+}
+
 // feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
 // formatted - before, FormatMessage without arguments failed (87) and the program showed "System
 // error N, text description is not available."; the inserts become "..." and no '%' is left
@@ -16922,6 +16959,7 @@ int main(int argc, char** argv)
     TestHexPattern257();
     TestRegFindTextToCodePage278();
     TestRegKeyId292();
+    TestRegKeyIdBelow294();
     TestDeleteAsDirLink197();
     TestAttrsLink253();
     TestAttrsFileLink272();
