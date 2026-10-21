@@ -46,3 +46,81 @@ Registry restored, identical (SHA-256 8079B0...0CAE).
 - The rule for "twins somewhere in these paths" goes into `src/common/salcasetwins.h` with saltests
   checks (the ZIP plug-in compiles header-only rules).
 - Low memory while collecting the names: refuse with IDS_LOWMEM (nothing changed).
+
+## Analyze (speckit-analyze)
+
+No CRITICAL / HIGH. Fixed: C1 (MEDIUM - FR-004 / SC-003 had no check -> T006 confirms by reading).
+Accepted: C2 (MEDIUM - Move of a folder into a twin ZIP not driven by the probe; the rule is
+unit-checked, `SalZipMemberIsOrIsIn` with `nameIgnoreCase` FALSE, T004), C3 (LOW - the low-memory
+refusal cannot be driven; reviewed by reading), C4 (LOW - exact duplicate members: code path
+unchanged, research R4). Second run: no new findings.
+
+## Work
+
+- `src/common/salcasetwins.h`: `SalPathsHaveCaseTwins(paths, count, lowMemory)` - every prefix of
+  every path ending at a whole part (before a separator that follows a part; the whole path unless it
+  ends with a separator) is one name; 252's `HaveTwinsInPlace` over all of them. Low memory: TRUE
+  and `*lowMemory` TRUE.
+- `src/common/salzipname.h`: `SalZipMemberIs(..., int* rootBytes, BOOL nameIgnoreCase = TRUE)` and
+  `SalZipMemberIsOrIsIn(..., BOOL rootIgnoreCase, BOOL nameIgnoreCase = TRUE)` - the part below the
+  panel's folder by `nameIgnoreCase` (was always TRUE). Other callers: saltests only (grep).
+- `src/plugins/zip/add.cpp` `CZipPack::MatchFiles`: after the HS_UNIX pre-pass, a second walk over
+  `NewCentrDir` (in memory, bounds checked by the first pass) collects `ProcessName` of every header
+  into one buffer; `SalPathsHaveCaseTwins` TRUE -> `pathFlag = 0`, `nameIgnoreCase = FALSE` for both
+  matches. Low memory -> IDS_LOWMEM before the match loop (no question, nothing on the delete list).
+  `Unix` unchanged. `ProcessName` also sets the directory attribute of a header whose name ends with a
+  separator - the match loop calls it on every header anyway, so the central directory written is the
+  same.
+- Trap met (build attempt 1 of the plug-in): `deflate.h` of the ZIP plug-in `#define Len dl.len` -
+  `salcasetwins.h` included after it did not compile (`SalCaseTwinName::Len`). The header is now
+  included before `deflate.h`, and `add.cpp` fills the struct by aggregate initialization (the token
+  `.Len` in `add.cpp` would expand too). Attempt 2: `BUILD SUCCEEDED`.
+
+## Checks
+
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- `.\build.cmd` -> `BUILD SUCCEEDED` (no `warning C` / `error C`); zip.spl rebuilt after the last
+  source edit.
+- `saltests.exe` -> `saltests: 25277 checks, 0 failed` (TestPathTwins290: the item's cases, a 4000-set
+  randomized cross-check against `SalDirTreeHasCaseTwins` on the case-sensitive tree, the
+  `nameIgnoreCase` variants of `SalZipMemberIs` / `SalZipMemberIsOrIsIn`).
+- Unit negative control: the prefixes disabled in `SalPathsHaveCaseTwins` (only whole paths) ->
+  `saltests: 25277 checks, 9 failed` (the item's cases, deep twins, the legacy pair and the
+  cross-check `agree == rounds`); restored (git grep NEGCTL290 -> nothing), rebuilt, 0 failed.
+- FR-004 / SC-003 by reading: the new walk reads `NewCentrDir`, which the add already holds; no file
+  read was added (the diff of `add.cpp` holds no read call).
+
+## Measured (after)
+
+Probe `probe/result_after.txt`: **18 PASS, 0 FAIL, 0 NOT DRIVEN** (before 6 FAIL):
+- ZIP-ADDDIR: `D/x.txt=X, d/x.txt=NEW, d/y.txt=Y`, no question;
+- ZIP-ADDFILE: `A.txt=UPPER, a.txt=NEW, z.txt`, 1 question;
+- ZIP-ADDFOLDER: `D/x.txt=X, d/x.txt=NEW, d/y.txt=Y`;
+- ZIP-NEWNAME: `A.txt, B.txt=NEW, a.txt, b.txt=old`, no question (the known change);
+- UNIX-ADDFILE: `A.txt=UPPER, a.txt=NEW, z.txt`, 1 question; UNIX-ADDFOLDER as ZIP-ADDFOLDER;
+- ZIP-CONTROL / UNIX-CONTROL / UNIX-ADDDIR: as before.
+- Negative control (T008): `SalPathsHaveCaseTwins` call short-circuited in `MatchFiles` ->
+  `probe/result_negctl_no_twin_switch.txt` **12 PASS / 6 FAIL** - exactly the six rows of the
+  before-run, with the before-run's archives; restored (git grep NEGCTL290 -> nothing), rebuilt.
+- Registry restored and identical (SHA-256 8079B0...0CAE) in every run.
+
+## Regression probes (T009)
+
+- 271's `zip271_probe.ps1` -> `probe/regress_zip271_290.txt` **16 PASS / 0 FAIL**.
+- 110's `zipname_probe.ps1`, first run -> **33 PASS / 9 FAIL**: rows `r_3ys`, `r_3ysA`, `r_3ysy`,
+  `r_3yyy`, `r_3all`, `r_3yskipall`, `r_3yc`, `r_3ysAU`, `r_3ysAM` (review SF1 of 110: an added file
+  equal ignoring case to several members `{cx, Cx, CX}` / `{ax, Ax, AX}`, mixed answers). These
+  archives hold case twins - since 271 they are listed case-sensitively - so 290 matches the added
+  file by its exact name: one question instead of three, and the other members keep their content in
+  every row (for example `r_3yyy`, Yes / Yes / Yes: before, `Cx` and `CX` were deleted; now kept).
+  Every result is the intended behaviour of the item; no member the user did not name is deleted. 110
+  did not decide that every case variant is asked (its SF1 fixed the delete-before-store order under
+  the old matching; that invariant code is unchanged). The nine rows' `Q` / `Expect` were
+  re-baselined in `specs/110-zip-plugin-name-matching/probe/zipname_probe.ps1` with a comment naming
+  290; re-run -> `probe/regress_zipname110_290.txt` **42 PASS / 0 FAIL / 0 NOT DRIVEN**.
+  Consequence recorded: the mixed-answer path of 110's `CAddInfo::Replaced` is now reached only by
+  byte-identical duplicate members (or legacy text equal by `CompareStringA` but not by the fold).
+- 108's `namecoll_probe.ps1` (F4 edits packed back into archives holding colliding names, among them
+  h-circumflex / L-acute, a pair of the legacy fold - a twin archive for 290) ->
+  `probe/regress_namecoll108_290.txt` **30 PASS / 0 FAIL / 0 NOT DRIVEN**, F4 retries 0 (as after 110).
+- Registry restored and identical in every regression run.

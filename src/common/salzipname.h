@@ -337,10 +337,11 @@ inline BOOL SalZipNamePrefix(const char* path, int pathLen, const char* prefix, 
 // the item 'target'? Both are full paths inside the archive, '\' separated; the first
 // 'rootLen' bytes of 'target' are the panel's folder in the archive (ZipRoot), compared
 // case-insensitively in a DOS/Windows archive and case-sensitively in a Unix one
-// ('rootIgnoreCase'); the rest (it starts with '\' when 'rootLen' > 0) always ignoring case.
-// '*rootBytes' (may be NULL) = the bytes of 'inZip' that hold the folder.
+// ('rootIgnoreCase'); the rest (it starts with '\' when 'rootLen' > 0) ignoring case unless
+// 'nameIgnoreCase' is FALSE (feature 290: an archive that holds names differing only in case is
+// matched by exact name). '*rootBytes' (may be NULL) = the bytes of 'inZip' that hold the folder.
 inline BOOL SalZipMemberIs(const char* inZip, int inZipLen, const char* target, int targetLen, int rootLen,
-                           BOOL rootIgnoreCase, int* rootBytes)
+                           BOOL rootIgnoreCase, int* rootBytes, BOOL nameIgnoreCase = TRUE)
 {
     if (rootBytes != NULL)
         *rootBytes = 0;
@@ -355,7 +356,7 @@ inline BOOL SalZipMemberIs(const char* inZip, int inZipLen, const char* target, 
     int c = 0;
     if (!SalZipNamePrefix(inZip, li, target, rootLen, rootIgnoreCase, &c))
         return FALSE;
-    if (!SalZipNameEqual(inZip + c, li - c, target + rootLen, lt - rootLen, TRUE))
+    if (!SalZipNameEqual(inZip + c, li - c, target + rootLen, lt - rootLen, nameIgnoreCase))
         return FALSE;
     if (rootBytes != NULL)
         *rootBytes = c;
@@ -365,7 +366,7 @@ inline BOOL SalZipMemberIs(const char* inZip, int inZipLen, const char* target, 
 // The same, for "is the member 'inZip' the item 'target' or inside it?" (a folder that a
 // Move does not add because the archive already holds it or something in it)
 inline BOOL SalZipMemberIsOrIsIn(const char* inZip, int inZipLen, const char* target, int targetLen, int rootLen,
-                                 BOOL rootIgnoreCase)
+                                 BOOL rootIgnoreCase, BOOL nameIgnoreCase = TRUE)
 {
     if (inZip == NULL)
         inZip = "";
@@ -378,7 +379,7 @@ inline BOOL SalZipMemberIsOrIsIn(const char* inZip, int inZipLen, const char* ta
     int c1 = 0;
     int c2 = 0;
     if (!SalZipNamePrefix(inZip, li, target, rootLen, rootIgnoreCase, &c1) ||
-        !SalZipNamePrefix(inZip + c1, li - c1, target + rootLen, lt - rootLen, TRUE, &c2))
+        !SalZipNamePrefix(inZip + c1, li - c1, target + rootLen, lt - rootLen, nameIgnoreCase, &c2))
         return FALSE;
     return c1 + c2 == li || inZip[c1 + c2] == '\\';
 }

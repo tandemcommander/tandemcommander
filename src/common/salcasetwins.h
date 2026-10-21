@@ -106,6 +106,69 @@ inline BOOL SalNamesHaveCaseTwins(const SalCaseTwinName* names, int count)
     return ret;
 }
 
+// The same question for flat paths - the names of an archive's members, '\' or
+// '/' separated (feature 290: the ZIP plug-in's add has the central directory,
+// not a tree). Every prefix of a path that ends at a whole part (before each
+// separator, and the whole path unless it ends with one) is one name, and the
+// check above runs over all of them: two byte-different paths equal ignoring
+// case differ first in a part whose preceding parts are identical - that folder
+// holds twins - and twins 'a', 'b' of folder 'F' give the prefixes 'F\a' and
+// 'F\b'. A separator has no case partner in either rule, so this is exactly
+// SalDirTreeHasCaseTwins on the case-sensitive tree the paths make. 'Len' < 0 =
+// up to the terminator; a NULL 'Name' is "". Low memory: TRUE and '*lowMemory'
+// (may be NULL) TRUE; otherwise '*lowMemory' FALSE.
+inline BOOL SalPathsHaveCaseTwins(const SalCaseTwinName* paths, int count, BOOL* lowMemory)
+{
+    if (lowMemory != NULL)
+        *lowMemory = FALSE;
+    if (paths == NULL || count < 2)
+        return FALSE;
+    size_t total = 0;
+    for (int i = 0; i < count; i++)
+    {
+        const char* s = paths[i].Name != NULL ? paths[i].Name : "";
+        int len = paths[i].Name == NULL ? 0 : (paths[i].Len < 0 ? (int)strlen(s) : paths[i].Len);
+        for (int k = 0; k < len; k++)
+        {
+            if (s[k] == '\\' || s[k] == '/')
+                total++;
+        }
+        total++;
+    }
+    SalCaseTwinName* names = (SalCaseTwinName*)malloc(sizeof(SalCaseTwinName) * total);
+    if (names == NULL)
+    {
+        if (lowMemory != NULL)
+            *lowMemory = TRUE;
+        return TRUE;
+    }
+    int n = 0;
+    for (int i = 0; i < count; i++)
+    {
+        const char* s = paths[i].Name != NULL ? paths[i].Name : "";
+        int len = paths[i].Name == NULL ? 0 : (paths[i].Len < 0 ? (int)strlen(s) : paths[i].Len);
+        for (int k = 0; k < len; k++)
+        {
+            // a prefix ends before a separator that follows a part (doubled or leading ones add none)
+            if ((s[k] == '\\' || s[k] == '/') && k > 0 && s[k - 1] != '\\' && s[k - 1] != '/')
+            {
+                names[n].Name = s;
+                names[n].Len = k;
+                n++;
+            }
+        }
+        if (len > 0 && s[len - 1] != '\\' && s[len - 1] != '/')
+        {
+            names[n].Name = s;
+            names[n].Len = len;
+            n++;
+        }
+    }
+    BOOL ret = SalCaseTwinsDetail::HaveTwinsInPlace(names, n);
+    free(names);
+    return ret;
+}
+
 // TRUE when any folder of the tree - the root and every sub-folder - holds case
 // twins among its folders and files together. TDir provides GetFilesCount(),
 // GetDirsCount(), GetFile(i) and GetDir(i) (items with Name and NameLen) and

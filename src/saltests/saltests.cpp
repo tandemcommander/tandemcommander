@@ -94,6 +94,7 @@
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
 #include "../plugins/shared/splloadstru8.h" // feature 130: a plug-in's resource text as UTF-8
 
+#include <deque>
 #include <map>
 #include <set>
 #include <string>
@@ -14927,6 +14928,166 @@ static void TestCaseTwins252()
     CHECK(SalDirTreeHasCaseTwins(&chain[0]));
 }
 
+// feature 290: case twins among the flat member paths of a ZIP (salcasetwins.h SalPathsHaveCaseTwins)
+static BOOL PathTwins290(std::initializer_list<const char*> list, BOOL* lowMemory = NULL)
+{
+    std::vector<SalCaseTwinName> v;
+    for (const char* n : list)
+        v.push_back({n, -1});
+    return SalPathsHaveCaseTwins(v.data(), (int)v.size(), lowMemory);
+}
+
+// the case-sensitive tree the paths make (as the ZIP listing builds it since 271): folders from
+// every part before a separator, a file from the last part unless the path ends with a separator
+struct Trie290
+{
+    std::map<std::string, Trie290> Dirs;
+    std::set<std::string> Files;
+};
+static const FakeDir252* TrieToFake290(const Trie290& t, std::deque<FakeDir252>& store)
+{
+    store.emplace_back();
+    FakeDir252* d = &store.back();
+    for (const auto& kv : t.Dirs)
+        d->AddDir(kv.first.c_str(), TrieToFake290(kv.second, store));
+    for (const auto& f : t.Files)
+        d->AddFile(f.c_str());
+    return d;
+}
+
+static void TestPathTwins290()
+{
+    BOOL low = TRUE;
+    // the item's cases
+    CHECK(PathTwins290({"D\\x.txt", "d\\y.txt"}, &low) && !low);
+    CHECK(PathTwins290({"A.txt", "a.txt", "z.txt"}));
+    // no twins: different folders and names, a folder entry and its own file, duplicates
+    CHECK(!PathTwins290({"Docs\\f.txt", "z.txt"}, &low) && !low);
+    CHECK(!PathTwins290({"D\\x.txt", "D\\y.txt"}));
+    CHECK(!PathTwins290({"D\\", "D\\x.txt"}));
+    CHECK(!PathTwins290({"a.txt", "a.txt"}));
+    CHECK(!PathTwins290({"sub\\a.txt", "SUB2\\A.txt"})); // equal names in different folders
+    // a folder entry and a member of the other twin; twins deep down; a file and a folder
+    CHECK(PathTwins290({"D\\", "d\\y.txt"}));
+    CHECK(PathTwins290({"a\\B\\x", "a\\b\\y"}));
+    CHECK(!PathTwins290({"a\\B\\x", "a\\B\\y", "c\\b"}));
+    CHECK(PathTwins290({"x\\Readme", "x\\README\\y"}));
+    CHECK(PathTwins290({"a/B/x", "a/b/y"})); // '/' separates too
+    // the file system's rule (C-caron / c-caron) and not the Kelvin sign
+    CHECK(PathTwins290({"\xC4\x8C\\a", "\xC4\x8D\\b"}));
+    CHECK(!PathTwins290({"K\\a", "\xE2\x84\xAA\\b"}));
+    // edges
+    CHECK(!PathTwins290({}));
+    CHECK(!PathTwins290({"A\\a"}));        // one path: its parts are in different folders
+    CHECK(!PathTwins290({"A\\a", "A\\a"}));
+    CHECK(!SalPathsHaveCaseTwins(NULL, 3, &low) && !low);
+    CHECK(!SalPathsHaveCaseTwins(NULL, 3, NULL));
+    SalCaseTwinName nul[3] = {{NULL, 0}, {"", -1}, {"\\", -1}};
+    CHECK(!SalPathsHaveCaseTwins(nul, 3, NULL));
+    SalCaseTwinName lens[2] = {{"D\\xQ", 3}, {"d\\yR", 3}}; // lengths are honoured
+    CHECK(SalPathsHaveCaseTwins(lens, 2, NULL));
+    SalCaseTwinName lens2[2] = {{"a.txtX", 5}, {"A.TXTY", 1}};
+    CHECK(!SalPathsHaveCaseTwins(lens2, 2, NULL)); // "a.txt" and "A"
+    // doubled separators add no empty part
+    CHECK(!PathTwins290({"D\\\\x", "D\\y"}));
+    // the legacy byte fold (cp1250: E-circumflex / U-acute) as 252
+    const BYTE* lower = SalNameOrderDetail::LegacyLowerTable();
+    for (int b1 = 0x80, done = 0; b1 <= 0xBF && !done; b1++)
+        for (int b2 = 0x80; b2 <= 0xBF && !done; b2++)
+            if (b1 != b2 && lower[b1] == lower[b2])
+            {
+                char n1[8] = {(char)0xC3, (char)b1, '\\', 'a', 0};
+                char n2[8] = {(char)0xC3, (char)b2, '\\', 'b', 0};
+                char n1s[4] = {(char)0xC3, (char)b1, 0};
+                char n2s[4] = {(char)0xC3, (char)b2, 0};
+                if (!SalNameOrderEqualCI(n1s, -1, n2s, -1))
+                {
+                    CHECK(PathTwins290({n1, n2}));
+                    done = 1;
+                }
+            }
+    // the same decision as SalDirTreeHasCaseTwins on the tree the paths make (randomized, fixed seed)
+    static const char* parts[] = {"a", "A", "b", "B", "ab", "aB"};
+    unsigned seed = 290;
+    auto rnd = [&seed](unsigned n)
+    {
+        seed = seed * 1103515245u + 12345u;
+        return (seed >> 16) % n;
+    };
+    int agree = 0, twinSets = 0;
+    const int rounds = 4000;
+    for (int round = 0; round < rounds; round++)
+    {
+        std::vector<std::string> paths;
+        int count = 1 + (int)rnd(5);
+        for (int i = 0; i < count; i++)
+        {
+            std::string p;
+            int depth = 1 + (int)rnd(3);
+            for (int k = 0; k < depth; k++)
+            {
+                if (k > 0)
+                    p += '\\';
+                p += parts[rnd(6)];
+            }
+            if (rnd(4) == 0)
+                p += '\\'; // a folder entry
+            paths.push_back(p);
+        }
+        Trie290 root;
+        for (const std::string& p : paths)
+        {
+            Trie290* t = &root;
+            size_t start = 0;
+            for (size_t k = 0; k <= p.size(); k++)
+            {
+                if (k == p.size() || p[k] == '\\')
+                {
+                    if (k > start)
+                    {
+                        std::string part = p.substr(start, k - start);
+                        if (k == p.size())
+                            t->Files.insert(part);
+                        else
+                            t = &t->Dirs[part];
+                    }
+                    start = k + 1;
+                }
+            }
+        }
+        std::deque<FakeDir252> store;
+        const FakeDir252* tree = TrieToFake290(root, store);
+        std::vector<SalCaseTwinName> v;
+        for (const std::string& p : paths)
+            v.push_back({p.c_str(), (int)p.size()});
+        BOOL flat = SalPathsHaveCaseTwins(v.data(), (int)v.size(), NULL);
+        BOOL treeTwins = SalDirTreeHasCaseTwins(tree);
+        if (flat == treeTwins)
+            agree++;
+        if (treeTwins)
+            twinSets++;
+    }
+    CHECK(agree == rounds);
+    CHECK(twinSets > rounds / 10 && twinSets < rounds - rounds / 10); // both answers are exercised
+
+    // salzipname.h: the name below the panel's folder by exact case (nameIgnoreCase FALSE)
+    int rb = -1;
+    CHECK(!SalZipMemberIs("A.txt", -1, "a.txt", -1, 0, FALSE, &rb, FALSE));
+    CHECK(SalZipMemberIs("a.txt", -1, "a.txt", -1, 0, FALSE, &rb, FALSE) && rb == 0);
+    CHECK(SalZipMemberIs("A.txt", -1, "a.txt", -1, 0, FALSE, &rb)); // the default: as before
+    CHECK(!SalZipMemberIs("Dir\\x.txt", -1, "Dir\\X.TXT", -1, 3, FALSE, &rb, FALSE));
+    CHECK(SalZipMemberIs("Dir\\x.txt", -1, "Dir\\x.txt", -1, 3, FALSE, &rb, FALSE) && rb == 3);
+    CHECK(!SalZipMemberIs("D\\x.txt", -1, "d\\x.txt", -1, 0, FALSE, &rb, FALSE)); // ADDFOLDER
+    CHECK(SalZipMemberIs("D\\x.txt", -1, "d\\x.txt", -1, 0, FALSE, &rb));         // before 290
+    CHECK(!SalZipMemberIs("\xC4\x8C.txt", -1, "\xC4\x8D.txt", -1, 0, FALSE, &rb, FALSE));
+    CHECK(SalZipMemberIs("\xC4\x8C.txt", -1, "\xC4\x8C.txt", -1, 0, FALSE, &rb, FALSE));
+    CHECK(!SalZipMemberIsOrIsIn("D\\x.txt", -1, "d", -1, 0, FALSE, FALSE));
+    CHECK(SalZipMemberIsOrIsIn("d\\x.txt", -1, "d", -1, 0, FALSE, FALSE));
+    CHECK(SalZipMemberIsOrIsIn("D\\x.txt", -1, "d", -1, 0, FALSE)); // the default: as before
+    CHECK(!SalZipMemberIsOrIsIn("s\\D\\x.txt", -1, "s\\d", -1, 1, FALSE, FALSE));
+    CHECK(SalZipMemberIsOrIsIn("s\\d\\x.txt", -1, "s\\d", -1, 1, FALSE, FALSE));
+}
+
 static void TestNetDrive246()
 {
     // the key Explorer keeps a drive's name under (measured: analysis.md G1)
@@ -16476,6 +16637,7 @@ int main(int argc, char** argv)
     TestCpFit248();
     TestTextFits251();
     TestCaseTwins252();
+    TestPathTwins290();
     TestCopyName259();
     TestCacheTmpPath260();
     TestCodeTable262();

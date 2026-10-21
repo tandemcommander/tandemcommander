@@ -23,6 +23,7 @@
 #include "chicon.h"
 #include "common.h"
 #include "add_del.h"
+#include "../../common/salcasetwins.h" // feature 290: names that differ only in case (before deflate.h: its Len macro)
 #include "deflate.h"
 #include "crypt.h"
 #include "iosfxset.h"
@@ -1322,6 +1323,73 @@ int CZipPack::MatchFiles(int& count)
         count++;
     }
 
+    // feature 290: an archive that holds, in some folder, names that differ only in case (made in a
+    // case-sensitive folder or on Unix) is listed case-sensitively since 271 - the panel shows D and
+    // d, A.txt and a.txt apart. An added item then replaces only the member of its exact name; before,
+    // every member equal ignoring case was asked about and replaced (Windows: the panel's folder too,
+    // Unix: below it), and the other twin was lost. The listing's rule (salcasetwins.h) on the names
+    // as ProcessName gives them to the listing; the central directory is in memory (no new read).
+    BOOL nameIgnoreCase = TRUE;
+    if (!errorID && count > 1)
+    {
+        SalCaseTwinName* names = (SalCaseTwinName*)malloc(sizeof(SalCaseTwinName) * (size_t)count);
+        size_t* offsets = (size_t*)malloc(sizeof(size_t) * (size_t)count);
+        char* text = NULL;
+        size_t textSize = 0;
+        size_t textUsed = 0;
+        bool lowMem = names == NULL || offsets == NULL;
+        int n = 0;
+        for (centralHeader = (CFileHeader*)NewCentrDir; !lowMem && n < count;
+             centralHeader = (CFileHeader*)((char*)centralHeader +
+                                            sizeof(CFileHeader) +
+                                            centralHeader->NameLen +
+                                            centralHeader->ExtraLen +
+                                            centralHeader->CommentLen))
+        {
+            int len = ProcessName(centralHeader, inZip); // the pass above checked every header's bounds
+            if (textUsed + len + 1 > textSize)
+            {
+                size_t newSize = textSize * 2;
+                if (newSize < textUsed + len + 1)
+                    newSize = textUsed + len + 1;
+                if (newSize < 65536)
+                    newSize = 65536;
+                char* grown = (char*)realloc(text, newSize);
+                if (grown == NULL)
+                {
+                    lowMem = true;
+                    break;
+                }
+                text = grown;
+                textSize = newSize;
+            }
+            memcpy(text + textUsed, inZip, len + 1);
+            offsets[n] = textUsed;
+            SalCaseTwinName item = {NULL, len}; // not ".Len =": deflate.h defines Len as a macro
+            names[n] = item;
+            textUsed += len + 1;
+            n++;
+        }
+        if (!lowMem)
+        {
+            for (int i = 0; i < n; i++)
+                names[i].Name = text + offsets[i];
+            BOOL lowMemory = FALSE;
+            if (SalPathsHaveCaseTwins(names, n, &lowMemory))
+            {
+                pathFlag = 0;
+                nameIgnoreCase = FALSE;
+            }
+            if (lowMemory)
+                lowMem = true;
+        }
+        free(names);
+        free(offsets);
+        free(text);
+        if (lowMem)
+            errorID = IDS_LOWMEM; // refused before any question; the archive is not changed
+    }
+
     for (centralHeader = (CFileHeader*)NewCentrDir;
          (char*)centralHeader < NewCentrDir + /*EONewCentrDir.*/ NewCentrDirSize &&
          !errorID;
@@ -1363,7 +1431,8 @@ int CZipPack::MatchFiles(int& count)
             if (next->Action == AF_NOADD && next->IsDir) // this may already apply to directories; files are skipped above
                 if (Move)
                 {
-                    if (SalZipMemberIsOrIsIn(inZip, inZipLen, destNameBuf, destLen, RootLen, pathFlag == NORM_IGNORECASE))
+                    if (SalZipMemberIsOrIsIn(inZip, inZipLen, destNameBuf, destLen, RootLen, pathFlag == NORM_IGNORECASE,
+                                             nameIgnoreCase))
                     {
                         next->Action = AF_DEL;
                         continue;
@@ -1372,7 +1441,8 @@ int CZipPack::MatchFiles(int& count)
                 else
                     continue;
             int inZipRootBytes = 0; // bytes of inZip that hold ZipRoot (with UTF-8 they can differ from RootLen)
-            if (SalZipMemberIs(inZip, inZipLen, destNameBuf, destLen, RootLen, pathFlag == NORM_IGNORECASE, &inZipRootBytes))
+            if (SalZipMemberIs(inZip, inZipLen, destNameBuf, destLen, RootLen, pathFlag == NORM_IGNORECASE, &inZipRootBytes,
+                               nameIgnoreCase))
             {
                 ProcessHeader(centralHeader, &file);
                 if (file.IsDir && next->IsDir)
