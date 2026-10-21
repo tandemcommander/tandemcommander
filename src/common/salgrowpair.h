@@ -37,8 +37,6 @@ inline bool SalGrowBufferPair(A*& a, B*& b, int& allocated, int needed, ReallocF
 {
     if (allocated >= needed)
         return true;
-    if (needed <= 0)
-        return false;
     bool hadA = a != NULL;
     bool hadB = b != NULL;
     A* newA = (A*)reallocFn(a, (size_t)needed * sizeof(A));

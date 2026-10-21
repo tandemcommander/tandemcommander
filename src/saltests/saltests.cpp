@@ -15893,6 +15893,10 @@ static void TestGrowBufferPair293()
         CHECK(FakeLive293(text, (size_t)allocated));
         CHECK(FakeLive293(alpDX, (size_t)allocated * sizeof(int)));
         CHECK(FakeLiveCount293() == 2);           // no block lost, none kept twice
+        // a broken rule is counted above; reading or writing its blocks would hang or crash the run
+        if (allocated != (c.ok ? 100 : 10) || !FakeLive293(text, (size_t)allocated) ||
+            !FakeLive293(alpDX, (size_t)allocated * sizeof(int)))
+            continue;
         CHECK(strcmp(text, "hello") == 0);        // the old text stays shown
         CHECK(alpDX[0] == 7 && alpDX[5] == 42);   // and its measurements
         if (c.textMoved)
@@ -15905,6 +15909,8 @@ static void TestGrowBufferPair293()
         CHECK(Grow293(text, alpDX, allocated, 100));
         CHECK(allocated == 100);
         CHECK(FakeLive293(text, 100) && FakeLive293(alpDX, 100 * sizeof(int)));
+        if (allocated != 100 || !FakeLive293(text, 100) || !FakeLive293(alpDX, 100 * sizeof(int)))
+            continue;
         CHECK(strcmp(text, "hello") == 0);
         memset(text, 'x', 99);
         text[99] = 0;

@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **The panel's path line or information line could crash the program when memory ran out** (feature 293).
+  - **Before:** when the line above a panel (the path) or below it (the information line) had to show a text longer than any it had shown before and memory ran out half-way through making room for it, the line kept using memory it had already given back; the next repaint, the next text or closing the panel could crash the program or damage its memory.
+  - **Now:** the line keeps showing its previous text and stays usable; the next longer text, once memory is available, is shown normally. Nothing changes when memory is available.
+  - **Limitation:** the low-memory case cannot be produced in the running program; it is checked by unit rules that make each step fail. A dialog's status text and the size field of the path line have similar low-memory defects - recorded for later.
+
 - **Registry Editor: moving a key onto itself under another root name deleted it** (feature 292).
   - **Before:** a key or value moved (F6) into the key that already holds it, written with another root name - `HKEY_CURRENT_USER\Software\X\Key` into `\HKEY_USERS\<your SID>\Software\X\`, or `HKEY_CURRENT_USER\Software\Classes\...` into the same key under `\HKEY_CLASSES_ROOT\` - was not recognised as a move onto itself. The overwrite question named two different paths, and after *All* (or *Yes*) the key with all its subkeys, or the value, was **deleted** - there was no other copy. Copy asked to overwrite instead of refusing, and a Move into one of the key's own subkeys under another root name filled it with copies of itself many levels deep.
   - **Now:** the Registry Editor compares what the registry itself says each key is, so every name of one key (`HKEY_USERS\<SID>` and `HKEY_CURRENT_USER`, `HKEY_CLASSES_ROOT` and its user and machine halves, `HKEY_CURRENT_CONFIG`, registry links) is the same key: such a Copy or Move is refused with the same message as under one root name ("Can't move key or value to itself." / "Can't move a key to itself."), and nothing is deleted. Other copies and moves behave as before.

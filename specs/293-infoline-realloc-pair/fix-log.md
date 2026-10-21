@@ -90,3 +90,28 @@ are untouched, `AlpDX` holds at least `Allocated` ints with the old measurements
 - `a-dialog-status-text-and-the-panel-size-field-crash-when` (measure:293): `CStaticText::SetText`
   (src/gui.cpp) frees the moved text block on a later failure; `CStatusWindow::SetSize` writes
   `Size[0]` before its NULL check.
+
+## Review
+
+Independent refute-first review (one agent, general-purpose): **no MUST**.
+
+- Confirmed the four outcomes, the fresh-line case (same state as main, which leaked the block),
+  the callers (`fileswn0.cpp` 4, `fileswn1.cpp` 1, `fileswn2.cpp` 1, `fileswn3.cpp` 5,
+  `fileswnb.cpp` 2; the two `CStatusWindow` objects are created in `fileswnb.cpp`), and that the
+  lambdas keep the header's allocation and the destructor's `free` on the same CRT (debug) heap.
+- Own negative controls of the reviewer (each one bug in `salgrowpair.h`): fresh block not freed ->
+  4 failed; AlpDX stored only when both succeed -> 6; Text stored only when both succeed -> 7;
+  `allocated = needed` on failure -> saltests hung; moved block freed although the buffer had one ->
+  access violation.
+- SHOULD (fixed): the last two controls were caught only by a hang / crash, because the test kept
+  reading and writing the blocks after a failed CHECK (`memset(text, 'x', 99)` past a 10-byte block;
+  `strcmp` on NULL). Fix: `TestGrowBufferPair293` skips the rest of a case when the capacity or a
+  block is wrong (the failure is already counted). Re-measured: `allocated = needed` on failure ->
+  `saltests: 25405 checks, 13 failed` (no hang); moved block freed -> `25428 checks, 2 failed` (no
+  crash). Rule restored (header touched so the incremental build recompiles), rebuilt:
+  `saltests: 25440 checks, 0 failed`; encoding guard `TOTAL: 0 finding(s)`.
+- NOTE 1 (fixed): the `needed <= 0` branch of `SalGrowBufferPair` was unreachable - removed.
+- NOTE 2 (accepted): clang-format would wrap the lambdas differently; cosmetic, same as the
+  surrounding files.
+- NOTE 3 (accepted): the fake heap always moves a block; growth in place was already safe.
+- NOTE 4: restoring a file with `cp` keeps its old timestamp - touch it before an incremental build.

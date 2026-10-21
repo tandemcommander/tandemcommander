@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [The information line keeps using a freed text when memory runs out as it grows](items/the-information-line-keeps-using-a-freed-text-when-memory/desc.md) | bug | 7 | panels-ui | 293 |
 
 ## Next
 

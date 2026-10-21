@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -3837,3 +3837,20 @@ a few early ones are out of sequence).
   `registry-editor-move-of-a-key-onto-itself-through-hkey-users`. Probe `alias292_probe.ps1`
   18 / 9 FAIL -> 33 / 0 (English and Czech; HKCRBOTH negative control on the second version: FAIL);
   saltests 25,330 / 0 (negative control 1 failed); three refute-first reviews (one MUST, fixed).
+- 293-infoline-realloc-pair: when a panel's directory line or information line (`CStatusWindow`) had
+  to show a text longer than any before and memory ran out between the two `realloc` calls of
+  `SetText` (`Text`, then `AlpDX`), it stored neither result, so a block that had moved left the
+  window holding released memory (crash or heap corruption at the next paint, `SetText` or
+  destructor) - now the growth goes through `src/common/salgrowpair.h` `SalGrowBufferPair`: each
+  successful result is stored at once, the capacity rises only when both grew, a fresh block of a
+  buffer that had none is released again (an uninitialized text block would have no terminator);
+  the old text stays shown. Traps: the Debug core defines `_CRTDBG_MAP_ALLOC`, so the CRT overload
+  calls `realloc` / `free` inside lambdas, not by address; a test that keeps using blocks after a
+  failed CHECK turns a regression into a hang or crash (review SHOULD) - the cases stop early;
+  restoring a header with `cp` keeps its timestamp, touch it before an incremental build. Limits: the
+  low-memory case is proven by the `saltests` seam (a fake heap failing chosen calls, moving every
+  block, marking released ones) and a reading proof, not on the running program; `CStaticText::SetText`
+  (src/gui.cpp) and `CStatusWindow::SetSize` have similar low-memory defects (Inbox
+  `a-dialog-status-text-and-the-panel-size-field-crash-when`). From backlog item
+  `the-information-line-keeps-using-a-freed-text-when-memory`. No probe; saltests 25,440 / 0
+  (negative control, the old rule: 13 failed); one refute-first review (no MUST, one SHOULD fixed).
