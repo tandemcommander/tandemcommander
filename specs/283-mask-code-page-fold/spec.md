@@ -40,6 +40,7 @@ mask service - a wrong answer selects, converts, copies, recycles or deletes the
 
 - Q: "The file system's case rule" or the matcher's existing letter rule for accented masks? → A: the matcher's existing rule for non-ASCII masks (whole letters, case-insensitive per character, canonically equivalent spellings equal) - the same rule every other mask of the group already uses, so a `*.ext` mask answers exactly as `*.ext*`-style masks do; for accented letters (Č/č, Ĺ/ĺ, Cyrillic, Greek) it agrees with the file system's rule; changing the matcher's rule for all masks is not part of this item (autonomous run: conservative - 068 recorded that rule as correct; 092 left masks outside the identity rule, masks are searching)
 - Q: Keep the shortcut for ASCII extensions? → A: yes, byte for byte unchanged - every mask and name made of ASCII only matches exactly as before (autonomous run: conservative / constitution principle II)
+- Q: Should accented extension masks get their own letter-aware shortcut (table) so long lists of them stay as fast as ASCII ones? → A: no - they go through the general letter matcher like every other non-ASCII mask; such masks are rare and the general matcher already serves every accented mask that is not `*.xxx` (autonomous run: conservative - the change that changes least)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -112,6 +113,7 @@ decision.
 - **SC-001**: Probe `mask283_probe.ps1`: 6 FAIL -> 0 FAIL, the 4 controls still PASS.
 - **SC-002**: saltests: the new checks pass, the count rises, 0 failed.
 - **SC-003**: No ASCII-only mask decision changes (saltests differential checks against the old shortcut for ASCII extensions).
+- **SC-004**: Groups made of ASCII masks keep their speed (the shortcut and the table are unchanged for them); an accented `*.xxx` mask costs what any other accented mask already costs.
 
 ## Assumptions
 
