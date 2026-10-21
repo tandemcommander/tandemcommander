@@ -110,5 +110,47 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\281-moved-aside-left
   interface wrappers' own message (FTP / SFTP need a server; no probe here reaches the wrappers -
   the Renamer's folder create was not tried). The wrappers' path is the same code as the core's
   rows, with `ReportMovedAsideLeft(NULL, ...)` called inside the create.
+## Review
+
+### Review 1 (refute-first, independent agent)
+
+Re-ran build, saltests (25,011 / 0), the probe (14 / 0); negative control `SAL_MOVE_BACK_RETRIES`
+0 -> `cp-brief` and `ren-brief` FAIL (so both prove the retry), restored; drove the Renamer's folder
+create through `SG->SalCreateDirectoryEx` (`LONGDI~1\x.txt`, seam 1000): an "Error Renaming File"
+box, then the Renamer's error, keep.txt intact in salNNN - the wrapper route works.
+
+- **MUST 1 - a long salNNN path was cut**: the report used the error dialog (`CFileErrorDlg`,
+  `IDD_ERROR3`) whose name field is a `CStaticText` with `STF_PATH_ELLIPSIS`; a deep fixture
+  showed `...\a_rather_long_folder_name_to_make…\sal5CE`. The probe passed it (it only checked a
+  capture existed). **Fixed**: `ReportMovedAsideLeft` shows Quick Rename's whole-path form
+  (`IDS_PATHERRORFORMAT` in `SalMessageBox`, `FormatMovedAsideLeft`); the worker formats the same
+  text and sends the new progress-dialog request 13 (`dialogs.cpp`, `SalMessageBox`); 221's
+  worker-move report uses it too (it had the same cut). The probe now reads the box text and
+  requires the whole `salNNN` path in it (white space ignored - the box breaks a long path at a
+  backslash; the fixture paths hold none); new row `cp-long` (the reviewer's deep folder).
+- **SHOULD 2 - the box does not name the entry it was** (only `salNNN`): needs a new UI string ->
+  the `.slt` refresh a run does not do; 221 kept the one-path form for the same reason. New Inbox
+  item `left-aside-message-names-the-entry` (review:281).
+- **SHOULD 3 - a cancel during the ~2 s of retries swallowed the worker's report**
+  (`WM_USER_DIALOG` returns at once when `CancelWorker`): **fixed** - request 13 is shown after
+  the user's cancel too, never during an unattended close or a critical shutdown (080);
+  `ReportMovedAsideLeft` shows nothing then either (a trace). By reading - not driven (the cancel
+  would have to land inside the retry window).
+- NOTE 4 (the create's error is now the second move back's): intended, both are the move back's
+  reason. NOTE 5 (FTP / SFTP get an ownerless modal box on their disk thread, blocking it until
+  answered): accepted by the spec (clarification 1) - nothing is shown during an unattended close
+  now. NOTE 6: `CMovedAsideLeft` moved above the old Czech comment, copy operations deleted.
+  NOTE 7: the probe reads the text now; `mv-left` / `qr-left` rows added (221's routes); PictView
+  stays by reading. NOTE 8: Debug `pictview.spl` also holds the seam variable (by design); the
+  Release build is rebuilt below.
+
+After the fixes: build, saltests 25,011 / 0, encoding guard 0; `left281_probe` **20 / 0**
+(`result_after.txt`: cp-left, cp-long, cp-brief, dir-left, zip-left, zipdir-left, f7-left,
+new-left, mv-left, qr-left); `ren281_probe` 4 / 0; regression 203 14 / 0, 201 6 / 0. Measured on
+the way: in `mv-left` the worker's undone move is retried by the worker (the reason is a sharing
+violation) and then lands as `LONGFI~1.TXT` - the short name is free; the user is told where
+longfilename.txt is (221's logic, nothing lost); Quick Rename stays undone and shows its own error
+box after the "left aside" one (221).
+
 - clang-format: no new finding in the changed code (the one extra in `saltests.cpp` is the new
   `#include` line in the include block, which the tool reports line by line already).

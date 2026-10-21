@@ -202,6 +202,7 @@ Last triaged: 2026-10-20
 | [FTP 277 on real servers: long PWD paths, AS/400 member names, case-insensitive lock](items/ftp-277-real-server-checks/desc.md) | person-step | 3 | ftp | leftover:277 | 2026-10-21 |
 | [FTP: server folder names compared by the code-page case rule on UTF-8 bytes](items/ftp-server-path-compare-code-page-fold/desc.md) | bug | 4 | ftp | review:277 | 2026-10-21 |
 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | person-step | 2 | panels-ui | leftover:276 | 2026-10-21 |
+| [The left-aside message names only the salNNN entry, not the entry it was](items/left-aside-message-names-the-entry/desc.md) | improvement | 3 | file-ops | review:281 | 2026-10-21 |
 | [Registry Editor Find: confirm a regexp finds the end of a non-ASCII text on UTF-8](items/registry-editor-find-confirm-a-regexp-finds-the-end-of-a-non/desc.md) | person-step | 3 | other-plugins | leftover:278 | 2026-10-21 |
 | [Registry Editor View of a text value: cut text and a stray byte on a UTF-8 code page](items/registry-editor-view-of-a-text-value-cut-text-and-a-stray/desc.md) | bug | 4 | other-plugins | review:278 | 2026-10-21 |
 | [SFTP: a folder uploaded again into a real upload-only service (279)](items/sftp-a-folder-uploaded-again-into-a-real-upload-only-service/desc.md) | person-step | 4 | sftp | leftover:279 | 2026-10-21 |

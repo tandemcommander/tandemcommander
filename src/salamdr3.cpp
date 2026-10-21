@@ -1343,14 +1343,27 @@ HWND GetMovedAsideReportParent()
     return NULL;
 }
 
+BOOL FormatMovedAsideLeft(CSalHeapString& text, const CMovedAsideLeft* left)
+{
+    // Quick Rename's form since 221: "Path: "...\salNNN"\nError: reason" - the path whole (the
+    // error dialog's name field cut a long one with an ellipsis: review of 281)
+    return left->Path != NULL && text.Printf(LoadStrU8(IDS_PATHERRORFORMAT), left->Path, GetErrorText(left->Err));
+}
+
 void ReportMovedAsideLeft(HWND parent, CMovedAsideLeft* left)
 {
     if (left == NULL || left->Path == NULL)
         return;
-    if (parent == NULL)
-        parent = GetMovedAsideReportParent();
-    // 221's form: "Error Renaming File", the salNNN path whole, the reason; OK only
-    ::DialogError(parent, BUTTONS_OK, left->Path, GetErrorText(left->Err), LoadStr(IDS_ERRORRENAMINGFILE));
+    if (UnattendedClose || CriticalShutdown) // feature 080: nothing is shown - nobody to tell
+        TRACE_E("ReportMovedAsideLeft(): during a close, not shown: " << left->Path);
+    else
+    {
+        if (parent == NULL)
+            parent = GetMovedAsideReportParent();
+        CSalHeapString text; // the path may be long - never cut
+        SalMessageBox(parent, FormatMovedAsideLeft(text, left) ? text.Get() : left->Path,
+                      LoadStr(IDS_ERRORRENAMINGFILE), MB_OK | MB_ICONEXCLAMATION);
+    }
     left->Clear();
 }
 

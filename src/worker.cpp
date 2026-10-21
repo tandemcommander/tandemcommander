@@ -5,6 +5,7 @@
 #include "precomp.h"
 #include "salsafereplace.h" // feature 175
 #include "salshortname.h"   // feature 203
+#include "salheapstr.h"     // feature 281
 #include "salreparse.h"     // feature 253
 
 #include "cfgdlg.h"
@@ -4519,17 +4520,19 @@ void DoCopyFileLoopAsync(CAsyncCopyParams* asyncPar, HANDLE& in, HANDLE& out, vo
 }
 
 // feature 281: the entry of an 8.3 clash that could not be moved back stays under its temporary
-// name - said through the progress dialog (221's form for the worker's move); keeps the last error
+// name - said through the progress dialog with the path whole (request 13, also after the user's
+// cancel - not during an unattended close); keeps the last error
 static void ReportMovedAsideLeftWorker(HWND hProgressDlg, CMovedAsideLeft* left)
 {
     if (left->Path == NULL)
         return;
     DWORD err = GetLastError();
-    char* data[3];
+    CSalHeapString text; // the path may be long - never cut
+    char* data[2];
     data[0] = LoadStr(IDS_ERRORRENAMINGFILE);
-    data[1] = left->Path;
-    data[2] = GetErrorText(left->Err);
-    SendMessage(hProgressDlg, WM_USER_DIALOG, 5, (LPARAM)data);
+    data[1] = FormatMovedAsideLeft(text, left) ? text.Get() : left->Path;
+    TRACE_I("ReportMovedAsideLeftWorker(): the entry stays under " << left->Path);
+    SendMessage(hProgressDlg, WM_USER_DIALOG, 13, (LPARAM)data);
     left->Clear();
     SetLastError(err);
 }
@@ -6149,11 +6152,10 @@ BOOL DoMoveFile(COperation* op, HWND hProgressDlg, void* buffer,
                                         }
                                         if (!back)
                                         { // feature 221: the other entry stays under the temporary name - said (it was a trace)
-                                            char* data[3];
-                                            data[0] = LoadStr(IDS_ERRORRENAMINGFILE);
-                                            data[1] = tmpName;
-                                            data[2] = GetErrorText(backErr);
-                                            SendMessage(hProgressDlg, WM_USER_DIALOG, 5, (LPARAM)data);
+                                            // feature 281: the path whole, also after a cancel
+                                            CMovedAsideLeft left;
+                                            left.Set(tmpName, backErr);
+                                            ReportMovedAsideLeftWorker(hProgressDlg, &left);
                                         }
                                     }
                                     else

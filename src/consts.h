@@ -176,6 +176,38 @@ BOOL IsUNCPath(const char* path);
 // test jestli jde o UNC root (detekuje jen format: \\server\share)
 BOOL IsUNCRootPath(const char* path);
 
+// feature 281: where an entry moved aside to a temporary name ("salNNN") for an 8.3 clash stayed
+// because it could not be moved back (another program held it) - the user is told
+struct CMovedAsideLeft
+{
+    char* Path; // malloc'd UTF-8 full path of the salNNN entry; NULL = nothing left
+    DWORD Err;  // the error of the last failed move back
+
+    CMovedAsideLeft() : Path(NULL), Err(0) {}
+    ~CMovedAsideLeft() { free(Path); }
+    CMovedAsideLeft(const CMovedAsideLeft&) = delete; // owns 'Path'
+    CMovedAsideLeft& operator=(const CMovedAsideLeft&) = delete;
+    void Set(const char* path, DWORD err); // (a copy of 'path'; replaces an earlier one)
+    void Clear()
+    {
+        free(Path);
+        Path = NULL;
+        Err = 0;
+    }
+};
+
+// shows "Error Renaming File" with the whole salNNN path and the reason (IDS_PATHERRORFORMAT, as
+// Quick Rename since 221) when 'left' holds one, then clears it; 'parent' NULL =
+// GetMovedAsideReportParent(); callable from any thread; nothing is shown during an unattended
+// close or a critical shutdown (feature 080 - a trace only)
+void ReportMovedAsideLeft(HWND parent, CMovedAsideLeft* left);
+// that message's text for 'left' into 'text' (FALSE: low memory)
+class CSalHeapString;
+BOOL FormatMovedAsideLeft(CSalHeapString& text, const CMovedAsideLeft* left);
+// an owner for that message on the calling thread: its foreground or first visible enabled
+// top-level window, else (main thread) the main window, else NULL
+HWND GetMovedAsideReportParent();
+
 // vytvoreni souboru se jmenem 'fileName' pres klasicke volani Win32 API
 // CreateFile (lpSecurityAttributes==NULL, dwCreationDisposition==CREATE_NEW,
 // hTemplateFile==NULL); tato metoda resi kolizi 'fileName' s dosovym nazvem
@@ -187,32 +219,7 @@ BOOL IsUNCRootPath(const char* path);
 // neni-li 'encryptionNotSupported' NULL a soubor nejde otevrit s Encrypted
 // atributem, zkusi ho otevrit jeste bez Encrypted atributu, pokud se to povede,
 // soubor je smazan a do 'encryptionNotSupported' se zapise TRUE - navratova hodnota
-// funkce a GetLastError() obsahuji "puvodni" chybu (otevirani s Encrypted atributem)
-// feature 281: where an entry moved aside to a temporary name ("salNNN") for an 8.3 clash stayed
-// because it could not be moved back (another program held it) - the user is told
-struct CMovedAsideLeft
-{
-    char* Path; // malloc'd UTF-8 full path of the salNNN entry; NULL = nothing left
-    DWORD Err;  // the error of the last failed move back
-
-    CMovedAsideLeft() : Path(NULL), Err(0) {}
-    ~CMovedAsideLeft() { free(Path); }
-    void Set(const char* path, DWORD err); // (a copy of 'path'; replaces an earlier one)
-    void Clear()
-    {
-        free(Path);
-        Path = NULL;
-        Err = 0;
-    }
-};
-
-// shows "Error Renaming File" with the salNNN path and the reason when 'left' holds one, then
-// clears it; 'parent' NULL = GetMovedAsideReportParent(); callable from any thread
-void ReportMovedAsideLeft(HWND parent, CMovedAsideLeft* left);
-// an owner for that message on the calling thread: its foreground or first visible enabled
-// top-level window, else (main thread) the main window, else NULL
-HWND GetMovedAsideReportParent();
-
+// funkce a GetLastError() obsahuji "puvodni" chybu (otevirani s Encrypted atributem);
 // feature 281: 'left' (may be NULL) receives the entry of an 8.3 clash that could not be moved
 // back; with NULL the function shows it itself (ReportMovedAsideLeft) - never only a trace
 HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,

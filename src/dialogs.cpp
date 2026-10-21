@@ -786,7 +786,9 @@ CProgressDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         //--- worker request to show a dialog
     case WM_USER_DIALOG:
     {
-        if (CancelWorker)
+        // feature 281: request 13 (an entry left under a temporary name) is shown after the user's
+        // cancel too - where the user's file is now; never during an unattended close (080)
+        if (CancelWorker && (wParam != 13 || UnattendedClose || CriticalShutdown))
             return TRUE; // should terminate, it should not request anything
 
         BOOL canFlash = RunningInOwnThread;
@@ -921,6 +923,13 @@ CProgressDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             CConfirmEncryptionLossDlg dlg(HWindow, (BOOL)(INT_PTR)data[1], data[2], (BOOL)(INT_PTR)data[3]);
             *(int*)data[0] = (int)dlg.Execute();
+            break;
+        }
+
+        case 13: // feature 281: [0] title, [1] text (UTF-8; a path in it is whole)
+        {
+            if (!UnattendedClose && !CriticalShutdown) // feature 080: nothing is shown during an unattended close
+                SalMessageBox(HWindow, data[1], data[0], MB_OK | MB_ICONEXCLAMATION);
             break;
         }
         }

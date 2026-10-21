@@ -10,8 +10,9 @@
     first n move-back attempts of the program fail with a sharing violation, contracts/probe-seam.md).
     Rows (boxes answered Yes / OK / Skip; dialogs that come back after an error are cancelled):
       cp-left     F5 of a file "LONGFI~1.TXT" into a folder holding "longfilename.txt", seam 1000:
-                  PASS = exactly one "Error Renaming File" box naming the salNNN entry that holds
-                  longfilename.txt's content
+                  PASS = exactly one "Error Renaming File" box whose text holds the whole path of
+                  the salNNN entry that holds longfilename.txt's content
+      cp-long     cp-left in a deep target folder: the box holds the whole salNNN path (review)
       cp-brief    the same with seam 3 (a hold shorter than the retry): the copy lands,
                   longfilename.txt keeps its name and content, no such box
       dir-left    F5 of a folder "LONGDI~1" next to a folder "longdirname" (keep.txt), seam 1000
@@ -20,6 +21,11 @@
                   folder made its own, feature 204), seam 1000
       f7-left     F7 Create Directory "LONGDI~1" next to "longdirname", seam 1000
       new-left    Edit New File "LONGFI~1.TXT" next to "longfilename.txt", seam 1000
+      mv-left     F6 of "x.txt" to "LONGFI~1.TXT" in its folder (221's worker move), seam 1000:
+                  the box with the whole path; x.txt's content kept (the worker retries the
+                  undone move - it lands as LONGFI~1.TXT)
+      qr-left     the same by Quick Rename (221's own report), seam 1000: x.txt kept, the box with
+                  the whole path and then Quick Rename's error box
     Short names must be made on the volume (dir /x; NOT DRIVEN otherwise). Driver of 203's probe.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
@@ -201,7 +207,7 @@ function Has-Short([string]$Dir, [string]$Short) {
 }
 # the other entry left aside: a salNNN entry holds $Content (a file, or keep.txt of a folder), and
 # exactly one "Error Renaming File" box names it
-function Left-Check([string]$Dir, [string]$Content, [bool]$IsDir) {
+function Left-Check([string]$Dir, [string]$Content, [bool]$IsDir, [int]$RenameBoxes = 1) {
     $sal = @([IO.Directory]::GetFileSystemEntries($LP + $Dir) | ForEach-Object { [IO.Path]::GetFileName($_) } | Where-Object { $_ -cmatch '^sal[0-9A-F]{3}$' })
     $where = ''
     foreach ($s in $sal) {
@@ -210,10 +216,13 @@ function Left-Check([string]$Dir, [string]$Content, [bool]$IsDir) {
     }
     $own = $(if ($IsDir) { (ReadOr "$Dir\longdirname\keep.txt") -ceq $Content } else { (ReadOr "$Dir\longfilename.txt") -ceq $Content })
     $boxes = @($script:Msgs | Where-Object { $_ -match "'Error Renaming File'" })
-    # the path itself is painted (no window text): the capture is read after the run (fix-log)
-    $shot = @($script:Msgs | Where-Object { $_ -match '^\(captured .*: True\)$' }).Count -eq 1
-    $ok = [bool]$where -and ($boxes.Count -eq 1) -and $shot
-    return (Res $ok (-not ([bool]$where -or $own)) ((Snap $Dir) + "; left at: $(if ($where) { $where } else { '-' }); rename boxes: $($boxes.Count); captured: $shot"))
+    # the box text holds the whole path of the entry (review of 281: the error dialog's painted
+    # name field cut a long one); the capture stays as a picture of what the user sees
+    # (the box breaks a long path into lines at a backslash; the fixture paths hold no white space)
+    # ($RenameBoxes 2: Quick Rename's own error box after the undo, as 221 kept it)
+    $naming = @($boxes | Where-Object { [bool]$where -and ($_ -replace '\s', '').Contains("$Dir\$where") })
+    $named = ($boxes.Count -eq $RenameBoxes) -and ($naming.Count -eq 1)
+    return (Res ([bool]$where -and $named) (-not ([bool]$where -or $own)) ((Snap $Dir) + "; left at: $(if ($where) { $where } else { '-' }); rename boxes: $($boxes.Count); the whole path in it: $named"))
 }
 # nothing left aside, the other entry under its own name, no rename box
 function Brief-Check([string]$Dir, [string]$Content, [string]$Landed, [string]$LandedContent) {
@@ -244,6 +253,15 @@ $Cases['cp-left'] = {
     $s = Has-Short "$d\tgt" 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
     @{ Seam = 1000; Left = "$d\src"; Right = "$d\tgt"; Focus = "$d\src\LONGFI~1.TXT"; Cmd = 727; Text = "$d\tgt\"
        Check = { Left-Check "$d\tgt" 'PRECIOUS-1' $false }.GetNewClosure() }
+}
+# review of 281: a target deep enough that a painted path field cut the salNNN path with an ellipsis
+$Cases['cp-long'] = {
+    $d = New-Case 'cp-long'; $t = "$d\a_rather_long_folder_name_to_make_the_path_wide\second_long_folder_name_to_make_it_wider\tgt"
+    NewDir "$d\src"; NewDir $t
+    Put "$t\longfilename.txt" 'PRECIOUS-5'; Put "$d\src\LONGFI~1.TXT" 'COPIED-5'
+    $s = Has-Short $t 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
+    @{ Seam = 1000; Left = "$d\src"; Right = $t; Focus = "$d\src\LONGFI~1.TXT"; Cmd = 727; Text = "$t\"
+       Check = { Left-Check $t 'PRECIOUS-5' $false }.GetNewClosure() }
 }
 $Cases['cp-brief'] = {
     $d = New-Case 'cp-brief'; NewDir "$d\src"; NewDir "$d\tgt"
@@ -288,6 +306,26 @@ $Cases['new-left'] = {
     $s = Has-Short "$d\tgt" 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
     @{ Seam = 1000; Left = "$d\tgt"; Right = $StartDir; FocusLast = $true; Cmd = 744; Text = 'LONGFI~1.TXT'
        Check = { Left-Check "$d\tgt" 'PRECIOUS-4' $false }.GetNewClosure() }
+}
+
+# 221's routes (the rename / move of "x.txt" to "LONGFI~1.TXT" in the same folder): the box says
+# where the other file stays - the worker's move now in the whole-path form. The worker's move is
+# undone and, its reason being a sharing violation, retried by the worker - the short name is free
+# then, so x.txt ends up as LONGFI~1.TXT (221's logic); Quick Rename stays undone and shows its own
+# error box after the "left aside" one (221)
+$Cases['mv-left'] = {
+    $d = New-Case 'mv-left'
+    Put "$d\longfilename.txt" 'PRECIOUS-6'; Put "$d\x.txt" 'MOVED-6'
+    $s = Has-Short $d 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
+    @{ Seam = 1000; Left = $d; Right = $StartDir; Focus = "$d\x.txt"; Cmd = 728; Text = "$d\LONGFI~1.TXT"
+       Check = { $r = Left-Check $d 'PRECIOUS-6' $false; $x = ((ReadOr "$d\x.txt") -ceq 'MOVED-6') -or ((ReadOr "$d\LONGFI~1.TXT") -ceq 'MOVED-6'); Res ($r.Ok -and $x) ($r.Lost -or -not $x) ($r.Facts + "; x.txt's content kept: $x") }.GetNewClosure() }
+}
+$Cases['qr-left'] = {
+    $d = New-Case 'qr-left'
+    Put "$d\longfilename.txt" 'PRECIOUS-7'; Put "$d\x.txt" 'MOVED-7'
+    $s = Has-Short $d 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
+    @{ Seam = 1000; Left = $d; Right = $StartDir; Focus = "$d\x.txt"; Cmd = 754; Text = 'LONGFI~1.TXT'
+       Check = { $r = Left-Check $d 'PRECIOUS-7' $false 2; $x = (ReadOr "$d\x.txt") -ceq 'MOVED-7'; Res ($r.Ok -and $x) ($r.Lost -or -not $x) ($r.Facts + "; x.txt kept: $x") }.GetNewClosure() }
 }
 
 # ---- main --------------------------------------------------------------------------

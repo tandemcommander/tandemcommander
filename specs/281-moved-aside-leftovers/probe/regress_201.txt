@@ -1,6 +1,6 @@
 short_clash_probe (feature 201) 
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 08:50; ACP 1250; registry key existed True
+Date    : 2026-10-21 09:18; ACP 1250; registry key existed True
 WebDAV  : NOT AVAILABLE - not used by this probe
 
 qr-free    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was 'x.txt', set 'LONGFI~1.TXT'; on disk: LONGFI~1.TXT=MOVED-qr-free; longfilename.txt=PRECIOUS-1; asked: nothing

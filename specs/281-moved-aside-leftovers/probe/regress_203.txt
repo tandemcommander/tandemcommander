@@ -1,6 +1,6 @@
 create_clash_probe (feature 203) 
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 08:48; ACP 1250; registry key existed True
+Date    : 2026-10-21 09:17; ACP 1250; registry key existed True
 WebDAV  : NOT AVAILABLE - not used by this probe
 
 cp-free    RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '...Data\Local\Temp\tc203_cc\cp-free\tgt\*.*', set '...AppData\Local\Temp\tc203_cc\cp-free\tgt\'; on disk: LONGFI~1.TXT=COPIED-cp-free; longfilename.txt=PRECIOUS-1; the copy there: True; asked: nothing
