@@ -17,7 +17,6 @@ Last triaged: 2026-10-21
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Adding a file into a ZIP that holds names differing only in case can replace the other twin](items/adding-a-file-into-a-zip-that-holds-names-differing-only-in/desc.md) | bug | 7 | archives | 290 |
 
 ## Next
 

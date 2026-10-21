@@ -33,7 +33,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
-| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
+| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
@@ -3776,3 +3776,23 @@ a few early ones are out of sequence).
   `drive-list-code-page-texts`. Probe `run289` (English, Czech) 3 / 5 -> 8 / 0; sink-decoded texts
   before = after (210 lines); saltests 25,226 -> 25,237 / 0; one refute-first review (no MUST;
   N2 probe coverage of As Other Panel and N3 fixed; N4 -> Inbox).
+- 290-zip-add-case-twins: copying or moving a file into a ZIP that holds names differing only in
+  case replaced a member the user did not name - into `t.zip\d` of D/x.txt + d/y.txt (271 shows D
+  and d apart) the question named `t.zip\D\x.txt` and Yes deleted it; adding a.txt beside A.txt +
+  a.txt asked twice and kept only the new a.txt; in a Unix-made ZIP the first match below the
+  panel's folder (A.txt) was replaced - the item's premise "Unix already matches exactly" was wrong:
+  `SalZipMemberIs` compared only the panel's folder by case - now `CZipPack::MatchFiles` collects the
+  members' names from the central directory it holds, asks 271's rule (`SalPathsHaveCaseTwins`,
+  `salcasetwins.h`, part by part per folder as `SalDirTreeHasCaseTwins`) and, for a twin archive,
+  matches folder and name exactly (`SalZipMemberIs` / `SalZipMemberIsOrIsIn` `nameIgnoreCase`,
+  default TRUE); ZIPs without twins unchanged; low memory refuses before any question. Traps:
+  `deflate.h` `#define Len` breaks `SalCaseTwinName::Len` (include before it, aggregate-init);
+  comparing whole prefixes missed ordinal twins below a folder that is not valid WTF-8 (review);
+  110's `r_3*` rows were twin archives and were re-baselined (one question, other members kept),
+  duplicate-member rows `v_dupys` / `v_dupyc` keep its SF1 path driven. Limits: in a twin archive
+  `B.txt` is added beside `b.txt` without a question (known change); a legacy-fold pair
+  (h-circumflex / L-acute) makes the archive exact too; ~1-3 s per add into a 200,000-member ZIP.
+  From backlog item `adding-a-file-into-a-zip-that-holds-names-differing-only-in`. Probe
+  `zip290_probe.ps1` 6 FAIL / 12 -> 18 / 0 (negative control 6 FAIL); 110's 33 / 9 -> 44 / 0, 271's
+  16 / 0, 108's 30 / 0; saltests 25,281 / 0; one refute-first review (no MUST; SHOULD 1-2
+  and NOTE 6 fixed).

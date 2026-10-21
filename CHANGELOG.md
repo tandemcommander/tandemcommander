@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Adding a file into a ZIP that holds names differing only in case could replace the other one** (feature 290).
+  - **Before:** in a ZIP that holds, for example, `A.txt` and `a.txt`, or folders `D` and `d` (made in a case-sensitive folder, by WSL, or on Unix), copying or moving a file into it matched the existing files ignoring case. Copying `x.txt` into folder `d` asked to overwrite `D\x.txt` - a file in the other folder, not shown where you were - and *Yes* deleted it; adding `a.txt` asked twice and, after *Yes* to both, only the new `a.txt` was left, `A.txt` was gone. In a ZIP made on Unix the new file could replace `A.txt` instead of `a.txt`.
+  - **Now:** in such an archive a file you add replaces only the file of exactly its name, after the usual question; the other one keeps its content. Archives without such names behave as before.
+  - **Limitation:** in such an archive a name that differs from an existing one only in case (`B.txt` beside `b.txt`) is added as a second file without a question. An archive holding two names that Windows treats as different but the older comparison took for one (e.g. `ĥ.txt` and `Ĺ.txt`) is treated the same way.
+
 - **A CD or USB drive named in another script showed as question marks in the Change Drive menu** (feature 289).
   - **Before:** the label of a CD / DVD and the name of a removable drive were asked of Windows in the system's code page, which turns every letter outside it into `?` before the program sees it - a disc labelled `Диск` on a Czech or English system showed as `????` in Alt+F1 / Alt+F2 and the drive bar tooltip. The same held for the type name of folders in the *Type* column ("File folder") when the Windows display language is outside the code page. The program's own words in the drive list ("Local Drive", "Network", "As Other Panel", the free space, …) and the type of the `..` entry were also code-page text where everything else is Unicode.
   - **Now:** these names and words come from Windows and the language file as Unicode and are shown exactly; a long name is never cut. Where they showed correctly before, they look the same.
